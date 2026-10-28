@@ -4,22 +4,35 @@ namespace BlackjackCasino.Desktop;
 
 internal static class CasinoFeedback
 {
-    public static void PlayChip(bool enabled) => Play(enabled, SystemSounds.Beep);
+    private static readonly Lazy<SoundPlayer> CardPlayer = CreatePlayer("card.wav");
+    private static readonly Lazy<SoundPlayer> ChipPlayer = CreatePlayer("chip.wav");
+    private static readonly Lazy<SoundPlayer> WinPlayer = CreatePlayer("win.wav");
+    private static readonly Lazy<SoundPlayer> LossPlayer = CreatePlayer("loss.wav");
+    private static readonly Lazy<SoundPlayer> PushPlayer = CreatePlayer("push.wav");
 
-    public static void PlayCard(bool enabled) => Play(enabled, SystemSounds.Asterisk);
+    public static void PlayChip(bool enabled) => Play(enabled, ChipPlayer);
+
+    public static void PlayCard(bool enabled) => Play(enabled, CardPlayer);
 
     public static void PlayOutcome(bool enabled, decimal net)
     {
-        SystemSound sound = net switch
+        Play(enabled, net switch
         {
-            > 0m => SystemSounds.Exclamation,
-            < 0m => SystemSounds.Hand,
-            _ => SystemSounds.Question,
-        };
-        Play(enabled, sound);
+            > 0m => WinPlayer,
+            < 0m => LossPlayer,
+            _ => PushPlayer,
+        });
     }
 
-    private static void Play(bool enabled, SystemSound sound)
+    private static Lazy<SoundPlayer> CreatePlayer(string fileName) => new(() =>
+    {
+        string path = Path.Combine(AppContext.BaseDirectory, "assets", "audio", fileName);
+        var player = new SoundPlayer(path);
+        player.Load();
+        return player;
+    });
+
+    private static void Play(bool enabled, Lazy<SoundPlayer> player)
     {
         if (!enabled)
         {
@@ -28,11 +41,11 @@ internal static class CasinoFeedback
 
         try
         {
-            sound.Play();
+            player.Value.Play();
         }
         catch
         {
-            // Sound feedback is cosmetic and must never interrupt play.
+            // Audio feedback is cosmetic and must never interrupt play.
         }
     }
 }
