@@ -269,6 +269,7 @@ internal partial class ProgressionWindow : Window
                 CosmeticKind.Frame => profile.EquippedFrameId == cosmetic.Id,
                 _ => false,
             };
+            bool canAfford = profile.Coins >= cosmetic.Price;
 
             var border = PanelBorder();
             var grid = new Grid();
@@ -284,7 +285,10 @@ internal partial class ProgressionWindow : Window
                 Tag = cosmetic.Id,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 Content = equipped ? "Equipped" : owned ? "Equip" : $"Buy · ◆ {cosmetic.Price:N0}",
-                IsEnabled = !equipped,
+                IsEnabled = !equipped && (owned || canAfford),
+                ToolTip = !owned && !canAfford
+                    ? $"You need ◆ {cosmetic.Price - profile.Coins:N0} more coins."
+                    : null,
             };
             button.Click += ShopItemButton_Click;
             Grid.SetColumn(button, 1);
