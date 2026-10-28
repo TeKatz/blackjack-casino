@@ -41,6 +41,16 @@ Season 1 is **Midnight Shift**:
 - Coins and exclusive titles/frames as rewards;
 - seasons are designed to remain accessible instead of disappearing for FOMO.
 
+The 0.6.1 polish pass presents the pass as a clearer reward track rather than a flat list: current tier, next reward, milestone cards and distinct unlocked/next/locked reward states are visible at a glance.
+
+## UI polish
+
+- the selected profile tab now has an explicit readable dark/gold template;
+- the Profile & Progression window uses custom casino window chrome instead of the standard Windows title bar;
+- scrollbars use a custom dark casino template throughout the app;
+- ComboBox hover states are deliberately subtle instead of glowing strongly;
+- the main table status strip and HIT/STAND/DOUBLE/SPLIT/SURRENDER action row are moved slightly upward for better spacing from the lower edge.
+
 ## Persistence
 
 Progression is stored separately from ordinary app preferences:
