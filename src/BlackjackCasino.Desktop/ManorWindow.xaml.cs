@@ -23,6 +23,7 @@ internal partial class ManorWindow : Window
     private readonly DispatcherTimer reelSound=new() { Interval=TimeSpan.FromMilliseconds(120) };
     private readonly DispatcherTimer atmosphere=new() { Interval=TimeSpan.FromMilliseconds(50) };
     private readonly List<ManorReelView> reels=[];
+    private readonly List<UIElement> routePreviewElements=[];
     private bool initializing=true,operation,closed;
     private decimal bet;
     private double phase;
@@ -276,13 +277,22 @@ internal partial class ManorWindow : Window
         audio.Play(ManorCue.Trigger); DoorPanel.Visibility=Visibility.Visible;
         DoorNote.Text=automatic ? "Auto-resolved with the same map and ghost rules" : $"Exit target {State.Run!.Multiplier(State.Run.ExitTarget):0.##}× · your choices change the risk";
         DoorScene.DoorOpen=0;
+        DoorPanel.Opacity=1;
         if(Animations)
         {
+            // Normal speed deliberately breathes here: a major bonus should feel like
+            // entering another space, not like a popup that flashes by between spins.
+            DoorPanel.Opacity=0;
+            await Animate(DoorPanel,OpacityProperty,0,1,Timing(460,160,60));
+            await Wait(Timing(420,100,0));
             audio.Play(ManorCue.Unlock);
-            await Wait(Timing(180,70,0));
+            await Wait(Timing(350,90,0));
             audio.Play(ManorCue.DoorOpen);
-            await Animate(DoorScene,ManorBackdrop.DoorOpenProperty,0,1,Timing(750,300,120));
+            await Animate(DoorScene,ManorBackdrop.DoorOpenProperty,0,1,Timing(1450,420,140));
+            await Wait(Timing(420,120,0));
         }
+        DoorPanel.BeginAnimation(OpacityProperty,null);
+        DoorPanel.Opacity=1;
         DoorPanel.Visibility=Visibility.Collapsed;
     }
 
@@ -291,7 +301,7 @@ internal partial class ManorWindow : Window
         ManorRunState run=State.Run!;
         BonusPanel.Visibility=Visibility.Visible;
         RoomScene.Scene=ManorMap.Rooms[run.Player].Area.ToString(); RoomScene.Threat=run.Haunt;
-        if(Animations) RoomScene.BeginAnimation(OpacityProperty,new DoubleAnimation(0.5,1,TimeSpan.FromMilliseconds(Timing(320,160,80))) { FillBehavior=FillBehavior.Stop });
+        if(Animations) RoomScene.BeginAnimation(OpacityProperty,new DoubleAnimation(0.5,1,TimeSpan.FromMilliseconds(Timing(650,180,80))) { FillBehavior=FillBehavior.Stop });
         RoomText.Text=$"{ManorMap.Rooms[run.Player].Name} · turn {run.Turn}/24 · Exit {run.Multiplier(run.ExitTarget):0.##}×";
         RewardText.Text=$"{run.Multiplier(run.Current):0.##}× / {run.Multiplier(run.Banked):0.##}×";
         HauntText.Text=$"{run.Haunt} / 8";
@@ -310,7 +320,12 @@ internal partial class ManorWindow : Window
             var button=new Button { Content=$"[{index++}] {destination.Name}"+(unlocked ? "" : " · KEY"),Tag=room,
                 IsEnabled=hunting && unlocked,Style=(Style)FindResource("ManorButton"),FontSize=11,Padding=new Thickness(8,8,8,8),
                 ToolTip=(visited ? "Already visited" : $"+{run.Multiplier(destination.Reward):0.##}×")+(destination.Checkpoint ? " · Checkpoint" : "")+(destination.Pressure>0 ? " · Extra Haunt" : "") };
-            button.Click+=Route_Click; RoutesPanel.Children.Add(button);
+            button.Click+=Route_Click;
+            button.MouseEnter+=(_,_)=>ShowRoutePreview(room);
+            button.MouseLeave+=(_,_)=>ClearRoutePreview();
+            button.GotKeyboardFocus+=(_,_)=>ShowRoutePreview(room);
+            button.LostKeyboardFocus+=(_,_)=>ClearRoutePreview();
+            RoutesPanel.Children.Add(button);
         }
         DrawMap(run); audio.Room(ManorMap.Rooms[run.Player].Area,run.Haunt);
         if(!hunting)
@@ -321,20 +336,26 @@ internal partial class ManorWindow : Window
         Refresh();
     }
 
+    private static Point MapPoint(int id)
+    {
+        ManorRoom room=ManorMap.Rooms[id];
+        return new Point(35+room.X*100,30+(room.Y-1)*50);
+    }
+
     private void DrawMap(ManorRunState run)
     {
         MapCanvas.Children.Clear();
-        static Point P(int id) { ManorRoom r=ManorMap.Rooms[id]; return new Point(35+r.X*100,30+(r.Y-1)*50); }
+        routePreviewElements.Clear();
         foreach((int a,int b) in ManorMap.Edges.Where(e=>e.A<17 && e.B<17))
         {
-            Point p=P(a),q=P(b);
+            Point p=MapPoint(a),q=MapPoint(b);
             bool traced=run.Route.Zip(run.Route.Skip(1)).Any(e=>(e.First==a && e.Second==b)||(e.First==b && e.Second==a));
             MapCanvas.Children.Add(new Line { X1=p.X,Y1=p.Y,X2=q.X,Y2=q.Y,Stroke=ManorArtwork.Ink(traced ? "#C6AA77" : "#4D4058"),StrokeThickness=traced?3:1.5,
                 StrokeDashArray=ManorMap.Locked(a,b) ? new DoubleCollection {3,2} : null });
         }
         foreach(ManorRoom room in ManorMap.Rooms.Take(17))
         {
-            Point p=P(room.Id);
+            Point p=MapPoint(room.Id);
             bool visited=(run.Collected&(1UL<<room.Id))!=0;
             var node=new Ellipse { Width=room.Id==run.Player?19:12,Height=room.Id==run.Player?19:12,
                 Fill=ManorArtwork.Ink(room.Id==run.Player ? "#E6D09B" : room.Id==16 ? "#8DB2B3" : visited ? "#95826A" : "#342C42"),
@@ -342,7 +363,7 @@ internal partial class ManorWindow : Window
             Canvas.SetLeft(node,p.X-node.Width/2); Canvas.SetTop(node,p.Y-node.Height/2); MapCanvas.Children.Add(node);
             if(Animations && room.Id==run.Player && lastMapPlayer>=0 && lastMapPlayer!=run.Player)
             {
-                Point old=P(lastMapPlayer); var movement=new TranslateTransform(); node.RenderTransform=movement;
+                Point old=MapPoint(lastMapPlayer); var movement=new TranslateTransform(); node.RenderTransform=movement;
                 movement.BeginAnimation(TranslateTransform.XProperty,new DoubleAnimation(old.X-p.X,0,TimeSpan.FromMilliseconds(180)));
                 movement.BeginAnimation(TranslateTransform.YProperty,new DoubleAnimation(old.Y-p.Y,0,TimeSpan.FromMilliseconds(180)));
             }
@@ -355,9 +376,58 @@ internal partial class ManorWindow : Window
         lastMapPlayer=run.Player;
         if(run.RevealUntilTurn>=run.Turn && run.Ghost<17)
         {
-            Point p=P(run.Ghost); var ghost=new TextBlock { Text="G",Foreground=ManorArtwork.Ink("#D48CA6"),FontWeight=FontWeights.Bold,FontSize=15 };
+            Point p=MapPoint(run.Ghost); var ghost=new TextBlock { Text="G",Foreground=ManorArtwork.Ink("#D48CA6"),FontWeight=FontWeights.Bold,FontSize=15 };
             Canvas.SetLeft(ghost,p.X-5); Canvas.SetTop(ghost,p.Y-11); MapCanvas.Children.Add(ghost);
         }
+    }
+
+    private void ShowRoutePreview(int room)
+    {
+        if(State.Run is not {Status:ManorRunStatus.Hunting} run || room<0 || room>=17) return;
+        ClearRoutePreview();
+        Point start=MapPoint(run.Player),end=MapPoint(room);
+        var glow=new Line
+        {
+            X1=start.X,Y1=start.Y,X2=end.X,Y2=end.Y,
+            Stroke=ManorArtwork.Ink("#E8CF99"),StrokeThickness=10,Opacity=0.2,IsHitTestVisible=false,
+            Effect=new DropShadowEffect {Color=Color.FromRgb(244,211,145),BlurRadius=18,ShadowDepth=0,Opacity=0.9}
+        };
+        var guide=new Line
+        {
+            X1=start.X,Y1=start.Y,X2=end.X,Y2=end.Y,
+            Stroke=ManorArtwork.Ink("#FFE6AA"),StrokeThickness=3,Opacity=0.95,IsHitTestVisible=false,
+            StrokeDashArray=new DoubleCollection {4,2},
+            Effect=new DropShadowEffect {Color=Color.FromRgb(255,226,166),BlurRadius=10,ShadowDepth=0,Opacity=0.9}
+        };
+        var halo=new Ellipse
+        {
+            Width=28,Height=28,Fill=ManorArtwork.Ink("#3017121D"),Stroke=ManorArtwork.Ink("#FFE6AA"),StrokeThickness=2,
+            IsHitTestVisible=false,Effect=new DropShadowEffect {Color=Color.FromRgb(255,218,150),BlurRadius=14,ShadowDepth=0,Opacity=0.9}
+        };
+        Canvas.SetLeft(halo,end.X-14); Canvas.SetTop(halo,end.Y-14);
+        var name=new Border
+        {
+            Background=ManorArtwork.Ink("#EE17131D"),BorderBrush=ManorArtwork.Ink("#B99C6C"),BorderThickness=new Thickness(1),
+            CornerRadius=new CornerRadius(4),Padding=new Thickness(6,3,6,3),IsHitTestVisible=false,
+            Child=new TextBlock {Text=ManorMap.Rooms[room].Name,Foreground=ManorArtwork.Ink("#F2DFB2"),FontSize=10,FontWeight=FontWeights.SemiBold}
+        };
+        Canvas.SetLeft(name,Math.Clamp(end.X+12,4,650));
+        Canvas.SetTop(name,Math.Clamp(end.Y-31,3,137));
+        routePreviewElements.Add(glow); routePreviewElements.Add(guide); routePreviewElements.Add(halo); routePreviewElements.Add(name);
+        foreach(UIElement element in routePreviewElements) MapCanvas.Children.Add(element);
+        if(Animations)
+        {
+            guide.BeginAnimation(Shape.StrokeDashOffsetProperty,new DoubleAnimation(12,0,TimeSpan.FromMilliseconds(850)) {RepeatBehavior=RepeatBehavior.Forever});
+            var pulse=new DoubleAnimation(0.55,1,TimeSpan.FromMilliseconds(430)) {AutoReverse=true,RepeatBehavior=RepeatBehavior.Forever};
+            halo.BeginAnimation(UIElement.OpacityProperty,pulse);
+            glow.BeginAnimation(UIElement.OpacityProperty,new DoubleAnimation(0.12,0.32,TimeSpan.FromMilliseconds(430)) {AutoReverse=true,RepeatBehavior=RepeatBehavior.Forever});
+        }
+    }
+
+    private void ClearRoutePreview()
+    {
+        foreach(UIElement element in routePreviewElements.ToArray()) MapCanvas.Children.Remove(element);
+        routePreviewElements.Clear();
     }
 
     private async Task RunChoice(Action<ManorSession> choice)
