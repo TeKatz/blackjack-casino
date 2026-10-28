@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using BlackjackCasino.Core;
 
@@ -14,7 +15,9 @@ internal partial class ProgressionWindow : Window
     {
         this.controller = controller ?? throw new ArgumentNullException(nameof(controller));
         InitializeComponent();
+        StateChanged += (_, _) => RefreshMaximizeGlyph();
         RefreshAll();
+        RefreshMaximizeGlyph();
     }
 
     private void RefreshAll()
@@ -117,28 +120,135 @@ internal partial class ProgressionWindow : Window
         SeasonProgressState progress = controller.Service.GetOrCreateSeasonProgress(season.Id);
         SeasonTitleText.Text = season.Name;
         SeasonDescriptionText.Text = season.Description;
-        SeasonTierText.Text = $"Tier {progress.Tier} / 50 · {progress.Experience:N0} Season XP";
+        SeasonTierText.Text = $"Tier {progress.Tier} / {season.Tiers.Count} · {progress.Experience:N0} Season XP";
         SeasonProgress.Maximum = season.Tiers[^1].RequiredExperience;
         SeasonProgress.Value = Math.Min(progress.Experience, season.Tiers[^1].RequiredExperience);
+
+        SeasonTierDefinition? next = season.Tiers.FirstOrDefault(tier => tier.Tier > progress.Tier);
+        if (next is null)
+        {
+            SeasonNextRewardText.Text = "Season complete";
+            SeasonNextRewardXpText.Text = "All 50 rewards unlocked.";
+        }
+        else
+        {
+            string cosmetic = next.CosmeticId is null ? string.Empty : $" + {CosmeticCatalog.Get(next.CosmeticId).Name}";
+            SeasonNextRewardText.Text = $"Tier {next.Tier} · ◆ {next.Coins:N0} coins{cosmetic}";
+            SeasonNextRewardXpText.Text = $"{Math.Max(0, next.RequiredExperience - progress.Experience):N0} XP to unlock";
+        }
+
+        SeasonMilestonesPanel.Children.Clear();
+        foreach (SeasonTierDefinition tier in season.Tiers.Where(tier => tier.CosmeticId is not null || tier.Tier % 10 == 0))
+        {
+            bool unlocked = progress.Tier >= tier.Tier;
+            string reward = tier.CosmeticId is null
+                ? $"◆ {tier.Coins:N0}"
+                : CosmeticCatalog.Get(tier.CosmeticId).Name;
+
+            var milestone = new Border
+            {
+                Width = 150,
+                MinHeight = 58,
+                Margin = new Thickness(0, 0, 8, 8),
+                Padding = new Thickness(10, 8, 10, 8),
+                CornerRadius = new CornerRadius(8),
+                BorderThickness = new Thickness(1),
+                BorderBrush = unlocked ? PositiveBrush : new SolidColorBrush(Color.FromRgb(53, 78, 65)),
+                Background = unlocked
+                    ? new SolidColorBrush(Color.FromRgb(18, 54, 37))
+                    : new SolidColorBrush(Color.FromRgb(9, 29, 20)),
+                Opacity = unlocked ? 1 : 0.78,
+            };
+            milestone.Child = new StackPanel
+            {
+                Children =
+                {
+                    new TextBlock { Text = $"TIER {tier.Tier}", FontSize = 10, FontWeight = FontWeights.Bold, Foreground = unlocked ? PositiveBrush : MutedBrush },
+                    new TextBlock { Text = reward, Margin = new Thickness(0, 4, 0, 0), FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap },
+                },
+            };
+            SeasonMilestonesPanel.Children.Add(milestone);
+        }
 
         SeasonRewardsPanel.Children.Clear();
         foreach (SeasonTierDefinition tier in season.Tiers)
         {
             bool unlocked = progress.Tier >= tier.Tier;
+            bool isNext = next?.Tier == tier.Tier;
             string cosmetic = tier.CosmeticId is null ? string.Empty : $" · {CosmeticCatalog.Get(tier.CosmeticId).Name}";
+
             var border = PanelBorder();
-            border.Opacity = unlocked ? 1 : 0.68;
+            border.Padding = new Thickness(12, 9, 12, 9);
+            border.Margin = new Thickness(2, 3, 2, 3);
+            border.Opacity = unlocked || isNext ? 1 : 0.62;
+            if (isNext)
+            {
+                border.BorderBrush = new SolidColorBrush(Color.FromRgb(116, 126, 184));
+                border.Background = new SolidColorBrush(Color.FromRgb(14, 31, 31));
+            }
+            else if (unlocked)
+            {
+                border.BorderBrush = new SolidColorBrush(Color.FromRgb(58, 100, 73));
+            }
+
             var grid = new Grid();
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(70) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(74) });
             grid.ColumnDefinitions.Add(new ColumnDefinition());
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) });
-            grid.Children.Add(new TextBlock { Text = $"T{tier.Tier}", FontWeight = FontWeights.Bold, Foreground = unlocked ? PositiveBrush : MutedBrush });
-            var reward = new TextBlock { Text = $"◆ {tier.Coins:N0} coins{cosmetic}", TextWrapping = TextWrapping.Wrap };
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(126) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(90) });
+
+            string state = unlocked ? "UNLOCKED" : isNext ? "NEXT" : "LOCKED";
+            var badge = new Border
+            {
+                Background = unlocked
+                    ? new SolidColorBrush(Color.FromRgb(22, 66, 44))
+                    : isNext
+                        ? new SolidColorBrush(Color.FromRgb(39, 48, 82))
+                        : new SolidColorBrush(Color.FromRgb(13, 38, 26)),
+                CornerRadius = new CornerRadius(6),
+                Padding = new Thickness(8, 5, 8, 5),
+                HorizontalAlignment = HorizontalAlignment.Left,
+            };
+            badge.Child = new TextBlock
+            {
+                Text = $"T{tier.Tier}",
+                FontWeight = FontWeights.Bold,
+                Foreground = unlocked ? PositiveBrush : isNext ? new SolidColorBrush(Color.FromRgb(166, 177, 232)) : MutedBrush,
+            };
+            grid.Children.Add(badge);
+
+            var reward = new TextBlock
+            {
+                Text = $"◆ {tier.Coins:N0} coins{cosmetic}",
+                VerticalAlignment = VerticalAlignment.Center,
+                TextWrapping = TextWrapping.Wrap,
+                FontWeight = tier.CosmeticId is null ? FontWeights.Normal : FontWeights.SemiBold,
+            };
             Grid.SetColumn(reward, 1);
             grid.Children.Add(reward);
-            var xp = new TextBlock { Text = $"{tier.RequiredExperience:N0} XP", Foreground = MutedBrush, HorizontalAlignment = HorizontalAlignment.Right };
+
+            var xp = new TextBlock
+            {
+                Text = $"{tier.RequiredExperience:N0} XP",
+                Foreground = MutedBrush,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
             Grid.SetColumn(xp, 2);
             grid.Children.Add(xp);
+
+            var status = new TextBlock
+            {
+                Text = state,
+                FontSize = 10,
+                FontWeight = FontWeights.Bold,
+                Foreground = unlocked ? PositiveBrush : isNext ? new SolidColorBrush(Color.FromRgb(166, 177, 232)) : MutedBrush,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            Grid.SetColumn(status, 3);
+            grid.Children.Add(status);
+
             border.Child = grid;
             SeasonRewardsPanel.Children.Add(border);
         }
@@ -231,6 +341,40 @@ internal partial class ProgressionWindow : Window
         PrestigeResult result = controller.Prestige();
         ShopStatusText.Text = result.Message;
         RefreshAll();
+    }
+
+    private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ClickCount == 2)
+        {
+            ToggleMaximize();
+            return;
+        }
+
+        if (e.LeftButton == MouseButtonState.Pressed)
+        {
+            DragMove();
+        }
+    }
+
+    private void MinimizeButton_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
+
+    private void MaximizeButton_Click(object sender, RoutedEventArgs e) => ToggleMaximize();
+
+    private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
+
+    private void ToggleMaximize()
+    {
+        WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+        RefreshMaximizeGlyph();
+    }
+
+    private void RefreshMaximizeGlyph()
+    {
+        if (MaximizeButton is not null)
+        {
+            MaximizeButton.Content = WindowState == WindowState.Maximized ? "❐" : "□";
+        }
     }
 
     private string BuildStatisticsText(StatisticsSnapshot stats, bool includePlaytime)
@@ -335,6 +479,7 @@ internal partial class ProgressionWindow : Window
         {
             return $"{(int)duration.TotalHours}h {duration.Minutes}m";
         }
+
         return $"{Math.Max(0, duration.Minutes)}m";
     }
 }
