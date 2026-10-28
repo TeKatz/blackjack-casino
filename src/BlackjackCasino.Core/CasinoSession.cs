@@ -17,6 +17,7 @@ public sealed class CasinoSession
     private bool settlementApplied;
     private decimal roundStartingBankroll;
     private DateTimeOffset roundStartedAt;
+    private Guid roundId;
 
     public CasinoSession(
         GameRules rules,
@@ -96,6 +97,7 @@ public sealed class CasinoSession
 
         roundStartingBankroll = Bankroll;
         roundStartedAt = DateTimeOffset.UtcNow;
+        roundId = Guid.NewGuid();
         Bankroll -= bet;
         settlementApplied = false;
         CurrentRound = new BlackjackRound(rules, shoe, bet, aiPlayers);
@@ -242,11 +244,14 @@ public sealed class CasinoSession
             .ToArray();
 
         history.Add(new RoundHistoryEntry(
+            roundId,
             roundStartedAt,
             DateTimeOffset.UtcNow,
             roundStartingBankroll,
             Bankroll,
             round.InitialBet,
+            round.InsuranceBet,
+            round.Result.InsuranceNet,
             round.Result.TotalNet,
             rules with { },
             round.DealerHand.Cards.ToArray(),
