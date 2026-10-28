@@ -57,11 +57,11 @@ public partial class MainWindow
             Height = 40,
             Margin = new Thickness(0, 0, 22, 0),
             VerticalAlignment = VerticalAlignment.Center,
-            ClipToBounds = true,
         };
 
         profileButton = new Button
         {
+            MinWidth = 190,
             Width = 190,
             Height = 40,
             Padding = new Thickness(13, 6, 13, 6),
@@ -71,13 +71,23 @@ public partial class MainWindow
         profileButton.Click += ProfileButton_Click;
         profileButtonHost.Children.Add(profileButton);
 
+        var sweepClip = new Canvas
+        {
+            Width = 190,
+            Height = 40,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            ClipToBounds = true,
+            IsHitTestVisible = false,
+            Background = Brushes.Transparent,
+        };
+
         profileLevelUpSweepTransform = new TranslateTransform(-92, 0);
         profileLevelUpSweep = new Border
         {
             Width = 86,
-            Height = 40,
-            HorizontalAlignment = HorizontalAlignment.Left,
-            VerticalAlignment = VerticalAlignment.Center,
+            Height = 32,
+            Canvas.Top = 4,
             Opacity = 0,
             IsHitTestVisible = false,
             RenderTransform = profileLevelUpSweepTransform,
@@ -95,7 +105,9 @@ public partial class MainWindow
                 },
             },
         };
-        profileButtonHost.Children.Add(profileLevelUpSweep);
+        sweepClip.Children.Add(profileLevelUpSweep);
+        Panel.SetZIndex(sweepClip, 2);
+        profileButtonHost.Children.Add(sweepClip);
 
         Grid.SetColumn(profileButtonHost, 2);
         headerGrid.Children.Add(profileButtonHost);
