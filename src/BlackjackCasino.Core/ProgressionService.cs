@@ -174,9 +174,36 @@ public sealed class ProgressionService
             case CosmeticKind.Frame:
                 State.EquippedFrameId = cosmetic.Id;
                 return true;
+            case CosmeticKind.Portrait:
+                State.EquippedPortraitId = cosmetic.Id;
+                return true;
             default:
                 return false;
         }
+    }
+
+    public ChallengeClaimResult ClaimChallenge(string challengeId)
+    {
+        ChallengeDefinition? challenge = ChallengeCatalog.TryGet(challengeId);
+        if (challenge is null)
+        {
+            return new ChallengeClaimResult(false, "Unknown challenge.");
+        }
+
+        if (State.ClaimedChallengeIds.Contains(challenge.Id, StringComparer.Ordinal))
+        {
+            return new ChallengeClaimResult(false, "Challenge reward already claimed.", challenge);
+        }
+
+        decimal progress = ChallengeCatalog.Progress(State, challenge);
+        if (progress < challenge.Goal)
+        {
+            return new ChallengeClaimResult(false, "Challenge is not complete yet.", challenge);
+        }
+
+        State.ClaimedChallengeIds.Add(challenge.Id);
+        State.Coins += challenge.CoinReward;
+        return new ChallengeClaimResult(true, $"Claimed {challenge.CoinReward:N0} coins for {challenge.Name}.", challenge, challenge.CoinReward);
     }
 
     public PrestigeResult Prestige()
@@ -234,6 +261,12 @@ public sealed class ProgressionService
     {
         EnsureOwned(CosmeticCatalog.DefaultTitleId);
         EnsureOwned(CosmeticCatalog.DefaultFrameId);
+        EnsureOwned(CosmeticCatalog.DefaultPortraitId);
+        State.ClaimedChallengeIds ??= [];
+        State.ClaimedChallengeIds = State.ClaimedChallengeIds
+            .Where(id => ChallengeCatalog.TryGet(id) is not null)
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
 
         if (CosmeticCatalog.TryGet(State.EquippedTitleId) is not { Kind: CosmeticKind.Title }
             || !State.OwnedCosmeticIds.Contains(State.EquippedTitleId, StringComparer.Ordinal))
@@ -247,12 +280,22 @@ public sealed class ProgressionService
             State.EquippedFrameId = CosmeticCatalog.DefaultFrameId;
         }
 
-        if (!SeasonCatalog.All.Any(x => string.Equals(x.Id, State.ActiveSeasonId, StringComparison.Ordinal)))
+        if (CosmeticCatalog.TryGet(State.EquippedPortraitId) is not { Kind: CosmeticKind.Portrait }
+            || !State.OwnedCosmeticIds.Contains(State.EquippedPortraitId, StringComparer.Ordinal))
         {
+            State.EquippedPortraitId = CosmeticCatalog.DefaultPortraitId;
+        }
+
+        SeasonDefinition? active = SeasonCatalog.All.FirstOrDefault(x => string.Equals(x.Id, State.ActiveSeasonId, StringComparison.Ordinal));
+        if (active is null || active.Archived)
+        {
+            // Season 1 remains stored and owned rewards are never revoked; existing saves simply
+            // begin earning the new long-form current season from their next completed cycle.
             State.ActiveSeasonId = SeasonCatalog.Current.Id;
         }
 
         _ = GetOrCreateSeasonProgress(State.ActiveSeasonId);
+        State.SchemaVersion = Math.Max(State.SchemaVersion, 2);
     }
 
     private bool EnsureOwned(string cosmeticId)
