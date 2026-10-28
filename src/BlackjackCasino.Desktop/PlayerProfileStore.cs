@@ -81,6 +81,7 @@ internal static class PlayerProfileStore
         state.Coins = Math.Max(0, state.Coins);
         state.LifetimeExperience = Math.Max(0, state.LifetimeExperience);
         state.TotalPlaytimeSeconds = Math.Max(0, state.TotalPlaytimeSeconds);
+        state.Slots ??= new SlotStatistics();
         state.LifetimeStatistics ??= new StatisticsSnapshot();
         state.TableStatistics ??= new Dictionary<string, StatisticsSnapshot>(StringComparer.OrdinalIgnoreCase);
         state.Seasons ??= new Dictionary<string, SeasonProgressState>(StringComparer.OrdinalIgnoreCase);

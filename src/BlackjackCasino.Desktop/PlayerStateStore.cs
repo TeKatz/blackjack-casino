@@ -84,6 +84,7 @@ internal static class PlayerStateStore
         {
             Bankroll = bankroll,
             SelectedBet = selectedBet,
+            SlotBet = Math.Clamp(decimal.Round(state.SlotBet, 2), SlotMachineRules.MinimumBet, SlotMachineRules.MaximumBet),
             PlayMode = playMode,
             AiSeatCount = aiSeats,
             TablePreset = preset,

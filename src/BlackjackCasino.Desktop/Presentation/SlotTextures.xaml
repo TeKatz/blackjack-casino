@@ -1,0 +1,70 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!-- Original vector textures: resolution independent and bundled in the executable. -->
+  <LinearGradientBrush x:Key="SlotGold" StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#795126" Offset="0"/><GradientStop Color="#FBE0A0" Offset="0.3"/><GradientStop Color="#B6853E" Offset="0.6"/><GradientStop Color="#E4BD72" Offset="1"/></LinearGradientBrush>
+  <LinearGradientBrush x:Key="SlotCabinet" StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#302238" Offset="0"/><GradientStop Color="#110E1B" Offset="0.55"/><GradientStop Color="#26172B" Offset="1"/></LinearGradientBrush>
+  <LinearGradientBrush x:Key="SlotReelPaper" StartPoint="0,0" EndPoint="0,1"><GradientStop Color="#DFD6C2" Offset="0"/><GradientStop Color="#FFF9E9" Offset="0.45"/><GradientStop Color="#E6DEC9" Offset="1"/></LinearGradientBrush>
+  <DrawingBrush x:Key="SlotGrain" TileMode="Tile" Viewport="0,0,8,8" ViewportUnits="Absolute" Viewbox="0,0,8,8" ViewboxUnits="Absolute">
+    <DrawingBrush.Drawing><DrawingGroup><GeometryDrawing Geometry="M0,1 L8,1 M0,5 L8,5"><GeometryDrawing.Pen><Pen Brush="#0CFFFFFF" Thickness="0.5"/></GeometryDrawing.Pen></GeometryDrawing><GeometryDrawing Geometry="M2,0 L2,8 M6,0 L6,8"><GeometryDrawing.Pen><Pen Brush="#0A000000" Thickness="0.5"/></GeometryDrawing.Pen></GeometryDrawing></DrawingGroup></DrawingBrush.Drawing>
+  </DrawingBrush>
+  <DrawingImage x:Key="SlotCherry">
+    <DrawingImage.Drawing><DrawingGroup>
+      <GeometryDrawing Brush="Transparent" Geometry="M0,0 H100 V100 H0 Z"/>
+      <GeometryDrawing Geometry="M29,57 Q42,30 55,18 Q56,39 72,57"><GeometryDrawing.Pen><Pen Brush="#37633D" Thickness="5"/></GeometryDrawing.Pen></GeometryDrawing>
+      <GeometryDrawing Brush="#3C8950" Geometry="M54,22 Q58,2 84,12 Q74,32 54,22 Z"/>
+      <GeometryDrawing Brush="#000000" Geometry="M10,85 A38,5 0 1 0 86,85 A38,5 0 1 0 10,85"/>
+      <GeometryDrawing Geometry="M10,65 A21,22 0 1 0 52,65 A21,22 0 1 0 10,65">
+        <GeometryDrawing.Brush><RadialGradientBrush Center="0.3,0.25" GradientOrigin="0.3,0.25"><GradientStop Color="#FF7887" Offset="0"/><GradientStop Color="#CC2446" Offset="0.5"/><GradientStop Color="#710F2B" Offset="1"/></RadialGradientBrush></GeometryDrawing.Brush>
+        <GeometryDrawing.Pen><Pen Brush="#861A30" Thickness="1.8"/></GeometryDrawing.Pen>
+      </GeometryDrawing>
+      <GeometryDrawing Geometry="M48,68 A21,22 0 1 0 90,68 A21,22 0 1 0 48,68">
+        <GeometryDrawing.Brush><RadialGradientBrush Center="0.3,0.25" GradientOrigin="0.3,0.25"><GradientStop Color="#FF8E98" Offset="0"/><GradientStop Color="#E6374F" Offset="0.48"/><GradientStop Color="#851131" Offset="1"/></RadialGradientBrush></GeometryDrawing.Brush>
+        <GeometryDrawing.Pen><Pen Brush="#861A30" Thickness="1.8"/></GeometryDrawing.Pen>
+      </GeometryDrawing>
+      <GeometryDrawing Brush="#A6FFFFFF" Geometry="M18,60 Q20,50 29,50 Q31,54 25,55 Q21,61 18,60 M56,62 Q58,52 67,52 Q69,56 63,57 Q59,63 56,62"/>
+    </DrawingGroup></DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="SlotLemon">
+    <DrawingImage.Drawing><DrawingGroup>
+      <GeometryDrawing Brush="Transparent" Geometry="M0,0 H100 V100 H0 Z"/>
+      <GeometryDrawing Brush="#234D31" Geometry="M64,26 Q67,6 89,12 Q85,31 64,26 Z"/>
+      <GeometryDrawing Geometry="M11,65 Q4,55 17,48 Q23,19 53,22 Q76,23 83,38 Q100,41 89,54 Q82,83 49,84 Q24,84 19,72 Q9,75 11,65 Z">
+        <GeometryDrawing.Brush><LinearGradientBrush StartPoint="0,0" EndPoint="0.8,1"><GradientStop Color="#FFF6A4" Offset="0"/><GradientStop Color="#F5D744" Offset="0.45"/><GradientStop Color="#C79516" Offset="1"/></LinearGradientBrush></GeometryDrawing.Brush>
+        <GeometryDrawing.Pen><Pen Brush="#B68B23" Thickness="2"/></GeometryDrawing.Pen>
+      </GeometryDrawing>
+      <GeometryDrawing Geometry="M26,46 Q35,28 57,32"><GeometryDrawing.Pen><Pen Brush="#BFFFFFFF" Thickness="4" StartLineCap="Round" EndLineCap="Round"/></GeometryDrawing.Pen></GeometryDrawing>
+      <GeometryDrawing Brush="#558B5C16" Geometry="M30,65 A1,1 0 1 0 32,65 M43,74 A1,1 0 1 0 45,74 M65,64 A1,1 0 1 0 67,64 M75,48 A1,1 0 1 0 77,48 M52,59 A1,1 0 1 0 54,59"/>
+    </DrawingGroup></DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="SlotBell">
+    <DrawingImage.Drawing><DrawingGroup>
+      <GeometryDrawing Brush="Transparent" Geometry="M0,0 H100 V100 H0 Z"/>
+      <GeometryDrawing Brush="#A97721" Geometry="M43,13 A7,7 0 1 0 57,13 A7,7 0 1 0 43,13"/>
+      <GeometryDrawing Brush="#A57525" Geometry="M40,80 A10,10 0 1 0 60,80 A10,10 0 1 0 40,80"/>
+      <GeometryDrawing Geometry="M18,74 Q28,63 28,42 Q28,19 50,19 Q72,19 72,42 Q72,63 82,74 L82,80 L18,80 Z">
+        <GeometryDrawing.Brush><LinearGradientBrush StartPoint="0,0" EndPoint="1,0"><GradientStop Color="#8D581E" Offset="0"/><GradientStop Color="#FFE7A0" Offset="0.32"/><GradientStop Color="#E3B54E" Offset="0.58"/><GradientStop Color="#9A601B" Offset="1"/></LinearGradientBrush></GeometryDrawing.Brush>
+        <GeometryDrawing.Pen><Pen Brush="#916122" Thickness="2"/></GeometryDrawing.Pen>
+      </GeometryDrawing>
+      <GeometryDrawing Geometry="M36,58 Q35,32 46,29 M25,72 H75"><GeometryDrawing.Pen><Pen Brush="#FFF1B8" Thickness="3" StartLineCap="Round" EndLineCap="Round"/></GeometryDrawing.Pen></GeometryDrawing>
+    </DrawingGroup></DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="SlotBar">
+    <DrawingImage.Drawing><DrawingGroup>
+      <GeometryDrawing Brush="Transparent" Geometry="M0,0 H100 V100 H0 Z"/>
+      <GeometryDrawing Brush="#22152B" Geometry="M7,24 H93 V78 H7 Z"><GeometryDrawing.Pen><Pen Brush="#CDA34F" Thickness="3"/></GeometryDrawing.Pen></GeometryDrawing>
+      <GeometryDrawing Geometry="M12,29 H88 V73 H12 Z"><GeometryDrawing.Pen><Pen Brush="#735A3A" Thickness="1"/></GeometryDrawing.Pen></GeometryDrawing>
+      <!-- BAR letterforms are hand-drawn geometry rather than font glyphs. -->
+      <GeometryDrawing Brush="#F6DA91" Geometry="F0 M18,37 H30 Q39,37 39,44 Q39,49 35,50 Q40,52 40,58 Q40,66 30,66 H18 Z M24,42 V48 H29 Q33,48 33,45 Q33,42 29,42 Z M24,53 V61 H30 Q34,61 34,57 Q34,53 30,53 Z M42,66 L49,37 H58 L65,66 H59 L57,59 H49 L48,66 Z M51,53 H56 L53,42 Z M68,37 H80 Q89,37 89,46 Q89,52 84,54 L91,66 H84 L78,55 H74 V66 H68 Z M74,42 V49 H79 Q83,49 83,45 Q83,42 79,42 Z"/>
+    </DrawingGroup></DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="SlotSeven">
+    <DrawingImage.Drawing><DrawingGroup>
+      <GeometryDrawing Brush="Transparent" Geometry="M0,0 H100 V100 H0 Z"/>
+      <GeometryDrawing Geometry="M20,17 H82 V31 Q61,49 51,87 H29 Q37,54 58,35 H20 Z">
+        <GeometryDrawing.Brush><LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#FF8B85" Offset="0"/><GradientStop Color="#E63859" Offset="0.4"/><GradientStop Color="#8F173E" Offset="1"/></LinearGradientBrush></GeometryDrawing.Brush>
+        <GeometryDrawing.Pen><Pen Brush="#B28239" Thickness="3" LineJoin="Round"/></GeometryDrawing.Pen>
+      </GeometryDrawing>
+      <GeometryDrawing Geometry="M26,23 H73 M48,54 L66,54"><GeometryDrawing.Pen><Pen Brush="#FFE8A8" Thickness="3" StartLineCap="Round" EndLineCap="Round"/></GeometryDrawing.Pen></GeometryDrawing>
+      <GeometryDrawing Brush="#F6D791" Geometry="M83,53 L85,59 L91,61 L85,63 L83,69 L81,63 L75,61 L81,59 Z M14,36 L16,40 L20,42 L16,44 L14,48 L12,44 L8,42 L12,40 Z"/>
+    </DrawingGroup></DrawingImage.Drawing>
+  </DrawingImage>
+</ResourceDictionary>
