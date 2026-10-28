@@ -13,11 +13,13 @@
 - split-hand tracking so a split 21 is not treated as a natural blackjack
 - automated unit tests for core rules and updater version/integrity behavior
 - Windows desktop bootstrap shell
-- updater manifest protocol
+- schema-versioned updater manifest protocol
+- Stable and Development update channels
 - HTTPS download with SHA-256 and exact-size verification
 - out-of-process staged updater with swap rollback
 - CI on pushes and pull requests
-- tag-driven Windows packaging and GitHub Release creation
+- tag-driven Stable Windows packaging and GitHub Release creation
+- branch-driven Development prerelease packaging
 
 ## Still Phase 1 follow-up work
 
@@ -29,6 +31,7 @@ Before Phase 2 UI work begins, expand edge-case coverage around:
 - configurable blackjack payout (6:5 tables);
 - bankroll/reservation accounting around split/double/insurance;
 - long-running simulation tests to detect statistical regressions;
-- updater end-to-end smoke test using a temporary installation directory.
+- updater end-to-end smoke test using a temporary installation directory;
+- post-update startup acknowledgement/health marker so a future updater can also roll back after a bad launch, not only after a failed filesystem swap.
 
-These are deliberately tracked as rule-engine work, not UI work.
+These are deliberately tracked as foundation work, not table/UI work.
