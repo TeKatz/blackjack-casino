@@ -83,7 +83,7 @@ jobs:
             version = $env:VERSION
             channel = "stable"
             publishedAt = (Get-Date).ToUniversalTime().ToString("o")
-            minimumUpdaterVersion = "0.1.0"
+            minimumUpdaterVersion = "0.1.0-preview.1"
             package = [ordered]@{
               url = "https://github.com/$repo/releases/download/$tag/blackjack-casino-win-x64.zip"
               sha256 = $hash
