@@ -11,6 +11,9 @@ public partial class MainWindow
 {
     private PlayerProgressionController? progressionController;
     private Button? profileButton;
+    private Grid? profileButtonHost;
+    private Border? profileLevelUpSweep;
+    private TranslateTransform? profileLevelUpSweepTransform;
     private bool progressionInitialized;
 
     private void InitializeProgressionFeature()
@@ -48,18 +51,54 @@ public partial class MainWindow
 
         Grid.SetColumn(versionPanel, 3);
 
-        profileButton = new Button
+        profileButtonHost = new Grid
         {
-            MinWidth = 190,
+            Width = 190,
             Height = 40,
             Margin = new Thickness(0, 0, 22, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+            ClipToBounds = true,
+        };
+
+        profileButton = new Button
+        {
+            Width = 190,
+            Height = 40,
             Padding = new Thickness(13, 6, 13, 6),
             Style = (Style)FindResource("MutedButton"),
             VerticalAlignment = VerticalAlignment.Center,
         };
         profileButton.Click += ProfileButton_Click;
-        Grid.SetColumn(profileButton, 2);
-        headerGrid.Children.Add(profileButton);
+        profileButtonHost.Children.Add(profileButton);
+
+        profileLevelUpSweepTransform = new TranslateTransform(-92, 0);
+        profileLevelUpSweep = new Border
+        {
+            Width = 86,
+            Height = 40,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = VerticalAlignment.Center,
+            Opacity = 0,
+            IsHitTestVisible = false,
+            RenderTransform = profileLevelUpSweepTransform,
+            Background = new LinearGradientBrush
+            {
+                StartPoint = new Point(0, 0),
+                EndPoint = new Point(1, 0),
+                GradientStops =
+                {
+                    new GradientStop(Color.FromArgb(0, 214, 63, 82), 0),
+                    new GradientStop(Color.FromArgb(92, 225, 71, 91), 0.32),
+                    new GradientStop(Color.FromArgb(178, 255, 102, 118), 0.5),
+                    new GradientStop(Color.FromArgb(92, 225, 71, 91), 0.68),
+                    new GradientStop(Color.FromArgb(0, 214, 63, 82), 1),
+                },
+            },
+        };
+        profileButtonHost.Children.Add(profileLevelUpSweep);
+
+        Grid.SetColumn(profileButtonHost, 2);
+        headerGrid.Children.Add(profileButtonHost);
     }
 
     private void ProgressionButtonBubbled(object sender, RoutedEventArgs e) => QueueProgressionCheck();
