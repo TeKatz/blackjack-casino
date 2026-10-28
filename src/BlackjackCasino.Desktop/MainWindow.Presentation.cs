@@ -1,4 +1,6 @@
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace BlackjackCasino.Desktop;
 
@@ -10,6 +12,8 @@ public partial class MainWindow
     {
         InitializeTableRulesFeature();
         InitializeProgressionFeature();
+        ApplyCasinoDropdownStyles();
+        RaiseBottomActionDeck();
 
         suppressPreferenceEvents = true;
         MusicCheckBox.IsChecked = preferences.MusicEnabled;
@@ -24,6 +28,45 @@ public partial class MainWindow
     {
         ShutdownProgressionFeature();
         backgroundMusic.Dispose();
+    }
+
+    private void ApplyCasinoDropdownStyles()
+    {
+        if (Application.Current.TryFindResource(typeof(ComboBox)) is not Style comboStyle
+            || Application.Current.TryFindResource(typeof(ComboBoxItem)) is not Style itemStyle)
+        {
+            return;
+        }
+
+        foreach (ComboBox combo in FindVisualChildren<ComboBox>(this))
+        {
+            combo.Style = comboStyle;
+            combo.ItemContainerStyle = itemStyle;
+        }
+    }
+
+    private void RaiseBottomActionDeck()
+    {
+        StatusBorder.Margin = new Thickness(70, 8, 70, 24);
+        InsurancePanel.Margin = new Thickness(0, 0, 0, 14);
+        ActionPanel.Margin = new Thickness(16, 0, 16, 32);
+    }
+
+    private static IEnumerable<T> FindVisualChildren<T>(DependencyObject root) where T : DependencyObject
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+        {
+            DependencyObject child = VisualTreeHelper.GetChild(root, i);
+            if (child is T typed)
+            {
+                yield return typed;
+            }
+
+            foreach (T nested in FindVisualChildren<T>(child))
+            {
+                yield return nested;
+            }
+        }
     }
 
     private void MusicSettingChanged(object sender, RoutedEventArgs e)
