@@ -76,7 +76,6 @@ public partial class MainWindow
             Background = new SolidColorBrush(Color.FromRgb(16, 13, 24)),
             Visibility = Visibility.Collapsed,
             Focusable = true,
-            Child = null,
         };
         embeddedGameOverlay.Children.Add(embeddedGameHost);
         Grid.SetRowSpan(embeddedGameOverlay, Math.Max(1, root.RowDefinitions.Count));
@@ -298,7 +297,7 @@ public partial class MainWindow
             }
             if (levelUp)
             {
-                Dispatcher.BeginInvoke(AnimateLevelUpCue);
+                Dispatcher.BeginInvoke(new Action(AnimateLevelUpCue));
             }
         });
     }
