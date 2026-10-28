@@ -40,6 +40,17 @@ public sealed class SlotPlayTests
         Assert.False(floor.TryBegin(true,100,25)); Assert.False(floor.Busy); Assert.False(floor.AutoActive);
     }
     [Fact]
+    public void LiveStopConditionsAndSelectingOffApplyWithoutRestartingTheBudget()
+    {
+        var play=new SlotPlayController(); play.StartAuto(new(){Count=25});
+        Assert.True(play.TryBegin(true,100,1));
+        play.UpdateSettings(new(){Count=25,StopOnBonus=true});
+        Assert.Equal(24,play.Remaining);
+        play.Complete(100,false,true); Assert.False(play.AutoActive);
+        play.StartAuto(new(){Count=-1}); play.UpdateSettings(new(){Count=0}); Assert.False(play.CanAutoStart);
+    }
+
+    [Fact]
     public void InvalidSavedConfigurationIsSanitizedButNeverActivatesAuto()
     {
         var settings=new AutoSpinSettings {Count=-7,MinimumBalance=-5};

@@ -102,7 +102,7 @@ internal partial class ManorWindow : Window
 
     private async Task StartPaid(bool automatic)
     {
-        if(State.CycleActive || !play.TryBegin(automatic,State.Bankroll,bet)) return;
+        if((!automatic && play.AutoActive) || State.CycleActive || !play.TryBegin(automatic,State.Bankroll,bet)) return;
         try { controller.Execute(s=>s.Start(bet),controller.Preferences with { ManorBet=bet }); }
         catch { play.Complete(State.Bankroll,false,false); throw; }
         await PresentSpin(State.LastSpin!);
@@ -404,6 +404,11 @@ internal partial class ManorWindow : Window
             ManorAuto=auto.Sanitize(),ManorInteractive=InteractiveBox.IsChecked==true,SoundEnabled=SoundBox.IsChecked==true,
             MusicEnabled=MusicBox.IsChecked==true,AnimationsEnabled=AnimationBox.IsChecked==true };
         controller.Execute(_=>{},prefs);
+        if(play.AutoActive)
+        {
+            play.UpdateSettings(prefs.ManorAuto);
+            if(!play.AutoActive) autoTimer.Stop();
+        }
         ApplyAudio(); Refresh();
     }
     private async void Settings_Changed(object sender,RoutedEventArgs e)
@@ -432,7 +437,9 @@ internal partial class ManorWindow : Window
     {
         if(operation || State.CycleActive || play.AutoActive || sender is not Button {Tag:string value}) return;
         decimal before=bet; bet=decimal.Parse(value,CultureInfo.InvariantCulture);
-        try { SaveSettings(); } catch(IOException ex) { bet=before; StatusText.Text=ex.Message; Refresh(); }
+        try { SaveSettings(); }
+        catch(Exception ex) when(ex is IOException or UnauthorizedAccessException or InvalidOperationException or ArgumentException)
+        { bet=before; StatusText.Text=ex.Message; Refresh(); }
     }
     private void Tab_Click(object sender,RoutedEventArgs e)
     {

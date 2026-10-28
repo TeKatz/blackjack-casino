@@ -3,5 +3,6 @@
     <OutputType>Exe</OutputType><TargetFramework>net10.0-windows</TargetFramework>
     <UseWPF>true</UseWPF><EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
+  <ItemGroup><EmbeddedResource Include="../../src/BlackjackCasino.Desktop/App.xaml" LogicalName="CasinoStylesSource.xaml" /></ItemGroup>
   <ItemGroup><ProjectReference Include="../../src/BlackjackCasino.Desktop/BlackjackCasino.Desktop.csproj"/></ItemGroup>
 </Project>

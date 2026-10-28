@@ -34,6 +34,12 @@ public sealed class SlotPlayController
         AutoActive = Remaining != 0;
     }
 
+    public void UpdateSettings(AutoSpinSettings value)
+    {
+        settings=value.Sanitize();
+        if(settings.Count==0) CancelAuto();
+    }
+
     public void CancelAuto() { AutoActive = false; Remaining = 0; }
     public void Pause() => Paused = true;
     public void Resume() => Paused = false;
