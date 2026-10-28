@@ -64,6 +64,16 @@ internal sealed class PlayerProgressionController : IDisposable
         return equipped;
     }
 
+    public ChallengeClaimResult ClaimChallenge(string challengeId)
+    {
+        ChallengeClaimResult result = Service.ClaimChallenge(challengeId);
+        if (result.Success && persist)
+        {
+            PlayerProfileStore.SaveProfile(Profile);
+        }
+        return result;
+    }
+
     public PrestigeResult Prestige()
     {
         PrestigeResult result = Service.Prestige();
@@ -84,7 +94,12 @@ internal sealed class PlayerProgressionController : IDisposable
         Profile.LifetimeExperience = committed.LifetimeExperience;
         Profile.LastPlayedAt = committed.LastPlayedAt;
         Profile.Seasons = committed.Seasons;
+        Profile.ActiveSeasonId = committed.ActiveSeasonId;
         Profile.OwnedCosmeticIds = committed.OwnedCosmeticIds;
+        Profile.ClaimedChallengeIds = committed.ClaimedChallengeIds;
+        Profile.EquippedTitleId = committed.EquippedTitleId;
+        Profile.EquippedFrameId = committed.EquippedFrameId;
+        Profile.EquippedPortraitId = committed.EquippedPortraitId;
     }
 
     public void SaveAll()
