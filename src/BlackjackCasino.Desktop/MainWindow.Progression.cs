@@ -87,7 +87,6 @@ public partial class MainWindow
         {
             Width = 86,
             Height = 32,
-            Canvas.Top = 4,
             Opacity = 0,
             IsHitTestVisible = false,
             RenderTransform = profileLevelUpSweepTransform,
@@ -105,6 +104,7 @@ public partial class MainWindow
                 },
             },
         };
+        Canvas.SetTop(profileLevelUpSweep, 4);
         sweepClip.Children.Add(profileLevelUpSweep);
         Panel.SetZIndex(sweepClip, 2);
         profileButtonHost.Children.Add(sweepClip);
