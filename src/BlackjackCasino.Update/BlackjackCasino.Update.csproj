@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Update manifest, version comparison, download and integrity verification.</Description>
+  </PropertyGroup>
+</Project>

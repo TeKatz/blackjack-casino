@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Rule-correct blackjack domain engine.</Description>
+  </PropertyGroup>
+</Project>
