@@ -2,6 +2,8 @@
 
 An optional, offline, play-money slot machine accessible from **Casino Games** at the Blackjack table. Casual Solo still opens directly, with no setup required. Finish the current blackjack hand before opening Slots; the modal window prevents concurrent wagers in two games.
 
+The feature is integrated on top of the Phase 6 progression foundation and targets `main`; the normal Development update channel is published after merge from `main`.
+
 ## Play
 
 - Three independent 32-stop weighted reels; only the centre horizontal line pays.
