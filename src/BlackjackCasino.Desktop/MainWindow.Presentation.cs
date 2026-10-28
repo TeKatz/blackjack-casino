@@ -38,7 +38,7 @@ public partial class MainWindow
             return;
         }
 
-        foreach (ComboBox combo in FindVisualChildren<ComboBox>(this))
+        foreach (ComboBox combo in FindPresentationChildren<ComboBox>(this))
         {
             combo.Style = comboStyle;
             combo.ItemContainerStyle = itemStyle;
@@ -52,7 +52,7 @@ public partial class MainWindow
         ActionPanel.Margin = new Thickness(16, 0, 16, 32);
     }
 
-    private static IEnumerable<T> FindVisualChildren<T>(DependencyObject root) where T : DependencyObject
+    private static IEnumerable<T> FindPresentationChildren<T>(DependencyObject root) where T : DependencyObject
     {
         for (int i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
         {
@@ -62,7 +62,7 @@ public partial class MainWindow
                 yield return typed;
             }
 
-            foreach (T nested in FindVisualChildren<T>(child))
+            foreach (T nested in FindPresentationChildren<T>(child))
             {
                 yield return nested;
             }
