@@ -8,6 +8,8 @@ public partial class MainWindow
 
     private void PresentationLoaded(object sender, RoutedEventArgs e)
     {
+        InitializeTableRulesFeature();
+
         suppressPreferenceEvents = true;
         MusicCheckBox.IsChecked = preferences.MusicEnabled;
         MusicVolumeSlider.Value = preferences.MusicVolume;
