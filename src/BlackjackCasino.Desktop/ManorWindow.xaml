@@ -4,6 +4,9 @@
  Width="1280" Height="890" MinWidth="1000" MinHeight="760" Background="#101019" Foreground="#E9E2D4" FontFamily="Segoe UI"
  WindowStartupLocation="CenterOwner" PreviewKeyDown="Window_KeyDown" Loaded="Window_Loaded" Closing="Window_Closing" Closed="Window_Closed">
  <Window.Resources>
+  <ResourceDictionary>
+   <ResourceDictionary.MergedDictionaries><ResourceDictionary Source="Presentation/ManorStyles.xaml"/></ResourceDictionary.MergedDictionaries>
+   <DrawingBrush x:Key="ManorWoodGrain" TileMode="Tile" Viewport="0,0,44,18" ViewportUnits="Absolute" Viewbox="0,0,44,18" ViewboxUnits="Absolute"><DrawingBrush.Drawing><DrawingGroup><GeometryDrawing Geometry="M0,2 Q15,5 44,1 M0,8 Q28,13 44,7 M0,15 Q17,11 44,16"><GeometryDrawing.Pen><Pen Brush="#0EBE9A72" Thickness="0.6"/></GeometryDrawing.Pen></GeometryDrawing><GeometryDrawing Geometry="M0,5 Q26,1 44,6 M0,17 Q29,14 44,18"><GeometryDrawing.Pen><Pen Brush="#1C000000" Thickness="0.7"/></GeometryDrawing.Pen></GeometryDrawing></DrawingGroup></DrawingBrush.Drawing></DrawingBrush>
   <LinearGradientBrush x:Key="Brass" StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#6A5037" Offset="0"/><GradientStop Color="#D6BD88" Offset="0.4"/><GradientStop Color="#937349" Offset="0.7"/><GradientStop Color="#C3A374" Offset="1"/></LinearGradientBrush>
   <Style x:Key="ManorButton" TargetType="Button">
    <Setter Property="Background" Value="#2D2430"/><Setter Property="Foreground" Value="#E9E0CF"/><Setter Property="BorderBrush" Value="#6B5860"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Margin" Value="3"/><Setter Property="Padding" Value="12,9"/><Setter Property="Cursor" Value="Hand"/><Setter Property="FontWeight" Value="SemiBold"/>
@@ -11,6 +14,7 @@
   </Style>
   <Style TargetType="CheckBox"><Setter Property="Foreground" Value="#CEC1CE"/><Setter Property="Margin" Value="4,8"/><Setter Property="VerticalContentAlignment" Value="Center"/></Style>
   <Style TargetType="TextBox"><Setter Property="Background" Value="#19151F"/><Setter Property="Foreground" Value="#ECE3D5"/><Setter Property="BorderBrush" Value="#68545F"/><Setter Property="Padding" Value="8,6"/></Style>
+  </ResourceDictionary>
  </Window.Resources>
  <Viewbox Stretch="Uniform" Margin="16">
   <Grid Width="1180" Height="760">
@@ -19,6 +23,7 @@
    <Grid Grid.Row="1"><Grid.ColumnDefinitions><ColumnDefinition Width="858"/><ColumnDefinition Width="18"/><ColumnDefinition Width="304"/></Grid.ColumnDefinitions>
     <Border BorderBrush="{StaticResource Brass}" BorderThickness="3" CornerRadius="15" Background="#231B23" Padding="14">
      <Grid>
+      <Border Background="{StaticResource ManorWoodGrain}" IsHitTestVisible="False"/>
       <local:ManorBackdrop x:Name="MachineScene" Scene="Exterior" Opacity="0.44" IsHitTestVisible="False"/>
       <Grid Margin="12,4"><Grid.RowDefinitions><RowDefinition Height="48"/><RowDefinition Height="288"/><RowDefinition Height="72"/><RowDefinition Height="*"/></Grid.RowDefinitions>
        <StackPanel HorizontalAlignment="Center"><TextBlock Text="THE HOUSE REMEMBERS" FontFamily="Georgia" FontSize="19" Foreground="#E8D1A0" HorizontalAlignment="Center"/><TextBlock x:Name="ModeText" Text="20 FIXED PAYLINES · FIVE REELS · ONE HAUNTED NIGHT" FontSize="10" Foreground="#BEAFC5" HorizontalAlignment="Center" Margin="0,5,0,0"/></StackPanel>

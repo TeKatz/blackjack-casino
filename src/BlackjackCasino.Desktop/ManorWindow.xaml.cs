@@ -20,6 +20,7 @@ internal partial class ManorWindow : Window
     private readonly ManorAudio audio=new();
     private readonly CancellationTokenSource lifetime=new();
     private readonly DispatcherTimer autoTimer=new() { Interval=TimeSpan.FromMilliseconds(200) };
+    private readonly DispatcherTimer reelSound=new() { Interval=TimeSpan.FromMilliseconds(120) };
     private readonly DispatcherTimer atmosphere=new() { Interval=TimeSpan.FromMilliseconds(50) };
     private readonly List<ManorReelView> reels=[];
     private bool initializing=true,operation,closed;
@@ -64,6 +65,7 @@ internal partial class ManorWindow : Window
         }
         autoTimer.Tick+=AutoTick;
         atmosphere.Tick+=AtmosphereTick;
+        reelSound.Tick+=ReelSoundTick;
         MouseMove+=(_,e)=>
         {
             if(!Animations || BonusPanel.Visibility!=Visibility.Visible) return;
@@ -145,6 +147,7 @@ internal partial class ManorWindow : Window
         }
         if(!closed && !State.CycleActive)
         {
+            audio.EndRoom();
             play.Resume();
             play.Complete(State.Bankroll,State.CycleReturned>=State.Bet*25,State.BonusTriggered);
             StatusText.Text=$"Cycle returned {Money(State.CycleReturned)} · +{(State.CycleReturned>State.Bet ? 25 : 20)} XP / +{(State.CycleReturned>State.Bet ? 20 : 15)} Season XP";
@@ -160,11 +163,13 @@ internal partial class ManorWindow : Window
         MachineScene.Opacity=spin.Free ? 0.65 : 0.44;
         WinText.Text=spin.Free ? "HAUNTED NIGHT · 2× LINE WINS" : "The reels awaken…";
         ModeText.Text=spin.Free ? $"FREE SPINS LEFT: {State.FreeSpinsRemaining} · FEATURES DO NOT RETRIGGER" : "20 FIXED PAYLINES · FIVE REELS · ONE HAUNTED NIGHT";
+        audio.EndRoom();
         audio.Play(ManorCue.Start);
         int doors=0;
         for(int i=0;i<5;i++) { reels[i].WinningRows.Clear(); reels[i].DimOthers=false; reels[i].InvalidateVisual(); }
         if(Animations)
         {
+            reelSound.Start();
             var motions=new List<Task>();
             for(int i=0;i<5;i++)
             {
@@ -186,7 +191,7 @@ internal partial class ManorWindow : Window
                     if(doors==2 && reel<4) { audio.Mood(0,true); audio.Play(ManorCue.Heartbeat); }
                 }));
             }
-            await Task.WhenAll(motions);
+            try { await Task.WhenAll(motions); } finally { reelSound.Stop(); }
         }
         else for(int i=0;i<5;i++) { reels[i].Position=spin.Stops[i]; reels[i].Effect=null; }
         Token.ThrowIfCancellationRequested();
@@ -283,7 +288,7 @@ internal partial class ManorWindow : Window
                 ToolTip=(visited ? "Already visited" : $"+{destination.Reward}×")+(destination.Checkpoint ? " · Checkpoint" : "")+(destination.Pressure>0 ? " · Extra Haunt" : "") };
             button.Click+=Route_Click; RoutesPanel.Children.Add(button);
         }
-        DrawMap(run); audio.Mood(run.Haunt);
+        DrawMap(run); audio.Room(ManorMap.Rooms[run.Player].Area,run.Haunt);
         if(!hunting)
         {
             RoomNote.Text=run.Message+$"  Returned {Money(run.Payout*State.Bet)}. "+(State.InteractiveRunCounted ? "" : "Auto-resolved; same reference policy available interactively.");
@@ -365,7 +370,9 @@ internal partial class ManorWindow : Window
     private void Auto_Click(object sender,RoutedEventArgs e)
     {
         if(operation || closed) return;
-        SaveSettings(); play.StartAuto(controller.Preferences.ManorAuto); ScheduleAuto(); Refresh();
+        try { SaveSettings(); play.StartAuto(controller.Preferences.ManorAuto); ScheduleAuto(); Refresh(); }
+        catch(Exception ex) when(ex is IOException or UnauthorizedAccessException or InvalidOperationException or ArgumentException)
+        { StatusText.Text="Auto was not started: "+ex.Message; }
     }
     private void Stop_Click(object sender,RoutedEventArgs e) { autoTimer.Stop(); play.CancelAuto(); StatusText.Text="Auto stopped. Any committed feature remains yours."; Refresh(); }
     private async void AutoTick(object? sender,EventArgs e)
@@ -397,7 +404,8 @@ internal partial class ManorWindow : Window
 
     private void SaveSettings()
     {
-        decimal.TryParse(FloorBox.Text,NumberStyles.Number,CultureInfo.InvariantCulture,out decimal floor);
+        if(!decimal.TryParse(FloorBox.Text,NumberStyles.Number,CultureInfo.InvariantCulture,out decimal floor) || floor<0)
+            throw new ArgumentException("Enter a nonnegative dollar amount for the Auto bankroll floor.");
         var auto=new AutoSpinSettings { Count=new[]{0,10,25,50,100,-1}[Math.Clamp(AutoBox.SelectedIndex,0,5)],
             StopOnBigWin=StopBigBox.IsChecked==true,StopOnBonus=StopBonusBox.IsChecked==true,MinimumBalance=floor };
         AppPreferences prefs=controller.Preferences with { ManorBet=bet,ManorSpeed=(SlotSpinSpeed)Math.Clamp(SpeedBox.SelectedIndex,0,2),
@@ -426,9 +434,11 @@ internal partial class ManorWindow : Window
     private void ApplyAudio()
     {
         audio.SoundEnabled=controller.Preferences.SoundEnabled; audio.MusicEnabled=controller.Preferences.MusicEnabled; audio.MusicVolume=controller.Preferences.MusicVolume;
-        audio.Mood(State.Run is {Status:ManorRunStatus.Hunting} r?r.Haunt:0);
+        if(State.Run is {Status:ManorRunStatus.Hunting} r) audio.Room(ManorMap.Rooms[r.Player].Area,r.Haunt);
+        else { audio.EndRoom(); audio.Mood(0); }
         if(Animations) atmosphere.Start(); else atmosphere.Stop();
     }
+    private void ReelSoundTick(object? sender,EventArgs e)=>audio.Play(ManorCue.Reel);
     private void AtmosphereTick(object? sender,EventArgs e)
     {
         phase+=0.05; MachineScene.Phase=phase; RoomScene.Phase=phase; DoorScene.Phase=phase;
@@ -468,8 +478,8 @@ internal partial class ManorWindow : Window
     private void Window_Closing(object? sender,CancelEventArgs e) { play.CancelAuto(); autoTimer.Stop(); }
     private void Window_Closed(object? sender,EventArgs e)
     {
-        closed=true; lifetime.Cancel(); autoTimer.Stop(); atmosphere.Stop();
-        autoTimer.Tick-=AutoTick; atmosphere.Tick-=AtmosphereTick;
+        closed=true; lifetime.Cancel(); autoTimer.Stop(); atmosphere.Stop(); reelSound.Stop();
+        autoTimer.Tick-=AutoTick; atmosphere.Tick-=AtmosphereTick; reelSound.Tick-=ReelSoundTick;
         foreach(ManorReelView reel in reels) reel.BeginAnimation(ManorReelView.PositionProperty,null);
         DoorScene.BeginAnimation(ManorBackdrop.DoorOpenProperty,null); audio.Dispose(); lifetime.Dispose();
     }

@@ -66,7 +66,17 @@ internal static class ManorSoundSynthesis
             double whisper=t>19 && t<21 ? low*0.65*Math.Sin((t-19)*Math.PI/2) : 0;
             double thunder=t>10 && t<14 ? Math.Sin(2*Math.PI*37*t)*Math.Exp(-(t-10))*0.14 : 0;
             double heart=Math.Sin(2*Math.PI*65*t)*Math.Exp(-(t%(layer==2?0.65:1.1))/0.07);
-            double sample=layer==0 ? room+wind+fire+clock+whisper+thunder : heart*0.45+room*0.3;
+            double sample=layer switch
+            {
+                0=>room+wind+fire+clock+whisper+thunder,
+                1 or 2=>heart*0.45+room*0.3,
+                3=>room*0.6+fire*3+clock*0.3,
+                4=>room*0.4+clock*2+whisper*0.6,
+                5=>room+Math.Sin(2*Math.PI*146.83*t)*0.06+wind*0.2,
+                6=>wind*0.6+clock*1.5+fire,
+                7=>wind*2+thunder*1.4+fire*0.2,
+                _=>room*1.5+whisper+thunder*0.6,
+            };
             return sample*0.06*Math.Min(1,t/0.12)*Math.Min(1,(24-t)/0.15);
         });
     }
