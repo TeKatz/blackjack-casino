@@ -1,7 +1,9 @@
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Shell;
 using BlackjackCasino.Core;
 
 namespace BlackjackCasino.Desktop;
@@ -25,6 +27,7 @@ internal sealed class TableRulesDialog : Window
     private readonly TextBox minimumBet = new();
     private readonly TextBox maximumBet = new();
     private readonly TextBlock validationText = new();
+    private TextBlock? maximizeGlyph;
 
     public TableRulesDialog(GameRules initial)
     {
@@ -36,14 +39,171 @@ internal sealed class TableRulesDialog : Window
         MinWidth = 540;
         MinHeight = 650;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
-        Background = new SolidColorBrush(Color.FromRgb(7, 23, 15));
+        WindowStyle = WindowStyle.None;
+        ResizeMode = ResizeMode.CanResize;
+        Background = new SolidColorBrush(Color.FromRgb(5, 13, 9));
         Foreground = new SolidColorBrush(Color.FromRgb(239, 242, 235));
         FontFamily = new FontFamily("Segoe UI");
 
-        Content = BuildContent(initial);
+        WindowChrome.SetWindowChrome(this, new WindowChrome
+        {
+            CaptionHeight = 0,
+            ResizeBorderThickness = new Thickness(6),
+            GlassFrameThickness = new Thickness(0),
+            CornerRadius = new CornerRadius(0),
+            UseAeroCaptionButtons = false,
+        });
+
+        StateChanged += (_, _) => RefreshMaximizeGlyph();
+        Content = BuildWindowShell(BuildContent(initial));
+        RefreshMaximizeGlyph();
     }
 
     public GameRules? ResultRules { get; private set; }
+
+    private UIElement BuildWindowShell(UIElement content)
+    {
+        var root = new Border
+        {
+            Background = new SolidColorBrush(Color.FromRgb(7, 23, 15)),
+            BorderBrush = new SolidColorBrush(Color.FromRgb(49, 90, 67)),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(10),
+        };
+
+        var grid = new Grid();
+        grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(42) });
+        grid.RowDefinitions.Add(new RowDefinition());
+
+        var titleBar = new Border
+        {
+            Background = new SolidColorBrush(Color.FromRgb(8, 26, 17)),
+            BorderBrush = new SolidColorBrush(Color.FromRgb(40, 69, 53)),
+            BorderThickness = new Thickness(0, 0, 0, 1),
+            CornerRadius = new CornerRadius(9, 9, 0, 0),
+        };
+        titleBar.MouseLeftButtonDown += TitleBar_MouseLeftButtonDown;
+
+        var titleGrid = new Grid { Margin = new Thickness(14, 0, 6, 0) };
+        titleGrid.ColumnDefinitions.Add(new ColumnDefinition());
+        titleGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var titleText = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        titleText.Children.Add(new TextBlock
+        {
+            Text = "♠",
+            Foreground = new SolidColorBrush(Color.FromRgb(255, 215, 124)),
+            FontSize = 15,
+            Margin = new Thickness(0, 0, 9, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        titleText.Children.Add(new TextBlock
+        {
+            Text = "BLACKJACK CASINO",
+            Foreground = new SolidColorBrush(Color.FromRgb(245, 241, 231)),
+            FontWeight = FontWeights.Bold,
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        titleText.Children.Add(new TextBlock
+        {
+            Text = "  ·  TABLE SETUP",
+            Foreground = new SolidColorBrush(Color.FromRgb(120, 146, 130)),
+            FontSize = 11,
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        titleGrid.Children.Add(titleText);
+
+        var controls = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        controls.Children.Add(WindowControl("—", () => WindowState = WindowState.Minimized));
+        Border maximize = WindowControl("□", ToggleMaximize);
+        maximizeGlyph = maximize.Child as TextBlock;
+        controls.Children.Add(maximize);
+        controls.Children.Add(WindowControl("×", Close, closeButton: true));
+        Grid.SetColumn(controls, 1);
+        titleGrid.Children.Add(controls);
+        titleBar.Child = titleGrid;
+        grid.Children.Add(titleBar);
+
+        Grid.SetRow(content, 1);
+        grid.Children.Add(content);
+        root.Child = grid;
+        return root;
+    }
+
+    private Border WindowControl(string glyph, Action action, bool closeButton = false)
+    {
+        var text = new TextBlock
+        {
+            Text = glyph,
+            Foreground = new SolidColorBrush(Color.FromRgb(175, 193, 181)),
+            FontSize = glyph == "×" ? 18 : 14,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        var border = new Border
+        {
+            Width = 42,
+            Height = 32,
+            CornerRadius = new CornerRadius(4),
+            Background = Brushes.Transparent,
+            Cursor = Cursors.Hand,
+            Child = text,
+        };
+        border.MouseEnter += (_, _) =>
+        {
+            border.Background = new SolidColorBrush(closeButton
+                ? Color.FromRgb(111, 44, 44)
+                : Color.FromRgb(23, 51, 38));
+            text.Foreground = Brushes.White;
+        };
+        border.MouseLeave += (_, _) =>
+        {
+            border.Background = Brushes.Transparent;
+            text.Foreground = new SolidColorBrush(Color.FromRgb(175, 193, 181));
+        };
+        border.MouseLeftButtonUp += (_, e) =>
+        {
+            e.Handled = true;
+            action();
+        };
+        return border;
+    }
+
+    private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ClickCount == 2)
+        {
+            ToggleMaximize();
+            return;
+        }
+
+        if (e.LeftButton == MouseButtonState.Pressed)
+        {
+            DragMove();
+        }
+    }
+
+    private void ToggleMaximize()
+    {
+        WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+        RefreshMaximizeGlyph();
+    }
+
+    private void RefreshMaximizeGlyph()
+    {
+        if (maximizeGlyph is not null)
+        {
+            maximizeGlyph.Text = WindowState == WindowState.Maximized ? "❐" : "□";
+        }
+    }
 
     private UIElement BuildContent(GameRules initial)
     {

@@ -16,11 +16,14 @@ public sealed record HistoricalAiSeat(
     IReadOnlyList<HistoricalHand> Hands);
 
 public sealed record RoundHistoryEntry(
+    Guid RoundId,
     DateTimeOffset StartedAt,
     DateTimeOffset CompletedAt,
     decimal BankrollBefore,
     decimal BankrollAfter,
     decimal InitialBet,
+    decimal InsuranceBet,
+    decimal InsuranceNet,
     decimal TotalNet,
     GameRules Rules,
     IReadOnlyList<Card> DealerCards,
