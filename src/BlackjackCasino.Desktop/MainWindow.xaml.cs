@@ -12,6 +12,12 @@ namespace BlackjackCasino.Desktop;
 
 public partial class MainWindow : Window
 {
+    private enum PlayMode
+    {
+        Solo,
+        FullTable,
+    }
+
     private static readonly GameRules TableRules = new()
     {
         DeckCount = 6,
@@ -27,20 +33,35 @@ public partial class MainWindow : Window
         Penetration = 0.75,
     };
 
+    private static readonly (string Name, decimal Bet)[] AiRoster =
+    [
+        ("Alex", 25m),
+        ("Morgan", 50m),
+        ("Casey", 10m),
+        ("Jordan", 25m),
+        ("Riley", 100m),
+    ];
+
     private readonly HttpClient httpClient = new()
     {
         Timeout = TimeSpan.FromSeconds(20),
     };
 
-    private readonly CasinoSession session;
+    private CasinoSession session;
+    private PlayMode playMode = PlayMode.Solo;
+    private int aiSeatCount = 3;
     private decimal selectedBet = 25m;
     private UpdateManifest? pendingManifest;
 
     public MainWindow()
     {
         InitializeComponent();
-        session = new CasinoSession(TableRules, PlayerStateStore.LoadBankroll());
+        session = CreateSession(PlayerStateStore.LoadBankroll());
         VersionText.Text = AppVersion.Current.ToString();
+
+        GameModeComboBox.SelectionChanged += GameModeComboBox_SelectionChanged;
+        AiSeatCountComboBox.SelectionChanged += AiSeatCountComboBox_SelectionChanged;
+
         Loaded += async (_, _) =>
         {
             RefreshGameUi();
@@ -56,6 +77,74 @@ public partial class MainWindow : Window
     private UpdateChannel SelectedUpdateChannel => UpdateChannelComboBox.SelectedIndex == 1
         ? UpdateChannel.Development
         : UpdateChannel.Stable;
+
+    private CasinoSession CreateSession(decimal bankroll)
+    {
+        IReadOnlyList<AiPlayerProfile> aiPlayers = playMode == PlayMode.FullTable
+            ? BuildAiProfiles(aiSeatCount)
+            : [];
+
+        return new CasinoSession(TableRules, bankroll, aiPlayers: aiPlayers);
+    }
+
+    private static IReadOnlyList<AiPlayerProfile> BuildAiProfiles(int count)
+    {
+        return AiRoster.Take(count)
+            .Select(entry => new AiPlayerProfile(entry.Name, entry.Bet))
+            .ToArray();
+    }
+
+    private void GameModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (!IsLoaded || session.RoundInProgress)
+        {
+            return;
+        }
+
+        PlayMode requested = GameModeComboBox.SelectedIndex == 1
+            ? PlayMode.FullTable
+            : PlayMode.Solo;
+
+        if (requested == playMode)
+        {
+            return;
+        }
+
+        SwitchTable(requested, aiSeatCount);
+    }
+
+    private void AiSeatCountComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (!IsLoaded || session.RoundInProgress || playMode != PlayMode.FullTable)
+        {
+            return;
+        }
+
+        int requested = Math.Clamp(AiSeatCountComboBox.SelectedIndex + 1, 1, 5);
+        if (requested == aiSeatCount)
+        {
+            return;
+        }
+
+        SwitchTable(playMode, requested);
+    }
+
+    private void SwitchTable(PlayMode mode, int seats)
+    {
+        decimal bankroll = session.Bankroll;
+        PlayerStateStore.SaveBankroll(bankroll);
+
+        playMode = mode;
+        aiSeatCount = seats;
+        session = CreateSession(bankroll);
+        selectedBet = Math.Min(selectedBet, bankroll);
+
+        StatusText.Text = playMode == PlayMode.Solo
+            ? "Solo table ready. Place a bet to begin."
+            : $"Full table ready with {aiSeatCount} AI seat{(aiSeatCount == 1 ? string.Empty : "s")}. Place a bet to begin.";
+
+        RefreshGameUi();
+    }
 
     private void Chip_Click(object sender, RoutedEventArgs e)
     {
@@ -89,7 +178,7 @@ public partial class MainWindow : Window
         try
         {
             session.StartRound(selectedBet);
-            HandleRoundStateAfterMutation("Cards dealt.");
+            HandleRoundStateAfterMutation(playMode == PlayMode.FullTable ? "Cards dealt around the table." : "Cards dealt.");
         }
         catch (Exception ex)
         {
@@ -232,6 +321,9 @@ public partial class MainWindow : Window
         BankrollText.Text = Money(session.Bankroll);
         BetText.Text = Money(selectedBet);
         ShoeText.Text = $"#{session.ShoeNumber} · {session.CardsRemaining} cards";
+        TableModeText.Text = playMode == PlayMode.Solo
+            ? "Solo table"
+            : $"Full table · {aiSeatCount} AI seat{(aiSeatCount == 1 ? string.Empty : "s")}";
 
         BlackjackRound? round = session.CurrentRound;
         bool betting = !session.RoundInProgress;
@@ -240,9 +332,15 @@ public partial class MainWindow : Window
         DealButton.IsEnabled = canDeal;
         ClearBetButton.IsEnabled = betting && selectedBet > 0m;
         ResetBankrollButton.IsEnabled = betting;
+        GameModeComboBox.IsEnabled = betting;
+        AiSeatCountComboBox.IsEnabled = betting;
+        AiSettingsPanel.Visibility = playMode == PlayMode.FullTable ? Visibility.Visible : Visibility.Collapsed;
 
         DealerCardsPanel.Children.Clear();
         PlayerHandsPanel.Children.Clear();
+        AiTableSeatsPanel.Children.Clear();
+
+        RenderAiSeats(round);
 
         if (round is null)
         {
@@ -259,6 +357,120 @@ public partial class MainWindow : Window
         InsurancePanel.Visibility = round.Phase == RoundPhase.InsuranceDecision
             ? Visibility.Visible
             : Visibility.Collapsed;
+    }
+
+    private void RenderAiSeats(BlackjackRound? round)
+    {
+        if (playMode != PlayMode.FullTable)
+        {
+            AiSeatsScrollViewer.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        AiSeatsScrollViewer.Visibility = Visibility.Visible;
+
+        if (round is null)
+        {
+            foreach (AiPlayerProfile profile in BuildAiProfiles(aiSeatCount))
+            {
+                AiTableSeatsPanel.Children.Add(BuildAiPlaceholder(profile));
+            }
+            return;
+        }
+
+        foreach (AiSeatState seat in round.AiSeats)
+        {
+            AiTableSeatsPanel.Children.Add(BuildAiSeat(seat, round.Phase == RoundPhase.Settled));
+        }
+    }
+
+    private static Border BuildAiPlaceholder(AiPlayerProfile profile)
+    {
+        var stack = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+        stack.Children.Add(new TextBlock
+        {
+            Text = profile.Name.ToUpperInvariant(),
+            FontWeight = FontWeights.Bold,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Foreground = Brush("#9EB1A4"),
+        });
+        stack.Children.Add(new TextBlock
+        {
+            Text = $"Bet {Money(profile.Bet)}\nWaiting for deal",
+            TextAlignment = TextAlignment.Center,
+            Margin = new Thickness(0, 8, 0, 0),
+            Foreground = Brush("#789484"),
+        });
+
+        return new Border
+        {
+            Width = 172,
+            Height = 108,
+            Margin = new Thickness(5),
+            Padding = new Thickness(10),
+            Background = Brush("#0B2117"),
+            BorderBrush = Brush("#31533F"),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(9),
+            Child = stack,
+        };
+    }
+
+    private static Border BuildAiSeat(AiSeatState seat, bool settled)
+    {
+        var stack = new StackPanel();
+        stack.Children.Add(new TextBlock
+        {
+            Text = $"{seat.Name.ToUpperInvariant()} · {Money(seat.InitialBet)}",
+            FontSize = 11,
+            FontWeight = FontWeights.Bold,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Foreground = Brush("#9EB1A4"),
+        });
+
+        for (int i = 0; i < seat.Hands.Count; i++)
+        {
+            BlackjackHand hand = seat.Hands[i];
+            var cards = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 5, 0, 2),
+            };
+
+            foreach (Card card in hand.Cards)
+            {
+                cards.Children.Add(CreateCard(card, compact: true));
+            }
+            stack.Children.Add(cards);
+
+            string value = hand.IsSurrendered ? "Surrendered" : FormatHandValue(hand);
+            if (settled && i < seat.Results.Count)
+            {
+                HandResult result = seat.Results[i];
+                value += $" · {OutcomeText(result.Outcome)} {SignedMoney(result.Net)}";
+            }
+
+            stack.Children.Add(new TextBlock
+            {
+                Text = seat.Hands.Count > 1 ? $"H{i + 1}: {value}" : value,
+                FontSize = 10,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Foreground = Brush("#C8D5CC"),
+            });
+        }
+
+        return new Border
+        {
+            MinWidth = 172,
+            Margin = new Thickness(5),
+            Padding = new Thickness(9),
+            Background = Brush("#0B2117"),
+            BorderBrush = settled && seat.TotalNet > 0 ? Brush("#6A8F55") : Brush("#31533F"),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(9),
+            Child = stack,
+        };
     }
 
     private void RenderDealer(BlackjackRound round)
@@ -356,14 +568,19 @@ public partial class MainWindow : Window
         };
     }
 
-    private static Border CreateCard(Card card, bool faceDown = false)
+    private static Border CreateCard(Card card, bool faceDown = false, bool compact = false)
     {
+        double width = compact ? 48 : 76;
+        double height = compact ? 68 : 108;
+        double rankSize = compact ? 13 : 20;
+        double suitSize = compact ? 22 : 34;
+
         var border = new Border
         {
-            Width = 76,
-            Height = 108,
-            Margin = new Thickness(4),
-            CornerRadius = new CornerRadius(7),
+            Width = width,
+            Height = height,
+            Margin = new Thickness(compact ? 2 : 4),
+            CornerRadius = new CornerRadius(compact ? 5 : 7),
             BorderThickness = new Thickness(1),
         };
 
@@ -374,7 +591,7 @@ public partial class MainWindow : Window
             border.Child = new TextBlock
             {
                 Text = "♠",
-                FontSize = 36,
+                FontSize = compact ? 24 : 36,
                 FontWeight = FontWeights.Bold,
                 Foreground = Brush("#D4A84F"),
                 HorizontalAlignment = HorizontalAlignment.Center,
@@ -388,20 +605,20 @@ public partial class MainWindow : Window
         border.Background = Brushes.WhiteSmoke;
         border.BorderBrush = Brush("#D8D8D2");
 
-        var grid = new Grid { Margin = new Thickness(8) };
+        var grid = new Grid { Margin = new Thickness(compact ? 5 : 8) };
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         grid.RowDefinitions.Add(new RowDefinition());
         grid.Children.Add(new TextBlock
         {
             Text = RankText(card.Rank),
-            FontSize = 20,
+            FontSize = rankSize,
             FontWeight = FontWeights.Bold,
             Foreground = ink,
         });
         var suit = new TextBlock
         {
             Text = SuitText(card.Suit),
-            FontSize = 34,
+            FontSize = suitSize,
             Foreground = ink,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,

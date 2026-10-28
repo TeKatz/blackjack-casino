@@ -9,10 +9,15 @@ public sealed class CasinoSession
 {
     private readonly GameRules rules;
     private readonly Func<ICardShoe> shoeFactory;
+    private readonly IReadOnlyList<AiPlayerProfile> aiPlayers;
     private ICardShoe shoe;
     private bool settlementApplied;
 
-    public CasinoSession(GameRules rules, decimal startingBankroll = 1_000m, Func<ICardShoe>? shoeFactory = null)
+    public CasinoSession(
+        GameRules rules,
+        decimal startingBankroll = 1_000m,
+        Func<ICardShoe>? shoeFactory = null,
+        IReadOnlyList<AiPlayerProfile>? aiPlayers = null)
     {
         ArgumentNullException.ThrowIfNull(rules);
         rules.Validate();
@@ -22,8 +27,14 @@ public sealed class CasinoSession
             throw new ArgumentOutOfRangeException(nameof(startingBankroll));
         }
 
+        if (aiPlayers is { Count: > 5 })
+        {
+            throw new ArgumentOutOfRangeException(nameof(aiPlayers), "A table supports at most five AI seats.");
+        }
+
         this.rules = rules;
         this.shoeFactory = shoeFactory ?? (() => new Shoe(rules));
+        this.aiPlayers = aiPlayers?.ToArray() ?? [];
         shoe = this.shoeFactory();
         Bankroll = startingBankroll;
     }
@@ -35,6 +46,8 @@ public sealed class CasinoSession
     public int ShoeNumber { get; private set; } = 1;
 
     public int CardsRemaining => shoe.Remaining;
+
+    public int AiPlayerCount => aiPlayers.Count;
 
     public bool RoundInProgress => CurrentRound is { Phase: not RoundPhase.Settled };
 
@@ -74,7 +87,7 @@ public sealed class CasinoSession
 
         Bankroll -= bet;
         settlementApplied = false;
-        CurrentRound = new BlackjackRound(rules, shoe, bet);
+        CurrentRound = new BlackjackRound(rules, shoe, bet, aiPlayers);
 
         try
         {
