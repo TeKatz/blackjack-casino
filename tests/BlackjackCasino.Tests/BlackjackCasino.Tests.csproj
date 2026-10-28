@@ -16,6 +16,11 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="../../src/BlackjackCasino.Desktop/AppPreferences.cs" Link="Persistence/AppPreferences.cs" />
+    <Compile Include="../../src/BlackjackCasino.Desktop/ManorPersistence.cs" Link="Persistence/ManorPersistence.cs" />
+    <Compile Include="../../src/BlackjackCasino.Desktop/ManorSoundSynthesis.cs" Link="Audio/ManorSoundSynthesis.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\..\src\BlackjackCasino.Core\BlackjackCasino.Core.csproj" />
     <ProjectReference Include="..\..\src\BlackjackCasino.Update\BlackjackCasino.Update.csproj" />
   </ItemGroup>

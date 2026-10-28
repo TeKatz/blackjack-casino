@@ -24,7 +24,7 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Resolve preview version
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' || github.event_name == 'pull_request'
         shell: pwsh
         run: |
           [xml]$props = Get-Content Directory.Build.props
@@ -43,6 +43,18 @@ jobs:
       - name: Test
         run: dotnet test BlackjackCasino.sln --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory TestResults
 
+      - name: Windows Manor runtime smoke
+        run: dotnet run --project tools/ManorSmoke/ManorSmoke.csproj --configuration Release -- artifacts/manor-windows-smoke
+
+      - name: Upload Manor runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: manor-windows-runtime-evidence
+          path: artifacts/manor-windows-smoke
+          if-no-files-found: ignore
+          retention-days: 14
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
@@ -52,7 +64,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Publish preview updater
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' || github.event_name == 'pull_request'
         shell: pwsh
         run: |
           dotnet publish src/BlackjackCasino.Updater/BlackjackCasino.Updater.csproj `
@@ -65,7 +77,7 @@ jobs:
             --output artifacts/preview-updater
 
       - name: Publish preview desktop
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' || github.event_name == 'pull_request'
         shell: pwsh
         run: |
           dotnet publish src/BlackjackCasino.Desktop/BlackjackCasino.Desktop.csproj `
@@ -81,7 +93,7 @@ jobs:
           Copy-Item artifacts/preview-updater/BlackjackCasino.Updater.exe artifacts/preview-app/tools/updater/BlackjackCasino.Updater.exe
 
       - name: Upload Windows preview
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' || github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           name: blackjack-casino-preview-win-x64

@@ -77,6 +77,10 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
+        string? manorRecoveryNotice = null;
+        try { new ManorPersistence(ManorPersistence.DefaultDirectory).Recover(); }
+        catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException or System.Text.Json.JsonException or ArgumentException)
+        { manorRecoveryNotice = "Manor checkpoint could not be recovered: " + ex.Message; }
         preferences = PlayerStateStore.Load();
         playMode = preferences.PlayMode;
         aiSeatCount = preferences.AiSeatCount;
@@ -114,6 +118,7 @@ public partial class MainWindow : Window
         Loaded += async (_, _) =>
         {
             RefreshGameUi();
+            if (manorRecoveryNotice is not null) StatusText.Text = manorRecoveryNotice;
             await CheckForUpdatesAsync(silent: true);
         };
         Closed += (_, _) =>

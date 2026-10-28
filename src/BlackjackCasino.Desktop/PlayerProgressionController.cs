@@ -8,11 +8,13 @@ internal sealed class PlayerProgressionController : IDisposable
     private readonly List<RoundHistoryEntry> history;
     private readonly HashSet<Guid> knownRoundIds;
     private bool disposed;
+    private readonly bool persist;
 
-    public PlayerProgressionController()
+    public PlayerProgressionController(PlayerProfileState? initialProfile = null)
     {
-        Service = new ProgressionService(PlayerProfileStore.LoadProfile());
-        history = PlayerProfileStore.LoadHistory().ToList();
+        persist = initialProfile is null;
+        Service = new ProgressionService(initialProfile ?? PlayerProfileStore.LoadProfile());
+        history = initialProfile is null ? PlayerProfileStore.LoadHistory().ToList() : [];
         knownRoundIds = history.Select(x => x.RoundId).ToHashSet();
     }
 
@@ -45,7 +47,7 @@ internal sealed class PlayerProgressionController : IDisposable
     public PurchaseResult PurchaseCosmetic(string cosmeticId)
     {
         PurchaseResult result = Service.PurchaseCosmetic(cosmeticId);
-        if (result.Success)
+        if (result.Success && persist)
         {
             PlayerProfileStore.SaveProfile(Profile);
         }
@@ -55,7 +57,7 @@ internal sealed class PlayerProgressionController : IDisposable
     public bool EquipCosmetic(string cosmeticId)
     {
         bool equipped = Service.EquipCosmetic(cosmeticId);
-        if (equipped)
+        if (equipped && persist)
         {
             PlayerProfileStore.SaveProfile(Profile);
         }
@@ -65,15 +67,29 @@ internal sealed class PlayerProgressionController : IDisposable
     public PrestigeResult Prestige()
     {
         PrestigeResult result = Service.Prestige();
-        if (result.Success)
+        if (result.Success && persist)
         {
             PlayerProfileStore.SaveProfile(Profile);
         }
         return result;
     }
 
+    public void AdoptManorProfile(PlayerProfileState committed)
+    {
+        // Keep the existing blackjack service, processed-round set and session statistics.
+        Profile.Manor = committed.Manor;
+        Profile.Level = committed.Level;
+        Profile.LevelExperience = committed.LevelExperience;
+        Profile.Coins = committed.Coins;
+        Profile.LifetimeExperience = committed.LifetimeExperience;
+        Profile.LastPlayedAt = committed.LastPlayedAt;
+        Profile.Seasons = committed.Seasons;
+        Profile.OwnedCosmeticIds = committed.OwnedCosmeticIds;
+    }
+
     public void SaveAll()
     {
+        if (!persist) return;
         PlayerProfileStore.SaveProfile(Profile);
         PlayerProfileStore.SaveHistory(history);
     }

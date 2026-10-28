@@ -83,6 +83,9 @@ internal static class PlayerStateStore
         return state with
         {
             Bankroll = bankroll,
+            ManorBet = Math.Clamp(decimal.Truncate(state.ManorBet), 1, 1_000),
+            ManorSpeed = Enum.IsDefined(state.ManorSpeed) ? state.ManorSpeed : SlotSpinSpeed.Normal,
+            ManorAuto = (state.ManorAuto ?? new AutoSpinSettings()).Sanitize(),
             SelectedBet = selectedBet,
             SlotBet = Math.Clamp(decimal.Round(state.SlotBet, 2), SlotMachineRules.MinimumBet, SlotMachineRules.MaximumBet),
             PlayMode = playMode,

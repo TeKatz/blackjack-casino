@@ -61,6 +61,7 @@ public sealed class PlayerProfileState
     public string EquippedTitleId { get; set; } = CosmeticCatalog.DefaultTitleId;
     public string EquippedFrameId { get; set; } = CosmeticCatalog.DefaultFrameId;
     public List<string> OwnedCosmeticIds { get; set; } = [CosmeticCatalog.DefaultTitleId, CosmeticCatalog.DefaultFrameId];
+    public Manor.ManorStatistics Manor { get; set; } = new();
     public SlotStatistics Slots { get; set; } = new();
     public StatisticsSnapshot LifetimeStatistics { get; set; } = new();
     public Dictionary<string, StatisticsSnapshot> TableStatistics { get; set; } = new(StringComparer.OrdinalIgnoreCase);

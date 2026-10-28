@@ -20,6 +20,11 @@ internal sealed record AppPreferences
 {
     public decimal Bankroll { get; init; } = 1_000m;
 
+    public decimal ManorBet { get; init; } = 25m;
+    public SlotSpinSpeed ManorSpeed { get; init; }
+    public AutoSpinSettings ManorAuto { get; init; } = new();
+    public bool ManorInteractive { get; init; } = true;
+
     public decimal SlotBet { get; init; } = 25m;
 
     public decimal SelectedBet { get; init; } = 25m;
