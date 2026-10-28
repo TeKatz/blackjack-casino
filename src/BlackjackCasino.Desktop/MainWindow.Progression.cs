@@ -98,6 +98,7 @@ public partial class MainWindow
 
         if (award.HasLevelUp)
         {
+            AnimateLevelUpCue();
             string levels = award.LevelsGained.Count == 1
                 ? $"Level {award.LevelsGained[0]}"
                 : $"Level {award.LevelsGained[0]}–{award.LevelsGained[^1]}";
