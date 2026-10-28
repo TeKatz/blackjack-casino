@@ -48,6 +48,15 @@ public sealed class ManorRunTests
     }
 
     [Fact]
+    public void EnvironmentalDirectionFollowsActualGhostPosition()
+    {
+        var run=new ManorRun(new ManorRunState {Player=0,Ghost=1});
+        Assert.Contains("east",run.GhostClue);
+        run.State.Ghost=18; Assert.Contains("west",run.GhostClue);
+        run.State.Player=1; run.State.Ghost=4; Assert.Contains("north",run.GhostClue);
+    }
+
+    [Fact]
     public void GhostMovesAlongReadableShortestEdgesAndRunsAreBounded()
     {
         ManorRun run=ManorRun.Create(3,0);

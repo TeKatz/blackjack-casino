@@ -88,10 +88,18 @@ public sealed class ManorRun
     public ManorRunState State { get; }
     public bool Finished => State.Status != ManorRunStatus.Hunting;
     public int Distance => ManorMap.Path(State.Ghost,State.Player).Length;
+    private string GhostDirection
+    {
+        get
+        {
+            ManorRoom ghost=ManorMap.Rooms[State.Ghost],player=ManorMap.Rooms[State.Player];
+            return ghost.X<player.X ? "west" : ghost.X>player.X ? "east" : ghost.Y<player.Y ? "north" : ghost.Y>player.Y ? "south" : "nearby";
+        }
+    }
     public string GhostClue => State.RevealUntilTurn >= State.Turn
         ? $"Candle reveals: {ManorMap.Rooms[State.Ghost].Name}."
-        : Distance <= 2 ? "Cold breath at your back. The ghost is CLOSE (within two rooms)."
-        : Distance <= 4 ? "A door slams in the western halls. The ghost is approaching."
+        : Distance <= 2 ? $"Cold air creeps from the {GhostDirection}. The ghost is CLOSE (within two rooms)."
+        : Distance <= 4 ? $"A door slams to the {GhostDirection}. The ghost is approaching."
         : "Distant footsteps echo through the Manor. The ghost is far away.";
 
     public static ManorRun Create(int doors, int seed)
