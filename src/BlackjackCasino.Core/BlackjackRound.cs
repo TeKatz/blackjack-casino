@@ -39,10 +39,15 @@ public sealed class BlackjackRound
     private readonly GameRules rules;
     private readonly ICardShoe shoe;
     private readonly List<BlackjackHand> playerHands = [];
+    private readonly List<AiSeatState> aiSeats = [];
     private int activeHandIndex;
     private decimal insuranceBet;
 
-    public BlackjackRound(GameRules rules, ICardShoe shoe, decimal initialBet)
+    public BlackjackRound(
+        GameRules rules,
+        ICardShoe shoe,
+        decimal initialBet,
+        IReadOnlyList<AiPlayerProfile>? aiPlayers = null)
     {
         ArgumentNullException.ThrowIfNull(rules);
         ArgumentNullException.ThrowIfNull(shoe);
@@ -53,11 +58,24 @@ public sealed class BlackjackRound
             throw new ArgumentOutOfRangeException(nameof(initialBet), "Initial bet must be positive.");
         }
 
+        if (aiPlayers is { Count: > 5 })
+        {
+            throw new ArgumentOutOfRangeException(nameof(aiPlayers), "A table supports at most five AI seats.");
+        }
+
         this.rules = rules;
         this.shoe = shoe;
         InitialBet = initialBet;
         DealerHand = new BlackjackHand(initialBet);
         playerHands.Add(new BlackjackHand(initialBet));
+
+        if (aiPlayers is not null)
+        {
+            foreach (AiPlayerProfile profile in aiPlayers)
+            {
+                aiSeats.Add(new AiSeatState(profile));
+            }
+        }
     }
 
     public decimal InitialBet { get; }
@@ -65,6 +83,8 @@ public sealed class BlackjackRound
     public RoundPhase Phase { get; private set; } = RoundPhase.NotStarted;
 
     public IReadOnlyList<BlackjackHand> PlayerHands => playerHands;
+
+    public IReadOnlyList<AiSeatState> AiSeats => aiSeats;
 
     public BlackjackHand DealerHand { get; }
 
@@ -80,10 +100,11 @@ public sealed class BlackjackRound
     {
         EnsurePhase(RoundPhase.NotStarted);
 
-        BlackjackHand player = playerHands[0];
-        player.Add(shoe.Draw());
+        // Real table order: each occupied seat receives one card, then the dealer.
+        // The human player is first base; AI seats act after the human.
+        DealOneCardToOccupiedSeats();
         DealerHand.Add(shoe.Draw());
-        player.Add(shoe.Draw());
+        DealOneCardToOccupiedSeats();
         DealerHand.Add(shoe.Draw());
 
         if (rules.AllowInsurance && DealerHand.Cards[0].Rank == Rank.Ace)
@@ -123,30 +144,7 @@ public sealed class BlackjackRound
             return new HashSet<PlayerAction>();
         }
 
-        BlackjackHand hand = playerHands[activeHandIndex];
-        var actions = new HashSet<PlayerAction> { PlayerAction.Stand };
-
-        if (!hand.IsSplitAces || rules.HitSplitAces)
-        {
-            actions.Add(PlayerAction.Hit);
-        }
-
-        if (hand.Cards.Count == 2 && (!hand.IsSplitHand || rules.DoubleAfterSplit) && (!hand.IsSplitAces || rules.HitSplitAces))
-        {
-            actions.Add(PlayerAction.DoubleDown);
-        }
-
-        if (CanSplit(hand))
-        {
-            actions.Add(PlayerAction.Split);
-        }
-
-        if (rules.AllowLateSurrender && !hand.IsSplitHand && hand.Cards.Count == 2)
-        {
-            actions.Add(PlayerAction.Surrender);
-        }
-
-        return actions;
+        return GetAvailableActionsForHands(playerHands, activeHandIndex);
     }
 
     public void Act(PlayerAction action)
@@ -159,7 +157,93 @@ public sealed class BlackjackRound
             throw new InvalidOperationException($"Action {action} is not available for the active hand.");
         }
 
-        BlackjackHand hand = playerHands[activeHandIndex];
+        ExecuteAction(playerHands, activeHandIndex, action);
+        AdvanceAfterPlayerAction();
+    }
+
+    private void DealOneCardToOccupiedSeats()
+    {
+        playerHands[0].Add(shoe.Draw());
+        foreach (AiSeatState seat in aiSeats)
+        {
+            seat.MutableHands[0].Add(shoe.Draw());
+        }
+    }
+
+    private void ResolveOpeningState()
+    {
+        bool dealerCanPeek = DealerHand.Cards[0].Rank == Rank.Ace || DealerHand.Cards[0].IsTenValue;
+        if (rules.DealerPeeksForBlackjack && dealerCanPeek && DealerHand.IsNaturalBlackjack)
+        {
+            Settle();
+            return;
+        }
+
+        if (playerHands[0].IsNaturalBlackjack)
+        {
+            playerHands[0].IsComplete = true;
+            FinishTableAndSettle();
+            return;
+        }
+
+        Phase = RoundPhase.PlayerTurn;
+        activeHandIndex = 0;
+    }
+
+    private IReadOnlySet<PlayerAction> GetAvailableActionsForHands(List<BlackjackHand> hands, int handIndex)
+    {
+        BlackjackHand hand = hands[handIndex];
+        var actions = new HashSet<PlayerAction> { PlayerAction.Stand };
+
+        if (!hand.IsSplitAces || rules.HitSplitAces)
+        {
+            actions.Add(PlayerAction.Hit);
+        }
+
+        if (hand.Cards.Count == 2
+            && (!hand.IsSplitHand || rules.DoubleAfterSplit)
+            && (!hand.IsSplitAces || rules.HitSplitAces))
+        {
+            actions.Add(PlayerAction.DoubleDown);
+        }
+
+        if (CanSplit(hand, hands.Count))
+        {
+            actions.Add(PlayerAction.Split);
+        }
+
+        if (rules.AllowLateSurrender && !hand.IsSplitHand && hand.Cards.Count == 2)
+        {
+            actions.Add(PlayerAction.Surrender);
+        }
+
+        return actions;
+    }
+
+    private bool CanSplit(BlackjackHand hand, int handCount)
+    {
+        if (hand.Cards.Count != 2 || handCount >= rules.MaxSplitHands)
+        {
+            return false;
+        }
+
+        if (hand.Cards[0].Rank != hand.Cards[1].Rank)
+        {
+            return false;
+        }
+
+        bool splittingAces = hand.Cards[0].Rank == Rank.Ace;
+        if (splittingAces && hand.IsSplitAces && !rules.ResplitAces)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private void ExecuteAction(List<BlackjackHand> hands, int handIndex, PlayerAction action)
+    {
+        BlackjackHand hand = hands[handIndex];
 
         switch (action)
         {
@@ -180,7 +264,7 @@ public sealed class BlackjackRound
                 hand.IsComplete = true;
                 break;
             case PlayerAction.Split:
-                SplitActiveHand();
+                SplitHand(hands, handIndex);
                 break;
             case PlayerAction.Surrender:
                 hand.IsSurrendered = true;
@@ -189,53 +273,11 @@ public sealed class BlackjackRound
             default:
                 throw new ArgumentOutOfRangeException(nameof(action), action, null);
         }
-
-        AdvanceAfterPlayerAction();
     }
 
-    private void ResolveOpeningState()
+    private void SplitHand(List<BlackjackHand> hands, int handIndex)
     {
-        bool dealerCanPeek = DealerHand.Cards[0].Rank == Rank.Ace || DealerHand.Cards[0].IsTenValue;
-        if (rules.DealerPeeksForBlackjack && dealerCanPeek && DealerHand.IsNaturalBlackjack)
-        {
-            Settle();
-            return;
-        }
-
-        if (playerHands[0].IsNaturalBlackjack)
-        {
-            FinishDealerAndSettle(playDealer: false);
-            return;
-        }
-
-        Phase = RoundPhase.PlayerTurn;
-        activeHandIndex = 0;
-    }
-
-    private bool CanSplit(BlackjackHand hand)
-    {
-        if (hand.Cards.Count != 2 || playerHands.Count >= rules.MaxSplitHands)
-        {
-            return false;
-        }
-
-        if (hand.Cards[0].Rank != hand.Cards[1].Rank)
-        {
-            return false;
-        }
-
-        bool splittingAces = hand.Cards[0].Rank == Rank.Ace;
-        if (splittingAces && hand.IsSplitAces && !rules.ResplitAces)
-        {
-            return false;
-        }
-
-        return true;
-    }
-
-    private void SplitActiveHand()
-    {
-        BlackjackHand original = playerHands[activeHandIndex];
+        BlackjackHand original = hands[handIndex];
         Card first = original.Cards[0];
         Card second = original.Cards[1];
         bool splitAces = first.Rank == Rank.Ace;
@@ -248,13 +290,13 @@ public sealed class BlackjackRound
         left.Add(shoe.Draw());
         right.Add(shoe.Draw());
 
-        playerHands[activeHandIndex] = left;
-        playerHands.Insert(activeHandIndex + 1, right);
+        hands[handIndex] = left;
+        hands.Insert(handIndex + 1, right);
 
         if (splitAces && !rules.HitSplitAces)
         {
-            left.IsComplete = !CanSplit(left);
-            right.IsComplete = !CanSplit(right);
+            left.IsComplete = !CanSplit(left, hands.Count);
+            right.IsComplete = !CanSplit(right, hands.Count);
         }
     }
 
@@ -277,24 +319,15 @@ public sealed class BlackjackRound
             return;
         }
 
-        FinishDealerAndSettle(playDealer: ShouldDealerPlay());
+        FinishTableAndSettle();
     }
 
-    private bool ShouldDealerPlay()
-    {
-        if (DealerHand.IsNaturalBlackjack)
-        {
-            return false;
-        }
-
-        return playerHands.Any(hand => !hand.IsSurrendered && !hand.Value.IsBust && !hand.IsNaturalBlackjack);
-    }
-
-    private void FinishDealerAndSettle(bool playDealer)
+    private void FinishTableAndSettle()
     {
         Phase = RoundPhase.DealerTurn;
+        PlayAiSeats();
 
-        if (playDealer)
+        if (ShouldDealerPlay())
         {
             while (ShouldDealerHit())
             {
@@ -304,6 +337,53 @@ public sealed class BlackjackRound
 
         Settle();
     }
+
+    private void PlayAiSeats()
+    {
+        foreach (AiSeatState seat in aiSeats)
+        {
+            List<BlackjackHand> hands = seat.MutableHands;
+            int handIndex = 0;
+
+            while (handIndex < hands.Count)
+            {
+                BlackjackHand hand = hands[handIndex];
+                if (hand.IsNaturalBlackjack)
+                {
+                    hand.IsComplete = true;
+                    handIndex++;
+                    continue;
+                }
+
+                while (!hands[handIndex].IsComplete)
+                {
+                    IReadOnlySet<PlayerAction> available = GetAvailableActionsForHands(hands, handIndex);
+                    PlayerAction action = BasicStrategy.Decide(hands[handIndex], DealerHand.Cards[0], available);
+                    ExecuteAction(hands, handIndex, action);
+                }
+
+                handIndex++;
+            }
+        }
+    }
+
+    private bool ShouldDealerPlay()
+    {
+        if (DealerHand.IsNaturalBlackjack)
+        {
+            return false;
+        }
+
+        if (playerHands.Any(NeedsDealerComparison))
+        {
+            return true;
+        }
+
+        return aiSeats.SelectMany(seat => seat.Hands).Any(NeedsDealerComparison);
+    }
+
+    private static bool NeedsDealerComparison(BlackjackHand hand) =>
+        !hand.IsSurrendered && !hand.Value.IsBust && !hand.IsNaturalBlackjack;
 
     private bool ShouldDealerHit()
     {
@@ -323,13 +403,31 @@ public sealed class BlackjackRound
 
     private void Settle()
     {
-        var results = new List<HandResult>(playerHands.Count);
+        List<HandResult> playerResults = EvaluateHands(playerHands);
+
+        decimal insuranceNet = insuranceBet == 0m
+            ? 0m
+            : DealerHand.IsNaturalBlackjack ? insuranceBet * 2m : -insuranceBet;
+
+        Result = new RoundResult(playerResults, insuranceNet);
+
+        foreach (AiSeatState seat in aiSeats)
+        {
+            seat.Results = EvaluateHands(seat.Hands);
+        }
+
+        Phase = RoundPhase.Settled;
+    }
+
+    private List<HandResult> EvaluateHands(IReadOnlyList<BlackjackHand> hands)
+    {
+        var results = new List<HandResult>(hands.Count);
         HandValue dealerValue = DealerHand.Value;
         bool dealerBlackjack = DealerHand.IsNaturalBlackjack;
 
-        for (int i = 0; i < playerHands.Count; i++)
+        for (int i = 0; i < hands.Count; i++)
         {
-            BlackjackHand hand = playerHands[i];
+            BlackjackHand hand = hands[i];
             HandResult result;
 
             if (hand.IsSurrendered)
@@ -366,12 +464,7 @@ public sealed class BlackjackRound
             results.Add(result);
         }
 
-        decimal insuranceNet = insuranceBet == 0m
-            ? 0m
-            : dealerBlackjack ? insuranceBet * 2m : -insuranceBet;
-
-        Result = new RoundResult(results, insuranceNet);
-        Phase = RoundPhase.Settled;
+        return results;
     }
 
     private void EnsurePhase(RoundPhase expected)
