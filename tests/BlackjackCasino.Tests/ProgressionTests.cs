@@ -60,6 +60,20 @@ public sealed class ProgressionTests
     }
 
     [Fact]
+    public void Portraits_ArePurchasableAndEquippableWithoutAffectingGameplay()
+    {
+        var profile = new PlayerProfileState { Coins = 1_500 };
+        var service = new ProgressionService(profile);
+
+        PurchaseResult purchase = service.PurchaseCosmetic("portrait-night-dealer");
+
+        Assert.True(purchase.Success);
+        Assert.True(service.EquipCosmetic("portrait-night-dealer"));
+        Assert.Equal("portrait-night-dealer", profile.EquippedPortraitId);
+        Assert.Equal(800, profile.Coins);
+    }
+
+    [Fact]
     public void ProcessingLossStillAwardsExperienceAndUpdatesStats()
     {
         var service = new ProgressionService(new PlayerProfileState());
@@ -75,16 +89,83 @@ public sealed class ProgressionTests
     }
 
     [Fact]
-    public void SeasonTrack_GrantsTierRewardsWithoutPremiumTrack()
+    public void CurrentSeason_IsLongFormAndRequiresOneHundredTwentyThousandXp()
+    {
+        SeasonDefinition season = SeasonCatalog.Current;
+
+        Assert.Equal(100, season.Tiers.Count);
+        Assert.Equal(120_000, season.Tiers[^1].RequiredExperience);
+        Assert.True(season.Tiers[49].RequiredExperience > 30_000);
+    }
+
+    [Fact]
+    public void SeasonTrack_GrantsNewTierRewardsWithoutPremiumTrack()
+    {
+        var profile = new PlayerProfileState();
+        var service = new ProgressionService(profile);
+        SeasonTierDefinition tier15 = SeasonCatalog.Current.Tiers[14];
+
+        ProgressionAward award = service.GrantSeasonExperience(SeasonCatalog.Current.Id, tier15.RequiredExperience);
+
+        Assert.Equal(15, service.GetOrCreateSeasonProgress(SeasonCatalog.Current.Id).Tier);
+        Assert.Equal(15, award.SeasonTiersGained);
+        Assert.Contains("portrait-eclipse-raven", profile.OwnedCosmeticIds);
+    }
+
+    [Fact]
+    public void LegacySeason_RemainsStoredButArchivedProfileMovesToCurrentSeason()
+    {
+        var profile = new PlayerProfileState
+        {
+            ActiveSeasonId = "season-1-midnight-shift",
+            Seasons = new Dictionary<string, SeasonProgressState>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["season-1-midnight-shift"] = new() { SeasonId = "season-1-midnight-shift", Experience = 10_000, Tier = 50 },
+            },
+        };
+
+        _ = new ProgressionService(profile);
+
+        Assert.Equal(SeasonCatalog.Current.Id, profile.ActiveSeasonId);
+        Assert.Equal(50, profile.Seasons["season-1-midnight-shift"].Tier);
+        Assert.True(SeasonCatalog.Get("season-1-midnight-shift").Archived);
+    }
+
+    [Fact]
+    public void ChallengeCatalog_HasRequestedCoverage()
+    {
+        Assert.True(ChallengeCatalog.For(ChallengeCategory.Blackjack).Count > 20);
+        Assert.Equal(10, ChallengeCatalog.For(ChallengeCategory.MidnightReels).Count);
+        Assert.Equal(10, ChallengeCatalog.For(ChallengeCategory.MidnightManor).Count);
+    }
+
+    [Fact]
+    public void CompletedChallenge_CanBeClaimedExactlyOnce()
+    {
+        var profile = new PlayerProfileState();
+        profile.LifetimeStatistics.RoundsPlayed = 10;
+        var service = new ProgressionService(profile);
+        long before = profile.Coins;
+
+        ChallengeClaimResult first = service.ClaimChallenge("bj-rounds-10");
+        ChallengeClaimResult second = service.ClaimChallenge("bj-rounds-10");
+
+        Assert.True(first.Success);
+        Assert.False(second.Success);
+        Assert.Equal(before + first.CoinsEarned, profile.Coins);
+        Assert.Contains("bj-rounds-10", profile.ClaimedChallengeIds);
+    }
+
+    [Fact]
+    public void IncompleteChallenge_CannotBeClaimed()
     {
         var profile = new PlayerProfileState();
         var service = new ProgressionService(profile);
 
-        ProgressionAward award = service.GrantSeasonExperience(SeasonCatalog.Current.Id, 1_000);
+        ChallengeClaimResult result = service.ClaimChallenge("bj-rounds-10");
 
-        Assert.Equal(5, service.GetOrCreateSeasonProgress(SeasonCatalog.Current.Id).Tier);
-        Assert.Equal(5, award.SeasonTiersGained);
-        Assert.Contains("title-season-midnight-5", profile.OwnedCosmeticIds);
+        Assert.False(result.Success);
+        Assert.Empty(profile.ClaimedChallengeIds);
     }
 
     private static RoundHistoryEntry History(HandOutcome outcome, decimal net)
