@@ -23,6 +23,17 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
+      - name: Resolve preview version
+        if: github.event_name == 'push'
+        shell: pwsh
+        run: |
+          [xml]$props = Get-Content Directory.Build.props
+          $baseVersion = [string]$props.Project.PropertyGroup.VersionPrefix
+          if ([string]::IsNullOrWhiteSpace($baseVersion)) {
+            throw "Directory.Build.props does not define VersionPrefix."
+          }
+          "PREVIEW_VERSION=$baseVersion-dev.0" | Out-File -FilePath $env:GITHUB_ENV -Append
+
       - name: Restore
         run: dotnet restore BlackjackCasino.sln
 
@@ -44,28 +55,26 @@ jobs:
         if: github.event_name == 'push'
         shell: pwsh
         run: |
-          $version = "0.1.0-preview.${{ github.run_number }}"
           dotnet publish src/BlackjackCasino.Updater/BlackjackCasino.Updater.csproj `
             --configuration Release `
             --runtime win-x64 `
             --self-contained true `
             -p:PublishSingleFile=true `
             -p:DebugType=None `
-            -p:Version=$version `
+            -p:Version=$env:PREVIEW_VERSION `
             --output artifacts/preview-updater
 
       - name: Publish preview desktop
         if: github.event_name == 'push'
         shell: pwsh
         run: |
-          $version = "0.1.0-preview.${{ github.run_number }}"
           dotnet publish src/BlackjackCasino.Desktop/BlackjackCasino.Desktop.csproj `
             --configuration Release `
             --runtime win-x64 `
             --self-contained true `
             -p:PublishSingleFile=true `
             -p:DebugType=None `
-            -p:Version=$version `
+            -p:Version=$env:PREVIEW_VERSION `
             --output artifacts/preview-app
 
           New-Item -ItemType Directory -Path artifacts/preview-app/tools/updater -Force | Out-Null

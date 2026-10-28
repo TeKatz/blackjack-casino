@@ -2,11 +2,15 @@ name: Development Release
 
 on:
   push:
-    branches: [develop]
+    branches: [develop, "feature/**", "fix/**"]
   workflow_dispatch:
 
 permissions:
   contents: write
+
+concurrency:
+  group: development-release
+  cancel-in-progress: true
 
 jobs:
   publish-development:
@@ -87,7 +91,7 @@ jobs:
               sha256 = $hash
               sizeBytes = $size
             }
-            notesUrl = "https://github.com/$repo/commits/develop"
+            notesUrl = "https://github.com/$repo/commit/${{ github.sha }}"
           }
 
           $manifest | ConvertTo-Json -Depth 5 | Set-Content -Path "artifacts/update-manifest.json" -Encoding utf8NoBOM
@@ -99,16 +103,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release view development *> $null
-          if ($LASTEXITCODE -ne 0) {
-            gh release create development `
-              --target "${{ github.sha }}" `
-              --prerelease `
-              --title "Blackjack Casino Development" `
-              --notes "Mutable development channel. Assets are replaced by successful builds from the develop branch."
+          if ($LASTEXITCODE -eq 0) {
+            gh release delete development --yes --cleanup-tag
           }
 
-          gh release upload development `
+          gh release create development `
+            --target "${{ github.sha }}" `
+            --prerelease `
+            --title "Blackjack Casino Development $env:VERSION" `
+            --notes "Automated development build from `${{ github.ref_name }}` at `${{ github.sha }}`. This channel may change frequently." `
             "artifacts/blackjack-casino-win-x64.zip" `
             "artifacts/blackjack-casino-win-x64.zip.sha256" `
-            "artifacts/update-manifest.json" `
-            --clobber
+            "artifacts/update-manifest.json"
