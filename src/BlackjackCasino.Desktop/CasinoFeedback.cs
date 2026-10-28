@@ -4,6 +4,8 @@ namespace BlackjackCasino.Desktop;
 
 internal static class CasinoFeedback
 {
+    private const double CueMasterGain = 0.24d;
+
     private sealed class SoundCue : IDisposable
     {
         private readonly MemoryStream stream;
@@ -60,43 +62,43 @@ internal static class CasinoFeedback
 
     private static byte[] BuildCardCue()
     {
-        const double duration = 0.11;
+        const double duration = 0.13d;
         var random = new Random(21421);
-        double lowPassedNoise = 0;
+        double lowPassedNoise = 0d;
 
         return BuildWave(duration, t =>
         {
             double noise = (random.NextDouble() * 2d) - 1d;
-            lowPassedNoise = (0.12d * noise) + (0.88d * lowPassedNoise);
-            double felt = 0.34d * lowPassedNoise * Envelope(t, 0.002d, 0.045d);
-            double snap = 0.08d * Math.Sin(2d * Math.PI * 980d * t) * Envelope(t, 0.001d, 0.018d);
-            return felt + snap;
+            lowPassedNoise = (0.075d * noise) + (0.925d * lowPassedNoise);
+            double felt = 0.18d * lowPassedNoise * Envelope(t, 0.003d, 0.055d);
+            double paper = 0.018d * Math.Sin(2d * Math.PI * 620d * t) * Envelope(t, 0.002d, 0.025d);
+            return felt + paper;
         });
     }
 
-    private static byte[] BuildChipCue() => BuildWave(0.15d, t =>
-        (0.22d * Math.Sin(2d * Math.PI * 2300d * t)
-        + 0.12d * Math.Sin(2d * Math.PI * 3150d * t)
-        + 0.07d * Math.Sin(2d * Math.PI * 4700d * t))
-        * Envelope(t, 0.001d, 0.035d));
+    private static byte[] BuildChipCue() => BuildWave(0.16d, t =>
+        (0.095d * Math.Sin(2d * Math.PI * 1900d * t)
+        + 0.045d * Math.Sin(2d * Math.PI * 2750d * t)
+        + 0.018d * Math.Sin(2d * Math.PI * 3900d * t))
+        * Envelope(t, 0.0015d, 0.043d));
 
     private static byte[] BuildWinCue() => BuildToneSequence(
-        0.42d,
-        [(659.25d, 0.00d, 0.17d), (783.99d, 0.08d, 0.17d), (987.77d, 0.16d, 0.17d), (1318.51d, 0.24d, 0.17d)],
-        amplitude: 0.17d,
-        decay: 0.09d);
+        0.44d,
+        [(523.25d, 0.00d, 0.19d), (659.25d, 0.10d, 0.19d), (783.99d, 0.20d, 0.18d)],
+        amplitude: 0.095d,
+        decay: 0.11d);
 
     private static byte[] BuildLossCue() => BuildToneSequence(
-        0.36d,
-        [(392d, 0.00d, 0.18d), (329.63d, 0.10d, 0.18d), (261.63d, 0.20d, 0.16d)],
-        amplitude: 0.13d,
-        decay: 0.10d);
+        0.38d,
+        [(349.23d, 0.00d, 0.19d), (293.66d, 0.12d, 0.18d), (246.94d, 0.24d, 0.13d)],
+        amplitude: 0.075d,
+        decay: 0.12d);
 
     private static byte[] BuildPushCue() => BuildToneSequence(
-        0.24d,
-        [(523.25d, 0.00d, 0.11d), (523.25d, 0.11d, 0.11d)],
-        amplitude: 0.12d,
-        decay: 0.055d);
+        0.25d,
+        [(440d, 0.00d, 0.10d), (440d, 0.12d, 0.10d)],
+        amplitude: 0.065d,
+        decay: 0.065d);
 
     private static byte[] BuildToneSequence(
         double duration,
@@ -106,16 +108,16 @@ internal static class CasinoFeedback
     {
         return BuildWave(duration, t =>
         {
-            double sample = 0;
+            double sample = 0d;
             foreach ((double frequency, double start, double length) in tones)
             {
                 double local = t - start;
-                if (local < 0 || local >= length)
+                if (local < 0d || local >= length)
                 {
                     continue;
                 }
 
-                sample += amplitude * Math.Sin(2d * Math.PI * frequency * local) * Envelope(local, 0.004d, decay);
+                sample += amplitude * Math.Sin(2d * Math.PI * frequency * local) * Envelope(local, 0.005d, decay);
             }
 
             return sample;
@@ -150,7 +152,7 @@ internal static class CasinoFeedback
         for (int i = 0; i < sampleCount; i++)
         {
             double t = i / (double)sampleRate;
-            double sample = Math.Clamp(sampleFactory(t), -1d, 1d);
+            double sample = Math.Clamp(sampleFactory(t) * CueMasterGain, -1d, 1d);
             writer.Write((short)Math.Round(sample * short.MaxValue));
         }
 
