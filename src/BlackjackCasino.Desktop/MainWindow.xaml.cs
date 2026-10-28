@@ -927,7 +927,7 @@ public partial class MainWindow : Window
             if (!result.UpdateAvailable)
             {
                 pendingManifest = null;
-                UpdateStatusText.Text = $"{channel}: up to date";
+                UpdateStatusText.Text = $"{channel}: up to date (installed {result.CurrentVersion}, available {result.LatestVersion})";
                 InstallUpdateButton.IsEnabled = false;
                 return;
             }

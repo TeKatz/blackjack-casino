@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Net.Http.Headers;
 using System.Text.Json;
 
 namespace BlackjackCasino.Update;
@@ -25,7 +26,12 @@ public sealed class HttpManifestUpdateSource : IUpdateSource
 
     public async Task<UpdateManifest> GetLatestAsync(CancellationToken cancellationToken = default)
     {
-        UpdateManifest? manifest = await httpClient.GetFromJsonAsync<UpdateManifest>(manifestUri, JsonOptions, cancellationToken);
+        // The Development tag is mutable; require revalidation instead of a stale cached redirect/manifest.
+        using var request = new HttpRequestMessage(HttpMethod.Get, manifestUri);
+        request.Headers.CacheControl = new CacheControlHeaderValue { NoCache = true, NoStore = true };
+        using HttpResponseMessage response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        UpdateManifest? manifest = await response.Content.ReadFromJsonAsync<UpdateManifest>(JsonOptions, cancellationToken);
         return manifest ?? throw new InvalidDataException("The update manifest was empty.");
     }
 }
