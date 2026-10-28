@@ -11,7 +11,6 @@ public partial class MainWindow
 {
     private PlayerProgressionController? progressionController;
     private Button? profileButton;
-    private Grid? profileButtonHost;
     private Border? profileLevelUpSweep;
     private TranslateTransform? profileLevelUpSweepTransform;
     private bool progressionInitialized;
@@ -51,31 +50,29 @@ public partial class MainWindow
 
         Grid.SetColumn(versionPanel, 3);
 
-        profileButtonHost = new Grid
-        {
-            Width = 190,
-            Height = 40,
-            Margin = new Thickness(0, 0, 22, 0),
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-
+        // Keep the real button exactly as it was before the level-up animation existed.
+        // The animation is a separate sibling so it can never alter the button's layout,
+        // clipping, shadow, template or hover behavior.
         profileButton = new Button
         {
             MinWidth = 190,
-            Width = 190,
             Height = 40,
+            Margin = new Thickness(0, 0, 22, 0),
             Padding = new Thickness(13, 6, 13, 6),
             Style = (Style)FindResource("MutedButton"),
             VerticalAlignment = VerticalAlignment.Center,
         };
         profileButton.Click += ProfileButton_Click;
-        profileButtonHost.Children.Add(profileButton);
+        Grid.SetColumn(profileButton, 2);
+        Panel.SetZIndex(profileButton, 1);
+        headerGrid.Children.Add(profileButton);
 
         var sweepClip = new Canvas
         {
             Width = 190,
             Height = 40,
-            HorizontalAlignment = HorizontalAlignment.Center,
+            Margin = new Thickness(0, 0, 22, 0),
+            HorizontalAlignment = HorizontalAlignment.Left,
             VerticalAlignment = VerticalAlignment.Center,
             ClipToBounds = true,
             IsHitTestVisible = false,
@@ -106,11 +103,9 @@ public partial class MainWindow
         };
         Canvas.SetTop(profileLevelUpSweep, 4);
         sweepClip.Children.Add(profileLevelUpSweep);
+        Grid.SetColumn(sweepClip, 2);
         Panel.SetZIndex(sweepClip, 2);
-        profileButtonHost.Children.Add(sweepClip);
-
-        Grid.SetColumn(profileButtonHost, 2);
-        headerGrid.Children.Add(profileButtonHost);
+        headerGrid.Children.Add(sweepClip);
     }
 
     private void ProgressionButtonBubbled(object sender, RoutedEventArgs e) => QueueProgressionCheck();
