@@ -16,6 +16,10 @@ public partial class MainWindow
     private UIElement? embeddedGameContent;
     private string? embeddedPreviousTitle;
     private bool embeddedGamesInitialized;
+    private Viewbox? embeddedScaleViewbox;
+    private double embeddedScaleBaseWidth;
+    private double embeddedScaleBaseHeight;
+    private double embeddedScaleMaximum = 1d;
 
     protected override void OnInitialized(EventArgs e)
     {
@@ -82,6 +86,7 @@ public partial class MainWindow
             UseLayoutRounding = true,
             SnapsToDevicePixels = true,
         };
+        embeddedGameOverlay.SizeChanged += (_, _) => UpdateEmbeddedGameScale();
         embeddedGameOverlay.Children.Add(embeddedGameHost);
         Grid.SetRowSpan(embeddedGameOverlay, Math.Max(1, root.RowDefinitions.Count));
         Grid.SetColumnSpan(embeddedGameOverlay, Math.Max(1, root.ColumnDefinitions.Count));
@@ -126,6 +131,7 @@ public partial class MainWindow
         shell.Closed += (_, _) => FinishEmbeddedGame(shell, muteHostMusic, closed);
         embeddedGameHost.Content = content;
         embeddedGameOverlay.Visibility = Visibility.Visible;
+        UpdateEmbeddedGameScale();
 
         // The Blackjack keyboard handler tunnels first. Disable table actions while the
         // overlay is active, then forward unconsumed keys to the original game shell.
@@ -150,6 +156,7 @@ public partial class MainWindow
 
         Dispatcher.BeginInvoke(() =>
         {
+            UpdateEmbeddedGameScale();
             embeddedGameOverlay.Focus();
             if (content is FrameworkElement element)
             {
@@ -158,7 +165,7 @@ public partial class MainWindow
         });
     }
 
-    private static void PreserveEmbeddedPresentation(Window shell, UIElement content)
+    private void PreserveEmbeddedPresentation(Window shell, UIElement content)
     {
         if (content is FrameworkElement root)
         {
@@ -169,17 +176,30 @@ public partial class MainWindow
             root.SnapsToDevicePixels = true;
             TextOptions.SetTextFormattingMode(root, TextFormattingMode.Display);
             TextOptions.SetTextHintingMode(root, TextHintingMode.Fixed);
+            TextOptions.SetTextRenderingMode(root, TextRenderingMode.ClearType);
         }
 
-        // Both slot layouts were authored at a deliberate pixel size. In a separate window the
-        // Viewbox was close to 1:1; filling the larger embedded host made it upscale text by a
-        // fractional factor, visibly softening glyphs and numbers. DownOnly keeps native-size
-        // text sharp while retaining responsive shrink-on-small-window behaviour.
-        foreach (Viewbox viewbox in FindEmbeddedLogicalChildren<Viewbox>(content))
+        // Keep the authored layout as the source of truth, but scale it in discrete 1/8 steps
+        // when the host is larger. The previous DownOnly workaround kept glyphs sharp by never
+        // growing at all, which made both games comically small on fullscreen displays. Discrete
+        // steps avoid arbitrary fractional zoom while still letting the machines occupy the room.
+        embeddedScaleViewbox = FindEmbeddedLogicalChildren<Viewbox>(content).FirstOrDefault();
+        if (embeddedScaleViewbox is not null)
         {
-            viewbox.StretchDirection = StretchDirection.DownOnly;
-            viewbox.UseLayoutRounding = true;
-            viewbox.SnapsToDevicePixels = true;
+            FrameworkElement? design = embeddedScaleViewbox.Child as FrameworkElement;
+            embeddedScaleBaseWidth = design is not null && double.IsFinite(design.Width) && design.Width > 0d
+                ? design.Width
+                : shell is ManorWindow ? 1180d : 1000d;
+            embeddedScaleBaseHeight = design is not null && double.IsFinite(design.Height) && design.Height > 0d
+                ? design.Height
+                : shell is ManorWindow ? 760d : 650d;
+            embeddedScaleMaximum = shell is ManorWindow ? 1.5d : 1.75d;
+            embeddedScaleViewbox.Stretch = Stretch.Uniform;
+            embeddedScaleViewbox.StretchDirection = StretchDirection.Both;
+            embeddedScaleViewbox.HorizontalAlignment = HorizontalAlignment.Center;
+            embeddedScaleViewbox.VerticalAlignment = VerticalAlignment.Center;
+            embeddedScaleViewbox.UseLayoutRounding = true;
+            embeddedScaleViewbox.SnapsToDevicePixels = true;
         }
 
         // Resolve the slot-local ComboBox styles while the original Window scope is still
@@ -197,6 +217,36 @@ public partial class MainWindow
                 }
             }
         }
+    }
+
+    private void UpdateEmbeddedGameScale()
+    {
+        if (embeddedScaleViewbox is null || embeddedGameOverlay is null
+            || embeddedScaleBaseWidth <= 0d || embeddedScaleBaseHeight <= 0d
+            || embeddedGameOverlay.ActualWidth <= 0d || embeddedGameOverlay.ActualHeight <= 0d)
+        {
+            return;
+        }
+
+        Thickness margin = embeddedScaleViewbox.Margin;
+        double availableWidth = Math.Max(1d, embeddedGameOverlay.ActualWidth - margin.Left - margin.Right - 20d);
+        double availableHeight = Math.Max(1d, embeddedGameOverlay.ActualHeight - margin.Top - margin.Bottom - 20d);
+        double fit = Math.Min(availableWidth / embeddedScaleBaseWidth, availableHeight / embeddedScaleBaseHeight);
+
+        double scale;
+        if (fit < 1d)
+        {
+            // Small windows still need to remain usable, so shrinking may use the exact fit.
+            scale = fit;
+        }
+        else
+        {
+            double capped = Math.Min(fit, embeddedScaleMaximum);
+            scale = Math.Max(1d, Math.Floor(capped * 8d) / 8d);
+        }
+
+        embeddedScaleViewbox.Width = Math.Round(embeddedScaleBaseWidth * scale);
+        embeddedScaleViewbox.Height = Math.Round(embeddedScaleBaseHeight * scale);
     }
 
     private static IEnumerable<T> FindEmbeddedLogicalChildren<T>(DependencyObject root) where T : DependencyObject
@@ -285,6 +335,10 @@ public partial class MainWindow
 
         embeddedGameShell = null;
         embeddedGameContent = null;
+        embeddedScaleViewbox = null;
+        embeddedScaleBaseWidth = 0d;
+        embeddedScaleBaseHeight = 0d;
+        embeddedScaleMaximum = 1d;
         if (embeddedPreviousTitle is not null)
         {
             Title = embeddedPreviousTitle;
