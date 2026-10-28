@@ -4,6 +4,7 @@ public enum CosmeticKind
 {
     Title,
     Frame,
+    Portrait,
 }
 
 public sealed record CosmeticDefinition(
@@ -12,7 +13,8 @@ public sealed record CosmeticDefinition(
     CosmeticKind Kind,
     long Price,
     bool ShopAvailable,
-    string Description);
+    string Description,
+    string VisualVariant = "standard");
 
 public sealed class StatisticsSnapshot
 {
@@ -49,7 +51,7 @@ public sealed class SeasonProgressState
 
 public sealed class PlayerProfileState
 {
-    public int SchemaVersion { get; set; } = 1;
+    public int SchemaVersion { get; set; } = 2;
     public int Level { get; set; }
     public long LevelExperience { get; set; }
     public int Prestige { get; set; }
@@ -60,7 +62,14 @@ public sealed class PlayerProfileState
     public DateTimeOffset LastPlayedAt { get; set; } = DateTimeOffset.UtcNow;
     public string EquippedTitleId { get; set; } = CosmeticCatalog.DefaultTitleId;
     public string EquippedFrameId { get; set; } = CosmeticCatalog.DefaultFrameId;
-    public List<string> OwnedCosmeticIds { get; set; } = [CosmeticCatalog.DefaultTitleId, CosmeticCatalog.DefaultFrameId];
+    public string EquippedPortraitId { get; set; } = CosmeticCatalog.DefaultPortraitId;
+    public List<string> OwnedCosmeticIds { get; set; } =
+    [
+        CosmeticCatalog.DefaultTitleId,
+        CosmeticCatalog.DefaultFrameId,
+        CosmeticCatalog.DefaultPortraitId,
+    ];
+    public List<string> ClaimedChallengeIds { get; set; } = [];
     public Manor.ManorStatistics Manor { get; set; } = new();
     public SlotStatistics Slots { get; set; } = new();
     public StatisticsSnapshot LifetimeStatistics { get; set; } = new();
@@ -83,6 +92,12 @@ public sealed record ProgressionAward(
 }
 
 public sealed record PurchaseResult(bool Success, string Message, CosmeticDefinition? Cosmetic = null);
+
+public sealed record ChallengeClaimResult(
+    bool Success,
+    string Message,
+    ChallengeDefinition? Challenge = null,
+    long CoinsEarned = 0);
 
 public sealed record PrestigeResult(
     bool Success,
