@@ -55,7 +55,8 @@ public partial class MainWindow
 
         glowPulse.Completed += (_, _) =>
         {
-            profileButton.RenderTransform = Transform.Identity;
+            profileButton.ClearValue(RenderTransformProperty);
+            profileButton.ClearValue(RenderTransformOriginProperty);
             profileButton.ClearValue(EffectProperty);
         };
 
