@@ -12,7 +12,7 @@
                     Background="{TemplateBinding Background}"
                     BorderBrush="#315744"
                     BorderThickness="1"
-                    CornerRadius="5"
+                    CornerRadius="6"
                     Margin="2" />
             <ControlTemplate.Triggers>
               <Trigger Property="IsMouseOver" Value="True">
@@ -31,14 +31,22 @@
 
     <Style TargetType="ScrollBar">
       <Setter Property="Background" Value="#091C13" />
-      <Setter Property="Width" Value="14" />
-      <Setter Property="Height" Value="14" />
+      <Setter Property="Width" Value="16" />
+      <Setter Property="Height" Value="16" />
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="ScrollBar">
             <Grid Background="Transparent">
-              <Border Background="#0D2418" BorderBrush="#1F3D2E" BorderThickness="1" CornerRadius="7" Margin="2" />
-              <Track x:Name="PART_Track" Orientation="{TemplateBinding Orientation}" IsDirectionReversed="True" Margin="1">
+              <Border Background="#0D2418" BorderBrush="#1F3D2E" BorderThickness="1" CornerRadius="8" Margin="2" />
+              <Track x:Name="PART_Track"
+                     Orientation="{TemplateBinding Orientation}"
+                     Minimum="{TemplateBinding Minimum}"
+                     Maximum="{TemplateBinding Maximum}"
+                     Value="{TemplateBinding Value}"
+                     ViewportSize="{TemplateBinding ViewportSize}"
+                     IsDirectionReversed="True"
+                     Focusable="False"
+                     Margin="1">
                 <Track.DecreaseRepeatButton>
                   <RepeatButton Command="ScrollBar.PageUpCommand" Opacity="0" IsTabStop="False" />
                 </Track.DecreaseRepeatButton>
@@ -52,12 +60,12 @@
             </Grid>
             <ControlTemplate.Triggers>
               <Trigger Property="Orientation" Value="Vertical">
-                <Setter TargetName="ScrollThumb" Property="MinHeight" Value="54" />
+                <Setter TargetName="ScrollThumb" Property="MinHeight" Value="64" />
                 <Setter TargetName="ScrollThumb" Property="MinWidth" Value="0" />
               </Trigger>
               <Trigger Property="Orientation" Value="Horizontal">
                 <Setter TargetName="PART_Track" Property="IsDirectionReversed" Value="False" />
-                <Setter TargetName="ScrollThumb" Property="MinWidth" Value="54" />
+                <Setter TargetName="ScrollThumb" Property="MinWidth" Value="64" />
                 <Setter TargetName="ScrollThumb" Property="MinHeight" Value="0" />
               </Trigger>
             </ControlTemplate.Triggers>
