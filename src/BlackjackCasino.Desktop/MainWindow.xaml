@@ -35,7 +35,6 @@
       <Setter Property="FontSize" Value="11" />
       <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="Foreground" Value="{DynamicResource AccentLightBrush}" />
-      <Setter Property="CharacterSpacing" Value="110" />
       <Setter Property="Margin" Value="0,0,0,10" />
     </Style>
 
@@ -109,35 +108,19 @@
       <Setter Property="Cursor" Value="Hand" />
       <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
       <Setter Property="RenderTransform">
-        <Setter.Value>
-          <ScaleTransform ScaleX="1" ScaleY="1" />
-        </Setter.Value>
+        <Setter.Value><ScaleTransform ScaleX="1" ScaleY="1" /></Setter.Value>
       </Setter>
       <Setter Property="Effect">
-        <Setter.Value>
-          <DropShadowEffect Color="#000000" BlurRadius="10" ShadowDepth="2" Opacity="0.30" />
-        </Setter.Value>
+        <Setter.Value><DropShadowEffect Color="#000000" BlurRadius="10" ShadowDepth="2" Opacity="0.30" /></Setter.Value>
       </Setter>
       <Style.Triggers>
         <Trigger Property="IsMouseOver" Value="True">
           <Setter Property="BorderBrush" Value="{DynamicResource AccentLightBrush}" />
-          <Setter Property="RenderTransform">
-            <Setter.Value>
-              <ScaleTransform ScaleX="1.025" ScaleY="1.025" />
-            </Setter.Value>
-          </Setter>
-          <Setter Property="Effect">
-            <Setter.Value>
-              <DropShadowEffect Color="#E6B94F" BlurRadius="17" ShadowDepth="0" Opacity="0.55" />
-            </Setter.Value>
-          </Setter>
+          <Setter Property="RenderTransform"><Setter.Value><ScaleTransform ScaleX="1.025" ScaleY="1.025" /></Setter.Value></Setter>
+          <Setter Property="Effect"><Setter.Value><DropShadowEffect Color="#E6B94F" BlurRadius="17" ShadowDepth="0" Opacity="0.55" /></Setter.Value></Setter>
         </Trigger>
         <Trigger Property="IsPressed" Value="True">
-          <Setter Property="RenderTransform">
-            <Setter.Value>
-              <ScaleTransform ScaleX="0.98" ScaleY="0.98" />
-            </Setter.Value>
-          </Setter>
+          <Setter Property="RenderTransform"><Setter.Value><ScaleTransform ScaleX="0.98" ScaleY="0.98" /></Setter.Value></Setter>
           <Setter Property="Opacity" Value="0.88" />
         </Trigger>
         <Trigger Property="IsEnabled" Value="False">
@@ -154,13 +137,11 @@
       <Setter Property="BorderBrush" Value="{DynamicResource AccentLightBrush}" />
       <Setter Property="FontWeight" Value="Bold" />
     </Style>
-
     <Style x:Key="ActionButton" TargetType="Button" BasedOn="{StaticResource ButtonChrome}">
       <Setter Property="Background" Value="{DynamicResource ActionBackgroundBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
       <Setter Property="MinWidth" Value="108" />
     </Style>
-
     <Style x:Key="MutedButton" TargetType="Button" BasedOn="{StaticResource ButtonChrome}">
       <Setter Property="Background" Value="{DynamicResource MutedButtonBackgroundBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
@@ -170,27 +151,12 @@
   </Window.Resources>
 
   <Grid>
-    <Grid.ColumnDefinitions>
-      <ColumnDefinition Width="*" />
-      <ColumnDefinition Width="336" />
-    </Grid.ColumnDefinitions>
-    <Grid.RowDefinitions>
-      <RowDefinition Height="70" />
-      <RowDefinition Height="*" />
-    </Grid.RowDefinitions>
+    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="336" /></Grid.ColumnDefinitions>
+    <Grid.RowDefinitions><RowDefinition Height="70" /><RowDefinition Height="*" /></Grid.RowDefinitions>
 
-    <Border Grid.ColumnSpan="2"
-            Background="{DynamicResource HeaderBackgroundBrush}"
-            BorderBrush="{DynamicResource PanelBorderBrush}"
-            BorderThickness="0,0,0,1"
-            Effect="{StaticResource HeaderShadow}"
-            Panel.ZIndex="5">
+    <Border Grid.ColumnSpan="2" Background="{DynamicResource HeaderBackgroundBrush}" BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="0,0,0,1" Effect="{StaticResource HeaderShadow}" Panel.ZIndex="5">
       <Grid Margin="26,0">
-        <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="*" />
-          <ColumnDefinition Width="Auto" />
-          <ColumnDefinition Width="Auto" />
-        </Grid.ColumnDefinitions>
+        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
         <StackPanel VerticalAlignment="Center">
           <TextBlock Text="BLACKJACK CASINO" FontSize="23" FontWeight="Bold" Foreground="#FFF9ED" />
           <TextBlock x:Name="TableModeText" Text="Solo table" FontSize="11" Foreground="{DynamicResource MutedTextBrush}" />
@@ -208,191 +174,44 @@
 
     <Grid x:Name="TableSurface" Grid.Row="1" Background="{DynamicResource TableBackgroundBrush}" ClipToBounds="True">
       <Rectangle IsHitTestVisible="False" Opacity="0.28">
-        <Rectangle.Fill>
-          <RadialGradientBrush Center="0.5,0.44" GradientOrigin="0.5,0.44" RadiusX="0.78" RadiusY="0.68">
-            <GradientStop Color="#66FFFFFF" Offset="0" />
-            <GradientStop Color="#14000000" Offset="0.56" />
-            <GradientStop Color="#8A000000" Offset="1" />
-          </RadialGradientBrush>
-        </Rectangle.Fill>
+        <Rectangle.Fill><RadialGradientBrush Center="0.5,0.44" GradientOrigin="0.5,0.44" RadiusX="0.78" RadiusY="0.68"><GradientStop Color="#66FFFFFF" Offset="0" /><GradientStop Color="#14000000" Offset="0.56" /><GradientStop Color="#8A000000" Offset="1" /></RadialGradientBrush></Rectangle.Fill>
       </Rectangle>
       <Border IsHitTestVisible="False" Margin="18" CornerRadius="28" BorderBrush="#2BC89A58" BorderThickness="1" />
-
       <Grid>
-        <Grid.RowDefinitions>
-          <RowDefinition Height="Auto" />
-          <RowDefinition Height="*" />
-          <RowDefinition Height="Auto" />
-          <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
-
+        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
         <StackPanel Grid.Row="0" Margin="24,20,24,4" HorizontalAlignment="Center">
-          <TextBlock Text="DEALER" FontSize="11" CharacterSpacing="130" FontWeight="SemiBold" Foreground="{DynamicResource MutedTextBrush}" HorizontalAlignment="Center" />
+          <TextBlock Text="DEALER" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource MutedTextBrush}" HorizontalAlignment="Center" />
           <StackPanel x:Name="DealerCardsPanel" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8,0,4" />
           <TextBlock x:Name="DealerValueText" FontSize="13" FontWeight="SemiBold" Foreground="#E0E9E3" HorizontalAlignment="Center" />
         </StackPanel>
-
         <Grid Grid.Row="1">
-          <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
-          </Grid.RowDefinitions>
-
-          <ScrollViewer x:Name="AiSeatsScrollViewer"
-                        Grid.Row="0"
-                        HorizontalScrollBarVisibility="Auto"
-                        VerticalScrollBarVisibility="Disabled"
-                        Margin="20,4,20,2"
-                        MaxHeight="220"
-                        Visibility="Collapsed">
-            <StackPanel x:Name="AiTableSeatsPanel" Orientation="Horizontal" HorizontalAlignment="Center" />
-          </ScrollViewer>
-
-          <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Margin="20,6">
-            <StackPanel x:Name="PlayerHandsPanel" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" />
-          </ScrollViewer>
-
-          <Border x:Name="StatusBorder"
-                  Grid.Row="2"
-                  Margin="70,8,70,14"
-                  Padding="14,9"
-                  Background="{DynamicResource StatusBackgroundBrush}"
-                  BorderBrush="{DynamicResource PanelBorderBrush}"
-                  BorderThickness="1"
-                  CornerRadius="10">
-            <Border.Effect>
-              <DropShadowEffect Color="#000000" BlurRadius="13" ShadowDepth="3" Opacity="0.34" />
-            </Border.Effect>
+          <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+          <ScrollViewer x:Name="AiSeatsScrollViewer" Grid.Row="0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Margin="20,4,20,2" MaxHeight="220" Visibility="Collapsed"><StackPanel x:Name="AiTableSeatsPanel" Orientation="Horizontal" HorizontalAlignment="Center" /></ScrollViewer>
+          <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Margin="20,6"><StackPanel x:Name="PlayerHandsPanel" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" /></ScrollViewer>
+          <Border x:Name="StatusBorder" Grid.Row="2" Margin="70,8,70,14" Padding="14,9" Background="{DynamicResource StatusBackgroundBrush}" BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="1" CornerRadius="10">
+            <Border.Effect><DropShadowEffect Color="#000000" BlurRadius="13" ShadowDepth="3" Opacity="0.34" /></Border.Effect>
             <TextBlock x:Name="StatusText" Text="Place a bet to begin." TextAlignment="Center" FontSize="15" FontWeight="SemiBold" Foreground="#F2EBDD" TextWrapping="Wrap" />
           </Border>
         </Grid>
-
         <StackPanel Grid.Row="2" x:Name="InsurancePanel" Orientation="Horizontal" HorizontalAlignment="Center" Visibility="Collapsed" Margin="0,0,0,8">
           <TextBlock Text="Dealer shows an Ace. Insurance?" VerticalAlignment="Center" Margin="0,0,12,0" Foreground="#FFE09B" FontWeight="SemiBold" />
-          <Button Content="Take Insurance" Style="{StaticResource PrimaryButton}" Click="TakeInsurance_Click" />
-          <Button Content="No Insurance" Style="{StaticResource MutedButton}" Click="DeclineInsurance_Click" />
+          <Button Content="Take Insurance" Style="{StaticResource PrimaryButton}" Click="TakeInsurance_Click" /><Button Content="No Insurance" Style="{StaticResource MutedButton}" Click="DeclineInsurance_Click" />
         </StackPanel>
-
         <StackPanel Grid.Row="3" x:Name="ActionPanel" Orientation="Horizontal" HorizontalAlignment="Center" Margin="16,0,16,20">
-          <Button x:Name="HitButton" Content="HIT  [H]" Style="{StaticResource ActionButton}" Click="Hit_Click" />
-          <Button x:Name="StandButton" Content="STAND  [S]" Style="{StaticResource ActionButton}" Click="Stand_Click" />
-          <Button x:Name="DoubleButton" Content="DOUBLE  [D]" Style="{StaticResource ActionButton}" Click="Double_Click" />
-          <Button x:Name="SplitButton" Content="SPLIT  [P]" Style="{StaticResource ActionButton}" Click="Split_Click" />
-          <Button x:Name="SurrenderButton" Content="SURRENDER  [R]" Style="{StaticResource ActionButton}" Click="Surrender_Click" />
+          <Button x:Name="HitButton" Content="HIT  [H]" Style="{StaticResource ActionButton}" Click="Hit_Click" /><Button x:Name="StandButton" Content="STAND  [S]" Style="{StaticResource ActionButton}" Click="Stand_Click" /><Button x:Name="DoubleButton" Content="DOUBLE  [D]" Style="{StaticResource ActionButton}" Click="Double_Click" /><Button x:Name="SplitButton" Content="SPLIT  [P]" Style="{StaticResource ActionButton}" Click="Split_Click" /><Button x:Name="SurrenderButton" Content="SURRENDER  [R]" Style="{StaticResource ActionButton}" Click="Surrender_Click" />
         </StackPanel>
       </Grid>
     </Grid>
 
     <Border Grid.Row="1" Grid.Column="1" Background="{DynamicResource SideBackgroundBrush}" BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="1,0,0,0" Panel.ZIndex="4">
-      <Border.Effect>
-        <DropShadowEffect Color="#000000" BlurRadius="20" ShadowDepth="-4" Direction="180" Opacity="0.42" />
-      </Border.Effect>
+      <Border.Effect><DropShadowEffect Color="#000000" BlurRadius="20" ShadowDepth="5" Direction="180" Opacity="0.42" /></Border.Effect>
       <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <StackPanel Margin="14,16,14,20">
-
-          <Border Style="{StaticResource SidebarSection}">
-            <StackPanel>
-              <TextBlock Text="PLAY MODE" Style="{StaticResource SectionHeader}" />
-              <ComboBox x:Name="GameModeComboBox" SelectedIndex="0">
-                <ComboBoxItem Content="Solo" />
-                <ComboBoxItem Content="Full Table (AI)" />
-              </ComboBox>
-              <StackPanel x:Name="AiSettingsPanel" Visibility="Collapsed" Margin="0,10,0,0">
-                <Grid>
-                  <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="92" />
-                  </Grid.ColumnDefinitions>
-                  <TextBlock Text="AI seats" VerticalAlignment="Center" Foreground="#D8E5DC" FontWeight="SemiBold" />
-                  <ComboBox x:Name="AiSeatCountComboBox" Grid.Column="1" SelectedIndex="2">
-                    <ComboBoxItem Content="1" />
-                    <ComboBoxItem Content="2" />
-                    <ComboBoxItem Content="3" />
-                    <ComboBoxItem Content="4" />
-                    <ComboBoxItem Content="5" />
-                  </ComboBox>
-                </Grid>
-                <TextBlock Text="All occupied seats draw from the same shoe. AI plays basic strategy." Margin="0,8,0,0" TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SoftTextBrush}" />
-              </StackPanel>
-            </StackPanel>
-          </Border>
-
-          <Border Style="{StaticResource SidebarSection}">
-            <StackPanel>
-              <TextBlock Text="BETTING" Style="{StaticResource SectionHeader}" />
-              <TextBlock x:Name="BetText" Text="$0" FontSize="29" FontWeight="Bold" Foreground="#FFF8EA" Margin="0,0,0,10" />
-              <UniformGrid Columns="2">
-                <Button Content="+$5" Tag="5" Style="{StaticResource MutedButton}" Click="Chip_Click" />
-                <Button Content="+$25" Tag="25" Style="{StaticResource MutedButton}" Click="Chip_Click" />
-                <Button Content="+$100" Tag="100" Style="{StaticResource MutedButton}" Click="Chip_Click" />
-                <Button Content="+$500" Tag="500" Style="{StaticResource MutedButton}" Click="Chip_Click" />
-              </UniformGrid>
-              <Button x:Name="ClearBetButton" Content="Clear Bet" Style="{StaticResource MutedButton}" Click="ClearBet_Click" />
-              <Button x:Name="DealButton" Content="DEAL  [ENTER]" Style="{StaticResource PrimaryButton}" Height="45" Margin="4,9,4,0" Click="Deal_Click" />
-            </StackPanel>
-          </Border>
-
-          <Border Style="{StaticResource SidebarSection}">
-            <StackPanel>
-              <TextBlock Text="TABLE" Style="{StaticResource SectionHeader}" />
-              <Grid>
-                <Grid.ColumnDefinitions>
-                  <ColumnDefinition Width="*" />
-                  <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                  <RowDefinition Height="Auto" />
-                  <RowDefinition Height="Auto" />
-                  <RowDefinition Height="Auto" />
-                  <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-                <TextBlock Text="Shoe" Foreground="{DynamicResource MutedTextBrush}" />
-                <TextBlock x:Name="ShoeText" Grid.Column="1" FontWeight="SemiBold" />
-                <TextBlock Grid.Row="1" Text="Rules" Foreground="{DynamicResource MutedTextBrush}" Margin="0,7,0,0" />
-                <TextBlock Grid.Row="1" Grid.Column="1" Text="6D · S17" Margin="0,7,0,0" FontWeight="SemiBold" />
-                <TextBlock Grid.Row="2" Text="Blackjack" Foreground="{DynamicResource MutedTextBrush}" Margin="0,7,0,0" />
-                <TextBlock Grid.Row="2" Grid.Column="1" Text="3:2" Margin="0,7,0,0" FontWeight="SemiBold" />
-                <TextBlock Grid.Row="3" Text="Surrender" Foreground="{DynamicResource MutedTextBrush}" Margin="0,7,0,0" />
-                <TextBlock Grid.Row="3" Grid.Column="1" Text="Late" Margin="0,7,0,0" FontWeight="SemiBold" />
-              </Grid>
-              <Button x:Name="ResetBankrollButton" Content="Reset bankroll to $1,000" Style="{StaticResource MutedButton}" Margin="4,14,4,0" Click="ResetBankroll_Click" />
-            </StackPanel>
-          </Border>
-
-          <Border Style="{StaticResource SidebarSection}">
-            <StackPanel>
-              <TextBlock Text="PRESENTATION" Style="{StaticResource SectionHeader}" />
-              <Grid Margin="0,0,0,8">
-                <Grid.ColumnDefinitions>
-                  <ColumnDefinition Width="*" />
-                  <ColumnDefinition Width="156" />
-                </Grid.ColumnDefinitions>
-                <TextBlock Text="Table theme" VerticalAlignment="Center" Foreground="#E1ECE4" FontWeight="SemiBold" />
-                <ComboBox x:Name="ThemeComboBox" Grid.Column="1" SelectedIndex="0">
-                  <ComboBoxItem Content="Classic Green" />
-                  <ComboBoxItem Content="Midnight Blue" />
-                  <ComboBoxItem Content="Burgundy" />
-                </ComboBox>
-              </Grid>
-              <CheckBox x:Name="SoundCheckBox" Content="Custom casino sounds" IsChecked="True" Margin="2,5,2,3" />
-              <CheckBox x:Name="AnimationsCheckBox" Content="Card animations" IsChecked="True" Margin="2,4,2,3" />
-              <Button Content="Toggle fullscreen  [F11]" Style="{StaticResource MutedButton}" Margin="4,10,4,0" Click="Fullscreen_Click" />
-            </StackPanel>
-          </Border>
-
-          <Border Style="{StaticResource SidebarSection}" Margin="0">
-            <StackPanel>
-              <TextBlock Text="UPDATES" Style="{StaticResource SectionHeader}" />
-              <ComboBox x:Name="UpdateChannelComboBox" SelectedIndex="0">
-                <ComboBoxItem Content="Stable" />
-                <ComboBoxItem Content="Development" />
-              </ComboBox>
-              <TextBlock x:Name="UpdateStatusText" Text="Not checked yet" Margin="2,8" Foreground="#D1DED5" TextWrapping="Wrap" FontSize="12" />
-              <Button x:Name="CheckUpdateButton" Content="Check for updates" Style="{StaticResource MutedButton}" Click="CheckUpdateButton_Click" />
-              <Button x:Name="InstallUpdateButton" Content="Install update" Style="{StaticResource PrimaryButton}" IsEnabled="False" Click="InstallUpdateButton_Click" />
-            </StackPanel>
-          </Border>
+          <Border Style="{StaticResource SidebarSection}"><StackPanel><TextBlock Text="PLAY MODE" Style="{StaticResource SectionHeader}" /><ComboBox x:Name="GameModeComboBox" SelectedIndex="0"><ComboBoxItem Content="Solo" /><ComboBoxItem Content="Full Table (AI)" /></ComboBox><StackPanel x:Name="AiSettingsPanel" Visibility="Collapsed" Margin="0,10,0,0"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="92" /></Grid.ColumnDefinitions><TextBlock Text="AI seats" VerticalAlignment="Center" Foreground="#D8E5DC" FontWeight="SemiBold" /><ComboBox x:Name="AiSeatCountComboBox" Grid.Column="1" SelectedIndex="2"><ComboBoxItem Content="1" /><ComboBoxItem Content="2" /><ComboBoxItem Content="3" /><ComboBoxItem Content="4" /><ComboBoxItem Content="5" /></ComboBox></Grid><TextBlock Text="All occupied seats draw from the same shoe. AI plays basic strategy." Margin="0,8,0,0" TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SoftTextBrush}" /></StackPanel></StackPanel></Border>
+          <Border Style="{StaticResource SidebarSection}"><StackPanel><TextBlock Text="BETTING" Style="{StaticResource SectionHeader}" /><TextBlock x:Name="BetText" Text="$0" FontSize="29" FontWeight="Bold" Foreground="#FFF8EA" Margin="0,0,0,10" /><UniformGrid Columns="2"><Button Content="+$5" Tag="5" Style="{StaticResource MutedButton}" Click="Chip_Click" /><Button Content="+$25" Tag="25" Style="{StaticResource MutedButton}" Click="Chip_Click" /><Button Content="+$100" Tag="100" Style="{StaticResource MutedButton}" Click="Chip_Click" /><Button Content="+$500" Tag="500" Style="{StaticResource MutedButton}" Click="Chip_Click" /></UniformGrid><Button x:Name="ClearBetButton" Content="Clear Bet" Style="{StaticResource MutedButton}" Click="ClearBet_Click" /><Button x:Name="DealButton" Content="DEAL  [ENTER]" Style="{StaticResource PrimaryButton}" Height="45" Margin="4,9,4,0" Click="Deal_Click" /></StackPanel></Border>
+          <Border Style="{StaticResource SidebarSection}"><StackPanel><TextBlock Text="TABLE" Style="{StaticResource SectionHeader}" /><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions><TextBlock Text="Shoe" Foreground="{DynamicResource MutedTextBrush}" /><TextBlock x:Name="ShoeText" Grid.Column="1" FontWeight="SemiBold" /><TextBlock Grid.Row="1" Text="Rules" Foreground="{DynamicResource MutedTextBrush}" Margin="0,7,0,0" /><TextBlock Grid.Row="1" Grid.Column="1" Text="6D · S17" Margin="0,7,0,0" FontWeight="SemiBold" /><TextBlock Grid.Row="2" Text="Blackjack" Foreground="{DynamicResource MutedTextBrush}" Margin="0,7,0,0" /><TextBlock Grid.Row="2" Grid.Column="1" Text="3:2" Margin="0,7,0,0" FontWeight="SemiBold" /><TextBlock Grid.Row="3" Text="Surrender" Foreground="{DynamicResource MutedTextBrush}" Margin="0,7,0,0" /><TextBlock Grid.Row="3" Grid.Column="1" Text="Late" Margin="0,7,0,0" FontWeight="SemiBold" /></Grid><Button x:Name="ResetBankrollButton" Content="Reset bankroll to $1,000" Style="{StaticResource MutedButton}" Margin="4,14,4,0" Click="ResetBankroll_Click" /></StackPanel></Border>
+          <Border Style="{StaticResource SidebarSection}"><StackPanel><TextBlock Text="PRESENTATION" Style="{StaticResource SectionHeader}" /><Grid Margin="0,0,0,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="156" /></Grid.ColumnDefinitions><TextBlock Text="Table theme" VerticalAlignment="Center" Foreground="#E1ECE4" FontWeight="SemiBold" /><ComboBox x:Name="ThemeComboBox" Grid.Column="1" SelectedIndex="0"><ComboBoxItem Content="Classic Green" /><ComboBoxItem Content="Midnight Blue" /><ComboBoxItem Content="Burgundy" /></ComboBox></Grid><CheckBox x:Name="SoundCheckBox" Content="Custom casino sounds" IsChecked="True" Margin="2,5,2,3" /><CheckBox x:Name="AnimationsCheckBox" Content="Card animations" IsChecked="True" Margin="2,4,2,3" /><Button Content="Toggle fullscreen  [F11]" Style="{StaticResource MutedButton}" Margin="4,10,4,0" Click="Fullscreen_Click" /></StackPanel></Border>
+          <Border Style="{StaticResource SidebarSection}" Margin="0"><StackPanel><TextBlock Text="UPDATES" Style="{StaticResource SectionHeader}" /><ComboBox x:Name="UpdateChannelComboBox" SelectedIndex="0"><ComboBoxItem Content="Stable" /><ComboBoxItem Content="Development" /></ComboBox><TextBlock x:Name="UpdateStatusText" Text="Not checked yet" Margin="2,8" Foreground="#D1DED5" TextWrapping="Wrap" FontSize="12" /><Button x:Name="CheckUpdateButton" Content="Check for updates" Style="{StaticResource MutedButton}" Click="CheckUpdateButton_Click" /><Button x:Name="InstallUpdateButton" Content="Install update" Style="{StaticResource PrimaryButton}" IsEnabled="False" Click="InstallUpdateButton_Click" /></StackPanel></Border>
         </StackPanel>
       </ScrollViewer>
     </Border>
