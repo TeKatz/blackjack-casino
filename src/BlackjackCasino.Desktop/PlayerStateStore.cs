@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using BlackjackCasino.Core;
 
 namespace BlackjackCasino.Desktop;
 
@@ -50,7 +51,6 @@ internal static class PlayerStateStore
         }
     }
 
-    // Kept as tiny compatibility helpers for code paths created before Phase 4.
     public static decimal LoadBankroll() => Load().Bankroll;
 
     public static void SaveBankroll(decimal bankroll)
@@ -74,6 +74,11 @@ internal static class PlayerStateStore
         TableThemePreference theme = Enum.IsDefined(state.Theme)
             ? state.Theme
             : TableThemePreference.ClassicGreen;
+        TablePresetId preset = Enum.IsDefined(state.TablePreset)
+            ? state.TablePreset
+            : TablePresetId.Casual;
+
+        GameRules customRules = SanitizeRules(state.CustomRules);
 
         return state with
         {
@@ -81,11 +86,32 @@ internal static class PlayerStateStore
             SelectedBet = selectedBet,
             PlayMode = playMode,
             AiSeatCount = aiSeats,
+            TablePreset = preset,
+            CustomRules = customRules,
             Theme = theme,
             MusicVolume = musicVolume,
             WindowWidth = width,
             WindowHeight = height,
         };
+    }
+
+    private static GameRules SanitizeRules(GameRules? rules)
+    {
+        GameRules fallback = TablePresets.Get(TablePresetId.Casual).Rules with { };
+        if (rules is null)
+        {
+            return fallback;
+        }
+
+        try
+        {
+            rules.Validate();
+            return rules;
+        }
+        catch
+        {
+            return fallback;
+        }
     }
 
     private static JsonSerializerOptions CreateJsonOptions()

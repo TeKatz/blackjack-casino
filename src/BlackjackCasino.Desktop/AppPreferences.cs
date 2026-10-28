@@ -1,3 +1,4 @@
+using BlackjackCasino.Core;
 using BlackjackCasino.Update;
 
 namespace BlackjackCasino.Desktop;
@@ -24,6 +25,10 @@ internal sealed record AppPreferences
     public PlayModePreference PlayMode { get; init; } = PlayModePreference.Solo;
 
     public int AiSeatCount { get; init; } = 3;
+
+    public TablePresetId TablePreset { get; init; } = TablePresetId.Casual;
+
+    public GameRules CustomRules { get; init; } = TablePresets.Get(TablePresetId.Casual).Rules with { };
 
     public TableThemePreference Theme { get; init; } = TableThemePreference.ClassicGreen;
 
