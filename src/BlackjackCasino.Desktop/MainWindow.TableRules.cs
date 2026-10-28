@@ -43,6 +43,11 @@ public partial class MainWindow
             tableSection.AddHandler(Button.ClickEvent, new RoutedEventHandler(TableSectionButtonClicked));
         }
 
+        if (DealButton.Parent is StackPanel bettingSection)
+        {
+            bettingSection.AddHandler(Button.ClickEvent, new RoutedEventHandler(TableSectionButtonClicked));
+        }
+
         UpdateTableRulePresentation();
     }
 
@@ -245,6 +250,13 @@ public partial class MainWindow
         if (session.RoundInProgress)
         {
             return;
+        }
+
+        if (selectedBet > currentTableRules.MaximumBet)
+        {
+            selectedBet = Math.Min(currentTableRules.MaximumBet, session.Bankroll);
+            SavePreferences();
+            RefreshGameUi();
         }
 
         bool validBet = selectedBet >= currentTableRules.MinimumBet
