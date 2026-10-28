@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.IO.Compression;
 using BlackjackCasino.Update;
 
 namespace BlackjackCasino.Updater;
@@ -23,7 +22,7 @@ internal static class Program
             }
 
             await PackageDownloader.VerifySha256Async(options.PackagePath, options.Sha256);
-            ApplyPackage(options);
+            PackageInstaller.InstallFromZip(options.PackagePath, options.TargetDirectory, options.RestartExecutable);
             Restart(options);
             TryDelete(options.PackagePath);
             return 0;
@@ -44,74 +43,19 @@ internal static class Program
         }
         catch (ArgumentException)
         {
-        }
-    }
-
-    private static void ApplyPackage(UpdaterArguments options)
-    {
-        string target = Path.GetFullPath(options.TargetDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
-        string? parent = Directory.GetParent(target)?.FullName;
-        if (string.IsNullOrWhiteSpace(parent))
-        {
-            throw new InvalidOperationException("Refusing to update a filesystem root.");
-        }
-
-        string staging = Path.Combine(parent, $".{Path.GetFileName(target)}.staging-{Guid.NewGuid():N}");
-        string backup = Path.Combine(parent, $".{Path.GetFileName(target)}.backup-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}");
-
-        Directory.CreateDirectory(staging);
-
-        try
-        {
-            ZipFile.ExtractToDirectory(options.PackagePath, staging, overwriteFiles: false);
-            ValidateExtractedPackage(staging, options.RestartExecutable);
-
-            if (Directory.Exists(target))
-            {
-                Directory.Move(target, backup);
-            }
-
-            try
-            {
-                Directory.Move(staging, target);
-            }
-            catch
-            {
-                if (Directory.Exists(backup) && !Directory.Exists(target))
-                {
-                    Directory.Move(backup, target);
-                }
-
-                throw;
-            }
-
-            TryDeleteDirectory(backup);
-        }
-        finally
-        {
-            TryDeleteDirectory(staging);
-        }
-    }
-
-    private static void ValidateExtractedPackage(string staging, string restartExecutable)
-    {
-        string restartPath = Path.GetFullPath(Path.Combine(staging, restartExecutable));
-        if (!restartPath.StartsWith(Path.GetFullPath(staging), StringComparison.OrdinalIgnoreCase)
-            || !File.Exists(restartPath))
-        {
-            throw new InvalidDataException($"The update package does not contain '{restartExecutable}'.");
+            // The application has already exited.
         }
     }
 
     private static void Restart(UpdaterArguments options)
     {
-        string executable = Path.Combine(options.TargetDirectory, options.RestartExecutable);
-        Process.Start(new ProcessStartInfo
+        string executable = PackageInstaller.GetRestartPath(options.TargetDirectory, options.RestartExecutable);
+        _ = Process.Start(new ProcessStartInfo
         {
             FileName = executable,
             WorkingDirectory = options.TargetDirectory,
             UseShellExecute = true,
-        });
+        }) ?? throw new InvalidOperationException("Failed to restart the application after updating.");
     }
 
     private static void TryDelete(string path)
@@ -125,20 +69,7 @@ internal static class Program
         }
         catch
         {
-        }
-    }
-
-    private static void TryDeleteDirectory(string path)
-    {
-        try
-        {
-            if (Directory.Exists(path))
-            {
-                Directory.Delete(path, recursive: true);
-            }
-        }
-        catch
-        {
+            // The package can be cleaned up by a later maintenance pass.
         }
     }
 }
@@ -169,15 +100,13 @@ internal sealed record UpdaterArguments(
         string target = GetRequired(values, "target");
         string restart = GetRequired(values, "restart");
 
-        if (Path.IsPathRooted(restart) || restart.Contains("..", StringComparison.Ordinal))
-        {
-            throw new ArgumentException("Restart executable must be a safe path relative to the target directory.");
-        }
-
         if (sha256.Length != 64 || !sha256.All(Uri.IsHexDigit))
         {
             throw new ArgumentException("SHA-256 must contain exactly 64 hexadecimal characters.");
         }
+
+        // Also validates that this cannot escape the target directory.
+        _ = PackageInstaller.GetRestartPath(target, restart);
 
         int? pid = null;
         if (values.TryGetValue("pid", out string? pidValue))
