@@ -20,6 +20,8 @@ internal sealed record AppPreferences
 {
     public decimal Bankroll { get; init; } = 1_000m;
 
+    public decimal SlotBet { get; init; } = 25m;
+
     public decimal SelectedBet { get; init; } = 25m;
 
     public PlayModePreference PlayMode { get; init; } = PlayModePreference.Solo;

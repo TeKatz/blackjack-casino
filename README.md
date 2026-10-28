@@ -20,6 +20,10 @@ The project is currently in **Phase 4: Casino Presentation & Polish**. The black
 - persistent bankroll, bet, play mode, AI seats, appearance, audio, window state and update channel;
 - Stable and Development updater channels with SHA-256 package verification.
 
+## Midnight Reels slot mode
+
+Open **Casino Games → Midnight Reels** between Blackjack hands for a three-reel slot machine with custom vector textures, animated reels/lights and original sounds. Slots share the existing play-money bankroll, level/Prestige and free Season progression; wager size does not scale XP. See [slot rules and payouts](docs/slots.md).
+
 ## Projects
 
 | Project | Purpose |
