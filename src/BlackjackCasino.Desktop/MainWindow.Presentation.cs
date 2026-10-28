@@ -37,7 +37,7 @@ public partial class MainWindow
 
     private void MusicVolumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
-        double volume = Math.Clamp(e.NewValue, 0d, 0.45d);
+        double volume = Math.Clamp(e.NewValue, 0d, 0.32d);
         if (MusicVolumeText is not null)
         {
             MusicVolumeText.Text = $"{volume:P0}";
