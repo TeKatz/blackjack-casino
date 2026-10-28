@@ -40,6 +40,7 @@ public sealed class BlackjackRound
     private readonly ICardShoe shoe;
     private readonly List<BlackjackHand> playerHands = [];
     private readonly List<AiSeatState> aiSeats = [];
+    private readonly List<PlayerActionRecord> actionHistory = [];
     private int activeHandIndex;
     private decimal insuranceBet;
 
@@ -94,18 +95,22 @@ public sealed class BlackjackRound
 
     public decimal InsuranceBet => insuranceBet;
 
+    public IReadOnlyList<PlayerActionRecord> ActionHistory => actionHistory;
+
     public RoundResult? Result { get; private set; }
 
     public void Start()
     {
         EnsurePhase(RoundPhase.NotStarted);
 
-        // Real table order: each occupied seat receives one card, then the dealer.
-        // The human player is first base; AI seats act after the human.
         DealOneCardToOccupiedSeats();
         DealerHand.Add(shoe.Draw());
         DealOneCardToOccupiedSeats();
-        DealerHand.Add(shoe.Draw());
+
+        if (rules.DealerTakesHoleCard)
+        {
+            DealerHand.Add(shoe.Draw());
+        }
 
         if (rules.AllowInsurance && DealerHand.Cards[0].Rank == Rank.Ace)
         {
@@ -157,6 +162,8 @@ public sealed class BlackjackRound
             throw new InvalidOperationException($"Action {action} is not available for the active hand.");
         }
 
+        int handIndex = activeHandIndex;
+        actionHistory.Add(new PlayerActionRecord(handIndex, action));
         ExecuteAction(playerHands, activeHandIndex, action);
         AdvanceAfterPlayerAction();
     }
@@ -172,8 +179,12 @@ public sealed class BlackjackRound
 
     private void ResolveOpeningState()
     {
-        bool dealerCanPeek = DealerHand.Cards[0].Rank == Rank.Ace || DealerHand.Cards[0].IsTenValue;
-        if (rules.DealerPeeksForBlackjack && dealerCanPeek && DealerHand.IsNaturalBlackjack)
+        bool dealerCanPeek = rules.DealerTakesHoleCard
+            && rules.DealerPeeksForBlackjack
+            && DealerHand.Cards.Count == 2
+            && (DealerHand.Cards[0].Rank == Rank.Ace || DealerHand.Cards[0].IsTenValue);
+
+        if (dealerCanPeek && DealerHand.IsNaturalBlackjack)
         {
             Settle();
             return;
@@ -201,6 +212,7 @@ public sealed class BlackjackRound
         }
 
         if (hand.Cards.Count == 2
+            && rules.IsDoubleAllowed(hand.Value.Total)
             && (!hand.IsSplitHand || rules.DoubleAfterSplit)
             && (!hand.IsSplitAces || rules.HitSplitAces))
         {
@@ -212,12 +224,26 @@ public sealed class BlackjackRound
             actions.Add(PlayerAction.Split);
         }
 
-        if (rules.AllowLateSurrender && !hand.IsSplitHand && hand.Cards.Count == 2)
+        if (rules.AllowLateSurrender
+            && !hand.IsSplitHand
+            && hand.Cards.Count == 2
+            && CanOfferLateSurrender())
         {
             actions.Add(PlayerAction.Surrender);
         }
 
         return actions;
+    }
+
+    private bool CanOfferLateSurrender()
+    {
+        Card upCard = DealerHand.Cards[0];
+        if (upCard.Rank != Rank.Ace && !upCard.IsTenValue)
+        {
+            return true;
+        }
+
+        return rules.DealerTakesHoleCard && rules.DealerPeeksForBlackjack;
     }
 
     private bool CanSplit(BlackjackHand hand, int handCount)
@@ -326,6 +352,7 @@ public sealed class BlackjackRound
     {
         Phase = RoundPhase.DealerTurn;
         PlayAiSeats();
+        EnsureDealerHoleCard();
 
         if (ShouldDealerPlay())
         {
@@ -336,6 +363,14 @@ public sealed class BlackjackRound
         }
 
         Settle();
+    }
+
+    private void EnsureDealerHoleCard()
+    {
+        if (DealerHand.Cards.Count == 1)
+        {
+            DealerHand.Add(shoe.Draw());
+        }
     }
 
     private void PlayAiSeats()
