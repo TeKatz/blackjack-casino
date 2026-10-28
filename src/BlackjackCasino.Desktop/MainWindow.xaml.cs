@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using BlackjackCasino.Core;
 using BlackjackCasino.Update;
 
@@ -12,11 +13,21 @@ namespace BlackjackCasino.Desktop;
 
 public partial class MainWindow : Window
 {
-    private enum PlayMode
-    {
-        Solo,
-        FullTable,
-    }
+    private sealed record TablePalette(
+        string Window,
+        string Header,
+        string Table,
+        string Side,
+        string Seat,
+        string Border,
+        string Action,
+        string MutedButton,
+        string Accent,
+        string AccentLight,
+        string MutedText,
+        string SoftText,
+        string Status,
+        string AiWin);
 
     private static readonly GameRules TableRules = new()
     {
@@ -47,20 +58,58 @@ public partial class MainWindow : Window
         Timeout = TimeSpan.FromSeconds(20),
     };
 
+    private AppPreferences preferences;
     private CasinoSession session;
-    private PlayMode playMode = PlayMode.Solo;
-    private int aiSeatCount = 3;
-    private decimal selectedBet = 25m;
+    private PlayModePreference playMode;
+    private int aiSeatCount;
+    private decimal selectedBet;
     private UpdateManifest? pendingManifest;
+    private bool suppressPreferenceEvents;
+    private bool animateNextRender;
+    private int animationSequence;
+    private bool isFullscreen;
+    private WindowState previousWindowState;
+    private WindowStyle previousWindowStyle;
+    private ResizeMode previousResizeMode;
+    private Rect previousWindowBounds;
 
     public MainWindow()
     {
         InitializeComponent();
-        session = CreateSession(PlayerStateStore.LoadBankroll());
+
+        preferences = PlayerStateStore.Load();
+        playMode = preferences.PlayMode;
+        aiSeatCount = preferences.AiSeatCount;
+        selectedBet = Math.Min(preferences.SelectedBet, preferences.Bankroll);
+        session = CreateSession(preferences.Bankroll);
         VersionText.Text = AppVersion.Current.ToString();
+
+        suppressPreferenceEvents = true;
+        Width = preferences.WindowWidth;
+        Height = preferences.WindowHeight;
+        WindowState = preferences.WindowMaximized ? WindowState.Maximized : WindowState.Normal;
+        GameModeComboBox.SelectedIndex = playMode == PlayModePreference.FullTable ? 1 : 0;
+        AiSeatCountComboBox.SelectedIndex = aiSeatCount - 1;
+        ThemeComboBox.SelectedIndex = (int)preferences.Theme;
+        SoundCheckBox.IsChecked = preferences.SoundEnabled;
+        AnimationsCheckBox.IsChecked = preferences.AnimationsEnabled;
+
+        UpdateChannel initialChannel = preferences.UpdateChannel
+            ?? (AppVersion.Current.PreRelease is null ? UpdateChannel.Stable : UpdateChannel.Development);
+        UpdateChannelComboBox.SelectedIndex = initialChannel == UpdateChannel.Development ? 1 : 0;
+        preferences = preferences with { UpdateChannel = initialChannel };
+        suppressPreferenceEvents = false;
+
+        ApplyTheme(preferences.Theme);
 
         GameModeComboBox.SelectionChanged += GameModeComboBox_SelectionChanged;
         AiSeatCountComboBox.SelectionChanged += AiSeatCountComboBox_SelectionChanged;
+        ThemeComboBox.SelectionChanged += ThemeComboBox_SelectionChanged;
+        UpdateChannelComboBox.SelectionChanged += UpdateChannelComboBox_SelectionChanged;
+        SoundCheckBox.Checked += PresentationSettingChanged;
+        SoundCheckBox.Unchecked += PresentationSettingChanged;
+        AnimationsCheckBox.Checked += PresentationSettingChanged;
+        AnimationsCheckBox.Unchecked += PresentationSettingChanged;
 
         Loaded += async (_, _) =>
         {
@@ -69,10 +118,21 @@ public partial class MainWindow : Window
         };
         Closed += (_, _) =>
         {
-            PlayerStateStore.SaveBankroll(session.Bankroll);
+            SavePreferences();
             httpClient.Dispose();
         };
     }
+
+    private bool SoundEnabled => SoundCheckBox.IsChecked == true;
+
+    private bool AnimationsEnabled => AnimationsCheckBox.IsChecked == true;
+
+    private TableThemePreference SelectedTheme => ThemeComboBox.SelectedIndex switch
+    {
+        1 => TableThemePreference.MidnightBlue,
+        2 => TableThemePreference.Burgundy,
+        _ => TableThemePreference.ClassicGreen,
+    };
 
     private UpdateChannel SelectedUpdateChannel => UpdateChannelComboBox.SelectedIndex == 1
         ? UpdateChannel.Development
@@ -80,7 +140,7 @@ public partial class MainWindow : Window
 
     private CasinoSession CreateSession(decimal bankroll)
     {
-        IReadOnlyList<AiPlayerProfile> aiPlayers = playMode == PlayMode.FullTable
+        IReadOnlyList<AiPlayerProfile> aiPlayers = playMode == PlayModePreference.FullTable
             ? BuildAiProfiles(aiSeatCount)
             : [];
 
@@ -96,14 +156,14 @@ public partial class MainWindow : Window
 
     private void GameModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (!IsLoaded || session.RoundInProgress)
+        if (suppressPreferenceEvents || !IsLoaded || session.RoundInProgress)
         {
             return;
         }
 
-        PlayMode requested = GameModeComboBox.SelectedIndex == 1
-            ? PlayMode.FullTable
-            : PlayMode.Solo;
+        PlayModePreference requested = GameModeComboBox.SelectedIndex == 1
+            ? PlayModePreference.FullTable
+            : PlayModePreference.Solo;
 
         if (requested == playMode)
         {
@@ -115,7 +175,7 @@ public partial class MainWindow : Window
 
     private void AiSeatCountComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (!IsLoaded || session.RoundInProgress || playMode != PlayMode.FullTable)
+        if (suppressPreferenceEvents || !IsLoaded || session.RoundInProgress || playMode != PlayModePreference.FullTable)
         {
             return;
         }
@@ -129,20 +189,54 @@ public partial class MainWindow : Window
         SwitchTable(playMode, requested);
     }
 
-    private void SwitchTable(PlayMode mode, int seats)
+    private void ThemeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (suppressPreferenceEvents || !IsLoaded)
+        {
+            return;
+        }
+
+        preferences = preferences with { Theme = SelectedTheme };
+        ApplyTheme(SelectedTheme);
+        RefreshGameUi();
+        SavePreferences();
+    }
+
+    private void UpdateChannelComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (suppressPreferenceEvents || !IsLoaded)
+        {
+            return;
+        }
+
+        pendingManifest = null;
+        InstallUpdateButton.IsEnabled = false;
+        UpdateStatusText.Text = "Channel changed. Check for updates.";
+        SavePreferences();
+    }
+
+    private void PresentationSettingChanged(object sender, RoutedEventArgs e)
+    {
+        if (!suppressPreferenceEvents && IsLoaded)
+        {
+            SavePreferences();
+        }
+    }
+
+    private void SwitchTable(PlayModePreference mode, int seats)
     {
         decimal bankroll = session.Bankroll;
-        PlayerStateStore.SaveBankroll(bankroll);
 
         playMode = mode;
         aiSeatCount = seats;
         session = CreateSession(bankroll);
         selectedBet = Math.Min(selectedBet, bankroll);
 
-        StatusText.Text = playMode == PlayMode.Solo
+        StatusText.Text = playMode == PlayModePreference.Solo
             ? "Solo table ready. Place a bet to begin."
             : $"Full table ready with {aiSeatCount} AI seat{(aiSeatCount == 1 ? string.Empty : "s")}. Place a bet to begin.";
 
+        SavePreferences();
         RefreshGameUi();
     }
 
@@ -154,6 +248,8 @@ public partial class MainWindow : Window
         }
 
         selectedBet = Math.Min(session.Bankroll, selectedBet + chip);
+        CasinoFeedback.PlayChip(SoundEnabled);
+        SavePreferences();
         RefreshGameUi();
     }
 
@@ -162,6 +258,7 @@ public partial class MainWindow : Window
         if (!session.RoundInProgress)
         {
             selectedBet = 0m;
+            SavePreferences();
             RefreshGameUi();
         }
     }
@@ -177,11 +274,14 @@ public partial class MainWindow : Window
 
         try
         {
+            animateNextRender = AnimationsEnabled;
             session.StartRound(selectedBet);
-            HandleRoundStateAfterMutation(playMode == PlayMode.FullTable ? "Cards dealt around the table." : "Cards dealt.");
+            CasinoFeedback.PlayCard(SoundEnabled);
+            HandleRoundStateAfterMutation(playMode == PlayModePreference.FullTable ? "Cards dealt around the table." : "Cards dealt.");
         }
         catch (Exception ex)
         {
+            animateNextRender = false;
             StatusText.Text = ex.Message;
         }
     }
@@ -200,7 +300,13 @@ public partial class MainWindow : Window
     {
         try
         {
+            animateNextRender = AnimationsEnabled && action is PlayerAction.Hit or PlayerAction.DoubleDown or PlayerAction.Split;
             session.Act(action);
+            if (action is PlayerAction.Hit or PlayerAction.DoubleDown or PlayerAction.Split)
+            {
+                CasinoFeedback.PlayCard(SoundEnabled);
+            }
+
             HandleRoundStateAfterMutation(action switch
             {
                 PlayerAction.Hit => "Hit.",
@@ -213,6 +319,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
+            animateNextRender = false;
             StatusText.Text = ex.Message;
         }
     }
@@ -264,9 +371,44 @@ public partial class MainWindow : Window
 
         session.ResetBankroll();
         selectedBet = 25m;
-        PlayerStateStore.SaveBankroll(session.Bankroll);
         StatusText.Text = "Bankroll reset. Place a bet to begin.";
+        SavePreferences();
         RefreshGameUi();
+    }
+
+    private void Fullscreen_Click(object sender, RoutedEventArgs e) => ToggleFullscreen();
+
+    private void ToggleFullscreen()
+    {
+        if (!isFullscreen)
+        {
+            previousWindowState = WindowState;
+            previousWindowStyle = WindowStyle;
+            previousResizeMode = ResizeMode;
+            previousWindowBounds = WindowState == WindowState.Normal
+                ? new Rect(Left, Top, ActualWidth, ActualHeight)
+                : RestoreBounds;
+
+            WindowState = WindowState.Normal;
+            WindowStyle = WindowStyle.None;
+            ResizeMode = ResizeMode.NoResize;
+            WindowState = WindowState.Maximized;
+            isFullscreen = true;
+            return;
+        }
+
+        WindowState = WindowState.Normal;
+        WindowStyle = previousWindowStyle;
+        ResizeMode = previousResizeMode;
+        if (previousWindowBounds.Width >= MinWidth && previousWindowBounds.Height >= MinHeight)
+        {
+            Left = previousWindowBounds.Left;
+            Top = previousWindowBounds.Top;
+            Width = previousWindowBounds.Width;
+            Height = previousWindowBounds.Height;
+        }
+        WindowState = previousWindowState;
+        isFullscreen = false;
     }
 
     private void HandleRoundStateAfterMutation(string fallbackStatus)
@@ -290,8 +432,9 @@ public partial class MainWindow : Window
 
         if (round.Phase == RoundPhase.Settled)
         {
-            PlayerStateStore.SaveBankroll(session.Bankroll);
             selectedBet = Math.Min(selectedBet, session.Bankroll);
+            CasinoFeedback.PlayOutcome(SoundEnabled, round.Result!.TotalNet);
+            SavePreferences();
         }
 
         RefreshGameUi();
@@ -318,50 +461,59 @@ public partial class MainWindow : Window
 
     private void RefreshGameUi()
     {
-        BankrollText.Text = Money(session.Bankroll);
-        BetText.Text = Money(selectedBet);
-        ShoeText.Text = $"#{session.ShoeNumber} · {session.CardsRemaining} cards";
-        TableModeText.Text = playMode == PlayMode.Solo
-            ? "Solo table"
-            : $"Full table · {aiSeatCount} AI seat{(aiSeatCount == 1 ? string.Empty : "s")}";
+        animationSequence = 0;
 
-        BlackjackRound? round = session.CurrentRound;
-        bool betting = !session.RoundInProgress;
-        bool canDeal = betting && selectedBet > 0m && selectedBet <= session.Bankroll;
-
-        DealButton.IsEnabled = canDeal;
-        ClearBetButton.IsEnabled = betting && selectedBet > 0m;
-        ResetBankrollButton.IsEnabled = betting;
-        GameModeComboBox.IsEnabled = betting;
-        AiSeatCountComboBox.IsEnabled = betting;
-        AiSettingsPanel.Visibility = playMode == PlayMode.FullTable ? Visibility.Visible : Visibility.Collapsed;
-
-        DealerCardsPanel.Children.Clear();
-        PlayerHandsPanel.Children.Clear();
-        AiTableSeatsPanel.Children.Clear();
-
-        RenderAiSeats(round);
-
-        if (round is null)
+        try
         {
-            DealerValueText.Text = string.Empty;
-            PlayerHandsPanel.Children.Add(BuildEmptySeat());
-            SetActionAvailability(new HashSet<PlayerAction>());
-            InsurancePanel.Visibility = Visibility.Collapsed;
-            return;
-        }
+            BankrollText.Text = Money(session.Bankroll);
+            BetText.Text = Money(selectedBet);
+            ShoeText.Text = $"#{session.ShoeNumber} · {session.CardsRemaining} cards";
+            TableModeText.Text = playMode == PlayModePreference.Solo
+                ? "Solo table"
+                : $"Full table · {aiSeatCount} AI seat{(aiSeatCount == 1 ? string.Empty : "s")}";
 
-        RenderDealer(round);
-        RenderPlayerHands(round);
-        SetActionAvailability(session.GetAvailableActions());
-        InsurancePanel.Visibility = round.Phase == RoundPhase.InsuranceDecision
-            ? Visibility.Visible
-            : Visibility.Collapsed;
+            BlackjackRound? round = session.CurrentRound;
+            bool betting = !session.RoundInProgress;
+            bool canDeal = betting && selectedBet > 0m && selectedBet <= session.Bankroll;
+
+            DealButton.IsEnabled = canDeal;
+            ClearBetButton.IsEnabled = betting && selectedBet > 0m;
+            ResetBankrollButton.IsEnabled = betting;
+            GameModeComboBox.IsEnabled = betting;
+            AiSeatCountComboBox.IsEnabled = betting;
+            AiSettingsPanel.Visibility = playMode == PlayModePreference.FullTable ? Visibility.Visible : Visibility.Collapsed;
+
+            DealerCardsPanel.Children.Clear();
+            PlayerHandsPanel.Children.Clear();
+            AiTableSeatsPanel.Children.Clear();
+
+            RenderAiSeats(round);
+
+            if (round is null)
+            {
+                DealerValueText.Text = string.Empty;
+                PlayerHandsPanel.Children.Add(BuildEmptySeat());
+                SetActionAvailability(new HashSet<PlayerAction>());
+                InsurancePanel.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            RenderDealer(round);
+            RenderPlayerHands(round);
+            SetActionAvailability(session.GetAvailableActions());
+            InsurancePanel.Visibility = round.Phase == RoundPhase.InsuranceDecision
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+        }
+        finally
+        {
+            animateNextRender = false;
+        }
     }
 
     private void RenderAiSeats(BlackjackRound? round)
     {
-        if (playMode != PlayMode.FullTable)
+        if (playMode != PlayModePreference.FullTable)
         {
             AiSeatsScrollViewer.Visibility = Visibility.Collapsed;
             return;
@@ -384,7 +536,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private static Border BuildAiPlaceholder(AiPlayerProfile profile)
+    private Border BuildAiPlaceholder(AiPlayerProfile profile)
     {
         var stack = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
         stack.Children.Add(new TextBlock
@@ -392,14 +544,14 @@ public partial class MainWindow : Window
             Text = profile.Name.ToUpperInvariant(),
             FontWeight = FontWeights.Bold,
             HorizontalAlignment = HorizontalAlignment.Center,
-            Foreground = Brush("#9EB1A4"),
+            Foreground = UiBrush("MutedTextBrush"),
         });
         stack.Children.Add(new TextBlock
         {
             Text = $"Bet {Money(profile.Bet)}\nWaiting for deal",
             TextAlignment = TextAlignment.Center,
             Margin = new Thickness(0, 8, 0, 0),
-            Foreground = Brush("#789484"),
+            Foreground = UiBrush("SoftTextBrush"),
         });
 
         return new Border
@@ -408,15 +560,15 @@ public partial class MainWindow : Window
             Height = 108,
             Margin = new Thickness(5),
             Padding = new Thickness(10),
-            Background = Brush("#0B2117"),
-            BorderBrush = Brush("#31533F"),
+            Background = UiBrush("SeatBackgroundBrush"),
+            BorderBrush = UiBrush("PanelBorderBrush"),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(9),
             Child = stack,
         };
     }
 
-    private static Border BuildAiSeat(AiSeatState seat, bool settled)
+    private Border BuildAiSeat(AiSeatState seat, bool settled)
     {
         var stack = new StackPanel();
         stack.Children.Add(new TextBlock
@@ -425,7 +577,7 @@ public partial class MainWindow : Window
             FontSize = 11,
             FontWeight = FontWeights.Bold,
             HorizontalAlignment = HorizontalAlignment.Center,
-            Foreground = Brush("#9EB1A4"),
+            Foreground = UiBrush("MutedTextBrush"),
         });
 
         for (int i = 0; i < seat.Hands.Count; i++)
@@ -465,8 +617,8 @@ public partial class MainWindow : Window
             MinWidth = 172,
             Margin = new Thickness(5),
             Padding = new Thickness(9),
-            Background = Brush("#0B2117"),
-            BorderBrush = settled && seat.TotalNet > 0 ? Brush("#6A8F55") : Brush("#31533F"),
+            Background = UiBrush("SeatBackgroundBrush"),
+            BorderBrush = settled && seat.TotalNet > 0 ? UiBrush("AiWinBrush") : UiBrush("PanelBorderBrush"),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(9),
             Child = stack,
@@ -496,8 +648,8 @@ public partial class MainWindow : Window
 
             var outer = new Border
             {
-                Background = Brush("#0B2117"),
-                BorderBrush = active ? Brush("#D4A84F") : Brush("#31533F"),
+                Background = UiBrush("SeatBackgroundBrush"),
+                BorderBrush = active ? UiBrush("AccentBrush") : UiBrush("PanelBorderBrush"),
                 BorderThickness = new Thickness(active ? 2 : 1),
                 CornerRadius = new CornerRadius(10),
                 Margin = new Thickness(8),
@@ -512,7 +664,7 @@ public partial class MainWindow : Window
                 Text = $"{label}  ·  {Money(hand.Bet)}",
                 FontSize = 12,
                 FontWeight = FontWeights.Bold,
-                Foreground = active ? Brush("#F0CD7A") : Brush("#9EB1A4"),
+                Foreground = active ? UiBrush("AccentLightBrush") : UiBrush("MutedTextBrush"),
                 HorizontalAlignment = HorizontalAlignment.Center,
             });
 
@@ -548,13 +700,13 @@ public partial class MainWindow : Window
         }
     }
 
-    private static Border BuildEmptySeat()
+    private Border BuildEmptySeat()
     {
         return new Border
         {
             Width = 250,
             Height = 150,
-            BorderBrush = Brush("#31533F"),
+            BorderBrush = UiBrush("PanelBorderBrush"),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(12),
             Margin = new Thickness(8),
@@ -562,13 +714,13 @@ public partial class MainWindow : Window
             {
                 Text = "YOUR SEAT\n\nPlace a bet and deal",
                 TextAlignment = TextAlignment.Center,
-                Foreground = Brush("#789484"),
+                Foreground = UiBrush("SoftTextBrush"),
                 VerticalAlignment = VerticalAlignment.Center,
             },
         };
     }
 
-    private static Border CreateCard(Card card, bool faceDown = false, bool compact = false)
+    private Border CreateCard(Card card, bool faceDown = false, bool compact = false)
     {
         double width = compact ? 48 : 76;
         double height = compact ? 68 : 108;
@@ -586,17 +738,18 @@ public partial class MainWindow : Window
 
         if (faceDown)
         {
-            border.Background = Brush("#173A2A");
-            border.BorderBrush = Brush("#D4A84F");
+            border.Background = UiBrush("ActionBackgroundBrush");
+            border.BorderBrush = UiBrush("AccentBrush");
             border.Child = new TextBlock
             {
                 Text = "♠",
                 FontSize = compact ? 24 : 36,
                 FontWeight = FontWeights.Bold,
-                Foreground = Brush("#D4A84F"),
+                Foreground = UiBrush("AccentBrush"),
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
             };
+            AnimateEntrance(border, compact);
             return border;
         }
 
@@ -626,7 +779,38 @@ public partial class MainWindow : Window
         Grid.SetRow(suit, 1);
         grid.Children.Add(suit);
         border.Child = grid;
+        AnimateEntrance(border, compact);
         return border;
+    }
+
+    private void AnimateEntrance(FrameworkElement element, bool compact)
+    {
+        if (!animateNextRender || !AnimationsEnabled)
+        {
+            return;
+        }
+
+        int sequence = animationSequence++;
+        TimeSpan delay = TimeSpan.FromMilliseconds(Math.Min(sequence, 18) * 32d);
+        double offset = compact ? -7d : -14d;
+        var transform = new TranslateTransform(0d, offset);
+        element.RenderTransform = transform;
+        element.Opacity = 0d;
+
+        var opacity = new DoubleAnimation(0d, 1d, TimeSpan.FromMilliseconds(150d))
+        {
+            BeginTime = delay,
+            FillBehavior = FillBehavior.HoldEnd,
+        };
+        var movement = new DoubleAnimation(offset, 0d, TimeSpan.FromMilliseconds(190d))
+        {
+            BeginTime = delay,
+            FillBehavior = FillBehavior.HoldEnd,
+            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut },
+        };
+
+        element.BeginAnimation(OpacityProperty, opacity);
+        transform.BeginAnimation(TranslateTransform.YProperty, movement);
     }
 
     private void SetActionAvailability(IReadOnlySet<PlayerAction> actions)
@@ -640,6 +824,13 @@ public partial class MainWindow : Window
 
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
+        if (e.Key == Key.F11)
+        {
+            ToggleFullscreen();
+            e.Handled = true;
+            return;
+        }
+
         if (Keyboard.FocusedElement is ComboBox)
         {
             return;
@@ -700,7 +891,7 @@ public partial class MainWindow : Window
                 updateDirectory,
                 progress);
 
-            PlayerStateStore.SaveBankroll(session.Bankroll);
+            SavePreferences();
             UpdateStatusText.Text = "Update verified. Restarting…";
             UpdaterLauncher.Launch(packagePath, pendingManifest.Package.Sha256);
             Application.Current.Shutdown();
@@ -737,10 +928,11 @@ public partial class MainWindow : Window
             }
 
             SemanticVersion minimumUpdater = SemanticVersion.Parse(result.Manifest.MinimumUpdaterVersion);
-            if (minimumUpdater > AppVersion.Current)
+            SemanticVersion updaterVersion = UpdaterLauncher.CurrentVersion ?? AppVersion.Current;
+            if (minimumUpdater > updaterVersion)
             {
                 pendingManifest = null;
-                UpdateStatusText.Text = $"Update {result.LatestVersion} requires a newer updater.";
+                UpdateStatusText.Text = $"Update {result.LatestVersion} requires updater {minimumUpdater} or newer (installed {updaterVersion}).";
                 InstallUpdateButton.IsEnabled = false;
                 return;
             }
@@ -794,6 +986,80 @@ public partial class MainWindow : Window
             InstallUpdateButton.IsEnabled = UpdaterLauncher.IsAvailable;
         }
     }
+
+    private void SavePreferences()
+    {
+        Rect bounds;
+        bool maximized;
+
+        if (isFullscreen)
+        {
+            bounds = previousWindowBounds;
+            maximized = previousWindowState == WindowState.Maximized;
+        }
+        else
+        {
+            bounds = WindowState == WindowState.Normal
+                ? new Rect(Left, Top, ActualWidth, ActualHeight)
+                : RestoreBounds;
+            maximized = WindowState == WindowState.Maximized;
+        }
+
+        double width = bounds.Width >= MinWidth ? bounds.Width : preferences.WindowWidth;
+        double height = bounds.Height >= MinHeight ? bounds.Height : preferences.WindowHeight;
+
+        preferences = preferences with
+        {
+            Bankroll = session.Bankroll,
+            SelectedBet = Math.Min(selectedBet, session.Bankroll),
+            PlayMode = playMode,
+            AiSeatCount = aiSeatCount,
+            Theme = SelectedTheme,
+            SoundEnabled = SoundEnabled,
+            AnimationsEnabled = AnimationsEnabled,
+            UpdateChannel = SelectedUpdateChannel,
+            WindowWidth = width,
+            WindowHeight = height,
+            WindowMaximized = maximized,
+        };
+
+        PlayerStateStore.Save(preferences);
+    }
+
+    private void ApplyTheme(TableThemePreference theme)
+    {
+        TablePalette palette = theme switch
+        {
+            TableThemePreference.MidnightBlue => new TablePalette(
+                "#071019", "#0A1722", "#0B2637", "#091923", "#102C3D", "#315A70",
+                "#174660", "#102F41", "#D4A84F", "#F0CD7A", "#9EB5C2", "#7392A3", "#071E2C", "#5C8E9E"),
+            TableThemePreference.Burgundy => new TablePalette(
+                "#180A0C", "#211012", "#351417", "#1F0E10", "#2B1518", "#704047",
+                "#5B272D", "#381A1E", "#D4A84F", "#F0CD7A", "#C2A0A4", "#98767B", "#260F12", "#8F625C"),
+            _ => new TablePalette(
+                "#07150E", "#091B12", "#0A291A", "#091B12", "#0B2117", "#31533F",
+                "#163D29", "#102A1D", "#D4A84F", "#F0CD7A", "#9EB1A4", "#789484", "#071D13", "#6A8F55"),
+        };
+
+        SetBrushResource("WindowBackgroundBrush", palette.Window);
+        SetBrushResource("HeaderBackgroundBrush", palette.Header);
+        SetBrushResource("TableBackgroundBrush", palette.Table);
+        SetBrushResource("SideBackgroundBrush", palette.Side);
+        SetBrushResource("SeatBackgroundBrush", palette.Seat);
+        SetBrushResource("PanelBorderBrush", palette.Border);
+        SetBrushResource("ActionBackgroundBrush", palette.Action);
+        SetBrushResource("MutedButtonBackgroundBrush", palette.MutedButton);
+        SetBrushResource("AccentBrush", palette.Accent);
+        SetBrushResource("AccentLightBrush", palette.AccentLight);
+        SetBrushResource("MutedTextBrush", palette.MutedText);
+        SetBrushResource("SoftTextBrush", palette.SoftText);
+        SetBrushResource("StatusBackgroundBrush", palette.Status);
+        SetBrushResource("AiWinBrush", palette.AiWin);
+    }
+
+    private void SetBrushResource(string key, string hex) => Resources[key] = Brush(hex);
+
+    private Brush UiBrush(string key) => (Brush)FindResource(key);
 
     private static string FormatHandValue(BlackjackHand hand)
     {

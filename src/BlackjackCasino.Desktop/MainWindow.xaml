@@ -7,14 +7,29 @@
         MinWidth="1080"
         MinHeight="720"
         WindowStartupLocation="CenterScreen"
-        Background="#07150E"
+        Background="{DynamicResource WindowBackgroundBrush}"
         Foreground="#F3EFE4"
         PreviewKeyDown="Window_PreviewKeyDown">
   <Window.Resources>
+    <SolidColorBrush x:Key="WindowBackgroundBrush" Color="#07150E" />
+    <SolidColorBrush x:Key="HeaderBackgroundBrush" Color="#091B12" />
+    <SolidColorBrush x:Key="TableBackgroundBrush" Color="#0A291A" />
+    <SolidColorBrush x:Key="SideBackgroundBrush" Color="#091B12" />
+    <SolidColorBrush x:Key="SeatBackgroundBrush" Color="#0B2117" />
+    <SolidColorBrush x:Key="PanelBorderBrush" Color="#31533F" />
+    <SolidColorBrush x:Key="ActionBackgroundBrush" Color="#163D29" />
+    <SolidColorBrush x:Key="MutedButtonBackgroundBrush" Color="#102A1D" />
+    <SolidColorBrush x:Key="AccentBrush" Color="#D4A84F" />
+    <SolidColorBrush x:Key="AccentLightBrush" Color="#F0CD7A" />
+    <SolidColorBrush x:Key="MutedTextBrush" Color="#9EB1A4" />
+    <SolidColorBrush x:Key="SoftTextBrush" Color="#789484" />
+    <SolidColorBrush x:Key="StatusBackgroundBrush" Color="#071D13" />
+    <SolidColorBrush x:Key="AiWinBrush" Color="#6A8F55" />
+
     <Style x:Key="PrimaryButton" TargetType="Button">
-      <Setter Property="Background" Value="#D4A84F" />
+      <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
       <Setter Property="Foreground" Value="#16130C" />
-      <Setter Property="BorderBrush" Value="#F0CD7A" />
+      <Setter Property="BorderBrush" Value="{DynamicResource AccentLightBrush}" />
       <Setter Property="BorderThickness" Value="1" />
       <Setter Property="FontWeight" Value="Bold" />
       <Setter Property="Padding" Value="16,9" />
@@ -22,9 +37,9 @@
       <Setter Property="Cursor" Value="Hand" />
     </Style>
     <Style x:Key="ActionButton" TargetType="Button">
-      <Setter Property="Background" Value="#163D29" />
+      <Setter Property="Background" Value="{DynamicResource ActionBackgroundBrush}" />
       <Setter Property="Foreground" Value="#F3EFE4" />
-      <Setter Property="BorderBrush" Value="#37694C" />
+      <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
       <Setter Property="BorderThickness" Value="1" />
       <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="Padding" Value="18,10" />
@@ -33,7 +48,7 @@
       <Setter Property="Cursor" Value="Hand" />
     </Style>
     <Style x:Key="MutedButton" TargetType="Button" BasedOn="{StaticResource ActionButton}">
-      <Setter Property="Background" Value="#102A1D" />
+      <Setter Property="Background" Value="{DynamicResource MutedButtonBackgroundBrush}" />
       <Setter Property="Foreground" Value="#C7D4CB" />
       <Setter Property="MinWidth" Value="80" />
     </Style>
@@ -42,14 +57,14 @@
   <Grid>
     <Grid.ColumnDefinitions>
       <ColumnDefinition Width="*" />
-      <ColumnDefinition Width="310" />
+      <ColumnDefinition Width="320" />
     </Grid.ColumnDefinitions>
     <Grid.RowDefinitions>
       <RowDefinition Height="64" />
       <RowDefinition Height="*" />
     </Grid.RowDefinitions>
 
-    <Border Grid.ColumnSpan="2" Background="#091B12" BorderBrush="#244531" BorderThickness="0,0,0,1">
+    <Border Grid.ColumnSpan="2" Background="{DynamicResource HeaderBackgroundBrush}" BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="0,0,0,1">
       <Grid Margin="24,0">
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width="*" />
@@ -58,20 +73,20 @@
         </Grid.ColumnDefinitions>
         <StackPanel VerticalAlignment="Center">
           <TextBlock Text="BLACKJACK CASINO" FontSize="22" FontWeight="Bold" />
-          <TextBlock x:Name="TableModeText" Text="Solo table" FontSize="11" Foreground="#8FAA98" />
+          <TextBlock x:Name="TableModeText" Text="Solo table" FontSize="11" Foreground="{DynamicResource MutedTextBrush}" />
         </StackPanel>
         <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,28,0">
-          <TextBlock Text="BANKROLL" FontSize="10" Foreground="#8FAA98" HorizontalAlignment="Right" />
+          <TextBlock Text="BANKROLL" FontSize="10" Foreground="{DynamicResource MutedTextBrush}" HorizontalAlignment="Right" />
           <TextBlock x:Name="BankrollText" FontSize="20" FontWeight="Bold" HorizontalAlignment="Right" />
         </StackPanel>
         <StackPanel Grid.Column="2" VerticalAlignment="Center">
-          <TextBlock Text="VERSION" FontSize="10" Foreground="#8FAA98" HorizontalAlignment="Right" />
+          <TextBlock Text="VERSION" FontSize="10" Foreground="{DynamicResource MutedTextBrush}" HorizontalAlignment="Right" />
           <TextBlock x:Name="VersionText" FontSize="13" Foreground="#D5DED8" HorizontalAlignment="Right" />
         </StackPanel>
       </Grid>
     </Border>
 
-    <Grid Grid.Row="1" Background="#0A291A">
+    <Grid Grid.Row="1" Background="{DynamicResource TableBackgroundBrush}">
       <Grid.RowDefinitions>
         <RowDefinition Height="Auto" />
         <RowDefinition Height="*" />
@@ -80,7 +95,7 @@
       </Grid.RowDefinitions>
 
       <StackPanel Grid.Row="0" Margin="24,18,24,4" HorizontalAlignment="Center">
-        <TextBlock Text="DEALER" FontSize="12" FontWeight="Bold" Foreground="#9EB1A4" HorizontalAlignment="Center" />
+        <TextBlock Text="DEALER" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource MutedTextBrush}" HorizontalAlignment="Center" />
         <StackPanel x:Name="DealerCardsPanel" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8,0,4" />
         <TextBlock x:Name="DealerValueText" FontSize="13" Foreground="#D4DED7" HorizontalAlignment="Center" />
       </StackPanel>
@@ -106,7 +121,7 @@
           <StackPanel x:Name="PlayerHandsPanel" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" />
         </ScrollViewer>
 
-        <Border Grid.Row="2" Margin="70,6,70,12" Padding="12,8" Background="#071D13" CornerRadius="8">
+        <Border Grid.Row="2" Margin="70,6,70,12" Padding="12,8" Background="{DynamicResource StatusBackgroundBrush}" CornerRadius="8">
           <TextBlock x:Name="StatusText" Text="Place a bet to begin." TextAlignment="Center" FontSize="15" Foreground="#E8E2D4" TextWrapping="Wrap" />
         </Border>
       </Grid>
@@ -126,10 +141,10 @@
       </StackPanel>
     </Grid>
 
-    <Border Grid.Row="1" Grid.Column="1" Background="#091B12" BorderBrush="#244531" BorderThickness="1,0,0,0">
+    <Border Grid.Row="1" Grid.Column="1" Background="{DynamicResource SideBackgroundBrush}" BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="1,0,0,0">
       <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="20">
-          <TextBlock Text="PLAY MODE" FontSize="12" FontWeight="Bold" Foreground="#9EB1A4" />
+          <TextBlock Text="PLAY MODE" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource MutedTextBrush}" />
           <ComboBox x:Name="GameModeComboBox" SelectedIndex="0" Margin="4,10,4,4">
             <ComboBoxItem Content="Solo" />
             <ComboBoxItem Content="Full Table (AI)" />
@@ -149,12 +164,12 @@
                 <ComboBoxItem Content="5" />
               </ComboBox>
             </Grid>
-            <TextBlock Text="All occupied seats draw from the same shoe. AI plays basic strategy." Margin="0,7,0,0" TextWrapping="Wrap" FontSize="11" Foreground="#789484" />
+            <TextBlock Text="All occupied seats draw from the same shoe. AI plays basic strategy." Margin="0,7,0,0" TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SoftTextBrush}" />
           </StackPanel>
 
-          <Separator Margin="0,18" Background="#31533F" />
+          <Separator Margin="0,18" Background="{DynamicResource PanelBorderBrush}" />
 
-          <TextBlock Text="BETTING" FontSize="12" FontWeight="Bold" Foreground="#9EB1A4" />
+          <TextBlock Text="BETTING" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource MutedTextBrush}" />
           <TextBlock x:Name="BetText" Text="$0" FontSize="28" FontWeight="Bold" Margin="0,7,0,12" />
 
           <UniformGrid Columns="2">
@@ -166,9 +181,9 @@
           <Button x:Name="ClearBetButton" Content="Clear Bet" Style="{StaticResource MutedButton}" Click="ClearBet_Click" />
           <Button x:Name="DealButton" Content="DEAL  [ENTER]" Style="{StaticResource PrimaryButton}" Height="44" Margin="4,8,4,0" Click="Deal_Click" />
 
-          <Separator Margin="0,18" Background="#31533F" />
+          <Separator Margin="0,18" Background="{DynamicResource PanelBorderBrush}" />
 
-          <TextBlock Text="TABLE" FontSize="12" FontWeight="Bold" Foreground="#9EB1A4" />
+          <TextBlock Text="TABLE" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource MutedTextBrush}" />
           <Grid Margin="0,10,0,0">
             <Grid.ColumnDefinitions>
               <ColumnDefinition Width="*" />
@@ -192,9 +207,28 @@
 
           <Button x:Name="ResetBankrollButton" Content="Reset bankroll to $1,000" Style="{StaticResource MutedButton}" Margin="4,14,4,0" Click="ResetBankroll_Click" />
 
-          <Separator Margin="0,18" Background="#31533F" />
+          <Separator Margin="0,18" Background="{DynamicResource PanelBorderBrush}" />
 
-          <TextBlock Text="UPDATES" FontSize="12" FontWeight="Bold" Foreground="#9EB1A4" />
+          <TextBlock Text="PRESENTATION" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource MutedTextBrush}" />
+          <Grid Margin="4,10,4,3">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="155" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="Table theme" VerticalAlignment="Center" Foreground="#AFC0B4" />
+            <ComboBox x:Name="ThemeComboBox" Grid.Column="1" SelectedIndex="0">
+              <ComboBoxItem Content="Classic Green" />
+              <ComboBoxItem Content="Midnight Blue" />
+              <ComboBoxItem Content="Burgundy" />
+            </ComboBox>
+          </Grid>
+          <CheckBox x:Name="SoundCheckBox" Content="Sound feedback" IsChecked="True" Margin="5,8,4,2" />
+          <CheckBox x:Name="AnimationsCheckBox" Content="Card animations" IsChecked="True" Margin="5,5,4,2" />
+          <Button Content="Toggle fullscreen  [F11]" Style="{StaticResource MutedButton}" Margin="4,9,4,0" Click="Fullscreen_Click" />
+
+          <Separator Margin="0,18" Background="{DynamicResource PanelBorderBrush}" />
+
+          <TextBlock Text="UPDATES" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource MutedTextBrush}" />
           <ComboBox x:Name="UpdateChannelComboBox" SelectedIndex="0" Margin="4,10,4,4">
             <ComboBoxItem Content="Stable" />
             <ComboBoxItem Content="Development" />
