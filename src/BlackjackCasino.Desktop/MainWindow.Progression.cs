@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using BlackjackCasino.Core;
@@ -23,6 +24,7 @@ public partial class MainWindow
         progressionController = new PlayerProgressionController();
         BuildProfileButton();
         AddHandler(Button.ClickEvent, new RoutedEventHandler(ProgressionButtonBubbled), handledEventsToo: true);
+        AddHandler(Keyboard.PreviewKeyDownEvent, new KeyEventHandler(ProgressionKeyObserved), handledEventsToo: true);
         RefreshProfileButton();
     }
 
@@ -60,14 +62,22 @@ public partial class MainWindow
         headerGrid.Children.Add(profileButton);
     }
 
-    private void ProgressionButtonBubbled(object sender, RoutedEventArgs e)
-    {
-        if (progressionController is null)
-        {
-            return;
-        }
+    private void ProgressionButtonBubbled(object sender, RoutedEventArgs e) => QueueProgressionCheck();
 
-        Dispatcher.BeginInvoke(ProcessLatestCompletedRound, DispatcherPriority.ContextIdle);
+    private void ProgressionKeyObserved(object sender, KeyEventArgs e)
+    {
+        if (e.Key is Key.H or Key.S or Key.D or Key.P or Key.R or Key.Enter)
+        {
+            QueueProgressionCheck();
+        }
+    }
+
+    private void QueueProgressionCheck()
+    {
+        if (progressionController is not null)
+        {
+            Dispatcher.BeginInvoke(ProcessLatestCompletedRound, DispatcherPriority.ContextIdle);
+        }
     }
 
     private void ProcessLatestCompletedRound()
