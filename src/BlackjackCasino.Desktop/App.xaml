@@ -4,17 +4,24 @@
              StartupUri="MainWindow.xaml">
   <Application.Resources>
     <Style x:Key="CasinoScrollThumb" TargetType="Thumb">
-      <Setter Property="Background" Value="#3A5E4A" />
+      <Setter Property="Background" Value="#426853" />
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="Thumb">
-            <Border x:Name="ThumbChrome" Background="{TemplateBinding Background}" CornerRadius="5" Margin="2" />
+            <Border x:Name="ThumbChrome"
+                    Background="{TemplateBinding Background}"
+                    BorderBrush="#315744"
+                    BorderThickness="1"
+                    CornerRadius="5"
+                    Margin="2" />
             <ControlTemplate.Triggers>
               <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="ThumbChrome" Property="Background" Value="#567662" />
+                <Setter TargetName="ThumbChrome" Property="Background" Value="#5B7D68" />
+                <Setter TargetName="ThumbChrome" Property="BorderBrush" Value="#718D78" />
               </Trigger>
               <Trigger Property="IsDragging" Value="True">
-                <Setter TargetName="ThumbChrome" Property="Background" Value="#B99247" />
+                <Setter TargetName="ThumbChrome" Property="Background" Value="#9A8248" />
+                <Setter TargetName="ThumbChrome" Property="BorderBrush" Value="#C6A95D" />
               </Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
@@ -23,19 +30,20 @@
     </Style>
 
     <Style TargetType="ScrollBar">
-      <Setter Property="Background" Value="#071A11" />
-      <Setter Property="Width" Value="12" />
-      <Setter Property="Height" Value="12" />
+      <Setter Property="Background" Value="#091C13" />
+      <Setter Property="Width" Value="14" />
+      <Setter Property="Height" Value="14" />
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="ScrollBar">
-            <Grid x:Name="Root" Background="Transparent">
-              <Track x:Name="PART_Track" Orientation="{TemplateBinding Orientation}" IsDirectionReversed="True">
+            <Grid Background="Transparent">
+              <Border Background="#0D2418" BorderBrush="#1F3D2E" BorderThickness="1" CornerRadius="7" Margin="2" />
+              <Track x:Name="PART_Track" Orientation="{TemplateBinding Orientation}" IsDirectionReversed="True" Margin="1">
                 <Track.DecreaseRepeatButton>
                   <RepeatButton Command="ScrollBar.PageUpCommand" Opacity="0" IsTabStop="False" />
                 </Track.DecreaseRepeatButton>
                 <Track.Thumb>
-                  <Thumb Style="{StaticResource CasinoScrollThumb}" />
+                  <Thumb x:Name="ScrollThumb" Style="{StaticResource CasinoScrollThumb}" />
                 </Track.Thumb>
                 <Track.IncreaseRepeatButton>
                   <RepeatButton Command="ScrollBar.PageDownCommand" Opacity="0" IsTabStop="False" />
@@ -43,8 +51,14 @@
               </Track>
             </Grid>
             <ControlTemplate.Triggers>
+              <Trigger Property="Orientation" Value="Vertical">
+                <Setter TargetName="ScrollThumb" Property="MinHeight" Value="54" />
+                <Setter TargetName="ScrollThumb" Property="MinWidth" Value="0" />
+              </Trigger>
               <Trigger Property="Orientation" Value="Horizontal">
                 <Setter TargetName="PART_Track" Property="IsDirectionReversed" Value="False" />
+                <Setter TargetName="ScrollThumb" Property="MinWidth" Value="54" />
+                <Setter TargetName="ScrollThumb" Property="MinHeight" Value="0" />
               </Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
