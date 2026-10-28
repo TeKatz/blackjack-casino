@@ -1,7 +1,10 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Media.Effects;
 using System.Windows.Threading;
 using BlackjackCasino.Core;
 
@@ -148,7 +151,7 @@ public partial class MainWindow
             string levels = award.LevelsGained.Count == 1
                 ? $"Level {award.LevelsGained[0]}"
                 : $"Level {award.LevelsGained[0]}–{award.LevelsGained[^1]}";
-            StatusText.Text += $" · {levels}! +{award.CoinsEarned:N0} coins";
+            StatusText.Text += $" · {levels}! +{award.CoinsEarned:N0} cosmetic coins";
         }
         else if (award.SeasonTiersGained > 0)
         {
@@ -181,22 +184,77 @@ public partial class MainWindow
 
         PlayerProfileState profile = progressionController.Profile;
         CosmeticDefinition title = CosmeticCatalog.Get(profile.EquippedTitleId);
-        profileButton.Content = $"P{profile.Prestige} · LV {profile.Level}    ◆ {profile.Coins:N0}";
-        profileButton.ToolTip = $"{title.Name} · Open profile, stats, season and shop";
-        profileButton.BorderBrush = ProfileFrameBrush(profile.EquippedFrameId);
+        CosmeticDefinition frame = CosmeticCatalog.Get(profile.EquippedFrameId);
+
+        var text = new TextBlock { VerticalAlignment = VerticalAlignment.Center };
+        text.Inlines.Add(new Run($"P{profile.Prestige} · LV {profile.Level}    "));
+        text.Inlines.Add(new Run($"◆ {profile.Coins:N0}")
+        {
+            Foreground = new SolidColorBrush(Color.FromRgb(84, 225, 183)),
+            FontWeight = FontWeights.Bold,
+        });
+        profileButton.Content = text;
+        profileButton.ToolTip = $"{title.Name} · Open Player, stats, Season Pass, Shop and Challenges";
+        ApplyHeaderFrame(frame);
     }
 
-    private static Brush ProfileFrameBrush(string frameId) => frameId switch
+    private void ApplyHeaderFrame(CosmeticDefinition frame)
     {
-        "frame-prestige-2" => Brush("#B77A45"),
-        "frame-prestige-5" => Brush("#BFC9D1"),
-        "frame-prestige-10" => Brush("#E1C15A"),
-        "frame-season-midnight-10" => Brush("#667FD1"),
-        "frame-season-midnight-35" => Brush("#B05ECF"),
-        "frame-emerald" => Brush("#4D9A72"),
-        "frame-midnight" => Brush("#526E9A"),
-        "frame-burgundy" => Brush("#9C5B66"),
-        "frame-gold-trim" => Brush("#D4A84F"),
-        _ => Brush("#52695A"),
-    };
+        if (profileButton is null)
+        {
+            return;
+        }
+
+        (Color first, Color second, string motion) = frame.VisualVariant switch
+        {
+            "emerald-breathe" => (Color.FromRgb(65, 150, 105), Color.FromRgb(112, 220, 156), "pulse"),
+            "midnight-sweep" => (Color.FromRgb(60, 86, 142), Color.FromRgb(108, 153, 225), "sweep"),
+            "burgundy-ember" => (Color.FromRgb(127, 59, 72), Color.FromRgb(211, 87, 104), "pulse"),
+            "gold-shimmer" => (Color.FromRgb(139, 100, 39), Color.FromRgb(238, 198, 91), "sweep"),
+            "aurora-drift" => (Color.FromRgb(65, 208, 177), Color.FromRgb(152, 87, 218), "sweep"),
+            "crimson-heartbeat" => (Color.FromRgb(117, 34, 49), Color.FromRgb(235, 82, 104), "pulse"),
+            "starlight-orbit" => (Color.FromRgb(125, 159, 207), Color.FromRgb(223, 235, 245), "sweep"),
+            "royal-violet" => (Color.FromRgb(118, 73, 164), Color.FromRgb(224, 184, 91), "sweep"),
+            "obsidian-pulse" => (Color.FromRgb(24, 31, 37), Color.FromRgb(54, 224, 205), "pulse"),
+            "prestige-bronze" => (Color.FromRgb(136, 78, 42), Color.FromRgb(208, 142, 82), "pulse"),
+            "prestige-silver" => (Color.FromRgb(125, 137, 147), Color.FromRgb(225, 234, 240), "sweep"),
+            "prestige-gold" => (Color.FromRgb(151, 113, 36), Color.FromRgb(255, 220, 102), "sweep"),
+            "midnight-line" => (Color.FromRgb(67, 87, 157), Color.FromRgb(118, 146, 229), "sweep"),
+            "neon-noir" => (Color.FromRgb(59, 210, 188), Color.FromRgb(197, 78, 219), "sweep"),
+            "eclipse-thread" => (Color.FromRgb(74, 96, 135), Color.FromRgb(170, 96, 187), "sweep"),
+            "eclipse-halo" => (Color.FromRgb(55, 155, 168), Color.FromRgb(206, 107, 178), "pulse"),
+            "eclipse-crown" => (Color.FromRgb(191, 137, 55), Color.FromRgb(136, 79, 190), "sweep"),
+            _ => (Color.FromRgb(82, 105, 90), Color.FromRgb(82, 105, 90), "none"),
+        };
+
+        var brush = new LinearGradientBrush(first, second, 0);
+        profileButton.BorderBrush = brush;
+        var glow = new DropShadowEffect
+        {
+            Color = second,
+            BlurRadius = motion == "none" ? 0 : 9,
+            ShadowDepth = 0,
+            Opacity = motion == "none" ? 0 : 0.22,
+        };
+        profileButton.Effect = motion == "none" ? null : glow;
+
+        if (motion == "pulse")
+        {
+            glow.BeginAnimation(DropShadowEffect.OpacityProperty, new DoubleAnimation(0.12, 0.38, TimeSpan.FromSeconds(2.2))
+            {
+                AutoReverse = true,
+                RepeatBehavior = RepeatBehavior.Forever,
+                EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut },
+            });
+        }
+        else if (motion == "sweep")
+        {
+            brush.GradientStops[1].BeginAnimation(GradientStop.OffsetProperty, new DoubleAnimation(0.2, 0.88, TimeSpan.FromSeconds(3.8))
+            {
+                AutoReverse = true,
+                RepeatBehavior = RepeatBehavior.Forever,
+                EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut },
+            });
+        }
+    }
 }
