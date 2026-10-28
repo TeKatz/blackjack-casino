@@ -12,7 +12,7 @@ permissions:
 jobs:
   build-test:
     runs-on: windows-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
       - name: Checkout
@@ -39,3 +39,43 @@ jobs:
           name: test-results
           path: TestResults
           if-no-files-found: ignore
+
+      - name: Publish preview updater
+        if: github.event_name == 'push'
+        shell: pwsh
+        run: |
+          $version = "0.1.0-preview.${{ github.run_number }}"
+          dotnet publish src/BlackjackCasino.Updater/BlackjackCasino.Updater.csproj `
+            --configuration Release `
+            --runtime win-x64 `
+            --self-contained true `
+            -p:PublishSingleFile=true `
+            -p:DebugType=None `
+            -p:Version=$version `
+            --output artifacts/preview-updater
+
+      - name: Publish preview desktop
+        if: github.event_name == 'push'
+        shell: pwsh
+        run: |
+          $version = "0.1.0-preview.${{ github.run_number }}"
+          dotnet publish src/BlackjackCasino.Desktop/BlackjackCasino.Desktop.csproj `
+            --configuration Release `
+            --runtime win-x64 `
+            --self-contained true `
+            -p:PublishSingleFile=true `
+            -p:DebugType=None `
+            -p:Version=$version `
+            --output artifacts/preview-app
+
+          New-Item -ItemType Directory -Path artifacts/preview-app/tools/updater -Force | Out-Null
+          Copy-Item artifacts/preview-updater/BlackjackCasino.Updater.exe artifacts/preview-app/tools/updater/BlackjackCasino.Updater.exe
+
+      - name: Upload Windows preview
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@v4
+        with:
+          name: blackjack-casino-preview-win-x64
+          path: artifacts/preview-app
+          if-no-files-found: error
+          retention-days: 14
