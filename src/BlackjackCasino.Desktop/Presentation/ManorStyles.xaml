@@ -122,7 +122,11 @@
                   <Path Width="8" Height="5" Margin="0,0,11,0" HorizontalAlignment="Right" VerticalAlignment="Center" Fill="#D5B15E" Data="M 0 0 L 4 5 L 8 0 Z" />
                 </Grid>
               </Border>
-              <ToggleButton Focusable="False" Background="Transparent" BorderThickness="0" Cursor="Hand" IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}" />
+              <!-- A transparent default ToggleButton still paints Windows hover/disabled chrome.
+                   Own its entire template so those states never cover the selected text. -->
+              <ToggleButton x:Name="DropDownToggle" Focusable="False" Background="Transparent" BorderThickness="0" Cursor="Hand" IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
+                <ToggleButton.Template><ControlTemplate TargetType="ToggleButton"><Border Background="Transparent" /></ControlTemplate></ToggleButton.Template>
+              </ToggleButton>
               <Popup x:Name="PART_Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" AllowsTransparency="True" Focusable="False" PopupAnimation="Fade">
                 <Border Margin="0,4,0,0" MinWidth="{TemplateBinding ActualWidth}" Background="#1B1525" BorderBrush="#68546E" BorderThickness="1" CornerRadius="7">
                   <Border.Effect><DropShadowEffect Color="#000000" BlurRadius="12" ShadowDepth="3" Opacity="0.38" /></Border.Effect>
@@ -131,7 +135,7 @@
               </Popup>
             </Grid>
             <ControlTemplate.Triggers>
-              <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="ComboChrome" Property="BorderBrush" Value="#9C7E93" /></Trigger>
+              <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="ComboChrome" Property="BorderBrush" Value="#9C7E93" /><Setter TargetName="ComboChrome" Property="Background" Value="#352939" /></Trigger>
               <Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="ComboChrome" Property="BorderBrush" Value="#BFA373" /></Trigger>
               <Trigger Property="IsEnabled" Value="False"><Setter TargetName="ComboChrome" Property="Opacity" Value="0.58" /><Setter Property="Cursor" Value="Arrow" /></Trigger>
             </ControlTemplate.Triggers>

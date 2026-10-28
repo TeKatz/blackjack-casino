@@ -66,18 +66,20 @@ internal sealed class ManorPersistence(string directory)
             throw new InvalidDataException("Unsupported Manor checkpoint.");
         ManorSessionState s=checkpoint.Machine;
         ManorRules.ValidateBet(s.Bet);
+        _=ManorRules.SymbolDefinitions(s.PaytableVersion);
         if(s.Bankroll<0 || checkpoint.Preferences.Bankroll!=s.Bankroll || s.FreeSpinsRemaining is <0 or >20
             || s.CycleReturned<0 || s.CycleReturned>s.Bet*ManorRules.MaximumCycleMultiplier
             || s.Statistics is null || checkpoint.Profile.Manor is null)
             throw new InvalidDataException("Invalid Manor financial state.");
         if(s.LastSpin is {} spin)
         {
-            ManorSpin evaluated=ManorRules.Evaluate(spin.Stops,s.Bet,spin.Free);
+            ManorSpin evaluated=ManorRules.Evaluate(spin.Stops,s.Bet,spin.Free,spin.PaytableVersion);
             if(evaluated.Payout!=spin.Payout || !evaluated.Cells.SequenceEqual(spin.Cells))
                 throw new InvalidDataException("Invalid stored Manor reel result.");
         }
         if(s.Run is {} r && (r.Player is <0 or >16 || r.Ghost is <0 or >18 || r.Seed is <0 or >15
-            || r.ExitTarget is not (250 or 500 or 1000) || r.Current<0 || r.Current>r.ExitTarget
+            || r.ExitTarget is not (250 or 500 or 1000) || r.PrizeScale is not (1m or 0.1m)
+            || (r.PrizeScale==0.1m && r.ExitTarget!=250) || r.Current<0 || r.Current>r.ExitTarget
             || r.Banked<0 || r.Banked>r.Current || r.Turn is <0 or >24 || !Enum.IsDefined(r.Status)))
             throw new InvalidDataException("Invalid Manor labyrinth state.");
     }

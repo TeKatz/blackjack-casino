@@ -22,27 +22,27 @@ public static class ManorMath
         decimal denominator=Pow(64,5);
         decimal baseReturn=weighted/denominator;
         decimal freeProbability=0,bonusProbability=0,freeCount=0,bonusReturn=0;
-        var runAverages=new decimal[3];
-        for(int n=3;n<=5;n++)
+        var runAverages=new decimal[4];
+        for(int n=2;n<=5;n++)
         {
-            decimal f=Choose(n)*Pow(6,n)*Pow(58,5-n)/denominator;
+            decimal f=n>=3 ? Choose(n)*Pow(6,n)*Pow(58,5-n)/denominator : 0;
             decimal b=Choose(n)*Pow(3,n)*Pow(61,5-n)/denominator;
             freeProbability+=f;
             bonusProbability+=b;
             freeCount+=f*ManorRules.FreeSpinCount(n);
-            int sum=0;
+            decimal sum=0;
             for(int seed=0;seed<16;seed++)
             {
                 ManorRun run=ManorRun.Create(n,seed);
                 run.AutoResolve();
-                sum+=run.State.Payout;
+                sum+=run.State.PaidMultiplier;
             }
-            runAverages[n-3]=sum/16m;
-            bonusReturn+=b*runAverages[n-3];
+            runAverages[n-2]=sum/16m;
+            bonusReturn+=b*runAverages[n-2];
         }
         return new(baseReturn,freeProbability,bonusProbability,freeCount,bonusReturn,
             baseReturn*(1+2*freeCount)+bonusReturn,runAverages);
     }
     private static decimal Pow(int n,int p) { decimal value=1; for(int i=0;i<p;i++) value*=n; return value; }
-    private static int Choose(int n) => n==3 ? 10 : n==4 ? 5 : 1;
+    private static int Choose(int n) => n is 2 or 3 ? 10 : n==4 ? 5 : 1;
 }

@@ -5,23 +5,36 @@ namespace BlackjackCasino.Core.Manor;
 public enum ManorSymbol { Jack, Queen, King, Ace, Candelabrum, Watch, Raven, Key, Portrait, Rose, Lady, Wild, Scatter, Bonus }
 public sealed record ManorSymbolDefinition(ManorSymbol Symbol, string Name, int Frequency, int Three, int Four, int Five);
 public sealed record ManorLineWin(int Line, ManorSymbol Symbol, int Count, decimal Amount);
-public sealed record ManorSpin(int[] Stops, ManorSymbol[] Cells, ManorLineWin[] Wins, decimal Payout, int Scatters, int Doors, bool Free);
+public sealed record ManorSpin(int[] Stops, ManorSymbol[] Cells, ManorLineWin[] Wins, decimal Payout, int Scatters, int Doors, bool Free, int PaytableVersion=1);
 
 public static class ManorRules
 {
     public const int StopCount=64;
+    public const int CurrentPaytableVersion=2;
     public const int MaximumCycleMultiplier=148_600;
     public const int BigWinMultiplier=25;
     public static IReadOnlyList<ManorSymbolDefinition> Symbols { get; } = Array.AsReadOnly(new ManorSymbolDefinition[]
     {
-        new(ManorSymbol.Jack,"Victorian J",10,18,48,120), new(ManorSymbol.Queen,"Victorian Q",9,24,60,150),
-        new(ManorSymbol.King,"Victorian K",8,30,72,180), new(ManorSymbol.Ace,"Victorian A",7,36,90,240),
-        new(ManorSymbol.Candelabrum,"Candelabrum",6,48,120,360), new(ManorSymbol.Watch,"Pocket watch",5,60,150,480),
-        new(ManorSymbol.Raven,"Raven",4,90,240,720), new(ManorSymbol.Key,"Antique key",3,108,300,900),
-        new(ManorSymbol.Portrait,"Haunted portrait",3,120,360,1200), new(ManorSymbol.Rose,"Black rose",3,150,450,1500),
-        new(ManorSymbol.Lady,"Lady of the Manor",2,240,900,3600), new(ManorSymbol.Wild,"Haunted mirror / Wild",1,0,0,0),
+        new(ManorSymbol.Jack,"Victorian J",10,14,36,90), new(ManorSymbol.Queen,"Victorian Q",9,18,45,112),
+        new(ManorSymbol.King,"Victorian K",8,22,54,135), new(ManorSymbol.Ace,"Victorian A",7,27,68,180),
+        new(ManorSymbol.Candelabrum,"Candelabrum",6,36,90,270), new(ManorSymbol.Watch,"Pocket watch",5,45,112,360),
+        new(ManorSymbol.Raven,"Raven",4,68,180,540), new(ManorSymbol.Key,"Antique key",3,81,225,675),
+        new(ManorSymbol.Portrait,"Haunted portrait",3,90,270,900), new(ManorSymbol.Rose,"Black rose",3,112,338,1125),
+        new(ManorSymbol.Lady,"Lady of the Manor",2,180,675,2700), new(ManorSymbol.Wild,"Haunted mirror / Wild",1,0,0,0),
         new(ManorSymbol.Scatter,"Manor moon / Scatter",2,0,0,0), new(ManorSymbol.Bonus,"Manor door / Bonus",1,0,0,0),
     });
+    private static readonly IReadOnlyList<ManorSymbolDefinition> LegacySymbols=Array.AsReadOnly(Symbols.Select((s,i)=>
+    {
+        int[][] awards=[[18,48,120],[24,60,150],[30,72,180],[36,90,240],[48,120,360],[60,150,480],
+            [90,240,720],[108,300,900],[120,360,1200],[150,450,1500],[240,900,3600]];
+        return i<11 ? s with {Three=awards[i][0],Four=awards[i][1],Five=awards[i][2]} : s;
+    }).ToArray());
+    public static IReadOnlyList<ManorSymbolDefinition> SymbolDefinitions(int version) => version switch
+    {
+        1=>LegacySymbols,
+        CurrentPaytableVersion=>Symbols,
+        _=>throw new ArgumentOutOfRangeException(nameof(version),"Unknown Manor payout table."),
+    };
     private static readonly int[][] Lines="11111 00000 22222 01210 21012 00100 22122 11011 11211 01110 21112 10001 12221 01010 21212 10101 12121 02020 20202 02120"
         .Split(' ').Select(s=>s.Select(c=>c-'0').ToArray()).ToArray();
     public static IReadOnlyList<IReadOnlyList<int>> Paylines { get; } = Array.AsReadOnly(Lines.Select(x=>(IReadOnlyList<int>)Array.AsReadOnly(x)).ToArray());
@@ -46,11 +59,11 @@ public static class ManorRules
         return Strip[(stop+row+reel*11)%64];
     }
 
-    public static (ManorSymbol Symbol,int Count,int Credits) EvaluateLine(IReadOnlyList<ManorSymbol> symbols)
+    public static (ManorSymbol Symbol,int Count,int Credits) EvaluateLine(IReadOnlyList<ManorSymbol> symbols,int paytableVersion=CurrentPaytableVersion)
     {
         if(symbols.Count!=5 || symbols.Any(s=>!Enum.IsDefined(s))) throw new ArgumentException("A line contains five known symbols.");
         (ManorSymbol Symbol,int Count,int Credits) best=default;
-        foreach(ManorSymbolDefinition definition in Symbols.Take(11))
+        foreach(ManorSymbolDefinition definition in SymbolDefinitions(paytableVersion).Take(11))
         {
             int count=0;
             while(count<5 && (symbols[count]==definition.Symbol || symbols[count]==ManorSymbol.Wild)) count++;
@@ -60,7 +73,7 @@ public static class ManorRules
         return best;
     }
 
-    public static ManorSpin Evaluate(int[] stops,decimal bet,bool free=false)
+    public static ManorSpin Evaluate(int[] stops,decimal bet,bool free=false,int paytableVersion=CurrentPaytableVersion)
     {
         ValidateBet(bet);
         if(stops.Length!=5) throw new ArgumentException("Five stops required.",nameof(stops));
@@ -70,11 +83,11 @@ public static class ManorRules
         var wins=new List<ManorLineWin>();
         for(int line=0;line<20;line++)
         {
-            var result=EvaluateLine(Enumerable.Range(0,5).Select(r=>cells[r*3+Lines[line][r]]).ToArray());
+            var result=EvaluateLine(Enumerable.Range(0,5).Select(r=>cells[r*3+Lines[line][r]]).ToArray(),paytableVersion);
             if(result.Credits>0) wins.Add(new(line,result.Symbol,result.Count,bet/20*result.Credits*(free ? 2 : 1)));
         }
         return new(stops.ToArray(),cells,wins.ToArray(),wins.Sum(w=>w.Amount),
-            cells.Count(s=>s==ManorSymbol.Scatter),cells.Count(s=>s==ManorSymbol.Bonus),free);
+            cells.Count(s=>s==ManorSymbol.Scatter),cells.Count(s=>s==ManorSymbol.Bonus),free,paytableVersion);
     }
 
     public static int FreeSpinCount(int scatters) => scatters>=5 ? 20 : scatters==4 ? 12 : scatters==3 ? 8 : 0;

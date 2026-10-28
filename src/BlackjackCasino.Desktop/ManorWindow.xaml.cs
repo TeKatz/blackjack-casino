@@ -159,6 +159,7 @@ internal partial class ManorWindow : Window
     {
         Refresh();
         PaylineCanvas.Children.Clear();
+        ReelEffects.BeginAnimation(ManorEffects.BurstProperty,null);
         ReelFrame.Background=ManorArtwork.Ink(spin.Free ? "#16313C" : "#17141D");
         MachineScene.Opacity=spin.Free ? 0.65 : 0.44;
         WinText.Text=spin.Free ? "HAUNTED NIGHT · 2× LINE WINS" : "The reels awaken…";
@@ -166,7 +167,8 @@ internal partial class ManorWindow : Window
         audio.EndRoom();
         audio.Play(ManorCue.Start);
         int doors=0;
-        for(int i=0;i<5;i++) { reels[i].WinningRows.Clear(); reels[i].DimOthers=false; reels[i].InvalidateVisual(); }
+        if(Animations) ReelEffects.Activity=1;
+        for(int i=0;i<5;i++) { reels[i].BeginAnimation(ManorReelView.EmphasisProperty,null); reels[i].WinningRows.Clear(); reels[i].DimOthers=false; reels[i].InvalidateVisual(); }
         if(Animations)
         {
             reelSound.Start();
@@ -178,8 +180,8 @@ internal partial class ManorWindow : Window
                 int target=spin.Stops[i];
                 int travel=(Speed==SlotSpinSpeed.Normal ? 64 : Speed==SlotSpinSpeed.Fast ? 32 : 0)+(target-from+64)%64;
                 int duration=Speed==SlotSpinSpeed.Normal ? 1550+i*170 : Speed==SlotSpinSpeed.Fast ? 450+i*70 : 115+i*20;
-                // Anticipation is based on two actually visible Doors, never an altered outcome.
-                bool possible=Enumerable.Range(0,4).Sum(r=>spin.Cells.Skip(r*3).Take(3).Count(s=>s==ManorSymbol.Bonus))>=2;
+                // Anticipation is based on an actually visible Door, never an altered outcome.
+                bool possible=Enumerable.Range(0,4).Sum(r=>spin.Cells.Skip(r*3).Take(3).Count(s=>s==ManorSymbol.Bonus))>=1;
                 if(possible && i==4 && Speed==SlotSpinSpeed.Normal) duration+=350;
                 reels[i].Effect=Speed==SlotSpinSpeed.Normal ? new BlurEffect { Radius=1.7,KernelType=KernelType.Gaussian } : null;
                 motions.Add(Animate(reels[i],ManorReelView.PositionProperty,from,from+travel,duration,()=>
@@ -187,24 +189,31 @@ internal partial class ManorWindow : Window
                     reels[reel].Effect=null;
                     reels[reel].Position=target;
                     audio.Play((ManorCue)((int)ManorCue.Stop1+reel));
+                    reels[reel].BeginAnimation(ManorReelView.StopImpactProperty,new DoubleAnimation(1,0,TimeSpan.FromMilliseconds(Timing(280,170,100))) { FillBehavior=FillBehavior.Stop });
                     doors+=spin.Cells.Skip(reel*3).Take(3).Count(s=>s==ManorSymbol.Bonus);
-                    if(doors==2 && reel<4) { audio.Mood(0,true); audio.Play(ManorCue.Heartbeat); }
+                    if(doors==1 && reel<4) { audio.Mood(0,true); audio.Play(ManorCue.Heartbeat); }
                 }));
             }
             try { await Task.WhenAll(motions); } finally { reelSound.Stop(); }
         }
         else for(int i=0;i<5;i++) { reels[i].Position=spin.Stops[i]; reels[i].Effect=null; }
         Token.ThrowIfCancellationRequested();
+        ReelEffects.Activity=0;
         audio.Mood(0);
-        if(spin.Doors==2 && !spin.Free) audio.Play(ManorCue.Fakeout);
+        if(spin.Doors==1 && !spin.Free) audio.Play(ManorCue.Fakeout);
         if(spin.Cells.Contains(ManorSymbol.Wild)) audio.Play(ManorCue.Wild);
         if(spin.Scatters>=3 && !spin.Free) audio.Play(ManorCue.Scatter);
-        if(spin.Doors>=3 && !spin.Free) audio.Play(ManorCue.Bonus);
+        if(spin.Doors>=2 && !spin.Free) audio.Play(ManorCue.Bonus);
         Highlight(spin);
         if(Animations && spin.Cells.Any(s=>s>=ManorSymbol.Wild))
             foreach(ManorReelView reel in reels)
-                reel.BeginAnimation(ManorReelView.EmphasisProperty,new DoubleAnimation(0,1,TimeSpan.FromMilliseconds(240)) {AutoReverse=true,FillBehavior=FillBehavior.Stop});
-        string prefix=spin.Payout>=State.Bet*100 ? "SUPERNATURAL WIN" : spin.Payout>=State.Bet*25 ? "BIG WIN" : spin.Payout>0 ? "RETURNED" : "NO PAYLINE THIS TIME";
+                reel.BeginAnimation(ManorReelView.EmphasisProperty,new DoubleAnimation(0.15,1,TimeSpan.FromMilliseconds(650)) {AutoReverse=true,RepeatBehavior=RepeatBehavior.Forever,FillBehavior=FillBehavior.Stop});
+        if(Animations && (spin.Payout>0 || (!spin.Free && (spin.Doors>=2 || spin.Scatters>=3))))
+        {
+            ReelEffects.Grand=spin.Payout>=State.Bet*25 || (!spin.Free && (spin.Doors>=2 || spin.Scatters>=3));
+            ReelEffects.BeginAnimation(ManorEffects.BurstProperty,new DoubleAnimation(1,0,TimeSpan.FromMilliseconds(Timing(ReelEffects.Grand?1600:850,500,220))) { FillBehavior=FillBehavior.Stop });
+        }
+        string prefix=!spin.Free && spin.Doors>=2 ? "THE MANOR OPENS" : !spin.Free && spin.Scatters>=3 ? "HAUNTED NIGHT AWARDED" : spin.Payout>=State.Bet*100 ? "SUPERNATURAL WIN" : spin.Payout>=State.Bet*25 ? "BIG WIN" : spin.Payout>0 ? "RETURNED" : "NO PAYLINE THIS TIME";
         if(spin.Payout>0)
         {
             audio.Play(spin.Payout>=State.Bet*25 ? ManorCue.BigWin : spin.Payout>=State.Bet*5 ? ManorCue.MediumWin : ManorCue.SmallWin);
@@ -217,8 +226,11 @@ internal partial class ManorWindow : Window
             }
             if(spin.Payout>=State.Bet*25 && Animations)
             {
-                var pulse=new DoubleAnimation(1,0.68,TimeSpan.FromMilliseconds(220)) { AutoReverse=true,RepeatBehavior=new RepeatBehavior(2),FillBehavior=FillBehavior.Stop };
-                ReelFrame.BeginAnimation(OpacityProperty,pulse);
+                WinText.RenderTransformOrigin=new Point(0.5,0.5);
+                var scale=new ScaleTransform(1,1); WinText.RenderTransform=scale;
+                var pulse=new DoubleAnimation(1,1.09,TimeSpan.FromMilliseconds(260)) { AutoReverse=true,RepeatBehavior=new RepeatBehavior(2),FillBehavior=FillBehavior.Stop };
+                scale.BeginAnimation(ScaleTransform.ScaleXProperty,pulse);
+                scale.BeginAnimation(ScaleTransform.ScaleYProperty,pulse);
             }
         }
         WinText.Text=prefix+(spin.Payout>0 ? " · "+Money(spin.Payout) : "");
@@ -238,20 +250,31 @@ internal partial class ManorWindow : Window
             reels[i].DimOthers=winning.Count>0; reels[i].InvalidateVisual();
         }
         PaylineCanvas.Children.Clear();
-        foreach(ManorLineWin win in spin.Wins.Take(3))
+        // Show every paid line, only along the symbols that actually paid.
+        // A dark outer stroke, bright gold core and moving moonlight trace keep it
+        // readable on ivory reels without hiding the artwork under a solid band.
+        foreach(ManorLineWin win in spin.Wins)
         {
-            var line=new Polyline { Stroke=ManorArtwork.Ink("#A6D7B985"),StrokeThickness=1.2,IsHitTestVisible=false };
-            for(int col=0;col<5;col++) line.Points.Add(new Point(76+col*152,47+ManorRules.Paylines[win.Line][col]*94));
+            var points=new PointCollection(Enumerable.Range(0,win.Count).Select(col=>new Point(76+col*152,47+ManorRules.Paylines[win.Line][col]*94)));
+            PaylineCanvas.Children.Add(new Polyline { Points=points,Stroke=ManorArtwork.Ink("#D0181829"),StrokeThickness=6,StrokeLineJoin=PenLineJoin.Round });
+            var line=new Polyline { Points=points,Stroke=ManorArtwork.Ink("#FFF0A7"),StrokeThickness=2.8,StrokeLineJoin=PenLineJoin.Round,
+                Effect=new DropShadowEffect {Color=Color.FromRgb(100,255,225),BlurRadius=8,ShadowDepth=0,Opacity=0.8} };
             PaylineCanvas.Children.Add(line);
+            if(Animations)
+            {
+                var trace=new Polyline { Points=points,Stroke=Brushes.White,StrokeThickness=1.5,StrokeDashArray=new DoubleCollection {3,9},StrokeLineJoin=PenLineJoin.Round };
+                trace.BeginAnimation(Shape.StrokeDashOffsetProperty,new DoubleAnimation(12,0,TimeSpan.FromMilliseconds(1000)) {RepeatBehavior=RepeatBehavior.Forever});
+                PaylineCanvas.Children.Add(trace);
+            }
         }
     }
 
     private async Task DoorTransition(bool automatic)
     {
         if(closed) return;
-        DoorTitle.Text="ESCAPE THE MANOR"; DoorScene.Scene="Door";
+        DoorTitle.Text=State.Run!.PrizeScale<1 ? "A VISIT TO THE MANOR" : "ESCAPE THE MANOR"; DoorScene.Scene="Door";
         audio.Play(ManorCue.Trigger); DoorPanel.Visibility=Visibility.Visible;
-        DoorNote.Text=automatic ? "Auto-resolved with the same map and ghost rules" : $"Exit target {State.Run!.ExitTarget}× · your choices change the risk";
+        DoorNote.Text=automatic ? "Auto-resolved with the same map and ghost rules" : $"Exit target {State.Run!.Multiplier(State.Run.ExitTarget):0.##}× · your choices change the risk";
         DoorScene.DoorOpen=0;
         if(Animations)
         {
@@ -268,12 +291,13 @@ internal partial class ManorWindow : Window
         ManorRunState run=State.Run!;
         BonusPanel.Visibility=Visibility.Visible;
         RoomScene.Scene=ManorMap.Rooms[run.Player].Area.ToString(); RoomScene.Threat=run.Haunt;
-        RoomText.Text=$"{ManorMap.Rooms[run.Player].Name} · turn {run.Turn}/24 · Exit {run.ExitTarget}×";
-        RewardText.Text=$"{run.Current}× / {run.Banked}×";
+        if(Animations) RoomScene.BeginAnimation(OpacityProperty,new DoubleAnimation(0.5,1,TimeSpan.FromMilliseconds(Timing(320,160,80))) { FillBehavior=FillBehavior.Stop });
+        RoomText.Text=$"{ManorMap.Rooms[run.Player].Name} · turn {run.Turn}/24 · Exit {run.Multiplier(run.ExitTarget):0.##}×";
+        RewardText.Text=$"{run.Multiplier(run.Current):0.##}× / {run.Multiplier(run.Banked):0.##}×";
         HauntText.Text=$"{run.Haunt} / 8";
         GhostText.Text=new ManorRun(run).GhostClue;
         RoomNote.Text=run.Message+(run.HasKey ? "  KEY" : "")+(run.HasCharm ? "  CHARM" : "")+(run.HasCandle ? "  CANDLE" : "");
-        LeaveButton.Content=$"LEAVE · TAKE {run.Current}×  [L]";
+        LeaveButton.Content=$"LEAVE · TAKE {run.Multiplier(run.Current):0.##}×  [L]";
         bool hunting=run.Status==ManorRunStatus.Hunting;
         LeaveButton.IsEnabled=hunting; RecommendButton.IsEnabled=hunting; CandleButton.IsEnabled=hunting && run.HasCandle;
         RoutesPanel.Children.Clear();
@@ -285,13 +309,13 @@ internal partial class ManorWindow : Window
             bool visited=(run.Collected&(1UL<<room))!=0;
             var button=new Button { Content=$"[{index++}] {destination.Name}"+(unlocked ? "" : " · KEY"),Tag=room,
                 IsEnabled=hunting && unlocked,Style=(Style)FindResource("ManorButton"),FontSize=11,Padding=new Thickness(8,8,8,8),
-                ToolTip=(visited ? "Already visited" : $"+{destination.Reward}×")+(destination.Checkpoint ? " · Checkpoint" : "")+(destination.Pressure>0 ? " · Extra Haunt" : "") };
+                ToolTip=(visited ? "Already visited" : $"+{run.Multiplier(destination.Reward):0.##}×")+(destination.Checkpoint ? " · Checkpoint" : "")+(destination.Pressure>0 ? " · Extra Haunt" : "") };
             button.Click+=Route_Click; RoutesPanel.Children.Add(button);
         }
         DrawMap(run); audio.Room(ManorMap.Rooms[run.Player].Area,run.Haunt);
         if(!hunting)
         {
-            RoomNote.Text=run.Message+$"  Returned {Money(run.Payout*State.Bet)}. "+(State.InteractiveRunCounted ? "" : "Auto-resolved; same reference policy available interactively.");
+            RoomNote.Text=run.Message+$"  Returned {Money(run.PaidMultiplier*State.Bet)}. "+(State.InteractiveRunCounted ? "" : "Auto-resolved; same reference policy available interactively.");
             audio.Play(run.Status==ManorRunStatus.Escaped ? run.ExitTarget==1000 ? ManorCue.MaximumExit : ManorCue.Escape : run.Status==ManorRunStatus.Caught ? ManorCue.Catch : ManorCue.Checkpoint);
         }
         Refresh();
@@ -350,8 +374,8 @@ internal partial class ManorWindow : Window
             if(State.Run.Status==ManorRunStatus.Escaped)
             {
                 DoorScene.Scene="Exterior"; DoorPanel.Visibility=Visibility.Visible;
-                DoorTitle.Text=State.Run.ExitTarget==1000 ? "1000× · THE MOONLIT GATE" : $"ESCAPED · {State.Run.ExitTarget}×";
-                DoorNote.Text=$"{Money(State.Run.Payout*State.Bet)} secured. The Manor releases you.";
+                DoorTitle.Text=State.Run.ExitTarget==1000 ? "1000× · THE MOONLIT GATE" : $"ESCAPED · {State.Run.Multiplier(State.Run.ExitTarget):0.##}×";
+                DoorNote.Text=$"{Money(State.Run.PaidMultiplier*State.Bet)} secured. The Manor releases you.";
             }
             await Wait(Timing(State.Run.Status==ManorRunStatus.Escaped?1900:1100,500,200));
             DoorPanel.Visibility=Visibility.Collapsed;
@@ -436,12 +460,20 @@ internal partial class ManorWindow : Window
         audio.SoundEnabled=controller.Preferences.SoundEnabled; audio.MusicEnabled=controller.Preferences.MusicEnabled; audio.MusicVolume=controller.Preferences.MusicVolume;
         if(State.Run is {Status:ManorRunStatus.Hunting} r) audio.Room(ManorMap.Rooms[r.Player].Area,r.Haunt);
         else { audio.EndRoom(); audio.Mood(0); }
-        if(Animations) atmosphere.Start(); else atmosphere.Stop();
+        if(Animations) atmosphere.Start();
+        else
+        {
+            atmosphere.Stop(); ReelEffects.Activity=0; ReelEffects.BeginAnimation(ManorEffects.BurstProperty,null);
+            foreach(ManorReelView reel in reels) { reel.BeginAnimation(ManorReelView.EmphasisProperty,null); reel.Pulse=0; }
+            foreach(Polyline trace in PaylineCanvas.Children.OfType<Polyline>()) trace.BeginAnimation(Shape.StrokeDashOffsetProperty,null);
+        }
     }
     private void ReelSoundTick(object? sender,EventArgs e)=>audio.Play(ManorCue.Reel);
     private void AtmosphereTick(object? sender,EventArgs e)
     {
         phase+=0.05; MachineScene.Phase=phase; RoomScene.Phase=phase; DoorScene.Phase=phase;
+        ReelEffects.Phase=phase;
+        foreach(ManorReelView reel in reels) reel.Pulse=(Math.Sin(phase*4)+1)/2;
     }
     private void Bet_Click(object sender,RoutedEventArgs e)
     {
@@ -480,7 +512,14 @@ internal partial class ManorWindow : Window
     {
         closed=true; lifetime.Cancel(); autoTimer.Stop(); atmosphere.Stop(); reelSound.Stop();
         autoTimer.Tick-=AutoTick; atmosphere.Tick-=AtmosphereTick; reelSound.Tick-=ReelSoundTick;
-        foreach(ManorReelView reel in reels) reel.BeginAnimation(ManorReelView.PositionProperty,null);
+        foreach(ManorReelView reel in reels)
+        {
+            reel.BeginAnimation(ManorReelView.PositionProperty,null);
+            reel.BeginAnimation(ManorReelView.EmphasisProperty,null);
+            reel.BeginAnimation(ManorReelView.StopImpactProperty,null);
+        }
+        foreach(Polyline trace in PaylineCanvas.Children.OfType<Polyline>()) trace.BeginAnimation(Shape.StrokeDashOffsetProperty,null);
+        ReelEffects.BeginAnimation(ManorEffects.BurstProperty,null);
         DoorScene.BeginAnimation(ManorBackdrop.DoorOpenProperty,null); audio.Dispose(); lifetime.Dispose();
     }
     private int Timing(int normal,int fast,int turbo)=>!Animations?0:Speed==SlotSpinSpeed.Normal?normal:Speed==SlotSpinSpeed.Fast?fast:turbo;

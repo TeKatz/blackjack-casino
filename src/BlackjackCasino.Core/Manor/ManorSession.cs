@@ -17,12 +17,14 @@ public sealed class ManorStatistics
     public long MaximumExits { get; set; }
     public long Catches { get; set; }
     public long CashOuts { get; set; }
-    public int BestManorMultiplier { get; set; }
+    public decimal BestManorMultiplier { get; set; }
     public Guid LastAwardedCycle { get; set; }
 }
 
 public sealed class ManorSessionState
 {
+    // Old JSON has no version; pending Free Spins keep its original payout table.
+    public int PaytableVersion { get; set; }=1;
     public decimal Bankroll { get; set; }
     public decimal Bet { get; set; }=25;
     public Guid CycleId { get; set; }
@@ -52,9 +54,10 @@ public sealed class ManorSession(ManorSessionState state,Func<int,int>? rng=null
         if(bet>State.Bankroll) throw new InvalidOperationException("Insufficient play-money bankroll.");
         // Prove enough decimal headroom for every permitted future feature before debiting.
         if(State.Bankroll>decimal.MaxValue-bet*ManorRules.MaximumCycleMultiplier) throw new OverflowException("Bankroll exceeds the supported range.");
-        ManorSpin result=Draw(bet,false);
-        ManorRunState? run=result.Doors>=3 ? ManorRun.Create(result.Doors,ManorRules.Draw(rng,16)).State : null;
+        ManorSpin result=Draw(bet,false,ManorRules.CurrentPaytableVersion);
+        ManorRunState? run=result.Doors>=2 ? ManorRun.Create(result.Doors,ManorRules.Draw(rng,16)).State : null;
         State.Bet=bet;
+        State.PaytableVersion=ManorRules.CurrentPaytableVersion;
         State.CycleId=Guid.NewGuid();
         State.CycleReturned=0;
         State.CycleActive=true;
@@ -76,7 +79,7 @@ public sealed class ManorSession(ManorSessionState state,Func<int,int>? rng=null
     public ManorSpin SpinFree()
     {
         if(!HasFreeSpin) throw new InvalidOperationException("No free spin is currently available.");
-        ManorSpin spin=Draw(State.Bet,true);
+        ManorSpin spin=Draw(State.Bet,true,State.PaytableVersion);
         State.FreeSpinsRemaining--;
         State.Statistics.FreeSpins++;
         Apply(spin);
@@ -101,7 +104,7 @@ public sealed class ManorSession(ManorSessionState state,Func<int,int>? rng=null
     }
 
     private ManorRun RequireRun() => HasRun ? new(State.Run!) : throw new InvalidOperationException("No active Manor run.");
-    private ManorSpin Draw(decimal bet,bool free) => ManorRules.Evaluate(Enumerable.Range(0,5).Select(_=>ManorRules.Draw(rng,64)).ToArray(),bet,free);
+    private ManorSpin Draw(decimal bet,bool free,int version) => ManorRules.Evaluate(Enumerable.Range(0,5).Select(_=>ManorRules.Draw(rng,64)).ToArray(),bet,free,version);
     private void Apply(ManorSpin spin)
     {
         State.LastSpin=spin;
@@ -119,10 +122,10 @@ public sealed class ManorSession(ManorSessionState state,Func<int,int>? rng=null
     private void FinishRunIfNeeded()
     {
         if(State.Run is not { Status:not ManorRunStatus.Hunting } run || State.RunPaid) return;
-        Credit(State.Bet*run.Payout);
+        Credit(State.Bet*run.PaidMultiplier);
         State.RunPaid=true;
         ManorStatistics stats=State.Statistics;
-        stats.BestManorMultiplier=Math.Max(stats.BestManorMultiplier,run.Payout);
+        stats.BestManorMultiplier=Math.Max(stats.BestManorMultiplier,run.PaidMultiplier);
         stats.Exits+=run.Status==ManorRunStatus.Escaped ? 1 : 0;
         stats.MaximumExits+=run.Status==ManorRunStatus.Escaped && run.ExitTarget==1000 ? 1 : 0;
         stats.Catches+=run.Status==ManorRunStatus.Caught ? 1 : 0;

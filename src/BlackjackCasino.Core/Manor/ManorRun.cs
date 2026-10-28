@@ -9,6 +9,9 @@ public sealed class ManorRunState
 {
     public int Seed { get; set; }
     public int ExitTarget { get; set; } = 250;
+    // Missing in older saved runs: retain their full prizes. Two Doors use the same
+    // graph/policy in smaller prize units; never alter a pending run on upgrade.
+    public decimal PrizeScale { get; set; } = 1;
     public int Player { get; set; }
     public int Ghost { get; set; } = 17;
     public int Turn { get; set; }
@@ -27,6 +30,8 @@ public sealed class ManorRunState
     public int Haunt => Math.Min(8, Turn + ExtraHaunt);
     public int Payout => Status == ManorRunStatus.Hunting ? 0 : Status == ManorRunStatus.Escaped ? ExitTarget
         : Status is ManorRunStatus.Caught or ManorRunStatus.Exhausted ? Banked : Current;
+    public decimal Multiplier(int units) => units * PrizeScale;
+    public decimal PaidMultiplier => Multiplier(Payout);
 }
 
 public static class ManorMap
@@ -104,8 +109,9 @@ public sealed class ManorRun
 
     public static ManorRun Create(int doors, int seed)
     {
-        if (doors is < 3 or > 5 || seed is < 0 or >= 16) throw new ArgumentOutOfRangeException(nameof(doors));
-        return new(new ManorRunState { Seed=seed, Ghost=seed>=8 ? 18 : 17, ExitTarget=doors==3 ? 250 : doors==4 ? 500 : 1000 });
+        if (doors is < 2 or > 5 || seed is < 0 or >= 16) throw new ArgumentOutOfRangeException(nameof(doors));
+        return new(new ManorRunState { Seed=seed, Ghost=seed>=8 ? 18 : 17, ExitTarget=doors<=3 ? 250 : doors==4 ? 500 : 1000,
+            PrizeScale=doors==2 ? 0.1m : 1m });
     }
 
     public void UseCandle()
@@ -129,7 +135,7 @@ public sealed class ManorRun
         {
             State.Current=State.ExitTarget;
             State.Status=ManorRunStatus.Escaped;
-            State.Message=$"You reached the Moonlit Gate. {State.ExitTarget}× secured.";
+            State.Message=$"You reached the Moonlit Gate. {State.Multiplier(State.ExitTarget):0.##}× secured.";
             return;
         }
         ManorRoom entered=ManorMap.Rooms[room];
@@ -143,7 +149,7 @@ public sealed class ManorRun
             State.HasCandle |= entered.Candle;
             State.HasCharm |= entered.Charm;
             if (entered.Checkpoint) State.Banked=State.Current;
-            State.Message += $" +{entered.Reward}×." + (entered.Checkpoint ? " Checkpoint secured." : "")
+            State.Message += $" +{State.Multiplier(entered.Reward):0.##}×." + (entered.Checkpoint ? " Checkpoint secured." : "")
                 + (entered.Key ? " Key found." : "") + (entered.Candle ? " Candle found." : "") + (entered.Charm ? " Holy charm found." : "");
         }
         if (State.Ghost==State.Player) { Catch(); if (Finished) return; }
@@ -169,7 +175,7 @@ public sealed class ManorRun
     {
         RequireActive();
         State.Status=ManorRunStatus.CashedOut;
-        State.Message=$"You leave the Manor with {State.Current}×.";
+        State.Message=$"You leave the Manor with {State.Multiplier(State.Current):0.##}×.";
     }
 
     public void FollowPolicy()
@@ -195,7 +201,7 @@ public sealed class ManorRun
         else
         {
             State.Status=ManorRunStatus.Caught;
-            State.Message=$"The ghost catches you. Checkpoint pays {State.Banked}×.";
+            State.Message=$"The ghost catches you. Checkpoint pays {State.Multiplier(State.Banked):0.##}×.";
         }
     }
     private void RequireActive() { if(Finished) throw new InvalidOperationException("This Manor run has ended."); }

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using BlackjackCasino.Core;
 using BlackjackCasino.Core.Manor;
 using BlackjackCasino.Desktop;
@@ -63,6 +64,43 @@ public sealed class ManorPersistenceTests : IDisposable
         Assert.Equal(25,p.ManorBet); Assert.True(p.ManorInteractive); Assert.Equal(SlotSpinSpeed.Normal,p.ManorSpeed);
         Assert.Equal(0,p.ManorAuto.Count); Assert.NotNull(profile.Manor); Assert.NotNull(profile.Slots);
         var checkpoint=ManorPersistence.Clone(Snapshot()); Assert.Equal(975,checkpoint.Machine.Bankroll);
+    }
+    [Fact]
+    public void ExistingWinningCheckpointAndPendingFreeSpinsKeepTheirOriginalPaytable()
+    {
+        int[] stops=Enumerable.Range(0,5).Select(reel=>Enumerable.Range(0,64).First(stop=>ManorRules.SymbolAt(reel,stop,1)==ManorSymbol.Jack)).ToArray();
+        ManorSpin oldSpin=ManorRules.Evaluate(stops,25,paytableVersion:1);
+        Assert.True(oldSpin.Payout>ManorRules.Evaluate(stops,25).Payout);
+        var old=new ManorSessionState {Bankroll=1_000,Bet=25,LastSpin=oldSpin,CycleId=Guid.NewGuid(),CycleActive=true,FreeSpinsRemaining=1,CycleReturned=oldSpin.Payout};
+        var checkpoint=Snapshot(1_000) with {Machine=old};
+        var node=JsonNode.Parse(JsonSerializer.Serialize(checkpoint,ManorPersistence.Json))!;
+        node["Machine"]!.AsObject().Remove("PaytableVersion");
+        node["Machine"]!["LastSpin"]!.AsObject().Remove("PaytableVersion");
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(FileAt("manor-checkpoint.json"),node.ToJsonString());
+        var store=new ManorPersistence(folder); store.Recover();
+        ManorCheckpoint saved=store.Load()!;
+        Assert.Equal(oldSpin.Payout,saved.Machine.LastSpin!.Payout);
+        Assert.Equal(1,saved.Machine.PaytableVersion);
+        int i=0;
+        var machine=new ManorSession(saved.Machine,_=>stops[i++%5]);
+        Assert.Equal(oldSpin.Payout*2,machine.SpinFree().Payout);
+        Assert.Equal(1_000+oldSpin.Payout*2,saved.Machine.Bankroll);
+        Assert.Null(store.Commit(saved with {Preferences=saved.Preferences with {Bankroll=saved.Machine.Bankroll}}));
+        Assert.Equal(saved.Machine.Bankroll,store.Load()!.Machine.Bankroll);
+        machine.Start(25);
+        Assert.Equal(ManorRules.CurrentPaytableVersion,saved.Machine.PaytableVersion);
+        Assert.Equal(ManorRules.Evaluate(stops,25).Payout,saved.Machine.LastSpin!.Payout);
+    }
+
+    [Theory]
+    [InlineData("0")] [InlineData("2")] [InlineData("-1")]
+    public void UnknownPrizeScalesCannotBeCommitted(string value)
+    {
+        var snapshot=Snapshot();
+        snapshot.Machine.Run=ManorRun.Create(2,2).State;
+        snapshot.Machine.Run.PrizeScale=decimal.Parse(value,System.Globalization.CultureInfo.InvariantCulture);
+        Assert.Throws<InvalidDataException>(()=>new ManorPersistence(folder).Commit(snapshot));
     }
     public void Dispose() { if(Directory.Exists(folder)) Directory.Delete(folder,true); }
 }

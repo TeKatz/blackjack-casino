@@ -6,6 +6,7 @@ using System.Xml.Linq;
 using System.Windows.Markup;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using BlackjackCasino.Core;
@@ -64,6 +65,23 @@ internal static class Program
         bitmap.Render(w); var png=new PngBitmapEncoder(); png.Frames.Add(BitmapFrame.Create(bitmap));
         using var file=File.Create(Path.Combine(output,name+".png")); png.Save(file);
     }
+    private static void CheckDropdown(ManorWindow w,string name)
+    {
+        ComboBox combo=Named<ComboBox>(w,name); combo.ApplyTemplate();
+        var toggle=(ToggleButton)combo.Template.FindName("DropDownToggle",combo);
+        toggle.ApplyTemplate();
+        Require(toggle.Template.Triggers.Count==0,"Dropdown still has theme hover/disabled triggers");
+        var hitArea=VisualTreeHelper.GetChild(toggle,0) as Border;
+        Require(hitArea?.Background is SolidColorBrush {Color.A:0},"Dropdown overlay must stay transparent in every state");
+        // Pixel check the actual composed control, including its disabled state in-spin.
+        var drawing=new DrawingVisual();
+        using(var d=drawing.RenderOpen()) d.DrawRectangle(new VisualBrush(combo),null,new Rect(0,0,combo.ActualWidth,combo.ActualHeight));
+        var bitmap=new RenderTargetBitmap((int)combo.ActualWidth,(int)combo.ActualHeight,96,96,PixelFormats.Pbgra32);
+        bitmap.Render(drawing); byte[] pixels=new byte[bitmap.PixelWidth*bitmap.PixelHeight*4];
+        bitmap.CopyPixels(pixels,bitmap.PixelWidth*4,0);
+        int light=Enumerable.Range(0,pixels.Length/4).Count(i=>pixels[i*4]>180 && pixels[i*4+1]>180 && pixels[i*4+2]>180 && pixels[i*4+3]>128);
+        Require(light<(pixels.Length/4)*0.2,"Dropdown turned into a light rectangle");
+    }
     private static int[] Feature(ManorSymbol symbol,int count)=>Enumerable.Range(0,5).Select(reel=>Enumerable.Range(0,64).First(stop=>
     {
         var visible=Enumerable.Range(0,3).Select(row=>ManorRules.SymbolAt(reel,stop,row)).ToArray();
@@ -73,13 +91,35 @@ internal static class Program
     private static async Task Check(ManorWindow w,ManorController c,ManorPersistence persistence)
     {
         await Task.Delay(100); Capture(w,"01-cabinet");
+        CheckDropdown(w,"SpeedBox"); CheckDropdown(w,"AutoBox");
+        ComboBox speedBox=Named<ComboBox>(w,"SpeedBox"); speedBox.IsDropDownOpen=true;
+        await Task.Delay(100);
+        var popup=(Popup)speedBox.Template.FindName("PART_Popup",speedBox);
+        Require(popup.IsOpen && popup.Child is Border {Background:SolidColorBrush},"Dark dropdown popup did not open");
+        speedBox.IsDropDownOpen=false;
         w.Width=w.MinWidth; w.Height=w.MinHeight; await Task.Delay(50); Capture(w,"02-minimum");
         w.Width=1280; w.Height=890; Capture(w,"03-double-resolution",192);
         // Exercise actual routed button events and real WPF animations, not a second fake UI.
         Named<CheckBox>(w,"AnimationBox").IsChecked=true;
         Draw(0,0,0,0,0); Click(w,"SpinButton");
+        await Task.Delay(200);
+        Require(!speedBox.IsEnabled,"Speed dropdown must be locked during a committed spin");
+        CheckDropdown(w,"SpeedBox"); CheckDropdown(w,"AutoBox");
+        Require(Named<ManorEffects>(w,"ReelEffects").Activity>0,"Spinning reel effects missing");
+        Capture(w,"06-in-spin-dark-dropdown");
         await Until(()=>Named<Button>(w,"SpinButton").IsEnabled);
         Require(c.State.Statistics.PaidSpins==1,"Animated paid spin not recorded");
+        // Force a real regular win through authored stops and capture its live glow/trace.
+        int[] winning=Enumerable.Range(0,5).Select(reel=>Enumerable.Range(0,64).First(stop=>ManorRules.SymbolAt(reel,stop,1)==ManorSymbol.Jack)).ToArray();
+        Draw(winning); Click(w,"SpinButton");
+        await Until(()=>Named<Canvas>(w,"PaylineCanvas").Children.Count>0);
+        Require(Named<ManorEffects>(w,"ReelEffects").Burst>0,"Winning particle animation missing");
+        Capture(w,"07-bright-win-and-particles");
+        await Task.Delay(180); Capture(w,"08-win-motion-later");
+        await Until(()=>Named<Button>(w,"SpinButton").IsEnabled);
+        Named<CheckBox>(w,"AnimationBox").IsChecked=false;
+        Require(!Named<ManorEffects>(w,"ReelEffects").HasAnimatedProperties,"Animation preference left particle clocks running");
+        Named<CheckBox>(w,"AnimationBox").IsChecked=true;
         foreach(int speed in new[]{1,2})
         {
             Named<ComboBox>(w,"SpeedBox").SelectedIndex=speed;
@@ -87,6 +127,12 @@ internal static class Program
             await Until(()=>c.State.Statistics.PaidSpins==before+1 && Named<Button>(w,"SpinButton").IsEnabled);
         }
         Named<CheckBox>(w,"AnimationBox").IsChecked=false;
+        int[] visit=Feature(ManorSymbol.Bonus,2); Draw([..visit,2]); Click(w,"SpinButton");
+        await Until(()=>Named<Grid>(w,"BonusPanel").Visibility==Visibility.Visible);
+        Require(c.State.Run?.PrizeScale==0.1m,"Two Doors did not enter the smaller real Manor run");
+        Require(Named<TextBlock>(w,"RoomText").Text.Contains("25×"),"Two-Door prize tier not displayed");
+        Capture(w,"09-two-door-manor-visit");
+        Click(w,"LeaveButton"); await Until(()=>!c.State.CycleActive && Named<Button>(w,"SpinButton").IsEnabled);
         int[] bonus=Feature(ManorSymbol.Bonus,3); Draw([..bonus,2]); Click(w,"SpinButton");
         await Until(()=>Named<Grid>(w,"BonusPanel").Visibility==Visibility.Visible);
         Require(c.State.Run is {Status:ManorRunStatus.Hunting},"Interactive Manor did not pause");

@@ -3,8 +3,8 @@
 ## Automated coverage
 
 - Baseline before edits: 72 existing tests passed on main `378a896`.
-- Pure engine tests: published paytable, Wild substitution, feature separation/spacing, all stake/RNG boundaries, bankroll conservation, all 3/4/5 trigger tiers, free-spin stake/2× modifier/no retriggers, no overlapping paid cycles, completion XP deduplication, old-profile defaults and serialized continuation.
-- Manor tests: connected reachable graph, actual route/cash-out effect, deterministic pursuit, visible distance bands, key locks, candles, charm edge movement, checkpoints, capture, finite turns, exact interactive/reference-policy parity for every seed and tier.
+- Pure engine tests: published paytable, Wild substitution, feature separation/spacing, all stake/RNG boundaries, bankroll conservation, all 2/3/4/5 Door tiers and 3/4/5 Moon tiers, free-spin stake/2× modifier/no retriggers, no overlapping paid cycles, completion XP deduplication, old-profile defaults and serialized continuation.
+- Manor tests: connected reachable graph, actual route/cash-out effect, deterministic pursuit, visible distance bands, key locks, candles, charm edge movement, checkpoints, capture, finite turns, exact interactive/reference-policy parity for every seed and tier, scaled two-Door rewards, legacy winning checkpoints/free-spin continuation without table-version fields, legacy runs missing the scale field, and simultaneous two-Door/three-Moon awards.
 - Exact math enumerates all 14^5 line symbol combinations plus all 16 Manor seeds. A seeded 100,000-paid-cycle simulation checks exposure, financial conservation and feature frequencies.
 - Write-ahead recovery tests interrupt projections and verify idempotent replay; invalid checkpoints do not overwrite valid balances. Audio tests inspect every generated WAV's format, peak, RMS and transient bounds.
 - Shared play-control tests cover finite/unlimited auto, cancellation while paused, no overlapping spins, stop conditions and pre-wager bankroll floor.
@@ -13,7 +13,7 @@
 
 `dotnet run --project tools/ManorSmoke -c Release -- artifacts/manor-windows-smoke`
 
-CI runs this on `windows-latest` after the full suite. It creates an isolated profile/checkpoint (never the user's save), opens the real Manor window, exercises actual routed button/key events, renders all six room variants, captures the cabinet at normal/minimum dimensions plus a 2× export, and drives normal/Fast/Turbo spins, animations-off Free Spins, interactive bonus pause, closing/resuming a run, optional auto-resolution, Auto cancellation and closing during a committed animation. The artifact `manor-windows-runtime-evidence` contains PNGs and pass/failure evidence. Audio is muted in the automated runner.
+CI runs this on `windows-latest` after the full suite. It creates an isolated profile/checkpoint (never the user's save), opens the real Manor window, exercises actual routed button/key events, renders all six room variants, captures the cabinet at normal/minimum dimensions plus a 2× export, and drives normal/Fast/Turbo spins, animations-off Free Spins, interactive bonus pause, closing/resuming a run, optional auto-resolution, Auto cancellation and closing during a committed animation. The artifact `manor-windows-runtime-evidence` contains PNGs and pass/failure evidence. The playtest regression sequence also checks both dropdown templates and actual rendered brightness while idle/disabled in-spin, opens the real popup, captures spinning light streaks and two moments of bright winning traces/particles, and enters the real two-Door smaller run. Audio is muted in the automated runner.
 
 A 2× bitmap export verifies rendering resolution; it does **not** prove actual monitor DPI switching. Automated routed input does not replace a human keyboard/usability check.
 

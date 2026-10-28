@@ -10,11 +10,16 @@ internal sealed class ManorReelView : FrameworkElement
     public double Position { get=>(double)GetValue(PositionProperty); set=>SetValue(PositionProperty,value); }
     public static readonly DependencyProperty EmphasisProperty=DependencyProperty.Register(nameof(Emphasis),typeof(double),typeof(ManorReelView),new FrameworkPropertyMetadata(0d,FrameworkPropertyMetadataOptions.AffectsRender));
     public double Emphasis { get=>(double)GetValue(EmphasisProperty); set=>SetValue(EmphasisProperty,value); }
+    public static readonly DependencyProperty StopImpactProperty=DependencyProperty.Register(nameof(StopImpact),typeof(double),typeof(ManorReelView),new FrameworkPropertyMetadata(0d,FrameworkPropertyMetadataOptions.AffectsRender));
+    public double StopImpact { get=>(double)GetValue(StopImpactProperty); set=>SetValue(StopImpactProperty,value); }
+    public static readonly DependencyProperty PulseProperty=DependencyProperty.Register(nameof(Pulse),typeof(double),typeof(ManorReelView),new FrameworkPropertyMetadata(0d,FrameworkPropertyMetadataOptions.AffectsRender));
+    public double Pulse { get=>(double)GetValue(PulseProperty); set=>SetValue(PulseProperty,value); }
     public int Reel { get; init; }
     public HashSet<int> WinningRows { get; }=[];
     public bool DimOthers { get; set; }
     protected override void OnRender(DrawingContext d)
     {
+        if(ActualWidth<=0 || ActualHeight<=0) return;
         double cell=ActualHeight/3;
         d.PushClip(new RectangleGeometry(new Rect(0,0,ActualWidth,ActualHeight),5,5));
         d.DrawRectangle(ManorArtwork.Gradient("#B8B1A6","#D8CFBC"),null,new Rect(0,0,ActualWidth,ActualHeight));
@@ -25,10 +30,19 @@ internal sealed class ManorReelView : FrameworkElement
             double y=(row-fraction)*cell;
             int stop=((first+row)%64+64)%64;
             bool winner=WinningRows.Contains(row);
-            d.PushOpacity(DimOthers && !winner ? 0.33 : 1);
+            d.PushOpacity(DimOthers && !winner ? 0.48 : 1);
             double size=Math.Min(cell-9,ActualWidth-8);
             ManorSymbol symbol=ManorRules.SymbolAt(Reel,stop,0);
-            d.DrawImage(ManorArtwork.Symbol(symbol),new Rect((ActualWidth-size)/2,y+(cell-size)/2,size,size));
+            double swell=winner ? 1.02+Pulse*0.025 : 1;
+            double drawn=size*swell;
+            d.DrawImage(ManorArtwork.Symbol(symbol),new Rect((ActualWidth-drawn)/2,y+(cell-drawn)/2+Math.Sin(StopImpact*Math.PI*2)*2.5,drawn,drawn));
+            if(symbol==ManorSymbol.Candelabrum)
+            {
+                d.PushOpacity(0.14+Pulse*0.13);
+                foreach(double x in new[]{0.25,0.5,0.75})
+                    d.DrawEllipse(ManorArtwork.Ink("#FFE5A5"),null,new Point((ActualWidth-size)/2+size*x,y+(cell-size)/2+size*0.18),7+Pulse*2,10+Pulse*3);
+                d.Pop();
+            }
             if(Emphasis>0 && symbol is ManorSymbol.Wild or ManorSymbol.Scatter or ManorSymbol.Bonus)
             {
                 d.PushOpacity(Emphasis*0.6);
@@ -36,11 +50,82 @@ internal sealed class ManorReelView : FrameworkElement
                 if(symbol==ManorSymbol.Wild) d.DrawImage(ManorArtwork.Symbol(ManorSymbol.Lady),new Rect((ActualWidth-size*0.6)/2,y+cell*0.14,size*0.6,size*0.7));
                 d.Pop();
             }
-            if(winner) d.DrawRoundedRectangle(ManorArtwork.Ink("#22F2D49D"),ManorArtwork.Edge("#E0C394",2),new Rect(3,y+3,ActualWidth-6,cell-6),6,6);
             d.Pop();
         }
         d.DrawRectangle(new LinearGradientBrush(new GradientStopCollection {
             new(Colors.Black,0),new(Color.FromArgb(0,0,0,0),0.2),new(Color.FromArgb(0,0,0,0),0.8),new(Color.FromArgb(110,0,0,0),1)},new Point(0,0),new Point(0,1)),null,new Rect(0,0,ActualWidth,ActualHeight));
+        // Draw the prize frames ABOVE the reel shadows. Dark keyline plus opaque
+        // moonlight stays legible against both ivory reels and the dark cabinet.
+        foreach(int row in WinningRows)
+        {
+            Rect frame=new(4,row*cell+4,ActualWidth-8,cell-8);
+            d.PushOpacity(0.8+Pulse*0.2);
+            d.DrawRoundedRectangle(ManorArtwork.Ink("#164CEBDD"),ManorArtwork.Edge("#151A29",7),frame,7,7);
+            d.DrawRoundedRectangle(null,ManorArtwork.Edge("#82FFF0",3),frame,7,7);
+            d.DrawRoundedRectangle(null,ManorArtwork.Edge("#FFF1BC",1),new Rect(7,row*cell+7,ActualWidth-14,cell-14),5,5);
+            for(int n=0;n<4;n++)
+            {
+                double a=Pulse*Math.PI*2+n*Math.PI/2;
+                d.DrawEllipse(Brushes.White,null,new Point(ActualWidth/2+Math.Cos(a)*(ActualWidth/2-7),row*cell+cell/2+Math.Sin(a)*(cell/2-7)),1.8,1.8);
+            }
+            d.Pop();
+        }
+        if(StopImpact>0)
+        {
+            d.PushOpacity(StopImpact*0.4);
+            d.DrawRectangle(ManorArtwork.Ink("#D9FFF6"),null,new Rect(0,0,ActualWidth,ActualHeight));
+            d.DrawRoundedRectangle(null,ManorArtwork.Edge("#C5FFF2",3),new Rect(2,2,ActualWidth-4,ActualHeight-4),5,5);
+            d.Pop();
+        }
+        d.Pop();
+    }
+}
+
+/// <summary>Decorative motion only: no RNG calls and no effect on settlement.</summary>
+internal sealed class ManorEffects : FrameworkElement
+{
+    public static readonly DependencyProperty PhaseProperty=DependencyProperty.Register(nameof(Phase),typeof(double),typeof(ManorEffects),new FrameworkPropertyMetadata(0d,FrameworkPropertyMetadataOptions.AffectsRender));
+    public static readonly DependencyProperty ActivityProperty=DependencyProperty.Register(nameof(Activity),typeof(double),typeof(ManorEffects),new FrameworkPropertyMetadata(0d,FrameworkPropertyMetadataOptions.AffectsRender));
+    public static readonly DependencyProperty BurstProperty=DependencyProperty.Register(nameof(Burst),typeof(double),typeof(ManorEffects),new FrameworkPropertyMetadata(0d,FrameworkPropertyMetadataOptions.AffectsRender));
+    public double Phase { get=>(double)GetValue(PhaseProperty); set=>SetValue(PhaseProperty,value); }
+    public double Activity { get=>(double)GetValue(ActivityProperty); set=>SetValue(ActivityProperty,value); }
+    public double Burst { get=>(double)GetValue(BurstProperty); set=>SetValue(BurstProperty,value); }
+    public bool Grand { get; set; }
+    protected override void OnRender(DrawingContext d)
+    {
+        if(ActualWidth<=0 || ActualHeight<=0) return;
+        d.PushClip(new RectangleGeometry(new Rect(0,0,ActualWidth,ActualHeight),7,7));
+        if(Activity>0)
+        {
+            d.PushOpacity(Activity);
+            // Moonlit streaks scroll across each turning reel; no full-screen flashes.
+            for(int i=0;i<15;i++)
+            {
+                double x=(i%5+0.2+(i/5)*0.25)*ActualWidth/5;
+                double y=(Phase*380+i*67)% (ActualHeight+100)-70;
+                d.DrawLine(ManorArtwork.Edge("#6075E6D7",1.5),new Point(x,y),new Point(x,y+45));
+            }
+            d.DrawRoundedRectangle(null,ManorArtwork.Edge("#8CC9F7ED",3),new Rect(2,2,ActualWidth-4,ActualHeight-4),7,7);
+            d.Pop();
+        }
+        if(Burst>0)
+        {
+            double progress=1-Burst;
+            d.PushOpacity(Math.Min(1,Burst*2));
+            int count=Grand ? 70 : 24;
+            for(int i=0;i<count;i++)
+            {
+                double angle=i*2.39996323;
+                double radius=progress*(60+i%9*23);
+                double x=ActualWidth/2+Math.Cos(angle)*radius*1.7;
+                double y=ActualHeight/2+Math.Sin(angle)*radius+progress*progress*65;
+                double size=(Grand?2.7:1.9)*(0.6+Burst);
+                d.DrawEllipse(ManorArtwork.Ink(i%3==0 ? "#FFF1BC" : "#9CFFF0"),null,new Point(x,y),size,size);
+                d.DrawLine(ManorArtwork.Edge("#80FFF4CE",1),new Point(x-size*2,y),new Point(x+size*2,y));
+            }
+            d.DrawRoundedRectangle(null,ManorArtwork.Edge("#FFF0B1",1+Burst*3),new Rect(3,3,ActualWidth-6,ActualHeight-6),7,7);
+            d.Pop();
+        }
         d.Pop();
     }
 }
@@ -66,15 +151,17 @@ internal sealed class ManorBackdrop : FrameworkElement
         else Room(d);
         // Slow, low-opacity fog and fixed dust particles; never consume gameplay RNG.
         for(int i=0;i<4;i++)
-            d.DrawEllipse(ManorArtwork.Ink("#06304059"),null,new Point((i*300+Phase*9)%1300-150,450+i*28),300,38);
+            d.DrawEllipse(ManorArtwork.Ink("#18456076"),null,new Point((i*300+Phase*16)%1300-150,450+i*28),300,38);
         for(int i=0;i<30;i++)
-            d.DrawEllipse(ManorArtwork.Ink("#28E2CFAB"),null,new Point((i*137+Math.Sin(Phase*0.2+i)*9)%1000,(i*71+Phase*1.2)%600),0.8,0.8);
+            d.DrawEllipse(ManorArtwork.Ink("#68E2CFAB"),null,new Point((i*137+Math.Sin(Phase*0.6+i)*15)%1000,(i*71+Phase*5)%600),1.1,1.1);
         if(Threat>=6) d.DrawRectangle(ManorArtwork.Ink("#263D0925"),null,new Rect(0,0,1000,600));
         d.Pop(); d.Pop();
     }
     private void Exterior(DrawingContext d)
     {
-        d.DrawEllipse(ManorArtwork.Ink("#16D3DDE8"),null,new Point(735,110),100,100);
+        d.PushOpacity(0.7+Math.Sin(Phase*0.65)*0.3);
+        d.DrawEllipse(ManorArtwork.Ink("#36D3DDE8"),null,new Point(735,110),110,110);
+        d.Pop();
         d.DrawEllipse(ManorArtwork.Gradient("#DFDCCF","#8996AC"),null,new Point(735,110),60,60);
         ManorArtwork.Shape(d,"M0,390 Q170,310 300,385 Q540,290 700,355 Q850,290 1000,360 V600 H0 Z","#121722");
         ManorArtwork.Shape(d,"M230,490 V230 L310,155 L390,230 V170 L500,75 L610,170 V230 L690,155 L770,230 V490 Z","#24232D","#6C6267",2);
@@ -82,7 +169,9 @@ internal sealed class ManorBackdrop : FrameworkElement
         for(int col=0;col<7;col++) for(int row=0;row<3;row++)
         {
             double x=276+col*66,y=245+row*73;
+            d.PushOpacity(0.72+0.28*Math.Sin(Phase*1.8+col*3+row));
             d.DrawRoundedRectangle(ManorArtwork.Gradient(col%3==0?"#C9A06B":"#5B5967","#302B36"),ManorArtwork.Edge("#7C6B5B",3),new Rect(x,y,27,43),13,13);
+            d.Pop();
             d.DrawLine(ManorArtwork.Edge("#3C3439",2),new Point(x+13,y),new Point(x+13,y+43));
         }
         ManorArtwork.Shape(d,"M448,490 V390 Q500,337 552,390 V490 Z","#171420","#A18A60",4);

@@ -33,7 +33,13 @@ internal static class ManorArtwork
                 string letter=new[]{"J","Q","K","A"}[(int)symbol];
                 Shape(d,"M50,4 L85,20 L91,50 L85,80 L50,96 L15,80 L9,50 L15,20 Z","#281926","#967C50",1.6);
                 Shape(d,"M50,10 L79,25 L84,50 L79,75 L50,89 L21,75 L16,50 L21,25 Z","#3F2536","#58432F");
-                Label(d,letter,57,new Point(letter=="J"?29:22,12),"#E5C593");
+                // Centre the actual ink bounds, including Georgia's asymmetric J/Q bearings.
+                var glyph=new FormattedText(letter,CultureInfo.InvariantCulture,FlowDirection.LeftToRight,
+                    new Typeface(new FontFamily("Georgia"),FontStyles.Normal,FontWeights.Bold,FontStretches.Normal),57,Ink("#E5C593"),1).BuildGeometry(new Point());
+                Rect bounds=glyph.Bounds;
+                d.PushTransform(new TranslateTransform(50-bounds.X-bounds.Width/2,49-bounds.Y-bounds.Height/2));
+                d.DrawGeometry(Ink("#E5C593"),null,glyph);
+                d.Pop();
                 Shape(d,"M17,37 Q4,20 24,18 M83,37 Q96,20 76,18 M17,63 Q4,80 24,82 M83,63 Q96,80 76,82","Transparent","#B1915A",2);
                 Shape(d,"M41,10 L50,3 L59,10 L50,15 Z M41,89 L50,96 L59,89 L50,84 Z","#BA9563");
             }

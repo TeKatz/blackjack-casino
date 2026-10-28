@@ -38,7 +38,7 @@ public sealed class ManorTests
             line[0]=ManorSymbol.Wild;
             Assert.Equal(count==3?definition.Three:count==4?definition.Four:definition.Five,ManorRules.EvaluateLine(line).Credits);
         }
-        Assert.Equal(3600,ManorRules.EvaluateLine(Enumerable.Repeat(ManorSymbol.Wild,5).ToArray()).Credits);
+        Assert.Equal(2700,ManorRules.EvaluateLine(Enumerable.Repeat(ManorSymbol.Wild,5).ToArray()).Credits);
     }
 
     [Fact]
@@ -172,12 +172,12 @@ public sealed class ManorTests
     public void ReferenceMathAndPolicyAreReproducible()
     {
         ManorMathReport report=ManorMath.Calculate();
-        Assert.Equal(0.7605586275458336m,decimal.Round(report.BaseReturn,16));
-        Assert.InRange(report.ReferenceReturn,0.95453926083m,0.95453926085m);
-        Assert.Equal(new[]{108.75m,140m,202.5m},report.RunAverages);
+        Assert.Equal(0.5714641995728016m,decimal.Round(report.BaseReturn,16));
+        Assert.InRange(report.ReferenceReturn,0.95022769541m,0.95022769543m);
+        Assert.Equal(new[]{10.875m,108.75m,140m,202.5m},report.RunAverages);
         Assert.InRange(report.FreeSpinProbability,0.00712m,0.00713m);
-        Assert.InRange(report.BonusProbability,0.000958m,0.000960m);
-        for(int n=3;n<=5;n++) for(int seed=0;seed<16;seed++)
+        Assert.InRange(report.BonusProbability,0.019984m,0.019985m);
+        for(int n=2;n<=5;n++) for(int seed=0;seed<16;seed++)
         {
             ManorRun manual=ManorRun.Create(n,seed),automatic=ManorRun.Create(n,seed);
             while(!manual.Finished) manual.FollowPolicy();
@@ -203,9 +203,61 @@ public sealed class ManorTests
             Assert.InRange(state.CycleReturned,0,ManorRules.MaximumCycleMultiplier);
         }
         Assert.Equal(1_000_000-state.Statistics.TotalWagered+state.Statistics.TotalReturned,state.Bankroll);
-        Assert.InRange(state.Statistics.ManorBonuses,60,140);
+        Assert.InRange(state.Statistics.ManorBonuses,1800,2200);
         Assert.InRange(state.Statistics.FreeSpinsTriggered,610,820);
         Assert.InRange(state.Statistics.TotalReturned/state.Statistics.TotalWagered,0.75m,1.17m);
+    }
+
+    [Theory]
+    [InlineData(0)] [InlineData(2)] [InlineData(9)] [InlineData(15)]
+    public void TwoDoorsStartARealScaledRunAndResumeWithoutChangingAwards(int seed)
+    {
+        int[] stops=FeatureStops(ManorSymbol.Bonus,2); int i=0;
+        var state=new ManorSessionState {Bankroll=1_000};
+        var session=new ManorSession(state,max=>max==16?seed:stops[i++%5]);
+        ManorSpin paid=session.Start(25);
+        Assert.True(session.HasRun);
+        Assert.Equal(0.1m,state.Run!.PrizeScale);
+        session.MarkInteractive(); session.FollowPolicy();
+        var saved=ManorPersistence.Clone(state);
+        var resumed=new ManorSession(saved);
+        session.ResolveAutomatically(); resumed.ResolveAutomatically();
+        ManorRun full=ManorRun.Create(3,seed); full.AutoResolve();
+        Assert.Equal(full.State.Payout/10m,state.Run.PaidMultiplier);
+        Assert.Equal(1_000-25+paid.Payout+25*state.Run.PaidMultiplier,state.Bankroll);
+        Assert.Equal(state.Bankroll,saved.Bankroll);
+        Assert.Equal(JsonSerializer.Serialize(state),JsonSerializer.Serialize(saved));
+        Assert.Equal(1,state.Statistics.ManorBonuses);
+        Assert.Throws<InvalidOperationException>(()=>resumed.ResolveAutomatically());
+    }
+
+    [Fact]
+    public void LegacySavedRunsRetainFullPrizesWhenScaleIsMissing()
+    {
+        var old=JsonSerializer.Deserialize<ManorRunState>("{\"Seed\":2,\"ExitTarget\":250}")!;
+        Assert.Equal(1m,old.PrizeScale);
+        var run=new ManorRun(old); run.AutoResolve();
+        Assert.Equal(250m,run.State.PaidMultiplier);
+    }
+
+    [Fact]
+    public void TwoDoorsAndThreeMoonsAwardBothFeaturesWithoutAdditionalWagers()
+    {
+        int[] stops=Enumerable.Range(0,5).Select(reel=>Enumerable.Range(0,64).First(stop=>
+            Enumerable.Range(0,3).Any(row=>ManorRules.SymbolAt(reel,stop,row)==(reel<2 ? ManorSymbol.Bonus : ManorSymbol.Scatter)))).ToArray();
+        int i=0;
+        var state=new ManorSessionState {Bankroll=1_000};
+        var machine=new ManorSession(state,max=>max==16 ? 2 : stops[i++%5]);
+        machine.Start(1);
+        Assert.True(machine.HasRun); Assert.Equal(8,state.FreeSpinsRemaining);
+        machine.ResolveAutomatically();
+        Assert.True(state.CycleActive);
+        while(machine.HasFreeSpin) machine.SpinFree();
+        Assert.False(state.CycleActive);
+        Assert.Equal(1,state.Statistics.TotalWagered);
+        Assert.Equal(1,state.Statistics.ManorBonuses);
+        Assert.Equal(8,state.Statistics.FreeSpins);
+        Assert.Equal(999+state.CycleReturned,state.Bankroll);
     }
 
     internal static int[] FeatureStops(ManorSymbol symbol,int count) => Enumerable.Range(0,5).Select(reel=>
