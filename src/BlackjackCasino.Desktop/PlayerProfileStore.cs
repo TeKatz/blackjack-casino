@@ -87,9 +87,14 @@ internal static class PlayerProfileStore
         state.TableStatistics ??= new Dictionary<string, StatisticsSnapshot>(StringComparer.OrdinalIgnoreCase);
         state.Seasons ??= new Dictionary<string, SeasonProgressState>(StringComparer.OrdinalIgnoreCase);
         state.OwnedCosmeticIds ??= [];
+        state.ClaimedChallengeIds ??= [];
 
         state.OwnedCosmeticIds = state.OwnedCosmeticIds
             .Where(id => CosmeticCatalog.TryGet(id) is not null)
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+        state.ClaimedChallengeIds = state.ClaimedChallengeIds
+            .Where(id => ChallengeCatalog.TryGet(id) is not null)
             .Distinct(StringComparer.Ordinal)
             .ToList();
 
@@ -108,14 +113,15 @@ internal static class PlayerProfileStore
 
         foreach ((string key, SeasonProgressState value) in state.Seasons.ToArray())
         {
-            if (!SeasonCatalog.All.Any(x => string.Equals(x.Id, key, StringComparison.Ordinal)))
+            SeasonDefinition? season = SeasonCatalog.All.FirstOrDefault(x => string.Equals(x.Id, key, StringComparison.Ordinal));
+            if (season is null)
             {
                 state.Seasons.Remove(key);
                 continue;
             }
 
             value.Experience = Math.Max(0, value.Experience);
-            value.Tier = Math.Clamp(value.Tier, 0, 50);
+            value.Tier = Math.Clamp(value.Tier, 0, season.Tiers.Count);
             value.SeasonId = key;
         }
 
