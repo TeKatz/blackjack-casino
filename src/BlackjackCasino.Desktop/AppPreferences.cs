@@ -31,6 +31,10 @@ internal sealed record AppPreferences
 
     public bool AnimationsEnabled { get; init; } = true;
 
+    public bool MusicEnabled { get; init; } = true;
+
+    public double MusicVolume { get; init; } = 0.18d;
+
     public UpdateChannel? UpdateChannel { get; init; }
 
     public double WindowWidth { get; init; } = 1360d;
