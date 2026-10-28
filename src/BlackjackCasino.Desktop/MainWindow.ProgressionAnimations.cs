@@ -70,6 +70,9 @@ public partial class MainWindow
             profileLevelUpSweep.Opacity = 0;
             profileLevelUpSweepTransform.X = -92;
             profileButton.ClearValue(EffectProperty);
+            // The level-up glow temporarily replaces the equipped cosmetic frame glow.
+            // Restore the normal profile presentation once the one-shot sweep is over.
+            RefreshProfileButton();
         };
 
         profileLevelUpSweepTransform.BeginAnimation(TranslateTransform.XProperty, sweep);
