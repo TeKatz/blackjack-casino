@@ -33,7 +33,7 @@ internal sealed record AppPreferences
 
     public bool MusicEnabled { get; init; } = true;
 
-    public double MusicVolume { get; init; } = 0.18d;
+    public double MusicVolume { get; init; } = 0.10d;
 
     public UpdateChannel? UpdateChannel { get; init; }
 
