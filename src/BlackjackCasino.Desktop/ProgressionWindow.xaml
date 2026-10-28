@@ -1,7 +1,8 @@
 <Window x:Class="BlackjackCasino.Desktop.ProgressionWindow"
+        x:ClassModifier="internal"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Blackjack Casino — Profile & Progression"
+        Title="Blackjack Casino — Profile &amp; Progression"
         Width="1120" Height="780" MinWidth="920" MinHeight="650"
         WindowStartupLocation="CenterOwner"
         Background="#07120D" Foreground="#F2EEE4" FontFamily="Segoe UI">
