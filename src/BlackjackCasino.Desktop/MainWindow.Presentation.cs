@@ -9,6 +9,7 @@ public partial class MainWindow
     private void PresentationLoaded(object sender, RoutedEventArgs e)
     {
         InitializeTableRulesFeature();
+        InitializeProgressionFeature();
 
         suppressPreferenceEvents = true;
         MusicCheckBox.IsChecked = preferences.MusicEnabled;
@@ -21,6 +22,7 @@ public partial class MainWindow
 
     private void PresentationClosed(object? sender, EventArgs e)
     {
+        ShutdownProgressionFeature();
         backgroundMusic.Dispose();
     }
 
