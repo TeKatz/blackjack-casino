@@ -66,6 +66,7 @@ internal static class PlayerStateStore
         int aiSeats = Math.Clamp(state.AiSeatCount, 1, 5);
         double width = double.IsFinite(state.WindowWidth) ? Math.Clamp(state.WindowWidth, 1080d, 3840d) : 1360d;
         double height = double.IsFinite(state.WindowHeight) ? Math.Clamp(state.WindowHeight, 720d, 2160d) : 860d;
+        double musicVolume = double.IsFinite(state.MusicVolume) ? Math.Clamp(state.MusicVolume, 0d, 0.45d) : 0.18d;
 
         PlayModePreference playMode = Enum.IsDefined(state.PlayMode)
             ? state.PlayMode
@@ -81,6 +82,7 @@ internal static class PlayerStateStore
             PlayMode = playMode,
             AiSeatCount = aiSeats,
             Theme = theme,
+            MusicVolume = musicVolume,
             WindowWidth = width,
             WindowHeight = height,
         };
