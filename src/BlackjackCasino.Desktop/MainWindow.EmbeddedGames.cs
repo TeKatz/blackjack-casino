@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -69,6 +70,8 @@ public partial class MainWindow
         {
             HorizontalContentAlignment = HorizontalAlignment.Stretch,
             VerticalContentAlignment = VerticalAlignment.Stretch,
+            UseLayoutRounding = true,
+            SnapsToDevicePixels = true,
         };
 
         embeddedGameOverlay = new Grid
@@ -76,6 +79,8 @@ public partial class MainWindow
             Background = new SolidColorBrush(Color.FromRgb(16, 13, 24)),
             Visibility = Visibility.Collapsed,
             Focusable = true,
+            UseLayoutRounding = true,
+            SnapsToDevicePixels = true,
         };
         embeddedGameOverlay.Children.Add(embeddedGameHost);
         Grid.SetRowSpan(embeddedGameOverlay, Math.Max(1, root.RowDefinitions.Count));
@@ -97,6 +102,12 @@ public partial class MainWindow
             shell.Close();
             throw new InvalidOperationException("The casino game does not expose hostable content.");
         }
+
+        // The slot windows own important implicit styles (especially the fully custom Manor
+        // ComboBox toggle template). Reparenting their content into MainWindow changes normal
+        // WPF resource lookup. Preserve that scope before detaching or Windows theme chrome can
+        // leak back in as bright hover/disabled rectangles.
+        PreserveEmbeddedPresentation(shell, content);
 
         embeddedPreviousTitle = Title;
         Title = title;
@@ -145,6 +156,90 @@ public partial class MainWindow
                 element.Focus();
             }
         });
+    }
+
+    private static void PreserveEmbeddedPresentation(Window shell, UIElement content)
+    {
+        if (content is FrameworkElement root)
+        {
+            var scopedResources = new ResourceDictionary();
+            CopyResources(shell.Resources, scopedResources);
+            root.Resources.MergedDictionaries.Insert(0, scopedResources);
+            root.UseLayoutRounding = true;
+            root.SnapsToDevicePixels = true;
+            TextOptions.SetTextFormattingMode(root, TextFormattingMode.Display);
+            TextOptions.SetTextHintingMode(root, TextHintingMode.Fixed);
+        }
+
+        // Both slot layouts were authored at a deliberate pixel size. In a separate window the
+        // Viewbox was close to 1:1; filling the larger embedded host made it upscale text by a
+        // fractional factor, visibly softening glyphs and numbers. DownOnly keeps native-size
+        // text sharp while retaining responsive shrink-on-small-window behaviour.
+        foreach (Viewbox viewbox in FindEmbeddedLogicalChildren<Viewbox>(content))
+        {
+            viewbox.StretchDirection = StretchDirection.DownOnly;
+            viewbox.UseLayoutRounding = true;
+            viewbox.SnapsToDevicePixels = true;
+        }
+
+        // Resolve the slot-local ComboBox styles while the original Window scope is still
+        // authoritative, then pin them explicitly. ItemContainerStyle also covers popup items
+        // that are generated only after the user opens the dropdown.
+        if (shell.TryFindResource(typeof(ComboBox)) is Style comboStyle)
+        {
+            Style? itemStyle = shell.TryFindResource(typeof(ComboBoxItem)) as Style;
+            foreach (ComboBox combo in FindEmbeddedLogicalChildren<ComboBox>(content))
+            {
+                combo.Style = comboStyle;
+                if (itemStyle is not null)
+                {
+                    combo.ItemContainerStyle = itemStyle;
+                }
+            }
+        }
+    }
+
+    private static IEnumerable<T> FindEmbeddedLogicalChildren<T>(DependencyObject root) where T : DependencyObject
+    {
+        if (root is T match)
+        {
+            yield return match;
+        }
+
+        foreach (object child in LogicalTreeHelper.GetChildren(root))
+        {
+            if (child is not DependencyObject dependencyObject)
+            {
+                continue;
+            }
+
+            foreach (T nested in FindEmbeddedLogicalChildren<T>(dependencyObject))
+            {
+                yield return nested;
+            }
+        }
+    }
+
+    private static void CopyResources(ResourceDictionary source, ResourceDictionary target)
+    {
+        foreach (DictionaryEntry entry in source)
+        {
+            target[entry.Key] = entry.Value;
+        }
+
+        foreach (ResourceDictionary merged in source.MergedDictionaries)
+        {
+            var copy = new ResourceDictionary();
+            if (merged.Source is not null)
+            {
+                copy.Source = merged.Source;
+            }
+            else
+            {
+                CopyResources(merged, copy);
+            }
+            target.MergedDictionaries.Add(copy);
+        }
     }
 
     private void ForwardEmbeddedKey(Window shell, KeyEventArgs original)
