@@ -53,12 +53,26 @@
           <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
           </Grid.RowDefinitions>
 
           <TextBlock Text="Installed version" Foreground="#9CB2A4" />
           <TextBlock x:Name="VersionText" Grid.Column="1" Margin="24,0,0,0" FontWeight="SemiBold" />
-          <TextBlock Grid.Row="1" Margin="0,12,0,0" Text="Update status" Foreground="#9CB2A4" />
-          <TextBlock x:Name="UpdateStatusText" Grid.Row="1" Grid.Column="1" Margin="24,12,0,0" Text="Not checked yet" />
+
+          <TextBlock Grid.Row="1" Margin="0,12,0,0" Text="Update channel" Foreground="#9CB2A4" />
+          <ComboBox x:Name="UpdateChannelComboBox"
+                    Grid.Row="1"
+                    Grid.Column="1"
+                    Width="180"
+                    Margin="24,8,0,0"
+                    HorizontalAlignment="Left"
+                    SelectedIndex="0">
+            <ComboBoxItem Content="Stable" />
+            <ComboBoxItem Content="Development" />
+          </ComboBox>
+
+          <TextBlock Grid.Row="2" Margin="0,12,0,0" Text="Update status" Foreground="#9CB2A4" />
+          <TextBlock x:Name="UpdateStatusText" Grid.Row="2" Grid.Column="1" Margin="24,12,0,0" Text="Not checked yet" />
         </Grid>
       </StackPanel>
     </Border>

@@ -1,0 +1,114 @@
+name: Development Release
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish-development:
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Resolve development version
+        shell: pwsh
+        run: |
+          [xml]$props = Get-Content Directory.Build.props
+          $baseVersion = [string]$props.Project.PropertyGroup.VersionPrefix
+          if ([string]::IsNullOrWhiteSpace($baseVersion)) {
+            throw "Directory.Build.props does not define VersionPrefix."
+          }
+          $version = "$baseVersion-dev.${{ github.run_number }}"
+          "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Restore
+        run: dotnet restore BlackjackCasino.sln
+
+      - name: Build
+        run: dotnet build BlackjackCasino.sln --configuration Release --no-restore -p:Version=${{ env.VERSION }}
+
+      - name: Test
+        run: dotnet test BlackjackCasino.sln --configuration Release --no-build
+
+      - name: Publish updater and desktop
+        shell: pwsh
+        run: |
+          dotnet publish src/BlackjackCasino.Updater/BlackjackCasino.Updater.csproj `
+            --configuration Release `
+            --runtime win-x64 `
+            --self-contained true `
+            -p:PublishSingleFile=true `
+            -p:DebugType=None `
+            -p:Version=$env:VERSION `
+            --output artifacts/updater
+
+          dotnet publish src/BlackjackCasino.Desktop/BlackjackCasino.Desktop.csproj `
+            --configuration Release `
+            --runtime win-x64 `
+            --self-contained true `
+            -p:PublishSingleFile=true `
+            -p:DebugType=None `
+            -p:Version=$env:VERSION `
+            --output artifacts/app
+
+          New-Item -ItemType Directory -Path artifacts/app/tools/updater -Force | Out-Null
+          Copy-Item artifacts/updater/BlackjackCasino.Updater.exe artifacts/app/tools/updater/BlackjackCasino.Updater.exe
+
+      - name: Package development build
+        shell: pwsh
+        run: |
+          $package = Join-Path $PWD "artifacts/blackjack-casino-win-x64.zip"
+          Compress-Archive -Path "artifacts/app/*" -DestinationPath $package -CompressionLevel Optimal
+
+          $hash = (Get-FileHash -Path $package -Algorithm SHA256).Hash
+          $size = (Get-Item $package).Length
+          $repo = "${{ github.repository }}"
+
+          $manifest = [ordered]@{
+            schemaVersion = 1
+            version = $env:VERSION
+            channel = "development"
+            publishedAt = (Get-Date).ToUniversalTime().ToString("o")
+            minimumUpdaterVersion = "0.1.0"
+            package = [ordered]@{
+              url = "https://github.com/$repo/releases/download/development/blackjack-casino-win-x64.zip"
+              sha256 = $hash
+              sizeBytes = $size
+            }
+            notesUrl = "https://github.com/$repo/commits/develop"
+          }
+
+          $manifest | ConvertTo-Json -Depth 5 | Set-Content -Path "artifacts/update-manifest.json" -Encoding utf8NoBOM
+          "$hash  blackjack-casino-win-x64.zip" | Set-Content -Path "artifacts/blackjack-casino-win-x64.zip.sha256" -Encoding ascii
+
+      - name: Publish mutable development channel
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view development *> $null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create development `
+              --target "${{ github.sha }}" `
+              --prerelease `
+              --title "Blackjack Casino Development" `
+              --notes "Mutable development channel. Assets are replaced by successful builds from the develop branch."
+          }
+
+          gh release upload development `
+            "artifacts/blackjack-casino-win-x64.zip" `
+            "artifacts/blackjack-casino-win-x64.zip.sha256" `
+            "artifacts/update-manifest.json" `
+            --clobber

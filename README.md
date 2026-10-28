@@ -35,6 +35,11 @@ dotnet test BlackjackCasino.sln -c Release --no-build
 
 ## Releases and updates
 
+The updater has two channels from the start:
+
+- **Stable** — immutable SemVer-tagged GitHub Releases such as `v0.1.0`.
+- **Development** — a mutable `development` prerelease whose assets are replaced by successful builds from the `develop` branch.
+
 Stable releases are produced from SemVer tags:
 
 ```text
@@ -43,14 +48,10 @@ v0.2.0
 v1.0.0
 ```
 
-The release workflow builds and tests the solution, publishes a self-contained `win-x64` package, publishes the standalone updater, computes SHA-256, generates `update-manifest.json`, and creates the GitHub Release.
+The stable release workflow builds and tests the solution, publishes a self-contained `win-x64` package, publishes the standalone updater, computes SHA-256, generates `update-manifest.json`, and creates the GitHub Release. The development workflow uses the same package contract and integrity checks.
 
-The desktop client checks:
+The desktop client can switch between Stable and Development and checks the corresponding GitHub-hosted manifest.
 
-```text
-https://github.com/TeKatz/blackjack-casino/releases/latest/download/update-manifest.json
-```
-
-An update is only installed after its exact byte size and SHA-256 digest match the signed release metadata path we control. The running application hands installation off to a temporary updater process, which stages the new files before replacing the current installation.
+An update is installed only after its exact byte size and SHA-256 digest match the selected channel manifest. The running application hands installation off to a temporary updater process, which stages the new files before replacing the current installation and restores the previous directory if the swap itself fails.
 
 See [`docs/architecture.md`](docs/architecture.md) and [`docs/phase-1.md`](docs/phase-1.md).

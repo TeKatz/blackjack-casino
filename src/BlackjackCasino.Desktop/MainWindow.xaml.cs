@@ -7,9 +7,6 @@ namespace BlackjackCasino.Desktop;
 
 public partial class MainWindow : Window
 {
-    private static readonly Uri ManifestUri = new(
-        "https://github.com/TeKatz/blackjack-casino/releases/latest/download/update-manifest.json");
-
     private readonly HttpClient httpClient = new()
     {
         Timeout = TimeSpan.FromSeconds(20),
@@ -24,6 +21,10 @@ public partial class MainWindow : Window
         Loaded += async (_, _) => await CheckForUpdatesAsync(silent: true);
         Closed += (_, _) => httpClient.Dispose();
     }
+
+    private UpdateChannel SelectedUpdateChannel => UpdateChannelComboBox.SelectedIndex == 1
+        ? UpdateChannel.Development
+        : UpdateChannel.Stable;
 
     private async void CheckUpdateButton_Click(object sender, RoutedEventArgs e)
     {
@@ -69,22 +70,24 @@ public partial class MainWindow : Window
 
     private async Task CheckForUpdatesAsync(bool silent)
     {
+        UpdateChannel channel = SelectedUpdateChannel;
+
         try
         {
             SetBusy(true);
             if (!silent)
             {
-                UpdateStatusText.Text = "Checking…";
+                UpdateStatusText.Text = $"Checking {channel}…";
             }
 
-            var source = new HttpManifestUpdateSource(httpClient, ManifestUri);
-            var client = new UpdateClient(source);
+            var source = new HttpManifestUpdateSource(httpClient, GetManifestUri(channel));
+            var client = new UpdateClient(source, channel.ToManifestValue());
             UpdateCheckResult result = await client.CheckAsync(AppVersion.Current);
 
             if (!result.UpdateAvailable)
             {
                 pendingManifest = null;
-                UpdateStatusText.Text = "Up to date";
+                UpdateStatusText.Text = $"{channel}: up to date";
                 InstallUpdateButton.IsEnabled = false;
                 return;
             }
@@ -99,7 +102,7 @@ public partial class MainWindow : Window
             }
 
             pendingManifest = result.Manifest;
-            UpdateStatusText.Text = $"Version {result.LatestVersion} is available";
+            UpdateStatusText.Text = $"{channel}: version {result.LatestVersion} is available";
             InstallUpdateButton.IsEnabled = UpdaterLauncher.IsAvailable;
 
             if (!UpdaterLauncher.IsAvailable)
@@ -110,14 +113,16 @@ public partial class MainWindow : Window
         catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
             pendingManifest = null;
-            UpdateStatusText.Text = "No published release channel yet";
+            UpdateStatusText.Text = $"No {channel} release channel has been published yet";
             InstallUpdateButton.IsEnabled = false;
         }
         catch (Exception ex)
         {
             pendingManifest = null;
             InstallUpdateButton.IsEnabled = false;
-            UpdateStatusText.Text = silent ? "Update check unavailable" : $"Update check failed: {ex.Message}";
+            UpdateStatusText.Text = silent
+                ? $"{channel} update check unavailable"
+                : $"Update check failed: {ex.Message}";
         }
         finally
         {
@@ -125,9 +130,19 @@ public partial class MainWindow : Window
         }
     }
 
+    private static Uri GetManifestUri(UpdateChannel channel) => channel switch
+    {
+        UpdateChannel.Stable => new Uri(
+            "https://github.com/TeKatz/blackjack-casino/releases/latest/download/update-manifest.json"),
+        UpdateChannel.Development => new Uri(
+            "https://github.com/TeKatz/blackjack-casino/releases/download/development/update-manifest.json"),
+        _ => throw new ArgumentOutOfRangeException(nameof(channel), channel, null),
+    };
+
     private void SetBusy(bool busy)
     {
         CheckUpdateButton.IsEnabled = !busy;
+        UpdateChannelComboBox.IsEnabled = !busy;
         if (busy)
         {
             InstallUpdateButton.IsEnabled = false;
