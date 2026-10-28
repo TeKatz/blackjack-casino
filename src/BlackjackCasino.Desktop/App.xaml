@@ -30,7 +30,7 @@
         <Setter.Value>
           <ControlTemplate TargetType="ScrollBar">
             <Grid x:Name="Root" Background="Transparent">
-              <Track x:Name="PART_Track" IsDirectionReversed="True">
+              <Track x:Name="PART_Track" Orientation="{TemplateBinding Orientation}" IsDirectionReversed="True">
                 <Track.DecreaseRepeatButton>
                   <RepeatButton Command="ScrollBar.PageUpCommand" Opacity="0" IsTabStop="False" />
                 </Track.DecreaseRepeatButton>
