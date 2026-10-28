@@ -12,9 +12,12 @@ The project is currently in **Phase 4: Casino Presentation & Polish**. The black
 - persistent shoe and cut-card reshuffle;
 - Solo mode or Full Table with 1–5 AI seats;
 - deterministic basic-strategy AI sharing the exact same shoe;
-- three table themes, optional card animations and sound feedback;
+- three table themes with layered felt texture and casino-table depth;
+- dark themed controls with subtle hover/pressed feedback;
+- optional staggered card animations and custom casino sound effects;
+- optional procedurally generated lo-fi background music with persistent volume;
 - F11 fullscreen mode;
-- persistent bankroll, bet, play mode, AI seats, appearance, window state and update channel;
+- persistent bankroll, bet, play mode, AI seats, appearance, audio, window state and update channel;
 - Stable and Development updater channels with SHA-256 package verification.
 
 ## Projects
@@ -24,7 +27,7 @@ The project is currently in **Phase 4: Casino Presentation & Polish**. The black
 | `BlackjackCasino.Core` | Cards, shoe, hands, table AI, rule engine and settlement |
 | `BlackjackCasino.Update` | Manifest protocol, semantic versions, download and SHA-256 validation |
 | `BlackjackCasino.Updater` | Out-of-process staged installation replacement |
-| `BlackjackCasino.Desktop` | Windows casino table, presentation and local preferences |
+| `BlackjackCasino.Desktop` | Windows casino table, presentation, audio and local preferences |
 | `BlackjackCasino.Tests` | Core, full-table and updater tests |
 
 ## Development
