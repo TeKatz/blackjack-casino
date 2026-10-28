@@ -33,16 +33,16 @@
     <DropShadowEffect x:Key="SoftPanelShadow" Color="#000000" BlurRadius="16" ShadowDepth="4" Opacity="0.32" />
     <DropShadowEffect x:Key="HeaderShadow" Color="#000000" BlurRadius="16" ShadowDepth="3" Opacity="0.45" />
 
-    <DrawingBrush x:Key="FeltWeaveBrush" TileMode="Tile" Viewport="0,0,22,22" ViewportUnits="Absolute" Viewbox="0,0,22,22" ViewboxUnits="Absolute">
+    <DrawingBrush x:Key="FeltWeaveBrush" TileMode="Tile" Viewport="0,0,24,24" ViewportUnits="Absolute" Viewbox="0,0,24,24" ViewboxUnits="Absolute">
       <DrawingBrush.Drawing>
         <DrawingGroup>
-          <GeometryDrawing Geometry="M 0,22 L 22,0">
-            <GeometryDrawing.Pen><Pen Brush="#16FFFFFF" Thickness="0.45" /></GeometryDrawing.Pen>
+          <GeometryDrawing Geometry="M 0,24 L 24,0">
+            <GeometryDrawing.Pen><Pen Brush="#0AFFFFFF" Thickness="0.35" /></GeometryDrawing.Pen>
           </GeometryDrawing>
-          <GeometryDrawing Geometry="M -11,22 L 11,0 M 11,22 L 33,0">
-            <GeometryDrawing.Pen><Pen Brush="#10000000" Thickness="0.55" /></GeometryDrawing.Pen>
+          <GeometryDrawing Geometry="M -12,24 L 12,0 M 12,24 L 36,0">
+            <GeometryDrawing.Pen><Pen Brush="#08000000" Thickness="0.45" /></GeometryDrawing.Pen>
           </GeometryDrawing>
-          <GeometryDrawing Brush="#0EFFFFFF" Geometry="M 5,5 A 0.7,0.7 0 1 1 4.9,5 M 16,15 A 0.55,0.55 0 1 1 15.9,15" />
+          <GeometryDrawing Brush="#06FFFFFF" Geometry="M 6,6 A 0.55,0.55 0 1 1 5.9,6 M 18,17 A 0.45,0.45 0 1 1 17.9,17" />
         </DrawingGroup>
       </DrawingBrush.Drawing>
     </DrawingBrush>
@@ -170,7 +170,7 @@
     <Style x:Key="CasinoSlider" TargetType="Slider">
       <Setter Property="Height" Value="24" />
       <Setter Property="Minimum" Value="0" />
-      <Setter Property="Maximum" Value="0.45" />
+      <Setter Property="Maximum" Value="0.32" />
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="Slider">
@@ -208,14 +208,17 @@
     </Border>
 
     <Grid x:Name="TableSurface" Grid.Row="1" Background="{DynamicResource TableBackgroundBrush}" ClipToBounds="True">
-      <Rectangle IsHitTestVisible="False"><Rectangle.Fill><LinearGradientBrush StartPoint="0,0" EndPoint="0,1"><GradientStop Color="#26000000" Offset="0" /><GradientStop Color="#00FFFFFF" Offset="0.37" /><GradientStop Color="#34000000" Offset="1" /></LinearGradientBrush></Rectangle.Fill></Rectangle>
-      <Rectangle IsHitTestVisible="False" Fill="{StaticResource FeltWeaveBrush}" Opacity="0.42" />
-      <Rectangle IsHitTestVisible="False" Opacity="0.32"><Rectangle.Fill><RadialGradientBrush Center="0.5,0.43" GradientOrigin="0.5,0.39" RadiusX="0.72" RadiusY="0.64"><GradientStop Color="#58FFFFFF" Offset="0" /><GradientStop Color="#0AFFFFFF" Offset="0.48" /><GradientStop Color="#76000000" Offset="1" /></RadialGradientBrush></Rectangle.Fill></Rectangle>
-      <Border IsHitTestVisible="False" Margin="13" CornerRadius="44" BorderBrush="#2B000000" BorderThickness="22"><Border.Effect><DropShadowEffect Color="#000000" BlurRadius="30" ShadowDepth="8" Opacity="0.38" /></Border.Effect></Border>
-      <Border IsHitTestVisible="False" Margin="28" CornerRadius="31" BorderBrush="#38D7A944" BorderThickness="1" />
-      <Border IsHitTestVisible="False" Margin="37" CornerRadius="25" BorderBrush="#16FFFFFF" BorderThickness="1" />
-      <Ellipse IsHitTestVisible="False" Width="870" Height="385" HorizontalAlignment="Center" VerticalAlignment="Center" Stroke="#12000000" StrokeThickness="52" Opacity="0.55" />
-      <Ellipse IsHitTestVisible="False" Width="820" Height="335" HorizontalAlignment="Center" VerticalAlignment="Center" Stroke="#18FFFFFF" StrokeThickness="1" />
+      <Rectangle IsHitTestVisible="False"><Rectangle.Fill><LinearGradientBrush StartPoint="0,0" EndPoint="0,1"><GradientStop Color="#30000000" Offset="0" /><GradientStop Color="#08FFFFFF" Offset="0.32" /><GradientStop Color="#18000000" Offset="0.68" /><GradientStop Color="#42000000" Offset="1" /></LinearGradientBrush></Rectangle.Fill></Rectangle>
+      <Rectangle IsHitTestVisible="False" Fill="{StaticResource FeltWeaveBrush}" Opacity="0.24" />
+      <Rectangle IsHitTestVisible="False" Opacity="0.27"><Rectangle.Fill><RadialGradientBrush Center="0.5,0.34" GradientOrigin="0.5,0.28" RadiusX="0.76" RadiusY="0.72"><GradientStop Color="#38FFFFFF" Offset="0" /><GradientStop Color="#08FFFFFF" Offset="0.43" /><GradientStop Color="#74000000" Offset="1" /></RadialGradientBrush></Rectangle.Fill></Rectangle>
+      <Rectangle IsHitTestVisible="False" Opacity="0.18"><Rectangle.Fill><RadialGradientBrush Center="0.5,0.82" GradientOrigin="0.5,0.82" RadiusX="0.58" RadiusY="0.32"><GradientStop Color="#20D7A944" Offset="0" /><GradientStop Color="#00000000" Offset="1" /></RadialGradientBrush></Rectangle.Fill></Rectangle>
+      <Border IsHitTestVisible="False" Margin="13" CornerRadius="44" BorderBrush="#30000000" BorderThickness="22"><Border.Effect><DropShadowEffect Color="#000000" BlurRadius="30" ShadowDepth="8" Opacity="0.40" /></Border.Effect></Border>
+      <Border IsHitTestVisible="False" Margin="28" CornerRadius="31" BorderBrush="#30D7A944" BorderThickness="1" />
+      <Border IsHitTestVisible="False" Margin="37" CornerRadius="25" BorderBrush="#14FFFFFF" BorderThickness="1" />
+      <StackPanel IsHitTestVisible="False" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,238,0,0" Opacity="0.14">
+        <TextBlock Text="BLACKJACK PAYS 3 TO 2" Foreground="{DynamicResource AccentLightBrush}" FontSize="18" FontWeight="SemiBold" HorizontalAlignment="Center" />
+        <TextBlock Text="DEALER STANDS ON ALL 17" Foreground="#DDE8E0" FontSize="10" Margin="0,5,0,0" HorizontalAlignment="Center" />
+      </StackPanel>
 
       <Grid>
         <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
@@ -245,7 +248,7 @@
               <CheckBox x:Name="SoundCheckBox" Content="Casino sound effects" IsChecked="True" Margin="2,5,2,3" />
               <CheckBox x:Name="AnimationsCheckBox" Content="Card animations" IsChecked="True" Margin="2,4,2,3" />
               <CheckBox x:Name="MusicCheckBox" Content="Lo-fi background music" IsChecked="True" Margin="2,4,2,3" Checked="MusicSettingChanged" Unchecked="MusicSettingChanged" />
-              <Grid Margin="2,7,2,2"><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="116" /></Grid.ColumnDefinitions><TextBlock Text="Music volume" VerticalAlignment="Center" Foreground="#DDE8E0" /><StackPanel Grid.Column="1" Orientation="Horizontal"><Slider x:Name="MusicVolumeSlider" Style="{StaticResource CasinoSlider}" Width="82" Minimum="0" Maximum="0.45" Value="0.18" SmallChange="0.02" LargeChange="0.05" ValueChanged="MusicVolumeSlider_ValueChanged" /><TextBlock x:Name="MusicVolumeText" Width="34" Margin="6,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Right" Foreground="{DynamicResource MutedTextBrush}" Text="18%" /></StackPanel></Grid>
+              <Grid Margin="2,7,2,2"><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="116" /></Grid.ColumnDefinitions><TextBlock Text="Music volume" VerticalAlignment="Center" Foreground="#DDE8E0" /><StackPanel Grid.Column="1" Orientation="Horizontal"><Slider x:Name="MusicVolumeSlider" Style="{StaticResource CasinoSlider}" Width="82" Minimum="0" Maximum="0.32" Value="0.10" SmallChange="0.02" LargeChange="0.04" ValueChanged="MusicVolumeSlider_ValueChanged" /><TextBlock x:Name="MusicVolumeText" Width="34" Margin="6,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Right" Foreground="{DynamicResource MutedTextBrush}" Text="10%" /></StackPanel></Grid>
               <Button Content="Toggle fullscreen  [F11]" Style="{StaticResource MutedButton}" Margin="4,10,4,0" Click="Fullscreen_Click" />
             </StackPanel>
           </Border>
