@@ -63,14 +63,16 @@ internal static class Program
                 Require(Find<Image>(window).Any(image => image.IsVisible && image.Source is not null),
                     "Nine Lives did not render any artwork after opening.");
 
+                SaveScreenshot(window, Path.Combine(output, "nine-lives-main.png"));
+
                 Image[] reelImages = Find<Image>(window)
                     .Where(image => image.IsVisible
-                        && image.ActualWidth >= 180 && image.ActualWidth <= 300
-                        && image.ActualHeight >= 150 && image.ActualHeight <= 230)
-                    .Take(9)
+                        && image.Parent is Border frame
+                        && Math.Abs(frame.Width - 257d) < 0.1
+                        && Math.Abs(frame.Height - 199d) < 0.1)
                     .ToArray();
                 Require(reelImages.Length == 9,
-                    "Nine Lives did not expose all nine reel artwork surfaces.");
+                    $"Nine Lives did not expose exactly nine reel artwork surfaces; found {reelImages.Length}.");
                 Require(reelImages.All(image => image.Source is BitmapSource),
                     "Nine Lives regressed to replacement vector symbols instead of the restored concept-art set.");
                 Require(reelImages.All(image => image.Source is BitmapSource bitmap
@@ -85,7 +87,6 @@ internal static class Program
                 TextBlock winText = Find<TextBlock>(window).FirstOrDefault(text => text.Name == "WinText")
                     ?? throw new InvalidOperationException("Nine Lives last-win display is missing.");
                 Require(winText.Text == "—", "Nine Lives must show an em dash rather than NO/0 for an empty last win.");
-                SaveScreenshot(window, Path.Combine(output, "nine-lives-main.png"));
 
                 Button settings = Find<Button>(window).FirstOrDefault(button => button.Name == "SettingsButton")
                     ?? throw new InvalidOperationException("Nine Lives settings button is missing.");
