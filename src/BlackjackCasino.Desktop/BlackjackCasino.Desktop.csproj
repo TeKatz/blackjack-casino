@@ -11,6 +11,7 @@
     <Resource Include="Assets\Portraits\*.png" />
     <Resource Include="Assets\Empire\*.png" />
     <Resource Include="Assets\NineLives\*.png" />
+    <Resource Include="Assets\NineLives\*.jpg" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BlackjackCasino.Core\BlackjackCasino.Core.csproj" />
