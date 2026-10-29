@@ -13,6 +13,7 @@ internal partial class NineLivesWindow
     protected override void OnContentRendered(EventArgs e)
     {
         base.OnContentRendered(e);
+        InitializeReelMotionPresentation();
         if (polishedLayoutApplied)
         {
             return;
