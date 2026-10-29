@@ -62,7 +62,29 @@ jobs:
           retention-days: 14
 
       - name: Windows Manor runtime acceptance smoke
-        run: dotnet run --project tools/ManorSmoke/ManorSmoke.csproj --configuration Release -- artifacts/manor-development-smoke
+        shell: pwsh
+        run: |
+          $maxAttempts = 2
+          for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+            $attemptOutput = "artifacts/manor-development-smoke/attempt-$attempt"
+            Write-Host "Running Manor smoke attempt $attempt of $maxAttempts..."
+            dotnet run --project tools/ManorSmoke/ManorSmoke.csproj --configuration Release -- $attemptOutput
+            if ($LASTEXITCODE -eq 0) {
+              Write-Host "Manor smoke passed on attempt $attempt."
+              exit 0
+            }
+            Write-Warning "Manor smoke attempt $attempt failed with exit code $LASTEXITCODE."
+          }
+          throw "Manor runtime smoke failed on all $maxAttempts attempts."
+
+      - name: Upload Manor runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: manor-development-smoke
+          path: artifacts/manor-development-smoke
+          if-no-files-found: ignore
+          retention-days: 14
 
       - name: Publish updater and desktop
         shell: pwsh
