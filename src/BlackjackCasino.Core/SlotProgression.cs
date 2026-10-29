@@ -19,26 +19,37 @@ public sealed class SlotProgression(ProgressionService progression)
     public ProgressionAward Process(SlotSpinResult spin)
     {
         ArgumentNullException.ThrowIfNull(spin);
-        if (!processed.Add(spin.SpinId))
+        return ProcessCore(spin.SpinId, spin.CompletedAt, spin.Bet, spin.Payout, spin.Net);
+    }
+
+    public ProgressionAward Process(NeonVaultSpinResult spin)
+    {
+        ArgumentNullException.ThrowIfNull(spin);
+        return ProcessCore(spin.SpinId, spin.CompletedAt, spin.Stake, spin.Payout, spin.Net);
+    }
+
+    private ProgressionAward ProcessCore(Guid spinId, DateTimeOffset completedAt, decimal wagered, decimal returned, decimal net)
+    {
+        if (!processed.Add(spinId))
         {
             return ProgressionAward.None;
         }
 
         SlotStatistics stats = progression.State.Slots;
         stats.Spins++;
-        stats.Wins += spin.Net > 0 ? 1 : 0;
-        stats.Pushes += spin.Net == 0 ? 1 : 0;
-        stats.TotalWagered += spin.Bet;
-        stats.TotalReturned += spin.Payout;
-        stats.BiggestPayout = Math.Max(stats.BiggestPayout, spin.Payout);
+        stats.Wins += net > 0 ? 1 : 0;
+        stats.Pushes += net == 0 ? 1 : 0;
+        stats.TotalWagered += wagered;
+        stats.TotalReturned += returned;
+        stats.BiggestPayout = Math.Max(stats.BiggestPayout, returned);
 
-        // Same base and win bonus as a normal completed blackjack hand;
-        // neither wager size nor jackpot size buys faster progression.
-        long playerXp = 20 + (spin.Net > 0 ? 5 : 0);
-        long seasonXp = 15 + (spin.Net > 0 ? 5 : 0);
+        // Same base and win bonus as a normal completed blackjack hand; neither wager size,
+        // jackpot size nor a free spin buys faster progression.
+        long playerXp = 20 + (net > 0 ? 5 : 0);
+        long seasonXp = 15 + (net > 0 ? 5 : 0);
         ProgressionAward player = progression.GrantPlayerExperience(playerXp);
         ProgressionAward season = progression.GrantSeasonExperience(progression.State.ActiveSeasonId, seasonXp);
-        progression.State.LastPlayedAt = spin.CompletedAt;
+        progression.State.LastPlayedAt = completedAt;
         return new ProgressionAward(playerXp, seasonXp, player.LevelsGained, season.SeasonTiersGained,
             player.CoinsEarned + season.CoinsEarned, player.CosmeticsUnlocked.Concat(season.CosmeticsUnlocked).ToArray());
     }
