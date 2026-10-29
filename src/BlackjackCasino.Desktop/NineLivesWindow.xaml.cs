@@ -4,7 +4,6 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-using System.Windows.Threading;
 using BlackjackCasino.Core;
 
 namespace BlackjackCasino.Desktop;
@@ -185,7 +184,7 @@ internal partial class NineLivesWindow : Window
         ProgressionAward award = commitSpin(result);
         if (award.HasLevelUp)
         {
-            StatusText.Text += $"  ·  LEVEL {progression.State.Level}";
+            StatusText.Text += $"  ·  LEVEL {progression.Profile.Level}";
         }
 
         spinning = false;
@@ -491,7 +490,7 @@ internal partial class NineLivesWindow : Window
     private void RefreshUi()
     {
         BankrollText.Text = machine.Bankroll.ToString("N0", CultureInfo.InvariantCulture);
-        LevelText.Text = $"Lvl {Math.Max(1, progression.State.Level)}";
+        LevelText.Text = $"Lvl {Math.Max(1, progression.Profile.Level)}";
         BetText.Text = machine.BonusActive ? "FREE" : selectedBet.ToString("N0", CultureInfo.InvariantCulture);
         WinText.Text = lastWin.ToString("N0.##", CultureInfo.InvariantCulture);
         BetDownButton.IsEnabled = !spinning && !machine.BonusActive && NineLivesRules.Bets.IndexOf(selectedBet) > 0;
