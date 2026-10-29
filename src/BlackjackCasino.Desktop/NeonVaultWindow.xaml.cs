@@ -4,7 +4,6 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-using System.Windows.Media.Effects;
 using System.Windows.Threading;
 using BlackjackCasino.Core;
 
@@ -12,23 +11,47 @@ namespace BlackjackCasino.Desktop;
 
 internal partial class NeonVaultWindow : Window
 {
+    private const double PresentationPace = 1.45;
     private static readonly NeonVaultSymbol[] PreviewSymbols = Enum.GetValues<NeonVaultSymbol>();
+    private static readonly IReadOnlyDictionary<NeonVaultSymbol, SymbolPalette> Palettes = BuildPalettes();
+
     private readonly NeonVaultSession machine;
     private readonly PlayerProgressionController progression;
     private readonly Func<NeonVaultSpinResult, ProgressionAward> commitSpin;
     private readonly SlotAudio audio = new();
     private readonly BackgroundMusic music = new(Soundtrack.Reels);
-    private readonly DispatcherTimer previewTimer = new() { Interval = TimeSpan.FromMilliseconds(82) };
+    private readonly DispatcherTimer previewTimer = new() { Interval = TimeSpan.FromMilliseconds(33) };
     private readonly Random visualRandom = new(0x4E56_2026);
     private readonly Border[,] cells = new Border[NeonVaultRules.Rows, NeonVaultRules.Reels];
+    private readonly SymbolPresenter[,] presenters = new SymbolPresenter[NeonVaultRules.Rows, NeonVaultRules.Reels];
     private readonly Border[] reelFrames = new Border[NeonVaultRules.Reels];
+    private readonly TranslateTransform[] reelMotion = new TranslateTransform[NeonVaultRules.Reels];
     private readonly bool[] reelSettled = new bool[NeonVaultRules.Reels];
+
     private NeonVaultSymbol[] displayGrid = Enumerable.Repeat(NeonVaultSymbol.Pulse, NeonVaultRules.Cells).ToArray();
     private decimal selectedBet;
     private bool spinning;
     private bool initialized;
     private bool closed;
     private NeonVaultNearMiss activeNearMiss;
+
+    private sealed record SymbolPalette(
+        string Icon,
+        string Label,
+        Brush IconBrush,
+        Brush BorderBrush,
+        Brush Background,
+        double IconSize,
+        bool Emphasis);
+
+    private sealed class SymbolPresenter(Border card, TextBlock icon, TextBlock label)
+    {
+        internal Border Card { get; } = card;
+        internal TextBlock Icon { get; } = icon;
+        internal TextBlock Label { get; } = label;
+        internal NeonVaultSymbol? Symbol { get; set; }
+        internal bool Compact { get; set; }
+    }
 
     public NeonVaultWindow(
         decimal bankroll,
@@ -66,14 +89,27 @@ internal partial class NeonVaultWindow : Window
 
     private void BuildReels()
     {
+        ReelsHost.Children.Clear();
         ReelsHost.ColumnDefinitions.Clear();
+
         for (int reel = 0; reel < NeonVaultRules.Reels; reel++)
         {
             ReelsHost.ColumnDefinitions.Add(new ColumnDefinition());
-            var reelGrid = new Grid { Margin = new Thickness(5, 0, 5, 0) };
+            var motion = new TranslateTransform();
+            reelMotion[reel] = motion;
+
+            var reelGrid = new Grid
+            {
+                Margin = new Thickness(5, 0, 5, 0),
+                RenderTransform = motion,
+                RenderTransformOrigin = new Point(0.5, 0.5),
+                SnapsToDevicePixels = true,
+            };
+
             for (int row = 0; row < NeonVaultRules.Rows; row++)
             {
                 reelGrid.RowDefinitions.Add(new RowDefinition());
+                SymbolPresenter presenter = CreateSymbolPresenter();
                 var frame = new Border
                 {
                     Margin = new Thickness(0, 4, 0, 4),
@@ -84,11 +120,14 @@ internal partial class NeonVaultWindow : Window
                     BorderThickness = new Thickness(1),
                     ClipToBounds = true,
                     SnapsToDevicePixels = true,
+                    Child = presenter.Card,
                 };
                 Grid.SetRow(frame, row);
                 reelGrid.Children.Add(frame);
                 cells[row, reel] = frame;
+                presenters[row, reel] = presenter;
             }
+
             var reelBorder = new Border
             {
                 Background = Ink("#3A0A0D17"),
@@ -97,11 +136,118 @@ internal partial class NeonVaultWindow : Window
                 CornerRadius = new CornerRadius(10),
                 Padding = new Thickness(3),
                 Child = reelGrid,
+                SnapsToDevicePixels = true,
             };
             reelFrames[reel] = reelBorder;
             Grid.SetColumn(reelBorder, reel);
             ReelsHost.Children.Add(reelBorder);
         }
+    }
+
+    private SymbolPresenter CreateSymbolPresenter()
+    {
+        var icon = new TextBlock
+        {
+            FontFamily = new FontFamily("Segoe UI Symbol"),
+            FontWeight = FontWeights.Bold,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        var label = new TextBlock
+        {
+            FontSize = 8,
+            FontWeight = FontWeights.SemiBold,
+            Foreground = Ink("#D9DCF0"),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Margin = new Thickness(2, 0, 2, 5),
+        };
+
+        var grid = new Grid();
+        grid.RowDefinitions.Add(new RowDefinition());
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        grid.Children.Add(icon);
+        Grid.SetRow(label, 1);
+        grid.Children.Add(label);
+
+        var card = new Border
+        {
+            Margin = new Thickness(2),
+            CornerRadius = new CornerRadius(7),
+            Child = grid,
+            SnapsToDevicePixels = true,
+        };
+
+        var presenter = new SymbolPresenter(card, icon, label);
+        ApplySymbol(presenter, NeonVaultSymbol.Pulse, compact: false);
+        return presenter;
+    }
+
+    private static IReadOnlyDictionary<NeonVaultSymbol, SymbolPalette> BuildPalettes()
+    {
+        return new Dictionary<NeonVaultSymbol, SymbolPalette>
+        {
+            [NeonVaultSymbol.Pulse] = Palette("✦", "PULSE", "#51C9FF", "#1A2038", "#101427", 31, false),
+            [NeonVaultSymbol.Prism] = Palette("◆", "PRISM", "#9C72FF", "#251942", "#12102A", 31, false),
+            [NeonVaultSymbol.Chip] = Palette("●", "HIGH ROLLER", "#58F0D2", "#142F37", "#0D1923", 31, false),
+            [NeonVaultSymbol.Crown] = Palette("♛", "CROWN", "#FFD66E", "#3B2B15", "#1A140D", 31, false),
+            [NeonVaultSymbol.Key] = Palette("⌁", "VAULT KEY", "#FFAF66", "#342216", "#171116", 31, false),
+            [NeonVaultSymbol.Wild] = Palette("W", "WILD", "#67F3FF", "#0D3B4C", "#15194A", 36, true),
+            [NeonVaultSymbol.Scatter] = Palette("▣", "VAULT", "#FFD66E", "#4A2D16", "#1D1320", 33, true),
+            [NeonVaultSymbol.VaultKey] = Palette("◇", "ACCESS KEY", "#D49BFF", "#38244B", "#161329", 33, true),
+        };
+    }
+
+    private static SymbolPalette Palette(
+        string icon,
+        string label,
+        string glow,
+        string top,
+        string bottom,
+        double iconSize,
+        bool emphasis)
+    {
+        return new SymbolPalette(
+            icon,
+            label,
+            FrozenSolid(glow),
+            FrozenSolid(glow),
+            FrozenGradient(top, bottom),
+            iconSize,
+            emphasis);
+    }
+
+    private static SolidColorBrush FrozenSolid(string hex)
+    {
+        var brush = new SolidColorBrush(InkColor(hex));
+        brush.Freeze();
+        return brush;
+    }
+
+    private static LinearGradientBrush FrozenGradient(string top, string bottom)
+    {
+        var brush = new LinearGradientBrush(InkColor(top), InkColor(bottom), 80);
+        brush.Freeze();
+        return brush;
+    }
+
+    private static void ApplySymbol(SymbolPresenter presenter, NeonVaultSymbol symbol, bool compact)
+    {
+        if (presenter.Symbol == symbol && presenter.Compact == compact)
+        {
+            return;
+        }
+
+        SymbolPalette palette = Palettes[symbol];
+        presenter.Symbol = symbol;
+        presenter.Compact = compact;
+        presenter.Card.Background = palette.Background;
+        presenter.Card.BorderBrush = palette.BorderBrush;
+        presenter.Card.BorderThickness = new Thickness(palette.Emphasis ? 1.4 : 0.7);
+        presenter.Icon.Text = palette.Icon;
+        presenter.Icon.Foreground = palette.IconBrush;
+        presenter.Icon.FontSize = compact ? Math.Min(29, palette.IconSize) : palette.IconSize;
+        presenter.Label.Text = palette.Label;
+        presenter.Label.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
     }
 
     private async void Spin_Click(object sender, RoutedEventArgs e) => await SpinAsync();
@@ -116,6 +262,7 @@ internal partial class NeonVaultWindow : Window
         spinning = true;
         Array.Fill(reelSettled, false);
         RefreshUi();
+
         NeonVaultSpinResult result;
         try
         {
@@ -133,13 +280,16 @@ internal partial class NeonVaultWindow : Window
         ProgressionAward award = commitSpin(result);
         BalanceText.Text = Money(result.BankrollBefore - result.Stake);
         SystemStatusText.Text = result.IsFreeSpin ? "VAULT BREAK ACTIVE" : "REELS ENERGIZED";
-        AnticipationText.Text = result.IsFreeSpin ? $"FREE SPIN · {result.FreeSpinsRemaining + 1} IN SEQUENCE" : "OUTCOME LOCKED · ANIMATION ONLY";
+        AnticipationText.Text = result.IsFreeSpin
+            ? $"FREE SPIN · {result.FreeSpinsRemaining + 1} IN SEQUENCE"
+            : "OUTCOME LOCKED · PRESENTATION RUNNING";
         ResultText.Text = result.IsFreeSpin ? "Free Spin resolving…" : "Vault reels spinning…";
-        RewardText.Text = "All game logic is settled before the presentation sequence begins.";
+        RewardText.Text = "Outcome settled. The reels now present the result.";
         audio.Play(SlotSound.Start, SoundsEnabled);
 
         if (AnimationsEnabled)
         {
+            StartReelMotion();
             previewTimer.Start();
             await AnimateReelStops(result);
             previewTimer.Stop();
@@ -157,21 +307,33 @@ internal partial class NeonVaultWindow : Window
 
     private async Task AnimateReelStops(NeonVaultSpinResult result)
     {
-        int[] pauses = [620, 235, 250, 270, result.NearMiss == NeonVaultNearMiss.None ? 300 : 980];
+        int[] pauses =
+        [
+            Pace(680),
+            Pace(330),
+            Pace(360),
+            Pace(400),
+            Pace(result.NearMiss == NeonVaultNearMiss.None ? 500 : 1_100),
+        ];
+
         for (int reel = 0; reel < NeonVaultRules.Reels; reel++)
         {
-            if (reel == 4 && result.NearMiss != NeonVaultNearMiss.None)
+            if (reel == NeonVaultRules.Reels - 1 && result.NearMiss != NeonVaultNearMiss.None)
             {
                 BeginAnticipation(result.NearMiss);
                 audio.Play(SlotSound.Anticipation, SoundsEnabled);
             }
+
             await Task.Delay(pauses[reel]);
             if (closed) return;
+
+            StopReelMotion(reel);
             SetReel(reel, result.BaseGrid);
             reelSettled[reel] = true;
-            FlashReel(reel, result.NearMiss != NeonVaultNearMiss.None && reel == 4 ? 4 : 2);
+            FlashReel(reel, result.NearMiss != NeonVaultNearMiss.None && reel == NeonVaultRules.Reels - 1 ? 4 : 2);
             audio.Play(SlotSound.Stop, SoundsEnabled);
         }
+
         AnticipationText.Text = result.NearMiss switch
         {
             NeonVaultNearMiss.Scatter => "VAULT SIGNAL PASSED THE FINAL REEL",
@@ -182,11 +344,32 @@ internal partial class NeonVaultWindow : Window
         displayGrid = result.BaseGrid.ToArray();
     }
 
+    private void StartReelMotion()
+    {
+        for (int reel = 0; reel < reelMotion.Length; reel++)
+        {
+            var animation = new DoubleAnimation(-3.5, 4.5, TimeSpan.FromMilliseconds(Pace(230)))
+            {
+                AutoReverse = true,
+                RepeatBehavior = RepeatBehavior.Forever,
+                EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut },
+            };
+            reelMotion[reel].BeginAnimation(TranslateTransform.YProperty, animation);
+        }
+    }
+
+    private void StopReelMotion(int reel)
+    {
+        reelMotion[reel].BeginAnimation(TranslateTransform.YProperty, null);
+        reelMotion[reel].Y = 0;
+    }
+
     private void PreviewTimer_Tick(object? sender, EventArgs e)
     {
         for (int reel = 0; reel < NeonVaultRules.Reels; reel++)
         {
             if (reelSettled[reel]) continue;
+
             for (int row = 0; row < NeonVaultRules.Rows; row++)
             {
                 NeonVaultSymbol symbol = PreviewSymbols[visualRandom.Next(PreviewSymbols.Length)];
@@ -199,12 +382,9 @@ internal partial class NeonVaultWindow : Window
                         _ => symbol,
                     };
                 }
-                cells[row, reel].Child = SymbolVisual(symbol, compact: true);
+
+                ApplySymbol(presenters[row, reel], symbol, compact: true);
             }
-        }
-        if (visualRandom.Next(4) == 0)
-        {
-            AmbientGlow.Opacity = 0.17 + visualRandom.NextDouble() * 0.13;
         }
     }
 
@@ -215,17 +395,17 @@ internal partial class NeonVaultWindow : Window
         if (result.NearMiss == NeonVaultNearMiss.Blackout && result.Blackout == NeonVaultBlackout.None)
         {
             audio.Play(SlotSound.Blackout, SoundsEnabled);
-            await ShowFeature("SIGNAL INSTABILITY", "POWER DROP DETECTED · SYSTEM RECOVERING", Ink("#FF5B79"), 520);
+            await ShowFeature("SIGNAL INSTABILITY", "POWER DROP DETECTED · SYSTEM RECOVERING", Ink("#FF5B79"), 620);
             SystemStatusText.Text = "SYSTEM STABLE";
         }
 
         if (result.SecurityOverrideReel is int overrideReel)
         {
             audio.Play(SlotSound.FreeSpins, SoundsEnabled);
-            await ShowFeature("SECURITY OVERRIDE", $"REEL {overrideReel + 1} FORCED WILD", Ink("#65EFFF"), 620);
+            await ShowFeature("SECURITY OVERRIDE", $"REEL {overrideReel + 1} FORCED WILD", Ink("#65EFFF"), 760);
             ApplyFullReelWild(overrideReel);
             FlashReel(overrideReel, 5);
-            await Task.Delay(260);
+            await VisualDelay(360);
         }
 
         if (result.Blackout != NeonVaultBlackout.None)
@@ -237,11 +417,13 @@ internal partial class NeonVaultWindow : Window
                 NeonVaultBlackout.Overload => ("BLACKOUT OVERLOAD", "POWER SURGE · MULTIPLE WILD INJECTIONS", Ink("#FF6687")),
                 _ => ("BLACKOUT", "EMERGENCY GRID · WILD INJECTION", Ink("#FF718D")),
             };
-            await ShowFeature(title, subtitle, color, result.Blackout == NeonVaultBlackout.Total ? 820 : 620);
+            await ShowFeature(title, subtitle, color, result.Blackout == NeonVaultBlackout.Total ? 1_000 : 760);
+
             if (result.BlackoutFullReel is int fullReel)
             {
                 FlashReel(fullReel, 6);
             }
+
             foreach (int index in result.BlackoutWildCells)
             {
                 int row = index / NeonVaultRules.Reels;
@@ -250,7 +432,7 @@ internal partial class NeonVaultWindow : Window
                 {
                     displayGrid[index] = NeonVaultSymbol.Wild;
                     SetCell(row, reel, NeonVaultSymbol.Wild, true);
-                    await Task.Delay(AnimationsEnabled ? 58 : 0);
+                    await VisualDelay(90);
                 }
             }
         }
@@ -258,12 +440,17 @@ internal partial class NeonVaultWindow : Window
         if (result.ExpandedReels.Count > 0)
         {
             audio.Play(SlotSound.Wild, SoundsEnabled);
-            await ShowFeature("WILD EXPANSION", result.IsFreeSpin ? "VAULT BREAK GUARANTEED EXPANSION" : "ENERGY CASCADE DETECTED", Ink("#65EFFF"), 480);
+            await ShowFeature(
+                "WILD EXPANSION",
+                result.IsFreeSpin ? "VAULT BREAK GUARANTEED EXPANSION" : "ENERGY CASCADE DETECTED",
+                Ink("#65EFFF"),
+                650);
+
             foreach (int reel in result.ExpandedReels)
             {
                 ApplyFullReelWild(reel);
                 FlashReel(reel, 5);
-                await Task.Delay(AnimationsEnabled ? 180 : 0);
+                await VisualDelay(270);
             }
         }
 
@@ -279,14 +466,22 @@ internal partial class NeonVaultWindow : Window
                 _ => "MINI ACCESS",
             };
             audio.Play(SlotSound.Jackpot, SoundsEnabled);
-            await ShowFeature(title, $"ACCESS GRANTED · {Money(result.JackpotPayout)}", Ink("#FFD66E"), result.Jackpot == NeonVaultJackpot.Grand ? 1100 : 760);
+            await ShowFeature(
+                title,
+                $"ACCESS GRANTED · {Money(result.JackpotPayout)}",
+                Ink("#FFD66E"),
+                result.Jackpot == NeonVaultJackpot.Grand ? 1_350 : 950);
         }
 
         if (result.FreeSpinsAwarded > 0)
         {
             audio.Play(SlotSound.FreeSpins, SoundsEnabled);
             string title = result.IsFreeSpin ? "VAULT BREAK EXTENDED" : "VAULT BREAK";
-            await ShowFeature(title, $"+{result.FreeSpinsAwarded} FREE SPINS · EXPANDING WILDS GUARANTEED", Ink("#FFD66E"), 760);
+            await ShowFeature(
+                title,
+                $"+{result.FreeSpinsAwarded} FREE SPINS · EXPANDING WILDS GUARANTEED",
+                Ink("#FFD66E"),
+                950);
         }
     }
 
@@ -296,10 +491,14 @@ internal partial class NeonVaultWindow : Window
         activeNearMiss = NeonVaultNearMiss.None;
         LastWinText.Text = Money(result.Payout);
         LastFeatureText.Text = FeatureSummary(result);
+
         string multiplier = result.TotalMultiplier >= 1m ? $" · {result.TotalMultiplier:0.##}× BET" : string.Empty;
         ResultText.Text = result.Payout > 0
             ? $"{result.WaysWon:N0} winning ways · {Money(result.Payout)} returned{multiplier}"
-            : result.NearMiss == NeonVaultNearMiss.None ? "Vault stayed sealed this spin." : "Signal lost. The vault stays sealed.";
+            : result.NearMiss == NeonVaultNearMiss.None
+                ? "Vault stayed sealed this spin."
+                : "Signal lost. The vault stays sealed.";
+
         string level = award.HasLevelUp ? $" · LEVEL {progression.Profile.Level}!" : string.Empty;
         RewardText.Text = $"+{award.PlayerExperience} XP · +{award.SeasonExperience} Season XP{level}";
         SystemStatusText.Text = result.FreeSpinsRemaining > 0 ? "VAULT BREAK ACTIVE" : "VAULT ONLINE";
@@ -316,9 +515,10 @@ internal partial class NeonVaultWindow : Window
         }
 
         RefreshUi();
+
         if (machine.FreeSpinsRemaining > 0 && !closed)
         {
-            await Task.Delay(AnimationsEnabled ? 650 : 120);
+            await Task.Delay(AnimationsEnabled ? Pace(850) : 120);
             if (!closed)
             {
                 await SpinAsync();
@@ -338,12 +538,15 @@ internal partial class NeonVaultWindow : Window
         BigWinAmount.Text = Money(result.Payout);
         BigWinPanel.Opacity = 0;
         BigWinPanel.Visibility = Visibility.Visible;
-        var enter = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(170));
+
+        var enter = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(Pace(210)));
         BigWinPanel.BeginAnimation(OpacityProperty, enter);
-        await Task.Delay(AnimationsEnabled ? 720 : 0);
-        var leave = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(180));
+        await VisualDelay(1_000);
+
+        var leave = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(Pace(250)));
         BigWinPanel.BeginAnimation(OpacityProperty, leave);
-        await Task.Delay(AnimationsEnabled ? 190 : 0);
+        await VisualDelay(270);
+
         BigWinPanel.Visibility = Visibility.Collapsed;
         BigWinPanel.BeginAnimation(OpacityProperty, null);
     }
@@ -355,12 +558,15 @@ internal partial class NeonVaultWindow : Window
         FeatureTitle.Foreground = color;
         FeatureOverlay.Opacity = 0;
         FeatureOverlay.Visibility = Visibility.Visible;
-        var enter = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(120));
+
+        var enter = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(Pace(170)));
         FeatureOverlay.BeginAnimation(OpacityProperty, enter);
-        await Task.Delay(AnimationsEnabled ? holdMilliseconds : 0);
-        var leave = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(150));
+        await VisualDelay(holdMilliseconds);
+
+        var leave = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(Pace(220)));
         FeatureOverlay.BeginAnimation(OpacityProperty, leave);
-        await Task.Delay(AnimationsEnabled ? 160 : 0);
+        await VisualDelay(240);
+
         FeatureOverlay.Visibility = Visibility.Collapsed;
         FeatureOverlay.BeginAnimation(OpacityProperty, null);
     }
@@ -375,7 +581,7 @@ internal partial class NeonVaultWindow : Window
             _ => "FINAL REEL SEARCHING…",
         };
         SystemStatusText.Text = "ANTICIPATION MODE";
-        FlashReel(4, 9);
+        FlashReel(NeonVaultRules.Reels - 1, 7);
     }
 
     private void SetGrid(IReadOnlyList<NeonVaultSymbol> grid)
@@ -410,15 +616,16 @@ internal partial class NeonVaultWindow : Window
         }
     }
 
-    private static bool CanBecomeWild(NeonVaultSymbol symbol) => symbol is not NeonVaultSymbol.Scatter and not NeonVaultSymbol.VaultKey;
+    private static bool CanBecomeWild(NeonVaultSymbol symbol) =>
+        symbol is not NeonVaultSymbol.Scatter and not NeonVaultSymbol.VaultKey;
 
     private void SetCell(int row, int reel, NeonVaultSymbol symbol, bool flash)
     {
-        Border frame = cells[row, reel];
-        frame.Child = SymbolVisual(symbol, compact: false);
+        ApplySymbol(presenters[row, reel], symbol, compact: false);
         if (flash && AnimationsEnabled)
         {
-            var pulse = new DoubleAnimation(0.35, 1, TimeSpan.FromMilliseconds(150))
+            Border frame = cells[row, reel];
+            var pulse = new DoubleAnimation(0.42, 1, TimeSpan.FromMilliseconds(Pace(150)))
             {
                 AutoReverse = true,
                 RepeatBehavior = new RepeatBehavior(2),
@@ -428,65 +635,11 @@ internal partial class NeonVaultWindow : Window
         }
     }
 
-    private FrameworkElement SymbolVisual(NeonVaultSymbol symbol, bool compact)
-    {
-        (string icon, string label, string top, string bottom, string glow) = symbol switch
-        {
-            NeonVaultSymbol.Pulse => ("✦", "PULSE", "#1A2038", "#101427", "#51C9FF"),
-            NeonVaultSymbol.Prism => ("◆", "PRISM", "#251942", "#12102A", "#9C72FF"),
-            NeonVaultSymbol.Chip => ("●", "HIGH ROLLER", "#142F37", "#0D1923", "#58F0D2"),
-            NeonVaultSymbol.Crown => ("♛", "CROWN", "#3B2B15", "#1A140D", "#FFD66E"),
-            NeonVaultSymbol.Key => ("⌁", "VAULT KEY", "#342216", "#171116", "#FFAF66"),
-            NeonVaultSymbol.Wild => ("W", "WILD", "#0D3B4C", "#15194A", "#67F3FF"),
-            NeonVaultSymbol.Scatter => ("▣", "VAULT", "#4A2D16", "#1D1320", "#FFD66E"),
-            _ => ("◇", "ACCESS KEY", "#38244B", "#161329", "#D49BFF"),
-        };
-
-        var grid = new Grid();
-        grid.RowDefinitions.Add(new RowDefinition());
-        if (!compact) grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        var iconText = new TextBlock
-        {
-            Text = icon,
-            FontFamily = new FontFamily("Segoe UI Symbol"),
-            FontSize = compact ? 28 : symbol == NeonVaultSymbol.Wild ? 36 : 31,
-            FontWeight = FontWeights.Bold,
-            Foreground = Ink(glow),
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-            Effect = new DropShadowEffect { Color = InkColor(glow), BlurRadius = symbol is NeonVaultSymbol.Wild or NeonVaultSymbol.Scatter ? 18 : 10, ShadowDepth = 0, Opacity = 0.72 },
-        };
-        grid.Children.Add(iconText);
-        if (!compact)
-        {
-            var labelText = new TextBlock
-            {
-                Text = label,
-                FontSize = 8,
-                FontWeight = FontWeights.SemiBold,
-                Foreground = Ink("#D9DCF0"),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(2, 0, 2, 5),
-            };
-            Grid.SetRow(labelText, 1);
-            grid.Children.Add(labelText);
-        }
-        return new Border
-        {
-            Margin = new Thickness(2),
-            CornerRadius = new CornerRadius(7),
-            BorderBrush = Ink(glow),
-            BorderThickness = new Thickness(symbol is NeonVaultSymbol.Wild or NeonVaultSymbol.Scatter or NeonVaultSymbol.VaultKey ? 1.4 : 0.7),
-            Background = new LinearGradientBrush(InkColor(top), InkColor(bottom), 80),
-            Child = grid,
-            Effect = new DropShadowEffect { Color = InkColor(glow), BlurRadius = symbol is NeonVaultSymbol.Wild or NeonVaultSymbol.Scatter ? 13 : 5, ShadowDepth = 0, Opacity = symbol is NeonVaultSymbol.Wild or NeonVaultSymbol.Scatter ? 0.36 : 0.16 },
-        };
-    }
-
     private void FlashReel(int reel, int repeats)
     {
         if (!AnimationsEnabled || reel < 0 || reel >= reelFrames.Length) return;
-        var pulse = new DoubleAnimation(1, 0.48, TimeSpan.FromMilliseconds(105))
+
+        var pulse = new DoubleAnimation(1, 0.56, TimeSpan.FromMilliseconds(Pace(110)))
         {
             AutoReverse = true,
             RepeatBehavior = new RepeatBehavior(repeats),
@@ -498,15 +651,21 @@ internal partial class NeonVaultWindow : Window
     private void StartAmbientMotion()
     {
         if (!AnimationsEnabled) return;
-        AmbientGlow.BeginAnimation(OpacityProperty, new DoubleAnimation(0.14, 0.30, TimeSpan.FromSeconds(2.8))
-        {
-            AutoReverse = true,
-            RepeatBehavior = RepeatBehavior.Forever,
-        });
-        ScanlineTransform.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(0, 610, TimeSpan.FromSeconds(4.8))
-        {
-            RepeatBehavior = RepeatBehavior.Forever,
-        });
+
+        AmbientGlow.BeginAnimation(
+            OpacityProperty,
+            new DoubleAnimation(0.15, 0.27, TimeSpan.FromSeconds(4.6))
+            {
+                AutoReverse = true,
+                RepeatBehavior = RepeatBehavior.Forever,
+            });
+
+        ScanlineTransform.BeginAnimation(
+            TranslateTransform.YProperty,
+            new DoubleAnimation(0, 610, TimeSpan.FromSeconds(8.2))
+            {
+                RepeatBehavior = RepeatBehavior.Forever,
+            });
     }
 
     private void RefreshUi()
@@ -575,9 +734,14 @@ internal partial class NeonVaultWindow : Window
     private void Settings_Changed(object sender, RoutedEventArgs e)
     {
         if (!initialized) return;
+
         MenuAudio.Enabled = SoundsEnabled;
         if (!SoundsEnabled) audio.Stop();
-        if (AnimationsEnabled) StartAmbientMotion();
+
+        if (AnimationsEnabled)
+        {
+            StartAmbientMotion();
+        }
         else
         {
             AmbientGlow.BeginAnimation(OpacityProperty, null);
@@ -594,6 +758,7 @@ internal partial class NeonVaultWindow : Window
             e.Handled = true;
             return;
         }
+
         if (e.Key == Key.Escape && !spinning && !machine.BonusActive)
         {
             Close();
@@ -618,7 +783,13 @@ internal partial class NeonVaultWindow : Window
         previewTimer.Tick -= PreviewTimer_Tick;
         AmbientGlow.BeginAnimation(OpacityProperty, null);
         ScanlineTransform.BeginAnimation(TranslateTransform.YProperty, null);
-        foreach (Border reel in reelFrames) reel.BeginAnimation(OpacityProperty, null);
+
+        for (int reel = 0; reel < reelFrames.Length; reel++)
+        {
+            reelFrames[reel].BeginAnimation(OpacityProperty, null);
+            StopReelMotion(reel);
+        }
+
         audio.Dispose();
         music.Dispose();
     }
@@ -635,7 +806,14 @@ internal partial class NeonVaultWindow : Window
         return parts.Count == 0 ? "No feature event." : string.Join(" · ", parts);
     }
 
-    private static decimal ClosestBet(decimal bet) => NeonVaultRules.Bets.OrderBy(value => Math.Abs(value - bet)).First();
+    private Task VisualDelay(int milliseconds) =>
+        Task.Delay(AnimationsEnabled ? Pace(milliseconds) : 0);
+
+    private static int Pace(int milliseconds) =>
+        (int)Math.Round(milliseconds * PresentationPace, MidpointRounding.AwayFromZero);
+
+    private static decimal ClosestBet(decimal bet) =>
+        NeonVaultRules.Bets.OrderBy(value => Math.Abs(value - bet)).First();
 
     private static int BetIndex(decimal bet)
     {
