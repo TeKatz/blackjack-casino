@@ -53,6 +53,7 @@ public partial class MainWindow
         empire.Start(DateTimeOffset.UtcNow);
         empire.Accrue(DateTimeOffset.UtcNow);
         SavePreferences();
+        if (lobby is not null) lobby.Visibility = Visibility.Collapsed;
         empireView = new EmpireView(empire, UpgradeEmpire, ClaimEmpireDividend, CloseEmpire, () => AnimationsEnabled);
         foreach (UIElement covered in CasinoRoot.Children.OfType<UIElement>().Where(child => child != embeddedGameOverlay))
         {
