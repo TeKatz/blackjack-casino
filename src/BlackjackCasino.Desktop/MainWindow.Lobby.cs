@@ -22,14 +22,20 @@ public partial class MainWindow
         Grid.SetRow(lobby,1); Grid.SetColumnSpan(lobby,2);Panel.SetZIndex(lobby,900);CasinoRoot.Children.Add(lobby);
         TableModeText.Text="Casino lobby";
 
-        Loaded += (_,_) =>
+        Loaded += (_,_) => Dispatcher.BeginInvoke(new Action(ConfigureEmbeddedGameSurface));
+    }
+    private void ConfigureEmbeddedGameSurface()
+    {
+        EnsureEmbeddedGameHost();
+        if(embeddedGameOverlay is null) return;
+        Grid.SetRow(embeddedGameOverlay,0);
+        Grid.SetRowSpan(embeddedGameOverlay,2);
+        embeddedGameOverlay.IsVisibleChanged-=EmbeddedGameOverlay_IsVisibleChanged;
+        embeddedGameOverlay.IsVisibleChanged+=EmbeddedGameOverlay_IsVisibleChanged;
+        if(CasinoHeader.Parent is UIElement hostHeader)
         {
-            if(embeddedGameOverlay is null) return;
-            Grid.SetRow(embeddedGameOverlay,0);
-            Grid.SetRowSpan(embeddedGameOverlay,2);
-            embeddedGameOverlay.IsVisibleChanged-=EmbeddedGameOverlay_IsVisibleChanged;
-            embeddedGameOverlay.IsVisibleChanged+=EmbeddedGameOverlay_IsVisibleChanged;
-        };
+            hostHeader.Visibility=embeddedGameOverlay.IsVisible ? Visibility.Collapsed : Visibility.Visible;
+        }
     }
     private void EmbeddedGameOverlay_IsVisibleChanged(object sender,DependencyPropertyChangedEventArgs e)
     {
