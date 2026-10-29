@@ -25,6 +25,17 @@ public sealed class NeonVaultStatistics : SlotStatistics
     public decimal BestPayoutMultiplier { get; set; }
 }
 
+public sealed class NineLivesStatistics : SlotStatistics
+{
+    public long PaidSpins { get; set; }
+    public long BonusSpins { get; set; }
+    public long BonusSessions { get; set; }
+    public long BonusSpinsAwarded { get; set; }
+    public long PounceWilds { get; set; }
+    public long FullGridFrenzies { get; set; }
+    public decimal BestPayoutMultiplier { get; set; }
+}
+
 /// <summary>Shares level/season rewards without recording slots as blackjack hands.</summary>
 public sealed class SlotProgression(ProgressionService progression)
 {
@@ -56,6 +67,26 @@ public sealed class SlotProgression(ProgressionService progression)
         stats.TotalBlackouts += spin.Blackout == NeonVaultBlackout.Total ? 1 : 0;
         stats.SecurityOverrides += spin.SecurityOverrideReel.HasValue ? 1 : 0;
         stats.BestPayoutMultiplier = Math.Max(stats.BestPayoutMultiplier, spin.Payout / spin.Bet);
+        return award;
+    }
+
+    public ProgressionAward Process(NineLivesSpinResult spin)
+    {
+        ArgumentNullException.ThrowIfNull(spin);
+        NineLivesStatistics stats = progression.State.NineLives;
+        ProgressionAward award = ProcessCore(stats, spin.SpinId, spin.CompletedAt, spin.Stake, spin.Payout, spin.Net);
+        if (award == ProgressionAward.None)
+        {
+            return award;
+        }
+
+        stats.PaidSpins += spin.IsBonusSpin ? 0 : 1;
+        stats.BonusSpins += spin.IsBonusSpin ? 1 : 0;
+        stats.BonusSessions += !spin.IsBonusSpin && spin.BonusSpinsAwarded > 0 ? 1 : 0;
+        stats.BonusSpinsAwarded += spin.BonusSpinsAwarded;
+        stats.PounceWilds += spin.PounceWildCell.HasValue ? 1 : 0;
+        stats.FullGridFrenzies += spin.FullGridFrenzy ? 1 : 0;
+        stats.BestPayoutMultiplier = Math.Max(stats.BestPayoutMultiplier, spin.TotalMultiplier);
         return award;
     }
 
