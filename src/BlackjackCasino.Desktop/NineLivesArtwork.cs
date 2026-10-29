@@ -39,10 +39,9 @@ internal static class NineLivesArtwork
     private static IReadOnlyDictionary<NineLivesSymbol, Lazy<ImageSource>> BuildSymbols() =>
         new Dictionary<NineLivesSymbol, Lazy<ImageSource>>
         {
-            // The historical inline Yarn JPEG was truncated. Use the exact crop from the
-            // original generated Nine Lives symbol sheet instead of silently falling back
-            // to the flat replacement vector artwork.
-            [NineLivesSymbol.Yarn] = new(() => LoadPackagedSymbol("yarn.jpg", nameof(NineLivesSymbol.Yarn))),
+            // The historical inline Yarn JPEG was truncated. YarnConcept is the repaired
+            // crop from the original generated Nine Lives symbol sheet.
+            [NineLivesSymbol.Yarn] = LazySymbol(NineLivesArtData.YarnConcept, nameof(NineLivesSymbol.Yarn), 256),
             [NineLivesSymbol.Fishbone] = LazySymbol(NineLivesArtData.Fishbone, nameof(NineLivesSymbol.Fishbone)),
             [NineLivesSymbol.Bell] = LazySymbol(NineLivesArtData.Bell, nameof(NineLivesSymbol.Bell)),
             [NineLivesSymbol.TabbyCat] = LazySymbol(NineLivesArtData.TabbyCat, nameof(NineLivesSymbol.TabbyCat)),
@@ -52,30 +51,8 @@ internal static class NineLivesArtwork
             [NineLivesSymbol.Bonus] = LazySymbol(NineLivesArtData.Bonus, nameof(NineLivesSymbol.Bonus)),
         };
 
-    private static Lazy<ImageSource> LazySymbol(string base64, string name)
-        => new(() => DecodeOrFallback(base64, 192, name));
-
-    private static ImageSource LoadPackagedSymbol(string fileName, string assetName)
-    {
-        try
-        {
-            var bitmap = new BitmapImage();
-            bitmap.BeginInit();
-            bitmap.CacheOption = BitmapCacheOption.OnLoad;
-            bitmap.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
-            bitmap.UriSource = new Uri(
-                $"/BlackjackCasino.Desktop;component/Assets/NineLives/{fileName}",
-                UriKind.Relative);
-            bitmap.EndInit();
-            bitmap.Freeze();
-            return bitmap;
-        }
-        catch (Exception ex)
-        {
-            AppCrashLog.Write($"Nine Lives packaged artwork '{assetName}' could not be decoded. Falling back to safe artwork.", ex);
-            return CreateFallback(256, 256, assetName);
-        }
-    }
+    private static Lazy<ImageSource> LazySymbol(string base64, string name, int pixelWidth = 192)
+        => new(() => DecodeOrFallback(base64, pixelWidth, name));
 
     private static ImageSource DecodeOrFallback(string base64, int pixelWidth, string assetName)
     {
