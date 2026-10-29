@@ -1,6 +1,7 @@
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using BlackjackCasino.Core;
 using BlackjackCasino.Desktop;
 
@@ -53,15 +54,45 @@ internal static class Program
                 Require(window.Modes.Modes.Any(mode => mode.Id == "nine-lives"), "Nine Lives was not registered in the lobby.");
 
                 window.Modes.Open("nine-lives");
-                await Task.Delay(200);
+                await Task.Delay(220);
                 window.UpdateLayout();
 
                 Require(Application.Current.Windows.Cast<Window>().Count(w => w.IsVisible) == 1,
                     "Nine Lives opened another visible native window.");
                 Require(Find<Image>(window).Any(image => image.IsVisible && image.Source is not null),
                     "Nine Lives did not render any artwork after opening.");
+                Require(Find<Image>(window).Count(image => image.IsVisible && image.Source is DrawingImage) >= 9,
+                    "Nine Lives reel symbols are not using the resolution-independent vector artwork pipeline.");
                 Require(Find<Button>(window).Any(button => button.Name == "SpinButton" && button.IsVisible),
                     "Nine Lives Spin button is missing from the hosted surface.");
+
+                Button settings = Find<Button>(window).FirstOrDefault(button => button.Name == "SettingsButton")
+                    ?? throw new InvalidOperationException("Nine Lives settings button is missing.");
+                settings.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                await Task.Delay(60);
+                window.UpdateLayout();
+                Border settingsFlyout = Find<Border>(window).FirstOrDefault(border => border.Name == "SettingsFlyout")
+                    ?? throw new InvalidOperationException("Nine Lives custom settings flyout is missing.");
+                Require(settingsFlyout.Visibility == Visibility.Visible,
+                    "Nine Lives settings did not open the custom in-app flyout.");
+                Require(settings.ContextMenu is null,
+                    "Nine Lives settings regressed to a native Windows ContextMenu.");
+                settings.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+
+                Button paytable = Find<Button>(window).FirstOrDefault(button => button.Name == "InfoButton")
+                    ?? throw new InvalidOperationException("Nine Lives paytable button is missing.");
+                paytable.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                await Task.Delay(60);
+                window.UpdateLayout();
+                Border paytableFlyout = Find<Border>(window).FirstOrDefault(border => border.Name == "PaytableFlyout")
+                    ?? throw new InvalidOperationException("Nine Lives in-app paytable flyout is missing.");
+                Require(paytableFlyout.Visibility == Visibility.Visible,
+                    "Nine Lives paytable did not open inside the game surface.");
+                Require(Application.Current.Windows.Cast<Window>().Count(w => w.IsVisible) == 1,
+                    "Nine Lives paytable opened native Windows chrome.");
+                Button closePaytable = Find<Button>(paytableFlyout).FirstOrDefault(button => Equals(button.Content, "BACK TO GAME"))
+                    ?? throw new InvalidOperationException("Nine Lives paytable has no visible return control.");
+                closePaytable.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
 
                 Button back = Find<Button>(window).FirstOrDefault(button => button.Name == "CasinoButton")
                     ?? throw new InvalidOperationException("Nine Lives does not expose a Casino/back button.");
@@ -80,7 +111,7 @@ internal static class Program
                     "Casino lobby was not restored after leaving Nine Lives.");
 
                 File.WriteAllText(Path.Combine(output, "result.txt"),
-                    "PASS: MainWindow rendered the casino lobby, opened Nine Lives in the single-window host, exposed visible controls, and returned to the lobby through the Casino button.");
+                    "PASS: MainWindow opened Nine Lives with vector reel art, themed settings/paytable flyouts, visible controls, and a working Casino return path.");
             }
             catch (Exception ex)
             {
@@ -107,10 +138,10 @@ internal static class Program
             yield return match;
         }
 
-        int count = System.Windows.Media.VisualTreeHelper.GetChildrenCount(root);
+        int count = VisualTreeHelper.GetChildrenCount(root);
         for (int i = 0; i < count; i++)
         {
-            foreach (T child in Find<T>(System.Windows.Media.VisualTreeHelper.GetChild(root, i)))
+            foreach (T child in Find<T>(VisualTreeHelper.GetChild(root, i)))
             {
                 yield return child;
             }
