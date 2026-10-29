@@ -49,6 +49,7 @@ public partial class MainWindow
     private void OpenEmpire()
     {
         if (session.RoundInProgress || MetaPageOpen || embeddedGameShell is not null || EmpirePageOpen || empire is null) return;
+        ProcessLatestCompletedRound();
         EnsureEmbeddedGameHost();
         empire.Start(DateTimeOffset.UtcNow);
         empire.Accrue(DateTimeOffset.UtcNow);
