@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Media.Effects;
 using BlackjackCasino.Core;
 
 namespace BlackjackCasino.Desktop;
@@ -15,6 +16,7 @@ internal partial class NineLivesWindow : Window
     private static readonly Brush Gold = FrozenBrush("#FFD56A");
     private static readonly Brush Violet = FrozenBrush("#B34DFF");
     private static readonly Brush DimGold = FrozenBrush("#9D6B2C");
+    private static readonly Brush SoftText = FrozenBrush("#EEDFF4");
     private static readonly NineLivesSymbol[] PreviewSymbols = Enum.GetValues<NineLivesSymbol>();
 
     private readonly NineLivesSession machine;
@@ -179,8 +181,10 @@ internal partial class NineLivesWindow : Window
             await PresentPounceAsync(result.PounceWildCell.Value);
         }
 
-        PresentResult(result);
         lastWin = result.Payout;
+        RefreshUi();
+        await PresentResultAsync(result);
+
         ProgressionAward award = commitSpin(result);
         if (award.HasLevelUp)
         {
@@ -194,7 +198,7 @@ internal partial class NineLivesWindow : Window
     private async Task AnimateReelsAsync(NineLivesSpinResult result)
     {
         bool[] stopped = new bool[NineLivesRules.Reels];
-        int[] stopTick = [7, 10, 13];
+        int[] stopTick = [10, 17, 24];
         int bonusSeen = 0;
 
         for (int tick = 0; tick <= stopTick[^1]; tick++)
@@ -213,16 +217,21 @@ internal partial class NineLivesWindow : Window
                     {
                         int index = NineLivesRules.Index(row, reel);
                         SetSymbol(index, result.Grid[index]);
+                        RenderOptions.SetBitmapScalingMode(symbolImages[index], BitmapScalingMode.HighQuality);
                         if (result.Grid[index] == NineLivesSymbol.Bonus)
                         {
                             bonusSeen++;
                         }
                     }
+
                     audio.Play(SlotSound.Stop, SoundsEnabled);
+                    await PresentReelStopAsync(reel);
+
                     if (bonusSeen >= 2 && reel < NineLivesRules.Reels - 1)
                     {
                         audio.Play(SlotSound.Anticipation, SoundsEnabled);
                         StatusText.Text = "Two lives are glowing. One more can open the night…";
+                        await Task.Delay(AnimationsEnabled ? 520 : 0);
                     }
                     continue;
                 }
@@ -234,7 +243,8 @@ internal partial class NineLivesWindow : Window
                     RenderOptions.SetBitmapScalingMode(symbolImages[index], BitmapScalingMode.LowQuality);
                 }
             }
-            await Task.Delay(55);
+
+            await Task.Delay(72);
         }
 
         for (int i = 0; i < symbolImages.Length; i++)
@@ -243,10 +253,50 @@ internal partial class NineLivesWindow : Window
         }
     }
 
+    private async Task PresentReelStopAsync(int reel)
+    {
+        if (!AnimationsEnabled)
+        {
+            return;
+        }
+
+        for (int row = 0; row < NineLivesRules.Rows; row++)
+        {
+            int index = NineLivesRules.Index(row, reel);
+            cells[index].BorderBrush = Gold;
+            cells[index].BorderThickness = new Thickness(3);
+
+            var settle = new DoubleAnimation(0.92, 1.0, TimeSpan.FromMilliseconds(190))
+            {
+                EasingFunction = new BackEase { Amplitude = 0.25, EasingMode = EasingMode.EaseOut },
+            };
+            symbolScale[index].BeginAnimation(ScaleTransform.ScaleXProperty, settle);
+            symbolScale[index].BeginAnimation(ScaleTransform.ScaleYProperty, settle);
+
+            var fade = new DoubleAnimation(0.62, 1.0, TimeSpan.FromMilliseconds(180));
+            symbolImages[index].BeginAnimation(OpacityProperty, fade);
+        }
+
+        await Task.Delay(210);
+        for (int row = 0; row < NineLivesRules.Rows; row++)
+        {
+            int index = NineLivesRules.Index(row, reel);
+            cells[index].BorderBrush = DimGold;
+            cells[index].BorderThickness = new Thickness(2);
+        }
+    }
+
     private async Task PresentPounceAsync(int index)
     {
         cells[index].BorderBrush = Violet;
         cells[index].BorderThickness = new Thickness(5);
+        cells[index].Effect = new DropShadowEffect
+        {
+            Color = Color.FromRgb(190, 77, 255),
+            BlurRadius = 28,
+            ShadowDepth = 0,
+            Opacity = 0.88,
+        };
         audio.Play(SlotSound.Wild, SoundsEnabled);
         StatusText.Text = "POUNCE WILD — the black cat struck another cell.";
         if (!AnimationsEnabled)
@@ -254,22 +304,49 @@ internal partial class NineLivesWindow : Window
             return;
         }
 
-        var upX = new DoubleAnimation(1, 1.14, TimeSpan.FromMilliseconds(130)) { AutoReverse = true };
-        var upY = new DoubleAnimation(1, 1.14, TimeSpan.FromMilliseconds(130)) { AutoReverse = true };
-        symbolScale[index].BeginAnimation(ScaleTransform.ScaleXProperty, upX);
-        symbolScale[index].BeginAnimation(ScaleTransform.ScaleYProperty, upY);
-        await Task.Delay(280);
+        var pounce = new DoubleAnimationUsingKeyFrames { Duration = TimeSpan.FromMilliseconds(620) };
+        pounce.KeyFrames.Add(new EasingDoubleKeyFrame(1.0, KeyTime.FromPercent(0)));
+        pounce.KeyFrames.Add(new EasingDoubleKeyFrame(1.18, KeyTime.FromPercent(0.24), new QuadraticEase { EasingMode = EasingMode.EaseOut }));
+        pounce.KeyFrames.Add(new EasingDoubleKeyFrame(0.94, KeyTime.FromPercent(0.52)));
+        pounce.KeyFrames.Add(new EasingDoubleKeyFrame(1.08, KeyTime.FromPercent(0.76)));
+        pounce.KeyFrames.Add(new EasingDoubleKeyFrame(1.0, KeyTime.FromPercent(1)));
+        symbolScale[index].BeginAnimation(ScaleTransform.ScaleXProperty, pounce);
+        symbolScale[index].BeginAnimation(ScaleTransform.ScaleYProperty, pounce);
+
+        var flash = new DoubleAnimation(0.58, 1.0, TimeSpan.FromMilliseconds(210))
+        {
+            AutoReverse = true,
+            RepeatBehavior = new RepeatBehavior(2),
+        };
+        cells[index].BeginAnimation(OpacityProperty, flash);
+        await Task.Delay(660);
+        cells[index].BeginAnimation(OpacityProperty, null);
     }
 
-    private void PresentResult(NineLivesSpinResult result)
+    private async Task PresentResultAsync(NineLivesSpinResult result)
     {
         WinLineCanvas.Children.Clear();
         for (int i = 0; i < cells.Length; i++)
         {
             bool winner = result.FullGridFrenzy || result.WinningCells.Contains(i);
-            cells[i].Opacity = result.WinningCells.Count == 0 && !result.FullGridFrenzy ? 1 : winner ? 1 : 0.42;
+            cells[i].Opacity = result.WinningCells.Count == 0 && !result.FullGridFrenzy ? 1 : winner ? 1 : 0.36;
             cells[i].BorderBrush = winner ? Gold : DimGold;
             cells[i].BorderThickness = winner ? new Thickness(5) : new Thickness(2);
+            cells[i].Effect = winner
+                ? new DropShadowEffect { Color = Color.FromRgb(255, 213, 106), BlurRadius = 18, ShadowDepth = 0, Opacity = 0.60 }
+                : null;
+
+            if (winner && AnimationsEnabled)
+            {
+                var pulse = new DoubleAnimation(1, 1.075, TimeSpan.FromMilliseconds(260))
+                {
+                    AutoReverse = true,
+                    RepeatBehavior = new RepeatBehavior(2),
+                    EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut },
+                };
+                symbolScale[i].BeginAnimation(ScaleTransform.ScaleXProperty, pulse);
+                symbolScale[i].BeginAnimation(ScaleTransform.ScaleYProperty, pulse);
+            }
         }
 
         foreach (int lineIndex in result.WinningLines)
@@ -280,17 +357,26 @@ internal partial class NineLivesWindow : Window
         if (result.FullGridFrenzy)
         {
             audio.Play(SlotSound.Jackpot, SoundsEnabled);
-            StatusText.Text = $"FULL GRID FRENZY · {NineLivesRules.FullGridMultiplier:N0}×";
+            StatusText.Text = $"FULL GRID FRENZY · {NineLivesRules.FullGridMultiplier:N0}× · WIN {FormatMoney(result.Payout)}";
+            StatusText.FontSize = 20;
+            StatusText.Foreground = Gold;
+            await PulseWinAmountAsync(1450);
         }
         else if (result.BonusSpinsAwarded > 0)
         {
             audio.Play(SlotSound.FreeSpins, SoundsEnabled);
-            StatusText.Text = $"NINE LIVES AWAKENED · {result.BonusSpinsAwarded} bonus spins";
+            StatusText.Text = $"NINE LIVES AWAKENED · {result.BonusSpinsAwarded} BONUS SPINS";
+            StatusText.FontSize = 18;
+            StatusText.Foreground = Violet;
+            await PulseWinAmountAsync(1050);
         }
         else if (result.Payout > 0)
         {
             audio.Play(SlotSound.Win, SoundsEnabled);
-            StatusText.Text = $"{result.WinningLines.Count} line{(result.WinningLines.Count == 1 ? "" : "s")} hit · {result.TotalMultiplier:0.##}×";
+            StatusText.Text = $"WIN {FormatMoney(result.Payout)}  ·  {result.WinningLines.Count} LINE{(result.WinningLines.Count == 1 ? "" : "S")}  ·  {result.TotalMultiplier:0.##}×";
+            StatusText.FontSize = 19;
+            StatusText.Foreground = Gold;
+            await PulseWinAmountAsync(820);
         }
         else
         {
@@ -298,6 +384,7 @@ internal partial class NineLivesWindow : Window
             StatusText.Text = result.BonusCount == 2
                 ? "Two lives. The third stayed in the shadows."
                 : "The rooftop goes quiet.";
+            await Task.Delay(AnimationsEnabled ? 360 : 80);
         }
 
         if (result.BonusSpinsRemaining > 0)
@@ -311,6 +398,26 @@ internal partial class NineLivesWindow : Window
         }
     }
 
+    private async Task PulseWinAmountAsync(int holdMilliseconds)
+    {
+        if (!AnimationsEnabled)
+        {
+            return;
+        }
+
+        WinText.RenderTransformOrigin = new Point(0.5, 0.5);
+        var scale = new ScaleTransform(1, 1);
+        WinText.RenderTransform = scale;
+        var pulse = new DoubleAnimation(1, 1.30, TimeSpan.FromMilliseconds(230))
+        {
+            AutoReverse = true,
+            EasingFunction = new BackEase { Amplitude = 0.2, EasingMode = EasingMode.EaseOut },
+        };
+        scale.BeginAnimation(ScaleTransform.ScaleXProperty, pulse);
+        scale.BeginAnimation(ScaleTransform.ScaleYProperty, pulse);
+        await Task.Delay(holdMilliseconds);
+    }
+
     private void DrawPayline(int lineIndex)
     {
         IReadOnlyList<int> line = NineLivesRules.Lines[lineIndex];
@@ -322,11 +429,12 @@ internal partial class NineLivesWindow : Window
             Y1 = start.Y,
             X2 = end.X,
             Y2 = end.Y,
-            Stroke = new SolidColorBrush(Color.FromArgb(150, 185, 69, 255)),
-            StrokeThickness = 14,
+            Stroke = new SolidColorBrush(Color.FromArgb(135, 185, 69, 255)),
+            StrokeThickness = 12,
             StrokeStartLineCap = PenLineCap.Round,
             StrokeEndLineCap = PenLineCap.Round,
             IsHitTestVisible = false,
+            Opacity = AnimationsEnabled ? 0 : 1,
         };
         var core = new System.Windows.Shapes.Line
         {
@@ -335,13 +443,24 @@ internal partial class NineLivesWindow : Window
             X2 = end.X,
             Y2 = end.Y,
             Stroke = Gold,
-            StrokeThickness = 5,
+            StrokeThickness = 4,
             StrokeStartLineCap = PenLineCap.Round,
             StrokeEndLineCap = PenLineCap.Round,
             IsHitTestVisible = false,
+            Opacity = AnimationsEnabled ? 0 : 1,
         };
         WinLineCanvas.Children.Add(glow);
         WinLineCanvas.Children.Add(core);
+
+        if (AnimationsEnabled)
+        {
+            var fade = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(320))
+            {
+                EasingFunction = new SineEase { EasingMode = EasingMode.EaseOut },
+            };
+            glow.BeginAnimation(OpacityProperty, fade);
+            core.BeginAnimation(OpacityProperty, fade);
+        }
     }
 
     private static Point Center(int index)
@@ -355,15 +474,20 @@ internal partial class NineLivesWindow : Window
     {
         WinLineCanvas.Children.Clear();
         BonusBadge.Visibility = machine.BonusActive ? Visibility.Visible : Visibility.Collapsed;
+        StatusText.FontSize = 14;
+        StatusText.Foreground = SoftText;
         for (int i = 0; i < cells.Length; i++)
         {
             cells[i].Opacity = 1;
+            cells[i].Effect = null;
             cells[i].BorderBrush = DimGold;
             cells[i].BorderThickness = new Thickness(2);
             symbolScale[i].BeginAnimation(ScaleTransform.ScaleXProperty, null);
             symbolScale[i].BeginAnimation(ScaleTransform.ScaleYProperty, null);
             symbolScale[i].ScaleX = 1;
             symbolScale[i].ScaleY = 1;
+            symbolImages[i].BeginAnimation(OpacityProperty, null);
+            symbolImages[i].Opacity = 1;
         }
     }
 
@@ -420,35 +544,10 @@ internal partial class NineLivesWindow : Window
             }
             await SpinAsync();
             if (!autoSpinning || closed) break;
-            await Task.Delay(AnimationsEnabled ? 220 : 80);
+            await Task.Delay(AnimationsEnabled ? 620 : 180);
         }
         autoSpinning = false;
         RefreshUi();
-    }
-
-    private void SettingsButton_Click(object sender, RoutedEventArgs e)
-    {
-        var sound = new MenuItem { Header = "Sound", IsCheckable = true, IsChecked = soundsEnabled };
-        sound.Click += (_, _) => soundsEnabled = sound.IsChecked;
-        var animation = new MenuItem { Header = "Animations", IsCheckable = true, IsChecked = animationsEnabled };
-        animation.Click += (_, _) => animationsEnabled = animation.IsChecked;
-        var menu = new ContextMenu();
-        menu.Items.Add(sound);
-        menu.Items.Add(animation);
-        SettingsButton.ContextMenu = menu;
-        menu.PlacementTarget = SettingsButton;
-        menu.IsOpen = true;
-    }
-
-    private void InfoButton_Click(object sender, RoutedEventArgs e)
-    {
-        MessageBox.Show(this,
-            "NINE LIVES\n\n5 paylines: three rows + two diagonals.\n" +
-            "Pounce Wild substitutes and can strike a second cell.\n" +
-            "3 Nine Lives symbols award 9 bonus spins.\n" +
-            "A full 3×3 matching grid pays 5,000×.\n\n" +
-            "This is the casino's high-volatility compact slot.",
-            "Nine Lives · Paytable", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
     private void CasinoButton_Click(object sender, RoutedEventArgs e)
@@ -461,8 +560,16 @@ internal partial class NineLivesWindow : Window
     {
         if (e.Key == Key.Escape)
         {
-            autoSpinning = false;
-            Close();
+            if (PaytableFlyout.Visibility == Visibility.Visible || SettingsFlyout.Visibility == Visibility.Visible)
+            {
+                PaytableFlyout.Visibility = Visibility.Collapsed;
+                SettingsFlyout.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                autoSpinning = false;
+                Close();
+            }
             e.Handled = true;
         }
         else if (e.Key == Key.Space)
@@ -489,14 +596,15 @@ internal partial class NineLivesWindow : Window
 
     private void RefreshUi()
     {
-        BankrollText.Text = machine.Bankroll.ToString("N0", CultureInfo.InvariantCulture);
+        BankrollText.Text = machine.Bankroll.ToString("#,##0.##", CultureInfo.InvariantCulture);
         LevelText.Text = $"Lvl {Math.Max(1, progression.Profile.Level)}";
-        BetText.Text = machine.BonusActive ? "FREE" : selectedBet.ToString("N0", CultureInfo.InvariantCulture);
-        WinText.Text = lastWin.ToString("N0.##", CultureInfo.InvariantCulture);
+        BetText.Text = machine.BonusActive ? "FREE" : selectedBet.ToString("#,##0.##", CultureInfo.InvariantCulture);
+        WinText.Text = lastWin > 0 ? FormatMoney(lastWin) : "—";
         BetDownButton.IsEnabled = !spinning && !machine.BonusActive && NineLivesRules.Bets.IndexOf(selectedBet) > 0;
         BetUpButton.IsEnabled = !spinning && !machine.BonusActive && NineLivesRules.Bets.IndexOf(selectedBet) < NineLivesRules.Bets.Count - 1;
         MaxButton.IsEnabled = !spinning && !machine.BonusActive;
         SpinButton.IsEnabled = !spinning && (machine.BonusActive || machine.Bankroll >= selectedBet);
+        SpinButton.Content = machine.BonusActive ? "FREE SPIN" : "SPIN";
         AutoButton.IsEnabled = !spinning || autoSpinning;
         if (machine.BonusActive)
         {
@@ -504,6 +612,9 @@ internal partial class NineLivesWindow : Window
             BonusText.Text = $"NINE LIVES · {machine.BonusSpinsRemaining} SPINS LEFT";
         }
     }
+
+    private static string FormatMoney(decimal amount)
+        => amount.ToString("#,##0.##", CultureInfo.InvariantCulture);
 
     private static decimal ClosestBet(decimal target) => NineLivesRules.Bets.OrderBy(value => Math.Abs(value - target)).First();
 
