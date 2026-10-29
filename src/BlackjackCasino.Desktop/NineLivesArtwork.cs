@@ -39,9 +39,7 @@ internal static class NineLivesArtwork
     private static IReadOnlyDictionary<NineLivesSymbol, Lazy<ImageSource>> BuildSymbols() =>
         new Dictionary<NineLivesSymbol, Lazy<ImageSource>>
         {
-            // The historical inline Yarn JPEG was truncated. YarnConcept is the repaired
-            // crop from the original generated Nine Lives symbol sheet.
-            [NineLivesSymbol.Yarn] = LazySymbol(NineLivesArtData.YarnConcept, nameof(NineLivesSymbol.Yarn), 256),
+            [NineLivesSymbol.Yarn] = new(() => LoadPackagedSymbol("yarn.jpg", nameof(NineLivesSymbol.Yarn))),
             [NineLivesSymbol.Fishbone] = LazySymbol(NineLivesArtData.Fishbone, nameof(NineLivesSymbol.Fishbone)),
             [NineLivesSymbol.Bell] = LazySymbol(NineLivesArtData.Bell, nameof(NineLivesSymbol.Bell)),
             [NineLivesSymbol.TabbyCat] = LazySymbol(NineLivesArtData.TabbyCat, nameof(NineLivesSymbol.TabbyCat)),
@@ -54,29 +52,35 @@ internal static class NineLivesArtwork
     private static Lazy<ImageSource> LazySymbol(string base64, string name, int pixelWidth = 192)
         => new(() => DecodeOrFallback(base64, pixelWidth, name));
 
+    private static ImageSource LoadPackagedSymbol(string fileName, string assetName)
+    {
+        try
+        {
+            var uri = new Uri(
+                $"pack://application:,,,/BlackjackCasino.Desktop;component/Assets/NineLives/{fileName}",
+                UriKind.Absolute);
+            var resource = Application.GetResourceStream(uri)
+                ?? throw new FileNotFoundException($"WPF resource not found: {uri}");
+
+            using Stream stream = resource.Stream;
+            BitmapSource source = DecodeBitmap(stream, 0);
+            source.Freeze();
+            return source;
+        }
+        catch (Exception ex)
+        {
+            AppCrashLog.Write($"Nine Lives packaged artwork '{assetName}' could not be decoded. Falling back to safe vector artwork.", ex);
+            return CreateFallback(256, 256, assetName);
+        }
+    }
+
     private static ImageSource DecodeOrFallback(string base64, int pixelWidth, string assetName)
     {
         try
         {
             byte[] bytes = Convert.FromBase64String(base64);
             using var stream = new MemoryStream(bytes, writable: false);
-
-            // Decode the frame completely before disposing the source stream. This is more
-            // reliable for progressive JPEG concept art than leaving BitmapImage to defer work.
-            BitmapDecoder decoder = BitmapDecoder.Create(
-                stream,
-                BitmapCreateOptions.PreservePixelFormat,
-                BitmapCacheOption.OnLoad);
-            BitmapSource source = decoder.Frames[0];
-
-            if (pixelWidth > 0 && source.PixelWidth > pixelWidth)
-            {
-                double scale = pixelWidth / (double)source.PixelWidth;
-                var transformed = new TransformedBitmap(source, new ScaleTransform(scale, scale));
-                transformed.Freeze();
-                return transformed;
-            }
-
+            BitmapSource source = DecodeBitmap(stream, pixelWidth);
             source.Freeze();
             return source;
         }
@@ -85,6 +89,26 @@ internal static class NineLivesArtwork
             AppCrashLog.Write($"Nine Lives artwork '{assetName}' could not be decoded. Falling back to safe vector artwork.", ex);
             return CreateFallback(pixelWidth, pixelWidth, assetName);
         }
+    }
+
+    private static BitmapSource DecodeBitmap(Stream stream, int maximumPixelWidth)
+    {
+        BitmapDecoder decoder = BitmapDecoder.Create(
+            stream,
+            BitmapCreateOptions.PreservePixelFormat,
+            BitmapCacheOption.OnLoad);
+        BitmapSource source = decoder.Frames[0];
+
+        if (maximumPixelWidth > 0 && source.PixelWidth > maximumPixelWidth)
+        {
+            double scale = maximumPixelWidth / (double)source.PixelWidth;
+            var transformed = new TransformedBitmap(source, new ScaleTransform(scale, scale));
+            transformed.Freeze();
+            return transformed;
+        }
+
+        source.Freeze();
+        return source;
     }
 
     private static ImageSource CreateFallback(double width, double height, string assetName)
