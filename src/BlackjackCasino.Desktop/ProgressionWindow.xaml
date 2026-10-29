@@ -136,7 +136,7 @@
 
       <Border x:Name="EmbeddedTitleBar" Grid.Row="0" Visibility="Collapsed" Background="#081A11" BorderBrush="#284535" BorderThickness="0,0,0,1">
         <DockPanel Margin="16,0,10,0">
-          <Button DockPanel.Dock="Right" Content="Back" Click="EmbeddedBackButton_Click" Padding="14,5" Margin="4,2" />
+          <Button x:Name="ProgressionBackButton" DockPanel.Dock="Right" Content="Back" Click="EmbeddedBackButton_Click" Padding="14,5" Margin="4,2" />
           <TextBlock Text="PROFILE &amp; PROGRESSION" Foreground="#FFD77C" FontWeight="SemiBold" VerticalAlignment="Center" />
         </DockPanel>
       </Border>

@@ -143,7 +143,7 @@ internal static class Program
         shopSearch.Text="Moon Cat";window.UpdateLayout();
         Require(Find<Button>(window).Any(b=>Equals(b.Tag,"portrait-moon-cat")),"Shop search failed to find the requested portrait");
         shopSearch.Clear();
-        Find<Button>(window).Single(b=>Equals(b.Content,"Back to casino") && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Find<Button>(window).Single(b=>b.Name=="ProgressionBackButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(40);window.UpdateLayout();
         Require(Find<TextBox>(window).Any(t=>t.Name=="ProfileNameBox" && t.Text=="Midnight Timo"),"Progression Back did not restore the profile");
         Find<Button>(window).Single(b=>b.Name=="ProfileBackButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
@@ -152,7 +152,7 @@ internal static class Program
         Find<Button>(window).Single(b=>Equals(b.Content,"Challenges") && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(60);window.UpdateLayout();RequireSingleHost(window,"Lobby Challenges");
         Require(Find<TabControl>(window).Any(t=>t.SelectedItem is TabItem item && Equals(item.Header,"Challenges")),"Lobby shortcut selected the wrong tab");
-        Find<Button>(window).Single(b=>Equals(b.Content,"Back to casino") && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Find<Button>(window).Single(b=>b.Name=="ProgressionBackButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(40);
         window.Width=1440;window.Height=900;window.Modes.Open("blackjack");mode.SelectedIndex=1;theme.SelectedIndex=0;
         ((Button)window.FindName("DealButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
@@ -195,7 +195,9 @@ internal static class Program
                     Rect bounds=wager.TransformToAncestor(viewport).TransformBounds(new Rect(0,0,wager.ActualWidth,wager.ActualHeight));
                     Require(bounds.Top>=-1 && bounds.Bottom<=viewport.ActualHeight+1,"Wager clipped in "+size+" / "+handCount+" hands");
                 }
-                foreach(TextBlock heading in Find<TextBlock>(window).Where(t=>t.Text=="YOUR HAND" || (t.Text.StartsWith("HAND ") && t.Text.Length<=6)))
+                TextBlock[] headings=Find<TextBlock>(window).Where(t=>t.Text=="YOUR HAND" || (t.Text.StartsWith("HAND ") && t.Text.Length<=6)).ToArray();
+                Require(headings.Length==handCount,"Player hand headings are missing");
+                foreach(TextBlock heading in headings)
                 {
                     Rect bounds=heading.TransformToVisual(table).TransformBounds(new Rect(0,0,heading.ActualWidth,heading.ActualHeight));
                     for(int sample=0;sample<=200;sample++)
