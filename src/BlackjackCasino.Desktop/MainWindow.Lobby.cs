@@ -22,7 +22,9 @@ public partial class MainWindow
         Grid.SetRow(lobby,1); Grid.SetColumnSpan(lobby,2);Panel.SetZIndex(lobby,900);CasinoRoot.Children.Add(lobby);
         TableModeText.Text="Casino lobby";
 
-        Loaded += (_,_) => Dispatcher.BeginInvoke(new Action(ConfigureEmbeddedGameSurface));
+        // InitializeLobby is invoked from PresentationLoaded, so registering another Loaded
+        // handler here would be too late. Configure the embedded surface synchronously now.
+        ConfigureEmbeddedGameSurface();
     }
     private void ConfigureEmbeddedGameSurface()
     {
@@ -32,16 +34,15 @@ public partial class MainWindow
         Grid.SetRowSpan(embeddedGameOverlay,2);
         embeddedGameOverlay.IsVisibleChanged-=EmbeddedGameOverlay_IsVisibleChanged;
         embeddedGameOverlay.IsVisibleChanged+=EmbeddedGameOverlay_IsVisibleChanged;
-        if(CasinoHeader.Parent is UIElement hostHeader)
-        {
-            hostHeader.Visibility=embeddedGameOverlay.IsVisible ? Visibility.Collapsed : Visibility.Visible;
-        }
+        UpdateHostHeaderVisibility(embeddedGameOverlay.IsVisible);
     }
     private void EmbeddedGameOverlay_IsVisibleChanged(object sender,DependencyPropertyChangedEventArgs e)
+        => UpdateHostHeaderVisibility((bool)e.NewValue);
+    private void UpdateHostHeaderVisibility(bool embeddedGameVisible)
     {
         if(CasinoHeader.Parent is UIElement hostHeader)
         {
-            hostHeader.Visibility=(bool)e.NewValue ? Visibility.Collapsed : Visibility.Visible;
+            hostHeader.Visibility=embeddedGameVisible ? Visibility.Collapsed : Visibility.Visible;
         }
     }
     private void Lobby_Click(object sender,RoutedEventArgs e)
