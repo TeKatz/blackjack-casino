@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.Windows;
-using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -8,227 +7,270 @@ using BlackjackCasino.Core.Empire;
 
 namespace BlackjackCasino.Desktop;
 
-/// <summary>A hosted page, with no Window or native handle of its own.</summary>
+/// <summary>Responsive estate dashboard. The simulation is independent of its visual clocks.</summary>
 internal sealed class EmpireView : UserControl, IDisposable
 {
     private readonly EmpireService service;
-    private readonly Func<string, bool> upgrade;
-    private readonly Func<bool> claim;
     private readonly Func<bool> animations;
-    private readonly EmpireFloorArtwork artwork = new();
-    private readonly TextBlock credits = Label("", 26, "#F0D49B");
-    private readonly TextBlock production = Label("", 26, "#9ED7BD");
-    private readonly TextBlock dividend = Label("", 26, "#F0D49B");
-    private readonly TextBlock roomTitle = Label("", 27, "#F4E8D4");
-    private readonly TextBlock roomDescription = Label("", 14, "#ABBCB6");
-    private readonly TextBlock roomStats = Label("", 15, "#D9E3DA");
-    private readonly TextBlock milestone = Label("", 13, "#B5C8BB");
-    private readonly TextBlock notice = Label("Your first slot cabinet is already earning. Select a room to invest your credits.", 13, "#B7C8BD");
-    private readonly Button buy = new() { Name = "EmpireUpgradeButton", Margin = new Thickness(0, 18, 0, 14) };
-    private readonly Button collect = new() { Name = "EmpireClaimButton", Margin = new Thickness(0, 12, 0, 0) };
+    private readonly WrapPanel rooms = new() { Name = "EmpireRoomGrid", HorizontalAlignment = HorizontalAlignment.Stretch };
+    private readonly List<EmpireRoomCard> cards = [];
+    private readonly EmpireBalanceCounter credits = new() { FontSize = 25, Foreground = Ink("#EFD5A0") };
+    private readonly TextBlock production = Label("", 25, "#A8D9BB");
+    private readonly TextBlock dividend = Label("", 23, "#EFD5A0");
+    private readonly TextBlock cashRate = Label("", 10, "#9BB7A5");
+    private readonly TextBlock roomTitle = Label("", 26, "#F2E4C8");
+    private readonly TextBlock roomDescription = Label("", 13, "#A5BCAF");
+    private readonly TextBlock roomStats = Label("", 15, "#D1DFD4");
+    private readonly TextBlock milestone = Label("", 12, "#B5C8B8");
+    private readonly TextBlock estateStatus = Label("", 10, "#9DB1A2");
+    private readonly TextBlock lifetime = Label("", 21, "#E6CE9D");
+    private readonly TextBlock cashClaimed = Label("", 21, "#E6CE9D");
+    private readonly TextBlock levels = Label("", 21, "#B2D3B8");
+    private readonly TextBlock openRooms = Label("", 21, "#B2D3B8");
+    private readonly TextBlock notice = Label("Your casino is working. Select a room to open or upgrade it.", 12, "#B8CCBB");
+    private readonly TextBlock buyLabel = Label("", 13, "#F3E7CC");
+    private readonly Button buy = new() { Name = "EmpireUpgradeButton", Margin = new Thickness(0, 14, 0, 14), MinHeight = 48 };
+    private readonly Button collect = new() { Name = "EmpireClaimButton", Padding = new Thickness(13, 8, 13, 8), MinHeight = 35, FontSize = 12 };
+    private readonly Dictionary<string, Button> filters = new(StringComparer.Ordinal);
+    private readonly Border milestoneFill = new() { Height = 5, Background = Ink("#C7AA6E"), HorizontalAlignment = HorizontalAlignment.Left, CornerRadius = new CornerRadius(3) };
+    private readonly Grid milestoneTrack = new() { Height = 5, Background = Ink("#2A3E34"), Margin = new Thickness(0, 8, 0, 10) };
+    private readonly ScrollViewer roomScroll;
     private readonly DispatcherTimer animationTimer;
     private string selected = "slots";
+    private string filter = "all";
+    private bool disposed;
+    private bool wasAnimating;
+    private double phase;
 
     internal EmpireView(EmpireService service, Func<string, bool> upgrade, Func<bool> claim, Action back, Func<bool> animations)
     {
         this.service = service;
-        this.upgrade = upgrade;
-        this.claim = claim;
         this.animations = animations;
         Name = "CasinoEmpirePage";
         FontFamily = new FontFamily("Segoe UI");
-        Foreground = Ink("#F4E8D4");
-        Background = new LinearGradientBrush(Color.FromRgb(10, 22, 23), Color.FromRgb(27, 23, 34), 30);
-        // Explicit page scope prevents any host/table theme from changing these controls.
+        Foreground = Ink("#F2E4C8");
+        Background = new LinearGradientBrush(Color.FromRgb(8, 20, 19), Color.FromRgb(26, 23, 29), 25);
         Resources[typeof(Button)] = Application.Current.FindResource("CasinoButton");
-        var root = new Grid { Margin = new Thickness(28, 20, 28, 18) };
-        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        root.RowDefinitions.Add(new RowDefinition());
-        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        var root = new Grid { Margin = new Thickness(24, 17, 24, 14) };
+        foreach (GridLength height in new[] { GridLength.Auto, GridLength.Auto, new GridLength(1, GridUnitType.Star), GridLength.Auto })
+            root.RowDefinitions.Add(new RowDefinition { Height = height });
 
-        var header = new DockPanel { Margin = new Thickness(0, 0, 0, 18) };
+        var header = new DockPanel { Margin = new Thickness(0, 0, 0, 13) };
         var exit = new Button { Name = "EmpireBackButton", Content = "←  Casino lobby", VerticalAlignment = VerticalAlignment.Center };
         exit.Click += (_, _) => back();
         DockPanel.SetDock(exit, Dock.Right);
         header.Children.Add(exit);
-        var heading = new StackPanel();
-        heading.Children.Add(Label("THE MIDNIGHT CLUB  /  OWNER'S COLLECTION", 10, "#C6AD7A"));
-        heading.Children.Add(new TextBlock { Text = "Casino Empire", FontSize = 34, FontFamily = new FontFamily("Georgia"), Foreground = Ink("#F4E8D4"), Margin = new Thickness(0, 5, 0, 2) });
-        heading.Children.Add(Label("A small beginning. A name above the door.", 13, "#A5B8AE"));
-        header.Children.Add(heading);
+        var title = new StackPanel();
+        title.Children.Add(Label("THE MIDNIGHT CLUB  /  YOUR PRIVATE ESTATE", 9, "#BEA674"));
+        title.Children.Add(new TextBlock { Text = "Casino Empire", FontFamily = new FontFamily("Georgia"), FontSize = 32, Foreground = Ink("#F4E7CA"), Margin = new Thickness(0, 3, 0, 0) });
+        header.Children.Add(title);
         root.Children.Add(header);
 
-        var balances = new Grid { Margin = new Thickness(0, 0, 0, 18) };
+        var balances = new Grid { Margin = new Thickness(0, 0, 0, 15) };
         for (int i = 0; i < 3; i++) balances.ColumnDefinitions.Add(new ColumnDefinition());
-        AddBalance(0, "EMPIRE CREDITS", credits, "Only used to build your casino.");
-        AddBalance(1, "AUTOMATIC PRODUCTION", production, "Keeps earning in other games and offline.");
-        AddBalance(2, "OWNER DIVIDEND", dividend, "Separate cash for the other casino games.");
+        AddMetric(0, "EMPIRE CREDITS", credits, Label("Your independent construction budget", 10, "#91A99C"));
+        AddMetric(1, "AUTOMATIC PRODUCTION", production, Label("Earning in other games · 8h offline catch-up", 10, "#91A99C"));
+        var dividendContent = new DockPanel();
+        collect.VerticalAlignment = VerticalAlignment.Center;
+        collect.Click += (_, _) => { claim(); Refresh(); };
+        DockPanel.SetDock(collect, Dock.Right);
+        dividendContent.Children.Add(collect);
+        dividendContent.Children.Add(dividend);
+        AddMetric(2, "OWNER DIVIDEND", dividendContent, cashRate);
         Grid.SetRow(balances, 1);
         root.Children.Add(balances);
 
         var body = new Grid();
         body.ColumnDefinitions.Add(new ColumnDefinition());
-        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(320) });
-        var floor = new Grid { Margin = new Thickness(0, 0, 18, 0) };
-        floor.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        floor.RowDefinitions.Add(new RowDefinition());
-        floor.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        floor.Children.Add(Label("YOUR CASINO FLOOR     /     SELECT A ROOM", 10, "#C6AD7A"));
-        var plan = new Canvas { Width = 1000, Height = 470 };
-        artwork.Width = 1000;
-        artwork.Height = 470;
-        artwork.IsHitTestVisible = false;
-        plan.Children.Add(artwork);
+        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(288) });
+        var estate = new Grid { Margin = new Thickness(0, 0, 16, 0) };
+        estate.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        estate.RowDefinitions.Add(new RowDefinition());
+        var toolbar = new DockPanel { Margin = new Thickness(0, 0, 0, 10) };
+        var buttons = new StackPanel { Orientation = Orientation.Horizontal };
+        foreach (var item in new[] { (Id: "all", Text: "All rooms"), (Id: "open", Text: "Operating"), (Id: "locked", Text: "Locked") })
+        {
+            var choice = new Button { Name = "EmpireFilter_" + item.Id, Content = item.Text, FontSize = 11, MinHeight = 29, Padding = new Thickness(10, 4, 10, 4), Margin = new Thickness(4, 0, 0, 0) };
+            choice.Click += (_, _) => { filter = item.Id; Refresh(); };
+            filters[item.Id] = choice;
+            buttons.Children.Add(choice);
+        }
+        DockPanel.SetDock(buttons, Dock.Right);
+        toolbar.Children.Add(buttons);
+        estateStatus.VerticalAlignment = VerticalAlignment.Center;
+        toolbar.Children.Add(estateStatus);
+        estate.Children.Add(toolbar);
+        var estateContent = new StackPanel();
         for (int i = 0; i < EmpireCatalog.Departments.Count; i++)
         {
-            EmpireDepartment room = EmpireCatalog.Departments[i];
-            Rect rect = EmpireFloorArtwork.RoomBounds[i];
-            var selector = new Button
-            {
-                Name = "EmpireRoom_" + room.Id, Width = rect.Width, Height = rect.Height,
-                Background = Brushes.Transparent, BorderBrush = Brushes.Transparent, BorderThickness = new Thickness(2),
-                Style = RoomSelectorStyle(), ToolTip = "Select " + room.Name,
-            };
-            AutomationProperties.SetName(selector, "Select " + room.Name);
-            Canvas.SetLeft(selector, rect.X);
-            Canvas.SetTop(selector, rect.Y);
-            selector.Click += (_, _) => { selected = room.Id; Refresh(); };
-            plan.Children.Add(selector);
+            var card = new EmpireRoomCard(EmpireCatalog.Departments[i], i, id => { selected = id; Refresh(); });
+            cards.Add(card);
+            rooms.Children.Add(card);
         }
-        var scene = new Viewbox { Child = plan, Stretch = Stretch.Uniform, Margin = new Thickness(0, 12, 0, 10), VerticalAlignment = VerticalAlignment.Center };
-        Grid.SetRow(scene, 1);
-        floor.Children.Add(scene);
-        var floorNote = new StackPanel();
-        floorNote.Children.Add(Label("THE HOUSE WORKS FOR YOU", 11, "#C6AD7A"));
-        floorNote.Children.Add(Label("Every room earns automatically. Reach each 10th level to double that room's production and refresh its furnishings.", 13, "#A5B8AE"));
-        floorNote.Children.Add(Label("Offline catch-up: up to 8 hours. Progress saves automatically.", 12, "#819C91"));
-        Grid.SetRow(floorNote, 2);
-        floor.Children.Add(floorNote);
-        body.Children.Add(floor);
+        estateContent.Children.Add(rooms);
+        var ledger = new Border { Background = Ink("#10251F"), BorderBrush = Ink("#35483B"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(9), Margin = new Thickness(2, 3, 12, 0), Padding = new Thickness(14, 13, 14, 14) };
+        var ledgerBody = new StackPanel();
+        ledgerBody.Children.Add(Label("ESTATE LEDGER  /  LIFETIME", 9, "#BEA674"));
+        var ledgerMetrics = new Grid { Margin = new Thickness(0, 9, 0, 0) };
+        for (int i = 0; i < 4; i++) ledgerMetrics.ColumnDefinitions.Add(new ColumnDefinition());
+        LedgerValue(0, lifetime, "Credits produced");
+        LedgerValue(1, cashClaimed, "Cash paid to you");
+        LedgerValue(2, openRooms, "Rooms operating");
+        LedgerValue(3, levels, "Total room levels");
+        ledgerBody.Children.Add(ledgerMetrics);
+        ledger.Child = ledgerBody;
+        estateContent.Children.Add(ledger);
+        roomScroll = new ScrollViewer { Content = estateContent, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, CanContentScroll = false };
+        roomScroll.SizeChanged += (_, _) => ResizeRooms();
+        Grid.SetRow(roomScroll, 1);
+        estate.Children.Add(roomScroll);
+        body.Children.Add(estate);
 
-        var management = new StackPanel { Margin = new Thickness(20) };
-        management.Children.Add(Label("ROOM MANAGEMENT", 10, "#C6AD7A"));
+        var management = new StackPanel { Margin = new Thickness(18) };
+        management.Children.Add(Label("ROOM MANAGEMENT", 9, "#BEA674"));
         roomTitle.FontFamily = new FontFamily("Georgia");
-        roomTitle.Margin = new Thickness(0, 10, 0, 8);
+        roomTitle.Margin = new Thickness(0, 9, 0, 8);
         management.Children.Add(roomTitle);
         management.Children.Add(roomDescription);
-        roomStats.Margin = new Thickness(0, 20, 0, 0);
+        roomStats.Margin = new Thickness(0, 18, 0, 0);
         management.Children.Add(roomStats);
+        buyLabel.TextAlignment = TextAlignment.Center;
+        buyLabel.MaxWidth = 220;
+        buy.Content = buyLabel;
         buy.Click += (_, _) =>
         {
-            if (this.upgrade(selected))
-                SetNotice(service.Level(selected) == 1 ? "A new room is open. Its income is now automatic." : "Room upgraded. Your new production rate is already running.");
+            if (upgrade(selected)) SetNotice(service.Level(selected) == 1 ? "Room opened. A new part of your casino is now earning." : "Upgrade complete. Your room is now producing more credits.");
             Refresh();
         };
         management.Children.Add(buy);
+        management.Children.Add(Label("THE NEXT MILESTONE", 9, "#BEA674"));
+        milestoneTrack.Children.Add(milestoneFill);
+        milestoneTrack.SizeChanged += (_, _) => RefreshMilestone();
+        management.Children.Add(milestoneTrack);
         management.Children.Add(milestone);
-        management.Children.Add(new Border { Height = 1, Background = Ink("#3E4942"), Margin = new Thickness(0, 22, 0, 20) });
-        management.Children.Add(Label("YOUR OWNER DIVIDEND", 11, "#C6AD7A"));
-        management.Children.Add(Label("The reserve earns independently of credits. Claiming pays your shared casino cash without spending your construction budget.", 13, "#A5B8AE"));
-        collect.Click += (_, _) => { this.claim(); Refresh(); };
-        management.Children.Add(collect);
-        management.Children.Add(Label("Reserve capacity: $320.00. Rate grows with room levels, up to $40.00 / hour.", 11, "#819C91"));
-        var side = new Border
-        {
-            Background = Ink("#142523"), BorderBrush = Ink("#435448"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12),
-            Child = new ScrollViewer { Content = management, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled },
-        };
+        management.Children.Add(new Border { Background = Ink("#374C3E"), Height = 1, Margin = new Thickness(0, 18, 0, 15) });
+        management.Children.Add(Label("EVERY ROOM HAS ITS OWN RHYTHM", 9, "#BEA674"));
+        management.Children.Add(Label("Every 10 levels doubles this room's production. Golden details mark your upgraded estate. Everything earns automatically.", 12, "#99B0A2"));
+        var side = new Border { Background = new LinearGradientBrush(Color.FromRgb(24, 43, 34), Color.FromRgb(15, 30, 26), 90), BorderBrush = Ink("#4A5943"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(10), Child = new ScrollViewer { Content = management, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled } };
         Grid.SetColumn(side, 1);
         body.Children.Add(side);
         Grid.SetRow(body, 2);
         root.Children.Add(body);
 
         notice.Name = "EmpireNotice";
-        var status = new Border { Padding = new Thickness(14, 10, 14, 10), Margin = new Thickness(0, 16, 0, 0), Background = Ink("#172C28"), CornerRadius = new CornerRadius(7), Child = notice };
+        var status = new Border { Padding = new Thickness(13, 9, 13, 9), Margin = new Thickness(0, 12, 0, 0), Background = Ink("#193127"), CornerRadius = new CornerRadius(7), Child = notice };
         Grid.SetRow(status, 3);
         root.Children.Add(status);
         Content = root;
-        Refresh();
-        animationTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
+        animationTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(40) };
         animationTimer.Tick += (_, _) =>
         {
-            if (IsVisible && this.animations()) artwork.Phase += .12;
+            bool active = this.animations() && IsVisible && !disposed;
+            if (active)
+            {
+                phase += .08;
+                foreach (EmpireRoomCard card in cards.Where(card => card.IsVisible && card.Artwork.Open)) card.Artwork.Phase = phase;
+            }
+            else if (wasAnimating) foreach (EmpireRoomCard card in cards) card.StopAnimation();
+            wasAnimating = active;
         };
-        Loaded += (_, _) => animationTimer.Start();
+        Loaded += (_, _) => { if (!disposed) animationTimer.Start(); ResizeRooms(); };
         Unloaded += (_, _) => animationTimer.Stop();
+        Refresh();
 
-        void AddBalance(int column, string title, TextBlock value, string detail)
+        void AddMetric(int column, string label, UIElement value, UIElement detail)
         {
-            var stack = new StackPanel { Margin = new Thickness(16, 12, 16, 12) };
-            stack.Children.Add(Label(title, 10, "#B5AA8D"));
-            value.Margin = new Thickness(0, 4, 0, 3);
+            var stack = new StackPanel { Margin = new Thickness(14, 10, 14, 10) };
+            stack.Children.Add(Label(label, 9, "#BEA674"));
+            if (value is FrameworkElement element) element.Margin = new Thickness(0, 3, 0, 2);
             stack.Children.Add(value);
-            stack.Children.Add(Label(detail, 11, "#8DA69A"));
-            var card = new Border { Background = Ink("#142724"), BorderBrush = Ink("#33473F"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(9), Margin = new Thickness(column == 0 ? 0 : 10, 0, 0, 0), Child = stack };
-            Grid.SetColumn(card, column);
-            balances.Children.Add(card);
+            stack.Children.Add(detail);
+            var panel = new Border { Background = Ink("#142A22"), BorderBrush = Ink("#3B4F3E"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(9), Margin = new Thickness(column == 0 ? 0 : 10, 0, 0, 0), Child = stack };
+            Grid.SetColumn(panel, column);
+            balances.Children.Add(panel);
+        }
+        void LedgerValue(int column, TextBlock value, string label)
+        {
+            var metric = new StackPanel { Margin = new Thickness(0, 0, 10, 0) };
+            metric.Children.Add(value);
+            metric.Children.Add(Label(label, 10, "#8FA89A"));
+            Grid.SetColumn(metric, column);
+            ledgerMetrics.Children.Add(metric);
         }
     }
 
     internal void Refresh()
     {
-        credits.Text = Number(service.Credits) + " cr";
+        if (disposed) return;
+        bool animate = animations() && IsVisible;
+        credits.SetAmount(service.Credits, animate);
         production.Text = Number(service.CreditsPerSecond) + " cr / sec";
         dividend.Text = service.ClaimableDividend.ToString("C2", CultureInfo.GetCultureInfo("en-US"));
+        collect.Content = "Claim cash";
+        collect.IsEnabled = service.ClaimableDividend >= .01m;
+        cashRate.Text = $"${service.CashPerHour:0.00} / hour · $320 reserve capacity";
         EmpireDepartment room = EmpireCatalog.Find(selected)!;
         int level = service.Level(selected);
         roomTitle.Text = room.Name;
         roomDescription.Text = room.Description;
-        roomStats.Text = level == 0 ? "Not yet open\nPotential: " + Number(room.BaseCreditsPerSecond) + " cr / sec"
-            : $"Level {level} / {EmpireRules.MaximumLevel}\nProducing {Number(EmpireRules.Production(room, level))} cr / sec";
+        roomStats.Text = level == 0 ? "Ready to open\nStarts at " + Number(room.BaseCreditsPerSecond) + " cr / sec" : $"LEVEL {level} / {EmpireRules.MaximumLevel}\n+{Number(EmpireRules.Production(room, level))} cr / sec";
         decimal cost = EmpireRules.UpgradeCost(room, level);
-        buy.Content = new TextBlock
-        {
-            Text = level == EmpireRules.MaximumLevel ? "Fully upgraded" : (level == 0 ? "Open room" : "Upgrade to level " + (level + 1)) + "  ·  " + Number(cost) + " cr",
-            TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center, MaxWidth = 240,
-        };
+        buyLabel.Text = level == EmpireRules.MaximumLevel ? "Fully upgraded" : (level == 0 ? "Open room" : "Upgrade to level " + (level + 1)) + "  ·  " + Number(cost) + " cr";
         buy.IsEnabled = level < EmpireRules.MaximumLevel && service.Credits >= cost;
-        milestone.Text = level >= EmpireRules.MaximumLevel ? "All room milestones reached."
-            : $"Next milestone: level {(level / 10 + 1) * 10}\nDoubles this room's production permanently.";
-        collect.Content = "Claim " + service.ClaimableDividend.ToString("C2", CultureInfo.GetCultureInfo("en-US")) + " cash";
-        collect.IsEnabled = service.ClaimableDividend >= .01m;
-        collect.ToolTip = $"Current dividend rate: ${service.CashPerHour:0.00} / hour. No credits are exchanged.";
-        artwork.State = service.Snapshot;
-        artwork.SelectedRoom = selected;
-        artwork.InvalidateVisual();
+        RefreshMilestone();
+        estateStatus.Text = $"YOUR CASINO  /  {service.OpenRooms} OF {EmpireCatalog.Departments.Count} ROOMS OPERATING";
+        foreach (var item in filters) item.Value.BorderBrush = Ink(item.Key == filter ? "#D8BB7E" : "#42594A");
+        foreach (EmpireRoomCard card in cards)
+        {
+            int value = service.Level(card.Department.Id);
+            card.Visibility = filter == "open" && value == 0 || filter == "locked" && value > 0 ? Visibility.Collapsed : Visibility.Visible;
+            card.Refresh(service, card.Department.Id == selected, animate);
+        }
+        EmpireState snapshot = service.Snapshot;
+        lifetime.Text = Number(snapshot.LifetimeCredits) + " cr";
+        cashClaimed.Text = snapshot.LifetimeCashClaimed.ToString("C2", CultureInfo.GetCultureInfo("en-US"));
+        openRooms.Text = service.OpenRooms + " / " + EmpireCatalog.Departments.Count;
+        levels.Text = service.TotalLevels.ToString(CultureInfo.InvariantCulture);
+        ResizeRooms();
+    }
+
+    private void RefreshMilestone()
+    {
+        int level = service.Level(selected);
+        milestoneFill.Width = milestoneTrack.ActualWidth * (level == EmpireRules.MaximumLevel ? 1 : level % 10 / 10d);
+        milestone.Text = level == EmpireRules.MaximumLevel ? "Every room milestone reached." : $"Level {(level / 10 + 1) * 10}: ×2 room production\n{10 - level % 10} levels to the next milestone";
+    }
+
+    private void ResizeRooms()
+    {
+        double available = Math.Max(210, roomScroll.ActualWidth - 20);
+        int count = Math.Max(1, cards.Count(card => card.Visibility == Visibility.Visible));
+        int columns = Math.Min(count, Math.Clamp((int)(available / 222), 1, 6));
+        double width = Math.Max(200, available / columns - 12);
+        foreach (EmpireRoomCard card in cards) card.Width = width;
     }
 
     internal void SetNotice(string text) => notice.Text = text;
-    public void Dispose() => animationTimer.Stop();
+    internal void StopVisualAnimations()
+    {
+        wasAnimating = false;
+        phase = 0;
+        credits.SetAmount(service.Credits, false);
+        foreach (EmpireRoomCard card in cards) card.StopAnimation();
+    }
+    public void Dispose()
+    {
+        disposed = true;
+        animationTimer.Stop();
+        StopVisualAnimations();
+    }
 
     internal static string Number(decimal value)
     {
         (decimal Scale, string Suffix)[] units = [(1_000_000_000_000_000_000_000_000m, "Sp"), (1_000_000_000_000_000_000_000m, "Sx"), (1_000_000_000_000_000_000m, "Qi"), (1_000_000_000_000_000m, "Qa"), (1_000_000_000_000m, "T"), (1_000_000_000m, "B"), (1_000_000m, "M"), (1_000m, "K")];
-        foreach (var unit in units)
-            if (value >= unit.Scale) return (value / unit.Scale).ToString("0.##", CultureInfo.InvariantCulture) + unit.Suffix;
+        foreach (var unit in units) if (value >= unit.Scale) return (value / unit.Scale).ToString("0.##", CultureInfo.InvariantCulture) + unit.Suffix;
         return value.ToString("0.##", CultureInfo.InvariantCulture);
     }
-
-    private static TextBlock Label(string text, double size, string color) => new()
-    {
-        Text = text, FontSize = size, Foreground = Ink(color), TextWrapping = TextWrapping.Wrap,
-    };
+    private static TextBlock Label(string text, double size, string color) => new() { Text = text, FontSize = size, Foreground = Ink(color), TextWrapping = TextWrapping.Wrap };
     private static SolidColorBrush Ink(string hex) => new((Color)ColorConverter.ConvertFromString(hex));
-
-    private static Style RoomSelectorStyle()
-    {
-        var border = new FrameworkElementFactory(typeof(Border));
-        border.Name = "Outline";
-        border.SetValue(Border.CornerRadiusProperty, new CornerRadius(10));
-        border.SetValue(Border.BorderThicknessProperty, new Thickness(2));
-        border.SetValue(Border.BackgroundProperty, Brushes.Transparent);
-        border.SetValue(Border.BorderBrushProperty, Brushes.Transparent);
-        var template = new ControlTemplate(typeof(Button)) { VisualTree = border };
-        var hover = new Trigger { Property = IsMouseOverProperty, Value = true };
-        hover.Setters.Add(new Setter(Border.BorderBrushProperty, Ink("#D9BE87"), "Outline"));
-        template.Triggers.Add(hover);
-        var focus = new Trigger { Property = IsKeyboardFocusedProperty, Value = true };
-        focus.Setters.Add(new Setter(Border.BorderBrushProperty, Ink("#F8E3B2"), "Outline"));
-        template.Triggers.Add(focus);
-        var style = new Style(typeof(Button));
-        style.Setters.Add(new Setter(TemplateProperty, template));
-        style.Setters.Add(new Setter(CursorProperty, System.Windows.Input.Cursors.Hand));
-        return style;
-    }
 }

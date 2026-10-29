@@ -103,6 +103,7 @@ public partial class MainWindow : Window
         ThemeComboBox.SelectedIndex = (int)preferences.Theme;
         SoundCheckBox.IsChecked = preferences.SoundEnabled;
         AnimationsCheckBox.IsChecked = preferences.AnimationsEnabled;
+        EmpireBalanceCheckBox.IsChecked = preferences.ShowEmpireBalance;
 
         UpdateChannel initialChannel = preferences.UpdateChannel
             ?? (AppVersion.Current.PreRelease is null ? UpdateChannel.Stable : UpdateChannel.Development);
@@ -230,6 +231,11 @@ public partial class MainWindow : Window
     {
         MenuAudio.Enabled = SoundEnabled;
         if (!SoundEnabled) CasinoFeedback.Stop();
+        if (empire is not null)
+        {
+            RefreshEmpireHeader();
+            if (!AnimationsEnabled) empireView?.StopVisualAnimations();
+        }
         if (!suppressPreferenceEvents && IsLoaded)
         {
             SavePreferences();
@@ -1060,6 +1066,7 @@ public partial class MainWindow : Window
             Theme = SelectedTheme,
             SoundEnabled = SoundEnabled,
             AnimationsEnabled = AnimationsEnabled,
+            ShowEmpireBalance = EmpireBalanceCheckBox.IsChecked == true,
             UpdateChannel = SelectedUpdateChannel,
             WindowWidth = width,
             WindowHeight = height,

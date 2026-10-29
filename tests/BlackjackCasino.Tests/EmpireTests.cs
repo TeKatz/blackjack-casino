@@ -164,6 +164,25 @@ public sealed class EmpireTests
     }
 
     [Fact]
+    public void HeaderBalancePreferencePersistsWithoutChangingEitherCurrency()
+    {
+        string folder = Path.Combine(Path.GetTempPath(), "empire-header-" + Guid.NewGuid());
+        try
+        {
+            Assert.True(new AppPreferences().ShowEmpireBalance);
+            var state = new AppPreferences { ShowEmpireBalance = false, Bankroll = 777m, Empire = new EmpireState { Credits = 1234m } };
+            PlayerStateStore.SaveOrThrow(state, folder);
+            var loaded = JsonSerializer.Deserialize<AppPreferences>(File.ReadAllText(Path.Combine(folder, "player-state.json")), ManorPersistence.Json)!;
+            Assert.False(loaded.ShowEmpireBalance);
+            Assert.Equal(777m, loaded.Bankroll);
+            Assert.Equal(1234m, loaded.Empire.Credits);
+            var legacy = JsonSerializer.Deserialize<AppPreferences>("{\"Bankroll\":777}")!;
+            Assert.True(legacy.ShowEmpireBalance);
+        }
+        finally { if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true); }
+    }
+
+    [Fact]
     public void FailedAtomicReplacementPreservesThePreviousSaveAndReserve()
     {
         string folder = Path.Combine(Path.GetTempPath(), "empire-blocked-" + Guid.NewGuid());

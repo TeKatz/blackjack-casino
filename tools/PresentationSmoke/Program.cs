@@ -185,9 +185,48 @@ internal static class Program
             window.Width=size.Item1;window.Height=size.Item2;window.UpdateLayout();await Task.Delay(50);
             RequireWithin(window,Find<Button>(window).Single(b=>b.Name=="EmpireBackButton"),"Empire Back");
             RequireWithin(window,buy,"Empire Upgrade");
-            RequireWithin(window,Find<EmpireFloorArtwork>(window).Single(a=>a.IsVisible),"Empire floor");
+            RequireWithin(window,Find<Button>(window).Single(b=>b.Name=="EmpireClaimButton"),"Empire claim");
+            var roomCards=Find<EmpireRoomCard>(window).Where(card=>card.IsVisible).ToArray();
+            Require(roomCards.Length==5,"The estate dashboard lost a room");
+            Require(roomCards.All(card=>card.ActualWidth<360 && card.ActualHeight<=230),"Idle room segments are not compact");
+            Require(roomCards[0].TransformToAncestor(window).Transform(new Point()).X<roomCards[1].TransformToAncestor(window).Transform(new Point()).X,"Room cards failed to form a responsive row");
             Capture(window,"09-empire-"+(int)size.Item1);
         }
+        Find<Button>(window).Single(b=>b.Name=="EmpireFilter_open").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));window.UpdateLayout();
+        Require(Find<EmpireRoomCard>(window).Count(card=>card.IsVisible)==1,"Operating filter is incorrect");
+        Find<Button>(window).Single(b=>b.Name=="EmpireFilter_locked").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));window.UpdateLayout();
+        Require(Find<EmpireRoomCard>(window).Count(card=>card.IsVisible)==4,"Locked filter is incorrect");
+        Find<Button>(window).Single(b=>b.Name=="EmpireFilter_all").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));window.UpdateLayout();
+        Require(EmpireRoomTextures.Get(0).IsFrozen && EmpireRoomTextures.Get(0).PixelWidth>=256 && ReferenceEquals(EmpireRoomTextures.Get(0),EmpireRoomTextures.Get(0)),"Room artwork is missing or not cached");
+        var animationSetting=(CheckBox)window.FindName("AnimationsCheckBox");
+        animationSetting.IsChecked=true;await Task.Delay(150);
+        Require(Find<EmpireRoomCard>(window).Single(card=>card.Department.Id=="slots").Artwork.Phase>0,"Open-room effects are not running");
+        animationSetting.IsChecked=false;
+        Require(Find<EmpireRoomCard>(window).All(card=>card.Artwork.Phase==0),"Disabling animations did not stop room effects immediately");
+        Find<Button>(window).Single(b=>b.Name=="EmpireBackButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        window.Modes.Open("blackjack");await Task.Delay(50);window.UpdateLayout();
+        var indicator=(Border)window.FindName("EmpireBalancePanel");
+        Require(indicator.IsVisible,"The Blackjack header does not show the live idle balance");
+        decimal before=service.Credits;
+        await Task.Delay(1100);window.UpdateLayout();
+        Require(service.Credits>before,"Idle income stopped on the Blackjack table");
+        var ticker=(EmpireBalanceCounter)window.FindName("EmpireHeaderBalance");
+        Require(Math.Abs(ticker.DisplayedAmount-(double)service.Credits)<.01,"The header ticker is not showing the current idle balance");
+        foreach(var size in new[]{(1080d,720d),(1440d,900d)})
+        {
+            window.Width=size.Item1;window.Height=size.Item2;window.UpdateLayout();
+            RequireWithin(window,indicator,"Empire header balance");
+            Rect cash=((FrameworkElement)window.FindName("BankrollText")).TransformToAncestor(window).TransformBounds(new Rect(((FrameworkElement)window.FindName("BankrollText")).RenderSize));
+            Rect idle=indicator.TransformToAncestor(window).TransformBounds(new Rect(indicator.RenderSize));
+            Rect profile=Find<Button>(window).Single(b=>b.Name=="PlayerProfileButton").TransformToAncestor(window).TransformBounds(new Rect(Find<Button>(window).Single(b=>b.Name=="PlayerProfileButton").RenderSize));
+            Require(!cash.IntersectsWith(idle) && !profile.IntersectsWith(idle),"Header cash/profile overlaps the idle balance");
+            Capture(window,"09-empire-header-"+(int)size.Item1);
+        }
+        var balanceSetting=(CheckBox)window.FindName("EmpireBalanceCheckBox");
+        balanceSetting.IsChecked=false;Require(indicator.Visibility==Visibility.Collapsed,"The header balance setting does not hide the indicator");
+        balanceSetting.IsChecked=true;Require(indicator.IsVisible,"The header balance setting does not restore the indicator");
+        window.Modes.Open("casino-empire");await Task.Delay(50);window.UpdateLayout();
+        buy=Find<Button>(window).Single(b=>b.Name=="EmpireUpgradeButton");
         Find<Button>(window).Single(b=>b.Name=="EmpireRoom_vip").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         Require(!buy.IsEnabled,"An unaffordable room can be opened");
         Find<Button>(window).Single(b=>b.Name=="EmpireRoom_slots").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
@@ -201,13 +240,17 @@ internal static class Program
         Require(session.Bankroll==bankroll+claim,"Dividend did not reach the shared wallet");
         Find<Button>(window).Single(b=>b.Name=="EmpireClaimButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         Require(session.Bankroll==bankroll+claim,"Dividend was paid twice");
+        foreach(var department in BlackjackCasino.Core.Empire.EmpireCatalog.Departments)
+            for(int i=0;i<10;i++) service.Upgrade(department.Id,DateTimeOffset.UtcNow);
+        Find<EmpireView>(window).Single().Refresh();window.UpdateLayout();
+        Capture(window,"09-empire-developed-estate");
         decimal credits=service.Credits;
         Find<Button>(window).Single(b=>b.Name=="EmpireBackButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(40);window.UpdateLayout();
         Require(Find<CasinoLobbyView>(window).Any(v=>v.IsVisible),"Empire Back did not restore the lobby");
         Require(((FrameworkElement)window.FindName("CasinoHeader")).IsVisible,"Empire Back did not restore the host header");
         window.Modes.Open("casino-empire");await Task.Delay(40);window.UpdateLayout();
-        Require(service.Level("slots")==2 && service.Credits==credits,"Reopening Casino Empire reset progress");
+        Require(service.Level("slots")>=2 && service.Credits==credits,"Reopening Casino Empire reset progress");
         var source=PresentationSource.FromVisual(window)!;
         window.RaiseEvent(new System.Windows.Input.KeyEventArgs(System.Windows.Input.Keyboard.PrimaryDevice,source,0,System.Windows.Input.Key.Escape)
             {RoutedEvent=System.Windows.Input.Keyboard.PreviewKeyDownEvent});

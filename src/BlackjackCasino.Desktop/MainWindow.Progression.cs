@@ -51,7 +51,7 @@ public partial class MainWindow
             headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         }
 
-        Grid.SetColumn(versionPanel, 3);
+        Grid.SetColumn(versionPanel, 4);
 
         // Keep the real button exactly as it was before the level-up animation existed.
         // The animation is a separate sibling so it can never alter the button's layout,

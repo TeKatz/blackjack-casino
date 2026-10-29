@@ -54,3 +54,24 @@ checks three window sizes, returns/reopens, and checks Escape and native-window 
 Managers, research, prestige, additional locations, special events and collection
 rewards are future layers. This foundation already provides the independent
 economy, room catalog, persistence, host navigation and 2D presentation they can use.
+
+## Textured compact dashboard and table balance
+
+The estate now uses compact room cards that wrap to the available width instead
+of scaling one fixed floor plan. Operating/locked filters and a lifetime estate
+ledger keep future room additions within the same catalog-driven layout. The
+owner dividend and claim action stay in the top summary, accessible at minimum
+window size. Room textures are bundled locally in `Assets/Empire/rooms-atlas.png`;
+the source prompt is in that directory's README.
+
+Open rooms show ambient light and income particles; purchases briefly flash the
+selected room and milestone upgrades add gold accents. Animation clocks are
+presentation only, reuse existing controls and stop when leaving the page. The
+existing Animations option disables all these effects and balance interpolation.
+
+After the business has been started, the Blackjack header displays Empire credits
+and credits/sec alongside the separate shared cash bankroll. It updates while
+playing Blackjack. `Show Empire balance in header` under Presentation controls its
+visibility and persists as `ShowEmpireBalance` (on by default). Hiding it never
+stops production, changes the wallet, or resets any progress. Old saves retain
+the default setting and do not need migration.

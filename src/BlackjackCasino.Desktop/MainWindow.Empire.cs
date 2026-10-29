@@ -25,12 +25,14 @@ public partial class MainWindow
             empireReturnNotice = $"While you were away: +{EmpireView.Number(catchUp.Credits)} credits over {catchUp.Elapsed.TotalHours:0.0} hours."
                 + (catchUp.Capped ? " Offline earnings are capped at 8 hours." : "");
         empireLastSave = DateTimeOffset.UtcNow;
+        RefreshEmpireHeader();
         empireTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         empireTimer.Tick += (_, _) =>
         {
             DateTimeOffset now = DateTimeOffset.UtcNow;
             empire.Accrue(now);
             empireView?.Refresh();
+            RefreshEmpireHeader();
             if (empire.Started && now - empireLastSave >= TimeSpan.FromSeconds(30))
             {
                 SavePreferences();
@@ -78,6 +80,7 @@ public partial class MainWindow
     {
         if (empire is null || !empire.Upgrade(id, DateTimeOffset.UtcNow)) return false;
         SavePreferences();
+        RefreshEmpireHeader();
         return true;
     }
 
@@ -121,6 +124,24 @@ public partial class MainWindow
         RefreshGameUi();
         ApplyBetLimitState();
         RefreshProfileButton();
+        RefreshEmpireHeader();
         lobby?.MoveFocus(new TraversalRequest(FocusNavigationDirection.First));
+    }
+
+    private void EmpireBalanceSettingChanged(object sender, RoutedEventArgs e)
+    {
+        // XAML may raise Checked before constructor preferences have been loaded.
+        if (empire is null || suppressPreferenceEvents) return;
+        RefreshEmpireHeader();
+        SavePreferences();
+    }
+
+    private void RefreshEmpireHeader()
+    {
+        if (empire is null) return;
+        bool visible = empire.Started && EmpireBalanceCheckBox.IsChecked == true;
+        EmpireBalancePanel.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+        EmpireHeaderBalance.SetAmount(empire.Credits, AnimationsEnabled && visible && EmpireBalancePanel.IsVisible);
+        EmpireHeaderRate.Text = "+" + EmpireView.Number(empire.CreditsPerSecond) + " cr / sec";
     }
 }
