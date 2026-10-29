@@ -6,34 +6,103 @@
         Width="1536" Height="1024"
         MinWidth="1080" MinHeight="720"
         WindowStartupLocation="CenterOwner"
-        Background="#090711"
+        Background="#08060E"
         UseLayoutRounding="True"
         SnapsToDevicePixels="True"
         PreviewKeyDown="Window_PreviewKeyDown"
         Closed="Window_Closed">
     <Window.Resources>
-        <Style x:Key="HotspotButton" TargetType="Button">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderBrush" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Foreground" Value="Transparent"/>
+        <Style x:Key="ChromeButton" TargetType="Button">
+            <Setter Property="Foreground" Value="#F8E9FF"/>
+            <Setter Property="Background" Value="#D9141020"/>
+            <Setter Property="BorderBrush" Value="#8E47C7"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+            <Setter Property="Padding" Value="18,10"/>
+            <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
+            <Setter Property="FontSize" Value="15"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Focusable" Value="False"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="14">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Border x:Name="Chrome"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="12">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}"/>
                         </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Chrome" Property="Background" Value="#EA28193A"/>
+                                <Setter TargetName="Chrome" Property="BorderBrush" Value="#CF70FF"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Chrome" Property="Background" Value="#F1392052"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Chrome" Property="Opacity" Value="0.38"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <Style x:Key="GoldButton" TargetType="Button" BasedOn="{StaticResource ChromeButton}">
+            <Setter Property="Foreground" Value="#1A1020"/>
+            <Setter Property="Background" Value="#F2D16A"/>
+            <Setter Property="BorderBrush" Value="#FFE89A"/>
+            <Setter Property="FontFamily" Value="Georgia"/>
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+
+        <Style x:Key="SpinButtonStyle" TargetType="Button" BasedOn="{StaticResource ChromeButton}">
+            <Setter Property="Foreground" Value="#FFF7D7"/>
+            <Setter Property="FontFamily" Value="Georgia"/>
+            <Setter Property="FontSize" Value="28"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="BorderThickness" Value="2.5"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Chrome" CornerRadius="22"
+                                BorderBrush="#EFC96A" BorderThickness="{TemplateBinding BorderThickness}">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#A52F1461" Offset="0"/>
+                                    <GradientStop Color="#E1682A95" Offset="0.52"/>
+                                    <GradientStop Color="#8B32115C" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <Grid>
+                                <Ellipse Margin="18" Stroke="#35FFFFFF" StrokeThickness="2" IsHitTestVisible="False"/>
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Chrome" Property="BorderBrush" Value="#FFF1A6"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Chrome" Property="Opacity" Value="0.82"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Chrome" Property="Opacity" Value="0.4"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style x:Key="HudPanel" TargetType="Border">
             <Setter Property="Background" Value="#E90B0912"/>
-            <Setter Property="BorderBrush" Value="#D59B4B"/>
+            <Setter Property="BorderBrush" Value="#8C6132"/>
             <Setter Property="BorderThickness" Value="1.5"/>
-            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="CornerRadius" Value="12"/>
         </Style>
         <Style x:Key="HudText" TargetType="TextBlock">
             <Setter Property="Foreground" Value="#FFD57A"/>
@@ -41,60 +110,178 @@
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="TextOptions.TextRenderingMode" Value="ClearType"/>
         </Style>
+        <Style x:Key="PanelLabel" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#9B88A9"/>
+            <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="CharacterSpacing" Value="140"/>
+        </Style>
     </Window.Resources>
 
-    <Grid Background="#090711">
+    <Grid Background="#08060E">
         <Viewbox Stretch="Uniform" StretchDirection="Both" HorizontalAlignment="Center" VerticalAlignment="Center">
             <Grid Width="1536" Height="1024" ClipToBounds="True">
-                <Image x:Name="BackgroundArt" Stretch="Fill" RenderOptions.BitmapScalingMode="HighQuality"/>
-                <Border Background="#12000000" IsHitTestVisible="False"/>
+                <Image x:Name="BackgroundArt" Stretch="UniformToFill" Opacity="0.16" RenderOptions.BitmapScalingMode="HighQuality"/>
+                <Border Background="#C807050E"/>
+
+                <Ellipse Width="920" Height="720" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.13" IsHitTestVisible="False">
+                    <Ellipse.Fill>
+                        <RadialGradientBrush>
+                            <GradientStop Color="#C248FF" Offset="0"/>
+                            <GradientStop Color="#271340" Offset="0.6"/>
+                            <GradientStop Color="#08060E" Offset="1"/>
+                        </RadialGradientBrush>
+                    </Ellipse.Fill>
+                </Ellipse>
 
                 <Canvas Panel.ZIndex="20">
-                    <Button x:Name="CasinoButton" Style="{StaticResource HotspotButton}" Canvas.Left="18" Canvas.Top="7" Width="170" Height="48" Click="CasinoButton_Click" ToolTip="Back to Casino"/>
+                    <Border Canvas.Left="38" Canvas.Top="24" Width="1460" Height="958"
+                            Background="#B90A0712" BorderBrush="#8544B9" BorderThickness="3" CornerRadius="42"/>
 
-                    <Border Style="{StaticResource HudPanel}" Canvas.Left="1153" Canvas.Top="8" Width="146" Height="45">
+                    <!-- Header -->
+                    <Button x:Name="CasinoButton" Canvas.Left="78" Canvas.Top="62" Width="172" Height="54"
+                            Style="{StaticResource ChromeButton}" Content="←  CASINO" Click="CasinoButton_Click" ToolTip="Back to Casino (Esc)"/>
+
+                    <StackPanel Canvas.Left="438" Canvas.Top="42" Width="660" HorizontalAlignment="Center">
+                        <TextBlock Text="NINE LIVES" HorizontalAlignment="Center" Foreground="#F2CF75"
+                                   FontFamily="Georgia" FontSize="44" FontWeight="Bold" CharacterSpacing="120"/>
+                        <TextBlock Text="A compact high-volatility midnight slot" HorizontalAlignment="Center"
+                                   Foreground="#B9A8C4" FontFamily="Segoe UI" FontSize="14" Margin="0,4,0,0"/>
+                    </StackPanel>
+
+                    <Border Style="{StaticResource HudPanel}" Canvas.Left="1122" Canvas.Top="58" Width="150" Height="56">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <TextBlock Text="●" Foreground="#F0B34F" FontSize="20" Margin="0,0,10,0"/>
-                            <TextBlock x:Name="BankrollText" Style="{StaticResource HudText}" FontSize="19" VerticalAlignment="Center"/>
+                            <TextBlock Text="●" Foreground="#F0B34F" FontSize="20" Margin="0,0,9,0"/>
+                            <StackPanel>
+                                <TextBlock Text="BANKROLL" Style="{StaticResource PanelLabel}" FontSize="9"/>
+                                <TextBlock x:Name="BankrollText" Style="{StaticResource HudText}" FontSize="19"/>
+                            </StackPanel>
                         </StackPanel>
                     </Border>
-                    <Border Style="{StaticResource HudPanel}" Canvas.Left="1306" Canvas.Top="8" Width="145" Height="45">
+                    <Border Style="{StaticResource HudPanel}" Canvas.Left="1282" Canvas.Top="58" Width="122" Height="56">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <TextBlock Text="★" Foreground="#D75CFF" FontSize="20" Margin="0,0,10,0"/>
-                            <TextBlock x:Name="LevelText" Style="{StaticResource HudText}" FontSize="18" VerticalAlignment="Center"/>
+                            <TextBlock Text="★" Foreground="#D75CFF" FontSize="19" Margin="0,0,8,0"/>
+                            <StackPanel>
+                                <TextBlock Text="PROFILE" Style="{StaticResource PanelLabel}" FontSize="9"/>
+                                <TextBlock x:Name="LevelText" Style="{StaticResource HudText}" FontSize="17"/>
+                            </StackPanel>
                         </StackPanel>
                     </Border>
-                    <Button x:Name="SettingsButton" Style="{StaticResource HotspotButton}" Canvas.Left="1458" Canvas.Top="6" Width="62" Height="49" Click="SettingsButton_Click" ToolTip="Sound / animation settings"/>
+                    <Button x:Name="SettingsButton" Canvas.Left="1415" Canvas.Top="58" Width="46" Height="56"
+                            Style="{StaticResource ChromeButton}" Padding="0" Content="⚙" FontSize="21"
+                            Click="SettingsButton_Click" ToolTip="Sound / animation settings"/>
+
+                    <!-- Left feature rail -->
+                    <Border Canvas.Left="78" Canvas.Top="178" Width="238" Height="575"
+                            Background="#D30D0917" BorderBrush="#472A5C" BorderThickness="1.5" CornerRadius="20">
+                        <StackPanel Margin="22">
+                            <TextBlock Text="THE GAME" Style="{StaticResource PanelLabel}" Foreground="#B969EB"/>
+                            <TextBlock Text="One dangerous cat. Five lines. No quiet wins."
+                                       Foreground="#F4EAF8" FontFamily="Georgia" FontSize="21" TextWrapping="Wrap" Margin="0,12,0,26"/>
+                            <Border Height="1" Background="#352240" Margin="0,0,0,24"/>
+                            <TextBlock Text="POUNCE WILD" Foreground="#E7BE62" FontFamily="Segoe UI Semibold" FontSize="14"/>
+                            <TextBlock Text="The black cat can strike a second cell after the reels stop."
+                                       Foreground="#AFA0B9" FontSize="13" TextWrapping="Wrap" Margin="0,7,0,22"/>
+                            <TextBlock Text="NINE LIVES" Foreground="#D66BFF" FontFamily="Segoe UI Semibold" FontSize="14"/>
+                            <TextBlock Text="Three bonus symbols wake nine bonus spins."
+                                       Foreground="#AFA0B9" FontSize="13" TextWrapping="Wrap" Margin="0,7,0,22"/>
+                            <TextBlock Text="FULL GRID" Foreground="#E7BE62" FontFamily="Segoe UI Semibold" FontSize="14"/>
+                            <TextBlock Text="A complete matching 3×3 grid pays 5,000×."
+                                       Foreground="#AFA0B9" FontSize="13" TextWrapping="Wrap" Margin="0,7,0,0"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Reel stage -->
+                    <Border Canvas.Left="336" Canvas.Top="166" Width="864" Height="600"
+                            Background="#E20B0813" BorderBrush="#5A326F" BorderThickness="2" CornerRadius="26">
+                        <Border.Effect>
+                            <DropShadowEffect Color="#8E42C7" BlurRadius="26" ShadowDepth="0" Opacity="0.22"/>
+                        </Border.Effect>
+                    </Border>
+                    <Border Canvas.Left="353" Canvas.Top="183" Width="830" Height="566"
+                            Background="#5A0B0812" BorderBrush="#2D1C37" BorderThickness="1" CornerRadius="18"/>
 
                     <Canvas x:Name="ReelCanvas" Canvas.Left="0" Canvas.Top="0" Width="1536" Height="1024"/>
                     <Canvas x:Name="WinLineCanvas" Canvas.Left="0" Canvas.Top="0" Width="1536" Height="1024" IsHitTestVisible="False"/>
 
-                    <Border x:Name="StatusBadge" Canvas.Left="510" Canvas.Top="805" Width="516" Height="43"
-                            Background="#D80A0713" BorderBrush="#9347E9" BorderThickness="1" CornerRadius="18" Opacity="0.94">
-                        <TextBlock x:Name="StatusText" Text="Five lines. Three reels. One dangerous cat."
-                                   Foreground="#F8D8FF" FontFamily="Segoe UI Semibold" FontSize="15"
+                    <Border x:Name="BonusBadge" Canvas.Left="610" Canvas.Top="129" Width="316" Height="36"
+                            Background="#E31A1024" BorderBrush="#E7B95E" BorderThickness="1" CornerRadius="15" Visibility="Collapsed">
+                        <TextBlock x:Name="BonusText" Style="{StaticResource HudText}" FontSize="15"
                                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
 
-                    <Border x:Name="BonusBadge" Canvas.Left="615" Canvas.Top="151" Width="305" Height="38"
-                            Background="#D90B0715" BorderBrush="#F5C45D" BorderThickness="1" CornerRadius="16" Visibility="Collapsed">
-                        <TextBlock x:Name="BonusText" Style="{StaticResource HudText}" FontSize="16"
-                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <!-- Right rail -->
+                    <Border Canvas.Left="1220" Canvas.Top="178" Width="240" Height="575"
+                            Background="#D30D0917" BorderBrush="#472A5C" BorderThickness="1.5" CornerRadius="20">
+                        <StackPanel Margin="22">
+                            <TextBlock Text="TABLE INFO" Style="{StaticResource PanelLabel}" Foreground="#B969EB"/>
+                            <Grid Margin="0,18,0,16">
+                                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="5" Foreground="#F3D06E" FontFamily="Georgia" FontSize="31" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="PAYLINES" Style="{StaticResource PanelLabel}" FontSize="9" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="9" Foreground="#D66BFF" FontFamily="Georgia" FontSize="31" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="BONUS SPINS" Style="{StaticResource PanelLabel}" FontSize="9" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Grid>
+                            <Border Height="1" Background="#352240" Margin="0,2,0,20"/>
+                            <TextBlock Text="VOLATILITY" Style="{StaticResource PanelLabel}"/>
+                            <TextBlock Text="HIGH" Foreground="#F3D06E" FontFamily="Georgia" FontSize="26" Margin="0,5,0,17"/>
+                            <TextBlock Text="MAX WIN" Style="{StaticResource PanelLabel}"/>
+                            <TextBlock Text="5,000×" Foreground="#F6E4AC" FontFamily="Georgia" FontSize="26" Margin="0,5,0,20"/>
+                            <Border Height="1" Background="#352240" Margin="0,0,0,20"/>
+                            <TextBlock Text="SHORTCUTS" Style="{StaticResource PanelLabel}"/>
+                            <TextBlock Text="Space  Spin\nA  Auto\n+ / −  Bet\nEsc  Casino"
+                                       Foreground="#AFA0B9" FontFamily="Consolas" FontSize="13" LineHeight="24" Margin="0,9,0,0"/>
+                        </StackPanel>
                     </Border>
 
-                    <Border Canvas.Left="226" Canvas.Top="902" Width="158" Height="59" Background="#F20A0911" CornerRadius="8">
-                        <TextBlock x:Name="BetText" Style="{StaticResource HudText}" FontSize="31" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <!-- Status -->
+                    <Border x:Name="StatusBadge" Canvas.Left="430" Canvas.Top="779" Width="676" Height="48"
+                            Background="#E6100A1A" BorderBrush="#6F3E8D" BorderThickness="1.2" CornerRadius="18">
+                        <Grid>
+                            <Ellipse Width="7" Height="7" Fill="#C34FFF" HorizontalAlignment="Left" Margin="20,0,0,0"/>
+                            <TextBlock x:Name="StatusText" Text="Five lines. Three reels. One dangerous cat."
+                                       Foreground="#EEDFF4" FontFamily="Segoe UI Semibold" FontSize="15"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
                     </Border>
-                    <Button x:Name="BetDownButton" Style="{StaticResource HotspotButton}" Canvas.Left="157" Canvas.Top="894" Width="78" Height="75" Click="BetDownButton_Click" ToolTip="Lower bet"/>
-                    <Button x:Name="BetUpButton" Style="{StaticResource HotspotButton}" Canvas.Left="382" Canvas.Top="894" Width="78" Height="75" Click="BetUpButton_Click" ToolTip="Raise bet"/>
-                    <Button x:Name="AutoButton" Style="{StaticResource HotspotButton}" Canvas.Left="488" Canvas.Top="881" Width="177" Height="75" Click="AutoButton_Click" ToolTip="Auto spin"/>
-                    <Button x:Name="SpinButton" Style="{StaticResource HotspotButton}" Canvas.Left="665" Canvas.Top="833" Width="205" Height="181" Click="SpinButton_Click" ToolTip="Spin"/>
-                    <Button x:Name="MaxButton" Style="{StaticResource HotspotButton}" Canvas.Left="878" Canvas.Top="882" Width="178" Height="75" Click="MaxButton_Click" ToolTip="Maximum affordable bet"/>
-                    <Border Canvas.Left="1112" Canvas.Top="902" Width="229" Height="59" Background="#F20A0911" CornerRadius="8">
-                        <TextBlock x:Name="WinText" Style="{StaticResource HudText}" FontSize="31" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                    <!-- Bottom control deck -->
+                    <Border Canvas.Left="78" Canvas.Top="850" Width="1382" Height="100"
+                            Background="#E20C0914" BorderBrush="#3E2948" BorderThickness="1.5" CornerRadius="22"/>
+
+                    <Button x:Name="InfoButton" Canvas.Left="96" Canvas.Top="868" Width="142" Height="64"
+                            Style="{StaticResource ChromeButton}" Content="PAYTABLE" Click="InfoButton_Click" ToolTip="Paytable"/>
+
+                    <Button x:Name="BetDownButton" Canvas.Left="286" Canvas.Top="868" Width="58" Height="64"
+                            Style="{StaticResource ChromeButton}" Content="−" FontSize="25" Click="BetDownButton_Click" ToolTip="Lower bet"/>
+                    <Border Canvas.Left="352" Canvas.Top="868" Width="132" Height="64" Style="{StaticResource HudPanel}">
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock Text="BET" Style="{StaticResource PanelLabel}" FontSize="9" HorizontalAlignment="Center"/>
+                            <TextBlock x:Name="BetText" Style="{StaticResource HudText}" FontSize="24" HorizontalAlignment="Center"/>
+                        </StackPanel>
                     </Border>
-                    <Button x:Name="InfoButton" Style="{StaticResource HotspotButton}" Canvas.Left="35" Canvas.Top="873" Width="90" Height="91" Click="InfoButton_Click" ToolTip="Paytable"/>
-                    <Button x:Name="MenuButton" Style="{StaticResource HotspotButton}" Canvas.Left="1411" Canvas.Top="873" Width="92" Height="91" Click="CasinoButton_Click" ToolTip="Back to Casino"/>
+                    <Button x:Name="BetUpButton" Canvas.Left="492" Canvas.Top="868" Width="58" Height="64"
+                            Style="{StaticResource ChromeButton}" Content="+" FontSize="24" Click="BetUpButton_Click" ToolTip="Raise bet"/>
+
+                    <Button x:Name="AutoButton" Canvas.Left="585" Canvas.Top="868" Width="150" Height="64"
+                            Style="{StaticResource ChromeButton}" Content="AUTO ×20" Click="AutoButton_Click" ToolTip="Auto spin"/>
+                    <Button x:Name="SpinButton" Canvas.Left="756" Canvas.Top="852" Width="202" Height="94"
+                            Style="{StaticResource SpinButtonStyle}" Content="SPIN" Click="SpinButton_Click" ToolTip="Spin (Space)"/>
+                    <Button x:Name="MaxButton" Canvas.Left="979" Canvas.Top="868" Width="130" Height="64"
+                            Style="{StaticResource GoldButton}" Content="MAX BET" Click="MaxButton_Click" ToolTip="Maximum affordable bet"/>
+
+                    <Border Canvas.Left="1130" Canvas.Top="868" Width="148" Height="64" Style="{StaticResource HudPanel}">
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock Text="LAST WIN" Style="{StaticResource PanelLabel}" FontSize="9" HorizontalAlignment="Center"/>
+                            <TextBlock x:Name="WinText" Style="{StaticResource HudText}" FontSize="24" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                    <Button x:Name="MenuButton" Canvas.Left="1296" Canvas.Top="868" Width="146" Height="64"
+                            Style="{StaticResource ChromeButton}" Content="← CASINO" Click="CasinoButton_Click" ToolTip="Back to Casino"/>
                 </Canvas>
             </Grid>
         </Viewbox>
