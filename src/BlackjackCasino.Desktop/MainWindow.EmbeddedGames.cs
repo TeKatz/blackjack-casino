@@ -378,32 +378,6 @@ public partial class MainWindow
         }
     }
 
-    private void RecoverSlotPresentationDefaultsIfNeeded()
-    {
-        // New profiles already default all three presentation systems to on. Recover the
-        // accidental legacy all-off state once it is encountered without overriding a
-        // deliberate choice to disable only one or two systems.
-        if (preferences.SoundEnabled || preferences.AnimationsEnabled || preferences.MusicEnabled)
-        {
-            return;
-        }
-
-        preferences = preferences with
-        {
-            SoundEnabled = true,
-            AnimationsEnabled = true,
-            MusicEnabled = true,
-            MusicVolume = preferences.MusicVolume > 0d ? preferences.MusicVolume : 0.10d,
-        };
-        suppressPreferenceEvents = true;
-        SoundCheckBox.IsChecked = true;
-        AnimationsCheckBox.IsChecked = true;
-        MusicCheckBox.IsChecked = true;
-        MusicVolumeSlider.Value = preferences.MusicVolume;
-        suppressPreferenceEvents = false;
-        PlayerStateStore.Save(preferences);
-    }
-
     private void EmbeddedSlots_Click(object sender, RoutedEventArgs e)
     {
         if (session.RoundInProgress)
@@ -416,7 +390,6 @@ public partial class MainWindow
             return;
         }
 
-        RecoverSlotPresentationDefaultsIfNeeded();
         ProcessLatestCompletedRound();
         slotProgression ??= new SlotProgression(progressionController.Service);
         bool levelUp = false;
@@ -431,9 +404,9 @@ public partial class MainWindow
                 progressionController.SaveAll();
                 levelUp |= award.HasLevelUp;
                 return award;
-            });
+            }, musicEnabled: preferences.MusicEnabled, musicVolume: preferences.MusicVolume);
 
-        ShowEmbeddedGame(window, "Midnight Reels · Blackjack Casino", muteHostMusic: false, closed: () =>
+        ShowEmbeddedGame(window, "Midnight Reels · Blackjack Casino", muteHostMusic: true, closed: () =>
         {
             preferences = preferences with { SlotBet = window.SelectedBet };
             suppressPreferenceEvents = true;
@@ -463,7 +436,6 @@ public partial class MainWindow
             return;
         }
 
-        RecoverSlotPresentationDefaultsIfNeeded();
         ProcessLatestCompletedRound();
         var controller = new ManorController(preferences, session.Bankroll, progressionController, committed =>
         {

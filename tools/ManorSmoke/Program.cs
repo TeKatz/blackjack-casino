@@ -46,7 +46,7 @@ internal static class Program
         {
             try { await Check(window,controller,persistence); File.WriteAllText(Path.Combine(output,"result.txt"),"PASS: WPF window, vector rendering, minimum size, 2x export, mouse/keyboard route actions, feature close/resume, free spins, speed/auto cancellation, wallet/XP checkpoint. Audio quality and actual monitor DPI remain manual checks."); }
             catch(Exception ex) { failures++; File.WriteAllText(Path.Combine(output,"failure.txt"),ex.ToString()); }
-            finally { if(window.IsVisible) window.Close(); app.Shutdown(failures==0?0:1); }
+            finally { if(window.IsVisible) window.Close(); CasinoAudio.Shutdown(); app.Shutdown(failures==0?0:1); }
         };
         window.Show(); app.Run(); return failures==0?0:1;
     }
@@ -91,6 +91,7 @@ internal static class Program
     private static async Task Check(ManorWindow w,ManorController c,ManorPersistence persistence)
     {
         await PortraitSmoke.Check(output);
+        await AudioSmoke.Check(output);
         await Task.Delay(100); Capture(w,"01-cabinet");
         CheckDropdown(w,"SpeedBox"); CheckDropdown(w,"AutoBox");
         ComboBox speedBox=Named<ComboBox>(w,"SpeedBox"); speedBox.IsDropDownOpen=true;

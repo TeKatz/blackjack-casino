@@ -26,6 +26,7 @@ public partial class MainWindow
         suppressPreferenceEvents = false;
 
         backgroundMusic.Start(preferences.MusicEnabled, preferences.MusicVolume);
+        BackgroundMusic.Prewarm();
     }
 
     private void PresentationClosed(object? sender, EventArgs e)

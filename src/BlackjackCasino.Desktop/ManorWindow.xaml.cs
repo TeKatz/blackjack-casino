@@ -38,6 +38,7 @@ internal partial class ManorWindow : Window
     {
         InitializeComponent();
         this.controller=controller;
+        MenuAudio.Attach(this, () => controller.Preferences.SoundEnabled);
         bet=controller.Preferences.ManorBet;
         AppPreferences p=controller.Preferences;
         SpeedBox.SelectedIndex=(int)p.ManorSpeed;
@@ -527,6 +528,7 @@ internal partial class ManorWindow : Window
     }
     private void ApplyAudio()
     {
+        MenuAudio.Enabled=controller.Preferences.SoundEnabled;
         audio.SoundEnabled=controller.Preferences.SoundEnabled; audio.MusicEnabled=controller.Preferences.MusicEnabled; audio.MusicVolume=controller.Preferences.MusicVolume;
         if(State.Run is {Status:ManorRunStatus.Hunting} r) audio.Room(ManorMap.Rooms[r.Player].Area,r.Haunt);
         else { audio.EndRoom(); audio.Mood(0); }

@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../src/BlackjackCasino.Desktop/AudioClip.cs" Link="AudioClip.cs" />
+    <Compile Include="../../src/BlackjackCasino.Desktop/AudioMixer.cs" Link="AudioMixer.cs" />
+    <Compile Include="../../src/BlackjackCasino.Desktop/CasinoMusicSynthesis.cs" Link="CasinoMusicSynthesis.cs" />
+    <Compile Include="../../src/BlackjackCasino.Desktop/CasinoSoundSynthesis.cs" Link="CasinoSoundSynthesis.cs" />
+    <Compile Include="../../src/BlackjackCasino.Desktop/ManorSoundSynthesis.cs" Link="ManorSoundSynthesis.cs" />
+  </ItemGroup>
+</Project>

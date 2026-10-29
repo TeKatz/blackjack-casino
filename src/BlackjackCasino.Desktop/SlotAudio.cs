@@ -1,5 +1,3 @@
-using System.Media;
-
 namespace BlackjackCasino.Desktop;
 
 internal enum SlotSound { Start, Tick, Stop, Win, Jackpot, Push, Loss }
@@ -7,53 +5,19 @@ internal enum SlotSound { Start, Tick, Stop, Win, Jackpot, Push, Loss }
 /// <summary>Original synthesized mechanical and musical cues, offline and asset-free.</summary>
 internal sealed class SlotAudio : IDisposable
 {
-    private readonly Dictionary<SlotSound, (MemoryStream Stream, SoundPlayer Player)> cues = [];
-
+    private static readonly IReadOnlyDictionary<SlotSound,AudioClip> Cues = Enum.GetValues<SlotSound>().ToDictionary(c => c, c => AudioClip.FromWave(BuildCue(c)));
+    private readonly object owner = new();
     public void Play(SlotSound sound, bool enabled)
     {
-        if (!enabled)
-        {
-            return;
-        }
-        try
-        {
-            if (!cues.TryGetValue(sound, out var cue))
-            {
-                var stream = new MemoryStream(BuildCue(sound), writable: false);
-                var player = new SoundPlayer(stream);
-                player.Load();
-                cue = (stream, player);
-                cues.Add(sound, cue);
-            }
-            cue.Player.Play();
-        }
-        catch
-        {
-            // Optional sound never interrupts the settled game.
-        }
+        if (enabled) CasinoAudio.Play(Cues[sound], owner);
     }
-
-    public void Stop()
-    {
-        foreach (var cue in cues.Values)
-        {
-            cue.Player.Stop();
-        }
-    }
-
-    public void Dispose()
-    {
-        Stop();
-        foreach (var cue in cues.Values)
-        {
-            cue.Player.Dispose();
-            cue.Stream.Dispose();
-        }
-        cues.Clear();
-    }
+    public void Stop() => CasinoAudio.Mixer.Stop(owner);
+    public void Dispose() => Stop();
 
     private static byte[] BuildCue(SlotSound sound)
     {
+        if (sound is SlotSound.Start or SlotSound.Loss)
+            return CasinoSoundSynthesis.Build(sound == SlotSound.Start ? TableCue.ReelSpin : TableCue.ReelLoss).Wave();
         double duration = sound switch
         {
             SlotSound.Tick => 0.045,

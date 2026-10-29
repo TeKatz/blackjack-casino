@@ -55,6 +55,16 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+      - name: Render audio audition tracks
+        run: dotnet run --project tools/AudioRender --configuration Release -- artifacts/audio-review
+
+      - name: Upload audio review
+        uses: actions/upload-artifact@v4
+        with:
+          name: casino-audio-review
+          path: artifacts/audio-review
+          retention-days: 14
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4

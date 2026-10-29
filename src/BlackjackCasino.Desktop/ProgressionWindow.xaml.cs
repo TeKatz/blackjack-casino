@@ -34,6 +34,7 @@ internal partial class ProgressionWindow : Window
     {
         this.controller = controller ?? throw new ArgumentNullException(nameof(controller));
         InitializeComponent();
+        MenuAudio.Attach(this);
         InitializeContentTabs();
         StateChanged += (_, _) => RefreshMaximizeGlyph();
         RefreshAll();

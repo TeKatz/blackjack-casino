@@ -16,6 +16,7 @@ internal partial class SlotMachineWindow : Window
     private readonly PlayerProgressionController progression;
     private readonly Func<SlotSpinResult, ProgressionAward> commitSpin;
     private readonly SlotAudio audio = new();
+    private readonly BackgroundMusic music = new(Soundtrack.Reels);
     private readonly DispatcherTimer reelTicker = new() { Interval = TimeSpan.FromMilliseconds(75) };
     private readonly List<(StackPanel Strip, TranslateTransform Movement)> reels = [];
     private readonly int[] previousStops = [4, 4, 4];
@@ -28,7 +29,8 @@ internal partial class SlotMachineWindow : Window
     private decimal selectedBet;
 
     public SlotMachineWindow(decimal bankroll, decimal bet, bool sounds, bool animations,
-        PlayerProgressionController progression, Func<SlotSpinResult, ProgressionAward> commitSpin)
+        PlayerProgressionController progression, Func<SlotSpinResult, ProgressionAward> commitSpin,
+        bool musicEnabled = true, double musicVolume = 0.10)
     {
         InitializeComponent();
         machine = new SlotMachineSession(bankroll);
@@ -77,6 +79,8 @@ internal partial class SlotMachineWindow : Window
         reelTicker.Tick += ReelTicker_Tick;
         initialized = true;
         RefreshUi();
+        MenuAudio.Attach(this, () => SoundsEnabled);
+        Loaded += (_, _) => music.Start(musicEnabled, musicVolume);
     }
 
     public decimal SelectedBet => selectedBet;
@@ -267,6 +271,7 @@ internal partial class SlotMachineWindow : Window
 
     private void Settings_Changed(object sender, RoutedEventArgs e)
     {
+        if (initialized) MenuAudio.Enabled = SoundsEnabled;
         if (initialized && !SoundsEnabled)
         {
             audio.Stop();
@@ -308,6 +313,7 @@ internal partial class SlotMachineWindow : Window
         }
         ReelFrame.BeginAnimation(OpacityProperty, null);
         audio.Dispose();
+        music.Dispose();
     }
 
     private static string Money(decimal amount) => amount.ToString("C2", CultureInfo.GetCultureInfo("en-US"));

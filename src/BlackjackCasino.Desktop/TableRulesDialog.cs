@@ -56,6 +56,7 @@ internal sealed class TableRulesDialog : Window
 
         StateChanged += (_, _) => RefreshMaximizeGlyph();
         Content = BuildWindowShell(BuildContent(initial));
+        MenuAudio.Attach(this);
         RefreshMaximizeGlyph();
     }
 

@@ -15,8 +15,9 @@ internal static class ManorSoundSynthesis
     {
         double duration=cue is ManorCue.MaximumExit or ManorCue.BigWin or ManorCue.Escape ? 1.4
             : cue is ManorCue.Trigger or ManorCue.DoorOpen or ManorCue.FreeStart ? 0.9
-            : cue is >=ManorCue.Stop1 and <=ManorCue.Stop5 ? 0.2 : 0.4;
+            : cue is >=ManorCue.Stop1 and <=ManorCue.Stop5 ? 0.2 : cue == ManorCue.Reel ? 0.11 : 0.4;
         var random=new Random(8113+(int)cue);
+        double rollingNoise=0;
         double root=cue switch { ManorCue.Catch=>110,ManorCue.GhostNear=>82.4,ManorCue.GhostFar=>98,
             ManorCue.SmallWin=>523.25,ManorCue.MediumWin=>392,ManorCue.BigWin=>196,ManorCue.MaximumExit=>261.63,
             ManorCue.Scatter=>659.25,ManorCue.Wild=>293.66,ManorCue.FreeStart=>440,_=>146.83 };
@@ -24,7 +25,13 @@ internal static class ManorSoundSynthesis
         {
             double attack=Math.Min(1,t/0.009),release=Math.Min(1,(duration-t)/0.025);
             double value;
-            if(cue is >=ManorCue.Stop1 and <=ManorCue.Stop5 || cue is ManorCue.Reel or ManorCue.Unlock)
+            if(cue == ManorCue.Reel)
+            {
+                double noise=random.NextDouble()*2-1;
+                rollingNoise=rollingNoise*0.72+noise*0.28;
+                value=(rollingNoise*0.65+Math.Sin(2*Math.PI*174*t)*0.24)*Math.Exp(-t/0.025);
+            }
+            else if(cue is >=ManorCue.Stop1 and <=ManorCue.Stop5 || cue is ManorCue.Reel or ManorCue.Unlock)
             {
                 double tone=130+17*(int)cue;
                 value=(Math.Sin(tone*2*Math.PI*t)*0.5+(random.NextDouble()*2-1)*0.16)*Math.Exp(-t/0.042);

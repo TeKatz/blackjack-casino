@@ -19,6 +19,10 @@
     <Compile Include="../../src/BlackjackCasino.Desktop/AppPreferences.cs" Link="Persistence/AppPreferences.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/ManorPersistence.cs" Link="Persistence/ManorPersistence.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/ManorSoundSynthesis.cs" Link="Audio/ManorSoundSynthesis.cs" />
+    <Compile Include="../../src/BlackjackCasino.Desktop/AudioClip.cs" Link="Audio/AudioClip.cs" />
+    <Compile Include="../../src/BlackjackCasino.Desktop/AudioMixer.cs" Link="Audio/AudioMixer.cs" />
+    <Compile Include="../../src/BlackjackCasino.Desktop/CasinoMusicSynthesis.cs" Link="Audio/CasinoMusicSynthesis.cs" />
+    <Compile Include="../../src/BlackjackCasino.Desktop/CasinoSoundSynthesis.cs" Link="Audio/CasinoSoundSynthesis.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\BlackjackCasino.Core\BlackjackCasino.Core.csproj" />

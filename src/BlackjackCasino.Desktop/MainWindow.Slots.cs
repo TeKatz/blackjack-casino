@@ -36,8 +36,10 @@ public partial class MainWindow
                 progressionController.SaveAll();
                 levelUp |= award.HasLevelUp;
                 return award;
-            }) { Owner = this };
-        window.ShowDialog();
+            }, musicEnabled: preferences.MusicEnabled, musicVolume: preferences.MusicVolume) { Owner = this };
+        backgroundMusic.SetEnabled(false);
+        try { window.ShowDialog(); }
+        finally { backgroundMusic.SetEnabled(preferences.MusicEnabled); }
 
         preferences = preferences with { SlotBet = window.SelectedBet };
         SoundCheckBox.IsChecked = window.SoundsEnabled;
