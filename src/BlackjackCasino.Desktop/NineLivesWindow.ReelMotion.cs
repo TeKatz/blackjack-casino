@@ -16,6 +16,7 @@ internal partial class NineLivesWindow
     private readonly Rectangle[] reelLightSweep = new Rectangle[NineLivesRules.Reels];
     private readonly TranslateTransform[] reelLightSweepTranslate = new TranslateTransform[NineLivesRules.Reels];
     private readonly bool[] reelMotionStopped = new bool[NineLivesRules.Reels];
+    private readonly int[] reelSpinFrame = new int[NineLivesRules.Reels];
 
     private bool reelMotionInitialized;
     private bool reelMotionWasSpinning;
@@ -51,7 +52,7 @@ internal partial class NineLivesWindow
 
             reelSpinBlur[index] = new BlurEffect
             {
-                Radius = 2.35,
+                Radius = 2.8,
                 KernelType = KernelType.Gaussian,
                 RenderingBias = RenderingBias.Performance,
             };
@@ -159,6 +160,7 @@ internal partial class NineLivesWindow
     private void BeginReelMotionPresentation()
     {
         Array.Fill(reelMotionStopped, false);
+        Array.Fill(reelSpinFrame, -1);
         reelMotionStartedAt = DateTime.UtcNow;
 
         for (int reel = 0; reel < NineLivesRules.Reels; reel++)
@@ -171,16 +173,32 @@ internal partial class NineLivesWindow
                 int index = NineLivesRules.Index(row, reel);
                 reelSpinTranslate[index].Y = 0;
                 symbolImages[index].Effect = reelSpinBlur[index];
+                RenderOptions.SetBitmapScalingMode(symbolImages[index], BitmapScalingMode.LowQuality);
             }
         }
     }
 
     private void RenderSpinningReel(int reel, double elapsed)
     {
-        double wave = Math.Sin((elapsed * 26.0) + (reel * 0.82));
-        double secondaryWave = Math.Sin((elapsed * 11.0) + (reel * 1.35));
-        double offset = (wave * 15.5) + (secondaryWave * 4.0);
+        // Each reel owns its visual cadence. This keeps the still-spinning reels alive while
+        // another reel is awaiting its settle/anticipation animation in AnimateReelsAsync.
+        double frameDuration = 0.060 + (reel * 0.004);
+        int frame = (int)(elapsed / frameDuration);
+        double phase = (elapsed % frameDuration) / frameDuration;
 
+        if (frame != reelSpinFrame[reel])
+        {
+            reelSpinFrame[reel] = frame;
+            for (int row = 0; row < NineLivesRules.Rows; row++)
+            {
+                int index = NineLivesRules.Index(row, reel);
+                SetSymbol(index, PreviewSymbols[visualRandom.Next(PreviewSymbols.Length)]);
+            }
+        }
+
+        // Move continuously down through the cell, then swap the symbol as the next visual
+        // frame enters. The clipped cell plus blur hides the wrap and reads like a real reel.
+        double offset = -18.0 + (phase * 36.0);
         for (int row = 0; row < NineLivesRules.Rows; row++)
         {
             int index = NineLivesRules.Index(row, reel);
@@ -221,6 +239,7 @@ internal partial class NineLivesWindow
             int index = NineLivesRules.Index(row, reel);
             reelSpinTranslate[index].Y = 0;
             symbolImages[index].Effect = null;
+            RenderOptions.SetBitmapScalingMode(symbolImages[index], BitmapScalingMode.HighQuality);
         }
     }
 
@@ -229,6 +248,7 @@ internal partial class NineLivesWindow
         for (int reel = 0; reel < NineLivesRules.Reels; reel++)
         {
             reelMotionStopped[reel] = false;
+            reelSpinFrame[reel] = -1;
             reelSpinGlow[reel].Opacity = 0;
             reelLightSweep[reel].Opacity = 0;
             reelLightSweepTranslate[reel].Y = 0;
@@ -238,6 +258,7 @@ internal partial class NineLivesWindow
                 int index = NineLivesRules.Index(row, reel);
                 reelSpinTranslate[index].Y = 0;
                 symbolImages[index].Effect = null;
+                RenderOptions.SetBitmapScalingMode(symbolImages[index], BitmapScalingMode.HighQuality);
             }
         }
     }
