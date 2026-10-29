@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
+using System.Windows.Interop;
 using System.Windows.Media.Imaging;
 using BlackjackCasino.Core;
 using BlackjackCasino.Desktop;
@@ -20,6 +21,13 @@ internal static class Program
         int exit=0;
         var window=new MainWindow(new AppPreferences {SoundEnabled=false,MusicEnabled=false,AnimationsEnabled=false,WindowWidth=1280,WindowHeight=900},new PlayerProfileState {DisplayName="Presentation QA",EquippedPortraitId="portrait-moon-cat",OwnedCosmeticIds=[CosmeticCatalog.DefaultTitleId,CosmeticCatalog.DefaultFrameId,CosmeticCatalog.DefaultPortraitId,"portrait-moon-cat"]});
         window.MaxWidth=4096;window.MaxHeight=2160;
+        // The hosted runner has a small virtual monitor. Raise only this test HWND's
+        // tracking limit before WPF reads it, then assert actual rendered dimensions.
+        window.SourceInitialized+=(_,_)=>HwndSource.FromHwnd(new WindowInteropHelper(window).Handle).AddHook((IntPtr hwnd,int msg,IntPtr wp,IntPtr lp,ref bool handled)=>
+        {
+            if(msg==0x24) {Marshal.WriteInt32(lp,32,4096);Marshal.WriteInt32(lp,36,2160);}
+            return IntPtr.Zero;
+        });
         app.DispatcherUnhandledException+=(_,e)=> {File.WriteAllText(Path.Combine(output,"fatal.txt"),e.Exception.ToString());e.Handled=true;app.Shutdown(1);};
         window.ContentRendered+=async(_,_)=>
         {
