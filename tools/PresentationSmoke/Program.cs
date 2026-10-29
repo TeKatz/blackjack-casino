@@ -83,7 +83,7 @@ internal static class Program
         await Task.Delay(500);window.UpdateLayout();
         var viewport=(ScrollViewer)window.FindName("PlayerHandViewport");var hands=(FrameworkElement)window.FindName("PlayerHandsPanel");
         Rect handBounds=hands.TransformToAncestor(viewport).TransformBounds(new Rect(0,0,hands.ActualWidth,hands.ActualHeight));
-        Require(handBounds.Top>=-1 && handBounds.Bottom<=viewport.ActualHeight+1,"Player cards clipped in AI table");
+        Require(handBounds.Top>=-1 && handBounds.Bottom<=viewport.ActualHeight+1 && handBounds.Height>=90,"Player cards clipped or reduced below readable size in AI table");
         Capture(window,"06-blackjack-dealt");
     }
     private static async Task CheckCombo(ComboBox combo)
@@ -110,7 +110,7 @@ internal static class Program
     }
     private static RenderTargetBitmap Render(FrameworkElement target)
     {
-        target.UpdateLayout();var visual=new DrawingVisual();using(var d=visual.RenderOpen())d.DrawRectangle(new VisualBrush(target),null,new Rect(0,0,target.ActualWidth,target.ActualHeight));
+        target.UpdateLayout();var visual=new DrawingVisual();using(var d=visual.RenderOpen())d.DrawRectangle(new VisualBrush(target) {ViewboxUnits=BrushMappingMode.Absolute,Viewbox=new Rect(0,0,target.ActualWidth,target.ActualHeight)},null,new Rect(0,0,target.ActualWidth,target.ActualHeight));
         var bmp=new RenderTargetBitmap((int)Math.Ceiling(target.ActualWidth),(int)Math.Ceiling(target.ActualHeight),96,96,PixelFormats.Pbgra32);bmp.Render(visual);return bmp;
     }
     private static void Capture(FrameworkElement target,string name){var png=new PngBitmapEncoder();png.Frames.Add(BitmapFrame.Create(Render(target)));using var file=File.Create(Path.Combine(output,name+".png"));png.Save(file);}
