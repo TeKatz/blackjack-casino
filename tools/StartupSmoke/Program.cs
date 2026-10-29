@@ -81,9 +81,13 @@ internal static class Program
 
                 Require(Find<Button>(window).Any(button => button.Name == "SpinButton" && button.IsVisible),
                     "Nine Lives Spin button is missing from the hosted surface.");
-                Require(Find<Button>(window).Count(button => button.IsVisible
-                    && button.Content?.ToString()?.Contains("CASINO", StringComparison.OrdinalIgnoreCase) == true) == 1,
-                    "Nine Lives shows duplicate Casino/back navigation controls.");
+                Button back = Find<Button>(window).FirstOrDefault(button => button.Name == "CasinoButton")
+                    ?? throw new InvalidOperationException("Nine Lives does not expose a Casino/back button.");
+                Button? duplicateMenu = Find<Button>(window).FirstOrDefault(button => button.Name == "MenuButton");
+                Require(back.IsVisible,
+                    "Nine Lives Casino/back button exists but is not visible.");
+                Require(duplicateMenu is null || !duplicateMenu.IsVisible,
+                    "Nine Lives shows its deprecated footer Casino/back navigation control.");
                 TextBlock winText = Find<TextBlock>(window).FirstOrDefault(text => text.Name == "WinText")
                     ?? throw new InvalidOperationException("Nine Lives last-win display is missing.");
                 Require(winText.Text == "—", "Nine Lives must show an em dash rather than NO/0 for an empty last win.");
@@ -120,10 +124,6 @@ internal static class Program
                     "Nine Lives paytable return button is too narrow and can clip its label.");
                 closePaytable.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
 
-                Button back = Find<Button>(window).FirstOrDefault(button => button.Name == "CasinoButton")
-                    ?? throw new InvalidOperationException("Nine Lives does not expose a Casino/back button.");
-                Require(back.IsVisible,
-                    "Nine Lives Casino/back button exists but is not visible.");
                 Require(!string.IsNullOrWhiteSpace(back.Content?.ToString()),
                     "Nine Lives Casino/back button is an invisible hotspot without a label.");
 
