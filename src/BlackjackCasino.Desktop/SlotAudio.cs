@@ -1,6 +1,6 @@
 namespace BlackjackCasino.Desktop;
 
-internal enum SlotSound { Start, Tick, Stop, Win, Jackpot, Push, Loss }
+internal enum SlotSound { Start, Tick, Stop, Win, Jackpot, Push, Loss, Anticipation, Wild, Blackout, FreeSpins }
 
 /// <summary>Original synthesized mechanical and musical cues, offline and asset-free.</summary>
 internal sealed class SlotAudio : IDisposable
@@ -22,9 +22,12 @@ internal sealed class SlotAudio : IDisposable
         {
             SlotSound.Tick => 0.045,
             SlotSound.Stop => 0.16,
-            SlotSound.Start => 0.30,
             SlotSound.Jackpot => 1.65,
             SlotSound.Win => 0.65,
+            SlotSound.Anticipation => 0.70,
+            SlotSound.Wild => 0.48,
+            SlotSound.Blackout => 0.72,
+            SlotSound.FreeSpins => 1.10,
             _ => 0.30,
         };
         const int rate = 44_100;
@@ -48,6 +51,9 @@ internal sealed class SlotAudio : IDisposable
         {
             SlotSound.Jackpot => [523.25, 659.25, 783.99, 1046.50, 783.99, 1046.50, 1318.51, 1567.98],
             SlotSound.Win => [523.25, 659.25, 783.99, 1046.50],
+            SlotSound.FreeSpins => [392.00, 523.25, 659.25, 783.99, 1046.50],
+            SlotSound.Wild => [659.25, 880.00, 1046.50],
+            SlotSound.Anticipation => [329.63, 440.00, 554.37, 659.25],
             SlotSound.Push => [440, 554.37],
             SlotSound.Loss => [220, 196],
             _ => [],
@@ -59,7 +65,7 @@ internal sealed class SlotAudio : IDisposable
             {
                 SlotSound.Tick => ((noise.NextDouble() * 2 - 1) * 0.22 + Math.Sin(2 * Math.PI * 1500 * t) * 0.26) * Envelope(t, 0.0007, 0.009),
                 SlotSound.Stop => (Math.Sin(2 * Math.PI * 170 * t) * 0.6 + Math.Sin(2 * Math.PI * 1050 * t) * 0.23) * Envelope(t, 0.001, 0.036),
-                SlotSound.Start => Math.Sin(2 * Math.PI * (180 * t + 800 * t * t)) * Envelope(t, 0.008, 0.09),
+                SlotSound.Blackout => (Math.Sin(2 * Math.PI * 58 * t) * 0.72 + (noise.NextDouble() * 2 - 1) * 0.22) * Envelope(t, 0.004, 0.20),
                 _ => 0,
             };
             for (int note = 0; note < notes.Length; note++)
