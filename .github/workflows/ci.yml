@@ -52,6 +52,18 @@ jobs:
       - name: Casino presentation runtime regression
         run: dotnet run --project tools/PresentationSmoke --configuration Release -- artifacts/presentation-regression
 
+      - name: Desktop startup and Nine Lives smoke
+        run: dotnet run --project tools/StartupSmoke/StartupSmoke.csproj --configuration Release -- artifacts/startup-smoke
+
+      - name: Upload startup smoke evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-startup-smoke
+          path: artifacts/startup-smoke
+          if-no-files-found: ignore
+          retention-days: 14
+
       - name: Upload casino presentation evidence
         if: always()
         uses: actions/upload-artifact@v4
