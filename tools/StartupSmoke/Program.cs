@@ -55,7 +55,7 @@ internal static class Program
                 Require(window.Modes.Modes.Any(mode => mode.Id == "nine-lives"), "Nine Lives was not registered in the lobby.");
 
                 window.Modes.Open("nine-lives");
-                await Task.Delay(220);
+                await Task.Delay(260);
                 window.UpdateLayout();
 
                 Require(Application.Current.Windows.Cast<Window>().Count(w => w.IsVisible) == 1,
@@ -67,19 +67,24 @@ internal static class Program
                     .Where(image => image.IsVisible
                         && image.ActualWidth >= 180 && image.ActualWidth <= 300
                         && image.ActualHeight >= 150 && image.ActualHeight <= 230)
+                    .Take(9)
                     .ToArray();
-                Require(reelImages.Length >= 9,
+                Require(reelImages.Length == 9,
                     "Nine Lives did not expose all nine reel artwork surfaces.");
-                Require(reelImages.Take(9).All(image => image.Source switch
-                    {
-                        DrawingImage => true,
-                        BitmapSource bitmap => bitmap.PixelWidth >= 512 && bitmap.PixelHeight >= 384,
-                        _ => false,
-                    }),
-                    "Nine Lives reel art regressed to a low-resolution bitmap. Use >=512 px raster art or the vector fallback.");
+                Require(reelImages.All(image => image.Source is BitmapSource),
+                    "Nine Lives regressed to replacement vector symbols instead of the restored concept-art set.");
+                Require(reelImages.All(image => image.Source is BitmapSource bitmap
+                    && bitmap.PixelWidth >= 112 && bitmap.PixelHeight >= 112),
+                    "Nine Lives concept-art symbols decoded below their authored source resolution.");
 
                 Require(Find<Button>(window).Any(button => button.Name == "SpinButton" && button.IsVisible),
                     "Nine Lives Spin button is missing from the hosted surface.");
+                Require(Find<Button>(window).Count(button => button.IsVisible
+                    && button.Content?.ToString()?.Contains("CASINO", StringComparison.OrdinalIgnoreCase) == true) == 1,
+                    "Nine Lives shows duplicate Casino/back navigation controls.");
+                TextBlock winText = Find<TextBlock>(window).FirstOrDefault(text => text.Name == "WinText")
+                    ?? throw new InvalidOperationException("Nine Lives last-win display is missing.");
+                Require(winText.Text == "—", "Nine Lives must show an em dash rather than NO/0 for an empty last win.");
                 SaveScreenshot(window, Path.Combine(output, "nine-lives-main.png"));
 
                 Button settings = Find<Button>(window).FirstOrDefault(button => button.Name == "SettingsButton")
@@ -102,7 +107,7 @@ internal static class Program
                 await Task.Delay(60);
                 window.UpdateLayout();
                 Border paytableFlyout = Find<Border>(window).FirstOrDefault(border => border.Name == "PaytableFlyout")
-                    ?? throw new InvalidOperationException("Nine Lives in-app paytable flyout is missing.");
+                    ?? throw new InvalidOperationException("Nine Lives custom paytable flyout is missing.");
                 Require(paytableFlyout.Visibility == Visibility.Visible,
                     "Nine Lives paytable did not open inside the game surface.");
                 Require(Application.Current.Windows.Cast<Window>().Count(w => w.IsVisible) == 1,
@@ -110,6 +115,8 @@ internal static class Program
                 SaveScreenshot(window, Path.Combine(output, "nine-lives-paytable.png"));
                 Button closePaytable = Find<Button>(paytableFlyout).FirstOrDefault(button => Equals(button.Content, "BACK TO GAME"))
                     ?? throw new InvalidOperationException("Nine Lives paytable has no visible return control.");
+                Require(closePaytable.ActualWidth >= 180,
+                    "Nine Lives paytable return button is too narrow and can clip its label.");
                 closePaytable.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
 
                 Button back = Find<Button>(window).FirstOrDefault(button => button.Name == "CasinoButton")
@@ -129,7 +136,7 @@ internal static class Program
                     "Casino lobby was not restored after leaving Nine Lives.");
 
                 File.WriteAllText(Path.Combine(output, "result.txt"),
-                    "PASS: MainWindow opened Nine Lives with high-quality reel art (high-resolution raster or vector fallback), themed settings/paytable flyouts, screenshot evidence, visible controls, and a working Casino return path.");
+                    "PASS: Nine Lives opened with the restored concept-art symbols, single Casino navigation, clean empty-win state, themed in-app flyouts and non-clipping paytable return control.");
             }
             catch (Exception ex)
             {
