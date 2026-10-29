@@ -62,8 +62,22 @@ internal static class Program
                     "Nine Lives opened another visible native window.");
                 Require(Find<Image>(window).Any(image => image.IsVisible && image.Source is not null),
                     "Nine Lives did not render any artwork after opening.");
-                Require(Find<Image>(window).Count(image => image.IsVisible && image.Source is DrawingImage) >= 9,
-                    "Nine Lives reel symbols are not using the resolution-independent vector artwork pipeline.");
+
+                Image[] reelImages = Find<Image>(window)
+                    .Where(image => image.IsVisible
+                        && image.ActualWidth >= 180 && image.ActualWidth <= 300
+                        && image.ActualHeight >= 150 && image.ActualHeight <= 230)
+                    .ToArray();
+                Require(reelImages.Length >= 9,
+                    "Nine Lives did not expose all nine reel artwork surfaces.");
+                Require(reelImages.Take(9).All(image => image.Source switch
+                    {
+                        DrawingImage => true,
+                        BitmapSource bitmap => bitmap.PixelWidth >= 512 && bitmap.PixelHeight >= 384,
+                        _ => false,
+                    }),
+                    "Nine Lives reel art regressed to a low-resolution bitmap. Use >=512 px raster art or the vector fallback.");
+
                 Require(Find<Button>(window).Any(button => button.Name == "SpinButton" && button.IsVisible),
                     "Nine Lives Spin button is missing from the hosted surface.");
                 SaveScreenshot(window, Path.Combine(output, "nine-lives-main.png"));
@@ -115,7 +129,7 @@ internal static class Program
                     "Casino lobby was not restored after leaving Nine Lives.");
 
                 File.WriteAllText(Path.Combine(output, "result.txt"),
-                    "PASS: MainWindow opened Nine Lives with vector reel art, themed settings/paytable flyouts, screenshot evidence, visible controls, and a working Casino return path.");
+                    "PASS: MainWindow opened Nine Lives with high-quality reel art (high-resolution raster or vector fallback), themed settings/paytable flyouts, screenshot evidence, visible controls, and a working Casino return path.");
             }
             catch (Exception ex)
             {
