@@ -7,6 +7,11 @@ namespace BlackjackCasino.Desktop;
 
 internal sealed class NineLivesWinCanvas : Canvas
 {
+    // Authored outer bounds of the 3x3 reel cells. Paylines are drawn by game logic
+    // center-to-center and this presentation layer extends them exactly to the grid edges.
+    private const double ReelLeft = 366d;
+    private const double ReelRight = 1169d;
+
     protected override void OnVisualChildrenChanged(DependencyObject visualAdded, DependencyObject visualRemoved)
     {
         base.OnVisualChildrenChanged(visualAdded, visualRemoved);
@@ -19,20 +24,23 @@ internal sealed class NineLivesWinCanvas : Canvas
         double dx = line.X2 - line.X1;
         double dy = line.Y2 - line.Y1;
         double length = Math.Sqrt((dx * dx) + (dy * dy));
-        if (length < 1)
+        if (length < 1 || Math.Abs(dx) < 0.001)
         {
             return;
         }
 
-        // Existing game logic draws center-to-center. Extend the visual sweep almost to the
-        // outside edges of the first/last winning cells so the line reads as a complete payline.
-        const double extension = 118d;
         double ux = dx / length;
         double uy = dy / length;
-        line.X1 -= ux * extension;
-        line.Y1 -= uy * extension;
-        line.X2 += ux * extension;
-        line.Y2 += uy * extension;
+
+        // Every valid Nine Lives payline runs left-to-right. Use its actual direction to
+        // intersect the first/last cell edges. Unlike the old fixed 118 px extension this
+        // also reaches the correct corners for both diagonal lines.
+        double startDistance = Math.Abs((line.X1 - ReelLeft) / ux);
+        double endDistance = Math.Abs((ReelRight - line.X2) / ux);
+        line.X1 -= ux * startDistance;
+        line.Y1 -= uy * startDistance;
+        line.X2 += ux * endDistance;
+        line.Y2 += uy * endDistance;
 
         line.StrokeThickness = line.StrokeThickness >= 10 ? 18 : 6;
         line.StrokeStartLineCap = PenLineCap.Round;
