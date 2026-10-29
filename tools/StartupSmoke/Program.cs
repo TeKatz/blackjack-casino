@@ -63,8 +63,23 @@ internal static class Program
                 Require(Find<Button>(window).Any(button => button.Name == "SpinButton" && button.IsVisible),
                     "Nine Lives Spin button is missing from the hosted surface.");
 
+                Button? back = Find<Button>(window).FirstOrDefault(button => button.Name == "CasinoButton");
+                Require(back is not null && back.IsVisible,
+                    "Nine Lives does not expose a visible Casino/back button.");
+                Require(!string.IsNullOrWhiteSpace(back.Content?.ToString()),
+                    "Nine Lives Casino/back button is an invisible hotspot without a label.");
+
+                back.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                await Task.Delay(150);
+                window.UpdateLayout();
+
+                Require(!Find<Button>(window).Any(button => button.Name == "SpinButton" && button.IsVisible),
+                    "Nine Lives remained hosted after using the Casino/back button.");
+                Require(Find<Button>(window).Any(button => button.Name == "Mode_nine_lives" && button.IsVisible),
+                    "Casino lobby was not restored after leaving Nine Lives.");
+
                 File.WriteAllText(Path.Combine(output, "result.txt"),
-                    "PASS: MainWindow rendered the casino lobby and opened Nine Lives with decoded/fallback artwork in the single-window host.");
+                    "PASS: MainWindow rendered the casino lobby, opened Nine Lives in the single-window host, exposed visible controls, and returned to the lobby through the Casino button.");
             }
             catch (Exception ex)
             {
