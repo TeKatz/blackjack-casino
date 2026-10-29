@@ -35,13 +35,13 @@ public static class CosmeticCatalog
 
         // Shop portraits. These are original vector-style profile images rendered by the desktop client.
         new("portrait-night-dealer", "Night Dealer", CosmeticKind.Portrait, 700, true, "A sharp-suited dealer beneath a single table light.", "portrait-night-dealer"),
-        new("portrait-card-shark", "Card Shark", CosmeticKind.Portrait, 900, true, "A cool silhouette framed by two aces.", "portrait-card-shark"),
+        new("portrait-card-shark", "Card Shark", CosmeticKind.Portrait, 900, true, "A silver-framed shark in a tailored petrol suit.", "portrait-card-shark"),
         new("portrait-moon-cat", "Moon Cat", CosmeticKind.Portrait, 1100, true, "A casino cat who absolutely knows the count.", "portrait-moon-cat"),
-        new("portrait-neon-ace", "Neon Ace", CosmeticKind.Portrait, 1400, true, "An ace-shaped neon portrait in cyan and magenta.", "portrait-neon-ace"),
-        new("portrait-lucky-raven", "Lucky Raven", CosmeticKind.Portrait, 1700, true, "A black raven perched above a gold chip.", "portrait-lucky-raven"),
+        new("portrait-neon-ace", "Neon Ace", CosmeticKind.Portrait, 1400, true, "A neon card virtuoso in cyan, magenta and black chrome.", "portrait-neon-ace"),
+        new("portrait-lucky-raven", "Lucky Raven", CosmeticKind.Portrait, 1700, true, "An emerald-eyed raven adorned with gold and a lucky clover.", "portrait-lucky-raven"),
         new("portrait-midnight-lady", "Midnight Lady", CosmeticKind.Portrait, 2300, true, "A moonlit portrait with a quiet Manor influence.", "portrait-midnight-lady"),
         new("portrait-golden-joker", "Golden Joker", CosmeticKind.Portrait, 2800, true, "A theatrical gold mask for players who enjoy variance.", "portrait-golden-joker"),
-        new("portrait-velvet-king", "Velvet King", CosmeticKind.Portrait, 3400, true, "A burgundy royal portrait with old-casino attitude.", "portrait-velvet-king"),
+        new("portrait-velvet-king", "Velvet King", CosmeticKind.Portrait, 3400, true, "An imperial velvet king crowned in gold, rubies and amethyst.", "portrait-velvet-king"),
 
         // Prestige rewards.
         new("title-prestige-1", "The Regular", CosmeticKind.Title, 0, false, "Prestige I reward."),

@@ -767,6 +767,25 @@ internal partial class ProgressionWindow : Window
 
     private static FrameworkElement CreatePortraitVisual(CosmeticDefinition portrait, double size)
     {
+        if (PortraitArtwork.Get(portrait.Id) is { } image)
+        {
+            // ImageBrush + Ellipse produces a real circular crop; CornerRadius on a
+            // Border alone would not clip its child image. Keep the original square
+            // composition centred so its crown, ears and ornamental ring stay intact.
+            var picture = new Ellipse
+            {
+                Width = size,
+                Height = size,
+                Fill = new ImageBrush(image) { Stretch = Stretch.UniformToFill, AlignmentX = AlignmentX.Center, AlignmentY = AlignmentY.Center },
+                Stroke = new SolidColorBrush(Color.FromArgb(190, 225, 211, 170)),
+                StrokeThickness = Math.Max(1, size / 80),
+                ToolTip = portrait.Name,
+                SnapsToDevicePixels = true,
+            };
+            System.Windows.Automation.AutomationProperties.SetName(picture, portrait.Name);
+            RenderOptions.SetBitmapScalingMode(picture, BitmapScalingMode.HighQuality);
+            return picture;
+        }
         (Color a, Color b, string glyph) = PortraitTheme(portrait.VisualVariant);
         var border = new Border
         {

@@ -8,6 +8,9 @@
     <Description>Windows desktop client for Blackjack Casino.</Description>
   </PropertyGroup>
   <ItemGroup>
+    <Resource Include="Assets\Portraits\*.png" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\BlackjackCasino.Core\BlackjackCasino.Core.csproj" />
     <ProjectReference Include="..\BlackjackCasino.Update\BlackjackCasino.Update.csproj" />
   </ItemGroup>

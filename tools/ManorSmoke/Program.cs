@@ -90,6 +90,7 @@ internal static class Program
     private static void Draw(params int[] values) { draws.Clear(); foreach(int value in values) draws.Enqueue(value); }
     private static async Task Check(ManorWindow w,ManorController c,ManorPersistence persistence)
     {
+        await PortraitSmoke.Check(output);
         await Task.Delay(100); Capture(w,"01-cabinet");
         CheckDropdown(w,"SpeedBox"); CheckDropdown(w,"AutoBox");
         ComboBox speedBox=Named<ComboBox>(w,"SpeedBox"); speedBox.IsDropDownOpen=true;
