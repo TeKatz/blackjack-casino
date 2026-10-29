@@ -2,7 +2,7 @@ name: Development Release
 
 on:
   push:
-    branches: ["feature/casino-empire-foundation"]
+    branches: ["feature/nine-lives-polish-v2"]
   workflow_dispatch:
 
 permissions:
@@ -14,8 +14,8 @@ concurrency:
 
 jobs:
   publish-development:
-    # The shared in-app Development channel is pinned to Casino Empire by the user's current test-build choice.
-    if: github.ref == 'refs/heads/feature/casino-empire-foundation'
+    # The shared in-app Development channel is pinned to the active Nine Lives polish branch.
+    if: github.ref == 'refs/heads/feature/nine-lives-polish-v2'
     runs-on: windows-latest
     timeout-minutes: 20
 
