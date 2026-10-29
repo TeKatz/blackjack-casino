@@ -8,6 +8,7 @@ public static class ProfileNormalization
         ArgumentNullException.ThrowIfNull(state);
         state.Slots ??= new();
         state.NeonVault ??= new();
+        state.NineLives ??= new();
         state.LegacyPooledSlots ??= new();
 
         if (state.SlotTrackingVersion < 1)
@@ -33,6 +34,6 @@ public static class ProfileNormalization
         }
         state.OwnedCosmeticIds ??= [];
         state.ClaimedChallengeIds ??= [];
-        state.SchemaVersion = Math.Max(state.SchemaVersion, 4);
+        state.SchemaVersion = Math.Max(state.SchemaVersion, 5);
     }
 }
