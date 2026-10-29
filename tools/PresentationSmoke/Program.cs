@@ -31,7 +31,7 @@ internal static class Program
         app.DispatcherUnhandledException+=(_,e)=> {File.WriteAllText(Path.Combine(output,"fatal.txt"),e.Exception.ToString());e.Handled=true;app.Shutdown(1);};
         window.ContentRendered+=async(_,_)=>
         {
-            try {await Check(window);File.WriteAllText(Path.Combine(output,"result.txt"),"PASS: startup lobby, registered future mode, shared hover/focus/open/disabled dropdown contracts, all table themes, proportional controls, embedded Reels and Neon Vault bounds, single-window casino hosting, standalone profile rename and serialization. Mouse hover capability recorded separately.");}
+            try {await Check(window);File.WriteAllText(Path.Combine(output,"result.txt"),"PASS: startup lobby, registered future mode, shared hover/focus/open/disabled dropdown contracts, all table themes, proportional controls, embedded Reels and Neon Vault bounds, full-surface single-window casino hosting, standalone profile rename and serialization. Mouse hover capability recorded separately.");}
             catch(Exception ex){exit=1;File.WriteAllText(Path.Combine(output,"failure.txt"),ex.ToString());}
             finally {window.Close();CasinoAudio.Shutdown();app.Shutdown(exit);}
         };
@@ -60,6 +60,7 @@ internal static class Program
         File.WriteAllText(Path.Combine(output,"hover-input.txt"),$"Native cursor request: {cursor}; ComboBox IsMouseOver: {mode.IsMouseOver}. All state templates and composed dark pixels are required regardless of headless input support.");
         await CheckCombo(mode);Capture(window,"03-hover-minimum");
         window.Modes.Open("midnight-reels");await Task.Delay(100);
+        Require(!((FrameworkElement)window.FindName("CasinoHeader")).IsVisible,"Host casino header remained visible over embedded Midnight Reels");
         foreach(var size in new[]{(1080d,720d),(1440d,900d),(1920d,1080d),(2560d,1440d)})
         {
             window.Width=size.Item1;window.Height=size.Item2;window.UpdateLayout();await Task.Delay(50);
@@ -71,9 +72,11 @@ internal static class Program
         }
         Find<Button>(window).Single(b=>b.Name=="ReelsBackButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Task.Delay(50);
         Require(Find<CasinoLobbyView>(window).Any(v=>v.IsVisible),"Leaving a slot did not return to the lobby");
+        Require(((FrameworkElement)window.FindName("CasinoHeader")).IsVisible,"Host casino header did not return after leaving Midnight Reels");
 
         window.Modes.Open("neon-vault");await Task.Delay(120);window.UpdateLayout();
         Require(Application.Current.Windows.Cast<Window>().Count(w=>w.IsVisible)==1,"Neon Vault opened a second visible native window instead of using the casino host");
+        Require(!((FrameworkElement)window.FindName("CasinoHeader")).IsVisible,"Host casino header remained visible over embedded Neon Vault");
         Require(Find<ProgressBar>(window).Single(b=>b.Name=="EnergyBar").Maximum==NeonVaultRules.VaultEnergyTarget,"Neon Vault energy meter is not wired to the feature target");
         foreach(var size in new[]{(1080d,720d),(1440d,900d),(1920d,1080d),(2560d,1440d)})
         {
@@ -86,6 +89,7 @@ internal static class Program
         }
         Find<Button>(window).Single(b=>b.Name=="BackButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Task.Delay(50);
         Require(Find<CasinoLobbyView>(window).Any(v=>v.IsVisible),"Leaving Neon Vault did not return to the lobby");
+        Require(((FrameworkElement)window.FindName("CasinoHeader")).IsVisible,"Host casino header did not return after leaving Neon Vault");
 
         using var profile=new PlayerProgressionController(new PlayerProfileState {DisplayName="Before"});
         var identity=new PlayerProfileWindow(profile);identity.Show();identity.UpdateLayout();
