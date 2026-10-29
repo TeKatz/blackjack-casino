@@ -58,6 +58,7 @@ public partial class MainWindow
         // clipping, shadow, template or hover behavior.
         profileButton = new Button
         {
+            Name = "PlayerProfileButton",
             MinWidth = 240,
             Height = 52,
             Margin = new Thickness(0, 0, 22, 0),
@@ -167,12 +168,7 @@ public partial class MainWindow
             return;
         }
 
-        var window = new PlayerProfileWindow(progressionController)
-        {
-            Owner = this,
-        };
-        _ = window.ShowDialog();
-        RefreshProfileButton();
+        OpenPlayerProfile();
     }
 
     private void RefreshProfileButton()

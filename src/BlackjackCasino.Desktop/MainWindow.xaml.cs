@@ -506,6 +506,7 @@ public partial class MainWindow : Window
             {
                 DealerValueText.Text = string.Empty;
                 PlayerHandsPanel.Children.Add(BuildEmptySeat());
+                PresentTableWagers();
                 SetActionAvailability(new HashSet<PlayerAction>());
                 InsurancePanel.Visibility = Visibility.Collapsed;
                 return;
@@ -513,6 +514,7 @@ public partial class MainWindow : Window
 
             RenderDealer(round);
             RenderPlayerHands(round);
+            PresentTableWagers();
             SetActionAvailability(session.GetAvailableActions());
             InsurancePanel.Visibility = round.Phase == RoundPhase.InsuranceDecision
                 ? Visibility.Visible
@@ -845,7 +847,22 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (Keyboard.FocusedElement is ComboBox)
+        if (MetaPageOpen)
+        {
+            if (e.Key == Key.Escape)
+            {
+                CloseMetaPage();
+                e.Handled = true;
+            }
+            return;
+        }
+
+        if (embeddedGameShell is not null || lobby?.Visibility == Visibility.Visible)
+        {
+            return;
+        }
+
+        if (Keyboard.FocusedElement is System.Windows.Controls.Primitives.TextBoxBase or ComboBox)
         {
             return;
         }

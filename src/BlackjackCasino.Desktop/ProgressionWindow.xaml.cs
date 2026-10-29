@@ -1,6 +1,4 @@
 using System.Globalization;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -9,7 +7,6 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
 using System.Windows.Shapes;
-using Microsoft.Win32;
 using BlackjackCasino.Core;
 
 namespace BlackjackCasino.Desktop;
@@ -17,9 +14,6 @@ namespace BlackjackCasino.Desktop;
 internal partial class ProgressionWindow : Window
 {
     private readonly PlayerProgressionController controller;
-    private StackPanel? challengesPanel;
-    private TextBlock? challengeSummaryText;
-    private TextBlock? challengeStatusText;
 
     private static readonly Brush MutedBrush = new SolidColorBrush(Color.FromRgb(166, 187, 174));
     private static readonly Brush PositiveBrush = new SolidColorBrush(Color.FromRgb(142, 199, 129));
@@ -32,7 +26,7 @@ internal partial class ProgressionWindow : Window
         this.controller = controller ?? throw new ArgumentNullException(nameof(controller));
         InitializeComponent();
         MenuAudio.Attach(this);
-        InitializeContentTabs();
+        InitializeCollections();
         StateChanged += (_, _) => RefreshMaximizeGlyph();
         RefreshAll();
         RefreshMaximizeGlyph();
@@ -40,12 +34,14 @@ internal partial class ProgressionWindow : Window
 
     internal void SelectTab(string header)
     {
-        TabControl? tabs=FindVisualChild<TabControl>(this);
-        if(tabs is not null) tabs.SelectedItem=tabs.Items.OfType<TabItem>().FirstOrDefault(t=>Equals(t.Header,header)) ?? tabs.Items[0];
+        ProgressionTabs.SelectedItem = ProgressionTabs.Items.OfType<TabItem>()
+            .FirstOrDefault(tab => string.Equals(tab.Header?.ToString(), header, StringComparison.OrdinalIgnoreCase))
+            ?? ProgressionTabs.Items[0];
     }
 
     private void RefreshAll()
     {
+        controller.AccruePlaytime();
         RefreshProfileHeader();
         RefreshStatistics();
         RefreshHistory();
@@ -58,7 +54,7 @@ internal partial class ProgressionWindow : Window
     {
         PlayerProfileState profile = controller.Profile;
         CosmeticDefinition title = CosmeticCatalog.Get(profile.EquippedTitleId);
-        TitleText.Text = title.Name;
+        TitleText.Text = $"{profile.DisplayName} · {title.Name}";
         LevelText.Text = $"Prestige {profile.Prestige} · Level {profile.Level} / {ProgressionCurve.MaximumLevel} · Lifetime XP {profile.LifetimeExperience:N0}";
         CoinsText.Text = $"◆ {profile.Coins:N0} COSMETIC COINS";
         CoinsText.Foreground = CoinBrush;
@@ -77,38 +73,6 @@ internal partial class ProgressionWindow : Window
             LevelProgress.Maximum = Math.Max(1, required);
             LevelProgress.Value = Math.Min(profile.LevelExperience, required);
             LevelProgressText.Text = $"{profile.LevelExperience:N0} / {required:N0} XP";
-        }
-    }
-
-    private void RefreshStatistics()
-    {
-        LifetimeStatsText.Text = BuildStatisticsText(controller.Profile.LifetimeStatistics, includePlaytime: true);
-        SessionStatsText.Text = BuildStatisticsText(controller.Service.SessionStatistics, includePlaytime: false)
-            + $"\nSession time: {FormatDuration(controller.SessionElapsed)}";
-
-        TableStatsPanel.Children.Clear();
-        if (controller.Profile.TableStatistics.Count == 0)
-        {
-            TableStatsPanel.Children.Add(MutedText("No completed hands yet."));
-            return;
-        }
-
-        foreach ((string table, StatisticsSnapshot stats) in controller.Profile.TableStatistics.OrderByDescending(x => x.Value.RoundsPlayed))
-        {
-            decimal winRate = stats.HandsPlayed == 0 ? 0 : (decimal)stats.HandsWon / stats.HandsPlayed;
-            var row = new Grid { Margin = new Thickness(0, 4, 0, 4) };
-            row.ColumnDefinitions.Add(new ColumnDefinition());
-            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(110) });
-            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(110) });
-            row.Children.Add(new TextBlock { Text = table, FontWeight = FontWeights.SemiBold });
-            var hands = new TextBlock { Text = $"{stats.HandsPlayed:N0} hands", Foreground = MutedBrush, HorizontalAlignment = HorizontalAlignment.Right };
-            Grid.SetColumn(hands, 1);
-            row.Children.Add(hands);
-            var net = new TextBlock { Text = SignedMoney(stats.NetProfit), Foreground = stats.NetProfit >= 0 ? PositiveBrush : NegativeBrush, HorizontalAlignment = HorizontalAlignment.Right };
-            Grid.SetColumn(net, 2);
-            row.Children.Add(net);
-            row.ToolTip = $"Win rate {winRate:P1}";
-            TableStatsPanel.Children.Add(row);
         }
     }
 
@@ -285,271 +249,6 @@ internal partial class ProgressionWindow : Window
             border.Child = grid;
             SeasonRewardsPanel.Children.Add(border);
         }
-    }
-
-    private void RefreshShop()
-    {
-        PlayerProfileState profile = controller.Profile;
-        ShopCoinsText.Text = $"Balance: ◆ {profile.Coins:N0}";
-        ShopCoinsText.Foreground = CoinBrush;
-        ShopPanel.Children.Clear();
-
-        CosmeticKind[] order = [CosmeticKind.Frame, CosmeticKind.Portrait, CosmeticKind.Title];
-        foreach (CosmeticKind kind in order)
-        {
-            ShopPanel.Children.Add(new TextBlock
-            {
-                Text = kind switch
-                {
-                    CosmeticKind.Frame => "ANIMATED PROFILE FRAMES",
-                    CosmeticKind.Portrait => "PROFILE PICTURES",
-                    _ => "TITLES",
-                },
-                Foreground = new SolidColorBrush(Color.FromRgb(255, 215, 124)),
-                FontWeight = FontWeights.Bold,
-                FontSize = 12,
-                Margin = new Thickness(5, 14, 5, 5),
-            });
-
-            foreach (CosmeticDefinition cosmetic in CosmeticCatalog.ShopItems.Where(x => x.Kind == kind))
-            {
-                bool owned = profile.OwnedCosmeticIds.Contains(cosmetic.Id, StringComparer.Ordinal);
-                bool equipped = cosmetic.Kind switch
-                {
-                    CosmeticKind.Title => profile.EquippedTitleId == cosmetic.Id,
-                    CosmeticKind.Frame => profile.EquippedFrameId == cosmetic.Id,
-                    CosmeticKind.Portrait => profile.EquippedPortraitId == cosmetic.Id,
-                    _ => false,
-                };
-                bool canAfford = profile.Coins >= cosmetic.Price;
-
-                var border = PanelBorder();
-                var grid = new Grid();
-                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(118) });
-                grid.ColumnDefinitions.Add(new ColumnDefinition());
-                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(190) });
-
-                FrameworkElement preview = CreateCosmeticPreview(cosmetic);
-                preview.Margin = new Thickness(0, 0, 12, 0);
-                grid.Children.Add(preview);
-
-                var text = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-                text.Children.Add(new TextBlock { Text = cosmetic.Name, FontWeight = FontWeights.Bold, FontSize = 15 });
-                text.Children.Add(new TextBlock { Text = cosmetic.Description, Foreground = MutedBrush, Margin = new Thickness(0, 4, 0, 0), TextWrapping = TextWrapping.Wrap });
-                if (!owned)
-                {
-                    text.Children.Add(CoinText($"◆ {cosmetic.Price:N0} COSMETIC COINS", 11, FontWeights.SemiBold));
-                }
-                Grid.SetColumn(text, 1);
-                grid.Children.Add(text);
-
-                var button = new Button
-                {
-                    Tag = cosmetic.Id,
-                    HorizontalAlignment = HorizontalAlignment.Stretch,
-                    Content = equipped ? "Equipped" : owned ? "Equip" : CoinButtonContent($"Buy · ◆ {cosmetic.Price:N0}"),
-                    IsEnabled = !equipped && (owned || canAfford),
-                    ToolTip = !owned && !canAfford
-                        ? $"You need ◆ {cosmetic.Price - profile.Coins:N0} more coins."
-                        : null,
-                };
-                button.Click += ShopItemButton_Click;
-                Grid.SetColumn(button, 2);
-                grid.Children.Add(button);
-                border.Child = grid;
-                ShopPanel.Children.Add(border);
-            }
-        }
-    }
-
-    private void ShopItemButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is not Button { Tag: string id })
-        {
-            return;
-        }
-
-        PlayerProfileState profile = controller.Profile;
-        bool owned = profile.OwnedCosmeticIds.Contains(id, StringComparer.Ordinal);
-        if (!owned)
-        {
-            PurchaseResult result = controller.PurchaseCosmetic(id);
-            ShopStatusText.Text = result.Message;
-            if (!result.Success)
-            {
-                RefreshShop();
-                return;
-            }
-        }
-
-        _ = controller.EquipCosmetic(id);
-        ShopStatusText.Text = $"Equipped {CosmeticCatalog.Get(id).Name}.";
-        RefreshAll();
-    }
-
-    private void InitializeContentTabs()
-    {
-        TabControl? tabs = FindVisualChild<TabControl>(this);
-        if (tabs is null)
-        {
-            return;
-        }
-
-        tabs.Items.Add(BuildChallengesTab());
-    }
-
-    private TabItem BuildChallengesTab()
-    {
-        var root = new Grid { Margin = new Thickness(10) };
-        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        root.RowDefinitions.Add(new RowDefinition());
-
-        var header = PanelBorder();
-        var headerGrid = new Grid();
-        headerGrid.ColumnDefinitions.Add(new ColumnDefinition());
-        headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(300) });
-        var intro = new StackPanel();
-        intro.Children.Add(new TextBlock { Text = "CHALLENGES", Foreground = new SolidColorBrush(Color.FromRgb(255, 215, 124)), FontSize = 11, FontWeight = FontWeights.Bold });
-        intro.Children.Add(new TextBlock { Text = "Long-term goals across the casino", FontSize = 21, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 3, 0, 0) });
-        intro.Children.Add(new TextBlock { Text = "Progress is read from your saved statistics. Complete a goal, then claim its Cosmetic Coins here.", Foreground = MutedBrush, Margin = new Thickness(0, 5, 0, 0), TextWrapping = TextWrapping.Wrap });
-        headerGrid.Children.Add(intro);
-        var summary = new StackPanel { HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center };
-        challengeSummaryText = new TextBlock { FontSize = 14, FontWeight = FontWeights.SemiBold, HorizontalAlignment = HorizontalAlignment.Right };
-        challengeStatusText = new TextBlock { Foreground = CoinBrush, Margin = new Thickness(0, 5, 0, 0), TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Right };
-        summary.Children.Add(challengeSummaryText);
-        summary.Children.Add(challengeStatusText);
-        Grid.SetColumn(summary, 1);
-        headerGrid.Children.Add(summary);
-        header.Child = headerGrid;
-        root.Children.Add(header);
-
-        challengesPanel = new StackPanel { Margin = new Thickness(4, 5, 8, 8) };
-        var scroll = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = challengesPanel };
-        Grid.SetRow(scroll, 1);
-        root.Children.Add(scroll);
-        return new TabItem { Header = "Challenges", Content = root };
-    }
-
-    private void RefreshChallenges()
-    {
-        if (challengesPanel is null || challengeSummaryText is null)
-        {
-            return;
-        }
-
-        PlayerProfileState profile = controller.Profile;
-        int completed = ChallengeCatalog.All.Count(x => ChallengeCatalog.Complete(profile, x));
-        int claimed = profile.ClaimedChallengeIds.Count;
-        int claimable = ChallengeCatalog.All.Count(x => ChallengeCatalog.Complete(profile, x) && !profile.ClaimedChallengeIds.Contains(x.Id, StringComparer.Ordinal));
-        challengeSummaryText.Text = $"{completed} / {ChallengeCatalog.All.Count} complete · {claimed} claimed";
-        if (challengeStatusText is not null && string.IsNullOrWhiteSpace(challengeStatusText.Text))
-        {
-            challengeStatusText.Text = claimable > 0 ? $"◆ {claimable} reward{(claimable == 1 ? string.Empty : "s")} ready to claim" : "Keep playing — every mode advances its own goals.";
-        }
-
-        challengesPanel.Children.Clear();
-        foreach (ChallengeCategory category in Enum.GetValues<ChallengeCategory>())
-        {
-            ChallengeDefinition[] entries = ChallengeCatalog.For(category).ToArray();
-            int categoryComplete = entries.Count(x => ChallengeCatalog.Complete(profile, x));
-            challengesPanel.Children.Add(new TextBlock
-            {
-                Text = category switch
-                {
-                    ChallengeCategory.Blackjack => $"BLACKJACK  ·  {categoryComplete}/{entries.Length}",
-                    ChallengeCategory.MidnightReels => $"MIDNIGHT REELS  ·  {categoryComplete}/{entries.Length}",
-                    _ => $"MIDNIGHT MANOR  ·  {categoryComplete}/{entries.Length}",
-                },
-                Foreground = new SolidColorBrush(Color.FromRgb(255, 215, 124)),
-                FontWeight = FontWeights.Bold,
-                FontSize = 12,
-                Margin = new Thickness(5, 15, 5, 5),
-            });
-
-            foreach (ChallengeDefinition challenge in entries)
-            {
-                challengesPanel.Children.Add(BuildChallengeCard(challenge));
-            }
-        }
-    }
-
-    private FrameworkElement BuildChallengeCard(ChallengeDefinition challenge)
-    {
-        PlayerProfileState profile = controller.Profile;
-        decimal progress = ChallengeCatalog.Progress(profile, challenge);
-        bool complete = progress >= challenge.Goal;
-        bool claimed = profile.ClaimedChallengeIds.Contains(challenge.Id, StringComparer.Ordinal);
-
-        var border = PanelBorder();
-        border.BorderBrush = claimed
-            ? new SolidColorBrush(Color.FromRgb(48, 83, 65))
-            : complete
-                ? CoinMutedBrush
-                : new SolidColorBrush(Color.FromRgb(49, 90, 67));
-        border.Opacity = claimed ? 0.72 : 1;
-
-        var grid = new Grid();
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.5, GridUnitType.Star) });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.15, GridUnitType.Star) });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(175) });
-
-        var text = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-        text.Children.Add(new TextBlock { Text = challenge.Name, FontWeight = FontWeights.Bold, FontSize = 14 });
-        text.Children.Add(new TextBlock { Text = challenge.Description, Foreground = MutedBrush, FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 3, 12, 0) });
-        grid.Children.Add(text);
-
-        var progressStack = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 16, 0) };
-        progressStack.Children.Add(new TextBlock
-        {
-            Text = $"{FormatChallengeValue(challenge, Math.Min(progress, challenge.Goal))} / {FormatChallengeValue(challenge, challenge.Goal)}",
-            FontSize = 11,
-            Foreground = complete ? PositiveBrush : MutedBrush,
-        });
-        progressStack.Children.Add(new ProgressBar
-        {
-            Minimum = 0,
-            Maximum = Math.Max(1d, (double)challenge.Goal),
-            Value = Math.Min((double)challenge.Goal, Math.Max(0d, (double)progress)),
-            Height = 11,
-            Margin = new Thickness(0, 5, 0, 0),
-            Foreground = complete ? CoinBrush : new SolidColorBrush(Color.FromRgb(93, 121, 104)),
-            Background = new SolidColorBrush(Color.FromRgb(18, 48, 34)),
-        });
-        Grid.SetColumn(progressStack, 1);
-        grid.Children.Add(progressStack);
-
-        var reward = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-        reward.Children.Add(CoinText($"◆ {challenge.CoinReward:N0}", 13, FontWeights.Bold));
-        var button = new Button
-        {
-            Tag = challenge.Id,
-            Content = claimed ? "Claimed" : complete ? "Claim reward" : "In progress",
-            IsEnabled = complete && !claimed,
-            Margin = new Thickness(0, 5, 0, 0),
-        };
-        button.Click += ChallengeClaim_Click;
-        reward.Children.Add(button);
-        Grid.SetColumn(reward, 2);
-        grid.Children.Add(reward);
-        border.Child = grid;
-        return border;
-    }
-
-    private void ChallengeClaim_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is not Button { Tag: string id })
-        {
-            return;
-        }
-
-        ChallengeClaimResult result = controller.ClaimChallenge(id);
-        if (challengeStatusText is not null)
-        {
-            challengeStatusText.Text = result.Message;
-        }
-        RefreshProfileHeader();
-        RefreshShop();
-        RefreshChallenges();
     }
 
     private FrameworkElement CreateCosmeticPreview(CosmeticDefinition cosmetic)
@@ -802,41 +501,17 @@ internal partial class ProgressionWindow : Window
         };
     }
 
-    private static TextBlock CoinButtonContent(string text) => new()
-    {
-        Text = text,
-        Foreground = CoinBrush,
-        FontWeight = FontWeights.Bold,
-    };
-
     private static string FormatChallengeValue(ChallengeDefinition challenge, decimal value)
     {
-        return challenge.Metric switch
+        if (challenge.Metric == ChallengeMetric.LifetimePlaytimeSeconds) return $"{value / 3600m:N1} h";
+        string metric = challenge.Metric.ToString();
+        if (metric.EndsWith("Wagered", StringComparison.Ordinal) || metric.EndsWith("Returned", StringComparison.Ordinal)
+            || metric.EndsWith("NetProfit", StringComparison.Ordinal) || metric.EndsWith("BiggestWin", StringComparison.Ordinal)
+            || metric.EndsWith("BiggestPayout", StringComparison.Ordinal) || metric.EndsWith("HighestBankroll", StringComparison.Ordinal))
         {
-            ChallengeMetric.BlackjackWagered or ChallengeMetric.BlackjackNetProfit or ChallengeMetric.BlackjackBiggestWin or ChallengeMetric.BlackjackHighestBankroll
-                or ChallengeMetric.ReelsWagered or ChallengeMetric.ReelsReturned or ChallengeMetric.ReelsBiggestPayout or ChallengeMetric.ReelsNetProfit
-                or ChallengeMetric.ManorWagered or ChallengeMetric.ManorReturned => $"${value:N0}",
-            ChallengeMetric.ManorBestMultiplier => $"{value:N0}×",
-            _ => $"{value:N0}",
-        };
-    }
-
-    private static T? FindVisualChild<T>(DependencyObject root) where T : DependencyObject
-    {
-        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
-        {
-            DependencyObject child = VisualTreeHelper.GetChild(root, i);
-            if (child is T result)
-            {
-                return result;
-            }
-            T? nested = FindVisualChild<T>(child);
-            if (nested is not null)
-            {
-                return nested;
-            }
+            return $"${value:N0}";
         }
-        return null;
+        return metric.EndsWith("Multiplier", StringComparison.Ordinal) ? $"{value:N0}×" : $"{value:N0}";
     }
 
     private void PrestigeButton_Click(object sender, RoutedEventArgs e)
@@ -847,7 +522,7 @@ internal partial class ProgressionWindow : Window
         }
 
         MessageBoxResult answer = MessageBox.Show(
-            this,
+            Window.GetWindow(ProgressionRoot) ?? this,
             "Enter Prestige? Your level and current level XP reset to 0. Coins, cosmetics, statistics, bankroll and Season Pass progress stay exactly as they are.",
             "Enter Prestige",
             MessageBoxButton.YesNo,
@@ -865,6 +540,8 @@ internal partial class ProgressionWindow : Window
 
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
+        if (embeddedClose is not null) return;
+
         if (e.ClickCount == 2)
         {
             ToggleMaximize();
@@ -877,14 +554,21 @@ internal partial class ProgressionWindow : Window
         }
     }
 
-    private void MinimizeButton_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
+    private void MinimizeButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (embeddedClose is null) WindowState = WindowState.Minimized;
+    }
 
     private void MaximizeButton_Click(object sender, RoutedEventArgs e) => ToggleMaximize();
 
-    private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
+    private void CloseButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (embeddedClose is { } close) close(); else Close();
+    }
 
     private void ToggleMaximize()
     {
+        if (embeddedClose is not null) return;
         WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
         RefreshMaximizeGlyph();
     }
@@ -919,7 +603,7 @@ internal partial class ProgressionWindow : Window
 
         if (includePlaytime)
         {
-            text += $"\nPlaytime: {FormatDuration(TimeSpan.FromSeconds(controller.Profile.TotalPlaytimeSeconds) + controller.SessionElapsed)}";
+            text += $"\nPlaytime: {FormatDuration(controller.TotalPlaytime)}";
         }
 
         return text;

@@ -54,9 +54,6 @@ public partial class MainWindow
     }
     private void OpenProgression(string tab)
     {
-        if(progressionController is null) return;
-        var window=new ProgressionWindow(progressionController) {Owner=this};
-        window.Loaded+=(_,_)=>window.SelectTab(tab);
-        window.ShowDialog();RefreshProfileButton();
+        OpenProgressionPage(tab);
     }
 }

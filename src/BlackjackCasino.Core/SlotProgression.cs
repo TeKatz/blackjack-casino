@@ -1,6 +1,6 @@
 namespace BlackjackCasino.Core;
 
-public sealed class SlotStatistics
+public class SlotStatistics
 {
     public long Spins { get; set; }
     public long Wins { get; set; }
@@ -11,6 +11,20 @@ public sealed class SlotStatistics
     public decimal NetProfit => TotalReturned - TotalWagered;
 }
 
+public sealed class NeonVaultStatistics : SlotStatistics
+{
+    public long PaidSpins { get; set; }
+    public long FreeSpins { get; set; }
+    public long FreeSpinSessions { get; set; }
+    public long FreeSpinsAwarded { get; set; }
+    public long Jackpots { get; set; }
+    public long GrandJackpots { get; set; }
+    public long Blackouts { get; set; }
+    public long TotalBlackouts { get; set; }
+    public long SecurityOverrides { get; set; }
+    public decimal BestPayoutMultiplier { get; set; }
+}
+
 /// <summary>Shares level/season rewards without recording slots as blackjack hands.</summary>
 public sealed class SlotProgression(ProgressionService progression)
 {
@@ -19,23 +33,39 @@ public sealed class SlotProgression(ProgressionService progression)
     public ProgressionAward Process(SlotSpinResult spin)
     {
         ArgumentNullException.ThrowIfNull(spin);
-        return ProcessCore(spin.SpinId, spin.CompletedAt, spin.Bet, spin.Payout, spin.Net);
+        return ProcessCore(progression.State.Slots, spin.SpinId, spin.CompletedAt, spin.Bet, spin.Payout, spin.Net);
     }
 
     public ProgressionAward Process(NeonVaultSpinResult spin)
     {
         ArgumentNullException.ThrowIfNull(spin);
-        return ProcessCore(spin.SpinId, spin.CompletedAt, spin.Stake, spin.Payout, spin.Net);
+        NeonVaultStatistics stats = progression.State.NeonVault;
+        ProgressionAward award = ProcessCore(stats, spin.SpinId, spin.CompletedAt, spin.Stake, spin.Payout, spin.Net);
+        if (award == ProgressionAward.None)
+        {
+            return award;
+        }
+
+        stats.PaidSpins += spin.IsFreeSpin ? 0 : 1;
+        stats.FreeSpins += spin.IsFreeSpin ? 1 : 0;
+        stats.FreeSpinSessions += !spin.IsFreeSpin && spin.FreeSpinsAwarded > 0 ? 1 : 0;
+        stats.FreeSpinsAwarded += spin.FreeSpinsAwarded;
+        stats.Jackpots += spin.Jackpot != NeonVaultJackpot.None ? 1 : 0;
+        stats.GrandJackpots += spin.Jackpot == NeonVaultJackpot.Grand ? 1 : 0;
+        stats.Blackouts += spin.Blackout != NeonVaultBlackout.None ? 1 : 0;
+        stats.TotalBlackouts += spin.Blackout == NeonVaultBlackout.Total ? 1 : 0;
+        stats.SecurityOverrides += spin.SecurityOverrideReel.HasValue ? 1 : 0;
+        stats.BestPayoutMultiplier = Math.Max(stats.BestPayoutMultiplier, spin.Payout / spin.Bet);
+        return award;
     }
 
-    private ProgressionAward ProcessCore(Guid spinId, DateTimeOffset completedAt, decimal wagered, decimal returned, decimal net)
+    private ProgressionAward ProcessCore(SlotStatistics stats, Guid spinId, DateTimeOffset completedAt, decimal wagered, decimal returned, decimal net)
     {
         if (!processed.Add(spinId))
         {
             return ProgressionAward.None;
         }
 
-        SlotStatistics stats = progression.State.Slots;
         stats.Spins++;
         stats.Wins += net > 0 ? 1 : 0;
         stats.Pushes += net == 0 ? 1 : 0;

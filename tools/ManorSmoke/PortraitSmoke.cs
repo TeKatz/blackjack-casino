@@ -31,6 +31,8 @@ internal static class PortraitSmoke
                 Require(image.IsFrozen && image.PixelWidth == 512 && image.PixelHeight == 512, "Invalid decoded portrait " + portrait.Id);
                 Require(ReferenceEquals(image, PortraitArtwork.Get(portrait.Id)), "Portrait decode cache was bypassed");
                 Require(sources.Add(image), "Different portraits reused the same artwork");
+                ((TextBox)window.FindName("ShopSearchBox")).Text = portrait.Name;
+                window.UpdateLayout();
                 Border row = ShopRow(shop, portrait.Id);
                 Ellipse preview = Descendants<Ellipse>(row).Single(e => e.Fill is ImageBrush);
                 Require(ReferenceEquals(((ImageBrush)preview.Fill).ImageSource, image), "Shop preview uses the wrong image");
@@ -52,7 +54,7 @@ internal static class PortraitSmoke
             using var profileController=new PlayerProgressionController(controller.Profile);
             var profileWindow=new PlayerProfileWindow(profileController);
             profileWindow.Show();profileWindow.UpdateLayout();await Task.Delay(70);
-            Ellipse equipped = Descendants<Ellipse>(profileWindow).Single(e => e.Width == 112 && e.Fill is ImageBrush);
+            Ellipse equipped = Descendants<Ellipse>(profileWindow).Single(e => e.Width == 136 && e.Fill is ImageBrush);
             Require(ReferenceEquals(((ImageBrush)equipped.Fill).ImageSource, PortraitArtwork.Get("portrait-velvet-king")), "Equipped portrait differs from its shop image");
             CheckCircle(equipped);
             Save(profileWindow, System.IO.Path.Combine(output, "portraits-player.png"));

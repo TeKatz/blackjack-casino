@@ -18,6 +18,7 @@ public partial class MainWindow
         ApplyCasinoDropdownStyles();
         RaiseBottomActionDeck();
         InitializeSplitOpportunityCue();
+        InitializeTableWagerPresentation();
         InitializeLobby();
         var tableAtmosphere=new System.Windows.Threading.DispatcherTimer {Interval=TimeSpan.FromMilliseconds(80)};
         tableAtmosphere.Tick+=(_,_)=> {if(AnimationsEnabled && lobby?.Visibility!=Visibility.Visible && embeddedGameShell is null) TableArt.Phase+=.08;};

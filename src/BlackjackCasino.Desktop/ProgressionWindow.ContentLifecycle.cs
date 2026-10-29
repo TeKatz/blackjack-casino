@@ -1,18 +1,28 @@
+using System.Windows;
+
 namespace BlackjackCasino.Desktop;
 
 internal partial class ProgressionWindow
 {
-    protected override void OnContentRendered(EventArgs e)
-    {
-        base.OnContentRendered(e);
+    private Action? embeddedClose;
 
-        // Window templates are not guaranteed to have a visual tree during the constructor.
-        // The constructor attempts eager initialization, while this guarantees Player and
-        // Challenges are present once WPF has created the actual TabControl visual.
-        if (challengesPanel is null)
-        {
-            InitializeContentTabs();
-            RefreshChallenges();
-        }
+    /// <summary>Call before moving Content into the casino's profile/progression host.</summary>
+    internal void ConfigureEmbeddedPresentation(Action close)
+    {
+        ArgumentNullException.ThrowIfNull(close);
+        embeddedClose = close;
+        NativeTitleBar.Visibility = Visibility.Collapsed;
+        EmbeddedTitleBar.Visibility = Visibility.Visible;
+        ResizeMode = ResizeMode.NoResize;
     }
+
+    // This belongs to the content, not Window.Loaded/OnContentRendered: a detached
+    // ProgressionRoot is loaded by the main window without ever showing this Window.
+    private void ProgressionRoot_Loaded(object sender, RoutedEventArgs e)
+    {
+        InitializeCollections();
+        RefreshAll();
+    }
+
+    private void EmbeddedBackButton_Click(object sender, RoutedEventArgs e) => embeddedClose?.Invoke();
 }

@@ -51,7 +51,7 @@ public sealed class SeasonProgressState
 
 public sealed class PlayerProfileState
 {
-    public int SchemaVersion { get; set; } = 3;
+    public int SchemaVersion { get; set; } = 4;
     public string DisplayName { get; set; } = "Player";
     public int Level { get; set; }
     public long LevelExperience { get; set; }
@@ -72,7 +72,13 @@ public sealed class PlayerProfileState
     ];
     public List<string> ClaimedChallengeIds { get; set; } = [];
     public Manor.ManorStatistics Manor { get; set; } = new();
+    // Zero also identifies saves with no version field. Normalize before recording new spins.
+    public int SlotTrackingVersion { get; set; }
+    /// <summary>Verified Midnight Reels play since separate tracking began.</summary>
     public SlotStatistics Slots { get; set; } = new();
+    public NeonVaultStatistics NeonVault { get; set; } = new();
+    /// <summary>Unattributable historical Reels + Neon Vault totals; never used for game-specific goals.</summary>
+    public SlotStatistics LegacyPooledSlots { get; set; } = new();
     public StatisticsSnapshot LifetimeStatistics { get; set; } = new();
     public Dictionary<string, StatisticsSnapshot> TableStatistics { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     public Dictionary<string, SeasonProgressState> Seasons { get; set; } = new(StringComparer.OrdinalIgnoreCase);
@@ -99,6 +105,15 @@ public sealed record ChallengeClaimResult(
     string Message,
     ChallengeDefinition? Challenge = null,
     long CoinsEarned = 0);
+
+public sealed record ChallengeClaimAllResult(
+    bool Success,
+    string Message,
+    IReadOnlyList<ChallengeDefinition> Challenges,
+    long CoinsEarned = 0)
+{
+    public int ClaimsCount => Challenges.Count;
+}
 
 public sealed record PrestigeResult(
     bool Success,

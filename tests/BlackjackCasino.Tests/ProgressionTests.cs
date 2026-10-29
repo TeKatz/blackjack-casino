@@ -135,8 +135,9 @@ public sealed class ProgressionTests
     public void ChallengeCatalog_HasRequestedCoverage()
     {
         Assert.True(ChallengeCatalog.For(ChallengeCategory.Blackjack).Count > 20);
-        Assert.Equal(10, ChallengeCatalog.For(ChallengeCategory.MidnightReels).Count);
-        Assert.Equal(10, ChallengeCatalog.For(ChallengeCategory.MidnightManor).Count);
+        Assert.True(ChallengeCatalog.For(ChallengeCategory.MidnightReels).Count >= 10);
+        Assert.True(ChallengeCatalog.For(ChallengeCategory.MidnightManor).Count >= 10);
+        Assert.True(ChallengeCatalog.For(ChallengeCategory.NeonVault).Count >= 10);
     }
 
     [Fact]

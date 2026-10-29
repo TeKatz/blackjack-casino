@@ -15,106 +15,108 @@
     <shell:WindowChrome CaptionHeight="0" ResizeBorderThickness="6" CornerRadius="0" GlassFrameThickness="0" UseAeroCaptionButtons="False" />
   </shell:WindowChrome.WindowChrome>
 
-  <Window.Resources>
-    <Style TargetType="Button">
-      <Setter Property="Background" Value="#123322" />
-      <Setter Property="Foreground" Value="#F2EEE4" />
-      <Setter Property="BorderBrush" Value="#466552" />
-      <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="Padding" Value="12,7" />
-      <Setter Property="Margin" Value="4" />
-      <Setter Property="Cursor" Value="Hand" />
-      <Setter Property="FontWeight" Value="SemiBold" />
-      <Setter Property="Template">
-        <Setter.Value>
-          <ControlTemplate TargetType="Button">
-            <Border x:Name="Chrome" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="5" Padding="{TemplateBinding Padding}">
-              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" TextElement.Foreground="{TemplateBinding Foreground}" />
-            </Border>
-            <ControlTemplate.Triggers>
-              <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Chrome" Property="Background" Value="#183B29" /><Setter TargetName="Chrome" Property="BorderBrush" Value="#6A795F" /></Trigger>
-              <Trigger Property="IsPressed" Value="True"><Setter TargetName="Chrome" Property="Background" Value="#102A1D" /></Trigger>
-              <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.4" /></Trigger>
-            </ControlTemplate.Triggers>
-          </ControlTemplate>
-        </Setter.Value>
-      </Setter>
-    </Style>
+  <Border x:Name="ProgressionRoot" Loaded="ProgressionRoot_Loaded" Background="#07120D" BorderBrush="#315A43" BorderThickness="1" CornerRadius="10" TextElement.Foreground="#F2EEE4" TextElement.FontFamily="Segoe UI">
+    <Border.Resources>
+      <ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries><ResourceDictionary Source="Presentation/CasinoControls.xaml" /></ResourceDictionary.MergedDictionaries>
+        <Style TargetType="Button">
+          <Setter Property="Background" Value="#123322" />
+          <Setter Property="Foreground" Value="#F2EEE4" />
+          <Setter Property="BorderBrush" Value="#466552" />
+          <Setter Property="BorderThickness" Value="1" />
+          <Setter Property="Padding" Value="12,7" />
+          <Setter Property="Margin" Value="4" />
+          <Setter Property="Cursor" Value="Hand" />
+          <Setter Property="FontWeight" Value="SemiBold" />
+          <Setter Property="Template">
+            <Setter.Value>
+              <ControlTemplate TargetType="Button">
+                <Border x:Name="Chrome" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="5" Padding="{TemplateBinding Padding}">
+                  <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" TextElement.Foreground="{TemplateBinding Foreground}" />
+                </Border>
+                <ControlTemplate.Triggers>
+                  <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Chrome" Property="Background" Value="#183B29" /><Setter TargetName="Chrome" Property="BorderBrush" Value="#6A795F" /></Trigger>
+                  <Trigger Property="IsPressed" Value="True"><Setter TargetName="Chrome" Property="Background" Value="#102A1D" /></Trigger>
+                  <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.4" /></Trigger>
+                </ControlTemplate.Triggers>
+              </ControlTemplate>
+            </Setter.Value>
+          </Setter>
+        </Style>
 
-    <Style x:Key="WindowButton" TargetType="Button">
-      <Setter Property="Width" Value="42" />
-      <Setter Property="Height" Value="32" />
-      <Setter Property="Padding" Value="0" />
-      <Setter Property="Margin" Value="0" />
-      <Setter Property="Background" Value="Transparent" />
-      <Setter Property="BorderBrush" Value="Transparent" />
-      <Setter Property="Foreground" Value="#AFC1B5" />
-      <Setter Property="FontSize" Value="14" />
-      <Setter Property="FontWeight" Value="Normal" />
-      <Setter Property="Template">
-        <Setter.Value>
-          <ControlTemplate TargetType="Button">
-            <Border x:Name="Chrome" Background="{TemplateBinding Background}" CornerRadius="4" Margin="2">
-              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" TextElement.Foreground="{TemplateBinding Foreground}" />
-            </Border>
-            <ControlTemplate.Triggers>
-              <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Chrome" Property="Background" Value="#173326" /><Setter Property="Foreground" Value="#F8F3E6" /></Trigger>
-              <Trigger Property="IsPressed" Value="True"><Setter TargetName="Chrome" Property="Background" Value="#214332" /></Trigger>
-            </ControlTemplate.Triggers>
-          </ControlTemplate>
-        </Setter.Value>
-      </Setter>
-    </Style>
+        <Style x:Key="WindowButton" TargetType="Button">
+          <Setter Property="Width" Value="42" />
+          <Setter Property="Height" Value="32" />
+          <Setter Property="Padding" Value="0" />
+          <Setter Property="Margin" Value="0" />
+          <Setter Property="Background" Value="Transparent" />
+          <Setter Property="BorderBrush" Value="Transparent" />
+          <Setter Property="Foreground" Value="#AFC1B5" />
+          <Setter Property="FontSize" Value="14" />
+          <Setter Property="FontWeight" Value="Normal" />
+          <Setter Property="Template">
+            <Setter.Value>
+              <ControlTemplate TargetType="Button">
+                <Border x:Name="Chrome" Background="{TemplateBinding Background}" CornerRadius="4" Margin="2">
+                  <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" TextElement.Foreground="{TemplateBinding Foreground}" />
+                </Border>
+                <ControlTemplate.Triggers>
+                  <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Chrome" Property="Background" Value="#173326" /><Setter Property="Foreground" Value="#F8F3E6" /></Trigger>
+                  <Trigger Property="IsPressed" Value="True"><Setter TargetName="Chrome" Property="Background" Value="#214332" /></Trigger>
+                </ControlTemplate.Triggers>
+              </ControlTemplate>
+            </Setter.Value>
+          </Setter>
+        </Style>
 
-    <Style x:Key="CloseWindowButton" TargetType="Button" BasedOn="{StaticResource WindowButton}">
-      <Style.Triggers>
-        <Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="#6F2C2C" /><Setter Property="Foreground" Value="#FFFFFF" /></Trigger>
-      </Style.Triggers>
-    </Style>
+        <Style x:Key="CloseWindowButton" TargetType="Button" BasedOn="{StaticResource WindowButton}">
+          <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="#6F2C2C" /><Setter Property="Foreground" Value="#FFFFFF" /></Trigger>
+          </Style.Triggers>
+        </Style>
 
-    <Style TargetType="TabItem">
-      <Setter Property="Foreground" Value="#AFC1B5" />
-      <Setter Property="Background" Value="#0A1A12" />
-      <Setter Property="BorderBrush" Value="#2F5140" />
-      <Setter Property="Padding" Value="17,9" />
-      <Setter Property="FontWeight" Value="SemiBold" />
-      <Setter Property="Template">
-        <Setter.Value>
-          <ControlTemplate TargetType="TabItem">
-            <Border x:Name="TabChrome" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1,1,1,0" CornerRadius="6,6,0,0" Padding="{TemplateBinding Padding}" Margin="0,0,3,0">
-              <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center" TextElement.Foreground="{TemplateBinding Foreground}" />
-            </Border>
-            <ControlTemplate.Triggers>
-              <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="TabChrome" Property="Background" Value="#10271B" /><Setter Property="Foreground" Value="#E8EEE9" /></Trigger>
-              <Trigger Property="IsSelected" Value="True"><Setter TargetName="TabChrome" Property="Background" Value="#173727" /><Setter TargetName="TabChrome" Property="BorderBrush" Value="#8C7540" /><Setter Property="Foreground" Value="#FFE09B" /></Trigger>
-              <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.45" /></Trigger>
-            </ControlTemplate.Triggers>
-          </ControlTemplate>
-        </Setter.Value>
-      </Setter>
-    </Style>
+        <Style TargetType="TabItem">
+          <Setter Property="Foreground" Value="#AFC1B5" />
+          <Setter Property="Background" Value="#0A1A12" />
+          <Setter Property="BorderBrush" Value="#2F5140" />
+          <Setter Property="Padding" Value="17,9" />
+          <Setter Property="FontWeight" Value="SemiBold" />
+          <Setter Property="Template">
+            <Setter.Value>
+              <ControlTemplate TargetType="TabItem">
+                <Border x:Name="TabChrome" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1,1,1,0" CornerRadius="6,6,0,0" Padding="{TemplateBinding Padding}" Margin="0,0,3,0">
+                  <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center" TextElement.Foreground="{TemplateBinding Foreground}" />
+                </Border>
+                <ControlTemplate.Triggers>
+                  <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="TabChrome" Property="Background" Value="#10271B" /><Setter Property="Foreground" Value="#E8EEE9" /></Trigger>
+                  <Trigger Property="IsSelected" Value="True"><Setter TargetName="TabChrome" Property="Background" Value="#173727" /><Setter TargetName="TabChrome" Property="BorderBrush" Value="#8C7540" /><Setter Property="Foreground" Value="#FFE09B" /></Trigger>
+                  <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.45" /></Trigger>
+                </ControlTemplate.Triggers>
+              </ControlTemplate>
+            </Setter.Value>
+          </Setter>
+        </Style>
 
-    <Style x:Key="Panel" TargetType="Border">
-      <Setter Property="Background" Value="#B30B2117" />
-      <Setter Property="BorderBrush" Value="#315A43" />
-      <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="CornerRadius" Value="10" />
-      <Setter Property="Padding" Value="16" />
-      <Setter Property="Margin" Value="6" />
-    </Style>
+        <Style x:Key="Panel" TargetType="Border">
+          <Setter Property="Background" Value="#B30B2117" />
+          <Setter Property="BorderBrush" Value="#315A43" />
+          <Setter Property="BorderThickness" Value="1" />
+          <Setter Property="CornerRadius" Value="10" />
+          <Setter Property="Padding" Value="16" />
+          <Setter Property="Margin" Value="6" />
+        </Style>
 
-    <Style x:Key="SectionCaption" TargetType="TextBlock">
-      <Setter Property="Foreground" Value="#FFD77C" />
-      <Setter Property="FontWeight" Value="Bold" />
-      <Setter Property="FontSize" Value="11" />
-    </Style>
-  </Window.Resources>
-
-  <Border Background="#07120D" BorderBrush="#315A43" BorderThickness="1" CornerRadius="10">
+        <Style x:Key="SectionCaption" TargetType="TextBlock">
+          <Setter Property="Foreground" Value="#FFD77C" />
+          <Setter Property="FontWeight" Value="Bold" />
+          <Setter Property="FontSize" Value="11" />
+        </Style>
+      </ResourceDictionary>
+    </Border.Resources>
     <Grid>
       <Grid.RowDefinitions><RowDefinition Height="42" /><RowDefinition Height="*" /></Grid.RowDefinitions>
 
-      <Border Grid.Row="0" Background="#081A11" BorderBrush="#284535" BorderThickness="0,0,0,1" CornerRadius="9,9,0,0" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+      <Border x:Name="NativeTitleBar" Grid.Row="0" Background="#081A11" BorderBrush="#284535" BorderThickness="0,0,0,1" CornerRadius="9,9,0,0" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
         <Grid Margin="14,0,6,0">
           <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
           <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
@@ -132,17 +134,24 @@
         </Grid>
       </Border>
 
+      <Border x:Name="EmbeddedTitleBar" Grid.Row="0" Visibility="Collapsed" Background="#081A11" BorderBrush="#284535" BorderThickness="0,0,0,1">
+        <DockPanel Margin="16,0,10,0">
+          <Button DockPanel.Dock="Right" Content="Back" Click="EmbeddedBackButton_Click" Padding="14,5" Margin="4,2" />
+          <TextBlock Text="PROFILE &amp; PROGRESSION" Foreground="#FFD77C" FontWeight="SemiBold" VerticalAlignment="Center" />
+        </DockPanel>
+      </Border>
+
       <Grid Grid.Row="1" Margin="16">
         <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
 
-        <Border x:Name="ProfileFrame" Padding="16" CornerRadius="12" BorderThickness="2" Background="#0B2117" BorderBrush="#D4A84F" Margin="0,0,0,12">
+        <Border x:Name="ProfileFrame" Padding="14,10" CornerRadius="12" BorderThickness="2" Background="#0B2117" BorderBrush="#D4A84F" Margin="0,0,0,12">
           <Grid>
             <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-            <StackPanel>
-              <TextBlock x:Name="TitleText" FontSize="25" FontWeight="Bold" Foreground="#FFE09B" />
+            <StackPanel Margin="0,0,20,0">
+              <TextBlock x:Name="TitleText" TextTrimming="CharacterEllipsis" FontSize="22" FontWeight="Bold" Foreground="#FFE09B" />
               <TextBlock x:Name="LevelText" FontSize="13" Foreground="#B6C8BC" Margin="0,3,0,0" />
-              <Grid Margin="0,9,0,0" MaxWidth="720" HorizontalAlignment="Left">
-                <ProgressBar x:Name="LevelProgress" Width="720" Height="15" Minimum="0" Maximum="1" Background="#173729" Foreground="#D4A84F" />
+              <Grid Margin="0,8,0,0" MaxWidth="720" HorizontalAlignment="Stretch">
+                <ProgressBar x:Name="LevelProgress" Height="15" Minimum="0" Maximum="1" Background="#173729" Foreground="#D4A84F" />
                 <TextBlock x:Name="LevelProgressText" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10" FontWeight="Bold" Foreground="#FFF8E8" />
               </Grid>
             </StackPanel>
@@ -153,16 +162,19 @@
           </Grid>
         </Border>
 
-        <TabControl Grid.Row="1" Background="#07120D" BorderBrush="#315A43" BorderThickness="1" Padding="0">
+        <TabControl x:Name="ProgressionTabs" Grid.Row="1" Background="#07120D" BorderBrush="#315A43" BorderThickness="1" Padding="0">
           <TabItem Header="Overview">
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
-              <StackPanel Margin="8">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+              <StackPanel Margin="10">
+                <TextBlock Text="YOUR CASINO AT A GLANCE" Style="{StaticResource SectionCaption}" Margin="6,4,6,5" />
+                <UniformGrid x:Name="OverviewSummaryPanel" Columns="4" />
+                <UniformGrid x:Name="GameStatsPanel" Columns="2" />
+                <ContentControl x:Name="LegacySlotStatsHost" HorizontalContentAlignment="Stretch" />
                 <Grid>
                   <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
-                  <Border Style="{StaticResource Panel}"><StackPanel><TextBlock Text="LIFETIME" Style="{StaticResource SectionCaption}" /><TextBlock x:Name="LifetimeStatsText" Margin="0,10,0,0" LineHeight="24" /></StackPanel></Border>
-                  <Border Grid.Column="1" Style="{StaticResource Panel}"><StackPanel><TextBlock Text="THIS SESSION" Style="{StaticResource SectionCaption}" /><TextBlock x:Name="SessionStatsText" Margin="0,10,0,0" LineHeight="24" /></StackPanel></Border>
+                  <Border Style="{StaticResource Panel}"><StackPanel><TextBlock Text="BLACKJACK · THIS SESSION" Style="{StaticResource SectionCaption}" /><TextBlock x:Name="SessionStatsText" Margin="0,8,0,0" LineHeight="21" TextWrapping="Wrap" /></StackPanel></Border>
+                  <Border Grid.Column="1" Style="{StaticResource Panel}"><StackPanel><TextBlock Text="BLACKJACK · TABLE PERFORMANCE" Style="{StaticResource SectionCaption}" /><StackPanel x:Name="TableStatsPanel" Margin="0,8,0,0" /></StackPanel></Border>
                 </Grid>
-                <Border Style="{StaticResource Panel}"><StackPanel><TextBlock Text="TABLE PERFORMANCE" Style="{StaticResource SectionCaption}" /><StackPanel x:Name="TableStatsPanel" Margin="0,8,0,0" /></StackPanel></Border>
               </StackPanel>
             </ScrollViewer>
           </TabItem>
@@ -229,11 +241,53 @@
             </Grid>
           </TabItem>
 
+          <TabItem Header="Challenges">
+            <Grid Margin="14,10">
+              <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+              <Border Style="{StaticResource Panel}" Margin="0,0,0,8" Padding="12,9">
+                <StackPanel>
+                  <DockPanel>
+                    <Button x:Name="ClaimAllButton" DockPanel.Dock="Right" Content="Claim All" Click="ClaimAllChallenges_Click" Margin="12,0,0,0" MinWidth="170" ToolTip="Claim every ready reward across all categories, including hidden pages and filters." />
+                    <StackPanel VerticalAlignment="Center"><TextBlock Text="CHALLENGES" Style="{StaticResource SectionCaption}" /><TextBlock x:Name="ChallengeSummaryText" Margin="0,3,0,0" FontWeight="SemiBold" /></StackPanel>
+                  </DockPanel>
+                  <WrapPanel Margin="0,9,0,0">
+                    <StackPanel Margin="0,0,12,0"><TextBlock Text="CATEGORY" Style="{StaticResource SectionCaption}" Foreground="#A6BBAE" FontSize="9" /><ComboBox x:Name="ChallengeCategoryFilter" Width="185" SelectionChanged="ChallengeFilters_Changed" AutomationProperties.Name="Challenge category" /></StackPanel>
+                    <StackPanel Margin="0,0,12,0"><TextBlock Text="STATUS" Style="{StaticResource SectionCaption}" Foreground="#A6BBAE" FontSize="9" /><ComboBox x:Name="ChallengeStatusFilter" Width="155" SelectionChanged="ChallengeFilters_Changed" AutomationProperties.Name="Challenge status" /></StackPanel>
+                    <StackPanel Margin="0,0,8,0"><TextBlock Text="SEARCH CHALLENGES" Style="{StaticResource SectionCaption}" Foreground="#A6BBAE" FontSize="9" /><TextBox x:Name="ChallengeSearchBox" Width="250" TextChanged="ChallengeSearch_Changed" AutomationProperties.Name="Search challenges" ToolTip="Search names, descriptions and categories" /></StackPanel>
+                    <Button Content="Reset" Click="ResetChallengeFilters_Click" VerticalAlignment="Bottom" Padding="12,6" />
+                  </WrapPanel>
+                  <TextBlock x:Name="ChallengeStatusText" Foreground="#54E1B7" Margin="0,7,0,0" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite" />
+                </StackPanel>
+              </Border>
+              <ScrollViewer x:Name="ChallengesScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel x:Name="ChallengesPanel" /></ScrollViewer>
+              <DockPanel Grid.Row="2" Margin="0,8,0,0">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"><Button x:Name="ChallengePreviousButton" Content="Previous" Click="ChallengePrevious_Click" /><Button x:Name="ChallengeNextButton" Content="Next" Click="ChallengeNext_Click" /></StackPanel>
+                <TextBlock x:Name="ChallengePageText" VerticalAlignment="Center" Foreground="#A6BBAE" />
+              </DockPanel>
+            </Grid>
+          </TabItem>
+
           <TabItem Header="Cosmetic Shop">
-            <Grid Margin="10">
-              <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
-              <StackPanel Orientation="Horizontal" Margin="6"><TextBlock x:Name="ShopCoinsText" FontSize="18" FontWeight="Bold" Foreground="#FFD77C" /><TextBlock x:Name="ShopStatusText" Margin="18,3,0,0" Foreground="#B7C9BD" /></StackPanel>
-              <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"><StackPanel x:Name="ShopPanel" Margin="8" /></ScrollViewer>
+            <Grid Margin="14,10">
+              <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+              <Border Style="{StaticResource Panel}" Margin="0,0,0,8" Padding="12,9">
+                <StackPanel>
+                  <DockPanel><TextBlock x:Name="ShopCoinsText" DockPanel.Dock="Right" FontSize="17" FontWeight="Bold" Foreground="#54E1B7" /><StackPanel><TextBlock Text="SHOP &amp; COLLECTION" Style="{StaticResource SectionCaption}" /><TextBlock x:Name="ShopSummaryText" Margin="0,3,0,0" Foreground="#A6BBAE" /></StackPanel></DockPanel>
+                  <WrapPanel Margin="0,9,0,0">
+                    <StackPanel Margin="0,0,10,0"><TextBlock Text="TYPE" Style="{StaticResource SectionCaption}" Foreground="#A6BBAE" FontSize="9" /><ComboBox x:Name="ShopKindFilter" Width="135" SelectionChanged="ShopFilters_Changed" AutomationProperties.Name="Cosmetic type" /></StackPanel>
+                    <StackPanel Margin="0,0,10,0"><TextBlock Text="STATUS" Style="{StaticResource SectionCaption}" Foreground="#A6BBAE" FontSize="9" /><ComboBox x:Name="ShopOwnershipFilter" Width="150" SelectionChanged="ShopFilters_Changed" AutomationProperties.Name="Cosmetic ownership and availability" /></StackPanel>
+                    <StackPanel Margin="0,0,10,0"><TextBlock Text="SORT" Style="{StaticResource SectionCaption}" Foreground="#A6BBAE" FontSize="9" /><ComboBox x:Name="ShopSortFilter" Width="140" SelectionChanged="ShopFilters_Changed" AutomationProperties.Name="Cosmetic sort order" /></StackPanel>
+                    <StackPanel Margin="0,0,8,0"><TextBlock Text="SEARCH COSMETICS" Style="{StaticResource SectionCaption}" Foreground="#A6BBAE" FontSize="9" /><TextBox x:Name="ShopSearchBox" Width="210" TextChanged="ShopSearch_Changed" AutomationProperties.Name="Search cosmetics" /></StackPanel>
+                    <Button Content="Reset" Click="ResetShopFilters_Click" VerticalAlignment="Bottom" Padding="12,6" />
+                  </WrapPanel>
+                  <TextBlock x:Name="ShopStatusText" Margin="0,7,0,0" Foreground="#B7C9BD" TextWrapping="Wrap" Text="Preview cosmetics, buy with Cosmetic Coins, or equip an owned reward." AutomationProperties.LiveSetting="Polite" />
+                </StackPanel>
+              </Border>
+              <ScrollViewer x:Name="ShopScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel x:Name="ShopPanel" /></ScrollViewer>
+              <DockPanel Grid.Row="2" Margin="0,8,0,0">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"><Button x:Name="ShopPreviousButton" Content="Previous" Click="ShopPrevious_Click" /><Button x:Name="ShopNextButton" Content="Next" Click="ShopNext_Click" /></StackPanel>
+                <TextBlock x:Name="ShopPageText" VerticalAlignment="Center" Foreground="#A6BBAE" />
+              </DockPanel>
             </Grid>
           </TabItem>
         </TabControl>

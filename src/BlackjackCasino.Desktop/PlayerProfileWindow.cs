@@ -11,142 +11,172 @@ namespace BlackjackCasino.Desktop;
 internal sealed class PlayerProfileWindow : Window
 {
     private readonly PlayerProgressionController controller;
-    private WrapPanel? playerPortraitPanel;
-    private ContentControl? equippedPortraitHost;
-    private TextBlock? playerStatusText;
-    private TextBox? nameBox;
-    private TextBlock? nameLabel;
-    private static readonly Brush MutedBrush = new SolidColorBrush(Color.FromRgb(166,187,174));
-    private static readonly Brush PositiveBrush = new SolidColorBrush(Color.FromRgb(142,199,129));
-    private static readonly Brush CoinBrush = new SolidColorBrush(Color.FromRgb(84,225,183));
-    internal PlayerProfileWindow(PlayerProgressionController controller)
+    private readonly Action openProgression;
+    private readonly Action closePage;
+    private readonly Grid profileRoot;
+    private readonly WrapPanel playerPortraitPanel = new();
+    private readonly ContentControl equippedPortraitHost = new();
+    private readonly TextBlock playerStatusText = new();
+    private readonly TextBlock nameLabel = new();
+    private readonly TextBlock levelLabel = new();
+    private readonly TextBlock collectionLabel = new();
+    private readonly TextBox nameBox = new();
+    private readonly TextBox portraitSearch = new();
+    private static readonly Brush MutedBrush = Brush("#A6BBAE");
+    private static readonly Brush PositiveBrush = Brush("#8EC781");
+    private static readonly Brush CoinBrush = Brush("#54E1B7");
+
+    internal PlayerProfileWindow(PlayerProgressionController controller,
+        Action? openProgression = null, Action? closePage = null)
     {
-        this.controller=controller;
-        Title="Player profile · Blackjack Casino"; Width=1040; Height=780; MinWidth=940; MinHeight=650;
-        WindowStartupLocation=WindowStartupLocation.CenterOwner;
-        Background=new SolidColorBrush(Color.FromRgb(7,18,13)); Foreground=Brushes.Ivory;
-        var root=new DockPanel {Margin=new Thickness(18)};
-        var heading=new DockPanel {Margin=new Thickness(6,0,6,12)};
-        var back=new Button {Content="Close profile",HorizontalAlignment=HorizontalAlignment.Right}; back.Click+=(_,_)=>Close(); DockPanel.SetDock(back,Dock.Right); heading.Children.Add(back);
-        heading.Children.Add(new TextBlock {Text="YOUR CASINO IDENTITY",FontSize=24,FontWeight=FontWeights.Bold,VerticalAlignment=VerticalAlignment.Center});
-        DockPanel.SetDock(heading,Dock.Top); root.Children.Add(heading);
-        root.Children.Add(BuildPlayerContent()); Content=root;
-        MenuAudio.Attach(this); RefreshPlayer();
+        this.controller = controller;
+        this.openProgression = openProgression ?? (() => { });
+        this.closePage = closePage ?? Close;
+        Title = "Player profile · Blackjack Casino";
+        Width = 1200; Height = 800; MinWidth = 940; MinHeight = 650;
+        WindowStyle = WindowStyle.None;
+        WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        Background = Brush("#07120D"); Foreground = Brush("#F2EEE4");
+        FontFamily = new FontFamily("Segoe UI");
+        Resources.MergedDictionaries.Add(new ResourceDictionary
+        {
+            Source = new Uri("/BlackjackCasino.Desktop;component/Presentation/CasinoControls.xaml", UriKind.Relative),
+        });
+        profileRoot = BuildPlayerContent();
+        Content = profileRoot;
+        MenuAudio.Attach(this);
+        RefreshPlayer();
     }
-    private static Border PanelBorder() => new() {Background=new SolidColorBrush(Color.FromRgb(11,33,23)),BorderBrush=new SolidColorBrush(Color.FromRgb(49,90,67)),BorderThickness=new Thickness(1),CornerRadius=new CornerRadius(10),Margin=new Thickness(5),Padding=new Thickness(12)};
-    private static FrameworkElement CreatePortraitVisual(CosmeticDefinition portrait,double size) => ProgressionWindow.CreatePortraitVisual(portrait,size);
-    private FrameworkElement BuildPlayerContent()
+
+    private static Brush Brush(string color) => new SolidColorBrush((Color)ColorConverter.ConvertFromString(color));
+    private static TextBlock Caption(string text) => new()
     {
-        var root = new Grid { Margin = new Thickness(10) };
+        Text = text, Foreground = Brush("#FFD77C"), FontSize = 11, FontWeight = FontWeights.Bold,
+    };
+    private static Border PanelBorder() => new()
+    {
+        Background = Brush("#0B2117"), BorderBrush = Brush("#315A43"),
+        BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(10), Padding = new Thickness(18),
+    };
+    private Button ActionButton(string text, Action action)
+    {
+        var button = new Button { Content = text, Margin = new Thickness(0, 5, 0, 0) };
+        button.Click += (_, _) => action();
+        return button;
+    }
+
+    private Grid BuildPlayerContent()
+    {
+        var root = new Grid { Background = Background, Margin = new Thickness(22) };
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         root.RowDefinitions.Add(new RowDefinition());
+        var heading = new DockPanel { Margin = new Thickness(0, 0, 0, 18) };
+        var back = ActionButton("← Back", closePage);
+        back.Name = "ProfileBackButton";
+        DockPanel.SetDock(back, Dock.Right); heading.Children.Add(back);
+        var title = new StackPanel();
+        title.Children.Add(Caption("BLACKJACK CASINO / PLAYER PROFILE"));
+        title.Children.Add(new TextBlock
+        {
+            Text = "Your casino identity", FontSize = 27, FontWeight = FontWeights.Bold,
+            Foreground = Brush("#FFE09B"), Margin = new Thickness(0, 5, 0, 0),
+        });
+        heading.Children.Add(title); root.Children.Add(heading);
 
-        var summary = PanelBorder();
-        summary.Padding = new Thickness(18);
-        var summaryGrid = new Grid();
-        summaryGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) });
-        summaryGrid.ColumnDefinitions.Add(new ColumnDefinition());
-        summaryGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(190) });
-        equippedPortraitHost = new ContentControl { Width = 118, Height = 118, HorizontalAlignment = HorizontalAlignment.Left };
-        summaryGrid.Children.Add(equippedPortraitHost);
+        var body = new Grid(); Grid.SetRow(body, 1); root.Children.Add(body);
+        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(300) });
+        body.ColumnDefinitions.Add(new ColumnDefinition());
+        var summary = PanelBorder(); summary.Margin = new Thickness(0, 0, 16, 0);
+        var identity = new StackPanel();
+        equippedPortraitHost.Width = 140; equippedPortraitHost.Height = 140;
+        equippedPortraitHost.HorizontalAlignment = HorizontalAlignment.Center;
+        identity.Children.Add(equippedPortraitHost);
+        nameLabel.FontSize = 25; nameLabel.FontWeight = FontWeights.Bold;
+        nameLabel.TextWrapping = TextWrapping.Wrap; nameLabel.Margin = new Thickness(0, 14, 0, 0);
+        identity.Children.Add(nameLabel);
+        levelLabel.Foreground = CoinBrush; levelLabel.Margin = new Thickness(0, 5, 0, 18);
+        levelLabel.TextWrapping = TextWrapping.Wrap; identity.Children.Add(levelLabel);
+        identity.Children.Add(Caption("DISPLAY NAME"));
+        nameBox.Name = "ProfileNameBox"; nameBox.Text = controller.Profile.DisplayName;
+        nameBox.MaxLength = 256; nameBox.ToolTip = "Profile name, up to 24 characters";
+        nameBox.Margin = new Thickness(0, 8, 0, 0); identity.Children.Add(nameBox);
+        var saveName = ActionButton("Save name", () =>
+        {
+            controller.RenameProfile(nameBox.Text, out string message);
+            playerStatusText.Text = message; nameBox.Text = controller.Profile.DisplayName; RefreshPlayer();
+        });
+        saveName.Name = "RenameProfileButton"; identity.Children.Add(saveName);
+        var progression = ActionButton("Progression & shop →", openProgression);
+        progression.Name = "ProfileProgressionButton";
+        progression.Margin = new Thickness(0, 24, 0, 0); identity.Children.Add(progression);
+        var export = new Button { Content = "Save Progress…", Margin = new Thickness(0, 8, 0, 0) };
+        export.Click += SaveProgress_Click; identity.Children.Add(export);
+        playerStatusText.Foreground = PositiveBrush; playerStatusText.TextWrapping = TextWrapping.Wrap;
+        playerStatusText.Margin = new Thickness(0, 14, 0, 0); identity.Children.Add(playerStatusText);
+        summary.Child = new ScrollViewer { Content = identity, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
+        body.Children.Add(summary);
 
-        var info = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-        info.Children.Add(new TextBlock { Text = "PLAYER", Foreground = new SolidColorBrush(Color.FromRgb(255, 215, 124)), FontSize = 11, FontWeight = FontWeights.Bold });
-        nameLabel = new TextBlock { Text=controller.Profile.DisplayName,FontSize=22,FontWeight=FontWeights.Bold,Margin=new Thickness(0,4,0,0) }; info.Children.Add(nameLabel);
-        info.Children.Add(new TextBlock {Text=$"Level {controller.Profile.Level} · Prestige {controller.Profile.Prestige} · ◆ {controller.Profile.Coins:N0}",Foreground=CoinBrush,Margin=new Thickness(0,5,0,0)});
-        info.Children.Add(new TextBlock { Text = "Choose an owned profile picture. Portraits can be unlocked in the Shop and Season Pass.", Foreground = MutedBrush, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 7, 10, 0) });
-        playerStatusText = new TextBlock { Foreground = PositiveBrush, Margin = new Thickness(0, 8, 0, 0), TextWrapping = TextWrapping.Wrap };
-        info.Children.Add(playerStatusText);
-        var rename = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0,12,0,0) };
-        nameBox = new TextBox { Name="ProfileNameBox", Text=controller.Profile.DisplayName, Width=200, MaxLength=256, ToolTip="Profile name, up to 24 characters" };
-        var saveName = new Button { Name="RenameProfileButton", Content="Save name", Margin=new Thickness(8,0,0,0) };
-        saveName.Click += (_,_) => { controller.RenameProfile(nameBox.Text,out string message); playerStatusText.Text=message; nameBox.Text=controller.Profile.DisplayName; RefreshPlayer(); };
-        rename.Children.Add(nameBox); rename.Children.Add(saveName); info.Children.Add(rename);
-
-        Grid.SetColumn(info, 1);
-        summaryGrid.Children.Add(info);
-
-        var actions = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-        var export = new Button { Content = "Save Progress…", ToolTip = "Export your current player statistics and progression as a JSON file." };
-        export.Click += SaveProgress_Click;
-        actions.Children.Add(export);
-        var progression = new Button {Content="Progression & shop",Margin=new Thickness(0,8,0,0)};
-        progression.Click+=(_,_)=> { var window=new ProgressionWindow(controller) {Owner=this}; window.ShowDialog(); RefreshPlayer(); };
-        actions.Children.Add(progression);
-        actions.Children.Add(new TextBlock { Text = "Exports stats, progression, seasons and challenge progress. Your live save is not moved or modified.", Foreground = MutedBrush, FontSize = 10, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(5, 6, 5, 0) });
-        Grid.SetColumn(actions, 2);
-        summaryGrid.Children.Add(actions);
-        summary.Child = summaryGrid;
-        root.Children.Add(summary);
-
-        var portraitPanel = new StackPanel { Margin = new Thickness(5, 8, 5, 5) };
-        portraitPanel.Children.Add(new TextBlock { Text = "OWNED PROFILE PICTURES", Foreground = new SolidColorBrush(Color.FromRgb(255, 215, 124)), FontSize = 11, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 8) });
-        playerPortraitPanel = new WrapPanel();
-        portraitPanel.Children.Add(playerPortraitPanel);
-        var scroll = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = portraitPanel };
-        Grid.SetRow(scroll, 1);
-        root.Children.Add(scroll);
-
+        var collection = PanelBorder(); Grid.SetColumn(collection, 1); body.Children.Add(collection);
+        var gallery = new Grid();
+        gallery.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        gallery.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        gallery.RowDefinitions.Add(new RowDefinition());
+        var galleryHeader = new StackPanel();
+        galleryHeader.Children.Add(Caption("PORTRAIT COLLECTION"));
+        collectionLabel.Foreground = MutedBrush; collectionLabel.Margin = new Thickness(0, 5, 0, 12);
+        galleryHeader.Children.Add(collectionLabel); gallery.Children.Add(galleryHeader);
+        portraitSearch.Name = "PortraitSearchBox";
+        portraitSearch.ToolTip = "Search owned portraits";
+        portraitSearch.TextChanged += (_, _) => RefreshPlayer();
+        portraitSearch.Margin = new Thickness(0, 0, 0, 12);
+        Grid.SetRow(portraitSearch, 1); gallery.Children.Add(portraitSearch);
+        var scroll = new ScrollViewer
+        {
+            Content = playerPortraitPanel, VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+        };
+        Grid.SetRow(scroll, 2); gallery.Children.Add(scroll); collection.Child = gallery;
         return root;
     }
 
-    private void RefreshPlayer()
+    internal void RefreshPlayer()
     {
-        if (playerPortraitPanel is null || equippedPortraitHost is null)
-        {
-            return;
-        }
-
         PlayerProfileState profile = controller.Profile;
-        if(nameLabel is not null) nameLabel.Text=profile.DisplayName;
-        CosmeticDefinition equipped = CosmeticCatalog.Get(profile.EquippedPortraitId);
-        equippedPortraitHost.Content = CreatePortraitVisual(equipped, 112);
+        nameLabel.Text = profile.DisplayName;
+        levelLabel.Text = $"Level {profile.Level} · Prestige {profile.Prestige}\n◆ {profile.Coins:N0} cosmetic coins";
+        equippedPortraitHost.Content = ProgressionWindow.CreatePortraitVisual(CosmeticCatalog.Get(profile.EquippedPortraitId), 136);
+        CosmeticDefinition[] owned = CosmeticCatalog.All.Where(x => x.Kind == CosmeticKind.Portrait
+            && profile.OwnedCosmeticIds.Contains(x.Id, StringComparer.Ordinal)).ToArray();
+        collectionLabel.Text = $"{owned.Length} owned · Select a portrait to make it yours";
         playerPortraitPanel.Children.Clear();
-
-        foreach (CosmeticDefinition portrait in CosmeticCatalog.All
-                     .Where(x => x.Kind == CosmeticKind.Portrait && profile.OwnedCosmeticIds.Contains(x.Id, StringComparer.Ordinal))
-                     .OrderBy(x => x.Name))
+        foreach (CosmeticDefinition portrait in owned
+            .Where(x => x.Name.Contains(portraitSearch.Text.Trim(), StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(x => x.Id == profile.EquippedPortraitId).ThenBy(x => x.Name))
         {
             bool selected = portrait.Id == profile.EquippedPortraitId;
-            var card = new Border
-            {
-                Width = 174,
-                MinHeight = 190,
-                Margin = new Thickness(5),
-                Padding = new Thickness(10),
-                CornerRadius = new CornerRadius(10),
-                BorderThickness = new Thickness(selected ? 2 : 1),
-                BorderBrush = selected ? CoinBrush : new SolidColorBrush(Color.FromRgb(49, 90, 67)),
-                Background = new SolidColorBrush(Color.FromArgb(180, 11, 33, 23)),
-            };
+            var card = PanelBorder(); card.Width = 148; card.Padding = new Thickness(10);
+            card.Margin = new Thickness(0, 0, 10, 10);
+            card.BorderBrush = selected ? CoinBrush : Brush("#315A43");
             var stack = new StackPanel();
-            FrameworkElement visual = CreatePortraitVisual(portrait, 104);
-            visual.HorizontalAlignment = HorizontalAlignment.Center;
-            stack.Children.Add(visual);
-            stack.Children.Add(new TextBlock { Text = portrait.Name, FontWeight = FontWeights.Bold, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 7, 0, 3) });
-            var equip = new Button { Tag = portrait.Id, Content = selected ? "Equipped" : "Use portrait", IsEnabled = !selected };
-            equip.Click += PortraitEquip_Click;
-            stack.Children.Add(equip);
-            card.Child = stack;
-            playerPortraitPanel.Children.Add(card);
-        }
-    }
-
-    private void PortraitEquip_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is not Button { Tag: string id })
-        {
-            return;
-        }
-
-        if (controller.EquipCosmetic(id))
-        {
-            if (playerStatusText is not null)
+            var visual = ProgressionWindow.CreatePortraitVisual(portrait, 92);
+            visual.HorizontalAlignment = HorizontalAlignment.Center; stack.Children.Add(visual);
+            stack.Children.Add(new TextBlock
             {
-                playerStatusText.Text = $"Using {CosmeticCatalog.Get(id).Name}.";
-            }
-            RefreshPlayer();
+                Text = portrait.Name, FontWeight = FontWeights.Bold, TextWrapping = TextWrapping.Wrap,
+                TextAlignment = TextAlignment.Center, MinHeight = 34, Margin = new Thickness(0, 8, 0, 4),
+            });
+            var equip = ActionButton(selected ? "Equipped" : "Use portrait", () =>
+            {
+                if (controller.EquipCosmetic(portrait.Id))
+                {
+                    playerStatusText.Text = $"Using {portrait.Name}."; RefreshPlayer();
+                }
+            });
+            equip.IsEnabled = !selected; equip.FontSize = 12; equip.Padding = new Thickness(6);
+            stack.Children.Add(equip); card.Child = stack; playerPortraitPanel.Children.Add(card);
         }
+        if (playerPortraitPanel.Children.Count == 0)
+            playerPortraitPanel.Children.Add(new TextBlock { Text = "No portraits match your search.", Foreground = MutedBrush });
     }
 
     private void SaveProgress_Click(object sender, RoutedEventArgs e)
@@ -160,7 +190,7 @@ internal sealed class PlayerProfileWindow : Window
             AddExtension = true,
             OverwritePrompt = true,
         };
-        if (dialog.ShowDialog(this) != true)
+        if (dialog.ShowDialog(Window.GetWindow(profileRoot)) != true)
         {
             return;
         }
@@ -170,7 +200,7 @@ internal sealed class PlayerProfileWindow : Window
             PlayerProfileState profile = controller.Profile;
             var export = new
             {
-                ExportVersion = 1,
+                ExportVersion = 2,
                 GeneratedAt = DateTimeOffset.Now,
                 Player = new
                 {
@@ -179,7 +209,7 @@ internal sealed class PlayerProfileWindow : Window
                     profile.Prestige,
                     CosmeticCoins = profile.Coins,
                     profile.LifetimeExperience,
-                    PlaytimeSeconds = profile.TotalPlaytimeSeconds + (long)controller.SessionElapsed.TotalSeconds,
+                    PlaytimeSeconds = (long)controller.TotalPlaytime.TotalSeconds,
                     Title = CosmeticCatalog.Get(profile.EquippedTitleId).Name,
                     Frame = CosmeticCatalog.Get(profile.EquippedFrameId).Name,
                     Portrait = CosmeticCatalog.Get(profile.EquippedPortraitId).Name,
@@ -187,6 +217,8 @@ internal sealed class PlayerProfileWindow : Window
                 Blackjack = profile.LifetimeStatistics,
                 MidnightReels = profile.Slots,
                 MidnightManor = profile.Manor,
+                NeonVault = profile.NeonVault,
+                LegacyPooledSlots = profile.LegacyPooledSlots,
                 Seasons = profile.Seasons.Values.OrderBy(x => x.SeasonId).ToArray(),
                 Challenges = ChallengeCatalog.All.Select(challenge => new
                 {

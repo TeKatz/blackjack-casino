@@ -184,26 +184,56 @@ public sealed class ProgressionService
 
     public ChallengeClaimResult ClaimChallenge(string challengeId)
     {
-        ChallengeDefinition? challenge = ChallengeCatalog.TryGet(challengeId);
-        if (challenge is null)
+        lock (State)
         {
-            return new ChallengeClaimResult(false, "Unknown challenge.");
-        }
+            ChallengeDefinition? challenge = ChallengeCatalog.TryGet(challengeId);
+            if (challenge is null)
+            {
+                return new ChallengeClaimResult(false, "Unknown challenge.");
+            }
 
-        if (State.ClaimedChallengeIds.Contains(challenge.Id, StringComparer.Ordinal))
+            if (State.ClaimedChallengeIds.Contains(challenge.Id, StringComparer.Ordinal))
+            {
+                return new ChallengeClaimResult(false, "Challenge reward already claimed.", challenge);
+            }
+
+            decimal progress = ChallengeCatalog.Progress(State, challenge);
+            if (progress < challenge.Goal)
+            {
+                return new ChallengeClaimResult(false, "Challenge is not complete yet.", challenge);
+            }
+
+            long balance = checked(State.Coins + challenge.CoinReward);
+            State.ClaimedChallengeIds.Add(challenge.Id);
+            State.Coins = balance;
+            return new ChallengeClaimResult(true, $"Claimed {challenge.CoinReward:N0} coins for {challenge.Name}.", challenge, challenge.CoinReward);
+        }
+    }
+
+    /// <summary>Claims one snapshot of earned rewards, with no partial mutation or duplicate payment.</summary>
+    public ChallengeClaimAllResult ClaimAllChallenges()
+    {
+        // A profile can be shared by multiple services. Single and bulk claims use the same gate.
+        lock (State)
         {
-            return new ChallengeClaimResult(false, "Challenge reward already claimed.", challenge);
-        }
+            var claimed = State.ClaimedChallengeIds.ToHashSet(StringComparer.Ordinal);
+            ChallengeDefinition[] available = ChallengeCatalog.All
+                .Where(challenge => !claimed.Contains(challenge.Id) && ChallengeCatalog.Complete(State, challenge))
+                .ToArray();
+            if (available.Length == 0)
+            {
+                return new(false, "No completed challenge rewards to claim.", []);
+            }
 
-        decimal progress = ChallengeCatalog.Progress(State, challenge);
-        if (progress < challenge.Goal)
-        {
-            return new ChallengeClaimResult(false, "Challenge is not complete yet.", challenge);
+            // Check both sums before touching either the wallet or the claim ledger.
+            long coins = available.Aggregate(0L, (total, challenge) => checked(total + challenge.CoinReward));
+            long balance = checked(State.Coins + coins);
+            var updatedClaims = new List<string>(State.ClaimedChallengeIds);
+            updatedClaims.AddRange(available.Select(challenge => challenge.Id));
+            State.ClaimedChallengeIds = updatedClaims;
+            State.Coins = balance;
+            return new(true, $"Claimed {coins:N0} coins from {available.Length:N0} challenges.", Array.AsReadOnly(available), coins);
         }
-
-        State.ClaimedChallengeIds.Add(challenge.Id);
-        State.Coins += challenge.CoinReward;
-        return new ChallengeClaimResult(true, $"Claimed {challenge.CoinReward:N0} coins for {challenge.Name}.", challenge, challenge.CoinReward);
     }
 
     public PrestigeResult Prestige()
@@ -259,6 +289,7 @@ public sealed class ProgressionService
 
     private void EnsureDefaults()
     {
+        ProfileNormalization.Normalize(State);
         EnsureOwned(CosmeticCatalog.DefaultTitleId);
         EnsureOwned(CosmeticCatalog.DefaultFrameId);
         EnsureOwned(CosmeticCatalog.DefaultPortraitId);
@@ -296,7 +327,6 @@ public sealed class ProgressionService
 
         _ = GetOrCreateSeasonProgress(State.ActiveSeasonId);
         State.DisplayName = ProfileIdentity.Restore(State.DisplayName);
-        State.SchemaVersion = Math.Max(State.SchemaVersion, 3);
     }
 
     private bool EnsureOwned(string cosmeticId)

@@ -30,7 +30,7 @@ protection. The workflow itself cannot grant itself required-check status.
 
 ## Responsive surfaces
 
-Embedded games occupy only the content row below the shared header. Each authored
+Embedded games occupy the full casino surface and hide the shared Blackjack header. Each authored
 Viewbox fits its actual remaining Grid row; no overlay-wide forced Width/Height
 may ignore a game's internal header. The Windows check verifies the actual Reels
 Spin button stays inside the window at 1080×720, 1440×900, 1920×1080 and 2560×1440.
@@ -48,8 +48,21 @@ mode at runtime. Cards reflow and scroll as the catalogue grows.
 
 Startup opens the lobby, while returning during an unfinished Blackjack hand is
 blocked. Slots keep their existing committed wallet/feature close behavior.
-The shared header displays the selected portrait and name, and opens the separate
-PlayerProfileWindow. Progression tabs remain available from the lobby/profile.
+The shared header displays the selected portrait and name, and opens the embedded player profile. Profile and progression share a host with
+a back stack; neither page creates a native window. Progression tabs remain
+available from the lobby/profile. Covered controls are disabled and keyboard
+navigation cycles within the active page.
 Profile names are normalized and validated, stored in profile.json and progress
 exports, and copied through Manor profile adoption. Old profiles get “Player”
 without losing cosmetics, balances or XP. No rules or payout logic changes here.
+
+
+## Wager and progression regression
+
+The presentation smoke also checks profile/progression navigation and search,
+four-row collection pages (Next and Previous), Claim All across hidden filters,
+and keyboard focus containment. Wager fixtures cover solo and five AI seats with
+one, two, and four player hands at 1080×720, 1440×900 and 2560×1440. Heading bounds
+are compared against the drawn betting arc; each wager must stay in its viewport.
+`tools/TableWagerTests` verifies exact denomination totals and animation transition
+history without a Windows runtime. All chip controls are read-only presentation.

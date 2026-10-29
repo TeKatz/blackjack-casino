@@ -82,20 +82,14 @@ internal static class PlayerProfileStore
         WriteJsonAtomically(HistoryPath, snapshot);
     }
 
-    private static PlayerProfileState SanitizeProfile(PlayerProfileState state)
+    internal static PlayerProfileState SanitizeProfile(PlayerProfileState state)
     {
+        ProfileNormalization.Normalize(state);
         state.Level = Math.Clamp(state.Level, 0, ProgressionCurve.MaximumLevel);
         state.Prestige = Math.Max(0, state.Prestige);
         state.Coins = Math.Max(0, state.Coins);
         state.LifetimeExperience = Math.Max(0, state.LifetimeExperience);
         state.TotalPlaytimeSeconds = Math.Max(0, state.TotalPlaytimeSeconds);
-        state.Manor ??= new BlackjackCasino.Core.Manor.ManorStatistics();
-        state.Slots ??= new SlotStatistics();
-        state.LifetimeStatistics ??= new StatisticsSnapshot();
-        state.TableStatistics ??= new Dictionary<string, StatisticsSnapshot>(StringComparer.OrdinalIgnoreCase);
-        state.Seasons ??= new Dictionary<string, SeasonProgressState>(StringComparer.OrdinalIgnoreCase);
-        state.OwnedCosmeticIds ??= [];
-        state.ClaimedChallengeIds ??= [];
 
         state.OwnedCosmeticIds = state.OwnedCosmeticIds
             .Where(id => CosmeticCatalog.TryGet(id) is not null)

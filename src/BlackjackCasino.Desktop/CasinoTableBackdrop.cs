@@ -28,12 +28,7 @@ internal sealed class CasinoTableBackdrop : FrameworkElement
         d.DrawGeometry(null,new Pen(Ink("#45D7BB7C"),1.2) {DashStyle=new DashStyle(new[]{7d,5d},0)},arc);
         foreach(double x in new[]{.23,.5,.77}) d.DrawEllipse(null,new Pen(Ink("#38D9BD85"),1),new Point(w*x,h*.68),39,23);
         Text(d,"THE MIDNIGHT CLUB",13,new Point(w*.5,h-29),"#8CBCAD7E");
-        // Dealer tray: independent chips, discard stack and a brass shoe.
-        double trayX=65,trayY=66;
-        d.DrawRoundedRectangle(Ink("#18231F"),new Pen(Ink("#6E674E"),1),new Rect(trayX-9,trayY-14,151,55),8,8);
-        string[] chipColors={"#9B5C57","#D2BD88","#3E7170","#5B567B"};
-        for(int col=0;col<4;col++) for(int row=0;row<5;row++)
-        {var p=new Point(trayX+col*33,trayY+23-row*5);d.DrawEllipse(Ink(chipColors[col]),new Pen(Ink("#BADED4B4"),1),p,13,5);d.DrawLine(new Pen(Ink("#80342B28"),2),new Point(p.X-5,p.Y),new Point(p.X+5,p.Y));}
+        // Keep the dealer corner clear; chips belong to the player's actual wager.
         double shoe=w-170;
         for(int i=0;i<4;i++) d.DrawRoundedRectangle(Ink("#D5CDB7"),new Pen(Ink("#786B58"),.7),new Rect(shoe+i*2,68-i*2,46,65),4,4);
         d.DrawRoundedRectangle(Ink("#283D38"),new Pen(Ink("#B39B6C"),1),new Rect(shoe+7,63,40,58),3,3);
