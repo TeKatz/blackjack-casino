@@ -60,15 +60,25 @@ internal static class NineLivesArtwork
         {
             byte[] bytes = Convert.FromBase64String(base64);
             using var stream = new MemoryStream(bytes, writable: false);
-            var bitmap = new BitmapImage();
-            bitmap.BeginInit();
-            bitmap.CacheOption = BitmapCacheOption.OnLoad;
-            bitmap.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
-            bitmap.DecodePixelWidth = pixelWidth;
-            bitmap.StreamSource = stream;
-            bitmap.EndInit();
-            bitmap.Freeze();
-            return bitmap;
+
+            // Decode the frame completely before disposing the source stream. This is more
+            // reliable for progressive JPEG concept art than leaving BitmapImage to defer work.
+            BitmapDecoder decoder = BitmapDecoder.Create(
+                stream,
+                BitmapCreateOptions.PreservePixelFormat,
+                BitmapCacheOption.OnLoad);
+            BitmapSource source = decoder.Frames[0];
+
+            if (pixelWidth > 0 && source.PixelWidth > pixelWidth)
+            {
+                double scale = pixelWidth / (double)source.PixelWidth;
+                var transformed = new TransformedBitmap(source, new ScaleTransform(scale, scale));
+                transformed.Freeze();
+                return transformed;
+            }
+
+            source.Freeze();
+            return source;
         }
         catch (Exception ex)
         {
