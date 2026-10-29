@@ -31,7 +31,7 @@ internal static class Program
         app.DispatcherUnhandledException+=(_,e)=> {File.WriteAllText(Path.Combine(output,"fatal.txt"),e.Exception.ToString());e.Handled=true;app.Shutdown(1);};
         window.ContentRendered+=async(_,_)=>
         {
-            try {await Check(window);File.WriteAllText(Path.Combine(output,"result.txt"),"PASS: startup lobby, registered future mode, shared hover/focus/open/disabled dropdown contracts, all table themes, proportional controls, embedded Reels bounds, standalone profile rename and serialization. Mouse hover capability recorded separately.");}
+            try {await Check(window);File.WriteAllText(Path.Combine(output,"result.txt"),"PASS: startup lobby, registered future mode, shared hover/focus/open/disabled dropdown contracts, all table themes, proportional controls, embedded Reels and Neon Vault bounds, single-window casino hosting, standalone profile rename and serialization. Mouse hover capability recorded separately.");}
             catch(Exception ex){exit=1;File.WriteAllText(Path.Combine(output,"failure.txt"),ex.ToString());}
             finally {window.Close();CasinoAudio.Shutdown();app.Shutdown(exit);}
         };
@@ -71,20 +71,36 @@ internal static class Program
         }
         Find<Button>(window).Single(b=>b.Name=="ReelsBackButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Task.Delay(50);
         Require(Find<CasinoLobbyView>(window).Any(v=>v.IsVisible),"Leaving a slot did not return to the lobby");
+
+        window.Modes.Open("neon-vault");await Task.Delay(120);window.UpdateLayout();
+        Require(Application.Current.Windows.Cast<Window>().Count(w=>w.IsVisible)==1,"Neon Vault opened a second visible native window instead of using the casino host");
+        Require(Find<ProgressBar>(window).Single(b=>b.Name=="EnergyBar").Maximum==NeonVaultRules.VaultEnergyTarget,"Neon Vault energy meter is not wired to the feature target");
+        foreach(var size in new[]{(1080d,720d),(1440d,900d),(1920d,1080d),(2560d,1440d)})
+        {
+            window.Width=size.Item1;window.Height=size.Item2;window.UpdateLayout();await Task.Delay(50);
+            Button spin=Find<Button>(window).Single(b=>b.Name=="SpinButton");
+            Rect bounds=spin.TransformToAncestor(window).TransformBounds(new Rect(0,0,spin.ActualWidth,spin.ActualHeight));
+            Require(bounds.Top>=60 && bounds.Bottom<=window.ActualHeight-8 && bounds.Left>=0 && bounds.Right<=window.ActualWidth,"Neon Vault Spin button clipped at "+size);
+            Require(Find<Button>(window).Any(b=>b.Name=="MaxBetButton" && b.IsVisible),"Neon Vault high-roller MAX bet control is missing");
+            Capture(window,"05-neon-vault-"+(int)size.Item1);
+        }
+        Find<Button>(window).Single(b=>b.Name=="BackButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Task.Delay(50);
+        Require(Find<CasinoLobbyView>(window).Any(v=>v.IsVisible),"Leaving Neon Vault did not return to the lobby");
+
         using var profile=new PlayerProgressionController(new PlayerProfileState {DisplayName="Before"});
         var identity=new PlayerProfileWindow(profile);identity.Show();identity.UpdateLayout();
         TextBox name=Find<TextBox>(identity).Single(t=>t.Name=="ProfileNameBox");name.Text="Midnight Timo";
         Find<Button>(identity).Single(b=>b.Name=="RenameProfileButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         Require(profile.Profile.DisplayName=="Midnight Timo","Profile rename failed");
         Require(System.Text.Json.JsonSerializer.Deserialize<PlayerProfileState>(System.Text.Json.JsonSerializer.Serialize(profile.Profile))!.DisplayName=="Midnight Timo","Save lost profile name");
-        Capture(identity,"05-profile");identity.Close();
+        Capture(identity,"06-profile");identity.Close();
         window.Width=1440;window.Height=900;window.Modes.Open("blackjack");mode.SelectedIndex=1;theme.SelectedIndex=0;
         ((Button)window.FindName("DealButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(500);window.UpdateLayout();
         var viewport=(ScrollViewer)window.FindName("PlayerHandViewport");var hands=(FrameworkElement)window.FindName("PlayerHandsPanel");
         Rect handBounds=hands.TransformToAncestor(viewport).TransformBounds(new Rect(0,0,hands.ActualWidth,hands.ActualHeight));
         Require(handBounds.Top>=-1 && handBounds.Bottom<=viewport.ActualHeight+1 && handBounds.Height>=90,"Player cards clipped or reduced below readable size in AI table");
-        Capture(window,"06-blackjack-dealt");
+        Capture(window,"07-blackjack-dealt");
     }
     private static async Task CheckCombo(ComboBox combo)
     {
