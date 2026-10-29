@@ -154,6 +154,7 @@ internal static class Program
         Require(Find<TabControl>(window).Any(t=>t.SelectedItem is TabItem item && Equals(item.Header,"Challenges")),"Lobby shortcut selected the wrong tab");
         Find<Button>(window).Single(b=>b.Name=="ProgressionBackButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(40);
+        await CheckEmpire(window);
         window.Width=1440;window.Height=900;window.Modes.Open("blackjack");mode.SelectedIndex=1;theme.SelectedIndex=0;
         ((Button)window.FindName("DealButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(500);window.UpdateLayout();
@@ -162,6 +163,57 @@ internal static class Program
         Require(handBounds.Top>=-1 && handBounds.Bottom<=viewport.ActualHeight+1 && handBounds.Height>=90,"Player cards clipped or reduced below readable size in AI table");
         Capture(window,"07-blackjack-dealt");
         await CheckWagerGeometry(window);
+    }
+
+    private static async Task CheckEmpire(MainWindow window)
+    {
+        int nativeWindows=Application.Current.Windows.Count;
+        window.Modes.Open("casino-empire");await Task.Delay(100);window.UpdateLayout();
+        RequireSingleHost(window,"Casino Empire");
+        Require(Application.Current.Windows.Count==nativeWindows,"Casino Empire constructed a native Window");
+        Require(Find<EmpireView>(window).Count()==1,"Casino Empire did not mount its hosted page");
+        Require(!((FrameworkElement)window.FindName("CasinoHeader")).IsVisible,"Host header covers Casino Empire");
+        Require(!((Button)window.FindName("DealButton")).IsEnabled,"Covered Blackjack input is still enabled");
+        var service=(BlackjackCasino.Core.Empire.EmpireService)typeof(MainWindow)
+            .GetField("empire",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.GetValue(window)!;
+        var buy=Find<Button>(window).Single(b=>b.Name=="EmpireUpgradeButton");
+        Require(buy.IsEnabled,"The starter room cannot be upgraded");
+        buy.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Require(service.Level("slots")==2,"Room upgrade did not reach the idle economy");
+        foreach(var size in new[]{(1080d,720d),(1440d,900d),(1920d,1080d)})
+        {
+            window.Width=size.Item1;window.Height=size.Item2;window.UpdateLayout();await Task.Delay(50);
+            RequireWithin(window,Find<Button>(window).Single(b=>b.Name=="EmpireBackButton"),"Empire Back");
+            RequireWithin(window,buy,"Empire Upgrade");
+            RequireWithin(window,Find<EmpireFloorArtwork>(window).Single(a=>a.IsVisible),"Empire floor");
+            Capture(window,"09-empire-"+(int)size.Item1);
+        }
+        Find<Button>(window).Single(b=>b.Name=="EmpireRoom_vip").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Require(!buy.IsEnabled,"An unaffordable room can be opened");
+        Find<Button>(window).Single(b=>b.Name=="EmpireRoom_slots").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        var session=(CasinoSession)typeof(MainWindow).GetField("session",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.GetValue(window)!;
+        decimal bankroll=session.Bankroll;
+        service.Accrue(DateTimeOffset.UtcNow.AddHours(1));
+        Find<EmpireView>(window).Single().Refresh();
+        decimal claim=service.ClaimableDividend;
+        Require(claim>0,"Owner dividend did not accrue");
+        Find<Button>(window).Single(b=>b.Name=="EmpireClaimButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Require(session.Bankroll==bankroll+claim,"Dividend did not reach the shared wallet");
+        Find<Button>(window).Single(b=>b.Name=="EmpireClaimButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Require(session.Bankroll==bankroll+claim,"Dividend was paid twice");
+        decimal credits=service.Credits;
+        Find<Button>(window).Single(b=>b.Name=="EmpireBackButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        await Task.Delay(40);window.UpdateLayout();
+        Require(Find<CasinoLobbyView>(window).Any(v=>v.IsVisible),"Empire Back did not restore the lobby");
+        Require(((FrameworkElement)window.FindName("CasinoHeader")).IsVisible,"Empire Back did not restore the host header");
+        window.Modes.Open("casino-empire");await Task.Delay(40);window.UpdateLayout();
+        Require(service.Level("slots")==2 && service.Credits==credits,"Reopening Casino Empire reset progress");
+        var source=PresentationSource.FromVisual(window)!;
+        window.RaiseEvent(new System.Windows.Input.KeyEventArgs(System.Windows.Input.Keyboard.PrimaryDevice,source,0,System.Windows.Input.Key.Escape)
+            {RoutedEvent=System.Windows.Input.Keyboard.PreviewKeyDownEvent});
+        await Task.Delay(40);
+        Require(!Find<EmpireView>(window).Any(),"Escape did not close the hosted idle page");
+        Require(Application.Current.Windows.Count==nativeWindows,"Casino Empire leaked a native Window");
     }
     private sealed class WagerShoe : ICardShoe
     {

@@ -304,6 +304,11 @@ public partial class MainWindow
 
     private void CloseEmbeddedGame()
     {
+        if (EmpirePageOpen)
+        {
+            CloseEmpire();
+            return;
+        }
         Window? shell = embeddedGameShell;
         if (shell is null)
         {

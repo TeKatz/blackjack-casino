@@ -857,6 +857,16 @@ public partial class MainWindow : Window
             return;
         }
 
+        if (EmpirePageOpen)
+        {
+            if (e.Key == Key.Escape)
+            {
+                CloseEmpire();
+                e.Handled = true;
+            }
+            return;
+        }
+
         if (embeddedGameShell is not null || lobby?.Visibility == Visibility.Visible)
         {
             return;
@@ -1042,6 +1052,7 @@ public partial class MainWindow : Window
 
         preferences = preferences with
         {
+            Empire = empire?.Snapshot ?? preferences.Empire,
             Bankroll = session.Bankroll,
             SelectedBet = Math.Min(selectedBet, session.Bankroll),
             PlayMode = playMode,
