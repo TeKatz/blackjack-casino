@@ -34,6 +34,6 @@ public static class ProfileNormalization
         }
         state.OwnedCosmeticIds ??= [];
         state.ClaimedChallengeIds ??= [];
-        state.SchemaVersion = Math.Max(state.SchemaVersion, 5);
+        state.SchemaVersion = Math.Max(state.SchemaVersion, 4);
     }
 }
