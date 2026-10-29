@@ -42,11 +42,17 @@ public partial class MainWindow
 
         ShowEmbeddedGame(window, "Nine Lives · Blackjack Casino", muteHostMusic: true, closed: () =>
         {
-            preferences = preferences with { NineLivesBet = window.SelectedBet };
+            preferences = preferences with
+            {
+                NineLivesBet = window.SelectedBet,
+                SoundEnabled = window.SoundsEnabled,
+                AnimationsEnabled = window.AnimationsEnabled,
+            };
             suppressPreferenceEvents = true;
             SoundCheckBox.IsChecked = window.SoundsEnabled;
             AnimationsCheckBox.IsChecked = window.AnimationsEnabled;
             suppressPreferenceEvents = false;
+            SavePreferences();
             if (session.CurrentRound is null)
             {
                 StatusText.Text = "Welcome back. Place a bet to play Blackjack.";
