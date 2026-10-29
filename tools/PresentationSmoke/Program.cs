@@ -19,6 +19,7 @@ internal static class Program
         app.Resources.MergedDictionaries.Add(new ResourceDictionary {Source=new Uri("/BlackjackCasino.Desktop;component/Presentation/CasinoControls.xaml",UriKind.Relative)});
         int exit=0;
         var window=new MainWindow(new AppPreferences {SoundEnabled=false,MusicEnabled=false,AnimationsEnabled=false,WindowWidth=1280,WindowHeight=900},new PlayerProfileState {DisplayName="Presentation QA",EquippedPortraitId="portrait-moon-cat",OwnedCosmeticIds=[CosmeticCatalog.DefaultTitleId,CosmeticCatalog.DefaultFrameId,CosmeticCatalog.DefaultPortraitId,"portrait-moon-cat"]});
+        window.MaxWidth=4096;window.MaxHeight=2160;
         app.DispatcherUnhandledException+=(_,e)=> {File.WriteAllText(Path.Combine(output,"fatal.txt"),e.Exception.ToString());e.Handled=true;app.Shutdown(1);};
         window.ContentRendered+=async(_,_)=>
         {
@@ -54,6 +55,7 @@ internal static class Program
         foreach(var size in new[]{(1080d,720d),(1440d,900d),(1920d,1080d),(2560d,1440d)})
         {
             window.Width=size.Item1;window.Height=size.Item2;window.UpdateLayout();await Task.Delay(50);
+            Require(Math.Abs(window.ActualWidth-size.Item1)<2 && Math.Abs(window.ActualHeight-size.Item2)<2,"Host OS clamped requested window size "+size+" to "+window.ActualWidth+"x"+window.ActualHeight);
             Button spin=Find<Button>(window).Single(b=>b.Name=="SpinButton");
             Rect bounds=spin.TransformToAncestor(window).TransformBounds(new Rect(0,0,spin.ActualWidth,spin.ActualHeight));
             Require(bounds.Top>=60 && bounds.Bottom<=window.ActualHeight-8 && bounds.Left>=0 && bounds.Right<=window.ActualWidth,"Reels Spin button clipped at "+size);
@@ -70,7 +72,11 @@ internal static class Program
         Capture(identity,"05-profile");identity.Close();
         window.Width=1440;window.Height=900;window.Modes.Open("blackjack");mode.SelectedIndex=1;theme.SelectedIndex=0;
         ((Button)window.FindName("DealButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-        await Task.Delay(500);window.UpdateLayout();Capture(window,"06-blackjack-dealt");
+        await Task.Delay(500);window.UpdateLayout();
+        var viewport=(ScrollViewer)window.FindName("PlayerHandViewport");var hands=(FrameworkElement)window.FindName("PlayerHandsPanel");
+        Rect handBounds=hands.TransformToAncestor(viewport).TransformBounds(new Rect(0,0,hands.ActualWidth,hands.ActualHeight));
+        Require(handBounds.Top>=-1 && handBounds.Bottom<=viewport.ActualHeight+1,"Player cards clipped in AI table");
+        Capture(window,"06-blackjack-dealt");
     }
     private static async Task CheckCombo(ComboBox combo)
     {
