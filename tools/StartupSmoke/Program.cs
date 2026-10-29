@@ -63,9 +63,10 @@ internal static class Program
                 Require(Find<Button>(window).Any(button => button.Name == "SpinButton" && button.IsVisible),
                     "Nine Lives Spin button is missing from the hosted surface.");
 
-                Button? back = Find<Button>(window).FirstOrDefault(button => button.Name == "CasinoButton");
-                Require(back is not null && back.IsVisible,
-                    "Nine Lives does not expose a visible Casino/back button.");
+                Button back = Find<Button>(window).FirstOrDefault(button => button.Name == "CasinoButton")
+                    ?? throw new InvalidOperationException("Nine Lives does not expose a Casino/back button.");
+                Require(back.IsVisible,
+                    "Nine Lives Casino/back button exists but is not visible.");
                 Require(!string.IsNullOrWhiteSpace(back.Content?.ToString()),
                     "Nine Lives Casino/back button is an invisible hotspot without a label.");
 
