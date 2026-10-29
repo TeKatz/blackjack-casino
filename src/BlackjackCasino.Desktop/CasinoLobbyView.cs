@@ -62,7 +62,7 @@ internal sealed class CasinoLobbyView : UserControl
     private void ResizeCards()
     {
         double available=Math.Max(300,ActualWidth-110);
-        int columns=Math.Clamp((int)(available/320),1,Math.Max(1,cards.Children.Count));
+        int columns=Math.Clamp((int)(available/300),1,Math.Max(1,cards.Children.Count));
         double width=Math.Clamp(available/columns-24,280,430);
         foreach(Button card in cards.Children) card.Width=width;
     }

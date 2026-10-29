@@ -45,6 +45,7 @@ internal static class Program
         ComboBox theme=(ComboBox)window.FindName("ThemeComboBox");
         for(int i=0;i<3;i++){theme.SelectedIndex=i;window.UpdateLayout();Capture(window,"02-table-theme-"+i);}
         window.Width=1080;window.Height=720;window.Left=0;window.Top=0;window.Activate();window.UpdateLayout();
+        mode.BringIntoView();window.UpdateLayout();await Task.Delay(50);
         Point point=mode.PointToScreen(new Point(mode.ActualWidth/2,mode.ActualHeight/2));
         bool cursor=SetCursorPos((int)point.X,(int)point.Y);await Task.Delay(100);System.Windows.Input.Mouse.Synchronize();
         File.WriteAllText(Path.Combine(output,"hover-input.txt"),$"Native cursor request: {cursor}; ComboBox IsMouseOver: {mode.IsMouseOver}. All state templates and composed dark pixels are required regardless of headless input support.");

@@ -27,8 +27,8 @@ internal sealed class CasinoTableBackdrop : FrameworkElement
         var arc=new StreamGeometry();using(var g=arc.Open()) {g.BeginFigure(new Point(w*.14,h*.66),false,false);g.BezierTo(new(w*.32,h*.39),new(w*.68,h*.39),new(w*.86,h*.66),true,false);}
         d.DrawGeometry(null,new Pen(Ink("#45D7BB7C"),1.2) {DashStyle=new DashStyle(new[]{7d,5d},0)},arc);
         foreach(double x in new[]{.23,.5,.77}) d.DrawEllipse(null,new Pen(Ink("#38D9BD85"),1),new Point(w*x,h*.68),39,23);
-        Text(d,"THE MIDNIGHT CLUB",Math.Clamp(w/53,15,25),new Point(w*.5,h*.39),"#8CBCAD7E");
-        Text(d,"♠  ·  ♥  ·  ♣  ·  ♦",16,new Point(w*.5,h*.43),"#7BC9B17E");
+        Text(d,"THE MIDNIGHT CLUB",Math.Clamp(w/53,15,25),new Point(w*.5,57),"#8CBCAD7E");
+        Text(d,"♠  ·  ♥  ·  ♣  ·  ♦",16,new Point(w*.5,87),"#7BC9B17E");
         // Dealer tray: independent chips, discard stack and a brass shoe.
         double trayX=65,trayY=66;
         d.DrawRoundedRectangle(Ink("#18231F"),new Pen(Ink("#6E674E"),1),new Rect(trayX-9,trayY-14,151,55),8,8);

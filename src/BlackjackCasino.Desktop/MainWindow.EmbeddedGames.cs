@@ -229,14 +229,9 @@ public partial class MainWindow
         foreach (ResourceDictionary merged in source.MergedDictionaries)
         {
             var copy = new ResourceDictionary();
-            if (merged.Source is not null)
-            {
-                copy.Source = merged.Source;
-            }
-            else
-            {
-                CopyResources(merged, copy);
-            }
+            // Copy resolved resources; reloading a relative Source changes its assembly base
+            // when the host is a test executable or a different shell.
+            CopyResources(merged, copy);
             target.MergedDictionaries.Add(copy);
         }
     }

@@ -726,6 +726,7 @@ public partial class MainWindow : Window
             Child = new TextBlock
             {
                 Text = "YOUR SEAT\n\nPlace a bet and deal",
+                FontSize = 16,
                 TextAlignment = TextAlignment.Center,
                 Foreground = UiBrush("SoftTextBrush"),
                 VerticalAlignment = VerticalAlignment.Center,
