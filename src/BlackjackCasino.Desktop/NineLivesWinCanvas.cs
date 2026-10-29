@@ -11,7 +11,7 @@ internal sealed class NineLivesWinCanvas : Canvas
     // across the surrounding UI again.
     private static readonly Rect ReelBounds = new(366d, 185d, 803d, 623d);
 
-    internal NineLivesWinCanvas()
+    public NineLivesWinCanvas()
     {
         Clip = new RectangleGeometry(ReelBounds);
         ClipToBounds = true;
