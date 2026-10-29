@@ -244,8 +244,8 @@ internal sealed class EmpireView : UserControl, IDisposable
     private void ResizeRooms()
     {
         double available = Math.Max(210, roomScroll.ActualWidth - 20);
-        int count = Math.Max(1, cards.Count(card => card.Visibility == Visibility.Visible));
-        int columns = Math.Min(count, Math.Clamp((int)(available / 222), 1, 6));
+        // Keep the compact grid stable when filtering down to one operating room.
+        int columns = Math.Max(1, (int)(available / 222));
         double width = Math.Max(200, available / columns - 12);
         foreach (EmpireRoomCard card in cards) card.Width = width;
     }

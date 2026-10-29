@@ -194,6 +194,7 @@ internal static class Program
         }
         Find<Button>(window).Single(b=>b.Name=="EmpireFilter_open").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));window.UpdateLayout();
         Require(Find<EmpireRoomCard>(window).Count(card=>card.IsVisible)==1,"Operating filter is incorrect");
+        Require(Find<EmpireRoomCard>(window).Where(card=>card.IsVisible).All(card=>card.ActualWidth<360),"Filtering stretched one room across the estate");
         Find<Button>(window).Single(b=>b.Name=="EmpireFilter_locked").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));window.UpdateLayout();
         Require(Find<EmpireRoomCard>(window).Count(card=>card.IsVisible)==4,"Locked filter is incorrect");
         Find<Button>(window).Single(b=>b.Name=="EmpireFilter_all").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));window.UpdateLayout();
