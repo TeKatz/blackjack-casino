@@ -47,8 +47,10 @@ internal partial class NineLivesWindow
             winPanel.Margin = new Thickness(0);
         }
 
-        // The shortcut cheat-sheet consumed a large part of the permanent info rail. It is
-        // secondary information and no longer lives on the main machine surface.
+        // The shortcut cheat-sheet is secondary information and no longer belongs on the
+        // permanent machine surface. Search from the hosted canvas instead of the Window:
+        // ShowEmbeddedGame reparents the content, so the Window itself is no longer a reliable
+        // visual-tree root once Nine Lives is shown inside MainWindow.
         HideShortcutRail();
 
         // A win must read instantly, especially on a high-volatility 3x3 machine.
@@ -79,29 +81,31 @@ internal partial class NineLivesWindow
 
     private void HideShortcutRail()
     {
-        foreach (StackPanel panel in FindVisualChildren<StackPanel>(this))
+        DependencyObject root = SettingsFlyout.Parent as DependencyObject
+            ?? PaytableFlyout.Parent as DependencyObject
+            ?? this;
+
+        TextBlock? shortcutLabel = FindVisualChildren<TextBlock>(root)
+            .FirstOrDefault(text => string.Equals(text.Text, "SHORTCUTS", StringComparison.Ordinal));
+        if (shortcutLabel is null)
         {
-            int shortcutIndex = -1;
-            for (int i = 0; i < panel.Children.Count; i++)
+            return;
+        }
+
+        shortcutLabel.Visibility = Visibility.Collapsed;
+
+        if (shortcutLabel.Parent is Panel parent)
+        {
+            int index = parent.Children.IndexOf(shortcutLabel);
+            if (index >= 0 && index + 1 < parent.Children.Count)
             {
-                if (panel.Children[i] is TextBlock text
-                    && string.Equals(text.Text, "SHORTCUTS", StringComparison.Ordinal))
-                {
-                    shortcutIndex = i;
-                    break;
-                }
+                parent.Children[index + 1].Visibility = Visibility.Collapsed;
             }
 
-            if (shortcutIndex < 0)
+            if (index > 0 && parent.Children[index - 1] is Border separator && separator.Height <= 2)
             {
-                continue;
+                separator.Visibility = Visibility.Collapsed;
             }
-
-            for (int i = shortcutIndex; i < panel.Children.Count; i++)
-            {
-                panel.Children[i].Visibility = Visibility.Collapsed;
-            }
-            break;
         }
     }
 
