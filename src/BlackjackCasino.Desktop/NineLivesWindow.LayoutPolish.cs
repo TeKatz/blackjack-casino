@@ -40,12 +40,19 @@ internal partial class NineLivesWindow
         // made the footer noisy and looked like a second back-arrow bug.
         MenuButton.Visibility = Visibility.Collapsed;
 
+        // Reuse the freed footer space for the information that matters after a spin.
+        if (WinText.Parent is StackPanel winStack && winStack.Parent is Border winPanel)
+        {
+            Grid.SetColumnSpan(winPanel, 3);
+            winPanel.Margin = new Thickness(0);
+        }
+
         // The shortcut cheat-sheet consumed a large part of the permanent info rail. It is
         // secondary information and no longer lives on the main machine surface.
         HideShortcutRail();
 
         // A win must read instantly, especially on a high-volatility 3x3 machine.
-        WinText.FontSize = 24;
+        WinText.FontSize = 27;
         WinText.FontWeight = FontWeights.Bold;
         WinText.Foreground = FrozenBrush("#FFF0A6");
         WinText.TextAlignment = TextAlignment.Center;
