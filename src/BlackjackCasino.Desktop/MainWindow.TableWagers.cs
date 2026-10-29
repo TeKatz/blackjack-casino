@@ -20,6 +20,10 @@ public partial class MainWindow
     {
         foreach (TableWagerView old in tableWagerViews) old.StopAnimations();
         tableWagerViews.Clear();
+        // Wide resplits extend towards the rising sides of the felt arc.
+        // Reserve additional clearance only for those wider player layouts.
+        PlayerHandViewport.Margin = new Thickness(20,
+            session.CurrentRound?.PlayerHands.Count > 2 ? 160 : 30, 20, 6);
         for (int i = 0; i < PlayerHandsPanel.Children.Count; i++)
         {
             if (PlayerHandsPanel.Children[i] is FrameworkElement hand) PresentTableWager(hand, i);
@@ -75,11 +79,14 @@ public partial class MainWindow
             {
                 heading.Text = round!.PlayerHands.Count == 1 ? "YOUR HAND" : $"HAND {index + 1}";
             }
-            // The wager sits on the betting arc above the cards. Reserving its
-            // space here also lowers YOUR HAND instead of pushing its heading up
-            // when the centered seat grows. The existing Viewbox scales both.
-            wager.Margin = new Thickness(0, 0, 0, 10);
-            content.Children.Insert(0, wager);
+            // Keep wager chips on the felt above the card panel. The panel's
+            // border and heading both stay below the arc rather than enclosing it.
+            wager.Margin = new Thickness(0, 0, 0, 2);
+            var group = new StackPanel();
+            PlayerHandsPanel.Children.RemoveAt(index);
+            PlayerHandsPanel.Children.Insert(index, group);
+            group.Children.Add(wager);
+            group.Children.Add(seat);
         }
 
         wager.Animate(transition, index);

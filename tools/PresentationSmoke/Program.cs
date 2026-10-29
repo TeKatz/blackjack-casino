@@ -176,7 +176,9 @@ internal static class Program
         foreach(bool fullTable in new[]{false,true})
         foreach(int handCount in new[]{1,2,4})
         {
+            typeof(MainWindow).GetMethod("SwitchTable",flags)!.Invoke(window,[fullTable?PlayModePreference.FullTable:PlayModePreference.Solo,5]);
             ((ComboBox)window.FindName("GameModeComboBox")).SelectedIndex=fullTable?1:0;
+            ((ComboBox)window.FindName("AiSeatCountComboBox")).SelectedIndex=4;
             AiPlayerProfile[] ai=fullTable?[new("A",10m),new("B",10m),new("C",10m),new("D",10m),new("E",10m)]:[];
             var fixture=new CasinoSession(new GameRules {MaxSplitHands=4,AllowInsurance=false},10_000m,()=>new WagerShoe(),ai);
             fixture.StartRound(138.25m);
@@ -185,8 +187,10 @@ internal static class Program
             foreach(var size in new[]{(1080d,720d),(1440d,900d),(2560d,1440d)})
             {
                 window.Width=size.Item1;window.Height=size.Item2;window.UpdateLayout();await Task.Delay(30);
+                Capture(window,"08-wager-"+(fullTable?"full":"solo")+"-"+handCount+"-"+(int)size.Item1);
                 var viewport=(ScrollViewer)window.FindName("PlayerHandViewport");
                 var table=(FrameworkElement)window.FindName("TableArt");
+                Require(((ScrollViewer)window.FindName("AiSeatsScrollViewer")).IsVisible==fullTable,"Fixture did not enter requested table mode");
                 var wagers=Find<TableWagerView>(window).ToArray();
                 Require(wagers.Length==handCount,"Wager count differs from player hands");
                 foreach(var wager in wagers)
@@ -212,6 +216,13 @@ internal static class Program
                 Capture(window,"08-wager-"+(fullTable?"full":"solo")+"-"+handCount+"-"+(int)size.Item1);
             }
         }
+        var animations=(CheckBox)window.FindName("AnimationsCheckBox");
+        animations.IsChecked=true;
+        var last=(CasinoSession)sessionField.GetValue(window)!;
+        last.Act(PlayerAction.DoubleDown);refresh.Invoke(window,null);window.UpdateLayout();
+        Require(Find<TableChipDrawing>(window).Any(chips=>chips.HasAnimatedProperties),"Changing a wager did not animate its chips");
+        animations.IsChecked=false;
+        Require(Find<TableChipDrawing>(window).All(chips=>!chips.HasAnimatedProperties),"Disabling animations did not stop active chip clocks immediately");
     }
     private static void CheckCollectionPaging(MainWindow window,string panelName,string nextName,string previousName)
     {
