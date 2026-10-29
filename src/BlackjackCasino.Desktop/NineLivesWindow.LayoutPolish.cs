@@ -1,5 +1,4 @@
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Media;
 
 namespace BlackjackCasino.Desktop;
@@ -18,27 +17,17 @@ internal partial class NineLivesWindow
 
         polishedLayoutApplied = true;
 
-        // The authored reel coordinates end at roughly Y=808. Keep the visual stage behind the
-        // complete third row rather than letting the old artwork frame stop early.
-        var reelStage = new Border
+        // Symbols are authored as square vector illustrations. Uniform rendering keeps the
+        // complete artwork visible instead of cropping faces/ears to the old wide JPEG frame.
+        for (int i = 0; i < symbolImages.Length; i++)
         {
-            Width = 830,
-            Height = 628,
-            CornerRadius = new CornerRadius(18),
-            Background = new SolidColorBrush(Color.FromArgb(226, 10, 7, 18)),
-            BorderBrush = new SolidColorBrush(Color.FromRgb(91, 50, 112)),
-            BorderThickness = new Thickness(2),
-            IsHitTestVisible = false,
-        };
-        Canvas.SetLeft(reelStage, 353);
-        Canvas.SetTop(reelStage, 183);
-        ReelCanvas.Children.Insert(0, reelStage);
+            symbolImages[i].Stretch = Stretch.Uniform;
+            RenderOptions.SetBitmapScalingMode(symbolImages[i], BitmapScalingMode.HighQuality);
+            cells[i].Background = FrozenBrush("#F10A0712");
+        }
 
-        // The previous status badge overlapped the lower symbols. It now sits in the narrow
-        // breathing room between the reel stage and the permanent control deck.
-        StatusBadge.Height = 38;
-        Canvas.SetTop(StatusBadge, 812);
-
+        SoundToggle.IsChecked = soundsEnabled;
+        AnimationsToggle.IsChecked = animationsEnabled;
         AutoButton.Content = "AUTO ×20";
         SpinButton.Content = machine.BonusActive ? "FREE SPIN" : "SPIN";
     }
