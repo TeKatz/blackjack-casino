@@ -68,6 +68,9 @@ internal static class Program
         Require(profile.Profile.DisplayName=="Midnight Timo","Profile rename failed");
         Require(System.Text.Json.JsonSerializer.Deserialize<PlayerProfileState>(System.Text.Json.JsonSerializer.Serialize(profile.Profile))!.DisplayName=="Midnight Timo","Save lost profile name");
         Capture(identity,"05-profile");identity.Close();
+        window.Width=1440;window.Height=900;window.Modes.Open("blackjack");mode.SelectedIndex=1;theme.SelectedIndex=0;
+        ((Button)window.FindName("DealButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        await Task.Delay(500);window.UpdateLayout();Capture(window,"06-blackjack-dealt");
     }
     private static async Task CheckCombo(ComboBox combo)
     {
