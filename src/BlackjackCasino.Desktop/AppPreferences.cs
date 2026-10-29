@@ -27,6 +27,8 @@ internal sealed record AppPreferences
 
     public decimal SlotBet { get; init; } = 25m;
 
+    public decimal NeonVaultBet { get; init; } = 100m;
+
     public decimal SelectedBet { get; init; } = 25m;
 
     public PlayModePreference PlayMode { get; init; } = PlayModePreference.Solo;
