@@ -26,7 +26,14 @@ public partial class MainWindow
                 + (catchUp.Capped ? " Offline earnings are capped at 8 hours." : "");
         empireLastSave = DateTimeOffset.UtcNow;
         RefreshEmpireHeader();
-        empireTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        // Idle production belongs to the whole casino, not just the Empire page. Keep the
+        // accrual clock responsive while other WPF surfaces are rendering or animating;
+        // Background-priority one-second ticks can be starved long enough for the live
+        // balance to appear frozen even though elapsed-time catch-up is otherwise correct.
+        empireTimer = new DispatcherTimer(DispatcherPriority.Normal)
+        {
+            Interval = TimeSpan.FromMilliseconds(500),
+        };
         empireTimer.Tick += (_, _) =>
         {
             DateTimeOffset now = DateTimeOffset.UtcNow;
