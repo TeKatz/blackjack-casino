@@ -30,12 +30,12 @@ internal sealed class PlayerProfileWindow : Window
         var back=new Button {Content="Close profile",HorizontalAlignment=HorizontalAlignment.Right}; back.Click+=(_,_)=>Close(); DockPanel.SetDock(back,Dock.Right); heading.Children.Add(back);
         heading.Children.Add(new TextBlock {Text="YOUR CASINO IDENTITY",FontSize=24,FontWeight=FontWeights.Bold,VerticalAlignment=VerticalAlignment.Center});
         DockPanel.SetDock(heading,Dock.Top); root.Children.Add(heading);
-        root.Children.Add((UIElement)BuildPlayerTab().Content); Content=root;
+        root.Children.Add(BuildPlayerContent()); Content=root;
         MenuAudio.Attach(this); RefreshPlayer();
     }
     private static Border PanelBorder() => new() {Background=new SolidColorBrush(Color.FromRgb(11,33,23)),BorderBrush=new SolidColorBrush(Color.FromRgb(49,90,67)),BorderThickness=new Thickness(1),CornerRadius=new CornerRadius(10),Margin=new Thickness(5),Padding=new Thickness(12)};
     private static FrameworkElement CreatePortraitVisual(CosmeticDefinition portrait,double size) => ProgressionWindow.CreatePortraitVisual(portrait,size);
-    private TabItem BuildPlayerTab()
+    private FrameworkElement BuildPlayerContent()
     {
         var root = new Grid { Margin = new Thickness(10) };
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -87,7 +87,7 @@ internal sealed class PlayerProfileWindow : Window
         Grid.SetRow(scroll, 1);
         root.Children.Add(scroll);
 
-        return new TabItem { Header = "Player", Content = root };
+        return root;
     }
 
     private void RefreshPlayer()
