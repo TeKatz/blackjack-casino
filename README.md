@@ -1,6 +1,6 @@
 # Blackjack Casino
 
-A free, offline-first single-player casino game for Windows. It combines Blackjack with four distinct slot modes, shared play-money progression and a unified in-app casino lobby. There is no real-money gambling, advertising or account requirement.
+A free, offline-first single-player casino game for Windows. It combines Blackjack with four distinct slot modes, an independent idle casino, shared play-money progression and a unified in-app casino lobby. There is no real-money gambling, advertising or account requirement.
 
 The repository now contains the work from Phases 1–6. Current development is focused on presentation polish, content depth, regression protection and keeping every game mode inside one coherent desktop experience.
 
@@ -19,9 +19,18 @@ The repository now contains the work from Phases 1–6. Current development is f
 
 ### Casino lobby and embedded games
 
-The application opens into a casino lobby. Blackjack, Midnight Reels, Midnight Manor, Neon Vault and Nine Lives all run inside the same main application window rather than opening separate visible Windows windows. Returning from a game restores the lobby and its navigation state.
+The application opens into a casino lobby. Blackjack, Midnight Reels, Midnight Manor, Neon Vault, Nine Lives and Casino Empire all run inside the same main application window rather than opening separate visible Windows windows. Returning from a game restores the lobby and its navigation state.
 
-All casino games share the same play-money bankroll, player level, Prestige, Coins and Season progression. Game-specific statistics are tracked separately for Blackjack, Midnight Reels, Midnight Manor, Neon Vault and Nine Lives.
+The table and slot games share the same play-money bankroll, player level, Prestige, Coins and Season progression. Game-specific statistics are tracked separately for Blackjack, Midnight Reels, Midnight Manor, Neon Vault and Nine Lives. Casino Empire has its own construction credits and idle progression; owner dividends are its connection to the shared play-money bankroll.
+
+## Casino Empire
+
+A furnished 2D idle casino with five unlockable rooms, automatic production,
+room upgrades and ten-level production milestones. Earn Empire credits to build
+your business, including up to eight hours of offline catch-up, and claim a
+separate bounded owner dividend as casino cash. The page creates no separate window.
+
+See [Casino Empire foundation and economy](docs/casino-empire.md).
 
 ## Midnight Reels
 

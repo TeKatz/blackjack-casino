@@ -134,10 +134,13 @@
 
     <Border Grid.ColumnSpan="2" Background="{DynamicResource HeaderBackgroundBrush}" BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="0,0,0,1" Effect="{StaticResource HeaderShadow}" Panel.ZIndex="5">
       <Grid x:Name="CasinoHeader" Margin="22,0">
-        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
         <StackPanel Orientation="Horizontal" VerticalAlignment="Center"><Button x:Name="LobbyButton" Content="← LOBBY" Style="{StaticResource MutedButton}" Click="Lobby_Click" Margin="0,0,16,0"/><StackPanel><TextBlock Text="BLACKJACK CASINO" FontSize="23" FontWeight="Bold" Foreground="#FFF9ED" /><TextBlock x:Name="TableModeText" Text="Solo table" FontSize="11" Foreground="{DynamicResource MutedTextBrush}" /></StackPanel></StackPanel>
         <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,30,0"><TextBlock Text="BANKROLL" FontSize="10" Foreground="{DynamicResource MutedTextBrush}" HorizontalAlignment="Right" /><TextBlock x:Name="BankrollText" FontSize="21" FontWeight="Bold" Foreground="{DynamicResource AccentLightBrush}" HorizontalAlignment="Right" /></StackPanel>
-        <StackPanel Grid.Column="3" VerticalAlignment="Center"><TextBlock Text="VERSION" FontSize="10" Foreground="{DynamicResource MutedTextBrush}" HorizontalAlignment="Right" /><TextBlock x:Name="VersionText" FontSize="13" Foreground="#D5DED8" HorizontalAlignment="Right" /></StackPanel>
+        <Border x:Name="EmpireBalancePanel" Grid.Column="3" Visibility="Collapsed" Margin="0,0,20,0" Padding="12,5" CornerRadius="7" Background="#182C27" BorderBrush="#46634F" BorderThickness="1" VerticalAlignment="Center" ToolTip="Casino Empire construction credits. Your casino keeps earning while you play.">
+          <StackPanel MinWidth="118"><TextBlock Text="EMPIRE CREDITS" FontSize="9" Foreground="#BDA77B"/><local:EmpireBalanceCounter x:Name="EmpireHeaderBalance" FontSize="18" FontWeight="SemiBold" Foreground="#EAD19C"/><TextBlock x:Name="EmpireHeaderRate" FontSize="10" Foreground="#96C5AA"/></StackPanel>
+        </Border>
+        <StackPanel Grid.Column="4" VerticalAlignment="Center"><TextBlock Text="VERSION" FontSize="10" Foreground="{DynamicResource MutedTextBrush}" HorizontalAlignment="Right" /><TextBlock x:Name="VersionText" FontSize="13" Foreground="#D5DED8" HorizontalAlignment="Right" /></StackPanel>
       </Grid>
     </Border>
 
@@ -176,6 +179,7 @@
               <Grid Margin="0,0,0,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="156" /></Grid.ColumnDefinitions><TextBlock Text="Table theme" VerticalAlignment="Center" Foreground="#E1ECE4" FontWeight="SemiBold" /><ComboBox x:Name="ThemeComboBox" Grid.Column="1" SelectedIndex="0"><ComboBoxItem Content="Classic Green" /><ComboBoxItem Content="Midnight Blue" /><ComboBoxItem Content="Burgundy" /></ComboBox></Grid>
               <CheckBox x:Name="SoundCheckBox" Content="Casino sound effects" IsChecked="True" Margin="2,5,2,3" />
               <CheckBox x:Name="AnimationsCheckBox" Content="Card animations" IsChecked="True" Margin="2,4,2,3" />
+              <CheckBox x:Name="EmpireBalanceCheckBox" Content="Show Empire balance in header" IsChecked="True" Margin="2,4,2,3" Checked="EmpireBalanceSettingChanged" Unchecked="EmpireBalanceSettingChanged" />
               <CheckBox x:Name="MusicCheckBox" Content="Background music" IsChecked="True" Margin="2,4,2,3" Checked="MusicSettingChanged" Unchecked="MusicSettingChanged" />
               <Grid Margin="2,7,2,2"><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="116" /></Grid.ColumnDefinitions><TextBlock Text="Music volume" VerticalAlignment="Center" Foreground="#DDE8E0" /><StackPanel Grid.Column="1" Orientation="Horizontal"><Slider x:Name="MusicVolumeSlider" Style="{StaticResource CasinoSlider}" Width="82" Minimum="0" Maximum="0.32" Value="0.10" SmallChange="0.02" LargeChange="0.04" ValueChanged="MusicVolumeSlider_ValueChanged" /><TextBlock x:Name="MusicVolumeText" Width="34" Margin="6,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Right" Foreground="{DynamicResource MutedTextBrush}" Text="10%" /></StackPanel></Grid>
               <Button Content="Toggle fullscreen  [F11]" Style="{StaticResource MutedButton}" Margin="4,10,4,0" Click="Fullscreen_Click" />

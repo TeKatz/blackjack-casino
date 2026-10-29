@@ -41,14 +41,27 @@ internal static class PlayerStateStore
 
         try
         {
-            Directory.CreateDirectory(DirectoryPath);
-            string json = JsonSerializer.Serialize(Sanitize(state), JsonOptions);
-            File.WriteAllText(StatePath, json);
+            SaveOrThrow(state);
         }
         catch
         {
             // A failed local save must never interrupt a blackjack hand.
         }
+    }
+
+    // Cash dividends and their consumed reserve must survive as a single durable snapshot.
+    internal static void SaveOrThrow(AppPreferences state, string? directory = null)
+    {
+        directory ??= DirectoryPath;
+        Directory.CreateDirectory(directory);
+        string path = Path.Combine(directory, "player-state.json");
+        string temporary = path + ".tmp";
+        using (var file = new FileStream(temporary, FileMode.Create, FileAccess.Write, FileShare.None))
+        {
+            JsonSerializer.Serialize(file, Sanitize(state), JsonOptions);
+            file.Flush(flushToDisk: true);
+        }
+        File.Move(temporary, path, overwrite: true);
     }
 
     public static decimal LoadBankroll() => Load().Bankroll;
@@ -82,6 +95,7 @@ internal static class PlayerStateStore
 
         return state with
         {
+            Empire = BlackjackCasino.Core.Empire.EmpireState.Normalize(state.Empire),
             Bankroll = bankroll,
             ManorBet = Math.Clamp(decimal.Truncate(state.ManorBet), 1, 1_000),
             ManorSpeed = Enum.IsDefined(state.ManorSpeed) ? state.ManorSpeed : SlotSpinSpeed.Normal,
