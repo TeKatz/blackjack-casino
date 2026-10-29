@@ -21,12 +21,6 @@ internal partial class NineLivesWindow
     private bool reelMotionWasSpinning;
     private DateTime reelMotionStartedAt;
 
-    protected override void OnContentRendered(EventArgs e)
-    {
-        base.OnContentRendered(e);
-        InitializeReelMotionPresentation();
-    }
-
     protected override void OnClosed(EventArgs e)
     {
         CompositionTarget.Rendering -= ReelMotion_Rendering;
