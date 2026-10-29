@@ -51,7 +51,7 @@ public sealed class SeasonProgressState
 
 public sealed class PlayerProfileState
 {
-    public int SchemaVersion { get; set; } = 4;
+    public int SchemaVersion { get; set; } = 5;
     public string DisplayName { get; set; } = "Player";
     public int Level { get; set; }
     public long LevelExperience { get; set; }
@@ -77,6 +77,7 @@ public sealed class PlayerProfileState
     /// <summary>Verified Midnight Reels play since separate tracking began.</summary>
     public SlotStatistics Slots { get; set; } = new();
     public NeonVaultStatistics NeonVault { get; set; } = new();
+    public NineLivesStatistics NineLives { get; set; } = new();
     /// <summary>Unattributable historical Reels + Neon Vault totals; never used for game-specific goals.</summary>
     public SlotStatistics LegacyPooledSlots { get; set; } = new();
     public StatisticsSnapshot LifetimeStatistics { get; set; } = new();
