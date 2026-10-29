@@ -11,7 +11,11 @@ namespace BlackjackCasino.Desktop;
 internal static class NineLivesArtwork
 {
     private const double Size = 256d;
-    private static readonly Lazy<ImageSource> BackgroundLazy = new(() => DecodeBackground());
+    private const int SymbolDecodeWidth = 512;
+    private const string AssetRoot = "/BlackjackCasino.Desktop;component/Assets/NineLives/";
+
+    private static readonly Lazy<ImageSource> BackgroundLazy = new(() =>
+        LoadPackPng("background.png", 1536) ?? DecodeEmbeddedBackground());
     private static readonly IReadOnlyDictionary<NineLivesSymbol, ImageSource> Symbols = BuildSymbols();
 
     internal static ImageSource Background => BackgroundLazy.Value;
@@ -28,6 +32,7 @@ internal static class NineLivesArtwork
             HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = VerticalAlignment.Stretch,
         };
+        RenderOptions.SetBitmapScalingMode(image, BitmapScalingMode.HighQuality);
         return new Border
         {
             Background = Solid("#0A0712"),
@@ -39,17 +44,59 @@ internal static class NineLivesArtwork
     private static IReadOnlyDictionary<NineLivesSymbol, ImageSource> BuildSymbols() =>
         new Dictionary<NineLivesSymbol, ImageSource>
         {
-            [NineLivesSymbol.Yarn] = CreateYarn(),
-            [NineLivesSymbol.Fishbone] = CreateFishbone(),
-            [NineLivesSymbol.Bell] = CreateBell(),
-            [NineLivesSymbol.TabbyCat] = CreateCat("#A96931", "#E0A955", "#62D38D", tabby: true),
-            [NineLivesSymbol.WhiteCat] = CreateCat("#EAE7E2", "#FBF8F4", "#76C8FF", tabby: false),
-            [NineLivesSymbol.BlackCat] = CreateCat("#17131D", "#28202F", "#FFBE3F", tabby: false),
-            [NineLivesSymbol.Wild] = CreateWild(),
-            [NineLivesSymbol.Bonus] = CreateBonus(),
+            [NineLivesSymbol.Yarn] = LoadPackPng("yarn.png", SymbolDecodeWidth) ?? CreateYarn(),
+            [NineLivesSymbol.Fishbone] = LoadPackPng("fishbone.png", SymbolDecodeWidth) ?? CreateFishbone(),
+            [NineLivesSymbol.Bell] = LoadPackPng("bell.png", SymbolDecodeWidth) ?? CreateBell(),
+            [NineLivesSymbol.TabbyCat] = LoadPackPng("tabby-cat.png", SymbolDecodeWidth)
+                ?? CreateCat("#A96931", "#E0A955", "#62D38D", tabby: true),
+            [NineLivesSymbol.WhiteCat] = LoadPackPng("white-cat.png", SymbolDecodeWidth)
+                ?? CreateCat("#EAE7E2", "#FBF8F4", "#76C8FF", tabby: false),
+            [NineLivesSymbol.BlackCat] = LoadPackPng("black-cat.png", SymbolDecodeWidth)
+                ?? CreateCat("#17131D", "#28202F", "#FFBE3F", tabby: false),
+            [NineLivesSymbol.Wild] = LoadPackPng("wild.png", SymbolDecodeWidth) ?? CreateWild(),
+            [NineLivesSymbol.Bonus] = LoadPackPng("bonus.png", SymbolDecodeWidth) ?? CreateBonus(),
         };
 
-    private static ImageSource DecodeBackground()
+    private static ImageSource? LoadPackPng(string fileName, int decodePixelWidth)
+    {
+        Uri uri = new(AssetRoot + fileName, UriKind.Relative);
+        System.Windows.Resources.StreamResourceInfo? resource;
+        try
+        {
+            resource = Application.GetResourceStream(uri);
+        }
+        catch (IOException)
+        {
+            // Missing resource is expected while an art pass is in progress. The fallback below is intentional.
+            return null;
+        }
+
+        if (resource is null)
+        {
+            return null;
+        }
+
+        try
+        {
+            using Stream stream = resource.Stream;
+            var bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.CreateOptions = BitmapCreateOptions.PreservePixelFormat;
+            bitmap.DecodePixelWidth = decodePixelWidth;
+            bitmap.StreamSource = stream;
+            bitmap.EndInit();
+            bitmap.Freeze();
+            return bitmap;
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException or NotSupportedException or ArgumentException)
+        {
+            AppCrashLog.Write($"Nine Lives asset '{fileName}' could not be decoded. Falling back to vector artwork.", ex);
+            return null;
+        }
+    }
+
+    private static ImageSource DecodeEmbeddedBackground()
     {
         try
         {
