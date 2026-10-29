@@ -1,0 +1,320 @@
+<Window x:Class="BlackjackCasino.Desktop.NeonVaultWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Neon Vault"
+        Width="1440"
+        Height="900"
+        MinWidth="1080"
+        MinHeight="720"
+        WindowStartupLocation="CenterOwner"
+        Background="#05050B"
+        Foreground="#F4F5FF"
+        FontFamily="Segoe UI"
+        PreviewKeyDown="Window_KeyDown"
+        Closed="Window_Closed">
+  <Window.Resources>
+    <SolidColorBrush x:Key="VaultInk" Color="#F4F5FF" />
+    <SolidColorBrush x:Key="VaultMuted" Color="#8C91B2" />
+    <SolidColorBrush x:Key="VaultCyan" Color="#4DEBFF" />
+    <SolidColorBrush x:Key="VaultViolet" Color="#8A63FF" />
+    <SolidColorBrush x:Key="VaultGold" Color="#FFD56A" />
+    <SolidColorBrush x:Key="VaultRed" Color="#FF4D72" />
+    <SolidColorBrush x:Key="VaultPanel" Color="#B20B0D1A" />
+    <SolidColorBrush x:Key="VaultPanel2" Color="#E0111424" />
+
+    <Style x:Key="VaultButton" TargetType="Button">
+      <Setter Property="Foreground" Value="#EEF2FF" />
+      <Setter Property="Background" Value="#15182B" />
+      <Setter Property="BorderBrush" Value="#414868" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Padding" Value="14,9" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="Chrome"
+                    Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}"
+                    CornerRadius="7"
+                    Padding="{TemplateBinding Padding}">
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Chrome" Property="BorderBrush" Value="#65E8FF" />
+                <Setter TargetName="Chrome" Property="Background" Value="#202641" />
+              </Trigger>
+              <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="Chrome" Property="Opacity" Value="0.78" />
+              </Trigger>
+              <Trigger Property="IsEnabled" Value="False">
+                <Setter TargetName="Chrome" Property="Opacity" Value="0.34" />
+                <Setter Property="Cursor" Value="Arrow" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style x:Key="SpinButtonStyle" TargetType="Button" BasedOn="{StaticResource VaultButton}">
+      <Setter Property="Background" Value="#1F3150" />
+      <Setter Property="BorderBrush" Value="#63EEFF" />
+      <Setter Property="Foreground" Value="#FFFFFF" />
+      <Setter Property="FontWeight" Value="Bold" />
+      <Setter Property="FontSize" Value="17" />
+      <Setter Property="MinWidth" Value="210" />
+      <Setter Property="Padding" Value="24,16" />
+      <Setter Property="Effect">
+        <Setter.Value>
+          <DropShadowEffect Color="#54E9FF" BlurRadius="18" ShadowDepth="0" Opacity="0.34" />
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style x:Key="VaultToggle" TargetType="CheckBox">
+      <Setter Property="Foreground" Value="#A9B1D2" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Margin" Value="8,0" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="Cursor" Value="Hand" />
+    </Style>
+  </Window.Resources>
+
+  <Grid x:Name="Root" Background="#05050B" ClipToBounds="True">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="64" />
+      <RowDefinition Height="*" />
+    </Grid.RowDefinitions>
+
+    <Border Grid.Row="0" Background="#EE090B14" BorderBrush="#242B45" BorderThickness="0,0,0,1" Panel.ZIndex="20">
+      <Grid Margin="22,0">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <Button x:Name="BackButton" Grid.Column="0" Content="←  LOBBY" Style="{StaticResource VaultButton}" Margin="0,10,18,10" Click="Back_Click" />
+        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+          <TextBlock Text="NEON VAULT" FontSize="22" FontWeight="Bold" Foreground="#F7FAFF" />
+          <TextBlock Text="BREAK THE SYSTEM  ·  CRACK THE VAULT" FontSize="9" Foreground="#6DE8FF" Margin="0,2,0,0" />
+        </StackPanel>
+        <StackPanel Grid.Column="2" Margin="24,0" VerticalAlignment="Center">
+          <TextBlock Text="BANKROLL" FontSize="9" Foreground="#727A9D" HorizontalAlignment="Right" />
+          <TextBlock x:Name="BalanceText" FontSize="18" FontWeight="Bold" Foreground="#FFD978" HorizontalAlignment="Right" />
+        </StackPanel>
+        <StackPanel Grid.Column="3" VerticalAlignment="Center">
+          <TextBlock Text="PROFILE" FontSize="9" Foreground="#727A9D" HorizontalAlignment="Right" />
+          <TextBlock x:Name="ProfileText" FontSize="11" Foreground="#C8CDE4" HorizontalAlignment="Right" />
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <Viewbox Grid.Row="1" Stretch="Uniform" StretchDirection="Both" HorizontalAlignment="Center" VerticalAlignment="Center">
+      <Grid Width="1360" Height="770" Background="#060712" ClipToBounds="True">
+        <Rectangle>
+          <Rectangle.Fill>
+            <RadialGradientBrush RadiusX="0.8" RadiusY="0.8" Center="0.5,0.42" GradientOrigin="0.5,0.42">
+              <GradientStop Color="#241A4F" Offset="0" />
+              <GradientStop Color="#121329" Offset="0.42" />
+              <GradientStop Color="#060712" Offset="1" />
+            </RadialGradientBrush>
+          </Rectangle.Fill>
+        </Rectangle>
+        <Ellipse x:Name="AmbientGlow" Width="1040" Height="500" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.22" IsHitTestVisible="False">
+          <Ellipse.Fill>
+            <RadialGradientBrush>
+              <GradientStop Color="#5B42FF" Offset="0" />
+              <GradientStop Color="#00101B" Offset="1" />
+            </RadialGradientBrush>
+          </Ellipse.Fill>
+          <Ellipse.Effect><BlurEffect Radius="42" /></Ellipse.Effect>
+        </Ellipse>
+        <Rectangle x:Name="Scanline" Width="1260" Height="2" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,80,0,0" Fill="#5FEAFF" Opacity="0.09" IsHitTestVisible="False">
+          <Rectangle.Effect><BlurEffect Radius="6" /></Rectangle.Effect>
+          <Rectangle.RenderTransform><TranslateTransform x:Name="ScanlineTransform" /></Rectangle.RenderTransform>
+        </Rectangle>
+
+        <Grid Margin="34,24,34,26">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="82" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="112" />
+          </Grid.RowDefinitions>
+
+          <Grid Grid.Row="0" Margin="0,0,0,14">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition />
+              <ColumnDefinition />
+              <ColumnDefinition />
+              <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <Border Grid.Column="0" Margin="0,0,8,0" Background="#B1111524" BorderBrush="#4A597B" BorderThickness="1" CornerRadius="10" Padding="16,9">
+              <StackPanel>
+                <TextBlock Text="ACCESS LEVEL I" FontSize="9" Foreground="#7E8AAE" />
+                <TextBlock Text="MINI" FontSize="13" FontWeight="Bold" Foreground="#9EEBFF" />
+                <TextBlock x:Name="MiniJackpotText" FontSize="19" FontWeight="Bold" Foreground="#FFFFFF" />
+              </StackPanel>
+            </Border>
+            <Border Grid.Column="1" Margin="8,0" Background="#B1111524" BorderBrush="#55518E" BorderThickness="1" CornerRadius="10" Padding="16,9">
+              <StackPanel>
+                <TextBlock Text="ACCESS LEVEL II" FontSize="9" Foreground="#8780AF" />
+                <TextBlock Text="MINOR" FontSize="13" FontWeight="Bold" Foreground="#B9A6FF" />
+                <TextBlock x:Name="MinorJackpotText" FontSize="19" FontWeight="Bold" Foreground="#FFFFFF" />
+              </StackPanel>
+            </Border>
+            <Border Grid.Column="2" Margin="8,0" Background="#B1111524" BorderBrush="#80662C" BorderThickness="1" CornerRadius="10" Padding="16,9">
+              <StackPanel>
+                <TextBlock Text="ACCESS LEVEL III" FontSize="9" Foreground="#A28B56" />
+                <TextBlock Text="MAJOR" FontSize="13" FontWeight="Bold" Foreground="#FFD66E" />
+                <TextBlock x:Name="MajorJackpotText" FontSize="19" FontWeight="Bold" Foreground="#FFFFFF" />
+              </StackPanel>
+            </Border>
+            <Border Grid.Column="3" Margin="8,0,0,0" Background="#D3161020" BorderBrush="#D08E44" BorderThickness="1.3" CornerRadius="10" Padding="16,9">
+              <Border.Effect><DropShadowEffect Color="#E5A14E" BlurRadius="13" ShadowDepth="0" Opacity="0.20" /></Border.Effect>
+              <StackPanel>
+                <TextBlock Text="ACCESS LEVEL IV" FontSize="9" Foreground="#B79A6E" />
+                <TextBlock Text="GRAND VAULT" FontSize="13" FontWeight="Bold" Foreground="#FFE3A2" />
+                <TextBlock x:Name="GrandJackpotText" FontSize="19" FontWeight="Bold" Foreground="#FFFFFF" />
+              </StackPanel>
+            </Border>
+          </Grid>
+
+          <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="205" />
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="220" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0" Margin="0,6,18,6">
+              <Border Background="#B20B0F1D" BorderBrush="#29304C" BorderThickness="1" CornerRadius="11" Padding="16" Margin="0,0,0,12">
+                <StackPanel>
+                  <TextBlock Text="SYSTEM STATUS" FontSize="9" Foreground="#747D9D" />
+                  <TextBlock x:Name="SystemStatusText" Text="VAULT ONLINE" FontSize="16" FontWeight="Bold" Foreground="#62E9FF" Margin="0,5,0,0" />
+                  <TextBlock x:Name="AnticipationText" Text="1,024 WAYS ACTIVE" TextWrapping="Wrap" FontSize="11" Foreground="#A7AECB" Margin="0,8,0,0" />
+                </StackPanel>
+              </Border>
+              <Border Background="#A80B0F1D" BorderBrush="#29304C" BorderThickness="1" CornerRadius="11" Padding="16" Margin="0,0,0,12">
+                <StackPanel>
+                  <TextBlock Text="FEATURE MATRIX" FontSize="9" Foreground="#747D9D" />
+                  <TextBlock Text="WILD EXPANSION" Foreground="#68E9FF" FontSize="11" Margin="0,8,0,0" />
+                  <TextBlock Text="BLACKOUT / OVERLOAD" Foreground="#FF718D" FontSize="11" Margin="0,5,0,0" />
+                  <TextBlock Text="VAULT BREAK FREE SPINS" Foreground="#FFD66E" FontSize="11" Margin="0,5,0,0" />
+                  <TextBlock Text="JACKPOT ACCESS KEYS" Foreground="#BDA9FF" FontSize="11" Margin="0,5,0,0" />
+                </StackPanel>
+              </Border>
+              <Border x:Name="HighRollPanel" Background="#A80B0F1D" BorderBrush="#29304C" BorderThickness="1" CornerRadius="11" Padding="16">
+                <StackPanel>
+                  <TextBlock Text="BET CLASS" FontSize="9" Foreground="#747D9D" />
+                  <TextBlock x:Name="HighRollText" Text="STANDARD ACCESS" FontSize="14" FontWeight="Bold" Foreground="#C4CBE2" Margin="0,5,0,0" />
+                  <TextBlock Text="High Roller presentation begins at $10K. Vault Class begins at $100K." TextWrapping="Wrap" FontSize="10" Foreground="#747D9D" Margin="0,7,0,0" />
+                </StackPanel>
+              </Border>
+            </StackPanel>
+
+            <Border x:Name="ReelFrame" Grid.Column="1" Margin="0,4" Background="#F20A0C14" BorderBrush="#4C5A88" BorderThickness="1.5" CornerRadius="16" Padding="15">
+              <Border.Effect><DropShadowEffect Color="#503DFF" BlurRadius="24" ShadowDepth="0" Opacity="0.28" /></Border.Effect>
+              <Grid>
+                <Rectangle RadiusX="10" RadiusY="10" IsHitTestVisible="False">
+                  <Rectangle.Fill>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                      <GradientStop Color="#241E355D" Offset="0" />
+                      <GradientStop Color="#050711" Offset="0.46" />
+                      <GradientStop Color="#171044" Offset="1" />
+                    </LinearGradientBrush>
+                  </Rectangle.Fill>
+                </Rectangle>
+                <Grid x:Name="ReelsHost" Margin="13" />
+                <Border IsHitTestVisible="False" BorderBrush="#325FF4FF" BorderThickness="1" CornerRadius="10" Margin="8" />
+                <Rectangle IsHitTestVisible="False" Height="2" Fill="#7C5FF3FF" VerticalAlignment="Center" Margin="8,0" />
+              </Grid>
+            </Border>
+
+            <StackPanel Grid.Column="2" Margin="18,6,0,6">
+              <Border Background="#B20B0F1D" BorderBrush="#394363" BorderThickness="1" CornerRadius="11" Padding="16" Margin="0,0,0,12">
+                <StackPanel>
+                  <TextBlock Text="VAULT ENERGY" FontSize="9" Foreground="#747D9D" />
+                  <ProgressBar x:Name="EnergyBar" Minimum="0" Maximum="12" Height="10" Margin="0,10,0,7" Foreground="#5CEAFF" Background="#14182B" BorderThickness="0" />
+                  <TextBlock x:Name="EnergyText" Text="0 / 12" FontSize="11" Foreground="#C9CFE5" HorizontalAlignment="Right" />
+                  <TextBlock Text="Fill during Free Spins to arm SECURITY OVERRIDE." FontSize="10" TextWrapping="Wrap" Foreground="#747D9D" Margin="0,8,0,0" />
+                </StackPanel>
+              </Border>
+              <Border Background="#B20B0F1D" BorderBrush="#394363" BorderThickness="1" CornerRadius="11" Padding="16" Margin="0,0,0,12">
+                <StackPanel>
+                  <TextBlock Text="VAULT BREAK" FontSize="9" Foreground="#747D9D" />
+                  <TextBlock x:Name="FreeSpinsText" Text="NO FREE SPINS" FontSize="16" FontWeight="Bold" Foreground="#FFD66E" Margin="0,5,0,0" />
+                  <TextBlock Text="Wilds on reels 2–4 expand automatically during the bonus." FontSize="10" TextWrapping="Wrap" Foreground="#747D9D" Margin="0,7,0,0" />
+                </StackPanel>
+              </Border>
+              <Border Background="#B20B0F1D" BorderBrush="#394363" BorderThickness="1" CornerRadius="11" Padding="16">
+                <StackPanel>
+                  <TextBlock Text="LAST RETURN" FontSize="9" Foreground="#747D9D" />
+                  <TextBlock x:Name="LastWinText" Text="$0.00" FontSize="23" FontWeight="Bold" Foreground="#FFFFFF" Margin="0,5,0,0" />
+                  <TextBlock x:Name="LastFeatureText" Text="Ready for access." FontSize="10" TextWrapping="Wrap" Foreground="#8F98B7" Margin="0,8,0,0" />
+                </StackPanel>
+              </Border>
+            </StackPanel>
+          </Grid>
+
+          <Border Grid.Row="2" Margin="0,16,0,0" Background="#D30B0E19" BorderBrush="#2C3450" BorderThickness="1" CornerRadius="13" Padding="18,12">
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+              </Grid.ColumnDefinitions>
+
+              <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                <TextBlock Text="BET" FontSize="9" Foreground="#747D9D" />
+                <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                  <Button x:Name="BetDownButton" Content="−" Style="{StaticResource VaultButton}" Width="42" Height="38" Padding="0" Click="BetDown_Click" />
+                  <Border Background="#171B2E" BorderBrush="#434C6C" BorderThickness="1" CornerRadius="7" Width="150" Height="38" Margin="6,0">
+                    <TextBlock x:Name="BetText" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="16" FontWeight="Bold" Foreground="#F7F8FF" />
+                  </Border>
+                  <Button x:Name="BetUpButton" Content="+" Style="{StaticResource VaultButton}" Width="42" Height="38" Padding="0" Click="BetUp_Click" />
+                  <Button x:Name="MaxBetButton" Content="MAX" Style="{StaticResource VaultButton}" Width="58" Height="38" Padding="0" Margin="6,0,0,0" Click="MaxBet_Click" />
+                </StackPanel>
+              </StackPanel>
+
+              <StackPanel Grid.Column="1" Margin="22,0,0,0" VerticalAlignment="Center">
+                <TextBlock Text="1,024 WAYS  ·  FIVE REELS  ·  FOUR ROWS" FontSize="9" Foreground="#747D9D" />
+                <TextBlock x:Name="ResultText" Text="System armed. Choose your exposure." FontSize="13" Foreground="#D3D8EB" Margin="0,8,0,0" />
+                <TextBlock x:Name="RewardText" Text="Expanding Wilds · Blackout · Free Spins · Vault Jackpots" FontSize="10" Foreground="#7E87A8" Margin="0,5,0,0" />
+              </StackPanel>
+
+              <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="16,0">
+                <CheckBox x:Name="SoundToggle" Content="SFX" Style="{StaticResource VaultToggle}" Checked="Settings_Changed" Unchecked="Settings_Changed" />
+                <CheckBox x:Name="AnimationToggle" Content="ANIMATIONS" Style="{StaticResource VaultToggle}" Checked="Settings_Changed" Unchecked="Settings_Changed" />
+              </StackPanel>
+
+              <Button x:Name="SpinButton" Grid.Column="3" Content="SPIN  [SPACE]" Style="{StaticResource SpinButtonStyle}" Click="Spin_Click" />
+            </Grid>
+          </Border>
+        </Grid>
+
+        <Grid x:Name="FeatureOverlay" Visibility="Collapsed" Background="#D7000008" Panel.ZIndex="90" IsHitTestVisible="False">
+          <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+            <TextBlock x:Name="FeatureKicker" Text="SYSTEM EVENT" HorizontalAlignment="Center" FontSize="11" FontWeight="Bold" Foreground="#8F97B7" />
+            <TextBlock x:Name="FeatureTitle" Text="BLACKOUT" HorizontalAlignment="Center" FontSize="58" FontWeight="Bold" Foreground="#FF5B79" Margin="0,10,0,0">
+              <TextBlock.Effect><DropShadowEffect Color="#FF3159" BlurRadius="24" ShadowDepth="0" Opacity="0.65" /></TextBlock.Effect>
+            </TextBlock>
+            <TextBlock x:Name="FeatureSubtitle" Text="SECURITY GRID OFFLINE" HorizontalAlignment="Center" FontSize="14" Foreground="#E4E8F8" Margin="0,8,0,0" />
+          </StackPanel>
+        </Grid>
+
+        <Border x:Name="BigWinPanel" Visibility="Collapsed" Background="#E9141025" BorderBrush="#FFD66E" BorderThickness="1.5" CornerRadius="16" Padding="34,20" HorizontalAlignment="Center" VerticalAlignment="Center" Panel.ZIndex="95" IsHitTestVisible="False">
+          <Border.Effect><DropShadowEffect Color="#FFD66E" BlurRadius="34" ShadowDepth="0" Opacity="0.50" /></Border.Effect>
+          <StackPanel>
+            <TextBlock x:Name="BigWinTitle" Text="BIG WIN" HorizontalAlignment="Center" FontSize="28" FontWeight="Bold" Foreground="#FFE6A8" />
+            <TextBlock x:Name="BigWinAmount" Text="$0.00" HorizontalAlignment="Center" FontSize="48" FontWeight="Bold" Foreground="#FFFFFF" Margin="0,8,0,0" />
+          </StackPanel>
+        </Border>
+      </Grid>
+    </Viewbox>
+  </Grid>
+</Window>
