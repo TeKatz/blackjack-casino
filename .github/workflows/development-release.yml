@@ -2,18 +2,20 @@ name: Development Release
 
 on:
   push:
-    branches: [main, develop, "feature/**", "fix/**", "slots/midnight-manor"]
+    branches: ["feature/casino-empire-foundation"]
   workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: development-release
+  group: development-release-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   publish-development:
+    # The shared in-app Development channel is temporarily pinned for Casino Empire testing.
+    if: github.ref == 'refs/heads/feature/casino-empire-foundation'
     runs-on: windows-latest
     timeout-minutes: 20
 
@@ -155,7 +157,7 @@ jobs:
             --target "${{ github.sha }}" `
             --prerelease `
             --title "Blackjack Casino Development $env:VERSION" `
-            --notes "Automated development build from `${{ github.ref_name }}` at `${{ github.sha }}`. This channel may change frequently." `
+            --notes "Automated development build from '${{ github.ref_name }}' at '${{ github.sha }}'. This channel may change frequently." `
             "artifacts/blackjack-casino-win-x64.zip" `
             "artifacts/blackjack-casino-win-x64.zip.sha256" `
             "artifacts/update-manifest.json"
