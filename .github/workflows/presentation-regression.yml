@@ -1,0 +1,29 @@
+name: Casino presentation regression
+on:
+  push:
+    branches: [main, "feature/**", "fix/**", "slots/midnight-manor"]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  hover-and-layout:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reject unsafe dropdown templates
+        run: python tools/check_control_templates.py --self-test
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Actual Windows hover and layout regression
+        run: dotnet run --project tools/PresentationSmoke --configuration Release -- artifacts/presentation-regression
+      - name: Upload screenshots and state evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: casino-presentation-regression
+          path: artifacts/presentation-regression
+          if-no-files-found: ignore
+          retention-days: 14

@@ -26,15 +26,7 @@ internal static class Program
         output=Path.GetFullPath(args.FirstOrDefault() ?? "artifacts/manor-windows-smoke"); Directory.CreateDirectory(output);
         var app=new Application { ShutdownMode=ShutdownMode.OnExplicitShutdown };
         // Load the exact shared resource source without starting the normal casino/updater window.
-        using(var source=typeof(Program).Assembly.GetManifestResourceStream("CasinoStylesSource.xaml")!)
-        {
-            XDocument document=XDocument.Load(source);
-            XNamespace ns="http://schemas.microsoft.com/winfx/2006/xaml/presentation";
-            var dictionary=new XElement(ns+"ResourceDictionary",
-                new XAttribute(XNamespace.Xmlns+"x","http://schemas.microsoft.com/winfx/2006/xaml"),
-                document.Root!.Element(ns+"Application.Resources")!.Elements());
-            app.Resources=(ResourceDictionary)XamlReader.Parse(dictionary.ToString());
-        }
+        app.Resources.MergedDictionaries.Add(new ResourceDictionary {Source=new Uri("/BlackjackCasino.Desktop;component/Presentation/CasinoControls.xaml",UriKind.Relative)});
         app.DispatcherUnhandledException+=(_,e)=> { failures++; File.WriteAllText(Path.Combine(output,"fatal.txt"),e.Exception.ToString()); e.Handled=true; app.Shutdown(1); };
         var preferences=new AppPreferences {Bankroll=100_000,ManorBet=1,SoundEnabled=false,MusicEnabled=false,AnimationsEnabled=false};
         var progression=new PlayerProgressionController(new PlayerProfileState());

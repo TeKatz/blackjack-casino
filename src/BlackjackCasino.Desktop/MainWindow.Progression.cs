@@ -26,7 +26,7 @@ public partial class MainWindow
         }
 
         progressionInitialized = true;
-        progressionController = new PlayerProgressionController();
+        progressionController = new PlayerProgressionController(initialProfile);
         BuildProfileButton();
         AddHandler(Button.ClickEvent, new RoutedEventHandler(ProgressionButtonBubbled), handledEventsToo: true);
         AddHandler(Keyboard.PreviewKeyDownEvent, new KeyEventHandler(ProgressionKeyObserved), handledEventsToo: true);
@@ -58,10 +58,10 @@ public partial class MainWindow
         // clipping, shadow, template or hover behavior.
         profileButton = new Button
         {
-            MinWidth = 190,
-            Height = 40,
+            MinWidth = 240,
+            Height = 52,
             Margin = new Thickness(0, 0, 22, 0),
-            Padding = new Thickness(13, 6, 13, 6),
+            Padding = new Thickness(9, 5, 9, 5),
             Style = (Style)FindResource("MutedButton"),
             VerticalAlignment = VerticalAlignment.Center,
         };
@@ -167,7 +167,7 @@ public partial class MainWindow
             return;
         }
 
-        var window = new ProgressionWindow(progressionController)
+        var window = new PlayerProfileWindow(progressionController)
         {
             Owner = this,
         };
@@ -186,15 +186,14 @@ public partial class MainWindow
         CosmeticDefinition title = CosmeticCatalog.Get(profile.EquippedTitleId);
         CosmeticDefinition frame = CosmeticCatalog.Get(profile.EquippedFrameId);
 
-        var text = new TextBlock { VerticalAlignment = VerticalAlignment.Center };
-        text.Inlines.Add(new Run($"P{profile.Prestige} · LV {profile.Level}    "));
-        text.Inlines.Add(new Run($"◆ {profile.Coins:N0}")
-        {
-            Foreground = new SolidColorBrush(Color.FromRgb(84, 225, 183)),
-            FontWeight = FontWeights.Bold,
-        });
-        profileButton.Content = text;
-        profileButton.ToolTip = $"{title.Name} · Open Player, stats, Season Pass, Shop and Challenges";
+        var content = new StackPanel { Orientation=Orientation.Horizontal };
+        content.Children.Add(ProgressionWindow.CreatePortraitVisual(CosmeticCatalog.Get(profile.EquippedPortraitId),38));
+        var labels=new StackPanel {Margin=new Thickness(10,0,0,0),VerticalAlignment=VerticalAlignment.Center};
+        labels.Children.Add(new TextBlock {Text=profile.DisplayName,FontWeight=FontWeights.Bold,FontSize=14,Width=140,TextTrimming=TextTrimming.CharacterEllipsis});
+        var detail=new TextBlock {FontSize=11,Foreground=new SolidColorBrush(Color.FromRgb(84,225,183))};
+        detail.Text=$"LV {profile.Level} · ◆ {profile.Coins:N0}"; labels.Children.Add(detail); content.Children.Add(labels);
+        profileButton.Content=content;
+        profileButton.ToolTip=$"{profile.DisplayName} · {title.Name} · Open profile";
         ApplyHeaderFrame(frame);
     }
 

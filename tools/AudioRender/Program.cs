@@ -9,7 +9,7 @@ foreach(Soundtrack track in Enum.GetValues<Soundtrack>())
     AudioClip clip=CasinoMusicSynthesis.Build(track);
     string name=track.ToString().ToLowerInvariant()+"-loop.wav";
     File.WriteAllBytes(Path.Combine(output,name),clip.Wave());
-    report.Add(new {File=name,Bpm=CasinoMusicSynthesis.Tempo(track),Seconds=clip.Frames/(double)AudioClip.Rate,
+    report.Add(new {File=name,Theme=CasinoMusicSynthesis.Theme(track),Beats=CasinoMusicSynthesis.Beats(track),Bpm=CasinoMusicSynthesis.Tempo(track),Seconds=clip.Frames/(double)AudioClip.Rate,
         Peak=clip.Samples.Max(s=>Math.Abs(s)),Rms=Math.Sqrt(clip.Samples.Sum(s=>(double)s*s)/clip.Samples.Length),
         Seam=Math.Max(Math.Abs(clip.Samples[0]-clip.Samples[^2]),Math.Abs(clip.Samples[1]-clip.Samples[^1]))});
 }

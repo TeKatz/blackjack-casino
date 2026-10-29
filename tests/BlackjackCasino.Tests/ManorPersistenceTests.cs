@@ -66,6 +66,15 @@ public sealed class ManorPersistenceTests : IDisposable
         var checkpoint=ManorPersistence.Clone(Snapshot()); Assert.Equal(975,checkpoint.Machine.Bankroll);
     }
     [Fact]
+    public void RenamedProfileSurvivesCheckpointProjectionAndReload()
+    {
+        var snapshot=Snapshot();snapshot.Profile.DisplayName="Midnight Timo";
+        var store=new ManorPersistence(folder);store.Commit(snapshot);store.Recover();
+        Assert.Equal("Midnight Timo",store.Load()!.Profile.DisplayName);
+        var saved=JsonSerializer.Deserialize<PlayerProfileState>(File.ReadAllText(FileAt("profile.json")),ManorPersistence.Json)!;
+        Assert.Equal("Midnight Timo",saved.DisplayName);Assert.Equal(120,saved.Coins);
+    }
+    [Fact]
     public void ExistingWinningCheckpointAndPendingFreeSpinsKeepTheirOriginalPaytable()
     {
         int[] stops=Enumerable.Range(0,5).Select(reel=>Enumerable.Range(0,64).First(stop=>ManorRules.SymbolAt(reel,stop,1)==ManorSymbol.Jack)).ToArray();

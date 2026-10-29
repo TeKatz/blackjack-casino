@@ -5,13 +5,13 @@ namespace BlackjackCasino.Tests;
 public sealed class AudioOverhaulTests
 {
     [Theory]
-    [InlineData(0,75)] [InlineData(1,96)] [InlineData(2,70)]
+    [InlineData(0,72)] [InlineData(1,104)] [InlineData(2,62)]
     public void TracksAreFullStereoPhrasesWithContinuousLoopBoundaries(int trackId,int tempo)
     {
         Soundtrack track=(Soundtrack)trackId;
         AudioClip clip=CasinoMusicSynthesis.Build(track);
         Assert.Equal(tempo,CasinoMusicSynthesis.Tempo(track));
-        Assert.Equal((int)Math.Round(64*60d/tempo*AudioClip.Rate),clip.Frames);
+        Assert.InRange(clip.Frames,(int)Math.Round(CasinoMusicSynthesis.Beats(track)*60d/tempo*AudioClip.Rate)-1,(int)Math.Round(CasinoMusicSynthesis.Beats(track)*60d/tempo*AudioClip.Rate)+1);
         Assert.DoesNotContain(clip.Samples,s=>!float.IsFinite(s));
         double peak=clip.Samples.Max(s=>Math.Abs(s));
         double rms=Math.Sqrt(clip.Samples.Sum(s=>(double)s*s)/clip.Samples.Length);

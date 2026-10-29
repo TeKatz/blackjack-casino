@@ -295,7 +295,8 @@ public sealed class ProgressionService
         }
 
         _ = GetOrCreateSeasonProgress(State.ActiveSeasonId);
-        State.SchemaVersion = Math.Max(State.SchemaVersion, 2);
+        State.DisplayName = ProfileIdentity.Restore(State.DisplayName);
+        State.SchemaVersion = Math.Max(State.SchemaVersion, 3);
     }
 
     private bool EnsureOwned(string cosmeticId)

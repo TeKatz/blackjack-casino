@@ -10,14 +10,14 @@
         <Setter Property="Foreground" Value="#F7EEDB"/><Setter Property="Background" Value="#302539"/><Setter Property="BorderBrush" Value="#66516D"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Padding" Value="14,10"/><Setter Property="Margin" Value="4"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button"><Border x:Name="Chrome" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="7" Padding="{TemplateBinding Padding}"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Chrome" Property="BorderBrush" Value="#F3CD7A"/></Trigger><Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Chrome" Property="BorderBrush" Value="#FFFFFF"/></Trigger><Trigger Property="IsPressed" Value="True"><Setter TargetName="Chrome" Property="Opacity" Value="0.65"/></Trigger><Trigger Property="IsEnabled" Value="False"><Setter TargetName="Chrome" Property="Opacity" Value="0.38"/><Setter Property="Cursor" Value="Arrow"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter>
       </Style>
-      <Style TargetType="CheckBox"><Setter Property="Foreground" Value="#C6B7CE"/><Setter Property="Margin" Value="6,8"/><Setter Property="VerticalContentAlignment" Value="Center"/></Style>
+      <Style TargetType="CheckBox" BasedOn="{StaticResource CasinoCheckBox}"><Setter Property="Foreground" Value="#C6B7CE"/><Setter Property="Margin" Value="6,8"/><Setter Property="VerticalContentAlignment" Value="Center"/></Style>
     </ResourceDictionary>
   </Window.Resources>
   <Grid Margin="24,16">
     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
     <Grid>
       <StackPanel><TextBlock Text="CASINO / SLOTS" Foreground="#B39CBE" FontSize="11"/><TextBlock Text="MIDNIGHT REELS" FontSize="23" FontWeight="Bold"/></StackPanel>
-      <Button Content="← Back to Blackjack  [Esc]" Style="{StaticResource SlotButton}" HorizontalAlignment="Right" Click="Back_Click"/>
+      <Button x:Name="ReelsBackButton" Content="← Casino lobby  [Esc]" Style="{StaticResource SlotButton}" HorizontalAlignment="Right" Click="Back_Click"/>
     </Grid>
     <Viewbox Grid.Row="1" Stretch="Uniform" Margin="0,12,0,0">
       <Grid Width="1000" Height="650">

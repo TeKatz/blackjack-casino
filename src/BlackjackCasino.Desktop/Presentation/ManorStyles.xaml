@@ -124,9 +124,7 @@
               </Border>
               <!-- A transparent default ToggleButton still paints Windows hover/disabled chrome.
                    Own its entire template so those states never cover the selected text. -->
-              <ToggleButton x:Name="DropDownToggle" Focusable="False" Background="Transparent" BorderThickness="0" Cursor="Hand" IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
-                <ToggleButton.Template><ControlTemplate TargetType="ToggleButton"><Border Background="Transparent" /></ControlTemplate></ToggleButton.Template>
-              </ToggleButton>
+              <ToggleButton x:Name="DropDownToggle" Style="{StaticResource CasinoDropDownHitArea}" Focusable="False" Background="Transparent" BorderThickness="0" Cursor="Hand" IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}" />
               <Popup x:Name="PART_Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" AllowsTransparency="True" Focusable="False" PopupAnimation="Fade">
                 <Border Margin="0,4,0,0" MinWidth="{TemplateBinding ActualWidth}" Background="#1B1525" BorderBrush="#68546E" BorderThickness="1" CornerRadius="7">
                   <Border.Effect><DropShadowEffect Color="#000000" BlurRadius="12" ShadowDepth="3" Opacity="0.38" /></Border.Effect>

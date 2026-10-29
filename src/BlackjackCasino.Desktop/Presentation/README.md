@@ -1,5 +1,11 @@
 # Presentation layer
 
-Phase 4 owns the desktop game's visual and audio polish here. Casino audio is generated deterministically in `CasinoFeedback.cs` as project-owned PCM WAV data at runtime, so the game uses no Windows system sounds and has no external audio/license dependency.
+Shared state templates live in `CasinoControls.xaml`. Read
+[the presentation regression contract](../../../docs/presentation-regression.md)
+before modifying dropdowns or scaling. Run the contract checker and Windows
+presentation smoke; the dedicated workflow and Development publisher enforce them.
 
-The current cues cover card movement, chip placement, win, loss and push. They are intentionally small and replaceable if we later add recorded studio assets.
+Music, cues and native PCM playback are documented in
+[the audio overhaul](../../../docs/audio-overhaul.md). Rendered music credits and
+source scores live in `Assets/Music`. Financial game state never depends on UI or
+audio timing.

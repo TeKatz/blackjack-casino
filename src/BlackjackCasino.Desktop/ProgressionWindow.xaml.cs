@@ -17,9 +17,6 @@ namespace BlackjackCasino.Desktop;
 internal partial class ProgressionWindow : Window
 {
     private readonly PlayerProgressionController controller;
-    private WrapPanel? playerPortraitPanel;
-    private ContentControl? equippedPortraitHost;
-    private TextBlock? playerStatusText;
     private StackPanel? challengesPanel;
     private TextBlock? challengeSummaryText;
     private TextBlock? challengeStatusText;
@@ -41,6 +38,12 @@ internal partial class ProgressionWindow : Window
         RefreshMaximizeGlyph();
     }
 
+    internal void SelectTab(string header)
+    {
+        TabControl? tabs=FindVisualChild<TabControl>(this);
+        if(tabs is not null) tabs.SelectedItem=tabs.Items.OfType<TabItem>().FirstOrDefault(t=>Equals(t.Header,header)) ?? tabs.Items[0];
+    }
+
     private void RefreshAll()
     {
         RefreshProfileHeader();
@@ -48,7 +51,6 @@ internal partial class ProgressionWindow : Window
         RefreshHistory();
         RefreshSeason();
         RefreshShop();
-        RefreshPlayer();
         RefreshChallenges();
     }
 
@@ -393,53 +395,7 @@ internal partial class ProgressionWindow : Window
             return;
         }
 
-        tabs.Items.Add(BuildPlayerTab());
         tabs.Items.Add(BuildChallengesTab());
-    }
-
-    private TabItem BuildPlayerTab()
-    {
-        var root = new Grid { Margin = new Thickness(10) };
-        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        root.RowDefinitions.Add(new RowDefinition());
-
-        var summary = PanelBorder();
-        summary.Padding = new Thickness(18);
-        var summaryGrid = new Grid();
-        summaryGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) });
-        summaryGrid.ColumnDefinitions.Add(new ColumnDefinition());
-        summaryGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(220) });
-        equippedPortraitHost = new ContentControl { Width = 118, Height = 118, HorizontalAlignment = HorizontalAlignment.Left };
-        summaryGrid.Children.Add(equippedPortraitHost);
-
-        var info = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-        info.Children.Add(new TextBlock { Text = "PLAYER", Foreground = new SolidColorBrush(Color.FromRgb(255, 215, 124)), FontSize = 11, FontWeight = FontWeights.Bold });
-        info.Children.Add(new TextBlock { Text = "Your local casino identity", FontSize = 22, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 4, 0, 0) });
-        info.Children.Add(new TextBlock { Text = "Choose an owned profile picture. Portraits can be unlocked in the Shop and Season Pass.", Foreground = MutedBrush, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 7, 10, 0) });
-        playerStatusText = new TextBlock { Foreground = PositiveBrush, Margin = new Thickness(0, 8, 0, 0), TextWrapping = TextWrapping.Wrap };
-        info.Children.Add(playerStatusText);
-        Grid.SetColumn(info, 1);
-        summaryGrid.Children.Add(info);
-
-        var actions = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-        var export = new Button { Content = "Save Progress…", ToolTip = "Export your current player statistics and progression as a JSON file." };
-        export.Click += SaveProgress_Click;
-        actions.Children.Add(export);
-        actions.Children.Add(new TextBlock { Text = "Exports stats, progression, seasons and challenge progress. Your live save is not moved or modified.", Foreground = MutedBrush, FontSize = 10, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(5, 6, 5, 0) });
-        Grid.SetColumn(actions, 2);
-        summaryGrid.Children.Add(actions);
-        summary.Child = summaryGrid;
-        root.Children.Add(summary);
-
-        var portraitPanel = new StackPanel { Margin = new Thickness(5, 8, 5, 5) };
-        portraitPanel.Children.Add(new TextBlock { Text = "OWNED PROFILE PICTURES", Foreground = new SolidColorBrush(Color.FromRgb(255, 215, 124)), FontSize = 11, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 8) });
-        playerPortraitPanel = new WrapPanel();
-        portraitPanel.Children.Add(playerPortraitPanel);
-        var scroll = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = portraitPanel };
-        Grid.SetRow(scroll, 1);
-        root.Children.Add(scroll);
-
-        return new TabItem { Header = "Player", Content = root };
     }
 
     private TabItem BuildChallengesTab()
@@ -472,47 +428,6 @@ internal partial class ProgressionWindow : Window
         Grid.SetRow(scroll, 1);
         root.Children.Add(scroll);
         return new TabItem { Header = "Challenges", Content = root };
-    }
-
-    private void RefreshPlayer()
-    {
-        if (playerPortraitPanel is null || equippedPortraitHost is null)
-        {
-            return;
-        }
-
-        PlayerProfileState profile = controller.Profile;
-        CosmeticDefinition equipped = CosmeticCatalog.Get(profile.EquippedPortraitId);
-        equippedPortraitHost.Content = CreatePortraitVisual(equipped, 112);
-        playerPortraitPanel.Children.Clear();
-
-        foreach (CosmeticDefinition portrait in CosmeticCatalog.All
-                     .Where(x => x.Kind == CosmeticKind.Portrait && profile.OwnedCosmeticIds.Contains(x.Id, StringComparer.Ordinal))
-                     .OrderBy(x => x.Name))
-        {
-            bool selected = portrait.Id == profile.EquippedPortraitId;
-            var card = new Border
-            {
-                Width = 174,
-                MinHeight = 190,
-                Margin = new Thickness(5),
-                Padding = new Thickness(10),
-                CornerRadius = new CornerRadius(10),
-                BorderThickness = new Thickness(selected ? 2 : 1),
-                BorderBrush = selected ? CoinBrush : new SolidColorBrush(Color.FromRgb(49, 90, 67)),
-                Background = new SolidColorBrush(Color.FromArgb(180, 11, 33, 23)),
-            };
-            var stack = new StackPanel();
-            FrameworkElement visual = CreatePortraitVisual(portrait, 104);
-            visual.HorizontalAlignment = HorizontalAlignment.Center;
-            stack.Children.Add(visual);
-            stack.Children.Add(new TextBlock { Text = portrait.Name, FontWeight = FontWeights.Bold, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 7, 0, 3) });
-            var equip = new Button { Tag = portrait.Id, Content = selected ? "Equipped" : "Use portrait", IsEnabled = !selected };
-            equip.Click += PortraitEquip_Click;
-            stack.Children.Add(equip);
-            card.Child = stack;
-            playerPortraitPanel.Children.Add(card);
-        }
     }
 
     private void RefreshChallenges()
@@ -620,25 +535,6 @@ internal partial class ProgressionWindow : Window
         return border;
     }
 
-    private void PortraitEquip_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is not Button { Tag: string id })
-        {
-            return;
-        }
-
-        if (controller.EquipCosmetic(id))
-        {
-            if (playerStatusText is not null)
-            {
-                playerStatusText.Text = $"Using {CosmeticCatalog.Get(id).Name}.";
-            }
-            RefreshProfileHeader();
-            RefreshPlayer();
-            RefreshShop();
-        }
-    }
-
     private void ChallengeClaim_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not Button { Tag: string id })
@@ -654,73 +550,6 @@ internal partial class ProgressionWindow : Window
         RefreshProfileHeader();
         RefreshShop();
         RefreshChallenges();
-    }
-
-    private void SaveProgress_Click(object sender, RoutedEventArgs e)
-    {
-        var dialog = new SaveFileDialog
-        {
-            Title = "Save Player Progress",
-            FileName = $"blackjack-casino-progress-{DateTime.Now:yyyy-MM-dd}.json",
-            DefaultExt = ".json",
-            Filter = "JSON progress export (*.json)|*.json",
-            AddExtension = true,
-            OverwritePrompt = true,
-        };
-        if (dialog.ShowDialog(this) != true)
-        {
-            return;
-        }
-
-        try
-        {
-            PlayerProfileState profile = controller.Profile;
-            var export = new
-            {
-                ExportVersion = 1,
-                GeneratedAt = DateTimeOffset.Now,
-                Player = new
-                {
-                    profile.Level,
-                    profile.Prestige,
-                    CosmeticCoins = profile.Coins,
-                    profile.LifetimeExperience,
-                    PlaytimeSeconds = profile.TotalPlaytimeSeconds + (long)controller.SessionElapsed.TotalSeconds,
-                    Title = CosmeticCatalog.Get(profile.EquippedTitleId).Name,
-                    Frame = CosmeticCatalog.Get(profile.EquippedFrameId).Name,
-                    Portrait = CosmeticCatalog.Get(profile.EquippedPortraitId).Name,
-                },
-                Blackjack = profile.LifetimeStatistics,
-                MidnightReels = profile.Slots,
-                MidnightManor = profile.Manor,
-                Seasons = profile.Seasons.Values.OrderBy(x => x.SeasonId).ToArray(),
-                Challenges = ChallengeCatalog.All.Select(challenge => new
-                {
-                    challenge.Id,
-                    challenge.Name,
-                    Category = challenge.Category.ToString(),
-                    Progress = ChallengeCatalog.Progress(profile, challenge),
-                    challenge.Goal,
-                    Complete = ChallengeCatalog.Complete(profile, challenge),
-                    Claimed = profile.ClaimedChallengeIds.Contains(challenge.Id, StringComparer.Ordinal),
-                    challenge.CoinReward,
-                }).ToArray(),
-            };
-            var options = new JsonSerializerOptions { WriteIndented = true };
-            options.Converters.Add(new JsonStringEnumConverter());
-            File.WriteAllText(dialog.FileName, JsonSerializer.Serialize(export, options));
-            if (playerStatusText is not null)
-            {
-                playerStatusText.Text = $"Progress exported to {dialog.FileName}";
-            }
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
-        {
-            if (playerStatusText is not null)
-            {
-                playerStatusText.Text = "Export failed: " + ex.Message;
-            }
-        }
     }
 
     private FrameworkElement CreateCosmeticPreview(CosmeticDefinition cosmetic)
@@ -766,7 +595,7 @@ internal partial class ProgressionWindow : Window
         return frame;
     }
 
-    private static FrameworkElement CreatePortraitVisual(CosmeticDefinition portrait, double size)
+    internal static FrameworkElement CreatePortraitVisual(CosmeticDefinition portrait, double size)
     {
         if (PortraitArtwork.Get(portrait.Id) is { } image)
         {
@@ -792,7 +621,7 @@ internal partial class ProgressionWindow : Window
         {
             Width = size,
             Height = size,
-            CornerRadius = new CornerRadius(size * 0.16),
+            CornerRadius = new CornerRadius(size * 0.5),
             BorderThickness = new Thickness(Math.Max(1, size / 42)),
             BorderBrush = new SolidColorBrush(Color.FromArgb(190, 225, 211, 170)),
             Background = new LinearGradientBrush(a, b, new Point(0, 0), new Point(1, 1)),
@@ -829,6 +658,7 @@ internal partial class ProgressionWindow : Window
             Effect = new DropShadowEffect { Color = Colors.Black, BlurRadius = 5, ShadowDepth = 1, Opacity = 0.5 },
         });
         border.Child = grid;
+        border.Clip = new EllipseGeometry(new Point(size/2,size/2),size/2,size/2);
         return border;
     }
 

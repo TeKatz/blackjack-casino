@@ -9,10 +9,9 @@ internal partial class ProgressionWindow
         // Window templates are not guaranteed to have a visual tree during the constructor.
         // The constructor attempts eager initialization, while this guarantees Player and
         // Challenges are present once WPF has created the actual TabControl visual.
-        if (playerPortraitPanel is null || challengesPanel is null)
+        if (challengesPanel is null)
         {
             InitializeContentTabs();
-            RefreshPlayer();
             RefreshChallenges();
         }
     }

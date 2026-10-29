@@ -28,4 +28,5 @@
     <ProjectReference Include="..\..\src\BlackjackCasino.Core\BlackjackCasino.Core.csproj" />
     <ProjectReference Include="..\..\src\BlackjackCasino.Update\BlackjackCasino.Update.csproj" />
   </ItemGroup>
+  <ItemGroup><EmbeddedResource Include="../../src/BlackjackCasino.Desktop/Assets/Music/*.wav" LogicalName="BlackjackCasino.Music.%(Filename)%(Extension)" /></ItemGroup>
 </Project>

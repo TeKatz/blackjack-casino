@@ -49,14 +49,16 @@ internal static class PortraitSmoke
                 Require(controller.Profile.EquippedPortraitId == portrait.Id, "Purchased portrait did not equip");
                 window.UpdateLayout();
             }
-            tabs.SelectedItem = tabs.Items.OfType<TabItem>().Single(t => (string)t.Header == "Player");
-            window.UpdateLayout(); await Task.Delay(70);
-            Ellipse equipped = Descendants<Ellipse>(window).Single(e => e.Width == 112 && e.Fill is ImageBrush);
+            using var profileController=new PlayerProgressionController(controller.Profile);
+            var profileWindow=new PlayerProfileWindow(profileController);
+            profileWindow.Show();profileWindow.UpdateLayout();await Task.Delay(70);
+            Ellipse equipped = Descendants<Ellipse>(profileWindow).Single(e => e.Width == 112 && e.Fill is ImageBrush);
             Require(ReferenceEquals(((ImageBrush)equipped.Fill).ImageSource, PortraitArtwork.Get("portrait-velvet-king")), "Equipped portrait differs from its shop image");
             CheckCircle(equipped);
-            Save(window, System.IO.Path.Combine(output, "portraits-player.png"));
-            window.Width = window.MinWidth; window.Height = window.MinHeight;
-            window.UpdateLayout(); Save(window, System.IO.Path.Combine(output, "portraits-player-minimum.png"));
+            Save(profileWindow, System.IO.Path.Combine(output, "portraits-player.png"));
+            profileWindow.Width = profileWindow.MinWidth; profileWindow.Height = profileWindow.MinHeight;
+            profileWindow.UpdateLayout(); Save(profileWindow, System.IO.Path.Combine(output, "portraits-player-minimum.png"));
+            profileWindow.Close();
             Require(PortraitArtwork.Get(CosmeticCatalog.DefaultPortraitId) is null, "Default/season artwork was unexpectedly replaced");
             File.WriteAllText(System.IO.Path.Combine(output, "portraits-result.txt"), "PASS: all 8 embedded images loaded, distinct and cached; true circular clipping with transparent corners; actual shop previews, purchase/equip and Player portrait; regular/minimum window captures. No live profile was used.");
         }

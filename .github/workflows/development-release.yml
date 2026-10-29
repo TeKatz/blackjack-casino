@@ -46,6 +46,21 @@ jobs:
       - name: Test
         run: dotnet test BlackjackCasino.sln --configuration Release --no-build
 
+      - name: Shared controls regression contract
+        run: python tools/check_control_templates.py --self-test
+
+      - name: Casino presentation runtime regression
+        run: dotnet run --project tools/PresentationSmoke --configuration Release -- artifacts/presentation-regression
+
+      - name: Upload casino presentation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: casino-presentation-regression
+          path: artifacts/presentation-regression
+          if-no-files-found: ignore
+          retention-days: 14
+
       - name: Windows Manor runtime acceptance smoke
         run: dotnet run --project tools/ManorSmoke/ManorSmoke.csproj --configuration Release -- artifacts/manor-development-smoke
 

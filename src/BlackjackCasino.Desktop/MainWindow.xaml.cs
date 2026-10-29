@@ -73,15 +73,19 @@ public partial class MainWindow : Window
     private ResizeMode previousResizeMode;
     private Rect previousWindowBounds;
 
-    public MainWindow()
+    private readonly PlayerProfileState? initialProfile;
+    private readonly bool testSession;
+    public MainWindow() : this(null,null) { }
+    internal MainWindow(AppPreferences? initialPreferences,PlayerProfileState? profile)
     {
+        initialProfile=profile; testSession=initialPreferences is not null;
         InitializeComponent();
 
         string? manorRecoveryNotice = null;
-        try { new ManorPersistence(ManorPersistence.DefaultDirectory).Recover(); }
+        try { if(!testSession) new ManorPersistence(ManorPersistence.DefaultDirectory).Recover(); }
         catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException or System.Text.Json.JsonException or ArgumentException)
         { manorRecoveryNotice = "Manor checkpoint could not be recovered: " + ex.Message; }
-        preferences = PlayerStateStore.Load();
+        preferences = initialPreferences ?? PlayerStateStore.Load();
         MenuAudio.Enabled = preferences.SoundEnabled;
         MenuAudio.Attach(this, () => SoundEnabled);
         playMode = preferences.PlayMode;
@@ -121,7 +125,7 @@ public partial class MainWindow : Window
         {
             RefreshGameUi();
             if (manorRecoveryNotice is not null) StatusText.Text = manorRecoveryNotice;
-            await CheckForUpdatesAsync(silent: true);
+            if(!testSession) await CheckForUpdatesAsync(silent: true);
         };
         Closed += (_, _) =>
         {
@@ -477,7 +481,7 @@ public partial class MainWindow : Window
             BankrollText.Text = Money(session.Bankroll);
             BetText.Text = Money(selectedBet);
             ShoeText.Text = $"#{session.ShoeNumber} · {session.CardsRemaining} cards";
-            TableModeText.Text = playMode == PlayModePreference.Solo
+            TableModeText.Text = lobby?.Visibility == Visibility.Visible ? "Casino lobby" : playMode == PlayModePreference.Solo
                 ? "Solo table"
                 : $"Full table · {aiSeatCount} AI seat{(aiSeatCount == 1 ? string.Empty : "s")}";
 
@@ -998,6 +1002,7 @@ public partial class MainWindow : Window
 
     private void SavePreferences()
     {
+        if(testSession) return;
         Rect bounds;
         bool maximized;
 

@@ -18,6 +18,10 @@ public partial class MainWindow
         ApplyCasinoDropdownStyles();
         RaiseBottomActionDeck();
         InitializeSplitOpportunityCue();
+        InitializeLobby();
+        var tableAtmosphere=new System.Windows.Threading.DispatcherTimer {Interval=TimeSpan.FromMilliseconds(80)};
+        tableAtmosphere.Tick+=(_,_)=> {if(AnimationsEnabled && lobby?.Visibility!=Visibility.Visible && embeddedGameShell is null) TableArt.Phase+=.08;};
+        tableAtmosphere.Start(); Closed+=(_,_)=>tableAtmosphere.Stop();
 
         suppressPreferenceEvents = true;
         MusicCheckBox.IsChecked = preferences.MusicEnabled;

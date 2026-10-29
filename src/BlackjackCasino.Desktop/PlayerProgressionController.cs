@@ -64,6 +64,24 @@ internal sealed class PlayerProgressionController : IDisposable
         return equipped;
     }
 
+    public bool RenameProfile(string name, out string message)
+    {
+        string previous = Profile.DisplayName;
+        try
+        {
+            Profile.DisplayName = ProfileIdentity.Validate(name);
+            if (persist) PlayerProfileStore.SaveProfileOrThrow(Profile);
+            message = "Profile name saved.";
+            return true;
+        }
+        catch (Exception ex) when (ex is ArgumentException or IOException or UnauthorizedAccessException)
+        {
+            Profile.DisplayName = previous;
+            message = ex.Message;
+            return false;
+        }
+    }
+
     public ChallengeClaimResult ClaimChallenge(string challengeId)
     {
         ChallengeClaimResult result = Service.ClaimChallenge(challengeId);
@@ -88,6 +106,7 @@ internal sealed class PlayerProgressionController : IDisposable
     {
         // Keep the existing blackjack service, processed-round set and session statistics.
         Profile.Manor = committed.Manor;
+        Profile.DisplayName = committed.DisplayName;
         Profile.Level = committed.Level;
         Profile.LevelExperience = committed.LevelExperience;
         Profile.Coins = committed.Coins;

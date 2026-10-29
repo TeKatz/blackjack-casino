@@ -1,23 +1,24 @@
 # Casino audio overhaul
 
-The audio is original offline synthesis, with no streamed assets, external sample
-packs or additional packages. Blackjack rules, slot outcomes, bankroll and XP are
-unchanged. Audio is never a clock for financial transitions.
+The original casino compositions now use offline rendered instruments. No audio
+was copied from the reference video. The user clarified the direction as chill
+hip-hop lo-fi. Finished WAVs are embedded, so there is no runtime synth, network
+or extra package dependency. [Music source/credits](../src/BlackjackCasino.Desktop/Assets/Music/README.md)
+includes the score renderer and SoundFont attribution.
 
-## Music
+## Music, revision 2
 
-| Mode | Track | Tempo | Loop |
-| --- | --- | ---: | ---: |
-| Blackjack | Laid-back hip-hop: swung hats, soft backbeat, round kick/bass, warm FM electric piano and jazz extensions | 75 BPM | 51.2 s / 16 bars |
-| Midnight Reels | Casino lounge quartet: walking upright bass, brushed drums, bright keys and vibraphone | 96 BPM | 40 s / 16 bars |
-| Midnight Manor | Calm Halloween chamber score: minor harmony, slow string/organ bed, celesta and felt plucks | 70 BPM | 54.857 s / 16 bars |
+| Mode | Theme | Tempo / meter | Distinctive sound |
+| --- | --- | --- | --- |
+| Blackjack | Felt after hours | 72 BPM / 4/4 | Sampled Rhodes, jazz guitar, finger bass and swung hip-hop drums, filtered lo-fi mix |
+| Midnight Reels | Brass and lucky sevens | 104 BPM / 4/4 | Muted trumpet melody, piano, nylon guitar, walking upright bass and brushed swing |
+| Midnight Manor | The clockwork waltz | 62 BPM / 3/4 | Celesta/harp motif, cello and slow strings in a haunted minor waltz |
 
-Notes and feed-forward room reflections are rendered circularly so the last bar's
-tails carry into the first. Playback wraps on the PCM sample clock, with no file
-reopening, UI timer or MediaEnded seek. Music is prepared asynchronously, cached
-once per track, and quietly faded on mode/volume changes. Reels now has its own
-music in both embedded and standalone entry paths; Blackjack is muted during
-either slot and restored on return. Saved music enable/volume settings persist.
+Each track has its own score, key, arrangement and instruments. Sampler/reverb
+tails are warmed through a repeated score before capturing the loop, with a tiny
+endpoint correction to prevent a seam. Playback remains gapless on the shared PCM
+sample clock. Track loading is asynchronous and cached; saved volume/mute and
+mode-switch behavior remain intact.
 
 ## Effects
 

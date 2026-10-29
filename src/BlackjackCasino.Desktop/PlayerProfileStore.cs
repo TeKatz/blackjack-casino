@@ -64,6 +64,14 @@ internal static class PlayerProfileStore
         WriteJsonAtomically(ProfilePath, SanitizeProfile(state));
     }
 
+    internal static void SaveProfileOrThrow(PlayerProfileState state)
+    {
+        Directory.CreateDirectory(DirectoryPath);
+        string temporary = ProfilePath + ".tmp";
+        File.WriteAllText(temporary, JsonSerializer.Serialize(SanitizeProfile(state), JsonOptions));
+        File.Move(temporary, ProfilePath, overwrite: true);
+    }
+
     public static void SaveHistory(IEnumerable<RoundHistoryEntry> history)
     {
         ArgumentNullException.ThrowIfNull(history);
