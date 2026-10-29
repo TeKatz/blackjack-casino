@@ -23,7 +23,7 @@ public partial class MainWindow
         // Wide resplits extend towards the rising sides of the felt arc.
         // Reserve additional clearance only for those wider player layouts.
         PlayerHandViewport.Margin = new Thickness(20,
-            session.CurrentRound?.PlayerHands.Count > 2 ? 160 : 30, 20, 6);
+            session.CurrentRound is { PlayerHands.Count: > 2, AiSeats.Count: 0 } ? 160 : 30, 20, 6);
         for (int i = 0; i < PlayerHandsPanel.Children.Count; i++)
         {
             if (PlayerHandsPanel.Children[i] is FrameworkElement hand) PresentTableWager(hand, i);

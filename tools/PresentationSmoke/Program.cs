@@ -201,17 +201,28 @@ internal static class Program
                 }
                 TextBlock[] headings=Find<TextBlock>(window).Where(t=>t.Text=="YOUR HAND" || (t.Text.StartsWith("HAND ") && t.Text.Length<=6)).ToArray();
                 Require(headings.Length==handCount,"Player hand headings are missing");
-                foreach(TextBlock heading in headings)
+                foreach(double offset in new[]{0d,viewport.ScrollableWidth}.Distinct())
                 {
-                    Rect bounds=heading.TransformToVisual(table).TransformBounds(new Rect(0,0,heading.ActualWidth,heading.ActualHeight));
-                    for(int sample=0;sample<=200;sample++)
+                    viewport.ScrollToHorizontalOffset(offset);window.UpdateLayout();
+                    int visibleHeadings=0;
+                    foreach(TextBlock heading in headings)
                     {
-                        double t=sample/200d,u=1-t;
-                        double x=table.ActualWidth*(u*u*u*.14+3*u*u*t*.32+3*u*t*t*.68+t*t*t*.86);
-                        double y=table.ActualHeight*(u*u*u*.66+3*u*u*t*.39+3*u*t*t*.39+t*t*t*.66);
-                        if(x>=bounds.Left && x<=bounds.Right)
-                            Require(bounds.Top>=y+4,"Player heading overlaps the felt arc in "+size+" / "+handCount+" hands / full="+fullTable+"; heading="+bounds.Top+", arc="+y);
+                        Rect inViewport=heading.TransformToAncestor(viewport).TransformBounds(new Rect(0,0,heading.ActualWidth,heading.ActualHeight));
+                        // Resplits intentionally scroll horizontally to keep cards legible.
+                        // Offscreen content has no relationship to the native felt arc.
+                        if(inViewport.Left<0 || inViewport.Right>viewport.ActualWidth) continue;
+                        visibleHeadings++;
+                        Rect bounds=heading.TransformToVisual(table).TransformBounds(new Rect(0,0,heading.ActualWidth,heading.ActualHeight));
+                        for(int sample=0;sample<=200;sample++)
+                        {
+                            double t=sample/200d,u=1-t;
+                            double x=table.ActualWidth*(u*u*u*.14+3*u*u*t*.32+3*u*t*t*.68+t*t*t*.86);
+                            double y=table.ActualHeight*(u*u*u*.66+3*u*u*t*.39+3*u*t*t*.39+t*t*t*.66);
+                            if(x>=bounds.Left && x<=bounds.Right)
+                                Require(bounds.Top>=y+4,"Player heading overlaps the felt arc in "+size+" / "+handCount+" hands / full="+fullTable+"; heading="+bounds.Top+", arc="+y);
+                        }
                     }
+                    Require(visibleHeadings>0,"No player heading is visible in the hand viewport");
                 }
                 Capture(window,"08-wager-"+(fullTable?"full":"solo")+"-"+handCount+"-"+(int)size.Item1);
             }
