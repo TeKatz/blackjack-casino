@@ -8,6 +8,7 @@ public static class ProfileNormalization
         ArgumentNullException.ThrowIfNull(state);
         state.Slots ??= new();
         state.NeonVault ??= new();
+        state.NineLives ??= new();
         state.LegacyPooledSlots ??= new();
 
         if (state.SlotTrackingVersion < 1)

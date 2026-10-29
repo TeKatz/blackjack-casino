@@ -1,6 +1,6 @@
 # Blackjack Casino
 
-A free, offline-first single-player casino game for Windows. It combines Blackjack with three distinct slot modes, an independent idle casino, shared play-money progression and a unified in-app casino lobby. There is no real-money gambling, advertising or account requirement.
+A free, offline-first single-player casino game for Windows. It combines Blackjack with four distinct slot modes, an independent idle casino, shared play-money progression and a unified in-app casino lobby. There is no real-money gambling, advertising or account requirement.
 
 The repository now contains the work from Phases 1–6. Current development is focused on presentation polish, content depth, regression protection and keeping every game mode inside one coherent desktop experience.
 
@@ -19,9 +19,9 @@ The repository now contains the work from Phases 1–6. Current development is f
 
 ### Casino lobby and embedded games
 
-The application opens into a casino lobby. Blackjack, Midnight Reels, Midnight Manor, Neon Vault and Casino Empire all run inside the same main application window rather than opening separate visible Windows windows. Returning from a game restores the lobby and its navigation state.
+The application opens into a casino lobby. Blackjack, Midnight Reels, Midnight Manor, Neon Vault, Nine Lives and Casino Empire all run inside the same main application window rather than opening separate visible Windows windows. Returning from a game restores the lobby and its navigation state.
 
-The table and slot games share the same play-money bankroll, player level, Prestige, Coins and Season progression. Game-specific statistics are tracked separately for Blackjack, Midnight Reels, Midnight Manor and Neon Vault. Casino Empire has its own construction credits and idle progression; owner dividends are its connection to the shared play-money bankroll.
+The table and slot games share the same play-money bankroll, player level, Prestige, Coins and Season progression. Game-specific statistics are tracked separately for Blackjack, Midnight Reels, Midnight Manor, Neon Vault and Nine Lives. Casino Empire has its own construction credits and idle progression; owner dividends are its connection to the shared play-money bankroll.
 
 ## Casino Empire
 
@@ -52,6 +52,14 @@ The slot uses custom generated symbol artwork, cached WPF image assets, candidat
 
 See [Neon Vault design and implementation](docs/neon-vault.md).
 
+## Nine Lives
+
+Nine Lives is the compact high-risk/high-reward slot: a **3×3** machine with five fixed paylines, bets from $1 to $25,000, eight custom cat-themed symbols, Pounce Wilds, nine-spin bonus rounds and a rare **5,000× Full Grid Frenzy**.
+
+Its presentation follows the moonlit rooftop concept art directly: a fixed 1536×1024 design surface scales uniformly inside the embedded game host, while the nine reel cells, bankroll, level, bet, win amount and controls remain real WPF elements layered over the artwork. The generated cabinet and symbol art is embedded locally and decoded into frozen image sources, so the mode works offline and does not rely on external URLs.
+
+Nine Lives uses its own persistent statistics bucket and never writes into Midnight Reels or Neon Vault tracking. Version `0.10.0` is the first development line containing the new machine.
+
 ## Profile, progression and cosmetics
 
 - player levels 0–100 with voluntary Prestige;
@@ -75,7 +83,7 @@ See [audio overhaul](docs/audio-overhaul.md) and [presentation regression](docs/
 
 ## Updates
 
-Stable and Development updater channels use versioned manifests, package-size validation and SHA-256 verification. Player saves live outside the installation directory and are preserved across application replacement.
+Stable and Development updater channels use versioned manifests, package-size validation and SHA-256 verification. Player saves live outside the installation directory and are preserved across application replacement. The Nine Lives branch advances the development line to `0.10.0-dev.*`, ensuring the Development updater sees it as newer than the previous `0.9.0-dev.*` builds.
 
 See [development update delivery](docs/development-update-delivery.md).
 
