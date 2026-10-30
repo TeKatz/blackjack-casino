@@ -26,7 +26,7 @@ internal sealed class KniffelMatchResultView : UserControl
         if (table is not null)
         {
             decimal net = table.Payout - table.Stake;
-            var cash = new UniformGrid { Columns = 3, Margin = new Thickness(0, 16, 0, 6) };
+            var cash = new UniformGrid { Columns = 3, Margin = new Thickness(0, 10, 0, 6) };
             cash.Children.Add(Metric("ENTRY PAID", "−" + KniffelSetupView.Money(table.Stake), "Already charged when you joined", "MatchEntryText"));
             cash.Children.Add(Metric("PRIZE RETURNED", "+" + KniffelSetupView.Money(table.Payout), forfeited ? "No prize for a forfeited table" : "Includes the stake return", "MatchPayoutText"));
             cash.Children.Add(Metric(net > 0 ? "NET WIN" : net < 0 ? "NET LOSS" : "BREAK EVEN", Signed(net), "Prize returned minus entry paid", "MatchNetText", net < 0 ? "#E9AD99" : "#A5E6C4"));
@@ -37,7 +37,7 @@ internal sealed class KniffelMatchResultView : UserControl
         }
         else body.Children.Add(Text("Casual game · No entry fee or casino cash payout", 13, "#C9DACD"));
 
-        body.Children.Add(Text(forfeited ? "SCORES WHEN YOU LEFT" : "FINAL STANDINGS & SCORE BREAKDOWN", 12, "#9FD1B6", top: 18));
+        body.Children.Add(Text(forfeited ? "SCORES WHEN YOU LEFT" : "FINAL STANDINGS & SCORE BREAKDOWN", 12, "#9FD1B6", top: 12));
         var standings = new Grid { Margin = new Thickness(0, 8, 0, 5) };
         double[] widths = [44, 135, 76, 80, 80, 96, 110, 85];
         foreach (double width in widths) standings.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(width, GridUnitType.Star) });
@@ -63,39 +63,43 @@ internal sealed class KniffelMatchResultView : UserControl
         body.Children.Add(Text($"Your sheet: {game.FilledCount}/13 boxes · {scratches} scratched · {game.KniffelsScored} five-of-a-kind rolls", 13, "#C9DACD"));
         if (made.Length > 0) body.Children.Add(Text("Scored combinations: " + string.Join(" · ", made), 12));
         body.Children.Add(Text(forfeited ? "No completion XP · Forfeited tables do not earn completion rewards."
-            : $"Completion reward: {KniffelProgression.PlayerExperience(game.Total)} XP · {KniffelProgression.SeasonExperience(game.Total)} Season XP", 15, "#E8CB8F", "MatchXpText", 14));
+            : $"Completion reward: {KniffelProgression.PlayerExperience(game.Total)} XP · {KniffelProgression.SeasonExperience(game.Total)} Season XP", 15, "#E8CB8F", "MatchXpText", 10));
         if (!string.IsNullOrWhiteSpace(reward)) body.Children.Add(Text(reward, 12, "#B7CABB", "MatchRewardStatusText"));
-        var buttons = new WrapPanel { Margin = new Thickness(0, 17, 0, 0) };
+        var buttons = new WrapPanel { Margin = new Thickness(0, 14, 0, 0) };
         buttons.Children.Add(Button("Back to score sheet", "CloseMatchResultButton", close));
         buttons.Children.Add(Button("Game setup", "ResultGameSetupButton", setup));
         buttons.Children.Add(Button("Return to casino", "ResultCasinoButton", casino));
-        body.Children.Add(buttons);
+        var layout = new DockPanel();
+        DockPanel.SetDock(buttons, Dock.Bottom);
+        layout.Children.Add(buttons);
+        layout.Children.Add(new ScrollViewer { Name = "MatchDetailsScroll", Content = body, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled });
         Content = new Border
         {
-            Width = 960, MaxHeight = 710, Padding = new Thickness(30), CornerRadius = new CornerRadius(18),
+            Width = 960, MaxHeight = 710, Padding = new Thickness(24), CornerRadius = new CornerRadius(18),
             Background = Ink("#19352B"), BorderBrush = Ink("#D7BC7B"), BorderThickness = new Thickness(1),
             HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
-            Child = new ScrollViewer { Content = body, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled },
+            Child = layout,
         };
     }
     private static Border Metric(string title, string value, string detail, string name, string color = "#F0D395")
     {
         var content = new StackPanel();
         content.Children.Add(Text(title, 11, "#B4CDBD"));
-        content.Children.Add(Text(value, 28, color, name));
+        content.Children.Add(Text(value, 26, color, name));
         content.Children.Add(Text(detail, 11));
-        return new Border { Background = Ink("#10291F"), CornerRadius = new CornerRadius(9), Padding = new Thickness(14), Margin = new Thickness(0, 0, 10, 0), Child = content };
+        return new Border { Background = Ink("#10291F"), CornerRadius = new CornerRadius(9), Padding = new Thickness(12), Margin = new Thickness(0, 0, 10, 0), Child = content };
     }
     private static void AddCell(Grid grid, string value, int row, int column, bool player, bool header)
     {
         TextBlock label = Text(value, header ? 11 : 14, player ? "#F4D797" : header ? "#A9C2AF" : "#D7E1D5");
         label.FontWeight = player ? FontWeights.Bold : FontWeights.Normal;
-        var cell = new Border { Padding = new Thickness(8, 8, 4, 8), Background = player ? Ink("#294B38") : Brushes.Transparent, Child = label };
+        label.Margin = new Thickness(0);
+        var cell = new Border { Padding = new Thickness(8, 4, 4, 4), Background = player ? Ink("#294B38") : Brushes.Transparent, Child = label };
         Grid.SetRow(cell, row); Grid.SetColumn(cell, column); grid.Children.Add(cell);
     }
     internal static string Signed(decimal value) => (value < 0 ? "−" : value > 0 ? "+" : "") + KniffelSetupView.Money(Math.Abs(value));
-    private static TextBlock Text(string text, double size, string color = "#B7CABB", string? name = null, double top = 5)
-        => new() { Text = text, Name = name ?? "", FontSize = size, Foreground = Ink(color), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, top, 0, 2) };
+    private static TextBlock Text(string text, double size, string color = "#B7CABB", string? name = null, double top = 3)
+        => new() { Text = text, Name = name ?? "", FontSize = size, Foreground = Ink(color), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, top, 0, 1) };
     private static Button Button(string text, string name, Action action)
     {
         var button = new Button { Name = name, Content = text, Padding = new Thickness(16, 10, 16, 10), Margin = new Thickness(0, 0, 10, 0) };

@@ -13,7 +13,10 @@ internal static class KniffelFeedbackSmoke
     {
         // Host a deterministic presentation fixture inside the existing window;
         // it uses detached sheets and never writes the user's profile or bankroll.
-        object original = window.Content;
+        var root = (Grid)window.Content;
+        var host = new ContentControl();
+        Grid.SetRowSpan(host, 2); Grid.SetColumnSpan(host, 2); Panel.SetZIndex(host, int.MaxValue);
+        root.Children.Add(host);
         KniffelView? view = null;
         try
         {
@@ -24,7 +27,7 @@ internal static class KniffelFeedbackSmoke
             var initial = new KniffelTableState { Stake = 100, Player = player, Opponents = [Waiting(), Waiting(), Waiting()] };
             int sounds = 0, saves = 0;
             view = new KniffelView(player, _ => saves++, () => { }, () => true, persistInitialState: false, fiveOfAKindSound: () => sounds++);
-            window.Content = view;
+            host.Content = view;
             view.UpdateTable(initial, 49_900, false);
             window.UpdateLayout();
             await Task.Delay(80);
@@ -65,6 +68,10 @@ internal static class KniffelFeedbackSmoke
             Capture(window, Path.Combine(output, "dice-match-tie.png"));
             window.Width = 1080; window.Height = 720;
             await Task.Delay(80);
+            Button footer = Find<Button>(view).Single(b => b.Name == "ResultCasinoButton");
+            Rect footerBounds = footer.TransformToAncestor(view).TransformBounds(new Rect(footer.RenderSize));
+            Require(footerBounds.Bottom <= view.ActualHeight && footerBounds.Top >= 0, "The receipt footer is outside the minimum window.");
+            Require(Find<ScrollViewer>(view).Single(s => s.Name == "MatchDetailsScroll").VerticalOffset == 0, "Focusing the result footer scrolled the receipt heading out of view.");
             Capture(window, Path.Combine(output, "dice-match-1080x720.png"));
             window.Width = 1280; window.Height = 900;
             Click(view, "CloseMatchResultButton");
@@ -87,7 +94,7 @@ internal static class KniffelFeedbackSmoke
             var bonusGame = KniffelGame.Restore(bonusBefore);
             bonusGame.Commit(KniffelCategory.Chance);
             view = new KniffelView(bonusBefore, _ => { }, () => { }, () => false, persistInitialState: false, fiveOfAKindSound: () => sounds++);
-            window.Content = view; window.UpdateLayout();
+            host.Content = view; window.UpdateLayout();
             await Task.Delay(60);
             view.ShowGameSetup(new Button { Content = "Paused fixture" });
             view.CelebrateScore("You", bonusBefore, bonusGame.Snapshot);
@@ -101,13 +108,13 @@ internal static class KniffelFeedbackSmoke
 
             view = new KniffelView(Ready(), _ => throw new IOException("fixture save failure"), () => { }, () => false,
                 persistInitialState: false, fiveOfAKindSound: () => sounds++);
-            window.Content = view; window.UpdateLayout();
+            host.Content = view; window.UpdateLayout();
             await Task.Delay(60);
             Click(view, "Score_Kniffel"); Click(view, "CommitButton");
             Require(view.Game.FilledCount == 12 && sounds == 5, "A failed save celebrated an uncommitted score.");
             File.WriteAllText(Path.Combine(output, "dice-feedback-result.txt"), "PASS: saved player and three AI celebrations, glow and particles, ordered cues with deduplication, deferred tied result, exact net and bonus breakdown, 1080x720 receipt, read-only reopen, extra-five bonus in another box, reduced motion, dialog deferral, disposal, failed-save rollback.");
         }
-        finally { view?.Dispose(); window.Content = original; window.UpdateLayout(); }
+        finally { view?.Dispose(); root.Children.Remove(host); window.UpdateLayout(); }
     }
     private static string? Player(DependencyObject root) => Find<TextBlock>(root).FirstOrDefault(t => t.Name == "FiveOfAKindPlayer")?.Text;
     private static async Task Until(Func<bool> condition)
