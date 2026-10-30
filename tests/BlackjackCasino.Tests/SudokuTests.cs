@@ -1,3 +1,4 @@
+using BlackjackCasino.Core;
 using BlackjackCasino.Core.Sudoku;
 
 namespace BlackjackCasino.Tests;
@@ -190,5 +191,48 @@ public sealed class SudokuTests
         Assert.Equal(0, restored.Notes[given]);
         Assert.Equal(0, restored.ElapsedSeconds);
         Assert.Equal(0, restored.HintsUsed);
+    }
+
+    [Fact]
+    public void StatisticsRecordEachPuzzleOnceAndTrackModeDifficultyAndCleanSolves()
+    {
+        var stats = new SudokuStatistics();
+        var clean = new SudokuCompletionRecord("normal-medium-test", SudokuDifficulty.Medium, SudokuPuzzlePool.Normal, 620, 0);
+        var daily = new SudokuCompletionRecord("daily-master-test", SudokuDifficulty.Master, SudokuPuzzlePool.Daily, 910, 2);
+
+        Assert.True(stats.Record(clean));
+        Assert.False(stats.Record(clean with { ElapsedSeconds = 1 }));
+        Assert.True(stats.Record(daily));
+
+        Assert.Equal(2, stats.CompletedPuzzles);
+        Assert.Equal(1, stats.FreePlayCompleted);
+        Assert.Equal(1, stats.DailyCompleted);
+        Assert.Equal(1, stats.NoHintCompletions);
+        Assert.Equal(2, stats.HintsUsed);
+        Assert.Equal(1530, stats.TotalSolveSeconds);
+        Assert.Equal(620, stats.FastestSolveSeconds);
+        Assert.Equal(620, stats.FastestNoHintSeconds);
+        Assert.Equal(1, stats.MediumCompleted);
+        Assert.Equal(1, stats.MasterCompleted);
+    }
+
+    [Fact]
+    public void SudokuChallengesUseDedicatedStatisticsWithoutSpeedRequirements()
+    {
+        var profile = new PlayerProfileState();
+        profile.Sudoku.CompletedPuzzles = 10;
+        profile.Sudoku.DailyCompleted = 1;
+        profile.Sudoku.NoHintCompletions = 3;
+        profile.Sudoku.ExpertCompleted = 10;
+        profile.Sudoku.MasterCompleted = 1;
+
+        Assert.True(ChallengeCatalog.Complete(profile, ChallengeCatalog.TryGet("sudoku-10")!));
+        Assert.True(ChallengeCatalog.Complete(profile, ChallengeCatalog.TryGet("sudoku-daily-1")!));
+        Assert.True(ChallengeCatalog.Complete(profile, ChallengeCatalog.TryGet("sudoku-clean-1")!));
+        Assert.True(ChallengeCatalog.Complete(profile, ChallengeCatalog.TryGet("sudoku-expert-10")!));
+        Assert.True(ChallengeCatalog.Complete(profile, ChallengeCatalog.TryGet("sudoku-master-1")!));
+        Assert.DoesNotContain(ChallengeCatalog.For(ChallengeCategory.Sudoku), challenge =>
+            challenge.Name.Contains("minute", StringComparison.OrdinalIgnoreCase) ||
+            challenge.Description.Contains("under ", StringComparison.OrdinalIgnoreCase));
     }
 }
