@@ -52,7 +52,7 @@ internal partial class ProgressionWindow
         {
             Name = "ShopCardSetsTab",
             Content = "CARD SETS",
-            Margin = new Thickness(0, 0, 10, 0),
+            Margin = new Thickness(8, 0, 0, 0),
             Padding = new Thickness(13, 6, 13, 6),
             VerticalAlignment = VerticalAlignment.Bottom,
             ToolTip = "Show only playing-card designs",
@@ -62,8 +62,11 @@ internal partial class ProgressionWindow
             FilterChoice? cardSets = ShopKindFilter.Items.OfType<FilterChoice>().FirstOrDefault(choice => Equals(choice.Value, CosmeticKind.CardSet));
             if (cardSets is not null) ShopKindFilter.SelectedItem = cardSets;
         };
-        int index = Math.Min(toolbar.Children.Count, toolbar.Children.IndexOf(typeHost) + 1);
-        toolbar.Children.Insert(index, button);
+
+        // Keep the original TYPE / STATUS / SORT / SEARCH positions intact. The dedicated
+        // card-set shortcut is an optional quick filter and therefore belongs after Reset,
+        // rather than being inserted between existing filter controls.
+        toolbar.Children.Add(button);
     }
 
     private static string CategoryName(ChallengeCategory category) => category switch
