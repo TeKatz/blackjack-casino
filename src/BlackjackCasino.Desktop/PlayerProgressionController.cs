@@ -114,6 +114,7 @@ internal sealed class PlayerProgressionController : IDisposable
             PlayerProfileState candidate = ManorPersistence.Clone(Profile);
             ProgressionAward award = new BlackjackCasino.Core.Kniffel.KniffelProgression(new ProgressionService(candidate)).Process(checkpoint);
             if (award == ProgressionAward.None) return award;
+            CasinoVaultService.SyncFromStatistics(candidate);
             if (persistKniffelRewards) saveKniffelProfile(candidate);
             AdoptManorProfile(candidate);
             return award;
@@ -127,6 +128,9 @@ internal sealed class PlayerProgressionController : IDisposable
             AccruePlaytime();
             PlayerProfileState candidate = ManorPersistence.Clone(Profile);
             ProgressionAward award = new BlackjackCasino.Core.Kniffel.KniffelProgression(new ProgressionService(candidate)).ProcessTable(table);
+            // Entry fees are recorded even before a table settles. The vault follows that
+            // durable wager receipt exactly once, independent of the later prize/result.
+            CasinoVaultService.SyncFromStatistics(candidate);
             if (persistKniffelRewards) saveKniffelProfile(candidate);
             AdoptManorProfile(candidate);
             return award;
@@ -243,6 +247,7 @@ internal sealed class PlayerProgressionController : IDisposable
         Profile.Kniffel = committed.Kniffel;
         Profile.Sudoku = committed.Sudoku;
         Profile.Manor = committed.Manor;
+        Profile.Vault = committed.Vault;
         Profile.SchemaVersion = committed.SchemaVersion;
         Profile.SlotTrackingVersion = committed.SlotTrackingVersion;
         Profile.Slots = committed.Slots;
@@ -270,6 +275,7 @@ internal sealed class PlayerProgressionController : IDisposable
     public void SaveAll()
     {
         AccruePlaytime();
+        CasinoVaultService.SyncFromStatistics(Profile);
         if (!persist) return;
         PlayerProfileStore.SaveProfile(Profile);
         PlayerProfileStore.SaveHistory(history);
