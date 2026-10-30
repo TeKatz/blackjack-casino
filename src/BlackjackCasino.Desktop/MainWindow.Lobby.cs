@@ -29,6 +29,9 @@ public partial class MainWindow
             secondaryOpen: OpenEmpireDetached,
             secondaryLabel: "OPEN IN NEW WINDOW",
             canSecondaryOpen: () => !EmpirePageOpen);
+        modeRegistry.Register(new("chill-lounge", "Chill Lounge", "A quieter corner",
+            "Step away from the tables. Solve offline puzzles at your own pace, starting with Sudoku and a separate Daily library.",
+            "#7FB49F", "✦", "Relaxed games"), OpenLounge);
         modeRegistry.Register(new("kniffel", "Midnight Dice", "The dice lounge",
             "Five dice, three rolls and your score sheet. Play casual solo or enter a casino table against three strategic AI opponents.",
             "#9DD6B3", "⚄", "Table games"), OpenKniffel);
