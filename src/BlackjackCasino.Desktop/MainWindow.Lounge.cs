@@ -30,6 +30,15 @@ public partial class MainWindow
                 {
                     SavePreferences();
                 }
+            },
+            preferences.SudokuShowGuides,
+            showGuides =>
+            {
+                preferences = preferences with { SudokuShowGuides = showGuides };
+                if (!testSession)
+                {
+                    SavePreferences();
+                }
             });
 
         if (lobby is not null)
