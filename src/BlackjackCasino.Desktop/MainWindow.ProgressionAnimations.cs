@@ -18,8 +18,8 @@ public partial class MainWindow
 
         var glow = new DropShadowEffect
         {
-            Color = Color.FromRgb(220, 62, 80),
-            BlurRadius = 10,
+            Color = Color.FromRgb(255, 186, 82),
+            BlurRadius = 14,
             ShadowDepth = 0,
             Opacity = 0,
         };
@@ -28,38 +28,38 @@ public partial class MainWindow
         var sweepEase = new CubicEase { EasingMode = EasingMode.EaseInOut };
         var sweep = new DoubleAnimation
         {
-            From = -92,
-            To = 214,
-            Duration = TimeSpan.FromMilliseconds(920),
+            From = -125,
+            To = 315,
+            Duration = TimeSpan.FromMilliseconds(2350),
             EasingFunction = sweepEase,
             FillBehavior = FillBehavior.Stop,
         };
 
         var sweepOpacity = new DoubleAnimationUsingKeyFrames
         {
-            Duration = TimeSpan.FromMilliseconds(920),
+            Duration = TimeSpan.FromMilliseconds(2350),
             FillBehavior = FillBehavior.Stop,
         };
         sweepOpacity.KeyFrames.Add(new DiscreteDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
-        sweepOpacity.KeyFrames.Add(new EasingDoubleKeyFrame(0.9, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(130)), new SineEase { EasingMode = EasingMode.EaseOut }));
-        sweepOpacity.KeyFrames.Add(new LinearDoubleKeyFrame(0.82, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(680))));
-        sweepOpacity.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(920)), new SineEase { EasingMode = EasingMode.EaseIn }));
+        sweepOpacity.KeyFrames.Add(new EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(280)), new SineEase { EasingMode = EasingMode.EaseOut }));
+        sweepOpacity.KeyFrames.Add(new LinearDoubleKeyFrame(0.9, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(1750))));
+        sweepOpacity.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(2350)), new SineEase { EasingMode = EasingMode.EaseIn }));
 
         var glowOpacity = new DoubleAnimationUsingKeyFrames
         {
-            Duration = TimeSpan.FromMilliseconds(1050),
+            Duration = TimeSpan.FromMilliseconds(2700),
             FillBehavior = FillBehavior.Stop,
         };
         glowOpacity.KeyFrames.Add(new DiscreteDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
-        glowOpacity.KeyFrames.Add(new EasingDoubleKeyFrame(0.78, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(170)), new SineEase { EasingMode = EasingMode.EaseOut }));
-        glowOpacity.KeyFrames.Add(new LinearDoubleKeyFrame(0.46, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(720))));
-        glowOpacity.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(1050)), new SineEase { EasingMode = EasingMode.EaseIn }));
+        glowOpacity.KeyFrames.Add(new EasingDoubleKeyFrame(0.95, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(360)), new SineEase { EasingMode = EasingMode.EaseOut }));
+        glowOpacity.KeyFrames.Add(new LinearDoubleKeyFrame(0.7, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(1950))));
+        glowOpacity.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(2700)), new SineEase { EasingMode = EasingMode.EaseIn }));
 
         var glowRadius = new DoubleAnimation
         {
-            From = 10,
-            To = 24,
-            Duration = TimeSpan.FromMilliseconds(520),
+            From = 14,
+            To = 34,
+            Duration = TimeSpan.FromMilliseconds(1150),
             AutoReverse = true,
             EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut },
             FillBehavior = FillBehavior.Stop,
@@ -68,7 +68,7 @@ public partial class MainWindow
         glowOpacity.Completed += (_, _) =>
         {
             profileLevelUpSweep.Opacity = 0;
-            profileLevelUpSweepTransform.X = -92;
+            profileLevelUpSweepTransform.X = -125;
             profileButton.ClearValue(EffectProperty);
             // The level-up glow temporarily replaces the equipped cosmetic frame glow.
             // Restore the normal profile presentation once the one-shot sweep is over.
