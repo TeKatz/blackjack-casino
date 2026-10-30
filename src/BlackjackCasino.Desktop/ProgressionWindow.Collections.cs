@@ -111,8 +111,6 @@ internal partial class ProgressionWindow
         ResetShopPage();
     }
 
-    private void ChallengePrevious_Click(object sender, RoutedEventArgs e, bool unused) { }
-
     private void ShopPrevious_Click(object sender, RoutedEventArgs e)
     {
         shopPage = Math.Max(0, shopPage - 1);
