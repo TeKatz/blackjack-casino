@@ -233,9 +233,12 @@ public partial class MainWindow
         }
 
         Guid payoutId = vault.PendingPayoutId;
+        decimal pendingPayout = vault.PendingPayout;
+        decimal pendingBasePayout = vault.PendingBasePayout;
+        decimal pendingBonus = vault.PendingBonus;
         if (preferences.LastAppliedVaultPayoutId != payoutId)
         {
-            decimal nextBankroll = checked(session.Bankroll + vault.PendingPayout);
+            decimal nextBankroll = checked(session.Bankroll + pendingPayout);
             AppPreferences applied = preferences with
             {
                 Bankroll = nextBankroll,
@@ -264,9 +267,9 @@ public partial class MainWindow
                 // The bankroll receipt already prevents a duplicate payout. Re-create the pending
                 // marker in memory so a later save/restart can finish the profile side safely.
                 profile.Vault.PendingPayoutId = payoutId;
-                profile.Vault.PendingPayout = vault.PendingPayout;
-                profile.Vault.PendingBasePayout = vault.PendingBasePayout;
-                profile.Vault.PendingBonus = vault.PendingBonus;
+                profile.Vault.PendingPayout = pendingPayout;
+                profile.Vault.PendingBasePayout = pendingBasePayout;
+                profile.Vault.PendingBonus = pendingBonus;
                 throw;
             }
         }
