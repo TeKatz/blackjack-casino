@@ -9,6 +9,7 @@ public enum ChallengeCategory
     NineLives,
     Lifetime,
     Prestige,
+    MidnightDice,
 }
 
 public enum ChallengeMetric
@@ -81,6 +82,8 @@ public enum ChallengeMetric
     LifetimeWagered,
     LifetimePlays,
     PrestigeCount,
+    DiceGames, DiceBestScore, DiceUpperBonuses, DiceFiveOfAKinds, DiceFullHouses, DiceLargeStraights,
+    DiceCasinoGames, DiceCasinoWins, DicePodiums, DiceWagered, DiceReturned, DiceBiggestPayout,
 }
 
 public sealed record ChallengeDefinition(
@@ -97,6 +100,26 @@ public static class ChallengeCatalog
 {
     private static readonly IReadOnlyList<ChallengeDefinition> Challenges = Array.AsReadOnly(new[]
     {
+        C("dice-game-1", ChallengeCategory.MidnightDice, "First Sheet", "Complete a Midnight Dice game in either mode.", ChallengeMetric.DiceGames, 1, 50),
+        C("dice-games-10", ChallengeCategory.MidnightDice, "Dice Lounge Regular", "Complete 10 Midnight Dice games.", ChallengeMetric.DiceGames, 10, 150),
+        C("dice-games-50", ChallengeCategory.MidnightDice, "A Stack of Sheets", "Complete 50 Midnight Dice games.", ChallengeMetric.DiceGames, 50, 400),
+        E("dice-games-250", ChallengeCategory.MidnightDice, "The Long Roll", "Complete 250 Midnight Dice games.", ChallengeMetric.DiceGames, 250, 1500),
+        C("dice-score-200", ChallengeCategory.MidnightDice, "Finding Your Rhythm", "Score at least 200 points in one game.", ChallengeMetric.DiceBestScore, 200, 100),
+        C("dice-score-250", ChallengeCategory.MidnightDice, "A Beautiful Sheet", "Score at least 250 points in one game.", ChallengeMetric.DiceBestScore, 250, 200),
+        E("dice-score-300", ChallengeCategory.MidnightDice, "Three Hundred Club", "Score at least 300 points in one game.", ChallengeMetric.DiceBestScore, 300, 500),
+        C("dice-bonus-1", ChallengeCategory.MidnightDice, "Above the Line", "Complete a game with the upper-section bonus.", ChallengeMetric.DiceUpperBonuses, 1, 75),
+        C("dice-bonus-25", ChallengeCategory.MidnightDice, "Upper Management", "Earn the upper bonus in 25 completed games.", ChallengeMetric.DiceUpperBonuses, 25, 350),
+        C("dice-five-1", ChallengeCategory.MidnightDice, "All Together", "Record a five of a kind and complete the game.", ChallengeMetric.DiceFiveOfAKinds, 1, 100),
+        E("dice-five-50", ChallengeCategory.MidnightDice, "Five-Star Regular", "Record 50 five-of-a-kind rolls in completed games.", ChallengeMetric.DiceFiveOfAKinds, 50, 1000),
+        C("dice-full-10", ChallengeCategory.MidnightDice, "Full House Guest", "Fill Full House in 10 completed games.", ChallengeMetric.DiceFullHouses, 10, 150),
+        C("dice-straight-10", ChallengeCategory.MidnightDice, "Straight to the Point", "Fill Large Straight in 10 completed games.", ChallengeMetric.DiceLargeStraights, 10, 200),
+        C("dice-table-1", ChallengeCategory.MidnightDice, "Pull Up a Chair", "Finish your first casino table against three AI opponents.", ChallengeMetric.DiceCasinoGames, 1, 100),
+        C("dice-win-1", ChallengeCategory.MidnightDice, "Table Champion", "Take first place at a casino dice table; shared first counts.", ChallengeMetric.DiceCasinoWins, 1, 150),
+        C("dice-wins-10", ChallengeCategory.MidnightDice, "House Favourite", "Take first place at 10 casino dice tables.", ChallengeMetric.DiceCasinoWins, 10, 500),
+        E("dice-wins-50", ChallengeCategory.MidnightDice, "Velvet Crown", "Take first place at 50 casino dice tables.", ChallengeMetric.DiceCasinoWins, 50, 1500),
+        C("dice-podium-10", ChallengeCategory.MidnightDice, "Always in Contention", "Finish in the top two at 10 casino dice tables.", ChallengeMetric.DicePodiums, 10, 300),
+        C("dice-wager-100000", ChallengeCategory.MidnightDice, "Serious Seat", "Pay $100,000 in casino dice entry fees.", ChallengeMetric.DiceWagered, 100000, 300),
+        E("dice-payout-100000", ChallengeCategory.MidnightDice, "A Golden Sheet", "Receive at least $100,000 from one casino dice table.", ChallengeMetric.DiceBiggestPayout, 100000, 1000),
         // Blackjack — 25 challenges. Milestones intentionally overlap so ordinary laid-back play
         // always has something moving without forcing exotic rules or high stakes.
         C("bj-rounds-10", ChallengeCategory.Blackjack, "Take a Seat", "Complete 10 Blackjack rounds.", ChallengeMetric.BlackjackRounds, 10, 60),
@@ -199,7 +222,7 @@ public static class ChallengeCatalog
         E("lifetime-xp-1000000", ChallengeCategory.Lifetime, "Casino Institution", "Earn 1,000,000 lifetime player XP across all games.", ChallengeMetric.LifetimeExperience, 1000000, 4000),
         E("lifetime-hours-250", ChallengeCategory.Lifetime, "The Long Night", "Record 250 hours of total casino playtime.", ChallengeMetric.LifetimePlaytimeSeconds, 900000, 3000),
         E("lifetime-wager-10000000", ChallengeCategory.Lifetime, "Ten Million in Motion", "Wager $10,000,000 across all games, including preserved pooled slot history.", ChallengeMetric.LifetimeWagered, 10000000, 4000),
-        E("lifetime-plays-100000", ChallengeCategory.Lifetime, "A Hundred Thousand Nights", "Complete 100,000 Blackjack rounds and slot spins combined, including preserved pooled slot history.", ChallengeMetric.LifetimePlays, 100000, 5000),
+        E("lifetime-plays-100000", ChallengeCategory.Lifetime, "A Hundred Thousand Nights", "Complete 100,000 Blackjack rounds, dice games and slot spins combined, including preserved pooled slot history.", ChallengeMetric.LifetimePlays, 100000, 5000),
         E("prestige-3", ChallengeCategory.Prestige, "Third Time Crowned", "Reach Prestige 3.", ChallengeMetric.PrestigeCount, 3, 2500),
         E("prestige-5", ChallengeCategory.Prestige, "Fivefold Legend", "Reach Prestige 5.", ChallengeMetric.PrestigeCount, 5, 4000),
         E("prestige-10", ChallengeCategory.Prestige, "Eternal High Roller", "Reach Prestige 10.", ChallengeMetric.PrestigeCount, 10, 7500),
@@ -289,12 +312,24 @@ public static class ChallengeCatalog
             ChallengeMetric.NineLivesFullGridFrenzies => nine.FullGridFrenzies,
             ChallengeMetric.NineLivesBestMultiplier => nine.BestPayoutMultiplier,
 
+            ChallengeMetric.DiceGames => profile.Kniffel.CompletedGames,
+            ChallengeMetric.DiceBestScore => profile.Kniffel.BestScore,
+            ChallengeMetric.DiceUpperBonuses => profile.Kniffel.UpperBonuses,
+            ChallengeMetric.DiceFiveOfAKinds => profile.Kniffel.FiveOfAKinds,
+            ChallengeMetric.DiceFullHouses => profile.Kniffel.FullHouses,
+            ChallengeMetric.DiceLargeStraights => profile.Kniffel.LargeStraights,
+            ChallengeMetric.DiceCasinoGames => profile.Kniffel.CasinoGamesCompleted,
+            ChallengeMetric.DiceCasinoWins => profile.Kniffel.CasinoWins,
+            ChallengeMetric.DicePodiums => profile.Kniffel.PodiumFinishes,
+            ChallengeMetric.DiceWagered => profile.Kniffel.TotalWagered,
+            ChallengeMetric.DiceReturned => profile.Kniffel.TotalReturned,
+            ChallengeMetric.DiceBiggestPayout => profile.Kniffel.BiggestPayout,
             ChallengeMetric.LifetimeExperience => profile.LifetimeExperience,
             ChallengeMetric.LifetimePlaytimeSeconds => profile.TotalPlaytimeSeconds,
             ChallengeMetric.LifetimeWagered => blackjack.TotalWagered + reels.TotalWagered + neon.TotalWagered + nine.TotalWagered
-                + manor.TotalWagered + legacy.TotalWagered,
+                + manor.TotalWagered + legacy.TotalWagered + profile.Kniffel.TotalWagered,
             ChallengeMetric.LifetimePlays => (decimal)blackjack.RoundsPlayed + reels.Spins + neon.Spins + nine.Spins
-                + manor.PaidSpins + manor.FreeSpins + legacy.Spins,
+                + manor.PaidSpins + manor.FreeSpins + legacy.Spins + profile.Kniffel.CompletedGames,
             ChallengeMetric.PrestigeCount => profile.Prestige,
             _ => 0,
         };

@@ -75,6 +75,7 @@ public sealed class PlayerProfileState
         CosmeticCatalog.DefaultCardSetId,
     ];
     public List<string> ClaimedChallengeIds { get; set; } = [];
+    public Kniffel.KniffelStatistics Kniffel { get; set; } = new();
     public Manor.ManorStatistics Manor { get; set; } = new();
     // Zero also identifies saves with no version field. Normalize before recording new spins.
     public int SlotTrackingVersion { get; set; }

@@ -230,7 +230,7 @@ public partial class MainWindow : Window
     private void PresentationSettingChanged(object sender, RoutedEventArgs e)
     {
         MenuAudio.Enabled = SoundEnabled;
-        if (!SoundEnabled) CasinoFeedback.Stop();
+        if (!SoundEnabled) { CasinoFeedback.Stop(); CasinoAudio.Mixer.Stop(kniffelAudioOwner); }
         if (empire is not null)
         {
             RefreshEmpireHeader();
@@ -862,6 +862,9 @@ public partial class MainWindow : Window
             }
             return;
         }
+
+        // The hosted view owns its shortcuts and Escape; never route them to Blackjack.
+        if (KniffelPageOpen) return;
 
         if (EmpirePageOpen)
         {

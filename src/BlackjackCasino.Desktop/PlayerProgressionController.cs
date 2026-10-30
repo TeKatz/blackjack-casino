@@ -14,15 +14,19 @@ internal sealed class PlayerProgressionController : IDisposable
     private readonly bool persist;
     private readonly bool persistChallengeClaims;
     private readonly Action<PlayerProfileState> saveChallengeProfile;
+    private readonly Action<PlayerProfileState> saveKniffelProfile;
+    private readonly bool persistKniffelRewards;
 
     public PlayerProgressionController(PlayerProfileState? initialProfile = null, Action<PlayerProfileState>? challengeProfileSaver = null,
-        TimeProvider? timeProvider = null)
+        TimeProvider? timeProvider = null, Action<PlayerProfileState>? kniffelProfileSaver = null)
     {
         this.timeProvider = timeProvider ?? TimeProvider.System;
         sessionStartedAt = this.timeProvider.GetTimestamp();
         persist = initialProfile is null;
         persistChallengeClaims = persist || challengeProfileSaver is not null;
         saveChallengeProfile = challengeProfileSaver ?? PlayerProfileStore.SaveProfileOrThrow;
+        persistKniffelRewards = persist || kniffelProfileSaver is not null;
+        saveKniffelProfile = kniffelProfileSaver ?? PlayerProfileStore.SaveProfileOrThrow;
         Service = new ProgressionService(initialProfile ?? PlayerProfileStore.LoadProfile());
         history = initialProfile is null ? PlayerProfileStore.LoadHistory().ToList() : [];
         knownRoundIds = history.Select(x => x.RoundId).ToHashSet();
@@ -98,6 +102,35 @@ internal sealed class PlayerProgressionController : IDisposable
 
         SaveAll();
         return award;
+    }
+
+    public ProgressionAward ProcessKniffel(BlackjackCasino.Core.Kniffel.KniffelState checkpoint)
+    {
+        lock (Profile)
+        {
+            AccruePlaytime();
+            // Save XP and its durable game receipt in the same profile replacement. A
+            // failed write leaves the live profile untouched and the reward retryable.
+            PlayerProfileState candidate = ManorPersistence.Clone(Profile);
+            ProgressionAward award = new BlackjackCasino.Core.Kniffel.KniffelProgression(new ProgressionService(candidate)).Process(checkpoint);
+            if (award == ProgressionAward.None) return award;
+            if (persistKniffelRewards) saveKniffelProfile(candidate);
+            AdoptManorProfile(candidate);
+            return award;
+        }
+    }
+
+    public ProgressionAward ProcessKniffelTable(BlackjackCasino.Core.Kniffel.KniffelTableState table)
+    {
+        lock (Profile)
+        {
+            AccruePlaytime();
+            PlayerProfileState candidate = ManorPersistence.Clone(Profile);
+            ProgressionAward award = new BlackjackCasino.Core.Kniffel.KniffelProgression(new ProgressionService(candidate)).ProcessTable(table);
+            if (persistKniffelRewards) saveKniffelProfile(candidate);
+            AdoptManorProfile(candidate);
+            return award;
+        }
     }
 
     public PurchaseResult PurchaseCosmetic(string cosmeticId)
@@ -193,6 +226,7 @@ internal sealed class PlayerProgressionController : IDisposable
     public void AdoptManorProfile(PlayerProfileState committed)
     {
         // Keep the existing blackjack service, processed-round set and session statistics.
+        Profile.Kniffel = committed.Kniffel;
         Profile.Manor = committed.Manor;
         Profile.SchemaVersion = committed.SchemaVersion;
         Profile.SlotTrackingVersion = committed.SlotTrackingVersion;

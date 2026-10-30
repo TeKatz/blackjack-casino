@@ -73,7 +73,7 @@ public partial class MainWindow
             empireDetachedWindow!.Activate();
             return;
         }
-        if (session.RoundInProgress || MetaPageOpen || embeddedGameShell is not null || EmpirePageOpen || empire is null) return;
+        if (session.RoundInProgress || MetaPageOpen || embeddedGameShell is not null || EmpirePageOpen || KniffelPageOpen || empire is null) return;
         ProcessLatestCompletedRound();
         EnsureEmbeddedGameHost();
         StartEmpireSession();
