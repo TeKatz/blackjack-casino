@@ -544,7 +544,7 @@ internal sealed class EmpireView : UserControl, IDisposable
     private void ShowManagement()
     {
         if (managementView is not null) return;
-        var overlay = new Grid { Name = "EmpireManagementOverlay", Background = Ink("#F2081714") };
+        var overlay = new Grid { Name = "EmpireManagementOverlay", Background = Ink("#081714") };
         managementView = new EmpireManagementView(service, change => manage(change), () => TryCloseManagement());
         overlay.Children.Add(managementView);
         Grid.SetRowSpan(overlay, root.RowDefinitions.Count);

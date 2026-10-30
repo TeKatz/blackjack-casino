@@ -9,7 +9,7 @@ public sealed record EmpireRequirement(int Prestige = 0, int Reputation = 0, str
     {
         Prestige > 0 ? $"Empire Prestige {Prestige}" : null,
         Reputation > 0 ? $"Reputation {Reputation:N0}" : null,
-        ProjectId is not null ? "Project: " + ProjectId.Replace('-', ' ') : null,
+        ProjectId is not null ? "Project: " + (EmpireProjectCatalog.Find(ProjectId)?.Name ?? ProjectId.Replace('-', ' ')) : null,
         TotalLevels > 0 ? $"{TotalLevels} estate levels" : null,
         RoomTags != EmpireTag.None ? $"{RoomTags} departments at level {MinimumRoomLevel}" : null,
     }.Where(x => x is not null));
