@@ -29,6 +29,7 @@ internal sealed record AppPreferences
     public BlackjackCasino.Core.Empire.EmpireState Empire { get; init; } = new();
 
     public decimal Bankroll { get; init; } = 1_000m;
+    public Guid LastAppliedVaultPayoutId { get; init; }
 
     public decimal ManorBet { get; init; } = 25m;
     public SlotSpinSpeed ManorSpeed { get; init; }
