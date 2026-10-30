@@ -4,6 +4,8 @@ namespace BlackjackCasino.Desktop;
 
 public partial class MainWindow
 {
+    private BackgroundMusic? loungeBackgroundMusic;
+
     private void OpenLounge()
     {
         if (session.RoundInProgress || MetaPageOpen || embeddedGameShell is not null || EmpirePageOpen || KniffelPageOpen)
@@ -11,6 +13,7 @@ public partial class MainWindow
             return;
         }
         ProcessLatestCompletedRound();
+        SudokuLoungePolish.EnsureInstalled();
 
         var window = new LoungeWindow(
             preferences.Sudoku,
@@ -46,9 +49,15 @@ public partial class MainWindow
             lobby.Visibility = System.Windows.Visibility.Collapsed;
         }
         TableModeText.Text = "Chill Lounge";
-        ShowEmbeddedGame(window, "Chill Lounge · The Midnight Club", muteHostMusic: false, closed: () =>
+
+        loungeBackgroundMusic?.Dispose();
+        loungeBackgroundMusic = new BackgroundMusic(Soundtrack.ChillLounge);
+        ShowEmbeddedGame(window, "Chill Lounge · The Midnight Club", muteHostMusic: true, closed: () =>
         {
+            loungeBackgroundMusic?.Dispose();
+            loungeBackgroundMusic = null;
             TableModeText.Text = "Casino lobby";
         });
+        loungeBackgroundMusic.Start(preferences.MusicEnabled, preferences.MusicVolume);
     }
 }
