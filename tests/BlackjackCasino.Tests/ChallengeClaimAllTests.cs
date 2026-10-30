@@ -287,6 +287,8 @@ public sealed class ChallengeClaimAllTests
             case ChallengeMetric.DiceFiveOfAKinds: profile.Kniffel.FiveOfAKinds = (long)value; break;
             case ChallengeMetric.DiceCasinoWins: profile.Kniffel.CasinoWins = (long)value; break;
             case ChallengeMetric.DiceBiggestPayout: profile.Kniffel.BiggestPayout = value; break;
+            case ChallengeMetric.SudokuCompleted: profile.Sudoku.CompletedPuzzles = (long)value; break;
+            case ChallengeMetric.SudokuMasterCompleted: profile.Sudoku.MasterCompleted = (long)value; break;
             default: throw new InvalidOperationException($"Missing endgame boundary test for {metric}.");
         }
     }
