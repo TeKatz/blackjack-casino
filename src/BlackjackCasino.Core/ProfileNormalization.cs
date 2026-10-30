@@ -49,6 +49,8 @@ public static class ProfileNormalization
         state.EquippedDiceSetId = string.IsNullOrWhiteSpace(state.EquippedDiceSetId)
             ? CosmeticCatalog.DefaultDiceSetId
             : state.EquippedDiceSetId;
-        state.SchemaVersion = Math.Max(state.SchemaVersion, 5);
+
+        state.Vault = CasinoVaultService.Normalize(state, state.Vault);
+        state.SchemaVersion = Math.Max(state.SchemaVersion, 6);
     }
 }
