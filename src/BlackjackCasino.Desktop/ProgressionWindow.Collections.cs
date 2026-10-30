@@ -25,8 +25,14 @@ internal partial class ProgressionWindow
             ChallengeCategoryFilter.Items.Add(new FilterChoice(CategoryName(category), category));
         ChallengeStatusFilter.ItemsSource = new[] { "All statuses", "Ready to claim", "In progress", "Claimed", "Unclaimed" };
         ShopKindFilter.Items.Add(new FilterChoice("All types"));
-        foreach (CosmeticKind kind in new[] { CosmeticKind.Frame, CosmeticKind.Portrait, CosmeticKind.Title })
-            ShopKindFilter.Items.Add(new FilterChoice(kind.ToString(), kind));
+        foreach ((CosmeticKind kind, string label) in new[]
+        {
+            (CosmeticKind.CardSet, "Card Sets"),
+            (CosmeticKind.Frame, "Frames"),
+            (CosmeticKind.Portrait, "Portraits"),
+            (CosmeticKind.Title, "Titles"),
+        })
+            ShopKindFilter.Items.Add(new FilterChoice(label, kind));
         ShopOwnershipFilter.ItemsSource = new[] { "All items", "For sale", "Affordable", "Owned", "Equipped", "Unowned", "Locked rewards" };
         ShopSortFilter.ItemsSource = new[] { "Recommended", "Cost: low to high", "Cost: high to low", "Name" };
         ChallengeCategoryFilter.SelectedIndex = ChallengeStatusFilter.SelectedIndex = 0;
@@ -40,6 +46,7 @@ internal partial class ProgressionWindow
         ChallengeCategory.MidnightReels => "Midnight Reels",
         ChallengeCategory.MidnightManor => "Midnight Manor",
         ChallengeCategory.NeonVault => "Neon Vault",
+        ChallengeCategory.NineLives => "Nine Lives",
         _ => category.ToString(),
     };
 
@@ -103,6 +110,8 @@ internal partial class ProgressionWindow
         collectionsInitialized = true;
         ResetShopPage();
     }
+
+    private void ChallengePrevious_Click(object sender, RoutedEventArgs e, bool unused) { }
 
     private void ShopPrevious_Click(object sender, RoutedEventArgs e)
     {
