@@ -9,15 +9,22 @@ namespace BlackjackCasino.Desktop;
 internal sealed class LoungeWindow : Window
 {
     private readonly Action<SudokuProgressState> persist;
+    private readonly Action<bool> persistTimerVisibility;
     private readonly ContentControl contentHost = new();
     private SudokuProgressState progress;
     private SudokuView? sudokuView;
-    private ComboBox? difficultyPicker;
+    private bool showTimer;
 
-    public LoungeWindow(SudokuProgressState progress, Action<SudokuProgressState> persist)
+    public LoungeWindow(
+        SudokuProgressState progress,
+        Action<SudokuProgressState> persist,
+        bool showTimer,
+        Action<bool> persistTimerVisibility)
     {
         this.progress = SudokuProgressState.Normalize(progress);
         this.persist = persist ?? throw new ArgumentNullException(nameof(persist));
+        this.showTimer = showTimer;
+        this.persistTimerVisibility = persistTimerVisibility ?? throw new ArgumentNullException(nameof(persistTimerVisibility));
 
         Title = "Chill Lounge";
         Width = 1180;
@@ -109,8 +116,8 @@ internal sealed class LoungeWindow : Window
         };
         var root = new StackPanel
         {
-            Margin = new Thickness(52, 36, 52, 40),
-            MaxWidth = 1040,
+            Margin = new Thickness(42, 28, 42, 34),
+            MaxWidth = 1180,
             HorizontalAlignment = HorizontalAlignment.Center,
         };
 
@@ -135,7 +142,7 @@ internal sealed class LoungeWindow : Window
             Foreground = Ink("#A9BBB5"),
             FontSize = 14,
             TextWrapping = TextWrapping.Wrap,
-            Margin = new Thickness(0, 0, 0, 28),
+            Margin = new Thickness(0, 0, 0, 24),
         });
 
         var sudokuCard = new Border
@@ -147,10 +154,10 @@ internal sealed class LoungeWindow : Window
             Padding = new Thickness(26),
         };
         var card = new Grid();
-        card.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 340 });
-        card.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(360) });
+        card.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 300 });
+        card.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(500) });
 
-        var copy = new StackPanel { Margin = new Thickness(0, 0, 30, 0) };
+        var copy = new StackPanel { Margin = new Thickness(0, 0, 34, 0) };
         copy.Children.Add(new TextBlock
         {
             Text = "SUDOKU",
@@ -168,7 +175,7 @@ internal sealed class LoungeWindow : Window
         });
         copy.Children.Add(new TextBlock
         {
-            Text = "Pencil marks, undo/redo, optional hints and autosave. Normal puzzles and Daily puzzles live in separate libraries, so a Daily never reappears during free play.",
+            Text = "Pencil marks, undo/redo, optional hints and autosave. Each Free Play difficulty keeps its own paused puzzle, while Daily puzzles remain in a completely separate library.",
             FontSize = 13,
             Foreground = Ink("#ABC0B9"),
             TextWrapping = TextWrapping.Wrap,
@@ -184,38 +191,53 @@ internal sealed class LoungeWindow : Window
             Foreground = Ink("#718E86"),
             Margin = new Thickness(0, 18, 0, 0),
         });
+        copy.Children.Add(new TextBlock
+        {
+            Text = "NEW PUZZLE replaces only the paused puzzle on that difficulty. Other difficulties remain untouched.",
+            FontSize = 11,
+            Foreground = Ink("#718E86"),
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(0, 10, 0, 0),
+        });
         card.Children.Add(copy);
 
         var actions = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
         Grid.SetColumn(actions, 1);
         actions.Children.Add(new TextBlock
         {
-            Text = "FREE PLAY DIFFICULTY",
+            Text = "FREE PLAY",
             FontSize = 9,
+            FontWeight = FontWeights.SemiBold,
             Foreground = Ink("#809B93"),
-            Margin = new Thickness(0, 0, 0, 6),
+            Margin = new Thickness(0, 0, 0, 7),
         });
-        difficultyPicker = new ComboBox
-        {
-            ItemsSource = Enum.GetValues<SudokuDifficulty>(),
-            SelectedItem = SudokuDifficulty.Medium,
-            MinHeight = 38,
-            Margin = new Thickness(0, 0, 0, 10),
-        };
-        actions.Children.Add(difficultyPicker);
 
-        Button start = LoungeButton("START NEXT PUZZLE");
-        start.Click += (_, _) => StartNextNormal();
-        actions.Children.Add(start);
-
-        if (TryGetActiveNormal(out SudokuPuzzle? activeNormal, out SudokuGameState? activeState) &&
-            activeNormal is not null && activeState is not null && !activeState.Completed)
+        foreach (SudokuDifficulty difficulty in Enum.GetValues<SudokuDifficulty>())
         {
-            Button resume = LoungeButton($"CONTINUE {DifficultyLabel(activeNormal.Difficulty).ToUpperInvariant()}");
-            resume.Margin = new Thickness(0, 8, 0, 0);
-            resume.Click += (_, _) => StartPuzzle(activeNormal, null);
-            actions.Children.Add(resume);
+            actions.Children.Add(BuildDifficultyRow(difficulty));
         }
+
+        var timerToggle = LoungeButton(showTimer ? "TIMER · VISIBLE" : "TIMER · HIDDEN");
+        timerToggle.Name = "SudokuTimerToggle";
+        timerToggle.Margin = new Thickness(0, 10, 0, 0);
+        timerToggle.BorderBrush = Ink(showTimer ? "#668C7E" : "#4A6661");
+        timerToggle.Click += (_, _) =>
+        {
+            showTimer = !showTimer;
+            persistTimerVisibility(showTimer);
+            ShowHub();
+        };
+        actions.Children.Add(timerToggle);
+
+        actions.Children.Add(new TextBlock
+        {
+            Text = "The timer can be hidden completely. Your elapsed time is still preserved in the save.",
+            FontSize = 10,
+            Foreground = Ink("#718E86"),
+            TextWrapping = TextWrapping.Wrap,
+            TextAlignment = TextAlignment.Center,
+            Margin = new Thickness(8, 6, 8, 0),
+        });
 
         DateOnly today = DateOnly.FromDateTime(DateTime.Now);
         SudokuPuzzle daily = ResolveDaily(today);
@@ -225,10 +247,11 @@ internal sealed class LoungeWindow : Window
         Button dailyButton = LoungeButton(dailyState.Completed
             ? "TODAY'S DAILY · COMPLETE"
             : $"TODAY'S DAILY · {DifficultyLabel(daily.Difficulty).ToUpperInvariant()}");
+        dailyButton.Name = "SudokuDailyButton";
         dailyButton.Margin = new Thickness(0, 14, 0, 0);
         dailyButton.BorderBrush = Ink("#8A9B6F");
         dailyButton.Background = Ink("#283126");
-        dailyButton.Click += (_, _) => StartPuzzle(daily, today);
+        dailyButton.Click += (_, _) => StartPuzzle(daily, today, forceNew: false);
         actions.Children.Add(dailyButton);
 
         actions.Children.Add(new TextBlock
@@ -246,7 +269,7 @@ internal sealed class LoungeWindow : Window
 
         root.Children.Add(new TextBlock
         {
-            Text = "The bundled catalog is intentionally data-driven. This first slice proves the systems; the long-term target is thousands of separately validated free-play and Daily puzzles.",
+            Text = "The bundled catalog is data-driven and validated before release. Free Play and Daily content never share the same puzzle pool.",
             FontSize = 11,
             Foreground = Ink("#617A74"),
             TextWrapping = TextWrapping.Wrap,
@@ -258,11 +281,70 @@ internal sealed class LoungeWindow : Window
         contentHost.Content = scroll;
     }
 
-    private void StartNextNormal()
+    private Border BuildDifficultyRow(SudokuDifficulty difficulty)
     {
-        SudokuDifficulty difficulty = difficultyPicker?.SelectedItem is SudokuDifficulty selected
-            ? selected
-            : SudokuDifficulty.Medium;
+        bool hasActive = TryGetActiveNormal(difficulty, out SudokuPuzzle? activePuzzle, out SudokuGameState? activeState) &&
+            activePuzzle is not null && activeState is not null && !activeState.Completed;
+
+        var row = new Border
+        {
+            Background = Ink(hasActive ? "#142827" : "#111D1F"),
+            BorderBrush = Ink(hasActive ? "#4E756A" : "#304A47"),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(7),
+            Padding = new Thickness(10, 7, 8, 7),
+            Margin = new Thickness(0, 0, 0, 6),
+        };
+        var grid = new Grid();
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var labels = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+        labels.Children.Add(new TextBlock
+        {
+            Text = DifficultyLabel(difficulty).ToUpperInvariant(),
+            FontSize = 11,
+            FontWeight = FontWeights.SemiBold,
+            Foreground = Ink("#E9E0D1"),
+        });
+        var status = new TextBlock
+        {
+            Name = $"SudokuStatus_{difficulty}",
+            Text = hasActive ? $"IN PROGRESS · {FormatTime(activeState!.ElapsedSeconds)}" : "NO ACTIVE PUZZLE",
+            FontSize = 9,
+            Foreground = Ink(hasActive ? "#8EC9B0" : "#6F8881"),
+            Margin = new Thickness(0, 2, 8, 0),
+        };
+        labels.Children.Add(status);
+        grid.Children.Add(labels);
+
+        var resume = SmallActionButton("RESUME");
+        resume.Name = $"SudokuResume_{difficulty}";
+        resume.IsEnabled = hasActive;
+        resume.Opacity = hasActive ? 1d : 0.42d;
+        resume.Margin = new Thickness(6, 0, 4, 0);
+        if (hasActive)
+        {
+            SudokuPuzzle puzzleToResume = activePuzzle!;
+            resume.Click += (_, _) => StartPuzzle(puzzleToResume, null, forceNew: false);
+        }
+        Grid.SetColumn(resume, 1);
+        grid.Children.Add(resume);
+
+        var startNew = SmallActionButton("NEW PUZZLE");
+        startNew.Name = $"SudokuNew_{difficulty}";
+        startNew.Margin = new Thickness(4, 0, 0, 0);
+        startNew.Click += (_, _) => StartNewNormal(difficulty);
+        Grid.SetColumn(startNew, 2);
+        grid.Children.Add(startNew);
+
+        row.Child = grid;
+        return row;
+    }
+
+    private void StartNewNormal(SudokuDifficulty difficulty)
+    {
         IReadOnlyList<SudokuPuzzle> candidates = SudokuLibrary.ForDifficulty(difficulty);
         if (candidates.Count == 0)
         {
@@ -270,20 +352,61 @@ internal sealed class LoungeWindow : Window
         }
 
         var completed = new HashSet<string>(progress.CompletedPuzzleIds, StringComparer.Ordinal);
-        SudokuPuzzle puzzle = candidates.FirstOrDefault(candidate => !completed.Contains(candidate.Id))
-            ?? candidates[0];
-        StartPuzzle(puzzle, null);
+        var seen = new HashSet<string>(progress.Games.Keys, StringComparer.Ordinal);
+        SudokuPuzzle? current = null;
+        if (TryGetActiveNormal(difficulty, out SudokuPuzzle? active, out _) && active is not null)
+        {
+            current = active;
+        }
+
+        SudokuPuzzle puzzle = candidates.FirstOrDefault(candidate => !completed.Contains(candidate.Id) && !seen.Contains(candidate.Id))
+            ?? candidates.FirstOrDefault(candidate => !completed.Contains(candidate.Id) && candidate.Id != current?.Id)
+            ?? candidates.FirstOrDefault(candidate => !completed.Contains(candidate.Id))
+            ?? candidates.First();
+
+        var games = new Dictionary<string, SudokuGameState>(progress.Games, StringComparer.Ordinal);
+        var abandoned = new HashSet<string>(StringComparer.Ordinal);
+        foreach ((string id, SudokuGameState raw) in progress.Games)
+        {
+            if (!SudokuLibrary.TryGet(id, out SudokuPuzzle? existing) ||
+                existing.Pool != SudokuPuzzlePool.Normal ||
+                existing.Difficulty != difficulty)
+            {
+                continue;
+            }
+
+            SudokuGameState clean = SudokuGameState.Normalize(existing, raw);
+            if (!clean.Completed)
+            {
+                games.Remove(id);
+                abandoned.Add(id);
+            }
+        }
+
+        string? activeNormalId = progress.ActiveNormalPuzzleId;
+        if (activeNormalId is not null && abandoned.Contains(activeNormalId))
+        {
+            activeNormalId = null;
+        }
+        progress = progress with
+        {
+            Games = games,
+            ActiveNormalPuzzleId = activeNormalId,
+        };
+        persist(progress);
+        StartPuzzle(puzzle, null, forceNew: true);
     }
 
-    private void StartPuzzle(SudokuPuzzle puzzle, DateOnly? dailyDate)
+    private void StartPuzzle(SudokuPuzzle puzzle, DateOnly? dailyDate, bool forceNew)
     {
-        SudokuGameState state = progress.Games.TryGetValue(puzzle.Id, out SudokuGameState? saved)
+        SudokuGameState state = !forceNew && progress.Games.TryGetValue(puzzle.Id, out SudokuGameState? saved)
             ? SudokuGameState.Normalize(puzzle, saved)
             : SudokuGameState.Create(puzzle);
 
         sudokuView = new SudokuView(
             puzzle,
             state,
+            showTimer,
             next =>
             {
                 progress = progress.SaveGame(puzzle, next, dailyDate);
@@ -339,21 +462,57 @@ internal sealed class LoungeWindow : Window
         return null;
     }
 
-    private bool TryGetActiveNormal(out SudokuPuzzle? puzzle, out SudokuGameState? state)
+    private bool TryGetActiveNormal(
+        SudokuDifficulty difficulty,
+        out SudokuPuzzle? puzzle,
+        out SudokuGameState? state)
     {
         puzzle = null;
         state = null;
-        if (progress.ActiveNormalPuzzleId is not string id ||
-            !SudokuLibrary.TryGet(id, out SudokuPuzzle? found) ||
-            found.Pool != SudokuPuzzlePool.Normal)
+
+        if (progress.ActiveNormalPuzzleId is string preferredId &&
+            TryRestoreActive(preferredId, difficulty, out puzzle, out state))
+        {
+            return true;
+        }
+
+        foreach ((string id, _) in progress.Games.Reverse())
+        {
+            if (TryRestoreActive(id, difficulty, out puzzle, out state))
+            {
+                return true;
+            }
+        }
+
+        puzzle = null;
+        state = null;
+        return false;
+    }
+
+    private bool TryRestoreActive(
+        string id,
+        SudokuDifficulty difficulty,
+        out SudokuPuzzle? puzzle,
+        out SudokuGameState? state)
+    {
+        puzzle = null;
+        state = null;
+        if (!SudokuLibrary.TryGet(id, out SudokuPuzzle? found) ||
+            found.Pool != SudokuPuzzlePool.Normal ||
+            found.Difficulty != difficulty ||
+            !progress.Games.TryGetValue(id, out SudokuGameState? saved))
+        {
+            return false;
+        }
+
+        SudokuGameState clean = SudokuGameState.Normalize(found, saved);
+        if (clean.Completed)
         {
             return false;
         }
 
         puzzle = found;
-        state = progress.Games.TryGetValue(id, out SudokuGameState? saved)
-            ? SudokuGameState.Normalize(found, saved)
-            : SudokuGameState.Create(found);
+        state = clean;
         return true;
     }
 
@@ -370,6 +529,20 @@ internal sealed class LoungeWindow : Window
         HorizontalContentAlignment = HorizontalAlignment.Center,
     };
 
+    private static Button SmallActionButton(string text) => new()
+    {
+        Content = text,
+        Foreground = Ink("#EEE4D4"),
+        Background = Ink("#17282A"),
+        BorderBrush = Ink("#4A6661"),
+        BorderThickness = new Thickness(1),
+        Padding = new Thickness(10, 6, 10, 6),
+        FontSize = 9,
+        FontWeight = FontWeights.SemiBold,
+        Cursor = Cursors.Hand,
+        MinWidth = 82,
+    };
+
     private static string DifficultyLabel(SudokuDifficulty difficulty) => difficulty switch
     {
         SudokuDifficulty.Relaxed => "Relaxed",
@@ -380,6 +553,14 @@ internal sealed class LoungeWindow : Window
         SudokuDifficulty.Master => "Master",
         _ => difficulty.ToString(),
     };
+
+    private static string FormatTime(long seconds)
+    {
+        TimeSpan time = TimeSpan.FromSeconds(Math.Max(0L, seconds));
+        return time.TotalHours >= 1
+            ? $"{(int)time.TotalHours:00}:{time.Minutes:00}:{time.Seconds:00}"
+            : $"{time.Minutes:00}:{time.Seconds:00}";
+    }
 
     private static SolidColorBrush Ink(string hex) => new((Color)ColorConverter.ConvertFromString(hex));
 }
