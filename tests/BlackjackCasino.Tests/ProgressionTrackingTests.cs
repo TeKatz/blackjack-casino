@@ -24,7 +24,7 @@ public sealed class ProgressionTrackingTests
 
         var service = new ProgressionService(profile);
 
-        Assert.Equal(4, profile.SchemaVersion);
+        Assert.Equal(5, profile.SchemaVersion);
         Assert.Equal(1, profile.SlotTrackingVersion);
         Assert.Equal(80, profile.LegacyPooledSlots.Spins);
         Assert.Equal(9, profile.LegacyPooledSlots.Wins);
