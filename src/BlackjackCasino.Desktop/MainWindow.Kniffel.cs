@@ -85,6 +85,7 @@ public partial class MainWindow
         kniffelSetupView = null;
         CreateKniffelView();
         embeddedGameHost.Content = kniffelView;
+        embeddedGameHost.UpdateLayout();
         KeyboardNavigation.SetTabNavigation(kniffelView, KeyboardNavigationMode.Cycle);
         RefreshKniffelTable();
         if (KniffelCasinoMode) AdvanceKniffelTable();

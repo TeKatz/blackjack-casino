@@ -131,6 +131,8 @@ public partial class KniffelView : UserControl, IDisposable
         DicePanel.IsEnabled = ScoreRows.IsEnabled = NewGameButton.IsEnabled = KniffelBackButton.IsEnabled = false;
         KeyboardNavigation.SetTabNavigation(RestartOverlay, KeyboardNavigationMode.Cycle);
         Refresh();
+        // Materialize the hosted UserControl template before traversing its focus targets.
+        UpdateLayout();
         if (content is FrameworkElement element) element.MoveFocus(new TraversalRequest(FocusNavigationDirection.First));
     }
     internal void HideGameSetup() => CancelRestart_Click(this, new RoutedEventArgs());
