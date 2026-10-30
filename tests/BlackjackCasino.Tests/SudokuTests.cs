@@ -72,6 +72,82 @@ public sealed class SudokuTests
         Assert.Equal(editable, hinted);
         Assert.Equal(1, board.HintsUsed);
         Assert.NotEqual(0, board.ValueAt(editable));
+        Assert.True(board.IsCorrectAt(editable));
+    }
+
+    [Fact]
+    public void IncorrectValuesAreDetectedAndHintsCorrectThemBeforeEmptyCells()
+    {
+        SudokuPuzzle puzzle = SudokuLibrary.Normal[0];
+        Assert.True(SudokuSolver.TrySolve(puzzle.Givens, out string solution));
+        var board = new SudokuBoard(puzzle);
+        int editable = Enumerable.Range(0, 81).First(index => !board.IsGiven(index));
+        int correct = solution[editable] - '0';
+        int wrong = correct == 9 ? 1 : correct + 1;
+
+        Assert.True(board.SetValue(editable, wrong));
+        Assert.True(board.IsIncorrectAt(editable));
+        Assert.False(board.IsCorrectAt(editable));
+
+        int hinted = board.ApplyHint();
+        Assert.Equal(editable, hinted);
+        Assert.Equal(correct, board.ValueAt(editable));
+        Assert.True(board.IsCorrectAt(editable));
+        Assert.False(board.IsIncorrectAt(editable));
+    }
+
+    [Fact]
+    public void RepeatedHintsRecoverACompletelyFilledWrongBoardWithoutSoftlock()
+    {
+        SudokuPuzzle puzzle = SudokuLibrary.Normal[0];
+        Assert.True(SudokuSolver.TrySolve(puzzle.Givens, out string solution));
+        var board = new SudokuBoard(puzzle);
+
+        foreach (int index in Enumerable.Range(0, 81).Where(index => !board.IsGiven(index)))
+        {
+            int correct = solution[index] - '0';
+            int wrong = correct == 9 ? 1 : correct + 1;
+            Assert.True(board.SetValue(index, wrong));
+        }
+
+        Assert.False(board.IsComplete);
+        Assert.DoesNotContain(Enumerable.Range(0, 81), index => !board.IsGiven(index) && board.ValueAt(index) == 0);
+
+        int guard = 0;
+        while (!board.IsComplete && guard < 81)
+        {
+            Assert.True(board.ApplyHint() >= 0);
+            guard++;
+        }
+
+        Assert.True(board.IsComplete);
+        Assert.InRange(guard, 1, 81);
+        Assert.Equal(guard, board.HintsUsed);
+    }
+
+    [Fact]
+    public void DigitCompletionRequiresEveryOccurrenceToBeCorrectAndNoWrongExtras()
+    {
+        SudokuPuzzle puzzle = SudokuLibrary.Normal[0];
+        Assert.True(SudokuSolver.TrySolve(puzzle.Givens, out string solution));
+        var board = new SudokuBoard(puzzle);
+        int digit = Enumerable.Range(1, 9).First(candidate =>
+            Enumerable.Range(0, 81).Any(index => !board.IsGiven(index) && solution[index] - '0' == candidate));
+
+        Assert.False(board.IsDigitComplete(digit));
+        foreach (int index in Enumerable.Range(0, 81).Where(index => !board.IsGiven(index) && solution[index] - '0' == digit))
+        {
+            Assert.True(board.SetValue(index, digit));
+        }
+        Assert.True(board.IsDigitComplete(digit));
+
+        int wrongExtra = Enumerable.Range(0, 81).First(index =>
+            !board.IsGiven(index) && board.ValueAt(index) == 0 && solution[index] - '0' != digit);
+        Assert.True(board.SetValue(wrongExtra, digit));
+        Assert.False(board.IsDigitComplete(digit));
+
+        Assert.True(board.SetValue(wrongExtra, 0));
+        Assert.True(board.IsDigitComplete(digit));
     }
 
     [Fact]
