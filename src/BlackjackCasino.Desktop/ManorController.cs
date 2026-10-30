@@ -38,6 +38,9 @@ internal sealed class ManorController
         action(machine);
         var grants=new ProgressionService(profile);
         ProgressionAward award=ManorProgression.Award(grants,next);
+        // Paid Manor spins update TotalWagered while free spins and room decisions do not.
+        // Synchronize that durable statistic before the existing journal atomically commits it.
+        CasinoVaultService.SyncFromStatistics(profile);
         AppPreferences prefs=(preferences ?? Preferences) with { Bankroll=next.Bankroll };
         SaveNotice=persistence.Commit(new(1,true,prefs,profile,next));
         State=next;
