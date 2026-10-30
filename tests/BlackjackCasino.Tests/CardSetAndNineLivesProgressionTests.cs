@@ -69,7 +69,7 @@ public sealed class CardSetAndNineLivesProgressionTests
 
         Assert.Equal(5, cardSets.Length);
         Assert.Equal(4, cardSets.Count(item => item.RequiredPrestige == 0));
-        CosmeticDefinition premium = Assert.Single(cardSets.Where(item => item.RequiredPrestige == 1));
+        CosmeticDefinition premium = Assert.Single(cardSets, item => item.RequiredPrestige == 1);
         Assert.Equal("cardset-midnight-sovereign", premium.Id);
     }
 
