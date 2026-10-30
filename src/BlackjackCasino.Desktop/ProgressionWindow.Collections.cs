@@ -77,6 +77,7 @@ internal partial class ProgressionWindow
         ChallengeCategory.NeonVault => "Neon Vault",
         ChallengeCategory.NineLives => "Nine Lives",
         ChallengeCategory.MidnightDice => "Midnight Dice",
+        ChallengeCategory.Sudoku => "Sudoku",
         _ => category.ToString(),
     };
 
