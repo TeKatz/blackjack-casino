@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using BlackjackCasino.Core.Sudoku;
 using BlackjackCasino.Desktop;
 
 internal static class SudokuSmoke
@@ -35,7 +36,7 @@ internal static class SudokuSmoke
 
         SudokuView mediumView = Find<SudokuView>(window).Single();
         string firstMediumId = mediumView.PuzzleId;
-        Require(mediumView.Difficulty == BlackjackCasino.Core.Sudoku.SudokuDifficulty.Medium,
+        Require(mediumView.Difficulty == SudokuDifficulty.Medium,
             "Medium New Puzzle opened the wrong difficulty.");
         Button[] cells = BoardCells(window);
         Require(cells.Length == 81, $"Sudoku board should expose 81 cells; found {cells.Length}.");
@@ -69,26 +70,56 @@ internal static class SudokuSmoke
         Require(sameNumberColor != unrelatedColor,
             "Selecting a number did not highlight matching values across the full Sudoku board.");
 
+        ToggleButton guides = Find<ToggleButton>(mediumView).Single(button =>
+            button.IsVisible && button.Content?.ToString()?.StartsWith("GUIDES ·", StringComparison.Ordinal) == true);
+        Require(mediumView.GuidesVisible && Equals(guides.Content, "GUIDES · ON  [G]"),
+            "Sudoku guide highlighting should start enabled in the smoke profile.");
+        Color relatedWithGuides = ((SolidColorBrush)cells.First(cell =>
+            !ReferenceEquals(cell, selectedGiven) &&
+            !Equals(cell.Content, selectedGiven.Content) &&
+            IsRelated((int)cell.Tag, (int)selectedGiven.Tag)).Background).Color;
+        Click(guides);
+        Require(!mediumView.GuidesVisible && Equals(guides.Content, "GUIDES · OFF  [G]"),
+            "Sudoku guide highlighting did not turn off.");
+        Color relatedWithoutGuides = ((SolidColorBrush)cells.First(cell =>
+            !ReferenceEquals(cell, selectedGiven) &&
+            !Equals(cell.Content, selectedGiven.Content) &&
+            IsRelated((int)cell.Tag, (int)selectedGiven.Tag)).Background).Color;
+        Require(relatedWithGuides != relatedWithoutGuides,
+            "Disabling Sudoku guides did not remove row/column/block highlighting.");
+        Click(guides);
+        Require(mediumView.GuidesVisible, "Sudoku guide highlighting did not turn back on.");
+
+        SudokuPuzzle mediumPuzzle = SudokuLibrary.Get(mediumView.PuzzleId);
+        Require(SudokuSolver.TrySolve(mediumPuzzle.Givens, out string mediumSolution),
+            "Smoke could not solve the Medium Sudoku fixture.");
         Button editable = cells.First(cell => string.IsNullOrEmpty(cell.Content?.ToString()));
         Click(editable);
-        Button one = Find<Button>(window).First(button => button.IsVisible && Equals(button.Content, "1") && button.Tag is null);
-        Click(one);
-        Require(Equals(editable.Content, "1"), "Entering a Sudoku digit did not update the selected cell.");
+        int editableDigit = mediumSolution[(int)editable.Tag] - '0';
+        Click(NumberButton(window, editableDigit));
+        Require(Equals(editable.Content, editableDigit.ToString()), "Entering a Sudoku digit did not update the selected cell.");
 
         Button noteCell = BoardCells(window).First(cell => !ReferenceEquals(cell, editable) && string.IsNullOrEmpty(cell.Content?.ToString()));
         Click(noteCell);
         ToggleButton pencil = Find<ToggleButton>(window).Single(button => button.IsVisible && Equals(button.Content, "PENCIL  [SPACE]"));
         Click(pencil);
-        Button two = Find<Button>(window).First(button => button.IsVisible && Equals(button.Content, "2") && button.Tag is null);
+        Button two = NumberButton(window, 2);
+        if (!two.IsEnabled)
+        {
+            two = Enumerable.Range(1, 9).Select(digit => NumberButton(window, digit)).First(button => button.IsEnabled);
+        }
+        string noteDigit = two.Content!.ToString()!;
         Click(two);
-        Require(noteCell.Content?.ToString()?.Contains('2') == true, "Pencil entry did not appear in the selected Sudoku cell.");
+        Require(noteCell.Content?.ToString()?.Contains(noteDigit, StringComparison.Ordinal) == true,
+            "Pencil entry did not appear in the selected Sudoku cell.");
 
         Button undo = Find<Button>(window).Single(button => button.IsVisible && Equals(button.Content, "UNDO"));
         Click(undo);
         Require(string.IsNullOrEmpty(noteCell.Content?.ToString()), "Undo did not restore the previous Sudoku board frame.");
         Button redo = Find<Button>(window).Single(button => button.IsVisible && Equals(button.Content, "REDO"));
         Click(redo);
-        Require(noteCell.Content?.ToString()?.Contains('2') == true, "Redo did not restore the Sudoku pencil mark.");
+        Require(noteCell.Content?.ToString()?.Contains(noteDigit, StringComparison.Ordinal) == true,
+            "Redo did not restore the Sudoku pencil mark.");
         Capture(window, Path.Combine(output, "sudoku-free-play.png"));
 
         Click(Find<Button>(window).Single(button => button.IsVisible && Equals(button.Content, "← LOUNGE")));
@@ -101,7 +132,7 @@ internal static class SudokuSmoke
 
         Click(ButtonByName(window, "SudokuNew_Hard"));
         await Task.Delay(60);
-        Require(Find<SudokuView>(window).Single().Difficulty == BlackjackCasino.Core.Sudoku.SudokuDifficulty.Hard,
+        Require(Find<SudokuView>(window).Single().Difficulty == SudokuDifficulty.Hard,
             "Hard New Puzzle opened the wrong difficulty.");
         Click(Find<Button>(window).Single(button => button.IsVisible && Equals(button.Content, "← LOUNGE")));
         await Task.Delay(60);
@@ -116,6 +147,8 @@ internal static class SudokuSmoke
         SudokuView replacementMedium = Find<SudokuView>(window).Single();
         Require(replacementMedium.PuzzleId != firstMediumId,
             "New Puzzle reopened the existing Medium save instead of starting a fresh puzzle.");
+        Require(replacementMedium.GuidesVisible,
+            "Sudoku guide visibility was not persisted when opening another puzzle.");
         Click(Find<Button>(window).Single(button => button.IsVisible && Equals(button.Content, "← LOUNGE")));
         await Task.Delay(60);
         window.UpdateLayout();
@@ -133,6 +166,60 @@ internal static class SudokuSmoke
         Require(!hiddenTimerView.TimerVisible, "Hidden timer preference was not applied to the Sudoku game view.");
         Require(!Find<TextBlock>(hiddenTimerView).Any(text => text.IsVisible && text.Text == "TIME"),
             "Timer label is still visible after disabling the Sudoku timer.");
+
+        SudokuPuzzle easyPuzzle = SudokuLibrary.Get(hiddenTimerView.PuzzleId);
+        Require(SudokuSolver.TrySolve(easyPuzzle.Givens, out string easySolution),
+            "Smoke could not solve the Easy Sudoku fixture.");
+        Button[] easyCells = BoardCells(hiddenTimerView);
+        int completedDigit = Enumerable.Range(1, 9).First(digit => easyCells.Any(cell =>
+            string.IsNullOrEmpty(cell.Content?.ToString()) && easySolution[(int)cell.Tag] - '0' == digit));
+        Button completedDigitButton = NumberButton(hiddenTimerView, completedDigit);
+        foreach (Button cell in easyCells.Where(cell =>
+                     string.IsNullOrEmpty(cell.Content?.ToString()) && easySolution[(int)cell.Tag] - '0' == completedDigit).ToArray())
+        {
+            Click(cell);
+            Click(completedDigitButton);
+        }
+        Require(!completedDigitButton.IsEnabled && completedDigitButton.Opacity < 0.5d,
+            "A fully and correctly placed Sudoku digit was not greyed out and disabled in the number pad.");
+
+        Button wrongCell = BoardCells(hiddenTimerView).First(cell => string.IsNullOrEmpty(cell.Content?.ToString()));
+        int correctValue = easySolution[(int)wrongCell.Tag] - '0';
+        int wrongValue = Enumerable.Range(1, 9).First(digit =>
+            digit != correctValue && NumberButton(hiddenTimerView, digit).IsEnabled);
+        Click(wrongCell);
+        Click(NumberButton(hiddenTimerView, wrongValue));
+        Require(Equals(wrongCell.Content, wrongValue.ToString()), "Smoke could not place an intentionally wrong Sudoku value.");
+        Color wrongColor = ((SolidColorBrush)wrongCell.Foreground).Color;
+        Color expectedWrongColor = (Color)ColorConverter.ConvertFromString("#F08F84");
+        Require(wrongColor == expectedWrongColor,
+            "A wrong but otherwise non-conflicting Sudoku value was not identified immediately.");
+
+        Button hint = Find<Button>(hiddenTimerView).Single(button => button.IsVisible && Equals(button.Content, "REVEAL ONE CELL"));
+        Click(hint);
+        Require(Equals(wrongCell.Content, correctValue.ToString()),
+            "Sudoku hint did not repair the selected wrong value.");
+
+        Button secondWrongCell = BoardCells(hiddenTimerView).First(cell => string.IsNullOrEmpty(cell.Content?.ToString()));
+        int secondCorrect = easySolution[(int)secondWrongCell.Tag] - '0';
+        int secondWrong = Enumerable.Range(1, 9).First(digit =>
+            digit != secondCorrect && NumberButton(hiddenTimerView, digit).IsEnabled);
+        Click(secondWrongCell);
+        Click(NumberButton(hiddenTimerView, secondWrong));
+        Require(!hiddenTimerView.Snapshot.Completed, "Intentionally wrong Sudoku state unexpectedly completed the puzzle.");
+
+        int hintGuard = 0;
+        while (!hiddenTimerView.Snapshot.Completed && hintGuard < 81)
+        {
+            Click(hint);
+            hintGuard++;
+        }
+        Require(hiddenTimerView.Snapshot.Completed,
+            "Repeated hints softlocked instead of correcting wrong entries and completing the Sudoku.");
+        Require(Enumerable.Range(1, 9).All(digit => !NumberButton(hiddenTimerView, digit).IsEnabled),
+            "Completed Sudoku still leaves one or more number buttons enabled.");
+        Capture(window, Path.Combine(output, "sudoku-hint-recovery.png"));
+
         Click(Find<Button>(window).Single(button => button.IsVisible && Equals(button.Content, "← LOUNGE")));
         await Task.Delay(50);
 
@@ -154,11 +241,14 @@ internal static class SudokuSmoke
             "Casino lobby was not restored after leaving Chill Lounge.");
 
         File.WriteAllText(Path.Combine(output, "sudoku-result.txt"),
-            "PASS: larger board; fine cell grid and strong block boundaries; matching-number highlight; independent per-difficulty resume; true New Puzzle replacement; timer hide option; pencil marks; undo/redo; separate Daily entry.");
+            "PASS: larger board; fine cell grid and strong block boundaries; matching-number highlight; toggleable guides; completed-number disabling; immediate wrong-value validation; hint correction and anti-softlock recovery; independent per-difficulty resume; true New Puzzle replacement; timer hide option; pencil marks; undo/redo; separate Daily entry.");
     }
 
     private static Button ButtonByName(DependencyObject root, string name) =>
         Find<Button>(root).Single(button => button.Name == name);
+
+    private static Button NumberButton(DependencyObject root, int digit) => Find<Button>(root)
+        .Single(button => button.IsVisible && button.Tag is null && Equals(button.Content, digit.ToString()));
 
     private static Button[] BoardCells(DependencyObject root) => Find<Button>(root)
         .Where(button => button.IsVisible && button.Tag is int)
