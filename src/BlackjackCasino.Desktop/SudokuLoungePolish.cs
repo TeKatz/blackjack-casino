@@ -83,22 +83,32 @@ internal static class SudokuLoungePolish
         };
         States.Add(view, state);
 
-        watch.Tick += (_, _) =>
-        {
-            if (state.CompletionShown || !view.Snapshot.Completed)
-            {
-                return;
-            }
-
-            state.CompletionShown = true;
-            watch.Stop();
-            ShowCompletion(view, state.Host);
-        };
+        watch.Tick += (_, _) => TryShowCompletion(view, state);
+        view.AddHandler(
+            ButtonBase.ClickEvent,
+            new RoutedEventHandler((_, _) => TryShowCompletion(view, state)),
+            handledEventsToo: true);
+        view.AddHandler(
+            Keyboard.PreviewKeyDownEvent,
+            new KeyEventHandler((_, _) => TryShowCompletion(view, state)),
+            handledEventsToo: true);
 
         if (!state.CompletionShown)
         {
             watch.Start();
         }
+    }
+
+    private static void TryShowCompletion(SudokuView view, ViewState state)
+    {
+        if (state.CompletionShown || !view.Snapshot.Completed)
+        {
+            return;
+        }
+
+        state.CompletionShown = true;
+        state.CompletionWatch.Stop();
+        ShowCompletion(view, state.Host);
     }
 
     private static void OnSudokuUnloaded(object sender, RoutedEventArgs e)
