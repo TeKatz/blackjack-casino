@@ -97,6 +97,7 @@ internal static class PlayerStateStore
         {
             Empire = BlackjackCasino.Core.Empire.EmpireState.Normalize(state.Empire),
             Kniffel = BlackjackCasino.Core.Kniffel.KniffelGame.Normalize(state.Kniffel),
+            Sudoku = BlackjackCasino.Core.Sudoku.SudokuProgressState.Normalize(state.Sudoku),
             Bankroll = bankroll,
             ManorBet = Math.Clamp(decimal.Truncate(state.ManorBet), 1, 1_000),
             ManorSpeed = Enum.IsDefined(state.ManorSpeed) ? state.ManorSpeed : SlotSpinSpeed.Normal,
