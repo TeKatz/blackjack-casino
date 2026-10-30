@@ -23,6 +23,7 @@ internal sealed record AppPreferences
     public BlackjackCasino.Core.Kniffel.KniffelState Kniffel { get; init; } = new();
 
     public BlackjackCasino.Core.Sudoku.SudokuProgressState Sudoku { get; init; } = new();
+    public bool SudokuShowTimer { get; init; } = true;
 
     public BlackjackCasino.Core.Empire.EmpireState Empire { get; init; } = new();
 
