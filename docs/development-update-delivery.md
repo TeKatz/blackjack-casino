@@ -12,23 +12,12 @@ Before publication, the workflow builds, runs all tests and the actual Windows W
 
 Versioning rule: start a new Development cycle on a version base strictly above the latest final version (e.g. 0.7.0-dev.N after final 0.6.5). Preserve SemVer ordering; do not offer silent downgrades. PR preview artifacts use dev.0 and are superseded by the published Development run number.
 
-## Current test channel: Kniffel
+## Current test channel: Chill Lounge / Sudoku
 
-The shared `development` release is pinned to `feature/kniffel-table`, which
-includes the merged current main changes alongside Kniffel. Pushes to this branch
-run the Development publisher automatically; manual dispatch on this workflow
-revision from another branch is skipped. The in-app manifest URL is unchanged,
-so installed clients only need to select Development and check for updates.
+The shared `development` release is pinned to `feature/chill-lounge-sudoku`, which starts from the current merged `main` and carries the new Chill Lounge and Sudoku work. Pushes to this branch run the Development publisher automatically; manual dispatch on this workflow revision from another branch is skipped. The in-app manifest URL is unchanged, so installed clients only need to select Development and check for updates.
 
-Versions continue as `0.10.1-dev.N` using the existing increasing workflow run
-number, superseding the previous Nine Lives `0.10.1-dev.302` test build. The
-publisher builds and tests the complete application, including the hosted Kniffel
-Windows smoke, before replacing the mutable release. Package SHA-256, size and
-application/manifest version checks remain enabled. Release notes and the manifest
-notes identify the exact Kniffel commit.
+Versions continue as `0.10.1-dev.N` using the existing increasing workflow run number. The publisher builds and tests the complete application before replacing the mutable release. Package SHA-256, size and application/manifest version checks remain enabled. Release notes and the manifest notes identify the exact source commit.
 
-The source pin lives in the publishing workflow's push trigger and job guard.
-The previous Nine Lives source branch has already been deleted. When changing
-the source again, update both fields together on the selected branch. Normal PR
-previews remain available as CI artifacts and do not replace the shared
-Development release.
+Sudoku is intentionally designed as an offline-first feature. Normal free-play puzzles and Daily puzzles are separate data sets so completing one can never make a later puzzle in the other pool familiar. Runtime puzzle generation is not part of the design: bundled puzzles are validated for a single solution before publication, and the offline Daily selection only chooses from its dedicated prevalidated pool.
+
+The source pin lives in the publishing workflow's push trigger and job guard. When changing the active feature branch again, update both fields together on the selected branch. Normal PR previews remain available as CI artifacts and do not replace the shared Development release.
