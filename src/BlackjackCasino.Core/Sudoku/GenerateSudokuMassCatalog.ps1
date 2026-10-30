@@ -30,7 +30,13 @@ function Get-PermutationFromRank {
 
 function Get-HashBytes {
     param([string]$Key)
-    return [System.Security.Cryptography.SHA256]::HashData([System.Text.Encoding]::UTF8.GetBytes($Key))
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        return $sha.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Key))
+    }
+    finally {
+        $sha.Dispose()
+    }
 }
 
 function Transform-Grid {
