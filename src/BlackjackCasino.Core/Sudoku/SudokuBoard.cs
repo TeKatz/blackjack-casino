@@ -51,6 +51,36 @@ public sealed class SudokuBoard
         return puzzle.Givens[index] != '0';
     }
 
+    public bool IsCorrectAt(int index)
+    {
+        ValidateIndex(index);
+        return values[index] != 0 && values[index] == solution[index] - '0';
+    }
+
+    public bool IsIncorrectAt(int index)
+    {
+        ValidateIndex(index);
+        return values[index] != 0 && values[index] != solution[index] - '0';
+    }
+
+    public bool IsDigitComplete(int digit)
+    {
+        if (digit is < 1 or > 9)
+        {
+            throw new ArgumentOutOfRangeException(nameof(digit));
+        }
+
+        char expected = (char)('0' + digit);
+        for (int index = 0; index < 81; index++)
+        {
+            if (solution[index] == expected && values[index] != digit)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public bool SetValue(int index, int value)
     {
         ValidateIndex(index);
@@ -95,9 +125,14 @@ public sealed class SudokuBoard
 
     public int ApplyHint(int preferredIndex = -1)
     {
-        int index = preferredIndex is >= 0 and < 81 && !IsGiven(preferredIndex) && values[preferredIndex] == 0
+        int index = preferredIndex is >= 0 and < 81 && CanReveal(preferredIndex)
             ? preferredIndex
-            : Enumerable.Range(0, 81).FirstOrDefault(candidate => !IsGiven(candidate) && values[candidate] == 0, -1);
+            : Enumerable.Range(0, 81).FirstOrDefault(candidate =>
+                !IsGiven(candidate) && values[candidate] != 0 && IsIncorrectAt(candidate), -1);
+        if (index < 0)
+        {
+            index = Enumerable.Range(0, 81).FirstOrDefault(candidate => !IsGiven(candidate) && values[candidate] == 0, -1);
+        }
         if (index < 0)
         {
             return -1;
@@ -171,6 +206,8 @@ public sealed class SudokuBoard
         HintsUsed = HintsUsed,
         Completed = IsComplete,
     };
+
+    private bool CanReveal(int index) => !IsGiven(index) && !IsCorrectAt(index);
 
     private void Load(string board, int[] noteMasks)
     {
