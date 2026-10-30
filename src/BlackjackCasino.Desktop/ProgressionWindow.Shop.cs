@@ -75,7 +75,10 @@ internal partial class ProgressionWindow
         grid.ColumnDefinitions.Add(new ColumnDefinition());
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(180) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) });
-        grid.Children.Add(new Viewbox { Width = 72, Height = 58, Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Left, Child = CreateCosmeticPreview(cosmetic), ToolTip = cosmetic.Name });
+        FrameworkElement preview = cosmetic.Kind == CosmeticKind.CardSet
+            ? PlayingCardPresentation.CreatePreview(cosmetic)
+            : CreateCosmeticPreview(cosmetic);
+        grid.Children.Add(new Viewbox { Width = 72, Height = 58, Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Left, Child = preview, ToolTip = cosmetic.Name });
         var text = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 12, 0) };
         text.Children.Add(new TextBlock { Text = cosmetic.Name, FontWeight = FontWeights.SemiBold, FontSize = 13, TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = cosmetic.Name });
         text.Children.Add(new TextBlock { Text = cosmetic.Description, FontSize = 11, Foreground = MutedBrush, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 3, 0, 0) });
