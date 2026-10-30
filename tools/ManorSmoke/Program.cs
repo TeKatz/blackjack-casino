@@ -106,7 +106,10 @@ internal static class Program
         // Force a real regular win through authored stops and capture its live glow/trace.
         int[] winning=Enumerable.Range(0,5).Select(reel=>Enumerable.Range(0,64).First(stop=>ManorRules.SymbolAt(reel,stop,1)==ManorSymbol.Jack)).ToArray();
         Draw(winning); Click(w,"SpinButton");
-        await Until(()=>Named<Canvas>(w,"PaylineCanvas").Children.Count>0);
+        // Paylines can exist before WPF advances the particle animation clock.
+        // Wait for both live visuals before asserting/capturing the winning state.
+        await Until(()=>Named<Canvas>(w,"PaylineCanvas").Children.Count>0
+            && Named<ManorEffects>(w,"ReelEffects").Burst>0);
         Require(Named<ManorEffects>(w,"ReelEffects").Burst>0,"Winning particle animation missing");
         Capture(w,"07-bright-win-and-particles");
         await Task.Delay(180); Capture(w,"08-win-motion-later");
