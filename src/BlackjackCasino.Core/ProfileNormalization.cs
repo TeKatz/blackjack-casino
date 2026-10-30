@@ -51,6 +51,6 @@ public static class ProfileNormalization
             : state.EquippedDiceSetId;
 
         state.Vault = CasinoVaultService.Normalize(state, state.Vault);
-        state.SchemaVersion = Math.Max(state.SchemaVersion, 6);
+        state.SchemaVersion = Math.Max(state.SchemaVersion, 5);
     }
 }
