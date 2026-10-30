@@ -38,7 +38,6 @@ internal sealed class EmpireOfflineReportWindow : Window
             FontSize = 11,
             FontWeight = FontWeights.SemiBold,
             Foreground = Ink("#D6B478"),
-            CharacterSpacing = 120,
         });
         stack.Children.Add(new TextBlock
         {
