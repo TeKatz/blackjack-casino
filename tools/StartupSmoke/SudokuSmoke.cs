@@ -55,8 +55,9 @@ internal static class SudokuSmoke
             .GroupBy(cell => cell.Content!.ToString()!)
             .FirstOrDefault(group => group.Count() >= 2);
         Require(repeatedGiven is not null, "Smoke puzzle did not expose a repeated given digit for highlight validation.");
-        Button selectedGiven = repeatedGiven!.First();
-        Button matchingGiven = repeatedGiven.Skip(1).First();
+        IGrouping<string, Button> repeated = repeatedGiven!;
+        Button selectedGiven = repeated.First();
+        Button matchingGiven = repeated.Skip(1).First();
         Click(selectedGiven);
         Color sameNumberColor = ((SolidColorBrush)matchingGiven.Background).Color;
         Button unrelated = cells.First(cell =>
