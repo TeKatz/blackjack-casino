@@ -5,6 +5,7 @@ public enum CosmeticKind
     Title,
     Frame,
     Portrait,
+    CardSet,
 }
 
 public sealed record CosmeticDefinition(
@@ -14,7 +15,8 @@ public sealed record CosmeticDefinition(
     long Price,
     bool ShopAvailable,
     string Description,
-    string VisualVariant = "standard");
+    string VisualVariant = "standard",
+    int RequiredPrestige = 0);
 
 public sealed class StatisticsSnapshot
 {
@@ -51,7 +53,7 @@ public sealed class SeasonProgressState
 
 public sealed class PlayerProfileState
 {
-    public int SchemaVersion { get; set; } = 4;
+    public int SchemaVersion { get; set; } = 5;
     public string DisplayName { get; set; } = "Player";
     public int Level { get; set; }
     public long LevelExperience { get; set; }
@@ -64,11 +66,13 @@ public sealed class PlayerProfileState
     public string EquippedTitleId { get; set; } = CosmeticCatalog.DefaultTitleId;
     public string EquippedFrameId { get; set; } = CosmeticCatalog.DefaultFrameId;
     public string EquippedPortraitId { get; set; } = CosmeticCatalog.DefaultPortraitId;
+    public string EquippedCardSetId { get; set; } = CosmeticCatalog.DefaultCardSetId;
     public List<string> OwnedCosmeticIds { get; set; } =
     [
         CosmeticCatalog.DefaultTitleId,
         CosmeticCatalog.DefaultFrameId,
         CosmeticCatalog.DefaultPortraitId,
+        CosmeticCatalog.DefaultCardSetId,
     ];
     public List<string> ClaimedChallengeIds { get; set; } = [];
     public Manor.ManorStatistics Manor { get; set; } = new();
