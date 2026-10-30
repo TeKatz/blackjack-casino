@@ -8,10 +8,12 @@ namespace BlackjackCasino.Desktop;
 public partial class MainWindow
 {
     private bool cardSetStyleBusy;
+    private bool cardSetStylingInitialized;
 
-    protected override void OnInitialized(EventArgs e)
+    private void InitializeCardSetStyling()
     {
-        base.OnInitialized(e);
+        if (cardSetStylingInitialized) return;
+        cardSetStylingInitialized = true;
         LayoutUpdated += (_, _) => ApplyEquippedCardSetToRenderedCards();
     }
 
@@ -90,7 +92,6 @@ public partial class MainWindow
         text[0].Foreground = ink;
         text[1].Foreground = ink;
 
-        // Remove only ornaments created by this card-set layer; rank and suit stay untouched.
         foreach (FrameworkElement decoration in face.Children.OfType<FrameworkElement>().Where(x => Equals(x.Uid, "CardSetOrnament")).ToArray())
         {
             face.Children.Remove(decoration);
