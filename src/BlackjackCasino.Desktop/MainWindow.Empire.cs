@@ -86,6 +86,7 @@ public partial class MainWindow
             CloseEmpire,
             () => AnimationsEnabled,
             "←  Casino lobby");
+        EmpireStatisticsPage.Attach(empireView, empire);
         foreach (UIElement covered in CasinoRoot.Children.OfType<UIElement>().Where(child => child != embeddedGameOverlay))
         {
             empireCoveredElements.Add((covered, covered.IsEnabled));
@@ -136,6 +137,7 @@ public partial class MainWindow
             () => window.Close(),
             () => AnimationsEnabled,
             "Close Empire window");
+        EmpireStatisticsPage.Attach(view, empire);
         window.Content = view;
         window.Closed += (_, _) =>
         {
