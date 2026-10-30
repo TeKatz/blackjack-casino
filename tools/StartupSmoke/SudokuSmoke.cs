@@ -74,20 +74,18 @@ internal static class SudokuSmoke
             button.IsVisible && button.Content?.ToString()?.StartsWith("GUIDES ·", StringComparison.Ordinal) == true);
         Require(mediumView.GuidesVisible && Equals(guides.Content, "GUIDES · ON  [G]"),
             "Sudoku guide highlighting should start enabled in the smoke profile.");
-        Color relatedWithGuides = ((SolidColorBrush)cells.First(cell =>
+        Button relatedCell = cells.First(cell =>
             !ReferenceEquals(cell, selectedGiven) &&
             !Equals(cell.Content, selectedGiven.Content) &&
-            IsRelated((int)cell.Tag, (int)selectedGiven.Tag)).Background).Color;
-        Click(guides);
+            IsRelated((int)cell.Tag, (int)selectedGiven.Tag));
+        Color relatedWithGuides = ((SolidColorBrush)relatedCell.Background).Color;
+        Toggle(guides);
         Require(!mediumView.GuidesVisible && Equals(guides.Content, "GUIDES · OFF  [G]"),
             "Sudoku guide highlighting did not turn off.");
-        Color relatedWithoutGuides = ((SolidColorBrush)cells.First(cell =>
-            !ReferenceEquals(cell, selectedGiven) &&
-            !Equals(cell.Content, selectedGiven.Content) &&
-            IsRelated((int)cell.Tag, (int)selectedGiven.Tag)).Background).Color;
+        Color relatedWithoutGuides = ((SolidColorBrush)relatedCell.Background).Color;
         Require(relatedWithGuides != relatedWithoutGuides,
             "Disabling Sudoku guides did not remove row/column/block highlighting.");
-        Click(guides);
+        Toggle(guides);
         Require(mediumView.GuidesVisible, "Sudoku guide highlighting did not turn back on.");
 
         SudokuPuzzle mediumPuzzle = SudokuLibrary.Get(mediumView.PuzzleId);
@@ -102,7 +100,8 @@ internal static class SudokuSmoke
         Button noteCell = BoardCells(window).First(cell => !ReferenceEquals(cell, editable) && string.IsNullOrEmpty(cell.Content?.ToString()));
         Click(noteCell);
         ToggleButton pencil = Find<ToggleButton>(window).Single(button => button.IsVisible && Equals(button.Content, "PENCIL  [SPACE]"));
-        Click(pencil);
+        Toggle(pencil);
+        Require(pencil.IsChecked == true, "Sudoku pencil mode did not switch on in the desktop smoke.");
         Button two = NumberButton(window, 2);
         if (!two.IsEnabled)
         {
@@ -263,6 +262,12 @@ internal static class SudokuSmoke
         int rightColumn = right % 9;
         return leftRow == rightRow || leftColumn == rightColumn ||
                (leftRow / 3 == rightRow / 3 && leftColumn / 3 == rightColumn / 3);
+    }
+
+    private static void Toggle(ToggleButton button)
+    {
+        Require(button.IsVisible && button.IsEnabled, $"Toggle '{button.Content}' is unavailable.");
+        button.IsChecked = button.IsChecked != true;
     }
 
     private static void Click(ButtonBase button)
