@@ -1,5 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Description>Rule-correct blackjack domain engine.</Description>
+    <SudokuMassCatalogDir>$(IntermediateOutputPath)SudokuCatalog</SudokuMassCatalogDir>
+    <SudokuMassCatalogFile>$(SudokuMassCatalogDir)\mass-catalog.txt</SudokuMassCatalogFile>
   </PropertyGroup>
+
+  <Target Name="GenerateSudokuMassCatalog" BeforeTargets="PrepareResources">
+    <MakeDir Directories="$(SudokuMassCatalogDir)" />
+    <Exec Command="powershell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\Sudoku\GenerateSudokuMassCatalog.ps1&quot; -Source &quot;$(MSBuildProjectDirectory)\Sudoku\SudokuLibrary.cs&quot; -Output &quot;$(SudokuMassCatalogFile)&quot;" />
+    <ItemGroup>
+      <EmbeddedResource Include="$(SudokuMassCatalogFile)" LogicalName="BlackjackCasino.Core.Sudoku.mass-catalog.txt" />
+    </ItemGroup>
+  </Target>
 </Project>
