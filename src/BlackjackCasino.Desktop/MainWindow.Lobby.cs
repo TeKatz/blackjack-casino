@@ -24,6 +24,9 @@ public partial class MainWindow
         modeRegistry.Register(new("casino-empire", "Casino Empire", "Your name above the door",
             "Build a quiet gaming room into a midnight landmark. An independent idle economy, lasting upgrades and owner dividends.",
             "#CBA66B", "♜", "Idle casino", () => new EmpireFloorArtwork()), OpenEmpire);
+        modeRegistry.Register(new("kniffel", "Kniffel", "The dice lounge",
+            "Five dice, three rolls and your own score sheet. Hold, reroll and choose your combinations in a complete casual solo game.",
+            "#9DD6B3", "⚄", "Table games"), OpenKniffel);
         lobby=new CasinoLobbyView(modeRegistry,OpenProgression);
         Grid.SetRow(lobby,1); Grid.SetColumnSpan(lobby,2);Panel.SetZIndex(lobby,900);CasinoRoot.Children.Add(lobby);
         TableModeText.Text="Casino lobby";

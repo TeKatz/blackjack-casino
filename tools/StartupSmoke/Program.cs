@@ -114,6 +114,8 @@ internal static class Program
                 Require(Find<Button>(window).Any(button => button.Name == "Mode_nine_lives" && button.IsVisible),
                     "Casino lobby was not restored after leaving Nine Lives.");
 
+                await KniffelSmoke.Run(window, output);
+
                 File.WriteAllText(Path.Combine(output, "result.txt"),
                     "PASS: MainWindow opened Nine Lives with vector reel art, themed settings/paytable flyouts, screenshot evidence, visible controls, and a working Casino return path.");
             }

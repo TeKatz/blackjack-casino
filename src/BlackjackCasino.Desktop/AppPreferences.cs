@@ -18,6 +18,8 @@ internal enum TableThemePreference
 
 internal sealed record AppPreferences
 {
+    public BlackjackCasino.Core.Kniffel.KniffelState Kniffel { get; init; } = new();
+
     public BlackjackCasino.Core.Empire.EmpireState Empire { get; init; } = new();
 
     public decimal Bankroll { get; init; } = 1_000m;

@@ -304,6 +304,11 @@ public partial class MainWindow
 
     private void CloseEmbeddedGame()
     {
+        if (KniffelPageOpen)
+        {
+            CloseKniffel();
+            return;
+        }
         if (EmpirePageOpen)
         {
             CloseEmpire();

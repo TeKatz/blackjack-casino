@@ -19,9 +19,20 @@ The repository now contains the work from Phases 1–6. Current development is f
 
 ### Casino lobby and embedded games
 
-The application opens into a casino lobby. Blackjack, Midnight Reels, Midnight Manor, Neon Vault, Nine Lives and Casino Empire all run inside the same main application window rather than opening separate visible Windows windows. Returning from a game restores the lobby and its navigation state.
+The application opens into a casino lobby. Blackjack, Kniffel, Midnight Reels, Midnight Manor, Neon Vault, Nine Lives and Casino Empire all run inside the same main application window rather than opening separate visible Windows windows. Returning from a game restores the lobby and its navigation state.
 
 The table and slot games share the same play-money bankroll, player level, Prestige, Coins and Season progression. Game-specific statistics are tracked separately for Blackjack, Midnight Reels, Midnight Manor, Neon Vault and Nine Lives. Casino Empire has its own construction credits and idle progression; owner dividends are its connection to the shared play-money bankroll.
+
+## Kniffel
+
+A complete casual solo dice table with five animated vector dice, hold/release,
+up to three rolls per turn and a 13-box interactive paper score sheet. All legal
+scores are previewed together with candidate glows; entries require confirmation,
+including explicit zero scratches. Upper and further-Kniffel bonuses are included.
+The current turn is saved automatically, including held dice and remaining rolls.
+This foundation has no entry fees, payouts or AI opponents yet.
+
+See [Kniffel rules, controls and validation](docs/kniffel.md).
 
 ## Casino Empire
 
