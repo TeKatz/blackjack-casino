@@ -75,7 +75,6 @@ internal sealed class CasinoVaultWindow : Window
             FontSize = 10,
             FontWeight = FontWeights.SemiBold,
             Foreground = Brush("#B89B68"),
-            CharacterSpacing = 180,
         });
         heading.Children.Add(new TextBlock
         {
@@ -170,7 +169,7 @@ internal sealed class CasinoVaultWindow : Window
         safeDoor.RenderTransform = doorScale;
 
         var doorGrid = new Grid();
-        var ring = new Ellipse
+        doorGrid.Children.Add(new Ellipse
         {
             Width = 168,
             Height = 168,
@@ -179,8 +178,7 @@ internal sealed class CasinoVaultWindow : Window
             Fill = Brush("#172125"),
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
-        };
-        doorGrid.Children.Add(ring);
+        });
 
         var wheel = new Grid
         {
@@ -194,7 +192,7 @@ internal sealed class CasinoVaultWindow : Window
         wheel.Children.Add(new Ellipse { Stroke = Brush("#D5BA7B"), StrokeThickness = 3, Margin = new Thickness(26) });
         for (int i = 0; i < 6; i++)
         {
-            var spoke = new Border
+            wheel.Children.Add(new Border
             {
                 Width = 8,
                 Height = 66,
@@ -205,8 +203,7 @@ internal sealed class CasinoVaultWindow : Window
                 Margin = new Thickness(0, 3, 0, 0),
                 RenderTransformOrigin = new Point(0.5, 1),
                 RenderTransform = new RotateTransform(i * 60),
-            };
-            wheel.Children.Add(spoke);
+            });
         }
         wheel.Children.Add(new Ellipse
         {
@@ -220,7 +217,7 @@ internal sealed class CasinoVaultWindow : Window
         });
         doorGrid.Children.Add(wheel);
 
-        var plate = new Border
+        doorGrid.Children.Add(new Border
         {
             Padding = new Thickness(16, 6, 16, 6),
             CornerRadius = new CornerRadius(7),
@@ -236,10 +233,8 @@ internal sealed class CasinoVaultWindow : Window
                 FontSize = 10,
                 FontWeight = FontWeights.Bold,
                 Foreground = Brush("#E6D09A"),
-                CharacterSpacing = 100,
             },
-        };
-        doorGrid.Children.Add(plate);
+        });
         safeDoor.Child = doorGrid;
         frame.Children.Add(safeDoor);
 
@@ -325,13 +320,19 @@ internal sealed class CasinoVaultWindow : Window
         stack.Children.Add(InfoLine("FULL VAULT", "Open only at 100% · bonus is added on top"));
         stack.Children.Add(InfoLine("NO CATCH", "Free spins, rewards and Empire income never refill it"));
 
-        lifetimeText.Margin = new Thickness(0, 22, 0, 0);
-        lifetimeText.Padding = new Thickness(14);
-        lifetimeText.Background = Brush("#10191D");
         lifetimeText.Foreground = Brush("#AFC1BC");
         lifetimeText.FontSize = 12;
         lifetimeText.TextWrapping = TextWrapping.Wrap;
-        stack.Children.Add(lifetimeText);
+        stack.Children.Add(new Border
+        {
+            Margin = new Thickness(0, 22, 0, 0),
+            Padding = new Thickness(14),
+            Background = Brush("#10191D"),
+            BorderBrush = Brush("#24383D"),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(9),
+            Child = lifetimeText,
+        });
 
         openButton.Height = 54;
         openButton.Margin = new Thickness(0, 22, 0, 0);
