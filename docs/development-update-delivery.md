@@ -12,12 +12,14 @@ Before publication, the workflow builds, runs all tests and the actual Windows W
 
 Versioning rule: start a new Development cycle on a version base strictly above the latest final version (e.g. 0.7.0-dev.N after final 0.6.5). Preserve SemVer ordering; do not offer silent downgrades. PR preview artifacts use dev.0 and are superseded by the published Development run number.
 
-## Current test channel: Chill Lounge / Sudoku
+## Current test channel: Casino Vault
 
-The shared `development` release is pinned to `feature/chill-lounge-sudoku`, which starts from the current merged `main` and carries the new Chill Lounge and Sudoku work. Pushes to this branch run the Development publisher automatically; manual dispatch on this workflow revision from another branch is skipped. The in-app manifest URL is unchanged, so installed clients only need to select Development and check for updates.
+The shared `development` release is pinned to `feature/casino-vault`. This branch is based directly on the completed `feature/chill-lounge-sudoku` / Casino Empire work and carries the Casino Vault meta-progression implementation on top. Pushes to this branch run the Development publisher automatically; manual dispatch on this workflow revision from another branch is skipped. The in-app manifest URL is unchanged, so installed clients only need to select Development and check for updates.
 
 Versions continue as `0.10.1-dev.N` using the existing increasing workflow run number. The publisher builds and tests the complete application before replacing the mutable release. Package SHA-256, size and application/manifest version checks remain enabled. Release notes and the manifest notes identify the exact source commit.
 
-Sudoku is intentionally designed as an offline-first feature. Normal free-play puzzles and Daily puzzles are separate data sets so completing one can never make a later puzzle in the other pool familiar. Runtime puzzle generation is not part of the design: bundled puzzles are validated for a single solution before publication, and the offline Daily selection only chooses from its dedicated prevalidated pool.
+The Casino Vault receives 2% meta-progression contributions from newly recorded eligible play-money wagers without changing game wagers, RNG, RTP or payouts. Existing profiles can inherit the appropriate career tier from lifetime wager history, but do not receive retroactive Vault cash or fill. Vault persistence has its own schema while the existing global profile schema remains unchanged.
+
+The completed Chill Lounge / Sudoku content remains part of this Development build. Sudoku stays offline-first with separate validated free-play and Daily libraries; the Casino Empire expansion and all prior integrated modes are built and tested together with the Vault.
 
 The source pin lives in the publishing workflow's push trigger and job guard. When changing the active feature branch again, update both fields together on the selected branch. Normal PR previews remain available as CI artifacts and do not replace the shared Development release.
