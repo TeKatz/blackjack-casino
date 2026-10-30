@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using BlackjackCasino.Core.Empire;
 
@@ -8,11 +9,8 @@ namespace BlackjackCasino.Desktop;
 
 internal static class EmpireStatisticsPage
 {
-    private static readonly HashSet<EmpireView> Attached = [];
-
     internal static void Attach(EmpireView view, EmpireService service)
     {
-        if (!Attached.Add(view)) return;
         view.Loaded += (_, _) => EnsureButton(view, service);
         if (view.IsLoaded) EnsureButton(view, service);
     }
