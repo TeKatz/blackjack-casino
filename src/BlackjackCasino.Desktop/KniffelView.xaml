@@ -31,7 +31,7 @@
     <TextBlock Text="THE MIDNIGHT CLUB  /  DICE LOUNGE" Foreground="#CDB17A" FontSize="11" FontWeight="SemiBold"/>
     <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
      <TextBlock Text="Midnight Dice" FontFamily="Georgia" FontSize="36" Foreground="#F5EAD3"/>
-     <Border Background="#203F36" CornerRadius="10" Padding="12,5" Margin="18,12,0,5"><TextBlock Text="CASUAL · SOLO" Foreground="#AEDBC5" FontSize="10"/></Border>
+     <Border Background="#203F36" CornerRadius="10" Padding="12,5" Margin="18,12,0,5"><TextBlock x:Name="ModeLabel" Text="CASUAL · SOLO" Foreground="#AEDBC5" FontSize="10"/></Border>
     </StackPanel>
    </StackPanel>
    <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
@@ -49,12 +49,16 @@
      <StackPanel Grid.Row="1" VerticalAlignment="Center">
       <TextBlock x:Name="RollText" Foreground="#E8D9B6" FontSize="15" HorizontalAlignment="Center"/>
       <TextBlock Text="Click dice to hold or release" Foreground="#A6BEAC" FontSize="13" HorizontalAlignment="Center" Margin="0,9,0,0"/>
+      <TextBlock x:Name="TableStandingsText" Visibility="Collapsed" Foreground="#F0D395" FontSize="12" HorizontalAlignment="Center" Margin="0,9,0,0"/>
      </StackPanel>
      <UniformGrid x:Name="DicePanel" Grid.Row="2" Columns="5" VerticalAlignment="Center"/>
-     <TextBlock x:Name="CombinationText" Grid.Row="3" Foreground="#F4D798" FontSize="18" TextWrapping="Wrap" TextAlignment="Center" VerticalAlignment="Center"/>
+     <StackPanel Grid.Row="3" VerticalAlignment="Center">
+     <TextBlock x:Name="CombinationText" Foreground="#F4D798" FontSize="18" TextWrapping="Wrap" TextAlignment="Center" VerticalAlignment="Center"/>
+     <Button x:Name="OpponentSheetsButton" Content="View opponents’ score sheets" Visibility="Collapsed" Padding="8,3" FontSize="10" HorizontalAlignment="Center" Click="OpponentSheets_Click"/>
+     </StackPanel>
      <StackPanel Grid.Row="4" VerticalAlignment="Center">
       <Button x:Name="RollButton" Content="Roll dice" FontSize="18" FontWeight="SemiBold" Padding="28,14" HorizontalAlignment="Center" MinWidth="250" Click="Roll_Click"/>
-      <TextBlock Text="Up to 3 rolls · 13 turns · no wager" Foreground="#9BB4A3" FontSize="12" HorizontalAlignment="Center" Margin="0,16,0,0"/>
+      <TextBlock x:Name="TableRulesText" Text="Up to 3 rolls · 13 turns · no wager" Foreground="#9BB4A3" FontSize="12" HorizontalAlignment="Center" Margin="0,16,0,0"/>
       <TextBlock Text="Glowing boxes show your possible scores.&#10;Choose a box on the sheet and confirm your score." Foreground="#B2C6B6" FontSize="13" TextAlignment="Center" Margin="0,10,0,0"/>
      </StackPanel>
     </Grid>

@@ -9,6 +9,10 @@ public static class ProfileNormalization
         state.Kniffel ??= new();
         state.Kniffel.RewardedGameIds ??= [];
         state.Kniffel.RewardedGameIds.Remove(Guid.Empty);
+        state.Kniffel.EnteredTableIds ??= [];
+        state.Kniffel.SettledTableIds ??= [];
+        state.Kniffel.EnteredTableIds.Remove(Guid.Empty);
+        state.Kniffel.SettledTableIds.Remove(Guid.Empty);
         state.Slots ??= new();
         state.NeonVault ??= new();
         state.NineLives ??= new();

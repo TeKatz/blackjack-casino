@@ -30,7 +30,7 @@ public partial class MainWindow
             secondaryLabel: "OPEN IN NEW WINDOW",
             canSecondaryOpen: () => !EmpirePageOpen);
         modeRegistry.Register(new("kniffel", "Midnight Dice", "The dice lounge",
-            "Five dice, three rolls and your own score sheet. Hold, reroll and choose your combinations in a complete casual solo game.",
+            "Five dice, three rolls and your score sheet. Play casual solo or enter a casino table against three strategic AI opponents.",
             "#9DD6B3", "⚄", "Table games"), OpenKniffel);
         lobby=new CasinoLobbyView(modeRegistry,OpenProgression);
         lobby.IsVisibleChanged += (_, _) => LobbyButton.Visibility = lobby.IsVisible ? Visibility.Collapsed : Visibility.Visible;

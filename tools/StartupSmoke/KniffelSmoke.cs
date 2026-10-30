@@ -72,6 +72,8 @@ internal static class KniffelSmoke
         view = Find<KniffelView>(window).Single();
         Require(view.Game.IsComplete && profile.LifetimeExperience == xpBefore + earned, "Reopening a finished game granted duplicate XP.");
         Click(view, "NewGameButton");
+        Click(view, "StartCasualButton");
+        view = Find<KniffelView>(window).Single();
         Require(view.Game.FilledCount == 0, "A new game did not clear the score sheet.");
 
         // Enable actual roll animation, close while it is running, then resume the result.
@@ -92,7 +94,7 @@ internal static class KniffelSmoke
         Capture(window, Path.Combine(output, "kniffel-animated-settled.png"));
         Click(view, "NewGameButton");
         Require(Find<Border>(view).Single(border => border.Name == "RestartOverlay").IsVisible, "Restart did not request confirmation.");
-        Click(view, "CancelRestartButton");
+        Click(view, "CloseDiceSetupButton");
         Require(view.Game.RollsUsed == 2, "Cancelling restart discarded the turn.");
         Click(view, "KniffelBackButton");
         animationSetting.IsChecked = false;

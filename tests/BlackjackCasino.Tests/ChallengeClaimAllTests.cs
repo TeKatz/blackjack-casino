@@ -282,6 +282,11 @@ public sealed class ChallengeClaimAllTests
             case ChallengeMetric.LifetimeWagered: profile.LegacyPooledSlots.TotalWagered = value; break;
             case ChallengeMetric.LifetimePlays: profile.LegacyPooledSlots.Spins = (long)value; break;
             case ChallengeMetric.PrestigeCount: profile.Prestige = (int)value; break;
+            case ChallengeMetric.DiceGames: profile.Kniffel.CompletedGames = (long)value; break;
+            case ChallengeMetric.DiceBestScore: profile.Kniffel.BestScore = (int)value; break;
+            case ChallengeMetric.DiceFiveOfAKinds: profile.Kniffel.FiveOfAKinds = (long)value; break;
+            case ChallengeMetric.DiceCasinoWins: profile.Kniffel.CasinoWins = (long)value; break;
+            case ChallengeMetric.DiceBiggestPayout: profile.Kniffel.BiggestPayout = value; break;
             default: throw new InvalidOperationException($"Missing endgame boundary test for {metric}.");
         }
     }

@@ -1,10 +1,8 @@
-# Midnight Dice — casual solo dice table
+# Midnight Dice — casual and casino dice tables
 
 Midnight Dice is registered under Table games in the casino lobby and is hosted as a
 UserControl inside the existing main window. It creates no game window or HWND.
-This first version is a complete 13-turn solo score game. Opponents, entry fees,
-prize money are deferred until their economy and opponent design have been agreed. It does not debit or credit casino cash or
-cosmetic Coins.
+The table offers a complete 13-turn casual solo game and a separate paid casino table against three AI opponents. Casual does not debit or credit casino cash; casino entry fees and prizes use the shared bankroll.
 
 ## Playing
 
@@ -124,3 +122,69 @@ Additional tests cover durable reward receipts, restart/reopen deduplication,
 failed-write rollback/retry, old checkpoint migration, maximum-level XP, music
 phrase length/stereo/level/seam, quiet dice effects, and the English hosted table
 with visible completion XP in the actual Windows startup smoke.
+
+
+## Casino table, statistics and achievements
+
+**Game setup** switches between the independently saved Casual sheet and Casino
+Table. A paid table seats the player alongside Mara (balanced), Felix (upper
+collector) and June (adventurous). All four sheets use the same scoring engine,
+three-roll limit and five fair dice. Stakes do not change opponent strength.
+After each player entry, opponents take one turn; standings update on the table,
+and **View opponents’ score sheets** shows their actual filled boxes and bonuses.
+The next player roll stays locked until those turns are committed.
+
+The strategy compares up to 32 hold/stop choices with a bounded expected-value
+search using common Monte Carlo samples, scoring opportunity costs and upper-bonus
+progress. It uses only its own dice and sheet, never the player's dice or future
+random outcomes. Computation runs off the UI thread. Independent saved seat IDs
+and turn-indexed random streams make an interrupted AI turn reproducible on resume.
+
+Available entry fees are **100, 500, 2,500, 10,000, 50,000 and 100,000** casino cash.
+The displayed gross prize includes any stake return and a fixed place bonus:
+
+| Place | Gross payout |
+| --- | --- |
+| First | 2.5 × entry + 5,000 |
+| Second | 1.1 × entry + 2,000 |
+| Third | 500 |
+| Fourth | 250 |
+
+These fixed bonuses intentionally reward the time spent on a full game even at
+small tables. This is a subsidized play-money tournament, not a closed prize pool.
+At high stakes, lower placements can lose most of the entry. Ties share the
+combined prizes of their occupied places, rounded down to cents. Shared first
+counts as a win. Paying for a new table requires enough cash and cannot replace
+an active table. Leaving for the casino pauses the paid game. **Forfeit table**
+requires a second explicit confirmation, keeps the lost entry in statistics and
+awards neither prize nor completion XP.
+
+Bankroll and casino checkpoint are persisted atomically in `player-state.json`.
+The entry is committed before play; a settlement records both the gross prize and
+its settled flag in the same write before updating the live session. A duplicate
+settlement is a no-op. Failed roll/hold/score checkpoint writes roll the view back
+and allow retry. If the player leaves during an AI turn, its result is deferred
+until this paid table is resumed, so another game's live bankroll/round cannot be
+replaced. Cash is committed before profile statistics; durable entry/result/XP
+receipts allow a profile-write failure to recover without charging or paying twice.
+An old settled table's statistics must save before a new paid table can replace it.
+
+The statistics Overview now has a Midnight Dice card with completed casual/casino
+games, best/average score, casino wins/top-two/rate, forfeits, entry fees, gross
+returns, biggest payout and combination totals. Entry fees/net contribute to the
+casino-wide money totals, and completed dice games count toward lifetime plays.
+Existing best scores/game totals are retained. Combination counts begin with games
+completed after those counters were introduced.
+
+There are **20 Midnight Dice achievements** under their own challenge filter:
+completion milestones, 200/250/300-point sheets, upper bonuses, five of a kind,
+Full House/Large Straight, paid-table completions, wins, top-two finishes, cumulative
+entry fees and a large single payout. They use the existing coin rewards,
+one-time claims and Claim All flow. Both modes keep the prior player/Season XP
+formula; paid games award completion XP only once all opponents finish.
+
+Casino tests cover placements/ties, atomic debit/settlement and failure handling,
+legal AI decisions, deterministic recovery, complete matches, forfeit and receipt
+idempotence. Windows smoke additionally plays a full paid table, checks resume
+without a second fee, opponent sheets, exact payout, repeat-result protection,
+confirmed forfeit, the statistics card and filtered achievements.

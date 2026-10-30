@@ -17,8 +17,8 @@ internal partial class ProgressionWindow
         NeonVaultStatistics vault = profile.NeonVault;
         NineLivesStatistics nineLives = profile.NineLives;
         ManorStatistics manor = profile.Manor;
-        decimal totalWagered = blackjack.TotalWagered + reels.TotalWagered + vault.TotalWagered + nineLives.TotalWagered + manor.TotalWagered + legacy.TotalWagered;
-        decimal totalNet = blackjack.NetProfit + reels.NetProfit + vault.NetProfit + nineLives.NetProfit + manor.NetProfit + legacy.NetProfit;
+        decimal totalWagered = blackjack.TotalWagered + reels.TotalWagered + vault.TotalWagered + nineLives.TotalWagered + manor.TotalWagered + legacy.TotalWagered + profile.Kniffel.TotalWagered;
+        decimal totalNet = blackjack.NetProfit + reels.NetProfit + vault.NetProfit + nineLives.NetProfit + manor.NetProfit + legacy.NetProfit + profile.Kniffel.NetProfit;
         OverviewSummaryPanel.Children.Clear();
         OverviewSummaryPanel.Children.Add(SummaryTile("CASINO NET", SignedMoney(totalNet), totalNet >= 0 ? PositiveBrush : NegativeBrush));
         OverviewSummaryPanel.Children.Add(SummaryTile("TOTAL WAGERED", Money(totalWagered), MutedBrush));
@@ -39,6 +39,18 @@ internal partial class ProgressionWindow
             Content = new TextBlock { Text = BuildStatisticsText(blackjack, includePlaytime: false), Margin = new Thickness(0, 8, 0, 0), LineHeight = 21 },
         });
         GameStatsPanel.Children.Add(blackjackCard);
+        var dice = profile.Kniffel;
+        GameStatsPanel.Children.Add(GameStatisticsCard("⚄  MIDNIGHT DICE", dice.NetProfit,
+            ("Completed games", $"{dice.CompletedGames:N0}"),
+            ("Casual / casino", $"{Math.Max(0, dice.CompletedGames - dice.CasinoGamesCompleted):N0} / {dice.CasinoGamesCompleted:N0}"),
+            ("Best / average score", dice.CompletedGames == 0 ? "—" : $"{dice.BestScore:N0} / {(double)dice.TotalScore / dice.CompletedGames:0.0}"),
+            ("Casino wins / top two", $"{dice.CasinoWins:N0} / {dice.PodiumFinishes:N0}"),
+            ("Casino win rate", dice.CasinoGamesCompleted == 0 ? "—" : $"{(decimal)dice.CasinoWins / dice.CasinoGamesCompleted:P1}"),
+            ("Entries / forfeits", $"{dice.CasinoGamesStarted:N0} / {dice.Forfeits:N0}"),
+            ("Total entry fees", Money(dice.TotalWagered)), ("Total returned", Money(dice.TotalReturned)),
+            ("Biggest payout", Money(dice.BiggestPayout)),
+            ("Upper bonuses", $"{dice.UpperBonuses:N0}"), ("Five of a kind", $"{dice.FiveOfAKinds:N0}"),
+            ("Full house / large straight", $"{dice.FullHouses:N0} / {dice.LargeStraights:N0}")));
         GameStatsPanel.Children.Add(SlotStatisticsCard("◈  MIDNIGHT REELS", reels));
         GameStatsPanel.Children.Add(GameStatisticsCard("☾  MIDNIGHT MANOR", manor.NetProfit,
             ("Paid spins", $"{manor.PaidSpins:N0}"), ("Free spins", $"{manor.FreeSpins:N0}"), ("Big wins", $"{manor.BigWins:N0}"),

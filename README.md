@@ -30,7 +30,7 @@ up to three rolls per turn and a 13-box interactive paper score sheet. All legal
 scores are previewed together with candidate glows; entries require confirmation,
 including explicit zero scratches. Upper and further-Kniffel bonuses are included.
 The current turn is saved automatically, including held dice and remaining rolls.
-A dedicated mellow lounge soundtrack and subtle dice-roll sound follow the existing audio settings. Completed games earn player and Season XP once per saved game. This foundation has no entry fees, cash payouts or AI opponents yet.
+A dedicated mellow lounge soundtrack and subtle dice-roll sound follow the existing audio settings. Completed games earn player and Season XP once per saved game. Game setup also offers a four-player casino table with three strategic AI opponents, entry fees, rank prizes and automatic pause/resume. Midnight Dice has its own statistics card and 20 achievements.
 
 See [Midnight Dice rules, controls and validation](docs/kniffel.md).
 

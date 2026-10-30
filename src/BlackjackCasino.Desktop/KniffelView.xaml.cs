@@ -16,6 +16,10 @@ public partial class KniffelView : UserControl, IDisposable
 {
     private readonly Action<KniffelState> save;
     private readonly Action back;
+    private readonly Action? gameSetup;
+    private readonly Action<KniffelState>? turnFinished;
+    private bool tableWaiting;
+    private KniffelTableState? tableState;
     private readonly Action? rollSound;
     private readonly Func<KniffelState, string>? completion;
     private readonly Func<bool> animations;
@@ -33,9 +37,11 @@ public partial class KniffelView : UserControl, IDisposable
     private KniffelCategory? selected;
     internal KniffelGame Game { get; private set; }
 
-    internal KniffelView(KniffelState state, Action<KniffelState> save, Action back, Func<bool> animations, Action? rollSound = null, Func<KniffelState, string>? completion = null)
+    internal KniffelView(KniffelState state, Action<KniffelState> save, Action back, Func<bool> animations, Action? rollSound = null, Func<KniffelState, string>? completion = null, Action? gameSetup = null, Action<KniffelState>? turnFinished = null, bool persistInitialState = true)
     {
         this.save = save;
+        this.gameSetup = gameSetup;
+        this.turnFinished = turnFinished;
         this.rollSound = rollSound;
         this.completion = completion;
         this.back = back;
@@ -97,19 +103,62 @@ public partial class KniffelView : UserControl, IDisposable
         NoticeText.Text = "Roll first, then hold dice and reroll or choose a score. Your game saves automatically.";
         Refresh();
         // Persist migrated IDs before awarding an older completed save.
-        save(Game.Snapshot);
+        if (persistInitialState) save(Game.Snapshot);
+        if (gameSetup is not null) NewGameButton.Content = "Game setup";
         if (Game.IsComplete) NoticeText.Text = $"Game complete! {Game.Total} points. " + completion?.Invoke(Game.Snapshot);
+    }
+
+    private bool ApplyAction(Action<KniffelGame> action)
+    {
+        KniffelState before = Game.Snapshot;
+        action(Game);
+        try { save(Game.Snapshot); return true; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Game = KniffelGame.Restore(before);
+            Refresh();
+            NoticeText.Text = "The game could not be saved. Your last action was not applied; please try again.";
+            return false;
+        }
+    }
+
+    internal void SetNotice(string text) => NoticeText.Text = text;
+    internal void ShowGameSetup(UIElement content)
+    {
+        StopRoll();
+        RestartOverlay.Child = content;
+        RestartOverlay.Visibility = Visibility.Visible;
+        DicePanel.IsEnabled = ScoreRows.IsEnabled = NewGameButton.IsEnabled = KniffelBackButton.IsEnabled = false;
+        KeyboardNavigation.SetTabNavigation(RestartOverlay, KeyboardNavigationMode.Cycle);
+        Refresh();
+        if (content is FrameworkElement element) element.MoveFocus(new TraversalRequest(FocusNavigationDirection.First));
+    }
+    internal void HideGameSetup() => CancelRestart_Click(this, new RoutedEventArgs());
+    internal void UpdateTable(KniffelTableState state, decimal bankroll, bool waiting)
+    {
+        tableState = state;
+        tableWaiting = waiting || state.Forfeited;
+        ModeLabel.Text = "CASINO · 4 PLAYERS";
+        TableStandingsText.Visibility = OpponentSheetsButton.Visibility = Visibility.Visible;
+        TableStandingsText.Text = "You " + Game.Total + "   ·   " + string.Join("   ·   ", state.Opponents.Select((s, i) => KniffelTable.Names[i] + " " + KniffelGame.Restore(s).Total));
+        TableRulesText.Text = $"Entry {KniffelSetupView.Money(state.Stake)} · Bankroll {KniffelSetupView.Money(bankroll)}";
+        Refresh();
+        if (state.Forfeited) { TurnText.Text = "Table forfeited"; RollButton.Content = "Table closed"; }
+        if (waiting) NoticeText.Text = "Your score is saved. Mara, Felix and June are playing their turns …";
+    }
+    private void OpponentSheets_Click(object sender, RoutedEventArgs e)
+    {
+        if (tableState is not null) ShowGameSetup(KniffelSetupView.OpponentSheets(tableState, HideGameSetup));
     }
 
     private void Roll_Click(object sender, RoutedEventArgs e)
     {
-        if (disposed || busy || !Game.CanRoll || RestartOverlay.IsVisible) return;
+        if (disposed || busy || tableWaiting || !Game.CanRoll || RestartOverlay.IsVisible) return;
         selected = null;
         for (int i = 0; i < 5; i++) rolling[i] = !Game.Held[i];
-        Game.Roll();
         // Save the real result before showing cosmetic rolling faces. Leaving mid-animation
         // therefore resumes exactly this roll and never grants a free reroll.
-        save(Game.Snapshot);
+        if (!ApplyAction(game => game.Roll())) return;
         rollSound?.Invoke();
         busy = animations();
         Refresh();
@@ -174,15 +223,14 @@ public partial class KniffelView : UserControl, IDisposable
 
     private void ToggleHold(int index)
     {
-        if (disposed || busy || !Game.CanScore || Game.RollsUsed == 3 || RestartOverlay.IsVisible) return;
-        Game.ToggleHold(index);
-        save(Game.Snapshot);
+        if (disposed || busy || tableWaiting || !Game.CanScore || Game.RollsUsed == 3 || RestartOverlay.IsVisible) return;
+        if (!ApplyAction(game => game.ToggleHold(index))) return;
         Refresh();
     }
 
     private void Select(KniffelCategory category)
     {
-        if (disposed || busy || !Game.CanScore || Game.ScoreFor(category).HasValue || RestartOverlay.IsVisible) return;
+        if (disposed || busy || tableWaiting || !Game.CanScore || Game.ScoreFor(category).HasValue || RestartOverlay.IsVisible) return;
         selected = category;
         int points = Game.Preview(category);
         NoticeText.Text = points > 0
@@ -195,10 +243,10 @@ public partial class KniffelView : UserControl, IDisposable
     private void Scratch_Click(object sender, RoutedEventArgs e) => Commit(true);
     private void Commit(bool scratch)
     {
-        if (disposed || busy || selected is not KniffelCategory category || !Game.CanScore || RestartOverlay.IsVisible) return;
-        int points = Game.Commit(category, scratch);
+        if (disposed || busy || tableWaiting || selected is not KniffelCategory category || !Game.CanScore || RestartOverlay.IsVisible) return;
+        int points = 0;
+        if (!ApplyAction(game => points = game.Commit(category, scratch))) return;
         selected = null;
-        save(Game.Snapshot);
         Refresh();
         NoticeText.Text = Game.IsComplete
             ? $"Game complete! {Game.Total} points. Upper: {Game.UpperSubtotal} + {Game.UpperBonus} bonus · Lower: {Game.LowerSubtotal} · Extra five-of-a-kind: {Game.AdditionalKniffelBonus}."
@@ -206,6 +254,7 @@ public partial class KniffelView : UserControl, IDisposable
         if (Game.IsComplete) NoticeText.Text += " " + completion?.Invoke(Game.Snapshot);
         Pulse(rows[category].Button, Color.FromRgb(189, 142, 52));
         RollButton.Focus();
+        turnFinished?.Invoke(Game.Snapshot);
     }
 
     private void Refresh()
@@ -213,7 +262,8 @@ public partial class KniffelView : UserControl, IDisposable
         TurnText.Text = Game.IsComplete ? "Game complete" : $"Turn {Game.FilledCount + 1} of 13";
         TotalText.Text = Game.Total.ToString(CultureInfo.InvariantCulture);
         RollText.Text = Game.IsComplete ? "All 13 boxes are filled." : $"Roll {Game.RollsUsed} / 3";
-        RollButton.IsEnabled = !busy && Game.CanRoll;
+        bool interactive = !tableWaiting && RestartOverlay.Visibility != Visibility.Visible;
+        RollButton.IsEnabled = interactive && !busy && Game.CanRoll;
         RollButton.Content = busy ? "Rolling dice …" : Game.IsComplete ? "Game finished" : Game.RollsUsed == 0 ? "Roll dice" : "Roll again";
         if (!busy)
         {
@@ -227,14 +277,14 @@ public partial class KniffelView : UserControl, IDisposable
         }
         for (int i = 0; i < 5; i++)
         {
-            diceButtons[i].IsEnabled = !busy && Game.CanScore && Game.RollsUsed < 3;
+            diceButtons[i].IsEnabled = interactive && !busy && Game.CanScore && Game.RollsUsed < 3;
             AutomationProperties.SetName(diceButtons[i], $"Die {i + 1}: {Game.Dice[i]}, {(Game.Held[i] ? "held" : "not held")}");
         }
         foreach (var (category, row) in rows)
         {
             row.Button.Effect = null;
             int? stored = Game.ScoreFor(category);
-            bool available = !busy && Game.CanScore && !stored.HasValue;
+            bool available = interactive && !busy && Game.CanScore && !stored.HasValue;
             int preview = available ? Game.Preview(category) : 0;
             bool chosen = available && selected == category;
             row.Button.IsEnabled = available;
@@ -249,8 +299,8 @@ public partial class KniffelView : UserControl, IDisposable
             AutomationProperties.SetName(row.Button, $"{CategoryName(category)}, {row.Score.Text}");
             if (available && preview > 0) Pulse(row.Button, Color.FromRgb(39, 165, 122), chosen ? .7 : .35);
         }
-        CommitButton.IsEnabled = !busy && selected.HasValue && Game.CanScore && Game.Preview(selected.Value) > 0;
-        ScratchButton.IsEnabled = !busy && selected.HasValue && Game.CanScore;
+        CommitButton.IsEnabled = interactive && !busy && selected.HasValue && Game.CanScore && Game.Preview(selected.Value) > 0;
+        ScratchButton.IsEnabled = interactive && !busy && selected.HasValue && Game.CanScore;
         CommitButton.Content = CommitButton.IsEnabled ? $"Record {Game.Preview(selected!.Value)} points" : "Choose a box";
         UpperText.Text = $"Upper: {Game.UpperSubtotal} points · Bonus: {Game.UpperBonus} / 35 (at 63)";
         BonusText.Text = $"Lower: {Game.LowerSubtotal} points · To upper bonus: {Math.Max(0, 63 - Game.UpperSubtotal)}";
@@ -281,6 +331,7 @@ public partial class KniffelView : UserControl, IDisposable
     private void NewGame_Click(object sender, RoutedEventArgs e)
     {
         if (disposed) return;
+        if (gameSetup is not null) { gameSetup(); return; }
         if (Game.FilledCount == 0 && Game.RollsUsed == 0 || Game.IsComplete) { Restart(); return; }
         StopRoll();
         RestartOverlay.Visibility = Visibility.Visible;
