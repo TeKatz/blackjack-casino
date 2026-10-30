@@ -18,7 +18,7 @@ public sealed class ProfileIdentityTests
     {
         var state=JsonSerializer.Deserialize<PlayerProfileState>("{\"SchemaVersion\":2,\"Coins\":4500,\"Level\":20}")!;
         _=new ProgressionService(state);
-        Assert.Equal("Player",state.DisplayName);Assert.Equal(4500,state.Coins);Assert.Equal(20,state.Level);Assert.Equal(4,state.SchemaVersion);
+        Assert.Equal("Player",state.DisplayName);Assert.Equal(4500,state.Coins);Assert.Equal(20,state.Level);Assert.Equal(5,state.SchemaVersion);
         Assert.Throws<ArgumentException>(()=>ProfileIdentity.Validate("   "));
         Assert.Throws<ArgumentException>(()=>ProfileIdentity.Validate(new string('x',25)));
     }

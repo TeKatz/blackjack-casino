@@ -7,6 +7,7 @@ namespace BlackjackCasino.Desktop;
 
 internal sealed class CasinoLobbyView : UserControl
 {
+    private const double CompactCardWidth = 280;
     private readonly CasinoModeRegistry modes;
     private readonly WrapPanel cards = new() {HorizontalAlignment=HorizontalAlignment.Center};
     internal CasinoLobbyView(CasinoModeRegistry modes,Action<string> progression)
@@ -39,6 +40,7 @@ internal sealed class CasinoLobbyView : UserControl
         cards.Children.Clear();
         foreach(CasinoMode mode in modes.Modes)
         {
+            bool canOpen=modes.CanOpen(mode.Id);
             Brush accent=Ink(mode.Accent);
             var panel=new StackPanel();
             var art=new Grid {Height=185,ClipToBounds=true,Background=new LinearGradientBrush(((SolidColorBrush)accent).Color,Color.FromRgb(9,17,22),65)};
@@ -52,19 +54,42 @@ internal sealed class CasinoLobbyView : UserControl
             text.Children.Add(new TextBlock {Text=mode.Subtitle.ToUpperInvariant(),FontSize=10,Foreground=accent});
             text.Children.Add(new TextBlock {Text=mode.Title,FontFamily=new FontFamily("Georgia"),FontSize=27,Foreground=Ink("#F3E6D1"),Margin=new Thickness(0,8,0,12)});
             text.Children.Add(new TextBlock {Text=mode.Description,FontSize=14,Foreground=Ink("#ADBCB6"),TextWrapping=TextWrapping.Wrap,MinHeight=57});
-            text.Children.Add(new TextBlock {Text="TAKE A SEAT   →",FontSize=12,FontWeight=FontWeights.Bold,Foreground=Ink("#E7CCA0"),Margin=new Thickness(0,20,0,0)});
+            text.Children.Add(new TextBlock {Text=canOpen?"TAKE A SEAT   →":"CURRENTLY OPEN   →",FontSize=12,FontWeight=FontWeights.Bold,Foreground=Ink("#E7CCA0"),Margin=new Thickness(0,20,0,0)});
             panel.Children.Add(text);
-            var button=new Button {Name="Mode_"+mode.Id.Replace('-','_'),Tag=mode.Id,Width=330,Padding=new Thickness(0),Margin=new Thickness(10),Content=panel,Background=Ink("#111F20"),BorderBrush=accent,HorizontalContentAlignment=HorizontalAlignment.Stretch};
-            button.Click+=(_,_)=>modes.Open(mode.Id);cards.Children.Add(button);
+
+            var primary=new Button
+            {
+                Name="Mode_"+mode.Id.Replace('-','_'),Tag=mode.Id,Padding=new Thickness(0),Content=panel,
+                Background=Ink("#111F20"),BorderBrush=accent,HorizontalContentAlignment=HorizontalAlignment.Stretch,
+                IsEnabled=canOpen,HorizontalAlignment=HorizontalAlignment.Stretch,
+            };
+            primary.Click+=(_,_)=>modes.Open(mode.Id);
+
+            var wrapper=new StackPanel {Margin=new Thickness(10),Width=CompactCardWidth};
+            wrapper.Children.Add(primary);
+            if(modes.HasSecondary(mode.Id))
+            {
+                var secondary=new Button
+                {
+                    Name="ModeSecondary_"+mode.Id.Replace('-','_'),Tag=mode.Id+"-secondary",
+                    Content=modes.SecondaryLabel(mode.Id),Margin=new Thickness(0,7,0,0),Padding=new Thickness(12,8,12,8),
+                    IsEnabled=modes.CanOpenSecondary(mode.Id),HorizontalAlignment=HorizontalAlignment.Stretch,
+                };
+                secondary.Click+=(_,_)=>modes.OpenSecondary(mode.Id);
+                wrapper.Children.Add(secondary);
+            }
+            cards.Children.Add(wrapper);
         }
         ResizeCards();
     }
     private void ResizeCards()
     {
-        double available=Math.Max(300,ActualWidth-110);
-        int columns=Math.Clamp((int)(available/300),1,Math.Max(1,cards.Children.Count));
-        double width=Math.Clamp(available/columns-24,280,430);
-        foreach(Button card in cards.Children) card.Width=width;
+        // Lobby cards are intentionally compact and stable. Previously they could grow up to
+        // 430 px depending on window width, which changed the visual hierarchy of the lobby.
+        // Keep a fixed desktop width and only shrink when the viewport is genuinely narrow.
+        double available=Math.Max(220,ActualWidth-110);
+        double width=Math.Min(CompactCardWidth,Math.Max(220,available-20));
+        foreach(FrameworkElement card in cards.Children) card.Width=width;
     }
     private static SolidColorBrush Ink(string hex)=>new((Color)ColorConverter.ConvertFromString(hex));
 }

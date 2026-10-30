@@ -15,13 +15,14 @@ internal partial class ProgressionWindow
         SlotStatistics reels = profile.Slots;
         SlotStatistics legacy = profile.LegacyPooledSlots;
         NeonVaultStatistics vault = profile.NeonVault;
+        NineLivesStatistics nineLives = profile.NineLives;
         ManorStatistics manor = profile.Manor;
-        decimal totalWagered = blackjack.TotalWagered + reels.TotalWagered + vault.TotalWagered + manor.TotalWagered + legacy.TotalWagered;
-        decimal totalNet = blackjack.NetProfit + reels.NetProfit + vault.NetProfit + manor.NetProfit + legacy.NetProfit;
+        decimal totalWagered = blackjack.TotalWagered + reels.TotalWagered + vault.TotalWagered + nineLives.TotalWagered + manor.TotalWagered + legacy.TotalWagered;
+        decimal totalNet = blackjack.NetProfit + reels.NetProfit + vault.NetProfit + nineLives.NetProfit + manor.NetProfit + legacy.NetProfit;
         OverviewSummaryPanel.Children.Clear();
         OverviewSummaryPanel.Children.Add(SummaryTile("CASINO NET", SignedMoney(totalNet), totalNet >= 0 ? PositiveBrush : NegativeBrush));
         OverviewSummaryPanel.Children.Add(SummaryTile("TOTAL WAGERED", Money(totalWagered), MutedBrush));
-        OverviewSummaryPanel.Children.Add(SummaryTile("SLOT SPINS · ALL HISTORY", $"{reels.Spins + vault.Spins + manor.PaidSpins + manor.FreeSpins + legacy.Spins:N0}", CoinBrush));
+        OverviewSummaryPanel.Children.Add(SummaryTile("SLOT SPINS · ALL HISTORY", $"{reels.Spins + vault.Spins + nineLives.Spins + manor.PaidSpins + manor.FreeSpins + legacy.Spins:N0}", CoinBrush));
         OverviewSummaryPanel.Children.Add(SummaryTile("TOTAL PLAYTIME", FormatDuration(controller.TotalPlaytime), MutedBrush));
 
         GameStatsPanel.Children.Clear();
@@ -60,6 +61,21 @@ internal partial class ProgressionWindow
             },
         });
         GameStatsPanel.Children.Add(vaultCard);
+
+        var nineLivesCard = SlotStatisticsCard("●  NINE LIVES", nineLives);
+        ((StackPanel)nineLivesCard.Child).Children.Add(new Expander
+        {
+            Header = "Nine Lives features & bonus spins", Foreground = MutedBrush, Margin = new Thickness(0, 8, 0, 0),
+            Content = new TextBlock
+            {
+                Text = $"Paid spins {nineLives.PaidSpins:N0} · Bonus spins {nineLives.BonusSpins:N0}\n"
+                    + $"Bonus sessions {nineLives.BonusSessions:N0} · Spins awarded {nineLives.BonusSpinsAwarded:N0}\n"
+                    + $"Pounce Wilds {nineLives.PounceWilds:N0} · Full Grid Frenzies {nineLives.FullGridFrenzies:N0}\n"
+                    + $"Best payout {nineLives.BestPayoutMultiplier:N0.##}×",
+                TextWrapping = TextWrapping.Wrap, LineHeight = 21, Margin = new Thickness(0, 8, 0, 0),
+            },
+        });
+        GameStatsPanel.Children.Add(nineLivesCard);
 
         LegacySlotStatsHost.Content = null;
         if (legacy.Spins != 0 || legacy.Wins != 0 || legacy.Pushes != 0 || legacy.TotalWagered != 0 || legacy.TotalReturned != 0 || legacy.BiggestPayout != 0)

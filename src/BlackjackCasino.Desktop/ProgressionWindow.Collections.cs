@@ -25,13 +25,48 @@ internal partial class ProgressionWindow
             ChallengeCategoryFilter.Items.Add(new FilterChoice(CategoryName(category), category));
         ChallengeStatusFilter.ItemsSource = new[] { "All statuses", "Ready to claim", "In progress", "Claimed", "Unclaimed" };
         ShopKindFilter.Items.Add(new FilterChoice("All types"));
-        foreach (CosmeticKind kind in new[] { CosmeticKind.Frame, CosmeticKind.Portrait, CosmeticKind.Title })
-            ShopKindFilter.Items.Add(new FilterChoice(kind.ToString(), kind));
+        foreach ((CosmeticKind kind, string label) in new[]
+        {
+            (CosmeticKind.CardSet, "Card Sets"),
+            (CosmeticKind.Frame, "Frames"),
+            (CosmeticKind.Portrait, "Portraits"),
+            (CosmeticKind.Title, "Titles"),
+        })
+            ShopKindFilter.Items.Add(new FilterChoice(label, kind));
         ShopOwnershipFilter.ItemsSource = new[] { "All items", "For sale", "Affordable", "Owned", "Equipped", "Unowned", "Locked rewards" };
         ShopSortFilter.ItemsSource = new[] { "Recommended", "Cost: low to high", "Cost: high to low", "Name" };
         ChallengeCategoryFilter.SelectedIndex = ChallengeStatusFilter.SelectedIndex = 0;
         ShopKindFilter.SelectedIndex = ShopOwnershipFilter.SelectedIndex = ShopSortFilter.SelectedIndex = 0;
+        EnsureCardSetShopTab();
         collectionsInitialized = true;
+    }
+
+    private void EnsureCardSetShopTab()
+    {
+        if (ShopKindFilter.Parent is not StackPanel typeHost || typeHost.Parent is not WrapPanel toolbar)
+            return;
+        if (toolbar.Children.OfType<Button>().Any(button => button.Name == "ShopCardSetsTab"))
+            return;
+
+        var button = new Button
+        {
+            Name = "ShopCardSetsTab",
+            Content = "CARD SETS",
+            Margin = new Thickness(8, 0, 0, 0),
+            Padding = new Thickness(13, 6, 13, 6),
+            VerticalAlignment = VerticalAlignment.Bottom,
+            ToolTip = "Show only playing-card designs",
+        };
+        button.Click += (_, _) =>
+        {
+            FilterChoice? cardSets = ShopKindFilter.Items.OfType<FilterChoice>().FirstOrDefault(choice => Equals(choice.Value, CosmeticKind.CardSet));
+            if (cardSets is not null) ShopKindFilter.SelectedItem = cardSets;
+        };
+
+        // Keep the original TYPE / STATUS / SORT / SEARCH positions intact. The dedicated
+        // card-set shortcut is an optional quick filter and therefore belongs after Reset,
+        // rather than being inserted between existing filter controls.
+        toolbar.Children.Add(button);
     }
 
     private static string CategoryName(ChallengeCategory category) => category switch
@@ -40,6 +75,7 @@ internal partial class ProgressionWindow
         ChallengeCategory.MidnightReels => "Midnight Reels",
         ChallengeCategory.MidnightManor => "Midnight Manor",
         ChallengeCategory.NeonVault => "Neon Vault",
+        ChallengeCategory.NineLives => "Nine Lives",
         _ => category.ToString(),
     };
 

@@ -6,6 +6,7 @@ public enum ChallengeCategory
     MidnightReels,
     MidnightManor,
     NeonVault,
+    NineLives,
     Lifetime,
     Prestige,
 }
@@ -61,6 +62,19 @@ public enum ChallengeMetric
     NeonTotalBlackouts,
     NeonSecurityOverrides,
     NeonBestMultiplier,
+
+    NineLivesSpins,
+    NineLivesPaidSpins,
+    NineLivesBonusSpins,
+    NineLivesWins,
+    NineLivesWagered,
+    NineLivesReturned,
+    NineLivesBiggestPayout,
+    NineLivesBonusSessions,
+    NineLivesBonusSpinsAwarded,
+    NineLivesPounceWilds,
+    NineLivesFullGridFrenzies,
+    NineLivesBestMultiplier,
 
     LifetimeExperience,
     LifetimePlaytimeSeconds,
@@ -147,6 +161,18 @@ public static class ChallengeCatalog
         C("neon-wager-25000", ChallengeCategory.NeonVault, "Vault Circulation", "Wager $25,000 on Neon Vault paid spins.", ChallengeMetric.NeonWagered, 25000, 350),
         C("neon-multiplier-250", ChallengeCategory.NeonVault, "Power Surge", "Land a Neon Vault payout of 250× the spin bet.", ChallengeMetric.NeonBestMultiplier, 250, 500),
 
+        // Nine Lives — feature-driven goals use the already separately tracked Nine Lives statistics.
+        C("nine-spins-25", ChallengeCategory.NineLives, "Curiosity", "Play 25 Nine Lives spins.", ChallengeMetric.NineLivesSpins, 25, 60),
+        C("nine-spins-100", ChallengeCategory.NineLives, "Cat Nap Cancelled", "Play 100 Nine Lives spins.", ChallengeMetric.NineLivesSpins, 100, 150),
+        C("nine-spins-500", ChallengeCategory.NineLives, "Rooftop Regular", "Play 500 Nine Lives spins.", ChallengeMetric.NineLivesSpins, 500, 450),
+        C("nine-wins-100", ChallengeCategory.NineLives, "Lucky Paws", "Win 100 Nine Lives spins.", ChallengeMetric.NineLivesWins, 100, 350),
+        C("nine-bonus-50", ChallengeCategory.NineLives, "Nine More Lives", "Play 50 Nine Lives bonus spins.", ChallengeMetric.NineLivesBonusSpins, 50, 220),
+        C("nine-sessions-10", ChallengeCategory.NineLives, "Lives to Spare", "Trigger 10 Nine Lives bonus sessions.", ChallengeMetric.NineLivesBonusSessions, 10, 300),
+        C("nine-pounce-25", ChallengeCategory.NineLives, "Pounce!", "Trigger 25 Pounce Wild transformations.", ChallengeMetric.NineLivesPounceWilds, 25, 300),
+        C("nine-wager-25000", ChallengeCategory.NineLives, "Yarn in Motion", "Wager $25,000 on paid Nine Lives spins.", ChallengeMetric.NineLivesWagered, 25000, 350),
+        C("nine-multiplier-250", ChallengeCategory.NineLives, "Moonlit Payday", "Land a Nine Lives payout of 250× the spin bet.", ChallengeMetric.NineLivesBestMultiplier, 250, 550),
+        C("nine-frenzy-1", ChallengeCategory.NineLives, "All Nine", "Land a Full Grid Frenzy.", ChallengeMetric.NineLivesFullGridFrenzies, 1, 1000),
+
         // Long-term goals: all are beyond the existing introductory milestones.
         E("bj-rounds-10000", ChallengeCategory.Blackjack, "Keeper of the Table", "Complete 10,000 Blackjack rounds.", ChallengeMetric.BlackjackRounds, 10000, 2500),
         E("bj-wins-5000", ChallengeCategory.Blackjack, "House Legend", "Win 5,000 Blackjack hands.", ChallengeMetric.BlackjackWins, 5000, 2500),
@@ -166,6 +192,10 @@ public static class ChallengeCatalog
         E("neon-grand-10", ChallengeCategory.NeonVault, "Grand Vault Legend", "Land 10 separately tracked Neon Vault Grand jackpots.", ChallengeMetric.NeonGrandJackpots, 10, 4000),
         E("neon-total-blackouts-100", ChallengeCategory.NeonVault, "Beyond the Blackout", "Encounter 100 separately tracked Neon Vault Total Blackouts.", ChallengeMetric.NeonTotalBlackouts, 100, 3500),
         E("neon-overrides-250", ChallengeCategory.NeonVault, "System Architect", "Activate 250 separately tracked Neon Vault security overrides.", ChallengeMetric.NeonSecurityOverrides, 250, 3000),
+        E("nine-paid-10000", ChallengeCategory.NineLives, "Nine Lives Institution", "Play 10,000 separately tracked Nine Lives paid spins.", ChallengeMetric.NineLivesPaidSpins, 10000, 2500),
+        E("nine-bonus-5000", ChallengeCategory.NineLives, "Endless Rooftop", "Play 5,000 Nine Lives bonus spins.", ChallengeMetric.NineLivesBonusSpins, 5000, 3000),
+        E("nine-pounce-500", ChallengeCategory.NineLives, "Predator Instinct", "Trigger 500 Pounce Wild transformations.", ChallengeMetric.NineLivesPounceWilds, 500, 3000),
+        E("nine-frenzy-10", ChallengeCategory.NineLives, "Nine Times Nine", "Land 10 Full Grid Frenzies.", ChallengeMetric.NineLivesFullGridFrenzies, 10, 5000),
         E("lifetime-xp-1000000", ChallengeCategory.Lifetime, "Casino Institution", "Earn 1,000,000 lifetime player XP across all games.", ChallengeMetric.LifetimeExperience, 1000000, 4000),
         E("lifetime-hours-250", ChallengeCategory.Lifetime, "The Long Night", "Record 250 hours of total casino playtime.", ChallengeMetric.LifetimePlaytimeSeconds, 900000, 3000),
         E("lifetime-wager-10000000", ChallengeCategory.Lifetime, "Ten Million in Motion", "Wager $10,000,000 across all games, including preserved pooled slot history.", ChallengeMetric.LifetimeWagered, 10000000, 4000),
@@ -191,6 +221,7 @@ public static class ChallengeCatalog
         SlotStatistics reels = profile.Slots;
         Manor.ManorStatistics manor = profile.Manor;
         NeonVaultStatistics neon = profile.NeonVault;
+        NineLivesStatistics nine = profile.NineLives;
         SlotStatistics legacy = profile.LegacyPooledSlots;
 
         return challenge.Metric switch
@@ -245,11 +276,24 @@ public static class ChallengeCatalog
             ChallengeMetric.NeonSecurityOverrides => neon.SecurityOverrides,
             ChallengeMetric.NeonBestMultiplier => neon.BestPayoutMultiplier,
 
+            ChallengeMetric.NineLivesSpins => nine.Spins,
+            ChallengeMetric.NineLivesPaidSpins => nine.PaidSpins,
+            ChallengeMetric.NineLivesBonusSpins => nine.BonusSpins,
+            ChallengeMetric.NineLivesWins => nine.Wins,
+            ChallengeMetric.NineLivesWagered => nine.TotalWagered,
+            ChallengeMetric.NineLivesReturned => nine.TotalReturned,
+            ChallengeMetric.NineLivesBiggestPayout => nine.BiggestPayout,
+            ChallengeMetric.NineLivesBonusSessions => nine.BonusSessions,
+            ChallengeMetric.NineLivesBonusSpinsAwarded => nine.BonusSpinsAwarded,
+            ChallengeMetric.NineLivesPounceWilds => nine.PounceWilds,
+            ChallengeMetric.NineLivesFullGridFrenzies => nine.FullGridFrenzies,
+            ChallengeMetric.NineLivesBestMultiplier => nine.BestPayoutMultiplier,
+
             ChallengeMetric.LifetimeExperience => profile.LifetimeExperience,
             ChallengeMetric.LifetimePlaytimeSeconds => profile.TotalPlaytimeSeconds,
-            ChallengeMetric.LifetimeWagered => blackjack.TotalWagered + reels.TotalWagered + neon.TotalWagered
+            ChallengeMetric.LifetimeWagered => blackjack.TotalWagered + reels.TotalWagered + neon.TotalWagered + nine.TotalWagered
                 + manor.TotalWagered + legacy.TotalWagered,
-            ChallengeMetric.LifetimePlays => (decimal)blackjack.RoundsPlayed + reels.Spins + neon.Spins
+            ChallengeMetric.LifetimePlays => (decimal)blackjack.RoundsPlayed + reels.Spins + neon.Spins + nine.Spins
                 + manor.PaidSpins + manor.FreeSpins + legacy.Spins,
             ChallengeMetric.PrestigeCount => profile.Prestige,
             _ => 0,

@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using BlackjackCasino.Core;
+using BlackjackCasino.Core.Empire;
 
 namespace BlackjackCasino.Desktop;
 
@@ -56,6 +57,7 @@ internal partial class ProgressionWindow
         decimal progress = ChallengeCatalog.Progress(controller.Profile, challenge);
         bool complete = progress >= challenge.Goal;
         bool claimed = controller.Profile.ClaimedChallengeIds.Contains(challenge.Id, StringComparer.Ordinal);
+        EmpireAchievementBoost? empireReward = EmpireAchievementBoostCatalog.All.FirstOrDefault(boost => boost.ChallengeId == challenge.Id);
         var border = PanelBorder();
         border.Padding = new Thickness(12, 8, 12, 8);
         border.Margin = new Thickness(0, 0, 4, 6);
@@ -63,7 +65,7 @@ internal partial class ProgressionWindow
         var grid = new Grid { MinHeight = 48 };
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.6, GridUnitType.Star) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(105) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(130) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(125) });
         var text = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 16, 0) };
         text.Children.Add(new TextBlock { Text = $"{CategoryName(challenge.Category).ToUpperInvariant()} · {(challenge.IsEndgame ? "ENDGAME · " : "")}{challenge.Name}", FontWeight = FontWeights.SemiBold, FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = challenge.Name });
@@ -80,10 +82,26 @@ internal partial class ProgressionWindow
         });
         Grid.SetColumn(progressStack, 1);
         grid.Children.Add(progressStack);
-        var reward = CoinText($"◆ {challenge.CoinReward:N0}", 12, FontWeights.Bold);
-        reward.VerticalAlignment = VerticalAlignment.Center;
-        Grid.SetColumn(reward, 2);
-        grid.Children.Add(reward);
+
+        var rewardStack = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+        rewardStack.Children.Add(CoinText($"◆ {challenge.CoinReward:N0}", 12, FontWeights.Bold));
+        if (empireReward is not null)
+        {
+            string target = empireReward.RoomId is null
+                ? "ALL ROOMS"
+                : EmpireCatalog.Find(empireReward.RoomId)?.Name.ToUpperInvariant() ?? empireReward.RoomId.ToUpperInvariant();
+            rewardStack.Children.Add(new TextBlock
+            {
+                Text = $"EMPIRE +{empireReward.Percent:P1}\n{target}",
+                FontSize = 9,
+                Foreground = PositiveBrush,
+                Margin = new Thickness(0, 3, 0, 0),
+                TextWrapping = TextWrapping.Wrap,
+            });
+        }
+        Grid.SetColumn(rewardStack, 2);
+        grid.Children.Add(rewardStack);
+
         var button = new Button { Tag = challenge.Id, Content = claimed ? "Claimed" : complete ? "Claim" : "In progress", IsEnabled = complete && !claimed, Margin = new Thickness(4, 0, 0, 0), Padding = new Thickness(8, 6, 8, 6), VerticalAlignment = VerticalAlignment.Center };
         System.Windows.Automation.AutomationProperties.SetName(button, $"{button.Content}: {challenge.Name}");
         button.Click += ChallengeClaim_Click;
