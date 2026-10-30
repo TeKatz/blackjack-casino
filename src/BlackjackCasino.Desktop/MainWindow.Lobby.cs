@@ -23,7 +23,12 @@ public partial class MainWindow
         {lobby!.Visibility=Visibility.Collapsed;TableModeText.Text="Midnight Manor · video slots";EmbeddedManor_Click(this,new RoutedEventArgs());});
         modeRegistry.Register(new("casino-empire", "Casino Empire", "Your name above the door",
             "Build a quiet gaming room into a midnight landmark. An independent idle economy, lasting upgrades and owner dividends.",
-            "#CBA66B", "♜", "Idle casino", () => new EmpireFloorArtwork()), OpenEmpire);
+            "#CBA66B", "♜", "Idle casino", () => new EmpireFloorArtwork()),
+            OpenEmpire,
+            canOpen: () => !EmpireDetachedOpen,
+            secondaryOpen: OpenEmpireDetached,
+            secondaryLabel: "OPEN IN NEW WINDOW",
+            canSecondaryOpen: () => !EmpirePageOpen);
         lobby=new CasinoLobbyView(modeRegistry,OpenProgression);
         Grid.SetRow(lobby,1); Grid.SetColumnSpan(lobby,2);Panel.SetZIndex(lobby,900);CasinoRoot.Children.Add(lobby);
         TableModeText.Text="Casino lobby";
