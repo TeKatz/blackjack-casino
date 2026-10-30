@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace BlackjackCasino.Core.Sudoku;
 
 public static class SudokuLibrary
@@ -66,7 +68,7 @@ public static class SudokuLibrary
     public static IReadOnlyList<SudokuPuzzle> Daily => DailyPuzzles;
     public static IReadOnlyList<SudokuPuzzle> All => NormalPuzzles.Concat(DailyPuzzles).ToArray();
 
-    public static bool TryGet(string id, out SudokuPuzzle? puzzle) => ById.TryGetValue(id, out puzzle);
+    public static bool TryGet(string id, [NotNullWhen(true)] out SudokuPuzzle? puzzle) => ById.TryGetValue(id, out puzzle);
 
     public static SudokuPuzzle Get(string id) =>
         TryGet(id, out SudokuPuzzle? puzzle)
