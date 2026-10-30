@@ -39,6 +39,7 @@ internal sealed class CasinoLobbyView : UserControl
         cards.Children.Clear();
         foreach(CasinoMode mode in modes.Modes)
         {
+            bool canOpen=modes.CanOpen(mode.Id);
             Brush accent=Ink(mode.Accent);
             var panel=new StackPanel();
             var art=new Grid {Height=185,ClipToBounds=true,Background=new LinearGradientBrush(((SolidColorBrush)accent).Color,Color.FromRgb(9,17,22),65)};
@@ -52,14 +53,14 @@ internal sealed class CasinoLobbyView : UserControl
             text.Children.Add(new TextBlock {Text=mode.Subtitle.ToUpperInvariant(),FontSize=10,Foreground=accent});
             text.Children.Add(new TextBlock {Text=mode.Title,FontFamily=new FontFamily("Georgia"),FontSize=27,Foreground=Ink("#F3E6D1"),Margin=new Thickness(0,8,0,12)});
             text.Children.Add(new TextBlock {Text=mode.Description,FontSize=14,Foreground=Ink("#ADBCB6"),TextWrapping=TextWrapping.Wrap,MinHeight=57});
-            text.Children.Add(new TextBlock {Text=modes.CanOpen(mode.Id)?"TAKE A SEAT   →":"OPEN IN SEPARATE WINDOW",FontSize=12,FontWeight=FontWeights.Bold,Foreground=Ink("#E7CCA0"),Margin=new Thickness(0,20,0,0)});
+            text.Children.Add(new TextBlock {Text=canOpen?"TAKE A SEAT   →":"CURRENTLY OPEN   →",FontSize=12,FontWeight=FontWeights.Bold,Foreground=Ink("#E7CCA0"),Margin=new Thickness(0,20,0,0)});
             panel.Children.Add(text);
 
             var primary=new Button
             {
                 Name="Mode_"+mode.Id.Replace('-','_'),Tag=mode.Id,Padding=new Thickness(0),Content=panel,
                 Background=Ink("#111F20"),BorderBrush=accent,HorizontalContentAlignment=HorizontalAlignment.Stretch,
-                IsEnabled=modes.CanOpen(mode.Id),HorizontalAlignment=HorizontalAlignment.Stretch,
+                IsEnabled=canOpen,HorizontalAlignment=HorizontalAlignment.Stretch,
             };
             primary.Click+=(_,_)=>modes.Open(mode.Id);
 
