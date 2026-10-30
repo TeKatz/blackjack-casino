@@ -10,21 +10,27 @@ internal sealed class LoungeWindow : Window
 {
     private readonly Action<SudokuProgressState> persist;
     private readonly Action<bool> persistTimerVisibility;
+    private readonly Action<bool> persistGuideVisibility;
     private readonly ContentControl contentHost = new();
     private SudokuProgressState progress;
     private SudokuView? sudokuView;
     private bool showTimer;
+    private bool showGuides;
 
     public LoungeWindow(
         SudokuProgressState progress,
         Action<SudokuProgressState> persist,
         bool showTimer,
-        Action<bool> persistTimerVisibility)
+        Action<bool> persistTimerVisibility,
+        bool showGuides = true,
+        Action<bool>? persistGuideVisibility = null)
     {
         this.progress = SudokuProgressState.Normalize(progress);
         this.persist = persist ?? throw new ArgumentNullException(nameof(persist));
         this.showTimer = showTimer;
         this.persistTimerVisibility = persistTimerVisibility ?? throw new ArgumentNullException(nameof(persistTimerVisibility));
+        this.showGuides = showGuides;
+        this.persistGuideVisibility = persistGuideVisibility ?? (_ => { });
 
         Title = "Chill Lounge";
         Width = 1180;
@@ -412,7 +418,13 @@ internal sealed class LoungeWindow : Window
                 progress = progress.SaveGame(puzzle, next, dailyDate);
                 persist(progress);
             },
-            ShowHub);
+            ShowHub,
+            showGuides,
+            visible =>
+            {
+                showGuides = visible;
+                persistGuideVisibility(visible);
+            });
         contentHost.Content = sudokuView;
         sudokuView.Focus();
     }
