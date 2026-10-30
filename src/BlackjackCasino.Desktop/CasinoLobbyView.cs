@@ -7,6 +7,7 @@ namespace BlackjackCasino.Desktop;
 
 internal sealed class CasinoLobbyView : UserControl
 {
+    private const double CompactCardWidth = 280;
     private readonly CasinoModeRegistry modes;
     private readonly WrapPanel cards = new() {HorizontalAlignment=HorizontalAlignment.Center};
     internal CasinoLobbyView(CasinoModeRegistry modes,Action<string> progression)
@@ -64,7 +65,7 @@ internal sealed class CasinoLobbyView : UserControl
             };
             primary.Click+=(_,_)=>modes.Open(mode.Id);
 
-            var wrapper=new StackPanel {Margin=new Thickness(10)};
+            var wrapper=new StackPanel {Margin=new Thickness(10),Width=CompactCardWidth};
             wrapper.Children.Add(primary);
             if(modes.HasSecondary(mode.Id))
             {
@@ -83,9 +84,11 @@ internal sealed class CasinoLobbyView : UserControl
     }
     private void ResizeCards()
     {
-        double available=Math.Max(300,ActualWidth-110);
-        int columns=Math.Clamp((int)(available/300),1,Math.Max(1,cards.Children.Count));
-        double width=Math.Clamp(available/columns-24,280,430);
+        // Lobby cards are intentionally compact and stable. Previously they could grow up to
+        // 430 px depending on window width, which changed the visual hierarchy of the lobby.
+        // Keep a fixed desktop width and only shrink when the viewport is genuinely narrow.
+        double available=Math.Max(220,ActualWidth-110);
+        double width=Math.Min(CompactCardWidth,Math.Max(220,available-20));
         foreach(FrameworkElement card in cards.Children) card.Width=width;
     }
     private static SolidColorBrush Ink(string hex)=>new((Color)ColorConverter.ConvertFromString(hex));
