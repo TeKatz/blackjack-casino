@@ -37,7 +37,33 @@ internal partial class ProgressionWindow
         ShopSortFilter.ItemsSource = new[] { "Recommended", "Cost: low to high", "Cost: high to low", "Name" };
         ChallengeCategoryFilter.SelectedIndex = ChallengeStatusFilter.SelectedIndex = 0;
         ShopKindFilter.SelectedIndex = ShopOwnershipFilter.SelectedIndex = ShopSortFilter.SelectedIndex = 0;
+        EnsureCardSetShopTab();
         collectionsInitialized = true;
+    }
+
+    private void EnsureCardSetShopTab()
+    {
+        if (ShopKindFilter.Parent is not StackPanel typeHost || typeHost.Parent is not WrapPanel toolbar)
+            return;
+        if (toolbar.Children.OfType<Button>().Any(button => button.Name == "ShopCardSetsTab"))
+            return;
+
+        var button = new Button
+        {
+            Name = "ShopCardSetsTab",
+            Content = "CARD SETS",
+            Margin = new Thickness(0, 0, 10, 0),
+            Padding = new Thickness(13, 6, 13, 6),
+            VerticalAlignment = VerticalAlignment.Bottom,
+            ToolTip = "Show only playing-card designs",
+        };
+        button.Click += (_, _) =>
+        {
+            FilterChoice? cardSets = ShopKindFilter.Items.OfType<FilterChoice>().FirstOrDefault(choice => Equals(choice.Value, CosmeticKind.CardSet));
+            if (cardSets is not null) ShopKindFilter.SelectedItem = cardSets;
+        };
+        int index = Math.Min(toolbar.Children.Count, toolbar.Children.IndexOf(typeHost) + 1);
+        toolbar.Children.Insert(index, button);
     }
 
     private static string CategoryName(ChallengeCategory category) => category switch
