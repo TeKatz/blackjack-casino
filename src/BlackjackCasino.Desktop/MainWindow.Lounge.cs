@@ -12,14 +12,25 @@ public partial class MainWindow
         }
         ProcessLatestCompletedRound();
 
-        var window = new LoungeWindow(preferences.Sudoku, state =>
-        {
-            preferences = preferences with { Sudoku = SudokuProgressState.Normalize(state) };
-            if (!testSession)
+        var window = new LoungeWindow(
+            preferences.Sudoku,
+            state =>
             {
-                SavePreferences();
-            }
-        });
+                preferences = preferences with { Sudoku = SudokuProgressState.Normalize(state) };
+                if (!testSession)
+                {
+                    SavePreferences();
+                }
+            },
+            preferences.SudokuShowTimer,
+            showTimer =>
+            {
+                preferences = preferences with { SudokuShowTimer = showTimer };
+                if (!testSession)
+                {
+                    SavePreferences();
+                }
+            });
 
         if (lobby is not null)
         {
