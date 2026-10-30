@@ -16,6 +16,8 @@ public partial class KniffelView : UserControl, IDisposable
 {
     private readonly Action<KniffelState> save;
     private readonly Action back;
+    private readonly Action? rollSound;
+    private readonly Func<KniffelState, string>? completion;
     private readonly Func<bool> animations;
     private readonly Button[] diceButtons = new Button[5];
     private readonly KniffelDie[] diceViews = new KniffelDie[5];
@@ -31,9 +33,11 @@ public partial class KniffelView : UserControl, IDisposable
     private KniffelCategory? selected;
     internal KniffelGame Game { get; private set; }
 
-    internal KniffelView(KniffelState state, Action<KniffelState> save, Action back, Func<bool> animations)
+    internal KniffelView(KniffelState state, Action<KniffelState> save, Action back, Func<bool> animations, Action? rollSound = null, Func<KniffelState, string>? completion = null)
     {
         this.save = save;
+        this.rollSound = rollSound;
+        this.completion = completion;
         this.back = back;
         this.animations = animations;
         Game = KniffelGame.Restore(KniffelGame.Normalize(state));
@@ -48,7 +52,7 @@ public partial class KniffelView : UserControl, IDisposable
             transform.Children.Add(rotations[i]);
             transform.Children.Add(translations[i]);
             diceViews[i] = new KniffelDie { Width = 94, Height = 100, RenderTransformOrigin = new Point(.5, .5), RenderTransform = transform };
-            holdLabels[i] = Label("WÜRFELN", 10, "#B6C7AB");
+            holdLabels[i] = Label("ROLL", 10, "#B6C7AB");
             holdLabels[i].TextAlignment = TextAlignment.Center;
             holdLabels[i].Margin = new Thickness(0, 12, 0, 0);
             stack.Children.Add(diceViews[i]);
@@ -58,7 +62,7 @@ public partial class KniffelView : UserControl, IDisposable
                 Name = "KniffelDie" + i, Content = stack, Padding = new Thickness(0), Margin = new Thickness(2),
                 Background = Brushes.Transparent, BorderThickness = new Thickness(0),
                 HorizontalContentAlignment = HorizontalAlignment.Center,
-                ToolTip = $"Würfel {i + 1} behalten / freigeben (Taste {i + 1})",
+                ToolTip = $"Hold / release die {i + 1} (key {i + 1})",
             };
             button.Click += (_, _) => ToggleHold(index);
             diceButtons[i] = button;
@@ -90,8 +94,11 @@ public partial class KniffelView : UserControl, IDisposable
         PreviewKeyDown += OnKeyDown;
         Loaded += (_, _) => { Refresh(); RollButton.Focus(); };
         Unloaded += (_, _) => StopRoll();
-        NoticeText.Text = "Würfle zuerst. Danach kannst du Würfel behalten und erneut würfeln oder bereits einen Wert eintragen. Deine Partie wird automatisch gespeichert.";
+        NoticeText.Text = "Roll first, then hold dice and reroll or choose a score. Your game saves automatically.";
         Refresh();
+        // Persist migrated IDs before awarding an older completed save.
+        save(Game.Snapshot);
+        if (Game.IsComplete) NoticeText.Text = $"Game complete! {Game.Total} points. " + completion?.Invoke(Game.Snapshot);
     }
 
     private void Roll_Click(object sender, RoutedEventArgs e)
@@ -103,11 +110,12 @@ public partial class KniffelView : UserControl, IDisposable
         // Save the real result before showing cosmetic rolling faces. Leaving mid-animation
         // therefore resumes exactly this roll and never grants a free reroll.
         save(Game.Snapshot);
+        rollSound?.Invoke();
         busy = animations();
         Refresh();
         if (busy)
         {
-            NoticeText.Text = "Die Würfel rollen …";
+            NoticeText.Text = "The dice are rolling …";
             rollClock.Restart();
             rollTimer.Start();
         }
@@ -158,10 +166,10 @@ public partial class KniffelView : UserControl, IDisposable
     private void ShowRollNotice()
     {
         NoticeText.Text = Game.IsAdditionalKniffel
-            ? "Weiterer Kniffel! Beim Eintragen erhältst du +50 Zusatzpunkte und kannst die Höchstpunktzahl eines freien Felds wählen."
+            ? "Another five of a kind! Scoring grants +50 bonus points and the maximum in any free box."
             : Game.RollsUsed == 3
-                ? "Dritter Wurf: Wähle jetzt ein freies Feld auf deinem Block und bestätige den Eintrag."
-                : "Wähle Würfel zum Behalten oder ein Feld auf dem Block. Du darfst auch schon vor dem dritten Wurf eintragen.";
+                ? "Third roll: choose a free box on your sheet and confirm your score."
+                : "Choose dice to hold or a box on the sheet. You can score before the third roll.";
     }
 
     private void ToggleHold(int index)
@@ -178,8 +186,8 @@ public partial class KniffelView : UserControl, IDisposable
         selected = category;
         int points = Game.Preview(category);
         NoticeText.Text = points > 0
-            ? $"{CategoryName(category)}: {points} Punkte. Mit „Eintragen“ bestätigen oder ein anderes Feld wählen."
-            : $"{CategoryName(category)} bringt mit diesem Wurf 0 Punkte. Bestätige mit „Streichen“ oder wähle ein anderes Feld.";
+            ? $"{CategoryName(category)}: {points} points. Confirm with “Record score” or choose another box."
+            : $"{CategoryName(category)} scores 0 with this roll. Confirm with “Scratch” or choose another box.";
         Refresh();
     }
 
@@ -193,33 +201,34 @@ public partial class KniffelView : UserControl, IDisposable
         save(Game.Snapshot);
         Refresh();
         NoticeText.Text = Game.IsComplete
-            ? $"Partie abgeschlossen! {Game.Total} Punkte insgesamt. Oben: {Game.UpperSubtotal} + {Game.UpperBonus} Bonus · Unten: {Game.LowerSubtotal} · Zusatz-Kniffel: {Game.AdditionalKniffelBonus}."
-            : $"{CategoryName(category)}: {points} Punkte eingetragen. Weiter mit Runde {Game.FilledCount + 1}.";
+            ? $"Game complete! {Game.Total} points. Upper: {Game.UpperSubtotal} + {Game.UpperBonus} bonus · Lower: {Game.LowerSubtotal} · Extra five-of-a-kind: {Game.AdditionalKniffelBonus}."
+            : $"{CategoryName(category)}: {points} points recorded. Next: turn {Game.FilledCount + 1}.";
+        if (Game.IsComplete) NoticeText.Text += " " + completion?.Invoke(Game.Snapshot);
         Pulse(rows[category].Button, Color.FromRgb(189, 142, 52));
         RollButton.Focus();
     }
 
     private void Refresh()
     {
-        TurnText.Text = Game.IsComplete ? "Partie abgeschlossen" : $"Runde {Game.FilledCount + 1} von 13";
+        TurnText.Text = Game.IsComplete ? "Game complete" : $"Turn {Game.FilledCount + 1} of 13";
         TotalText.Text = Game.Total.ToString(CultureInfo.InvariantCulture);
-        RollText.Text = Game.IsComplete ? "Alle 13 Felder sind ausgefüllt." : $"Wurf {Game.RollsUsed} / 3";
+        RollText.Text = Game.IsComplete ? "All 13 boxes are filled." : $"Roll {Game.RollsUsed} / 3";
         RollButton.IsEnabled = !busy && Game.CanRoll;
-        RollButton.Content = busy ? "Würfel rollen …" : Game.IsComplete ? "Partie beendet" : Game.RollsUsed == 0 ? "Würfeln" : "Erneut würfeln";
+        RollButton.Content = busy ? "Rolling dice …" : Game.IsComplete ? "Game finished" : Game.RollsUsed == 0 ? "Roll dice" : "Roll again";
         if (!busy)
         {
             for (int i = 0; i < 5; i++)
             {
                 diceViews[i].Value = Game.Dice[i];
                 diceViews[i].Held = Game.Held[i];
-                holdLabels[i].Text = Game.Held[i] ? "BEHALTEN" : Game.RollsUsed == 3 ? "ERGEBNIS" : "WÜRFELN";
+                holdLabels[i].Text = Game.Held[i] ? "HELD" : Game.RollsUsed == 3 ? "RESULT" : "ROLL";
                 holdLabels[i].Foreground = Ink(Game.Held[i] ? "#A2EFCD" : "#B6C7AB");
             }
         }
         for (int i = 0; i < 5; i++)
         {
             diceButtons[i].IsEnabled = !busy && Game.CanScore && Game.RollsUsed < 3;
-            AutomationProperties.SetName(diceButtons[i], $"Würfel {i + 1}: {Game.Dice[i]}, {(Game.Held[i] ? "behalten" : "nicht behalten")}");
+            AutomationProperties.SetName(diceButtons[i], $"Die {i + 1}: {Game.Dice[i]}, {(Game.Held[i] ? "held" : "not held")}");
         }
         foreach (var (category, row) in rows)
         {
@@ -234,20 +243,20 @@ public partial class KniffelView : UserControl, IDisposable
             row.Score.Foreground = Ink(stored.HasValue ? "#263F3B" : preview > 0 ? "#08775F" : "#958874");
             row.Button.Background = Ink(chosen ? "#BFE4CF" : stored.HasValue ? "#E1D8C5" : available && preview > 0 ? "#DFEEDC" : "#F3ECDD");
             row.Button.BorderBrush = Ink(chosen ? "#16896E" : available && preview > 0 ? "#77AE90" : "#D8CEB9");
-            row.Button.ToolTip = stored.HasValue ? $"{CategoryName(category)}: {stored} Punkte eingetragen"
-                : available ? $"{CategoryName(category)}: {preview} Punkte möglich. Anklicken zum Auswählen."
-                : "Würfle zuerst, um Punkte einzutragen.";
+            row.Button.ToolTip = stored.HasValue ? $"{CategoryName(category)}: {stored} points recorded"
+                : available ? $"{CategoryName(category)}: {preview} possible points. Click to select."
+                : "Roll first to record a score.";
             AutomationProperties.SetName(row.Button, $"{CategoryName(category)}, {row.Score.Text}");
             if (available && preview > 0) Pulse(row.Button, Color.FromRgb(39, 165, 122), chosen ? .7 : .35);
         }
         CommitButton.IsEnabled = !busy && selected.HasValue && Game.CanScore && Game.Preview(selected.Value) > 0;
         ScratchButton.IsEnabled = !busy && selected.HasValue && Game.CanScore;
-        CommitButton.Content = CommitButton.IsEnabled ? $"{Game.Preview(selected!.Value)} Punkte eintragen" : "Feld auswählen";
-        UpperText.Text = $"Oben: {Game.UpperSubtotal} Punkte · Bonus: {Game.UpperBonus} / 35 (ab 63)";
-        BonusText.Text = $"Unten: {Game.LowerSubtotal} Punkte · Bis zum oberen Bonus: {Math.Max(0, 63 - Game.UpperSubtotal)}";
-        AdditionalText.Text = $"Zusatz-Kniffel: +{Game.AdditionalKniffelBonus} · Gesamt: {Game.Total}";
-        CombinationText.Text = busy ? "" : !Game.CanScore ? Game.IsComplete ? "Dein Block ist vollständig." : "Fünf Würfel. Deine Entscheidung."
-            : Game.IsAdditionalKniffel ? "KNIFFEL · +50 Bonus & freie Höchstwertung"
+        CommitButton.Content = CommitButton.IsEnabled ? $"Record {Game.Preview(selected!.Value)} points" : "Choose a box";
+        UpperText.Text = $"Upper: {Game.UpperSubtotal} points · Bonus: {Game.UpperBonus} / 35 (at 63)";
+        BonusText.Text = $"Lower: {Game.LowerSubtotal} points · To upper bonus: {Math.Max(0, 63 - Game.UpperSubtotal)}";
+        AdditionalText.Text = $"Extra five-of-a-kind: +{Game.AdditionalKniffelBonus} · Total: {Game.Total}";
+        CombinationText.Text = busy ? "" : !Game.CanScore ? Game.IsComplete ? "Your score sheet is complete." : "Five dice. Your decision."
+            : Game.IsAdditionalKniffel ? "FIVE OF A KIND · +50 bonus & any box maximum"
             : CombinationDescription();
     }
 
@@ -257,7 +266,7 @@ public partial class KniffelView : UserControl, IDisposable
             KniffelCategory.FullHouse, KniffelCategory.FourOfAKind, KniffelCategory.ThreeOfAKind];
         string[] found = special.Where(category => KniffelScoring.Evaluate(category, Game.Dice) > 0)
             .Select(CategoryName).ToArray();
-        return found.Length > 0 ? string.Join(" · ", found) : "Augen sammeln oder auf eine Kombination spielen";
+        return found.Length > 0 ? string.Join(" · ", found) : "Collect points or aim for a combination";
     }
 
     private void Pulse(Button row, Color color, double opacity = .6)
@@ -295,7 +304,7 @@ public partial class KniffelView : UserControl, IDisposable
         selected = null;
         save(Game.Snapshot);
         CancelRestart_Click(this, new RoutedEventArgs());
-        NoticeText.Text = "Neue Partie. Viel Erfolg beim Würfeln!";
+        NoticeText.Text = "New game. Good luck with your rolls!";
     }
     private void Back_Click(object sender, RoutedEventArgs e) => back();
     private void OnKeyDown(object sender, KeyEventArgs e)
@@ -321,11 +330,11 @@ public partial class KniffelView : UserControl, IDisposable
     }
     internal static string CategoryName(KniffelCategory category) => category switch
     {
-        KniffelCategory.Ones => "Einsen", KniffelCategory.Twos => "Zweien", KniffelCategory.Threes => "Dreien",
-        KniffelCategory.Fours => "Vieren", KniffelCategory.Fives => "Fünfen", KniffelCategory.Sixes => "Sechsen",
-        KniffelCategory.ThreeOfAKind => "Dreierpasch", KniffelCategory.FourOfAKind => "Viererpasch",
-        KniffelCategory.FullHouse => "Full House", KniffelCategory.SmallStraight => "Kleine Straße",
-        KniffelCategory.LargeStraight => "Große Straße", KniffelCategory.Kniffel => "Kniffel", _ => "Chance",
+        KniffelCategory.Ones => "Ones", KniffelCategory.Twos => "Twos", KniffelCategory.Threes => "Threes",
+        KniffelCategory.Fours => "Fours", KniffelCategory.Fives => "Fives", KniffelCategory.Sixes => "Sixes",
+        KniffelCategory.ThreeOfAKind => "Three of a kind", KniffelCategory.FourOfAKind => "Four of a kind",
+        KniffelCategory.FullHouse => "Full House", KniffelCategory.SmallStraight => "Small straight",
+        KniffelCategory.LargeStraight => "Large straight", KniffelCategory.Kniffel => "Five of a kind", _ => "Chance",
     };
     private static TextBlock Label(string text, double size, string color) => new() { Text = text, FontSize = size, Foreground = Ink(color), VerticalAlignment = VerticalAlignment.Center };
     private static SolidColorBrush Ink(string color) => new((Color)ColorConverter.ConvertFromString(color));

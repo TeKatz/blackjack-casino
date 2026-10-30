@@ -4,11 +4,12 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using BlackjackCasino.Core.Kniffel;
+using BlackjackCasino.Core;
 using BlackjackCasino.Desktop;
 
 internal static class KniffelSmoke
 {
-    internal static async Task Run(MainWindow window, string output)
+    internal static async Task Run(MainWindow window, string output, PlayerProfileState profile)
     {
         Require(window.Modes.Modes.Any(mode => mode.Id == "kniffel"), "Kniffel is missing from the lobby.");
         window.Modes.Open("kniffel");
@@ -17,6 +18,8 @@ internal static class KniffelSmoke
         Require(Application.Current.Windows.Cast<Window>().Count(w => w.IsVisible) == 1, "Kniffel opened another native window.");
         Require(Find<KniffelDie>(view).Count() == 5, "Five vector dice were not rendered.");
         Require(Find<Button>(view).Count(button => button.Name.StartsWith("Score_", StringComparison.Ordinal)) == 13, "Score sheet does not have 13 boxes.");
+        Require(Find<TextBlock>(view).Any(text => text.Text == "Midnight Dice"), "English game title is missing.");
+        Require(Find<TextBlock>(view).Single(text => text.Name == "TurnText").Text == "Turn 1 of 13", "Table text was not translated.");
         Require(!Button(view, "CommitButton").IsEnabled, "Scoring was enabled before a roll.");
         Capture(window, Path.Combine(output, "kniffel-initial.png"));
         window.Width = 1080;
@@ -50,6 +53,7 @@ internal static class KniffelSmoke
         view = Find<KniffelView>(window).Single();
         Require(view.Game.RollsUsed == 1 && view.Game.Held[1] && dice.SequenceEqual(view.Game.Dice), "Resume changed the turn checkpoint.");
 
+        long xpBefore = profile.LifetimeExperience;
         foreach (KniffelCategory category in KniffelScoring.Categories.Where(category => category != KniffelCategory.Chance))
         {
             if (!view.Game.CanScore) Click(view, "RollButton");
@@ -58,7 +62,15 @@ internal static class KniffelSmoke
             Click(view, preview > 0 ? "CommitButton" : "ScratchButton");
         }
         Require(view.Game.IsComplete && !Button(view, "RollButton").IsEnabled, "The 13-round game did not finish.");
+        long earned = KniffelProgression.PlayerExperience(view.Game.Total);
+        Require(profile.LifetimeExperience == xpBefore + earned, "Completed game did not grant the expected XP.");
+        Require(Find<TextBlock>(view).Single(text => text.Name == "NoticeText").Text.Contains("XP", StringComparison.Ordinal), "Completion did not show the XP award.");
         Capture(window, Path.Combine(output, "kniffel-complete.png"));
+        Click(view, "KniffelBackButton");
+        window.Modes.Open("kniffel");
+        await Task.Delay(80);
+        view = Find<KniffelView>(window).Single();
+        Require(view.Game.IsComplete && profile.LifetimeExperience == xpBefore + earned, "Reopening a finished game granted duplicate XP.");
         Click(view, "NewGameButton");
         Require(view.Game.FilledCount == 0, "A new game did not clear the score sheet.");
 

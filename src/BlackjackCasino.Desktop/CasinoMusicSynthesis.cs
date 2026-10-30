@@ -1,15 +1,16 @@
 namespace BlackjackCasino.Desktop;
 
-internal enum Soundtrack { Blackjack, Reels, Manor }
+internal enum Soundtrack { Blackjack, Reels, Manor, DiceLounge }
 
-/// <summary>Original sampled scores rendered offline; no runtime synth or network dependency.</summary>
+/// <summary>Original cached scores: sampled themes plus a generated dice-lounge composition; no network dependency.</summary>
 internal static class CasinoMusicSynthesis
 {
-    internal static int Tempo(Soundtrack track) => track switch {Soundtrack.Blackjack=>72,Soundtrack.Reels=>104,_=>62};
+    internal static int Tempo(Soundtrack track) => track switch {Soundtrack.Blackjack=>72,Soundtrack.Reels=>104,Soundtrack.DiceLounge=>68,_=>62};
     internal static int Beats(Soundtrack track) => track==Soundtrack.Manor ? 48 : 64;
-    internal static string Theme(Soundtrack track) => track switch {Soundtrack.Blackjack=>"Felt after hours",Soundtrack.Reels=>"Brass and lucky sevens",_=>"The clockwork waltz"};
+    internal static string Theme(Soundtrack track) => track switch {Soundtrack.Blackjack=>"Felt after hours",Soundtrack.Reels=>"Brass and lucky sevens",Soundtrack.DiceLounge=>"A quiet roll",_=>"The clockwork waltz"};
     internal static AudioClip Build(Soundtrack track)
     {
+        if (track == Soundtrack.DiceLounge) return DiceLoungeSynthesis.Build();
         string name="BlackjackCasino.Music."+track.ToString().ToLowerInvariant()+".wav";
         using Stream stream=typeof(CasinoMusicSynthesis).Assembly.GetManifestResourceStream(name) ?? throw new InvalidDataException("Missing music resource: "+name);
         using var data=new MemoryStream();stream.CopyTo(data);return AudioClip.FromWave(data.ToArray());

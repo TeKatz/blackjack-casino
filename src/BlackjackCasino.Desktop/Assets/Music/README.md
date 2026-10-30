@@ -30,3 +30,15 @@ to warm instrument release and reverb tails before taking its loop. A 3ms endpoi
 correction removes a DC seam without inserting silence or shortening a bar.
 `render-report.json` records lengths and signal levels. Runtime looping remains
 on the PCM sample clock, independent of WPF timers.
+
+
+## Midnight Dice — A quiet roll
+
+The dice table adds an independent original 68 BPM / 64-beat composition. It uses
+warm electric-piano-style chords, sparse plucked melody, mellow bass and very light
+brush percussion. `DiceLoungeSynthesis.cs` contains the complete reproducible score
+and timbres, rendered once off the UI thread and cached in memory. It needs no
+sample library or downloaded assets. Circular room reflections preserve note tails
+at the loop boundary. Existing WAV-based soundtracks are unchanged. The audio
+review tool exports `dicelounge-loop.wav` and the quiet `diceroll.wav` cue alongside
+the existing audition files.

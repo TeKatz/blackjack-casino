@@ -29,7 +29,7 @@ public partial class MainWindow
             secondaryOpen: OpenEmpireDetached,
             secondaryLabel: "OPEN IN NEW WINDOW",
             canSecondaryOpen: () => !EmpirePageOpen);
-        modeRegistry.Register(new("kniffel", "Kniffel", "The dice lounge",
+        modeRegistry.Register(new("kniffel", "Midnight Dice", "The dice lounge",
             "Five dice, three rolls and your own score sheet. Hold, reroll and choose your combinations in a complete casual solo game.",
             "#9DD6B3", "⚄", "Table games"), OpenKniffel);
         lobby=new CasinoLobbyView(modeRegistry,OpenProgression);

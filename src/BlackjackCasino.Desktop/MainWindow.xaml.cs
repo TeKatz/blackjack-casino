@@ -230,7 +230,7 @@ public partial class MainWindow : Window
     private void PresentationSettingChanged(object sender, RoutedEventArgs e)
     {
         MenuAudio.Enabled = SoundEnabled;
-        if (!SoundEnabled) CasinoFeedback.Stop();
+        if (!SoundEnabled) { CasinoFeedback.Stop(); CasinoAudio.Mixer.Stop(kniffelAudioOwner); }
         if (empire is not null)
         {
             RefreshEmpireHeader();

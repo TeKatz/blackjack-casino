@@ -1,10 +1,9 @@
-# Kniffel — casual solo foundation
+# Midnight Dice — casual solo dice table
 
-Kniffel is registered under Table games in the casino lobby and is hosted as a
+Midnight Dice is registered under Table games in the casino lobby and is hosted as a
 UserControl inside the existing main window. It creates no game window or HWND.
 This first version is a complete 13-turn solo score game. Opponents, entry fees,
-prize money and progression awards are deliberately deferred until their economy
-and opponent design have been agreed. It does not debit or credit casino cash or
+prize money are deferred until their economy and opponent design have been agreed. It does not debit or credit casino cash or
 cosmetic Coins.
 
 ## Playing
@@ -16,8 +15,8 @@ cosmetic Coins.
   Positive candidates glow green; zero candidates remain available to scratch.
   A large straight also highlights small straight, and a four/five-of-a-kind
   also satisfies the lower matching sets. Filled boxes cannot be overwritten.
-- Click a box to select it, then **Eintragen** to commit the displayed points or
-  **Streichen** to commit zero. Selection alone never changes the score.
+- Click a box to select it, then **Record score** to commit the displayed points or
+  **Scratch** to commit zero. Selection alone never changes the score.
 - The next turn clears all dice and holds. Filling the 13th box ends the game;
   final upper/lower totals and bonuses remain visible.
 - **R** rolls; **1–5** hold/release individual dice; **Escape** returns to the
@@ -33,7 +32,7 @@ cosmetic Coins.
 | Full house | 25 for exactly three of one face and two of another |
 | Small straight | 30 for four consecutive distinct faces; the fifth can duplicate |
 | Large straight | 40 for five consecutive distinct faces |
-| Kniffel | 50 for five equal dice |
+| Five of a kind | 50 for five equal dice |
 | Chance | Sum of all five dice |
 | Upper bonus | 35 once the upper subtotal reaches 63 |
 
@@ -86,3 +85,42 @@ No runtime artwork downloads or external assets are needed.
   settlement, mid-animation exit, restart cancellation and one-window hosting.
   CI uploads screenshots at 1080×720 and 1280×900 with the existing startup smoke
   evidence.
+
+
+## English presentation, audio and completion rewards
+
+All table labels, status messages, tooltips and accessibility names are English.
+The public name is **Midnight Dice**; the internal `kniffel` lobby/save IDs remain
+unchanged for compatibility. The five-equal-dice box is labelled **Five of a kind**.
+The existing German-classic scoring contract is preserved, including its 50-point
+additional-five-of-a-kind rule; renaming the table does not substitute Yahtzee's
+rules. Hasbro identifies Yahtzee as its trademark:
+https://instructions.hasbro.com/en-in/instruction/yahtzee-classic
+
+**A quiet roll** is a separate original 68 BPM, 64-beat lounge composition with
+warm electric-piano-style chords, sparse melodic plucks, soft bass and restrained
+percussion. `DiceLoungeSynthesis` renders it once on a background thread through
+the existing soundtrack cache. Circular room reflections and a corrected boundary
+keep the loop continuous. Existing sampled tracks are unchanged. Host music is
+muted while the dice table is open and restored on return. The dice-roll cue uses
+quiet, short felt/wood taps and plays once per actual roll, including when visual
+animations are disabled. Existing music/sound switches and music volume apply;
+leaving the table stops its music and effect owners.
+
+A completed 13-box game grants **200 + 2 × score player XP** and
+**100 + score Season XP**. Level and Season rewards use the shared progression
+service; dice games do not increment Blackjack/slot statistics or grant direct
+casino cash. For example, 223 points earns 646 XP and 323 Season XP. Completion
+feedback appears in the existing status line without changing the table layout.
+
+Every saved game has a stable GUID. XP, Season rewards and the GUID receipt are
+persisted together in an atomic profile replacement before updating the live
+profile. Reopening the result or restarting the application cannot award twice.
+A failed profile write leaves the reward retryable. Existing saves migrate their
+GUID before claiming rewards, so an already-completed pre-XP game can receive
+its completion reward once. Starting over mid-game grants no completion reward.
+
+Additional tests cover durable reward receipts, restart/reopen deduplication,
+failed-write rollback/retry, old checkpoint migration, maximum-level XP, music
+phrase length/stereo/level/seam, quiet dice effects, and the English hosted table
+with visible completion XP in the actual Windows startup smoke.

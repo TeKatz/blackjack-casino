@@ -14,6 +14,7 @@ public sealed record KniffelEntry(KniffelCategory Category, int Points);
 public sealed record KniffelState
 {
     public int Version { get; init; } = 1;
+    public Guid GameId { get; init; } = Guid.NewGuid();
     public int[] Dice { get; init; } = new int[5];
     public bool[] Held { get; init; } = new bool[5];
     public int RollsUsed { get; init; }
@@ -85,6 +86,7 @@ public sealed class KniffelGame
         Held = Array.AsReadOnly(held);
     }
 
+    public Guid GameId { get; private set; } = Guid.NewGuid();
     public IReadOnlyList<int> Dice { get; }
     public IReadOnlyList<bool> Held { get; }
     public int RollsUsed { get; private set; }
@@ -144,7 +146,7 @@ public sealed class KniffelGame
 
     public KniffelState Snapshot => new()
     {
-        Dice = (int[])dice.Clone(), Held = (bool[])held.Clone(), RollsUsed = RollsUsed,
+        GameId = GameId, Dice = (int[])dice.Clone(), Held = (bool[])held.Clone(), RollsUsed = RollsUsed,
         Entries = entries.Select(entry => new KniffelEntry(entry.Key, entry.Value)).ToArray(),
         KniffelsScored = KniffelsScored,
     };
@@ -166,6 +168,7 @@ public sealed class KniffelGame
             || state.RollsUsed == 0 && state.Held.Any(value => value)
             || state.Entries.Length == 13 && state.RollsUsed != 0)
             throw new ArgumentException("Invalid Kniffel checkpoint.", nameof(state));
+        game.GameId = state.GameId == Guid.Empty ? Guid.NewGuid() : state.GameId;
         state.Dice.CopyTo(game.dice, 0);
         state.Held.CopyTo(game.held, 0);
         foreach (KniffelEntry entry in state.Entries) game.entries.Add(entry.Category, entry.Points);

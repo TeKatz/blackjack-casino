@@ -6,6 +6,9 @@ public static class ProfileNormalization
     public static void Normalize(PlayerProfileState state)
     {
         ArgumentNullException.ThrowIfNull(state);
+        state.Kniffel ??= new();
+        state.Kniffel.RewardedGameIds ??= [];
+        state.Kniffel.RewardedGameIds.Remove(Guid.Empty);
         state.Slots ??= new();
         state.NeonVault ??= new();
         state.NineLives ??= new();

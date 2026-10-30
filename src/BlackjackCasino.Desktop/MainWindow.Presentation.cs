@@ -153,7 +153,8 @@ public partial class MainWindow
 
         bool enabled = MusicCheckBox.IsChecked == true;
         preferences = preferences with { MusicEnabled = enabled };
-        backgroundMusic.SetEnabled(enabled);
+        backgroundMusic.SetEnabled(enabled && !KniffelPageOpen);
+        kniffelMusic?.SetEnabled(enabled);
         SavePreferences();
     }
 
@@ -172,6 +173,7 @@ public partial class MainWindow
 
         preferences = preferences with { MusicVolume = volume };
         backgroundMusic.SetVolume(volume);
+        kniffelMusic?.SetVolume(volume);
         SavePreferences();
     }
 }

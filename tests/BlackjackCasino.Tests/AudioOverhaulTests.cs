@@ -5,7 +5,7 @@ namespace BlackjackCasino.Tests;
 public sealed class AudioOverhaulTests
 {
     [Theory]
-    [InlineData(0,72)] [InlineData(1,104)] [InlineData(2,62)]
+    [InlineData(0,72)] [InlineData(1,104)] [InlineData(2,62)] [InlineData(3,68)]
     public void TracksAreFullStereoPhrasesWithContinuousLoopBoundaries(int trackId,int tempo)
     {
         Soundtrack track=(Soundtrack)trackId;
