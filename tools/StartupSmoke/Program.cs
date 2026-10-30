@@ -149,6 +149,7 @@ internal static class Program
             {
                 exit = 1;
                 File.WriteAllText(Path.Combine(output, "failure.txt"), ex.ToString());
+                Console.Error.WriteLine(ex);
             }
             finally
             {

@@ -25,7 +25,10 @@ public static class EmpireFloorCatalog
     ]);
     public static EmpireFloorDefinition? Find(int id) => All.FirstOrDefault(f => f.Id == id);
 }
-public sealed record EmpirePropertyDefinition(string Id, string Name, string Description, EmpireTag Specialty, decimal ProductionBonus, decimal Cost, EmpireRequirement Requirement);
+public sealed record EmpirePropertyDefinition(string Id, string Name, string Description, EmpireTag Specialty, decimal ProductionBonus, decimal Cost, EmpireRequirement Requirement)
+{
+    public override string ToString() => Name;
+}
 public static class EmpirePropertyCatalog
 {
     public const string DefaultId = "midnight-club";

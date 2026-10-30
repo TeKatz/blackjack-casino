@@ -113,9 +113,11 @@ internal static class EmpireStrategySmoke
     }
     private static void Click(DependencyObject root,string name)
     {
+        if (root is UIElement surface) surface.UpdateLayout();
         Button button=Find<Button>(root).Single(b=>b.Name==name);
         Require(button.IsEnabled,$"{name} is disabled unexpectedly.");
         button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        if (root is UIElement updated) updated.UpdateLayout();
     }
     private static void Require(bool condition,string message) {if(!condition)throw new InvalidOperationException(message);}
     private static IEnumerable<T> Find<T>(DependencyObject root) where T:DependencyObject

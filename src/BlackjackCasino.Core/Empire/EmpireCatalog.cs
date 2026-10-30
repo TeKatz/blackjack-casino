@@ -3,6 +3,7 @@ namespace BlackjackCasino.Core.Empire;
 public sealed record EmpireDepartment(string Id, string Name, string Description, decimal BaseCost,
     decimal BaseCreditsPerSecond, string Accent, int Floor = 1, EmpireTag Tags = EmpireTag.None, string Category = "Gaming", EmpireRequirement? Requirements = null)
 {
+    public override string ToString() => Name;
     public EmpireRequirement UnlockRequirement => Requirements ?? EmpireFloorCatalog.Find(Floor)?.Requirement ?? new(Prestige: int.MaxValue);
 }
 
