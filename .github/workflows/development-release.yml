@@ -2,7 +2,7 @@ name: Development Release
 
 on:
   push:
-    branches: ["feature/chill-lounge-sudoku"]
+    branches: ["feature/casino-vault"]
   workflow_dispatch:
 
 permissions:
@@ -14,8 +14,8 @@ concurrency:
 
 jobs:
   publish-development:
-    # The shared in-app Development channel is pinned to the active Chill Lounge branch.
-    if: github.ref == 'refs/heads/feature/chill-lounge-sudoku'
+    # The shared in-app Development channel is pinned to the active Casino Vault branch.
+    if: github.ref == 'refs/heads/feature/casino-vault'
     runs-on: windows-latest
     timeout-minutes: 20
 
