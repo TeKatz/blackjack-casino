@@ -13,6 +13,8 @@ public static class ProfileNormalization
         state.Kniffel.SettledTableIds ??= [];
         state.Kniffel.EnteredTableIds.Remove(Guid.Empty);
         state.Kniffel.SettledTableIds.Remove(Guid.Empty);
+        state.Sudoku ??= new();
+        state.Sudoku.RecordedPuzzleIds ??= new HashSet<string>(StringComparer.Ordinal);
         state.Slots ??= new();
         state.NeonVault ??= new();
         state.NineLives ??= new();
