@@ -55,6 +55,7 @@ internal partial class ProgressionWindow : Window
         PlayerProfileState profile = controller.Profile;
         CosmeticDefinition title = CosmeticCatalog.Get(profile.EquippedTitleId);
         TitleText.Text = $"{profile.DisplayName} · {title.Name}";
+        TitleText.Foreground = CosmeticAppearance.TitleBrush(title);
         LevelText.Text = $"Prestige {profile.Prestige} · Level {profile.Level} / {ProgressionCurve.MaximumLevel} · Lifetime XP {profile.LifetimeExperience:N0}";
         CoinsText.Text = $"◆ {profile.Coins:N0} COSMETIC COINS";
         CoinsText.Foreground = CoinBrush;
@@ -256,6 +257,7 @@ internal partial class ProgressionWindow : Window
         return cosmetic.Kind switch
         {
             CosmeticKind.Portrait => CreatePortraitVisual(cosmetic, 78),
+            CosmeticKind.DiceSet => new KniffelDie { Width = 72, Height = 72, Value = 5, VisualVariant = cosmetic.VisualVariant },
             CosmeticKind.Frame => CreateFramePreview(cosmetic),
             _ => new Border
             {
@@ -265,7 +267,7 @@ internal partial class ProgressionWindow : Window
                 Background = new SolidColorBrush(Color.FromRgb(14, 43, 29)),
                 BorderBrush = new SolidColorBrush(Color.FromRgb(58, 100, 73)),
                 BorderThickness = new Thickness(1),
-                Child = new TextBlock { Text = cosmetic.Name, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center, VerticalAlignment = VerticalAlignment.Center, FontWeight = FontWeights.SemiBold, FontSize = 11 },
+                Child = new TextBlock { Text = cosmetic.Name, Foreground = CosmeticAppearance.TitleBrush(cosmetic), TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center, VerticalAlignment = VerticalAlignment.Center, FontWeight = FontWeights.SemiBold, FontSize = 11 },
             },
         };
     }
@@ -380,6 +382,12 @@ internal partial class ProgressionWindow : Window
 
     private static void ApplyFramePresentation(Border target, CosmeticDefinition frame, bool compact = false)
     {
+        if (frame.VisualVariant.StartsWith("static-", StringComparison.Ordinal))
+        {
+            target.BorderBrush = new SolidColorBrush(CosmeticAppearance.StandardFrame(frame.VisualVariant));
+            target.Effect = null;
+            return;
+        }
         (Color a, Color b, string motion, double seconds) = FrameTheme(frame.VisualVariant);
         var brush = new LinearGradientBrush
         {

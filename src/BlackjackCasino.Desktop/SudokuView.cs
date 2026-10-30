@@ -76,6 +76,7 @@ internal sealed class SudokuView : UserControl, IDisposable
 
     public SudokuGameState Snapshot => board.Snapshot(CurrentElapsedSeconds);
 
+    internal Func<string>? CompletionRewardNotice { get; set; }
     internal string PuzzleId => puzzle.Id;
     internal SudokuDifficulty Difficulty => puzzle.Difficulty;
     internal bool TimerVisible => showTimer;

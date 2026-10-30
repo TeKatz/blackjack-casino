@@ -1,15 +1,12 @@
 namespace BlackjackCasino.Desktop;
 
-/// <summary>
-/// Original slow study-LoFi loop for the Chill Lounge. Unlike Midnight Dice's jazz-lounge
-/// groove this score is intentionally sparse: felt piano, a wide sleepy pad, occasional
-/// sub-bass pulses and tape-room texture with almost no percussion.
-/// </summary>
+/// <summary>Original 74 BPM chill hip-hop loop: swung hats, dusty kick and snare,
+/// mellow electric keys, warm sub bass and a quiet tape bed. Generated offline.</summary>
 internal static class ChillLoungeSynthesis
 {
     internal static AudioClip Build()
     {
-        const double bpm = 54d;
+        const double bpm = 74d;
         const int bars = 16;
         double beat = 60d / bpm;
         int frames = (int)Math.Round(bars * 4 * beat * AudioClip.Rate);
@@ -38,7 +35,13 @@ internal static class ChillLoungeSynthesis
                 Pad(chords[harmony][voice] - 12, start, 4.35 * beat, 0.025, pan);
             }
 
-            Felt(chords[harmony][1] + 12, start + 0.34 * beat, 1.55 * beat, 0.054, -0.22);
+            // Soft syncopated electric-key chords, alternating voicings every four bars.
+            for (int voice = 1; voice < chords[harmony].Length; voice++)
+            {
+                Felt(chords[harmony][voice], start + 0.08 * beat, 1.65 * beat, 0.032, (voice - 2) * 0.14);
+                Felt(chords[harmony][voice], start + 2.65 * beat, 1.15 * beat, 0.023, (voice - 2) * 0.14);
+            }
+            Felt(chords[harmony][1] + 12, start + 0.34 * beat, 1.55 * beat, 0.044, -0.22);
             Felt(chords[harmony][3] + 12, start + 2.42 * beat, 1.28 * beat, 0.041, 0.20);
             if (bar % 2 == 1)
             {
@@ -52,11 +55,15 @@ internal static class ChillLoungeSynthesis
                 Felt(airNotes[harmony], start + 1.62 * beat, 2.08 * beat, 0.020, 0.38);
             }
 
-            if (bar % 2 == 0)
-            {
-                SoftBrush(start + 1.98 * beat, 0.34 * beat, 0.0065, -0.18);
-                SoftBrush(start + 3.96 * beat, 0.28 * beat, 0.0052, 0.22);
-            }
+            Kick(start + 0.03 * beat, 0.17);
+            Kick(start + (bar % 2 == 0 ? 2.48 : 2.02) * beat, 0.125);
+            if (bar % 4 == 3) Kick(start + 3.60 * beat, 0.075);
+            Snare(start + 1.04 * beat, 0.055);
+            Snare(start + 3.05 * beat, 0.048);
+            for (int eighth = 0; eighth < 8; eighth++)
+                Hat(start + (eighth * 0.5 + (eighth % 2 == 1 ? 0.095 : 0.01)) * beat,
+                    eighth % 2 == 0 ? 0.018 : 0.011, eighth % 2 == 0 ? -0.20 : 0.26);
+            Sub(roots[harmony], start + 2.52 * beat, 1.15 * beat, 0.044);
         }
 
         double tape = 0;
@@ -166,19 +173,41 @@ internal static class ChillLoungeSynthesis
             }
         }
 
-        void SoftBrush(double start, double duration, double level, double pan)
+        void Kick(double start, double level)
         {
             int first = (int)(start * AudioClip.Rate);
-            int count = (int)(duration * AudioClip.Rate);
-            double filtered = 0;
-            for (int n = 0; n < count; n++)
+            for (int n = 0; n < AudioClip.Rate * 0.32; n++)
             {
-                double raw = CasinoMusicSynthesis.Noise(first * 5 + n + 7811);
-                filtered = filtered * 0.82 + raw * 0.18;
                 double t = n / (double)AudioClip.Rate;
-                double attack = Math.Min(1, t / 0.055);
-                double release = Math.Min(1, (duration - t) / 0.16);
-                Add(first + n, filtered * attack * release * level, pan);
+                double phase = 2 * Math.PI * (48 * t + 42 * 0.028 * (1 - Math.Exp(-t / 0.028)));
+                double envelope = Math.Min(1, t / 0.003) * Math.Exp(-t / 0.070);
+                Add(first + n, Math.Sin(phase) * envelope * level, 0);
+            }
+        }
+
+        void Snare(double start, double level)
+        {
+            int first = (int)(start * AudioClip.Rate);
+            double filtered = 0;
+            for (int n = 0; n < AudioClip.Rate * 0.22; n++)
+            {
+                double t = n / (double)AudioClip.Rate;
+                filtered = filtered * 0.62 + CasinoMusicSynthesis.Noise(first + n + 541) * 0.38;
+                double body = filtered * 0.82 + Math.Sin(2 * Math.PI * 174 * t) * 0.18;
+                Add(first + n, body * Math.Min(1, t / 0.003) * Math.Exp(-t / 0.048) * level, -0.08);
+            }
+        }
+
+        void Hat(double start, double level, double pan)
+        {
+            int first = (int)(start * AudioClip.Rate);
+            double low = 0;
+            for (int n = 0; n < AudioClip.Rate * 0.085; n++)
+            {
+                double raw = CasinoMusicSynthesis.Noise(first * 3 + n + 7811);
+                low = low * 0.7 + raw * 0.3;
+                double t = n / (double)AudioClip.Rate;
+                Add(first + n, (raw - low) * Math.Min(1, t / 0.002) * Math.Exp(-t / 0.019) * level, pan);
             }
         }
 

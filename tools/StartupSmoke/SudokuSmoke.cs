@@ -20,6 +20,13 @@ internal static class SudokuSmoke
             "Chill Lounge opened another visible native window.");
         Require(Find<TextBlock>(window).Any(text => text.Text == "Chill Lounge" && text.IsVisible),
             "Chill Lounge heading is missing from the hosted surface.");
+        Require(ButtonByName(window, "LoungeGame_sudoku").IsVisible, "Chill Lounge game selection is missing.");
+        Require(!Find<Button>(window).Any(button => button.Name == "SudokuDailyButton" && button.IsVisible),
+            "Sudoku library appeared before selecting its game tile.");
+        Capture(window, Path.Combine(output, "chill-lounge-games.png"));
+        Click(ButtonByName(window, "LoungeGame_sudoku"));
+        await Task.Delay(60);
+        window.UpdateLayout();
         Require(ButtonByName(window, "SudokuNew_Medium").IsVisible,
             "Chill Lounge does not expose a dedicated Medium New Puzzle action.");
         Require(ButtonByName(window, "SudokuNew_Hard").IsVisible,
@@ -213,6 +220,10 @@ internal static class SudokuSmoke
             Click(hint);
             hintGuard++;
         }
+        await Task.Delay(180);
+        window.UpdateLayout();
+        Require(Find<TextBlock>(window).Any(text => text.Name == "SudokuCompletionXp" && text.Text.Contains("XP", StringComparison.Ordinal)),
+            "Sudoku completion overlay did not show its XP reward.");
         Require(hiddenTimerView.Snapshot.Completed,
             "Repeated hints softlocked instead of correcting wrong entries and completing the Sudoku.");
         Require(Enumerable.Range(1, 9).All(digit => !NumberButton(hiddenTimerView, digit).IsEnabled),
@@ -240,7 +251,7 @@ internal static class SudokuSmoke
             "Casino lobby was not restored after leaving Chill Lounge.");
 
         File.WriteAllText(Path.Combine(output, "sudoku-result.txt"),
-            "PASS: larger board; fine cell grid and strong block boundaries; matching-number highlight; toggleable guides; completed-number disabling; immediate wrong-value validation; hint correction and anti-softlock recovery; independent per-difficulty resume; true New Puzzle replacement; timer hide option; pencil marks; undo/redo; separate Daily entry.");
+            "PASS: larger board; fine cell grid and strong block boundaries; matching-number highlight; toggleable guides; completed-number disabling; immediate wrong-value validation; hint correction and anti-softlock recovery; independent per-difficulty resume; true New Puzzle replacement; timer hide option; pencil marks; undo/redo; separate Daily entry; extensible game selection; completion XP notice.");
     }
 
     private static Button ButtonByName(DependencyObject root, string name) =>

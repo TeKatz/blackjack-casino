@@ -6,6 +6,7 @@ public enum CosmeticKind
     Frame,
     Portrait,
     CardSet,
+    DiceSet,
 }
 
 public sealed record CosmeticDefinition(
@@ -67,12 +68,14 @@ public sealed class PlayerProfileState
     public string EquippedFrameId { get; set; } = CosmeticCatalog.DefaultFrameId;
     public string EquippedPortraitId { get; set; } = CosmeticCatalog.DefaultPortraitId;
     public string EquippedCardSetId { get; set; } = CosmeticCatalog.DefaultCardSetId;
+    public string EquippedDiceSetId { get; set; } = CosmeticCatalog.DefaultDiceSetId;
     public List<string> OwnedCosmeticIds { get; set; } =
     [
         CosmeticCatalog.DefaultTitleId,
         CosmeticCatalog.DefaultFrameId,
         CosmeticCatalog.DefaultPortraitId,
         CosmeticCatalog.DefaultCardSetId,
+        CosmeticCatalog.DefaultDiceSetId,
     ];
     public List<string> ClaimedChallengeIds { get; set; } = [];
     public Kniffel.KniffelStatistics Kniffel { get; set; } = new();

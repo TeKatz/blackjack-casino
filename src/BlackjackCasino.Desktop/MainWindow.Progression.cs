@@ -187,6 +187,8 @@ public partial class MainWindow
         var detail = new TextBlock { FontSize = 11, Foreground = new SolidColorBrush(Color.FromRgb(84, 225, 183)) };
         detail.Text = $"LV {profile.Level} · ◆ {profile.Coins:N0}";
         labels.Children.Add(detail);
+        labels.Children.Add(new TextBlock { Text = title.Name, FontSize = 10, Foreground = CosmeticAppearance.TitleBrush(title),
+            MaxWidth = 132, TextTrimming = TextTrimming.CharacterEllipsis });
         content.Children.Add(labels);
         if (profile.Prestige > 0)
         {
@@ -240,6 +242,12 @@ public partial class MainWindow
             return;
         }
 
+        if (frame.VisualVariant.StartsWith("static-", StringComparison.Ordinal))
+        {
+            profileButton.BorderBrush = new SolidColorBrush(CosmeticAppearance.StandardFrame(frame.VisualVariant));
+            profileButton.Effect = null;
+            return;
+        }
         (Color first, Color second, string motion) = frame.VisualVariant switch
         {
             "emerald-breathe" => (Color.FromRgb(65, 150, 105), Color.FromRgb(112, 220, 156), "pulse"),

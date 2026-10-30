@@ -116,6 +116,17 @@ public static class ChallengeCatalog
         C("sudoku-master-1", ChallengeCategory.Sudoku, "Master Key", "Complete your first Master Sudoku.", ChallengeMetric.SudokuMasterCompleted, 1, 250),
         E("sudoku-master-25", ChallengeCategory.Sudoku, "Stillness", "Complete 25 Master Sudokus.", ChallengeMetric.SudokuMasterCompleted, 25, 1200),
 
+        C("sudoku-25", ChallengeCategory.Sudoku, "Quiet Evenings", "Complete 25 Sudoku puzzles.", ChallengeMetric.SudokuCompleted, 25, 250),
+        C("sudoku-100", ChallengeCategory.Sudoku, "A Shelf of Grids", "Complete 100 Sudoku puzzles.", ChallengeMetric.SudokuCompleted, 100, 750),
+        E("sudoku-500", ChallengeCategory.Sudoku, "The Patient Mind", "Complete 500 Sudoku puzzles.", ChallengeMetric.SudokuCompleted, 500, 2500),
+        C("sudoku-daily-7", ChallengeCategory.Sudoku, "Seven Quiet Days", "Complete 7 Daily Sudokus; no streak required.", ChallengeMetric.SudokuDailyCompleted, 7, 175),
+        E("sudoku-daily-100", ChallengeCategory.Sudoku, "Daily Ritual", "Complete 100 Daily Sudokus; no streak required.", ChallengeMetric.SudokuDailyCompleted, 100, 1000),
+        C("sudoku-clean-10", ChallengeCategory.Sudoku, "Trust Your Pencil", "Complete 10 Sudokus without hints.", ChallengeMetric.SudokuNoHintCompleted, 10, 200),
+        E("sudoku-clean-100", ChallengeCategory.Sudoku, "Clear Thinking", "Complete 100 Sudokus without hints.", ChallengeMetric.SudokuNoHintCompleted, 100, 900),
+        C("sudoku-expert-1", ChallengeCategory.Sudoku, "A Deeper Grid", "Complete your first Expert Sudoku.", ChallengeMetric.SudokuExpertCompleted, 1, 175),
+        E("sudoku-expert-50", ChallengeCategory.Sudoku, "Expert's Corner", "Complete 50 Expert Sudokus.", ChallengeMetric.SudokuExpertCompleted, 50, 1500),
+        C("sudoku-master-10", ChallengeCategory.Sudoku, "Mindful Master", "Complete 10 Master Sudokus.", ChallengeMetric.SudokuMasterCompleted, 10, 750),
+
         C("dice-game-1", ChallengeCategory.MidnightDice, "First Sheet", "Complete a Midnight Dice game in either mode.", ChallengeMetric.DiceGames, 1, 50),
         C("dice-games-10", ChallengeCategory.MidnightDice, "Dice Lounge Regular", "Complete 10 Midnight Dice games.", ChallengeMetric.DiceGames, 10, 150),
         C("dice-games-50", ChallengeCategory.MidnightDice, "A Stack of Sheets", "Complete 50 Midnight Dice games.", ChallengeMetric.DiceGames, 50, 400),
@@ -136,6 +147,17 @@ public static class ChallengeCatalog
         C("dice-podium-10", ChallengeCategory.MidnightDice, "Always in Contention", "Finish in the top two at 10 casino dice tables.", ChallengeMetric.DicePodiums, 10, 300),
         C("dice-wager-100000", ChallengeCategory.MidnightDice, "Serious Seat", "Pay $100,000 in casino dice entry fees.", ChallengeMetric.DiceWagered, 100000, 300),
         E("dice-payout-100000", ChallengeCategory.MidnightDice, "A Golden Sheet", "Receive at least $100,000 from one casino dice table.", ChallengeMetric.DiceBiggestPayout, 100000, 1000),
+        C("dice-games-25", ChallengeCategory.MidnightDice, "Evening Ritual", "Complete 25 Midnight Dice games.", ChallengeMetric.DiceGames, 25, 250),
+        E("dice-games-100", ChallengeCategory.MidnightDice, "Hundred Sheets", "Complete 100 Midnight Dice games.", ChallengeMetric.DiceGames, 100, 800),
+        C("dice-score-275", ChallengeCategory.MidnightDice, "Almost Perfect", "Score at least 275 points in one game.", ChallengeMetric.DiceBestScore, 275, 350),
+        C("dice-bonus-10", ChallengeCategory.MidnightDice, "Above Average", "Earn the upper bonus in 10 completed games.", ChallengeMetric.DiceUpperBonuses, 10, 200),
+        C("dice-five-10", ChallengeCategory.MidnightDice, "Five in Style", "Record 10 five of a kinds in completed games.", ChallengeMetric.DiceFiveOfAKinds, 10, 350),
+        E("dice-full-50", ChallengeCategory.MidnightDice, "House Collector", "Fill Full House in 50 completed games.", ChallengeMetric.DiceFullHouses, 50, 600),
+        E("dice-straight-50", ChallengeCategory.MidnightDice, "Straight Talk", "Fill Large Straight in 50 completed games.", ChallengeMetric.DiceLargeStraights, 50, 650),
+        C("dice-table-10", ChallengeCategory.MidnightDice, "The Regular Table", "Finish 10 casino dice tables.", ChallengeMetric.DiceCasinoGames, 10, 300),
+        E("dice-podium-50", ChallengeCategory.MidnightDice, "Podium Resident", "Finish in the top two at 50 casino dice tables.", ChallengeMetric.DicePodiums, 50, 900),
+        E("dice-returned-1000000", ChallengeCategory.MidnightDice, "Velvet Fortune", "Receive $1,000,000 in total casino dice prizes.", ChallengeMetric.DiceReturned, 1000000, 1500),
+
         // Blackjack — 25 challenges. Milestones intentionally overlap so ordinary laid-back play
         // always has something moving without forcing exotic rules or high stakes.
         C("bj-rounds-10", ChallengeCategory.Blackjack, "Take a Seat", "Complete 10 Blackjack rounds.", ChallengeMetric.BlackjackRounds, 10, 60),

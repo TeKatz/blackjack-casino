@@ -14,6 +14,8 @@ internal sealed class LoungeWindow : Window
     private readonly ContentControl contentHost = new();
     private SudokuProgressState progress;
     private SudokuView? sudokuView;
+    private readonly List<LoungeGame> games = [];
+    private readonly Func<string>? rewardNotice;
     private bool showTimer;
     private bool showGuides;
 
@@ -23,8 +25,10 @@ internal sealed class LoungeWindow : Window
         bool showTimer,
         Action<bool> persistTimerVisibility,
         bool showGuides = true,
-        Action<bool>? persistGuideVisibility = null)
+        Action<bool>? persistGuideVisibility = null,
+        Func<string>? rewardNotice = null)
     {
+        this.rewardNotice = rewardNotice;
         this.progress = SudokuProgressState.Normalize(progress);
         this.persist = persist ?? throw new ArgumentNullException(nameof(persist));
         this.showTimer = showTimer;
@@ -53,7 +57,20 @@ internal sealed class LoungeWindow : Window
             }
         };
 
-        ShowHub();
+        games.Add(new LoungeGame("sudoku", "Sudoku", "A little space to think.", "Six difficulties, saved progress and a separate offline Daily library.", ShowHub, () => new LoungeGameArtwork(false)));
+        ShowGames();
+    }
+
+    private void ShowGames()
+    {
+        if (sudokuView is not null)
+        {
+            SudokuView previous = sudokuView;
+            sudokuView = null;
+            SaveActive(previous);
+            previous.Dispose();
+        }
+        contentHost.Content = new LoungeGameMenu(games);
     }
 
     private UIElement BuildShell()
@@ -88,12 +105,19 @@ internal sealed class LoungeWindow : Window
             Foreground = Ink("#F3E7D5"),
         });
         bar.Children.Add(brand);
+        var navigation = new StackPanel { Orientation = Orientation.Horizontal };
+        var gameMenu = LoungeButton("← LOUNGE GAMES");
+        gameMenu.Name = "LoungeGamesButton";
+        gameMenu.Margin = new Thickness(0, 0, 10, 0);
+        gameMenu.Click += (_, _) => ShowGames();
+        navigation.Children.Add(gameMenu);
 
         var close = LoungeButton("RETURN TO CLUB");
         close.Padding = new Thickness(17, 8, 17, 8);
         close.Click += (_, _) => Close();
-        Grid.SetColumn(close, 1);
-        bar.Children.Add(close);
+        navigation.Children.Add(close);
+        Grid.SetColumn(navigation, 1);
+        bar.Children.Add(navigation);
         top.Child = bar;
         root.Children.Add(top);
 
@@ -425,6 +449,7 @@ internal sealed class LoungeWindow : Window
                 showGuides = visible;
                 persistGuideVisibility(visible);
             });
+        sudokuView.CompletionRewardNotice = rewardNotice;
         contentHost.Content = sudokuView;
         sudokuView.Focus();
     }

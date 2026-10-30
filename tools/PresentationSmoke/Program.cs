@@ -34,7 +34,7 @@ internal static class Program
         app.DispatcherUnhandledException+=(_,e)=> {File.WriteAllText(Path.Combine(output,"fatal.txt"),e.Exception.ToString());e.Handled=true;app.Shutdown(1);};
         window.ContentRendered+=async(_,_)=>
         {
-            try {await Check(window,qaProfile);File.WriteAllText(Path.Combine(output,"result.txt"),"PASS: startup lobby, registered future mode, shared hover/focus/open/disabled dropdown contracts, all table themes, proportional controls, embedded Reels and Neon Vault bounds, full-surface single-window casino hosting, embedded profile rename, nested profile/progression navigation, compact challenges/shop search and pagination. Mouse hover capability recorded separately.");}
+            try {await Check(window,qaProfile);File.WriteAllText(Path.Combine(output,"result.txt"),"PASS: startup lobby, registered future mode, shared hover/focus/open/disabled dropdown contracts, all table themes, proportional controls, embedded Reels and Neon Vault bounds, full-surface single-window casino hosting, embedded profile rename, nested profile/progression navigation, compact challenge pagination, scrolling shop and search. Mouse hover capability recorded separately.");}
             catch(Exception ex){exit=1;File.WriteAllText(Path.Combine(output,"failure.txt"),ex.ToString());}
             finally {window.Close();CasinoAudio.Shutdown();app.Shutdown(exit);}
         };
@@ -44,6 +44,21 @@ internal static class Program
     {
         await Task.Delay(200);Capture(window,"01-lobby");
         Require(Find<CasinoLobbyView>(window).Any(v=>v.IsVisible),"Application did not start in the lobby");
+        foreach (var size in new[] { (1080d,720d), (1440d,900d), (1920d,1080d) })
+        {
+            window.Width = size.Item1; window.Height = size.Item2; window.UpdateLayout();
+            CasinoLobbyView lobby = Find<CasinoLobbyView>(window).Single();
+            Button[] tiles = Find<Button>(lobby).Where(button => button.Name.StartsWith("Mode_", StringComparison.Ordinal)).ToArray();
+            Require(tiles.Length == 8, "Lobby is missing a registered game tile");
+            foreach (Button tile in tiles)
+            {
+                Rect bounds = tile.TransformToAncestor(lobby).TransformBounds(new Rect(0,0,tile.ActualWidth,tile.ActualHeight));
+                Require(bounds.Left >= -1 && bounds.Top >= -1 && bounds.Right <= lobby.ActualWidth + 1 && bounds.Bottom <= lobby.ActualHeight + 1,
+                    "Lobby tile is outside the visible surface at " + size + ": " + tile.Name);
+            }
+            Require(!Find<ScrollViewer>(lobby).Any(), "Lobby still requires a scrolling surface");
+            Capture(window, "lobby-grid-" + (int)size.Item1);
+        }
         bool future=false;
         window.Modes.Register(new("future-room","Future room","Registry test","A future mode without changing lobby layout.","#527D9A","◇","Future"),()=>future=true);
         window.UpdateLayout();
@@ -139,7 +154,15 @@ internal static class Program
         challengeSearch.Clear();
         progressionTabs.SelectedItem=progressionTabs.Items.OfType<TabItem>().Single(t=>Equals(t.Header,"Cosmetic Shop"));window.UpdateLayout();
         var shopSearch=Find<TextBox>(window).Single(t=>t.Name=="ShopSearchBox");
-        CheckCollectionPaging(window,"ShopPanel","ShopNextButton","ShopPreviousButton");
+        StackPanel shopPanel = Find<StackPanel>(window).Single(panel => panel.Name == "ShopPanel");
+        Require(shopPanel.Children.Count == CosmeticCatalog.All.Count, "Shop did not expose the full filtered collection in one scroll view");
+        Require(!Find<Button>(window).Any(button => button.Name is "ShopNextButton" or "ShopPreviousButton" or "ShopCardSetsTab"), "Obsolete shop pagination/card-set shortcut remains");
+        ScrollViewer shopScroll = Find<ScrollViewer>(window).Single(scroll => scroll.Name == "ShopScroll");
+        Require(shopScroll.ScrollableHeight > 0, "Shop collection cannot scroll");
+        shopScroll.ScrollToBottom(); window.UpdateLayout();
+        Require(shopScroll.VerticalOffset > 0, "Shop scroll did not reach later items");
+        Require(Math.Abs(shopSearch.ActualHeight - Find<ComboBox>(window).Single(combo => combo.Name == "ShopKindFilter").ActualHeight) < 2, "Shop search height is inconsistent with filters");
+        Capture(window, "shop-scroll-bottom");
         shopSearch.Text="Moon Cat";window.UpdateLayout();
         Require(Find<Button>(window).Any(b=>Equals(b.Tag,"portrait-moon-cat")),"Shop search failed to find the requested portrait");
         shopSearch.Clear();
@@ -163,6 +186,7 @@ internal static class Program
         Require(handBounds.Top>=-1 && handBounds.Bottom<=viewport.ActualHeight+1 && handBounds.Height>=90,"Player cards clipped or reduced below readable size in AI table");
         Capture(window,"07-blackjack-dealt");
         await CheckWagerGeometry(window);
+        await CheckResultDeal(window);
     }
 
     private static async Task CheckEmpire(MainWindow window)
@@ -330,6 +354,27 @@ internal static class Program
         Require(Find<TableChipDrawing>(window).Any(chips=>chips.HasAnimatedProperties),"Changing a wager did not animate its chips");
         animations.IsChecked=false;
         Require(Find<TableChipDrawing>(window).All(chips=>!chips.HasAnimatedProperties),"Disabling animations did not stop active chip clocks immediately");
+    }
+    private static async Task CheckResultDeal(MainWindow window)
+    {
+        const System.Reflection.BindingFlags flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+        var fixture = new CasinoSession(new GameRules { AllowInsurance = false }, 10000m, () => new WagerShoe());
+        fixture.StartRound(100m);
+        fixture.Act(PlayerAction.Stand);
+        Require(!fixture.RoundInProgress, "Result Deal fixture did not settle");
+        typeof(MainWindow).GetField("session", flags)!.SetValue(window, fixture);
+        typeof(MainWindow).GetField("selectedBet", flags)!.SetValue(window, 100m);
+        typeof(MainWindow).GetMethod("RefreshGameUi", flags)!.Invoke(window, null);
+        await Task.Delay(60); window.UpdateLayout();
+        var original = (Button)window.FindName("DealButton");
+        var resultDeal = (Button)window.FindName("ResultDealButton");
+        Require(resultDeal.IsVisible && resultDeal.IsEnabled == original.IsEnabled && resultDeal.IsEnabled, "Result Deal is missing or out of sync with betting controls");
+        var round = fixture.CurrentRound;
+        Capture(window, "blackjack-result-deal");
+        resultDeal.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        window.UpdateLayout();
+        Require(!ReferenceEquals(round, fixture.CurrentRound), "Result Deal did not use the normal deal action");
+        Require(!resultDeal.IsVisible || !fixture.RoundInProgress, "Result Deal remained visible during play");
     }
     private static void CheckCollectionPaging(MainWindow window,string panelName,string nextName,string previousName)
     {

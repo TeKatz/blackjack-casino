@@ -182,6 +182,9 @@ public sealed class ProgressionService
             case CosmeticKind.Portrait:
                 State.EquippedPortraitId = cosmetic.Id;
                 return true;
+            case CosmeticKind.DiceSet:
+                State.EquippedDiceSetId = cosmetic.Id;
+                return true;
             case CosmeticKind.CardSet:
                 State.EquippedCardSetId = cosmetic.Id;
                 return true;
@@ -302,6 +305,7 @@ public sealed class ProgressionService
         EnsureOwned(CosmeticCatalog.DefaultFrameId);
         EnsureOwned(CosmeticCatalog.DefaultPortraitId);
         EnsureOwned(CosmeticCatalog.DefaultCardSetId);
+        EnsureOwned(CosmeticCatalog.DefaultDiceSetId);
         State.ClaimedChallengeIds ??= [];
         State.ClaimedChallengeIds = State.ClaimedChallengeIds
             .Where(id => ChallengeCatalog.TryGet(id) is not null)
@@ -331,6 +335,10 @@ public sealed class ProgressionService
         {
             State.EquippedCardSetId = CosmeticCatalog.DefaultCardSetId;
         }
+
+        if (CosmeticCatalog.TryGet(State.EquippedDiceSetId) is not { Kind: CosmeticKind.DiceSet }
+            || !State.OwnedCosmeticIds.Contains(State.EquippedDiceSetId, StringComparer.Ordinal))
+            State.EquippedDiceSetId = CosmeticCatalog.DefaultDiceSetId;
 
         SeasonDefinition? active = SeasonCatalog.All.FirstOrDefault(x => string.Equals(x.Id, State.ActiveSeasonId, StringComparison.Ordinal));
         if (active is null || active.Archived)

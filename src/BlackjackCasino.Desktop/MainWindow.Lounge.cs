@@ -5,6 +5,7 @@ namespace BlackjackCasino.Desktop;
 public partial class MainWindow
 {
     private BackgroundMusic? loungeBackgroundMusic;
+    private string sudokuRewardNotice = "";
 
     private void OpenLounge()
     {
@@ -22,11 +23,11 @@ public partial class MainWindow
             {
                 SudokuProgressState normalized = SudokuProgressState.Normalize(state);
                 preferences = preferences with { Sudoku = normalized };
-                RecordSudokuCompletions(normalized);
                 if (!testSession)
                 {
                     SavePreferences();
                 }
+                RecordSudokuCompletions(normalized);
             },
             preferences.SudokuShowTimer,
             showTimer =>
@@ -45,7 +46,8 @@ public partial class MainWindow
                 {
                     SavePreferences();
                 }
-            });
+            },
+            rewardNotice: () => sudokuRewardNotice);
 
         if (lobby is not null)
         {
@@ -88,12 +90,17 @@ public partial class MainWindow
                 continue;
             }
 
-            progressionController.ProcessSudoku(new SudokuCompletionRecord(
-                puzzle.Id,
-                puzzle.Difficulty,
-                puzzle.Pool,
-                clean.ElapsedSeconds,
-                clean.HintsUsed));
+            try
+            {
+                var award = progressionController.ProcessSudoku(new SudokuCompletionRecord(
+                    puzzle.Id, puzzle.Difficulty, puzzle.Pool, clean.ElapsedSeconds, clean.HintsUsed));
+                if (award.PlayerExperience > 0)
+                    sudokuRewardNotice = $"+{award.PlayerExperience:N0} XP · +{award.SeasonExperience:N0} Season XP earned!";
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                sudokuRewardNotice = "Puzzle saved. Reopen the Chill Lounge to retry saving your XP.";
+            }
         }
     }
 }

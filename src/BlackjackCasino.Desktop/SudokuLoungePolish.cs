@@ -230,6 +230,12 @@ internal static class SudokuLoungePolish
         stats.Children.Add(CompletionStat("MODE", puzzle.Pool == SudokuPuzzlePool.Daily ? "DAILY" : "FREE PLAY"));
         content.Children.Add(stats);
 
+        content.Children.Add(new TextBlock
+        {
+            Name = "SudokuCompletionXp", Text = view.CompletionRewardNotice?.Invoke() ?? "",
+            Foreground = Ink("#8EC9B0"), FontSize = 14, TextAlignment = TextAlignment.Center,
+            TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 18),
+        });
         var actions = new UniformGrid { Rows = 1, Columns = 3 };
         Button backToPuzzle = CompletionButton("BACK TO PUZZLE", "SudokuCompletionBackToPuzzle", false);
         Button returnToLounge = CompletionButton("RETURN TO LOUNGE", "SudokuCompletionReturnToLounge", true);

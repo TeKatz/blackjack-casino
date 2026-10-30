@@ -67,7 +67,8 @@ public partial class MainWindow
         {
             if (SoundEnabled) CasinoAudio.Play(DiceRollCue.Value, kniffelAudioOwner, .75);
         }, AwardKniffelCompletion, ShowKniffelSetup, _ => { if (casino) AdvanceKniffelTable(); }, persistInitialState: !casino,
-        fiveOfAKindSound: () => { if (SoundEnabled) CasinoAudio.Play(DiceFiveOfAKindCue.Value, kniffelAudioOwner, .85); });
+        fiveOfAKindSound: () => { if (SoundEnabled) CasinoAudio.Play(DiceFiveOfAKindCue.Value, kniffelAudioOwner, .85); },
+        diceVariant: CosmeticCatalog.Get(progressionController?.Profile.EquippedDiceSetId ?? CosmeticCatalog.DefaultDiceSetId).VisualVariant);
     }
 
     private void PersistKniffelPreferences(AppPreferences next)

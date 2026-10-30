@@ -57,3 +57,31 @@ The first slice includes:
 - solver/uniqueness regression tests
 
 Later slices should expand the curated catalog substantially, add Daily history/calendar browsing, completion statistics and progression rewards without making solve time part of the reward formula.
+
+## Lounge menu and completion XP
+
+The Chill Lounge opens a game-selection menu before the Sudoku library. `LoungeGame`
+registrations supply an ID, text, artwork factory and route; further games can add a
+registration in `LoungeWindow` without changing the menu renderer. The header's
+Lounge Games button preserves and disposes any active Sudoku before returning.
+
+Completed puzzles now earn player XP / active-season XP:
+
+| Difficulty | Player XP | Season XP |
+| --- | ---: | ---: |
+| Relaxed | 150 | 75 |
+| Easy | 250 | 125 |
+| Medium | 400 | 200 |
+| Hard | 600 | 300 |
+| Expert | 850 | 425 |
+| Master | 1200 | 600 |
+
+Hints, timer visibility and solve speed do not reduce rewards. Free Play and Daily
+use the same difficulty scale. The completion receipt and XP are saved atomically
+in the profile. Already recorded puzzles do not pay again, including historical
+completions recorded before this update. An unsuccessful profile write remains
+retryable on reopening the lounge. Ten additional Sudoku challenges bring the
+category to 21; all goals remain free of speed or streak pressure.
+
+The original 74 BPM **Velvet Sidewalks** score replaces Quiet Pages: swung hats,
+dusty kick/snare, soft electric keys, sub bass and tape texture, synthesized offline.

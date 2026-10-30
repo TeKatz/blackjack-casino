@@ -19,6 +19,7 @@ internal sealed class PlayerProfileWindow : Window
     private readonly TextBlock playerStatusText = new();
     private readonly TextBlock nameLabel = new();
     private readonly TextBlock levelLabel = new();
+    private readonly TextBlock titleLabel = new();
     private readonly TextBlock collectionLabel = new();
     private readonly TextBox nameBox = new();
     private readonly TextBox portraitSearch = new();
@@ -94,6 +95,8 @@ internal sealed class PlayerProfileWindow : Window
         nameLabel.FontSize = 25; nameLabel.FontWeight = FontWeights.Bold;
         nameLabel.TextWrapping = TextWrapping.Wrap; nameLabel.Margin = new Thickness(0, 14, 0, 0);
         identity.Children.Add(nameLabel);
+        titleLabel.FontSize = 15; titleLabel.Margin = new Thickness(0, 5, 0, 0);
+        identity.Children.Add(titleLabel);
         levelLabel.Foreground = CoinBrush; levelLabel.Margin = new Thickness(0, 5, 0, 18);
         levelLabel.TextWrapping = TextWrapping.Wrap; identity.Children.Add(levelLabel);
         identity.Children.Add(Caption("DISPLAY NAME"));
@@ -143,6 +146,9 @@ internal sealed class PlayerProfileWindow : Window
     {
         PlayerProfileState profile = controller.Profile;
         nameLabel.Text = profile.DisplayName;
+        CosmeticDefinition title = CosmeticCatalog.Get(profile.EquippedTitleId);
+        titleLabel.Text = title.Name;
+        titleLabel.Foreground = CosmeticAppearance.TitleBrush(title);
         levelLabel.Text = $"Level {profile.Level} · Prestige {profile.Prestige}\n◆ {profile.Coins:N0} cosmetic coins";
         equippedPortraitHost.Content = ProgressionWindow.CreatePortraitVisual(CosmeticCatalog.Get(profile.EquippedPortraitId), 136);
         CosmeticDefinition[] owned = CosmeticCatalog.All.Where(x => x.Kind == CosmeticKind.Portrait

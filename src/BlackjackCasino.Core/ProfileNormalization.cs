@@ -46,6 +46,9 @@ public static class ProfileNormalization
         state.EquippedCardSetId = string.IsNullOrWhiteSpace(state.EquippedCardSetId)
             ? CosmeticCatalog.DefaultCardSetId
             : state.EquippedCardSetId;
+        state.EquippedDiceSetId = string.IsNullOrWhiteSpace(state.EquippedDiceSetId)
+            ? CosmeticCatalog.DefaultDiceSetId
+            : state.EquippedDiceSetId;
         state.SchemaVersion = Math.Max(state.SchemaVersion, 5);
     }
 }

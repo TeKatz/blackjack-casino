@@ -13,41 +13,60 @@ internal sealed class KniffelSetupView : UserControl
         Action<bool> playCasual, Action<decimal> startCasino, Action resumeCasino, Action forfeit, Action back)
     {
         var body = new StackPanel();
-        body.Children.Add(Text("Choose your dice night", 28, "#F3E6CF"));
-        body.Children.Add(Text("Your casino bankroll: " + Money(bankroll), 15, "#E7CD97"));
-        body.Children.Add(Text("CASUAL · SOLO", 12, "#9FD1B6", 18));
-        body.Children.Add(Text("No entry fee. Play at your own pace and earn completion XP.", 13));
-        var casualButtons = new WrapPanel();
-        casualButtons.Children.Add(Button("Continue saved casual game", "ResumeCasualButton", () => playCasual(false)));
-        casualButtons.Children.Add(Button("New casual game", "StartCasualButton", () => playCasual(true)));
-        body.Children.Add(casualButtons);
-        if (casual.Entries.Length > 0 || casual.RollsUsed > 0)
-            body.Children.Add(Text("New casual game replaces your saved casual sheet. Casino tables are saved separately.", 11));
-        body.Children.Add(Text("CASINO TABLE · YOU + 3 AI OPPONENTS", 12, "#9FD1B6", 17));
-        body.Children.Add(Text("Mara · balanced     Felix · upper-section collector     June · adventurous", 12));
-        body.Children.Add(Text("Same rules, independent dice and 13 turns each. Entry is charged once. Leaving the table pauses it.", 13));
-        var stakes = new ComboBox { Name = "DiceStakeCombo", Margin = new Thickness(0, 10, 0, 7), MinWidth = 180, HorizontalAlignment = HorizontalAlignment.Left };
+        var heading = new DockPanel();
+        var balance = Text("BANKROLL\n" + Money(bankroll), 16, "#E7CD97");
+        balance.TextAlignment = TextAlignment.Right;
+        DockPanel.SetDock(balance, Dock.Right);
+        heading.Children.Add(balance);
+        heading.Children.Add(Text("Choose your dice night", 28, "#F3E6CF"));
+        body.Children.Add(heading);
+        body.Children.Add(Text("Two ways to play. Your casual sheet and paid table save separately.", 13));
+        var choices = new Grid { Margin = new Thickness(0, 18, 0, 10) };
+        choices.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(0.85, GridUnitType.Star) });
+        choices.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.15, GridUnitType.Star) });
+        body.Children.Add(choices);
+        var casualBody = new StackPanel();
+        casualBody.Children.Add(Text("CASUAL · SOLO", 12, "#9FD1B6"));
+        casualBody.Children.Add(Text("A game at your pace", 22, "#F3E6CF"));
+        casualBody.Children.Add(Text("Free entry · completion XP · no opponents", 13));
+        casualBody.Children.Add(Text("Roll, hold and fill your sheet whenever you feel like it.", 13));
+        bool hasSaved = casual.Entries.Length > 0 || casual.RollsUsed > 0;
+        var resume = Button("Continue saved game", "ResumeCasualButton", () => playCasual(false));
+        resume.IsEnabled = hasSaved;
+        casualBody.Children.Add(resume);
+        casualBody.Children.Add(Button("New casual game", "StartCasualButton", () => playCasual(true)));
+        casualBody.Children.Add(Text(hasSaved ? "Starting a new game replaces this casual sheet." : "No casual game in progress yet.", 11));
+        choices.Children.Add(Choice(casualBody, new Thickness(0, 0, 10, 0)));
+        var casino = new StackPanel();
+        casino.Children.Add(Text("CASINO · YOU + 3 AI", 12, "#9FD1B6"));
+        casino.Children.Add(Text("Take a seat at the table", 22, "#F3E6CF"));
+        casino.Children.Add(Text("Mara · balanced   /   Felix · collector   /   June · adventurous", 11));
+        casino.Children.Add(Text("13 turns each · same rules · independent dice", 13));
+        var stakes = new ComboBox { Name = "DiceStakeCombo", Margin = new Thickness(0, 12, 0, 8), MinWidth = 170, HorizontalAlignment = HorizontalAlignment.Left };
         foreach (decimal stake in KniffelTable.Stakes) stakes.Items.Add(new ComboBoxItem { Content = Money(stake), Tag = stake });
         stakes.SelectedIndex = 0;
-        body.Children.Add(stakes);
-        var prizes = Text("", 13, "#E7CD97");
-        body.Children.Add(prizes);
-        body.Children.Add(Text("Prize money includes your stake return. Ties share the prizes for their occupied places, rounded down to cents. Fixed place bonuses make a full game worthwhile at small tables.", 11));
+        casino.Children.Add(Text("ENTRY FEE", 10, "#9FD1B6"));
+        casino.Children.Add(stakes);
+        var prizeGrid = new System.Windows.Controls.Primitives.UniformGrid { Columns = 2, Margin = new Thickness(0, 3, 0, 8) };
+        var prizeLabels = new TextBlock[4];
+        for (int i = 0; i < 4; i++) { prizeLabels[i] = Text("", 13, "#E7CD97"); prizeGrid.Children.Add(prizeLabels[i]); }
+        casino.Children.Add(prizeGrid);
+        casino.Children.Add(Text("Prizes include your stake. Ties share the occupied places' prizes, rounded down to cents.", 11));
         Button start = Button("Pay entry & start table", "StartCasinoButton", () => startCasino((decimal)((ComboBoxItem)stakes.SelectedItem).Tag));
-        body.Children.Add(start);
+        casino.Children.Add(start);
         void RefreshStake()
         {
             decimal stake = (decimal)((ComboBoxItem)stakes.SelectedItem).Tag;
-            prizes.Text = string.Join("   ·   ", Enumerable.Range(1, 4).Select(place => $"#{place}: {Money(KniffelTable.PrizeForPlace(stake, place))}"));
+            for (int i = 0; i < 4; i++) prizeLabels[i].Text = $"#{i + 1}   {Money(KniffelTable.PrizeForPlace(stake, i + 1))}";
             start.IsEnabled = bankroll >= stake && !KniffelTable.IsActive(table);
-            start.Content = KniffelTable.IsActive(table) ? "Finish or forfeit your current casino table first"
+            start.Content = KniffelTable.IsActive(table) ? "A paid table is already in progress"
                 : bankroll < stake ? "Not enough casino cash" : "Pay " + Money(stake) + " & start table";
         }
         stakes.SelectionChanged += (_, _) => RefreshStake();
         RefreshStake();
         if (table is not null)
         {
-            body.Children.Add(Button(table.Settled ? "View last casino result" : "Resume paid casino table · no new entry fee", "ResumeCasinoButton", resumeCasino));
+            casino.Children.Add(Button(table.Settled ? "View last casino result" : "Resume paid table · no new fee", "ResumeCasinoButton", resumeCasino));
             if (!table.Settled)
             {
                 Button abandon = Button("Forfeit table…", "ForfeitCasinoButton", () => { });
@@ -57,18 +76,27 @@ internal sealed class KniffelSetupView : UserControl
                     if (!confirming)
                     {
                         confirming = true;
-                        abandon.Content = "Confirm forfeit · lose entry, no prize or XP";
-                        notice.Text = "Forfeiting permanently ends this table. Use Back to game to keep playing instead.";
+                        abandon.Content = "Confirm forfeit";
+                        notice.Text = "Forfeit loses your entry with no prize or XP. Back to game keeps your table.";
                     }
                     else forfeit();
                 };
-                body.Children.Add(abandon);
+                casino.Children.Add(abandon);
             }
         }
+        var casinoCard = Choice(casino, new Thickness(0));
+        Grid.SetColumn(casinoCard, 1);
+        choices.Children.Add(casinoCard);
+        body.Children.Add(Text("Paid once. Leaving the table pauses your game.", 11));
         body.Children.Add(notice);
         body.Children.Add(Button("Back to game", "CloseDiceSetupButton", back));
-        Content = Panel(body, 650);
+        Content = Panel(body, 960);
     }
+    private static Border Choice(UIElement content, Thickness margin) => new()
+    {
+        Background = Ink("#102A24"), BorderBrush = Ink("#426959"), BorderThickness = new Thickness(1),
+        CornerRadius = new CornerRadius(10), Padding = new Thickness(18), Margin = margin, Child = content,
+    };
     internal void SetNotice(string message) => notice.Text = message;
     internal static string Money(decimal value) => value.ToString("C2", CultureInfo.GetCultureInfo("en-US"));
     private static TextBlock Text(string value, double size = 13, string color = "#B7CABB", double top = 5)

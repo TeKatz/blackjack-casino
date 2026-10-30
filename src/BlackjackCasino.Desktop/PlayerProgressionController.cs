@@ -133,6 +133,20 @@ internal sealed class PlayerProgressionController : IDisposable
         }
     }
 
+    public ProgressionAward ProcessSudoku(BlackjackCasino.Core.Sudoku.SudokuCompletionRecord completion)
+    {
+        lock (Profile)
+        {
+            AccruePlaytime();
+            PlayerProfileState candidate = ManorPersistence.Clone(Profile);
+            ProgressionAward award = new BlackjackCasino.Core.Sudoku.SudokuProgression(new ProgressionService(candidate)).Process(completion);
+            if (award == ProgressionAward.None) return award;
+            if (persistKniffelRewards) saveKniffelProfile(candidate);
+            AdoptManorProfile(candidate);
+            return award;
+        }
+    }
+
     public PurchaseResult PurchaseCosmetic(string cosmeticId)
     {
         PurchaseResult result = Service.PurchaseCosmetic(cosmeticId);
@@ -227,6 +241,7 @@ internal sealed class PlayerProgressionController : IDisposable
     {
         // Keep the existing blackjack service, processed-round set and session statistics.
         Profile.Kniffel = committed.Kniffel;
+        Profile.Sudoku = committed.Sudoku;
         Profile.Manor = committed.Manor;
         Profile.SchemaVersion = committed.SchemaVersion;
         Profile.SlotTrackingVersion = committed.SlotTrackingVersion;
@@ -249,6 +264,7 @@ internal sealed class PlayerProgressionController : IDisposable
         Profile.EquippedFrameId = committed.EquippedFrameId;
         Profile.EquippedPortraitId = committed.EquippedPortraitId;
         Profile.EquippedCardSetId = committed.EquippedCardSetId;
+        Profile.EquippedDiceSetId = committed.EquippedDiceSetId;
     }
 
     public void SaveAll()
