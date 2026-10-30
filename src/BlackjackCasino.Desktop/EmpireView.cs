@@ -17,6 +17,7 @@ internal sealed class EmpireView : UserControl, IDisposable
     private readonly Func<bool> claim;
     private readonly Func<EmpirePrestigeResult> prestige;
     private readonly Func<bool> animations;
+    private readonly Grid root = new() { Margin = new Thickness(24, 17, 24, 14) };
     private readonly WrapPanel rooms = new() { Name = "EmpireRoomGrid", HorizontalAlignment = HorizontalAlignment.Stretch };
     private readonly List<EmpireRoomCard> cards = [];
     private readonly EmpireBalanceCounter credits = new() { FontSize = 25, Foreground = Ink("#EFD5A0") };
@@ -76,7 +77,6 @@ internal sealed class EmpireView : UserControl, IDisposable
         Background = new LinearGradientBrush(Color.FromRgb(8, 20, 19), Color.FromRgb(26, 23, 29), 25);
         Resources[typeof(Button)] = Application.Current.FindResource("CasinoButton");
 
-        var root = new Grid { Margin = new Thickness(24, 17, 24, 14) };
         foreach (GridLength height in new[] { GridLength.Auto, GridLength.Auto, new GridLength(1, GridUnitType.Star), GridLength.Auto })
             root.RowDefinitions.Add(new RowDefinition { Height = height });
 
@@ -401,7 +401,8 @@ internal sealed class EmpireView : UserControl, IDisposable
         EmpireState snapshot = service.Snapshot;
         lifetime.Text = Number(snapshot.LifetimeCredits) + " cr";
         cashClaimed.Text = snapshot.LifetimeCashClaimed.ToString("C2", CultureInfo.GetCultureInfo("en-US"));
-        openRooms.Text = service.OpenRooms + " / " + EmpireCatalog.Departments.Count;
+        int availableRooms = EmpireCatalog.Departments.Count(room => service.FloorUnlocked(room.Floor));
+        openRooms.Text = service.OpenRooms + " / " + availableRooms;
         levels.Text = service.TotalLevels.ToString(CultureInfo.InvariantCulture);
 
         prestigeTitle.Text = service.Prestige == 0 ? "Prestige not yet claimed" : $"Empire Prestige {service.Prestige}";
@@ -411,6 +412,91 @@ internal sealed class EmpireView : UserControl, IDisposable
         prestigeButton.IsEnabled = service.CanPrestige;
         prestigeButton.Content = service.CanPrestige ? $"PRESTIGE → {service.Prestige + 1}" : "PRESTIGE LOCKED";
         ResizeRooms();
+    }
+
+    internal void ShowOfflineReport(EmpireAccrual report)
+    {
+        if (disposed || report.Elapsed < TimeSpan.FromMinutes(2)) return;
+
+        var overlayBody = new StackPanel { Margin = new Thickness(26) };
+        overlayBody.Children.Add(Label("WELCOME BACK, BOSS", 10, "#D6B478"));
+        overlayBody.Children.Add(new TextBlock
+        {
+            Text = "The house kept working.",
+            FontFamily = new FontFamily("Georgia"),
+            FontSize = 30,
+            Foreground = Ink("#F5E7CC"),
+            Margin = new Thickness(0, 7, 0, 4),
+        });
+        overlayBody.Children.Add(Label("Offline for " + OfflineDuration(report.Elapsed), 13, "#9FB5A8", new Thickness(0, 0, 0, 15)));
+
+        var totals = new Grid { Margin = new Thickness(0, 0, 0, 15) };
+        totals.ColumnDefinitions.Add(new ColumnDefinition());
+        totals.ColumnDefinitions.Add(new ColumnDefinition());
+        AddOfflineMetric(totals, 0, "EMPIRE CREDITS", "+" + Number(report.Credits) + " cr");
+        AddOfflineMetric(totals, 1, "OWNER DIVIDEND", "+" + report.Dividend.ToString("C2", CultureInfo.GetCultureInfo("en-US")));
+        overlayBody.Children.Add(totals);
+        overlayBody.Children.Add(Label("ROOM EARNINGS", 9, "#B89B69", new Thickness(0, 0, 0, 6)));
+
+        var roomList = new StackPanel();
+        foreach (var pair in report.Rooms.OrderBy(pair => EmpireCatalog.Find(pair.Key)?.Floor ?? int.MaxValue)
+                     .ThenBy(pair => EmpireCatalog.Find(pair.Key)?.Name ?? pair.Key))
+        {
+            if (pair.Value <= 0) continue;
+            EmpireDepartment? room = EmpireCatalog.Find(pair.Key);
+            var line = new DockPanel { Margin = new Thickness(0, 3, 0, 3) };
+            var amount = Label("+" + Number(pair.Value) + " cr", 12, "#B9DFC4");
+            amount.FontWeight = FontWeights.SemiBold;
+            DockPanel.SetDock(amount, Dock.Right);
+            line.Children.Add(amount);
+            line.Children.Add(Label(room is null ? pair.Key : (room.Floor == 1 ? room.Name : "Upper Floor · " + room.Name), 12, "#D8E2DA"));
+            roomList.Children.Add(line);
+        }
+        overlayBody.Children.Add(new Border
+        {
+            Background = Ink("#10241E"),
+            BorderBrush = Ink("#33483D"),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(13, 8, 13, 8),
+            Child = roomList,
+        });
+        if (report.Capped)
+            overlayBody.Children.Add(Label("Offline production reached the 8-hour storage limit. Time beyond the cap was not paid twice.", 11, "#D9BD82", new Thickness(0, 12, 0, 0)));
+
+        var close = new Button
+        {
+            Name = "EmpireOfflineContinueButton",
+            Content = "COLLECT & CONTINUE",
+            MinHeight = 42,
+            Margin = new Thickness(0, 18, 0, 0),
+            Padding = new Thickness(18, 8, 18, 8),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+        overlayBody.Children.Add(close);
+
+        var card = new Border
+        {
+            MaxWidth = 560,
+            MaxHeight = 650,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Background = new LinearGradientBrush(Color.FromRgb(10, 29, 24), Color.FromRgb(28, 23, 31), 35),
+            BorderBrush = Ink("#8B7048"),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(12),
+            Child = new ScrollViewer { Content = overlayBody, VerticalScrollBarVisibility = ScrollBarVisibility.Auto },
+        };
+        var overlay = new Grid
+        {
+            Name = "EmpireOfflineReportOverlay",
+            Background = new SolidColorBrush(Color.FromArgb(218, 3, 9, 8)),
+        };
+        overlay.Children.Add(card);
+        Grid.SetRowSpan(overlay, 4);
+        Panel.SetZIndex(overlay, 5000);
+        close.Click += (_, _) => root.Children.Remove(overlay);
+        root.Children.Add(overlay);
     }
 
     private void PrestigeClicked()
@@ -482,12 +568,26 @@ internal sealed class EmpireView : UserControl, IDisposable
         return value.ToString(absolute >= 100 ? "0" : "0.##", CultureInfo.InvariantCulture);
     }
 
+    private static string OfflineDuration(TimeSpan elapsed)
+        => elapsed.TotalHours >= 1 ? $"{(int)elapsed.TotalHours}h {elapsed.Minutes}m" : $"{Math.Max(1, (int)elapsed.TotalMinutes)}m";
+
+    private static void AddOfflineMetric(Grid grid, int column, string label, string value)
+    {
+        var stack = new StackPanel { Margin = new Thickness(column == 0 ? 0 : 7, 0, column == 0 ? 7 : 0, 0) };
+        stack.Children.Add(Label(label, 9, "#B89B69"));
+        stack.Children.Add(new TextBlock { Text = value, FontFamily = new FontFamily("Georgia"), FontSize = 21, Foreground = Ink("#F0D39C"), Margin = new Thickness(0, 3, 0, 0) });
+        var panel = new Border { Background = Ink("#132820"), BorderBrush = Ink("#3A4E40"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 9, 12, 9), Child = stack };
+        Grid.SetColumn(panel, column);
+        grid.Children.Add(panel);
+    }
+
     private static TextBlock Label(string text, double size, string color, Thickness? margin = null) => new()
     {
         Text = text,
         FontSize = size,
         Foreground = Ink(color),
         Margin = margin ?? new Thickness(0),
+        TextWrapping = TextWrapping.Wrap,
     };
 
     private static SolidColorBrush Ink(string color) => new((Color)ColorConverter.ConvertFromString(color));
