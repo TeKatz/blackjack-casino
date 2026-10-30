@@ -1,14 +1,14 @@
 namespace BlackjackCasino.Desktop;
 
-internal enum TableCue { Deal, Chip, Win, Loss, Push, Menu, ReelSpin, ReelLoss, DiceRoll }
+internal enum TableCue { Deal, Chip, Win, Loss, Push, Menu, ReelSpin, ReelLoss, DiceRoll, DiceFiveOfAKind }
 internal static class CasinoSoundSynthesis
 {
     internal static AudioClip Build(TableCue cue)
     {
-        double duration = cue switch { TableCue.DiceRoll => .62, TableCue.Deal => 0.17, TableCue.Menu => 0.055, TableCue.ReelSpin => 0.11, TableCue.Chip => 0.16, TableCue.Win => 0.56, TableCue.Loss => 0.48, _ => 0.38 };
+        double duration = cue switch { TableCue.DiceFiveOfAKind => 1.25, TableCue.DiceRoll => .62, TableCue.Deal => 0.17, TableCue.Menu => 0.055, TableCue.ReelSpin => 0.11, TableCue.Chip => 0.16, TableCue.Win => 0.56, TableCue.Loss => 0.48, _ => 0.38 };
         var samples = new float[(int)(duration * AudioClip.Rate) * 2];
         double low = 0, mid = 0;
-        double[] notes = cue switch { TableCue.Win => [523.25,659.25,783.99], TableCue.Loss => [349.23,293.66,246.94], TableCue.Push => [440,440], TableCue.ReelLoss => [196,146.83], _ => [] };
+        double[] notes = cue switch { TableCue.DiceFiveOfAKind => [659.25, 783.99, 987.77, 1174.66, 1318.51], TableCue.Win => [523.25,659.25,783.99], TableCue.Loss => [349.23,293.66,246.94], TableCue.Push => [440,440], TableCue.ReelLoss => [196,146.83], _ => [] };
         for (int i = 0; i < samples.Length / 2; i++)
         {
             double t = i / (double)AudioClip.Rate;
@@ -28,11 +28,12 @@ internal static class CasinoSoundSynthesis
             };
             for (int n = 0; n < notes.Length; n++)
             {
-                double local = t - n * (cue == TableCue.Win ? 0.09 : 0.115);
+                double local = t - n * (cue == TableCue.DiceFiveOfAKind ? 0.105 : cue == TableCue.Win ? 0.09 : 0.115);
                 if (local < 0) continue;
                 double f = notes[n];
-                value += (Math.Sin(2*Math.PI*f*local)+Math.Sin(2*Math.PI*f*2*local)*0.085)
-                    * Env(local,0.008,cue == TableCue.Win ? 0.13 : 0.11) * (cue == TableCue.Win ? 0.085 : 0.065);
+                bool celebration = cue == TableCue.DiceFiveOfAKind;
+                value += (Math.Sin(2*Math.PI*f*local)+Math.Sin(2*Math.PI*f*2*local)*(celebration ? .18 : .085))
+                    * Env(local,0.008,celebration ? .22 : cue == TableCue.Win ? 0.13 : 0.11) * (celebration ? .075 : cue == TableCue.Win ? 0.085 : 0.065);
             }
             value *= 0.24 * Math.Min(1,(duration-t)/0.025);
             samples[i*2] = samples[i*2+1] = (float)value;

@@ -188,3 +188,29 @@ legal AI decisions, deterministic recovery, complete matches, forfeit and receip
 idempotence. Windows smoke additionally plays a full paid table, checks resume
 without a second fee, opponent sheets, exact payout, repeat-result protection,
 confirmed forfeit, the statistics card and filtered achievements.
+
+## Match feedback and result receipt
+
+Recording a five of a kind now shows a short gold-glow banner with the scorer's
+name, score-box points and any extra-five bonus, accompanied by a quiet original
+five-note chime and a small particle burst. The player's actual matching faces
+are shown; AI banners use five matching gold emblems because committed AI
+checkpoints no longer retain rolled faces. Only successfully saved entries trigger
+feedback. Player and opponent events queue in order and repeated refreshes do not
+replay them. Reduced motion keeps the readable banner without movement or particles;
+the shared sound setting and volume apply. Open dialogs defer queued feedback.
+
+After the last opponents finish and cash is saved, a match receipt opens after
+any queued celebrations. It shows ranked scores for all seats, upper/lower scores,
+upper and extra-five bonuses, five-of-a-kind counts, scratched player boxes and
+completion XP. The casino receipt separately lists entry paid, gross prize returned
+and signed **net win/loss**, plus the current bankroll and any tie explanation.
+A forfeited receipt clearly shows the lost entry and no completion XP. Casual
+completion has its own score summary without a cash prize.
+
+**Back to score sheet**, **Game setup** and **Return to casino** provide clear next
+steps. **Match results** reopens the read-only receipt without awarding cash or XP
+again. The Windows feedback smoke uses deterministic five-of-a-kind fixtures to
+verify the player and all three named opponents, ordered/deduplicated sounds,
+bonus entries in another box, failed-save rollback, reduced motion, dialog
+deferral, endscreen timing, tied/loss receipts, minimum-window rendering and cleanup.

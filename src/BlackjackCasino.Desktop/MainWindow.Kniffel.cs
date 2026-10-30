@@ -12,6 +12,7 @@ public partial class MainWindow
     private readonly object kniffelAudioOwner = new();
     private bool kniffelLevelUp;
     private static readonly Lazy<AudioClip> DiceRollCue = new(() => CasinoSoundSynthesis.Build(TableCue.DiceRoll));
+    private static readonly Lazy<AudioClip> DiceFiveOfAKindCue = new(() => CasinoSoundSynthesis.Build(TableCue.DiceFiveOfAKind));
     private readonly List<(UIElement Element, bool Enabled)> kniffelCoveredElements = [];
     private bool KniffelPageOpen => kniffelView is not null;
     private bool KniffelCasinoMode => preferences.KniffelCasinoSelected && preferences.KniffelTable is not null;
@@ -65,7 +66,8 @@ public partial class MainWindow
         }, CloseKniffel, () => AnimationsEnabled, () =>
         {
             if (SoundEnabled) CasinoAudio.Play(DiceRollCue.Value, kniffelAudioOwner, .75);
-        }, AwardKniffelCompletion, ShowKniffelSetup, _ => { if (casino) AdvanceKniffelTable(); }, persistInitialState: !casino);
+        }, AwardKniffelCompletion, ShowKniffelSetup, _ => { if (casino) AdvanceKniffelTable(); }, persistInitialState: !casino,
+        fiveOfAKindSound: () => { if (SoundEnabled) CasinoAudio.Play(DiceFiveOfAKindCue.Value, kniffelAudioOwner, .85); });
     }
 
     private void PersistKniffelPreferences(AppPreferences next)
@@ -148,12 +150,13 @@ public partial class MainWindow
         if (!KniffelCasinoMode || kniffelView is null) return;
         KniffelTableState table = preferences.KniffelTable!;
         if (kniffelView.Game.GameId != table.Player.GameId) return;
+        if (table.Settled) kniffelView.SetCompletionNotice(reward ?? RecordKniffelTable(table));
         kniffelView.UpdateTable(table, session.Bankroll, KniffelTable.NeedsOpponents(table));
         if (table.Settled)
         {
             string result = table.Forfeited ? "Table forfeited. Your entry fee was lost; no prize was paid."
                 : $"Table complete · Place #{table.Placement} · Paid {KniffelSetupView.Money(table.Payout)} · Net {KniffelSetupView.Money(table.Payout - table.Stake)} · Bankroll {KniffelSetupView.Money(session.Bankroll)}.";
-            kniffelView.SetNotice(result + " " + (reward ?? RecordKniffelTable(table)));
+            kniffelView.SetNotice(result + " " + kniffelView.CompletionNotice);
         }
     }
     private async void AdvanceKniffelTable()
@@ -182,6 +185,7 @@ public partial class MainWindow
                 PersistKniffelPreferences(preferences with { Bankroll = change.Bankroll, KniffelTable = change.Table, KniffelCasinoSelected = selected });
                 session.ResetBankroll(change.Bankroll);
             });
+            kniffelView.CelebrateOpponents(snapshot, next);
             string reward = RecordKniffelTable(next);
             RefreshKniffelTable(reward);
             if (!next.Settled && KniffelCasinoMode)

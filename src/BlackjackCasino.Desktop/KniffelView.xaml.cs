@@ -21,6 +21,7 @@ public partial class KniffelView : UserControl, IDisposable
     private bool tableWaiting;
     private KniffelTableState? tableState;
     private readonly Action? rollSound;
+    private readonly Action? fiveOfAKindSound;
     private readonly Func<KniffelState, string>? completion;
     private readonly Func<bool> animations;
     private readonly Button[] diceButtons = new Button[5];
@@ -37,12 +38,13 @@ public partial class KniffelView : UserControl, IDisposable
     private KniffelCategory? selected;
     internal KniffelGame Game { get; private set; }
 
-    internal KniffelView(KniffelState state, Action<KniffelState> save, Action back, Func<bool> animations, Action? rollSound = null, Func<KniffelState, string>? completion = null, Action? gameSetup = null, Action<KniffelState>? turnFinished = null, bool persistInitialState = true)
+    internal KniffelView(KniffelState state, Action<KniffelState> save, Action back, Func<bool> animations, Action? rollSound = null, Func<KniffelState, string>? completion = null, Action? gameSetup = null, Action<KniffelState>? turnFinished = null, bool persistInitialState = true, Action? fiveOfAKindSound = null)
     {
         this.save = save;
         this.gameSetup = gameSetup;
         this.turnFinished = turnFinished;
         this.rollSound = rollSound;
+        this.fiveOfAKindSound = fiveOfAKindSound;
         this.completion = completion;
         this.back = back;
         this.animations = animations;
@@ -98,14 +100,19 @@ public partial class KniffelView : UserControl, IDisposable
         }
         rollTimer.Tick += (_, _) => AnimateRollFrame();
         PreviewKeyDown += OnKeyDown;
-        Loaded += (_, _) => { Refresh(); RollButton.Focus(); };
-        Unloaded += (_, _) => StopRoll();
+        Loaded += (_, _) => { Refresh(); RollButton.Focus(); PresentNextFeedback(); TryShowMatchResult(); };
+        Unloaded += (_, _) => { StopRoll(); StopFeedback(); };
         NoticeText.Text = "Roll first, then hold dice and reroll or choose a score. Your game saves automatically.";
         Refresh();
         // Persist migrated IDs before awarding an older completed save.
         if (persistInitialState) save(Game.Snapshot);
         if (gameSetup is not null) NewGameButton.Content = "Game setup";
-        if (Game.IsComplete) NoticeText.Text = $"Game complete! {Game.Total} points. " + completion?.Invoke(Game.Snapshot);
+        if (Game.IsComplete)
+        {
+            completionNotice = completion?.Invoke(Game.Snapshot) ?? "";
+            NoticeText.Text = $"Game complete! {Game.Total} points. " + completionNotice;
+            if (persistInitialState) RequestMatchResult();
+        }
     }
 
     private bool ApplyAction(Action<KniffelGame> action)
@@ -139,6 +146,7 @@ public partial class KniffelView : UserControl, IDisposable
     internal void UpdateTable(KniffelTableState state, decimal bankroll, bool waiting)
     {
         tableState = state;
+        tableBankroll = bankroll;
         tableWaiting = waiting || state.Forfeited;
         ModeLabel.Text = "CASINO · 4 PLAYERS";
         TableStandingsText.Visibility = OpponentSheetsButton.Visibility = Visibility.Visible;
@@ -147,6 +155,7 @@ public partial class KniffelView : UserControl, IDisposable
         Refresh();
         if (state.Forfeited) { TurnText.Text = "Table forfeited"; RollButton.Content = "Table closed"; }
         if (waiting) NoticeText.Text = "Your score is saved. Mara, Felix and June are playing their turns …";
+        if (state.Settled) RequestMatchResult();
     }
     private void OpponentSheets_Click(object sender, RoutedEventArgs e)
     {
@@ -247,13 +256,20 @@ public partial class KniffelView : UserControl, IDisposable
     {
         if (disposed || busy || tableWaiting || selected is not KniffelCategory category || !Game.CanScore || RestartOverlay.IsVisible) return;
         int points = 0;
+        KniffelState before = Game.Snapshot;
         if (!ApplyAction(game => points = game.Commit(category, scratch))) return;
+        CelebrateScore("You", before, Game.Snapshot);
         selected = null;
         Refresh();
         NoticeText.Text = Game.IsComplete
             ? $"Game complete! {Game.Total} points. Upper: {Game.UpperSubtotal} + {Game.UpperBonus} bonus · Lower: {Game.LowerSubtotal} · Extra five-of-a-kind: {Game.AdditionalKniffelBonus}."
             : $"{CategoryName(category)}: {points} points recorded. Next: turn {Game.FilledCount + 1}.";
-        if (Game.IsComplete) NoticeText.Text += " " + completion?.Invoke(Game.Snapshot);
+        if (Game.IsComplete)
+        {
+            completionNotice = completion?.Invoke(Game.Snapshot) ?? "";
+            NoticeText.Text += " " + completionNotice;
+            if (tableState is null) RequestMatchResult();
+        }
         Pulse(rows[category].Button, Color.FromRgb(189, 142, 52));
         RollButton.Focus();
         turnFinished?.Invoke(Game.Snapshot);
@@ -349,11 +365,14 @@ public partial class KniffelView : UserControl, IDisposable
         DicePanel.IsEnabled = ScoreRows.IsEnabled = NewGameButton.IsEnabled = KniffelBackButton.IsEnabled = true;
         Refresh();
         RollButton.Focus();
+        PresentNextFeedback();
+        TryShowMatchResult();
     }
     private void Restart()
     {
         StopRoll();
         Game = new KniffelGame();
+        ResetMatchFeedback();
         selected = null;
         save(Game.Snapshot);
         CancelRestart_Click(this, new RoutedEventArgs());
@@ -378,6 +397,7 @@ public partial class KniffelView : UserControl, IDisposable
     {
         if (disposed) return;
         disposed = true;
+        StopFeedback();
         StopRoll();
         foreach (var row in rows.Values) row.Button.Effect = null;
     }

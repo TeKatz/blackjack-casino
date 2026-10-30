@@ -65,12 +65,14 @@ internal static class KniffelSmoke
         long earned = KniffelProgression.PlayerExperience(view.Game.Total);
         Require(profile.LifetimeExperience == xpBefore + earned, "Completed game did not grant the expected XP.");
         Require(Find<TextBlock>(view).Single(text => text.Name == "NoticeText").Text.Contains("XP", StringComparison.Ordinal), "Completion did not show the XP award.");
+        await CloseResult(view);
         Capture(window, Path.Combine(output, "kniffel-complete.png"));
         Click(view, "KniffelBackButton");
         window.Modes.Open("kniffel");
         await Task.Delay(80);
         view = Find<KniffelView>(window).Single();
         Require(view.Game.IsComplete && profile.LifetimeExperience == xpBefore + earned, "Reopening a finished game granted duplicate XP.");
+        await CloseResult(view);
         Click(view, "NewGameButton");
         Click(view, "StartCasualButton");
         view = Find<KniffelView>(window).Single();
@@ -103,6 +105,11 @@ internal static class KniffelSmoke
     }
 
     private static Button Button(DependencyObject root, string name) => Find<Button>(root).Single(button => button.Name == name);
+    private static async Task CloseResult(KniffelView view)
+    {
+        for (int i = 0; i < 400 && !Find<Button>(view).Any(b => b.Name == "CloseMatchResultButton" && b.IsVisible); i++) await Task.Delay(30);
+        Click(view, "CloseMatchResultButton");
+    }
     private static void Click(DependencyObject root, string name)
     {
         Button button = Button(root, name);

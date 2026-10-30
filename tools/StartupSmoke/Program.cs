@@ -138,6 +138,7 @@ internal static class Program
 
                 await KniffelSmoke.Run(window, output, profile);
                 await KniffelCasinoSmoke.Run(window, output, profile);
+                await KniffelFeedbackSmoke.Run(window, output);
 
                 File.WriteAllText(Path.Combine(output, "result.txt"),
                     "PASS: Nine Lives opened with the restored concept-art symbols, single Casino navigation, clean empty-win state, themed in-app flyouts and non-clipping paytable return control.");

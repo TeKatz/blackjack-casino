@@ -62,7 +62,13 @@ internal static class KniffelCasinoSmoke
         Require(window.DiceCasinoBankroll == initialCash - 100 + result.Payout, "Final cash does not match entry plus rank prize.");
         Require(profile.Kniffel.CasinoGamesCompleted == 1 && profile.Kniffel.TotalWagered == 100, "Casino statistics were not recorded once.");
         Require(profile.LifetimeExperience == xp + KniffelProgression.PlayerExperience(view.Game.Total), "Paid table completion XP is wrong.");
+        await Until(() => Find<Button>(view).Any(b => b.Name == "CloseMatchResultButton" && b.IsVisible));
+        Require(Find<TextBlock>(view).Single(t => t.Name == "MatchNetText").Text == KniffelMatchResultView.Signed(result.Payout - result.Stake), "Match receipt does not show the true net result.");
+        Require(Find<TextBlock>(view).Single(t => t.Name == "MatchPayoutText").Text == "+" + KniffelSetupView.Money(result.Payout), "Match receipt has the wrong prize return.");
         Capture(window, Path.Combine(output, "dice-casino-result.png"));
+        Click(view, "CloseMatchResultButton");
+        Click(view, "MatchResultButton");
+        Click(view, "CloseMatchResultButton");
         decimal settledCash = window.DiceCasinoBankroll;
         long settledXp = profile.LifetimeExperience;
         Click(view, "KniffelBackButton");
@@ -70,7 +76,8 @@ internal static class KniffelCasinoSmoke
         await Task.Delay(80);
         view = Find<KniffelView>(window).Single();
         Require(window.DiceCasinoBankroll == settledCash && profile.LifetimeExperience == settledXp, "Reopening a result duplicated cash or XP.");
-        Click(view, "NewGameButton");
+        await Until(() => Find<Button>(view).Any(b => b.Name == "ResultGameSetupButton" && b.IsVisible));
+        Click(view, "ResultGameSetupButton");
         Click(view, "StartCasinoButton");
         view = Find<KniffelView>(window).Single();
         Click(view, "NewGameButton");
@@ -81,7 +88,9 @@ internal static class KniffelCasinoSmoke
         Require(window.DiceTableCheckpoint!.Forfeited && window.DiceCasinoBankroll == settledCash - 100, "Forfeit incorrectly refunded or paid a prize.");
         Require(profile.LifetimeExperience == settledXp && profile.Kniffel.Forfeits == 1, "Forfeit awarded XP or missed statistics.");
         Require(!Find<Button>(view).Single(b => b.Name == "RollButton").IsEnabled, "A forfeited table can still roll.");
-        Click(view, "KniffelBackButton");
+        await Until(() => Find<Button>(view).Any(b => b.Name == "ResultCasinoButton" && b.IsVisible));
+        Require(Find<TextBlock>(view).Single(t => t.Name == "MatchNetText").Text == "−$100.00", "Forfeit receipt does not show the lost entry.");
+        Click(view, "ResultCasinoButton");
         Button overview = Find<Button>(window).Single(b => Equals(b.Content, "Overview") && b.IsVisible);
         overview.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(120);
