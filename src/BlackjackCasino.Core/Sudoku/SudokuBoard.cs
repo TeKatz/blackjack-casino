@@ -73,7 +73,14 @@ public sealed class SudokuBoard
         char expected = (char)('0' + digit);
         for (int index = 0; index < 81; index++)
         {
-            if (solution[index] == expected && values[index] != digit)
+            if (solution[index] == expected)
+            {
+                if (values[index] != digit)
+                {
+                    return false;
+                }
+            }
+            else if (values[index] == digit)
             {
                 return false;
             }
