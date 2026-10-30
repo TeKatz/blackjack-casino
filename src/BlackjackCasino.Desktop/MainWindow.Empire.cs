@@ -100,7 +100,7 @@ public partial class MainWindow
         Dispatcher.BeginInvoke(() =>
         {
             empireView?.MoveFocus(new TraversalRequest(FocusNavigationDirection.First));
-            ShowStartupEmpireReport(this);
+            ShowStartupEmpireReport(empireView);
         });
     }
 
@@ -151,7 +151,7 @@ public partial class MainWindow
         empireDetachedView = view;
         window.Show();
         modeRegistry.NotifyStateChanged();
-        Dispatcher.BeginInvoke(() => ShowStartupEmpireReport(window));
+        Dispatcher.BeginInvoke(() => ShowStartupEmpireReport(view));
     }
 
     private void StartEmpireSession()
@@ -164,12 +164,11 @@ public partial class MainWindow
         RefreshEmpireHeader();
     }
 
-    private void ShowStartupEmpireReport(Window owner)
+    private void ShowStartupEmpireReport(EmpireView? target)
     {
-        if (empireStartupReportShown || empireStartupCatchUp is null) return;
+        if (target is null || empireStartupReportShown || empireStartupCatchUp is null) return;
         empireStartupReportShown = true;
-        var report = new EmpireOfflineReportWindow(empireStartupCatchUp) { Owner = owner };
-        report.ShowDialog();
+        target.ShowOfflineReport(empireStartupCatchUp);
     }
 
     private bool UpgradeEmpire(string id, int levels)
