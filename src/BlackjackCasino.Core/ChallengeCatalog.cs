@@ -10,6 +10,7 @@ public enum ChallengeCategory
     Lifetime,
     Prestige,
     MidnightDice,
+    Sudoku,
 }
 
 public enum ChallengeMetric
@@ -84,6 +85,7 @@ public enum ChallengeMetric
     PrestigeCount,
     DiceGames, DiceBestScore, DiceUpperBonuses, DiceFiveOfAKinds, DiceFullHouses, DiceLargeStraights,
     DiceCasinoGames, DiceCasinoWins, DicePodiums, DiceWagered, DiceReturned, DiceBiggestPayout,
+    SudokuCompleted, SudokuDailyCompleted, SudokuNoHintCompleted, SudokuExpertCompleted, SudokuMasterCompleted,
 }
 
 public sealed record ChallengeDefinition(
@@ -100,6 +102,20 @@ public static class ChallengeCatalog
 {
     private static readonly IReadOnlyList<ChallengeDefinition> Challenges = Array.AsReadOnly(new[]
     {
+        // Sudoku deliberately rewards persistence rather than speed. The Chill Lounge should
+        // never turn its timer into pressure or punish players for using accessibility aids.
+        C("sudoku-first", ChallengeCategory.Sudoku, "First Grid", "Complete your first Sudoku puzzle.", ChallengeMetric.SudokuCompleted, 1, 50),
+        C("sudoku-10", ChallengeCategory.Sudoku, "Settling In", "Complete 10 Sudoku puzzles.", ChallengeMetric.SudokuCompleted, 10, 150),
+        C("sudoku-50", ChallengeCategory.Sudoku, "Quiet Regular", "Complete 50 Sudoku puzzles.", ChallengeMetric.SudokuCompleted, 50, 400),
+        E("sudoku-250", ChallengeCategory.Sudoku, "A Thousand Little Squares", "Complete 250 Sudoku puzzles.", ChallengeMetric.SudokuCompleted, 250, 1500),
+        C("sudoku-daily-1", ChallengeCategory.Sudoku, "Today's Grid", "Complete your first Daily Sudoku.", ChallengeMetric.SudokuDailyCompleted, 1, 75),
+        C("sudoku-daily-30", ChallengeCategory.Sudoku, "A Month of Dailies", "Complete 30 Daily Sudokus. They do not need to be consecutive.", ChallengeMetric.SudokuDailyCompleted, 30, 350),
+        C("sudoku-clean-1", ChallengeCategory.Sudoku, "No Nudge Needed", "Complete a Sudoku without using a hint.", ChallengeMetric.SudokuNoHintCompleted, 1, 75),
+        C("sudoku-clean-25", ChallengeCategory.Sudoku, "Pencil and Patience", "Complete 25 Sudokus without using a hint.", ChallengeMetric.SudokuNoHintCompleted, 25, 350),
+        C("sudoku-expert-10", ChallengeCategory.Sudoku, "Deep Focus", "Complete 10 Expert Sudokus.", ChallengeMetric.SudokuExpertCompleted, 10, 500),
+        C("sudoku-master-1", ChallengeCategory.Sudoku, "Master Key", "Complete your first Master Sudoku.", ChallengeMetric.SudokuMasterCompleted, 1, 250),
+        E("sudoku-master-25", ChallengeCategory.Sudoku, "Stillness", "Complete 25 Master Sudokus.", ChallengeMetric.SudokuMasterCompleted, 25, 1200),
+
         C("dice-game-1", ChallengeCategory.MidnightDice, "First Sheet", "Complete a Midnight Dice game in either mode.", ChallengeMetric.DiceGames, 1, 50),
         C("dice-games-10", ChallengeCategory.MidnightDice, "Dice Lounge Regular", "Complete 10 Midnight Dice games.", ChallengeMetric.DiceGames, 10, 150),
         C("dice-games-50", ChallengeCategory.MidnightDice, "A Stack of Sheets", "Complete 50 Midnight Dice games.", ChallengeMetric.DiceGames, 50, 400),
@@ -222,7 +238,7 @@ public static class ChallengeCatalog
         E("lifetime-xp-1000000", ChallengeCategory.Lifetime, "Casino Institution", "Earn 1,000,000 lifetime player XP across all games.", ChallengeMetric.LifetimeExperience, 1000000, 4000),
         E("lifetime-hours-250", ChallengeCategory.Lifetime, "The Long Night", "Record 250 hours of total casino playtime.", ChallengeMetric.LifetimePlaytimeSeconds, 900000, 3000),
         E("lifetime-wager-10000000", ChallengeCategory.Lifetime, "Ten Million in Motion", "Wager $10,000,000 across all games, including preserved pooled slot history.", ChallengeMetric.LifetimeWagered, 10000000, 4000),
-        E("lifetime-plays-100000", ChallengeCategory.Lifetime, "A Hundred Thousand Nights", "Complete 100,000 Blackjack rounds, dice games and slot spins combined, including preserved pooled slot history.", ChallengeMetric.LifetimePlays, 100000, 5000),
+        E("lifetime-plays-100000", ChallengeCategory.Lifetime, "A Hundred Thousand Nights", "Complete 100,000 Blackjack rounds, dice games, Sudoku puzzles and slot spins combined, including preserved pooled slot history.", ChallengeMetric.LifetimePlays, 100000, 5000),
         E("prestige-3", ChallengeCategory.Prestige, "Third Time Crowned", "Reach Prestige 3.", ChallengeMetric.PrestigeCount, 3, 2500),
         E("prestige-5", ChallengeCategory.Prestige, "Fivefold Legend", "Reach Prestige 5.", ChallengeMetric.PrestigeCount, 5, 4000),
         E("prestige-10", ChallengeCategory.Prestige, "Eternal High Roller", "Reach Prestige 10.", ChallengeMetric.PrestigeCount, 10, 7500),
@@ -324,12 +340,19 @@ public static class ChallengeCatalog
             ChallengeMetric.DiceWagered => profile.Kniffel.TotalWagered,
             ChallengeMetric.DiceReturned => profile.Kniffel.TotalReturned,
             ChallengeMetric.DiceBiggestPayout => profile.Kniffel.BiggestPayout,
+
+            ChallengeMetric.SudokuCompleted => profile.Sudoku.CompletedPuzzles,
+            ChallengeMetric.SudokuDailyCompleted => profile.Sudoku.DailyCompleted,
+            ChallengeMetric.SudokuNoHintCompleted => profile.Sudoku.NoHintCompletions,
+            ChallengeMetric.SudokuExpertCompleted => profile.Sudoku.ExpertCompleted,
+            ChallengeMetric.SudokuMasterCompleted => profile.Sudoku.MasterCompleted,
+
             ChallengeMetric.LifetimeExperience => profile.LifetimeExperience,
             ChallengeMetric.LifetimePlaytimeSeconds => profile.TotalPlaytimeSeconds,
             ChallengeMetric.LifetimeWagered => blackjack.TotalWagered + reels.TotalWagered + neon.TotalWagered + nine.TotalWagered
                 + manor.TotalWagered + legacy.TotalWagered + profile.Kniffel.TotalWagered,
             ChallengeMetric.LifetimePlays => (decimal)blackjack.RoundsPlayed + reels.Spins + neon.Spins + nine.Spins
-                + manor.PaidSpins + manor.FreeSpins + legacy.Spins + profile.Kniffel.CompletedGames,
+                + manor.PaidSpins + manor.FreeSpins + legacy.Spins + profile.Kniffel.CompletedGames + profile.Sudoku.CompletedPuzzles,
             ChallengeMetric.PrestigeCount => profile.Prestige,
             _ => 0,
         };
