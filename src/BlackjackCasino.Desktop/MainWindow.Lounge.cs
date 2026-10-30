@@ -14,12 +14,15 @@ public partial class MainWindow
         }
         ProcessLatestCompletedRound();
         SudokuLoungePolish.EnsureInstalled();
+        RecordSudokuCompletions(preferences.Sudoku);
 
         var window = new LoungeWindow(
             preferences.Sudoku,
             state =>
             {
-                preferences = preferences with { Sudoku = SudokuProgressState.Normalize(state) };
+                SudokuProgressState normalized = SudokuProgressState.Normalize(state);
+                preferences = preferences with { Sudoku = normalized };
+                RecordSudokuCompletions(normalized);
                 if (!testSession)
                 {
                     SavePreferences();
@@ -59,5 +62,38 @@ public partial class MainWindow
             TableModeText.Text = "Casino lobby";
         });
         loungeBackgroundMusic.Start(preferences.MusicEnabled, preferences.MusicVolume);
+    }
+
+    private void RecordSudokuCompletions(SudokuProgressState state)
+    {
+        if (progressionController is null)
+        {
+            return;
+        }
+
+        SudokuProgressState normalized = SudokuProgressState.Normalize(state);
+        foreach (string puzzleId in normalized.CompletedPuzzleIds)
+        {
+            if (progressionController.Profile.Sudoku.RecordedPuzzleIds.Contains(puzzleId) ||
+                !SudokuLibrary.TryGet(puzzleId, out SudokuPuzzle? puzzle) ||
+                puzzle is null ||
+                !normalized.Games.TryGetValue(puzzleId, out SudokuGameState? game))
+            {
+                continue;
+            }
+
+            SudokuGameState clean = SudokuGameState.Normalize(puzzle, game);
+            if (!clean.Completed)
+            {
+                continue;
+            }
+
+            progressionController.ProcessSudoku(new SudokuCompletionRecord(
+                puzzle.Id,
+                puzzle.Difficulty,
+                puzzle.Pool,
+                clean.ElapsedSeconds,
+                clean.HintsUsed));
+        }
     }
 }
