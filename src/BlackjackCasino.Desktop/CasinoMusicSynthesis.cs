@@ -10,7 +10,7 @@ internal static class CasinoMusicSynthesis
         Soundtrack.Blackjack => 72,
         Soundtrack.Reels => 104,
         Soundtrack.DiceLounge => 68,
-        Soundtrack.ChillLounge => 60,
+        Soundtrack.ChillLounge => 54,
         _ => 62,
     };
 
@@ -21,7 +21,7 @@ internal static class CasinoMusicSynthesis
         Soundtrack.Blackjack => "Felt after hours",
         Soundtrack.Reels => "Brass and lucky sevens",
         Soundtrack.DiceLounge => "A quiet roll",
-        Soundtrack.ChillLounge => "Midnight LoFi",
+        Soundtrack.ChillLounge => "Quiet Pages",
         _ => "The clockwork waltz",
     };
 
