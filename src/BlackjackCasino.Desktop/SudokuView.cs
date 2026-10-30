@@ -17,6 +17,7 @@ internal sealed class SudokuView : UserControl, IDisposable
     private readonly bool showTimer;
     private readonly Action<SudokuGameState> save;
     private readonly Action back;
+    private readonly Action<bool> persistGuideVisibility;
     private readonly Button[] cells = new Button[81];
     private readonly Button[] numberButtons = new Button[9];
     private readonly Stack<SudokuBoardFrame> undo = new();
@@ -28,9 +29,11 @@ internal sealed class SudokuView : UserControl, IDisposable
     private readonly TextBlock statusText = new();
     private readonly TextBlock hintText = new();
     private readonly ToggleButton pencilButton = new();
+    private readonly ToggleButton guidesButton = new();
     private readonly Button undoButton = new();
     private readonly Button redoButton = new();
     private int selectedIndex = -1;
+    private bool showGuides;
     private bool disposed;
     private bool completionSaved;
 
@@ -39,12 +42,16 @@ internal sealed class SudokuView : UserControl, IDisposable
         SudokuGameState state,
         bool showTimer,
         Action<SudokuGameState> save,
-        Action back)
+        Action back,
+        bool showGuides = true,
+        Action<bool>? persistGuideVisibility = null)
     {
         this.puzzle = puzzle ?? throw new ArgumentNullException(nameof(puzzle));
         this.showTimer = showTimer;
+        this.showGuides = showGuides;
         this.save = save ?? throw new ArgumentNullException(nameof(save));
         this.back = back ?? throw new ArgumentNullException(nameof(back));
+        this.persistGuideVisibility = persistGuideVisibility ?? (_ => { });
         SudokuGameState clean = SudokuGameState.Normalize(puzzle, state);
         board = new SudokuBoard(puzzle, clean);
         elapsedBaseSeconds = clean.ElapsedSeconds;
@@ -72,6 +79,7 @@ internal sealed class SudokuView : UserControl, IDisposable
     internal string PuzzleId => puzzle.Id;
     internal SudokuDifficulty Difficulty => puzzle.Difficulty;
     internal bool TimerVisible => showTimer;
+    internal bool GuidesVisible => showGuides;
 
     public void Dispose()
     {
@@ -268,8 +276,19 @@ internal sealed class SudokuView : UserControl, IDisposable
         historyRow.Children.Add(redoButton);
         side.Children.Add(historyRow);
 
+        guidesButton.IsChecked = showGuides;
+        guidesButton.Foreground = Ink("#E9E1D2");
+        guidesButton.Background = Ink("#17272A");
+        guidesButton.BorderBrush = Ink("#54706D");
+        guidesButton.Padding = new Thickness(12, 9, 12, 9);
+        guidesButton.Margin = new Thickness(3, 10, 3, 0);
+        guidesButton.FontWeight = FontWeights.SemiBold;
+        guidesButton.Checked += (_, _) => SetGuidesVisible(true);
+        guidesButton.Unchecked += (_, _) => SetGuidesVisible(false);
+        side.Children.Add(guidesButton);
+
         var hint = MakeButton("REVEAL ONE CELL", Ink("#2A3326"), Ink("#8A9C70"));
-        hint.Margin = new Thickness(3, 12, 3, 3);
+        hint.Margin = new Thickness(3, 10, 3, 3);
         hint.Click += (_, _) => ApplyHint();
         side.Children.Add(hint);
 
@@ -297,18 +316,26 @@ internal sealed class SudokuView : UserControl, IDisposable
 
     private void EnterDigit(int digit)
     {
-        if (!CanEditSelected())
+        if (!CanEditSelected() || board.IsDigitComplete(digit))
         {
             return;
         }
 
+        bool pencil = pencilButton.IsChecked == true;
         PushUndo();
-        bool changed = pencilButton.IsChecked == true
+        bool changed = pencil
             ? board.ToggleNote(selectedIndex, digit)
             : board.SetValue(selectedIndex, digit);
         if (!changed)
         {
             undo.Pop();
+            return;
+        }
+
+        if (!pencil && board.IsIncorrectAt(selectedIndex))
+        {
+            statusText.Text = "That number does not belong in this cell.";
+            AfterMutation(preserveStatus: true);
             return;
         }
 
@@ -357,7 +384,7 @@ internal sealed class SudokuView : UserControl, IDisposable
         }
 
         selectedIndex = revealed;
-        statusText.Text = "One cell was revealed. Hints are recorded, but they never block completion.";
+        statusText.Text = "One cell was revealed or corrected. Hints are recorded, but they never block completion.";
         AfterMutation(preserveStatus: true);
     }
 
@@ -387,6 +414,19 @@ internal sealed class SudokuView : UserControl, IDisposable
     {
         undo.Push(board.CaptureFrame());
         redo.Clear();
+    }
+
+    private void SetGuidesVisible(bool visible)
+    {
+        if (showGuides == visible)
+        {
+            RefreshGuidesButton();
+            return;
+        }
+
+        showGuides = visible;
+        persistGuideVisibility(showGuides);
+        Refresh();
     }
 
     private void AfterMutation(bool preserveStatus = false)
@@ -427,15 +467,16 @@ internal sealed class SudokuView : UserControl, IDisposable
             Button cell = cells[index];
             int value = board.ValueAt(index);
             bool given = board.IsGiven(index);
+            bool incorrect = board.IsIncorrectAt(index);
             bool conflict = board.HasConflictAt(index);
-            bool related = selectedIndex >= 0 && IsRelated(index, selectedIndex);
+            bool related = showGuides && selectedIndex >= 0 && IsRelated(index, selectedIndex);
             bool selected = index == selectedIndex;
             bool sameValue = selectedValue > 0 && value == selectedValue;
 
             cell.Content = value == 0 ? NotesText(board.NotesAt(index)) : value.ToString();
             cell.FontSize = value == 0 ? 12 : 32;
             cell.FontWeight = given ? FontWeights.Bold : FontWeights.SemiBold;
-            cell.Foreground = conflict
+            cell.Foreground = incorrect || conflict
                 ? Ink("#F08F84")
                 : given ? Ink("#F2E7D5") : Ink("#91D3BC");
             cell.Background = selected
@@ -452,9 +493,15 @@ internal sealed class SudokuView : UserControl, IDisposable
             {
                 continue;
             }
+
+            bool completedDigit = board.IsDigitComplete(digit);
             bool selectedDigit = selectedValue == digit;
-            number.Background = Ink(selectedDigit ? "#315149" : "#182B2C");
-            number.BorderBrush = Ink(selectedDigit ? "#8EC9B0" : "#456763");
+            number.IsEnabled = !completedDigit && !board.IsComplete;
+            number.Opacity = completedDigit ? 0.38d : board.IsComplete ? 0.55d : 1d;
+            number.Foreground = Ink(completedDigit ? "#71807B" : "#EEE5D6");
+            number.Background = Ink(completedDigit ? "#101A1C" : selectedDigit ? "#315149" : "#182B2C");
+            number.BorderBrush = Ink(completedDigit ? "#293D3A" : selectedDigit ? "#8EC9B0" : "#456763");
+            number.ToolTip = completedDigit ? $"All {digit}s are correctly placed." : null;
         }
 
         timeText.Text = FormatTime(CurrentElapsedSeconds);
@@ -462,6 +509,7 @@ internal sealed class SudokuView : UserControl, IDisposable
         undoButton.IsEnabled = undo.Count > 0;
         redoButton.IsEnabled = redo.Count > 0;
         RefreshPencilButton();
+        RefreshGuidesButton();
 
         if (board.IsComplete && !completionSaved)
         {
@@ -473,6 +521,13 @@ internal sealed class SudokuView : UserControl, IDisposable
     {
         pencilButton.Background = pencilButton.IsChecked == true ? Ink("#36544F") : Ink("#17272A");
         pencilButton.BorderBrush = pencilButton.IsChecked == true ? Ink("#8EC9B0") : Ink("#54706D");
+    }
+
+    private void RefreshGuidesButton()
+    {
+        guidesButton.Content = showGuides ? "GUIDES · ON  [G]" : "GUIDES · OFF  [G]";
+        guidesButton.Background = showGuides ? Ink("#36544F") : Ink("#17272A");
+        guidesButton.BorderBrush = showGuides ? Ink("#8EC9B0") : Ink("#54706D");
     }
 
     private bool CanEditSelected() => selectedIndex is >= 0 and < 81 && !board.IsGiven(selectedIndex) && !board.IsComplete;
@@ -517,6 +572,10 @@ internal sealed class SudokuView : UserControl, IDisposable
                 break;
             case Key.Space:
                 pencilButton.IsChecked = pencilButton.IsChecked != true;
+                e.Handled = true;
+                break;
+            case Key.G:
+                guidesButton.IsChecked = guidesButton.IsChecked != true;
                 e.Handled = true;
                 break;
             case Key.Z when Keyboard.Modifiers.HasFlag(ModifierKeys.Control):
