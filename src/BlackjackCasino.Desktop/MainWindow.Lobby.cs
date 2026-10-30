@@ -30,7 +30,9 @@ public partial class MainWindow
             secondaryLabel: "OPEN IN NEW WINDOW",
             canSecondaryOpen: () => !EmpirePageOpen);
         lobby=new CasinoLobbyView(modeRegistry,OpenProgression);
+        lobby.IsVisibleChanged += (_, _) => LobbyButton.Visibility = lobby.IsVisible ? Visibility.Collapsed : Visibility.Visible;
         Grid.SetRow(lobby,1); Grid.SetColumnSpan(lobby,2);Panel.SetZIndex(lobby,900);CasinoRoot.Children.Add(lobby);
+        LobbyButton.Visibility=Visibility.Collapsed;
         TableModeText.Text="Casino lobby";
 
         // InitializeLobby is invoked from PresentationLoaded, so registering another Loaded
@@ -61,6 +63,7 @@ public partial class MainWindow
         if(session.RoundInProgress) {StatusText.Text="Finish your hand before returning to the lobby.";return;}
         CloseEmbeddedGame();
         if(lobby is not null) lobby.Visibility=Visibility.Visible;
+        LobbyButton.Visibility=Visibility.Collapsed;
         TableModeText.Text="Casino lobby";
     }
     private void OpenProgression(string tab)
