@@ -52,10 +52,31 @@ internal sealed class CasinoLobbyView : UserControl
             text.Children.Add(new TextBlock {Text=mode.Subtitle.ToUpperInvariant(),FontSize=10,Foreground=accent});
             text.Children.Add(new TextBlock {Text=mode.Title,FontFamily=new FontFamily("Georgia"),FontSize=27,Foreground=Ink("#F3E6D1"),Margin=new Thickness(0,8,0,12)});
             text.Children.Add(new TextBlock {Text=mode.Description,FontSize=14,Foreground=Ink("#ADBCB6"),TextWrapping=TextWrapping.Wrap,MinHeight=57});
-            text.Children.Add(new TextBlock {Text="TAKE A SEAT   →",FontSize=12,FontWeight=FontWeights.Bold,Foreground=Ink("#E7CCA0"),Margin=new Thickness(0,20,0,0)});
+            text.Children.Add(new TextBlock {Text=modes.CanOpen(mode.Id)?"TAKE A SEAT   →":"OPEN IN SEPARATE WINDOW",FontSize=12,FontWeight=FontWeights.Bold,Foreground=Ink("#E7CCA0"),Margin=new Thickness(0,20,0,0)});
             panel.Children.Add(text);
-            var button=new Button {Name="Mode_"+mode.Id.Replace('-','_'),Tag=mode.Id,Width=330,Padding=new Thickness(0),Margin=new Thickness(10),Content=panel,Background=Ink("#111F20"),BorderBrush=accent,HorizontalContentAlignment=HorizontalAlignment.Stretch};
-            button.Click+=(_,_)=>modes.Open(mode.Id);cards.Children.Add(button);
+
+            var primary=new Button
+            {
+                Name="Mode_"+mode.Id.Replace('-','_'),Tag=mode.Id,Padding=new Thickness(0),Content=panel,
+                Background=Ink("#111F20"),BorderBrush=accent,HorizontalContentAlignment=HorizontalAlignment.Stretch,
+                IsEnabled=modes.CanOpen(mode.Id),HorizontalAlignment=HorizontalAlignment.Stretch,
+            };
+            primary.Click+=(_,_)=>modes.Open(mode.Id);
+
+            var wrapper=new StackPanel {Margin=new Thickness(10)};
+            wrapper.Children.Add(primary);
+            if(modes.HasSecondary(mode.Id))
+            {
+                var secondary=new Button
+                {
+                    Name="ModeSecondary_"+mode.Id.Replace('-','_'),Tag=mode.Id+"-secondary",
+                    Content=modes.SecondaryLabel(mode.Id),Margin=new Thickness(0,7,0,0),Padding=new Thickness(12,8,12,8),
+                    IsEnabled=modes.CanOpenSecondary(mode.Id),HorizontalAlignment=HorizontalAlignment.Stretch,
+                };
+                secondary.Click+=(_,_)=>modes.OpenSecondary(mode.Id);
+                wrapper.Children.Add(secondary);
+            }
+            cards.Children.Add(wrapper);
         }
         ResizeCards();
     }
@@ -64,7 +85,7 @@ internal sealed class CasinoLobbyView : UserControl
         double available=Math.Max(300,ActualWidth-110);
         int columns=Math.Clamp((int)(available/300),1,Math.Max(1,cards.Children.Count));
         double width=Math.Clamp(available/columns-24,280,430);
-        foreach(Button card in cards.Children) card.Width=width;
+        foreach(FrameworkElement card in cards.Children) card.Width=width;
     }
     private static SolidColorBrush Ink(string hex)=>new((Color)ColorConverter.ConvertFromString(hex));
 }
