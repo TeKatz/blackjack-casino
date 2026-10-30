@@ -208,7 +208,8 @@ internal sealed class LoungeWindow : Window
         start.Click += (_, _) => StartNextNormal();
         actions.Children.Add(start);
 
-        if (TryGetActiveNormal(out SudokuPuzzle? activeNormal, out SudokuGameState? activeState) && !activeState.Completed)
+        if (TryGetActiveNormal(out SudokuPuzzle? activeNormal, out SudokuGameState? activeState) &&
+            activeNormal is not null && activeState is not null && !activeState.Completed)
         {
             Button resume = LoungeButton($"CONTINUE {DifficultyLabel(activeNormal.Difficulty).ToUpperInvariant()}");
             resume.Margin = new Thickness(0, 8, 0, 0);
