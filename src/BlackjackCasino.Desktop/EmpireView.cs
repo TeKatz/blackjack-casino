@@ -17,6 +17,11 @@ internal sealed class EmpireView : UserControl, IDisposable
     private readonly Func<bool> claim;
     private readonly Func<EmpirePrestigeResult> prestige;
     private readonly Func<bool> animations;
+    private readonly Func<Func<EmpireService, EmpireActionResult>, EmpireActionResult> manage;
+    private EmpireManagementView? managementView;
+    private readonly ComboBox propertyPicker = new() { Name = "EmpirePropertySelector", DisplayMemberPath = "Name", SelectedValuePath = "Id", Width = 230, HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 0, 0, 7) };
+    private bool selectingProperty;
+    private readonly TextBlock offlineDetail = Label("", 10, "#91A99C");
     private readonly Grid root = new() { Margin = new Thickness(24, 17, 24, 14) };
     private readonly WrapPanel rooms = new() { Name = "EmpireRoomGrid", HorizontalAlignment = HorizontalAlignment.Stretch };
     private readonly List<EmpireRoomCard> cards = [];
@@ -64,13 +69,15 @@ internal sealed class EmpireView : UserControl, IDisposable
         Func<EmpirePrestigeResult> prestige,
         Action back,
         Func<bool> animations,
-        string backLabel)
+        string backLabel,
+        Func<Func<EmpireService, EmpireActionResult>, EmpireActionResult>? managementAction = null)
     {
         this.service = service;
         this.upgrade = upgrade;
         this.claim = claim;
         this.prestige = prestige;
         this.animations = animations;
+        manage = managementAction ?? (change => change(service));
         Name = "CasinoEmpirePage";
         FontFamily = new FontFamily("Segoe UI");
         Foreground = Ink("#F2E4C8");
@@ -85,6 +92,10 @@ internal sealed class EmpireView : UserControl, IDisposable
         exit.Click += (_, _) => back();
         DockPanel.SetDock(exit, Dock.Right);
         header.Children.Add(exit);
+        var strategic = new Button { Name = "EmpireManagementButton", Content = "MANAGEMENT", Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center };
+        DockPanel.SetDock(strategic, Dock.Right);
+        strategic.Click += (_, _) => ShowManagement();
+        header.Children.Add(strategic);
         var title = new StackPanel();
         title.Children.Add(Label("THE MIDNIGHT CLUB  /  YOUR PRIVATE ESTATE", 9, "#BEA674"));
         title.Children.Add(new TextBlock { Text = "Casino Empire", FontFamily = new FontFamily("Georgia"), FontSize = 32, Foreground = Ink("#F4E7CA"), Margin = new Thickness(0, 3, 0, 0) });
@@ -94,7 +105,7 @@ internal sealed class EmpireView : UserControl, IDisposable
         var balances = new Grid { Margin = new Thickness(0, 0, 0, 15) };
         for (int i = 0; i < 3; i++) balances.ColumnDefinitions.Add(new ColumnDefinition());
         AddMetric(0, "EMPIRE CREDITS", credits, Label("Your independent construction budget", 10, "#91A99C"));
-        AddMetric(1, "AUTOMATIC PRODUCTION", production, Label("Earning in other games · 8h offline catch-up", 10, "#91A99C"));
+        AddMetric(1, "AUTOMATIC PRODUCTION", production, offlineDetail);
         var dividendContent = new DockPanel();
         collect.VerticalAlignment = VerticalAlignment.Center;
         collect.Click += (_, _) => { this.claim(); Refresh(); };
@@ -115,11 +126,24 @@ internal sealed class EmpireView : UserControl, IDisposable
         var toolbar = new Grid { Margin = new Thickness(0, 0, 0, 10) };
         toolbar.ColumnDefinitions.Add(new ColumnDefinition());
         toolbar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        var floorBar = new StackPanel { Orientation = Orientation.Horizontal };
-        AddFloorButton(1, "MAIN FLOOR");
-        AddFloorButton(2, "UPPER FLOOR · PRESTIGE I");
-        floorBar.Children.Add(floors[1]);
-        floorBar.Children.Add(floors[2]);
+        toolbar.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        toolbar.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        toolbar.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        Grid.SetColumnSpan(propertyPicker, 2);
+        toolbar.Children.Add(propertyPicker);
+        propertyPicker.SelectionChanged += (_, _) =>
+        {
+            if (selectingProperty || propertyPicker.SelectedValue is not string id || id == service.ActivePropertyId) return;
+            manage(candidate => candidate.SelectProperty(id, DateTimeOffset.UtcNow));
+            selectedFloor = 1; selected = "slots"; Refresh();
+        };
+        var floorBar = new WrapPanel { Margin = new Thickness(0, 0, 0, 7) };
+        foreach (EmpireFloorDefinition floor in EmpireFloorCatalog.All.OrderBy(floor => floor.SortOrder))
+        {
+            AddFloorButton(floor.Id, floor.DisplayName.ToUpperInvariant());
+            floorBar.Children.Add(floors[floor.Id]);
+        }
+        Grid.SetRow(floorBar, 1); Grid.SetColumnSpan(floorBar, 2);
         toolbar.Children.Add(floorBar);
 
         var filterBar = new StackPanel { Orientation = Orientation.Horizontal };
@@ -130,7 +154,7 @@ internal sealed class EmpireView : UserControl, IDisposable
             filters[item.Id] = choice;
             filterBar.Children.Add(choice);
         }
-        Grid.SetColumn(filterBar, 1);
+        Grid.SetRow(filterBar, 2); Grid.SetColumnSpan(filterBar, 2);
         toolbar.Children.Add(filterBar);
         estate.Children.Add(toolbar);
 
@@ -339,12 +363,19 @@ internal sealed class EmpireView : UserControl, IDisposable
         dividend.Text = service.ClaimableDividend.ToString("C2", CultureInfo.GetCultureInfo("en-US"));
         collect.Content = "Claim cash";
         collect.IsEnabled = service.ClaimableDividend >= .01m;
-        cashRate.Text = $"${service.CashPerHour:0.00} / hour · $320 reserve capacity";
+        cashRate.Text = $"${service.CashPerHour:0.00} / hour · ${service.DividendCapacity:0} shared reserve";
+        offlineDetail.Text = $"All owned properties earn · {service.OfflineCapacity.TotalHours:0}h offline storage";
+        selectingProperty = true;
+        if (propertyPicker.Items.Count != service.OwnedProperties.Count) propertyPicker.ItemsSource = service.OwnedProperties;
+        propertyPicker.SelectedValue = service.ActivePropertyId;
+        selectingProperty = false;
 
         foreach ((int floor, Button button) in floors)
         {
             button.IsEnabled = service.FloorUnlocked(floor);
-            button.Content = floor == 1 ? "MAIN FLOOR" : service.FloorUnlocked(2) ? "UPPER FLOOR" : "UPPER FLOOR · PRESTIGE I";
+            EmpireFloorDefinition definition = EmpireFloorCatalog.Find(floor)!;
+            button.Content = definition.DisplayName.ToUpperInvariant() + (button.IsEnabled ? "" : " · LOCKED");
+            button.ToolTip = button.IsEnabled ? definition.DisplayName : definition.Requirement.Description;
             button.BorderBrush = Ink(floor == selectedFloor ? "#D8BB7E" : "#42594A");
         }
         foreach ((string id, Button button) in filters) button.BorderBrush = Ink(id == filter ? "#D8BB7E" : "#42594A");
@@ -359,7 +390,7 @@ internal sealed class EmpireView : UserControl, IDisposable
         roomStats.Text = level == 0
             ? "Ready to open\nStarts at " + Number(room.BaseCreditsPerSecond * service.PrestigeMultiplier * (1m + achievementBonus)) + " cr / sec"
             : $"LEVEL {level} / {EmpireRules.MaximumLevel}\n+{Number(effectiveProduction)} cr / sec";
-        roomBoosts.Text = $"Empire Prestige +{service.PrestigeBonusPercent:P0} · Achievements +{achievementBonus:P1}";
+        roomBoosts.Text = $"{room.Category} · {room.Tags}\nEmpire Prestige +{service.PrestigeBonusPercent:P0} · Achievements +{achievementBonus:P1}\nConstruction discount {service.ConstructionDiscount(selected):P0}";
 
         EmpireUpgradeQuote quote = service.QuoteUpgrade(selected, bulk);
         if (level >= EmpireRules.MaximumLevel)
@@ -369,7 +400,7 @@ internal sealed class EmpireView : UserControl, IDisposable
         }
         else if (!quote.Unlocked)
         {
-            buyLabel.Text = "Locked behind Empire Prestige";
+            buyLabel.Text = "Locked · " + room.UnlockRequirement.Description;
             buy.IsEnabled = false;
         }
         else
@@ -380,9 +411,7 @@ internal sealed class EmpireView : UserControl, IDisposable
 
         RefreshMilestone();
         int floorRooms = EmpireCatalog.Floor(selectedFloor).Count;
-        estateStatus.Text = selectedFloor == 1
-            ? $"MAIN FLOOR  /  {service.OpenRoomsOnFloor(1)} OF {floorRooms} ROOMS OPERATING"
-            : $"UPPER FLOOR  /  {service.OpenRoomsOnFloor(2)} OF {floorRooms} ROOMS OPERATING  /  PRESTIGE {service.Prestige}";
+        estateStatus.Text = $"{service.ActiveProperty.Name.ToUpperInvariant()} / {EmpireFloorCatalog.Find(selectedFloor)!.DisplayName.ToUpperInvariant()} / {service.OpenRoomsOnFloor(selectedFloor)} OF {floorRooms} ROOMS OPERATING";
 
         foreach (EmpireRoomCard card in cards)
         {
@@ -407,10 +436,11 @@ internal sealed class EmpireView : UserControl, IDisposable
 
         prestigeTitle.Text = service.Prestige == 0 ? "Prestige not yet claimed" : $"Empire Prestige {service.Prestige}";
         prestigeBonus.Text = $"Permanent production bonus: +{service.PrestigeBonusPercent:P0}. "
-            + (service.Floor2Unlocked ? "Upper Floor unlocked permanently." : "First Prestige permanently unlocks the Upper Floor.");
+            + string.Join(" · ", EmpireFloorCatalog.All.Where(floor => floor.Requirement.Prestige > 0).Select(floor => floor.DisplayName + (service.FloorUnlocked(floor.Id) ? " unlocked" : " locked")));
         prestigeRequirement.Text = service.PrestigeRequirementText();
         prestigeButton.IsEnabled = service.CanPrestige;
         prestigeButton.Content = service.CanPrestige ? $"PRESTIGE → {service.Prestige + 1}" : "PRESTIGE LOCKED";
+        managementView?.Refresh();
         ResizeRooms();
     }
 
@@ -436,7 +466,10 @@ internal sealed class EmpireView : UserControl, IDisposable
         AddOfflineMetric(totals, 0, "EMPIRE CREDITS", "+" + Number(report.Credits) + " cr");
         AddOfflineMetric(totals, 1, "OWNER DIVIDEND", "+" + report.Dividend.ToString("C2", CultureInfo.GetCultureInfo("en-US")));
         overlayBody.Children.Add(totals);
-        overlayBody.Children.Add(Label("ROOM EARNINGS", 9, "#B89B69", new Thickness(0, 0, 0, 6)));
+        if (report.Properties.Count > 1)
+            foreach (var (id, earned) in report.Properties)
+                overlayBody.Children.Add(Label(EmpirePropertyCatalog.Find(id)!.Name + ": +" + Number(earned) + " cr", 12, "#B9DFC4"));
+        overlayBody.Children.Add(Label("SELECTED PROPERTY · ROOM EARNINGS", 9, "#B89B69", new Thickness(0, 0, 0, 6)));
 
         var roomList = new StackPanel();
         foreach (var pair in report.Rooms.OrderBy(pair => EmpireCatalog.Find(pair.Key)?.Floor ?? int.MaxValue)
@@ -449,7 +482,7 @@ internal sealed class EmpireView : UserControl, IDisposable
             amount.FontWeight = FontWeights.SemiBold;
             DockPanel.SetDock(amount, Dock.Right);
             line.Children.Add(amount);
-            line.Children.Add(Label(room is null ? pair.Key : (room.Floor == 1 ? room.Name : "Upper Floor · " + room.Name), 12, "#D8E2DA"));
+            line.Children.Add(Label(room is null ? pair.Key : (room.Floor == 1 ? room.Name : EmpireFloorCatalog.Find(room.Floor)!.DisplayName + " · " + room.Name), 12, "#D8E2DA"));
             roomList.Children.Add(line);
         }
         overlayBody.Children.Add(new Border
@@ -462,7 +495,7 @@ internal sealed class EmpireView : UserControl, IDisposable
             Child = roomList,
         });
         if (report.Capped)
-            overlayBody.Children.Add(Label("Offline production reached the 8-hour storage limit. Time beyond the cap was not paid twice.", 11, "#D9BD82", new Thickness(0, 12, 0, 0)));
+            overlayBody.Children.Add(Label("Offline production reached the " + service.OfflineCapacity.TotalHours.ToString("0", CultureInfo.InvariantCulture) + "-hour storage limit. Excess absence has been consumed.", 11, "#D9BD82", new Thickness(0, 12, 0, 0)));
 
         var close = new Button
         {
@@ -499,13 +532,33 @@ internal sealed class EmpireView : UserControl, IDisposable
         root.Children.Add(overlay);
     }
 
+    internal bool TryCloseManagement()
+    {
+        if (managementView is null) return false;
+        Grid? overlay = root.Children.OfType<Grid>().FirstOrDefault(grid => grid.Name == "EmpireManagementOverlay");
+        if (overlay is not null) root.Children.Remove(overlay);
+        managementView = null; Refresh();
+        return true;
+    }
+
+    private void ShowManagement()
+    {
+        if (managementView is not null) return;
+        var overlay = new Grid { Name = "EmpireManagementOverlay", Background = Ink("#F2081714") };
+        managementView = new EmpireManagementView(service, change => manage(change), () => TryCloseManagement());
+        overlay.Children.Add(managementView);
+        Grid.SetRowSpan(overlay, root.RowDefinitions.Count);
+        Panel.SetZIndex(overlay, 5500);
+        root.Children.Add(overlay);
+    }
+
     private void PrestigeClicked()
     {
         if (!service.CanPrestige) return;
         Window? owner = Window.GetWindow(this);
         MessageBoxResult answer = owner is null
-            ? MessageBox.Show("Empire Prestige resets construction credits and all room levels. Lifetime statistics, claimed achievement boosts, dividends and permanent Prestige progress remain. Continue?", "Empire Prestige", MessageBoxButton.YesNo, MessageBoxImage.Warning)
-            : MessageBox.Show(owner, "Empire Prestige resets construction credits and all room levels. Lifetime statistics, claimed achievement boosts, dividends and permanent Prestige progress remain. Continue?", "Empire Prestige", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            ? MessageBox.Show("Empire Prestige resets construction credits and all room levels. Research, Legacy Points, capital projects, contracts, managers, other properties and lifetime statistics remain. The active event ends. Continue?", "Empire Prestige", MessageBoxButton.YesNo, MessageBoxImage.Warning)
+            : MessageBox.Show(owner, "Empire Prestige resets construction credits and all room levels. Research, Legacy Points, capital projects, contracts, managers, other properties and lifetime statistics remain. The active event ends. Continue?", "Empire Prestige", MessageBoxButton.YesNo, MessageBoxImage.Warning);
         if (answer != MessageBoxResult.Yes) return;
 
         EmpirePrestigeResult result = prestige();
@@ -553,6 +606,8 @@ internal sealed class EmpireView : UserControl, IDisposable
         decimal absolute = Math.Abs(value);
         (decimal Divisor, string Suffix)[] suffixes =
         [
+            (1_000_000_000_000_000_000_000_000_000m, "Oc"),
+            (1_000_000_000_000_000_000_000_000m, "Sp"),
             (1_000_000_000_000_000_000_000m, "Sx"),
             (1_000_000_000_000_000_000m, "Qi"),
             (1_000_000_000_000_000m, "Qa"),

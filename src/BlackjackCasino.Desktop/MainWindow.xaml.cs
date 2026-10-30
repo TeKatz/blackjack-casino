@@ -871,7 +871,7 @@ public partial class MainWindow : Window
         {
             if (e.Key == Key.Escape)
             {
-                CloseEmpire();
+                if (empireView?.TryCloseManagement() != true) CloseEmpire();
                 e.Handled = true;
             }
             return;

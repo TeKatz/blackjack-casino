@@ -140,6 +140,8 @@ internal sealed class EmpireRoomCard : Button
             ? "Open for " + EmpireView.Number(Department.BaseCost) + " cr"
             : "+" + EmpireView.Number(service.RoomCreditsPerSecond(Department.Id)) + " cr / sec";
         next.Text = value == 0 ? "Select to open this room" : value == EmpireRules.MaximumLevel ? "All milestones complete" : "Next ×2 at level " + ((value / 10 + 1) * 10);
+        if (service.Synergies.Any(synergy => synergy.Tier == 3 && (synergy.Definition.Beneficiaries & Department.Tags) != 0))
+            next.Text = "SYNERGY III ✦ · " + next.Text;
         progress = value == EmpireRules.MaximumLevel ? 1 : value % 10 / 10d;
         milestoneFill.Width = milestoneTrack.ActualWidth * progress;
         frame.BorderBrush = Ink(selected ? "#E6C68A" : "#3F5143");

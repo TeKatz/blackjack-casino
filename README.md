@@ -19,7 +19,7 @@ The repository now contains the work from Phases 1–6. Current development is f
 
 ### Casino lobby and embedded games
 
-The application opens into a casino lobby. Blackjack, Midnight Dice, Midnight Reels, Midnight Manor, Neon Vault, Nine Lives and Casino Empire all run inside the same main application window rather than opening separate visible Windows windows. Returning from a game restores the lobby and its navigation state.
+The application opens into a casino lobby. Blackjack, Midnight Dice, Chill Lounge, Midnight Reels, Midnight Manor, Neon Vault, Nine Lives and Casino Empire all run inside the same main application window rather than opening separate visible Windows windows. Returning from a game restores the lobby and its navigation state.
 
 The table and slot games share the same play-money bankroll, player level, Prestige, Coins and Season progression. Game-specific statistics are tracked separately for Blackjack, Midnight Reels, Midnight Manor, Neon Vault and Nine Lives. Casino Empire has its own construction credits and idle progression; owner dividends are its connection to the shared play-money bankroll.
 
@@ -30,18 +30,30 @@ up to three rolls per turn and a 13-box interactive paper score sheet. All legal
 scores are previewed together with candidate glows; entries require confirmation,
 including explicit zero scratches. Upper and further-Kniffel bonuses are included.
 The current turn is saved automatically, including held dice and remaining rolls.
-A dedicated mellow lounge soundtrack and subtle dice-roll sound follow the existing audio settings. Completed games earn player and Season XP once per saved game. Game setup also offers a four-player casino table with three strategic AI opponents, entry fees, rank prizes and automatic pause/resume. Midnight Dice has its own statistics card and 20 achievements.
+A dedicated mellow lounge soundtrack and subtle dice-roll sound follow the existing audio settings. Completed games earn player and Season XP once per saved game. Game setup also offers a four-player casino table with three strategic AI opponents, entry fees, rank prizes and automatic pause/resume. Midnight Dice has its own statistics card and 30 achievements.
 
 See [Midnight Dice rules, controls and validation](docs/kniffel.md).
 
 ## Casino Empire
 
-A furnished 2D idle casino with five unlockable rooms, automatic production,
-room upgrades and ten-level production milestones. Earn Empire credits to build
-your business, including up to eight hours of offline catch-up, and claim a
-separate bounded owner dividend as casino cash. The page creates no separate window.
+A persistent management mode with **15 departments on three catalog-driven floors**,
+Empire Prestige and a permanent Legacy research tree. Combine tag-based synergies,
+one-time capital projects and four fixed managers; unlock reserve-aware automation,
+run optional casino events and choose contracts without deadlines. Expand from
+The Midnight Club into Neon Bay Resort, Crown Palace and Aurora International,
+each with an independent economy and a different specialty.
 
-See [Casino Empire foundation and economy](docs/casino-empire.md).
+Bulk upgrades, offline reports, property statistics and embedded/detached views
+share the same deterministic Core simulation. Offline storage starts at eight
+hours and research extends it to twelve. Achievements from all casino games,
+including Midnight Dice and Sudoku, can boost Empire. The bounded owner dividend
+is its only cash bridge; Empire does not change other games' rules, odds or RTP.
+Schema-3 migration preserves existing estates and credits existing prestige with
+Legacy Points. The Main Floor prestige requirement now grows by 10 levels per
+prestige and caps at 500, avoiding the previous multi-year late-game wall.
+
+See [Casino Empire management, economy and persistence](docs/casino-empire.md)
+and the [reproducible balance report](docs/empire-balancing.md).
 
 ## Midnight Reels
 

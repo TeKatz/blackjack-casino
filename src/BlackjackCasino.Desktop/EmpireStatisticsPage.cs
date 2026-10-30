@@ -78,13 +78,14 @@ internal static class EmpireStatisticsPage
         progressionBody.Children.Add(Text(
             $"{service.OpenRooms:N0} rooms operating · {service.TotalLevels:N0} total levels · Main Floor {service.MainFloorLevels:N0} levels\n"
             + $"Permanent Prestige production +{service.PrestigeBonusPercent:P0} · {service.ActiveAchievementBoosts.Count:N0} active achievement boosts\n"
-            + (service.Floor2Unlocked ? "Upper Floor permanently unlocked." : "Upper Floor locked until Empire Prestige I."),
+            + string.Join(" · ", EmpireFloorCatalog.All.Where(floor => floor.Requirement.Prestige > 0).Select(floor => floor.DisplayName + (service.FloorUnlocked(floor.Id) ? " unlocked" : " locked"))),
             12, "#C5D6CB", margin: new Thickness(0, 7, 0, 0)));
         progression.Child = progressionBody;
         body.Children.Add(progression);
 
-        foreach (int floor in new[] { 1, 2 })
+        foreach (EmpireFloorDefinition floorDefinition in EmpireFloorCatalog.All.OrderBy(floor => floor.SortOrder))
         {
+            int floor = floorDefinition.Id;
             bool unlocked = service.FloorUnlocked(floor);
             var section = new Border
             {
@@ -92,7 +93,7 @@ internal static class EmpireStatisticsPage
                 Padding = new Thickness(14), Margin = new Thickness(0, 0, 0, 12), Opacity = unlocked ? 1 : .62,
             };
             var sectionBody = new StackPanel();
-            sectionBody.Children.Add(Text(floor == 1 ? "MAIN FLOOR" : unlocked ? "UPPER FLOOR" : "UPPER FLOOR · LOCKED", 10, "#D6B478", bold: true));
+            sectionBody.Children.Add(Text(floorDefinition.DisplayName.ToUpperInvariant() + (unlocked ? "" : " · LOCKED"), 10, "#D6B478", bold: true));
             decimal floorRate = EmpireCatalog.Floor(floor).Sum(room => service.RoomCreditsPerSecond(room.Id));
             int floorLevels = EmpireCatalog.Floor(floor).Sum(room => service.Level(room.Id));
             sectionBody.Children.Add(Text($"{service.OpenRoomsOnFloor(floor)} / {EmpireCatalog.Floor(floor).Count} rooms operating · {floorLevels:N0} levels · {EmpireView.Number(floorRate)} cr/s", 12, "#A8C5B3", margin: new Thickness(0, 4, 0, 7)));
@@ -114,6 +115,18 @@ internal static class EmpireStatisticsPage
             section.Child = sectionBody;
             body.Children.Add(section);
         }
+
+        body.Children.Add(Text("PORTFOLIO & LEGACY", 12, "#D6B478", bold: true));
+        body.Children.Add(Text($"{service.LegacyPointsAvailable} Legacy Points available / {service.LegacyPointsEarned} earned · Reputation {service.Reputation:N0}\n"
+            + $"{service.Projects.Count} capital projects · {service.ManagerAssignments.Count}/{service.ManagerSlots} active managers · {service.OfflineCapacity.TotalHours:0}h offline cap", 12, "#C5D6CB"));
+        foreach (EmpirePropertyDefinition property in service.OwnedProperties)
+        {
+            EmpirePropertyState estate = service.PropertySnapshot(property.Id);
+            body.Children.Add(Text($"{property.Name}: Prestige {estate.Prestige}, {estate.Levels.Values.Sum():N0} levels, {EmpireView.Number(estate.Credits)} cr\n"
+                + $"{estate.Projects.Count} projects · {estate.EventsCompleted} events / {estate.EventEncores} encores · {estate.ContractsCompleted} contracts · {estate.AutomatedLevels:N0} automated levels", 12, "#A8C5B3", margin: new Thickness(0, 8, 0, 8)));
+        }
+        foreach (EmpireSynergyStatus synergy in service.Synergies)
+            body.Children.Add(Text($"{synergy.Definition.Name}: tier {synergy.Tier} · +{synergy.Bonus:P1}", 12, "#A8C5B3"));
 
         var scroll = new ScrollViewer { Content = body, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
         var card = new Border
