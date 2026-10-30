@@ -273,6 +273,10 @@ public sealed class ChallengeClaimAllTests
             case ChallengeMetric.NeonGrandJackpots: profile.NeonVault.GrandJackpots = (long)value; break;
             case ChallengeMetric.NeonTotalBlackouts: profile.NeonVault.TotalBlackouts = (long)value; break;
             case ChallengeMetric.NeonSecurityOverrides: profile.NeonVault.SecurityOverrides = (long)value; break;
+            case ChallengeMetric.NineLivesPaidSpins: profile.NineLives.PaidSpins = (long)value; break;
+            case ChallengeMetric.NineLivesBonusSpins: profile.NineLives.BonusSpins = (long)value; break;
+            case ChallengeMetric.NineLivesPounceWilds: profile.NineLives.PounceWilds = (long)value; break;
+            case ChallengeMetric.NineLivesFullGridFrenzies: profile.NineLives.FullGridFrenzies = (long)value; break;
             case ChallengeMetric.LifetimeExperience: profile.LifetimeExperience = (long)value; break;
             case ChallengeMetric.LifetimePlaytimeSeconds: profile.TotalPlaytimeSeconds = (long)value; break;
             case ChallengeMetric.LifetimeWagered: profile.LegacyPooledSlots.TotalWagered = value; break;
