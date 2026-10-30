@@ -5,12 +5,14 @@ public static class CosmeticCatalog
     public const string DefaultTitleId = "title-rookie";
     public const string DefaultFrameId = "frame-standard";
     public const string DefaultPortraitId = "portrait-classic";
+    public const string DefaultCardSetId = "cardset-classic";
 
     private static readonly IReadOnlyList<CosmeticDefinition> Cosmetics =
     [
         new(DefaultTitleId, "Rookie", CosmeticKind.Title, 0, false, "The default title."),
         new(DefaultFrameId, "Classic", CosmeticKind.Frame, 0, false, "The clean default profile frame.", "classic"),
         new(DefaultPortraitId, "House Guest", CosmeticKind.Portrait, 0, false, "The default casino portrait.", "portrait-house-guest"),
+        new(DefaultCardSetId, "Classic Cards", CosmeticKind.CardSet, 0, false, "The familiar clean casino deck.", "card-classic"),
 
         // Shop titles.
         new("title-night-owl", "Night Owl", CosmeticKind.Title, 300, true, "For sessions that somehow became 2 AM."),
@@ -42,6 +44,13 @@ public static class CosmeticCatalog
         new("portrait-midnight-lady", "Midnight Lady", CosmeticKind.Portrait, 2300, true, "A moonlit portrait with a quiet Manor influence.", "portrait-midnight-lady"),
         new("portrait-golden-joker", "Golden Joker", CosmeticKind.Portrait, 2800, true, "A theatrical gold mask for players who enjoy variance.", "portrait-golden-joker"),
         new("portrait-velvet-king", "Velvet King", CosmeticKind.Portrait, 3400, true, "An imperial velvet king crowned in gold, rubies and amethyst.", "portrait-velvet-king"),
+
+        // Playing-card cosmetics. Classic remains free; the first premium collection requires Player Prestige I.
+        new("cardset-art-deco", "Art Deco", CosmeticKind.CardSet, 1800, true, "Ivory faces, black geometry and restrained brass trim.", "card-art-deco"),
+        new("cardset-crimson-velvet", "Crimson Velvet", CosmeticKind.CardSet, 2600, true, "Warm cream cards with deep velvet-red accents and silver edging.", "card-crimson-velvet"),
+        new("cardset-emerald-house", "Emerald House", CosmeticKind.CardSet, 3400, true, "House green, warm gold and a classic private-table finish.", "card-emerald-house"),
+        new("cardset-midnight-blue", "Midnight Blue", CosmeticKind.CardSet, 4600, true, "Cool moonlit faces with navy backs and pale silver details.", "card-midnight-blue"),
+        new("cardset-midnight-sovereign", "Midnight Sovereign", CosmeticKind.CardSet, 12500, true, "Prestige collection: obsidian faces, antique gold trim and a royal Midnight Club back.", "card-midnight-sovereign", 1),
 
         // Prestige rewards.
         new("title-prestige-1", "The Regular", CosmeticKind.Title, 0, false, "Prestige I reward."),

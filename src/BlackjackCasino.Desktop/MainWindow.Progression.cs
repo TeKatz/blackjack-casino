@@ -53,13 +53,11 @@ public partial class MainWindow
 
         Grid.SetColumn(versionPanel, 4);
 
-        // Keep the real button exactly as it was before the level-up animation existed.
-        // The animation is a separate sibling so it can never alter the button's layout,
-        // clipping, shadow, template or hover behavior.
+        // The level-up layer is a sibling, so the cue never changes the button's measured layout.
         profileButton = new Button
         {
             Name = "PlayerProfileButton",
-            MinWidth = 240,
+            MinWidth = 275,
             Height = 52,
             Margin = new Thickness(0, 0, 22, 0),
             Padding = new Thickness(9, 5, 9, 5),
@@ -73,8 +71,8 @@ public partial class MainWindow
 
         var sweepClip = new Canvas
         {
-            Width = 190,
-            Height = 40,
+            Width = 255,
+            Height = 44,
             Margin = new Thickness(0, 0, 22, 0),
             HorizontalAlignment = HorizontalAlignment.Left,
             VerticalAlignment = VerticalAlignment.Center,
@@ -83,11 +81,11 @@ public partial class MainWindow
             Background = Brushes.Transparent,
         };
 
-        profileLevelUpSweepTransform = new TranslateTransform(-92, 0);
+        profileLevelUpSweepTransform = new TranslateTransform(-125, 0);
         profileLevelUpSweep = new Border
         {
-            Width = 86,
-            Height = 32,
+            Width = 118,
+            Height = 38,
             Opacity = 0,
             IsHitTestVisible = false,
             RenderTransform = profileLevelUpSweepTransform,
@@ -98,14 +96,14 @@ public partial class MainWindow
                 GradientStops =
                 {
                     new GradientStop(Color.FromArgb(0, 214, 63, 82), 0),
-                    new GradientStop(Color.FromArgb(92, 225, 71, 91), 0.32),
-                    new GradientStop(Color.FromArgb(178, 255, 102, 118), 0.5),
-                    new GradientStop(Color.FromArgb(92, 225, 71, 91), 0.68),
+                    new GradientStop(Color.FromArgb(105, 225, 71, 91), 0.28),
+                    new GradientStop(Color.FromArgb(215, 255, 176, 98), 0.5),
+                    new GradientStop(Color.FromArgb(105, 225, 71, 91), 0.72),
                     new GradientStop(Color.FromArgb(0, 214, 63, 82), 1),
                 },
             },
         };
-        Canvas.SetTop(profileLevelUpSweep, 4);
+        Canvas.SetTop(profileLevelUpSweep, 3);
         sweepClip.Children.Add(profileLevelUpSweep);
         Grid.SetColumn(sweepClip, 2);
         Panel.SetZIndex(sweepClip, 2);
@@ -182,15 +180,57 @@ public partial class MainWindow
         CosmeticDefinition title = CosmeticCatalog.Get(profile.EquippedTitleId);
         CosmeticDefinition frame = CosmeticCatalog.Get(profile.EquippedFrameId);
 
-        var content = new StackPanel { Orientation=Orientation.Horizontal };
-        content.Children.Add(ProgressionWindow.CreatePortraitVisual(CosmeticCatalog.Get(profile.EquippedPortraitId),38));
-        var labels=new StackPanel {Margin=new Thickness(10,0,0,0),VerticalAlignment=VerticalAlignment.Center};
-        labels.Children.Add(new TextBlock {Text=profile.DisplayName,FontWeight=FontWeights.Bold,FontSize=14,Width=140,TextTrimming=TextTrimming.CharacterEllipsis});
-        var detail=new TextBlock {FontSize=11,Foreground=new SolidColorBrush(Color.FromRgb(84,225,183))};
-        detail.Text=$"LV {profile.Level} · ◆ {profile.Coins:N0}"; labels.Children.Add(detail); content.Children.Add(labels);
-        profileButton.Content=content;
-        profileButton.ToolTip=$"{profile.DisplayName} · {title.Name} · Open profile";
+        var content = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+        content.Children.Add(ProgressionWindow.CreatePortraitVisual(CosmeticCatalog.Get(profile.EquippedPortraitId), 38));
+        var labels = new StackPanel { Margin = new Thickness(10, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+        labels.Children.Add(new TextBlock { Text = profile.DisplayName, FontWeight = FontWeights.Bold, FontSize = 14, Width = 132, TextTrimming = TextTrimming.CharacterEllipsis });
+        var detail = new TextBlock { FontSize = 11, Foreground = new SolidColorBrush(Color.FromRgb(84, 225, 183)) };
+        detail.Text = $"LV {profile.Level} · ◆ {profile.Coins:N0}";
+        labels.Children.Add(detail);
+        content.Children.Add(labels);
+        if (profile.Prestige > 0)
+        {
+            content.Children.Add(CreatePrestigeBadge(profile.Prestige));
+        }
+        profileButton.Content = content;
+        profileButton.ToolTip = $"{profile.DisplayName} · {title.Name} · Player Prestige {profile.Prestige} · Open profile";
         ApplyHeaderFrame(frame);
+    }
+
+    private static FrameworkElement CreatePrestigeBadge(int prestige)
+    {
+        var outer = new Border
+        {
+            Width = 43,
+            Height = 38,
+            Margin = new Thickness(10, 0, 0, 0),
+            CornerRadius = new CornerRadius(10),
+            BorderThickness = new Thickness(1.5),
+            BorderBrush = new LinearGradientBrush(Color.FromRgb(255, 226, 137), Color.FromRgb(150, 93, 31), 35),
+            Background = new LinearGradientBrush(Color.FromRgb(45, 31, 19), Color.FromRgb(18, 20, 25), 65),
+            ToolTip = $"Player Prestige {prestige}",
+            Effect = new DropShadowEffect { Color = Color.FromRgb(232, 180, 77), BlurRadius = 10, ShadowDepth = 0, Opacity = .42 },
+        };
+        var stack = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+        stack.Children.Add(new TextBlock
+        {
+            Text = "✦",
+            FontSize = 13,
+            FontWeight = FontWeights.Bold,
+            Foreground = new SolidColorBrush(Color.FromRgb(255, 222, 129)),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Margin = new Thickness(0, -2, 0, -3),
+        });
+        stack.Children.Add(new TextBlock
+        {
+            Text = "P" + prestige,
+            FontSize = 9,
+            FontWeight = FontWeights.Bold,
+            Foreground = new SolidColorBrush(Color.FromRgb(240, 207, 133)),
+            HorizontalAlignment = HorizontalAlignment.Center,
+        });
+        outer.Child = stack;
+        return outer;
     }
 
     private void ApplyHeaderFrame(CosmeticDefinition frame)

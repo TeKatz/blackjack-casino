@@ -12,7 +12,7 @@ namespace BlackjackCasino.Desktop;
 internal static class EmpireRoomTextures
 {
     private static readonly BitmapSource[] images = Load();
-    internal static BitmapSource Get(int index) => images[Math.Clamp(index, 0, images.Length - 1)];
+    internal static BitmapSource Get(int index) => images[Math.Abs(index) % images.Length];
     private static BitmapSource[] Load()
     {
         var atlas = new BitmapImage();
@@ -101,7 +101,7 @@ internal sealed class EmpireRoomCard : Button
     internal EmpireRoomCard(EmpireDepartment room, int index, Action<string> select)
     {
         Department = room;
-        Name = "EmpireRoom_" + room.Id;
+        Name = "EmpireRoom_" + room.Id.Replace('-', '_');
         AutomationProperties.SetName(this, "Select " + room.Name);
         Margin = new Thickness(0, 0, 12, 12);
         Height = 222;
@@ -136,7 +136,9 @@ internal sealed class EmpireRoomCard : Button
     {
         int value = service.Level(Department.Id);
         level.Text = value == 0 ? "LOCKED" : "LV " + value;
-        income.Text = value == 0 ? "Open for " + EmpireView.Number(Department.BaseCost) + " cr" : "+" + EmpireView.Number(EmpireRules.Production(Department, value)) + " cr / sec";
+        income.Text = value == 0
+            ? "Open for " + EmpireView.Number(Department.BaseCost) + " cr"
+            : "+" + EmpireView.Number(service.RoomCreditsPerSecond(Department.Id)) + " cr / sec";
         next.Text = value == 0 ? "Select to open this room" : value == EmpireRules.MaximumLevel ? "All milestones complete" : "Next ×2 at level " + ((value / 10 + 1) * 10);
         progress = value == EmpireRules.MaximumLevel ? 1 : value % 10 / 10d;
         milestoneFill.Width = milestoneTrack.ActualWidth * progress;

@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Threading;
 using BlackjackCasino.Core.Empire;
 
@@ -11,34 +12,40 @@ public partial class MainWindow
 {
     private EmpireService? empire;
     private EmpireView? empireView;
+    private EmpireView? empireDetachedView;
+    private Window? empireDetachedWindow;
     private DispatcherTimer? empireTimer;
     private DateTimeOffset empireLastSave;
-    private string? empireReturnNotice;
+    private EmpireAccrual? empireStartupCatchUp;
+    private bool empireStartupReportShown;
     private readonly List<(UIElement Element, bool Enabled)> empireCoveredElements = [];
     private bool EmpirePageOpen => empireView is not null;
+    private bool EmpireDetachedOpen => empireDetachedWindow is { IsVisible: true };
 
     private void InitializeEmpire()
     {
         empire = new EmpireService(preferences.Empire);
+        SyncEmpireAchievementBoosts();
         EmpireAccrual catchUp = empire.Accrue(DateTimeOffset.UtcNow);
-        if (catchUp.Elapsed > TimeSpan.FromMinutes(1))
-            empireReturnNotice = $"While you were away: +{EmpireView.Number(catchUp.Credits)} credits over {catchUp.Elapsed.TotalHours:0.0} hours."
-                + (catchUp.Capped ? " Offline earnings are capped at 8 hours." : "");
+        if (catchUp.Elapsed >= TimeSpan.FromMinutes(2) && (catchUp.Credits > 0 || catchUp.Dividend > 0))
+            empireStartupCatchUp = catchUp;
+
         empireLastSave = DateTimeOffset.UtcNow;
         RefreshEmpireHeader();
         // Idle production belongs to the whole casino, not just the Empire page. Keep the
-        // accrual clock responsive while other WPF surfaces are rendering or animating;
-        // Background-priority one-second ticks can be starved long enough for the live
-        // balance to appear frozen even though elapsed-time catch-up is otherwise correct.
+        // accrual clock responsive while other WPF surfaces are rendering or animating.
         empireTimer = new DispatcherTimer(DispatcherPriority.Normal)
         {
             Interval = TimeSpan.FromMilliseconds(500),
         };
         empireTimer.Tick += (_, _) =>
         {
+            if (empire is null) return;
             DateTimeOffset now = DateTimeOffset.UtcNow;
+            SyncEmpireAchievementBoosts();
             empire.Accrue(now);
             empireView?.Refresh();
+            empireDetachedView?.Refresh();
             RefreshEmpireHeader();
             if (empire.Started && now - empireLastSave >= TimeSpan.FromSeconds(30))
             {
@@ -50,21 +57,36 @@ public partial class MainWindow
         Closed += (_, _) =>
         {
             empireTimer.Stop();
+            if (empireDetachedWindow is { IsVisible: true }) empireDetachedWindow.Close();
             empire.Accrue(DateTimeOffset.UtcNow);
             SavePreferences();
         };
     }
 
+    private void SyncEmpireAchievementBoosts()
+        => empire?.SetClaimedAchievements(progressionController?.Profile.ClaimedChallengeIds);
+
     private void OpenEmpire()
     {
+        if (EmpireDetachedOpen)
+        {
+            empireDetachedWindow!.Activate();
+            return;
+        }
         if (session.RoundInProgress || MetaPageOpen || embeddedGameShell is not null || EmpirePageOpen || empire is null) return;
         ProcessLatestCompletedRound();
         EnsureEmbeddedGameHost();
-        empire.Start(DateTimeOffset.UtcNow);
-        empire.Accrue(DateTimeOffset.UtcNow);
-        SavePreferences();
+        StartEmpireSession();
         if (lobby is not null) lobby.Visibility = Visibility.Collapsed;
-        empireView = new EmpireView(empire, UpgradeEmpire, ClaimEmpireDividend, CloseEmpire, () => AnimationsEnabled);
+        empireView = new EmpireView(
+            empire,
+            UpgradeEmpire,
+            ClaimEmpireDividend,
+            PrestigeEmpire,
+            CloseEmpire,
+            () => AnimationsEnabled,
+            "←  Casino lobby");
+        EmpireStatisticsPage.Attach(empireView, empire);
         foreach (UIElement covered in CasinoRoot.Children.OfType<UIElement>().Where(child => child != embeddedGameOverlay))
         {
             empireCoveredElements.Add((covered, covered.IsEnabled));
@@ -75,20 +97,103 @@ public partial class MainWindow
         KeyboardNavigation.SetTabNavigation(empireView, KeyboardNavigationMode.Cycle);
         KeyboardNavigation.SetControlTabNavigation(empireView, KeyboardNavigationMode.Cycle);
         KeyboardNavigation.SetDirectionalNavigation(empireView, KeyboardNavigationMode.Contained);
-        if (empireReturnNotice is not null)
+        modeRegistry.NotifyStateChanged();
+        Dispatcher.BeginInvoke(() =>
         {
-            empireView.SetNotice(empireReturnNotice);
-            empireReturnNotice = null;
-        }
-        Dispatcher.BeginInvoke(() => empireView?.MoveFocus(new TraversalRequest(FocusNavigationDirection.First)));
+            empireView?.MoveFocus(new TraversalRequest(FocusNavigationDirection.First));
+            ShowStartupEmpireReport(empireView);
+        });
     }
 
-    private bool UpgradeEmpire(string id)
+    private void OpenEmpireDetached()
     {
-        if (empire is null || !empire.Upgrade(id, DateTimeOffset.UtcNow)) return false;
+        if (empire is null || EmpirePageOpen) return;
+        if (EmpireDetachedOpen)
+        {
+            empireDetachedWindow!.WindowState = WindowState.Normal;
+            empireDetachedWindow.Activate();
+            return;
+        }
+
+        ProcessLatestCompletedRound();
+        StartEmpireSession();
+        var window = new Window
+        {
+            Title = "Casino Empire · Detached",
+            Width = 1280,
+            Height = 820,
+            MinWidth = 940,
+            MinHeight = 650,
+            Background = new SolidColorBrush(Color.FromRgb(8, 20, 19)),
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Owner = this,
+        };
+        EmpireView? view = null;
+        view = new EmpireView(
+            empire,
+            UpgradeEmpire,
+            ClaimEmpireDividend,
+            PrestigeEmpire,
+            () => window.Close(),
+            () => AnimationsEnabled,
+            "Close Empire window");
+        EmpireStatisticsPage.Attach(view, empire);
+        window.Content = view;
+        window.Closed += (_, _) =>
+        {
+            view.Dispose();
+            empireDetachedView = null;
+            empireDetachedWindow = null;
+            empire!.Accrue(DateTimeOffset.UtcNow);
+            SavePreferences();
+            RefreshEmpireHeader();
+            modeRegistry.NotifyStateChanged();
+        };
+        empireDetachedWindow = window;
+        empireDetachedView = view;
+        window.Show();
+        modeRegistry.NotifyStateChanged();
+        Dispatcher.BeginInvoke(() => ShowStartupEmpireReport(view));
+    }
+
+    private void StartEmpireSession()
+    {
+        if (empire is null) return;
+        SyncEmpireAchievementBoosts();
+        empire.Start(DateTimeOffset.UtcNow);
+        empire.Accrue(DateTimeOffset.UtcNow);
         SavePreferences();
         RefreshEmpireHeader();
+    }
+
+    private void ShowStartupEmpireReport(EmpireView? target)
+    {
+        if (target is null || empireStartupReportShown || empireStartupCatchUp is null) return;
+        empireStartupReportShown = true;
+        target.ShowOfflineReport(empireStartupCatchUp);
+    }
+
+    private bool UpgradeEmpire(string id, int levels)
+    {
+        if (empire is null || !empire.UpgradeMany(id, levels, DateTimeOffset.UtcNow)) return false;
+        SavePreferences();
+        empireView?.Refresh();
+        empireDetachedView?.Refresh();
+        RefreshEmpireHeader();
         return true;
+    }
+
+    private bool UpgradeEmpire(string id) => UpgradeEmpire(id, 1);
+
+    private EmpirePrestigeResult PrestigeEmpire()
+    {
+        if (empire is null) return new(false, 0, 0, "Empire is unavailable.");
+        EmpirePrestigeResult result = empire.PrestigeEmpire(DateTimeOffset.UtcNow);
+        if (result.Success) SavePreferences();
+        empireView?.Refresh();
+        empireDetachedView?.Refresh();
+        RefreshEmpireHeader();
+        return result;
     }
 
     private bool ClaimEmpireDividend()
@@ -104,12 +209,19 @@ public partial class MainWindow
                 session.ResetBankroll(committed.Bankroll);
             });
             if (amount <= 0) return false;
-            empireView?.SetNotice($"Owner dividend: {amount.ToString("C2", CultureInfo.GetCultureInfo("en-US"))} added to your casino cash.");
+            string text = $"Owner dividend: {amount.ToString("C2", CultureInfo.GetCultureInfo("en-US"))} added to your casino cash.";
+            empireView?.SetNotice(text);
+            empireDetachedView?.SetNotice(text);
+            empireView?.Refresh();
+            empireDetachedView?.Refresh();
+            RefreshEmpireHeader();
             return true;
         }
         catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException or OverflowException)
         {
-            empireView?.SetNotice("The dividend could not be saved. Your reserve is still available; please try again.");
+            const string text = "The dividend could not be saved. Your reserve is still available; please try again.";
+            empireView?.SetNotice(text);
+            empireDetachedView?.SetNotice(text);
             return false;
         }
     }
@@ -132,6 +244,7 @@ public partial class MainWindow
         ApplyBetLimitState();
         RefreshProfileButton();
         RefreshEmpireHeader();
+        modeRegistry.NotifyStateChanged();
         lobby?.MoveFocus(new TraversalRequest(FocusNavigationDirection.First));
     }
 

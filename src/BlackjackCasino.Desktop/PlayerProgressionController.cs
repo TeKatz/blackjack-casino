@@ -198,10 +198,12 @@ internal sealed class PlayerProgressionController : IDisposable
         Profile.SlotTrackingVersion = committed.SlotTrackingVersion;
         Profile.Slots = committed.Slots;
         Profile.NeonVault = committed.NeonVault;
+        Profile.NineLives = committed.NineLives;
         Profile.LegacyPooledSlots = committed.LegacyPooledSlots;
         Profile.DisplayName = committed.DisplayName;
         Profile.Level = committed.Level;
         Profile.LevelExperience = committed.LevelExperience;
+        Profile.Prestige = committed.Prestige;
         Profile.Coins = committed.Coins;
         Profile.LifetimeExperience = committed.LifetimeExperience;
         Profile.LastPlayedAt = committed.LastPlayedAt;
@@ -212,6 +214,7 @@ internal sealed class PlayerProgressionController : IDisposable
         Profile.EquippedTitleId = committed.EquippedTitleId;
         Profile.EquippedFrameId = committed.EquippedFrameId;
         Profile.EquippedPortraitId = committed.EquippedPortraitId;
+        Profile.EquippedCardSetId = committed.EquippedCardSetId;
     }
 
     public void SaveAll()

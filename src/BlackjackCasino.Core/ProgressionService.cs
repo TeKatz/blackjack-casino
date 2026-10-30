@@ -143,6 +143,11 @@ public sealed class ProgressionService
             return new PurchaseResult(false, "You already own this cosmetic.", cosmetic);
         }
 
+        if (State.Prestige < cosmetic.RequiredPrestige)
+        {
+            return new PurchaseResult(false, $"Reach Player Prestige {cosmetic.RequiredPrestige} to unlock {cosmetic.Name}.", cosmetic);
+        }
+
         if (State.Coins < cosmetic.Price)
         {
             return new PurchaseResult(false, $"You need {cosmetic.Price - State.Coins:N0} more coins.", cosmetic);
@@ -176,6 +181,9 @@ public sealed class ProgressionService
                 return true;
             case CosmeticKind.Portrait:
                 State.EquippedPortraitId = cosmetic.Id;
+                return true;
+            case CosmeticKind.CardSet:
+                State.EquippedCardSetId = cosmetic.Id;
                 return true;
             default:
                 return false;
@@ -293,6 +301,7 @@ public sealed class ProgressionService
         EnsureOwned(CosmeticCatalog.DefaultTitleId);
         EnsureOwned(CosmeticCatalog.DefaultFrameId);
         EnsureOwned(CosmeticCatalog.DefaultPortraitId);
+        EnsureOwned(CosmeticCatalog.DefaultCardSetId);
         State.ClaimedChallengeIds ??= [];
         State.ClaimedChallengeIds = State.ClaimedChallengeIds
             .Where(id => ChallengeCatalog.TryGet(id) is not null)
@@ -315,6 +324,12 @@ public sealed class ProgressionService
             || !State.OwnedCosmeticIds.Contains(State.EquippedPortraitId, StringComparer.Ordinal))
         {
             State.EquippedPortraitId = CosmeticCatalog.DefaultPortraitId;
+        }
+
+        if (CosmeticCatalog.TryGet(State.EquippedCardSetId) is not { Kind: CosmeticKind.CardSet }
+            || !State.OwnedCosmeticIds.Contains(State.EquippedCardSetId, StringComparer.Ordinal))
+        {
+            State.EquippedCardSetId = CosmeticCatalog.DefaultCardSetId;
         }
 
         SeasonDefinition? active = SeasonCatalog.All.FirstOrDefault(x => string.Equals(x.Id, State.ActiveSeasonId, StringComparison.Ordinal));
