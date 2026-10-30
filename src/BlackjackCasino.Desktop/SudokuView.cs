@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -13,9 +14,11 @@ internal sealed class SudokuView : UserControl, IDisposable
 {
     private readonly SudokuPuzzle puzzle;
     private readonly SudokuBoard board;
+    private readonly bool showTimer;
     private readonly Action<SudokuGameState> save;
     private readonly Action back;
     private readonly Button[] cells = new Button[81];
+    private readonly Button[] numberButtons = new Button[9];
     private readonly Stack<SudokuBoardFrame> undo = new();
     private readonly Stack<SudokuBoardFrame> redo = new();
     private readonly DispatcherTimer clock = new() { Interval = TimeSpan.FromSeconds(1) };
@@ -31,9 +34,15 @@ internal sealed class SudokuView : UserControl, IDisposable
     private bool disposed;
     private bool completionSaved;
 
-    public SudokuView(SudokuPuzzle puzzle, SudokuGameState state, Action<SudokuGameState> save, Action back)
+    public SudokuView(
+        SudokuPuzzle puzzle,
+        SudokuGameState state,
+        bool showTimer,
+        Action<SudokuGameState> save,
+        Action back)
     {
         this.puzzle = puzzle ?? throw new ArgumentNullException(nameof(puzzle));
+        this.showTimer = showTimer;
         this.save = save ?? throw new ArgumentNullException(nameof(save));
         this.back = back ?? throw new ArgumentNullException(nameof(back));
         SudokuGameState clean = SudokuGameState.Normalize(puzzle, state);
@@ -60,6 +69,10 @@ internal sealed class SudokuView : UserControl, IDisposable
 
     public SudokuGameState Snapshot => board.Snapshot(CurrentElapsedSeconds);
 
+    internal string PuzzleId => puzzle.Id;
+    internal SudokuDifficulty Difficulty => puzzle.Difficulty;
+    internal bool TimerVisible => showTimer;
+
     public void Dispose()
     {
         if (disposed)
@@ -75,11 +88,11 @@ internal sealed class SudokuView : UserControl, IDisposable
 
     private UIElement BuildLayout()
     {
-        var root = new Grid { Margin = new Thickness(34, 24, 34, 26) };
+        var root = new Grid { Margin = new Thickness(22, 18, 22, 20) };
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
 
-        var header = new Grid { Margin = new Thickness(0, 0, 0, 18) };
+        var header = new Grid { Margin = new Thickness(0, 0, 0, 12) };
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         var title = new StackPanel();
@@ -108,38 +121,57 @@ internal sealed class SudokuView : UserControl, IDisposable
         root.Children.Add(header);
 
         var body = new Grid();
-        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(3, GridUnitType.Star), MinWidth = 430 });
-        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(2, GridUnitType.Star), MinWidth = 290 });
+        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 520 });
+        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(380), MinWidth = 330 });
         Grid.SetRow(body, 1);
         root.Children.Add(body);
 
         var boardFrame = new Border
         {
-            Background = Ink("#111D1E"),
+            Background = Ink("#101C1E"),
             BorderBrush = Ink("#6A8B81"),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(12),
-            Padding = new Thickness(18),
-            Margin = new Thickness(0, 0, 22, 0),
+            Padding = new Thickness(10),
+            Margin = new Thickness(0, 0, 18, 0),
         };
-        var boardViewbox = new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly };
-        var grid = new UniformGrid { Rows = 9, Columns = 9, Width = 594, Height = 594 };
+        var boardViewbox = new Viewbox
+        {
+            Stretch = Stretch.Uniform,
+            StretchDirection = StretchDirection.Both,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Stretch,
+        };
+        var grid = new UniformGrid
+        {
+            Rows = 9,
+            Columns = 9,
+            Width = 720,
+            Height = 720,
+            UseLayoutRounding = true,
+            SnapsToDevicePixels = true,
+        };
+        ControlTemplate cellTemplate = CreateCellTemplate();
         for (int index = 0; index < 81; index++)
         {
             int cellIndex = index;
             var button = new Button
             {
                 Tag = index,
-                FontSize = 27,
+                Template = cellTemplate,
+                FontSize = 32,
                 FontWeight = FontWeights.SemiBold,
                 Background = Ink("#142224"),
                 Foreground = Ink("#DFE8E2"),
-                BorderBrush = Ink("#46625D"),
+                BorderBrush = Ink("#58756F"),
                 BorderThickness = CellBorder(index),
                 Padding = new Thickness(0),
                 Focusable = false,
+                Cursor = Cursors.Hand,
                 HorizontalContentAlignment = HorizontalAlignment.Center,
                 VerticalContentAlignment = VerticalAlignment.Center,
+                UseLayoutRounding = true,
+                SnapsToDevicePixels = true,
             };
             button.Click += (_, _) =>
             {
@@ -159,13 +191,22 @@ internal sealed class SudokuView : UserControl, IDisposable
         body.Children.Add(side);
 
         var stats = new Grid { Margin = new Thickness(0, 0, 0, 16) };
-        stats.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        stats.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        stats.Children.Add(StatCard("TIME", timeText));
-        hintText.TextAlignment = TextAlignment.Right;
-        var hintCard = StatCard("HINTS", hintText);
-        Grid.SetColumn(hintCard, 1);
-        stats.Children.Add(hintCard);
+        if (showTimer)
+        {
+            stats.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            stats.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            stats.Children.Add(StatCard("TIME", timeText));
+            hintText.TextAlignment = TextAlignment.Right;
+            var hintCard = StatCard("HINTS", hintText);
+            Grid.SetColumn(hintCard, 1);
+            stats.Children.Add(hintCard);
+        }
+        else
+        {
+            stats.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            hintText.TextAlignment = TextAlignment.Left;
+            stats.Children.Add(StatCard("HINTS", hintText));
+        }
         side.Children.Add(stats);
 
         side.Children.Add(new TextBlock
@@ -185,6 +226,7 @@ internal sealed class SudokuView : UserControl, IDisposable
             number.Margin = new Thickness(3);
             number.MinHeight = 48;
             number.Click += (_, _) => EnterDigit(value);
+            numberButtons[digit - 1] = number;
             numbers.Children.Add(number);
         }
         side.Children.Add(numbers);
@@ -240,7 +282,9 @@ internal sealed class SudokuView : UserControl, IDisposable
 
         side.Children.Add(new TextBlock
         {
-            Text = "No rush. The timer is informational only and never changes your reward.",
+            Text = showTimer
+                ? "No rush. The timer is informational only and never changes your reward."
+                : "Timer hidden. Progress and elapsed time are still saved automatically.",
             FontSize = 11,
             TextWrapping = TextWrapping.Wrap,
             TextAlignment = TextAlignment.Center,
@@ -377,6 +421,7 @@ internal sealed class SudokuView : UserControl, IDisposable
 
     private void Refresh()
     {
+        int selectedValue = selectedIndex is >= 0 and < 81 ? board.ValueAt(selectedIndex) : 0;
         for (int index = 0; index < cells.Length; index++)
         {
             Button cell = cells[index];
@@ -385,16 +430,31 @@ internal sealed class SudokuView : UserControl, IDisposable
             bool conflict = board.HasConflictAt(index);
             bool related = selectedIndex >= 0 && IsRelated(index, selectedIndex);
             bool selected = index == selectedIndex;
+            bool sameValue = selectedValue > 0 && value == selectedValue;
 
             cell.Content = value == 0 ? NotesText(board.NotesAt(index)) : value.ToString();
-            cell.FontSize = value == 0 ? 10 : 27;
+            cell.FontSize = value == 0 ? 12 : 32;
             cell.FontWeight = given ? FontWeights.Bold : FontWeights.SemiBold;
             cell.Foreground = conflict
                 ? Ink("#F08F84")
                 : given ? Ink("#F2E7D5") : Ink("#91D3BC");
             cell.Background = selected
-                ? Ink("#36544F")
-                : related ? Ink("#1C3030") : Ink("#142224");
+                ? Ink("#41665E")
+                : sameValue ? Ink("#2C4A43")
+                : related ? Ink("#1D3231")
+                : Ink("#142224");
+        }
+
+        for (int digit = 1; digit <= numberButtons.Length; digit++)
+        {
+            Button number = numberButtons[digit - 1];
+            if (number is null)
+            {
+                continue;
+            }
+            bool selectedDigit = selectedValue == digit;
+            number.Background = Ink(selectedDigit ? "#315149" : "#182B2C");
+            number.BorderBrush = Ink(selectedDigit ? "#8EC9B0" : "#456763");
         }
 
         timeText.Text = FormatTime(CurrentElapsedSeconds);
@@ -535,12 +595,38 @@ internal sealed class SudokuView : UserControl, IDisposable
     {
         int row = index / 9;
         int column = index % 9;
-        double left = column == 0 || column % 3 == 0 ? 2 : 0.5;
-        double top = row == 0 || row % 3 == 0 ? 2 : 0.5;
-        double right = column == 8 || column % 3 == 2 ? 2 : 0.5;
-        double bottom = row == 8 || row % 3 == 2 ? 2 : 0.5;
+        const double fine = 0.8d;
+        const double strong = 2.6d;
+        double left = column == 0 || column % 3 == 0 ? strong : fine;
+        double top = row == 0 || row % 3 == 0 ? strong : fine;
+        double right = column == 8 ? strong : 0d;
+        double bottom = row == 8 ? strong : 0d;
         return new Thickness(left, top, right, bottom);
     }
+
+    private static ControlTemplate CreateCellTemplate()
+    {
+        var border = new FrameworkElementFactory(typeof(Border));
+        border.SetBinding(Border.BackgroundProperty, TemplateBinding(nameof(Control.Background)));
+        border.SetBinding(Border.BorderBrushProperty, TemplateBinding(nameof(Control.BorderBrush)));
+        border.SetBinding(Border.BorderThicknessProperty, TemplateBinding(nameof(Control.BorderThickness)));
+
+        var presenter = new FrameworkElementFactory(typeof(ContentPresenter));
+        presenter.SetBinding(ContentPresenter.ContentProperty, TemplateBinding(nameof(ContentControl.Content)));
+        presenter.SetBinding(ContentPresenter.ContentTemplateProperty, TemplateBinding(nameof(ContentControl.ContentTemplate)));
+        presenter.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+        presenter.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
+        presenter.SetValue(ContentPresenter.SnapsToDevicePixelsProperty, true);
+        border.AppendChild(presenter);
+
+        return new ControlTemplate(typeof(Button)) { VisualTree = border };
+    }
+
+    private static Binding TemplateBinding(string path) => new(path)
+    {
+        RelativeSource = RelativeSource.TemplatedParent,
+        Mode = BindingMode.OneWay,
+    };
 
     private static Border StatCard(string label, TextBlock value)
     {
