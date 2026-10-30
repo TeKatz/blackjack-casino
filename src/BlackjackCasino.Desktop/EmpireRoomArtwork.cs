@@ -101,7 +101,7 @@ internal sealed class EmpireRoomCard : Button
     internal EmpireRoomCard(EmpireDepartment room, int index, Action<string> select)
     {
         Department = room;
-        Name = "EmpireRoom_" + room.Id;
+        Name = "EmpireRoom_" + room.Id.Replace('-', '_');
         AutomationProperties.SetName(this, "Select " + room.Name);
         Margin = new Thickness(0, 0, 12, 12);
         Height = 222;
