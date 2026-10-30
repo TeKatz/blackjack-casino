@@ -15,6 +15,7 @@ public partial class MainWindow
     {
         InitializeTableRulesFeature();
         InitializeProgressionFeature();
+        InitializeVaultFeature();
         ApplyCasinoDropdownStyles();
         RaiseBottomActionDeck();
         InitializeSplitOpportunityCue();
@@ -36,6 +37,7 @@ public partial class MainWindow
 
     private void PresentationClosed(object? sender, EventArgs e)
     {
+        ShutdownVaultFeature();
         ShutdownProgressionFeature();
         backgroundMusic.Dispose();
     }
