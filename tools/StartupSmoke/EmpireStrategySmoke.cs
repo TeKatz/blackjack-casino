@@ -1,4 +1,5 @@
 using System.IO;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -49,6 +50,18 @@ internal static class EmpireStrategySmoke
             Find<TextBox>(window).Single(c=>c.Name=="EmpireAutomationTarget").Text="110";
             Click(window,"EmpireAutomationSave");
             Require(service.Automation.Enabled && service.Automation.TargetLevel==110,"Automation input was not saved.");
+            CultureInfo originalCulture = CultureInfo.CurrentCulture;
+            try
+            {
+                CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("de-DE");
+                Click(window,"EmpireTab_Automation");
+                Require(Find<TextBox>(window).Single(c=>c.Name=="EmpireAutomationPercent").Text=="25", "Automation mixed invariant display with localized parsing.");
+                Find<TextBox>(window).Single(c=>c.Name=="EmpireAutomationReserve").Text="1000000,50";
+                Find<TextBox>(window).Single(c=>c.Name=="EmpireAutomationPercent").Text="12,5";
+                Click(window,"EmpireAutomationSave");
+                Require(service.Automation.Reserve==1000000.5m && service.Automation.SpendPercent==.125m,"German automation decimals were not saved exactly.");
+            }
+            finally { CultureInfo.CurrentCulture = originalCulture; }
             Click(window,"EmpireTab_Events"); Click(window,"EmpireEvent_dice");
             Require(service.ActiveEvent?.Id=="dice","Event start UI failed.");
             Click(window,"EmpireTab_Contracts"); Click(window,"EmpireContract_expansion_drive");

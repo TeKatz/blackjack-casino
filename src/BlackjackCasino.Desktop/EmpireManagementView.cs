@@ -159,8 +159,8 @@ internal sealed class EmpireManagementView : UserControl
         var panel = new StackPanel { Margin = new Thickness(16) };
         var enabled = new CheckBox { Name = "EmpireAutomationEnabled", Content = "Enable automatic upgrades", IsChecked = config.Enabled, Margin = new Thickness(0, 4, 0, 12), Foreground = Foreground };
         panel.Children.Add(enabled);
-        TextBox reserve = Input("Minimum reserve (cr)", config.Reserve.ToString(CultureInfo.InvariantCulture), "EmpireAutomationReserve", panel);
-        TextBox percent = Input("Maximum budget per decision (%) · 1–50", (config.SpendPercent * 100).ToString(CultureInfo.InvariantCulture), "EmpireAutomationPercent", panel);
+        TextBox reserve = Input("Minimum reserve (cr)", config.Reserve.ToString("0.##", CultureInfo.CurrentCulture), "EmpireAutomationReserve", panel);
+        TextBox percent = Input("Maximum budget per decision (%) · 1–50", (config.SpendPercent * 100).ToString("0.##", CultureInfo.CurrentCulture), "EmpireAutomationPercent", panel);
         TextBox target = Input("Stop each department at level · 1–200", config.TargetLevel.ToString(CultureInfo.InvariantCulture), "EmpireAutomationTarget", panel);
         var mode = new ComboBox { Name = "EmpireAutomationMode", Width = 300, HorizontalAlignment = HorizontalAlignment.Left, ItemsSource = new[] { "Cheapest next milestone", "Priority order" }, SelectedIndex = config.CheapestMilestone ? 0 : 1, Margin = new Thickness(0, 8, 0, 12) };
         panel.Children.Add(mode);
