@@ -2,7 +2,7 @@ name: Development Release
 
 on:
   push:
-    branches: ["feature/nine-lives-polish-v2"]
+    branches: ["feature/kniffel-table"]
   workflow_dispatch:
 
 permissions:
@@ -14,8 +14,8 @@ concurrency:
 
 jobs:
   publish-development:
-    # The shared in-app Development channel is pinned to the active Nine Lives polish branch.
-    if: github.ref == 'refs/heads/feature/nine-lives-polish-v2'
+    # The shared in-app Development channel is pinned to the active Kniffel branch.
+    if: github.ref == 'refs/heads/feature/kniffel-table'
     runs-on: windows-latest
     timeout-minutes: 20
 
@@ -54,7 +54,7 @@ jobs:
       - name: Casino presentation runtime regression
         run: dotnet run --project tools/PresentationSmoke --configuration Release -- artifacts/presentation-regression
 
-      - name: Desktop startup and Nine Lives smoke
+      - name: Desktop startup, Nine Lives and Kniffel smoke
         run: dotnet run --project tools/StartupSmoke/StartupSmoke.csproj --configuration Release -- artifacts/startup-smoke
 
       - name: Upload startup smoke evidence

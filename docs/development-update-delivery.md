@@ -12,23 +12,23 @@ Before publication, the workflow builds, runs all tests and the actual Windows W
 
 Versioning rule: start a new Development cycle on a version base strictly above the latest final version (e.g. 0.7.0-dev.N after final 0.6.5). Preserve SemVer ordering; do not offer silent downgrades. PR preview artifacts use dev.0 and are superseded by the published Development run number.
 
-## Current test channel: Casino Empire
+## Current test channel: Kniffel
 
-The shared `development` release is temporarily pinned to
-`feature/casino-empire-foundation`. The publisher runs automatically only for
-that branch; manual dispatch from another branch is skipped. Main and other
-active branches retain normal CI but cannot replace this test channel.
-Workflow concurrency is scoped by branch so unrelated/skipped manual runs do
-not cancel the selected publisher. The existing client manifest URL stays the
-same; installed clients only need to select Development and check for updates.
+The shared `development` release is pinned to `feature/kniffel-table`, which
+includes the merged current main changes alongside Kniffel. Pushes to this branch
+run the Development publisher automatically; manual dispatch on this workflow
+revision from another branch is skipped. The in-app manifest URL is unchanged,
+so installed clients only need to select Development and check for updates.
 
-The next published version uses the existing monotonically increasing workflow
-run number (`0.10.1-dev.N`). The release target and manifest notes identify the
-exact Casino Empire commit, and package SHA-256 and size checks remain enabled.
-To move the shared channel later, update the pinned trigger and job guard in
-the publishing workflow on main and any active source branches.
+Versions continue as `0.10.1-dev.N` using the existing increasing workflow run
+number, superseding the previous Nine Lives `0.10.1-dev.302` test build. The
+publisher builds and tests the complete application, including the hosted Kniffel
+Windows smoke, before replacing the mutable release. Package SHA-256, size and
+application/manifest version checks remain enabled. Release notes and the manifest
+notes identify the exact Kniffel commit.
 
-The Casino Empire presentation update starts at `0.10.1-dev.N` so clients that
-installed the parallel Nine Lives `0.10.0-dev.211` build can detect it through
-normal SemVer ordering. The user explicitly selected Casino Empire as the
-current shared Development test build.
+The source pin lives in the publishing workflow's push trigger and job guard.
+The previous Nine Lives source branch has already been deleted. When changing
+the source again, update both fields together on the selected branch. Normal PR
+previews remain available as CI artifacts and do not replace the shared
+Development release.
