@@ -34,6 +34,9 @@ public static class ProfileNormalization
         }
         state.OwnedCosmeticIds ??= [];
         state.ClaimedChallengeIds ??= [];
-        state.SchemaVersion = Math.Max(state.SchemaVersion, 4);
+        state.EquippedCardSetId = string.IsNullOrWhiteSpace(state.EquippedCardSetId)
+            ? CosmeticCatalog.DefaultCardSetId
+            : state.EquippedCardSetId;
+        state.SchemaVersion = Math.Max(state.SchemaVersion, 5);
     }
 }
