@@ -2,7 +2,7 @@ name: Development Release
 
 on:
   push:
-    branches: ["feature/midnight-merge-foundation"]
+    branches: ["feature/word-search-foundation"]
   workflow_dispatch:
 
 permissions:
@@ -14,8 +14,8 @@ concurrency:
 
 jobs:
   publish-development:
-    # The shared in-app Development channel is pinned to the active Midnight Merge foundation branch.
-    if: github.ref == 'refs/heads/feature/midnight-merge-foundation'
+    # The shared in-app Development channel is pinned to the active Word Search foundation branch.
+    if: github.ref == 'refs/heads/feature/word-search-foundation'
     runs-on: windows-latest
     timeout-minutes: 20
 
