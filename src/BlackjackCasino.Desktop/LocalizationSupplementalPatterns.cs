@@ -36,6 +36,14 @@ internal static partial class LocalizationSupplementalPatterns
             return $"Casino Vault · {match.Groups[1].Value} voll · {match.Groups[2].Value} der berechtigten Einsätze · {match.Groups[3].Value} Bonus bei 100 %";
         if ((match = VaultBreakOpenRegex().Match(source)).Success)
             return $"AUFBRECHEN · +{match.Groups[1].Value} BONUS";
+        if ((match = VaultHeaderBreakOpenRegex().Match(source)).Success)
+            return $"AUFBRECHEN · +{match.Groups[1].Value}";
+        if ((match = VaultStatsFlexibleRegex().Match(source)).Success)
+            return $"Geöffnete Vaults {match.Groups[1].Value} · Beiträge {match.Groups[2].Value}\nAusgezahlt {match.Groups[3].Value} · Voll-Boni {match.Groups[4].Value} · Rekord {match.Groups[5].Value}";
+        if ((match = LoungeStatusUpperRegex().Match(source)).Success)
+            return $"{match.Groups[1].Value} SIEGE · {match.Groups[2].Value} AKTIV · {match.Groups[3].Value}/{match.Groups[4].Value} ERFOLGE";
+        if ((match = SudokuProgressFlexibleRegex().Match(source)).Success)
+            return $"FREIES SPIEL {match.Groups[1].Value}/{match.Groups[2].Value} · DAILY {match.Groups[3].Value} abgeschlossen";
         if ((match = RewardXpRegex().Match(source)).Success)
             return $"+{match.Groups[1].Value} XP · +{match.Groups[2].Value} Season-XP verdient!";
 
@@ -62,6 +70,14 @@ internal static partial class LocalizationSupplementalPatterns
     private static partial Regex VaultToolTipRegex();
     [GeneratedRegex(@"^BREAK OPEN\s+·\s+\+(.+) BONUS$")]
     private static partial Regex VaultBreakOpenRegex();
+    [GeneratedRegex(@"^BREAK OPEN\s+·\s+\+(.+)$")]
+    private static partial Regex VaultHeaderBreakOpenRegex();
+    [GeneratedRegex(@"^Vaults opened\s+(.+?)\s+·\s+Contributions\s+(.+?)\nPaid back\s+(.+?)\s+·\s+Full bonuses\s+(.+?)\s+·\s+Best\s+(.+)$")]
+    private static partial Regex VaultStatsFlexibleRegex();
+    [GeneratedRegex(@"^(.+) WINS\s+·\s+(.+) ACTIVE\s+·\s+(.+)/(.+) ACHIEVEMENTS$")]
+    private static partial Regex LoungeStatusUpperRegex();
+    [GeneratedRegex(@"^FREE PLAY\s+(.+?)/(.+?)\s+·\s+DAILY\s+(.+) completed$")]
+    private static partial Regex SudokuProgressFlexibleRegex();
     [GeneratedRegex(@"^\+(.+) XP · \+(.+) Season XP earned!$")]
     private static partial Regex RewardXpRegex();
 }
