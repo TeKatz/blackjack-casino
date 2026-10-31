@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Common.Play" xml:space="preserve"><value>SPIELEN</value></data>
+  <data name="Common.Close" xml:space="preserve"><value>SCHLIESSEN</value></data>
+  <data name="Common.Resume" xml:space="preserve"><value>FORTSETZEN</value></data>
+  <data name="Common.NewDeal" xml:space="preserve"><value>NEUES SPIEL</value></data>
+  <data name="Common.View" xml:space="preserve"><value>ANSEHEN</value></data>
+  <data name="Common.Stable" xml:space="preserve"><value>Stabil</value></data>
+  <data name="Common.Development" xml:space="preserve"><value>Entwicklung</value></data>
+  <data name="Common.English" xml:space="preserve"><value>English</value></data>
+  <data name="Common.German" xml:space="preserve"><value>Deutsch</value></data>
+  <data name="Settings.Presentation" xml:space="preserve"><value>DARSTELLUNG</value></data>
+  <data name="Settings.Language" xml:space="preserve"><value>Sprache</value></data>
+  <data name="Settings.TableTheme" xml:space="preserve"><value>Tischdesign</value></data>
+  <data name="Settings.ClassicGreen" xml:space="preserve"><value>Klassisches Grün</value></data>
+  <data name="Settings.MidnightBlue" xml:space="preserve"><value>Mitternachtsblau</value></data>
+  <data name="Settings.Burgundy" xml:space="preserve"><value>Burgunderrot</value></data>
+  <data name="Settings.SoundEffects" xml:space="preserve"><value>Casino-Soundeffekte</value></data>
+  <data name="Settings.CardAnimations" xml:space="preserve"><value>Kartenanimationen</value></data>
+  <data name="Settings.ShowEmpireBalance" xml:space="preserve"><value>Empire-Guthaben im Header anzeigen</value></data>
+  <data name="Settings.BackgroundMusic" xml:space="preserve"><value>Hintergrundmusik</value></data>
+  <data name="Settings.MusicVolume" xml:space="preserve"><value>Musiklautstärke</value></data>
+  <data name="Settings.Fullscreen" xml:space="preserve"><value>Vollbild umschalten  [F11]</value></data>
+  <data name="Updates.Header" xml:space="preserve"><value>UPDATES</value></data>
+  <data name="Updates.NotChecked" xml:space="preserve"><value>Noch nicht geprüft</value></data>
+  <data name="Updates.Check" xml:space="preserve"><value>Nach Updates suchen</value></data>
+  <data name="Updates.Install" xml:space="preserve"><value>Update installieren</value></data>
+  <data name="Updates.ChannelChanged" xml:space="preserve"><value>Kanal geändert. Suche nach Updates.</value></data>
+  <data name="Casino.Header" xml:space="preserve"><value>BLACKJACK CASINO</value></data>
+  <data name="Casino.Lobby" xml:space="preserve"><value>← LOBBY</value></data>
+  <data name="Casino.Bankroll" xml:space="preserve"><value>GUTHABEN</value></data>
+  <data name="Casino.Version" xml:space="preserve"><value>VERSION</value></data>
+  <data name="Casino.EmpireCredits" xml:space="preserve"><value>EMPIRE-CREDITS</value></data>
+  <data name="Casino.BlackjackPays" xml:space="preserve"><value>BLACKJACK ZAHLT 3 ZU 2</value></data>
+  <data name="Casino.DealerStands" xml:space="preserve"><value>DEALER BLEIBT BEI JEDER 17 STEHEN</value></data>
+  <data name="Casino.Dealer" xml:space="preserve"><value>DEALER</value></data>
+  <data name="Casino.PlaceBet" xml:space="preserve"><value>Setze einen Einsatz, um zu beginnen.</value></data>
+  <data name="Casino.InsuranceQuestion" xml:space="preserve"><value>Der Dealer zeigt ein Ass. Versicherung?</value></data>
+  <data name="Casino.TakeInsurance" xml:space="preserve"><value>Versicherung nehmen</value></data>
+  <data name="Casino.NoInsurance" xml:space="preserve"><value>Keine Versicherung</value></data>
+  <data name="Casino.Hit" xml:space="preserve"><value>KARTE  [H]</value></data>
+  <data name="Casino.Stand" xml:space="preserve"><value>HALTEN  [S]</value></data>
+  <data name="Casino.Double" xml:space="preserve"><value>VERDOPPELN  [D]</value></data>
+  <data name="Casino.Split" xml:space="preserve"><value>TEILEN  [P]</value></data>
+  <data name="Casino.Surrender" xml:space="preserve"><value>AUFGEBEN  [R]</value></data>
+  <data name="Casino.Deal" xml:space="preserve"><value>GEBEN  [ENTER]</value></data>
+  <data name="Casino.TheCasino" xml:space="preserve"><value>DAS CASINO</value></data>
+  <data name="Casino.ReturnLobby" xml:space="preserve"><value>Zur Casino-Lobby zurückkehren</value></data>
+  <data name="Casino.DiscoverFloor" xml:space="preserve"><value>Entdecke das Casino. Ein gemeinsames Guthaben und Profil.</value></data>
+  <data name="Casino.PlayMode" xml:space="preserve"><value>SPIELMODUS</value></data>
+  <data name="Casino.Solo" xml:space="preserve"><value>Solo</value></data>
+  <data name="Casino.FullTableAi" xml:space="preserve"><value>Voller Tisch (KI)</value></data>
+  <data name="Casino.AiSeats" xml:space="preserve"><value>KI-Plätze</value></data>
+  <data name="Casino.AiShoeHelp" xml:space="preserve"><value>Alle besetzten Plätze ziehen aus demselben Shoe. Die KI spielt Basisstrategie.</value></data>
+  <data name="Casino.Betting" xml:space="preserve"><value>EINSATZ</value></data>
+  <data name="Casino.ClearBet" xml:space="preserve"><value>Einsatz löschen</value></data>
+  <data name="Casino.Table" xml:space="preserve"><value>TISCH</value></data>
+  <data name="Casino.Shoe" xml:space="preserve"><value>Shoe</value></data>
+  <data name="Casino.Rules" xml:space="preserve"><value>Regeln</value></data>
+  <data name="Casino.Blackjack" xml:space="preserve"><value>Blackjack</value></data>
+  <data name="Casino.SurrenderLabel" xml:space="preserve"><value>Aufgeben</value></data>
+  <data name="Casino.Late" xml:space="preserve"><value>Spät</value></data>
+  <data name="Casino.ResetBankroll" xml:space="preserve"><value>Guthaben auf $1.000 zurücksetzen</value></data>
+  <data name="Lobby.Title" xml:space="preserve"><value>Casino-Lobby</value></data>
+  <data name="Lounge.Title" xml:space="preserve"><value>Chill Lounge</value></data>
+  <data name="Lounge.Eyebrow" xml:space="preserve"><value>EINE RUHIGERE ECKE</value></data>
+  <data name="Lounge.Headline" xml:space="preserve"><value>Finde dein eigenes Tempo.</value></data>
+  <data name="Lounge.Description" xml:space="preserve"><value>Wähle ein Spiel. Kein Einsatz, kein Zeitdruck — einfach ein wenig Zeit für dich.</value></data>
+  <data name="Lounge.ReturnClub" xml:space="preserve"><value>ZURÜCK ZUM CLUB</value></data>
+  <data name="Lounge.BackGames" xml:space="preserve"><value>← LOUNGE-SPIELE</value></data>
+  <data name="Sudoku.Subtitle" xml:space="preserve"><value>Ein wenig Raum zum Denken.</value></data>
+  <data name="Sudoku.Description" xml:space="preserve"><value>Sechs Schwierigkeitsgrade, gespeicherter Fortschritt und eine separate Offline-Daily-Bibliothek.</value></data>
+  <data name="Solitaire.Subtitle" xml:space="preserve"><value>Sechs Arten, die Karten zur Ruhe kommen zu lassen.</value></data>
+  <data name="Solitaire.Description" xml:space="preserve"><value>Klondike, FreeCell, Spider, Pyramid, Golf und TriPeaks. Jede Partie wird automatisch gespeichert; FreeCell-Partien sind nummeriert und reproduzierbar.</value></data>
+  <data name="Solitaire.NoPressure" xml:space="preserve"><value>Keine Einsätze, keine Streak-Pflicht und keine Zeitboni. Zeit und Züge werden nur als persönliche Statistik erfasst.</value></data>
+  <data name="Solitaire.Career" xml:space="preserve"><value>KARRIERE</value></data>
+  <data name="Solitaire.Achievements" xml:space="preserve"><value>ERFOLGE</value></data>
+  <data name="Solitaire.AchievementHelp" xml:space="preserve"><value>Nur Meilensteine — keine täglichen Streaks und keine Zeitvorgaben.</value></data>
+  <data name="Solitaire.Back" xml:space="preserve"><value>← SOLITAIRE</value></data>
+  <data name="Solitaire.Selected" xml:space="preserve"><value>AUSGEWÄHLT</value></data>
+  <data name="Vault.Title" xml:space="preserve"><value>CASINO VAULT</value></data>
+  <data name="Vault.Tagline" xml:space="preserve"><value>Jeder echte Einsatz bringt etwas voran — selbst in einer kalten Nacht.</value></data>
+  <data name="Vault.MidnightReserve" xml:space="preserve"><value>MIDNIGHT RESERVE</value></data>
+  <data name="Vault.Contribution" xml:space="preserve"><value>BEITRAG</value></data>
+  <data name="Vault.ContributionHelp" xml:space="preserve"><value>2 % jedes berechtigten Spielgeld-Einsatzes</value></data>
+  <data name="Vault.FullVault" xml:space="preserve"><value>VOLLER VAULT</value></data>
+  <data name="Vault.FullVaultHelp" xml:space="preserve"><value>Nur bei 100 % öffnen · der Bonus kommt zusätzlich oben drauf</value></data>
+  <data name="Vault.NoCatch" xml:space="preserve"><value>KEIN HAKEN</value></data>
+  <data name="Vault.NoCatchHelp" xml:space="preserve"><value>Freispiele, Belohnungen und Empire-Einnahmen füllen ihn niemals</value></data>
+  <data name="Vault.Opened" xml:space="preserve"><value>VAULT GEÖFFNET</value></data>
+  <data name="Vault.BreakOpen" xml:space="preserve"><value>AUFBRECHEN</value></data>
+  <data name="Vault.AlmostFull" xml:space="preserve"><value>FAST VOLL</value></data>
+  <data name="Vault.Locked" xml:space="preserve"><value>VAULT GESPERRT</value></data>
+  <data name="Profile.Profile" xml:space="preserve"><value>PROFIL</value></data>
+  <data name="Progression.Shop" xml:space="preserve"><value>SHOP</value></data>
+  <data name="Progression.Statistics" xml:space="preserve"><value>STATISTIKEN</value></data>
+  <data name="Progression.Challenges" xml:space="preserve"><value>HERAUSFORDERUNGEN</value></data>
+  <data name="Progression.Season" xml:space="preserve"><value>SEASON</value></data>
+</root>
