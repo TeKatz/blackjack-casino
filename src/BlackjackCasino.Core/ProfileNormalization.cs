@@ -17,6 +17,8 @@ public static class ProfileNormalization
         state.Sudoku.RecordedPuzzleIds ??= new HashSet<string>(StringComparer.Ordinal);
         state.Solitaire ??= new();
         state.Solitaire.Normalize();
+        state.WordSearch ??= new();
+        state.WordSearch.Normalize();
         state.MidnightMerge ??= new();
         state.MidnightMerge.Normalize();
         state.Slots ??= new();
