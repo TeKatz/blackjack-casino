@@ -21,6 +21,7 @@ internal sealed class MemoryCardArtwork : FrameworkElement
         Width = CardWidth;
         Height = CardHeight;
         SnapsToDevicePixels = true;
+        ClipToBounds = true;
         IsHitTestVisible = false;
     }
 
