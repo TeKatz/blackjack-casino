@@ -359,7 +359,7 @@ internal sealed class WordSearchView : UserControl, IDisposable
         hintButton.Click += (_, _) => UseHint();
         side.Children.Add(hintButton);
         side.Children.Add(WordSearchLoungeHub.MarginLabel(
-            "Hints never reduce XP or block challenges except the optional no-hint milestones.",
+            "Hints are tracked separately, but they never reduce XP in the Chill Lounge.",
             10,
             "#7F948B",
             new Thickness(2, 8, 0, 0)));
@@ -483,7 +483,7 @@ internal sealed class WordSearchView : UserControl, IDisposable
         }
         status.Text = $"Hint: {hint.Word} begins at the glowing letter.";
         SaveNow();
-        RefreshCells();
+        Refresh();
     }
 
     private void Refresh()
