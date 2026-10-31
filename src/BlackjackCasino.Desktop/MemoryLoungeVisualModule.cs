@@ -71,9 +71,17 @@ internal sealed class MemoryLoungeHubVisual : UserControl, IDisposable
         this.sounds = sounds;
         this.animations = animations;
         Background = Brush("#0B1715");
-        Content = BuildHub();
+        Content = BuildHubViewport();
         Unloaded += (_, _) => Dispose();
     }
+
+    private FrameworkElement BuildHubViewport() => new ScrollViewer
+    {
+        Content = BuildHub(),
+        VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+        HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+        CanContentScroll = false,
+    };
 
     private FrameworkElement BuildHub()
     {
@@ -479,7 +487,7 @@ internal sealed class MemoryLoungeHubVisual : UserControl, IDisposable
     {
         activeView?.Dispose();
         activeView = null;
-        Content = BuildHub();
+        Content = BuildHubViewport();
     }
 
     private static Border ResultStat(string caption, string value)
