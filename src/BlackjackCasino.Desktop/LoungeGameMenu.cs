@@ -143,6 +143,7 @@ internal sealed class LoungeGameMenu : UserControl
         if (injectedShellBack is not null)
         {
             injectedShellBack.Content = label ?? "← GAMES";
+            injectedShellBack.Tag = action;
             injectedShellBack.Visibility = action is null ? Visibility.Collapsed : Visibility.Visible;
         }
         ApplyInjectedShellNavigation();
@@ -157,6 +158,7 @@ internal sealed class LoungeGameMenu : UserControl
         Button? close = FindDescendant<Button>(window, button => string.Equals(button.Content as string, "RETURN TO CLUB", StringComparison.Ordinal));
         if (close is null) return;
 
+        injectedShellBack ??= FindDescendant<Button>(window, button => string.Equals(button.Name, "LoungeGamesHeaderBack", StringComparison.Ordinal));
         if (injectedShellBack is null)
         {
             injectedShellBack = new Button
@@ -171,10 +173,12 @@ internal sealed class LoungeGameMenu : UserControl
                 FontWeight = FontWeights.SemiBold,
                 Cursor = CasinoCursors.Hand,
                 Margin = new Thickness(0, 0, 10, 0),
-                Visibility = injectedShellBackAction is null ? Visibility.Collapsed : Visibility.Visible,
             };
-            injectedShellBack.Click += (_, _) => injectedShellBackAction?.Invoke();
+            injectedShellBack.Click += ShellBackClicked;
         }
+
+        injectedShellBack.Tag = injectedShellBackAction;
+        injectedShellBack.Visibility = injectedShellBackAction is null ? Visibility.Collapsed : Visibility.Visible;
 
         if (injectedShellBack.Parent is null)
         {
@@ -194,8 +198,11 @@ internal sealed class LoungeGameMenu : UserControl
                 stack.Children.Insert(Math.Max(0, index), injectedShellBack);
             }
         }
+    }
 
-        injectedShellBack.Visibility = injectedShellBackAction is null ? Visibility.Collapsed : Visibility.Visible;
+    private static void ShellBackClicked(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: Action action }) action();
     }
 
     private static T? FindDescendant<T>(DependencyObject root, Func<T, bool> predicate) where T : DependencyObject
