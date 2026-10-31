@@ -11,8 +11,10 @@
   <data name="Lobby.CosmeticShop" xml:space="preserve"><value>Cosmetic Shop</value></data>
   <data name="Lobby.Challenges" xml:space="preserve"><value>Challenges</value></data>
   <data name="Lobby.Overview" xml:space="preserve"><value>Overview</value></data>
-  <data name="Lobby.TakeSeat" xml:space="preserve"><value>TAKE A SEAT  →</value></data>
+  <data name="Lobby.TakeSeat" xml:space="preserve"><value>TAKE A SEAT   →</value></data>
+  <data name="Lobby.CurrentlyOpen" xml:space="preserve"><value>CURRENTLY OPEN</value></data>
   <data name="Lobby.Open" xml:space="preserve"><value>OPEN  →</value></data>
+  <data name="Lobby.NewWindow" xml:space="preserve"><value>↗ NEW WINDOW</value></data>
   <data name="Lobby.OpenNewWindow" xml:space="preserve"><value>OPEN IN NEW WINDOW</value></data>
   <data name="Lobby.Category.TableGames" xml:space="preserve"><value>Table games</value></data>
   <data name="Lobby.Category.ClassicSlots" xml:space="preserve"><value>Classic slots</value></data>
