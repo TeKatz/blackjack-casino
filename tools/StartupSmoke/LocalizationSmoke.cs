@@ -12,6 +12,10 @@ internal static class LocalizationSmoke
 {
     internal static async Task Run(MainWindow window, string output)
     {
+        // StartupSmoke hosts MainWindow in a plain WPF Application rather than App.xaml.cs.
+        // Install the same Loaded hook production uses before opening dynamic game surfaces.
+        Localization.InstallAutomaticTranslation();
+
         ComboBox language = Find<ComboBox>(window).FirstOrDefault(combo => combo.Name == "LanguageComboBox")
             ?? throw new InvalidOperationException("Presentation settings do not expose the Language selector.");
 
