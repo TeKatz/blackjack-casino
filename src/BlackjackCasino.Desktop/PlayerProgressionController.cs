@@ -33,34 +33,23 @@ internal sealed class PlayerProgressionController : IDisposable
     }
 
     public ProgressionService Service { get; }
-
     public PlayerProfileState Profile => Service.State;
-
     public IReadOnlyList<RoundHistoryEntry> History => history;
-
     public TimeSpan SessionElapsed => finalSessionElapsed ?? timeProvider.GetElapsedTime(sessionStartedAt);
 
-    /// <summary>Live session time not yet included in the profile's stored whole seconds.</summary>
     public TimeSpan UnrecordedSessionElapsed
     {
         get
         {
-            lock (Profile)
-            {
-                return UnrecordedElapsed();
-            }
+            lock (Profile) { return UnrecordedElapsed(); }
         }
     }
 
-    /// <summary>Stored lifetime time plus only the unrecorded portion of this session.</summary>
     public TimeSpan TotalPlaytime
     {
         get
         {
-            lock (Profile)
-            {
-                return TimeSpan.FromSeconds(Profile.TotalPlaytimeSeconds) + UnrecordedElapsed();
-            }
+            lock (Profile) { return TimeSpan.FromSeconds(Profile.TotalPlaytimeSeconds) + UnrecordedElapsed(); }
         }
     }
 
@@ -72,9 +61,6 @@ internal sealed class PlayerProgressionController : IDisposable
             long elapsedSeconds = SessionElapsed.Ticks / TimeSpan.TicksPerSecond;
             long unrecordedSeconds = elapsedSeconds - accountedSessionSeconds;
             if (unrecordedSeconds <= 0) return;
-
-            // Accrue whole seconds against the session origin, rather than rounding each
-            // interval. Frequent refreshes cannot manufacture time or lose fractions.
             Service.AddPlaytime(TimeSpan.FromSeconds(unrecordedSeconds));
             accountedSessionSeconds = elapsedSeconds;
         }
@@ -88,18 +74,10 @@ internal sealed class PlayerProgressionController : IDisposable
 
     public ProgressionAward ProcessRound(RoundHistoryEntry round)
     {
-        if (!knownRoundIds.Add(round.RoundId))
-        {
-            return ProgressionAward.None;
-        }
-
+        if (!knownRoundIds.Add(round.RoundId)) return ProgressionAward.None;
         ProgressionAward award = Service.ProcessRound(round);
         history.Add(round);
-        if (history.Count > 1_000)
-        {
-            history.RemoveRange(0, history.Count - 1_000);
-        }
-
+        if (history.Count > 1_000) history.RemoveRange(0, history.Count - 1_000);
         SaveAll();
         return award;
     }
@@ -109,8 +87,6 @@ internal sealed class PlayerProgressionController : IDisposable
         lock (Profile)
         {
             AccruePlaytime();
-            // Save XP and its durable game receipt in the same profile replacement. A
-            // failed write leaves the live profile untouched and the reward retryable.
             PlayerProfileState candidate = ManorPersistence.Clone(Profile);
             ProgressionAward award = new BlackjackCasino.Core.Kniffel.KniffelProgression(new ProgressionService(candidate)).Process(checkpoint);
             if (award == ProgressionAward.None) return award;
@@ -128,8 +104,6 @@ internal sealed class PlayerProgressionController : IDisposable
             AccruePlaytime();
             PlayerProfileState candidate = ManorPersistence.Clone(Profile);
             ProgressionAward award = new BlackjackCasino.Core.Kniffel.KniffelProgression(new ProgressionService(candidate)).ProcessTable(table);
-            // Entry fees are recorded even before a table settles. The vault follows that
-            // durable wager receipt exactly once, independent of the later prize/result.
             CasinoVaultService.SyncFromStatistics(candidate);
             if (persistKniffelRewards) saveKniffelProfile(candidate);
             AdoptManorProfile(candidate);
@@ -151,23 +125,59 @@ internal sealed class PlayerProgressionController : IDisposable
         }
     }
 
+    public bool ProcessSolitaireStart(BlackjackCasino.Core.Solitaire.SolitaireStartRecord start)
+    {
+        lock (Profile)
+        {
+            AccruePlaytime();
+            PlayerProfileState candidate = ManorPersistence.Clone(Profile);
+            bool changed = new BlackjackCasino.Core.Solitaire.SolitaireProgression(new ProgressionService(candidate)).ProcessStart(start);
+            if (!changed) return false;
+            if (persistKniffelRewards) saveKniffelProfile(candidate);
+            AdoptManorProfile(candidate);
+            return true;
+        }
+    }
+
+    public bool ProcessSolitaireAbandon(BlackjackCasino.Core.Solitaire.SolitaireAbandonRecord abandon)
+    {
+        lock (Profile)
+        {
+            AccruePlaytime();
+            PlayerProfileState candidate = ManorPersistence.Clone(Profile);
+            bool changed = new BlackjackCasino.Core.Solitaire.SolitaireProgression(new ProgressionService(candidate)).ProcessAbandon(abandon);
+            if (!changed) return false;
+            if (persistKniffelRewards) saveKniffelProfile(candidate);
+            AdoptManorProfile(candidate);
+            return true;
+        }
+    }
+
+    public ProgressionAward ProcessSolitaire(BlackjackCasino.Core.Solitaire.SolitaireCompletionRecord completion)
+    {
+        lock (Profile)
+        {
+            AccruePlaytime();
+            PlayerProfileState candidate = ManorPersistence.Clone(Profile);
+            ProgressionAward award = new BlackjackCasino.Core.Solitaire.SolitaireProgression(new ProgressionService(candidate)).ProcessWin(completion);
+            if (award == ProgressionAward.None) return award;
+            if (persistKniffelRewards) saveKniffelProfile(candidate);
+            AdoptManorProfile(candidate);
+            return award;
+        }
+    }
+
     public PurchaseResult PurchaseCosmetic(string cosmeticId)
     {
         PurchaseResult result = Service.PurchaseCosmetic(cosmeticId);
-        if (result.Success && persist)
-        {
-            PlayerProfileStore.SaveProfile(Profile);
-        }
+        if (result.Success && persist) PlayerProfileStore.SaveProfile(Profile);
         return result;
     }
 
     public bool EquipCosmetic(string cosmeticId)
     {
         bool equipped = Service.EquipCosmetic(cosmeticId);
-        if (equipped && persist)
-        {
-            PlayerProfileStore.SaveProfile(Profile);
-        }
+        if (equipped && persist) PlayerProfileStore.SaveProfile(Profile);
         return equipped;
     }
 
@@ -195,10 +205,7 @@ internal sealed class PlayerProgressionController : IDisposable
         {
             AccruePlaytime();
             ChallengeClaimResult result = Service.ClaimChallenge(challengeId);
-            if (result.Success && persist)
-            {
-                PlayerProfileStore.SaveProfile(Profile);
-            }
+            if (result.Success && persist) PlayerProfileStore.SaveProfile(Profile);
             return result;
         }
     }
@@ -211,14 +218,9 @@ internal sealed class PlayerProgressionController : IDisposable
             long previousCoins = Profile.Coins;
             List<string> previousClaims = Profile.ClaimedChallengeIds;
             ChallengeClaimAllResult result = Service.ClaimAllChallenges();
-            if (!result.Success || !persistChallengeClaims)
-            {
-                return result;
-            }
-
+            if (!result.Success || !persistChallengeClaims) return result;
             try
             {
-                // One atomic profile replacement for the entire batch; no per-challenge saves.
                 saveChallengeProfile(Profile);
                 return result;
             }
@@ -234,18 +236,15 @@ internal sealed class PlayerProgressionController : IDisposable
     public PrestigeResult Prestige()
     {
         PrestigeResult result = Service.Prestige();
-        if (result.Success && persist)
-        {
-            PlayerProfileStore.SaveProfile(Profile);
-        }
+        if (result.Success && persist) PlayerProfileStore.SaveProfile(Profile);
         return result;
     }
 
     public void AdoptManorProfile(PlayerProfileState committed)
     {
-        // Keep the existing blackjack service, processed-round set and session statistics.
         Profile.Kniffel = committed.Kniffel;
         Profile.Sudoku = committed.Sudoku;
+        Profile.Solitaire = committed.Solitaire;
         Profile.Manor = committed.Manor;
         Profile.Vault = committed.Vault;
         Profile.SchemaVersion = committed.SchemaVersion;
@@ -286,9 +285,6 @@ internal sealed class PlayerProgressionController : IDisposable
         lock (Profile)
         {
             if (disposed) return;
-
-            // Freeze elapsed time before the final accrual. Later refreshes/disposals cannot
-            // grow or re-add a session that has already ended.
             finalSessionElapsed = SessionElapsed;
             AccruePlaytime();
             disposed = true;
