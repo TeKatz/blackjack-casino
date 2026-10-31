@@ -11,6 +11,7 @@ public enum ChallengeCategory
     Prestige,
     MidnightDice,
     Sudoku,
+    MidnightMerge,
 }
 
 public enum ChallengeMetric
@@ -86,6 +87,7 @@ public enum ChallengeMetric
     DiceGames, DiceBestScore, DiceUpperBonuses, DiceFiveOfAKinds, DiceFullHouses, DiceLargeStraights,
     DiceCasinoGames, DiceCasinoWins, DicePodiums, DiceWagered, DiceReturned, DiceBiggestPayout,
     SudokuCompleted, SudokuDailyCompleted, SudokuNoHintCompleted, SudokuExpertCompleted, SudokuMasterCompleted,
+    MergeMerges, MergeOrdersCompleted, MergeRenovationPoints, MergeHighestTier, MergeMilestones, MergeAreasCompleted,
 }
 
 public sealed record ChallengeDefinition(
@@ -115,7 +117,6 @@ public static class ChallengeCatalog
         C("sudoku-expert-10", ChallengeCategory.Sudoku, "Deep Focus", "Complete 10 Expert Sudokus.", ChallengeMetric.SudokuExpertCompleted, 10, 500),
         C("sudoku-master-1", ChallengeCategory.Sudoku, "Master Key", "Complete your first Master Sudoku.", ChallengeMetric.SudokuMasterCompleted, 1, 250),
         E("sudoku-master-25", ChallengeCategory.Sudoku, "Stillness", "Complete 25 Master Sudokus.", ChallengeMetric.SudokuMasterCompleted, 25, 1200),
-
         C("sudoku-25", ChallengeCategory.Sudoku, "Quiet Evenings", "Complete 25 Sudoku puzzles.", ChallengeMetric.SudokuCompleted, 25, 250),
         C("sudoku-100", ChallengeCategory.Sudoku, "A Shelf of Grids", "Complete 100 Sudoku puzzles.", ChallengeMetric.SudokuCompleted, 100, 750),
         E("sudoku-500", ChallengeCategory.Sudoku, "The Patient Mind", "Complete 500 Sudoku puzzles.", ChallengeMetric.SudokuCompleted, 500, 2500),
@@ -126,6 +127,24 @@ public static class ChallengeCatalog
         C("sudoku-expert-1", ChallengeCategory.Sudoku, "A Deeper Grid", "Complete your first Expert Sudoku.", ChallengeMetric.SudokuExpertCompleted, 1, 175),
         E("sudoku-expert-50", ChallengeCategory.Sudoku, "Expert's Corner", "Complete 50 Expert Sudokus.", ChallengeMetric.SudokuExpertCompleted, 50, 1500),
         C("sudoku-master-10", ChallengeCategory.Sudoku, "Mindful Master", "Complete 10 Master Sudokus.", ChallengeMetric.SudokuMasterCompleted, 10, 750),
+
+        // Midnight Merge rewards meaningful progress. There is deliberately no challenge for producer clicks.
+        C("merge-first", ChallengeCategory.MidnightMerge, "Two Become One", "Create your first merged item.", ChallengeMetric.MergeMerges, 1, 25),
+        C("merge-100", ChallengeCategory.MidnightMerge, "Finding the Rhythm", "Complete 100 merges.", ChallengeMetric.MergeMerges, 100, 125),
+        C("merge-1000", ChallengeCategory.MidnightMerge, "Night Shift", "Complete 1,000 merges.", ChallengeMetric.MergeMerges, 1000, 500),
+        E("merge-10000", ChallengeCategory.MidnightMerge, "Merge Institution", "Complete 10,000 merges.", ChallengeMetric.MergeMerges, 10000, 2000),
+        C("merge-order-1", ChallengeCategory.MidnightMerge, "First Delivery", "Complete your first supply order.", ChallengeMetric.MergeOrdersCompleted, 1, 50),
+        C("merge-order-25", ChallengeCategory.MidnightMerge, "Reliable Supplier", "Complete 25 supply orders.", ChallengeMetric.MergeOrdersCompleted, 25, 200),
+        C("merge-order-100", ChallengeCategory.MidnightMerge, "House Supplier", "Complete 100 supply orders.", ChallengeMetric.MergeOrdersCompleted, 100, 500),
+        C("merge-order-500", ChallengeCategory.MidnightMerge, "Everybody Knows Your Name", "Complete 500 supply orders.", ChallengeMetric.MergeOrdersCompleted, 500, 1200),
+        E("merge-order-2500", ChallengeCategory.MidnightMerge, "Endless Supply", "Complete 2,500 supply orders.", ChallengeMetric.MergeOrdersCompleted, 2500, 3000),
+        C("merge-renovation-20", ChallengeCategory.MidnightMerge, "Dust Be Gone", "Earn 20 renovation points.", ChallengeMetric.MergeRenovationPoints, 20, 75),
+        C("merge-renovation-50", ChallengeCategory.MidnightMerge, "Let There Be Light", "Earn 50 renovation points.", ChallengeMetric.MergeRenovationPoints, 50, 125),
+        C("merge-renovation-1000", ChallengeCategory.MidnightMerge, "Restoration Regular", "Earn 1,000 renovation points.", ChallengeMetric.MergeRenovationPoints, 1000, 600),
+        E("merge-renovation-10000", ChallengeCategory.MidnightMerge, "From Dust to Gold", "Earn 10,000 renovation points.", ChallengeMetric.MergeRenovationPoints, 10000, 3000),
+        C("merge-tier-6", ChallengeCategory.MidnightMerge, "Top Shelf", "Create a tier VI item.", ChallengeMetric.MergeHighestTier, 6, 250),
+        C("merge-milestones-3", ChallengeCategory.MidnightMerge, "Lobby Makeover", "Reach all three lobby restoration milestones.", ChallengeMetric.MergeMilestones, 3, 250),
+        C("merge-area-1", ChallengeCategory.MidnightMerge, "Grand Reopening", "Fully restore your first Midnight Club area.", ChallengeMetric.MergeAreasCompleted, 1, 400),
 
         C("dice-game-1", ChallengeCategory.MidnightDice, "First Sheet", "Complete a Midnight Dice game in either mode.", ChallengeMetric.DiceGames, 1, 50),
         C("dice-games-10", ChallengeCategory.MidnightDice, "Dice Lounge Regular", "Complete 10 Midnight Dice games.", ChallengeMetric.DiceGames, 10, 150),
@@ -260,7 +279,7 @@ public static class ChallengeCatalog
         E("lifetime-xp-1000000", ChallengeCategory.Lifetime, "Casino Institution", "Earn 1,000,000 lifetime player XP across all games.", ChallengeMetric.LifetimeExperience, 1000000, 4000),
         E("lifetime-hours-250", ChallengeCategory.Lifetime, "The Long Night", "Record 250 hours of total casino playtime.", ChallengeMetric.LifetimePlaytimeSeconds, 900000, 3000),
         E("lifetime-wager-10000000", ChallengeCategory.Lifetime, "Ten Million in Motion", "Wager $10,000,000 across all games, including preserved pooled slot history.", ChallengeMetric.LifetimeWagered, 10000000, 4000),
-        E("lifetime-plays-100000", ChallengeCategory.Lifetime, "A Hundred Thousand Nights", "Complete 100,000 Blackjack rounds, dice games, Sudoku puzzles and slot spins combined, including preserved pooled slot history.", ChallengeMetric.LifetimePlays, 100000, 5000),
+        E("lifetime-plays-100000", ChallengeCategory.Lifetime, "A Hundred Thousand Nights", "Complete 100,000 Blackjack rounds, dice games, Sudoku puzzles, Merge orders and slot spins combined, including preserved pooled slot history.", ChallengeMetric.LifetimePlays, 100000, 5000),
         E("prestige-3", ChallengeCategory.Prestige, "Third Time Crowned", "Reach Prestige 3.", ChallengeMetric.PrestigeCount, 3, 2500),
         E("prestige-5", ChallengeCategory.Prestige, "Fivefold Legend", "Reach Prestige 5.", ChallengeMetric.PrestigeCount, 5, 4000),
         E("prestige-10", ChallengeCategory.Prestige, "Eternal High Roller", "Reach Prestige 10.", ChallengeMetric.PrestigeCount, 10, 7500),
@@ -283,6 +302,7 @@ public static class ChallengeCatalog
         Manor.ManorStatistics manor = profile.Manor;
         NeonVaultStatistics neon = profile.NeonVault;
         NineLivesStatistics nine = profile.NineLives;
+        MidnightMerge.MidnightMergeStatistics merge = profile.MidnightMerge;
         SlotStatistics legacy = profile.LegacyPooledSlots;
 
         return challenge.Metric switch
@@ -369,12 +389,20 @@ public static class ChallengeCatalog
             ChallengeMetric.SudokuExpertCompleted => profile.Sudoku.ExpertCompleted,
             ChallengeMetric.SudokuMasterCompleted => profile.Sudoku.MasterCompleted,
 
+            ChallengeMetric.MergeMerges => merge.Merges,
+            ChallengeMetric.MergeOrdersCompleted => merge.OrdersCompleted,
+            ChallengeMetric.MergeRenovationPoints => merge.RenovationPointsEarned,
+            ChallengeMetric.MergeHighestTier => merge.HighestTierCreated,
+            ChallengeMetric.MergeMilestones => merge.MilestonesReached,
+            ChallengeMetric.MergeAreasCompleted => merge.AreasCompleted,
+
             ChallengeMetric.LifetimeExperience => profile.LifetimeExperience,
             ChallengeMetric.LifetimePlaytimeSeconds => profile.TotalPlaytimeSeconds,
             ChallengeMetric.LifetimeWagered => blackjack.TotalWagered + reels.TotalWagered + neon.TotalWagered + nine.TotalWagered
                 + manor.TotalWagered + legacy.TotalWagered + profile.Kniffel.TotalWagered,
             ChallengeMetric.LifetimePlays => (decimal)blackjack.RoundsPlayed + reels.Spins + neon.Spins + nine.Spins
-                + manor.PaidSpins + manor.FreeSpins + legacy.Spins + profile.Kniffel.CompletedGames + profile.Sudoku.CompletedPuzzles,
+                + manor.PaidSpins + manor.FreeSpins + legacy.Spins + profile.Kniffel.CompletedGames + profile.Sudoku.CompletedPuzzles
+                + merge.OrdersCompleted,
             ChallengeMetric.PrestigeCount => profile.Prestige,
             _ => 0,
         };
