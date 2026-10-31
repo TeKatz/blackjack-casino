@@ -17,7 +17,7 @@ internal static class LocalizationSmoke
         Require(language.SelectedIndex == 0, "Existing/default preferences should start in English.");
 
         language.SelectedIndex = 1;
-        await Task.Delay(80);
+        await Task.Delay(100);
         window.UpdateLayout();
 
         Require(CultureInfo.CurrentUICulture.Name == "de-DE",
@@ -31,10 +31,19 @@ internal static class LocalizationSmoke
         Require(Find<TextBlock>(window).Any(text => text.Text == "Sprache"),
             "Language selector label did not switch to German.");
 
+        Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "Eine andere Art von Nacht."),
+            "Casino lobby headline did not switch to German.");
+        Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "DIE SAMTTISCHE"),
+            "Blackjack lobby subtitle did not switch to German.");
+        Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "PLATZ NEHMEN   →"),
+            "Casino lobby call-to-action did not switch to German.");
+        Require(Find<Button>(window).Any(button => button.IsVisible && Equals(button.Content, "Kosmetik-Shop")),
+            "Casino lobby footer did not switch to German.");
+
         SaveScreenshot(window, Path.Combine(output, "localization-german.png"));
 
         language.SelectedIndex = 0;
-        await Task.Delay(80);
+        await Task.Delay(100);
         window.UpdateLayout();
 
         Require(CultureInfo.CurrentUICulture.Name == "en-US",
@@ -45,6 +54,10 @@ internal static class LocalizationSmoke
             "Sound setting did not restore its English resource value.");
         Require(Find<Button>(window).Any(button => button.Name == "HitButton" && Equals(button.Content, "HIT  [H]")),
             "Blackjack action text did not restore to English.");
+        Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "A different kind of night."),
+            "Casino lobby headline did not switch back to English.");
+        Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "THE VELVET TABLES"),
+            "Blackjack lobby subtitle did not switch back to English.");
     }
 
     private static void SaveScreenshot(FrameworkElement element, string path)
