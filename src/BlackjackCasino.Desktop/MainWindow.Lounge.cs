@@ -48,7 +48,7 @@ public partial class MainWindow
                 },
                 () => progressionController?.Profile.WordSearch ?? new WordSearchStatistics(),
                 RecordWordSearchCompletion),
-            MemoryLoungeModule.Create(
+            MemoryLoungeModuleVisual.Create(
                 preferences.Memory,
                 state =>
                 {
