@@ -6,15 +6,14 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
+using System.Windows.Threading;
 
 namespace BlackjackCasino.Desktop;
 
 /// <summary>
-/// Central UI localization service. English is the neutral fallback resource; German is the
-/// first translated satellite resource. Resource catalogs are split by surface so future game
-/// translations can grow without turning one resource file into a monolith.
-/// Existing hard-coded English controls are migrated at runtime by matching their neutral
-/// resource value once and remembering the resource key. New UI should call T/F directly.
+/// Central UI localization service. English is the neutral fallback resource and German is the
+/// first translated satellite resource. Existing hard-coded controls are migrated safely at
+/// runtime while new UI can use T/F directly.
 /// </summary>
 internal static class Localization
 {
@@ -23,6 +22,7 @@ internal static class Localization
         new("BlackjackCasino.Desktop.Resources.Strings", typeof(Localization).Assembly),
         new("BlackjackCasino.Desktop.Resources.LobbyStrings", typeof(Localization).Assembly),
         new("BlackjackCasino.Desktop.Resources.VaultShellStrings", typeof(Localization).Assembly),
+        new("BlackjackCasino.Desktop.Resources.GameStrings", typeof(Localization).Assembly),
     ];
 
     private static readonly CultureInfo EnglishCulture = CultureInfo.GetCultureInfo("en-US");
@@ -32,12 +32,15 @@ internal static class Localization
     private static UiLanguagePreference language = UiLanguagePreference.English;
     private static bool classHandlerInstalled;
 
-    private static readonly DependencyProperty LocalizationKeyProperty = DependencyProperty.RegisterAttached(
-        "LocalizationKey", typeof(string), typeof(Localization), new PropertyMetadata(null));
-    private static readonly DependencyProperty WatchInstalledProperty = DependencyProperty.RegisterAttached(
-        "WatchInstalled", typeof(bool), typeof(Localization), new PropertyMetadata(false));
-    private static readonly DependencyProperty ApplyingProperty = DependencyProperty.RegisterAttached(
-        "Applying", typeof(bool), typeof(Localization), new PropertyMetadata(false));
+    private static readonly DependencyProperty LocalizationKeyProperty = Attached("LocalizationKey", typeof(string));
+    private static readonly DependencyProperty SourceTextProperty = Attached("SourceText", typeof(string));
+    private static readonly DependencyProperty LastRenderedTextProperty = Attached("LastRenderedText", typeof(string));
+    private static readonly DependencyProperty ToolTipKeyProperty = Attached("ToolTipKey", typeof(string));
+    private static readonly DependencyProperty ToolTipSourceProperty = Attached("ToolTipSource", typeof(string));
+    private static readonly DependencyProperty LastRenderedToolTipProperty = Attached("LastRenderedToolTip", typeof(string));
+    private static readonly DependencyProperty WatchInstalledProperty = Attached("WatchInstalled", typeof(bool), false);
+    private static readonly DependencyProperty ApplyingProperty = Attached("Applying", typeof(bool), false);
+    private static readonly DependencyProperty SubtreeRefreshQueuedProperty = Attached("SubtreeRefreshQueued", typeof(bool), false);
 
     internal static event EventHandler? LanguageChanged;
 
@@ -53,11 +56,10 @@ internal static class Localization
             FrameworkElement.LoadedEvent,
             new RoutedEventHandler((sender, _) =>
             {
-                if (sender is FrameworkElement element)
-                {
-                    InstallChangeWatch(element);
-                    TranslateElement(element);
-                }
+                if (sender is not FrameworkElement element) return;
+                InstallChangeWatch(element);
+                TranslateElement(element);
+                QueueSubtreeRefresh(element);
             }));
     }
 
@@ -96,6 +98,12 @@ internal static class Localization
 
     internal static string F(string key, params object?[] args) => string.Format(Culture, T(key), args);
 
+    internal static string TranslateSource(string englishSource)
+    {
+        string? key = KeyForEnglishSource(englishSource);
+        return key is not null ? T(key) : LocalizationPatterns.Translate(englishSource, Culture);
+    }
+
     internal static void ApplyTree(DependencyObject root)
     {
         if (root is FrameworkElement element)
@@ -117,6 +125,17 @@ internal static class Localization
     internal static string? KeyForEnglishSource(string source) =>
         EnglishValueToKey.TryGetValue(source, out string? key) ? key : null;
 
+    private static void QueueSubtreeRefresh(FrameworkElement element)
+    {
+        if ((bool)element.GetValue(SubtreeRefreshQueuedProperty)) return;
+        element.SetValue(SubtreeRefreshQueuedProperty, true);
+        _ = element.Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() =>
+        {
+            element.SetValue(SubtreeRefreshQueuedProperty, false);
+            if (element.IsLoaded) ApplyTree(element);
+        }));
+    }
+
     private static void InstallChangeWatch(FrameworkElement element)
     {
         if ((bool)element.GetValue(WatchInstalledProperty)) return;
@@ -127,6 +146,7 @@ internal static class Localization
             TextBlock => DependencyPropertyDescriptor.FromProperty(TextBlock.TextProperty, typeof(TextBlock)),
             HeaderedContentControl => DependencyPropertyDescriptor.FromProperty(HeaderedContentControl.HeaderProperty, typeof(HeaderedContentControl)),
             ContentControl => DependencyPropertyDescriptor.FromProperty(ContentControl.ContentProperty, typeof(ContentControl)),
+            Window => DependencyPropertyDescriptor.FromProperty(Window.TitleProperty, typeof(Window)),
             _ => null,
         };
         descriptor?.AddValueChanged(element, (_, _) => TranslateElement(element));
@@ -149,13 +169,13 @@ internal static class Localization
                 case ContentControl content when content.Content is string source:
                     content.Content = TranslateRemembered(element, source);
                     break;
+                case Window window when !string.IsNullOrWhiteSpace(window.Title):
+                    window.Title = TranslateRemembered(element, window.Title);
+                    break;
             }
 
             if (element.ToolTip is string tooltip)
-            {
-                string? key = KeyForEnglishSource(tooltip);
-                if (key is not null) element.ToolTip = T(key);
-            }
+                element.ToolTip = TranslateRememberedToolTip(element, tooltip);
         }
         finally
         {
@@ -163,51 +183,44 @@ internal static class Localization
         }
     }
 
-    private static string TranslateRemembered(DependencyObject owner, string source)
+    private static string TranslateRemembered(DependencyObject owner, string current)
     {
-        string? key = (string?)owner.GetValue(LocalizationKeyProperty);
-        if (key is not null && !IsValueForKey(key, source))
+        string? source = owner.GetValue(SourceTextProperty) as string;
+        string? lastRendered = owner.GetValue(LastRenderedTextProperty) as string;
+        string? key = owner.GetValue(LocalizationKeyProperty) as string;
+
+        // A difference from the last value we rendered means the owning game code produced fresh
+        // English text. Preserve that new source before translating it, so later EN↔DE switches
+        // remain reversible even for status banners and counters.
+        if (source is null || !string.Equals(current, lastRendered, StringComparison.Ordinal))
         {
+            source = current;
             key = KeyForEnglishSource(source);
+            owner.SetValue(SourceTextProperty, source);
             owner.SetValue(LocalizationKeyProperty, key);
         }
 
-        if (key is null)
+        string rendered = key is not null ? T(key) : LocalizationPatterns.Translate(source, Culture);
+        owner.SetValue(LastRenderedTextProperty, rendered);
+        return rendered;
+    }
+
+    private static string TranslateRememberedToolTip(DependencyObject owner, string current)
+    {
+        string? source = owner.GetValue(ToolTipSourceProperty) as string;
+        string? lastRendered = owner.GetValue(LastRenderedToolTipProperty) as string;
+        string? key = owner.GetValue(ToolTipKeyProperty) as string;
+        if (source is null || !string.Equals(current, lastRendered, StringComparison.Ordinal))
         {
+            source = current;
             key = KeyForEnglishSource(source);
-            if (key is null)
-            {
-                return TranslateCompositePrefix(source);
-            }
-            owner.SetValue(LocalizationKeyProperty, key);
+            owner.SetValue(ToolTipSourceProperty, source);
+            owner.SetValue(ToolTipKeyProperty, key);
         }
-        return T(key);
-    }
 
-    private static string TranslateCompositePrefix(string source)
-    {
-        foreach ((string english, string key) in EnglishValueToKey.OrderByDescending(pair => pair.Key.Length))
-        {
-            if (source.Length <= english.Length || !source.StartsWith(english, StringComparison.Ordinal)) continue;
-            ReadOnlySpan<char> remainder = source.AsSpan(english.Length);
-            if (!remainder.StartsWith(" · ", StringComparison.Ordinal) &&
-                !remainder.StartsWith(": ", StringComparison.Ordinal))
-                continue;
-            return T(key) + remainder.ToString();
-        }
-        return source;
-    }
-
-    private static bool IsValueForKey(string key, string value)
-    {
-        foreach (ResourceManager manager in ResourceManagers)
-        {
-            foreach (CultureInfo culture in SupportedCultures)
-            {
-                if (string.Equals(manager.GetString(key, culture), value, StringComparison.Ordinal)) return true;
-            }
-        }
-        return false;
+        string rendered = key is not null ? T(key) : LocalizationPatterns.Translate(source, Culture);
+        owner.SetValue(LastRenderedToolTipProperty, rendered);
+        return rendered;
     }
 
     private static IReadOnlyDictionary<string, string> BuildEnglishValueIndex()
@@ -230,4 +243,7 @@ internal static class Localization
         }
         return result;
     }
+
+    private static DependencyProperty Attached(string name, Type type, object? defaultValue = null) =>
+        DependencyProperty.RegisterAttached(name, type, typeof(Localization), new PropertyMetadata(defaultValue));
 }
