@@ -2,7 +2,7 @@ name: Development Release
 
 on:
   push:
-    branches: ["feature/casino-vault"]
+    branches: ["feature/chill-lounge-solitaire"]
   workflow_dispatch:
 
 permissions:
@@ -14,8 +14,8 @@ concurrency:
 
 jobs:
   publish-development:
-    # The shared in-app Development channel is pinned to the active Casino Vault branch.
-    if: github.ref == 'refs/heads/feature/casino-vault'
+    # The shared in-app Development channel is pinned to the active Midnight Solitaire branch.
+    if: github.ref == 'refs/heads/feature/chill-lounge-solitaire'
     runs-on: windows-latest
     timeout-minutes: 20
 
