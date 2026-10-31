@@ -23,8 +23,11 @@ internal static class SolitaireSmoke
         Click(tile);
         await Task.Delay(80);
         window.UpdateLayout();
-        Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "Midnight Solitaire"),
+        Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "MIDNIGHT SOLITAIRE"),
+            "Midnight Solitaire eyebrow is missing after opening the Lounge tile.");
+        Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "Let the cards settle."),
             "Midnight Solitaire hub did not open from the Chill Lounge menu.");
+        Capture(window, Path.Combine(output, "solitaire-hub.png"));
 
         Button newDeal = Find<Button>(window)
             .First(button => button.IsVisible && Equals(button.Content, "NEW DEAL"));
