@@ -62,24 +62,25 @@ public sealed class MergePlayerProgression(ProgressionService progression)
         stats.Normalize();
 
         bool changed = false;
-        changed |= Raise(ref stats.ItemsSpawned, state.Producers.Sum(x => x.SpawnCount));
-        changed |= Raise(ref stats.Merges, state.TotalMerges);
-        changed |= Raise(ref stats.OrdersCompleted, state.Receipts.Count);
-        changed |= Raise(ref stats.RenovationPointsEarned, state.RenovationPoints);
-        changed |= Raise(ref stats.HighestTierCreated, state.HighestTierCreated);
+        long spawned = Math.Max(0, state.Producers.Sum(x => x.SpawnCount));
+        if (spawned > stats.ItemsSpawned) { stats.ItemsSpawned = spawned; changed = true; }
+        if (state.TotalMerges > stats.Merges) { stats.Merges = state.TotalMerges; changed = true; }
+        if (state.Receipts.Count > stats.OrdersCompleted) { stats.OrdersCompleted = state.Receipts.Count; changed = true; }
+        if (state.RenovationPoints > stats.RenovationPointsEarned) { stats.RenovationPointsEarned = state.RenovationPoints; changed = true; }
+        if (state.HighestTierCreated > stats.HighestTierCreated) { stats.HighestTierCreated = state.HighestTierCreated; changed = true; }
 
         string[] earnedMilestones = state.UnlockedMilestones
             .Where(id => TryMilestone(catalog, id, out _, out MergeMilestone? milestone) && milestone.Points > 0)
             .Distinct(StringComparer.Ordinal)
             .ToArray();
-        changed |= Raise(ref stats.MilestonesReached, earnedMilestones.LongLength);
+        if (earnedMilestones.LongLength > stats.MilestonesReached) { stats.MilestonesReached = earnedMilestones.LongLength; changed = true; }
 
         string[] completedAreas = catalog.Areas
             .Where(area => area.Milestones.Count > 0 && state.UnlockedMilestones.Contains($"{area.Id}/{area.Milestones[^1].Id}", StringComparer.Ordinal))
             .Select(area => area.Id)
             .Distinct(StringComparer.Ordinal)
             .ToArray();
-        changed |= Raise(ref stats.AreasCompleted, completedAreas.LongLength);
+        if (completedAreas.LongLength > stats.AreasCompleted) { stats.AreasCompleted = completedAreas.LongLength; changed = true; }
 
         long playerXp = 0, seasonXp = 0;
         int ordersRewarded = 0, milestonesRewarded = 0, areasRewarded = 0;
@@ -129,22 +130,6 @@ public sealed class MergePlayerProgression(ProgressionService progression)
             checked(player.CoinsEarned + season.CoinsEarned),
             player.CosmeticsUnlocked.Concat(season.CosmeticsUnlocked).ToArray());
         return new(true, award, ordersRewarded, milestonesRewarded, areasRewarded);
-    }
-
-    private static bool Raise(ref long target, long candidate)
-    {
-        candidate = Math.Max(0, candidate);
-        if (candidate <= target) return false;
-        target = candidate;
-        return true;
-    }
-
-    private static bool Raise(ref int target, int candidate)
-    {
-        candidate = Math.Max(0, candidate);
-        if (candidate <= target) return false;
-        target = candidate;
-        return true;
     }
 
     private static bool TryMilestone(MergeCatalog catalog, string id, out MergeArea? area, out MergeMilestone? milestone)
