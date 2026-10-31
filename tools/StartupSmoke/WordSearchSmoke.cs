@@ -33,8 +33,7 @@ internal static class WordSearchSmoke
 
         Require(Find<Button>(window).Any(button => button.Name == "WordSearchHint" && button.IsVisible),
             "Starting a Relaxed Word Search did not open the playable puzzle view.");
-        Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text.Contains("6 words found", StringComparison.Ordinal) == false
-            && text.Text.Contains("0 / 6 words found", StringComparison.Ordinal)),
+        Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text.Contains("0 / 6 words found", StringComparison.Ordinal)),
             "Relaxed Word Search did not start with a six-word progress counter.");
 
         Button hint = Find<Button>(window).Single(button => button.Name == "WordSearchHint" && button.IsVisible);
