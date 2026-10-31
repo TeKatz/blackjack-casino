@@ -30,7 +30,7 @@ public partial class MainWindow
             secondaryLabel: "OPEN IN NEW WINDOW",
             canSecondaryOpen: () => !EmpirePageOpen);
         modeRegistry.Register(new("chill-lounge", "Chill Lounge", "A quieter corner",
-            "Offline games at your own pace. Start with Sudoku, six difficulties and a separate Daily library.",
+            "Offline games at your own pace. Settle into Sudoku or Midnight Solitaire — no wagers, no rush.",
             "#7FB49F", "✦", "Relaxed games", () => new LoungeGameArtwork(false)), OpenLounge);
         modeRegistry.Register(new("kniffel", "Midnight Dice", "The dice lounge",
             "Five dice and your score sheet. Play solo or join a casino table with three AI opponents.",
