@@ -15,16 +15,62 @@ internal static partial class LocalizationPatterns
         if (!string.Equals(culture.Name, "de-DE", StringComparison.OrdinalIgnoreCase) || string.IsNullOrEmpty(source))
             return source;
 
+        string? exact = source switch
+        {
+            "UNDO" => "RÜCKGÄNGIG",
+            "REDO" => "WIEDERHOLEN",
+            "NEW PUZZLE" => "NEUES RÄTSEL",
+            "BRONZE VAULT" => "BRONZE-VAULT",
+            "SILVER VAULT" => "SILBER-VAULT",
+            "GOLD VAULT" => "GOLD-VAULT",
+            "PLATINUM VAULT" => "PLATIN-VAULT",
+            "DIAMOND VAULT" => "DIAMANT-VAULT",
+            "First Quiet Victory" => "Erster ruhiger Sieg",
+            "Win any Midnight Solitaire game." => "Gewinne eine beliebige Partie Midnight Solitaire.",
+            "Card Table Regular" => "Stammgast am Kartentisch",
+            "Win 10 Solitaire games." => "Gewinne 10 Solitaire-Partien.",
+            "After Hours" => "Nach Ladenschluss",
+            "Win 50 Solitaire games." => "Gewinne 50 Solitaire-Partien.",
+            "Midnight Patience" => "Mitternachtsgeduld",
+            "Win 250 Solitaire games." => "Gewinne 250 Solitaire-Partien.",
+            "Classic Hand" => "Klassische Hand",
+            "Win Klondike." => "Gewinne Klondike.",
+            "Open Information" => "Offene Karten",
+            "Win FreeCell." => "Gewinne FreeCell.",
+            "Eight Runs" => "Acht Reihen",
+            "Win Spider." => "Gewinne Spider.",
+            "Four-Suit Web" => "Vier-Farben-Netz",
+            "Win four-suit Spider." => "Gewinne Spider mit vier Farben.",
+            "Desert Night" => "Wüstennacht",
+            "Win Pyramid." => "Gewinne Pyramid.",
+            "Under Par" => "Unter Par",
+            "Win Golf." => "Gewinne Golf.",
+            "Three Peaks" => "Drei Gipfel",
+            "Win TriPeaks." => "Gewinne TriPeaks.",
+            "The Full Cabinet" => "Die ganze Sammlung",
+            "Win every Solitaire variant at least once." => "Gewinne jede Solitaire-Variante mindestens einmal.",
+            _ => null,
+        };
+        if (exact is not null) return exact;
+
         Match match;
 
         if ((match = FullTableReadyRegex().Match(source)).Success)
             return $"Voller Tisch mit {match.Groups[1].Value} KI-Platz{(match.Groups[1].Value == "1" ? string.Empty : "en")} bereit. Setze deinen Einsatz, um zu beginnen.";
         if ((match = PlayingHandRegex().Match(source)).Success)
             return $"Hand {match.Groups[1].Value} von {match.Groups[2].Value} wird gespielt.";
-        if ((match = YouWinRegex().Match(source)).Success)
-            return $"Du gewinnst {match.Groups[1].Value}";
-        if ((match = YouLoseRegex().Match(source)).Success)
-            return $"Du verlierst {match.Groups[1].Value}";
+        if ((match = SettlementRegex().Match(source)).Success)
+        {
+            string lead = match.Groups[1].Value switch
+            {
+                "win" => "Du gewinnst",
+                "lose" => "Du verlierst",
+                _ => "Unentschieden",
+            };
+            string amount = match.Groups[2].Value;
+            string outcome = match.Groups[3].Success ? $" · {TranslateOutcome(match.Groups[3].Value)}" : string.Empty;
+            return string.IsNullOrEmpty(amount) ? $"{lead}{outcome}" : $"{lead} {amount}{outcome}";
+        }
         if ((match = ShoeRegex().Match(source)).Success)
             return $"#{match.Groups[1].Value} · {match.Groups[2].Value} Karten";
         if ((match = FullTableModeRegex().Match(source)).Success)
@@ -39,6 +85,10 @@ internal static partial class LocalizationPatterns
             return $"Weiche {match.Groups[1].Value}";
         if ((match = BustRegex().Match(source)).Success)
             return $"{match.Groups[1].Value} · Überkauft";
+        if ((match = HandOutcomeRegex().Match(source)).Success)
+            return $"{match.Groups[1].Value} · {TranslateOutcome(match.Groups[2].Value)} {match.Groups[3].Value}";
+        if ((match = IndexedHandOutcomeRegex().Match(source)).Success)
+            return $"H{match.Groups[1].Value}: {match.Groups[2].Value} · {TranslateOutcome(match.Groups[3].Value)} {match.Groups[4].Value}";
 
         if ((match = LoungeStatusRegex().Match(source)).Success)
             return $"{match.Groups[1].Value} Siege · {match.Groups[2].Value} aktiv · {match.Groups[3].Value}/{match.Groups[4].Value} Erfolge";
@@ -100,6 +150,16 @@ internal static partial class LocalizationPatterns
         return source;
     }
 
+    private static string TranslateOutcome(string value) => value switch
+    {
+        "Win" => "Gewinn",
+        "Loss" => "Verlust",
+        "Push" => "Unentschieden",
+        "Blackjack" => "Blackjack",
+        "Surrender" => "Aufgabe",
+        _ => value,
+    };
+
     private static string TranslateDifficulty(string value) => value.ToUpperInvariant() switch
     {
         "RELAXED" => "ENTSPANNT",
@@ -125,10 +185,8 @@ internal static partial class LocalizationPatterns
     private static partial Regex FullTableReadyRegex();
     [GeneratedRegex(@"^Playing hand (\d+) of (\d+)\.$")]
     private static partial Regex PlayingHandRegex();
-    [GeneratedRegex(@"^You win (.+)$")]
-    private static partial Regex YouWinRegex();
-    [GeneratedRegex(@"^You lose (.+)$")]
-    private static partial Regex YouLoseRegex();
+    [GeneratedRegex(@"^You (win|lose) (.+?)(?: · (Win|Loss|Push|Blackjack|Surrender))?$")]
+    private static partial Regex SettlementRegex();
     [GeneratedRegex(@"^#(.+?) · (.+?) cards$")]
     private static partial Regex ShoeRegex();
     [GeneratedRegex(@"^Full table · (\d+) AI seats?$")]
@@ -143,6 +201,10 @@ internal static partial class LocalizationPatterns
     private static partial Regex SoftRegex();
     [GeneratedRegex(@"^(\d+) · Bust$")]
     private static partial Regex BustRegex();
+    [GeneratedRegex(@"^(.+?)\s+·\s+(Win|Loss|Push|Blackjack|Surrender)\s+(.+)$")]
+    private static partial Regex HandOutcomeRegex();
+    [GeneratedRegex(@"^H(\d+):\s+(.+?)\s+·\s+(Win|Loss|Push|Blackjack|Surrender)\s+(.+)$")]
+    private static partial Regex IndexedHandOutcomeRegex();
 
     [GeneratedRegex(@"^(.+) wins · (.+) active · (.+)/(.+) achievements$")]
     private static partial Regex LoungeStatusRegex();
@@ -169,7 +231,7 @@ internal static partial class LocalizationPatterns
     private static partial Regex CardsRemainRegex();
     [GeneratedRegex(@"^(.+) foundation · Ace to King$")]
     private static partial Regex FoundationRegex();
-    [GeneratedRegex(@"^(\d+) Suit$")]
+    [GeneratedRegex(@"^(\d+)\s+SUIT$", RegexOptions.IgnoreCase)]
     private static partial Regex SpiderSuitRegex();
     [GeneratedRegex(@"^COMPLETED RUNS\s+(.+)/8$")]
     private static partial Regex CompletedRunsRegex();
