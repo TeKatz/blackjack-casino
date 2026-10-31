@@ -1,0 +1,72 @@
+name: Memory integration patch
+
+on:
+  push:
+    branches:
+      - feature/memory-foundation
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/memory-foundation
+      - name: Apply Memory challenge integration
+        shell: python
+        run: |
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text(encoding='utf-8')
+              if old not in text:
+                  raise SystemExit(f'Expected patch anchor not found in {path}: {old[:120]!r}')
+              p.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          catalog = 'src/BlackjackCasino.Core/ChallengeCatalog.cs'
+          replace_once(catalog,
+              '    WordSearch,\n}\n\npublic enum ChallengeMetric',
+              '    WordSearch,\n    Memory,\n}\n\npublic enum ChallengeMetric')
+          replace_once(catalog,
+              '    WordSearchCompleted, WordSearchWordsFound, WordSearchNoHintCompleted, WordSearchExpertCompleted, WordSearchMasterCompleted,\n}',
+              '    WordSearchCompleted, WordSearchWordsFound, WordSearchNoHintCompleted, WordSearchExpertCompleted, WordSearchMasterCompleted,\n    MemoryGamesCompleted, MemoryPairsFound, MemoryPerfectGames, MemoryExpertCompleted, MemoryMasterCompleted, MemoryBestStreak,\n}')
+
+          marker = '        // Midnight Merge rewards meaningful progress. There is deliberately no challenge for producer clicks.\n'
+          memory_challenges = '''        // Memory rewards calm persistence and recall rather than speed. A perfect table and long\n        // match streak are optional mastery goals; mistakes never reduce completion XP.\n        C("memory-pair-1", ChallengeCategory.Memory, "First Pair", "Find your first Memory pair.", ChallengeMetric.MemoryPairsFound, 1, 25),\n        C("memory-pair-100", ChallengeCategory.Memory, "Pair Collector", "Find 100 Memory pairs.", ChallengeMetric.MemoryPairsFound, 100, 100),\n        C("memory-pair-1000", ChallengeCategory.Memory, "Matchmaker", "Find 1,000 Memory pairs.", ChallengeMetric.MemoryPairsFound, 1000, 400),\n        E("memory-pair-5000", ChallengeCategory.Memory, "Total Recall", "Find 5,000 Memory pairs.", ChallengeMetric.MemoryPairsFound, 5000, 1500),\n        C("memory-game-1", ChallengeCategory.Memory, "Cleared the Table", "Complete your first Memory table.", ChallengeMetric.MemoryGamesCompleted, 1, 50),\n        C("memory-game-10", ChallengeCategory.Memory, "Getting Familiar", "Complete 10 Memory tables.", ChallengeMetric.MemoryGamesCompleted, 10, 150),\n        C("memory-game-50", ChallengeCategory.Memory, "Lounge Regular", "Complete 50 Memory tables.", ChallengeMetric.MemoryGamesCompleted, 50, 350),\n        C("memory-game-100", ChallengeCategory.Memory, "Memory Habit", "Complete 100 Memory tables.", ChallengeMetric.MemoryGamesCompleted, 100, 650),\n        E("memory-game-250", ChallengeCategory.Memory, "Photographic Memory", "Complete 250 Memory tables.", ChallengeMetric.MemoryGamesCompleted, 250, 1500),\n        C("memory-perfect-1", ChallengeCategory.Memory, "Not a Single Mistake", "Complete a Memory table without one wrong match.", ChallengeMetric.MemoryPerfectGames, 1, 100),\n        C("memory-perfect-10", ChallengeCategory.Memory, "Flawless Recall", "Complete 10 perfect Memory tables.", ChallengeMetric.MemoryPerfectGames, 10, 350),\n        C("memory-perfect-50", ChallengeCategory.Memory, "Crystal Clear", "Complete 50 perfect Memory tables.", ChallengeMetric.MemoryPerfectGames, 50, 900),\n        E("memory-perfect-100", ChallengeCategory.Memory, "Mind Palace", "Complete 100 perfect Memory tables.", ChallengeMetric.MemoryPerfectGames, 100, 1800),\n        C("memory-expert-1", ChallengeCategory.Memory, "Big Board, Big Brain", "Complete your first Expert Memory table.", ChallengeMetric.MemoryExpertCompleted, 1, 175),\n        C("memory-expert-25", ChallengeCategory.Memory, "Deep Recall", "Complete 25 Expert Memory tables.", ChallengeMetric.MemoryExpertCompleted, 25, 650),\n        E("memory-expert-100", ChallengeCategory.Memory, "Expert Memory", "Complete 100 Expert Memory tables.", ChallengeMetric.MemoryExpertCompleted, 100, 1500),\n        C("memory-master-1", ChallengeCategory.Memory, "Master Memory", "Complete your first Master Memory table.", ChallengeMetric.MemoryMasterCompleted, 1, 250),\n        C("memory-master-25", ChallengeCategory.Memory, "Long-Term Memory", "Complete 25 Master Memory tables.", ChallengeMetric.MemoryMasterCompleted, 25, 800),\n        E("memory-master-100", ChallengeCategory.Memory, "Memory Archive", "Complete 100 Master Memory tables.", ChallengeMetric.MemoryMasterCompleted, 100, 1800),\n        C("memory-streak-5", ChallengeCategory.Memory, "Hot Streak", "Find 5 pairs in a row without a miss.", ChallengeMetric.MemoryBestStreak, 5, 150),\n        C("memory-streak-10", ChallengeCategory.Memory, "Locked In", "Find 10 pairs in a row without a miss.", ChallengeMetric.MemoryBestStreak, 10, 400),\n        E("memory-streak-20", ChallengeCategory.Memory, "Unbroken Recall", "Find 20 pairs in a row without a miss.", ChallengeMetric.MemoryBestStreak, 20, 1000),\n\n'''
+          replace_once(catalog, marker, memory_challenges + marker)
+
+          replace_once(catalog,
+              '            ChallengeMetric.WordSearchMasterCompleted => profile.WordSearch.MasterCompleted,\n\n            ChallengeMetric.LifetimeExperience',
+              '            ChallengeMetric.WordSearchMasterCompleted => profile.WordSearch.MasterCompleted,\n\n            ChallengeMetric.MemoryGamesCompleted => profile.Memory.CompletedGames,\n            ChallengeMetric.MemoryPairsFound => profile.Memory.PairsFound,\n            ChallengeMetric.MemoryPerfectGames => profile.Memory.PerfectGames,\n            ChallengeMetric.MemoryExpertCompleted => profile.Memory.ExpertCompleted,\n            ChallengeMetric.MemoryMasterCompleted => profile.Memory.MasterCompleted,\n            ChallengeMetric.MemoryBestStreak => profile.Memory.BestStreak,\n\n            ChallengeMetric.LifetimeExperience')
+          replace_once(catalog,
+              '                + profile.WordSearch.CompletedPuzzles + merge.OrdersCompleted,',
+              '                + profile.WordSearch.CompletedPuzzles + profile.Memory.CompletedGames + merge.OrdersCompleted,')
+
+          collections = 'src/BlackjackCasino.Desktop/ProgressionWindow.Collections.cs'
+          replace_once(collections,
+              '        ChallengeCategory.WordSearch => "Word Search",\n        _ => category.ToString(),',
+              '        ChallengeCategory.WordSearch => "Word Search",\n        ChallengeCategory.Memory => "Memory",\n        _ => category.ToString(),')
+
+          memory_view = 'src/BlackjackCasino.Desktop/MemoryLoungeModule.cs'
+          replace_once(memory_view,
+              'difficulty >= MemoryDifficulty.Expert ? "#E0BE73" : "#86BA9D"',
+              '(int)difficulty >= (int)MemoryDifficulty.Expert ? "#E0BE73" : "#86BA9D"')
+
+          challenge_tests = 'tests/BlackjackCasino.Tests/ChallengeClaimAllTests.cs'
+          replace_once(challenge_tests,
+              '            case ChallengeMetric.WordSearchCompleted: profile.WordSearch.CompletedPuzzles = (long)value; break;\n            default:',
+              '            case ChallengeMetric.WordSearchCompleted: profile.WordSearch.CompletedPuzzles = (long)value; break;\n            case ChallengeMetric.MemoryGamesCompleted: profile.Memory.CompletedGames = (long)value; break;\n            case ChallengeMetric.MemoryPairsFound: profile.Memory.PairsFound = (long)value; break;\n            case ChallengeMetric.MemoryPerfectGames: profile.Memory.PerfectGames = (long)value; break;\n            case ChallengeMetric.MemoryExpertCompleted: profile.Memory.ExpertCompleted = (long)value; break;\n            case ChallengeMetric.MemoryMasterCompleted: profile.Memory.MasterCompleted = (long)value; break;\n            case ChallengeMetric.MemoryBestStreak: profile.Memory.BestStreak = (int)value; break;\n            default:')
+
+          Path('.github/workflows/memory-integration-patch.yml').unlink()
+      - name: Commit integration
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Integrate Memory challenges and UI polish"
+          git push origin HEAD:feature/memory-foundation
