@@ -143,10 +143,10 @@ internal static class Localization
 
         DependencyPropertyDescriptor? descriptor = element switch
         {
+            Window => DependencyPropertyDescriptor.FromProperty(Window.TitleProperty, typeof(Window)),
             TextBlock => DependencyPropertyDescriptor.FromProperty(TextBlock.TextProperty, typeof(TextBlock)),
             HeaderedContentControl => DependencyPropertyDescriptor.FromProperty(HeaderedContentControl.HeaderProperty, typeof(HeaderedContentControl)),
             ContentControl => DependencyPropertyDescriptor.FromProperty(ContentControl.ContentProperty, typeof(ContentControl)),
-            Window => DependencyPropertyDescriptor.FromProperty(Window.TitleProperty, typeof(Window)),
             _ => null,
         };
         descriptor?.AddValueChanged(element, (_, _) => TranslateElement(element));
@@ -160,6 +160,9 @@ internal static class Localization
         {
             switch (element)
             {
+                case Window window when !string.IsNullOrWhiteSpace(window.Title):
+                    window.Title = TranslateRemembered(element, window.Title);
+                    break;
                 case TextBlock text:
                     text.Text = TranslateRemembered(element, text.Text);
                     break;
@@ -168,9 +171,6 @@ internal static class Localization
                     break;
                 case ContentControl content when content.Content is string source:
                     content.Content = TranslateRemembered(element, source);
-                    break;
-                case Window window when !string.IsNullOrWhiteSpace(window.Title):
-                    window.Title = TranslateRemembered(element, window.Title);
                     break;
             }
 
@@ -189,9 +189,6 @@ internal static class Localization
         string? lastRendered = owner.GetValue(LastRenderedTextProperty) as string;
         string? key = owner.GetValue(LocalizationKeyProperty) as string;
 
-        // A difference from the last value we rendered means the owning game code produced fresh
-        // English text. Preserve that new source before translating it, so later EN↔DE switches
-        // remain reversible even for status banners and counters.
         if (source is null || !string.Equals(current, lastRendered, StringComparison.Ordinal))
         {
             source = current;
