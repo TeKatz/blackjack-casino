@@ -16,6 +16,12 @@ internal enum TableThemePreference
     Burgundy,
 }
 
+internal enum UiLanguagePreference
+{
+    English,
+    German,
+}
+
 internal sealed record AppPreferences
 {
     public BlackjackCasino.Core.Kniffel.KniffelTableState? KniffelTable { get; init; }
@@ -54,6 +60,8 @@ internal sealed record AppPreferences
     public GameRules CustomRules { get; init; } = TablePresets.Get(TablePresetId.Casual).Rules with { };
 
     public TableThemePreference Theme { get; init; } = TableThemePreference.ClassicGreen;
+
+    public UiLanguagePreference Language { get; init; } = UiLanguagePreference.English;
 
     public bool SoundEnabled { get; init; } = true;
 
