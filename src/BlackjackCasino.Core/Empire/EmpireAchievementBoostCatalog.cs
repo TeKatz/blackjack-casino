@@ -20,6 +20,12 @@ public static class EmpireAchievementBoostCatalog
         new("neon-grand-10", "Grand Vault Legend", "high-limit-slots", .15m),
         new("nine-pounce-25", "Pounce!", "slots", .05m),
         new("nine-frenzy-1", "All Nine", "high-limit-slots", .10m),
+        new("dice-games-50", "A Stack of Sheets", "bar", .05m),
+        new("dice-score-300", "Three Hundred Club", "tables", .075m),
+        new("dice-five-50", "Five-Star Regular", "stage", .10m),
+        new("dice-wins-50", "Velvet Crown", "private-salon", .15m),
+        new("sudoku-50", "Quiet Regular", "spa", .05m),
+        new("sudoku-master-25", "Stillness", "hotel", .10m),
         new("lifetime-xp-1000000", "Casino Institution", null, .05m),
         new("lifetime-wager-10000000", "Ten Million in Motion", null, .10m),
     ]);

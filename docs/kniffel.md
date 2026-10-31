@@ -214,3 +214,16 @@ again. The Windows feedback smoke uses deterministic five-of-a-kind fixtures to
 verify the player and all three named opponents, ordered/deduplicated sounds,
 bonus entries in another box, failed-save rollback, reduced motion, dialog
 deferral, endscreen timing, tied/loss receipts, minimum-window rendering and cleanup.
+
+## Cosmetic dice sets and presentation refresh
+
+Dice Sets are profile cosmetics bought and equipped through the shared shop.
+House Ivory preserves the original appearance; Obsidian Gold, Jade Palace,
+Royal Amethyst, Moonstone, Ruby Velvet and Aurora Prism supply distinct palettes.
+Only `KniffelDie` drawing colours change. The five die controls, hit targets,
+held border, question-mark state, pips, values, roll transforms, timings and
+five-of-a-kind feedback continue to use their existing code paths.
+
+The setup screen separates casual play from paid AI tables into two cards. Entry,
+prizes, resume and confirmed forfeit retain their existing actions. Ten new
+challenges bring Midnight Dice to 30 goals.

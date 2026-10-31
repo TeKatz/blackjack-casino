@@ -113,7 +113,7 @@ internal sealed class TableWagerView : StackPanel
     private static DoubleAnimationUsingKeyFrames Track() => new() { FillBehavior = FillBehavior.Stop };
 
     private static void Add(DoubleAnimationUsingKeyFrames animation, double value, double milliseconds) =>
-        animation.KeyFrames.Add(new EasingDoubleKeyFrame(value, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(milliseconds)))
+        animation.KeyFrames.Add(new EasingDoubleKeyFrame(value, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(milliseconds * 1.45)))
         {
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
         });

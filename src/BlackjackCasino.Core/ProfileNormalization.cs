@@ -13,6 +13,10 @@ public static class ProfileNormalization
         state.Kniffel.SettledTableIds ??= [];
         state.Kniffel.EnteredTableIds.Remove(Guid.Empty);
         state.Kniffel.SettledTableIds.Remove(Guid.Empty);
+        state.Sudoku ??= new();
+        state.Sudoku.RecordedPuzzleIds ??= new HashSet<string>(StringComparer.Ordinal);
+        state.Solitaire ??= new();
+        state.Solitaire.Normalize();
         state.Slots ??= new();
         state.NeonVault ??= new();
         state.NineLives ??= new();
@@ -44,6 +48,11 @@ public static class ProfileNormalization
         state.EquippedCardSetId = string.IsNullOrWhiteSpace(state.EquippedCardSetId)
             ? CosmeticCatalog.DefaultCardSetId
             : state.EquippedCardSetId;
+        state.EquippedDiceSetId = string.IsNullOrWhiteSpace(state.EquippedDiceSetId)
+            ? CosmeticCatalog.DefaultDiceSetId
+            : state.EquippedDiceSetId;
+
+        state.Vault = CasinoVaultService.Normalize(state, state.Vault);
         state.SchemaVersion = Math.Max(state.SchemaVersion, 5);
     }
 }

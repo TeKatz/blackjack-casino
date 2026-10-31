@@ -6,6 +6,7 @@ public enum CosmeticKind
     Frame,
     Portrait,
     CardSet,
+    DiceSet,
 }
 
 public sealed record CosmeticDefinition(
@@ -67,16 +68,21 @@ public sealed class PlayerProfileState
     public string EquippedFrameId { get; set; } = CosmeticCatalog.DefaultFrameId;
     public string EquippedPortraitId { get; set; } = CosmeticCatalog.DefaultPortraitId;
     public string EquippedCardSetId { get; set; } = CosmeticCatalog.DefaultCardSetId;
+    public string EquippedDiceSetId { get; set; } = CosmeticCatalog.DefaultDiceSetId;
     public List<string> OwnedCosmeticIds { get; set; } =
     [
         CosmeticCatalog.DefaultTitleId,
         CosmeticCatalog.DefaultFrameId,
         CosmeticCatalog.DefaultPortraitId,
         CosmeticCatalog.DefaultCardSetId,
+        CosmeticCatalog.DefaultDiceSetId,
     ];
     public List<string> ClaimedChallengeIds { get; set; } = [];
     public Kniffel.KniffelStatistics Kniffel { get; set; } = new();
+    public Sudoku.SudokuStatistics Sudoku { get; set; } = new();
+    public Solitaire.SolitaireStatistics Solitaire { get; set; } = new();
     public Manor.ManorStatistics Manor { get; set; } = new();
+    public CasinoVaultState Vault { get; set; } = new();
     // Zero also identifies saves with no version field. Normalize before recording new spins.
     public int SlotTrackingVersion { get; set; }
     /// <summary>Verified Midnight Reels play since separate tracking began.</summary>

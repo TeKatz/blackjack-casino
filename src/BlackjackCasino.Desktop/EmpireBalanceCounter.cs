@@ -1,4 +1,5 @@
 using System.Windows;
+using BlackjackCasino.Core.Empire;
 using System.Windows.Controls;
 using System.Windows.Media.Animation;
 
@@ -30,5 +31,5 @@ public sealed class EmpireBalanceCounter : TextBlock
         initialized = true;
     }
 
-    private void RefreshText() => Text = EmpireView.Number((decimal)Math.Clamp(DisplayedAmount, 0, 1e24)) + " cr";
+    private void RefreshText() => Text = EmpireView.Number((decimal)Math.Clamp(DisplayedAmount, 0, (double)EmpireRules.MaximumCredits)) + " cr";
 }

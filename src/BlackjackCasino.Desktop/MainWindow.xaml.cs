@@ -496,6 +496,7 @@ public partial class MainWindow : Window
             bool canDeal = betting && selectedBet > 0m && selectedBet <= session.Bankroll;
 
             DealButton.IsEnabled = canDeal;
+            ResultDealButton.Visibility = round is not null && betting ? Visibility.Visible : Visibility.Collapsed;
             ClearBetButton.IsEnabled = betting && selectedBet > 0m;
             ResetBankrollButton.IsEnabled = betting;
             GameModeComboBox.IsEnabled = betting;
@@ -813,18 +814,18 @@ public partial class MainWindow : Window
         }
 
         int sequence = animationSequence++;
-        TimeSpan delay = TimeSpan.FromMilliseconds(Math.Min(sequence, 18) * 32d);
+        TimeSpan delay = TimeSpan.FromMilliseconds(Math.Min(sequence, 18) * 85d);
         double offset = compact ? -7d : -14d;
         var transform = new TranslateTransform(0d, offset);
         element.RenderTransform = transform;
         element.Opacity = 0d;
 
-        var opacity = new DoubleAnimation(0d, 1d, TimeSpan.FromMilliseconds(150d))
+        var opacity = new DoubleAnimation(0d, 1d, TimeSpan.FromMilliseconds(260d))
         {
             BeginTime = delay,
             FillBehavior = FillBehavior.HoldEnd,
         };
-        var movement = new DoubleAnimation(offset, 0d, TimeSpan.FromMilliseconds(190d))
+        var movement = new DoubleAnimation(offset, 0d, TimeSpan.FromMilliseconds(340d))
         {
             BeginTime = delay,
             FillBehavior = FillBehavior.HoldEnd,
@@ -870,7 +871,7 @@ public partial class MainWindow : Window
         {
             if (e.Key == Key.Escape)
             {
-                CloseEmpire();
+                if (empireView?.TryCloseManagement() != true) CloseEmpire();
                 e.Handled = true;
             }
             return;

@@ -127,7 +127,7 @@ public sealed class Empire2Tests
             Levels = new() { ["slots"] = 4, ["tables"] = 2 },
         });
 
-        Assert.Equal(2, state.SchemaVersion);
+        Assert.Equal(EmpireState.CurrentSchemaVersion, state.SchemaVersion);
         Assert.Equal(777m, state.Credits);
         Assert.Equal(4, state.Levels["slots"]);
         Assert.Equal(2, state.Levels["tables"]);

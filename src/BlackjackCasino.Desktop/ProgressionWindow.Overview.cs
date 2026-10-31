@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using BlackjackCasino.Core;
 using BlackjackCasino.Core.Manor;
+using BlackjackCasino.Core.Sudoku;
 
 namespace BlackjackCasino.Desktop;
 
@@ -51,6 +52,23 @@ internal partial class ProgressionWindow
             ("Biggest payout", Money(dice.BiggestPayout)),
             ("Upper bonuses", $"{dice.UpperBonuses:N0}"), ("Five of a kind", $"{dice.FiveOfAKinds:N0}"),
             ("Full house / large straight", $"{dice.FullHouses:N0} / {dice.LargeStraights:N0}")));
+
+        SudokuStatistics sudoku = profile.Sudoku;
+        string averageSolve = sudoku.CompletedPuzzles == 0
+            ? "—"
+            : FormatDuration(TimeSpan.FromSeconds((double)sudoku.TotalSolveSeconds / sudoku.CompletedPuzzles));
+        GameStatsPanel.Children.Add(ActivityStatisticsCard("▦  SUDOKU",
+            ("Completed puzzles", $"{sudoku.CompletedPuzzles:N0}"),
+            ("Free Play / Daily", $"{sudoku.FreePlayCompleted:N0} / {sudoku.DailyCompleted:N0}"),
+            ("No-hint solves", $"{sudoku.NoHintCompletions:N0}"),
+            ("Hints used", $"{sudoku.HintsUsed:N0}"),
+            ("Total solve time", FormatDuration(TimeSpan.FromSeconds(sudoku.TotalSolveSeconds))),
+            ("Average solve", averageSolve),
+            ("Fastest solve", sudoku.FastestSolveSeconds <= 0 ? "—" : FormatDuration(TimeSpan.FromSeconds(sudoku.FastestSolveSeconds))),
+            ("Fastest clean solve", sudoku.FastestNoHintSeconds <= 0 ? "—" : FormatDuration(TimeSpan.FromSeconds(sudoku.FastestNoHintSeconds))),
+            ("Relaxed / Easy / Medium", $"{sudoku.RelaxedCompleted:N0} / {sudoku.EasyCompleted:N0} / {sudoku.MediumCompleted:N0}"),
+            ("Hard / Expert / Master", $"{sudoku.HardCompleted:N0} / {sudoku.ExpertCompleted:N0} / {sudoku.MasterCompleted:N0}")));
+
         GameStatsPanel.Children.Add(SlotStatisticsCard("◈  MIDNIGHT REELS", reels));
         GameStatsPanel.Children.Add(GameStatisticsCard("☾  MIDNIGHT MANOR", manor.NetProfit,
             ("Paid spins", $"{manor.PaidSpins:N0}"), ("Free spins", $"{manor.FreeSpins:N0}"), ("Big wins", $"{manor.BigWins:N0}"),
@@ -147,6 +165,32 @@ internal partial class ProgressionWindow
             ("Total wagered", Money(stats.TotalWagered)), ("Total returned", Money(stats.TotalReturned)), ("Biggest payout", Money(stats.BiggestPayout)),
             ("Pushes", $"{stats.Pushes:N0}"), ("Losing spins", $"{Math.Max(0, stats.Spins - stats.Wins - stats.Pushes):N0}"),
             ("Return / wagered", stats.TotalWagered == 0 ? "—" : $"{stats.TotalReturned / stats.TotalWagered:P1}"));
+    }
+
+    private static Border ActivityStatisticsCard(string name, params (string Caption, string Value)[] metrics)
+    {
+        var border = PanelBorder();
+        border.Margin = new Thickness(6);
+        var stack = new StackPanel();
+        stack.Children.Add(new TextBlock
+        {
+            Text = name,
+            Foreground = new SolidColorBrush(Rgb(142, 201, 176)),
+            FontWeight = FontWeights.Bold,
+            FontSize = 11,
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        var cells = new System.Windows.Controls.Primitives.UniformGrid { Columns = 3, Margin = new Thickness(0, 10, 0, 0) };
+        foreach ((string caption, string value) in metrics)
+        {
+            var cell = new StackPanel { Margin = new Thickness(0, 4, 10, 4) };
+            cell.Children.Add(new TextBlock { Text = caption, Foreground = MutedBrush, FontSize = 10 });
+            cell.Children.Add(new TextBlock { Text = value, FontWeight = FontWeights.SemiBold, FontSize = 13, Margin = new Thickness(0, 3, 0, 0), TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = value });
+            cells.Children.Add(cell);
+        }
+        stack.Children.Add(cells);
+        border.Child = stack;
+        return border;
     }
 
     private static Border GameStatisticsCard(string name, decimal net, params (string Caption, string Value)[] metrics)

@@ -34,6 +34,13 @@ internal static class Program
             DisplayName = "Startup Smoke",
             Coins = 10_000,
             SlotTrackingVersion = 1,
+            Vault = new CasinoVaultState
+            {
+                SchemaVersion = CasinoVaultService.CurrentSchemaVersion,
+                TierId = "gold",
+                CurrentAmount = 50_000m,
+                LifetimeContributions = 50_000m,
+            },
         };
         var preferences = new AppPreferences
         {
@@ -136,17 +143,22 @@ internal static class Program
                 Require(Find<Button>(window).Any(button => button.Name == "Mode_nine_lives" && button.IsVisible),
                     "Casino lobby was not restored after leaving Nine Lives.");
 
+                await SudokuSmoke.Run(window, output);
+                await SolitaireSmoke.Run(window, output);
                 await KniffelSmoke.Run(window, output, profile);
                 await KniffelCasinoSmoke.Run(window, output, profile);
                 await KniffelFeedbackSmoke.Run(window, output);
+                await EmpireStrategySmoke.Run(window, output);
+                await VaultSmoke.Run(window, output);
 
                 File.WriteAllText(Path.Combine(output, "result.txt"),
-                    "PASS: Nine Lives opened with the restored concept-art symbols, single Casino navigation, clean empty-win state, themed in-app flyouts and non-clipping paytable return control.");
+                    "PASS: Nine Lives presentation; Chill Lounge Sudoku; Midnight Solitaire navigation and selection feedback; Midnight Dice; Casino Empire; and in-app Casino Vault acceptance all passed.");
             }
             catch (Exception ex)
             {
                 exit = 1;
                 File.WriteAllText(Path.Combine(output, "failure.txt"), ex.ToString());
+                Console.Error.WriteLine(ex);
             }
             finally
             {

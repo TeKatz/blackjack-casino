@@ -38,7 +38,7 @@ public partial class KniffelView : UserControl, IDisposable
     private KniffelCategory? selected;
     internal KniffelGame Game { get; private set; }
 
-    internal KniffelView(KniffelState state, Action<KniffelState> save, Action back, Func<bool> animations, Action? rollSound = null, Func<KniffelState, string>? completion = null, Action? gameSetup = null, Action<KniffelState>? turnFinished = null, bool persistInitialState = true, Action? fiveOfAKindSound = null)
+    internal KniffelView(KniffelState state, Action<KniffelState> save, Action back, Func<bool> animations, Action? rollSound = null, Func<KniffelState, string>? completion = null, Action? gameSetup = null, Action<KniffelState>? turnFinished = null, bool persistInitialState = true, Action? fiveOfAKindSound = null, string diceVariant = "dice-ivory")
     {
         this.save = save;
         this.gameSetup = gameSetup;
@@ -59,7 +59,7 @@ public partial class KniffelView : UserControl, IDisposable
             var transform = new TransformGroup();
             transform.Children.Add(rotations[i]);
             transform.Children.Add(translations[i]);
-            diceViews[i] = new KniffelDie { Width = 94, Height = 100, RenderTransformOrigin = new Point(.5, .5), RenderTransform = transform };
+            diceViews[i] = new KniffelDie { VisualVariant = diceVariant, Width = 94, Height = 100, RenderTransformOrigin = new Point(.5, .5), RenderTransform = transform };
             holdLabels[i] = Label("ROLL", 10, "#B6C7AB");
             holdLabels[i].TextAlignment = TextAlignment.Center;
             holdLabels[i].Margin = new Thickness(0, 12, 0, 0);

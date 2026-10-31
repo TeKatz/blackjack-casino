@@ -7,12 +7,34 @@ public static class CosmeticCatalog
     public const string DefaultPortraitId = "portrait-classic";
     public const string DefaultCardSetId = "cardset-classic";
 
+    public const string DefaultDiceSetId = "diceset-ivory";
+
     private static readonly IReadOnlyList<CosmeticDefinition> Cosmetics =
     [
         new(DefaultTitleId, "Rookie", CosmeticKind.Title, 0, false, "The default title."),
         new(DefaultFrameId, "Classic", CosmeticKind.Frame, 0, false, "The clean default profile frame.", "classic"),
         new(DefaultPortraitId, "House Guest", CosmeticKind.Portrait, 0, false, "The default casino portrait.", "portrait-house-guest"),
         new(DefaultCardSetId, "Classic Cards", CosmeticKind.CardSet, 0, false, "The familiar clean casino deck.", "card-classic"),
+
+        new(DefaultDiceSetId, "House Ivory", CosmeticKind.DiceSet, 0, false, "The original Midnight Dice. Appearance only.", "dice-ivory"),
+
+        // Premium colour titles and quiet, unanimated standard frames.
+        new("title-velvet-sovereign", "Velvet Sovereign", CosmeticKind.Title, 6500, true, "A royal violet signature.", "title-violet"),
+        new("title-golden-hour", "Golden Hour", CosmeticKind.Title, 7200, true, "A warm gold signature.", "title-gold"),
+        new("title-aurora-dreamer", "Aurora Dreamer", CosmeticKind.Title, 8000, true, "An aurora teal signature.", "title-teal"),
+        new("title-rose-noir", "Rose Noir", CosmeticKind.Title, 8500, true, "A rose pink signature.", "title-rose"),
+        new("title-moonlit-legend", "Moonlit Legend", CosmeticKind.Title, 10000, true, "An ice blue signature.", "title-ice"),
+        new("title-ember-crown", "Ember Crown", CosmeticKind.Title, 12000, true, "A glowing amber signature.", "title-amber"),
+        new("frame-slate", "Slate Outline", CosmeticKind.Frame, 350, true, "A simple matte slate outline.", "static-slate"),
+        new("frame-copper", "Copper Outline", CosmeticKind.Frame, 450, true, "A quiet brushed copper outline.", "static-copper"),
+        new("frame-sage", "Sage Outline", CosmeticKind.Frame, 500, true, "A soft sage border without animation.", "static-sage"),
+        new("frame-pearl", "Pearl Outline", CosmeticKind.Frame, 650, true, "A clean pearl-white outline.", "static-pearl"),
+        new("diceset-obsidian", "Obsidian Gold", CosmeticKind.DiceSet, 2400, true, "Black glass and gold pips. Appearance only.", "dice-obsidian"),
+        new("diceset-jade", "Jade Palace", CosmeticKind.DiceSet, 3200, true, "Polished jade and ivory pips. Appearance only.", "dice-jade"),
+        new("diceset-violet", "Royal Amethyst", CosmeticKind.DiceSet, 4200, true, "Violet crystal and pale gold pips. Appearance only.", "dice-violet"),
+        new("diceset-ice", "Moonstone", CosmeticKind.DiceSet, 5200, true, "Moonlit blue and silver pips. Appearance only.", "dice-ice"),
+        new("diceset-ruby", "Ruby Velvet", CosmeticKind.DiceSet, 6200, true, "Deep ruby and cream pips. Appearance only.", "dice-ruby"),
+        new("diceset-aurora", "Aurora Prism", CosmeticKind.DiceSet, 8000, true, "Teal and violet with luminous pips. Appearance only.", "dice-aurora"),
 
         // Shop titles.
         new("title-night-owl", "Night Owl", CosmeticKind.Title, 300, true, "For sessions that somehow became 2 AM."),

@@ -22,9 +22,15 @@ internal sealed record AppPreferences
     public bool KniffelCasinoSelected { get; init; }
     public BlackjackCasino.Core.Kniffel.KniffelState Kniffel { get; init; } = new();
 
+    public BlackjackCasino.Core.Sudoku.SudokuProgressState Sudoku { get; init; } = new();
+    public bool SudokuShowTimer { get; init; } = true;
+    public bool SudokuShowGuides { get; init; } = true;
+    public BlackjackCasino.Core.Solitaire.SolitaireProgressState Solitaire { get; init; } = new();
+
     public BlackjackCasino.Core.Empire.EmpireState Empire { get; init; } = new();
 
     public decimal Bankroll { get; init; } = 1_000m;
+    public Guid LastAppliedVaultPayoutId { get; init; }
 
     public decimal ManorBet { get; init; } = 25m;
     public SlotSpinSpeed ManorSpeed { get; init; }

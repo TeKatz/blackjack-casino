@@ -7,9 +7,7 @@ namespace BlackjackCasino.Desktop;
 internal partial class ProgressionWindow
 {
     private const int ChallengePageSize = 4;
-    private const int ShopPageSize = 4;
     private int challengePage;
-    private int shopPage;
     private bool collectionsInitialized;
 
     private sealed record FilterChoice(string Label, object? Value = null)
@@ -28,6 +26,7 @@ internal partial class ProgressionWindow
         foreach ((CosmeticKind kind, string label) in new[]
         {
             (CosmeticKind.CardSet, "Card Sets"),
+            (CosmeticKind.DiceSet, "Dice Sets"),
             (CosmeticKind.Frame, "Frames"),
             (CosmeticKind.Portrait, "Portraits"),
             (CosmeticKind.Title, "Titles"),
@@ -37,36 +36,7 @@ internal partial class ProgressionWindow
         ShopSortFilter.ItemsSource = new[] { "Recommended", "Cost: low to high", "Cost: high to low", "Name" };
         ChallengeCategoryFilter.SelectedIndex = ChallengeStatusFilter.SelectedIndex = 0;
         ShopKindFilter.SelectedIndex = ShopOwnershipFilter.SelectedIndex = ShopSortFilter.SelectedIndex = 0;
-        EnsureCardSetShopTab();
         collectionsInitialized = true;
-    }
-
-    private void EnsureCardSetShopTab()
-    {
-        if (ShopKindFilter.Parent is not StackPanel typeHost || typeHost.Parent is not WrapPanel toolbar)
-            return;
-        if (toolbar.Children.OfType<Button>().Any(button => button.Name == "ShopCardSetsTab"))
-            return;
-
-        var button = new Button
-        {
-            Name = "ShopCardSetsTab",
-            Content = "CARD SETS",
-            Margin = new Thickness(8, 0, 0, 0),
-            Padding = new Thickness(13, 6, 13, 6),
-            VerticalAlignment = VerticalAlignment.Bottom,
-            ToolTip = "Show only playing-card designs",
-        };
-        button.Click += (_, _) =>
-        {
-            FilterChoice? cardSets = ShopKindFilter.Items.OfType<FilterChoice>().FirstOrDefault(choice => Equals(choice.Value, CosmeticKind.CardSet));
-            if (cardSets is not null) ShopKindFilter.SelectedItem = cardSets;
-        };
-
-        // Keep the original TYPE / STATUS / SORT / SEARCH positions intact. The dedicated
-        // card-set shortcut is an optional quick filter and therefore belongs after Reset,
-        // rather than being inserted between existing filter controls.
-        toolbar.Children.Add(button);
     }
 
     private static string CategoryName(ChallengeCategory category) => category switch
@@ -77,6 +47,7 @@ internal partial class ProgressionWindow
         ChallengeCategory.NeonVault => "Neon Vault",
         ChallengeCategory.NineLives => "Nine Lives",
         ChallengeCategory.MidnightDice => "Midnight Dice",
+        ChallengeCategory.Sudoku => "Sudoku",
         _ => category.ToString(),
     };
 
@@ -127,7 +98,6 @@ internal partial class ProgressionWindow
     private void ResetShopPage()
     {
         if (!collectionsInitialized) return;
-        shopPage = 0;
         RefreshShop();
         ShopScroll.ScrollToTop();
     }
@@ -141,17 +111,4 @@ internal partial class ProgressionWindow
         ResetShopPage();
     }
 
-    private void ShopPrevious_Click(object sender, RoutedEventArgs e)
-    {
-        shopPage = Math.Max(0, shopPage - 1);
-        RefreshShop();
-        ShopScroll.ScrollToTop();
-    }
-
-    private void ShopNext_Click(object sender, RoutedEventArgs e)
-    {
-        shopPage++;
-        RefreshShop();
-        ShopScroll.ScrollToTop();
-    }
 }

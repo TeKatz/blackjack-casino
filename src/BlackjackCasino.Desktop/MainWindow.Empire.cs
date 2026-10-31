@@ -26,6 +26,7 @@ public partial class MainWindow
     {
         empire = new EmpireService(preferences.Empire);
         SyncEmpireAchievementBoosts();
+        if (progressionController is not null) empire.SetActivitySnapshot(EmpireActivitySnapshot.FromProfile(progressionController.Profile));
         EmpireAccrual catchUp = empire.Accrue(DateTimeOffset.UtcNow);
         if (catchUp.Elapsed >= TimeSpan.FromMinutes(2) && (catchUp.Credits > 0 || catchUp.Dividend > 0))
             empireStartupCatchUp = catchUp;
@@ -43,7 +44,7 @@ public partial class MainWindow
             if (empire is null) return;
             DateTimeOffset now = DateTimeOffset.UtcNow;
             SyncEmpireAchievementBoosts();
-            empire.Accrue(now);
+            empire.ObserveActivity(progressionController is null ? new() : EmpireActivitySnapshot.FromProfile(progressionController.Profile), now);
             empireView?.Refresh();
             empireDetachedView?.Refresh();
             RefreshEmpireHeader();
@@ -85,7 +86,8 @@ public partial class MainWindow
             PrestigeEmpire,
             CloseEmpire,
             () => AnimationsEnabled,
-            "←  Casino lobby");
+            "←  Casino lobby",
+            MutateEmpire);
         EmpireStatisticsPage.Attach(empireView, empire);
         foreach (UIElement covered in CasinoRoot.Children.OfType<UIElement>().Where(child => child != embeddedGameOverlay))
         {
@@ -136,7 +138,8 @@ public partial class MainWindow
             PrestigeEmpire,
             () => window.Close(),
             () => AnimationsEnabled,
-            "Close Empire window");
+            "Close Empire window",
+            MutateEmpire);
         EmpireStatisticsPage.Attach(view, empire);
         window.Content = view;
         window.Closed += (_, _) =>
@@ -173,32 +176,63 @@ public partial class MainWindow
         target.ShowOfflineReport(empireStartupCatchUp);
     }
 
-    private bool UpgradeEmpire(string id, int levels)
+    private EmpireActionResult MutateEmpire(Func<EmpireService, EmpireActionResult> change)
     {
-        if (empire is null || !empire.UpgradeMany(id, levels, DateTimeOffset.UtcNow)) return false;
-        SavePreferences();
-        empireView?.Refresh();
-        empireDetachedView?.Refresh();
-        RefreshEmpireHeader();
-        return true;
-    }
-
-    private bool UpgradeEmpire(string id) => UpgradeEmpire(id, 1);
-
-    private EmpirePrestigeResult PrestigeEmpire()
-    {
-        if (empire is null) return new(false, 0, 0, "Empire is unavailable.");
-        EmpirePrestigeResult result = empire.PrestigeEmpire(DateTimeOffset.UtcNow);
-        if (result.Success) SavePreferences();
+        if (empire is null) return new(false, "Empire is unavailable.");
+        EmpireActionResult result;
+        try
+        {
+            result = empire.Transact(candidate =>
+            {
+                if (progressionController is not null) candidate.ObserveActivity(EmpireActivitySnapshot.FromProfile(progressionController.Profile), DateTimeOffset.UtcNow);
+                return change(candidate);
+            }, committed =>
+            {
+                AppPreferences next = preferences with { Empire = committed, Bankroll = session.Bankroll };
+                if (!testSession) PlayerStateStore.SaveOrThrow(next);
+                preferences = next;
+            });
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or OverflowException)
+        {
+            result = new(false, "The change could not be saved. Your credits and management choices remain available; please retry.");
+        }
+        empireView?.SetNotice(result.Message);
+        empireDetachedView?.SetNotice(result.Message);
         empireView?.Refresh();
         empireDetachedView?.Refresh();
         RefreshEmpireHeader();
         return result;
     }
 
+    private bool UpgradeEmpire(string id, int levels) => MutateEmpire(candidate => candidate.UpgradeMany(id, levels, DateTimeOffset.UtcNow)
+        ? new(true, "Department upgrade saved.") : new(false, "Upgrade requirements or construction budget are not met.")).Success;
+
+    private bool UpgradeEmpire(string id) => UpgradeEmpire(id, 1);
+
+    private EmpirePrestigeResult PrestigeEmpire()
+    {
+        if (empire is null) return new(false, 0, 0, "Empire is unavailable.");
+        EmpirePrestigeResult? prestigeResult = null;
+        EmpireActionResult result = MutateEmpire(candidate =>
+        {
+            prestigeResult = candidate.PrestigeEmpire(DateTimeOffset.UtcNow);
+            return new(prestigeResult.Success, prestigeResult.Message);
+        });
+        return result.Success ? prestigeResult! : new(false, empire.Prestige, empire.PrestigeBonusPercent, result.Message);
+    }
+
     private bool ClaimEmpireDividend()
     {
         if (empire is null) return false;
+        // A detached estate may stay open beside a live game. Replacing that game's
+        // wallet would invalidate its own settlement/checkpoint, so defer only the claim.
+        if (session.RoundInProgress || embeddedGameShell is not null || KniffelPageOpen)
+        {
+            const string message = "Return to the lobby or finish your Blackjack hand before collecting cash. Your owner reserve remains available.";
+            empireView?.SetNotice(message); empireDetachedView?.SetNotice(message);
+            return false;
+        }
         try
         {
             decimal amount = empire.ClaimDividend(DateTimeOffset.UtcNow, (state, cash) =>

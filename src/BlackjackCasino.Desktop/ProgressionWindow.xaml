@@ -273,19 +273,19 @@
               <Border Style="{StaticResource Panel}" Margin="0,0,0,8" Padding="12,9">
                 <StackPanel>
                   <DockPanel><TextBlock x:Name="ShopCoinsText" DockPanel.Dock="Right" FontSize="17" FontWeight="Bold" Foreground="#54E1B7" /><StackPanel><TextBlock Text="SHOP &amp; COLLECTION" Style="{StaticResource SectionCaption}" /><TextBlock x:Name="ShopSummaryText" Margin="0,3,0,0" Foreground="#A6BBAE" /></StackPanel></DockPanel>
-                  <WrapPanel Margin="0,9,0,0">
-                    <StackPanel Margin="0,0,10,0"><TextBlock Text="TYPE" Style="{StaticResource SectionCaption}" Foreground="#A6BBAE" FontSize="9" /><ComboBox x:Name="ShopKindFilter" Width="135" SelectionChanged="ShopFilters_Changed" AutomationProperties.Name="Cosmetic type" /></StackPanel>
-                    <StackPanel Margin="0,0,10,0"><TextBlock Text="STATUS" Style="{StaticResource SectionCaption}" Foreground="#A6BBAE" FontSize="9" /><ComboBox x:Name="ShopOwnershipFilter" Width="150" SelectionChanged="ShopFilters_Changed" AutomationProperties.Name="Cosmetic ownership and availability" /></StackPanel>
-                    <StackPanel Margin="0,0,10,0"><TextBlock Text="SORT" Style="{StaticResource SectionCaption}" Foreground="#A6BBAE" FontSize="9" /><ComboBox x:Name="ShopSortFilter" Width="140" SelectionChanged="ShopFilters_Changed" AutomationProperties.Name="Cosmetic sort order" /></StackPanel>
-                    <StackPanel Margin="0,0,8,0"><TextBlock Text="SEARCH COSMETICS" Style="{StaticResource SectionCaption}" Foreground="#A6BBAE" FontSize="9" /><TextBox x:Name="ShopSearchBox" Width="210" TextChanged="ShopSearch_Changed" AutomationProperties.Name="Search cosmetics" /></StackPanel>
-                    <Button Content="Reset" Click="ResetShopFilters_Click" VerticalAlignment="Bottom" Padding="12,6" />
-                  </WrapPanel>
+                  <Grid Margin="0,9,0,0">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="145"/><ColumnDefinition Width="160"/><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <StackPanel Margin="0,0,10,0"><TextBlock Text="TYPE" Style="{StaticResource SectionCaption}" Foreground="#A6BBAE" FontSize="9" /><ComboBox x:Name="ShopKindFilter" Height="32" SelectionChanged="ShopFilters_Changed" AutomationProperties.Name="Cosmetic type" /></StackPanel>
+                    <StackPanel Grid.Column="1" Margin="0,0,10,0"><TextBlock Text="STATUS" Style="{StaticResource SectionCaption}" Foreground="#A6BBAE" FontSize="9" /><ComboBox x:Name="ShopOwnershipFilter" Height="32" SelectionChanged="ShopFilters_Changed" AutomationProperties.Name="Cosmetic ownership and availability" /></StackPanel>
+                    <StackPanel Grid.Column="2" Margin="0,0,10,0"><TextBlock Text="SORT" Style="{StaticResource SectionCaption}" Foreground="#A6BBAE" FontSize="9" /><ComboBox x:Name="ShopSortFilter" Height="32" SelectionChanged="ShopFilters_Changed" AutomationProperties.Name="Cosmetic sort order" /></StackPanel>
+                    <StackPanel Grid.Column="3" Margin="0,0,8,0"><TextBlock Text="SEARCH COSMETICS" Style="{StaticResource SectionCaption}" Foreground="#A6BBAE" FontSize="9" /><TextBox x:Name="ShopSearchBox" Height="32" MinWidth="140" Padding="9,4" VerticalContentAlignment="Center" TextChanged="ShopSearch_Changed" AutomationProperties.Name="Search cosmetics" /></StackPanel>
+                    <Button Grid.Column="4" Content="Reset" Height="32" Margin="0" Click="ResetShopFilters_Click" VerticalAlignment="Bottom" Padding="12,4" />
+                  </Grid>
                   <TextBlock x:Name="ShopStatusText" Margin="0,7,0,0" Foreground="#B7C9BD" TextWrapping="Wrap" Text="Preview cosmetics, buy with Cosmetic Coins, or equip an owned reward." AutomationProperties.LiveSetting="Polite" />
                 </StackPanel>
               </Border>
               <ScrollViewer x:Name="ShopScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel x:Name="ShopPanel" /></ScrollViewer>
               <DockPanel Grid.Row="2" Margin="0,8,0,0">
-                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"><Button x:Name="ShopPreviousButton" Content="Previous" Click="ShopPrevious_Click" /><Button x:Name="ShopNextButton" Content="Next" Click="ShopNext_Click" /></StackPanel>
                 <TextBlock x:Name="ShopPageText" VerticalAlignment="Center" Foreground="#A6BBAE" />
               </DockPanel>
             </Grid>

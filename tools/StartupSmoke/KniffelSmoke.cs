@@ -12,11 +12,14 @@ internal static class KniffelSmoke
     internal static async Task Run(MainWindow window, string output, PlayerProfileState profile)
     {
         Require(window.Modes.Modes.Any(mode => mode.Id == "kniffel"), "Kniffel is missing from the lobby.");
+        profile.OwnedCosmeticIds.Add("diceset-aurora");
+        profile.EquippedDiceSetId = "diceset-aurora";
         window.Modes.Open("kniffel");
         await Task.Delay(100);
         KniffelView view = Find<KniffelView>(window).Single();
         Require(Application.Current.Windows.Cast<Window>().Count(w => w.IsVisible) == 1, "Kniffel opened another native window.");
         Require(Find<KniffelDie>(view).Count() == 5, "Five vector dice were not rendered.");
+        Require(Find<KniffelDie>(view).All(die => die.VisualVariant == "dice-aurora"), "Equipped premium dice were not rendered.");
         Require(Find<Button>(view).Count(button => button.Name.StartsWith("Score_", StringComparison.Ordinal)) == 13, "Score sheet does not have 13 boxes.");
         Require(Find<TextBlock>(view).Any(text => text.Text == "Midnight Dice"), "English game title is missing.");
         Require(Find<TextBlock>(view).Single(text => text.Name == "TurnText").Text == "Turn 1 of 13", "Table text was not translated.");
