@@ -1,3 +1,4 @@
+using BlackjackCasino.Core.Solitaire;
 using BlackjackCasino.Core.Sudoku;
 
 namespace BlackjackCasino.Desktop;
@@ -16,6 +17,22 @@ public partial class MainWindow
         ProcessLatestCompletedRound();
         SudokuLoungePolish.EnsureInstalled();
         RecordSudokuCompletions(preferences.Sudoku);
+
+        preferences = preferences with { Solitaire = SolitaireProgressState.Normalize(preferences.Solitaire) };
+        LoungeHostedGameRegistry.SetSessionModules([
+            SolitaireLoungeModule.Create(
+                preferences.Solitaire,
+                state =>
+                {
+                    preferences = preferences with { Solitaire = SolitaireProgressState.Normalize(state) };
+                    if (!testSession) SavePreferences();
+                },
+                () => progressionController?.Profile.Solitaire ?? new SolitaireStatistics(),
+                RecordSolitaireStart,
+                RecordSolitaireAbandon,
+                RecordSolitaireCompletion,
+                () => progressionController?.Profile.EquippedCardSetId)
+        ]);
 
         var window = new LoungeWindow(
             preferences.Sudoku,
@@ -59,6 +76,7 @@ public partial class MainWindow
         loungeBackgroundMusic = new BackgroundMusic(Soundtrack.ChillLounge);
         ShowEmbeddedGame(window, "Chill Lounge · The Midnight Club", muteHostMusic: true, closed: () =>
         {
+            LoungeHostedGameRegistry.ClearSessionModules();
             loungeBackgroundMusic?.Dispose();
             loungeBackgroundMusic = null;
             TableModeText.Text = "Casino lobby";
@@ -101,6 +119,34 @@ public partial class MainWindow
             {
                 sudokuRewardNotice = "Puzzle saved. Reopen the Chill Lounge to retry saving your XP.";
             }
+        }
+    }
+
+    private void RecordSolitaireStart(SolitaireStartRecord start)
+    {
+        if (progressionController is null) return;
+        _ = progressionController.ProcessSolitaireStart(start);
+    }
+
+    private void RecordSolitaireAbandon(SolitaireAbandonRecord abandon)
+    {
+        if (progressionController is null) return;
+        _ = progressionController.ProcessSolitaireAbandon(abandon);
+    }
+
+    private string RecordSolitaireCompletion(SolitaireCompletionRecord completion)
+    {
+        if (progressionController is null) return "Solved. Progression is unavailable in this session.";
+        try
+        {
+            var award = progressionController.ProcessSolitaire(completion);
+            return award.PlayerExperience > 0
+                ? $"+{award.PlayerExperience:N0} XP · +{award.SeasonExperience:N0} Season XP earned!"
+                : "Solved · reward already recorded.";
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return "Solved and saved locally. Reopen this deal to retry saving XP. " + ex.Message;
         }
     }
 }
