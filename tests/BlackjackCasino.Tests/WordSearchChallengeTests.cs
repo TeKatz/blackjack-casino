@@ -4,6 +4,7 @@ namespace BlackjackCasino.Tests;
 
 public sealed class WordSearchChallengeTests
 {
+    // The challenge ceiling follows the fixed 144-puzzle offline catalog, so every goal must remain reachable.
     [Fact]
     public void CatalogUsesReachableWordSearchGoalsAndNeverRewardsSpeed()
     {
