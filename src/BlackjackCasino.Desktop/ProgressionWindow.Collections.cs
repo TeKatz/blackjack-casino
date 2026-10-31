@@ -48,6 +48,7 @@ internal partial class ProgressionWindow
         ChallengeCategory.NineLives => "Nine Lives",
         ChallengeCategory.MidnightDice => "Midnight Dice",
         ChallengeCategory.Sudoku => "Sudoku",
+        ChallengeCategory.MidnightMerge => "Midnight Merge",
         _ => category.ToString(),
     };
 
