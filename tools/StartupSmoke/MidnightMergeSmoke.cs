@@ -17,7 +17,12 @@ internal static class MidnightMergeSmoke
         MidnightMergeView view = Find<MidnightMergeView>(window).Single();
         Require(view.IsVisible, "Merge was not embedded in the main window.");
         Require(Find<MergeLobbyArtwork>(view).Single().ActualWidth > 1000, "Merge restoration panorama did not use the wide layout.");
-        Require(Find<TextBlock>(view).Any(x => x.IsVisible && x.Text == "MIDNIGHT MERGE CHALLENGES"), "Merge challenge panel is missing.");
+        Require(!Find<Button>(view).Any(x => x.Name == "MergeLanguage"), "Merge still exposes a screen-local language button.");
+        Require(!Find<TextBlock>(view).Any(x => x.IsVisible && x.Text == "MIDNIGHT MERGE CHALLENGES"), "Merge challenge panel should not occupy gameplay space.");
+        Require(Find<ScrollViewer>(view).Single(x => x.Name == "MergeOrderScroll").ActualHeight > 400, "Merge orders did not receive the freed vertical space.");
+        Require(Find<MergeChipArtwork>(view).Any(x => x.Name.StartsWith("MergeOrderItem_", StringComparison.Ordinal)), "Merge order requirements have no item artwork.");
+        Require(Find<TextBlock>(view).Single(x => x.Name == "MergeNextUpgrade").Text.Contains("First cleanup", StringComparison.Ordinal), "Merge did not show the next restoration upgrade.");
+
         var producer = Find<Button>(view).Single(x => x.Name == "MergeProducer");
         producer.Focus();
         for (int i = 0; i < 60; i++)
@@ -28,6 +33,7 @@ internal static class MidnightMergeSmoke
         }
         Require(view.Snapshot.Items.Count == 0, "Fresh Merge board was not empty.");
         Capture(window, Path.Combine(output, "merge-initial.png"));
+
         Click(view, "MergeProducer"); Click(view, "MergeProducer");
         await Settle(window);
         Require(view.Snapshot.Items.Count == 2, "Producer did not spawn two chips.");
@@ -37,7 +43,9 @@ internal static class MidnightMergeSmoke
         Require(view.Snapshot.Items.Count == 1 && view.Snapshot.Items.Single().DefinitionId == "chip-2", "UI merge did not produce tier II.");
         Require(view.Snapshot.TotalMerges == 1 && view.Snapshot.HighestTierCreated >= 2, "Merge lifetime counters were not updated.");
         Require(Find<Button>(view).Any(x => x.Name == "MergeOrder_first_stack" && x.IsVisible), "Merge order UI missing.");
+        Require(Find<MergeChipArtwork>(view).Any(x => x.Name == "MergeOrderItem_first_stack_chip_2"), "First order does not visualize its required chip.");
         Capture(window, Path.Combine(output, "merge-tier-up.png"));
+
         Click(view, "MergeOrder_first_stack");
         await Settle(window);
         Require(view.Snapshot.RenovationPoints == 10 && view.Snapshot.Items.Count == 0, "Order did not consume its chip and award 10 points.");
@@ -45,7 +53,11 @@ internal static class MidnightMergeSmoke
         Click(view, "MergeProducer"); Click(view, "MergeProducer");
         Click(view, "MergeCell_0"); Click(view, "MergeCell_1");
         Click(view, "MergeOrder_first_stack");
+        await Settle(window);
         Require(view.Snapshot.RenovationPoints == 20 && view.Snapshot.UnlockedMilestones.Contains("lobby/cleanup"), "Restoration milestone did not unlock.");
+        TextBlock nextUpgrade = Find<TextBlock>(view).Single(x => x.Name == "MergeNextUpgrade");
+        Require(nextUpgrade.Text.Contains("30", StringComparison.Ordinal) && nextUpgrade.Text.Contains("Lights restored", StringComparison.Ordinal), "Next-upgrade feedback did not advance after the cleanup milestone.");
+
         Click(view, "MergeProducer");
         Click(view, "MergeCell_0"); Click(view, "MergeCell_41");
         Require(view.Snapshot.Items.Single().Position == 41, "Click fallback did not move the chip.");
@@ -58,34 +70,38 @@ internal static class MidnightMergeSmoke
         await Settle(window);
         view = Find<MidnightMergeView>(window).Single();
         Require(JsonSerializer.Serialize(view.Snapshot) == serialized, "Leaving and reopening changed the saved state or IDs.");
+
         // Exercise the same atomic disk writer and app-preferences schema used by the host.
         string directory = Path.Combine(output, "merge-save-roundtrip");
         PlayerStateStore.SaveOrThrow(new AppPreferences { MidnightMerge = before }, directory);
         var loaded = PlayerStateStore.Load(directory);
         Require(JsonSerializer.Serialize(new MergeBoard(loaded.MidnightMerge).Snapshot) == serialized, "Disk serialize/reload lost merge state.");
         Capture(window, Path.Combine(output, "merge-resumed.png"));
-        Click(view, "MergeLanguage");
+
+        Localization.SetLanguage(UiLanguagePreference.German);
         await Settle(window);
-        Require(Localization.Language == UiLanguagePreference.German, "Merge language action did not switch to German.");
+        Require(Localization.Language == UiLanguagePreference.German, "Global language change did not reach Midnight Merge.");
         Require(Find<TextBlock>(view).Any(x => x.IsVisible && x.Text == "Lobby-Restaurierung"), "German restoration label missing.");
         Require(Find<TextBlock>(view).Any(x => x.IsVisible && x.Text.Contains("Renovierungspunkte", StringComparison.Ordinal)), "German points text missing.");
         Require(Find<TextBlock>(view).Any(x => x.IsVisible && x.Text == "LIEFERAUFTRÄGE"), "German orders label missing.");
-        Require(Find<TextBlock>(view).Any(x => x.IsVisible && x.Text == "MIDNIGHT-MERGE-CHALLENGES"), "German Merge challenge label missing.");
+        Require(Find<TextBlock>(view).Single(x => x.Name == "MergeNextUpgrade").Text.Contains("Beleuchtung restauriert", StringComparison.Ordinal), "German next-upgrade feedback missing.");
         Capture(window, Path.Combine(output, "merge-german.png"));
+
         window.Width = 1080; window.Height = 720;
         await Settle(window);
         var lastCell = Find<Button>(view).Single(x => x.Name == "MergeCell_41");
         Rect bounds = lastCell.TransformToAncestor(window).TransformBounds(new Rect(lastCell.RenderSize));
         Require(bounds.Bottom < window.ActualHeight && bounds.Right < window.ActualWidth && bounds.Top > 0, "Merge board clips at minimum window size.");
         Capture(window, Path.Combine(output, "merge-german-1080x720.png"));
-        Click(view, "MergeLanguage");
+
+        Localization.SetLanguage(UiLanguagePreference.English);
         await Settle(window);
-        Require(Localization.Language == UiLanguagePreference.English, "Merge did not restore English.");
+        Require(Localization.Language == UiLanguagePreference.English, "Merge did not restore English after the global language change.");
         Require(JsonSerializer.Serialize(view.Snapshot) == serialized, "Language/size changes mutated Merge state.");
         Click(view, "MergeBack");
         window.Width = 1280; window.Height = 900;
         await Settle(window);
-        File.WriteAllText(Path.Combine(output, "merge-result.txt"), "PASS: wide restoration panorama; global XP feedback; Merge challenges; embedded host; producer; click move/merge; tier II; order consumption/rewards; restoration milestone; atomic disk roundtrip; exact resume with stable IDs; German labels; minimum window size; English restored.");
+        File.WriteAllText(Path.Combine(output, "merge-result.txt"), "PASS: wide restoration panorama; generic next-upgrade feedback; expanded visual order list; item requirement artwork; no local language/challenge controls; global XP feedback; embedded host; producer; click move/merge; tier II; order consumption/rewards; restoration milestone; atomic disk roundtrip; exact resume with stable IDs; global German localization; minimum window size; English restored.");
 
         // Render real animations on a separate test host without altering the accepted save.
         var animated = new Window { Width = 1500, Height = 900, Title = "Merge animation acceptance" };
@@ -104,6 +120,7 @@ internal static class MidnightMergeSmoke
         }
         finally { animatedView.Dispose(); animated.Close(); }
     }
+
     private static async Task Settle(FrameworkElement element) { await Task.Delay(100); element.UpdateLayout(); }
     private static void Click(DependencyObject root, string name) => Find<Button>(root).Single(x => x.Name == name).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
     private static void Require(bool test, string message) { if (!test) throw new InvalidOperationException(message); }
@@ -113,6 +130,7 @@ internal static class MidnightMergeSmoke
         for (int i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
             foreach (T child in Find<T>(VisualTreeHelper.GetChild(root, i))) yield return child;
     }
+
     private static void Capture(FrameworkElement element, string path)
     {
         element.UpdateLayout();
