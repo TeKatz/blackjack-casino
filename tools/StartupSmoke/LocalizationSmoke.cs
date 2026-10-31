@@ -39,6 +39,10 @@ internal static class LocalizationSmoke
             "Casino lobby call-to-action did not switch to German.");
         Require(Find<Button>(window).Any(button => button.IsVisible && Equals(button.Content, "Kosmetik-Shop")),
             "Casino lobby footer did not switch to German.");
+        Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "VAULT VOLL"),
+            "Dynamic Vault header did not switch to German.");
+        Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text.StartsWith("AUFBRECHEN · +", StringComparison.Ordinal)),
+            "Dynamic Vault action did not switch to German.");
 
         SaveScreenshot(window, Path.Combine(output, "localization-german.png"));
 
@@ -58,6 +62,8 @@ internal static class LocalizationSmoke
             "Casino lobby headline did not switch back to English.");
         Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "THE VELVET TABLES"),
             "Blackjack lobby subtitle did not switch back to English.");
+        Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "VAULT FULL"),
+            "Dynamic Vault header did not switch back to English.");
     }
 
     private static void SaveScreenshot(FrameworkElement element, string path)
