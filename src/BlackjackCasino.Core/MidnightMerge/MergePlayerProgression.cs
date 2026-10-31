@@ -70,7 +70,7 @@ public sealed class MergePlayerProgression(ProgressionService progression)
         if (state.HighestTierCreated > stats.HighestTierCreated) { stats.HighestTierCreated = state.HighestTierCreated; changed = true; }
 
         string[] earnedMilestones = state.UnlockedMilestones
-            .Where(id => TryMilestone(catalog, id, out _, out MergeMilestone? milestone) && milestone.Points > 0)
+            .Where(id => TryMilestone(catalog, id, out _, out MergeMilestone? milestone) && milestone is { Points: > 0 })
             .Distinct(StringComparer.Ordinal)
             .ToArray();
         if (earnedMilestones.LongLength > stats.MilestonesReached) { stats.MilestonesReached = earnedMilestones.LongLength; changed = true; }
@@ -99,7 +99,10 @@ public sealed class MergePlayerProgression(ProgressionService progression)
 
         foreach (string id in earnedMilestones)
         {
-            if (stats.RewardedMilestoneIds.Contains(id) || !TryMilestone(catalog, id, out _, out MergeMilestone? milestone)) continue;
+            if (stats.RewardedMilestoneIds.Contains(id)
+                || !TryMilestone(catalog, id, out _, out MergeMilestone? milestone)
+                || milestone is null)
+                continue;
             stats.RewardedMilestoneIds.Add(id);
             playerXp = checked(playerXp + MilestonePlayerExperience(milestone.Points));
             seasonXp = checked(seasonXp + MilestoneSeasonExperience(milestone.Points));
