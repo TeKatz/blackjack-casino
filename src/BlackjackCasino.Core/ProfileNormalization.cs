@@ -19,6 +19,8 @@ public static class ProfileNormalization
         state.Solitaire.Normalize();
         state.WordSearch ??= new();
         state.WordSearch.Normalize();
+        state.Memory ??= new();
+        state.Memory.Normalize();
         state.MidnightMerge ??= new();
         state.MidnightMerge.Normalize();
         state.Slots ??= new();
