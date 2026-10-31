@@ -1,4 +1,5 @@
 using System.IO;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -39,10 +40,7 @@ internal static class MemorySmoke
         await Task.Delay(80);
         window.UpdateLayout();
 
-        Button[] cards = Find<Button>(window)
-            .Where(button => button.IsVisible && button.Name.StartsWith("MemoryCard_", StringComparison.Ordinal))
-            .OrderBy(button => button.Name, StringComparer.Ordinal)
-            .ToArray();
+        Button[] cards = VisibleCards(window);
         Require(cards.Length == 16, $"Easy Memory did not render a 4x4 board; found {cards.Length} card buttons.");
         Require(cards.All(card => card.Content?.GetType().Name == "MemoryCardArtwork"),
             "Memory cards are not using the custom card artwork renderer.");
@@ -50,7 +48,7 @@ internal static class MemorySmoke
             "Easy Memory did not start with an eight-pair progress counter.");
 
         Click(cards[0]);
-        await Task.Delay(220);
+        await Task.Delay(240);
         window.UpdateLayout();
         Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text.Contains("One card open", StringComparison.Ordinal)),
             "Flipping the first Memory card did not update the table feedback.");
@@ -66,6 +64,31 @@ internal static class MemorySmoke
         Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text.Contains("0 / 8 pairs", StringComparison.Ordinal)),
             "Memory resume card did not preserve the Easy table progress.");
 
+        Click(Find<Button>(window).Single(button => button.Name == "MemoryResume" && button.IsVisible));
+        await Task.Delay(80);
+        window.UpdateLayout();
+        await CompleteCurrentEasyGame(window);
+        await Task.Delay(350);
+        window.UpdateLayout();
+
+        Require(Find<Button>(window).Any(button => button.Name == "MemoryResultBack" && button.IsVisible),
+            "Winning Memory did not show the completion screen's Back to Memory action.");
+        Require(Find<Button>(window).Any(button => button.Name == "MemoryResultAgain" && button.IsVisible),
+            "Winning Memory did not show the completion screen's Play Again action.");
+        string[] resultLabels = ["MOVES", "ACCURACY", "MISSES", "BEST STREAK", "TIME", "PAIRS"];
+        foreach (string label in resultLabels)
+        {
+            Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == label),
+                $"Memory completion screen is missing the {label} statistic.");
+        }
+        Capture(window, Path.Combine(output, "memory-completion.png"));
+
+        Click(Find<Button>(window).Single(button => button.Name == "MemoryResultBack" && button.IsVisible));
+        await Task.Delay(60);
+        window.UpdateLayout();
+        Require(Find<Button>(window).Count(button => button.IsVisible && button.Name.StartsWith("MemoryStart_", StringComparison.Ordinal)) == 5,
+            "Memory completion screen did not return to the Memory hub.");
+
         Click(Find<Button>(window).Single(button => button.Name == "LoungeGamesHeaderBack" && button.IsVisible));
         await Task.Delay(50);
         window.UpdateLayout();
@@ -79,8 +102,48 @@ internal static class MemorySmoke
             "Casino lobby was not restored after the Memory smoke.");
 
         File.WriteAllText(Path.Combine(output, "memory-result.txt"),
-            "PASS: Memory tile, five difficulty tables, four curated decks, enlarged deck preview, custom card artwork, Easy 4x4 start, card flip feedback, saved resume state and header Lounge navigation all passed.");
+            "PASS: Memory tile, five difficulty tables, four curated decks, enlarged deck preview, custom card artwork, Easy 4x4 start, card flip feedback, saved resume state, completion statistics screen and header Lounge navigation all passed.");
     }
+
+    private static async Task CompleteCurrentEasyGame(MainWindow window)
+    {
+        FrameworkElement view = Find<FrameworkElement>(window)
+            .Single(element => element.IsVisible && element.GetType().Name == "MemoryView");
+        FieldInfo? gameField = view.GetType().GetField("game", BindingFlags.Instance | BindingFlags.NonPublic);
+        Require(gameField?.GetValue(view) is MemoryGameState, "Memory smoke could not inspect the active game state.");
+        var game = (MemoryGameState)gameField!.GetValue(view)!;
+        Dictionary<int, Button> buttons = VisibleCards(window).ToDictionary(button => (int)button.Tag);
+
+        if (game.FaceUpIndices.Count == 1)
+        {
+            int open = game.FaceUpIndices[0];
+            int mate = Enumerable.Range(0, game.Cards.Count)
+                .Single(index => index != open && game.Cards[index] == game.Cards[open]);
+            Click(buttons[mate]);
+            await Task.Delay(280);
+        }
+
+        List<int[]> pairs = game.Cards
+            .Select((symbol, index) => new { symbol, index })
+            .Where(item => !game.MatchedIndices.Contains(item.index))
+            .GroupBy(item => item.symbol, StringComparer.Ordinal)
+            .Select(group => group.Select(item => item.index).ToArray())
+            .ToList();
+
+        foreach (int[] pair in pairs)
+        {
+            Require(pair.Length == 2, "Memory smoke found a malformed pair while completing the Easy table.");
+            Click(buttons[pair[0]]);
+            await Task.Delay(240);
+            Click(buttons[pair[1]]);
+            await Task.Delay(300);
+        }
+    }
+
+    private static Button[] VisibleCards(MainWindow window) => Find<Button>(window)
+        .Where(button => button.IsVisible && button.Name.StartsWith("MemoryCard_", StringComparison.Ordinal))
+        .OrderBy(button => button.Name, StringComparer.Ordinal)
+        .ToArray();
 
     private static void Click(Button button) => button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
 
