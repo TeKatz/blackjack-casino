@@ -12,8 +12,6 @@ internal static class LocalizationSmoke
 {
     internal static async Task Run(MainWindow window, string output)
     {
-        // StartupSmoke hosts MainWindow in a plain WPF Application rather than App.xaml.cs.
-        // Install the same Loaded hook production uses before opening dynamic game surfaces.
         Localization.InstallAutomaticTranslation();
 
         ComboBox language = Find<ComboBox>(window).FirstOrDefault(combo => combo.Name == "LanguageComboBox")
@@ -48,7 +46,6 @@ internal static class LocalizationSmoke
 
         SaveScreenshot(window, Path.Combine(output, "localization-german-lobby.png"));
 
-        // Actual Blackjack play surface: the user's first test exposed English hand/result text here.
         window.Modes.Open("blackjack");
         await Task.Delay(80);
         window.UpdateLayout();
@@ -73,9 +70,6 @@ internal static class LocalizationSmoke
             "Blackjack hand outcome remained English after settlement.");
         SaveScreenshot(window, Path.Combine(output, "localization-german-blackjack.png"));
 
-        // Casino Vault must localize when opened after the language switch, not only its header tile.
-        // A Blackjack settlement can finish on a dispatcher turn after Stand, so retry the header action
-        // briefly instead of racing that state transition with one fixed delay.
         Button vault = Find<Button>(window).Single(button => button.Name == "CasinoVaultButton" && button.IsVisible);
         Grid overlay = await OpenVault(window, vault);
         Require(Find<TextBlock>(overlay).Any(text => text.IsVisible && text.Text == "BEITRAG"),
@@ -90,7 +84,6 @@ internal static class LocalizationSmoke
         Click(Find<Button>(overlay).Single(button => button.Name == "CasinoVaultCloseButton"));
         await Task.Delay(60);
 
-        // Chill Lounge game selection and Sudoku hub/game are dynamically hosted surfaces.
         window.Modes.Open("chill-lounge");
         await Task.Delay(140);
         window.UpdateLayout();
@@ -110,8 +103,6 @@ internal static class LocalizationSmoke
         Require(Find<Button>(window).Any(button => button.Name == "SudokuNew_Medium" && Equals(button.Content, "NEUES RÄTSEL")),
             "Sudoku New Puzzle action remained English.");
 
-        // Use Expert here so this localization acceptance path does not contaminate the
-        // independent Sudoku behavior smoke, which intentionally starts from untouched Medium.
         Click(Find<Button>(window).Single(button => button.Name == "SudokuNew_Expert"));
         await Task.Delay(100);
         window.UpdateLayout();
@@ -130,7 +121,6 @@ internal static class LocalizationSmoke
         await Task.Delay(70);
         window.UpdateLayout();
 
-        // Midnight Solitaire hub and an actual Klondike deal.
         Click(Find<Button>(window).Single(button => button.Name == "LoungeGame_solitaire" && button.IsVisible));
         await Task.Delay(90);
         window.UpdateLayout();
@@ -185,10 +175,18 @@ internal static class LocalizationSmoke
 
     private static async Task<Grid> OpenVault(MainWindow window, Button vault)
     {
-        for (int attempt = 0; attempt < 10; attempt++)
+        for (int attempt = 0; attempt < 25; attempt++)
         {
+            Button? stand = Find<Button>(window).FirstOrDefault(button => button.Name == "StandButton" && button.IsEnabled);
+            if (stand is not null)
+            {
+                Click(stand);
+                await Task.Delay(120);
+                window.UpdateLayout();
+            }
+
             Click(vault);
-            await Task.Delay(100);
+            await Task.Delay(120);
             window.UpdateLayout();
             Grid? overlay = Find<Grid>(window).FirstOrDefault(grid => grid.Name == "CasinoVaultOverlay" && grid.IsVisible);
             if (overlay is not null) return overlay;
