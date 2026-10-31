@@ -1,0 +1,41 @@
+name: Apply Word Search Challenges
+
+on:
+  push:
+    branches: ["feature/word-search-foundation"]
+    paths:
+      - ".github/workflows/apply-word-search-challenges.yml"
+      - "tools/apply_word_search_challenges.py"
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply challenge integration
+        run: python tools/apply_word_search_challenges.py
+
+      - name: Remove one-time migration helpers
+        run: |
+          rm tools/apply_word_search_challenges.py
+          rm .github/workflows/apply-word-search-challenges.yml
+
+      - name: Commit challenge integration
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No challenge changes to commit."
+            exit 0
+          fi
+          git commit -m "Add Word Search challenges"
+          git push origin HEAD:feature/word-search-foundation
