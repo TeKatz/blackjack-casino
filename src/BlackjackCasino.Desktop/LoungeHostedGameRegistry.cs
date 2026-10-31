@@ -6,7 +6,10 @@ namespace BlackjackCasino.Desktop;
 /// Session-scoped extension point for Lounge games that own their own hub/view lifecycle.
 /// The Lounge shell only receives descriptors and factories; it never knows a game's save format.
 /// </summary>
-internal sealed record LoungeHostedGame(LoungeGame Definition, Func<Action, FrameworkElement> CreateContent);
+internal sealed record LoungeHostedGame(
+    LoungeGame Definition,
+    Func<Action, FrameworkElement> CreateContent,
+    bool UseShellBackNavigation = false);
 
 internal static class LoungeHostedGameRegistry
 {
