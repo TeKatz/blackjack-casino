@@ -212,16 +212,7 @@ public partial class MainWindow
     private ProgressionAward RecordMemoryCompletion(MemoryCompletionRecord completion)
     {
         if (progressionController is null) return ProgressionAward.None;
-        try
-        {
-            ProgressionAward award = progressionController.ProcessMemory(completion);
-            ApplyProgressionAward(award);
-            UpdateHeader();
-            return award;
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            return ProgressionAward.None;
-        }
+        try { return progressionController.ProcessMemory(completion); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return ProgressionAward.None; }
     }
 }
