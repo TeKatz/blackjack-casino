@@ -63,6 +63,7 @@ internal sealed class CasinoLobbyView : UserControl
         cards.Height = cards.Rows * 266;
         foreach (CasinoMode mode in modes.Modes.OrderBy(m => Array.IndexOf(Order, m.Id) is int index && index >= 0 ? index : int.MaxValue))
         {
+            string Label(string source) => mode.UseResourceKeys ? Localization.T(source) : Localized(source);
             Brush accent = Ink(mode.Accent);
             var panel = new Grid { Height = 246 };
             panel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(94) });
@@ -71,12 +72,12 @@ internal sealed class CasinoLobbyView : UserControl
             if (mode.Artwork is not null) art.Children.Add(mode.Artwork());
             else art.Children.Add(new TextBlock { Text = mode.Emblem, FontSize = 48, Foreground = Ink("#F4DFC0"), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center });
             art.Children.Add(new Border { Background = Ink("#990B1718"), VerticalAlignment = VerticalAlignment.Bottom,
-                Child = new TextBlock { Text = Localized(mode.Category).ToUpperInvariant(), FontSize = 10, Foreground = Ink("#F4DFC0"), Margin = new Thickness(14, 3, 14, 3) } });
+                Child = new TextBlock { Text = Label(mode.Category).ToUpperInvariant(), FontSize = 10, Foreground = Ink("#F4DFC0"), Margin = new Thickness(14, 3, 14, 3) } });
             panel.Children.Add(art);
             var text = new StackPanel { Margin = new Thickness(16, 9, 16, 9) };
-            text.Children.Add(new TextBlock { Text = Localized(mode.Subtitle).ToUpperInvariant(), FontSize = 10, Foreground = accent });
-            text.Children.Add(new TextBlock { Text = mode.Title, FontFamily = new FontFamily("Georgia"), FontSize = 25, Foreground = Ink("#F3E6D1"), Margin = new Thickness(0, 3, 0, 6) });
-            text.Children.Add(new TextBlock { Text = Localized(mode.Description), FontSize = 12, Foreground = Ink("#ADBCB6"), TextWrapping = TextWrapping.Wrap, Height = 50 });
+            text.Children.Add(new TextBlock { Text = Label(mode.Subtitle).ToUpperInvariant(), FontSize = 10, Foreground = accent });
+            text.Children.Add(new TextBlock { Text = Label(mode.Title), FontFamily = new FontFamily("Georgia"), FontSize = 25, Foreground = Ink("#F3E6D1"), Margin = new Thickness(0, 3, 0, 6) });
+            text.Children.Add(new TextBlock { Text = Label(mode.Description), FontSize = 12, Foreground = Ink("#ADBCB6"), TextWrapping = TextWrapping.Wrap, Height = 50 });
             text.Children.Add(new TextBlock { Text = modes.CanOpen(mode.Id) ? Localization.T("Lobby.TakeSeat") : Localization.T("Lobby.CurrentlyOpen"), FontSize = 11, FontWeight = FontWeights.Bold, Foreground = Ink("#E7CCA0"), Margin = new Thickness(0, 7, 0, 0) });
             Grid.SetRow(text, 1);
             panel.Children.Add(text);

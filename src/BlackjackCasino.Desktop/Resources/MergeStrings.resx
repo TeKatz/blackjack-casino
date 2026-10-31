@@ -1,0 +1,168 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="Merge.Title" xml:space="preserve">
+    <value>Midnight Merge</value>
+  </data>
+  <data name="Merge.Eyebrow" xml:space="preserve">
+    <value>THE MIDNIGHT CLUB · RESTORATION</value>
+  </data>
+  <data name="Merge.Subtitle" xml:space="preserve">
+    <value>A new beginning for the club</value>
+  </data>
+  <data name="Merge.Description" xml:space="preserve">
+    <value>Open the supply case, merge casino chips and restore the old lobby. Your board always waits for you.</value>
+  </data>
+  <data name="Merge.Category" xml:space="preserve">
+    <value>Casino restoration</value>
+  </data>
+  <data name="Merge.Back" xml:space="preserve">
+    <value>← Casino lobby</value>
+  </data>
+  <data name="Merge.Producer" xml:space="preserve">
+    <value>Chip case</value>
+  </data>
+  <data name="Merge.Produce" xml:space="preserve">
+    <value>◈  Open chip case</value>
+  </data>
+  <data name="Merge.ProducerHint" xml:space="preserve">
+    <value>Place a tier I chip into the first free cell. No energy or cooldown.</value>
+  </data>
+  <data name="Merge.NoEnergy" xml:space="preserve">
+    <value>No energy. No rush. Autosaved.</value>
+  </data>
+  <data name="Merge.Area" xml:space="preserve">
+    <value>Lobby restoration</value>
+  </data>
+  <data name="Merge.StageDusty" xml:space="preserve">
+    <value>Dusty lobby</value>
+  </data>
+  <data name="Merge.StageCleanup" xml:space="preserve">
+    <value>First cleanup</value>
+  </data>
+  <data name="Merge.StageLights" xml:space="preserve">
+    <value>Lights restored</value>
+  </data>
+  <data name="Merge.StageReady" xml:space="preserve">
+    <value>Lobby ready</value>
+  </data>
+  <data name="Merge.Orders" xml:space="preserve">
+    <value>SUPPLY ORDERS</value>
+  </data>
+  <data name="Merge.Points" xml:space="preserve">
+    <value>Lobby · {0:N0} renovation points</value>
+  </data>
+  <data name="Merge.Space" xml:space="preserve">
+    <value>{0} / {1} cells free</value>
+  </data>
+  <data name="Merge.Help" xml:space="preserve">
+    <value>Open the case to begin. Two matching chips make the next tier.</value>
+  </data>
+  <data name="Merge.SelectFirst" xml:space="preserve">
+    <value>Select a chip, then click a free cell or a matching chip.</value>
+  </data>
+  <data name="Merge.SelectionHelp" xml:space="preserve">
+    <value>Drag chips, or select a chip and click its destination.</value>
+  </data>
+  <data name="Merge.Selected" xml:space="preserve">
+    <value>Selected: {0} · click a destination</value>
+  </data>
+  <data name="Merge.EmptyCell" xml:space="preserve">
+    <value>Empty cell · row {0}, column {1}</value>
+  </data>
+  <data name="Merge.ItemCell" xml:space="preserve">
+    <value>{0} · row {1}, column {2}</value>
+  </data>
+  <data name="Merge.Requirement" xml:space="preserve">
+    <value>{0} × {1}</value>
+  </data>
+  <data name="Merge.Available" xml:space="preserve">
+    <value>{0} / {1} available</value>
+  </data>
+  <data name="Merge.OrderReward" xml:space="preserve">
+    <value>+{0:N0} renovation points</value>
+  </data>
+  <data name="Merge.Deliver" xml:space="preserve">
+    <value>DELIVER</value>
+  </data>
+  <data name="Merge.Waiting" xml:space="preserve">
+    <value>NEED CHIPS</value>
+  </data>
+  <data name="Merge.Reward" xml:space="preserve">
+    <value>Order delivered · +{0:N0} renovation points. Saved.</value>
+  </data>
+  <data name="Merge.Milestone" xml:space="preserve">
+    <value>{0} unlocked · +{1:N0} renovation points. Saved.</value>
+  </data>
+  <data name="Merge.Progress" xml:space="preserve">
+    <value>{0:N0} / {1:N0} points · orders remain available</value>
+  </data>
+  <data name="Merge.SaveFailed" xml:space="preserve">
+    <value>Could not save. Your action was not applied. Please check local storage and try again.</value>
+  </data>
+  <data name="Merge.Feedback.Spawned" xml:space="preserve">
+    <value>A new chip is on the table. Saved.</value>
+  </data>
+  <data name="Merge.Feedback.Moved" xml:space="preserve">
+    <value>Chip moved. Saved.</value>
+  </data>
+  <data name="Merge.Feedback.Merged" xml:space="preserve">
+    <value>Tier up! Two chips became one. Saved.</value>
+  </data>
+  <data name="Merge.Feedback.InvalidPosition" xml:space="preserve">
+    <value>Choose a cell on the table.</value>
+  </data>
+  <data name="Merge.Feedback.MissingItem" xml:space="preserve">
+    <value>That chip has already moved. Select it again.</value>
+  </data>
+  <data name="Merge.Feedback.Occupied" xml:space="preserve">
+    <value>This cell is occupied.</value>
+  </data>
+  <data name="Merge.Feedback.Incompatible" xml:space="preserve">
+    <value>Only identical chips of the same tier can merge.</value>
+  </data>
+  <data name="Merge.Feedback.MaxTier" xml:space="preserve">
+    <value>This chip has reached its highest tier. Deliver it to an order.</value>
+  </data>
+  <data name="Merge.Feedback.BoardFull" xml:space="preserve">
+    <value>The table is full. Merge chips or deliver an order to make room.</value>
+  </data>
+  <data name="Merge.Feedback.MissingItems" xml:space="preserve">
+    <value>The chips for this order are not ready yet.</value>
+  </data>
+  <data name="Merge.Feedback.AlreadyCompleted" xml:space="preserve">
+    <value>This order was already delivered. Its reward is saved.</value>
+  </data>
+  <data name="Merge.Feedback.UnknownDefinition" xml:space="preserve">
+    <value>This action is no longer available.</value>
+  </data>
+  <data name="Merge.Chip1" xml:space="preserve">
+    <value>Casino chip 1</value>
+  </data>
+  <data name="Merge.Chip2" xml:space="preserve">
+    <value>Casino chip 2</value>
+  </data>
+  <data name="Merge.Chip3" xml:space="preserve">
+    <value>Casino chip 3</value>
+  </data>
+  <data name="Merge.Chip4" xml:space="preserve">
+    <value>Casino chip 4</value>
+  </data>
+  <data name="Merge.Chip5" xml:space="preserve">
+    <value>Casino chip 5</value>
+  </data>
+  <data name="Merge.Chip6" xml:space="preserve">
+    <value>Casino chip 6</value>
+  </data>
+</root>

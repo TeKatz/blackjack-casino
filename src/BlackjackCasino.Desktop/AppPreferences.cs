@@ -35,6 +35,8 @@ internal sealed record AppPreferences
 
     public BlackjackCasino.Core.Empire.EmpireState Empire { get; init; } = new();
 
+    public BlackjackCasino.Core.MidnightMerge.MergeGameState MidnightMerge { get; init; } = new();
+
     public decimal Bankroll { get; init; } = 1_000m;
     public Guid LastAppliedVaultPayoutId { get; init; }
 

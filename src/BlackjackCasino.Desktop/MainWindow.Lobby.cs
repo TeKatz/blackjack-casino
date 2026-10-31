@@ -29,6 +29,8 @@ public partial class MainWindow
             secondaryOpen: OpenEmpireDetached,
             secondaryLabel: "OPEN IN NEW WINDOW",
             canSecondaryOpen: () => !EmpirePageOpen);
+        modeRegistry.Register(new("midnight-merge", "Merge.Title", "Merge.Subtitle",
+            "Merge.Description", "#CBA66B", "◈", "Merge.Category", () => new MergeLobbyArtwork(), UseResourceKeys: true), OpenMidnightMerge);
         modeRegistry.Register(new("chill-lounge", "Chill Lounge", "A quieter corner",
             "Offline games at your own pace. Settle into Sudoku or Midnight Solitaire — no wagers, no rush.",
             "#7FB49F", "✦", "Relaxed games", () => new LoungeGameArtwork(false)), OpenLounge);

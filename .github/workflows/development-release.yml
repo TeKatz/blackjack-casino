@@ -2,7 +2,7 @@ name: Development Release
 
 on:
   push:
-    branches: ["feature/localization-en-de"]
+    branches: ["feature/midnight-merge-foundation"]
   workflow_dispatch:
 
 permissions:
@@ -14,8 +14,8 @@ concurrency:
 
 jobs:
   publish-development:
-    # The shared in-app Development channel is pinned to the active EN/DE localization branch.
-    if: github.ref == 'refs/heads/feature/localization-en-de'
+    # The shared in-app Development channel is pinned to the active Midnight Merge foundation branch.
+    if: github.ref == 'refs/heads/feature/midnight-merge-foundation'
     runs-on: windows-latest
     timeout-minutes: 20
 
@@ -188,3 +188,16 @@ jobs:
           foreach ($asset in @("blackjack-casino-win-x64.zip", "blackjack-casino-win-x64.zip.sha256", "update-manifest.json")) {
             if ($asset -notin $release.assets.name) { throw "Missing Development asset: $asset" }
           }
+
+          $verifyDir = "artifacts/published-development-verification"
+          gh release download development --dir $verifyDir --pattern "update-manifest.json" --pattern "blackjack-casino-win-x64.zip" --pattern "blackjack-casino-win-x64.zip.sha256"
+          if ($LASTEXITCODE -ne 0) { throw "Could not download the published Development assets." }
+          $manifest = Get-Content "$verifyDir/update-manifest.json" -Raw | ConvertFrom-Json
+          if ($manifest.notesUrl -ne "https://github.com/${{ github.repository }}/commit/${{ github.sha }}") { throw "Published manifest points to another commit." }
+          if ($manifest.version -ne $env:VERSION -or $manifest.channel -ne "development") { throw "Published manifest version/channel mismatch." }
+          $publishedPackage = Get-Item "$verifyDir/blackjack-casino-win-x64.zip"
+          $publishedHash = (Get-FileHash $publishedPackage.FullName -Algorithm SHA256).Hash
+          if ($publishedHash -ne $manifest.package.sha256 -or $publishedPackage.Length -ne $manifest.package.sizeBytes) { throw "Published package hash/size mismatch." }
+          $checksum = (Get-Content "$verifyDir/blackjack-casino-win-x64.zip.sha256" -Raw).Split(' ')[0]
+          if ($checksum -ne $publishedHash) { throw "Published checksum asset mismatch." }
+          Write-Host "Verified published Development $env:VERSION at ${{ github.sha }} (SHA-256 and size)."

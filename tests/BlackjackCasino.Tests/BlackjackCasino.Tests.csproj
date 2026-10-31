@@ -22,6 +22,7 @@
     <Compile Include="../../src/BlackjackCasino.Desktop/PlayerProfileStore.cs" Link="Persistence/PlayerProfileStore.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/PlayerProgressionController.cs" Link="Persistence/PlayerProgressionController.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/ManorSoundSynthesis.cs" Link="Audio/ManorSoundSynthesis.cs" />
+    <Compile Include="../../src/BlackjackCasino.Desktop/MergeSoundSynthesis.cs" Link="Audio/MergeSoundSynthesis.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/AudioClip.cs" Link="Audio/AudioClip.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/AudioMixer.cs" Link="Audio/AudioMixer.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/DiceLoungeSynthesis.cs" Link="Audio/DiceLoungeSynthesis.cs" />
