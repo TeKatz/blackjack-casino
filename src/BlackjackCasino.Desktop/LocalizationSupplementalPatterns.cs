@@ -34,6 +34,8 @@ internal static partial class LocalizationSupplementalPatterns
             return $"VAULT · {TranslateTierWord(match.Groups[1].Value)}";
         if ((match = VaultToolTipRegex().Match(source)).Success)
             return $"Casino Vault · {match.Groups[1].Value} voll · {match.Groups[2].Value} der berechtigten Einsätze · {match.Groups[3].Value} Bonus bei 100 %";
+        if ((match = VaultBreakOpenRegex().Match(source)).Success)
+            return $"AUFBRECHEN · +{match.Groups[1].Value} BONUS";
         if ((match = RewardXpRegex().Match(source)).Success)
             return $"+{match.Groups[1].Value} XP · +{match.Groups[2].Value} Season-XP verdient!";
 
@@ -58,6 +60,8 @@ internal static partial class LocalizationSupplementalPatterns
     private static partial Regex VaultHeaderTierRegex();
     [GeneratedRegex(@"^Casino Vault · (.+) full · (.+) of eligible wagers · (.+) bonus at 100%$")]
     private static partial Regex VaultToolTipRegex();
+    [GeneratedRegex(@"^BREAK OPEN\s+·\s+\+(.+) BONUS$")]
+    private static partial Regex VaultBreakOpenRegex();
     [GeneratedRegex(@"^\+(.+) XP · \+(.+) Season XP earned!$")]
     private static partial Regex RewardXpRegex();
 }
