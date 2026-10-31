@@ -2,6 +2,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
 using BlackjackCasino.Core;
 using BlackjackCasino.Desktop;
@@ -19,6 +20,11 @@ internal static class Program
         {
             Source = new Uri("/BlackjackCasino.Desktop;component/Presentation/CasinoControls.xaml", UriKind.Relative),
         });
+        app.Resources.MergedDictionaries.Add(new ResourceDictionary
+        {
+            Source = new Uri("/BlackjackCasino.Desktop;component/Presentation/CasinoTooltips.xaml", UriKind.Relative),
+        });
+        CasinoCursors.Install();
 
         int exit = 0;
         app.DispatcherUnhandledException += (_, e) =>
@@ -42,12 +48,15 @@ internal static class Program
                 LifetimeContributions = 50_000m,
             },
         };
+        // Seed one completed, unclaimed challenge so the persistent header notification is exercised.
+        profile.MidnightMerge.Merges = 1;
+
         var preferences = new AppPreferences
         {
             Bankroll = 50_000m,
             SoundEnabled = false,
             MusicEnabled = false,
-            AnimationsEnabled = false,
+            AnimationsEnabled = true,
             WindowWidth = 1280,
             WindowHeight = 900,
         };
@@ -57,8 +66,22 @@ internal static class Program
         {
             try
             {
-                await Task.Delay(150);
+                await Task.Delay(180);
+                window.UpdateLayout();
                 Require(window.IsVisible, "Main window never became visible.");
+                Require(window.Cursor == CasinoCursors.Arrow, "Main window did not install the custom casino cursor.");
+                Require(Application.Current.TryFindResource(typeof(ToolTip)) is Style,
+                    "Global casino tooltip style is not available to application controls.");
+                Button challenges = Find<Button>(window).Single(button => button.Name == "HeaderChallengesButton" && button.IsVisible);
+                Require(Find<TextBlock>(challenges).Any(text => text.Text.Contains("READY", StringComparison.Ordinal)),
+                    "Completed challenge did not surface a READY indicator in the global header.");
+                Require(challenges.Effect is DropShadowEffect,
+                    "Completed challenge did not activate the global header glow cue.");
+                Button vaultHeader = Find<Button>(window).Single(button => button.Name == "CasinoVaultButton" && button.IsVisible);
+                Require(Find<VaultHeaderArtwork>(vaultHeader).Any(),
+                    "Casino Vault header card is missing its vault artwork.");
+                SaveScreenshot(window, Path.Combine(output, "global-header-polish.png"));
+
                 Require(window.Modes.Modes.Any(mode => mode.Id == "nine-lives"), "Nine Lives was not registered in the lobby.");
 
                 window.Modes.Open("nine-lives");
@@ -154,7 +177,7 @@ internal static class Program
                 await VaultSmoke.Run(window, output);
 
                 File.WriteAllText(Path.Combine(output, "result.txt"),
-                    "PASS: EN/DE live localization; Nine Lives presentation; Chill Lounge Sudoku; Midnight Merge foundation; Midnight Solitaire navigation and selection feedback; Midnight Dice; Casino Empire; and in-app Casino Vault acceptance all passed.");
+                    "PASS: global casino tooltip/cursor/header polish; EN/DE live localization; Nine Lives presentation; Chill Lounge Sudoku; Midnight Merge foundation; Midnight Solitaire navigation and selection feedback; Midnight Dice; Casino Empire; and in-app Casino Vault acceptance all passed.");
             }
             catch (Exception ex)
             {
