@@ -11,15 +11,18 @@ namespace BlackjackCasino.Desktop;
 
 /// <summary>
 /// Central UI localization service. English is the neutral fallback resource; German is the
-/// first translated satellite resource. Existing hard-coded English controls are migrated at
-/// runtime by matching their neutral resource value once and remembering the resource key.
-/// New UI should call T/F directly (or bind to resource keys) instead of adding new literals.
+/// first translated satellite resource. Resource catalogs are split by surface so future game
+/// translations can grow without turning one resource file into a monolith.
+/// Existing hard-coded English controls are migrated at runtime by matching their neutral
+/// resource value once and remembering the resource key. New UI should call T/F directly.
 /// </summary>
 internal static class Localization
 {
-    private static readonly ResourceManager ResourceManager = new(
-        "BlackjackCasino.Desktop.Resources.Strings",
-        typeof(Localization).Assembly);
+    private static readonly ResourceManager[] ResourceManagers =
+    [
+        new("BlackjackCasino.Desktop.Resources.Strings", typeof(Localization).Assembly),
+        new("BlackjackCasino.Desktop.Resources.LobbyStrings", typeof(Localization).Assembly),
+    ];
 
     private static readonly CultureInfo EnglishCulture = CultureInfo.GetCultureInfo("en-US");
     private static readonly CultureInfo GermanCulture = CultureInfo.GetCultureInfo("de-DE");
@@ -77,9 +80,17 @@ internal static class Localization
     internal static string T(string key)
     {
         if (string.IsNullOrWhiteSpace(key)) return string.Empty;
-        return ResourceManager.GetString(key, Culture)
-            ?? ResourceManager.GetString(key, EnglishCulture)
-            ?? $"⟦{key}⟧";
+        foreach (ResourceManager manager in ResourceManagers)
+        {
+            string? localized = manager.GetString(key, Culture);
+            if (localized is not null) return localized;
+        }
+        foreach (ResourceManager manager in ResourceManagers)
+        {
+            string? fallback = manager.GetString(key, EnglishCulture);
+            if (fallback is not null) return fallback;
+        }
+        return $"⟦{key}⟧";
     }
 
     internal static string F(string key, params object?[] args) => string.Format(Culture, T(key), args);
@@ -95,8 +106,6 @@ internal static class Localization
         int visualChildren = root is Visual or Visual3D ? VisualTreeHelper.GetChildrenCount(root) : 0;
         for (int i = 0; i < visualChildren; i++) ApplyTree(VisualTreeHelper.GetChild(root, i));
 
-        // Some logical children (for example menu/content objects) are not present in the
-        // visual tree yet. Only visit non-visual descendants here to avoid duplicate walks.
         foreach (object child in LogicalTreeHelper.GetChildren(root))
         {
             if (child is DependencyObject dependency && dependency is not Visual && dependency is not Visual3D)
@@ -158,8 +167,6 @@ internal static class Localization
         string? key = (string?)owner.GetValue(LocalizationKeyProperty);
         if (key is not null && !IsValueForKey(key, source))
         {
-            // The game replaced the control's text after it was localized. Re-resolve the key
-            // from the new English source instead of incorrectly reusing the old translation.
             key = KeyForEnglishSource(source);
             owner.SetValue(LocalizationKeyProperty, key);
         }
@@ -175,9 +182,12 @@ internal static class Localization
 
     private static bool IsValueForKey(string key, string value)
     {
-        foreach (CultureInfo culture in SupportedCultures)
+        foreach (ResourceManager manager in ResourceManagers)
         {
-            if (string.Equals(ResourceManager.GetString(key, culture), value, StringComparison.Ordinal)) return true;
+            foreach (CultureInfo culture in SupportedCultures)
+            {
+                if (string.Equals(manager.GetString(key, culture), value, StringComparison.Ordinal)) return true;
+            }
         }
         return false;
     }
@@ -185,13 +195,20 @@ internal static class Localization
     private static IReadOnlyDictionary<string, string> BuildEnglishValueIndex()
     {
         var result = new Dictionary<string, string>(StringComparer.Ordinal);
-        ResourceSet? set = ResourceManager.GetResourceSet(CultureInfo.InvariantCulture, true, true);
-        if (set is null) return result;
+        var keys = new HashSet<string>(StringComparer.Ordinal);
 
-        foreach (DictionaryEntry entry in set)
+        foreach (ResourceManager manager in ResourceManagers)
         {
-            if (entry.Key is not string key || entry.Value is not string value || string.IsNullOrWhiteSpace(value)) continue;
-            result.TryAdd(value, key);
+            ResourceSet? set = manager.GetResourceSet(CultureInfo.InvariantCulture, true, true);
+            if (set is null) continue;
+
+            foreach (DictionaryEntry entry in set)
+            {
+                if (entry.Key is not string key || entry.Value is not string value || string.IsNullOrWhiteSpace(value)) continue;
+                if (!keys.Add(key))
+                    throw new InvalidOperationException($"Duplicate localization key across resource catalogs: {key}");
+                result.TryAdd(value, key);
+            }
         }
         return result;
     }
