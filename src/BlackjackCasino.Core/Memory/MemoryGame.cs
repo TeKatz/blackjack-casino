@@ -40,7 +40,6 @@ public static class MemoryGame
     public static MemoryFlipResult Flip(MemoryGameState game, int index, DateTimeOffset? now = null)
     {
         ArgumentNullException.ThrowIfNull(game);
-        game.Normalize();
         if (index < 0 || index >= game.Cards.Count) return new(MemoryFlipOutcome.InvalidIndex, index);
         if (game.MatchedIndices.Contains(index)) return new(MemoryFlipOutcome.AlreadyMatched, index);
         if (game.FaceUpIndices.Contains(index)) return new(MemoryFlipOutcome.AlreadyFaceUp, index);
@@ -64,7 +63,7 @@ public static class MemoryGame
             if (game.Completed)
             {
                 game.CompletedAt = now ?? DateTimeOffset.UtcNow;
-                return new(MemoryFlipOutcome.Completed, second, first, game.CurrentStreak);
+                return new(MemoryOutcome.Completed, second, first, game.CurrentStreak);
             }
             return new(MemoryFlipOutcome.Match, second, first, game.CurrentStreak);
         }
