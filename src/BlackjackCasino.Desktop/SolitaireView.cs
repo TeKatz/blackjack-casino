@@ -184,7 +184,7 @@ internal sealed class SolitaireView : UserControl, IDisposable
         IReadOnlyList<SolitaireCardState> stock = SolitaireGame.Pile(state, "Stock");
         if (stock.Count == 0)
         {
-            AddPlaceholder("Stock", x, y, "STOCK\nEMPTY", TryDraw);
+            AddPlaceholder("Stock", x, y, "STOCK\nEMPTY", () => { if (SolitaireGame.TryDraw(state)) Changed(); });
             return;
         }
         Border card = PlayingCardPresentation.Create(stock[^1].Card, faceDown: true, compact: false, cardSetId());
