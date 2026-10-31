@@ -34,7 +34,7 @@ public sealed class MemoryTests
         List<string> second = MemoryGame.CreateCards(MemoryDifficulty.Master, "animals", 12345);
         List<string> other = MemoryGame.CreateCards(MemoryDifficulty.Master, "animals", 54321);
         Assert.Equal(first, second);
-        Assert.NotEqual(first, other);
+        Assert.False(first.SequenceEqual(other));
         Assert.Equal(64, first.Count);
         Assert.All(first.GroupBy(x => x), group => Assert.Equal(2, group.Count()));
     }
@@ -63,7 +63,7 @@ public sealed class MemoryTests
         int[] pair = Pair(game, 0);
         MemoryGame.Flip(game, pair[0]);
         MemoryGame.Flip(game, pair[1]);
-        int first = game.Cards.FindIndex(x => !game.MatchedIndices.Contains(game.Cards.IndexOf(x)));
+        int first = Enumerable.Range(0, game.Cards.Count).First(i => !game.MatchedIndices.Contains(i));
         int second = Enumerable.Range(0, game.Cards.Count)
             .First(i => !game.MatchedIndices.Contains(i) && i != first && game.Cards[i] != game.Cards[first]);
         MemoryGame.Flip(game, first);
@@ -72,7 +72,8 @@ public sealed class MemoryTests
         Assert.Equal(1, game.WrongMatches);
         Assert.Equal(0, game.CurrentStreak);
         Assert.Equal(2, game.FaceUpIndices.Count);
-        Assert.Equal(MemoryFlipOutcome.WaitingForMismatch, MemoryGame.Flip(game, Enumerable.Range(0, game.Cards.Count).First(i => !game.FaceUpIndices.Contains(i))).Outcome);
+        int third = Enumerable.Range(0, game.Cards.Count).First(i => !game.FaceUpIndices.Contains(i) && !game.MatchedIndices.Contains(i));
+        Assert.Equal(MemoryFlipOutcome.WaitingForMismatch, MemoryGame.Flip(game, third).Outcome);
         Assert.True(MemoryGame.ResolveMismatch(game));
         Assert.Empty(game.FaceUpIndices);
     }
@@ -105,13 +106,16 @@ public sealed class MemoryTests
         int second = Enumerable.Range(1, game.Cards.Count).First(i => game.Cards[i] != game.Cards[first]);
         MemoryGame.Flip(game, first);
         MemoryGame.Flip(game, second);
+        Guid gameId = game.GameId;
+        int seed = game.Seed;
+        string[] cards = game.Cards.ToArray();
         var progress = new MemoryProgressState { ActiveGame = game, PreferredDeckId = "casino-icons" };
         progress.Normalize();
         Assert.NotNull(progress.ActiveGame);
         Assert.Empty(progress.ActiveGame!.FaceUpIndices);
-        Assert.Equal(game.GameId, progress.ActiveGame.GameId);
-        Assert.Equal(game.Seed, progress.ActiveGame.Seed);
-        Assert.Equal(game.Cards, progress.ActiveGame.Cards);
+        Assert.Equal(gameId, progress.ActiveGame.GameId);
+        Assert.Equal(seed, progress.ActiveGame.Seed);
+        Assert.Equal(cards, progress.ActiveGame.Cards);
     }
 
     [Fact]
@@ -147,6 +151,22 @@ public sealed class MemoryTests
         Assert.Equal(ProgressionAward.None, second);
         Assert.Equal(1, profile.Memory.CompletedGames);
         Assert.Equal(1, profile.Memory.MasterCompleted);
+    }
+
+    [Fact]
+    public void MemoryChallengeCatalogCoversCompletionPairsPerfectExpertMasterAndStreaks()
+    {
+        ChallengeDefinition[] challenges = ChallengeCatalog.For(ChallengeCategory.Memory).ToArray();
+        Assert.True(challenges.Length >= 20);
+        ChallengeMetric[] metrics = challenges.Select(x => x.Metric).Distinct().ToArray();
+        Assert.Contains(ChallengeMetric.MemoryGamesCompleted, metrics);
+        Assert.Contains(ChallengeMetric.MemoryPairsFound, metrics);
+        Assert.Contains(ChallengeMetric.MemoryPerfectGames, metrics);
+        Assert.Contains(ChallengeMetric.MemoryExpertCompleted, metrics);
+        Assert.Contains(ChallengeMetric.MemoryMasterCompleted, metrics);
+        Assert.Contains(ChallengeMetric.MemoryBestStreak, metrics);
+        Assert.DoesNotContain(challenges, x => x.Name.Contains("second", StringComparison.OrdinalIgnoreCase)
+            || x.Description.Contains("minute", StringComparison.OrdinalIgnoreCase));
     }
 
     private static int[] Pair(MemoryGameState game, int ordinal)
