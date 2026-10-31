@@ -49,7 +49,7 @@ internal static class Program
             window.Width = size.Item1; window.Height = size.Item2; window.UpdateLayout();
             CasinoLobbyView lobby = Find<CasinoLobbyView>(window).Single();
             Button[] tiles = Find<Button>(lobby).Where(button => button.Name.StartsWith("Mode_", StringComparison.Ordinal)).ToArray();
-            Require(tiles.Length == 8, "Lobby is missing a registered game tile");
+            Require(tiles.Select(tile => tile.Tag as string).OrderBy(id => id).SequenceEqual(window.Modes.Modes.Select(mode => mode.Id).OrderBy(id => id)), "Lobby tiles do not match the registered modes");
             foreach (Button tile in tiles)
             {
                 Rect bounds = tile.TransformToAncestor(lobby).TransformBounds(new Rect(0,0,tile.ActualWidth,tile.ActualHeight));
