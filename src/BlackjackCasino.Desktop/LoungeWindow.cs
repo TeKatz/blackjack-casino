@@ -105,19 +105,14 @@ internal sealed class LoungeWindow : Window
             Foreground = Ink("#F3E7D5"),
         });
         bar.Children.Add(brand);
-        var navigation = new StackPanel { Orientation = Orientation.Horizontal };
-        var gameMenu = LoungeButton("← LOUNGE GAMES");
-        gameMenu.Name = "LoungeGamesButton";
-        gameMenu.Margin = new Thickness(0, 0, 10, 0);
-        gameMenu.Click += (_, _) => ShowGames();
-        navigation.Children.Add(gameMenu);
 
+        // Navigation back to the Lounge game list is owned by each hosted game's local
+        // hierarchy. The global header only exits the Lounge, avoiding duplicate back paths.
         var close = LoungeButton("RETURN TO CLUB");
         close.Padding = new Thickness(17, 8, 17, 8);
         close.Click += (_, _) => Close();
-        navigation.Children.Add(close);
-        Grid.SetColumn(navigation, 1);
-        bar.Children.Add(navigation);
+        Grid.SetColumn(close, 1);
+        bar.Children.Add(close);
         top.Child = bar;
         root.Children.Add(top);
 
