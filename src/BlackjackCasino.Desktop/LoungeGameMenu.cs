@@ -7,9 +7,23 @@ namespace BlackjackCasino.Desktop;
 /// <summary>Each game registers one tile and its route; the menu does not know its rules or save format.</summary>
 internal sealed class LoungeGameMenu : UserControl
 {
+    private readonly IReadOnlyList<LoungeGame> baseGames;
+
     internal LoungeGameMenu(IEnumerable<LoungeGame> games)
     {
-        IReadOnlyList<LoungeGame> catalog = LoungeGameCatalog.Normalize(games);
+        baseGames = games?.ToArray() ?? throw new ArgumentNullException(nameof(games));
+        ShowMenu();
+    }
+
+    private void ShowMenu()
+    {
+        IReadOnlyList<LoungeHostedGame> hosted = LoungeHostedGameRegistry.Snapshot;
+        var routes = hosted.ToDictionary(x => x.Definition.Id, StringComparer.Ordinal);
+        IEnumerable<LoungeGame> combined = baseGames.Concat(hosted.Select(module => module.Definition with
+        {
+            Open = () => OpenHosted(module),
+        }));
+        IReadOnlyList<LoungeGame> catalog = LoungeGameCatalog.Normalize(combined);
 
         var root = new StackPanel { Margin = new Thickness(42, 30, 42, 30) };
         root.Children.Add(new TextBlock { Text = "A QUIETER CORNER", FontSize = 11, Foreground = LoungeUi.Ink("#8EC9B0") });
@@ -85,5 +99,10 @@ internal sealed class LoungeGameMenu : UserControl
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
         };
+    }
+
+    private void OpenHosted(LoungeHostedGame module)
+    {
+        Content = module.CreateContent(ShowMenu);
     }
 }
