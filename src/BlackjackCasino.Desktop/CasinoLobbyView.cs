@@ -32,14 +32,29 @@ internal sealed class CasinoLobbyView : UserControl
         heading.Children.Add(new TextBlock { Text = "Choose your table. Find your rhythm. Make yourself at home.", Foreground = Ink("#B8C7BE"), FontSize = 13 });
         DockPanel.SetDock(heading, Dock.Top);
         root.Children.Add(heading);
-        // A bounded four-column board scales as one surface: all eight modes and the
-        // footer remain visible even at the supported minimum window size / high DPI.
         root.Children.Add(new Viewbox { Stretch = Stretch.Uniform, Child = cards, VerticalAlignment = VerticalAlignment.Center });
         Content = root;
-        Loaded += (_, _) => { modes.Changed -= Refresh; modes.Changed += Refresh; Refresh(); };
-        Unloaded += (_, _) => modes.Changed -= Refresh;
+        Loaded += OnLoaded;
+        Unloaded += OnUnloaded;
         Refresh();
     }
+
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        modes.Changed -= Refresh;
+        modes.Changed += Refresh;
+        Localization.LanguageChanged -= Localization_LanguageChanged;
+        Localization.LanguageChanged += Localization_LanguageChanged;
+        Refresh();
+    }
+
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        modes.Changed -= Refresh;
+        Localization.LanguageChanged -= Localization_LanguageChanged;
+    }
+
+    private void Localization_LanguageChanged(object? sender, EventArgs e) => Refresh();
 
     private void Refresh()
     {
@@ -56,25 +71,23 @@ internal sealed class CasinoLobbyView : UserControl
             if (mode.Artwork is not null) art.Children.Add(mode.Artwork());
             else art.Children.Add(new TextBlock { Text = mode.Emblem, FontSize = 48, Foreground = Ink("#F4DFC0"), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center });
             art.Children.Add(new Border { Background = Ink("#990B1718"), VerticalAlignment = VerticalAlignment.Bottom,
-                Child = new TextBlock { Text = mode.Category.ToUpperInvariant(), FontSize = 10, Foreground = Ink("#F4DFC0"), Margin = new Thickness(14, 3, 14, 3) } });
+                Child = new TextBlock { Text = Localized(mode.Category).ToUpperInvariant(), FontSize = 10, Foreground = Ink("#F4DFC0"), Margin = new Thickness(14, 3, 14, 3) } });
             panel.Children.Add(art);
             var text = new StackPanel { Margin = new Thickness(16, 9, 16, 9) };
-            text.Children.Add(new TextBlock { Text = mode.Subtitle.ToUpperInvariant(), FontSize = 10, Foreground = accent });
+            text.Children.Add(new TextBlock { Text = Localized(mode.Subtitle).ToUpperInvariant(), FontSize = 10, Foreground = accent });
             text.Children.Add(new TextBlock { Text = mode.Title, FontFamily = new FontFamily("Georgia"), FontSize = 25, Foreground = Ink("#F3E6D1"), Margin = new Thickness(0, 3, 0, 6) });
-            text.Children.Add(new TextBlock { Text = mode.Description, FontSize = 12, Foreground = Ink("#ADBCB6"), TextWrapping = TextWrapping.Wrap, Height = 50 });
-            text.Children.Add(new TextBlock { Text = modes.CanOpen(mode.Id) ? "TAKE A SEAT   →" : "CURRENTLY OPEN", FontSize = 11, FontWeight = FontWeights.Bold, Foreground = Ink("#E7CCA0"), Margin = new Thickness(0, 7, 0, 0) });
+            text.Children.Add(new TextBlock { Text = Localized(mode.Description), FontSize = 12, Foreground = Ink("#ADBCB6"), TextWrapping = TextWrapping.Wrap, Height = 50 });
+            text.Children.Add(new TextBlock { Text = modes.CanOpen(mode.Id) ? Localization.T("Lobby.TakeSeat") : Localization.T("Lobby.CurrentlyOpen"), FontSize = 11, FontWeight = FontWeights.Bold, Foreground = Ink("#E7CCA0"), Margin = new Thickness(0, 7, 0, 0) });
             Grid.SetRow(text, 1);
             panel.Children.Add(text);
             var primary = new Button { Name = "Mode_" + mode.Id.Replace('-', '_'), Tag = mode.Id, Padding = new Thickness(0), Margin = new Thickness(0), Content = panel,
                 Background = Ink("#111F20"), BorderBrush = accent, HorizontalContentAlignment = HorizontalAlignment.Stretch, IsEnabled = modes.CanOpen(mode.Id) };
             primary.Click += (_, _) => modes.Open(mode.Id);
-            // A secondary action overlays its own reserved art corner, never changing a
-            // tile's height or interfering with the primary button's click routing.
             var wrapper = new Grid { Margin = new Thickness(8) };
             wrapper.Children.Add(primary);
             if (modes.HasSecondary(mode.Id))
             {
-                var secondary = new Button { Name = "ModeSecondary_" + mode.Id.Replace('-', '_'), Tag = mode.Id + "-secondary", Content = "↗ NEW WINDOW",
+                var secondary = new Button { Name = "ModeSecondary_" + mode.Id.Replace('-', '_'), Tag = mode.Id + "-secondary", Content = Localization.T("Lobby.NewWindow"),
                     ToolTip = modes.SecondaryLabel(mode.Id), FontSize = 10, Padding = new Thickness(9, 5, 9, 5), Margin = new Thickness(8),
                     HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, IsEnabled = modes.CanOpenSecondary(mode.Id) };
                 secondary.Click += (_, _) => modes.OpenSecondary(mode.Id);
@@ -83,5 +96,9 @@ internal sealed class CasinoLobbyView : UserControl
             cards.Children.Add(wrapper);
         }
     }
+
+    private static string Localized(string source) =>
+        Localization.KeyForEnglishSource(source) is string key ? Localization.T(key) : source;
+
     private static SolidColorBrush Ink(string hex) => new((Color)ColorConverter.ConvertFromString(hex));
 }
