@@ -27,7 +27,6 @@ internal static class Localization
 
     private static readonly CultureInfo EnglishCulture = CultureInfo.GetCultureInfo("en-US");
     private static readonly CultureInfo GermanCulture = CultureInfo.GetCultureInfo("de-DE");
-    private static readonly CultureInfo[] SupportedCultures = [EnglishCulture, GermanCulture];
     private static readonly IReadOnlyDictionary<string, string> EnglishValueToKey = BuildEnglishValueIndex();
     private static UiLanguagePreference language = UiLanguagePreference.English;
     private static bool classHandlerInstalled;
@@ -59,7 +58,7 @@ internal static class Localization
                 if (sender is not FrameworkElement element) return;
                 InstallChangeWatch(element);
                 TranslateElement(element);
-                QueueSubtreeRefresh(element);
+                if (element is Window or UserControl) QueueSubtreeRefresh(element);
             }));
     }
 
