@@ -195,6 +195,20 @@ internal sealed class PlayerProgressionController : IDisposable
         }
     }
 
+    public ProgressionAward ProcessMemory(BlackjackCasino.Core.Memory.MemoryCompletionRecord completion)
+    {
+        lock (Profile)
+        {
+            AccruePlaytime();
+            PlayerProfileState candidate = ManorPersistence.Clone(Profile);
+            ProgressionAward award = new BlackjackCasino.Core.Memory.MemoryProgression(new ProgressionService(candidate)).Process(completion);
+            if (award == ProgressionAward.None) return award;
+            if (persistKniffelRewards) saveKniffelProfile(candidate);
+            AdoptManorProfile(candidate);
+            return award;
+        }
+    }
+
     public PurchaseResult PurchaseCosmetic(string cosmeticId)
     {
         PurchaseResult result = Service.PurchaseCosmetic(cosmeticId);
@@ -274,6 +288,7 @@ internal sealed class PlayerProgressionController : IDisposable
         Profile.Sudoku = committed.Sudoku;
         Profile.Solitaire = committed.Solitaire;
         Profile.WordSearch = committed.WordSearch;
+        Profile.Memory = committed.Memory;
         Profile.MidnightMerge = committed.MidnightMerge;
         Profile.Manor = committed.Manor;
         Profile.Vault = committed.Vault;
