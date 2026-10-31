@@ -32,6 +32,11 @@
   <data name="Merge.Area" xml:space="preserve"><value>Lobby-Restaurierung</value></data>
   <data name="Merge.AreaBar" xml:space="preserve"><value>Bar-Restaurierung</value></data>
   <data name="Merge.AreaCounter" xml:space="preserve"><value>BEREICH {0} / {1}</value></data>
+  <data name="Merge.NextUpgrade" xml:space="preserve"><value>NÄCHSTES RESTAURIERUNGS-UPGRADE</value></data>
+  <data name="Merge.NextUpgradeTarget" xml:space="preserve"><value>{0:N0} / {1:N0} Punkte</value></data>
+  <data name="Merge.NextUpgradeRemaining" xml:space="preserve"><value>Noch {0:N0} Punkte bis {1}</value></data>
+  <data name="Merge.AreaComplete" xml:space="preserve"><value>BEREICH ABGESCHLOSSEN · alle Restaurierungs-Upgrades freigeschaltet</value></data>
+  <data name="Merge.OrderCount" xml:space="preserve"><value>{0} / {1}</value></data>
   <data name="Merge.StageDusty" xml:space="preserve"><value>Verstaubte Lobby</value></data>
   <data name="Merge.StageCleanup" xml:space="preserve"><value>Erste Reinigung</value></data>
   <data name="Merge.StageLights" xml:space="preserve"><value>Beleuchtung restauriert</value></data>
