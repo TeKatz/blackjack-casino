@@ -70,6 +70,10 @@ internal static class Program
                 window.UpdateLayout();
                 Require(window.IsVisible, "Main window never became visible.");
                 Require(window.Cursor == CasinoCursors.Arrow, "Main window did not install the custom casino cursor.");
+                Require(!ReferenceEquals(CasinoCursors.Hand, System.Windows.Input.Cursors.Hand),
+                    "Interactive casino cursor regressed to the stock Windows hand instead of the custom pointing glove.");
+                Require(!ReferenceEquals(CasinoCursors.Hand, CasinoCursors.Arrow),
+                    "Interactive casino cursor must remain distinct from the default casino arrow.");
                 Require(Application.Current.TryFindResource(typeof(ToolTip)) is Style,
                     "Global casino tooltip style is not available to application controls.");
                 Button challenges = Find<Button>(window).Single(button => button.Name == "HeaderChallengesButton" && button.IsVisible);
@@ -177,7 +181,7 @@ internal static class Program
                 await VaultSmoke.Run(window, output);
 
                 File.WriteAllText(Path.Combine(output, "result.txt"),
-                    "PASS: global casino tooltip/cursor/header polish; EN/DE live localization; Nine Lives presentation; Chill Lounge Sudoku; Midnight Merge foundation; Midnight Solitaire navigation and selection feedback; Midnight Dice; Casino Empire; and in-app Casino Vault acceptance all passed.");
+                    "PASS: EN/DE live localization; Nine Lives presentation; Chill Lounge Sudoku; Midnight Merge foundation; Midnight Solitaire navigation and selection feedback; Midnight Dice; Casino Empire; and in-app Casino Vault acceptance all passed.");
             }
             catch (Exception ex)
             {
