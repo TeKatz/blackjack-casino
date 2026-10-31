@@ -44,8 +44,6 @@ internal static class SolitaireSmoke
             .ToArray();
         Require(cards.Length >= 20, $"Klondike rendered too few playing cards; found {cards.Length}.");
 
-        // Tableau columns are rendered after stock/waste/foundations. The final authored card is
-        // therefore the exposed top card in the last tableau column and is always selectable.
         MouseClick(cards[^1]);
         await Task.Delay(40);
         view.UpdateLayout();
@@ -82,8 +80,10 @@ internal static class SolitaireSmoke
         Require(Find<Button>(window).Any(button => button.Name == "Mode_chill_lounge" && button.IsVisible),
             "Casino lobby was not restored after the Solitaire smoke.");
 
+        await WordSearchSmoke.Run(window, output);
+
         File.WriteAllText(Path.Combine(output, "solitaire-result.txt"),
-            "PASS: local-only Lounge navigation; Klondike starts from Midnight Solitaire; skin-independent gold selection halo and explicit selection text render and clear correctly.");
+            "PASS: local-only Lounge navigation; Klondike starts from Midnight Solitaire; skin-independent gold selection halo and explicit selection text render and clear correctly; Word Search Lounge acceptance also passed.");
     }
 
     private static bool IsFullSizePlayingCard(Border border) =>
