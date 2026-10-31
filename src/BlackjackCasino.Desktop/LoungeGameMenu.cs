@@ -85,7 +85,7 @@ internal sealed class LoungeGameMenu : UserControl
             body.Children.Add(new TextBlock { Text = "PLAY   →", FontWeight = FontWeights.Bold, Foreground = LoungeUi.Ink("#E7CCA0") });
             var tile = new Button
             {
-                Name = "LoungeGame_" + game.Id,
+                Name = ControlName(game.Id),
                 Content = body,
                 Width = 340,
                 Padding = new Thickness(22),
@@ -105,6 +105,13 @@ internal sealed class LoungeGameMenu : UserControl
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
         };
+    }
+
+    internal static string ControlName(string gameId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(gameId);
+        char[] safe = gameId.Select(character => char.IsLetterOrDigit(character) || character == '_' ? character : '_').ToArray();
+        return "LoungeGame_" + new string(safe);
     }
 
     private void OpenHosted(LoungeHostedGame module)
