@@ -34,6 +34,13 @@ internal static class Program
             DisplayName = "Startup Smoke",
             Coins = 10_000,
             SlotTrackingVersion = 1,
+            Vault = new CasinoVaultState
+            {
+                SchemaVersion = CasinoVaultService.CurrentSchemaVersion,
+                TierId = "gold",
+                CurrentAmount = 50_000m,
+                LifetimeContributions = 50_000m,
+            },
         };
         var preferences = new AppPreferences
         {
@@ -142,9 +149,10 @@ internal static class Program
                 await KniffelCasinoSmoke.Run(window, output, profile);
                 await KniffelFeedbackSmoke.Run(window, output);
                 await EmpireStrategySmoke.Run(window, output);
+                await VaultSmoke.Run(window, output);
 
                 File.WriteAllText(Path.Combine(output, "result.txt"),
-                    "PASS: Nine Lives presentation; Chill Lounge Sudoku; Midnight Solitaire navigation and selection feedback; Midnight Dice; and Casino Empire startup acceptance all passed.");
+                    "PASS: Nine Lives presentation; Chill Lounge Sudoku; Midnight Solitaire navigation and selection feedback; Midnight Dice; Casino Empire; and in-app Casino Vault acceptance all passed.");
             }
             catch (Exception ex)
             {
