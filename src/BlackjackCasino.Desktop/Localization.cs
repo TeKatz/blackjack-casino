@@ -100,7 +100,7 @@ internal static class Localization
     internal static string TranslateSource(string englishSource)
     {
         string? key = KeyForEnglishSource(englishSource);
-        return key is not null ? T(key) : LocalizationPatterns.Translate(englishSource, Culture);
+        return key is not null ? T(key) : TranslatePattern(englishSource);
     }
 
     internal static void ApplyTree(DependencyObject root)
@@ -123,6 +123,14 @@ internal static class Localization
 
     internal static string? KeyForEnglishSource(string source) =>
         EnglishValueToKey.TryGetValue(source, out string? key) ? key : null;
+
+    private static string TranslatePattern(string source)
+    {
+        string translated = LocalizationPatterns.Translate(source, Culture);
+        return string.Equals(translated, source, StringComparison.Ordinal)
+            ? LocalizationSupplementalPatterns.Translate(source, Culture)
+            : translated;
+    }
 
     private static void QueueSubtreeRefresh(FrameworkElement element)
     {
@@ -196,7 +204,7 @@ internal static class Localization
             owner.SetValue(LocalizationKeyProperty, key);
         }
 
-        string rendered = key is not null ? T(key) : LocalizationPatterns.Translate(source, Culture);
+        string rendered = key is not null ? T(key) : TranslatePattern(source);
         owner.SetValue(LastRenderedTextProperty, rendered);
         return rendered;
     }
@@ -214,7 +222,7 @@ internal static class Localization
             owner.SetValue(ToolTipKeyProperty, key);
         }
 
-        string rendered = key is not null ? T(key) : LocalizationPatterns.Translate(source, Culture);
+        string rendered = key is not null ? T(key) : TranslatePattern(source);
         owner.SetValue(LastRenderedToolTipProperty, rendered);
         return rendered;
     }
