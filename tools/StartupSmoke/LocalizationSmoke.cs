@@ -111,7 +111,9 @@ internal static class LocalizationSmoke
         Require(Find<Button>(window).Any(button => button.Name == "SudokuNew_Medium" && Equals(button.Content, "NEUES RÄTSEL")),
             "Sudoku New Puzzle action remained English.");
 
-        Click(Find<Button>(window).Single(button => button.Name == "SudokuNew_Medium"));
+        // Use Expert here so this localization acceptance path does not contaminate the
+        // independent Sudoku behavior smoke, which intentionally starts from untouched Medium.
+        Click(Find<Button>(window).Single(button => button.Name == "SudokuNew_Expert"));
         await Task.Delay(100);
         window.UpdateLayout();
         Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "ZAHL"),
