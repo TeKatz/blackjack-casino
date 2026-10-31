@@ -47,7 +47,14 @@ internal sealed class LoungeGameMenu : UserControl
                 FontSize = 30,
                 Margin = new Thickness(0, 12, 0, 5),
             });
-            body.Children.Add(new TextBlock { Text = game.Subtitle, FontSize = 14, Foreground = LoungeUi.Ink("#A4D3BA") });
+            body.Children.Add(new TextBlock
+            {
+                Text = game.Subtitle,
+                FontSize = 14,
+                Foreground = LoungeUi.Ink("#A4D3BA"),
+                TextWrapping = TextWrapping.Wrap,
+                MinHeight = 34,
+            });
             body.Children.Add(new TextBlock
             {
                 Text = game.Description,

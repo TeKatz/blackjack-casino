@@ -143,6 +143,7 @@ internal static class Program
                 Require(Find<Button>(window).Any(button => button.Name == "Mode_nine_lives" && button.IsVisible),
                     "Casino lobby was not restored after leaving Nine Lives.");
 
+                await LocalizationSmoke.Run(window, output);
                 await SudokuSmoke.Run(window, output);
                 await SolitaireSmoke.Run(window, output);
                 await KniffelSmoke.Run(window, output, profile);
@@ -152,7 +153,7 @@ internal static class Program
                 await VaultSmoke.Run(window, output);
 
                 File.WriteAllText(Path.Combine(output, "result.txt"),
-                    "PASS: Nine Lives presentation; Chill Lounge Sudoku; Midnight Solitaire navigation and selection feedback; Midnight Dice; Casino Empire; and in-app Casino Vault acceptance all passed.");
+                    "PASS: EN/DE live localization; Nine Lives presentation; Chill Lounge Sudoku; Midnight Solitaire navigation and selection feedback; Midnight Dice; Casino Empire; and in-app Casino Vault acceptance all passed.");
             }
             catch (Exception ex)
             {

@@ -34,6 +34,9 @@ jobs:
           }
           "PREVIEW_VERSION=$baseVersion-dev.0" | Out-File -FilePath $env:GITHUB_ENV -Append
 
+      - name: Localization resource parity
+        run: python tools/check_localization.py
+
       - name: Restore
         run: dotnet restore BlackjackCasino.sln
 

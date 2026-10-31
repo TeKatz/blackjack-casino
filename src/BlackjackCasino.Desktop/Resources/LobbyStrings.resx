@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Lobby.Eyebrow" xml:space="preserve"><value>THE MIDNIGHT CLUB</value></data>
+  <data name="Lobby.Headline" xml:space="preserve"><value>A different kind of night.</value></data>
+  <data name="Lobby.Description" xml:space="preserve"><value>Choose your table. Find your rhythm. Make yourself at home.</value></data>
+  <data name="Lobby.SeasonPass" xml:space="preserve"><value>Season Pass</value></data>
+  <data name="Lobby.CosmeticShop" xml:space="preserve"><value>Cosmetic Shop</value></data>
+  <data name="Lobby.Challenges" xml:space="preserve"><value>Challenges</value></data>
+  <data name="Lobby.Overview" xml:space="preserve"><value>Overview</value></data>
+  <data name="Lobby.TakeSeat" xml:space="preserve"><value>TAKE A SEAT   →</value></data>
+  <data name="Lobby.CurrentlyOpen" xml:space="preserve"><value>CURRENTLY OPEN</value></data>
+  <data name="Lobby.Open" xml:space="preserve"><value>OPEN  →</value></data>
+  <data name="Lobby.NewWindow" xml:space="preserve"><value>↗ NEW WINDOW</value></data>
+  <data name="Lobby.OpenNewWindow" xml:space="preserve"><value>OPEN IN NEW WINDOW</value></data>
+  <data name="Lobby.Category.TableGames" xml:space="preserve"><value>Table games</value></data>
+  <data name="Lobby.Category.ClassicSlots" xml:space="preserve"><value>Classic slots</value></data>
+  <data name="Lobby.Category.VideoSlots" xml:space="preserve"><value>Video slots</value></data>
+  <data name="Lobby.Category.IdleCasino" xml:space="preserve"><value>Idle casino</value></data>
+  <data name="Lobby.Category.RelaxedGames" xml:space="preserve"><value>Relaxed games</value></data>
+  <data name="Lobby.Blackjack.Subtitle" xml:space="preserve"><value>The velvet tables</value></data>
+  <data name="Lobby.Blackjack.Description" xml:space="preserve"><value>A quiet seat, a fresh shoe and your next decision. Solo or with the house regulars.</value></data>
+  <data name="Lobby.Reels.Subtitle" xml:space="preserve"><value>The golden floor</value></data>
+  <data name="Lobby.Reels.Description" xml:space="preserve"><value>Three reels, a centre payline and a little old-school casino charm.</value></data>
+  <data name="Lobby.NeonVault.Subtitle" xml:space="preserve"><value>The high-voltage floor</value></data>
+  <data name="Lobby.NeonVault.Description" xml:space="preserve"><value>Five reels, 1,024 ways and Vault Break Free Spins. High Roller stakes up to $250K.</value></data>
+  <data name="Lobby.NineLives.Subtitle" xml:space="preserve"><value>The moonlit rooftop</value></data>
+  <data name="Lobby.NineLives.Description" xml:space="preserve"><value>Five lines, Pounce Wilds and nine bonus spins. Chase the 5,000× Full Grid Frenzy.</value></data>
+  <data name="Lobby.Manor.Subtitle" xml:space="preserve"><value>Beyond the moonlit doors</value></data>
+  <data name="Lobby.Manor.Description" xml:space="preserve"><value>Five haunted reels. Free Spins. A Manor whose rooms remember your choices.</value></data>
+  <data name="Lobby.Empire.Subtitle" xml:space="preserve"><value>Your name above the door</value></data>
+  <data name="Lobby.Empire.Description" xml:space="preserve"><value>Build your midnight landmark with lasting upgrades, idle income and owner dividends.</value></data>
+  <data name="Lobby.Chill.Subtitle" xml:space="preserve"><value>A quieter corner</value></data>
+  <data name="Lobby.Chill.Description" xml:space="preserve"><value>Offline games at your own pace. Settle into Sudoku or Midnight Solitaire — no wagers, no rush.</value></data>
+  <data name="Lobby.Dice.Subtitle" xml:space="preserve"><value>The dice lounge</value></data>
+  <data name="Lobby.Dice.Description" xml:space="preserve"><value>Five dice and your score sheet. Play solo or join a casino table with three AI opponents.</value></data>
+  <data name="Lobby.FinishHand" xml:space="preserve"><value>Finish your hand before returning to the lobby.</value></data>
+  <data name="Lobby.Mode.Blackjack" xml:space="preserve"><value>Blackjack · your table</value></data>
+  <data name="Lobby.Mode.Reels" xml:space="preserve"><value>Midnight Reels · classic slots</value></data>
+  <data name="Lobby.Mode.NeonVault" xml:space="preserve"><value>Neon Vault · high roller slots</value></data>
+  <data name="Lobby.Mode.NineLives" xml:space="preserve"><value>Nine Lives · high risk slots</value></data>
+  <data name="Lobby.Mode.Manor" xml:space="preserve"><value>Midnight Manor · video slots</value></data>
+</root>

@@ -9,6 +9,7 @@ public partial class App : Application
     {
         DispatcherUnhandledException += OnDispatcherUnhandledException;
         AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
+        Localization.InstallAutomaticTranslation();
         base.OnStartup(e);
     }
 
