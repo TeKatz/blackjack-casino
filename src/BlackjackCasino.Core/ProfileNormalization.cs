@@ -17,6 +17,8 @@ public static class ProfileNormalization
         state.Sudoku.RecordedPuzzleIds ??= new HashSet<string>(StringComparer.Ordinal);
         state.Solitaire ??= new();
         state.Solitaire.Normalize();
+        state.MidnightMerge ??= new();
+        state.MidnightMerge.Normalize();
         state.Slots ??= new();
         state.NeonVault ??= new();
         state.NineLives ??= new();
@@ -53,6 +55,6 @@ public static class ProfileNormalization
             : state.EquippedDiceSetId;
 
         state.Vault = CasinoVaultService.Normalize(state, state.Vault);
-        state.SchemaVersion = Math.Max(state.SchemaVersion, 5);
+        state.SchemaVersion = Math.Max(state.SchemaVersion, 6);
     }
 }
