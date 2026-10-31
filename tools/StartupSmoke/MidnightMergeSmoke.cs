@@ -16,6 +16,8 @@ internal static class MidnightMergeSmoke
         Require(Application.Current.Windows.Cast<Window>().Count(w => w.IsVisible) == 1, "Merge opened a second visible window.");
         MidnightMergeView view = Find<MidnightMergeView>(window).Single();
         Require(view.IsVisible, "Merge was not embedded in the main window.");
+        Require(Find<MergeLobbyArtwork>(view).Single().ActualWidth > 1000, "Merge restoration panorama did not use the wide layout.");
+        Require(Find<TextBlock>(view).Any(x => x.IsVisible && x.Text == "MIDNIGHT MERGE CHALLENGES"), "Merge challenge panel is missing.");
         var producer = Find<Button>(view).Single(x => x.Name == "MergeProducer");
         producer.Focus();
         for (int i = 0; i < 60; i++)
@@ -33,11 +35,13 @@ internal static class MidnightMergeSmoke
         Click(view, "MergeCell_0"); Click(view, "MergeCell_1");
         await Settle(window);
         Require(view.Snapshot.Items.Count == 1 && view.Snapshot.Items.Single().DefinitionId == "chip-2", "UI merge did not produce tier II.");
+        Require(view.Snapshot.TotalMerges == 1 && view.Snapshot.HighestTierCreated >= 2, "Merge lifetime counters were not updated.");
         Require(Find<Button>(view).Any(x => x.Name == "MergeOrder_first_stack" && x.IsVisible), "Merge order UI missing.");
         Capture(window, Path.Combine(output, "merge-tier-up.png"));
         Click(view, "MergeOrder_first_stack");
         await Settle(window);
         Require(view.Snapshot.RenovationPoints == 10 && view.Snapshot.Items.Count == 0, "Order did not consume its chip and award 10 points.");
+        Require(Find<TextBlock>(view).Any(x => x.IsVisible && x.Text.Contains("player XP", StringComparison.Ordinal)), "Merge order did not surface global XP feedback.");
         Click(view, "MergeProducer"); Click(view, "MergeProducer");
         Click(view, "MergeCell_0"); Click(view, "MergeCell_1");
         Click(view, "MergeOrder_first_stack");
@@ -66,6 +70,7 @@ internal static class MidnightMergeSmoke
         Require(Find<TextBlock>(view).Any(x => x.IsVisible && x.Text == "Lobby-Restaurierung"), "German restoration label missing.");
         Require(Find<TextBlock>(view).Any(x => x.IsVisible && x.Text.Contains("Renovierungspunkte", StringComparison.Ordinal)), "German points text missing.");
         Require(Find<TextBlock>(view).Any(x => x.IsVisible && x.Text == "LIEFERAUFTRÄGE"), "German orders label missing.");
+        Require(Find<TextBlock>(view).Any(x => x.IsVisible && x.Text == "MIDNIGHT-MERGE-CHALLENGES"), "German Merge challenge label missing.");
         Capture(window, Path.Combine(output, "merge-german.png"));
         window.Width = 1080; window.Height = 720;
         await Settle(window);
@@ -80,10 +85,10 @@ internal static class MidnightMergeSmoke
         Click(view, "MergeBack");
         window.Width = 1280; window.Height = 900;
         await Settle(window);
-        File.WriteAllText(Path.Combine(output, "merge-result.txt"), "PASS: embedded host; producer; click move/merge; tier II; order consumption/rewards; restoration milestone; atomic disk roundtrip; exact resume with stable IDs; German labels; minimum window size; English restored.");
+        File.WriteAllText(Path.Combine(output, "merge-result.txt"), "PASS: wide restoration panorama; global XP feedback; Merge challenges; embedded host; producer; click move/merge; tier II; order consumption/rewards; restoration milestone; atomic disk roundtrip; exact resume with stable IDs; German labels; minimum window size; English restored.");
 
         // Render real animations on a separate test host without altering the accepted save.
-        var animated = new Window { Width = 1200, Height = 900, Title = "Merge animation acceptance" };
+        var animated = new Window { Width = 1500, Height = 900, Title = "Merge animation acceptance" };
         var animatedView = new MidnightMergeView(new MergeBoard(), () => false, () => true, animated.Close);
         animated.Content = animatedView; animated.Show();
         try
