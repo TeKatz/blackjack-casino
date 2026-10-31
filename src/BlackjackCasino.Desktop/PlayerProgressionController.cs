@@ -125,6 +125,20 @@ internal sealed class PlayerProgressionController : IDisposable
         }
     }
 
+    public BlackjackCasino.Core.MidnightMerge.MergeProfileSyncResult ProcessMidnightMerge(BlackjackCasino.Core.MidnightMerge.MergeGameState state)
+    {
+        lock (Profile)
+        {
+            AccruePlaytime();
+            PlayerProfileState candidate = ManorPersistence.Clone(Profile);
+            var result = new BlackjackCasino.Core.MidnightMerge.MergePlayerProgression(new ProgressionService(candidate)).Sync(state);
+            if (!result.Changed) return result;
+            if (persistKniffelRewards) saveKniffelProfile(candidate);
+            AdoptManorProfile(candidate);
+            return result;
+        }
+    }
+
     public bool ProcessSolitaireStart(BlackjackCasino.Core.Solitaire.SolitaireStartRecord start)
     {
         lock (Profile)
@@ -245,6 +259,7 @@ internal sealed class PlayerProgressionController : IDisposable
         Profile.Kniffel = committed.Kniffel;
         Profile.Sudoku = committed.Sudoku;
         Profile.Solitaire = committed.Solitaire;
+        Profile.MidnightMerge = committed.MidnightMerge;
         Profile.Manor = committed.Manor;
         Profile.Vault = committed.Vault;
         Profile.SchemaVersion = committed.SchemaVersion;
