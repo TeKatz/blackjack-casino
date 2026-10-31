@@ -67,6 +67,8 @@ public partial class MainWindow
         };
         Grid.SetColumn(headerActions, 2);
         Panel.SetZIndex(headerActions, 1);
+
+        BuildChallengeHeaderButton(headerActions);
         headerActions.Children.Add(profileButton);
 
         vaultHeaderTitle = new TextBlock
@@ -90,17 +92,30 @@ public partial class MainWindow
             Background = new SolidColorBrush(Color.FromRgb(28, 44, 47)),
             Foreground = new SolidColorBrush(Color.FromRgb(217, 172, 68)),
         };
-        var content = new StackPanel { Width = 150 };
-        content.Children.Add(vaultHeaderTitle);
-        content.Children.Add(vaultHeaderAmount);
-        content.Children.Add(vaultHeaderProgress);
+        var textContent = new StackPanel { Width = 142, VerticalAlignment = VerticalAlignment.Center };
+        textContent.Children.Add(vaultHeaderTitle);
+        textContent.Children.Add(vaultHeaderAmount);
+        textContent.Children.Add(vaultHeaderProgress);
+
+        var content = new Grid { Width = 178 };
+        content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(36) });
+        content.ColumnDefinitions.Add(new ColumnDefinition());
+        var vaultArtwork = new VaultHeaderArtwork
+        {
+            Margin = new Thickness(0, 0, 6, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Left,
+        };
+        content.Children.Add(vaultArtwork);
+        Grid.SetColumn(textContent, 1);
+        content.Children.Add(textContent);
 
         vaultButton = new Button
         {
             Name = "CasinoVaultButton",
             Height = 52,
-            MinWidth = 170,
-            Padding = new Thickness(10, 5, 10, 5),
+            MinWidth = 190,
+            Padding = new Thickness(8, 5, 8, 5),
             Margin = new Thickness(0),
             Style = (Style)FindResource("MutedButton"),
             Content = content,
@@ -113,6 +128,7 @@ public partial class MainWindow
 
     private void RefreshVaultButton()
     {
+        RefreshChallengeHeaderButton();
         if (vaultButton is null || vaultHeaderTitle is null || vaultHeaderAmount is null || vaultHeaderProgress is null || progressionController is null)
         {
             return;
@@ -140,6 +156,7 @@ public partial class MainWindow
         {
             vaultHeaderTitle.Text = "VAULT · " + snapshot.Tier.Name.Replace(" Vault", string.Empty, StringComparison.Ordinal).ToUpperInvariant();
             vaultHeaderAmount.Text = $"{Money(snapshot.CurrentAmount)} / {Money(snapshot.Tier.Capacity)}";
+            vaultButton.ClearValue(BorderBrushProperty);
             vaultButton.ClearValue(EffectProperty);
         }
 
