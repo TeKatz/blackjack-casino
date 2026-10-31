@@ -18,7 +18,6 @@ internal sealed class LoungeGameMenu : UserControl
     private void ShowMenu()
     {
         IReadOnlyList<LoungeHostedGame> hosted = LoungeHostedGameRegistry.Snapshot;
-        var routes = hosted.ToDictionary(x => x.Definition.Id, StringComparer.Ordinal);
         IEnumerable<LoungeGame> combined = baseGames.Concat(hosted.Select(module => module.Definition with
         {
             Open = () => OpenHosted(module),
