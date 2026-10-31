@@ -74,11 +74,10 @@ internal static class LocalizationSmoke
         SaveScreenshot(window, Path.Combine(output, "localization-german-blackjack.png"));
 
         // Casino Vault must localize when opened after the language switch, not only its header tile.
+        // A Blackjack settlement can finish on a dispatcher turn after Stand, so retry the header action
+        // briefly instead of racing that state transition with one fixed delay.
         Button vault = Find<Button>(window).Single(button => button.Name == "CasinoVaultButton" && button.IsVisible);
-        Click(vault);
-        await Task.Delay(100);
-        window.UpdateLayout();
-        Grid overlay = Find<Grid>(window).Single(grid => grid.Name == "CasinoVaultOverlay" && grid.IsVisible);
+        Grid overlay = await OpenVault(window, vault);
         Require(Find<TextBlock>(overlay).Any(text => text.IsVisible && text.Text == "BEITRAG"),
             "Casino Vault contribution row remained English.");
         Require(Find<TextBlock>(overlay).Any(text => text.IsVisible && text.Text == "VOLLER VAULT"),
@@ -179,9 +178,24 @@ internal static class LocalizationSmoke
         Require(Find<CheckBox>(window).Any(check => check.Name == "SoundCheckBox" && Equals(check.Content, "Casino sound effects")),
             "Sound setting did not restore its English resource value.");
         Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "A different kind of night."),
-            "Casino lobby headline did not switch back to English.");
+            "Casino lobby headline did not switch back to English without a restart.");
         Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "VAULT FULL"),
             "Dynamic Vault header did not switch back to English.");
+    }
+
+    private static async Task<Grid> OpenVault(MainWindow window, Button vault)
+    {
+        for (int attempt = 0; attempt < 10; attempt++)
+        {
+            Click(vault);
+            await Task.Delay(100);
+            window.UpdateLayout();
+            Grid? overlay = Find<Grid>(window).FirstOrDefault(grid => grid.Name == "CasinoVaultOverlay" && grid.IsVisible);
+            if (overlay is not null) return overlay;
+        }
+
+        TextBlock? status = Find<TextBlock>(window).FirstOrDefault(text => text.Name == "StatusText");
+        throw new InvalidOperationException("Casino Vault overlay did not open after the localized Blackjack hand settled. Status: " + status?.Text);
     }
 
     private static string SelectedLanguageName(ComboBox combo)
