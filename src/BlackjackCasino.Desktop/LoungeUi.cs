@@ -41,15 +41,23 @@ internal static class LoungeUi
         HorizontalContentAlignment = HorizontalAlignment.Center,
     };
 
-    public static Border Card(UIElement child, Thickness? padding = null) => new()
+    public static Button SmallButton(string text) => SmallActionButton(text);
+
+    public static Border Card(Thickness? padding = null) => new()
     {
-        Child = child,
         Background = Ink("#101F21"),
         BorderBrush = Ink("#42645E"),
         BorderThickness = new Thickness(1),
         CornerRadius = new CornerRadius(14),
         Padding = padding ?? new Thickness(22),
     };
+
+    public static Border Card(UIElement child, Thickness? padding = null)
+    {
+        Border card = Card(padding);
+        card.Child = child;
+        return card;
+    }
 
     public static TextBlock Eyebrow(string text) => new()
     {
