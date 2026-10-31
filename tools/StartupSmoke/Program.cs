@@ -56,7 +56,7 @@ internal static class Program
             Bankroll = 50_000m,
             SoundEnabled = false,
             MusicEnabled = false,
-            AnimationsEnabled = true,
+            AnimationsEnabled = false,
             WindowWidth = 1280,
             WindowHeight = 900,
         };
