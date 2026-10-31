@@ -15,6 +15,8 @@ public partial class MainWindow
     private TextBlock? vaultHeaderAmount;
     private ProgressBar? vaultHeaderProgress;
     private DispatcherTimer? vaultRefreshTimer;
+    private Grid? vaultOverlay;
+    private CasinoVaultView? vaultView;
     private decimal lastVaultHeaderAmount = -1m;
 
     private void InitializeVaultFeature()
@@ -44,6 +46,7 @@ public partial class MainWindow
     {
         vaultRefreshTimer?.Stop();
         vaultRefreshTimer = null;
+        CloseCasinoVaultOverlay(refreshUi: false);
     }
 
     private void BuildVaultHeaderButton()
@@ -168,20 +171,168 @@ public partial class MainWindow
             StatusText.Text = "Return to the casino lobby or Blackjack table before opening the Casino Vault.";
             return;
         }
+        if (vaultOverlay is not null)
+        {
+            return;
+        }
 
         ProcessLatestCompletedRound();
-        var window = new CasinoVaultWindow(
+        OpenCasinoVaultOverlay();
+    }
+
+    private void OpenCasinoVaultOverlay()
+    {
+        if (progressionController is null || vaultOverlay is not null)
+        {
+            return;
+        }
+
+        var overlay = new Grid
+        {
+            Name = "CasinoVaultOverlay",
+            Background = new SolidColorBrush(Color.FromArgb(205, 1, 7, 8)),
+            Focusable = true,
+        };
+        Grid.SetRowSpan(overlay, 2);
+        Grid.SetColumnSpan(overlay, 2);
+        Panel.SetZIndex(overlay, 1000);
+
+        var modal = new Border
+        {
+            Name = "CasinoVaultModalFrame",
+            Width = 1_090,
+            Height = 760,
+            CornerRadius = new CornerRadius(14),
+            BorderThickness = new Thickness(1),
+            BorderBrush = new SolidColorBrush(Color.FromRgb(73, 91, 91)),
+            Background = new SolidColorBrush(Color.FromRgb(7, 16, 20)),
+            ClipToBounds = true,
+            Effect = new DropShadowEffect
+            {
+                Color = Colors.Black,
+                BlurRadius = 38,
+                ShadowDepth = 12,
+                Opacity = 0.72,
+            },
+        };
+
+        var shell = new Grid();
+        shell.RowDefinitions.Add(new RowDefinition { Height = new GridLength(50) });
+        shell.RowDefinitions.Add(new RowDefinition());
+
+        var titleBar = new Border
+        {
+            Background = new LinearGradientBrush(
+                Color.FromRgb(15, 31, 34),
+                Color.FromRgb(8, 21, 24),
+                0),
+            BorderBrush = new SolidColorBrush(Color.FromRgb(51, 72, 73)),
+            BorderThickness = new Thickness(0, 0, 0, 1),
+            Padding = new Thickness(18, 0, 10, 0),
+        };
+        var titleGrid = new Grid();
+        titleGrid.ColumnDefinitions.Add(new ColumnDefinition());
+        titleGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var title = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        title.Children.Add(new TextBlock
+        {
+            Text = "THE MIDNIGHT CLUB",
+            FontSize = 9,
+            FontWeight = FontWeights.Bold,
+            Foreground = new SolidColorBrush(Color.FromRgb(190, 159, 96)),
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        title.Children.Add(new Border
+        {
+            Width = 1,
+            Height = 18,
+            Margin = new Thickness(14, 0, 14, 0),
+            Background = new SolidColorBrush(Color.FromRgb(60, 79, 79)),
+        });
+        title.Children.Add(new TextBlock
+        {
+            Text = "MIDNIGHT RESERVE",
+            FontFamily = new FontFamily("Georgia"),
+            FontSize = 15,
+            FontWeight = FontWeights.SemiBold,
+            Foreground = new SolidColorBrush(Color.FromRgb(238, 219, 174)),
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        titleGrid.Children.Add(title);
+
+        var chromeClose = new Button
+        {
+            Name = "CasinoVaultChromeCloseButton",
+            Content = "✕",
+            Width = 38,
+            Height = 32,
+            Padding = new Thickness(0),
+            Margin = new Thickness(4, 0, 0, 0),
+            Background = new SolidColorBrush(Color.FromRgb(16, 35, 40)),
+            BorderBrush = new SolidColorBrush(Color.FromRgb(58, 80, 84)),
+            Foreground = new SolidColorBrush(Color.FromRgb(221, 231, 227)),
+            FontSize = 13,
+            Cursor = System.Windows.Input.Cursors.Hand,
+        };
+        Grid.SetColumn(chromeClose, 1);
+        titleGrid.Children.Add(chromeClose);
+        titleBar.Child = titleGrid;
+        shell.Children.Add(titleBar);
+
+        var view = new CasinoVaultView(
             () => CasinoVaultService.Snapshot(progressionController.Profile),
             OpenCasinoVault,
             () => AnimationsEnabled,
-            () => SoundEnabled)
+            () => SoundEnabled,
+            () => CloseCasinoVaultOverlay(refreshUi: true));
+        vaultView = view;
+        chromeClose.Click += (_, _) => view.RequestClose();
+
+        Grid.SetRow(view, 1);
+        shell.Children.Add(view);
+        modal.Child = shell;
+
+        // Keep the dialog visually compact at normal sizes, but shrink it as one unit when the
+        // main window approaches its minimum dimensions. This preserves the authored layout.
+        var scaler = new Viewbox
         {
-            Owner = this,
+            Margin = new Thickness(28),
+            Stretch = Stretch.Uniform,
+            StretchDirection = StretchDirection.DownOnly,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Child = modal,
         };
-        window.ShowDialog();
-        RefreshVaultButton();
-        RefreshProfileButton();
-        RefreshGameUi();
+        overlay.Children.Add(scaler);
+
+        vaultOverlay = overlay;
+        CasinoRoot.Children.Add(overlay);
+        overlay.Focus();
+    }
+
+    private void CloseCasinoVaultOverlay(bool refreshUi)
+    {
+        CasinoVaultView? view = vaultView;
+        Grid? overlay = vaultOverlay;
+        vaultView = null;
+        vaultOverlay = null;
+
+        view?.Dispose();
+        if (overlay is not null)
+        {
+            CasinoRoot.Children.Remove(overlay);
+        }
+
+        if (refreshUi)
+        {
+            RefreshVaultButton();
+            RefreshProfileButton();
+            RefreshGameUi();
+        }
     }
 
     private CasinoVaultOpenResult OpenCasinoVault()
