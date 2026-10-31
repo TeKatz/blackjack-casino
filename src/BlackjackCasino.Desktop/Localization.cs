@@ -115,8 +115,8 @@ internal static class Localization
         DependencyPropertyDescriptor? descriptor = element switch
         {
             TextBlock => DependencyPropertyDescriptor.FromProperty(TextBlock.TextProperty, typeof(TextBlock)),
-            ContentControl => DependencyPropertyDescriptor.FromProperty(ContentControl.ContentProperty, typeof(ContentControl)),
             HeaderedContentControl => DependencyPropertyDescriptor.FromProperty(HeaderedContentControl.HeaderProperty, typeof(HeaderedContentControl)),
+            ContentControl => DependencyPropertyDescriptor.FromProperty(ContentControl.ContentProperty, typeof(ContentControl)),
             _ => null,
         };
         descriptor?.AddValueChanged(element, (_, _) => TranslateElement(element));
