@@ -170,8 +170,10 @@ internal sealed class SolitaireView : UserControl, IDisposable
 
         RenderStock(35, 20);
         RenderPile("Waste", 135, 20, 0, false);
-        string[] foundations = ["F-Clubs", "F-Diamonds", "F-Hearts", "F-Spades"];
-        for (int i = 0; i < 4; i++) RenderPile(foundations[i], 600 + i * 105, 20, 0, false, FoundationLabel(foundations[i]));
+        RenderFoundation("F-Clubs", Suit.Clubs, 600, 20);
+        RenderFoundation("F-Diamonds", Suit.Diamonds, 705, 20);
+        RenderFoundation("F-Hearts", Suit.Hearts, 810, 20);
+        RenderFoundation("F-Spades", Suit.Spades, 915, 20);
         for (int i = 0; i < 7; i++) RenderPile($"T{i}", 45 + i * 145, 178, 31, true);
     }
 
@@ -182,8 +184,10 @@ internal sealed class SolitaireView : UserControl, IDisposable
         AddSectionRule(154, "TABLEAU");
 
         for (int i = 0; i < 4; i++) RenderPile($"Cell{i}", 35 + i * 105, 20, 0, false, $"CELL\n{i + 1}");
-        string[] foundations = ["F-Clubs", "F-Diamonds", "F-Hearts", "F-Spades"];
-        for (int i = 0; i < 4; i++) RenderPile(foundations[i], 650 + i * 105, 20, 0, false, FoundationLabel(foundations[i]));
+        RenderFoundation("F-Clubs", Suit.Clubs, 650, 20);
+        RenderFoundation("F-Diamonds", Suit.Diamonds, 755, 20);
+        RenderFoundation("F-Hearts", Suit.Hearts, 860, 20);
+        RenderFoundation("F-Spades", Suit.Spades, 965, 20);
         for (int i = 0; i < 8; i++) RenderPile($"C{i}", 25 + i * 135, 178, 31, true);
     }
 
@@ -256,6 +260,29 @@ internal sealed class SolitaireView : UserControl, IDisposable
         card.ToolTip = state.Variant == SolitaireVariant.Spider ? $"Deal row · {stock.Count} cards remain" : $"Draw · {stock.Count} cards remain";
         card.MouseLeftButtonUp += (_, _) => { if (SolitaireGame.TryDraw(state)) Changed(); };
         Place(card, x, y);
+    }
+
+    private void RenderFoundation(string id, Suit suit, double x, double y)
+    {
+        IReadOnlyList<SolitaireCardState> pile = SolitaireGame.Pile(state, id);
+        if (pile.Count > 0)
+        {
+            RenderPile(id, x, y, 0, false);
+            return;
+        }
+
+        bool destination = selectedPile is not null;
+        Border ghost = PlayingCardPresentation.Create(new Card(Rank.Ace, suit), faceDown: false, compact: false, cardSetId());
+        ghost.Opacity = destination ? 0.34 : 0.18;
+        ghost.Cursor = Cursors.Hand;
+        ghost.ToolTip = $"{suit} foundation · Ace to King";
+        if (destination)
+        {
+            ghost.BorderBrush = LoungeUi.Ink("#8FB7A9");
+            ghost.BorderThickness = new Thickness(2);
+        }
+        ghost.MouseLeftButtonUp += (_, _) => MoveSelected(id);
+        Place(ghost, x, y);
     }
 
     private void RenderPile(string id, double x, double y, double step, bool stack, string? emptyLabel = null)
@@ -533,15 +560,6 @@ internal sealed class SolitaireView : UserControl, IDisposable
         Canvas.SetTop(element, y);
         board.Children.Add(element);
     }
-
-    private static string FoundationLabel(string id) => id switch
-    {
-        "F-Clubs" => "♣",
-        "F-Diamonds" => "♦",
-        "F-Hearts" => "♥",
-        "F-Spades" => "♠",
-        _ => "FOUNDATION",
-    };
 
     private static string CardLabel(Card card) => $"{RankLabel(card.Rank)}{SuitLabel(card.Suit)}";
 
