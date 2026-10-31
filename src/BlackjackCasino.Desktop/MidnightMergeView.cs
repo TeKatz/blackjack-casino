@@ -15,12 +15,12 @@ internal sealed class MidnightMergeView : UserControl, IDisposable
     private const double CellSize = 64;
     private const double BoardWidth = 526;
     private const double BoardHeight = 456;
+    private const double RestorationWidth = 1400;
 
     private readonly MergeBoard board;
     private readonly Func<bool> sounds;
     private readonly Func<bool> animations;
     private readonly Action back;
-    private readonly Action<UiLanguagePreference> setLanguage;
     private readonly Func<MergeGameState, MergeProfileSyncResult> syncProgression;
     private readonly Func<PlayerProfileState?> profile;
     private readonly object audioOwner = new();
@@ -34,7 +34,6 @@ internal sealed class MidnightMergeView : UserControl, IDisposable
     private Canvas effects = null!;
     private StackPanel orders = null!;
     private StackPanel renovation = null!;
-    private StackPanel challenges = null!;
     private TextBlock feedback = null!;
     private TextBlock selection = null!;
     private TextBlock pointsLabel = null!;
@@ -67,7 +66,7 @@ internal sealed class MidnightMergeView : UserControl, IDisposable
         this.sounds = sounds;
         this.animations = animations;
         this.back = back;
-        this.setLanguage = setLanguage ?? (language => Localization.SetLanguage(language));
+        _ = setLanguage; // Language remains global; Midnight Merge no longer owns a screen-local switch.
         this.syncProgression = syncProgression ?? (_ => MergeProfileSyncResult.None);
         this.profile = profile ?? (() => null);
         KeyboardNavigation.SetTabNavigation(this, KeyboardNavigationMode.Cycle);
@@ -182,23 +181,18 @@ internal sealed class MidnightMergeView : UserControl, IDisposable
         Grid.SetColumn(profileStack, 1);
         header.Children.Add(profileStack);
 
-        var navigation = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-        Button language = ActionButton(Localization.Language == UiLanguagePreference.English ? "Deutsch" : "English", "MergeLanguage");
-        language.Margin = new Thickness(0, 0, 12, 0);
-        language.Click += (_, _) => setLanguage(Localization.Language == UiLanguagePreference.English ? UiLanguagePreference.German : UiLanguagePreference.English);
-        navigation.Children.Add(language);
         Button leave = ActionButton(Localization.T("Merge.Back"), "MergeBack");
+        leave.VerticalAlignment = VerticalAlignment.Center;
         leave.Click += (_, _) => back();
-        navigation.Children.Add(leave);
-        Grid.SetColumn(navigation, 2);
-        header.Children.Add(navigation);
+        Grid.SetColumn(leave, 2);
+        header.Children.Add(leave);
         body.Children.Add(header);
     }
 
     private void BuildRestoration(Grid body)
     {
         renovation = new StackPanel();
-        var panorama = Card(renovation, "#8E7851", new Thickness(14, 10, 14, 10));
+        var panorama = Card(renovation, "#8E7851", new Thickness(14, 9, 14, 9));
         panorama.Margin = new Thickness(0, 4, 0, 8);
         Grid.SetRow(panorama, 1);
         body.Children.Add(panorama);
@@ -260,8 +254,6 @@ internal sealed class MidnightMergeView : UserControl, IDisposable
 
         var side = new Grid();
         side.RowDefinitions.Add(new RowDefinition { Height = new GridLength(28) });
-        side.RowDefinitions.Add(new RowDefinition { Height = new GridLength(285) });
-        side.RowDefinitions.Add(new RowDefinition { Height = new GridLength(28) });
         side.RowDefinitions.Add(new RowDefinition());
 
         var orderTitle = Text(Localization.T("Merge.Orders"), 11, "#D5B879");
@@ -270,21 +262,13 @@ internal sealed class MidnightMergeView : UserControl, IDisposable
         orders = new StackPanel();
         var orderScroll = new ScrollViewer
         {
+            Name = "MergeOrderScroll",
             Content = orders,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
         };
         Grid.SetRow(orderScroll, 1);
         side.Children.Add(orderScroll);
-
-        var challengeTitle = Text(Localization.T("Merge.Challenges"), 11, "#D5B879");
-        challengeTitle.VerticalAlignment = VerticalAlignment.Center;
-        Grid.SetRow(challengeTitle, 2);
-        side.Children.Add(challengeTitle);
-        challenges = new StackPanel();
-        var challengeCard = Card(challenges, "#34565A", new Thickness(10));
-        Grid.SetRow(challengeCard, 3);
-        side.Children.Add(challengeCard);
 
         Grid.SetColumn(side, 2);
         main.Children.Add(side);
@@ -497,7 +481,6 @@ internal sealed class MidnightMergeView : UserControl, IDisposable
         RefreshHighlights();
         RefreshOrders(state);
         RefreshRestoration(state);
-        RefreshChallenges();
     }
 
     private void RefreshProfile()
@@ -541,7 +524,7 @@ internal sealed class MidnightMergeView : UserControl, IDisposable
     {
         foreach (var (position, cell) in cells)
         {
-            var item = state.Items.FirstOrDefault(x => x.Position == position);
+            MergeItemInstance? item = state.Items.FirstOrDefault(x => x.Position == position);
             if (item is null)
             {
                 if (displayed.Remove(position)) cell.Content = null;
@@ -549,7 +532,7 @@ internal sealed class MidnightMergeView : UserControl, IDisposable
             }
             else
             {
-                var definition = MergeCatalog.Default.Items[item.DefinitionId];
+                MergeItemDefinition definition = MergeCatalog.Default.Items[item.DefinitionId];
                 if (!displayed.TryGetValue(position, out Guid previous) || previous != item.Id)
                 {
                     cell.Content = new MergeChipArtwork(definition, 52);
@@ -566,34 +549,94 @@ internal sealed class MidnightMergeView : UserControl, IDisposable
         orders.Children.Clear();
         orderCards.Clear();
         MergeArea activeArea = MergeProgression.ActiveArea(MergeCatalog.Default, state.RenovationPoints);
-        foreach (var active in state.Orders)
+        foreach (MergeOrderInstance active in state.Orders)
         {
-            var definition = MergeCatalog.Default.Orders.Single(x => x.Id == active.DefinitionId);
+            MergeOrderDefinition definition = MergeCatalog.Default.Orders.Single(x => x.Id == active.DefinitionId);
             bool available = MergeOrders.SelectRequired(state, definition) is not null;
             if (!string.Equals(definition.AreaId, activeArea.Id, StringComparison.Ordinal) && !available) continue;
 
             var content = new Grid();
             content.ColumnDefinitions.Add(new ColumnDefinition());
-            content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(118) });
+            content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(124) });
+
             var description = new StackPanel();
-            foreach (var required in definition.Requirements)
-            {
-                int count = state.Items.Count(x => x.DefinitionId == required.DefinitionId);
-                description.Children.Add(Text(Localization.F("Merge.Requirement", required.Count, Localization.T(MergeCatalog.Default.Items[required.DefinitionId].DisplayName)), 11, "#E4D6BB"));
-                description.Children.Add(Text(Localization.F("Merge.Available", count, required.Count), 9, available ? "#9CCEB7" : "#8F9EA3"));
-            }
-            description.Children.Add(Text(Localization.F("Merge.OrderReward", definition.Reward), 10, "#CCB67F"));
+            foreach (MergeRequirement required in definition.Requirements)
+                description.Children.Add(BuildRequirementRow(definition, required, state));
+            var reward = Text(Localization.F("Merge.OrderReward", definition.Reward), 10, "#CCB67F");
+            reward.Margin = new Thickness(4, 4, 0, 0);
+            description.Children.Add(reward);
             content.Children.Add(description);
+
             Button fulfill = ActionButton(Localization.T(available ? "Merge.Deliver" : "Merge.Waiting"), "MergeOrder_" + definition.Id.Replace('-', '_'));
-            fulfill.Opacity = available ? 1 : .6;
+            fulfill.Opacity = available ? 1 : .58;
+            fulfill.Margin = new Thickness(8, 0, 0, 0);
             fulfill.Click += (_, _) => Execute(() => board.TryComplete(active.Id), fulfill, definition.Id);
             Grid.SetColumn(fulfill, 1);
             content.Children.Add(fulfill);
-            var card = Card(content, available ? "#8EAA80" : "#34494D", new Thickness(9));
-            card.Margin = new Thickness(0, 0, 5, 7);
+
+            var card = Card(content, available ? "#8EAA80" : "#34494D", new Thickness(8));
+            card.Margin = new Thickness(0, 0, 5, 8);
             orderCards[definition.Id] = card;
             orders.Children.Add(card);
         }
+    }
+
+    private Border BuildRequirementRow(MergeOrderDefinition order, MergeRequirement required, MergeGameState state)
+    {
+        MergeItemDefinition item = MergeCatalog.Default.Items[required.DefinitionId];
+        int count = state.Items.Count(x => x.DefinitionId == required.DefinitionId);
+        int shown = Math.Min(count, required.Count);
+        bool complete = count >= required.Count;
+        bool partial = count > 0 && !complete;
+        string accent = complete ? "#86C6A1" : partial ? "#D8B46C" : "#52666A";
+        string countColor = complete ? "#9FD7B6" : partial ? "#E4C57F" : "#8F9EA3";
+
+        var row = new Grid { Margin = new Thickness(0, 0, 0, 4), MinHeight = 48 };
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(48) });
+        row.ColumnDefinitions.Add(new ColumnDefinition());
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(58) });
+
+        var artwork = new MergeChipArtwork(item, 38)
+        {
+            Name = $"MergeOrderItem_{order.Id.Replace('-', '_')}_{required.DefinitionId.Replace('-', '_')}",
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        AutomationProperties.SetName(artwork, Localization.T(item.DisplayName));
+        var artFrame = new Border
+        {
+            Width = 44,
+            Height = 44,
+            CornerRadius = new CornerRadius(8),
+            Background = Ink("#172A2E"),
+            BorderBrush = Ink(accent),
+            BorderThickness = new Thickness(1.25),
+            Child = artwork,
+        };
+        row.Children.Add(artFrame);
+
+        var labels = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 6, 0) };
+        labels.Children.Add(Text(Localization.T(item.DisplayName), 11, complete ? "#E6DEC9" : "#D4CBB7"));
+        labels.Children.Add(Text(Localization.F("Merge.Requirement", required.Count, Localization.T(item.DisplayName)), 8, "#74898C"));
+        Grid.SetColumn(labels, 1);
+        row.Children.Add(labels);
+
+        var countText = Text(Localization.F("Merge.OrderCount", shown, required.Count), 11, countColor);
+        countText.FontWeight = FontWeights.SemiBold;
+        countText.HorizontalAlignment = HorizontalAlignment.Right;
+        countText.VerticalAlignment = VerticalAlignment.Center;
+        countText.TextAlignment = TextAlignment.Right;
+        Grid.SetColumn(countText, 2);
+        row.Children.Add(countText);
+
+        return new Border
+        {
+            Background = Ink(complete ? "#172B29" : partial ? "#2A2A24" : "#142328"),
+            BorderBrush = Ink(accent),
+            BorderThickness = new Thickness(0, 0, 0, 1),
+            Padding = new Thickness(2, 2, 4, 3),
+            Child = row,
+        };
     }
 
     private void RefreshRestoration(MergeGameState state)
@@ -603,8 +646,9 @@ internal sealed class MidnightMergeView : UserControl, IDisposable
         MergeArea area = MergeProgression.ActiveArea(MergeCatalog.Default, state.RenovationPoints);
         int areaIndex = Enumerable.Range(0, areas.Count).First(i => string.Equals(areas[i].Id, area.Id, StringComparison.Ordinal));
         MergeMilestone current = MergeProgression.Current(area, state.RenovationPoints);
+        MergeMilestone? next = MergeProgression.Next(area, state.RenovationPoints);
 
-        var heading = new Grid { Margin = new Thickness(2, 0, 2, 4) };
+        var heading = new Grid { Margin = new Thickness(2, 0, 2, 3) };
         heading.ColumnDefinitions.Add(new ColumnDefinition());
         heading.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         var leftHeading = new StackPanel();
@@ -617,15 +661,47 @@ internal sealed class MidnightMergeView : UserControl, IDisposable
         Grid.SetColumn(stage, 1);
         heading.Children.Add(stage);
         renovation.Children.Add(heading);
-        renovation.Children.Add(area.Id == "bar"
-            ? new MergeBarArtwork(state.RenovationPoints, 1400, 184)
-            : new MergeLobbyArtwork(state.RenovationPoints, 1400, 184));
 
-        var track = new Grid { Height = 6, Margin = new Thickness(2, 7, 2, 3), Background = Ink("#2C3D41") };
+        renovation.Children.Add(area.Id == "bar"
+            ? new MergeBarArtwork(state.RenovationPoints, RestorationWidth, 150)
+            : new MergeLobbyArtwork(state.RenovationPoints, RestorationWidth, 150));
+
+        var upgrade = new Grid { Margin = new Thickness(2, 5, 2, 2) };
+        upgrade.ColumnDefinitions.Add(new ColumnDefinition());
+        upgrade.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        if (next is not null)
+        {
+            var nextStack = new StackPanel();
+            var nextTitle = Text(Localization.T("Merge.NextUpgrade"), 8, "#7FA398");
+            nextStack.Children.Add(nextTitle);
+            TextBlock remaining = Text(Localization.F("Merge.NextUpgradeRemaining", MergeProgression.PointsUntilNext(area, state.RenovationPoints), Localization.T(next.DisplayName)), 11, "#E5D2A9");
+            remaining.Name = "MergeNextUpgrade";
+            remaining.FontWeight = FontWeights.SemiBold;
+            nextStack.Children.Add(remaining);
+            upgrade.Children.Add(nextStack);
+
+            TextBlock target = Text(Localization.F("Merge.NextUpgradeTarget", state.RenovationPoints, next.Points), 11, "#D8B46C");
+            target.VerticalAlignment = VerticalAlignment.Bottom;
+            target.TextAlignment = TextAlignment.Right;
+            Grid.SetColumn(target, 1);
+            upgrade.Children.Add(target);
+        }
+        else
+        {
+            TextBlock complete = Text(Localization.T("Merge.AreaComplete"), 10, "#9CCEB7");
+            complete.Name = "MergeNextUpgrade";
+            complete.FontWeight = FontWeights.SemiBold;
+            upgrade.Children.Add(complete);
+        }
+        renovation.Children.Add(upgrade);
+
+        var track = new Grid { Height = 6, Margin = new Thickness(2, 2, 2, 3), Background = Ink("#2C3D41") };
         track.Children.Add(new Border
         {
-            Background = Ink("#D8B46C"), HorizontalAlignment = HorizontalAlignment.Left,
-            Width = 1400 * MergeProgression.AreaProgress(area, state.RenovationPoints), CornerRadius = new CornerRadius(3),
+            Background = Ink(next is null ? "#86C6A1" : "#D8B46C"),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Width = RestorationWidth * MergeProgression.UpgradeProgress(area, state.RenovationPoints),
+            CornerRadius = new CornerRadius(3),
         });
         renovation.Children.Add(track);
 
@@ -635,7 +711,7 @@ internal sealed class MidnightMergeView : UserControl, IDisposable
         {
             MergeMilestone milestone = area.Milestones[i];
             bool unlocked = state.RenovationPoints >= milestone.Points;
-            var label = Text(Localization.T(milestone.DisplayName), 9, unlocked ? "#E3C884" : "#758489");
+            var label = Text(Localization.T(milestone.DisplayName), 8, unlocked ? "#E3C884" : "#758489");
             label.TextAlignment = i == 0 ? TextAlignment.Left : i == area.Milestones.Count - 1 ? TextAlignment.Right : TextAlignment.Center;
             Grid.SetColumn(label, i);
             milestones.Children.Add(label);
@@ -643,61 +719,9 @@ internal sealed class MidnightMergeView : UserControl, IDisposable
         renovation.Children.Add(milestones);
     }
 
-    private void RefreshChallenges()
-    {
-        challenges.Children.Clear();
-        PlayerProfileState? value = profile();
-        if (value is null)
-        {
-            challenges.Children.Add(Text(Localization.T("Merge.ProfileUnavailable"), 10));
-            return;
-        }
-
-        var claimed = value.ClaimedChallengeIds.ToHashSet(StringComparer.Ordinal);
-        var candidates = ChallengeCatalog.For(ChallengeCategory.MidnightMerge)
-            .Where(x => !claimed.Contains(x.Id))
-            .Select(x => new { Challenge = x, Progress = ChallengeCatalog.Progress(value, x) })
-            .OrderBy(x => x.Progress >= x.Challenge.Goal ? 0 : 1)
-            .ThenBy(x => Math.Max(0, x.Challenge.Goal - x.Progress))
-            .Take(2)
-            .ToArray();
-
-        if (candidates.Length == 0)
-        {
-            challenges.Children.Add(Text(Localization.T("Merge.AllChallengesComplete"), 10, "#9CCEB7"));
-            return;
-        }
-
-        foreach (var entry in candidates)
-        {
-            bool complete = entry.Progress >= entry.Challenge.Goal;
-            var row = new Grid { Margin = new Thickness(0, 0, 0, 7) };
-            row.ColumnDefinitions.Add(new ColumnDefinition());
-            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(145) });
-            var labels = new StackPanel();
-            labels.Children.Add(Text(entry.Challenge.Name, 10, complete ? "#E7D08F" : "#D9D0BC"));
-            labels.Children.Add(Text(entry.Challenge.Description, 9, "#8F9EA3"));
-            row.Children.Add(labels);
-            var progressStack = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-            progressStack.Children.Add(Text(complete ? Localization.T("Merge.ChallengeReady") : Localization.F("Merge.ChallengeProgress", Math.Min(entry.Progress, entry.Challenge.Goal), entry.Challenge.Goal), 9, complete ? "#9CCEB7" : "#AAB7B8"));
-            var bar = new Grid { Height = 5, Background = Ink("#263C40"), Margin = new Thickness(0, 5, 0, 0) };
-            bar.Children.Add(new Border
-            {
-                Background = Ink(complete ? "#D8B46C" : "#72A990"),
-                HorizontalAlignment = HorizontalAlignment.Left,
-                Width = 135 * Math.Min(1, (double)(entry.Progress / Math.Max(1, entry.Challenge.Goal))),
-                CornerRadius = new CornerRadius(2),
-            });
-            progressStack.Children.Add(bar);
-            Grid.SetColumn(progressStack, 1);
-            row.Children.Add(progressStack);
-            challenges.Children.Add(row);
-        }
-    }
-
     private void RefreshHighlights()
     {
-        var state = board.Snapshot;
+        MergeGameState state = board.Snapshot;
         foreach (var (position, cell) in cells)
         {
             bool own = selected is { } id && state.Items.Any(x => x.Id == id && x.Position == position);
