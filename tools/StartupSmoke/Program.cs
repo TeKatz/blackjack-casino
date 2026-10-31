@@ -174,6 +174,7 @@ internal static class Program
                 await MidnightMergeSmoke.Run(window, output);
                 await SudokuSmoke.Run(window, output);
                 await SolitaireSmoke.Run(window, output);
+                await MemorySmoke.Run(window, output);
                 await KniffelSmoke.Run(window, output, profile);
                 await KniffelCasinoSmoke.Run(window, output, profile);
                 await KniffelFeedbackSmoke.Run(window, output);
@@ -181,7 +182,7 @@ internal static class Program
                 await VaultSmoke.Run(window, output);
 
                 File.WriteAllText(Path.Combine(output, "result.txt"),
-                    "PASS: EN/DE live localization; Nine Lives presentation; Chill Lounge Sudoku; Midnight Merge foundation; Midnight Solitaire navigation and selection feedback; Midnight Dice; Casino Empire; and in-app Casino Vault acceptance all passed.");
+                    "PASS: EN/DE live localization; Nine Lives presentation; Chill Lounge Sudoku, Solitaire and Memory; Midnight Merge foundation; Midnight Dice; Casino Empire; and in-app Casino Vault acceptance all passed.");
             }
             catch (Exception ex)
             {
