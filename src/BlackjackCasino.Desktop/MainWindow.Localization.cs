@@ -5,6 +5,14 @@ namespace BlackjackCasino.Desktop;
 
 public partial class MainWindow
 {
+    private sealed record LanguageOption(UiLanguagePreference Language, string DisplayName);
+
+    private static readonly LanguageOption[] LanguageOptions =
+    [
+        new(UiLanguagePreference.English, "English"),
+        new(UiLanguagePreference.German, "Deutsch"),
+    ];
+
     private bool languageUiInitialized;
     private bool suppressLanguageSelection;
     private TextBlock? languageLabel;
@@ -46,10 +54,11 @@ public partial class MainWindow
             languageComboBox = new ComboBox
             {
                 Name = "LanguageComboBox",
-                SelectedIndex = preferences.Language == UiLanguagePreference.German ? 1 : 0,
+                ItemsSource = LanguageOptions,
+                DisplayMemberPath = nameof(LanguageOption.DisplayName),
+                SelectedValuePath = nameof(LanguageOption.Language),
+                SelectedValue = preferences.Language,
             };
-            languageComboBox.Items.Add(new ComboBoxItem { Content = "English", Tag = UiLanguagePreference.English });
-            languageComboBox.Items.Add(new ComboBoxItem { Content = "Deutsch", Tag = UiLanguagePreference.German });
             languageComboBox.SelectionChanged += LanguageComboBox_SelectionChanged;
             Grid.SetColumn(languageComboBox, 1);
             row.Children.Add(languageComboBox);
@@ -66,7 +75,7 @@ public partial class MainWindow
 
     private void LanguageComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (suppressLanguageSelection || !languageUiInitialized || languageComboBox?.SelectedItem is not ComboBoxItem { Tag: UiLanguagePreference requested })
+        if (suppressLanguageSelection || !languageUiInitialized || languageComboBox?.SelectedValue is not UiLanguagePreference requested)
             return;
 
         if (preferences.Language == requested)
@@ -90,7 +99,7 @@ public partial class MainWindow
         if (languageComboBox is not null)
         {
             suppressLanguageSelection = true;
-            languageComboBox.SelectedIndex = Localization.Language == UiLanguagePreference.German ? 1 : 0;
+            languageComboBox.SelectedValue = Localization.Language;
             suppressLanguageSelection = false;
         }
 
