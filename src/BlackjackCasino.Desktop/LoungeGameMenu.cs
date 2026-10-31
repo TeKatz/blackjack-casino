@@ -8,15 +8,19 @@ namespace BlackjackCasino.Desktop;
 internal sealed class LoungeGameMenu : UserControl
 {
     private readonly IReadOnlyList<LoungeGame> baseGames;
+    private readonly Action<string?, Action?>? setShellNavigation;
 
-    internal LoungeGameMenu(IEnumerable<LoungeGame> games)
+    internal LoungeGameMenu(IEnumerable<LoungeGame> games, Action<string?, Action?>? setShellNavigation = null)
     {
         baseGames = games?.ToArray() ?? throw new ArgumentNullException(nameof(games));
+        this.setShellNavigation = setShellNavigation;
         ShowMenu();
     }
 
     private void ShowMenu()
     {
+        setShellNavigation?.Invoke(null, null);
+
         IReadOnlyList<LoungeHostedGame> hosted = LoungeHostedGameRegistry.Snapshot;
         IEnumerable<LoungeGame> combined = baseGames.Concat(hosted.Select(module => module.Definition with
         {
@@ -116,6 +120,11 @@ internal sealed class LoungeGameMenu : UserControl
 
     private void OpenHosted(LoungeHostedGame module)
     {
+        if (module.UseShellBackNavigation)
+            setShellNavigation?.Invoke("← GAMES", ShowMenu);
+        else
+            setShellNavigation?.Invoke(null, null);
+
         Content = module.CreateContent(ShowMenu);
     }
 }
