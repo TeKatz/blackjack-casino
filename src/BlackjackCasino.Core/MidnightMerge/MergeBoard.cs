@@ -16,7 +16,13 @@ public sealed class MergeBoard
     }
 
     public MergeGameState Snapshot { get { lock (gate) return Copy(state); } }
-    public bool CanSpawn(string producerId) { lock (gate) return catalog.Producers.ContainsKey(producerId) && state.Items.Count < MergeGameState.Capacity; }
+    public bool CanSpawn(string producerId)
+    {
+        lock (gate)
+            return catalog.Producers.TryGetValue(producerId, out var producer)
+                && state.RenovationPoints >= producer.UnlockPoints
+                && state.Items.Count < MergeGameState.Capacity;
+    }
     public bool CanMove(Guid itemId, int target) { lock (gate) return MergeRules.IsPosition(target) && state.Items.Any(x => x.Id == itemId) && state.Items.All(x => x.Position != target); }
     public bool CanMerge(Guid itemId, int target)
     {
@@ -33,12 +39,20 @@ public sealed class MergeBoard
         lock (gate)
         {
             if (!catalog.Producers.TryGetValue(producerId, out var producer)) return new(MergeOutcome.UnknownDefinition);
+            if (state.RenovationPoints < producer.UnlockPoints) return new(MergeOutcome.Locked);
             int position = Enumerable.Range(0, MergeGameState.Capacity).FirstOrDefault(p => state.Items.All(i => i.Position != p), -1);
             if (position < 0) return new(MergeOutcome.BoardFull);
             var next = Copy(state);
             next.Items.Add(new(Guid.NewGuid(), producer.OutputDefinitionId, position));
             int index = next.Producers.FindIndex(x => x.DefinitionId == producerId);
-            next.Producers[index] = next.Producers[index] with { SpawnCount = checked(next.Producers[index].SpawnCount + 1) };
+            if (index < 0)
+            {
+                next.Producers.Add(new(producerId, 1));
+            }
+            else
+            {
+                next.Producers[index] = next.Producers[index] with { SpawnCount = checked(next.Producers[index].SpawnCount + 1) };
+            }
             next = next with { HighestTierCreated = Math.Max(next.HighestTierCreated, catalog.Items[producer.OutputDefinitionId].Tier) };
             Commit(next);
             return new(MergeOutcome.Spawned, position, DefinitionId: producer.OutputDefinitionId);

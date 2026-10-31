@@ -46,10 +46,10 @@ public sealed class MidnightMergeTests
     [Fact]
     public void DifferentLinesAndSelfMergeAreRejectedByCore()
     {
-        var other = MergeCatalog.Default.Items["chip-1"] with { Id = "drink-1", LineId = "drinks", MergeResult = null };
+        var other = MergeCatalog.Default.Items["chip-1"] with { Id = "decor-1", LineId = "decorations", MergeResult = null };
         var catalog = new MergeCatalog(MergeCatalog.Default.Items.Values.Append(other), MergeCatalog.Default.Producers.Values,
             MergeCatalog.Default.Orders, MergeCatalog.Default.Areas);
-        var a = Chip(1, 0); var b = new MergeItemInstance(Guid.NewGuid(), "drink-1", 1);
+        var a = Chip(1, 0); var b = new MergeItemInstance(Guid.NewGuid(), "decor-1", 1);
         var board = new MergeBoard(new() { Items = [a, b] }, catalog: catalog);
         Assert.Equal(MergeOutcome.Incompatible, board.TryMerge(a.Id, 1).Outcome);
         Assert.Equal(MergeOutcome.Incompatible, board.TryMerge(a.Id, 0).Outcome);
@@ -65,9 +65,40 @@ public sealed class MidnightMergeTests
         Assert.Equal(42, board.Snapshot.Items.Select(x => x.Position).Distinct().Count());
         Assert.Equal(42, board.Snapshot.Items.Select(x => x.Id).Distinct().Count());
         Assert.All(board.Snapshot.Items, x => Assert.Equal("chip-1", x.DefinitionId));
-        Assert.Equal(42, board.Snapshot.Producers.Single().SpawnCount);
+        Assert.Equal(42, board.Snapshot.Producers.Single(x => x.DefinitionId == "chip-case").SpawnCount);
         Assert.False(board.CanSpawn("chip-case"));
         Assert.Equal(MergeOutcome.BoardFull, board.TrySpawn().Outcome);
+    }
+
+    [Fact]
+    public void BarSupplyUnlocksAtLobbyCompletionAndCreatesItsOwnMergeLine()
+    {
+        var locked = new MergeBoard(new() { RenovationPoints = 99 });
+        Assert.False(locked.CanSpawn("bar-cart"));
+        Assert.Equal(MergeOutcome.Locked, locked.TrySpawn("bar-cart").Outcome);
+
+        var unlocked = new MergeBoard(new() { RenovationPoints = 100 });
+        Assert.True(unlocked.CanSpawn("bar-cart"));
+        Assert.True(unlocked.TrySpawn("bar-cart").Success);
+        Assert.True(unlocked.TrySpawn("bar-cart").Success);
+        MergeItemInstance source = unlocked.Snapshot.Items.Single(x => x.Position == 0);
+        Assert.True(unlocked.TryMerge(source.Id, 1).Success);
+        Assert.Equal("drink-2", unlocked.Snapshot.Items.Single().DefinitionId);
+        Assert.Equal(2, MergeCatalog.Default.Items["drink-2"].Tier);
+        Assert.Equal(8, MergeCatalog.Default.Items["drink-8"].MaxTier);
+    }
+
+    [Fact]
+    public void LobbyFlowsIntoLongerBarAreaWithoutMovingOldThresholds()
+    {
+        MergeCatalog catalog = MergeCatalog.Default;
+        Assert.Equal("lobby", MergeProgression.ActiveArea(catalog, 99).Id);
+        Assert.Equal("bar", MergeProgression.ActiveArea(catalog, 100).Id);
+        MergeArea bar = catalog.Areas.Single(x => x.Id == "bar");
+        Assert.Equal(new long[] { 100, 500, 1200, 2500 }, bar.Milestones.Select(x => x.Points));
+        Assert.Equal(0, MergeProgression.AreaProgress(bar, 100));
+        Assert.Equal(1, MergeProgression.AreaProgress(bar, 2500));
+        Assert.Contains(catalog.Orders, x => x.Id == "bar-midnight-reserve" && x.Reward == 900);
     }
 
     [Fact]
@@ -107,10 +138,11 @@ public sealed class MidnightMergeTests
         result = board.TryComplete(board.Snapshot.Orders.Single(x => x.DefinitionId == "violet-table").Id);
         Assert.Equal(new[] { "lobby/lights" }, result.Milestones);
         result = board.TryComplete(board.Snapshot.Orders.Single(x => x.DefinitionId == "gold-table").Id);
-        Assert.Equal(new[] { "lobby/ready" }, result.Milestones);
+        Assert.Equal(new[] { "lobby/ready", "bar/closed" }, result.Milestones);
         var state = board.Snapshot;
         Assert.Equal(170, state.RenovationPoints);
         Assert.Equal("ready", MergeProgression.Current(MergeCatalog.Default.Areas[0], state.RenovationPoints).Id);
+        Assert.Equal("bar", MergeProgression.ActiveArea(MergeCatalog.Default, state.RenovationPoints).Id);
         Assert.Equal(JsonSerializer.Serialize(state), JsonSerializer.Serialize(MergeGameState.Normalize(state)));
     }
 
@@ -182,7 +214,7 @@ public sealed class MidnightMergeTests
     }
 
     [Fact]
-    public void EveryMaxTierChipHasAnOrderSoAFullBoardCanRecover()
+    public void EveryMaxTierItemHasAnOrderSoAFullBoardCanRecover()
     {
         foreach (var item in MergeCatalog.Default.Items.Values.Where(x => x.MergeResult is null))
         {

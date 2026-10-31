@@ -5,7 +5,7 @@ using BlackjackCasino.Core.MidnightMerge;
 
 namespace BlackjackCasino.Desktop;
 
-/// <summary>Original vector chip artwork, shared by the board, order cards and restoration scene.</summary>
+/// <summary>Original vector merge-item artwork shared by the board, order cards and restoration scenes.</summary>
 internal sealed class MergeChipArtwork : FrameworkElement
 {
     private readonly MergeItemDefinition definition;
@@ -17,6 +17,13 @@ internal sealed class MergeChipArtwork : FrameworkElement
         base.OnRender(dc);
         double scale = ActualWidth / 64;
         dc.PushTransform(new ScaleTransform(scale, scale));
+        if (definition.LineId == "bar-drinks")
+        {
+            DrawBarItem(dc);
+            dc.Pop();
+            return;
+        }
+
         var ink = MidnightMergeView.Ink(definition.Visual.Color);
         for (int layer = definition.Visual.StackCount - 1; layer >= 0; layer--)
         {
@@ -37,6 +44,54 @@ internal sealed class MergeChipArtwork : FrameworkElement
             new Typeface("Georgia"), 16, ink, VisualTreeHelper.GetDpi(this).PixelsPerDip);
         dc.DrawText(text, new Point(32 - text.Width / 2, 28 - text.Height / 2));
         dc.Pop();
+    }
+
+    private void DrawBarItem(DrawingContext dc)
+    {
+        Brush accent = MidnightMergeView.Ink(definition.Visual.Color);
+        Pen gold = new(MidnightMergeView.Ink("#E8D7A8"), 1.4);
+        Brush glass = new SolidColorBrush(Color.FromArgb(110, 214, 235, 232));
+        int tier = definition.Tier;
+
+        dc.DrawEllipse(new SolidColorBrush(Color.FromArgb(55, 0, 0, 0)), null, new Point(32, 54), 22, 5);
+        if (tier <= 2)
+        {
+            dc.DrawRoundedRectangle(glass, gold, new Rect(17, 15, 30, 38), 5, 5);
+            dc.DrawRectangle(accent, null, new Rect(19, tier == 1 ? 42 : 31, 26, tier == 1 ? 8 : 19));
+            if (tier == 2)
+            {
+                dc.DrawRectangle(MidnightMergeView.Ink("#EAF5F2"), new Pen(MidnightMergeView.Ink("#B5D6D1"), .7), new Rect(22, 24, 8, 8));
+                dc.DrawRectangle(MidnightMergeView.Ink("#EAF5F2"), new Pen(MidnightMergeView.Ink("#B5D6D1"), .7), new Rect(33, 27, 8, 8));
+            }
+        }
+        else if (tier <= 5)
+        {
+            var bowl = new StreamGeometry();
+            using (StreamGeometryContext ctx = bowl.Open())
+            {
+                ctx.BeginFigure(new Point(12, 16), true, true);
+                ctx.LineTo(new Point(52, 16), true, false);
+                ctx.LineTo(new Point(32, 38), true, false);
+            }
+            dc.DrawGeometry(accent, gold, bowl);
+            dc.DrawLine(gold, new Point(32, 38), new Point(32, 51));
+            dc.DrawLine(new Pen(MidnightMergeView.Ink("#E8D7A8"), 2), new Point(20, 52), new Point(44, 52));
+            if (tier >= 4) dc.DrawEllipse(MidnightMergeView.Ink("#A5CE91"), null, new Point(44, 18), 5, 3);
+            if (tier >= 5) dc.DrawEllipse(MidnightMergeView.Ink("#E7C970"), null, new Point(37, 24), 3, 3);
+        }
+        else
+        {
+            dc.DrawRoundedRectangle(accent, gold, new Rect(20, 20, 24, 34), 5, 5);
+            dc.DrawRoundedRectangle(MidnightMergeView.Ink("#24383A"), gold, new Rect(26, 8, 12, 17), 3, 3);
+            dc.DrawRectangle(MidnightMergeView.Ink("#F2E2C5"), null, new Rect(23, 34, 18, 10));
+            if (tier >= 7) dc.DrawLine(new Pen(MidnightMergeView.Ink("#D8B46C"), 2), new Point(23, 30), new Point(41, 30));
+            if (tier >= 8) dc.DrawEllipse(MidnightMergeView.Ink("#F5E6AA"), new Pen(MidnightMergeView.Ink("#6E5631"), 1), new Point(32, 39), 5, 5);
+        }
+
+        var text = new FormattedText(definition.Visual.Mark, CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
+            new Typeface("Georgia"), definition.Visual.Mark.Length > 1 ? 9 : 12, MidnightMergeView.Ink("#132327"), VisualTreeHelper.GetDpi(this).PixelsPerDip);
+        dc.DrawRoundedRectangle(MidnightMergeView.Ink("#F0DFC0"), null, new Rect(25, 45, 14, 12), 4, 4);
+        dc.DrawText(text, new Point(32 - text.Width / 2, 51 - text.Height / 2));
     }
 }
 
@@ -81,7 +136,6 @@ internal sealed class MergeLobbyArtwork : FrameworkElement
         dc.DrawRectangle(wallDark, null, new Rect(18, 16, DesignWidth - 36, 24));
         dc.DrawRectangle(floor, null, new Rect(18, 160, DesignWidth - 36, 57));
 
-        // Repeating art-deco wall panels and columns make the panorama read as a real room.
         for (int i = 0; i < 7; i++)
         {
             double panelX = 42 + i * 198;
@@ -98,7 +152,6 @@ internal sealed class MergeLobbyArtwork : FrameworkElement
             dc.DrawRectangle(gold, null, new Rect(x - 4, 160, 21, 5));
         }
 
-        // Central reception desk becomes the focal point at the final restoration stage.
         Brush desk = MidnightMergeView.Ink(ready ? "#673845" : cleaned ? "#3B3635" : "#333431");
         dc.DrawRoundedRectangle(desk, new Pen(gold, 1.5), new Rect(545, 115, 310, 72), 8, 8);
         dc.DrawRectangle(MidnightMergeView.Ink(ready ? "#522C38" : "#2C3030"), null, new Rect(565, 133, 270, 39));
@@ -110,7 +163,6 @@ internal sealed class MergeLobbyArtwork : FrameworkElement
             dc.DrawText(label, new Point(700 - label.Width / 2, 141 - label.Height / 2));
         }
 
-        // Chandelier / restored lighting.
         dc.DrawLine(new Pen(gold, 2), new Point(700, 18), new Point(700, 57));
         dc.DrawEllipse(MidnightMergeView.Ink(lit ? "#F1D798" : "#4A473E"), new Pen(gold, 1), new Point(700, 61), 65, 9);
         for (int i = -2; i <= 2; i++)
@@ -132,7 +184,6 @@ internal sealed class MergeLobbyArtwork : FrameworkElement
             dc.DrawEllipse(glow, null, new Point(700, 96), 235, 105);
         }
 
-        // Lounge furniture arrives with the final stage.
         if (ready)
         {
             DrawSofa(dc, 270, 147, gold);
@@ -148,7 +199,6 @@ internal sealed class MergeLobbyArtwork : FrameworkElement
             dc.DrawLine(new Pen(gold, 1), new Point(54, 204), new Point(1346, 204));
         }
 
-        // Dust, debris and dimness disappear as the very first restoration milestone is reached.
         if (!cleaned)
         {
             for (int i = 0; i < 15; i++)
@@ -181,5 +231,122 @@ internal sealed class MergeLobbyArtwork : FrameworkElement
             double dx = i * 8;
             dc.DrawEllipse(MidnightMergeView.Ink("#426451"), null, new Point(x + dx, y + 17 - Math.Abs(i) * 5), 12, 25);
         }
+    }
+}
+
+/// <summary>Second restoration panorama: the Midnight Club bar from shuttered room to a fully stocked night bar.</summary>
+internal sealed class MergeBarArtwork : FrameworkElement
+{
+    private const double DesignWidth = 1400;
+    private const double DesignHeight = 235;
+    private readonly long points;
+
+    internal MergeBarArtwork(long points, double width = DesignWidth, double height = DesignHeight)
+    {
+        this.points = Math.Max(0, points);
+        Width = width;
+        Height = height;
+        IsHitTestVisible = false;
+    }
+
+    protected override void OnRender(DrawingContext dc)
+    {
+        base.OnRender(dc);
+        if (ActualWidth <= 0 || ActualHeight <= 0) return;
+        double scale = Math.Min(ActualWidth / DesignWidth, ActualHeight / DesignHeight);
+        double offsetX = (ActualWidth - DesignWidth * scale) / 2;
+        double offsetY = (ActualHeight - DesignHeight * scale) / 2;
+        dc.PushTransform(new TranslateTransform(offsetX, offsetY));
+        dc.PushTransform(new ScaleTransform(scale, scale));
+
+        bool cleaned = points >= 500;
+        bool stocked = points >= 1200;
+        bool open = points >= 2500;
+        Brush gold = MidnightMergeView.Ink(cleaned ? "#D8B46C" : "#6F6550");
+        Brush wall = MidnightMergeView.Ink(cleaned ? "#172D31" : "#292B2A");
+        Brush wood = MidnightMergeView.Ink(cleaned ? "#633C36" : "#3C3733");
+
+        dc.DrawRoundedRectangle(MidnightMergeView.Ink("#0D171C"), new Pen(gold, 1.5), new Rect(1, 1, DesignWidth - 2, DesignHeight - 2), 12, 12);
+        dc.DrawRectangle(wall, null, new Rect(18, 16, DesignWidth - 36, 145));
+        dc.DrawRectangle(MidnightMergeView.Ink(cleaned ? "#102326" : "#202321"), null, new Rect(18, 16, DesignWidth - 36, 25));
+        dc.DrawRectangle(MidnightMergeView.Ink(cleaned ? "#1A2829" : "#252622"), null, new Rect(18, 161, DesignWidth - 36, 56));
+
+        for (int section = 0; section < 5; section++)
+        {
+            double x = 150 + section * 224;
+            dc.DrawRoundedRectangle(MidnightMergeView.Ink(cleaned ? "#1D3A3D" : "#31322F"), new Pen(gold, 1), new Rect(x, 49, 180, 86), 5, 5);
+            dc.DrawLine(new Pen(gold, 1), new Point(x + 12, 78), new Point(x + 168, 78));
+            dc.DrawLine(new Pen(gold, 1), new Point(x + 12, 106), new Point(x + 168, 106));
+            if (stocked)
+            {
+                for (int shelf = 0; shelf < 3; shelf++)
+                    for (int bottle = 0; bottle < 6; bottle++)
+                        DrawBottle(dc, x + 21 + bottle * 24, 70 + shelf * 28, bottle + shelf * 2);
+            }
+        }
+
+        dc.DrawRoundedRectangle(wood, new Pen(gold, 1.5), new Rect(100, 128, 1200, 63), 9, 9);
+        dc.DrawRectangle(MidnightMergeView.Ink(cleaned ? "#4F302F" : "#34312F"), null, new Rect(125, 144, 1150, 29));
+        dc.DrawLine(new Pen(gold, 2), new Point(100, 128), new Point(1300, 128));
+
+        if (cleaned)
+        {
+            for (int i = 0; i < 6; i++)
+            {
+                double x = 210 + i * 196;
+                dc.DrawLine(new Pen(gold, 1), new Point(x, 18), new Point(x, 48));
+                dc.DrawEllipse(MidnightMergeView.Ink(stocked ? "#FFE1A0" : "#75694D"), new Pen(gold, 1), new Point(x, 53), 15, 7);
+            }
+        }
+
+        if (open)
+        {
+            for (int i = 0; i < 8; i++)
+            {
+                double x = 205 + i * 142;
+                dc.DrawEllipse(MidnightMergeView.Ink(i % 2 == 0 ? "#643B48" : "#35595B"), new Pen(gold, 1), new Point(x, 193), 25, 9);
+                dc.DrawLine(new Pen(gold, 2), new Point(x, 201), new Point(x, 215));
+            }
+            var sign = new FormattedText("MIDNIGHT BAR", CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
+                new Typeface("Georgia"), 21, MidnightMergeView.Ink("#F4D98D"), VisualTreeHelper.GetDpi(this).PixelsPerDip);
+            dc.DrawRoundedRectangle(MidnightMergeView.Ink("#20383A"), new Pen(gold, 1), new Rect(545, 44, 310, 50), 9, 9);
+            dc.DrawText(sign, new Point(700 - sign.Width / 2, 69 - sign.Height / 2));
+            DrawCocktail(dc, 80, 145, gold);
+            DrawCocktail(dc, 1320, 145, gold);
+        }
+        else if (!cleaned)
+        {
+            for (int i = 0; i < 12; i++)
+            {
+                double x = 70 + i * 112;
+                dc.DrawRoundedRectangle(MidnightMergeView.Ink("#55524A"), null, new Rect(x, 183 - (i % 2) * 8, 55, 18), 3, 3);
+            }
+            dc.DrawRectangle(new SolidColorBrush(Color.FromArgb(75, 0, 0, 0)), null, new Rect(18, 16, DesignWidth - 36, 201));
+        }
+
+        dc.Pop();
+        dc.Pop();
+    }
+
+    private static void DrawBottle(DrawingContext dc, double x, double y, int variant)
+    {
+        string[] colors = ["#9B6B52", "#568273", "#7A608A", "#B58B45"];
+        Brush fill = MidnightMergeView.Ink(colors[variant % colors.Length]);
+        dc.DrawRoundedRectangle(fill, new Pen(MidnightMergeView.Ink("#D8C38D"), .6), new Rect(x, y - 15, 10, 17), 2, 2);
+        dc.DrawRectangle(fill, null, new Rect(x + 3, y - 21, 4, 7));
+    }
+
+    private static void DrawCocktail(DrawingContext dc, double x, double y, Brush gold)
+    {
+        var bowl = new StreamGeometry();
+        using (StreamGeometryContext ctx = bowl.Open())
+        {
+            ctx.BeginFigure(new Point(x - 22, y), true, true);
+            ctx.LineTo(new Point(x + 22, y), true, false);
+            ctx.LineTo(new Point(x, y + 26), true, false);
+        }
+        dc.DrawGeometry(MidnightMergeView.Ink("#B96F7C"), new Pen(gold, 1), bowl);
+        dc.DrawLine(new Pen(gold, 1), new Point(x, y + 26), new Point(x, y + 43));
+        dc.DrawLine(new Pen(gold, 2), new Point(x - 15, y + 44), new Point(x + 15, y + 44));
     }
 }

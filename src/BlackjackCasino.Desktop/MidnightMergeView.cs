@@ -28,6 +28,7 @@ internal sealed class MidnightMergeView : UserControl, IDisposable
     private readonly Dictionary<int, Button> cells = [];
     private readonly Dictionary<int, Guid> displayed = [];
     private readonly Dictionary<string, Border> orderCards = [];
+    private readonly Dictionary<string, Button> producerButtons = [];
 
     private Canvas table = null!;
     private Canvas effects = null!;
@@ -40,7 +41,6 @@ internal sealed class MidnightMergeView : UserControl, IDisposable
     private TextBlock spaceLabel = null!;
     private TextBlock profileLabel = null!;
     private TextBlock progressionFeedback = null!;
-    private Button producer = null!;
     private Guid? selected;
     private Point dragStart;
     private Guid? dragItem;
@@ -90,7 +90,6 @@ internal sealed class MidnightMergeView : UserControl, IDisposable
     private static Border Card(UIElement child, string border = "#4C4A3A", Thickness? padding = null) => new()
     { Child = child, Background = Ink("#121F26"), BorderBrush = Ink(border), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Padding = padding ?? new Thickness(16) };
 
-    // A local template keeps Windows theme chrome from whitening the tabletop or producer.
     private static Button ActionButton(string text, string name)
     {
         var button = new Button
@@ -118,7 +117,8 @@ internal sealed class MidnightMergeView : UserControl, IDisposable
         hover.Setters.Add(new Setter(BackgroundProperty, Ink("#344D4D")));
         var focus = new Trigger { Property = IsKeyboardFocusedProperty, Value = true };
         focus.Setters.Add(new Setter(BorderBrushProperty, Ink("#F1CD7A")));
-        style.Triggers.Add(hover); style.Triggers.Add(focus);
+        style.Triggers.Add(hover);
+        style.Triggers.Add(focus);
         button.Style = style;
         AutomationProperties.SetName(button, text);
         return button;
@@ -129,6 +129,7 @@ internal sealed class MidnightMergeView : UserControl, IDisposable
         cells.Clear();
         displayed.Clear();
         orderCards.Clear();
+        producerButtons.Clear();
 
         var root = new Grid
         {
@@ -234,16 +235,22 @@ internal sealed class MidnightMergeView : UserControl, IDisposable
 
         var tools = new StackPanel { VerticalAlignment = VerticalAlignment.Stretch };
         tools.Children.Add(Text(Localization.T("Merge.Producer"), 11, "#D5B879"));
-        producer = ActionButton(Localization.T("Merge.Produce"), "MergeProducer");
-        producer.Margin = new Thickness(0, 8, 0, 10);
-        producer.ToolTip = Localization.T("Merge.ProducerHint");
-        producer.Click += (_, _) => Execute(() => board.TrySpawn(), producer);
-        tools.Children.Add(producer);
-        tools.Children.Add(Text(Localization.T("Merge.NoEnergy"), 11, "#C6B78F"));
+        foreach (MergeProducerDefinition definition in MergeCatalog.Default.Producers.Values.OrderBy(x => x.UnlockPoints))
+        {
+            string name = definition.Id == "chip-case" ? "MergeProducer" : "MergeProducer_" + definition.Id.Replace('-', '_');
+            Button producer = ActionButton(Localization.T(definition.DisplayName), name);
+            producer.Margin = new Thickness(0, 8, 0, 2);
+            producer.Click += (_, _) => Execute(() => board.TrySpawn(definition.Id), producer);
+            producerButtons[definition.Id] = producer;
+            tools.Children.Add(producer);
+        }
+        var noEnergy = Text(Localization.T("Merge.NoEnergy"), 11, "#C6B78F");
+        noEnergy.Margin = new Thickness(0, 8, 0, 0);
+        tools.Children.Add(noEnergy);
         spaceLabel = Text("", 10);
         spaceLabel.Margin = new Thickness(0, 4, 0, 0);
         tools.Children.Add(spaceLabel);
-        tools.Children.Add(new Border { Height = 1, Background = Ink("#34494D"), Margin = new Thickness(0, 16, 0, 14) });
+        tools.Children.Add(new Border { Height = 1, Background = Ink("#34494D"), Margin = new Thickness(0, 14, 0, 12) });
         tools.Children.Add(Text(Localization.T("Merge.HowToPlay"), 10, "#89BBAA"));
         tools.Children.Add(Text(Localization.T("Merge.SelectionHelp"), 10, "#AEBBBC"));
         var toolsCard = Card(tools, "#3C5554", new Thickness(14));
@@ -418,7 +425,7 @@ internal sealed class MidnightMergeView : UserControl, IDisposable
             case MergeOutcome.Spawned:
                 Play(MergeCue.Spawn);
                 Pop(cells[result.Position].Content as FrameworkElement);
-                Pop(producer);
+                Pop(origin);
                 break;
             case MergeOutcome.Moved:
                 Play(MergeCue.Drop);
@@ -437,7 +444,8 @@ internal sealed class MidnightMergeView : UserControl, IDisposable
                 {
                     Play(MergeCue.Milestone);
                     Pop(renovation);
-                    SetStatus("Merge.Milestone", MergeProgression.Current(MergeCatalog.Default.Areas[0], board.Snapshot.RenovationPoints).DisplayName, result.Reward);
+                    MergeArea area = MergeProgression.ActiveArea(MergeCatalog.Default, board.Snapshot.RenovationPoints);
+                    SetStatus("Merge.Milestone", MergeProgression.Current(area, board.Snapshot.RenovationPoints).DisplayName, result.Reward);
                     feedback.Text = FormatStatus();
                 }
                 break;
@@ -484,6 +492,7 @@ internal sealed class MidnightMergeView : UserControl, IDisposable
             : Localization.T("Merge.SelectionHelp");
 
         RefreshProfile();
+        RefreshProducers(state);
         RefreshBoard(state);
         RefreshHighlights();
         RefreshOrders(state);
@@ -511,6 +520,21 @@ internal sealed class MidnightMergeView : UserControl, IDisposable
                 ? Localization.F("Merge.XpAward", lastPlayerXp, lastSeasonXp)
                 : Localization.T("Merge.XpHint");
         progressionFeedback.Foreground = Ink(progressionSaveFailed ? "#CF7C7C" : "#9CCEB7");
+    }
+
+    private void RefreshProducers(MergeGameState state)
+    {
+        foreach (MergeProducerDefinition definition in MergeCatalog.Default.Producers.Values)
+        {
+            if (!producerButtons.TryGetValue(definition.Id, out Button? button)) continue;
+            bool unlocked = state.RenovationPoints >= definition.UnlockPoints;
+            bool space = state.Items.Count < MergeGameState.Capacity;
+            button.IsEnabled = unlocked && space;
+            button.Opacity = unlocked ? 1 : .5;
+            button.ToolTip = unlocked
+                ? Localization.T("Merge.ProducerHint")
+                : Localization.F("Merge.ProducerLocked", definition.UnlockPoints);
+        }
     }
 
     private void RefreshBoard(MergeGameState state)
@@ -541,10 +565,13 @@ internal sealed class MidnightMergeView : UserControl, IDisposable
     {
         orders.Children.Clear();
         orderCards.Clear();
+        MergeArea activeArea = MergeProgression.ActiveArea(MergeCatalog.Default, state.RenovationPoints);
         foreach (var active in state.Orders)
         {
             var definition = MergeCatalog.Default.Orders.Single(x => x.Id == active.DefinitionId);
             bool available = MergeOrders.SelectRequired(state, definition) is not null;
+            if (!string.Equals(definition.AreaId, activeArea.Id, StringComparison.Ordinal) && !available) continue;
+
             var content = new Grid();
             content.ColumnDefinitions.Add(new ColumnDefinition());
             content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(118) });
@@ -572,27 +599,33 @@ internal sealed class MidnightMergeView : UserControl, IDisposable
     private void RefreshRestoration(MergeGameState state)
     {
         renovation.Children.Clear();
-        MergeArea area = MergeCatalog.Default.Areas[0];
+        IReadOnlyList<MergeArea> areas = MergeCatalog.Default.Areas;
+        MergeArea area = MergeProgression.ActiveArea(MergeCatalog.Default, state.RenovationPoints);
+        int areaIndex = Enumerable.Range(0, areas.Count).First(i => string.Equals(areas[i].Id, area.Id, StringComparison.Ordinal));
         MergeMilestone current = MergeProgression.Current(area, state.RenovationPoints);
-        long goal = Math.Max(1, area.Milestones.Max(x => x.Points));
 
         var heading = new Grid { Margin = new Thickness(2, 0, 2, 4) };
         heading.ColumnDefinitions.Add(new ColumnDefinition());
         heading.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var leftHeading = new StackPanel();
         var headingText = Text(Localization.T(area.DisplayName), 15, "#ECD8AF");
         headingText.FontWeight = FontWeights.SemiBold;
-        heading.Children.Add(headingText);
+        leftHeading.Children.Add(headingText);
+        leftHeading.Children.Add(Text(Localization.F("Merge.AreaCounter", areaIndex + 1, areas.Count), 8, "#7FA398"));
+        heading.Children.Add(leftHeading);
         var stage = Text(Localization.T(current.DisplayName), 12, "#E3C884");
         Grid.SetColumn(stage, 1);
         heading.Children.Add(stage);
         renovation.Children.Add(heading);
-        renovation.Children.Add(new MergeLobbyArtwork(state.RenovationPoints, 1400, 184));
+        renovation.Children.Add(area.Id == "bar"
+            ? new MergeBarArtwork(state.RenovationPoints, 1400, 184)
+            : new MergeLobbyArtwork(state.RenovationPoints, 1400, 184));
 
         var track = new Grid { Height = 6, Margin = new Thickness(2, 7, 2, 3), Background = Ink("#2C3D41") };
         track.Children.Add(new Border
         {
             Background = Ink("#D8B46C"), HorizontalAlignment = HorizontalAlignment.Left,
-            Width = 1400 * Math.Min(1, state.RenovationPoints / (double)goal), CornerRadius = new CornerRadius(3),
+            Width = 1400 * MergeProgression.AreaProgress(area, state.RenovationPoints), CornerRadius = new CornerRadius(3),
         });
         renovation.Children.Add(track);
 

@@ -69,8 +69,11 @@ public sealed class MergePlayerProgression(ProgressionService progression)
         if (state.RenovationPoints > stats.RenovationPointsEarned) { stats.RenovationPointsEarned = state.RenovationPoints; changed = true; }
         if (state.HighestTierCreated > stats.HighestTierCreated) { stats.HighestTierCreated = state.HighestTierCreated; changed = true; }
 
+        HashSet<string> rewardableMilestones = catalog.Areas
+            .SelectMany(area => area.Milestones.Skip(1).Select(milestone => $"{area.Id}/{milestone.Id}"))
+            .ToHashSet(StringComparer.Ordinal);
         string[] earnedMilestones = state.UnlockedMilestones
-            .Where(id => TryMilestone(catalog, id, out _, out MergeMilestone? milestone) && milestone is { Points: > 0 })
+            .Where(rewardableMilestones.Contains)
             .Distinct(StringComparer.Ordinal)
             .ToArray();
         if (earnedMilestones.LongLength > stats.MilestonesReached) { stats.MilestonesReached = earnedMilestones.LongLength; changed = true; }
