@@ -20,7 +20,10 @@ public sealed record MemoryDeckDefinition(
     string Id,
     string Name,
     string Description,
-    IReadOnlyList<MemorySymbol> Symbols);
+    IReadOnlyList<MemorySymbol> Symbols)
+{
+    public override string ToString() => Name;
+}
 
 public enum MemoryFlipOutcome
 {
