@@ -8,6 +8,7 @@ public partial class MainWindow
     private void OpenMidnightMerge()
     {
         if (session.RoundInProgress || MetaPageOpen || embeddedGameShell is not null || EmpirePageOpen || KniffelPageOpen) return;
+        ProcessLatestCompletedRound();
         void PersistMerge(MergeGameState candidate)
         {
             var updated = preferences with { MidnightMerge = candidate, Empire = empire?.Snapshot ?? preferences.Empire, Bankroll = session.Bankroll };

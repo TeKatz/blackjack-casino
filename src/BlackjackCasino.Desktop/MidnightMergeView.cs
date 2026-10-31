@@ -46,6 +46,14 @@ internal sealed class MidnightMergeView : UserControl, IDisposable
         this.animations = animations;
         this.back = back;
         this.setLanguage = setLanguage ?? (language => Localization.SetLanguage(language));
+        KeyboardNavigation.SetTabNavigation(this, KeyboardNavigationMode.Cycle);
+        KeyboardNavigation.SetControlTabNavigation(this, KeyboardNavigationMode.Cycle);
+        PreviewKeyDown += (_, e) =>
+        {
+            if (e.Key != Key.Escape) return;
+            e.Handled = true;
+            back();
+        };
         Background = Ink("#0B141A");
         Build();
         Localization.LanguageChanged += LanguageChanged;

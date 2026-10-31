@@ -16,6 +16,14 @@ internal static class MidnightMergeSmoke
         Require(Application.Current.Windows.Cast<Window>().Count(w => w.IsVisible) == 1, "Merge opened a second visible window.");
         MidnightMergeView view = Find<MidnightMergeView>(window).Single();
         Require(view.IsVisible, "Merge was not embedded in the main window.");
+        var producer = Find<Button>(view).Single(x => x.Name == "MergeProducer");
+        producer.Focus();
+        for (int i = 0; i < 60; i++)
+        {
+            if (System.Windows.Input.Keyboard.FocusedElement is UIElement focused)
+                focused.MoveFocus(new System.Windows.Input.TraversalRequest(System.Windows.Input.FocusNavigationDirection.Next));
+            Require(view.IsKeyboardFocusWithin, "Tab navigation escaped the Merge view.");
+        }
         Require(view.Snapshot.Items.Count == 0, "Fresh Merge board was not empty.");
         Capture(window, Path.Combine(output, "merge-initial.png"));
         Click(view, "MergeProducer"); Click(view, "MergeProducer");
