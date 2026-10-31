@@ -106,8 +106,8 @@ internal sealed class LoungeWindow : Window
         });
         bar.Children.Add(brand);
 
-        // Navigation back to the Lounge game list is owned by each hosted game's local
-        // hierarchy. The global header only exits the Lounge, avoiding duplicate back paths.
+        // Game-list navigation belongs to the local game hierarchy. The persistent header
+        // only exits the Chill Lounge, avoiding the duplicate back path on the main menu.
         var close = LoungeButton("RETURN TO CLUB");
         close.Padding = new Thickness(17, 8, 17, 8);
         close.Click += (_, _) => Close();
@@ -146,14 +146,18 @@ internal sealed class LoungeWindow : Window
             HorizontalAlignment = HorizontalAlignment.Center,
         };
 
-        root.Children.Add(new TextBlock
+        var heading = new Grid { Margin = new Thickness(0, 0, 0, 24) };
+        heading.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        heading.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var headingCopy = new StackPanel();
+        headingCopy.Children.Add(new TextBlock
         {
             Text = "A QUIETER CORNER",
             Foreground = Ink("#7FB49F"),
             FontSize = 11,
             FontWeight = FontWeights.SemiBold,
         });
-        root.Children.Add(new TextBlock
+        headingCopy.Children.Add(new TextBlock
         {
             Text = "Take your time.",
             Foreground = Ink("#F4E8D7"),
@@ -161,14 +165,23 @@ internal sealed class LoungeWindow : Window
             FontSize = 40,
             Margin = new Thickness(0, 7, 0, 8),
         });
-        root.Children.Add(new TextBlock
+        headingCopy.Children.Add(new TextBlock
         {
             Text = "No wagers, no pressure. Pick something small, settle in and leave whenever you want — progress is saved locally.",
             Foreground = Ink("#A9BBB5"),
             FontSize = 14,
             TextWrapping = TextWrapping.Wrap,
-            Margin = new Thickness(0, 0, 0, 24),
+            MaxWidth = 760,
         });
+        heading.Children.Add(headingCopy);
+        var backToGames = LoungeButton("← LOUNGE GAMES");
+        backToGames.Name = "SudokuBackToLoungeGames";
+        backToGames.VerticalAlignment = VerticalAlignment.Top;
+        backToGames.Margin = new Thickness(24, 0, 0, 0);
+        backToGames.Click += (_, _) => ShowGames();
+        Grid.SetColumn(backToGames, 1);
+        heading.Children.Add(backToGames);
+        root.Children.Add(heading);
 
         var sudokuCard = new Border
         {
