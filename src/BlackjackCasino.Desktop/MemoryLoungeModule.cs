@@ -145,19 +145,28 @@ internal sealed class MemoryLoungeHub : UserControl, IDisposable
             Padding = new Thickness(8, 6, 8, 6),
             IsEnabled = progress.ActiveGame is null,
         };
+        var preview = new ContentControl { Name = "MemoryDeckPreview", Margin = new Thickness(0, 10, 0, 0) };
+        var description = MarginLabel("", 10, "#8FA59B", new Thickness(0, 8, 0, 0));
+
+        void RefreshDeckPresentation(MemoryDeckDefinition deck)
+        {
+            preview.Content = BuildDeckPreview(deck);
+            description.Text = deck.Description;
+        }
+
         deckPicker.SelectionChanged += (_, _) =>
         {
-            if (deckPicker.SelectedItem is not MemoryDeckDefinition deck || progress.ActiveGame is not null) return;
+            if (deckPicker.SelectedItem is not MemoryDeckDefinition deck) return;
+            RefreshDeckPresentation(deck);
+            if (progress.ActiveGame is not null) return;
             progress.PreferredDeckId = deck.Id;
             persist(progress);
             status.Text = $"{deck.Name} selected.";
         };
         deckStack.Children.Add(deckPicker);
-        deckStack.Children.Add(MarginLabel(
-            MemoryCatalog.GetDeck(progress.PreferredDeckId).Description,
-            10,
-            "#8FA59B",
-            new Thickness(0, 8, 0, 0)));
+        deckStack.Children.Add(preview);
+        deckStack.Children.Add(description);
+        RefreshDeckPresentation(MemoryCatalog.GetDeck(progress.PreferredDeckId));
         deckPanel.Child = deckStack;
         side.Children.Add(deckPanel);
 
@@ -176,6 +185,21 @@ internal sealed class MemoryLoungeHub : UserControl, IDisposable
         Grid.SetColumn(side, 2);
         content.Children.Add(side);
         return root;
+    }
+
+    private static FrameworkElement BuildDeckPreview(MemoryDeckDefinition deck)
+    {
+        var strip = new UniformGrid { Columns = 4, Height = 76 };
+        foreach (MemorySymbol symbol in deck.Symbols.Take(4))
+        {
+            strip.Children.Add(new Viewbox
+            {
+                Stretch = Stretch.Uniform,
+                Margin = new Thickness(2),
+                Child = new MemoryCardArtwork(deck.Id, symbol),
+            });
+        }
+        return strip;
     }
 
     private FrameworkElement DifficultyCard(MemoryDifficulty difficulty)
@@ -418,11 +442,12 @@ internal sealed class MemoryView : UserControl, IDisposable
                 Tag = index,
                 Margin = new Thickness(5),
                 Padding = new Thickness(0),
-                Background = MemoryLoungeHub.Brush("#17352E"),
-                BorderBrush = MemoryLoungeHub.Brush("#526A54"),
-                BorderThickness = new Thickness(1.2),
+                Background = Brushes.Transparent,
+                BorderBrush = Brushes.Transparent,
+                BorderThickness = new Thickness(0),
                 Cursor = CasinoCursors.Hand,
                 RenderTransformOrigin = new Point(.5, .5),
+                FocusVisualStyle = null,
             };
             card.Click += async (_, _) => await CardClicked(cardIndex);
             cardButtons[index] = card;
@@ -450,8 +475,11 @@ internal sealed class MemoryView : UserControl, IDisposable
             case MemoryFlipOutcome.Match:
                 Play(MemoryCue.Match);
                 status.Text = $"PAIR FOUND · ×{result.Streak}";
+                RenderCard(result.Index);
+                RenderCard(result.OtherIndex);
                 Pulse(result.Index);
                 Pulse(result.OtherIndex);
+                RefreshEnabled();
                 break;
             case MemoryFlipOutcome.Mismatch:
                 resolvingMismatch = true;
@@ -468,6 +496,8 @@ internal sealed class MemoryView : UserControl, IDisposable
             case MemoryFlipOutcome.Completed:
                 Play(game.Perfect ? MemoryCue.Perfect : MemoryCue.Complete);
                 timer.Stop();
+                RenderCard(result.Index);
+                RenderCard(result.OtherIndex);
                 Pulse(result.Index);
                 Pulse(result.OtherIndex);
                 ProgressionAward award = complete(game);
@@ -534,7 +564,13 @@ internal sealed class MemoryView : UserControl, IDisposable
     private void RefreshEnabled()
     {
         foreach ((int index, Button card) in cardButtons)
-            card.IsEnabled = !resolvingMismatch && !game.Completed && !game.MatchedIndices.Contains(index);
+        {
+            bool interactive = !resolvingMismatch && !game.Completed && !game.MatchedIndices.Contains(index);
+            card.IsEnabled = true;
+            card.IsHitTestVisible = interactive;
+            card.Focusable = interactive;
+            card.Cursor = interactive ? CasinoCursors.Hand : CasinoCursors.Arrow;
+        }
     }
 
     private void RenderCard(int index)
@@ -542,39 +578,10 @@ internal sealed class MemoryView : UserControl, IDisposable
         if (!cardButtons.TryGetValue(index, out Button? card)) return;
         bool matched = game.MatchedIndices.Contains(index);
         bool faceUp = matched || game.FaceUpIndices.Contains(index);
-        if (!faceUp)
-        {
-            card.Content = new TextBlock
-            {
-                Text = "◆",
-                FontFamily = new FontFamily("Georgia"),
-                FontSize = 23,
-                Foreground = MemoryLoungeHub.Brush("#C9AE70"),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center,
-            };
-            card.Background = MemoryLoungeHub.Brush("#17352E");
-            card.BorderBrush = MemoryLoungeHub.Brush("#526A54");
-            card.Opacity = 1;
-            return;
-        }
-
-        MemorySymbol symbol = MemoryCatalog.Symbol(game.DeckId, game.Cards[index]);
-        var stack = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-        stack.Children.Add(new TextBlock
-        {
-            Text = symbol.Glyph,
-            FontFamily = new FontFamily("Segoe UI Symbol, Segoe UI Emoji"),
-            FontSize = symbol.Glyph.Length > 3 ? 15 : 25,
-            FontWeight = FontWeights.SemiBold,
-            Foreground = MemoryLoungeHub.Brush(symbol.Accent),
-            HorizontalAlignment = HorizontalAlignment.Center,
-            TextAlignment = TextAlignment.Center,
-        });
-        card.Content = stack;
-        card.Background = MemoryLoungeHub.Brush(matched ? "#163D31" : "#263F38");
-        card.BorderBrush = MemoryLoungeHub.Brush(matched ? "#78B38D" : symbol.Accent);
-        card.Opacity = matched ? .82 : 1;
+        MemorySymbol? symbol = faceUp ? MemoryCatalog.Symbol(game.DeckId, game.Cards[index]) : null;
+        card.Content = new MemoryCardArtwork(game.DeckId, symbol, matched);
+        card.ToolTip = faceUp && symbol is not null ? symbol.Name : "Flip card";
+        card.Opacity = 1;
     }
 
     private void TimerTick(object? sender, EventArgs e)
@@ -628,24 +635,26 @@ internal sealed class MemoryLoungeArtwork : FrameworkElement
         Brush cream = MemoryLoungeHub.Brush("#E9DFC8");
         dc.DrawRoundedRectangle(bg, new Pen(line, 1), new Rect(0, 0, 310, 130), 10, 10);
 
-        double[,] positions = { { 20, 18 }, { 86, 18 }, { 152, 18 }, { 218, 18 }, { 20, 70 }, { 86, 70 }, { 152, 70 }, { 218, 70 } };
-        string[] faces = ["★", "◆", "♠", "☾", "◆", "★", "☾", "♠"];
+        double[,] positions = { { 18, 16 }, { 84, 16 }, { 150, 16 }, { 216, 16 }, { 18, 70 }, { 84, 70 }, { 150, 70 }, { 216, 70 } };
+        string[] faces = ["25", "", "7", "", "", "25", "", "7"];
         for (int i = 0; i < 8; i++)
         {
-            Rect rect = new(positions[i, 0], positions[i, 1], 52, 42);
-            bool open = i is 0 or 1 or 4 or 5;
-            dc.DrawRoundedRectangle(open ? panel : MemoryLoungeHub.Brush("#1A352F"), new Pen(open ? gold : line, 1.2), rect, 6, 6);
+            Rect rect = new(positions[i, 0], positions[i, 1], 50, 43);
+            bool open = faces[i].Length > 0;
+            dc.DrawRoundedRectangle(open ? panel : MemoryLoungeHub.Brush("#17352E"), new Pen(open ? gold : line, 1.1), rect, 6, 6);
+            dc.DrawRoundedRectangle(null, new Pen(open ? MemoryLoungeHub.Brush("#8A7547") : gold, .6), new Rect(rect.X + 4, rect.Y + 4, rect.Width - 8, rect.Height - 8), 4, 4);
             if (open)
             {
-                var glyph = new FormattedText(faces[i], System.Globalization.CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
-                    new Typeface("Segoe UI Symbol"), 20, i is 0 or 5 ? gold : cream, VisualTreeHelper.GetDpi(this).PixelsPerDip);
-                dc.DrawText(glyph, new Point(rect.X + rect.Width / 2 - glyph.Width / 2, rect.Y + rect.Height / 2 - glyph.Height / 2));
+                dc.DrawEllipse(MemoryLoungeHub.Brush("#10251F"), new Pen(gold, .8), new Point(rect.X + 25, rect.Y + 20), 13, 13);
+                var text = new FormattedText(faces[i], System.Globalization.CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
+                    new Typeface("Georgia"), faces[i] == "7" ? 18 : 10, cream, VisualTreeHelper.GetDpi(this).PixelsPerDip);
+                dc.DrawText(text, new Point(rect.X + 25 - text.Width / 2, rect.Y + 20 - text.Height / 2));
             }
             else
             {
-                var back = new FormattedText("◆", System.Globalization.CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
-                    new Typeface("Georgia"), 15, gold, VisualTreeHelper.GetDpi(this).PixelsPerDip);
-                dc.DrawText(back, new Point(rect.X + rect.Width / 2 - back.Width / 2, rect.Y + rect.Height / 2 - back.Height / 2));
+                var back = new FormattedText("M", System.Globalization.CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
+                    new Typeface("Georgia"), 13, gold, VisualTreeHelper.GetDpi(this).PixelsPerDip);
+                dc.DrawText(back, new Point(rect.X + 25 - back.Width / 2, rect.Y + 21 - back.Height / 2));
             }
         }
     }

@@ -16,14 +16,16 @@ public sealed class MemoryTests
     }
 
     [Fact]
-    public void EveryDeckSupportsMasterAndHasStableUniqueSymbols()
+    public void CatalogKeepsOnlyTheFourCuratedDecksAndEachSupportsMaster()
     {
-        Assert.Equal(8, MemoryCatalog.Decks.Count);
-        Assert.Equal(MemoryCatalog.Decks.Count, MemoryCatalog.Decks.Select(x => x.Id).Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal(
+            ["casino-icons", "card-suits", "animals", "fruits"],
+            MemoryCatalog.Decks.Select(x => x.Id).ToArray());
         Assert.All(MemoryCatalog.Decks, deck =>
         {
-            Assert.True(deck.Symbols.Count >= 32);
+            Assert.Equal(32, deck.Symbols.Count);
             Assert.Equal(deck.Symbols.Count, deck.Symbols.Select(x => x.Id).Distinct(StringComparer.Ordinal).Count());
+            Assert.DoesNotContain(deck.Symbols, symbol => string.IsNullOrWhiteSpace(symbol.Name) || string.IsNullOrWhiteSpace(symbol.Accent));
         });
     }
 
@@ -81,7 +83,7 @@ public sealed class MemoryTests
     [Fact]
     public void PerfectTableCompletesInExactlyOneMovePerPair()
     {
-        MemoryGameState game = MemoryGame.Start(MemoryDifficulty.Normal, "gemstones", 314159);
+        MemoryGameState game = MemoryGame.Start(MemoryDifficulty.Normal, "card-suits", 314159);
         foreach (IGrouping<string, (string Card, int Index)> group in game.Cards.Select((card, index) => (Card: card, Index: index)).GroupBy(x => x.Card))
         {
             int[] indices = group.Select(x => x.Index).ToArray();
@@ -119,6 +121,37 @@ public sealed class MemoryTests
     }
 
     [Fact]
+    public void RemovedDeckSaveMigratesToDefaultAndRebuildsTheTable()
+    {
+        var game = new MemoryGameState
+        {
+            Difficulty = MemoryDifficulty.Easy,
+            DeckId = "space",
+            Seed = 4242,
+            Cards = Enumerable.Range(0, 16).Select(i => $"space-{(i % 8) + 1:00}").ToList(),
+            MatchedIndices = [0, 1],
+            FaceUpIndices = [2],
+            Moves = 4,
+            CardsFlipped = 9,
+            WrongMatches = 2,
+            CurrentStreak = 1,
+            BestStreak = 2,
+            ElapsedSeconds = 55,
+        };
+
+        game.Normalize();
+
+        Assert.Equal(MemoryCatalog.DefaultDeckId, game.DeckId);
+        Assert.Equal(16, game.Cards.Count);
+        Assert.All(game.Cards, id => _ = MemoryCatalog.Symbol(game.DeckId, id));
+        Assert.All(game.Cards.GroupBy(x => x), group => Assert.Equal(2, group.Count()));
+        Assert.Empty(game.MatchedIndices);
+        Assert.Empty(game.FaceUpIndices);
+        Assert.Equal(0, game.Moves);
+        Assert.Equal(0, game.ElapsedSeconds);
+    }
+
+    [Fact]
     public void StatisticsRecordEachCompletedGameExactlyOnce()
     {
         var stats = new MemoryStatistics();
@@ -143,7 +176,7 @@ public sealed class MemoryTests
         var profile = new PlayerProfileState();
         ProfileNormalization.Normalize(profile);
         var progression = new MemoryProgression(new ProgressionService(profile));
-        var completion = new MemoryCompletionRecord(Guid.NewGuid(), MemoryDifficulty.Master, "space", 32, 45, 90, 13, 7, 300, DateTimeOffset.UtcNow);
+        var completion = new MemoryCompletionRecord(Guid.NewGuid(), MemoryDifficulty.Master, "casino-icons", 32, 45, 90, 13, 7, 300, DateTimeOffset.UtcNow);
         ProgressionAward first = progression.Process(completion);
         ProgressionAward second = progression.Process(completion);
         Assert.Equal(MemoryProgression.PlayerExperience(MemoryDifficulty.Master), first.PlayerExperience);

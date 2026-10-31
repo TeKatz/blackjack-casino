@@ -75,11 +75,31 @@ public sealed class MemoryGameState
     {
         if (GameId == Guid.Empty) GameId = Guid.NewGuid();
         MemoryDifficultySpec spec = MemoryCatalog.Spec(Difficulty);
-        if (!MemoryCatalog.TryGetDeck(DeckId, out MemoryDeckDefinition? deck) || deck is null)
+        bool deckWasRemoved = !MemoryCatalog.TryGetDeck(DeckId, out MemoryDeckDefinition? deck) || deck is null;
+        if (deckWasRemoved)
+        {
             DeckId = MemoryCatalog.DefaultDeckId;
+            deck = MemoryCatalog.GetDeck(DeckId);
+        }
 
-        if (Cards is null || Cards.Count != spec.Cards || Cards.Any(string.IsNullOrWhiteSpace))
+        HashSet<string> validSymbols = deck!.Symbols.Select(x => x.Id).ToHashSet(StringComparer.Ordinal);
+        bool invalidCards = Cards is null
+            || Cards.Count != spec.Cards
+            || Cards.Any(string.IsNullOrWhiteSpace)
+            || Cards.Any(card => !validSymbols.Contains(card));
+        if (deckWasRemoved || invalidCards)
+        {
             Cards = MemoryGame.CreateCards(Difficulty, DeckId, Seed == 0 ? 1 : Seed);
+            MatchedIndices = [];
+            FaceUpIndices = [];
+            Moves = 0;
+            CardsFlipped = 0;
+            WrongMatches = 0;
+            CurrentStreak = 0;
+            BestStreak = 0;
+            ElapsedSeconds = 0;
+            CompletedAt = null;
+        }
 
         MatchedIndices ??= [];
         MatchedIndices = MatchedIndices.Where(i => i >= 0 && i < Cards.Count).ToHashSet();

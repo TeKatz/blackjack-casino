@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using BlackjackCasino.Core.Memory;
 using BlackjackCasino.Desktop;
 
 internal static class MemorySmoke
@@ -22,8 +23,13 @@ internal static class MemorySmoke
             "Memory hub did not open from the Chill Lounge menu.");
         Require(Find<Button>(window).Count(button => button.IsVisible && button.Name.StartsWith("MemoryStart_", StringComparison.Ordinal)) == 5,
             "Memory hub does not expose all five difficulty tables.");
-        Require(Find<ComboBox>(window).Any(combo => combo.Name == "MemoryDeckPicker" && combo.IsVisible),
-            "Memory hub is missing the card deck selector.");
+        ComboBox deckPicker = Find<ComboBox>(window).Single(combo => combo.Name == "MemoryDeckPicker" && combo.IsVisible);
+        Require(deckPicker.Items.Count == 4, $"Memory should expose exactly four curated decks; found {deckPicker.Items.Count}.");
+        string[] deckIds = deckPicker.Items.Cast<MemoryDeckDefinition>().Select(x => x.Id).ToArray();
+        Require(deckIds.SequenceEqual(new[] { "casino-icons", "card-suits", "animals", "fruits" }),
+            "Memory deck picker does not expose the four curated decks in the expected order.");
+        Require(Find<ContentControl>(window).Any(control => control.Name == "MemoryDeckPreview" && control.IsVisible),
+            "Memory hub is missing the curated deck preview strip.");
         Capture(window, Path.Combine(output, "memory-hub.png"));
 
         Button easy = Find<Button>(window).Single(button => button.Name == "MemoryStart_Easy" && button.IsVisible);
@@ -36,14 +42,18 @@ internal static class MemorySmoke
             .OrderBy(button => button.Name, StringComparer.Ordinal)
             .ToArray();
         Require(cards.Length == 16, $"Easy Memory did not render a 4x4 board; found {cards.Length} card buttons.");
+        Require(cards.All(card => card.Content?.GetType().Name == "MemoryCardArtwork"),
+            "Memory cards are not using the custom card artwork renderer.");
         Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text.Contains("0 / 8 pairs", StringComparison.Ordinal)),
             "Easy Memory did not start with an eight-pair progress counter.");
 
         Click(cards[0]);
-        await Task.Delay(50);
+        await Task.Delay(220);
         window.UpdateLayout();
         Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text.Contains("One card open", StringComparison.Ordinal)),
             "Flipping the first Memory card did not update the table feedback.");
+        Require(cards[0].Content?.GetType().Name == "MemoryCardArtwork",
+            "Face-up Memory card lost the custom card artwork renderer.");
         Capture(window, Path.Combine(output, "memory-game.png"));
 
         Click(Find<Button>(window).Single(button => button.Name == "MemoryGameBack" && button.IsVisible));
@@ -67,7 +77,7 @@ internal static class MemorySmoke
             "Casino lobby was not restored after the Memory smoke.");
 
         File.WriteAllText(Path.Combine(output, "memory-result.txt"),
-            "PASS: Memory tile, five difficulty tables, deck picker, Easy 4x4 start, card flip feedback, saved resume state and local Lounge navigation all passed.");
+            "PASS: Memory tile, five difficulty tables, four curated decks, deck preview, custom card artwork, Easy 4x4 start, card flip feedback, saved resume state and local Lounge navigation all passed.");
     }
 
     private static void Click(Button button) => button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
