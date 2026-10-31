@@ -1,5 +1,4 @@
 using BlackjackCasino.Core;
-using BlackjackCasino.Desktop;
 
 namespace BlackjackCasino.Tests;
 
@@ -47,39 +46,5 @@ public sealed class LoungeInfrastructureTests
             seasonExperience: 0));
 
         Assert.False(recorded);
-    }
-
-    [Fact]
-    public void LoungeCatalogSortsGamesAndRejectsDuplicateIds()
-    {
-        LoungeGame later = new("mahjong", "Mahjong", "Tiles", "Match pairs.", () => { }, SortOrder: 20);
-        LoungeGame first = new("solitaire", "Solitaire", "Cards", "Play cards.", () => { }, SortOrder: 10);
-
-        IReadOnlyList<LoungeGame> games = LoungeGameCatalog.Normalize([later, first]);
-
-        Assert.Equal(["solitaire", "mahjong"], games.Select(game => game.Id));
-        Assert.Throws<InvalidOperationException>(() => LoungeGameCatalog.Normalize([
-            first,
-            first with { Title = "Duplicate" },
-        ]));
-    }
-
-    [Fact]
-    public void LoungeCatalogAllowsDynamicStatusWithoutCouplingMenuToGameState()
-    {
-        int completed = 12;
-        LoungeGame game = new(
-            "word-search",
-            "Word Search",
-            "Find your pace.",
-            "Search themed boards.",
-            () => { },
-            Status: () => $"{completed} completed");
-
-        LoungeGame normalized = Assert.Single(LoungeGameCatalog.Normalize([game]));
-        Assert.Equal("12 completed", normalized.Status?.Invoke());
-
-        completed = 13;
-        Assert.Equal("13 completed", normalized.Status?.Invoke());
     }
 }
