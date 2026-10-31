@@ -299,6 +299,7 @@ public sealed class ChallengeClaimAllTests
             case ChallengeMetric.MergeMerges: profile.MidnightMerge.Merges = (long)value; break;
             case ChallengeMetric.MergeOrdersCompleted: profile.MidnightMerge.OrdersCompleted = (long)value; break;
             case ChallengeMetric.MergeRenovationPoints: profile.MidnightMerge.RenovationPointsEarned = (long)value; break;
+            case ChallengeMetric.WordSearchCompleted: profile.WordSearch.CompletedPuzzles = (long)value; break;
             default: throw new InvalidOperationException($"Missing endgame boundary test for {metric}.");
         }
     }

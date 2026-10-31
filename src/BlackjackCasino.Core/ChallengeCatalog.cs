@@ -12,6 +12,7 @@ public enum ChallengeCategory
     MidnightDice,
     Sudoku,
     MidnightMerge,
+    WordSearch,
 }
 
 public enum ChallengeMetric
@@ -88,6 +89,7 @@ public enum ChallengeMetric
     DiceCasinoGames, DiceCasinoWins, DicePodiums, DiceWagered, DiceReturned, DiceBiggestPayout,
     SudokuCompleted, SudokuDailyCompleted, SudokuNoHintCompleted, SudokuExpertCompleted, SudokuMasterCompleted,
     MergeMerges, MergeOrdersCompleted, MergeRenovationPoints, MergeHighestTier, MergeMilestones, MergeAreasCompleted,
+    WordSearchCompleted, WordSearchWordsFound, WordSearchNoHintCompleted, WordSearchExpertCompleted, WordSearchMasterCompleted,
 }
 
 public sealed record ChallengeDefinition(
@@ -127,6 +129,30 @@ public static class ChallengeCatalog
         C("sudoku-expert-1", ChallengeCategory.Sudoku, "A Deeper Grid", "Complete your first Expert Sudoku.", ChallengeMetric.SudokuExpertCompleted, 1, 175),
         E("sudoku-expert-50", ChallengeCategory.Sudoku, "Expert's Corner", "Complete 50 Expert Sudokus.", ChallengeMetric.SudokuExpertCompleted, 50, 1500),
         C("sudoku-master-10", ChallengeCategory.Sudoku, "Mindful Master", "Complete 10 Master Sudokus.", ChallengeMetric.SudokuMasterCompleted, 10, 750),
+
+        // Word Search follows the same Chill Lounge philosophy as Sudoku: progress and discovery matter,
+        // never solve speed. Hints remain welcome; no-hint goals are optional side challenges only.
+        C("word-search-first", ChallengeCategory.WordSearch, "First Find", "Complete your first Word Search puzzle.", ChallengeMetric.WordSearchCompleted, 1, 50),
+        C("word-search-10", ChallengeCategory.WordSearch, "Letter Lounge Regular", "Complete 10 Word Search puzzles.", ChallengeMetric.WordSearchCompleted, 10, 150),
+        C("word-search-25", ChallengeCategory.WordSearch, "Word Hunter", "Complete 25 Word Search puzzles.", ChallengeMetric.WordSearchCompleted, 25, 250),
+        C("word-search-50", ChallengeCategory.WordSearch, "Shelf of Searches", "Complete 50 Word Search puzzles.", ChallengeMetric.WordSearchCompleted, 50, 400),
+        C("word-search-100", ChallengeCategory.WordSearch, "Hundred Grids", "Complete 100 Word Search puzzles.", ChallengeMetric.WordSearchCompleted, 100, 750),
+        E("word-search-144", ChallengeCategory.WordSearch, "Every Grid in the Lounge", "Complete all 144 unique Word Search puzzles.", ChallengeMetric.WordSearchCompleted, 144, 1800),
+        C("word-search-words-25", ChallengeCategory.WordSearch, "Sharp Eyes", "Find 25 words across completed puzzles.", ChallengeMetric.WordSearchWordsFound, 25, 75),
+        C("word-search-words-100", ChallengeCategory.WordSearch, "Word Collector", "Find 100 words across completed puzzles.", ChallengeMetric.WordSearchWordsFound, 100, 175),
+        C("word-search-words-500", ChallengeCategory.WordSearch, "Hidden in Plain Sight", "Find 500 words across completed puzzles.", ChallengeMetric.WordSearchWordsFound, 500, 500),
+        C("word-search-words-1000", ChallengeCategory.WordSearch, "Walking Dictionary", "Find 1,000 words across completed puzzles.", ChallengeMetric.WordSearchWordsFound, 1000, 900),
+        C("word-search-words-1368", ChallengeCategory.WordSearch, "Every Last Word", "Find all 1,368 words across the 144 unique puzzles.", ChallengeMetric.WordSearchWordsFound, 1368, 1800),
+        C("word-search-clean-1", ChallengeCategory.WordSearch, "No Nudge Needed", "Complete a Word Search without using a hint.", ChallengeMetric.WordSearchNoHintCompleted, 1, 75),
+        C("word-search-clean-10", ChallengeCategory.WordSearch, "Trust Your Eyes", "Complete 10 Word Search puzzles without hints.", ChallengeMetric.WordSearchNoHintCompleted, 10, 200),
+        C("word-search-clean-50", ChallengeCategory.WordSearch, "Clear Sight", "Complete 50 Word Search puzzles without hints.", ChallengeMetric.WordSearchNoHintCompleted, 50, 500),
+        C("word-search-clean-100", ChallengeCategory.WordSearch, "Unaided Explorer", "Complete 100 Word Search puzzles without hints.", ChallengeMetric.WordSearchNoHintCompleted, 100, 1000),
+        C("word-search-expert-1", ChallengeCategory.WordSearch, "Deep Search", "Complete your first Expert Word Search.", ChallengeMetric.WordSearchExpertCompleted, 1, 175),
+        C("word-search-expert-10", ChallengeCategory.WordSearch, "Expert Eye", "Complete 10 Expert Word Search puzzles.", ChallengeMetric.WordSearchExpertCompleted, 10, 450),
+        C("word-search-expert-24", ChallengeCategory.WordSearch, "Expert Collection", "Complete all 24 Expert Word Search puzzles.", ChallengeMetric.WordSearchExpertCompleted, 24, 1200),
+        C("word-search-master-1", ChallengeCategory.WordSearch, "Master Finder", "Complete your first Master Word Search.", ChallengeMetric.WordSearchMasterCompleted, 1, 250),
+        C("word-search-master-10", ChallengeCategory.WordSearch, "Master of Letters", "Complete 10 Master Word Search puzzles.", ChallengeMetric.WordSearchMasterCompleted, 10, 700),
+        C("word-search-master-24", ChallengeCategory.WordSearch, "The Last Hidden Word", "Complete all 24 Master Word Search puzzles.", ChallengeMetric.WordSearchMasterCompleted, 24, 1600),
 
         // Midnight Merge rewards meaningful progress. There is deliberately no challenge for producer clicks.
         C("merge-first", ChallengeCategory.MidnightMerge, "Two Become One", "Create your first merged item.", ChallengeMetric.MergeMerges, 1, 25),
@@ -279,7 +305,7 @@ public static class ChallengeCatalog
         E("lifetime-xp-1000000", ChallengeCategory.Lifetime, "Casino Institution", "Earn 1,000,000 lifetime player XP across all games.", ChallengeMetric.LifetimeExperience, 1000000, 4000),
         E("lifetime-hours-250", ChallengeCategory.Lifetime, "The Long Night", "Record 250 hours of total casino playtime.", ChallengeMetric.LifetimePlaytimeSeconds, 900000, 3000),
         E("lifetime-wager-10000000", ChallengeCategory.Lifetime, "Ten Million in Motion", "Wager $10,000,000 across all games, including preserved pooled slot history.", ChallengeMetric.LifetimeWagered, 10000000, 4000),
-        E("lifetime-plays-100000", ChallengeCategory.Lifetime, "A Hundred Thousand Nights", "Complete 100,000 Blackjack rounds, dice games, Sudoku puzzles, Merge orders and slot spins combined, including preserved pooled slot history.", ChallengeMetric.LifetimePlays, 100000, 5000),
+        E("lifetime-plays-100000", ChallengeCategory.Lifetime, "A Hundred Thousand Nights", "Complete 100,000 Blackjack rounds, dice games, Sudoku and Word Search puzzles, Merge orders and slot spins combined, including preserved pooled slot history.", ChallengeMetric.LifetimePlays, 100000, 5000),
         E("prestige-3", ChallengeCategory.Prestige, "Third Time Crowned", "Reach Prestige 3.", ChallengeMetric.PrestigeCount, 3, 2500),
         E("prestige-5", ChallengeCategory.Prestige, "Fivefold Legend", "Reach Prestige 5.", ChallengeMetric.PrestigeCount, 5, 4000),
         E("prestige-10", ChallengeCategory.Prestige, "Eternal High Roller", "Reach Prestige 10.", ChallengeMetric.PrestigeCount, 10, 7500),
@@ -396,13 +422,19 @@ public static class ChallengeCatalog
             ChallengeMetric.MergeMilestones => merge.MilestonesReached,
             ChallengeMetric.MergeAreasCompleted => merge.AreasCompleted,
 
+            ChallengeMetric.WordSearchCompleted => profile.WordSearch.CompletedPuzzles,
+            ChallengeMetric.WordSearchWordsFound => profile.WordSearch.WordsFound,
+            ChallengeMetric.WordSearchNoHintCompleted => profile.WordSearch.NoHintCompletions,
+            ChallengeMetric.WordSearchExpertCompleted => profile.WordSearch.ExpertCompleted,
+            ChallengeMetric.WordSearchMasterCompleted => profile.WordSearch.MasterCompleted,
+
             ChallengeMetric.LifetimeExperience => profile.LifetimeExperience,
             ChallengeMetric.LifetimePlaytimeSeconds => profile.TotalPlaytimeSeconds,
             ChallengeMetric.LifetimeWagered => blackjack.TotalWagered + reels.TotalWagered + neon.TotalWagered + nine.TotalWagered
                 + manor.TotalWagered + legacy.TotalWagered + profile.Kniffel.TotalWagered,
             ChallengeMetric.LifetimePlays => (decimal)blackjack.RoundsPlayed + reels.Spins + neon.Spins + nine.Spins
                 + manor.PaidSpins + manor.FreeSpins + legacy.Spins + profile.Kniffel.CompletedGames + profile.Sudoku.CompletedPuzzles
-                + merge.OrdersCompleted,
+                + profile.WordSearch.CompletedPuzzles + merge.OrdersCompleted,
             ChallengeMetric.PrestigeCount => profile.Prestige,
             _ => 0,
         };

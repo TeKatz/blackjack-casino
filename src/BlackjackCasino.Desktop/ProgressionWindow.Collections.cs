@@ -49,6 +49,7 @@ internal partial class ProgressionWindow
         ChallengeCategory.MidnightDice => "Midnight Dice",
         ChallengeCategory.Sudoku => "Sudoku",
         ChallengeCategory.MidnightMerge => "Midnight Merge",
+        ChallengeCategory.WordSearch => "Word Search",
         _ => category.ToString(),
     };
 
