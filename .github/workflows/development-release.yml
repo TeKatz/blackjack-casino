@@ -2,7 +2,7 @@ name: Development Release
 
 on:
   push:
-    branches: ["feature/chill-lounge-solitaire"]
+    branches: ["feature/localization-en-de"]
   workflow_dispatch:
 
 permissions:
@@ -14,8 +14,8 @@ concurrency:
 
 jobs:
   publish-development:
-    # The shared in-app Development channel is pinned to the active Midnight Solitaire branch.
-    if: github.ref == 'refs/heads/feature/chill-lounge-solitaire'
+    # The shared in-app Development channel is pinned to the active EN/DE localization branch.
+    if: github.ref == 'refs/heads/feature/localization-en-de'
     runs-on: windows-latest
     timeout-minutes: 20
 
@@ -38,6 +38,9 @@ jobs:
           }
           $version = "$baseVersion-dev.${{ github.run_number }}"
           "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Localization resource parity
+        run: python tools/check_localization.py
 
       - name: Restore
         run: dotnet restore BlackjackCasino.sln
