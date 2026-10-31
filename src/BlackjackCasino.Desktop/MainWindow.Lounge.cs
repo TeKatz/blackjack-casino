@@ -1,3 +1,4 @@
+using BlackjackCasino.Core.Memory;
 using BlackjackCasino.Core.Solitaire;
 using BlackjackCasino.Core.Sudoku;
 using BlackjackCasino.Core.WordSearch;
@@ -22,6 +23,8 @@ public partial class MainWindow
         preferences = preferences with { Solitaire = SolitaireProgressState.Normalize(preferences.Solitaire) };
         preferences.WordSearch.Normalize();
         RecordWordSearchCompletions(preferences.WordSearch);
+        preferences.Memory.Normalize();
+        RecordMemoryCompletions(preferences.Memory);
         LoungeHostedGameRegistry.SetSessionModules([
             SolitaireLoungeModule.Create(
                 preferences.Solitaire,
@@ -44,7 +47,19 @@ public partial class MainWindow
                     if (!testSession) SavePreferences();
                 },
                 () => progressionController?.Profile.WordSearch ?? new WordSearchStatistics(),
-                RecordWordSearchCompletion)
+                RecordWordSearchCompletion),
+            MemoryLoungeModule.Create(
+                preferences.Memory,
+                state =>
+                {
+                    state.Normalize();
+                    preferences = preferences with { Memory = state };
+                    if (!testSession) SavePreferences();
+                },
+                () => progressionController?.Profile.Memory ?? new MemoryStatistics(),
+                RecordMemoryCompletion,
+                () => preferences.SoundEnabled,
+                () => preferences.AnimationsEnabled)
         ]);
 
         var window = new LoungeWindow(
@@ -180,5 +195,33 @@ public partial class MainWindow
         if (progressionController is null) return ProgressionAward.None;
         try { return progressionController.ProcessWordSearch(completion); }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return ProgressionAward.None; }
+    }
+
+    private void RecordMemoryCompletions(MemoryProgressState state)
+    {
+        if (progressionController is null) return;
+        state.Normalize();
+        foreach (MemoryCompletionRecord completion in state.CompletedGames)
+        {
+            if (progressionController.Profile.Memory.RecordedGameIds.Contains(completion.GameId)) continue;
+            try { _ = progressionController.ProcessMemory(completion); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return; }
+        }
+    }
+
+    private ProgressionAward RecordMemoryCompletion(MemoryCompletionRecord completion)
+    {
+        if (progressionController is null) return ProgressionAward.None;
+        try
+        {
+            ProgressionAward award = progressionController.ProcessMemory(completion);
+            ApplyProgressionAward(award);
+            UpdateHeader();
+            return award;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return ProgressionAward.None;
+        }
     }
 }
