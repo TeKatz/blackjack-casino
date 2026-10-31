@@ -70,7 +70,7 @@ public static class WordSearchGame
         if (!state.Completed) throw new InvalidOperationException("The Word Search puzzle is not complete.");
         DateTimeOffset completed = state.CompletedAt ?? now ?? DateTimeOffset.UtcNow;
         state.CompletedAt = completed;
-        long elapsed = Math.Max(state.ElapsedSeconds, (long)Math.Max(0, (completed - state.StartedAt).TotalSeconds));
+        long elapsed = Math.Max(0, state.ElapsedSeconds);
         state.ElapsedSeconds = elapsed;
         return new(state.Puzzle.Id, state.Puzzle.Difficulty, state.FoundWords.Count, state.HintsUsed, elapsed, completed);
     }
