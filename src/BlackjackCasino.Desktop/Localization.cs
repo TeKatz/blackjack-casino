@@ -60,6 +60,19 @@ internal static class Localization
                 TranslateElement(element);
                 if (element is Window or UserControl) QueueSubtreeRefresh(element);
             }));
+
+        // Dynamically rebuilt game surfaces can join an already loaded visual tree between
+        // refresh passes. Their first real arrange always changes size, so this gives those
+        // controls a second, cheap localization hook without polling the whole window.
+        EventManager.RegisterClassHandler(
+            typeof(FrameworkElement),
+            FrameworkElement.SizeChangedEvent,
+            new SizeChangedEventHandler((sender, _) =>
+            {
+                if (sender is not FrameworkElement element) return;
+                InstallChangeWatch(element);
+                TranslateElement(element);
+            }));
     }
 
     internal static void SetLanguage(UiLanguagePreference requested, bool refreshOpenWindows = true)
