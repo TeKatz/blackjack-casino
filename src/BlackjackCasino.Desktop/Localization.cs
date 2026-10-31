@@ -22,6 +22,7 @@ internal static class Localization
     [
         new("BlackjackCasino.Desktop.Resources.Strings", typeof(Localization).Assembly),
         new("BlackjackCasino.Desktop.Resources.LobbyStrings", typeof(Localization).Assembly),
+        new("BlackjackCasino.Desktop.Resources.VaultShellStrings", typeof(Localization).Assembly),
     ];
 
     private static readonly CultureInfo EnglishCulture = CultureInfo.GetCultureInfo("en-US");
@@ -174,10 +175,27 @@ internal static class Localization
         if (key is null)
         {
             key = KeyForEnglishSource(source);
-            if (key is null) return source;
+            if (key is null)
+            {
+                return TranslateCompositePrefix(source);
+            }
             owner.SetValue(LocalizationKeyProperty, key);
         }
         return T(key);
+    }
+
+    private static string TranslateCompositePrefix(string source)
+    {
+        foreach ((string english, string key) in EnglishValueToKey.OrderByDescending(pair => pair.Key.Length))
+        {
+            if (source.Length <= english.Length || !source.StartsWith(english, StringComparison.Ordinal)) continue;
+            ReadOnlySpan<char> remainder = source.AsSpan(english.Length);
+            if (!remainder.StartsWith(" · ", StringComparison.Ordinal) &&
+                !remainder.StartsWith(": ", StringComparison.Ordinal))
+                continue;
+            return T(key) + remainder.ToString();
+        }
+        return source;
     }
 
     private static bool IsValueForKey(string key, string value)
