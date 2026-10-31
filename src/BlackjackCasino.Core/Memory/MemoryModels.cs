@@ -102,10 +102,10 @@ public sealed class MemoryGameState
         }
 
         MatchedIndices ??= [];
-        MatchedIndices = MatchedIndices.Where(i => i >= 0 && i < Cards.Count).ToHashSet();
+        MatchedIndices = MatchedIndices.Where(i => i >= 0 && i < Cards!.Count).ToHashSet();
         FaceUpIndices ??= [];
-        FaceUpIndices = FaceUpIndices.Where(i => i >= 0 && i < Cards.Count && !MatchedIndices.Contains(i)).Distinct().Take(2).ToList();
-        if (FaceUpIndices.Count == 2 && !string.Equals(Cards[FaceUpIndices[0]], Cards[FaceUpIndices[1]], StringComparison.Ordinal))
+        FaceUpIndices = FaceUpIndices.Where(i => i >= 0 && i < Cards!.Count && !MatchedIndices.Contains(i)).Distinct().Take(2).ToList();
+        if (FaceUpIndices.Count == 2 && !string.Equals(Cards![FaceUpIndices[0]], Cards[FaceUpIndices[1]], StringComparison.Ordinal))
             FaceUpIndices.Clear();
 
         Moves = Math.Max(0, Moves);
