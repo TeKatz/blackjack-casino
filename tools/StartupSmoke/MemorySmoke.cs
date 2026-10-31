@@ -30,6 +30,8 @@ internal static class MemorySmoke
             "Memory deck picker does not expose the four curated decks in the expected order.");
         Require(Find<ContentControl>(window).Any(control => control.Name == "MemoryDeckPreview" && control.IsVisible),
             "Memory hub is missing the curated deck preview strip.");
+        Require(Find<Button>(window).Any(button => button.Name == "LoungeGamesHeaderBack" && button.IsVisible),
+            "Memory did not move the Games navigation into the Chill Lounge header.");
         Capture(window, Path.Combine(output, "memory-hub.png"));
 
         Button easy = Find<Button>(window).Single(button => button.Name == "MemoryStart_Easy" && button.IsVisible);
@@ -64,7 +66,7 @@ internal static class MemorySmoke
         Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text.Contains("0 / 8 pairs", StringComparison.Ordinal)),
             "Memory resume card did not preserve the Easy table progress.");
 
-        Click(Find<Button>(window).Single(button => button.Name == "MemoryBack" && button.IsVisible));
+        Click(Find<Button>(window).Single(button => button.Name == "LoungeGamesHeaderBack" && button.IsVisible));
         await Task.Delay(50);
         window.UpdateLayout();
         Require(Find<Button>(window).Any(button => button.Name == "LoungeGame_memory" && button.IsVisible),
@@ -77,7 +79,7 @@ internal static class MemorySmoke
             "Casino lobby was not restored after the Memory smoke.");
 
         File.WriteAllText(Path.Combine(output, "memory-result.txt"),
-            "PASS: Memory tile, five difficulty tables, four curated decks, deck preview, custom card artwork, Easy 4x4 start, card flip feedback, saved resume state and local Lounge navigation all passed.");
+            "PASS: Memory tile, five difficulty tables, four curated decks, enlarged deck preview, custom card artwork, Easy 4x4 start, card flip feedback, saved resume state and header Lounge navigation all passed.");
     }
 
     private static void Click(Button button) => button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
