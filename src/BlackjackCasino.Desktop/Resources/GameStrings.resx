@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="Lounge.TakeTime" xml:space="preserve"><value>Take your time.</value></data>
+  <data name="Lounge.NoPressure" xml:space="preserve"><value>No wagers, no pressure. Pick something small, settle in and leave whenever you want — progress is saved locally.</value></data>
+  <data name="Lounge.PlayArrow" xml:space="preserve"><value>PLAY   →</value></data>
+
+  <data name="Sudoku.Eyebrow" xml:space="preserve"><value>SUDOKU</value></data>
+  <data name="Sudoku.Headline" xml:space="preserve"><value>One grid. No clock to beat.</value></data>
+  <data name="Sudoku.HubDescription" xml:space="preserve"><value>Pencil marks, undo and redo, optional guides and gentle hints. Every move autosaves so you can leave whenever you like.</value></data>
+  <data name="Sudoku.NewPuzzleWarning" xml:space="preserve"><value>NEW PUZZLE replaces only the active puzzle for that difficulty. Completed puzzles stay in your history.</value></data>
+  <data name="Sudoku.FreePlay" xml:space="preserve"><value>FREE PLAY</value></data>
+  <data name="Sudoku.TimerVisible" xml:space="preserve"><value>TIMER · VISIBLE</value></data>
+  <data name="Sudoku.TimerHidden" xml:space="preserve"><value>TIMER · HIDDEN</value></data>
+  <data name="Sudoku.TimerHelp" xml:space="preserve"><value>The timer can be hidden completely. Your elapsed time is still preserved in the save.</value></data>
+  <data name="Sudoku.DailyComplete" xml:space="preserve"><value>TODAY'S DAILY · COMPLETE</value></data>
+  <data name="Sudoku.DailyCatalogHelp" xml:space="preserve"><value>The Daily uses a separate offline library, so ordinary free play never spoils a future Daily.</value></data>
+  <data name="Sudoku.Relaxed" xml:space="preserve"><value>Relaxed</value></data>
+  <data name="Sudoku.Easy" xml:space="preserve"><value>Easy</value></data>
+  <data name="Sudoku.Medium" xml:space="preserve"><value>Medium</value></data>
+  <data name="Sudoku.Hard" xml:space="preserve"><value>Hard</value></data>
+  <data name="Sudoku.Expert" xml:space="preserve"><value>Expert</value></data>
+  <data name="Sudoku.Master" xml:space="preserve"><value>Master</value></data>
+  <data name="Sudoku.NoActive" xml:space="preserve"><value>NO ACTIVE PUZZLE</value></data>
+  <data name="Sudoku.BackLounge" xml:space="preserve"><value>← LOUNGE</value></data>
+  <data name="Sudoku.DailyTitle" xml:space="preserve"><value>DAILY SUDOKU</value></data>
+  <data name="Sudoku.Time" xml:space="preserve"><value>TIME</value></data>
+  <data name="Sudoku.Hints" xml:space="preserve"><value>HINTS</value></data>
+  <data name="Sudoku.Number" xml:space="preserve"><value>NUMBER</value></data>
+  <data name="Sudoku.Pencil" xml:space="preserve"><value>PENCIL  [SPACE]</value></data>
+  <data name="Sudoku.Erase" xml:space="preserve"><value>ERASE  [DEL]</value></data>
+  <data name="Sudoku.Undo" xml:space="preserve"><value>UNDO  [CTRL+Z]</value></data>
+  <data name="Sudoku.Redo" xml:space="preserve"><value>REDO  [CTRL+Y]</value></data>
+  <data name="Sudoku.Reveal" xml:space="preserve"><value>REVEAL ONE CELL</value></data>
+  <data name="Sudoku.TimerInfo" xml:space="preserve"><value>No rush. The timer is informational only and never changes your reward.</value></data>
+  <data name="Sudoku.TimerHiddenInfo" xml:space="preserve"><value>Timer hidden. Progress and elapsed time are still saved automatically.</value></data>
+  <data name="Sudoku.WrongNumber" xml:space="preserve"><value>That number does not belong in this cell.</value></data>
+  <data name="Sudoku.HintApplied" xml:space="preserve"><value>One cell was revealed or corrected. Hints are recorded, but they never block completion.</value></data>
+  <data name="Sudoku.DailyDoneStatus" xml:space="preserve"><value>Daily complete. A quiet win for today.</value></data>
+  <data name="Sudoku.PuzzleDoneStatus" xml:space="preserve"><value>Puzzle complete. Nicely done.</value></data>
+  <data name="Sudoku.GuidesOn" xml:space="preserve"><value>GUIDES · ON  [G]</value></data>
+  <data name="Sudoku.GuidesOff" xml:space="preserve"><value>GUIDES · OFF  [G]</value></data>
+  <data name="Sudoku.CompleteDaily" xml:space="preserve"><value>DAILY COMPLETE</value></data>
+  <data name="Sudoku.CompletePuzzle" xml:space="preserve"><value>PUZZLE COMPLETE</value></data>
+  <data name="Sudoku.QuietWin" xml:space="preserve"><value>A quiet win for today.</value></data>
+  <data name="Sudoku.NicelyDone" xml:space="preserve"><value>Nicely done.</value></data>
+  <data name="Sudoku.CleanSolve" xml:space="preserve"><value>Clean solve — no hints used.</value></data>
+  <data name="Sudoku.OneHint" xml:space="preserve"><value>One hint helped along the way.</value></data>
+  <data name="Sudoku.Difficulty" xml:space="preserve"><value>DIFFICULTY</value></data>
+  <data name="Sudoku.Mode" xml:space="preserve"><value>MODE</value></data>
+  <data name="Sudoku.Daily" xml:space="preserve"><value>DAILY</value></data>
+  <data name="Sudoku.BackPuzzle" xml:space="preserve"><value>BACK TO PUZZLE</value></data>
+  <data name="Sudoku.ReturnLounge" xml:space="preserve"><value>RETURN TO LOUNGE</value></data>
+
+  <data name="Solitaire.Headline" xml:space="preserve"><value>Let the cards settle.</value></data>
+  <data name="Solitaire.KlondikeSubtitle" xml:space="preserve"><value>The familiar seven-column classic.</value></data>
+  <data name="Solitaire.KlondikeDescription" xml:space="preserve"><value>Build alternating colors down; send each suit home from Ace to King.</value></data>
+  <data name="Solitaire.FreeCellSubtitle" xml:space="preserve"><value>Every deal has a number.</value></data>
+  <data name="Solitaire.FreeCellDescription" xml:space="preserve"><value>All cards are visible. Enter a deal number to replay or share the exact same layout.</value></data>
+  <data name="Solitaire.SpiderSubtitle" xml:space="preserve"><value>Eight complete runs.</value></data>
+  <data name="Solitaire.SpiderDescription" xml:space="preserve"><value>Choose one, two or four suits. More suits change difficulty, never the underlying rules.</value></data>
+  <data name="Solitaire.PyramidSubtitle" xml:space="preserve"><value>Pairs make thirteen.</value></data>
+  <data name="Solitaire.PyramidDescription" xml:space="preserve"><value>Clear exposed pairs totaling 13; Kings leave on their own.</value></data>
+  <data name="Solitaire.GolfSubtitle" xml:space="preserve"><value>One rank at a time.</value></data>
+  <data name="Solitaire.GolfDescription" xml:space="preserve"><value>Clear seven columns by playing one rank above or below the waste.</value></data>
+  <data name="Solitaire.TriPeaksSubtitle" xml:space="preserve"><value>Three peaks, one quiet run.</value></data>
+  <data name="Solitaire.TriPeaksDescription" xml:space="preserve"><value>Open the peaks by clearing exposed cards one rank above or below.</value></data>
+  <data name="Solitaire.Draw" xml:space="preserve"><value>DRAW</value></data>
+  <data name="Solitaire.Waste" xml:space="preserve"><value>WASTE</value></data>
+  <data name="Solitaire.Foundations" xml:space="preserve"><value>FOUNDATIONS</value></data>
+  <data name="Solitaire.Tableau" xml:space="preserve"><value>TABLEAU</value></data>
+  <data name="Solitaire.FreeCells" xml:space="preserve"><value>FREE CELLS</value></data>
+  <data name="Solitaire.Deal" xml:space="preserve"><value>DEAL</value></data>
+  <data name="Solitaire.Pyramid" xml:space="preserve"><value>PYRAMID</value></data>
+  <data name="Solitaire.DrawWaste" xml:space="preserve"><value>DRAW &amp; WASTE</value></data>
+  <data name="Solitaire.SevenColumns" xml:space="preserve"><value>SEVEN COLUMNS</value></data>
+  <data name="Solitaire.ThreePeaks" xml:space="preserve"><value>THREE PEAKS</value></data>
+  <data name="Solitaire.KingsRule" xml:space="preserve"><value>KINGS CLEAR ALONE · ALL OTHER PAIRS TOTAL 13</value></data>
+  <data name="Solitaire.GolfRule" xml:space="preserve"><value>CLEAR THE COLUMNS WITH RANKS ONE HIGHER OR LOWER</value></data>
+  <data name="Solitaire.PeaksRule" xml:space="preserve"><value>ONE HIGHER OR LOWER · CLEAR ALL THREE PEAKS</value></data>
+  <data name="Solitaire.StockEmpty" xml:space="preserve"><value>STOCK
+EMPTY</value></data>
+  <data name="Solitaire.Empty" xml:space="preserve"><value>EMPTY</value></data>
+  <data name="Solitaire.SolvedBanner" xml:space="preserve"><value>SOLVED
+A quiet victory. Start another deal whenever you like.</value></data>
+  <data name="Solitaire.KlondikeHint" xml:space="preserve"><value>Click a card, then its destination. Click the selected card again to cancel. Double-click a top card for foundation. Stock draws one.</value></data>
+  <data name="Solitaire.FreeCellHint" xml:space="preserve"><value>Build down in alternating colors. Empty cells hold one card. Click the selected card again to cancel. Double-click sends a card home.</value></data>
+  <data name="Solitaire.SpiderHint" xml:space="preserve"><value>Build down freely; only same-suit runs move together. The selected run gets a gold outline. Complete King-to-Ace runs. Stock deals ten.</value></data>
+  <data name="Solitaire.PyramidHint" xml:space="preserve"><value>Select two exposed cards totaling 13. The selected card gets a gold outline. Kings clear alone. Draw when no pair is available.</value></data>
+  <data name="Solitaire.GolfHint" xml:space="preserve"><value>Click a top card one rank above or below the waste. Aces and Kings do not wrap.</value></data>
+  <data name="Solitaire.TriPeaksHint" xml:space="preserve"><value>Clear exposed cards one rank above or below the waste. Aces and Kings do not wrap.</value></data>
+  <data name="Solitaire.SaveError" xml:space="preserve"><value>The new deal could not be saved. Nothing was replaced. </value></data>
+
+  <data name="Vault.CloseOpening" xml:space="preserve"><value>The Vault is opening. Let the reserve transfer finish first.</value></data>
+  <data name="Vault.MaximumTier" xml:space="preserve"><value>Maximum Vault tier unlocked.</value></data>
+  <data name="Vault.RecoveryProgress" xml:space="preserve"><value>PAYOUT RECOVERY IN PROGRESS</value></data>
+  <data name="Vault.PayoutHelper" xml:space="preserve"><value>Payout transferred to your play-money bankroll. A fresh Vault is ready when you close this screen.</value></data>
+
+  <data name="Blackjack.SoloReady" xml:space="preserve"><value>Solo table ready. Place a bet to begin.</value></data>
+  <data name="Blackjack.CardsDealt" xml:space="preserve"><value>Cards dealt.</value></data>
+  <data name="Blackjack.CardsDealtTable" xml:space="preserve"><value>Cards dealt around the table.</value></data>
+  <data name="Blackjack.HitStatus" xml:space="preserve"><value>Hit.</value></data>
+  <data name="Blackjack.StandStatus" xml:space="preserve"><value>Stand.</value></data>
+  <data name="Blackjack.DoubleStatus" xml:space="preserve"><value>Double down.</value></data>
+  <data name="Blackjack.SplitStatus" xml:space="preserve"><value>Split.</value></data>
+  <data name="Blackjack.SurrenderStatus" xml:space="preserve"><value>Surrender.</value></data>
+  <data name="Blackjack.InsuranceTaken" xml:space="preserve"><value>Insurance taken.</value></data>
+  <data name="Blackjack.NoInsuranceStatus" xml:space="preserve"><value>No insurance.</value></data>
+  <data name="Blackjack.ResetQuestion" xml:space="preserve"><value>Reset your local bankroll to $1,000? This only affects play-money chips.</value></data>
+  <data name="Blackjack.ResetTitle" xml:space="preserve"><value>Reset bankroll</value></data>
+  <data name="Blackjack.ResetDone" xml:space="preserve"><value>Bankroll reset. Place a bet to begin.</value></data>
+  <data name="Blackjack.InsuranceAvailable" xml:space="preserve"><value>Dealer shows an Ace. Insurance is available for half your original bet.</value></data>
+  <data name="Blackjack.Push" xml:space="preserve"><value>Push</value></data>
+  <data name="Blackjack.CasinoLobby" xml:space="preserve"><value>Casino lobby</value></data>
+  <data name="Blackjack.SoloTable" xml:space="preserve"><value>Solo table</value></data>
+  <data name="Blackjack.WaitingDeal" xml:space="preserve"><value>Waiting for deal</value></data>
+  <data name="Blackjack.Surrendered" xml:space="preserve"><value>Surrendered</value></data>
+  <data name="Blackjack.YourHand" xml:space="preserve"><value>YOUR HAND</value></data>
+  <data name="Blackjack.Bust" xml:space="preserve"><value>Bust</value></data>
+  <data name="Blackjack.Win" xml:space="preserve"><value>Win</value></data>
+  <data name="Blackjack.Loss" xml:space="preserve"><value>Loss</value></data>
+  <data name="Blackjack.SurrenderOutcome" xml:space="preserve"><value>Surrender</value></data>
+</root>
