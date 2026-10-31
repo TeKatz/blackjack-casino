@@ -1,5 +1,6 @@
 using BlackjackCasino.Core.Solitaire;
 using BlackjackCasino.Core.Sudoku;
+using BlackjackCasino.Core.WordSearch;
 
 namespace BlackjackCasino.Desktop;
 
@@ -19,6 +20,8 @@ public partial class MainWindow
         RecordSudokuCompletions(preferences.Sudoku);
 
         preferences = preferences with { Solitaire = SolitaireProgressState.Normalize(preferences.Solitaire) };
+        preferences.WordSearch.Normalize();
+        RecordWordSearchCompletions(preferences.WordSearch);
         LoungeHostedGameRegistry.SetSessionModules([
             SolitaireLoungeModule.Create(
                 preferences.Solitaire,
@@ -31,7 +34,17 @@ public partial class MainWindow
                 RecordSolitaireStart,
                 RecordSolitaireAbandon,
                 RecordSolitaireCompletion,
-                () => progressionController?.Profile.EquippedCardSetId)
+                () => progressionController?.Profile.EquippedCardSetId),
+            WordSearchLoungeModule.Create(
+                preferences.WordSearch,
+                state =>
+                {
+                    state.Normalize();
+                    preferences = preferences with { WordSearch = state };
+                    if (!testSession) SavePreferences();
+                },
+                () => progressionController?.Profile.WordSearch ?? new WordSearchStatistics(),
+                RecordWordSearchCompletion)
         ]);
 
         var window = new LoungeWindow(
@@ -148,5 +161,24 @@ public partial class MainWindow
         {
             return "Solved and saved locally. Reopen this deal to retry saving XP. " + ex.Message;
         }
+    }
+
+    private void RecordWordSearchCompletions(WordSearchProgressState state)
+    {
+        if (progressionController is null) return;
+        state.Normalize();
+        foreach (WordSearchCompletionRecord completion in state.CompletedGames)
+        {
+            if (progressionController.Profile.WordSearch.RecordedPuzzleIds.Contains(completion.PuzzleId)) continue;
+            try { _ = progressionController.ProcessWordSearch(completion); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return; }
+        }
+    }
+
+    private ProgressionAward RecordWordSearchCompletion(WordSearchCompletionRecord completion)
+    {
+        if (progressionController is null) return ProgressionAward.None;
+        try { return progressionController.ProcessWordSearch(completion); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return ProgressionAward.None; }
     }
 }
