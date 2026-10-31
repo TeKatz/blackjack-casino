@@ -63,7 +63,7 @@ public static class MemoryGame
             if (game.Completed)
             {
                 game.CompletedAt = now ?? DateTimeOffset.UtcNow;
-                return new(MemoryOutcome.Completed, second, first, game.CurrentStreak);
+                return new(MemoryFlipOutcome.Completed, second, first, game.CurrentStreak);
             }
             return new(MemoryFlipOutcome.Match, second, first, game.CurrentStreak);
         }
