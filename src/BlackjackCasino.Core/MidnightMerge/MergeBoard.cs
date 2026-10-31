@@ -39,6 +39,7 @@ public sealed class MergeBoard
             next.Items.Add(new(Guid.NewGuid(), producer.OutputDefinitionId, position));
             int index = next.Producers.FindIndex(x => x.DefinitionId == producerId);
             next.Producers[index] = next.Producers[index] with { SpawnCount = checked(next.Producers[index].SpawnCount + 1) };
+            next = next with { HighestTierCreated = Math.Max(next.HighestTierCreated, catalog.Items[producer.OutputDefinitionId].Tier) };
             Commit(next);
             return new(MergeOutcome.Spawned, position, DefinitionId: producer.OutputDefinitionId);
         }
@@ -71,6 +72,14 @@ public sealed class MergeBoard
             var next = Copy(state);
             next.Items.RemoveAll(x => x.Id == itemId || (merge && x.Id == destination!.Id));
             next.Items.Add(merge ? new(Guid.NewGuid(), definition, target) : source with { Position = target });
+            if (merge)
+            {
+                next = next with
+                {
+                    TotalMerges = checked(next.TotalMerges + 1),
+                    HighestTierCreated = Math.Max(next.HighestTierCreated, catalog.Items[definition].Tier),
+                };
+            }
             Commit(next);
             return new(merge ? MergeOutcome.Merged : MergeOutcome.Moved, target, source.Position, definition, SourceDefinitionId: source.DefinitionId);
         }
