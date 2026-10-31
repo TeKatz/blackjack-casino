@@ -137,13 +137,14 @@ internal static class Program
                     "Casino lobby was not restored after leaving Nine Lives.");
 
                 await SudokuSmoke.Run(window, output);
+                await SolitaireSmoke.Run(window, output);
                 await KniffelSmoke.Run(window, output, profile);
                 await KniffelCasinoSmoke.Run(window, output, profile);
                 await KniffelFeedbackSmoke.Run(window, output);
                 await EmpireStrategySmoke.Run(window, output);
 
                 File.WriteAllText(Path.Combine(output, "result.txt"),
-                    "PASS: Nine Lives opened with the restored concept-art symbols, single Casino navigation, clean empty-win state, themed in-app flyouts and non-clipping paytable return control; Chill Lounge Sudoku smoke also passed.");
+                    "PASS: Nine Lives presentation; Chill Lounge Sudoku; Midnight Solitaire navigation and selection feedback; Midnight Dice; and Casino Empire startup acceptance all passed.");
             }
             catch (Exception ex)
             {
