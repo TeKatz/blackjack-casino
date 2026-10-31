@@ -50,6 +50,7 @@ internal partial class ProgressionWindow
         ChallengeCategory.Sudoku => "Sudoku",
         ChallengeCategory.MidnightMerge => "Midnight Merge",
         ChallengeCategory.WordSearch => "Word Search",
+        ChallengeCategory.Memory => "Memory",
         _ => category.ToString(),
     };
 

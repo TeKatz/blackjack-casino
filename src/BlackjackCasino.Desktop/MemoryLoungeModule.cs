@@ -186,7 +186,7 @@ internal sealed class MemoryLoungeHub : UserControl, IDisposable
         var border = Panel();
         border.Margin = new Thickness(0, 0, 10, 10);
         var stack = new StackPanel();
-        stack.Children.Add(Label(difficulty.ToString().ToUpperInvariant(), 11, difficulty >= MemoryDifficulty.Expert ? "#E0BE73" : "#86BA9D", FontWeights.Bold));
+        stack.Children.Add(Label(difficulty.ToString().ToUpperInvariant(), 11, (int)difficulty >= (int)MemoryDifficulty.Expert ? "#E0BE73" : "#86BA9D", FontWeights.Bold));
         stack.Children.Add(Label($"{spec.Rows} × {spec.Columns} · {spec.Pairs} pairs", 17, "#F0DFC2", FontWeights.SemiBold));
         stack.Children.Add(Label($"+{MemoryProgression.PlayerExperience(difficulty):N0} XP on completion", 10, "#91A79C"));
         stack.Children.Add(MarginLabel(bestMoves > 0 ? $"Best: {bestMoves} moves" : "No completed table yet", 10, "#7F948B", new Thickness(0, 7, 0, 10)));

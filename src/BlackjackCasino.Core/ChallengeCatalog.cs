@@ -13,6 +13,7 @@ public enum ChallengeCategory
     Sudoku,
     MidnightMerge,
     WordSearch,
+    Memory,
 }
 
 public enum ChallengeMetric
@@ -90,6 +91,7 @@ public enum ChallengeMetric
     SudokuCompleted, SudokuDailyCompleted, SudokuNoHintCompleted, SudokuExpertCompleted, SudokuMasterCompleted,
     MergeMerges, MergeOrdersCompleted, MergeRenovationPoints, MergeHighestTier, MergeMilestones, MergeAreasCompleted,
     WordSearchCompleted, WordSearchWordsFound, WordSearchNoHintCompleted, WordSearchExpertCompleted, WordSearchMasterCompleted,
+    MemoryGamesCompleted, MemoryPairsFound, MemoryPerfectGames, MemoryExpertCompleted, MemoryMasterCompleted, MemoryBestStreak,
 }
 
 public sealed record ChallengeDefinition(
@@ -153,6 +155,31 @@ public static class ChallengeCatalog
         C("word-search-master-1", ChallengeCategory.WordSearch, "Master Finder", "Complete your first Master Word Search.", ChallengeMetric.WordSearchMasterCompleted, 1, 250),
         C("word-search-master-10", ChallengeCategory.WordSearch, "Master of Letters", "Complete 10 Master Word Search puzzles.", ChallengeMetric.WordSearchMasterCompleted, 10, 700),
         C("word-search-master-24", ChallengeCategory.WordSearch, "The Last Hidden Word", "Complete all 24 Master Word Search puzzles.", ChallengeMetric.WordSearchMasterCompleted, 24, 1600),
+
+        // Memory rewards calm persistence and recall rather than speed. A perfect table and long
+        // match streak are optional mastery goals; mistakes never reduce completion XP.
+        C("memory-pair-1", ChallengeCategory.Memory, "First Pair", "Find your first Memory pair.", ChallengeMetric.MemoryPairsFound, 1, 25),
+        C("memory-pair-100", ChallengeCategory.Memory, "Pair Collector", "Find 100 Memory pairs.", ChallengeMetric.MemoryPairsFound, 100, 100),
+        C("memory-pair-1000", ChallengeCategory.Memory, "Matchmaker", "Find 1,000 Memory pairs.", ChallengeMetric.MemoryPairsFound, 1000, 400),
+        E("memory-pair-5000", ChallengeCategory.Memory, "Total Recall", "Find 5,000 Memory pairs.", ChallengeMetric.MemoryPairsFound, 5000, 1500),
+        C("memory-game-1", ChallengeCategory.Memory, "Cleared the Table", "Complete your first Memory table.", ChallengeMetric.MemoryGamesCompleted, 1, 50),
+        C("memory-game-10", ChallengeCategory.Memory, "Getting Familiar", "Complete 10 Memory tables.", ChallengeMetric.MemoryGamesCompleted, 10, 150),
+        C("memory-game-50", ChallengeCategory.Memory, "Lounge Regular", "Complete 50 Memory tables.", ChallengeMetric.MemoryGamesCompleted, 50, 350),
+        C("memory-game-100", ChallengeCategory.Memory, "Memory Habit", "Complete 100 Memory tables.", ChallengeMetric.MemoryGamesCompleted, 100, 650),
+        E("memory-game-250", ChallengeCategory.Memory, "Photographic Memory", "Complete 250 Memory tables.", ChallengeMetric.MemoryGamesCompleted, 250, 1500),
+        C("memory-perfect-1", ChallengeCategory.Memory, "Not a Single Mistake", "Complete a Memory table without one wrong match.", ChallengeMetric.MemoryPerfectGames, 1, 100),
+        C("memory-perfect-10", ChallengeCategory.Memory, "Flawless Recall", "Complete 10 perfect Memory tables.", ChallengeMetric.MemoryPerfectGames, 10, 350),
+        C("memory-perfect-50", ChallengeCategory.Memory, "Crystal Clear", "Complete 50 perfect Memory tables.", ChallengeMetric.MemoryPerfectGames, 50, 900),
+        E("memory-perfect-100", ChallengeCategory.Memory, "Mind Palace", "Complete 100 perfect Memory tables.", ChallengeMetric.MemoryPerfectGames, 100, 1800),
+        C("memory-expert-1", ChallengeCategory.Memory, "Big Board, Big Brain", "Complete your first Expert Memory table.", ChallengeMetric.MemoryExpertCompleted, 1, 175),
+        C("memory-expert-25", ChallengeCategory.Memory, "Deep Recall", "Complete 25 Expert Memory tables.", ChallengeMetric.MemoryExpertCompleted, 25, 650),
+        E("memory-expert-100", ChallengeCategory.Memory, "Expert Memory", "Complete 100 Expert Memory tables.", ChallengeMetric.MemoryExpertCompleted, 100, 1500),
+        C("memory-master-1", ChallengeCategory.Memory, "Master Memory", "Complete your first Master Memory table.", ChallengeMetric.MemoryMasterCompleted, 1, 250),
+        C("memory-master-25", ChallengeCategory.Memory, "Long-Term Memory", "Complete 25 Master Memory tables.", ChallengeMetric.MemoryMasterCompleted, 25, 800),
+        E("memory-master-100", ChallengeCategory.Memory, "Memory Archive", "Complete 100 Master Memory tables.", ChallengeMetric.MemoryMasterCompleted, 100, 1800),
+        C("memory-streak-5", ChallengeCategory.Memory, "Hot Streak", "Find 5 pairs in a row without a miss.", ChallengeMetric.MemoryBestStreak, 5, 150),
+        C("memory-streak-10", ChallengeCategory.Memory, "Locked In", "Find 10 pairs in a row without a miss.", ChallengeMetric.MemoryBestStreak, 10, 400),
+        E("memory-streak-20", ChallengeCategory.Memory, "Unbroken Recall", "Find 20 pairs in a row without a miss.", ChallengeMetric.MemoryBestStreak, 20, 1000),
 
         // Midnight Merge rewards meaningful progress. There is deliberately no challenge for producer clicks.
         C("merge-first", ChallengeCategory.MidnightMerge, "Two Become One", "Create your first merged item.", ChallengeMetric.MergeMerges, 1, 25),
@@ -428,13 +455,20 @@ public static class ChallengeCatalog
             ChallengeMetric.WordSearchExpertCompleted => profile.WordSearch.ExpertCompleted,
             ChallengeMetric.WordSearchMasterCompleted => profile.WordSearch.MasterCompleted,
 
+            ChallengeMetric.MemoryGamesCompleted => profile.Memory.CompletedGames,
+            ChallengeMetric.MemoryPairsFound => profile.Memory.PairsFound,
+            ChallengeMetric.MemoryPerfectGames => profile.Memory.PerfectGames,
+            ChallengeMetric.MemoryExpertCompleted => profile.Memory.ExpertCompleted,
+            ChallengeMetric.MemoryMasterCompleted => profile.Memory.MasterCompleted,
+            ChallengeMetric.MemoryBestStreak => profile.Memory.BestStreak,
+
             ChallengeMetric.LifetimeExperience => profile.LifetimeExperience,
             ChallengeMetric.LifetimePlaytimeSeconds => profile.TotalPlaytimeSeconds,
             ChallengeMetric.LifetimeWagered => blackjack.TotalWagered + reels.TotalWagered + neon.TotalWagered + nine.TotalWagered
                 + manor.TotalWagered + legacy.TotalWagered + profile.Kniffel.TotalWagered,
             ChallengeMetric.LifetimePlays => (decimal)blackjack.RoundsPlayed + reels.Spins + neon.Spins + nine.Spins
                 + manor.PaidSpins + manor.FreeSpins + legacy.Spins + profile.Kniffel.CompletedGames + profile.Sudoku.CompletedPuzzles
-                + profile.WordSearch.CompletedPuzzles + merge.OrdersCompleted,
+                + profile.WordSearch.CompletedPuzzles + profile.Memory.CompletedGames + merge.OrdersCompleted,
             ChallengeMetric.PrestigeCount => profile.Prestige,
             _ => 0,
         };
