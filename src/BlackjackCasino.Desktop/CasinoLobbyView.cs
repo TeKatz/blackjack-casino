@@ -86,23 +86,18 @@ internal sealed class CasinoLobbyView : UserControl
         albumPackCount = count;
         if (albumPackBadgeGlow is null) return;
 
+        // A static glow is cheap. Only the count transition receives a short opacity pulse;
+        // continuously animating BlurRadius kept the whole lobby in a costly effect render path.
         albumPackBadgeGlow.BeginAnimation(DropShadowEffect.OpacityProperty, null);
         albumPackBadgeGlow.BeginAnimation(DropShadowEffect.BlurRadiusProperty, null);
         albumPackBadgeGlow.Opacity = count > 0 ? .38 : 0;
         albumPackBadgeGlow.BlurRadius = 11;
         if (count <= 0) return;
 
-        albumPackBadgeGlow.BeginAnimation(DropShadowEffect.OpacityProperty, new DoubleAnimation(.24, .56, TimeSpan.FromMilliseconds(1350))
+        albumPackBadgeGlow.BeginAnimation(DropShadowEffect.OpacityProperty, new DoubleAnimation(.60, .38, TimeSpan.FromMilliseconds(560))
         {
-            AutoReverse = true,
-            RepeatBehavior = RepeatBehavior.Forever,
-            EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut },
-        });
-        albumPackBadgeGlow.BeginAnimation(DropShadowEffect.BlurRadiusProperty, new DoubleAnimation(8, 15, TimeSpan.FromMilliseconds(1350))
-        {
-            AutoReverse = true,
-            RepeatBehavior = RepeatBehavior.Forever,
-            EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut },
+            EasingFunction = new SineEase { EasingMode = EasingMode.EaseOut },
+            FillBehavior = FillBehavior.Stop,
         });
     }
 
@@ -327,6 +322,8 @@ internal sealed class CasinoLobbyView : UserControl
     {
         modes.Changed -= Refresh;
         Localization.LanguageChanged -= Localization_LanguageChanged;
+        albumPackBadgeGlow?.BeginAnimation(DropShadowEffect.OpacityProperty, null);
+        albumPackBadgeGlow?.BeginAnimation(DropShadowEffect.BlurRadiusProperty, null);
     }
 
     private void Localization_LanguageChanged(object? sender, EventArgs e) => Refresh();
