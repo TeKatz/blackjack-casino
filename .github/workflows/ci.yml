@@ -37,6 +37,9 @@ jobs:
       - name: Localization resource parity
         run: python tools/check_localization.py
 
+      - name: Collection artwork coverage
+        run: python tools/check_collection_art.py
+
       - name: Restore
         run: dotnet restore BlackjackCasino.sln
 

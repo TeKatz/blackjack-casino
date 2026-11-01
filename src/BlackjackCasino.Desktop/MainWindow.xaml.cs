@@ -858,7 +858,8 @@ public partial class MainWindow : Window
         {
             if (e.Key == Key.Escape)
             {
-                CloseMetaPage();
+                if (metaPages.Peek().Shell is not ProgressionWindow progression || !progression.TryCloseAlbumArt())
+                    CloseMetaPage();
                 e.Handled = true;
             }
             return;

@@ -54,7 +54,15 @@ internal partial class ProgressionWindow
         AlbumThemeTitle.Text = $"{active.Symbol}  {active.Name}" + (active.UltraRare ? " · " + Localization.T("Album.UltraRare") : "");
         AlbumCards.Children.Clear();
         foreach (CollectionCard card in active.Cards)
-            AlbumCards.Children.Add(CollectionArtwork.Card(card, state.OwnedCardIds.Contains(card.Id)));
+        {
+            bool owned = state.OwnedCardIds.Contains(card.Id);
+            Border preview = CollectionArtwork.Card(card, owned, animationsEnabled: albumAnimations);
+            var inspect = new Button { Content = preview, Tag = "inspect:" + card.Id, IsEnabled = owned, Padding = new Thickness(0), Margin = new Thickness(0),
+                Template = (ControlTemplate)ProgressionRoot.FindResource("CollectionCardButtonTemplate"), ToolTip = owned ? Localization.T("Album.ArtHelp") : card.Name };
+            System.Windows.Automation.AutomationProperties.SetName(inspect, card.Name + (owned ? " · " + Localization.T("Album.ArtHelp") : ""));
+            inspect.Click += (_, _) => OpenAlbumArt(card);
+            AlbumCards.Children.Add(inspect);
+        }
         if (state.PendingOpening is { } opening)
         {
             if (opening.Id != albumOpeningId) ShowAlbumOpening(opening);
@@ -124,7 +132,7 @@ internal partial class ProgressionWindow
             var back = new Button { Content = CollectionArtwork.Pack(opening.PackRarity), Background = Brushes.Transparent, BorderThickness = new Thickness(0), Padding = new Thickness(8), Margin = new Thickness(0), ToolTip = Localization.F("Album.RevealCard", i + 1) };
             System.Windows.Automation.AutomationProperties.SetName(back, Localization.F("Album.RevealCard", i + 1));
             back.Click += (_, _) => RevealAlbumCard(index, albumAnimations);
-            var slot = new ContentControl { Content = back, Width = 158, Height = 230, HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center };
+            var slot = new ContentControl { Content = back, Width = 180, Height = 268, HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center };
             albumSlots.Add(slot); AlbumOpeningCards.Children.Add(slot);
         }
     }
@@ -136,7 +144,7 @@ internal partial class ProgressionWindow
         CollectionDraw draw = opening.Cards[index];
         CollectionCard card = CollectionCatalog.Find(draw.CardId)!;
         bool ultra = CollectionCatalog.Theme(card).UltraRare;
-        Border front = CollectionArtwork.Card(card, true, draw.IsNew ? Localization.T("Album.New") : Localization.F("Album.Duplicate", draw.DuplicatePoints));
+        Border front = CollectionArtwork.Card(card, true, draw.IsNew ? Localization.T("Album.New") : Localization.F("Album.Duplicate", draw.DuplicatePoints), albumAnimations);
         albumSlots[index].Content = front;
         if (sound) PlayAlbumCue(card.Rarity, false);
         if (animate)

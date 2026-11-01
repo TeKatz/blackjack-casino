@@ -1,6 +1,12 @@
 # Collector's Album
 
-The **Album** tab in Progression contains 136 permanent collectible cards, independent of playable card-set cosmetics. Twelve regular themes have ten cards each (four Common, three Uncommon, one Rare, one Epic, one Legendary). Four ultra rare themes contain four Legendary cards each. The catalog contains stable IDs, individual names, theme-specific vector scenes and numbered constellation seals. Missing slots remain visible; each theme tracks completion.
+The **Album** tab in Progression contains 136 permanent collectible cards, independent of playable card-set cosmetics. Twelve regular themes have ten cards each (four Common, three Uncommon, one Rare, one Epic, one Legendary). Four ultra rare themes contain four Legendary cards each. Every stable card ID has its own painted illustration, backed by 16 embedded theme atlases. Missing slots remain visible; each theme tracks completion.
+
+## Illustrated editions
+
+All 136 subjects are individually assigned in `Assets/CollectionArt/manifest.json`; `prompts.json` preserves the image-generation briefs. The 12 regular atlases use five columns and two rows; the four ultra rare atlases use two columns and two rows with larger portrait illustrations. No card shares an illustration region. Atlas SHA-256 checksums, unique pixel hashes and non-overlapping crop coordinates guard against missing or accidentally reused art.
+
+Cards use full-art scenes, engraved metal borders and readable shaded captions. Rare, Epic and Legendary cards add a gentle moving foil reflection; ultra rare editions have stronger finishing. Reflections stop when hidden or unloaded and respect the animation preference. Selecting an owned card opens a larger inspector. Escape or the close button returns to the same album card, including inside the main casino window; undiscovered illustrations stay hidden.
 
 ## Packs and odds
 
@@ -41,4 +47,4 @@ Packs have five distinct frames, ornament counts and glow strengths. Opening add
 
 `CollectionTests` covers catalog shape, five-card draws for all pack qualities, rarity guarantees, ultra rare pool reachability, in-pack duplicates, point carry and multiple conversions, serialization/resume, concurrent opens, prices, all reward sources, Prestige retention, failed-write rollback/retry and synthesized audio bounds.
 
-The Windows presentation smoke additionally exercises the Album tab at 1080×720 and 1440×900, all theme pages, pack purchases, five-card reveal, duplicate click protection and resumed receipts. The Windows runtime is required to execute WPF; Linux can compile the complete desktop project and execute the domain/persistence/audio tests.
+`tools/check_collection_art.py` verifies all 136 assignments, all 16 atlas checksums, crop bounds and uniqueness. The Windows presentation smoke additionally checks decoded pixels and perceptual hashes, captures every theme and rarity finish, opens the actual inspector at 1080×720 and 1440×900, verifies Escape/focus restoration, and checks foil animation visibility/unload behavior. It also exercises all theme pages, pack purchases, five-card reveal, duplicate click protection and resumed receipts. The Windows runtime is required to execute WPF; Linux can compile the complete desktop project and execute the domain/persistence/audio tests.

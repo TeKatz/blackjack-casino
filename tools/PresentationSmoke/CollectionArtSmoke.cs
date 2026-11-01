@@ -1,0 +1,112 @@
+using System.IO;
+using System.Numerics;
+using System.Security.Cryptography;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using BlackjackCasino.Core;
+using BlackjackCasino.Core.Collections;
+using BlackjackCasino.Desktop;
+
+internal static partial class Program
+{
+    private static async Task CheckCollectionArt(MainWindow window, PlayerProfileState profile)
+    {
+        var pixels = new HashSet<string>(StringComparer.Ordinal);
+        var perceptual = new List<(string Id, ulong Hash)>();
+        foreach (CollectionCard card in CollectionCatalog.Cards)
+        {
+            BitmapSource image = CollectionIllustrations.ImageFor(card);
+            Require(image.IsFrozen && image.PixelWidth >= 200 && image.PixelHeight >= 300, "Missing or undersized illustration: " + card.Id);
+            var converted = new FormatConvertedBitmap(image, PixelFormats.Bgra32, null, 0);
+            int stride = converted.PixelWidth * 4;
+            var buffer = new byte[stride * converted.PixelHeight];
+            converted.CopyPixels(buffer, stride, 0);
+            Require(pixels.Add(Convert.ToHexString(SHA256.HashData(buffer))), "Duplicate illustration pixels: " + card.Id);
+            ulong hash = IllustrationHash(image);
+            foreach (var other in perceptual)
+                Require(BitOperations.PopCount(hash ^ other.Hash) > 3, "Near-duplicate illustration composition: " + card.Id + " / " + other.Id);
+            perceptual.Add((card.Id, hash));
+        }
+        Require(pixels.Count == 136 && CollectionIllustrations.All.Count == 136, "Not every card has unique artwork");
+        // Exercise the real album inspector without mutating the player's ownership.
+        string ownedId = profile.Collection.OwnedCardIds.First();
+        CollectionCard owned = CollectionCatalog.Find(ownedId)!;
+        Find<Button>(Find<StackPanel>(window).Single(p => p.Name == "AlbumThemes"))
+            .Single(b => Equals(b.Tag, owned.ThemeId)).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        window.UpdateLayout();
+        Button selected = Find<Button>(window).Single(b => Equals(b.Tag, "inspect:" + ownedId));
+        selected.Focus();
+        selected.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        window.UpdateLayout(); await Task.Delay(50);
+        Border inspector = Find<Border>(window).Single(b => b.Name == "AlbumArtOverlay");
+        Require(inspector.IsVisible, "Collected card did not open its artwork inspector");
+        Require(Find<Image>(inspector).Single(i => i.Name == "CollectionCardArt").Tag as string == ownedId, "Inspector displays another card");
+        foreach (var size in new[] { (1080d, 720d), (1440d, 900d) })
+        {
+            window.Width = size.Item1; window.Height = size.Item2; window.UpdateLayout();
+            RequireWithin(window, Find<Button>(inspector).Single(b => b.Name == "AlbumArtClose"), "Artwork inspector close");
+            RequireWithin(window, Find<Image>(inspector).Single(i => i.Name == "CollectionCardArt"), "Artwork inspector illustration");
+            Capture(window, "album-art-inspector-" + (int)size.Item1);
+        }
+        Button close = Find<Button>(inspector).Single(b => b.Name == "AlbumArtClose");
+        close.RaiseEvent(new KeyEventArgs(Keyboard.PrimaryDevice, PresentationSource.FromVisual(window)!, 0, Key.Escape) { RoutedEvent = Keyboard.PreviewKeyDownEvent });
+        Require(!inspector.IsVisible, "Escape did not close the artwork inspector");
+        Require(selected.IsVisible && selected.IsEnabled && selected.IsKeyboardFocused, "Escape left the album or lost the selected card focus");
+        Require(Find<TabControl>(window).Any(t => t.IsVisible && t.SelectedItem is TabItem { Header: "Album" }), "Escape closed the progression page");
+
+        var root = (Grid)window.Content;
+        var host = new Border { Name = "CollectionArtQA", Background = new SolidColorBrush(Color.FromRgb(6, 12, 20)), Padding = new Thickness(18) };
+        Grid.SetRowSpan(host, 2); Grid.SetColumnSpan(host, 2); Panel.SetZIndex(host, int.MaxValue); root.Children.Add(host);
+        try
+        {
+            window.Width = 1440; window.Height = 900;
+            foreach (CollectionTheme theme in CollectionCatalog.Themes)
+            {
+                var stack = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+                stack.Children.Add(new TextBlock { Text = theme.Name + " · ILLUSTRATED EDITION", Foreground = Brushes.WhiteSmoke, FontFamily = new FontFamily("Georgia"), FontSize = 25, Margin = new Thickness(8, 0, 0, 18) });
+                var grid = new UniformGrid { Columns = theme.UltraRare ? 4 : 5, Width = (theme.UltraRare ? 4 : 5) * 180 };
+                foreach (CollectionCard card in theme.Cards)
+                    grid.Children.Add(CollectionArtwork.Card(card, true, animationsEnabled: false));
+                stack.Children.Add(grid); host.Child = stack;
+                window.UpdateLayout(); await Task.Delay(30);
+                Require(!Find<Border>(host).Where(b => b.Name == "CollectionFoil").Any(b => b.RenderTransform.HasAnimatedProperties), "Reduced-motion cards still animate");
+                Capture(window, "album-art-" + theme.Id);
+            }
+            var editions = new WrapPanel { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+            foreach (CollectionRarity rarity in Enum.GetValues<CollectionRarity>())
+                editions.Children.Add(CollectionArtwork.Card(CollectionCatalog.Themes[0].Cards.First(c => c.Rarity == rarity), true, animationsEnabled: false));
+            editions.Children.Add(CollectionArtwork.Card(CollectionCatalog.Themes.First(t => t.UltraRare).Cards[0], true, animationsEnabled: false));
+            host.Child = editions; window.UpdateLayout(); await Task.Delay(40); Capture(window, "album-art-rarity-editions");
+
+            CollectionCard legendary = CollectionCatalog.Themes[0].Cards[^1];
+            Border animated = CollectionArtwork.Card(legendary, true, animationsEnabled: true);
+            host.Child = animated; window.UpdateLayout(); await Task.Delay(50);
+            Border foil = Find<Border>(animated).Single(b => b.Name == "CollectionFoil");
+            Require(foil.RenderTransform.HasAnimatedProperties, "Visible Legendary card has no foil animation");
+            animated.Visibility = Visibility.Collapsed; await Task.Delay(30);
+            Require(!foil.RenderTransform.HasAnimatedProperties, "Hidden card kept an animation clock");
+            animated.Visibility = Visibility.Visible; await Task.Delay(30);
+            Require(foil.RenderTransform.HasAnimatedProperties, "Visible card did not resume foil animation");
+            host.Child = null; window.UpdateLayout(); await Task.Delay(40);
+            Require(!foil.RenderTransform.HasAnimatedProperties, "Unloaded card kept an animation clock");
+            File.WriteAllText(Path.Combine(output, "album-art-result.txt"), "PASS: 136 distinct decoded illustrations and perceptual compositions; full catalog mapping; all 16 theme galleries; all rarity finishes; real inspector and Escape; reduced motion; visible/hidden/unloaded foil lifecycle.");
+        }
+        finally { host.Child = null; root.Children.Remove(host); window.UpdateLayout(); }
+    }
+
+    private static ulong IllustrationHash(BitmapSource image)
+    {
+        var drawing = new DrawingVisual();
+        using (DrawingContext dc = drawing.RenderOpen()) dc.DrawImage(image, new Rect(0, 0, 9, 8));
+        var thumb = new RenderTargetBitmap(9, 8, 96, 96, PixelFormats.Pbgra32); thumb.Render(drawing);
+        var data = new byte[9 * 8 * 4]; thumb.CopyPixels(data, 9 * 4, 0);
+        int Luma(int x, int y) { int i = (y * 9 + x) * 4; return data[i] * 114 + data[i+1] * 587 + data[i+2] * 299; }
+        ulong result = 0;
+        for (int y = 0; y < 8; y++) for (int x = 0; x < 8; x++) if (Luma(x, y) > Luma(x+1, y)) result |= 1UL << (y*8+x);
+        return result;
+    }
+}

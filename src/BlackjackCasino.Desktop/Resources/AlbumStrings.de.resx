@@ -72,4 +72,7 @@
   <data name="Album.Odds" xml:space="preserve">
     <value>Fünf Karten. Eine garantiert {0} oder besser. Weitere reguläre Plätze: {1}. Jeder Platz hat zuerst eine Chance von {2:P2} auf ein extrem seltenes Theme. Duplikatpunkte: 5 / 10 / 25 / 75 / 200. 500 Punkte = ein Common-Pack.</value>
   </data>
+  <data name="Album.ArtHelp" xml:space="preserve"><value>Wähle eine gesammelte Karte, um ihr Bild groß anzusehen.</value></data>
+  <data name="Album.CloseArtwork" xml:space="preserve"><value>Zurück zum Album</value></data>
+  <data name="Album.BackToAlbum" xml:space="preserve"><value>Zurück zum Album</value></data>
 </root>

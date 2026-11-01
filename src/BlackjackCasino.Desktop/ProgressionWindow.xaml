@@ -97,6 +97,16 @@
           </Setter>
         </Style>
 
+        <ControlTemplate x:Key="CollectionCardButtonTemplate" TargetType="Button">
+          <Border x:Name="FocusRing" CornerRadius="12" Background="Transparent" BorderBrush="Transparent" BorderThickness="1">
+            <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+          </Border>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="FocusRing" Property="BorderBrush" Value="#EFD594" /></Trigger>
+            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="FocusRing" Property="BorderBrush" Value="#826F49" /></Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+
         <Style x:Key="Panel" TargetType="Border">
           <Setter Property="Background" Value="#B30B2117" />
           <Setter Property="BorderBrush" Value="#315A43" />
@@ -299,7 +309,7 @@
                 <ProgressBar x:Name="AlbumDuplicateProgress" Height="5" Margin="0,8,0,0" Maximum="500" Foreground="#C494FF"/>
                 <TextBlock x:Name="AlbumStatus" Margin="0,6,0,0" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite"/>
               </StackPanel>
-              <Grid Grid.Row="1">
+              <Grid x:Name="AlbumBrowseSurface" Grid.Row="1">
                 <Grid.ColumnDefinitions><ColumnDefinition Width="205"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                 <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel x:Name="AlbumThemes" Margin="0,0,8,0"/></ScrollViewer>
                 <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
@@ -324,6 +334,19 @@
                     </WrapPanel>
                   </StackPanel>
                 </ScrollViewer>
+              </Border>
+              <Border x:Name="AlbumArtOverlay" Grid.RowSpan="2" Panel.ZIndex="20" Background="#FE080E17" CornerRadius="12" BorderThickness="1" BorderBrush="#AD9161" Visibility="Collapsed" Padding="10">
+                <Grid KeyboardNavigation.TabNavigation="Cycle">
+                  <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                  <StackPanel HorizontalAlignment="Center" Margin="0,2,0,4">
+                    <TextBlock x:Name="AlbumArtTitle" FontFamily="Georgia" FontSize="20" Foreground="#FFE5B2" TextAlignment="Center"/>
+                    <TextBlock x:Name="AlbumArtEdition" FontSize="11" Foreground="#B3C2CF" TextAlignment="Center" Margin="0,3,0,0"/>
+                  </StackPanel>
+                  <Viewbox Grid.Row="1" MaxWidth="430" MaxHeight="620" Stretch="Uniform" StretchDirection="Both" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <ContentControl x:Name="AlbumArtHost"/>
+                  </Viewbox>
+                  <Button x:Name="AlbumArtClose" Grid.Row="2" Content="Back to album" HorizontalAlignment="Center" Click="AlbumArtClose_Click" Margin="0,6,0,2" Padding="20,8"/>
+                </Grid>
               </Border>
             </Grid>
           </TabItem>

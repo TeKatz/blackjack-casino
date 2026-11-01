@@ -33,6 +33,7 @@ internal partial class ProgressionWindow : Window
         InitializeComponent();
         ProgressionRoot.Unloaded += (_, _) => StopAlbumPresentation();
         AlbumOpeningOverlay.Unloaded += (_, _) => StopAlbumPresentation();
+        ProgressionRoot.PreviewKeyDown += AlbumArt_KeyDown;
         MenuAudio.Attach(this);
         InitializeCollections();
         StateChanged += (_, _) => RefreshMaximizeGlyph();

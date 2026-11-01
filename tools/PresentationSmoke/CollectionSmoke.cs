@@ -23,10 +23,10 @@ internal static partial class Program
             Find<Button>(Find<StackPanel>(window).Single(p => p.Name == "AlbumThemes")).Single(b => Equals(b.Tag, theme.Id)).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             window.UpdateLayout();
             Require(Find<WrapPanel>(window).Single(p => p.Name == "AlbumCards").Children.Count == theme.Cards.Count, "Wrong number of theme slots");
-            // Every vector scene must parse and measure, including motifs not drawn in the random pack.
+            // Every full-art card must load and measure, including cards not drawn in the random pack.
             foreach (CollectionCard card in theme.Cards)
             {
-                Border preview = CollectionArtwork.Card(card, true);
+                Border preview = CollectionArtwork.Card(card, true, animationsEnabled: false);
                 preview.Measure(new Size(200, 260));
                 Require(preview.DesiredSize.Width > 0, "Collection artwork failed to measure: " + card.Id);
             }
@@ -67,5 +67,6 @@ internal static partial class Program
         Find<Button>(window).Single(b => b.Name == "AlbumCollect").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         Require(profile.Collection.PendingOpening is null, "Continue failed to clear the original receipt");
         Require(receipt.Cards.All(c => profile.Collection.OwnedCardIds.Contains(c.CardId)), "Collected cards disappeared after Continue");
+        await CheckCollectionArt(window, profile);
     }
 }
