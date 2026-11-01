@@ -18,6 +18,7 @@ public partial class MainWindow
         }
         ProcessLatestCompletedRound();
         SudokuLoungePolish.EnsureInstalled();
+        LoungeVisualUpgrade.EnsureInstalled(() => preferences.Sudoku);
         RecordSudokuCompletions(preferences.Sudoku);
 
         preferences = preferences with { Solitaire = SolitaireProgressState.Normalize(preferences.Solitaire) };
@@ -25,20 +26,25 @@ public partial class MainWindow
         RecordWordSearchCompletions(preferences.WordSearch);
         preferences.Memory.Normalize();
         RecordMemoryCompletions(preferences.Memory);
+
+        Func<SolitaireStatistics> solitaireStats = () => progressionController?.Profile.Solitaire ?? new SolitaireStatistics();
+        Func<WordSearchStatistics> wordSearchStats = () => progressionController?.Profile.WordSearch ?? new WordSearchStatistics();
+        Func<MemoryStatistics> memoryStats = () => progressionController?.Profile.Memory ?? new MemoryStatistics();
+
         LoungeHostedGameRegistry.SetSessionModules([
-            SolitaireLoungeModule.Create(
+            LoungeVisualUpgrade.UpgradeSolitaire(SolitaireLoungeModule.Create(
                 preferences.Solitaire,
                 state =>
                 {
                     preferences = preferences with { Solitaire = SolitaireProgressState.Normalize(state) };
                     if (!testSession) SavePreferences();
                 },
-                () => progressionController?.Profile.Solitaire ?? new SolitaireStatistics(),
+                solitaireStats,
                 RecordSolitaireStart,
                 RecordSolitaireAbandon,
                 RecordSolitaireCompletion,
-                () => progressionController?.Profile.EquippedCardSetId),
-            WordSearchLoungeModule.Create(
+                () => progressionController?.Profile.EquippedCardSetId)),
+            LoungeVisualUpgrade.UpgradeWordSearch(WordSearchLoungeModule.Create(
                 preferences.WordSearch,
                 state =>
                 {
@@ -46,9 +52,11 @@ public partial class MainWindow
                     preferences = preferences with { WordSearch = state };
                     if (!testSession) SavePreferences();
                 },
-                () => progressionController?.Profile.WordSearch ?? new WordSearchStatistics(),
+                wordSearchStats,
                 RecordWordSearchCompletion),
-            MemoryLoungeModuleVisual.Create(
+                wordSearchStats,
+                () => preferences.WordSearch),
+            LoungeVisualUpgrade.UpgradeMemory(MemoryLoungeModuleVisual.Create(
                 preferences.Memory,
                 state =>
                 {
@@ -56,10 +64,11 @@ public partial class MainWindow
                     preferences = preferences with { Memory = state };
                     if (!testSession) SavePreferences();
                 },
-                () => progressionController?.Profile.Memory ?? new MemoryStatistics(),
+                memoryStats,
                 RecordMemoryCompletion,
                 () => preferences.SoundEnabled,
-                () => preferences.AnimationsEnabled)
+                () => preferences.AnimationsEnabled),
+                memoryStats)
         ]);
 
         var window = new LoungeWindow(
