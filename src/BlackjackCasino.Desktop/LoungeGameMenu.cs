@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -121,10 +122,15 @@ internal sealed class LoungeGameMenu : UserControl
         return "LoungeGame_" + new string(safe);
     }
 
+    internal static string GamesBackLabel() =>
+        string.Equals(CultureInfo.CurrentUICulture.Name, "de-DE", StringComparison.OrdinalIgnoreCase)
+            ? "← SPIELE"
+            : "← GAMES";
+
     private void OpenHosted(LoungeHostedGame module)
     {
         if (module.UseShellBackNavigation)
-            ConfigureShellNavigation("← GAMES", ShowMenu);
+            ConfigureShellNavigation(GamesBackLabel(), ShowMenu);
         else
             ConfigureShellNavigation(null, null);
 
@@ -142,7 +148,7 @@ internal sealed class LoungeGameMenu : UserControl
         injectedShellBackAction = action;
         if (injectedShellBack is not null)
         {
-            injectedShellBack.Content = label ?? "← GAMES";
+            injectedShellBack.Content = label ?? GamesBackLabel();
             injectedShellBack.Tag = action;
             injectedShellBack.Visibility = action is null ? Visibility.Collapsed : Visibility.Visible;
         }
@@ -155,7 +161,7 @@ internal sealed class LoungeGameMenu : UserControl
         Window? window = Window.GetWindow(this);
         if (window is null) return;
 
-        Button? close = FindDescendant<Button>(window, button => string.Equals(button.Content as string, "RETURN TO CLUB", StringComparison.Ordinal));
+        Button? close = FindDescendant<Button>(window, IsReturnToClubButton);
         if (close is null) return;
 
         injectedShellBack ??= FindDescendant<Button>(window, button => string.Equals(button.Name, "LoungeGamesHeaderBack", StringComparison.Ordinal));
@@ -164,7 +170,7 @@ internal sealed class LoungeGameMenu : UserControl
             injectedShellBack = new Button
             {
                 Name = "LoungeGamesHeaderBack",
-                Content = "← GAMES",
+                Content = GamesBackLabel(),
                 Foreground = LoungeUi.Ink("#EEE4D4"),
                 Background = LoungeUi.Ink("#17282A"),
                 BorderBrush = LoungeUi.Ink("#4A6661"),
@@ -177,6 +183,7 @@ internal sealed class LoungeGameMenu : UserControl
             injectedShellBack.Click += ShellBackClicked;
         }
 
+        injectedShellBack.Content = GamesBackLabel();
         injectedShellBack.Tag = injectedShellBackAction;
         injectedShellBack.Visibility = injectedShellBackAction is null ? Visibility.Collapsed : Visibility.Visible;
 
@@ -198,6 +205,14 @@ internal sealed class LoungeGameMenu : UserControl
                 stack.Children.Insert(Math.Max(0, index), injectedShellBack);
             }
         }
+    }
+
+    private static bool IsReturnToClubButton(Button button)
+    {
+        if (button.Name == "LoungeGamesHeaderBack" || button.Content is not string text) return false;
+        return text.Contains("CLUB", StringComparison.OrdinalIgnoreCase) &&
+               (text.Contains("RETURN", StringComparison.OrdinalIgnoreCase) ||
+                text.Contains("ZURÜCK", StringComparison.OrdinalIgnoreCase));
     }
 
     private static void ShellBackClicked(object sender, RoutedEventArgs e)
