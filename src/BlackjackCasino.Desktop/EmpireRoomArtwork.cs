@@ -36,6 +36,7 @@ internal sealed class EmpireRoomArtwork(int textureIndex) : FrameworkElement
     private double phase;
     internal double Phase { get => phase; set { phase = value; InvalidateVisual(); } }
     internal bool Open { get; set; }
+    internal bool Available { get; set; } = true;
     internal int Level { get; set; }
     internal bool Selected { get; set; }
     internal int TextureIndex => textureIndex;
@@ -52,7 +53,7 @@ internal sealed class EmpireRoomArtwork(int textureIndex) : FrameworkElement
         if (!Open)
         {
             dc.DrawRectangle(new SolidColorBrush(Color.FromArgb(145, 5, 14, 17)), null, area);
-            Text(dc, "ROOM AVAILABLE", 12, ActualHeight - 29, 10, "#CAB992");
+            Text(dc, Available ? "ROOM AVAILABLE" : "LOCKED", 12, ActualHeight - 29, 10, "#CAB992");
         }
         else
         {
@@ -88,14 +89,17 @@ internal sealed class EmpireRoomCard : Button
 {
     internal EmpireDepartment Department { get; }
     internal EmpireRoomArtwork Artwork { get; }
+    private readonly TextBlock roomName;
     private readonly TextBlock level = Text("", 11, "#BFAE8A");
     private readonly TextBlock income = Text("", 13, "#B3D4BE");
     private readonly TextBlock next = Text("", 10, "#94AAA0");
     private readonly Border milestoneFill = new() { Background = Ink("#B59A62"), HorizontalAlignment = HorizontalAlignment.Left, CornerRadius = new CornerRadius(2) };
     private readonly Border frame;
+    private static readonly System.Windows.Media.Effects.DropShadowEffect selectedGlow = CreateGlow();
     private readonly Grid milestoneTrack;
     private readonly Border flash = new() { Background = Ink("#FFE0A0"), Opacity = 0, IsHitTestVisible = false, CornerRadius = new CornerRadius(9) };
     private int previousLevel = -1;
+    private bool previouslySelected;
     private double progress;
 
     internal EmpireRoomCard(EmpireDepartment room, int index, Action<string> select)
@@ -103,7 +107,7 @@ internal sealed class EmpireRoomCard : Button
         Department = room;
         Name = "EmpireRoom_" + room.Id.Replace('-', '_');
         AutomationProperties.SetName(this, "Select " + room.Name);
-        Margin = new Thickness(0, 0, 12, 12);
+        Margin = new Thickness(0, 0, 9, 10);
         Height = 222;
         Style = MakeStyle();
         Artwork = new EmpireRoomArtwork(index) { Height = 126 };
@@ -113,9 +117,9 @@ internal sealed class EmpireRoomCard : Button
         var title = new DockPanel { Margin = new Thickness(12, 8, 12, 2) };
         DockPanel.SetDock(level, Dock.Right);
         title.Children.Add(level);
-        var name = Text(room.Name, 18, "#F2E4C8");
-        name.FontFamily = new FontFamily("Georgia");
-        title.Children.Add(name);
+        roomName = Text(room.Name, 18, "#F2E4C8");
+        roomName.FontFamily = new FontFamily("Georgia");
+        title.Children.Add(roomName);
         stack.Children.Add(title);
         income.Margin = new Thickness(12, 0, 12, 5);
         stack.Children.Add(income);
@@ -126,26 +130,51 @@ internal sealed class EmpireRoomCard : Button
         next.Margin = new Thickness(12, 0, 12, 7);
         stack.Children.Add(next);
         content.Children.Add(stack);
+        string insignia = room.Tags.HasFlag(EmpireTag.Slots) ? "Slots" : room.Tags.HasFlag(EmpireTag.Tables) ? "Tables"
+            : room.Tags.HasFlag(EmpireTag.Hospitality) ? "Hospitality" : room.Tags.HasFlag(EmpireTag.VIP) ? "Prestige" : "Events";
+        content.Children.Add(new EmpireIcon(insignia, 18) { HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(10) });
         content.Children.Add(flash);
-        frame = new Border { Background = Ink("#142722"), BorderBrush = Ink("#3F5143"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(9), Child = content, ClipToBounds = true };
+        frame = new Border { Background = new LinearGradientBrush(Color.FromRgb(25, 49, 34), Color.FromRgb(12, 30, 21), 100), BorderBrush = Ink("#3C5643"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(9), Child = content, ClipToBounds = true };
         Content = frame;
         Click += (_, _) => select(room.Id);
+    }
+
+    internal void SetSize(double width, double height)
+    {
+        Width = width; Height = height;
+        Artwork.Height = Math.Max(62, height - 96);
+        roomName.FontSize = width < 190 ? 14 : 18;
+        level.FontSize = width < 190 ? 9 : 11;
+        income.FontSize = width < 190 ? 11 : 13;
     }
 
     internal void Refresh(EmpireService service, bool selected, bool animate)
     {
         int value = service.Level(Department.Id);
-        level.Text = value == 0 ? "LOCKED" : "LV " + value;
+        EmpireUpgradeQuote opening = service.QuoteUpgrade(Department.Id, 1);
+        level.Text = value == 0 ? (opening.Unlocked ? "NEW" : "LOCKED") : "LV " + value;
         income.Text = value == 0
-            ? "Open for " + EmpireView.Number(Department.BaseCost) + " cr"
+            ? (opening.Unlocked ? "Open for " + EmpireView.Number(opening.Cost) + " cr" : "Requirements needed")
             : "+" + EmpireView.Number(service.RoomCreditsPerSecond(Department.Id)) + " cr / sec";
-        next.Text = value == 0 ? "Select to open this room" : value == EmpireRules.MaximumLevel ? "All milestones complete" : "Next ×2 at level " + ((value / 10 + 1) * 10);
+        next.Text = value == 0 ? (opening.Unlocked ? "Select to open this room" : Department.UnlockRequirement.Description) : value == EmpireRules.MaximumLevel ? "All milestones complete" : "Next ×2 at level " + ((value / 10 + 1) * 10);
+        bool limits = service.Synergies.Any(s => s.NextLevel is int target && value < target && value == s.MinimumLevel
+            && Department.Floor <= s.Definition.MaximumFloor && (Department.Tags & s.Definition.Members) != 0);
+        if (limits) next.Text = "CIRCUIT LIMIT · " + next.Text;
+        else if (service.ManagerAssignments.Values.Contains(Department.Id)) next.Text = "MANAGED · " + next.Text;
+        else if (service.AutomationUnlocked && !service.Automation.Enabled) next.Text = "AUTO READY · " + next.Text;
         if (service.Synergies.Any(synergy => synergy.Tier == 3 && (synergy.Definition.Beneficiaries & Department.Tags) != 0))
             next.Text = "SYNERGY III ✦ · " + next.Text;
         progress = value == EmpireRules.MaximumLevel ? 1 : value % 10 / 10d;
         milestoneFill.Width = milestoneTrack.ActualWidth * progress;
-        frame.BorderBrush = Ink(selected ? "#E6C68A" : "#3F5143");
+        frame.BorderBrush = Ink(selected ? "#E6C68A" : "#3C5643");
+        frame.Effect = selected ? selectedGlow : null;
+        if (selected && !previouslySelected && animate)
+            frame.BeginAnimation(OpacityProperty, new DoubleAnimation(.65, 1, TimeSpan.FromMilliseconds(160)) { FillBehavior = FillBehavior.Stop });
+        if (!animate) frame.BeginAnimation(OpacityProperty, null);
+        previouslySelected = selected;
         Artwork.Open = value > 0;
+        Artwork.Available = opening.Unlocked;
         Artwork.Level = value;
         Artwork.Selected = selected;
         Artwork.InvalidateVisual();
@@ -153,13 +182,20 @@ internal sealed class EmpireRoomCard : Button
             flash.BeginAnimation(OpacityProperty, new DoubleAnimation(.35, 0, TimeSpan.FromMilliseconds(650)) { FillBehavior = FillBehavior.Stop });
         if (!animate) flash.BeginAnimation(OpacityProperty, null);
         previousLevel = value;
-        ToolTip = Department.Description;
+        ToolTip = Department.Description + (value == 0 && !opening.Unlocked ? "\n" + Department.UnlockRequirement.Description : "");
     }
 
     internal void StopAnimation()
     {
         flash.BeginAnimation(OpacityProperty, null);
+        frame.BeginAnimation(OpacityProperty, null);
         Artwork.Phase = 0;
+    }
+
+    private static System.Windows.Media.Effects.DropShadowEffect CreateGlow()
+    {
+        var glow = new System.Windows.Media.Effects.DropShadowEffect { Color = Color.FromRgb(212, 179, 113), BlurRadius = 14, ShadowDepth = 0, Opacity = .28 };
+        glow.Freeze(); return glow;
     }
 
     private static Style MakeStyle()

@@ -70,10 +70,13 @@ public sealed partial class EmpireService
         return Math.Min(.25m, discount);
     }
     private decimal RoomRate(EmpirePropertyState estate, string propertyId, EmpireDepartment? room, DateTimeOffset at)
+        => BreakdownFor(estate, propertyId, room, at).Final;
+
+    private EmpireProductionBreakdown BreakdownFor(EmpirePropertyState estate, string propertyId, EmpireDepartment? room, DateTimeOffset at)
     {
-        if (room is null || !FloorUnlockedFor(estate, room.Floor)) return 0;
+        if (room is null || !FloorUnlockedFor(estate, room.Floor)) return new(0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0);
         int level = estate.Levels.GetValueOrDefault(room.Id);
-        if (level <= 0) return 0;
+        if (level <= 0) return new(0, EmpireRules.PrestigeMultiplier(estate.Prestige), 1 + AchievementBonusPercent(room.Id), 0, 0, 0, 0, 0, 0, 0, 0);
         decimal strategy = 0;
         if (room.Tags.HasFlag(EmpireTag.Tables)) strategy += ResearchRank("tables") * .08m;
         if (room.Tags.HasFlag(EmpireTag.Slots)) strategy += ResearchRank("mechanical") * .08m;
@@ -107,7 +110,9 @@ public sealed partial class EmpireService
         // All strategic additions share one bounded additive bucket. The established
         // prestige and claimed-achievement factors remain intact and independently visible.
         decimal bucket = Math.Min(5m, strategy + synergies + projects + managers + eventBonus + contractBonus);
-        return Math.Min(100_000_000_000_000_000_000m, EmpireRules.Production(room, level)
-            * EmpireRules.PrestigeMultiplier(estate.Prestige) * (1 + AchievementBonusPercent(room.Id)) * (1 + bucket));
+        decimal basis = EmpireRules.Production(room, level);
+        decimal prestige = EmpireRules.PrestigeMultiplier(estate.Prestige), achievements = 1 + AchievementBonusPercent(room.Id);
+        decimal final = Math.Min(100_000_000_000_000_000_000m, basis * prestige * achievements * (1 + bucket));
+        return new(basis, prestige, achievements, strategy, synergies, projects, managers, eventBonus, contractBonus, bucket, final);
     }
 }

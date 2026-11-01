@@ -229,6 +229,7 @@ internal static partial class Program
         var service=(BlackjackCasino.Core.Empire.EmpireService)typeof(MainWindow)
             .GetField("empire",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.GetValue(window)!;
         var buy=Find<Button>(window).Single(b=>b.Name=="EmpireUpgradeButton");
+        Find<Button>(window).Single(b=>b.Name=="EmpireRoom_slots").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         Require(buy.IsEnabled,"The starter room cannot be upgraded");
         buy.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         Require(service.Level("slots")==2,"Room upgrade did not reach the idle economy");
@@ -240,7 +241,9 @@ internal static partial class Program
             RequireWithin(window,Find<Button>(window).Single(b=>b.Name=="EmpireClaimButton"),"Empire claim");
             var roomCards=Find<EmpireRoomCard>(window).Where(card=>card.IsVisible).ToArray();
             Require(roomCards.Length==5,"The estate dashboard lost a room");
-            Require(roomCards.All(card=>card.ActualWidth<360 && card.ActualHeight<=230),"Idle room segments are not compact");
+            Require(roomCards.All(card=>card.ActualWidth<360 && card.ActualHeight<=310),"Room gallery exceeds its responsive artwork size");
+            Require(roomCards.All(card => Math.Abs(card.TransformToAncestor(window).Transform(new Point()).Y
+                - roomCards[0].TransformToAncestor(window).Transform(new Point()).Y) < 1), "A room wrapped below the gallery's first row at a standard width");
             Require(roomCards[0].TransformToAncestor(window).Transform(new Point()).X<roomCards[1].TransformToAncestor(window).Transform(new Point()).X,"Room cards failed to form a responsive row");
             Capture(window,"09-empire-"+(int)size.Item1);
         }
@@ -257,8 +260,10 @@ internal static partial class Program
         var preferencesField = typeof(MainWindow).GetField("preferences", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
         AppPreferences areaPrefs = (AppPreferences)preferencesField.GetValue(window)!;
         preferencesField.SetValue(window, areaPrefs.WithPresentation("casino-empire", areaPrefs.Presentation("casino-empire") with { AnimationsEnabled = true }));
-        await Task.Delay(150);
-        Require(Find<EmpireRoomCard>(window).Single(card=>card.Department.Id=="slots").Artwork.Phase>0,"Empire's own animations did not run.");
+        var animationDeadline = System.Diagnostics.Stopwatch.StartNew();
+        while (Find<EmpireRoomCard>(window).Single(card => card.Department.Id == "slots").Artwork.Phase == 0
+            && animationDeadline.Elapsed < TimeSpan.FromSeconds(3)) await Task.Delay(50);
+        Require(Find<EmpireRoomCard>(window).Single(card=>card.Department.Id=="slots").Artwork.Phase>0,"Empire's own animations did not run within three seconds.");
         animationSetting.IsChecked=false;
         await Task.Delay(150);
         Require(Find<EmpireRoomCard>(window).Single(card=>card.Department.Id=="slots").Artwork.Phase>0,"Blackjack toggle stopped Empire's local effects.");

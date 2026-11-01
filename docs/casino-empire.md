@@ -6,6 +6,58 @@ outbound connection is a bounded owner cash dividend. Empire never changes
 Blackjack rules, dice outcomes, slot odds or RTP. Claimed challenges and completed
 game activity can benefit Empire in the other direction.
 
+## Estate command center
+
+The Estate page gives the room gallery priority. Four quiet navigation groups
+keep every system reachable: Estate (rooms, floors, circuits), Development
+(research, projects, properties), Operations (team, automation) and Opportunities
+(events, contracts). Section pages use only their group's local navigation and
+remain in the same native window. The updater still follows
+`feature/empire-command-center`.
+
+The right inspector holds room upgrades, bulk quantities, cost, production and
+the next milestone. One Room Intelligence surface below the gallery explains
+growth, actual operating specialists, automation requirements and policy,
+participating/benefiting circuits, their individual members and limiting rooms,
+and the exact production factors. Select a room again or use Estate overview to
+clear selection; the panel then shows estate progress, useful next steps and the
+prestige action. Future-floor circuit members can be expanded when relevant.
+There are no permanent research/project/team/opportunity cards or global circuit
+row on the main screen. Long contextual details have local scroll fallbacks for
+small windows; the gallery preserves five cards per floor at standard widths.
+
+Hover or keyboard-focus an upgrade quantity or purchase button to preview its
+construction cost, portfolio production delta, room level/output, milestones and
+circuit progress. Specialists can be previewed in the contextual selector or Team;
+automation can be previewed at the contextual toggle or Save automation. Cyan
+values explicitly labelled PREVIEW are temporary. Leaving, changing room, estate,
+floor, filter or section, committing, editing a management form, and unloading
+clear previews. Current values remain separate from their projected effects.
+
+`EmpireService.Preview` runs real commands on an isolated state at the simulation's
+current instant, with the same achievements and activity snapshot. It never
+accrues future time or calls persistence/wallet callbacks. Portfolio totals include
+other owned properties; an upgrade can affect other rooms through circuits or
+research. `ProductionBreakdown` and live production share the same calculation:
+base (including level milestones) × prestige × achievements × (1 + capped
+strategic additions), with the existing final room cap. Automation purchases
+upgrades every 30 production seconds and does **not** grant an output multiplier;
+specialists have fixed effects, not a fictional manager-level progression.
+
+The palette uses deep club greens, warm ivory, restrained milestone/prestige gold
+and a distinct cyan preview accent. Original vector insignia share a 24-unit grid
+for economy, navigation, room categories, operations and performance. Selection,
+preview entry, circuit progress, purchases and numeric transitions respect Empire's
+animation preference and replace in-flight animations rather than queuing them.
+
+Research retains its three branch diagrams, rank prerequisites and exact costs.
+Catalog pages retain pagination and automation form inputs remain stable during
+production refreshes. The Windows smoke covers the revised navigation at
+1080×720, 1366×768 and 1920×1080, hover isolation/cleanup, estate overview, room
+changes, catalog purchases and detached hosting. Core regression tests compare
+previews with committed upgrades, cross-room synergy effects, specialist moves,
+automation policies, achievements, level caps and multiple properties.
+
 ## Departments, floors and properties
 
 Departments have a category, composable tags, a floor and optional requirements.
@@ -88,7 +140,7 @@ unlocked after a reset lowers the current room contribution.
 
 Every member must meet a tier. Tiers replace rather than stack; opening a new
 floor does not add members to an existing original-floor circuit. Complete tier-3
-circuits get a status mark on affected room cards. The management page lists
+circuits get a status mark on affected room cards. The Synergies section lists
 members, current levels, active bonus and next threshold.
 
 Capital projects are one-time purchases per estate:
@@ -202,6 +254,8 @@ synergies, time segmentation, offline/online automation, activity baselines,
 contract receipts, independent properties, snapshot isolation and failed atomic
 commits. The Windows startup suite exercises every management page, Resort Floor,
 research/project purchases, manager assignment, automation inputs, event/contract
-entry, property purchase/switching and portfolio statistics at two sizes. Existing
+entry, property purchase/switching and portfolio statistics at two sizes. The
+command center adds three-resolution visibility checks, every research branch,
+prerequisite connectors, catalog pagination and input stability across refreshes. Existing
 presentation tests retain upgrade/dividend/navigation checks at three sizes.
 See `docs/empire-balancing.md` for simulation results and reproducible commands.

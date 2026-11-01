@@ -19,7 +19,7 @@ internal static class EmpireStrategySmoke
         var old = (EmpireService)typeof(MainWindow).GetField("empire", flags)!.GetValue(window)!;
         EmpireState baseState = EmpireState.Normalize(new EmpireState
         {
-            Started = true, LastAccruedAt = DateTimeOffset.UtcNow, Prestige = 25, Credits = 100_000_000_000_000m,
+            Started = true, LastAccruedAt = DateTimeOffset.UtcNow, Prestige = 25, Credits = EmpireRules.MaximumCredits,
             Levels = EmpireCatalog.Departments.ToDictionary(room => room.Id, _ => 100),
             Research = new() { ["construction"] = 2, ["compound"] = 1, ["automation"] = 1 },
         });
@@ -32,15 +32,49 @@ internal static class EmpireStrategySmoke
             int windows = Application.Current.Windows.Cast<Window>().Count(w=>w.IsVisible);
             Click(window,"EmpireFloor3Button"); window.UpdateLayout();
             Require(Find<EmpireRoomCard>(window).Count(card=>card.IsVisible)==5,"Resort Floor did not render its five departments.");
+            Require(Find<Grid>(window).Single(g => g.Name == "EmpireRoomIntelligence").IsVisible, "Estate overview panel is missing.");
+            Require(!Find<Button>(window).Any(b => b.Name == "EmpireQuickResearch"), "The permanent feature cards returned.");
             Capture(window,Path.Combine(output,"empire-resort.png"));
-            Click(window,"EmpireManagementButton");
+            Click(window, "EmpireRoom_hotel");
+            foreach (var size in new[] { (1080d,720d), (1366d,768d), (1920d,1080d) })
+            {
+                window.Width = size.Item1; window.Height = size.Item2; window.UpdateLayout(); await Task.Delay(80); window.UpdateLayout();
+                foreach (string name in new[] { "EmpireOverviewButton", "EmpireDevelopmentButton", "EmpireOperationsButton", "EmpireOpportunitiesButton", "EmpireUpgradeButton", "EmpireClaimButton" })
+                {
+                    Button visible = Find<Button>(window).Single(b => b.Name == name);
+                    Rect bounds = visible.TransformToAncestor(window).TransformBounds(new Rect(visible.RenderSize));
+                    Require(visible.IsVisible && bounds.Width > 20 && bounds.Height > 10 && bounds.Left >= 0 && bounds.Right <= window.ActualWidth && bounds.Bottom <= window.ActualHeight,
+                        $"Empire overview clips {name} at {size.Item1}x{size.Item2}.");
+                }
+                Grid intelligence = Find<Grid>(window).Single(g => g.Name == "EmpireRoomIntelligence");
+                Rect infoBounds = intelligence.TransformToAncestor(window).TransformBounds(new Rect(intelligence.RenderSize));
+                Require(infoBounds.Height > 100 && infoBounds.Bottom <= window.ActualHeight, "Room intelligence is clipped.");
+                Capture(window, Path.Combine(output, $"empire-command-center-{(int)size.Item1}.png"));
+            }
+            await VerifyRoomPreviews(window, service, output);
+            Click(window, "EmpireTab_Projects"); Click(window, "EmpireProject_casino_vault");
+            Require(service.Projects.Contains("casino-vault"), "Dashboard construction did not commit its suggested project.");
+            Click(window, "EmpireTab_Research");
+            Require(Find<System.Windows.Shapes.Polyline>(window).Count(l => l.Name.StartsWith("EmpireResearchLink_", StringComparison.Ordinal)) == 4,
+                "Operations research lost a prerequisite connection.");
+            Click(window, "EmpireResearchBranch_Gaming");
+            Require(Find<Button>(window).Any(b => b.Name == "EmpireResearchNode_high_roller"), "Gaming research is unreachable.");
+            Click(window, "EmpireResearchNode_high_roller");
+            Require(!Find<Button>(window).Single(b => b.Name == "EmpireResearch_high_roller").IsEnabled, "Research ignored its missing Table Authority prerequisite.");
+            Click(window, "EmpireResearchBranch_Hospitality");
+            Require(Find<Button>(window).Any(b => b.Name == "EmpireResearchNode_guests"), "Hospitality research is unreachable.");
+            Click(window, "EmpireManagementClose");
+
+            Click(window,"EmpireTab_Research");
             Require(Find<EmpireManagementView>(window).Single().IsVisible,"Management did not mount in place.");
             Click(window,"EmpireResearch_construction");
             Require(service.ResearchRank("construction")==3,"Research UI did not spend a Legacy Point.");
             Click(window,"EmpireTab_Projects");
-            Click(window,"EmpireProject_casino_vault");
-            Require(service.Projects.Contains("casino-vault"),"Capital project UI did not persist its purchase.");
+            Click(window,"EmpireProject_luxury_atrium");
+            Require(service.Projects.Contains("luxury-atrium"),"Capital project UI did not persist its purchase.");
             Click(window,"EmpireTab_Managers");
+            PreviewAndLeave(window, "EmpireManagerAssign_elena");
+            Require(!service.ManagerAssignments.ContainsKey("elena"), "Manager hover committed an assignment.");
             Click(window,"EmpireManagerAssign_elena");
             Require(service.ManagerAssignments.ContainsKey("elena"),"Manager assignment UI did not reach Core.");
             Click(window,"EmpireTab_Automation");
@@ -48,6 +82,10 @@ internal static class EmpireStrategySmoke
             Find<TextBox>(window).Single(c=>c.Name=="EmpireAutomationReserve").Text="1000000";
             Find<TextBox>(window).Single(c=>c.Name=="EmpireAutomationPercent").Text="25";
             Find<TextBox>(window).Single(c=>c.Name=="EmpireAutomationTarget").Text="110";
+            Find<EmpireView>(window).Single().Refresh();
+            Require(Find<TextBox>(window).Single(c=>c.Name=="EmpireAutomationTarget").Text=="110", "A production refresh replaced unsaved automation inputs.");
+            PreviewAndLeave(window, "EmpireAutomationSave");
+            Require(!service.Automation.Enabled && service.Automation.TargetLevel == 100, "Automation hover saved edited inputs.");
             Click(window,"EmpireAutomationSave");
             Require(service.Automation.Enabled && service.Automation.TargetLevel==110,"Automation input was not saved.");
             CultureInfo originalCulture = CultureInfo.CurrentCulture;
@@ -62,16 +100,32 @@ internal static class EmpireStrategySmoke
                 Require(service.Automation.Reserve==1000000.5m && service.Automation.SpendPercent==.125m,"German automation decimals were not saved exactly.");
             }
             finally { CultureInfo.CurrentCulture = originalCulture; }
+            Click(window,"EmpireTab_Events");
+            var reachableEvents = new HashSet<string>(StringComparer.Ordinal);
+            for (int eventPage = 0; eventPage < EmpireEventCatalog.All.Count; eventPage++)
+            {
+                foreach (Button choice in Find<Button>(window).Where(b => b.Name.StartsWith("EmpireEvent_", StringComparison.Ordinal))) reachableEvents.Add(choice.Name);
+                Button? next = Find<Button>(window).SingleOrDefault(b => b.Name == "EmpirePageNext");
+                if (next is not { IsEnabled: true }) break;
+                Click(window,"EmpirePageNext");
+            }
+            Require(EmpireEventCatalog.All.All(e => reachableEvents.Contains("EmpireEvent_" + e.Id)), "Paginated event pages lost a catalog event.");
             Click(window,"EmpireTab_Events"); Click(window,"EmpireEvent_dice");
             Require(service.ActiveEvent?.Id=="dice","Event start UI failed.");
             Click(window,"EmpireTab_Contracts"); Click(window,"EmpireContract_expansion_drive");
             Require(service.ActiveContract?.Id=="expansion-drive","Contract acceptance UI failed.");
+            Click(window,"EmpireManagementClose");
+            Click(window,"EmpireFloor1Button"); Click(window,"EmpireRoom_slots"); Click(window,"EmpireBulk50Button"); Click(window,"EmpireUpgradeButton");
+            Require(service.CanClaimContract, "Bulk room upgrades did not complete the dashboard contract.");
+            Click(window,"EmpireTab_Contracts"); Click(window,"EmpireContractClaim");
+            Require(service.ActiveContract is null && service.ContractBuff?.ContractId == "expansion-drive", "Dashboard contract claim did not save its reward.");
+            Click(window,"EmpireManagementClose"); Click(window,"EmpireBulk1Button");
             foreach(string tab in new[]{"Research","Synergies","Projects","Managers","Automation","Events","Contracts","Properties"})
             {
                 Click(window,"EmpireTab_"+tab); window.UpdateLayout();
                 foreach(var size in new[]{(1080d,720d),(1440d,900d)})
                 {
-                    window.Width=size.Item1;window.Height=size.Item2;window.UpdateLayout();
+                    window.Width=size.Item1;window.Height=size.Item2;window.UpdateLayout();await Task.Delay(80);window.UpdateLayout();
                     Button back=Find<Button>(window).Single(b=>b.Name=="EmpireManagementClose");
                     Rect bounds=back.TransformToAncestor(window).TransformBounds(new Rect(back.RenderSize));
                     Require(bounds.Left>=0 && bounds.Top>=0 && bounds.Right<=window.ActualWidth && bounds.Bottom<=window.ActualHeight,"Management back button is clipped.");
@@ -83,6 +137,12 @@ internal static class EmpireStrategySmoke
             Click(window,"EmpireProperty_neon_bay");
             Require(service.ActivePropertyId=="neon-bay" && service.Level("slots")==1,"Property navigation did not select its independent estate.");
             Click(window,"EmpireManagementClose");
+            Click(window,"EmpireOperationsButton");
+            Require(Find<Button>(window).Any(b=>b.Name=="EmpireManagerAssign_elena"), "Overview Team shortcut opened the wrong section.");
+            Click(window,"EmpireManagementClose");
+            Click(window,"EmpireTab_Contracts");
+            Require(Find<Button>(window).Any(b=>b.Name=="EmpireContractClaim"), "Overview contract shortcut opened the wrong section.");
+            Click(window,"EmpireManagementClose");
             ComboBox picker=Find<ComboBox>(window).Single(c=>c.Name=="EmpirePropertySelector");
             picker.SelectedValue="midnight-club"; window.UpdateLayout();
             Require(service.ActivePropertyId=="midnight-club","Property quick selector did not return to the original estate.");
@@ -93,7 +153,7 @@ internal static class EmpireStrategySmoke
             Click(window,"EmpireStatisticsCloseButton"); Click(window,"EmpireBackButton");
             window.Modes.OpenSecondary("casino-empire"); await Task.Delay(80);
             Window detached = Application.Current.Windows.Cast<Window>().Single(w=>w.Title=="Casino Empire · Detached");
-            Click(detached,"EmpireManagementButton"); Click(detached,"EmpireTab_Properties");
+            Click(detached,"EmpireTab_Research"); Click(detached,"EmpireTab_Properties");
             Require(Find<EmpireManagementView>(detached).Any(),"Detached estate did not mount the shared management pages.");
             Capture(detached,Path.Combine(output,"empire-detached-management.png"));
             Click(detached,"EmpireManagementClose");
@@ -119,6 +179,44 @@ internal static class EmpireStrategySmoke
             typeof(MainWindow).GetField("empire",flags)!.SetValue(window,old);
         }
     }
+    private static async Task VerifyRoomPreviews(MainWindow window, EmpireService service, string output)
+    {
+        EmpireView view = Find<EmpireView>(window).Single();
+        // Routed hover events exercise the same preview callbacks as pointer and keyboard input.
+        foreach (int count in new[] { 1, 5, 10, 25, 50, 100 })
+        {
+            Button choice = Find<Button>(window).Single(b => b.Name == "EmpireBulk" + count + "Button");
+            int before = service.Level("hotel"); decimal budget = service.Credits;
+            choice.RaiseEvent(new System.Windows.Input.MouseEventArgs(System.Windows.Input.Mouse.PrimaryDevice, 0) { RoutedEvent = UIElement.MouseEnterEvent });
+            window.UpdateLayout();
+            Require(service.Level("hotel") == before && service.Credits == budget, "Hover purchased room levels.");
+            Require(Find<TextBlock>(view).Any(t => t.Text.StartsWith("PREVIEW /", StringComparison.Ordinal)), "Bulk hover did not show a preview.");
+            if (count >= 10) Require(Find<TextBlock>(view).Any(t => t.Text.Contains("×2 milestone at LV 110", StringComparison.Ordinal)), "Hover omitted the crossed production milestone.");
+            Require(Find<TextBlock>(view).Any(t => t.Text.Contains("Luxury Hotel: 100 / 100 →", StringComparison.Ordinal)), "Circuit member progress did not preview the upgraded room.");
+            choice.RaiseEvent(new System.Windows.Input.MouseEventArgs(System.Windows.Input.Mouse.PrimaryDevice, 0) { RoutedEvent = UIElement.MouseLeaveEvent });
+            Require(!Find<TextBlock>(view).Any(t => t.Text.StartsWith("PREVIEW /", StringComparison.Ordinal)), "Preview survived mouse leave.");
+        }
+        Button buy = Find<Button>(window).Single(b => b.Name == "EmpireUpgradeButton");
+        buy.RaiseEvent(new System.Windows.Input.MouseEventArgs(System.Windows.Input.Mouse.PrimaryDevice, 0) { RoutedEvent = UIElement.MouseEnterEvent });
+        Capture(window, Path.Combine(output, "empire-upgrade-hover.png"));
+        Click(window, "EmpireRoom_spa");
+        Require(!Find<TextBlock>(view).Any(t => t.Text.StartsWith("PREVIEW /", StringComparison.Ordinal)), "Preview leaked into another room.");
+        Click(window, "EmpireClearRoomSelection");
+        Require(Find<TextBlock>(view).Any(t => t.Text.StartsWith("ESTATE OVERVIEW /", StringComparison.Ordinal)), "Clear selection lost the estate overview.");
+        Click(window, "EmpireRoom_hotel");
+        await Task.Delay(180);
+    }
+
+    private static void PreviewAndLeave(DependencyObject root, string name)
+    {
+        Button owner = Find<Button>(root).Single(b => b.Name == name);
+        Require(owner.IsEnabled, name + " is not available for preview.");
+        owner.RaiseEvent(new System.Windows.Input.MouseEventArgs(System.Windows.Input.Mouse.PrimaryDevice, 0) { RoutedEvent = UIElement.MouseEnterEvent });
+        Require(Find<TextBlock>(root).Any(t => t.IsVisible && t.Text.StartsWith("PREVIEW /", StringComparison.Ordinal)), name + " did not preview its effect.");
+        owner.RaiseEvent(new System.Windows.Input.MouseEventArgs(System.Windows.Input.Mouse.PrimaryDevice, 0) { RoutedEvent = UIElement.MouseLeaveEvent });
+        Require(!Find<TextBlock>(root).Any(t => t.IsVisible && t.Text.StartsWith("PREVIEW /", StringComparison.Ordinal)), name + " left a stale preview.");
+    }
+
     private sealed class EightShoe : ICardShoe
     {
         public int Remaining { get; private set; } = 312;
@@ -127,7 +225,28 @@ internal static class EmpireStrategySmoke
     private static void Click(DependencyObject root,string name)
     {
         if (root is UIElement surface) surface.UpdateLayout();
-        Button button=Find<Button>(root).Single(b=>b.Name==name);
+        Button? button=Find<Button>(root).SingleOrDefault(b=>b.Name==name);
+        if (button is null && name.StartsWith("EmpireTab_", StringComparison.Ordinal))
+        {
+            string group = name[10..] switch
+            {
+                "Research" or "Projects" or "Properties" => "EmpireDevelopmentButton",
+                "Managers" or "Automation" => "EmpireOperationsButton",
+                "Events" or "Contracts" => "EmpireOpportunitiesButton", _ => "EmpireOverviewButton",
+            };
+            Click(root, group); button = Find<Button>(root).SingleOrDefault(b => b.Name == name);
+        }
+        // Catalogs use two or four cards according to available height. Follow the
+        // real page controls when a target is on a later page; never click hidden entries.
+        for (int page=0; button is null && page<10; page++)
+        {
+            Button? next=Find<Button>(root).SingleOrDefault(b=>b.Name=="EmpirePageNext");
+            if(next is not { IsEnabled:true }) break;
+            next.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            if(root is UIElement paged) paged.UpdateLayout();
+            button=Find<Button>(root).SingleOrDefault(b=>b.Name==name);
+        }
+        if(button is null) throw new InvalidOperationException($"{name} is unreachable through the current section's page controls.");
         Require(button.IsEnabled,$"{name} is disabled unexpectedly.");
         button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         if (root is UIElement updated) updated.UpdateLayout();

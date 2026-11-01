@@ -9,6 +9,7 @@ internal static class EmpireViewVisualAnimations
     internal static void StopVisualAnimations(this EmpireView view)
     {
         ArgumentNullException.ThrowIfNull(view);
+        view.StopWorkspaceAnimation();
         foreach (EmpireRoomCard card in Descendants<EmpireRoomCard>(view)) card.StopAnimation();
     }
 

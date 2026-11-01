@@ -11,6 +11,7 @@ public sealed class EmpireBalanceCounter : TextBlock
     public static readonly DependencyProperty DisplayedAmountProperty = DependencyProperty.Register(
         nameof(DisplayedAmount), typeof(double), typeof(EmpireBalanceCounter),
         new PropertyMetadata(0d, (d, _) => ((EmpireBalanceCounter)d).RefreshText()));
+    internal string UnitText { get; init; } = " cr";
     private bool initialized;
     private decimal target;
     public double DisplayedAmount { get => (double)GetValue(DisplayedAmountProperty); set => SetValue(DisplayedAmountProperty, value); }
@@ -31,5 +32,5 @@ public sealed class EmpireBalanceCounter : TextBlock
         initialized = true;
     }
 
-    private void RefreshText() => Text = EmpireView.Number((decimal)Math.Clamp(DisplayedAmount, 0, (double)EmpireRules.MaximumCredits)) + " cr";
+    private void RefreshText() => Text = EmpireView.Number((decimal)Math.Clamp(DisplayedAmount, 0, (double)EmpireRules.MaximumCredits)) + UnitText;
 }

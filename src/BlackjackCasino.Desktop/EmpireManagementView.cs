@@ -2,6 +2,8 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Media.Effects;
 using System.Windows.Media;
 using System.Windows.Input;
 using BlackjackCasino.Core.Empire;
@@ -9,54 +11,99 @@ using BlackjackCasino.Core.Empire;
 namespace BlackjackCasino.Desktop;
 
 /// <summary>In-place management pages. Inputs remain stable during the host's 500 ms tick.</summary>
-internal sealed class EmpireManagementView : UserControl
+internal sealed partial class EmpireManagementView : UserControl
 {
     private readonly EmpireService service;
     private readonly Func<Func<EmpireService, EmpireActionResult>, EmpireActionResult> commit;
     private readonly TextBlock summary = Text("", 12, "#AFCBBB");
     private readonly TextBlock notice = Text("Changes save immediately. All bonuses apply only inside Empire.", 12, "#B9D3C2");
-    private readonly StackPanel body = new();
+    private readonly DockPanel body = new();
+    private readonly List<UIElement> entries = [];
+    private int page;
+    private int arrangedPageSize = 4;
     private readonly List<Action> updates = [];
     private readonly Dictionary<string, Button> tabs = new(StringComparer.Ordinal);
     private string selected = "Research";
+    private readonly Action<string, Func<EmpireService, DateTimeOffset, EmpireActionResult>, string>? showPreview;
+    private readonly Action? clearPreview;
+    private readonly TextBlock pageTitle = Text("", 23, "#F3E7D0", true);
+    private Action? refreshActionPreview;
+    private Button? actionPreviewOwner;
 
-    internal EmpireManagementView(EmpireService service, Func<Func<EmpireService, EmpireActionResult>, EmpireActionResult> commit, Action close)
+    internal EmpireManagementView(EmpireService service, Func<Func<EmpireService, EmpireActionResult>, EmpireActionResult> commit, Action close, string initialSection = "Research", bool embedded = false,
+        Action<string, Func<EmpireService, DateTimeOffset, EmpireActionResult>, string>? showPreview = null, Action? clearPreview = null)
     {
-        this.service = service; this.commit = commit;
+        this.service = service; this.commit = commit; selected = initialSection;
+        this.showPreview = showPreview; this.clearPreview = clearPreview;
+        Unloaded += (_, _) => ClearActionPreview();
         Name = "EmpireManagementPage";
         Foreground = Ink("#F3E7D0");
-        var root = new Grid { Margin = new Thickness(18), MaxWidth = 1220 };
+        var root = new Grid { Margin = new Thickness(embedded ? 0 : 18) };
         foreach (GridLength height in new[] { GridLength.Auto, GridLength.Auto, GridLength.Auto, new GridLength(1, GridUnitType.Star), GridLength.Auto })
             root.RowDefinitions.Add(new RowDefinition { Height = height });
         var header = new DockPanel();
-        Button back = Button("BACK TO ESTATE", "EmpireManagementClose", close);
+        Button back = Button("← Estate overview", "EmpireManagementClose", close);
         DockPanel.SetDock(back, Dock.Right); header.Children.Add(back);
-        header.Children.Add(Text("Empire management", 29, "#F3E7D0", true)); root.Children.Add(header);
-        summary.Margin = new Thickness(0, 6, 0, 12); Grid.SetRow(summary, 1); root.Children.Add(summary);
+        header.Children.Add(pageTitle); root.Children.Add(header);
+        summary.Margin = new Thickness(0, 4, 0, 8); Grid.SetRow(summary, 1); root.Children.Add(summary);
         var navigation = new WrapPanel { Margin = new Thickness(0, 0, 0, 12) };
-        foreach (string section in new[] { "Research", "Synergies", "Projects", "Managers", "Automation", "Events", "Contracts", "Properties" })
+        foreach (string section in embedded ? GroupSections(initialSection) : new[] { "Research", "Synergies", "Projects", "Managers", "Automation", "Events", "Contracts", "Properties" })
         {
             string route = section;
-            Button tab = Button(section, "EmpireTab_" + section, () => { selected = route; Build(); });
+            Button tab = Button(section, "EmpireTab_" + section, () => { selected = route; page = 0; Build(); });
+            tab.Content = EmpireView.IconCaption(section, section, 16);
             tabs[section] = tab; navigation.Children.Add(tab);
         }
         Grid.SetRow(navigation, 2); root.Children.Add(navigation);
-        var scroll = new ScrollViewer { Name = "EmpireManagementScroll", Content = body, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
-        Grid.SetRow(scroll, 3); root.Children.Add(scroll);
-        var status = new Border { Background = Ink("#173328"), Padding = new Thickness(12), Margin = new Thickness(0, 12, 0, 0), CornerRadius = new CornerRadius(7), Child = notice };
+        Grid.SetRow(body, 3); root.Children.Add(body);
+        var status = new Border { Background = Ink("#173328"), Padding = new Thickness(10, 6, 10, 6), Margin = new Thickness(0, 8, 0, 0), CornerRadius = new CornerRadius(7), Child = notice };
         Grid.SetRow(status, 4); root.Children.Add(status);
         Content = root;
         KeyboardNavigation.SetTabNavigation(this, KeyboardNavigationMode.Cycle);
         KeyboardNavigation.SetControlTabNavigation(this, KeyboardNavigationMode.Cycle);
         Loaded += (_, _) => back.Focus();
         PreviewKeyDown += (_, args) => { if (args.Key == Key.Escape) { close(); args.Handled = true; } };
+        SizeChanged += (_, _) =>
+        {
+            int nextSize = ActualHeight is > 0 and < 550 ? 2 : 4;
+            if (nextSize == arrangedPageSize || selected is "Automation" or "Research") return;
+            arrangedPageSize = nextSize; page = 0; Build();
+        };
         Build();
     }
     internal void Refresh()
     {
         summary.Text = $"{service.ActiveProperty.Name} · Prestige {service.Prestige} · Reputation {service.Reputation:N0} · Legacy Points {service.LegacyPointsAvailable}/{service.LegacyPointsEarned} · {EmpireView.Number(service.Credits)} cr";
         foreach (Action update in updates) update();
+        if (actionPreviewOwner is { IsEnabled: true }) refreshActionPreview?.Invoke();
+        else if (actionPreviewOwner is not null) ClearActionPreview();
     }
+    private static string[] GroupSections(string section) => section switch
+    {
+        "Research" or "Projects" or "Properties" => ["Research", "Projects", "Properties"],
+        "Managers" or "Automation" => ["Managers", "Automation"],
+        "Events" or "Contracts" => ["Events", "Contracts"], _ => ["Synergies"],
+    };
+
+    private void ClearActionPreview()
+    {
+        actionPreviewOwner = null; refreshActionPreview = null; clearPreview?.Invoke();
+    }
+
+    private void PreviewAction(Button owner, Func<string> room, Func<Func<EmpireService, DateTimeOffset, EmpireActionResult>> action, string caption)
+    {
+        void Enter()
+        {
+            if (!owner.IsEnabled) return;
+            actionPreviewOwner = owner;
+            refreshActionPreview = () => showPreview?.Invoke(room(), action(), caption);
+            refreshActionPreview();
+        }
+        owner.MouseEnter += (_, _) => Enter(); owner.GotKeyboardFocus += (_, _) => Enter();
+        owner.MouseLeave += (_, _) => { if (actionPreviewOwner == owner) ClearActionPreview(); };
+        owner.LostKeyboardFocus += (_, _) => { if (actionPreviewOwner == owner) ClearActionPreview(); };
+    }
+
     private void Run(Func<EmpireService, EmpireActionResult> action)
     {
         EmpireActionResult result = commit(action); notice.Text = result.Message;
@@ -64,7 +111,8 @@ internal sealed class EmpireManagementView : UserControl
     }
     private void Build()
     {
-        updates.Clear(); body.Children.Clear();
+        ClearActionPreview(); pageTitle.Text = SectionTitle(selected);
+        updates.Clear(); entries.Clear(); body.Children.Clear();
         foreach ((string section, Button button) in tabs) button.BorderBrush = Ink(section == selected ? "#DAB67B" : "#41624F");
         switch (selected)
         {
@@ -77,22 +125,12 @@ internal sealed class EmpireManagementView : UserControl
             case "Contracts": Contracts(); break;
             case "Properties": Properties(); break;
         }
+        ArrangeEntries();
         Refresh();
     }
     private void Research()
     {
-        Intro("A permanent legacy", "Each property prestige earns one Legacy Point. Existing prestige is credited automatically. Research persists across every reset and affects every property. Branch prerequisites and limited points make your build a choice.");
-        foreach (var branch in EmpireResearchCatalog.All.GroupBy(node => node.Branch))
-        {
-            body.Children.Add(Text(branch.Key.ToUpperInvariant(), 12, "#D9B477", true));
-            foreach (EmpireResearchDefinition node in branch)
-            {
-                var status = Text("", 11, "#A2CBB1");
-                Button buy = Button("Research", "EmpireResearch_" + node.Id.Replace('-', '_'), () => Run(s => s.Research(node.Id, DateTimeOffset.UtcNow)));
-                Row(node.Name, node.Description + (node.Prerequisite is null ? "" : $"\nRequires {EmpireResearchCatalog.Find(node.Prerequisite)!.Name} rank {node.PrerequisiteRank}."), status, buy);
-                updates.Add(() => { status.Text = $"Rank {service.ResearchRank(node.Id)}/{node.MaxRank} · {node.CostPerRank} Legacy Point(s) per rank"; buy.IsEnabled = service.CanResearch(node.Id); });
-            }
-        }
+        BuildResearchTree();
     }
     private void Synergies()
     {
@@ -101,12 +139,16 @@ internal sealed class EmpireManagementView : UserControl
         {
             var status = Text("", 12, "#A8D9BB");
             var members = Text("", 11, "#9EBBAA");
-            var stack = new StackPanel(); stack.Children.Add(status); stack.Children.Add(members);
+            var progress = new ProgressBar { Name = "EmpireSynergyProgress_" + definition.Id.Replace('-', '_'), Minimum = 0, Maximum = 1, BorderThickness = new Thickness(0), BorderBrush = Brushes.Transparent, Height = 7,
+                Foreground = Ink("#CEB47A"), Background = Ink("#0C2419"), Margin = new Thickness(0, 8, 0, 8) };
+            var stack = new StackPanel(); stack.Children.Add(status); stack.Children.Add(progress); stack.Children.Add(members);
             Row(definition.Name, definition.Description, stack);
             updates.Add(() =>
             {
                 EmpireSynergyStatus current = service.Synergies.Single(s => s.Definition.Id == definition.Id);
                 status.Text = $"Tier {current.Tier}/{definition.Levels.Length} · +{current.Bonus:P1} production" + (current.NextLevel is int next ? $" · next: every member at level {next}" : " · CIRCUIT COMPLETE ✦");
+                progress.Value = current.NextLevel is int target ? Math.Clamp((double)current.MinimumLevel / target, 0, 1) : 1;
+                progress.ToolTip = current.NextLevel is int goal ? $"Lowest member: level {current.MinimumLevel} / {goal}" : "All tiers complete";
                 members.Text = string.Join("   /   ", EmpireCatalog.Departments.Where(room => room.Floor <= definition.MaximumFloor && (room.Tags & definition.Members) != 0).Select(room => $"{room.Name} {service.Level(room.Id)}"));
             });
         }
@@ -139,6 +181,11 @@ internal sealed class EmpireManagementView : UserControl
                 if (room.SelectedValue is string id) Run(s => s.AssignManager(manager.Id, id, DateTimeOffset.UtcNow));
             });
             Button remove = Button("Make inactive", "EmpireManagerRemove_" + manager.Id, () => Run(s => s.AssignManager(manager.Id, null, DateTimeOffset.UtcNow)));
+            PreviewAction(assign, () => room.SelectedValue as string ?? "slots", () =>
+                (s, at) => s.AssignManager(manager.Id, room.SelectedValue as string, at), "Assign " + manager.Name);
+            PreviewAction(remove, () => service.ManagerAssignments.GetValueOrDefault(manager.Id) ?? "slots", () =>
+                (s, at) => s.AssignManager(manager.Id, null, at), "Release " + manager.Name);
+            room.SelectionChanged += (_, _) => ClearActionPreview();
             controls.Children.Add(assign); controls.Children.Add(remove);
             var state = Text("", 11, "#A6CCB4");
             var content = new StackPanel(); content.Children.Add(state); content.Children.Add(controls);
@@ -156,35 +203,57 @@ internal sealed class EmpireManagementView : UserControl
     {
         Intro("Executive automation", "Requires Executive Offices and Executive Automation research. Each 30 production seconds, the system spends up to your chosen percentage of the current property budget while preserving the reserve. It follows the same schedule offline. At most 50 upgrade batches run per decision.");
         EmpireAutomationState config = service.Automation;
-        var panel = new StackPanel { Margin = new Thickness(16) };
-        var enabled = new CheckBox { Name = "EmpireAutomationEnabled", Content = "Enable automatic upgrades", IsChecked = config.Enabled, Margin = new Thickness(0, 4, 0, 12), Foreground = Foreground };
-        panel.Children.Add(enabled);
-        TextBox reserve = Input("Minimum reserve (cr)", config.Reserve.ToString("0.##", CultureInfo.CurrentCulture), "EmpireAutomationReserve", panel);
-        TextBox percent = Input("Maximum budget per decision (%) · 1–50", (config.SpendPercent * 100).ToString("0.##", CultureInfo.CurrentCulture), "EmpireAutomationPercent", panel);
-        TextBox target = Input("Stop each department at level · 1–200", config.TargetLevel.ToString(CultureInfo.InvariantCulture), "EmpireAutomationTarget", panel);
-        var mode = new ComboBox { Name = "EmpireAutomationMode", Width = 300, HorizontalAlignment = HorizontalAlignment.Left, ItemsSource = new[] { "Cheapest next milestone", "Priority order" }, SelectedIndex = config.CheapestMilestone ? 0 : 1, Margin = new Thickness(0, 8, 0, 12) };
-        panel.Children.Add(mode);
-        panel.Children.Add(Text("Priority order (used in Priority order mode)", 12, "#B7CFBE"));
+        var form = new Grid { Margin = new Thickness(8) };
+        form.ColumnDefinitions.Add(new ColumnDefinition()); form.ColumnDefinitions.Add(new ColumnDefinition());
+        var settings = new StackPanel { Margin = new Thickness(8, 0, 24, 0) };
+        var prioritiesPanel = new StackPanel { Margin = new Thickness(8, 0, 8, 0) };
+        var enabled = new CheckBox { Name = "EmpireAutomationEnabled", Content = "Enable automatic upgrades", IsChecked = config.Enabled, Margin = new Thickness(0, 4, 0, 8), Foreground = Foreground };
+        settings.Children.Add(enabled);
+        TextBox reserve = AutomationInput("Reserve (cr)", config.Reserve.ToString("0.##", CultureInfo.CurrentCulture), "EmpireAutomationReserve", settings);
+        TextBox percent = AutomationInput("Budget / decision (%) · 1–50", (config.SpendPercent * 100).ToString("0.##", CultureInfo.CurrentCulture), "EmpireAutomationPercent", settings);
+        TextBox target = AutomationInput("Level target · 1–200", config.TargetLevel.ToString(CultureInfo.InvariantCulture), "EmpireAutomationTarget", settings);
+        var mode = new ComboBox { Name = "EmpireAutomationMode", Width = 300, HorizontalAlignment = HorizontalAlignment.Left, ItemsSource = new[] { "Cheapest next milestone", "Priority order" }, SelectedIndex = config.CheapestMilestone ? 0 : 1, Margin = new Thickness(0, 4, 0, 8) };
+        settings.Children.Add(mode);
+        prioritiesPanel.Children.Add(Text("Priority queue", 19, "#E3D0AB", true));
+        prioritiesPanel.ToolTip = "Used by Priority order mode. Select a department to move it or remove it.";
         var priorities = new ObservableCollection<EmpireDepartment>(config.Priorities.Select(id => EmpireCatalog.Find(id)!));
-        var list = new ListBox { Name = "EmpireAutomationPriority", ItemsSource = priorities, DisplayMemberPath = "Name", Width = 340, Height = 145, HorizontalAlignment = HorizontalAlignment.Left, Background = Ink("#10251D"), Foreground = Foreground, BorderBrush = Ink("#456653"), Margin = new Thickness(0, 6, 0, 7) };
-        panel.Children.Add(list);
-        var add = new ComboBox { Width = 230, ItemsSource = EmpireCatalog.Departments, DisplayMemberPath = "Name", SelectedIndex = 0 };
-        var tools = new WrapPanel(); tools.Children.Add(add);
+        var list = new ListBox { Name = "EmpireAutomationPriority", ItemsSource = priorities, DisplayMemberPath = "Name", MinHeight = 90, Height = 100, HorizontalAlignment = HorizontalAlignment.Stretch, Background = Ink("#10291D"), Foreground = Foreground, BorderBrush = Ink("#45634D"), Margin = new Thickness(0, 6, 0, 7) };
+        prioritiesPanel.Children.Add(list);
+        var add = new ComboBox { Width = 230, HorizontalAlignment = HorizontalAlignment.Left, ItemsSource = EmpireCatalog.Departments, DisplayMemberPath = "Name", SelectedIndex = 0 };
+        prioritiesPanel.Children.Add(add);
+        var tools = new WrapPanel { Margin = new Thickness(0, 8, 0, 0) };
         tools.Children.Add(Button("Add", "EmpireAutomationAdd", () => { if (add.SelectedItem is EmpireDepartment room && !priorities.Contains(room)) priorities.Add(room); }));
         tools.Children.Add(Button("Remove", "EmpireAutomationRemove", () => { if (list.SelectedItem is EmpireDepartment room) priorities.Remove(room); }));
         tools.Children.Add(Button("Move up", "EmpireAutomationUp", () => { int i = list.SelectedIndex; if (i > 0) { priorities.Move(i, i - 1); list.SelectedIndex = i - 1; } }));
         tools.Children.Add(Button("Move down", "EmpireAutomationDown", () => { int i = list.SelectedIndex; if (i >= 0 && i < priorities.Count - 1) { priorities.Move(i, i + 1); list.SelectedIndex = i + 1; } }));
-        panel.Children.Add(tools);
+        prioritiesPanel.Children.Add(tools);
+        EmpireAutomationState? ReadConfiguration()
+        {
+            if (!Decimal(reserve.Text, out decimal minimum) || !Decimal(percent.Text, out decimal budget) || !int.TryParse(target.Text, out int maximum)) return null;
+            return new EmpireAutomationState { Enabled = enabled.IsChecked == true, Reserve = minimum, SpendPercent = budget / 100, TargetLevel = maximum, CheapestMilestone = mode.SelectedIndex == 0, Priorities = priorities.Select(room => room.Id).ToArray() };
+        }
         Button save = Button("Save automation", "EmpireAutomationSave", () =>
         {
-            if (!Decimal(reserve.Text, out decimal minimum) || !Decimal(percent.Text, out decimal budget) || !int.TryParse(target.Text, out int maximum))
-            { notice.Text = "Enter valid numbers for reserve, budget and level target."; return; }
-            var next = new EmpireAutomationState { Enabled = enabled.IsChecked == true, Reserve = minimum, SpendPercent = budget / 100, TargetLevel = maximum, CheapestMilestone = mode.SelectedIndex == 0, Priorities = priorities.Select(room => room.Id).ToArray() };
+            EmpireAutomationState? next = ReadConfiguration();
+            if (next is null) { notice.Text = "Enter valid numbers for reserve, budget and level target."; return; }
             Run(s => s.ConfigureAutomation(next, DateTimeOffset.UtcNow));
         });
-        save.Margin = new Thickness(0, 14, 0, 0); panel.Children.Add(save);
-        updates.Add(() => save.IsEnabled = service.AutomationUnlocked);
-        body.Children.Add(Card(panel));
+        PreviewAction(save, () => priorities.FirstOrDefault()?.Id ?? "slots", () => (s, at) =>
+            ReadConfiguration() is { } next ? s.ConfigureAutomation(next, at) : new(false, "Invalid configuration"), "Automation policy");
+        foreach (TextBox input in new[] { reserve, percent, target }) input.TextChanged += (_, _) => ClearActionPreview();
+        enabled.Checked += (_, _) => ClearActionPreview(); enabled.Unchecked += (_, _) => ClearActionPreview();
+        mode.SelectionChanged += (_, _) => ClearActionPreview();
+        priorities.CollectionChanged += (_, _) => ClearActionPreview();
+        save.Margin = new Thickness(0, 8, 0, 0); settings.Children.Add(save);
+        var availability = Text("", 11, "#CDB581", margin: new Thickness(0, 8, 0, 0)); prioritiesPanel.Children.Add(availability);
+        updates.Add(() =>
+        {
+            save.IsEnabled = service.AutomationUnlocked;
+            availability.Text = service.AutomationUnlocked ? "Automation ready · decisions every 30 production seconds." : "Locked · build Executive Offices and research Executive Automation.";
+        });
+        form.Children.Add(new ScrollViewer { Content = settings, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled });
+        var queueScroll = new ScrollViewer { Content = prioritiesPanel, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
+        Grid.SetColumn(queueScroll, 1); form.Children.Add(queueScroll); entries.Add(Card(form));
     }
     private void Events()
     {
@@ -246,29 +315,23 @@ internal sealed class EmpireManagementView : UserControl
     }
     private void Intro(string title, string detail)
     {
-        body.Children.Add(Text(title, 24, "#F0E2C5", true));
-        body.Children.Add(Text(detail, 12, "#A4BEAE", margin: new Thickness(0, 5, 0, 14)));
+        var intro = Text(detail, 11, "#9EBAAA", margin: new Thickness(0, 0, 0, 10));
+        intro.MaxHeight = 48; intro.TextTrimming = TextTrimming.CharacterEllipsis; intro.ToolTip = detail;
+        body.Children.Add(intro);
     }
     private void Row(string title, string detail, UIElement status, Button? action = null)
     {
-        var content = new Grid(); content.ColumnDefinitions.Add(new ColumnDefinition()); content.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        var info = new StackPanel { Margin = new Thickness(0, 0, 14, 0) }; info.Children.Add(Text(title, 16, "#EAD5AF", true));
+        var content = new DockPanel();
+        var info = new StackPanel { Margin = new Thickness(0, 0, 0, 0) }; info.Children.Add(Text(title, 16, "#EAD5AF", true));
         info.Children.Add(Text(detail, 12, "#ACC4B5", margin: new Thickness(0, 4, 0, 7))); info.Children.Add(status); content.Children.Add(info);
-        if (action is not null) { Grid.SetColumn(action, 1); action.MinWidth = 135; action.VerticalAlignment = VerticalAlignment.Center; content.Children.Add(action); }
-        body.Children.Add(Card(content));
+        if (action is not null) { action.MinWidth = 135; action.HorizontalAlignment = HorizontalAlignment.Left; DockPanel.SetDock(action, Dock.Bottom); content.Children.Insert(0, action); }
+        entries.Add(Card(new ScrollViewer { Content = content, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled }));
     }
-    private static Border Card(UIElement child) => new() { Background = Ink("#10271F"), BorderBrush = Ink("#3C5946"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(9), Padding = new Thickness(14), Margin = new Thickness(0, 0, 6, 10), Child = child };
-    private static TextBox Input(string caption, string value, string name, Panel parent)
-    {
-        parent.Children.Add(Text(caption, 11, "#ADCBBA"));
-        var input = new TextBox { Name = name, Text = value, Width = 300, Height = 32, Padding = new Thickness(8, 4, 8, 4), HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 5, 0, 10),
-            Background = Ink("#0B2018"), Foreground = Ink("#F0E3CE"), BorderBrush = Ink("#507660"), CaretBrush = Ink("#E5C47E") };
-        parent.Children.Add(input); return input;
-    }
+    private static Border Card(UIElement child) => new() { Background = new LinearGradientBrush(Color.FromRgb(24, 47, 33), Color.FromRgb(12, 29, 21), 110), BorderBrush = Ink("#405B47"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(9), Padding = new Thickness(14), Margin = new Thickness(0, 0, 10, 10), Effect = new DropShadowEffect { BlurRadius = 12, ShadowDepth = 4, Opacity = .2 }, Child = child };
     private static bool Decimal(string value, out decimal number) => decimal.TryParse(value, NumberStyles.Number, CultureInfo.CurrentCulture, out number);
     private static Button Button(string text, string name, Action action)
     {
-        var button = new Button { Name = name, Content = text, Padding = new Thickness(12, 7, 12, 7), Margin = new Thickness(0, 0, 7, 6), FontSize = 11 };
+        var button = new Button { Name = name, Content = text, Padding = new Thickness(12, 7, 12, 7), Margin = new Thickness(0, 0, 7, 6), FontSize = 11, Background = Ink("#19382A"), BorderBrush = Ink("#3F604C"), Foreground = Ink("#D8E4DF") };
         button.Click += (_, _) => action(); return button;
     }
     private static TextBlock Text(string text, double size = 12, string color = "#B7CDBD", bool bold = false, Thickness? margin = null) => new()
