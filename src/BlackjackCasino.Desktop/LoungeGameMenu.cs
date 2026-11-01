@@ -135,11 +135,10 @@ internal sealed class LoungeGameMenu : UserControl
         ConfigureShellNavigation(label, action);
         Content = module.CreateContent(ShowMenu);
 
-        // The game menu and the hosted hub can both complete Loaded work in the same dispatcher
-        // cycle. Reassert the final navigation state after the hub has loaded so a pending menu
-        // cleanup cannot hide the shared header button again.
+        // Loaded polish hooks are allowed to finish first; the hosted route then owns the final
+        // shell-navigation state for the active hub.
         Dispatcher.BeginInvoke(
-            DispatcherPriority.Loaded,
+            DispatcherPriority.ContextIdle,
             new Action(() => ConfigureShellNavigation(label, action)));
     }
 
@@ -165,8 +164,6 @@ internal sealed class LoungeGameMenu : UserControl
         Window? window = Window.GetWindow(this);
         if (window is null) return;
 
-        // LoungeWindow now owns a persistent Games button. Prefer that existing shell control
-        // immediately instead of making its state depend on finding the Return-to-Club control.
         injectedShellBack ??= FindDescendant<Button>(window, button =>
             string.Equals(button.Name, "LoungeGamesHeaderBack", StringComparison.Ordinal));
         if (injectedShellBack is not null)
@@ -175,7 +172,6 @@ internal sealed class LoungeGameMenu : UserControl
             return;
         }
 
-        // Fallback for any future host that does not provide the persistent shell button yet.
         Button? close = FindDescendant<Button>(window, IsReturnToClubButton);
         if (close is null) return;
 
