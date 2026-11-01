@@ -93,15 +93,33 @@ public sealed class ProgressionTests
     {
         SeasonDefinition season = SeasonCatalog.Current;
 
+        Assert.Equal("Velvet Eclipse", season.Name);
         Assert.Equal(100, season.Tiers.Count);
         Assert.Equal(120_000, season.Tiers[^1].RequiredExperience);
-        Assert.True(season.Tiers[49].RequiredExperience > 30_000);
+        Assert.False(season.RewardsEnabled);
     }
 
     [Fact]
-    public void SeasonTrack_GrantsNewTierRewardsWithoutPremiumTrack()
+    public void CurrentSeason_UsesIncreasingTierCostsAboveLegacyRate()
     {
-        var profile = new PlayerProfileState();
+        SeasonDefinition season = SeasonCatalog.Current;
+        long previous = 0;
+        var tierCosts = new List<long>();
+
+        foreach (SeasonTierDefinition tier in season.Tiers)
+        {
+            tierCosts.Add(tier.RequiredExperience - previous);
+            previous = tier.RequiredExperience;
+        }
+
+        Assert.All(tierCosts, cost => Assert.True(cost > 200));
+        Assert.True(tierCosts[^1] > tierCosts[0]);
+    }
+
+    [Fact]
+    public void DraftSeason_TracksTiersWithoutGrantingRewards()
+    {
+        var profile = new PlayerProfileState { Coins = 321 };
         var service = new ProgressionService(profile);
         SeasonTierDefinition tier15 = SeasonCatalog.Current.Tiers[14];
 
@@ -109,11 +127,14 @@ public sealed class ProgressionTests
 
         Assert.Equal(15, service.GetOrCreateSeasonProgress(SeasonCatalog.Current.Id).Tier);
         Assert.Equal(15, award.SeasonTiersGained);
-        Assert.Contains("portrait-eclipse-raven", profile.OwnedCosmeticIds);
+        Assert.Equal(0, award.CoinsEarned);
+        Assert.Empty(award.CosmeticsUnlocked);
+        Assert.Equal(321, profile.Coins);
+        Assert.DoesNotContain("portrait-eclipse-raven", profile.OwnedCosmeticIds);
     }
 
     [Fact]
-    public void LegacySeason_RemainsStoredButArchivedProfileMovesToCurrentSeason()
+    public void LegacySeason_RemainsSelectableAndKeepsItsProgress()
     {
         var profile = new PlayerProfileState
         {
@@ -126,9 +147,29 @@ public sealed class ProgressionTests
 
         _ = new ProgressionService(profile);
 
-        Assert.Equal(SeasonCatalog.Current.Id, profile.ActiveSeasonId);
+        Assert.Equal("season-1-midnight-shift", profile.ActiveSeasonId);
         Assert.Equal(50, profile.Seasons["season-1-midnight-shift"].Tier);
         Assert.True(SeasonCatalog.Get("season-1-midnight-shift").Archived);
+        Assert.True(SeasonCatalog.Get("season-1-midnight-shift").RewardsEnabled);
+    }
+
+    [Fact]
+    public void SwitchingSeason_PreservesIndependentProgress()
+    {
+        var profile = new PlayerProfileState();
+        var service = new ProgressionService(profile);
+
+        service.GrantSeasonExperience(SeasonCatalog.Current.Id, 1_000);
+        int currentTier = service.GetOrCreateSeasonProgress(SeasonCatalog.Current.Id).Tier;
+
+        Assert.True(service.SelectSeason("season-1-midnight-shift"));
+        service.GrantSeasonExperience(profile.ActiveSeasonId, 400);
+
+        Assert.Equal("season-1-midnight-shift", profile.ActiveSeasonId);
+        Assert.Equal(2, service.GetOrCreateSeasonProgress("season-1-midnight-shift").Tier);
+        Assert.Equal(currentTier, service.GetOrCreateSeasonProgress(SeasonCatalog.Current.Id).Tier);
+        Assert.True(service.SelectSeason(SeasonCatalog.Current.Id));
+        Assert.Equal(SeasonCatalog.Current.Id, profile.ActiveSeasonId);
     }
 
     [Fact]
