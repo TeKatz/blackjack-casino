@@ -15,6 +15,17 @@ public sealed class AdventureEngineTests
     }
 
     [Fact]
+    public void AdventureDefinitionsRoundTripThroughJsonContentBoundary()
+    {
+        string json = AdventureContentJson.Serialize(AdventureCatalog.BlackStag);
+        AdventureDefinition restored = AdventureContentJson.Deserialize(json);
+        Assert.Equal(AdventureCatalog.BlackStag.Id, restored.Id);
+        Assert.Equal(AdventureCatalog.BlackStag.Version, restored.Version);
+        Assert.Equal(AdventureCatalog.BlackStag.Scenes.Count, restored.Scenes.Count);
+        Assert.Equal(AdventureCatalog.BlackStag.StartSceneId, restored.StartSceneId);
+    }
+
+    [Fact]
     public void InvestigationChoiceWaitsForExplicitD20Roll()
     {
         AdventureEngine engine = AdventureEngine.StartNew(AdventureCatalog.BlackStag, AdventureCharacterCatalog.Create("rogue", "Test"));
