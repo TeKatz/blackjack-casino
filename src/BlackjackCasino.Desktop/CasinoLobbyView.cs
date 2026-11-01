@@ -121,6 +121,14 @@ internal sealed class CasinoLobbyView : UserControl
             "#A78AC8",
             progression));
         stack.Children.Add(ProgressionTile(
+            "LobbyProgression_Album",
+            "Collector's Album",
+            "CARD COLLECTION",
+            "Open packs, complete themed collections and inspect discovered editions.",
+            "▣",
+            "#D7B568",
+            progression));
+        stack.Children.Add(ProgressionTile(
             "LobbyProgression_Challenges",
             "Challenges",
             "GOALS & REWARDS",
