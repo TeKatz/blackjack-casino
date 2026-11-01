@@ -12,13 +12,13 @@ Before publication, the workflow validates localization resources, builds, runs 
 
 Versioning rule: start a new Development cycle on a version base strictly above the latest final version. Preserve SemVer ordering; do not offer silent downgrades. PR preview artifacts use dev.0 and are superseded by the published Development run number.
 
-## Current test channel: Collector’s Album
+## Current test channel: Casino UI and Sudoku fixes
 
-The shared `development` release is pinned to `feature/collectible-card-album`. Pushes to this branch run the Development publisher automatically; manual dispatch on this workflow revision from another branch is skipped. The existing in-app manifest URL is retained, so installed clients only need to select Development and check for updates.
+The shared `development` release is pinned to `fix/casino-ui-settings-sudoku`. Pushes to this branch run the Development publisher automatically; manual dispatch on this workflow revision from another branch is skipped. The existing in-app manifest URL is retained, so installed clients only need to select Development and check for updates.
 
-Versions continue as `0.10.1-dev.N` using the existing increasing workflow run number. The previously published Memory build was `0.10.1-dev.506`; the next Development run advances that suffix. The publisher builds and tests the complete application before replacing the mutable release. Package SHA-256, size and application/manifest version checks remain enabled. Release notes and the manifest notes identify the exact source commit.
+Versions continue as `0.10.1-dev.N` using the existing increasing workflow run number. The previously published Album build was `0.10.1-dev.552`; the next Development run advances that suffix. The publisher builds and tests the complete application before replacing the mutable release. Package SHA-256, size and application/manifest version checks remain enabled. Release notes and the manifest notes identify the exact source commit.
 
-This branch includes the permanent 136-card Collector’s Album, five-card packs, rarity-based duplicate recycling and integration with challenges, seasons, the Casino Vault, Prestige and the shop. Windows presentation tests cover all 16 themes, pack purchases, five-card reveals, repeated input, resumed receipts and compact/large desktop layouts. See [Collector’s Album rules](collectible-album.md) for odds and reward sources.
+This branch includes all Collector’s Album content plus corrected premium card corners, the expanded lobby hub, aligned profile level-up effects, reliable Sudoku input and erase rendering, profile-owned statistics/history navigation, owned titles, responsive challenge pages, independent presentation settings and distinct cosmetic frames. Windows smoke tests cover the rendered Sudoku glyphs, settings isolation, collectible inlays, navigation, portrait rendering and multiple desktop resolutions.
 
 `tools/check_localization.py` is a mandatory CI and Development-publisher gate. Every translated resource file must contain exactly the neutral English key set and every value must be non-empty. English remains the fallback when a runtime key cannot be resolved in a selected translation. Proper product and mode names such as The Midnight Club, Midnight Solitaire, Midnight Manor and Neon Vault remain untranslated unless explicitly changed by product direction.
 
