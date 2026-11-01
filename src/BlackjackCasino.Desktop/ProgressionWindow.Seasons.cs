@@ -144,8 +144,6 @@ internal partial class ProgressionWindow
             return;
         }
 
-        // Browsing is intentionally separate from activation. Merely selecting another pass must
-        // never redirect Season XP or write ActiveSeasonId.
         viewedSeasonId = choice.Id;
         RenderViewedSeason();
         UpdateSeasonActivationPresentation();
@@ -344,10 +342,12 @@ internal partial class ProgressionWindow
             bool unlocked = progress.Tier >= tier.Tier;
             bool isNext = next?.Tier == tier.Tier;
             CosmeticDefinition? cosmetic = tier.CosmeticId is null ? null : CosmeticCatalog.Get(tier.CosmeticId);
+            CollectionRarity? pack = CollectionCatalog.SeasonPack(tier.Tier);
 
             var border = PanelBorder();
-            border.Padding = new Thickness(12, 9, 12, 9);
+            border.Padding = new Thickness(12, 8, 12, 8);
             border.Margin = new Thickness(2, 3, 2, 3);
+            border.MinHeight = 60;
             border.Opacity = unlocked || isNext ? 1 : 0.62;
             if (isNext)
             {
@@ -361,6 +361,7 @@ internal partial class ProgressionWindow
 
             var grid = new Grid();
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(74) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(205) });
             grid.ColumnDefinitions.Add(new ColumnDefinition());
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(126) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(90) });
@@ -376,6 +377,7 @@ internal partial class ProgressionWindow
                 CornerRadius = new CornerRadius(6),
                 Padding = new Thickness(8, 5, 8, 5),
                 HorizontalAlignment = HorizontalAlignment.Left,
+                VerticalAlignment = VerticalAlignment.Center,
                 Child = new TextBlock
                 {
                     Text = $"T{tier.Tier}",
@@ -385,14 +387,19 @@ internal partial class ProgressionWindow
             };
             grid.Children.Add(badge);
 
+            FrameworkElement preview = CreateSeasonRewardPreview(tier, cosmetic, pack);
+            Grid.SetColumn(preview, 1);
+            grid.Children.Add(preview);
+
             var reward = new TextBlock
             {
                 VerticalAlignment = VerticalAlignment.Center,
                 TextWrapping = TextWrapping.Wrap,
                 FontWeight = cosmetic is null ? FontWeights.Normal : FontWeights.SemiBold,
+                Margin = new Thickness(8, 0, 8, 0),
             };
             reward.Inlines.Add(new Run($"◆ {tier.Coins:N0} coins") { Foreground = CoinBrush, FontWeight = FontWeights.SemiBold });
-            if (CollectionCatalog.SeasonPack(tier.Tier) is { } tierPack)
+            if (pack is { } tierPack)
             {
                 reward.Inlines.Add(new Run($" · {tierPack} card pack"));
             }
@@ -400,7 +407,7 @@ internal partial class ProgressionWindow
             {
                 reward.Inlines.Add(new Run($" · {cosmetic.Name} ({cosmetic.Kind})"));
             }
-            Grid.SetColumn(reward, 1);
+            Grid.SetColumn(reward, 2);
             grid.Children.Add(reward);
 
             var xp = new TextBlock
@@ -410,7 +417,7 @@ internal partial class ProgressionWindow
                 HorizontalAlignment = HorizontalAlignment.Right,
                 VerticalAlignment = VerticalAlignment.Center,
             };
-            Grid.SetColumn(xp, 2);
+            Grid.SetColumn(xp, 3);
             grid.Children.Add(xp);
 
             var status = new TextBlock
@@ -422,13 +429,108 @@ internal partial class ProgressionWindow
                 HorizontalAlignment = HorizontalAlignment.Right,
                 VerticalAlignment = VerticalAlignment.Center,
             };
-            Grid.SetColumn(status, 3);
+            Grid.SetColumn(status, 4);
             grid.Children.Add(status);
 
             border.Child = grid;
             SeasonRewardsPanel.Children.Add(border);
         }
     }
+
+    private FrameworkElement CreateSeasonRewardPreview(
+        SeasonTierDefinition tier,
+        CosmeticDefinition? cosmetic,
+        CollectionRarity? pack)
+    {
+        var panel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Left,
+        };
+
+        panel.Children.Add(CreateSeasonRewardChip(
+            "◆",
+            tier.Coins.ToString("N0"),
+            CoinBrush,
+            $"{tier.Coins:N0} cosmetic coins"));
+
+        if (pack is { } rarity)
+        {
+            panel.Children.Add(CreateSeasonRewardChip(
+                "PACK",
+                rarity.ToString().ToUpperInvariant(),
+                SeasonPackAccent(rarity),
+                $"{rarity} card pack"));
+        }
+
+        if (cosmetic is not null)
+        {
+            var preview = new Viewbox
+            {
+                Width = 58,
+                Height = 42,
+                Margin = new Thickness(5, 0, 0, 0),
+                Stretch = Stretch.Uniform,
+                Child = CreateCosmeticPreview(cosmetic),
+                ToolTip = $"{cosmetic.Name} · {cosmetic.Kind}",
+            };
+            System.Windows.Automation.AutomationProperties.SetName(preview, $"{cosmetic.Name} preview");
+            panel.Children.Add(preview);
+        }
+
+        return panel;
+    }
+
+    private static Border CreateSeasonRewardChip(string symbol, string label, Brush accent, string tooltip)
+    {
+        var content = new StackPanel
+        {
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center,
+        };
+        content.Children.Add(new TextBlock
+        {
+            Text = symbol,
+            FontSize = symbol == "PACK" ? 8 : 13,
+            FontWeight = FontWeights.Bold,
+            Foreground = accent,
+            HorizontalAlignment = HorizontalAlignment.Center,
+        });
+        content.Children.Add(new TextBlock
+        {
+            Text = label,
+            FontSize = 8,
+            FontWeight = FontWeights.SemiBold,
+            Foreground = new SolidColorBrush(Color.FromRgb(222, 232, 226)),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+        });
+
+        return new Border
+        {
+            Width = 58,
+            Height = 42,
+            Margin = new Thickness(0, 0, 5, 0),
+            Padding = new Thickness(4, 3, 4, 3),
+            CornerRadius = new CornerRadius(7),
+            BorderThickness = new Thickness(1),
+            BorderBrush = accent,
+            Background = new SolidColorBrush(Color.FromRgb(8, 27, 19)),
+            Child = content,
+            ToolTip = tooltip,
+        };
+    }
+
+    private static Brush SeasonPackAccent(CollectionRarity rarity) => new SolidColorBrush(rarity switch
+    {
+        CollectionRarity.Common => Color.FromRgb(126, 169, 147),
+        CollectionRarity.Uncommon => Color.FromRgb(82, 218, 191),
+        CollectionRarity.Rare => Color.FromRgb(103, 169, 245),
+        CollectionRarity.Epic => Color.FromRgb(185, 128, 240),
+        CollectionRarity.Legendary => Color.FromRgb(244, 199, 92),
+        _ => Color.FromRgb(126, 169, 147),
+    });
 
     private void RenderRewardPlaceholderTrack(SeasonDefinition season, SeasonProgressState progress)
     {
