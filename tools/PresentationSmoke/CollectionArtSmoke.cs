@@ -32,7 +32,8 @@ internal static partial class Program
             perceptual.Add((card.Id, hash));
         }
         Require(pixels.Count == 136 && CollectionIllustrations.All.Count == 136, "Not every card has unique artwork");
-        // Exercise the real album inspector without mutating the player's ownership.
+
+        // Exercise the real dedicated album inspector without mutating ownership.
         string ownedId = profile.Collection.OwnedCardIds.First();
         CollectionCard owned = CollectionCatalog.Find(ownedId)!;
         Find<Button>(Find<StackPanel>(window).Single(p => p.Name == "AlbumThemes"))
@@ -44,19 +45,26 @@ internal static partial class Program
         window.UpdateLayout(); await Task.Delay(50);
         Border inspector = Find<Border>(window).Single(b => b.Name == "AlbumArtOverlay");
         Require(inspector.IsVisible, "Collected card did not open its artwork inspector");
-        Require(Find<Image>(inspector).Single(i => i.Name == "CollectionCardArt").Tag as string == ownedId, "Inspector displays another card");
-        foreach (var size in new[] { (1080d, 720d), (1440d, 900d) })
+        Image inspectorImage = Find<Image>(inspector).Single(i => i.Name == "CollectionCardArt");
+        Require(inspectorImage.Tag as string == ownedId, "Inspector displays another card");
+        Require(RenderOptions.GetBitmapScalingMode(inspectorImage) == BitmapScalingMode.HighQuality, "Inspector illustration is not using high-quality bitmap scaling");
+        Require(!Find<Viewbox>(inspector).Any(), "Inspector still enlarges the small card through a Viewbox");
+        Border inspectorCard = Find<Border>(inspector).Single(b => b.Name == "CollectionCard" && Equals(b.Tag, ownedId));
+        Require(inspectorCard.Width >= 320 && inspectorCard.Height >= 490, "Inspector did not render a native large card");
+
+        foreach (var size in new[] { (1440d, 900d), (1920d, 1080d) })
         {
-            window.Width = size.Item1; window.Height = size.Item2; window.UpdateLayout();
+            window.Width = size.Item1; window.Height = size.Item2; window.UpdateLayout(); await Task.Delay(30);
             RequireWithin(window, Find<Button>(inspector).Single(b => b.Name == "AlbumArtClose"), "Artwork inspector close");
-            RequireWithin(window, Find<Image>(inspector).Single(i => i.Name == "CollectionCardArt"), "Artwork inspector illustration");
+            RequireWithin(window, inspectorImage, "Artwork inspector illustration");
+            RequireWithin(window, inspectorCard, "Artwork inspector card");
             Capture(window, "album-art-inspector-" + (int)size.Item1);
         }
         Button close = Find<Button>(inspector).Single(b => b.Name == "AlbumArtClose");
         close.RaiseEvent(new KeyEventArgs(Keyboard.PrimaryDevice, PresentationSource.FromVisual(window)!, 0, Key.Escape) { RoutedEvent = Keyboard.PreviewKeyDownEvent });
         Require(!inspector.IsVisible, "Escape did not close the artwork inspector");
         Require(selected.IsVisible && selected.IsEnabled && selected.IsKeyboardFocused, "Escape left the album or lost the selected card focus");
-        Require(Find<TabControl>(window).Any(t => t.IsVisible && t.SelectedItem is TabItem { Header: "Album" }), "Escape closed the progression page");
+        Require(Find<Grid>(window).Any(g => g.Name == "CollectionAlbumRoot" && g.IsVisible), "Escape closed the dedicated album page");
 
         var root = (Grid)window.Content;
         var host = new Border { Name = "CollectionArtQA", Background = new SolidColorBrush(Color.FromRgb(6, 12, 20)), Padding = new Thickness(18) };
@@ -93,7 +101,7 @@ internal static partial class Program
             Require(foil.RenderTransform.HasAnimatedProperties, "Visible card did not resume foil animation");
             host.Child = null; window.UpdateLayout(); await Task.Delay(40);
             Require(!foil.RenderTransform.HasAnimatedProperties, "Unloaded card kept an animation clock");
-            File.WriteAllText(Path.Combine(output, "album-art-result.txt"), "PASS: 136 distinct decoded illustrations and perceptual compositions; full catalog mapping; all 16 theme galleries; all rarity finishes; real inspector and Escape; reduced motion; visible/hidden/unloaded foil lifecycle.");
+            File.WriteAllText(Path.Combine(output, "album-art-result.txt"), "PASS: 136 distinct decoded illustrations and perceptual compositions; full catalog mapping; all 16 theme galleries; all rarity finishes; dedicated high-quality inspector and Escape; reduced motion; visible/hidden/unloaded foil lifecycle.");
         }
         finally { host.Child = null; root.Children.Remove(host); window.UpdateLayout(); }
     }
