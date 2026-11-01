@@ -71,8 +71,8 @@ internal sealed class LoungeWindow : Window
             SaveActive(previous);
             previous.Dispose();
         }
-        SetGamesHeader(null);
-        contentHost.Content = new LoungeGameMenu(games);
+        SetShellNavigation(null, null);
+        contentHost.Content = new LoungeGameMenu(games, SetShellNavigation);
     }
 
     private UIElement BuildShell()
@@ -137,10 +137,10 @@ internal sealed class LoungeWindow : Window
         return root;
     }
 
-    private void SetGamesHeader(Action? action)
+    private void SetShellNavigation(string? label, Action? action)
     {
         if (gamesHeaderBack is null) return;
-        gamesHeaderBack.Content = LoungeGameMenu.GamesBackLabel();
+        gamesHeaderBack.Content = label ?? LoungeGameMenu.GamesBackLabel();
         gamesHeaderBack.Tag = action;
         gamesHeaderBack.Visibility = action is null ? Visibility.Collapsed : Visibility.Visible;
     }
@@ -155,7 +155,7 @@ internal sealed class LoungeWindow : Window
             previous.Dispose();
         }
 
-        SetGamesHeader(ShowGames);
+        SetShellNavigation(LoungeGameMenu.GamesBackLabel(), ShowGames);
         progress = SudokuProgressState.Normalize(progress);
         var scroll = new ScrollViewer
         {
