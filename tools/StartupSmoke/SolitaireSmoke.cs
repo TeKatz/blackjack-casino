@@ -16,17 +16,21 @@ internal static class SolitaireSmoke
         await Task.Delay(120);
         window.UpdateLayout();
 
-        Require(!Find<Button>(window).Any(button => button.Name == "LoungeGamesButton" && button.IsVisible),
-            "Chill Lounge still exposes the redundant global Lounge Games header button.");
+        Require(!Find<Button>(window).Any(button => button.Name == "LoungeGamesHeaderBack" && button.IsVisible),
+            "Chill Lounge game selection should not show Games navigation before entering a game hub.");
 
         Button tile = Find<Button>(window).Single(button => button.Name == "LoungeGame_solitaire" && button.IsVisible);
         Click(tile);
-        await Task.Delay(80);
+        await Task.Delay(90);
         window.UpdateLayout();
         Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "MIDNIGHT SOLITAIRE"),
             "Midnight Solitaire eyebrow is missing after opening the Lounge tile.");
         Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "Let the cards settle."),
             "Midnight Solitaire hub did not open from the Chill Lounge menu.");
+        Require(Find<Button>(window).Any(button => button.Name == "LoungeGamesHeaderBack" && button.IsVisible && Equals(button.Content, "← GAMES")),
+            "Midnight Solitaire did not move Games navigation into the Chill Lounge header.");
+        Require(!Find<Button>(window).Any(button => button.IsVisible && Equals(button.Content, "← LOUNGE GAMES")),
+            "Midnight Solitaire still exposes the old page-local Lounge Games button.");
         Capture(window, Path.Combine(output, "solitaire-hub.png"));
 
         Button newDeal = Find<Button>(window)
@@ -70,7 +74,7 @@ internal static class SolitaireSmoke
         Click(Find<Button>(window).Single(button => button.IsVisible && Equals(button.Content, "← SOLITAIRE")));
         await Task.Delay(50);
         window.UpdateLayout();
-        Click(Find<Button>(window).Single(button => button.IsVisible && Equals(button.Content, "← LOUNGE GAMES")));
+        Click(Find<Button>(window).Single(button => button.Name == "LoungeGamesHeaderBack" && button.IsVisible));
         await Task.Delay(50);
         window.UpdateLayout();
         Click(Find<Button>(window).Single(button => button.IsVisible && Equals(button.Content, "RETURN TO CLUB")));
@@ -83,7 +87,7 @@ internal static class SolitaireSmoke
         await WordSearchSmoke.Run(window, output);
 
         File.WriteAllText(Path.Combine(output, "solitaire-result.txt"),
-            "PASS: local-only Lounge navigation; Klondike starts from Midnight Solitaire; skin-independent gold selection halo and explicit selection text render and clear correctly; Word Search Lounge acceptance also passed.");
+            "PASS: shared header Games navigation; Klondike starts from Midnight Solitaire; skin-independent gold selection halo and explicit selection text render and clear correctly; Word Search Lounge acceptance also passed.");
     }
 
     private static bool IsFullSizePlayingCard(Border border) =>
