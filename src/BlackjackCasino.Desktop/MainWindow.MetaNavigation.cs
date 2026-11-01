@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Documents;
 using System.Windows.Media;
+using System.Windows.Threading;
 
 namespace BlackjackCasino.Desktop;
 
@@ -69,6 +70,7 @@ public partial class MainWindow
             KeyboardNavigation.SetTabNavigation(metaOverlay, KeyboardNavigationMode.Cycle);
             KeyboardNavigation.SetControlTabNavigation(metaOverlay, KeyboardNavigationMode.Cycle);
             KeyboardNavigation.SetDirectionalNavigation(metaOverlay, KeyboardNavigationMode.Contained);
+            metaOverlay.AddHandler(Keyboard.PreviewKeyDownEvent, new KeyEventHandler(MetaOverlay_PreviewKeyDown), true);
             metaOverlay.Children.Add(metaHost);
             Grid.SetRowSpan(metaOverlay, Math.Max(1, CasinoRoot.RowDefinitions.Count));
             Grid.SetColumnSpan(metaOverlay, Math.Max(1, CasinoRoot.ColumnDefinitions.Count));
@@ -99,6 +101,46 @@ public partial class MainWindow
         metaHost!.Content = content;
         metaOverlay.Visibility = Visibility.Visible;
         Dispatcher.BeginInvoke(() => content.MoveFocus(new TraversalRequest(FocusNavigationDirection.First)));
+    }
+
+    private void MetaOverlay_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Escape || metaHost?.Content is not FrameworkElement content ||
+            !metaPages.TryPeek(out MetaPage? page) || page.Shell is not CollectionAlbumPage)
+            return;
+
+        Border? inspector = VisualDescendants<Border>(content)
+            .FirstOrDefault(border => border.Name == "AlbumArtOverlay" && border.IsVisible);
+        if (inspector is null) return;
+
+        string? cardId = VisualDescendants<Image>(inspector)
+            .FirstOrDefault(image => image.Name == "CollectionCardArt")?.Tag as string;
+        if (string.IsNullOrEmpty(cardId)) return;
+
+        Button? cardButton = VisualDescendants<Button>(content)
+            .FirstOrDefault(button => Equals(button.Tag, "inspect:" + cardId));
+        if (cardButton is null) return;
+
+        // The album itself closes the inspector later in the same routed key event. Restore
+        // keyboard focus after that event has unwound so the hidden close button cannot retain it.
+        Dispatcher.BeginInvoke(DispatcherPriority.Input, () =>
+        {
+            if (cardButton.IsVisible && cardButton.IsEnabled)
+            {
+                cardButton.Focus();
+                Keyboard.Focus(cardButton);
+            }
+        });
+    }
+
+    private static IEnumerable<T> VisualDescendants<T>(DependencyObject root) where T : DependencyObject
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+        {
+            DependencyObject child = VisualTreeHelper.GetChild(root, i);
+            if (child is T match) yield return match;
+            foreach (T nested in VisualDescendants<T>(child)) yield return nested;
+        }
     }
 
     private void CloseMetaPage()
