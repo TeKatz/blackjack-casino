@@ -85,7 +85,7 @@ public partial class MainWindow
             ClaimEmpireDividend,
             PrestigeEmpire,
             CloseEmpire,
-            () => AnimationsEnabled,
+            () => preferences.Presentation("casino-empire").AnimationsEnabled,
             "←  Casino lobby",
             MutateEmpire);
         EmpireStatisticsPage.Attach(empireView, empire);
@@ -137,7 +137,7 @@ public partial class MainWindow
             ClaimEmpireDividend,
             PrestigeEmpire,
             () => window.Close(),
-            () => AnimationsEnabled,
+            () => preferences.Presentation("casino-empire").AnimationsEnabled,
             "Close Empire window",
             MutateEmpire);
         EmpireStatisticsPage.Attach(view, empire);

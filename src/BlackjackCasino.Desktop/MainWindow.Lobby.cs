@@ -38,7 +38,12 @@ public partial class MainWindow
             "Five dice and your score sheet. Play solo or join a casino table with three AI opponents.",
             "#9DD6B3", "⚄", "Table games", () => new LoungeGameArtwork(true)), OpenKniffel);
         lobby=new CasinoLobbyView(modeRegistry,OpenProgression);
-        lobby.IsVisibleChanged += (_, _) => LobbyButton.Visibility = lobby.IsVisible ? Visibility.Collapsed : Visibility.Visible;
+        lobby.IsVisibleChanged += (_, _) =>
+        {
+            LobbyButton.Visibility = lobby.IsVisible ? Visibility.Collapsed : Visibility.Visible;
+            SyncHostMusic();
+            RefreshProfileButton();
+        };
         Grid.SetRow(lobby,1); Grid.SetColumnSpan(lobby,2);Panel.SetZIndex(lobby,900);CasinoRoot.Children.Add(lobby);
         LobbyButton.Visibility=Visibility.Collapsed;
         TableModeText.Text="Casino lobby";
@@ -79,6 +84,7 @@ public partial class MainWindow
     private void OpenProgression(string tab)
     {
         if(string.Equals(tab,"Collector's Album",StringComparison.OrdinalIgnoreCase)) OpenCollectionAlbumPage();
+        else if (string.Equals(tab, "Overview", StringComparison.OrdinalIgnoreCase)) OpenProfileStatistics("Overview");
         else OpenProgressionPage(tab);
     }
 }

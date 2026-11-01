@@ -6,7 +6,7 @@ namespace BlackjackCasino.Desktop;
 
 internal partial class ProgressionWindow
 {
-    private const int ChallengePageSize = 4;
+    private const int ChallengePageSize = 12;
     private int challengePage;
     private bool collectionsInitialized;
 

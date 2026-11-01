@@ -24,14 +24,7 @@ public partial class MainWindow
         content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(28) });
         content.ColumnDefinitions.Add(new ColumnDefinition());
         content.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        content.Children.Add(new TextBlock
-        {
-            Text = "▣",
-            FontSize = 16,
-            Foreground = new SolidColorBrush(Color.FromRgb(218, 187, 112)),
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-        });
+        content.Children.Add(ProgressionArtwork.Create("Collector's Album", 27));
 
         var labels = new StackPanel { Margin = new Thickness(5, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
         labels.Children.Add(new TextBlock

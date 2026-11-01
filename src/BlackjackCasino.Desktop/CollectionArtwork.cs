@@ -71,10 +71,19 @@ internal static class CollectionArtwork
         content.Children.Add(new Border { IsHitTestVisible = false, Margin = T(3), BorderThickness = new Thickness(S(.6)), BorderBrush = new SolidColorBrush(Color.FromArgb(owned ? (byte)140 : (byte)45, foil.R, foil.G, foil.B)), CornerRadius = new CornerRadius(S(7)) });
         if (owned && premium)
         {
-            var corners = new System.Windows.Shapes.Path { IsHitTestVisible = false, Stroke = new SolidColorBrush(foil), StrokeThickness = S(theme.UltraRare ? 1.4 : .8),
-                Data = Geometry.Parse("M 8,31 L8,8 31,8 M 131,8 L154,8 154,31 M 8,211 L8,234 31,234 M 131,234 L154,234 154,211"), Opacity = .75,
-                RenderTransform = new ScaleTransform(scale, scale), RenderTransformOrigin = new Point(0, 0) };
-            content.Children.Add(corners);
+            // Anchor all four inlays to the actual inner surface. Border/padding and rarity
+            // change its dimensions, so design-space coordinates cannot align every edition.
+            foreach (bool top in new[] { true, false })
+            foreach (bool left in new[] { true, false })
+                content.Children.Add(new Border
+                {
+                    Name = "CollectionCorner" + (top ? "Top" : "Bottom") + (left ? "Left" : "Right"),
+                    IsHitTestVisible = false, Width = S(23), Height = S(23), Margin = T(7),
+                    HorizontalAlignment = left ? HorizontalAlignment.Left : HorizontalAlignment.Right,
+                    VerticalAlignment = top ? VerticalAlignment.Top : VerticalAlignment.Bottom,
+                    BorderBrush = new SolidColorBrush(foil), Opacity = .75,
+                    BorderThickness = new Thickness(left ? S(1) : 0, top ? S(1) : 0, left ? 0 : S(1), top ? 0 : S(1)),
+                });
             content.Children.Add(CollectionFoil.Create(card, animationsEnabled));
         }
         var metal = new LinearGradientBrush(new GradientStopCollection

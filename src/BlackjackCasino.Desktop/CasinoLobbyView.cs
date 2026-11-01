@@ -64,6 +64,19 @@ internal sealed class CasinoLobbyView : UserControl
         Border hub = BuildProgressionHub(progression);
         Grid.SetColumn(hub, 2);
         body.Children.Add(hub);
+        // Expand only into the unused right-hand letterbox gutter of the games Viewbox.
+        // The games column, scale, centering and tile hit targets remain exactly as before.
+        void FitHub()
+        {
+            if (cards.ActualWidth <= 0 || !cards.IsArrangeValid || !body.IsArrangeValid) return;
+            Rect games = cards.TransformToAncestor(body).TransformBounds(new Rect(0, 0, cards.ActualWidth, cards.ActualHeight));
+            double columnStart = body.ColumnDefinitions[0].ActualWidth + 22;
+            double extra = Math.Max(0, columnStart - games.Right - 18);
+            hub.Margin = new Thickness(-extra, 8, 0, 8);
+        }
+        body.SizeChanged += (_, _) => Dispatcher.BeginInvoke(FitHub);
+        gamesViewport.SizeChanged += (_, _) => Dispatcher.BeginInvoke(FitHub);
+        Loaded += (_, _) => Dispatcher.BeginInvoke(FitHub);
 
         Content = root;
         Loaded += OnLoaded;
@@ -111,11 +124,17 @@ internal sealed class CasinoLobbyView : UserControl
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(12),
             Padding = new Thickness(15, 16, 15, 15),
-            VerticalAlignment = VerticalAlignment.Top,
+            VerticalAlignment = VerticalAlignment.Stretch,
             Margin = new Thickness(0, 8, 0, 8),
         };
 
+        var layout = new Grid();
+        layout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        layout.RowDefinitions.Add(new RowDefinition());
         var stack = new StackPanel();
+        layout.Children.Add(stack);
+        var destinations = new UniformGrid { Rows = 5, Columns = 1 };
+        Grid.SetRow(destinations, 1); layout.Children.Add(destinations);
         stack.Children.Add(new TextBlock
         {
             Text = "YOUR MIDNIGHT CLUB",
@@ -140,7 +159,7 @@ internal sealed class CasinoLobbyView : UserControl
             Margin = new Thickness(0, 0, 0, 12),
         });
 
-        stack.Children.Add(ProgressionTile(
+        destinations.Children.Add(ProgressionTile(
             "LobbyProgression_SeasonPass",
             "Season Pass",
             "SEASON REWARDS",
@@ -148,7 +167,7 @@ internal sealed class CasinoLobbyView : UserControl
             "✦",
             "#D2B363",
             progression));
-        stack.Children.Add(ProgressionTile(
+        destinations.Children.Add(ProgressionTile(
             "LobbyProgression_CosmeticShop",
             "Cosmetic Shop",
             "PERSONAL STYLE",
@@ -156,7 +175,7 @@ internal sealed class CasinoLobbyView : UserControl
             "◆",
             "#A78AC8",
             progression));
-        stack.Children.Add(ProgressionTile(
+        destinations.Children.Add(ProgressionTile(
             "LobbyProgression_Album",
             "Collector's Album",
             "CARD COLLECTION",
@@ -165,7 +184,7 @@ internal sealed class CasinoLobbyView : UserControl
             "#D7B568",
             progression,
             showPackBadge: true));
-        stack.Children.Add(ProgressionTile(
+        destinations.Children.Add(ProgressionTile(
             "LobbyProgression_Challenges",
             "Challenges",
             "GOALS & REWARDS",
@@ -173,7 +192,7 @@ internal sealed class CasinoLobbyView : UserControl
             "✓",
             "#78B69A",
             progression));
-        stack.Children.Add(ProgressionTile(
+        destinations.Children.Add(ProgressionTile(
             "LobbyProgression_Overview",
             "Overview",
             "CAREER OVERVIEW",
@@ -182,7 +201,7 @@ internal sealed class CasinoLobbyView : UserControl
             "#7FA9C2",
             progression));
 
-        shell.Child = stack;
+        shell.Child = layout;
         return shell;
     }
 
@@ -198,35 +217,25 @@ internal sealed class CasinoLobbyView : UserControl
     {
         Brush accent = Ink(accentHex);
         var content = new Grid();
-        content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(35) });
+        content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(76) });
         content.ColumnDefinitions.Add(new ColumnDefinition());
         content.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
         var emblemFrame = new Border
         {
-            Width = 29,
-            Height = 29,
-            CornerRadius = new CornerRadius(8),
-            BorderBrush = accent,
-            BorderThickness = new Thickness(1),
-            Background = Ink("#152B26"),
-            VerticalAlignment = VerticalAlignment.Top,
-            Child = new TextBlock
-            {
-                Text = emblem,
-                FontSize = 15,
-                Foreground = accent,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center,
-            },
+            Width = 68, Height = 68, CornerRadius = new CornerRadius(12),
+            BorderBrush = accent, BorderThickness = new Thickness(1),
+            Background = new LinearGradientBrush(Ink("#203833").Color, Ink("#101E24").Color, 60),
+            VerticalAlignment = VerticalAlignment.Center,
+            Child = ProgressionArtwork.Create(section, 62),
         };
         content.Children.Add(emblemFrame);
 
-        var copy = new StackPanel { Margin = new Thickness(6, 0, 0, 0) };
+        var copy = new StackPanel { Margin = new Thickness(6, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
         copy.Children.Add(new TextBlock
         {
             Text = eyebrow,
-            FontSize = 8,
+            FontSize = 9,
             FontWeight = FontWeights.SemiBold,
             Foreground = accent,
         });
@@ -295,13 +304,14 @@ internal sealed class CasinoLobbyView : UserControl
         var button = new Button
         {
             Name = name,
-            Content = content,
+            Content = new Viewbox { Child = new Border { Width = 320, Padding = new Thickness(1), Child = content }, Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, HorizontalAlignment = HorizontalAlignment.Stretch },
             Tag = section,
             Background = Ink("#112420"),
             BorderBrush = Ink("#34544A"),
             BorderThickness = new Thickness(1),
             Padding = new Thickness(10, 10, 10, 10),
-            Margin = new Thickness(0, 0, 0, 9),
+            Margin = new Thickness(0, 0, 0, 7),
+            VerticalContentAlignment = VerticalAlignment.Stretch,
             HorizontalContentAlignment = HorizontalAlignment.Stretch,
             Cursor = CasinoCursors.Hand,
         };

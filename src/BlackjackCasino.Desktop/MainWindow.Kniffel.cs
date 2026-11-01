@@ -29,7 +29,7 @@ public partial class MainWindow
         CreateKniffelView();
         backgroundMusic.SetEnabled(false);
         kniffelMusic = new BackgroundMusic(Soundtrack.DiceLounge);
-        kniffelMusic.Start(preferences.MusicEnabled, preferences.MusicVolume);
+        kniffelMusic.Start(preferences.Presentation("kniffel").MusicEnabled, preferences.Presentation("kniffel").MusicVolume);
         if (lobby is not null) lobby.Visibility = Visibility.Collapsed;
         foreach (UIElement covered in CasinoRoot.Children.OfType<UIElement>().Where(child => child != embeddedGameOverlay))
         {
@@ -63,11 +63,11 @@ public partial class MainWindow
                 preferences = preferences with { Kniffel = state };
                 if (!testSession) SavePreferences();
             }
-        }, CloseKniffel, () => AnimationsEnabled, () =>
+        }, CloseKniffel, () => preferences.Presentation("kniffel").AnimationsEnabled, () =>
         {
-            if (SoundEnabled) CasinoAudio.Play(DiceRollCue.Value, kniffelAudioOwner, .75);
+            if (preferences.Presentation("kniffel").SoundEnabled) CasinoAudio.Play(DiceRollCue.Value, kniffelAudioOwner, .75);
         }, AwardKniffelCompletion, ShowKniffelSetup, _ => { if (casino) AdvanceKniffelTable(); }, persistInitialState: !casino,
-        fiveOfAKindSound: () => { if (SoundEnabled) CasinoAudio.Play(DiceFiveOfAKindCue.Value, kniffelAudioOwner, .85); },
+        fiveOfAKindSound: () => { if (preferences.Presentation("kniffel").SoundEnabled) CasinoAudio.Play(DiceFiveOfAKindCue.Value, kniffelAudioOwner, .85); },
         diceVariant: CosmeticCatalog.Get(progressionController?.Profile.EquippedDiceSetId ?? CosmeticCatalog.DefaultDiceSetId).VisualVariant);
     }
 
@@ -239,8 +239,8 @@ public partial class MainWindow
         CasinoAudio.Mixer.Stop(kniffelAudioOwner);
         kniffelMusic?.Dispose();
         kniffelMusic = null;
-        backgroundMusic.SetEnabled(preferences.MusicEnabled);
-        backgroundMusic.SetVolume(preferences.MusicVolume);
+        backgroundMusic.SetEnabled(HostMusicSettings.MusicEnabled);
+        backgroundMusic.SetVolume(HostMusicSettings.MusicVolume);
         embeddedGameHost!.Content = null;
         kniffelView = null;
         embeddedGameOverlay!.Visibility = Visibility.Collapsed;

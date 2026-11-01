@@ -67,6 +67,8 @@ public partial class MainWindow
             Orientation = Orientation.Horizontal,
             VerticalAlignment = VerticalAlignment.Center,
         };
+        content.Children.Add(ProgressionArtwork.Create("Challenges", 27));
+        labels.Margin = new Thickness(5, 0, 0, 0);
         content.Children.Add(labels);
         content.Children.Add(challengeHeaderBadge);
 

@@ -13,6 +13,8 @@ internal sealed class PlayerProfileWindow : Window
     private readonly PlayerProgressionController controller;
     private readonly Action openProgression;
     private readonly Action closePage;
+    private readonly Action<string> openStatistics;
+    private readonly WrapPanel playerTitlesPanel = new();
     private readonly Grid profileRoot;
     private readonly WrapPanel playerPortraitPanel = new();
     private readonly ContentControl equippedPortraitHost = new();
@@ -28,16 +30,17 @@ internal sealed class PlayerProfileWindow : Window
     private static readonly Brush CoinBrush = Brush("#54E1B7");
 
     internal PlayerProfileWindow(PlayerProgressionController controller,
-        Action? openProgression = null, Action? closePage = null)
+        Action? openProgression = null, Action? closePage = null, Action<string>? openStatistics = null)
     {
         this.controller = controller;
         this.openProgression = openProgression ?? (() => { });
         this.closePage = closePage ?? Close;
+        this.openStatistics = openStatistics ?? (_ => { });
         Title = "Player profile · Blackjack Casino";
         Width = 1200; Height = 800; MinWidth = 940; MinHeight = 650;
         WindowStyle = WindowStyle.None;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
-        Background = Brush("#07120D"); Foreground = Brush("#F2EEE4");
+        Background = new LinearGradientBrush(Color.FromRgb(7, 18, 20), Color.FromRgb(13, 30, 27), 55); Foreground = Brush("#F2EEE4");
         FontFamily = new FontFamily("Segoe UI");
         Resources.MergedDictionaries.Add(new ResourceDictionary
         {
@@ -85,11 +88,11 @@ internal sealed class PlayerProfileWindow : Window
         heading.Children.Add(title); root.Children.Add(heading);
 
         var body = new Grid(); Grid.SetRow(body, 1); root.Children.Add(body);
-        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(300) });
+        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(350) });
         body.ColumnDefinitions.Add(new ColumnDefinition());
         var summary = PanelBorder(); summary.Margin = new Thickness(0, 0, 16, 0);
         var identity = new StackPanel();
-        equippedPortraitHost.Width = 140; equippedPortraitHost.Height = 140;
+        equippedPortraitHost.Width = 202; equippedPortraitHost.Height = 202;
         equippedPortraitHost.HorizontalAlignment = HorizontalAlignment.Center;
         identity.Children.Add(equippedPortraitHost);
         nameLabel.FontSize = 25; nameLabel.FontWeight = FontWeights.Bold;
@@ -97,6 +100,7 @@ internal sealed class PlayerProfileWindow : Window
         identity.Children.Add(nameLabel);
         titleLabel.FontSize = 15; titleLabel.Margin = new Thickness(0, 5, 0, 0);
         identity.Children.Add(titleLabel);
+        levelLabel.FontSize = 20; levelLabel.FontWeight = FontWeights.Bold; levelLabel.LineHeight = 30;
         levelLabel.Foreground = CoinBrush; levelLabel.Margin = new Thickness(0, 5, 0, 18);
         levelLabel.TextWrapping = TextWrapping.Wrap; identity.Children.Add(levelLabel);
         identity.Children.Add(Caption("DISPLAY NAME"));
@@ -111,7 +115,12 @@ internal sealed class PlayerProfileWindow : Window
         saveName.Name = "RenameProfileButton"; identity.Children.Add(saveName);
         var progression = ActionButton("Progression & shop →", openProgression);
         progression.Name = "ProfileProgressionButton";
-        progression.Margin = new Thickness(0, 24, 0, 0); identity.Children.Add(progression);
+        var stats = ActionButton("Statistics →", () => openStatistics("Overview"));
+        stats.Name = "ProfileStatisticsButton";
+        stats.Margin = new Thickness(0, 20, 0, 0); identity.Children.Add(stats);
+        var history = ActionButton("Hand History →", () => openStatistics("Hand History"));
+        history.Name = "ProfileHandHistoryButton"; identity.Children.Add(history);
+        progression.Margin = new Thickness(0, 12, 0, 0); identity.Children.Add(progression);
         var export = new Button { Content = "Save Progress…", Margin = new Thickness(0, 8, 0, 0) };
         export.Click += SaveProgress_Click; identity.Children.Add(export);
         playerStatusText.Foreground = PositiveBrush; playerStatusText.TextWrapping = TextWrapping.Wrap;
@@ -125,21 +134,34 @@ internal sealed class PlayerProfileWindow : Window
         gallery.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         gallery.RowDefinitions.Add(new RowDefinition());
         var galleryHeader = new StackPanel();
-        galleryHeader.Children.Add(Caption("PORTRAIT COLLECTION"));
+        galleryHeader.Children.Add(Caption("YOUR COLLECTION · PORTRAITS & TITLES"));
         collectionLabel.Foreground = MutedBrush; collectionLabel.Margin = new Thickness(0, 5, 0, 12);
         galleryHeader.Children.Add(collectionLabel); gallery.Children.Add(galleryHeader);
         portraitSearch.Name = "PortraitSearchBox";
-        portraitSearch.ToolTip = "Search owned portraits";
+        portraitSearch.ToolTip = "Search owned portraits and titles";
         portraitSearch.TextChanged += (_, _) => RefreshPlayer();
         portraitSearch.Margin = new Thickness(0, 0, 0, 12);
         Grid.SetRow(portraitSearch, 1); gallery.Children.Add(portraitSearch);
         var scroll = new ScrollViewer
         {
-            Content = playerPortraitPanel, VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            Content = BuildIdentityCollections(), VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
         };
         Grid.SetRow(scroll, 2); gallery.Children.Add(scroll); collection.Child = gallery;
         return root;
+    }
+
+    private UIElement BuildIdentityCollections()
+    {
+        var stack = new StackPanel();
+        stack.Children.Add(Caption("PORTRAITS"));
+        playerPortraitPanel.Margin = new Thickness(0, 12, 0, 12);
+        stack.Children.Add(playerPortraitPanel);
+        stack.Children.Add(new Border { Height = 1, Background = Brush("#34534D"), Margin = new Thickness(0, 6, 0, 20) });
+        stack.Children.Add(Caption("EARNED TITLES"));
+        playerTitlesPanel.Margin = new Thickness(0, 12, 0, 0);
+        stack.Children.Add(playerTitlesPanel);
+        return stack;
     }
 
     internal void RefreshPlayer()
@@ -150,10 +172,31 @@ internal sealed class PlayerProfileWindow : Window
         titleLabel.Text = title.Name;
         titleLabel.Foreground = CosmeticAppearance.TitleBrush(title);
         levelLabel.Text = $"Level {profile.Level} · Prestige {profile.Prestige}\n◆ {profile.Coins:N0} cosmetic coins";
-        equippedPortraitHost.Content = ProgressionWindow.CreatePortraitVisual(CosmeticCatalog.Get(profile.EquippedPortraitId), 136);
+        equippedPortraitHost.Content = ProgressionWindow.CreatePortraitVisual(CosmeticCatalog.Get(profile.EquippedPortraitId), 198);
         CosmeticDefinition[] owned = CosmeticCatalog.All.Where(x => x.Kind == CosmeticKind.Portrait
             && profile.OwnedCosmeticIds.Contains(x.Id, StringComparer.Ordinal)).ToArray();
-        collectionLabel.Text = $"{owned.Length} owned · Select a portrait to make it yours";
+        CosmeticDefinition[] titles = CosmeticCatalog.All.Where(x => x.Kind == CosmeticKind.Title
+            && profile.OwnedCosmeticIds.Contains(x.Id, StringComparer.Ordinal)).ToArray();
+        collectionLabel.Text = $"{owned.Length} portraits · {titles.Length} titles · Choose your casino signature";
+        playerTitlesPanel.Children.Clear();
+        foreach (CosmeticDefinition item in titles
+            .Where(x => x.Name.Contains(portraitSearch.Text.Trim(), StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(x => x.Id == profile.EquippedTitleId).ThenBy(x => x.Name))
+        {
+            bool equipped = item.Id == profile.EquippedTitleId;
+            var card = PanelBorder(); card.Width = 240; card.Margin = new Thickness(0, 0, 12, 12);
+            card.BorderBrush = equipped ? CoinBrush : Brush("#315A43");
+            var stack = new StackPanel();
+            stack.Children.Add(new TextBlock { Text = "✦  " + item.Name, Foreground = CosmeticAppearance.TitleBrush(item), FontSize = 18, FontFamily = new FontFamily("Georgia"), TextWrapping = TextWrapping.Wrap, MinHeight = 52 });
+            var equip = ActionButton(equipped ? "Equipped" : "Use title", () =>
+            {
+                if (controller.EquipCosmetic(item.Id)) { playerStatusText.Text = $"Using {item.Name}."; RefreshPlayer(); }
+            });
+            equip.IsEnabled = !equipped;
+            stack.Children.Add(equip); card.Child = stack; playerTitlesPanel.Children.Add(card);
+        }
+        if (playerTitlesPanel.Children.Count == 0)
+            playerTitlesPanel.Children.Add(new TextBlock { Text = "No titles match your search.", Foreground = MutedBrush });
         playerPortraitPanel.Children.Clear();
         foreach (CosmeticDefinition portrait in owned
             .Where(x => x.Name.Contains(portraitSearch.Text.Trim(), StringComparison.OrdinalIgnoreCase))

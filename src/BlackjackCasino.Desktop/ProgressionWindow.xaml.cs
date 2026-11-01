@@ -34,11 +34,28 @@ internal partial class ProgressionWindow : Window
         ProgressionRoot.Unloaded += (_, _) => StopAlbumPresentation();
         AlbumOpeningOverlay.Unloaded += (_, _) => StopAlbumPresentation();
         ProgressionRoot.PreviewKeyDown += AlbumArt_KeyDown;
-        MenuAudio.Attach(this);
+        MenuAudio.Attach(this, () => albumSounds);
         InitializeCollections();
+        ChallengesScroll.SizeChanged += (_, _) => ChallengesPanel.Columns = ChallengesScroll.ActualWidth < 1100 ? 2 : 3;
         StateChanged += (_, _) => RefreshMaximizeGlyph();
         RefreshAll();
         RefreshMaximizeGlyph();
+        RemoveProfileTabs();
+    }
+
+    internal void RemoveProfileTabs()
+    {
+        ProgressionTabs.Items.Remove(StatisticsTab);
+        ProgressionTabs.Items.Remove(HandHistoryTab);
+    }
+
+    internal void ConfigureProfileSection(string section)
+    {
+        TabItem selected = section == "Hand History" ? HandHistoryTab : StatisticsTab;
+        ProgressionTabs.Items.Clear();
+        ProgressionTabs.Items.Add(selected);
+        selected.Header = section == "Hand History" ? "Hand History" : "Player Statistics";
+        ProgressionTabs.SelectedItem = selected;
     }
 
     internal void SelectTab(string header)
@@ -394,8 +411,11 @@ internal partial class ProgressionWindow : Window
         _ => (Rgb(39, 91, 64), Rgb(14, 37, 27), "♠"),
     };
 
-    private static void ApplyFramePresentation(Border target, CosmeticDefinition frame, bool compact = false)
+    private void ApplyFramePresentation(Border target, CosmeticDefinition frame, bool compact = false)
     {
+        target.BorderThickness = new Thickness(2);
+        target.CornerRadius = new CornerRadius(compact ? 10 : 12);
+        if (DistinctCosmeticFrames.Apply(target, frame.VisualVariant, albumAnimations)) return;
         if (frame.VisualVariant.StartsWith("static-", StringComparison.Ordinal))
         {
             target.BorderBrush = new SolidColorBrush(CosmeticAppearance.StandardFrame(frame.VisualVariant));
@@ -425,6 +445,7 @@ internal partial class ProgressionWindow : Window
         };
         target.Effect = glow;
 
+        if (!albumAnimations) return;
         switch (motion)
         {
             case "sweep":

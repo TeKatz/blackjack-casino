@@ -173,7 +173,7 @@
         </Border>
 
         <TabControl x:Name="ProgressionTabs" Grid.Row="1" Background="#07120D" BorderBrush="#315A43" BorderThickness="1" Padding="0">
-          <TabItem Header="Overview">
+          <TabItem x:Name="StatisticsTab" Header="Overview">
             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
               <StackPanel Margin="10">
                 <TextBlock Text="YOUR CASINO AT A GLANCE" Style="{StaticResource SectionCaption}" Margin="6,4,6,5" />
@@ -189,7 +189,7 @@
             </ScrollViewer>
           </TabItem>
 
-          <TabItem Header="Hand History">
+          <TabItem x:Name="HandHistoryTab" Header="Hand History">
             <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel x:Name="HistoryPanel" Margin="8" /></ScrollViewer>
           </TabItem>
 
@@ -269,7 +269,7 @@
                   <TextBlock x:Name="ChallengeStatusText" Foreground="#54E1B7" Margin="0,7,0,0" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite" />
                 </StackPanel>
               </Border>
-              <ScrollViewer x:Name="ChallengesScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel x:Name="ChallengesPanel" /></ScrollViewer>
+              <ScrollViewer x:Name="ChallengesScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><UniformGrid x:Name="ChallengesPanel" Columns="3" VerticalAlignment="Top" /></ScrollViewer>
               <DockPanel Grid.Row="2" Margin="0,8,0,0">
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"><Button x:Name="ChallengePreviousButton" Content="Previous" Click="ChallengePrevious_Click" /><Button x:Name="ChallengeNextButton" Content="Next" Click="ChallengeNext_Click" /></StackPanel>
                 <TextBlock x:Name="ChallengePageText" VerticalAlignment="Center" Foreground="#A6BBAE" />

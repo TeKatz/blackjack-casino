@@ -250,7 +250,7 @@ internal static class SudokuLoungePolish
             host.Children.Remove(overlay);
             view.Focus();
         };
-        returnToLounge.Click += (_, _) => RaiseButton(view, "← LOUNGE", null);
+        returnToLounge.Click += (_, _) => view.ReturnToLounge();
         returnToClub.Click += (_, _) =>
         {
             Window? window = Window.GetWindow(view) ?? Application.Current?.MainWindow;

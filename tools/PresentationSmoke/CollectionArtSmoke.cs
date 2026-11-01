@@ -102,6 +102,21 @@ internal static partial class Program
             editions.Children.Add(CollectionArtwork.Card(CollectionCatalog.Themes.First(t => t.UltraRare).Cards[0], true, animationsEnabled: false));
             host.Child = editions; window.UpdateLayout(); await Task.Delay(40); Capture(window, "album-art-rarity-editions");
 
+            foreach (CollectionRarity rarity in new[] { CollectionRarity.Rare, CollectionRarity.Epic, CollectionRarity.Legendary })
+            foreach (double scale in new[] { 1d, 2.08d })
+            {
+                CollectionCard edition = CollectionCatalog.Themes[0].Cards.First(c => c.Rarity == rarity);
+                Border testCard = CollectionArtwork.Card(edition, true, animationsEnabled: false, scale: scale);
+                host.Child = testCard; window.UpdateLayout();
+                Grid surface = (Grid)testCard.Child;
+                Border[] inlays = Find<Border>(surface).Where(b => b.Name.StartsWith("CollectionCorner", StringComparison.Ordinal)).ToArray();
+                Require(inlays.Length == 4, "Premium card lost its four corner inlays.");
+                Rect[] bounds = inlays.Select(b => b.TransformToAncestor(surface).TransformBounds(new Rect(b.RenderSize))).ToArray();
+                Require(Math.Abs(bounds[0].Left - bounds[2].Left) < 1 && Math.Abs(bounds[1].Right - bounds[3].Right) < 1, "Corner inlays have mismatched horizontal anchors.");
+                Require(Math.Abs(bounds[0].Left - (surface.ActualWidth - bounds[1].Right)) < 1, "Premium corner insets are asymmetric.");
+                Require(Math.Abs(bounds[0].Top - (surface.ActualHeight - bounds[2].Bottom)) < 1, "Premium vertical corner insets are asymmetric.");
+            }
+
             CollectionCard legendary = CollectionCatalog.Themes[0].Cards[^1];
             Border animated = CollectionArtwork.Card(legendary, true, animationsEnabled: true);
             host.Child = animated; window.UpdateLayout(); await Task.Delay(50);

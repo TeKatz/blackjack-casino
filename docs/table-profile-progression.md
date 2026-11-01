@@ -12,3 +12,25 @@
 ## Verification
 
 CI builds and tests the solution on Windows, checks the shared control templates, and runs the casino presentation and Manor runtime smoke programs. Presentation captures cover the embedded profile/progression back stack, lobby tab shortcuts, search and pagination at minimum and regular window sizes. Existing portrait purchase/equip smoke checks locate each portrait through shop search rather than assuming the whole catalog is on one page.
+
+## November presentation and input fixes
+
+- The lobby's destination hub fills its available height and expands into the existing
+  letterbox gutter. Game tiles retain their original grid, scale and position. A single
+  scalable emblem set is shared by the hub and Album/Challenges header shortcuts.
+- Premium collectible inlays anchor to all four edges of the actual inner card at every
+  scale. The inspector uses a full-height archive spread with edition/catalogue/theme
+  details and adapts native card dimensions to smaller windows.
+- Sudoku uses a bound numeric text renderer. Automatic translation preserves dependency
+  property bindings; entering, erasing and undoing digits no longer leaves stale glyphs.
+  The Lounge return action lives in the shared header.
+- Player Profile owns Statistics and Hand History navigation, and displays owned titles
+  with equip actions alongside portraits. Progression & Shop contains rewards and shop
+  destinations only. Challenges show twelve cards per page in a responsive grid.
+- Presentation settings migrate the previous global values into independent destination
+  records on first load. Blackjack keeps its existing controls; slot/Manor controls save
+  only their destination settings. A muted embedded page consumes its own menu events
+  so its host cannot replay them. Game state, wallets and rewards remain shared.
+- Neon Noir, Eclipse Thread, Eclipse Halo and Aurora Glass share one renderer across
+  header and shop previews, with distinct geometry, materials and motion. Reduced motion
+  is honored; hidden/unloaded frame clocks stop and refreshes replace their lifecycle.

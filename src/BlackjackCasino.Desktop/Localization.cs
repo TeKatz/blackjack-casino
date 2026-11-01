@@ -183,16 +183,16 @@ internal static class Localization
             switch (element)
             {
                 case Window window when !string.IsNullOrWhiteSpace(window.Title):
-                    window.Title = TranslateRemembered(element, window.Title);
+                    window.SetCurrentValue(Window.TitleProperty, TranslateRemembered(element, window.Title));
                     break;
                 case TextBlock text:
-                    text.Text = TranslateRemembered(element, text.Text);
+                    text.SetCurrentValue(TextBlock.TextProperty, TranslateRemembered(element, text.Text));
                     break;
                 case HeaderedContentControl headered when headered.Header is string header:
-                    headered.Header = TranslateRemembered(element, header);
+                    headered.SetCurrentValue(HeaderedContentControl.HeaderProperty, TranslateRemembered(element, header));
                     break;
                 case ContentControl content when content.Content is string source:
-                    content.Content = TranslateRemembered(element, source);
+                    content.SetCurrentValue(ContentControl.ContentProperty, TranslateRemembered(element, source));
                     break;
             }
 

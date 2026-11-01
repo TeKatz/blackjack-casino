@@ -31,14 +31,14 @@ internal partial class ManorWindow : Window
     private CancellationToken Token=>lifetime.Token;
     private ManorSessionState State=>controller.State;
     private SlotSpinSpeed Speed=>controller.Preferences.ManorSpeed;
-    private bool Animations=>controller.Preferences.AnimationsEnabled;
+    private bool Animations=>controller.Preferences.Presentation("midnight-manor").AnimationsEnabled;
     public AppPreferences Preferences=>controller.Preferences;
 
     public ManorWindow(ManorController controller)
     {
         InitializeComponent();
         this.controller=controller;
-        MenuAudio.Attach(this, () => controller.Preferences.SoundEnabled);
+        MenuAudio.Attach(this, () => controller.Preferences.Presentation("midnight-manor").SoundEnabled);
         bet=controller.Preferences.ManorBet;
         AppPreferences p=controller.Preferences;
         SpeedBox.SelectedIndex=(int)p.ManorSpeed;
@@ -47,7 +47,7 @@ internal partial class ManorWindow : Window
         StopBigBox.IsChecked=p.ManorAuto.StopOnBigWin;
         StopBonusBox.IsChecked=p.ManorAuto.StopOnBonus;
         FloorBox.Text=p.ManorAuto.MinimumBalance.ToString(CultureInfo.InvariantCulture);
-        SoundBox.IsChecked=p.SoundEnabled; MusicBox.IsChecked=p.MusicEnabled; AnimationBox.IsChecked=p.AnimationsEnabled;
+        SoundBox.IsChecked=p.Presentation("midnight-manor").SoundEnabled; MusicBox.IsChecked=p.Presentation("midnight-manor").MusicEnabled; AnimationBox.IsChecked=p.Presentation("midnight-manor").AnimationsEnabled;
         for(int i=0;i<5;i++)
         {
             ReelsHost.ColumnDefinitions.Add(new ColumnDefinition());
@@ -504,8 +504,9 @@ internal partial class ManorWindow : Window
         var auto=new AutoSpinSettings { Count=new[]{0,10,25,50,100,-1}[Math.Clamp(AutoBox.SelectedIndex,0,5)],
             StopOnBigWin=StopBigBox.IsChecked==true,StopOnBonus=StopBonusBox.IsChecked==true,MinimumBalance=floor };
         AppPreferences prefs=controller.Preferences with { ManorBet=bet,ManorSpeed=(SlotSpinSpeed)Math.Clamp(SpeedBox.SelectedIndex,0,2),
-            ManorAuto=auto.Sanitize(),ManorInteractive=InteractiveBox.IsChecked==true,SoundEnabled=SoundBox.IsChecked==true,
-            MusicEnabled=MusicBox.IsChecked==true,AnimationsEnabled=AnimationBox.IsChecked==true };
+            ManorAuto=auto.Sanitize(),ManorInteractive=InteractiveBox.IsChecked==true };
+        prefs = prefs.WithPresentation("midnight-manor", prefs.Presentation("midnight-manor") with
+        { SoundEnabled=SoundBox.IsChecked==true, MusicEnabled=MusicBox.IsChecked==true, AnimationsEnabled=AnimationBox.IsChecked==true });
         controller.Execute(_=>{},prefs);
         if(play.AutoActive)
         {
@@ -528,8 +529,7 @@ internal partial class ManorWindow : Window
     }
     private void ApplyAudio()
     {
-        MenuAudio.Enabled=controller.Preferences.SoundEnabled;
-        audio.SoundEnabled=controller.Preferences.SoundEnabled; audio.MusicEnabled=controller.Preferences.MusicEnabled; audio.MusicVolume=controller.Preferences.MusicVolume;
+        audio.SoundEnabled=controller.Preferences.Presentation("midnight-manor").SoundEnabled; audio.MusicEnabled=controller.Preferences.Presentation("midnight-manor").MusicEnabled; audio.MusicVolume=controller.Preferences.Presentation("midnight-manor").MusicVolume;
         if(State.Run is {Status:ManorRunStatus.Hunting} r) audio.Room(ManorMap.Rooms[r.Player].Area,r.Haunt);
         else { audio.EndRoom(); audio.Mood(0); }
         if(Animations) atmosphere.Start();

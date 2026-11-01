@@ -11,6 +11,7 @@ internal static class SudokuSmoke
 {
     internal static async Task Run(MainWindow window, string output)
     {
+        Localization.InstallAutomaticTranslation();
         Require(window.Modes.Modes.Any(mode => mode.Id == "chill-lounge"), "Chill Lounge is missing from the lobby.");
         window.Modes.Open("chill-lounge");
         await Task.Delay(120);
@@ -103,6 +104,29 @@ internal static class SudokuSmoke
         int editableDigit = mediumSolution[(int)editable.Tag] - '0';
         Click(NumberButton(window, editableDigit));
         Require(Equals(editable.Content, editableDigit.ToString()), "Entering a Sudoku digit did not update the selected cell.");
+        // Assert the rendered glyph, not only Button.Content: the original bug kept
+        // model/content correct while localization severed the presenter's Text binding.
+        for (int repeat = 0; repeat < 3; repeat++)
+        {
+            window.UpdateLayout(); await Task.Delay(30);
+            TextBlock glyph = Find<TextBlock>(editable).Single();
+            Require(glyph.Text == editableDigit.ToString(), "Entered Sudoku glyph is invisible/stale after localization.");
+            Localization.ApplyTree(mediumView);
+            Click(Find<Button>(window).Single(button => button.IsVisible && Equals(button.Content, "ERASE  [DEL]")));
+            window.UpdateLayout();
+            Require(string.IsNullOrEmpty(glyph.Text), "Erase left a smaller stale glyph on the board.");
+            Click(Find<Button>(window).Single(button => button.IsVisible && Equals(button.Content, "UNDO")));
+            window.UpdateLayout();
+            Require(glyph.Text == editableDigit.ToString(), "Undo did not restore the visible glyph.");
+            Click(Find<Button>(window).Single(button => button.IsVisible && Equals(button.Content, "REDO")));
+            window.UpdateLayout();
+            Require(string.IsNullOrEmpty(glyph.Text), "Redo did not visibly erase the glyph.");
+            Click(NumberButton(window, editableDigit));
+        }
+        Button loungeBack = ButtonByName(window, "LoungeGamesHeaderBack");
+        Require(Equals(loungeBack.Content, "← LOUNGE") && loungeBack.IsVisible, "Sudoku back action is missing from the shared header.");
+        Require(!Find<Button>(mediumView).Any(button => Equals(button.Content, "← LOUNGE") && button.IsVisible), "Sudoku still duplicates Lounge navigation below the header.");
+
 
         Button noteCell = BoardCells(window).First(cell => !ReferenceEquals(cell, editable) && string.IsNullOrEmpty(cell.Content?.ToString()));
         Click(noteCell);

@@ -211,7 +211,7 @@ internal partial class ProgressionWindow
 
     private void PlayAlbumCue(CollectionRarity rarity, bool opening)
     {
-        if (!albumSounds || !MenuAudio.Enabled) return;
+        if (!albumSounds) return;
         if (!AlbumCues.TryGetValue((rarity, opening), out AudioClip? clip))
             AlbumCues[(rarity, opening)] = clip = CollectionSoundSynthesis.Build(rarity, opening);
         CasinoAudio.Play(clip, albumAudioOwner, .8);

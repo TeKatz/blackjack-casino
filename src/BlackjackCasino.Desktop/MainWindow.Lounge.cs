@@ -66,8 +66,8 @@ public partial class MainWindow
                 },
                 memoryStats,
                 RecordMemoryCompletion,
-                () => preferences.SoundEnabled,
-                () => preferences.AnimationsEnabled),
+                () => preferences.Presentation("chill-lounge").SoundEnabled,
+                () => preferences.Presentation("chill-lounge").AnimationsEnabled),
                 memoryStats)
         ]);
 
@@ -108,6 +108,7 @@ public partial class MainWindow
             lobby.Visibility = System.Windows.Visibility.Collapsed;
         }
         TableModeText.Text = "Chill Lounge";
+        MenuAudio.Attach(window, () => preferences.Presentation("chill-lounge").SoundEnabled);
 
         loungeBackgroundMusic?.Dispose();
         loungeBackgroundMusic = new BackgroundMusic(Soundtrack.ChillLounge);
@@ -118,7 +119,7 @@ public partial class MainWindow
             loungeBackgroundMusic = null;
             TableModeText.Text = "Casino lobby";
         });
-        loungeBackgroundMusic.Start(preferences.MusicEnabled, preferences.MusicVolume);
+        loungeBackgroundMusic.Start(preferences.Presentation("chill-lounge").MusicEnabled, preferences.Presentation("chill-lounge").MusicVolume);
     }
 
     private void RecordSudokuCompletions(SudokuProgressState state)

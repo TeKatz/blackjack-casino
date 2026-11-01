@@ -59,29 +59,34 @@ internal partial class ProgressionWindow
         bool claimed = controller.Profile.ClaimedChallengeIds.Contains(challenge.Id, StringComparer.Ordinal);
         EmpireAchievementBoost? empireReward = EmpireAchievementBoostCatalog.All.FirstOrDefault(boost => boost.ChallengeId == challenge.Id);
         var border = PanelBorder();
-        border.Padding = new Thickness(12, 8, 12, 8);
-        border.Margin = new Thickness(0, 0, 4, 6);
-        border.BorderBrush = claimed ? new SolidColorBrush(Rgb(48, 83, 65)) : complete ? CoinMutedBrush : new SolidColorBrush(Rgb(49, 90, 67));
-        var grid = new Grid { MinHeight = 48 };
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.6, GridUnitType.Star) });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(130) });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(125) });
-        var text = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 16, 0) };
-        text.Children.Add(new TextBlock { Text = $"{CategoryName(challenge.Category).ToUpperInvariant()} · {(challenge.IsEndgame ? "ENDGAME · " : "")}{challenge.Name}", FontWeight = FontWeights.SemiBold, FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = challenge.Name });
-        text.Children.Add(new TextBlock { Text = challenge.Description, Foreground = MutedBrush, FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 3, 0, 0) });
+        border.Padding = new Thickness(18, 15, 18, 15);
+        border.Margin = new Thickness(0, 0, 12, 12);
+        border.BorderBrush = claimed ? new SolidColorBrush(Rgb(48, 83, 65)) : complete ? CoinBrush : new SolidColorBrush(Rgb(49, 90, 67));
+        var grid = new Grid { MinHeight = 184 };
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        var text = new StackPanel();
+        text.Children.Add(new TextBlock { Text = CategoryName(challenge.Category).ToUpperInvariant() + (challenge.IsEndgame ? " · ENDGAME" : ""), FontSize = 9, Foreground = CoinMutedBrush, FontWeight = FontWeights.Bold });
+        text.Children.Add(new TextBlock { Text = challenge.Name, FontFamily = new FontFamily("Georgia"), FontSize = 19, Foreground = complete ? CoinBrush : new SolidColorBrush(Rgb(244, 225, 184)), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 6, 0, 7) });
         grid.Children.Add(text);
-        var progressStack = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 16, 0) };
+        var description = new TextBlock { Text = challenge.Description, Foreground = MutedBrush, FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 12) };
+        Grid.SetRow(description, 1); grid.Children.Add(description);
+        var progressStack = new StackPanel { Margin = new Thickness(0, 0, 0, 13) };
         progressStack.Children.Add(new TextBlock { Text = $"{FormatChallengeValue(challenge, Math.Min(progress, challenge.Goal))} / {FormatChallengeValue(challenge, challenge.Goal)}", FontSize = 11, Foreground = complete ? PositiveBrush : MutedBrush });
         progressStack.Children.Add(new ProgressBar
         {
             Minimum = 0, Maximum = Math.Max(1d, (double)challenge.Goal),
             Value = Math.Clamp((double)progress, 0, Math.Max(1d, (double)challenge.Goal)),
-            Height = 6, Margin = new Thickness(0, 6, 0, 0), Foreground = complete ? CoinBrush : PositiveBrush,
+            Height = 7, Margin = new Thickness(0, 6, 0, 0), Foreground = complete ? CoinBrush : PositiveBrush,
             Background = new SolidColorBrush(Rgb(18, 48, 34)),
         });
-        Grid.SetColumn(progressStack, 1);
-        grid.Children.Add(progressStack);
+        Grid.SetRow(progressStack, 2); grid.Children.Add(progressStack);
+        var footer = new Grid();
+        footer.ColumnDefinitions.Add(new ColumnDefinition());
+        footer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        Grid.SetRow(footer, 3); grid.Children.Add(footer);
 
         var rewardStack = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
         rewardStack.Children.Add(CoinText($"◆ {challenge.CoinReward:N0}", 12, FontWeights.Bold));
@@ -100,14 +105,13 @@ internal partial class ProgressionWindow
                 TextWrapping = TextWrapping.Wrap,
             });
         }
-        Grid.SetColumn(rewardStack, 2);
-        grid.Children.Add(rewardStack);
+        footer.Children.Add(rewardStack);
 
         var button = new Button { Tag = challenge.Id, Content = claimed ? "Claimed" : complete ? "Claim" : "In progress", IsEnabled = complete && !claimed, Margin = new Thickness(4, 0, 0, 0), Padding = new Thickness(8, 6, 8, 6), VerticalAlignment = VerticalAlignment.Center };
         System.Windows.Automation.AutomationProperties.SetName(button, $"{button.Content}: {challenge.Name}");
         button.Click += ChallengeClaim_Click;
-        Grid.SetColumn(button, 3);
-        grid.Children.Add(button);
+        Grid.SetColumn(button, 1);
+        footer.Children.Add(button);
         border.Child = grid;
         return border;
     }

@@ -86,8 +86,8 @@ public partial class MainWindow : Window
         catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException or System.Text.Json.JsonException or ArgumentException)
         { manorRecoveryNotice = "Manor checkpoint could not be recovered: " + ex.Message; }
         preferences = initialPreferences ?? PlayerStateStore.Load();
-        MenuAudio.Enabled = preferences.SoundEnabled;
-        MenuAudio.Attach(this, () => SoundEnabled);
+        preferences = preferences.InitializePresentationAreas();
+        MenuAudio.Attach(this, () => CurrentPresentation.SoundEnabled);
         playMode = preferences.PlayMode;
         aiSeatCount = preferences.AiSeatCount;
         selectedBet = Math.Min(preferences.SelectedBet, preferences.Bankroll);
@@ -229,12 +229,11 @@ public partial class MainWindow : Window
 
     private void PresentationSettingChanged(object sender, RoutedEventArgs e)
     {
-        MenuAudio.Enabled = SoundEnabled;
-        if (!SoundEnabled) { CasinoFeedback.Stop(); CasinoAudio.Mixer.Stop(kniffelAudioOwner); }
+        if (!SoundEnabled) CasinoFeedback.Stop();
         if (empire is not null)
         {
             RefreshEmpireHeader();
-            if (!AnimationsEnabled) empireView?.StopVisualAnimations();
+            if (!preferences.Presentation("casino-empire").AnimationsEnabled) empireView?.StopVisualAnimations();
         }
         if (!suppressPreferenceEvents && IsLoaded)
         {

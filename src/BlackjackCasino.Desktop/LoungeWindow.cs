@@ -470,7 +470,8 @@ internal sealed class LoungeWindow : Window
             {
                 showGuides = visible;
                 persistGuideVisibility(visible);
-            });
+            }, showBackButton: false);
+        SetShellNavigation("← LOUNGE", ShowHub);
         sudokuView.CompletionRewardNotice = rewardNotice;
         contentHost.Content = sudokuView;
         sudokuView.Focus();

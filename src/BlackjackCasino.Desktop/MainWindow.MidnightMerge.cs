@@ -43,8 +43,8 @@ public partial class MainWindow
         var shell = new Window { Title = Localization.T("Merge.Title"), Width = 1500, Height = 900 };
         var view = new MidnightMergeView(
             board,
-            () => SoundEnabled,
-            () => AnimationsEnabled,
+            () => preferences.Presentation("midnight-merge").SoundEnabled,
+            () => preferences.Presentation("midnight-merge").AnimationsEnabled,
             shell.Close,
             language =>
             {
