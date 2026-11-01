@@ -55,7 +55,10 @@ public partial class MainWindow
         if (progressionController is null || MetaPageOpen) return;
         progressionController.AccruePlaytime();
         ProcessLatestCompletedRound();
-        ShowMetaPage(new CollectionAlbumPage(progressionController, preferences.Presentation("album").AnimationsEnabled, preferences.Presentation("album").SoundEnabled, CloseMetaPage));
+        bool animations = preferences.Presentation("album").AnimationsEnabled;
+        var page = new CollectionAlbumPage(progressionController, animations, preferences.Presentation("album").SoundEnabled, CloseMetaPage);
+        CollectionThemeRewardPresenter.Attach(page, progressionController, animations);
+        ShowMetaPage(page);
     }
 
     private void ShowMetaPage(Window shell)
