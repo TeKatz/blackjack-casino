@@ -8,7 +8,7 @@ using BlackjackCasino.Core.Empire;
 namespace BlackjackCasino.Desktop;
 
 /// <summary>Responsive estate dashboard. The simulation is independent of its visual clocks.</summary>
-internal sealed class EmpireView : UserControl, IDisposable
+internal sealed partial class EmpireView : UserControl, IDisposable
 {
     private static readonly int[] BulkChoices = [1, 5, 10, 25, 50, 100];
 
@@ -52,7 +52,7 @@ internal sealed class EmpireView : UserControl, IDisposable
     private readonly Dictionary<int, Button> bulkButtons = [];
     private readonly Border milestoneFill = new() { Height = 5, Background = Ink("#C7AA6E"), HorizontalAlignment = HorizontalAlignment.Left, CornerRadius = new CornerRadius(3) };
     private readonly Grid milestoneTrack = new() { Height = 5, Background = Ink("#2A3E34"), Margin = new Thickness(0, 8, 0, 10) };
-    private readonly ScrollViewer roomScroll;
+    private readonly ScrollViewer roomScroll = new();
     private readonly DispatcherTimer animationTimer;
     private string selected = "slots";
     private string filter = "all";
@@ -84,199 +84,7 @@ internal sealed class EmpireView : UserControl, IDisposable
         Background = new LinearGradientBrush(Color.FromRgb(8, 20, 19), Color.FromRgb(26, 23, 29), 25);
         Resources[typeof(Button)] = Application.Current.FindResource("CasinoButton");
 
-        foreach (GridLength height in new[] { GridLength.Auto, GridLength.Auto, new GridLength(1, GridUnitType.Star), GridLength.Auto })
-            root.RowDefinitions.Add(new RowDefinition { Height = height });
-
-        var header = new DockPanel { Margin = new Thickness(0, 0, 0, 13) };
-        var exit = new Button { Name = "EmpireBackButton", Content = backLabel, VerticalAlignment = VerticalAlignment.Center };
-        exit.Click += (_, _) => back();
-        DockPanel.SetDock(exit, Dock.Right);
-        header.Children.Add(exit);
-        var strategic = new Button { Name = "EmpireManagementButton", Content = "MANAGEMENT", Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center };
-        DockPanel.SetDock(strategic, Dock.Right);
-        strategic.Click += (_, _) => ShowManagement();
-        header.Children.Add(strategic);
-        var title = new StackPanel();
-        title.Children.Add(Label("THE MIDNIGHT CLUB  /  YOUR PRIVATE ESTATE", 9, "#BEA674"));
-        title.Children.Add(new TextBlock { Text = "Casino Empire", FontFamily = new FontFamily("Georgia"), FontSize = 32, Foreground = Ink("#F4E7CA"), Margin = new Thickness(0, 3, 0, 0) });
-        header.Children.Add(title);
-        root.Children.Add(header);
-
-        var balances = new Grid { Margin = new Thickness(0, 0, 0, 15) };
-        for (int i = 0; i < 3; i++) balances.ColumnDefinitions.Add(new ColumnDefinition());
-        AddMetric(0, "EMPIRE CREDITS", credits, Label("Your independent construction budget", 10, "#91A99C"));
-        AddMetric(1, "AUTOMATIC PRODUCTION", production, offlineDetail);
-        var dividendContent = new DockPanel();
-        collect.VerticalAlignment = VerticalAlignment.Center;
-        collect.Click += (_, _) => { this.claim(); Refresh(); };
-        DockPanel.SetDock(collect, Dock.Right);
-        dividendContent.Children.Add(collect);
-        dividendContent.Children.Add(dividend);
-        AddMetric(2, "OWNER DIVIDEND", dividendContent, cashRate);
-        Grid.SetRow(balances, 1);
-        root.Children.Add(balances);
-
-        var body = new Grid();
-        body.ColumnDefinitions.Add(new ColumnDefinition());
-        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(315) });
-        var estate = new Grid { Margin = new Thickness(0, 0, 16, 0) };
-        estate.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        estate.RowDefinitions.Add(new RowDefinition());
-
-        var toolbar = new Grid { Margin = new Thickness(0, 0, 0, 10) };
-        toolbar.ColumnDefinitions.Add(new ColumnDefinition());
-        toolbar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        toolbar.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        toolbar.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        toolbar.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        Grid.SetColumnSpan(propertyPicker, 2);
-        toolbar.Children.Add(propertyPicker);
-        propertyPicker.SelectionChanged += (_, _) =>
-        {
-            if (selectingProperty || propertyPicker.SelectedValue is not string id || id == service.ActivePropertyId) return;
-            manage(candidate => candidate.SelectProperty(id, DateTimeOffset.UtcNow));
-            selectedFloor = 1; selected = "slots"; Refresh();
-        };
-        var floorBar = new WrapPanel { Margin = new Thickness(0, 0, 0, 7) };
-        foreach (EmpireFloorDefinition floor in EmpireFloorCatalog.All.OrderBy(floor => floor.SortOrder))
-        {
-            AddFloorButton(floor.Id, floor.DisplayName.ToUpperInvariant());
-            floorBar.Children.Add(floors[floor.Id]);
-        }
-        Grid.SetRow(floorBar, 1); Grid.SetColumnSpan(floorBar, 2);
-        toolbar.Children.Add(floorBar);
-
-        var filterBar = new StackPanel { Orientation = Orientation.Horizontal };
-        foreach (var item in new[] { (Id: "all", Text: "All rooms"), (Id: "open", Text: "Operating"), (Id: "locked", Text: "Locked") })
-        {
-            var choice = new Button { Name = "EmpireFilter_" + item.Id, Content = item.Text, FontSize = 11, MinHeight = 29, Padding = new Thickness(10, 4, 10, 4), Margin = new Thickness(4, 0, 0, 0) };
-            choice.Click += (_, _) => { filter = item.Id; Refresh(); };
-            filters[item.Id] = choice;
-            filterBar.Children.Add(choice);
-        }
-        Grid.SetRow(filterBar, 2); Grid.SetColumnSpan(filterBar, 2);
-        toolbar.Children.Add(filterBar);
-        estate.Children.Add(toolbar);
-
-        var estateContent = new StackPanel();
-        estateStatus.Margin = new Thickness(2, 0, 0, 7);
-        estateContent.Children.Add(estateStatus);
-        for (int i = 0; i < EmpireCatalog.Departments.Count; i++)
-        {
-            var card = new EmpireRoomCard(EmpireCatalog.Departments[i], i, id =>
-            {
-                selected = id;
-                selectedFloor = EmpireCatalog.Find(id)?.Floor ?? selectedFloor;
-                Refresh();
-            });
-            cards.Add(card);
-            rooms.Children.Add(card);
-        }
-        estateContent.Children.Add(rooms);
-
-        var ledger = new Border { Background = Ink("#10251F"), BorderBrush = Ink("#35483B"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(9), Margin = new Thickness(2, 3, 12, 0), Padding = new Thickness(14, 13, 14, 14) };
-        var ledgerBody = new StackPanel();
-        ledgerBody.Children.Add(Label("ESTATE LEDGER  /  LIFETIME", 9, "#BEA674"));
-        var ledgerMetrics = new Grid { Margin = new Thickness(0, 9, 0, 0) };
-        for (int i = 0; i < 4; i++) ledgerMetrics.ColumnDefinitions.Add(new ColumnDefinition());
-        LedgerValue(0, lifetime, "Credits produced");
-        LedgerValue(1, cashClaimed, "Cash paid to you");
-        LedgerValue(2, openRooms, "Rooms operating");
-        LedgerValue(3, levels, "Total room levels");
-        ledgerBody.Children.Add(ledgerMetrics);
-        ledger.Child = ledgerBody;
-        estateContent.Children.Add(ledger);
-        roomScroll = new ScrollViewer { Content = estateContent, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, CanContentScroll = false };
-        roomScroll.SizeChanged += (_, _) => ResizeRooms();
-        Grid.SetRow(roomScroll, 1);
-        estate.Children.Add(roomScroll);
-        body.Children.Add(estate);
-
-        var management = new StackPanel { Margin = new Thickness(18) };
-        management.Children.Add(Label("ROOM MANAGEMENT", 9, "#BEA674"));
-        roomTitle.FontFamily = new FontFamily("Georgia");
-        roomTitle.Margin = new Thickness(0, 9, 0, 8);
-        management.Children.Add(roomTitle);
-        roomDescription.TextWrapping = TextWrapping.Wrap;
-        management.Children.Add(roomDescription);
-        roomStats.Margin = new Thickness(0, 16, 0, 4);
-        management.Children.Add(roomStats);
-        roomBoosts.TextWrapping = TextWrapping.Wrap;
-        management.Children.Add(roomBoosts);
-
-        management.Children.Add(Label("BULK UPGRADE", 9, "#BEA674", new Thickness(0, 15, 0, 5)));
-        var bulkBar = new WrapPanel();
-        foreach (int count in BulkChoices)
-        {
-            int value = count;
-            var button = new Button
-            {
-                Name = "EmpireBulk" + count + "Button",
-                Content = "×" + count,
-                MinWidth = count >= 100 ? 53 : 43,
-                MinHeight = 28,
-                Padding = new Thickness(7, 3, 7, 3),
-                Margin = new Thickness(0, 0, 5, 5),
-                FontSize = 11,
-            };
-            button.Click += (_, _) => { bulk = value; Refresh(); };
-            bulkButtons[count] = button;
-            bulkBar.Children.Add(button);
-        }
-        management.Children.Add(bulkBar);
-
-        buyLabel.TextAlignment = TextAlignment.Center;
-        buyLabel.TextWrapping = TextWrapping.Wrap;
-        buyLabel.MaxWidth = 250;
-        buy.Content = buyLabel;
-        buy.Click += (_, _) =>
-        {
-            int before = service.Level(selected);
-            if (this.upgrade(selected, bulk))
-            {
-                int gained = service.Level(selected) - before;
-                SetNotice(before == 0 ? "Room opened. A new part of your casino is now earning." : $"Upgrade complete. +{gained} room level{(gained == 1 ? string.Empty : "s")}.");
-            }
-            Refresh();
-        };
-        management.Children.Add(buy);
-
-        management.Children.Add(Label("THE NEXT MILESTONE", 9, "#BEA674"));
-        milestoneTrack.Children.Add(milestoneFill);
-        milestoneTrack.SizeChanged += (_, _) => RefreshMilestone();
-        management.Children.Add(milestoneTrack);
-        management.Children.Add(milestone);
-
-        management.Children.Add(new Border { Background = Ink("#374C3E"), Height = 1, Margin = new Thickness(0, 18, 0, 15) });
-        management.Children.Add(Label("EMPIRE PRESTIGE", 9, "#BEA674"));
-        prestigeTitle.FontFamily = new FontFamily("Georgia");
-        prestigeTitle.Margin = new Thickness(0, 7, 0, 4);
-        management.Children.Add(prestigeTitle);
-        prestigeBonus.TextWrapping = TextWrapping.Wrap;
-        management.Children.Add(prestigeBonus);
-        prestigeRequirement.Margin = new Thickness(0, 6, 0, 0);
-        prestigeRequirement.TextWrapping = TextWrapping.Wrap;
-        management.Children.Add(prestigeRequirement);
-        prestigeButton.Content = "PRESTIGE EMPIRE";
-        prestigeButton.Click += (_, _) => PrestigeClicked();
-        management.Children.Add(prestigeButton);
-
-        management.Children.Add(new Border { Background = Ink("#374C3E"), Height = 1, Margin = new Thickness(0, 18, 0, 15) });
-        management.Children.Add(Label("HOW THE HOUSE GROWS", 9, "#BEA674"));
-        management.Children.Add(Label("Every 10 room levels doubles that room's base production. Claimed achievements add permanent room boosts. Empire Prestige resets room levels and construction credits but permanently accelerates production.", 11, "#99B0A2"));
-
-        var side = new Border { Background = new LinearGradientBrush(Color.FromRgb(24, 43, 34), Color.FromRgb(15, 30, 26), 90), BorderBrush = Ink("#4A5943"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(10), Child = new ScrollViewer { Content = management, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled } };
-        Grid.SetColumn(side, 1);
-        body.Children.Add(side);
-        Grid.SetRow(body, 2);
-        root.Children.Add(body);
-
-        notice.Name = "EmpireNotice";
-        notice.TextWrapping = TextWrapping.Wrap;
-        var status = new Border { Padding = new Thickness(13, 9, 13, 9), Margin = new Thickness(0, 12, 0, 0), Background = Ink("#193127"), CornerRadius = new CornerRadius(7), Child = notice };
-        Grid.SetRow(status, 3);
-        root.Children.Add(status);
-        Content = root;
+        BuildCommandCenter(back, backLabel);
 
         animationTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(40) };
         animationTimer.Tick += (_, _) =>
@@ -297,48 +105,6 @@ internal sealed class EmpireView : UserControl, IDisposable
         Unloaded += (_, _) => animationTimer.Stop();
         Refresh();
 
-        void AddMetric(int column, string label, UIElement value, UIElement detail)
-        {
-            var stack = new StackPanel { Margin = new Thickness(14, 10, 14, 10) };
-            stack.Children.Add(Label(label, 9, "#BEA674"));
-            if (value is FrameworkElement element) element.Margin = new Thickness(0, 3, 0, 2);
-            stack.Children.Add(value);
-            stack.Children.Add(detail);
-            var panel = new Border { Background = Ink("#142A22"), BorderBrush = Ink("#3B4F3E"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(9), Margin = new Thickness(column == 0 ? 0 : 10, 0, 0, 0), Child = stack };
-            Grid.SetColumn(panel, column);
-            balances.Children.Add(panel);
-        }
-
-        void LedgerValue(int column, TextBlock value, string label)
-        {
-            var metric = new StackPanel { Margin = new Thickness(0, 0, 10, 0) };
-            metric.Children.Add(value);
-            metric.Children.Add(Label(label, 10, "#8FA89A"));
-            Grid.SetColumn(metric, column);
-            ledgerMetrics.Children.Add(metric);
-        }
-
-        void AddFloorButton(int floor, string text)
-        {
-            var button = new Button
-            {
-                Name = "EmpireFloor" + floor + "Button",
-                Content = text,
-                MinHeight = 29,
-                Padding = new Thickness(11, 4, 11, 4),
-                Margin = new Thickness(floor == 1 ? 0 : 5, 0, 0, 0),
-                FontSize = 10,
-            };
-            button.Click += (_, _) =>
-            {
-                if (!service.FloorUnlocked(floor)) return;
-                selectedFloor = floor;
-                selected = EmpireCatalog.Floor(floor).First().Id;
-                filter = "all";
-                Refresh();
-            };
-            floors[floor] = button;
-        }
     }
 
     // Compatibility overload for presentation helpers written against Empire v1.
@@ -441,6 +207,7 @@ internal sealed class EmpireView : UserControl, IDisposable
         prestigeButton.IsEnabled = service.CanPrestige;
         prestigeButton.Content = service.CanPrestige ? $"PRESTIGE → {service.Prestige + 1}" : "PRESTIGE LOCKED";
         managementView?.Refresh();
+        RefreshCommandCenter();
         ResizeRooms();
     }
 
@@ -535,21 +302,8 @@ internal sealed class EmpireView : UserControl, IDisposable
     internal bool TryCloseManagement()
     {
         if (managementView is null) return false;
-        Grid? overlay = root.Children.OfType<Grid>().FirstOrDefault(grid => grid.Name == "EmpireManagementOverlay");
-        if (overlay is not null) root.Children.Remove(overlay);
-        managementView = null; Refresh();
+        OpenSection("Overview");
         return true;
-    }
-
-    private void ShowManagement()
-    {
-        if (managementView is not null) return;
-        var overlay = new Grid { Name = "EmpireManagementOverlay", Background = Ink("#081714") };
-        managementView = new EmpireManagementView(service, change => manage(change), () => TryCloseManagement());
-        overlay.Children.Add(managementView);
-        Grid.SetRowSpan(overlay, root.RowDefinitions.Count);
-        Panel.SetZIndex(overlay, 5500);
-        root.Children.Add(overlay);
     }
 
     private void PrestigeClicked()
@@ -585,10 +339,12 @@ internal sealed class EmpireView : UserControl, IDisposable
 
     private void ResizeRooms()
     {
-        double available = Math.Max(280, roomScroll.ViewportWidth > 0 ? roomScroll.ViewportWidth - 22 : ActualWidth - 370);
-        int columns = Math.Max(1, (int)(available / 285));
-        double width = Math.Clamp(available / columns - 13, 250, 335);
-        foreach (EmpireRoomCard card in cards) card.Width = width;
+        double available = Math.Max(400, roomScroll.ActualWidth - 8);
+        int columns = 5;
+        double width = Math.Min(335, available / columns - 10);
+        double height = ActualHeight < 760 ? 180 : 230;
+        foreach (EmpireRoomCard card in cards) card.SetSize(width, height);
+
     }
 
     internal void SetNotice(string text) => notice.Text = text;

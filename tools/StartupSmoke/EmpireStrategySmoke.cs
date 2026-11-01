@@ -33,7 +33,30 @@ internal static class EmpireStrategySmoke
             Click(window,"EmpireFloor3Button"); window.UpdateLayout();
             Require(Find<EmpireRoomCard>(window).Count(card=>card.IsVisible)==5,"Resort Floor did not render its five departments.");
             Capture(window,Path.Combine(output,"empire-resort.png"));
-            Click(window,"EmpireManagementButton");
+            foreach (var size in new[] { (1080d,720d), (1366d,768d), (1920d,1080d) })
+            {
+                window.Width = size.Item1; window.Height = size.Item2; window.UpdateLayout();
+                foreach (string name in new[] { "EmpireQuickResearch", "EmpireQuickProjects", "EmpireQuickManagers", "EmpireQuickEvents", "EmpireUpgradeButton", "EmpireClaimButton" })
+                {
+                    Button visible = Find<Button>(window).Single(b => b.Name == name);
+                    Rect bounds = visible.TransformToAncestor(window).TransformBounds(new Rect(visible.RenderSize));
+                    Require(visible.IsVisible && bounds.Width > 20 && bounds.Height > 10 && bounds.Left >= 0 && bounds.Right <= window.ActualWidth && bounds.Bottom <= window.ActualHeight,
+                        $"Empire overview clips {name} at {size.Item1}x{size.Item2}.");
+                }
+                Capture(window, Path.Combine(output, $"empire-command-center-{(int)size.Item1}.png"));
+            }
+            Click(window, "EmpireQuickResearch");
+            Require(Find<System.Windows.Shapes.Polyline>(window).Count(l => l.Name.StartsWith("EmpireResearchLink_", StringComparison.Ordinal)) == 4,
+                "Operations research lost a prerequisite connection.");
+            Click(window, "EmpireResearchBranch_Gaming");
+            Require(Find<Button>(window).Any(b => b.Name == "EmpireResearchNode_high_roller"), "Gaming research is unreachable.");
+            Click(window, "EmpireResearchNode_high_roller");
+            Require(!Find<Button>(window).Single(b => b.Name == "EmpireResearch_high_roller").IsEnabled, "Research ignored its missing Table Authority prerequisite.");
+            Click(window, "EmpireResearchBranch_Hospitality");
+            Require(Find<Button>(window).Any(b => b.Name == "EmpireResearchNode_guests"), "Hospitality research is unreachable.");
+            Click(window, "EmpireManagementClose");
+
+            Click(window,"EmpireTab_Research");
             Require(Find<EmpireManagementView>(window).Single().IsVisible,"Management did not mount in place.");
             Click(window,"EmpireResearch_construction");
             Require(service.ResearchRank("construction")==3,"Research UI did not spend a Legacy Point.");
@@ -48,6 +71,8 @@ internal static class EmpireStrategySmoke
             Find<TextBox>(window).Single(c=>c.Name=="EmpireAutomationReserve").Text="1000000";
             Find<TextBox>(window).Single(c=>c.Name=="EmpireAutomationPercent").Text="25";
             Find<TextBox>(window).Single(c=>c.Name=="EmpireAutomationTarget").Text="110";
+            Find<EmpireView>(window).Single().Refresh();
+            Require(Find<TextBox>(window).Single(c=>c.Name=="EmpireAutomationTarget").Text=="110", "A production refresh replaced unsaved automation inputs.");
             Click(window,"EmpireAutomationSave");
             Require(service.Automation.Enabled && service.Automation.TargetLevel==110,"Automation input was not saved.");
             CultureInfo originalCulture = CultureInfo.CurrentCulture;
@@ -62,7 +87,10 @@ internal static class EmpireStrategySmoke
                 Require(service.Automation.Reserve==1000000.5m && service.Automation.SpendPercent==.125m,"German automation decimals were not saved exactly.");
             }
             finally { CultureInfo.CurrentCulture = originalCulture; }
-            Click(window,"EmpireTab_Events"); Click(window,"EmpireEvent_dice");
+            Click(window,"EmpireTab_Events");
+            Click(window,"EmpirePageNext");
+            Require(Find<Button>(window).Any(b=>b.Name=="EmpireEvent_quiet"), "Paginated events lost Quiet Sunday.");
+            Click(window,"EmpirePagePrevious"); Click(window,"EmpireEvent_dice");
             Require(service.ActiveEvent?.Id=="dice","Event start UI failed.");
             Click(window,"EmpireTab_Contracts"); Click(window,"EmpireContract_expansion_drive");
             Require(service.ActiveContract?.Id=="expansion-drive","Contract acceptance UI failed.");
@@ -83,6 +111,12 @@ internal static class EmpireStrategySmoke
             Click(window,"EmpireProperty_neon_bay");
             Require(service.ActivePropertyId=="neon-bay" && service.Level("slots")==1,"Property navigation did not select its independent estate.");
             Click(window,"EmpireManagementClose");
+            Click(window,"EmpireQuickManagers");
+            Require(Find<Button>(window).Any(b=>b.Name=="EmpireManagerAssign_elena"), "Overview Team shortcut opened the wrong section.");
+            Click(window,"EmpireManagementClose");
+            Click(window,"EmpireContractShortcut");
+            Require(Find<Button>(window).Any(b=>b.Name=="EmpireContractClaim"), "Overview contract shortcut opened the wrong section.");
+            Click(window,"EmpireManagementClose");
             ComboBox picker=Find<ComboBox>(window).Single(c=>c.Name=="EmpirePropertySelector");
             picker.SelectedValue="midnight-club"; window.UpdateLayout();
             Require(service.ActivePropertyId=="midnight-club","Property quick selector did not return to the original estate.");
@@ -93,7 +127,7 @@ internal static class EmpireStrategySmoke
             Click(window,"EmpireStatisticsCloseButton"); Click(window,"EmpireBackButton");
             window.Modes.OpenSecondary("casino-empire"); await Task.Delay(80);
             Window detached = Application.Current.Windows.Cast<Window>().Single(w=>w.Title=="Casino Empire · Detached");
-            Click(detached,"EmpireManagementButton"); Click(detached,"EmpireTab_Properties");
+            Click(detached,"EmpireTab_Research"); Click(detached,"EmpireTab_Properties");
             Require(Find<EmpireManagementView>(detached).Any(),"Detached estate did not mount the shared management pages.");
             Capture(detached,Path.Combine(output,"empire-detached-management.png"));
             Click(detached,"EmpireManagementClose");
