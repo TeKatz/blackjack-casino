@@ -19,6 +19,7 @@ public partial class MainWindow
         ProcessLatestCompletedRound();
         SudokuLoungePolish.EnsureInstalled();
         LoungeVisualUpgrade.EnsureInstalled(() => preferences.Sudoku);
+        SudokuHeaderNavigationUpgrade.EnsureInstalled();
         RecordSudokuCompletions(preferences.Sudoku);
 
         preferences = preferences with { Solitaire = SolitaireProgressState.Normalize(preferences.Solitaire) };
