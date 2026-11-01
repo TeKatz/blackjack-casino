@@ -1,3 +1,4 @@
+using BlackjackCasino.Core.Adventure;
 using BlackjackCasino.Core.Memory;
 using BlackjackCasino.Core.Solitaire;
 using BlackjackCasino.Core.Sudoku;
@@ -26,6 +27,7 @@ public partial class MainWindow
         RecordWordSearchCompletions(preferences.WordSearch);
         preferences.Memory.Normalize();
         RecordMemoryCompletions(preferences.Memory);
+        preferences = preferences with { Adventure = AdventureProgressState.Normalize(preferences.Adventure) };
 
         Func<SolitaireStatistics> solitaireStats = () => progressionController?.Profile.Solitaire ?? new SolitaireStatistics();
         Func<WordSearchStatistics> wordSearchStats = () => progressionController?.Profile.WordSearch ?? new WordSearchStatistics();
@@ -68,7 +70,17 @@ public partial class MainWindow
                 RecordMemoryCompletion,
                 () => preferences.Presentation("chill-lounge").SoundEnabled,
                 () => preferences.Presentation("chill-lounge").AnimationsEnabled),
-                memoryStats)
+                memoryStats),
+            AdventureLoungeModule.Create(
+                preferences.Adventure,
+                state =>
+                {
+                    preferences = preferences with { Adventure = AdventureProgressState.Normalize(state) };
+                    if (!testSession) SavePreferences();
+                },
+                () => progressionController?.Profile.EquippedDiceSetId,
+                () => progressionController?.Profile.DisplayName,
+                () => preferences.Presentation("chill-lounge").AnimationsEnabled)
         ]);
 
         var window = new LoungeWindow(
