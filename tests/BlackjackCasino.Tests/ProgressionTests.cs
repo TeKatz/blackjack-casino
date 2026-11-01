@@ -98,7 +98,7 @@ public sealed class ProgressionTests
         Assert.Equal(120, season.Tiers.Count);
         Assert.Equal(232_800, season.Tiers[^1].RequiredExperience);
         Assert.False(season.Archived);
-        Assert.False(season.RewardsEnabled);
+        Assert.True(season.RewardsEnabled);
         Assert.Equal(3, SeasonCatalog.All.Count);
     }
 
@@ -123,19 +123,68 @@ public sealed class ProgressionTests
     }
 
     [Fact]
-    public void DraftSeason_TracksTiersWithoutGrantingRewards()
+    public void NeonDynasty_UsesThemedCosmeticMilestonesEveryTenTiers()
+    {
+        SeasonDefinition season = SeasonCatalog.Current;
+        var expected = new Dictionary<int, string>
+        {
+            [10] = "title-neon-initiate",
+            [20] = "frame-neon-thread",
+            [30] = "portrait-neon-croupier",
+            [40] = "title-dynasty-dealer",
+            [50] = "frame-dynasty-circuit",
+            [60] = "portrait-dynasty-heiress",
+            [70] = "title-electric-royalty",
+            [80] = "frame-neon-pagoda",
+            [90] = "portrait-neon-overseer",
+            [100] = "title-neon-sovereign",
+            [110] = "frame-dynasty-crown",
+            [120] = "portrait-neon-emperor",
+        };
+
+        foreach ((int tier, string cosmeticId) in expected)
+        {
+            Assert.Equal(cosmeticId, season.Tiers[tier - 1].CosmeticId);
+            CosmeticDefinition cosmetic = CosmeticCatalog.Get(cosmeticId);
+            Assert.False(cosmetic.ShopAvailable);
+            Assert.Equal(0, cosmetic.Price);
+        }
+
+        Assert.Equal(4, expected.Values.Count(id => CosmeticCatalog.Get(id).Kind == CosmeticKind.Title));
+        Assert.Equal(4, expected.Values.Count(id => CosmeticCatalog.Get(id).Kind == CosmeticKind.Frame));
+        Assert.Equal(4, expected.Values.Count(id => CosmeticCatalog.Get(id).Kind == CosmeticKind.Portrait));
+    }
+
+    [Fact]
+    public void NeonDynasty_GrantsCoinsAndThemedCosmeticsAcrossReachedMilestones()
     {
         var profile = new PlayerProfileState { Coins = 321 };
         var service = new ProgressionService(profile);
-        SeasonTierDefinition tier15 = SeasonCatalog.Current.Tiers[14];
+        SeasonTierDefinition tier30 = SeasonCatalog.Current.Tiers[29];
 
-        ProgressionAward award = service.GrantSeasonExperience(SeasonCatalog.Current.Id, tier15.RequiredExperience);
+        ProgressionAward award = service.GrantSeasonExperience(SeasonCatalog.Current.Id, tier30.RequiredExperience);
 
-        Assert.Equal(15, service.GetOrCreateSeasonProgress(SeasonCatalog.Current.Id).Tier);
-        Assert.Equal(15, award.SeasonTiersGained);
-        Assert.Equal(0, award.CoinsEarned);
-        Assert.Empty(award.CosmeticsUnlocked);
-        Assert.Equal(321, profile.Coins);
+        Assert.Equal(30, service.GetOrCreateSeasonProgress(SeasonCatalog.Current.Id).Tier);
+        Assert.Equal(30, award.SeasonTiersGained);
+        Assert.True(award.CoinsEarned > 0);
+        Assert.True(profile.Coins > 321);
+        Assert.Contains(award.CosmeticsUnlocked, cosmetic => cosmetic.Id == "title-neon-initiate");
+        Assert.Contains(award.CosmeticsUnlocked, cosmetic => cosmetic.Id == "frame-neon-thread");
+        Assert.Contains(award.CosmeticsUnlocked, cosmetic => cosmetic.Id == "portrait-neon-croupier");
+        Assert.Contains("title-neon-initiate", profile.OwnedCosmeticIds);
+        Assert.Contains("frame-neon-thread", profile.OwnedCosmeticIds);
+        Assert.Contains("portrait-neon-croupier", profile.OwnedCosmeticIds);
+    }
+
+    [Fact]
+    public void NeonDynasty_FinalTierIsAHighValueSeasonReward()
+    {
+        SeasonTierDefinition final = SeasonCatalog.Current.Tiers[^1];
+
+        Assert.Equal(120, final.Tier);
+        Assert.Equal(600, final.Coins);
+        Assert.Equal("portrait-neon-emperor", final.CosmeticId);
+        Assert.Equal(CosmeticKind.Portrait, CosmeticCatalog.Get(final.CosmeticId!).Kind);
     }
 
     [Fact]
