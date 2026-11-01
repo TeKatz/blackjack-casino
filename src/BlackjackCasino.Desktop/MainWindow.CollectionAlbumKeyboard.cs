@@ -7,7 +7,9 @@ namespace BlackjackCasino.Desktop;
 
 public partial class MainWindow
 {
-    static MainWindow()
+    private static readonly bool CollectionAlbumEscapeHandlerRegistered = RegisterCollectionAlbumEscapeHandler();
+
+    private static bool RegisterCollectionAlbumEscapeHandler()
     {
         // MainWindow owns the global Escape-to-close behavior for hosted meta pages. The album
         // inspector is one level deeper, so intercept its Escape first; otherwise the same key
@@ -17,6 +19,7 @@ public partial class MainWindow
             Keyboard.PreviewKeyDownEvent,
             new KeyEventHandler(CollectionAlbumEscapeClassHandler),
             handledEventsToo: true);
+        return true;
     }
 
     private static void CollectionAlbumEscapeClassHandler(object sender, KeyEventArgs e)
