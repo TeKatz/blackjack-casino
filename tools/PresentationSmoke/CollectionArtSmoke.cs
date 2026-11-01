@@ -62,6 +62,8 @@ internal static partial class Program
         }
         Button close = Find<Button>(inspector).Single(b => b.Name == "AlbumArtClose");
         close.RaiseEvent(new KeyEventArgs(Keyboard.PrimaryDevice, PresentationSource.FromVisual(window)!, 0, Key.Escape) { RoutedEvent = Keyboard.PreviewKeyDownEvent });
+        window.UpdateLayout();
+        await Task.Delay(35);
         Require(!inspector.IsVisible, "Escape did not close the artwork inspector");
         Require(selected.IsVisible && selected.IsEnabled && selected.IsKeyboardFocused, "Escape left the album or lost the selected card focus");
         Require(Find<Grid>(window).Any(g => g.Name == "CollectionAlbumRoot" && g.IsVisible), "Escape closed the dedicated album page");
