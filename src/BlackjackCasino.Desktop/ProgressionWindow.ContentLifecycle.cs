@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Controls;
 
 namespace BlackjackCasino.Desktop;
 
@@ -22,7 +23,19 @@ internal partial class ProgressionWindow
     {
         InitializeCollections();
         RefreshAll();
-        InitializeSeasonPassLibrary();
+
+        // Keep the menu's lazy-loading contract intact. Challenges/Shop must not construct the
+        // hidden 100-tier Season Pass just because the progression shell was embedded.
+        if (ProgressionTabs.SelectedItem is TabItem tab
+            && string.Equals(tab.Tag as string, "Season Pass", StringComparison.Ordinal))
+        {
+            InitializeSeasonPassLibrary();
+        }
+        else if (!seasonPassTabHooked)
+        {
+            ProgressionTabs.SelectionChanged += SeasonPassTabs_SelectionChanged;
+            seasonPassTabHooked = true;
+        }
     }
 
     private void EmbeddedBackButton_Click(object sender, RoutedEventArgs e) => embeddedClose?.Invoke();
