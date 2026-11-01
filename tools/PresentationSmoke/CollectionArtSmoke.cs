@@ -6,7 +6,9 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
 using BlackjackCasino.Core;
 using BlackjackCasino.Core.Collections;
 using BlackjackCasino.Desktop;
@@ -52,6 +54,12 @@ internal static partial class Program
         Border inspectorCard = Find<Border>(inspector).Single(b => b.Name == "CollectionCard" && Equals(b.Tag, ownedId));
         Require(inspectorCard.Width >= 320 && inspectorCard.Height >= 490, "Inspector did not render a native large card");
 
+        // Large blurred ellipses caused the inspector and the rest of the WPF menu to fall onto an
+        // expensive effect render path. The background is now panel-aligned radial gradients instead.
+        Require(!Find<Ellipse>(inspector).Any(e => e.Effect is BlurEffect), "Artwork inspector reintroduced a large BlurEffect glow");
+        Grid browse = Find<Grid>(window).Single(g => g.Name == "AlbumBrowseSurface");
+        Require(browse.Visibility == Visibility.Collapsed, "Album browser is still rendering underneath the artwork inspector");
+
         foreach (var size in new[] { (1440d, 900d), (1920d, 1080d) })
         {
             window.Width = size.Item1; window.Height = size.Item2; window.UpdateLayout(); await Task.Delay(30);
@@ -65,6 +73,7 @@ internal static partial class Program
         window.UpdateLayout();
         await Task.Delay(35);
         Require(!inspector.IsVisible, "Escape did not close the artwork inspector");
+        Require(browse.Visibility == Visibility.Visible, "Album browser did not resume after closing the inspector");
         Require(selected.IsVisible && selected.IsEnabled && selected.IsKeyboardFocused,
             $"Escape focus state invalid: visible={selected.IsVisible}, enabled={selected.IsEnabled}, keyboardFocused={selected.IsKeyboardFocused}, focusedElement={Keyboard.FocusedElement?.GetType().Name ?? "null"}");
         Require(Find<Grid>(window).Any(g => g.Name == "CollectionAlbumRoot" && g.IsVisible), "Escape closed the dedicated album page");
@@ -104,7 +113,7 @@ internal static partial class Program
             Require(foil.RenderTransform.HasAnimatedProperties, "Visible card did not resume foil animation");
             host.Child = null; window.UpdateLayout(); await Task.Delay(40);
             Require(!foil.RenderTransform.HasAnimatedProperties, "Unloaded card kept an animation clock");
-            File.WriteAllText(Path.Combine(output, "album-art-result.txt"), "PASS: 136 distinct decoded illustrations and perceptual compositions; full catalog mapping; all 16 theme galleries; all rarity finishes; dedicated high-quality inspector and Escape; reduced motion; visible/hidden/unloaded foil lifecycle.");
+            File.WriteAllText(Path.Combine(output, "album-art-result.txt"), "PASS: 136 distinct decoded illustrations and perceptual compositions; full catalog mapping; all 16 theme galleries; all rarity finishes; dedicated high-quality inspector and Escape; no expensive blur glows behind the inspector; hidden album browser; reduced motion; visible/hidden/unloaded foil lifecycle.");
         }
         finally { host.Child = null; root.Children.Remove(host); window.UpdateLayout(); }
     }
