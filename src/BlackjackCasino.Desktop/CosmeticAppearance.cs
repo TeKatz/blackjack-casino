@@ -9,6 +9,8 @@ internal static class CosmeticAppearance
     {
         "title-violet" => "#CEAAFF", "title-gold" => "#FFD877", "title-teal" => "#68E9CD",
         "title-rose" => "#FFAACD", "title-ice" => "#A7DEFF", "title-amber" => "#FFB968",
+        "title-neon-cyan" => "#63F5F0", "title-neon-magenta" => "#FF6BC7",
+        "title-dynasty-gold" => "#FFD36E", "title-dynasty-prism" => "#E7B6FF",
         _ => "#F3E6CF",
     }));
     internal static Color StandardFrame(string variant) => (Color)ColorConverter.ConvertFromString(variant switch
