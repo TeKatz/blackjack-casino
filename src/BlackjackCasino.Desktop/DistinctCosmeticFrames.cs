@@ -18,7 +18,8 @@ internal static class DistinctCosmeticFrames
         {
             previous.Dispose(); Lifecycles.Remove(target);
         }
-        if (variant is not ("neon-noir" or "eclipse-thread" or "eclipse-halo" or "aurora-drift")) return false;
+        if (variant is not ("neon-noir" or "eclipse-thread" or "eclipse-halo" or "aurora-drift"
+            or "neon-thread" or "dynasty-circuit" or "neon-pagoda" or "dynasty-crown")) return false;
         Color C(string value) => (Color)ColorConverter.ConvertFromString(value);
         Brush brush;
         Thickness thickness;
@@ -48,6 +49,37 @@ internal static class DistinctCosmeticFrames
                 }) { Center = new Point(.5, .5), GradientOrigin = new Point(.48, .48), RadiusX = .55, RadiusY = .65 };
                 thickness = new Thickness(3); corners = new CornerRadius(26); glow = C("#FFC071");
                 break;
+            case "neon-thread": // Entry Dynasty frame: razor-thin cyan/magenta light on black glass.
+                brush = new LinearGradientBrush(new GradientStopCollection
+                {
+                    new(C("#54F6F0"), 0), new(C("#12202B"), .28), new(C("#FF55B8"), .52),
+                    new(C("#161323"), .72), new(C("#54F6F0"), 1),
+                }, 20);
+                thickness = new Thickness(2, 1, 2, 1); corners = new CornerRadius(6); glow = C("#55EDEB");
+                break;
+            case "dynasty-circuit": // Cyan signal paths separated by short imperial-gold nodes.
+                var circuit = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(.16, 1), SpreadMethod = GradientSpreadMethod.Repeat };
+                circuit.GradientStops.Add(new(C("#0C1720"), 0)); circuit.GradientStops.Add(new(C("#48E7E4"), .23));
+                circuit.GradientStops.Add(new(C("#F3BF58"), .31)); circuit.GradientStops.Add(new(C("#171126"), .48));
+                circuit.GradientStops.Add(new(C("#FF55B8"), .72)); circuit.GradientStops.Add(new(C("#0C1720"), 1));
+                brush = circuit; thickness = new Thickness(2); corners = new CornerRadius(4, 14, 4, 14); glow = C("#E3B654");
+                break;
+            case "neon-pagoda": // Layered architectural bands; heavier at top/bottom like illuminated eaves.
+                brush = new LinearGradientBrush(new GradientStopCollection
+                {
+                    new(C("#FF4FB5"), 0), new(C("#702C78"), .18), new(C("#111522"), .37),
+                    new(C("#50F2EA"), .56), new(C("#C6943F"), .76), new(C("#FF4FB5"), 1),
+                }, 90);
+                thickness = new Thickness(2, 4, 2, 4); corners = new CornerRadius(2, 12, 2, 12); glow = C("#FF59BD");
+                break;
+            case "dynasty-crown": // Final frame: black-glass breaks between cyan, magenta and imperial gold.
+                brush = new LinearGradientBrush(new GradientStopCollection
+                {
+                    new(C("#F7CF69"), 0), new(C("#54F6F0"), .16), new(C("#12101C"), .34),
+                    new(C("#FF58BC"), .50), new(C("#12101C"), .66), new(C("#54F6F0"), .84), new(C("#F7CF69"), 1),
+                }, 30);
+                thickness = new Thickness(4, 2, 4, 2); corners = new CornerRadius(14, 3, 14, 3); glow = C("#F7CF69");
+                break;
             default: // Translucent glacial facets with a moving reflected light.
                 brush = new LinearGradientBrush(new GradientStopCollection
                 {
@@ -62,7 +94,8 @@ internal static class DistinctCosmeticFrames
             border.BorderBrush = brush; border.BorderThickness = thickness; border.CornerRadius = corners;
         }
         else if (target is Control control) { control.BorderBrush = brush; control.BorderThickness = thickness; }
-        var effect = new DropShadowEffect { Color = glow, ShadowDepth = 0, BlurRadius = variant == "eclipse-thread" ? 3 : 12, Opacity = variant == "eclipse-thread" ? .13 : .32 };
+        bool quiet = variant is "eclipse-thread" or "neon-thread";
+        var effect = new DropShadowEffect { Color = glow, ShadowDepth = 0, BlurRadius = quiet ? 4 : variant == "dynasty-crown" ? 16 : 12, Opacity = quiet ? .18 : .34 };
         target.Effect = effect;
         void Stop()
         {
@@ -72,12 +105,23 @@ internal static class DistinctCosmeticFrames
         void Start()
         {
             if (!animate || !target.IsVisible) return;
-            if (variant == "eclipse-halo")
-                effect.BeginAnimation(DropShadowEffect.OpacityProperty, new DoubleAnimation(.18, .52, TimeSpan.FromSeconds(3)) { AutoReverse = true, RepeatBehavior = RepeatBehavior.Forever });
-            else if (variant == "aurora-drift")
+            if (variant is "eclipse-halo" or "neon-thread" or "neon-pagoda")
+            {
+                double low = variant == "neon-thread" ? .12 : .18;
+                double high = variant == "neon-pagoda" ? .56 : .48;
+                effect.BeginAnimation(DropShadowEffect.OpacityProperty, new DoubleAnimation(low, high, TimeSpan.FromSeconds(variant == "neon-pagoda" ? 2.5 : 3.2)) { AutoReverse = true, RepeatBehavior = RepeatBehavior.Forever });
+            }
+            else if (variant is "aurora-drift" or "dynasty-circuit" or "dynasty-crown")
             {
                 var rotate = new RotateTransform(0, .5, .5); brush.RelativeTransform = rotate;
-                rotate.BeginAnimation(RotateTransform.AngleProperty, new DoubleAnimation(-12, 32, TimeSpan.FromSeconds(6)) { AutoReverse = true, RepeatBehavior = RepeatBehavior.Forever });
+                double to = variant == "dynasty-crown" ? 360 : 34;
+                double from = variant == "dynasty-crown" ? 0 : -14;
+                double seconds = variant == "dynasty-crown" ? 7.5 : 5.5;
+                rotate.BeginAnimation(RotateTransform.AngleProperty, new DoubleAnimation(from, to, TimeSpan.FromSeconds(seconds))
+                {
+                    AutoReverse = variant != "dynasty-crown",
+                    RepeatBehavior = RepeatBehavior.Forever,
+                });
             }
         }
         RoutedEventHandler loaded = (_, _) => Start();
