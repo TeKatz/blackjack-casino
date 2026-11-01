@@ -179,7 +179,18 @@ internal static class EmpireStrategySmoke
     private static void Click(DependencyObject root,string name)
     {
         if (root is UIElement surface) surface.UpdateLayout();
-        Button button=Find<Button>(root).Single(b=>b.Name==name);
+        Button? button=Find<Button>(root).SingleOrDefault(b=>b.Name==name);
+        // Catalogs use two or four cards according to available height. Follow the
+        // real page controls when a target is on a later page; never click hidden entries.
+        for (int page=0; button is null && page<10; page++)
+        {
+            Button? next=Find<Button>(root).SingleOrDefault(b=>b.Name=="EmpirePageNext");
+            if(next is not { IsEnabled:true }) break;
+            next.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            if(root is UIElement paged) paged.UpdateLayout();
+            button=Find<Button>(root).SingleOrDefault(b=>b.Name==name);
+        }
+        if(button is null) throw new InvalidOperationException($"{name} is unreachable through the current section's page controls.");
         Require(button.IsEnabled,$"{name} is disabled unexpectedly.");
         button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         if (root is UIElement updated) updated.UpdateLayout();
