@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Threading;
 
 namespace BlackjackCasino.Desktop;
 
@@ -129,12 +130,17 @@ internal sealed class LoungeGameMenu : UserControl
 
     private void OpenHosted(LoungeHostedGame module)
     {
-        if (module.UseShellBackNavigation)
-            ConfigureShellNavigation(GamesBackLabel(), ShowMenu);
-        else
-            ConfigureShellNavigation(null, null);
-
+        string? label = module.UseShellBackNavigation ? GamesBackLabel() : null;
+        Action? action = module.UseShellBackNavigation ? ShowMenu : null;
+        ConfigureShellNavigation(label, action);
         Content = module.CreateContent(ShowMenu);
+
+        // The game menu and the hosted hub can both complete Loaded work in the same dispatcher
+        // cycle. Reassert the final navigation state after the hub has loaded so a pending menu
+        // cleanup cannot hide the shared header button again.
+        Dispatcher.BeginInvoke(
+            DispatcherPriority.Loaded,
+            new Action(() => ConfigureShellNavigation(label, action)));
     }
 
     private void ConfigureShellNavigation(string? label, Action? action)
