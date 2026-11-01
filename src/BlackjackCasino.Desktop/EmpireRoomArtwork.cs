@@ -99,6 +99,7 @@ internal sealed class EmpireRoomCard : Button
     private readonly Grid milestoneTrack;
     private readonly Border flash = new() { Background = Ink("#FFE0A0"), Opacity = 0, IsHitTestVisible = false, CornerRadius = new CornerRadius(9) };
     private int previousLevel = -1;
+    private bool previouslySelected;
     private double progress;
 
     internal EmpireRoomCard(EmpireDepartment room, int index, Action<string> select)
@@ -129,8 +130,12 @@ internal sealed class EmpireRoomCard : Button
         next.Margin = new Thickness(12, 0, 12, 7);
         stack.Children.Add(next);
         content.Children.Add(stack);
+        string insignia = room.Tags.HasFlag(EmpireTag.Slots) ? "Slots" : room.Tags.HasFlag(EmpireTag.Tables) ? "Tables"
+            : room.Tags.HasFlag(EmpireTag.Hospitality) ? "Hospitality" : room.Tags.HasFlag(EmpireTag.VIP) ? "Prestige" : "Events";
+        content.Children.Add(new EmpireIcon(insignia, 18) { HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(10) });
         content.Children.Add(flash);
-        frame = new Border { Background = new LinearGradientBrush(Color.FromRgb(29, 47, 58), Color.FromRgb(16, 30, 40), 100), BorderBrush = Ink("#445A66"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(9), Child = content, ClipToBounds = true };
+        frame = new Border { Background = new LinearGradientBrush(Color.FromRgb(25, 49, 34), Color.FromRgb(12, 30, 21), 100), BorderBrush = Ink("#3C5643"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(9), Child = content, ClipToBounds = true };
         Content = frame;
         Click += (_, _) => select(room.Id);
     }
@@ -153,12 +158,21 @@ internal sealed class EmpireRoomCard : Button
             ? (opening.Unlocked ? "Open for " + EmpireView.Number(opening.Cost) + " cr" : "Requirements needed")
             : "+" + EmpireView.Number(service.RoomCreditsPerSecond(Department.Id)) + " cr / sec";
         next.Text = value == 0 ? (opening.Unlocked ? "Select to open this room" : Department.UnlockRequirement.Description) : value == EmpireRules.MaximumLevel ? "All milestones complete" : "Next ×2 at level " + ((value / 10 + 1) * 10);
+        bool limits = service.Synergies.Any(s => s.NextLevel is int target && value < target && value == s.MinimumLevel
+            && Department.Floor <= s.Definition.MaximumFloor && (Department.Tags & s.Definition.Members) != 0);
+        if (limits) next.Text = "CIRCUIT LIMIT · " + next.Text;
+        else if (service.ManagerAssignments.Values.Contains(Department.Id)) next.Text = "MANAGED · " + next.Text;
+        else if (service.AutomationUnlocked && !service.Automation.Enabled) next.Text = "AUTO READY · " + next.Text;
         if (service.Synergies.Any(synergy => synergy.Tier == 3 && (synergy.Definition.Beneficiaries & Department.Tags) != 0))
             next.Text = "SYNERGY III ✦ · " + next.Text;
         progress = value == EmpireRules.MaximumLevel ? 1 : value % 10 / 10d;
         milestoneFill.Width = milestoneTrack.ActualWidth * progress;
-        frame.BorderBrush = Ink(selected ? "#E6C68A" : "#445A66");
+        frame.BorderBrush = Ink(selected ? "#E6C68A" : "#3C5643");
         frame.Effect = selected ? selectedGlow : null;
+        if (selected && !previouslySelected && animate)
+            frame.BeginAnimation(OpacityProperty, new DoubleAnimation(.65, 1, TimeSpan.FromMilliseconds(160)) { FillBehavior = FillBehavior.Stop });
+        if (!animate) frame.BeginAnimation(OpacityProperty, null);
+        previouslySelected = selected;
         Artwork.Open = value > 0;
         Artwork.Available = opening.Unlocked;
         Artwork.Level = value;
@@ -174,6 +188,7 @@ internal sealed class EmpireRoomCard : Button
     internal void StopAnimation()
     {
         flash.BeginAnimation(OpacityProperty, null);
+        frame.BeginAnimation(OpacityProperty, null);
         Artwork.Phase = 0;
     }
 

@@ -28,10 +28,10 @@ internal sealed partial class EmpireManagementView
                 researchSelection = EmpireResearchCatalog.All.First(n => n.Branch == route).Id;
                 Build();
             });
-            tab.BorderBrush = Ink(branch == researchBranch ? "#D7B97D" : "#405866"); branches.Children.Add(tab);
+            tab.BorderBrush = Ink(branch == researchBranch ? "#D7B97D" : "#405B47"); branches.Children.Add(tab);
         }
         heading.Children.Add(branches); DockPanel.SetDock(heading, Dock.Top); body.Children.Add(heading);
-        var legend = Text("Select a node to inspect it. Lines show the exact prerequisite; research spends Legacy Points earned through prestige.", 11, "#9DB5C4");
+        var legend = Text("Select a node to inspect it. Lines show the exact prerequisite; research spends Legacy Points earned through prestige.", 11, "#9DB9A7");
         DockPanel.SetDock(legend, Dock.Top); body.Children.Add(legend);
 
         var layout = new Grid { Name = "EmpireResearchTree", Margin = new Thickness(0, 8, 0, 0) };
@@ -57,7 +57,7 @@ internal sealed partial class EmpireManagementView
             canvas.Children.Add(arrow);
             updates.Add(() =>
             {
-                Brush color = Ink(service.ResearchRank(node.Prerequisite!) >= node.PrerequisiteRank ? "#D6B97A" : "#536675");
+                Brush color = Ink(service.ResearchRank(node.Prerequisite!) >= node.PrerequisiteRank ? "#D6B97A" : "#536B59");
                 line.Stroke = color; arrow.Fill = color;
             });
             var requirement = Text("R" + node.PrerequisiteRank, 9, "#C8B180");
@@ -72,7 +72,7 @@ internal sealed partial class EmpireManagementView
             Button target = Button("", "EmpireResearchNode_" + node.Id.Replace('-', '_'), () => { researchSelection = node.Id; Build(); });
             target.Content = stack; target.Width = 190; target.Height = 108; target.Padding = new Thickness(0);
             target.HorizontalContentAlignment = HorizontalAlignment.Stretch;
-            target.Background = new LinearGradientBrush(Color.FromRgb(33, 58, 70), Color.FromRgb(16, 32, 44), 100);
+            target.Background = new LinearGradientBrush(Color.FromRgb(29, 56, 38), Color.FromRgb(14, 32, 23), 100);
             target.ToolTip = node.Description; AutomationProperties.SetName(target, node.Name);
             Canvas.SetLeft(target, positions[node.Id].X); Canvas.SetTop(target, positions[node.Id].Y); canvas.Children.Add(target);
             updates.Add(() =>
@@ -81,12 +81,12 @@ internal sealed partial class EmpireManagementView
                 rank.Text = $"RANK {current} / {node.MaxRank}    ·    {node.CostPerRank} LP";
                 bool prerequisite = node.Prerequisite is null || service.ResearchRank(node.Prerequisite) >= node.PrerequisiteRank;
                 state.Text = current == node.MaxRank ? "✦ MASTERED" : !prerequisite ? "◆ PREREQUISITE REQUIRED" : service.CanResearch(node.Id) ? "● READY TO RESEARCH" : "◇ SAVE LEGACY POINTS";
-                target.BorderBrush = Ink(node.Id == researchSelection ? "#F3D28C" : current > 0 ? "#73B6A7" : "#506575");
+                target.BorderBrush = Ink(node.Id == researchSelection ? "#F3D28C" : current > 0 ? "#73B6A7" : "#506B57");
                 target.BorderThickness = new Thickness(node.Id == researchSelection ? 2 : 1);
                 AutomationProperties.SetHelpText(target, rank.Text + ". " + state.Text + ". " + node.Description);
             });
         }
-        layout.Children.Add(new Border { Background = Ink("#0B1B26"), BorderBrush = Ink("#344B59"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12),
+        layout.Children.Add(new Border { Background = Ink("#0B2117"), BorderBrush = Ink("#344F3D"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12),
             Margin = new Thickness(0, 0, 12, 0), Child = new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, Child = canvas } });
         EmpireResearchDefinition selectedNode = EmpireResearchCatalog.Find(researchSelection)!;
         var inspector = new StackPanel { Margin = new Thickness(12) };

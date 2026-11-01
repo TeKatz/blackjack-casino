@@ -8,35 +8,54 @@ game activity can benefit Empire in the other direction.
 
 ## Estate command center
 
-The Estate page combines a five-room gallery with a selected-room inspector,
-construction quotes, bulk controls, milestone progress and prestige. Portfolio
-income, selected-property budget and owner dividend remain visible while using
-any of the eight first-level sections: Research, Projects, Team, Automation,
-Synergies, Events, Contracts and Properties. There is no intermediate Management
-menu and no additional native window.
+The Estate page gives the room gallery priority. Four quiet navigation groups
+keep every system reachable: Estate (rooms, floors, circuits), Development
+(research, projects, properties), Operations (team, automation) and Opportunities
+(events, contracts). Section pages use only their group's local navigation and
+remain in the same native window. The updater still follows
+`feature/empire-command-center`.
 
-Four live dashboard cards surface Legacy Points and active circuits, the next
-available capital project (build directly when affordable), assigned specialists
-and automation status, plus event time and contract progress. Completed contract
-rewards can be claimed directly. Taller desktop layouts also show every synergy
-circuit with its weakest member's progress toward the next tier. Compact windows
-retain the primary actions and use the navigation bar for secondary routes.
+The right inspector holds room upgrades, bulk quantities, cost, production and
+the next milestone. One Room Intelligence surface below the gallery explains
+growth, actual operating specialists, automation requirements and policy,
+participating/benefiting circuits, their individual members and limiting rooms,
+and the exact production factors. Select a room again or use Estate overview to
+clear selection; the panel then shows estate progress and useful next steps.
+There are no permanent research/project/team/opportunity cards or global circuit
+row on the main screen. Long contextual details have local scroll fallbacks for
+small windows; the gallery preserves five cards per floor at standard widths.
 
-Research has three branch diagrams, selectable nodes and an inspector with exact
-rank prerequisites, point costs, current ranks and permanent effects. Connector
-colors reflect prerequisite rank completion, while node labels distinguish
-mastered, available and point-gated upgrades. Nothing in the research catalog or
-economy is changed by the diagram.
+Hover or keyboard-focus an upgrade quantity or purchase button to preview its
+construction cost, portfolio production delta, room level/output, milestones and
+circuit progress. Specialists can be previewed in the contextual selector or Team;
+automation can be previewed at the contextual toggle or Save automation. Cyan
+values explicitly labelled PREVIEW are temporary. Leaving, changing room, estate,
+floor, filter or section, committing, editing a management form, and unloading
+clear previews. Current values remain separate from their projected effects.
 
-Long catalogs use two- or four-card pages, depending on available height, instead
-of a single scrolling list. Automation
-settings and the editable priority queue occupy two columns. Production refreshes
-update labels and action eligibility without rebuilding active input fields.
-A local scroll fallback retains access to unusually long content in small windows;
-the standard desktop dashboard is checked for visible primary controls and no
-scrolling inside its command cards at 1366×768 and 1920×1080. Room illustrations,
-selection glow, purchase flashes and section transitions respect Empire's own
-animation preference.
+`EmpireService.Preview` runs real commands on an isolated state at the simulation's
+current instant, with the same achievements and activity snapshot. It never
+accrues future time or calls persistence/wallet callbacks. Portfolio totals include
+other owned properties; an upgrade can affect other rooms through circuits or
+research. `ProductionBreakdown` and live production share the same calculation:
+base (including level milestones) × prestige × achievements × (1 + capped
+strategic additions), with the existing final room cap. Automation purchases
+upgrades every 30 production seconds and does **not** grant an output multiplier;
+specialists have fixed effects, not a fictional manager-level progression.
+
+The palette uses deep club greens, warm ivory, restrained milestone/prestige gold
+and a distinct cyan preview accent. Original vector insignia share a 24-unit grid
+for economy, navigation, room categories, operations and performance. Selection,
+preview entry, circuit progress, purchases and numeric transitions respect Empire's
+animation preference and replace in-flight animations rather than queuing them.
+
+Research retains its three branch diagrams, rank prerequisites and exact costs.
+Catalog pages retain pagination and automation form inputs remain stable during
+production refreshes. The Windows smoke covers the revised navigation at
+1080×720, 1366×768 and 1920×1080, hover isolation/cleanup, estate overview, room
+changes, catalog purchases and detached hosting. Core regression tests compare
+previews with committed upgrades, cross-room synergy effects, specialist moves,
+automation policies, achievements, level caps and multiple properties.
 
 ## Departments, floors and properties
 

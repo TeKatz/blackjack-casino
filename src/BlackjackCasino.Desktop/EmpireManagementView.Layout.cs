@@ -18,9 +18,9 @@ internal sealed partial class EmpireManagementView
     {
         var row = new Grid { Margin = new Thickness(0, 2, 0, 7) };
         row.ColumnDefinitions.Add(new ColumnDefinition()); row.ColumnDefinitions.Add(new ColumnDefinition());
-        TextBlock label = Text(caption, 11, "#ACC6D0"); label.VerticalAlignment = VerticalAlignment.Center; label.Margin = new Thickness(0, 0, 10, 0); row.Children.Add(label);
+        TextBlock label = Text(caption, 11, "#ACC6B2"); label.VerticalAlignment = VerticalAlignment.Center; label.Margin = new Thickness(0, 0, 10, 0); row.Children.Add(label);
         var input = new TextBox { Name = name, Text = value, MinWidth = 135, Height = 30, Padding = new Thickness(7, 4, 7, 4),
-            Background = Ink("#10212D"), Foreground = Ink("#F0E3CE"), BorderBrush = Ink("#507080"), CaretBrush = Ink("#E5C47E") };
+            Background = Ink("#10291D"), Foreground = Ink("#F0E3CE"), BorderBrush = Ink("#50705A"), CaretBrush = Ink("#E5C47E") };
         System.Windows.Automation.AutomationProperties.SetName(input, caption);
         Grid.SetColumn(input, 1); row.Children.Add(input); parent.Children.Add(row); return input;
     }
