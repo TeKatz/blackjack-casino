@@ -22,6 +22,7 @@ internal partial class ProgressionWindow
     {
         InitializeCollections();
         RefreshAll();
+        InitializeSeasonPassLibrary();
     }
 
     private void EmbeddedBackButton_Click(object sender, RoutedEventArgs e) => embeddedClose?.Invoke();
