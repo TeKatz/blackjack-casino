@@ -11,9 +11,9 @@ ART = ROOT / 'src/BlackjackCasino.Desktop/Assets/CollectionArt'
 
 
 def main():
-    manifest = json.loads((ART / 'manifest.json').read_text())
+    manifest = json.loads((ART / 'manifest.json').read_text(encoding='utf-8'))
     assert manifest['Version'] == 1, 'Unsupported artwork manifest'
-    catalog = (ROOT / 'src/BlackjackCasino.Core/Collections/CollectionCatalog.cs').read_text()
+    catalog = (ROOT / 'src/BlackjackCasino.Core/Collections/CollectionCatalog.cs').read_text(encoding='utf-8')
     expected = {}
     for match in re.finditer(r'\("([^"\n]+)", "([^"\n]+)", "[^"\n]+", "[^"\n]+", \[([^\]\n]+)\]\)', catalog):
         theme, _, names = match.groups()
