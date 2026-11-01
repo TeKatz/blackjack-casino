@@ -130,8 +130,8 @@ internal sealed class LoungeGameMenu : UserControl
 
     private void OpenHosted(LoungeHostedGame module)
     {
-        string? label = module.UseShellBackNavigation ? GamesBackLabel() : null;
-        Action? action = module.UseShellBackNavigation ? ShowMenu : null;
+        string label = GamesBackLabel();
+        Action action = ShowMenu;
         ConfigureShellNavigation(label, action);
         Content = module.CreateContent(ShowMenu);
 
