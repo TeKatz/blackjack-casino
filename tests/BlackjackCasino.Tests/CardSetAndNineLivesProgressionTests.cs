@@ -22,7 +22,7 @@ public sealed class CardSetAndNineLivesProgressionTests
 
         _ = new ProgressionService(profile);
 
-        Assert.Equal(5, profile.SchemaVersion);
+        Assert.Equal(6, profile.SchemaVersion);
         Assert.Equal(CosmeticCatalog.DefaultCardSetId, profile.EquippedCardSetId);
         Assert.Contains(CosmeticCatalog.DefaultCardSetId, profile.OwnedCosmeticIds);
     }

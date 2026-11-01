@@ -1,3 +1,4 @@
+using BlackjackCasino.Core.Collections;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
@@ -21,10 +22,18 @@ internal partial class ProgressionWindow : Window
     private static readonly Brush CoinBrush = new SolidColorBrush(Color.FromRgb(84, 225, 183));
     private static readonly Brush CoinMutedBrush = new SolidColorBrush(Color.FromRgb(72, 177, 151));
 
-    public ProgressionWindow(PlayerProgressionController controller)
+    private readonly bool albumAnimations;
+    private readonly bool albumSounds;
+
+    public ProgressionWindow(PlayerProgressionController controller, bool animationsEnabled = true, bool soundsEnabled = true)
     {
         this.controller = controller ?? throw new ArgumentNullException(nameof(controller));
+        albumAnimations = animationsEnabled;
+        albumSounds = soundsEnabled;
         InitializeComponent();
+        ProgressionRoot.Unloaded += (_, _) => StopAlbumPresentation();
+        AlbumOpeningOverlay.Unloaded += (_, _) => StopAlbumPresentation();
+        ProgressionRoot.PreviewKeyDown += AlbumArt_KeyDown;
         MenuAudio.Attach(this);
         InitializeCollections();
         StateChanged += (_, _) => RefreshMaximizeGlyph();
@@ -48,6 +57,7 @@ internal partial class ProgressionWindow : Window
         RefreshSeason();
         RefreshShop();
         RefreshChallenges();
+        RefreshAlbum();
     }
 
     private void RefreshProfileHeader()
@@ -130,6 +140,8 @@ internal partial class ProgressionWindow : Window
             {
                 SeasonNextRewardText.Inlines.Add(new Run($" + {CosmeticCatalog.Get(next.CosmeticId).Name}"));
             }
+            if (CollectionCatalog.SeasonPack(next.Tier) is { } nextPack)
+                SeasonNextRewardText.Inlines.Add(new Run($" + {nextPack} pack"));
             SeasonNextRewardXpText.Text = $"{Math.Max(0, next.RequiredExperience - progress.Experience):N0} XP to unlock";
         }
 
@@ -218,6 +230,8 @@ internal partial class ProgressionWindow : Window
                 FontWeight = cosmetic is null ? FontWeights.Normal : FontWeights.SemiBold,
             };
             reward.Inlines.Add(new Run($"◆ {tier.Coins:N0} coins") { Foreground = CoinBrush, FontWeight = FontWeights.SemiBold });
+            if (CollectionCatalog.SeasonPack(tier.Tier) is { } tierPack)
+                reward.Inlines.Add(new Run($" · {tierPack} card pack"));
             if (cosmetic is not null)
             {
                 reward.Inlines.Add(new Run($" · {cosmetic.Name} ({cosmetic.Kind})"));
@@ -531,7 +545,7 @@ internal partial class ProgressionWindow : Window
 
         MessageBoxResult answer = MessageBox.Show(
             Window.GetWindow(ProgressionRoot) ?? this,
-            "Enter Prestige? Your level and current level XP reset to 0. Coins, cosmetics, statistics, bankroll and Season Pass progress stay exactly as they are.",
+            "Enter Prestige? Your level and current level XP reset to 0. Coins, cosmetics, statistics, bankroll, your Album and Season Pass progress stay exactly as they are. Receive one Legendary and two Epic card packs.",
             "Enter Prestige",
             MessageBoxButton.YesNo,
             MessageBoxImage.Question);

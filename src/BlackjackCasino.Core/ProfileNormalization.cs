@@ -58,7 +58,8 @@ public static class ProfileNormalization
             ? CosmeticCatalog.DefaultDiceSetId
             : state.EquippedDiceSetId;
 
+        Collections.CollectionService.Normalize(state);
         state.Vault = CasinoVaultService.Normalize(state, state.Vault);
-        state.SchemaVersion = Math.Max(state.SchemaVersion, 5);
+        state.SchemaVersion = Math.Max(state.SchemaVersion, 6);
     }
 }

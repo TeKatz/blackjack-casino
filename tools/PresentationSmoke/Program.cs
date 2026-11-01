@@ -9,7 +9,7 @@ using System.Windows.Media.Imaging;
 using BlackjackCasino.Core;
 using BlackjackCasino.Desktop;
 
-internal static class Program
+internal static partial class Program
 {
     [DllImport("user32.dll")] private static extern bool SetCursorPos(int x,int y);
     private static string output="";
@@ -35,7 +35,7 @@ internal static class Program
         window.ContentRendered+=async(_,_)=>
         {
             try {await Check(window,qaProfile);File.WriteAllText(Path.Combine(output,"result.txt"),"PASS: startup lobby, registered future mode, shared hover/focus/open/disabled dropdown contracts, all table themes, proportional controls, embedded Reels and Neon Vault bounds, full-surface single-window casino hosting, embedded profile rename, nested profile/progression navigation, compact challenge pagination, scrolling shop and search.");}
-            catch(Exception ex){exit=1;File.WriteAllText(Path.Combine(output,"failure.txt"),ex.ToString());}
+            catch(Exception ex){exit=1;Console.Error.WriteLine(ex);File.WriteAllText(Path.Combine(output,"failure.txt"),ex.ToString());}
             finally {window.Close();CasinoAudio.Shutdown();app.Shutdown(exit);}
         };
         window.Show();app.Run();return exit;
@@ -166,6 +166,7 @@ internal static class Program
         shopSearch.Text="Moon Cat";window.UpdateLayout();
         Require(Find<Button>(window).Any(b=>Equals(b.Tag,"portrait-moon-cat")),"Shop search failed to find the requested portrait");
         shopSearch.Clear();
+        await CheckAlbum(window, qaProfile, progressionTabs);
         Find<Button>(window).Single(b=>b.Name=="ProgressionBackButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(40);window.UpdateLayout();
         Require(Find<TextBox>(window).Any(t=>t.Name=="ProfileNameBox" && t.Text=="Midnight Timo"),"Progression Back did not restore the profile");

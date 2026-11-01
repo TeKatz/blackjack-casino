@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -94,8 +95,11 @@ internal static class KniffelSmoke
         view = Find<KniffelView>(window).Single();
         Require(dice.SequenceEqual(view.Game.Dice) && view.Game.RollsUsed == 1, "Leaving mid-animation granted a reroll.");
         Click(view, "RollButton");
-        await Task.Delay(1000);
-        Require(view.Game.RollsUsed == 2 && Button(view, "RollButton").IsEnabled, "Animated roll did not settle and unlock.");
+        Require(view.Game.RollsUsed == 2, "Animated reroll was not committed exactly once.");
+        dice = view.Game.Dice.ToArray();
+        await WaitForRollSettlement(view);
+        Require(view.Game.RollsUsed == 2 && dice.SequenceEqual(view.Game.Dice), "Animation settlement changed the saved roll.");
+        Require(Find<KniffelDie>(view).Select(die => die.Value).SequenceEqual(dice), "Settled dice do not show the saved roll.");
         Capture(window, Path.Combine(output, "kniffel-animated-settled.png"));
         Click(view, "NewGameButton");
         Require(Find<Border>(view).Single(border => border.Name == "RestartOverlay").IsVisible, "Restart did not request confirmation.");
@@ -105,6 +109,22 @@ internal static class KniffelSmoke
         animationSetting.IsChecked = false;
         File.WriteAllText(Path.Combine(output, "kniffel-result.txt"),
             "PASS: embedded lobby entry; five vector dice; 13 scoring rows; hold/reroll; score selection and confirmation; glow; full game; checkpoints; animation locking, settlement and mid-animation return; restart cancellation; 1080x720 and 1280x900 captures.");
+    }
+
+    private static async Task WaitForRollSettlement(KniffelView view)
+    {
+        Button roll = Button(view, "RollButton");
+        Button score = Button(view, "Score_Chance");
+        var clock = Stopwatch.StartNew();
+        // The animation settles through a background-priority DispatcherTimer. A fixed
+        // Task.Delay resumes at a different dispatcher priority and can beat that tick
+        // on a loaded Windows runner even after the nominal 840 ms animation duration.
+        while (!roll.IsEnabled || !score.IsEnabled)
+        {
+            if (clock.Elapsed >= TimeSpan.FromSeconds(10))
+                throw new InvalidOperationException($"Animated roll did not settle within 10 seconds. RollsUsed={view.Game.RollsUsed}, RollEnabled={roll.IsEnabled}, ScoreEnabled={score.IsEnabled}, Visible={view.IsVisible}.");
+            await Task.Delay(30);
+        }
     }
 
     private static Button Button(DependencyObject root, string name) => Find<Button>(root).Single(button => button.Name == name);

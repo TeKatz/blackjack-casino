@@ -1,0 +1,78 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="Album.Tab" xml:space="preserve">
+    <value>Album</value>
+  </data>
+  <data name="Album.Title" xml:space="preserve">
+    <value>DAS SAMMELALBUM</value>
+  </data>
+  <data name="Album.YourPacks" xml:space="preserve">
+    <value>DEINE PACKS</value>
+  </data>
+  <data name="Album.ShopTitle" xml:space="preserve">
+    <value>KARTENPACKS · IM ALBUM ÖFFNEN</value>
+  </data>
+  <data name="Album.Open" xml:space="preserve">
+    <value>Pack öffnen</value>
+  </data>
+  <data name="Album.RevealAll" xml:space="preserve">
+    <value>Alle aufdecken</value>
+  </data>
+  <data name="Album.Continue" xml:space="preserve">
+    <value>Weiter sammeln</value>
+  </data>
+  <data name="Album.Summary" xml:space="preserve">
+    <value>{0} / 136 Karten · {1} / 16 Themes vollständig · {2:N0} Packs geöffnet · {3} / 500 Duplikatpunkte</value>
+  </data>
+  <data name="Album.Help" xml:space="preserve">
+    <value>Packs gibt es durch Challenges, Season-Pass-Meilensteine, volle Vaults, Prestige und im Shop. Jedes Pack enthält fünf Karten. 500 Duplikatpunkte ergeben ein Common-Pack.</value>
+  </data>
+  <data name="Album.SafeReveal" xml:space="preserve">
+    <value>Fünf Karten sind sicher gespeichert. Decke jede Karte einzeln oder alle zusammen auf.</value>
+  </data>
+  <data name="Album.New" xml:space="preserve">
+    <value>NEU IM ALBUM</value>
+  </data>
+  <data name="Album.Duplicate" xml:space="preserve">
+    <value>DUPLIKAT · +{0} PKT</value>
+  </data>
+  <data name="Album.Result" xml:space="preserve">
+    <value>{0} neue Karten · +{1} Duplikatpunkte · {2} Bonuspacks. Albumfortschritt gespeichert.</value>
+  </data>
+  <data name="Album.Undiscovered" xml:space="preserve">
+    <value>NOCH NICHT ENTDECKT</value>
+  </data>
+  <data name="Album.RevealCard" xml:space="preserve">
+    <value>Karte {0} aufdecken</value>
+  </data>
+  <data name="Album.Buy" xml:space="preserve">
+    <value>Kaufen · ◆ {0:N0}</value>
+  </data>
+  <data name="Album.UltraRare" xml:space="preserve">
+    <value>EXTREM SELTEN</value>
+  </data>
+  <data name="Album.Complete" xml:space="preserve">
+    <value>VOLLSTÄNDIG</value>
+  </data>
+  <data name="Album.FiveCards" xml:space="preserve">
+    <value>FÜNF KARTEN</value>
+  </data>
+  <data name="Album.Odds" xml:space="preserve">
+    <value>Fünf Karten. Eine garantiert {0} oder besser. Weitere reguläre Plätze: {1}. Jeder Platz hat zuerst eine Chance von {2:P2} auf ein extrem seltenes Theme. Duplikatpunkte: 5 / 10 / 25 / 75 / 200. 500 Punkte = ein Common-Pack.</value>
+  </data>
+  <data name="Album.ArtHelp" xml:space="preserve"><value>Wähle eine gesammelte Karte, um ihr Bild groß anzusehen.</value></data>
+  <data name="Album.CloseArtwork" xml:space="preserve"><value>Zurück zum Album</value></data>
+  <data name="Album.BackToAlbum" xml:space="preserve"><value>Zurück zum Album</value></data>
+</root>

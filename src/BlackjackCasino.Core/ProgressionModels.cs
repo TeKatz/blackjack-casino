@@ -54,7 +54,7 @@ public sealed class SeasonProgressState
 
 public sealed class PlayerProfileState
 {
-    public int SchemaVersion { get; set; } = 5;
+    public int SchemaVersion { get; set; } = 6;
     public string DisplayName { get; set; } = "Player";
     public int Level { get; set; }
     public long LevelExperience { get; set; }
@@ -85,6 +85,7 @@ public sealed class PlayerProfileState
     public Memory.MemoryStatistics Memory { get; set; } = new();
     public MidnightMerge.MidnightMergeStatistics MidnightMerge { get; set; } = new();
     public Manor.ManorStatistics Manor { get; set; } = new();
+    public Collections.CollectionState Collection { get; set; } = new();
     public CasinoVaultState Vault { get; set; } = new();
     // Zero also identifies saves with no version field. Normalize before recording new spins.
     public int SlotTrackingVersion { get; set; }

@@ -1,0 +1,78 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="Album.Tab" xml:space="preserve">
+    <value>Album</value>
+  </data>
+  <data name="Album.Title" xml:space="preserve">
+    <value>THE COLLECTOR’S ALBUM</value>
+  </data>
+  <data name="Album.YourPacks" xml:space="preserve">
+    <value>YOUR PACKS</value>
+  </data>
+  <data name="Album.ShopTitle" xml:space="preserve">
+    <value>CARD PACKS · OPEN IN THE ALBUM</value>
+  </data>
+  <data name="Album.Open" xml:space="preserve">
+    <value>Open pack</value>
+  </data>
+  <data name="Album.RevealAll" xml:space="preserve">
+    <value>Reveal all</value>
+  </data>
+  <data name="Album.Continue" xml:space="preserve">
+    <value>Continue collecting</value>
+  </data>
+  <data name="Album.Summary" xml:space="preserve">
+    <value>{0} / 136 cards · {1} / 16 themes complete · {2:N0} packs opened · {3} / 500 duplicate points</value>
+  </data>
+  <data name="Album.Help" xml:space="preserve">
+    <value>Collect packs from challenges, Season Pass milestones, full Vaults, Prestige and the Shop. Every pack contains five cards. 500 duplicate points become a Common pack.</value>
+  </data>
+  <data name="Album.SafeReveal" xml:space="preserve">
+    <value>Five cards are safely saved. Reveal each card or reveal all.</value>
+  </data>
+  <data name="Album.New" xml:space="preserve">
+    <value>NEW TO YOUR ALBUM</value>
+  </data>
+  <data name="Album.Duplicate" xml:space="preserve">
+    <value>DUPLICATE · +{0} PTS</value>
+  </data>
+  <data name="Album.Result" xml:space="preserve">
+    <value>{0} new cards · +{1} duplicate points · {2} bonus packs. Album progress is saved.</value>
+  </data>
+  <data name="Album.Undiscovered" xml:space="preserve">
+    <value>UNDISCOVERED</value>
+  </data>
+  <data name="Album.RevealCard" xml:space="preserve">
+    <value>Reveal card {0}</value>
+  </data>
+  <data name="Album.Buy" xml:space="preserve">
+    <value>Buy · ◆ {0:N0}</value>
+  </data>
+  <data name="Album.UltraRare" xml:space="preserve">
+    <value>ULTRA RARE</value>
+  </data>
+  <data name="Album.Complete" xml:space="preserve">
+    <value>COMPLETE</value>
+  </data>
+  <data name="Album.FiveCards" xml:space="preserve">
+    <value>FIVE CARDS</value>
+  </data>
+  <data name="Album.Odds" xml:space="preserve">
+    <value>Five cards. One guaranteed {0} or better. Other regular slots: {1}. Each slot first has a {2:P2} chance for an ultra rare theme. Duplicate points: 5 / 10 / 25 / 75 / 200. 500 points = a Common pack.</value>
+  </data>
+  <data name="Album.ArtHelp" xml:space="preserve"><value>Select a collected card to inspect its illustration.</value></data>
+  <data name="Album.CloseArtwork" xml:space="preserve"><value>Back to album</value></data>
+  <data name="Album.BackToAlbum" xml:space="preserve"><value>Back to album</value></data>
+</root>

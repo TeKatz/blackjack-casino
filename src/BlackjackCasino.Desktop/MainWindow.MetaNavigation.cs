@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Documents;
 using System.Windows.Media;
+using System.Windows.Threading;
 
 namespace BlackjackCasino.Desktop;
 
@@ -32,11 +33,20 @@ public partial class MainWindow
         if (progressionController is null) return;
         progressionController.AccruePlaytime();
         ProcessLatestCompletedRound();
-        var page = new ProgressionWindow(progressionController);
+        var page = new ProgressionWindow(progressionController, AnimationsEnabled, SoundEnabled);
+        page.RemoveAlbumTab();
         page.ConfigureEmbeddedPresentation(CloseMetaPage);
         if (page.Content is FrameworkElement content)
             content.Loaded += (_, _) => page.SelectTab(tab);
         ShowMetaPage(page);
+    }
+
+    private void OpenCollectionAlbumPage()
+    {
+        if (progressionController is null || MetaPageOpen) return;
+        progressionController.AccruePlaytime();
+        ProcessLatestCompletedRound();
+        ShowMetaPage(new CollectionAlbumPage(progressionController, AnimationsEnabled, SoundEnabled, CloseMetaPage));
     }
 
     private void ShowMetaPage(Window shell)
@@ -60,6 +70,7 @@ public partial class MainWindow
             KeyboardNavigation.SetTabNavigation(metaOverlay, KeyboardNavigationMode.Cycle);
             KeyboardNavigation.SetControlTabNavigation(metaOverlay, KeyboardNavigationMode.Cycle);
             KeyboardNavigation.SetDirectionalNavigation(metaOverlay, KeyboardNavigationMode.Contained);
+            metaOverlay.AddHandler(Keyboard.PreviewKeyDownEvent, new KeyEventHandler(MetaOverlay_PreviewKeyDown), true);
             metaOverlay.Children.Add(metaHost);
             Grid.SetRowSpan(metaOverlay, Math.Max(1, CasinoRoot.RowDefinitions.Count));
             Grid.SetColumnSpan(metaOverlay, Math.Max(1, CasinoRoot.ColumnDefinitions.Count));
@@ -85,12 +96,52 @@ public partial class MainWindow
         content.UseLayoutRounding = true;
         content.SnapsToDevicePixels = true;
         content.Focusable = true;
-        // These pages are visual content only: never Show(), ShowDialog() or create a HWND.
         shell.Content = null;
         metaPages.Push(new MetaPage(shell, content));
         metaHost!.Content = content;
         metaOverlay.Visibility = Visibility.Visible;
         Dispatcher.BeginInvoke(() => content.MoveFocus(new TraversalRequest(FocusNavigationDirection.First)));
+    }
+
+    private void MetaOverlay_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Escape || metaHost?.Content is not FrameworkElement content ||
+            !metaPages.TryPeek(out MetaPage? page) || page.Shell is not CollectionAlbumPage)
+            return;
+
+        Border? inspector = VisualDescendants<Border>(content)
+            .FirstOrDefault(border => border.Name == "AlbumArtOverlay" && border.IsVisible);
+        if (inspector is null) return;
+
+        string? cardId = VisualDescendants<Image>(inspector)
+            .FirstOrDefault(image => image.Name == "CollectionCardArt")?.Tag as string;
+        if (string.IsNullOrEmpty(cardId)) return;
+
+        Button? cardButton = VisualDescendants<Button>(content)
+            .FirstOrDefault(button => Equals(button.Tag, "inspect:" + cardId));
+        if (cardButton is null) return;
+
+        // The album closes the inspector later in this routed key event. Restore focus only after
+        // layout/enabled-state propagation is complete; otherwise WPF can leave focus on the now
+        // hidden close button even though the card itself is available again.
+        Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle, () =>
+        {
+            if (!cardButton.IsVisible || !cardButton.IsEnabled) return;
+            cardButton.BringIntoView();
+            FocusManager.SetFocusedElement(FocusManager.GetFocusScope(cardButton), cardButton);
+            cardButton.Focus();
+            Keyboard.Focus(cardButton);
+        });
+    }
+
+    private static IEnumerable<T> VisualDescendants<T>(DependencyObject root) where T : DependencyObject
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+        {
+            DependencyObject child = VisualTreeHelper.GetChild(root, i);
+            if (child is T match) yield return match;
+            foreach (T nested in VisualDescendants<T>(child)) yield return nested;
+        }
     }
 
     private void CloseMetaPage()
@@ -99,6 +150,7 @@ public partial class MainWindow
         metaHost!.Content = null;
         page.Shell.Close();
         RefreshProfileButton();
+        RefreshCollectionAlbumHeaderButton();
         if (metaPages.TryPeek(out MetaPage? previous))
         {
             if (previous.Shell is PlayerProfileWindow profile) profile.RefreshPlayer();

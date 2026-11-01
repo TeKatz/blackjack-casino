@@ -69,6 +69,7 @@ public partial class MainWindow
         Panel.SetZIndex(headerActions, 1);
 
         BuildChallengeHeaderButton(headerActions);
+        BuildCollectionAlbumHeaderButton(headerActions);
         headerActions.Children.Add(profileButton);
 
         vaultHeaderTitle = new TextBlock
@@ -129,6 +130,7 @@ public partial class MainWindow
     private void RefreshVaultButton()
     {
         RefreshChallengeHeaderButton();
+        RefreshCollectionAlbumHeaderButton();
         if (vaultButton is null || vaultHeaderTitle is null || vaultHeaderAmount is null || vaultHeaderProgress is null || progressionController is null)
         {
             return;
@@ -313,8 +315,6 @@ public partial class MainWindow
         shell.Children.Add(view);
         modal.Child = shell;
 
-        // Keep the dialog visually compact at normal sizes, but shrink it as one unit when the
-        // main window approaches its minimum dimensions. This preserves the authored layout.
         var scaler = new Viewbox
         {
             Margin = new Thickness(28),
@@ -361,6 +361,7 @@ public partial class MainWindow
 
         PlayerProfileState profile = progressionController.Profile;
         CasinoVaultState before = CopyVault(profile.Vault);
+        var collectionBefore = ManorPersistence.Clone(profile.Collection);
         bool preparedDurably = false;
         try
         {
@@ -376,11 +377,10 @@ public partial class MainWindow
         }
         catch
         {
-            // If the pending receipt never reached disk there is nothing to recover, so restore
-            // the live state as well. Once durable, recovery owns the transition and must remain.
             if (!preparedDurably)
             {
                 profile.Vault = before;
+                profile.Collection = collectionBefore;
             }
             throw;
         }
@@ -414,8 +414,6 @@ public partial class MainWindow
                 Empire = empire?.Snapshot ?? preferences.Empire,
             };
 
-            // Persist the bankroll and receipt together before projecting it into the live table.
-            // If this write fails, the durable profile still contains the pending payout.
             if (!testSession)
             {
                 PlayerStateStore.SaveOrThrow(applied);
@@ -432,8 +430,6 @@ public partial class MainWindow
             }
             catch
             {
-                // The bankroll receipt already prevents a duplicate payout. Re-create the pending
-                // marker in memory so a later save/restart can finish the profile side safely.
                 profile.Vault.PendingPayoutId = payoutId;
                 profile.Vault.PendingPayout = pendingPayout;
                 profile.Vault.PendingBasePayout = pendingBasePayout;

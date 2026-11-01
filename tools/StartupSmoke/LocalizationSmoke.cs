@@ -38,7 +38,7 @@ internal static class LocalizationSmoke
         Require(Find<TextBlock>(window).Any(text => text.Text == "Sprache"),
             "Language selector label did not switch to German.");
         Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "Eine andere Art von Nacht."),
-            "Casino lobby headline did not switch to German.");
+            "Casino lobby headline did not switch to German without a restart.");
         Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "DIE SAMTTISCHE"),
             "Blackjack lobby subtitle did not switch to German.");
         Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "PLATZ NEHMEN   →"),
@@ -56,13 +56,11 @@ internal static class LocalizationSmoke
         window.UpdateLayout();
         Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text.StartsWith("DEINE HAND", StringComparison.Ordinal)),
             "Blackjack player-hand label remained English during an actual hand.");
-        Button? stand = Find<Button>(window).FirstOrDefault(button => button.Name == "StandButton" && button.IsEnabled);
-        if (stand is not null)
-        {
-            Click(stand);
-            await Task.Delay(100);
-            window.UpdateLayout();
-        }
+
+        // Settlement can include dealer presentation/animation work. Do not assume that a fixed 100 ms
+        // delay is enough before testing another header surface; wait for the table to become deal-ready.
+        await WaitForBlackjackSettlement(window);
+
         TextBlock status = Find<TextBlock>(window).Single(text => text.Name == "StatusText");
         Require(!status.Text.Contains("You win", StringComparison.Ordinal) && !status.Text.Contains("You lose", StringComparison.Ordinal),
             $"Blackjack settlement remained English: {status.Text}");
@@ -186,27 +184,39 @@ internal static class LocalizationSmoke
                !text.Contains("LOUNGE", StringComparison.OrdinalIgnoreCase);
     }
 
+    private static async Task WaitForBlackjackSettlement(MainWindow window)
+    {
+        for (int attempt = 0; attempt < 120; attempt++)
+        {
+            window.UpdateLayout();
+            Button? deal = Find<Button>(window).FirstOrDefault(button => button.Name == "DealButton");
+            if (deal is { IsEnabled: true }) return;
+
+            Button? stand = Find<Button>(window).FirstOrDefault(button => button.Name == "StandButton" && button.IsEnabled);
+            if (stand is not null) Click(stand);
+
+            await Task.Delay(75);
+        }
+
+        TextBlock? status = Find<TextBlock>(window).FirstOrDefault(text => text.Name == "StatusText");
+        throw new InvalidOperationException("Localized Blackjack hand did not return to a deal-ready state. Status: " + status?.Text);
+    }
+
     private static async Task<Grid> OpenVault(MainWindow window, Button vault)
     {
-        for (int attempt = 0; attempt < 25; attempt++)
-        {
-            Button? stand = Find<Button>(window).FirstOrDefault(button => button.Name == "StandButton" && button.IsEnabled);
-            if (stand is not null)
-            {
-                Click(stand);
-                await Task.Delay(120);
-                window.UpdateLayout();
-            }
+        await WaitForBlackjackSettlement(window);
+        Click(vault);
 
-            Click(vault);
-            await Task.Delay(120);
+        for (int attempt = 0; attempt < 40; attempt++)
+        {
+            await Task.Delay(50);
             window.UpdateLayout();
             Grid? overlay = Find<Grid>(window).FirstOrDefault(grid => grid.Name == "CasinoVaultOverlay" && grid.IsVisible);
             if (overlay is not null) return overlay;
         }
 
         TextBlock? status = Find<TextBlock>(window).FirstOrDefault(text => text.Name == "StatusText");
-        throw new InvalidOperationException("Casino Vault overlay did not open after the localized Blackjack hand settled. Status: " + status?.Text);
+        throw new InvalidOperationException("Casino Vault overlay did not open after Blackjack reached its deal-ready state. Status: " + status?.Text);
     }
 
     private static string SelectedLanguageName(ComboBox combo)

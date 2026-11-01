@@ -2,7 +2,7 @@ name: Development Release
 
 on:
   push:
-    branches: ["feature/memory-foundation"]
+    branches: ["feature/collectible-card-album"]
   workflow_dispatch:
 
 permissions:
@@ -14,8 +14,8 @@ concurrency:
 
 jobs:
   publish-development:
-    # The shared in-app Development channel is pinned to the active Memory foundation branch.
-    if: github.ref == 'refs/heads/feature/memory-foundation'
+    # The shared in-app Development channel is pinned to the collectible card album branch.
+    if: github.ref == 'refs/heads/feature/collectible-card-album'
     runs-on: windows-latest
     timeout-minutes: 20
 
@@ -41,6 +41,9 @@ jobs:
 
       - name: Localization resource parity
         run: python tools/check_localization.py
+
+      - name: Collection artwork coverage
+        run: python -X warn_default_encoding -W error::EncodingWarning tools/check_collection_art.py
 
       - name: Restore
         run: dotnet restore BlackjackCasino.sln
