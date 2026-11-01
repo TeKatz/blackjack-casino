@@ -103,6 +103,7 @@ internal static class LoungeVisualUpgrade
         {
             Button? localBack = FindDescendant<Button>(hub, button => button.Name == "WordSearchBack");
             if (localBack is not null) localBack.Visibility = Visibility.Collapsed;
+            SetHeaderGamesLabel(hub);
             PolishWordSearchDifficultyCards(hub);
         }));
     }
@@ -113,8 +114,11 @@ internal static class LoungeVisualUpgrade
         hub.Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() =>
         {
             Button? localBack = FindDescendant<Button>(hub, button =>
-                string.Equals(button.Content as string, "← LOUNGE GAMES", StringComparison.OrdinalIgnoreCase));
+                button.Content is string text &&
+                (text.Contains("LOUNGE GAMES", StringComparison.OrdinalIgnoreCase) ||
+                 text.Contains("LOUNGE-SPIELE", StringComparison.OrdinalIgnoreCase)));
             if (localBack is not null) localBack.Visibility = Visibility.Collapsed;
+            SetHeaderGamesLabel(hub);
         }));
     }
 
@@ -128,10 +132,18 @@ internal static class LoungeVisualUpgrade
             if (header is null) return;
 
             button.Visibility = Visibility.Collapsed;
-            header.Content = "← GAMES";
+            header.Content = LoungeGameMenu.GamesBackLabel();
             header.Tag = (Action)(() => button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
             header.Visibility = Visibility.Visible;
         }));
+    }
+
+    private static void SetHeaderGamesLabel(DependencyObject origin)
+    {
+        Window? window = Window.GetWindow(origin);
+        if (window is null) return;
+        Button? header = FindDescendant<Button>(window, button => button.Name == "LoungeGamesHeaderBack");
+        if (header is not null) header.Content = LoungeGameMenu.GamesBackLabel();
     }
 
     private static void HideHeaderGamesButton(DependencyObject origin)
@@ -153,13 +165,17 @@ internal static class LoungeVisualUpgrade
         if (existing is not null) return existing;
 
         Button? close = FindDescendant<Button>(window, button =>
-            string.Equals(button.Content as string, "RETURN TO CLUB", StringComparison.Ordinal));
+            button.Name != "LoungeGamesHeaderBack" &&
+            button.Content is string text &&
+            text.Contains("CLUB", StringComparison.OrdinalIgnoreCase) &&
+            (text.Contains("RETURN", StringComparison.OrdinalIgnoreCase) ||
+             text.Contains("ZURÜCK", StringComparison.OrdinalIgnoreCase)));
         if (close is null) return null;
 
         var back = new Button
         {
             Name = "LoungeGamesHeaderBack",
-            Content = "← GAMES",
+            Content = LoungeGameMenu.GamesBackLabel(),
             Foreground = LoungeUi.Ink("#EEE4D4"),
             Background = LoungeUi.Ink("#17282A"),
             BorderBrush = LoungeUi.Ink("#4A6661"),
