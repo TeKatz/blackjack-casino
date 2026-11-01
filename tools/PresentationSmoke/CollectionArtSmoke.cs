@@ -63,6 +63,9 @@ internal static partial class Program
         foreach (var size in new[] { (1440d, 900d), (1920d, 1080d) })
         {
             window.Width = size.Item1; window.Height = size.Item2; window.UpdateLayout(); await Task.Delay(30);
+            // Resizing intentionally rebuilds the native card at the new resolution.
+            inspectorImage = Find<Image>(inspector).Single(i => i.Name == "CollectionCardArt" && Equals(i.Tag, ownedId));
+            inspectorCard = Find<Border>(inspector).Single(b => b.Name == "CollectionCard" && Equals(b.Tag, ownedId));
             RequireWithin(window, Find<Button>(inspector).Single(b => b.Name == "AlbumArtClose"), "Artwork inspector close");
             RequireWithin(window, inspectorImage, "Artwork inspector illustration");
             RequireWithin(window, inspectorCard, "Artwork inspector card");

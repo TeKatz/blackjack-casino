@@ -111,7 +111,8 @@ internal static class KniffelSmoke
         Require(view.Game.RollsUsed == 2, "Cancelling restart discarded the turn.");
         Click(view, "KniffelBackButton");
         animationSetting.IsChecked = false;
-        preferencesField.SetValue(window, previousPreferences);
+        AppPreferences currentPreferences = (AppPreferences)preferencesField.GetValue(window)!;
+        preferencesField.SetValue(window, currentPreferences.WithPresentation("kniffel", previousPreferences.Presentation("kniffel")));
         File.WriteAllText(Path.Combine(output, "kniffel-result.txt"),
             "PASS: embedded lobby entry; five vector dice; 13 scoring rows; hold/reroll; score selection and confirmation; glow; full game; checkpoints; animation locking, settlement and mid-animation return; restart cancellation; 1080x720 and 1280x900 captures.");
     }
