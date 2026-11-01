@@ -153,14 +153,15 @@ public sealed class CollectionTests
     }
 
     [Fact]
-    public void SeasonAwardsAllCrossedMilestonesOnceAndPrestigePreservesAlbum()
+    public void LegacySeasonAwardsAllCrossedMilestonesOnceAndPrestigePreservesAlbum()
     {
-        var profile = new PlayerProfileState();
+        SeasonDefinition legacy = SeasonCatalog.Get("season-1-midnight-shift");
+        var profile = new PlayerProfileState { ActiveSeasonId = legacy.Id };
         var service = new ProgressionService(profile);
-        service.GrantSeasonExperience(SeasonCatalog.Current.Id, 120_000);
-        int packs = 3 + SeasonCatalog.Current.Tiers.Count(t => CollectionCatalog.SeasonPack(t.Tier) is not null);
+        service.GrantSeasonExperience(legacy.Id, legacy.Tiers[^1].RequiredExperience);
+        int packs = 3 + legacy.Tiers.Count(t => CollectionCatalog.SeasonPack(t.Tier) is not null);
         Assert.Equal(packs, profile.Collection.Packs.Values.Sum());
-        service.GrantSeasonExperience(SeasonCatalog.Current.Id, 1);
+        service.GrantSeasonExperience(legacy.Id, 1);
         Assert.Equal(packs, profile.Collection.Packs.Values.Sum());
         var opening = CollectionService.OpenPack(profile, CollectionRarity.Common, new Random(4)).Opening!;
         string[] owned = profile.Collection.OwnedCardIds.ToArray();
