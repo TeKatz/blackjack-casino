@@ -199,8 +199,9 @@ internal static partial class Program
             batchPage.Close();
         }
 
-        // Regression for the reported stale count: four guaranteed-new Common packs must become three
-        // after Open Pack, and the result screen itself must immediately offer the next Open Pack / Open All.
+        // Regression for the reported stale count: four Common packs must become three after Open Pack,
+        // and the result screen itself must immediately offer the next Open Pack / Open All. The badge
+        // expectations are taken from the persisted receipt because same-pack repeats can already be duplicates.
         var countProfile = ManorPersistence.Clone(profile);
         countProfile.Collection.PendingOpening = null;
         countProfile.Collection.OwnedCardIds.Clear();
@@ -217,6 +218,12 @@ internal static partial class Program
             Button countAll = Find<Button>(countPage).Single(b => b.Name == "AlbumCollect" && b.IsVisible);
             Require(Equals(countAll.Content, "Open All Packs (4)"), "Four-pack staging count is wrong before opening");
             countPrimary.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+
+            CollectionOpening? countOpening = countProfile.Collection.PendingOpening;
+            Require(countOpening is not null, "Open Pack did not persist a receipt for badge verification");
+            int expectedNew = countOpening.Cards.Count(c => c.IsNew);
+            int expectedDuplicates = countOpening.Cards.Count - expectedNew;
+
             for (int i = 0; i < 140 && countProfile.Collection.PendingOpening is not null; i++)
             {
                 countPage.UpdateLayout();
@@ -231,11 +238,19 @@ internal static partial class Program
             Require(Equals(countAll.Content, "Open All Packs (3)"), "Open All did not refresh from four packs to three");
 
             Border countStage = Find<Border>(countPage).Single(b => b.Name == "AlbumOpeningStage");
-            Border[] newBadges = Find<Border>(countStage).Where(b => b.Name == "AlbumRevealResultBadge").ToArray();
-            Require(newBadges.Length == CollectionCatalog.CardsPerPack && newBadges.All(b => Equals(b.Tag, "NEW")),
-                "Guaranteed-new pack did not show five NEW result badges");
-            Require(newBadges.All(b => b.BorderBrush is SolidColorBrush brush && brush.Color.G > brush.Color.R && brush.Color.G > brush.Color.B),
+            Border[] resultBadges = Find<Border>(countStage).Where(b => b.Name == "AlbumRevealResultBadge").ToArray();
+            Require(resultBadges.Length == CollectionCatalog.CardsPerPack,
+                "Completed pack did not show five result badges");
+            Border[] newBadges = resultBadges.Where(b => Equals(b.Tag, "NEW")).ToArray();
+            Border[] duplicateResultBadges = resultBadges.Where(b => Equals(b.Tag, "DUPLICATE")).ToArray();
+            Require(newBadges.Length == expectedNew && duplicateResultBadges.Length == expectedDuplicates,
+                "Reveal result badges do not match the saved opening receipt");
+            Require(newBadges.Length > 0 && newBadges.All(b => b.BorderBrush is SolidColorBrush brush && brush.Color.G > brush.Color.R && brush.Color.G > brush.Color.B),
                 "NEW result badges are not using the green treatment");
+            Require(duplicateResultBadges.All(b => b.BorderBrush is SolidColorBrush brush && brush.Color.B > brush.Color.G && brush.Color.R > 150),
+                "Same-pack duplicate badges are not using the lavender treatment");
+            Require(duplicateResultBadges.SelectMany(Find<TextBlock>).All(t => t.Text.StartsWith("DUPLICATE +", StringComparison.Ordinal)),
+                "Same-pack duplicate result badges do not expose their +X value");
             Capture(countPage, "album-pack-result-actions");
             countPage.Close();
         }
