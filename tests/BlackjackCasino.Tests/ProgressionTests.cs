@@ -89,18 +89,21 @@ public sealed class ProgressionTests
     }
 
     [Fact]
-    public void CurrentSeason_IsLongFormAndRequiresOneHundredTwentyThousandXp()
+    public void CurrentSeason_IsThirdLongFormPass()
     {
         SeasonDefinition season = SeasonCatalog.Current;
 
-        Assert.Equal("Velvet Eclipse", season.Name);
-        Assert.Equal(100, season.Tiers.Count);
-        Assert.Equal(120_000, season.Tiers[^1].RequiredExperience);
+        Assert.Equal("Neon Dynasty", season.Name);
+        Assert.Equal("season-3-neon-dynasty", season.Id);
+        Assert.Equal(120, season.Tiers.Count);
+        Assert.Equal(232_800, season.Tiers[^1].RequiredExperience);
+        Assert.False(season.Archived);
         Assert.False(season.RewardsEnabled);
+        Assert.Equal(3, SeasonCatalog.All.Count);
     }
 
     [Fact]
-    public void CurrentSeason_UsesIncreasingTierCostsAboveLegacyRate()
+    public void CurrentSeason_UsesIncreasingTierCostsAbovePreviousPasses()
     {
         SeasonDefinition season = SeasonCatalog.Current;
         long previous = 0;
@@ -113,7 +116,10 @@ public sealed class ProgressionTests
         }
 
         Assert.All(tierCosts, cost => Assert.True(cost > 200));
+        Assert.Equal(512, tierCosts[0]);
+        Assert.Equal(3_368, tierCosts[^1]);
         Assert.True(tierCosts[^1] > tierCosts[0]);
+        Assert.True(season.Tiers[^1].RequiredExperience > SeasonCatalog.Get("season-2-velvet-eclipse").Tiers[^1].RequiredExperience);
     }
 
     [Fact]
@@ -130,7 +136,21 @@ public sealed class ProgressionTests
         Assert.Equal(0, award.CoinsEarned);
         Assert.Empty(award.CosmeticsUnlocked);
         Assert.Equal(321, profile.Coins);
-        Assert.DoesNotContain("portrait-eclipse-raven", profile.OwnedCosmeticIds);
+    }
+
+    [Fact]
+    public void VelvetEclipse_RemainsLegacyPassWithOriginalRewards()
+    {
+        SeasonDefinition season = SeasonCatalog.Get("season-2-velvet-eclipse");
+
+        Assert.Equal("Velvet Eclipse", season.Name);
+        Assert.True(season.Archived);
+        Assert.True(season.RewardsEnabled);
+        Assert.Equal(100, season.Tiers.Count);
+        Assert.Equal(120_000, season.Tiers[^1].RequiredExperience);
+        Assert.Equal("portrait-eclipse-raven", season.Tiers[14].CosmeticId);
+        Assert.Equal("portrait-eclipse-sovereign", season.Tiers[99].CosmeticId);
+        Assert.Equal(500, season.Tiers[99].Coins);
     }
 
     [Fact]
