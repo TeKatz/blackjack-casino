@@ -123,7 +123,7 @@ internal sealed class LoungeGameMenu : UserControl
     }
 
     internal static string GamesBackLabel() =>
-        Localization.Language == UiLanguagePreference.German ? "← SPIELE" : "← GAMES";
+        Localization.Language == UiLanguagePreference.German ? "← LOUNGE-SPIELE" : "← LOUNGE GAMES";
 
     private void OpenHosted(LoungeHostedGame module)
     {
