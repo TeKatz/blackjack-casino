@@ -65,7 +65,8 @@ internal static partial class Program
         window.UpdateLayout();
         await Task.Delay(35);
         Require(!inspector.IsVisible, "Escape did not close the artwork inspector");
-        Require(selected.IsVisible && selected.IsEnabled && selected.IsKeyboardFocused, "Escape left the album or lost the selected card focus");
+        Require(selected.IsVisible && selected.IsEnabled && selected.IsKeyboardFocused,
+            $"Escape focus state invalid: visible={selected.IsVisible}, enabled={selected.IsEnabled}, keyboardFocused={selected.IsKeyboardFocused}, focusedElement={Keyboard.FocusedElement?.GetType().Name ?? "null"}");
         Require(Find<Grid>(window).Any(g => g.Name == "CollectionAlbumRoot" && g.IsVisible), "Escape closed the dedicated album page");
 
         var root = (Grid)window.Content;
