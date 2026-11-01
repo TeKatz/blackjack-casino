@@ -59,6 +59,10 @@ internal static partial class Program
         foreach (Button card in Find<Button>(regularCards).Where(b => b.Tag is string tag && tag.StartsWith("inspect:", StringComparison.Ordinal)))
             RequireWithin(window, card, "Album card at 1920x1080");
         RequireWithin(window, Find<TextBlock>(window).Single(t => t.Name == "AlbumSummary"), "Album summary at 1920x1080");
+        TextBlock duplicatePoints = Find<TextBlock>(window).Single(t => t.Name == "AlbumDuplicatePoints");
+        Require(duplicatePoints.Text.Contains(profile.Collection.DuplicatePoints.ToString(), StringComparison.Ordinal)
+            && duplicatePoints.Text.Contains(CollectionCatalog.DuplicatePackCost.ToString(), StringComparison.Ordinal),
+            "Duplicate recycling does not consistently expose the numeric point total");
         Capture(window, "album-dedicated-1920");
 
         // Return once and reopen through the header shortcut so both requested access paths stay covered.
@@ -69,17 +73,40 @@ internal static partial class Program
         await Task.Delay(60); window.UpdateLayout();
         Require(Find<Grid>(window).Any(g => g.Name == "CollectionAlbumRoot" && g.IsVisible), "Header Album shortcut did not open the dedicated page");
 
+        // Clicking a pack now stages the sealed five-card overview. Inventory and RNG must remain
+        // untouched until the explicit Open 1 Pack / Open All Packs confirmation.
         long opened = profile.Collection.PacksOpened;
+        int commonPacksBeforeStage = profile.Collection.Packs.GetValueOrDefault(CollectionRarity.Common);
         Find<Button>(window).Single(b => Equals(b.Tag, CollectionRarity.Common) && b.IsVisible)
             .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         window.UpdateLayout();
-        Require(profile.Collection.PacksOpened == opened + 1, "Open did not consume one pack");
+        Require(profile.Collection.PacksOpened == opened, "Selecting a pack consumed it before confirmation");
+        Require(profile.Collection.Packs.GetValueOrDefault(CollectionRarity.Common) == commonPacksBeforeStage,
+            "Selecting a pack changed inventory before confirmation");
+        Require(profile.Collection.PendingOpening is null, "Selecting a pack rolled cards before confirmation");
+        Require(Find<Border>(window).Any(b => b.Name == "AlbumOpeningStage" && b.IsVisible), "Pack staging overview is missing");
+
+        Button primaryOpen = Find<Button>(window).Single(b => b.Name == "AlbumRevealAll" && b.IsVisible);
+        Button secondaryOpen = Find<Button>(window).Single(b => b.Name == "AlbumCollect" && b.IsVisible);
+        Require(Equals(primaryOpen.Content, "Open 1 Pack"), "Pack staging primary action is not Open 1 Pack");
+        Require(secondaryOpen.Content?.ToString()?.StartsWith("Open All Packs", StringComparison.Ordinal) == true,
+            "Pack staging secondary action is not Open All Packs");
+        Require(primaryOpen.IsEnabled && secondaryOpen.IsEnabled, "Pack staging actions are not enabled");
+        Capture(window, "album-pack-staging");
+
+        primaryOpen.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        window.UpdateLayout();
+        Require(profile.Collection.PacksOpened == opened + 1, "Open 1 Pack did not consume exactly one pack");
+        Require(profile.Collection.Packs.GetValueOrDefault(CollectionRarity.Common) <= commonPacksBeforeStage,
+            "Open 1 Pack did not update inventory");
         CollectionOpening receipt = profile.Collection.PendingOpening!;
         Require(receipt.Cards.Count == 5, "Reveal receipt does not contain five cards");
-        Find<Button>(window).Single(b => b.Name == "AlbumRevealAll" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Require(Equals(primaryOpen.Content, "Reveal all"), "Opened pack did not switch the primary action to Reveal all");
+
+        primaryOpen.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         window.UpdateLayout();
-        Require(Find<Button>(window).Single(b => b.Name == "AlbumCollect" && b.IsVisible).IsEnabled, "Continue is disabled after reveal all");
-        Find<Button>(window).Single(b => b.Name == "AlbumRevealAll" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Require(secondaryOpen.IsEnabled, "Continue is disabled after reveal all");
+        primaryOpen.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         Require(profile.Collection.PacksOpened == opened + 1, "Repeated reveal consumed a pack");
         Capture(window, "album-five-card-reveal");
 
@@ -95,7 +122,7 @@ internal static partial class Program
         Require(reload.Collection.PacksOpened == opened + 1, "Resume consumed another pack");
         resumed.Close();
 
-        Find<Button>(window).Single(b => b.Name == "AlbumCollect" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        secondaryOpen.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         Require(profile.Collection.PendingOpening is null, "Continue failed to clear the original receipt");
         Require(receipt.Cards.All(c => profile.Collection.OwnedCardIds.Contains(c.CardId)), "Collected cards disappeared after Continue");
         await CheckCollectionArt(window, profile);
