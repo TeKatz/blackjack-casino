@@ -14,11 +14,22 @@ internal sealed partial class EmpireManagementView
         "Contracts" => "Contract Board", "Properties" => "Property Portfolio", _ => section,
     };
 
+    private static TextBox AutomationInput(string caption, string value, string name, Panel parent)
+    {
+        var row = new Grid { Margin = new Thickness(0, 2, 0, 7) };
+        row.ColumnDefinitions.Add(new ColumnDefinition()); row.ColumnDefinitions.Add(new ColumnDefinition());
+        TextBlock label = Text(caption, 11, "#ACC6D0"); label.VerticalAlignment = VerticalAlignment.Center; label.Margin = new Thickness(0, 0, 10, 0); row.Children.Add(label);
+        var input = new TextBox { Name = name, Text = value, MinWidth = 135, Height = 30, Padding = new Thickness(7, 4, 7, 4),
+            Background = Ink("#10212D"), Foreground = Ink("#F0E3CE"), BorderBrush = Ink("#507080"), CaretBrush = Ink("#E5C47E") };
+        System.Windows.Automation.AutomationProperties.SetName(input, caption);
+        Grid.SetColumn(input, 1); row.Children.Add(input); parent.Children.Add(row); return input;
+    }
+
     private void ArrangeEntries()
     {
         if (entries.Count == 0) return; // Research supplies its own constrained graph.
         foreach (UIElement element in body.Children) DockPanel.SetDock(element, Dock.Top);
-        const int pageSize = 4;
+        int pageSize = ActualHeight is > 0 and < 550 ? 2 : 4;
         int pages = Math.Max(1, (entries.Count + pageSize - 1) / pageSize);
         page = Math.Clamp(page, 0, pages - 1);
         if (pages > 1)

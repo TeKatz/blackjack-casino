@@ -89,22 +89,21 @@ internal sealed partial class EmpireManagementView
         layout.Children.Add(new Border { Background = Ink("#0B1B26"), BorderBrush = Ink("#344B59"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12),
             Margin = new Thickness(0, 0, 12, 0), Child = new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, Child = canvas } });
         EmpireResearchDefinition selectedNode = EmpireResearchCatalog.Find(researchSelection)!;
-        var inspector = new StackPanel { Margin = new Thickness(15) };
+        var inspector = new StackPanel { Margin = new Thickness(12) };
         inspector.Children.Add(Text(researchBranch.ToUpperInvariant() + " / LEGACY NODE", 9, "#D1B77D"));
-        inspector.Children.Add(Text(selectedNode.Name, 23, "#F1E0BD", true, new Thickness(0, 8, 0, 10)));
-        inspector.Children.Add(Text(selectedNode.Description, 13, "#C1D3D6"));
-        var requirementText = Text("", 12, "#C7B68F", margin: new Thickness(0, 16, 0, 12)); inspector.Children.Add(requirementText);
+        inspector.Children.Add(Text(selectedNode.Name, 20, "#F1E0BD", true, new Thickness(0, 8, 0, 10)));
+        inspector.Children.Add(Text(selectedNode.Description, 12, "#C1D3D6"));
+        var requirementText = Text("", 11, "#C7B68F", margin: new Thickness(0, 10, 0, 10)); inspector.Children.Add(requirementText);
         Button buy = Button("", "EmpireResearch_" + selectedNode.Id.Replace('-', '_'), () => Run(s => s.Research(selectedNode.Id, DateTimeOffset.UtcNow)));
         inspector.Children.Add(buy);
         updates.Add(() =>
         {
             int rank = service.ResearchRank(selectedNode.Id);
-            requirementText.Text = $"Rank {rank} / {selectedNode.MaxRank}\nCost per rank: {selectedNode.CostPerRank} LP\nAvailable: {service.LegacyPointsAvailable} LP\n\n"
+            requirementText.Text = $"Rank {rank} / {selectedNode.MaxRank} · {selectedNode.CostPerRank} LP per rank\nAvailable: {service.LegacyPointsAvailable} LP\n\n"
                 + (selectedNode.Prerequisite is null ? "Entry node · no prerequisite." : $"Requires {EmpireResearchCatalog.Find(selectedNode.Prerequisite)!.Name}\nRank {service.ResearchRank(selectedNode.Prerequisite)} / {selectedNode.PrerequisiteRank} required.");
             buy.Content = rank >= selectedNode.MaxRank ? "Mastered permanently" : service.CanResearch(selectedNode.Id) ? "Research next rank  ✦" : "Requirements not met";
             buy.IsEnabled = service.CanResearch(selectedNode.Id);
         });
-        inspector.Children.Add(Text("Legacy Points come from property prestige. Every rank survives a reset and benefits every property.", 11, "#8FAAB9", margin: new Thickness(0, 14, 0, 0)));
         Border detail = Card(new ScrollViewer { Content = inspector, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled });
         detail.Padding = new Thickness(0); Grid.SetColumn(detail, 1); layout.Children.Add(detail); body.Children.Add(layout);
     }

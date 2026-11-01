@@ -35,7 +35,7 @@ internal static class EmpireStrategySmoke
             Capture(window,Path.Combine(output,"empire-resort.png"));
             foreach (var size in new[] { (1080d,720d), (1366d,768d), (1920d,1080d) })
             {
-                window.Width = size.Item1; window.Height = size.Item2; window.UpdateLayout();
+                window.Width = size.Item1; window.Height = size.Item2; window.UpdateLayout(); await Task.Delay(80); window.UpdateLayout();
                 foreach (string name in new[] { "EmpireQuickResearch", "EmpireQuickProjects", "EmpireQuickManagers", "EmpireQuickEvents", "EmpireUpgradeButton", "EmpireClaimButton" })
                 {
                     Button visible = Find<Button>(window).Single(b => b.Name == name);
@@ -43,6 +43,9 @@ internal static class EmpireStrategySmoke
                     Require(visible.IsVisible && bounds.Width > 20 && bounds.Height > 10 && bounds.Left >= 0 && bounds.Right <= window.ActualWidth && bounds.Bottom <= window.ActualHeight,
                         $"Empire overview clips {name} at {size.Item1}x{size.Item2}.");
                 }
+                if (size.Item1 >= 1366)
+                    Require(Find<ScrollViewer>(window).Where(v => v.Name.StartsWith("EmpireQuick", StringComparison.Ordinal)).All(v => v.ScrollableHeight < 1),
+                        $"Empire command cards require scrolling at {size.Item1}x{size.Item2}.");
                 Capture(window, Path.Combine(output, $"empire-command-center-{(int)size.Item1}.png"));
             }
             Click(window, "EmpireQuickResearch");
@@ -99,7 +102,7 @@ internal static class EmpireStrategySmoke
                 Click(window,"EmpireTab_"+tab); window.UpdateLayout();
                 foreach(var size in new[]{(1080d,720d),(1440d,900d)})
                 {
-                    window.Width=size.Item1;window.Height=size.Item2;window.UpdateLayout();
+                    window.Width=size.Item1;window.Height=size.Item2;window.UpdateLayout();await Task.Delay(80);window.UpdateLayout();
                     Button back=Find<Button>(window).Single(b=>b.Name=="EmpireManagementClose");
                     Rect bounds=back.TransformToAncestor(window).TransformBounds(new Rect(back.RenderSize));
                     Require(bounds.Left>=0 && bounds.Top>=0 && bounds.Right<=window.ActualWidth && bounds.Bottom<=window.ActualHeight,"Management back button is clipped.");

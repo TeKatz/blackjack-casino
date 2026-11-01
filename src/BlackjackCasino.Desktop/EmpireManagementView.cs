@@ -20,6 +20,7 @@ internal sealed partial class EmpireManagementView : UserControl
     private readonly DockPanel body = new();
     private readonly List<UIElement> entries = [];
     private int page;
+    private int arrangedPageSize = 4;
     private readonly List<Action> updates = [];
     private readonly Dictionary<string, Button> tabs = new(StringComparer.Ordinal);
     private string selected = "Research";
@@ -53,6 +54,12 @@ internal sealed partial class EmpireManagementView : UserControl
         KeyboardNavigation.SetControlTabNavigation(this, KeyboardNavigationMode.Cycle);
         Loaded += (_, _) => back.Focus();
         PreviewKeyDown += (_, args) => { if (args.Key == Key.Escape) { close(); args.Handled = true; } };
+        SizeChanged += (_, _) =>
+        {
+            int nextSize = ActualHeight is > 0 and < 550 ? 2 : 4;
+            if (nextSize == arrangedPageSize || selected is "Automation" or "Research") return;
+            arrangedPageSize = nextSize; page = 0; Build();
+        };
         Build();
     }
     internal void Refresh()
@@ -94,12 +101,16 @@ internal sealed partial class EmpireManagementView : UserControl
         {
             var status = Text("", 12, "#A8D9BB");
             var members = Text("", 11, "#9EBBAA");
-            var stack = new StackPanel(); stack.Children.Add(status); stack.Children.Add(members);
+            var progress = new ProgressBar { Name = "EmpireSynergyProgress_" + definition.Id.Replace('-', '_'), Minimum = 0, Maximum = 1, Height = 7,
+                Foreground = Ink("#CEB47A"), Background = Ink("#0C202D"), Margin = new Thickness(0, 8, 0, 8) };
+            var stack = new StackPanel(); stack.Children.Add(status); stack.Children.Add(progress); stack.Children.Add(members);
             Row(definition.Name, definition.Description, stack);
             updates.Add(() =>
             {
                 EmpireSynergyStatus current = service.Synergies.Single(s => s.Definition.Id == definition.Id);
                 status.Text = $"Tier {current.Tier}/{definition.Levels.Length} · +{current.Bonus:P1} production" + (current.NextLevel is int next ? $" · next: every member at level {next}" : " · CIRCUIT COMPLETE ✦");
+                progress.Value = current.NextLevel is int target ? Math.Clamp((double)current.MinimumLevel / target, 0, 1) : 1;
+                progress.ToolTip = current.NextLevel is int goal ? $"Lowest member: level {current.MinimumLevel} / {goal}" : "All tiers complete";
                 members.Text = string.Join("   /   ", EmpireCatalog.Departments.Where(room => room.Floor <= definition.MaximumFloor && (room.Tags & definition.Members) != 0).Select(room => $"{room.Name} {service.Level(room.Id)}"));
             });
         }
@@ -153,17 +164,17 @@ internal sealed partial class EmpireManagementView : UserControl
         form.ColumnDefinitions.Add(new ColumnDefinition()); form.ColumnDefinitions.Add(new ColumnDefinition());
         var settings = new StackPanel { Margin = new Thickness(8, 0, 24, 0) };
         var prioritiesPanel = new StackPanel { Margin = new Thickness(8, 0, 8, 0) };
-        var enabled = new CheckBox { Name = "EmpireAutomationEnabled", Content = "Enable automatic upgrades", IsChecked = config.Enabled, Margin = new Thickness(0, 4, 0, 12), Foreground = Foreground };
+        var enabled = new CheckBox { Name = "EmpireAutomationEnabled", Content = "Enable automatic upgrades", IsChecked = config.Enabled, Margin = new Thickness(0, 4, 0, 8), Foreground = Foreground };
         settings.Children.Add(enabled);
-        TextBox reserve = Input("Minimum reserve (cr)", config.Reserve.ToString("0.##", CultureInfo.CurrentCulture), "EmpireAutomationReserve", settings);
-        TextBox percent = Input("Maximum budget per decision (%) · 1–50", (config.SpendPercent * 100).ToString("0.##", CultureInfo.CurrentCulture), "EmpireAutomationPercent", settings);
-        TextBox target = Input("Stop each department at level · 1–200", config.TargetLevel.ToString(CultureInfo.InvariantCulture), "EmpireAutomationTarget", settings);
+        TextBox reserve = AutomationInput("Reserve (cr)", config.Reserve.ToString("0.##", CultureInfo.CurrentCulture), "EmpireAutomationReserve", settings);
+        TextBox percent = AutomationInput("Budget / decision (%) · 1–50", (config.SpendPercent * 100).ToString("0.##", CultureInfo.CurrentCulture), "EmpireAutomationPercent", settings);
+        TextBox target = AutomationInput("Level target · 1–200", config.TargetLevel.ToString(CultureInfo.InvariantCulture), "EmpireAutomationTarget", settings);
         var mode = new ComboBox { Name = "EmpireAutomationMode", Width = 300, HorizontalAlignment = HorizontalAlignment.Left, ItemsSource = new[] { "Cheapest next milestone", "Priority order" }, SelectedIndex = config.CheapestMilestone ? 0 : 1, Margin = new Thickness(0, 4, 0, 8) };
         settings.Children.Add(mode);
         prioritiesPanel.Children.Add(Text("Priority queue", 19, "#E3D0AB", true));
-        prioritiesPanel.Children.Add(Text("Used by Priority order mode. Select a department to move it or remove it.", 11, "#A7C1CB"));
+        prioritiesPanel.ToolTip = "Used by Priority order mode. Select a department to move it or remove it.";
         var priorities = new ObservableCollection<EmpireDepartment>(config.Priorities.Select(id => EmpireCatalog.Find(id)!));
-        var list = new ListBox { Name = "EmpireAutomationPriority", ItemsSource = priorities, DisplayMemberPath = "Name", MinHeight = 100, Height = 145, HorizontalAlignment = HorizontalAlignment.Stretch, Background = Ink("#10212D"), Foreground = Foreground, BorderBrush = Ink("#456273"), Margin = new Thickness(0, 6, 0, 7) };
+        var list = new ListBox { Name = "EmpireAutomationPriority", ItemsSource = priorities, DisplayMemberPath = "Name", MinHeight = 90, Height = 100, HorizontalAlignment = HorizontalAlignment.Stretch, Background = Ink("#10212D"), Foreground = Foreground, BorderBrush = Ink("#456273"), Margin = new Thickness(0, 6, 0, 7) };
         prioritiesPanel.Children.Add(list);
         var add = new ComboBox { Width = 230, HorizontalAlignment = HorizontalAlignment.Left, ItemsSource = EmpireCatalog.Departments, DisplayMemberPath = "Name", SelectedIndex = 0 };
         prioritiesPanel.Children.Add(add);
@@ -274,7 +285,7 @@ internal sealed partial class EmpireManagementView : UserControl
     private static bool Decimal(string value, out decimal number) => decimal.TryParse(value, NumberStyles.Number, CultureInfo.CurrentCulture, out number);
     private static Button Button(string text, string name, Action action)
     {
-        var button = new Button { Name = name, Content = text, Padding = new Thickness(12, 7, 12, 7), Margin = new Thickness(0, 0, 7, 6), FontSize = 11 };
+        var button = new Button { Name = name, Content = text, Padding = new Thickness(12, 7, 12, 7), Margin = new Thickness(0, 0, 7, 6), FontSize = 11, Background = Ink("#192F3B"), BorderBrush = Ink("#41606A"), Foreground = Ink("#D8E4DF") };
         button.Click += (_, _) => action(); return button;
     }
     private static TextBlock Text(string text, double size = 12, string color = "#B7CDBD", bool bold = false, Thickness? margin = null) => new()

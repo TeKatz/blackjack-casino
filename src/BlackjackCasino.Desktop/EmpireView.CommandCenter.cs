@@ -21,6 +21,11 @@ internal sealed partial class EmpireView
     private readonly ColumnDefinition inspectorColumn = new() { Width = new GridLength(290) };
     private readonly TextBlock emptyRooms = Label("No rooms match this filter. Choose All rooms to see this floor.", 12, "#AFC5C6");
     private readonly List<TextBlock> commandDetails = [];
+    private readonly List<TextBlock> commandStates = [];
+    private readonly List<Button> compactSecondary = [];
+    private readonly List<StackPanel> commandPanels = [];
+    private readonly StackPanel circuitOverview = new() { Name = "EmpireCircuitOverview", Height = 148, Margin = new Thickness(0, 12, 9, 0) };
+    private Button? roomSynergyShortcut;
 
     private void BuildCommandCenter(Action back, string backLabel)
     {
@@ -119,7 +124,10 @@ internal sealed partial class EmpireView
 
         BuildCommandCards();
         // The cards use the space that used to be empty below the room gallery.
-        Grid.SetRow(commandGrid, 2); estate.Children.Add(commandGrid);
+        var operations = new Grid();
+        operations.RowDefinitions.Add(new RowDefinition()); operations.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        operations.Children.Add(commandGrid); BuildCircuitOverview(); Grid.SetRow(circuitOverview, 1); operations.Children.Add(circuitOverview);
+        Grid.SetRow(operations, 2); estate.Children.Add(operations);
         var ledger = new UniformGrid { Columns = 4, Margin = new Thickness(0, 12, 0, 0) };
         Ledger(lifetime, "LIFETIME CREDITS"); Ledger(cashClaimed, "CASH PAID"); Ledger(openRooms, "ROOMS OPERATING"); Ledger(levels, "TOTAL LEVELS");
         Grid.SetRow(ledger, 3); estate.Children.Add(ledger); overview.Children.Add(estate);
@@ -134,6 +142,17 @@ internal sealed partial class EmpireView
             inspectorColumn.Width = new GridLength(ActualWidth < 1150 ? 260 : 290);
             commandGrid.Columns = 4; commandGrid.Rows = 1;
             foreach (TextBlock detail in commandDetails) detail.Visibility = ActualHeight < 800 ? Visibility.Collapsed : Visibility.Visible;
+            foreach (Button secondary in compactSecondary) secondary.Visibility = ActualHeight < 800 ? Visibility.Collapsed : Visibility.Visible;
+            foreach (StackPanel panel in commandPanels) panel.Margin = new Thickness(ActualHeight < 800 ? 8 : 13);
+            circuitOverview.Visibility = ActualHeight >= 920 ? Visibility.Visible : Visibility.Collapsed;
+            bool compactInspector = ActualHeight < 920;
+            roomDescription.Visibility = roomBoosts.Visibility = prestigeBonus.Visibility = compactInspector ? Visibility.Collapsed : Visibility.Visible;
+            if (roomSynergyShortcut is not null) roomSynergyShortcut.Visibility = compactInspector ? Visibility.Collapsed : Visibility.Visible;
+            roomTitle.FontSize = compactInspector ? 22 : 25;
+            roomStats.Margin = new Thickness(0, compactInspector ? 7 : 12, 0, 5);
+            prestigeTitle.FontSize = compactInspector ? 16 : 18;
+            prestigeRequirement.TextWrapping = compactInspector ? TextWrapping.NoWrap : TextWrapping.Wrap;
+            prestigeRequirement.TextTrimming = TextTrimming.CharacterEllipsis;
             ResizeRooms();
         };
         KeyboardNavigation.SetTabNavigation(workspace, KeyboardNavigationMode.Cycle);
@@ -156,7 +175,7 @@ internal sealed partial class EmpireView
 
     private Border BuildRoomInspector()
     {
-        var content = new StackPanel { Margin = new Thickness(17) };
+        var content = new StackPanel { Margin = new Thickness(13) };
         content.Children.Add(Label("SELECTED DEPARTMENT", 9, "#D3B77F"));
         roomTitle.FontFamily = new FontFamily("Georgia"); roomTitle.FontSize = 25; roomTitle.Margin = new Thickness(0, 8, 0, 6);
         content.Children.Add(roomTitle); roomDescription.FontSize = 11; content.Children.Add(roomDescription);
@@ -172,7 +191,7 @@ internal sealed partial class EmpireView
             button.MinWidth = 0; bulkButtons[count] = button; amounts.Children.Add(button);
         }
         content.Children.Add(amounts); buyLabel.TextAlignment = TextAlignment.Center; buy.Content = buyLabel;
-        buy.Margin = new Thickness(0, 10, 0, 12); buy.Background = Ink("#305449"); buy.BorderBrush = Ink("#BFA26E");
+        buy.Margin = new Thickness(0, 7, 0, 8); buy.Background = Ink("#305449"); buy.BorderBrush = Ink("#BFA26E");
         buy.Click += (_, _) =>
         {
             int before = service.Level(selected);
@@ -182,13 +201,13 @@ internal sealed partial class EmpireView
         content.Children.Add(buy); content.Children.Add(Label("NEXT PRODUCTION MILESTONE", 9, "#C7B18A"));
         milestoneTrack.Children.Add(milestoneFill); milestoneTrack.SizeChanged += (_, _) => RefreshMilestone();
         content.Children.Add(milestoneTrack); content.Children.Add(milestone);
-        content.Children.Add(Command("View this room’s synergies  →", "EmpireRoomSynergies", () => OpenSection("Synergies")));
-        content.Children.Add(new Border { Height = 1, Background = Ink("#3C4E58"), Margin = new Thickness(0, 15, 0, 13) });
+        roomSynergyShortcut = Command("Explore synergy circuits  →", "EmpireRoomSynergies", () => OpenSection("Synergies")); content.Children.Add(roomSynergyShortcut);
+        content.Children.Add(new Border { Height = 1, Background = Ink("#3C4E58"), Margin = new Thickness(0, 9, 0, 9) });
         content.Children.Add(Label("THE NEXT CHAPTER", 9, "#D3B77F"));
         prestigeTitle.FontFamily = new FontFamily("Georgia"); prestigeTitle.Margin = new Thickness(0, 6, 0, 5); content.Children.Add(prestigeTitle);
         prestigeBonus.FontSize = 11; content.Children.Add(prestigeBonus);
         prestigeRequirement.Margin = new Thickness(0, 7, 0, 0); content.Children.Add(prestigeRequirement);
-        prestigeButton.Click += (_, _) => PrestigeClicked(); content.Children.Add(prestigeButton);
+        prestigeButton.Click += (_, _) => PrestigeClicked(); ToolTipService.SetShowOnDisabled(prestigeButton, true); content.Children.Add(prestigeButton);
         prestigeButton.ToolTip = "Prestige resets this property's credits and room levels. Research, projects, managers, contracts and other properties remain. Each prestige earns a Legacy Point.";
         Border panel = Surface(new ScrollViewer { Name = "EmpireInspectorScroll", Content = content, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled });
         panel.BorderBrush = Ink("#685F4B"); return panel;
@@ -253,14 +272,14 @@ internal sealed partial class EmpireView
 
     private StackPanel CommandCard(string icon, string caption, string route, string name, string accessibleName, out TextBlock state, out TextBlock detail)
     {
-        var content = new StackPanel { Margin = new Thickness(13) };
+        var content = new StackPanel { Margin = new Thickness(13) }; commandPanels.Add(content);
         Button heading = Command(icon + "  " + caption + "  ↗", name, () => OpenSection(route));
-        heading.FontSize = 10; heading.Padding = new Thickness(0, 2, 0, 8); heading.HorizontalContentAlignment = HorizontalAlignment.Left;
+        heading.MinHeight = 20; heading.Margin = new Thickness(0, 0, 0, 2); heading.FontSize = 10; heading.Padding = new Thickness(0, 2, 0, 6); heading.HorizontalContentAlignment = HorizontalAlignment.Left;
         heading.Background = Brushes.Transparent; heading.BorderThickness = new Thickness(0); heading.Foreground = Ink("#DDC08A");
         AutomationProperties.SetName(heading, accessibleName); content.Children.Add(heading);
-        state = Label("", 18, "#F2E6CD"); state.FontFamily = new FontFamily("Georgia"); state.Margin = new Thickness(0, 7, 0, 7); content.Children.Add(state);
+        state = Label("", 17, "#F2E6CD"); commandStates.Add(state); state.TextWrapping = TextWrapping.NoWrap; state.TextTrimming = TextTrimming.CharacterEllipsis; state.FontFamily = new FontFamily("Georgia"); state.Margin = new Thickness(0, 4, 0, 6); content.Children.Add(state);
         detail = Label("", 11, "#9FB7C1"); commandDetails.Add(detail); detail.MinHeight = 50; detail.Margin = new Thickness(0, 0, 0, 12); content.Children.Add(detail);
-        Border panel = Surface(new ScrollViewer { Content = content, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled });
+        Border panel = Surface(new ScrollViewer { Name = name + "Scroll", Content = content, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled });
         panel.Margin = new Thickness(0, 4, 9, 0); commandGrid.Children.Add(panel); return content;
     }
 
@@ -291,11 +310,17 @@ internal sealed partial class EmpireView
         RefreshCommandCenter();
     }
 
+    internal void StopWorkspaceAnimation() => workspace.BeginAnimation(OpacityProperty, null);
+
     private void RefreshCommandCenter()
     {
         if (!animations()) workspace.BeginAnimation(OpacityProperty, null);
         legacySummary.Text = $"PRESTIGE {service.Prestige}   /   {service.LegacyPointsAvailable} LP   /   REP {service.Reputation:N0}";
         foreach (Action update in commandUpdates) update();
+        foreach (TextBlock state in commandStates) state.ToolTip = state.Text;
+        prestigeTitle.ToolTip = prestigeRequirement.Text + "\n" + prestigeBonus.Text;
+        prestigeRequirement.ToolTip = prestigeRequirement.Text;
+        prestigeButton.ToolTip = prestigeRequirement.Text + "\nPrestige resets this property's room levels and credits. Research, projects, managers, contracts and other properties remain.";
         emptyRooms.Visibility = cards.Any(c => c.Visibility == Visibility.Visible) ? Visibility.Collapsed : Visibility.Visible;
     }
 
@@ -303,7 +328,9 @@ internal sealed partial class EmpireView
     {
         var button = new Button { Name = name, Content = text, FontSize = 11, Padding = new Thickness(9, 6, 9, 6), MinHeight = 28,
             Background = Ink("#192F3B"), BorderBrush = Ink("#41606A"), Foreground = Ink("#D8E4DF"), Margin = new Thickness(0, 2, 0, 2) };
-        button.Click += (_, _) => action(); return button;
+        button.Click += (_, _) => action();
+        if (name is "EmpireSynergyShortcut" or "EmpirePropertyShortcut" or "EmpireAutomationShortcut" or "EmpireEventShortcut") compactSecondary.Add(button);
+        return button;
     }
 
     private static Border Surface(UIElement child) => new()

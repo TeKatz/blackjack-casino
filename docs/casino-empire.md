@@ -6,6 +6,37 @@ outbound connection is a bounded owner cash dividend. Empire never changes
 Blackjack rules, dice outcomes, slot odds or RTP. Claimed challenges and completed
 game activity can benefit Empire in the other direction.
 
+## Estate command center
+
+The Estate page combines a five-room gallery with a selected-room inspector,
+construction quotes, bulk controls, milestone progress and prestige. Portfolio
+income, selected-property budget and owner dividend remain visible while using
+any of the eight first-level sections: Research, Projects, Team, Automation,
+Synergies, Events, Contracts and Properties. There is no intermediate Management
+menu and no additional native window.
+
+Four live dashboard cards surface Legacy Points and active circuits, the next
+available capital project (build directly when affordable), assigned specialists
+and automation status, plus event time and contract progress. Completed contract
+rewards can be claimed directly. Taller desktop layouts also show every synergy
+circuit with its weakest member's progress toward the next tier. Compact windows
+retain the primary actions and use the navigation bar for secondary routes.
+
+Research has three branch diagrams, selectable nodes and an inspector with exact
+rank prerequisites, point costs, current ranks and permanent effects. Connector
+colors reflect prerequisite rank completion, while node labels distinguish
+mastered, available and point-gated upgrades. Nothing in the research catalog or
+economy is changed by the diagram.
+
+Long catalogs use four-card pages instead of a single scrolling list. Automation
+settings and the editable priority queue occupy two columns. Production refreshes
+update labels and action eligibility without rebuilding active input fields.
+A local scroll fallback retains access to unusually long content in small windows;
+the standard desktop dashboard is checked for visible primary controls and no
+scrolling inside its command cards at 1366×768 and 1920×1080. Room illustrations,
+selection glow, purchase flashes and section transitions respect Empire's own
+animation preference.
+
 ## Departments, floors and properties
 
 Departments have a category, composable tags, a floor and optional requirements.
@@ -88,7 +119,7 @@ unlocked after a reset lowers the current room contribution.
 
 Every member must meet a tier. Tiers replace rather than stack; opening a new
 floor does not add members to an existing original-floor circuit. Complete tier-3
-circuits get a status mark on affected room cards. The management page lists
+circuits get a status mark on affected room cards. The Synergies section lists
 members, current levels, active bonus and next threshold.
 
 Capital projects are one-time purchases per estate:
@@ -202,6 +233,8 @@ synergies, time segmentation, offline/online automation, activity baselines,
 contract receipts, independent properties, snapshot isolation and failed atomic
 commits. The Windows startup suite exercises every management page, Resort Floor,
 research/project purchases, manager assignment, automation inputs, event/contract
-entry, property purchase/switching and portfolio statistics at two sizes. Existing
+entry, property purchase/switching and portfolio statistics at two sizes. The
+command center adds three-resolution visibility checks, every research branch,
+prerequisite connectors, catalog pagination and input stability across refreshes. Existing
 presentation tests retain upgrade/dividend/navigation checks at three sizes.
 See `docs/empire-balancing.md` for simulation results and reproducible commands.
