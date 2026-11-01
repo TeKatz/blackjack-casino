@@ -42,6 +42,7 @@ public partial class MainWindow
         Grid.SetRow(lobby,1); Grid.SetColumnSpan(lobby,2);Panel.SetZIndex(lobby,900);CasinoRoot.Children.Add(lobby);
         LobbyButton.Visibility=Visibility.Collapsed;
         TableModeText.Text="Casino lobby";
+        RefreshCollectionAlbumHeaderButton();
 
         // InitializeLobby is invoked from PresentationLoaded, so registering another Loaded
         // handler here would be too late. Configure the embedded surface synchronously now.
@@ -73,6 +74,7 @@ public partial class MainWindow
         if(lobby is not null) lobby.Visibility=Visibility.Visible;
         LobbyButton.Visibility=Visibility.Collapsed;
         TableModeText.Text="Casino lobby";
+        RefreshCollectionAlbumHeaderButton();
     }
     private void OpenProgression(string tab)
     {
