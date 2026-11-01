@@ -128,26 +128,18 @@ public partial class MainWindow
         lastCollectionPackCount = unopened;
         if (collectionAlbumHeaderBadgeGlow is null) return;
 
+        // Keep the glow static during normal navigation. Only a count change receives a short
+        // one-shot pulse; animating BlurRadius forever is disproportionately expensive in WPF.
         collectionAlbumHeaderBadgeGlow.BeginAnimation(DropShadowEffect.OpacityProperty, null);
         collectionAlbumHeaderBadgeGlow.BeginAnimation(DropShadowEffect.BlurRadiusProperty, null);
-        if (unopened <= 0 || !AnimationsEnabled)
-        {
-            collectionAlbumHeaderBadgeGlow.Opacity = unopened > 0 ? .35 : 0;
-            collectionAlbumHeaderBadgeGlow.BlurRadius = 10;
-            return;
-        }
+        collectionAlbumHeaderBadgeGlow.BlurRadius = 10;
+        collectionAlbumHeaderBadgeGlow.Opacity = unopened > 0 ? .35 : 0;
+        if (unopened <= 0 || !AnimationsEnabled) return;
 
-        collectionAlbumHeaderBadgeGlow.BeginAnimation(DropShadowEffect.OpacityProperty, new DoubleAnimation(.22, .52, TimeSpan.FromMilliseconds(1250))
+        collectionAlbumHeaderBadgeGlow.BeginAnimation(DropShadowEffect.OpacityProperty, new DoubleAnimation(.58, .35, TimeSpan.FromMilliseconds(520))
         {
-            AutoReverse = true,
-            RepeatBehavior = RepeatBehavior.Forever,
-            EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut },
-        });
-        collectionAlbumHeaderBadgeGlow.BeginAnimation(DropShadowEffect.BlurRadiusProperty, new DoubleAnimation(8, 14, TimeSpan.FromMilliseconds(1250))
-        {
-            AutoReverse = true,
-            RepeatBehavior = RepeatBehavior.Forever,
-            EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut },
+            EasingFunction = new SineEase { EasingMode = EasingMode.EaseOut },
+            FillBehavior = FillBehavior.Stop,
         });
     }
 }
