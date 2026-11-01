@@ -37,10 +37,6 @@ internal static class LoungeVisualUpgrade
             typeof(SolitaireHubControl),
             FrameworkElement.LoadedEvent,
             new RoutedEventHandler(OnSolitaireHubLoaded));
-        EventManager.RegisterClassHandler(
-            typeof(Button),
-            FrameworkElement.LoadedEvent,
-            new RoutedEventHandler(OnButtonLoaded));
     }
 
     internal static LoungeHostedGame UpgradeSolitaire(LoungeHostedGame module) =>
@@ -89,11 +85,9 @@ internal static class LoungeVisualUpgrade
     private static void OnLoungeMenuLoaded(object sender, RoutedEventArgs e)
     {
         if (sender is not LoungeGameMenu menu) return;
-        menu.Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() =>
-        {
-            HideHeaderGamesButton(menu);
-            UpdateSudokuTileStatistics(menu);
-        }));
+        menu.Dispatcher.BeginInvoke(
+            DispatcherPriority.Loaded,
+            new Action(() => UpdateSudokuTileStatistics(menu)));
     }
 
     private static void OnWordSearchHubLoaded(object sender, RoutedEventArgs e)
@@ -122,96 +116,12 @@ internal static class LoungeVisualUpgrade
         }));
     }
 
-    private static void OnButtonLoaded(object sender, RoutedEventArgs e)
-    {
-        if (sender is not Button button || button.Name != "SudokuBackToLoungeGames") return;
-
-        button.Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() =>
-        {
-            Button? header = GetOrCreateHeaderGamesButton(button);
-            if (header is null) return;
-
-            button.Visibility = Visibility.Collapsed;
-            header.Content = LoungeGameMenu.GamesBackLabel();
-            header.Tag = (Action)(() => button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
-            header.Visibility = Visibility.Visible;
-        }));
-    }
-
     private static void SetHeaderGamesLabel(DependencyObject origin)
     {
         Window? window = Window.GetWindow(origin);
         if (window is null) return;
         Button? header = FindDescendant<Button>(window, button => button.Name == "LoungeGamesHeaderBack");
         if (header is not null) header.Content = LoungeGameMenu.GamesBackLabel();
-    }
-
-    private static void HideHeaderGamesButton(DependencyObject origin)
-    {
-        Window? window = Window.GetWindow(origin);
-        if (window is null) return;
-        Button? header = FindDescendant<Button>(window, button => button.Name == "LoungeGamesHeaderBack");
-        if (header is null) return;
-        header.Tag = null;
-        header.Visibility = Visibility.Collapsed;
-    }
-
-    private static Button? GetOrCreateHeaderGamesButton(DependencyObject origin)
-    {
-        Window? window = Window.GetWindow(origin);
-        if (window is null) return null;
-
-        Button? existing = FindDescendant<Button>(window, button => button.Name == "LoungeGamesHeaderBack");
-        if (existing is not null) return existing;
-
-        Button? close = FindDescendant<Button>(window, button =>
-            button.Name != "LoungeGamesHeaderBack" &&
-            button.Content is string text &&
-            text.Contains("CLUB", StringComparison.OrdinalIgnoreCase) &&
-            (text.Contains("RETURN", StringComparison.OrdinalIgnoreCase) ||
-             text.Contains("ZURÜCK", StringComparison.OrdinalIgnoreCase)));
-        if (close is null) return null;
-
-        var back = new Button
-        {
-            Name = "LoungeGamesHeaderBack",
-            Content = LoungeGameMenu.GamesBackLabel(),
-            Foreground = LoungeUi.Ink("#EEE4D4"),
-            Background = LoungeUi.Ink("#17282A"),
-            BorderBrush = LoungeUi.Ink("#4A6661"),
-            BorderThickness = new Thickness(1),
-            Padding = new Thickness(15, 8, 15, 8),
-            FontWeight = FontWeights.SemiBold,
-            Cursor = CasinoCursors.Hand,
-            Margin = new Thickness(0, 0, 10, 0),
-            Visibility = Visibility.Collapsed,
-        };
-        back.Click += (_, _) =>
-        {
-            if (back.Tag is Action action) action();
-        };
-
-        if (close.Parent is Grid grid)
-        {
-            int column = Grid.GetColumn(close);
-            grid.Children.Remove(close);
-            var actions = new StackPanel { Orientation = Orientation.Horizontal };
-            actions.Children.Add(back);
-            actions.Children.Add(close);
-            Grid.SetColumn(actions, column);
-            grid.Children.Add(actions);
-        }
-        else if (close.Parent is StackPanel stack)
-        {
-            int index = stack.Children.IndexOf(close);
-            stack.Children.Insert(Math.Max(0, index), back);
-        }
-        else
-        {
-            return null;
-        }
-
-        return back;
     }
 
     private static void UpdateSudokuTileStatistics(LoungeGameMenu menu)
