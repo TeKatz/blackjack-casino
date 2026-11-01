@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Media;
 using BlackjackCasino.Core;
 using BlackjackCasino.Core.Collections;
 using BlackjackCasino.Desktop;
@@ -127,6 +128,8 @@ internal static partial class Program
         await WaitUntil(() => profile.Collection.PendingOpening is null, "Automatic pack reveal did not complete its saved receipt");
         Require(Find<Button>(window).Single(b => b.Name == "AlbumOpeningBack" && b.IsVisible).IsEnabled,
             "Automatic reveal did not finish on a usable Back to album state");
+        Require(Find<Border>(openingStage).Count(b => b.Name == "AlbumRevealResultBadge") == CollectionCatalog.CardsPerPack,
+            "Automatic reveal did not mark all five result cards");
         Capture(window, "album-five-card-reveal");
         Find<Button>(window).Single(b => b.Name == "AlbumOpeningBack" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         window.UpdateLayout();
@@ -194,6 +197,79 @@ internal static partial class Program
             Require(Find<Button>(batchPage).Single(b => b.Name == "AlbumOpeningBack" && b.IsVisible).IsEnabled,
                 "Open All did not finish on Back to album");
             batchPage.Close();
+        }
+
+        // Regression for the reported stale count: four guaranteed-new Common packs must become three
+        // after Open Pack, and the result screen itself must immediately offer the next Open Pack / Open All.
+        var countProfile = ManorPersistence.Clone(profile);
+        countProfile.Collection.PendingOpening = null;
+        countProfile.Collection.OwnedCardIds.Clear();
+        countProfile.Collection.DuplicatePoints = 0;
+        countProfile.Collection.Packs[CollectionRarity.Common] = 4;
+        long countOpenedBefore = countProfile.Collection.PacksOpened;
+        using (var countController = new PlayerProgressionController(countProfile))
+        {
+            var countPage = new CollectionAlbumPage(countController, false, false, () => { });
+            countPage.Show(); countPage.UpdateLayout(); await Task.Delay(35);
+            Find<Button>(countPage).Single(b => Equals(b.Tag, CollectionRarity.Common) && b.IsVisible)
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Button countPrimary = Find<Button>(countPage).Single(b => b.Name == "AlbumRevealAll" && b.IsVisible);
+            Button countAll = Find<Button>(countPage).Single(b => b.Name == "AlbumCollect" && b.IsVisible);
+            Require(Equals(countAll.Content, "Open All Packs (4)"), "Four-pack staging count is wrong before opening");
+            countPrimary.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            for (int i = 0; i < 140 && countProfile.Collection.PendingOpening is not null; i++)
+            {
+                countPage.UpdateLayout();
+                await Task.Delay(20);
+            }
+            Require(countProfile.Collection.PacksOpened == countOpenedBefore + 1, "Count regression did not open exactly one pack");
+            Require(countProfile.Collection.Packs.GetValueOrDefault(CollectionRarity.Common) == 3,
+                "Opening one of four Common packs did not leave exactly three");
+            countPrimary = Find<Button>(countPage).Single(b => b.Name == "AlbumRevealAll" && b.IsVisible);
+            countAll = Find<Button>(countPage).Single(b => b.Name == "AlbumCollect" && b.IsVisible);
+            Require(Equals(countPrimary.Content, "Open Pack"), "Open Pack did not return after a completed reveal");
+            Require(Equals(countAll.Content, "Open All Packs (3)"), "Open All did not refresh from four packs to three");
+
+            Border countStage = Find<Border>(countPage).Single(b => b.Name == "AlbumOpeningStage");
+            Border[] newBadges = Find<Border>(countStage).Where(b => b.Name == "AlbumRevealResultBadge").ToArray();
+            Require(newBadges.Length == CollectionCatalog.CardsPerPack && newBadges.All(b => Equals(b.Tag, "NEW")),
+                "Guaranteed-new pack did not show five NEW result badges");
+            Require(newBadges.All(b => b.BorderBrush is SolidColorBrush brush && brush.Color.G > brush.Color.R && brush.Color.G > brush.Color.B),
+                "NEW result badges are not using the green treatment");
+            Capture(countPage, "album-pack-result-actions");
+            countPage.Close();
+        }
+
+        // A fully owned catalog guarantees duplicates, so the lavender DUPLICATE +X treatment is
+        // verified independently from RNG composition.
+        var duplicateProfile = ManorPersistence.Clone(profile);
+        duplicateProfile.Collection.PendingOpening = null;
+        duplicateProfile.Collection.OwnedCardIds.Clear();
+        foreach (CollectionCard card in CollectionCatalog.Cards) duplicateProfile.Collection.OwnedCardIds.Add(card.Id);
+        duplicateProfile.Collection.DuplicatePoints = 0;
+        duplicateProfile.Collection.Packs[CollectionRarity.Common] = 1;
+        using (var duplicateController = new PlayerProgressionController(duplicateProfile))
+        {
+            var duplicatePage = new CollectionAlbumPage(duplicateController, false, false, () => { });
+            duplicatePage.Show(); duplicatePage.UpdateLayout(); await Task.Delay(35);
+            Find<Button>(duplicatePage).Single(b => Equals(b.Tag, CollectionRarity.Common) && b.IsVisible)
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Find<Button>(duplicatePage).Single(b => b.Name == "AlbumRevealAll" && b.IsVisible)
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            for (int i = 0; i < 140 && duplicateProfile.Collection.PendingOpening is not null; i++)
+            {
+                duplicatePage.UpdateLayout();
+                await Task.Delay(20);
+            }
+            Border duplicateStage = Find<Border>(duplicatePage).Single(b => b.Name == "AlbumOpeningStage");
+            Border[] duplicateBadges = Find<Border>(duplicateStage).Where(b => b.Name == "AlbumRevealResultBadge").ToArray();
+            Require(duplicateBadges.Length == CollectionCatalog.CardsPerPack && duplicateBadges.All(b => Equals(b.Tag, "DUPLICATE")),
+                "Fully owned pack did not show five duplicate result badges");
+            Require(duplicateBadges.All(b => b.BorderBrush is SolidColorBrush brush && brush.Color.B > brush.Color.G && brush.Color.R > 150),
+                "Duplicate result badges are not using the lavender treatment");
+            Require(duplicateBadges.SelectMany(Find<TextBlock>).All(t => t.Text.StartsWith("DUPLICATE +", StringComparison.Ordinal)),
+                "Duplicate result badges do not expose their +X value");
+            duplicatePage.Close();
         }
 
         await CheckCollectionArt(window, profile);
