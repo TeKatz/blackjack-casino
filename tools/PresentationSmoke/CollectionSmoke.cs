@@ -9,6 +9,17 @@ internal static partial class Program
 {
     private static async Task CheckAlbum(MainWindow window, PlayerProfileState profile, TabControl tabs)
     {
+        async Task WaitUntil(Func<bool> condition, string message, int attempts = 140)
+        {
+            for (int i = 0; i < attempts; i++)
+            {
+                window.UpdateLayout();
+                if (condition()) return;
+                await Task.Delay(40);
+            }
+            Require(condition(), message);
+        }
+
         // Pack purchasing remains part of the cosmetic shop, but browsing/opening the album is now
         // a first-class casino page rather than a cramped Progression tab.
         WrapPanel shop = Find<WrapPanel>(window).Single(p => p.Name == "PackShopPanel");
@@ -73,8 +84,12 @@ internal static partial class Program
         await Task.Delay(60); window.UpdateLayout();
         Require(Find<Grid>(window).Any(g => g.Name == "CollectionAlbumRoot" && g.IsVisible), "Header Album shortcut did not open the dedicated page");
 
-        // Clicking a pack now stages the sealed five-card overview. Inventory and RNG must remain
-        // untouched until the explicit Open 1 Pack / Open All Packs confirmation.
+        Grid browse = Find<Grid>(window).Single(g => g.Name == "AlbumBrowseSurface");
+        Border openingOverlay = Find<Border>(window).Single(b => b.Name == "AlbumOpeningOverlay");
+        Border openingStage = Find<Border>(window).Single(b => b.Name == "AlbumOpeningStage");
+        Button openingBack = Find<Button>(window).Single(b => b.Name == "AlbumOpeningBack");
+
+        // Selecting a pack only stages the overview. The overlay must always have a real escape route.
         long opened = profile.Collection.PacksOpened;
         int commonPacksBeforeStage = profile.Collection.Packs.GetValueOrDefault(CollectionRarity.Common);
         Find<Button>(window).Single(b => Equals(b.Tag, CollectionRarity.Common) && b.IsVisible)
@@ -84,50 +99,75 @@ internal static partial class Program
         Require(profile.Collection.Packs.GetValueOrDefault(CollectionRarity.Common) == commonPacksBeforeStage,
             "Selecting a pack changed inventory before confirmation");
         Require(profile.Collection.PendingOpening is null, "Selecting a pack rolled cards before confirmation");
-        Require(Find<Border>(window).Any(b => b.Name == "AlbumOpeningStage" && b.IsVisible), "Pack staging overview is missing");
+        Require(openingOverlay.IsVisible && openingStage.IsVisible, "Pack staging overview is missing");
+        Require(browse.Visibility == Visibility.Collapsed, "Album browser kept rendering behind the pack overlay");
+        Require(!Find<Button>(openingStage).Any(), "Sealed cards are still individually clickable");
 
         Button primaryOpen = Find<Button>(window).Single(b => b.Name == "AlbumRevealAll" && b.IsVisible);
         Button secondaryOpen = Find<Button>(window).Single(b => b.Name == "AlbumCollect" && b.IsVisible);
-        Require(Equals(primaryOpen.Content, "Open 1 Pack"), "Pack staging primary action is not Open 1 Pack");
+        Require(Equals(primaryOpen.Content, "Open Pack"), "Pack staging primary action is not Open Pack");
         Require(secondaryOpen.Content?.ToString()?.StartsWith("Open All Packs", StringComparison.Ordinal) == true,
             "Pack staging secondary action is not Open All Packs");
-        Require(primaryOpen.IsEnabled && secondaryOpen.IsEnabled, "Pack staging actions are not enabled");
+        Require(openingBack.IsVisible && openingBack.IsEnabled, "Pack staging has no Back to album action");
         Capture(window, "album-pack-staging");
 
-        primaryOpen.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        // Back from staging must be lossless and immediately restore album navigation.
+        openingBack.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         window.UpdateLayout();
-        Require(profile.Collection.PacksOpened == opened + 1, "Open 1 Pack did not consume exactly one pack");
-        Require(profile.Collection.Packs.GetValueOrDefault(CollectionRarity.Common) <= commonPacksBeforeStage,
-            "Open 1 Pack did not update inventory");
-        CollectionOpening receipt = profile.Collection.PendingOpening!;
-        Require(receipt.Cards.Count == 5, "Reveal receipt does not contain five cards");
-        Require(Equals(primaryOpen.Content, "Reveal all"), "Opened pack did not switch the primary action to Reveal all");
+        Require(!openingOverlay.IsVisible && browse.Visibility == Visibility.Visible, "Back to album did not leave pack staging");
+        Require(profile.Collection.PacksOpened == opened && profile.Collection.PendingOpening is null,
+            "Back from staging mutated pack state");
 
+        // Open Pack starts the automatic five-card reveal. No Reveal all / Continue state remains.
+        Find<Button>(window).Single(b => Equals(b.Tag, CollectionRarity.Common) && b.IsVisible)
+            .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        primaryOpen = Find<Button>(window).Single(b => b.Name == "AlbumRevealAll" && b.IsVisible);
         primaryOpen.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-        window.UpdateLayout();
-        Require(secondaryOpen.IsEnabled, "Continue is disabled after reveal all");
-        primaryOpen.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-        Require(profile.Collection.PacksOpened == opened + 1, "Repeated reveal consumed a pack");
+        Require(profile.Collection.PacksOpened == opened + 1, "Open Pack did not consume exactly one pack");
+        await WaitUntil(() => profile.Collection.PendingOpening is null, "Automatic pack reveal did not complete its saved receipt");
+        Require(Find<Button>(window).Single(b => b.Name == "AlbumOpeningBack" && b.IsVisible).IsEnabled,
+            "Automatic reveal did not finish on a usable Back to album state");
         Capture(window, "album-five-card-reveal");
+        Find<Button>(window).Single(b => b.Name == "AlbumOpeningBack" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        window.UpdateLayout();
+        Require(browse.Visibility == Visibility.Visible, "Album did not return after completed pack reveal");
 
-        // Rebuild the dedicated presentation from a serialized-style clone and finish the same receipt.
-        var reload = ManorPersistence.Clone(profile);
-        using var controller = new PlayerProgressionController(reload);
-        var resumed = new CollectionAlbumPage(controller, false, false, () => { });
-        resumed.Show(); resumed.UpdateLayout(); await Task.Delay(40);
-        Require(reload.Collection.PendingOpening!.Id == receipt.Id, "Reload changed the pack receipt");
-        Find<Button>(resumed).Single(b => b.Name == "AlbumRevealAll" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-        Find<Button>(resumed).Single(b => b.Name == "AlbumCollect" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-        Require(reload.Collection.PendingOpening is null, "Continue failed to acknowledge resumed receipt");
-        Require(reload.Collection.PacksOpened == opened + 1, "Resume consumed another pack");
-        resumed.Close();
+        // Reproduce the reported softlock: start another reveal, leave immediately while its receipt is
+        // pending, then exit and reopen the album through the header. Reopening must show the album,
+        // not force the reveal overlay, and the saved pack must be resumable from its pack slot.
+        long beforePausedReveal = profile.Collection.PacksOpened;
+        Find<Button>(window).Single(b => Equals(b.Tag, CollectionRarity.Common) && b.IsVisible)
+            .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Find<Button>(window).Single(b => b.Name == "AlbumRevealAll" && b.IsVisible)
+            .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Require(profile.Collection.PacksOpened == beforePausedReveal + 1, "Paused reveal did not persist its opening first");
+        Require(profile.Collection.PendingOpening is not null, "Paused reveal has no persisted receipt");
+        Find<Button>(window).Single(b => b.Name == "AlbumOpeningBack" && b.IsVisible)
+            .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        window.UpdateLayout();
+        Require(profile.Collection.PendingOpening is not null, "Back to album discarded the pending receipt");
+        Require(browse.Visibility == Visibility.Visible && !openingOverlay.IsVisible, "Back to album left the reveal overlay active");
 
-        secondaryOpen.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-        Require(profile.Collection.PendingOpening is null, "Continue failed to clear the original receipt");
-        Require(receipt.Cards.All(c => profile.Collection.OwnedCardIds.Contains(c.CardId)), "Collected cards disappeared after Continue");
+        Find<Button>(window).Single(b => b.Name == "AlbumBackButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        await Task.Delay(40); window.UpdateLayout();
+        Find<Button>(window).Single(b => b.Name == "HeaderCollectionAlbumButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        await Task.Delay(60); window.UpdateLayout();
+        openingOverlay = Find<Border>(window).Single(b => b.Name == "AlbumOpeningOverlay");
+        browse = Find<Grid>(window).Single(g => g.Name == "AlbumBrowseSurface");
+        Require(!openingOverlay.IsVisible && browse.IsVisible,
+            "Reopening the album forced the pending pack overlay and recreated the softlock");
 
-        // Open All is a bounded queue: it snapshots the selected rarity count, persists one receipt at
-        // a time, and must finish exactly that many packs without recursively consuming bonus rewards.
+        Find<Button>(window).Single(b => Equals(b.Tag, CollectionRarity.Common) && b.IsVisible)
+            .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        await WaitUntil(() => profile.Collection.PendingOpening is null, "Resume did not automatically finish the saved pack reveal");
+        Require(Find<Button>(window).Single(b => b.Name == "AlbumOpeningBack" && b.IsVisible).IsEnabled,
+            "Resumed reveal has no Back to album action");
+        Find<Button>(window).Single(b => b.Name == "AlbumOpeningBack" && b.IsVisible)
+            .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        window.UpdateLayout();
+
+        // Open All is bounded to the selected rarity count and automatically reveals each persisted
+        // receipt in order. It must finish without manual card clicks or a Continue button.
         var batchProfile = ManorPersistence.Clone(profile);
         batchProfile.Collection.PendingOpening = null;
         batchProfile.Collection.Packs[CollectionRarity.Uncommon] = 3;
@@ -139,29 +179,20 @@ internal static partial class Program
             Find<Button>(batchPage).Single(b => Equals(b.Tag, CollectionRarity.Uncommon) && b.IsVisible)
                 .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             batchPage.UpdateLayout();
-            Button batchPrimary = Find<Button>(batchPage).Single(b => b.Name == "AlbumRevealAll" && b.IsVisible);
             Button batchSecondary = Find<Button>(batchPage).Single(b => b.Name == "AlbumCollect" && b.IsVisible);
             Require(Equals(batchSecondary.Content, "Open All Packs (3)"), "Open All did not snapshot all three Uncommon packs");
             batchSecondary.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            Require(batchProfile.Collection.PacksOpened == batchOpenedBefore + 1, "Open All did not start with exactly one persisted receipt");
-
-            for (int packIndex = 0; packIndex < 3; packIndex++)
+            for (int i = 0; i < 140 && (batchProfile.Collection.PendingOpening is not null || batchProfile.Collection.PacksOpened < batchOpenedBefore + 3); i++)
             {
-                Require(batchProfile.Collection.PendingOpening is not null, $"Open All lost pending receipt {packIndex + 1}");
-                batchPrimary.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 batchPage.UpdateLayout();
-                Require(batchSecondary.IsEnabled, $"Open All pack {packIndex + 1} cannot be continued after reveal");
-                batchSecondary.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                batchPage.UpdateLayout();
-                if (packIndex < 2)
-                    Require(batchProfile.Collection.PacksOpened == batchOpenedBefore + packIndex + 2,
-                        $"Open All failed to advance to pack {packIndex + 2}");
+                await Task.Delay(20);
             }
-
             Require(batchProfile.Collection.PendingOpening is null, "Open All left a pending receipt after its queue finished");
             Require(batchProfile.Collection.PacksOpened == batchOpenedBefore + 3, "Open All did not open exactly three packs");
             Require(batchProfile.Collection.Packs.GetValueOrDefault(CollectionRarity.Uncommon) == 0,
                 "Open All did not consume exactly the snapshotted Uncommon inventory");
+            Require(Find<Button>(batchPage).Single(b => b.Name == "AlbumOpeningBack" && b.IsVisible).IsEnabled,
+                "Open All did not finish on Back to album");
             batchPage.Close();
         }
 
