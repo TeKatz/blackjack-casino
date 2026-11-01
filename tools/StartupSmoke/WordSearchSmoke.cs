@@ -14,8 +14,13 @@ internal static class WordSearchSmoke
         window.UpdateLayout();
 
         Button tile = Find<Button>(window).Single(button => button.Name == "LoungeGame_word_search" && button.IsVisible);
+        Require(Find<TextBlock>(tile).Any(text => text.Text.Contains("PUZZLES", StringComparison.Ordinal) && text.Text.Contains("WORDS", StringComparison.Ordinal)),
+            "Word Search Lounge tile is missing its compact statistics overview.");
+        Require(Find<FrameworkElement>(tile).Any(element => element.GetType().Name == "WordSearchLoungeArtworkUpgrade"),
+            "Word Search Lounge tile is not using the upgraded real-grid artwork.");
+
         Click(tile);
-        await Task.Delay(70);
+        await Task.Delay(90);
         window.UpdateLayout();
 
         Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "Word Search"),
@@ -24,6 +29,12 @@ internal static class WordSearchSmoke
             "Word Search hub does not advertise the deterministic offline puzzle catalog.");
         Require(Find<Button>(window).Count(button => button.IsVisible && button.Name.StartsWith("WordSearchStart_", StringComparison.Ordinal)) == 6,
             "Word Search hub does not expose all six difficulty tiers.");
+        Require(Find<Button>(window).Any(button => button.Name == "LoungeGamesHeaderBack" && button.IsVisible && Equals(button.Content, "← GAMES")),
+            "Word Search did not move Games navigation into the Chill Lounge header.");
+        Require(!Find<Button>(window).Any(button => button.Name == "WordSearchBack" && button.IsVisible),
+            "Word Search still shows the redundant page-local Games button.");
+        Require(Find<TextBlock>(window).Count(text => text.IsVisible && text.Text.EndsWith(" XP", StringComparison.Ordinal)) >= 6,
+            "Word Search difficulty cards are missing their XP presentation.");
         Capture(window, Path.Combine(output, "word-search-hub.png"));
 
         Button relaxed = Find<Button>(window).Single(button => button.Name == "WordSearchStart_Relaxed" && button.IsVisible);
@@ -52,7 +63,7 @@ internal static class WordSearchSmoke
         Require(Find<Button>(window).Any(button => button.Name == "WordSearchResume" && button.IsVisible),
             "Leaving a Word Search puzzle did not preserve a resumable active game.");
 
-        Click(Find<Button>(window).Single(button => button.Name == "WordSearchBack" && button.IsVisible));
+        Click(Find<Button>(window).Single(button => button.Name == "LoungeGamesHeaderBack" && button.IsVisible));
         await Task.Delay(50);
         window.UpdateLayout();
         Require(Find<Button>(window).Any(button => button.Name == "LoungeGame_word_search" && button.IsVisible),
@@ -65,7 +76,7 @@ internal static class WordSearchSmoke
             "Casino lobby was not restored after the Word Search smoke.");
 
         File.WriteAllText(Path.Combine(output, "word-search-result.txt"),
-            "PASS: Word Search tile, six difficulty tiers, Relaxed puzzle start, hint feedback, autosaved resume state and local Lounge navigation all passed.");
+            "PASS: upgraded Word Search artwork, compact tile statistics, six polished difficulty tiers, header Games navigation, Relaxed puzzle start, hint feedback and autosaved resume state all passed.");
     }
 
     private static void Click(Button button) => button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
