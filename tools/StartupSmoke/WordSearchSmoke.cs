@@ -13,13 +13,31 @@ internal static class WordSearchSmoke
         await Task.Delay(120);
         window.UpdateLayout();
 
-        Button tile = Find<Button>(window).Single(button => button.Name == "LoungeGame_word_search" && button.IsVisible);
-        Require(Find<TextBlock>(tile).Any(text => text.Text.Contains("PUZZLES", StringComparison.Ordinal) && text.Text.Contains("WORDS", StringComparison.Ordinal)),
+        Button wordSearchTile = Find<Button>(window).Single(button => button.Name == "LoungeGame_word_search" && button.IsVisible);
+        Button memoryTile = Find<Button>(window).Single(button => button.Name == "LoungeGame_memory" && button.IsVisible);
+        Button sudokuTile = Find<Button>(window).Single(button => button.Name == "LoungeGame_sudoku" && button.IsVisible);
+        Require(Find<TextBlock>(wordSearchTile).Any(text => text.Text.Contains("PUZZLES", StringComparison.Ordinal) && text.Text.Contains("WORDS", StringComparison.Ordinal)),
             "Word Search Lounge tile is missing its compact statistics overview.");
-        Require(Find<FrameworkElement>(tile).Any(element => element.GetType().Name == "WordSearchLoungeArtworkUpgrade"),
+        Require(Find<TextBlock>(memoryTile).Any(text => text.Text.Contains("GAMES", StringComparison.Ordinal) && text.Text.Contains("PAIRS", StringComparison.Ordinal)),
+            "Memory Lounge tile is missing its compact statistics overview.");
+        Require(Find<TextBlock>(sudokuTile).Any(text => text.Name == "SudokuTileStats" && text.Text.Contains("SOLVED", StringComparison.Ordinal)),
+            "Sudoku Lounge tile is missing its compact statistics overview.");
+        Require(Find<FrameworkElement>(wordSearchTile).Any(element => element.GetType().Name == "WordSearchLoungeArtworkUpgrade"),
             "Word Search Lounge tile is not using the upgraded real-grid artwork.");
 
-        Click(tile);
+        Click(sudokuTile);
+        await Task.Delay(90);
+        window.UpdateLayout();
+        Require(Find<Button>(window).Any(button => button.Name == "LoungeGamesHeaderBack" && button.IsVisible && Equals(button.Content, "← GAMES")),
+            "Sudoku did not move Games navigation into the Chill Lounge header.");
+        Require(!Find<Button>(window).Any(button => button.Name == "SudokuBackToLoungeGames" && button.IsVisible),
+            "Sudoku still shows the old page-local Lounge Games button.");
+        Click(Find<Button>(window).Single(button => button.Name == "LoungeGamesHeaderBack" && button.IsVisible));
+        await Task.Delay(70);
+        window.UpdateLayout();
+
+        wordSearchTile = Find<Button>(window).Single(button => button.Name == "LoungeGame_word_search" && button.IsVisible);
+        Click(wordSearchTile);
         await Task.Delay(90);
         window.UpdateLayout();
 
@@ -94,7 +112,7 @@ internal static class WordSearchSmoke
         Capture(window, Path.Combine(output, "casino-lobby-overview-hub.png"));
 
         File.WriteAllText(Path.Combine(output, "word-search-result.txt"),
-            "PASS: upgraded Word Search artwork, compact tile statistics, six polished difficulty tiers, header Games navigation, Relaxed puzzle start, hint feedback, autosaved resume state and right-side casino overview hub all passed.");
+            "PASS: upgraded Word Search artwork; Word Search, Memory and Sudoku tile statistics; Sudoku and Word Search header Games navigation; six polished difficulty tiers; autosaved Word Search state; and right-side casino overview hub all passed.");
     }
 
     private static void Click(Button button) => button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
