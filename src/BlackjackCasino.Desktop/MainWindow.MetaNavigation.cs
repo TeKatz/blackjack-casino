@@ -121,15 +121,16 @@ public partial class MainWindow
             .FirstOrDefault(button => Equals(button.Tag, "inspect:" + cardId));
         if (cardButton is null) return;
 
-        // The album itself closes the inspector later in the same routed key event. Restore
-        // keyboard focus after that event has unwound so the hidden close button cannot retain it.
-        Dispatcher.BeginInvoke(DispatcherPriority.Input, () =>
+        // The album closes the inspector later in this routed key event. Restore focus only after
+        // layout/enabled-state propagation is complete; otherwise WPF can leave focus on the now
+        // hidden close button even though the card itself is available again.
+        Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle, () =>
         {
-            if (cardButton.IsVisible && cardButton.IsEnabled)
-            {
-                cardButton.Focus();
-                Keyboard.Focus(cardButton);
-            }
+            if (!cardButton.IsVisible || !cardButton.IsEnabled) return;
+            cardButton.BringIntoView();
+            FocusManager.SetFocusedElement(FocusManager.GetFocusScope(cardButton), cardButton);
+            cardButton.Focus();
+            Keyboard.Focus(cardButton);
         });
     }
 
