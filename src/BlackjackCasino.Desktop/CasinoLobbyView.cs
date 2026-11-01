@@ -2,6 +2,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Media.Effects;
 
 namespace BlackjackCasino.Desktop;
 
@@ -9,6 +11,10 @@ internal sealed class CasinoLobbyView : UserControl
 {
     private readonly CasinoModeRegistry modes;
     private readonly UniformGrid cards = new() { Columns = 4, Width = 1280 };
+    private Border? albumPackBadge;
+    private TextBlock? albumPackBadgeText;
+    private DropShadowEffect? albumPackBadgeGlow;
+    private int albumPackCount = -1;
     private static readonly string[] Order = ["blackjack", "kniffel", "chill-lounge", "casino-empire", "midnight-reels", "neon-vault", "nine-lives", "midnight-manor"];
 
     internal CasinoLobbyView(CasinoModeRegistry modes, Action<string> progression)
@@ -65,7 +71,42 @@ internal sealed class CasinoLobbyView : UserControl
         Refresh();
     }
 
-    private static Border BuildProgressionHub(Action<string> progression)
+    internal void SetAlbumPackCount(int count)
+    {
+        count = Math.Max(0, count);
+        if (albumPackBadge is null || albumPackBadgeText is null) return;
+
+        albumPackBadge.Visibility = count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        albumPackBadgeText.Text = count > 99 ? "+99" : $"+{count}";
+        albumPackBadge.ToolTip = count > 0
+            ? $"{count} unopened collection pack{(count == 1 ? string.Empty : "s")}" 
+            : null;
+
+        if (count == albumPackCount) return;
+        albumPackCount = count;
+        if (albumPackBadgeGlow is null) return;
+
+        albumPackBadgeGlow.BeginAnimation(DropShadowEffect.OpacityProperty, null);
+        albumPackBadgeGlow.BeginAnimation(DropShadowEffect.BlurRadiusProperty, null);
+        albumPackBadgeGlow.Opacity = count > 0 ? .38 : 0;
+        albumPackBadgeGlow.BlurRadius = 11;
+        if (count <= 0) return;
+
+        albumPackBadgeGlow.BeginAnimation(DropShadowEffect.OpacityProperty, new DoubleAnimation(.24, .56, TimeSpan.FromMilliseconds(1350))
+        {
+            AutoReverse = true,
+            RepeatBehavior = RepeatBehavior.Forever,
+            EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut },
+        });
+        albumPackBadgeGlow.BeginAnimation(DropShadowEffect.BlurRadiusProperty, new DoubleAnimation(8, 15, TimeSpan.FromMilliseconds(1350))
+        {
+            AutoReverse = true,
+            RepeatBehavior = RepeatBehavior.Forever,
+            EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut },
+        });
+    }
+
+    private Border BuildProgressionHub(Action<string> progression)
     {
         var shell = new Border
         {
@@ -127,7 +168,8 @@ internal sealed class CasinoLobbyView : UserControl
             "Open packs, complete themed collections and inspect discovered editions.",
             "▣",
             "#D7B568",
-            progression));
+            progression,
+            showPackBadge: true));
         stack.Children.Add(ProgressionTile(
             "LobbyProgression_Challenges",
             "Challenges",
@@ -149,19 +191,21 @@ internal sealed class CasinoLobbyView : UserControl
         return shell;
     }
 
-    private static Button ProgressionTile(
+    private Button ProgressionTile(
         string name,
         string section,
         string eyebrow,
         string description,
         string emblem,
         string accentHex,
-        Action<string> progression)
+        Action<string> progression,
+        bool showPackBadge = false)
     {
         Brush accent = Ink(accentHex);
         var content = new Grid();
         content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(35) });
         content.ColumnDefinitions.Add(new ColumnDefinition());
+        content.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
         var emblemFrame = new Border
         {
@@ -216,6 +260,42 @@ internal sealed class CasinoLobbyView : UserControl
         });
         Grid.SetColumn(copy, 1);
         content.Children.Add(copy);
+
+        if (showPackBadge)
+        {
+            albumPackBadgeText = new TextBlock
+            {
+                FontSize = 8.5,
+                FontWeight = FontWeights.Bold,
+                Foreground = Ink("#14251F"),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            albumPackBadgeGlow = new DropShadowEffect
+            {
+                Color = Color.FromRgb(112, 226, 181),
+                BlurRadius = 11,
+                ShadowDepth = 0,
+                Opacity = .38,
+            };
+            albumPackBadge = new Border
+            {
+                MinWidth = 30,
+                Height = 22,
+                Padding = new Thickness(6, 0, 6, 0),
+                Margin = new Thickness(7, 0, 0, 0),
+                CornerRadius = new CornerRadius(11),
+                Background = Ink("#70DDB0"),
+                BorderBrush = Ink("#B6F5D8"),
+                BorderThickness = new Thickness(1),
+                VerticalAlignment = VerticalAlignment.Top,
+                Child = albumPackBadgeText,
+                Effect = albumPackBadgeGlow,
+                Visibility = Visibility.Collapsed,
+            };
+            Grid.SetColumn(albumPackBadge, 2);
+            content.Children.Add(albumPackBadge);
+        }
 
         var button = new Button
         {
