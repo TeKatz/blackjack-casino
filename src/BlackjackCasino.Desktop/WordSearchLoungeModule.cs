@@ -43,7 +43,6 @@ internal sealed class WordSearchLoungeHub : UserControl, IDisposable
     private readonly Action<WordSearchProgressState> persist;
     private readonly Func<WordSearchStatistics> stats;
     private readonly Func<WordSearchCompletionRecord, ProgressionAward> recordCompletion;
-    private readonly Action backToGames;
     private WordSearchView? activeView;
     private TextBlock status = null!;
 
@@ -58,7 +57,7 @@ internal sealed class WordSearchLoungeHub : UserControl, IDisposable
         this.persist = persist;
         this.stats = stats;
         this.recordCompletion = recordCompletion;
-        this.backToGames = backToGames;
+        _ = backToGames;
         Background = Brush("#0B1715");
         Content = BuildHub();
     }
@@ -71,17 +70,11 @@ internal sealed class WordSearchLoungeHub : UserControl, IDisposable
         root.RowDefinitions.Add(new RowDefinition());
 
         var header = new Grid { Margin = new Thickness(0, 0, 0, 16) };
-        header.ColumnDefinitions.Add(new ColumnDefinition());
-        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         var title = new StackPanel();
         title.Children.Add(Label("CHILL LOUNGE · WORD SEARCH", 10, "#82B79D"));
         title.Children.Add(Label("Word Search", 30, "#F2E3C5", FontWeights.SemiBold));
         title.Children.Add(Label("Find the words. Keep the pace yours.", 12, "#AABCB3"));
         header.Children.Add(title);
-        Button back = ActionButton("← Games", "WordSearchBack");
-        back.Click += (_, _) => backToGames();
-        Grid.SetColumn(back, 1);
-        header.Children.Add(back);
         root.Children.Add(header);
 
         WordSearchStatistics snapshot = stats();
