@@ -35,7 +35,7 @@ internal static partial class Program
         window.ContentRendered+=async(_,_)=>
         {
             try {await Check(window,qaProfile);File.WriteAllText(Path.Combine(output,"result.txt"),"PASS: startup lobby, registered future mode, shared hover/focus/open/disabled dropdown contracts, all table themes, proportional controls, embedded Reels and Neon Vault bounds, full-surface single-window casino hosting, embedded profile rename, nested profile/progression navigation, compact challenge pagination, scrolling shop and search.");}
-            catch(Exception ex){exit=1;File.WriteAllText(Path.Combine(output,"failure.txt"),ex.ToString());}
+            catch(Exception ex){exit=1;Console.Error.WriteLine(ex);File.WriteAllText(Path.Combine(output,"failure.txt"),ex.ToString());}
             finally {window.Close();CasinoAudio.Shutdown();app.Shutdown(exit);}
         };
         window.Show();app.Run();return exit;

@@ -20,7 +20,7 @@ internal static partial class Program
         Require(Find<StackPanel>(window).Single(p => p.Name == "AlbumThemes").Children.Count == 16, "Album does not show 16 themes");
         foreach (CollectionTheme theme in CollectionCatalog.Themes)
         {
-            Find<Button>(window).Single(b => Equals(b.Tag, theme.Id)).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Find<Button>(Find<StackPanel>(window).Single(p => p.Name == "AlbumThemes")).Single(b => Equals(b.Tag, theme.Id)).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             window.UpdateLayout();
             Require(Find<WrapPanel>(window).Single(p => p.Name == "AlbumCards").Children.Count == theme.Cards.Count, "Wrong number of theme slots");
             // Every vector scene must parse and measure, including motifs not drawn in the random pack.
