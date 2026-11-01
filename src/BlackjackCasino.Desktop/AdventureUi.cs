@@ -51,7 +51,6 @@ internal static class AdventureUi
         FontSize = size,
         FontWeight = FontWeights.SemiBold,
         Foreground = Ink("#86C8AE"),
-        CharacterSpacing = 70,
     };
 
     internal static TextBlock SectionLabel(string text) => new()
@@ -62,7 +61,6 @@ internal static class AdventureUi
         FontWeight = FontWeights.SemiBold,
         Foreground = Ink("#92CDB4"),
         Margin = new Thickness(0, 8, 0, 7),
-        CharacterSpacing = 55,
     };
 
     internal static FrameworkElement OrnamentRule(string glyph = "◆")
