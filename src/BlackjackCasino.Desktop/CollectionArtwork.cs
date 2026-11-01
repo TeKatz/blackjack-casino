@@ -24,7 +24,7 @@ internal static class CollectionArtwork
         if (!double.IsFinite(scale) || scale <= 0) throw new ArgumentOutOfRangeException(nameof(scale));
         double S(double value) => value * scale;
         Thickness T(double uniform) => new(S(uniform));
-        Thickness T(double left, double top, double right, double bottom) => new(S(left), S(top), S(right), S(bottom));
+        Thickness T4(double left, double top, double right, double bottom) => new(S(left), S(top), S(right), S(bottom));
 
         CollectionTheme theme = CollectionCatalog.Theme(card);
         Color foil = RarityColor(card.Rarity);
@@ -57,15 +57,15 @@ internal static class CollectionArtwork
             new(Color.FromArgb(190, 3, 8, 15), 0), new(Color.FromArgb(20, 3, 8, 15), .22),
             new(Colors.Transparent, .48), new(Color.FromArgb(130, 3, 8, 15), .68), new(Color.FromArgb(248, 3, 8, 15), 1),
         }, 90) });
-        var header = new Grid { VerticalAlignment = VerticalAlignment.Top, Margin = T(9, 8, 9, 0) };
+        var header = new Grid { VerticalAlignment = VerticalAlignment.Top, Margin = T4(9, 8, 9, 0) };
         header.ColumnDefinitions.Add(new ColumnDefinition()); header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         header.Children.Add(new TextBlock { Text = card.Rarity.ToString().ToUpperInvariant(), FontSize = S(9), FontWeight = FontWeights.Bold, Foreground = new SolidColorBrush(foil) });
         var number = new TextBlock { Text = $"{card.Number:00} / {theme.Cards.Count:00}", FontSize = S(9), Foreground = new SolidColorBrush(foil) };
         Grid.SetColumn(number, 1); header.Children.Add(number); content.Children.Add(header);
-        var label = new StackPanel { Margin = T(10, 0, 10, 10), VerticalAlignment = VerticalAlignment.Bottom };
-        label.Children.Add(new TextBlock { Text = theme.UltraRare ? "✧  " + Localization.T("Album.UltraRare") + "  ✧" : new string('◆', 1 + (int)card.Rarity), FontSize = S(8), Foreground = new SolidColorBrush(foil), Margin = T(0, 0, 0, 5), HorizontalAlignment = HorizontalAlignment.Center });
+        var label = new StackPanel { Margin = T4(10, 0, 10, 10), VerticalAlignment = VerticalAlignment.Bottom };
+        label.Children.Add(new TextBlock { Text = theme.UltraRare ? "✧  " + Localization.T("Album.UltraRare") + "  ✧" : new string('◆', 1 + (int)card.Rarity), FontSize = S(8), Foreground = new SolidColorBrush(foil), Margin = T4(0, 0, 0, 5), HorizontalAlignment = HorizontalAlignment.Center });
         label.Children.Add(new TextBlock { Text = card.Name, FontFamily = new FontFamily("Georgia"), FontSize = S(15), FontWeight = FontWeights.SemiBold, Foreground = Brushes.WhiteSmoke, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center });
-        label.Children.Add(new TextBlock { Text = badge ?? (owned ? theme.Name : Localization.T("Album.Undiscovered")), FontSize = S(8.5), Margin = T(0, 6, 0, 0), Foreground = new SolidColorBrush(owned ? foil : Color.FromRgb(150, 161, 171)), TextAlignment = TextAlignment.Center, TextWrapping = TextWrapping.Wrap });
+        label.Children.Add(new TextBlock { Text = badge ?? (owned ? theme.Name : Localization.T("Album.Undiscovered")), FontSize = S(8.5), Margin = T4(0, 6, 0, 0), Foreground = new SolidColorBrush(owned ? foil : Color.FromRgb(150, 161, 171)), TextAlignment = TextAlignment.Center, TextWrapping = TextWrapping.Wrap });
         content.Children.Add(label);
         // Fine metal inlays stay inside the card. Rarer editions have additional corner engraving.
         content.Children.Add(new Border { IsHitTestVisible = false, Margin = T(3), BorderThickness = new Thickness(S(.6)), BorderBrush = new SolidColorBrush(Color.FromArgb(owned ? (byte)140 : (byte)45, foil.R, foil.G, foil.B)), CornerRadius = new CornerRadius(S(7)) });
