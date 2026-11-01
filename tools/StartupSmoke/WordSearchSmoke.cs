@@ -74,9 +74,27 @@ internal static class WordSearchSmoke
         window.UpdateLayout();
         Require(Find<Button>(window).Any(button => button.Name == "Mode_chill_lounge" && button.IsVisible),
             "Casino lobby was not restored after the Word Search smoke.");
+        Require(Find<Border>(window).Any(border => border.Name == "LobbyOverviewHub" && border.IsVisible),
+            "Casino lobby is missing the new right-side overview hub.");
+        string[] hubActions =
+        [
+            "LobbyProgression_SeasonPass",
+            "LobbyProgression_CosmeticShop",
+            "LobbyProgression_Challenges",
+            "LobbyProgression_Overview",
+        ];
+        foreach (string name in hubActions)
+        {
+            Require(Find<Button>(window).Any(button => button.Name == name && button.IsVisible),
+                $"Casino lobby overview hub is missing {name}.");
+        }
+        string[] retiredFooter = ["Season Pass", "Cosmetic Shop", "Challenges", "Overview"];
+        Require(!Find<Button>(window).Any(button => button.IsVisible && button.Content is string label && retiredFooter.Contains(label, StringComparer.Ordinal)),
+            "Casino lobby still exposes the retired bottom progression button row.");
+        Capture(window, Path.Combine(output, "casino-lobby-overview-hub.png"));
 
         File.WriteAllText(Path.Combine(output, "word-search-result.txt"),
-            "PASS: upgraded Word Search artwork, compact tile statistics, six polished difficulty tiers, header Games navigation, Relaxed puzzle start, hint feedback and autosaved resume state all passed.");
+            "PASS: upgraded Word Search artwork, compact tile statistics, six polished difficulty tiers, header Games navigation, Relaxed puzzle start, hint feedback, autosaved resume state and right-side casino overview hub all passed.");
     }
 
     private static void Click(Button button) => button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
