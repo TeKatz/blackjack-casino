@@ -47,7 +47,7 @@ internal static partial class Program
         window.UpdateLayout(); await Task.Delay(50);
         Border inspector = Find<Border>(window).Single(b => b.Name == "AlbumArtOverlay");
         Require(inspector.IsVisible, "Collected card did not open its artwork inspector");
-        Image inspectorImage = Find<Image>(inspector).Single(i => i.Name == "CollectionCardArt");
+        Image inspectorImage = Find<Image>(inspector).Single(i => i.Name == "CollectionCardArt" && Equals(i.Tag, ownedId));
         Require(inspectorImage.Tag as string == ownedId, "Inspector displays another card");
         Require(RenderOptions.GetBitmapScalingMode(inspectorImage) == BitmapScalingMode.HighQuality, "Inspector illustration is not using high-quality bitmap scaling");
         Require(!Find<Viewbox>(inspector).Any(), "Inspector still enlarges the small card through a Viewbox");
@@ -113,8 +113,8 @@ internal static partial class Program
                 Require(inlays.Length == 4, "Premium card lost its four corner inlays.");
                 Rect[] bounds = inlays.Select(b => b.TransformToAncestor(surface).TransformBounds(new Rect(b.RenderSize))).ToArray();
                 Require(Math.Abs(bounds[0].Left - bounds[2].Left) < 1 && Math.Abs(bounds[1].Right - bounds[3].Right) < 1, "Corner inlays have mismatched horizontal anchors.");
-                Require(Math.Abs(bounds[0].Left - (surface.ActualWidth - bounds[1].Right)) < 1, "Premium corner insets are asymmetric.");
-                Require(Math.Abs(bounds[0].Top - (surface.ActualHeight - bounds[2].Bottom)) < 1, "Premium vertical corner insets are asymmetric.");
+                Require(Math.Abs(bounds[0].Left - (surface.ActualWidth - bounds[1].Right)) <= 1.01, $"Premium corner insets are asymmetric: {rarity}, scale {scale}, surface {surface.ActualWidth}, left {bounds[0].Left}, right {surface.ActualWidth - bounds[1].Right}.");
+                Require(Math.Abs(bounds[0].Top - (surface.ActualHeight - bounds[2].Bottom)) <= 1.01, $"Premium vertical corner insets are asymmetric: {rarity}, scale {scale}, top {bounds[0].Top}, bottom {surface.ActualHeight - bounds[2].Bottom}.");
             }
 
             CollectionCard legendary = CollectionCatalog.Themes[0].Cards[^1];

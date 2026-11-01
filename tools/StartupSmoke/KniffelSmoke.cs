@@ -85,6 +85,10 @@ internal static class KniffelSmoke
         // Enable actual roll animation, close while it is running, then resume the result.
         CheckBox animationSetting = Find<CheckBox>(window).Single(box => box.Name == "AnimationsCheckBox");
         animationSetting.IsChecked = true;
+        var preferencesField = typeof(MainWindow).GetField("preferences", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        AppPreferences previousPreferences = (AppPreferences)preferencesField.GetValue(window)!;
+        Require(!previousPreferences.Presentation("kniffel").AnimationsEnabled, "Blackjack animation setting leaked into Midnight Dice.");
+        preferencesField.SetValue(window, previousPreferences.WithPresentation("kniffel", previousPreferences.Presentation("kniffel") with { AnimationsEnabled = true }));
         Click(view, "RollButton");
         Require(!Button(view, "RollButton").IsEnabled && !Button(view, "Score_Chance").IsEnabled,
             "Animation did not lock rolling and scoring.");
@@ -107,6 +111,7 @@ internal static class KniffelSmoke
         Require(view.Game.RollsUsed == 2, "Cancelling restart discarded the turn.");
         Click(view, "KniffelBackButton");
         animationSetting.IsChecked = false;
+        preferencesField.SetValue(window, previousPreferences);
         File.WriteAllText(Path.Combine(output, "kniffel-result.txt"),
             "PASS: embedded lobby entry; five vector dice; 13 scoring rows; hold/reroll; score selection and confirmation; glow; full game; checkpoints; animation locking, settlement and mid-animation return; restart cancellation; 1080x720 and 1280x900 captures.");
     }

@@ -26,7 +26,7 @@ CI builds and tests the solution on Windows, checks the shared control templates
   The Lounge return action lives in the shared header.
 - Player Profile owns Statistics and Hand History navigation, and displays owned titles
   with equip actions alongside portraits. Progression & Shop contains rewards and shop
-  destinations only. Challenges show twelve cards per page in a responsive grid.
+  destinations only. Challenges use a responsive grid whose page size fits the available viewport.
 - Presentation settings migrate the previous global values into independent destination
   records on first load. Blackjack keeps its existing controls; slot/Manor controls save
   only their destination settings. A muted embedded page consumes its own menu events

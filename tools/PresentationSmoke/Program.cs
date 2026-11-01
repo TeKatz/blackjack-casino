@@ -66,6 +66,7 @@ internal static partial class Program
 
             Capture(window, "lobby-grid-" + (int)size.Item1);
         }
+        await CheckDistinctFrames(window);
         bool future=false;
         window.Modes.Register(new("future-room","Future room","Registry test","A future mode without changing lobby layout.","#527D9A","◇","Future"),()=>future=true);
         window.UpdateLayout();
@@ -164,7 +165,7 @@ internal static partial class Program
         }
         progressionTabs.SelectedItem=progressionTabs.Items.OfType<TabItem>().Single(t=>Equals(t.Header,"Challenges"));window.UpdateLayout();
         var challengeSearch=Find<TextBox>(window).Single(t=>t.Name=="ChallengeSearchBox");
-        Require(Find<UniformGrid>(window).Single(p=>p.Name=="ChallengesPanel").Children.OfType<Border>().Count()==12,"Challenge pagination renders an unbounded list");
+        Require(Find<UniformGrid>(window).Single(p=>p.Name=="ChallengesPanel").Children.OfType<Border>().Count()>=4,"Challenge grid did not fill the available page");
         CheckCollectionPaging(window,"ChallengesPanel","ChallengeNextButton","ChallengePreviousButton");
         ChallengeDefinition[] ready=ChallengeCatalog.All.Where(c=>ChallengeCatalog.Complete(qaProfile,c) && !qaProfile.ClaimedChallengeIds.Contains(c.Id)).ToArray();
         Require(ready.Length>0,"QA profile did not prepare claimable challenges");
@@ -414,7 +415,7 @@ internal static partial class Program
     {
         string[] Ids()=>Find<Panel>(window).Single(p=>p.Name==panelName).Children.OfType<Border>()
             .SelectMany(p=>Find<Button>(p)).Select(b=>b.Tag).OfType<string>().ToArray();
-        string[] first=Ids();Require(first.Length==12,"Expected twelve challenge cards in "+panelName);
+        string[] first=Ids();Require(first.Length>=2 && first.Length<=12,"Expected a bounded responsive challenge grid in "+panelName);
         Button next=Find<Button>(window).Single(b=>b.Name==nextName);
         Require(next.IsEnabled,"Next is unavailable with multiple pages in "+panelName);
         next.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));window.UpdateLayout();

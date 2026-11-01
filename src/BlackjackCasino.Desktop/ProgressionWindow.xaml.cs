@@ -36,7 +36,17 @@ internal partial class ProgressionWindow : Window
         ProgressionRoot.PreviewKeyDown += AlbumArt_KeyDown;
         MenuAudio.Attach(this, () => albumSounds);
         InitializeCollections();
-        ChallengesScroll.SizeChanged += (_, _) => ChallengesPanel.Columns = ChallengesScroll.ActualWidth < 1100 ? 2 : 3;
+        ChallengesScroll.SizeChanged += (_, _) =>
+        {
+            if (ChallengesScroll.ActualHeight <= 0) return;
+            int columns = ChallengesScroll.ActualWidth < 1100 ? 2 : 3;
+            int size = columns * Math.Clamp((int)(ChallengesScroll.ActualHeight / 192), 1, 4);
+            ChallengesPanel.Columns = columns;
+            if (size == ChallengePageSize) return;
+            int first = challengePage * ChallengePageSize;
+            ChallengePageSize = size; challengePage = first / size;
+            RefreshChallenges();
+        };
         StateChanged += (_, _) => RefreshMaximizeGlyph();
         RefreshAll();
         RefreshMaximizeGlyph();

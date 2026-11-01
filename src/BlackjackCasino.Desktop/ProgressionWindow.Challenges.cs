@@ -62,7 +62,7 @@ internal partial class ProgressionWindow
         border.Padding = new Thickness(18, 15, 18, 15);
         border.Margin = new Thickness(0, 0, 12, 12);
         border.BorderBrush = claimed ? new SolidColorBrush(Rgb(48, 83, 65)) : complete ? CoinBrush : new SolidColorBrush(Rgb(49, 90, 67));
-        var grid = new Grid { MinHeight = 184 };
+        var grid = new Grid { MinHeight = 140 };
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
