@@ -102,7 +102,7 @@ internal static class LocalizationSmoke
             "Sudoku timer control remained English.");
         Require(Find<Button>(window).Any(button => button.Name == "SudokuNew_Medium" && Equals(button.Content, "NEUES RÄTSEL")),
             "Sudoku New Puzzle action remained English.");
-        Require(Find<Button>(window).Any(button => button.Name == "LoungeGamesHeaderBack" && button.IsVisible && Equals(button.Content, "← SPIELE")),
+        Require(Find<Button>(window).Any(button => IsVisibleGamesButton(button, "SPIELE")),
             "Sudoku Games header navigation did not localize to German.");
 
         Click(Find<Button>(window).Single(button => button.Name == "SudokuNew_Expert"));
@@ -119,7 +119,7 @@ internal static class LocalizationSmoke
         Click(Find<Button>(window).Single(button => button.IsVisible && Equals(button.Content, "← LOUNGE")));
         await Task.Delay(70);
         window.UpdateLayout();
-        Click(Find<Button>(window).Single(button => button.Name == "LoungeGamesHeaderBack" && button.IsVisible && Equals(button.Content, "← SPIELE")));
+        Click(Find<Button>(window).Single(button => IsVisibleGamesButton(button, "SPIELE")));
         await Task.Delay(70);
         window.UpdateLayout();
 
@@ -130,8 +130,10 @@ internal static class LocalizationSmoke
             "Midnight Solitaire hub headline remained English.");
         Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "ERFOLGE"),
             "Midnight Solitaire achievement section remained English.");
-        Require(Find<Button>(window).Any(button => button.Name == "LoungeGamesHeaderBack" && button.IsVisible && Equals(button.Content, "← SPIELE")),
+        Require(Find<Button>(window).Any(button => IsVisibleGamesButton(button, "SPIELE")),
             "Midnight Solitaire Games header navigation did not localize to German.");
+        Require(!Find<Button>(window).Any(button => button.IsVisible && button.Content is string text && text.Contains("LOUNGE-SPIELE", StringComparison.OrdinalIgnoreCase)),
+            "Midnight Solitaire still exposes the old Lounge-Spiele navigation.");
         Button newDeal = Find<Button>(window).First(button => button.IsVisible && Equals(button.Content, "NEUES SPIEL"));
         Click(newDeal);
         await Task.Delay(100);
@@ -153,7 +155,7 @@ internal static class LocalizationSmoke
 
         Click(Find<Button>(window).Single(button => button.IsVisible && Equals(button.Content, "← SOLITAIRE")));
         await Task.Delay(50);
-        Click(Find<Button>(window).Single(button => button.Name == "LoungeGamesHeaderBack" && button.IsVisible && Equals(button.Content, "← SPIELE")));
+        Click(Find<Button>(window).Single(button => IsVisibleGamesButton(button, "SPIELE")));
         await Task.Delay(50);
         Click(Find<Button>(window).Single(button => button.IsVisible && Equals(button.Content, "ZURÜCK ZUM CLUB")));
         await Task.Delay(100);
@@ -175,6 +177,13 @@ internal static class LocalizationSmoke
             "Casino lobby headline did not switch back to English without a restart.");
         Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "VAULT FULL"),
             "Dynamic Vault header did not switch back to English.");
+    }
+
+    private static bool IsVisibleGamesButton(Button button, string label)
+    {
+        if (!button.IsVisible || button.Content is not string text) return false;
+        return text.Contains(label, StringComparison.OrdinalIgnoreCase) &&
+               !text.Contains("LOUNGE", StringComparison.OrdinalIgnoreCase);
     }
 
     private static async Task<Grid> OpenVault(MainWindow window, Button vault)
