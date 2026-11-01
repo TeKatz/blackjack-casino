@@ -141,9 +141,31 @@ internal sealed class WordSearchLoungeHub : UserControl, IDisposable
         border.Margin = new Thickness(0, 0, 10, 10);
         var stack = new StackPanel();
         stack.Children.Add(Label(difficulty.ToString().ToUpperInvariant(), 11, difficulty >= WordSearchDifficulty.Expert ? "#E0BE73" : "#86BA9D", FontWeights.Bold));
-        stack.Children.Add(Label($"{size} × {size} · {wordCount} words", 17, "#F0DFC2", FontWeights.SemiBold));
+        stack.Children.Add(Label($"{size} × {size}", 17, "#F0DFC2", FontWeights.SemiBold));
         stack.Children.Add(Label(DirectionText(difficulty), 10, "#91A79C"));
         stack.Children.Add(MarginLabel($"{Math.Min(completed, pool.Count)} / {pool.Count} completed", 10, "#7F948B", new Thickness(0, 7, 0, 0)));
+
+        var meta = new Grid { Name = "WordSearchDifficultyMeta", Margin = new Thickness(0, 7, 0, 2) };
+        meta.ColumnDefinitions.Add(new ColumnDefinition());
+        meta.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        meta.Children.Add(new TextBlock
+        {
+            Text = $"{wordCount} WORDS",
+            FontSize = 10,
+            FontWeight = FontWeights.SemiBold,
+            Foreground = Brush("#9CB0A6"),
+        });
+        var xp = new TextBlock
+        {
+            Text = $"+{WordSearchProgression.PlayerExperience(difficulty):N0} XP",
+            FontSize = 10,
+            FontWeight = FontWeights.Bold,
+            Foreground = Brush(difficulty >= WordSearchDifficulty.Expert ? "#E0BE73" : "#86BA9D"),
+        };
+        Grid.SetColumn(xp, 1);
+        meta.Children.Add(xp);
+        stack.Children.Add(meta);
+
         var bar = new ProgressBar
         {
             Minimum = 0,
