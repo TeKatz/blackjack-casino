@@ -33,6 +33,7 @@ public partial class MainWindow
         progressionController.AccruePlaytime();
         ProcessLatestCompletedRound();
         var page = new ProgressionWindow(progressionController, AnimationsEnabled, SoundEnabled);
+        page.RemoveAlbumTab();
         page.ConfigureEmbeddedPresentation(CloseMetaPage);
         if (page.Content is FrameworkElement content)
             content.Loaded += (_, _) => page.SelectTab(tab);
@@ -93,7 +94,6 @@ public partial class MainWindow
         content.UseLayoutRounding = true;
         content.SnapsToDevicePixels = true;
         content.Focusable = true;
-        // These pages are visual content only: never Show(), ShowDialog() or create a HWND.
         shell.Content = null;
         metaPages.Push(new MetaPage(shell, content));
         metaHost!.Content = content;
