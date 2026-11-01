@@ -1,3 +1,4 @@
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
@@ -13,8 +14,25 @@ public partial class MainWindow
             return;
         }
 
+        // The header gains and loses neighbouring actions over time, so the level-up sweep must
+        // follow the real profile tile instead of relying on the old fixed 255px clip and travel.
+        double profileWidth = Math.Max(1, profileButton.ActualWidth > 0 ? profileButton.ActualWidth : profileButton.MinWidth);
+        double profileHeight = Math.Max(1, profileButton.ActualHeight > 0 ? profileButton.ActualHeight : profileButton.Height);
+        double sweepWidth = Math.Clamp(profileWidth * .42, 112, 150);
+        if (profileLevelUpSweep.Parent is Canvas sweepClip)
+        {
+            sweepClip.Width = profileWidth;
+            sweepClip.Height = profileHeight;
+            profileLevelUpSweep.Width = sweepWidth;
+            profileLevelUpSweep.Height = Math.Max(32, profileHeight - 6);
+            Canvas.SetTop(profileLevelUpSweep, Math.Max(0, (profileHeight - profileLevelUpSweep.Height) / 2));
+        }
+
+        double sweepStart = -sweepWidth;
+        double sweepEnd = profileWidth + 2;
         profileLevelUpSweep.BeginAnimation(OpacityProperty, null);
         profileLevelUpSweepTransform.BeginAnimation(TranslateTransform.XProperty, null);
+        profileLevelUpSweepTransform.X = sweepStart;
 
         var glow = new DropShadowEffect
         {
@@ -30,8 +48,8 @@ public partial class MainWindow
         var sweepEase = new CubicEase { EasingMode = EasingMode.EaseInOut };
         var sweep = new DoubleAnimation
         {
-            From = -125,
-            To = 315,
+            From = sweepStart,
+            To = sweepEnd,
             Duration = TimeSpan.FromMilliseconds(sweepDurationMs),
             EasingFunction = sweepEase,
             FillBehavior = FillBehavior.Stop,
@@ -70,7 +88,7 @@ public partial class MainWindow
         glowOpacity.Completed += (_, _) =>
         {
             profileLevelUpSweep.Opacity = 0;
-            profileLevelUpSweepTransform.X = -125;
+            profileLevelUpSweepTransform.X = sweepStart;
             profileButton.ClearValue(EffectProperty);
             // The level-up glow temporarily replaces the equipped cosmetic frame glow.
             // Restore the normal profile presentation once the one-shot sweep is over.
