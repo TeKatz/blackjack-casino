@@ -22,6 +22,7 @@ internal partial class ProgressionWindow
     private void RefreshShop()
     {
         if (!collectionsInitialized) return;
+        RefreshPackShop();
         PlayerProfileState profile = controller.Profile;
         ShopCoinsText.Text = $"Balance: ◆ {profile.Coins:N0}";
         ShopCoinsText.Foreground = CoinBrush;

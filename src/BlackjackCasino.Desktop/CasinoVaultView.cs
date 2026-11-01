@@ -490,7 +490,8 @@ internal sealed class CasinoVaultView : UserControl, IDisposable
         }
 
         rewardBase.Text = $"Reserve released  {Money(result.BaseAmount)}";
-        rewardBonus.Text = $"FULL VAULT BONUS  +{Money(result.BonusAmount)}  ({result.BonusRate:P0})";
+        int packTier = CasinoVaultTierCatalog.All.ToList().FindIndex(t => t.Id == result.TierId);
+        rewardBonus.Text = $"FULL VAULT BONUS  +{Money(result.BonusAmount)}  ({result.BonusRate:P0})\n+ {(BlackjackCasino.Core.Collections.CollectionRarity)Math.Clamp(packTier, 0, 4)} card pack · open in the Album";
         rewardTotal.Text = "+" + Money(result.TotalPayout);
 
         if (!animationsEnabled())

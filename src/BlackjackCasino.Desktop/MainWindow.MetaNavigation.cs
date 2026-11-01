@@ -32,7 +32,7 @@ public partial class MainWindow
         if (progressionController is null) return;
         progressionController.AccruePlaytime();
         ProcessLatestCompletedRound();
-        var page = new ProgressionWindow(progressionController);
+        var page = new ProgressionWindow(progressionController, AnimationsEnabled, SoundEnabled);
         page.ConfigureEmbeddedPresentation(CloseMetaPage);
         if (page.Content is FrameworkElement content)
             content.Loaded += (_, _) => page.SelectTab(tab);

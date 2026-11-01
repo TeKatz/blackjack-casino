@@ -9,7 +9,7 @@ using System.Windows.Media.Imaging;
 using BlackjackCasino.Core;
 using BlackjackCasino.Desktop;
 
-internal static class Program
+internal static partial class Program
 {
     [DllImport("user32.dll")] private static extern bool SetCursorPos(int x,int y);
     private static string output="";
@@ -166,6 +166,7 @@ internal static class Program
         shopSearch.Text="Moon Cat";window.UpdateLayout();
         Require(Find<Button>(window).Any(b=>Equals(b.Tag,"portrait-moon-cat")),"Shop search failed to find the requested portrait");
         shopSearch.Clear();
+        await CheckAlbum(window, qaProfile, progressionTabs);
         Find<Button>(window).Single(b=>b.Name=="ProgressionBackButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(40);window.UpdateLayout();
         Require(Find<TextBox>(window).Any(t=>t.Name=="ProfileNameBox" && t.Text=="Midnight Timo"),"Progression Back did not restore the profile");

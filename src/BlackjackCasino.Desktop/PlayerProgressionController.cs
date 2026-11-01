@@ -1,3 +1,4 @@
+using BlackjackCasino.Core.Collections;
 using BlackjackCasino.Core;
 
 namespace BlackjackCasino.Desktop;
@@ -12,17 +13,21 @@ internal sealed class PlayerProgressionController : IDisposable
     private readonly HashSet<Guid> knownRoundIds;
     private bool disposed;
     private readonly bool persist;
+    private readonly Action<PlayerProfileState> saveCollectionProfile;
+    private readonly bool persistCollection;
     private readonly bool persistChallengeClaims;
     private readonly Action<PlayerProfileState> saveChallengeProfile;
     private readonly Action<PlayerProfileState> saveKniffelProfile;
     private readonly bool persistKniffelRewards;
 
     public PlayerProgressionController(PlayerProfileState? initialProfile = null, Action<PlayerProfileState>? challengeProfileSaver = null,
-        TimeProvider? timeProvider = null, Action<PlayerProfileState>? kniffelProfileSaver = null)
+        TimeProvider? timeProvider = null, Action<PlayerProfileState>? kniffelProfileSaver = null, Action<PlayerProfileState>? collectionProfileSaver = null)
     {
         this.timeProvider = timeProvider ?? TimeProvider.System;
         sessionStartedAt = this.timeProvider.GetTimestamp();
         persist = initialProfile is null;
+        saveCollectionProfile = collectionProfileSaver ?? PlayerProfileStore.SaveProfileOrThrow;
+        persistCollection = persist || collectionProfileSaver is not null;
         persistChallengeClaims = persist || challengeProfileSaver is not null;
         saveChallengeProfile = challengeProfileSaver ?? PlayerProfileStore.SaveProfileOrThrow;
         persistKniffelRewards = persist || kniffelProfileSaver is not null;
@@ -246,9 +251,19 @@ internal sealed class PlayerProgressionController : IDisposable
         lock (Profile)
         {
             AccruePlaytime();
-            ChallengeClaimResult result = Service.ClaimChallenge(challengeId);
-            if (result.Success && persist) PlayerProfileStore.SaveProfile(Profile);
-            return result;
+            PlayerProfileState candidate = ManorPersistence.Clone(Profile);
+            ChallengeClaimResult result = new ProgressionService(candidate).ClaimChallenge(challengeId);
+            if (!result.Success) return result;
+            try
+            {
+                if (persistChallengeClaims) saveChallengeProfile(candidate);
+                AdoptManorProfile(candidate);
+                return result;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                return new(false, "Challenge reward could not be saved. " + ex.Message);
+            }
         }
     }
 
@@ -257,19 +272,17 @@ internal sealed class PlayerProgressionController : IDisposable
         lock (Profile)
         {
             AccruePlaytime();
-            long previousCoins = Profile.Coins;
-            List<string> previousClaims = Profile.ClaimedChallengeIds;
-            ChallengeClaimAllResult result = Service.ClaimAllChallenges();
-            if (!result.Success || !persistChallengeClaims) return result;
+            PlayerProfileState candidate = ManorPersistence.Clone(Profile);
+            ChallengeClaimAllResult result = new ProgressionService(candidate).ClaimAllChallenges();
+            if (!result.Success) return result;
             try
             {
-                saveChallengeProfile(Profile);
+                if (persistChallengeClaims) saveChallengeProfile(candidate);
+                AdoptManorProfile(candidate);
                 return result;
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-                Profile.Coins = previousCoins;
-                Profile.ClaimedChallengeIds = previousClaims;
                 return new(false, "Challenge rewards could not be saved. Please try again. " + ex.Message, []);
             }
         }
@@ -277,9 +290,53 @@ internal sealed class PlayerProgressionController : IDisposable
 
     public PrestigeResult Prestige()
     {
-        PrestigeResult result = Service.Prestige();
-        if (result.Success && persist) PlayerProfileStore.SaveProfile(Profile);
-        return result;
+        lock (Profile)
+        {
+            PlayerProfileState candidate = ManorPersistence.Clone(Profile);
+            PrestigeResult result = new ProgressionService(candidate).Prestige();
+            if (!result.Success) return result;
+            try
+            {
+                if (persistCollection) saveCollectionProfile(candidate);
+                AdoptManorProfile(candidate);
+                return result;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                return new(false, Profile.Prestige, 0, [], "Prestige could not be saved. " + ex.Message);
+            }
+        }
+    }
+
+    public CollectionActionResult PurchaseCollectionPack(CollectionRarity rarity) =>
+        CommitCollection(candidate => CollectionService.PurchasePack(candidate, rarity));
+
+    public CollectionActionResult OpenCollectionPack(CollectionRarity rarity) =>
+        CommitCollection(candidate => CollectionService.OpenPack(candidate, rarity));
+
+    public CollectionActionResult CompleteCollectionOpening(Guid id) => CommitCollection(candidate =>
+        CollectionService.CompleteOpening(candidate, id)
+            ? new(true, "Cards added to your album.") : new(false, "No matching pack reveal."));
+
+    private CollectionActionResult CommitCollection(Func<PlayerProfileState, CollectionActionResult> action)
+    {
+        lock (Profile)
+        {
+            PlayerProfileState candidate = ManorPersistence.Clone(Profile);
+            CollectionActionResult result = action(candidate);
+            if (!result.Success) return result;
+            try
+            {
+                // Inventory, cards, duplicate conversion and the reveal receipt commit together.
+                if (persistCollection) saveCollectionProfile(candidate);
+                AdoptManorProfile(candidate);
+                return result;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                return new(false, "Collection could not be saved. Please try again. " + ex.Message);
+            }
+        }
     }
 
     public void AdoptManorProfile(PlayerProfileState committed)
@@ -292,6 +349,7 @@ internal sealed class PlayerProgressionController : IDisposable
         Profile.MidnightMerge = committed.MidnightMerge;
         Profile.Manor = committed.Manor;
         Profile.Vault = committed.Vault;
+        Profile.Collection = committed.Collection;
         Profile.SchemaVersion = committed.SchemaVersion;
         Profile.SlotTrackingVersion = committed.SlotTrackingVersion;
         Profile.Slots = committed.Slots;

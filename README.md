@@ -134,3 +134,7 @@ dotnet test BlackjackCasino.sln -c Release --no-build
 The CI pipeline additionally exercises shared-control contracts, table wager presentation, embedded casino navigation, Midnight Manor runtime behavior and Windows presentation regression captures.
 
 For the overall structure see [`docs/architecture.md`](docs/architecture.md). Historical implementation phases are documented in [`docs/phase-1.md`](docs/phase-1.md) through [`docs/phase-6.md`](docs/phase-6.md).
+
+### Collector’s Album
+
+The Progression **Album** tab adds 136 permanent collectible cards across 12 regular and 4 ultra rare themes. Earn five-card packs from challenges, Season Pass milestones, full Vaults, Prestige or the existing Cosmetic Shop. Duplicate points automatically recycle into packs. Pack reveals include rarity-scaled foil effects and audio, with saved receipts for interrupted openings. See [album rules, odds and save behavior](docs/collectible-album.md).

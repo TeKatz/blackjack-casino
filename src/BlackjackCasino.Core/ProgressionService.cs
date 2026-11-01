@@ -1,3 +1,5 @@
+using BlackjackCasino.Core.Collections;
+
 namespace BlackjackCasino.Core;
 
 public sealed class ProgressionService
@@ -113,6 +115,8 @@ public sealed class ProgressionService
         for (int tier = previousTier + 1; tier <= targetTier; tier++)
         {
             SeasonTierDefinition reward = season.Tiers[tier - 1];
+            if (CollectionCatalog.SeasonPack(tier) is { } packRarity)
+                CollectionService.GrantPack(State, packRarity);
             State.Coins += reward.Coins;
             coins += reward.Coins;
 
@@ -217,7 +221,8 @@ public sealed class ProgressionService
             long balance = checked(State.Coins + challenge.CoinReward);
             State.ClaimedChallengeIds.Add(challenge.Id);
             State.Coins = balance;
-            return new ChallengeClaimResult(true, $"Claimed {challenge.CoinReward:N0} coins for {challenge.Name}.", challenge, challenge.CoinReward);
+            CollectionService.GrantPack(State, ChallengePack(challenge));
+            return new ChallengeClaimResult(true, $"Claimed {challenge.CoinReward:N0} coins and a {ChallengePack(challenge)} card pack for {challenge.Name}.", challenge, challenge.CoinReward);
         }
     }
 
@@ -243,7 +248,9 @@ public sealed class ProgressionService
             updatedClaims.AddRange(available.Select(challenge => challenge.Id));
             State.ClaimedChallengeIds = updatedClaims;
             State.Coins = balance;
-            return new(true, $"Claimed {coins:N0} coins from {available.Length:N0} challenges.", Array.AsReadOnly(available), coins);
+            foreach (ChallengeDefinition challenge in available)
+                CollectionService.GrantPack(State, ChallengePack(challenge));
+            return new(true, $"Claimed {coins:N0} coins and {available.Length:N0} card packs from {available.Length:N0} challenges.", Array.AsReadOnly(available), coins);
         }
     }
 
@@ -260,6 +267,8 @@ public sealed class ProgressionService
 
         const long prestigeCoins = 500;
         State.Coins += prestigeCoins;
+        CollectionService.GrantPack(State, CollectionRarity.Legendary);
+        CollectionService.GrantPack(State, CollectionRarity.Epic, 2);
 
         var unlocked = new List<CosmeticDefinition>();
         foreach (CosmeticDefinition reward in CosmeticCatalog.PrestigeRewards(State.Prestige))
@@ -273,8 +282,11 @@ public sealed class ProgressionService
         string rewardText = unlocked.Count == 0
             ? string.Empty
             : $" Unlocked {string.Join(", ", unlocked.Select(x => x.Name))}.";
-        return new PrestigeResult(true, State.Prestige, prestigeCoins, unlocked, $"Prestige {State.Prestige} reached. Level reset to 0.{rewardText}");
+        return new PrestigeResult(true, State.Prestige, prestigeCoins, unlocked, $"Prestige {State.Prestige} reached. Level reset to 0. One Legendary and two Epic card packs added to the Album.{rewardText}");
     }
+
+    public static CollectionRarity ChallengePack(ChallengeDefinition challenge) => challenge.CoinReward >= 100
+        ? CollectionRarity.Rare : challenge.CoinReward >= 40 ? CollectionRarity.Uncommon : CollectionRarity.Common;
 
     public void AddPlaytime(TimeSpan duration)
     {

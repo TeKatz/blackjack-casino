@@ -361,6 +361,7 @@ public partial class MainWindow
 
         PlayerProfileState profile = progressionController.Profile;
         CasinoVaultState before = CopyVault(profile.Vault);
+        var collectionBefore = ManorPersistence.Clone(profile.Collection);
         bool preparedDurably = false;
         try
         {
@@ -381,6 +382,7 @@ public partial class MainWindow
             if (!preparedDurably)
             {
                 profile.Vault = before;
+                profile.Collection = collectionBefore;
             }
             throw;
         }

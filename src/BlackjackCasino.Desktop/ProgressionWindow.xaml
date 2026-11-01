@@ -284,10 +284,47 @@
                   <TextBlock x:Name="ShopStatusText" Margin="0,7,0,0" Foreground="#B7C9BD" TextWrapping="Wrap" Text="Preview cosmetics, buy with Cosmetic Coins, or equip an owned reward." AutomationProperties.LiveSetting="Polite" />
                 </StackPanel>
               </Border>
-              <ScrollViewer x:Name="ShopScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel x:Name="ShopPanel" /></ScrollViewer>
+              <ScrollViewer x:Name="ShopScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel><TextBlock Text="CARD PACKS · OPEN IN THE ALBUM" FontWeight="Bold" Foreground="#FFE0A1" Margin="6"/><WrapPanel x:Name="PackShopPanel"/><StackPanel x:Name="ShopPanel" /></StackPanel></ScrollViewer>
               <DockPanel Grid.Row="2" Margin="0,8,0,0">
                 <TextBlock x:Name="ShopPageText" VerticalAlignment="Center" Foreground="#A6BBAE" />
               </DockPanel>
+            </Grid>
+          </TabItem>
+          <TabItem Header="Album">
+            <Grid Margin="6">
+              <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+              <StackPanel Margin="8,4,8,8">
+                <TextBlock Text="THE COLLECTOR’S ALBUM" FontSize="20" FontWeight="Bold" Foreground="#FFE0A1"/>
+                <TextBlock x:Name="AlbumSummary" Margin="0,5,0,0" Foreground="#A6BBAE" TextWrapping="Wrap"/>
+                <ProgressBar x:Name="AlbumDuplicateProgress" Height="5" Margin="0,8,0,0" Maximum="500" Foreground="#C494FF"/>
+                <TextBlock x:Name="AlbumStatus" Margin="0,6,0,0" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite"/>
+              </StackPanel>
+              <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="205"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel x:Name="AlbumThemes" Margin="0,0,8,0"/></ScrollViewer>
+                <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+                  <StackPanel>
+                    <TextBlock Text="YOUR PACKS" FontWeight="Bold" Foreground="#FFE0A1" Margin="8,2"/>
+                    <WrapPanel x:Name="AlbumPacks"/>
+                    <TextBlock x:Name="AlbumThemeTitle" FontSize="20" FontWeight="SemiBold" Margin="8,14,8,3"/>
+                    <WrapPanel x:Name="AlbumCards"/>
+                  </StackPanel>
+                </ScrollViewer>
+              </Grid>
+              <Border x:Name="AlbumOpeningOverlay" Grid.RowSpan="2" Background="#FA0B1420" CornerRadius="12" BorderThickness="1" BorderBrush="#C494FF" Visibility="Collapsed" Padding="12">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                  <StackPanel HorizontalAlignment="Center">
+                    <TextBlock x:Name="AlbumOpeningTitle" FontSize="25" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,12,0,8"/>
+                    <ContentControl x:Name="AlbumOpeningPack" HorizontalAlignment="Center"/>
+                    <TextBlock x:Name="AlbumOpeningSummary" TextWrapping="Wrap" TextAlignment="Center" Margin="10" Foreground="#C5CEDB"/>
+                    <WrapPanel x:Name="AlbumOpeningCards" HorizontalAlignment="Center"/>
+                    <WrapPanel HorizontalAlignment="Center" Margin="0,14">
+                      <Button x:Name="AlbumRevealAll" Content="Reveal all" Click="AlbumRevealAll_Click" Margin="6" Padding="20,10"/>
+                      <Button x:Name="AlbumCollect" Content="Continue collecting" Click="AlbumCollect_Click" Margin="6" Padding="20,10"/>
+                    </WrapPanel>
+                  </StackPanel>
+                </ScrollViewer>
+              </Border>
             </Grid>
           </TabItem>
         </TabControl>

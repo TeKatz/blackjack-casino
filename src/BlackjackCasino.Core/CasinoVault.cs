@@ -224,6 +224,8 @@ public static class CasinoVaultService
         state.LifetimeBonuses = checked(state.LifetimeBonuses + bonus);
         state.BiggestPayout = Math.Max(state.BiggestPayout, payout);
         state.LastOpenedAt = openedAt;
+        int tierIndex = CasinoVaultTierCatalog.All.ToList().FindIndex(t => t.Id == tier.Id);
+        Collections.CollectionService.GrantPack(profile, (Collections.CollectionRarity)Math.Clamp(tierIndex, 0, 4));
 
         return new(id, tier.Id, baseAmount, bonus, payout, tier.FullBonusRate, openedAt);
     }
