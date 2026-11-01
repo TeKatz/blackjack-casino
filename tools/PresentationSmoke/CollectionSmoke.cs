@@ -219,8 +219,8 @@ internal static partial class Program
             Require(Equals(countAll.Content, "Open All Packs (4)"), "Four-pack staging count is wrong before opening");
             countPrimary.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
 
-            CollectionOpening? countOpening = countProfile.Collection.PendingOpening;
-            Require(countOpening is not null, "Open Pack did not persist a receipt for badge verification");
+            CollectionOpening countOpening = countProfile.Collection.PendingOpening
+                ?? throw new InvalidOperationException("Open Pack did not persist a receipt for badge verification");
             int expectedNew = countOpening.Cards.Count(c => c.IsNew);
             int expectedDuplicates = countOpening.Cards.Count - expectedNew;
 
