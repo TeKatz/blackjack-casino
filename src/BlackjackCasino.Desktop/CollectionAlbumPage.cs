@@ -699,12 +699,7 @@ internal sealed class CollectionAlbumPage : Window
         for (int i = 0; i < CollectionCatalog.CardsPerPack; i++)
             openingCards.Children.Add(OpeningSlot(CreateConcealedCard(rarity)));
 
-        revealAll.Content = "Open Pack";
-        revealAll.Visibility = Visibility.Visible;
-        revealAll.IsEnabled = true;
-        collect.Content = available == 1 ? "Open All Packs" : $"Open All Packs ({available})";
-        collect.Visibility = Visibility.Visible;
-        collect.IsEnabled = true;
+        ConfigureOpeningActions(rarity, available);
         openingBack.Visibility = Visibility.Visible;
         ShowOpeningOverlay();
         revealAll.Focus();
@@ -810,7 +805,7 @@ internal sealed class CollectionAlbumPage : Window
                 await Task.Delay(animationsEnabled ? 360 : 1, token);
         }
 
-        FinishPackSequence();
+        FinishPackSequence(rarity);
     }
 
     private async Task PresentPendingOpeningAsync(CollectionOpening opening)
@@ -830,7 +825,7 @@ internal sealed class CollectionAlbumPage : Window
             }
             openingId = Guid.Empty;
             RefreshOverview(controller.Profile.Collection);
-            FinishPackSequence();
+            FinishPackSequence(opening.PackRarity);
         }
         catch (OperationCanceledException) { }
         finally
@@ -902,13 +897,16 @@ internal sealed class CollectionAlbumPage : Window
         CollectionDraw draw = opening.Cards[index];
         CollectionCard card = CollectionCatalog.Find(draw.CardId)!;
         bool ultra = CollectionCatalog.Theme(card).UltraRare;
-        Border front = CollectionArtwork.Card(
-            card,
-            true,
-            draw.IsNew ? "NEW TO YOUR ALBUM" : $"DUPLICATE · +{draw.DuplicatePoints} PTS",
-            animationsEnabled: false,
-            scale: .90);
-        revealSlots[index].Content = front;
+        Border front = CollectionArtwork.Card(card, true, animationsEnabled: false, scale: .90);
+        var result = new Grid { Width = 176, Height = 260 };
+        front.HorizontalAlignment = HorizontalAlignment.Center;
+        front.VerticalAlignment = VerticalAlignment.Center;
+        result.Children.Add(front);
+
+        Border resultBadge = RevealResultBadge(draw);
+        Panel.SetZIndex(resultBadge, 2);
+        result.Children.Add(resultBadge);
+        revealSlots[index].Content = result;
         PlayCue(card.Rarity, false);
 
         if (!animate) return;
@@ -928,21 +926,87 @@ internal sealed class CollectionAlbumPage : Window
         }
     }
 
-    private void FinishPackSequence()
+    private void FinishPackSequence(CollectionRarity rarity)
     {
         int opened = Math.Max(1, queuedPackTotal);
-        openingSummary.Text = opened == 1
+        int remaining = controller.Profile.Collection.Packs.GetValueOrDefault(rarity);
+        string result = opened == 1
             ? $"Pack opened · {sequenceNewCards} new cards · +{sequenceDuplicatePoints} duplicate points · {sequenceBonusPacks} bonus packs."
             : $"All {opened} packs opened · {sequenceNewCards} new cards · +{sequenceDuplicatePoints} duplicate points · {sequenceBonusPacks} bonus packs.";
-        status.Text = openingSummary.Text;
-        stagingPack = false;
-        stagedPackRarity = null;
+        openingSummary.Text = remaining > 0
+            ? result + $"  {remaining} {rarity.ToString().ToLowerInvariant()} pack{(remaining == 1 ? string.Empty : "s")} remaining."
+            : result;
+        status.Text = result;
         queuedPacksRemaining = 0;
+        queuedPackTotal = 0;
         queuedPackIndex = 0;
-        revealAll.Visibility = Visibility.Collapsed;
-        collect.Visibility = Visibility.Collapsed;
+        sequenceNewCards = 0;
+        sequenceDuplicatePoints = 0;
+        sequenceBonusPacks = 0;
+        openingId = Guid.Empty;
+
+        if (remaining > 0)
+        {
+            stagedPackRarity = rarity;
+            stagingPack = true;
+            ConfigureOpeningActions(rarity, remaining);
+            revealAll.Focus();
+        }
+        else
+        {
+            stagingPack = false;
+            stagedPackRarity = null;
+            revealAll.Visibility = Visibility.Collapsed;
+            collect.Visibility = Visibility.Collapsed;
+            openingBack.Focus();
+        }
         openingBack.Visibility = Visibility.Visible;
-        openingBack.Focus();
+    }
+
+    private void ConfigureOpeningActions(CollectionRarity rarity, int available)
+    {
+        revealAll.Content = "Open Pack";
+        revealAll.Visibility = available > 0 ? Visibility.Visible : Visibility.Collapsed;
+        revealAll.IsEnabled = available > 0;
+        collect.Content = available == 1 ? "Open All Packs" : $"Open All Packs ({available})";
+        collect.Visibility = available > 0 ? Visibility.Visible : Visibility.Collapsed;
+        collect.IsEnabled = available > 0;
+        if (available > 0) stagedPackRarity = rarity;
+    }
+
+    private static Border RevealResultBadge(CollectionDraw draw)
+    {
+        bool isNew = draw.IsNew;
+        Color accent = isNew ? Color.FromRgb(94, 232, 161) : Color.FromRgb(196, 148, 255);
+        string text = isNew ? "NEW" : $"DUPLICATE +{draw.DuplicatePoints}";
+        var label = new TextBlock
+        {
+            Text = text,
+            FontSize = 9,
+            FontWeight = FontWeights.Bold,
+            Foreground = new SolidColorBrush(isNew ? Color.FromRgb(199, 255, 225) : Color.FromRgb(233, 216, 255)),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        var badge = new Border
+        {
+            Name = "AlbumRevealResultBadge",
+            Tag = isNew ? "NEW" : "DUPLICATE",
+            Padding = new Thickness(9, 3, 9, 3),
+            CornerRadius = new CornerRadius(9),
+            Background = new SolidColorBrush(Color.FromArgb(235,
+                isNew ? (byte)18 : (byte)42,
+                isNew ? (byte)62 : (byte)31,
+                isNew ? (byte)43 : (byte)58)),
+            BorderBrush = new SolidColorBrush(accent),
+            BorderThickness = new Thickness(1),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = isNew ? VerticalAlignment.Top : VerticalAlignment.Bottom,
+            Margin = isNew ? new Thickness(0, 1, 0, 0) : new Thickness(0, 0, 0, 1),
+            Child = label,
+        };
+        System.Windows.Automation.AutomationProperties.SetName(badge, isNew ? "New collection card" : $"Duplicate collection card plus {draw.DuplicatePoints} points");
+        return badge;
     }
 
     private void ReturnToAlbumFromOpening()
