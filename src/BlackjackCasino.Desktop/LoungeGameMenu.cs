@@ -154,9 +154,7 @@ internal sealed class LoungeGameMenu : UserControl
         injectedShellBackAction = action;
         if (injectedShellBack is not null)
         {
-            injectedShellBack.Content = label ?? GamesBackLabel();
-            injectedShellBack.Tag = action;
-            injectedShellBack.Visibility = action is null ? Visibility.Collapsed : Visibility.Visible;
+            UpdateShellBack(injectedShellBack);
         }
         ApplyInjectedShellNavigation();
     }
@@ -167,50 +165,58 @@ internal sealed class LoungeGameMenu : UserControl
         Window? window = Window.GetWindow(this);
         if (window is null) return;
 
+        // LoungeWindow now owns a persistent Games button. Prefer that existing shell control
+        // immediately instead of making its state depend on finding the Return-to-Club control.
+        injectedShellBack ??= FindDescendant<Button>(window, button =>
+            string.Equals(button.Name, "LoungeGamesHeaderBack", StringComparison.Ordinal));
+        if (injectedShellBack is not null)
+        {
+            UpdateShellBack(injectedShellBack);
+            return;
+        }
+
+        // Fallback for any future host that does not provide the persistent shell button yet.
         Button? close = FindDescendant<Button>(window, IsReturnToClubButton);
         if (close is null) return;
 
-        injectedShellBack ??= FindDescendant<Button>(window, button => string.Equals(button.Name, "LoungeGamesHeaderBack", StringComparison.Ordinal));
-        if (injectedShellBack is null)
+        injectedShellBack = new Button
         {
-            injectedShellBack = new Button
-            {
-                Name = "LoungeGamesHeaderBack",
-                Content = GamesBackLabel(),
-                Foreground = LoungeUi.Ink("#EEE4D4"),
-                Background = LoungeUi.Ink("#17282A"),
-                BorderBrush = LoungeUi.Ink("#4A6661"),
-                BorderThickness = new Thickness(1),
-                Padding = new Thickness(15, 8, 15, 8),
-                FontWeight = FontWeights.SemiBold,
-                Cursor = CasinoCursors.Hand,
-                Margin = new Thickness(0, 0, 10, 0),
-            };
-            injectedShellBack.Click += ShellBackClicked;
-        }
+            Name = "LoungeGamesHeaderBack",
+            Content = GamesBackLabel(),
+            Foreground = LoungeUi.Ink("#EEE4D4"),
+            Background = LoungeUi.Ink("#17282A"),
+            BorderBrush = LoungeUi.Ink("#4A6661"),
+            BorderThickness = new Thickness(1),
+            Padding = new Thickness(15, 8, 15, 8),
+            FontWeight = FontWeights.SemiBold,
+            Cursor = CasinoCursors.Hand,
+            Margin = new Thickness(0, 0, 10, 0),
+        };
+        injectedShellBack.Click += ShellBackClicked;
+        UpdateShellBack(injectedShellBack);
 
-        injectedShellBack.Content = GamesBackLabel();
-        injectedShellBack.Tag = injectedShellBackAction;
-        injectedShellBack.Visibility = injectedShellBackAction is null ? Visibility.Collapsed : Visibility.Visible;
-
-        if (injectedShellBack.Parent is null)
+        if (close.Parent is Grid grid)
         {
-            if (close.Parent is Grid grid)
-            {
-                int column = Grid.GetColumn(close);
-                grid.Children.Remove(close);
-                var actions = new StackPanel { Orientation = Orientation.Horizontal };
-                actions.Children.Add(injectedShellBack);
-                actions.Children.Add(close);
-                Grid.SetColumn(actions, column);
-                grid.Children.Add(actions);
-            }
-            else if (close.Parent is StackPanel stack)
-            {
-                int index = stack.Children.IndexOf(close);
-                stack.Children.Insert(Math.Max(0, index), injectedShellBack);
-            }
+            int column = Grid.GetColumn(close);
+            grid.Children.Remove(close);
+            var actions = new StackPanel { Orientation = Orientation.Horizontal };
+            actions.Children.Add(injectedShellBack);
+            actions.Children.Add(close);
+            Grid.SetColumn(actions, column);
+            grid.Children.Add(actions);
         }
+        else if (close.Parent is StackPanel stack)
+        {
+            int index = stack.Children.IndexOf(close);
+            stack.Children.Insert(Math.Max(0, index), injectedShellBack);
+        }
+    }
+
+    private void UpdateShellBack(Button button)
+    {
+        button.Content = GamesBackLabel();
+        button.Tag = injectedShellBackAction;
+        button.Visibility = injectedShellBackAction is null ? Visibility.Collapsed : Visibility.Visible;
     }
 
     private static bool IsReturnToClubButton(Button button)
