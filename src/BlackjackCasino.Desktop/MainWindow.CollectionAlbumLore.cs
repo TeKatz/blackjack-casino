@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
+using System.Windows.Threading;
 using BlackjackCasino.Core.Collections;
 
 namespace BlackjackCasino.Desktop;
@@ -30,6 +31,16 @@ public partial class MainWindow
         if (clicked?.Tag is not string tag || !tag.StartsWith("inspect:", StringComparison.Ordinal)) return;
         CollectionCard? card = CollectionCatalog.Find(tag["inspect:".Length..]);
         if (card is null) return;
+
+        // The album's own Button.Click handler opens the inspector and writes its placeholder.
+        // Apply authored copy after that routed click has fully unwound so ordering cannot leave
+        // the placeholder on screen.
+        window.Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle, () => ApplyCollectionLore(window, content, card));
+    }
+
+    private static void ApplyCollectionLore(MainWindow window, FrameworkElement content, CollectionCard card)
+    {
+        if (!ReferenceEquals(window.metaHost?.Content, content)) return;
 
         Border? inspector = VisualDescendants<Border>(content)
             .FirstOrDefault(border => border.Name == "AlbumArtOverlay" && border.IsVisible);
