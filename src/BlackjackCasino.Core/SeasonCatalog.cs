@@ -35,9 +35,9 @@ public static class SeasonCatalog
     private static readonly SeasonDefinition NeonDynasty = new(
         "season-3-neon-dynasty",
         "Neon Dynasty",
-        "Season 3 · a new 120-tier endurance pass with a substantially steeper XP curve. Reward slots are intentionally unassigned for now.",
+        "Season 3 · a 120-tier neon-luxury endurance pass with exclusive Dynasty titles, portraits and animated frames.",
         false,
-        false,
+        true,
         BuildNeonDynastyTiers());
 
     public static SeasonDefinition Current => NeonDynasty;
@@ -114,10 +114,34 @@ public static class SeasonCatalog
         {
             // Cumulative target: 512 XP at tier 1, 6,200 at tier 10,
             // 55,000 at tier 50, 170,000 at tier 100 and 232,800 total XP at tier 120.
-            // The per-tier cost rises from 512 XP to 3,368 XP, making this pass materially
-            // longer than Velvet Eclipse while retaining a smooth, predictable curve.
+            // The reward identity escalates from neon street luxury into full Dynasty regalia.
             long required = 500L * tier + 12L * tier * tier;
-            tiers.Add(new SeasonTierDefinition(tier, required, 0, null));
+            string? cosmetic = tier switch
+            {
+                10 => "title-neon-initiate",
+                20 => "frame-neon-thread",
+                30 => "portrait-neon-croupier",
+                40 => "title-dynasty-dealer",
+                50 => "frame-dynasty-circuit",
+                60 => "portrait-dynasty-heiress",
+                70 => "title-electric-royalty",
+                80 => "frame-neon-pagoda",
+                90 => "portrait-neon-overseer",
+                100 => "title-neon-sovereign",
+                110 => "frame-dynasty-crown",
+                120 => "portrait-neon-emperor",
+                _ => null,
+            };
+
+            long coins = tier switch
+            {
+                120 => 600,
+                _ when tier % 25 == 0 => 180,
+                _ when tier % 10 == 0 => 90,
+                _ when tier % 5 == 0 => 40,
+                _ => 18,
+            };
+            tiers.Add(new SeasonTierDefinition(tier, required, coins, cosmetic));
         }
 
         return tiers;
