@@ -20,7 +20,8 @@ the next milestone. One Room Intelligence surface below the gallery explains
 growth, actual operating specialists, automation requirements and policy,
 participating/benefiting circuits, their individual members and limiting rooms,
 and the exact production factors. Select a room again or use Estate overview to
-clear selection; the panel then shows estate progress and useful next steps.
+clear selection; the panel then shows estate progress, useful next steps and the
+prestige action. Future-floor circuit members can be expanded when relevant.
 There are no permanent research/project/team/opportunity cards or global circuit
 row on the main screen. Long contextual details have local scroll fallbacks for
 small windows; the gallery preserves five cards per floor at standard widths.

@@ -13,6 +13,7 @@ internal sealed partial class EmpireView
     private readonly Grid intelligence = new() { Name = "EmpireRoomIntelligence" };
     private readonly TextBlock intelligenceTitle = Label("ESTATE OVERVIEW", 12, "#E2CFAB");
     private readonly StackPanel estateOverview = new() { Margin = new Thickness(18, 8, 18, 12) };
+    private readonly TextBlock prestigeActionCaption = Label("", 11, "#E1CA9E");
     private readonly TextBlock estateOverviewText = Label("", 13, "#C1D5C5");
     private readonly TextBlock estateHint = Label("", 12, "#95B7A1", new Thickness(0, 10, 0, 0));
     private readonly Grid intelligenceColumns = new();
@@ -47,9 +48,19 @@ internal sealed partial class EmpireView
         Button reset = Command("Estate overview", "EmpireClearRoomSelection", () => { ClearPreview(); selected = ""; Refresh(); });
         reset.FontSize = 10; reset.MinHeight = 24; reset.Padding = new Thickness(6, 2, 6, 2);
         DockPanel.SetDock(reset, Dock.Right); heading.Children.Add(reset); heading.Children.Add(intelligenceTitle); intelligence.Children.Add(heading);
-        estateOverview.Children.Add(estateOverviewText); estateOverview.Children.Add(estateHint);
-        estateOverview.Children.Add(Label("Select a room above to explore growth, operations, connections and performance.", 11, "#8CA996", new Thickness(0, 12, 0, 0)));
-        Grid.SetRow(estateOverview, 1); intelligence.Children.Add(estateOverview);
+        var overviewLayout = new Grid(); overviewLayout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.4, GridUnitType.Star) }); overviewLayout.ColumnDefinitions.Add(new ColumnDefinition());
+        var estateFacts = new StackPanel { Margin = new Thickness(0, 0, 18, 0) }; estateFacts.Children.Add(estateOverviewText); estateFacts.Children.Add(estateHint);
+        estateFacts.Children.Add(Label("Select a room above to explore growth, operations, connections and performance.", 11, "#8CA996", new Thickness(0, 12, 0, 0)));
+        overviewLayout.Children.Add(estateFacts);
+        var nextChapter = new StackPanel(); nextChapter.Children.Add(IconCaption("Prestige", "THE NEXT CHAPTER", 16));
+        prestigeTitle.FontFamily = new System.Windows.Media.FontFamily("Georgia"); prestigeTitle.Margin = new Thickness(0, 8, 0, 5); nextChapter.Children.Add(prestigeTitle);
+        prestigeRequirement.FontSize = 10; nextChapter.Children.Add(prestigeRequirement);
+        var prestigeContent = new StackPanel { Orientation = Orientation.Horizontal }; prestigeContent.Children.Add(new EmpireIcon("Prestige", 18) { Margin = new Thickness(0, 0, 8, 0) }); prestigeContent.Children.Add(prestigeActionCaption);
+        prestigeButton.Content = prestigeContent; prestigeButton.Click += (_, _) => { ClearPreview(); PrestigeClicked(); };
+        ToolTipService.SetShowOnDisabled(prestigeButton, true); nextChapter.Children.Add(prestigeButton);
+        Grid.SetColumn(nextChapter, 1); overviewLayout.Children.Add(nextChapter); estateOverview.Children.Add(overviewLayout);
+        var overviewScroll = new ScrollViewer { Content = estateOverview, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
+        Grid.SetRow(overviewScroll, 1); intelligence.Children.Add(overviewScroll);
         var growth = new StackPanel(); growth.Children.Add(growthInfo); growth.Children.Add(growthPreview);
         var operations = new StackPanel(); operations.Children.Add(operationsInfo); operations.Children.Add(automationInfo);
         var specialistControls = new StackPanel();
@@ -131,7 +142,7 @@ internal sealed partial class EmpireView
             toggleRoomAutomation.Content = auto.Enabled ? "Pause automation" : "Resume automation";
         }
         EmpireProductionBreakdown value = service.ProductionBreakdown(selected);
-        performanceInfo.Text = $"Base + milestones  {Number(value.Base)}\nPrestige  ×{value.Prestige:0.##}\nAchievements  ×{value.Achievements:0.###}\n\nResearch / property  +{value.Strategy:P0}\nManagers  +{value.Managers:P0}\nSynergies  +{value.Synergies:P0}\nProjects  +{value.Projects:P0}\nEvents / contracts  +{value.Events + value.Contracts:P0}\nStrategic total  +{value.StrategicBonus:P0} (cap 500%)";
+        performanceInfo.Text = $"Base + milestones  {Number(value.Base)}\nPrestige  ×{value.Prestige:0.##}\nAchievements  ×{value.Achievements:0.###}\n\nResearch / property  +{value.Strategy:P1}\nManagers  +{value.Managers:P1}\nSynergies  +{value.Synergies:P1}\nProjects  +{value.Projects:P1}\nEvents / contracts  +{value.Events + value.Contracts:P1}\nStrategic total  +{value.StrategicBonus:P1} (cap 500%)";
         performanceInfo.ToolTip = "(Base including level milestones) × Prestige × Achievements × (1 + capped strategic total). Final room output is capped at 100 Qi cr/sec. Automation buys upgrades and is not an additive production bonus.";
         performanceFinal.Text = "FINAL / " + Number(value.Final) + " cr/sec";
         string key = service.ActivePropertyId + "/" + selected;
@@ -153,14 +164,21 @@ internal sealed partial class EmpireView
             var progress = new ProgressBar { Minimum = 0, Maximum = 1, Height = 4, Foreground = Ink("#9EBB8C"), Background = Ink("#263E2F"),
                 Margin = new Thickness(0, 5, 0, 6), BorderThickness = new Thickness(0) }; intelligenceProgress.Add(progress); connections.Children.Add(progress);
             EmpireDepartment[] members = EmpireCatalog.Departments.Where(r => r.Floor <= definition.MaximumFloor && (r.Tags & definition.Members) != 0).ToArray();
-            var lines = members.Select(_ => Label("", 10, "#A9C1AE")).ToArray(); foreach (TextBlock line in lines) connections.Children.Add(line);
-            var limiter = Label("", 10, "#D4C292", new Thickness(0, 5, 0, 14)); connections.Children.Add(limiter);
+            var memberDetails = new StackPanel();
+            var lines = members.Select(_ => Label("", 10, "#A9C1AE")).ToArray(); foreach (TextBlock line in lines) memberDetails.Children.Add(line);
+            var limiter = Label("", 10, "#D4C292", new Thickness(0, 5, 0, 8)); memberDetails.Children.Add(limiter);
+            bool futureFloor = members.Any(m => !service.FloorUnlocked(m.Floor));
+            if (futureFloor)
+            {
+                connections.Children.Add(new Expander { Header = "Future circuit · floor unlock required", Content = memberDetails, Foreground = Ink("#9FB8A5"), FontSize = 10, Margin = new Thickness(0, 0, 0, 8) });
+            }
+            else connections.Children.Add(memberDetails);
             connectionUpdates.Add(preview =>
             {
                 EmpireSynergyStatus actual = service.Synergies.Single(s => s.Definition.Id == definition.Id);
                 EmpireSynergyStatus after = preview?.SynergiesAfter.Single(s => s.Definition.Id == definition.Id) ?? actual;
                 int target = actual.NextLevel ?? definition.Levels[^1];
-                status.Text = $"Tier {actual.Tier} · +{actual.Bonus:P0}" + (after.Tier != actual.Tier ? $" → tier {after.Tier} · +{after.Bonus:P0} PREVIEW" : "");
+                status.Text = $"Tier {actual.Tier} · +{actual.Bonus:P1}" + (after.Tier != actual.Tier ? $" → tier {after.Tier} · +{after.Bonus:P1} PREVIEW" : "");
                 status.Foreground = Ink(after.Tier != actual.Tier ? PreviewColor : "#AECAB6");
                 double next = Math.Clamp((double)after.MinimumLevel / target, 0, 1);
                 if (Math.Abs(progress.Value - next) > .001)
@@ -219,7 +237,7 @@ internal sealed partial class EmpireView
         bool entering = currentPreview is null;
         currentPreview = preview;
         budgetPreview.Foreground = productionPreview.Foreground = Ink(PreviewColor);
-        budgetPreview.Text = $"PREVIEW / −{Number(preview.BudgetBefore - preview.BudgetAfter)} cr";
+        budgetPreview.Text = preview.BudgetBefore == preview.BudgetAfter ? "PREVIEW / no construction cost" : $"PREVIEW / −{Number(preview.BudgetBefore - preview.BudgetAfter)} cr";
         decimal delta = preview.PortfolioAfter - preview.PortfolioBefore;
         productionPreview.Text = $"PREVIEW / {(delta >= 0 ? "+" : "−")}{Number(Math.Abs(delta))} cr/sec";
         roomPreview.Text = $"PREVIEW / {caption}\nLV {preview.LevelBefore} → {preview.LevelAfter} · {Number(preview.RoomBefore.Final)} → {Number(preview.RoomAfter.Final)} cr/sec";

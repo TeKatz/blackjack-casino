@@ -110,6 +110,7 @@ internal sealed partial class EmpireView
         roomScroll.Content = roomArea; roomScroll.VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
         roomScroll.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
         roomScroll.SizeChanged += (_, _) => ResizeRooms();
+        roomScroll.ScrollChanged += (_, e) => { if (e.ViewportWidthChange != 0 || e.ViewportHeightChange != 0) ResizeRooms(); };
         Grid.SetRow(roomScroll, 1); estate.Children.Add(roomScroll);
         Border information = BuildIntelligencePanel(); Grid.SetRow(information, 2); estate.Children.Add(information);
         overview.Children.Add(estate);
@@ -172,12 +173,6 @@ internal sealed partial class EmpireView
         content.Children.Add(buy); content.Children.Add(Label("NEXT PRODUCTION MILESTONE", 9, "#C7B18A"));
         milestoneTrack.Children.Add(milestoneFill); milestoneTrack.SizeChanged += (_, _) => RefreshMilestone();
         content.Children.Add(milestoneTrack); content.Children.Add(milestone);
-        content.Children.Add(new Border { Height = 1, Background = Ink("#344F3F"), Margin = new Thickness(0, 14, 0, 10) });
-        prestigeTitle.FontFamily = new FontFamily("Georgia"); prestigeTitle.Margin = new Thickness(0, 4, 0, 5); content.Children.Add(prestigeTitle);
-        prestigeRequirement.FontSize = 10; content.Children.Add(prestigeRequirement);
-        prestigeButton.Content = IconCaption("Prestige", "Prestige");
-        prestigeButton.Click += (_, _) => { ClearPreview(); PrestigeClicked(); };
-        ToolTipService.SetShowOnDisabled(prestigeButton, true); content.Children.Add(prestigeButton);
         var grid = new Grid(); grid.Children.Add(inspectorEmpty);
         grid.Children.Add(new ScrollViewer { Name = "EmpireInspectorScroll", Content = content, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled });
         Border panel = Surface(grid); panel.BorderBrush = Ink("#5E6244"); return panel;
@@ -245,7 +240,7 @@ internal sealed partial class EmpireView
         return button;
     }
 
-    private static StackPanel IconCaption(string kind, string text, double size = 19)
+    internal static StackPanel IconCaption(string kind, string text, double size = 19)
     {
         var content = new StackPanel { Orientation = Orientation.Horizontal };
         content.Children.Add(new EmpireIcon(kind, size) { Margin = new Thickness(0, 0, 8, 0) });

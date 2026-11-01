@@ -51,6 +51,7 @@ internal sealed partial class EmpireManagementView : UserControl
         {
             string route = section;
             Button tab = Button(section, "EmpireTab_" + section, () => { selected = route; page = 0; Build(); });
+            tab.Content = EmpireView.IconCaption(section, section, 16);
             tabs[section] = tab; navigation.Children.Add(tab);
         }
         Grid.SetRow(navigation, 2); root.Children.Add(navigation);

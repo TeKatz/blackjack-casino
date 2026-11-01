@@ -208,7 +208,7 @@ internal sealed partial class EmpireView : UserControl, IDisposable
             + string.Join(" · ", EmpireFloorCatalog.All.Where(floor => floor.Requirement.Prestige > 0).Select(floor => floor.DisplayName + (service.FloorUnlocked(floor.Id) ? " unlocked" : " locked")));
         prestigeRequirement.Text = service.PrestigeRequirementText();
         prestigeButton.IsEnabled = service.CanPrestige;
-        prestigeButton.Content = service.CanPrestige ? $"PRESTIGE → {service.Prestige + 1}" : "PRESTIGE LOCKED";
+        prestigeActionCaption.Text = service.CanPrestige ? $"PRESTIGE → {service.Prestige + 1}" : "PRESTIGE LOCKED";
         managementView?.Refresh();
         RefreshCommandCenter();
         ResizeRooms();
@@ -342,7 +342,7 @@ internal sealed partial class EmpireView : UserControl, IDisposable
 
     private void ResizeRooms()
     {
-        double available = Math.Max(240, roomScroll.ActualWidth - 8);
+        double available = Math.Max(240, (roomScroll.ViewportWidth > 0 ? roomScroll.ViewportWidth : roomScroll.ActualWidth - 20) - 4);
         int columns = available < 620 ? 3 : 5;
         double width = Math.Min(335, available / columns - 10);
         double height = Math.Clamp(roomScroll.ActualHeight - 44, 150, 310);
