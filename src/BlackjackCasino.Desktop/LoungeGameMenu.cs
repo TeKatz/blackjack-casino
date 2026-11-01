@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -124,9 +123,7 @@ internal sealed class LoungeGameMenu : UserControl
     }
 
     internal static string GamesBackLabel() =>
-        string.Equals(CultureInfo.CurrentUICulture.Name, "de-DE", StringComparison.OrdinalIgnoreCase)
-            ? "← SPIELE"
-            : "← GAMES";
+        Localization.Language == UiLanguagePreference.German ? "← SPIELE" : "← GAMES";
 
     private void OpenHosted(LoungeHostedGame module)
     {
@@ -135,8 +132,6 @@ internal sealed class LoungeGameMenu : UserControl
         ConfigureShellNavigation(label, action);
         Content = module.CreateContent(ShowMenu);
 
-        // Loaded polish hooks are allowed to finish first; the hosted route then owns the final
-        // shell-navigation state for the active hub.
         Dispatcher.BeginInvoke(
             DispatcherPriority.ContextIdle,
             new Action(() => ConfigureShellNavigation(label, action)));
