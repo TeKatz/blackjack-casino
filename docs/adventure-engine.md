@@ -16,7 +16,8 @@ The initial engine provides:
 - natural 1 / natural 20 outcomes and optional critical routes;
 - fail-forward success/failure routing;
 - conditional choices and multiple endings;
-- a catalog boundary so later adventures can be added without changing the story UI.
+- a catalog boundary so later adventures can be added without changing the story UI;
+- `AdventureContentJson` for validated JSON import/export of adventure packages.
 
 ## Desktop flow
 
@@ -34,10 +35,13 @@ The D20 reuses `PlayerProfileState.EquippedDiceSetId` and the existing Dice Set 
 4. Express mutations through `AdventureEffect` rather than scene-specific code.
 5. Route checked choices through `AdventureCheckDefinition` success/failure destinations.
 6. Mark ending scenes with `IsEnding` and a stable `EndingId`.
-7. Run `AdventureDefinitionValidator.Validate` and add engine tests for important branches.
+7. Serialize or load the definition through `AdventureContentJson` when external content is desired.
+8. Run `AdventureDefinitionValidator.Validate` and add engine tests for important branches.
 
-The current model includes localization-key slots on scenes and choices so story text can move to external localized content without changing the engine contract.
+`AdventureContentJson` uses camel-case JSON, string enum values, comments and trailing commas for author-friendly packages. Deserialization always runs the same graph validator before content can enter the engine.
+
+The model also includes localization-key slots on scenes and choices so story text can move to external localized content without changing the engine contract.
 
 ## Planned extensions
 
-The current contracts are intentionally prepared for additional systems rather than hardcoding The Black Stag. Natural next layers are encounter/combat definitions that reuse the same checks/effects, richer equipment and conditions, quest/objective tracking, NPC knowledge/state, external JSON adventure packages, save migrations and an internal authoring/editor surface.
+The current contracts are intentionally prepared for additional systems rather than hardcoding The Black Stag. Natural next layers are encounter/combat definitions that reuse the same checks/effects, richer equipment and conditions, quest/objective tracking, deeper NPC knowledge/state, save migrations and an internal authoring/editor surface.
