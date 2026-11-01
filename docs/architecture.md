@@ -115,7 +115,7 @@ GitHub excludes prereleases from `latest`, so Development cannot accidentally be
 
 ### Development
 
-`.github/workflows/development-release.yml` publishes successful development builds from `main`, `develop`, active `feature/**` / `fix/**` branches and the retained Midnight Manor slot branch. Builds use versions such as `0.1.0-dev.143` and replace the assets of the mutable GitHub prerelease tagged `development`.
+`.github/workflows/development-release.yml` publishes successful development builds from the explicitly pinned branch, currently `feature/collectible-card-album`. Both its push trigger and job guard select that source. Builds use versions such as `0.10.1-dev.N` and replace the assets of the mutable GitHub prerelease tagged `development`.
 
 The client reads:
 
