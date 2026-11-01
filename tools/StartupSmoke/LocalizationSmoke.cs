@@ -102,6 +102,8 @@ internal static class LocalizationSmoke
             "Sudoku timer control remained English.");
         Require(Find<Button>(window).Any(button => button.Name == "SudokuNew_Medium" && Equals(button.Content, "NEUES RÄTSEL")),
             "Sudoku New Puzzle action remained English.");
+        Require(Find<Button>(window).Any(button => button.Name == "LoungeGamesHeaderBack" && button.IsVisible && Equals(button.Content, "← SPIELE")),
+            "Sudoku Games header navigation did not localize to German.");
 
         Click(Find<Button>(window).Single(button => button.Name == "SudokuNew_Expert"));
         await Task.Delay(100);
@@ -117,7 +119,7 @@ internal static class LocalizationSmoke
         Click(Find<Button>(window).Single(button => button.IsVisible && Equals(button.Content, "← LOUNGE")));
         await Task.Delay(70);
         window.UpdateLayout();
-        Click(Find<Button>(window).Single(button => button.IsVisible && Equals(button.Content, "← LOUNGE-SPIELE")));
+        Click(Find<Button>(window).Single(button => button.Name == "LoungeGamesHeaderBack" && button.IsVisible && Equals(button.Content, "← SPIELE")));
         await Task.Delay(70);
         window.UpdateLayout();
 
@@ -128,6 +130,8 @@ internal static class LocalizationSmoke
             "Midnight Solitaire hub headline remained English.");
         Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "ERFOLGE"),
             "Midnight Solitaire achievement section remained English.");
+        Require(Find<Button>(window).Any(button => button.Name == "LoungeGamesHeaderBack" && button.IsVisible && Equals(button.Content, "← SPIELE")),
+            "Midnight Solitaire Games header navigation did not localize to German.");
         Button newDeal = Find<Button>(window).First(button => button.IsVisible && Equals(button.Content, "NEUES SPIEL"));
         Click(newDeal);
         await Task.Delay(100);
@@ -149,7 +153,7 @@ internal static class LocalizationSmoke
 
         Click(Find<Button>(window).Single(button => button.IsVisible && Equals(button.Content, "← SOLITAIRE")));
         await Task.Delay(50);
-        Click(Find<Button>(window).Single(button => button.IsVisible && Equals(button.Content, "← LOUNGE-SPIELE")));
+        Click(Find<Button>(window).Single(button => button.Name == "LoungeGamesHeaderBack" && button.IsVisible && Equals(button.Content, "← SPIELE")));
         await Task.Delay(50);
         Click(Find<Button>(window).Single(button => button.IsVisible && Equals(button.Content, "ZURÜCK ZUM CLUB")));
         await Task.Delay(100);
