@@ -76,6 +76,7 @@ public partial class MainWindow
     }
     private void OpenProgression(string tab)
     {
-        OpenProgressionPage(tab);
+        if(string.Equals(tab,"Collector's Album",StringComparison.OrdinalIgnoreCase)) OpenCollectionAlbumPage();
+        else OpenProgressionPage(tab);
     }
 }
