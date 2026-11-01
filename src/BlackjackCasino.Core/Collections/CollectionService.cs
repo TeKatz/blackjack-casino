@@ -5,6 +5,7 @@ public sealed class CollectionState
     public int Version { get; set; }
     public HashSet<string> OwnedCardIds { get; set; } = new(StringComparer.Ordinal);
     public Dictionary<CollectionRarity, int> Packs { get; set; } = [];
+    public HashSet<string> ClaimedThemeRewardIds { get; set; } = new(StringComparer.Ordinal);
     public int DuplicatePoints { get; set; }
     public long PacksOpened { get; set; }
     public CollectionOpening? PendingOpening { get; set; }
@@ -13,6 +14,14 @@ public sealed class CollectionState
 public sealed record CollectionDraw(string CardId, bool IsNew, int DuplicatePoints);
 public sealed record CollectionOpening(Guid Id, CollectionRarity PackRarity, IReadOnlyList<CollectionDraw> Cards, int PointsEarned, int PacksEarned);
 public sealed record CollectionActionResult(bool Success, string Message, CollectionOpening? Opening = null);
+public sealed record CollectionThemeCompletionReward(long Coins, CollectionRarity PackRarity, int PackCount = 1);
+public sealed record CollectionThemeRewardClaimResult(
+    bool Success,
+    string Message,
+    string ThemeId,
+    long Coins = 0,
+    CollectionRarity? PackRarity = null,
+    int PackCount = 0);
 
 /// <summary>Profile-owned collection; presentation never rolls cards or awards inventory.</summary>
 public static class CollectionService
@@ -24,6 +33,9 @@ public static class CollectionService
         state.OwnedCardIds ??= new(StringComparer.Ordinal);
         state.OwnedCardIds.RemoveWhere(id => id is null || CollectionCatalog.Find(id) is null);
         state.Packs ??= [];
+        state.ClaimedThemeRewardIds ??= new(StringComparer.Ordinal);
+        var knownThemes = CollectionCatalog.Themes.Select(theme => theme.Id).ToHashSet(StringComparer.Ordinal);
+        state.ClaimedThemeRewardIds.RemoveWhere(id => string.IsNullOrWhiteSpace(id) || !knownThemes.Contains(id));
         foreach (CollectionRarity rarity in state.Packs.Keys.ToArray())
         {
             if (!Enum.IsDefined(rarity)) state.Packs.Remove(rarity);
@@ -40,6 +52,46 @@ public static class CollectionService
             // A single welcome gift for both new and migrated profiles; no historical reward replay.
             state.Packs[CollectionRarity.Common] = checked(state.Packs.GetValueOrDefault(CollectionRarity.Common) + 3);
             state.Version = CollectionCatalog.Version;
+        }
+    }
+
+    public static CollectionThemeCompletionReward ThemeCompletionReward(CollectionTheme theme) => theme.UltraRare
+        ? new(750, CollectionRarity.Epic)
+        : new(300, CollectionRarity.Rare);
+
+    public static bool IsThemeComplete(PlayerProfileState profile, CollectionTheme theme)
+    {
+        lock (profile)
+        {
+            Normalize(profile);
+            return theme.Cards.All(card => profile.Collection.OwnedCardIds.Contains(card.Id));
+        }
+    }
+
+    public static CollectionThemeRewardClaimResult ClaimThemeCompletionReward(PlayerProfileState profile, string themeId)
+    {
+        lock (profile)
+        {
+            Normalize(profile);
+            CollectionState state = profile.Collection;
+            CollectionTheme? theme = CollectionCatalog.Themes.FirstOrDefault(candidate =>
+                string.Equals(candidate.Id, themeId, StringComparison.Ordinal));
+            if (theme is null) return new(false, "Unknown collection theme.", themeId ?? string.Empty);
+            if (state.ClaimedThemeRewardIds.Contains(theme.Id))
+                return new(false, "This theme completion reward has already been claimed.", theme.Id);
+            if (!theme.Cards.All(card => state.OwnedCardIds.Contains(card.Id)))
+                return new(false, $"Collect all {theme.Cards.Count} cards in {theme.Name} before claiming this reward.", theme.Id);
+
+            CollectionThemeCompletionReward reward = ThemeCompletionReward(theme);
+            long updatedCoins = checked(profile.Coins + reward.Coins);
+            int updatedPacks = checked(state.Packs.GetValueOrDefault(reward.PackRarity) + reward.PackCount);
+
+            profile.Coins = updatedCoins;
+            state.Packs[reward.PackRarity] = updatedPacks;
+            state.ClaimedThemeRewardIds.Add(theme.Id);
+            return new(true,
+                $"{theme.Name} complete! +{reward.Coins:N0} Cosmetic Coins and {reward.PackCount} {reward.PackRarity} pack awarded.",
+                theme.Id, reward.Coins, reward.PackRarity, reward.PackCount);
         }
     }
 
