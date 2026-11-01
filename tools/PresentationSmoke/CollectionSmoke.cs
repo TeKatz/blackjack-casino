@@ -125,6 +125,46 @@ internal static partial class Program
         secondaryOpen.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         Require(profile.Collection.PendingOpening is null, "Continue failed to clear the original receipt");
         Require(receipt.Cards.All(c => profile.Collection.OwnedCardIds.Contains(c.CardId)), "Collected cards disappeared after Continue");
+
+        // Open All is a bounded queue: it snapshots the selected rarity count, persists one receipt at
+        // a time, and must finish exactly that many packs without recursively consuming bonus rewards.
+        var batchProfile = ManorPersistence.Clone(profile);
+        batchProfile.Collection.PendingOpening = null;
+        batchProfile.Collection.Packs[CollectionRarity.Uncommon] = 3;
+        long batchOpenedBefore = batchProfile.Collection.PacksOpened;
+        using (var batchController = new PlayerProgressionController(batchProfile))
+        {
+            var batchPage = new CollectionAlbumPage(batchController, false, false, () => { });
+            batchPage.Show(); batchPage.UpdateLayout(); await Task.Delay(35);
+            Find<Button>(batchPage).Single(b => Equals(b.Tag, CollectionRarity.Uncommon) && b.IsVisible)
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            batchPage.UpdateLayout();
+            Button batchPrimary = Find<Button>(batchPage).Single(b => b.Name == "AlbumRevealAll" && b.IsVisible);
+            Button batchSecondary = Find<Button>(batchPage).Single(b => b.Name == "AlbumCollect" && b.IsVisible);
+            Require(Equals(batchSecondary.Content, "Open All Packs (3)"), "Open All did not snapshot all three Uncommon packs");
+            batchSecondary.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Require(batchProfile.Collection.PacksOpened == batchOpenedBefore + 1, "Open All did not start with exactly one persisted receipt");
+
+            for (int packIndex = 0; packIndex < 3; packIndex++)
+            {
+                Require(batchProfile.Collection.PendingOpening is not null, $"Open All lost pending receipt {packIndex + 1}");
+                batchPrimary.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                batchPage.UpdateLayout();
+                Require(batchSecondary.IsEnabled, $"Open All pack {packIndex + 1} cannot be continued after reveal");
+                batchSecondary.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                batchPage.UpdateLayout();
+                if (packIndex < 2)
+                    Require(batchProfile.Collection.PacksOpened == batchOpenedBefore + packIndex + 2,
+                        $"Open All failed to advance to pack {packIndex + 2}");
+            }
+
+            Require(batchProfile.Collection.PendingOpening is null, "Open All left a pending receipt after its queue finished");
+            Require(batchProfile.Collection.PacksOpened == batchOpenedBefore + 3, "Open All did not open exactly three packs");
+            Require(batchProfile.Collection.Packs.GetValueOrDefault(CollectionRarity.Uncommon) == 0,
+                "Open All did not consume exactly the snapshotted Uncommon inventory");
+            batchPage.Close();
+        }
+
         await CheckCollectionArt(window, profile);
 
         // Restore the caller's nested Profile -> Progression state; Program.cs intentionally keeps
