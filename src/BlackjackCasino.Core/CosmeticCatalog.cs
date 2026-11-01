@@ -100,6 +100,20 @@ public static class CosmeticCatalog
         new("frame-eclipse-crown", "Eclipse Crown", CosmeticKind.Frame, 0, false, "Velvet Eclipse tier 85 frame.", "eclipse-crown"),
         new("title-eclipse-velvet-hour", "The Velvet Hour", CosmeticKind.Title, 0, false, "Velvet Eclipse tier 95 title."),
         new("portrait-eclipse-sovereign", "Eclipse Sovereign", CosmeticKind.Portrait, 0, false, "Velvet Eclipse tier 100 portrait.", "portrait-eclipse-sovereign"),
+
+        // Season 3 — Neon Dynasty. One coherent collection: black glass, cyan/magenta neon and late-pass imperial gold.
+        new("title-neon-initiate", "Neon Initiate", CosmeticKind.Title, 0, false, "Neon Dynasty tier 10 title.", "title-neon-cyan"),
+        new("frame-neon-thread", "Neon Thread", CosmeticKind.Frame, 0, false, "A razor-thin cyan and magenta light trace. Neon Dynasty tier 20 frame.", "neon-thread"),
+        new("portrait-neon-croupier", "Neon Croupier", CosmeticKind.Portrait, 0, false, "A black-glass croupier beneath the first Dynasty signs. Neon Dynasty tier 30 portrait.", "portrait-neon-croupier"),
+        new("title-dynasty-dealer", "Dynasty Dealer", CosmeticKind.Title, 0, false, "Neon Dynasty tier 40 title.", "title-neon-magenta"),
+        new("frame-dynasty-circuit", "Dynasty Circuit", CosmeticKind.Frame, 0, false, "Gold circuitry woven through cyan neon. Neon Dynasty tier 50 frame.", "dynasty-circuit"),
+        new("portrait-dynasty-heiress", "Dynasty Heiress", CosmeticKind.Portrait, 0, false, "The heir to the electric tables, crowned in restrained neon gold. Neon Dynasty tier 60 portrait.", "portrait-dynasty-heiress"),
+        new("title-electric-royalty", "Electric Royalty", CosmeticKind.Title, 0, false, "Neon Dynasty tier 70 title.", "title-dynasty-gold"),
+        new("frame-neon-pagoda", "Neon Pagoda", CosmeticKind.Frame, 0, false, "Layered magenta architecture with cyan-lit edges and gold joints. Neon Dynasty tier 80 frame.", "neon-pagoda"),
+        new("portrait-neon-overseer", "Neon Overseer", CosmeticKind.Portrait, 0, false, "The Dynasty floor overseer in violet chrome and electric cyan. Neon Dynasty tier 90 portrait.", "portrait-neon-overseer"),
+        new("title-neon-sovereign", "Neon Sovereign", CosmeticKind.Title, 0, false, "Neon Dynasty tier 100 title.", "title-dynasty-prism"),
+        new("frame-dynasty-crown", "Dynasty Crown", CosmeticKind.Frame, 0, false, "The imperial frame: black glass, hot neon and a travelling gold crown-light. Neon Dynasty tier 110 frame.", "dynasty-crown"),
+        new("portrait-neon-emperor", "Neon Emperor", CosmeticKind.Portrait, 0, false, "The final face of Neon Dynasty, framed in cyan, magenta and imperial gold. Tier 120 portrait.", "portrait-neon-emperor"),
     ];
 
     public static IReadOnlyList<CosmeticDefinition> All => Cosmetics;
