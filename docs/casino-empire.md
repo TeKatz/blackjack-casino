@@ -28,7 +28,8 @@ colors reflect prerequisite rank completion, while node labels distinguish
 mastered, available and point-gated upgrades. Nothing in the research catalog or
 economy is changed by the diagram.
 
-Long catalogs use four-card pages instead of a single scrolling list. Automation
+Long catalogs use two- or four-card pages, depending on available height, instead
+of a single scrolling list. Automation
 settings and the editable priority queue occupy two columns. Production refreshes
 update labels and action eligibility without rebuilding active input fields.
 A local scroll fallback retains access to unusually long content in small windows;

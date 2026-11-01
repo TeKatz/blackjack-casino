@@ -17,7 +17,7 @@ internal sealed partial class EmpireView
             var content = new StackPanel { Margin = new Thickness(11, 8, 11, 8) };
             var title = Label(definition.Name + "  ↗", 13, "#E6D2A8"); content.Children.Add(title);
             var state = Label("", 11, "#ACCFCE"); content.Children.Add(state);
-            var progress = new ProgressBar { Name = "EmpireOverviewCircuit_" + definition.Id.Replace('-', '_'), Minimum = 0, Maximum = 1, Height = 5,
+            var progress = new ProgressBar { Name = "EmpireOverviewCircuit_" + definition.Id.Replace('-', '_'), Minimum = 0, Maximum = 1, BorderThickness = new Thickness(0), BorderBrush = Brushes.Transparent, Height = 5,
                 Foreground = Ink("#BFA36F"), Background = Ink("#12232D"), Margin = new Thickness(0, 8, 0, 7) }; content.Children.Add(progress);
             var goal = Label("", 10, "#8FAAB7"); content.Children.Add(goal);
             Button open = Command("", "EmpireCircuit_" + definition.Id.Replace('-', '_'), () => OpenSection("Synergies"));

@@ -36,6 +36,7 @@ internal sealed class EmpireRoomArtwork(int textureIndex) : FrameworkElement
     private double phase;
     internal double Phase { get => phase; set { phase = value; InvalidateVisual(); } }
     internal bool Open { get; set; }
+    internal bool Available { get; set; } = true;
     internal int Level { get; set; }
     internal bool Selected { get; set; }
     internal int TextureIndex => textureIndex;
@@ -52,7 +53,7 @@ internal sealed class EmpireRoomArtwork(int textureIndex) : FrameworkElement
         if (!Open)
         {
             dc.DrawRectangle(new SolidColorBrush(Color.FromArgb(145, 5, 14, 17)), null, area);
-            Text(dc, "ROOM AVAILABLE", 12, ActualHeight - 29, 10, "#CAB992");
+            Text(dc, Available ? "ROOM AVAILABLE" : "LOCKED", 12, ActualHeight - 29, 10, "#CAB992");
         }
         else
         {
@@ -146,8 +147,8 @@ internal sealed class EmpireRoomCard : Button
     internal void Refresh(EmpireService service, bool selected, bool animate)
     {
         int value = service.Level(Department.Id);
-        level.Text = value == 0 ? "NEW" : "LV " + value;
         EmpireUpgradeQuote opening = service.QuoteUpgrade(Department.Id, 1);
+        level.Text = value == 0 ? (opening.Unlocked ? "NEW" : "LOCKED") : "LV " + value;
         income.Text = value == 0
             ? (opening.Unlocked ? "Open for " + EmpireView.Number(opening.Cost) + " cr" : "Requirements needed")
             : "+" + EmpireView.Number(service.RoomCreditsPerSecond(Department.Id)) + " cr / sec";
@@ -159,6 +160,7 @@ internal sealed class EmpireRoomCard : Button
         frame.BorderBrush = Ink(selected ? "#E6C68A" : "#445A66");
         frame.Effect = selected ? selectedGlow : null;
         Artwork.Open = value > 0;
+        Artwork.Available = opening.Unlocked;
         Artwork.Level = value;
         Artwork.Selected = selected;
         Artwork.InvalidateVisual();
@@ -166,7 +168,7 @@ internal sealed class EmpireRoomCard : Button
             flash.BeginAnimation(OpacityProperty, new DoubleAnimation(.35, 0, TimeSpan.FromMilliseconds(650)) { FillBehavior = FillBehavior.Stop });
         if (!animate) flash.BeginAnimation(OpacityProperty, null);
         previousLevel = value;
-        ToolTip = Department.Description;
+        ToolTip = Department.Description + (value == 0 && !opening.Unlocked ? "\n" + Department.UnlockRequirement.Description : "");
     }
 
     internal void StopAnimation()

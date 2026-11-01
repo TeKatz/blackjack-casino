@@ -48,6 +48,8 @@ internal static class EmpireStrategySmoke
                         $"Empire command cards require scrolling at {size.Item1}x{size.Item2}.");
                 Capture(window, Path.Combine(output, $"empire-command-center-{(int)size.Item1}.png"));
             }
+            Click(window, "EmpireQuickBuild");
+            Require(service.Projects.Contains("casino-vault"), "Dashboard construction did not commit its suggested project.");
             Click(window, "EmpireQuickResearch");
             Require(Find<System.Windows.Shapes.Polyline>(window).Count(l => l.Name.StartsWith("EmpireResearchLink_", StringComparison.Ordinal)) == 4,
                 "Operations research lost a prerequisite connection.");
@@ -64,8 +66,8 @@ internal static class EmpireStrategySmoke
             Click(window,"EmpireResearch_construction");
             Require(service.ResearchRank("construction")==3,"Research UI did not spend a Legacy Point.");
             Click(window,"EmpireTab_Projects");
-            Click(window,"EmpireProject_casino_vault");
-            Require(service.Projects.Contains("casino-vault"),"Capital project UI did not persist its purchase.");
+            Click(window,"EmpireProject_luxury_atrium");
+            Require(service.Projects.Contains("luxury-atrium"),"Capital project UI did not persist its purchase.");
             Click(window,"EmpireTab_Managers");
             Click(window,"EmpireManagerAssign_elena");
             Require(service.ManagerAssignments.ContainsKey("elena"),"Manager assignment UI did not reach Core.");
@@ -91,12 +93,25 @@ internal static class EmpireStrategySmoke
             }
             finally { CultureInfo.CurrentCulture = originalCulture; }
             Click(window,"EmpireTab_Events");
-            Click(window,"EmpirePageNext");
-            Require(Find<Button>(window).Any(b=>b.Name=="EmpireEvent_quiet"), "Paginated events lost Quiet Sunday.");
-            Click(window,"EmpirePagePrevious"); Click(window,"EmpireEvent_dice");
+            var reachableEvents = new HashSet<string>(StringComparer.Ordinal);
+            for (int eventPage = 0; eventPage < EmpireEventCatalog.All.Count; eventPage++)
+            {
+                foreach (Button choice in Find<Button>(window).Where(b => b.Name.StartsWith("EmpireEvent_", StringComparison.Ordinal))) reachableEvents.Add(choice.Name);
+                Button? next = Find<Button>(window).SingleOrDefault(b => b.Name == "EmpirePageNext");
+                if (next is not { IsEnabled: true }) break;
+                Click(window,"EmpirePageNext");
+            }
+            Require(EmpireEventCatalog.All.All(e => reachableEvents.Contains("EmpireEvent_" + e.Id)), "Paginated event pages lost a catalog event.");
+            Click(window,"EmpireTab_Events"); Click(window,"EmpireEvent_dice");
             Require(service.ActiveEvent?.Id=="dice","Event start UI failed.");
             Click(window,"EmpireTab_Contracts"); Click(window,"EmpireContract_expansion_drive");
             Require(service.ActiveContract?.Id=="expansion-drive","Contract acceptance UI failed.");
+            Click(window,"EmpireManagementClose");
+            Click(window,"EmpireFloor1Button"); Click(window,"EmpireBulk50Button"); Click(window,"EmpireUpgradeButton");
+            Require(service.CanClaimContract, "Bulk room upgrades did not complete the dashboard contract.");
+            Click(window,"EmpireContractShortcut");
+            Require(service.ActiveContract is null && service.ContractBuff?.ContractId == "expansion-drive", "Dashboard contract claim did not save its reward.");
+            Click(window,"EmpireBulk1Button");
             foreach(string tab in new[]{"Research","Synergies","Projects","Managers","Automation","Events","Contracts","Properties"})
             {
                 Click(window,"EmpireTab_"+tab); window.UpdateLayout();

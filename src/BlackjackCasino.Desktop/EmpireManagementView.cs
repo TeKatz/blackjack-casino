@@ -101,7 +101,7 @@ internal sealed partial class EmpireManagementView : UserControl
         {
             var status = Text("", 12, "#A8D9BB");
             var members = Text("", 11, "#9EBBAA");
-            var progress = new ProgressBar { Name = "EmpireSynergyProgress_" + definition.Id.Replace('-', '_'), Minimum = 0, Maximum = 1, Height = 7,
+            var progress = new ProgressBar { Name = "EmpireSynergyProgress_" + definition.Id.Replace('-', '_'), Minimum = 0, Maximum = 1, BorderThickness = new Thickness(0), BorderBrush = Brushes.Transparent, Height = 7,
                 Foreground = Ink("#CEB47A"), Background = Ink("#0C202D"), Margin = new Thickness(0, 8, 0, 8) };
             var stack = new StackPanel(); stack.Children.Add(status); stack.Children.Add(progress); stack.Children.Add(members);
             Row(definition.Name, definition.Description, stack);
@@ -275,13 +275,6 @@ internal sealed partial class EmpireManagementView : UserControl
         entries.Add(Card(new ScrollViewer { Content = content, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled }));
     }
     private static Border Card(UIElement child) => new() { Background = new LinearGradientBrush(Color.FromRgb(28, 47, 60), Color.FromRgb(15, 29, 39), 110), BorderBrush = Ink("#405866"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(9), Padding = new Thickness(14), Margin = new Thickness(0, 0, 10, 10), Effect = new DropShadowEffect { BlurRadius = 12, ShadowDepth = 4, Opacity = .2 }, Child = child };
-    private static TextBox Input(string caption, string value, string name, Panel parent)
-    {
-        parent.Children.Add(Text(caption, 11, "#ADCBBA"));
-        var input = new TextBox { Name = name, Text = value, Width = 300, Height = 32, Padding = new Thickness(8, 4, 8, 4), HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 5, 0, 10),
-            Background = Ink("#0B2018"), Foreground = Ink("#F0E3CE"), BorderBrush = Ink("#507660"), CaretBrush = Ink("#E5C47E") };
-        parent.Children.Add(input); return input;
-    }
     private static bool Decimal(string value, out decimal number) => decimal.TryParse(value, NumberStyles.Number, CultureInfo.CurrentCulture, out number);
     private static Button Button(string text, string name, Action action)
     {

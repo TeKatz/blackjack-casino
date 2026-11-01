@@ -149,7 +149,12 @@ internal sealed partial class EmpireView
             roomDescription.Visibility = roomBoosts.Visibility = prestigeBonus.Visibility = compactInspector ? Visibility.Collapsed : Visibility.Visible;
             if (roomSynergyShortcut is not null) roomSynergyShortcut.Visibility = compactInspector ? Visibility.Collapsed : Visibility.Visible;
             roomTitle.FontSize = compactInspector ? 22 : 25;
-            roomStats.Margin = new Thickness(0, compactInspector ? 7 : 12, 0, 5);
+            roomTitle.Margin = new Thickness(0, compactInspector ? 5 : 8, 0, compactInspector ? 4 : 6);
+            roomStats.Margin = new Thickness(0, compactInspector ? 4 : 12, 0, compactInspector ? 2 : 5);
+            buy.Margin = compactInspector ? new Thickness(0, 5, 0, 5) : new Thickness(0, 7, 0, 8);
+            milestoneTrack.Margin = compactInspector ? new Thickness(0, 5, 0, 7) : new Thickness(0, 8, 0, 10);
+            prestigeTitle.Margin = compactInspector ? new Thickness(0, 4, 0, 2) : new Thickness(0, 6, 0, 5);
+            prestigeButton.Margin = new Thickness(0, compactInspector ? 5 : 10, 0, 0);
             prestigeTitle.FontSize = compactInspector ? 16 : 18;
             prestigeRequirement.TextWrapping = compactInspector ? TextWrapping.NoWrap : TextWrapping.Wrap;
             prestigeRequirement.TextTrimming = TextTrimming.CharacterEllipsis;
@@ -236,8 +241,8 @@ internal sealed partial class EmpireView
         {
             EmpireProjectDefinition? next = NextProject(); projectState.Text = next?.Name ?? "Estate complete";
             projectDetail.Text = next is null ? "All permanent projects completed." : $"{Number(next.Cost)} cr · {next.Description}";
-            build.Content = next is not null && service.CanBuildProject(next.Id) ? "Build project  ↗" : "Plan construction  →";
-            build.ToolTip = next?.Requirement.Description;
+            build.Content = next is not null && service.CanBuildProject(next.Id) ? $"Build · {Number(next.Cost)} cr  ↗" : "Plan construction  →";
+            build.ToolTip = next is null ? "All projects completed" : $"{next.Name} · {Number(next.Cost)} cr\n{next.Description}\n{next.Requirement.Description}";
         });
 
         var team = CommandCard("♟", "EXECUTIVE OFFICE", "Managers", "EmpireQuickManagers", "Team & automation", out TextBlock teamState, out TextBlock teamDetail);
