@@ -122,11 +122,12 @@ internal sealed partial class EmpireView
             && (assignment == selected || m.Effect == EmpireManagerEffect.TagProduction && (m.Tags & room.Tags) != 0
                 || m.Effect == EmpireManagerEffect.Synergy && (m.Tags & room.Tags) != 0)).ToArray();
         operationsInfo.Text = managers.Length == 0 ? "No active specialist for this room." : string.Join("\n", managers.Select(m => m.Name + "\n" + m.Description));
+        if (service.ManagerSlots == 0) operationsInfo.Text += "\nTeam locked · build Executive Offices.";
         EmpireAutomationState auto = service.Automation;
         bool included = auto.CheapestMilestone || auto.Priorities.Contains(selected, StringComparer.Ordinal);
         if (toggleRoomAutomation is not null) toggleRoomAutomation.Visibility = service.AutomationUnlocked ? Visibility.Visible : Visibility.Collapsed;
         automationInfo.Text = service.AutomationUnlocked
-            ? $"AUTO / {(auto.Enabled ? "RUNNING" : "PAUSED")} · {(included ? "Room included" : "Not in priority queue")}\n{auto.SpendPercent:P0} budget / 30 sec · reserve {Number(auto.Reserve)} cr\nTarget LV {auto.TargetLevel} · {(auto.CheapestMilestone ? "cheapest milestone" : "priority order")}\nBuys upgrades; no direct output multiplier."
+            ? $"AUTO / {(auto.Enabled ? "RUNNING" : "PAUSED")} · {(level >= auto.TargetLevel ? "Target reached" : !nextQuote.Unlocked ? "Room locked" : included ? "Room queued" : "Not in priority queue")}\n{auto.SpendPercent:P0} budget / 30 sec · reserve {Number(auto.Reserve)} cr\nTarget LV {auto.TargetLevel} · {(auto.CheapestMilestone ? "cheapest milestone" : "priority order")}\nBuys upgrades; no direct output multiplier."
             : $"AUTO / LOCKED\n{(service.Projects.Contains("executive-offices") ? "✓" : "✕")} Executive Offices\n{(service.ResearchRank("automation") > 0 ? "✓" : "✕")} Executive Automation research";
         if (assignRoomManager is not null)
         {

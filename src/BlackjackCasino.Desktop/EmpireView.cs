@@ -156,7 +156,7 @@ internal sealed partial class EmpireView : UserControl, IDisposable
             roomTitle.Text = room.Name;
             roomDescription.Text = room.Description;
             roomStats.Text = level == 0
-                ? "Ready to open\nStarts at " + Number(room.BaseCreditsPerSecond * service.PrestigeMultiplier * (1m + achievementBonus)) + " cr / sec"
+                ? "Ready to open\nCurrent output: 0 cr / sec"
                 : $"LEVEL {level} / {EmpireRules.MaximumLevel}\n+{Number(effectiveProduction)} cr / sec";
             roomBoosts.Text = $"{room.Category} · {room.Tags}\nEmpire Prestige +{service.PrestigeBonusPercent:P0} · Achievements +{achievementBonus:P1}\nConstruction discount {service.ConstructionDiscount(selected):P0}";
 

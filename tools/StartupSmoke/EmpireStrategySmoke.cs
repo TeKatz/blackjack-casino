@@ -73,6 +73,8 @@ internal static class EmpireStrategySmoke
             Click(window,"EmpireProject_luxury_atrium");
             Require(service.Projects.Contains("luxury-atrium"),"Capital project UI did not persist its purchase.");
             Click(window,"EmpireTab_Managers");
+            PreviewAndLeave(window, "EmpireManagerAssign_elena");
+            Require(!service.ManagerAssignments.ContainsKey("elena"), "Manager hover committed an assignment.");
             Click(window,"EmpireManagerAssign_elena");
             Require(service.ManagerAssignments.ContainsKey("elena"),"Manager assignment UI did not reach Core.");
             Click(window,"EmpireTab_Automation");
@@ -82,6 +84,8 @@ internal static class EmpireStrategySmoke
             Find<TextBox>(window).Single(c=>c.Name=="EmpireAutomationTarget").Text="110";
             Find<EmpireView>(window).Single().Refresh();
             Require(Find<TextBox>(window).Single(c=>c.Name=="EmpireAutomationTarget").Text=="110", "A production refresh replaced unsaved automation inputs.");
+            PreviewAndLeave(window, "EmpireAutomationSave");
+            Require(!service.Automation.Enabled && service.Automation.TargetLevel == 100, "Automation hover saved edited inputs.");
             Click(window,"EmpireAutomationSave");
             Require(service.Automation.Enabled && service.Automation.TargetLevel==110,"Automation input was not saved.");
             CultureInfo originalCulture = CultureInfo.CurrentCulture;
@@ -187,6 +191,8 @@ internal static class EmpireStrategySmoke
             window.UpdateLayout();
             Require(service.Level("hotel") == before && service.Credits == budget, "Hover purchased room levels.");
             Require(Find<TextBlock>(view).Any(t => t.Text.StartsWith("PREVIEW /", StringComparison.Ordinal)), "Bulk hover did not show a preview.");
+            if (count >= 10) Require(Find<TextBlock>(view).Any(t => t.Text.Contains("×2 milestone at LV 110", StringComparison.Ordinal)), "Hover omitted the crossed production milestone.");
+            Require(Find<TextBlock>(view).Any(t => t.Text.Contains("Luxury Hotel: 100 / 100 →", StringComparison.Ordinal)), "Circuit member progress did not preview the upgraded room.");
             choice.RaiseEvent(new System.Windows.Input.MouseEventArgs(System.Windows.Input.Mouse.PrimaryDevice, 0) { RoutedEvent = UIElement.MouseLeaveEvent });
             Require(!Find<TextBlock>(view).Any(t => t.Text.StartsWith("PREVIEW /", StringComparison.Ordinal)), "Preview survived mouse leave.");
         }
@@ -199,6 +205,16 @@ internal static class EmpireStrategySmoke
         Require(Find<TextBlock>(view).Any(t => t.Text.StartsWith("ESTATE OVERVIEW /", StringComparison.Ordinal)), "Clear selection lost the estate overview.");
         Click(window, "EmpireRoom_hotel");
         await Task.Delay(180);
+    }
+
+    private static void PreviewAndLeave(DependencyObject root, string name)
+    {
+        Button owner = Find<Button>(root).Single(b => b.Name == name);
+        Require(owner.IsEnabled, name + " is not available for preview.");
+        owner.RaiseEvent(new System.Windows.Input.MouseEventArgs(System.Windows.Input.Mouse.PrimaryDevice, 0) { RoutedEvent = UIElement.MouseEnterEvent });
+        Require(Find<TextBlock>(root).Any(t => t.IsVisible && t.Text.StartsWith("PREVIEW /", StringComparison.Ordinal)), name + " did not preview its effect.");
+        owner.RaiseEvent(new System.Windows.Input.MouseEventArgs(System.Windows.Input.Mouse.PrimaryDevice, 0) { RoutedEvent = UIElement.MouseLeaveEvent });
+        Require(!Find<TextBlock>(root).Any(t => t.IsVisible && t.Text.StartsWith("PREVIEW /", StringComparison.Ordinal)), name + " left a stale preview.");
     }
 
     private sealed class EightShoe : ICardShoe
