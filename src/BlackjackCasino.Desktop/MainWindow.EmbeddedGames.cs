@@ -111,6 +111,7 @@ public partial class MainWindow
         shell.Closed += (_, _) => FinishEmbeddedGame(shell, muteHostMusic, closed);
         embeddedGameHost.Content = content;
         embeddedGameOverlay.Visibility = Visibility.Visible;
+        if (lobby is not null) lobby.Visibility = Visibility.Collapsed;
         UpdateEmbeddedGameScale();
 
         // The Blackjack keyboard handler tunnels first. Disable table actions while the
@@ -268,6 +269,7 @@ public partial class MainWindow
             return;
         }
 
+        if (lobby is not null) lobby.Visibility = Visibility.Visible;
         if (embeddedGameHost is not null)
         {
             embeddedGameHost.Content = null;
@@ -289,11 +291,7 @@ public partial class MainWindow
         closed();
         if(lobby is not null) {lobby.Visibility=Visibility.Visible;TableModeText.Text="Casino lobby";}
 
-        if (restoreHostMusic)
-        {
-            backgroundMusic.SetEnabled(HostMusicSettings.MusicEnabled);
-            backgroundMusic.SetVolume(HostMusicSettings.MusicVolume);
-        }
+        SyncHostMusic();
 
         NormalizeBetForTable();
         SavePreferences();

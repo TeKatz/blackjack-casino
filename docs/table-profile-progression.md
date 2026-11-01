@@ -34,3 +34,26 @@ CI builds and tests the solution on Windows, checks the shared control templates
 - Neon Noir, Eclipse Thread, Eclipse Halo and Aurora Glass share one renderer across
   header and shop previews, with distinct geometry, materials and motion. Reduced motion
   is honored; hidden/unloaded frame clocks stop and refreshes replace their lifecycle.
+
+## Lobby progress and menu responsiveness
+
+The hub uses generated RGBA emblems from `Assets/Navigation`, cached once and
+shared with the header. Statistics now names the existing lifetime statistics
+route. The Season Pass bar measures XP within the current tier interval; the
+Challenges bar picks the highest relative progress among incomplete, unclaimed
+challenges. The header and lobby share the same data snapshot.
+
+Pack badges are larger and breathe through scale and opacity on the small badge
+surface only. Hidden, disabled or unloaded badges stop their clocks; local
+reduced-motion preferences disable breathing. Blur radius is never animated.
+
+Progression pages build their selected tab on first display and cache it until
+profile changes. Shop/Challenges never initialize the retired album, unrelated
+statistics, history or Season reward controls. Translation change listeners are
+removed when controls unload and reattached when reused, so closed menus are not
+retained by dependency-property descriptors.
+
+Lobby-to-game handoffs keep the lobby visible until the embedded destination
+has content and its overlay is visible. Return navigation covers the table in
+the reverse order. Runtime smoke checks observe the visibility change directly
+for game entry, and record menu-open timings plus off-screen construction checks.

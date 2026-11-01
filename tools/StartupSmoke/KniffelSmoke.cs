@@ -15,7 +15,7 @@ internal static class KniffelSmoke
         Require(window.Modes.Modes.Any(mode => mode.Id == "kniffel"), "Kniffel is missing from the lobby.");
         profile.OwnedCosmeticIds.Add("diceset-aurora");
         profile.EquippedDiceSetId = "diceset-aurora";
-        window.Modes.Open("kniffel");
+        NavigationSmoke.OpenCovered(window, "kniffel");
         await Task.Delay(100);
         KniffelView view = Find<KniffelView>(window).Single();
         Require(Application.Current.Windows.Cast<Window>().Count(w => w.IsVisible) == 1, "Kniffel opened another native window.");
@@ -52,7 +52,7 @@ internal static class KniffelSmoke
         int[] dice = view.Game.Dice.ToArray();
         Click(view, "KniffelBackButton");
         Require(Find<Button>(window).Any(button => button.Name == "Mode_kniffel" && button.IsVisible && button.IsEnabled), "Lobby was not restored.");
-        window.Modes.Open("kniffel");
+        NavigationSmoke.OpenCovered(window, "kniffel");
         await Task.Delay(80);
         view = Find<KniffelView>(window).Single();
         Require(view.Game.RollsUsed == 1 && view.Game.Held[1] && dice.SequenceEqual(view.Game.Dice), "Resume changed the turn checkpoint.");
@@ -72,7 +72,7 @@ internal static class KniffelSmoke
         await CloseResult(view);
         Capture(window, Path.Combine(output, "kniffel-complete.png"));
         Click(view, "KniffelBackButton");
-        window.Modes.Open("kniffel");
+        NavigationSmoke.OpenCovered(window, "kniffel");
         await Task.Delay(80);
         view = Find<KniffelView>(window).Single();
         Require(view.Game.IsComplete && profile.LifetimeExperience == xpBefore + earned, "Reopening a finished game granted duplicate XP.");
@@ -94,7 +94,7 @@ internal static class KniffelSmoke
             "Animation did not lock rolling and scoring.");
         dice = view.Game.Dice.ToArray();
         Click(view, "KniffelBackButton");
-        window.Modes.Open("kniffel");
+        NavigationSmoke.OpenCovered(window, "kniffel");
         await Task.Delay(80);
         view = Find<KniffelView>(window).Single();
         Require(dice.SequenceEqual(view.Game.Dice) && view.Game.RollsUsed == 1, "Leaving mid-animation granted a reroll.");

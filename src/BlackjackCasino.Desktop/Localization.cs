@@ -158,20 +158,34 @@ internal static class Localization
         }));
     }
 
+    private static DependencyPropertyDescriptor? ChangeDescriptor(FrameworkElement element) => element switch
+    {
+        Window => DependencyPropertyDescriptor.FromProperty(Window.TitleProperty, typeof(Window)),
+        TextBlock => DependencyPropertyDescriptor.FromProperty(TextBlock.TextProperty, typeof(TextBlock)),
+        HeaderedContentControl => DependencyPropertyDescriptor.FromProperty(HeaderedContentControl.HeaderProperty, typeof(HeaderedContentControl)),
+        ContentControl => DependencyPropertyDescriptor.FromProperty(ContentControl.ContentProperty, typeof(ContentControl)),
+        _ => null,
+    };
+
     private static void InstallChangeWatch(FrameworkElement element)
     {
-        if ((bool)element.GetValue(WatchInstalledProperty)) return;
+        if (!element.IsLoaded || (bool)element.GetValue(WatchInstalledProperty)) return;
         element.SetValue(WatchInstalledProperty, true);
+        ChangeDescriptor(element)?.AddValueChanged(element, WatchedValueChanged);
+        element.Unloaded += RemoveChangeWatch;
+    }
 
-        DependencyPropertyDescriptor? descriptor = element switch
-        {
-            Window => DependencyPropertyDescriptor.FromProperty(Window.TitleProperty, typeof(Window)),
-            TextBlock => DependencyPropertyDescriptor.FromProperty(TextBlock.TextProperty, typeof(TextBlock)),
-            HeaderedContentControl => DependencyPropertyDescriptor.FromProperty(HeaderedContentControl.HeaderProperty, typeof(HeaderedContentControl)),
-            ContentControl => DependencyPropertyDescriptor.FromProperty(ContentControl.ContentProperty, typeof(ContentControl)),
-            _ => null,
-        };
-        descriptor?.AddValueChanged(element, (_, _) => TranslateElement(element));
+    private static void WatchedValueChanged(object? sender, EventArgs e)
+    {
+        if (sender is FrameworkElement element) TranslateElement(element);
+    }
+
+    private static void RemoveChangeWatch(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement element) return;
+        ChangeDescriptor(element)?.RemoveValueChanged(element, WatchedValueChanged);
+        element.Unloaded -= RemoveChangeWatch;
+        element.SetValue(WatchInstalledProperty, false);
     }
 
     private static void TranslateElement(FrameworkElement element)

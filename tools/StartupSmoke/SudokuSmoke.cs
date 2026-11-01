@@ -13,7 +13,7 @@ internal static class SudokuSmoke
     {
         Localization.InstallAutomaticTranslation();
         Require(window.Modes.Modes.Any(mode => mode.Id == "chill-lounge"), "Chill Lounge is missing from the lobby.");
-        window.Modes.Open("chill-lounge");
+        NavigationSmoke.OpenCovered(window, "chill-lounge");
         await Task.Delay(120);
         window.UpdateLayout();
 

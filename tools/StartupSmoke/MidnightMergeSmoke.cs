@@ -11,7 +11,7 @@ internal static class MidnightMergeSmoke
 {
     internal static async Task Run(MainWindow window, string output)
     {
-        window.Modes.Open("midnight-merge");
+        NavigationSmoke.OpenCovered(window, "midnight-merge");
         await Settle(window);
         Require(Application.Current.Windows.Cast<Window>().Count(w => w.IsVisible) == 1, "Merge opened a second visible window.");
         MidnightMergeView view = Find<MidnightMergeView>(window).Single();
@@ -66,7 +66,7 @@ internal static class MidnightMergeSmoke
         Click(view, "MergeBack");
         await Settle(window);
         Require(!Find<MidnightMergeView>(window).Any(), "Merge remained hosted after returning to the lobby.");
-        window.Modes.Open("midnight-merge");
+        NavigationSmoke.OpenCovered(window, "midnight-merge");
         await Settle(window);
         view = Find<MidnightMergeView>(window).Single();
         Require(JsonSerializer.Serialize(view.Snapshot) == serialized, "Leaving and reopening changed the saved state or IDs.");

@@ -88,7 +88,7 @@ internal static class Program
 
                 Require(window.Modes.Modes.Any(mode => mode.Id == "nine-lives"), "Nine Lives was not registered in the lobby.");
 
-                window.Modes.Open("nine-lives");
+                NavigationSmoke.OpenCovered(window, "nine-lives");
                 await Task.Delay(260);
                 window.UpdateLayout();
 

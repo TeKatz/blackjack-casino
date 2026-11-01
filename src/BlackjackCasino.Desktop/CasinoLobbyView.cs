@@ -10,16 +10,22 @@ namespace BlackjackCasino.Desktop;
 internal sealed class CasinoLobbyView : UserControl
 {
     private readonly CasinoModeRegistry modes;
+    private readonly Func<bool> animations;
+    private readonly ProgressBar seasonProgress = new() { Name = "LobbySeasonProgress", Minimum = 0, Maximum = 1 };
+    private readonly ProgressBar challengeProgress = new() { Name = "LobbyChallengeProgress", Minimum = 0, Maximum = 1 };
+    private readonly TextBlock seasonStatus = new() { Name = "LobbySeasonStatus" };
+    private readonly TextBlock challengeStatus = new() { Name = "LobbyChallengeStatus" };
+    private LobbyProgressSnapshot? lastProgress;
     private readonly UniformGrid cards = new() { Columns = 4, Width = 1280 };
     private Border? albumPackBadge;
     private TextBlock? albumPackBadgeText;
     private DropShadowEffect? albumPackBadgeGlow;
-    private int albumPackCount = -1;
     private static readonly string[] Order = ["blackjack", "kniffel", "chill-lounge", "casino-empire", "midnight-reels", "neon-vault", "nine-lives", "midnight-manor"];
 
-    internal CasinoLobbyView(CasinoModeRegistry modes, Action<string> progression)
+    internal CasinoLobbyView(CasinoModeRegistry modes, Action<string> progression, Func<bool>? animations = null)
     {
         this.modes = modes;
+        this.animations = animations ?? (() => true);
         Background = new LinearGradientBrush(Color.FromRgb(10, 17, 22), Color.FromRgb(23, 32, 28), 80);
 
         var root = new Grid { Margin = new Thickness(30, 14, 30, 14) };
@@ -95,23 +101,18 @@ internal sealed class CasinoLobbyView : UserControl
             ? $"{count} unopened collection pack{(count == 1 ? string.Empty : "s")}" 
             : null;
 
-        if (count == albumPackCount) return;
-        albumPackCount = count;
-        if (albumPackBadgeGlow is null) return;
+        PackBadgeMotion.Sync(albumPackBadge);
+    }
 
-        // A static glow is cheap. Only the count transition receives a short opacity pulse;
-        // continuously animating BlurRadius kept the whole lobby in a costly effect render path.
-        albumPackBadgeGlow.BeginAnimation(DropShadowEffect.OpacityProperty, null);
-        albumPackBadgeGlow.BeginAnimation(DropShadowEffect.BlurRadiusProperty, null);
-        albumPackBadgeGlow.Opacity = count > 0 ? .38 : 0;
-        albumPackBadgeGlow.BlurRadius = 11;
-        if (count <= 0) return;
-
-        albumPackBadgeGlow.BeginAnimation(DropShadowEffect.OpacityProperty, new DoubleAnimation(.60, .38, TimeSpan.FromMilliseconds(560))
-        {
-            EasingFunction = new SineEase { EasingMode = EasingMode.EaseOut },
-            FillBehavior = FillBehavior.Stop,
-        });
+    internal void SetProgress(LobbyProgressSnapshot snapshot)
+    {
+        if (snapshot == lastProgress) return;
+        lastProgress = snapshot;
+        seasonProgress.Value = snapshot.SeasonFraction;
+        seasonStatus.Text = snapshot.SeasonComplete ? "SEASON COMPLETE" : $"Tier {snapshot.SeasonTier} → {snapshot.SeasonNextTier} · {snapshot.SeasonExperience:N0} / {snapshot.SeasonRequired:N0} XP";
+        challengeProgress.Value = snapshot.ChallengeFraction;
+        challengeStatus.Text = snapshot.ChallengeId is null ? snapshot.ChallengeName : $"{snapshot.ChallengeName} · {snapshot.ChallengeFraction:P0}";
+        challengeStatus.ToolTip = snapshot.ChallengeId is null ? snapshot.ChallengeName : $"{snapshot.ChallengeName}: {snapshot.ChallengeProgress:N0} / {snapshot.ChallengeGoal:N0}";
     }
 
     private Border BuildProgressionHub(Action<string> progression)
@@ -194,9 +195,9 @@ internal sealed class CasinoLobbyView : UserControl
             progression));
         destinations.Children.Add(ProgressionTile(
             "LobbyProgression_Overview",
-            "Overview",
-            "CAREER OVERVIEW",
-            "Review your progress, collection and the wider Midnight Club journey.",
+            "Statistics",
+            "PLAYER STATISTICS",
+            "Review lifetime results, game-by-game performance and your casino playtime.",
             "◎",
             "#7FA9C2",
             progression));
@@ -217,17 +218,17 @@ internal sealed class CasinoLobbyView : UserControl
     {
         Brush accent = Ink(accentHex);
         var content = new Grid();
-        content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(76) });
+        content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(94) });
         content.ColumnDefinitions.Add(new ColumnDefinition());
         content.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
         var emblemFrame = new Border
         {
-            Width = 68, Height = 68, CornerRadius = new CornerRadius(12),
-            BorderBrush = accent, BorderThickness = new Thickness(1),
-            Background = new LinearGradientBrush(Ink("#203833").Color, Ink("#101E24").Color, 60),
+            Width = 86, Height = 86, CornerRadius = new CornerRadius(12),
+            BorderBrush = accent, BorderThickness = new Thickness(0),
+            Background = Brushes.Transparent,
             VerticalAlignment = VerticalAlignment.Center,
-            Child = ProgressionArtwork.Create(section, 62),
+            Child = ProgressionArtwork.Create(section, 82),
         };
         content.Children.Add(emblemFrame);
 
@@ -262,6 +263,16 @@ internal sealed class CasinoLobbyView : UserControl
             Foreground = Ink("#DCC794"),
             Margin = new Thickness(0, 7, 0, 0),
         });
+        if (section is "Season Pass" or "Challenges")
+        {
+            ProgressBar progress = section == "Season Pass" ? seasonProgress : challengeProgress;
+            TextBlock status = section == "Season Pass" ? seasonStatus : challengeStatus;
+            progress.Height = 5; progress.Margin = new Thickness(0, 8, 0, 5);
+            progress.Foreground = accent; progress.Background = Ink("#243B35");
+            status.Foreground = Ink("#BED5C9"); status.FontSize = 9;
+            status.TextTrimming = TextTrimming.CharacterEllipsis;
+            copy.Children.Add(progress); copy.Children.Add(status);
+        }
         Grid.SetColumn(copy, 1);
         content.Children.Add(copy);
 
@@ -269,7 +280,7 @@ internal sealed class CasinoLobbyView : UserControl
         {
             albumPackBadgeText = new TextBlock
             {
-                FontSize = 8.5,
+                FontSize = 15,
                 FontWeight = FontWeights.Bold,
                 Foreground = Ink("#14251F"),
                 HorizontalAlignment = HorizontalAlignment.Center,
@@ -284,11 +295,11 @@ internal sealed class CasinoLobbyView : UserControl
             };
             albumPackBadge = new Border
             {
-                MinWidth = 30,
-                Height = 22,
+                MinWidth = 46,
+                Height = 34,
                 Padding = new Thickness(6, 0, 6, 0),
                 Margin = new Thickness(7, 0, 0, 0),
-                CornerRadius = new CornerRadius(11),
+                CornerRadius = new CornerRadius(17),
                 Background = Ink("#70DDB0"),
                 BorderBrush = Ink("#B6F5D8"),
                 BorderThickness = new Thickness(1),
@@ -297,6 +308,8 @@ internal sealed class CasinoLobbyView : UserControl
                 Effect = albumPackBadgeGlow,
                 Visibility = Visibility.Collapsed,
             };
+            albumPackBadge.Name = "LobbyAlbumPackBadge";
+            PackBadgeMotion.Attach(albumPackBadge, this.animations);
             Grid.SetColumn(albumPackBadge, 2);
             content.Children.Add(albumPackBadge);
         }
@@ -304,7 +317,7 @@ internal sealed class CasinoLobbyView : UserControl
         var button = new Button
         {
             Name = name,
-            Content = new Viewbox { Child = new Border { Width = 320, Padding = new Thickness(1), Child = content }, Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, HorizontalAlignment = HorizontalAlignment.Stretch },
+            Content = new Viewbox { Child = new Border { Width = 350, Padding = new Thickness(1), Child = content }, Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, HorizontalAlignment = HorizontalAlignment.Stretch },
             Tag = section,
             Background = Ink("#112420"),
             BorderBrush = Ink("#34544A"),

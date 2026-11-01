@@ -14,17 +14,16 @@ public partial class MainWindow
     private Border? collectionAlbumHeaderBadge;
     private TextBlock? collectionAlbumHeaderBadgeText;
     private DropShadowEffect? collectionAlbumHeaderBadgeGlow;
-    private int lastCollectionPackCount = -1;
 
     private void BuildCollectionAlbumHeaderButton(Panel headerActions)
     {
         if (collectionAlbumHeaderButton is not null) return;
 
         var content = new Grid();
-        content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(28) });
+        content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(35) });
         content.ColumnDefinitions.Add(new ColumnDefinition());
         content.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        content.Children.Add(ProgressionArtwork.Create("Collector's Album", 27));
+        content.Children.Add(ProgressionArtwork.Create("Collector's Album", 34));
 
         var labels = new StackPanel { Margin = new Thickness(5, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
         labels.Children.Add(new TextBlock
@@ -46,7 +45,7 @@ public partial class MainWindow
 
         collectionAlbumHeaderBadgeText = new TextBlock
         {
-            FontSize = 9,
+            FontSize = 13,
             FontWeight = FontWeights.Bold,
             Foreground = new SolidColorBrush(Color.FromRgb(19, 35, 30)),
             HorizontalAlignment = HorizontalAlignment.Center,
@@ -61,11 +60,11 @@ public partial class MainWindow
         };
         collectionAlbumHeaderBadge = new Border
         {
-            MinWidth = 28,
-            Height = 22,
+            MinWidth = 38,
+            Height = 30,
             Margin = new Thickness(9, 0, 0, 0),
             Padding = new Thickness(6, 0, 6, 0),
-            CornerRadius = new CornerRadius(11),
+            CornerRadius = new CornerRadius(15),
             Background = new SolidColorBrush(Color.FromRgb(112, 220, 172)),
             BorderBrush = new SolidColorBrush(Color.FromRgb(177, 250, 215)),
             BorderThickness = new Thickness(1),
@@ -74,6 +73,8 @@ public partial class MainWindow
             Effect = collectionAlbumHeaderBadgeGlow,
             Visibility = Visibility.Collapsed,
         };
+        collectionAlbumHeaderBadge.Name = "HeaderAlbumPackBadge";
+        PackBadgeMotion.Attach(collectionAlbumHeaderBadge, () => CurrentPresentation.AnimationsEnabled);
         Grid.SetColumn(collectionAlbumHeaderBadge, 2);
         content.Children.Add(collectionAlbumHeaderBadge);
 
@@ -117,22 +118,6 @@ public partial class MainWindow
 
         lobby?.SetAlbumPackCount(unopened);
 
-        if (unopened == lastCollectionPackCount) return;
-        lastCollectionPackCount = unopened;
-        if (collectionAlbumHeaderBadgeGlow is null) return;
-
-        // Keep the glow static during normal navigation. Only a count change receives a short
-        // one-shot pulse; animating BlurRadius forever is disproportionately expensive in WPF.
-        collectionAlbumHeaderBadgeGlow.BeginAnimation(DropShadowEffect.OpacityProperty, null);
-        collectionAlbumHeaderBadgeGlow.BeginAnimation(DropShadowEffect.BlurRadiusProperty, null);
-        collectionAlbumHeaderBadgeGlow.BlurRadius = 10;
-        collectionAlbumHeaderBadgeGlow.Opacity = unopened > 0 ? .35 : 0;
-        if (unopened <= 0 || !AnimationsEnabled) return;
-
-        collectionAlbumHeaderBadgeGlow.BeginAnimation(DropShadowEffect.OpacityProperty, new DoubleAnimation(.58, .35, TimeSpan.FromMilliseconds(520))
-        {
-            EasingFunction = new SineEase { EasingMode = EasingMode.EaseOut },
-            FillBehavior = FillBehavior.Stop,
-        });
+        PackBadgeMotion.Sync(collectionAlbumHeaderBadge);
     }
 }

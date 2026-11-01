@@ -11,6 +11,7 @@ public partial class MainWindow
 {
     private Button? challengeHeaderButton;
     private TextBlock? challengeHeaderStatus;
+    private ProgressBar? challengeHeaderProgress;
     private Border? challengeHeaderBadge;
     private TextBlock? challengeHeaderBadgeText;
     private DropShadowEffect? challengeHeaderGlow;
@@ -38,6 +39,8 @@ public partial class MainWindow
             HorizontalAlignment = HorizontalAlignment.Left,
         };
         labels.Children.Add(challengeHeaderStatus);
+        challengeHeaderProgress = new ProgressBar { Name = "HeaderChallengeProgress", Minimum = 0, Maximum = 1, Height = 3, Margin = new Thickness(0, 3, 0, 0), Foreground = new SolidColorBrush(Color.FromRgb(113, 221, 176)), Background = new SolidColorBrush(Color.FromRgb(34, 56, 45)) };
+        labels.Children.Add(challengeHeaderProgress);
 
         challengeHeaderBadgeText = new TextBlock
         {
@@ -67,7 +70,7 @@ public partial class MainWindow
             Orientation = Orientation.Horizontal,
             VerticalAlignment = VerticalAlignment.Center,
         };
-        content.Children.Add(ProgressionArtwork.Create("Challenges", 27));
+        content.Children.Add(ProgressionArtwork.Create("Challenges", 32));
         labels.Margin = new Thickness(5, 0, 0, 0);
         content.Children.Add(labels);
         content.Children.Add(challengeHeaderBadge);
@@ -100,15 +103,12 @@ public partial class MainWindow
             || challengeHeaderBadgeText is null || progressionController is null)
             return;
 
-        PlayerProfileState profile = progressionController.Profile;
-        HashSet<string> claimed = profile.ClaimedChallengeIds.ToHashSet(StringComparer.Ordinal);
-        ChallengeDefinition[] ready = ChallengeCatalog.All
-            .Where(challenge => !claimed.Contains(challenge.Id) && ChallengeCatalog.Complete(profile, challenge))
-            .ToArray();
-        int readyCount = ready.Length;
-        long readyCoins = ready.Sum(challenge => challenge.CoinReward);
-
-        challengeHeaderStatus.Text = readyCount > 0 ? $"{readyCount} READY" : "VIEW";
+        LobbyProgressSnapshot snapshot = LobbyProgressSnapshot.From(progressionController.Profile);
+        lobby?.SetProgress(snapshot);
+        int readyCount = snapshot.ReadyCount;
+        long readyCoins = snapshot.ReadyCoins;
+        if (challengeHeaderProgress is not null) challengeHeaderProgress.Value = snapshot.ChallengeFraction;
+        challengeHeaderStatus.Text = readyCount > 0 ? $"{readyCount} READY" : snapshot.ChallengeId is null ? "COMPLETE" : snapshot.ChallengeFraction.ToString("P0");
         challengeHeaderStatus.Foreground = new SolidColorBrush(readyCount > 0
             ? Color.FromRgb(246, 213, 133)
             : Color.FromRgb(225, 232, 224));
@@ -116,7 +116,7 @@ public partial class MainWindow
         challengeHeaderBadgeText.Text = readyCount > 99 ? "99+" : readyCount.ToString();
         challengeHeaderButton.ToolTip = readyCount > 0
             ? $"{readyCount:N0} challenge reward{(readyCount == 1 ? string.Empty : "s")} ready · ◆ {readyCoins:N0} cosmetic coins · Open Challenges"
-            : "Open Challenges";
+            : snapshot.ChallengeId is null ? "All challenges complete" : $"{snapshot.ChallengeName}: {snapshot.ChallengeProgress:N0} / {snapshot.ChallengeGoal:N0} · Open Challenges";
 
         if (readyCount == lastChallengeReadyCount) return;
         bool hadReady = lastChallengeReadyCount > 0;
@@ -155,12 +155,7 @@ public partial class MainWindow
             RepeatBehavior = RepeatBehavior.Forever,
             EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut },
         });
-        challengeHeaderGlow.BeginAnimation(DropShadowEffect.BlurRadiusProperty, new DoubleAnimation(8, 15, TimeSpan.FromMilliseconds(1050))
-        {
-            AutoReverse = true,
-            RepeatBehavior = RepeatBehavior.Forever,
-            EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut },
-        });
+
 
         // A newly completed challenge gets one gentle opacity cue; afterwards only the glow remains.
         if (!hadReady)

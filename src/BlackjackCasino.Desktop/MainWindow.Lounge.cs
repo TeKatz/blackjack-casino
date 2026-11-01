@@ -103,10 +103,6 @@ public partial class MainWindow
             },
             rewardNotice: () => sudokuRewardNotice);
 
-        if (lobby is not null)
-        {
-            lobby.Visibility = System.Windows.Visibility.Collapsed;
-        }
         TableModeText.Text = "Chill Lounge";
         MenuAudio.Attach(window, () => preferences.Presentation("chill-lounge").SoundEnabled);
 

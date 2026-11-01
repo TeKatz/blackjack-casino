@@ -66,6 +66,7 @@ internal static partial class Program
 
             Capture(window, "lobby-grid-" + (int)size.Item1);
         }
+        await CheckMenuPerformance(window, qaProfile);
         await CheckDistinctFrames(window);
         bool future=false;
         window.Modes.Register(new("future-room","Future room","Registry test","A future mode without changing lobby layout.","#527D9A","◇","Future"),()=>future=true);
@@ -85,7 +86,7 @@ internal static partial class Program
         bool cursor=SetCursorPos((int)point.X,(int)point.Y);await Task.Delay(100);System.Windows.Input.Mouse.Synchronize();
         File.WriteAllText(Path.Combine(output,"hover-input.txt"),$"Native cursor request: {cursor}; ComboBox IsMouseOver: {mode.IsMouseOver}. All state templates and composed dark pixels are required regardless of headless input support.");
         await CheckCombo(mode);Capture(window,"03-hover-minimum");
-        window.Modes.Open("midnight-reels");await Task.Delay(100);
+        NavigationSmoke.OpenCovered(window, "midnight-reels");await Task.Delay(100);
         Require(!((FrameworkElement)window.FindName("CasinoHeader")).IsVisible,"Host casino header remained visible over embedded Midnight Reels");
         foreach(var size in new[]{(1080d,720d),(1440d,900d),(1920d,1080d),(2560d,1440d)})
         {
@@ -107,7 +108,7 @@ internal static partial class Program
         Require(Find<CasinoLobbyView>(window).Any(v=>v.IsVisible),"Leaving a slot did not return to the lobby");
         Require(((FrameworkElement)window.FindName("CasinoHeader")).IsVisible,"Host casino header did not return after leaving Midnight Reels");
 
-        window.Modes.Open("neon-vault");await Task.Delay(120);window.UpdateLayout();
+        NavigationSmoke.OpenCovered(window, "neon-vault");await Task.Delay(120);window.UpdateLayout();
         Require(Find<CheckBox>(window).Single(b => b.Name == "SoundToggle").IsChecked == false, "Neon Vault inherited Reels sound toggle.");
         Require(Application.Current.Windows.Cast<Window>().Count(w=>w.IsVisible)==1,"Neon Vault opened a second visible native window instead of using the casino host");
         Require(!((FrameworkElement)window.FindName("CasinoHeader")).IsVisible,"Host casino header remained visible over embedded Neon Vault");
@@ -219,7 +220,7 @@ internal static partial class Program
     private static async Task CheckEmpire(MainWindow window)
     {
         int nativeWindows=Application.Current.Windows.Count;
-        window.Modes.Open("casino-empire");await Task.Delay(100);window.UpdateLayout();
+        NavigationSmoke.OpenCovered(window, "casino-empire");await Task.Delay(100);window.UpdateLayout();
         RequireSingleHost(window,"Casino Empire");
         Require(Application.Current.Windows.Count==nativeWindows,"Casino Empire constructed a native Window");
         Require(Find<EmpireView>(window).Count()==1,"Casino Empire did not mount its hosted page");
@@ -285,7 +286,7 @@ internal static partial class Program
         var balanceSetting=(CheckBox)window.FindName("EmpireBalanceCheckBox");
         balanceSetting.IsChecked=false;Require(indicator.Visibility==Visibility.Collapsed,"The header balance setting does not hide the indicator");
         balanceSetting.IsChecked=true;Require(indicator.IsVisible,"The header balance setting does not restore the indicator");
-        window.Modes.Open("casino-empire");await Task.Delay(50);window.UpdateLayout();
+        NavigationSmoke.OpenCovered(window, "casino-empire");await Task.Delay(50);window.UpdateLayout();
         buy=Find<Button>(window).Single(b=>b.Name=="EmpireUpgradeButton");
         Find<Button>(window).Single(b=>b.Name=="EmpireRoom_vip").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         Require(!buy.IsEnabled,"An unaffordable room can be opened");
@@ -309,7 +310,7 @@ internal static partial class Program
         await Task.Delay(40);window.UpdateLayout();
         Require(Find<CasinoLobbyView>(window).Any(v=>v.IsVisible),"Empire Back did not restore the lobby");
         Require(((FrameworkElement)window.FindName("CasinoHeader")).IsVisible,"Empire Back did not restore the host header");
-        window.Modes.Open("casino-empire");await Task.Delay(40);window.UpdateLayout();
+        NavigationSmoke.OpenCovered(window, "casino-empire");await Task.Delay(40);window.UpdateLayout();
         Require(service.Level("slots")>=2 && service.Credits==credits,"Reopening Casino Empire reset progress");
         var source=PresentationSource.FromVisual(window)!;
         window.RaiseEvent(new System.Windows.Input.KeyEventArgs(System.Windows.Input.Keyboard.PrimaryDevice,source,0,System.Windows.Input.Key.Escape)

@@ -62,7 +62,6 @@ public partial class MainWindow
             () => progressionController?.Profile);
         shell.Content = view;
         shell.Closed += (_, _) => view.Dispose();
-        if (lobby is not null) lobby.Visibility = Visibility.Collapsed;
         ShowEmbeddedGame(shell, "Midnight Merge · Blackjack Casino", muteHostMusic: false, closed: () => { });
     }
 }

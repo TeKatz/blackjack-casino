@@ -24,6 +24,8 @@ internal partial class ProgressionWindow : Window
 
     private readonly bool albumAnimations;
     private readonly bool albumSounds;
+    private readonly HashSet<TabItem> renderedTabs = [];
+    private bool menuReady;
 
     public ProgressionWindow(PlayerProgressionController controller, bool animationsEnabled = true, bool soundsEnabled = true)
     {
@@ -48,9 +50,13 @@ internal partial class ProgressionWindow : Window
             RefreshChallenges();
         };
         StateChanged += (_, _) => RefreshMaximizeGlyph();
-        RefreshAll();
-        RefreshMaximizeGlyph();
         RemoveProfileTabs();
+        menuReady = true;
+        ProgressionTabs.SelectionChanged += (_, e) =>
+        {
+            if (ReferenceEquals(e.OriginalSource, ProgressionTabs) && ProgressionRoot.IsLoaded) RefreshSelectedTab();
+        };
+        RefreshMaximizeGlyph();
     }
 
     internal void RemoveProfileTabs()
@@ -77,14 +83,25 @@ internal partial class ProgressionWindow : Window
 
     private void RefreshAll()
     {
+        renderedTabs.Clear();
+        if (!menuReady || !ProgressionRoot.IsLoaded) return;
         controller.AccruePlaytime();
         RefreshProfileHeader();
-        RefreshStatistics();
-        RefreshHistory();
-        RefreshSeason();
-        RefreshShop();
-        RefreshChallenges();
-        RefreshAlbum();
+        RefreshSelectedTab();
+    }
+
+    private void RefreshSelectedTab()
+    {
+        if (!menuReady || ProgressionTabs.SelectedItem is not TabItem tab || !renderedTabs.Add(tab)) return;
+        switch (tab.Tag as string)
+        {
+            case "Overview": RefreshStatistics(); break;
+            case "Hand History": RefreshHistory(); break;
+            case "Season Pass": RefreshSeason(); break;
+            case "Cosmetic Shop": RefreshShop(); break;
+            case "Challenges": RefreshChallenges(); break;
+            case "Album": RefreshAlbum(); break;
+        }
     }
 
     private void RefreshProfileHeader()

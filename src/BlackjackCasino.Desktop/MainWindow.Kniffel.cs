@@ -30,7 +30,6 @@ public partial class MainWindow
         backgroundMusic.SetEnabled(false);
         kniffelMusic = new BackgroundMusic(Soundtrack.DiceLounge);
         kniffelMusic.Start(preferences.Presentation("kniffel").MusicEnabled, preferences.Presentation("kniffel").MusicVolume);
-        if (lobby is not null) lobby.Visibility = Visibility.Collapsed;
         foreach (UIElement covered in CasinoRoot.Children.OfType<UIElement>().Where(child => child != embeddedGameOverlay))
         {
             kniffelCoveredElements.Add((covered, covered.IsEnabled));
@@ -38,6 +37,7 @@ public partial class MainWindow
         }
         embeddedGameHost!.Content = kniffelView;
         embeddedGameOverlay!.Visibility = Visibility.Visible;
+        if (lobby is not null) lobby.Visibility = Visibility.Collapsed;
         KeyboardNavigation.SetTabNavigation(kniffelView, KeyboardNavigationMode.Cycle);
         KeyboardNavigation.SetControlTabNavigation(kniffelView, KeyboardNavigationMode.Cycle);
         KeyboardNavigation.SetDirectionalNavigation(kniffelView, KeyboardNavigationMode.Contained);
@@ -241,6 +241,7 @@ public partial class MainWindow
         kniffelMusic = null;
         backgroundMusic.SetEnabled(HostMusicSettings.MusicEnabled);
         backgroundMusic.SetVolume(HostMusicSettings.MusicVolume);
+        if (lobby is not null) lobby.Visibility = Visibility.Visible;
         embeddedGameHost!.Content = null;
         kniffelView = null;
         embeddedGameOverlay!.Visibility = Visibility.Collapsed;
@@ -248,6 +249,7 @@ public partial class MainWindow
         kniffelCoveredElements.Clear();
         if (lobby is not null) lobby.Visibility = Visibility.Visible;
         TableModeText.Text = "Casino lobby";
+        SyncHostMusic();
         if (!testSession) SavePreferences();
         NormalizeBetForTable();
         RefreshGameUi();

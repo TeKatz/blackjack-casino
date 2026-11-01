@@ -37,8 +37,7 @@ public partial class MainWindow
         page.RemoveAlbumTab();
         page.RemoveProfileTabs();
         page.ConfigureEmbeddedPresentation(CloseMetaPage);
-        if (page.Content is FrameworkElement content)
-            content.Loaded += (_, _) => page.SelectTab(tab);
+        page.SelectTab(tab);
         ShowMetaPage(page);
     }
 

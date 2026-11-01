@@ -12,7 +12,7 @@ internal static class SolitaireSmoke
 {
     internal static async Task Run(MainWindow window, string output)
     {
-        window.Modes.Open("chill-lounge");
+        NavigationSmoke.OpenCovered(window, "chill-lounge");
         await Task.Delay(120);
         window.UpdateLayout();
 

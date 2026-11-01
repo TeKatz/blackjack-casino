@@ -28,7 +28,7 @@ internal static class EmpireStrategySmoke
         typeof(MainWindow).GetField("empire",flags)!.SetValue(window,service);
         try
         {
-            window.Modes.Open("casino-empire"); await Task.Delay(100); window.UpdateLayout();
+            NavigationSmoke.OpenCovered(window, "casino-empire"); await Task.Delay(100); window.UpdateLayout();
             int windows = Application.Current.Windows.Cast<Window>().Count(w=>w.IsVisible);
             Click(window,"EmpireFloor3Button"); window.UpdateLayout();
             Require(Find<EmpireRoomCard>(window).Count(card=>card.IsVisible)==5,"Resort Floor did not render its five departments.");
