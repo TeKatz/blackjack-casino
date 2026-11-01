@@ -110,7 +110,6 @@ internal sealed class CollectionAlbumPage : Window
 
         var overview = new Border
         {
-            GridRow = 1,
             Margin = new Thickness(22, 0, 22, 10),
             Padding = new Thickness(14, 9, 14, 9),
             Background = Brush("#0A2118"),
@@ -118,6 +117,7 @@ internal sealed class CollectionAlbumPage : Window
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(9),
         };
+        Grid.SetRow(overview, 1);
         var overviewGrid = new Grid();
         overviewGrid.ColumnDefinitions.Add(new ColumnDefinition());
         overviewGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(360) });
@@ -126,7 +126,8 @@ internal sealed class CollectionAlbumPage : Window
         summary.FontWeight = FontWeights.SemiBold;
         summary.VerticalAlignment = VerticalAlignment.Center;
         overviewGrid.Children.Add(summary);
-        var duplicate = new StackPanel { GridColumn = 1, Margin = new Thickness(18, 0, 0, 0) };
+        var duplicate = new StackPanel { Margin = new Thickness(18, 0, 0, 0) };
+        Grid.SetColumn(duplicate, 1);
         duplicate.Children.Add(new TextBlock { Text = "DUPLICATE RECYCLING", FontSize = 9, FontWeight = FontWeights.Bold, Foreground = Brush("#C494FF") });
         duplicateProgress.Height = 6;
         duplicateProgress.Margin = new Thickness(0, 4, 0, 3);
@@ -155,12 +156,14 @@ internal sealed class CollectionAlbumPage : Window
         themesGrid.RowDefinitions.Add(new RowDefinition());
         themesGrid.Children.Add(new TextBlock { Text = "COLLECTIONS", FontSize = 10, FontWeight = FontWeights.Bold, Foreground = GoldBrush, Margin = new Thickness(8, 4, 8, 8) });
         themeList.Name = "AlbumThemes";
-        var themeScroll = new ScrollViewer { GridRow = 1, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, Content = themeList };
+        var themeScroll = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, Content = themeList };
+        Grid.SetRow(themeScroll, 1);
         themesGrid.Children.Add(themeScroll);
         themesPanel.Child = themesGrid;
         browseSurface.Children.Add(themesPanel);
 
-        var content = new Grid { GridColumn = 2 };
+        var content = new Grid();
+        Grid.SetColumn(content, 2);
         content.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         content.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         content.RowDefinitions.Add(new RowDefinition());
@@ -177,7 +180,8 @@ internal sealed class CollectionAlbumPage : Window
         packs.Child = packGrid;
         content.Children.Add(packs);
 
-        var themeHeader = new Grid { GridRow = 1, Margin = new Thickness(4, 2, 4, 5) };
+        var themeHeader = new Grid { Margin = new Thickness(4, 2, 4, 5) };
+        Grid.SetRow(themeHeader, 1);
         themeHeader.ColumnDefinitions.Add(new ColumnDefinition());
         themeHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         themeTitle.Name = "AlbumThemeTitle";
@@ -193,7 +197,7 @@ internal sealed class CollectionAlbumPage : Window
         content.Children.Add(themeHeader);
 
         cardArea.Name = "AlbumCards";
-        cardArea.GridRow = 2;
+        Grid.SetRow(cardArea, 2);
         cardArea.VerticalAlignment = VerticalAlignment.Top;
         content.Children.Add(cardArea);
 
@@ -285,7 +289,8 @@ internal sealed class CollectionAlbumPage : Window
         artHost.VerticalAlignment = VerticalAlignment.Center;
         body.Children.Add(artHost);
 
-        var lore = new Border { GridColumn = 1, Margin = new Thickness(28, 20, 20, 20), Padding = new Thickness(26), Background = Brush("#0B1820"), BorderBrush = Brush("#3E5360"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), VerticalAlignment = VerticalAlignment.Center, MaxWidth = 720 };
+        var lore = new Border { Margin = new Thickness(28, 20, 20, 20), Padding = new Thickness(26), Background = Brush("#0B1820"), BorderBrush = Brush("#3E5360"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), VerticalAlignment = VerticalAlignment.Center, MaxWidth = 720 };
+        Grid.SetColumn(lore, 1);
         var loreStack = new StackPanel();
         loreStack.Children.Add(new TextBlock { Text = "ARCHIVE ENTRY", FontSize = 10, FontWeight = FontWeights.Bold, Foreground = GoldBrush });
         loreTheme.FontSize = 12;
@@ -435,7 +440,7 @@ internal sealed class CollectionAlbumPage : Window
         if (theme.UltraRare)
         {
             cardArea.RowDefinitions.Add(new RowDefinition());
-            var group = BuildCardGroup("ULTRA RARE · LEGENDARY EDITIONS", theme.Cards, state, CollectionRarity.Legendary, 4);
+            FrameworkElement group = BuildCardGroup("ULTRA RARE · LEGENDARY EDITIONS", theme.Cards, state, CollectionRarity.Legendary, 4);
             group.HorizontalAlignment = HorizontalAlignment.Center;
             cardArea.Children.Add(group);
             return;
@@ -728,16 +733,4 @@ internal sealed class CollectionAlbumPage : Window
     }
 
     private static SolidColorBrush Brush(string hex) => new((Color)ColorConverter.ConvertFromString(hex));
-}
-
-internal static class CollectionAlbumGridExtensions
-{
-    internal static int GridRow
-    {
-        set { }
-    }
-    internal static int GridColumn
-    {
-        set { }
-    }
 }
