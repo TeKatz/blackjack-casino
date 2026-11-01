@@ -39,6 +39,14 @@ public partial class MainWindow
         ShowMetaPage(page);
     }
 
+    private void OpenCollectionAlbumPage()
+    {
+        if (progressionController is null || MetaPageOpen) return;
+        progressionController.AccruePlaytime();
+        ProcessLatestCompletedRound();
+        ShowMetaPage(new CollectionAlbumPage(progressionController, AnimationsEnabled, SoundEnabled, CloseMetaPage));
+    }
+
     private void ShowMetaPage(Window shell)
     {
         if (shell.Content is not FrameworkElement content)
@@ -99,6 +107,7 @@ public partial class MainWindow
         metaHost!.Content = null;
         page.Shell.Close();
         RefreshProfileButton();
+        RefreshCollectionAlbumHeaderButton();
         if (metaPages.TryPeek(out MetaPage? previous))
         {
             if (previous.Shell is PlayerProfileWindow profile) profile.RefreshPlayer();
