@@ -49,9 +49,9 @@ reduced-motion preferences disable breathing. Blur radius is never animated.
 
 Progression pages build their selected tab on first display and cache it until
 profile changes. Shop/Challenges never initialize the retired album, unrelated
-statistics, history or Season reward controls. Translation change listeners are
-removed when controls unload and reattached when reused, so closed menus are not
-retained by dependency-property descriptors.
+statistics, history or Season reward controls. Translation observes text through self bindings rather than global
+dependency-property descriptor subscriptions. Closed menus can be collected, and
+temporarily detached game controls still receive immediate localization updates.
 
 Lobby-to-game handoffs keep the lobby visible until the embedded destination
 has content and its overlay is visible. Return navigation covers the table in

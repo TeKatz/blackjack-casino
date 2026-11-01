@@ -1,9 +1,9 @@
 using System.Collections;
-using System.ComponentModel;
 using System.Globalization;
 using System.Resources;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
 using System.Windows.Threading;
@@ -40,6 +40,11 @@ internal static class Localization
     private static readonly DependencyProperty ToolTipSourceProperty = Attached("ToolTipSource", typeof(string));
     private static readonly DependencyProperty LastRenderedToolTipProperty = Attached("LastRenderedToolTip", typeof(string));
     private static readonly DependencyProperty WatchInstalledProperty = Attached("WatchInstalled", typeof(bool), false);
+    private static readonly DependencyProperty ObservedValueProperty = DependencyProperty.RegisterAttached(
+        "ObservedValue", typeof(object), typeof(Localization), new PropertyMetadata(null, (owner, _) =>
+        {
+            if (owner is FrameworkElement element) TranslateElement(element);
+        }));
     private static readonly DependencyProperty ApplyingProperty = Attached("Applying", typeof(bool), false);
     private static readonly DependencyProperty SubtreeRefreshQueuedProperty = Attached("SubtreeRefreshQueued", typeof(bool), false);
 
@@ -158,34 +163,27 @@ internal static class Localization
         }));
     }
 
-    private static DependencyPropertyDescriptor? ChangeDescriptor(FrameworkElement element) => element switch
-    {
-        Window => DependencyPropertyDescriptor.FromProperty(Window.TitleProperty, typeof(Window)),
-        TextBlock => DependencyPropertyDescriptor.FromProperty(TextBlock.TextProperty, typeof(TextBlock)),
-        HeaderedContentControl => DependencyPropertyDescriptor.FromProperty(HeaderedContentControl.HeaderProperty, typeof(HeaderedContentControl)),
-        ContentControl => DependencyPropertyDescriptor.FromProperty(ContentControl.ContentProperty, typeof(ContentControl)),
-        _ => null,
-    };
-
     private static void InstallChangeWatch(FrameworkElement element)
     {
-        if (!element.IsLoaded || (bool)element.GetValue(WatchInstalledProperty)) return;
+        if ((bool)element.GetValue(WatchInstalledProperty)) return;
         element.SetValue(WatchInstalledProperty, true);
-        ChangeDescriptor(element)?.AddValueChanged(element, WatchedValueChanged);
-        element.Unloaded += RemoveChangeWatch;
-    }
-
-    private static void WatchedValueChanged(object? sender, EventArgs e)
-    {
-        if (sender is FrameworkElement element) TranslateElement(element);
-    }
-
-    private static void RemoveChangeWatch(object sender, RoutedEventArgs e)
-    {
-        if (sender is not FrameworkElement element) return;
-        ChangeDescriptor(element)?.RemoveValueChanged(element, WatchedValueChanged);
-        element.Unloaded -= RemoveChangeWatch;
-        element.SetValue(WatchInstalledProperty, false);
+        string? path = element switch
+        {
+            Window => nameof(Window.Title),
+            TextBlock => nameof(TextBlock.Text),
+            HeaderedContentControl => nameof(HeaderedContentControl.Header),
+            ContentControl => nameof(ContentControl.Content),
+            _ => null,
+        };
+        if (path is null) return;
+        // A self binding observes the dependency property without a global descriptor
+        // subscription retaining the menu. It also stays valid when game controls are
+        // temporarily detached and reused before their next Loaded event.
+        BindingOperations.SetBinding(element, ObservedValueProperty, new Binding(path)
+        {
+            RelativeSource = new RelativeSource(RelativeSourceMode.Self),
+            Mode = BindingMode.OneWay,
+        });
     }
 
     private static void TranslateElement(FrameworkElement element)
