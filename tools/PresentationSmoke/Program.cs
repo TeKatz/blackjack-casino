@@ -34,7 +34,7 @@ internal static class Program
         app.DispatcherUnhandledException+=(_,e)=> {File.WriteAllText(Path.Combine(output,"fatal.txt"),e.Exception.ToString());e.Handled=true;app.Shutdown(1);};
         window.ContentRendered+=async(_,_)=>
         {
-            try {await Check(window,qaProfile);File.WriteAllText(Path.Combine(output,"result.txt"),"PASS: startup lobby, registered future mode, shared hover/focus/open/disabled dropdown contracts, all table themes, proportional controls, embedded Reels and Neon Vault bounds, full-surface single-window casino hosting, embedded profile rename, nested profile/progression navigation, compact challenge pagination, scrolling shop and search. Mouse hover capability recorded separately.");}
+            try {await Check(window,qaProfile);File.WriteAllText(Path.Combine(output,"result.txt"),"PASS: startup lobby, registered future mode, shared hover/focus/open/disabled dropdown contracts, all table themes, proportional controls, embedded Reels and Neon Vault bounds, full-surface single-window casino hosting, embedded profile rename, nested profile/progression navigation, compact challenge pagination, scrolling shop and search.");}
             catch(Exception ex){exit=1;File.WriteAllText(Path.Combine(output,"failure.txt"),ex.ToString());}
             finally {window.Close();CasinoAudio.Shutdown();app.Shutdown(exit);}
         };
@@ -49,7 +49,7 @@ internal static class Program
             window.Width = size.Item1; window.Height = size.Item2; window.UpdateLayout();
             CasinoLobbyView lobby = Find<CasinoLobbyView>(window).Single();
             Button[] tiles = Find<Button>(lobby).Where(button => button.Name.StartsWith("Mode_", StringComparison.Ordinal)).ToArray();
-            Require(tiles.Length == 8, "Lobby is missing a registered game tile");
+            Require(tiles.Select(tile => tile.Tag as string).OrderBy(id => id).SequenceEqual(window.Modes.Modes.Select(mode => mode.Id).OrderBy(id => id)), "Lobby tiles do not match the registered modes");
             foreach (Button tile in tiles)
             {
                 Rect bounds = tile.TransformToAncestor(lobby).TransformBounds(new Rect(0,0,tile.ActualWidth,tile.ActualHeight));
@@ -172,7 +172,7 @@ internal static class Program
         Find<Button>(window).Single(b=>b.Name=="ProfileBackButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(40);window.UpdateLayout();
         Require(Find<CasinoLobbyView>(window).Any(v=>v.IsVisible),"Closing the profile lost the previous lobby");
-        Find<Button>(window).Single(b=>Equals(b.Content,"Challenges") && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Find<Button>(window).Single(b=>b.Name=="LobbyProgression_Challenges" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(60);window.UpdateLayout();RequireSingleHost(window,"Lobby Challenges");
         Require(Find<TabControl>(window).Any(t=>t.SelectedItem is TabItem item && Equals(item.Header,"Challenges")),"Lobby shortcut selected the wrong tab");
         Find<Button>(window).Single(b=>b.Name=="ProgressionBackButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));

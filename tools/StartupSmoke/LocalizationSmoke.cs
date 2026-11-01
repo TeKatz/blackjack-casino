@@ -12,8 +12,6 @@ internal static class LocalizationSmoke
 {
     internal static async Task Run(MainWindow window, string output)
     {
-        // StartupSmoke hosts MainWindow in a plain WPF Application rather than App.xaml.cs.
-        // Install the same Loaded hook production uses before opening dynamic game surfaces.
         Localization.InstallAutomaticTranslation();
 
         ComboBox language = Find<ComboBox>(window).FirstOrDefault(combo => combo.Name == "LanguageComboBox")
@@ -48,7 +46,6 @@ internal static class LocalizationSmoke
 
         SaveScreenshot(window, Path.Combine(output, "localization-german-lobby.png"));
 
-        // Actual Blackjack play surface: the user's first test exposed English hand/result text here.
         window.Modes.Open("blackjack");
         await Task.Delay(80);
         window.UpdateLayout();
@@ -73,12 +70,8 @@ internal static class LocalizationSmoke
             "Blackjack hand outcome remained English after settlement.");
         SaveScreenshot(window, Path.Combine(output, "localization-german-blackjack.png"));
 
-        // Casino Vault must localize when opened after the language switch, not only its header tile.
         Button vault = Find<Button>(window).Single(button => button.Name == "CasinoVaultButton" && button.IsVisible);
-        Click(vault);
-        await Task.Delay(100);
-        window.UpdateLayout();
-        Grid overlay = Find<Grid>(window).Single(grid => grid.Name == "CasinoVaultOverlay" && grid.IsVisible);
+        Grid overlay = await OpenVault(window, vault);
         Require(Find<TextBlock>(overlay).Any(text => text.IsVisible && text.Text == "BEITRAG"),
             "Casino Vault contribution row remained English.");
         Require(Find<TextBlock>(overlay).Any(text => text.IsVisible && text.Text == "VOLLER VAULT"),
@@ -91,7 +84,6 @@ internal static class LocalizationSmoke
         Click(Find<Button>(overlay).Single(button => button.Name == "CasinoVaultCloseButton"));
         await Task.Delay(60);
 
-        // Chill Lounge game selection and Sudoku hub/game are dynamically hosted surfaces.
         window.Modes.Open("chill-lounge");
         await Task.Delay(140);
         window.UpdateLayout();
@@ -110,9 +102,9 @@ internal static class LocalizationSmoke
             "Sudoku timer control remained English.");
         Require(Find<Button>(window).Any(button => button.Name == "SudokuNew_Medium" && Equals(button.Content, "NEUES RÄTSEL")),
             "Sudoku New Puzzle action remained English.");
+        Require(Find<Button>(window).Any(button => IsVisibleGamesButton(button, "SPIELE")),
+            "Sudoku Games header navigation did not localize to German.");
 
-        // Use Expert here so this localization acceptance path does not contaminate the
-        // independent Sudoku behavior smoke, which intentionally starts from untouched Medium.
         Click(Find<Button>(window).Single(button => button.Name == "SudokuNew_Expert"));
         await Task.Delay(100);
         window.UpdateLayout();
@@ -127,11 +119,10 @@ internal static class LocalizationSmoke
         Click(Find<Button>(window).Single(button => button.IsVisible && Equals(button.Content, "← LOUNGE")));
         await Task.Delay(70);
         window.UpdateLayout();
-        Click(Find<Button>(window).Single(button => button.IsVisible && Equals(button.Content, "← LOUNGE-SPIELE")));
+        Click(Find<Button>(window).Single(button => IsVisibleGamesButton(button, "SPIELE")));
         await Task.Delay(70);
         window.UpdateLayout();
 
-        // Midnight Solitaire hub and an actual Klondike deal.
         Click(Find<Button>(window).Single(button => button.Name == "LoungeGame_solitaire" && button.IsVisible));
         await Task.Delay(90);
         window.UpdateLayout();
@@ -139,6 +130,10 @@ internal static class LocalizationSmoke
             "Midnight Solitaire hub headline remained English.");
         Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "ERFOLGE"),
             "Midnight Solitaire achievement section remained English.");
+        Require(Find<Button>(window).Any(button => IsVisibleGamesButton(button, "SPIELE")),
+            "Midnight Solitaire Games header navigation did not localize to German.");
+        Require(!Find<Button>(window).Any(button => button.IsVisible && button.Content is string text && text.Contains("LOUNGE-SPIELE", StringComparison.OrdinalIgnoreCase)),
+            "Midnight Solitaire still exposes the old Lounge-Spiele navigation.");
         Button newDeal = Find<Button>(window).First(button => button.IsVisible && Equals(button.Content, "NEUES SPIEL"));
         Click(newDeal);
         await Task.Delay(100);
@@ -160,7 +155,7 @@ internal static class LocalizationSmoke
 
         Click(Find<Button>(window).Single(button => button.IsVisible && Equals(button.Content, "← SOLITAIRE")));
         await Task.Delay(50);
-        Click(Find<Button>(window).Single(button => button.IsVisible && Equals(button.Content, "← LOUNGE-SPIELE")));
+        Click(Find<Button>(window).Single(button => IsVisibleGamesButton(button, "SPIELE")));
         await Task.Delay(50);
         Click(Find<Button>(window).Single(button => button.IsVisible && Equals(button.Content, "ZURÜCK ZUM CLUB")));
         await Task.Delay(100);
@@ -179,9 +174,39 @@ internal static class LocalizationSmoke
         Require(Find<CheckBox>(window).Any(check => check.Name == "SoundCheckBox" && Equals(check.Content, "Casino sound effects")),
             "Sound setting did not restore its English resource value.");
         Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "A different kind of night."),
-            "Casino lobby headline did not switch back to English.");
+            "Casino lobby headline did not switch back to English without a restart.");
         Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "VAULT FULL"),
             "Dynamic Vault header did not switch back to English.");
+    }
+
+    private static bool IsVisibleGamesButton(Button button, string label)
+    {
+        if (!button.IsVisible || button.Content is not string text) return false;
+        return text.Contains(label, StringComparison.OrdinalIgnoreCase) &&
+               !text.Contains("LOUNGE", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static async Task<Grid> OpenVault(MainWindow window, Button vault)
+    {
+        for (int attempt = 0; attempt < 25; attempt++)
+        {
+            Button? stand = Find<Button>(window).FirstOrDefault(button => button.Name == "StandButton" && button.IsEnabled);
+            if (stand is not null)
+            {
+                Click(stand);
+                await Task.Delay(120);
+                window.UpdateLayout();
+            }
+
+            Click(vault);
+            await Task.Delay(120);
+            window.UpdateLayout();
+            Grid? overlay = Find<Grid>(window).FirstOrDefault(grid => grid.Name == "CasinoVaultOverlay" && grid.IsVisible);
+            if (overlay is not null) return overlay;
+        }
+
+        TextBlock? status = Find<TextBlock>(window).FirstOrDefault(text => text.Name == "StatusText");
+        throw new InvalidOperationException("Casino Vault overlay did not open after the localized Blackjack hand settled. Status: " + status?.Text);
     }
 
     private static string SelectedLanguageName(ComboBox combo)

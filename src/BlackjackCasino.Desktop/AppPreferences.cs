@@ -32,8 +32,12 @@ internal sealed record AppPreferences
     public bool SudokuShowTimer { get; init; } = true;
     public bool SudokuShowGuides { get; init; } = true;
     public BlackjackCasino.Core.Solitaire.SolitaireProgressState Solitaire { get; init; } = new();
+    public BlackjackCasino.Core.WordSearch.WordSearchProgressState WordSearch { get; init; } = new();
+    public BlackjackCasino.Core.Memory.MemoryProgressState Memory { get; init; } = new();
 
     public BlackjackCasino.Core.Empire.EmpireState Empire { get; init; } = new();
+
+    public BlackjackCasino.Core.MidnightMerge.MergeGameState MidnightMerge { get; init; } = new();
 
     public decimal Bankroll { get; init; } = 1_000m;
     public Guid LastAppliedVaultPayoutId { get; init; }

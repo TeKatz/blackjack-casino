@@ -16,16 +16,17 @@ internal static class PlayerStateStore
 
     private static readonly JsonSerializerOptions JsonOptions = CreateJsonOptions();
 
-    public static AppPreferences Load()
+    public static AppPreferences Load(string? directory = null)
     {
+        string path = directory is null ? StatePath : Path.Combine(directory, "player-state.json");
         try
         {
-            if (!File.Exists(StatePath))
+            if (!File.Exists(path))
             {
                 return new AppPreferences();
             }
 
-            string json = File.ReadAllText(StatePath);
+            string json = File.ReadAllText(path);
             AppPreferences? state = JsonSerializer.Deserialize<AppPreferences>(json, JsonOptions);
             return Sanitize(state ?? new AppPreferences());
         }
@@ -95,6 +96,7 @@ internal static class PlayerStateStore
 
         return state with
         {
+            MidnightMerge = BlackjackCasino.Core.MidnightMerge.MergeGameState.Normalize(state.MidnightMerge),
             Empire = BlackjackCasino.Core.Empire.EmpireState.Normalize(state.Empire),
             Kniffel = BlackjackCasino.Core.Kniffel.KniffelGame.Normalize(state.Kniffel),
             Sudoku = BlackjackCasino.Core.Sudoku.SudokuProgressState.Normalize(state.Sudoku),

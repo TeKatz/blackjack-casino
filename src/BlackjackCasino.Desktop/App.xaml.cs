@@ -10,6 +10,7 @@ public partial class App : Application
         DispatcherUnhandledException += OnDispatcherUnhandledException;
         AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
         Localization.InstallAutomaticTranslation();
+        CasinoCursors.Install();
         base.OnStartup(e);
     }
 

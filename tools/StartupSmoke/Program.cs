@@ -2,6 +2,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
 using BlackjackCasino.Core;
 using BlackjackCasino.Desktop;
@@ -19,6 +20,11 @@ internal static class Program
         {
             Source = new Uri("/BlackjackCasino.Desktop;component/Presentation/CasinoControls.xaml", UriKind.Relative),
         });
+        app.Resources.MergedDictionaries.Add(new ResourceDictionary
+        {
+            Source = new Uri("/BlackjackCasino.Desktop;component/Presentation/CasinoTooltips.xaml", UriKind.Relative),
+        });
+        CasinoCursors.Install();
 
         int exit = 0;
         app.DispatcherUnhandledException += (_, e) =>
@@ -42,6 +48,9 @@ internal static class Program
                 LifetimeContributions = 50_000m,
             },
         };
+        // Seed one completed, unclaimed challenge so the persistent header notification is exercised.
+        profile.MidnightMerge.Merges = 1;
+
         var preferences = new AppPreferences
         {
             Bankroll = 50_000m,
@@ -57,8 +66,26 @@ internal static class Program
         {
             try
             {
-                await Task.Delay(150);
+                await Task.Delay(180);
+                window.UpdateLayout();
                 Require(window.IsVisible, "Main window never became visible.");
+                Require(window.Cursor == CasinoCursors.Arrow, "Main window did not install the custom casino cursor.");
+                Require(!ReferenceEquals(CasinoCursors.Hand, System.Windows.Input.Cursors.Hand),
+                    "Interactive casino cursor regressed to the stock Windows hand instead of the custom pointing glove.");
+                Require(!ReferenceEquals(CasinoCursors.Hand, CasinoCursors.Arrow),
+                    "Interactive casino cursor must remain distinct from the default casino arrow.");
+                Require(Application.Current.TryFindResource(typeof(ToolTip)) is Style,
+                    "Global casino tooltip style is not available to application controls.");
+                Button challenges = Find<Button>(window).Single(button => button.Name == "HeaderChallengesButton" && button.IsVisible);
+                Require(Find<TextBlock>(challenges).Any(text => text.Text.Contains("READY", StringComparison.Ordinal)),
+                    "Completed challenge did not surface a READY indicator in the global header.");
+                Require(challenges.Effect is DropShadowEffect,
+                    "Completed challenge did not activate the global header glow cue.");
+                Button vaultHeader = Find<Button>(window).Single(button => button.Name == "CasinoVaultButton" && button.IsVisible);
+                Require(Find<VaultHeaderArtwork>(vaultHeader).Any(),
+                    "Casino Vault header card is missing its vault artwork.");
+                SaveScreenshot(window, Path.Combine(output, "global-header-polish.png"));
+
                 Require(window.Modes.Modes.Any(mode => mode.Id == "nine-lives"), "Nine Lives was not registered in the lobby.");
 
                 window.Modes.Open("nine-lives");
@@ -144,8 +171,10 @@ internal static class Program
                     "Casino lobby was not restored after leaving Nine Lives.");
 
                 await LocalizationSmoke.Run(window, output);
+                await MidnightMergeSmoke.Run(window, output);
                 await SudokuSmoke.Run(window, output);
                 await SolitaireSmoke.Run(window, output);
+                await MemorySmoke.Run(window, output);
                 await KniffelSmoke.Run(window, output, profile);
                 await KniffelCasinoSmoke.Run(window, output, profile);
                 await KniffelFeedbackSmoke.Run(window, output);
@@ -153,7 +182,7 @@ internal static class Program
                 await VaultSmoke.Run(window, output);
 
                 File.WriteAllText(Path.Combine(output, "result.txt"),
-                    "PASS: EN/DE live localization; Nine Lives presentation; Chill Lounge Sudoku; Midnight Solitaire navigation and selection feedback; Midnight Dice; Casino Empire; and in-app Casino Vault acceptance all passed.");
+                    "PASS: EN/DE live localization; Nine Lives presentation; Chill Lounge Sudoku, Solitaire and Memory; Midnight Merge foundation; Midnight Dice; Casino Empire; and in-app Casino Vault acceptance all passed.");
             }
             catch (Exception ex)
             {

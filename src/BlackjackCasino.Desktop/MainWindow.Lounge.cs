@@ -1,5 +1,7 @@
+using BlackjackCasino.Core.Memory;
 using BlackjackCasino.Core.Solitaire;
 using BlackjackCasino.Core.Sudoku;
+using BlackjackCasino.Core.WordSearch;
 
 namespace BlackjackCasino.Desktop;
 
@@ -16,22 +18,57 @@ public partial class MainWindow
         }
         ProcessLatestCompletedRound();
         SudokuLoungePolish.EnsureInstalled();
+        LoungeVisualUpgrade.EnsureInstalled(() => preferences.Sudoku);
         RecordSudokuCompletions(preferences.Sudoku);
 
         preferences = preferences with { Solitaire = SolitaireProgressState.Normalize(preferences.Solitaire) };
+        preferences.WordSearch.Normalize();
+        RecordWordSearchCompletions(preferences.WordSearch);
+        preferences.Memory.Normalize();
+        RecordMemoryCompletions(preferences.Memory);
+
+        Func<SolitaireStatistics> solitaireStats = () => progressionController?.Profile.Solitaire ?? new SolitaireStatistics();
+        Func<WordSearchStatistics> wordSearchStats = () => progressionController?.Profile.WordSearch ?? new WordSearchStatistics();
+        Func<MemoryStatistics> memoryStats = () => progressionController?.Profile.Memory ?? new MemoryStatistics();
+
         LoungeHostedGameRegistry.SetSessionModules([
-            SolitaireLoungeModule.Create(
+            LoungeVisualUpgrade.UpgradeSolitaire(SolitaireLoungeModule.Create(
                 preferences.Solitaire,
                 state =>
                 {
                     preferences = preferences with { Solitaire = SolitaireProgressState.Normalize(state) };
                     if (!testSession) SavePreferences();
                 },
-                () => progressionController?.Profile.Solitaire ?? new SolitaireStatistics(),
+                solitaireStats,
                 RecordSolitaireStart,
                 RecordSolitaireAbandon,
                 RecordSolitaireCompletion,
-                () => progressionController?.Profile.EquippedCardSetId)
+                () => progressionController?.Profile.EquippedCardSetId)),
+            LoungeVisualUpgrade.UpgradeWordSearch(WordSearchLoungeModule.Create(
+                preferences.WordSearch,
+                state =>
+                {
+                    state.Normalize();
+                    preferences = preferences with { WordSearch = state };
+                    if (!testSession) SavePreferences();
+                },
+                wordSearchStats,
+                RecordWordSearchCompletion),
+                wordSearchStats,
+                () => preferences.WordSearch),
+            LoungeVisualUpgrade.UpgradeMemory(MemoryLoungeModuleVisual.Create(
+                preferences.Memory,
+                state =>
+                {
+                    state.Normalize();
+                    preferences = preferences with { Memory = state };
+                    if (!testSession) SavePreferences();
+                },
+                memoryStats,
+                RecordMemoryCompletion,
+                () => preferences.SoundEnabled,
+                () => preferences.AnimationsEnabled),
+                memoryStats)
         ]);
 
         var window = new LoungeWindow(
@@ -148,5 +185,43 @@ public partial class MainWindow
         {
             return "Solved and saved locally. Reopen this deal to retry saving XP. " + ex.Message;
         }
+    }
+
+    private void RecordWordSearchCompletions(WordSearchProgressState state)
+    {
+        if (progressionController is null) return;
+        state.Normalize();
+        foreach (WordSearchCompletionRecord completion in state.CompletedGames)
+        {
+            if (progressionController.Profile.WordSearch.RecordedPuzzleIds.Contains(completion.PuzzleId)) continue;
+            try { _ = progressionController.ProcessWordSearch(completion); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return; }
+        }
+    }
+
+    private ProgressionAward RecordWordSearchCompletion(WordSearchCompletionRecord completion)
+    {
+        if (progressionController is null) return ProgressionAward.None;
+        try { return progressionController.ProcessWordSearch(completion); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return ProgressionAward.None; }
+    }
+
+    private void RecordMemoryCompletions(MemoryProgressState state)
+    {
+        if (progressionController is null) return;
+        state.Normalize();
+        foreach (MemoryCompletionRecord completion in state.CompletedGames)
+        {
+            if (progressionController.Profile.Memory.RecordedGameIds.Contains(completion.GameId)) continue;
+            try { _ = progressionController.ProcessMemory(completion); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return; }
+        }
+    }
+
+    private ProgressionAward RecordMemoryCompletion(MemoryCompletionRecord completion)
+    {
+        if (progressionController is null) return ProgressionAward.None;
+        try { return progressionController.ProcessMemory(completion); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return ProgressionAward.None; }
     }
 }

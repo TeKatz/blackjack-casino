@@ -1,6 +1,6 @@
 namespace BlackjackCasino.Desktop;
 
-internal sealed record CasinoMode(string Id,string Title,string Subtitle,string Description,string Accent,string Emblem,string Category,Func<System.Windows.FrameworkElement>? Artwork=null);
+internal sealed record CasinoMode(string Id,string Title,string Subtitle,string Description,string Accent,string Emblem,string Category,Func<System.Windows.FrameworkElement>? Artwork=null, bool UseResourceKeys=false);
 
 /// <summary>Composition root registers modes; lobby rendering stays generic for primary and optional secondary actions.</summary>
 internal sealed class CasinoModeRegistry

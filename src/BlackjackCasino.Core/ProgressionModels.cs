@@ -81,6 +81,9 @@ public sealed class PlayerProfileState
     public Kniffel.KniffelStatistics Kniffel { get; set; } = new();
     public Sudoku.SudokuStatistics Sudoku { get; set; } = new();
     public Solitaire.SolitaireStatistics Solitaire { get; set; } = new();
+    public WordSearch.WordSearchStatistics WordSearch { get; set; } = new();
+    public Memory.MemoryStatistics Memory { get; set; } = new();
+    public MidnightMerge.MidnightMergeStatistics MidnightMerge { get; set; } = new();
     public Manor.ManorStatistics Manor { get; set; } = new();
     public CasinoVaultState Vault { get; set; } = new();
     // Zero also identifies saves with no version field. Normalize before recording new spins.

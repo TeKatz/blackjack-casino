@@ -16,6 +16,7 @@ internal sealed class LoungeWindow : Window
     private SudokuView? sudokuView;
     private readonly List<LoungeGame> games = [];
     private readonly Func<string>? rewardNotice;
+    private Button? gamesHeaderBack;
     private bool showTimer;
     private bool showGuides;
 
@@ -70,7 +71,8 @@ internal sealed class LoungeWindow : Window
             SaveActive(previous);
             previous.Dispose();
         }
-        contentHost.Content = new LoungeGameMenu(games);
+        SetShellNavigation(null, null);
+        contentHost.Content = new LoungeGameMenu(games, SetShellNavigation);
     }
 
     private UIElement BuildShell()
@@ -106,13 +108,25 @@ internal sealed class LoungeWindow : Window
         });
         bar.Children.Add(brand);
 
-        // Game-list navigation belongs to the local game hierarchy. The persistent header
-        // only exits the Chill Lounge, avoiding the duplicate back path on the main menu.
+        gamesHeaderBack = LoungeButton(LoungeGameMenu.GamesBackLabel());
+        gamesHeaderBack.Name = "LoungeGamesHeaderBack";
+        gamesHeaderBack.Padding = new Thickness(15, 8, 15, 8);
+        gamesHeaderBack.Margin = new Thickness(0, 0, 10, 0);
+        gamesHeaderBack.Visibility = Visibility.Collapsed;
+        gamesHeaderBack.Click += (_, _) =>
+        {
+            if (gamesHeaderBack.Tag is Action action) action();
+        };
+
         var close = LoungeButton("RETURN TO CLUB");
         close.Padding = new Thickness(17, 8, 17, 8);
         close.Click += (_, _) => Close();
-        Grid.SetColumn(close, 1);
-        bar.Children.Add(close);
+
+        var headerActions = new StackPanel { Orientation = Orientation.Horizontal };
+        headerActions.Children.Add(gamesHeaderBack);
+        headerActions.Children.Add(close);
+        Grid.SetColumn(headerActions, 1);
+        bar.Children.Add(headerActions);
         top.Child = bar;
         root.Children.Add(top);
 
@@ -121,6 +135,14 @@ internal sealed class LoungeWindow : Window
         Grid.SetRow(contentHost, 1);
         root.Children.Add(contentHost);
         return root;
+    }
+
+    private void SetShellNavigation(string? label, Action? action)
+    {
+        if (gamesHeaderBack is null) return;
+        gamesHeaderBack.Content = label ?? LoungeGameMenu.GamesBackLabel();
+        gamesHeaderBack.Tag = action;
+        gamesHeaderBack.Visibility = action is null ? Visibility.Collapsed : Visibility.Visible;
     }
 
     private void ShowHub()
@@ -133,6 +155,7 @@ internal sealed class LoungeWindow : Window
             previous.Dispose();
         }
 
+        SetShellNavigation(LoungeGameMenu.GamesBackLabel(), ShowGames);
         progress = SudokuProgressState.Normalize(progress);
         var scroll = new ScrollViewer
         {
@@ -147,8 +170,6 @@ internal sealed class LoungeWindow : Window
         };
 
         var heading = new Grid { Margin = new Thickness(0, 0, 0, 24) };
-        heading.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        heading.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         var headingCopy = new StackPanel();
         headingCopy.Children.Add(new TextBlock
         {
@@ -174,13 +195,6 @@ internal sealed class LoungeWindow : Window
             MaxWidth = 760,
         });
         heading.Children.Add(headingCopy);
-        var backToGames = LoungeButton("← LOUNGE GAMES");
-        backToGames.Name = "SudokuBackToLoungeGames";
-        backToGames.VerticalAlignment = VerticalAlignment.Top;
-        backToGames.Margin = new Thickness(24, 0, 0, 0);
-        backToGames.Click += (_, _) => ShowGames();
-        Grid.SetColumn(backToGames, 1);
-        heading.Children.Add(backToGames);
         root.Children.Add(heading);
 
         var sudokuCard = new Border

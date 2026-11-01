@@ -91,16 +91,14 @@ internal static class KniffelCasinoSmoke
         await Until(() => Find<Button>(view).Any(b => b.Name == "ResultCasinoButton" && b.IsVisible));
         Require(Find<TextBlock>(view).Single(t => t.Name == "MatchNetText").Text == "−$100.00", "Forfeit receipt does not show the lost entry.");
         Click(view, "ResultCasinoButton");
-        Button overview = Find<Button>(window).Single(b => Equals(b.Content, "Overview") && b.IsVisible);
-        overview.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Click(window, "LobbyProgression_Overview");
         await Task.Delay(120);
         Require(Find<TextBlock>(window).Any(text => text.Text.Contains("MIDNIGHT DICE", StringComparison.Ordinal)), "Statistics overview has no Midnight Dice card.");
         Find<TextBlock>(window).First(text => text.Text.Contains("MIDNIGHT DICE", StringComparison.Ordinal)).BringIntoView();
         await Task.Delay(80);
         Capture(window, Path.Combine(output, "dice-statistics.png"));
         Click(window, "ProgressionBackButton");
-        Button challenges = Find<Button>(window).Single(b => Equals(b.Content, "Challenges") && b.IsVisible);
-        challenges.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Click(window, "LobbyProgression_Challenges");
         await Task.Delay(100);
         ComboBox filter = Find<ComboBox>(window).Single(combo => combo.Name == "ChallengeCategoryFilter");
         filter.SelectedItem = filter.Items.Cast<object>().Single(item => item.ToString() == "Midnight Dice");
