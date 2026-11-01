@@ -82,7 +82,7 @@ internal static class LocalizationSmoke
         Click(Find<Button>(overlay).Single(button => button.Name == "CasinoVaultCloseButton"));
         await Task.Delay(60);
 
-        window.Modes.Open("chill-lounge");
+        NavigationSmoke.OpenCovered(window, "chill-lounge");
         await Task.Delay(140);
         window.UpdateLayout();
         Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "Finde dein eigenes Tempo."),
@@ -192,6 +192,8 @@ internal static class LocalizationSmoke
             Button? deal = Find<Button>(window).FirstOrDefault(button => button.Name == "DealButton");
             if (deal is { IsEnabled: true }) return;
 
+            Button? decline = Find<Button>(window).FirstOrDefault(button => button.Name == "DeclineInsuranceButton" && button.IsVisible && button.IsEnabled);
+            if (decline is not null) Click(decline);
             Button? stand = Find<Button>(window).FirstOrDefault(button => button.Name == "StandButton" && button.IsEnabled);
             if (stand is not null) Click(stand);
 

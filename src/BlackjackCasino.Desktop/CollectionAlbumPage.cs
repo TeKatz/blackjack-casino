@@ -16,7 +16,7 @@ namespace BlackjackCasino.Desktop;
 internal sealed class CollectionAlbumPage : Window
 {
     private const double AlbumCardScale = .92;
-    private const double InspectorCardScale = 2.08;
+    private const double InspectorCardScale = 2.45;
 
     private readonly PlayerProgressionController controller;
     private readonly bool animationsEnabled;
@@ -56,6 +56,8 @@ internal sealed class CollectionAlbumPage : Window
     private readonly TextBlock loreTheme = new();
     private readonly TextBlock loreCard = new();
     private readonly TextBlock loreMeta = new();
+    private readonly WrapPanel archiveDetails = new();
+    private readonly StackPanel relatedEditions = new() { Orientation = Orientation.Horizontal };
     private readonly TextBlock loreBody = new() { Name = "AlbumLoreBody" };
     private readonly Button artClose = new() { Name = "AlbumArtClose", Content = "Back to album" };
 
@@ -420,12 +422,12 @@ internal sealed class CollectionAlbumPage : Window
         var body = new Grid
         {
             Margin = new Thickness(10, 5, 10, 5),
-            MaxWidth = 1540,
+            MaxWidth = 1700,
             HorizontalAlignment = HorizontalAlignment.Stretch,
-            VerticalAlignment = VerticalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Stretch,
         };
-        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(45, GridUnitType.Star) });
-        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(55, GridUnitType.Star) });
+        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(36, GridUnitType.Star) });
+        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64, GridUnitType.Star) });
 
         artCardGlow.Margin = new Thickness(0, 18, 0, 18);
         artCardGlow.Background = RadialGlow(Color.FromRgb(211, 178, 103), 42);
@@ -436,15 +438,20 @@ internal sealed class CollectionAlbumPage : Window
         body.Children.Add(loreGlow);
 
         artCardStage.Name = "AlbumArtCardStage";
+        artCardStage.SizeChanged += (_, _) =>
+        {
+            FitInspectorCard();
+            if (relatedEditions.Parent is UIElement related) related.Visibility = artCardStage.ActualHeight < 540 ? Visibility.Collapsed : Visibility.Visible;
+        };
         artCardStage.Margin = new Thickness(12, 8, 12, 8);
         artCardStage.Padding = new Thickness(28, 21, 28, 19);
         artCardStage.HorizontalAlignment = HorizontalAlignment.Stretch;
-        artCardStage.VerticalAlignment = VerticalAlignment.Center;
+        artCardStage.VerticalAlignment = VerticalAlignment.Stretch;
         artCardStage.Background = new LinearGradientBrush(Color.FromRgb(11, 20, 27), Color.FromRgb(6, 13, 19), 90);
         artCardStage.BorderBrush = Brush("#5D5848");
         artCardStage.BorderThickness = new Thickness(1);
         artCardStage.CornerRadius = new CornerRadius(18);
-        var cardStageStack = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center };
+        var cardStageStack = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
         cardStageStack.Children.Add(new TextBlock
         {
             Text = "DISCOVERED EDITION",
@@ -476,7 +483,7 @@ internal sealed class CollectionAlbumPage : Window
         lorePanel.BorderThickness = new Thickness(1);
         lorePanel.CornerRadius = new CornerRadius(16);
         lorePanel.HorizontalAlignment = HorizontalAlignment.Stretch;
-        lorePanel.VerticalAlignment = VerticalAlignment.Center;
+        lorePanel.VerticalAlignment = VerticalAlignment.Stretch;
         Grid.SetColumn(lorePanel, 1);
 
         var loreStack = new StackPanel();
@@ -523,12 +530,33 @@ internal sealed class CollectionAlbumPage : Window
         loreBody.Foreground = Brush("#D0D9DA");
         loreBody.TextWrapping = TextWrapping.Wrap;
         loreStack.Children.Add(loreBody);
-        lorePanel.Child = new ScrollViewer
+        loreStack.Children.Add(new Border
+        {
+            Height = 1, Margin = new Thickness(0, 24, 0, 18),
+            Background = new LinearGradientBrush(BrushColor("#7E6A42"), Colors.Transparent, 0),
+        });
+        loreStack.Children.Add(archiveDetails);
+        loreStack.Children.Add(new TextBlock
+        {
+            Text = "✦  THE MIDNIGHT CLUB  /  PERMANENT COLLECTION",
+            Foreground = Brush("#988B70"), FontSize = 10, Margin = new Thickness(0, 22, 0, 0),
+            TextWrapping = TextWrapping.Wrap,
+        });
+        var archiveLayout = new Grid();
+        archiveLayout.RowDefinitions.Add(new RowDefinition());
+        archiveLayout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        archiveLayout.Children.Add(new ScrollViewer
         {
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
             Content = loreStack,
-        };
+        });
+        var related = new StackPanel { Margin = new Thickness(0, 20, 0, 0) };
+        related.Children.Add(new Border { Height = 1, Background = Brush("#344B50"), Margin = new Thickness(0, 0, 0, 16) });
+        related.Children.Add(new TextBlock { Text = "FROM THE SAME COLLECTION", FontSize = 10, FontWeight = FontWeights.SemiBold, Foreground = Brush("#BCA575"), Margin = new Thickness(0, 0, 0, 8) });
+        related.Children.Add(relatedEditions);
+        Grid.SetRow(related, 1); archiveLayout.Children.Add(related);
+        lorePanel.Child = archiveLayout;
         body.Children.Add(lorePanel);
         Grid.SetRow(body, 1);
         grid.Children.Add(body);
@@ -1204,6 +1232,40 @@ internal sealed class CollectionAlbumPage : Window
         artTitle.Text = card.Name;
         artEdition.Text = $"{theme.Name} · {card.Rarity}" + (theme.UltraRare ? " · ULTRA RARE" : string.Empty);
         artHost.Content = CollectionArtwork.Card(card, true, animationsEnabled: animationsEnabled, scale: InspectorCardScale);
+        archiveDetails.Children.Clear();
+        int collected = theme.Cards.Count(c => controller.Profile.Collection.OwnedCardIds.Contains(c.Id));
+        foreach ((string caption, string value) in new[]
+        {
+            ("EDITION", card.Rarity.ToString().ToUpperInvariant()),
+            ("CATALOGUE", $"{card.Number:00} / {theme.Cards.Count:00}"),
+            ("THEME COLLECTED", $"{collected} / {theme.Cards.Count}"),
+            ("COLLECTION", theme.UltraRare ? "ULTRA RARE" : "STANDARD ARCHIVE"),
+        })
+        {
+            var details = new StackPanel();
+            details.Children.Add(new TextBlock { Text = caption, Foreground = Brush("#82959D"), FontSize = 9 });
+            details.Children.Add(new TextBlock { Text = value, Foreground = new SolidColorBrush(rarityColor), FontSize = 15, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 6, 0, 0) });
+            archiveDetails.Children.Add(new Border { MinWidth = 160, Margin = new Thickness(0, 0, 12, 12), Padding = new Thickness(14), BorderThickness = new Thickness(1), BorderBrush = Brush("#344B50"), Background = Brush("#102329"), CornerRadius = new CornerRadius(8), Child = details });
+        }
+        relatedEditions.Children.Clear();
+        foreach (CollectionCard sibling in theme.Cards.Where(c => c.Id != card.Id)
+            .OrderByDescending(c => controller.Profile.Collection.OwnedCardIds.Contains(c.Id)).Take(3))
+        {
+            bool owned = controller.Profile.Collection.OwnedCardIds.Contains(sibling.Id);
+            var preview = new Button
+            {
+                Content = CollectionArtwork.Card(sibling, owned, animationsEnabled: false, scale: .60),
+                Padding = new Thickness(0), Margin = new Thickness(0, 0, 7, 0),
+                Background = Brushes.Transparent, BorderThickness = new Thickness(0),
+                IsEnabled = owned, ToolTip = owned ? "Inspect " + sibling.Name : "Undiscovered edition",
+            };
+            preview.Click += (_, _) =>
+            {
+                IInputElement? restore = previousFocus;
+                OpenArt(sibling); previousFocus = restore;
+            };
+            relatedEditions.Children.Add(preview);
+        }
         artCardStage.BorderBrush = new SolidColorBrush(Color.FromArgb(165, rarityColor.R, rarityColor.G, rarityColor.B));
         lorePanel.BorderBrush = new SolidColorBrush(Color.FromArgb(120, rarityColor.R, rarityColor.G, rarityColor.B));
         artCardGlow.Background = RadialGlow(rarityColor, card.Rarity >= CollectionRarity.Rare ? (byte)56 : (byte)38);
@@ -1217,6 +1279,17 @@ internal sealed class CollectionAlbumPage : Window
         browseSurface.IsEnabled = false;
         artOverlay.Visibility = Visibility.Visible;
         artClose.Focus();
+        FitInspectorCard();
+    }
+
+    private void FitInspectorCard()
+    {
+        if (artHost.Content is not Border { Tag: string id } || CollectionCatalog.Find(id) is not { } card) return;
+        double scale = Math.Min(InspectorCardScale, Math.Min(
+            Math.Max(1, artCardStage.ActualWidth - 58) / 180,
+            Math.Max(1, artCardStage.ActualHeight - 85) / 264));
+        if (artHost.Content is Border current && Math.Abs(current.Width - 164 * scale) < .5) return;
+        artHost.Content = CollectionArtwork.Card(card, true, animationsEnabled: animationsEnabled, scale: scale);
     }
 
     private void CloseArt()
@@ -1257,7 +1330,7 @@ internal sealed class CollectionAlbumPage : Window
 
     private void PlayCue(CollectionRarity rarity, bool opening)
     {
-        if (!soundsEnabled || !MenuAudio.Enabled) return;
+        if (!soundsEnabled) return;
         if (!Cues.TryGetValue((rarity, opening), out AudioClip? clip))
             Cues[(rarity, opening)] = clip = CollectionSoundSynthesis.Build(rarity, opening);
         CasinoAudio.Play(clip, audioOwner, .8);

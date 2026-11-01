@@ -31,6 +31,7 @@ public sealed class CollectionTests
         Assert.Equal(3, reloaded.Collection.Packs[CollectionRarity.Common]);
         Assert.Single(reloaded.Collection.Packs);
         Assert.Empty(reloaded.Collection.OwnedCardIds);
+        Assert.Empty(reloaded.Collection.ClaimedThemeRewardIds);
         Assert.Equal(456, reloaded.Coins);
     }
 
@@ -134,6 +135,58 @@ public sealed class CollectionTests
     }
 
     [Fact]
+    public void ThemeCompletionRewardUnlocksOnlyAtFullSetAndCanBeClaimedExactlyOnce()
+    {
+        var profile = new PlayerProfileState { Coins = 125 };
+        ProfileNormalization.Normalize(profile);
+        CollectionTheme theme = CollectionCatalog.Themes.First(candidate => !candidate.UltraRare);
+        foreach (CollectionCard card in theme.Cards.Take(theme.Cards.Count - 1))
+            profile.Collection.OwnedCardIds.Add(card.Id);
+
+        string lockedSnapshot = JsonSerializer.Serialize(profile);
+        CollectionThemeRewardClaimResult locked = CollectionService.ClaimThemeCompletionReward(profile, theme.Id);
+        Assert.False(locked.Success);
+        Assert.Equal(lockedSnapshot, JsonSerializer.Serialize(profile));
+
+        profile.Collection.OwnedCardIds.Add(theme.Cards[^1].Id);
+        int rareBefore = profile.Collection.Packs.GetValueOrDefault(CollectionRarity.Rare);
+        CollectionThemeRewardClaimResult claimed = CollectionService.ClaimThemeCompletionReward(profile, theme.Id);
+
+        Assert.True(claimed.Success);
+        Assert.Equal(300, claimed.Coins);
+        Assert.Equal(CollectionRarity.Rare, claimed.PackRarity);
+        Assert.Equal(1, claimed.PackCount);
+        Assert.Equal(425, profile.Coins);
+        Assert.Equal(rareBefore + 1, profile.Collection.Packs[CollectionRarity.Rare]);
+        Assert.Contains(theme.Id, profile.Collection.ClaimedThemeRewardIds);
+
+        PlayerProfileState reloaded = Reload(profile);
+        Assert.Contains(theme.Id, reloaded.Collection.ClaimedThemeRewardIds);
+        string claimedSnapshot = JsonSerializer.Serialize(reloaded);
+        CollectionThemeRewardClaimResult duplicate = CollectionService.ClaimThemeCompletionReward(reloaded, theme.Id);
+        Assert.False(duplicate.Success);
+        Assert.Equal(claimedSnapshot, JsonSerializer.Serialize(reloaded));
+    }
+
+    [Fact]
+    public void UltraRareThemeCompletionUsesHigherEpicRewardTier()
+    {
+        var profile = new PlayerProfileState { Coins = 50 };
+        ProfileNormalization.Normalize(profile);
+        CollectionTheme theme = CollectionCatalog.Themes.First(candidate => candidate.UltraRare);
+        foreach (CollectionCard card in theme.Cards) profile.Collection.OwnedCardIds.Add(card.Id);
+        int epicBefore = profile.Collection.Packs.GetValueOrDefault(CollectionRarity.Epic);
+
+        CollectionThemeRewardClaimResult result = CollectionService.ClaimThemeCompletionReward(profile, theme.Id);
+
+        Assert.True(result.Success);
+        Assert.Equal(750, result.Coins);
+        Assert.Equal(CollectionRarity.Epic, result.PackRarity);
+        Assert.Equal(800, profile.Coins);
+        Assert.Equal(epicBefore + 1, profile.Collection.Packs[CollectionRarity.Epic]);
+    }
+
+    [Fact]
     public void ChallengeSingleAndBulkClaimsGrantExactlyOnePackPerNewClaim()
     {
         var profile = new PlayerProfileState { LifetimeStatistics = new() { RoundsPlayed = 100, HandsPlayed = 100, HandsWon = 60 } };
@@ -153,14 +206,15 @@ public sealed class CollectionTests
     }
 
     [Fact]
-    public void SeasonAwardsAllCrossedMilestonesOnceAndPrestigePreservesAlbum()
+    public void LegacySeasonAwardsAllCrossedMilestonesOnceAndPrestigePreservesAlbum()
     {
-        var profile = new PlayerProfileState();
+        SeasonDefinition legacy = SeasonCatalog.Get("season-1-midnight-shift");
+        var profile = new PlayerProfileState { ActiveSeasonId = legacy.Id };
         var service = new ProgressionService(profile);
-        service.GrantSeasonExperience(SeasonCatalog.Current.Id, 120_000);
-        int packs = 3 + SeasonCatalog.Current.Tiers.Count(t => CollectionCatalog.SeasonPack(t.Tier) is not null);
+        service.GrantSeasonExperience(legacy.Id, legacy.Tiers[^1].RequiredExperience);
+        int packs = 3 + legacy.Tiers.Count(t => CollectionCatalog.SeasonPack(t.Tier) is not null);
         Assert.Equal(packs, profile.Collection.Packs.Values.Sum());
-        service.GrantSeasonExperience(SeasonCatalog.Current.Id, 1);
+        service.GrantSeasonExperience(legacy.Id, 1);
         Assert.Equal(packs, profile.Collection.Packs.Values.Sum());
         var opening = CollectionService.OpenPack(profile, CollectionRarity.Common, new Random(4)).Opening!;
         string[] owned = profile.Collection.OwnedCardIds.ToArray();
@@ -222,6 +276,35 @@ public sealed class CollectionTests
     }
 
     [Fact]
+    public void FailedThemeRewardPersistenceRollsBackCoinsPackAndClaimMarker()
+    {
+        var profile = new PlayerProfileState { Coins = 200 };
+        ProfileNormalization.Normalize(profile);
+        CollectionTheme theme = CollectionCatalog.Themes.First(candidate => !candidate.UltraRare);
+        foreach (CollectionCard card in theme.Cards) profile.Collection.OwnedCardIds.Add(card.Id);
+        bool fail = true;
+        PlayerProfileState? saved = null;
+        using var controller = new PlayerProgressionController(profile, collectionProfileSaver: candidate =>
+        {
+            if (fail) throw new IOException("disk full");
+            saved = Reload(candidate);
+        });
+
+        string before = JsonSerializer.Serialize(profile);
+        CollectionThemeRewardClaimResult failed = controller.ClaimCollectionThemeReward(theme.Id);
+        Assert.False(failed.Success);
+        Assert.Equal(before, JsonSerializer.Serialize(profile));
+
+        fail = false;
+        CollectionThemeRewardClaimResult success = controller.ClaimCollectionThemeReward(theme.Id);
+        Assert.True(success.Success);
+        Assert.Equal(500, profile.Coins);
+        Assert.Contains(theme.Id, profile.Collection.ClaimedThemeRewardIds);
+        Assert.Contains(theme.Id, saved!.Collection.ClaimedThemeRewardIds);
+        Assert.Equal(profile.Collection.Packs[CollectionRarity.Rare], saved.Collection.Packs[CollectionRarity.Rare]);
+    }
+
+    [Fact]
     public void FailedChallengeSaveDoesNotLeakPackRewards()
     {
         var profile = new PlayerProfileState { LifetimeStatistics = new() { RoundsPlayed = 100, HandsPlayed = 100 } };
@@ -240,6 +323,7 @@ public sealed class CollectionTests
         var profile = new PlayerProfileState { Coins = 789 };
         profile.Collection.Version = 1;
         profile.Collection.OwnedCardIds = ["unknown", null!];
+        profile.Collection.ClaimedThemeRewardIds = ["unknown", null!];
         profile.Collection.Packs[(CollectionRarity)99] = 2;
         profile.Collection.Packs[CollectionRarity.Epic] = -3;
         profile.Collection.PendingOpening = new(Guid.NewGuid(), CollectionRarity.Common,
@@ -247,6 +331,7 @@ public sealed class CollectionTests
         ProfileNormalization.Normalize(profile);
         Assert.Equal(789, profile.Coins);
         Assert.Empty(profile.Collection.OwnedCardIds);
+        Assert.Empty(profile.Collection.ClaimedThemeRewardIds);
         Assert.Equal(0, profile.Collection.Packs[CollectionRarity.Epic]);
         Assert.False(profile.Collection.Packs.ContainsKey((CollectionRarity)99));
         Assert.Null(profile.Collection.PendingOpening);

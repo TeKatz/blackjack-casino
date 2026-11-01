@@ -94,7 +94,7 @@ internal static class PlayerStateStore
 
         GameRules customRules = SanitizeRules(state.CustomRules);
 
-        return state with
+        return state.InitializePresentationAreas() with
         {
             MidnightMerge = BlackjackCasino.Core.MidnightMerge.MergeGameState.Normalize(state.MidnightMerge),
             Empire = BlackjackCasino.Core.Empire.EmpireState.Normalize(state.Empire),

@@ -111,6 +111,7 @@ public partial class MainWindow
         shell.Closed += (_, _) => FinishEmbeddedGame(shell, muteHostMusic, closed);
         embeddedGameHost.Content = content;
         embeddedGameOverlay.Visibility = Visibility.Visible;
+        if (lobby is not null) lobby.Visibility = Visibility.Collapsed;
         UpdateEmbeddedGameScale();
 
         // The Blackjack keyboard handler tunnels first. Disable table actions while the
@@ -268,6 +269,7 @@ public partial class MainWindow
             return;
         }
 
+        if (lobby is not null) lobby.Visibility = Visibility.Visible;
         if (embeddedGameHost is not null)
         {
             embeddedGameHost.Content = null;
@@ -289,11 +291,7 @@ public partial class MainWindow
         closed();
         if(lobby is not null) {lobby.Visibility=Visibility.Visible;TableModeText.Text="Casino lobby";}
 
-        if (restoreHostMusic)
-        {
-            backgroundMusic.SetEnabled(preferences.MusicEnabled);
-            backgroundMusic.SetVolume(preferences.MusicVolume);
-        }
+        SyncHostMusic();
 
         NormalizeBetForTable();
         SavePreferences();
@@ -345,7 +343,8 @@ public partial class MainWindow
         ProcessLatestCompletedRound();
         slotProgression ??= new SlotProgression(progressionController.Service);
         bool levelUp = false;
-        var window = new SlotMachineWindow(session.Bankroll, preferences.SlotBet, SoundEnabled, AnimationsEnabled,
+        AreaPresentationSettings presentation = preferences.Presentation("midnight-reels");
+        var window = new SlotMachineWindow(session.Bankroll, preferences.SlotBet, presentation.SoundEnabled, presentation.AnimationsEnabled,
             progressionController, spin =>
             {
                 session.ResetBankroll(spin.BankrollAfter);
@@ -356,15 +355,12 @@ public partial class MainWindow
                 progressionController.SaveAll();
                 levelUp |= award.HasLevelUp;
                 return award;
-            }, musicEnabled: preferences.MusicEnabled, musicVolume: preferences.MusicVolume);
+            }, musicEnabled: presentation.MusicEnabled, musicVolume: presentation.MusicVolume);
 
         ShowEmbeddedGame(window, "Midnight Reels · Blackjack Casino", muteHostMusic: true, closed: () =>
         {
             preferences = preferences with { SlotBet = window.SelectedBet };
-            suppressPreferenceEvents = true;
-            SoundCheckBox.IsChecked = window.SoundsEnabled;
-            AnimationsCheckBox.IsChecked = window.AnimationsEnabled;
-            suppressPreferenceEvents = false;
+            preferences = preferences.WithPresentation("midnight-reels", presentation with { SoundEnabled = window.SoundsEnabled, AnimationsEnabled = window.AnimationsEnabled });
             if (session.CurrentRound is null)
             {
                 StatusText.Text = "Welcome back. Place a bet to play Blackjack.";
@@ -400,12 +396,7 @@ public partial class MainWindow
         ShowEmbeddedGame(window, "Midnight Manor · Blackjack Casino", muteHostMusic: true, closed: () =>
         {
             preferences = window.Preferences;
-            suppressPreferenceEvents = true;
-            SoundCheckBox.IsChecked = preferences.SoundEnabled;
-            AnimationsCheckBox.IsChecked = preferences.AnimationsEnabled;
-            MusicCheckBox.IsChecked = preferences.MusicEnabled;
-            MusicVolumeSlider.Value = preferences.MusicVolume;
-            suppressPreferenceEvents = false;
+
         });
     }
 }

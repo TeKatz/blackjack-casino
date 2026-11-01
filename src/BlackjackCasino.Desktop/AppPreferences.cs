@@ -24,6 +24,7 @@ internal enum UiLanguagePreference
 
 internal sealed record AppPreferences
 {
+    public Dictionary<string, AreaPresentationSettings> AreaPresentation { get; init; } = new(StringComparer.Ordinal);
     public BlackjackCasino.Core.Kniffel.KniffelTableState? KniffelTable { get; init; }
     public bool KniffelCasinoSelected { get; init; }
     public BlackjackCasino.Core.Kniffel.KniffelState Kniffel { get; init; } = new();

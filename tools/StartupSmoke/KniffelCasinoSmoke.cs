@@ -12,7 +12,7 @@ internal static class KniffelCasinoSmoke
 {
     internal static async Task Run(MainWindow window, string output, PlayerProfileState profile)
     {
-        window.Modes.Open("kniffel");
+        NavigationSmoke.OpenCovered(window, "kniffel");
         await Task.Delay(80);
         KniffelView view = Find<KniffelView>(window).Single();
         Click(view, "NewGameButton");
@@ -42,7 +42,7 @@ internal static class KniffelCasinoSmoke
                 decimal cashWhileAway = window.DiceCasinoBankroll;
                 await Task.Delay(160);
                 Require(window.DiceCasinoBankroll == cashWhileAway, "A paused table modified another surface's bankroll.");
-                window.Modes.Open("kniffel");
+                NavigationSmoke.OpenCovered(window, "kniffel");
                 await Task.Delay(60);
                 view = Find<KniffelView>(window).Single();
                 Require(view.Game.GameId == gameId, "Resume changed the paid game identity.");
@@ -72,7 +72,7 @@ internal static class KniffelCasinoSmoke
         decimal settledCash = window.DiceCasinoBankroll;
         long settledXp = profile.LifetimeExperience;
         Click(view, "KniffelBackButton");
-        window.Modes.Open("kniffel");
+        NavigationSmoke.OpenCovered(window, "kniffel");
         await Task.Delay(80);
         view = Find<KniffelView>(window).Single();
         Require(window.DiceCasinoBankroll == settledCash && profile.LifetimeExperience == settledXp, "Reopening a result duplicated cash or XP.");

@@ -67,13 +67,15 @@ public partial class MainWindow
         profileButton.Click += ProfileButton_Click;
         Grid.SetColumn(profileButton, 2);
         Panel.SetZIndex(profileButton, 1);
-        headerGrid.Children.Add(profileButton);
+        var profileTile = new Grid { Name = "PlayerProfileTile", Margin = profileButton.Margin, VerticalAlignment = VerticalAlignment.Center };
+        profileButton.Margin = new Thickness(0);
+        Grid.SetColumn(profileTile, 2);
+        profileTile.Children.Add(profileButton);
+        headerGrid.Children.Add(profileTile);
 
         var sweepClip = new Canvas
         {
-            Width = 255,
-            Height = 44,
-            Margin = new Thickness(0, 0, 22, 0),
+            Margin = new Thickness(0),
             HorizontalAlignment = HorizontalAlignment.Left,
             VerticalAlignment = VerticalAlignment.Center,
             ClipToBounds = true,
@@ -107,7 +109,7 @@ public partial class MainWindow
         sweepClip.Children.Add(profileLevelUpSweep);
         Grid.SetColumn(sweepClip, 2);
         Panel.SetZIndex(sweepClip, 2);
-        headerGrid.Children.Add(sweepClip);
+        profileTile.Children.Add(sweepClip);
     }
 
     private void ProgressionButtonBubbled(object sender, RoutedEventArgs e) => QueueProgressionCheck();
@@ -242,6 +244,8 @@ public partial class MainWindow
             return;
         }
 
+        profileButton.BorderThickness = new Thickness(1);
+        if (DistinctCosmeticFrames.Apply(profileButton, frame.VisualVariant, CurrentPresentation.AnimationsEnabled)) return;
         if (frame.VisualVariant.StartsWith("static-", StringComparison.Ordinal))
         {
             profileButton.BorderBrush = new SolidColorBrush(CosmeticAppearance.StandardFrame(frame.VisualVariant));
@@ -281,6 +285,7 @@ public partial class MainWindow
         };
         profileButton.Effect = motion == "none" ? null : glow;
 
+        if (!CurrentPresentation.AnimationsEnabled) return;
         if (motion == "pulse")
         {
             glow.BeginAnimation(DropShadowEffect.OpacityProperty, new DoubleAnimation(0.12, 0.38, TimeSpan.FromSeconds(2.2))

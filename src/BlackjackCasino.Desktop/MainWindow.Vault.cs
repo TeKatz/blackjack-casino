@@ -51,13 +51,13 @@ public partial class MainWindow
 
     private void BuildVaultHeaderButton()
     {
-        if (profileButton is null || profileButton.Parent is not Grid headerGrid)
+        if (profileButton is null || profileButton.Parent is not Grid profileTile || profileTile.Parent is not Grid headerGrid)
         {
             return;
         }
 
-        headerGrid.Children.Remove(profileButton);
-        profileButton.Margin = new Thickness(0, 0, 8, 0);
+        headerGrid.Children.Remove(profileTile);
+        profileTile.Margin = new Thickness(0, 0, 8, 0);
 
         var headerActions = new StackPanel
         {
@@ -70,7 +70,7 @@ public partial class MainWindow
 
         BuildChallengeHeaderButton(headerActions);
         BuildCollectionAlbumHeaderButton(headerActions);
-        headerActions.Children.Add(profileButton);
+        headerActions.Children.Add(profileTile);
 
         vaultHeaderTitle = new TextBlock
         {

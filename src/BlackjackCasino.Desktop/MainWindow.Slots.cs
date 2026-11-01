@@ -23,7 +23,8 @@ public partial class MainWindow
         ProcessLatestCompletedRound();
         slotProgression ??= new SlotProgression(progressionController.Service);
         bool levelUp = false;
-        var window = new SlotMachineWindow(session.Bankroll, preferences.SlotBet, SoundEnabled, AnimationsEnabled,
+        AreaPresentationSettings presentation = preferences.Presentation("midnight-reels");
+        var window = new SlotMachineWindow(session.Bankroll, preferences.SlotBet, presentation.SoundEnabled, presentation.AnimationsEnabled,
             progressionController, spin =>
             {
                 // Existing public wallet operation, permitted only between blackjack hands.
@@ -36,14 +37,13 @@ public partial class MainWindow
                 progressionController.SaveAll();
                 levelUp |= award.HasLevelUp;
                 return award;
-            }, musicEnabled: preferences.MusicEnabled, musicVolume: preferences.MusicVolume) { Owner = this };
+            }, musicEnabled: presentation.MusicEnabled, musicVolume: presentation.MusicVolume) { Owner = this };
         backgroundMusic.SetEnabled(false);
         try { window.ShowDialog(); }
-        finally { backgroundMusic.SetEnabled(preferences.MusicEnabled); }
+        finally { backgroundMusic.SetEnabled(HostMusicSettings.MusicEnabled); }
 
         preferences = preferences with { SlotBet = window.SelectedBet };
-        SoundCheckBox.IsChecked = window.SoundsEnabled;
-        AnimationsCheckBox.IsChecked = window.AnimationsEnabled;
+        preferences = preferences.WithPresentation("midnight-reels", presentation with { SoundEnabled = window.SoundsEnabled, AnimationsEnabled = window.AnimationsEnabled });
         NormalizeBetForTable();
         SavePreferences();
         RefreshGameUi();

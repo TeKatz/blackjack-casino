@@ -8,7 +8,6 @@ namespace BlackjackCasino.Desktop;
 
 internal static class MenuAudio
 {
-    internal static bool Enabled { get; set; } = true;
     private static readonly ConditionalWeakTable<RoutedEventArgs,object> Heard = new();
     private static long lastTick;
     internal static void Attach(Window window, Func<bool>? enabled = null)
@@ -16,8 +15,9 @@ internal static class MenuAudio
         if (window.Content is not FrameworkElement root) return;
         void Tick(RoutedEventArgs e)
         {
-            if (!root.IsLoaded || !(enabled?.Invoke() ?? Enabled) || Heard.TryGetValue(e,out _)) return;
-            Heard.Add(e,new object()); // embedded root and host must not play the same event twice
+            if (!root.IsLoaded || Heard.TryGetValue(e,out _)) return;
+            Heard.Add(e,new object());
+            if (!(enabled?.Invoke() ?? true)) return; // embedded root and host must not play the same event twice
             long now = Stopwatch.GetTimestamp();
             if (Stopwatch.GetElapsedTime(lastTick,now).TotalMilliseconds < 65) return;
             lastTick=now; CasinoFeedback.Menu(true);

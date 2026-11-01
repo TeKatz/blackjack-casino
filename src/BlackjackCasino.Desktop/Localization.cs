@@ -1,9 +1,9 @@
 using System.Collections;
-using System.ComponentModel;
 using System.Globalization;
 using System.Resources;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
 using System.Windows.Threading;
@@ -40,6 +40,11 @@ internal static class Localization
     private static readonly DependencyProperty ToolTipSourceProperty = Attached("ToolTipSource", typeof(string));
     private static readonly DependencyProperty LastRenderedToolTipProperty = Attached("LastRenderedToolTip", typeof(string));
     private static readonly DependencyProperty WatchInstalledProperty = Attached("WatchInstalled", typeof(bool), false);
+    private static readonly DependencyProperty ObservedValueProperty = DependencyProperty.RegisterAttached(
+        "ObservedValue", typeof(object), typeof(Localization), new PropertyMetadata(null, (owner, _) =>
+        {
+            if (owner is FrameworkElement element) TranslateElement(element);
+        }));
     private static readonly DependencyProperty ApplyingProperty = Attached("Applying", typeof(bool), false);
     private static readonly DependencyProperty SubtreeRefreshQueuedProperty = Attached("SubtreeRefreshQueued", typeof(bool), false);
 
@@ -162,16 +167,23 @@ internal static class Localization
     {
         if ((bool)element.GetValue(WatchInstalledProperty)) return;
         element.SetValue(WatchInstalledProperty, true);
-
-        DependencyPropertyDescriptor? descriptor = element switch
+        string? path = element switch
         {
-            Window => DependencyPropertyDescriptor.FromProperty(Window.TitleProperty, typeof(Window)),
-            TextBlock => DependencyPropertyDescriptor.FromProperty(TextBlock.TextProperty, typeof(TextBlock)),
-            HeaderedContentControl => DependencyPropertyDescriptor.FromProperty(HeaderedContentControl.HeaderProperty, typeof(HeaderedContentControl)),
-            ContentControl => DependencyPropertyDescriptor.FromProperty(ContentControl.ContentProperty, typeof(ContentControl)),
+            Window => nameof(Window.Title),
+            TextBlock => nameof(TextBlock.Text),
+            HeaderedContentControl => nameof(HeaderedContentControl.Header),
+            ContentControl => nameof(ContentControl.Content),
             _ => null,
         };
-        descriptor?.AddValueChanged(element, (_, _) => TranslateElement(element));
+        if (path is null) return;
+        // A self binding observes the dependency property without a global descriptor
+        // subscription retaining the menu. It also stays valid when game controls are
+        // temporarily detached and reused before their next Loaded event.
+        BindingOperations.SetBinding(element, ObservedValueProperty, new Binding(path)
+        {
+            RelativeSource = new RelativeSource(RelativeSourceMode.Self),
+            Mode = BindingMode.OneWay,
+        });
     }
 
     private static void TranslateElement(FrameworkElement element)
@@ -183,16 +195,16 @@ internal static class Localization
             switch (element)
             {
                 case Window window when !string.IsNullOrWhiteSpace(window.Title):
-                    window.Title = TranslateRemembered(element, window.Title);
+                    window.SetCurrentValue(Window.TitleProperty, TranslateRemembered(element, window.Title));
                     break;
                 case TextBlock text:
-                    text.Text = TranslateRemembered(element, text.Text);
+                    text.SetCurrentValue(TextBlock.TextProperty, TranslateRemembered(element, text.Text));
                     break;
                 case HeaderedContentControl headered when headered.Header is string header:
-                    headered.Header = TranslateRemembered(element, header);
+                    headered.SetCurrentValue(HeaderedContentControl.HeaderProperty, TranslateRemembered(element, header));
                     break;
                 case ContentControl content when content.Content is string source:
-                    content.Content = TranslateRemembered(element, source);
+                    content.SetCurrentValue(ContentControl.ContentProperty, TranslateRemembered(element, source));
                     break;
             }
 

@@ -8,6 +8,19 @@ namespace BlackjackCasino.Desktop;
 
 public partial class MainWindow
 {
+    private AreaPresentationSettings CurrentPresentation => preferences.Presentation(
+        KniffelPageOpen ? "kniffel" : EmpirePageOpen ? "casino-empire" :
+        lobby?.IsVisible == true ? "lobby" : "blackjack");
+
+    private AreaPresentationSettings HostMusicSettings => preferences.Presentation(
+        EmpirePageOpen ? "casino-empire" : lobby?.IsVisible == true ? "lobby" : "blackjack");
+
+    private void SyncHostMusic()
+    {
+        backgroundMusic.SetEnabled(HostMusicSettings.MusicEnabled && !KniffelPageOpen && embeddedGameShell is null);
+        backgroundMusic.SetVolume(HostMusicSettings.MusicVolume);
+    }
+
     private readonly BackgroundMusic backgroundMusic = new();
     private DropShadowEffect? splitOpportunityGlow;
 
@@ -31,7 +44,7 @@ public partial class MainWindow
         MusicVolumeText.Text = $"{preferences.MusicVolume:P0}";
         suppressPreferenceEvents = false;
 
-        backgroundMusic.Start(preferences.MusicEnabled, preferences.MusicVolume);
+        backgroundMusic.Start(HostMusicSettings.MusicEnabled, HostMusicSettings.MusicVolume);
         BackgroundMusic.Prewarm();
     }
 
@@ -155,8 +168,7 @@ public partial class MainWindow
 
         bool enabled = MusicCheckBox.IsChecked == true;
         preferences = preferences with { MusicEnabled = enabled };
-        backgroundMusic.SetEnabled(enabled && !KniffelPageOpen);
-        kniffelMusic?.SetEnabled(enabled);
+        SyncHostMusic();
         SavePreferences();
     }
 
@@ -174,8 +186,7 @@ public partial class MainWindow
         }
 
         preferences = preferences with { MusicVolume = volume };
-        backgroundMusic.SetVolume(volume);
-        kniffelMusic?.SetVolume(volume);
+        SyncHostMusic();
         SavePreferences();
     }
 }

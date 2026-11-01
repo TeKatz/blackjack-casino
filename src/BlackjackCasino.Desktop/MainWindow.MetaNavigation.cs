@@ -24,7 +24,7 @@ public partial class MainWindow
         progressionController.AccruePlaytime();
         ProcessLatestCompletedRound();
         var profile = new PlayerProfileWindow(progressionController,
-            () => OpenProgressionPage("Overview"), CloseMetaPage);
+            () => OpenProgressionPage("Season Pass"), CloseMetaPage, OpenProfileStatistics);
         ShowMetaPage(profile);
     }
 
@@ -33,11 +33,20 @@ public partial class MainWindow
         if (progressionController is null) return;
         progressionController.AccruePlaytime();
         ProcessLatestCompletedRound();
-        var page = new ProgressionWindow(progressionController, AnimationsEnabled, SoundEnabled);
+        var page = new ProgressionWindow(progressionController, preferences.Presentation("progression").AnimationsEnabled, preferences.Presentation("progression").SoundEnabled);
         page.RemoveAlbumTab();
+        page.RemoveProfileTabs();
         page.ConfigureEmbeddedPresentation(CloseMetaPage);
-        if (page.Content is FrameworkElement content)
-            content.Loaded += (_, _) => page.SelectTab(tab);
+        page.SelectTab(tab);
+        ShowMetaPage(page);
+    }
+
+    private void OpenProfileStatistics(string section)
+    {
+        if (progressionController is null) return;
+        var page = new ProgressionWindow(progressionController, preferences.Presentation("progression").AnimationsEnabled, preferences.Presentation("progression").SoundEnabled);
+        page.ConfigureProfileSection(section);
+        page.ConfigureEmbeddedPresentation(CloseMetaPage);
         ShowMetaPage(page);
     }
 
@@ -46,7 +55,10 @@ public partial class MainWindow
         if (progressionController is null || MetaPageOpen) return;
         progressionController.AccruePlaytime();
         ProcessLatestCompletedRound();
-        ShowMetaPage(new CollectionAlbumPage(progressionController, AnimationsEnabled, SoundEnabled, CloseMetaPage));
+        bool animations = preferences.Presentation("album").AnimationsEnabled;
+        var page = new CollectionAlbumPage(progressionController, animations, preferences.Presentation("album").SoundEnabled, CloseMetaPage);
+        CollectionThemeRewardPresenter.Attach(page, progressionController, animations);
+        ShowMetaPage(page);
     }
 
     private void ShowMetaPage(Window shell)

@@ -14,13 +14,13 @@ public partial class MainWindow
         modeRegistry.Register(new("blackjack","Blackjack","The velvet tables","A quiet seat, a fresh shoe and your next decision. Solo or with the house regulars.","#537D66","♠","Table games",()=>new LobbyGameArtwork(false)),()=>
         {lobby!.Visibility=Visibility.Collapsed;TableModeText.Text="Blackjack · your table";});
         modeRegistry.Register(new("midnight-reels","Midnight Reels","The golden floor","Three reels, a centre payline and a little old-school casino charm.","#C69A51","7 7 7","Classic slots",()=>new LobbyGameArtwork(true)),()=>
-        {lobby!.Visibility=Visibility.Collapsed;TableModeText.Text="Midnight Reels · classic slots";EmbeddedSlots_Click(this,new RoutedEventArgs());});
+        {TableModeText.Text="Midnight Reels · classic slots";EmbeddedSlots_Click(this,new RoutedEventArgs());});
         modeRegistry.Register(new("neon-vault","Neon Vault","The high-voltage floor","Five reels, 1,024 ways and Vault Break Free Spins. High Roller stakes up to $250K.","#55DDF8","◇","Video slots",()=>new NeonVaultArtwork()),()=>
-        {lobby!.Visibility=Visibility.Collapsed;TableModeText.Text="Neon Vault · high roller slots";EmbeddedNeonVault_Click(this,new RoutedEventArgs());});
+        {TableModeText.Text="Neon Vault · high roller slots";EmbeddedNeonVault_Click(this,new RoutedEventArgs());});
         modeRegistry.Register(new("nine-lives","Nine Lives","The moonlit rooftop","Five lines, Pounce Wilds and nine bonus spins. Chase the 5,000× Full Grid Frenzy.","#C95CFF","9","Video slots",()=>new NineLivesLobbyArtwork()),()=>
-        {lobby!.Visibility=Visibility.Collapsed;TableModeText.Text="Nine Lives · high risk slots";EmbeddedNineLives_Click(this,new RoutedEventArgs());});
+        {TableModeText.Text="Nine Lives · high risk slots";EmbeddedNineLives_Click(this,new RoutedEventArgs());});
         modeRegistry.Register(new("midnight-manor","Midnight Manor","Beyond the moonlit doors","Five haunted reels. Free Spins. A Manor whose rooms remember your choices.","#9170AC","☾","Video slots",()=>new ManorBackdrop {Scene="Exterior",Opacity=.85}),()=>
-        {lobby!.Visibility=Visibility.Collapsed;TableModeText.Text="Midnight Manor · video slots";EmbeddedManor_Click(this,new RoutedEventArgs());});
+        {TableModeText.Text="Midnight Manor · video slots";EmbeddedManor_Click(this,new RoutedEventArgs());});
         modeRegistry.Register(new("casino-empire", "Casino Empire", "Your name above the door",
             "Build your midnight landmark with lasting upgrades, idle income and owner dividends.",
             "#CBA66B", "♜", "Idle casino", () => new EmpireFloorArtwork()),
@@ -37,12 +37,18 @@ public partial class MainWindow
         modeRegistry.Register(new("kniffel", "Midnight Dice", "The dice lounge",
             "Five dice and your score sheet. Play solo or join a casino table with three AI opponents.",
             "#9DD6B3", "⚄", "Table games", () => new LoungeGameArtwork(true)), OpenKniffel);
-        lobby=new CasinoLobbyView(modeRegistry,OpenProgression);
-        lobby.IsVisibleChanged += (_, _) => LobbyButton.Visibility = lobby.IsVisible ? Visibility.Collapsed : Visibility.Visible;
+        lobby=new CasinoLobbyView(modeRegistry,OpenProgression, () => preferences.Presentation("lobby").AnimationsEnabled);
+        lobby.IsVisibleChanged += (_, _) =>
+        {
+            LobbyButton.Visibility = lobby.IsVisible ? Visibility.Collapsed : Visibility.Visible;
+            SyncHostMusic();
+            RefreshProfileButton();
+        };
         Grid.SetRow(lobby,1); Grid.SetColumnSpan(lobby,2);Panel.SetZIndex(lobby,900);CasinoRoot.Children.Add(lobby);
         LobbyButton.Visibility=Visibility.Collapsed;
         TableModeText.Text="Casino lobby";
         RefreshCollectionAlbumHeaderButton();
+        RefreshChallengeHeaderButton();
 
         // InitializeLobby is invoked from PresentationLoaded, so registering another Loaded
         // handler here would be too late. Configure the embedded surface synchronously now.
@@ -75,10 +81,12 @@ public partial class MainWindow
         LobbyButton.Visibility=Visibility.Collapsed;
         TableModeText.Text="Casino lobby";
         RefreshCollectionAlbumHeaderButton();
+        RefreshChallengeHeaderButton();
     }
     private void OpenProgression(string tab)
     {
         if(string.Equals(tab,"Collector's Album",StringComparison.OrdinalIgnoreCase)) OpenCollectionAlbumPage();
+        else if ((string.Equals(tab, "Overview", StringComparison.OrdinalIgnoreCase) || string.Equals(tab, "Statistics", StringComparison.OrdinalIgnoreCase))) OpenProfileStatistics("Overview");
         else OpenProgressionPage(tab);
     }
 }

@@ -54,7 +54,8 @@ internal static class PortraitSmoke
             using var profileController=new PlayerProgressionController(controller.Profile);
             var profileWindow=new PlayerProfileWindow(profileController);
             profileWindow.Show();profileWindow.UpdateLayout();await Task.Delay(70);
-            Ellipse equipped = Descendants<Ellipse>(profileWindow).Single(e => e.Width == 136 && e.Fill is ImageBrush);
+            Ellipse equipped = Descendants<Ellipse>(profileWindow).Where(e => e.Fill is ImageBrush).MaxBy(e => e.Width)!;
+            Require(equipped.Width >= 190, "Player profile did not use the enlarged portrait.");
             Require(ReferenceEquals(((ImageBrush)equipped.Fill).ImageSource, PortraitArtwork.Get("portrait-velvet-king")), "Equipped portrait differs from its shop image");
             CheckCircle(equipped);
             Save(profileWindow, System.IO.Path.Combine(output, "portraits-player.png"));

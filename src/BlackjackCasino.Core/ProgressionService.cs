@@ -112,20 +112,26 @@ public sealed class ProgressionService
 
         long coins = 0;
         var unlocked = new List<CosmeticDefinition>();
-        for (int tier = previousTier + 1; tier <= targetTier; tier++)
+        if (season.RewardsEnabled)
         {
-            SeasonTierDefinition reward = season.Tiers[tier - 1];
-            if (CollectionCatalog.SeasonPack(tier) is { } packRarity)
-                CollectionService.GrantPack(State, packRarity);
-            State.Coins += reward.Coins;
-            coins += reward.Coins;
-
-            if (reward.CosmeticId is not null)
+            for (int tier = previousTier + 1; tier <= targetTier; tier++)
             {
-                CosmeticDefinition cosmetic = CosmeticCatalog.Get(reward.CosmeticId);
-                if (EnsureOwned(cosmetic.Id))
+                SeasonTierDefinition reward = season.Tiers[tier - 1];
+                if (CollectionCatalog.SeasonPack(tier) is { } packRarity)
                 {
-                    unlocked.Add(cosmetic);
+                    CollectionService.GrantPack(State, packRarity);
+                }
+
+                State.Coins += reward.Coins;
+                coins += reward.Coins;
+
+                if (reward.CosmeticId is not null)
+                {
+                    CosmeticDefinition cosmetic = CosmeticCatalog.Get(reward.CosmeticId);
+                    if (EnsureOwned(cosmetic.Id))
+                    {
+                        unlocked.Add(cosmetic);
+                    }
                 }
             }
         }
@@ -249,7 +255,10 @@ public sealed class ProgressionService
             State.ClaimedChallengeIds = updatedClaims;
             State.Coins = balance;
             foreach (ChallengeDefinition challenge in available)
+            {
                 CollectionService.GrantPack(State, ChallengePack(challenge));
+            }
+
             return new(true, $"Claimed {coins:N0} coins and {available.Length:N0} card packs from {available.Length:N0} challenges.", Array.AsReadOnly(available), coins);
         }
     }
@@ -310,6 +319,19 @@ public sealed class ProgressionService
         return progress;
     }
 
+    public bool SelectSeason(string seasonId)
+    {
+        SeasonDefinition? season = SeasonCatalog.TryGet(seasonId);
+        if (season is null)
+        {
+            return false;
+        }
+
+        State.ActiveSeasonId = season.Id;
+        _ = GetOrCreateSeasonProgress(season.Id);
+        return true;
+    }
+
     private void EnsureDefaults()
     {
         ProfileNormalization.Normalize(State);
@@ -350,13 +372,12 @@ public sealed class ProgressionService
 
         if (CosmeticCatalog.TryGet(State.EquippedDiceSetId) is not { Kind: CosmeticKind.DiceSet }
             || !State.OwnedCosmeticIds.Contains(State.EquippedDiceSetId, StringComparer.Ordinal))
-            State.EquippedDiceSetId = CosmeticCatalog.DefaultDiceSetId;
-
-        SeasonDefinition? active = SeasonCatalog.All.FirstOrDefault(x => string.Equals(x.Id, State.ActiveSeasonId, StringComparison.Ordinal));
-        if (active is null || active.Archived)
         {
-            // Season 1 remains stored and owned rewards are never revoked; existing saves simply
-            // begin earning the new long-form current season from their next completed cycle.
+            State.EquippedDiceSetId = CosmeticCatalog.DefaultDiceSetId;
+        }
+
+        if (SeasonCatalog.TryGet(State.ActiveSeasonId) is null)
+        {
             State.ActiveSeasonId = SeasonCatalog.Current.Id;
         }
 

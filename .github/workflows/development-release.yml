@@ -2,7 +2,7 @@ name: Development Release
 
 on:
   push:
-    branches: ["feature/collectible-card-album"]
+    branches: ["fix/casino-ui-settings-sudoku"]
   workflow_dispatch:
 
 permissions:
@@ -14,8 +14,8 @@ concurrency:
 
 jobs:
   publish-development:
-    # The shared in-app Development channel is pinned to the collectible card album branch.
-    if: github.ref == 'refs/heads/feature/collectible-card-album'
+    # The shared in-app Development channel is pinned to the casino UI, scoped settings and Sudoku fixes branch.
+    if: github.ref == 'refs/heads/fix/casino-ui-settings-sudoku'
     runs-on: windows-latest
     timeout-minutes: 20
 

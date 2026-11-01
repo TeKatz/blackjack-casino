@@ -44,7 +44,8 @@ internal sealed class SudokuView : UserControl, IDisposable
         Action<SudokuGameState> save,
         Action back,
         bool showGuides = true,
-        Action<bool>? persistGuideVisibility = null)
+        Action<bool>? persistGuideVisibility = null,
+        bool showBackButton = true)
     {
         this.puzzle = puzzle ?? throw new ArgumentNullException(nameof(puzzle));
         this.showTimer = showTimer;
@@ -60,7 +61,7 @@ internal sealed class SudokuView : UserControl, IDisposable
         Focusable = true;
         Background = Ink("#0B1517");
         Foreground = Ink("#F0E7D7");
-        Content = BuildLayout();
+        Content = BuildLayout(showBackButton);
 
         PreviewKeyDown += OnPreviewKeyDown;
         clock.Tick += ClockOnTick;
@@ -82,6 +83,8 @@ internal sealed class SudokuView : UserControl, IDisposable
     internal bool TimerVisible => showTimer;
     internal bool GuidesVisible => showGuides;
 
+    internal void ReturnToLounge() => back();
+
     public void Dispose()
     {
         if (disposed)
@@ -95,7 +98,7 @@ internal sealed class SudokuView : UserControl, IDisposable
         save(Snapshot);
     }
 
-    private UIElement BuildLayout()
+    private UIElement BuildLayout(bool showBackButton)
     {
         var root = new Grid { Margin = new Thickness(22, 18, 22, 20) };
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -126,7 +129,7 @@ internal sealed class SudokuView : UserControl, IDisposable
         leave.Padding = new Thickness(18, 9, 18, 9);
         leave.Click += (_, _) => back();
         Grid.SetColumn(leave, 1);
-        header.Children.Add(leave);
+        if (showBackButton) header.Children.Add(leave);
         root.Children.Add(header);
 
         var body = new Grid();
@@ -671,12 +674,14 @@ internal sealed class SudokuView : UserControl, IDisposable
         border.SetBinding(Border.BorderBrushProperty, TemplateBinding(nameof(Control.BorderBrush)));
         border.SetBinding(Border.BorderThicknessProperty, TemplateBinding(nameof(Control.BorderThickness)));
 
-        var presenter = new FrameworkElementFactory(typeof(ContentPresenter));
-        presenter.SetBinding(ContentPresenter.ContentProperty, TemplateBinding(nameof(ContentControl.Content)));
-        presenter.SetBinding(ContentPresenter.ContentTemplateProperty, TemplateBinding(nameof(ContentControl.ContentTemplate)));
-        presenter.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
-        presenter.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
-        presenter.SetValue(ContentPresenter.SnapsToDevicePixelsProperty, true);
+        var presenter = new FrameworkElementFactory(typeof(TextBlock));
+        presenter.SetBinding(TextBlock.TextProperty, TemplateBinding(nameof(ContentControl.Content)));
+        presenter.SetBinding(TextBlock.ForegroundProperty, TemplateBinding(nameof(Control.Foreground)));
+        presenter.SetBinding(TextBlock.FontSizeProperty, TemplateBinding(nameof(Control.FontSize)));
+        presenter.SetBinding(TextBlock.FontWeightProperty, TemplateBinding(nameof(Control.FontWeight)));
+        presenter.SetValue(TextBlock.TextAlignmentProperty, TextAlignment.Center);
+        presenter.SetValue(TextBlock.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+        presenter.SetValue(TextBlock.VerticalAlignmentProperty, VerticalAlignment.Center);
         border.AppendChild(presenter);
 
         return new ControlTemplate(typeof(Button)) { VisualTree = border };

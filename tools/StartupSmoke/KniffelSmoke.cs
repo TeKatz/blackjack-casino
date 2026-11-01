@@ -15,7 +15,7 @@ internal static class KniffelSmoke
         Require(window.Modes.Modes.Any(mode => mode.Id == "kniffel"), "Kniffel is missing from the lobby.");
         profile.OwnedCosmeticIds.Add("diceset-aurora");
         profile.EquippedDiceSetId = "diceset-aurora";
-        window.Modes.Open("kniffel");
+        NavigationSmoke.OpenCovered(window, "kniffel");
         await Task.Delay(100);
         KniffelView view = Find<KniffelView>(window).Single();
         Require(Application.Current.Windows.Cast<Window>().Count(w => w.IsVisible) == 1, "Kniffel opened another native window.");
@@ -52,7 +52,7 @@ internal static class KniffelSmoke
         int[] dice = view.Game.Dice.ToArray();
         Click(view, "KniffelBackButton");
         Require(Find<Button>(window).Any(button => button.Name == "Mode_kniffel" && button.IsVisible && button.IsEnabled), "Lobby was not restored.");
-        window.Modes.Open("kniffel");
+        NavigationSmoke.OpenCovered(window, "kniffel");
         await Task.Delay(80);
         view = Find<KniffelView>(window).Single();
         Require(view.Game.RollsUsed == 1 && view.Game.Held[1] && dice.SequenceEqual(view.Game.Dice), "Resume changed the turn checkpoint.");
@@ -72,7 +72,7 @@ internal static class KniffelSmoke
         await CloseResult(view);
         Capture(window, Path.Combine(output, "kniffel-complete.png"));
         Click(view, "KniffelBackButton");
-        window.Modes.Open("kniffel");
+        NavigationSmoke.OpenCovered(window, "kniffel");
         await Task.Delay(80);
         view = Find<KniffelView>(window).Single();
         Require(view.Game.IsComplete && profile.LifetimeExperience == xpBefore + earned, "Reopening a finished game granted duplicate XP.");
@@ -85,12 +85,16 @@ internal static class KniffelSmoke
         // Enable actual roll animation, close while it is running, then resume the result.
         CheckBox animationSetting = Find<CheckBox>(window).Single(box => box.Name == "AnimationsCheckBox");
         animationSetting.IsChecked = true;
+        var preferencesField = typeof(MainWindow).GetField("preferences", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        AppPreferences previousPreferences = (AppPreferences)preferencesField.GetValue(window)!;
+        Require(!previousPreferences.Presentation("kniffel").AnimationsEnabled, "Blackjack animation setting leaked into Midnight Dice.");
+        preferencesField.SetValue(window, previousPreferences.WithPresentation("kniffel", previousPreferences.Presentation("kniffel") with { AnimationsEnabled = true }));
         Click(view, "RollButton");
         Require(!Button(view, "RollButton").IsEnabled && !Button(view, "Score_Chance").IsEnabled,
             "Animation did not lock rolling and scoring.");
         dice = view.Game.Dice.ToArray();
         Click(view, "KniffelBackButton");
-        window.Modes.Open("kniffel");
+        NavigationSmoke.OpenCovered(window, "kniffel");
         await Task.Delay(80);
         view = Find<KniffelView>(window).Single();
         Require(dice.SequenceEqual(view.Game.Dice) && view.Game.RollsUsed == 1, "Leaving mid-animation granted a reroll.");
@@ -107,6 +111,8 @@ internal static class KniffelSmoke
         Require(view.Game.RollsUsed == 2, "Cancelling restart discarded the turn.");
         Click(view, "KniffelBackButton");
         animationSetting.IsChecked = false;
+        AppPreferences currentPreferences = (AppPreferences)preferencesField.GetValue(window)!;
+        preferencesField.SetValue(window, currentPreferences.WithPresentation("kniffel", previousPreferences.Presentation("kniffel")));
         File.WriteAllText(Path.Combine(output, "kniffel-result.txt"),
             "PASS: embedded lobby entry; five vector dice; 13 scoring rows; hold/reroll; score selection and confirmation; glow; full game; checkpoints; animation locking, settlement and mid-animation return; restart cancellation; 1080x720 and 1280x900 captures.");
     }

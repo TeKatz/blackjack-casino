@@ -20,11 +20,12 @@ public partial class MainWindow
         ProcessLatestCompletedRound();
         slotProgression ??= new SlotProgression(progressionController.Service);
         bool levelUp = false;
+        AreaPresentationSettings presentation = preferences.Presentation("nine-lives");
         var window = new NineLivesWindow(
             session.Bankroll,
             preferences.NineLivesBet,
-            SoundEnabled,
-            AnimationsEnabled,
+            presentation.SoundEnabled,
+            presentation.AnimationsEnabled,
             progressionController,
             spin =>
             {
@@ -37,21 +38,16 @@ public partial class MainWindow
                 levelUp |= award.HasLevelUp;
                 return award;
             },
-            musicEnabled: preferences.MusicEnabled,
-            musicVolume: preferences.MusicVolume);
+            musicEnabled: presentation.MusicEnabled,
+            musicVolume: presentation.MusicVolume);
 
         ShowEmbeddedGame(window, "Nine Lives · Blackjack Casino", muteHostMusic: true, closed: () =>
         {
             preferences = preferences with
             {
                 NineLivesBet = window.SelectedBet,
-                SoundEnabled = window.SoundsEnabled,
-                AnimationsEnabled = window.AnimationsEnabled,
             };
-            suppressPreferenceEvents = true;
-            SoundCheckBox.IsChecked = window.SoundsEnabled;
-            AnimationsCheckBox.IsChecked = window.AnimationsEnabled;
-            suppressPreferenceEvents = false;
+            preferences = preferences.WithPresentation("nine-lives", presentation with { SoundEnabled = window.SoundsEnabled, AnimationsEnabled = window.AnimationsEnabled });
             SavePreferences();
             if (session.CurrentRound is null)
             {

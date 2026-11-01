@@ -47,7 +47,7 @@ internal static partial class Program
         window.UpdateLayout(); await Task.Delay(50);
         Border inspector = Find<Border>(window).Single(b => b.Name == "AlbumArtOverlay");
         Require(inspector.IsVisible, "Collected card did not open its artwork inspector");
-        Image inspectorImage = Find<Image>(inspector).Single(i => i.Name == "CollectionCardArt");
+        Image inspectorImage = Find<Image>(inspector).Single(i => i.Name == "CollectionCardArt" && Equals(i.Tag, ownedId));
         Require(inspectorImage.Tag as string == ownedId, "Inspector displays another card");
         Require(RenderOptions.GetBitmapScalingMode(inspectorImage) == BitmapScalingMode.HighQuality, "Inspector illustration is not using high-quality bitmap scaling");
         Require(!Find<Viewbox>(inspector).Any(), "Inspector still enlarges the small card through a Viewbox");
@@ -63,6 +63,9 @@ internal static partial class Program
         foreach (var size in new[] { (1440d, 900d), (1920d, 1080d) })
         {
             window.Width = size.Item1; window.Height = size.Item2; window.UpdateLayout(); await Task.Delay(30);
+            // Resizing intentionally rebuilds the native card at the new resolution.
+            inspectorImage = Find<Image>(inspector).Single(i => i.Name == "CollectionCardArt" && Equals(i.Tag, ownedId));
+            inspectorCard = Find<Border>(inspector).Single(b => b.Name == "CollectionCard" && Equals(b.Tag, ownedId));
             RequireWithin(window, Find<Button>(inspector).Single(b => b.Name == "AlbumArtClose"), "Artwork inspector close");
             RequireWithin(window, inspectorImage, "Artwork inspector illustration");
             RequireWithin(window, inspectorCard, "Artwork inspector card");
@@ -101,6 +104,21 @@ internal static partial class Program
                 editions.Children.Add(CollectionArtwork.Card(CollectionCatalog.Themes[0].Cards.First(c => c.Rarity == rarity), true, animationsEnabled: false));
             editions.Children.Add(CollectionArtwork.Card(CollectionCatalog.Themes.First(t => t.UltraRare).Cards[0], true, animationsEnabled: false));
             host.Child = editions; window.UpdateLayout(); await Task.Delay(40); Capture(window, "album-art-rarity-editions");
+
+            foreach (CollectionRarity rarity in new[] { CollectionRarity.Rare, CollectionRarity.Epic, CollectionRarity.Legendary })
+            foreach (double scale in new[] { 1d, 2.08d })
+            {
+                CollectionCard edition = CollectionCatalog.Themes[0].Cards.First(c => c.Rarity == rarity);
+                Border testCard = CollectionArtwork.Card(edition, true, animationsEnabled: false, scale: scale);
+                host.Child = testCard; window.UpdateLayout();
+                Grid surface = (Grid)testCard.Child;
+                Border[] inlays = Find<Border>(surface).Where(b => b.Name.StartsWith("CollectionCorner", StringComparison.Ordinal)).ToArray();
+                Require(inlays.Length == 4, "Premium card lost its four corner inlays.");
+                Rect[] bounds = inlays.Select(b => b.TransformToAncestor(surface).TransformBounds(new Rect(b.RenderSize))).ToArray();
+                Require(Math.Abs(bounds[0].Left - bounds[2].Left) < 1 && Math.Abs(bounds[1].Right - bounds[3].Right) < 1, "Corner inlays have mismatched horizontal anchors.");
+                Require(Math.Abs(bounds[0].Left - (surface.ActualWidth - bounds[1].Right)) <= 1.01, $"Premium corner insets are asymmetric: {rarity}, scale {scale}, surface {surface.ActualWidth}, left {bounds[0].Left}, right {surface.ActualWidth - bounds[1].Right}.");
+                Require(Math.Abs(bounds[0].Top - (surface.ActualHeight - bounds[2].Bottom)) <= 1.01, $"Premium vertical corner insets are asymmetric: {rarity}, scale {scale}, top {bounds[0].Top}, bottom {surface.ActualHeight - bounds[2].Bottom}.");
+            }
 
             CollectionCard legendary = CollectionCatalog.Themes[0].Cards[^1];
             Border animated = CollectionArtwork.Card(legendary, true, animationsEnabled: true);

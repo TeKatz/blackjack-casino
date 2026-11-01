@@ -78,14 +78,13 @@ public partial class MainWindow
         ProcessLatestCompletedRound();
         EnsureEmbeddedGameHost();
         StartEmpireSession();
-        if (lobby is not null) lobby.Visibility = Visibility.Collapsed;
         empireView = new EmpireView(
             empire,
             UpgradeEmpire,
             ClaimEmpireDividend,
             PrestigeEmpire,
             CloseEmpire,
-            () => AnimationsEnabled,
+            () => preferences.Presentation("casino-empire").AnimationsEnabled,
             "←  Casino lobby",
             MutateEmpire);
         EmpireStatisticsPage.Attach(empireView, empire);
@@ -96,6 +95,7 @@ public partial class MainWindow
         }
         embeddedGameHost!.Content = empireView;
         embeddedGameOverlay!.Visibility = Visibility.Visible;
+        if (lobby is not null) lobby.Visibility = Visibility.Collapsed;
         KeyboardNavigation.SetTabNavigation(empireView, KeyboardNavigationMode.Cycle);
         KeyboardNavigation.SetControlTabNavigation(empireView, KeyboardNavigationMode.Cycle);
         KeyboardNavigation.SetDirectionalNavigation(empireView, KeyboardNavigationMode.Contained);
@@ -137,7 +137,7 @@ public partial class MainWindow
             ClaimEmpireDividend,
             PrestigeEmpire,
             () => window.Close(),
-            () => AnimationsEnabled,
+            () => preferences.Presentation("casino-empire").AnimationsEnabled,
             "Close Empire window",
             MutateEmpire);
         EmpireStatisticsPage.Attach(view, empire);
@@ -264,6 +264,7 @@ public partial class MainWindow
     {
         if (empireView is null) return;
         empireView.Dispose();
+        if (lobby is not null) lobby.Visibility = Visibility.Visible;
         embeddedGameHost!.Content = null;
         empireView = null;
         embeddedGameOverlay!.Visibility = Visibility.Collapsed;
@@ -271,6 +272,7 @@ public partial class MainWindow
         empireCoveredElements.Clear();
         if (lobby is not null) lobby.Visibility = Visibility.Visible;
         TableModeText.Text = "Casino lobby";
+        SyncHostMusic();
         empire!.Accrue(DateTimeOffset.UtcNow);
         SavePreferences();
         NormalizeBetForTable();

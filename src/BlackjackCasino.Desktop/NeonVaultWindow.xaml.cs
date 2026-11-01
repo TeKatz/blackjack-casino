@@ -735,7 +735,6 @@ internal partial class NeonVaultWindow : Window
     {
         if (!initialized) return;
 
-        MenuAudio.Enabled = SoundsEnabled;
         if (!SoundsEnabled) audio.Stop();
 
         if (AnimationsEnabled)

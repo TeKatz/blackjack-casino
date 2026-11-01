@@ -57,8 +57,17 @@ internal static partial class Program
                     "Lobby tile is outside the visible surface at " + size + ": " + tile.Name);
             }
             Require(!Find<ScrollViewer>(lobby).Any(), "Lobby still requires a scrolling surface");
+            await Task.Delay(30); window.UpdateLayout();
+            Border hub = Find<Border>(lobby).Single(b => b.Name == "LobbyOverviewHub");
+            Rect hubBounds = hub.TransformToAncestor(lobby).TransformBounds(new Rect(hub.RenderSize));
+            Require(hubBounds.Bottom <= lobby.ActualHeight + 1, "Lobby hub overflows the viewport.");
+            foreach (Button destination in Find<Button>(hub)) RequireWithin(window, destination, "Lobby hub destination");
+            Require(tiles.Max(tile => tile.TransformToAncestor(lobby).TransformBounds(new Rect(tile.RenderSize)).Right) < hubBounds.Left, "Hub overlaps game tiles.");
+
             Capture(window, "lobby-grid-" + (int)size.Item1);
         }
+        await CheckMenuPerformance(window, qaProfile);
+        await CheckDistinctFrames(window);
         bool future=false;
         window.Modes.Register(new("future-room","Future room","Registry test","A future mode without changing lobby layout.","#527D9A","◇","Future"),()=>future=true);
         window.UpdateLayout();
@@ -77,7 +86,7 @@ internal static partial class Program
         bool cursor=SetCursorPos((int)point.X,(int)point.Y);await Task.Delay(100);System.Windows.Input.Mouse.Synchronize();
         File.WriteAllText(Path.Combine(output,"hover-input.txt"),$"Native cursor request: {cursor}; ComboBox IsMouseOver: {mode.IsMouseOver}. All state templates and composed dark pixels are required regardless of headless input support.");
         await CheckCombo(mode);Capture(window,"03-hover-minimum");
-        window.Modes.Open("midnight-reels");await Task.Delay(100);
+        NavigationSmoke.OpenCovered(window, "midnight-reels");await Task.Delay(100);
         Require(!((FrameworkElement)window.FindName("CasinoHeader")).IsVisible,"Host casino header remained visible over embedded Midnight Reels");
         foreach(var size in new[]{(1080d,720d),(1440d,900d),(1920d,1080d),(2560d,1440d)})
         {
@@ -88,11 +97,19 @@ internal static partial class Program
             Require(bounds.Top>=60 && bounds.Bottom<=window.ActualHeight-8 && bounds.Left>=0 && bounds.Right<=window.ActualWidth,"Reels Spin button clipped at "+size);
             Capture(window,"04-reels-"+(int)size.Item1);
         }
+        Find<CheckBox>(window).Single(b => b.Name == "SoundToggle").IsChecked = true;
+        Find<CheckBox>(window).Single(b => b.Name == "AnimationToggle").IsChecked = true;
         Find<Button>(window).Single(b=>b.Name=="ReelsBackButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Task.Delay(50);
+        var settingsField = typeof(MainWindow).GetField("preferences", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        AppPreferences scoped = (AppPreferences)settingsField.GetValue(window)!;
+        Require(scoped.Presentation("midnight-reels").SoundEnabled && scoped.Presentation("midnight-reels").AnimationsEnabled, "Reels settings were not retained locally.");
+        Require(!scoped.SoundEnabled && !scoped.AnimationsEnabled && !scoped.Presentation("neon-vault").SoundEnabled, "Reels settings leaked into another destination.");
+
         Require(Find<CasinoLobbyView>(window).Any(v=>v.IsVisible),"Leaving a slot did not return to the lobby");
         Require(((FrameworkElement)window.FindName("CasinoHeader")).IsVisible,"Host casino header did not return after leaving Midnight Reels");
 
-        window.Modes.Open("neon-vault");await Task.Delay(120);window.UpdateLayout();
+        NavigationSmoke.OpenCovered(window, "neon-vault");await Task.Delay(120);window.UpdateLayout();
+        Require(Find<CheckBox>(window).Single(b => b.Name == "SoundToggle").IsChecked == false, "Neon Vault inherited Reels sound toggle.");
         Require(Application.Current.Windows.Cast<Window>().Count(w=>w.IsVisible)==1,"Neon Vault opened a second visible native window instead of using the casino host");
         Require(!((FrameworkElement)window.FindName("CasinoHeader")).IsVisible,"Host casino header remained visible over embedded Neon Vault");
         Require(Find<ProgressBar>(window).Single(b=>b.Name=="EnergyBar").Maximum==NeonVaultRules.VaultEnergyTarget,"Neon Vault energy meter is not wired to the feature target");
@@ -125,10 +142,20 @@ internal static partial class Program
             RequireWithin(window,Find<TextBox>(window).Single(b=>b.Name=="ProfileNameBox"),"Profile name");
             Capture(window,"06-profile-"+(int)size.Item1);
         }
+        foreach (string destination in new[] { "ProfileStatisticsButton", "ProfileHandHistoryButton" })
+        {
+            Find<Button>(window).Single(b => b.Name == destination).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            await Task.Delay(40); window.UpdateLayout();
+            Require(!Find<TabControl>(window).Any(t => t.Items.OfType<TabItem>().Any(i => Equals(i.Header, "Cosmetic Shop"))), "Profile statistics retained shop navigation.");
+            Require(Find<TabControl>(window).Any(t => t.Items.Count == 1), "Profile statistics/history did not open their own page.");
+            Find<Button>(window).Single(b => b.Name == "ProgressionBackButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            await Task.Delay(40); window.UpdateLayout();
+        }
         Find<Button>(window).Single(b=>b.Name=="ProfileProgressionButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(100);window.UpdateLayout();RequireSingleHost(window,"Progression from profile");
         TabControl progressionTabs=Find<TabControl>(window).Single(t=>t.Items.OfType<TabItem>().Any(i=>Equals(i.Header,"Challenges")));
-        foreach(string tab in new[]{"Overview","Challenges","Cosmetic Shop"})
+        Require(!progressionTabs.Items.OfType<TabItem>().Any(t => t.Name is "StatisticsTab" or "HandHistoryTab"), "Statistics/history remain in Progression & Shop.");
+        foreach(string tab in new[]{"Season Pass","Challenges","Cosmetic Shop"})
         {
             progressionTabs.SelectedItem=progressionTabs.Items.OfType<TabItem>().Single(t=>Equals(t.Header,tab));
             foreach(var size in new[]{(1080d,720d),(1440d,900d)})
@@ -139,7 +166,7 @@ internal static partial class Program
         }
         progressionTabs.SelectedItem=progressionTabs.Items.OfType<TabItem>().Single(t=>Equals(t.Header,"Challenges"));window.UpdateLayout();
         var challengeSearch=Find<TextBox>(window).Single(t=>t.Name=="ChallengeSearchBox");
-        Require(Find<StackPanel>(window).Single(p=>p.Name=="ChallengesPanel").Children.OfType<Border>().Count()<=4,"Challenge pagination renders an unbounded list");
+        Require(Find<UniformGrid>(window).Single(p=>p.Name=="ChallengesPanel").Children.OfType<Border>().Count()>=4,"Challenge grid did not fill the available page");
         CheckCollectionPaging(window,"ChallengesPanel","ChallengeNextButton","ChallengePreviousButton");
         ChallengeDefinition[] ready=ChallengeCatalog.All.Where(c=>ChallengeCatalog.Complete(qaProfile,c) && !qaProfile.ClaimedChallengeIds.Contains(c.Id)).ToArray();
         Require(ready.Length>0,"QA profile did not prepare claimable challenges");
@@ -193,7 +220,7 @@ internal static partial class Program
     private static async Task CheckEmpire(MainWindow window)
     {
         int nativeWindows=Application.Current.Windows.Count;
-        window.Modes.Open("casino-empire");await Task.Delay(100);window.UpdateLayout();
+        NavigationSmoke.OpenCovered(window, "casino-empire");await Task.Delay(100);window.UpdateLayout();
         RequireSingleHost(window,"Casino Empire");
         Require(Application.Current.Windows.Count==nativeWindows,"Casino Empire constructed a native Window");
         Require(Find<EmpireView>(window).Count()==1,"Casino Empire did not mount its hosted page");
@@ -226,9 +253,17 @@ internal static partial class Program
         Require(EmpireRoomTextures.Get(0).IsFrozen && EmpireRoomTextures.Get(0).PixelWidth>=256 && ReferenceEquals(EmpireRoomTextures.Get(0),EmpireRoomTextures.Get(0)),"Room artwork is missing or not cached");
         var animationSetting=(CheckBox)window.FindName("AnimationsCheckBox");
         animationSetting.IsChecked=true;await Task.Delay(150);
-        Require(Find<EmpireRoomCard>(window).Single(card=>card.Department.Id=="slots").Artwork.Phase>0,"Open-room effects are not running");
+        Require(Find<EmpireRoomCard>(window).All(card=>card.Artwork.Phase==0),"Blackjack's animation toggle leaked into Casino Empire.");
+        var preferencesField = typeof(MainWindow).GetField("preferences", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        AppPreferences areaPrefs = (AppPreferences)preferencesField.GetValue(window)!;
+        preferencesField.SetValue(window, areaPrefs.WithPresentation("casino-empire", areaPrefs.Presentation("casino-empire") with { AnimationsEnabled = true }));
+        await Task.Delay(150);
+        Require(Find<EmpireRoomCard>(window).Single(card=>card.Department.Id=="slots").Artwork.Phase>0,"Empire's own animations did not run.");
         animationSetting.IsChecked=false;
-        Require(Find<EmpireRoomCard>(window).All(card=>card.Artwork.Phase==0),"Disabling animations did not stop room effects immediately");
+        await Task.Delay(150);
+        Require(Find<EmpireRoomCard>(window).Single(card=>card.Department.Id=="slots").Artwork.Phase>0,"Blackjack toggle stopped Empire's local effects.");
+        preferencesField.SetValue(window, areaPrefs);
+        foreach (EmpireView view in Find<EmpireView>(window)) view.StopVisualAnimations();
         Find<Button>(window).Single(b=>b.Name=="EmpireBackButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         window.Modes.Open("blackjack");await Task.Delay(50);window.UpdateLayout();
         var indicator=(Border)window.FindName("EmpireBalancePanel");
@@ -251,7 +286,7 @@ internal static partial class Program
         var balanceSetting=(CheckBox)window.FindName("EmpireBalanceCheckBox");
         balanceSetting.IsChecked=false;Require(indicator.Visibility==Visibility.Collapsed,"The header balance setting does not hide the indicator");
         balanceSetting.IsChecked=true;Require(indicator.IsVisible,"The header balance setting does not restore the indicator");
-        window.Modes.Open("casino-empire");await Task.Delay(50);window.UpdateLayout();
+        NavigationSmoke.OpenCovered(window, "casino-empire");await Task.Delay(50);window.UpdateLayout();
         buy=Find<Button>(window).Single(b=>b.Name=="EmpireUpgradeButton");
         Find<Button>(window).Single(b=>b.Name=="EmpireRoom_vip").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         Require(!buy.IsEnabled,"An unaffordable room can be opened");
@@ -275,7 +310,7 @@ internal static partial class Program
         await Task.Delay(40);window.UpdateLayout();
         Require(Find<CasinoLobbyView>(window).Any(v=>v.IsVisible),"Empire Back did not restore the lobby");
         Require(((FrameworkElement)window.FindName("CasinoHeader")).IsVisible,"Empire Back did not restore the host header");
-        window.Modes.Open("casino-empire");await Task.Delay(40);window.UpdateLayout();
+        NavigationSmoke.OpenCovered(window, "casino-empire");await Task.Delay(40);window.UpdateLayout();
         Require(service.Level("slots")>=2 && service.Credits==credits,"Reopening Casino Empire reset progress");
         var source=PresentationSource.FromVisual(window)!;
         window.RaiseEvent(new System.Windows.Input.KeyEventArgs(System.Windows.Input.Keyboard.PrimaryDevice,source,0,System.Windows.Input.Key.Escape)
@@ -379,9 +414,9 @@ internal static partial class Program
     }
     private static void CheckCollectionPaging(MainWindow window,string panelName,string nextName,string previousName)
     {
-        string[] Ids()=>Find<StackPanel>(window).Single(p=>p.Name==panelName).Children.OfType<Border>()
+        string[] Ids()=>Find<Panel>(window).Single(p=>p.Name==panelName).Children.OfType<Border>()
             .SelectMany(p=>Find<Button>(p)).Select(b=>b.Tag).OfType<string>().ToArray();
-        string[] first=Ids();Require(first.Length==4,"Expected four compact rows in "+panelName);
+        string[] first=Ids();Require(first.Length>=2 && first.Length<=12,"Expected a bounded responsive challenge grid in "+panelName);
         Button next=Find<Button>(window).Single(b=>b.Name==nextName);
         Require(next.IsEnabled,"Next is unavailable with multiple pages in "+panelName);
         next.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));window.UpdateLayout();

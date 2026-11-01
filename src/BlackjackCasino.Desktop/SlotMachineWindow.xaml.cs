@@ -271,7 +271,6 @@ internal partial class SlotMachineWindow : Window
 
     private void Settings_Changed(object sender, RoutedEventArgs e)
     {
-        if (initialized) MenuAudio.Enabled = SoundsEnabled;
         if (initialized && !SoundsEnabled)
         {
             audio.Stop();

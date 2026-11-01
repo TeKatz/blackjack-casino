@@ -24,6 +24,8 @@ internal partial class ProgressionWindow : Window
 
     private readonly bool albumAnimations;
     private readonly bool albumSounds;
+    private readonly HashSet<TabItem> renderedTabs = [];
+    private bool menuReady;
 
     public ProgressionWindow(PlayerProgressionController controller, bool animationsEnabled = true, bool soundsEnabled = true)
     {
@@ -34,11 +36,42 @@ internal partial class ProgressionWindow : Window
         ProgressionRoot.Unloaded += (_, _) => StopAlbumPresentation();
         AlbumOpeningOverlay.Unloaded += (_, _) => StopAlbumPresentation();
         ProgressionRoot.PreviewKeyDown += AlbumArt_KeyDown;
-        MenuAudio.Attach(this);
+        MenuAudio.Attach(this, () => albumSounds);
         InitializeCollections();
+        ChallengesScroll.SizeChanged += (_, _) =>
+        {
+            if (ChallengesScroll.ActualHeight <= 0) return;
+            int columns = ChallengesScroll.ActualWidth < 1100 ? 2 : 3;
+            int size = columns * Math.Clamp((int)(ChallengesScroll.ActualHeight / 192), 1, 4);
+            ChallengesPanel.Columns = columns;
+            if (size == ChallengePageSize) return;
+            int first = challengePage * ChallengePageSize;
+            ChallengePageSize = size; challengePage = first / size;
+            RefreshChallenges();
+        };
         StateChanged += (_, _) => RefreshMaximizeGlyph();
-        RefreshAll();
+        RemoveProfileTabs();
+        menuReady = true;
+        ProgressionTabs.SelectionChanged += (_, e) =>
+        {
+            if (ReferenceEquals(e.OriginalSource, ProgressionTabs) && ProgressionRoot.IsLoaded) RefreshSelectedTab();
+        };
         RefreshMaximizeGlyph();
+    }
+
+    internal void RemoveProfileTabs()
+    {
+        ProgressionTabs.Items.Remove(StatisticsTab);
+        ProgressionTabs.Items.Remove(HandHistoryTab);
+    }
+
+    internal void ConfigureProfileSection(string section)
+    {
+        TabItem selected = section == "Hand History" ? HandHistoryTab : StatisticsTab;
+        ProgressionTabs.Items.Clear();
+        ProgressionTabs.Items.Add(selected);
+        selected.Header = section == "Hand History" ? "Hand History" : "Player Statistics";
+        ProgressionTabs.SelectedItem = selected;
     }
 
     internal void SelectTab(string header)
@@ -50,14 +83,25 @@ internal partial class ProgressionWindow : Window
 
     private void RefreshAll()
     {
+        renderedTabs.Clear();
+        if (!menuReady || !ProgressionRoot.IsLoaded) return;
         controller.AccruePlaytime();
         RefreshProfileHeader();
-        RefreshStatistics();
-        RefreshHistory();
-        RefreshSeason();
-        RefreshShop();
-        RefreshChallenges();
-        RefreshAlbum();
+        RefreshSelectedTab();
+    }
+
+    private void RefreshSelectedTab()
+    {
+        if (!menuReady || ProgressionTabs.SelectedItem is not TabItem tab || !renderedTabs.Add(tab)) return;
+        switch (tab.Tag as string)
+        {
+            case "Overview": RefreshStatistics(); break;
+            case "Hand History": RefreshHistory(); break;
+            case "Season Pass": RefreshSeason(); break;
+            case "Cosmetic Shop": RefreshShop(); break;
+            case "Challenges": RefreshChallenges(); break;
+            case "Album": RefreshAlbum(); break;
+        }
     }
 
     private void RefreshProfileHeader()
@@ -394,8 +438,11 @@ internal partial class ProgressionWindow : Window
         _ => (Rgb(39, 91, 64), Rgb(14, 37, 27), "♠"),
     };
 
-    private static void ApplyFramePresentation(Border target, CosmeticDefinition frame, bool compact = false)
+    private void ApplyFramePresentation(Border target, CosmeticDefinition frame, bool compact = false)
     {
+        target.BorderThickness = new Thickness(2);
+        target.CornerRadius = new CornerRadius(compact ? 10 : 12);
+        if (DistinctCosmeticFrames.Apply(target, frame.VisualVariant, albumAnimations)) return;
         if (frame.VisualVariant.StartsWith("static-", StringComparison.Ordinal))
         {
             target.BorderBrush = new SolidColorBrush(CosmeticAppearance.StandardFrame(frame.VisualVariant));
@@ -425,6 +472,7 @@ internal partial class ProgressionWindow : Window
         };
         target.Effect = glow;
 
+        if (!albumAnimations) return;
         switch (motion)
         {
             case "sweep":

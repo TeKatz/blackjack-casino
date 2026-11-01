@@ -318,6 +318,33 @@ internal sealed class PlayerProgressionController : IDisposable
         CollectionService.CompleteOpening(candidate, id)
             ? new(true, "Cards added to your album.") : new(false, "No matching pack reveal."));
 
+    public CollectionThemeRewardClaimResult ClaimCollectionThemeReward(string themeId)
+    {
+        lock (Profile)
+        {
+            PlayerProfileState candidate = ManorPersistence.Clone(Profile);
+            CollectionThemeRewardClaimResult result = CollectionService.ClaimThemeCompletionReward(candidate, themeId);
+            if (!result.Success) return result;
+            try
+            {
+                if (persistCollection) saveCollectionProfile(candidate);
+                AdoptManorProfile(candidate);
+                return result;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                return result with
+                {
+                    Success = false,
+                    Message = "Collection reward could not be saved. Please try again. " + ex.Message,
+                    Coins = 0,
+                    PackRarity = null,
+                    PackCount = 0,
+                };
+            }
+        }
+    }
+
     private CollectionActionResult CommitCollection(Func<PlayerProfileState, CollectionActionResult> action)
     {
         lock (Profile)
