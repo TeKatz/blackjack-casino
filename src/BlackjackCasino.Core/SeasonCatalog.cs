@@ -27,14 +27,22 @@ public static class SeasonCatalog
     private static readonly SeasonDefinition VelvetEclipse = new(
         "season-2-velvet-eclipse",
         "Velvet Eclipse",
-        "Season 2 · a 100-tier long-form pass with a steeper XP curve. Reward slots are intentionally unassigned for now.",
-        false,
-        false,
+        "Season 2 · the original 100-tier long-form track. Completed rewards and progress remain available permanently.",
+        true,
+        true,
         BuildVelvetEclipseTiers());
 
-    public static SeasonDefinition Current => VelvetEclipse;
+    private static readonly SeasonDefinition NeonDynasty = new(
+        "season-3-neon-dynasty",
+        "Neon Dynasty",
+        "Season 3 · a new 120-tier endurance pass with a substantially steeper XP curve. Reward slots are intentionally unassigned for now.",
+        false,
+        false,
+        BuildNeonDynastyTiers());
 
-    public static IReadOnlyList<SeasonDefinition> All { get; } = [MidnightShift, VelvetEclipse];
+    public static SeasonDefinition Current => NeonDynasty;
+
+    public static IReadOnlyList<SeasonDefinition> All { get; } = [MidnightShift, VelvetEclipse, NeonDynasty];
 
     public static SeasonDefinition Get(string id) => TryGet(id)
         ?? throw new KeyNotFoundException($"Unknown season '{id}'.");
@@ -69,10 +77,46 @@ public static class SeasonCatalog
         var tiers = new List<SeasonTierDefinition>(100);
         for (int tier = 1; tier <= 100; tier++)
         {
-            // Cumulative target: 309 XP at tier 1, 3,900 at tier 10,
-            // 37,500 at tier 50 and 120,000 total XP at tier 100.
-            // Every individual tier costs more than Midnight Shift's flat 200 XP.
             long required = 300L * tier + 9L * tier * tier;
+            string? cosmetic = tier switch
+            {
+                15 => "portrait-eclipse-raven",
+                25 => "frame-eclipse-thread",
+                35 => "title-eclipse-afterglow",
+                45 => "portrait-eclipse-lady",
+                55 => "frame-eclipse-halo",
+                65 => "title-eclipse-architect",
+                75 => "portrait-eclipse-moon",
+                85 => "frame-eclipse-crown",
+                95 => "title-eclipse-velvet-hour",
+                100 => "portrait-eclipse-sovereign",
+                _ => null,
+            };
+
+            long coins = tier switch
+            {
+                100 => 500,
+                _ when tier % 25 == 0 => 175,
+                _ when tier % 10 == 0 => 80,
+                _ when tier % 5 == 0 => 35,
+                _ => 12,
+            };
+            tiers.Add(new SeasonTierDefinition(tier, required, coins, cosmetic));
+        }
+
+        return tiers;
+    }
+
+    private static IReadOnlyList<SeasonTierDefinition> BuildNeonDynastyTiers()
+    {
+        var tiers = new List<SeasonTierDefinition>(120);
+        for (int tier = 1; tier <= 120; tier++)
+        {
+            // Cumulative target: 512 XP at tier 1, 6,200 at tier 10,
+            // 55,000 at tier 50, 170,000 at tier 100 and 232,800 total XP at tier 120.
+            // The per-tier cost rises from 512 XP to 3,368 XP, making this pass materially
+            // longer than Velvet Eclipse while retaining a smooth, predictable curve.
+            long required = 500L * tier + 12L * tier * tier;
             tiers.Add(new SeasonTierDefinition(tier, required, 0, null));
         }
 
