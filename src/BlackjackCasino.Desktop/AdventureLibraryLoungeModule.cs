@@ -313,14 +313,14 @@ internal sealed class AdventureLibraryHubControl : UserControl
             Foreground = AdventureUi.Ink("#F0E0C6"),
             Margin = new Thickness(0, 5, 0, 12),
         });
-        var classes = BuildClassSelector();
+        var classes = BuildClassSelector(adventure);
         chooser.Children.Add(classes);
         Button start = AdventureUi.Button("BEGIN NEW RUN", accent: true, fontSize: 13, scaleOnHover: false);
         start.HorizontalAlignment = HorizontalAlignment.Left;
         start.Margin = new Thickness(0, 17, 0, 0);
         start.Click += (_, _) =>
         {
-            AdventureCharacterState character = AdventureCharacterCatalog.Create(SelectedClassId(classes), playerName());
+            AdventureCharacterState character = AdventureCharacterCatalog.Create(adventure, SelectedClassId(classes), playerName());
             StartFreshRun(adventure, character);
         };
         chooser.Children.Add(start);
@@ -333,7 +333,7 @@ internal sealed class AdventureLibraryHubControl : UserControl
         var preview = new StackPanel { Margin = new Thickness(4, 2, 0, 0) };
         var className = new TextBlock { FontFamily = new FontFamily("Georgia"), FontSize = 24, Foreground = AdventureUi.Ink("#EBD9B7") };
         var description = new TextBlock { Foreground = AdventureUi.Ink("#AEBFB7"), FontFamily = new FontFamily("Georgia"), FontSize = 13.5, LineHeight = 21, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 7, 0, 10) };
-        var stats = new TextBlock { Foreground = AdventureUi.Ink("#CDBA8B"), FontFamily = new FontFamily("Georgia"), FontSize = 11.5, TextWrapping = TextWrapping.Wrap };
+        var stats = new TextBlock { Foreground = AdventureUi.Ink("#CDBA8B"), FontFamily = new FontFamily("Georgia"), FontSize = 11.5, LineHeight = 18, TextWrapping = TextWrapping.Wrap };
         preview.Children.Add(className);
         preview.Children.Add(description);
         preview.Children.Add(AdventureUi.OrnamentRule("◇"));
@@ -343,10 +343,19 @@ internal sealed class AdventureLibraryHubControl : UserControl
 
         void UpdatePreview()
         {
-            AdventureClassDefinition definition = AdventureCharacterCatalog.All.First(item => item.Id == SelectedClassId(classes));
+            AdventureClassDefinition definition = AdventureCharacterCatalog.AllFor(adventure)
+                .First(item => item.Id == SelectedClassId(classes));
             className.Text = definition.Name;
             description.Text = definition.Description;
-            stats.Text = $"HP {definition.MaxHitPoints} · Armor {definition.Armor} · STR {definition.Abilities[AdventureAbility.Strength]} · DEX {definition.Abilities[AdventureAbility.Dexterity]} · INT {definition.Abilities[AdventureAbility.Intelligence]} · WIS {definition.Abilities[AdventureAbility.Wisdom]}";
+            string abilityLine = string.Join(" · ", Enum.GetValues<AdventureAbility>().Select(ability =>
+            {
+                int score = definition.Abilities.TryGetValue(ability, out int value) ? value : 10;
+                return $"{AdventureCharacterCatalog.AbilityShortLabel(adventure, ability)} {score}";
+            }));
+            string special = string.IsNullOrWhiteSpace(definition.SpecialMechanicName)
+                ? string.Empty
+                : $"\nSPECIAL · {definition.SpecialMechanicName}";
+            stats.Text = $"HP {definition.MaxHitPoints} · Armor {definition.Armor}\n{abilityLine}{special}";
         }
         classes.SelectionChanged += (_, _) => UpdatePreview();
         UpdatePreview();
@@ -354,7 +363,7 @@ internal sealed class AdventureLibraryHubControl : UserControl
         return panel;
     }
 
-    private static ComboBox BuildClassSelector()
+    private static ComboBox BuildClassSelector(AdventureDefinition adventure)
     {
         var classes = new ComboBox
         {
@@ -368,8 +377,8 @@ internal sealed class AdventureLibraryHubControl : UserControl
             BorderBrush = AdventureUi.Ink("#65755D"),
             BorderThickness = new Thickness(1),
         };
-        ComboBoxItem? rogue = null;
-        foreach (AdventureClassDefinition definition in AdventureCharacterCatalog.All)
+        ComboBoxItem? preferred = null;
+        foreach (AdventureClassDefinition definition in AdventureCharacterCatalog.AllFor(adventure))
         {
             var item = new ComboBoxItem
             {
@@ -381,9 +390,11 @@ internal sealed class AdventureLibraryHubControl : UserControl
                 Foreground = AdventureUi.Ink("#EEE2CF"),
             };
             classes.Items.Add(item);
-            if (definition.Id == "rogue") rogue = item;
+            if (definition.Id == "rogue") preferred = item;
         }
-        classes.SelectedItem = rogue ?? classes.Items[0];
+        if (classes.Items.Count == 0)
+            throw new InvalidOperationException($"Adventure '{adventure.Id}' does not expose any playable character archetypes.");
+        classes.SelectedItem = preferred ?? classes.Items[0];
         return classes;
     }
 
@@ -441,7 +452,7 @@ internal sealed class AdventureLibraryHubControl : UserControl
 
     private void RestartRun(AdventureDefinition adventure, AdventureRunState previous)
     {
-        AdventureCharacterState character = AdventureCharacterCatalog.Create(previous.Character.ClassId, previous.Character.Name);
+        AdventureCharacterState character = AdventureCharacterCatalog.Create(adventure, previous.Character.ClassId, previous.Character.Name);
         StartFreshRun(adventure, character);
     }
 
