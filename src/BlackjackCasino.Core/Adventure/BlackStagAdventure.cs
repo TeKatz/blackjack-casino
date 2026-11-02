@@ -6,8 +6,8 @@ internal static class BlackStagAdventure
     {
         static AdventureEffect Fx(AdventureEffectKind kind, string key = "", int value = 0, bool flag = true) => new(kind, key, value, flag);
         static AdventureCondition Req(AdventureConditionKind kind, string key = "", int value = 0, bool expected = true, AdventureAbility? ability = null) => new(kind, key, value, expected, ability);
-        static AdventureCheckDefinition Roll(string id, AdventureAbility ability, int dc, string? skill, string success, string failure, string? critSuccess = null, string? critFailure = null, AdventureRollMode mode = AdventureRollMode.Normal) =>
-            new(id, ability, dc, skill, RollMode: mode, SuccessSceneId: success, FailureSceneId: failure, CriticalSuccessSceneId: critSuccess, CriticalFailureSceneId: critFailure);
+        static AdventureCheckDefinition Roll(string id, AdventureAbility ability, int dc, string? skill, string success, string? failure = null, string? critSuccess = null, string? critFailure = null, AdventureRollMode mode = AdventureRollMode.Normal) =>
+            new(id, ability, dc, skill, RollMode: mode, SuccessSceneId: success, FailureSceneId: failure ?? success, CriticalSuccessSceneId: critSuccess, CriticalFailureSceneId: critFailure);
         static AdventureChoiceDefinition Choice(string id, string text, string? next = null, IReadOnlyList<AdventureCondition>? requires = null, AdventureCheckDefinition? check = null, IReadOnlyList<AdventureEffect>? effects = null, IReadOnlyList<AdventureEffect>? success = null, IReadOnlyList<AdventureEffect>? failure = null) =>
             new(id, text, next, requires, check, effects, success, failure);
         static AdventureSceneDefinition Scene(string id, string title, string body, string act, string location, IReadOnlyList<AdventureChoiceDefinition>? choices = null, string? speaker = null, IReadOnlyList<AdventureEffect>? enter = null) =>
@@ -214,7 +214,7 @@ internal static class BlackStagAdventure
                 "act-ii", "Saint Orra's Chapel",
                 [
                     Choice("chapel-grave", "Examine the grave that faces the forest.", check: Roll("grave-investigation", AdventureAbility.Intelligence, 12, "investigation", "chapel-crypt", "chapel-altar")),
-                    Choice("chapel-rite", "Study the old funerary symbols before entering.", requires: [Req(AdventureConditionKind.SkillMinimum, "religion", 2)], "chapel-rubbing", effects: [Fx(AdventureEffectKind.ChangeNpcRelation, "isi", 1)]),
+                    Choice("chapel-rite", "Study the old funerary symbols before entering.", "chapel-rubbing", requires: [Req(AdventureConditionKind.SkillMinimum, "religion", 2)], effects: [Fx(AdventureEffectKind.ChangeNpcRelation, "isi", 1)]),
                     Choice("chapel-magic", "Follow the magical residue in the stonework.", requires: [Req(AdventureConditionKind.SkillMinimum, "arcana", 2)], check: Roll("chapel-arcana", AdventureAbility.Intelligence, 13, "arcana", "chapel-rubbing", "chapel-altar")),
                 ]),
 
@@ -490,9 +490,7 @@ internal static class BlackStagAdventure
             Scene("archive-captured", "Chains Under the Palace",
                 "The aqueduct exit is watched. You wake with your wrists bound beneath an archive stairwell. Isi is somewhere beyond the door, arguing with a guard in a language you do not recognize.",
                 "act-v", "East Archive Cells",
-                [
-                    Choice("escape-bindings", "Work your hands free before the guard returns.", check: Roll("restraint-escape", AdventureAbility.Dexterity, 14, "sleight-of-hand", "archive-entry", "archive-entry"), effects: [Fx(AdventureEffectKind.ApplyCondition, "restrained", 2)], success: [Fx(AdventureEffectKind.RemoveCondition, "restrained")]),
-                ]),
+                [Choice("escape-bindings", "Work your hands free before the guard returns.", check: Roll("restraint-escape", AdventureAbility.Dexterity, 14, "sleight-of-hand", "archive-entry", "archive-entry"), effects: [Fx(AdventureEffectKind.ApplyCondition, "restrained", 2)], success: [Fx(AdventureEffectKind.RemoveCondition, "restrained")])]),
 
             Scene("archive-entry", "The East Archive",
                 "Rows of shelves vanish into darkness beneath the palace. Every shelf is a weapon disguised as paperwork: births, debts, pardons, deaths. Isi points to a locked iron door marked with the same office crest as your copied seal.",
@@ -506,9 +504,7 @@ internal static class BlackStagAdventure
             Scene("archive-fight", "Steel Between Shelves",
                 "The record keeper shouts before the lock gives. Guards flood the aisle. The fight is too close for clean movement; shelves topple, papers ignite and someone drives you to the floor.",
                 "act-v", "East Archive",
-                [
-                    Choice("fight-up", "Drive the nearest guard back and regain your feet.", check: Roll("archive-combat", AdventureAbility.Strength, 14, "athletics", "archive-vault", "archive-vault"), effects: [Fx(AdventureEffectKind.ApplyCondition, "prone", 1)], success: [Fx(AdventureEffectKind.RemoveCondition, "prone")], failure: [Fx(AdventureEffectKind.ChangeHitPoints, value: -3)]),
-                ]),
+                [Choice("fight-up", "Drive the nearest guard back and regain your feet.", check: Roll("archive-combat", AdventureAbility.Strength, 14, "athletics", "archive-vault", "archive-vault"), effects: [Fx(AdventureEffectKind.ApplyCondition, "prone", 1)], success: [Fx(AdventureEffectKind.RemoveCondition, "prone")], failure: [Fx(AdventureEffectKind.ChangeHitPoints, value: -3)])]),
 
             Scene("archive-vault", "The Ledger Beneath the Crown",
                 "The hidden ledger is exactly where Cael said it would be. It records not only disappearances, but the people who paid for them. Judges. Officers. Merchants. Chancellor Orven. And beneath several older entries, a symbol drawn in ink instead of stamped: the intact stag, both antlers whole.",
@@ -554,19 +550,14 @@ internal static class BlackStagAdventure
 
             Ending("ending-crown-exposed", "Ending — The Crown Exposed",
                 "Copies of the verified ledger reach temples, guilds and foreign courts before sunrise. The Crown calls them forgeries until three judges flee the city in the same hour. The Black Stag becomes a symbol again, but not one anyone fully controls. Isi returns to Grayfen carrying names that are finally allowed to belong to the living.", "crown-exposed", 420),
-
             Ending("ending-stag", "Ending — The Black Stag Survives",
                 "You destroy every planted name and preserve the routes that hid real witnesses. The network loses its council, its refuge and most of its certainty, but not its purpose. Months later, a letter arrives with no seal. Inside is a single line in Isi's hand: STILL CARRYING THEM.", "black-stag", 380),
-
             Ending("ending-missing-return", "Ending — The Missing Return",
                 "You do not give the city a scandal. You give families doors opening at midnight, old names returned, new names protected and people thought dead walking home. It is slower than justice and less satisfying than revenge. Isi calls it the first honest thing anyone has done with the ledger.", "missing-return", 450),
-
             Ending("ending-ashes", "Ending — Ashes of the Crown",
                 "The two ledgers burn together. By morning, neither the Crown nor the Black Stag can prove who belonged to whom. Some monsters escape judgment. Some innocent people escape a purge. History will call it cowardice, mercy or sabotage depending on who gets to write first.", "ashes-of-the-crown", 330),
-
             Ending("ending-quiet-lie", "Ending — The Quiet Lie",
                 "You hide the true ledger where neither faction can reach it and allow the public record to stand. The disappearances remain rumors. The network fractures. The Crown survives. You keep the names because somebody must — and discover that carrying a secret can resemble serving it.", "quiet-lie", 300),
-
             Ending("ending-watchful", "Ending — The Watchful Hand",
                 "You accept Orven's key, but not his certainty. From inside the archive you begin changing small things: a warrant delayed, a child erased from a hunter's list, a corrupt official's sealed file copied twice. Whether you joined the machine or infected it will depend on what you become next.", "watchful-hand", 400),
         };
