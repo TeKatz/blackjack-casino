@@ -50,6 +50,7 @@ public static class AdventureEncounterCatalog
 {
     private static readonly IReadOnlyList<AdventureEncounterDefinition> Encounters =
     [
+        // Temporary encounter-framework test tale.
         new(
             Id: "ashen-stranger-blackjack",
             AdventureId: "strangers-wager",
@@ -76,6 +77,34 @@ public static class AdventureEncounterCatalog
             LossChoiceId: "dice-encounter-loss",
             DrawChoiceId: "dice-encounter-draw",
             FiveOfAKind: new AdventureFiveOfAKindEncounterRules()),
+
+        // The Drowned Bell — the same framework now serves real campaign content.
+        new(
+            Id: "greyhaven-varro-blackjack",
+            AdventureId: "drowned-bell",
+            SceneId: "varro-blackjack",
+            Type: AdventureEncounterType.Blackjack,
+            Title: "One Hand for the Route",
+            OpponentName: "Captain Varro",
+            Intro: "Mara deals beneath a low whale-oil lamp while Varro keeps one hand beside the folded route chart. One hand decides whether the Lower Choir map changes owners.",
+            Stakes: "Win: Lower Choir chart · Lose: Varro keeps the route · Push: play again or walk",
+            WinChoiceId: "varro-game-win",
+            LossChoiceId: "varro-game-loss",
+            DrawChoiceId: "varro-game-draw",
+            Blackjack: new AdventureBlackjackEncounterRules()),
+        new(
+            Id: "greyhaven-bram-five-kind",
+            AdventureId: "drowned-bell",
+            SceneId: "bram-dice",
+            Type: AdventureEncounterType.FiveOfAKind,
+            Title: "Five Bones",
+            OpponentName: "Bram Kestrel",
+            Intro: "Five old bone dice strike the black felt. Bram gives you three throws and the freedom to keep whatever the sea seems willing to leave in your hand.",
+            Stakes: "Win: Tomas's oilskin map · one turn each · up to 3 rolls",
+            WinChoiceId: "bram-game-win",
+            LossChoiceId: "bram-game-loss",
+            DrawChoiceId: "bram-game-draw",
+            FiveOfAKind: new AdventureFiveOfAKindEncounterRules(AdventureFiveOfAKindOpponentStyle.Collector)),
     ];
 
     public static IReadOnlyList<AdventureEncounterDefinition> All => Encounters;
