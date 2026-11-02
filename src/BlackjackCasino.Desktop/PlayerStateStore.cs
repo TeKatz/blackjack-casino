@@ -7,17 +7,29 @@ namespace BlackjackCasino.Desktop;
 internal static class PlayerStateStore
 {
     private const decimal DefaultBankroll = 1_000m;
+    private static readonly TimeSpan RoutineSaveDelay = TimeSpan.FromMilliseconds(350);
 
     private static readonly string DirectoryPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "BlackjackCasino");
 
     private static readonly string StatePath = Path.Combine(DirectoryPath, "player-state.json");
-
     private static readonly JsonSerializerOptions JsonOptions = CreateJsonOptions();
+    private static readonly object FileWriteGate = new();
+    private static readonly DebouncedPersistenceWriter RoutineWriter = new(
+        RoutineSaveDelay,
+        payload => WriteSerializedAtomically(payload, DirectoryPath));
 
     public static AppPreferences Load(string? directory = null)
     {
+        // Preserve read-after-save semantics for the normal store even though routine writes are
+        // now debounced. Custom directories are used by transactional/test paths and are not
+        // serviced by the routine writer.
+        if (directory is null)
+        {
+            FlushPending();
+        }
+
         string path = directory is null ? StatePath : Path.Combine(directory, "player-state.json");
         try
         {
@@ -42,10 +54,11 @@ internal static class PlayerStateStore
 
         try
         {
-            // Routine UI persistence does not need an fsync on every click. The temp-file +
-            // atomic replace still prevents partially written JSON, while avoiding a physical
-            // disk barrier on the WPF dispatcher. Financial transactions use SaveOrThrow below.
-            WriteAtomically(state, DirectoryPath, durable: false);
+            // Serialize the snapshot on the caller thread so mutable nested preference state is
+            // observed consistently. Only the latest payload in a short burst reaches disk, and
+            // the actual file I/O runs on the timer thread instead of the WPF dispatcher.
+            string payload = JsonSerializer.Serialize(Sanitize(state), JsonOptions);
+            RoutineWriter.Schedule(payload);
         }
         catch
         {
@@ -56,26 +69,54 @@ internal static class PlayerStateStore
     // Cash dividends and their consumed reserve must survive as a single durable snapshot.
     internal static void SaveOrThrow(AppPreferences state, string? directory = null)
     {
-        directory ??= DirectoryPath;
+        ArgumentNullException.ThrowIfNull(state);
+
+        if (directory is null)
+        {
+            // An older deferred routine save must never land after a newer durable transaction.
+            FlushPending();
+            directory = DirectoryPath;
+        }
+
         WriteAtomically(state, directory, durable: true);
+    }
+
+    internal static void FlushPending()
+    {
+        RoutineWriter.Flush();
     }
 
     private static void WriteAtomically(AppPreferences state, string directory, bool durable)
     {
-        Directory.CreateDirectory(directory);
-        string path = Path.Combine(directory, "player-state.json");
-        string temporary = path + ".tmp";
-        using (var file = new FileStream(temporary, FileMode.Create, FileAccess.Write, FileShare.None))
+        lock (FileWriteGate)
         {
-            JsonSerializer.Serialize(file, Sanitize(state), JsonOptions);
-            if (durable)
+            Directory.CreateDirectory(directory);
+            string path = Path.Combine(directory, "player-state.json");
+            string temporary = path + ".tmp";
+            using (var file = new FileStream(temporary, FileMode.Create, FileAccess.Write, FileShare.None))
             {
-                // SaveOrThrow is used for transactional money/progression boundaries where the
-                // caller only commits the in-memory state after durable persistence succeeds.
-                file.Flush(flushToDisk: true);
+                JsonSerializer.Serialize(file, Sanitize(state), JsonOptions);
+                if (durable)
+                {
+                    // SaveOrThrow is used for transactional money/progression boundaries where the
+                    // caller only commits the in-memory state after durable persistence succeeds.
+                    file.Flush(flushToDisk: true);
+                }
             }
+            File.Move(temporary, path, overwrite: true);
         }
-        File.Move(temporary, path, overwrite: true);
+    }
+
+    private static void WriteSerializedAtomically(string payload, string directory)
+    {
+        lock (FileWriteGate)
+        {
+            Directory.CreateDirectory(directory);
+            string path = Path.Combine(directory, "player-state.json");
+            string temporary = path + ".tmp";
+            File.WriteAllText(temporary, payload);
+            File.Move(temporary, path, overwrite: true);
+        }
     }
 
     public static decimal LoadBankroll() => Load().Bankroll;
