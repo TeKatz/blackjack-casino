@@ -44,7 +44,16 @@ public sealed record AdventureEncounterDefinition(
     string LossChoiceId,
     string DrawChoiceId,
     AdventureBlackjackEncounterRules? Blackjack = null,
-    AdventureFiveOfAKindEncounterRules? FiveOfAKind = null);
+    AdventureFiveOfAKindEncounterRules? FiveOfAKind = null)
+{
+    public string ChoiceIdFor(AdventureEncounterOutcome outcome) => outcome switch
+    {
+        AdventureEncounterOutcome.Win => WinChoiceId,
+        AdventureEncounterOutcome.Loss => LossChoiceId,
+        AdventureEncounterOutcome.Draw => DrawChoiceId,
+        _ => throw new ArgumentOutOfRangeException(nameof(outcome), outcome, null),
+    };
+}
 
 public static class AdventureEncounterCatalog
 {
