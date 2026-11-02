@@ -1,5 +1,7 @@
 using BlackjackCasino.Core;
 using BlackjackCasino.Core.Adventure;
+using BlackjackCasino.Core.Collections;
+using BlackjackCasino.Desktop;
 
 namespace BlackjackCasino.Tests;
 
@@ -127,6 +129,61 @@ public sealed class AdventureProgressionTests
         Assert.True(result.Success);
         Assert.Contains("adventure-drowned-bell-silent", profile.ClaimedChallengeIds);
         Assert.True(profile.Coins >= result.CoinsEarned);
+    }
+
+    [Fact]
+    public void AdventureChallengeClaimSurvivesProfileSanitizationAndCannotPayTwice()
+    {
+        var profile = new PlayerProfileState();
+        var service = new ProgressionService(profile);
+        AdventureRunState state = CompletedRun(AdventureCatalog.DrownedBell, "silent-bell", "warrior");
+        _ = AdventureProgressionService.RecordCompletion(profile, AdventureCatalog.DrownedBell, state);
+
+        ChallengeClaimResult first = service.ClaimChallenge("adventure-drowned-bell-silent");
+        Assert.True(first.Success);
+        CollectionRarity packRarity = ProgressionService.ChallengePack(first.Challenge!);
+        long coinsAfterFirstClaim = profile.Coins;
+        int packsAfterFirstClaim = profile.Collection.Packs.GetValueOrDefault(packRarity);
+
+        PlayerProfileStore.SanitizeProfile(profile);
+        Assert.Contains("adventure-drowned-bell-silent", profile.ClaimedChallengeIds);
+
+        var reloadedService = new ProgressionService(profile);
+        ChallengeClaimResult second = reloadedService.ClaimChallenge("adventure-drowned-bell-silent");
+
+        Assert.False(second.Success);
+        Assert.Equal("Challenge reward already claimed.", second.Message);
+        Assert.Equal(coinsAfterFirstClaim, profile.Coins);
+        Assert.Equal(packsAfterFirstClaim, profile.Collection.Packs.GetValueOrDefault(packRarity));
+    }
+
+    [Fact]
+    public void AdventureClaimAllReceiptsSurviveProfileSanitization()
+    {
+        var profile = new PlayerProfileState();
+        var service = new ProgressionService(profile);
+        AdventureRunState state = CompletedRun(AdventureCatalog.DrownedBell, "debt-paid", "rogue");
+        state.Statistics.BlackjackWins = 1;
+        state.Statistics.FiveOfAKindWins = 1;
+        _ = AdventureProgressionService.RecordCompletion(profile, AdventureCatalog.DrownedBell, state);
+
+        ChallengeClaimAllResult first = service.ClaimAllChallenges();
+        Assert.True(first.Success);
+        Assert.Contains(first.Challenges, challenge => challenge.Id == "adventure-first-tale");
+        Assert.Contains(first.Challenges, challenge => challenge.Id == "adventure-against-house");
+        Assert.Contains(first.Challenges, challenge => challenge.Id == "adventure-loaded-dice");
+        long coinsAfterFirstClaim = profile.Coins;
+        Dictionary<CollectionRarity, int> packsAfterFirstClaim = profile.Collection.Packs.ToDictionary(pair => pair.Key, pair => pair.Value);
+
+        PlayerProfileStore.SanitizeProfile(profile);
+        Assert.All(first.Challenges, challenge => Assert.Contains(challenge.Id, profile.ClaimedChallengeIds));
+
+        var reloadedService = new ProgressionService(profile);
+        ChallengeClaimAllResult second = reloadedService.ClaimAllChallenges();
+
+        Assert.False(second.Success);
+        Assert.Equal(coinsAfterFirstClaim, profile.Coins);
+        Assert.Equal(packsAfterFirstClaim.OrderBy(pair => pair.Key), profile.Collection.Packs.OrderBy(pair => pair.Key));
     }
 
     private static AdventureRunState CompletedRun(AdventureDefinition definition, string endingId, string classId)
