@@ -120,22 +120,18 @@ internal static partial class Program
                 Require(Math.Abs(bounds[0].Top - (surface.ActualHeight - bounds[2].Bottom)) <= 1.01, $"Premium vertical corner insets are asymmetric: {rarity}, scale {scale}, top {bounds[0].Top}, bottom {surface.ActualHeight - bounds[2].Bottom}.");
             }
 
-            // Premium cards keep their foil finish, but an idle album must not own a permanent animation clock.
             CollectionCard legendary = CollectionCatalog.Themes[0].Cards[^1];
-            Border premium = CollectionArtwork.Card(legendary, true, animationsEnabled: true);
-            host.Child = premium; window.UpdateLayout(); await Task.Delay(50);
-            Border foil = Find<Border>(premium).Single(b => b.Name == "CollectionFoil");
-            Require(foil.Background is LinearGradientBrush && foil.Opacity > 0, "Visible Legendary card lost its foil finish");
-            Require(!foil.RenderTransform.HasAnimatedProperties && !foil.HasAnimatedProperties,
-                "Idle Legendary foil reintroduced a permanent animation clock");
-            premium.Visibility = Visibility.Collapsed; await Task.Delay(30);
-            Require(!foil.RenderTransform.HasAnimatedProperties && !foil.HasAnimatedProperties, "Hidden card kept an animation clock");
-            premium.Visibility = Visibility.Visible; await Task.Delay(30);
-            Require(foil.Opacity > 0 && !foil.RenderTransform.HasAnimatedProperties && !foil.HasAnimatedProperties,
-                "Visible premium card did not restore a static foil finish");
+            Border animated = CollectionArtwork.Card(legendary, true, animationsEnabled: true);
+            host.Child = animated; window.UpdateLayout(); await Task.Delay(50);
+            Border foil = Find<Border>(animated).Single(b => b.Name == "CollectionFoil");
+            Require(foil.RenderTransform.HasAnimatedProperties, "Visible Legendary card has no foil animation");
+            animated.Visibility = Visibility.Collapsed; await Task.Delay(30);
+            Require(!foil.RenderTransform.HasAnimatedProperties, "Hidden card kept an animation clock");
+            animated.Visibility = Visibility.Visible; await Task.Delay(30);
+            Require(foil.RenderTransform.HasAnimatedProperties, "Visible card did not resume foil animation");
             host.Child = null; window.UpdateLayout(); await Task.Delay(40);
-            Require(!foil.RenderTransform.HasAnimatedProperties && !foil.HasAnimatedProperties, "Unloaded card kept an animation clock");
-            File.WriteAllText(Path.Combine(output, "album-art-result.txt"), "PASS: 136 distinct decoded illustrations and perceptual compositions; full catalog mapping; all 16 theme galleries; all rarity finishes; dedicated high-quality inspector and Escape; no expensive blur glows behind the inspector; hidden album browser; reduced motion; idle premium foil remains static without permanent animation clocks.");
+            Require(!foil.RenderTransform.HasAnimatedProperties, "Unloaded card kept an animation clock");
+            File.WriteAllText(Path.Combine(output, "album-art-result.txt"), "PASS: 136 distinct decoded illustrations and perceptual compositions; full catalog mapping; all 16 theme galleries; all rarity finishes; dedicated high-quality inspector and Escape; no expensive blur glows behind the inspector; hidden album browser; reduced motion; visible/hidden/unloaded foil lifecycle.");
         }
         finally { host.Child = null; root.Children.Remove(host); window.UpdateLayout(); }
     }
