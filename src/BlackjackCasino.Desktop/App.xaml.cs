@@ -72,6 +72,9 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        // MainWindow performs one final SavePreferences call while closing. Routine saves are
+        // deliberately debounced now, so force that last payload to disk before process exit.
+        PlayerStateStore.FlushPending();
         CasinoAudio.Shutdown();
         base.OnExit(e);
     }
