@@ -13,19 +13,53 @@ public sealed partial class EmpireService
     public IReadOnlyList<EmpireSynergyStatus> Synergies => EmpireSynergyCatalog.All.Select(def => SynergyFor(Estate, def)).ToArray();
     public decimal ConstructionDiscount(string roomId) => ConstructionDiscountFor(Estate, roomId);
 
-    private static int ReputationFor(EmpirePropertyState estate) => (int)Math.Min(int.MaxValue,
-        estate.Levels.Values.Count(level => level > 0) * 100L + estate.Levels.Values.Sum(level => level / 10) * 30L
-        + estate.Projects.Count * 250L + estate.Prestige * 750L
-        + Math.Min(100, estate.EventsCompleted) * 10L + Math.Min(100, estate.ContractsCompleted) * 10L
-        + EmpireSynergyCatalog.All.Sum(def => SynergyTier(estate, def).Tier) * 150L);
+    private static int ReputationFor(EmpirePropertyState estate)
+    {
+        long openRooms = 0;
+        long milestones = 0;
+        foreach (int level in estate.Levels.Values)
+        {
+            if (level > 0) openRooms++;
+            milestones += level / 10;
+        }
 
-    private bool RequirementsMet(EmpirePropertyState estate, EmpireRequirement requirement) => estate.Prestige >= requirement.Prestige
-        && ReputationFor(estate) >= requirement.Reputation
-        && estate.Levels.Values.Sum() >= requirement.TotalLevels
-        && (requirement.ProjectId is null || estate.Projects.Contains(requirement.ProjectId))
-        && (requirement.RoomTags == EmpireTag.None || EmpireCatalog.Departments
-            .Where(room => room.Floor <= requirement.MaximumFloor && (room.Tags & requirement.RoomTags) != 0)
-            .All(room => estate.Levels.GetValueOrDefault(room.Id) >= requirement.MinimumRoomLevel));
+        long synergyTiers = 0;
+        foreach (EmpireSynergyDefinition definition in EmpireSynergyCatalog.All)
+            synergyTiers += SynergyTier(estate, definition).Tier;
+
+        return (int)Math.Min(int.MaxValue,
+            openRooms * 100L + milestones * 30L + estate.Projects.Count * 250L + estate.Prestige * 750L
+            + Math.Min(100, estate.EventsCompleted) * 10L + Math.Min(100, estate.ContractsCompleted) * 10L
+            + synergyTiers * 150L);
+    }
+
+    private bool RequirementsMet(EmpirePropertyState estate, EmpireRequirement requirement)
+    {
+        if (estate.Prestige < requirement.Prestige || ReputationFor(estate) < requirement.Reputation)
+            return false;
+
+        if (requirement.TotalLevels > 0)
+        {
+            int totalLevels = 0;
+            foreach (int level in estate.Levels.Values) totalLevels += level;
+            if (totalLevels < requirement.TotalLevels) return false;
+        }
+
+        if (requirement.ProjectId is not null && !estate.Projects.Contains(requirement.ProjectId))
+            return false;
+
+        if (requirement.RoomTags != EmpireTag.None)
+        {
+            foreach (EmpireDepartment room in EmpireCatalog.Departments)
+            {
+                if (room.Floor > requirement.MaximumFloor || (room.Tags & requirement.RoomTags) == 0) continue;
+                if (estate.Levels.GetValueOrDefault(room.Id) < requirement.MinimumRoomLevel) return false;
+            }
+        }
+
+        return true;
+    }
+
     public bool Meets(EmpireRequirement requirement) => RequirementsMet(Estate, requirement);
     public bool CanResearch(string id) => EmpireResearchCatalog.Find(id) is { } node && Started
         && ResearchRank(id) < node.MaxRank && LegacyPointsAvailable >= node.CostPerRank
@@ -47,12 +81,25 @@ public sealed partial class EmpireService
         Put(ActivePropertyId, Estate with { Credits = Credits - project.Cost, Projects = new(Estate.Projects, StringComparer.Ordinal) { id } });
         return new(true, $"{project.Name} completed permanently for {ActiveProperty.Name}.");
     }
+
     private static (int Tier, int Minimum) SynergyTier(EmpirePropertyState estate, EmpireSynergyDefinition definition)
     {
-        EmpireDepartment[] members = EmpireCatalog.Departments.Where(room => room.Floor <= definition.MaximumFloor && (room.Tags & definition.Members) != 0).ToArray();
-        int minimum = members.Length == 0 ? 0 : members.Min(room => estate.Levels.GetValueOrDefault(room.Id));
-        return (definition.Levels.Count(level => minimum >= level), minimum);
+        int minimum = int.MaxValue;
+        bool found = false;
+        foreach (EmpireDepartment room in EmpireCatalog.Departments)
+        {
+            if (room.Floor > definition.MaximumFloor || (room.Tags & definition.Members) == 0) continue;
+            found = true;
+            minimum = Math.Min(minimum, estate.Levels.GetValueOrDefault(room.Id));
+        }
+        if (!found) return (0, 0);
+
+        int tier = 0;
+        foreach (int level in definition.Levels)
+            if (minimum >= level) tier++;
+        return (tier, minimum);
     }
+
     private EmpireSynergyStatus SynergyFor(EmpirePropertyState estate, EmpireSynergyDefinition definition)
     {
         var (tier, minimum) = SynergyTier(estate, definition);
@@ -83,13 +130,27 @@ public sealed partial class EmpireService
         if ((room.Tags & (EmpireTag.Hospitality | EmpireTag.Entertainment)) != 0) strategy += ResearchRank("hospitality") * .08m;
         if ((room.Tags & (EmpireTag.VIP | EmpireTag.HighLimit)) != 0) strategy += ResearchRank("high-roller") * .05m * (level / 50);
         strategy += ResearchRank("compound") * .08m * Math.Min(3, level / 50);
-        if (room.Tags.HasFlag(EmpireTag.Gaming) && EmpireCatalog.Departments.Any(other => other.Tags.HasFlag(EmpireTag.Entertainment) && estate.Levels.GetValueOrDefault(other.Id) >= 50))
-            strategy += ResearchRank("destination") * .05m;
+        if (room.Tags.HasFlag(EmpireTag.Gaming))
+        {
+            foreach (EmpireDepartment other in EmpireCatalog.Departments)
+            {
+                if (!other.Tags.HasFlag(EmpireTag.Entertainment) || estate.Levels.GetValueOrDefault(other.Id) < 50) continue;
+                strategy += ResearchRank("destination") * .05m;
+                break;
+            }
+        }
         EmpirePropertyDefinition property = EmpirePropertyCatalog.Find(propertyId)!;
         if ((room.Tags & property.Specialty) != 0) strategy += property.ProductionBonus;
-        decimal synergies = EmpireSynergyCatalog.All.Where(def => (def.Beneficiaries & room.Tags) != 0).Sum(def => SynergyFor(estate, def).Bonus);
-        decimal projects = EmpireProjectCatalog.All.Where(project => estate.Projects.Contains(project.Id)
-            && (project.TargetTags == EmpireTag.None || (project.TargetTags & room.Tags) != 0)).Sum(project => project.ProductionBonus);
+
+        decimal synergies = 0;
+        foreach (EmpireSynergyDefinition definition in EmpireSynergyCatalog.All)
+            if ((definition.Beneficiaries & room.Tags) != 0) synergies += SynergyFor(estate, definition).Bonus;
+
+        decimal projects = 0;
+        foreach (EmpireProjectDefinition project in EmpireProjectCatalog.All)
+            if (estate.Projects.Contains(project.Id) && (project.TargetTags == EmpireTag.None || (project.TargetTags & room.Tags) != 0))
+                projects += project.ProductionBonus;
+
         decimal managers = 0;
         foreach (var (id, assignment) in estate.Managers)
         {
@@ -97,11 +158,15 @@ public sealed partial class EmpireService
             if (manager.Effect == EmpireManagerEffect.AssignedProduction && assignment == room.Id
                 || manager.Effect == EmpireManagerEffect.TagProduction && (room.Tags & manager.Tags) != 0) managers += manager.Bonus;
         }
+
         decimal eventBonus = 0;
         if (estate.Event is { } active && at >= active.StartedAt && at < active.EndsAt && EmpireEventCatalog.Find(active.Id) is { } ev)
         {
-            eventBonus = ev.Boosts.Where(boost => boost.RequireAll
-                ? room.Tags.HasFlag(boost.Tags) : (room.Tags & boost.Tags) != 0).Select(boost => boost.Bonus).DefaultIfEmpty().Max();
+            foreach (EmpireEventBoost boost in ev.Boosts)
+            {
+                bool applies = boost.RequireAll ? room.Tags.HasFlag(boost.Tags) : (room.Tags & boost.Tags) != 0;
+                if (applies) eventBonus = Math.Max(eventBonus, boost.Bonus);
+            }
             if (estate.Projects.Contains("convention-center")) eventBonus *= 1.25m;
         }
         decimal contractBonus = estate.ContractBuff is { RemainingSeconds: > 0 } buff
