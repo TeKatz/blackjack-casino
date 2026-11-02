@@ -36,7 +36,7 @@ public sealed class EmpireBalanceCounter : TextBlock
         BeginAnimation(DisplayedAmountProperty, null);
         DisplayedAmount = (double)amount;
         if (animate && initialized && target != amount)
-            BeginAnimation(DisplayedAmountProperty, new DoubleAnimation(from, (double)amount, TimeSpan.FromMilliseconds(240))
+            BeginAnimation(DisplayedAmountProperty, new DoubleAnimation(from, (double)amount, TimeSpan.FromMilliseconds(700))
             {
                 EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut },
                 FillBehavior = FillBehavior.Stop,
