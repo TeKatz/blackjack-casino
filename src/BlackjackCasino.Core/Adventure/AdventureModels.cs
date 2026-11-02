@@ -32,6 +32,9 @@ public enum AdventureConditionKind
     AbilityMinimum,
     SkillMinimum,
     NpcRelationMinimum,
+    ActiveCondition,
+    CoinsMinimum,
+    CounterMinimum,
 }
 
 public enum AdventureEffectKind
@@ -42,6 +45,36 @@ public enum AdventureEffectKind
     ChangeNpcRelation,
     ChangeHitPoints,
     GainCharacterExperience,
+    ChangeCoins,
+    ChangeCounter,
+    ApplyCondition,
+    RemoveCondition,
+}
+
+public enum AdventureItemKind
+{
+    Quest,
+    Consumable,
+    Utility,
+    Relic,
+}
+
+public enum AdventureDurationUnit
+{
+    Scene,
+    Turn,
+    Permanent,
+}
+
+public enum AdventureFeedbackKind
+{
+    ItemAcquired,
+    ItemRemoved,
+    ConditionApplied,
+    ConditionRemoved,
+    CoinsChanged,
+    HitPointsChanged,
+    Information,
 }
 
 public sealed record AdventureCondition(
@@ -90,7 +123,28 @@ public sealed record AdventureSceneDefinition(
     bool IsEnding = false,
     string? EndingId = null,
     string? TitleLocalizationKey = null,
-    string? BodyLocalizationKey = null);
+    string? BodyLocalizationKey = null,
+    string? ActId = null,
+    string? Location = null);
+
+public sealed record AdventureItemDefinition(
+    string Id,
+    string Name,
+    string Description,
+    string IconKey,
+    AdventureItemKind Kind,
+    int MaxStack = 1);
+
+public sealed record AdventureStatusDefinition(
+    string Id,
+    string Name,
+    string Description,
+    string IconKey,
+    AdventureDurationUnit DurationUnit = AdventureDurationUnit.Scene,
+    bool Beneficial = false,
+    bool Stackable = false,
+    bool DisadvantageOnAbilityChecks = false,
+    int PeriodicHitPointDelta = 0);
 
 public sealed record AdventureDefinition(
     string Id,
@@ -98,7 +152,10 @@ public sealed record AdventureDefinition(
     string Title,
     string Subtitle,
     string StartSceneId,
-    IReadOnlyList<AdventureSceneDefinition> Scenes);
+    IReadOnlyList<AdventureSceneDefinition> Scenes,
+    IReadOnlyList<AdventureItemDefinition>? Items = null,
+    IReadOnlyList<AdventureStatusDefinition>? Conditions = null,
+    IReadOnlyDictionary<string, string>? Acts = null);
 
 public sealed class AdventureSkillState
 {
@@ -144,15 +201,45 @@ public sealed class AdventureNpcState
     public HashSet<string> KnownFacts { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }
 
+public sealed class AdventureItemState
+{
+    public string ItemId { get; set; } = "";
+    public int Quantity { get; set; } = 1;
+}
+
+public sealed class AdventureStatusState
+{
+    public string ConditionId { get; set; } = "";
+    public AdventureDurationUnit Unit { get; set; } = AdventureDurationUnit.Scene;
+    public int Remaining { get; set; } = 1;
+    public int Stacks { get; set; } = 1;
+    public string? Source { get; set; }
+}
+
+public sealed record AdventureFeedbackEvent(
+    AdventureFeedbackKind Kind,
+    string Key,
+    string Title,
+    string Detail,
+    int Delta = 0);
+
 public sealed class AdventureRunState
 {
-    public int SchemaVersion { get; set; } = 1;
+    public int SchemaVersion { get; set; } = 2;
     public string AdventureId { get; set; } = "";
     public int AdventureVersion { get; set; } = 1;
     public string CurrentSceneId { get; set; } = "";
     public AdventureCharacterState Character { get; set; } = new();
     public Dictionary<string, bool> Flags { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+    // Legacy inventory mirror retained so old adventure saves can migrate without data loss.
     public HashSet<string> Inventory { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, AdventureItemState> ItemStacks { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, AdventureStatusState> ActiveConditions { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, int> Counters { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    public List<AdventureFeedbackEvent> PendingFeedback { get; set; } = [];
+    public int Coins { get; set; } = 20;
+
     public Dictionary<string, AdventureNpcState> Npcs { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     public string? PendingChoiceId { get; set; }
     public bool Completed { get; set; }
@@ -164,6 +251,7 @@ public sealed class AdventureRunState
     public static AdventureRunState Normalize(AdventureRunState? value)
     {
         AdventureRunState state = value ?? new AdventureRunState();
+        state.SchemaVersion = Math.Max(2, state.SchemaVersion);
         state.AdventureId ??= "";
         state.CurrentSceneId ??= "";
         state.Character ??= new AdventureCharacterState();
@@ -174,7 +262,22 @@ public sealed class AdventureRunState
         state.Character.Skills ??= new Dictionary<string, AdventureSkillState>(StringComparer.OrdinalIgnoreCase);
         state.Flags ??= new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
         state.Inventory ??= new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        state.ItemStacks ??= new Dictionary<string, AdventureItemState>(StringComparer.OrdinalIgnoreCase);
+        state.ActiveConditions ??= new Dictionary<string, AdventureStatusState>(StringComparer.OrdinalIgnoreCase);
+        state.Counters ??= new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        state.PendingFeedback ??= [];
         state.Npcs ??= new Dictionary<string, AdventureNpcState>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (string legacyItem in state.Inventory)
+        {
+            if (!state.ItemStacks.ContainsKey(legacyItem))
+                state.ItemStacks[legacyItem] = new AdventureItemState { ItemId = legacyItem, Quantity = 1 };
+        }
+        state.Inventory = new HashSet<string>(
+            state.ItemStacks.Where(pair => pair.Value.Quantity > 0).Select(pair => pair.Key),
+            StringComparer.OrdinalIgnoreCase);
+
+        state.Coins = Math.Max(0, state.Coins);
         state.Character.CurrentHitPoints = Math.Clamp(state.Character.CurrentHitPoints, 0, Math.Max(1, state.Character.MaxHitPoints));
         return state;
     }
@@ -182,13 +285,14 @@ public sealed class AdventureRunState
 
 public sealed class AdventureProgressState
 {
-    public int SchemaVersion { get; set; } = 1;
+    public int SchemaVersion { get; set; } = 2;
     public string? LastAdventureId { get; set; }
     public Dictionary<string, AdventureRunState> Runs { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
     public static AdventureProgressState Normalize(AdventureProgressState? value)
     {
         AdventureProgressState state = value ?? new AdventureProgressState();
+        state.SchemaVersion = Math.Max(2, state.SchemaVersion);
         state.Runs ??= new Dictionary<string, AdventureRunState>(StringComparer.OrdinalIgnoreCase);
         foreach (string key in state.Runs.Keys.ToArray())
             state.Runs[key] = AdventureRunState.Normalize(state.Runs[key]);
