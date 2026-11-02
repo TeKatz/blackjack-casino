@@ -3,27 +3,22 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
-using WpfPath = System.Windows.Shapes.Path;
 using BlackjackCasino.Core.Adventure;
+using WpfPath = System.Windows.Shapes.Path;
 
 namespace BlackjackCasino.Desktop;
 
 internal static class AdventureInventoryUi
 {
-    internal static Border Build(
-        AdventureEngine engine,
-        IReadOnlyList<AdventureFeedbackEvent> feedback,
-        bool animationsEnabled)
+    internal static Border Build(AdventureEngine engine)
     {
         Border shell = AdventureUi.Panel("#101A17", "#08110F", "#385148", new Thickness(18, 14, 18, 14), radius: 15);
         shell.Margin = new Thickness(0, 16, 0, 0);
 
         var grid = new Grid();
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.55, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.7, GridUnitType.Star) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(18) });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.15, GridUnitType.Star) });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(18) });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(320) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
         grid.Children.Add(BuildInventory(engine));
 
@@ -31,12 +26,59 @@ internal static class AdventureInventoryUi
         Grid.SetColumn(conditions, 2);
         grid.Children.Add(conditions);
 
-        FrameworkElement eventPanel = BuildFeedback(feedback.LastOrDefault(), animationsEnabled);
-        Grid.SetColumn(eventPanel, 4);
-        grid.Children.Add(eventPanel);
-
         shell.Child = grid;
         return shell;
+    }
+
+    internal static Border BuildEventFeed(IReadOnlyList<AdventureFeedbackEvent> feedback, bool animationsEnabled)
+    {
+        Border panel = AdventureUi.Panel("#111C19", "#091310", "#30443D", new Thickness(10, 8, 10, 8), radius: 10, shadow: false);
+        panel.Width = 205;
+        panel.MinHeight = 62;
+        panel.HorizontalAlignment = HorizontalAlignment.Right;
+        panel.VerticalAlignment = VerticalAlignment.Center;
+
+        var layout = new Grid();
+        layout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        layout.Children.Add(new TextBlock
+        {
+            Text = "ADVENTURE EVENT",
+            Foreground = AdventureUi.Ink("#607A70"),
+            FontFamily = new FontFamily("Georgia"),
+            FontSize = 8.5,
+            FontWeight = FontWeights.SemiBold,
+        });
+
+        var host = new Border { Margin = new Thickness(0, 4, 0, 0), MinHeight = 36 };
+        Grid.SetRow(host, 1);
+        layout.Children.Add(host);
+        panel.Child = layout;
+
+        if (feedback.Count == 0)
+        {
+            host.Child = new TextBlock
+            {
+                Text = "No recent event",
+                Foreground = AdventureUi.Ink("#536A62"),
+                FontFamily = new FontFamily("Georgia"),
+                FontSize = 9.5,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            return panel;
+        }
+
+        if (!animationsEnabled)
+        {
+            AdventureFeedbackEvent latest = feedback[^1];
+            panel.BorderBrush = AdventureUi.Ink(AccentFor(latest.Kind));
+            host.Child = BuildFeedbackContent(latest);
+            return panel;
+        }
+
+        host.Opacity = 0;
+        panel.Loaded += async (_, _) => await PlayFeedbackQueueAsync(panel, host, feedback);
+        return panel;
     }
 
     private static FrameworkElement BuildInventory(AdventureEngine engine)
@@ -64,7 +106,7 @@ internal static class AdventureInventoryUi
             wrap.Children.Add(ItemChip(icon, name, quantity, description, accent));
         }
 
-        if (engine.State.ItemStacks.Count == 0)
+        if (engine.State.ItemStacks.Values.All(item => item.Quantity <= 0))
         {
             wrap.Children.Add(new TextBlock
             {
@@ -121,68 +163,88 @@ internal static class AdventureInventoryUi
         return stack;
     }
 
-    private static FrameworkElement BuildFeedback(AdventureFeedbackEvent? feedback, bool animationsEnabled)
+    private static async Task PlayFeedbackQueueAsync(Border panel, Border host, IReadOnlyList<AdventureFeedbackEvent> feedback)
     {
-        Border panel = AdventureUi.Panel("#17211C", "#0B1411", feedback is null ? "#303F39" : AccentFor(feedback.Kind), new Thickness(13), radius: 11, shadow: false);
-        panel.MinHeight = 72;
-        panel.VerticalAlignment = VerticalAlignment.Stretch;
-
-        if (feedback is null)
+        foreach (AdventureFeedbackEvent item in feedback)
         {
-            panel.Child = new TextBlock
-            {
-                Text = "Adventure events will appear here.",
-                Foreground = AdventureUi.Ink("#6F857D"),
-                FontFamily = new FontFamily("Georgia"),
-                FontSize = 10.5,
-                TextWrapping = TextWrapping.Wrap,
-                VerticalAlignment = VerticalAlignment.Center,
-            };
-            return panel;
+            if (!panel.IsLoaded) return;
+
+            panel.BorderBrush = AdventureUi.Ink(AccentFor(item.Kind));
+            host.Child = BuildFeedbackContent(item);
+            host.Opacity = 0;
+            var translate = new TranslateTransform(7, 0);
+            host.RenderTransform = translate;
+
+            host.BeginAnimation(UIElement.OpacityProperty,
+                new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(190))
+                {
+                    EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut },
+                });
+            translate.BeginAnimation(TranslateTransform.XProperty,
+                new DoubleAnimation(7, 0, TimeSpan.FromMilliseconds(220))
+                {
+                    EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut },
+                });
+
+            await Task.Delay(1850);
+            if (!panel.IsLoaded) return;
+
+            host.BeginAnimation(UIElement.OpacityProperty,
+                new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(320))
+                {
+                    EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseIn },
+                });
+            await Task.Delay(360);
         }
 
+        if (!panel.IsLoaded) return;
+        host.BeginAnimation(UIElement.OpacityProperty, null);
+        host.Opacity = 1;
+        host.RenderTransform = Transform.Identity;
+        host.Child = new TextBlock
+        {
+            Text = "No recent event",
+            Foreground = AdventureUi.Ink("#536A62"),
+            FontFamily = new FontFamily("Georgia"),
+            FontSize = 9.5,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        panel.BorderBrush = AdventureUi.Ink("#30443D");
+    }
+
+    private static FrameworkElement BuildFeedbackContent(AdventureFeedbackEvent feedback)
+    {
         var content = new Grid();
-        content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(36) });
+        content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(28) });
         content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        FrameworkElement icon = Icon(feedback.Key, AccentFor(feedback.Kind), 29);
+
+        FrameworkElement icon = Icon(feedback.Key, AccentFor(feedback.Kind), 23);
         icon.VerticalAlignment = VerticalAlignment.Center;
         content.Children.Add(icon);
-        var copy = new StackPanel { Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+
+        var copy = new StackPanel { Margin = new Thickness(6, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
         copy.Children.Add(new TextBlock
         {
             Text = feedback.Title.ToUpperInvariant(),
             Foreground = AdventureUi.Ink("#E8D4A6"),
             FontFamily = new FontFamily("Georgia"),
-            FontSize = 10,
+            FontSize = 8.7,
             FontWeight = FontWeights.Bold,
+            TextTrimming = TextTrimming.CharacterEllipsis,
         });
         copy.Children.Add(new TextBlock
         {
             Text = feedback.Detail,
             Foreground = AdventureUi.Ink("#AFBFB8"),
             FontFamily = new FontFamily("Georgia"),
-            FontSize = 11.5,
+            FontSize = 9.7,
             TextWrapping = TextWrapping.Wrap,
-            Margin = new Thickness(0, 3, 0, 0),
+            MaxHeight = 29,
+            Margin = new Thickness(0, 2, 0, 0),
         });
         Grid.SetColumn(copy, 1);
         content.Children.Add(copy);
-        panel.Child = content;
-
-        if (animationsEnabled)
-        {
-            panel.Opacity = 0;
-            var translate = new TranslateTransform(0, 8);
-            panel.RenderTransform = translate;
-            panel.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(240)));
-            translate.BeginAnimation(TranslateTransform.YProperty,
-                new DoubleAnimation(8, 0, TimeSpan.FromMilliseconds(260))
-                {
-                    EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut },
-                });
-        }
-
-        return panel;
+        return content;
     }
 
     private static Border ItemChip(string iconKey, string name, string suffix, string description, string accent)
