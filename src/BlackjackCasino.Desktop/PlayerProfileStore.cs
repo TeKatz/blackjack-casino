@@ -105,6 +105,27 @@ internal static class PlayerProfileStore
         }
     }
 
+    /// <summary>
+    /// Persists a transaction candidate that was created from an already-normalized live profile.
+    /// Unlike SaveProfileOrThrow this deliberately avoids a second full graph normalization pass,
+    /// which would both cost CPU and mutate any read-only subgraphs shared by a scoped snapshot.
+    /// </summary>
+    internal static void SaveNormalizedProfileOrThrow(PlayerProfileState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+
+        // The candidate is serialized while the controller still owns the profile transaction lock.
+        // Flush first so an older deferred routine save can never overwrite this committed snapshot.
+        FlushProfilePending();
+        lock (ProfileFileWriteGate)
+        {
+            Directory.CreateDirectory(DirectoryPath);
+            string temporary = ProfilePath + ".tmp";
+            File.WriteAllText(temporary, JsonSerializer.Serialize(state, JsonOptions));
+            File.Move(temporary, ProfilePath, overwrite: true);
+        }
+    }
+
     public static void SaveHistory(IEnumerable<RoundHistoryEntry> history)
     {
         ArgumentNullException.ThrowIfNull(history);
