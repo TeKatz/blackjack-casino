@@ -47,6 +47,31 @@ public sealed class PlayerProfileTransactionSnapshotTests
     }
 
     [Fact]
+    public void ManorSnapshotIsolatesFinancialProgressionAndVaultState()
+    {
+        var source = new PlayerProfileState();
+        _ = new ProgressionService(source);
+        source.Manor.PaidSpins = 7;
+        source.Vault.StoredCoins = 50;
+
+        PlayerProfileState candidate = PlayerProfileTransactionSnapshot.Create(
+            source,
+            RoutineProfileTransactionArea.Manor);
+
+        Assert.NotSame(source.Manor, candidate.Manor);
+        Assert.NotSame(source.Vault, candidate.Vault);
+        Assert.NotSame(source.Collection, candidate.Collection);
+        Assert.NotSame(source.Seasons, candidate.Seasons);
+        Assert.Same(source.Solitaire, candidate.Solitaire);
+
+        candidate.Manor.PaidSpins++;
+        candidate.Seasons[source.ActiveSeasonId].Experience += 15;
+
+        Assert.Equal(7, source.Manor.PaidSpins);
+        Assert.Equal(0, source.Seasons[source.ActiveSeasonId].Experience);
+    }
+
+    [Fact]
     public void NormalizedSnapshotServiceDoesNotRunDefaultNormalizationAgain()
     {
         var snapshot = new PlayerProfileState
