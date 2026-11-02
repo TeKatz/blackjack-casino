@@ -42,6 +42,75 @@ public sealed class AdventureCaseBoardEngineTests
     }
 
     [Fact]
+    public void InitializeRepairsPersistedV2LayoutExactlyOnceWithoutLosingCaseProgress()
+    {
+        var board = new CaseBoardDefinition(
+            [
+                new CaseNodeDefinition("victim", CaseNodeCategory.Person, "Arthur Vane", "The missing man.", X: 120, Y: 180),
+                new CaseNodeDefinition("ledger", CaseNodeCategory.Evidence, "Casino Ledger", "A coded ledger.", X: 460, Y: 340),
+            ],
+            [
+                new CaseConnectionDefinition("victim-ledger", "victim", "ledger", CaseConnectionType.Financial),
+            ]);
+        var state = new CaseBoardState
+        {
+            Layout = new BoardLayoutState
+            {
+                LayoutVersion = 2,
+                Zoom = .24,
+                PanX = -940,
+                PanY = 680,
+                NodePositions = new Dictionary<string, CaseBoardNodePosition>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["victim"] = new() { X = 5_900, Y = 4_100 },
+                    ["ledger"] = new() { X = 7_800, Y = 5_200 },
+                },
+            },
+            Nodes = new Dictionary<string, CaseNodeState>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["victim"] = new() { IsKnown = true, Reliability = CaseReliability.Confirmed },
+                ["ledger"] = new() { IsKnown = true, Reliability = CaseReliability.Credible },
+            },
+            Connections = new Dictionary<string, CaseConnectionState>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["victim-ledger"] = new() { IsKnown = true, Status = CaseConnectionStatus.Confirmed },
+            },
+        };
+
+        CaseBoardState repaired = AdventureCaseBoard.Initialize(board, state);
+
+        Assert.Equal(1, repaired.Layout.RepairVersion);
+        Assert.Equal(0, repaired.Layout.LayoutVersion);
+        Assert.Equal(1d, repaired.Layout.Zoom);
+        Assert.Equal(0d, repaired.Layout.PanX);
+        Assert.Equal(0d, repaired.Layout.PanY);
+        Assert.Equal(120d, repaired.Layout.NodePositions["victim"].X);
+        Assert.Equal(180d, repaired.Layout.NodePositions["victim"].Y);
+        Assert.Equal(460d, repaired.Layout.NodePositions["ledger"].X);
+        Assert.Equal(340d, repaired.Layout.NodePositions["ledger"].Y);
+        Assert.True(repaired.Nodes["victim"].IsKnown);
+        Assert.Equal(CaseReliability.Confirmed, repaired.Nodes["victim"].Reliability);
+        Assert.True(repaired.Connections["victim-ledger"].IsKnown);
+        Assert.Equal(CaseConnectionStatus.Confirmed, repaired.Connections["victim-ledger"].Status);
+
+        repaired.Layout.LayoutVersion = 2;
+        repaired.Layout.Zoom = 1.35;
+        repaired.Layout.PanX = 42;
+        repaired.Layout.PanY = -18;
+        repaired.Layout.NodePositions["victim"] = new CaseBoardNodePosition { X = 777, Y = 555 };
+
+        CaseBoardState reopened = AdventureCaseBoard.Initialize(board, repaired);
+
+        Assert.Equal(1, reopened.Layout.RepairVersion);
+        Assert.Equal(2, reopened.Layout.LayoutVersion);
+        Assert.Equal(1.35, reopened.Layout.Zoom);
+        Assert.Equal(42d, reopened.Layout.PanX);
+        Assert.Equal(-18d, reopened.Layout.PanY);
+        Assert.Equal(777d, reopened.Layout.NodePositions["victim"].X);
+        Assert.Equal(555d, reopened.Layout.NodePositions["victim"].Y);
+    }
+
+    [Fact]
     public void CaseBoardEffectsAreRejectedWhenAdventureHasNoBoard()
     {
         var adventure = new AdventureDefinition(
