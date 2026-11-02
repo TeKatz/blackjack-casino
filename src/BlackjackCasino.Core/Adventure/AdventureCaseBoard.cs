@@ -78,11 +78,25 @@ public sealed record CaseConnectionDefinition(
     string? DiscoveredAtSceneId = null,
     string? Notes = null);
 
-public sealed record CaseBoardDefinition(
-    IReadOnlyList<CaseNodeDefinition> Nodes,
-    IReadOnlyList<CaseConnectionDefinition>? Connections = null,
-    string Title = "Case Board",
-    bool AllowManualConnections = false);
+public sealed record CaseBoardDefinition
+{
+    public CaseBoardDefinition(
+        IReadOnlyList<CaseNodeDefinition> Nodes,
+        IReadOnlyList<CaseConnectionDefinition>? Connections = null,
+        string Title = "Case Board",
+        bool AllowManualConnections = false)
+    {
+        this.Nodes = Nodes ?? throw new ArgumentNullException(nameof(Nodes));
+        this.Connections = Connections ?? Array.Empty<CaseConnectionDefinition>();
+        this.Title = string.IsNullOrWhiteSpace(Title) ? "Case Board" : Title;
+        this.AllowManualConnections = AllowManualConnections;
+    }
+
+    public IReadOnlyList<CaseNodeDefinition> Nodes { get; init; }
+    public IReadOnlyList<CaseConnectionDefinition> Connections { get; init; }
+    public string Title { get; init; }
+    public bool AllowManualConnections { get; init; }
+}
 
 public sealed class CaseNodeState
 {
@@ -188,7 +202,7 @@ public static class AdventureCaseBoard
                 normalized.Layout.NodePositions[node.Id] = new CaseBoardNodePosition { X = x, Y = y };
         }
 
-        foreach (CaseConnectionDefinition connection in definition.Connections ?? [])
+        foreach (CaseConnectionDefinition connection in definition.Connections)
         {
             if (!normalized.Connections.ContainsKey(connection.Id))
             {
@@ -277,7 +291,7 @@ public static class AdventureCaseBoard
         ?? throw new ArgumentException($"Unknown case-board node '{nodeId}'.", nameof(nodeId));
 
     private static CaseConnectionDefinition FindConnection(CaseBoardDefinition definition, string connectionId) =>
-        (definition.Connections ?? []).FirstOrDefault(connection => string.Equals(connection.Id, connectionId, StringComparison.OrdinalIgnoreCase))
+        definition.Connections.FirstOrDefault(connection => string.Equals(connection.Id, connectionId, StringComparison.OrdinalIgnoreCase))
         ?? throw new ArgumentException($"Unknown case-board connection '{connectionId}'.", nameof(connectionId));
 }
 
@@ -298,7 +312,7 @@ public static class CaseBoardDefinitionValidator
         }
 
         var connectionIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (CaseConnectionDefinition connection in definition.Connections ?? [])
+        foreach (CaseConnectionDefinition connection in definition.Connections)
         {
             if (string.IsNullOrWhiteSpace(connection.Id) || !connectionIds.Add(connection.Id))
                 throw new ArgumentException($"Case Board contains a blank or duplicate connection id '{connection.Id}'.", nameof(definition));
