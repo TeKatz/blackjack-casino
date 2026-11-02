@@ -63,6 +63,6 @@ public static class ProfileNormalization
 
         Collections.CollectionService.Normalize(state);
         state.Vault = CasinoVaultService.Normalize(state, state.Vault);
-        state.SchemaVersion = Math.Max(state.SchemaVersion, 7);
+        state.SchemaVersion = Math.Max(state.SchemaVersion, 6);
     }
 }
