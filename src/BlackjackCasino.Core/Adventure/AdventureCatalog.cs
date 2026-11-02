@@ -16,9 +16,103 @@ public static class AdventureCharacterCatalog
 
     public static IReadOnlyList<AdventureClassDefinition> All => Classes;
 
-    public static AdventureCharacterState Create(string classId, string? name = null)
+    public static IReadOnlyList<AdventureClassDefinition> AllFor(AdventureDefinition? adventure) =>
+        adventure?.CharacterCatalog?.Classes is { Count: > 0 } custom ? custom : Classes;
+
+    public static AdventureCharacterState Create(string classId, string? name = null) =>
+        CreateFrom(Classes, null, classId, name);
+
+    public static AdventureCharacterState Create(AdventureDefinition adventure, string classId, string? name = null)
     {
-        AdventureClassDefinition definition = Classes.FirstOrDefault(
+        ArgumentNullException.ThrowIfNull(adventure);
+        return CreateFrom(AllFor(adventure), adventure.CharacterCatalog, classId, name);
+    }
+
+    public static (string Name, AdventureAbility Ability) Skill(string id) => Skill(null, id);
+
+    public static (string Name, AdventureAbility Ability) Skill(AdventureDefinition? adventure, string id)
+    {
+        AdventureSkillDefinition? custom = adventure?.CharacterCatalog?.Skills?.FirstOrDefault(
+            skill => string.Equals(skill.Id, id, StringComparison.OrdinalIgnoreCase));
+        if (custom is not null) return (custom.Name, custom.Ability);
+
+        return id.ToLowerInvariant() switch
+        {
+            "athletics" => ("Athletics", AdventureAbility.Strength),
+            "acrobatics" => ("Acrobatics", AdventureAbility.Dexterity),
+            "stealth" => ("Stealth", AdventureAbility.Dexterity),
+            "sleight-of-hand" => ("Sleight of Hand", AdventureAbility.Dexterity),
+            "investigation" => ("Investigation", AdventureAbility.Intelligence),
+            "arcana" => ("Arcana", AdventureAbility.Intelligence),
+            "history" => ("History", AdventureAbility.Intelligence),
+            "religion" => ("Religion", AdventureAbility.Intelligence),
+            "perception" => ("Perception", AdventureAbility.Wisdom),
+            "insight" => ("Insight", AdventureAbility.Wisdom),
+            "survival" => ("Survival", AdventureAbility.Wisdom),
+            "persuasion" => ("Persuasion", AdventureAbility.Charisma),
+            "intimidation" => ("Intimidation", AdventureAbility.Charisma),
+            _ => (Humanize(id), AdventureAbility.Intelligence),
+        };
+    }
+
+    public static string AbilityLabel(AdventureDefinition? adventure, AdventureAbility ability)
+    {
+        if (adventure?.CharacterCatalog?.AbilityLabels?.TryGetValue(ability, out string? custom) == true && !string.IsNullOrWhiteSpace(custom))
+            return custom;
+        return ability.ToString();
+    }
+
+    public static string AbilityShortLabel(AdventureDefinition? adventure, AdventureAbility ability)
+    {
+        if (adventure?.CharacterCatalog?.AbilityShortLabels?.TryGetValue(ability, out string? custom) == true && !string.IsNullOrWhiteSpace(custom))
+            return custom;
+
+        return ability switch
+        {
+            AdventureAbility.Strength => "STR",
+            AdventureAbility.Dexterity => "DEX",
+            AdventureAbility.Constitution => "CON",
+            AdventureAbility.Intelligence => "INT",
+            AdventureAbility.Wisdom => "WIS",
+            AdventureAbility.Charisma => "CHA",
+            _ => ability.ToString().ToUpperInvariant(),
+        };
+    }
+
+    public static void Validate(AdventureCharacterCatalogDefinition catalog)
+    {
+        ArgumentNullException.ThrowIfNull(catalog);
+        if (catalog.Classes.Count == 0)
+            throw new ArgumentException("Adventure-specific character catalogs require at least one class.", nameof(catalog));
+
+        var classIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (AdventureClassDefinition definition in catalog.Classes)
+        {
+            if (string.IsNullOrWhiteSpace(definition.Id) || !classIds.Add(definition.Id))
+                throw new ArgumentException($"Adventure character catalog contains a blank or duplicate class id '{definition.Id}'.", nameof(catalog));
+            if (string.IsNullOrWhiteSpace(definition.Name))
+                throw new ArgumentException($"Adventure class '{definition.Id}' requires a display name.", nameof(catalog));
+            if (definition.MaxHitPoints < 1)
+                throw new ArgumentException($"Adventure class '{definition.Id}' requires positive hit points.", nameof(catalog));
+        }
+
+        var skillIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (AdventureSkillDefinition skill in catalog.Skills ?? [])
+        {
+            if (string.IsNullOrWhiteSpace(skill.Id) || !skillIds.Add(skill.Id))
+                throw new ArgumentException($"Adventure character catalog contains a blank or duplicate skill id '{skill.Id}'.", nameof(catalog));
+            if (string.IsNullOrWhiteSpace(skill.Name))
+                throw new ArgumentException($"Adventure skill '{skill.Id}' requires a display name.", nameof(catalog));
+        }
+    }
+
+    private static AdventureCharacterState CreateFrom(
+        IReadOnlyList<AdventureClassDefinition> classes,
+        AdventureCharacterCatalogDefinition? catalog,
+        string classId,
+        string? name)
+    {
+        AdventureClassDefinition definition = classes.FirstOrDefault(
             item => string.Equals(item.Id, classId, StringComparison.OrdinalIgnoreCase))
             ?? throw new ArgumentException($"Unknown adventure class '{classId}'.", nameof(classId));
 
@@ -35,7 +129,11 @@ public static class AdventureCharacterCatalog
 
         foreach ((string id, int bonus) in definition.SkillProficiencies)
         {
-            (string displayName, AdventureAbility ability) = Skill(id);
+            AdventureSkillDefinition? customSkill = catalog?.Skills?.FirstOrDefault(
+                skill => string.Equals(skill.Id, id, StringComparison.OrdinalIgnoreCase));
+            (string displayName, AdventureAbility ability) = customSkill is null
+                ? Skill(id)
+                : (customSkill.Name, customSkill.Ability);
             character.Skills[id] = new AdventureSkillState
             {
                 Id = id,
@@ -47,24 +145,6 @@ public static class AdventureCharacterCatalog
 
         return character;
     }
-
-    public static (string Name, AdventureAbility Ability) Skill(string id) => id.ToLowerInvariant() switch
-    {
-        "athletics" => ("Athletics", AdventureAbility.Strength),
-        "acrobatics" => ("Acrobatics", AdventureAbility.Dexterity),
-        "stealth" => ("Stealth", AdventureAbility.Dexterity),
-        "sleight-of-hand" => ("Sleight of Hand", AdventureAbility.Dexterity),
-        "investigation" => ("Investigation", AdventureAbility.Intelligence),
-        "arcana" => ("Arcana", AdventureAbility.Intelligence),
-        "history" => ("History", AdventureAbility.Intelligence),
-        "religion" => ("Religion", AdventureAbility.Intelligence),
-        "perception" => ("Perception", AdventureAbility.Wisdom),
-        "insight" => ("Insight", AdventureAbility.Wisdom),
-        "survival" => ("Survival", AdventureAbility.Wisdom),
-        "persuasion" => ("Persuasion", AdventureAbility.Charisma),
-        "intimidation" => ("Intimidation", AdventureAbility.Charisma),
-        _ => (Humanize(id), AdventureAbility.Intelligence),
-    };
 
     private static IReadOnlyDictionary<AdventureAbility, int> Stats(int strength, int dexterity, int constitution, int intelligence, int wisdom, int charisma) =>
         new Dictionary<AdventureAbility, int>

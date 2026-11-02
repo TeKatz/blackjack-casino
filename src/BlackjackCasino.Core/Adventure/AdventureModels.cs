@@ -155,7 +155,9 @@ public sealed record AdventureDefinition(
     IReadOnlyList<AdventureSceneDefinition> Scenes,
     IReadOnlyList<AdventureItemDefinition>? Items = null,
     IReadOnlyList<AdventureStatusDefinition>? Conditions = null,
-    IReadOnlyDictionary<string, string>? Acts = null);
+    IReadOnlyDictionary<string, string>? Acts = null,
+    AdventureCharacterCatalogDefinition? CharacterCatalog = null,
+    CaseBoardDefinition? CaseBoard = null);
 
 public sealed class AdventureSkillState
 {
@@ -259,7 +261,7 @@ public sealed class AdventureRunStatistics
 
 public sealed class AdventureRunState
 {
-    public int SchemaVersion { get; set; } = 3;
+    public int SchemaVersion { get; set; } = 4;
     public string RunId { get; set; } = Guid.NewGuid().ToString("N");
     public string AdventureId { get; set; } = "";
     public int AdventureVersion { get; set; } = 1;
@@ -276,6 +278,7 @@ public sealed class AdventureRunState
     public int Coins { get; set; } = 20;
 
     public Dictionary<string, AdventureNpcState> Npcs { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    public CaseBoardState CaseBoard { get; set; } = new();
     public string? PendingChoiceId { get; set; }
     public bool Completed { get; set; }
     public string? EndingId { get; set; }
@@ -287,7 +290,7 @@ public sealed class AdventureRunState
     public static AdventureRunState Normalize(AdventureRunState? value)
     {
         AdventureRunState state = value ?? new AdventureRunState();
-        state.SchemaVersion = Math.Max(3, state.SchemaVersion);
+        state.SchemaVersion = Math.Max(4, state.SchemaVersion);
         state.RunId = string.IsNullOrWhiteSpace(state.RunId) ? Guid.NewGuid().ToString("N") : state.RunId;
         state.AdventureId ??= "";
         state.CurrentSceneId ??= "";
@@ -304,6 +307,7 @@ public sealed class AdventureRunState
         state.Counters ??= new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         state.PendingFeedback ??= [];
         state.Npcs ??= new Dictionary<string, AdventureNpcState>(StringComparer.OrdinalIgnoreCase);
+        state.CaseBoard = CaseBoardState.Normalize(state.CaseBoard);
         state.Statistics = AdventureRunStatistics.Normalize(state.Statistics);
 
         foreach (string legacyItem in state.Inventory)
@@ -323,14 +327,14 @@ public sealed class AdventureRunState
 
 public sealed class AdventureProgressState
 {
-    public int SchemaVersion { get; set; } = 3;
+    public int SchemaVersion { get; set; } = 4;
     public string? LastAdventureId { get; set; }
     public Dictionary<string, AdventureRunState> Runs { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
     public static AdventureProgressState Normalize(AdventureProgressState? value)
     {
         AdventureProgressState state = value ?? new AdventureProgressState();
-        state.SchemaVersion = Math.Max(3, state.SchemaVersion);
+        state.SchemaVersion = Math.Max(4, state.SchemaVersion);
         state.Runs ??= new Dictionary<string, AdventureRunState>(StringComparer.OrdinalIgnoreCase);
         foreach (string key in state.Runs.Keys.ToArray())
             state.Runs[key] = AdventureRunState.Normalize(state.Runs[key]);
@@ -359,4 +363,20 @@ public sealed record AdventureClassDefinition(
     int MaxHitPoints,
     int Armor,
     IReadOnlyDictionary<AdventureAbility, int> Abilities,
-    IReadOnlyDictionary<string, int> SkillProficiencies);
+    IReadOnlyDictionary<string, int> SkillProficiencies,
+    string? SpecialMechanicId = null,
+    string? SpecialMechanicName = null,
+    IReadOnlyList<string>? RouteTags = null);
+
+public sealed record AdventureSkillDefinition(
+    string Id,
+    string Name,
+    AdventureAbility Ability);
+
+public sealed record AdventureCharacterCatalogDefinition(
+    IReadOnlyList<AdventureClassDefinition> Classes,
+    IReadOnlyDictionary<AdventureAbility, string>? AbilityLabels = null,
+    IReadOnlyDictionary<AdventureAbility, string>? AbilityShortLabels = null,
+    IReadOnlyList<AdventureSkillDefinition>? Skills = null,
+    string? SpecialResourceId = null,
+    string? SpecialResourceName = null);
