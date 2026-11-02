@@ -169,6 +169,7 @@ public static class AdventureCatalog
     private static readonly AdventureDefinition BlackStagDefinition = BlackStagAdventure.Build();
     private static readonly AdventureDefinition DrownedBellDefinition = DrownedBellAdventure.Build();
     private static readonly AdventureDefinition StrangersWagerDefinition = StrangersWagerAdventure.Build();
+    private static readonly AdventureDefinition DeadMansHandDefinition = DeadMansHandAdventure.Build();
 
     // Stranger's Wager remains temporarily registered while the reusable encounter framework is being exercised.
     private static readonly IReadOnlyList<AdventureDefinition> Adventures =
@@ -176,12 +177,14 @@ public static class AdventureCatalog
         BlackStagDefinition,
         DrownedBellDefinition,
         StrangersWagerDefinition,
+        DeadMansHandDefinition,
     ];
 
     public static IReadOnlyList<AdventureDefinition> All => Adventures;
     public static AdventureDefinition BlackStag => BlackStagDefinition;
     public static AdventureDefinition DrownedBell => DrownedBellDefinition;
     public static AdventureDefinition StrangersWager => StrangersWagerDefinition;
+    public static AdventureDefinition DeadMansHand => DeadMansHandDefinition;
 
     public static bool TryGet(string id, out AdventureDefinition? adventure)
     {
