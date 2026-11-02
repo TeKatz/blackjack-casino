@@ -223,9 +223,44 @@ public sealed record AdventureFeedbackEvent(
     string Detail,
     int Delta = 0);
 
+public sealed class AdventureRunStatistics
+{
+    public DateTimeOffset StartedAtUtc { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset? CompletedAtUtc { get; set; }
+    public int ScenesVisited { get; set; }
+    public HashSet<string> UniqueSceneIds { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    public int ChoicesMade { get; set; }
+    public int ChecksSucceeded { get; set; }
+    public int ChecksFailed { get; set; }
+    public int NaturalTwenties { get; set; }
+    public int NaturalOnes { get; set; }
+    public int DamageTaken { get; set; }
+    public int HealingReceived { get; set; }
+    public int ItemsFound { get; set; }
+    public int ItemsConsumed { get; set; }
+    public int CoinsEarned { get; set; }
+    public int CoinsSpent { get; set; }
+    public int ConditionsReceived { get; set; }
+    public int EncountersPlayed { get; set; }
+    public int EncountersWon { get; set; }
+    public int EncountersLost { get; set; }
+    public int EncountersDrawn { get; set; }
+    public int BlackjackWins { get; set; }
+    public int FiveOfAKindWins { get; set; }
+
+    public static AdventureRunStatistics Normalize(AdventureRunStatistics? value)
+    {
+        AdventureRunStatistics stats = value ?? new AdventureRunStatistics();
+        stats.UniqueSceneIds ??= new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (stats.StartedAtUtc == default) stats.StartedAtUtc = DateTimeOffset.UtcNow;
+        return stats;
+    }
+}
+
 public sealed class AdventureRunState
 {
-    public int SchemaVersion { get; set; } = 2;
+    public int SchemaVersion { get; set; } = 3;
+    public string RunId { get; set; } = Guid.NewGuid().ToString("N");
     public string AdventureId { get; set; } = "";
     public int AdventureVersion { get; set; } = 1;
     public string CurrentSceneId { get; set; } = "";
@@ -247,11 +282,13 @@ public sealed class AdventureRunState
     public int RollsMade { get; set; }
     public int NaturalTwenties { get; set; }
     public int NaturalOnes { get; set; }
+    public AdventureRunStatistics Statistics { get; set; } = new();
 
     public static AdventureRunState Normalize(AdventureRunState? value)
     {
         AdventureRunState state = value ?? new AdventureRunState();
-        state.SchemaVersion = Math.Max(2, state.SchemaVersion);
+        state.SchemaVersion = Math.Max(3, state.SchemaVersion);
+        state.RunId = string.IsNullOrWhiteSpace(state.RunId) ? Guid.NewGuid().ToString("N") : state.RunId;
         state.AdventureId ??= "";
         state.CurrentSceneId ??= "";
         state.Character ??= new AdventureCharacterState();
@@ -267,6 +304,7 @@ public sealed class AdventureRunState
         state.Counters ??= new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         state.PendingFeedback ??= [];
         state.Npcs ??= new Dictionary<string, AdventureNpcState>(StringComparer.OrdinalIgnoreCase);
+        state.Statistics = AdventureRunStatistics.Normalize(state.Statistics);
 
         foreach (string legacyItem in state.Inventory)
         {
@@ -285,14 +323,14 @@ public sealed class AdventureRunState
 
 public sealed class AdventureProgressState
 {
-    public int SchemaVersion { get; set; } = 2;
+    public int SchemaVersion { get; set; } = 3;
     public string? LastAdventureId { get; set; }
     public Dictionary<string, AdventureRunState> Runs { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
     public static AdventureProgressState Normalize(AdventureProgressState? value)
     {
         AdventureProgressState state = value ?? new AdventureProgressState();
-        state.SchemaVersion = Math.Max(2, state.SchemaVersion);
+        state.SchemaVersion = Math.Max(3, state.SchemaVersion);
         state.Runs ??= new Dictionary<string, AdventureRunState>(StringComparer.OrdinalIgnoreCase);
         foreach (string key in state.Runs.Keys.ToArray())
             state.Runs[key] = AdventureRunState.Normalize(state.Runs[key]);
