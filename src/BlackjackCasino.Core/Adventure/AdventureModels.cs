@@ -35,6 +35,10 @@ public enum AdventureConditionKind
     ActiveCondition,
     CoinsMinimum,
     CounterMinimum,
+    CaseNodeKnown,
+    CaseConnectionKnown,
+    LeadResolved,
+    TheoryKnown,
 }
 
 public enum AdventureEffectKind
@@ -49,6 +53,16 @@ public enum AdventureEffectKind
     ChangeCounter,
     ApplyCondition,
     RemoveCondition,
+    DiscoverCaseNode,
+    RevealCaseConnection,
+    ConfirmCaseConnection,
+    ContradictCaseConnection,
+    ResolveLead,
+    ContradictLead,
+    UnlockTheory,
+    SupportTheory,
+    ConfirmTheory,
+    ContradictTheory,
 }
 
 public enum AdventureItemKind

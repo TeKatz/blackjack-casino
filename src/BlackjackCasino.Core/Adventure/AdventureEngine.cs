@@ -70,6 +70,7 @@ public sealed class AdventureEngine
         scenes = definition.Scenes.ToDictionary(scene => scene.Id, StringComparer.OrdinalIgnoreCase);
         items = (definition.Items ?? []).ToDictionary(item => item.Id, StringComparer.OrdinalIgnoreCase);
         conditions = (definition.Conditions ?? []).ToDictionary(condition => condition.Id, StringComparer.OrdinalIgnoreCase);
+        State.CaseBoard = AdventureCaseBoard.Initialize(definition.CaseBoard, State.CaseBoard);
 
         if (!string.Equals(State.AdventureId, definition.Id, StringComparison.OrdinalIgnoreCase))
             throw new ArgumentException($"Run belongs to '{State.AdventureId}', not '{definition.Id}'.", nameof(state));
@@ -148,6 +149,15 @@ public sealed class AdventureEngine
             AdventureConditionKind.CoinsMinimum => State.Coins >= condition.Value,
             AdventureConditionKind.CounterMinimum =>
                 State.Counters.TryGetValue(condition.Key, out int counter) && counter >= condition.Value,
+            AdventureConditionKind.CaseNodeKnown =>
+                (State.CaseBoard.Nodes.TryGetValue(condition.Key, out CaseNodeState? nodeState) && nodeState.IsKnown) == condition.Expected,
+            AdventureConditionKind.CaseConnectionKnown =>
+                (State.CaseBoard.Connections.TryGetValue(condition.Key, out CaseConnectionState? connectionState) && connectionState.IsKnown) == condition.Expected,
+            AdventureConditionKind.LeadResolved =>
+                (State.CaseBoard.Nodes.TryGetValue(condition.Key, out CaseNodeState? leadState) &&
+                 leadState.IsKnown && leadState.LeadState == CaseLeadState.Resolved) == condition.Expected,
+            AdventureConditionKind.TheoryKnown =>
+                (State.CaseBoard.Nodes.TryGetValue(condition.Key, out CaseNodeState? theoryState) && theoryState.IsKnown) == condition.Expected,
             _ => false,
         };
     }
@@ -354,10 +364,92 @@ public sealed class AdventureEngine
                 case AdventureEffectKind.RemoveCondition:
                     RemoveCondition(effect.Key);
                     break;
+                case AdventureEffectKind.DiscoverCaseNode:
+                {
+                    CaseBoardDefinition board = RequireCaseBoard(effect);
+                    AdventureCaseBoard.DiscoverNode(board, State.CaseBoard, effect.Key, CurrentScene.Id);
+                    AddCaseBoardFeedback(effect.Key, "New case-board item");
+                    break;
+                }
+                case AdventureEffectKind.RevealCaseConnection:
+                {
+                    CaseBoardDefinition board = RequireCaseBoard(effect);
+                    AdventureCaseBoard.RevealConnection(board, State.CaseBoard, effect.Key, CurrentScene.Id);
+                    AddCaseBoardFeedback(effect.Key, "New connection");
+                    break;
+                }
+                case AdventureEffectKind.ConfirmCaseConnection:
+                {
+                    CaseBoardDefinition board = RequireCaseBoard(effect);
+                    AdventureCaseBoard.SetConnectionStatus(board, State.CaseBoard, effect.Key, CaseConnectionStatus.Confirmed, CurrentScene.Id);
+                    AddCaseBoardFeedback(effect.Key, "Connection confirmed");
+                    break;
+                }
+                case AdventureEffectKind.ContradictCaseConnection:
+                {
+                    CaseBoardDefinition board = RequireCaseBoard(effect);
+                    AdventureCaseBoard.SetConnectionStatus(board, State.CaseBoard, effect.Key, CaseConnectionStatus.Contradicted, CurrentScene.Id);
+                    AddCaseBoardFeedback(effect.Key, "Connection contradicted");
+                    break;
+                }
+                case AdventureEffectKind.ResolveLead:
+                {
+                    CaseBoardDefinition board = RequireCaseBoard(effect);
+                    AdventureCaseBoard.SetLeadState(board, State.CaseBoard, effect.Key, CaseLeadState.Resolved, CurrentScene.Id);
+                    AddCaseBoardFeedback(effect.Key, "Lead resolved");
+                    break;
+                }
+                case AdventureEffectKind.ContradictLead:
+                {
+                    CaseBoardDefinition board = RequireCaseBoard(effect);
+                    AdventureCaseBoard.SetLeadState(board, State.CaseBoard, effect.Key, CaseLeadState.Contradicted, CurrentScene.Id);
+                    AddCaseBoardFeedback(effect.Key, "Lead contradicted");
+                    break;
+                }
+                case AdventureEffectKind.UnlockTheory:
+                {
+                    CaseBoardDefinition board = RequireCaseBoard(effect);
+                    AdventureCaseBoard.SetTheoryState(board, State.CaseBoard, effect.Key, CaseTheoryState.Proposed, CurrentScene.Id);
+                    AddCaseBoardFeedback(effect.Key, "New theory");
+                    break;
+                }
+                case AdventureEffectKind.SupportTheory:
+                {
+                    CaseBoardDefinition board = RequireCaseBoard(effect);
+                    AdventureCaseBoard.SetTheoryState(board, State.CaseBoard, effect.Key, CaseTheoryState.Supported, CurrentScene.Id);
+                    AddCaseBoardFeedback(effect.Key, "Theory supported");
+                    break;
+                }
+                case AdventureEffectKind.ConfirmTheory:
+                {
+                    CaseBoardDefinition board = RequireCaseBoard(effect);
+                    AdventureCaseBoard.SetTheoryState(board, State.CaseBoard, effect.Key, CaseTheoryState.Confirmed, CurrentScene.Id);
+                    AddCaseBoardFeedback(effect.Key, "Theory confirmed");
+                    break;
+                }
+                case AdventureEffectKind.ContradictTheory:
+                {
+                    CaseBoardDefinition board = RequireCaseBoard(effect);
+                    AdventureCaseBoard.SetTheoryState(board, State.CaseBoard, effect.Key, CaseTheoryState.Contradicted, CurrentScene.Id);
+                    AddCaseBoardFeedback(effect.Key, "Theory contradicted");
+                    break;
+                }
                 default:
                     throw new ArgumentOutOfRangeException(nameof(effect), effect.Kind, "Unknown adventure effect.");
             }
         }
+    }
+
+    private CaseBoardDefinition RequireCaseBoard(AdventureEffect effect) =>
+        Definition.CaseBoard ?? throw new InvalidOperationException(
+            $"Adventure '{Definition.Id}' uses Case Board effect '{effect.Kind}' but does not define a Case Board.");
+
+    private void AddCaseBoardFeedback(string key, string title)
+    {
+        string detail = Definition.CaseBoard?.Nodes.FirstOrDefault(node => string.Equals(node.Id, key, StringComparison.OrdinalIgnoreCase))?.Title
+            ?? Definition.CaseBoard?.Connections.FirstOrDefault(connection => string.Equals(connection.Id, key, StringComparison.OrdinalIgnoreCase))?.Label
+            ?? Humanize(key);
+        AddFeedback(AdventureFeedbackKind.Information, key, title, detail);
     }
 
     private void ChangeItem(string itemId, int delta)
@@ -462,6 +554,11 @@ public static class AdventureDefinitionValidator
         if (string.IsNullOrWhiteSpace(definition.Id)) throw new ArgumentException("Adventure id is required.", nameof(definition));
         if (definition.Version < 1) throw new ArgumentException("Adventure version must be positive.", nameof(definition));
         if (definition.Scenes.Count == 0) throw new ArgumentException("Adventure must contain at least one scene.", nameof(definition));
+
+        if (definition.CharacterCatalog is not null)
+            AdventureCharacterCatalog.Validate(definition.CharacterCatalog);
+        if (definition.CaseBoard is not null)
+            CaseBoardDefinitionValidator.Validate(definition.CaseBoard);
 
         var itemIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (AdventureItemDefinition item in definition.Items ?? [])
