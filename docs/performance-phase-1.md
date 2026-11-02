@@ -5,14 +5,15 @@ Phase 1 focuses on routine persistence latency without changing gameplay, save f
 ## Implemented first slice
 
 - Routine `AppPreferences` writes are coalesced for 350 ms.
+- Routine player-profile and hand-history writes use independent 350 ms debounce queues.
 - The latest state in a burst replaces older pending routine snapshots.
-- JSON is serialized before background dispatch so mutable nested preference state is not read concurrently.
+- JSON is serialized before background dispatch so mutable nested preference/profile state is not read concurrently.
 - Physical routine file I/O runs outside the UI call path.
 - Writes still use temp-file + atomic replace semantics.
-- `Load()` flushes pending routine state first, preserving read-after-save behavior.
-- `SaveOrThrow()` remains synchronous and durable and flushes older deferred routine state first.
-- Application shutdown flushes the final pending preferences snapshot.
-- Midnight Manor and other transactional persistence paths retain their existing durable semantics.
+- `Load()` / `LoadProfile()` / `LoadHistory()` flush their respective pending routine state first, preserving read-after-save behavior.
+- Critical `SaveOrThrow()` / `SaveProfileOrThrow()` paths bypass deferred persistence and cannot be overwritten later by an older pending snapshot.
+- Application shutdown flushes final pending preferences, profile, and hand-history snapshots.
+- Midnight Manor and other transactional persistence paths retain their existing commit semantics.
 
 ## Safety constraints for the remaining Phase 1 work
 
