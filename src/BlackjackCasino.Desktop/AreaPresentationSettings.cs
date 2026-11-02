@@ -16,7 +16,7 @@ internal sealed record AreaPresentationSettings
 
 internal static class AreaPresentationPreferences
 {
-    internal static readonly string[] Areas = ["midnight-reels", "neon-vault", "nine-lives", "midnight-manor", "kniffel", "chill-lounge", "casino-empire", "midnight-merge", "album", "progression", "lobby"];
+    internal static readonly string[] Areas = ["midnight-reels", "neon-vault", "nine-lives", "midnight-manor", "kniffel", "chill-lounge", "adventure", "casino-empire", "midnight-merge", "album", "progression", "lobby"];
 
     internal static AreaPresentationSettings Presentation(this AppPreferences preferences, string area) =>
         preferences.AreaPresentation is { } settings && settings.TryGetValue(area, out AreaPresentationSettings? value) && value is not null
