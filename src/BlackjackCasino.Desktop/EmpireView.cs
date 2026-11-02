@@ -59,8 +59,8 @@ internal sealed partial class EmpireView : UserControl, IDisposable
     private int selectedFloor = 1;
     private int bulk = 1;
     private bool disposed;
-    private bool wasAnimating;
     private double phase;
+    private EmpireRoomCard? animatedCard;
 
     internal EmpireView(
         EmpireService service,
@@ -86,23 +86,26 @@ internal sealed partial class EmpireView : UserControl, IDisposable
 
         BuildCommandCenter(back, backLabel);
 
-        animationTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(40) };
+        animationTimer = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(80) };
         animationTimer.Tick += (_, _) =>
         {
             bool active = this.animations() && IsVisible && !disposed;
-            if (active)
+            EmpireRoomCard? hovered = active
+                ? cards.FirstOrDefault(card => card.IsVisible && card.Artwork.Open && card.Artwork.IsMouseOver)
+                : null;
+
+            if (!ReferenceEquals(animatedCard, hovered))
             {
-                phase += .08;
-                foreach (EmpireRoomCard card in cards.Where(card => card.IsVisible && card.Artwork.Open)) card.Artwork.Phase = phase;
+                animatedCard?.StopAnimation();
+                animatedCard = hovered;
             }
-            else if (wasAnimating)
-            {
-                foreach (EmpireRoomCard card in cards) card.StopAnimation();
-            }
-            wasAnimating = active;
+
+            if (hovered is null) return;
+            phase += .16;
+            hovered.Artwork.Phase = phase;
         };
         Loaded += (_, _) => { if (!disposed) animationTimer.Start(); ResizeRooms(); };
-        Unloaded += (_, _) => { animationTimer.Stop(); ClearPreview(); StopWorkspaceAnimation(); };
+        Unloaded += (_, _) => { animationTimer.Stop(); animatedCard?.StopAnimation(); animatedCard = null; ClearPreview(); StopWorkspaceAnimation(); };
         Refresh();
 
     }
@@ -357,6 +360,8 @@ internal sealed partial class EmpireView : UserControl, IDisposable
         if (disposed) return;
         disposed = true;
         animationTimer.Stop();
+        animatedCard?.StopAnimation();
+        animatedCard = null;
         ClearPreview(); StopWorkspaceAnimation();
         foreach (EmpireRoomCard card in cards) card.StopAnimation();
     }
