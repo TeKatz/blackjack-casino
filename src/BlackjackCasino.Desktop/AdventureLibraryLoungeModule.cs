@@ -16,6 +16,7 @@ internal static class AdventureLibraryLoungeModule
     internal static LoungeHostedGame Create(
         AdventureProgressState progress,
         Action<AdventureProgressState> persist,
+        Func<AdventureDefinition, AdventureRunState, AdventureCompletionMetaResult> recordCompletion,
         Func<string?> diceSetId,
         Func<string?> playerName,
         Func<bool> animationsEnabled,
@@ -37,6 +38,7 @@ internal static class AdventureLibraryLoungeModule
             back => new AdventureLibraryHubControl(
                 state,
                 persist,
+                recordCompletion,
                 diceSetId,
                 playerName,
                 animationsEnabled,
@@ -77,6 +79,7 @@ internal sealed class AdventureLibraryHubControl : UserControl
 {
     private readonly AdventureProgressState progress;
     private readonly Action<AdventureProgressState> persist;
+    private readonly Func<AdventureDefinition, AdventureRunState, AdventureCompletionMetaResult> recordCompletion;
     private readonly Func<string?> diceSetId;
     private readonly Func<string?> playerName;
     private readonly Func<bool> animationsEnabled;
@@ -88,6 +91,7 @@ internal sealed class AdventureLibraryHubControl : UserControl
     internal AdventureLibraryHubControl(
         AdventureProgressState progress,
         Action<AdventureProgressState> persist,
+        Func<AdventureDefinition, AdventureRunState, AdventureCompletionMetaResult> recordCompletion,
         Func<string?> diceSetId,
         Func<string?> playerName,
         Func<bool> animationsEnabled,
@@ -98,6 +102,7 @@ internal sealed class AdventureLibraryHubControl : UserControl
     {
         this.progress = AdventureProgressState.Normalize(progress);
         this.persist = persist ?? throw new ArgumentNullException(nameof(persist));
+        this.recordCompletion = recordCompletion ?? throw new ArgumentNullException(nameof(recordCompletion));
         this.diceSetId = diceSetId ?? throw new ArgumentNullException(nameof(diceSetId));
         this.playerName = playerName ?? throw new ArgumentNullException(nameof(playerName));
         this.animationsEnabled = animationsEnabled ?? throw new ArgumentNullException(nameof(animationsEnabled));
@@ -150,7 +155,7 @@ internal sealed class AdventureLibraryHubControl : UserControl
         });
         heading.Children.Add(new TextBlock
         {
-            Text = "Each adventure is its own content package, but all of them share the same character, dice, inventory, condition and save-state blueprint.",
+            Text = "Each adventure is its own content package, but all of them share the same character, dice, inventory, condition, encounter and completion blueprint.",
             FontFamily = new FontFamily("Georgia"),
             FontSize = 15.5,
             LineHeight = 24,
@@ -287,11 +292,7 @@ internal sealed class AdventureLibraryHubControl : UserControl
         start.Click += (_, _) =>
         {
             AdventureCharacterState character = AdventureCharacterCatalog.Create(SelectedClassId(classes), playerName());
-            AdventureEngine engine = AdventureEngine.StartNew(adventure, character);
-            progress.Runs[adventure.Id] = engine.State;
-            progress.LastAdventureId = adventure.Id;
-            persist(progress);
-            ShowRun(adventure, engine.State);
+            StartFreshRun(adventure, character);
         };
         chooser.Children.Add(start);
         grid.Children.Add(chooser);
@@ -399,6 +400,22 @@ internal sealed class AdventureLibraryHubControl : UserControl
         return panel;
     }
 
+    private void StartFreshRun(AdventureDefinition adventure, AdventureCharacterState character)
+    {
+        AdventureEngine engine = AdventureEngine.StartNew(adventure, character);
+        progress.Runs[adventure.Id] = engine.State;
+        progress.LastAdventureId = adventure.Id;
+        selectedAdventureId = adventure.Id;
+        persist(progress);
+        ShowRun(adventure, engine.State);
+    }
+
+    private void RestartRun(AdventureDefinition adventure, AdventureRunState previous)
+    {
+        AdventureCharacterState character = AdventureCharacterCatalog.Create(previous.Character.ClassId, previous.Character.Name);
+        StartFreshRun(adventure, character);
+    }
+
     private void ShowRun(AdventureDefinition adventure, AdventureRunState run)
     {
         var engine = new AdventureEngine(adventure, AdventureRunState.Normalize(run));
@@ -411,6 +428,8 @@ internal sealed class AdventureLibraryHubControl : UserControl
                 persist(progress);
             },
             ShowHub,
+            () => RestartRun(adventure, engine.State),
+            recordCompletion,
             diceSetId,
             animationsEnabled);
     }
