@@ -8,6 +8,7 @@ namespace BlackjackCasino.Desktop;
 internal static class PlayerProfileStore
 {
     private const int HistoryLimit = 1_000;
+    private static readonly TimeSpan RoutineSaveDelay = TimeSpan.FromMilliseconds(350);
 
     private static readonly string DirectoryPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -16,9 +17,19 @@ internal static class PlayerProfileStore
     private static readonly string ProfilePath = Path.Combine(DirectoryPath, "profile.json");
     private static readonly string HistoryPath = Path.Combine(DirectoryPath, "hand-history.json");
     private static readonly JsonSerializerOptions JsonOptions = CreateJsonOptions();
+    private static readonly object ProfileFileWriteGate = new();
+    private static readonly object HistoryFileWriteGate = new();
+    private static readonly DebouncedPersistenceWriter ProfileWriter = new(
+        RoutineSaveDelay,
+        payload => WriteSerializedAtomically(ProfilePath, payload, ProfileFileWriteGate));
+    private static readonly DebouncedPersistenceWriter HistoryWriter = new(
+        RoutineSaveDelay,
+        payload => WriteSerializedAtomically(HistoryPath, payload, HistoryFileWriteGate));
 
     public static PlayerProfileState LoadProfile()
     {
+        FlushProfilePending();
+
         try
         {
             if (!File.Exists(ProfilePath))
@@ -38,6 +49,8 @@ internal static class PlayerProfileStore
 
     public static IReadOnlyList<RoundHistoryEntry> LoadHistory()
     {
+        FlushHistoryPending();
+
         try
         {
             if (!File.Exists(HistoryPath))
@@ -62,25 +75,69 @@ internal static class PlayerProfileStore
     public static void SaveProfile(PlayerProfileState state)
     {
         ArgumentNullException.ThrowIfNull(state);
-        WriteJsonAtomically(ProfilePath, SanitizeProfile(state));
+
+        try
+        {
+            // Preserve the legacy normalization timing: callers still receive the sanitized
+            // in-memory profile immediately. Only the latest serialized routine snapshot is
+            // written to disk, and that I/O no longer blocks the gameplay/UI call path.
+            string payload = JsonSerializer.Serialize(SanitizeProfile(state), JsonOptions);
+            ProfileWriter.Schedule(payload);
+        }
+        catch
+        {
+            // Progression persistence must never interrupt a blackjack hand.
+        }
     }
 
     internal static void SaveProfileOrThrow(PlayerProfileState state)
     {
-        Directory.CreateDirectory(DirectoryPath);
-        string temporary = ProfilePath + ".tmp";
-        File.WriteAllText(temporary, JsonSerializer.Serialize(SanitizeProfile(state), JsonOptions));
-        File.Move(temporary, ProfilePath, overwrite: true);
+        ArgumentNullException.ThrowIfNull(state);
+
+        // Prevent an older deferred profile snapshot from landing after this transactional save.
+        FlushProfilePending();
+        lock (ProfileFileWriteGate)
+        {
+            Directory.CreateDirectory(DirectoryPath);
+            string temporary = ProfilePath + ".tmp";
+            File.WriteAllText(temporary, JsonSerializer.Serialize(SanitizeProfile(state), JsonOptions));
+            File.Move(temporary, ProfilePath, overwrite: true);
+        }
     }
 
     public static void SaveHistory(IEnumerable<RoundHistoryEntry> history)
     {
         ArgumentNullException.ThrowIfNull(history);
-        RoundHistoryEntry[] snapshot = history
-            .OrderBy(x => x.CompletedAt)
-            .TakeLast(HistoryLimit)
-            .ToArray();
-        WriteJsonAtomically(HistoryPath, snapshot);
+
+        try
+        {
+            RoundHistoryEntry[] snapshot = history
+                .OrderBy(x => x.CompletedAt)
+                .TakeLast(HistoryLimit)
+                .ToArray();
+            string payload = JsonSerializer.Serialize(snapshot, JsonOptions);
+            HistoryWriter.Schedule(payload);
+        }
+        catch
+        {
+            // History persistence is routine and must not interrupt gameplay.
+        }
+    }
+
+    internal static void FlushPending()
+    {
+        FlushProfilePending();
+        FlushHistoryPending();
+    }
+
+    private static void FlushProfilePending()
+    {
+        ProfileWriter.Flush();
+    }
+
+    private static void FlushHistoryPending()
+    {
+        HistoryWriter.Flush();
     }
 
     internal static PlayerProfileState SanitizeProfile(PlayerProfileState state)
@@ -135,19 +192,14 @@ internal static class PlayerProfileStore
         return state;
     }
 
-    private static void WriteJsonAtomically<T>(string path, T value)
+    private static void WriteSerializedAtomically(string path, string payload, object writeGate)
     {
-        try
+        lock (writeGate)
         {
             Directory.CreateDirectory(DirectoryPath);
             string temporary = path + ".tmp";
-            string json = JsonSerializer.Serialize(value, JsonOptions);
-            File.WriteAllText(temporary, json);
+            File.WriteAllText(temporary, payload);
             File.Move(temporary, path, overwrite: true);
-        }
-        catch
-        {
-            // Progression persistence must never interrupt a blackjack hand.
         }
     }
 
