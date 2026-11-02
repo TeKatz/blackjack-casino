@@ -189,11 +189,10 @@ public static class AdventureCaseBoard
 
         CaseBoardDefinitionValidator.Validate(definition);
 
-        // Layout v2 was shipped while the desktop board used a broken workspace scaling
-        // migration. Those saves are indistinguishable from healthy v2 layouts by version
-        // alone, so repair them exactly once. Clearing only the presentation coordinates
-        // preserves every discovered node/connection and lets the desktop board rebuild
-        // canonical positions from the case definition, then run its normal fit migration.
+        // Layout v2 was released while the desktop board could persist coordinates from
+        // an oversized workspace migration. The version number alone cannot distinguish
+        // those saves from healthy v2 layouts, so repair presentation coordinates once.
+        // Investigation progress itself (nodes, connections and states) is untouched.
         if (normalized.Layout.RepairVersion < CurrentLayoutRepairVersion)
         {
             if (normalized.Layout.LayoutVersion >= 2)
@@ -261,7 +260,12 @@ public static class AdventureCaseBoard
         connectionState.LastUpdatedSceneId = sceneId ?? connection.DiscoveredAtSceneId ?? connectionState.LastUpdatedSceneId;
     }
 
-    public static void SetConnectionStatus(CaseBoardDefinition definition, CaseBoardState state, string connectionId, CaseConnectionStatus status, string? sceneId = null)
+    public static void SetConnectionStatus(
+        CaseBoardDefinition definition,
+        CaseBoardState state,
+        string connectionId,
+        CaseConnectionStatus status,
+        string? sceneId = null)
     {
         CaseConnectionDefinition connection = FindConnection(definition, connectionId);
         CaseBoardState normalized = Initialize(definition, state);
@@ -271,65 +275,61 @@ public static class AdventureCaseBoard
         connectionState.LastUpdatedSceneId = sceneId ?? connectionState.LastUpdatedSceneId;
     }
 
-    public static void SetLeadState(CaseBoardDefinition definition, CaseBoardState state, string nodeId, CaseLeadState stateValue, string? sceneId = null)
+    public static void SetLeadState(
+        CaseBoardDefinition definition,
+        CaseBoardState state,
+        string nodeId,
+        CaseLeadState leadState,
+        string? sceneId = null)
     {
         CaseNodeDefinition node = FindNode(definition, nodeId);
-        if (node.Category != CaseNodeCategory.Lead) throw new InvalidOperationException($"Case node '{node.Id}' is not a lead.");
+        if (node.Category != CaseNodeCategory.Lead)
+            throw new ArgumentException($"Case node '{nodeId}' is not a lead.", nameof(nodeId));
+
         CaseBoardState normalized = Initialize(definition, state);
         CaseNodeState nodeState = normalized.Nodes[node.Id];
         nodeState.IsKnown = true;
-        nodeState.LeadState = stateValue;
+        nodeState.LeadState = leadState;
         nodeState.LastUpdatedSceneId = sceneId ?? nodeState.LastUpdatedSceneId;
     }
 
-    public static void SetTheoryState(CaseBoardDefinition definition, CaseBoardState state, string nodeId, CaseTheoryState stateValue, string? sceneId = null)
+    public static void SetTheoryState(
+        CaseBoardDefinition definition,
+        CaseBoardState state,
+        string nodeId,
+        CaseTheoryState theoryState,
+        string? sceneId = null)
     {
         CaseNodeDefinition node = FindNode(definition, nodeId);
-        if (node.Category != CaseNodeCategory.Theory) throw new InvalidOperationException($"Case node '{node.Id}' is not a theory.");
+        if (node.Category != CaseNodeCategory.Theory)
+            throw new ArgumentException($"Case node '{nodeId}' is not a theory.", nameof(nodeId));
+
         CaseBoardState normalized = Initialize(definition, state);
         CaseNodeState nodeState = normalized.Nodes[node.Id];
         nodeState.IsKnown = true;
-        nodeState.TheoryState = stateValue;
+        nodeState.TheoryState = theoryState;
         nodeState.LastUpdatedSceneId = sceneId ?? nodeState.LastUpdatedSceneId;
-    }
-
-    public static void SetReliability(CaseBoardDefinition definition, CaseBoardState state, string nodeId, CaseReliability reliability, string? sceneId = null)
-    {
-        CaseNodeDefinition node = FindNode(definition, nodeId);
-        CaseBoardState normalized = Initialize(definition, state);
-        CaseNodeState nodeState = normalized.Nodes[node.Id];
-        nodeState.IsKnown = true;
-        nodeState.Reliability = reliability;
-        nodeState.LastUpdatedSceneId = sceneId ?? nodeState.LastUpdatedSceneId;
-    }
-
-    public static void ApplyStoryProgress(CaseBoardDefinition definition, CaseBoardState state, string sceneId)
-    {
-        foreach (CaseConnectionDefinition connection in definition.Connections)
-        {
-            if (!string.Equals(connection.DiscoveredAtSceneId, sceneId, StringComparison.OrdinalIgnoreCase)) continue;
-            RevealConnection(definition, state, connection.Id, sceneId);
-        }
     }
 
     private static CaseNodeDefinition FindNode(CaseBoardDefinition definition, string nodeId) =>
         definition.Nodes.FirstOrDefault(node => string.Equals(node.Id, nodeId, StringComparison.OrdinalIgnoreCase))
-        ?? throw new KeyNotFoundException($"Unknown case node '{nodeId}'.");
+        ?? throw new ArgumentException($"Unknown case-board node '{nodeId}'.", nameof(nodeId));
 
     private static CaseConnectionDefinition FindConnection(CaseBoardDefinition definition, string connectionId) =>
         definition.Connections.FirstOrDefault(connection => string.Equals(connection.Id, connectionId, StringComparison.OrdinalIgnoreCase))
-        ?? throw new KeyNotFoundException($"Unknown case connection '{connectionId}'.");
+        ?? throw new ArgumentException($"Unknown case-board connection '{connectionId}'.", nameof(connectionId));
 }
 
-internal static class CaseBoardDefinitionValidator
+public static class CaseBoardDefinitionValidator
 {
     public static void Validate(CaseBoardDefinition definition)
     {
+        ArgumentNullException.ThrowIfNull(definition);
         var nodeIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (CaseNodeDefinition node in definition.Nodes)
         {
             if (string.IsNullOrWhiteSpace(node.Id) || !nodeIds.Add(node.Id))
-                throw new ArgumentException("Case Board node ids must be unique and non-empty.", nameof(definition));
+                throw new ArgumentException($"Case Board contains a blank or duplicate node id '{node.Id}'.", nameof(definition));
             if (string.IsNullOrWhiteSpace(node.Title))
                 throw new ArgumentException($"Case Board node '{node.Id}' requires a title.", nameof(definition));
             if ((node.X is null) != (node.Y is null))
@@ -340,9 +340,9 @@ internal static class CaseBoardDefinitionValidator
         foreach (CaseConnectionDefinition connection in definition.Connections)
         {
             if (string.IsNullOrWhiteSpace(connection.Id) || !connectionIds.Add(connection.Id))
-                throw new ArgumentException("Case Board connection ids must be unique and non-empty.", nameof(definition));
+                throw new ArgumentException($"Case Board contains a blank or duplicate connection id '{connection.Id}'.", nameof(definition));
             if (!nodeIds.Contains(connection.FromNodeId) || !nodeIds.Contains(connection.ToNodeId))
-                throw new ArgumentException($"Case Board connection '{connection.Id}' references an unknown node.", nameof(definition));
+                throw new ArgumentException($"Case Board connection '{connection.Id}' references a missing node.", nameof(definition));
             if (string.Equals(connection.FromNodeId, connection.ToNodeId, StringComparison.OrdinalIgnoreCase))
                 throw new ArgumentException($"Case Board connection '{connection.Id}' cannot connect a node to itself.", nameof(definition));
         }
