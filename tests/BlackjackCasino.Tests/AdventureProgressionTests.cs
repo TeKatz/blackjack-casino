@@ -8,12 +8,13 @@ namespace BlackjackCasino.Tests;
 public sealed class AdventureProgressionTests
 {
     [Fact]
-    public void LibraryContainsTwoFullAdventuresPlusTemporaryEncounterTestTale()
+    public void LibraryContainsRegisteredCampaignsPlusTemporaryEncounterTestTale()
     {
         Assert.Contains(AdventureCatalog.All, adventure => adventure.Id == "black-stag");
         Assert.Contains(AdventureCatalog.All, adventure => adventure.Id == "drowned-bell");
         Assert.Contains(AdventureCatalog.All, adventure => adventure.Id == "strangers-wager");
-        Assert.Equal(3, AdventureCatalog.All.Count);
+        Assert.Contains(AdventureCatalog.All, adventure => adventure.Id == "dead-mans-hand");
+        Assert.Equal(4, AdventureCatalog.All.Count);
     }
 
     [Fact]
