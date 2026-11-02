@@ -52,6 +52,7 @@ internal sealed class AdventureView : UserControl
     private readonly Action backToHub;
     private readonly Func<string?> diceSetId;
     private readonly Func<bool> animationsEnabled;
+    private readonly AdventureCaseBoardWindowController caseBoardWindow = new();
     private AdventureCheckResult? lastResult;
     private IReadOnlyList<AdventureFeedbackEvent> feedback = [];
     private AdventureD20? die;
@@ -73,6 +74,7 @@ internal sealed class AdventureView : UserControl
         this.diceSetId = diceSetId ?? throw new ArgumentNullException(nameof(diceSetId));
         this.animationsEnabled = animationsEnabled ?? throw new ArgumentNullException(nameof(animationsEnabled));
         feedback = engine.DrainFeedback();
+        Unloaded += (_, _) => caseBoardWindow.Close();
         Render();
     }
 
@@ -141,8 +143,25 @@ internal sealed class AdventureView : UserControl
         }
         header.Children.Add(title);
 
+        var headerActions = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            VerticalAlignment = VerticalAlignment.Top,
+        };
+        if (engine.Definition.CaseBoard is not null)
+        {
+            Button board = AdventureUi.Button("CASE BOARD", accent: true, fontSize: 11.5, scaleOnHover: false);
+            board.Margin = new Thickness(0, 0, 8, 0);
+            board.IsEnabled = !rolling;
+            board.Click += (_, _) =>
+            {
+                if (rolling || transitioning) return;
+                ShowEmbeddedCaseBoard();
+            };
+            headerActions.Children.Add(board);
+        }
+
         Button back = AdventureUi.Button("← ADVENTURES", fontSize: 11.5, scaleOnHover: false);
-        back.VerticalAlignment = VerticalAlignment.Top;
         back.IsEnabled = !rolling;
         back.Click += (_, _) =>
         {
@@ -150,8 +169,9 @@ internal sealed class AdventureView : UserControl
             persist(engine.State);
             backToHub();
         };
-        Grid.SetColumn(back, 1);
-        header.Children.Add(back);
+        headerActions.Children.Add(back);
+        Grid.SetColumn(headerActions, 1);
+        header.Children.Add(headerActions);
         grid.Children.Add(header);
 
         var scroll = new ScrollViewer
@@ -250,6 +270,32 @@ internal sealed class AdventureView : UserControl
         grid.Children.Add(scroll);
         story.Child = grid;
         return story;
+    }
+
+    private void ShowEmbeddedCaseBoard()
+    {
+        if (engine.Definition.CaseBoard is null) return;
+        persist(engine.State);
+
+        var root = new Grid { Background = AdventureUi.Ink("#080B0D") };
+        root.Children.Add(new AdventureCaseBoardView(engine, persist));
+
+        var actions = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Top,
+            Margin = new Thickness(0, 12, 18, 0),
+        };
+        Button popout = AdventureUi.Button("OPEN IN WINDOW", accent: true, fontSize: 10.5, scaleOnHover: false);
+        popout.Margin = new Thickness(0, 0, 8, 0);
+        popout.Click += (_, _) => caseBoardWindow.Open(engine, persist);
+        actions.Children.Add(popout);
+        Button close = AdventureUi.Button("BACK TO STORY", fontSize: 10.5, scaleOnHover: false);
+        close.Click += (_, _) => Render();
+        actions.Children.Add(close);
+        root.Children.Add(actions);
+        Content = root;
     }
 
     private FrameworkElement BuildChoice(AdventureChoiceDefinition choice)
@@ -460,6 +506,20 @@ internal sealed class AdventureView : UserControl
             FontSize = 12.5,
             Margin = new Thickness(0, 1, 0, 0),
         });
+        AdventureClassDefinition? archetype = AdventureCharacterCatalog.AllFor(engine.Definition)
+            .FirstOrDefault(item => string.Equals(item.Id, character.ClassId, StringComparison.OrdinalIgnoreCase));
+        if (!string.IsNullOrWhiteSpace(archetype?.SpecialMechanicName))
+        {
+            identity.Children.Add(new TextBlock
+            {
+                Text = $"SPECIAL · {archetype.SpecialMechanicName!.ToUpperInvariant()}",
+                Foreground = AdventureUi.Ink("#C7AA68"),
+                FontFamily = new FontFamily("Georgia"),
+                FontSize = 9.5,
+                FontWeight = FontWeights.SemiBold,
+                Margin = new Thickness(0, 4, 0, 0),
+            });
+        }
         identityRow.Children.Add(identity);
 
         Border eventFeed = AdventureInventoryUi.BuildEventFeed(feedback, animationsEnabled());
@@ -487,7 +547,8 @@ internal sealed class AdventureView : UserControl
         {
             int score = character.AbilityScore(ability);
             int modifier = character.AbilityModifier(ability);
-            abilities.Children.Add(AdventureUi.StatTile(ShortAbility(ability), $"{score}   {Signed(modifier)}", pending?.Ability == ability));
+            string label = AdventureCharacterCatalog.AbilityShortLabel(engine.Definition, ability);
+            abilities.Children.Add(AdventureUi.StatTile(label, $"{score}   {Signed(modifier)}", pending?.Ability == ability));
         }
         body.Children.Add(abilities);
 
@@ -567,7 +628,7 @@ internal sealed class AdventureView : UserControl
             int skill = engine.State.Character.SkillBonus(pending.SkillId);
             body.Children.Add(new TextBlock
             {
-                Text = $"Modifier {Signed(ability + skill + pending.Modifier)} · {ShortAbility(pending.Ability)} {Signed(ability)}" +
+                Text = $"Modifier {Signed(ability + skill + pending.Modifier)} · {AdventureCharacterCatalog.AbilityShortLabel(engine.Definition, pending.Ability)} {Signed(ability)}" +
                        (pending.SkillId is null ? "" : $" · training {Signed(skill)}"),
                 Foreground = AdventureUi.Ink("#B9C6BD"),
                 FontFamily = new FontFamily("Georgia"),
@@ -785,21 +846,10 @@ internal sealed class AdventureView : UserControl
         return border;
     }
 
-    private static string CheckLabel(AdventureCheckDefinition check) =>
+    private string CheckLabel(AdventureCheckDefinition check) =>
         string.IsNullOrWhiteSpace(check.SkillId)
-            ? check.Ability.ToString()
-            : AdventureCharacterCatalog.Skill(check.SkillId).Name;
-
-    private static string ShortAbility(AdventureAbility ability) => ability switch
-    {
-        AdventureAbility.Strength => "STR",
-        AdventureAbility.Dexterity => "DEX",
-        AdventureAbility.Constitution => "CON",
-        AdventureAbility.Intelligence => "INT",
-        AdventureAbility.Wisdom => "WIS",
-        AdventureAbility.Charisma => "CHA",
-        _ => ability.ToString().ToUpperInvariant(),
-    };
+            ? AdventureCharacterCatalog.AbilityLabel(engine.Definition, check.Ability)
+            : AdventureCharacterCatalog.Skill(engine.Definition, check.SkillId).Name;
 
     private static string Signed(int value) =>
         value >= 0 ? $"+{value}" : value.ToString(System.Globalization.CultureInfo.InvariantCulture);
