@@ -93,16 +93,7 @@ internal static class PlayerProfileStore
     internal static void SaveProfileOrThrow(PlayerProfileState state)
     {
         ArgumentNullException.ThrowIfNull(state);
-
-        // Prevent an older deferred profile snapshot from landing after this transactional save.
-        FlushProfilePending();
-        lock (ProfileFileWriteGate)
-        {
-            Directory.CreateDirectory(DirectoryPath);
-            string temporary = ProfilePath + ".tmp";
-            File.WriteAllText(temporary, JsonSerializer.Serialize(SanitizeProfile(state), JsonOptions));
-            File.Move(temporary, ProfilePath, overwrite: true);
-        }
+        WriteProfileTransaction(SanitizeProfile(state));
     }
 
     /// <summary>
@@ -113,17 +104,7 @@ internal static class PlayerProfileStore
     internal static void SaveNormalizedProfileOrThrow(PlayerProfileState state)
     {
         ArgumentNullException.ThrowIfNull(state);
-
-        // The candidate is serialized while the controller still owns the profile transaction lock.
-        // Flush first so an older deferred routine save can never overwrite this committed snapshot.
-        FlushProfilePending();
-        lock (ProfileFileWriteGate)
-        {
-            Directory.CreateDirectory(DirectoryPath);
-            string temporary = ProfilePath + ".tmp";
-            File.WriteAllText(temporary, JsonSerializer.Serialize(state, JsonOptions));
-            File.Move(temporary, ProfilePath, overwrite: true);
-        }
+        WriteProfileTransaction(state);
     }
 
     public static void SaveHistory(IEnumerable<RoundHistoryEntry> history)
@@ -211,6 +192,22 @@ internal static class PlayerProfileStore
 
         _ = new ProgressionService(state);
         return state;
+    }
+
+    private static void WriteProfileTransaction(PlayerProfileState state)
+    {
+        // Prevent an older deferred profile snapshot from landing after this transactional save.
+        FlushProfilePending();
+        lock (ProfileFileWriteGate)
+        {
+            Directory.CreateDirectory(DirectoryPath);
+            string temporary = ProfilePath + ".tmp";
+            using (var file = new FileStream(temporary, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                JsonSerializer.Serialize(file, state, JsonOptions);
+            }
+            File.Move(temporary, ProfilePath, overwrite: true);
+        }
     }
 
     private static void WriteSerializedAtomically(string path, string payload, object writeGate)
