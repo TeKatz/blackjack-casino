@@ -1,18 +1,20 @@
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
 using System.Windows.Shapes;
+using System.Windows.Shell;
+using System.Windows.Threading;
 using BlackjackCasino.Core.Adventure;
 
 namespace BlackjackCasino.Desktop;
 
 /// <summary>
 /// Generic investigation-board surface for Adventures that opt into a CaseBoardDefinition.
-/// The visual treatment is intentionally campaign-neutral at the API boundary while using a noir-style
-/// corkboard presentation as the first skin. It reads and writes the same CaseBoardState that lives on
-/// AdventureRunState, so embedded and detached presentations stay synchronized by construction.
+/// Story truth remains owned by the Adventure engine; this surface only controls presentation and layout.
 /// </summary>
 internal sealed class AdventureCaseBoardView : Grid
 {
@@ -20,6 +22,7 @@ internal sealed class AdventureCaseBoardView : Grid
     private const double BoardHeight = 900;
     private const double CardWidth = 210;
     private const double CardHeight = 116;
+    private const double CardEdgePadding = 20;
 
     private readonly AdventureEngine engine;
     private readonly CaseBoardDefinition definition;
@@ -30,10 +33,20 @@ internal sealed class AdventureCaseBoardView : Grid
     private readonly ScaleTransform scale = new(1, 1);
     private readonly TranslateTransform translate = new();
     private readonly HashSet<CaseNodeCategory> visibleCategories = Enum.GetValues<CaseNodeCategory>().ToHashSet();
-    private Point? dragOrigin;
-    private double dragStartX;
-    private double dragStartY;
+    private readonly Dictionary<string, Border> nodeCards = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, Line> connectionLines = new(StringComparer.OrdinalIgnoreCase);
+
+    private Point? panOrigin;
+    private double panStartX;
+    private double panStartY;
+    private Border? draggedCard;
+    private string? draggedNodeId;
+    private Point? nodeDragOrigin;
+    private double nodeDragStartX;
+    private double nodeDragStartY;
+    private bool nodeMoved;
     private string? selectedNodeId;
+    private string lastStoryStateSignature = string.Empty;
 
     internal AdventureCaseBoardView(
         AdventureEngine engine,
@@ -48,12 +61,20 @@ internal sealed class AdventureCaseBoardView : Grid
         BuildShell();
         RestoreLayout();
         RefreshBoard();
+        lastStoryStateSignature = BuildStoryStateSignature();
     }
 
-    internal void RefreshFromRunState()
+    /// <summary>
+    /// Pulls new story discoveries into an already-open board. Layout changes are intentionally excluded from
+    /// the signature so a refresh can never fight the user while a card is being dragged.
+    /// </summary>
+    internal void RefreshFromRunState(bool force = false)
     {
         engine.State.CaseBoard = AdventureCaseBoard.Initialize(definition, engine.State.CaseBoard);
-        RestoreLayout();
+        string signature = BuildStoryStateSignature();
+        if (!force && string.Equals(signature, lastStoryStateSignature, StringComparison.Ordinal)) return;
+
+        lastStoryStateSignature = signature;
         RefreshBoard();
     }
 
@@ -65,16 +86,22 @@ internal sealed class AdventureCaseBoardView : Grid
         RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
 
-        Border toolbar = AdventureUi.Panel("#151515", "#0D0E0F", "#51463A", new Thickness(16, 12, 16, 12), radius: 0, shadow: false);
+        Border toolbar = AdventureUi.Panel("#151515", "#0D0E0F", "#51463A", new Thickness(16, 10, 16, 11), radius: 0, shadow: false);
         Grid.SetColumnSpan(toolbar, 2);
         Children.Add(toolbar);
 
         var toolbarGrid = new Grid();
+        toolbarGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        toolbarGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         toolbarGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         toolbarGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        toolbarGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-        var title = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+        var title = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 360, 0),
+        };
         title.Children.Add(new TextBlock
         {
             Text = definition.Title.ToUpperInvariant(),
@@ -91,16 +118,22 @@ internal sealed class AdventureCaseBoardView : Grid
             Foreground = AdventureUi.Ink("#9B8062"),
             VerticalAlignment = VerticalAlignment.Center,
         });
+        Grid.SetColumnSpan(title, 2);
         toolbarGrid.Children.Add(title);
 
-        var filters = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+        var filters = new WrapPanel
+        {
+            Orientation = Orientation.Horizontal,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 10, 12, 0),
+        };
         foreach (CaseNodeCategory category in Enum.GetValues<CaseNodeCategory>())
         {
             var check = new CheckBox
             {
                 Content = CategoryLabel(category),
                 IsChecked = true,
-                Margin = new Thickness(0, 0, 13, 0),
+                Margin = new Thickness(0, 0, 14, 3),
                 Foreground = AdventureUi.Ink("#C7B69A"),
                 FontFamily = new FontFamily("Georgia"),
                 FontSize = 10.5,
@@ -119,10 +152,16 @@ internal sealed class AdventureCaseBoardView : Grid
             };
             filters.Children.Add(check);
         }
-        Grid.SetColumn(filters, 1);
+        Grid.SetRow(filters, 1);
         toolbarGrid.Children.Add(filters);
 
-        var viewActions = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(10, 0, 0, 0) };
+        var viewActions = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Margin = new Thickness(10, 8, 0, 0),
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
         Button minus = ToolbarButton("−");
         minus.ToolTip = "Zoom out";
         minus.Click += (_, _) => ChangeZoom(-0.12);
@@ -139,7 +178,8 @@ internal sealed class AdventureCaseBoardView : Grid
         reset.ToolTip = "Reset zoom and pan";
         reset.Click += (_, _) => ResetView();
         viewActions.Children.Add(reset);
-        Grid.SetColumn(viewActions, 2);
+        Grid.SetRow(viewActions, 1);
+        Grid.SetColumn(viewActions, 1);
         toolbarGrid.Children.Add(viewActions);
         toolbar.Child = toolbarGrid;
 
@@ -176,24 +216,24 @@ internal sealed class AdventureCaseBoardView : Grid
     private void RefreshBoard()
     {
         boardCanvas.Children.Clear();
+        nodeCards.Clear();
+        connectionLines.Clear();
         CaseBoardState state = engine.State.CaseBoard;
-        var visibleNodes = definition.Nodes
+        CaseNodeDefinition[] visibleNodes = definition.Nodes
             .Where(node => state.Nodes.TryGetValue(node.Id, out CaseNodeState? nodeState) && nodeState.IsKnown)
             .Where(node => visibleCategories.Contains(node.Category))
             .ToArray();
-        var visibleIds = visibleNodes.Select(node => node.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        HashSet<string> visibleIds = visibleNodes.Select(node => node.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        foreach (CaseConnectionDefinition connection in definition.Connections ?? [])
+        foreach (CaseConnectionDefinition connection in definition.Connections)
         {
             if (!state.Connections.TryGetValue(connection.Id, out CaseConnectionState? connectionState) || !connectionState.IsKnown)
                 continue;
             if (!visibleIds.Contains(connection.FromNodeId) || !visibleIds.Contains(connection.ToNodeId))
                 continue;
 
-            CaseNodeDefinition from = definition.Nodes.First(node => string.Equals(node.Id, connection.FromNodeId, StringComparison.OrdinalIgnoreCase));
-            CaseNodeDefinition to = definition.Nodes.First(node => string.Equals(node.Id, connection.ToNodeId, StringComparison.OrdinalIgnoreCase));
-            Point a = NodeCenter(from);
-            Point b = NodeCenter(to);
+            Point a = NodeCenter(connection.FromNodeId);
+            Point b = NodeCenter(connection.ToNodeId);
             var line = new Line
             {
                 X1 = a.X,
@@ -210,11 +250,16 @@ internal sealed class AdventureCaseBoardView : Grid
                 line.StrokeDashArray = new DoubleCollection { 6, 4 };
             if (connectionState.Status == CaseConnectionStatus.Contradicted)
                 line.StrokeDashArray = new DoubleCollection { 2, 4 };
+            connectionLines[connection.Id] = line;
             boardCanvas.Children.Add(line);
         }
 
         foreach (CaseNodeDefinition node in visibleNodes)
-            boardCanvas.Children.Add(BuildNodeCard(node, state.Nodes[node.Id]));
+        {
+            Border card = BuildNodeCard(node, state.Nodes[node.Id]);
+            nodeCards[node.Id] = card;
+            boardCanvas.Children.Add(card);
+        }
 
         if (visibleNodes.Length == 0)
         {
@@ -237,8 +282,9 @@ internal sealed class AdventureCaseBoardView : Grid
 
         if (selectedNodeId is not null && visibleIds.Contains(selectedNodeId))
         {
-            CaseNodeDefinition selected = definition.Nodes.First(node => string.Equals(node.Id, selectedNodeId, StringComparison.OrdinalIgnoreCase));
+            CaseNodeDefinition selected = FindNode(selectedNodeId);
             ShowDetails(selected, state.Nodes[selected.Id]);
+            ApplySelectionVisual(selectedNodeId);
         }
         else if (selectedNodeId is not null)
         {
@@ -247,13 +293,13 @@ internal sealed class AdventureCaseBoardView : Grid
         }
     }
 
-    private FrameworkElement BuildNodeCard(CaseNodeDefinition node, CaseNodeState state)
+    private Border BuildNodeCard(CaseNodeDefinition node, CaseNodeState state)
     {
         Border card = AdventureUi.Panel(
             NodeSurface(node.Category),
             "#D2C3A5",
             NodeBorder(node.Category),
-            new Thickness(13, 11, 13, 11),
+            new Thickness(13, 10, 13, 10),
             radius: 2,
             shadow: true);
         card.Width = CardWidth;
@@ -268,20 +314,31 @@ internal sealed class AdventureCaseBoardView : Grid
         {
             Text = CategoryLabel(node.Category).ToUpperInvariant(),
             FontFamily = new FontFamily("Georgia"),
-            FontSize = 9,
+            FontSize = 8.5,
             FontWeight = FontWeights.Bold,
             Foreground = AdventureUi.Ink("#6A332F"),
         });
-        stack.Children.Add(new TextBlock
+
+        var heading = new Grid { Margin = new Thickness(0, 3, 0, 2) };
+        heading.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        heading.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        FrameworkElement icon = BuildCategoryIcon(node.Category);
+        icon.Margin = new Thickness(0, 1, 7, 0);
+        heading.Children.Add(icon);
+        var title = new TextBlock
         {
             Text = node.Title,
             FontFamily = new FontFamily("Georgia"),
-            FontSize = 16,
+            FontSize = 15.5,
             FontWeight = FontWeights.Bold,
             Foreground = AdventureUi.Ink("#231F1A"),
-            Margin = new Thickness(0, 4, 0, 2),
             TextTrimming = TextTrimming.CharacterEllipsis,
-        });
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        Grid.SetColumn(title, 1);
+        heading.Children.Add(title);
+        stack.Children.Add(heading);
+
         stack.Children.Add(new TextBlock
         {
             Text = string.IsNullOrWhiteSpace(node.Subtitle) ? Shorten(node.Description, 84) : node.Subtitle,
@@ -290,7 +347,7 @@ internal sealed class AdventureCaseBoardView : Grid
             LineHeight = 14,
             Foreground = AdventureUi.Ink("#51483D"),
             TextWrapping = TextWrapping.Wrap,
-            MaxHeight = 31,
+            MaxHeight = 29,
         });
         stack.Children.Add(new TextBlock
         {
@@ -299,28 +356,197 @@ internal sealed class AdventureCaseBoardView : Grid
             FontSize = 8.5,
             FontStyle = FontStyles.Italic,
             Foreground = AdventureUi.Ink("#765C4A"),
-            Margin = new Thickness(0, 5, 0, 0),
+            Margin = new Thickness(0, 4, 0, 0),
         });
         card.Child = stack;
 
-        card.MouseLeftButtonUp += (_, args) =>
-        {
-            if (dragOrigin is not null) return;
-            selectedNodeId = node.Id;
-            ShowDetails(node, state);
-            args.Handled = true;
-        };
+        card.MouseLeftButtonDown += (_, args) => BeginNodeDrag(card, node, state, args);
+        card.MouseMove += (_, args) => ContinueNodeDrag(card, node, args);
+        card.MouseLeftButtonUp += (_, args) => EndNodeDrag(card, node, state, args);
+        card.MouseRightButtonUp += (_, args) => OpenNodeContextMenu(card, node, state, args);
 
         CaseBoardNodePosition position = ResolvePosition(node);
         Canvas.SetLeft(card, position.X);
         Canvas.SetTop(card, position.Y);
+        if (string.Equals(selectedNodeId, node.Id, StringComparison.OrdinalIgnoreCase))
+            ApplySelectionVisual(node.Id);
         return card;
+    }
+
+    private void BeginNodeDrag(Border card, CaseNodeDefinition node, CaseNodeState state, MouseButtonEventArgs args)
+    {
+        if (args.ChangedButton != MouseButton.Left) return;
+
+        SelectNode(node, state);
+        draggedCard = card;
+        draggedNodeId = node.Id;
+        nodeMoved = false;
+        nodeDragOrigin = args.GetPosition(boardCanvas);
+        CaseBoardNodePosition position = ResolvePosition(node);
+        nodeDragStartX = position.X;
+        nodeDragStartY = position.Y;
+        Panel.SetZIndex(card, 1000);
+        card.CaptureMouse();
+        args.Handled = true;
+    }
+
+    private void ContinueNodeDrag(Border card, CaseNodeDefinition node, MouseEventArgs args)
+    {
+        if (!ReferenceEquals(draggedCard, card) || nodeDragOrigin is not Point origin || args.LeftButton != MouseButtonState.Pressed)
+            return;
+
+        Point current = args.GetPosition(boardCanvas);
+        double nextX = Math.Clamp(nodeDragStartX + current.X - origin.X, CardEdgePadding, BoardWidth - CardWidth - CardEdgePadding);
+        double nextY = Math.Clamp(nodeDragStartY + current.Y - origin.Y, CardEdgePadding, BoardHeight - CardHeight - CardEdgePadding);
+        nodeMoved |= Math.Abs(nextX - nodeDragStartX) > 1 || Math.Abs(nextY - nodeDragStartY) > 1;
+
+        CaseBoardNodePosition position = ResolvePosition(node);
+        position.X = nextX;
+        position.Y = nextY;
+        Canvas.SetLeft(card, nextX);
+        Canvas.SetTop(card, nextY);
+        UpdateConnectedLines(node.Id);
+        args.Handled = true;
+    }
+
+    private void EndNodeDrag(Border card, CaseNodeDefinition node, CaseNodeState state, MouseButtonEventArgs args)
+    {
+        if (!ReferenceEquals(draggedCard, card)) return;
+        card.ReleaseMouseCapture();
+        Panel.SetZIndex(card, 10);
+        draggedCard = null;
+        draggedNodeId = null;
+        nodeDragOrigin = null;
+        if (nodeMoved)
+        {
+            persist(engine.State);
+            nodeMoved = false;
+        }
+        else
+        {
+            SelectNode(node, state);
+        }
+        args.Handled = true;
+    }
+
+    private void OpenNodeContextMenu(Border card, CaseNodeDefinition node, CaseNodeState state, MouseButtonEventArgs args)
+    {
+        SelectNode(node, state);
+        ContextMenu menu = BuildContextMenu();
+
+        MenuItem center = ContextMenuItem("Center on this node");
+        center.Click += (_, _) => CenterOnNode(node);
+        menu.Items.Add(center);
+
+        MenuItem front = ContextMenuItem("Bring to front");
+        front.Click += (_, _) => Panel.SetZIndex(card, 1100);
+        menu.Items.Add(front);
+
+        MenuItem reset = ContextMenuItem("Reset node position");
+        reset.Click += (_, _) => ResetNodePosition(node);
+        menu.Items.Add(reset);
+
+        MenuItem copy = ContextMenuItem("Copy case note");
+        copy.Click += (_, _) =>
+        {
+            try
+            {
+                Clipboard.SetText($"{node.Title}\n{node.Description}");
+            }
+            catch
+            {
+                // Clipboard ownership is best-effort and must never interrupt the board.
+            }
+        };
+        menu.Items.Add(copy);
+
+        menu.PlacementTarget = card;
+        menu.Placement = PlacementMode.MousePoint;
+        menu.IsOpen = true;
+        args.Handled = true;
+    }
+
+    private void SelectNode(CaseNodeDefinition node, CaseNodeState state)
+    {
+        selectedNodeId = node.Id;
+        ShowDetails(node, state);
+        ApplySelectionVisual(node.Id);
+    }
+
+    private void ApplySelectionVisual(string? nodeId)
+    {
+        foreach ((string id, Border card) in nodeCards)
+        {
+            bool selected = nodeId is not null && string.Equals(id, nodeId, StringComparison.OrdinalIgnoreCase);
+            CaseNodeDefinition node = FindNode(id);
+            card.BorderBrush = AdventureUi.Ink(selected ? "#F0C86B" : NodeBorder(node.Category));
+            card.BorderThickness = selected ? new Thickness(2.4) : new Thickness(1);
+            card.Effect = selected
+                ? new DropShadowEffect
+                {
+                    BlurRadius = 18,
+                    ShadowDepth = 0,
+                    Opacity = .42,
+                    Color = (Color)ColorConverter.ConvertFromString("#D1A94E"),
+                }
+                : new DropShadowEffect { BlurRadius = 12, ShadowDepth = 4, Opacity = .34, Color = Colors.Black };
+        }
+    }
+
+    private void UpdateConnectedLines(string nodeId)
+    {
+        foreach (CaseConnectionDefinition connection in definition.Connections)
+        {
+            if (!string.Equals(connection.FromNodeId, nodeId, StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(connection.ToNodeId, nodeId, StringComparison.OrdinalIgnoreCase))
+                continue;
+            if (!connectionLines.TryGetValue(connection.Id, out Line? line)) continue;
+
+            Point a = NodeCenter(connection.FromNodeId);
+            Point b = NodeCenter(connection.ToNodeId);
+            line.X1 = a.X;
+            line.Y1 = a.Y;
+            line.X2 = b.X;
+            line.Y2 = b.Y;
+        }
+    }
+
+    private void ResetNodePosition(CaseNodeDefinition node)
+    {
+        CaseBoardNodePosition position = ResolvePosition(node);
+        Point reset = DefaultPosition(node);
+        position.X = reset.X;
+        position.Y = reset.Y;
+        if (nodeCards.TryGetValue(node.Id, out Border? card))
+        {
+            Canvas.SetLeft(card, position.X);
+            Canvas.SetTop(card, position.Y);
+        }
+        UpdateConnectedLines(node.Id);
+        persist(engine.State);
+    }
+
+    private void CenterOnNode(CaseNodeDefinition node)
+    {
+        Point center = NodeCenter(node.Id);
+        double viewportWidth = Math.Max(1, viewport.ActualWidth);
+        double viewportHeight = Math.Max(1, viewport.ActualHeight);
+        translate.X = viewportWidth / 2 - center.X * scale.ScaleX;
+        translate.Y = viewportHeight / 2 - center.Y * scale.ScaleY;
+        SaveViewState();
     }
 
     private void ShowDetails(CaseNodeDefinition node, CaseNodeState state)
     {
         details.Children.Clear();
-        details.Children.Add(AdventureUi.Eyebrow(CategoryLabel(node.Category).ToUpperInvariant(), 10));
+
+        var category = new StackPanel { Orientation = Orientation.Horizontal };
+        FrameworkElement icon = BuildCategoryIcon(node.Category, light: true);
+        icon.Margin = new Thickness(0, 0, 7, 0);
+        category.Children.Add(icon);
+        category.Children.Add(AdventureUi.Eyebrow(CategoryLabel(node.Category).ToUpperInvariant(), 10));
+        details.Children.Add(category);
+
         details.Children.Add(new TextBlock
         {
             Text = node.Title,
@@ -362,7 +588,7 @@ internal sealed class AdventureCaseBoardView : Grid
         if ((node.StoryQuotes ?? []).Count > 0)
             AddDetailSection("NOTES / QUOTES", string.Join("\n\n", node.StoryQuotes ?? []));
 
-        var connections = (definition.Connections ?? [])
+        CaseConnectionDefinition[] connections = definition.Connections
             .Where(connection => string.Equals(connection.FromNodeId, node.Id, StringComparison.OrdinalIgnoreCase) || string.Equals(connection.ToNodeId, node.Id, StringComparison.OrdinalIgnoreCase))
             .Where(connection => engine.State.CaseBoard.Connections.TryGetValue(connection.Id, out CaseConnectionState? connectionState) && connectionState.IsKnown)
             .ToArray();
@@ -371,7 +597,7 @@ internal sealed class AdventureCaseBoardView : Grid
             string text = string.Join("\n", connections.Select(connection =>
             {
                 string otherId = string.Equals(connection.FromNodeId, node.Id, StringComparison.OrdinalIgnoreCase) ? connection.ToNodeId : connection.FromNodeId;
-                string other = definition.Nodes.First(candidate => string.Equals(candidate.Id, otherId, StringComparison.OrdinalIgnoreCase)).Title;
+                string other = FindNode(otherId).Title;
                 CaseConnectionState connectionState = engine.State.CaseBoard.Connections[connection.Id];
                 return $"{other} · {connection.Type} · {connectionState.Status}";
             }));
@@ -393,7 +619,7 @@ internal sealed class AdventureCaseBoardView : Grid
         });
         details.Children.Add(new TextBlock
         {
-            Text = "People, locations, evidence, unresolved leads and working theories can all carry their own reliability and story context. Connections on the board are semantic state, not decoration.",
+            Text = "Click a card to inspect it. Drag it to reorganize the board. Right-click a card for layout actions. Connections move with their pinned evidence automatically.",
             FontFamily = new FontFamily("Georgia"),
             FontSize = 12.5,
             LineHeight = 20,
@@ -429,23 +655,33 @@ internal sealed class AdventureCaseBoardView : Grid
         if (engine.State.CaseBoard.Layout.NodePositions.TryGetValue(node.Id, out CaseBoardNodePosition? existing))
             return existing;
 
-        int index = definition.Nodes.IndexOf(node);
-        int column = index % 5;
-        int row = index / 5;
-        var created = new CaseBoardNodePosition
-        {
-            X = 70 + column * 265 + (row % 2) * 28,
-            Y = 70 + row * 180 + (column % 2) * 17,
-        };
+        Point point = DefaultPosition(node);
+        var created = new CaseBoardNodePosition { X = point.X, Y = point.Y };
         engine.State.CaseBoard.Layout.NodePositions[node.Id] = created;
         return created;
     }
 
-    private Point NodeCenter(CaseNodeDefinition node)
+    private Point DefaultPosition(CaseNodeDefinition node)
     {
+        if (node.X is double x && node.Y is double y) return new Point(x, y);
+
+        int index = definition.Nodes.IndexOf(node);
+        int column = index % 5;
+        int row = index / 5;
+        return new Point(
+            70 + column * 265 + (row % 2) * 28,
+            70 + row * 180 + (column % 2) * 17);
+    }
+
+    private Point NodeCenter(string nodeId)
+    {
+        CaseNodeDefinition node = FindNode(nodeId);
         CaseBoardNodePosition position = ResolvePosition(node);
         return new Point(position.X + CardWidth / 2, position.Y + CardHeight / 2);
     }
+
+    private CaseNodeDefinition FindNode(string nodeId) =>
+        definition.Nodes.First(node => string.Equals(node.Id, nodeId, StringComparison.OrdinalIgnoreCase));
 
     private void ChangeZoom(double delta)
     {
@@ -504,28 +740,53 @@ internal sealed class AdventureCaseBoardView : Grid
     {
         if (args.OriginalSource is DependencyObject source && FindParent<Border>(source, element => element.Tag is string) is not null)
             return;
-        dragOrigin = args.GetPosition(this);
-        dragStartX = translate.X;
-        dragStartY = translate.Y;
+        panOrigin = args.GetPosition(this);
+        panStartX = translate.X;
+        panStartY = translate.Y;
         viewport.CaptureMouse();
         args.Handled = true;
     }
 
     private void OnPanMove(object sender, MouseEventArgs args)
     {
-        if (dragOrigin is not Point origin || args.LeftButton != MouseButtonState.Pressed) return;
+        if (draggedNodeId is not null || panOrigin is not Point origin || args.LeftButton != MouseButtonState.Pressed) return;
         Point current = args.GetPosition(this);
-        translate.X = dragStartX + current.X - origin.X;
-        translate.Y = dragStartY + current.Y - origin.Y;
+        translate.X = panStartX + current.X - origin.X;
+        translate.Y = panStartY + current.Y - origin.Y;
     }
 
     private void OnPanEnd(object sender, MouseButtonEventArgs args)
     {
-        if (dragOrigin is null) return;
-        dragOrigin = null;
+        if (panOrigin is null) return;
+        panOrigin = null;
         viewport.ReleaseMouseCapture();
         SaveViewState();
         args.Handled = true;
+    }
+
+    private string BuildStoryStateSignature()
+    {
+        var builder = new StringBuilder();
+        foreach (CaseNodeDefinition node in definition.Nodes.OrderBy(node => node.Id, StringComparer.OrdinalIgnoreCase))
+        {
+            if (!engine.State.CaseBoard.Nodes.TryGetValue(node.Id, out CaseNodeState? state)) continue;
+            builder.Append(node.Id).Append('|')
+                .Append(state.IsKnown).Append('|')
+                .Append((int)state.Reliability).Append('|')
+                .Append((int)state.LeadState).Append('|')
+                .Append((int)state.TheoryState).Append('|')
+                .Append(state.LastUpdatedSceneId).Append(';');
+        }
+        builder.Append('#');
+        foreach (CaseConnectionDefinition connection in definition.Connections.OrderBy(connection => connection.Id, StringComparer.OrdinalIgnoreCase))
+        {
+            if (!engine.State.CaseBoard.Connections.TryGetValue(connection.Id, out CaseConnectionState? state)) continue;
+            builder.Append(connection.Id).Append('|')
+                .Append(state.IsKnown).Append('|')
+                .Append((int)state.Status).Append('|')
+                .Append(state.LastUpdatedSceneId).Append(';');
+        }
+        return builder.ToString();
     }
 
     private static T? FindParent<T>(DependencyObject? start, Func<T, bool> predicate) where T : DependencyObject
@@ -545,6 +806,117 @@ internal sealed class AdventureCaseBoardView : Grid
         button.Padding = new Thickness(10, 6, 10, 6);
         button.Margin = new Thickness(4, 0, 0, 0);
         return button;
+    }
+
+    private static ContextMenu BuildContextMenu()
+    {
+        var menu = new ContextMenu
+        {
+            Background = AdventureUi.Ink("#101416"),
+            BorderBrush = AdventureUi.Ink("#5E4B38"),
+            BorderThickness = new Thickness(1),
+            Foreground = AdventureUi.Ink("#E2D2B7"),
+            FontFamily = new FontFamily("Georgia"),
+            Padding = new Thickness(4),
+        };
+        var style = new Style(typeof(MenuItem));
+        style.Setters.Add(new Setter(Control.ForegroundProperty, AdventureUi.Ink("#E2D2B7")));
+        style.Setters.Add(new Setter(Control.BackgroundProperty, AdventureUi.Ink("#101416")));
+        style.Setters.Add(new Setter(Control.FontFamilyProperty, new FontFamily("Georgia")));
+        style.Setters.Add(new Setter(Control.FontSizeProperty, 11.5));
+        style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(12, 8, 16, 8)));
+        var highlighted = new Trigger { Property = MenuItem.IsHighlightedProperty, Value = true };
+        highlighted.Setters.Add(new Setter(Control.BackgroundProperty, AdventureUi.Ink("#26302C")));
+        highlighted.Setters.Add(new Setter(Control.ForegroundProperty, AdventureUi.Ink("#F2D99A")));
+        style.Triggers.Add(highlighted);
+        menu.ItemContainerStyle = style;
+        return menu;
+    }
+
+    private static MenuItem ContextMenuItem(string header) => new() { Header = header };
+
+    private static FrameworkElement BuildCategoryIcon(CaseNodeCategory category, bool light = false)
+    {
+        Brush brush = AdventureUi.Ink(light ? "#C6A46C" : "#5F3D31");
+        var host = new Viewbox { Width = 16, Height = 16, Stretch = Stretch.Uniform };
+        var canvas = new Canvas { Width = 20, Height = 20 };
+
+        switch (category)
+        {
+            case CaseNodeCategory.Person:
+                canvas.Children.Add(new Ellipse
+                {
+                    Width = 7,
+                    Height = 7,
+                    Fill = brush,
+                    Margin = new Thickness(6.5, 1.5, 0, 0),
+                });
+                var shoulders = new Path
+                {
+                    Data = Geometry.Parse("M3,19 C3.3,13.8 6.2,11.2 10,11.2 C13.8,11.2 16.7,13.8 17,19 Z"),
+                    Fill = brush,
+                };
+                canvas.Children.Add(shoulders);
+                break;
+
+            case CaseNodeCategory.Location:
+                canvas.Children.Add(new Path
+                {
+                    Data = Geometry.Parse("M10,1 C5.5,1 2.5,4.2 2.5,8.2 C2.5,13.1 10,19 10,19 C10,19 17.5,13.1 17.5,8.2 C17.5,4.2 14.5,1 10,1 Z M10,5.2 A3,3 0 1 0 10,11.2 A3,3 0 1 0 10,5.2 Z"),
+                    Fill = brush,
+                });
+                break;
+
+            case CaseNodeCategory.Evidence:
+                canvas.Children.Add(new Path
+                {
+                    Data = Geometry.Parse("M4,1 L13.5,1 L18,5.5 L18,19 L4,19 Z M13.5,1 L13.5,5.5 L18,5.5 M7,9 L15,9 M7,12 L15,12 M7,15 L13,15"),
+                    Stroke = brush,
+                    StrokeThickness = 1.8,
+                    StrokeLineJoin = PenLineJoin.Round,
+                    Fill = Brushes.Transparent,
+                });
+                break;
+
+            case CaseNodeCategory.Lead:
+                canvas.Children.Add(new Ellipse
+                {
+                    Width = 11,
+                    Height = 11,
+                    Stroke = brush,
+                    StrokeThickness = 2,
+                    Margin = new Thickness(2, 2, 0, 0),
+                });
+                canvas.Children.Add(new Line
+                {
+                    X1 = 11.5,
+                    Y1 = 11.5,
+                    X2 = 18,
+                    Y2 = 18,
+                    Stroke = brush,
+                    StrokeThickness = 2.3,
+                    StrokeStartLineCap = PenLineCap.Round,
+                    StrokeEndLineCap = PenLineCap.Round,
+                });
+                break;
+
+            case CaseNodeCategory.Theory:
+                canvas.Children.Add(new Ellipse
+                {
+                    Width = 11,
+                    Height = 11,
+                    Stroke = brush,
+                    StrokeThickness = 1.8,
+                    Margin = new Thickness(4.5, 1, 0, 0),
+                });
+                canvas.Children.Add(new Line { X1 = 8, Y1 = 13, X2 = 12, Y2 = 13, Stroke = brush, StrokeThickness = 1.8 });
+                canvas.Children.Add(new Line { X1 = 8, Y1 = 16, X2 = 12, Y2 = 16, Stroke = brush, StrokeThickness = 1.8 });
+                canvas.Children.Add(new Line { X1 = 10, Y1 = 0, X2 = 10, Y2 = 2, Stroke = brush, StrokeThickness = 1.5 });
+                break;
+        }
+
+        host.Child = canvas;
+        return host;
     }
 
     private static Brush ConnectionBrush(CaseConnectionStatus status) => status switch
@@ -602,13 +974,16 @@ internal sealed class AdventureCaseBoardView : Grid
 }
 
 /// <summary>
-/// Owns the single detached board window for one active Adventure run. Closing the window only closes the
-/// presentation; the AdventureRunState remains untouched and can immediately be reopened on any monitor.
+/// Detached second-screen presentation with custom noir window chrome and active synchronization to the
+/// in-memory AdventureRunState. The timer refreshes only when story-owned board facts actually change.
 /// </summary>
 internal sealed class AdventureCaseBoardWindow : Window
 {
     private readonly AdventureEngine engine;
     private readonly Action<AdventureRunState> persist;
+    private readonly AdventureCaseBoardView boardView;
+    private readonly DispatcherTimer syncTimer;
+    private readonly Button maximizeButton;
 
     internal AdventureCaseBoardWindow(AdventureEngine engine, Action<AdventureRunState> persist)
     {
@@ -624,7 +999,87 @@ internal sealed class AdventureCaseBoardWindow : Window
         Height = engine.State.CaseBoard.Layout.DetachedHeight ?? 860;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
         Background = AdventureUi.Ink("#080B0D");
-        Content = new AdventureCaseBoardView(engine, persist);
+        Foreground = AdventureUi.Ink("#E7D7B6");
+        WindowStyle = WindowStyle.None;
+        ResizeMode = ResizeMode.CanResize;
+        SnapsToDevicePixels = true;
+        UseLayoutRounding = true;
+        WindowChrome.SetWindowChrome(this, new WindowChrome
+        {
+            CaptionHeight = 0,
+            ResizeBorderThickness = new Thickness(6),
+            GlassFrameThickness = new Thickness(0),
+            CornerRadius = new CornerRadius(0),
+            UseAeroCaptionButtons = false,
+        });
+
+        var root = new Grid();
+        root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(42) });
+        root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+
+        Border titleBar = new()
+        {
+            Background = AdventureUi.Ink("#0B1515"),
+            BorderBrush = AdventureUi.Ink("#3B514A"),
+            BorderThickness = new Thickness(0, 0, 0, 1),
+            Padding = new Thickness(15, 0, 8, 0),
+        };
+        titleBar.MouseLeftButtonDown += OnTitleBarMouseDown;
+        root.Children.Add(titleBar);
+
+        var titleGrid = new Grid();
+        titleGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        titleGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var identity = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        identity.Children.Add(new TextBlock
+        {
+            Text = "THE MIDNIGHT CLUB",
+            FontFamily = new FontFamily("Georgia"),
+            FontSize = 9,
+            FontWeight = FontWeights.Bold,
+            Foreground = AdventureUi.Ink("#62A897"),
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 10, 0),
+        });
+        identity.Children.Add(new TextBlock
+        {
+            Text = $"{engine.Definition.Title}  ·  {engine.Definition.CaseBoard.Title}",
+            FontFamily = new FontFamily("Georgia"),
+            FontSize = 13,
+            FontWeight = FontWeights.SemiBold,
+            Foreground = AdventureUi.Ink("#E5D2AD"),
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        titleGrid.Children.Add(identity);
+
+        var windowButtons = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        Button minimize = WindowButton("—", "Minimize");
+        minimize.Click += (_, _) => WindowState = WindowState.Minimized;
+        windowButtons.Children.Add(minimize);
+        maximizeButton = WindowButton("□", "Maximize / Restore");
+        maximizeButton.Click += (_, _) => ToggleMaximize();
+        windowButtons.Children.Add(maximizeButton);
+        Button close = WindowButton("×", "Close");
+        close.Click += (_, _) => Close();
+        windowButtons.Children.Add(close);
+        Grid.SetColumn(windowButtons, 1);
+        titleGrid.Children.Add(windowButtons);
+        titleBar.Child = titleGrid;
+
+        boardView = new AdventureCaseBoardView(engine, persist);
+        Grid.SetRow(boardView, 1);
+        root.Children.Add(boardView);
+        Content = root;
 
         BoardLayoutState layout = engine.State.CaseBoard.Layout;
         if (layout.DetachedLeft is double left && layout.DetachedTop is double top)
@@ -634,20 +1089,87 @@ internal sealed class AdventureCaseBoardWindow : Window
             Top = top;
         }
 
+        syncTimer = new DispatcherTimer(DispatcherPriority.Background)
+        {
+            Interval = TimeSpan.FromMilliseconds(300),
+        };
+        syncTimer.Tick += (_, _) => boardView.RefreshFromRunState();
+        syncTimer.Start();
+
+        StateChanged += (_, _) => UpdateMaximizeGlyph();
         Closing += OnClosing;
+        Closed += (_, _) => syncTimer.Stop();
+    }
+
+    internal void RefreshFromRunState() => boardView.RefreshFromRunState(force: true);
+
+    private void OnTitleBarMouseDown(object sender, MouseButtonEventArgs args)
+    {
+        if (args.ChangedButton != MouseButton.Left) return;
+        if (args.ClickCount == 2)
+        {
+            ToggleMaximize();
+            return;
+        }
+
+        if (args.OriginalSource is DependencyObject source && FindParent<Button>(source) is not null) return;
+        try
+        {
+            DragMove();
+        }
+        catch (InvalidOperationException)
+        {
+            // DragMove can race a double-click or a released mouse button; no recovery is required.
+        }
+    }
+
+    private void ToggleMaximize()
+    {
+        WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+    }
+
+    private void UpdateMaximizeGlyph()
+    {
+        maximizeButton.Content = WindowState == WindowState.Maximized ? "❐" : "□";
     }
 
     private void OnClosing(object? sender, System.ComponentModel.CancelEventArgs args)
     {
+        syncTimer.Stop();
+        Rect bounds = WindowState == WindowState.Normal
+            ? new Rect(Left, Top, Width, Height)
+            : RestoreBounds;
         BoardLayoutState layout = engine.State.CaseBoard.Layout;
-        if (WindowState == WindowState.Normal)
+        if (bounds.Width > 0 && bounds.Height > 0)
         {
-            layout.DetachedLeft = Left;
-            layout.DetachedTop = Top;
-            layout.DetachedWidth = Width;
-            layout.DetachedHeight = Height;
+            layout.DetachedLeft = bounds.Left;
+            layout.DetachedTop = bounds.Top;
+            layout.DetachedWidth = bounds.Width;
+            layout.DetachedHeight = bounds.Height;
         }
         persist(engine.State);
+    }
+
+    private static Button WindowButton(string text, string tooltip)
+    {
+        Button button = AdventureUi.Button(text, fontSize: 12, scaleOnHover: false);
+        button.Width = 38;
+        button.Height = 27;
+        button.Padding = new Thickness(0);
+        button.Margin = new Thickness(4, 0, 0, 0);
+        button.ToolTip = tooltip;
+        return button;
+    }
+
+    private static T? FindParent<T>(DependencyObject? source) where T : DependencyObject
+    {
+        DependencyObject? current = source;
+        while (current is not null)
+        {
+            if (current is T typed) return typed;
+            current = VisualTreeHelper.GetParent(current);
+        }
+        return null;
     }
 }
 
@@ -659,6 +1181,7 @@ internal sealed class AdventureCaseBoardWindowController
     {
         if (window is { IsVisible: true })
         {
+            window.RefreshFromRunState();
             if (window.WindowState == WindowState.Minimized) window.WindowState = WindowState.Normal;
             window.Activate();
             return;
