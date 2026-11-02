@@ -13,6 +13,35 @@ namespace BlackjackCasino.Desktop;
 /// </summary>
 internal static class AdventureLibraryLoungeModule
 {
+    // Compatibility overload for the historic AdventureLoungeModule shim and presentation tests.
+    // The production MainWindow path uses the overload below so account-wide completion progression is persisted.
+    internal static LoungeHostedGame Create(
+        AdventureProgressState progress,
+        Action<AdventureProgressState> persist,
+        Func<string?> diceSetId,
+        Func<string?> playerName,
+        Func<bool> animationsEnabled,
+        Func<AreaPresentationSettings> presentation,
+        Action<AreaPresentationSettings> updatePresentation,
+        Action<bool> setMusicActive) =>
+        Create(
+            progress,
+            persist,
+            (definition, state) => new AdventureCompletionMetaResult(
+                false,
+                false,
+                string.IsNullOrWhiteSpace(state.EndingId)
+                    ? string.Empty
+                    : AdventureProgressionService.EndingKey(definition.Id, state.EndingId),
+                [],
+                null),
+            diceSetId,
+            playerName,
+            animationsEnabled,
+            presentation,
+            updatePresentation,
+            setMusicActive);
+
     internal static LoungeHostedGame Create(
         AdventureProgressState progress,
         Action<AdventureProgressState> persist,
