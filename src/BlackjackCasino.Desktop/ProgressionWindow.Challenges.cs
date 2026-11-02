@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using BlackjackCasino.Core;
+using BlackjackCasino.Core.Adventure;
 using BlackjackCasino.Core.Empire;
 
 namespace BlackjackCasino.Desktop;
@@ -13,10 +14,10 @@ internal partial class ProgressionWindow
         if (!collectionsInitialized) return;
         PlayerProfileState profile = controller.Profile;
         var claimedIds = profile.ClaimedChallengeIds.ToHashSet(StringComparer.Ordinal);
-        var entries = ChallengeCatalog.All.Select(challenge => new
+        var entries = ChallengeRegistry.All.Select(challenge => new
         {
             Challenge = challenge,
-            Complete = ChallengeCatalog.Complete(profile, challenge),
+            Complete = ChallengeRegistry.Complete(profile, challenge),
             Claimed = claimedIds.Contains(challenge.Id),
         }).ToArray();
         var ready = entries.Where(entry => entry.Complete && !entry.Claimed).ToArray();
@@ -25,11 +26,11 @@ internal partial class ProgressionWindow
         ClaimAllButton.Content = ready.Length == 0 ? "Claim All · none ready" : $"Claim All · ◆ {readyCoins:N0}";
         ClaimAllButton.IsEnabled = ready.Length > 0;
         if (string.IsNullOrWhiteSpace(ChallengeStatusText.Text))
-            ChallengeStatusText.Text = "All ready rewards can be claimed together, across every filter and page.";
+            ChallengeStatusText.Text = "All ready rewards can be claimed together, including Adventure achievements.";
 
         ChallengeCategory? category = (ChallengeCategoryFilter.SelectedItem as FilterChoice)?.Value is ChallengeCategory selected ? selected : null;
         var filtered = entries.Where(entry => (!category.HasValue || entry.Challenge.Category == category)
-            && MatchesSearch(ChallengeSearchBox.Text, entry.Challenge.Name, entry.Challenge.Description, CategoryName(entry.Challenge.Category), entry.Challenge.IsEndgame ? "Endgame" : "Milestone")
+            && MatchesSearch(ChallengeSearchBox.Text, entry.Challenge.Name, entry.Challenge.Description, ChallengeCategoryLabel(entry.Challenge), entry.Challenge.IsEndgame ? "Endgame" : "Milestone")
             && (ChallengeStatusFilter.SelectedIndex switch
             {
                 1 => entry.Complete && !entry.Claimed,
@@ -39,7 +40,7 @@ internal partial class ProgressionWindow
                 _ => true,
             }))
             .OrderBy(entry => entry.Claimed ? 2 : entry.Complete ? 0 : 1)
-            .ThenBy(entry => entry.Challenge.Category)
+            .ThenBy(entry => AdventureChallengeCatalog.IsAdventure(entry.Challenge) ? "Adventure" : entry.Challenge.Category.ToString())
             .ToArray();
         challengePage = Math.Clamp(challengePage, 0, LastPage(filtered.Length, ChallengePageSize));
         ChallengesPanel.Children.Clear();
@@ -54,7 +55,7 @@ internal partial class ProgressionWindow
 
     private FrameworkElement BuildChallengeCard(ChallengeDefinition challenge)
     {
-        decimal progress = ChallengeCatalog.Progress(controller.Profile, challenge);
+        decimal progress = ChallengeRegistry.Progress(controller.Profile, challenge);
         bool complete = progress >= challenge.Goal;
         bool claimed = controller.Profile.ClaimedChallengeIds.Contains(challenge.Id, StringComparer.Ordinal);
         EmpireAchievementBoost? empireReward = EmpireAchievementBoostCatalog.All.FirstOrDefault(boost => boost.ChallengeId == challenge.Id);
@@ -68,7 +69,7 @@ internal partial class ProgressionWindow
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         var text = new StackPanel();
-        text.Children.Add(new TextBlock { Text = CategoryName(challenge.Category).ToUpperInvariant() + (challenge.IsEndgame ? " · ENDGAME" : ""), FontSize = 9, Foreground = CoinMutedBrush, FontWeight = FontWeights.Bold });
+        text.Children.Add(new TextBlock { Text = ChallengeCategoryLabel(challenge).ToUpperInvariant() + (challenge.IsEndgame ? " · ENDGAME" : ""), FontSize = 9, Foreground = CoinMutedBrush, FontWeight = FontWeights.Bold });
         text.Children.Add(new TextBlock { Text = challenge.Name, FontFamily = new FontFamily("Georgia"), FontSize = 19, Foreground = complete ? CoinBrush : new SolidColorBrush(Rgb(244, 225, 184)), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 6, 0, 7) });
         grid.Children.Add(text);
         var description = new TextBlock { Text = challenge.Description, Foreground = MutedBrush, FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 12) };
@@ -115,6 +116,9 @@ internal partial class ProgressionWindow
         border.Child = grid;
         return border;
     }
+
+    private static string ChallengeCategoryLabel(ChallengeDefinition challenge) =>
+        AdventureChallengeCatalog.IsAdventure(challenge) ? "Adventure" : CategoryName(challenge.Category);
 
     private void ChallengeClaim_Click(object sender, RoutedEventArgs e)
     {
