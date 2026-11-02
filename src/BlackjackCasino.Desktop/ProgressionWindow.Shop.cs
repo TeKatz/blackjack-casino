@@ -118,7 +118,11 @@ internal partial class ProgressionWindow
         for (int index = start; index < end; index++)
         {
             if (shopMaterialized[index]) continue;
-            ShopPanel.Children[index] = BuildShopRow(shopItems[index]);
+            FrameworkElement row = BuildShopRow(shopItems[index]);
+            // UIElementCollection cannot reliably replace a connected Visual through its indexer.
+            // Detach the lightweight placeholder first, then insert the real row at the same slot.
+            ShopPanel.Children.RemoveAt(index);
+            ShopPanel.Children.Insert(index, row);
             shopMaterialized[index] = true;
             shopMaterializedCount++;
         }
