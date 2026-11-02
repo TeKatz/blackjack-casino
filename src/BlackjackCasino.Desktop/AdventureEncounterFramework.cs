@@ -109,7 +109,7 @@ internal sealed class AdventureBlackjackEncounterView : Grid
         };
         Children.Add(panel);
 
-        BuildLayout(encounterRules);
+        BuildLayout();
         round.Start();
         if (round.Phase == RoundPhase.InsuranceDecision)
             round.DeclineInsurance();
@@ -124,7 +124,7 @@ internal sealed class AdventureBlackjackEncounterView : Grid
         }
     }
 
-    private void BuildLayout(AdventureBlackjackEncounterRules encounterRules)
+    private void BuildLayout()
     {
         var root = new StackPanel();
         root.Children.Add(AdventureUi.Eyebrow("ADVENTURE ENCOUNTER · BLACKJACK", 10.5));
@@ -210,7 +210,7 @@ internal sealed class AdventureBlackjackEncounterView : Grid
 
         dealerValue.Text = settled
             ? $"Total {round.DealerHand.Value.Total}"
-            : $"Showing {round.DealerHand.Cards[0].Value}";
+            : $"Showing {DisplayCardValue(round.DealerHand.Cards[0])}";
         playerValue.Text = $"Total {round.PlayerHands[0].Value.Total}";
 
         actionRow.Children.Clear();
@@ -331,6 +331,8 @@ internal sealed class AdventureBlackjackEncounterView : Grid
         MinimumBet = encounter.VirtualBet,
         MaximumBet = encounter.VirtualBet,
     };
+
+    private static int DisplayCardValue(Card card) => card.Rank == Rank.Ace ? 11 : card.HardValue;
 
     private static TextBlock HandLabel(string text) => new()
     {
