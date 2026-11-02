@@ -123,7 +123,7 @@ internal static class AdventureUi
                 Opacity = .32,
                 Color = (Color)ColorConverter.ConvertFromString(accent ? "#9B814D" : "#2C7563"),
             };
-            if (scaleOnHover && button.RenderTransform is ScaleTransform scale)
+            if (scaleOnHover && button.HorizontalAlignment != HorizontalAlignment.Stretch && button.RenderTransform is ScaleTransform scale)
             {
                 scale.ScaleX = 1.012;
                 scale.ScaleY = 1.012;
