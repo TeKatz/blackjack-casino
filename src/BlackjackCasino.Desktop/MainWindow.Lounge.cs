@@ -54,6 +54,19 @@ public partial class MainWindow
             loungeBackgroundMusic.SetVolume(current.MusicVolume);
         }
 
+        AdventureCompletionMetaResult RecordAdventureCompletion(AdventureDefinition definition, AdventureRunState state)
+        {
+            if (progressionController is null)
+            {
+                string key = string.IsNullOrWhiteSpace(state.EndingId)
+                    ? string.Empty
+                    : AdventureProgressionService.EndingKey(definition.Id, state.EndingId);
+                return new AdventureCompletionMetaResult(false, false, key, [], null);
+            }
+
+            return progressionController.RecordAdventureCompletion(definition, state);
+        }
+
         Func<SolitaireStatistics> solitaireStats = () => progressionController?.Profile.Solitaire ?? new SolitaireStatistics();
         Func<WordSearchStatistics> wordSearchStats = () => progressionController?.Profile.WordSearch ?? new WordSearchStatistics();
         Func<MemoryStatistics> memoryStats = () => progressionController?.Profile.Memory ?? new MemoryStatistics();
@@ -103,6 +116,7 @@ public partial class MainWindow
                     preferences = preferences with { Adventure = AdventureProgressState.Normalize(state) };
                     if (!testSession) SavePreferences();
                 },
+                RecordAdventureCompletion,
                 () => progressionController?.Profile.EquippedDiceSetId,
                 () => progressionController?.Profile.DisplayName,
                 () => preferences.Presentation("adventure").AnimationsEnabled,
