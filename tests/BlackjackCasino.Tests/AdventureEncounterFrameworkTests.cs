@@ -23,6 +23,26 @@ public sealed class AdventureEncounterFrameworkTests
     }
 
     [Fact]
+    public void ChoiceRoutingToEncounterIsDiscoverableBeforeSceneTransition()
+    {
+        AdventureEngine engine = AdventureEngine.StartNew(
+            AdventureCatalog.StrangersWager,
+            AdventureCharacterCatalog.Create("rogue", "Test"));
+        engine.SelectChoice("take-seat");
+
+        AdventureChoiceDefinition blackjackChoice = engine.AvailableChoices().Single(choice => choice.Id == "accept-now");
+        AdventureChoiceDefinition diceChoice = engine.AvailableChoices().Single(choice => choice.Id == "choose-dice");
+        AdventureChoiceDefinition ordinaryChoice = engine.AvailableChoices().First(choice => choice.Id != "accept-now" && choice.Id != "choose-dice");
+
+        Assert.True(AdventureEncounterCatalog.TryGetTriggeredByChoice(engine.Definition.Id, blackjackChoice, out AdventureEncounterDefinition? blackjack));
+        Assert.Equal(AdventureEncounterType.Blackjack, blackjack!.Type);
+        Assert.True(AdventureEncounterCatalog.TryGetTriggeredByChoice(engine.Definition.Id, diceChoice, out AdventureEncounterDefinition? dice));
+        Assert.Equal(AdventureEncounterType.FiveOfAKind, dice!.Type);
+        Assert.False(AdventureEncounterCatalog.TryGetTriggeredByChoice(engine.Definition.Id, ordinaryChoice, out AdventureEncounterDefinition? ordinary));
+        Assert.Null(ordinary);
+    }
+
+    [Fact]
     public void FiveOfAKindWinRoutesThroughOrdinaryAdventureEffects()
     {
         AdventureEngine engine = AdventureEngine.StartNew(
