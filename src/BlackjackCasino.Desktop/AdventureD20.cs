@@ -1,6 +1,8 @@
 using System.Globalization;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 
 namespace BlackjackCasino.Desktop;
 
@@ -10,9 +12,61 @@ internal sealed class AdventureD20 : FrameworkElement
     private bool active;
     private string visualVariant = "dice-ivory";
 
-    internal int Value { get => value; set { this.value = Math.Clamp(value, 0, 20); InvalidateVisual(); } }
-    internal bool Active { get => active; set { active = value; InvalidateVisual(); } }
-    internal string VisualVariant { get => visualVariant; set { visualVariant = string.IsNullOrWhiteSpace(value) ? "dice-ivory" : value; InvalidateVisual(); } }
+    internal AdventureD20()
+    {
+        Cursor = CasinoCursors.Arrow;
+        ForceCursor = true;
+        MouseEnter += (_, _) => Cursor = active ? CasinoCursors.Hand : CasinoCursors.Arrow;
+    }
+
+    internal int Value
+    {
+        get => value;
+        set
+        {
+            this.value = Math.Clamp(value, 0, 20);
+            InvalidateVisual();
+        }
+    }
+
+    internal bool Active
+    {
+        get => active;
+        set
+        {
+            active = value;
+            Cursor = active ? CasinoCursors.Hand : CasinoCursors.Arrow;
+            InvalidateVisual();
+        }
+    }
+
+    internal string VisualVariant
+    {
+        get => visualVariant;
+        set
+        {
+            visualVariant = string.IsNullOrWhiteSpace(value) ? "dice-ivory" : value;
+            InvalidateVisual();
+        }
+    }
+
+    // AdventureView's original prototype assigned a continuously accumulating RotateTransform while rolling.
+    // Keep decorative idle rotations, but intercept that legacy active-roll transform and replace it with a
+    // bounded tabletop wobble. This deliberately prevents the die from orbiting around its top-left corner.
+    internal new Transform RenderTransform
+    {
+        get => base.RenderTransform;
+        set
+        {
+            if (active && value is RotateTransform)
+            {
+                BeginControlledRollMotion();
+                return;
+            }
+
+            base.RenderTransform = value;
+        }
+    }
 
     private (Color Top, Color Bottom, Color Number, Color Edge) Palette => visualVariant switch
     {
@@ -24,6 +78,37 @@ internal sealed class AdventureD20 : FrameworkElement
         "dice-aurora" => (Rgb("#348B88"), Rgb("#663D84"), Rgb("#E1FFF4"), Rgb("#85E6D0")),
         _ => (Rgb("#FFFCEE"), Rgb("#D7CBB2"), Rgb("#2D3730"), Rgb("#BDA36E")),
     };
+
+    private void BeginControlledRollMotion()
+    {
+        RenderTransformOrigin = new Point(.5, .5);
+        var scale = new ScaleTransform(1, 1);
+        var rotation = new RotateTransform(0);
+        var group = new TransformGroup();
+        group.Children.Add(scale);
+        group.Children.Add(rotation);
+        base.RenderTransform = group;
+
+        var ease = new QuadraticEase { EasingMode = EasingMode.EaseOut };
+        var turn = new DoubleAnimationUsingKeyFrames { Duration = TimeSpan.FromMilliseconds(560) };
+        turn.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.Zero), ease));
+        turn.KeyFrames.Add(new EasingDoubleKeyFrame(-6.5, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(80)), ease));
+        turn.KeyFrames.Add(new EasingDoubleKeyFrame(9.5, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(190)), ease));
+        turn.KeyFrames.Add(new EasingDoubleKeyFrame(-4.2, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(320)), ease));
+        turn.KeyFrames.Add(new EasingDoubleKeyFrame(2.0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(440)), ease));
+        turn.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(560)), ease));
+
+        var pulse = new DoubleAnimationUsingKeyFrames { Duration = TimeSpan.FromMilliseconds(560) };
+        pulse.KeyFrames.Add(new EasingDoubleKeyFrame(1, KeyTime.FromTimeSpan(TimeSpan.Zero), ease));
+        pulse.KeyFrames.Add(new EasingDoubleKeyFrame(.955, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(80)), ease));
+        pulse.KeyFrames.Add(new EasingDoubleKeyFrame(1.045, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(205)), ease));
+        pulse.KeyFrames.Add(new EasingDoubleKeyFrame(.985, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(370)), ease));
+        pulse.KeyFrames.Add(new EasingDoubleKeyFrame(1, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(560)), ease));
+
+        rotation.BeginAnimation(RotateTransform.AngleProperty, turn, HandoffBehavior.SnapshotAndReplace);
+        scale.BeginAnimation(ScaleTransform.ScaleXProperty, pulse, HandoffBehavior.SnapshotAndReplace);
+        scale.BeginAnimation(ScaleTransform.ScaleYProperty, pulse, HandoffBehavior.SnapshotAndReplace);
+    }
 
     protected override void OnRender(DrawingContext dc)
     {
