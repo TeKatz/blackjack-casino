@@ -12,6 +12,7 @@ public sealed record EmpireActionResult(bool Success, string Message);
 /// <summary>Deterministic portfolio simulation. The only cash bridge is the bounded owner dividend.</summary>
 public sealed partial class EmpireService
 {
+    private static readonly EmpireTag[] ProductionTags = Enum.GetValues<EmpireTag>().Where(tag => tag != EmpireTag.None).ToArray();
     private EmpireState state;
     private readonly HashSet<string> claimedAchievements = new(StringComparer.Ordinal);
     private EmpireActivitySnapshot activity = new();
@@ -51,9 +52,12 @@ public sealed partial class EmpireService
 
     private void Put(string id, EmpirePropertyState estate)
     {
-        var properties = new Dictionary<string, EmpirePropertyState>(state.Properties, StringComparer.Ordinal) { [id] = estate };
-        EmpirePropertyState active = properties[ActivePropertyId];
-        state = state with { Properties = properties, Credits = active.Credits, RunCredits = active.RunCredits, Prestige = active.Prestige, Levels = active.Levels };
+        // EmpireService owns the normalized state graph. Snapshot/constructor boundaries clone
+        // dictionaries for callers, so cloning the whole property map for every internal tick is
+        // unnecessary allocation churn. Mutating this private map preserves the same public value semantics.
+        state.Properties[id] = estate;
+        EmpirePropertyState active = state.Properties[ActivePropertyId];
+        state = state with { Credits = active.Credits, RunCredits = active.RunCredits, Prestige = active.Prestige, Levels = active.Levels };
     }
     public void SetClaimedAchievements(IEnumerable<string>? ids)
     {
@@ -93,16 +97,21 @@ public sealed partial class EmpireService
         if (state.LastAccruedAt == default) { state = state with { LastAccruedAt = now }; return EmptyAccrual(); }
         if (now <= state.LastAccruedAt) return EmptyAccrual();
         TimeSpan absence = now - state.LastAccruedAt;
-        TimeSpan elapsed = absence > OfflineCapacity ? OfflineCapacity : absence;
+        TimeSpan offlineCapacity = OfflineCapacity;
+        TimeSpan elapsed = absence > offlineCapacity ? offlineCapacity : absence;
         DateTimeOffset cursor = state.LastAccruedAt, end = cursor + elapsed;
         var rooms = new Dictionary<string, decimal>(StringComparer.Ordinal);
         var properties = new Dictionary<string, decimal>(StringComparer.Ordinal);
+        IReadOnlyList<EmpireDepartment> departments = EmpireCatalog.Departments;
+        string[] propertyIds = state.Properties.Keys.ToArray();
+        var earnedByRoom = new decimal[departments.Count];
+        decimal dividendCapacity = DividendCapacity;
         decimal paid = 0, cash = 0;
         while (cursor < end)
         {
             // At most one automation decision per property per 30 seconds. Online and
             // offline calls visit the same boundaries; tick frequency cannot increase spending.
-            foreach (string id in state.Properties.Keys.ToArray())
+            foreach (string id in propertyIds)
             {
                 EmpirePropertyState estate = ExpireEffects(state.Properties[id], cursor);
                 if (AutomationUnlockedFor(estate) && estate.Automation.Enabled)
@@ -124,21 +133,27 @@ public sealed partial class EmpireService
             }
             decimal seconds = (decimal)(boundary - cursor).Ticks / TimeSpan.TicksPerSecond;
             decimal cashRate = CashPerHour;
-            foreach (string id in state.Properties.Keys.ToArray())
+            foreach (string id in propertyIds)
             {
                 EmpirePropertyState estate = state.Properties[id];
-                var earnedByRoom = EmpireCatalog.Departments.ToDictionary(room => room.Id, room => RoomRate(estate, id, room, cursor) * seconds, StringComparer.Ordinal);
-                decimal potential = earnedByRoom.Values.Sum();
+                decimal potential = 0;
+                for (int index = 0; index < departments.Count; index++)
+                {
+                    decimal roomEarned = RoomRate(estate, id, departments[index], cursor) * seconds;
+                    earnedByRoom[index] = roomEarned;
+                    potential += roomEarned;
+                }
                 decimal earned = Math.Min(Math.Max(0, EmpireRules.MaximumCredits - estate.Credits), potential);
                 decimal factor = potential > 0 ? earned / potential : 0;
                 var tags = new Dictionary<EmpireTag, decimal>(estate.ProducedByTag);
-                foreach (EmpireDepartment room in EmpireCatalog.Departments)
+                for (int index = 0; index < departments.Count; index++)
                 {
-                    decimal value = earnedByRoom[room.Id] * factor;
+                    EmpireDepartment room = departments[index];
+                    decimal value = earnedByRoom[index] * factor;
                     if (value <= 0) continue;
                     if (id == ActivePropertyId) rooms[room.Id] = rooms.GetValueOrDefault(room.Id) + value;
-                    foreach (EmpireTag tag in Enum.GetValues<EmpireTag>())
-                        if (tag != EmpireTag.None && room.Tags.HasFlag(tag)) tags[tag] = Math.Min(EmpireRules.MaximumCredits, tags.GetValueOrDefault(tag) + value);
+                    foreach (EmpireTag tag in ProductionTags)
+                        if (room.Tags.HasFlag(tag)) tags[tag] = Math.Min(EmpireRules.MaximumCredits, tags.GetValueOrDefault(tag) + value);
                 }
                 Put(id, estate with
                 {
@@ -151,25 +166,25 @@ public sealed partial class EmpireService
             }
             decimal rateSeconds = cashRate * seconds + state.DividendRemainder;
             decimal earnedCash = decimal.Truncate(rateSeconds / 36m) / 100m;
-            decimal dividend = Math.Min(DividendCapacity - state.Dividend, earnedCash);
+            decimal dividend = Math.Min(dividendCapacity - state.Dividend, earnedCash);
             cash += dividend;
             state = state with
             {
                 Dividend = state.Dividend + dividend,
-                DividendRemainder = state.Dividend + dividend >= DividendCapacity ? 0 : rateSeconds - earnedCash * 3600m,
+                DividendRemainder = state.Dividend + dividend >= dividendCapacity ? 0 : rateSeconds - earnedCash * 3600m,
             };
             cursor = boundary;
         }
-        foreach (string id in state.Properties.Keys.ToArray())
+        foreach (string id in propertyIds)
         {
             EmpirePropertyState estate = ExpireEffects(state.Properties[id], now);
             // Execute a decision exactly on the end boundary, not one tick later.
             if (AutomationUnlockedFor(estate) && estate.Automation.Enabled && estate.NextAutomationAt <= now)
-                estate = (absence <= OfflineCapacity ? Automate(estate) : estate) with { NextAutomationAt = now.AddSeconds(30) };
+                estate = (absence <= offlineCapacity ? Automate(estate) : estate) with { NextAutomationAt = now.AddSeconds(30) };
             Put(id, estate);
         }
         state = state with { LastAccruedAt = now, LifetimeCredits = Math.Min(EmpireRules.MaximumCredits, state.LifetimeCredits + paid) };
-        return new(paid, cash, elapsed, absence > OfflineCapacity, rooms) { Properties = properties };
+        return new(paid, cash, elapsed, absence > offlineCapacity, rooms) { Properties = properties };
     }
 
     public EmpireUpgradeQuote QuoteUpgrade(string id, int requestedLevels) => QuoteFor(Estate, id, requestedLevels);
