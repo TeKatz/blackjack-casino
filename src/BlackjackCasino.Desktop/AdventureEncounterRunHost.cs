@@ -25,6 +25,7 @@ internal sealed class AdventureEncounterRunHost : Grid
     private string? activeEncounterId;
     private bool completionShown;
     private bool completionPending;
+    private bool encounterResolving;
 
     internal AdventureEncounterRunHost(
         AdventureEngine engine,
@@ -132,6 +133,11 @@ internal sealed class AdventureEncounterRunHost : Grid
                 restart,
                 animationsEnabled()));
         }
+        catch (Exception ex)
+        {
+            AppCrashLog.Write("Adventure completion presentation failed.", ex);
+            completionShown = false;
+        }
         finally
         {
             completionPending = false;
@@ -140,17 +146,122 @@ internal sealed class AdventureEncounterRunHost : Grid
 
     private async Task ResolveEncounterAsync(AdventureEncounterDefinition encounter, AdventureEncounterOutcome outcome)
     {
-        string choiceId = outcome switch
-        {
-            AdventureEncounterOutcome.Win => encounter.WinChoiceId,
-            AdventureEncounterOutcome.Loss => encounter.LossChoiceId,
-            AdventureEncounterOutcome.Draw => encounter.DrawChoiceId,
-            _ => throw new ArgumentOutOfRangeException(nameof(outcome), outcome, null),
-        };
+        if (encounterResolving) return;
+        encounterResolving = true;
+        string originSceneId = engine.State.CurrentSceneId;
 
-        engine.RecordEncounter(encounter.Type, outcome);
-        engine.SelectChoice(choiceId);
-        persist(engine.State);
-        await Dispatcher.InvokeAsync(BuildStoryView);
+        try
+        {
+            // Route the story first. Only a successfully accepted outcome is counted in run telemetry.
+            // This prevents a failed/missing result route from recording the same encounter twice on retry.
+            engine.SelectChoice(encounter.ChoiceIdFor(outcome));
+            engine.RecordEncounter(encounter.Type, outcome);
+
+            try
+            {
+                persist(engine.State);
+            }
+            catch (Exception ex)
+            {
+                // A transient save problem must not turn a settled card hand into a process-ending WPF exception.
+                // The in-memory run remains authoritative and later story transitions will persist it again.
+                AppCrashLog.Write($"Adventure encounter '{encounter.Id}' could not be persisted after {outcome}.", ex);
+            }
+
+            await Dispatcher.InvokeAsync(BuildStoryView);
+        }
+        catch (Exception ex)
+        {
+            AppCrashLog.Write($"Adventure encounter '{encounter.Id}' failed while resolving {outcome}.", ex);
+
+            // If the story transition itself already succeeded, prefer recovering the story view instead of
+            // replaying the encounter outcome. That keeps loss/win rewards and telemetry strictly single-shot.
+            if (!string.Equals(engine.State.CurrentSceneId, originSceneId, StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    await Dispatcher.InvokeAsync(BuildStoryView);
+                    return;
+                }
+                catch (Exception recoveryException)
+                {
+                    AppCrashLog.Write($"Adventure encounter '{encounter.Id}' story-view recovery failed.", recoveryException);
+                }
+            }
+
+            await Dispatcher.InvokeAsync(() => ShowEncounterRecovery(encounter));
+        }
+        finally
+        {
+            encounterResolving = false;
+        }
+    }
+
+    private void ShowEncounterRecovery(AdventureEncounterDefinition encounter)
+    {
+        activeEncounterId = null;
+        overlayLayer.Children.Clear();
+
+        Border panel = AdventureUi.Panel("#211A18", "#100C0B", "#8E6252", new Thickness(28), radius: 16);
+        panel.Width = 620;
+        panel.HorizontalAlignment = HorizontalAlignment.Center;
+        panel.VerticalAlignment = VerticalAlignment.Center;
+
+        var body = new StackPanel();
+        body.Children.Add(AdventureUi.Eyebrow("ADVENTURE ENCOUNTER", 10.5));
+        body.Children.Add(new TextBlock
+        {
+            Text = "THE HAND IS SETTLED",
+            FontFamily = new System.Windows.Media.FontFamily("Georgia"),
+            FontSize = 27,
+            FontWeight = FontWeights.Bold,
+            Foreground = AdventureUi.Ink("#E7C8A7"),
+            Margin = new Thickness(0, 7, 0, 8),
+        });
+        body.Children.Add(new TextBlock
+        {
+            Text = $"{encounter.Title} finished, but the story view could not be restored cleanly. Your result has been kept. You can retry the story view or return to the Adventure Library without closing the game.",
+            FontFamily = new System.Windows.Media.FontFamily("Georgia"),
+            FontSize = 13,
+            LineHeight = 20,
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = AdventureUi.Ink("#C9B9A8"),
+            Margin = new Thickness(0, 0, 0, 18),
+        });
+
+        var actions = new StackPanel { Orientation = Orientation.Horizontal };
+        Button retry = AdventureUi.Button("RETRY STORY VIEW", accent: true, fontSize: 12, scaleOnHover: false);
+        retry.Margin = new Thickness(0, 0, 10, 0);
+        retry.Click += (_, _) =>
+        {
+            try
+            {
+                BuildStoryView();
+            }
+            catch (Exception ex)
+            {
+                AppCrashLog.Write($"Adventure encounter '{encounter.Id}' manual story-view recovery failed.", ex);
+            }
+        };
+        actions.Children.Add(retry);
+
+        Button library = AdventureUi.Button("ADVENTURE LIBRARY", fontSize: 12, scaleOnHover: false);
+        library.Click += (_, _) =>
+        {
+            try
+            {
+                persist(engine.State);
+            }
+            catch (Exception ex)
+            {
+                AppCrashLog.Write($"Adventure encounter '{encounter.Id}' recovery save failed.", ex);
+            }
+            backToHub();
+        };
+        actions.Children.Add(library);
+        body.Children.Add(actions);
+
+        panel.Child = body;
+        overlayLayer.Children.Add(panel);
     }
 }
