@@ -91,7 +91,10 @@ internal partial class ProgressionWindow
 
         var rewardStack = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
         rewardStack.Children.Add(CoinText($"◆ {challenge.CoinReward:N0}", 12, FontWeights.Bold));
-        rewardStack.Children.Add(new TextBlock { Text = $"+ {ProgressionService.ChallengePack(challenge)} pack", FontSize = 10, Foreground = MutedBrush, TextWrapping = TextWrapping.Wrap });
+        if (ProgressionService.ChallengePack(challenge) is { } packReward)
+        {
+            rewardStack.Children.Add(new TextBlock { Text = $"+ {packReward} pack", FontSize = 10, Foreground = MutedBrush, TextWrapping = TextWrapping.Wrap });
+        }
         if (empireReward is not null)
         {
             string target = empireReward.RoomId is null
