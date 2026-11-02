@@ -30,16 +30,29 @@ public partial class MainWindow
         preferences = preferences with { Adventure = AdventureProgressState.Normalize(preferences.Adventure) };
 
         bool loungeClosing = false;
+        bool adventureMusicActive = false;
         void SetLoungeSoundtrack(bool adventureActive)
         {
             if (loungeClosing) return;
+            adventureMusicActive = adventureActive;
+            string area = adventureActive ? "adventure" : "chill-lounge";
+            AreaPresentationSettings presentation = preferences.Presentation(area);
+
             loungeBackgroundMusic?.Dispose();
             loungeBackgroundMusic = new BackgroundMusic(adventureActive ? Soundtrack.Adventure : Soundtrack.ChillLounge);
-            loungeBackgroundMusic.Start(
-                preferences.Presentation("chill-lounge").MusicEnabled,
-                preferences.Presentation("chill-lounge").MusicVolume);
+            loungeBackgroundMusic.Start(presentation.MusicEnabled, presentation.MusicVolume);
         }
-        AdventureMusicRouter.Attach(SetLoungeSoundtrack);
+
+        void UpdateAdventurePresentation(AreaPresentationSettings presentation)
+        {
+            preferences = preferences.WithPresentation("adventure", presentation);
+            if (!testSession) SavePreferences();
+
+            if (!adventureMusicActive || loungeBackgroundMusic is null) return;
+            AreaPresentationSettings current = preferences.Presentation("adventure");
+            loungeBackgroundMusic.SetEnabled(current.MusicEnabled);
+            loungeBackgroundMusic.SetVolume(current.MusicVolume);
+        }
 
         Func<SolitaireStatistics> solitaireStats = () => progressionController?.Profile.Solitaire ?? new SolitaireStatistics();
         Func<WordSearchStatistics> wordSearchStats = () => progressionController?.Profile.WordSearch ?? new WordSearchStatistics();
@@ -92,7 +105,10 @@ public partial class MainWindow
                 },
                 () => progressionController?.Profile.EquippedDiceSetId,
                 () => progressionController?.Profile.DisplayName,
-                () => preferences.Presentation("chill-lounge").AnimationsEnabled)
+                () => preferences.Presentation("adventure").AnimationsEnabled,
+                () => preferences.Presentation("adventure"),
+                UpdateAdventurePresentation,
+                SetLoungeSoundtrack)
         ]);
 
         var window = new LoungeWindow(
@@ -133,7 +149,6 @@ public partial class MainWindow
         ShowEmbeddedGame(window, "Chill Lounge · The Midnight Club", muteHostMusic: true, closed: () =>
         {
             loungeClosing = true;
-            AdventureMusicRouter.Detach();
             LoungeHostedGameRegistry.ClearSessionModules();
             loungeBackgroundMusic?.Dispose();
             loungeBackgroundMusic = null;
