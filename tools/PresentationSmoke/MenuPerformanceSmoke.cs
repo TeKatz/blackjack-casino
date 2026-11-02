@@ -28,9 +28,30 @@ internal static partial class Program
             Require(Panel("AlbumCards").Children.Count == 0 && Panel("AlbumThemes").Children.Count == 0, "Opening " + section + " eagerly built the retired album tab.");
             Require(Panel("SeasonRewardsPanel").Children.Count == 0 && Panel("GameStatsPanel").Children.Count == 0 && Panel("HistoryPanel").Children.Count == 0,
                 "Opening " + section + " constructed hidden progression sections.");
-            if (section == "Challenges") Require(Panel("ShopPanel").Children.Count == 0, "Challenges constructed the entire hidden shop.");
-            else Require(Panel("ChallengesPanel").Children.Count == 0, "Shop constructed hidden challenges.");
-            timings.Add(new { section, elapsedMilliseconds = watch.ElapsedMilliseconds });
+
+            Panel shopPanel = Panel("ShopPanel");
+            int materializedShopRows = shopPanel.Children.OfType<FrameworkElement>().Count(element => element.Uid != "shop-placeholder");
+            if (section == "Challenges")
+            {
+                Require(shopPanel.Children.Count == 0, "Challenges constructed the hidden shop.");
+            }
+            else
+            {
+                Require(Panel("ChallengesPanel").Children.Count == 0, "Shop constructed hidden challenges.");
+                Require(shopPanel.Children.Count == CosmeticCatalog.All.Count,
+                    "Shop no longer exposes the full filtered catalogue to its scroll surface.");
+                // The initial 18-row materialization can legitimately gain a few rows when the
+                // ScrollViewer performs its first real layout and asks for the viewport preload
+                // cushion. Guard the optimization by bounding that cushion rather than requiring
+                // an exact count that varies slightly with runner DPI/window metrics.
+                int expectedMaximum = Math.Min(32, CosmeticCatalog.All.Count);
+                Require(materializedShopRows > 0 && materializedShopRows <= expectedMaximum,
+                    $"Shop eagerly materialized {materializedShopRows} cosmetic previews; expected at most {expectedMaximum} on first open.");
+                if (CosmeticCatalog.All.Count > expectedMaximum)
+                    Require(materializedShopRows < CosmeticCatalog.All.Count, "Shop eagerly materialized the entire cosmetic catalogue.");
+            }
+
+            timings.Add(new { section, elapsedMilliseconds = watch.ElapsedMilliseconds, materializedShopRows });
             Find<Button>(window).Single(b => b.Name == "ProgressionBackButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             await Task.Delay(25);
         }

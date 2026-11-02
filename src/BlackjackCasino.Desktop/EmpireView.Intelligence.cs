@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
 using BlackjackCasino.Core.Empire;
 
@@ -11,18 +12,18 @@ internal sealed partial class EmpireView
 {
     private const string PreviewColor = "#92CFE0";
     private readonly Grid intelligence = new() { Name = "EmpireRoomIntelligence" };
-    private readonly TextBlock intelligenceTitle = Label("ESTATE OVERVIEW", 12, "#E2CFAB");
+    private readonly TextBlock intelligenceTitle = Label("ESTATE OVERVIEW", 15, "#E2CFAB");
     private readonly StackPanel estateOverview = new() { Margin = new Thickness(18, 8, 18, 12) };
-    private readonly TextBlock prestigeActionCaption = Label("", 11, "#E1CA9E");
-    private readonly TextBlock estateOverviewText = Label("", 13, "#C1D5C5");
-    private readonly TextBlock estateHint = Label("", 12, "#95B7A1", new Thickness(0, 10, 0, 0));
+    private readonly TextBlock prestigeActionCaption = Label("", 15, "#E1CA9E");
+    private readonly TextBlock estateOverviewText = Label("", 24, "#D6E2CF");
+    private readonly TextBlock estateHint = Label("", 18, "#ACCBB5", new Thickness(0, 10, 0, 0));
     private readonly Grid intelligenceColumns = new();
-    private readonly TextBlock growthInfo = Label("", 11, "#BED0BF");
+    private readonly TextBlock growthInfo = Label("", 16, "#BED0BF");
     private readonly TextBlock growthPreview = Label("", 11, PreviewColor);
-    private readonly TextBlock operationsInfo = Label("", 11, "#BED0BF");
-    private readonly TextBlock automationInfo = Label("", 10, "#A9C1AF", new Thickness(0, 5, 0, 5));
-    private readonly TextBlock performanceInfo = Label("", 11, "#BED0BF");
-    private readonly TextBlock performanceFinal = Label("", 12, "#CBE2CE", new Thickness(0, 5, 0, 0));
+    private readonly TextBlock operationsInfo = Label("", 16, "#BED0BF");
+    private readonly TextBlock automationInfo = Label("", 14, "#A9C1AF", new Thickness(0, 5, 0, 5));
+    private readonly TextBlock performanceInfo = Label("", 16, "#BED0BF");
+    private readonly TextBlock performanceFinal = Label("", 20, "#CBE2CE", new Thickness(0, 5, 0, 0));
     private readonly TextBlock performancePreview = Label("", 11, PreviewColor);
     private readonly StackPanel connections = new();
     private readonly List<Action<EmpireActionPreview?>> connectionUpdates = [];
@@ -54,13 +55,14 @@ internal sealed partial class EmpireView
         overviewLayout.Children.Add(estateFacts);
         var nextChapter = new StackPanel(); nextChapter.Children.Add(IconCaption("Prestige", "THE NEXT CHAPTER", 16));
         prestigeTitle.FontFamily = new System.Windows.Media.FontFamily("Georgia"); prestigeTitle.Margin = new Thickness(0, 8, 0, 5); nextChapter.Children.Add(prestigeTitle);
-        prestigeRequirement.FontSize = 10; nextChapter.Children.Add(prestigeRequirement);
+        prestigeRequirement.FontSize = 15;
+        prestigeTitle.FontSize = 30; nextChapter.Children.Add(prestigeRequirement);
         var prestigeContent = new StackPanel { Orientation = Orientation.Horizontal }; prestigeContent.Children.Add(new EmpireIcon("Prestige", 18) { Margin = new Thickness(0, 0, 8, 0) }); prestigeContent.Children.Add(prestigeActionCaption);
         prestigeButton.Content = prestigeContent; prestigeButton.Click += (_, _) => { ClearPreview(); PrestigeClicked(); };
         ToolTipService.SetShowOnDisabled(prestigeButton, true); nextChapter.Children.Add(prestigeButton);
         Grid.SetColumn(nextChapter, 1); overviewLayout.Children.Add(nextChapter); estateOverview.Children.Add(overviewLayout);
-        var overviewScroll = new ScrollViewer { Content = estateOverview, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
-        Grid.SetRow(overviewScroll, 1); intelligence.Children.Add(overviewScroll);
+        var overviewFit = FitIntelligence(estateOverview);
+        Grid.SetRow(overviewFit, 1); intelligence.Children.Add(overviewFit);
         var growth = new StackPanel(); growth.Children.Add(growthInfo); growth.Children.Add(growthPreview);
         var operations = new StackPanel(); operations.Children.Add(operationsInfo); operations.Children.Add(automationInfo);
         var specialistControls = new StackPanel();
@@ -88,13 +90,30 @@ internal sealed partial class EmpireView
         {
             intelligenceColumns.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(width, GridUnitType.Star) });
             var stack = new DockPanel { Margin = new Thickness(12, 6, 12, 12) };
-            var title = IconCaption(caption, caption.ToUpperInvariant(), 16); title.Margin = new Thickness(0, 0, 0, 9);
+            var title = IconCaption(caption, caption.ToUpperInvariant(), 20);
+            if (title.Children.OfType<TextBlock>().FirstOrDefault() is TextBlock label) label.FontSize = 15;
+            title.Margin = new Thickness(0, 0, 0, 9);
             DockPanel.SetDock(title, Dock.Top); stack.Children.Add(title);
-            stack.Children.Add(new ScrollViewer { Name = "EmpireIntelligence" + caption + "Scroll", Content = content,
-                VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled });
+            stack.Children.Add(FitIntelligence((FrameworkElement)content));
             var border = new Border { Child = stack, BorderThickness = new Thickness(column == 0 ? 0 : 1, 0, 0, 0), BorderBrush = Ink("#304C3B") };
             Grid.SetColumn(border, column); intelligenceColumns.Children.Add(border);
         }
+    }
+
+    private static FrameworkElement FitIntelligence(FrameworkElement content)
+    {
+        var viewport = new Grid();
+        var fit = new Viewbox { Child = content, Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly,
+            HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top };
+        viewport.Children.Add(fit);
+        // Use the column's viewport width, not the Viewbox's fitted width. Otherwise
+        // down-only fitting can lock an initially empty column to its minimum width.
+        viewport.SizeChanged += (_, _) =>
+        {
+            double width = Math.Max(140, viewport.ActualWidth);
+            if (Math.Abs(content.Width - width) > .5 || double.IsNaN(content.Width)) content.Width = width;
+        };
+        return viewport;
     }
 
     private void RefreshIntelligence()
@@ -160,14 +179,14 @@ internal sealed partial class EmpireView
         foreach (EmpireSynergyDefinition definition in EmpireSynergyCatalog.All.Where(d => (room.Tags & d.Beneficiaries) != 0
             || room.Floor <= d.MaximumFloor && (room.Tags & d.Members) != 0))
         {
-            var title = Label(definition.Name.ToUpperInvariant(), 10, "#D1BD94", new Thickness(0, 0, 0, 4)); connections.Children.Add(title);
-            var status = Label("", 10, "#AECAB6"); connections.Children.Add(status);
-            var progress = new ProgressBar { Minimum = 0, Maximum = 1, Height = 4, Foreground = Ink("#9EBB8C"), Background = Ink("#263E2F"),
+            var title = Label(definition.Name.ToUpperInvariant(), 14, "#D1BD94", new Thickness(0, 0, 0, 4)); connections.Children.Add(title);
+            var status = Label("", 13, "#AECAB6"); connections.Children.Add(status);
+            var progress = new ProgressBar { Minimum = 0, Maximum = 1, Height = 6, Foreground = Ink("#9EBB8C"), Background = Ink("#263E2F"),
                 Margin = new Thickness(0, 5, 0, 6), BorderThickness = new Thickness(0) }; intelligenceProgress.Add(progress); connections.Children.Add(progress);
             EmpireDepartment[] members = EmpireCatalog.Departments.Where(r => r.Floor <= definition.MaximumFloor && (r.Tags & definition.Members) != 0).ToArray();
             var memberDetails = new StackPanel();
-            var lines = members.Select(_ => Label("", 10, "#A9C1AE")).ToArray(); foreach (TextBlock line in lines) memberDetails.Children.Add(line);
-            var limiter = Label("", 10, "#D4C292", new Thickness(0, 5, 0, 8)); memberDetails.Children.Add(limiter);
+            var lines = members.Select(_ => Label("", 13, "#A9C1AE")).ToArray(); foreach (TextBlock line in lines) memberDetails.Children.Add(line);
+            var limiter = Label("", 12, "#D4C292", new Thickness(0, 5, 0, 8)); memberDetails.Children.Add(limiter);
             bool futureFloor = members.Any(m => !service.FloorUnlocked(m.Floor));
             if (futureFloor)
             {

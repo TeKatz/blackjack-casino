@@ -33,28 +33,32 @@ public partial class MainWindow
 
         empireLastSave = DateTimeOffset.UtcNow;
         RefreshEmpireHeader();
-        // Idle production belongs to the whole casino, not just the Empire page. Keep the
-        // accrual clock responsive while other WPF surfaces are rendering or animating.
-        empireTimer = new DispatcherTimer(DispatcherPriority.Normal)
+        // Empire accrual is deterministic over elapsed time. Running it twice per second on
+        // DispatcherPriority.Normal only steals time from input/layout without improving the
+        // simulation. One background tick keeps the live counters responsive while allowing
+        // WPF input and render work to win dispatcher scheduling conflicts.
+        empireTimer = new DispatcherTimer(DispatcherPriority.Background)
         {
-            Interval = TimeSpan.FromMilliseconds(500),
+            Interval = TimeSpan.FromSeconds(1),
         };
         empireTimer.Tick += (_, _) =>
         {
-            if (empire is null) return;
+            if (empire is null || !empire.Started) return;
             DateTimeOffset now = DateTimeOffset.UtcNow;
             SyncEmpireAchievementBoosts();
             empire.ObserveActivity(progressionController is null ? new() : EmpireActivitySnapshot.FromProfile(progressionController.Profile), now);
-            empireView?.Refresh();
-            empireDetachedView?.Refresh();
+            if (empireView?.IsVisible == true) empireView.RefreshLive();
+            if (empireDetachedView?.IsVisible == true) empireDetachedView.RefreshLive();
             RefreshEmpireHeader();
-            if (empire.Started && now - empireLastSave >= TimeSpan.FromSeconds(30))
+            if (now - empireLastSave >= TimeSpan.FromSeconds(30))
             {
                 SavePreferences();
                 empireLastSave = now;
             }
         };
-        empireTimer.Start();
+        // A profile that has never started Casino Empire has no economy to accrue and no live
+        // header to update. Do not wake the WPF dispatcher once a second for a dormant feature.
+        if (empire.Started) empireTimer.Start();
         Closed += (_, _) =>
         {
             empireTimer.Stop();
@@ -164,6 +168,7 @@ public partial class MainWindow
         if (empire is null) return;
         SyncEmpireAchievementBoosts();
         empire.Start(DateTimeOffset.UtcNow);
+        if (empireTimer is not null && !empireTimer.IsEnabled) empireTimer.Start();
         empire.Accrue(DateTimeOffset.UtcNow);
         SavePreferences();
         RefreshEmpireHeader();
@@ -292,12 +297,22 @@ public partial class MainWindow
         SavePreferences();
     }
 
+    private bool empireHeaderWasLive;
+
     private void RefreshEmpireHeader()
     {
         if (empire is null) return;
         bool visible = empire.Started && EmpireBalanceCheckBox.IsChecked == true;
         EmpireBalancePanel.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
-        EmpireHeaderBalance.SetAmount(empire.Credits, AnimationsEnabled && visible && EmpireBalancePanel.IsVisible);
+        bool live = visible && EmpireBalancePanel.IsVisible && EmpireBalancePanel.IsEnabled && WindowState != WindowState.Minimized;
+        if (!live)
+        {
+            EmpireHeaderBalance.StopInterpolation();
+            empireHeaderWasLive = false;
+            return;
+        }
+        EmpireHeaderBalance.SetAmount(empire.Credits, CurrentPresentation.AnimationsEnabled && empireHeaderWasLive);
+        empireHeaderWasLive = true;
         EmpireHeaderRate.Text = "+" + EmpireView.Number(empire.CreditsPerSecond) + " cr / sec";
     }
 }

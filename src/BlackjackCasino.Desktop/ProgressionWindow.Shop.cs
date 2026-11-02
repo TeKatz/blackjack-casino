@@ -7,7 +7,15 @@ namespace BlackjackCasino.Desktop;
 
 internal partial class ProgressionWindow
 {
-    private bool IsOwned(CosmeticDefinition cosmetic) => controller.Profile.OwnedCosmeticIds.Contains(cosmetic.Id, StringComparer.Ordinal);
+    private const int ShopInitialMaterializedRows = 18;
+    private const double ShopEstimatedRowHeight = 68;
+    private HashSet<string> shopOwnedIds = new(StringComparer.Ordinal);
+    private CosmeticDefinition[] shopItems = [];
+    private bool[] shopMaterialized = [];
+    private int shopMaterializedCount;
+    private bool shopScrollHooked;
+
+    private bool IsOwned(CosmeticDefinition cosmetic) => shopOwnedIds.Contains(cosmetic.Id);
 
     private bool IsEquipped(CosmeticDefinition cosmetic) => cosmetic.Id == (cosmetic.Kind switch
     {
@@ -24,6 +32,7 @@ internal partial class ProgressionWindow
         if (!collectionsInitialized) return;
         RefreshPackShop();
         PlayerProfileState profile = controller.Profile;
+        shopOwnedIds = profile.OwnedCosmeticIds.ToHashSet(StringComparer.Ordinal);
         ShopCoinsText.Text = $"Balance: ◆ {profile.Coins:N0}";
         ShopCoinsText.Foreground = CoinBrush;
         ShopSummaryText.Text = $"{CosmeticCatalog.All.Count(IsOwned):N0} / {CosmeticCatalog.All.Count:N0} owned · card sets, dice sets, portraits, frames & titles";
@@ -47,13 +56,83 @@ internal partial class ProgressionWindow
             3 => filtered.OrderBy(cosmetic => cosmetic.Name),
             _ => filtered.OrderBy(cosmetic => IsEquipped(cosmetic) ? 0 : IsOwned(cosmetic) ? 1 : cosmetic.ShopAvailable && profile.Prestige >= cosmetic.RequiredPrestige ? 2 : 3).ThenBy(cosmetic => cosmetic.Kind).ThenBy(cosmetic => cosmetic.Price),
         };
-        CosmeticDefinition[] items = filtered.ToArray();
+
+        shopItems = filtered.ToArray();
+        shopMaterialized = new bool[shopItems.Length];
+        shopMaterializedCount = 0;
         ShopPanel.Children.Clear();
-        foreach (CosmeticDefinition cosmetic in items)
-            ShopPanel.Children.Add(BuildShopRow(cosmetic));
-        if (items.Length == 0)
+        if (!shopScrollHooked)
+        {
+            ShopScroll.ScrollChanged += ShopScroll_ScrollChanged;
+            shopScrollHooked = true;
+        }
+
+        if (shopItems.Length == 0)
+        {
             ShopPanel.Children.Add(MutedText("No cosmetics match these filters. Try another type, status or search, or choose Reset."));
-        ShopPageText.Text = $"{items.Length:N0} cosmetics · scroll to browse";
+            ShopPageText.Text = "0 cosmetics";
+            return;
+        }
+
+        // Keep one lightweight slot for every filtered item so the ScrollViewer exposes the
+        // complete catalogue and stable scrollbar immediately. Only rows near the viewport build
+        // the expensive live cosmetic/card previews.
+        foreach (CosmeticDefinition cosmetic in shopItems)
+            ShopPanel.Children.Add(BuildShopPlaceholder(cosmetic));
+
+        MaterializeShopRange(0, Math.Min(shopItems.Length, ShopInitialMaterializedRows));
+        ShopScroll.ScrollToTop();
+        UpdateShopPageText();
+    }
+
+    private static FrameworkElement BuildShopPlaceholder(CosmeticDefinition cosmetic) => new Border
+    {
+        Height = ShopEstimatedRowHeight - 6,
+        Margin = new Thickness(0, 0, 4, 6),
+        Background = Brushes.Transparent,
+        Uid = "shop-placeholder",
+        ToolTip = cosmetic.Name,
+        IsHitTestVisible = false,
+    };
+
+    private void ShopScroll_ScrollChanged(object sender, ScrollChangedEventArgs e)
+    {
+        if (shopMaterializedCount >= shopItems.Length || shopItems.Length == 0 || e.ViewportHeight <= 0 || e.ExtentHeight <= 0) return;
+
+        // Estimate the visible index from the current scroll ratio and eagerly build a cushion on
+        // both sides. This handles regular scrolling and direct ScrollToBottom without requiring
+        // all previews to exist up front.
+        double ratio = Math.Clamp(e.VerticalOffset / Math.Max(1, e.ExtentHeight), 0, 1);
+        int approximateTop = Math.Clamp((int)Math.Floor(ratio * shopItems.Length), 0, shopItems.Length - 1);
+        int visibleRows = Math.Max(8, (int)Math.Ceiling(e.ViewportHeight / ShopEstimatedRowHeight));
+        int start = Math.Max(0, approximateTop - 6);
+        int end = Math.Min(shopItems.Length, approximateTop + visibleRows + 10);
+        MaterializeShopRange(start, end);
+        UpdateShopPageText();
+    }
+
+    private void MaterializeShopRange(int start, int end)
+    {
+        start = Math.Clamp(start, 0, shopItems.Length);
+        end = Math.Clamp(end, start, shopItems.Length);
+        for (int index = start; index < end; index++)
+        {
+            if (shopMaterialized[index]) continue;
+            FrameworkElement row = BuildShopRow(shopItems[index]);
+            // UIElementCollection cannot reliably replace a connected Visual through its indexer.
+            // Detach the lightweight placeholder first, then insert the real row at the same slot.
+            ShopPanel.Children.RemoveAt(index);
+            ShopPanel.Children.Insert(index, row);
+            shopMaterialized[index] = true;
+            shopMaterializedCount++;
+        }
+    }
+
+    private void UpdateShopPageText()
+    {
+        ShopPageText.Text = shopMaterializedCount >= shopItems.Length
+            ? $"{shopItems.Length:N0} cosmetics · scroll to browse"
+            : $"{shopItems.Length:N0} cosmetics · {shopMaterializedCount:N0} previews active";
     }
 
     private FrameworkElement BuildShopRow(CosmeticDefinition cosmetic)

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using BlackjackCasino.Core;
+using BlackjackCasino.Core.Adventure;
 
 namespace BlackjackCasino.Desktop;
 
@@ -95,8 +96,11 @@ internal static class PlayerProfileStore
             .Where(id => CosmeticCatalog.TryGet(id) is not null)
             .Distinct(StringComparer.Ordinal)
             .ToList();
+        // ChallengeRegistry is the authoritative catalog. Adventure achievements are intentionally
+        // registered outside the legacy ChallengeCatalog, so filtering against ChallengeCatalog here
+        // silently deleted their claim receipts during every save and made their rewards repeatable.
         state.ClaimedChallengeIds = state.ClaimedChallengeIds
-            .Where(id => ChallengeCatalog.TryGet(id) is not null)
+            .Where(id => ChallengeRegistry.TryGet(id) is not null)
             .Distinct(StringComparer.Ordinal)
             .ToList();
 

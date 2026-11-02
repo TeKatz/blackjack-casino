@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using BlackjackCasino.Desktop;
+using BlackjackCasino.Core.WordSearch;
 
 internal static class WordSearchSmoke
 {
@@ -81,13 +82,52 @@ internal static class WordSearchSmoke
         Require(Find<Button>(window).Any(button => button.Name == "WordSearchResume" && button.IsVisible),
             "Leaving a Word Search puzzle did not preserve a resumable active game.");
 
+        Click(Find<Button>(window).Single(button => button.Name == "WordSearchResume" && button.IsVisible));
+        await Task.Delay(60); window.UpdateLayout();
+        WordSearchView puzzleView = Find<WordSearchView>(window).Single();
+        const System.Reflection.BindingFlags flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+        WordSearchGameState game = (WordSearchGameState)typeof(WordSearchView).GetField("game", flags)!.GetValue(puzzleView)!;
+        var preferencesField = typeof(MainWindow).GetField("preferences", flags)!;
+        AppPreferences currentPreferences = (AppPreferences)preferencesField.GetValue(window)!;
+        AreaPresentationSettings previousPresentation = currentPreferences.Presentation("chill-lounge");
+        preferencesField.SetValue(window, currentPreferences.WithPresentation("chill-lounge", previousPresentation with { AnimationsEnabled = true, SoundEnabled = false }));
+        WordSearchPlacement firstWord = game.Puzzle.Placements[0];
+        puzzleView.SubmitSelection(new(firstWord.StartRow, firstWord.StartColumn), new(firstWord.EndRow, firstWord.EndColumn));
+        await Task.Delay(80); window.UpdateLayout();
+        var glows = (System.Collections.ICollection)typeof(WordSearchView).GetField("wordGlows", flags)!.GetValue(puzzleView)!;
+        Require(glows.Count > 0, "Finding a word did not start the letter glow sweep.");
+        Capture(window, Path.Combine(output, "word-search-found-glow.png"));
+        foreach (WordSearchPlacement placement in game.Puzzle.Placements.Skip(1))
+            puzzleView.SubmitSelection(new(placement.StartRow, placement.StartColumn), new(placement.EndRow, placement.EndColumn));
+        await Task.Delay(1400); window.UpdateLayout();
+        currentPreferences = (AppPreferences)preferencesField.GetValue(window)!;
+        preferencesField.SetValue(window, currentPreferences.WithPresentation("chill-lounge", previousPresentation));
+        Require(Find<Grid>(window).Any(grid => grid.Name == "WordSearchCompletionOverlay" && grid.IsVisible), "Completing a Word Search did not show its result window.");
+        Require(Find<Button>(window).Any(button => button.Name == "WordSearchCompletionClub" && button.IsVisible), "Word Search result has no Return to Club action.");
+        int found = game.FoundWords.Count;
+        puzzleView.SubmitSelection(new(0, 0), new(0, 1));
+        Require(game.FoundWords.Count == found, "Completed Word Search still accepts selections.");
+        Capture(window, Path.Combine(output, "word-search-complete.png"));
+        Click(Find<Button>(window).Single(button => button.Name == "WordSearchCompletionHub" && button.IsVisible));
+        await Task.Delay(60); window.UpdateLayout();
+        Require(!Find<Button>(window).Any(button => button.Name == "WordSearchResume" && button.IsVisible), "A completed puzzle returned as an active resumable game.");
+
         Click(Find<Button>(window).Single(button => button.Name == "LoungeGamesHeaderBack" && button.IsVisible));
         await Task.Delay(50);
         window.UpdateLayout();
         Require(Find<Button>(window).Any(button => button.Name == "LoungeGame_word_search" && button.IsVisible),
             "Word Search did not return to the local Chill Lounge game menu.");
 
-        Click(Find<Button>(window).Single(button => button.IsVisible && Equals(button.Content, "RETURN TO CLUB")));
+        Click(Find<Button>(window).Single(button => button.Name == "LoungeGame_word_search" && button.IsVisible));
+        await Task.Delay(40); window.UpdateLayout();
+        Click(Find<Button>(window).Single(button => button.Name == "WordSearchStart_Easy" && button.IsVisible));
+        await Task.Delay(40); window.UpdateLayout();
+        puzzleView = Find<WordSearchView>(window).Single();
+        game = (WordSearchGameState)typeof(WordSearchView).GetField("game", flags)!.GetValue(puzzleView)!;
+        foreach (WordSearchPlacement placement in game.Puzzle.Placements)
+            puzzleView.SubmitSelection(new(placement.StartRow, placement.StartColumn), new(placement.EndRow, placement.EndColumn));
+        await Task.Delay(1100); window.UpdateLayout();
+        Click(Find<Button>(window).Single(button => button.Name == "WordSearchCompletionClub" && button.IsVisible));
         await Task.Delay(90);
         window.UpdateLayout();
         Require(Find<Button>(window).Any(button => button.Name == "Mode_chill_lounge" && button.IsVisible),

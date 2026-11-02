@@ -65,11 +65,11 @@ public partial class MainWindow
             VerticalAlignment = VerticalAlignment.Center,
         };
         profileButton.Click += ProfileButton_Click;
-        Grid.SetColumn(profileButton, 2);
+        Grid.SetColumn(profileButton, 1);
         Panel.SetZIndex(profileButton, 1);
         var profileTile = new Grid { Name = "PlayerProfileTile", Margin = profileButton.Margin, VerticalAlignment = VerticalAlignment.Center };
         profileButton.Margin = new Thickness(0);
-        Grid.SetColumn(profileTile, 2);
+        Grid.SetColumn(profileTile, 1);
         profileTile.Children.Add(profileButton);
         headerGrid.Children.Add(profileTile);
 
@@ -178,6 +178,7 @@ public partial class MainWindow
             return;
         }
 
+        if (cardSetStylingInitialized) ApplyEquippedCardSetToRenderedCards();
         PlayerProfileState profile = progressionController.Profile;
         CosmeticDefinition title = CosmeticCatalog.Get(profile.EquippedTitleId);
         CosmeticDefinition frame = CosmeticCatalog.Get(profile.EquippedFrameId);

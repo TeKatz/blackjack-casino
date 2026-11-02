@@ -42,7 +42,10 @@ internal static class PlayerStateStore
 
         try
         {
-            SaveOrThrow(state);
+            // Routine UI persistence does not need an fsync on every click. The temp-file +
+            // atomic replace still prevents partially written JSON, while avoiding a physical
+            // disk barrier on the WPF dispatcher. Financial transactions use SaveOrThrow below.
+            WriteAtomically(state, DirectoryPath, durable: false);
         }
         catch
         {
@@ -54,13 +57,23 @@ internal static class PlayerStateStore
     internal static void SaveOrThrow(AppPreferences state, string? directory = null)
     {
         directory ??= DirectoryPath;
+        WriteAtomically(state, directory, durable: true);
+    }
+
+    private static void WriteAtomically(AppPreferences state, string directory, bool durable)
+    {
         Directory.CreateDirectory(directory);
         string path = Path.Combine(directory, "player-state.json");
         string temporary = path + ".tmp";
         using (var file = new FileStream(temporary, FileMode.Create, FileAccess.Write, FileShare.None))
         {
             JsonSerializer.Serialize(file, Sanitize(state), JsonOptions);
-            file.Flush(flushToDisk: true);
+            if (durable)
+            {
+                // SaveOrThrow is used for transactional money/progression boundaries where the
+                // caller only commits the in-memory state after durable persistence succeeds.
+                file.Flush(flushToDisk: true);
+            }
         }
         File.Move(temporary, path, overwrite: true);
     }

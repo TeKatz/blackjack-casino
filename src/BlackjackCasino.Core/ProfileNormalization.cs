@@ -1,3 +1,5 @@
+using BlackjackCasino.Core.Adventure;
+
 namespace BlackjackCasino.Core;
 
 /// <summary>Idempotent structural normalization shared by persistence and progression.</summary>
@@ -27,6 +29,7 @@ public static class ProfileNormalization
         state.NeonVault ??= new();
         state.NineLives ??= new();
         state.LegacyPooledSlots ??= new();
+        state.Adventure = AdventureMetaProgressState.Normalize(state.Adventure);
 
         if (state.SlotTrackingVersion < 1)
         {

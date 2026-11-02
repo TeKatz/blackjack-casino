@@ -52,7 +52,7 @@ internal static class EmpireStrategySmoke
                 Capture(window, Path.Combine(output, $"empire-command-center-{(int)size.Item1}.png"));
             }
             await VerifyRoomPreviews(window, service, output);
-            Click(window, "EmpireTab_Projects"); Click(window, "EmpireProject_casino_vault");
+            Click(window, "EmpireTab_Development"); Click(window, "EmpireProject_casino_vault");
             Require(service.Projects.Contains("casino-vault"), "Dashboard construction did not commit its suggested project.");
             Click(window, "EmpireTab_Research");
             Require(Find<System.Windows.Shapes.Polyline>(window).Count(l => l.Name.StartsWith("EmpireResearchLink_", StringComparison.Ordinal)) == 4,
@@ -69,15 +69,15 @@ internal static class EmpireStrategySmoke
             Require(Find<EmpireManagementView>(window).Single().IsVisible,"Management did not mount in place.");
             Click(window,"EmpireResearch_construction");
             Require(service.ResearchRank("construction")==3,"Research UI did not spend a Legacy Point.");
-            Click(window,"EmpireTab_Projects");
+            Click(window,"EmpireTab_Development");
             Click(window,"EmpireProject_luxury_atrium");
             Require(service.Projects.Contains("luxury-atrium"),"Capital project UI did not persist its purchase.");
-            Click(window,"EmpireTab_Managers");
+            Click(window,"EmpireTab_Operations");
             PreviewAndLeave(window, "EmpireManagerAssign_elena");
             Require(!service.ManagerAssignments.ContainsKey("elena"), "Manager hover committed an assignment.");
             Click(window,"EmpireManagerAssign_elena");
             Require(service.ManagerAssignments.ContainsKey("elena"),"Manager assignment UI did not reach Core.");
-            Click(window,"EmpireTab_Automation");
+            Click(window,"EmpireTab_Operations");
             Find<CheckBox>(window).Single(c=>c.Name=="EmpireAutomationEnabled").IsChecked=true;
             Find<TextBox>(window).Single(c=>c.Name=="EmpireAutomationReserve").Text="1000000";
             Find<TextBox>(window).Single(c=>c.Name=="EmpireAutomationPercent").Text="25";
@@ -92,7 +92,7 @@ internal static class EmpireStrategySmoke
             try
             {
                 CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("de-DE");
-                Click(window,"EmpireTab_Automation");
+                Click(window,"EmpireTab_Operations");
                 Require(Find<TextBox>(window).Single(c=>c.Name=="EmpireAutomationPercent").Text=="25", "Automation mixed invariant display with localized parsing.");
                 Find<TextBox>(window).Single(c=>c.Name=="EmpireAutomationReserve").Text="1000000,50";
                 Find<TextBox>(window).Single(c=>c.Name=="EmpireAutomationPercent").Text="12,5";
@@ -100,7 +100,7 @@ internal static class EmpireStrategySmoke
                 Require(service.Automation.Reserve==1000000.5m && service.Automation.SpendPercent==.125m,"German automation decimals were not saved exactly.");
             }
             finally { CultureInfo.CurrentCulture = originalCulture; }
-            Click(window,"EmpireTab_Events");
+            Click(window,"EmpireTab_Opportunities");
             var reachableEvents = new HashSet<string>(StringComparer.Ordinal);
             for (int eventPage = 0; eventPage < EmpireEventCatalog.All.Count; eventPage++)
             {
@@ -109,18 +109,18 @@ internal static class EmpireStrategySmoke
                 if (next is not { IsEnabled: true }) break;
                 Click(window,"EmpirePageNext");
             }
-            Require(EmpireEventCatalog.All.All(e => reachableEvents.Contains("EmpireEvent_" + e.Id)), "Paginated event pages lost a catalog event.");
-            Click(window,"EmpireTab_Events"); Click(window,"EmpireEvent_dice");
+            Require(EmpireEventCatalog.All.All(e => reachableEvents.Contains("EmpireEvent_" + e.Id)), "The shared Opportunities overview lost a catalog event.");
+            Click(window,"EmpireTab_Opportunities"); Click(window,"EmpireEvent_dice");
             Require(service.ActiveEvent?.Id=="dice","Event start UI failed.");
-            Click(window,"EmpireTab_Contracts"); Click(window,"EmpireContract_expansion_drive");
+            Click(window,"EmpireTab_Opportunities"); Click(window,"EmpireContract_expansion_drive");
             Require(service.ActiveContract?.Id=="expansion-drive","Contract acceptance UI failed.");
             Click(window,"EmpireManagementClose");
             Click(window,"EmpireFloor1Button"); Click(window,"EmpireRoom_slots"); Click(window,"EmpireBulk50Button"); Click(window,"EmpireUpgradeButton");
             Require(service.CanClaimContract, "Bulk room upgrades did not complete the dashboard contract.");
-            Click(window,"EmpireTab_Contracts"); Click(window,"EmpireContractClaim");
+            Click(window,"EmpireTab_Opportunities"); Click(window,"EmpireContractClaim");
             Require(service.ActiveContract is null && service.ContractBuff?.ContractId == "expansion-drive", "Dashboard contract claim did not save its reward.");
             Click(window,"EmpireManagementClose"); Click(window,"EmpireBulk1Button");
-            foreach(string tab in new[]{"Research","Synergies","Projects","Managers","Automation","Events","Contracts","Properties"})
+            foreach(string tab in new[]{"Research","Synergies","Development","Operations","Opportunities","Development"})
             {
                 Click(window,"EmpireTab_"+tab); window.UpdateLayout();
                 foreach(var size in new[]{(1080d,720d),(1440d,900d)})
@@ -129,6 +129,26 @@ internal static class EmpireStrategySmoke
                     Button back=Find<Button>(window).Single(b=>b.Name=="EmpireManagementClose");
                     Rect bounds=back.TransformToAncestor(window).TransformBounds(new Rect(back.RenderSize));
                     Require(bounds.Left>=0 && bounds.Top>=0 && bounds.Right<=window.ActualWidth && bounds.Bottom<=window.ActualHeight,"Management back button is clipped.");
+                    Capture(window,Path.Combine(output,$"empire-{tab.ToLowerInvariant()}-{(int)size.Item1}.png"));
+                    if (tab is "Development" or "Operations" or "Opportunities")
+                    {
+                        EmpireManagementView view = Find<EmpireManagementView>(window).Single();
+                        Require(!Find<Button>(view).Any(b => b.Name is "EmpirePageNext" or "EmpirePagePrevious"), "A combined overview still paginates.");
+                        Require(!Find<ScrollViewer>(view).Any(scroll => scroll.IsVisible && scroll.ScrollableHeight > 1 && scroll.VerticalScrollBarVisibility == ScrollBarVisibility.Auto), "A combined overview needs scrolling.");
+                        string[] actions = tab switch
+                        {
+                            "Development" => EmpireProjectCatalog.All.Select(p => "EmpireProject_" + p.Id.Replace('-', '_')).Concat(EmpirePropertyCatalog.All.Select(p => "EmpireProperty_" + p.Id.Replace('-', '_'))).ToArray(),
+                            "Operations" => EmpireManagerCatalog.All.Select(m => "EmpireManagerAssign_" + m.Id).Append("EmpireAutomationSave").ToArray(),
+                            _ => EmpireEventCatalog.All.Select(e => "EmpireEvent_" + e.Id).Concat(EmpireContractCatalog.All.Select(c => "EmpireContract_" + c.Id.Replace('-', '_'))).ToArray(),
+                        };
+                        foreach (string action in actions)
+                        {
+                            Button control = Find<Button>(view).Single(b => b.Name == action);
+                            Rect area = control.TransformToAncestor(window).TransformBounds(new Rect(control.RenderSize));
+                            Require(control.IsVisible && area.Width > 8 && area.Height > 5 && area.Left >= 0 && area.Right <= window.ActualWidth + 1 && area.Bottom <= window.ActualHeight + 1,
+                                $"{action} is clipped on the {tab} overview at {size}: {area}, visible={control.IsVisible}.");
+                        }
+                    }
                     Capture(window,Path.Combine(output,$"empire-{tab.ToLowerInvariant()}-{(int)size.Item1}.png"));
                 }
             }
@@ -140,7 +160,7 @@ internal static class EmpireStrategySmoke
             Click(window,"EmpireOperationsButton");
             Require(Find<Button>(window).Any(b=>b.Name=="EmpireManagerAssign_elena"), "Overview Team shortcut opened the wrong section.");
             Click(window,"EmpireManagementClose");
-            Click(window,"EmpireTab_Contracts");
+            Click(window,"EmpireTab_Opportunities");
             Require(Find<Button>(window).Any(b=>b.Name=="EmpireContractClaim"), "Overview contract shortcut opened the wrong section.");
             Click(window,"EmpireManagementClose");
             ComboBox picker=Find<ComboBox>(window).Single(c=>c.Name=="EmpirePropertySelector");
@@ -153,7 +173,7 @@ internal static class EmpireStrategySmoke
             Click(window,"EmpireStatisticsCloseButton"); Click(window,"EmpireBackButton");
             window.Modes.OpenSecondary("casino-empire"); await Task.Delay(80);
             Window detached = Application.Current.Windows.Cast<Window>().Single(w=>w.Title=="Casino Empire · Detached");
-            Click(detached,"EmpireTab_Research"); Click(detached,"EmpireTab_Properties");
+            Click(detached,"EmpireTab_Research"); Click(detached,"EmpireTab_Development");
             Require(Find<EmpireManagementView>(detached).Any(),"Detached estate did not mount the shared management pages.");
             Capture(detached,Path.Combine(output,"empire-detached-management.png"));
             Click(detached,"EmpireManagementClose");
@@ -169,7 +189,7 @@ internal static class EmpireStrategySmoke
                 Require(!claimed && liveHand.Bankroll==wallet && service.ClaimableDividend==reserve,"Detached owner claim changed a live Blackjack wallet or consumed its reserve.");
             }
             finally { sessionField.SetValue(window,oldSession); detached.Close(); }
-            File.WriteAllText(Path.Combine(output,"empire-strategy-result.txt"),"PASS: data-driven Resort Floor, research purchase, capital project, manager assignment, automation configuration, event, contract, multi-property purchase/navigation, all eight management pages at 1080x720 and 1440x900, portfolio statistics and single-window hosting.");
+            File.WriteAllText(Path.Combine(output,"empire-strategy-result.txt"),"PASS: data-driven Resort Floor, research purchase, capital project, manager assignment, automation configuration, event, contract, multi-property purchase/navigation, all combined management overviews at 1080x720 and 1440x900, portfolio statistics and single-window hosting.");
         }
         finally
         {
@@ -230,9 +250,9 @@ internal static class EmpireStrategySmoke
         {
             string group = name[10..] switch
             {
-                "Research" or "Projects" or "Properties" => "EmpireDevelopmentButton",
-                "Managers" or "Automation" => "EmpireOperationsButton",
-                "Events" or "Contracts" => "EmpireOpportunitiesButton", _ => "EmpireOverviewButton",
+                "Research" or "Development" => "EmpireDevelopmentButton",
+                "Operations" => "EmpireOperationsButton",
+                "Opportunities" => "EmpireOpportunitiesButton", _ => "EmpireOverviewButton",
             };
             Click(root, group); button = Find<Button>(root).SingleOrDefault(b => b.Name == name);
         }

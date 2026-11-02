@@ -2,7 +2,7 @@ name: Development Release
 
 on:
   push:
-    branches: ["feature/empire-command-center"]
+    branches: ["feature/adventure-engine"]
   workflow_dispatch:
 
 permissions:
@@ -14,8 +14,8 @@ concurrency:
 
 jobs:
   publish-development:
-    # The shared in-app Development channel is pinned to the Casino Empire command center overhaul branch.
-    if: github.ref == 'refs/heads/feature/empire-command-center'
+    # The shared in-app Development channel is pinned to the tabletop adventure engine branch.
+    if: github.ref == 'refs/heads/feature/adventure-engine'
     runs-on: windows-latest
     timeout-minutes: 20
 

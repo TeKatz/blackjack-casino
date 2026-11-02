@@ -16,6 +16,19 @@ public sealed class EmpireBalanceCounter : TextBlock
     private decimal target;
     public double DisplayedAmount { get => (double)GetValue(DisplayedAmountProperty); set => SetValue(DisplayedAmountProperty, value); }
 
+    public EmpireBalanceCounter()
+    {
+        IsVisibleChanged += (_, _) => { if (!IsVisible) StopInterpolation(); };
+        IsEnabledChanged += (_, _) => { if (!IsEnabled) StopInterpolation(); };
+        Unloaded += (_, _) => StopInterpolation();
+    }
+
+    internal void StopInterpolation()
+    {
+        BeginAnimation(DisplayedAmountProperty, null);
+        if (initialized) DisplayedAmount = (double)target;
+    }
+
     internal void SetAmount(decimal amount, bool animate)
     {
         if (initialized && target == amount && animate) return;
@@ -32,5 +45,9 @@ public sealed class EmpireBalanceCounter : TextBlock
         initialized = true;
     }
 
-    private void RefreshText() => Text = EmpireView.Number((decimal)Math.Clamp(DisplayedAmount, 0, (double)EmpireRules.MaximumCredits)) + UnitText;
+    private void RefreshText()
+    {
+        string formatted = EmpireView.Number((decimal)Math.Clamp(DisplayedAmount, 0, (double)EmpireRules.MaximumCredits)) + UnitText;
+        if (Text != formatted) Text = formatted;
+    }
 }

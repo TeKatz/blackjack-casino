@@ -40,6 +40,9 @@ jobs:
       - name: Collection artwork coverage
         run: python -X warn_default_encoding -W error::EncodingWarning tools/check_collection_art.py
 
+      - name: Empire artwork integrity
+        run: python -X warn_default_encoding -W error::EncodingWarning tools/check_empire_art.py
+
       - name: Restore
         run: dotnet restore BlackjackCasino.sln
 

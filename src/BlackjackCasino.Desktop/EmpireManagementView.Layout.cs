@@ -9,10 +9,46 @@ internal sealed partial class EmpireManagementView
 {
     private static string SectionTitle(string section) => section switch
     {
-        "Research" => "Legacy Research", "Synergies" => "Synergy Circuits", "Projects" => "Capital Projects",
+        "Development" => "Development · Projects & Properties", "Operations" => "Operations · Managers & Automation",
+        "Opportunities" => "Opportunities · Events & Contracts", "Research" => "Legacy Research", "Synergies" => "Synergy Circuits", "Projects" => "Capital Projects",
         "Managers" => "Executive Team", "Automation" => "Executive Automation", "Events" => "Casino Events",
         "Contracts" => "Contract Board", "Properties" => "Property Portfolio", _ => section,
     };
+
+    private void BuildCombined(string firstTitle, Action first, string secondTitle, Action second, int firstColumns, int secondColumns, double ratio)
+    {
+        var overview = new Grid { Name = "EmpireCombinedOverview" };
+        overview.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(ratio, GridUnitType.Star) });
+        overview.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        AddGroup(firstTitle, first, firstColumns, 0);
+        AddGroup(secondTitle, second, secondColumns, 1);
+        entries.Clear(); body.Children.Clear(); body.Children.Add(overview);
+
+        void AddGroup(string title, Action build, int columns, int column)
+        {
+            body.Children.Clear(); entries.Clear();
+            build();
+            var group = new DockPanel { Name = "EmpireOverview_" + title, Margin = new Thickness(column == 0 ? 0 : 8, 0, 0, 0) };
+            var heading = Text(title.ToUpperInvariant(), 16, "#E3C991", true, new Thickness(0, 0, 0, 8));
+            heading.ToolTip = body.Children.OfType<TextBlock>().FirstOrDefault()?.ToolTip;
+            DockPanel.SetDock(heading, Dock.Top); group.Children.Add(heading);
+            foreach (UIElement element in body.Children.Cast<UIElement>().ToArray())
+            {
+                body.Children.Remove(element); DockPanel.SetDock(element, Dock.Top); group.Children.Add(element);
+            }
+            var cards = new UniformGrid { Name = "EmpireOverviewCards_" + title, Columns = columns,
+                Rows = Math.Max(1, (entries.Count + columns - 1) / columns) };
+            foreach (UIElement entry in entries) cards.Children.Add(entry);
+            if (title is "Properties" or "Contracts")
+                group.SizeChanged += (_, _) =>
+                {
+                    int nextColumns = group.ActualHeight < 430 && group.ActualWidth >= 260 ? 2 : columns;
+                    cards.Columns = nextColumns;
+                    cards.Rows = Math.Max(1, (cards.Children.Count + nextColumns - 1) / nextColumns);
+                };
+            group.Children.Add(cards); Grid.SetColumn(group, column); overview.Children.Add(group);
+        }
+    }
 
     private static TextBox AutomationInput(string caption, string value, string name, Panel parent)
     {

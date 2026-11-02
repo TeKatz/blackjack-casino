@@ -17,6 +17,7 @@ public sealed class CollectionTests
         Assert.Equal(136, CollectionCatalog.Cards.Select(c => c.Id).Distinct().Count());
         Assert.All(CollectionCatalog.Themes.Where(t => !t.UltraRare), t => Assert.Equal(Enum.GetValues<CollectionRarity>(), t.Cards.Select(c => c.Rarity).Distinct()));
         Assert.All(CollectionCatalog.Packs, p => Assert.Equal(1000, p.Weights.Sum()));
+        Assert.Equal(800, CollectionCatalog.DuplicatePackCost);
     }
 
     [Fact]
@@ -69,7 +70,7 @@ public sealed class CollectionTests
     {
         var profile = new PlayerProfileState();
         ProfileNormalization.Normalize(profile);
-        profile.Collection.DuplicatePoints = 499;
+        profile.Collection.DuplicatePoints = 799;
         CollectionOpening result = CollectionService.OpenPack(profile, CollectionRarity.Common, new FixedRandom(false)).Opening!;
         Assert.Single(profile.Collection.OwnedCardIds);
         Assert.Single(result.Cards, c => c.IsNew);
@@ -81,17 +82,17 @@ public sealed class CollectionTests
     }
 
     [Fact]
-    public void LegendaryDuplicatesCanCrossSeveralThresholdsInOneTransaction()
+    public void LegendaryDuplicatesRespectTheHigherRecycleThreshold()
     {
         var profile = new PlayerProfileState();
         ProfileNormalization.Normalize(profile);
-        profile.Collection.DuplicatePoints = 450;
+        profile.Collection.DuplicatePoints = 750;
         CollectionOpening result = CollectionService.OpenPack(profile, CollectionRarity.Common, new FixedRandom(true)).Opening!;
         Assert.All(result.Cards, c => Assert.True(CollectionCatalog.Theme(CollectionCatalog.Find(c.CardId)!).UltraRare));
         Assert.Equal(800, result.PointsEarned);
-        Assert.Equal(2, result.PacksEarned);
-        Assert.Equal(250, profile.Collection.DuplicatePoints);
-        Assert.Equal(4, profile.Collection.Packs[CollectionRarity.Common]);
+        Assert.Equal(1, result.PacksEarned);
+        Assert.Equal(750, profile.Collection.DuplicatePoints);
+        Assert.Equal(3, profile.Collection.Packs[CollectionRarity.Common]);
     }
 
     [Fact]
@@ -187,22 +188,44 @@ public sealed class CollectionTests
     }
 
     [Fact]
-    public void ChallengeSingleAndBulkClaimsGrantExactlyOnePackPerNewClaim()
+    public void ChallengePackRewardsAreReservedForMeaningfulMilestones()
+    {
+        var low = new ChallengeDefinition("low", ChallengeCategory.Blackjack, "Low", "Low", ChallengeMetric.BlackjackRounds, 1, 499);
+        var common = low with { Id = "common", CoinReward = 500 };
+        var uncommon = low with { Id = "uncommon", CoinReward = 750 };
+        var rare = low with { Id = "rare", CoinReward = 1500 };
+        var endgame = low with { Id = "endgame", CoinReward = 100, IsEndgame = true };
+
+        Assert.Null(ProgressionService.ChallengePack(low));
+        Assert.Equal(CollectionRarity.Common, ProgressionService.ChallengePack(common));
+        Assert.Equal(CollectionRarity.Uncommon, ProgressionService.ChallengePack(uncommon));
+        Assert.Equal(CollectionRarity.Rare, ProgressionService.ChallengePack(rare));
+        Assert.Equal(CollectionRarity.Epic, ProgressionService.ChallengePack(endgame));
+    }
+
+    [Fact]
+    public void ChallengeSingleAndBulkClaimsGrantOnlyMilestonePacks()
     {
         var profile = new PlayerProfileState { LifetimeStatistics = new() { RoundsPlayed = 100, HandsPlayed = 100, HandsWon = 60 } };
         var service = new ProgressionService(profile);
         ChallengeDefinition[] earned = ChallengeCatalog.All.Where(c => ChallengeCatalog.Complete(profile, c)).ToArray();
+        CollectionRarity[] rewardedPacks = earned
+            .Select(ProgressionService.ChallengePack)
+            .Where(rarity => rarity.HasValue)
+            .Select(rarity => rarity!.Value)
+            .ToArray();
         Assert.NotEmpty(earned);
+        Assert.True(rewardedPacks.Length < earned.Length);
         int before = profile.Collection.Packs.Values.Sum();
         Assert.True(service.ClaimChallenge(earned[0].Id).Success);
         service.ClaimAllChallenges();
-        Assert.Equal(before + earned.Length, profile.Collection.Packs.Values.Sum());
+        Assert.Equal(before + rewardedPacks.Length, profile.Collection.Packs.Values.Sum());
         foreach (CollectionRarity rarity in Enum.GetValues<CollectionRarity>())
-            Assert.Equal((rarity == CollectionRarity.Common ? 3 : 0) + earned.Count(c => ProgressionService.ChallengePack(c) == rarity), profile.Collection.Packs.GetValueOrDefault(rarity));
+            Assert.Equal((rarity == CollectionRarity.Common ? 3 : 0) + rewardedPacks.Count(pack => pack == rarity), profile.Collection.Packs.GetValueOrDefault(rarity));
         service = new ProgressionService(Reload(profile));
         Assert.False(service.ClaimChallenge(earned[0].Id).Success);
         Assert.False(service.ClaimAllChallenges().Success);
-        Assert.Equal(before + earned.Length, service.State.Collection.Packs.Values.Sum());
+        Assert.Equal(before + rewardedPacks.Length, service.State.Collection.Packs.Values.Sum());
     }
 
     [Fact]

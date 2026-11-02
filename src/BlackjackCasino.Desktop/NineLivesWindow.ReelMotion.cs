@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 using BlackjackCasino.Core;
 
 namespace BlackjackCasino.Desktop;
@@ -19,12 +20,13 @@ internal partial class NineLivesWindow
     private readonly int[] reelSpinFrame = new int[NineLivesRules.Reels];
 
     private bool reelMotionInitialized;
+    private bool reelMotionRenderingSubscribed;
     private bool reelMotionWasSpinning;
     private DateTime reelMotionStartedAt;
 
     protected override void OnClosed(EventArgs e)
     {
-        CompositionTarget.Rendering -= ReelMotion_Rendering;
+        StopReelMotionRendering();
         base.OnClosed(e);
     }
 
@@ -112,24 +114,43 @@ internal partial class NineLivesWindow
             ReelCanvas.Children.Add(sweep);
         }
 
-        CompositionTarget.Rendering += ReelMotion_Rendering;
+        // Button.Click covers mouse, touch and keyboard activation. Defer until the existing spin
+        // handler has had a chance to set spinning=true, then subscribe to the per-frame callback.
+        SpinButton.Click += (_, _) => Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(StartReelMotionRendering));
     }
 
-    private void ReelMotion_Rendering(object? sender, EventArgs e)
+    private void StartReelMotionRendering()
     {
-        if (!reelMotionInitialized)
+        if (reelMotionRenderingSubscribed || !reelMotionInitialized || !AnimationsEnabled || !spinning)
         {
             return;
         }
 
-        if (!AnimationsEnabled || !spinning)
-        {
-            if (reelMotionWasSpinning)
-            {
-                ResetReelMotionPresentation();
-            }
+        reelMotionRenderingSubscribed = true;
+        CompositionTarget.Rendering += ReelMotion_Rendering;
+    }
 
-            reelMotionWasSpinning = false;
+    private void StopReelMotionRendering()
+    {
+        if (reelMotionRenderingSubscribed)
+        {
+            CompositionTarget.Rendering -= ReelMotion_Rendering;
+            reelMotionRenderingSubscribed = false;
+        }
+
+        if (reelMotionWasSpinning)
+        {
+            ResetReelMotionPresentation();
+        }
+
+        reelMotionWasSpinning = false;
+    }
+
+    private void ReelMotion_Rendering(object? sender, EventArgs e)
+    {
+        if (!reelMotionInitialized || !AnimationsEnabled || !spinning)
+        {
+            StopReelMotionRendering();
             return;
         }
 

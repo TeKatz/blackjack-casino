@@ -51,7 +51,7 @@ internal sealed partial class EmpireView
         var body = new Grid(); body.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); body.RowDefinitions.Add(new RowDefinition());
         var navigation = new UniformGrid { Columns = 4, Margin = new Thickness(0, 0, 0, 9) };
         foreach (var (section, caption, name) in new[] {
-            ("Overview", "Estate", "EmpireOverviewButton"), ("Research", "Development", "EmpireDevelopmentButton"),
+            ("Overview", "Estate", "EmpireOverviewButton"), ("Development", "Development", "EmpireDevelopmentButton"),
             ("Managers", "Operations", "EmpireOperationsButton"), ("Events", "Opportunities", "EmpireOpportunitiesButton") })
         {
             Button tab = Command(caption, name, () => OpenSection(section));
@@ -180,9 +180,9 @@ internal sealed partial class EmpireView
 
     private static string GroupRoute(string section) => section switch
     {
-        "Projects" or "Properties" or "Research" => "Research",
-        "Automation" or "Managers" => "Managers",
-        "Contracts" or "Events" => "Events", _ => "Overview",
+        "Development" or "Projects" or "Properties" or "Research" => "Development",
+        "Operations" or "Automation" or "Managers" => "Managers",
+        "Opportunities" or "Contracts" or "Events" => "Events", _ => "Overview",
     };
 
     private void OpenSection(string section)

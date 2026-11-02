@@ -16,6 +16,7 @@ internal sealed class CasinoLobbyView : UserControl
     private readonly TextBlock seasonStatus = new() { Name = "LobbySeasonStatus" };
     private readonly TextBlock challengeStatus = new() { Name = "LobbyChallengeStatus" };
     private LobbyProgressSnapshot? lastProgress;
+    private bool compactSeasonStatus;
     private readonly UniformGrid cards = new() { Columns = 4, Width = 1280 };
     private Border? albumPackBadge;
     private TextBlock? albumPackBadgeText;
@@ -78,11 +79,19 @@ internal sealed class CasinoLobbyView : UserControl
             Rect games = cards.TransformToAncestor(body).TransformBounds(new Rect(0, 0, cards.ActualWidth, cards.ActualHeight));
             double columnStart = body.ColumnDefinitions[0].ActualWidth + 22;
             double extra = Math.Max(0, columnStart - games.Right - 18);
-            hub.Margin = new Thickness(-extra, 8, 0, 8);
+            Thickness next = new(-extra, 8, 0, 8);
+            if (Math.Abs(hub.Margin.Left - next.Left) > .5) hub.Margin = next;
         }
-        body.SizeChanged += (_, _) => Dispatcher.BeginInvoke(FitHub);
-        gamesViewport.SizeChanged += (_, _) => Dispatcher.BeginInvoke(FitHub);
-        Loaded += (_, _) => Dispatcher.BeginInvoke(FitHub);
+        bool fitQueued = false;
+        void QueueFit()
+        {
+            if (fitQueued) return;
+            fitQueued = true;
+            Dispatcher.BeginInvoke(() => { fitQueued = false; if (IsLoaded) FitHub(); });
+        }
+        body.SizeChanged += (_, _) => QueueFit();
+        gamesViewport.SizeChanged += (_, _) => QueueFit();
+        Loaded += (_, _) => QueueFit();
 
         Content = root;
         Loaded += OnLoaded;
@@ -109,11 +118,17 @@ internal sealed class CasinoLobbyView : UserControl
         if (snapshot == lastProgress) return;
         lastProgress = snapshot;
         seasonProgress.Value = snapshot.SeasonFraction;
-        seasonStatus.Text = snapshot.SeasonComplete ? "SEASON COMPLETE" : $"Tier {snapshot.SeasonTier} → {snapshot.SeasonNextTier} · {snapshot.SeasonExperience:N0} / {snapshot.SeasonRequired:N0} XP";
+        seasonStatus.Text = SeasonCaption(snapshot, compactSeasonStatus);
+        seasonStatus.ToolTip = SeasonCaption(snapshot, false);
         challengeProgress.Value = snapshot.ChallengeFraction;
         challengeStatus.Text = snapshot.ChallengeId is null ? snapshot.ChallengeName : $"{snapshot.ChallengeName} · {snapshot.ChallengeFraction:P0}";
         challengeStatus.ToolTip = snapshot.ChallengeId is null ? snapshot.ChallengeName : $"{snapshot.ChallengeName}: {snapshot.ChallengeProgress:N0} / {snapshot.ChallengeGoal:N0}";
     }
+
+    private static string SeasonCaption(LobbyProgressSnapshot snapshot, bool compact) => snapshot.SeasonComplete
+        ? "SEASON COMPLETE"
+        : compact ? $"T{snapshot.SeasonTier} · {snapshot.SeasonExperience:N0}/{snapshot.SeasonRequired:N0} XP"
+        : $"Tier {snapshot.SeasonTier} → {snapshot.SeasonNextTier}\n{snapshot.SeasonExperience:N0} / {snapshot.SeasonRequired:N0} XP";
 
     private Border BuildProgressionHub(Action<string> progression)
     {
@@ -154,7 +169,7 @@ internal sealed class CasinoLobbyView : UserControl
         stack.Children.Add(new TextBlock
         {
             Text = "Rewards, style, goals and your casino career — all in one corner.",
-            FontSize = 11,
+            FontSize = 13,
             Foreground = Ink("#91A69D"),
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 0, 0, 12),
@@ -218,17 +233,17 @@ internal sealed class CasinoLobbyView : UserControl
     {
         Brush accent = Ink(accentHex);
         var content = new Grid();
-        content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(94) });
+        content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(76) });
         content.ColumnDefinitions.Add(new ColumnDefinition());
         content.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
         var emblemFrame = new Border
         {
-            Width = 86, Height = 86, CornerRadius = new CornerRadius(12),
+            Width = 70, Height = 70, CornerRadius = new CornerRadius(12),
             BorderBrush = accent, BorderThickness = new Thickness(0),
             Background = Brushes.Transparent,
             VerticalAlignment = VerticalAlignment.Center,
-            Child = ProgressionArtwork.Create(section, 82),
+            Child = new Viewbox { Child = ProgressionArtwork.Create(section, 68), Stretch = Stretch.Uniform },
         };
         content.Children.Add(emblemFrame);
 
@@ -236,7 +251,7 @@ internal sealed class CasinoLobbyView : UserControl
         copy.Children.Add(new TextBlock
         {
             Text = eyebrow,
-            FontSize = 9,
+            FontSize = 11,
             FontWeight = FontWeights.SemiBold,
             Foreground = accent,
         });
@@ -244,24 +259,17 @@ internal sealed class CasinoLobbyView : UserControl
         {
             Text = section,
             FontFamily = new FontFamily("Georgia"),
-            FontSize = 17,
+            FontSize = 21,
+            TextWrapping = TextWrapping.Wrap,
             Foreground = Ink("#F1E4CF"),
             Margin = new Thickness(0, 2, 0, 3),
         });
         copy.Children.Add(new TextBlock
         {
             Text = description,
-            FontSize = 9.5,
-            Foreground = Ink("#94A79F"),
+            FontSize = 12,
+            Foreground = Ink("#A7BDB3"),
             TextWrapping = TextWrapping.Wrap,
-        });
-        copy.Children.Add(new TextBlock
-        {
-            Text = "OPEN  →",
-            FontSize = 9,
-            FontWeight = FontWeights.Bold,
-            Foreground = Ink("#DCC794"),
-            Margin = new Thickness(0, 7, 0, 0),
         });
         if (section is "Season Pass" or "Challenges")
         {
@@ -269,7 +277,10 @@ internal sealed class CasinoLobbyView : UserControl
             TextBlock status = section == "Season Pass" ? seasonStatus : challengeStatus;
             progress.Height = 5; progress.Margin = new Thickness(0, 8, 0, 5);
             progress.Foreground = accent; progress.Background = Ink("#243B35");
-            status.Foreground = Ink("#BED5C9"); status.FontSize = 9;
+            status.Foreground = Ink("#D5E5D9"); status.FontSize = 13;
+            status.FontWeight = FontWeights.SemiBold;
+            status.TextWrapping = TextWrapping.Wrap;
+            status.MaxHeight = 34;
             status.TextTrimming = TextTrimming.CharacterEllipsis;
             copy.Children.Add(progress); copy.Children.Add(status);
         }
@@ -317,7 +328,8 @@ internal sealed class CasinoLobbyView : UserControl
         var button = new Button
         {
             Name = name,
-            Content = new Viewbox { Child = new Border { Width = 350, Padding = new Thickness(1), Child = content }, Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, HorizontalAlignment = HorizontalAlignment.Stretch },
+            Content = content,
+            ToolTip = description,
             Tag = section,
             Background = Ink("#112420"),
             BorderBrush = Ink("#34544A"),
@@ -327,6 +339,38 @@ internal sealed class CasinoLobbyView : UserControl
             VerticalContentAlignment = VerticalAlignment.Stretch,
             HorizontalContentAlignment = HorizontalAlignment.Stretch,
             Cursor = CasinoCursors.Hand,
+        };
+        var eyebrowText = (TextBlock)copy.Children[0];
+        var titleText = (TextBlock)copy.Children[1];
+        var descriptionText = (TextBlock)copy.Children[2];
+        button.SizeChanged += (_, _) =>
+        {
+            bool compact = button.ActualHeight < 115 || button.ActualWidth < 280;
+            eyebrowText.Visibility = !compact && button.ActualHeight >= 158 ? Visibility.Visible : Visibility.Collapsed;
+            descriptionText.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
+            descriptionText.MaxHeight = 32;
+            descriptionText.TextTrimming = TextTrimming.CharacterEllipsis;
+            button.Padding = compact ? new Thickness(7, 5, 7, 5) : new Thickness(10);
+            titleText.FontSize = compact ? 18 : 21;
+            titleText.MaxHeight = compact ? 44 : 52;
+            titleText.Margin = compact ? new Thickness(0, 0, 0, 2) : new Thickness(0, 2, 0, 3);
+            emblemFrame.Width = emblemFrame.Height = compact ? 40 : 70;
+            content.ColumnDefinitions[0].Width = new GridLength(compact ? 50 : 76);
+            if (section is "Season Pass" or "Challenges")
+            {
+                TextBlock status = section == "Season Pass" ? seasonStatus : challengeStatus;
+                status.FontSize = compact ? 12 : 13;
+                status.TextWrapping = compact ? TextWrapping.NoWrap : TextWrapping.Wrap;
+                status.MaxHeight = compact ? 18 : 34;
+                ProgressBar progress = section == "Season Pass" ? seasonProgress : challengeProgress;
+                progress.Height = compact ? 4 : 5;
+                progress.Margin = compact ? new Thickness(0, 2, 0, 3) : new Thickness(0, 8, 0, 5);
+                if (section == "Season Pass")
+                {
+                    compactSeasonStatus = compact;
+                    if (lastProgress is { } snapshot) seasonStatus.Text = SeasonCaption(snapshot, compact);
+                }
+            }
         };
         button.Click += (_, _) => progression(section);
         return button;

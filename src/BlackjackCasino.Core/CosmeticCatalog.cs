@@ -82,6 +82,10 @@ public static class CosmeticCatalog
         new("frame-prestige-10", "Prestige Gold", CosmeticKind.Frame, 0, false, "Prestige X reward.", "prestige-gold"),
         new("title-prestige-25", "Blackjack Veteran", CosmeticKind.Title, 0, false, "Prestige XXV reward."),
 
+        // Prestige endings from Tales from the Backroom. These can only be earned through story play.
+        new("title-keeper-of-names", "Keeper of Names", CosmeticKind.Title, 0, false, "Awarded for bringing the missing home in The Black Stag.", "title-adventure-names"),
+        new("title-bellwarden", "Bellwarden", CosmeticKind.Title, 0, false, "Awarded for paying Greyhaven's oldest debt in The Drowned Bell.", "title-adventure-bell"),
+
         // Season 1 — Midnight Shift. Kept permanently for existing saves.
         new("title-season-midnight-5", "Night Shift", CosmeticKind.Title, 0, false, "Midnight Shift tier 5 reward."),
         new("frame-season-midnight-10", "Midnight Line", CosmeticKind.Frame, 0, false, "Midnight Shift tier 10 reward.", "midnight-line"),

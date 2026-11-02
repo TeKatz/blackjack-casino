@@ -21,7 +21,7 @@ public sealed record CollectionPack(CollectionRarity Rarity, long Price, IReadOn
 public static class CollectionCatalog
 {
     public const int CardsPerPack = 5;
-    public const int DuplicatePackCost = 500;
+    public const int DuplicatePackCost = 800;
     public const int Version = 1;
 
     public static IReadOnlyList<CollectionTheme> Themes { get; } = BuildThemes();

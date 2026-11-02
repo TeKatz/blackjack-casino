@@ -42,6 +42,9 @@ internal static class PlayingCardPresentation
             ClipToBounds = true,
         };
 
+        // Subscribe on the actual card; WPF may skip Loaded broadcasts for subtrees
+        // that have only a late registered class handler and no instance subscription.
+        MainWindow.RegisterCardStyling(border);
         if (faceDown)
         {
             border.Background = new LinearGradientBrush(palette.BackA, palette.BackB, 35);

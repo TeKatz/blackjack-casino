@@ -52,7 +52,10 @@ internal sealed class LoungeGameMenu : UserControl
             {
                 Text = game.Title,
                 FontFamily = new FontFamily("Georgia"),
-                FontSize = 30,
+                FontSize = game.Title.Length > 20 ? 28 : 30,
+                LineHeight = 33,
+                TextWrapping = TextWrapping.Wrap,
+                TextTrimming = TextTrimming.None,
                 Margin = new Thickness(0, 12, 0, 5),
             });
             body.Children.Add(new TextBlock
@@ -103,6 +106,7 @@ internal sealed class LoungeGameMenu : UserControl
                 BorderBrush = LoungeUi.Ink("#628B78"),
             };
             tile.Click += (_, _) => game.Open();
+            if (game.Id == "sudoku") LoungeVisualUpgrade.PrepareSudokuTile(tile);
             tiles.Children.Add(tile);
         }
 

@@ -9,12 +9,25 @@ public partial class MainWindow
 {
     private bool cardSetStyleBusy;
     private bool cardSetStylingInitialized;
+    private string? lastAppliedCardSetId;
+    internal int CardSetFullScanCount { get; private set; }
 
     private void InitializeCardSetStyling()
     {
         if (cardSetStylingInitialized) return;
         cardSetStylingInitialized = true;
-        LayoutUpdated += (_, _) => ApplyEquippedCardSetToRenderedCards();
+        ApplyEquippedCardSetToRenderedCards();
+    }
+
+    internal static void RegisterCardStyling(Border card) => card.Loaded += PlayingCardLoaded;
+
+    private static void PlayingCardLoaded(object sender, RoutedEventArgs args)
+    {
+        if (sender is not Border card || !IsPlayingCardBorder(card)) return;
+        MainWindow? owner = Window.GetWindow(card) as MainWindow;
+        for (DependencyObject? parent = card; owner is null && parent is not null; parent = VisualTreeHelper.GetParent(parent))
+            owner = parent as MainWindow;
+        owner?.ApplyEquippedCardSet(card);
     }
 
     private void ApplyEquippedCardSetToRenderedCards()
@@ -25,6 +38,9 @@ public partial class MainWindow
         }
 
         string cardSetId = progressionController.Profile.EquippedCardSetId;
+        if (lastAppliedCardSetId == cardSetId) return;
+        lastAppliedCardSetId = cardSetId;
+        CardSetFullScanCount++;
         CosmeticDefinition cosmetic = CosmeticCatalog.TryGet(cardSetId) is { Kind: CosmeticKind.CardSet } valid
             ? valid
             : CosmeticCatalog.Get(CosmeticCatalog.DefaultCardSetId);
@@ -47,6 +63,17 @@ public partial class MainWindow
         {
             cardSetStyleBusy = false;
         }
+    }
+
+    private void ApplyEquippedCardSet(Border card)
+    {
+        if (progressionController is null || !cardSetStylingInitialized) return;
+        string id = progressionController.Profile.EquippedCardSetId;
+        if (card.Tag is string applied && applied == id) return;
+        CosmeticDefinition cosmetic = CosmeticCatalog.TryGet(id) is { Kind: CosmeticKind.CardSet } valid
+            ? valid : CosmeticCatalog.Get(CosmeticCatalog.DefaultCardSetId);
+        RestyleCard(card, cosmetic);
+        card.Tag = id;
     }
 
     private static bool IsPlayingCardBorder(Border border)

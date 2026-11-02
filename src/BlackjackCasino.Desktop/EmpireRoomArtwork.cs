@@ -12,6 +12,22 @@ namespace BlackjackCasino.Desktop;
 internal static class EmpireRoomTextures
 {
     private static readonly BitmapSource[] images = Load();
+    private static readonly Dictionary<string, string> RoomFiles = new(StringComparer.Ordinal)
+    {
+        ["high-limit-slots"] = "high-limit-slots", ["poker"] = "poker-room", ["dining"] = "fine-dining",
+        ["stage"] = "grand-stage", ["private-salon"] = "private-gaming-salon", ["hotel"] = "luxury-hotel",
+        ["spa"] = "spa-wellness", ["sky-bar"] = "sky-bar", ["convention-hall"] = "convention-hall", ["penthouse-club"] = "penthouse-club",
+    };
+    private static readonly Dictionary<string, BitmapSource> RoomImages = new(StringComparer.Ordinal);
+    internal static BitmapSource ForRoom(string roomId, int fallback)
+    {
+        if (!RoomFiles.TryGetValue(roomId, out string? file)) return Get(fallback);
+        if (RoomImages.TryGetValue(roomId, out BitmapSource? cached)) return cached;
+        var image = new BitmapImage(); image.BeginInit();
+        image.UriSource = new Uri($"pack://application:,,,/BlackjackCasino.Desktop;component/Assets/Empire/{file}.png", UriKind.Absolute);
+        image.CacheOption = BitmapCacheOption.OnLoad; image.DecodePixelWidth = 768;
+        image.EndInit(); image.Freeze(); RoomImages.Add(roomId, image); return image;
+    }
     internal static BitmapSource Get(int index) => images[Math.Abs(index) % images.Length];
     private static BitmapSource[] Load()
     {
@@ -31,9 +47,25 @@ internal static class EmpireRoomTextures
 }
 
 /// <summary>Cached room textures with independent light, coin and purchase effects.</summary>
-internal sealed class EmpireRoomArtwork(int textureIndex) : FrameworkElement
+internal sealed class EmpireRoomArtwork(int textureIndex, string? roomId = null) : FrameworkElement
 {
+    private ImageBrush? photo;
+    private static readonly Brush Shade = Frozen(new LinearGradientBrush(Color.FromArgb(0, 4, 13, 13), Color.FromArgb(210, 4, 13, 13), 90));
+    private static readonly Brush ClosedShade = Frozen(new SolidColorBrush(Color.FromArgb(145, 5, 14, 17)));
+    private static readonly Brush Coin = Frozen(new SolidColorBrush(Color.FromRgb(235, 200, 115)));
+    private static readonly Brush CaptionInk = Frozen(new SolidColorBrush(Color.FromRgb(190, 227, 196)));
+    private static readonly Brush LockedInk = Frozen(new SolidColorBrush(Color.FromRgb(202, 185, 146)));
+    private static readonly Pen LevelSweepPen = Frozen(new Pen(new SolidColorBrush(Color.FromArgb(95, 238, 207, 139)), 1));
+    private static readonly Pen SelectedPen = Frozen(new Pen(new SolidColorBrush(Color.FromArgb(130, 241, 211, 149)), 2));
+    private readonly RadialGradientBrush glow = new(Colors.Transparent, Colors.Transparent);
+    private FormattedText? caption;
+    private (string Text, double Dpi) captionKey;
+    private RectangleGeometry? clipGeometry;
+    private Size clipSize;
     private double phase;
+
+    private static T Frozen<T>(T value) where T : Freezable { value.Freeze(); return value; }
+    private static ImageBrush Photo(BitmapSource image) => Frozen(new ImageBrush(image) { Stretch = Stretch.UniformToFill, AlignmentY = AlignmentY.Center });
     internal double Phase { get => phase; set { phase = value; InvalidateVisual(); } }
     internal bool Open { get; set; }
     internal bool Available { get; set; } = true;
@@ -46,13 +78,13 @@ internal sealed class EmpireRoomArtwork(int textureIndex) : FrameworkElement
         base.OnRender(dc);
         if (ActualWidth <= 0 || ActualHeight <= 0) return;
         Rect area = new(0, 0, ActualWidth, ActualHeight);
-        dc.PushClip(new RectangleGeometry(area, 7, 7));
-        var photo = new ImageBrush(EmpireRoomTextures.Get(textureIndex)) { Stretch = Stretch.UniformToFill, AlignmentY = AlignmentY.Center };
+        dc.PushClip(ClipFor(area));
+        photo ??= Photo(roomId is null ? EmpireRoomTextures.Get(textureIndex) : EmpireRoomTextures.ForRoom(roomId, textureIndex));
         dc.DrawRectangle(photo, null, area);
-        dc.DrawRectangle(new LinearGradientBrush(Color.FromArgb(0, 4, 13, 13), Color.FromArgb(210, 4, 13, 13), 90), null, area);
+        dc.DrawRectangle(Shade, null, area);
         if (!Open)
         {
-            dc.DrawRectangle(new SolidColorBrush(Color.FromArgb(145, 5, 14, 17)), null, area);
+            dc.DrawRectangle(ClosedShade, null, area);
             Text(dc, Available ? "ROOM AVAILABLE" : "LOCKED", 12, ActualHeight - 29, 10, "#CAB992");
         }
         else
@@ -64,25 +96,44 @@ internal sealed class EmpireRoomArtwork(int textureIndex) : FrameworkElement
                 double x = ActualWidth * (.25 + i * .23) + Math.Sin(phase + i) * 5;
                 double y = ActualHeight * (.88 - t * .6);
                 dc.PushOpacity(Math.Sin(t * Math.PI) * .65);
-                dc.DrawEllipse(new SolidColorBrush(Color.FromRgb(235, 200, 115)), null, new Point(x, y), 2, 3);
+                dc.DrawEllipse(Coin, null, new Point(x, y), 2, 3);
                 dc.Pop();
             }
-            var glow = new RadialGradientBrush(Color.FromArgb((byte)(23 + 14 * Math.Sin(phase + textureIndex)), 255, 199, 78), Colors.Transparent);
+            glow.GradientStops[0].Color = Color.FromArgb((byte)(23 + 14 * Math.Sin(phase + textureIndex)), 255, 199, 78);
             dc.DrawEllipse(glow, null, new Point(ActualWidth * .65, ActualHeight * .33), ActualWidth * .6, ActualHeight * .7);
             if (Level >= 10)
             {
                 double x = ((phase * .09) % 1) * ActualWidth;
-                dc.DrawLine(new Pen(new SolidColorBrush(Color.FromArgb(95, 238, 207, 139)), 1), new Point(x, 2), new Point(Math.Min(ActualWidth, x + 25), 2));
+                dc.DrawLine(LevelSweepPen, new Point(x, 2), new Point(Math.Min(ActualWidth, x + 25), 2));
             }
             Text(dc, "●  OPERATING", 12, ActualHeight - 29, 10, "#BEE3C4");
         }
-        if (Selected) dc.DrawRoundedRectangle(null, new Pen(new SolidColorBrush(Color.FromArgb(130, 241, 211, 149)), 2), new Rect(1, 1, ActualWidth - 2, ActualHeight - 2), 7, 7);
+        if (Selected) dc.DrawRoundedRectangle(null, SelectedPen, new Rect(1, 1, ActualWidth - 2, ActualHeight - 2), 7, 7);
         dc.Pop();
     }
 
+    private RectangleGeometry ClipFor(Rect area)
+    {
+        Size current = RenderSize;
+        if (clipGeometry is not null && clipSize == current) return clipGeometry;
+        clipSize = current;
+        clipGeometry = new RectangleGeometry(area, 7, 7);
+        clipGeometry.Freeze();
+        return clipGeometry;
+    }
+
     private void Text(DrawingContext dc, string text, double x, double y, double size, string color)
-        => dc.DrawText(new FormattedText(text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
-            new Typeface("Segoe UI"), size, (Brush)new BrushConverter().ConvertFromString(color)!, VisualTreeHelper.GetDpi(this).PixelsPerDip), new Point(x, y));
+    {
+        double dpi = VisualTreeHelper.GetDpi(this).PixelsPerDip;
+        if (caption is null || captionKey != (text, dpi))
+        {
+            caption = new FormattedText(text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
+                new Typeface("Segoe UI"), size, Open ? CaptionInk : LockedInk, dpi);
+            captionKey = (text, dpi);
+        }
+        dc.DrawText(caption, new Point(x, y));
+    }
+
 }
 
 internal sealed class EmpireRoomCard : Button
@@ -96,6 +147,9 @@ internal sealed class EmpireRoomCard : Button
     private readonly Border milestoneFill = new() { Background = Ink("#B59A62"), HorizontalAlignment = HorizontalAlignment.Left, CornerRadius = new CornerRadius(2) };
     private readonly Border frame;
     private static readonly System.Windows.Media.Effects.DropShadowEffect selectedGlow = CreateGlow();
+    private static readonly Brush normalFrameBrush = FreezeBrush(Ink("#3C5643"));
+    private static readonly Brush selectedFrameBrush = FreezeBrush(Ink("#E6C68A"));
+    private static readonly Style roomStyle = MakeStyle();
     private readonly Grid milestoneTrack;
     private readonly Border flash = new() { Background = Ink("#FFE0A0"), Opacity = 0, IsHitTestVisible = false, CornerRadius = new CornerRadius(9) };
     private int previousLevel = -1;
@@ -109,8 +163,8 @@ internal sealed class EmpireRoomCard : Button
         AutomationProperties.SetName(this, "Select " + room.Name);
         Margin = new Thickness(0, 0, 9, 10);
         Height = 222;
-        Style = MakeStyle();
-        Artwork = new EmpireRoomArtwork(index) { Height = 126 };
+        Style = roomStyle;
+        Artwork = new EmpireRoomArtwork(index, room.Id) { Height = 126 };
         var content = new Grid();
         var stack = new StackPanel();
         stack.Children.Add(Artwork);
@@ -135,7 +189,7 @@ internal sealed class EmpireRoomCard : Button
         content.Children.Add(new EmpireIcon(insignia, 18) { HorizontalAlignment = HorizontalAlignment.Left,
             VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(10) });
         content.Children.Add(flash);
-        frame = new Border { Background = new LinearGradientBrush(Color.FromRgb(25, 49, 34), Color.FromRgb(12, 30, 21), 100), BorderBrush = Ink("#3C5643"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(9), Child = content, ClipToBounds = true };
+        frame = new Border { Background = new LinearGradientBrush(Color.FromRgb(25, 49, 34), Color.FromRgb(12, 30, 21), 100), BorderBrush = normalFrameBrush, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(9), Child = content, ClipToBounds = true };
         Content = frame;
         Click += (_, _) => select(room.Id);
     }
@@ -167,7 +221,7 @@ internal sealed class EmpireRoomCard : Button
             next.Text = "SYNERGY III ✦ · " + next.Text;
         progress = value == EmpireRules.MaximumLevel ? 1 : value % 10 / 10d;
         milestoneFill.Width = milestoneTrack.ActualWidth * progress;
-        frame.BorderBrush = Ink(selected ? "#E6C68A" : "#3C5643");
+        frame.BorderBrush = selected ? selectedFrameBrush : normalFrameBrush;
         frame.Effect = selected ? selectedGlow : null;
         if (selected && !previouslySelected && animate)
             frame.BeginAnimation(OpacityProperty, new DoubleAnimation(.65, 1, TimeSpan.FromMilliseconds(160)) { FillBehavior = FillBehavior.Stop });
@@ -211,7 +265,7 @@ internal sealed class EmpireRoomCard : Button
         foreach (DependencyProperty property in new[] { IsMouseOverProperty, IsKeyboardFocusedProperty })
         {
             var trigger = new Trigger { Property = property, Value = true };
-            trigger.Setters.Add(new Setter(Border.BorderBrushProperty, Ink("#E6C68A"), "Chrome"));
+            trigger.Setters.Add(new Setter(Border.BorderBrushProperty, selectedFrameBrush, "Chrome"));
             template.Triggers.Add(trigger);
         }
         var pressed = new Trigger { Property = IsPressedProperty, Value = true };
@@ -222,6 +276,8 @@ internal sealed class EmpireRoomCard : Button
         style.Setters.Add(new Setter(CursorProperty, System.Windows.Input.Cursors.Hand));
         return style;
     }
+
+    private static Brush FreezeBrush(Brush brush) { brush.Freeze(); return brush; }
     private static TextBlock Text(string value, double size, string color) => new() { Text = value, FontSize = size, Foreground = Ink(color), TextTrimming = TextTrimming.CharacterEllipsis };
     private static SolidColorBrush Ink(string color) => new((Color)ColorConverter.ConvertFromString(color));
 }

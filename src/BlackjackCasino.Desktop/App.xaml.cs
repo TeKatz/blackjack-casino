@@ -5,13 +5,57 @@ namespace BlackjackCasino.Desktop;
 
 public partial class App : Application
 {
+    private bool startupWelcomeQueued;
+
     protected override void OnStartup(StartupEventArgs e)
     {
         DispatcherUnhandledException += OnDispatcherUnhandledException;
         AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
         Localization.InstallAutomaticTranslation();
         CasinoCursors.Install();
+        CasinoUxEnhancements.Install();
+        CasinoWindowFrame.Install();
         base.OnStartup(e);
+        Dispatcher.BeginInvoke(QueueStartupWelcome, DispatcherPriority.Loaded);
+    }
+
+    private void QueueStartupWelcome()
+    {
+        if (startupWelcomeQueued)
+        {
+            return;
+        }
+
+        if (MainWindow is not BlackjackCasino.Desktop.MainWindow main)
+        {
+            Dispatcher.BeginInvoke(QueueStartupWelcome, DispatcherPriority.ContextIdle);
+            return;
+        }
+
+        if (main.IsLoaded)
+        {
+            ShowStartupWelcome(main);
+            return;
+        }
+
+        RoutedEventHandler? loaded = null;
+        loaded = (_, _) =>
+        {
+            main.Loaded -= loaded;
+            ShowStartupWelcome(main);
+        };
+        main.Loaded += loaded;
+    }
+
+    private void ShowStartupWelcome(BlackjackCasino.Desktop.MainWindow main)
+    {
+        if (startupWelcomeQueued)
+        {
+            return;
+        }
+
+        startupWelcomeQueued = true;
+        Dispatcher.BeginInvoke(() => StartupWelcomeWindow.ShowFor(main), DispatcherPriority.ContextIdle);
     }
 
     private static void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)

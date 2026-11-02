@@ -16,7 +16,7 @@ internal sealed record AreaPresentationSettings
 
 internal static class AreaPresentationPreferences
 {
-    internal static readonly string[] Areas = ["midnight-reels", "neon-vault", "nine-lives", "midnight-manor", "kniffel", "chill-lounge", "casino-empire", "midnight-merge", "album", "progression", "lobby"];
+    internal static readonly string[] Areas = ["midnight-reels", "neon-vault", "nine-lives", "midnight-manor", "kniffel", "chill-lounge", "adventure", "casino-empire", "midnight-merge", "album", "progression", "lobby"];
 
     internal static AreaPresentationSettings Presentation(this AppPreferences preferences, string area) =>
         preferences.AreaPresentation is { } settings && settings.TryGetValue(area, out AreaPresentationSettings? value) && value is not null
@@ -35,10 +35,12 @@ internal static class AreaPresentationPreferences
     }
 
     // Snapshot the legacy global values once, before any local toggle can change them.
+    // Build the dictionary once. The former WithPresentation loop cloned the growing map once
+    // per area, which made every PlayerStateStore.Sanitize call allocate twelve dictionaries.
     internal static AppPreferences InitializePresentationAreas(this AppPreferences preferences)
     {
-        var next = preferences;
-        foreach (string area in Areas) next = next.WithPresentation(area, preferences.Presentation(area));
-        return next;
+        var settings = new Dictionary<string, AreaPresentationSettings>(preferences.AreaPresentation ?? new(), StringComparer.Ordinal);
+        foreach (string area in Areas) settings[area] = preferences.Presentation(area);
+        return preferences with { AreaPresentation = settings };
     }
 }

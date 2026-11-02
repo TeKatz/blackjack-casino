@@ -84,10 +84,9 @@ internal static class SolitaireSmoke
         Require(Find<Button>(window).Any(button => button.Name == "Mode_chill_lounge" && button.IsVisible),
             "Casino lobby was not restored after the Solitaire smoke.");
 
-        await WordSearchSmoke.Run(window, output);
 
         File.WriteAllText(Path.Combine(output, "solitaire-result.txt"),
-            "PASS: shared header Games navigation; Klondike starts from Midnight Solitaire; skin-independent gold selection halo and explicit selection text render and clear correctly; Word Search Lounge acceptance also passed.");
+            "PASS: shared header Games navigation; Klondike starts from Midnight Solitaire; skin-independent gold selection halo and explicit selection text render and clear correctly.");
     }
 
     private static bool IsFullSizePlayingCard(Border border) =>

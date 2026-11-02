@@ -28,6 +28,7 @@ public partial class MainWindow
     {
         InitializeTableRulesFeature();
         InitializeProgressionFeature();
+        InitializeCardSetStyling();
         InitializeVaultFeature();
         ApplyCasinoDropdownStyles();
         RaiseBottomActionDeck();

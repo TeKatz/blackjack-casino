@@ -1,3 +1,4 @@
+using BlackjackCasino.Core.Adventure;
 using BlackjackCasino.Core.Memory;
 using BlackjackCasino.Core.Solitaire;
 using BlackjackCasino.Core.Sudoku;
@@ -26,6 +27,45 @@ public partial class MainWindow
         RecordWordSearchCompletions(preferences.WordSearch);
         preferences.Memory.Normalize();
         RecordMemoryCompletions(preferences.Memory);
+        preferences = preferences with { Adventure = AdventureProgressState.Normalize(preferences.Adventure) };
+
+        bool loungeClosing = false;
+        bool adventureMusicActive = false;
+        void SetLoungeSoundtrack(bool adventureActive)
+        {
+            if (loungeClosing) return;
+            adventureMusicActive = adventureActive;
+            string area = adventureActive ? "adventure" : "chill-lounge";
+            AreaPresentationSettings presentation = preferences.Presentation(area);
+
+            loungeBackgroundMusic?.Dispose();
+            loungeBackgroundMusic = new BackgroundMusic(adventureActive ? Soundtrack.Adventure : Soundtrack.ChillLounge);
+            loungeBackgroundMusic.Start(presentation.MusicEnabled, presentation.MusicVolume);
+        }
+
+        void UpdateAdventurePresentation(AreaPresentationSettings presentation)
+        {
+            preferences = preferences.WithPresentation("adventure", presentation);
+            if (!testSession) SavePreferences();
+
+            if (!adventureMusicActive || loungeBackgroundMusic is null) return;
+            AreaPresentationSettings current = preferences.Presentation("adventure");
+            loungeBackgroundMusic.SetEnabled(current.MusicEnabled);
+            loungeBackgroundMusic.SetVolume(current.MusicVolume);
+        }
+
+        AdventureCompletionMetaResult RecordAdventureCompletion(AdventureDefinition definition, AdventureRunState state)
+        {
+            if (progressionController is null)
+            {
+                string key = string.IsNullOrWhiteSpace(state.EndingId)
+                    ? string.Empty
+                    : AdventureProgressionService.EndingKey(definition.Id, state.EndingId);
+                return new AdventureCompletionMetaResult(false, false, key, [], null);
+            }
+
+            return progressionController.RecordAdventureCompletion(definition, state);
+        }
 
         Func<SolitaireStatistics> solitaireStats = () => progressionController?.Profile.Solitaire ?? new SolitaireStatistics();
         Func<WordSearchStatistics> wordSearchStats = () => progressionController?.Profile.WordSearch ?? new WordSearchStatistics();
@@ -53,7 +93,9 @@ public partial class MainWindow
                     if (!testSession) SavePreferences();
                 },
                 wordSearchStats,
-                RecordWordSearchCompletion),
+                RecordWordSearchCompletion,
+                () => preferences.Presentation("chill-lounge").SoundEnabled,
+                () => preferences.Presentation("chill-lounge").AnimationsEnabled),
                 wordSearchStats,
                 () => preferences.WordSearch),
             LoungeVisualUpgrade.UpgradeMemory(MemoryLoungeModuleVisual.Create(
@@ -68,7 +110,21 @@ public partial class MainWindow
                 RecordMemoryCompletion,
                 () => preferences.Presentation("chill-lounge").SoundEnabled,
                 () => preferences.Presentation("chill-lounge").AnimationsEnabled),
-                memoryStats)
+                memoryStats),
+            AdventureLibraryLoungeModule.Create(
+                preferences.Adventure,
+                state =>
+                {
+                    preferences = preferences with { Adventure = AdventureProgressState.Normalize(state) };
+                    if (!testSession) SavePreferences();
+                },
+                RecordAdventureCompletion,
+                () => progressionController?.Profile.EquippedDiceSetId,
+                () => progressionController?.Profile.DisplayName,
+                () => preferences.Presentation("adventure").AnimationsEnabled,
+                () => preferences.Presentation("adventure"),
+                UpdateAdventurePresentation,
+                SetLoungeSoundtrack)
         ]);
 
         var window = new LoungeWindow(
@@ -106,16 +162,15 @@ public partial class MainWindow
         TableModeText.Text = "Chill Lounge";
         MenuAudio.Attach(window, () => preferences.Presentation("chill-lounge").SoundEnabled);
 
-        loungeBackgroundMusic?.Dispose();
-        loungeBackgroundMusic = new BackgroundMusic(Soundtrack.ChillLounge);
         ShowEmbeddedGame(window, "Chill Lounge · The Midnight Club", muteHostMusic: true, closed: () =>
         {
+            loungeClosing = true;
             LoungeHostedGameRegistry.ClearSessionModules();
             loungeBackgroundMusic?.Dispose();
             loungeBackgroundMusic = null;
             TableModeText.Text = "Casino lobby";
         });
-        loungeBackgroundMusic.Start(preferences.Presentation("chill-lounge").MusicEnabled, preferences.Presentation("chill-lounge").MusicVolume);
+        SetLoungeSoundtrack(adventureActive: false);
     }
 
     private void RecordSudokuCompletions(SudokuProgressState state)

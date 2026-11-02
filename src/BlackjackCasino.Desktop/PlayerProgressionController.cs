@@ -1,4 +1,5 @@
 using BlackjackCasino.Core.Collections;
+using BlackjackCasino.Core.Adventure;
 using BlackjackCasino.Core;
 
 namespace BlackjackCasino.Desktop;
@@ -246,6 +247,27 @@ internal sealed class PlayerProgressionController : IDisposable
         }
     }
 
+    public AdventureCompletionMetaResult RecordAdventureCompletion(AdventureDefinition definition, AdventureRunState state)
+    {
+        lock (Profile)
+        {
+            AccruePlaytime();
+            PlayerProfileState candidate = ManorPersistence.Clone(Profile);
+            AdventureCompletionMetaResult result = AdventureProgressionService.RecordCompletion(candidate, definition, state);
+            if (!result.Recorded) return result;
+            try
+            {
+                if (persistChallengeClaims) saveChallengeProfile(candidate);
+                AdoptManorProfile(candidate);
+                return result;
+            }
+            catch (Exception) when (persistChallengeClaims)
+            {
+                return new AdventureCompletionMetaResult(false, false, result.EndingKey, [], null);
+            }
+        }
+    }
+
     public ChallengeClaimResult ClaimChallenge(string challengeId)
     {
         lock (Profile)
@@ -377,6 +399,7 @@ internal sealed class PlayerProgressionController : IDisposable
         Profile.Manor = committed.Manor;
         Profile.Vault = committed.Vault;
         Profile.Collection = committed.Collection;
+        Profile.Adventure = committed.Adventure;
         Profile.SchemaVersion = committed.SchemaVersion;
         Profile.SlotTrackingVersion = committed.SlotTrackingVersion;
         Profile.Slots = committed.Slots;

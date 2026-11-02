@@ -65,7 +65,8 @@ public partial class MainWindow
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(0, 0, 20, 0),
         };
-        Grid.SetColumn(headerActions, 2);
+        headerActions.Name = "CasinoHeaderShortcuts";
+        Grid.SetColumn(headerActions, 1);
         Panel.SetZIndex(headerActions, 1);
 
         BuildChallengeHeaderButton(headerActions);

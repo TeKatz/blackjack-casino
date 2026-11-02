@@ -407,6 +407,7 @@ public partial class MainWindow : Window
                 ? new Rect(Left, Top, ActualWidth, ActualHeight)
                 : RestoreBounds;
 
+            CasinoWindowFrame.SetIsFullscreen(this, true);
             WindowState = WindowState.Normal;
             WindowStyle = WindowStyle.None;
             ResizeMode = ResizeMode.NoResize;
@@ -416,6 +417,7 @@ public partial class MainWindow : Window
         }
 
         WindowState = WindowState.Normal;
+        CasinoWindowFrame.SetIsFullscreen(this, false);
         WindowStyle = previousWindowStyle;
         ResizeMode = previousResizeMode;
         if (previousWindowBounds.Width >= MinWidth && previousWindowBounds.Height >= MinHeight)
@@ -771,6 +773,7 @@ public partial class MainWindow : Window
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
             };
+            ApplyEquippedCardSet(border);
             AnimateEntrance(border, compact);
             return border;
         }
@@ -801,6 +804,7 @@ public partial class MainWindow : Window
         Grid.SetRow(suit, 1);
         grid.Children.Add(suit);
         border.Child = grid;
+        ApplyEquippedCardSet(border);
         AnimateEntrance(border, compact);
         return border;
     }

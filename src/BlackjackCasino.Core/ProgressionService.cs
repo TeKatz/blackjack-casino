@@ -207,7 +207,7 @@ public sealed class ProgressionService
     {
         lock (State)
         {
-            ChallengeDefinition? challenge = ChallengeCatalog.TryGet(challengeId);
+            ChallengeDefinition? challenge = ChallengeRegistry.TryGet(challengeId);
             if (challenge is null)
             {
                 return new ChallengeClaimResult(false, "Unknown challenge.");
@@ -218,7 +218,7 @@ public sealed class ProgressionService
                 return new ChallengeClaimResult(false, "Challenge reward already claimed.", challenge);
             }
 
-            decimal progress = ChallengeCatalog.Progress(State, challenge);
+            decimal progress = ChallengeRegistry.Progress(State, challenge);
             if (progress < challenge.Goal)
             {
                 return new ChallengeClaimResult(false, "Challenge is not complete yet.", challenge);
@@ -227,8 +227,14 @@ public sealed class ProgressionService
             long balance = checked(State.Coins + challenge.CoinReward);
             State.ClaimedChallengeIds.Add(challenge.Id);
             State.Coins = balance;
-            CollectionService.GrantPack(State, ChallengePack(challenge));
-            return new ChallengeClaimResult(true, $"Claimed {challenge.CoinReward:N0} coins and a {ChallengePack(challenge)} card pack for {challenge.Name}.", challenge, challenge.CoinReward);
+            CollectionRarity? packReward = ChallengePack(challenge);
+            if (packReward is { } rarity)
+            {
+                CollectionService.GrantPack(State, rarity);
+            }
+
+            string packText = packReward is { } awardedPack ? $" and a {awardedPack} card pack" : string.Empty;
+            return new ChallengeClaimResult(true, $"Claimed {challenge.CoinReward:N0} coins{packText} for {challenge.Name}.", challenge, challenge.CoinReward);
         }
     }
 
@@ -239,8 +245,8 @@ public sealed class ProgressionService
         lock (State)
         {
             var claimed = State.ClaimedChallengeIds.ToHashSet(StringComparer.Ordinal);
-            ChallengeDefinition[] available = ChallengeCatalog.All
-                .Where(challenge => !claimed.Contains(challenge.Id) && ChallengeCatalog.Complete(State, challenge))
+            ChallengeDefinition[] available = ChallengeRegistry.All
+                .Where(challenge => !claimed.Contains(challenge.Id) && ChallengeRegistry.Complete(State, challenge))
                 .ToArray();
             if (available.Length == 0)
             {
@@ -250,16 +256,24 @@ public sealed class ProgressionService
             // Check both sums before touching either the wallet or the claim ledger.
             long coins = available.Aggregate(0L, (total, challenge) => checked(total + challenge.CoinReward));
             long balance = checked(State.Coins + coins);
+            CollectionRarity[] packRewards = available
+                .Select(ChallengePack)
+                .Where(rarity => rarity.HasValue)
+                .Select(rarity => rarity!.Value)
+                .ToArray();
             var updatedClaims = new List<string>(State.ClaimedChallengeIds);
             updatedClaims.AddRange(available.Select(challenge => challenge.Id));
             State.ClaimedChallengeIds = updatedClaims;
             State.Coins = balance;
-            foreach (ChallengeDefinition challenge in available)
+            foreach (CollectionRarity packReward in packRewards)
             {
-                CollectionService.GrantPack(State, ChallengePack(challenge));
+                CollectionService.GrantPack(State, packReward);
             }
 
-            return new(true, $"Claimed {coins:N0} coins and {available.Length:N0} card packs from {available.Length:N0} challenges.", Array.AsReadOnly(available), coins);
+            string packText = packRewards.Length == 0
+                ? string.Empty
+                : $" and {packRewards.Length:N0} card pack{(packRewards.Length == 1 ? string.Empty : "s")}";
+            return new(true, $"Claimed {coins:N0} coins{packText} from {available.Length:N0} challenges.", Array.AsReadOnly(available), coins);
         }
     }
 
@@ -294,8 +308,22 @@ public sealed class ProgressionService
         return new PrestigeResult(true, State.Prestige, prestigeCoins, unlocked, $"Prestige {State.Prestige} reached. Level reset to 0. One Legendary and two Epic card packs added to the Album.{rewardText}");
     }
 
-    public static CollectionRarity ChallengePack(ChallengeDefinition challenge) => challenge.CoinReward >= 100
-        ? CollectionRarity.Rare : challenge.CoinReward >= 40 ? CollectionRarity.Uncommon : CollectionRarity.Common;
+    public static CollectionRarity? ChallengePack(ChallengeDefinition challenge)
+    {
+        ArgumentNullException.ThrowIfNull(challenge);
+        if (challenge.IsEndgame)
+        {
+            return CollectionRarity.Epic;
+        }
+
+        return challenge.CoinReward switch
+        {
+            >= 1500 => CollectionRarity.Rare,
+            >= 750 => CollectionRarity.Uncommon,
+            >= 500 => CollectionRarity.Common,
+            _ => null,
+        };
+    }
 
     public void AddPlaytime(TimeSpan duration)
     {
@@ -342,7 +370,7 @@ public sealed class ProgressionService
         EnsureOwned(CosmeticCatalog.DefaultDiceSetId);
         State.ClaimedChallengeIds ??= [];
         State.ClaimedChallengeIds = State.ClaimedChallengeIds
-            .Where(id => ChallengeCatalog.TryGet(id) is not null)
+            .Where(id => ChallengeRegistry.TryGet(id) is not null)
             .Distinct(StringComparer.Ordinal)
             .ToList();
 
