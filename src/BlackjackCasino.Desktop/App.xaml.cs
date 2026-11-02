@@ -14,19 +14,46 @@ public partial class App : Application
         Localization.InstallAutomaticTranslation();
         CasinoCursors.Install();
         CasinoUxEnhancements.Install();
-        Activated += ShowStartupWelcomeOnce;
         base.OnStartup(e);
+        Dispatcher.BeginInvoke(QueueStartupWelcome, DispatcherPriority.Loaded);
     }
 
-    private void ShowStartupWelcomeOnce(object? sender, EventArgs e)
+    private void QueueStartupWelcome()
     {
-        if (startupWelcomeQueued || Application.Current.MainWindow is not BlackjackCasino.Desktop.MainWindow main || !main.IsLoaded)
+        if (startupWelcomeQueued)
+        {
+            return;
+        }
+
+        if (MainWindow is not BlackjackCasino.Desktop.MainWindow main)
+        {
+            Dispatcher.BeginInvoke(QueueStartupWelcome, DispatcherPriority.ContextIdle);
+            return;
+        }
+
+        if (main.IsLoaded)
+        {
+            ShowStartupWelcome(main);
+            return;
+        }
+
+        RoutedEventHandler? loaded = null;
+        loaded = (_, _) =>
+        {
+            main.Loaded -= loaded;
+            ShowStartupWelcome(main);
+        };
+        main.Loaded += loaded;
+    }
+
+    private void ShowStartupWelcome(BlackjackCasino.Desktop.MainWindow main)
+    {
+        if (startupWelcomeQueued)
         {
             return;
         }
 
         startupWelcomeQueued = true;
-        Activated -= ShowStartupWelcomeOnce;
         Dispatcher.BeginInvoke(() => StartupWelcomeWindow.ShowFor(main), DispatcherPriority.ContextIdle);
     }
 
