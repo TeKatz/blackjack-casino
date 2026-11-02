@@ -13,7 +13,7 @@ internal static class AdventureInventoryUi
     internal static Border Build(AdventureEngine engine)
     {
         Border shell = AdventureUi.Panel("#101A17", "#08110F", "#385148", new Thickness(18, 14, 18, 14), radius: 15);
-        shell.Margin = new Thickness(0, 16, 0, 0);
+        shell.Margin = new Thickness(0, 16, 20, 0);
 
         var grid = new Grid();
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.7, GridUnitType.Star) });
@@ -32,9 +32,9 @@ internal static class AdventureInventoryUi
 
     internal static Border BuildEventFeed(IReadOnlyList<AdventureFeedbackEvent> feedback, bool animationsEnabled)
     {
-        Border panel = AdventureUi.Panel("#111C19", "#091310", "#30443D", new Thickness(10, 8, 10, 8), radius: 10, shadow: false);
-        panel.Width = 205;
-        panel.MinHeight = 62;
+        Border panel = AdventureUi.Panel("#111C19", "#091310", "#30443D", new Thickness(12, 10, 12, 10), radius: 10, shadow: false);
+        panel.Width = 214;
+        panel.MinHeight = 76;
         panel.HorizontalAlignment = HorizontalAlignment.Right;
         panel.VerticalAlignment = VerticalAlignment.Center;
 
@@ -46,11 +46,11 @@ internal static class AdventureInventoryUi
             Text = "ADVENTURE EVENT",
             Foreground = AdventureUi.Ink("#607A70"),
             FontFamily = new FontFamily("Georgia"),
-            FontSize = 8.5,
+            FontSize = 9,
             FontWeight = FontWeights.SemiBold,
         });
 
-        var host = new Border { Margin = new Thickness(0, 4, 0, 0), MinHeight = 36 };
+        var host = new Border { Margin = new Thickness(0, 5, 0, 0), MinHeight = 42 };
         Grid.SetRow(host, 1);
         layout.Children.Add(host);
         panel.Child = layout;
@@ -62,7 +62,7 @@ internal static class AdventureInventoryUi
                 Text = "No recent event",
                 Foreground = AdventureUi.Ink("#536A62"),
                 FontFamily = new FontFamily("Georgia"),
-                FontSize = 9.5,
+                FontSize = 10,
                 VerticalAlignment = VerticalAlignment.Center,
             };
             return panel;
@@ -172,29 +172,29 @@ internal static class AdventureInventoryUi
             panel.BorderBrush = AdventureUi.Ink(AccentFor(item.Kind));
             host.Child = BuildFeedbackContent(item);
             host.Opacity = 0;
-            var translate = new TranslateTransform(7, 0);
+            var translate = new TranslateTransform(8, 0);
             host.RenderTransform = translate;
 
             host.BeginAnimation(UIElement.OpacityProperty,
-                new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(190))
+                new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(320))
                 {
                     EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut },
                 });
             translate.BeginAnimation(TranslateTransform.XProperty,
-                new DoubleAnimation(7, 0, TimeSpan.FromMilliseconds(220))
+                new DoubleAnimation(8, 0, TimeSpan.FromMilliseconds(380))
                 {
                     EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut },
                 });
 
-            await Task.Delay(1850);
+            await Task.Delay(3600);
             if (!panel.IsLoaded) return;
 
             host.BeginAnimation(UIElement.OpacityProperty,
-                new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(320))
+                new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(500))
                 {
                     EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseIn },
                 });
-            await Task.Delay(360);
+            await Task.Delay(540);
         }
 
         if (!panel.IsLoaded) return;
@@ -206,7 +206,7 @@ internal static class AdventureInventoryUi
             Text = "No recent event",
             Foreground = AdventureUi.Ink("#536A62"),
             FontFamily = new FontFamily("Georgia"),
-            FontSize = 9.5,
+            FontSize = 10,
             VerticalAlignment = VerticalAlignment.Center,
         };
         panel.BorderBrush = AdventureUi.Ink("#30443D");
@@ -215,20 +215,20 @@ internal static class AdventureInventoryUi
     private static FrameworkElement BuildFeedbackContent(AdventureFeedbackEvent feedback)
     {
         var content = new Grid();
-        content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(28) });
+        content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(31) });
         content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-        FrameworkElement icon = Icon(feedback.Key, AccentFor(feedback.Kind), 23);
+        FrameworkElement icon = Icon(feedback.Key, AccentFor(feedback.Kind), 25);
         icon.VerticalAlignment = VerticalAlignment.Center;
         content.Children.Add(icon);
 
-        var copy = new StackPanel { Margin = new Thickness(6, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+        var copy = new StackPanel { Margin = new Thickness(7, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
         copy.Children.Add(new TextBlock
         {
             Text = feedback.Title.ToUpperInvariant(),
             Foreground = AdventureUi.Ink("#E8D4A6"),
             FontFamily = new FontFamily("Georgia"),
-            FontSize = 8.7,
+            FontSize = 9.2,
             FontWeight = FontWeights.Bold,
             TextTrimming = TextTrimming.CharacterEllipsis,
         });
@@ -237,10 +237,10 @@ internal static class AdventureInventoryUi
             Text = feedback.Detail,
             Foreground = AdventureUi.Ink("#AFBFB8"),
             FontFamily = new FontFamily("Georgia"),
-            FontSize = 9.7,
+            FontSize = 10.2,
             TextWrapping = TextWrapping.Wrap,
-            MaxHeight = 29,
-            Margin = new Thickness(0, 2, 0, 0),
+            MaxHeight = 36,
+            Margin = new Thickness(0, 3, 0, 0),
         });
         Grid.SetColumn(copy, 1);
         content.Children.Add(copy);
