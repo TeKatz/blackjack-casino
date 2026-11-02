@@ -14,7 +14,7 @@ internal sealed class ManorPersistence(string directory)
     internal static readonly JsonSerializerOptions Json = MakeOptions();
     public static string DefaultDirectory => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"BlackjackCasino");
     private string Journal => Path.Combine(directory,"manor-checkpoint.json");
-    public static T Clone<T>(T value) => JsonSerializer.Deserialize<T>(JsonSerializer.Serialize(value,Json),Json)!;
+    public static T Clone<T>(T value) => JsonSerializer.Deserialize<T>(JsonSerializer.SerializeToUtf8Bytes(value,Json),Json)!;
 
     public ManorCheckpoint? Load()
     {
