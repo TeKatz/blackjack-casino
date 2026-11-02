@@ -43,20 +43,22 @@ public partial class MainWindow
         };
         empireTimer.Tick += (_, _) =>
         {
-            if (empire is null) return;
+            if (empire is null || !empire.Started) return;
             DateTimeOffset now = DateTimeOffset.UtcNow;
             SyncEmpireAchievementBoosts();
             empire.ObserveActivity(progressionController is null ? new() : EmpireActivitySnapshot.FromProfile(progressionController.Profile), now);
             if (empireView?.IsVisible == true) empireView.RefreshLive();
             if (empireDetachedView?.IsVisible == true) empireDetachedView.RefreshLive();
             RefreshEmpireHeader();
-            if (empire.Started && now - empireLastSave >= TimeSpan.FromSeconds(30))
+            if (now - empireLastSave >= TimeSpan.FromSeconds(30))
             {
                 SavePreferences();
                 empireLastSave = now;
             }
         };
-        empireTimer.Start();
+        // A profile that has never started Casino Empire has no economy to accrue and no live
+        // header to update. Do not wake the WPF dispatcher once a second for a dormant feature.
+        if (empire.Started) empireTimer.Start();
         Closed += (_, _) =>
         {
             empireTimer.Stop();
@@ -166,6 +168,7 @@ public partial class MainWindow
         if (empire is null) return;
         SyncEmpireAchievementBoosts();
         empire.Start(DateTimeOffset.UtcNow);
+        if (empireTimer is not null && !empireTimer.IsEnabled) empireTimer.Start();
         empire.Accrue(DateTimeOffset.UtcNow);
         SavePreferences();
         RefreshEmpireHeader();
