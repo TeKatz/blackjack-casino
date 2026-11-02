@@ -86,10 +86,16 @@ public static class AdventureCharacterCatalog
 
 public static class AdventureCatalog
 {
-    private static readonly IReadOnlyList<AdventureDefinition> Adventures = [BlackStagAdventure.Build()];
+    // The second entry is temporary test content for the embedded encounter framework.
+    private static readonly IReadOnlyList<AdventureDefinition> Adventures =
+    [
+        BlackStagAdventure.Build(),
+        StrangersWagerAdventure.Build(),
+    ];
 
     public static IReadOnlyList<AdventureDefinition> All => Adventures;
     public static AdventureDefinition BlackStag => Adventures[0];
+    public static AdventureDefinition StrangersWager => Adventures[1];
 
     public static bool TryGet(string id, out AdventureDefinition? adventure)
     {
