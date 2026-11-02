@@ -254,11 +254,26 @@ internal sealed class AdventureView : UserControl
 
     private FrameworkElement BuildChoice(AdventureChoiceDefinition choice)
     {
-        Button button = AdventureUi.Button("", accent: choice.Check is not null, fontSize: 14.5, scaleOnHover: false);
+        bool launchesEncounter = AdventureEncounterCatalog.TryGetTriggeredByChoice(
+            engine.Definition.Id,
+            choice,
+            out AdventureEncounterDefinition? encounter);
+        Button button = AdventureUi.Button("", accent: choice.Check is not null && !launchesEncounter, fontSize: 14.5, scaleOnHover: false);
         button.HorizontalContentAlignment = HorizontalAlignment.Left;
         button.Padding = new Thickness(18, 14, 18, 14);
         button.Margin = new Thickness(0, 0, 0, 10);
         button.MinHeight = 58;
+        if (encounter is not null) StyleEncounterChoice(button);
+
+        var content = new Grid();
+        if (encounter is not null)
+        {
+            content.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            FrameworkElement icon = BuildEncounterIcon(encounter.Type);
+            icon.Margin = new Thickness(0, 1, 14, 0);
+            content.Children.Add(icon);
+        }
 
         var copy = new StackPanel();
         copy.Children.Add(new TextBlock
@@ -268,7 +283,7 @@ internal sealed class AdventureView : UserControl
             FontFamily = new FontFamily("Georgia"),
             FontSize = 15,
             LineHeight = 22,
-            Foreground = AdventureUi.Ink("#EEE1CD"),
+            Foreground = AdventureUi.Ink(encounter is null ? "#EEE1CD" : "#E7F5EB"),
         });
         if (choice.Check is AdventureCheckDefinition check)
         {
@@ -282,9 +297,138 @@ internal sealed class AdventureView : UserControl
                 Margin = new Thickness(0, 7, 0, 0),
             });
         }
-        button.Content = copy;
+        if (encounter is not null)
+        {
+            copy.Children.Add(new TextBlock
+            {
+                Text = encounter.Type == AdventureEncounterType.Blackjack
+                    ? "BLACKJACK ENCOUNTER"
+                    : "DICE ENCOUNTER · FIVE OF A KIND",
+                Foreground = AdventureUi.Ink("#72D39B"),
+                FontFamily = new FontFamily("Georgia"),
+                FontSize = 10.5,
+                FontWeight = FontWeights.Bold,
+                Margin = new Thickness(0, 7, 0, 0),
+            });
+            Grid.SetColumn(copy, 1);
+        }
+        content.Children.Add(copy);
+        button.Content = content;
         button.Click += async (_, _) => await AdvanceChoiceAsync(choice.Id);
         return button;
+    }
+
+    private static void StyleEncounterChoice(Button button)
+    {
+        Brush normal = AdventureUi.Ink("#123025");
+        Brush hover = AdventureUi.Ink("#194632");
+        Brush border = AdventureUi.Ink("#4FAE78");
+        Brush hoverBorder = AdventureUi.Ink("#78D79F");
+        button.Background = normal;
+        button.BorderBrush = border;
+        button.Foreground = AdventureUi.Ink("#E5F7EA");
+        button.BorderThickness = new Thickness(1.25);
+
+        button.MouseEnter += (_, _) =>
+        {
+            button.Background = hover;
+            button.BorderBrush = hoverBorder;
+            button.Effect = new DropShadowEffect
+            {
+                BlurRadius = 18,
+                ShadowDepth = 0,
+                Opacity = .28,
+                Color = (Color)ColorConverter.ConvertFromString("#4FAE78"),
+            };
+        };
+        button.MouseLeave += (_, _) =>
+        {
+            button.Background = normal;
+            button.BorderBrush = border;
+            button.Effect = null;
+        };
+    }
+
+    private static FrameworkElement BuildEncounterIcon(AdventureEncounterType type)
+    {
+        Brush accent = AdventureUi.Ink("#78D79F");
+        Brush surface = AdventureUi.Ink("#0C2119");
+        if (type == AdventureEncounterType.Blackjack)
+        {
+            var host = new Grid { Width = 34, Height = 30 };
+            var rear = new Border
+            {
+                Width = 17,
+                Height = 23,
+                CornerRadius = new CornerRadius(2.5),
+                BorderBrush = accent,
+                BorderThickness = new Thickness(1.2),
+                Background = surface,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                VerticalAlignment = VerticalAlignment.Center,
+                RenderTransformOrigin = new Point(.5, .5),
+                RenderTransform = new RotateTransform(-10),
+                Margin = new Thickness(2, 0, 0, 0),
+            };
+            var front = new Border
+            {
+                Width = 17,
+                Height = 23,
+                CornerRadius = new CornerRadius(2.5),
+                BorderBrush = accent,
+                BorderThickness = new Thickness(1.2),
+                Background = AdventureUi.Ink("#123326"),
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Center,
+                RenderTransformOrigin = new Point(.5, .5),
+                RenderTransform = new RotateTransform(8),
+                Margin = new Thickness(0, 0, 2, 0),
+                Child = new TextBlock
+                {
+                    Text = "♠",
+                    FontFamily = new FontFamily("Georgia"),
+                    FontSize = 11,
+                    Foreground = accent,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center,
+                },
+            };
+            host.Children.Add(rear);
+            host.Children.Add(front);
+            return host;
+        }
+
+        var pipGrid = new Grid { Margin = new Thickness(4) };
+        for (int i = 0; i < 3; i++)
+        {
+            pipGrid.RowDefinitions.Add(new RowDefinition());
+            pipGrid.ColumnDefinitions.Add(new ColumnDefinition());
+        }
+        foreach ((int row, int column) in new[] { (0, 0), (0, 2), (1, 1), (2, 0), (2, 2) })
+        {
+            var pip = new System.Windows.Shapes.Ellipse
+            {
+                Width = 3.4,
+                Height = 3.4,
+                Fill = accent,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            Grid.SetRow(pip, row);
+            Grid.SetColumn(pip, column);
+            pipGrid.Children.Add(pip);
+        }
+        return new Border
+        {
+            Width = 27,
+            Height = 27,
+            CornerRadius = new CornerRadius(5),
+            BorderBrush = accent,
+            BorderThickness = new Thickness(1.3),
+            Background = surface,
+            Child = pipGrid,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
     }
 
     private Border BuildCharacterSheet(AdventureCheckDefinition? pending)
