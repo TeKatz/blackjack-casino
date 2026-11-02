@@ -30,13 +30,16 @@ internal sealed class ManorController
 
     public void Execute(Action<ManorSession> action,AppPreferences? preferences=null)
     {
-        // Stage changes on copies. A failed initial journal write changes neither wallet nor profile.
-        PlayerProfileState profile=ManorPersistence.Clone(progression.Profile);
+        // Stage changes on isolated copies. A failed initial journal write changes neither wallet nor profile.
+        // The scoped profile candidate avoids serializing the entire player profile for every Manor action.
+        PlayerProfileState profile=PlayerProfileTransactionSnapshot.Create(
+            progression.Profile,
+            RoutineProfileTransactionArea.Manor);
         ManorSessionState next=ManorPersistence.Clone(State);
         next.Statistics=profile.Manor;
         var machine=new ManorSession(next,rng);
         action(machine);
-        var grants=new ProgressionService(profile);
+        var grants=ProgressionService.ForNormalizedSnapshot(profile);
         ProgressionAward award=ManorProgression.Award(grants,next);
         // Paid Manor spins update TotalWagered while free spins and room decisions do not.
         // Synchronize that durable statistic before the existing journal atomically commits it.
