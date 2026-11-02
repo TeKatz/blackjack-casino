@@ -3,7 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
-using System.Windows.Shapes;
+using WpfPath = System.Windows.Shapes.Path;
 using BlackjackCasino.Core.Adventure;
 
 namespace BlackjackCasino.Desktop;
@@ -256,7 +256,7 @@ internal static class AdventureInventoryUi
 
         if (geometry is not null)
         {
-            grid.Children.Add(new Path
+            grid.Children.Add(new WpfPath
             {
                 Data = geometry,
                 Stroke = brush,
