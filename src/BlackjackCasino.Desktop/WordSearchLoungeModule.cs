@@ -76,6 +76,8 @@ internal sealed class WordSearchLoungeHub : UserControl, IDisposable
         root.RowDefinitions.Add(new RowDefinition());
 
         var header = new Grid { Margin = new Thickness(0, 0, 0, 16) };
+        header.ColumnDefinitions.Add(new ColumnDefinition());
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         var title = new StackPanel();
         title.Children.Add(Label("CHILL LOUNGE · WORD SEARCH", 10, "#82B79D"));
         title.Children.Add(Label("Word Search", 30, "#F2E3C5", FontWeights.SemiBold));
@@ -93,48 +95,47 @@ internal sealed class WordSearchLoungeHub : UserControl, IDisposable
         root.Children.Add(summary);
 
         var content = new Grid();
-        content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.65, GridUnitType.Star) });
-        content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(18) });
-        content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         Grid.SetRow(content, 2);
         root.Children.Add(content);
 
-        var levels = new UniformGrid { Columns = 2 };
+        var levels = new UniformGrid { Name = "WordSearchDifficulties", Columns = 3, Rows = 2 };
         foreach (WordSearchDifficulty difficulty in Enum.GetValues<WordSearchDifficulty>())
             levels.Children.Add(DifficultyCard(difficulty));
         content.Children.Add(levels);
 
-        var side = new StackPanel();
+        var side = new StackPanel { Width = 410, Margin = new Thickness(20, 0, 0, 0) };
         if (progress.ActiveGame is not null)
         {
             var resume = Panel();
-            var resumeStack = new StackPanel();
-            resumeStack.Children.Add(Label("CURRENT PUZZLE", 10, "#D5B879"));
-            resumeStack.Children.Add(Label(progress.ActiveGame.Puzzle.Theme, 19, "#F2E3C5", FontWeights.SemiBold));
-            resumeStack.Children.Add(Label($"{progress.ActiveGame.Puzzle.Difficulty} · {progress.ActiveGame.FoundWords.Count} / {progress.ActiveGame.Puzzle.Placements.Count} words found", 11, "#9DB2A8"));
+            var resumeStack = new DockPanel();
             Button resumeButton = ActionButton("RESUME", "WordSearchResume");
-            resumeButton.Margin = new Thickness(0, 12, 0, 0);
+            resumeButton.Margin = new Thickness(12, 0, 0, 0);
             resumeButton.Click += (_, _) => ShowGame(progress.ActiveGame);
-            resumeStack.Children.Add(resumeButton);
+            DockPanel.SetDock(resumeButton, Dock.Right); resumeStack.Children.Add(resumeButton);
+            var resumeCopy = new StackPanel();
+            resumeCopy.Children.Add(Label("CURRENT PUZZLE", 10, "#D5B879"));
+            resumeCopy.Children.Add(Label(progress.ActiveGame.Puzzle.Theme, 19, "#F2E3C5", FontWeights.SemiBold));
+            resumeCopy.Children.Add(Label($"{progress.ActiveGame.Puzzle.Difficulty} · {progress.ActiveGame.FoundWords.Count} / {progress.ActiveGame.Puzzle.Placements.Count} words found", 12, "#9DB2A8"));
+            resumeStack.Children.Add(resumeCopy);
             resume.Child = resumeStack;
             side.Children.Add(resume);
         }
 
         var info = Panel();
-        info.Margin = new Thickness(0, progress.ActiveGame is null ? 0 : 12, 0, 0);
+        info.ToolTip = "Drag from the first letter to the last. Words can overlap. Higher difficulties add diagonals and backwards words. Hints reveal a starting letter and never reduce XP.";
+        info.Visibility = progress.ActiveGame is null ? Visibility.Visible : Visibility.Collapsed;
         var infoStack = new StackPanel();
         infoStack.Children.Add(Label("HOW IT WORKS", 10, "#D5B879"));
-        infoStack.Children.Add(Label("Drag from the first letter to the last. Words can overlap. Higher difficulties add diagonals and backwards words.", 11, "#AABCB3"));
-        infoStack.Children.Add(MarginLabel("Hints reveal a starting letter. They never reduce XP — this is the Chill Lounge.", 11, "#82B79D", new Thickness(0, 10, 0, 0)));
-        infoStack.Children.Add(MarginLabel($"{WordSearchCatalog.All.Count:N0} authored puzzle slots · fully offline", 10, "#7F948B", new Thickness(0, 12, 0, 0)));
+        infoStack.Children.Add(Label("Drag across words. Hints never reduce XP.", 14, "#AABCB3"));
+        infoStack.Children.Add(MarginLabel($"{WordSearchCatalog.All.Count:N0} authored puzzle slots · fully offline", 10, "#7F948B", new Thickness(0, 5, 0, 0)));
         info.Child = infoStack;
         side.Children.Add(info);
 
         status = Label("Choose a difficulty, or resume your current puzzle.", 11, "#C9B98F");
-        status.Margin = new Thickness(2, 14, 0, 0);
+        status.Margin = new Thickness(2, 5, 0, 0);
         side.Children.Add(status);
-        Grid.SetColumn(side, 2);
-        content.Children.Add(side);
+        Grid.SetColumn(side, 1);
+        header.Children.Add(side);
         return root;
     }
 
@@ -166,7 +167,8 @@ internal sealed class WordSearchLoungeHub : UserControl, IDisposable
         // Scale only on smaller windows; the grid still distributes all available card space.
         card.Children.Add(new Viewbox { Child = stack, Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly,
             HorizontalAlignment = HorizontalAlignment.Stretch });
-        stack.Width = 410;
+        stack.Width = 300;
+        border.SizeChanged += (_, _) => stack.Width = Math.Max(180, border.ActualWidth - 38);
         Button play = ActionButton(completed >= pool.Count ? "REPLAY" : "PLAY", "WordSearchStart_" + difficulty);
         play.FontSize = 15; play.Padding = new Thickness(12, 7, 12, 7);
         play.Click += (_, _) => Start(difficulty);

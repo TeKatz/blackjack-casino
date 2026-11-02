@@ -30,6 +30,7 @@ internal sealed partial class EmpireManagementView
             build();
             var group = new DockPanel { Name = "EmpireOverview_" + title, Margin = new Thickness(column == 0 ? 0 : 8, 0, 0, 0) };
             var heading = Text(title.ToUpperInvariant(), 16, "#E3C991", true, new Thickness(0, 0, 0, 8));
+            heading.ToolTip = body.Children.OfType<TextBlock>().FirstOrDefault()?.ToolTip;
             DockPanel.SetDock(heading, Dock.Top); group.Children.Add(heading);
             foreach (UIElement element in body.Children.Cast<UIElement>().ToArray())
             {
@@ -38,6 +39,13 @@ internal sealed partial class EmpireManagementView
             var cards = new UniformGrid { Name = "EmpireOverviewCards_" + title, Columns = columns,
                 Rows = Math.Max(1, (entries.Count + columns - 1) / columns) };
             foreach (UIElement entry in entries) cards.Children.Add(entry);
+            if (title is "Properties" or "Contracts")
+                group.SizeChanged += (_, _) =>
+                {
+                    int nextColumns = group.ActualHeight < 430 && group.ActualWidth >= 260 ? 2 : columns;
+                    cards.Columns = nextColumns;
+                    cards.Rows = Math.Max(1, (cards.Children.Count + nextColumns - 1) / nextColumns);
+                };
             group.Children.Add(cards); Grid.SetColumn(group, column); overview.Children.Add(group);
         }
     }

@@ -52,7 +52,7 @@ internal sealed partial class EmpireManagementView : UserControl
         {
             string route = section;
             Button tab = Button(section, "EmpireTab_" + section, () => { selected = route; page = 0; Build(); });
-            tab.Content = EmpireView.IconCaption(section, section, 16);
+            tab.Content = EmpireView.IconCaption(section, section == "Development" ? "Projects & Properties" : section, 16);
             tabs[section] = tab; navigation.Children.Add(tab);
         }
         Grid.SetRow(navigation, 2); root.Children.Add(navigation);
@@ -329,14 +329,17 @@ internal sealed partial class EmpireManagementView : UserControl
     {
         var intro = Text(detail, 11, "#9EBAAA", margin: new Thickness(0, 0, 0, 10));
         intro.MaxHeight = 48; intro.TextTrimming = TextTrimming.CharacterEllipsis; intro.ToolTip = detail;
+        if (Combined) intro.Visibility = Visibility.Collapsed;
         body.Children.Add(intro);
     }
     private void Row(string title, string detail, UIElement status, Button? action = null)
     {
         var content = new DockPanel();
         var info = new StackPanel { Margin = new Thickness(0, 0, 0, 0) }; info.Children.Add(Text(title, Combined ? 15 : 16, "#EAD5AF", true));
-        info.Children.Add(Text(detail, Combined ? 11.5 : 12, "#ACC4B5", margin: new Thickness(0, 3, 0, 5))); info.Children.Add(status); content.Children.Add(info);
-        if (action is not null) { action.MinWidth = 135; action.HorizontalAlignment = HorizontalAlignment.Left; DockPanel.SetDock(action, Dock.Bottom); content.Children.Insert(0, action); }
+        var description = Text(detail, Combined ? 11.5 : 12, "#ACC4B5", margin: new Thickness(0, 3, 0, 5));
+        if (Combined) { description.MaxHeight = 32; description.TextTrimming = TextTrimming.CharacterEllipsis; description.ToolTip = detail; }
+        info.Children.Add(description); info.Children.Add(status); content.Children.Add(info);
+        if (action is not null) { action.MinWidth = Combined ? 100 : 135; if (Combined) action.Padding = new Thickness(8, 5, 8, 5); action.HorizontalAlignment = HorizontalAlignment.Left; DockPanel.SetDock(action, Dock.Bottom); content.Children.Insert(0, action); }
         if (Combined)
         {
             // A constrained card scales down only if the window cannot accommodate its natural content.

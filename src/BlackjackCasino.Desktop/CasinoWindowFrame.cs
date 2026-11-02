@@ -41,7 +41,7 @@ internal static class CasinoWindowFrame
 
     private static void OnLoaded(object sender, RoutedEventArgs args)
     {
-        if (sender is not Window window || (bool)window.GetValue(AppliedProperty)) return;
+        if (sender is not Window window || !window.IsVisible || (bool)window.GetValue(AppliedProperty)) return;
         window.SetValue(AppliedProperty, true);
         window.Icon ??= Icon;
         // Dialogs with their own bespoke title bars keep their existing chrome.

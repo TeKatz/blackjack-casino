@@ -102,15 +102,18 @@ internal sealed partial class EmpireView
 
     private static FrameworkElement FitIntelligence(FrameworkElement content)
     {
+        var viewport = new Grid();
         var fit = new Viewbox { Child = content, Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly,
-            HorizontalAlignment = HorizontalAlignment.Stretch, VerticalAlignment = VerticalAlignment.Top };
-        // Set a natural wrapping width; only excess height causes fitting on a small window.
-        fit.SizeChanged += (_, _) =>
+            HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top };
+        viewport.Children.Add(fit);
+        // Use the column's viewport width, not the Viewbox's fitted width. Otherwise
+        // down-only fitting can lock an initially empty column to its minimum width.
+        viewport.SizeChanged += (_, _) =>
         {
-            double width = Math.Max(140, fit.ActualWidth);
+            double width = Math.Max(140, viewport.ActualWidth);
             if (Math.Abs(content.Width - width) > .5 || double.IsNaN(content.Width)) content.Width = width;
         };
-        return fit;
+        return viewport;
     }
 
     private void RefreshIntelligence()

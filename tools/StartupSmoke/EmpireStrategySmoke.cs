@@ -129,6 +129,7 @@ internal static class EmpireStrategySmoke
                     Button back=Find<Button>(window).Single(b=>b.Name=="EmpireManagementClose");
                     Rect bounds=back.TransformToAncestor(window).TransformBounds(new Rect(back.RenderSize));
                     Require(bounds.Left>=0 && bounds.Top>=0 && bounds.Right<=window.ActualWidth && bounds.Bottom<=window.ActualHeight,"Management back button is clipped.");
+                    Capture(window,Path.Combine(output,$"empire-{tab.ToLowerInvariant()}-{(int)size.Item1}.png"));
                     if (tab is "Development" or "Operations" or "Opportunities")
                     {
                         EmpireManagementView view = Find<EmpireManagementView>(window).Single();
@@ -145,7 +146,7 @@ internal static class EmpireStrategySmoke
                             Button control = Find<Button>(view).Single(b => b.Name == action);
                             Rect area = control.TransformToAncestor(window).TransformBounds(new Rect(control.RenderSize));
                             Require(control.IsVisible && area.Width > 8 && area.Height > 5 && area.Left >= 0 && area.Right <= window.ActualWidth + 1 && area.Bottom <= window.ActualHeight + 1,
-                                $"{action} is clipped on the {tab} overview at {size}.");
+                                $"{action} is clipped on the {tab} overview at {size}: {area}, visible={control.IsVisible}.");
                         }
                     }
                     Capture(window,Path.Combine(output,$"empire-{tab.ToLowerInvariant()}-{(int)size.Item1}.png"));
