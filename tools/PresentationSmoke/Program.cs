@@ -260,13 +260,15 @@ internal static partial class Program
         var preferencesField = typeof(MainWindow).GetField("preferences", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
         AppPreferences areaPrefs = (AppPreferences)preferencesField.GetValue(window)!;
         preferencesField.SetValue(window, areaPrefs.WithPresentation("casino-empire", areaPrefs.Presentation("casino-empire") with { AnimationsEnabled = true }));
-        var animationDeadline = System.Diagnostics.Stopwatch.StartNew();
-        while (Find<EmpireRoomCard>(window).Single(card => card.Department.Id == "slots").Artwork.Phase == 0
-            && animationDeadline.Elapsed < TimeSpan.FromSeconds(3)) await Task.Delay(50);
-        Require(Find<EmpireRoomCard>(window).Single(card=>card.Department.Id=="slots").Artwork.Phase>0,"Empire's own animations did not run within three seconds.");
+        await Task.Delay(250);
+        Require(Find<EmpireRoomCard>(window).All(card=>card.Artwork.Phase==0),
+            "Casino Empire redrew ambient room artwork while idle instead of waiting for interaction.");
+        Require(((AppPreferences)preferencesField.GetValue(window)!).Presentation("casino-empire").AnimationsEnabled,
+            "Casino Empire local animation preference was not enabled.");
         animationSetting.IsChecked=false;
         await Task.Delay(150);
-        Require(Find<EmpireRoomCard>(window).Single(card=>card.Department.Id=="slots").Artwork.Phase>0,"Blackjack toggle stopped Empire's local effects.");
+        Require(((AppPreferences)preferencesField.GetValue(window)!).Presentation("casino-empire").AnimationsEnabled,
+            "Blackjack animation toggle leaked into Casino Empire's local setting.");
         preferencesField.SetValue(window, areaPrefs);
         foreach (EmpireView view in Find<EmpireView>(window)) view.StopVisualAnimations();
         Find<Button>(window).Single(b=>b.Name=="EmpireBackButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
