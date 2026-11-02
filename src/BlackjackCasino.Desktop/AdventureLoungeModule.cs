@@ -11,14 +11,22 @@ namespace BlackjackCasino.Desktop;
 
 internal static class AdventureLoungeModule
 {
-    internal static LoungeHostedGame Create(AdventureProgressState progress, Action<AdventureProgressState> persist, Func<string?> diceSetId, Func<string?> playerName, Func<bool> animationsEnabled)
+    internal static LoungeHostedGame Create(
+        AdventureProgressState progress,
+        Action<AdventureProgressState> persist,
+        Func<string?> diceSetId,
+        Func<string?> playerName,
+        Func<bool> animationsEnabled,
+        Func<AreaPresentationSettings> presentation,
+        Action<AreaPresentationSettings> updatePresentation,
+        Action<bool> setMusicActive)
     {
         AdventureProgressState state = AdventureProgressState.Normalize(progress);
         return new LoungeHostedGame(
             new LoungeGame("tales-backroom", "Tales from the Backroom", "A tabletop story waits behind the lounge.",
                 "Build a character, make consequential choices and roll your equipped Midnight Dice cosmetic when the story calls for a check.",
                 () => { }, Artwork: CreateArtwork, SortOrder: 70, Status: () => Status(state)),
-            back => new AdventureHubControl(state, persist, diceSetId, playerName, animationsEnabled, back));
+            back => new AdventureHubControl(state, persist, diceSetId, playerName, animationsEnabled, presentation, updatePresentation, setMusicActive, back));
     }
 
     private static string Status(AdventureProgressState state)
@@ -52,15 +60,33 @@ internal sealed class AdventureHubControl : UserControl
     private readonly Func<string?> diceSetId;
     private readonly Func<string?> playerName;
     private readonly Func<bool> animationsEnabled;
+    private readonly Func<AreaPresentationSettings> presentation;
+    private readonly Action<AreaPresentationSettings> updatePresentation;
+    private readonly Action<bool> setMusicActive;
 
-    internal AdventureHubControl(AdventureProgressState progress, Action<AdventureProgressState> persist, Func<string?> diceSetId, Func<string?> playerName, Func<bool> animationsEnabled, Action backToGames)
+    internal AdventureHubControl(
+        AdventureProgressState progress,
+        Action<AdventureProgressState> persist,
+        Func<string?> diceSetId,
+        Func<string?> playerName,
+        Func<bool> animationsEnabled,
+        Func<AreaPresentationSettings> presentation,
+        Action<AreaPresentationSettings> updatePresentation,
+        Action<bool> setMusicActive,
+        Action backToGames)
     {
         this.progress = AdventureProgressState.Normalize(progress);
         this.persist = persist ?? throw new ArgumentNullException(nameof(persist));
         this.diceSetId = diceSetId ?? throw new ArgumentNullException(nameof(diceSetId));
         this.playerName = playerName ?? throw new ArgumentNullException(nameof(playerName));
         this.animationsEnabled = animationsEnabled ?? throw new ArgumentNullException(nameof(animationsEnabled));
+        this.presentation = presentation ?? throw new ArgumentNullException(nameof(presentation));
+        this.updatePresentation = updatePresentation ?? throw new ArgumentNullException(nameof(updatePresentation));
+        this.setMusicActive = setMusicActive ?? throw new ArgumentNullException(nameof(setMusicActive));
         _ = backToGames ?? throw new ArgumentNullException(nameof(backToGames));
+
+        Loaded += (_, _) => this.setMusicActive(true);
+        Unloaded += (_, _) => this.setMusicActive(false);
         ShowHub();
     }
 
@@ -100,6 +126,7 @@ internal sealed class AdventureHubControl : UserControl
         });
         root.Children.Add(heading);
         root.Children.Add(AdventureUi.OrnamentRule());
+        root.Children.Add(BuildMusicPanel());
 
         AdventureDefinition adventure = AdventureCatalog.BlackStag;
         progress.Runs.TryGetValue(adventure.Id, out AdventureRunState? existing);
@@ -307,6 +334,95 @@ internal sealed class AdventureHubControl : UserControl
         Content = scroll;
     }
 
+    private Border BuildMusicPanel()
+    {
+        AreaPresentationSettings settings = presentation().Sanitize();
+        Border panel = AdventureUi.Panel("#151F1B", "#0B1412", "#5B5942", new Thickness(18, 15, 18, 15), radius: 12, shadow: false);
+        panel.Margin = new Thickness(0, 0, 0, 24);
+
+        var grid = new Grid();
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(290) });
+
+        var copy = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+        copy.Children.Add(AdventureUi.Eyebrow("BACKROOM SCORE", 10.5));
+        copy.Children.Add(new TextBlock
+        {
+            Text = "Lanterns Beyond the Door",
+            FontFamily = new FontFamily("Georgia"),
+            FontSize = 17,
+            Foreground = AdventureUi.Ink("#E9D8B6"),
+            Margin = new Thickness(0, 3, 0, 1),
+        });
+        copy.Children.Add(new TextBlock
+        {
+            Text = "A quiet fantasy score used only inside Tales from the Backroom.",
+            FontFamily = new FontFamily("Georgia"),
+            FontSize = 10.5,
+            Foreground = AdventureUi.Ink("#839B91"),
+        });
+        grid.Children.Add(copy);
+
+        Button musicToggle = AdventureUi.Button(settings.MusicEnabled ? "MUSIC · ON" : "MUSIC · OFF", accent: settings.MusicEnabled, fontSize: 11, scaleOnHover: false);
+        musicToggle.VerticalAlignment = VerticalAlignment.Center;
+        musicToggle.Margin = new Thickness(20, 0, 24, 0);
+        Grid.SetColumn(musicToggle, 1);
+        grid.Children.Add(musicToggle);
+
+        var volume = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+        var volumeHeader = new Grid { Margin = new Thickness(0, 0, 0, 5) };
+        volumeHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        volumeHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        volumeHeader.Children.Add(new TextBlock
+        {
+            Text = "MUSIC VOLUME",
+            FontFamily = new FontFamily("Georgia"),
+            FontSize = 10,
+            FontWeight = FontWeights.SemiBold,
+            Foreground = AdventureUi.Ink("#8FB9A6"),
+        });
+        var percent = new TextBlock
+        {
+            Text = $"{Math.Round(settings.MusicVolume / .32 * 100):0}%",
+            FontFamily = new FontFamily("Georgia"),
+            FontSize = 10,
+            Foreground = AdventureUi.Ink("#CBB882"),
+        };
+        Grid.SetColumn(percent, 1);
+        volumeHeader.Children.Add(percent);
+        volume.Children.Add(volumeHeader);
+
+        var slider = new Slider
+        {
+            Minimum = 0,
+            Maximum = .32,
+            Value = settings.MusicVolume,
+            Width = 280,
+            Height = 22,
+            IsMoveToPointEnabled = true,
+            Cursor = CasinoCursors.Hand,
+        };
+        volume.Children.Add(slider);
+        Grid.SetColumn(volume, 2);
+        grid.Children.Add(volume);
+
+        void Commit(bool enabled, double value)
+        {
+            settings = settings with { MusicEnabled = enabled, MusicVolume = value };
+            updatePresentation(settings);
+            musicToggle.Content = settings.MusicEnabled ? "MUSIC · ON" : "MUSIC · OFF";
+            musicToggle.Foreground = AdventureUi.Ink(settings.MusicEnabled ? "#F1DCA4" : "#EEE2CF");
+            percent.Text = $"{Math.Round(settings.MusicVolume / .32 * 100):0}%";
+        }
+
+        musicToggle.Click += (_, _) => Commit(!settings.MusicEnabled, slider.Value);
+        slider.ValueChanged += (_, args) => Commit(settings.MusicEnabled, args.NewValue);
+
+        panel.Child = grid;
+        return panel;
+    }
+
     private void ShowRun(AdventureRunState run)
     {
         AdventureDefinition adventure = AdventureCatalog.BlackStag;
@@ -449,7 +565,7 @@ internal sealed class AdventureView : UserControl
             };
             storyBody.Children.Add(ending);
 
-            Button returnButton = AdventureUi.Button("RETURN TO ADVENTURES", accent: true, fontSize: 13);
+            Button returnButton = AdventureUi.Button("RETURN TO ADVENTURES", accent: true, fontSize: 13, scaleOnHover: false);
             returnButton.HorizontalAlignment = HorizontalAlignment.Left;
             returnButton.Margin = new Thickness(0, 20, 0, 0);
             returnButton.Click += (_, _) =>
@@ -639,8 +755,8 @@ internal sealed class AdventureView : UserControl
 
     private Border BuildDiceTray(AdventureCheckDefinition? pending)
     {
-        Border tray = AdventureUi.Panel("#0D1815", "#07100E", pending is null ? "#314A43" : "#8F7847", new Thickness(17), radius: 14, shadow: false);
-        tray.Margin = new Thickness(0, 20, 0, 0);
+        Border tray = AdventureUi.Panel("#0D1815", "#07100E", pending is null ? "#314A43" : "#8F7847", new Thickness(16), radius: 14, shadow: false);
+        tray.Margin = new Thickness(0, 12, 0, 0);
         var body = new StackPanel();
         string? equippedId = diceSetId();
 
@@ -676,7 +792,7 @@ internal sealed class AdventureView : UserControl
         {
             Width = 166,
             Height = 166,
-            Value = pending is null ? 20 : 0,
+            Value = pending is null ? lastResult?.ChosenRoll ?? 20 : 0,
             Active = pending is not null,
             VisualVariant = AdventureHubControl.ResolveDiceVariant(equippedId),
         };
@@ -691,8 +807,8 @@ internal sealed class AdventureView : UserControl
         rollSurface.Width = 212;
         rollSurface.Height = 190;
         rollSurface.HorizontalAlignment = HorizontalAlignment.Center;
-        rollSurface.Margin = new Thickness(0, 9, 0, 7);
-        rollSurface.Cursor = pending is null ? Cursors.Arrow : Cursors.Hand;
+        rollSurface.Margin = new Thickness(0, 7, 0, 5);
+        rollSurface.Cursor = pending is null ? CasinoCursors.Arrow : CasinoCursors.Hand;
         rollSurface.RenderTransformOrigin = new Point(.5, .5);
         rollSurface.RenderTransform = new ScaleTransform(1, 1);
         rollSurface.Child = die;
@@ -750,8 +866,10 @@ internal sealed class AdventureView : UserControl
         });
         body.Children.Add(new TextBlock
         {
-            Text = pending is null ? "Waiting for the story" : "CLICK THE D20 TO ROLL",
-            Foreground = AdventureUi.Ink(pending is null ? "#718A82" : "#E0C77F"),
+            Text = pending is not null
+                ? "CLICK THE D20 TO ROLL"
+                : lastResult is not null ? $"LAST ROLL · {lastResult.ChosenRoll}" : "Waiting for the story",
+            Foreground = AdventureUi.Ink(pending is not null ? "#E0C77F" : lastResult is not null ? "#CBB579" : "#718A82"),
             FontFamily = new FontFamily("Georgia"),
             FontSize = 10.5,
             FontWeight = FontWeights.SemiBold,
@@ -770,28 +888,28 @@ internal sealed class AdventureView : UserControl
 
         int first = Random.Shared.Next(1, 21);
         int? second = check.RollMode == AdventureRollMode.Normal ? null : Random.Shared.Next(1, 21);
+        int chosen = check.RollMode switch
+        {
+            AdventureRollMode.Advantage => Math.Max(first, second!.Value),
+            AdventureRollMode.Disadvantage => Math.Min(first, second!.Value),
+            _ => first,
+        };
+
         if (animationsEnabled())
         {
-            var rotation = new RotateTransform();
-            die.RenderTransform = rotation;
-            for (int frame = 0; frame < 11; frame++)
+            die.PlayRollMotion();
+            int[] pauses = [90, 95, 100, 110, 120, 130, 145, 160, 180, 200];
+            foreach (int pause in pauses)
             {
                 die.Value = Random.Shared.Next(1, 21);
-                rotation.Angle += 39 + frame * 2;
-                await Task.Delay(42);
+                await Task.Delay(pause);
             }
-            die.Value = check.RollMode switch
-            {
-                AdventureRollMode.Advantage => Math.Max(first, second!.Value),
-                AdventureRollMode.Disadvantage => Math.Min(first, second!.Value),
-                _ => first,
-            };
-            var settle = new DoubleAnimation(rotation.Angle, rotation.Angle + 18, TimeSpan.FromMilliseconds(130))
-            {
-                EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut },
-            };
-            rotation.BeginAnimation(RotateTransform.AngleProperty, settle);
-            await Task.Delay(145);
+            die.Value = chosen;
+            await Task.Delay(230);
+        }
+        else
+        {
+            die.Value = chosen;
         }
 
         lastResult = engine.ResolvePendingCheck(first, second);
