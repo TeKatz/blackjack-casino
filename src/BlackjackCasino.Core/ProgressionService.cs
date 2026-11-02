@@ -7,10 +7,25 @@ public sealed class ProgressionService
     private readonly HashSet<Guid> processedRounds = [];
 
     public ProgressionService(PlayerProfileState state)
+        : this(state, normalize: true)
+    {
+    }
+
+    private ProgressionService(PlayerProfileState state, bool normalize)
     {
         State = state ?? throw new ArgumentNullException(nameof(state));
-        EnsureDefaults();
+        if (normalize)
+        {
+            EnsureDefaults();
+        }
     }
+
+    /// <summary>
+    /// Creates a service over an already-normalized transaction snapshot without walking and
+    /// normalizing the entire profile graph again. Callers must only pass snapshots derived from a
+    /// live normalized profile and must isolate every subgraph the operation can mutate.
+    /// </summary>
+    public static ProgressionService ForNormalizedSnapshot(PlayerProfileState state) => new(state, normalize: false);
 
     public PlayerProfileState State { get; }
 
