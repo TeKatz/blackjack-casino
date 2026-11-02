@@ -37,6 +37,55 @@ public sealed class AdventureEngineTests
     }
 
     [Fact]
+    public void TemporaryEncounterAdventureIsRegisteredAndValid()
+    {
+        AdventureDefinition adventure = AdventureCatalog.StrangersWager;
+        Assert.Contains(AdventureCatalog.All, item => item.Id == "strangers-wager");
+        AdventureDefinitionValidator.Validate(adventure);
+        AdventureEncounterCatalog.Validate(adventure);
+        Assert.True(AdventureEncounterCatalog.TryGet(adventure.Id, "blackjack-table", out AdventureEncounterDefinition? encounter));
+        Assert.NotNull(encounter);
+        Assert.Equal(AdventureEncounterType.Blackjack, encounter!.Type);
+        Assert.Equal("encounter-win", encounter.WinChoiceId);
+        Assert.Equal("encounter-loss", encounter.LossChoiceId);
+        Assert.Equal("encounter-draw", encounter.DrawChoiceId);
+    }
+
+    [Fact]
+    public void EncounterWinRoutesThroughOrdinaryAdventureEffects()
+    {
+        AdventureEngine engine = AdventureEngine.StartNew(AdventureCatalog.StrangersWager, AdventureCharacterCatalog.Create("rogue", "Test"));
+        engine.SelectChoice("take-seat");
+        engine.SelectChoice("accept-now");
+        Assert.Equal("blackjack-table", engine.State.CurrentSceneId);
+        Assert.True(AdventureEncounterCatalog.TryGet(engine.Definition.Id, engine.CurrentScene.Id, out AdventureEncounterDefinition? encounter));
+
+        engine.SelectChoice(encounter!.WinChoiceId);
+
+        Assert.True(engine.State.Completed);
+        Assert.Equal("raven-token", engine.State.EndingId);
+        Assert.Equal(30, engine.State.Coins);
+        Assert.Equal(1, engine.State.ItemStacks["black-iron-token"].Quantity);
+        Assert.Equal(50, engine.State.Character.Experience);
+    }
+
+    [Fact]
+    public void EncounterLossUsesSameStoryRoutingWithoutCasinoBankroll()
+    {
+        AdventureEngine engine = AdventureEngine.StartNew(AdventureCatalog.StrangersWager, AdventureCharacterCatalog.Create("warrior", "Test"));
+        engine.SelectChoice("take-seat");
+        engine.SelectChoice("accept-now");
+        AdventureEncounterCatalog.TryGet(engine.Definition.Id, engine.CurrentScene.Id, out AdventureEncounterDefinition? encounter);
+
+        engine.SelectChoice(encounter!.LossChoiceId);
+
+        Assert.True(engine.State.Completed);
+        Assert.Equal("house-lesson", engine.State.EndingId);
+        Assert.Equal(15, engine.State.Coins);
+        Assert.Equal(20, engine.State.Character.Experience);
+    }
+
+    [Fact]
     public void InvestigationChoiceWaitsForExplicitD20Roll()
     {
         AdventureEngine engine = AdventureEngine.StartNew(AdventureCatalog.BlackStag, AdventureCharacterCatalog.Create("rogue", "Test"));
