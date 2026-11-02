@@ -33,11 +33,13 @@ public partial class MainWindow
 
         empireLastSave = DateTimeOffset.UtcNow;
         RefreshEmpireHeader();
-        // Idle production belongs to the whole casino, not just the Empire page. Keep the
-        // accrual clock responsive while other WPF surfaces are rendering or animating.
-        empireTimer = new DispatcherTimer(DispatcherPriority.Normal)
+        // Empire accrual is deterministic over elapsed time. Running it twice per second on
+        // DispatcherPriority.Normal only steals time from input/layout without improving the
+        // simulation. One background tick keeps the live counters responsive while allowing
+        // WPF input and render work to win dispatcher scheduling conflicts.
+        empireTimer = new DispatcherTimer(DispatcherPriority.Background)
         {
-            Interval = TimeSpan.FromMilliseconds(500),
+            Interval = TimeSpan.FromSeconds(1),
         };
         empireTimer.Tick += (_, _) =>
         {
@@ -45,8 +47,8 @@ public partial class MainWindow
             DateTimeOffset now = DateTimeOffset.UtcNow;
             SyncEmpireAchievementBoosts();
             empire.ObserveActivity(progressionController is null ? new() : EmpireActivitySnapshot.FromProfile(progressionController.Profile), now);
-            empireView?.Refresh();
-            empireDetachedView?.Refresh();
+            if (empireView?.IsVisible == true) empireView.RefreshLive();
+            if (empireDetachedView?.IsVisible == true) empireDetachedView.RefreshLive();
             RefreshEmpireHeader();
             if (empire.Started && now - empireLastSave >= TimeSpan.FromSeconds(30))
             {
