@@ -32,7 +32,7 @@ internal sealed class PlayerProgressionController : IDisposable
         persistChallengeClaims = persist || challengeProfileSaver is not null;
         saveChallengeProfile = challengeProfileSaver ?? PlayerProfileStore.SaveProfileOrThrow;
         persistKniffelRewards = persist || kniffelProfileSaver is not null;
-        saveKniffelProfile = kniffelProfileSaver ?? PlayerProfileStore.SaveProfileOrThrow;
+        saveKniffelProfile = kniffelProfileSaver ?? PlayerProfileStore.SaveNormalizedProfileOrThrow;
         Service = new ProgressionService(initialProfile ?? PlayerProfileStore.LoadProfile());
         history = initialProfile is null ? PlayerProfileStore.LoadHistory().ToList() : [];
         knownRoundIds = history.Select(x => x.RoundId).ToHashSet();
@@ -93,8 +93,8 @@ internal sealed class PlayerProgressionController : IDisposable
         lock (Profile)
         {
             AccruePlaytime();
-            PlayerProfileState candidate = ManorPersistence.Clone(Profile);
-            ProgressionAward award = new BlackjackCasino.Core.Kniffel.KniffelProgression(new ProgressionService(candidate)).Process(checkpoint);
+            PlayerProfileState candidate = PlayerProfileTransactionSnapshot.Create(Profile, RoutineProfileTransactionArea.Kniffel);
+            ProgressionAward award = new BlackjackCasino.Core.Kniffel.KniffelProgression(ProgressionService.ForNormalizedSnapshot(candidate)).Process(checkpoint);
             if (award == ProgressionAward.None) return award;
             CasinoVaultService.SyncFromStatistics(candidate);
             if (persistKniffelRewards) saveKniffelProfile(candidate);
@@ -108,8 +108,8 @@ internal sealed class PlayerProgressionController : IDisposable
         lock (Profile)
         {
             AccruePlaytime();
-            PlayerProfileState candidate = ManorPersistence.Clone(Profile);
-            ProgressionAward award = new BlackjackCasino.Core.Kniffel.KniffelProgression(new ProgressionService(candidate)).ProcessTable(table);
+            PlayerProfileState candidate = PlayerProfileTransactionSnapshot.Create(Profile, RoutineProfileTransactionArea.Kniffel);
+            ProgressionAward award = new BlackjackCasino.Core.Kniffel.KniffelProgression(ProgressionService.ForNormalizedSnapshot(candidate)).ProcessTable(table);
             CasinoVaultService.SyncFromStatistics(candidate);
             if (persistKniffelRewards) saveKniffelProfile(candidate);
             AdoptManorProfile(candidate);
@@ -122,8 +122,8 @@ internal sealed class PlayerProgressionController : IDisposable
         lock (Profile)
         {
             AccruePlaytime();
-            PlayerProfileState candidate = ManorPersistence.Clone(Profile);
-            ProgressionAward award = new BlackjackCasino.Core.Sudoku.SudokuProgression(new ProgressionService(candidate)).Process(completion);
+            PlayerProfileState candidate = PlayerProfileTransactionSnapshot.Create(Profile, RoutineProfileTransactionArea.Sudoku);
+            ProgressionAward award = new BlackjackCasino.Core.Sudoku.SudokuProgression(ProgressionService.ForNormalizedSnapshot(candidate)).Process(completion);
             if (award == ProgressionAward.None) return award;
             if (persistKniffelRewards) saveKniffelProfile(candidate);
             AdoptManorProfile(candidate);
@@ -136,8 +136,8 @@ internal sealed class PlayerProgressionController : IDisposable
         lock (Profile)
         {
             AccruePlaytime();
-            PlayerProfileState candidate = ManorPersistence.Clone(Profile);
-            var result = new BlackjackCasino.Core.MidnightMerge.MergePlayerProgression(new ProgressionService(candidate)).Sync(state);
+            PlayerProfileState candidate = PlayerProfileTransactionSnapshot.Create(Profile, RoutineProfileTransactionArea.MidnightMerge);
+            var result = new BlackjackCasino.Core.MidnightMerge.MergePlayerProgression(ProgressionService.ForNormalizedSnapshot(candidate)).Sync(state);
             if (!result.Changed) return result;
             if (persistKniffelRewards) saveKniffelProfile(candidate);
             AdoptManorProfile(candidate);
@@ -150,8 +150,8 @@ internal sealed class PlayerProgressionController : IDisposable
         lock (Profile)
         {
             AccruePlaytime();
-            PlayerProfileState candidate = ManorPersistence.Clone(Profile);
-            bool changed = new BlackjackCasino.Core.Solitaire.SolitaireProgression(new ProgressionService(candidate)).ProcessStart(start);
+            PlayerProfileState candidate = PlayerProfileTransactionSnapshot.Create(Profile, RoutineProfileTransactionArea.Solitaire);
+            bool changed = new BlackjackCasino.Core.Solitaire.SolitaireProgression(ProgressionService.ForNormalizedSnapshot(candidate)).ProcessStart(start);
             if (!changed) return false;
             if (persistKniffelRewards) saveKniffelProfile(candidate);
             AdoptManorProfile(candidate);
@@ -164,8 +164,8 @@ internal sealed class PlayerProgressionController : IDisposable
         lock (Profile)
         {
             AccruePlaytime();
-            PlayerProfileState candidate = ManorPersistence.Clone(Profile);
-            bool changed = new BlackjackCasino.Core.Solitaire.SolitaireProgression(new ProgressionService(candidate)).ProcessAbandon(abandon);
+            PlayerProfileState candidate = PlayerProfileTransactionSnapshot.Create(Profile, RoutineProfileTransactionArea.Solitaire);
+            bool changed = new BlackjackCasino.Core.Solitaire.SolitaireProgression(ProgressionService.ForNormalizedSnapshot(candidate)).ProcessAbandon(abandon);
             if (!changed) return false;
             if (persistKniffelRewards) saveKniffelProfile(candidate);
             AdoptManorProfile(candidate);
@@ -178,8 +178,8 @@ internal sealed class PlayerProgressionController : IDisposable
         lock (Profile)
         {
             AccruePlaytime();
-            PlayerProfileState candidate = ManorPersistence.Clone(Profile);
-            ProgressionAward award = new BlackjackCasino.Core.Solitaire.SolitaireProgression(new ProgressionService(candidate)).ProcessWin(completion);
+            PlayerProfileState candidate = PlayerProfileTransactionSnapshot.Create(Profile, RoutineProfileTransactionArea.Solitaire);
+            ProgressionAward award = new BlackjackCasino.Core.Solitaire.SolitaireProgression(ProgressionService.ForNormalizedSnapshot(candidate)).ProcessWin(completion);
             if (award == ProgressionAward.None) return award;
             if (persistKniffelRewards) saveKniffelProfile(candidate);
             AdoptManorProfile(candidate);
@@ -192,8 +192,8 @@ internal sealed class PlayerProgressionController : IDisposable
         lock (Profile)
         {
             AccruePlaytime();
-            PlayerProfileState candidate = ManorPersistence.Clone(Profile);
-            ProgressionAward award = new BlackjackCasino.Core.WordSearch.WordSearchProgression(new ProgressionService(candidate)).Process(completion);
+            PlayerProfileState candidate = PlayerProfileTransactionSnapshot.Create(Profile, RoutineProfileTransactionArea.WordSearch);
+            ProgressionAward award = new BlackjackCasino.Core.WordSearch.WordSearchProgression(ProgressionService.ForNormalizedSnapshot(candidate)).Process(completion);
             if (award == ProgressionAward.None) return award;
             if (persistKniffelRewards) saveKniffelProfile(candidate);
             AdoptManorProfile(candidate);
@@ -206,8 +206,8 @@ internal sealed class PlayerProgressionController : IDisposable
         lock (Profile)
         {
             AccruePlaytime();
-            PlayerProfileState candidate = ManorPersistence.Clone(Profile);
-            ProgressionAward award = new BlackjackCasino.Core.Memory.MemoryProgression(new ProgressionService(candidate)).Process(completion);
+            PlayerProfileState candidate = PlayerProfileTransactionSnapshot.Create(Profile, RoutineProfileTransactionArea.Memory);
+            ProgressionAward award = new BlackjackCasino.Core.Memory.MemoryProgression(ProgressionService.ForNormalizedSnapshot(candidate)).Process(completion);
             if (award == ProgressionAward.None) return award;
             if (persistKniffelRewards) saveKniffelProfile(candidate);
             AdoptManorProfile(candidate);
