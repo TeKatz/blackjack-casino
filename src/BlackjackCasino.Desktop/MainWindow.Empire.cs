@@ -33,21 +33,27 @@ public partial class MainWindow
 
         empireLastSave = DateTimeOffset.UtcNow;
         RefreshEmpireHeader();
-        // Idle production belongs to the whole casino, not just the Empire page. Keep the
-        // accrual clock responsive while other WPF surfaces are rendering or animating.
-        empireTimer = new DispatcherTimer(DispatcherPriority.Normal)
+        // Empire production is elapsed-time based; it does not need a high-frequency UI clock.
+        // Keep the lightweight accrual pulse behind input/render work and only refresh visible surfaces.
+        empireTimer = new DispatcherTimer(DispatcherPriority.Background)
         {
-            Interval = TimeSpan.FromMilliseconds(500),
+            Interval = TimeSpan.FromSeconds(1),
         };
         empireTimer.Tick += (_, _) =>
         {
             if (empire is null) return;
             DateTimeOffset now = DateTimeOffset.UtcNow;
-            SyncEmpireAchievementBoosts();
-            empire.ObserveActivity(progressionController is null ? new() : EmpireActivitySnapshot.FromProfile(progressionController.Profile), now);
-            empireView?.Refresh();
-            empireDetachedView?.Refresh();
-            RefreshEmpireHeader();
+            if (empire.Started)
+            {
+                SyncEmpireAchievementBoosts();
+                empire.ObserveActivity(progressionController is null ? new() : EmpireActivitySnapshot.FromProfile(progressionController.Profile), now);
+            }
+
+            if (empireView is { IsVisible: true }) empireView.Refresh();
+            if (empireDetachedView is { IsVisible: true }) empireDetachedView.Refresh();
+            if (WindowState != WindowState.Minimized) RefreshEmpireHeader();
+            else EmpireHeaderBalance.StopInterpolation();
+
             if (empire.Started && now - empireLastSave >= TimeSpan.FromSeconds(30))
             {
                 SavePreferences();
@@ -292,8 +298,6 @@ public partial class MainWindow
         SavePreferences();
     }
 
-    private bool empireHeaderWasLive;
-
     private void RefreshEmpireHeader()
     {
         if (empire is null) return;
@@ -303,11 +307,12 @@ public partial class MainWindow
         if (!live)
         {
             EmpireHeaderBalance.StopInterpolation();
-            empireHeaderWasLive = false;
             return;
         }
-        EmpireHeaderBalance.SetAmount(empire.Credits, CurrentPresentation.AnimationsEnabled && empireHeaderWasLive);
-        empireHeaderWasLive = true;
+
+        // This is a continuously accruing value. Interpolating every timer tick creates a never-ending
+        // animation clock, so render the exact sampled value and reserve animation for one-shot feedback.
+        EmpireHeaderBalance.SetAmount(empire.Credits, animate: false);
         EmpireHeaderRate.Text = "+" + EmpireView.Number(empire.CreditsPerSecond) + " cr / sec";
     }
 }
