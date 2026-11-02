@@ -14,6 +14,7 @@ public partial class App : Application
         Localization.InstallAutomaticTranslation();
         CasinoCursors.Install();
         CasinoUxEnhancements.Install();
+        CasinoWindowFrame.Install();
         base.OnStartup(e);
         Dispatcher.BeginInvoke(QueueStartupWelcome, DispatcherPriority.Loaded);
     }

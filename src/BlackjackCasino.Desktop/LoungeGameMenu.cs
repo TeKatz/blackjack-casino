@@ -106,6 +106,7 @@ internal sealed class LoungeGameMenu : UserControl
                 BorderBrush = LoungeUi.Ink("#628B78"),
             };
             tile.Click += (_, _) => game.Open();
+            if (game.Id == "sudoku") LoungeVisualUpgrade.PrepareSudokuTile(tile);
             tiles.Children.Add(tile);
         }
 

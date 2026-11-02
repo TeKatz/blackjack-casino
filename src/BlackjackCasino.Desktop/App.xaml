@@ -7,6 +7,7 @@
       <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="Presentation/CasinoControls.xaml"/>
         <ResourceDictionary Source="Presentation/CasinoTooltips.xaml"/>
+        <ResourceDictionary Source="Presentation/CasinoWindow.xaml"/>
       </ResourceDictionary.MergedDictionaries>
     </ResourceDictionary>
   </Application.Resources>

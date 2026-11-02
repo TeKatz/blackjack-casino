@@ -26,10 +26,6 @@ internal static class LoungeVisualUpgrade
         installed = true;
 
         EventManager.RegisterClassHandler(
-            typeof(LoungeGameMenu),
-            FrameworkElement.LoadedEvent,
-            new RoutedEventHandler(OnLoungeMenuLoaded));
-        EventManager.RegisterClassHandler(
             typeof(WordSearchLoungeHub),
             FrameworkElement.LoadedEvent,
             new RoutedEventHandler(OnWordSearchHubLoaded));
@@ -82,14 +78,6 @@ internal static class LoungeVisualUpgrade
         };
     }
 
-    private static void OnLoungeMenuLoaded(object sender, RoutedEventArgs e)
-    {
-        if (sender is not LoungeGameMenu menu) return;
-        menu.Dispatcher.BeginInvoke(
-            DispatcherPriority.Loaded,
-            new Action(() => UpdateSudokuTileStatistics(menu)));
-    }
-
     private static void OnWordSearchHubLoaded(object sender, RoutedEventArgs e)
     {
         if (sender is not WordSearchLoungeHub hub) return;
@@ -98,7 +86,7 @@ internal static class LoungeVisualUpgrade
             Button? localBack = FindDescendant<Button>(hub, button => button.Name == "WordSearchBack");
             if (localBack is not null) localBack.Visibility = Visibility.Collapsed;
             SetHeaderGamesLabel(hub);
-            PolishWordSearchDifficultyCards(hub);
+
         }));
     }
 
@@ -124,10 +112,9 @@ internal static class LoungeVisualUpgrade
         if (header is not null) header.Content = LoungeGameMenu.GamesBackLabel();
     }
 
-    private static void UpdateSudokuTileStatistics(LoungeGameMenu menu)
+    internal static void PrepareSudokuTile(Button tile)
     {
         if (sudokuProgress is null) return;
-        Button? tile = FindDescendant<Button>(menu, button => button.Name == "LoungeGame_sudoku");
         if (tile?.Content is not StackPanel body) return;
 
         SudokuProgressState snapshot = SudokuProgressState.Normalize(sudokuProgress());
@@ -154,113 +141,6 @@ internal static class LoungeVisualUpgrade
             Margin = new Thickness(0, 0, 0, 18),
         };
         body.Children.Insert(Math.Max(0, body.Children.Count - 1), statistics);
-    }
-
-    private static void PolishWordSearchDifficultyCards(WordSearchLoungeHub hub)
-    {
-        foreach (Button play in FindDescendants<Button>(hub)
-                     .Where(button => button.Name.StartsWith("WordSearchStart_", StringComparison.Ordinal)))
-        {
-            if (play.Parent is not StackPanel stack || stack.Parent is not Border card) continue;
-            if (!Enum.TryParse(play.Name["WordSearchStart_".Length..], out WordSearchDifficulty difficulty)) continue;
-
-            string accent = difficulty switch
-            {
-                WordSearchDifficulty.Relaxed => "#86BA9D",
-                WordSearchDifficulty.Easy => "#82BCA3",
-                WordSearchDifficulty.Medium => "#78AEB0",
-                WordSearchDifficulty.Hard => "#7E9FBD",
-                WordSearchDifficulty.Expert => "#D7B86A",
-                _ => "#E3C16E",
-            };
-            (int size, int words) = WordSearchCatalog.Spec(difficulty);
-
-            card.MinHeight = 178;
-            card.Padding = new Thickness(17, 15, 17, 15);
-            card.CornerRadius = new CornerRadius(11);
-            card.BorderBrush = WordSearchLoungeHub.Brush(accent);
-            card.Background = new LinearGradientBrush(
-                ((SolidColorBrush)WordSearchLoungeHub.Brush("#142D26")).Color,
-                ((SolidColorBrush)WordSearchLoungeHub.Brush("#0E211C")).Color,
-                90);
-
-            TextBlock[] labels = stack.Children.OfType<TextBlock>().ToArray();
-            if (labels.Length >= 4)
-            {
-                TextBlock difficultyLabel = labels[0];
-                if (difficultyLabel.Parent == stack)
-                {
-                    int index = stack.Children.IndexOf(difficultyLabel);
-                    stack.Children.Remove(difficultyLabel);
-                    difficultyLabel.FontSize = 9;
-                    difficultyLabel.Foreground = WordSearchLoungeHub.Brush(accent);
-                    var badge = new Border
-                    {
-                        Name = "WordSearchDifficultyBadge",
-                        Background = WordSearchLoungeHub.Brush("#17382F"),
-                        BorderBrush = WordSearchLoungeHub.Brush(accent),
-                        BorderThickness = new Thickness(1),
-                        CornerRadius = new CornerRadius(10),
-                        Padding = new Thickness(8, 3, 8, 3),
-                        HorizontalAlignment = HorizontalAlignment.Left,
-                        Child = difficultyLabel,
-                    };
-                    stack.Children.Insert(index, badge);
-                }
-
-                TextBlock sizeLabel = labels[1];
-                sizeLabel.Text = $"{size} × {size}";
-                sizeLabel.FontFamily = new FontFamily("Georgia");
-                sizeLabel.FontSize = 25;
-                sizeLabel.Margin = new Thickness(0, 9, 0, 0);
-
-                TextBlock direction = labels[2];
-                direction.Margin = new Thickness(0, 2, 0, 0);
-                direction.Foreground = WordSearchLoungeHub.Brush("#91A79C");
-
-                TextBlock completion = labels[3];
-                completion.Margin = new Thickness(0, 8, 0, 0);
-            }
-
-            if (!stack.Children.OfType<Grid>().Any(grid => grid.Name == "WordSearchDifficultyMeta"))
-            {
-                var meta = new Grid { Name = "WordSearchDifficultyMeta", Margin = new Thickness(0, 7, 0, 2) };
-                meta.ColumnDefinitions.Add(new ColumnDefinition());
-                meta.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-                meta.Children.Add(new TextBlock
-                {
-                    Text = $"{words} WORDS",
-                    FontSize = 10,
-                    FontWeight = FontWeights.SemiBold,
-                    Foreground = WordSearchLoungeHub.Brush("#9CB0A6"),
-                });
-                var xp = new TextBlock
-                {
-                    Text = $"+{WordSearchProgression.PlayerExperience(difficulty):N0} XP",
-                    FontSize = 10,
-                    FontWeight = FontWeights.Bold,
-                    Foreground = WordSearchLoungeHub.Brush(accent),
-                };
-                Grid.SetColumn(xp, 1);
-                meta.Children.Add(xp);
-
-                int playIndex = stack.Children.IndexOf(play);
-                int progressIndex = stack.Children.OfType<ProgressBar>().Select(stack.Children.IndexOf).DefaultIfEmpty(playIndex).First();
-                stack.Children.Insert(Math.Max(0, progressIndex), meta);
-            }
-
-            ProgressBar? progressBar = stack.Children.OfType<ProgressBar>().FirstOrDefault();
-            if (progressBar is not null)
-            {
-                progressBar.Height = 6;
-                progressBar.Margin = new Thickness(0, 6, 0, 11);
-                progressBar.Foreground = WordSearchLoungeHub.Brush(accent);
-            }
-
-            play.Height = 38;
-            play.FontWeight = FontWeights.SemiBold;
-            play.BorderBrush = WordSearchLoungeHub.Brush(accent);
-        }
     }
 
     private static T? FindDescendant<T>(DependencyObject root, Func<T, bool> predicate) where T : DependencyObject

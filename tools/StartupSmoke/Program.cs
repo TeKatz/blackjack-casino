@@ -24,6 +24,11 @@ internal static class Program
         {
             Source = new Uri("/BlackjackCasino.Desktop;component/Presentation/CasinoTooltips.xaml", UriKind.Relative),
         });
+        app.Resources.MergedDictionaries.Add(new ResourceDictionary
+        {
+            Source = new Uri("/BlackjackCasino.Desktop;component/Presentation/CasinoWindow.xaml", UriKind.Relative),
+        });
+        CasinoWindowFrame.Install();
         CasinoCursors.Install();
 
         int exit = 0;
@@ -69,6 +74,12 @@ internal static class Program
                 await Task.Delay(180);
                 window.UpdateLayout();
                 Require(window.IsVisible, "Main window never became visible.");
+                Require(window.Icon is not null && window.Template.FindName("CasinoTitleBar", window) is FrameworkElement { IsVisible: true }, "The desktop icon or custom title bar is missing.");
+                object originalContent = window.Content;
+                CasinoWindowFrame.SetIsFullscreen(window, true); window.UpdateLayout();
+                Require(window.Template.FindName("CasinoTitleBar", window) is FrameworkElement { IsVisible: false }, "Full screen retained the custom title bar.");
+                CasinoWindowFrame.SetIsFullscreen(window, false); window.UpdateLayout();
+                Require(ReferenceEquals(originalContent, window.Content), "Window frame replaced the existing game content.");
                 Require(window.Cursor == CasinoCursors.Arrow, "Main window did not install the custom casino cursor.");
                 Require(!ReferenceEquals(CasinoCursors.Hand, System.Windows.Input.Cursors.Hand),
                     "Interactive casino cursor regressed to the stock Windows hand instead of the custom pointing glove.");
@@ -175,6 +186,7 @@ internal static class Program
                 await SudokuSmoke.Run(window, output);
                 await SolitaireSmoke.Run(window, output);
                 await MemorySmoke.Run(window, output);
+                await WordSearchSmoke.Run(window, output);
                 await KniffelSmoke.Run(window, output, profile);
                 await KniffelCasinoSmoke.Run(window, output, profile);
                 await KniffelFeedbackSmoke.Run(window, output);

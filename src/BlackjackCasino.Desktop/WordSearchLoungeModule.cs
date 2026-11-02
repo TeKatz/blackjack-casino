@@ -15,7 +15,8 @@ internal static class WordSearchLoungeModule
         WordSearchProgressState progress,
         Action<WordSearchProgressState> persist,
         Func<WordSearchStatistics> stats,
-        Func<WordSearchCompletionRecord, ProgressionAward> recordCompletion)
+        Func<WordSearchCompletionRecord, ProgressionAward> recordCompletion,
+        Func<bool>? sounds = null, Func<bool>? animations = null)
     {
         progress ??= new();
         progress.Normalize();
@@ -33,7 +34,7 @@ internal static class WordSearchLoungeModule
 
         return new LoungeHostedGame(
             definition,
-            backToGames => new WordSearchLoungeHub(progress, persist, stats, recordCompletion, backToGames));
+            backToGames => new WordSearchLoungeHub(progress, persist, stats, recordCompletion, backToGames, sounds ?? (() => true), animations ?? (() => true)));
     }
 }
 
@@ -43,6 +44,8 @@ internal sealed class WordSearchLoungeHub : UserControl, IDisposable
     private readonly Action<WordSearchProgressState> persist;
     private readonly Func<WordSearchStatistics> stats;
     private readonly Func<WordSearchCompletionRecord, ProgressionAward> recordCompletion;
+    private readonly Func<bool> sounds;
+    private readonly Func<bool> animations;
     private WordSearchView? activeView;
     private TextBlock status = null!;
 
@@ -51,13 +54,16 @@ internal sealed class WordSearchLoungeHub : UserControl, IDisposable
         Action<WordSearchProgressState> persist,
         Func<WordSearchStatistics> stats,
         Func<WordSearchCompletionRecord, ProgressionAward> recordCompletion,
-        Action backToGames)
+        Action backToGames, Func<bool> sounds, Func<bool> animations)
     {
         this.progress = progress;
         this.persist = persist;
         this.stats = stats;
         this.recordCompletion = recordCompletion;
         _ = backToGames;
+        this.sounds = sounds;
+        this.animations = animations;
+        Unloaded += (_, _) => Dispose();
         Background = Brush("#0B1715");
         Content = BuildHub();
     }
@@ -139,48 +145,33 @@ internal sealed class WordSearchLoungeHub : UserControl, IDisposable
         int completed = progress.CompletedGames.Count(x => x.Difficulty == difficulty);
         var border = Panel();
         border.Margin = new Thickness(0, 0, 10, 10);
-        var stack = new StackPanel();
-        stack.Children.Add(Label(difficulty.ToString().ToUpperInvariant(), 11, difficulty >= WordSearchDifficulty.Expert ? "#E0BE73" : "#86BA9D", FontWeights.Bold));
-        stack.Children.Add(Label($"{size} × {size}", 17, "#F0DFC2", FontWeights.SemiBold));
-        stack.Children.Add(Label(DirectionText(difficulty), 10, "#91A79C"));
-        stack.Children.Add(MarginLabel($"{Math.Min(completed, pool.Count)} / {pool.Count} completed", 10, "#7F948B", new Thickness(0, 7, 0, 0)));
-
-        var meta = new Grid { Name = "WordSearchDifficultyMeta", Margin = new Thickness(0, 7, 0, 2) };
+        border.Padding = new Thickness(18, 12, 18, 12);
+        var card = new Grid();
+        card.RowDefinitions.Add(new RowDefinition());
+        card.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        var stack = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+        string accent = difficulty >= WordSearchDifficulty.Expert ? "#E0BE73" : "#86BA9D";
+        stack.Children.Add(Label(difficulty.ToString().ToUpperInvariant(), 16, accent, FontWeights.Bold));
+        stack.Children.Add(Label($"{size} × {size}", 34, "#F0DFC2", FontWeights.SemiBold));
+        stack.Children.Add(Label(DirectionText(difficulty), 14, "#A7BDB1"));
+        stack.Children.Add(MarginLabel($"{Math.Min(completed, pool.Count)} / {pool.Count} completed", 14, "#91AC9D", new Thickness(0, 5, 0, 0)));
+        var meta = new Grid { Name = "WordSearchDifficultyMeta", Margin = new Thickness(0, 5, 0, 3) };
         meta.ColumnDefinitions.Add(new ColumnDefinition());
         meta.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        meta.Children.Add(new TextBlock
-        {
-            Text = $"{wordCount} WORDS",
-            FontSize = 10,
-            FontWeight = FontWeights.SemiBold,
-            Foreground = Brush("#9CB0A6"),
-        });
-        var xp = new TextBlock
-        {
-            Text = $"+{WordSearchProgression.PlayerExperience(difficulty):N0} XP",
-            FontSize = 10,
-            FontWeight = FontWeights.Bold,
-            Foreground = Brush(difficulty >= WordSearchDifficulty.Expert ? "#E0BE73" : "#86BA9D"),
-        };
-        Grid.SetColumn(xp, 1);
-        meta.Children.Add(xp);
-        stack.Children.Add(meta);
-
-        var bar = new ProgressBar
-        {
-            Minimum = 0,
-            Maximum = pool.Count,
-            Value = Math.Min(completed, pool.Count),
-            Height = 5,
-            Margin = new Thickness(0, 6, 0, 10),
-            Foreground = Brush("#72A990"),
-            Background = Brush("#203A34"),
-        };
-        stack.Children.Add(bar);
+        meta.Children.Add(Label($"{wordCount} WORDS", 14, "#B0C6BA", FontWeights.SemiBold));
+        var xp = Label($"+{WordSearchProgression.PlayerExperience(difficulty):N0} XP", 15, accent, FontWeights.Bold);
+        Grid.SetColumn(xp, 1); meta.Children.Add(xp); stack.Children.Add(meta);
+        stack.Children.Add(new ProgressBar { Minimum = 0, Maximum = pool.Count, Value = Math.Min(completed, pool.Count),
+            Height = 6, Margin = new Thickness(0, 4, 0, 8), Foreground = Brush(accent), Background = Brush("#203A34"), BorderThickness = new Thickness(0) });
+        // Scale only on smaller windows; the grid still distributes all available card space.
+        card.Children.Add(new Viewbox { Child = stack, Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly,
+            HorizontalAlignment = HorizontalAlignment.Stretch });
+        stack.Width = 410;
         Button play = ActionButton(completed >= pool.Count ? "REPLAY" : "PLAY", "WordSearchStart_" + difficulty);
+        play.FontSize = 15; play.Padding = new Thickness(12, 7, 12, 7);
         play.Click += (_, _) => Start(difficulty);
-        stack.Children.Add(play);
-        border.Child = stack;
+        Grid.SetRow(play, 1); card.Children.Add(play);
+        border.Child = card;
         return border;
     }
 
@@ -200,7 +191,7 @@ internal sealed class WordSearchLoungeHub : UserControl, IDisposable
     private void ShowGame(WordSearchGameState game)
     {
         activeView?.Dispose();
-        activeView = new WordSearchView(game, SaveGame, CompleteGame, BackToHub);
+        activeView = new WordSearchView(game, SaveGame, CompleteGame, BackToHub, sounds, animations);
         Content = activeView;
     }
 
@@ -237,8 +228,8 @@ internal sealed class WordSearchLoungeHub : UserControl, IDisposable
     private static Border Stat(string caption, string value)
     {
         var stack = new StackPanel();
-        stack.Children.Add(Label(caption, 9, "#7FA590"));
-        stack.Children.Add(Label(value, 20, "#F0DFC2", FontWeights.SemiBold));
+        stack.Children.Add(Label(caption, 13, "#7FA590"));
+        stack.Children.Add(Label(value, 30, "#F0DFC2", FontWeights.SemiBold));
         var panel = Panel();
         panel.Margin = new Thickness(0, 0, 10, 0);
         panel.Child = stack;
@@ -247,7 +238,8 @@ internal sealed class WordSearchLoungeHub : UserControl, IDisposable
 
     internal static Border Panel() => new()
     {
-        Background = Brush("#10251F"),
+        Background = new LinearGradientBrush(((SolidColorBrush)Brush("#19372C")).Color, ((SolidColorBrush)Brush("#0E211C")).Color, 100),
+        Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 16, ShadowDepth = 4, Opacity = .26 },
         BorderBrush = Brush("#315247"),
         BorderThickness = new Thickness(1),
         CornerRadius = new CornerRadius(10),
@@ -282,7 +274,13 @@ internal sealed class WordSearchLoungeHub : UserControl, IDisposable
         BorderThickness = new Thickness(1),
     };
 
-    internal static SolidColorBrush Brush(string hex) => new((Color)ColorConverter.ConvertFromString(hex));
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, SolidColorBrush> BrushesByColor = new();
+    internal static SolidColorBrush Brush(string hex) => BrushesByColor.GetOrAdd(hex, value =>
+    {
+        var brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(value));
+        brush.Freeze();
+        return brush;
+    });
 
     public void Dispose()
     {
@@ -291,7 +289,7 @@ internal sealed class WordSearchLoungeHub : UserControl, IDisposable
     }
 }
 
-internal sealed class WordSearchView : UserControl, IDisposable
+internal sealed partial class WordSearchView : UserControl, IDisposable
 {
     private readonly WordSearchGameState game;
     private readonly Action<WordSearchGameState> save;
@@ -303,6 +301,7 @@ internal sealed class WordSearchView : UserControl, IDisposable
     private readonly StackPanel words = new();
     private readonly TextBlock progress = WordSearchLoungeHub.Label("", 11, "#AABCB3");
     private readonly TextBlock status = WordSearchLoungeHub.Label("", 11, "#D7C38F");
+    private HashSet<WordSearchCell> foundCells = [];
     private WordSearchCell? dragStart;
     private WordSearchCell? dragEnd;
     private WordSearchPlacement? hint;
@@ -313,14 +312,17 @@ internal sealed class WordSearchView : UserControl, IDisposable
         WordSearchGameState game,
         Action<WordSearchGameState> save,
         Func<WordSearchGameState, ProgressionAward> complete,
-        Action back)
+        Action back, Func<bool> sounds, Func<bool> animations)
     {
         this.game = game;
         this.save = save;
         this.complete = complete;
         this.back = back;
+        this.sounds = sounds;
+        this.animations = animations;
         Background = WordSearchLoungeHub.Brush("#0B1715");
         Content = Build();
+        Unloaded += (_, _) => Dispose();
         timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         timer.Tick += TimerTick;
         timer.Start();
@@ -361,23 +363,28 @@ internal sealed class WordSearchView : UserControl, IDisposable
         boardFrame.Child = new Viewbox { Child = board, Stretch = Stretch.Uniform };
         body.Children.Add(boardFrame);
 
-        var side = new StackPanel();
+        var side = new Grid();
+        side.RowDefinitions.Add(new RowDefinition());
+        side.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        side.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         var wordPanel = WordSearchLoungeHub.Panel();
         var wordStack = new StackPanel();
-        wordStack.Children.Add(WordSearchLoungeHub.Label("WORDS", 10, "#D5B879"));
+        wordStack.Children.Add(WordSearchLoungeHub.Label("WORDS TO DISCOVER", 16, "#D5B879"));
         wordStack.Children.Add(words);
-        wordPanel.Child = wordStack;
+        wordStack.Width = 380;
+        wordPanel.Child = new Viewbox { Child = wordStack, Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, VerticalAlignment = VerticalAlignment.Top };
         side.Children.Add(wordPanel);
 
         Button hintButton = WordSearchLoungeHub.ActionButton("HINT · reveal a starting letter", "WordSearchHint");
         hintButton.Margin = new Thickness(0, 12, 0, 0);
         hintButton.Click += (_, _) => UseHint();
-        side.Children.Add(hintButton);
-        side.Children.Add(WordSearchLoungeHub.MarginLabel(
+        Grid.SetRow(hintButton, 1); side.Children.Add(hintButton);
+        var hintInfo = WordSearchLoungeHub.MarginLabel(
             "Hints are tracked separately, but they never reduce XP in the Chill Lounge.",
             10,
             "#7F948B",
-            new Thickness(2, 8, 0, 0)));
+            new Thickness(2, 8, 0, 0));
+        Grid.SetRow(hintInfo, 2); side.Children.Add(hintInfo);
         Grid.SetColumn(side, 2);
         body.Children.Add(side);
 
@@ -440,7 +447,7 @@ internal sealed class WordSearchView : UserControl, IDisposable
     private void BoardDown(object sender, MouseButtonEventArgs e)
     {
         WordSearchCell? cell = CellAt(e.GetPosition(board));
-        if (cell is null) return;
+        if (cell is null || game.Completed || disposed) return;
         dragStart = cell;
         dragEnd = cell;
         board.CaptureMouse();
@@ -459,18 +466,25 @@ internal sealed class WordSearchView : UserControl, IDisposable
 
     private void BoardUp(object sender, MouseButtonEventArgs e)
     {
-        if (dragStart is null) return;
+        if (dragStart is null || game.Completed || disposed) return;
         WordSearchCell end = dragEnd ?? dragStart.Value;
         WordSearchCell start = dragStart.Value;
         board.ReleaseMouseCapture();
         dragStart = null;
         dragEnd = null;
 
+        SubmitSelection(start, end);
+        e.Handled = true;
+    }
+
+    internal void SubmitSelection(WordSearchCell start, WordSearchCell end)
+    {
+        if (disposed || game.Completed) return;
         if (WordSearchGame.TryFind(game, start, end, out string? word))
         {
             hint = null;
             status.Text = $"Found {word}. Saved.";
-            SaveNow();
+            if (!game.Completed) SaveNow();
             if (game.Completed)
             {
                 timer.Stop();
@@ -478,6 +492,7 @@ internal sealed class WordSearchView : UserControl, IDisposable
                 status.Text = award.PlayerExperience > 0
                     ? $"Puzzle complete · +{award.PlayerExperience:N0} player XP · +{award.SeasonExperience:N0} season XP"
                     : "Puzzle complete · saved.";
+                ShowCompletion(award);
             }
         }
         else
@@ -485,7 +500,7 @@ internal sealed class WordSearchView : UserControl, IDisposable
             status.Text = "No listed word on that line. Keep looking.";
         }
         Refresh();
-        e.Handled = true;
+        if (word is not null) CelebrateWord(start, end);
     }
 
     private void UseHint()
@@ -503,6 +518,7 @@ internal sealed class WordSearchView : UserControl, IDisposable
 
     private void Refresh()
     {
+        foundCells = game.Puzzle.Placements.Where(p => game.FoundWords.Contains(p.Word)).SelectMany(p => p.Cells()).ToHashSet();
         progress.Text = $"{game.FoundWords.Count} / {game.Puzzle.Placements.Count} words found · {FormatTime(game.ElapsedSeconds)} · {game.HintsUsed} hint{(game.HintsUsed == 1 ? "" : "s")}";
         words.Children.Clear();
         foreach (WordSearchPlacement placement in game.Puzzle.Placements.OrderBy(x => x.Word, StringComparer.Ordinal))
@@ -511,10 +527,11 @@ internal sealed class WordSearchView : UserControl, IDisposable
             words.Children.Add(new TextBlock
             {
                 Text = found ? "✓  " + placement.Word : "○  " + placement.Word,
-                FontSize = 12,
+                FontSize = game.Puzzle.Placements.Count > 10 ? 18 : 22,
+                FontWeight = FontWeights.SemiBold,
                 Foreground = WordSearchLoungeHub.Brush(found ? "#82C6A0" : "#D8D0BC"),
                 TextDecorations = found ? TextDecorations.Strikethrough : null,
-                Margin = new Thickness(0, 5, 0, 0),
+                Margin = new Thickness(4, 6, 0, 4),
             });
         }
         if (string.IsNullOrWhiteSpace(status.Text))
@@ -524,10 +541,6 @@ internal sealed class WordSearchView : UserControl, IDisposable
 
     private void RefreshCells()
     {
-        HashSet<WordSearchCell> found = game.Puzzle.Placements
-            .Where(p => game.FoundWords.Contains(p.Word))
-            .SelectMany(p => p.Cells())
-            .ToHashSet();
         HashSet<WordSearchCell> selected = dragStart is { } start && dragEnd is { } end
             ? WordSearchGame.SelectionCells(game.Puzzle, start, end).ToHashSet()
             : [];
@@ -536,7 +549,7 @@ internal sealed class WordSearchView : UserControl, IDisposable
         foreach ((WordSearchCell cell, Border border) in cells)
         {
             bool isSelected = selected.Contains(cell);
-            bool isFound = found.Contains(cell);
+            bool isFound = foundCells.Contains(cell);
             bool isHint = hintCell == cell;
             border.Background = WordSearchLoungeHub.Brush(isSelected ? "#7C6738" : isFound ? "#285842" : isHint ? "#725D2F" : "#142E28");
             border.BorderBrush = WordSearchLoungeHub.Brush(isSelected || isHint ? "#E3C376" : isFound ? "#63A47F" : "#28483F");
@@ -576,6 +589,7 @@ internal sealed class WordSearchView : UserControl, IDisposable
 
     private void SaveNow()
     {
+        if (game.Completed) return;
         unsavedSeconds = 0;
         save(game);
     }
@@ -587,6 +601,10 @@ internal sealed class WordSearchView : UserControl, IDisposable
         if (disposed) return;
         disposed = true;
         timer.Stop();
+        timer.Tick -= TimerTick;
+        board.ReleaseMouseCapture();
+        StopFeedback();
+        CasinoAudio.Mixer.Stop(audioOwner);
         if (!game.Completed) SaveNow();
     }
 }

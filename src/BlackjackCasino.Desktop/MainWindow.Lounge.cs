@@ -93,7 +93,9 @@ public partial class MainWindow
                     if (!testSession) SavePreferences();
                 },
                 wordSearchStats,
-                RecordWordSearchCompletion),
+                RecordWordSearchCompletion,
+                () => preferences.Presentation("chill-lounge").SoundEnabled,
+                () => preferences.Presentation("chill-lounge").AnimationsEnabled),
                 wordSearchStats,
                 () => preferences.WordSearch),
             LoungeVisualUpgrade.UpgradeMemory(MemoryLoungeModuleVisual.Create(

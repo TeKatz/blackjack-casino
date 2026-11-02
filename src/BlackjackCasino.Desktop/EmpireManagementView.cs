@@ -24,6 +24,7 @@ internal sealed partial class EmpireManagementView : UserControl
     private readonly List<Action> updates = [];
     private readonly Dictionary<string, Button> tabs = new(StringComparer.Ordinal);
     private string selected = "Research";
+    private bool Combined => selected is "Development" or "Operations" or "Opportunities";
     private readonly Action<string, Func<EmpireService, DateTimeOffset, EmpireActionResult>, string>? showPreview;
     private readonly Action? clearPreview;
     private readonly TextBlock pageTitle = Text("", 23, "#F3E7D0", true);
@@ -33,7 +34,7 @@ internal sealed partial class EmpireManagementView : UserControl
     internal EmpireManagementView(EmpireService service, Func<Func<EmpireService, EmpireActionResult>, EmpireActionResult> commit, Action close, string initialSection = "Research", bool embedded = false,
         Action<string, Func<EmpireService, DateTimeOffset, EmpireActionResult>, string>? showPreview = null, Action? clearPreview = null)
     {
-        this.service = service; this.commit = commit; selected = initialSection;
+        this.service = service; this.commit = commit; selected = NormalizeSection(initialSection);
         this.showPreview = showPreview; this.clearPreview = clearPreview;
         Unloaded += (_, _) => ClearActionPreview();
         Name = "EmpireManagementPage";
@@ -47,7 +48,7 @@ internal sealed partial class EmpireManagementView : UserControl
         header.Children.Add(pageTitle); root.Children.Add(header);
         summary.Margin = new Thickness(0, 4, 0, 8); Grid.SetRow(summary, 1); root.Children.Add(summary);
         var navigation = new WrapPanel { Margin = new Thickness(0, 0, 0, 12) };
-        foreach (string section in embedded ? GroupSections(initialSection) : new[] { "Research", "Synergies", "Projects", "Managers", "Automation", "Events", "Contracts", "Properties" })
+        foreach (string section in embedded ? GroupSections(initialSection) : new[] { "Research", "Synergies", "Development", "Operations", "Opportunities" })
         {
             string route = section;
             Button tab = Button(section, "EmpireTab_" + section, () => { selected = route; page = 0; Build(); });
@@ -66,7 +67,7 @@ internal sealed partial class EmpireManagementView : UserControl
         SizeChanged += (_, _) =>
         {
             int nextSize = ActualHeight is > 0 and < 550 ? 2 : 4;
-            if (nextSize == arrangedPageSize || selected is "Automation" or "Research") return;
+            if (nextSize == arrangedPageSize || selected is "Automation" or "Research" || Combined) return;
             arrangedPageSize = nextSize; page = 0; Build();
         };
         Build();
@@ -78,11 +79,17 @@ internal sealed partial class EmpireManagementView : UserControl
         if (actionPreviewOwner is { IsEnabled: true }) refreshActionPreview?.Invoke();
         else if (actionPreviewOwner is not null) ClearActionPreview();
     }
-    private static string[] GroupSections(string section) => section switch
+    private static string NormalizeSection(string section) => section switch
     {
-        "Research" or "Projects" or "Properties" => ["Research", "Projects", "Properties"],
-        "Managers" or "Automation" => ["Managers", "Automation"],
-        "Events" or "Contracts" => ["Events", "Contracts"], _ => ["Synergies"],
+        "Projects" or "Properties" => "Development",
+        "Managers" or "Automation" => "Operations",
+        "Events" or "Contracts" => "Opportunities", _ => section,
+    };
+
+    private static string[] GroupSections(string section) => NormalizeSection(section) switch
+    {
+        "Research" or "Development" => ["Research", "Development"],
+        "Operations" => ["Operations"], "Opportunities" => ["Opportunities"], _ => ["Synergies"],
     };
 
     private void ClearActionPreview()
@@ -116,6 +123,9 @@ internal sealed partial class EmpireManagementView : UserControl
         foreach ((string section, Button button) in tabs) button.BorderBrush = Ink(section == selected ? "#DAB67B" : "#41624F");
         switch (selected)
         {
+            case "Development": BuildCombined("Projects", Projects, "Properties", Properties, 3, 1, 2.5); break;
+            case "Operations": BuildCombined("Managers", Managers, "Automation", Automation, 2, 1, 1.1); break;
+            case "Opportunities": BuildCombined("Events", Events, "Contracts", Contracts, 2, 1, 1.65); break;
             case "Research": Research(); break;
             case "Synergies": Synergies(); break;
             case "Projects": Projects(); break;
@@ -125,7 +135,7 @@ internal sealed partial class EmpireManagementView : UserControl
             case "Contracts": Contracts(); break;
             case "Properties": Properties(); break;
         }
-        ArrangeEntries();
+        if (!Combined) ArrangeEntries();
         Refresh();
     }
     private void Research()
@@ -173,7 +183,7 @@ internal sealed partial class EmpireManagementView : UserControl
         foreach (EmpireManagerDefinition manager in EmpireManagerCatalog.All)
         {
             var controls = new WrapPanel();
-            var room = new ComboBox { Name = "EmpireManagerRoom_" + manager.Id, ItemsSource = operating, DisplayMemberPath = "Name", SelectedValuePath = "Id", Width = 230, Margin = new Thickness(0, 5, 8, 0) };
+            var room = new ComboBox { Name = "EmpireManagerRoom_" + manager.Id, ItemsSource = operating, DisplayMemberPath = "Name", SelectedValuePath = "Id", Width = 180, Margin = new Thickness(0, 5, 8, 0) };
             room.SelectedValue = service.ManagerAssignments.GetValueOrDefault(manager.Id) ?? operating.FirstOrDefault()?.Id;
             controls.Children.Add(room);
             Button assign = Button("Assign", "EmpireManagerAssign_" + manager.Id, () =>
@@ -212,7 +222,7 @@ internal sealed partial class EmpireManagementView : UserControl
         TextBox reserve = AutomationInput("Reserve (cr)", config.Reserve.ToString("0.##", CultureInfo.CurrentCulture), "EmpireAutomationReserve", settings);
         TextBox percent = AutomationInput("Budget / decision (%) · 1–50", (config.SpendPercent * 100).ToString("0.##", CultureInfo.CurrentCulture), "EmpireAutomationPercent", settings);
         TextBox target = AutomationInput("Level target · 1–200", config.TargetLevel.ToString(CultureInfo.InvariantCulture), "EmpireAutomationTarget", settings);
-        var mode = new ComboBox { Name = "EmpireAutomationMode", Width = 300, HorizontalAlignment = HorizontalAlignment.Left, ItemsSource = new[] { "Cheapest next milestone", "Priority order" }, SelectedIndex = config.CheapestMilestone ? 0 : 1, Margin = new Thickness(0, 4, 0, 8) };
+        var mode = new ComboBox { Name = "EmpireAutomationMode", Width = 220, HorizontalAlignment = HorizontalAlignment.Left, ItemsSource = new[] { "Cheapest next milestone", "Priority order" }, SelectedIndex = config.CheapestMilestone ? 0 : 1, Margin = new Thickness(0, 4, 0, 8) };
         settings.Children.Add(mode);
         prioritiesPanel.Children.Add(Text("Priority queue", 19, "#E3D0AB", true));
         prioritiesPanel.ToolTip = "Used by Priority order mode. Select a department to move it or remove it.";
@@ -251,9 +261,11 @@ internal sealed partial class EmpireManagementView : UserControl
             save.IsEnabled = service.AutomationUnlocked;
             availability.Text = service.AutomationUnlocked ? "Automation ready · decisions every 30 production seconds." : "Locked · build Executive Offices and research Executive Automation.";
         });
-        form.Children.Add(new ScrollViewer { Content = settings, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled });
-        var queueScroll = new ScrollViewer { Content = prioritiesPanel, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
-        Grid.SetColumn(queueScroll, 1); form.Children.Add(queueScroll); entries.Add(Card(form));
+        form.Children.Add(settings);
+        Grid.SetColumn(prioritiesPanel, 1); form.Children.Add(prioritiesPanel);
+        // Both editing panes stay on the Operations overview. The queue retains its own list selection.
+        form.Width = 580;
+        entries.Add(Card(new Viewbox { Child = form, Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly }));
     }
     private void Events()
     {
@@ -322,10 +334,19 @@ internal sealed partial class EmpireManagementView : UserControl
     private void Row(string title, string detail, UIElement status, Button? action = null)
     {
         var content = new DockPanel();
-        var info = new StackPanel { Margin = new Thickness(0, 0, 0, 0) }; info.Children.Add(Text(title, 16, "#EAD5AF", true));
-        info.Children.Add(Text(detail, 12, "#ACC4B5", margin: new Thickness(0, 4, 0, 7))); info.Children.Add(status); content.Children.Add(info);
+        var info = new StackPanel { Margin = new Thickness(0, 0, 0, 0) }; info.Children.Add(Text(title, Combined ? 15 : 16, "#EAD5AF", true));
+        info.Children.Add(Text(detail, Combined ? 11.5 : 12, "#ACC4B5", margin: new Thickness(0, 3, 0, 5))); info.Children.Add(status); content.Children.Add(info);
         if (action is not null) { action.MinWidth = 135; action.HorizontalAlignment = HorizontalAlignment.Left; DockPanel.SetDock(action, Dock.Bottom); content.Children.Insert(0, action); }
-        entries.Add(Card(new ScrollViewer { Content = content, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled }));
+        if (Combined)
+        {
+            // A constrained card scales down only if the window cannot accommodate its natural content.
+            var fitted = new Viewbox { Child = content, Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly,
+                HorizontalAlignment = HorizontalAlignment.Stretch, VerticalAlignment = VerticalAlignment.Stretch };
+            var frame = Card(fitted); frame.Padding = new Thickness(10); frame.Margin = new Thickness(0, 0, 8, 8);
+            frame.SizeChanged += (_, _) => content.Width = Math.Max(120, frame.ActualWidth - 22);
+            entries.Add(frame);
+        }
+        else entries.Add(Card(new ScrollViewer { Content = content, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled }));
     }
     private static Border Card(UIElement child) => new() { Background = new LinearGradientBrush(Color.FromRgb(24, 47, 33), Color.FromRgb(12, 29, 21), 110), BorderBrush = Ink("#405B47"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(9), Padding = new Thickness(14), Margin = new Thickness(0, 0, 10, 10), Effect = new DropShadowEffect { BlurRadius = 12, ShadowDepth = 4, Opacity = .2 }, Child = child };
     private static bool Decimal(string value, out decimal number) => decimal.TryParse(value, NumberStyles.Number, CultureInfo.CurrentCulture, out number);

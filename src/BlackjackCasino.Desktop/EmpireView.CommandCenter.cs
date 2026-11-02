@@ -180,9 +180,9 @@ internal sealed partial class EmpireView
 
     private static string GroupRoute(string section) => section switch
     {
-        "Projects" or "Properties" or "Research" => "Research",
-        "Automation" or "Managers" => "Managers",
-        "Contracts" or "Events" => "Events", _ => "Overview",
+        "Development" or "Projects" or "Properties" or "Research" => "Research",
+        "Operations" or "Automation" or "Managers" => "Managers",
+        "Opportunities" or "Contracts" or "Events" => "Events", _ => "Overview",
     };
 
     private void OpenSection(string section)

@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using BlackjackCasino.Desktop;
+using BlackjackCasino.Core.WordSearch;
 
 internal static class WordSearchSmoke
 {
@@ -80,6 +81,24 @@ internal static class WordSearchSmoke
         window.UpdateLayout();
         Require(Find<Button>(window).Any(button => button.Name == "WordSearchResume" && button.IsVisible),
             "Leaving a Word Search puzzle did not preserve a resumable active game.");
+
+        Click(Find<Button>(window).Single(button => button.Name == "WordSearchResume" && button.IsVisible));
+        await Task.Delay(60); window.UpdateLayout();
+        WordSearchView puzzleView = Find<WordSearchView>(window).Single();
+        const System.Reflection.BindingFlags flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+        WordSearchGameState game = (WordSearchGameState)typeof(WordSearchView).GetField("game", flags)!.GetValue(puzzleView)!;
+        foreach (WordSearchPlacement placement in game.Puzzle.Placements)
+            puzzleView.SubmitSelection(new(placement.StartRow, placement.StartColumn), new(placement.EndRow, placement.EndColumn));
+        await Task.Delay(1100); window.UpdateLayout();
+        Require(Find<Grid>(window).Any(grid => grid.Name == "WordSearchCompletionOverlay" && grid.IsVisible), "Completing a Word Search did not show its result window.");
+        Require(Find<Button>(window).Any(button => button.Name == "WordSearchCompletionClub" && button.IsVisible), "Word Search result has no Return to Club action.");
+        int found = game.FoundWords.Count;
+        puzzleView.SubmitSelection(new(0, 0), new(0, 1));
+        Require(game.FoundWords.Count == found, "Completed Word Search still accepts selections.");
+        Capture(window, Path.Combine(output, "word-search-complete.png"));
+        Click(Find<Button>(window).Single(button => button.Name == "WordSearchCompletionHub" && button.IsVisible));
+        await Task.Delay(60); window.UpdateLayout();
+        Require(!Find<Button>(window).Any(button => button.Name == "WordSearchResume" && button.IsVisible), "A completed puzzle returned as an active resumable game.");
 
         Click(Find<Button>(window).Single(button => button.Name == "LoungeGamesHeaderBack" && button.IsVisible));
         await Task.Delay(50);

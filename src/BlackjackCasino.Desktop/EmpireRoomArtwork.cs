@@ -12,6 +12,22 @@ namespace BlackjackCasino.Desktop;
 internal static class EmpireRoomTextures
 {
     private static readonly BitmapSource[] images = Load();
+    private static readonly Dictionary<string, string> RoomFiles = new(StringComparer.Ordinal)
+    {
+        ["high-limit-slots"] = "high-limit-slots", ["poker"] = "poker-room", ["dining"] = "fine-dining",
+        ["stage"] = "grand-stage", ["private-salon"] = "private-gaming-salon", ["hotel"] = "luxury-hotel",
+        ["spa"] = "spa-wellness", ["sky-bar"] = "sky-bar", ["convention-hall"] = "convention-hall", ["penthouse-club"] = "penthouse-club",
+    };
+    private static readonly Dictionary<string, BitmapSource> RoomImages = new(StringComparer.Ordinal);
+    internal static BitmapSource ForRoom(string roomId, int fallback)
+    {
+        if (!RoomFiles.TryGetValue(roomId, out string? file)) return Get(fallback);
+        if (RoomImages.TryGetValue(roomId, out BitmapSource? cached)) return cached;
+        var image = new BitmapImage(); image.BeginInit();
+        image.UriSource = new Uri($"pack://application:,,,/BlackjackCasino.Desktop;component/Assets/Empire/{file}.png", UriKind.Absolute);
+        image.CacheOption = BitmapCacheOption.OnLoad; image.DecodePixelWidth = 768;
+        image.EndInit(); image.Freeze(); RoomImages.Add(roomId, image); return image;
+    }
     internal static BitmapSource Get(int index) => images[Math.Abs(index) % images.Length];
     private static BitmapSource[] Load()
     {
@@ -31,9 +47,21 @@ internal static class EmpireRoomTextures
 }
 
 /// <summary>Cached room textures with independent light, coin and purchase effects.</summary>
-internal sealed class EmpireRoomArtwork(int textureIndex) : FrameworkElement
+internal sealed class EmpireRoomArtwork(int textureIndex, string? roomId = null) : FrameworkElement
 {
+    private ImageBrush? photo;
+    private static readonly Brush Shade = Frozen(new LinearGradientBrush(Color.FromArgb(0, 4, 13, 13), Color.FromArgb(210, 4, 13, 13), 90));
+    private static readonly Brush ClosedShade = Frozen(new SolidColorBrush(Color.FromArgb(145, 5, 14, 17)));
+    private static readonly Brush Coin = Frozen(new SolidColorBrush(Color.FromRgb(235, 200, 115)));
+    private static readonly Brush CaptionInk = Frozen(new SolidColorBrush(Color.FromRgb(190, 227, 196)));
+    private static readonly Brush LockedInk = Frozen(new SolidColorBrush(Color.FromRgb(202, 185, 146)));
+    private readonly RadialGradientBrush glow = new(Colors.Transparent, Colors.Transparent);
+    private FormattedText? caption;
+    private (string Text, double Dpi) captionKey;
     private double phase;
+
+    private static T Frozen<T>(T value) where T : Freezable { value.Freeze(); return value; }
+    private static ImageBrush Photo(BitmapSource image) => Frozen(new ImageBrush(image) { Stretch = Stretch.UniformToFill, AlignmentY = AlignmentY.Center });
     internal double Phase { get => phase; set { phase = value; InvalidateVisual(); } }
     internal bool Open { get; set; }
     internal bool Available { get; set; } = true;
@@ -47,12 +75,12 @@ internal sealed class EmpireRoomArtwork(int textureIndex) : FrameworkElement
         if (ActualWidth <= 0 || ActualHeight <= 0) return;
         Rect area = new(0, 0, ActualWidth, ActualHeight);
         dc.PushClip(new RectangleGeometry(area, 7, 7));
-        var photo = new ImageBrush(EmpireRoomTextures.Get(textureIndex)) { Stretch = Stretch.UniformToFill, AlignmentY = AlignmentY.Center };
+        photo ??= Photo(roomId is null ? EmpireRoomTextures.Get(textureIndex) : EmpireRoomTextures.ForRoom(roomId, textureIndex));
         dc.DrawRectangle(photo, null, area);
-        dc.DrawRectangle(new LinearGradientBrush(Color.FromArgb(0, 4, 13, 13), Color.FromArgb(210, 4, 13, 13), 90), null, area);
+        dc.DrawRectangle(Shade, null, area);
         if (!Open)
         {
-            dc.DrawRectangle(new SolidColorBrush(Color.FromArgb(145, 5, 14, 17)), null, area);
+            dc.DrawRectangle(ClosedShade, null, area);
             Text(dc, Available ? "ROOM AVAILABLE" : "LOCKED", 12, ActualHeight - 29, 10, "#CAB992");
         }
         else
@@ -64,10 +92,10 @@ internal sealed class EmpireRoomArtwork(int textureIndex) : FrameworkElement
                 double x = ActualWidth * (.25 + i * .23) + Math.Sin(phase + i) * 5;
                 double y = ActualHeight * (.88 - t * .6);
                 dc.PushOpacity(Math.Sin(t * Math.PI) * .65);
-                dc.DrawEllipse(new SolidColorBrush(Color.FromRgb(235, 200, 115)), null, new Point(x, y), 2, 3);
+                dc.DrawEllipse(Coin, null, new Point(x, y), 2, 3);
                 dc.Pop();
             }
-            var glow = new RadialGradientBrush(Color.FromArgb((byte)(23 + 14 * Math.Sin(phase + textureIndex)), 255, 199, 78), Colors.Transparent);
+            glow.GradientStops[0].Color = Color.FromArgb((byte)(23 + 14 * Math.Sin(phase + textureIndex)), 255, 199, 78);
             dc.DrawEllipse(glow, null, new Point(ActualWidth * .65, ActualHeight * .33), ActualWidth * .6, ActualHeight * .7);
             if (Level >= 10)
             {
@@ -81,8 +109,17 @@ internal sealed class EmpireRoomArtwork(int textureIndex) : FrameworkElement
     }
 
     private void Text(DrawingContext dc, string text, double x, double y, double size, string color)
-        => dc.DrawText(new FormattedText(text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
-            new Typeface("Segoe UI"), size, (Brush)new BrushConverter().ConvertFromString(color)!, VisualTreeHelper.GetDpi(this).PixelsPerDip), new Point(x, y));
+    {
+        double dpi = VisualTreeHelper.GetDpi(this).PixelsPerDip;
+        if (caption is null || captionKey != (text, dpi))
+        {
+            caption = new FormattedText(text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
+                new Typeface("Segoe UI"), size, Open ? CaptionInk : LockedInk, dpi);
+            captionKey = (text, dpi);
+        }
+        dc.DrawText(caption, new Point(x, y));
+    }
+
 }
 
 internal sealed class EmpireRoomCard : Button
@@ -110,7 +147,7 @@ internal sealed class EmpireRoomCard : Button
         Margin = new Thickness(0, 0, 9, 10);
         Height = 222;
         Style = MakeStyle();
-        Artwork = new EmpireRoomArtwork(index) { Height = 126 };
+        Artwork = new EmpireRoomArtwork(index, room.Id) { Height = 126 };
         var content = new Grid();
         var stack = new StackPanel();
         stack.Children.Add(Artwork);

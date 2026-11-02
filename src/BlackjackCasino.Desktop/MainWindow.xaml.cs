@@ -407,6 +407,7 @@ public partial class MainWindow : Window
                 ? new Rect(Left, Top, ActualWidth, ActualHeight)
                 : RestoreBounds;
 
+            CasinoWindowFrame.SetIsFullscreen(this, true);
             WindowState = WindowState.Normal;
             WindowStyle = WindowStyle.None;
             ResizeMode = ResizeMode.NoResize;
@@ -416,6 +417,7 @@ public partial class MainWindow : Window
         }
 
         WindowState = WindowState.Normal;
+        CasinoWindowFrame.SetIsFullscreen(this, false);
         WindowStyle = previousWindowStyle;
         ResizeMode = previousResizeMode;
         if (previousWindowBounds.Width >= MinWidth && previousWindowBounds.Height >= MinHeight)

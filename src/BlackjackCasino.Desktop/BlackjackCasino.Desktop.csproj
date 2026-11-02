@@ -5,6 +5,7 @@
     <UseWPF>true</UseWPF>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets/midnight-club.ico</ApplicationIcon>
     <Description>Windows desktop client for Blackjack Casino.</Description>
   </PropertyGroup>
   <ItemGroup>
@@ -13,6 +14,7 @@
     <Resource Include="Assets\Portraits\*.png" />
     <Resource Include="Assets\Navigation\*.png" />
     <Resource Include="Assets\Empire\*.png" />
+    <Resource Include="Assets/midnight-club.ico" />
     <Resource Include="Assets\NineLives\*.png" />
     <Resource Include="Assets\NineLives\*.jpg" />
   </ItemGroup>
