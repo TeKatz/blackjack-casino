@@ -68,7 +68,12 @@ internal static class UiResponsivenessSmoke
             Border card = PlayingCardPresentation.Create(new Card(Rank.Ace, Suit.Spades), false, false, null);
             host.Children.Add(card); root.Children.Add(host);
             await Task.Delay(50); window.UpdateLayout();
-            Require(Equals(card.Tag, oldCards), "Newly loaded playing cards no longer receive the equipped design.");
+            File.WriteAllText(Path.Combine(output, "card-styling-state.json"), JsonSerializer.Serialize(new
+            {
+                card.Tag, expected = profile.EquippedCardSetId, card.IsLoaded,
+                owner = Window.GetWindow(card)?.GetType().Name, fullScans = window.CardSetFullScanCount,
+            }));
+            Require(Equals(card.Tag, profile.EquippedCardSetId), "Newly loaded playing cards no longer receive the equipped design.");
             profile.EquippedCardSetId = "cardset-emerald-house";
             Call(window, "RefreshProfileButton");
             Require(Equals(card.Tag, profile.EquippedCardSetId), "Changing the equipped design did not restyle the existing hand.");
@@ -132,7 +137,8 @@ internal static class UiResponsivenessSmoke
                 {
                     await Task.Delay(16);
                     var latency = Stopwatch.StartNew();
-                    await window.Dispatcher.InvokeAsync(() => input.Add(latency.Elapsed.TotalMilliseconds), DispatcherPriority.Input);
+                    using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                    await window.Dispatcher.InvokeAsync(() => input.Add(latency.Elapsed.TotalMilliseconds), DispatcherPriority.Input, timeout.Token);
                 }
             });
         }

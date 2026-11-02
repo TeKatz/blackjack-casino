@@ -773,6 +773,7 @@ public partial class MainWindow : Window
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
             };
+            ApplyEquippedCardSet(border);
             AnimateEntrance(border, compact);
             return border;
         }
@@ -803,6 +804,7 @@ public partial class MainWindow : Window
         Grid.SetRow(suit, 1);
         grid.Children.Add(suit);
         border.Child = grid;
+        ApplyEquippedCardSet(border);
         AnimateEntrance(border, compact);
         return border;
     }

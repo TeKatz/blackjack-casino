@@ -338,8 +338,11 @@ internal sealed class CasinoLobbyView : UserControl
         var descriptionText = (TextBlock)copy.Children[2];
         button.SizeChanged += (_, _) =>
         {
-            bool compact = button.ActualHeight < 145 || button.ActualWidth < 300;
-            eyebrowText.Visibility = descriptionText.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
+            bool compact = button.ActualHeight < 115 || button.ActualWidth < 280;
+            eyebrowText.Visibility = !compact && button.ActualHeight >= 158 ? Visibility.Visible : Visibility.Collapsed;
+            descriptionText.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
+            descriptionText.MaxHeight = 32;
+            descriptionText.TextTrimming = TextTrimming.CharacterEllipsis;
             titleText.FontSize = compact ? 18 : 21;
             titleText.MaxHeight = compact ? 44 : 52;
             emblemFrame.Width = emblemFrame.Height = compact ? 48 : 70;

@@ -9,7 +9,6 @@ public partial class MainWindow
 {
     private bool cardSetStyleBusy;
     private bool cardSetStylingInitialized;
-    private static bool cardLoadedHandlerInstalled;
     private string? lastAppliedCardSetId;
     internal int CardSetFullScanCount { get; private set; }
 
@@ -17,16 +16,18 @@ public partial class MainWindow
     {
         if (cardSetStylingInitialized) return;
         cardSetStylingInitialized = true;
-        if (!cardLoadedHandlerInstalled)
-        {
-            cardLoadedHandlerInstalled = true;
-            EventManager.RegisterClassHandler(typeof(Border), FrameworkElement.LoadedEvent, new RoutedEventHandler((sender, _) =>
-            {
-                if (sender is Border card && IsPlayingCardBorder(card) && Window.GetWindow(card) is MainWindow owner)
-                    owner.ApplyEquippedCardSet(card);
-            }));
-        }
         ApplyEquippedCardSetToRenderedCards();
+    }
+
+    internal static void RegisterCardStyling(Border card) => card.Loaded += PlayingCardLoaded;
+
+    private static void PlayingCardLoaded(object sender, RoutedEventArgs args)
+    {
+        if (sender is not Border card || !IsPlayingCardBorder(card)) return;
+        MainWindow? owner = Window.GetWindow(card) as MainWindow;
+        for (DependencyObject? parent = card; owner is null && parent is not null; parent = VisualTreeHelper.GetParent(parent))
+            owner = parent as MainWindow;
+        owner?.ApplyEquippedCardSet(card);
     }
 
     private void ApplyEquippedCardSetToRenderedCards()
