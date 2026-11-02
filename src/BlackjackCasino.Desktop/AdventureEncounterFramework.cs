@@ -82,6 +82,7 @@ internal sealed class AdventureBlackjackEncounterView : Grid
     private bool busy;
     private bool returning;
     private bool loadedOnce;
+    private bool recovering;
 
     internal AdventureBlackjackEncounterView(
         AdventureEncounterDefinition definition,
@@ -129,13 +130,23 @@ internal sealed class AdventureBlackjackEncounterView : Grid
             {
                 if (loadedOnce) return;
                 loadedOnce = true;
-                AnimateIn();
-                await DealInitialAsync();
+                await RunGuardedAsync("initial deal", async () =>
+                {
+                    AnimateIn();
+                    await DealInitialAsync();
+                });
             };
         }
         else
         {
-            RefreshImmediate();
+            try
+            {
+                RefreshImmediate();
+            }
+            catch (Exception ex)
+            {
+                HandleUiFailure("initial render", ex);
+            }
         }
     }
 
@@ -264,9 +275,9 @@ internal sealed class AdventureBlackjackEncounterView : Grid
         FadeIn(statusText);
         IReadOnlySet<PlayerAction> available = round.GetAvailableActions();
         if (available.Contains(PlayerAction.Hit))
-            actionRow.Children.Add(ActionButton("HIT", () => ActAsync(PlayerAction.Hit)));
+            actionRow.Children.Add(ActionButton("HIT", () => ActAsync(PlayerAction.Hit), stage: "hit"));
         if (available.Contains(PlayerAction.Stand))
-            actionRow.Children.Add(ActionButton("STAND", () => ActAsync(PlayerAction.Stand), accent: true));
+            actionRow.Children.Add(ActionButton("STAND", () => ActAsync(PlayerAction.Stand), accent: true, stage: "stand"));
         actionRow.IsEnabled = !busy;
     }
 
@@ -302,7 +313,7 @@ internal sealed class AdventureBlackjackEncounterView : Grid
         finally
         {
             busy = false;
-            if (outcome is null) actionRow.IsEnabled = true;
+            if (outcome is null && !recovering) actionRow.IsEnabled = true;
         }
     }
 
@@ -420,21 +431,12 @@ internal sealed class AdventureBlackjackEncounterView : Grid
     private void ResolveOutcomeAndActions()
     {
         decimal net = round.Result?.TotalNet ?? 0m;
-        outcome = net > 0m
-            ? AdventureEncounterOutcome.Win
-            : net < 0m
-                ? AdventureEncounterOutcome.Loss
-                : AdventureEncounterOutcome.Draw;
-        statusText.Text = outcome switch
-        {
-            AdventureEncounterOutcome.Win => "You win the hand. The stranger's expression barely changes, but his fingers leave the black token.",
-            AdventureEncounterOutcome.Loss => "The stranger wins. He gathers the cards first, then reaches for the five coins you promised.",
-            _ => "Push. Neither side takes the wager. The stranger leaves the deck between you, inviting another hand.",
-        };
+        outcome = OutcomeForNet(net);
+        statusText.Text = OutcomeMessage(outcome.Value);
         FadeIn(statusText);
 
         actionRow.Children.Clear();
-        Button returnButton = ActionButton("RETURN TO STORY", ReturnToStoryAsync, accent: true);
+        Button returnButton = ActionButton("RETURN TO STORY", ReturnToStoryAsync, accent: true, stage: "return to story");
         returnButton.MinWidth = 210;
         actionRow.Children.Add(returnButton);
         actionRow.IsEnabled = true;
@@ -463,13 +465,103 @@ internal sealed class AdventureBlackjackEncounterView : Grid
         }
     }
 
-    private Button ActionButton(string text, Func<Task> action, bool accent = false)
+    private async Task ReturnToStoryWithoutAnimationAsync()
+    {
+        if (returning || outcome is null) return;
+        returning = true;
+        try
+        {
+            await completed(definition, outcome.Value);
+        }
+        finally
+        {
+            returning = false;
+        }
+    }
+
+    private Button ActionButton(string text, Func<Task> action, bool accent = false, string? stage = null)
     {
         Button button = AdventureUi.Button(text, accent: accent, fontSize: 13, scaleOnHover: false);
         button.MinWidth = 120;
         button.Margin = new Thickness(6, 0, 6, 0);
-        button.Click += async (_, _) => await action();
+        string actionStage = stage ?? text.ToLowerInvariant();
+        button.Click += async (_, _) => await RunGuardedAsync(actionStage, action);
         return button;
+    }
+
+    private async Task RunGuardedAsync(string stage, Func<Task> action)
+    {
+        try
+        {
+            await action();
+        }
+        catch (Exception ex)
+        {
+            HandleUiFailure(stage, ex);
+        }
+    }
+
+    private void HandleUiFailure(string stage, Exception exception)
+    {
+        decimal? net = round.Result?.TotalNet;
+        AppCrashLog.Write(
+            $"Adventure blackjack encounter '{definition.Id}' recovered a UI failure during {stage}. Phase={round.Phase}; Net={(net.HasValue ? net.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "n/a")}; Outcome={(outcome?.ToString() ?? "n/a")}",
+            exception);
+
+        try
+        {
+            busy = false;
+            returning = false;
+            recovering = true;
+            BeginAnimation(UIElement.OpacityProperty, null);
+            Opacity = 1;
+            statusText.BeginAnimation(UIElement.OpacityProperty, null);
+            statusText.Opacity = 1;
+            actionRow.Children.Clear();
+            actionRow.IsEnabled = true;
+
+            if (round.Phase == RoundPhase.Settled && round.Result is not null)
+            {
+                outcome = OutcomeForNet(round.Result.TotalNet);
+                dealerValue.Text = $"Total {round.DealerHand.Value.Total}";
+                playerValue.Text = $"Total {round.PlayerHands[0].Value.Total}";
+                statusText.Text = OutcomeMessage(outcome.Value) +
+                    "\n\nThe hand settled correctly, but its presentation hit an error. You can safely continue the adventure.";
+
+                Button continueButton = ActionButton(
+                    "CONTINUE STORY",
+                    ReturnToStoryWithoutAnimationAsync,
+                    accent: true,
+                    stage: "recovery return to story");
+                continueButton.MinWidth = 210;
+                actionRow.Children.Add(continueButton);
+                return;
+            }
+
+            statusText.Text =
+                "The blackjack table hit a presentation error before the hand could finish. The adventure is still running; recover the table to continue.";
+            Button recoverButton = ActionButton(
+                "RECOVER TABLE",
+                RecoverTableAsync,
+                accent: true,
+                stage: "recover table");
+            recoverButton.MinWidth = 210;
+            actionRow.Children.Add(recoverButton);
+        }
+        catch (Exception recoveryException)
+        {
+            AppCrashLog.Write(
+                $"Adventure blackjack encounter '{definition.Id}' could not render its local recovery UI during {stage}.",
+                recoveryException);
+            // Never rethrow from an async WPF event. A broken encounter should not terminate the casino process.
+        }
+    }
+
+    private Task RecoverTableAsync()
+    {
+        recovering = false;
+        RefreshImmediate();
+        return Task.CompletedTask;
     }
 
     private void AnimateIn()
@@ -502,6 +594,19 @@ internal sealed class AdventureBlackjackEncounterView : Grid
                 EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut },
             });
     }
+
+    private static AdventureEncounterOutcome OutcomeForNet(decimal net) => net > 0m
+        ? AdventureEncounterOutcome.Win
+        : net < 0m
+            ? AdventureEncounterOutcome.Loss
+            : AdventureEncounterOutcome.Draw;
+
+    private static string OutcomeMessage(AdventureEncounterOutcome value) => value switch
+    {
+        AdventureEncounterOutcome.Win => "You win the hand. The stranger's expression barely changes, but his fingers leave the black token.",
+        AdventureEncounterOutcome.Loss => "The stranger wins. He gathers the cards first, then reaches for the five coins you promised.",
+        _ => "Push. Neither side takes the wager. The stranger leaves the deck between you, inviting another hand.",
+    };
 
     private static GameRules BuildRules(AdventureBlackjackEncounterRules encounter) => new()
     {
