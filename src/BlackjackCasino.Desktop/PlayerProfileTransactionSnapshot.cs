@@ -10,6 +10,7 @@ internal enum RoutineProfileTransactionArea
     Solitaire,
     WordSearch,
     Memory,
+    Manor,
 }
 
 /// <summary>
@@ -86,6 +87,11 @@ internal static class PlayerProfileTransactionSnapshot
                 break;
             case RoutineProfileTransactionArea.Memory:
                 candidate.Memory = ManorPersistence.Clone(source.Memory);
+                break;
+            case RoutineProfileTransactionArea.Manor:
+                candidate.Manor = ManorPersistence.Clone(source.Manor);
+                // Manor syncs Casino Vault progress from its durable statistics before committing.
+                candidate.Vault = ManorPersistence.Clone(source.Vault);
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(area), area, null);
