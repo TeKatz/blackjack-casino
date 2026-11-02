@@ -1,14 +1,12 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using BlackjackCasino.Core.Collections;
 
 namespace BlackjackCasino.Desktop;
 
-/// <summary>
-/// Static premium-card sheen. The previous forever animation kept one animation clock alive for every
-/// visible premium card, so album browsing could continuously wake the compositor even when idle.
-/// </summary>
+/// <summary>Soft foil light, attached only while an owned premium card is actually visible.</summary>
 internal static class CollectionFoil
 {
     internal static Border Create(CollectionCard card, bool enabled)
@@ -17,22 +15,34 @@ internal static class CollectionFoil
         Color tint = CollectionArtwork.RarityColor(card.Rarity);
         var brush = new LinearGradientBrush(new GradientStopCollection
         {
-            new(Colors.Transparent, 0),
-            new(Colors.Transparent, .28),
-            new(Color.FromArgb(38, tint.R, tint.G, tint.B), .40),
-            new(Color.FromArgb(ultra ? (byte)62 : (byte)42, 255, 248, 220), .49),
-            new(ultra ? Color.FromArgb(48, 146, 228, 255) : Color.FromArgb(28, tint.R, tint.G, tint.B), .57),
-            new(Colors.Transparent, .70),
-            new(Colors.Transparent, 1),
+            new(Colors.Transparent, 0), new(Colors.Transparent, .27),
+            new(Color.FromArgb(60, tint.R, tint.G, tint.B), .39),
+            new(Color.FromArgb(ultra ? (byte)88 : (byte)58, 255, 248, 220), .49),
+            new(ultra ? Color.FromArgb(72, 146, 228, 255) : Color.FromArgb(38, tint.R, tint.G, tint.B), .56),
+            new(Colors.Transparent, .7), new(Colors.Transparent, 1),
         }, 24);
-
-        if (brush.CanFreeze) brush.Freeze();
-        return new Border
+        var motion = new TranslateTransform(-500, 0);
+        var layer = new Border { Name = "CollectionFoil", Background = brush, IsHitTestVisible = false,
+            RenderTransform = motion, Opacity = card.Rarity == CollectionRarity.Rare ? .40 : ultra ? .80 : .60 };
+        bool running = false;
+        void Sync()
         {
-            Name = "CollectionFoil",
-            Background = brush,
-            IsHitTestVisible = false,
-            Opacity = enabled ? card.Rarity == CollectionRarity.Rare ? .34 : ultra ? .62 : .48 : 0,
-        };
+            bool visible = enabled && layer.IsLoaded && layer.IsVisible;
+            if (visible == running) return;
+            running = visible;
+            if (!visible) { motion.BeginAnimation(TranslateTransform.XProperty, null); motion.X = -500; return; }
+            // Long rests between slow reflections. No render loop or per-card timer.
+            double period = ultra ? 7.8 : card.Rarity == CollectionRarity.Legendary ? 8.8 : 10.5;
+            var sweep = new DoubleAnimationUsingKeyFrames { Duration = TimeSpan.FromSeconds(period), RepeatBehavior = RepeatBehavior.Forever };
+            sweep.KeyFrames.Add(new DiscreteDoubleKeyFrame(-500, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+            sweep.KeyFrames.Add(new DiscreteDoubleKeyFrame(-500, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(1.4 + card.Number * .08))));
+            sweep.KeyFrames.Add(new EasingDoubleKeyFrame(500, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(5.4)), new SineEase { EasingMode = EasingMode.EaseInOut }));
+            sweep.KeyFrames.Add(new DiscreteDoubleKeyFrame(500, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(period))));
+            motion.BeginAnimation(TranslateTransform.XProperty, sweep);
+        }
+        layer.Loaded += (_, _) => Sync();
+        layer.IsVisibleChanged += (_, _) => Sync();
+        layer.Unloaded += (_, _) => { running = false; motion.BeginAnimation(TranslateTransform.XProperty, null); motion.X = -500; };
+        return layer;
     }
 }
