@@ -62,7 +62,17 @@ internal sealed class EmpireRoomArtwork(int textureIndex, string? roomId = null)
 
     private static T Frozen<T>(T value) where T : Freezable { value.Freeze(); return value; }
     private static ImageBrush Photo(BitmapSource image) => Frozen(new ImageBrush(image) { Stretch = Stretch.UniformToFill, AlignmentY = AlignmentY.Center });
-    internal double Phase { get => phase; set { phase = value; InvalidateVisual(); } }
+    internal double Phase
+    {
+        get => phase;
+        set
+        {
+            phase = value;
+            // Ambient motion is useful while inspecting a room, but an idle estate must not redraw
+            // every open 768px artwork 25 times per second. Only the hovered artwork animates.
+            if (value == 0 || (Open && IsMouseOver)) InvalidateVisual();
+        }
+    }
     internal bool Open { get; set; }
     internal bool Available { get; set; } = true;
     internal int Level { get; set; }
@@ -190,6 +200,10 @@ internal sealed class EmpireRoomCard : Button
     {
         int value = service.Level(Department.Id);
         EmpireUpgradeQuote opening = service.QuoteUpgrade(Department.Id, 1);
+        bool levelChanged = previousLevel != value;
+        bool selectionChanged = previouslySelected != selected;
+        bool availabilityChanged = Artwork.Available != opening.Unlocked;
+
         level.Text = value == 0 ? (opening.Unlocked ? "NEW" : "LOCKED") : "LV " + value;
         income.Text = value == 0
             ? (opening.Unlocked ? "Open for " + EmpireView.Number(opening.Cost) + " cr" : "Requirements needed")
@@ -209,15 +223,17 @@ internal sealed class EmpireRoomCard : Button
         if (selected && !previouslySelected && animate)
             frame.BeginAnimation(OpacityProperty, new DoubleAnimation(.65, 1, TimeSpan.FromMilliseconds(160)) { FillBehavior = FillBehavior.Stop });
         if (!animate) frame.BeginAnimation(OpacityProperty, null);
-        previouslySelected = selected;
+
         Artwork.Open = value > 0;
         Artwork.Available = opening.Unlocked;
         Artwork.Level = value;
         Artwork.Selected = selected;
-        Artwork.InvalidateVisual();
+        if (levelChanged || selectionChanged || availabilityChanged) Artwork.InvalidateVisual();
+
         if (previousLevel >= 0 && value > previousLevel && animate)
             flash.BeginAnimation(OpacityProperty, new DoubleAnimation(.35, 0, TimeSpan.FromMilliseconds(650)) { FillBehavior = FillBehavior.Stop });
         if (!animate) flash.BeginAnimation(OpacityProperty, null);
+        previouslySelected = selected;
         previousLevel = value;
         ToolTip = Department.Description + (value == 0 && !opening.Unlocked ? "\n" + Department.UnlockRequirement.Description : "");
     }
