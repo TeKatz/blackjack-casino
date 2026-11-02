@@ -6,32 +6,40 @@ using BlackjackCasino.Core.Adventure;
 namespace BlackjackCasino.Desktop;
 
 /// <summary>
-/// Hosts the ordinary AdventureView and overlays registered encounters whenever the current scene
-/// has one. The host watches AdventureView.Content because every story render replaces that content;
-/// this keeps encounter detection decoupled from the story engine and from individual adventures.
+/// Hosts the ordinary AdventureView, overlays registered game encounters, and presents the shared
+/// completion screen once a story reaches an ending. Everything remains catalog-driven so later
+/// adventures inherit encounter and completion behavior without bespoke navigation code.
 /// </summary>
 internal sealed class AdventureEncounterRunHost : Grid
 {
     private readonly AdventureEngine engine;
     private readonly Action<AdventureRunState> persist;
     private readonly Action backToHub;
+    private readonly Action restart;
+    private readonly Func<AdventureDefinition, AdventureRunState, AdventureCompletionMetaResult> recordCompletion;
     private readonly Func<string?> diceSetId;
     private readonly Func<bool> animationsEnabled;
     private readonly Grid overlayLayer = new();
     private readonly DependencyPropertyDescriptor contentDescriptor;
     private AdventureView? storyView;
     private string? activeEncounterId;
+    private bool completionShown;
+    private bool completionPending;
 
     internal AdventureEncounterRunHost(
         AdventureEngine engine,
         Action<AdventureRunState> persist,
         Action backToHub,
+        Action restart,
+        Func<AdventureDefinition, AdventureRunState, AdventureCompletionMetaResult> recordCompletion,
         Func<string?> diceSetId,
         Func<bool> animationsEnabled)
     {
         this.engine = engine ?? throw new ArgumentNullException(nameof(engine));
         this.persist = persist ?? throw new ArgumentNullException(nameof(persist));
         this.backToHub = backToHub ?? throw new ArgumentNullException(nameof(backToHub));
+        this.restart = restart ?? throw new ArgumentNullException(nameof(restart));
+        this.recordCompletion = recordCompletion ?? throw new ArgumentNullException(nameof(recordCompletion));
         this.diceSetId = diceSetId ?? throw new ArgumentNullException(nameof(diceSetId));
         this.animationsEnabled = animationsEnabled ?? throw new ArgumentNullException(nameof(animationsEnabled));
         contentDescriptor = DependencyPropertyDescriptor.FromProperty(ContentControl.ContentProperty, typeof(AdventureView))
@@ -47,11 +55,12 @@ internal sealed class AdventureEncounterRunHost : Grid
         DetachStoryView();
         overlayLayer.Children.Clear();
         activeEncounterId = null;
+        if (!engine.State.Completed) completionShown = false;
 
         storyView = new AdventureView(engine, persist, backToHub, diceSetId, animationsEnabled);
         Children.Insert(0, storyView);
         contentDescriptor.AddValueChanged(storyView, OnStoryContentChanged);
-        RefreshEncounter();
+        RefreshOverlay();
     }
 
     private void DetachStoryView()
@@ -62,10 +71,21 @@ internal sealed class AdventureEncounterRunHost : Grid
         storyView = null;
     }
 
-    private void OnStoryContentChanged(object? sender, EventArgs args) => RefreshEncounter();
+    private void OnStoryContentChanged(object? sender, EventArgs args) => RefreshOverlay();
 
-    private void RefreshEncounter()
+    private void RefreshOverlay()
     {
+        if (engine.State.Completed)
+        {
+            activeEncounterId = null;
+            if (!completionShown && !completionPending)
+            {
+                completionPending = true;
+                _ = ShowCompletionAsync();
+            }
+            return;
+        }
+
         AdventureSceneDefinition scene = engine.CurrentScene;
         if (!AdventureEncounterCatalog.TryGet(engine.Definition.Id, scene.Id, out AdventureEncounterDefinition? encounter) || encounter is null)
         {
@@ -92,6 +112,32 @@ internal sealed class AdventureEncounterRunHost : Grid
         overlayLayer.Children.Add(overlay);
     }
 
+    private async Task ShowCompletionAsync()
+    {
+        try
+        {
+            // Let the final story scene breathe for a moment before the meta layer arrives.
+            await Task.Delay(animationsEnabled() ? 760 : 1);
+            if (!engine.State.Completed || !IsLoaded) return;
+
+            persist(engine.State);
+            AdventureCompletionMetaResult meta = recordCompletion(engine.Definition, engine.State);
+            completionShown = true;
+            overlayLayer.Children.Clear();
+            overlayLayer.Children.Add(new AdventureCompletionView(
+                engine.Definition,
+                engine.State,
+                meta,
+                backToHub,
+                restart,
+                animationsEnabled()));
+        }
+        finally
+        {
+            completionPending = false;
+        }
+    }
+
     private async Task ResolveEncounterAsync(AdventureEncounterDefinition encounter, AdventureEncounterOutcome outcome)
     {
         string choiceId = outcome switch
@@ -102,6 +148,7 @@ internal sealed class AdventureEncounterRunHost : Grid
             _ => throw new ArgumentOutOfRangeException(nameof(outcome), outcome, null),
         };
 
+        engine.RecordEncounter(encounter.Type, outcome);
         engine.SelectChoice(choiceId);
         persist(engine.State);
         await Dispatcher.InvokeAsync(BuildStoryView);
