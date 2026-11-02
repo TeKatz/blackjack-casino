@@ -59,6 +59,8 @@ public static class AdventureCheckResolver
 public sealed class AdventureEngine
 {
     private readonly IReadOnlyDictionary<string, AdventureSceneDefinition> scenes;
+    private readonly IReadOnlyDictionary<string, AdventureItemDefinition> items;
+    private readonly IReadOnlyDictionary<string, AdventureStatusDefinition> conditions;
 
     public AdventureEngine(AdventureDefinition definition, AdventureRunState state)
     {
@@ -66,6 +68,8 @@ public sealed class AdventureEngine
         State = AdventureRunState.Normalize(state);
         AdventureDefinitionValidator.Validate(definition);
         scenes = definition.Scenes.ToDictionary(scene => scene.Id, StringComparer.OrdinalIgnoreCase);
+        items = (definition.Items ?? []).ToDictionary(item => item.Id, StringComparer.OrdinalIgnoreCase);
+        conditions = (definition.Conditions ?? []).ToDictionary(condition => condition.Id, StringComparer.OrdinalIgnoreCase);
 
         if (!string.Equals(State.AdventureId, definition.Id, StringComparison.OrdinalIgnoreCase))
             throw new ArgumentException($"Run belongs to '{State.AdventureId}', not '{definition.Id}'.", nameof(state));
@@ -81,9 +85,9 @@ public sealed class AdventureEngine
     {
         get
         {
-            if (string.IsNullOrWhiteSpace(State.PendingChoiceId))
-                return null;
-            return FindChoice(State.PendingChoiceId).Check;
+            if (string.IsNullOrWhiteSpace(State.PendingChoiceId)) return null;
+            AdventureCheckDefinition? check = FindChoice(State.PendingChoiceId).Check;
+            return check is null ? null : ApplyConditionRollMode(check);
         }
     }
 
@@ -102,15 +106,25 @@ public sealed class AdventureEngine
         };
         var engine = new AdventureEngine(definition, state);
         engine.ApplyEffects(engine.CurrentScene.OnEnterEffects);
-        if (engine.CurrentScene.IsEnding)
-            engine.CompleteCurrentScene();
+        if (engine.CurrentScene.IsEnding) engine.CompleteCurrentScene();
         return engine;
     }
 
     public IReadOnlyList<AdventureChoiceDefinition> AvailableChoices() =>
-        (CurrentScene.Choices ?? [])
-            .Where(choice => (choice.Conditions ?? []).All(Evaluate))
-            .ToArray();
+        (CurrentScene.Choices ?? []).Where(choice => (choice.Conditions ?? []).All(Evaluate)).ToArray();
+
+    public IReadOnlyList<AdventureFeedbackEvent> DrainFeedback()
+    {
+        AdventureFeedbackEvent[] feedback = State.PendingFeedback.ToArray();
+        State.PendingFeedback.Clear();
+        return feedback;
+    }
+
+    public AdventureItemDefinition? ItemDefinition(string itemId) =>
+        items.TryGetValue(itemId, out AdventureItemDefinition? item) ? item : null;
+
+    public AdventureStatusDefinition? ConditionDefinition(string conditionId) =>
+        conditions.TryGetValue(conditionId, out AdventureStatusDefinition? condition) ? condition : null;
 
     public bool Evaluate(AdventureCondition condition)
     {
@@ -120,21 +134,25 @@ public sealed class AdventureEngine
             AdventureConditionKind.Flag =>
                 (State.Flags.TryGetValue(condition.Key, out bool flag) && flag) == condition.Expected,
             AdventureConditionKind.ItemOwned =>
-                State.Inventory.Contains(condition.Key) == condition.Expected,
+                HasItem(condition.Key) == condition.Expected,
             AdventureConditionKind.AbilityMinimum when condition.Ability is AdventureAbility ability =>
                 State.Character.AbilityScore(ability) >= condition.Value,
             AdventureConditionKind.SkillMinimum =>
                 State.Character.SkillBonus(condition.Key) >= condition.Value,
             AdventureConditionKind.NpcRelationMinimum =>
                 State.Npcs.TryGetValue(condition.Key, out AdventureNpcState? npc) && npc.Relation >= condition.Value,
+            AdventureConditionKind.ActiveCondition =>
+                State.ActiveConditions.ContainsKey(condition.Key) == condition.Expected,
+            AdventureConditionKind.CoinsMinimum => State.Coins >= condition.Value,
+            AdventureConditionKind.CounterMinimum =>
+                State.Counters.TryGetValue(condition.Key, out int counter) && counter >= condition.Value,
             _ => false,
         };
     }
 
     public void SelectChoice(string choiceId)
     {
-        if (State.Completed)
-            throw new InvalidOperationException("This adventure run is complete.");
+        if (State.Completed) throw new InvalidOperationException("This adventure run is complete.");
         if (!string.IsNullOrWhiteSpace(State.PendingChoiceId))
             throw new InvalidOperationException("Resolve the pending check before choosing another action.");
 
@@ -148,6 +166,7 @@ public sealed class AdventureEngine
             return;
         }
 
+        AdvanceConditions(AdventureDurationUnit.Scene);
         ApplyEffects(choice.Effects);
         MoveTo(choice.NextSceneId ?? throw new InvalidOperationException($"Choice '{choice.Id}' has no destination."));
     }
@@ -158,8 +177,9 @@ public sealed class AdventureEngine
             throw new InvalidOperationException("There is no pending check.");
 
         AdventureChoiceDefinition choice = FindChoice(State.PendingChoiceId);
-        AdventureCheckDefinition check = choice.Check ??
+        AdventureCheckDefinition baseCheck = choice.Check ??
             throw new InvalidOperationException($"Pending choice '{choice.Id}' does not contain a check.");
+        AdventureCheckDefinition check = ApplyConditionRollMode(baseCheck);
         AdventureCheckResult result = AdventureCheckResolver.Resolve(check, State.Character, firstRoll, secondRoll);
 
         State.RollsMade++;
@@ -167,25 +187,57 @@ public sealed class AdventureEngine
         if (result.ChosenRoll == 1) State.NaturalOnes++;
         State.PendingChoiceId = null;
 
+        AdvanceConditions(AdventureDurationUnit.Scene);
         ApplyEffects(choice.Effects);
-        if (result.Succeeded)
-            ApplyEffects(choice.SuccessEffects);
-        else
-            ApplyEffects(choice.FailureEffects);
+        if (result.Succeeded) ApplyEffects(choice.SuccessEffects);
+        else ApplyEffects(choice.FailureEffects);
 
         string destination = result.Outcome switch
         {
-            AdventureCheckOutcome.CriticalSuccess when !string.IsNullOrWhiteSpace(check.CriticalSuccessSceneId) => check.CriticalSuccessSceneId!,
-            AdventureCheckOutcome.CriticalFailure when !string.IsNullOrWhiteSpace(check.CriticalFailureSceneId) => check.CriticalFailureSceneId!,
-            AdventureCheckOutcome.Success or AdventureCheckOutcome.CriticalSuccess => check.SuccessSceneId ?? choice.NextSceneId!,
-            _ => check.FailureSceneId ?? choice.NextSceneId!,
+            AdventureCheckOutcome.CriticalSuccess when !string.IsNullOrWhiteSpace(baseCheck.CriticalSuccessSceneId) => baseCheck.CriticalSuccessSceneId!,
+            AdventureCheckOutcome.CriticalFailure when !string.IsNullOrWhiteSpace(baseCheck.CriticalFailureSceneId) => baseCheck.CriticalFailureSceneId!,
+            AdventureCheckOutcome.Success or AdventureCheckOutcome.CriticalSuccess => baseCheck.SuccessSceneId ?? choice.NextSceneId!,
+            _ => baseCheck.FailureSceneId ?? choice.NextSceneId!,
         };
 
         if (string.IsNullOrWhiteSpace(destination))
-            throw new InvalidOperationException($"Check '{check.Id}' has no destination for {result.Outcome}.");
+            throw new InvalidOperationException($"Check '{baseCheck.Id}' has no destination for {result.Outcome}.");
 
         MoveTo(destination);
         return result;
+    }
+
+    public void AdvanceConditions(AdventureDurationUnit unit)
+    {
+        foreach ((string id, AdventureStatusState state) in State.ActiveConditions.ToArray())
+        {
+            if (state.Unit != unit || state.Unit == AdventureDurationUnit.Permanent) continue;
+            if (conditions.TryGetValue(id, out AdventureStatusDefinition? definition) && definition.PeriodicHitPointDelta != 0)
+            {
+                ChangeHitPoints(definition.PeriodicHitPointDelta, definition.Name);
+            }
+
+            state.Remaining--;
+            if (state.Remaining > 0) continue;
+            State.ActiveConditions.Remove(id);
+            string name = conditions.TryGetValue(id, out AdventureStatusDefinition? removed) ? removed.Name : Humanize(id);
+            AddFeedback(AdventureFeedbackKind.ConditionRemoved, id, $"{name} ended", "The condition is no longer affecting you.");
+        }
+    }
+
+    private AdventureCheckDefinition ApplyConditionRollMode(AdventureCheckDefinition check)
+    {
+        bool disadvantage = State.ActiveConditions.Keys.Any(id =>
+            conditions.TryGetValue(id, out AdventureStatusDefinition? definition) && definition.DisadvantageOnAbilityChecks);
+        if (!disadvantage) return check;
+
+        AdventureRollMode rollMode = check.RollMode switch
+        {
+            AdventureRollMode.Advantage => AdventureRollMode.Normal,
+            AdventureRollMode.Normal => AdventureRollMode.Disadvantage,
+            _ => AdventureRollMode.Disadvantage,
+        };
+        return check with { RollMode = rollMode };
     }
 
     private AdventureChoiceDefinition FindChoice(string choiceId)
@@ -204,8 +256,7 @@ public sealed class AdventureEngine
 
         State.CurrentSceneId = scene.Id;
         ApplyEffects(scene.OnEnterEffects);
-        if (scene.IsEnding)
-            CompleteCurrentScene();
+        if (scene.IsEnding) CompleteCurrentScene();
     }
 
     private void CompleteCurrentScene()
@@ -214,6 +265,9 @@ public sealed class AdventureEngine
         State.EndingId = CurrentScene.EndingId ?? CurrentScene.Id;
         State.PendingChoiceId = null;
     }
+
+    private bool HasItem(string itemId) =>
+        State.ItemStacks.TryGetValue(itemId, out AdventureItemState? state) && state.Quantity > 0;
 
     private void ApplyEffects(IReadOnlyList<AdventureEffect>? effects)
     {
@@ -225,10 +279,10 @@ public sealed class AdventureEngine
                     State.Flags[effect.Key] = effect.FlagValue;
                     break;
                 case AdventureEffectKind.AddItem:
-                    State.Inventory.Add(effect.Key);
+                    ChangeItem(effect.Key, effect.Value == 0 ? 1 : Math.Abs(effect.Value));
                     break;
                 case AdventureEffectKind.RemoveItem:
-                    State.Inventory.Remove(effect.Key);
+                    ChangeItem(effect.Key, -(effect.Value == 0 ? 1 : Math.Abs(effect.Value)));
                     break;
                 case AdventureEffectKind.ChangeNpcRelation:
                     if (!State.Npcs.TryGetValue(effect.Key, out AdventureNpcState? npc))
@@ -239,19 +293,121 @@ public sealed class AdventureEngine
                     npc.Relation += effect.Value;
                     break;
                 case AdventureEffectKind.ChangeHitPoints:
-                    State.Character.CurrentHitPoints = Math.Clamp(
-                        State.Character.CurrentHitPoints + effect.Value,
-                        0,
-                        Math.Max(1, State.Character.MaxHitPoints));
+                    ChangeHitPoints(effect.Value, "Story consequence");
                     break;
                 case AdventureEffectKind.GainCharacterExperience:
                     State.Character.Experience = Math.Max(0, State.Character.Experience + effect.Value);
+                    break;
+                case AdventureEffectKind.ChangeCoins:
+                    int oldCoins = State.Coins;
+                    State.Coins = Math.Max(0, State.Coins + effect.Value);
+                    int coinDelta = State.Coins - oldCoins;
+                    if (coinDelta != 0)
+                        AddFeedback(AdventureFeedbackKind.CoinsChanged, "coins", coinDelta > 0 ? "Coins acquired" : "Coins spent", $"{Math.Abs(coinDelta)} coins", coinDelta);
+                    break;
+                case AdventureEffectKind.ChangeCounter:
+                    State.Counters.TryGetValue(effect.Key, out int current);
+                    State.Counters[effect.Key] = Math.Max(0, current + effect.Value);
+                    break;
+                case AdventureEffectKind.ApplyCondition:
+                    ApplyCondition(effect.Key, effect.Value);
+                    break;
+                case AdventureEffectKind.RemoveCondition:
+                    RemoveCondition(effect.Key);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(effect), effect.Kind, "Unknown adventure effect.");
             }
         }
     }
+
+    private void ChangeItem(string itemId, int delta)
+    {
+        if (!State.ItemStacks.TryGetValue(itemId, out AdventureItemState? state))
+        {
+            state = new AdventureItemState { ItemId = itemId, Quantity = 0 };
+            State.ItemStacks[itemId] = state;
+        }
+
+        int previous = state.Quantity;
+        int maxStack = items.TryGetValue(itemId, out AdventureItemDefinition? definition) ? Math.Max(1, definition.MaxStack) : int.MaxValue;
+        state.Quantity = Math.Clamp(state.Quantity + delta, 0, maxStack);
+        int applied = state.Quantity - previous;
+
+        if (state.Quantity <= 0)
+        {
+            State.ItemStacks.Remove(itemId);
+            State.Inventory.Remove(itemId);
+        }
+        else
+        {
+            State.Inventory.Add(itemId);
+        }
+
+        if (applied == 0) return;
+        string name = definition?.Name ?? Humanize(itemId);
+        if (applied > 0)
+            AddFeedback(AdventureFeedbackKind.ItemAcquired, itemId, "Item acquired", name + (applied > 1 ? $" ×{applied}" : ""), applied);
+        else
+            AddFeedback(AdventureFeedbackKind.ItemRemoved, itemId, "Item used", name + (applied < -1 ? $" ×{Math.Abs(applied)}" : ""), applied);
+    }
+
+    private void ApplyCondition(string conditionId, int duration)
+    {
+        AdventureStatusDefinition definition = conditions.TryGetValue(conditionId, out AdventureStatusDefinition? found)
+            ? found
+            : new AdventureStatusDefinition(conditionId, Humanize(conditionId), "Temporary adventure condition.", "status", AdventureDurationUnit.Scene);
+        int normalizedDuration = definition.DurationUnit == AdventureDurationUnit.Permanent ? int.MaxValue : Math.Max(1, duration == 0 ? 1 : duration);
+
+        if (State.ActiveConditions.TryGetValue(conditionId, out AdventureStatusState? existing))
+        {
+            if (definition.Stackable) existing.Stacks++;
+            existing.Remaining = definition.DurationUnit == AdventureDurationUnit.Permanent ? int.MaxValue : Math.Max(existing.Remaining, normalizedDuration);
+        }
+        else
+        {
+            State.ActiveConditions[conditionId] = new AdventureStatusState
+            {
+                ConditionId = conditionId,
+                Unit = definition.DurationUnit,
+                Remaining = normalizedDuration,
+                Stacks = 1,
+            };
+        }
+
+        string durationText = definition.DurationUnit == AdventureDurationUnit.Permanent
+            ? "Until cleared"
+            : $"{normalizedDuration} {definition.DurationUnit.ToString().ToLowerInvariant()}{(normalizedDuration == 1 ? "" : "s")}";
+        AddFeedback(AdventureFeedbackKind.ConditionApplied, conditionId, $"{definition.Name} applied", durationText);
+    }
+
+    private void RemoveCondition(string conditionId)
+    {
+        if (!State.ActiveConditions.Remove(conditionId)) return;
+        string name = conditions.TryGetValue(conditionId, out AdventureStatusDefinition? definition) ? definition.Name : Humanize(conditionId);
+        AddFeedback(AdventureFeedbackKind.ConditionRemoved, conditionId, $"{name} removed", "The condition has been cleared.");
+    }
+
+    private void ChangeHitPoints(int delta, string reason)
+    {
+        int previous = State.Character.CurrentHitPoints;
+        State.Character.CurrentHitPoints = Math.Clamp(
+            State.Character.CurrentHitPoints + delta,
+            0,
+            Math.Max(1, State.Character.MaxHitPoints));
+        int applied = State.Character.CurrentHitPoints - previous;
+        if (applied != 0)
+            AddFeedback(AdventureFeedbackKind.HitPointsChanged, "hp", applied > 0 ? "Health restored" : "You are hurt", $"{Math.Abs(applied)} HP · {reason}", applied);
+    }
+
+    private void AddFeedback(AdventureFeedbackKind kind, string key, string title, string detail, int delta = 0)
+    {
+        State.PendingFeedback.Add(new AdventureFeedbackEvent(kind, key, title, detail, delta));
+        if (State.PendingFeedback.Count > 8) State.PendingFeedback.RemoveRange(0, State.PendingFeedback.Count - 8);
+    }
+
+    private static string Humanize(string value) =>
+        string.Join(' ', value.Split('-', StringSplitOptions.RemoveEmptyEntries).Select(part => char.ToUpperInvariant(part[0]) + part[1..]));
 }
 
 public static class AdventureDefinitionValidator
@@ -259,12 +415,24 @@ public static class AdventureDefinitionValidator
     public static void Validate(AdventureDefinition definition)
     {
         ArgumentNullException.ThrowIfNull(definition);
-        if (string.IsNullOrWhiteSpace(definition.Id))
-            throw new ArgumentException("Adventure id is required.", nameof(definition));
-        if (definition.Version < 1)
-            throw new ArgumentException("Adventure version must be positive.", nameof(definition));
-        if (definition.Scenes.Count == 0)
-            throw new ArgumentException("Adventure must contain at least one scene.", nameof(definition));
+        if (string.IsNullOrWhiteSpace(definition.Id)) throw new ArgumentException("Adventure id is required.", nameof(definition));
+        if (definition.Version < 1) throw new ArgumentException("Adventure version must be positive.", nameof(definition));
+        if (definition.Scenes.Count == 0) throw new ArgumentException("Adventure must contain at least one scene.", nameof(definition));
+
+        var itemIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (AdventureItemDefinition item in definition.Items ?? [])
+        {
+            if (string.IsNullOrWhiteSpace(item.Id) || !itemIds.Add(item.Id))
+                throw new ArgumentException($"Adventure contains a blank or duplicate item id '{item.Id}'.", nameof(definition));
+            if (item.MaxStack < 1) throw new ArgumentException($"Item '{item.Id}' has an invalid max stack.", nameof(definition));
+        }
+
+        var conditionIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (AdventureStatusDefinition condition in definition.Conditions ?? [])
+        {
+            if (string.IsNullOrWhiteSpace(condition.Id) || !conditionIds.Add(condition.Id))
+                throw new ArgumentException($"Adventure contains a blank or duplicate condition id '{condition.Id}'.", nameof(definition));
+        }
 
         var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (AdventureSceneDefinition scene in definition.Scenes)
@@ -313,8 +481,6 @@ public static class AdventureDefinitionValidator
     private static void ValidateRoute(HashSet<string> ids, string? destination, string sceneId, string choiceId)
     {
         if (!string.IsNullOrWhiteSpace(destination) && !ids.Contains(destination))
-            throw new ArgumentException(
-                $"Choice '{sceneId}/{choiceId}' references missing scene '{destination}'.",
-                nameof(ids));
+            throw new ArgumentException($"Choice '{sceneId}/{choiceId}' references missing scene '{destination}'.", nameof(ids));
     }
 }
