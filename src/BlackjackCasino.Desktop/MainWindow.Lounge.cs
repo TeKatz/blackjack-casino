@@ -29,6 +29,18 @@ public partial class MainWindow
         RecordMemoryCompletions(preferences.Memory);
         preferences = preferences with { Adventure = AdventureProgressState.Normalize(preferences.Adventure) };
 
+        bool loungeClosing = false;
+        void SetLoungeSoundtrack(bool adventureActive)
+        {
+            if (loungeClosing) return;
+            loungeBackgroundMusic?.Dispose();
+            loungeBackgroundMusic = new BackgroundMusic(adventureActive ? Soundtrack.Adventure : Soundtrack.ChillLounge);
+            loungeBackgroundMusic.Start(
+                preferences.Presentation("chill-lounge").MusicEnabled,
+                preferences.Presentation("chill-lounge").MusicVolume);
+        }
+        AdventureMusicRouter.Attach(SetLoungeSoundtrack);
+
         Func<SolitaireStatistics> solitaireStats = () => progressionController?.Profile.Solitaire ?? new SolitaireStatistics();
         Func<WordSearchStatistics> wordSearchStats = () => progressionController?.Profile.WordSearch ?? new WordSearchStatistics();
         Func<MemoryStatistics> memoryStats = () => progressionController?.Profile.Memory ?? new MemoryStatistics();
@@ -118,16 +130,16 @@ public partial class MainWindow
         TableModeText.Text = "Chill Lounge";
         MenuAudio.Attach(window, () => preferences.Presentation("chill-lounge").SoundEnabled);
 
-        loungeBackgroundMusic?.Dispose();
-        loungeBackgroundMusic = new BackgroundMusic(Soundtrack.ChillLounge);
         ShowEmbeddedGame(window, "Chill Lounge · The Midnight Club", muteHostMusic: true, closed: () =>
         {
+            loungeClosing = true;
+            AdventureMusicRouter.Detach();
             LoungeHostedGameRegistry.ClearSessionModules();
             loungeBackgroundMusic?.Dispose();
             loungeBackgroundMusic = null;
             TableModeText.Text = "Casino lobby";
         });
-        loungeBackgroundMusic.Start(preferences.Presentation("chill-lounge").MusicEnabled, preferences.Presentation("chill-lounge").MusicVolume);
+        SetLoungeSoundtrack(adventureActive: false);
     }
 
     private void RecordSudokuCompletions(SudokuProgressState state)
