@@ -7,10 +7,12 @@ namespace BlackjackCasino.Desktop;
 
 internal partial class ProgressionWindow
 {
-    private const int ShopRenderChunkSize = 18;
+    private const int ShopInitialMaterializedRows = 18;
+    private const double ShopEstimatedRowHeight = 68;
     private HashSet<string> shopOwnedIds = new(StringComparer.Ordinal);
     private CosmeticDefinition[] shopItems = [];
-    private int shopRenderedCount;
+    private bool[] shopMaterialized = [];
+    private int shopMaterializedCount;
     private bool shopScrollHooked;
 
     private bool IsOwned(CosmeticDefinition cosmetic) => shopOwnedIds.Contains(cosmetic.Id);
@@ -56,7 +58,8 @@ internal partial class ProgressionWindow
         };
 
         shopItems = filtered.ToArray();
-        shopRenderedCount = 0;
+        shopMaterialized = new bool[shopItems.Length];
+        shopMaterializedCount = 0;
         ShopPanel.Children.Clear();
         if (!shopScrollHooked)
         {
@@ -71,30 +74,61 @@ internal partial class ProgressionWindow
             return;
         }
 
-        // Building a cosmetic row also builds its live preview. Construct only enough rows to
-        // fill the viewport initially, then append small chunks as the user scrolls. This keeps
-        // the exact same catalogue accessible without blocking navigation on every preview.
-        AppendShopRows();
+        // Keep one lightweight slot for every filtered item so the ScrollViewer exposes the
+        // complete catalogue and stable scrollbar immediately. Only rows near the viewport build
+        // the expensive live cosmetic/card previews.
+        foreach (CosmeticDefinition cosmetic in shopItems)
+            ShopPanel.Children.Add(BuildShopPlaceholder(cosmetic));
+
+        MaterializeShopRange(0, Math.Min(shopItems.Length, ShopInitialMaterializedRows));
         ShopScroll.ScrollToTop();
+        UpdateShopPageText();
     }
+
+    private static FrameworkElement BuildShopPlaceholder(CosmeticDefinition cosmetic) => new Border
+    {
+        Height = ShopEstimatedRowHeight - 6,
+        Margin = new Thickness(0, 0, 4, 6),
+        Background = Brushes.Transparent,
+        Uid = "shop-placeholder",
+        ToolTip = cosmetic.Name,
+        IsHitTestVisible = false,
+    };
 
     private void ShopScroll_ScrollChanged(object sender, ScrollChangedEventArgs e)
     {
-        if (shopRenderedCount >= shopItems.Length || e.ViewportHeight <= 0) return;
-        double preloadDistance = Math.Max(260, e.ViewportHeight * .45);
-        if (e.VerticalOffset + e.ViewportHeight + preloadDistance < e.ExtentHeight) return;
-        AppendShopRows();
+        if (shopMaterializedCount >= shopItems.Length || shopItems.Length == 0 || e.ViewportHeight <= 0 || e.ExtentHeight <= 0) return;
+
+        // Estimate the visible index from the current scroll ratio and eagerly build a cushion on
+        // both sides. This handles regular scrolling and direct ScrollToBottom without requiring
+        // all previews to exist up front.
+        double ratio = Math.Clamp(e.VerticalOffset / Math.Max(1, e.ExtentHeight), 0, 1);
+        int approximateTop = Math.Clamp((int)Math.Floor(ratio * shopItems.Length), 0, shopItems.Length - 1);
+        int visibleRows = Math.Max(8, (int)Math.Ceiling(e.ViewportHeight / ShopEstimatedRowHeight));
+        int start = Math.Max(0, approximateTop - 6);
+        int end = Math.Min(shopItems.Length, approximateTop + visibleRows + 10);
+        MaterializeShopRange(start, end);
+        UpdateShopPageText();
     }
 
-    private void AppendShopRows()
+    private void MaterializeShopRange(int start, int end)
     {
-        int target = Math.Min(shopItems.Length, shopRenderedCount + ShopRenderChunkSize);
-        for (int index = shopRenderedCount; index < target; index++)
-            ShopPanel.Children.Add(BuildShopRow(shopItems[index]));
-        shopRenderedCount = target;
-        ShopPageText.Text = shopRenderedCount >= shopItems.Length
+        start = Math.Clamp(start, 0, shopItems.Length);
+        end = Math.Clamp(end, start, shopItems.Length);
+        for (int index = start; index < end; index++)
+        {
+            if (shopMaterialized[index]) continue;
+            ShopPanel.Children[index] = BuildShopRow(shopItems[index]);
+            shopMaterialized[index] = true;
+            shopMaterializedCount++;
+        }
+    }
+
+    private void UpdateShopPageText()
+    {
+        ShopPageText.Text = shopMaterializedCount >= shopItems.Length
             ? $"{shopItems.Length:N0} cosmetics · scroll to browse"
-            : $"{shopRenderedCount:N0} / {shopItems.Length:N0} cosmetics loaded · keep scrolling";
+            : $"{shopItems.Length:N0} cosmetics · {shopMaterializedCount:N0} previews active";
     }
 
     private FrameworkElement BuildShopRow(CosmeticDefinition cosmetic)
