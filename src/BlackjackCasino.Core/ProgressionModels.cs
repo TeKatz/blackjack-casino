@@ -1,3 +1,5 @@
+using BlackjackCasino.Core.Adventure;
+
 namespace BlackjackCasino.Core;
 
 public enum CosmeticKind
@@ -54,7 +56,7 @@ public sealed class SeasonProgressState
 
 public sealed class PlayerProfileState
 {
-    public int SchemaVersion { get; set; } = 6;
+    public int SchemaVersion { get; set; } = 7;
     public string DisplayName { get; set; } = "Player";
     public int Level { get; set; }
     public long LevelExperience { get; set; }
@@ -78,6 +80,7 @@ public sealed class PlayerProfileState
         CosmeticCatalog.DefaultDiceSetId,
     ];
     public List<string> ClaimedChallengeIds { get; set; } = [];
+    public AdventureMetaProgressState Adventure { get; set; } = new();
     public Kniffel.KniffelStatistics Kniffel { get; set; } = new();
     public Sudoku.SudokuStatistics Sudoku { get; set; } = new();
     public Solitaire.SolitaireStatistics Solitaire { get; set; } = new();
