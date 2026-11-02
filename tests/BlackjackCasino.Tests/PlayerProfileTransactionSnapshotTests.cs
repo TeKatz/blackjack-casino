@@ -52,7 +52,7 @@ public sealed class PlayerProfileTransactionSnapshotTests
         var source = new PlayerProfileState();
         _ = new ProgressionService(source);
         source.Manor.PaidSpins = 7;
-        source.Vault.StoredCoins = 50;
+        source.Vault.CurrentAmount = 50;
 
         PlayerProfileState candidate = PlayerProfileTransactionSnapshot.Create(
             source,
@@ -65,9 +65,11 @@ public sealed class PlayerProfileTransactionSnapshotTests
         Assert.Same(source.Solitaire, candidate.Solitaire);
 
         candidate.Manor.PaidSpins++;
+        candidate.Vault.CurrentAmount += 25;
         candidate.Seasons[source.ActiveSeasonId].Experience += 15;
 
         Assert.Equal(7, source.Manor.PaidSpins);
+        Assert.Equal(50, source.Vault.CurrentAmount);
         Assert.Equal(0, source.Seasons[source.ActiveSeasonId].Experience);
     }
 
