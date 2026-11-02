@@ -142,9 +142,8 @@ public sealed class AdventureProgressionTests
 
         ChallengeClaimResult first = service.ClaimChallenge("adventure-drowned-bell-silent");
         Assert.True(first.Success);
-        CollectionRarity packRarity = ProgressionService.ChallengePack(first.Challenge!);
         long coinsAfterFirstClaim = profile.Coins;
-        int packsAfterFirstClaim = profile.Collection.Packs.GetValueOrDefault(packRarity);
+        Dictionary<CollectionRarity, int> packsAfterFirstClaim = profile.Collection.Packs.ToDictionary(pair => pair.Key, pair => pair.Value);
 
         PlayerProfileStore.SanitizeProfile(profile);
         Assert.Contains("adventure-drowned-bell-silent", profile.ClaimedChallengeIds);
@@ -155,7 +154,7 @@ public sealed class AdventureProgressionTests
         Assert.False(second.Success);
         Assert.Equal("Challenge reward already claimed.", second.Message);
         Assert.Equal(coinsAfterFirstClaim, profile.Coins);
-        Assert.Equal(packsAfterFirstClaim, profile.Collection.Packs.GetValueOrDefault(packRarity));
+        Assert.Equal(packsAfterFirstClaim.OrderBy(pair => pair.Key), profile.Collection.Packs.OrderBy(pair => pair.Key));
     }
 
     [Fact]
