@@ -348,34 +348,58 @@ internal sealed class AdventureBlackjackEncounterView : Grid
             return;
         }
 
-        if (!animationsEnabled)
+        if (dealerCards.Children[1] is not Border holeCard)
         {
-            dealerCards.Children[1] = PlayingCardPresentation.Create(card, faceDown: false, compact: false, cardSetId: null);
+            dealerCards.Children.RemoveAt(1);
+            dealerCards.Children.Insert(1, PlayingCardPresentation.Create(card, faceDown: false, compact: false, cardSetId: null));
             return;
         }
 
-        FrameworkElement oldCard = (FrameworkElement)dealerCards.Children[1];
-        oldCard.RenderTransformOrigin = new Point(.5, .5);
-        var collapse = new ScaleTransform(1, 1);
-        oldCard.RenderTransform = collapse;
-        collapse.BeginAnimation(ScaleTransform.ScaleXProperty,
+        holeCard.BeginAnimation(UIElement.OpacityProperty, null);
+        holeCard.Opacity = 1;
+
+        if (!animationsEnabled)
+        {
+            ApplyCardFace(holeCard, card);
+            return;
+        }
+
+        holeCard.RenderTransformOrigin = new Point(.5, .5);
+        var flip = new ScaleTransform(1, 1);
+        holeCard.RenderTransform = flip;
+        flip.BeginAnimation(ScaleTransform.ScaleXProperty,
             new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(105))
             {
                 EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseIn },
             });
         await Task.Delay(110);
 
-        Border face = PlayingCardPresentation.Create(card, faceDown: false, compact: false, cardSetId: null);
-        face.RenderTransformOrigin = new Point(.5, .5);
-        var expand = new ScaleTransform(0, 1);
-        face.RenderTransform = expand;
-        dealerCards.Children[1] = face;
-        expand.BeginAnimation(ScaleTransform.ScaleXProperty,
+        ApplyCardFace(holeCard, card);
+        flip.BeginAnimation(ScaleTransform.ScaleXProperty,
             new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(130))
             {
                 EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut },
             });
         await Task.Delay(140);
+    }
+
+    private static void ApplyCardFace(Border target, Card card)
+    {
+        Border source = PlayingCardPresentation.Create(card, faceDown: false, compact: false, cardSetId: null);
+        UIElement? faceContent = source.Child;
+        source.Child = null;
+
+        target.Width = source.Width;
+        target.Height = source.Height;
+        target.Margin = source.Margin;
+        target.Padding = source.Padding;
+        target.CornerRadius = source.CornerRadius;
+        target.BorderThickness = source.BorderThickness;
+        target.BorderBrush = source.BorderBrush;
+        target.Background = source.Background;
+        target.ClipToBounds = source.ClipToBounds;
+        target.ToolTip = source.ToolTip;
+        target.Child = faceContent;
     }
 
     private async Task AddCardAsync(Panel target, Card value, bool faceDown, bool fromRight)
