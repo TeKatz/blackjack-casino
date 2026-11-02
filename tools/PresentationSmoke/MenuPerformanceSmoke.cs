@@ -29,22 +29,23 @@ internal static partial class Program
             Require(Panel("SeasonRewardsPanel").Children.Count == 0 && Panel("GameStatsPanel").Children.Count == 0 && Panel("HistoryPanel").Children.Count == 0,
                 "Opening " + section + " constructed hidden progression sections.");
 
-            int renderedShopRows = Panel("ShopPanel").Children.Count;
+            Panel shopPanel = Panel("ShopPanel");
+            int materializedShopRows = shopPanel.Children.OfType<FrameworkElement>().Count(element => element.Uid != "shop-placeholder");
             if (section == "Challenges")
             {
-                Require(renderedShopRows == 0, "Challenges constructed the entire hidden shop.");
+                Require(shopPanel.Children.Count == 0, "Challenges constructed the hidden shop.");
             }
             else
             {
                 Require(Panel("ChallengesPanel").Children.Count == 0, "Shop constructed hidden challenges.");
+                Require(shopPanel.Children.Count == CosmeticCatalog.All.Count,
+                    "Shop no longer exposes the full filtered catalogue to its scroll surface.");
                 int expectedMaximum = Math.Min(18, CosmeticCatalog.All.Count);
-                Require(renderedShopRows > 0 && renderedShopRows <= expectedMaximum,
-                    $"Shop eagerly rendered {renderedShopRows} cosmetic rows; expected at most {expectedMaximum} on first open.");
-                if (CosmeticCatalog.All.Count > 18)
-                    Require(renderedShopRows < CosmeticCatalog.All.Count, "Shop eagerly rendered the entire cosmetic catalogue.");
+                Require(materializedShopRows > 0 && materializedShopRows <= expectedMaximum,
+                    $"Shop eagerly materialized {materializedShopRows} cosmetic previews; expected at most {expectedMaximum} on first open.");
             }
 
-            timings.Add(new { section, elapsedMilliseconds = watch.ElapsedMilliseconds, renderedShopRows });
+            timings.Add(new { section, elapsedMilliseconds = watch.ElapsedMilliseconds, materializedShopRows });
             Find<Button>(window).Single(b => b.Name == "ProgressionBackButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             await Task.Delay(25);
         }
