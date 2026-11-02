@@ -226,10 +226,15 @@ internal sealed class AdventureBlackjackEncounterView : Grid
         UpdateVisibleValues(revealDealer: false);
         await Task.Delay(120);
         if (round.Phase == RoundPhase.Settled)
+        {
             await RevealDealerAndFinishAsync();
+            busy = false;
+        }
         else
+        {
+            busy = false;
             ShowPlayerActions();
-        busy = false;
+        }
     }
 
     private void RefreshImmediate()
