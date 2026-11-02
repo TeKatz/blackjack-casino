@@ -13,6 +13,7 @@ namespace BlackjackCasino.Desktop;
 
 internal sealed class AdventureCaseBoardView : Grid
 {
+    private const int CurrentLayoutVersion = 2;
     private const double LegacyWidth = 1440;
     private const double LegacyHeight = 900;
     private const double CardWidth = 280;
@@ -55,7 +56,7 @@ internal sealed class AdventureCaseBoardView : Grid
         definition = engine.Definition.CaseBoard
             ?? throw new ArgumentException($"Adventure '{engine.Definition.Id}' does not define a Case Board.", nameof(engine));
 
-        (boardWidth, boardHeight) = CalculateExtent(definition.Nodes.Count);
+        (boardWidth, boardHeight) = CalculateExtent(definition);
         canvas = new Canvas
         {
             Width = boardWidth,
@@ -67,7 +68,7 @@ internal sealed class AdventureCaseBoardView : Grid
         boardSurface = BuildBoardSurface();
 
         engine.State.CaseBoard = AdventureCaseBoard.Initialize(definition, engine.State.CaseBoard);
-        bool migrated = MigrateLegacyLayoutIfNeeded();
+        bool migrated = MigrateLayoutIfNeeded();
         BuildShell();
         RestoreView();
         RefreshBoard();
@@ -90,12 +91,16 @@ internal sealed class AdventureCaseBoardView : Grid
         RefreshBoard();
     }
 
-    private static (double Width, double Height) CalculateExtent(int nodeCount)
+    private static (double Width, double Height) CalculateExtent(CaseBoardDefinition definition)
     {
-        int count = Math.Max(1, nodeCount);
-        int columns = Math.Max(6, (int)Math.Ceiling(Math.Sqrt(count * 1.75)));
+        int count = Math.Max(1, definition.Nodes.Count);
+        int columns = Math.Max(5, (int)Math.Ceiling(Math.Sqrt(count * 1.2)));
         int rows = (int)Math.Ceiling(count / (double)columns);
-        return (Math.Max(3200, 620 + columns * 430), Math.Max(2000, 620 + rows * 310));
+        double explicitMaxX = definition.Nodes.Where(n => n.X is not null).Select(n => n.X!.Value).DefaultIfEmpty(LegacyWidth - CardWidth).Max();
+        double explicitMaxY = definition.Nodes.Where(n => n.Y is not null).Select(n => n.Y!.Value).DefaultIfEmpty(LegacyHeight - CardHeight).Max();
+        double width = Math.Max(1900, Math.Max(explicitMaxX + CardWidth + 600, 500 + columns * 340));
+        double height = Math.Max(1250, Math.Max(explicitMaxY + CardHeight + 450, 420 + rows * 250));
+        return (width, height);
     }
 
     private Grid BuildBoardSurface()
@@ -628,24 +633,69 @@ internal sealed class AdventureCaseBoardView : Grid
         AddPlainText(content, 11.5, "#C5B9A8", 0, 0, 0, 0, 18);
     }
 
-    private bool MigrateLegacyLayoutIfNeeded()
+    private bool MigrateLayoutIfNeeded()
     {
-        Dictionary<string, CaseBoardNodePosition> positions = engine.State.CaseBoard.Layout.NodePositions;
-        if (positions.Count == 0) return false;
-        if (positions.Values.Max(p => p.X) > LegacyWidth + 80 || positions.Values.Max(p => p.Y) > LegacyHeight + 80) return false;
-        double sx = (boardWidth - 2 * (FrameInset + EdgePadding) - CardWidth) / LegacyWidth;
-        double sy = (boardHeight - 2 * (FrameInset + EdgePadding) - CardHeight) / LegacyHeight;
-        foreach (CaseBoardNodePosition p in positions.Values)
-        {
-            p.X = FrameInset + EdgePadding + p.X * sx;
-            p.Y = FrameInset + EdgePadding + p.Y * sy;
-        }
         BoardLayoutState layout = engine.State.CaseBoard.Layout;
-        layout.Zoom = .72;
+        if (layout.LayoutVersion >= CurrentLayoutVersion) return false;
+
+        Dictionary<string, CaseBoardNodePosition> positions = layout.NodePositions;
+        (double originX, double originY) = LegacyOrigin();
+        (double brokenWidth, double brokenHeight) = PreviousBrokenExtent(definition.Nodes.Count);
+        double brokenScaleX = (brokenWidth - 2 * (FrameInset + EdgePadding) - CardWidth) / LegacyWidth;
+        double brokenScaleY = (brokenHeight - 2 * (FrameInset + EdgePadding) - CardHeight) / LegacyHeight;
+        double brokenOffset = FrameInset + EdgePadding;
+
+        CaseNodeDefinition[] comparable = definition.Nodes
+            .Where(n => n.X is not null && n.Y is not null && positions.ContainsKey(n.Id))
+            .ToArray();
+        int brokenMatches = comparable.Count(n =>
+        {
+            CaseBoardNodePosition p = positions[n.Id];
+            double expectedX = brokenOffset + n.X!.Value * brokenScaleX;
+            double expectedY = brokenOffset + n.Y!.Value * brokenScaleY;
+            return Math.Abs(p.X - expectedX) < 150 && Math.Abs(p.Y - expectedY) < 150;
+        });
+        bool stretchedByBrokenMigration = comparable.Length >= 2 && brokenMatches >= Math.Max(2, (int)Math.Ceiling(comparable.Length * .55));
+
+        foreach (CaseNodeDefinition node in definition.Nodes)
+        {
+            if (!positions.TryGetValue(node.Id, out CaseBoardNodePosition? position))
+            {
+                Point fallback = DefaultPosition(node);
+                positions[node.Id] = new CaseBoardNodePosition { X = fallback.X, Y = fallback.Y };
+                continue;
+            }
+
+            double legacyX = position.X;
+            double legacyY = position.Y;
+            if (stretchedByBrokenMigration)
+            {
+                legacyX = (position.X - brokenOffset) / brokenScaleX;
+                legacyY = (position.Y - brokenOffset) / brokenScaleY;
+            }
+
+            position.X = Math.Clamp(originX + legacyX, FrameInset + EdgePadding, boardWidth - CardWidth - FrameInset - EdgePadding);
+            position.Y = Math.Clamp(originY + legacyY, FrameInset + EdgePadding, boardHeight - CardHeight - FrameInset - EdgePadding);
+        }
+
+        layout.LayoutVersion = CurrentLayoutVersion;
+        layout.Zoom = 1;
         layout.PanX = 0;
         layout.PanY = 0;
         persist(engine.State);
         return true;
+    }
+
+    private (double X, double Y) LegacyOrigin() =>
+        (Math.Max(FrameInset + EdgePadding, (boardWidth - LegacyWidth) / 2),
+         Math.Max(FrameInset + EdgePadding, (boardHeight - LegacyHeight) / 2));
+
+    private static (double Width, double Height) PreviousBrokenExtent(int nodeCount)
+    {
+        int count = Math.Max(1, nodeCount);
+        int columns = Math.Max(6, (int)Math.Ceiling(Math.Sqrt(count * 1.75)));
+        int rows = (int)Math.Ceiling(count / (double)columns);
+        return (Math.Max(3200, 620 + columns * 430), Math.Max(2000, 620 + rows * 310));
     }
 
     private CaseBoardNodePosition ResolvePosition(CaseNodeDefinition node)
@@ -659,12 +709,21 @@ internal sealed class AdventureCaseBoardView : Grid
 
     private Point DefaultPosition(CaseNodeDefinition node)
     {
+        (double originX, double originY) = LegacyOrigin();
+        if (node.X is double definedX && node.Y is double definedY)
+        {
+            double min = FrameInset + EdgePadding;
+            return new Point(
+                Math.Clamp(originX + definedX, min, boardWidth - CardWidth - min),
+                Math.Clamp(originY + definedY, min, boardHeight - CardHeight - min));
+        }
+
         int index = Math.Max(0, definition.Nodes.IndexOf(node));
         int columns = Math.Max(5, (int)Math.Floor((boardWidth - 360) / 420));
-        double x = FrameInset + EdgePadding + 100 + (index % columns) * 410 + ((index / columns) % 2) * 46;
-        double y = FrameInset + EdgePadding + 90 + (index / columns) * 290 + (index % 2) * 24;
-        double min = FrameInset + EdgePadding;
-        return new Point(Math.Clamp(x, min, boardWidth - CardWidth - min), Math.Clamp(y, min, boardHeight - CardHeight - min));
+        double x = originX + 80 + (index % columns) * 360 + ((index / columns) % 2) * 38;
+        double y = originY + 70 + (index / columns) * 245 + (index % 2) * 20;
+        double edge = FrameInset + EdgePadding;
+        return new Point(Math.Clamp(x, edge, boardWidth - CardWidth - edge), Math.Clamp(y, edge, boardHeight - CardHeight - edge));
     }
 
     private CaseNodeDefinition FindNode(string id) => definition.Nodes.First(n => string.Equals(n.Id, id, StringComparison.OrdinalIgnoreCase));
