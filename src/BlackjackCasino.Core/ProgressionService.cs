@@ -207,7 +207,7 @@ public sealed class ProgressionService
     {
         lock (State)
         {
-            ChallengeDefinition? challenge = ChallengeCatalog.TryGet(challengeId);
+            ChallengeDefinition? challenge = ChallengeRegistry.TryGet(challengeId);
             if (challenge is null)
             {
                 return new ChallengeClaimResult(false, "Unknown challenge.");
@@ -218,7 +218,7 @@ public sealed class ProgressionService
                 return new ChallengeClaimResult(false, "Challenge reward already claimed.", challenge);
             }
 
-            decimal progress = ChallengeCatalog.Progress(State, challenge);
+            decimal progress = ChallengeRegistry.Progress(State, challenge);
             if (progress < challenge.Goal)
             {
                 return new ChallengeClaimResult(false, "Challenge is not complete yet.", challenge);
@@ -239,8 +239,8 @@ public sealed class ProgressionService
         lock (State)
         {
             var claimed = State.ClaimedChallengeIds.ToHashSet(StringComparer.Ordinal);
-            ChallengeDefinition[] available = ChallengeCatalog.All
-                .Where(challenge => !claimed.Contains(challenge.Id) && ChallengeCatalog.Complete(State, challenge))
+            ChallengeDefinition[] available = ChallengeRegistry.All
+                .Where(challenge => !claimed.Contains(challenge.Id) && ChallengeRegistry.Complete(State, challenge))
                 .ToArray();
             if (available.Length == 0)
             {
@@ -342,7 +342,7 @@ public sealed class ProgressionService
         EnsureOwned(CosmeticCatalog.DefaultDiceSetId);
         State.ClaimedChallengeIds ??= [];
         State.ClaimedChallengeIds = State.ClaimedChallengeIds
-            .Where(id => ChallengeCatalog.TryGet(id) is not null)
+            .Where(id => ChallengeRegistry.TryGet(id) is not null)
             .Distinct(StringComparer.Ordinal)
             .ToList();
 
