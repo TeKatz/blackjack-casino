@@ -16,6 +16,7 @@ internal sealed class CasinoLobbyView : UserControl
     private readonly TextBlock seasonStatus = new() { Name = "LobbySeasonStatus" };
     private readonly TextBlock challengeStatus = new() { Name = "LobbyChallengeStatus" };
     private LobbyProgressSnapshot? lastProgress;
+    private bool compactSeasonStatus;
     private readonly UniformGrid cards = new() { Columns = 4, Width = 1280 };
     private Border? albumPackBadge;
     private TextBlock? albumPackBadgeText;
@@ -117,11 +118,17 @@ internal sealed class CasinoLobbyView : UserControl
         if (snapshot == lastProgress) return;
         lastProgress = snapshot;
         seasonProgress.Value = snapshot.SeasonFraction;
-        seasonStatus.Text = snapshot.SeasonComplete ? "SEASON COMPLETE" : $"Tier {snapshot.SeasonTier} → {snapshot.SeasonNextTier}\n{snapshot.SeasonExperience:N0} / {snapshot.SeasonRequired:N0} XP";
+        seasonStatus.Text = SeasonCaption(snapshot, compactSeasonStatus);
+        seasonStatus.ToolTip = SeasonCaption(snapshot, false);
         challengeProgress.Value = snapshot.ChallengeFraction;
         challengeStatus.Text = snapshot.ChallengeId is null ? snapshot.ChallengeName : $"{snapshot.ChallengeName} · {snapshot.ChallengeFraction:P0}";
         challengeStatus.ToolTip = snapshot.ChallengeId is null ? snapshot.ChallengeName : $"{snapshot.ChallengeName}: {snapshot.ChallengeProgress:N0} / {snapshot.ChallengeGoal:N0}";
     }
+
+    private static string SeasonCaption(LobbyProgressSnapshot snapshot, bool compact) => snapshot.SeasonComplete
+        ? "SEASON COMPLETE"
+        : compact ? $"T{snapshot.SeasonTier} · {snapshot.SeasonExperience:N0}/{snapshot.SeasonRequired:N0} XP"
+        : $"Tier {snapshot.SeasonTier} → {snapshot.SeasonNextTier}\n{snapshot.SeasonExperience:N0} / {snapshot.SeasonRequired:N0} XP";
 
     private Border BuildProgressionHub(Action<string> progression)
     {
@@ -343,14 +350,26 @@ internal sealed class CasinoLobbyView : UserControl
             descriptionText.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
             descriptionText.MaxHeight = 32;
             descriptionText.TextTrimming = TextTrimming.CharacterEllipsis;
+            button.Padding = compact ? new Thickness(7, 5, 7, 5) : new Thickness(10);
             titleText.FontSize = compact ? 18 : 21;
             titleText.MaxHeight = compact ? 44 : 52;
-            emblemFrame.Width = emblemFrame.Height = compact ? 48 : 70;
-            content.ColumnDefinitions[0].Width = new GridLength(compact ? 54 : 76);
+            titleText.Margin = compact ? new Thickness(0, 0, 0, 2) : new Thickness(0, 2, 0, 3);
+            emblemFrame.Width = emblemFrame.Height = compact ? 40 : 70;
+            content.ColumnDefinitions[0].Width = new GridLength(compact ? 50 : 76);
             if (section is "Season Pass" or "Challenges")
             {
                 TextBlock status = section == "Season Pass" ? seasonStatus : challengeStatus;
                 status.FontSize = compact ? 12 : 13;
+                status.TextWrapping = compact ? TextWrapping.NoWrap : TextWrapping.Wrap;
+                status.MaxHeight = compact ? 18 : 34;
+                ProgressBar progress = section == "Season Pass" ? seasonProgress : challengeProgress;
+                progress.Height = compact ? 4 : 5;
+                progress.Margin = compact ? new Thickness(0, 2, 0, 3) : new Thickness(0, 8, 0, 5);
+                if (section == "Season Pass")
+                {
+                    compactSeasonStatus = compact;
+                    if (lastProgress is { } snapshot) seasonStatus.Text = SeasonCaption(snapshot, compact);
+                }
             }
         };
         button.Click += (_, _) => progression(section);

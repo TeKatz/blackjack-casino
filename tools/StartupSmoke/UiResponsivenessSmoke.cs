@@ -59,7 +59,16 @@ internal static class UiResponsivenessSmoke
                 {
                     var text = Find<TextBlock>(hub).Single(t => t.Text == title);
                     Require(text.FontSize >= 18, title + " is still shrinking inside a fixed-width Viewbox.");
-                    Require(Bounds(text, window).Right <= window.ActualWidth + 1, title + " clips the lobby hub.");
+                    Rect titleBounds = Bounds(text, window);
+                    Button tile = Ancestor<Button>(text)!;
+                    Rect tileBounds = Bounds(tile, window);
+                    Require(titleBounds.Right <= window.ActualWidth + 1 && titleBounds.Top >= tileBounds.Top && titleBounds.Bottom <= tileBounds.Bottom,
+                        title + " clips the lobby hub.");
+                }
+                foreach (TextBlock status in Find<TextBlock>(hub).Where(t => t.Name is "LobbySeasonStatus" or "LobbyChallengeStatus"))
+                {
+                    Rect area = Bounds(status, window), tile = Bounds(Ancestor<Button>(status)!, window);
+                    Require(area.Top >= tile.Top && area.Bottom <= tile.Bottom, "Lobby progress numbers are clipped.");
                 }
                 Capture(window, Path.Combine(output, $"responsive-lobby-{(int)size.Item1}.png"));
             }
@@ -150,6 +159,12 @@ internal static class UiResponsivenessSmoke
             inputMaxMs = input.Count == 0 ? 0 : input[^1] };
     }
 
+    private static T? Ancestor<T>(DependencyObject element) where T : DependencyObject
+    {
+        for (DependencyObject? parent = VisualTreeHelper.GetParent(element); parent is not null; parent = VisualTreeHelper.GetParent(parent))
+            if (parent is T match) return match;
+        return null;
+    }
     private static void Call(MainWindow window, string method, params object[] args) => typeof(MainWindow).GetMethod(method, Flags)!.Invoke(window, args);
     private static Rect Bounds(FrameworkElement element, Visual parent) => element.TransformToAncestor(parent).TransformBounds(new Rect(element.RenderSize));
     private static IEnumerable<T> Find<T>(DependencyObject root) where T : DependencyObject
