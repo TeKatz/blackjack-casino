@@ -3,7 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
-using System.Windows.Shapes;
+using ShapePath = System.Windows.Shapes.Path;
 
 namespace BlackjackCasino.Desktop;
 
@@ -218,7 +218,7 @@ internal static class AdventureUi
             _ => "M12,3 A9,9 0 1 0 12,21 A9,9 0 1 0 12,3",
         };
 
-        var path = new Path
+        var path = new ShapePath
         {
             Data = Geometry.Parse(data),
             Stretch = Stretch.Uniform,
