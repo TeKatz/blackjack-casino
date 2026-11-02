@@ -28,9 +28,23 @@ internal static partial class Program
             Require(Panel("AlbumCards").Children.Count == 0 && Panel("AlbumThemes").Children.Count == 0, "Opening " + section + " eagerly built the retired album tab.");
             Require(Panel("SeasonRewardsPanel").Children.Count == 0 && Panel("GameStatsPanel").Children.Count == 0 && Panel("HistoryPanel").Children.Count == 0,
                 "Opening " + section + " constructed hidden progression sections.");
-            if (section == "Challenges") Require(Panel("ShopPanel").Children.Count == 0, "Challenges constructed the entire hidden shop.");
-            else Require(Panel("ChallengesPanel").Children.Count == 0, "Shop constructed hidden challenges.");
-            timings.Add(new { section, elapsedMilliseconds = watch.ElapsedMilliseconds });
+
+            int renderedShopRows = Panel("ShopPanel").Children.Count;
+            if (section == "Challenges")
+            {
+                Require(renderedShopRows == 0, "Challenges constructed the entire hidden shop.");
+            }
+            else
+            {
+                Require(Panel("ChallengesPanel").Children.Count == 0, "Shop constructed hidden challenges.");
+                int expectedMaximum = Math.Min(18, CosmeticCatalog.All.Count);
+                Require(renderedShopRows > 0 && renderedShopRows <= expectedMaximum,
+                    $"Shop eagerly rendered {renderedShopRows} cosmetic rows; expected at most {expectedMaximum} on first open.");
+                if (CosmeticCatalog.All.Count > 18)
+                    Require(renderedShopRows < CosmeticCatalog.All.Count, "Shop eagerly rendered the entire cosmetic catalogue.");
+            }
+
+            timings.Add(new { section, elapsedMilliseconds = watch.ElapsedMilliseconds, renderedShopRows });
             Find<Button>(window).Single(b => b.Name == "ProgressionBackButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             await Task.Delay(25);
         }
