@@ -88,14 +88,14 @@ public static class AdventureCatalog
 {
     private static readonly AdventureDefinition BlackStagDefinition = BlackStagAdventure.Build();
     private static readonly AdventureDefinition DrownedBellDefinition = DrownedBellAdventure.Build();
-
-    // Kept as internal test content for the reusable encounter framework, but no longer exposed in the public library.
     private static readonly AdventureDefinition StrangersWagerDefinition = StrangersWagerAdventure.Build();
 
+    // Stranger's Wager remains temporarily registered while the reusable encounter framework is being exercised.
     private static readonly IReadOnlyList<AdventureDefinition> Adventures =
     [
         BlackStagDefinition,
         DrownedBellDefinition,
+        StrangersWagerDefinition,
     ];
 
     public static IReadOnlyList<AdventureDefinition> All => Adventures;
