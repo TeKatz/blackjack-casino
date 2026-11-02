@@ -272,6 +272,7 @@ internal sealed class AdventureFiveOfAKindEncounterView : Grid
         }
 
         actionRow.Children.Clear();
+        actionRow.IsEnabled = !busy;
         if (playerScore is null)
         {
             Button roll = ActionButton(player.RollsUsed == 0 ? "ROLL DICE" : "ROLL AGAIN", RollPlayerAsync, accent: player.RollsUsed == 0);
@@ -448,6 +449,7 @@ internal sealed class AdventureFiveOfAKindEncounterView : Grid
     private void ShowResultActions()
     {
         actionRow.Children.Clear();
+        actionRow.IsEnabled = true;
         if (outcome is null) return;
         Button returnButton = ActionButton("RETURN TO STORY", ReturnToStoryAsync, accent: true);
         returnButton.MinWidth = 210;
