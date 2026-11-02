@@ -96,7 +96,7 @@ public partial class MainWindow
                 () => preferences.Presentation("chill-lounge").SoundEnabled,
                 () => preferences.Presentation("chill-lounge").AnimationsEnabled),
                 memoryStats),
-            AdventureLoungeModule.Create(
+            AdventureLibraryLoungeModule.Create(
                 preferences.Adventure,
                 state =>
                 {
