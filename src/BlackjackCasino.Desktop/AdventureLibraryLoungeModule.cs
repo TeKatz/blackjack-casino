@@ -279,7 +279,7 @@ internal sealed class AdventureLibraryHubControl : UserControl
             resume.Click += (_, _) => ShowRun(adventure, run);
             actions.Children.Add(resume);
         }
-        Button select = AdventureUi.Button(run is null ? "SELECT" : "NEW RUN", accent: selected, fontSize: 11, scaleOnHover: false);
+        Button select = AdventureUi.Button("SELECT", accent: selected, fontSize: 11, scaleOnHover: false);
         select.Click += (_, _) =>
         {
             selectedAdventureId = adventure.Id;
