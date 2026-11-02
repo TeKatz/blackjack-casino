@@ -7,7 +7,13 @@ namespace BlackjackCasino.Desktop;
 
 internal partial class ProgressionWindow
 {
-    private bool IsOwned(CosmeticDefinition cosmetic) => controller.Profile.OwnedCosmeticIds.Contains(cosmetic.Id, StringComparer.Ordinal);
+    private const int ShopRenderChunkSize = 18;
+    private HashSet<string> shopOwnedIds = new(StringComparer.Ordinal);
+    private CosmeticDefinition[] shopItems = [];
+    private int shopRenderedCount;
+    private bool shopScrollHooked;
+
+    private bool IsOwned(CosmeticDefinition cosmetic) => shopOwnedIds.Contains(cosmetic.Id);
 
     private bool IsEquipped(CosmeticDefinition cosmetic) => cosmetic.Id == (cosmetic.Kind switch
     {
@@ -24,6 +30,7 @@ internal partial class ProgressionWindow
         if (!collectionsInitialized) return;
         RefreshPackShop();
         PlayerProfileState profile = controller.Profile;
+        shopOwnedIds = profile.OwnedCosmeticIds.ToHashSet(StringComparer.Ordinal);
         ShopCoinsText.Text = $"Balance: ◆ {profile.Coins:N0}";
         ShopCoinsText.Foreground = CoinBrush;
         ShopSummaryText.Text = $"{CosmeticCatalog.All.Count(IsOwned):N0} / {CosmeticCatalog.All.Count:N0} owned · card sets, dice sets, portraits, frames & titles";
@@ -47,13 +54,47 @@ internal partial class ProgressionWindow
             3 => filtered.OrderBy(cosmetic => cosmetic.Name),
             _ => filtered.OrderBy(cosmetic => IsEquipped(cosmetic) ? 0 : IsOwned(cosmetic) ? 1 : cosmetic.ShopAvailable && profile.Prestige >= cosmetic.RequiredPrestige ? 2 : 3).ThenBy(cosmetic => cosmetic.Kind).ThenBy(cosmetic => cosmetic.Price),
         };
-        CosmeticDefinition[] items = filtered.ToArray();
+
+        shopItems = filtered.ToArray();
+        shopRenderedCount = 0;
         ShopPanel.Children.Clear();
-        foreach (CosmeticDefinition cosmetic in items)
-            ShopPanel.Children.Add(BuildShopRow(cosmetic));
-        if (items.Length == 0)
+        if (!shopScrollHooked)
+        {
+            ShopScroll.ScrollChanged += ShopScroll_ScrollChanged;
+            shopScrollHooked = true;
+        }
+
+        if (shopItems.Length == 0)
+        {
             ShopPanel.Children.Add(MutedText("No cosmetics match these filters. Try another type, status or search, or choose Reset."));
-        ShopPageText.Text = $"{items.Length:N0} cosmetics · scroll to browse";
+            ShopPageText.Text = "0 cosmetics";
+            return;
+        }
+
+        // Building a cosmetic row also builds its live preview. Construct only enough rows to
+        // fill the viewport initially, then append small chunks as the user scrolls. This keeps
+        // the exact same catalogue accessible without blocking navigation on every preview.
+        AppendShopRows();
+        ShopScroll.ScrollToTop();
+    }
+
+    private void ShopScroll_ScrollChanged(object sender, ScrollChangedEventArgs e)
+    {
+        if (shopRenderedCount >= shopItems.Length || e.ViewportHeight <= 0) return;
+        double preloadDistance = Math.Max(260, e.ViewportHeight * .45);
+        if (e.VerticalOffset + e.ViewportHeight + preloadDistance < e.ExtentHeight) return;
+        AppendShopRows();
+    }
+
+    private void AppendShopRows()
+    {
+        int target = Math.Min(shopItems.Length, shopRenderedCount + ShopRenderChunkSize);
+        for (int index = shopRenderedCount; index < target; index++)
+            ShopPanel.Children.Add(BuildShopRow(shopItems[index]));
+        shopRenderedCount = target;
+        ShopPageText.Text = shopRenderedCount >= shopItems.Length
+            ? $"{shopItems.Length:N0} cosmetics · scroll to browse"
+            : $"{shopRenderedCount:N0} / {shopItems.Length:N0} cosmetics loaded · keep scrolling";
     }
 
     private FrameworkElement BuildShopRow(CosmeticDefinition cosmetic)
