@@ -402,7 +402,7 @@ internal sealed class AdventureLibraryHubControl : UserControl
     private void ShowRun(AdventureDefinition adventure, AdventureRunState run)
     {
         var engine = new AdventureEngine(adventure, AdventureRunState.Normalize(run));
-        Content = new AdventureView(
+        Content = new AdventureEncounterRunHost(
             engine,
             state =>
             {
