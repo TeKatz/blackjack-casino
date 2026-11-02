@@ -1,0 +1,162 @@
+using System.Diagnostics;
+using System.IO;
+using System.Reflection;
+using System.Text.Json;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Threading;
+using BlackjackCasino.Core;
+using BlackjackCasino.Core.Empire;
+using BlackjackCasino.Desktop;
+
+internal static class UiResponsivenessSmoke
+{
+    private const BindingFlags Flags = BindingFlags.Instance | BindingFlags.NonPublic;
+
+    internal static async Task Run(MainWindow window, string output)
+    {
+        var prefsField = typeof(MainWindow).GetField("preferences", Flags)!;
+        var empireField = typeof(MainWindow).GetField("empire", Flags)!;
+        var controller = (PlayerProgressionController)typeof(MainWindow).GetField("progressionController", Flags)!.GetValue(window)!;
+        AppPreferences oldPrefs = (AppPreferences)prefsField.GetValue(window)!;
+        object oldEmpire = empireField.GetValue(window)!;
+        PlayerProfileState profile = controller.Profile;
+        string oldCards = profile.EquippedCardSetId, oldFrame = profile.EquippedFrameId;
+        int oldPrestige = profile.Prestige;
+        string[] oldOwned = profile.OwnedCosmeticIds.ToArray();
+        var animationCheck = (CheckBox)window.FindName("AnimationsCheckBox");
+        bool? oldAnimations = animationCheck.IsChecked;
+        var host = new Grid { IsHitTestVisible = false, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Bottom };
+        var root = (Grid)window.Content;
+        Grid.SetRowSpan(host, 2); Grid.SetColumnSpan(host, 2);
+        try
+        {
+            empireField.SetValue(window, new EmpireService(EmpireState.Normalize(new EmpireState
+            {
+                Started = true, LastAccruedAt = DateTimeOffset.UtcNow, Prestige = 10, Credits = 41_360_000m,
+                Levels = EmpireCatalog.Departments.ToDictionary(room => room.Id, room => room.Floor == 1 ? 20 : 0),
+            })));
+            prefsField.SetValue(window, oldPrefs.WithPresentation("lobby", oldPrefs.Presentation("lobby") with { AnimationsEnabled = true }));
+            animationCheck.IsChecked = true;
+            profile.Prestige = 3; profile.EquippedFrameId = "frame-prestige-10";
+            profile.OwnedCosmeticIds.Add("frame-prestige-10"); profile.OwnedCosmeticIds.Add("cardset-emerald-house");
+            Call(window, "RefreshProfileButton"); Call(window, "RefreshEmpireHeader");
+            foreach (var size in new[] { (1080d, 720d), (1440d, 900d), (1920d, 1080d) })
+            {
+                window.Width = size.Item1; window.Height = size.Item2;
+                window.UpdateLayout(); await Task.Delay(100); window.UpdateLayout();
+                var bank = (FrameworkElement)window.FindName("BankrollPanel");
+                var shortcuts = Find<FrameworkElement>(window).Single(e => e.Name == "CasinoHeaderShortcuts");
+                var credits = (FrameworkElement)window.FindName("EmpireBalancePanel");
+                Rect a = Bounds(shortcuts, window), b = Bounds(bank, window), c = Bounds(credits, window);
+                Require(a.Right + 4 <= b.Left && b.Right + 4 <= c.Left, "Header money overlaps shortcuts or Empire credits.");
+                Rect header = Bounds((FrameworkElement)window.FindName("CasinoHeader"), window);
+                Require(c.Right <= window.ActualWidth && b.Top >= header.Top && b.Bottom <= header.Bottom + 1, "Header money left the header.");
+                Border hub = Find<Border>(window).Single(e => e.Name == "LobbyOverviewHub");
+                foreach (string title in new[] { "Season Pass", "Cosmetic Shop", "Collector's Album", "Challenges", "Statistics" })
+                {
+                    var text = Find<TextBlock>(hub).Single(t => t.Text == title);
+                    Require(text.FontSize >= 18, title + " is still shrinking inside a fixed-width Viewbox.");
+                    Require(Bounds(text, window).Right <= window.ActualWidth + 1, title + " clips the lobby hub.");
+                }
+                Capture(window, Path.Combine(output, $"responsive-lobby-{(int)size.Item1}.png"));
+            }
+
+            // A loaded hand card and an equipment change must still be styled immediately.
+            Border card = PlayingCardPresentation.Create(new Card(Rank.Ace, Suit.Spades), false, false, null);
+            host.Children.Add(card); root.Children.Add(host);
+            await Task.Delay(50); window.UpdateLayout();
+            Require(Equals(card.Tag, oldCards), "Newly loaded playing cards no longer receive the equipped design.");
+            profile.EquippedCardSetId = "cardset-emerald-house";
+            Call(window, "RefreshProfileButton");
+            Require(Equals(card.Tag, profile.EquippedCardSetId), "Changing the equipped design did not restyle the existing hand.");
+            root.Children.Remove(host);
+
+            int scans = window.CardSetFullScanCount;
+            object optimized = await Sample(window, legacyScan: false);
+            Require(window.CardSetFullScanCount == scans, "Live header ticks still rescan the whole window for cards.");
+            object legacy = await Sample(window, legacyScan: true);
+            File.WriteAllText(Path.Combine(output, "ui-responsiveness.json"), JsonSerializer.Serialize(new
+            {
+                renderTier = RenderCapability.Tier >> 16,
+                optimized, legacyTreeWalkReplay = legacy,
+                fullCardScansWhileAnimated = window.CardSetFullScanCount - scans,
+            }, new JsonSerializerOptions { WriteIndented = true }));
+
+            // The covered header must stop its animation clocks while menus remain interactive.
+            Call(window, "OpenProgressionPage", "Challenges"); await Task.Delay(80); window.UpdateLayout();
+            var counter = (EmpireBalanceCounter)window.FindName("EmpireHeaderBalance");
+            Require(!DependencyPropertyHelper.GetValueSource(counter, EmpireBalanceCounter.DisplayedAmountProperty).IsAnimated,
+                "The hidden Empire header continues to animate underneath a menu.");
+            Find<Button>(window).Single(b => b.Name == "ProgressionBackButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            File.WriteAllText(Path.Combine(output, "ui-responsiveness-result.txt"), "PASS: right-aligned bankroll rail; readable unscaled hub text; loaded/equipped card styling; no per-layout card scans; stopped covered header clocks; rendering and input latency samples recorded.");
+        }
+        finally
+        {
+            root.Children.Remove(host);
+            profile.EquippedCardSetId = oldCards; profile.EquippedFrameId = oldFrame; profile.Prestige = oldPrestige;
+            profile.OwnedCosmeticIds.Clear(); foreach (string id in oldOwned) profile.OwnedCosmeticIds.Add(id);
+            prefsField.SetValue(window, oldPrefs); empireField.SetValue(window, oldEmpire); animationCheck.IsChecked = oldAnimations;
+            Call(window, "RefreshProfileButton"); Call(window, "RefreshEmpireHeader");
+        }
+    }
+
+    private static async Task<object> Sample(MainWindow window, bool legacyScan)
+    {
+        int layouts = 0, frames = 0, visited = 0;
+        var input = new List<double>();
+        long allocated = GC.GetAllocatedBytesForCurrentThread();
+        var elapsed = Stopwatch.StartNew();
+        EventHandler layout = (_, _) =>
+        {
+            layouts++;
+            if (legacyScan)
+                foreach (Border border in Find<Border>(window))
+                {
+                    // Replay the removed geometric scan, including its iterator allocation.
+                    visited++;
+                    _ = (Math.Abs(border.Width - 76) < .1 && Math.Abs(border.Height - 108) < .1)
+                        || (Math.Abs(border.Width - 48) < .1 && Math.Abs(border.Height - 68) < .1);
+                }
+        };
+        EventHandler rendering = (_, _) => frames++;
+        window.LayoutUpdated += layout; CompositionTarget.Rendering += rendering;
+        try
+        {
+            await Task.Run(async () =>
+            {
+                var period = Stopwatch.StartNew();
+                while (period.Elapsed < TimeSpan.FromSeconds(2))
+                {
+                    await Task.Delay(16);
+                    var latency = Stopwatch.StartNew();
+                    await window.Dispatcher.InvokeAsync(() => input.Add(latency.Elapsed.TotalMilliseconds), DispatcherPriority.Input);
+                }
+            });
+        }
+        finally { window.LayoutUpdated -= layout; CompositionTarget.Rendering -= rendering; }
+        input.Sort();
+        return new { elapsedMs = elapsed.Elapsed.TotalMilliseconds, frames, layouts, visited,
+            allocatedBytes = GC.GetAllocatedBytesForCurrentThread() - allocated,
+            inputP95Ms = input.Count == 0 ? 0 : input[(int)((input.Count - 1) * .95)],
+            inputMaxMs = input.Count == 0 ? 0 : input[^1] };
+    }
+
+    private static void Call(MainWindow window, string method, params object[] args) => typeof(MainWindow).GetMethod(method, Flags)!.Invoke(window, args);
+    private static Rect Bounds(FrameworkElement element, Visual parent) => element.TransformToAncestor(parent).TransformBounds(new Rect(element.RenderSize));
+    private static IEnumerable<T> Find<T>(DependencyObject root) where T : DependencyObject
+    {
+        if (root is T item) yield return item;
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+            foreach (T child in Find<T>(VisualTreeHelper.GetChild(root, i))) yield return child;
+    }
+    private static void Capture(FrameworkElement element, string path)
+    {
+        var bitmap = new RenderTargetBitmap((int)element.ActualWidth, (int)element.ActualHeight, 96, 96, PixelFormats.Pbgra32);
+        bitmap.Render(element); var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
+        using FileStream file = File.Create(path); encoder.Save(file);
+    }
+    private static void Require(bool condition, string message) { if (!condition) throw new InvalidOperationException(message); }
+}

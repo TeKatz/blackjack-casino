@@ -10,6 +10,7 @@ public partial class MainWindow
     internal CasinoModeRegistry Modes=>modeRegistry;
     private void InitializeLobby()
     {
+        InitializeHeaderLayout();
         InitializeEmpire();
         modeRegistry.Register(new("blackjack","Blackjack","The velvet tables","A quiet seat, a fresh shoe and your next decision. Solo or with the house regulars.","#537D66","♠","Table games",()=>new LobbyGameArtwork(false)),()=>
         {lobby!.Visibility=Visibility.Collapsed;TableModeText.Text="Blackjack · your table";});

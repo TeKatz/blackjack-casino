@@ -29,6 +29,7 @@ internal static class Program
             Source = new Uri("/BlackjackCasino.Desktop;component/Presentation/CasinoWindow.xaml", UriKind.Relative),
         });
         CasinoWindowFrame.Install();
+        Localization.InstallAutomaticTranslation();
         CasinoCursors.Install();
 
         int exit = 0;
@@ -181,6 +182,7 @@ internal static class Program
                 Require(Find<Button>(window).Any(button => button.Name == "Mode_nine_lives" && button.IsVisible),
                     "Casino lobby was not restored after leaving Nine Lives.");
 
+                await UiResponsivenessSmoke.Run(window, output);
                 await LocalizationSmoke.Run(window, output);
                 await MidnightMergeSmoke.Run(window, output);
                 await SudokuSmoke.Run(window, output);

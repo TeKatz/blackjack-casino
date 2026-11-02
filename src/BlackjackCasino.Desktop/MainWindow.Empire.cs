@@ -292,12 +292,22 @@ public partial class MainWindow
         SavePreferences();
     }
 
+    private bool empireHeaderWasLive;
+
     private void RefreshEmpireHeader()
     {
         if (empire is null) return;
         bool visible = empire.Started && EmpireBalanceCheckBox.IsChecked == true;
         EmpireBalancePanel.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
-        EmpireHeaderBalance.SetAmount(empire.Credits, AnimationsEnabled && visible && EmpireBalancePanel.IsVisible);
+        bool live = visible && EmpireBalancePanel.IsVisible && EmpireBalancePanel.IsEnabled && WindowState != WindowState.Minimized;
+        if (!live)
+        {
+            EmpireHeaderBalance.StopInterpolation();
+            empireHeaderWasLive = false;
+            return;
+        }
+        EmpireHeaderBalance.SetAmount(empire.Credits, CurrentPresentation.AnimationsEnabled && empireHeaderWasLive);
+        empireHeaderWasLive = true;
         EmpireHeaderRate.Text = "+" + EmpireView.Number(empire.CreditsPerSecond) + " cr / sec";
     }
 }
