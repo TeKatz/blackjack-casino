@@ -126,6 +126,25 @@ public static class AdventureEncounterCatalog
         return encounter is not null;
     }
 
+    /// <summary>
+    /// Resolves whether selecting a story choice immediately enters a registered minigame encounter.
+    /// Presentation can use this before the transition to clearly signal Blackjack or Five of a Kind choices.
+    /// </summary>
+    public static bool TryGetTriggeredByChoice(
+        string adventureId,
+        AdventureChoiceDefinition choice,
+        out AdventureEncounterDefinition? encounter)
+    {
+        ArgumentNullException.ThrowIfNull(choice);
+        if (string.IsNullOrWhiteSpace(choice.NextSceneId))
+        {
+            encounter = null;
+            return false;
+        }
+
+        return TryGet(adventureId, choice.NextSceneId, out encounter);
+    }
+
     public static void Validate(AdventureDefinition adventure)
     {
         ArgumentNullException.ThrowIfNull(adventure);
