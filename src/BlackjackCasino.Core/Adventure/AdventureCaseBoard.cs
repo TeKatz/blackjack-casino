@@ -123,6 +123,7 @@ public sealed class CaseBoardNodePosition
 
 public sealed class BoardLayoutState
 {
+    public int LayoutVersion { get; set; }
     public Dictionary<string, CaseBoardNodePosition> NodePositions { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     public double Zoom { get; set; } = 1d;
     public double PanX { get; set; }
@@ -135,6 +136,7 @@ public sealed class BoardLayoutState
     public static BoardLayoutState Normalize(BoardLayoutState? value)
     {
         BoardLayoutState state = value ?? new BoardLayoutState();
+        state.LayoutVersion = Math.Max(0, state.LayoutVersion);
         state.NodePositions = state.NodePositions is null
             ? new Dictionary<string, CaseBoardNodePosition>(StringComparer.OrdinalIgnoreCase)
             : new Dictionary<string, CaseBoardNodePosition>(state.NodePositions, StringComparer.OrdinalIgnoreCase);
