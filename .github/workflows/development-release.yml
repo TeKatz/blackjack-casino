@@ -2,7 +2,7 @@ name: Development Release
 
 on:
   push:
-    branches: ["feature/adventure-engine"]
+    branches: ["performance/system-wide-optimization"]
   workflow_dispatch:
 
 permissions:
@@ -14,8 +14,8 @@ concurrency:
 
 jobs:
   publish-development:
-    # The shared in-app Development channel is pinned to the tabletop adventure engine branch.
-    if: github.ref == 'refs/heads/feature/adventure-engine'
+    # The shared in-app Development channel follows the active system-wide performance branch.
+    if: github.ref == 'refs/heads/performance/system-wide-optimization'
     runs-on: windows-latest
     timeout-minutes: 20
 
