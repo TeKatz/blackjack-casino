@@ -123,8 +123,10 @@ public static class AdventureProgressionService
 }
 
 /// <summary>
-/// Adventure challenges deliberately use an existing ChallengeDefinition shape. Their metric is routed by id
+/// Adventure challenges deliberately use the existing ChallengeDefinition shape. Progress is routed by id
 /// through ChallengeRegistry, so the established challenge reward, claim and pack systems stay authoritative.
+/// The Lifetime category/metric act only as serialization-compatible placeholders; Adventure challenges never
+/// reach ChallengeCatalog.Progress and are labelled Adventure by the unified registry/UI.
 /// </summary>
 public static class AdventureChallengeCatalog
 {
@@ -144,20 +146,20 @@ public static class AdventureChallengeCatalog
         A("adventure-seasoned-traveler", "Seasoned Traveler", "Complete Adventures with 3 different character classes.", 3, 400),
 
         // The Black Stag endings.
-        E("adventure-black-stag-name-in-ink", "A Name in Ink", "Reach the A Name in Ink ending in The Black Stag.", "black-stag", "name-in-ink", 100),
-        E("adventure-black-stag-crown-exposed", "The Crown Exposed", "Reach The Crown Exposed ending in The Black Stag.", "black-stag", "crown-exposed", 175),
-        E("adventure-black-stag-survives", "The Black Stag Survives", "Reach The Black Stag Survives ending in The Black Stag.", "black-stag", "black-stag", 175),
-        E("adventure-black-stag-missing-return", "The Missing Return", "Reach The Missing Return ending in The Black Stag.", "black-stag", "missing-return", 250),
-        E("adventure-black-stag-ashes", "Ashes of the Crown", "Reach Ashes of the Crown ending in The Black Stag.", "black-stag", "ashes-of-the-crown", 150),
-        E("adventure-black-stag-quiet-lie", "The Quiet Lie", "Reach The Quiet Lie ending in The Black Stag.", "black-stag", "quiet-lie", 150),
-        E("adventure-black-stag-watchful-hand", "The Watchful Hand", "Reach The Watchful Hand ending in The Black Stag.", "black-stag", "watchful-hand", 200),
+        E("adventure-black-stag-name-in-ink", "A Name in Ink", "Reach the A Name in Ink ending in The Black Stag.", 100),
+        E("adventure-black-stag-crown-exposed", "The Crown Exposed", "Reach The Crown Exposed ending in The Black Stag.", 175),
+        E("adventure-black-stag-survives", "The Black Stag Survives", "Reach The Black Stag Survives ending in The Black Stag.", 175),
+        E("adventure-black-stag-missing-return", "The Missing Return", "Reach The Missing Return ending in The Black Stag.", 250),
+        E("adventure-black-stag-ashes", "Ashes of the Crown", "Reach Ashes of the Crown ending in The Black Stag.", 150),
+        E("adventure-black-stag-quiet-lie", "The Quiet Lie", "Reach The Quiet Lie ending in The Black Stag.", 150),
+        E("adventure-black-stag-watchful-hand", "The Watchful Hand", "Reach The Watchful Hand ending in The Black Stag.", 200),
 
         // The Drowned Bell endings.
-        E("adventure-drowned-bell-silent", "The Silent Bell", "Reach The Silent Bell ending in The Drowned Bell.", "drowned-bell", "silent-bell", 150),
-        E("adventure-drowned-bell-remembers", "What the Sea Remembers", "Reach What the Sea Remembers ending in The Drowned Bell.", "drowned-bell", "sea-remembers", 200),
-        E("adventure-drowned-bell-debt-paid", "A Debt Paid", "Reach the hidden prestige ending A Debt Paid in The Drowned Bell.", "drowned-bell", "debt-paid", 300),
-        E("adventure-drowned-bell-drowned", "The Drowned", "Reach The Drowned ending in The Drowned Bell.", "drowned-bell", "the-drowned", 100),
-        E("adventure-drowned-bell-gold", "Gold Beneath Greyhaven", "Reach Gold Beneath Greyhaven ending in The Drowned Bell.", "drowned-bell", "greyhaven-gold", 175),
+        E("adventure-drowned-bell-silent", "The Silent Bell", "Reach The Silent Bell ending in The Drowned Bell.", 150),
+        E("adventure-drowned-bell-remembers", "What the Sea Remembers", "Reach What the Sea Remembers ending in The Drowned Bell.", 200),
+        E("adventure-drowned-bell-debt-paid", "A Debt Paid", "Reach the hidden prestige ending A Debt Paid in The Drowned Bell.", 300),
+        E("adventure-drowned-bell-drowned", "The Drowned", "Reach The Drowned ending in The Drowned Bell.", 100),
+        E("adventure-drowned-bell-gold", "Gold Beneath Greyhaven", "Reach Gold Beneath Greyhaven ending in The Drowned Bell.", 175),
     });
 
     private static readonly HashSet<string> Ids = Challenges.Select(challenge => challenge.Id).ToHashSet(StringComparer.Ordinal);
@@ -203,10 +205,10 @@ public static class AdventureChallengeCatalog
     }
 
     private static ChallengeDefinition A(string id, string name, string description, decimal goal, long coins, bool endgame = false) =>
-        new(id, ChallengeCategory.Career, name, description, ChallengeMetric.HandsPlayed, goal, coins, endgame);
+        new(id, ChallengeCategory.Lifetime, name, description, ChallengeMetric.LifetimePlays, goal, coins, endgame);
 
-    private static ChallengeDefinition E(string id, string name, string description, string adventureId, string endingId, long coins) =>
-        new(id, ChallengeCategory.Career, name, description, ChallengeMetric.HandsPlayed, 1, coins);
+    private static ChallengeDefinition E(string id, string name, string description, long coins) =>
+        new(id, ChallengeCategory.Lifetime, name, description, ChallengeMetric.LifetimePlays, 1, coins);
 }
 
 public static class ChallengeRegistry
