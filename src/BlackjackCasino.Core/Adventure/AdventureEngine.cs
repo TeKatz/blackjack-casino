@@ -104,6 +104,8 @@ public sealed class AdventureEngine
             CurrentSceneId = definition.StartSceneId,
             Character = character,
         };
+        state.Statistics.ScenesVisited = 1;
+        state.Statistics.UniqueSceneIds.Add(definition.StartSceneId);
         var engine = new AdventureEngine(definition, state);
         engine.ApplyEffects(engine.CurrentScene.OnEnterEffects);
         if (engine.CurrentScene.IsEnding) engine.CompleteCurrentScene();
@@ -160,6 +162,7 @@ public sealed class AdventureEngine
         if (!(choice.Conditions ?? []).All(Evaluate))
             throw new InvalidOperationException($"Choice '{choiceId}' is not currently available.");
 
+        State.Statistics.ChoicesMade++;
         if (choice.Check is not null)
         {
             State.PendingChoiceId = choice.Id;
@@ -183,8 +186,18 @@ public sealed class AdventureEngine
         AdventureCheckResult result = AdventureCheckResolver.Resolve(check, State.Character, firstRoll, secondRoll);
 
         State.RollsMade++;
-        if (result.ChosenRoll == 20) State.NaturalTwenties++;
-        if (result.ChosenRoll == 1) State.NaturalOnes++;
+        if (result.ChosenRoll == 20)
+        {
+            State.NaturalTwenties++;
+            State.Statistics.NaturalTwenties++;
+        }
+        if (result.ChosenRoll == 1)
+        {
+            State.NaturalOnes++;
+            State.Statistics.NaturalOnes++;
+        }
+        if (result.Succeeded) State.Statistics.ChecksSucceeded++;
+        else State.Statistics.ChecksFailed++;
         State.PendingChoiceId = null;
 
         AdvanceConditions(AdventureDurationUnit.Scene);
@@ -205,6 +218,27 @@ public sealed class AdventureEngine
 
         MoveTo(destination);
         return result;
+    }
+
+    public void RecordEncounter(AdventureEncounterType type, AdventureEncounterOutcome outcome)
+    {
+        State.Statistics.EncountersPlayed++;
+        switch (outcome)
+        {
+            case AdventureEncounterOutcome.Win:
+                State.Statistics.EncountersWon++;
+                if (type == AdventureEncounterType.Blackjack) State.Statistics.BlackjackWins++;
+                if (type == AdventureEncounterType.FiveOfAKind) State.Statistics.FiveOfAKindWins++;
+                break;
+            case AdventureEncounterOutcome.Loss:
+                State.Statistics.EncountersLost++;
+                break;
+            case AdventureEncounterOutcome.Draw:
+                State.Statistics.EncountersDrawn++;
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(outcome), outcome, null);
+        }
     }
 
     public void AdvanceConditions(AdventureDurationUnit unit)
@@ -255,6 +289,8 @@ public sealed class AdventureEngine
             throw new InvalidOperationException($"Adventure '{Definition.Id}' references missing scene '{sceneId}'.");
 
         State.CurrentSceneId = scene.Id;
+        State.Statistics.ScenesVisited++;
+        State.Statistics.UniqueSceneIds.Add(scene.Id);
         ApplyEffects(scene.OnEnterEffects);
         if (scene.IsEnding) CompleteCurrentScene();
     }
@@ -264,6 +300,7 @@ public sealed class AdventureEngine
         State.Completed = true;
         State.EndingId = CurrentScene.EndingId ?? CurrentScene.Id;
         State.PendingChoiceId = null;
+        State.Statistics.CompletedAtUtc ??= DateTimeOffset.UtcNow;
     }
 
     private bool HasItem(string itemId) =>
@@ -302,6 +339,8 @@ public sealed class AdventureEngine
                     int oldCoins = State.Coins;
                     State.Coins = Math.Max(0, State.Coins + effect.Value);
                     int coinDelta = State.Coins - oldCoins;
+                    if (coinDelta > 0) State.Statistics.CoinsEarned += coinDelta;
+                    if (coinDelta < 0) State.Statistics.CoinsSpent += -coinDelta;
                     if (coinDelta != 0)
                         AddFeedback(AdventureFeedbackKind.CoinsChanged, "coins", coinDelta > 0 ? "Coins acquired" : "Coins spent", $"{Math.Abs(coinDelta)} coins", coinDelta);
                     break;
@@ -345,6 +384,8 @@ public sealed class AdventureEngine
         }
 
         if (applied == 0) return;
+        if (applied > 0) State.Statistics.ItemsFound += applied;
+        else State.Statistics.ItemsConsumed += -applied;
         string name = definition?.Name ?? Humanize(itemId);
         if (applied > 0)
             AddFeedback(AdventureFeedbackKind.ItemAcquired, itemId, "Item acquired", name + (applied > 1 ? $" ×{applied}" : ""), applied);
@@ -375,6 +416,7 @@ public sealed class AdventureEngine
             };
         }
 
+        State.Statistics.ConditionsReceived++;
         string durationText = definition.DurationUnit == AdventureDurationUnit.Permanent
             ? "Until cleared"
             : $"{normalizedDuration} {definition.DurationUnit.ToString().ToLowerInvariant()}{(normalizedDuration == 1 ? "" : "s")}";
@@ -396,6 +438,8 @@ public sealed class AdventureEngine
             0,
             Math.Max(1, State.Character.MaxHitPoints));
         int applied = State.Character.CurrentHitPoints - previous;
+        if (applied > 0) State.Statistics.HealingReceived += applied;
+        if (applied < 0) State.Statistics.DamageTaken += -applied;
         if (applied != 0)
             AddFeedback(AdventureFeedbackKind.HitPointsChanged, "hp", applied > 0 ? "Health restored" : "You are hurt", $"{Math.Abs(applied)} HP · {reason}", applied);
     }
