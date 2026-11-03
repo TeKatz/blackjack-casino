@@ -40,7 +40,7 @@ internal static class ShopCosmeticsSmoke
             }
             gallery.Children.Add(row);
         }
-        Save(Render(gallery, 700, 1450), Path.Combine(output, "shop-cardsets-gallery.png"));
+        Save(Render(gallery, 700, gallery.Children.Count * 132 + 24), Path.Combine(output, "shop-cardsets-gallery.png"));
 
         gallery.Children.Clear();
         var diceHashes = new HashSet<string>();
@@ -56,7 +56,7 @@ internal static class ShopCosmeticsSmoke
             Require(diceHashes.Add(Convert.ToHexString(SHA256.HashData(pixels))), "D20 palette fell back to another set: " + dice.Id);
             gallery.Children.Add(row);
         }
-        Save(Render(gallery, 700, 1350), Path.Combine(output, "shop-dicesets-gallery.png"));
+        Save(Render(gallery, 700, gallery.Children.Count * 104 + 24), Path.Combine(output, "shop-dicesets-gallery.png"));
         foreach (string variant in new[] { "dice-ruby", "dice-aurora", "dice-astral-opal", "dice-solar-crown" })
             Require(DiceAppearance.For(variant).Glow is not null, "Missing premium dice glow: " + variant);
         File.WriteAllText(Path.Combine(output, "shop-cosmetics-result.txt"), "PASS: all card fronts/backs render at regular and compact sizes; restyling preserves hidden cards and does not accumulate ornaments; back brushes are frozen and cached; every D20 palette is distinct; premium glows present; gallery exports captured.");
