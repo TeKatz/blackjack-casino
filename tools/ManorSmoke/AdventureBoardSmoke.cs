@@ -54,7 +54,11 @@ internal static class AdventureBoardSmoke
                 Require(layoutClip is null || layoutClip.Bounds.Contains(new Rect(surface.RenderSize)), "World surface still has a smaller pre-transform layout clip");
                 RenderTargetBitmap bitmap = Render(viewport);
                 byte[] pixels = new byte[bitmap.PixelWidth * bitmap.PixelHeight * 4]; bitmap.CopyPixels(pixels, bitmap.PixelWidth * 4, 0);
-                int topPaper = (50 * bitmap.PixelWidth + bitmap.PixelWidth / 2) * 4;
+                Rect worldBounds = surface.TransformToAncestor(viewport).TransformBounds(new Rect(surface.RenderSize));
+                if (worldBounds.Height >= viewport.ActualHeight)
+                    Require(worldBounds.Top <= viewport.BorderThickness.Top + 1, "Camera exposes empty space above a world taller than its viewport");
+                // At 1.35x zoom the physical frame ends below y=50; sample inside the cork.
+                int topPaper = (80 * bitmap.PixelWidth + bitmap.PixelWidth / 2) * 4;
                 Require(pixels[topPaper + 2] > 28, "FIT leaves a large empty region above the physical board");
                 foreach (Border card in cards.Children.OfType<Border>())
                 {
