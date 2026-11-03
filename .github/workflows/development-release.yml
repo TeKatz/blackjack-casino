@@ -2,7 +2,7 @@ name: Development Release
 
 on:
   push:
-    branches: ["performance/system-wide-optimization"]
+    branches: ["feature/economy-balancing"]
   workflow_dispatch:
 
 permissions:
@@ -14,8 +14,8 @@ concurrency:
 
 jobs:
   publish-development:
-    # The shared in-app Development channel follows the active system-wide performance branch.
-    if: github.ref == 'refs/heads/performance/system-wide-optimization'
+    # The shared in-app Development channel follows the active economy balancing branch.
+    if: github.ref == 'refs/heads/feature/economy-balancing'
     runs-on: windows-latest
     timeout-minutes: 20
 
