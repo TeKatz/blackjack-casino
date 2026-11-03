@@ -81,6 +81,7 @@ internal sealed class MemoryLoungeHubVisual : UserControl, IDisposable
     {
         MemoryStatistics snapshot = stats();
         var right = new StackPanel();
+        right.VerticalAlignment = VerticalAlignment.Center;
         right.Children.Add(PremiumLoungeTheme.Heading("CHOOSE YOUR TABLE"));
 
         if (progress.ActiveGame is MemoryGameState active)
@@ -117,8 +118,9 @@ internal sealed class MemoryLoungeHubVisual : UserControl, IDisposable
             right.Children.Add(row);
         }
 
-        var decks = PremiumLoungeTheme.Panel(new StackPanel(), 17);
-        decks.Margin = new Thickness(0, 12, 0, 8);
+        var leftSettings = new StackPanel { HorizontalAlignment = HorizontalAlignment.Stretch };
+        var decks = PremiumLoungeTheme.Panel(new StackPanel(), 12);
+        decks.Margin = new Thickness(0, 0, 0, 7);
         var deckContents = (StackPanel)decks.Child;
         deckContents.Children.Add(PremiumLoungeTheme.Heading("CARD DECK"));
 
@@ -129,7 +131,7 @@ internal sealed class MemoryLoungeHubVisual : UserControl, IDisposable
             DisplayMemberPath = nameof(MemoryDeckDefinition.Name),
             SelectedItem = MemoryCatalog.GetDeck(progress.PreferredDeckId),
             IsEnabled = progress.ActiveGame is null,
-            Height = 43,
+            Height = 36,
         };
         PremiumLoungeTheme.StyleInput(picker);
         deckContents.Children.Add(picker);
@@ -137,9 +139,9 @@ internal sealed class MemoryLoungeHubVisual : UserControl, IDisposable
         var preview = new ContentControl
         {
             Name = "MemoryDeckPreview",
-            Margin = new Thickness(0, 10, 0, 0),
+            Margin = new Thickness(0, 6, 0, 0),
         };
-        var descriptionText = PremiumLoungeTheme.Label("", 12, PremiumLoungeTheme.Muted);
+        var descriptionText = PremiumLoungeTheme.Label("", 11, PremiumLoungeTheme.Muted);
         descriptionText.Margin = new Thickness(0, 9, 0, 0);
 
         void UpdatePreview(MemoryDeckDefinition deck)
@@ -166,16 +168,16 @@ internal sealed class MemoryLoungeHubVisual : UserControl, IDisposable
 
         deckContents.Children.Add(preview);
         deckContents.Children.Add(descriptionText);
-        right.Children.Add(decks);
+        leftSettings.Children.Add(decks);
 
         var guide = PremiumLoungeTheme.Label(
             "Flip two cards. Matching pairs stay open; misses turn back over. " +
             "Time is only a statistic, and mistakes never reduce XP.",
             12, PremiumLoungeTheme.Muted);
         var guidePanel = PremiumLoungeTheme.Panel(guide, 14);
-        guidePanel.Margin = new Thickness(0, 3, 0, 8);
-        right.Children.Add(guidePanel);
-        right.Children.Add(status);
+        guidePanel.Margin = new Thickness(0, 3, 0, 4);
+        leftSettings.Children.Add(guidePanel);
+        leftSettings.Children.Add(status);
 
         return (FrameworkElement)PremiumLoungeTheme.Build(
             "spa-wellness.png",
@@ -184,19 +186,21 @@ internal sealed class MemoryLoungeHubVisual : UserControl, IDisposable
             "A moment to remember.",
             "No clock to beat. Turn over the cards and settle into your own rhythm.",
             "Memory",
-            "Find the pairs.\nTake your time.",
-            "A calm matching game with five table sizes, distinct card decks and local progress. Every match is yours to discover.",
+            "Find the pairs.",
+            "Choose your table, select a card deck and discover each matching pair at your own pace.",
             PremiumLoungeTheme.Stats(
-                $"GAMES   {snapshot.CompletedGames:N0}",
-                $"PAIRS FOUND   {snapshot.PairsFound:N0}",
+                $"GAMES   {snapshot.CompletedGames:N0}    ·    PAIRS FOUND   {snapshot.PairsFound:N0}",
                 $"PERFECT   {snapshot.PerfectGames:N0}    ·    BEST STREAK   {snapshot.BestStreak:N0}"),
             right,
-            "Choose a table size and card deck. Your current game is saved, and your completed tables remain in your statistics.");
+            "Choose a table size and card deck. Your current game is saved, and your completed tables remain in your statistics.",
+            leftSecondary: leftSettings,
+            compactLeft: true,
+            rightScrollable: false);
     }
 
     private static FrameworkElement BuildDeckPreview(MemoryDeckDefinition deck)
     {
-        var strip = new UniformGrid { Columns = 4, Height = 164 };
+        var strip = new UniformGrid { Columns = 4, Height = 89 };
         foreach (MemorySymbol symbol in deck.Symbols.Take(4))
         {
             var holder = new Border
