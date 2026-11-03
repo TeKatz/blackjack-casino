@@ -8,12 +8,20 @@ internal static class WindowFrameSmoke
         WindowState originalState = window.WindowState;
         WindowStyle originalStyle = window.WindowStyle;
         ResizeMode originalResizeMode = window.ResizeMode;
+        double originalMinWidth = window.MinWidth;
+        double originalMinHeight = window.MinHeight;
         Rect originalBounds = window.WindowState == WindowState.Normal
             ? new Rect(window.Left, window.Top, window.ActualWidth, window.ActualHeight)
             : window.RestoreBounds;
 
         try
         {
+            // Hosted Windows runners can expose a 1024px desktop, which is narrower than the app's
+            // production MinWidth=1080. Temporarily remove that product constraint so this smoke measures
+            // the native maximize/fullscreen frame contract rather than minimum-layout policy.
+            window.MinWidth = 0;
+            window.MinHeight = 0;
+
             CasinoWindowFrame.SetIsFullscreen(window, false);
             window.WindowState = WindowState.Normal;
             window.ResizeMode = ResizeMode.CanResize;
@@ -48,7 +56,9 @@ internal static class WindowFrameSmoke
             CasinoWindowFrame.SetIsFullscreen(window, false);
             window.WindowStyle = originalStyle;
             window.ResizeMode = originalResizeMode;
-            if (originalBounds.Width >= window.MinWidth && originalBounds.Height >= window.MinHeight)
+            window.MinWidth = originalMinWidth;
+            window.MinHeight = originalMinHeight;
+            if (originalBounds.Width >= originalMinWidth && originalBounds.Height >= originalMinHeight)
             {
                 window.Left = originalBounds.Left;
                 window.Top = originalBounds.Top;
