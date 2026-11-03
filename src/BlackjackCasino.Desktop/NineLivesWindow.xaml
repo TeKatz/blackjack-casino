@@ -63,11 +63,13 @@
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="11">
+                            <Grid>
                             <Border Margin="3" CornerRadius="9" BorderBrush="#55F2D7AA" BorderThickness="1" IsHitTestVisible="False"/>
                             <Border VerticalAlignment="Top" Height="1" Margin="14,5,14,0"
                                     Background="#80F5DEB0" IsHitTestVisible="False"/>
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
                                               Margin="{TemplateBinding Padding}"/>
+                            </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
