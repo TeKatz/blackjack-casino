@@ -209,12 +209,12 @@ internal sealed class AdventureLibraryHubControl : UserControl
         if (run is not null && !run.Completed)
         {
             AdventureRunState continuation = run;
-            var resume = PremiumLoungeTheme.Button("RESUME", "AdventureResume_" + adventure.Id,
+            var resume = PremiumLoungeTheme.Button("RESUME", "AdventureResume_" + adventure.Id.Replace('-', '_'),
                 () => ShowRun(adventure, continuation), width: 100);
             PremiumLoungeTheme.AddRowAction(row, resume, 108);
         }
 
-        var select = PremiumLoungeTheme.Button("SELECT", "AdventureSelect_" + adventure.Id,
+        var select = PremiumLoungeTheme.Button("SELECT", "AdventureSelect_" + adventure.Id.Replace('-', '_'),
             () =>
             {
                 selectedAdventureId = adventure.Id;
