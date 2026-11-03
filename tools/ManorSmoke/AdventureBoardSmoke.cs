@@ -79,7 +79,10 @@ internal static class AdventureBoardSmoke
     {
         element.UpdateLayout();
         var bitmap = new RenderTargetBitmap(Math.Max(1, (int)element.ActualWidth), Math.Max(1, (int)element.ActualHeight), 96, 96, PixelFormats.Pbgra32);
-        bitmap.Render(element); return bitmap;
+        var visual = new DrawingVisual();
+        using (DrawingContext dc = visual.RenderOpen())
+            dc.DrawRectangle(new VisualBrush(element), null, new Rect(0, 0, element.ActualWidth, element.ActualHeight));
+        bitmap.Render(visual); return bitmap;
     }
     private static void Save(BitmapSource image, string path)
     {
