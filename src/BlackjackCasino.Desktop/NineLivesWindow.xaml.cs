@@ -424,47 +424,119 @@ internal partial class NineLivesWindow : Window
 
     private void DrawPayline(int lineIndex)
     {
-        IReadOnlyList<int> line = NineLivesRules.Lines[lineIndex];
-        Point start = Center(line[0]);
-        Point end = Center(line[^1]);
-        var glow = new System.Windows.Shapes.Line
-        {
-            X1 = start.X,
-            Y1 = start.Y,
-            X2 = end.X,
-            Y2 = end.Y,
-            Stroke = new SolidColorBrush(Color.FromArgb(135, 185, 69, 255)),
-            StrokeThickness = 12,
-            StrokeStartLineCap = PenLineCap.Round,
-            StrokeEndLineCap = PenLineCap.Round,
-            IsHitTestVisible = false,
-            Opacity = AnimationsEnabled ? 0 : 1,
-        };
-        var core = new System.Windows.Shapes.Line
-        {
-            X1 = start.X,
-            Y1 = start.Y,
-            X2 = end.X,
-            Y2 = end.Y,
-            Stroke = Gold,
-            StrokeThickness = 4,
-            StrokeStartLineCap = PenLineCap.Round,
-            StrokeEndLineCap = PenLineCap.Round,
-            IsHitTestVisible = false,
-            Opacity = AnimationsEnabled ? 0 : 1,
-        };
-        WinLineCanvas.Children.Add(glow);
-        WinLineCanvas.Children.Add(core);
+        IReadOnlyList<int> indices = NineLivesRules.Lines[lineIndex];
+        Point start = Center(indices[0]);
+        Point end = Center(indices[^1]);
 
-        if (AnimationsEnabled)
+        // Three layers turn the old flat purple line into a warm, luminous
+        // casino-gold ribbon with a soft violet halo and a white-gold highlight.
+        var halo = new System.Windows.Shapes.Line
         {
-            var fade = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(320))
+            X1 = start.X, Y1 = start.Y, X2 = end.X, Y2 = end.Y,
+            Stroke = new SolidColorBrush(Color.FromArgb(145, 159, 71, 255)),
+            StrokeThickness = 17,
+            StrokeStartLineCap = PenLineCap.Round,
+            StrokeEndLineCap = PenLineCap.Round,
+            Effect = new BlurEffect { Radius = 11, RenderingBias = RenderingBias.Performance },
+            IsHitTestVisible = false,
+        };
+        var goldRibbon = new System.Windows.Shapes.Line
+        {
+            X1 = start.X, Y1 = start.Y, X2 = end.X, Y2 = end.Y,
+            Stroke = new SolidColorBrush(Color.FromRgb(239, 173, 82)),
+            StrokeThickness = 6.5,
+            StrokeStartLineCap = PenLineCap.Round,
+            StrokeEndLineCap = PenLineCap.Round,
+            IsHitTestVisible = false,
+        };
+        var luminousCore = new System.Windows.Shapes.Line
+        {
+            X1 = start.X, Y1 = start.Y, X2 = end.X, Y2 = end.Y,
+            Stroke = new SolidColorBrush(Color.FromRgb(255, 246, 203)),
+            StrokeThickness = 2.5,
+            StrokeStartLineCap = PenLineCap.Round,
+            StrokeEndLineCap = PenLineCap.Round,
+            IsHitTestVisible = false,
+        };
+        WinLineCanvas.Children.Add(halo);
+        WinLineCanvas.Children.Add(goldRibbon);
+        WinLineCanvas.Children.Add(luminousCore);
+
+        // Mark each of the three winning positions with a tiny golden flare.
+        foreach (int index in indices)
+        {
+            Point center = Center(index);
+            var flareBrush = new RadialGradientBrush();
+            flareBrush.GradientStops.Add(new GradientStop(Color.FromRgb(255, 255, 247), 0));
+            flareBrush.GradientStops.Add(new GradientStop(Color.FromRgb(255, 212, 125), 0.40));
+            flareBrush.GradientStops.Add(new GradientStop(Color.FromArgb(0, 255, 185, 90), 1));
+            var flare = new System.Windows.Shapes.Ellipse
             {
-                EasingFunction = new SineEase { EasingMode = EasingMode.EaseOut },
+                Width = 22, Height = 22,
+                Fill = flareBrush,
+                Effect = new DropShadowEffect
+                {
+                    Color = Color.FromRgb(255, 197, 107),
+                    BlurRadius = 12, ShadowDepth = 0, Opacity = 0.7,
+                },
+                Opacity = AnimationsEnabled ? 0 : 0.88,
+                IsHitTestVisible = false,
             };
-            glow.BeginAnimation(OpacityProperty, fade);
-            core.BeginAnimation(OpacityProperty, fade);
+            Canvas.SetLeft(flare, center.X - 11);
+            Canvas.SetTop(flare, center.Y - 11);
+            WinLineCanvas.Children.Add(flare);
+            if (AnimationsEnabled)
+            {
+                flare.BeginAnimation(OpacityProperty,
+                    new DoubleAnimation(0, 0.88, TimeSpan.FromMilliseconds(240))
+                    {
+                        BeginTime = TimeSpan.FromMilliseconds(180),
+                        EasingFunction = new SineEase { EasingMode = EasingMode.EaseOut },
+                    });
+            }
         }
+
+        if (!AnimationsEnabled)
+        {
+            return;
+        }
+
+        // Reveal the line along the actual winning path instead of just fading
+        // it in. This honors the existing animations toggle.
+        var duration = TimeSpan.FromMilliseconds(420);
+        var easing = new CubicEase { EasingMode = EasingMode.EaseOut };
+        foreach (var segment in new[] { halo, goldRibbon, luminousCore })
+        {
+            segment.BeginAnimation(System.Windows.Shapes.Line.X2Property,
+                new DoubleAnimation(start.X, end.X, duration) { EasingFunction = easing });
+            segment.BeginAnimation(System.Windows.Shapes.Line.Y2Property,
+                new DoubleAnimation(start.Y, end.Y, duration) { EasingFunction = easing });
+        }
+
+        // A brief traveling sparkle accompanies the winning sweep.
+        var spark = new System.Windows.Shapes.Ellipse
+        {
+            Width = 17, Height = 17,
+            Fill = new RadialGradientBrush(
+                Color.FromRgb(255, 255, 233),
+                Color.FromArgb(0, 251, 176, 86)),
+            Effect = new DropShadowEffect
+            {
+                Color = Color.FromRgb(255, 206, 117),
+                BlurRadius = 13, ShadowDepth = 0, Opacity = 0.9,
+            },
+            IsHitTestVisible = false,
+        };
+        Canvas.SetLeft(spark, start.X - 8.5);
+        Canvas.SetTop(spark, start.Y - 8.5);
+        WinLineCanvas.Children.Add(spark);
+        spark.BeginAnimation(Canvas.LeftProperty,
+            new DoubleAnimation(start.X - 8.5, end.X - 8.5, duration) { EasingFunction = easing });
+        spark.BeginAnimation(Canvas.TopProperty,
+            new DoubleAnimation(start.Y - 8.5, end.Y - 8.5, duration) { EasingFunction = easing });
+        spark.BeginAnimation(OpacityProperty,
+            new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(300))
+            { BeginTime = TimeSpan.FromMilliseconds(190) });
     }
 
     private static Point Center(int index)
