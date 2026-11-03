@@ -39,6 +39,7 @@ internal partial class ProgressionWindow
             }
 
             InitializeSeasonPassLibrary();
+            InitializeSeasonBankrollPresentation();
             return;
         }
 
@@ -60,6 +61,8 @@ internal partial class ProgressionWindow
             ProgressionTabs.SelectionChanged += SeasonPassTabs_SelectionChanged;
             seasonPassTabHooked = true;
         }
+
+        InitializeSeasonBankrollPresentation();
     }
 
     private static bool IsSeasonPassTab(TabItem? tab) =>
