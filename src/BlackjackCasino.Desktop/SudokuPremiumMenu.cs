@@ -137,6 +137,7 @@ internal static class SudokuPremiumMenu
             VerticalAlignment = VerticalAlignment.Bottom,
             Margin = new Thickness(0, 0, 12, 4),
             Opacity = .80,
+            OpacityMask = PremiumLoungeTheme.IllustrationFeatherMask(),
             IsHitTestVisible = false,
             CacheMode = new BitmapCache(),
         });
