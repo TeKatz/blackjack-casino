@@ -53,6 +53,7 @@ public sealed class MergePlayerProgression(ProgressionService progression)
     public static long MilestoneSeasonExperience(long points) => MilestonePlayerExperience(points) / 2L;
     public const long AreaCompletionPlayerExperience = 500;
     public const long AreaCompletionSeasonExperience = 250;
+    public const decimal AreaCompletionBankrollReward = 250m;
 
     public MergeProfileSyncResult Sync(MergeGameState state, MergeCatalog? catalog = null)
     {
@@ -86,6 +87,7 @@ public sealed class MergePlayerProgression(ProgressionService progression)
         if (completedAreas.LongLength > stats.AreasCompleted) { stats.AreasCompleted = completedAreas.LongLength; changed = true; }
 
         long playerXp = 0, seasonXp = 0;
+        decimal bankroll = 0m;
         int ordersRewarded = 0, milestonesRewarded = 0, areasRewarded = 0;
 
         foreach (MergeCompletionReceipt receipt in state.Receipts)
@@ -118,6 +120,7 @@ public sealed class MergePlayerProgression(ProgressionService progression)
             if (!stats.RewardedAreaIds.Add(areaId)) continue;
             playerXp = checked(playerXp + AreaCompletionPlayerExperience);
             seasonXp = checked(seasonXp + AreaCompletionSeasonExperience);
+            bankroll = checked(bankroll + AreaCompletionBankrollReward);
             areasRewarded++;
             changed = true;
         }
@@ -134,7 +137,8 @@ public sealed class MergePlayerProgression(ProgressionService progression)
             player.LevelsGained,
             season.SeasonTiersGained,
             checked(player.CoinsEarned + season.CoinsEarned),
-            player.CosmeticsUnlocked.Concat(season.CosmeticsUnlocked).ToArray());
+            player.CosmeticsUnlocked.Concat(season.CosmeticsUnlocked).ToArray(),
+            bankroll + player.BankrollEarned + season.BankrollEarned);
         return new(true, award, ordersRewarded, milestonesRewarded, areasRewarded);
     }
 
