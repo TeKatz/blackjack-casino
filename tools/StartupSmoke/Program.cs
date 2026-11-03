@@ -190,6 +190,7 @@ internal static class Program
                 await SolitaireSmoke.Run(window, output);
                 await MemorySmoke.Run(window, output);
                 await WordSearchSmoke.Run(window, output);
+                await BackroomLoungeSmoke.Run(window, output);
                 await KniffelSmoke.Run(window, output, profile);
                 await KniffelCasinoSmoke.Run(window, output, profile);
                 await KniffelFeedbackSmoke.Run(window, output);
