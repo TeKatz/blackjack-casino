@@ -22,9 +22,9 @@ internal static class PlayerProfileStore
     private static readonly DebouncedPersistenceWriter ProfileWriter = new(
         RoutineSaveDelay,
         payload => WriteSerializedAtomically(ProfilePath, payload, ProfileFileWriteGate));
-    private static readonly DebouncedPersistenceWriter HistoryWriter = new(
+    private static readonly DebouncedPersistenceWriter<RoundHistoryEntry[]> HistoryWriter = new(
         RoutineSaveDelay,
-        payload => WriteSerializedAtomically(HistoryPath, payload, HistoryFileWriteGate));
+        WriteHistorySnapshot);
 
     public static PlayerProfileState LoadProfile()
     {
@@ -58,8 +58,8 @@ internal static class PlayerProfileStore
                 return [];
             }
 
-            string json = File.ReadAllText(HistoryPath);
-            List<RoundHistoryEntry>? history = JsonSerializer.Deserialize<List<RoundHistoryEntry>>(json, JsonOptions);
+            using var file = new FileStream(HistoryPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            List<RoundHistoryEntry>? history = JsonSerializer.Deserialize<List<RoundHistoryEntry>>(file, JsonOptions);
             return history?
                 .Where(x => x.RoundId != Guid.Empty)
                 .OrderBy(x => x.CompletedAt)
@@ -113,18 +113,74 @@ internal static class PlayerProfileStore
 
         try
         {
-            RoundHistoryEntry[] snapshot = history
-                .OrderBy(x => x.CompletedAt)
-                .TakeLast(HistoryLimit)
-                .ToArray();
-            string payload = JsonSerializer.Serialize(snapshot, JsonOptions);
-            HistoryWriter.Schedule(payload);
+            // Capture a stable bounded object snapshot on the caller thread. The comparatively
+            // expensive JSON serialization and file replacement then happen on the debounced
+            // worker, without ever exposing the live mutable history graph to that worker.
+            HistoryWriter.Schedule(CreateHistorySnapshot(history));
         }
         catch
         {
             // History persistence is routine and must not interrupt gameplay.
         }
     }
+
+    internal static RoundHistoryEntry[] CreateHistorySnapshot(IEnumerable<RoundHistoryEntry> history)
+    {
+        ArgumentNullException.ThrowIfNull(history);
+
+        IReadOnlyList<RoundHistoryEntry> source = history as IReadOnlyList<RoundHistoryEntry> ?? history.ToArray();
+        if (source.Count == 0)
+        {
+            return [];
+        }
+
+        bool chronological = true;
+        for (int i = 1; i < source.Count; i++)
+        {
+            if (source[i - 1].CompletedAt > source[i].CompletedAt)
+            {
+                chronological = false;
+                break;
+            }
+        }
+
+        if (!chronological)
+        {
+            // Preserve the legacy stable ordering semantics for callers that provide arbitrary
+            // input. The normal controller path is already chronological and avoids this sort.
+            return source
+                .OrderBy(x => x.CompletedAt)
+                .TakeLast(HistoryLimit)
+                .Select(CloneHistoryEntry)
+                .ToArray();
+        }
+
+        int count = Math.Min(source.Count, HistoryLimit);
+        int start = source.Count - count;
+        var snapshot = new RoundHistoryEntry[count];
+        for (int i = 0; i < count; i++)
+        {
+            snapshot[i] = CloneHistoryEntry(source[start + i]);
+        }
+        return snapshot;
+    }
+
+    private static RoundHistoryEntry CloneHistoryEntry(RoundHistoryEntry entry) => entry with
+    {
+        Rules = entry.Rules with { },
+        DealerCards = entry.DealerCards.ToArray(),
+        PlayerHands = entry.PlayerHands.Select(CloneHistoricalHand).ToArray(),
+        Actions = entry.Actions.ToArray(),
+        AiSeats = entry.AiSeats.Select(seat => seat with
+        {
+            Hands = seat.Hands.Select(CloneHistoricalHand).ToArray(),
+        }).ToArray(),
+    };
+
+    private static HistoricalHand CloneHistoricalHand(HistoricalHand hand) => hand with
+    {
+        Cards = hand.Cards.ToArray(),
+    };
 
     internal static void FlushPending()
     {
@@ -207,6 +263,20 @@ internal static class PlayerProfileStore
                 JsonSerializer.Serialize(file, state, JsonOptions);
             }
             File.Move(temporary, ProfilePath, overwrite: true);
+        }
+    }
+
+    private static void WriteHistorySnapshot(RoundHistoryEntry[] snapshot)
+    {
+        lock (HistoryFileWriteGate)
+        {
+            Directory.CreateDirectory(DirectoryPath);
+            string temporary = HistoryPath + ".tmp";
+            using (var file = new FileStream(temporary, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                JsonSerializer.Serialize(file, snapshot, JsonOptions);
+            }
+            File.Move(temporary, HistoryPath, overwrite: true);
         }
     }
 
