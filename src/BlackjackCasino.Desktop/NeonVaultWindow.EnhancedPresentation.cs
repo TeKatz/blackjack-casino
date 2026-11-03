@@ -204,7 +204,8 @@ internal partial class NeonVaultWindow
                 }
 
                 string label = EnhancedLabel(symbol);
-                if (!string.Equals(presenter.Label.Text, label, StringComparison.Ordinal))
+                if (!presenter.Compact &&
+                    !string.Equals(presenter.Label.Text, label, StringComparison.Ordinal))
                 {
                     presenter.Label.Text = label;
                 }

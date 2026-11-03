@@ -255,10 +255,18 @@ internal partial class NeonVaultWindow : Window
         presenter.Card.Background = palette.Background;
         presenter.Card.BorderBrush = palette.BorderBrush;
         presenter.Card.BorderThickness = new Thickness(palette.Emphasis ? 1.4 : 0.7);
-        presenter.Icon.Text = palette.Icon;
-        presenter.Icon.Foreground = palette.IconBrush;
-        presenter.Icon.FontSize = compact ? Math.Min(29, palette.IconSize) : palette.IconSize;
-        presenter.Label.Text = palette.Label;
+        // The original glyph is hidden once the HD overlay is installed.
+        // Avoid repeatedly shaping invisible text during the reel-preview loop.
+        if (presenter.Icon.IsVisible)
+        {
+            presenter.Icon.Text = palette.Icon;
+            presenter.Icon.Foreground = palette.IconBrush;
+            presenter.Icon.FontSize = compact ? Math.Min(29, palette.IconSize) : palette.IconSize;
+        }
+        if (!compact)
+        {
+            presenter.Label.Text = palette.Label;
+        }
         presenter.Label.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
     }
 
