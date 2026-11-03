@@ -16,7 +16,7 @@ internal partial class NineLivesWindow : Window
     private const double ReelSize = 210;
     private static readonly Brush Gold = FrozenBrush("#FFD56A");
     private static readonly Brush Violet = FrozenBrush("#B34DFF");
-    private static readonly Brush DimGold = FrozenBrush("#9D6B2C");
+    private static readonly Brush DimGold = CreateMetallicReelBrush();
     private static readonly Brush SoftText = FrozenBrush("#EEDFF4");
     private static readonly NineLivesSymbol[] PreviewSymbols = Enum.GetValues<NineLivesSymbol>();
 
@@ -619,6 +619,17 @@ internal partial class NineLivesWindow : Window
         => amount.ToString("#,##0.##", CultureInfo.InvariantCulture);
 
     private static decimal ClosestBet(decimal target) => NineLivesRules.Bets.OrderBy(value => Math.Abs(value - target)).First();
+
+    private static Brush CreateMetallicReelBrush()
+    {
+        var brush = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 1) };
+        brush.GradientStops.Add(new GradientStop(Color.FromRgb(247, 216, 145), 0));
+        brush.GradientStops.Add(new GradientStop(Color.FromRgb(110, 65, 112), 0.33));
+        brush.GradientStops.Add(new GradientStop(Color.FromRgb(217, 166, 92), 0.68));
+        brush.GradientStops.Add(new GradientStop(Color.FromRgb(105, 58, 102), 1));
+        brush.Freeze();
+        return brush;
+    }
 
     private static SolidColorBrush FrozenBrush(string hex)
     {
