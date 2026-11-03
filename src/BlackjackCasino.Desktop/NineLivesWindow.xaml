@@ -95,6 +95,36 @@
             <Setter Property="FontFamily" Value="Georgia"/>
             <Setter Property="FontSize" Value="16"/>
             <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="GoldShell" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="2" CornerRadius="13">
+                            <Grid>
+                                <Border Margin="4" BorderBrush="#99FFF1C5" BorderThickness="1" CornerRadius="9"
+                                        IsHitTestVisible="False"/>
+                                <Border VerticalAlignment="Top" Height="1.5" Background="#A0FFF8D8"
+                                        Margin="15,6,15,0" IsHitTestVisible="False"/>
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                  Margin="{TemplateBinding Padding}"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="GoldShell" Property="BorderBrush" Value="#FFFFD993"/>
+                                <Setter TargetName="GoldShell" Property="Opacity" Value="0.94"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="GoldShell" Property="Opacity" Value="0.78"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="GoldShell" Property="Opacity" Value="0.32"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <Style x:Key="SpinButtonStyle" TargetType="Button" BasedOn="{StaticResource ChromeButton}">
@@ -219,7 +249,7 @@
                 </Ellipse>
 
                 <Canvas Panel.ZIndex="20">
-                    <Border Canvas.Left="28" Canvas.Top="20" Width="1704" Height="920"
+                    <Border x:Name="MachineCabinet" Canvas.Left="28" Canvas.Top="20" Width="1704" Height="920"
                             Background="{StaticResource NineLivesEnamel}" BorderBrush="{StaticResource NineLivesIris}" BorderThickness="4" CornerRadius="42"/>
 
                     <!-- Engraved inlays and corner filigree sit on top of the illustrated casing. -->
@@ -349,19 +379,17 @@
                             <TextBlock Text="MAX WIN" Style="{StaticResource PanelLabel}"/>
                             <TextBlock Text="5,000×" Foreground="#F6E4AC" FontFamily="Georgia" FontSize="25" Margin="0,4,0,18"/>
                             <Border Height="1.5" Background="{StaticResource NineLivesGold}" Opacity="0.55" Margin="0,0,0,18"/>
-                            <TextBlock Text="SHORTCUTS" Style="{StaticResource PanelLabel}"/>
-                            <Grid Margin="0,8,0,0">
-                                <Grid.ColumnDefinitions><ColumnDefinition Width="68"/><ColumnDefinition/></Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions><RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
-                                <TextBlock Grid.Row="0" Text="Space" Foreground="#C7B7CF" FontFamily="Consolas" FontSize="12"/>
-                                <TextBlock Grid.Row="0" Grid.Column="1" Text="Spin" Foreground="#887A92" FontSize="12"/>
-                                <TextBlock Grid.Row="1" Text="A" Foreground="#C7B7CF" FontFamily="Consolas" FontSize="12" Margin="0,8,0,0"/>
-                                <TextBlock Grid.Row="1" Grid.Column="1" Text="Auto" Foreground="#887A92" FontSize="12" Margin="0,8,0,0"/>
-                                <TextBlock Grid.Row="2" Text="+ / −" Foreground="#C7B7CF" FontFamily="Consolas" FontSize="12" Margin="0,8,0,0"/>
-                                <TextBlock Grid.Row="2" Grid.Column="1" Text="Bet" Foreground="#887A92" FontSize="12" Margin="0,8,0,0"/>
-                                <TextBlock Grid.Row="3" Text="Esc" Foreground="#C7B7CF" FontFamily="Consolas" FontSize="12" Margin="0,8,0,0"/>
-                                <TextBlock Grid.Row="3" Grid.Column="1" Text="Casino" Foreground="#887A92" FontSize="12" Margin="0,8,0,0"/>
-                            </Grid>
+                            <TextBlock Text="MIDNIGHT FORTUNE" Style="{StaticResource PanelLabel}" Foreground="#E4BE7B"/>
+                            <Border BorderBrush="{StaticResource NineLivesIris}" BorderThickness="1.3"
+                                    Background="#47170F2D" CornerRadius="15" Margin="0,12,0,0" Padding="14">
+                                <StackPanel>
+                                    <TextBlock Text="✦  LEGENDARY HITS" Foreground="#F3D490"
+                                               FontFamily="Georgia" FontSize="17" FontWeight="Bold"/>
+                                    <TextBlock Text="Winning symbols illuminate the reel and trace their payline."
+                                               Foreground="#C9B8D1" FontSize="13" TextWrapping="Wrap" Margin="0,9,0,0"/>
+                                </StackPanel>
+                            </Border>
+
                         </StackPanel>
                     </Border>
 
@@ -377,7 +405,7 @@
                     </Border>
 
                     <!-- Bottom control deck uses a real Grid so controls cannot overlap -->
-                    <Border Canvas.Left="70" Canvas.Top="861" Width="1620" Height="79"
+                    <Border x:Name="NineLivesFooter" Canvas.Left="70" Canvas.Top="860" Width="1620" Height="70"
                             Background="{StaticResource NineLivesEnamel}" BorderBrush="{StaticResource NineLivesGold}" BorderThickness="2" CornerRadius="21">
                         <Grid Margin="16,11">
                             <Grid.ColumnDefinitions>

@@ -122,6 +122,11 @@ internal static class Program
                     $"Nine Lives did not expose exactly nine reel artwork surfaces; found {reelImages.Length}.");
                 Grid nineLivesStage = Find<Grid>(window).Single(grid => grid.Name == "NineLivesStage");
                 Require(nineLivesStage.Width / nineLivesStage.Height > 1.8, "Nine Lives reverted to its letterboxed 3:2 canvas.");
+                FrameworkElement cabinet = Find<FrameworkElement>(window).Single(element => element.Name == "MachineCabinet");
+                FrameworkElement footer = Find<FrameworkElement>(window).Single(element => element.Name == "NineLivesFooter");
+                Point footerInCabinet = footer.TranslatePoint(new Point(0, 0), cabinet);
+                Require(footerInCabinet.Y + footer.ActualHeight < cabinet.ActualHeight - 3,
+                    "Nine Lives control console collides with the cabinet's lower metallic rim.");
                 Require(reelImages.All(image => image.Stretch == Stretch.Uniform), "Nine Lives symbol art is stretched or cropped.");
                 Require(reelImages.All(image => image.Source is BitmapSource),
                     "Nine Lives regressed to replacement vector symbols instead of the restored concept-art set.");
