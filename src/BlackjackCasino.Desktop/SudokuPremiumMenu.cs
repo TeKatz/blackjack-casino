@@ -33,7 +33,8 @@ internal static class SudokuPremiumMenu
     private const string Muted = "#9AB4B0";
 
     private static readonly Lazy<BitmapSource> AmbientArt = new(() => LoadArtwork("sky-bar.png", 1400));
-    private static readonly Lazy<BitmapSource> InteriorArt = new(() => LoadArtwork("lounge:sudoku-studio.jpg", 900));
+    private static readonly Lazy<BitmapSource> InteriorArt = new(() => LoadArtwork("fine-dining.png", 900));
+    private static readonly Lazy<BitmapSource> PuzzleArt = new(() => LoadArtwork("lounge:sudoku-studio.jpg", 420));
     private static readonly ControlTemplate ButtonTemplate = CreateButtonTemplate();
 
     internal static UIElement Build(
@@ -120,6 +121,22 @@ internal static class SudokuPremiumMenu
             Source = InteriorArt.Value,
             Stretch = Stretch.UniformToFill,
             Opacity = .64,
+            IsHitTestVisible = false,
+            CacheMode = new BitmapCache(),
+        });
+        // Dedicated Sudoku desk illustration from our premium puzzle artwork.
+        // Keep its original portrait proportions instead of stretching a small
+        // raster to the full width of the live UI panel.
+        scene.Children.Add(new Image
+        {
+            Source = PuzzleArt.Value,
+            Width = 390,
+            Height = 505,
+            Stretch = Stretch.Uniform,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Bottom,
+            Margin = new Thickness(0, 0, 12, 4),
+            Opacity = .80,
             IsHitTestVisible = false,
             CacheMode = new BitmapCache(),
         });
