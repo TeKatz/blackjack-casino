@@ -205,8 +205,8 @@ internal static class Program
                 Require(cyberSymbols.Length >= 20, $"Neon Vault rendered only {cyberSymbols.Length} vector reel symbols.");
                 Require(cyberSymbols.All(image => image.Stretch == Stretch.Uniform),
                     "Neon Vault is stretching or cropping symbol artwork.");
-                Require(cyberSymbols.Select(image => image.Source).Distinct().Count() >= 1,
-                    "Neon Vault has no visible cyber-symbol images.");
+                Require(cyberSymbols.Select(image => image.Source).Distinct().Count() >= 6,
+                    "Neon Vault has reverted to repeated placeholder artwork instead of the eight-symbol gallery.");
                 Border cyberReelFrame = Find<Border>(window).Single(border => border.Name == "ReelFrame");
                 Require(cyberReelFrame.ActualWidth > 720 && cyberReelFrame.ActualHeight > 475,
                     "Neon Vault reel stage failed to use the 1080p design area.");

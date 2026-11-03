@@ -28,7 +28,14 @@ internal partial class NeonVaultWindow : Window
     private readonly TranslateTransform[] reelMotion = new TranslateTransform[NeonVaultRules.Reels];
     private readonly bool[] reelSettled = new bool[NeonVaultRules.Reels];
 
-    private NeonVaultSymbol[] displayGrid = Enumerable.Repeat(NeonVaultSymbol.Pulse, NeonVaultRules.Cells).ToArray();
+    // A varied showcase when the machine is idle; actual outcomes always come from NeonVaultSession.
+    private NeonVaultSymbol[] displayGrid =
+    [
+        NeonVaultSymbol.Pulse, NeonVaultSymbol.Prism, NeonVaultSymbol.Chip, NeonVaultSymbol.Crown, NeonVaultSymbol.Key,
+        NeonVaultSymbol.Wild, NeonVaultSymbol.Scatter, NeonVaultSymbol.Pulse, NeonVaultSymbol.VaultKey, NeonVaultSymbol.Prism,
+        NeonVaultSymbol.Crown, NeonVaultSymbol.Key, NeonVaultSymbol.Wild, NeonVaultSymbol.Chip, NeonVaultSymbol.Pulse,
+        NeonVaultSymbol.VaultKey, NeonVaultSymbol.Prism, NeonVaultSymbol.Scatter, NeonVaultSymbol.Key, NeonVaultSymbol.Crown,
+    ];
     private decimal selectedBet;
     private bool spinning;
     private bool initialized;
