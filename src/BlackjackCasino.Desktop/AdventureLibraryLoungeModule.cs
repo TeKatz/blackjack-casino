@@ -160,18 +160,16 @@ internal sealed class AdventureLibraryHubControl : UserControl
 
     private void ShowHub()
     {
-        var right = new StackPanel();
+        var right = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
         right.Children.Add(PremiumLoungeTheme.Heading("ADVENTURE LIBRARY"));
 
         foreach (AdventureDefinition tale in AdventureCatalog.All)
             right.Children.Add(BuildAdventureCard(tale));
 
-        right.Children.Add(PremiumLoungeTheme.Heading("CHARACTER & NEW RUN"));
-        right.Children.Add(BuildCharacterCreator(SelectedAdventure));
-        var musicHeader = PremiumLoungeTheme.Heading("BACKROOM SCORE");
-        musicHeader.Margin = new Thickness(0, 18, 0, 9);
-        right.Children.Add(musicHeader);
-        right.Children.Add(BuildMusicPanel());
+        var leftSettings = new StackPanel();
+        leftSettings.Children.Add(PremiumLoungeTheme.Heading("CHARACTER & NEW RUN", 13));
+        leftSettings.Children.Add(BuildCharacterCreator(SelectedAdventure));
+        leftSettings.Children.Add(BuildMusicPanel());
 
         int started = progress.Runs.Count;
         int completed = progress.Runs.Values.Count(run => run.Completed);
@@ -181,15 +179,17 @@ internal sealed class AdventureLibraryHubControl : UserControl
             "BEYOND THE CASINO FLOOR",
             "Every door has a story.",
             "Make your choices, roll the dice and live with what follows.",
-            "T A L E S   F R O M   T H E   B A C K R O O M",
-            "Choose a tale.\nCarry the consequences.",
-            "Each adventure is its own content package. All tales share one character, dice, inventory, condition, encounter and completion blueprint.",
+            "TALES FROM THE BACKROOM",
+            "Choose a tale.",
+            "Make your choices, roll the dice and carry the consequences. Every tale shares your character, inventory and encounters.",
             PremiumLoungeTheme.Stats(
-                $"AVAILABLE TALES   {AdventureCatalog.All.Count:N0}",
-                $"RUNS STARTED   {started:N0}    ·    COMPLETED   {completed:N0}",
-                $"SELECTED   {SelectedAdventure.Title.ToUpperInvariant()}"),
+                $"AVAILABLE TALES   {AdventureCatalog.All.Count:N0}    ·    COMPLETED   {completed:N0}",
+                $"RUNS STARTED   {started:N0}    ·    SELECTED   {SelectedAdventure.Title.ToUpperInvariant()}"),
             right,
-            "Your investigation board, encounters, choices and character persist between sessions. Each tale can be continued independently.");
+            "Your investigation board, encounters, choices and character persist between sessions. Each tale can be continued independently.",
+            leftSecondary: leftSettings,
+            compactLeft: true,
+            rightScrollable: false);
     }
 
     private Border BuildAdventureCard(AdventureDefinition adventure)
@@ -228,11 +228,11 @@ internal sealed class AdventureLibraryHubControl : UserControl
 
     private Border BuildCharacterCreator(AdventureDefinition adventure)
     {
-        Border panel = PremiumLoungeTheme.Panel(new Grid(), 18);
+        Border panel = PremiumLoungeTheme.Panel(new Grid(), 11);
         panel.Margin = new Thickness(0, 0, 0, 9);
         var grid = new Grid();
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(355) });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(20) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(275) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(14) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
         var chooser = new StackPanel();
@@ -241,20 +241,19 @@ internal sealed class AdventureLibraryHubControl : UserControl
         {
             Text = adventure.Title,
             FontFamily = new FontFamily("Georgia"),
-            FontSize = 25,
+            FontSize = 20,
             Foreground = AdventureUi.Ink("#F0E0C6"),
-            Margin = new Thickness(0, 5, 0, 12),
+            Margin = new Thickness(0, 4, 0, 8),
         });
         var classes = BuildClassSelector(adventure);
         chooser.Children.Add(classes);
-        Button start = AdventureUi.Button("BEGIN NEW RUN", accent: true, fontSize: 13, scaleOnHover: false);
-        start.HorizontalAlignment = HorizontalAlignment.Left;
-        start.Margin = new Thickness(0, 17, 0, 0);
-        start.Click += (_, _) =>
+        Button start = PremiumLoungeTheme.Button("BEGIN NEW RUN", "AdventureBeginNewRun", () =>
         {
             AdventureCharacterState character = AdventureCharacterCatalog.Create(adventure, SelectedClassId(classes), playerName());
             StartFreshRun(adventure, character);
-        };
+        }, width: 235, height: 36, gold: true);
+        start.HorizontalAlignment = HorizontalAlignment.Left;
+        start.Margin = new Thickness(0, 9, 0, 0);
         chooser.Children.Add(start);
         grid.Children.Add(chooser);
 
@@ -263,9 +262,9 @@ internal sealed class AdventureLibraryHubControl : UserControl
         grid.Children.Add(divider);
 
         var preview = new StackPanel { Margin = new Thickness(4, 2, 0, 0) };
-        var className = new TextBlock { FontFamily = new FontFamily("Georgia"), FontSize = 24, Foreground = AdventureUi.Ink("#EBD9B7") };
-        var description = new TextBlock { Foreground = AdventureUi.Ink("#AEBFB7"), FontFamily = new FontFamily("Georgia"), FontSize = 13.5, LineHeight = 21, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 7, 0, 10) };
-        var stats = new TextBlock { Foreground = AdventureUi.Ink("#CDBA8B"), FontFamily = new FontFamily("Georgia"), FontSize = 11.5, LineHeight = 18, TextWrapping = TextWrapping.Wrap };
+        var className = new TextBlock { FontFamily = new FontFamily("Georgia"), FontSize = 18, Foreground = AdventureUi.Ink("#EBD9B7") };
+        var description = new TextBlock { Foreground = AdventureUi.Ink("#AEBFB7"), FontFamily = new FontFamily("Georgia"), FontSize = 11, LineHeight = 15, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 3, 0, 3) };
+        var stats = new TextBlock { Foreground = AdventureUi.Ink("#CDBA8B"), FontFamily = new FontFamily("Georgia"), FontSize = 10, LineHeight = 14, TextWrapping = TextWrapping.Wrap };
         preview.Children.Add(className);
         preview.Children.Add(description);
         preview.Children.Add(AdventureUi.OrnamentRule("◇"));
@@ -299,11 +298,11 @@ internal sealed class AdventureLibraryHubControl : UserControl
     {
         var classes = new ComboBox
         {
-            Width = 320,
+            Width = 246,
             HorizontalAlignment = HorizontalAlignment.Left,
-            Padding = new Thickness(12, 9, 12, 9),
+            Padding = new Thickness(9, 6, 9, 6),
             FontFamily = new FontFamily("Georgia"),
-            FontSize = 15,
+            FontSize = 13,
             Background = AdventureUi.Ink("#0B1714"),
             Foreground = AdventureUi.Ink("#F1E4D0"),
             BorderBrush = AdventureUi.Ink("#65755D"),
@@ -333,28 +332,31 @@ internal sealed class AdventureLibraryHubControl : UserControl
     private Border BuildMusicPanel()
     {
         AreaPresentationSettings settings = presentation().Sanitize();
-        Border panel = PremiumLoungeTheme.Panel(new Grid(), 16);
-        panel.Margin = new Thickness(0, 0, 0, 24);
+        Border panel = PremiumLoungeTheme.Panel(new Grid(), 10);
+        panel.Margin = new Thickness(0, 4, 0, 0);
         var grid = new Grid();
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(185) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(133) });
         var copy = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
         copy.Children.Add(AdventureUi.Eyebrow("BACKROOM SCORE", 10.5));
         copy.Children.Add(new TextBlock { Text = "Lanterns Beyond the Door", FontFamily = new FontFamily("Georgia"), FontSize = 17, Foreground = AdventureUi.Ink("#E9D8B6"), Margin = new Thickness(0, 3, 0, 1) });
-        copy.Children.Add(new TextBlock { Text = "Shared by the Backroom library; future tales can override this at the content layer.", FontFamily = new FontFamily("Georgia"), FontSize = 10.5, Foreground = AdventureUi.Ink("#839B91") });
+        // Keep the track name readable, but avoid using a full extra line on the compact layout.
         grid.Children.Add(copy);
 
-        Button toggle = AdventureUi.Button(settings.MusicEnabled ? "MUSIC · ON" : "MUSIC · OFF", accent: settings.MusicEnabled, fontSize: 11, scaleOnHover: false);
+        Button toggle = PremiumLoungeTheme.Button(
+            settings.MusicEnabled ? "MUSIC · ON" : "MUSIC · OFF",
+            "AdventureMusicToggle", () => Commit(!settings.MusicEnabled, slider.Value),
+            width: 102, height: 34);
         toggle.VerticalAlignment = VerticalAlignment.Center;
-        toggle.Margin = new Thickness(20, 0, 24, 0);
+        toggle.Margin = new Thickness(6, 0, 6, 0);
         Grid.SetColumn(toggle, 1);
         grid.Children.Add(toggle);
 
         var volume = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
         var label = new TextBlock { Text = $"MUSIC VOLUME · {Math.Round(settings.MusicVolume / .32 * 100):0}%", FontFamily = new FontFamily("Georgia"), FontSize = 10, Foreground = AdventureUi.Ink("#8FB9A6"), Margin = new Thickness(0, 0, 0, 5) };
         volume.Children.Add(label);
-        var slider = new Slider { Minimum = 0, Maximum = .32, Value = settings.MusicVolume, Width = 172, Height = 22, IsMoveToPointEnabled = true, Cursor = CasinoCursors.Hand };
+        var slider = new Slider { Minimum = 0, Maximum = .32, Value = settings.MusicVolume, Width = 123, Height = 22, IsMoveToPointEnabled = true, Cursor = CasinoCursors.Hand };
         volume.Children.Add(slider);
         Grid.SetColumn(volume, 2);
         grid.Children.Add(volume);
@@ -366,7 +368,6 @@ internal sealed class AdventureLibraryHubControl : UserControl
             toggle.Content = settings.MusicEnabled ? "MUSIC · ON" : "MUSIC · OFF";
             label.Text = $"MUSIC VOLUME · {Math.Round(settings.MusicVolume / .32 * 100):0}%";
         }
-        toggle.Click += (_, _) => Commit(!settings.MusicEnabled, slider.Value);
         slider.ValueChanged += (_, args) => Commit(settings.MusicEnabled, args.NewValue);
         panel.Child = grid;
         return panel;
