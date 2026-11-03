@@ -43,6 +43,8 @@ internal sealed record AppPreferences
 
     public decimal Bankroll { get; init; } = 1_000m;
     public Guid LastAppliedVaultPayoutId { get; init; }
+    public string? LastDailyLoginClaimDate { get; init; }
+    public int DailyLoginClaims { get; init; }
 
     public decimal ManorBet { get; init; } = 25m;
     public SlotSpinSpeed ManorSpeed { get; init; }
