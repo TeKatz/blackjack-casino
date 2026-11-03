@@ -74,7 +74,7 @@ internal static class SudokuPremiumMenu
         stage.Children.Add(layout);
 
         var hero = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
-        hero.Children.Add(Label("—   A QUIETER CORNER   —", 14, Teal, true, TextAlignment.Center));
+        hero.Children.Add(Label("A QUIETER CORNER", 14, Teal, true, TextAlignment.Center));
         hero.Children.Add(new TextBlock
         {
             Text = "Take your time.",
@@ -143,7 +143,9 @@ internal static class SudokuPremiumMenu
         leftCopy.Children.Add(Label("S U D O K U", 17, Gold, true));
         leftCopy.Children.Add(new TextBlock
         {
-            Text = "One grid.\nNo clock to beat.",
+            Text = "One grid. No clock to beat.",
+            TextWrapping = TextWrapping.Wrap,
+            MaxWidth = 520,
             FontFamily = new FontFamily("Georgia"),
             FontSize = 42,
             Foreground = Brush(Cream),
@@ -190,7 +192,7 @@ internal static class SudokuPremiumMenu
         Grid.SetColumn(right, 1);
         inside.Children.Add(right);
 
-        right.Children.Add(Label("F R E E   P L A Y", 15, Gold, true));
+        right.Children.Add(Label("FREE PLAY", 15, Gold, true));
         var rows = new StackPanel { Margin = new Thickness(0, 8, 0, 6) };
         foreach (DifficultyEntry entry in difficulties)
         {
@@ -200,7 +202,7 @@ internal static class SudokuPremiumMenu
         right.Children.Add(rows);
 
         var timerSection = new StackPanel { Margin = new Thickness(0, 6, 0, 0) };
-        var timerButton = ActionButton(showTimer ? "◷   TIMER · VISIBLE" : "◷   TIMER · HIDDEN", false, 750, 43);
+        var timerButton = ActionButton(showTimer ? "TIMER · VISIBLE" : "TIMER · HIDDEN", false, 750, 43);
         timerButton.Name = "SudokuTimerToggle";
         timerButton.Click += (_, _) => toggleTimer();
         timerSection.Children.Add(timerButton);
@@ -218,8 +220,8 @@ internal static class SudokuPremiumMenu
         var dailySection = new StackPanel { Margin = new Thickness(0, 4, 0, 0) };
         var dailyButton = ActionButton(
             dailyFinished
-                ? "▣   TODAY'S DAILY · COMPLETE"
-                : $"▣   TODAY'S DAILY · {daily.Difficulty.ToString().ToUpperInvariant()}",
+                ? "TODAY'S DAILY · COMPLETE"
+                : $"TODAY'S DAILY · {daily.Difficulty.ToString().ToUpperInvariant()}",
             true, 750, 46, isGold: true);
         dailyButton.Name = "SudokuDailyButton";
         dailyButton.Click += (_, _) => openDaily();
