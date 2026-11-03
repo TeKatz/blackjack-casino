@@ -171,12 +171,12 @@ public static class AdventureCatalog
     private static readonly AdventureDefinition StrangersWagerDefinition = StrangersWagerAdventure.Build();
     private static readonly AdventureDefinition DeadMansHandDefinition = DeadMansHandAdventure.Build();
 
-    // Stranger's Wager remains temporarily registered while the reusable encounter framework is being exercised.
+    // The Stranger's Wager remains available to encounter regression tests and as
+    // a compatibility definition for previously saved runs; it is no longer public content.
     private static readonly IReadOnlyList<AdventureDefinition> Adventures =
     [
         BlackStagDefinition,
         DrownedBellDefinition,
-        StrangersWagerDefinition,
         DeadMansHandDefinition,
     ];
 
@@ -188,7 +188,10 @@ public static class AdventureCatalog
 
     public static bool TryGet(string id, out AdventureDefinition? adventure)
     {
-        adventure = Adventures.FirstOrDefault(item => string.Equals(item.Id, id, StringComparison.OrdinalIgnoreCase));
+        // Keep legacy runs loadable without advertising the temporary test tale in the library.
+        adventure = string.Equals(id, StrangersWagerDefinition.Id, StringComparison.OrdinalIgnoreCase)
+            ? StrangersWagerDefinition
+            : Adventures.FirstOrDefault(item => string.Equals(item.Id, id, StringComparison.OrdinalIgnoreCase));
         return adventure is not null;
     }
 }

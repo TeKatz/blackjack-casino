@@ -40,7 +40,7 @@ public sealed class AdventureEngineTests
     public void TemporaryEncounterAdventureIsRegisteredAndValid()
     {
         AdventureDefinition adventure = AdventureCatalog.StrangersWager;
-        Assert.Contains(AdventureCatalog.All, item => item.Id == "strangers-wager");
+        Assert.DoesNotContain(AdventureCatalog.All, item => item.Id == "strangers-wager");
         AdventureDefinitionValidator.Validate(adventure);
         AdventureEncounterCatalog.Validate(adventure);
         Assert.True(AdventureEncounterCatalog.TryGet(adventure.Id, "blackjack-table", out AdventureEncounterDefinition? encounter));

@@ -13,6 +13,8 @@ public partial class MainWindow
     private Grid? embeddedGameOverlay;
     private ContentControl? embeddedGameHost;
     private Window? embeddedGameShell;
+    // Merge intentionally reuses the host soundtrack; other embedded games own their music.
+    private bool keepHostMusicForEmbeddedGame;
     private UIElement? embeddedGameContent;
     private string? embeddedPreviousTitle;
     private bool embeddedGamesInitialized;
@@ -97,6 +99,7 @@ public partial class MainWindow
         embeddedPreviousTitle = Title;
         Title = title;
         embeddedGameShell = shell;
+        keepHostMusicForEmbeddedGame = !muteHostMusic;
         embeddedGameContent = content;
 
         // Create an invisible native owner solely so the existing Window lifecycle and
@@ -280,6 +283,7 @@ public partial class MainWindow
         }
 
         embeddedGameShell = null;
+        keepHostMusicForEmbeddedGame = false;
         embeddedGameContent = null;
         embeddedScaleViewbox = null;
         if (embeddedPreviousTitle is not null)

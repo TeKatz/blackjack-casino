@@ -80,6 +80,10 @@ public partial class MainWindow : Window
     {
         initialProfile=profile; testSession=initialPreferences is not null;
         InitializeComponent();
+        // The Blackjack table is constructed by XAML, but should never be seen before
+        // the startup news and prepared casino lobby. Smoke tests use a plain Application.
+        if (!testSession && Application.Current is App)
+            Opacity = 0;
 
         string? manorRecoveryNotice = null;
         try { if(!testSession) new ManorPersistence(ManorPersistence.DefaultDirectory).Recover(); }

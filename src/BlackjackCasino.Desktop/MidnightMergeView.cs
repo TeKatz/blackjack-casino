@@ -112,12 +112,15 @@ internal sealed class MidnightMergeView : UserControl, IDisposable
         chrome.AppendChild(presenter);
         template.VisualTree = chrome;
         style.Setters.Add(new Setter(TemplateProperty, template));
+        // Local button colors override Style triggers. Template triggers can change the
+        // rendered chrome without replacing a button's explicitly configured palette.
         var hover = new Trigger { Property = IsMouseOverProperty, Value = true };
-        hover.Setters.Add(new Setter(BackgroundProperty, Ink("#344D4D")));
+        hover.Setters.Add(new Setter(Border.BackgroundProperty, Ink("#344D4D"), "Chrome"));
+        hover.Setters.Add(new Setter(Border.BorderBrushProperty, Ink("#D9BA82"), "Chrome"));
         var focus = new Trigger { Property = IsKeyboardFocusedProperty, Value = true };
-        focus.Setters.Add(new Setter(BorderBrushProperty, Ink("#F1CD7A")));
-        style.Triggers.Add(hover);
-        style.Triggers.Add(focus);
+        focus.Setters.Add(new Setter(Border.BorderBrushProperty, Ink("#F1CD7A"), "Chrome"));
+        template.Triggers.Add(hover);
+        template.Triggers.Add(focus);
         button.Style = style;
         AutomationProperties.SetName(button, text);
         return button;

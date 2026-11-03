@@ -55,7 +55,19 @@ public partial class App : Application
         }
 
         startupWelcomeQueued = true;
-        Dispatcher.BeginInvoke(() => StartupWelcomeWindow.ShowFor(main), DispatcherPriority.ContextIdle);
+        // The normal main window starts transparent; show the welcome news before revealing the lobby.
+        Dispatcher.BeginInvoke(() =>
+        {
+            try
+            {
+                StartupWelcomeWindow.ShowFor(main);
+            }
+            finally
+            {
+                // An exception in the welcome dialog must never strand an invisible casino window.
+                main.Opacity = 1;
+            }
+        }, DispatcherPriority.Loaded);
     }
 
     private static void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
