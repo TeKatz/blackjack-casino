@@ -9,13 +9,31 @@ public sealed class EconomyBalancingTests
     [Fact]
     public void DailyLoginCycleAdvancesWithoutStreakDependency()
     {
-        decimal[] expected = [100m, 125m, 150m, 175m, 200m, 250m, 500m];
+        decimal[] expected = [1_000m, 1_500m, 2_000m, 2_500m, 3_000m, 3_500m, 4_000m];
 
         for (int claim = 0; claim < expected.Length; claim++)
             Assert.Equal(expected[claim], DailyLoginRewardSchedule.GetReward(claim));
 
-        Assert.Equal(100m, DailyLoginRewardSchedule.GetReward(expected.Length));
-        Assert.Equal(500m, DailyLoginRewardSchedule.GetReward(expected.Length * 2 - 1));
+        Assert.Equal(1_000m, DailyLoginRewardSchedule.GetReward(expected.Length));
+        Assert.Equal(4_000m, DailyLoginRewardSchedule.GetReward(expected.Length * 2 - 1));
+    }
+
+    [Fact]
+    public void DailyLoginRewardBundlesContainCoinsAndMilestonePacks()
+    {
+        for (int claim = 0; claim < DailyLoginRewardSchedule.CycleLength; claim++)
+        {
+            DailyLoginRewardDefinition reward = DailyLoginRewardSchedule.GetDefinition(claim);
+            Assert.Equal(claim == 6 ? 80 : 40, reward.CosmeticCoins);
+        }
+
+        Assert.Equal(CollectionRarity.Common, DailyLoginRewardSchedule.GetDefinition(0).PackRarity);
+        Assert.Null(DailyLoginRewardSchedule.GetDefinition(1).PackRarity);
+        Assert.Null(DailyLoginRewardSchedule.GetDefinition(2).PackRarity);
+        Assert.Equal(CollectionRarity.Rare, DailyLoginRewardSchedule.GetDefinition(3).PackRarity);
+        Assert.Null(DailyLoginRewardSchedule.GetDefinition(4).PackRarity);
+        Assert.Null(DailyLoginRewardSchedule.GetDefinition(5).PackRarity);
+        Assert.Equal(CollectionRarity.Epic, DailyLoginRewardSchedule.GetDefinition(6).PackRarity);
     }
 
     [Fact]
@@ -23,17 +41,17 @@ public sealed class EconomyBalancingTests
     {
         var firstDay = new DateOnly(2026, 11, 1);
         DailyLoginClaim first = Assert.IsType<DailyLoginClaim>(DailyLoginProgress.TryClaim(null, 0, firstDay));
-        Assert.Equal(100m, first.Reward);
+        Assert.Equal(1_000m, first.Reward);
         Assert.Null(DailyLoginProgress.TryClaim(first.ClaimDate, first.TotalClaims, firstDay));
 
         DateOnly later = firstDay.AddDays(5);
         DailyLoginStatus waiting = DailyLoginProgress.GetStatus(first.ClaimDate, first.TotalClaims, later);
         Assert.True(waiting.CanClaim);
         Assert.Equal(2, waiting.ActiveStep);
-        Assert.Equal(125m, waiting.ActiveReward);
+        Assert.Equal(1_500m, waiting.ActiveReward);
 
         DailyLoginClaim second = Assert.IsType<DailyLoginClaim>(DailyLoginProgress.TryClaim(first.ClaimDate, first.TotalClaims, later));
-        Assert.Equal(125m, second.Reward);
+        Assert.Equal(1_500m, second.Reward);
         Assert.Equal(2, second.TotalClaims);
     }
 
@@ -42,14 +60,14 @@ public sealed class EconomyBalancingTests
     {
         DateOnly today = new(2026, 11, 3);
         DailyLoginClaim seventh = Assert.IsType<DailyLoginClaim>(DailyLoginProgress.TryClaim("2026-11-02", 6, today));
-        Assert.Equal(500m, seventh.Reward);
+        Assert.Equal(4_000m, seventh.Reward);
         Assert.Equal(7, seventh.Status.CycleCompletedSteps);
         Assert.False(seventh.Status.CanClaim);
 
         DailyLoginStatus tomorrow = DailyLoginProgress.GetStatus(seventh.ClaimDate, seventh.TotalClaims, today.AddDays(1));
         Assert.True(tomorrow.CanClaim);
         Assert.Equal(1, tomorrow.ActiveStep);
-        Assert.Equal(100m, tomorrow.ActiveReward);
+        Assert.Equal(1_000m, tomorrow.ActiveReward);
         Assert.Equal(0, tomorrow.CycleCompletedSteps);
     }
 
