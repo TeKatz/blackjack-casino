@@ -144,22 +144,21 @@ internal sealed class SolitaireHubControl : UserControl, IDisposable
         label.Margin = new Thickness(0, 9, 0, 7);
         right.Children.Add(label);
         var achievements = BuildAchievements(current);
-        achievements.Margin = new Thickness(0, 0, 0, 4);
+        achievements.Margin = new Thickness(0, 9, 0, 5);
         achievements.Padding = new Thickness(10);
-        // Keep the full original achievement list in an accessible section,
-        // without forcing it to displace the playable mode rows.
-        var details = new Expander
-        {
-            Header = $"VIEW ALL · {SolitaireAchievementCatalog.Completed(current)}/{SolitaireAchievementCatalog.All.Count}",
-            Content = achievements,
-            IsExpanded = false,
-            Foreground = PremiumLoungeTheme.Ink(PremiumLoungeTheme.Cream),
-            Background = PremiumLoungeTheme.Ink("#122A2C"),
-            BorderBrush = PremiumLoungeTheme.Ink("#6D6250"),
-            BorderThickness = new Thickness(1),
-            Padding = new Thickness(13, 10, 13, 10),
-        };
-        right.Children.Add(details);
+        achievements.Visibility = Visibility.Collapsed;
+        var toggleAchievements = PremiumLoungeTheme.Button(
+            $"VIEW ALL · {SolitaireAchievementCatalog.Completed(current)}/{SolitaireAchievementCatalog.All.Count}",
+            "SolitaireAchievementsToggle",
+            () =>
+            {
+                bool open = achievements.Visibility != Visibility.Visible;
+                achievements.Visibility = open ? Visibility.Visible : Visibility.Collapsed;
+            },
+            width: 710, height: 43, gold: true);
+        toggleAchievements.HorizontalAlignment = HorizontalAlignment.Left;
+        right.Children.Add(toggleAchievements);
+        right.Children.Add(achievements);
 
         Content = PremiumLoungeTheme.Build(
             "high-limit-slots.png",
