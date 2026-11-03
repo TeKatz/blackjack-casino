@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -31,6 +32,7 @@ public partial class MainWindow
         AddHandler(Button.ClickEvent, new RoutedEventHandler(ProgressionButtonBubbled), handledEventsToo: true);
         AddHandler(Keyboard.PreviewKeyDownEvent, new KeyEventHandler(ProgressionKeyObserved), handledEventsToo: true);
         RefreshProfileButton();
+        ClaimDailyLoginReward();
     }
 
     private void ShutdownProgressionFeature()
@@ -144,6 +146,7 @@ public partial class MainWindow
             return;
         }
 
+        CreditProgressionBankrollReward(award.BankrollEarned);
         RefreshProfileButton();
 
         if (award.HasLevelUp)
@@ -159,6 +162,48 @@ public partial class MainWindow
             SeasonProgressState season = progressionController.Service.GetOrCreateSeasonProgress(progressionController.Profile.ActiveSeasonId);
             StatusText.Text += $" · Season tier {season.Tier}";
         }
+    }
+
+    private void CreditProgressionBankrollReward(decimal amount, string? source = null)
+    {
+        if (amount <= 0m)
+        {
+            return;
+        }
+
+        session.CreditBankroll(amount);
+        SavePreferences();
+        BankrollText.Text = Money(session.Bankroll);
+        if (!string.IsNullOrWhiteSpace(source))
+        {
+            StatusText.Text = $"{source}: +{Money(amount)}";
+        }
+    }
+
+    private void ClaimDailyLoginReward()
+    {
+        if (testSession)
+        {
+            return;
+        }
+
+        string today = DateOnly.FromDateTime(DateTime.Now).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        if (string.Equals(preferences.LastDailyLoginClaimDate, today, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        int completedClaims = Math.Max(0, preferences.DailyLoginClaims);
+        decimal reward = DailyLoginRewardSchedule.GetReward(completedClaims);
+        session.CreditBankroll(reward);
+        preferences = preferences with
+        {
+            LastDailyLoginClaimDate = today,
+            DailyLoginClaims = completedClaims + 1,
+        };
+        SavePreferences();
+        BankrollText.Text = Money(session.Bankroll);
+        StatusText.Text = $"Daily login · +{Money(reward)} · claim {(completedClaims % DailyLoginRewardSchedule.CycleLength) + 1}/{DailyLoginRewardSchedule.CycleLength}";
     }
 
     private void ProfileButton_Click(object sender, RoutedEventArgs e)
