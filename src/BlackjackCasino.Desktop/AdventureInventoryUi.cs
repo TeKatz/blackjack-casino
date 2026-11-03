@@ -10,7 +10,7 @@ namespace BlackjackCasino.Desktop;
 
 internal static class AdventureInventoryUi
 {
-    internal static Border Build(AdventureEngine engine)
+    internal static Border Build(AdventureEngine engine, Func<string, Task>? useChoice = null)
     {
         Border shell = AdventureUi.Panel("#101A17", "#08110F", "#385148", new Thickness(18, 14, 18, 14), radius: 15);
         shell.Margin = new Thickness(0, 16, 20, 0);
@@ -20,7 +20,7 @@ internal static class AdventureInventoryUi
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(18) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-        grid.Children.Add(BuildInventory(engine));
+        grid.Children.Add(BuildInventory(engine, useChoice));
 
         FrameworkElement conditions = BuildConditions(engine);
         Grid.SetColumn(conditions, 2);
@@ -81,7 +81,7 @@ internal static class AdventureInventoryUi
         return panel;
     }
 
-    private static FrameworkElement BuildInventory(AdventureEngine engine)
+    private static FrameworkElement BuildInventory(AdventureEngine engine, Func<string, Task>? useChoice)
     {
         var stack = new StackPanel();
         stack.Children.Add(AdventureUi.Eyebrow("PACK & COINS", 10.5));
@@ -103,7 +103,34 @@ internal static class AdventureInventoryUi
                 AdventureItemKind.Relic => "#9A7CC8",
                 _ => "#82B8A2",
             };
-            wrap.Children.Add(ItemChip(icon, name, quantity, description, accent));
+            Border chip = ItemChip(icon, name, quantity, description, accent);
+            AdventureChoiceDefinition[] uses = engine.PendingCheck is null && !engine.State.Completed
+                ? engine.AvailableChoices().Where(choice => (choice.Conditions ?? []).Any(condition =>
+                    condition.Kind == AdventureConditionKind.ItemOwned && condition.Expected && condition.Key == state.ItemId)).ToArray()
+                : [];
+            if (useChoice is not null && uses.Length > 0)
+            {
+                chip.Cursor = CasinoCursors.Hand;
+                chip.Focusable = true;
+                chip.BorderBrush = AdventureUi.Ink("#E0C883");
+                chip.ToolTip = description + "\n\nClick to use here.";
+                var menu = new ContextMenu { Background = AdventureUi.Ink("#13201C"), Foreground = AdventureUi.Ink("#F0E0C6") };
+                foreach (AdventureChoiceDefinition choice in uses)
+                {
+                    var option = new MenuItem { Header = choice.Text, Background = menu.Background, Foreground = menu.Foreground };
+                    option.Click += async (_, _) => await useChoice(choice.Id);
+                    menu.Items.Add(option);
+                }
+                chip.ContextMenu = menu;
+                chip.MouseLeftButtonUp += (_, e) => { menu.PlacementTarget = chip; menu.IsOpen = true; e.Handled = true; };
+                chip.KeyDown += (_, e) =>
+                {
+                    if (e.Key is not System.Windows.Input.Key.Enter and not System.Windows.Input.Key.Space) return;
+                    menu.PlacementTarget = chip; menu.IsOpen = true; e.Handled = true;
+                };
+                System.Windows.Automation.AutomationProperties.SetName(chip, "Use " + name);
+            }
+            wrap.Children.Add(chip);
         }
 
         if (engine.State.ItemStacks.Values.All(item => item.Quantity <= 0))
@@ -118,7 +145,11 @@ internal static class AdventureInventoryUi
             });
         }
 
-        stack.Children.Add(wrap);
+        stack.Children.Add(new ScrollViewer
+        {
+            Content = wrap, MaxHeight = 112, VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+        });
         return stack;
     }
 

@@ -97,7 +97,7 @@ internal sealed class AdventureView : UserControl
         Grid.SetRowSpan(sheet, 2);
         root.Children.Add(sheet);
 
-        Border hud = AdventureInventoryUi.Build(engine);
+        Border hud = AdventureInventoryUi.Build(engine, AdvanceChoiceAsync);
         Grid.SetRow(hud, 1);
         Grid.SetColumn(hud, 0);
         root.Children.Add(hud);
@@ -125,6 +125,7 @@ internal sealed class AdventureView : UserControl
         title.Children.Add(new TextBlock
         {
             Text = scene.Title,
+            TextWrapping = TextWrapping.Wrap,
             FontFamily = new FontFamily("Georgia"),
             FontSize = 40,
             Foreground = AdventureUi.Ink("#F4E3C8"),

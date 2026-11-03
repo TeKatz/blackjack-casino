@@ -103,3 +103,8 @@ The model includes localization-key slots on scenes and choices so story text ca
 ## Planned extensions
 
 The next natural engine layers are encounter/combat definitions that reuse the existing checks/effects/conditions, richer equipment actions and consumable use from the HUD, quest/objective tracking, deeper NPC knowledge state, save migrations and an internal authoring/editor surface. These should extend the shared blueprint rather than introduce campaign-specific runtime code.
+
+
+## Dead Man's Hand v2
+
+The Vane investigation is playable across all six acts with ten endings, fourteen contextual items, independent evidence routes, witness protection and content-save migration. See [dead-mans-hand.md](dead-mans-hand.md) for the structure, item uses, ending requirements and board regression coverage.

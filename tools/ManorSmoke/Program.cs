@@ -84,6 +84,7 @@ internal static class Program
     {
         await PortraitSmoke.Check(output);
         ShopCosmeticsSmoke.Check(output);
+        await AdventureBoardSmoke.Check(output);
         await AudioSmoke.Check(output);
         await Task.Delay(100); Capture(w,"01-cabinet");
         CheckDropdown(w,"SpeedBox"); CheckDropdown(w,"AutoBox");

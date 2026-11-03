@@ -13,7 +13,7 @@ namespace BlackjackCasino.Desktop;
 
 internal sealed class AdventureCaseBoardView : Grid
 {
-    private const int CurrentLayoutVersion = 2;
+    private const int CurrentLayoutVersion = 3;
     private const double LegacyWidth = 1440;
     private const double LegacyHeight = 900;
     private const double CardWidth = 280;
@@ -107,6 +107,8 @@ internal sealed class AdventureCaseBoardView : Grid
     {
         var surface = new Grid
         {
+            HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = VerticalAlignment.Top,
             Width = boardWidth,
             Height = boardHeight,
             Background = AdventureUi.Ink("#17110E"),
@@ -139,7 +141,7 @@ internal sealed class AdventureCaseBoardView : Grid
     private void BuildShell()
     {
         Background = AdventureUi.Ink("#070A0B");
-        ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 560 });
+        ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 0 });
         ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(340) });
         RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
@@ -198,7 +200,7 @@ internal sealed class AdventureCaseBoardView : Grid
         viewport.Cursor = CasinoCursors.Hand;
         viewport.SnapsToDevicePixels = true;
         viewport.UseLayoutRounding = true;
-        viewport.MouseWheel += (_, e) => { ChangeZoom(e.Delta > 0 ? .1 : -.1); e.Handled = true; };
+        viewport.MouseWheel += (_, e) => { ChangeZoom(e.Delta > 0 ? .1 : -.1, e.GetPosition(viewport)); e.Handled = true; };
         viewport.MouseLeftButtonDown += OnPanStart;
         viewport.MouseMove += OnPanMove;
         viewport.MouseLeftButtonUp += OnPanEnd;
@@ -207,12 +209,26 @@ internal sealed class AdventureCaseBoardView : Grid
         transforms.Children.Add(scale);
         transforms.Children.Add(translate);
         boardSurface.RenderTransform = transforms;
-        viewport.Child = boardSurface;
+        // A world-sized Grid directly inside Border acquires a layout clip BEFORE its
+        // RenderTransform. Canvas arranges it at its full desired extent at origin (0,0);
+        // only the outer viewport clips the transformed world.
+        var worldHost = new Canvas { Name = "CaseBoardWorldHost", Background = Brushes.Transparent, ClipToBounds = false };
+        worldHost.Children.Add(boardSurface);
+        Canvas.SetLeft(boardSurface, 0);
+        Canvas.SetTop(boardSurface, 0);
+        viewport.Name = "CaseBoardViewport";
+        boardSurface.Name = "CaseBoardSurface";
+        canvas.Name = "CaseBoardNodes";
+        viewport.Child = worldHost;
         Grid.SetRow(viewport, 1);
         Children.Add(viewport);
 
         Border detailPanel = AdventureUi.Panel("#111315", "#090A0C", "#40382F", new Thickness(22), radius: 0, shadow: false);
-        detailPanel.Child = details;
+        detailPanel.Child = new ScrollViewer
+        {
+            Content = details, VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+        };
         Grid.SetColumn(detailPanel, 1);
         Grid.SetRow(detailPanel, 1);
         Children.Add(detailPanel);
@@ -637,65 +653,20 @@ internal sealed class AdventureCaseBoardView : Grid
     {
         BoardLayoutState layout = engine.State.CaseBoard.Layout;
         if (layout.LayoutVersion >= CurrentLayoutVersion) return false;
-
-        Dictionary<string, CaseBoardNodePosition> positions = layout.NodePositions;
-        (double originX, double originY) = LegacyOrigin();
-        (double brokenWidth, double brokenHeight) = PreviousBrokenExtent(definition.Nodes.Count);
-        double brokenScaleX = (brokenWidth - 2 * (FrameInset + EdgePadding) - CardWidth) / LegacyWidth;
-        double brokenScaleY = (brokenHeight - 2 * (FrameInset + EdgePadding) - CardHeight) / LegacyHeight;
-        double brokenOffset = FrameInset + EdgePadding;
-
-        CaseNodeDefinition[] comparable = definition.Nodes
-            .Where(n => n.X is not null && n.Y is not null && positions.ContainsKey(n.Id))
-            .ToArray();
-        int brokenMatches = comparable.Count(n =>
-        {
-            CaseBoardNodePosition p = positions[n.Id];
-            double expectedX = brokenOffset + n.X!.Value * brokenScaleX;
-            double expectedY = brokenOffset + n.Y!.Value * brokenScaleY;
-            return Math.Abs(p.X - expectedX) < 150 && Math.Abs(p.Y - expectedY) < 150;
-        });
-        bool stretchedByBrokenMigration = comparable.Length >= 2 && brokenMatches >= Math.Max(2, (int)Math.Ceiling(comparable.Length * .55));
-
+        // Preserve hand-arranged cards. V3 repairs the viewport and camera, rather than
+        // stretching saved coordinates or discarding investigation progress.
         foreach (CaseNodeDefinition node in definition.Nodes)
         {
-            if (!positions.TryGetValue(node.Id, out CaseBoardNodePosition? position))
-            {
-                Point fallback = DefaultPosition(node);
-                positions[node.Id] = new CaseBoardNodePosition { X = fallback.X, Y = fallback.Y };
-                continue;
-            }
-
-            double legacyX = position.X;
-            double legacyY = position.Y;
-            if (stretchedByBrokenMigration)
-            {
-                legacyX = (position.X - brokenOffset) / brokenScaleX;
-                legacyY = (position.Y - brokenOffset) / brokenScaleY;
-            }
-
-            position.X = Math.Clamp(originX + legacyX, FrameInset + EdgePadding, boardWidth - CardWidth - FrameInset - EdgePadding);
-            position.Y = Math.Clamp(originY + legacyY, FrameInset + EdgePadding, boardHeight - CardHeight - FrameInset - EdgePadding);
+            CaseBoardNodePosition position = ResolvePosition(node);
+            double min = FrameInset + EdgePadding;
+            position.X = Math.Clamp(position.X, min, boardWidth - CardWidth - min);
+            position.Y = Math.Clamp(position.Y, min, boardHeight - CardHeight - min);
         }
-
         layout.LayoutVersion = CurrentLayoutVersion;
         layout.Zoom = 1;
-        layout.PanX = 0;
-        layout.PanY = 0;
+        layout.PanX = layout.PanY = 0;
         persist(engine.State);
         return true;
-    }
-
-    private (double X, double Y) LegacyOrigin() =>
-        (Math.Max(FrameInset + EdgePadding, (boardWidth - LegacyWidth) / 2),
-         Math.Max(FrameInset + EdgePadding, (boardHeight - LegacyHeight) / 2));
-
-    private static (double Width, double Height) PreviousBrokenExtent(int nodeCount)
-    {
-        int count = Math.Max(1, nodeCount);
-        int columns = Math.Max(6, (int)Math.Ceiling(Math.Sqrt(count * 1.75)));
-        int rows = (int)Math.Ceiling(count / (double)columns);
-        return (Math.Max(3200, 620 + columns * 430), Math.Max(2000, 620 + rows * 310));
     }
 
     private CaseBoardNodePosition ResolvePosition(CaseNodeDefinition node)
@@ -709,19 +680,18 @@ internal sealed class AdventureCaseBoardView : Grid
 
     private Point DefaultPosition(CaseNodeDefinition node)
     {
-        (double originX, double originY) = LegacyOrigin();
         if (node.X is double definedX && node.Y is double definedY)
         {
             double min = FrameInset + EdgePadding;
             return new Point(
-                Math.Clamp(originX + definedX, min, boardWidth - CardWidth - min),
-                Math.Clamp(originY + definedY, min, boardHeight - CardHeight - min));
+                Math.Clamp(definedX, min, boardWidth - CardWidth - min),
+                Math.Clamp(definedY, min, boardHeight - CardHeight - min));
         }
 
         int index = Math.Max(0, definition.Nodes.IndexOf(node));
         int columns = Math.Max(5, (int)Math.Floor((boardWidth - 360) / 420));
-        double x = originX + 80 + (index % columns) * 360 + ((index / columns) % 2) * 38;
-        double y = originY + 70 + (index / columns) * 245 + (index % 2) * 20;
+        double x = FrameInset + EdgePadding + (index % columns) * 360 + ((index / columns) % 2) * 38;
+        double y = FrameInset + EdgePadding + (index / columns) * 245 + (index % 2) * 20;
         double edge = FrameInset + EdgePadding;
         return new Point(Math.Clamp(x, edge, boardWidth - CardWidth - edge), Math.Clamp(y, edge, boardHeight - CardHeight - edge));
     }
@@ -734,10 +704,10 @@ internal sealed class AdventureCaseBoardView : Grid
         return new Point(p.X + CardWidth / 2, p.Y + CardHeight / 2);
     }
 
-    private void ChangeZoom(double delta)
+    private void ChangeZoom(double delta, Point? pointer = null)
     {
         ClosePopup();
-        Point focus = Mouse.GetPosition(viewport);
+        Point focus = pointer ?? new Point(viewport.ActualWidth / 2, viewport.ActualHeight / 2);
         double oldZoom = scale.ScaleX;
         double next = Math.Clamp(oldZoom + delta, .18, 3.6);
         if (Math.Abs(next - oldZoom) < .001) return;

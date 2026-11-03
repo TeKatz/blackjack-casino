@@ -140,6 +140,12 @@ internal sealed class AdventureLibraryHubControl : UserControl
         this.setMusicActive = setMusicActive ?? throw new ArgumentNullException(nameof(setMusicActive));
         _ = backToGames ?? throw new ArgumentNullException(nameof(backToGames));
 
+        bool upgraded = false;
+        foreach (AdventureDefinition adventure in AdventureCatalog.All)
+            if (this.progress.Runs.TryGetValue(adventure.Id, out AdventureRunState? saved))
+                upgraded |= AdventureRunMigrations.Apply(adventure, saved);
+        if (upgraded) this.persist(this.progress);
+
         selectedAdventureId = ResolveInitialAdventureId();
         Loaded += (_, _) => this.setMusicActive(true);
         Unloaded += (_, _) => this.setMusicActive(false);

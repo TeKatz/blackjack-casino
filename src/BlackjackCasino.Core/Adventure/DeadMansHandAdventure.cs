@@ -1,18 +1,14 @@
 namespace BlackjackCasino.Core.Adventure;
 
-/// <summary>
-/// First playable foundation for the large noir campaign. This intentionally covers only the shared opening
-/// and the first investigation location; the remaining acts are declared so later content can grow without
-/// changing the campaign contract or character roster.
-/// </summary>
-public static class DeadMansHandAdventure
+/// <summary>A six-act noir investigation with persistent evidence, usable items and consequential endings.</summary>
+public static partial class DeadMansHandAdventure
 {
     public const string AdventureId = "dead-mans-hand";
 
     public static AdventureDefinition Build()
     {
         AdventureCharacterCatalogDefinition characters = BuildCharacterCatalog();
-        CaseBoardDefinition caseBoard = BuildCaseBoard();
+        CaseBoardDefinition caseBoard = ExpandCaseBoard(BuildCaseBoard());
 
         var acts = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
@@ -428,11 +424,12 @@ public static class DeadMansHandAdventure
 
         return new AdventureDefinition(
             AdventureId,
-            1,
+            2,
             "Dead Man's Hand",
             "Everyone lies. Some people just get paid for it.",
             "rain-office",
-            scenes,
+            ExpandOpening(scenes).Concat(BuildLaterActs()).ToArray(),
+            Items: NoirItems,
             Acts: acts,
             CharacterCatalog: characters,
             CaseBoard: caseBoard);
