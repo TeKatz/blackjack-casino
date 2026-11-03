@@ -15,6 +15,7 @@
     <Resource Include="Assets\Portraits\*.jpg" />
     <Resource Include="Assets\Navigation\*.png" />
     <Resource Include="Assets\Empire\*.png" />
+    <Resource Include="Assets\Lounge\*.jpg" />
     <Resource Include="Assets/midnight-club.ico" />
     <Resource Include="Assets\NineLives\*.png" />
     <Resource Include="Assets\NineLives\*.jpg" />
