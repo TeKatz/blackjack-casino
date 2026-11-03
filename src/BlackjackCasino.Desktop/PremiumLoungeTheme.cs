@@ -149,6 +149,7 @@ internal static class PremiumLoungeTheme
                 VerticalAlignment = VerticalAlignment.Bottom,
                 Margin = new Thickness(0, 0, 12, 4),
                 Opacity = .83,
+                OpacityMask = IllustrationFeatherMask(),
                 IsHitTestVisible = false,
                 CacheMode = new BitmapCache(),
             });
@@ -475,6 +476,22 @@ internal static class PremiumLoungeTheme
         control.BorderThickness = new Thickness(1);
         control.Padding = new Thickness(12, 8, 12, 8);
         control.FontSize = 14;
+    }
+
+    internal static Brush IllustrationFeatherMask()
+    {
+        var mask = new RadialGradientBrush
+        {
+            Center = new Point(.50, .56),
+            GradientOrigin = new Point(.50, .56),
+            RadiusX = .73,
+            RadiusY = .72,
+        };
+        mask.GradientStops.Add(new GradientStop(Color.FromArgb(255, 255, 255, 255), 0));
+        mask.GradientStops.Add(new GradientStop(Color.FromArgb(225, 255, 255, 255), .59));
+        mask.GradientStops.Add(new GradientStop(Colors.Transparent, 1));
+        mask.Freeze();
+        return mask;
     }
 
     private static DropShadowEffect Halo(double opacity, bool gold = false) => new()
