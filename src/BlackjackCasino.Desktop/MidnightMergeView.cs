@@ -100,7 +100,7 @@ internal sealed class MidnightMergeView : UserControl, IDisposable
         };
         var style = new Style(typeof(Button));
         var template = new ControlTemplate(typeof(Button));
-        var chrome = new FrameworkElementFactory(typeof(Border));
+        var chrome = new FrameworkElementFactory(typeof(Border)) { Name = "Chrome" };
         chrome.SetValue(Border.CornerRadiusProperty, new CornerRadius(8));
         chrome.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(BackgroundProperty));
         chrome.SetValue(Border.BorderBrushProperty, new TemplateBindingExtension(BorderBrushProperty));
