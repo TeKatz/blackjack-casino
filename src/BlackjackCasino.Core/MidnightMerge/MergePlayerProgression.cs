@@ -51,9 +51,9 @@ public sealed class MergePlayerProgression(ProgressionService progression)
     public static long OrderSeasonExperience(long renovationReward) => Math.Max(20L, OrderPlayerExperience(renovationReward) / 2L);
     public static long MilestonePlayerExperience(long points) => Math.Clamp(100L + points * 5L, 150L, 1_000L);
     public static long MilestoneSeasonExperience(long points) => MilestonePlayerExperience(points) / 2L;
+    public static decimal MilestoneBankrollReward(long points) => Math.Clamp(75m + points / 10m, 100m, 400m);
     public const long AreaCompletionPlayerExperience = 500;
     public const long AreaCompletionSeasonExperience = 250;
-    public const decimal AreaCompletionBankrollReward = 250m;
 
     public MergeProfileSyncResult Sync(MergeGameState state, MergeCatalog? catalog = null)
     {
@@ -111,6 +111,7 @@ public sealed class MergePlayerProgression(ProgressionService progression)
             stats.RewardedMilestoneIds.Add(id);
             playerXp = checked(playerXp + MilestonePlayerExperience(milestone.Points));
             seasonXp = checked(seasonXp + MilestoneSeasonExperience(milestone.Points));
+            bankroll = checked(bankroll + MilestoneBankrollReward(milestone.Points));
             milestonesRewarded++;
             changed = true;
         }
@@ -120,7 +121,6 @@ public sealed class MergePlayerProgression(ProgressionService progression)
             if (!stats.RewardedAreaIds.Add(areaId)) continue;
             playerXp = checked(playerXp + AreaCompletionPlayerExperience);
             seasonXp = checked(seasonXp + AreaCompletionSeasonExperience);
-            bankroll = checked(bankroll + AreaCompletionBankrollReward);
             areasRewarded++;
             changed = true;
         }
