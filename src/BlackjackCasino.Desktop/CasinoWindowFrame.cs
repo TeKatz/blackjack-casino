@@ -15,8 +15,14 @@ internal static class CasinoWindowFrame
     public static void SetIsFullscreen(DependencyObject value, bool fullscreen)
     {
         value.SetValue(IsFullscreenProperty, fullscreen);
-        if (value is Window window && window.Template == Application.Current?.TryFindResource("CasinoWindowTemplate"))
-            WindowChrome.SetWindowChrome(window, fullscreen ? null : Chrome());
+        if (value is not Window window || window.Template != Application.Current?.TryFindResource("CasinoWindowTemplate"))
+        {
+            return;
+        }
+
+        // MainWindow uses the lighter client-area frame in both windowed and fullscreen modes.
+        // Reintroducing WPF WindowChrome here would bring back the windowed rendering regression.
+        WindowChrome.SetWindowChrome(window, window is MainWindow ? null : fullscreen ? null : Chrome());
     }
 
     private static readonly DependencyProperty AppliedProperty = DependencyProperty.RegisterAttached(
@@ -47,9 +53,15 @@ internal static class CasinoWindowFrame
         // Dialogs with their own bespoke title bars keep their existing chrome.
         if (window.WindowStyle == WindowStyle.None || Application.Current?.TryFindResource("CasinoWindowTemplate") is not ControlTemplate template) return;
         window.WindowStyle = WindowStyle.None;
-        WindowChrome.SetWindowChrome(window, Chrome());
+        WindowChrome.SetWindowChrome(window, window is MainWindow ? null : Chrome());
         window.Template = template;
         window.ApplyTemplate();
+
+        if (window is MainWindow && template.FindName("CasinoTitleBar", window) is FrameworkElement titleBar)
+        {
+            CasinoClientWindowFrame.Attach(window, titleBar);
+        }
+
         Bind("CasinoMinimize", "Minimize", () => SystemCommands.MinimizeWindow(window), window.ResizeMode != ResizeMode.NoResize);
         Bind("CasinoMaximize", "Maximize / Restore", () =>
         {
@@ -62,7 +74,10 @@ internal static class CasinoWindowFrame
         {
             if (template.FindName(name, window) is not Button button) return;
             button.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
-            WindowChrome.SetIsHitTestVisibleInChrome(button, true);
+            if (window is not MainWindow)
+            {
+                WindowChrome.SetIsHitTestVisibleInChrome(button, true);
+            }
             AutomationProperties.SetName(button, label);
             button.Click += (_, _) => action();
         }
