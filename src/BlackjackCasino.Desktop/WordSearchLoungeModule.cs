@@ -70,73 +70,87 @@ internal sealed class WordSearchLoungeHub : UserControl, IDisposable
 
     private FrameworkElement BuildHub()
     {
-        var root = new Grid { Margin = new Thickness(26) };
-        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        root.RowDefinitions.Add(new RowDefinition());
-
-        var header = new Grid { Margin = new Thickness(0, 0, 0, 16) };
-        header.ColumnDefinitions.Add(new ColumnDefinition());
-        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        var title = new StackPanel();
-        title.Children.Add(Label("CHILL LOUNGE · WORD SEARCH", 10, "#82B79D"));
-        title.Children.Add(Label("Word Search", 30, "#F2E3C5", FontWeights.SemiBold));
-        title.Children.Add(Label("Find the words. Keep the pace yours.", 12, "#AABCB3"));
-        header.Children.Add(title);
-        root.Children.Add(header);
-
         WordSearchStatistics snapshot = stats();
-        var summary = new UniformGrid { Columns = 4, Margin = new Thickness(0, 0, 0, 18) };
-        summary.Children.Add(Stat("PUZZLES", snapshot.CompletedPuzzles.ToString("N0")));
-        summary.Children.Add(Stat("WORDS FOUND", snapshot.WordsFound.ToString("N0")));
-        summary.Children.Add(Stat("NO HINT", snapshot.NoHintCompletions.ToString("N0")));
-        summary.Children.Add(Stat("MASTER", snapshot.MasterCompleted.ToString("N0")));
-        Grid.SetRow(summary, 1);
-        root.Children.Add(summary);
+        var detail = new StackPanel();
+        detail.Children.Add(PremiumLoungeTheme.Heading("CHOOSE A DIFFICULTY"));
 
-        var content = new Grid();
-        Grid.SetRow(content, 2);
-        root.Children.Add(content);
-
-        var levels = new UniformGrid { Name = "WordSearchDifficulties", Columns = 3, Rows = 2 };
-        foreach (WordSearchDifficulty difficulty in Enum.GetValues<WordSearchDifficulty>())
-            levels.Children.Add(DifficultyCard(difficulty));
-        content.Children.Add(levels);
-
-        var side = new StackPanel { Width = 410, Margin = new Thickness(20, 0, 0, 0) };
-        if (progress.ActiveGame is not null)
+        // Keep the existing one-at-a-time gameplay contract and its resume route.
+        if (progress.ActiveGame is WordSearchGameState active)
         {
-            var resume = Panel();
-            var resumeStack = new DockPanel();
-            Button resumeButton = ActionButton("RESUME", "WordSearchResume");
-            resumeButton.Margin = new Thickness(12, 0, 0, 0);
-            resumeButton.Click += (_, _) => ShowGame(progress.ActiveGame);
-            DockPanel.SetDock(resumeButton, Dock.Right); resumeStack.Children.Add(resumeButton);
-            var resumeCopy = new StackPanel();
-            resumeCopy.Children.Add(Label("CURRENT PUZZLE", 10, "#D5B879"));
-            resumeCopy.Children.Add(Label(progress.ActiveGame.Puzzle.Theme, 19, "#F2E3C5", FontWeights.SemiBold));
-            resumeCopy.Children.Add(Label($"{progress.ActiveGame.Puzzle.Difficulty} · {progress.ActiveGame.FoundWords.Count} / {progress.ActiveGame.Puzzle.Placements.Count} words found", 12, "#9DB2A8"));
-            resumeStack.Children.Add(resumeCopy);
-            resume.Child = resumeStack;
-            side.Children.Add(resume);
+            var current = PremiumLoungeTheme.Row(
+                $"CONTINUE · {active.Puzzle.Theme}",
+                $"{active.Puzzle.Difficulty} · {active.FoundWords.Count}/{active.Puzzle.Placements.Count} words found",
+                selected: true, height: 70);
+            var resume = PremiumLoungeTheme.Button("RESUME", "WordSearchResume",
+                () => ShowGame(active), width: 120);
+            PremiumLoungeTheme.AddRowAction(current, resume, 126);
+            detail.Children.Add(current);
         }
 
-        var info = Panel();
-        info.ToolTip = "Drag from the first letter to the last. Words can overlap. Higher difficulties add diagonals and backwards words. Hints reveal a starting letter and never reduce XP.";
-        info.Visibility = progress.ActiveGame is null ? Visibility.Visible : Visibility.Collapsed;
-        var infoStack = new StackPanel();
-        infoStack.Children.Add(Label("HOW IT WORKS", 10, "#D5B879"));
-        infoStack.Children.Add(Label("Drag across words. Hints never reduce XP.", 14, "#AABCB3"));
-        infoStack.Children.Add(MarginLabel($"{WordSearchCatalog.All.Count:N0} authored puzzle slots · fully offline", 10, "#7F948B", new Thickness(0, 5, 0, 0)));
-        info.Child = infoStack;
-        side.Children.Add(info);
+        var levels = new UniformGrid
+        {
+            Name = "WordSearchDifficulties",
+            Columns = 1,
+        };
+        foreach (WordSearchDifficulty difficulty in Enum.GetValues<WordSearchDifficulty>())
+        {
+            (int size, int words) = WordSearchCatalog.Spec(difficulty);
+            IReadOnlyList<WordSearchPuzzleDefinition> pool = WordSearchCatalog.For(difficulty);
+            int completed = progress.CompletedGames.Count(x => x.Difficulty == difficulty);
+            int capped = Math.Min(completed, pool.Count);
+            var item = PremiumLoungeTheme.Row(
+                difficulty.ToString(),
+                $"{size}×{size} · {words} words · {capped}/{pool.Count} completed",
+                height: 76);
 
-        status = Label("Choose a difficulty, or resume your current puzzle.", 11, "#C9B98F");
-        status.Margin = new Thickness(2, 5, 0, 0);
-        side.Children.Add(status);
-        Grid.SetColumn(side, 1);
-        header.Children.Add(side);
-        return root;
+            // Preserve the named metadata region from the original menu for
+            // visual regression tooling and future progress embellishments.
+            var labelPanel = (StackPanel)PremiumLoungeTheme.RowContent(item).Children[1];
+            var meta = new Grid { Name = "WordSearchDifficultyMeta", Margin = new Thickness(0, 3, 8, 0) };
+            meta.Children.Add(PremiumLoungeTheme.Label(
+                $"+{WordSearchProgression.PlayerExperience(difficulty):N0} XP · {DirectionText(difficulty)}",
+                10, PremiumLoungeTheme.Gold));
+            labelPanel.Children.Add(meta);
+
+            WordSearchDifficulty selected = difficulty;
+            var play = PremiumLoungeTheme.Button(
+                capped >= pool.Count ? "REPLAY" : "PLAY",
+                "WordSearchStart_" + difficulty,
+                () => Start(selected),
+                width: 131);
+            PremiumLoungeTheme.AddRowAction(item, play, 138);
+            levels.Children.Add(item);
+        }
+        detail.Children.Add(levels);
+
+        var advice = PremiumLoungeTheme.Label(
+            "Drag from the first letter to the last. Words can overlap. Hints reveal a starting letter without reducing XP.",
+            13, PremiumLoungeTheme.Muted);
+        var info = PremiumLoungeTheme.Panel(advice, 13);
+        info.Margin = new Thickness(0, 10, 0, 10);
+        detail.Children.Add(info);
+
+        status = PremiumLoungeTheme.Label(
+            "Choose a difficulty, or resume your current puzzle.",
+            13, PremiumLoungeTheme.Gold);
+        status.Margin = new Thickness(4, 7, 0, 5);
+        detail.Children.Add(status);
+
+        return (FrameworkElement)PremiumLoungeTheme.Build(
+            "luxury-hotel.png",
+            "fine-dining.png",
+            "A QUIETER CORNER",
+            "Find your rhythm.",
+            "No wagers, no rush. Each found word is a small victory worth enjoying.",
+            "W O R D   S E A R C H",
+            "Find the words.\nKeep the pace yours.",
+            "Search handcrafted word grids at your own pace. Choose a difficulty, follow the letters and save your progress whenever you like.",
+            PremiumLoungeTheme.Stats(
+                $"PUZZLES   {snapshot.CompletedPuzzles:N0}",
+                $"WORDS FOUND   {snapshot.WordsFound:N0}",
+                $"NO HINT   {snapshot.NoHintCompletions:N0}    ·    MASTER   {snapshot.MasterCompleted:N0}"),
+            detail,
+            $"The {WordSearchCatalog.All.Count:N0} offline puzzle slots are saved locally. Progress and rewards remain unchanged.");
     }
 
     private FrameworkElement DifficultyCard(WordSearchDifficulty difficulty)
