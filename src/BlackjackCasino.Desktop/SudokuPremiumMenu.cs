@@ -102,6 +102,13 @@ internal static class SudokuPremiumMenu
         var inside = new Grid();
         inside.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(0.47, GridUnitType.Star) });
         inside.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(0.53, GridUnitType.Star) });
+        // A Border's CornerRadius does not clip child images by itself.
+        // Clip the image/content grid so both left corners stay rounded.
+        inside.SizeChanged += (_, e) =>
+        {
+            inside.Clip = new RectangleGeometry(
+                new Rect(0, 0, e.NewSize.Width, e.NewSize.Height), 22, 22);
+        };
         card.Child = inside;
         Grid.SetRow(card, 1);
         layout.Children.Add(card);
