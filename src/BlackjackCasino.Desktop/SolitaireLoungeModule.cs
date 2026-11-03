@@ -166,7 +166,7 @@ internal sealed class SolitaireHubControl : UserControl, IDisposable
             "A QUIETER CORNER",
             "Let the cards settle.",
             "No wagers, no streak requirements and no speed rewards. Just the deck and your decisions.",
-            "M I D N I G H T   S O L I T A I R E",
+            "MIDNIGHT SOLITAIRE",
             "Six ways to\nplay the night.",
             "Klondike, FreeCell, Spider, Pyramid, Golf and TriPeaks. Every deal is saved automatically; replay favorite numbered FreeCell deals whenever you like.",
             PremiumLoungeTheme.Stats(
