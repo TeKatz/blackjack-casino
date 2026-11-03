@@ -13,6 +13,7 @@ internal static class WindowFrameSmoke
         Rect originalBounds = window.WindowState == WindowState.Normal
             ? new Rect(window.Left, window.Top, window.ActualWidth, window.ActualHeight)
             : window.RestoreBounds;
+        Window? activationProbe = null;
 
         try
         {
@@ -35,6 +36,34 @@ internal static class WindowFrameSmoke
                 "Maximized windowed mode leaves a vertical native-frame inset instead of filling the work area.");
             Require(window.Template.FindName("CasinoTitleBar", window) is FrameworkElement { IsVisible: true },
                 "Maximized windowed mode unexpectedly hid the custom title bar.");
+            Require(CasinoClientWindowFrame.IsNativeBorderSuppressed(window),
+                "Main window retained a DWM-owned border that can repaint as bright strips while inactive.");
+
+            activationProbe = new Window
+            {
+                Width = 240,
+                Height = 120,
+                WindowStyle = WindowStyle.None,
+                ResizeMode = ResizeMode.NoResize,
+                ShowInTaskbar = false,
+                ShowActivated = true,
+                Title = "Window frame activation probe",
+            };
+            activationProbe.Show();
+            activationProbe.Activate();
+            await Settle(window);
+
+            RequireNear(window.ActualWidth, work.Width, 3d,
+                "Inactive maximized windowed mode reintroduced a horizontal native-frame inset.");
+            RequireNear(window.ActualHeight, work.Height, 3d,
+                "Inactive maximized windowed mode reintroduced a vertical native-frame inset.");
+            Require(CasinoClientWindowFrame.IsNativeBorderSuppressed(window),
+                "Losing activation restored the DWM-owned main-window border.");
+
+            activationProbe.Close();
+            activationProbe = null;
+            window.Activate();
+            await Settle(window);
 
             CasinoWindowFrame.SetIsFullscreen(window, true);
             window.WindowState = WindowState.Normal;
@@ -52,6 +81,7 @@ internal static class WindowFrameSmoke
         }
         finally
         {
+            activationProbe?.Close();
             window.WindowState = WindowState.Normal;
             CasinoWindowFrame.SetIsFullscreen(window, false);
             window.WindowStyle = originalStyle;
