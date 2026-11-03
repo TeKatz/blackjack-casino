@@ -162,8 +162,8 @@ internal sealed class SolitaireHubControl : UserControl, IDisposable
         right.Children.Add(details);
 
         Content = PremiumLoungeTheme.Build(
+            "high-limit-slots.png",
             "poker-room.png",
-            "private-gaming-salon.png",
             "A QUIETER CORNER",
             "Let the cards settle.",
             "No wagers, no streak requirements and no speed rewards. Just the deck and your decisions.",
