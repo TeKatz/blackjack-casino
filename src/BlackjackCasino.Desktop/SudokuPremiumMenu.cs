@@ -33,7 +33,7 @@ internal static class SudokuPremiumMenu
     private const string Muted = "#9AB4B0";
 
     private static readonly Lazy<BitmapSource> AmbientArt = new(() => LoadArtwork("sky-bar.png", 1400));
-    private static readonly Lazy<BitmapSource> InteriorArt = new(() => LoadArtwork("private-gaming-salon.png", 900));
+    private static readonly Lazy<BitmapSource> InteriorArt = new(() => LoadArtwork("lounge:sudoku-studio.jpg", 900));
     private static readonly ControlTemplate ButtonTemplate = CreateButtonTemplate();
 
     internal static UIElement Build(
@@ -479,8 +479,10 @@ internal static class SudokuPremiumMenu
         bitmap.BeginInit();
         bitmap.CacheOption = BitmapCacheOption.OnLoad;
         bitmap.DecodePixelWidth = decodedWidth;
+        string folder = file.StartsWith("lounge:", StringComparison.Ordinal) ? "Lounge" : "Empire";
+        string asset = folder == "Lounge" ? file["lounge:".Length..] : file;
         bitmap.UriSource = new Uri(
-            $"pack://application:,,,/BlackjackCasino.Desktop;component/Assets/Empire/{file}",
+            $"pack://application:,,,/BlackjackCasino.Desktop;component/Assets/{folder}/{asset}",
             UriKind.Absolute);
         bitmap.EndInit();
         bitmap.Freeze();
