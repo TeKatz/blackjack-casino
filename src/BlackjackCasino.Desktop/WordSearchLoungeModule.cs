@@ -143,7 +143,7 @@ internal sealed class WordSearchLoungeHub : UserControl, IDisposable
 
         return (FrameworkElement)PremiumLoungeTheme.Build(
             "luxury-hotel.png",
-            "fine-dining.png",
+            "lounge:word-search-studio.jpg",
             "A QUIETER CORNER",
             "Find your rhythm.",
             "No wagers, no rush. Each found word is a small victory worth enjoying.",
