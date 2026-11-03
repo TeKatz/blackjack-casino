@@ -80,7 +80,7 @@ internal sealed class WordSearchLoungeHub : UserControl, IDisposable
             var current = PremiumLoungeTheme.Row(
                 $"CONTINUE · {active.Puzzle.Theme}",
                 $"{active.Puzzle.Difficulty} · {active.FoundWords.Count}/{active.Puzzle.Placements.Count} words found",
-                selected: true, height: 70);
+                selected: true, height: 62);
             var resume = PremiumLoungeTheme.Button("RESUME", "WordSearchResume",
                 () => ShowGame(active), width: 120);
             PremiumLoungeTheme.AddRowAction(current, resume, 126);
@@ -101,7 +101,7 @@ internal sealed class WordSearchLoungeHub : UserControl, IDisposable
             var item = PremiumLoungeTheme.Row(
                 difficulty.ToString(),
                 $"{size}×{size} · {words} words · {capped}/{pool.Count} completed",
-                height: 76);
+                height: 66);
 
             // Preserve the named metadata region from the original menu for
             // visual regression tooling and future progress embellishments.
@@ -131,19 +131,21 @@ internal sealed class WordSearchLoungeHub : UserControl, IDisposable
         var advice = PremiumLoungeTheme.Label(
             "Drag from the first letter to the last. Words can overlap. Hints reveal a starting letter without reducing XP.",
             13, PremiumLoungeTheme.Muted);
-        var info = PremiumLoungeTheme.Panel(advice, 13);
-        info.Margin = new Thickness(0, 10, 0, 10);
+        var info = PremiumLoungeTheme.Panel(advice, 10);
+        info.Name = "WordSearchHubHelp";
+        info.Margin = new Thickness(0, 7, 0, 5);
         detail.Children.Add(info);
 
         status = PremiumLoungeTheme.Label(
             "Choose a difficulty, or resume your current puzzle.",
             13, PremiumLoungeTheme.Gold);
-        status.Margin = new Thickness(4, 7, 0, 5);
+        status.Name = "WordSearchHubStatus";
+        status.Margin = new Thickness(4, 4, 0, 2);
         detail.Children.Add(status);
 
         return (FrameworkElement)PremiumLoungeTheme.Build(
             "luxury-hotel.png",
-            "lounge:word-search-studio.jpg",
+            "penthouse-club.png",
             "A QUIETER CORNER",
             "Find your rhythm.",
             "No wagers, no rush. Each found word is a small victory worth enjoying.",
@@ -155,7 +157,9 @@ internal sealed class WordSearchLoungeHub : UserControl, IDisposable
                 $"WORDS FOUND   {snapshot.WordsFound:N0}",
                 $"NO HINT   {snapshot.NoHintCompletions:N0}    ·    MASTER   {snapshot.MasterCompleted:N0}"),
             detail,
-            $"The {WordSearchCatalog.All.Count:N0} authored puzzle slots are saved locally. Progress and rewards remain unchanged.");
+            $"The {WordSearchCatalog.All.Count:N0} authored puzzle slots are saved locally. Progress and rewards remain unchanged.",
+            rightScrollable: false,
+            featureAlignmentX: AlignmentX.Left);
     }
 
     private FrameworkElement DifficultyCard(WordSearchDifficulty difficulty)

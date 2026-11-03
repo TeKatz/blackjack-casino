@@ -160,7 +160,7 @@ internal sealed class AdventureLibraryHubControl : UserControl
 
     private void ShowHub()
     {
-        var right = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+        var right = new StackPanel { VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 36, 0, 0) };
         right.Children.Add(PremiumLoungeTheme.Heading("ADVENTURE LIBRARY"));
 
         foreach (AdventureDefinition tale in AdventureCatalog.All)
@@ -175,7 +175,7 @@ internal sealed class AdventureLibraryHubControl : UserControl
         int completed = progress.Runs.Values.Count(run => run.Completed);
         Content = PremiumLoungeTheme.Build(
             "convention-hall.png",
-            "penthouse-club.png",
+            "private-gaming-salon.png",
             "BEYOND THE CASINO FLOOR",
             "Every door has a story.",
             "Make your choices, roll the dice and live with what follows.",

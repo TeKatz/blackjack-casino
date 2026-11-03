@@ -81,7 +81,8 @@ internal sealed class MemoryLoungeHubVisual : UserControl, IDisposable
     {
         MemoryStatistics snapshot = stats();
         var right = new StackPanel();
-        right.VerticalAlignment = VerticalAlignment.Center;
+        right.VerticalAlignment = VerticalAlignment.Top;
+        right.Margin = new Thickness(0, 34, 0, 0);
         right.Children.Add(PremiumLoungeTheme.Heading("CHOOSE YOUR TABLE"));
 
         if (progress.ActiveGame is MemoryGameState active)
@@ -181,7 +182,7 @@ internal sealed class MemoryLoungeHubVisual : UserControl, IDisposable
 
         return (FrameworkElement)PremiumLoungeTheme.Build(
             "spa-wellness.png",
-            "grand-stage.png",
+            "poker-room.png",
             "A QUIETER CORNER",
             "A moment to remember.",
             "No clock to beat. Turn over the cards and settle into your own rhythm.",
@@ -200,7 +201,7 @@ internal sealed class MemoryLoungeHubVisual : UserControl, IDisposable
 
     private static FrameworkElement BuildDeckPreview(MemoryDeckDefinition deck)
     {
-        var strip = new UniformGrid { Columns = 4, Height = 89 };
+        var strip = new UniformGrid { Columns = 4, Height = 106 };
         foreach (MemorySymbol symbol in deck.Symbols.Take(4))
         {
             var holder = new Border

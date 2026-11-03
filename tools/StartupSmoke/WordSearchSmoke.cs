@@ -54,6 +54,26 @@ internal static class WordSearchSmoke
             "Word Search still shows the redundant page-local Games button.");
         Require(Find<TextBlock>(window).Count(text => text.IsVisible && text.Text.EndsWith(" XP", StringComparison.Ordinal)) >= 6,
             "Word Search difficulty cards are missing their XP presentation.");
+        // Verify the 1080p hub keeps every difficulty and its guidance visible
+        // without scrolling or magnifying a thumbnail into the large art pane.
+        FrameworkElement wordSearchHub = Find<FrameworkElement>(window).Single(element =>
+            element.IsVisible && element.GetType().Name == "WordSearchLoungeHub");
+        Require(!Find<ScrollViewer>(wordSearchHub).Any(scroll => scroll.IsVisible &&
+            scroll.ActualHeight > 200 && scroll.VerticalScrollBarVisibility != ScrollBarVisibility.Disabled),
+            "Word Search hub still requires a vertical scrollbar.");
+        FrameworkElement help = Find<FrameworkElement>(wordSearchHub).Single(element =>
+            element.Name == "WordSearchHubHelp" && element.IsVisible);
+        FrameworkElement hubStatus = Find<FrameworkElement>(wordSearchHub).Single(element =>
+            element.Name == "WordSearchHubStatus" && element.IsVisible);
+        foreach (FrameworkElement visible in new FrameworkElement[] { help, hubStatus })
+        {
+            Point location = visible.TranslatePoint(new Point(0, 0), wordSearchHub);
+            Require(location.Y >= -1 && location.Y + visible.ActualHeight <= wordSearchHub.ActualHeight + 2,
+                $"Word Search hub clipped {visible.Name} below the viewport.");
+        }
+        Require(Find<Image>(wordSearchHub).Where(art => art.IsVisible && art.Source is BitmapSource).All(art =>
+            ((BitmapSource)art.Source).PixelWidth >= 600),
+            "Word Search hub enlarged a low-resolution illustration in its backdrop.");
         Capture(window, Path.Combine(output, "word-search-hub.png"));
 
         Button relaxed = Find<Button>(window).Single(button => button.Name == "WordSearchStart_Relaxed" && button.IsVisible);

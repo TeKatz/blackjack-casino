@@ -13,7 +13,7 @@ namespace BlackjackCasino.Desktop;
 
 /// <summary>
 /// Shared image-led Chill Lounge hub for Solitaire, Word Search, Memory and Backroom.
-/// Illustrated backdrops are packaged assets; only live text and controls are WPF UI.
+/// Full-resolution illustrated backdrops are packaged assets; only live text and controls are WPF UI.
 /// The 1760x938 design canvas scales as a single 16:9 composition.
 /// </summary>
 internal static class PremiumLoungeTheme
@@ -40,7 +40,9 @@ internal static class PremiumLoungeTheme
         string footer,
         UIElement? leftSecondary = null,
         bool compactLeft = false,
-        bool rightScrollable = true)
+        bool rightScrollable = true,
+        AlignmentX featureAlignmentX = AlignmentX.Center,
+        AlignmentY featureAlignmentY = AlignmentY.Center)
     {
         var stage = new Grid
         {
@@ -124,51 +126,34 @@ internal static class PremiumLoungeTheme
         Grid.SetRow(plate, 1);
         layout.Children.Add(plate);
 
-        var scene = new Grid { ClipToBounds = true };
-        bool puzzleStudy = featureArt.StartsWith("lounge:", StringComparison.Ordinal);
-        // Preserve the premium full-resolution room painting. The game's dedicated
-        // puzzle artwork is a smaller illustrated detail, never enlarged to fill the
-        // full 740-DIP panel from its original compact source.
-        scene.Children.Add(new Image
+        // One full-resolution room painting forms the illustration. The controlled
+        // crop preserves its aspect ratio instead of enlarging 140x180 thumbnails.
+        var scene = new Grid
         {
-            Source = Art(puzzleStudy ? "penthouse-club.png" : featureArt, 950),
-            Stretch = Stretch.UniformToFill,
-            Opacity = .67,
-            IsHitTestVisible = false,
-            CacheMode = new BitmapCache(),
-        });
-        if (puzzleStudy)
-        {
-            scene.Children.Add(new Image
+            ClipToBounds = true,
+            Background = new ImageBrush(Art(featureArt, 1250))
             {
-                Source = Art(featureArt, 420),
-                Width = 390,
-                Height = 505,
-                Stretch = Stretch.Uniform,
-                HorizontalAlignment = HorizontalAlignment.Right,
-                VerticalAlignment = VerticalAlignment.Bottom,
-                Margin = new Thickness(0, 0, 12, 4),
-                Opacity = .83,
-                OpacityMask = IllustrationFeatherMask(),
-                IsHitTestVisible = false,
-                CacheMode = new BitmapCache(),
-            });
-        }
+                Stretch = Stretch.UniformToFill,
+                AlignmentX = featureAlignmentX,
+                AlignmentY = featureAlignmentY,
+                Opacity = .94,
+            },
+        };
         scene.Children.Add(new Border
         {
             IsHitTestVisible = false,
             Background = new LinearGradientBrush(
-                Color.FromArgb(246, 5, 25, 27),
-                Color.FromArgb(88, 2, 19, 23),
-                new Point(0, 0), new Point(.13, 1)),
+                Color.FromArgb(211, 5, 25, 27),
+                Color.FromArgb(68, 2, 19, 23),
+                new Point(0, 0), new Point(1, 0)),
         });
         scene.Children.Add(new Border
         {
             IsHitTestVisible = false,
             Background = new LinearGradientBrush(
                 Color.FromArgb(0, 1, 13, 19),
-                Color.FromArgb(214, 2, 17, 22),
-                new Point(.3, .5), new Point(1, .5)),
+                Color.FromArgb(148, 2, 17, 22),
+                new Point(.3, 0), new Point(1, 1)),
         });
         interior.Children.Add(scene);
 
@@ -476,22 +461,6 @@ internal static class PremiumLoungeTheme
         control.BorderThickness = new Thickness(1);
         control.Padding = new Thickness(12, 8, 12, 8);
         control.FontSize = 14;
-    }
-
-    internal static Brush IllustrationFeatherMask()
-    {
-        var mask = new RadialGradientBrush
-        {
-            Center = new Point(.50, .56),
-            GradientOrigin = new Point(.50, .56),
-            RadiusX = .73,
-            RadiusY = .72,
-        };
-        mask.GradientStops.Add(new GradientStop(Color.FromArgb(255, 255, 255, 255), 0));
-        mask.GradientStops.Add(new GradientStop(Color.FromArgb(225, 255, 255, 255), .59));
-        mask.GradientStops.Add(new GradientStop(Colors.Transparent, 1));
-        mask.Freeze();
-        return mask;
     }
 
     private static DropShadowEffect Halo(double opacity, bool gold = false) => new()

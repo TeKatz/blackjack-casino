@@ -33,8 +33,7 @@ internal static class SudokuPremiumMenu
     private const string Muted = "#9AB4B0";
 
     private static readonly Lazy<BitmapSource> AmbientArt = new(() => LoadArtwork("sky-bar.png", 1400));
-    private static readonly Lazy<BitmapSource> InteriorArt = new(() => LoadArtwork("fine-dining.png", 900));
-    private static readonly Lazy<BitmapSource> PuzzleArt = new(() => LoadArtwork("lounge:sudoku-studio.jpg", 420));
+    private static readonly Lazy<BitmapSource> InteriorArt = new(() => LoadArtwork("fine-dining.png", 1250));
     private static readonly ControlTemplate ButtonTemplate = CreateButtonTemplate();
 
     internal static UIElement Build(
@@ -115,46 +114,33 @@ internal static class SudokuPremiumMenu
         layout.Children.Add(card);
 
         // The left-side illustration is an actual bundled game-art image, not WPF vector art.
-        var scene = new Grid { ClipToBounds = true };
-        scene.Children.Add(new Image
+        // Keep a single full-resolution painting instead of magnifying a tiny
+        // 140x180 Sudoku JPEG and pasting it over the room illustration.
+        var scene = new Grid
         {
-            Source = InteriorArt.Value,
-            Stretch = Stretch.UniformToFill,
-            Opacity = .64,
-            IsHitTestVisible = false,
-            CacheMode = new BitmapCache(),
-        });
-        // Dedicated Sudoku desk illustration from our premium puzzle artwork.
-        // Keep its original portrait proportions instead of stretching a small
-        // raster to the full width of the live UI panel.
-        scene.Children.Add(new Image
-        {
-            Source = PuzzleArt.Value,
-            Width = 390,
-            Height = 505,
-            Stretch = Stretch.Uniform,
-            HorizontalAlignment = HorizontalAlignment.Right,
-            VerticalAlignment = VerticalAlignment.Bottom,
-            Margin = new Thickness(0, 0, 12, 4),
-            Opacity = .80,
-            OpacityMask = PremiumLoungeTheme.IllustrationFeatherMask(),
-            IsHitTestVisible = false,
-            CacheMode = new BitmapCache(),
-        });
+            ClipToBounds = true,
+            Background = new ImageBrush(InteriorArt.Value)
+            {
+                Stretch = Stretch.UniformToFill,
+                AlignmentX = AlignmentX.Center,
+                AlignmentY = AlignmentY.Center,
+                Opacity = .94,
+            },
+        };
         scene.Children.Add(new Border
         {
             Background = new LinearGradientBrush(
-                Color.FromArgb(243, 6, 26, 28),
-                Color.FromArgb(70, 2, 19, 23),
-                new Point(0, 0), new Point(.13, 1)),
+                Color.FromArgb(211, 5, 25, 27),
+                Color.FromArgb(68, 2, 19, 23),
+                new Point(0, 0), new Point(1, 0)),
             IsHitTestVisible = false,
         });
         scene.Children.Add(new Border
         {
             Background = new LinearGradientBrush(
                 Color.FromArgb(0, 1, 13, 19),
-                Color.FromArgb(210, 2, 17, 22),
-                new Point(.3, .5), new Point(1, .5)),
+                Color.FromArgb(148, 2, 17, 22),
+                new Point(.3, 0), new Point(1, 1)),
             IsHitTestVisible = false,
         });
         Grid.SetColumn(scene, 0);
