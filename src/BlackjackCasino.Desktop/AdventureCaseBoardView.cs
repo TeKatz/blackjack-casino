@@ -77,6 +77,7 @@ internal sealed class AdventureCaseBoardView : Grid
         Loaded += (_, _) =>
         {
             if (migrated) Dispatcher.BeginInvoke(FitKnownNodes, DispatcherPriority.Loaded);
+            else Dispatcher.BeginInvoke(ConstrainCamera, DispatcherPriority.Loaded);
         };
         Unloaded += (_, _) => ClosePopup();
     }
@@ -200,6 +201,7 @@ internal sealed class AdventureCaseBoardView : Grid
         viewport.Cursor = CasinoCursors.Hand;
         viewport.SnapsToDevicePixels = true;
         viewport.UseLayoutRounding = true;
+        viewport.SizeChanged += (_, _) => ConstrainCamera();
         viewport.MouseWheel += (_, e) => { ChangeZoom(e.Delta > 0 ? .1 : -.1, e.GetPosition(viewport)); e.Handled = true; };
         viewport.MouseLeftButtonDown += OnPanStart;
         viewport.MouseMove += OnPanMove;
@@ -765,11 +767,23 @@ internal sealed class AdventureCaseBoardView : Grid
 
     private void SaveView()
     {
+        ConstrainCamera();
         BoardLayoutState layout = engine.State.CaseBoard.Layout;
         layout.Zoom = scale.ScaleX;
         layout.PanX = translate.X;
         layout.PanY = translate.Y;
         persist(engine.State);
+    }
+
+    private void ConstrainCamera()
+    {
+        double width = viewport.ActualWidth - viewport.BorderThickness.Left - viewport.BorderThickness.Right;
+        double height = viewport.ActualHeight - viewport.BorderThickness.Top - viewport.BorderThickness.Bottom;
+        if (width <= 0 || height <= 0) return;
+        double scaledWidth = boardWidth * scale.ScaleX;
+        double scaledHeight = boardHeight * scale.ScaleY;
+        translate.X = scaledWidth <= width ? (width - scaledWidth) / 2 : Math.Clamp(translate.X, width - scaledWidth, 0);
+        translate.Y = scaledHeight <= height ? (height - scaledHeight) / 2 : Math.Clamp(translate.Y, height - scaledHeight, 0);
     }
 
     private void OnPanStart(object sender, MouseButtonEventArgs e)
@@ -789,6 +803,7 @@ internal sealed class AdventureCaseBoardView : Grid
         Point current = e.GetPosition(this);
         translate.X = panStartX + current.X - origin.X;
         translate.Y = panStartY + current.Y - origin.Y;
+        ConstrainCamera();
     }
 
     private void OnPanEnd(object sender, MouseButtonEventArgs e)

@@ -1,9 +1,11 @@
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Interop;
 using BlackjackCasino.Core.Adventure;
 using BlackjackCasino.Desktop;
 
@@ -20,6 +22,17 @@ internal static class AdventureBoardSmoke
         engine.State.CaseBoard.Layout.NodePositions["arthur-vane"] = new() { X = 180, Y = 150 };
         var view = new AdventureCaseBoardView(engine, _ => { });
         var window = new Window { Content = view, Width = 1440, Height = 900, WindowStyle = WindowStyle.None, ShowInTaskbar = false };
+        // Allow the QA window to exceed the hosted runner's small virtual monitor.
+        window.SourceInitialized += (_, _) => HwndSource.FromHwnd(new WindowInteropHelper(window).Handle).AddHook(
+            (IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam, ref bool handled) =>
+            {
+                if (message == 0x24)
+                {
+                    Marshal.WriteInt32(lParam, 32, 4096);
+                    Marshal.WriteInt32(lParam, 36, 2160);
+                }
+                return IntPtr.Zero;
+            });
         try
         {
             window.Show(); await Task.Delay(90); window.UpdateLayout();
@@ -28,6 +41,8 @@ internal static class AdventureBoardSmoke
             foreach ((double width, double height) in new[] { (900d, 620d), (1440d, 900d), (1920d, 1080d) })
             {
                 window.Width = width; window.Height = height; window.UpdateLayout();
+                Require(Math.Abs(window.ActualWidth - width) < 3 && Math.Abs(window.ActualHeight - height) < 3,
+                    "QA window was capped by the virtual monitor instead of exercising the requested size");
                 Find<Button>(view).Single(b => Equals(b.Content, "FIT")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 window.UpdateLayout();
                 Border viewport = Find<Border>(view).Single(b => b.Name == "CaseBoardViewport");
@@ -39,6 +54,8 @@ internal static class AdventureBoardSmoke
                 Require(layoutClip is null || layoutClip.Bounds.Contains(new Rect(surface.RenderSize)), "World surface still has a smaller pre-transform layout clip");
                 RenderTargetBitmap bitmap = Render(viewport);
                 byte[] pixels = new byte[bitmap.PixelWidth * bitmap.PixelHeight * 4]; bitmap.CopyPixels(pixels, bitmap.PixelWidth * 4, 0);
+                int topPaper = (50 * bitmap.PixelWidth + bitmap.PixelWidth / 2) * 4;
+                Require(pixels[topPaper + 2] > 28, "FIT leaves a large empty region above the physical board");
                 foreach (Border card in cards.Children.OfType<Border>())
                 {
                     Rect bounds = card.TransformToAncestor(viewport).TransformBounds(new Rect(card.RenderSize));
