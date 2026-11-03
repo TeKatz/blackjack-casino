@@ -19,6 +19,41 @@ public sealed class EconomyBalancingTests
     }
 
     [Fact]
+    public void DailyLoginClaimWaitsAcrossMissedDaysAndCannotBeClaimedTwice()
+    {
+        var firstDay = new DateOnly(2026, 11, 1);
+        DailyLoginClaim first = Assert.IsType<DailyLoginClaim>(DailyLoginProgress.TryClaim(null, 0, firstDay));
+        Assert.Equal(100m, first.Reward);
+        Assert.Null(DailyLoginProgress.TryClaim(first.ClaimDate, first.TotalClaims, firstDay));
+
+        DateOnly later = firstDay.AddDays(5);
+        DailyLoginStatus waiting = DailyLoginProgress.GetStatus(first.ClaimDate, first.TotalClaims, later);
+        Assert.True(waiting.CanClaim);
+        Assert.Equal(2, waiting.ActiveStep);
+        Assert.Equal(125m, waiting.ActiveReward);
+
+        DailyLoginClaim second = Assert.IsType<DailyLoginClaim>(DailyLoginProgress.TryClaim(first.ClaimDate, first.TotalClaims, later));
+        Assert.Equal(125m, second.Reward);
+        Assert.Equal(2, second.TotalClaims);
+    }
+
+    [Fact]
+    public void DailyLoginSeventhClaimRollsIntoFreshCycleNextDay()
+    {
+        DateOnly today = new(2026, 11, 3);
+        DailyLoginClaim seventh = Assert.IsType<DailyLoginClaim>(DailyLoginProgress.TryClaim("2026-11-02", 6, today));
+        Assert.Equal(500m, seventh.Reward);
+        Assert.Equal(7, seventh.Status.CycleCompletedSteps);
+        Assert.False(seventh.Status.CanClaim);
+
+        DailyLoginStatus tomorrow = DailyLoginProgress.GetStatus(seventh.ClaimDate, seventh.TotalClaims, today.AddDays(1));
+        Assert.True(tomorrow.CanClaim);
+        Assert.Equal(1, tomorrow.ActiveStep);
+        Assert.Equal(100m, tomorrow.ActiveReward);
+        Assert.Equal(0, tomorrow.CycleCompletedSteps);
+    }
+
+    [Fact]
     public void BlackjackTablesAllowFiveThousandDollarMaximumBet()
     {
         Assert.Equal(5_000m, new GameRules().MaximumBet);
