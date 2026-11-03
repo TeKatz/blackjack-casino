@@ -22,21 +22,48 @@ internal partial class ProgressionWindow
     private void ProgressionRoot_Loaded(object sender, RoutedEventArgs e)
     {
         InitializeCollections();
+
+        TabItem? selectedTab = ProgressionTabs.SelectedItem as TabItem;
+        bool seasonSelected = IsSeasonPassTab(selectedTab);
+        if (seasonSelected && selectedTab is not null)
+        {
+            // RefreshAll -> RefreshSelectedTab still contains the legacy Season renderer. Calling it
+            // here used to build the entire reward track once, then InitializeSeasonPassLibrary built
+            // the same 100/120-tier track a second time immediately afterwards.
+            renderedTabs.Clear();
+            if (menuReady && ProgressionRoot.IsLoaded)
+            {
+                controller.AccruePlaytime();
+                RefreshProfileHeader();
+                renderedTabs.Add(selectedTab);
+            }
+
+            InitializeSeasonPassLibrary();
+            return;
+        }
+
         RefreshAll();
 
-        // Keep the menu's lazy-loading contract intact. Challenges/Shop must not construct the
-        // hidden 100-tier Season Pass just because the progression shell was embedded.
-        if (ProgressionTabs.SelectedItem is TabItem tab
-            && string.Equals(tab.Tag as string, "Season Pass", StringComparison.Ordinal))
+        // The library owns Season Pass rendering. Mark that tab as handled for the generic legacy
+        // renderer before the user selects it; SeasonPassTabs_SelectionChanged then materializes it
+        // exactly once. Other progression tabs retain the existing lazy-rendering behavior.
+        TabItem? seasonTab = ProgressionTabs.Items
+            .OfType<TabItem>()
+            .FirstOrDefault(IsSeasonPassTab);
+        if (seasonTab is not null)
         {
-            InitializeSeasonPassLibrary();
+            renderedTabs.Add(seasonTab);
         }
-        else if (!seasonPassTabHooked)
+
+        if (!seasonPassTabHooked)
         {
             ProgressionTabs.SelectionChanged += SeasonPassTabs_SelectionChanged;
             seasonPassTabHooked = true;
         }
     }
+
+    private static bool IsSeasonPassTab(TabItem? tab) =>
+        tab is not null && string.Equals(tab.Tag as string, "Season Pass", StringComparison.Ordinal);
 
     private void EmbeddedBackButton_Click(object sender, RoutedEventArgs e) => embeddedClose?.Invoke();
 }
