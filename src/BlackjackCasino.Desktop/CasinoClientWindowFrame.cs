@@ -8,11 +8,12 @@ namespace BlackjackCasino.Desktop;
 /// <summary>
 /// Lightweight client-area frame support for the main casino window. WPF WindowChrome is deliberately
 /// avoided here: the title bar stays entirely in the client area while native hit testing preserves
-/// resize/maximize behavior and the monitor work area.
+/// resize/maximize behavior and the correct monitor bounds.
 /// </summary>
 internal static class CasinoClientWindowFrame
 {
     private const int WmGetMinMaxInfo = 0x0024;
+    private const int WmNcCalcSize = 0x0083;
     private const int WmNcHitTest = 0x0084;
     private const int HtLeft = 10;
     private const int HtRight = 11;
@@ -63,6 +64,16 @@ internal static class CasinoClientWindowFrame
 
         private IntPtr WndProc(IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
+            if (message == WmNcCalcSize && wParam != IntPtr.Zero)
+            {
+                // WindowStyle=None still keeps the native thick-frame metrics when ResizeMode is resizable.
+                // If USER32 is allowed to calculate that non-client area, a maximized borderless WPF window
+                // gets an invisible frame inset on every edge. Make the complete native window our client area;
+                // WmNcHitTest below continues to provide the resize affordance while restored.
+                handled = true;
+                return IntPtr.Zero;
+            }
+
             if (message == WmNcHitTest
                 && window.WindowState == WindowState.Normal
                 && window.ResizeMode is ResizeMode.CanResize or ResizeMode.CanResizeWithGrip)
@@ -95,7 +106,7 @@ internal static class CasinoClientWindowFrame
             }
             else if (message == WmGetMinMaxInfo)
             {
-                ApplyMonitorWorkArea(hwnd, lParam);
+                ApplyMonitorBounds(hwnd, lParam, CasinoWindowFrame.GetIsFullscreen(window));
                 handled = true;
             }
 
@@ -153,7 +164,7 @@ internal static class CasinoClientWindowFrame
         }
     }
 
-    private static void ApplyMonitorWorkArea(IntPtr hwnd, IntPtr lParam)
+    private static void ApplyMonitorBounds(IntPtr hwnd, IntPtr lParam, bool fullscreen)
     {
         IntPtr monitor = MonitorFromWindow(hwnd, MonitorDefaultToNearest);
         if (monitor == IntPtr.Zero)
@@ -167,11 +178,12 @@ internal static class CasinoClientWindowFrame
             return;
         }
 
+        NativeRect target = fullscreen ? monitorInfo.Monitor : monitorInfo.Work;
         MinMaxInfo minMax = Marshal.PtrToStructure<MinMaxInfo>(lParam);
-        minMax.MaxPosition.X = monitorInfo.Work.Left - monitorInfo.Monitor.Left;
-        minMax.MaxPosition.Y = monitorInfo.Work.Top - monitorInfo.Monitor.Top;
-        minMax.MaxSize.X = monitorInfo.Work.Right - monitorInfo.Work.Left;
-        minMax.MaxSize.Y = monitorInfo.Work.Bottom - monitorInfo.Work.Top;
+        minMax.MaxPosition.X = target.Left - monitorInfo.Monitor.Left;
+        minMax.MaxPosition.Y = target.Top - monitorInfo.Monitor.Top;
+        minMax.MaxSize.X = target.Right - target.Left;
+        minMax.MaxSize.Y = target.Bottom - target.Top;
         Marshal.StructureToPtr(minMax, lParam, fDeleteOld: false);
     }
 
