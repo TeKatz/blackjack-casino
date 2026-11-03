@@ -75,159 +75,133 @@ internal sealed class MemoryLoungeHubVisual : UserControl, IDisposable
         Unloaded += (_, _) => Dispose();
     }
 
-    private FrameworkElement BuildHubViewport() => new ScrollViewer
-    {
-        Content = BuildHub(),
-        VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-        HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
-        CanContentScroll = false,
-    };
+    private FrameworkElement BuildHubViewport() => BuildHub();
 
     private FrameworkElement BuildHub()
     {
-        var root = new Grid { Margin = new Thickness(30, 22, 30, 28) };
-        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        root.RowDefinitions.Add(new RowDefinition());
-
-        var title = new StackPanel { Margin = new Thickness(0, 0, 0, 16) };
-        title.Children.Add(Label("CHILL LOUNGE · MEMORY", 10, "#82B79D", FontWeights.SemiBold));
-        title.Children.Add(new TextBlock
-        {
-            Text = "Memory",
-            FontFamily = new FontFamily("Georgia"),
-            FontSize = 31,
-            FontWeight = FontWeights.SemiBold,
-            Foreground = Brush("#F2E3C5"),
-            Margin = new Thickness(0, 2, 0, 1),
-        });
-        title.Children.Add(Label("Find the pairs. Take all the time you need.", 12, "#AABCB3"));
-        root.Children.Add(title);
-
         MemoryStatistics snapshot = stats();
-        var summary = new UniformGrid { Columns = 4, Margin = new Thickness(0, 0, 0, 20) };
-        summary.Children.Add(Stat("GAMES", snapshot.CompletedGames.ToString("N0")));
-        summary.Children.Add(Stat("PAIRS FOUND", snapshot.PairsFound.ToString("N0")));
-        summary.Children.Add(Stat("PERFECT", snapshot.PerfectGames.ToString("N0")));
-        summary.Children.Add(Stat("BEST STREAK", snapshot.BestStreak.ToString("N0")));
-        Grid.SetRow(summary, 1);
-        root.Children.Add(summary);
+        var right = new StackPanel();
+        right.VerticalAlignment = VerticalAlignment.Top;
+        right.Margin = new Thickness(0, 34, 0, 0);
+        right.Children.Add(PremiumLoungeTheme.Heading("CHOOSE YOUR TABLE"));
 
-        var content = new Grid();
-        content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.35, GridUnitType.Star) });
-        content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(24) });
-        content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        Grid.SetRow(content, 2);
-        root.Children.Add(content);
-
-        var tableSection = new StackPanel();
-        var tableHeading = new Grid { Margin = new Thickness(2, 0, 10, 12) };
-        tableHeading.ColumnDefinitions.Add(new ColumnDefinition());
-        tableHeading.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        var tableTitle = new StackPanel();
-        tableTitle.Children.Add(Label("TABLE SIZE", 10, "#D5B879", FontWeights.Bold));
-        tableTitle.Children.Add(MarginLabel("Choose how much of the table you want to remember.", 11, "#8FA59B", new Thickness(0, 3, 0, 0)));
-        tableHeading.Children.Add(tableTitle);
-        TextBlock deckHint = Label("5 DIFFICULTIES", 9, "#6F9183", FontWeights.SemiBold);
-        deckHint.VerticalAlignment = VerticalAlignment.Bottom;
-        Grid.SetColumn(deckHint, 1);
-        tableHeading.Children.Add(deckHint);
-        tableSection.Children.Add(tableHeading);
-
-        var levels = new UniformGrid { Columns = 2 };
-        foreach (MemoryDifficulty difficulty in Enum.GetValues<MemoryDifficulty>())
-            levels.Children.Add(DifficultyCard(difficulty));
-        tableSection.Children.Add(levels);
-        content.Children.Add(tableSection);
-
-        var side = new StackPanel();
-        if (progress.ActiveGame is not null)
+        if (progress.ActiveGame is MemoryGameState active)
         {
-            MemoryGameState active = progress.ActiveGame;
-            Border resumePanel = Panel(new Thickness(18));
-            resumePanel.BorderBrush = Brush("#6A8F79");
-            var resumeStack = new StackPanel();
-            resumeStack.Children.Add(Label("CURRENT TABLE", 10, "#D5B879", FontWeights.Bold));
-            resumeStack.Children.Add(MarginLabel(MemoryCatalog.GetDeck(active.DeckId).Name, 20, "#F2E3C5", new Thickness(0, 3, 0, 2), FontWeights.SemiBold));
-            resumeStack.Children.Add(Label($"{active.Difficulty} · {active.PairsFound} / {active.PairCount} pairs · {active.Moves} moves", 11, "#9DB2A8"));
-            Button resume = ActionButton("RESUME TABLE", "MemoryResume");
-            resume.Margin = new Thickness(0, 13, 0, 0);
-            resume.Height = 38;
-            resume.Click += (_, _) => ShowGame(active);
-            resumeStack.Children.Add(resume);
-            resumePanel.Child = resumeStack;
-            side.Children.Add(resumePanel);
+            var current = PremiumLoungeTheme.Row(
+                "CONTINUE YOUR TABLE",
+                $"{active.Difficulty} · {active.PairsFound} / {active.PairCount} pairs · {active.Moves} moves",
+                selected: true, height: 74);
+            var resume = PremiumLoungeTheme.Button("RESUME TABLE", "MemoryResume",
+                () => ShowGame(active), width: 150);
+            PremiumLoungeTheme.AddRowAction(current, resume, 160);
+            right.Children.Add(current);
         }
 
-        Border deckPanel = Panel(new Thickness(18));
-        deckPanel.Margin = new Thickness(0, progress.ActiveGame is null ? 0 : 14, 0, 0);
-        var deckStack = new StackPanel();
-        var deckTitle = new Grid();
-        deckTitle.ColumnDefinitions.Add(new ColumnDefinition());
-        deckTitle.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        deckTitle.Children.Add(Label("CARD DECK", 10, "#D5B879", FontWeights.Bold));
-        TextBlock previewLabel = Label("LIVE PREVIEW", 9, "#6F9183", FontWeights.SemiBold);
-        Grid.SetColumn(previewLabel, 1);
-        deckTitle.Children.Add(previewLabel);
-        deckStack.Children.Add(deckTitle);
+        foreach (MemoryDifficulty difficulty in Enum.GetValues<MemoryDifficulty>())
+        {
+            MemoryDifficultySpec spec = MemoryCatalog.Spec(difficulty);
+            snapshot.BestMovesByDifficulty.TryGetValue(difficulty.ToString(), out int bestMoves);
+            var row = PremiumLoungeTheme.Row(
+                difficulty.ToString(),
+                $"{spec.Rows}×{spec.Columns} · {spec.Pairs} pairs · " +
+                (bestMoves > 0 ? $"BEST {bestMoves} MOVES" : "NO BEST YET"),
+                height: 73);
+            var description = (StackPanel)PremiumLoungeTheme.RowContent(row).Children[1];
+            var xp = PremiumLoungeTheme.Label(
+                $"+{MemoryProgression.PlayerExperience(difficulty):N0} XP", 11, PremiumLoungeTheme.Gold, true);
+            xp.Margin = new Thickness(0, 3, 0, 0);
+            description.Children.Add(xp);
 
-        var deckPicker = new ComboBox
+            MemoryDifficulty selected = difficulty;
+            var play = PremiumLoungeTheme.Button("PLAY", "MemoryStart_" + selected,
+                () => Start(selected), width: 130);
+            PremiumLoungeTheme.AddRowAction(row, play, 140);
+            right.Children.Add(row);
+        }
+
+        var leftSettings = new StackPanel { HorizontalAlignment = HorizontalAlignment.Stretch };
+        var decks = PremiumLoungeTheme.Panel(new StackPanel(), 12);
+        decks.Margin = new Thickness(0, 0, 0, 7);
+        var deckContents = (StackPanel)decks.Child;
+        deckContents.Children.Add(PremiumLoungeTheme.Heading("CARD DECK"));
+
+        var picker = new ComboBox
         {
             Name = "MemoryDeckPicker",
             ItemsSource = MemoryCatalog.Decks,
             DisplayMemberPath = nameof(MemoryDeckDefinition.Name),
             SelectedItem = MemoryCatalog.GetDeck(progress.PreferredDeckId),
-            Margin = new Thickness(0, 9, 0, 0),
-            Padding = new Thickness(10, 7, 10, 7),
-            FontSize = 12,
             IsEnabled = progress.ActiveGame is null,
+            Height = 36,
         };
-        var preview = new ContentControl { Name = "MemoryDeckPreview", Margin = new Thickness(0, 12, 0, 0) };
-        var description = MarginLabel("", 11, "#97AAA1", new Thickness(1, 10, 1, 0));
+        PremiumLoungeTheme.StyleInput(picker);
+        deckContents.Children.Add(picker);
 
-        void RefreshDeckPresentation(MemoryDeckDefinition deck)
+        var preview = new ContentControl
+        {
+            Name = "MemoryDeckPreview",
+            Margin = new Thickness(0, 6, 0, 0),
+        };
+        var descriptionText = PremiumLoungeTheme.Label("", 11, PremiumLoungeTheme.Muted);
+        descriptionText.Margin = new Thickness(0, 9, 0, 0);
+
+        void UpdatePreview(MemoryDeckDefinition deck)
         {
             preview.Content = BuildDeckPreview(deck);
-            description.Text = deck.Description;
+            descriptionText.Text = deck.Description;
         }
 
-        deckPicker.SelectionChanged += (_, _) =>
+        status = PremiumLoungeTheme.Label(
+            "Choose a table size, or resume your current game.",
+            13, PremiumLoungeTheme.Gold);
+        status.Margin = new Thickness(4, 9, 0, 6);
+
+        picker.SelectionChanged += (_, _) =>
         {
-            if (deckPicker.SelectedItem is not MemoryDeckDefinition deck) return;
-            RefreshDeckPresentation(deck);
+            if (picker.SelectedItem is not MemoryDeckDefinition deck) return;
+            UpdatePreview(deck);
             if (progress.ActiveGame is not null) return;
             progress.PreferredDeckId = deck.Id;
             persist(progress);
             status.Text = $"{deck.Name} selected.";
         };
-        deckStack.Children.Add(deckPicker);
-        deckStack.Children.Add(preview);
-        deckStack.Children.Add(description);
-        RefreshDeckPresentation(MemoryCatalog.GetDeck(progress.PreferredDeckId));
-        deckPanel.Child = deckStack;
-        side.Children.Add(deckPanel);
+        UpdatePreview(MemoryCatalog.GetDeck(progress.PreferredDeckId));
 
-        Border info = Panel(new Thickness(16));
-        info.Margin = new Thickness(0, 14, 0, 0);
-        var infoStack = new StackPanel();
-        infoStack.Children.Add(Label("HOW IT WORKS", 10, "#D5B879", FontWeights.Bold));
-        infoStack.Children.Add(MarginLabel("Flip two cards. A matching pair stays open; a miss turns back over. Consecutive matches build your streak.", 11, "#AABCB3", new Thickness(0, 5, 0, 0)));
-        infoStack.Children.Add(MarginLabel("Time is recorded only as a statistic. There is no timer pressure and mistakes never reduce XP.", 10, "#82B79D", new Thickness(0, 9, 0, 0)));
-        info.Child = infoStack;
-        side.Children.Add(info);
+        deckContents.Children.Add(preview);
+        deckContents.Children.Add(descriptionText);
+        leftSettings.Children.Add(decks);
 
-        status = Label("Choose a table size, or resume your current game.", 11, "#C9B98F");
-        status.Margin = new Thickness(2, 14, 0, 0);
-        side.Children.Add(status);
-        Grid.SetColumn(side, 2);
-        content.Children.Add(side);
+        var guide = PremiumLoungeTheme.Label(
+            "Flip two cards. Matching pairs stay open; misses turn back over. " +
+            "Time is only a statistic, and mistakes never reduce XP.",
+            12, PremiumLoungeTheme.Muted);
+        var guidePanel = PremiumLoungeTheme.Panel(guide, 14);
+        guidePanel.Margin = new Thickness(0, 3, 0, 4);
+        leftSettings.Children.Add(guidePanel);
+        leftSettings.Children.Add(status);
 
-        return root;
+        return (FrameworkElement)PremiumLoungeTheme.Build(
+            "spa-wellness.png",
+            "poker-room.png",
+            "A QUIETER CORNER",
+            "A moment to remember.",
+            "No clock to beat. Turn over the cards and settle into your own rhythm.",
+            "Memory",
+            "Find the pairs.",
+            "Choose your table, select a card deck and discover each matching pair at your own pace.",
+            PremiumLoungeTheme.Stats(
+                $"GAMES   {snapshot.CompletedGames:N0}    ·    PAIRS FOUND   {snapshot.PairsFound:N0}",
+                $"PERFECT   {snapshot.PerfectGames:N0}    ·    BEST STREAK   {snapshot.BestStreak:N0}"),
+            right,
+            "Choose a table size and card deck. Your current game is saved, and your completed tables remain in your statistics.",
+            leftSecondary: leftSettings,
+            compactLeft: true,
+            rightScrollable: false);
     }
 
     private static FrameworkElement BuildDeckPreview(MemoryDeckDefinition deck)
     {
-        var strip = new UniformGrid { Columns = 4, Height = 164 };
+        var strip = new UniformGrid { Columns = 4, Height = 106 };
         foreach (MemorySymbol symbol in deck.Symbols.Take(4))
         {
             var holder = new Border

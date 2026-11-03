@@ -4,7 +4,8 @@ public sealed record SeasonTierDefinition(
     int Tier,
     long RequiredExperience,
     long Coins,
-    string? CosmeticId);
+    string? CosmeticId,
+    decimal BankrollReward = 0m);
 
 public sealed record SeasonDefinition(
     string Id,
@@ -141,7 +142,8 @@ public static class SeasonCatalog
                 _ when tier % 5 == 0 => 40,
                 _ => 18,
             };
-            tiers.Add(new SeasonTierDefinition(tier, required, coins, cosmetic));
+            decimal bankrollReward = cosmetic is null ? 100m : 0m;
+            tiers.Add(new SeasonTierDefinition(tier, required, coins, cosmetic, bankrollReward));
         }
 
         return tiers;

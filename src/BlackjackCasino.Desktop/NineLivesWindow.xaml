@@ -4,8 +4,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:BlackjackCasino.Desktop"
         Title="Nine Lives"
-        Width="1536" Height="1024"
-        MinWidth="1080" MinHeight="720"
+        Width="1760" Height="960"
+        MinWidth="1100" MinHeight="690"
         WindowStartupLocation="CenterOwner"
         Background="#08060E"
         UseLayoutRounding="True"
@@ -13,10 +13,43 @@
         PreviewKeyDown="Window_PreviewKeyDown"
         Closed="Window_Closed">
     <Window.Resources>
+        <!-- Resolution-independent machine art materials. -->
+        <LinearGradientBrush x:Key="NineLivesGold" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#6C4026" Offset="0"/>
+            <GradientStop Color="#FFE9B8" Offset="0.16"/>
+            <GradientStop Color="#946439" Offset="0.39"/>
+            <GradientStop Color="#F6D48D" Offset="0.64"/>
+            <GradientStop Color="#583821" Offset="0.86"/>
+            <GradientStop Color="#D5A66B" Offset="1"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="NineLivesIris" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#704287" Offset="0"/>
+            <GradientStop Color="#E7C486" Offset="0.28"/>
+            <GradientStop Color="#664278" Offset="0.54"/>
+            <GradientStop Color="#E4B87C" Offset="0.82"/>
+            <GradientStop Color="#75408B" Offset="1"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="NineLivesEnamel" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#F51B102F" Offset="0"/>
+            <GradientStop Color="#F6090B16" Offset="0.48"/>
+            <GradientStop Color="#F4160C25" Offset="1"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="NineLivesGoldFill" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#FFF2C2" Offset="0"/>
+            <GradientStop Color="#F0CF7F" Offset="0.26"/>
+            <GradientStop Color="#BD8844" Offset="0.78"/>
+            <GradientStop Color="#754B26" Offset="1"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="NineLivesVioletFill" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#64386E" Offset="0"/>
+            <GradientStop Color="#2A1735" Offset="0.16"/>
+            <GradientStop Color="#140E20" Offset="0.83"/>
+            <GradientStop Color="#4B2C55" Offset="1"/>
+        </LinearGradientBrush>
         <Style x:Key="ChromeButton" TargetType="Button">
             <Setter Property="Foreground" Value="#F8E9FF"/>
-            <Setter Property="Background" Value="#E0141020"/>
-            <Setter Property="BorderBrush" Value="#8750A3"/>
+            <Setter Property="Background" Value="{StaticResource NineLivesVioletFill}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource NineLivesIris}"/>
             <Setter Property="BorderThickness" Value="1.5"/>
             <Setter Property="Padding" Value="14,8"/>
             <Setter Property="FontFamily" Value="Segoe UI Semibold"/>
@@ -30,13 +63,18 @@
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="11">
+                            <Grid>
+                            <Border Margin="3" CornerRadius="9" BorderBrush="#55F2D7AA" BorderThickness="1" IsHitTestVisible="False"/>
+                            <Border VerticalAlignment="Top" Height="1" Margin="14,5,14,0"
+                                    Background="#80F5DEB0" IsHitTestVisible="False"/>
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
                                               Margin="{TemplateBinding Padding}"/>
+                            </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Chrome" Property="Background" Value="#F0241935"/>
-                                <Setter TargetName="Chrome" Property="BorderBrush" Value="#CC69F4"/>
+                                <Setter TargetName="Chrome" Property="Background" Value="#55305F"/>
+                                <Setter TargetName="Chrome" Property="BorderBrush" Value="#FFF0B4"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Chrome" Property="Opacity" Value="0.78"/>
@@ -52,11 +90,41 @@
 
         <Style x:Key="GoldButton" TargetType="Button" BasedOn="{StaticResource ChromeButton}">
             <Setter Property="Foreground" Value="#24131C"/>
-            <Setter Property="Background" Value="#F2D16A"/>
-            <Setter Property="BorderBrush" Value="#FFF0A7"/>
+            <Setter Property="Background" Value="{StaticResource NineLivesGoldFill}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource NineLivesGold}"/>
             <Setter Property="FontFamily" Value="Georgia"/>
             <Setter Property="FontSize" Value="16"/>
             <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="GoldShell" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="2" CornerRadius="13">
+                            <Grid>
+                                <Border Margin="4" BorderBrush="#99FFF1C5" BorderThickness="1" CornerRadius="9"
+                                        IsHitTestVisible="False"/>
+                                <Border VerticalAlignment="Top" Height="1.5" Background="#A0FFF8D8"
+                                        Margin="15,6,15,0" IsHitTestVisible="False"/>
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                  Margin="{TemplateBinding Padding}"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="GoldShell" Property="BorderBrush" Value="#FFFFD993"/>
+                                <Setter TargetName="GoldShell" Property="Opacity" Value="0.94"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="GoldShell" Property="Opacity" Value="0.78"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="GoldShell" Property="Opacity" Value="0.32"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <Style x:Key="SpinButtonStyle" TargetType="Button" BasedOn="{StaticResource ChromeButton}">
@@ -68,17 +136,21 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Chrome" CornerRadius="21" BorderBrush="#EFC96A"
+                        <Border x:Name="Chrome" CornerRadius="21" BorderBrush="{StaticResource NineLivesGold}"
                                 BorderThickness="{TemplateBinding BorderThickness}">
                             <Border.Background>
                                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                    <GradientStop Color="#8E281052" Offset="0"/>
-                                    <GradientStop Color="#D15D2687" Offset="0.52"/>
-                                    <GradientStop Color="#7D260E4C" Offset="1"/>
+                                    <GradientStop Color="#A3538A" Offset="0"/>
+                                    <GradientStop Color="#47205A" Offset="0.52"/>
+                                    <GradientStop Color="#1A0D2D" Offset="1"/>
                                 </LinearGradientBrush>
                             </Border.Background>
                             <Grid>
-                                <Ellipse Margin="17" Stroke="#38FFFFFF" StrokeThickness="2" IsHitTestVisible="False"/>
+                                <Border Margin="5" BorderBrush="#72F2D3A3" BorderThickness="1" CornerRadius="16" IsHitTestVisible="False"/>
+                                <Path Data="M 0,0 L 26,0" Stroke="#A0FFE2B5" StrokeThickness="1.6"
+                                      HorizontalAlignment="Left" VerticalAlignment="Top" Margin="22,10,0,0" IsHitTestVisible="False"/>
+                                <Path Data="M 0,0 L 26,0" Stroke="#A0FFE2B5" StrokeThickness="1.6"
+                                      HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,22,10" IsHitTestVisible="False"/>
                                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Grid>
                         </Border>
@@ -99,8 +171,8 @@
         </Style>
 
         <Style x:Key="HudPanel" TargetType="Border">
-            <Setter Property="Background" Value="#ED0C0914"/>
-            <Setter Property="BorderBrush" Value="#8C6132"/>
+            <Setter Property="Background" Value="{StaticResource NineLivesEnamel}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource NineLivesGold}"/>
             <Setter Property="BorderThickness" Value="1.4"/>
             <Setter Property="CornerRadius" Value="11"/>
         </Style>
@@ -161,7 +233,7 @@
 
     <Grid Background="#08060E">
         <Viewbox Stretch="Uniform" StretchDirection="Both" HorizontalAlignment="Center" VerticalAlignment="Center">
-            <Grid Width="1536" Height="1024" ClipToBounds="True">
+            <Grid x:Name="NineLivesStage" Width="1760" Height="960" ClipToBounds="True">
                 <Image x:Name="BackgroundArt" Stretch="UniformToFill" Opacity="0.09"
                        RenderOptions.BitmapScalingMode="HighQuality"/>
                 <Border Background="#D207050E"/>
@@ -177,20 +249,33 @@
                 </Ellipse>
 
                 <Canvas Panel.ZIndex="20">
-                    <Border Canvas.Left="34" Canvas.Top="22" Width="1468" Height="976"
-                            Background="#C10A0712" BorderBrush="#8141B3" BorderThickness="3" CornerRadius="42"/>
+                    <Border x:Name="MachineCabinet" Canvas.Left="28" Canvas.Top="20" Width="1704" Height="920"
+                            Background="{StaticResource NineLivesEnamel}" BorderBrush="{StaticResource NineLivesIris}" BorderThickness="4" CornerRadius="42"/>
 
+                    <!-- Engraved inlays and corner filigree sit on top of the illustrated casing. -->
+                    <Border Canvas.Left="38" Canvas.Top="29" Width="1684" Height="902"
+                            Background="#08000000" BorderBrush="#B2826592" BorderThickness="1" CornerRadius="34"
+                            IsHitTestVisible="False"/>
+                    <Path Data="M 57,112 Q 57,43 123,43 M 1637,43 Q 1703,43 1703,112"
+                          Stroke="{StaticResource NineLivesGold}" StrokeThickness="2" Opacity="0.8"
+                          IsHitTestVisible="False"/>
+                    <Path Data="M 66,132 Q 244,127 380,132 M 1380,132 Q 1516,127 1694,132"
+                          Stroke="{StaticResource NineLivesGold}" StrokeThickness="1.8" Opacity="0.65"
+                          IsHitTestVisible="False"/>
+                    <Path Data="M 66,852 Q 350,850 710,852 M 1050,852 Q 1410,850 1694,852"
+                          Stroke="{StaticResource NineLivesIris}" StrokeThickness="1.7" Opacity="0.7"
+                          IsHitTestVisible="False"/>
                     <!-- Header -->
-                    <Button x:Name="CasinoButton" Canvas.Left="72" Canvas.Top="56" Width="168" Height="52"
+                    <Button x:Name="CasinoButton" Canvas.Left="70" Canvas.Top="56" Width="174" Height="52"
                             Style="{StaticResource ChromeButton}" Content="←  CASINO"
                             Click="CasinoButton_Click" ToolTip="Back to Casino (Esc)"/>
-                    <StackPanel Canvas.Left="438" Canvas.Top="40" Width="660">
+                    <StackPanel Canvas.Left="538" Canvas.Top="37" Width="684">
                         <TextBlock Text="NINE LIVES" HorizontalAlignment="Center" Foreground="#F2CF75"
-                                   FontFamily="Georgia" FontSize="43" FontWeight="Bold"/>
+                                   FontFamily="Georgia" FontSize="47" FontWeight="Bold"/>
                         <TextBlock Text="HIGH VOLATILITY · 3×3 · FIVE LINES" HorizontalAlignment="Center"
                                    Foreground="#AFA0BB" FontFamily="Segoe UI Semibold" FontSize="11" Margin="0,5,0,0"/>
                     </StackPanel>
-                    <Border Style="{StaticResource HudPanel}" Canvas.Left="1112" Canvas.Top="54" Width="150" Height="56">
+                    <Border Style="{StaticResource HudPanel}" Canvas.Left="1315" Canvas.Top="54" Width="155" Height="58">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                             <TextBlock Text="●" Foreground="#F0B34F" FontSize="19" Margin="0,0,8,0"/>
                             <StackPanel>
@@ -199,7 +284,7 @@
                             </StackPanel>
                         </StackPanel>
                     </Border>
-                    <Border Style="{StaticResource HudPanel}" Canvas.Left="1272" Canvas.Top="54" Width="118" Height="56">
+                    <Border Style="{StaticResource HudPanel}" Canvas.Left="1482" Canvas.Top="54" Width="129" Height="58">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                             <TextBlock Text="★" Foreground="#D75CFF" FontSize="18" Margin="0,0,7,0"/>
                             <StackPanel>
@@ -208,19 +293,32 @@
                             </StackPanel>
                         </StackPanel>
                     </Border>
-                    <Button x:Name="SettingsButton" Canvas.Left="1400" Canvas.Top="54" Width="66" Height="56"
+                    <Button x:Name="SettingsButton" Canvas.Left="1624" Canvas.Top="54" Width="67" Height="58"
                             Style="{StaticResource ChromeButton}" Padding="0" Content="SET"
                             Click="SettingsFlyoutButton_Click" ToolTip="Nine Lives settings"/>
 
                     <!-- Feature rail -->
-                    <Border Canvas.Left="72" Canvas.Top="164" Width="236" Height="650"
-                            Background="#D70D0917" BorderBrush="#482A57" BorderThickness="1.5" CornerRadius="20">
-                        <StackPanel Margin="21">
+                    <Border Canvas.Left="70" Canvas.Top="147" Width="330" Height="675"
+                            Background="{StaticResource NineLivesEnamel}" BorderBrush="{StaticResource NineLivesIris}" BorderThickness="2.2" CornerRadius="24">
+                        <Grid>
+                        <Image x:Name="NineLivesFeatureIllustration" Width="245" Height="245"
+                               Stretch="Uniform" Opacity="0.28" IsHitTestVisible="False"
+                               HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,14"
+                               RenderOptions.BitmapScalingMode="HighQuality">
+                            <Image.OpacityMask>
+                                <RadialGradientBrush Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.70" RadiusY="0.70">
+                                    <GradientStop Color="#F0FFFFFF" Offset="0"/>
+                                    <GradientStop Color="#D0FFFFFF" Offset="0.42"/>
+                                    <GradientStop Color="#00FFFFFF" Offset="1"/>
+                                </RadialGradientBrush>
+                            </Image.OpacityMask>
+                        </Image>
+                            <StackPanel Margin="26">
                             <TextBlock Text="THE GAME" Style="{StaticResource PanelLabel}" Foreground="#C46DF0"/>
                             <TextBlock Text="One dangerous cat. Five lines. No quiet wins."
                                        Foreground="#F4EAF8" FontFamily="Georgia" FontSize="20" TextWrapping="Wrap"
                                        Margin="0,11,0,22"/>
-                            <Border Height="1" Background="#352240" Margin="0,0,0,20"/>
+                            <Border Height="1.5" Background="{StaticResource NineLivesGold}" Opacity="0.55" Margin="0,0,0,20"/>
                             <TextBlock Text="POUNCE WILD" Foreground="#E7BE62" FontFamily="Segoe UI Semibold" FontSize="14"/>
                             <TextBlock Text="The black cat can strike a second cell after the reels stop."
                                        Foreground="#AFA0B9" FontSize="13" TextWrapping="Wrap" Margin="0,6,0,20"/>
@@ -230,27 +328,43 @@
                             <TextBlock Text="FULL GRID" Foreground="#E7BE62" FontFamily="Segoe UI Semibold" FontSize="14"/>
                             <TextBlock Text="A complete matching 3×3 grid pays 5,000×."
                                        Foreground="#AFA0B9" FontSize="13" TextWrapping="Wrap" Margin="0,6,0,20"/>
-                            <Border Height="1" Background="#352240" Margin="0,0,0,18"/>
+                            <Border Height="1.5" Background="{StaticResource NineLivesGold}" Opacity="0.55" Margin="0,0,0,18"/>
                             <TextBlock Text="WINS" Style="{StaticResource PanelLabel}"/>
                             <TextBlock Text="Winning symbols glow while the full line sweeps across the grid."
                                        Foreground="#81758B" FontSize="12" TextWrapping="Wrap" Margin="0,6,0,0"/>
-                        </StackPanel>
+                            </StackPanel>
+                        </Grid>
                     </Border>
 
                     <!-- Reel stage: sized around the authored reel coordinates through Y≈808 -->
-                    <Border Canvas.Left="340" Canvas.Top="164" Width="856" Height="650"
-                            Background="#EA0B0813" BorderBrush="#5B3471" BorderThickness="2" CornerRadius="26">
+                    <Border Canvas.Left="421" Canvas.Top="147" Width="918" Height="675"
+                            Background="{StaticResource NineLivesEnamel}" BorderBrush="{StaticResource NineLivesGold}" BorderThickness="3" CornerRadius="29">
                         <Border.Effect>
                             <DropShadowEffect Color="#8E42C7" BlurRadius="28" ShadowDepth="0" Opacity="0.24"/>
                         </Border.Effect>
                     </Border>
-                    <Border Canvas.Left="352" Canvas.Top="176" Width="832" Height="626"
-                            Background="#7A0A0712" BorderBrush="#302038" BorderThickness="1" CornerRadius="18"/>
-                    <Canvas x:Name="ReelCanvas" Canvas.Left="0" Canvas.Top="0" Width="1536" Height="1024"/>
+                    <Border Canvas.Left="432" Canvas.Top="158" Width="896" Height="653"
+                            Background="#44090513" BorderBrush="#8159567E" BorderThickness="1.5" CornerRadius="22"/>
+                    <!-- Architectural columns frame the square artworks without covering them. -->
+                    <Border Canvas.Left="460" Canvas.Top="179" Width="3" Height="615"
+                            Background="{StaticResource NineLivesGold}" Opacity="0.48" IsHitTestVisible="False"/>
+                    <Border Canvas.Left="1296" Canvas.Top="179" Width="3" Height="615"
+                            Background="{StaticResource NineLivesGold}" Opacity="0.48" IsHitTestVisible="False"/>
+                    <Path Data="M 471,210 Q 494,187 525,210 M 1235,210 Q 1266,187 1289,210
+                                M 471,757 Q 494,780 525,757 M 1235,757 Q 1266,780 1289,757"
+                          Stroke="{StaticResource NineLivesIris}" StrokeThickness="2.5" Opacity="0.85"
+                          IsHitTestVisible="False"/>
+                    <TextBlock Canvas.Left="467" Canvas.Top="389" Width="77" Text="IX"
+                               Foreground="#558C6A8D" FontFamily="Georgia" FontWeight="Bold"
+                               FontSize="62" TextAlignment="Center" IsHitTestVisible="False"/>
+                    <TextBlock Canvas.Left="1215" Canvas.Top="389" Width="77" Text="✦"
+                               Foreground="#56CC9F7E" FontFamily="Georgia"
+                               FontSize="62" TextAlignment="Center" IsHitTestVisible="False"/>
+                    <Canvas x:Name="ReelCanvas" Canvas.Left="0" Canvas.Top="0" Width="1760" Height="960"/>
                     <local:NineLivesWinCanvas x:Name="WinLineCanvas" Canvas.Left="0" Canvas.Top="0"
-                                              Width="1536" Height="1024" IsHitTestVisible="False"/>
+                                              Width="1760" Height="960" IsHitTestVisible="False"/>
 
-                    <Border x:Name="BonusBadge" Canvas.Left="610" Canvas.Top="126" Width="316" Height="36"
+                    <Border x:Name="BonusBadge" Canvas.Left="696" Canvas.Top="114" Width="368" Height="38"
                             Background="#E31A1024" BorderBrush="#E7B95E" BorderThickness="1" CornerRadius="15"
                             Visibility="Collapsed">
                         <TextBlock x:Name="BonusText" Style="{StaticResource HudText}" FontSize="15"
@@ -258,9 +372,22 @@
                     </Border>
 
                     <!-- Info rail -->
-                    <Border Canvas.Left="1228" Canvas.Top="164" Width="238" Height="650"
-                            Background="#D70D0917" BorderBrush="#482A57" BorderThickness="1.5" CornerRadius="20">
-                        <StackPanel Margin="21">
+                    <Border Canvas.Left="1360" Canvas.Top="147" Width="330" Height="675"
+                            Background="{StaticResource NineLivesEnamel}" BorderBrush="{StaticResource NineLivesIris}" BorderThickness="2.2" CornerRadius="24">
+                        <Grid>
+                        <Image x:Name="NineLivesInfoIllustration" Width="250" Height="250"
+                               Stretch="Uniform" Opacity="0.28" IsHitTestVisible="False"
+                               HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,14"
+                               RenderOptions.BitmapScalingMode="HighQuality">
+                            <Image.OpacityMask>
+                                <RadialGradientBrush Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.70" RadiusY="0.70">
+                                    <GradientStop Color="#F0FFFFFF" Offset="0"/>
+                                    <GradientStop Color="#D0FFFFFF" Offset="0.42"/>
+                                    <GradientStop Color="#00FFFFFF" Offset="1"/>
+                                </RadialGradientBrush>
+                            </Image.OpacityMask>
+                        </Image>
+                            <StackPanel Margin="26">
                             <TextBlock Text="TABLE INFO" Style="{StaticResource PanelLabel}" Foreground="#C46DF0"/>
                             <Grid Margin="0,16,0,15">
                                 <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
@@ -273,31 +400,30 @@
                                     <TextBlock Text="BONUS SPINS" Style="{StaticResource PanelLabel}" FontSize="9" HorizontalAlignment="Center"/>
                                 </StackPanel>
                             </Grid>
-                            <Border Height="1" Background="#352240" Margin="0,2,0,18"/>
+                            <Border Height="1.5" Background="{StaticResource NineLivesGold}" Opacity="0.55" Margin="0,2,0,18"/>
                             <TextBlock Text="VOLATILITY" Style="{StaticResource PanelLabel}"/>
                             <TextBlock Text="HIGH" Foreground="#F3D06E" FontFamily="Georgia" FontSize="25" Margin="0,4,0,15"/>
                             <TextBlock Text="MAX WIN" Style="{StaticResource PanelLabel}"/>
                             <TextBlock Text="5,000×" Foreground="#F6E4AC" FontFamily="Georgia" FontSize="25" Margin="0,4,0,18"/>
-                            <Border Height="1" Background="#352240" Margin="0,0,0,18"/>
-                            <TextBlock Text="SHORTCUTS" Style="{StaticResource PanelLabel}"/>
-                            <Grid Margin="0,8,0,0">
-                                <Grid.ColumnDefinitions><ColumnDefinition Width="68"/><ColumnDefinition/></Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions><RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
-                                <TextBlock Grid.Row="0" Text="Space" Foreground="#C7B7CF" FontFamily="Consolas" FontSize="12"/>
-                                <TextBlock Grid.Row="0" Grid.Column="1" Text="Spin" Foreground="#887A92" FontSize="12"/>
-                                <TextBlock Grid.Row="1" Text="A" Foreground="#C7B7CF" FontFamily="Consolas" FontSize="12" Margin="0,8,0,0"/>
-                                <TextBlock Grid.Row="1" Grid.Column="1" Text="Auto" Foreground="#887A92" FontSize="12" Margin="0,8,0,0"/>
-                                <TextBlock Grid.Row="2" Text="+ / −" Foreground="#C7B7CF" FontFamily="Consolas" FontSize="12" Margin="0,8,0,0"/>
-                                <TextBlock Grid.Row="2" Grid.Column="1" Text="Bet" Foreground="#887A92" FontSize="12" Margin="0,8,0,0"/>
-                                <TextBlock Grid.Row="3" Text="Esc" Foreground="#C7B7CF" FontFamily="Consolas" FontSize="12" Margin="0,8,0,0"/>
-                                <TextBlock Grid.Row="3" Grid.Column="1" Text="Casino" Foreground="#887A92" FontSize="12" Margin="0,8,0,0"/>
-                            </Grid>
-                        </StackPanel>
+                            <Border Height="1.5" Background="{StaticResource NineLivesGold}" Opacity="0.55" Margin="0,0,0,18"/>
+                            <TextBlock Text="MIDNIGHT FORTUNE" Style="{StaticResource PanelLabel}" Foreground="#E4BE7B"/>
+                            <Border BorderBrush="{StaticResource NineLivesIris}" BorderThickness="1.3"
+                                    Background="#47170F2D" CornerRadius="15" Margin="0,12,0,0" Padding="14">
+                                <StackPanel>
+                                    <TextBlock Text="✦  LEGENDARY HITS" Foreground="#F3D490"
+                                               FontFamily="Georgia" FontSize="17" FontWeight="Bold"/>
+                                    <TextBlock Text="Winning symbols illuminate the reel and trace their payline."
+                                               Foreground="#C9B8D1" FontSize="13" TextWrapping="Wrap" Margin="0,9,0,0"/>
+                                </StackPanel>
+                            </Border>
+
+                            </StackPanel>
+                        </Grid>
                     </Border>
 
                     <!-- Status never overlaps the third reel row -->
-                    <Border x:Name="StatusBadge" Canvas.Left="430" Canvas.Top="820" Width="676" Height="38"
-                            Background="#E6100A1A" BorderBrush="#6F3E8D" BorderThickness="1.2" CornerRadius="16">
+                    <Border x:Name="StatusBadge" Canvas.Left="520" Canvas.Top="824" Width="720" Height="30"
+                            Background="{StaticResource NineLivesEnamel}" BorderBrush="{StaticResource NineLivesIris}" BorderThickness="1.5" CornerRadius="14">
                         <Grid>
                             <Ellipse Width="7" Height="7" Fill="#C34FFF" HorizontalAlignment="Left" Margin="20,0,0,0"/>
                             <TextBlock x:Name="StatusText" Text="Five lines. Three reels. One dangerous cat."
@@ -307,16 +433,16 @@
                     </Border>
 
                     <!-- Bottom control deck uses a real Grid so controls cannot overlap -->
-                    <Border Canvas.Left="72" Canvas.Top="870" Width="1394" Height="94"
-                            Background="#E80C0914" BorderBrush="#3F2949" BorderThickness="1.5" CornerRadius="20">
-                        <Grid Margin="14,12">
+                    <Border x:Name="NineLivesFooter" Canvas.Left="70" Canvas.Top="860" Width="1620" Height="70"
+                            Background="{StaticResource NineLivesEnamel}" BorderBrush="{StaticResource NineLivesGold}" BorderThickness="2" CornerRadius="21">
+                        <Grid Margin="16,11">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="142"/><ColumnDefinition Width="18"/>
-                                <ColumnDefinition Width="54"/><ColumnDefinition Width="120"/><ColumnDefinition Width="54"/>
-                                <ColumnDefinition Width="20"/><ColumnDefinition Width="138"/><ColumnDefinition Width="20"/>
-                                <ColumnDefinition Width="192"/><ColumnDefinition Width="20"/>
-                                <ColumnDefinition Width="138"/><ColumnDefinition Width="20"/>
-                                <ColumnDefinition Width="150"/><ColumnDefinition Width="*"/><ColumnDefinition Width="142"/>
+                                <ColumnDefinition Width="165"/><ColumnDefinition Width="15"/>
+                                <ColumnDefinition Width="58"/><ColumnDefinition Width="138"/><ColumnDefinition Width="58"/>
+                                <ColumnDefinition Width="19"/><ColumnDefinition Width="154"/><ColumnDefinition Width="19"/>
+                                <ColumnDefinition Width="232"/><ColumnDefinition Width="19"/>
+                                <ColumnDefinition Width="155"/><ColumnDefinition Width="19"/>
+                                <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <Button x:Name="InfoButton" Grid.Column="0" Style="{StaticResource ChromeButton}"
                                     Content="PAYTABLE" Click="PaytableButton_Click" ToolTip="Paytable"/>
@@ -342,13 +468,13 @@
                                     <TextBlock x:Name="WinText" Style="{StaticResource HudText}" FontSize="21" HorizontalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
-                            <Button x:Name="MenuButton" Grid.Column="14" Style="{StaticResource ChromeButton}" Content="← CASINO"
+                            <Button x:Name="MenuButton" Grid.Column="12" Visibility="Collapsed" Style="{StaticResource ChromeButton}" Content="← CASINO"
                                     Click="CasinoButton_Click" ToolTip="Back to Casino"/>
                         </Grid>
                     </Border>
 
                     <!-- Custom themed settings flyout; no native Windows ContextMenu -->
-                    <Border x:Name="SettingsFlyout" Canvas.Left="1238" Canvas.Top="122" Width="228" Height="176"
+                    <Border x:Name="SettingsFlyout" Canvas.Left="1461" Canvas.Top="120" Width="228" Height="176"
                             Visibility="Collapsed" Panel.ZIndex="80" Background="#FC0D0916"
                             BorderBrush="#8E4FA9" BorderThickness="1.5" CornerRadius="16">
                         <Border.Effect><DropShadowEffect BlurRadius="24" ShadowDepth="5" Opacity="0.5" Color="#000000"/></Border.Effect>
@@ -366,7 +492,7 @@
                     </Border>
 
                     <!-- In-app paytable replaces native MessageBox -->
-                    <Border x:Name="PaytableFlyout" Canvas.Left="435" Canvas.Top="214" Width="666" Height="500"
+                    <Border x:Name="PaytableFlyout" Canvas.Left="530" Canvas.Top="206" Width="700" Height="500"
                             Visibility="Collapsed" Panel.ZIndex="90" Background="#FC0C0815"
                             BorderBrush="#9B55B7" BorderThickness="2" CornerRadius="22">
                         <Border.Effect><DropShadowEffect BlurRadius="32" ShadowDepth="8" Opacity="0.62" Color="#000000"/></Border.Effect>

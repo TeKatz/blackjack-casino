@@ -17,12 +17,12 @@ internal static class PortraitArtwork
         ["portrait-midnight-lady"] = "midnight-lady.png",
         ["portrait-golden-joker"] = "golden-joker.png",
         ["portrait-velvet-king"] = "velvet-king.png",
+        ["portrait-neon-croupier"] = "neon-croupier.jpg",
     };
 
     private static readonly IReadOnlyDictionary<string, DynastyPortraitPalette> DynastyPortraits =
         new Dictionary<string, DynastyPortraitPalette>(StringComparer.Ordinal)
         {
-            ["portrait-neon-croupier"] = new("#0A1720", "#16CFCB", "#FF4EAD", "#D7F7F4", false, false),
             ["portrait-dynasty-heiress"] = new("#160D22", "#D342A1", "#F1BC55", "#F5DCD0", true, false),
             ["portrait-neon-overseer"] = new("#080F19", "#38E6DF", "#8F55E8", "#D7EDF0", false, true),
             ["portrait-neon-emperor"] = new("#120A18", "#40ECE5", "#FF4DB3", "#F6C95F", true, true),
@@ -36,7 +36,7 @@ internal static class PortraitArtwork
 
         if (Files.TryGetValue(portraitId, out string? file))
         {
-            // Retain the full original PNG in the assembly, decode once at a bounded size
+            // Retain the full original artwork in the assembly, decode once at a bounded size
             // sufficient for the largest 112-DIP portrait even on a 4x-density display.
             var image = new BitmapImage();
             image.BeginInit();

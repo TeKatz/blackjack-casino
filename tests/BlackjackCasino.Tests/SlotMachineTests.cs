@@ -101,8 +101,8 @@ public sealed class SlotMachineTests
             total += SlotMachineRules.PayoutMultiplier(SlotMachineRules.SymbolAt(a), SlotMachineRules.SymbolAt(b), SlotMachineRules.SymbolAt(c));
         }
         Assert.Equal(0.970458984375m, total / (32m * 32m * 32m));
-        Assert.Equal(TablePresets.Get(TablePresetId.Casual).Rules.MinimumBet, SlotMachineRules.MinimumBet);
-        Assert.Equal(TablePresets.Get(TablePresetId.Casual).Rules.MaximumBet, SlotMachineRules.MaximumBet);
+        Assert.Equal(1m, SlotMachineRules.MinimumBet);
+        Assert.Equal(1_000m, SlotMachineRules.MaximumBet);
     }
 
     [Theory]

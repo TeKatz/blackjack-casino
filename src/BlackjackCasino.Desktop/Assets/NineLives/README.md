@@ -1,26 +1,27 @@
-# Nine Lives art assets
+# Nine Lives — HD symbol artwork
 
-Nine Lives is authored around high-resolution raster artwork. WPF vector drawings remain only as safe fallbacks so a missing or malformed image can never crash startup.
+The eight Nine Lives symbols were regenerated as a cohesive midnight-casino
+illustration set with gold ornaments and violet lighting.
 
-Expected PNG resources:
+Packaged WPF resources (1024 × 1024 pixels each):
 
-- `background.png` — 1536x1024 or larger, night rooftop / moonlit machine atmosphere.
-- `yarn.png`
-- `fishbone.png`
-- `bell.png`
-- `tabby-cat.png`
-- `white-cat.png`
-- `black-cat.png`
-- `wild.png`
-- `bonus.png`
+| File | NineLivesSymbol |
+| --- | --- |
+| `black-cat.jpg` | BlackCat |
+| `white-cat.jpg` | WhiteCat |
+| `tabby-cat.jpg` | TabbyCat |
+| `fishbone.jpg` | Fishbone |
+| `yarn.jpg` | Yarn |
+| `bell.jpg` | Bell |
+| `wild.jpg` | Wild |
+| `bonus.jpg` | Bonus |
 
-Symbol requirements:
+`NineLivesArtwork` loads each resource from its pack URI, decodes at full
+resolution, freezes and caches it once, and uses WPF high-quality
+`Stretch.Uniform` scaling at the reel. Source art (1254 × 1254 PNG) is kept in
+the accompanying artwork package, not duplicated in the production app.
 
-- square PNG, minimum 512x512; 1024x1024 preferred source.
-- no baked-in text labels.
-- consistent internal safe area so faces/ears/details are not clipped.
-- same gold/violet midnight lighting and framing language across all eight symbols.
-- avoid JPEG compression; alpha is allowed.
-- artwork is scaled down by the client with HighQuality bitmap filtering.
-
-The loader prefers these resources. If an asset is missing or cannot be decoded, Nine Lives logs the problem and falls back to its built-in vector drawing for that symbol only.
+The former 112-pixel embedded symbol JPEG strings and yarn concept were
+removed. Vector drawings remain as safe fallbacks for missing/corrupt assets.
+The existing background artwork in `NineLivesArtData.Background*.cs` is
+intentionally retained as it is separate from the symbol replacement.

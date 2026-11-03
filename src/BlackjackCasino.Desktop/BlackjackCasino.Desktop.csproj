@@ -12,8 +12,10 @@
     <Resource Include="Assets\CollectionArt\*.png" />
     <EmbeddedResource Include="Assets/CollectionArt/manifest.json" LogicalName="BlackjackCasino.CollectionArt.manifest.json" />
     <Resource Include="Assets\Portraits\*.png" />
+    <Resource Include="Assets\Portraits\*.jpg" />
     <Resource Include="Assets\Navigation\*.png" />
     <Resource Include="Assets\Empire\*.png" />
+    <Resource Include="Assets\Lounge\*.jpg" />
     <Resource Include="Assets/midnight-club.ico" />
     <Resource Include="Assets\NineLives\*.png" />
     <Resource Include="Assets\NineLives\*.jpg" />

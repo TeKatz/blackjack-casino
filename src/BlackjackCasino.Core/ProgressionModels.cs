@@ -110,9 +110,10 @@ public sealed record ProgressionAward(
     IReadOnlyList<int> LevelsGained,
     int SeasonTiersGained,
     long CoinsEarned,
-    IReadOnlyList<CosmeticDefinition> CosmeticsUnlocked)
+    IReadOnlyList<CosmeticDefinition> CosmeticsUnlocked,
+    decimal BankrollEarned = 0m)
 {
-    public static ProgressionAward None { get; } = new(0, 0, [], 0, 0, []);
+    public static ProgressionAward None { get; } = new(0, 0, [], 0, 0, [], 0m);
 
     public bool HasLevelUp => LevelsGained.Count > 0;
 }

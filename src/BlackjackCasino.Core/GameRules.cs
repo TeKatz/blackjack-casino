@@ -23,7 +23,7 @@ public sealed record GameRules
     public decimal BlackjackPayout { get; init; } = 1.5m;
     public double Penetration { get; init; } = 0.75;
     public decimal MinimumBet { get; init; } = 1m;
-    public decimal MaximumBet { get; init; } = 1_000m;
+    public decimal MaximumBet { get; init; } = 5_000m;
 
     public bool IsDoubleAllowed(int total) => DoubleRule switch
     {

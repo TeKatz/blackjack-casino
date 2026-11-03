@@ -20,7 +20,12 @@ internal partial class NeonVaultWindow : Window
     private readonly Func<NeonVaultSpinResult, ProgressionAward> commitSpin;
     private readonly SlotAudio audio = new();
     private readonly BackgroundMusic music = new(Soundtrack.Reels);
-    private readonly DispatcherTimer previewTimer = new() { Interval = TimeSpan.FromMilliseconds(33) };
+    // Changes to 20 live symbol cards are UI-thread work. Keep smooth GPU reel
+    // translation, but update the preview tiles at a modest cadence.
+    private readonly DispatcherTimer previewTimer = new(DispatcherPriority.Background)
+    {
+        Interval = TimeSpan.FromMilliseconds(70),
+    };
     private readonly Random visualRandom = new(0x4E56_2026);
     private readonly Border[,] cells = new Border[NeonVaultRules.Rows, NeonVaultRules.Reels];
     private readonly SymbolPresenter[,] presenters = new SymbolPresenter[NeonVaultRules.Rows, NeonVaultRules.Reels];
@@ -28,7 +33,14 @@ internal partial class NeonVaultWindow : Window
     private readonly TranslateTransform[] reelMotion = new TranslateTransform[NeonVaultRules.Reels];
     private readonly bool[] reelSettled = new bool[NeonVaultRules.Reels];
 
-    private NeonVaultSymbol[] displayGrid = Enumerable.Repeat(NeonVaultSymbol.Pulse, NeonVaultRules.Cells).ToArray();
+    // A varied showcase when the machine is idle; actual outcomes always come from NeonVaultSession.
+    private NeonVaultSymbol[] displayGrid =
+    [
+        NeonVaultSymbol.Pulse, NeonVaultSymbol.Prism, NeonVaultSymbol.Chip, NeonVaultSymbol.Crown, NeonVaultSymbol.Key,
+        NeonVaultSymbol.Wild, NeonVaultSymbol.Scatter, NeonVaultSymbol.Pulse, NeonVaultSymbol.VaultKey, NeonVaultSymbol.Prism,
+        NeonVaultSymbol.Crown, NeonVaultSymbol.Key, NeonVaultSymbol.Wild, NeonVaultSymbol.Chip, NeonVaultSymbol.Pulse,
+        NeonVaultSymbol.VaultKey, NeonVaultSymbol.Prism, NeonVaultSymbol.Scatter, NeonVaultSymbol.Key, NeonVaultSymbol.Crown,
+    ];
     private decimal selectedBet;
     private bool spinning;
     private bool initialized;
@@ -100,7 +112,7 @@ internal partial class NeonVaultWindow : Window
 
             var reelGrid = new Grid
             {
-                Margin = new Thickness(5, 0, 5, 0),
+                Margin = new Thickness(3, 0, 3, 0),
                 RenderTransform = motion,
                 RenderTransformOrigin = new Point(0.5, 0.5),
                 SnapsToDevicePixels = true,
@@ -112,12 +124,12 @@ internal partial class NeonVaultWindow : Window
                 SymbolPresenter presenter = CreateSymbolPresenter();
                 var frame = new Border
                 {
-                    Margin = new Thickness(0, 4, 0, 4),
-                    Padding = new Thickness(4),
-                    CornerRadius = new CornerRadius(8),
-                    Background = Ink("#A9090B14"),
-                    BorderBrush = Ink("#26304E"),
-                    BorderThickness = new Thickness(1),
+                    Margin = new Thickness(0, 3, 0, 3),
+                    Padding = new Thickness(2),
+                    CornerRadius = new CornerRadius(13),
+                    Background = FrozenGradient("#19264C", "#090E24"),
+                    BorderBrush = Ink("#4A8DC5"),
+                    BorderThickness = new Thickness(1.35),
                     ClipToBounds = true,
                     SnapsToDevicePixels = true,
                     Child = presenter.Card,
@@ -130,11 +142,11 @@ internal partial class NeonVaultWindow : Window
 
             var reelBorder = new Border
             {
-                Background = Ink("#3A0A0D17"),
-                BorderBrush = Ink("#34415F"),
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(10),
-                Padding = new Thickness(3),
+                Background = FrozenGradient("#1A1742", "#090F2A"),
+                BorderBrush = Ink("#5E70BD"),
+                BorderThickness = new Thickness(1.7),
+                CornerRadius = new CornerRadius(16),
+                Padding = new Thickness(2.5),
                 Child = reelGrid,
                 SnapsToDevicePixels = true,
             };
@@ -155,11 +167,11 @@ internal partial class NeonVaultWindow : Window
         };
         var label = new TextBlock
         {
-            FontSize = 8,
+            FontSize = 9,
             FontWeight = FontWeights.SemiBold,
             Foreground = Ink("#D9DCF0"),
             HorizontalAlignment = HorizontalAlignment.Center,
-            Margin = new Thickness(2, 0, 2, 5),
+            Margin = new Thickness(2, 0, 2, 3),
         };
 
         var grid = new Grid();
@@ -171,8 +183,8 @@ internal partial class NeonVaultWindow : Window
 
         var card = new Border
         {
-            Margin = new Thickness(2),
-            CornerRadius = new CornerRadius(7),
+            Margin = new Thickness(1),
+            CornerRadius = new CornerRadius(12),
             Child = grid,
             SnapsToDevicePixels = true,
         };
@@ -243,10 +255,18 @@ internal partial class NeonVaultWindow : Window
         presenter.Card.Background = palette.Background;
         presenter.Card.BorderBrush = palette.BorderBrush;
         presenter.Card.BorderThickness = new Thickness(palette.Emphasis ? 1.4 : 0.7);
-        presenter.Icon.Text = palette.Icon;
-        presenter.Icon.Foreground = palette.IconBrush;
-        presenter.Icon.FontSize = compact ? Math.Min(29, palette.IconSize) : palette.IconSize;
-        presenter.Label.Text = palette.Label;
+        // The original glyph is hidden once the HD overlay is installed.
+        // Avoid repeatedly shaping invisible text during the reel-preview loop.
+        if (presenter.Icon.Visibility == Visibility.Visible)
+        {
+            presenter.Icon.Text = palette.Icon;
+            presenter.Icon.Foreground = palette.IconBrush;
+            presenter.Icon.FontSize = compact ? Math.Min(29, palette.IconSize) : palette.IconSize;
+        }
+        if (!compact)
+        {
+            presenter.Label.Text = palette.Label;
+        }
         presenter.Label.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
     }
 
@@ -277,6 +297,8 @@ internal partial class NeonVaultWindow : Window
         }
 
         activeNearMiss = result.NearMiss;
+        BeginEnhancedFeedbackUpdates();
+        StartActiveVaultScan();
         ProgressionAward award = commitSpin(result);
         BalanceText.Text = Money(result.BankrollBefore - result.Stake);
         SystemStatusText.Text = result.IsFreeSpin ? "VAULT BREAK ACTIVE" : "REELS ENERGIZED";
@@ -488,6 +510,8 @@ internal partial class NeonVaultWindow : Window
     private async Task FinishSpin(NeonVaultSpinResult result, ProgressionAward award)
     {
         spinning = false;
+        StopActiveVaultScan();
+        CompleteEnhancedFeedbackUpdates();
         activeNearMiss = NeonVaultNearMiss.None;
         LastWinText.Text = Money(result.Payout);
         LastFeatureText.Text = FeatureSummary(result);
@@ -660,12 +684,35 @@ internal partial class NeonVaultWindow : Window
                 RepeatBehavior = RepeatBehavior.Forever,
             });
 
+        // Idle mode uses only a cached, subtle ambient glow. Sweeping full-width
+        // layers continuously dirtied a 1600x850 surface even without user input.
+    }
+
+    private void StartActiveVaultScan()
+    {
+        if (!AnimationsEnabled) return;
         ScanlineTransform.BeginAnimation(
             TranslateTransform.YProperty,
-            new DoubleAnimation(0, 610, TimeSpan.FromSeconds(8.2))
+            new DoubleAnimation(0, 775, TimeSpan.FromSeconds(9.4))
             {
                 RepeatBehavior = RepeatBehavior.Forever,
             });
+
+        ReelScanBeamTransform.BeginAnimation(
+            TranslateTransform.YProperty,
+            new DoubleAnimation(-30, 690, TimeSpan.FromSeconds(5.8))
+            {
+                RepeatBehavior = RepeatBehavior.Forever,
+                EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut },
+            });
+    }
+
+    private void StopActiveVaultScan()
+    {
+        ScanlineTransform.BeginAnimation(TranslateTransform.YProperty, null);
+        ScanlineTransform.Y = 0;
+        ReelScanBeamTransform.BeginAnimation(TranslateTransform.YProperty, null);
+        ReelScanBeamTransform.Y = 0;
     }
 
     private void RefreshUi()
@@ -745,8 +792,7 @@ internal partial class NeonVaultWindow : Window
         {
             AmbientGlow.BeginAnimation(OpacityProperty, null);
             AmbientGlow.Opacity = 0.20;
-            ScanlineTransform.BeginAnimation(TranslateTransform.YProperty, null);
-            ScanlineTransform.Y = 0;
+            StopActiveVaultScan();
         }
     }
 
@@ -781,7 +827,8 @@ internal partial class NeonVaultWindow : Window
         previewTimer.Stop();
         previewTimer.Tick -= PreviewTimer_Tick;
         AmbientGlow.BeginAnimation(OpacityProperty, null);
-        ScanlineTransform.BeginAnimation(TranslateTransform.YProperty, null);
+        StopActiveVaultScan();
+        enhancedFeedbackTimer.Stop();
 
         for (int reel = 0; reel < reelFrames.Length; reel++)
         {

@@ -27,8 +27,8 @@ public static class SlotMachineRules
 
     public static IReadOnlyList<SlotSymbolDefinition> Symbols { get; } = Array.AsReadOnly(Definitions);
     public const int ReelStops = 32;
-    public static decimal MinimumBet => TablePresets.Get(TablePresetId.Casual).Rules.MinimumBet;
-    public static decimal MaximumBet => TablePresets.Get(TablePresetId.Casual).Rules.MaximumBet;
+    public const decimal MinimumBet = 1m;
+    public const decimal MaximumBet = 1_000m;
 
     // Identical independent weighted strips: 97.0458984375% theoretical return.
     // Interleaving symbols makes the actual scrolling strip match the sampled stops.

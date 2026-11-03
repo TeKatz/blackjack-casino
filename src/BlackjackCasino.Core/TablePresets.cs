@@ -41,7 +41,7 @@ public static class TablePresets
                 BlackjackPayout = 1.5m,
                 Penetration = 0.75,
                 MinimumBet = 1m,
-                MaximumBet = 1_000m,
+                MaximumBet = 5_000m,
             }),
         new(
             TablePresetId.LasVegasStrip,
@@ -85,7 +85,7 @@ public static class TablePresets
                 BlackjackPayout = 1.5m,
                 Penetration = 0.65,
                 MinimumBet = 5m,
-                MaximumBet = 2_500m,
+                MaximumBet = 5_000m,
             }),
         new(
             TablePresetId.AtlanticCity,
@@ -151,7 +151,7 @@ public static class TablePresets
                 BlackjackPayout = 1.5m,
                 Penetration = 0.55,
                 MinimumBet = 5m,
-                MaximumBet = 1_000m,
+                MaximumBet = 5_000m,
             }),
     ];
 

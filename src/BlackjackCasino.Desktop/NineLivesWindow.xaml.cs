@@ -11,11 +11,12 @@ namespace BlackjackCasino.Desktop;
 
 internal partial class NineLivesWindow : Window
 {
-    private static readonly double[] ReelX = [366, 639, 912];
-    private static readonly double[] ReelY = [185, 399, 609];
+    private static readonly double[] ReelX = [553, 775, 997];
+    private static readonly double[] ReelY = [166, 386, 606];
+    private const double ReelSize = 210;
     private static readonly Brush Gold = FrozenBrush("#FFD56A");
     private static readonly Brush Violet = FrozenBrush("#B34DFF");
-    private static readonly Brush DimGold = FrozenBrush("#9D6B2C");
+    private static readonly Brush DimGold = CreateMetallicReelBrush();
     private static readonly Brush SoftText = FrozenBrush("#EEDFF4");
     private static readonly NineLivesSymbol[] PreviewSymbols = Enum.GetValues<NineLivesSymbol>();
 
@@ -60,6 +61,8 @@ internal partial class NineLivesWindow : Window
         selectedBet = ClosestBet(Math.Clamp(bet, NineLivesRules.MinimumBet, NineLivesRules.MaximumBet));
 
         BackgroundArt.Source = NineLivesArtwork.Background;
+        NineLivesFeatureIllustration.Source = NineLivesArtwork.Symbol(NineLivesSymbol.BlackCat);
+        NineLivesInfoIllustration.Source = NineLivesArtwork.Symbol(NineLivesSymbol.Wild);
         BuildReels();
         SetGrid(
         [
@@ -93,7 +96,8 @@ internal partial class NineLivesWindow : Window
                 symbolScale[index] = scale;
                 var image = new Image
                 {
-                    Stretch = Stretch.UniformToFill,
+                    Stretch = Stretch.Uniform,
+                    Margin = new Thickness(5),
                     RenderTransform = scale,
                     RenderTransformOrigin = new Point(0.5, 0.5),
                     SnapsToDevicePixels = true,
@@ -103,12 +107,12 @@ internal partial class NineLivesWindow : Window
 
                 var frame = new Border
                 {
-                    Width = 257,
-                    Height = 199,
-                    CornerRadius = new CornerRadius(13),
-                    BorderThickness = new Thickness(2),
+                    Width = ReelSize,
+                    Height = ReelSize,
+                    CornerRadius = new CornerRadius(17),
+                    BorderThickness = new Thickness(2.5),
                     BorderBrush = DimGold,
-                    Background = new SolidColorBrush(Color.FromArgb(245, 8, 6, 15)),
+                    Background = new LinearGradientBrush(Color.FromRgb(31, 12, 37), Color.FromRgb(5, 7, 19), 90),
                     ClipToBounds = true,
                     Child = image,
                     SnapsToDevicePixels = true,
@@ -420,54 +424,126 @@ internal partial class NineLivesWindow : Window
 
     private void DrawPayline(int lineIndex)
     {
-        IReadOnlyList<int> line = NineLivesRules.Lines[lineIndex];
-        Point start = Center(line[0]);
-        Point end = Center(line[^1]);
-        var glow = new System.Windows.Shapes.Line
-        {
-            X1 = start.X,
-            Y1 = start.Y,
-            X2 = end.X,
-            Y2 = end.Y,
-            Stroke = new SolidColorBrush(Color.FromArgb(135, 185, 69, 255)),
-            StrokeThickness = 12,
-            StrokeStartLineCap = PenLineCap.Round,
-            StrokeEndLineCap = PenLineCap.Round,
-            IsHitTestVisible = false,
-            Opacity = AnimationsEnabled ? 0 : 1,
-        };
-        var core = new System.Windows.Shapes.Line
-        {
-            X1 = start.X,
-            Y1 = start.Y,
-            X2 = end.X,
-            Y2 = end.Y,
-            Stroke = Gold,
-            StrokeThickness = 4,
-            StrokeStartLineCap = PenLineCap.Round,
-            StrokeEndLineCap = PenLineCap.Round,
-            IsHitTestVisible = false,
-            Opacity = AnimationsEnabled ? 0 : 1,
-        };
-        WinLineCanvas.Children.Add(glow);
-        WinLineCanvas.Children.Add(core);
+        IReadOnlyList<int> indices = NineLivesRules.Lines[lineIndex];
+        Point start = Center(indices[0]);
+        Point end = Center(indices[^1]);
 
-        if (AnimationsEnabled)
+        // Three layers turn the old flat purple line into a warm, luminous
+        // casino-gold ribbon with a soft violet halo and a white-gold highlight.
+        var halo = new System.Windows.Shapes.Line
         {
-            var fade = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(320))
+            X1 = start.X, Y1 = start.Y, X2 = end.X, Y2 = end.Y,
+            Stroke = new SolidColorBrush(Color.FromArgb(145, 159, 71, 255)),
+            StrokeThickness = 17,
+            StrokeStartLineCap = PenLineCap.Round,
+            StrokeEndLineCap = PenLineCap.Round,
+            Effect = new BlurEffect { Radius = 11, RenderingBias = RenderingBias.Performance },
+            IsHitTestVisible = false,
+        };
+        var goldRibbon = new System.Windows.Shapes.Line
+        {
+            X1 = start.X, Y1 = start.Y, X2 = end.X, Y2 = end.Y,
+            Stroke = new SolidColorBrush(Color.FromRgb(239, 173, 82)),
+            StrokeThickness = 6.5,
+            StrokeStartLineCap = PenLineCap.Round,
+            StrokeEndLineCap = PenLineCap.Round,
+            IsHitTestVisible = false,
+        };
+        var luminousCore = new System.Windows.Shapes.Line
+        {
+            X1 = start.X, Y1 = start.Y, X2 = end.X, Y2 = end.Y,
+            Stroke = new SolidColorBrush(Color.FromRgb(255, 246, 203)),
+            StrokeThickness = 2.5,
+            StrokeStartLineCap = PenLineCap.Round,
+            StrokeEndLineCap = PenLineCap.Round,
+            IsHitTestVisible = false,
+        };
+        WinLineCanvas.Children.Add(halo);
+        WinLineCanvas.Children.Add(goldRibbon);
+        WinLineCanvas.Children.Add(luminousCore);
+
+        // Mark each of the three winning positions with a tiny golden flare.
+        foreach (int index in indices)
+        {
+            Point center = Center(index);
+            var flareBrush = new RadialGradientBrush();
+            flareBrush.GradientStops.Add(new GradientStop(Color.FromRgb(255, 255, 247), 0));
+            flareBrush.GradientStops.Add(new GradientStop(Color.FromRgb(255, 212, 125), 0.40));
+            flareBrush.GradientStops.Add(new GradientStop(Color.FromArgb(0, 255, 185, 90), 1));
+            var flare = new System.Windows.Shapes.Ellipse
             {
-                EasingFunction = new SineEase { EasingMode = EasingMode.EaseOut },
+                Width = 22, Height = 22,
+                Fill = flareBrush,
+                Effect = new DropShadowEffect
+                {
+                    Color = Color.FromRgb(255, 197, 107),
+                    BlurRadius = 12, ShadowDepth = 0, Opacity = 0.7,
+                },
+                Opacity = AnimationsEnabled ? 0 : 0.88,
+                IsHitTestVisible = false,
             };
-            glow.BeginAnimation(OpacityProperty, fade);
-            core.BeginAnimation(OpacityProperty, fade);
+            Canvas.SetLeft(flare, center.X - 11);
+            Canvas.SetTop(flare, center.Y - 11);
+            WinLineCanvas.Children.Add(flare);
+            if (AnimationsEnabled)
+            {
+                flare.BeginAnimation(OpacityProperty,
+                    new DoubleAnimation(0, 0.88, TimeSpan.FromMilliseconds(240))
+                    {
+                        BeginTime = TimeSpan.FromMilliseconds(180),
+                        EasingFunction = new SineEase { EasingMode = EasingMode.EaseOut },
+                    });
+            }
         }
+
+        if (!AnimationsEnabled)
+        {
+            return;
+        }
+
+        // Reveal the line along the actual winning path instead of just fading
+        // it in. This honors the existing animations toggle.
+        var duration = TimeSpan.FromMilliseconds(420);
+        var easing = new CubicEase { EasingMode = EasingMode.EaseOut };
+        foreach (var segment in new[] { halo, goldRibbon, luminousCore })
+        {
+            segment.BeginAnimation(System.Windows.Shapes.Line.X2Property,
+                new DoubleAnimation(start.X, end.X, duration) { EasingFunction = easing });
+            segment.BeginAnimation(System.Windows.Shapes.Line.Y2Property,
+                new DoubleAnimation(start.Y, end.Y, duration) { EasingFunction = easing });
+        }
+
+        // A brief traveling sparkle accompanies the winning sweep.
+        var spark = new System.Windows.Shapes.Ellipse
+        {
+            Width = 17, Height = 17,
+            Fill = new RadialGradientBrush(
+                Color.FromRgb(255, 255, 233),
+                Color.FromArgb(0, 251, 176, 86)),
+            Effect = new DropShadowEffect
+            {
+                Color = Color.FromRgb(255, 206, 117),
+                BlurRadius = 13, ShadowDepth = 0, Opacity = 0.9,
+            },
+            IsHitTestVisible = false,
+        };
+        Canvas.SetLeft(spark, start.X - 8.5);
+        Canvas.SetTop(spark, start.Y - 8.5);
+        WinLineCanvas.Children.Add(spark);
+        spark.BeginAnimation(Canvas.LeftProperty,
+            new DoubleAnimation(start.X - 8.5, end.X - 8.5, duration) { EasingFunction = easing });
+        spark.BeginAnimation(Canvas.TopProperty,
+            new DoubleAnimation(start.Y - 8.5, end.Y - 8.5, duration) { EasingFunction = easing });
+        spark.BeginAnimation(OpacityProperty,
+            new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(300))
+            { BeginTime = TimeSpan.FromMilliseconds(190) });
     }
 
     private static Point Center(int index)
     {
         int row = index / NineLivesRules.Reels;
         int reel = index % NineLivesRules.Reels;
-        return new Point(ReelX[reel] + 128.5, ReelY[row] + 99.5);
+        return new Point(ReelX[reel] + ReelSize / 2, ReelY[row] + ReelSize / 2);
     }
 
     private void ResetPresentation()
@@ -617,6 +693,17 @@ internal partial class NineLivesWindow : Window
         => amount.ToString("#,##0.##", CultureInfo.InvariantCulture);
 
     private static decimal ClosestBet(decimal target) => NineLivesRules.Bets.OrderBy(value => Math.Abs(value - target)).First();
+
+    private static Brush CreateMetallicReelBrush()
+    {
+        var brush = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 1) };
+        brush.GradientStops.Add(new GradientStop(Color.FromRgb(247, 216, 145), 0));
+        brush.GradientStops.Add(new GradientStop(Color.FromRgb(110, 65, 112), 0.33));
+        brush.GradientStops.Add(new GradientStop(Color.FromRgb(217, 166, 92), 0.68));
+        brush.GradientStops.Add(new GradientStop(Color.FromRgb(105, 58, 102), 1));
+        brush.Freeze();
+        return brush;
+    }
 
     private static SolidColorBrush FrozenBrush(string hex)
     {

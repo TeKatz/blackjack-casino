@@ -32,6 +32,7 @@ public partial class MainWindow
             try
             {
                 MergeProfileSyncResult initialSync = progressionController.ProcessMidnightMerge(board.Snapshot);
+                CreditProgressionBankrollReward(initialSync.Award.BankrollEarned, "Midnight Merge reward");
                 if (initialSync.Changed) RefreshProfileButton();
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -56,6 +57,7 @@ public partial class MainWindow
             {
                 if (progressionController is null) return MergeProfileSyncResult.None;
                 MergeProfileSyncResult result = progressionController.ProcessMidnightMerge(state);
+                CreditProgressionBankrollReward(result.Award.BankrollEarned, "Midnight Merge reward");
                 if (result.Changed) RefreshProfileButton();
                 return result;
             },

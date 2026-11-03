@@ -144,6 +144,7 @@ public partial class MainWindow
             return;
         }
 
+        CreditProgressionBankrollReward(award.BankrollEarned);
         RefreshProfileButton();
 
         if (award.HasLevelUp)
@@ -158,6 +159,22 @@ public partial class MainWindow
         {
             SeasonProgressState season = progressionController.Service.GetOrCreateSeasonProgress(progressionController.Profile.ActiveSeasonId);
             StatusText.Text += $" · Season tier {season.Tier}";
+        }
+    }
+
+    private void CreditProgressionBankrollReward(decimal amount, string? source = null)
+    {
+        if (amount <= 0m)
+        {
+            return;
+        }
+
+        session.CreditBankroll(amount);
+        SavePreferences();
+        BankrollText.Text = Money(session.Bankroll);
+        if (!string.IsNullOrWhiteSpace(source))
+        {
+            StatusText.Text = $"{source}: +{Money(amount)}";
         }
     }
 

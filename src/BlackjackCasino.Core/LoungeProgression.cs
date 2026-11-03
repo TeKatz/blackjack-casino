@@ -7,6 +7,8 @@ namespace BlackjackCasino.Core;
 /// </summary>
 public static class LoungeProgression
 {
+    public const decimal CompletionBankrollReward = 100m;
+
     public static ProgressionAward GrantOnce(
         ProgressionService progression,
         Func<bool> tryRecordCompletion,
@@ -39,6 +41,7 @@ public static class LoungeProgression
             player.LevelsGained,
             season.SeasonTiersGained,
             player.CoinsEarned + season.CoinsEarned,
-            player.CosmeticsUnlocked.Concat(season.CosmeticsUnlocked).ToArray());
+            player.CosmeticsUnlocked.Concat(season.CosmeticsUnlocked).ToArray(),
+            CompletionBankrollReward + player.BankrollEarned + season.BankrollEarned);
     }
 }

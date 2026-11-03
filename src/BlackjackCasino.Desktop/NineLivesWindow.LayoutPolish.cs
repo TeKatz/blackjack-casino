@@ -22,7 +22,7 @@ internal partial class NineLivesWindow
         polishedLayoutApplied = true;
 
         // Let the authored rooftop/moon artwork participate in the composition again.
-        BackgroundArt.Opacity = 0.22;
+        BackgroundArt.Opacity = 0.36;
 
         // The restored concept-art symbols are square compositions. Uniform rendering keeps
         // the full cats/objects visible and high-quality scaling avoids the harsh nearest-neighbour look.
@@ -41,12 +41,7 @@ internal partial class NineLivesWindow
         // made the footer noisy and looked like a second back-arrow bug.
         MenuButton.Visibility = Visibility.Collapsed;
 
-        // Reuse the freed footer space for the information that matters after a spin.
-        if (WinText.Parent is StackPanel winStack && winStack.Parent is Border winPanel)
-        {
-            Grid.SetColumnSpan(winPanel, 3);
-            winPanel.Margin = new Thickness(0);
-        }
+        // LAST WIN occupies the entire flexible console column.
 
         // The shortcut cheat-sheet is secondary information and no longer belongs on the
         // permanent machine surface. Search from the hosted canvas instead of the Window:
@@ -62,7 +57,7 @@ internal partial class NineLivesWindow
 
         // The inherited GoldButton style swapped to a saturated purple hover. Use a quiet
         // gold treatment for high-value actions instead of flashing the whole control.
-        ApplyCalmGoldButton(MaxButton);
+        MaxButton.Style = (Style)FindResource("GoldButton");
         Button? backToGame = FindVisualChildren<Button>(PaytableFlyout)
             .FirstOrDefault(button => string.Equals(button.Content?.ToString(), "BACK TO GAME", StringComparison.Ordinal));
         if (backToGame is not null)
@@ -71,7 +66,7 @@ internal partial class NineLivesWindow
             backToGame.Height = 46;
             backToGame.Padding = new Thickness(14, 8, 14, 8);
             backToGame.FontSize = 14;
-            ApplyCalmGoldButton(backToGame);
+            backToGame.Style = (Style)FindResource("GoldButton");
         }
 
         SoundToggle.IsChecked = soundsEnabled;
@@ -108,58 +103,6 @@ internal partial class NineLivesWindow
                 separator.Visibility = Visibility.Collapsed;
             }
         }
-    }
-
-    private static void ApplyCalmGoldButton(Button button)
-    {
-        button.Foreground = FrozenBrush("#24131C");
-        button.Background = FrozenBrush("#F2D16A");
-        button.BorderBrush = FrozenBrush("#FFF0A7");
-        button.BorderThickness = new Thickness(1.5);
-        button.FontFamily = new FontFamily("Georgia");
-        button.FontWeight = FontWeights.Bold;
-        button.Cursor = System.Windows.Input.Cursors.Hand;
-        button.Template = CreateCalmButtonTemplate();
-
-        button.MouseEnter += (_, _) => button.Opacity = 0.92;
-        button.MouseLeave += (_, _) => button.Opacity = 1.0;
-        button.PreviewMouseDown += (_, _) => button.Opacity = 0.78;
-        button.PreviewMouseUp += (_, _) => button.Opacity = button.IsMouseOver ? 0.92 : 1.0;
-    }
-
-    private static ControlTemplate CreateCalmButtonTemplate()
-    {
-#pragma warning disable CS0618
-        var chrome = new FrameworkElementFactory(typeof(Border));
-        chrome.SetValue(Border.CornerRadiusProperty, new CornerRadius(11));
-        chrome.SetBinding(Border.BackgroundProperty, new Binding(nameof(Button.Background))
-        {
-            RelativeSource = RelativeSource.TemplatedParent,
-        });
-        chrome.SetBinding(Border.BorderBrushProperty, new Binding(nameof(Button.BorderBrush))
-        {
-            RelativeSource = RelativeSource.TemplatedParent,
-        });
-        chrome.SetBinding(Border.BorderThicknessProperty, new Binding(nameof(Button.BorderThickness))
-        {
-            RelativeSource = RelativeSource.TemplatedParent,
-        });
-
-        var presenter = new FrameworkElementFactory(typeof(ContentPresenter));
-        presenter.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Center);
-        presenter.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
-        presenter.SetBinding(ContentPresenter.ContentProperty, new Binding(nameof(Button.Content))
-        {
-            RelativeSource = RelativeSource.TemplatedParent,
-        });
-        presenter.SetBinding(ContentPresenter.ContentTemplateProperty, new Binding(nameof(Button.ContentTemplate))
-        {
-            RelativeSource = RelativeSource.TemplatedParent,
-        });
-        chrome.AppendChild(presenter);
-
-        return new ControlTemplate(typeof(Button)) { VisualTree = chrome };
-#pragma warning restore CS0618
     }
 
     private static IEnumerable<T> FindVisualChildren<T>(DependencyObject root) where T : DependencyObject

@@ -115,16 +115,26 @@ internal static class Program
                 Image[] reelImages = Find<Image>(window)
                     .Where(image => image.IsVisible
                         && image.Parent is Border frame
-                        && Math.Abs(frame.Width - 257d) < 0.1
-                        && Math.Abs(frame.Height - 199d) < 0.1)
+                        && Math.Abs(frame.Width - 210d) < 0.1
+                        && Math.Abs(frame.Height - 210d) < 0.1)
                     .ToArray();
                 Require(reelImages.Length == 9,
                     $"Nine Lives did not expose exactly nine reel artwork surfaces; found {reelImages.Length}.");
+                Grid nineLivesStage = Find<Grid>(window).Single(grid => grid.Name == "NineLivesStage");
+                Require(nineLivesStage.Width / nineLivesStage.Height > 1.8, "Nine Lives reverted to its letterboxed 3:2 canvas.");
+                FrameworkElement cabinet = Find<FrameworkElement>(window).Single(element => element.Name == "MachineCabinet");
+                FrameworkElement footer = Find<FrameworkElement>(window).Single(element => element.Name == "NineLivesFooter");
+                Point footerInCabinet = footer.TranslatePoint(new Point(0, 0), cabinet);
+                Require(footerInCabinet.Y + footer.ActualHeight < cabinet.ActualHeight - 3,
+                    "Nine Lives control console collides with the cabinet's lower metallic rim.");
+                Require(reelImages.All(image => image.Stretch == Stretch.Uniform), "Nine Lives symbol art is stretched or cropped.");
                 Require(reelImages.All(image => image.Source is BitmapSource),
                     "Nine Lives regressed to replacement vector symbols instead of the restored concept-art set.");
                 Require(reelImages.All(image => image.Source is BitmapSource bitmap
-                    && bitmap.PixelWidth >= 112 && bitmap.PixelHeight >= 112),
-                    "Nine Lives concept-art symbols decoded below their authored source resolution.");
+                    && bitmap.PixelWidth >= 1024 && bitmap.PixelHeight >= 1024),
+                    "Nine Lives high-resolution symbols failed to load or were downscaled.");
+                Require(reelImages.Select(image => image.Source).Distinct().Count() == 8,
+                    "Nine Lives preview should contain eight distinct premium symbol images.");
 
                 Require(Find<Button>(window).Any(button => button.Name == "SpinButton" && button.IsVisible),
                     "Nine Lives Spin button is missing from the hosted surface.");
@@ -183,6 +193,38 @@ internal static class Program
                 Require(Find<Button>(window).Any(button => button.Name == "Mode_nine_lives" && button.IsVisible),
                     "Casino lobby was not restored after leaving Nine Lives.");
 
+                // Neon Vault: scalable cyber artwork, no legacy 128px thumbnails, in-app navigation.
+                NavigationSmoke.OpenCovered(window, "neon-vault");
+                await Task.Delay(280);
+                window.UpdateLayout();
+                Grid cyberStage = Find<Grid>(window).Single(grid => grid.Name == "NeonVaultStage");
+                Require(cyberStage.Width / cyberStage.Height > 1.8, "Neon Vault reverted to a narrow letterboxed layout.");
+                Image[] cyberSymbols = Find<Image>(cyberStage)
+                    .Where(image => image.IsVisible && image.Source is BitmapSource)
+                    .ToArray();
+                Require(cyberSymbols.Length >= 20, $"Neon Vault rendered only {cyberSymbols.Length} cached reel symbols.");
+                Require(cyberSymbols.All(image => image.Source is BitmapSource art &&
+                    art.IsFrozen && art.PixelWidth >= 384 && art.PixelHeight >= 384),
+                    "Neon Vault symbols must be high-resolution, frozen, shared raster textures.");
+                Require(cyberSymbols.All(image => image.Stretch == Stretch.Uniform),
+                    "Neon Vault is stretching or cropping symbol artwork.");
+                Require(cyberSymbols.Select(image => image.Source).Distinct().Count() >= 6,
+                    "Neon Vault has reverted to repeated placeholder artwork instead of the eight-symbol gallery.");
+                Border cyberReelFrame = Find<Border>(window).Single(border => border.Name == "ReelFrame");
+                Require(cyberReelFrame.ActualWidth > 720 && cyberReelFrame.ActualHeight > 475,
+                    "Neon Vault reel stage failed to use the 1080p design area.");
+                Require(Find<Button>(window).Any(button => button.Name == "SpinButton" && button.IsVisible),
+                    "Neon Vault spin control is missing.");
+                SaveScreenshot(window, Path.Combine(output, "neon-vault-overhaul.png"));
+                Button neonBack = Find<Button>(window).Single(button => button.Name == "BackButton" && button.IsVisible);
+                neonBack.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                await Task.Delay(160);
+                window.UpdateLayout();
+                Require(Find<Button>(window).Any(button => button.Name == "Mode_neon_vault" && button.IsVisible),
+                    "Casino lobby did not return after closing Neon Vault.");
+
+
+
                 await UiResponsivenessSmoke.Run(window, output);
                 await LocalizationSmoke.Run(window, output);
                 await MidnightMergeSmoke.Run(window, output);
@@ -190,6 +232,7 @@ internal static class Program
                 await SolitaireSmoke.Run(window, output);
                 await MemorySmoke.Run(window, output);
                 await WordSearchSmoke.Run(window, output);
+                await BackroomLoungeSmoke.Run(window, output);
                 await KniffelSmoke.Run(window, output, profile);
                 await KniffelCasinoSmoke.Run(window, output, profile);
                 await KniffelFeedbackSmoke.Run(window, output);

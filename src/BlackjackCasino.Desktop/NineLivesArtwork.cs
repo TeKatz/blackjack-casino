@@ -17,7 +17,7 @@ internal static class NineLivesArtwork
     internal static ImageSource Symbol(NineLivesSymbol symbol)
         => Symbols.TryGetValue(symbol, out Lazy<ImageSource>? image)
             ? image.Value
-            : CreateFallback(192, 192, symbol.ToString());
+            : CreateFallback(256, 256, symbol.ToString());
 
     internal static FrameworkElement LobbyArtwork()
     {
@@ -36,21 +36,23 @@ internal static class NineLivesArtwork
         };
     }
 
+    // Each freshly generated 1024x1024 image is packaged as a WPF Resource.
+    // The full-size decoded bitmap is lazily cached; no thumbnail pre-resize.
     private static IReadOnlyDictionary<NineLivesSymbol, Lazy<ImageSource>> BuildSymbols() =>
         new Dictionary<NineLivesSymbol, Lazy<ImageSource>>
         {
-            [NineLivesSymbol.Yarn] = new(() => LoadPackagedSymbol("yarn.jpg", nameof(NineLivesSymbol.Yarn))),
-            [NineLivesSymbol.Fishbone] = LazySymbol(NineLivesArtData.Fishbone, nameof(NineLivesSymbol.Fishbone)),
-            [NineLivesSymbol.Bell] = LazySymbol(NineLivesArtData.Bell, nameof(NineLivesSymbol.Bell)),
-            [NineLivesSymbol.TabbyCat] = LazySymbol(NineLivesArtData.TabbyCat, nameof(NineLivesSymbol.TabbyCat)),
-            [NineLivesSymbol.WhiteCat] = LazySymbol(NineLivesArtData.WhiteCat, nameof(NineLivesSymbol.WhiteCat)),
-            [NineLivesSymbol.BlackCat] = LazySymbol(NineLivesArtData.BlackCat, nameof(NineLivesSymbol.BlackCat)),
-            [NineLivesSymbol.Wild] = LazySymbol(NineLivesArtData.Wild, nameof(NineLivesSymbol.Wild)),
-            [NineLivesSymbol.Bonus] = LazySymbol(NineLivesArtData.Bonus, nameof(NineLivesSymbol.Bonus)),
+            [NineLivesSymbol.BlackCat] = Packaged("black-cat.jpg", NineLivesSymbol.BlackCat),
+            [NineLivesSymbol.WhiteCat] = Packaged("white-cat.jpg", NineLivesSymbol.WhiteCat),
+            [NineLivesSymbol.TabbyCat] = Packaged("tabby-cat.jpg", NineLivesSymbol.TabbyCat),
+            [NineLivesSymbol.Fishbone] = Packaged("fishbone.jpg", NineLivesSymbol.Fishbone),
+            [NineLivesSymbol.Yarn] = Packaged("yarn.jpg", NineLivesSymbol.Yarn),
+            [NineLivesSymbol.Bell] = Packaged("bell.jpg", NineLivesSymbol.Bell),
+            [NineLivesSymbol.Wild] = Packaged("wild.jpg", NineLivesSymbol.Wild),
+            [NineLivesSymbol.Bonus] = Packaged("bonus.jpg", NineLivesSymbol.Bonus),
         };
 
-    private static Lazy<ImageSource> LazySymbol(string base64, string name, int pixelWidth = 192)
-        => new(() => DecodeOrFallback(base64, pixelWidth, name));
+    private static Lazy<ImageSource> Packaged(string name, NineLivesSymbol symbol)
+        => new(() => LoadPackagedSymbol(name, symbol.ToString()));
 
     private static ImageSource LoadPackagedSymbol(string fileName, string assetName)
     {
