@@ -3,8 +3,8 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Neon Vault"
-        Width="1440"
-        Height="900"
+        Width="1600"
+        Height="960"
         MinWidth="1080"
         MinHeight="720"
         WindowStartupLocation="CenterOwner"
@@ -16,6 +16,38 @@
         PreviewKeyDown="Window_KeyDown"
         Closed="Window_Closed">
   <Window.Resources>
+    <!-- High-contrast, layered glass and anodized-metal materials. -->
+    <LinearGradientBrush x:Key="VaultGlassPanel" StartPoint="0,0" EndPoint="1,1">
+      <GradientStop Color="#F1152144" Offset="0"/>
+      <GradientStop Color="#F40B122A" Offset="0.40"/>
+      <GradientStop Color="#F30A0B21" Offset="0.76"/>
+      <GradientStop Color="#F01B103C" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="VaultChrome" StartPoint="0,0" EndPoint="1,1">
+      <GradientStop Color="#218CFF" Offset="0"/>
+      <GradientStop Color="#C259FF" Offset="0.27"/>
+      <GradientStop Color="#64F4FF" Offset="0.59"/>
+      <GradientStop Color="#812CDA" Offset="0.85"/>
+      <GradientStop Color="#23D7FF" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="VaultButtonFill" StartPoint="0,0" EndPoint="0,1">
+      <GradientStop Color="#334776" Offset="0"/>
+      <GradientStop Color="#15243F" Offset="0.18"/>
+      <GradientStop Color="#091327" Offset="0.84"/>
+      <GradientStop Color="#32234D" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="VaultSpinFill" StartPoint="0,0" EndPoint="1,1">
+      <GradientStop Color="#2C4D9C" Offset="0"/>
+      <GradientStop Color="#451E73" Offset="0.36"/>
+      <GradientStop Color="#8A248C" Offset="0.70"/>
+      <GradientStop Color="#273CA7" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="VaultReelBed" StartPoint="0,0" EndPoint="1,1">
+      <GradientStop Color="#181640" Offset="0"/>
+      <GradientStop Color="#081326" Offset="0.37"/>
+      <GradientStop Color="#0B0B22" Offset="0.70"/>
+      <GradientStop Color="#21134E" Offset="1"/>
+    </LinearGradientBrush>
     <SolidColorBrush x:Key="VaultInk" Color="#F4F5FF" />
     <SolidColorBrush x:Key="VaultMuted" Color="#8C91B2" />
     <SolidColorBrush x:Key="VaultCyan" Color="#4DEBFF" />
@@ -25,9 +57,9 @@
 
     <Style x:Key="VaultButton" TargetType="Button">
       <Setter Property="Foreground" Value="#EEF2FF" />
-      <Setter Property="Background" Value="#15182B" />
-      <Setter Property="BorderBrush" Value="#414868" />
-      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Background" Value="{StaticResource VaultButtonFill}" />
+      <Setter Property="BorderBrush" Value="{StaticResource VaultChrome}" />
+      <Setter Property="BorderThickness" Value="1.7" />
       <Setter Property="Padding" Value="14,9" />
       <Setter Property="Cursor" Value="Hand" />
       <Setter Property="FontWeight" Value="SemiBold" />
@@ -38,14 +70,19 @@
                     Background="{TemplateBinding Background}"
                     BorderBrush="{TemplateBinding BorderBrush}"
                     BorderThickness="{TemplateBinding BorderThickness}"
-                    CornerRadius="7"
-                    Padding="{TemplateBinding Padding}">
-              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    CornerRadius="10">
+              <Grid>
+                <Border Margin="3" CornerRadius="7" BorderBrush="#397EDFFF" BorderThickness="1" IsHitTestVisible="False" />
+                <Border Margin="13,5,13,0" Height="1.6" VerticalAlignment="Top"
+                        Background="#79CEFCFF" IsHitTestVisible="False" />
+                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                  Margin="{TemplateBinding Padding}" />
+              </Grid>
             </Border>
             <ControlTemplate.Triggers>
               <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="Chrome" Property="BorderBrush" Value="#65E8FF" />
-                <Setter TargetName="Chrome" Property="Background" Value="#202641" />
+                <Setter TargetName="Chrome" Property="BorderBrush" Value="#E8FBFF" />
+                <Setter TargetName="Chrome" Property="Background" Value="#29427B" />
               </Trigger>
               <Trigger Property="IsPressed" Value="True">
                 <Setter TargetName="Chrome" Property="Opacity" Value="0.78" />
@@ -61,29 +98,97 @@
     </Style>
 
     <Style x:Key="SpinButtonStyle" TargetType="Button" BasedOn="{StaticResource VaultButton}">
-      <Setter Property="Background" Value="#213A5D" />
-      <Setter Property="BorderBrush" Value="#63EEFF" />
+      <Setter Property="Background" Value="{StaticResource VaultSpinFill}" />
+      <Setter Property="BorderBrush" Value="{StaticResource VaultChrome}" />
       <Setter Property="Foreground" Value="#FFFFFF" />
       <Setter Property="FontWeight" Value="Bold" />
-      <Setter Property="FontSize" Value="17" />
-      <Setter Property="MinWidth" Value="210" />
-      <Setter Property="Padding" Value="24,16" />
+      <Setter Property="FontSize" Value="22" />
+      <Setter Property="MinWidth" Value="244" />
+      <Setter Property="Padding" Value="28,17" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Grid>
+              <Border x:Name="SpinGlass" Background="{TemplateBinding Background}"
+                      BorderBrush="{TemplateBinding BorderBrush}"
+                      BorderThickness="3" CornerRadius="15">
+                <Border.Effect>
+                  <DropShadowEffect Color="#D536EC" BlurRadius="18" ShadowDepth="0" Opacity="0.48"/>
+                </Border.Effect>
+              </Border>
+              <Border Margin="5" CornerRadius="10" BorderBrush="#7FDBF9FF"
+                      BorderThickness="1" Background="#150F0A2C" IsHitTestVisible="False"/>
+              <Border Margin="23,8,23,0" Height="2" VerticalAlignment="Top"
+                      Background="#8EF6FCFF" IsHitTestVisible="False"/>
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                Margin="{TemplateBinding Padding}"/>
+            </Grid>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="SpinGlass" Property="BorderBrush" Value="#F3FFFF"/>
+                <Setter TargetName="SpinGlass" Property="Opacity" Value="0.9"/>
+              </Trigger>
+              <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="SpinGlass" Property="Opacity" Value="0.67"/>
+              </Trigger>
+              <Trigger Property="IsEnabled" Value="False">
+                <Setter TargetName="SpinGlass" Property="Opacity" Value="0.36"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
     </Style>
 
     <Style x:Key="VaultToggle" TargetType="CheckBox">
-      <Setter Property="Foreground" Value="#A9B1D2" />
-      <Setter Property="FontSize" Value="12" />
-      <Setter Property="Margin" Value="8,0" />
-      <Setter Property="VerticalContentAlignment" Value="Center" />
-      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="Foreground" Value="#DAE9FF"/>
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Margin" Value="9,0"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="CheckBox">
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="22"/>
+                <ColumnDefinition Width="Auto"/>
+              </Grid.ColumnDefinitions>
+              <Border x:Name="CheckFrame" Width="18" Height="18" VerticalAlignment="Center"
+                      CornerRadius="4" Background="#13203A" BorderBrush="#5284BD" BorderThickness="1.5"/>
+              <Path x:Name="CheckMark" Grid.Column="0"
+                    Data="M 3,9 L 7,13 15,4" Stroke="#C9FCFF" StrokeThickness="2.6"
+                    HorizontalAlignment="Left" VerticalAlignment="Center"
+                    Width="17" Height="18" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                    Visibility="Collapsed" IsHitTestVisible="False"/>
+              <ContentPresenter Grid.Column="1" Margin="7,0,0,0" VerticalAlignment="Center"
+                                RecognizesAccessKey="True"/>
+            </Grid>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsChecked" Value="True">
+                <Setter TargetName="CheckFrame" Property="Background" Value="#1D5C84"/>
+                <Setter TargetName="CheckFrame" Property="BorderBrush" Value="#65F4FF"/>
+                <Setter TargetName="CheckMark" Property="Visibility" Value="Visible"/>
+              </Trigger>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="CheckFrame" Property="BorderBrush" Value="#EAA3FF"/>
+              </Trigger>
+              <Trigger Property="IsEnabled" Value="False">
+                <Setter TargetName="CheckFrame" Property="Opacity" Value="0.35"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
     </Style>
 
     <Style x:Key="JackpotCard" TargetType="Border">
-      <Setter Property="Background" Value="#E0111524" />
-      <Setter Property="BorderBrush" Value="#4A597B" />
-      <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="CornerRadius" Value="10" />
-      <Setter Property="Padding" Value="16,10,16,12" />
+      <Setter Property="Background" Value="{StaticResource VaultGlassPanel}" />
+      <Setter Property="BorderBrush" Value="{StaticResource VaultChrome}" />
+      <Setter Property="BorderThickness" Value="2" />
+      <Setter Property="CornerRadius" Value="14" />
+      <Setter Property="Padding" Value="18,11,18,12" />
       <Setter Property="ClipToBounds" Value="False" />
     </Style>
   </Window.Resources>
@@ -94,7 +199,7 @@
       <RowDefinition Height="*" />
     </Grid.RowDefinitions>
 
-    <Border Grid.Row="0" Background="#F0090B14" BorderBrush="#242B45" BorderThickness="0,0,0,1" Panel.ZIndex="20">
+    <Border Grid.Row="0" Background="{StaticResource VaultGlassPanel}" BorderBrush="#4BBAE8" BorderThickness="0,0,0,2" Panel.ZIndex="20">
       <Grid Margin="22,0">
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width="Auto" />
@@ -104,7 +209,9 @@
         </Grid.ColumnDefinitions>
         <Button x:Name="BackButton" Grid.Column="0" Content="←  LOBBY" Style="{StaticResource VaultButton}" Margin="0,10,18,10" Click="Back_Click" />
         <StackPanel Grid.Column="1" VerticalAlignment="Center">
-          <TextBlock Text="NEON VAULT" FontSize="22" FontWeight="Bold" Foreground="#F7FAFF" />
+          <TextBlock Text="NEON VAULT" FontSize="27" FontWeight="Bold" Foreground="#A5F8FF">
+            <TextBlock.Effect><DropShadowEffect Color="#43D4FF" BlurRadius="15" ShadowDepth="0" Opacity="0.55"/></TextBlock.Effect>
+          </TextBlock>
           <TextBlock Text="BREAK THE SYSTEM  ·  CRACK THE VAULT" FontSize="9" Foreground="#6DE8FF" Margin="0,2,0,0" />
         </StackPanel>
         <StackPanel Grid.Column="2" Margin="24,0" VerticalAlignment="Center">
@@ -119,23 +226,23 @@
     </Border>
 
     <Viewbox Grid.Row="1" Stretch="Uniform" StretchDirection="Both" HorizontalAlignment="Center" VerticalAlignment="Center">
-      <Grid Width="1360" Height="770" Background="#060712" ClipToBounds="True">
+      <Grid x:Name="NeonVaultStage" Width="1600" Height="850" Background="#060712" ClipToBounds="True">
         <Rectangle IsHitTestVisible="False">
           <Rectangle.Fill>
             <RadialGradientBrush RadiusX="0.8" RadiusY="0.8" Center="0.5,0.42" GradientOrigin="0.5,0.42">
-              <GradientStop Color="#241A4F" Offset="0" />
-              <GradientStop Color="#121329" Offset="0.42" />
+              <GradientStop Color="#302668" Offset="0" />
+              <GradientStop Color="#121A3C" Offset="0.42" />
               <GradientStop Color="#060712" Offset="1" />
             </RadialGradientBrush>
           </Rectangle.Fill>
         </Rectangle>
 
         <Ellipse x:Name="AmbientGlow"
-                 Width="1080"
-                 Height="520"
+                 Width="1360"
+                 Height="680"
                  HorizontalAlignment="Center"
                  VerticalAlignment="Center"
-                 Opacity="0.20"
+                 Opacity="0.27"
                  IsHitTestVisible="False">
           <Ellipse.Fill>
             <RadialGradientBrush>
@@ -147,24 +254,37 @@
         </Ellipse>
 
         <Rectangle x:Name="Scanline"
-                   Width="1260"
-                   Height="1"
+                   Width="1480"
+                   Height="2"
                    HorizontalAlignment="Center"
                    VerticalAlignment="Top"
                    Margin="0,80,0,0"
-                   Fill="#42E6FA"
-                   Opacity="0.08"
+                   Fill="#6AEFFF"
+                   Opacity="0.17"
                    IsHitTestVisible="False">
           <Rectangle.RenderTransform>
             <TranslateTransform x:Name="ScanlineTransform" />
           </Rectangle.RenderTransform>
         </Rectangle>
 
-        <Grid Margin="34,20,34,26">
+        <!-- Vault chamber rails: machine-frame depth without non-interactive overlays blocking controls. -->
+        <Canvas Width="1600" Height="850" IsHitTestVisible="False" ClipToBounds="True">
+          <Path Data="M 22,210 L 22,65 150,20 M 1578,210 L 1578,65 1450,20"
+                Stroke="#6E45EFFF" StrokeThickness="5" Opacity="0.55"/>
+          <Path Data="M 16,615 L 16,780 168,834 M 1584,615 L 1584,780 1432,834"
+                Stroke="#A0C54BFF" StrokeThickness="4" Opacity="0.5"/>
+          <Path Data="M 180,8 L 550,8 M 1050,8 L 1420,8"
+                Stroke="#6A7E65FF" StrokeThickness="3"/>
+          <Ellipse Canvas.Left="680" Canvas.Top="-185" Width="240" Height="240"
+                   Stroke="#9C7849FF" StrokeThickness="17" Opacity="0.36"/>
+          <Ellipse Canvas.Left="720" Canvas.Top="-145" Width="160" Height="160"
+                   Stroke="#9E55EFFF" StrokeThickness="6" Opacity="0.30"/>
+        </Canvas>
+        <Grid Margin="28,18,28,21">
           <Grid.RowDefinitions>
-            <RowDefinition Height="100" />
-            <RowDefinition Height="*" />
             <RowDefinition Height="112" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="106" />
           </Grid.RowDefinitions>
 
           <Grid Grid.Row="0" Margin="0,0,0,14">
@@ -244,14 +364,14 @@
             </Grid.ColumnDefinitions>
 
             <StackPanel Grid.Column="0" Margin="0,6,18,6">
-              <Border Background="#B20B0F1D" BorderBrush="#29304C" BorderThickness="1" CornerRadius="11" Padding="16" Margin="0,0,0,12">
+              <Border Background="{StaticResource VaultGlassPanel}" BorderBrush="#437AAB" BorderThickness="1.6" CornerRadius="15" Padding="16" Margin="0,0,0,12">
                 <StackPanel>
                   <TextBlock Text="SYSTEM STATUS" FontSize="9" Foreground="#747D9D" />
                   <TextBlock x:Name="SystemStatusText" Text="VAULT ONLINE" FontSize="16" FontWeight="Bold" Foreground="#62E9FF" Margin="0,5,0,0" />
                   <TextBlock x:Name="AnticipationText" Text="1,024 WAYS ACTIVE" TextWrapping="Wrap" FontSize="11" Foreground="#A7AECB" Margin="0,8,0,0" />
                 </StackPanel>
               </Border>
-              <Border Background="#A80B0F1D" BorderBrush="#29304C" BorderThickness="1" CornerRadius="11" Padding="16" Margin="0,0,0,12">
+              <Border Background="{StaticResource VaultGlassPanel}" BorderBrush="#705AB3" BorderThickness="1.6" CornerRadius="15" Padding="16" Margin="0,0,0,12">
                 <StackPanel>
                   <TextBlock Text="FEATURE MATRIX" FontSize="9" Foreground="#747D9D" />
                   <TextBlock Text="WILD EXPANSION" Foreground="#68E9FF" FontSize="11" Margin="0,8,0,0" />
@@ -260,7 +380,7 @@
                   <TextBlock Text="JACKPOT ACCESS KEYS" Foreground="#BDA9FF" FontSize="11" Margin="0,5,0,0" />
                 </StackPanel>
               </Border>
-              <Border x:Name="HighRollPanel" Background="#A80B0F1D" BorderBrush="#29304C" BorderThickness="1" CornerRadius="11" Padding="16">
+              <Border x:Name="HighRollPanel" Background="{StaticResource VaultGlassPanel}" BorderBrush="#705AB3" BorderThickness="1.6" CornerRadius="15" Padding="16">
                 <StackPanel>
                   <TextBlock Text="BET CLASS" FontSize="9" Foreground="#747D9D" />
                   <TextBlock x:Name="HighRollText" Text="STANDARD ACCESS" FontSize="14" FontWeight="Bold" Foreground="#C4CBE2" Margin="0,5,0,0" />
@@ -272,13 +392,13 @@
             <Border x:Name="ReelFrame"
                     Grid.Column="1"
                     Margin="0,4"
-                    Background="#F20A0C14"
-                    BorderBrush="#4C5A88"
-                    BorderThickness="1.5"
-                    CornerRadius="16"
-                    Padding="15">
-              <Grid>
-                <Rectangle RadiusX="10" RadiusY="10" IsHitTestVisible="False">
+                    Background="{StaticResource VaultReelBed}"
+                    BorderBrush="{StaticResource VaultChrome}"
+                    BorderThickness="3"
+                    CornerRadius="22"
+                    Padding="10">
+              <Grid ClipToBounds="True">
+                <Rectangle RadiusX="15" RadiusY="15" IsHitTestVisible="False">
                   <Rectangle.Fill>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                       <GradientStop Color="#241E355D" Offset="0" />
@@ -287,14 +407,36 @@
                     </LinearGradientBrush>
                   </Rectangle.Fill>
                 </Rectangle>
-                <Grid x:Name="ReelsHost" Margin="13" />
-                <Border IsHitTestVisible="False" BorderBrush="#325FF4FF" BorderThickness="1" CornerRadius="10" Margin="8" />
-                <Rectangle IsHitTestVisible="False" Height="2" Fill="#7C5FF3FF" VerticalAlignment="Center" Margin="8,0" />
+                <Border Margin="4" BorderBrush="#4763ECFF" BorderThickness="1" CornerRadius="16"
+                        Background="#14000000" IsHitTestVisible="False" />
+                <Border Width="3" HorizontalAlignment="Left" Margin="5,25,0,25" CornerRadius="2"
+                        Background="{StaticResource VaultChrome}" Opacity="0.65" IsHitTestVisible="False"/>
+                <Border Width="3" HorizontalAlignment="Right" Margin="0,25,5,25" CornerRadius="2"
+                        Background="{StaticResource VaultChrome}" Opacity="0.65" IsHitTestVisible="False"/>
+                <Grid x:Name="ReelsHost" Margin="9" />
+                <Border IsHitTestVisible="False" BorderBrush="#4DABF5FF" BorderThickness="1.3" CornerRadius="16" Margin="3" />
+                <Rectangle IsHitTestVisible="False" Height="2" Fill="#8B58F3FF"
+                           VerticalAlignment="Center" Margin="9,0" />
+                <Rectangle x:Name="ReelScanBeam" Height="3" VerticalAlignment="Top"
+                           IsHitTestVisible="False" Opacity="0.36" Margin="9,0">
+                  <Rectangle.Fill>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                      <GradientStop Color="#004DEBFF" Offset="0"/>
+                      <GradientStop Color="#D57FFCFF" Offset="0.28"/>
+                      <GradientStop Color="#FF68EEFF" Offset="0.54"/>
+                      <GradientStop Color="#AFA767FF" Offset="0.8"/>
+                      <GradientStop Color="#0069EFFF" Offset="1"/>
+                    </LinearGradientBrush>
+                  </Rectangle.Fill>
+                  <Rectangle.RenderTransform>
+                    <TranslateTransform x:Name="ReelScanBeamTransform"/>
+                  </Rectangle.RenderTransform>
+                </Rectangle>
               </Grid>
             </Border>
 
             <StackPanel Grid.Column="2" Margin="18,6,0,6">
-              <Border Background="#B20B0F1D" BorderBrush="#394363" BorderThickness="1" CornerRadius="11" Padding="16" Margin="0,0,0,12">
+              <Border Background="{StaticResource VaultGlassPanel}" BorderBrush="#4C82AD" BorderThickness="1.6" CornerRadius="15" Padding="16" Margin="0,0,0,12">
                 <StackPanel>
                   <TextBlock Text="VAULT ENERGY" FontSize="9" Foreground="#747D9D" />
                   <ProgressBar x:Name="EnergyBar" Minimum="0" Maximum="12" Height="10" Margin="0,10,0,7" Foreground="#5CEAFF" Background="#14182B" BorderThickness="0" />
@@ -302,14 +444,14 @@
                   <TextBlock Text="Fill during Free Spins to arm SECURITY OVERRIDE." FontSize="10" TextWrapping="Wrap" Foreground="#747D9D" Margin="0,8,0,0" />
                 </StackPanel>
               </Border>
-              <Border Background="#B20B0F1D" BorderBrush="#394363" BorderThickness="1" CornerRadius="11" Padding="16" Margin="0,0,0,12">
+              <Border Background="{StaticResource VaultGlassPanel}" BorderBrush="#4C82AD" BorderThickness="1.6" CornerRadius="15" Padding="16" Margin="0,0,0,12">
                 <StackPanel>
                   <TextBlock Text="VAULT BREAK" FontSize="9" Foreground="#747D9D" />
                   <TextBlock x:Name="FreeSpinsText" Text="NO FREE SPINS" FontSize="16" FontWeight="Bold" Foreground="#FFD66E" Margin="0,5,0,0" />
                   <TextBlock Text="Wilds on reels 2–4 expand automatically during the bonus." FontSize="10" TextWrapping="Wrap" Foreground="#747D9D" Margin="0,7,0,0" />
                 </StackPanel>
               </Border>
-              <Border Background="#B20B0F1D" BorderBrush="#394363" BorderThickness="1" CornerRadius="11" Padding="16">
+              <Border Background="{StaticResource VaultGlassPanel}" BorderBrush="#4C82AD" BorderThickness="1.6" CornerRadius="15" Padding="16">
                 <StackPanel>
                   <TextBlock Text="LAST RETURN" FontSize="9" Foreground="#747D9D" />
                   <TextBlock x:Name="LastWinText" Text="$0.00" FontSize="23" FontWeight="Bold" Foreground="#FFFFFF" Margin="0,5,0,0" />
@@ -319,7 +461,7 @@
             </StackPanel>
           </Grid>
 
-          <Border Grid.Row="2" Margin="0,16,0,0" Background="#D30B0E19" BorderBrush="#2C3450" BorderThickness="1" CornerRadius="13" Padding="18,12">
+          <Border Grid.Row="2" Margin="0,15,0,0" Background="{StaticResource VaultGlassPanel}" BorderBrush="{StaticResource VaultChrome}" BorderThickness="2" CornerRadius="17" Padding="18,11">
             <Grid>
               <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
@@ -332,7 +474,7 @@
                 <TextBlock Text="BET" FontSize="9" Foreground="#747D9D" />
                 <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                   <Button x:Name="BetDownButton" Content="−" Style="{StaticResource VaultButton}" Width="42" Height="38" Padding="0" Click="BetDown_Click" />
-                  <Border Background="#171B2E" BorderBrush="#434C6C" BorderThickness="1" CornerRadius="7" Width="150" Height="38" Margin="6,0">
+                  <Border Background="{StaticResource VaultReelBed}" BorderBrush="#4CB8F2" BorderThickness="1.4" CornerRadius="9" Width="158" Height="41" Margin="6,0">
                     <TextBlock x:Name="BetText" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="16" FontWeight="Bold" Foreground="#F7F8FF" />
                   </Border>
                   <Button x:Name="BetUpButton" Content="+" Style="{StaticResource VaultButton}" Width="42" Height="38" Padding="0" Click="BetUp_Click" />
@@ -366,10 +508,10 @@
 
         <Border x:Name="BigWinPanel"
                 Visibility="Collapsed"
-                Background="#F0141025"
-                BorderBrush="#FFD66E"
-                BorderThickness="1.5"
-                CornerRadius="16"
+                Background="{StaticResource VaultGlassPanel}"
+                BorderBrush="{StaticResource VaultChrome}"
+                BorderThickness="3"
+                CornerRadius="22"
                 Padding="34,20"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
