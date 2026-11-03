@@ -126,6 +126,7 @@ public sealed class ProgressionService
             .Max();
 
         long coins = 0;
+        decimal bankroll = 0m;
         var unlocked = new List<CosmeticDefinition>();
         if (season.RewardsEnabled)
         {
@@ -139,6 +140,7 @@ public sealed class ProgressionService
 
                 State.Coins += reward.Coins;
                 coins += reward.Coins;
+                bankroll += reward.BankrollReward;
 
                 if (reward.CosmeticId is not null)
                 {
@@ -152,7 +154,7 @@ public sealed class ProgressionService
         }
 
         progress.Tier = targetTier;
-        return new ProgressionAward(0, experience, [], targetTier - previousTier, coins, unlocked);
+        return new ProgressionAward(0, experience, [], targetTier - previousTier, coins, unlocked, bankroll);
     }
 
     public PurchaseResult PurchaseCosmetic(string cosmeticId)
@@ -449,7 +451,8 @@ public sealed class ProgressionService
             player.LevelsGained,
             season.SeasonTiersGained,
             player.CoinsEarned + season.CoinsEarned,
-            player.CosmeticsUnlocked.Concat(season.CosmeticsUnlocked).ToArray());
+            player.CosmeticsUnlocked.Concat(season.CosmeticsUnlocked).ToArray(),
+            player.BankrollEarned + season.BankrollEarned);
 
     private static long CalculatePlayerExperience(RoundHistoryEntry round)
     {
