@@ -1,5 +1,6 @@
 using BlackjackCasino.Core;
 using BlackjackCasino.Core.Collections;
+using BlackjackCasino.Core.MidnightMerge;
 
 namespace BlackjackCasino.Tests;
 
@@ -69,5 +70,15 @@ public sealed class EconomyBalancingTests
 
         Assert.Equal(2_500m, CollectionService.ThemeCompletionReward(standard).Bankroll);
         Assert.Equal(10_000m, CollectionService.ThemeCompletionReward(ultraRare).Bankroll);
+    }
+
+    [Theory]
+    [InlineData(20, 100)]
+    [InlineData(500, 125)]
+    [InlineData(1200, 195)]
+    [InlineData(2500, 325)]
+    public void MergeStageBankrollRewardScalesWithoutBecomingDominant(long points, decimal expected)
+    {
+        Assert.Equal(expected, MergePlayerProgression.MilestoneBankrollReward(points));
     }
 }
