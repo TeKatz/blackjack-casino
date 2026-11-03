@@ -25,6 +25,8 @@ internal static class CasinoClientWindowFrame
     private const int HtBottomRight = 17;
     private const uint MonitorDefaultToNearest = 2;
     private const double ResizeBorder = 6d;
+    private const int DwmWindowAttributeBorderColor = 34;
+    private const uint DwmColorNone = 0xFFFFFFFE;
 
     private static readonly Dictionary<Window, FrameState> States = [];
 
@@ -46,6 +48,22 @@ internal static class CasinoClientWindowFrame
         };
     }
 
+    internal static bool IsNativeBorderSuppressed(Window window)
+    {
+        if (PresentationSource.FromVisual(window) is not HwndSource source)
+        {
+            return false;
+        }
+
+        uint color = 0;
+        int result = DwmGetWindowAttribute(
+            source.Handle,
+            DwmWindowAttributeBorderColor,
+            out color,
+            Marshal.SizeOf<uint>());
+        return result != 0 || color == DwmColorNone;
+    }
+
     private sealed class FrameState : IDisposable
     {
         private readonly Window window;
@@ -57,6 +75,7 @@ internal static class CasinoClientWindowFrame
             this.window = window;
             this.titleBar = titleBar;
             this.source = source;
+            SuppressNativeBorder(source.Handle);
             source.AddHook(WndProc);
             titleBar.MouseLeftButtonDown += TitleBar_MouseLeftButtonDown;
             titleBar.MouseRightButtonUp += TitleBar_MouseRightButtonUp;
@@ -64,12 +83,13 @@ internal static class CasinoClientWindowFrame
 
         private IntPtr WndProc(IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
-            if (message == WmNcCalcSize && wParam != IntPtr.Zero)
+            if (message == WmNcCalcSize)
             {
                 // WindowStyle=None still keeps the native thick-frame metrics when ResizeMode is resizable.
-                // If USER32 is allowed to calculate that non-client area, a maximized borderless WPF window
-                // gets an invisible frame inset on every edge. Make the complete native window our client area;
-                // WmNcHitTest below continues to provide the resize affordance while restored.
+                // WM_NCCALCSIZE has both TRUE and FALSE wParam forms; USER32 can use the latter during
+                // activation/frame recalculation. Letting either form through can temporarily resurrect the
+                // invisible non-client resize frame as bright inactive strips. The full native window is our
+                // client area in both forms; WmNcHitTest below continues to provide resizing while restored.
                 handled = true;
                 return IntPtr.Zero;
             }
@@ -164,6 +184,16 @@ internal static class CasinoClientWindowFrame
         }
     }
 
+    private static void SuppressNativeBorder(IntPtr hwnd)
+    {
+        uint color = DwmColorNone;
+        _ = DwmSetWindowAttribute(
+            hwnd,
+            DwmWindowAttributeBorderColor,
+            ref color,
+            Marshal.SizeOf<uint>());
+    }
+
     private static void ApplyMonitorBounds(IntPtr hwnd, IntPtr lParam, bool fullscreen)
     {
         IntPtr monitor = MonitorFromWindow(hwnd, MonitorDefaultToNearest);
@@ -193,6 +223,20 @@ internal static class CasinoClientWindowFrame
     [DllImport("user32.dll", CharSet = CharSet.Auto)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool GetMonitorInfo(IntPtr monitor, ref MonitorInfo monitorInfo);
+
+    [DllImport("dwmapi.dll")]
+    private static extern int DwmSetWindowAttribute(
+        IntPtr hwnd,
+        int attribute,
+        ref uint attributeValue,
+        int attributeSize);
+
+    [DllImport("dwmapi.dll")]
+    private static extern int DwmGetWindowAttribute(
+        IntPtr hwnd,
+        int attribute,
+        out uint attributeValue,
+        int attributeSize);
 
     [StructLayout(LayoutKind.Sequential)]
     private struct NativePoint
