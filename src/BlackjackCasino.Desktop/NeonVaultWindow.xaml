@@ -268,6 +268,7 @@
                  VerticalAlignment="Center"
                  Opacity="0.27"
                  IsHitTestVisible="False">
+          <Ellipse.CacheMode><BitmapCache RenderAtScale="0.65" /></Ellipse.CacheMode>
           <Ellipse.Fill>
             <RadialGradientBrush>
               <GradientStop Color="#5A42A8FF" Offset="0" />
@@ -293,6 +294,7 @@
 
         <!-- Vault chamber rails: machine-frame depth without non-interactive overlays blocking controls. -->
         <Canvas Width="1600" Height="850" IsHitTestVisible="False" ClipToBounds="True">
+          <Canvas.CacheMode><BitmapCache RenderAtScale="0.85" /></Canvas.CacheMode>
           <Path Data="M 22,210 L 22,65 150,20 M 1578,210 L 1578,65 1450,20"
                 Stroke="#6E45EFFF" StrokeThickness="5" Opacity="0.55"/>
           <Path Data="M 16,615 L 16,780 168,834 M 1584,615 L 1584,780 1432,834"

@@ -199,10 +199,13 @@ internal static class Program
                 window.UpdateLayout();
                 Grid cyberStage = Find<Grid>(window).Single(grid => grid.Name == "NeonVaultStage");
                 Require(cyberStage.Width / cyberStage.Height > 1.8, "Neon Vault reverted to a narrow letterboxed layout.");
-                Image[] cyberSymbols = Find<Image>(window)
-                    .Where(image => image.IsVisible && image.Source is DrawingImage)
+                Image[] cyberSymbols = Find<Image>(cyberStage)
+                    .Where(image => image.IsVisible && image.Source is BitmapSource)
                     .ToArray();
-                Require(cyberSymbols.Length >= 20, $"Neon Vault rendered only {cyberSymbols.Length} vector reel symbols.");
+                Require(cyberSymbols.Length >= 20, $"Neon Vault rendered only {cyberSymbols.Length} cached reel symbols.");
+                Require(cyberSymbols.All(image => image.Source is BitmapSource art &&
+                    art.IsFrozen && art.PixelWidth >= 384 && art.PixelHeight >= 384),
+                    "Neon Vault symbols must be high-resolution, frozen, shared raster textures.");
                 Require(cyberSymbols.All(image => image.Stretch == Stretch.Uniform),
                     "Neon Vault is stretching or cropping symbol artwork.");
                 Require(cyberSymbols.Select(image => image.Source).Distinct().Count() >= 6,

@@ -1,17 +1,20 @@
 using System.Globalization;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using BlackjackCasino.Core;
 
 namespace BlackjackCasino.Desktop;
 
 /// <summary>
-/// Resolution-independent, individually authored cyber-vault symbol illustrations.
-/// These are DrawingImages rather than the legacy 128px embedded JPEG/base64 crops.
-/// Render once, freeze, then reuse the same native vector asset for every reel.
+/// Author cyber-vault symbols as resolution-independent vectors, then rasterize
+/// exactly once into frozen 384px textures. WPF previously rerendered complex
+/// DrawingImages on twenty moving reel cells, reducing the frame rate.
 /// </summary>
 internal static class NeonVaultSymbolAssets
 {
+    private const int RasterSize = 384;
+
     private static readonly IReadOnlyDictionary<NeonVaultSymbol, ImageSource> Images =
         Enum.GetValues<NeonVaultSymbol>().ToDictionary(symbol => symbol, DrawSymbol);
 
@@ -48,9 +51,21 @@ internal static class NeonVaultSymbolAssets
             ForegroundDetails(dc, accent);
         }
         group.Freeze();
-        var image = new DrawingImage(group);
-        image.Freeze();
-        return image;
+
+        // Render the richly layered icon once, rather than for each WPF frame.
+        // 384x384 keeps downsampled reel art crisp on the 1080p interface while
+        // eight shared textures use only about 4.5 MiB.
+        var visual = new DrawingVisual();
+        using (DrawingContext drawing = visual.RenderOpen())
+        {
+            drawing.PushTransform(new ScaleTransform(RasterSize / 512.0, RasterSize / 512.0));
+            drawing.DrawDrawing(group);
+            drawing.Pop();
+        }
+        var bitmap = new RenderTargetBitmap(RasterSize, RasterSize, 96, 96, PixelFormats.Pbgra32);
+        bitmap.Render(visual);
+        bitmap.Freeze();
+        return bitmap;
     }
 
     private static void Background(DrawingContext dc, Color accent)
