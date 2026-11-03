@@ -201,8 +201,9 @@ public partial class MainWindow
             {
                 var award = progressionController.ProcessSudoku(new SudokuCompletionRecord(
                     puzzle.Id, puzzle.Difficulty, puzzle.Pool, clean.ElapsedSeconds, clean.HintsUsed));
+                CreditProgressionBankrollReward(award.BankrollEarned, "Sudoku reward");
                 if (award.PlayerExperience > 0)
-                    sudokuRewardNotice = $"+{award.PlayerExperience:N0} XP · +{award.SeasonExperience:N0} Season XP earned!";
+                    sudokuRewardNotice = $"+{award.PlayerExperience:N0} XP · +{award.SeasonExperience:N0} Season XP · +{Money(award.BankrollEarned)} bankroll earned!";
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
@@ -229,8 +230,9 @@ public partial class MainWindow
         try
         {
             var award = progressionController.ProcessSolitaire(completion);
+            CreditProgressionBankrollReward(award.BankrollEarned, "Solitaire reward");
             return award.PlayerExperience > 0
-                ? $"+{award.PlayerExperience:N0} XP · +{award.SeasonExperience:N0} Season XP earned!"
+                ? $"+{award.PlayerExperience:N0} XP · +{award.SeasonExperience:N0} Season XP · +{Money(award.BankrollEarned)} bankroll earned!"
                 : "Solved · reward already recorded.";
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -246,7 +248,11 @@ public partial class MainWindow
         foreach (WordSearchCompletionRecord completion in state.CompletedGames)
         {
             if (progressionController.Profile.WordSearch.RecordedPuzzleIds.Contains(completion.PuzzleId)) continue;
-            try { _ = progressionController.ProcessWordSearch(completion); }
+            try
+            {
+                ProgressionAward award = progressionController.ProcessWordSearch(completion);
+                CreditProgressionBankrollReward(award.BankrollEarned, "Word Search reward");
+            }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return; }
         }
     }
@@ -254,7 +260,12 @@ public partial class MainWindow
     private ProgressionAward RecordWordSearchCompletion(WordSearchCompletionRecord completion)
     {
         if (progressionController is null) return ProgressionAward.None;
-        try { return progressionController.ProcessWordSearch(completion); }
+        try
+        {
+            ProgressionAward award = progressionController.ProcessWordSearch(completion);
+            CreditProgressionBankrollReward(award.BankrollEarned, "Word Search reward");
+            return award;
+        }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return ProgressionAward.None; }
     }
 
@@ -265,7 +276,11 @@ public partial class MainWindow
         foreach (MemoryCompletionRecord completion in state.CompletedGames)
         {
             if (progressionController.Profile.Memory.RecordedGameIds.Contains(completion.GameId)) continue;
-            try { _ = progressionController.ProcessMemory(completion); }
+            try
+            {
+                ProgressionAward award = progressionController.ProcessMemory(completion);
+                CreditProgressionBankrollReward(award.BankrollEarned, "Memory reward");
+            }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return; }
         }
     }
@@ -273,7 +288,12 @@ public partial class MainWindow
     private ProgressionAward RecordMemoryCompletion(MemoryCompletionRecord completion)
     {
         if (progressionController is null) return ProgressionAward.None;
-        try { return progressionController.ProcessMemory(completion); }
+        try
+        {
+            ProgressionAward award = progressionController.ProcessMemory(completion);
+            CreditProgressionBankrollReward(award.BankrollEarned, "Memory reward");
+            return award;
+        }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return ProgressionAward.None; }
     }
 }
