@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using BlackjackCasino.Core;
+using BlackjackCasino.Core.Collections;
 
 namespace BlackjackCasino.Desktop;
 
@@ -82,7 +83,7 @@ public partial class MainWindow
 
     private DailyLoginClaim? ClaimDailyLoginFromDrawer()
     {
-        if (testSession)
+        if (testSession || progressionController is null)
         {
             return null;
         }
@@ -97,15 +98,30 @@ public partial class MainWindow
             return null;
         }
 
-        session.CreditBankroll(claim.Reward);
+        DailyLoginRewardDefinition reward = DailyLoginRewardSchedule.GetDefinition(claim.TotalClaims - 1);
+        long updatedCoins = checked(progressionController.Profile.Coins + reward.CosmeticCoins);
+
+        session.CreditBankroll(reward.Bankroll);
+        progressionController.Profile.Coins = updatedCoins;
+        if (reward.PackRarity is { } packRarity)
+        {
+            CollectionService.GrantPack(progressionController.Profile, packRarity);
+        }
+
         preferences = preferences with
         {
             LastDailyLoginClaimDate = claim.ClaimDate,
             DailyLoginClaims = claim.TotalClaims,
         };
+
+        progressionController.SaveAll();
         SavePreferences();
         BankrollText.Text = Money(session.Bankroll);
-        StatusText.Text = $"Daily reward · +{Money(claim.Reward)} · day {claim.Status.ActiveStep}/{DailyLoginRewardSchedule.CycleLength}";
+        RefreshProfileButton();
+        RefreshCollectionAlbumHeaderButton();
+
+        string packText = reward.PackRarity is { } rarity ? $" · {rarity} card pack" : string.Empty;
+        StatusText.Text = $"Daily reward · +{Money(reward.Bankroll)} · +{reward.CosmeticCoins:N0} cosmetic coins{packText} · day {claim.Status.ActiveStep}/{DailyLoginRewardSchedule.CycleLength}";
         CasinoFeedback.PlayChip(SoundEnabled);
         AnimateDailyBankrollCredit();
         return claim;
