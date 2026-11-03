@@ -98,49 +98,110 @@ internal sealed class SolitaireHubControl : UserControl, IDisposable
     private void ShowHub()
     {
         DisposeActiveView();
-        var scroll = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
-        var root = new StackPanel { Margin = new Thickness(42, 28, 42, 34), MaxWidth = 1120, HorizontalAlignment = HorizontalAlignment.Center };
+        SolitaireStatistics current = statistics();
+        var right = new StackPanel();
+        right.Children.Add(PremiumLoungeTheme.Heading("CHOOSE A SOLITAIRE GAME"));
 
-        var heading = new Grid();
-        heading.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        heading.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        var copy = new StackPanel();
-        copy.Children.Add(LoungeUi.Eyebrow("MIDNIGHT SOLITAIRE"));
-        copy.Children.Add(new TextBlock { Text = "Let the cards settle.", FontFamily = new FontFamily("Georgia"), FontSize = 38, Foreground = LoungeUi.Ink("#F1E6D5"), Margin = new Thickness(0, 5, 0, 7) });
-        copy.Children.Add(new TextBlock { Text = "No wagers, no streak requirements and no speed rewards. Time and moves are recorded only as personal statistics.", FontSize = 13, Foreground = LoungeUi.Ink("#9FB5AE"), TextWrapping = TextWrapping.Wrap, MaxWidth = 720 });
-        heading.Children.Add(copy);
-        Button games = LoungeUi.Button("← LOUNGE GAMES");
-        games.VerticalAlignment = VerticalAlignment.Top;
-        games.Click += (_, _) => backToGames();
-        Grid.SetColumn(games, 1);
-        heading.Children.Add(games);
-        root.Children.Add(heading);
+        status = PremiumLoungeTheme.Label("", 13, PremiumLoungeTheme.Gold);
+        status.Margin = new Thickness(4, 8, 4, 10);
 
-        SolitaireStatistics stats = statistics();
-        var statCard = LoungeUi.Card();
-        statCard.Margin = new Thickness(0, 24, 0, 18);
-        statCard.Child = new TextBlock
+        AddPremiumVariant(SolitaireVariant.Klondike, "KLONDIKE",
+            "The familiar seven-column classic.", 1, null);
+        AddPremiumVariant(SolitaireVariant.FreeCell, "FREECELL",
+            "All cards visible · numbered, reproducible deals.", 1, null);
+        // Retain the exact numbered FreeCell-deal entry from the original hub.
+        var dealPanel = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(37, 0, 0, 12) };
+        dealPanel.Children.Add(PremiumLoungeTheme.Label("FREECELL DEAL #", 12, PremiumLoungeTheme.Muted, true));
+        var freeCellDeal = new TextBox
         {
-            Text = $"CAREER   {stats.Wins:N0} wins / {stats.GamesStarted:N0} started   ·   {stats.WinRate:N1}% win rate   ·   best streak {stats.BestWinStreak:N0}   ·   achievements {SolitaireAchievementCatalog.Completed(stats)}/{SolitaireAchievementCatalog.All.Count}",
-            Foreground = LoungeUi.Ink("#B8CBC4"), FontSize = 12, TextWrapping = TextWrapping.Wrap
+            Name = "SolitaireFreeCellDeal",
+            Text = progress.NextDealNumber.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            Width = 128, Height = 33,
+            Margin = new Thickness(17, 0, 0, 0),
         };
-        root.Children.Add(statCard);
+        PremiumLoungeTheme.StyleInput(freeCellDeal);
+        dealPanel.Children.Add(freeCellDeal);
+        var numbered = PremiumLoungeTheme.Button("START #", "SolitaireFreeCellNumbered",
+            () => StartNew(SolitaireVariant.FreeCell, 1,
+                int.TryParse(freeCellDeal.Text, out int number) && number > 0 ? number : null),
+            width: 110, height: 33, gold: true);
+        numbered.Margin = new Thickness(12, 0, 0, 0);
+        dealPanel.Children.Add(numbered);
+        right.Children.Add(dealPanel);
 
-        status = new TextBlock { Foreground = LoungeUi.Ink("#E7CCA0"), FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(3, 0, 3, 12) };
-        root.Children.Add(status);
+        foreach (int suits in new[] { 1, 2, 4 })
+            AddPremiumVariant(SolitaireVariant.Spider, $"SPIDER · {suits} SUIT{(suits == 1 ? "" : "S")}",
+                "Eight completed runs · choose your suit count.", suits, null);
+        AddPremiumVariant(SolitaireVariant.Pyramid, "PYRAMID",
+            "Clear exposed pairs totaling thirteen.", 1, null);
+        AddPremiumVariant(SolitaireVariant.Golf, "GOLF",
+            "Clear columns one rank at a time.", 1, null);
+        AddPremiumVariant(SolitaireVariant.TriPeaks, "TRIPEAKS",
+            "Three peaks. One quiet run.", 1, null);
 
-        var variants = new WrapPanel();
-        variants.Children.Add(VariantCard(SolitaireVariant.Klondike, "Klondike", "The familiar seven-column classic.", "Build alternating colors down; send each suit home from Ace to King."));
-        variants.Children.Add(FreeCellCard());
-        variants.Children.Add(SpiderCard());
-        variants.Children.Add(VariantCard(SolitaireVariant.Pyramid, "Pyramid", "Pairs make thirteen.", "Clear exposed pairs totaling 13; Kings leave on their own."));
-        variants.Children.Add(VariantCard(SolitaireVariant.Golf, "Golf", "One rank at a time.", "Clear seven columns by playing one rank above or below the waste."));
-        variants.Children.Add(VariantCard(SolitaireVariant.TriPeaks, "TriPeaks", "Three peaks, one quiet run.", "Open the peaks by clearing exposed cards one rank above or below."));
-        root.Children.Add(variants);
+        right.Children.Add(status);
+        var label = PremiumLoungeTheme.Heading("ACHIEVEMENTS");
+        label.Margin = new Thickness(0, 9, 0, 7);
+        right.Children.Add(label);
+        var achievements = BuildAchievements(current);
+        achievements.Margin = new Thickness(0, 0, 0, 4);
+        achievements.Padding = new Thickness(10);
+        // Keep the full original achievement list in an accessible section,
+        // without forcing it to displace the playable mode rows.
+        var details = new Expander
+        {
+            Header = $"VIEW ALL · {SolitaireAchievementCatalog.Completed(current)}/{SolitaireAchievementCatalog.All.Count}",
+            Content = achievements,
+            IsExpanded = false,
+            Foreground = PremiumLoungeTheme.Ink(PremiumLoungeTheme.Cream),
+            Background = PremiumLoungeTheme.Ink("#122A2C"),
+            BorderBrush = PremiumLoungeTheme.Ink("#6D6250"),
+            BorderThickness = new Thickness(1),
+            Padding = new Thickness(13, 10, 13, 10),
+        };
+        right.Children.Add(details);
 
-        root.Children.Add(BuildAchievements(stats));
-        scroll.Content = root;
-        Content = scroll;
+        Content = PremiumLoungeTheme.Build(
+            "poker-room.png",
+            "private-gaming-salon.png",
+            "A QUIETER CORNER",
+            "Let the cards settle.",
+            "No wagers, no streak requirements and no speed rewards. Just the deck and your decisions.",
+            "M I D N I G H T   S O L I T A I R E",
+            "Six ways to\nplay the night.",
+            "Klondike, FreeCell, Spider, Pyramid, Golf and TriPeaks. Every deal is saved automatically; replay favorite numbered FreeCell deals whenever you like.",
+            PremiumLoungeTheme.Stats(
+                $"CAREER   {current.Wins:N0} WINS / {current.GamesStarted:N0} STARTED",
+                $"WIN RATE   {current.WinRate:N1}%    ·    BEST STREAK   {current.BestWinStreak:N0}",
+                $"ACHIEVEMENTS   {SolitaireAchievementCatalog.Completed(current)}/{SolitaireAchievementCatalog.All.Count}"),
+            right,
+            "All six solitaire variants keep their original rules, recorded deals, achievements and persistent progress.");
+
+        void AddPremiumVariant(SolitaireVariant variant, string title, string detail,
+            int suits, Func<int?>? dealNumber)
+        {
+            bool has = progress.TryGet(variant, out SolitaireGameState? active, suits) && active is not null;
+            var row = PremiumLoungeTheme.Row(title,
+                has
+                    ? $"{(active!.Won ? "SOLVED" : "IN PROGRESS")} · #{active.DealNumber:N0} · {active.Moves:N0} MOVES"
+                    : detail,
+                selected: has && !active!.Won, height: 73);
+
+            SolitaireGameState? resumable = active;
+            var resume = PremiumLoungeTheme.Button(
+                has && active!.Won ? "VIEW" : "RESUME",
+                $"SolitaireResume_{variant}_{suits}",
+                () => { if (resumable is not null) Open(resumable); },
+                primary: false, enabled: has, width: 98);
+            PremiumLoungeTheme.AddRowAction(row, resume, 105);
+
+            var fresh = PremiumLoungeTheme.Button("NEW DEAL",
+                $"SolitaireNew_{variant}_{suits}",
+                () => StartNew(variant, suits, dealNumber?.Invoke()),
+                width: 128);
+            PremiumLoungeTheme.AddRowAction(row, fresh, 137);
+            right.Children.Add(row);
+        }
     }
 
     private Border VariantCard(SolitaireVariant variant, string title, string subtitle, string description)
