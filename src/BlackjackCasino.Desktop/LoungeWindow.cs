@@ -388,18 +388,7 @@ internal sealed class LoungeWindow : Window
         return true;
     }
 
-    private static Button LoungeButton(string text) => new()
-    {
-        Content = text,
-        Foreground = Ink("#EEE4D4"),
-        Background = Ink("#17282A"),
-        BorderBrush = Ink("#4A6661"),
-        BorderThickness = new Thickness(1),
-        Padding = new Thickness(15, 10, 15, 10),
-        FontWeight = FontWeights.SemiBold,
-        Cursor = Cursors.Hand,
-        HorizontalContentAlignment = HorizontalAlignment.Center,
-    };
+    private static Button LoungeButton(string text) => SudokuPremiumMenu.NavigationButton(text);
 
     private static Button SmallActionButton(string text) => new()
     {
