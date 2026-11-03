@@ -192,6 +192,16 @@ public sealed class CasinoSession
         settlementApplied = false;
     }
 
+    public void CreditBankroll(decimal amount)
+    {
+        if (amount <= 0m)
+        {
+            throw new ArgumentOutOfRangeException(nameof(amount), "Reward amount must be positive.");
+        }
+
+        Bankroll = checked(Bankroll + amount);
+    }
+
     private BlackjackRound RequireRound(RoundPhase phase)
     {
         if (CurrentRound is null)
