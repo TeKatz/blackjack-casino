@@ -2,7 +2,7 @@ name: Development Release
 
 on:
   push:
-    branches: ["feature/economy-balancing"]
+    branches: ["feature/shop-cosmetics-expansion"]
   workflow_dispatch:
 
 permissions:
@@ -14,8 +14,8 @@ concurrency:
 
 jobs:
   publish-development:
-    # The shared in-app Development channel follows the active economy balancing branch.
-    if: github.ref == 'refs/heads/feature/economy-balancing'
+    # The shared in-app Development channel follows the active shop cosmetics branch.
+    if: github.ref == 'refs/heads/feature/shop-cosmetics-expansion'
     runs-on: windows-latest
     timeout-minutes: 20
 

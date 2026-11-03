@@ -12,10 +12,10 @@ Before publication, the workflow validates localization resources, builds, runs 
 
 Versioning rule: start a new Development cycle on a version base strictly above the latest final version. Preserve SemVer ordering; do not offer silent downgrades. PR preview artifacts use dev.0 and are superseded by the published Development run number.
 
-## Current test channel: Casino Empire command center
+## Current test channel: Shop cosmetics expansion
 
-The shared `development` release is pinned to `feature/empire-command-center`,
-created fresh from main at `b345f2a9a6e5582bee8786f52f1564b11a4626c1`.
+The shared `development` release is pinned to `feature/shop-cosmetics-expansion`,
+created fresh from main at `c4b72ef075104cff05d9426a9bffbe161f10d360`.
 The publisher's push trigger and job guard both select this branch. The existing
 in-app manifest URL, package names and updater schema remain unchanged.
 
@@ -24,13 +24,13 @@ number. Every publication validates the complete application, actual Windows UI
 behavior, package hash and size, application/manifest version agreement and the
 published release target before reporting success.
 
-This branch redesigns Casino Empire around an Estate command center: direct
-section navigation, live project and contract actions, room and prestige controls,
-connected research branches, synergy progress and compact catalog pagination.
-Existing Empire simulation, profile storage, other games and shared wallet guards
-remain in place. The Windows suites cover standard desktop layouts, research
-prerequisites, direct dashboard transactions, managers, automation inputs, events,
-contracts, property switching, statistics and detached hosting.
+This branch adds six card sets and six dice sets across three price tiers,
+refines Ruby Velvet and Aurora Prism with subtle glows, and replaces the nine
+requested default and season portraits with individually generated artwork.
+The Windows checks export full/compact card faces and backs, D6/D20 palettes and
+circular portrait crops. Cosmetic purchases, equipment and save compatibility
+are covered by the complete unit suite. See `shop-cosmetics-expansion.md` for
+prices, rendering details and image prompts.
 
 `tools/check_localization.py` is a mandatory CI and Development-publisher gate. Every translated resource file must contain exactly the neutral English key set and every value must be non-empty. English remains the fallback when a runtime key cannot be resolved in a selected translation. Proper product and mode names such as The Midnight Club, Midnight Solitaire, Midnight Manor and Neon Vault remain untranslated unless explicitly changed by product direction.
 
