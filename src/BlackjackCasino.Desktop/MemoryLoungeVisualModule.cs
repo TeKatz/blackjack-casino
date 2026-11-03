@@ -87,7 +87,7 @@ internal sealed class MemoryLoungeHubVisual : UserControl, IDisposable
         {
             var current = PremiumLoungeTheme.Row(
                 "CONTINUE YOUR TABLE",
-                $"{active.Difficulty} · {active.PairsFound}/{active.PairCount} pairs · {active.Moves} moves",
+                $"{active.Difficulty} · {active.PairsFound} / {active.PairCount} pairs · {active.Moves} moves",
                 selected: true, height: 74);
             var resume = PremiumLoungeTheme.Button("RESUME TABLE", "MemoryResume",
                 () => ShowGame(active), width: 150);
@@ -183,7 +183,7 @@ internal sealed class MemoryLoungeHubVisual : UserControl, IDisposable
             "A QUIETER CORNER",
             "A moment to remember.",
             "No clock to beat. Turn over the cards and settle into your own rhythm.",
-            "M E M O R Y",
+            "Memory",
             "Find the pairs.\nTake your time.",
             "A calm matching game with five table sizes, distinct card decks and local progress. Every match is yours to discover.",
             PremiumLoungeTheme.Stats(
