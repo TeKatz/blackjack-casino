@@ -107,9 +107,14 @@ internal sealed class WordSearchLoungeHub : UserControl, IDisposable
             // visual regression tooling and future progress embellishments.
             var labelPanel = (StackPanel)PremiumLoungeTheme.RowContent(item).Children[1];
             var meta = new Grid { Name = "WordSearchDifficultyMeta", Margin = new Thickness(0, 3, 8, 0) };
-            meta.Children.Add(PremiumLoungeTheme.Label(
-                $"+{WordSearchProgression.PlayerExperience(difficulty):N0} XP · {DirectionText(difficulty)}",
-                10, PremiumLoungeTheme.Gold));
+            meta.ColumnDefinitions.Add(new ColumnDefinition());
+            meta.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            meta.Children.Add(PremiumLoungeTheme.Label(DirectionText(difficulty), 10, PremiumLoungeTheme.Muted));
+            var xpLabel = PremiumLoungeTheme.Label(
+                $"+{WordSearchProgression.PlayerExperience(difficulty):N0} XP",
+                11, PremiumLoungeTheme.Gold, true);
+            Grid.SetColumn(xpLabel, 1);
+            meta.Children.Add(xpLabel);
             labelPanel.Children.Add(meta);
 
             WordSearchDifficulty selected = difficulty;
@@ -142,7 +147,7 @@ internal sealed class WordSearchLoungeHub : UserControl, IDisposable
             "A QUIETER CORNER",
             "Find your rhythm.",
             "No wagers, no rush. Each found word is a small victory worth enjoying.",
-            "W O R D   S E A R C H",
+            "Word Search",
             "Find the words.\nKeep the pace yours.",
             "Search handcrafted word grids at your own pace. Choose a difficulty, follow the letters and save your progress whenever you like.",
             PremiumLoungeTheme.Stats(
@@ -150,7 +155,7 @@ internal sealed class WordSearchLoungeHub : UserControl, IDisposable
                 $"WORDS FOUND   {snapshot.WordsFound:N0}",
                 $"NO HINT   {snapshot.NoHintCompletions:N0}    ·    MASTER   {snapshot.MasterCompleted:N0}"),
             detail,
-            $"The {WordSearchCatalog.All.Count:N0} offline puzzle slots are saved locally. Progress and rewards remain unchanged.");
+            $"The {WordSearchCatalog.All.Count:N0} authored puzzle slots are saved locally. Progress and rewards remain unchanged.");
     }
 
     private FrameworkElement DifficultyCard(WordSearchDifficulty difficulty)
