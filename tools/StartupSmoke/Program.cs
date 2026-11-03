@@ -131,8 +131,10 @@ internal static class Program
                 Require(reelImages.All(image => image.Source is BitmapSource),
                     "Nine Lives regressed to replacement vector symbols instead of the restored concept-art set.");
                 Require(reelImages.All(image => image.Source is BitmapSource bitmap
-                    && bitmap.PixelWidth >= 112 && bitmap.PixelHeight >= 112),
-                    "Nine Lives concept-art symbols decoded below their authored source resolution.");
+                    && bitmap.PixelWidth >= 1024 && bitmap.PixelHeight >= 1024),
+                    "Nine Lives high-resolution symbols failed to load or were downscaled.");
+                Require(reelImages.Select(image => image.Source).Distinct().Count() == 8,
+                    "Nine Lives preview should contain eight distinct premium symbol images.");
 
                 Require(Find<Button>(window).Any(button => button.Name == "SpinButton" && button.IsVisible),
                     "Nine Lives Spin button is missing from the hosted surface.");
