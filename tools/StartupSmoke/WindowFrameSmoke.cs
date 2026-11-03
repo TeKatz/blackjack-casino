@@ -27,6 +27,7 @@ internal static class WindowFrameSmoke
             window.WindowState = WindowState.Normal;
             window.ResizeMode = ResizeMode.CanResize;
             window.WindowState = WindowState.Maximized;
+            window.Activate();
             await Settle(window);
 
             Rect work = SystemParameters.WorkArea;
@@ -39,6 +40,7 @@ internal static class WindowFrameSmoke
             Require(CasinoClientWindowFrame.IsNativeBorderSuppressed(window),
                 "Main window retained a DWM-owned border that can repaint as bright strips while inactive.");
 
+            int activationSuppressionsBefore = CasinoClientWindowFrame.GetSuppressedNonClientActivationCount(window);
             activationProbe = new Window
             {
                 Width = 240,
@@ -53,6 +55,10 @@ internal static class WindowFrameSmoke
             activationProbe.Activate();
             await Settle(window);
 
+            Require(!window.IsActive,
+                "Activation probe did not move focus away from the main window.");
+            Require(CasinoClientWindowFrame.GetSuppressedNonClientActivationCount(window) > activationSuppressionsBefore,
+                "Losing activation did not pass through the main-window non-client activation suppression path.");
             RequireNear(window.ActualWidth, work.Width, 3d,
                 "Inactive maximized windowed mode reintroduced a horizontal native-frame inset.");
             RequireNear(window.ActualHeight, work.Height, 3d,
