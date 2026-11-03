@@ -76,6 +76,7 @@ internal static class Program
                 window.UpdateLayout();
                 Require(window.IsVisible, "Main window never became visible.");
                 Require(window.Icon is not null && window.Template.FindName("CasinoTitleBar", window) is FrameworkElement { IsVisible: true }, "The desktop icon or custom title bar is missing.");
+                await WindowFrameSmoke.Run(window);
                 object originalContent = window.Content;
                 CasinoWindowFrame.SetIsFullscreen(window, true); window.UpdateLayout();
                 Require(window.Template.FindName("CasinoTitleBar", window) is FrameworkElement { IsVisible: false }, "Full screen retained the custom title bar.");
@@ -196,7 +197,7 @@ internal static class Program
                 await VaultSmoke.Run(window, output);
 
                 File.WriteAllText(Path.Combine(output, "result.txt"),
-                    "PASS: EN/DE live localization; Nine Lives presentation; Chill Lounge Sudoku, Solitaire and Memory; Midnight Merge foundation; Midnight Dice; Casino Empire; and in-app Casino Vault acceptance all passed.");
+                    "PASS: window bounds; EN/DE live localization; Nine Lives presentation; Chill Lounge Sudoku, Solitaire and Memory; Midnight Merge foundation; Midnight Dice; Casino Empire; and in-app Casino Vault acceptance all passed.");
             }
             catch (Exception ex)
             {

@@ -14,12 +14,13 @@ internal sealed class ManorPersistence(string directory)
     internal static readonly JsonSerializerOptions Json = MakeOptions();
     public static string DefaultDirectory => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"BlackjackCasino");
     private string Journal => Path.Combine(directory,"manor-checkpoint.json");
-    public static T Clone<T>(T value) => JsonSerializer.Deserialize<T>(JsonSerializer.Serialize(value,Json),Json)!;
+    public static T Clone<T>(T value) => JsonSerializer.Deserialize<T>(JsonSerializer.SerializeToUtf8Bytes(value,Json),Json)!;
 
     public ManorCheckpoint? Load()
     {
         if(!File.Exists(Journal)) return null;
-        ManorCheckpoint value=JsonSerializer.Deserialize<ManorCheckpoint>(File.ReadAllText(Journal),Json)
+        using var file=File.OpenRead(Journal);
+        ManorCheckpoint value=JsonSerializer.Deserialize<ManorCheckpoint>(file,Json)
             ?? throw new InvalidDataException("The Manor checkpoint is empty.");
         Validate(value);
         return value;
@@ -31,11 +32,12 @@ internal sealed class ManorPersistence(string directory)
         if(value is { NeedsRecovery:true }) Project(value);
     }
 
-    // Once Write returns, the aggregate is durable. Projection failure is recoverable, not a failed spin.
+    // The recovery checkpoint is durable before projection begins. A projection failure therefore
+    // remains recoverable and never turns a failed mirror write into a lost financial transition.
     public string? Commit(ManorCheckpoint value)
     {
         Validate(value);
-        Write(Journal,value with { NeedsRecovery=true });
+        Write(Journal,value with { NeedsRecovery=true },durable:true);
         try { Project(value); return null; }
         catch(Exception ex) when(ex is IOException or UnauthorizedAccessException)
         { return "Saved safely in the Manor checkpoint; local mirrors will recover at restart: "+ex.Message; }
@@ -43,19 +45,24 @@ internal sealed class ManorPersistence(string directory)
 
     private void Project(ManorCheckpoint value)
     {
-        Write(Path.Combine(directory,"player-state.json"),value.Preferences);
-        Write(Path.Combine(directory,"profile.json"),value.Profile);
-        Write(Journal,value with { NeedsRecovery=false });
+        // Both mirrors must reach durable storage before the checkpoint can be marked projected.
+        Write(Path.Combine(directory,"player-state.json"),value.Preferences,durable:true);
+        Write(Path.Combine(directory,"profile.json"),value.Profile,durable:true);
+
+        // This completion marker intentionally does not force a fourth disk flush. If power is lost
+        // before it becomes durable, the older NeedsRecovery=true checkpoint is replayed at startup.
+        // That replay is idempotent and safer than publishing a completion marker before the mirrors.
+        Write(Journal,value with { NeedsRecovery=false },durable:false);
     }
 
-    private void Write<T>(string path,T value)
+    private void Write<T>(string path,T value,bool durable)
     {
         Directory.CreateDirectory(directory);
         string temp=path+".manor.tmp";
         using(var file=new FileStream(temp,FileMode.Create,FileAccess.Write,FileShare.None))
         {
             JsonSerializer.Serialize(file,value,Json);
-            file.Flush(flushToDisk:true);
+            file.Flush(flushToDisk:durable);
         }
         File.Move(temp,path,overwrite:true);
     }

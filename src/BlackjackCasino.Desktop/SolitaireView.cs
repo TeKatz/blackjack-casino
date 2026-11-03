@@ -27,10 +27,26 @@ internal sealed class SolitaireView : UserControl, IDisposable
     };
     private readonly TextBlock notice = new() { Foreground = LoungeUi.Ink("#E7CCA0"), FontSize = 12, TextWrapping = TextWrapping.Wrap };
     private readonly DispatcherTimer timer = new() { Interval = TimeSpan.FromSeconds(1) };
+    private readonly Dictionary<string, Canvas> renderGroups = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, PileVisualSnapshot> pileVisualSnapshots = new(StringComparer.Ordinal);
+    private Canvas? renderTarget;
     private string? selectedPile;
+    private string? renderedCardSetId;
     private int selectedIndex = -1;
+    private int nextRenderGroupZ = 10;
+    private int renderedCompletedRuns = -1;
+    private bool boardInitialized;
+    private bool renderedWinBanner;
     private bool completionHandled;
     private bool disposed;
+
+    private readonly record struct CardVisualSnapshot(Rank Rank, Suit Suit, bool FaceUp);
+
+    private sealed record PileVisualSnapshot(
+        CardVisualSnapshot[] Cards,
+        string? CardSetId,
+        int SelectedIndex,
+        bool DestinationMode);
 
     internal SolitaireView(
         SolitaireGameState game,
@@ -52,6 +68,8 @@ internal sealed class SolitaireView : UserControl, IDisposable
     }
 
     internal SolitaireGameState Snapshot => state;
+    internal int BoardInitializationCount { get; private set; }
+    internal int PileVisualRefreshCount { get; private set; }
 
     private UIElement BuildShell()
     {
@@ -120,20 +138,76 @@ internal sealed class SolitaireView : UserControl, IDisposable
 
     private void Render()
     {
-        board.Children.Clear();
-        RenderBoardSurface();
         UpdateInfo();
         UpdateSelectionInfo();
+        EnsureBoardInitialized();
+
+        string? currentCardSetId = cardSetId();
+        if (!string.Equals(renderedCardSetId, currentCardSetId, StringComparison.Ordinal))
+        {
+            renderedCardSetId = currentCardSetId;
+            pileVisualSnapshots.Clear();
+        }
+
         switch (state.Variant)
         {
-            case SolitaireVariant.Klondike: RenderKlondike(); break;
-            case SolitaireVariant.FreeCell: RenderFreeCell(); break;
-            case SolitaireVariant.Spider: RenderSpider(); break;
-            case SolitaireVariant.Pyramid: RenderPyramid(); break;
-            case SolitaireVariant.Golf: RenderGolf(); break;
-            case SolitaireVariant.TriPeaks: RenderTriPeaks(); break;
+            case SolitaireVariant.Klondike: RefreshKlondike(); break;
+            case SolitaireVariant.FreeCell: RefreshFreeCell(); break;
+            case SolitaireVariant.Spider: RefreshSpider(); break;
+            case SolitaireVariant.Pyramid: RefreshPyramid(); break;
+            case SolitaireVariant.Golf: RefreshGolf(); break;
+            case SolitaireVariant.TriPeaks: RefreshTriPeaks(); break;
         }
-        if (state.Won) RenderWinBanner();
+
+        RefreshWinBanner();
+    }
+
+    private void EnsureBoardInitialized()
+    {
+        if (boardInitialized) return;
+        boardInitialized = true;
+        BoardInitializationCount++;
+        board.Children.Clear();
+        RenderBoardSurface();
+        RenderStaticLayout();
+    }
+
+    private void RenderStaticLayout()
+    {
+        switch (state.Variant)
+        {
+            case SolitaireVariant.Klondike:
+                AddZoneCaption("DRAW", 35, 134);
+                AddZoneCaption("WASTE", 135, 134);
+                AddZoneCaption("FOUNDATIONS", 600, 134);
+                AddSectionRule(154, "TABLEAU");
+                break;
+            case SolitaireVariant.FreeCell:
+                AddZoneCaption("FREE CELLS", 35, 134);
+                AddZoneCaption("FOUNDATIONS", 650, 134);
+                AddSectionRule(154, "TABLEAU");
+                break;
+            case SolitaireVariant.Spider:
+                AddZoneCaption("DEAL", 30, 123);
+                AddSectionRule(132, "TABLEAU");
+                AddText($"{state.SpiderSuits}-SUIT", 380, 49, 11, "#6F8981");
+                break;
+            case SolitaireVariant.Pyramid:
+                AddZoneCaption("PYRAMID", 36, 26);
+                AddSectionRule(487, "DRAW & WASTE");
+                AddText("KINGS CLEAR ALONE · ALL OTHER PAIRS TOTAL 13", 320, 539, 11, "#718E86");
+                break;
+            case SolitaireVariant.Golf:
+                AddZoneCaption("SEVEN COLUMNS", 55, 56);
+                AddSectionRule(423, "DRAW & WASTE");
+                AddText("CLEAR THE COLUMNS WITH RANKS ONE HIGHER OR LOWER", 620, 480, 11, "#718E86");
+                break;
+            case SolitaireVariant.TriPeaks:
+                AddZoneCaption("THREE PEAKS", 36, 26);
+                AddSectionRule(416, "DRAW & WASTE");
+                AddText("ONE HIGHER OR LOWER · CLEAR ALL THREE PEAKS", 625, 475, 11, "#718E86");
+                break;
+        }
     }
 
     private void RenderBoardSurface()
@@ -154,56 +228,46 @@ internal sealed class SolitaireView : UserControl, IDisposable
         };
         Place(surface, 10, 8);
 
-        // Quiet corner accents give the table a finished surface without competing with the cards.
         AddGuideLine(28, 24, 120, 24, "#527267", 0.45);
         AddGuideLine(1000, 24, 1092, 24, "#527267", 0.45);
         AddGuideLine(28, 610, 120, 610, "#527267", 0.28);
         AddGuideLine(1000, 610, 1092, 610, "#527267", 0.28);
     }
 
-    private void RenderKlondike()
+    private void RefreshKlondike()
     {
-        AddZoneCaption("DRAW", 35, 134);
-        AddZoneCaption("WASTE", 135, 134);
-        AddZoneCaption("FOUNDATIONS", 600, 134);
-        AddSectionRule(154, "TABLEAU");
-
-        RenderStock(35, 20);
-        RenderPile("Waste", 135, 20, 0, false);
-        RenderFoundation("F-Clubs", Suit.Clubs, 600, 20);
-        RenderFoundation("F-Diamonds", Suit.Diamonds, 705, 20);
-        RenderFoundation("F-Hearts", Suit.Hearts, 810, 20);
-        RenderFoundation("F-Spades", Suit.Spades, 915, 20);
-        for (int i = 0; i < 7; i++) RenderPile($"T{i}", 45 + i * 145, 178, 31, true);
+        RefreshStock(35, 20);
+        RefreshPile("Waste", 135, 20, 0, false);
+        RefreshFoundation("F-Clubs", Suit.Clubs, 600, 20);
+        RefreshFoundation("F-Diamonds", Suit.Diamonds, 705, 20);
+        RefreshFoundation("F-Hearts", Suit.Hearts, 810, 20);
+        RefreshFoundation("F-Spades", Suit.Spades, 915, 20);
+        for (int i = 0; i < 7; i++) RefreshPile($"T{i}", 45 + i * 145, 178, 31, true);
     }
 
-    private void RenderFreeCell()
+    private void RefreshFreeCell()
     {
-        AddZoneCaption("FREE CELLS", 35, 134);
-        AddZoneCaption("FOUNDATIONS", 650, 134);
-        AddSectionRule(154, "TABLEAU");
-
-        for (int i = 0; i < 4; i++) RenderPile($"Cell{i}", 35 + i * 105, 20, 0, false, $"CELL\n{i + 1}");
-        RenderFoundation("F-Clubs", Suit.Clubs, 650, 20);
-        RenderFoundation("F-Diamonds", Suit.Diamonds, 755, 20);
-        RenderFoundation("F-Hearts", Suit.Hearts, 860, 20);
-        RenderFoundation("F-Spades", Suit.Spades, 965, 20);
-        for (int i = 0; i < 8; i++) RenderPile($"C{i}", 25 + i * 135, 178, 31, true);
+        for (int i = 0; i < 4; i++) RefreshPile($"Cell{i}", 35 + i * 105, 20, 0, false, $"CELL\n{i + 1}");
+        RefreshFoundation("F-Clubs", Suit.Clubs, 650, 20);
+        RefreshFoundation("F-Diamonds", Suit.Diamonds, 755, 20);
+        RefreshFoundation("F-Hearts", Suit.Hearts, 860, 20);
+        RefreshFoundation("F-Spades", Suit.Spades, 965, 20);
+        for (int i = 0; i < 8; i++) RefreshPile($"C{i}", 25 + i * 135, 178, 31, true);
     }
 
-    private void RenderSpider()
+    private void RefreshSpider()
     {
-        AddZoneCaption("DEAL", 30, 123);
-        AddSectionRule(132, "TABLEAU");
-        RenderStock(30, 20);
-        AddText($"COMPLETED RUNS  {state.CompletedRuns}/8", 160, 49, 12, "#8EC9B0");
-        AddText($"{state.SpiderSuits}-SUIT", 380, 49, 11, "#6F8981");
-        for (int i = 0; i < 10; i++) RenderPile($"T{i}", 18 + i * 108, 153, 27, true);
+        RefreshStock(30, 20);
+        if (renderedCompletedRuns != state.CompletedRuns)
+        {
+            renderedCompletedRuns = state.CompletedRuns;
+            RenderGroup("spider-status", () => AddText($"COMPLETED RUNS  {state.CompletedRuns}/8", 160, 49, 12, "#8EC9B0"));
+        }
+        for (int i = 0; i < 10; i++) RefreshPile($"T{i}", 18 + i * 108, 153, 27, true);
     }
 
-    private void RenderPyramid()
+    private void RefreshPyramid()
     {
-        AddZoneCaption("PYRAMID", 36, 26);
         for (int row = 0; row < 7; row++)
         {
             int start = row * (row + 1) / 2;
@@ -211,28 +275,22 @@ internal sealed class SolitaireView : UserControl, IDisposable
             {
                 double x = 540 + (col - row / 2d) * 92;
                 double y = 25 + row * 67;
-                RenderPile($"P{start + col}", x, y, 0, false);
+                RefreshPile($"P{start + col}", x, y, 0, false);
             }
         }
-        AddSectionRule(487, "DRAW & WASTE");
-        RenderStock(70, 505);
-        RenderPile("Waste", 175, 505, 0, false);
-        AddText("KINGS CLEAR ALONE · ALL OTHER PAIRS TOTAL 13", 320, 539, 11, "#718E86");
+        RefreshStock(70, 505);
+        RefreshPile("Waste", 175, 505, 0, false);
     }
 
-    private void RenderGolf()
+    private void RefreshGolf()
     {
-        AddZoneCaption("SEVEN COLUMNS", 55, 56);
-        for (int i = 0; i < 7; i++) RenderPile($"G{i}", 55 + i * 145, 80, 43, true);
-        AddSectionRule(423, "DRAW & WASTE");
-        RenderStock(380, 445);
-        RenderPile("Waste", 500, 445, 0, false);
-        AddText("CLEAR THE COLUMNS WITH RANKS ONE HIGHER OR LOWER", 620, 480, 11, "#718E86");
+        for (int i = 0; i < 7; i++) RefreshPile($"G{i}", 55 + i * 145, 80, 43, true);
+        RefreshStock(380, 445);
+        RefreshPile("Waste", 500, 445, 0, false);
     }
 
-    private void RenderTriPeaks()
+    private void RefreshTriPeaks()
     {
-        AddZoneCaption("THREE PEAKS", 36, 26);
         Point[] p =
         [
             new(165,20), new(495,20), new(825,20),
@@ -240,11 +298,89 @@ internal sealed class SolitaireView : UserControl, IDisposable
             new(55,150), new(165,150), new(275,150), new(385,150), new(495,150), new(605,150), new(715,150), new(825,150), new(935,150),
             new(0,215), new(110,215), new(220,215), new(330,215), new(440,215), new(550,215), new(660,215), new(770,215), new(880,215), new(990,215),
         ];
-        for (int i = 0; i < 28; i++) RenderPile($"P{i}", p[i].X, p[i].Y, 0, false);
-        AddSectionRule(416, "DRAW & WASTE");
-        RenderStock(390, 440);
-        RenderPile("Waste", 510, 440, 0, false);
-        AddText("ONE HIGHER OR LOWER · CLEAR ALL THREE PEAKS", 625, 475, 11, "#718E86");
+        for (int i = 0; i < 28; i++) RefreshPile($"P{i}", p[i].X, p[i].Y, 0, false);
+        RefreshStock(390, 440);
+        RefreshPile("Waste", 510, 440, 0, false);
+    }
+
+    private void RefreshStock(double x, double y)
+    {
+        if (!NeedsPileRefresh("Stock")) return;
+        PileVisualRefreshCount++;
+        RenderGroup("pile:Stock", () => RenderStock(x, y));
+    }
+
+    private void RefreshFoundation(string id, Suit suit, double x, double y)
+    {
+        if (!NeedsPileRefresh(id)) return;
+        PileVisualRefreshCount++;
+        RenderGroup("pile:" + id, () => RenderFoundation(id, suit, x, y));
+    }
+
+    private void RefreshPile(string id, double x, double y, double step, bool stack, string? emptyLabel = null)
+    {
+        if (!NeedsPileRefresh(id)) return;
+        PileVisualRefreshCount++;
+        RenderGroup("pile:" + id, () => RenderPile(id, x, y, step, stack, emptyLabel));
+    }
+
+    private bool NeedsPileRefresh(string id)
+    {
+        IReadOnlyList<SolitaireCardState> pile = SolitaireGame.Pile(state, id);
+        int visibleSelectedIndex = selectedPile == id && selectedIndex >= 0 && selectedIndex < pile.Count ? selectedIndex : -1;
+        bool destinationMode = pile.Count == 0 && selectedPile is not null && IsPotentialDestination(id);
+
+        if (pileVisualSnapshots.TryGetValue(id, out PileVisualSnapshot? previous) &&
+            previous.SelectedIndex == visibleSelectedIndex &&
+            previous.DestinationMode == destinationMode &&
+            string.Equals(previous.CardSetId, renderedCardSetId, StringComparison.Ordinal) &&
+            previous.Cards.Length == pile.Count)
+        {
+            bool same = true;
+            for (int i = 0; i < pile.Count; i++)
+            {
+                SolitaireCardState item = pile[i];
+                CardVisualSnapshot old = previous.Cards[i];
+                if (old.Rank != item.Card.Rank || old.Suit != item.Card.Suit || old.FaceUp != item.FaceUp)
+                {
+                    same = false;
+                    break;
+                }
+            }
+            if (same) return false;
+        }
+
+        var cards = new CardVisualSnapshot[pile.Count];
+        for (int i = 0; i < pile.Count; i++)
+        {
+            SolitaireCardState item = pile[i];
+            cards[i] = new CardVisualSnapshot(item.Card.Rank, item.Card.Suit, item.FaceUp);
+        }
+        pileVisualSnapshots[id] = new PileVisualSnapshot(cards, renderedCardSetId, visibleSelectedIndex, destinationMode);
+        return true;
+    }
+
+    private void RenderGroup(string key, Action render)
+    {
+        if (!renderGroups.TryGetValue(key, out Canvas? host))
+        {
+            host = new Canvas { Width = board.Width, Height = board.Height, Background = null };
+            Panel.SetZIndex(host, nextRenderGroupZ++);
+            renderGroups.Add(key, host);
+            board.Children.Add(host);
+        }
+
+        host.Children.Clear();
+        Canvas? previousTarget = renderTarget;
+        renderTarget = host;
+        try
+        {
+            render();
+        }
+        finally
+        {
+            renderTarget = previousTarget;
+        }
     }
 
     private void RenderStock(double x, double y)
@@ -255,7 +391,7 @@ internal sealed class SolitaireView : UserControl, IDisposable
             AddPlaceholder("Stock", x, y, "STOCK\nEMPTY", () => { if (SolitaireGame.TryDraw(state)) Changed(); });
             return;
         }
-        Border card = PlayingCardPresentation.Create(stock[^1].Card, faceDown: true, compact: false, cardSetId());
+        Border card = PlayingCardPresentation.Create(stock[^1].Card, faceDown: true, compact: false, renderedCardSetId);
         card.Cursor = Cursors.Hand;
         card.ToolTip = state.Variant == SolitaireVariant.Spider ? $"Deal row · {stock.Count} cards remain" : $"Draw · {stock.Count} cards remain";
         card.MouseLeftButtonUp += (_, _) => { if (SolitaireGame.TryDraw(state)) Changed(); };
@@ -272,7 +408,7 @@ internal sealed class SolitaireView : UserControl, IDisposable
         }
 
         bool destination = selectedPile is not null;
-        Border ghost = PlayingCardPresentation.Create(new Card(Rank.Ace, suit), faceDown: false, compact: false, cardSetId());
+        Border ghost = PlayingCardPresentation.Create(new Card(Rank.Ace, suit), faceDown: false, compact: false, renderedCardSetId);
         ghost.Opacity = destination ? 0.34 : 0.18;
         ghost.Cursor = Cursors.Hand;
         ghost.ToolTip = $"{suit} foundation · Ace to King";
@@ -305,7 +441,7 @@ internal sealed class SolitaireView : UserControl, IDisposable
         for (int i = 0; i < pile.Count; i++)
         {
             SolitaireCardState item = pile[i];
-            Border card = PlayingCardPresentation.Create(item.Card, !item.FaceUp, compact: false, cardSetId());
+            Border card = PlayingCardPresentation.Create(item.Card, !item.FaceUp, compact: false, renderedCardSetId);
             int index = i;
             card.Cursor = Cursors.Hand;
             card.MouseLeftButtonDown += (_, e) => CardClicked(id, index, e.ClickCount);
@@ -347,8 +483,6 @@ internal sealed class SolitaireView : UserControl, IDisposable
     {
         if (state.Won) return;
 
-        // Clicking the exact same selection again is an explicit cancel. This also gives the
-        // player a predictable way out of a selection without having to find an invalid target.
         if (selectedPile == pileId && selectedIndex == index)
         {
             ClearSelection();
@@ -451,6 +585,13 @@ internal sealed class SolitaireView : UserControl, IDisposable
         selectionInfo.Text = $"SELECTED  ·  {CardLabel(selected.Card)}{run}  ·  click a destination or click the selection again to cancel";
     }
 
+    private void RefreshWinBanner()
+    {
+        if (!state.Won || renderedWinBanner) return;
+        renderedWinBanner = true;
+        RenderGroup("win-banner", RenderWinBanner);
+    }
+
     private void RenderWinBanner()
     {
         var banner = new Border
@@ -545,7 +686,7 @@ internal sealed class SolitaireView : UserControl, IDisposable
             Opacity = opacity,
             IsHitTestVisible = false,
         };
-        board.Children.Add(line);
+        AddBoardChild(line);
     }
 
     private void AddText(string text, double x, double y, double size, string color)
@@ -558,8 +699,10 @@ internal sealed class SolitaireView : UserControl, IDisposable
     {
         Canvas.SetLeft(element, x);
         Canvas.SetTop(element, y);
-        board.Children.Add(element);
+        AddBoardChild(element);
     }
+
+    private void AddBoardChild(UIElement element) => (renderTarget ?? board).Children.Add(element);
 
     private static string CardLabel(Card card) => $"{RankLabel(card.Rank)}{SuitLabel(card.Suit)}";
 

@@ -72,6 +72,10 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        // MainWindow performs final routine saves while closing. They are deliberately debounced
+        // now, so force the latest preference/profile/history snapshots to disk before process exit.
+        PlayerStateStore.FlushPending();
+        PlayerProfileStore.FlushPending();
         CasinoAudio.Shutdown();
         base.OnExit(e);
     }

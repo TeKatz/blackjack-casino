@@ -42,15 +42,24 @@ internal static class SolitaireSmoke
         SolitaireView view = Find<SolitaireView>(window).Single();
         Require(view.Snapshot.Variant == SolitaireVariant.Klondike,
             "The first Midnight Solitaire New Deal action no longer opens Klondike.");
+        Require(view.BoardInitializationCount == 1,
+            $"Klondike board should initialize once; observed {view.BoardInitializationCount} initializations.");
 
         Border[] cards = Find<Border>(view)
             .Where(IsFullSizePlayingCard)
             .ToArray();
         Require(cards.Length >= 20, $"Klondike rendered too few playing cards; found {cards.Length}.");
 
+        int refreshesBeforeSelection = view.PileVisualRefreshCount;
         MouseClick(cards[^1]);
         await Task.Delay(40);
         view.UpdateLayout();
+
+        int selectionRefreshes = view.PileVisualRefreshCount - refreshesBeforeSelection;
+        Require(view.BoardInitializationCount == 1,
+            "Selecting a Solitaire card rebuilt the static board instead of preserving it.");
+        Require(selectionRefreshes is > 0 and <= 6,
+            $"Selecting one Klondike card refreshed {selectionRefreshes} pile visuals; expected only the selection and destination groups.");
 
         Color gold = (Color)ColorConverter.ConvertFromString("#F2C96D");
         Require(Find<Border>(view).Any(border =>
@@ -64,12 +73,18 @@ internal static class SolitaireSmoke
 
         Capture(window, Path.Combine(output, "solitaire-selected.png"));
 
+        int refreshesBeforeCancel = view.PileVisualRefreshCount;
         Border selectedAgain = Find<Border>(view).Where(IsFullSizePlayingCard).Last();
         MouseClick(selectedAgain);
         await Task.Delay(30);
         view.UpdateLayout();
         Require(!Find<TextBlock>(view).Any(text => text.IsVisible && text.Text.StartsWith("SELECTED", StringComparison.Ordinal)),
             "Clicking the selected Solitaire card again did not clear the selection.");
+        Require(view.BoardInitializationCount == 1,
+            "Clearing a Solitaire selection rebuilt the static board instead of preserving it.");
+        int cancelRefreshes = view.PileVisualRefreshCount - refreshesBeforeCancel;
+        Require(cancelRefreshes is > 0 and <= 6,
+            $"Clearing one Klondike selection refreshed {cancelRefreshes} pile visuals; expected only the selection and destination groups.");
 
         Click(Find<Button>(window).Single(button => button.IsVisible && Equals(button.Content, "← SOLITAIRE")));
         await Task.Delay(50);
@@ -84,9 +99,8 @@ internal static class SolitaireSmoke
         Require(Find<Button>(window).Any(button => button.Name == "Mode_chill_lounge" && button.IsVisible),
             "Casino lobby was not restored after the Solitaire smoke.");
 
-
         File.WriteAllText(Path.Combine(output, "solitaire-result.txt"),
-            "PASS: shared header Games navigation; Klondike starts from Midnight Solitaire; skin-independent gold selection halo and explicit selection text render and clear correctly.");
+            "PASS: shared header Games navigation; Klondike starts from Midnight Solitaire; static board initializes once; selection/cancel refresh only affected pile groups; gold selection halo and explicit selection text render and clear correctly.");
     }
 
     private static bool IsFullSizePlayingCard(Border border) =>
