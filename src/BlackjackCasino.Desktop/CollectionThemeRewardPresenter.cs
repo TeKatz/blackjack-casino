@@ -22,6 +22,9 @@ internal sealed class CollectionThemeRewardPresenter : IDisposable
     private readonly bool animationsEnabled;
     private string activeThemeId = CollectionCatalog.Themes[0].Id;
     private Border? rewardSurface;
+    private Grid? attachedGrid;
+    private RowDefinition? attachedSpacerRow;
+    private RowDefinition? attachedRewardRow;
     private bool renderScheduled;
     private bool disposed;
 
@@ -87,7 +90,7 @@ internal sealed class CollectionThemeRewardPresenter : IDisposable
             ?? CollectionCatalog.Themes[0];
         activeThemeId = theme.Id;
 
-        if (rewardSurface?.Parent is Panel oldParent) oldParent.Children.Remove(rewardSurface);
+        DetachRewardSurface();
 
         CollectionState state = controller.Profile.Collection;
         int owned = theme.Cards.Count(card => state.OwnedCardIds.Contains(card.Id));
@@ -96,11 +99,32 @@ internal sealed class CollectionThemeRewardPresenter : IDisposable
         CollectionThemeCompletionReward reward = CollectionService.ThemeCompletionReward(theme);
         rewardSurface = BuildRewardSurface(theme, reward, owned, complete, claimed);
 
-        cards.RowDefinitions.Add(new RowDefinition { Height = new GridLength(18) });
+        attachedGrid = cards;
+        attachedSpacerRow = new RowDefinition { Height = new GridLength(18) };
+        attachedRewardRow = new RowDefinition { Height = GridLength.Auto };
+        cards.RowDefinitions.Add(attachedSpacerRow);
         int rewardRow = cards.RowDefinitions.Count;
-        cards.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        cards.RowDefinitions.Add(attachedRewardRow);
         Grid.SetRow(rewardSurface, rewardRow);
         cards.Children.Add(rewardSurface);
+    }
+
+    private void DetachRewardSurface()
+    {
+        if (rewardSurface?.Parent is Panel oldParent)
+            oldParent.Children.Remove(rewardSurface);
+
+        if (attachedGrid is not null)
+        {
+            if (attachedRewardRow is not null)
+                attachedGrid.RowDefinitions.Remove(attachedRewardRow);
+            if (attachedSpacerRow is not null)
+                attachedGrid.RowDefinitions.Remove(attachedSpacerRow);
+        }
+
+        attachedGrid = null;
+        attachedSpacerRow = null;
+        attachedRewardRow = null;
     }
 
     private Border BuildRewardSurface(
@@ -146,7 +170,7 @@ internal sealed class CollectionThemeRewardPresenter : IDisposable
         var layout = new Grid();
         layout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(74) });
         layout.ColumnDefinitions.Add(new ColumnDefinition());
-        layout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(340) });
+        layout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(366) });
         layout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(178) });
 
         layout.Children.Add(new Border
@@ -207,6 +231,7 @@ internal sealed class CollectionThemeRewardPresenter : IDisposable
             HorizontalAlignment = HorizontalAlignment.Right,
         };
         rewards.Children.Add(RewardBadge("◆", $"{reward.Coins:N0}", "COSMETIC COINS", Color.FromRgb(84, 225, 183)));
+        rewards.Children.Add(RewardBadge("$", $"{reward.Bankroll:N0}", "BANKROLL", Color.FromRgb(240, 193, 91)));
         rewards.Children.Add(RewardBadge("✦", $"{reward.PackCount}× {reward.PackRarity}", "CARD PACK", CollectionArtwork.RarityColor(reward.PackRarity)));
         Grid.SetColumn(rewards, 2);
         layout.Children.Add(rewards);
@@ -279,10 +304,10 @@ internal sealed class CollectionThemeRewardPresenter : IDisposable
         });
         return new Border
         {
-            Width = 142,
+            Width = 114,
             Height = 70,
             Margin = new Thickness(4, 0, 4, 0),
-            Padding = new Thickness(7, 5, 7, 5),
+            Padding = new Thickness(6, 5, 6, 5),
             Background = new SolidColorBrush(Color.FromRgb(8, 27, 22)),
             BorderBrush = new SolidColorBrush(Color.FromArgb(150, accent.R, accent.G, accent.B)),
             BorderThickness = new Thickness(1),
@@ -299,6 +324,12 @@ internal sealed class CollectionThemeRewardPresenter : IDisposable
         {
             ScheduleRender();
             return;
+        }
+
+        if (result.Bankroll > 0m)
+        {
+            MainWindow? mainWindow = Window.GetWindow(root)?.Owner as MainWindow ?? Application.Current.MainWindow as MainWindow;
+            mainWindow?.CreditAlbumCompletionReward(result.Bankroll);
         }
 
         RefreshAlbumTheme(theme.Id);
@@ -351,6 +382,7 @@ internal sealed class CollectionThemeRewardPresenter : IDisposable
     {
         if (disposed) return;
         disposed = true;
+        DetachRewardSurface();
         root.RemoveHandler(Button.ClickEvent, new RoutedEventHandler(AnyButton_Click));
         root.LayoutUpdated -= Root_LayoutUpdated;
         page.Closed -= Page_Closed;
