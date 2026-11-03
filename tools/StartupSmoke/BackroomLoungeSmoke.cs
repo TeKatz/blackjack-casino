@@ -14,7 +14,7 @@ internal static class BackroomLoungeSmoke
         window.UpdateLayout();
 
         Button tile = Find<Button>(window).Single(button =>
-            button.Name == "LoungeGame_tales-backroom" && button.IsVisible);
+            button.Name == "LoungeGame_tales_backroom" && button.IsVisible);
         Click(tile);
         await Task.Delay(120);
         window.UpdateLayout();
@@ -70,7 +70,7 @@ internal static class BackroomLoungeSmoke
         await Task.Delay(90);
         window.UpdateLayout();
         Require(Find<Button>(window).Any(button =>
-            button.Name == "LoungeGame_tales-backroom" && button.IsVisible),
+            button.Name == "LoungeGame_tales_backroom" && button.IsVisible),
             "The Tales hub failed to return to the Chill Lounge games screen.");
 
         Click(Find<Button>(window).Single(button =>
