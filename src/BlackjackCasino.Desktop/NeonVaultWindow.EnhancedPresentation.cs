@@ -19,7 +19,9 @@ internal partial class NeonVaultWindow
         NeonVaultSymbol.Key,
     ];
 
-    private readonly DispatcherTimer enhancedFeedbackTimer = new()
+    // Only inspect outcome/feedback transitions while the reels are active.
+    // Polling every 50 ms for the entire idle session costs CPU and WPF work.
+    private readonly DispatcherTimer enhancedFeedbackTimer = new(DispatcherPriority.Background)
     {
         Interval = TimeSpan.FromMilliseconds(50),
     };
@@ -113,8 +115,22 @@ internal partial class NeonVaultWindow
         ResetEnhancedFeedback(clearPaths: true);
 
         enhancedFeedbackTimer.Tick += EnhancedFeedbackTimer_Tick;
-        enhancedFeedbackTimer.Start();
         Closed += (_, _) => enhancedFeedbackTimer.Stop();
+    }
+
+    private void BeginEnhancedFeedbackUpdates()
+    {
+        if (!enhancedPresentationInitialized) return;
+        EnhancedFeedbackTimer_Tick(this, EventArgs.Empty);
+        enhancedFeedbackTimer.Start();
+    }
+
+    private void CompleteEnhancedFeedbackUpdates()
+    {
+        if (!enhancedPresentationInitialized) return;
+        enhancedFeedbackTimer.Stop();
+        // One final event on the exact completed result; do not poll while idle.
+        EnhancedFeedbackTimer_Tick(this, EventArgs.Empty);
     }
 
     private void EnhancedFeedbackTimer_Tick(object? sender, EventArgs e)
@@ -204,8 +220,9 @@ internal partial class NeonVaultWindow
         }
 
         enhancedLowQualityScaling = lowQuality;
-        // Native DrawingImage vectors are resolution-independent; keep crisp edges even during spins.
-        BitmapScalingMode mode = BitmapScalingMode.HighQuality;
+        // The new symbols are frozen bitmap textures. Bilinear downsampling
+        // during rapid swaps is inexpensive; use high quality after the spin.
+        BitmapScalingMode mode = lowQuality ? BitmapScalingMode.LowQuality : BitmapScalingMode.HighQuality;
         foreach (Image? image in enhancedArtwork)
         {
             if (image is not null)
@@ -734,12 +751,9 @@ internal partial class NeonVaultWindow
         frame.Background = Ink(strong ? "#E3161A2A" : "#CA111827");
         frame.BorderBrush = Palettes[symbol].BorderBrush;
         frame.BorderThickness = new Thickness(strong ? 2.7 : 1.9);
-        frame.Effect = strong ? new System.Windows.Media.Effects.DropShadowEffect
-        {
-            Color = ((SolidColorBrush)Palettes[symbol].BorderBrush).Color,
-            BlurRadius = 15, ShadowDepth = 0, Opacity = .62,
-            RenderingBias = System.Windows.Media.Effects.RenderingBias.Performance,
-        } : null;
+        // Border color and scale already provide the neon focus cue.
+        // Avoid creating a separate GPU/software blur surface per candidate.
+        frame.Effect = null;
         SetStaticScale(frame, strong ? 1.035 : 1.015);
     }
 
@@ -751,12 +765,8 @@ internal partial class NeonVaultWindow
         frame.Background = Ink("#F0182036");
         frame.BorderBrush = Palettes[symbol].BorderBrush;
         frame.BorderThickness = new Thickness(2.8);
-        frame.Effect = new System.Windows.Media.Effects.DropShadowEffect
-        {
-            Color = ((SolidColorBrush)Palettes[symbol].BorderBrush).Color,
-            BlurRadius = 18, ShadowDepth = 0, Opacity = .75,
-            RenderingBias = System.Windows.Media.Effects.RenderingBias.Performance,
-        };
+        // Preserve animated glow-colored frames without expensive per-tile shadows.
+        frame.Effect = null;
         frame.RenderTransformOrigin = new Point(0.5, 0.5);
 
         var scale = new ScaleTransform(1.025, 1.025);

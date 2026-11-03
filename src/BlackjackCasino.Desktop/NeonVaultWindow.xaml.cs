@@ -20,7 +20,12 @@ internal partial class NeonVaultWindow : Window
     private readonly Func<NeonVaultSpinResult, ProgressionAward> commitSpin;
     private readonly SlotAudio audio = new();
     private readonly BackgroundMusic music = new(Soundtrack.Reels);
-    private readonly DispatcherTimer previewTimer = new() { Interval = TimeSpan.FromMilliseconds(33) };
+    // Changes to 20 live symbol cards are UI-thread work. Keep smooth GPU reel
+    // translation, but update the preview tiles at a modest cadence.
+    private readonly DispatcherTimer previewTimer = new(DispatcherPriority.Background)
+    {
+        Interval = TimeSpan.FromMilliseconds(70),
+    };
     private readonly Random visualRandom = new(0x4E56_2026);
     private readonly Border[,] cells = new Border[NeonVaultRules.Rows, NeonVaultRules.Reels];
     private readonly SymbolPresenter[,] presenters = new SymbolPresenter[NeonVaultRules.Rows, NeonVaultRules.Reels];
@@ -284,6 +289,8 @@ internal partial class NeonVaultWindow : Window
         }
 
         activeNearMiss = result.NearMiss;
+        BeginEnhancedFeedbackUpdates();
+        StartActiveVaultScan();
         ProgressionAward award = commitSpin(result);
         BalanceText.Text = Money(result.BankrollBefore - result.Stake);
         SystemStatusText.Text = result.IsFreeSpin ? "VAULT BREAK ACTIVE" : "REELS ENERGIZED";
@@ -495,6 +502,8 @@ internal partial class NeonVaultWindow : Window
     private async Task FinishSpin(NeonVaultSpinResult result, ProgressionAward award)
     {
         spinning = false;
+        StopActiveVaultScan();
+        CompleteEnhancedFeedbackUpdates();
         activeNearMiss = NeonVaultNearMiss.None;
         LastWinText.Text = Money(result.Payout);
         LastFeatureText.Text = FeatureSummary(result);
@@ -667,6 +676,13 @@ internal partial class NeonVaultWindow : Window
                 RepeatBehavior = RepeatBehavior.Forever,
             });
 
+        // Idle mode uses only a cached, subtle ambient glow. Sweeping full-width
+        // layers continuously dirtied a 1600x850 surface even without user input.
+    }
+
+    private void StartActiveVaultScan()
+    {
+        if (!AnimationsEnabled) return;
         ScanlineTransform.BeginAnimation(
             TranslateTransform.YProperty,
             new DoubleAnimation(0, 775, TimeSpan.FromSeconds(9.4))
@@ -681,6 +697,14 @@ internal partial class NeonVaultWindow : Window
                 RepeatBehavior = RepeatBehavior.Forever,
                 EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut },
             });
+    }
+
+    private void StopActiveVaultScan()
+    {
+        ScanlineTransform.BeginAnimation(TranslateTransform.YProperty, null);
+        ScanlineTransform.Y = 0;
+        ReelScanBeamTransform.BeginAnimation(TranslateTransform.YProperty, null);
+        ReelScanBeamTransform.Y = 0;
     }
 
     private void RefreshUi()
@@ -760,10 +784,7 @@ internal partial class NeonVaultWindow : Window
         {
             AmbientGlow.BeginAnimation(OpacityProperty, null);
             AmbientGlow.Opacity = 0.20;
-            ScanlineTransform.BeginAnimation(TranslateTransform.YProperty, null);
-            ScanlineTransform.Y = 0;
-            ReelScanBeamTransform.BeginAnimation(TranslateTransform.YProperty, null);
-            ReelScanBeamTransform.Y = 0;
+            StopActiveVaultScan();
         }
     }
 
@@ -798,8 +819,8 @@ internal partial class NeonVaultWindow : Window
         previewTimer.Stop();
         previewTimer.Tick -= PreviewTimer_Tick;
         AmbientGlow.BeginAnimation(OpacityProperty, null);
-        ScanlineTransform.BeginAnimation(TranslateTransform.YProperty, null);
-        ReelScanBeamTransform.BeginAnimation(TranslateTransform.YProperty, null);
+        StopActiveVaultScan();
+        enhancedFeedbackTimer.Stop();
 
         for (int reel = 0; reel < reelFrames.Length; reel++)
         {
