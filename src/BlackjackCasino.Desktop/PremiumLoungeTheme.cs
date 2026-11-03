@@ -37,7 +37,10 @@ internal static class PremiumLoungeTheme
         string description,
         UIElement leftExtra,
         UIElement rightContent,
-        string footer)
+        string footer,
+        UIElement? leftSecondary = null,
+        bool compactLeft = false,
+        bool rightScrollable = true)
     {
         var stage = new Grid
         {
@@ -148,27 +151,33 @@ internal static class PremiumLoungeTheme
         });
         interior.Children.Add(scene);
 
-        var copy = new StackPanel { Margin = new Thickness(52, 39, 39, 28) };
-        copy.Children.Add(Label(gameLabel, 17, Gold, true));
+        var copy = new StackPanel
+        {
+            Margin = compactLeft ? new Thickness(40, 20, 36, 12) : new Thickness(52, 34, 39, 24),
+        };
+        var gameTitle = Label(gameLabel, 17, Gold, true, TextAlignment.Center);
+        gameTitle.HorizontalAlignment = HorizontalAlignment.Stretch;
+        gameTitle.Margin = new Thickness(0, 0, 0, compactLeft ? 5 : 12);
+        copy.Children.Add(gameTitle);
         copy.Children.Add(new TextBlock
         {
             Text = heading,
-            FontSize = 43,
+            FontSize = compactLeft ? 33 : 43,
             FontFamily = new FontFamily("Georgia"),
             Foreground = Ink(Cream),
             TextWrapping = TextWrapping.Wrap,
-            LineHeight = 51,
+            LineHeight = compactLeft ? 39 : 51,
             MaxWidth = 565,
-            Margin = new Thickness(0, 14, 0, 20),
+            Margin = new Thickness(0, compactLeft ? 4 : 10, 0, compactLeft ? 9 : 17),
         });
         copy.Children.Add(new TextBlock
         {
             Text = description,
-            FontSize = 16,
+            FontSize = compactLeft ? 13.5 : 16,
             Foreground = Ink("#D8E6DE"),
             TextWrapping = TextWrapping.Wrap,
             MaxWidth = 545,
-            LineHeight = 25,
+            LineHeight = compactLeft ? 20 : 25,
         });
         if (leftExtra is not null)
         {
@@ -176,11 +185,20 @@ internal static class PremiumLoungeTheme
             {
                 BorderBrush = Ink("#79664B"),
                 BorderThickness = new Thickness(0, 1, 0, 0),
-                Margin = new Thickness(0, 29, 0, 0),
-                Padding = new Thickness(0, 19, 0, 0),
+                Margin = new Thickness(0, compactLeft ? 13 : 23, 0, 0),
+                Padding = new Thickness(0, compactLeft ? 11 : 16, 0, 0),
                 Child = leftExtra,
             };
             copy.Children.Add(extra);
+        }
+        if (leftSecondary is not null)
+        {
+            var placement = new Border
+            {
+                Margin = new Thickness(0, compactLeft ? 13 : 22, 0, 0),
+                Child = leftSecondary,
+            };
+            copy.Children.Add(placement);
         }
         scene.Children.Add(copy);
 
@@ -188,16 +206,23 @@ internal static class PremiumLoungeTheme
         Grid.SetColumn(right, 1);
         interior.Children.Add(right);
 
-        var scroll = new ScrollViewer
+        if (rightScrollable)
         {
-            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
-            PanningMode = PanningMode.VerticalOnly,
-            CanContentScroll = false,
-            Focusable = false,
-            Content = rightContent,
-        };
-        right.Children.Add(scroll);
+            var scroll = new ScrollViewer
+            {
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                PanningMode = PanningMode.VerticalOnly,
+                CanContentScroll = false,
+                Focusable = false,
+                Content = rightContent,
+            };
+            right.Children.Add(scroll);
+        }
+        else
+        {
+            right.Children.Add(rightContent);
+        }
 
         TextBlock footerText = Label(footer, 12, "#AFBBB5", false, TextAlignment.Center);
         footerText.VerticalAlignment = VerticalAlignment.Center;
@@ -239,14 +264,52 @@ internal static class PremiumLoungeTheme
 
     internal static UIElement Stats(params string[] items)
     {
-        var wrap = new StackPanel();
+        var table = new StackPanel();
+        var header = Label("S T A T I S T I C S", 12, Gold, true, TextAlignment.Center);
+        header.Margin = new Thickness(0, 2, 0, 8);
+        table.Children.Add(header);
         foreach (string item in items)
         {
-            var text = Label(item, 15, Gold, true);
-            text.Margin = new Thickness(0, 0, 0, 13);
-            wrap.Children.Add(text);
+            int split = item.IndexOf("   ", StringComparison.Ordinal);
+            string name = split > 0 ? item[..split].Trim() : item;
+            string value = split > 0 ? item[(split + 3)..].Trim() : "";
+            var row = new Grid
+            {
+                MinHeight = 42,
+                Margin = new Thickness(0, 0, 0, 6),
+                Background = Ink("#D10A2527"),
+            };
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(0.42, GridUnitType.Star) });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(0.58, GridUnitType.Star) });
+            var frame = new Border
+            {
+                BorderBrush = Ink("#6F6F58"),
+                BorderThickness = new Thickness(1),
+                Background = Ink("#A80A2529"),
+                CornerRadius = new CornerRadius(8),
+                Child = row,
+            };
+            var caption = Label(name, 12, "#D8C49A", true);
+            caption.Margin = new Thickness(13, 0, 3, 0);
+            caption.VerticalAlignment = VerticalAlignment.Center;
+            row.Children.Add(caption);
+
+            var data = Label(value, 13, Cream, true, TextAlignment.Right);
+            data.Margin = new Thickness(0, 0, 12, 0);
+            data.VerticalAlignment = VerticalAlignment.Center;
+            Grid.SetColumn(data, 1);
+            row.Children.Add(data);
+            table.Children.Add(frame);
         }
-        return wrap;
+        return new Border
+        {
+            BorderBrush = Ink("#97794C"),
+            BorderThickness = new Thickness(1),
+            Background = Ink("#A9071A1E"),
+            CornerRadius = new CornerRadius(12),
+            Padding = new Thickness(12, 10, 12, 7),
+            Child = table,
+        };
     }
 
     internal static Border Panel(UIElement content, double padding = 17)
