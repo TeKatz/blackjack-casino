@@ -63,12 +63,12 @@ public sealed class CardSetAndNineLivesProgressionTests
     }
 
     [Fact]
-    public void Shop_ContainsFourRegularCardSetsAndOnePrestigeCollection()
+    public void Shop_ContainsTenRegularCardSetsAndOnePrestigeCollection()
     {
         CosmeticDefinition[] cardSets = CosmeticCatalog.ShopItems.Where(item => item.Kind == CosmeticKind.CardSet).ToArray();
 
-        Assert.Equal(5, cardSets.Length);
-        Assert.Equal(4, cardSets.Count(item => item.RequiredPrestige == 0));
+        Assert.Equal(11, cardSets.Length);
+        Assert.Equal(10, cardSets.Count(item => item.RequiredPrestige == 0));
         CosmeticDefinition premium = Assert.Single(cardSets, item => item.RequiredPrestige == 1);
         Assert.Equal("cardset-midnight-sovereign", premium.Id);
     }

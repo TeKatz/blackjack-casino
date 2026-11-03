@@ -746,65 +746,8 @@ public partial class MainWindow : Window
 
     private Border CreateCard(Card card, bool faceDown = false, bool compact = false)
     {
-        double width = compact ? 48 : 76;
-        double height = compact ? 68 : 108;
-        double rankSize = compact ? 13 : 20;
-        double suitSize = compact ? 22 : 34;
-
-        var border = new Border
-        {
-            Width = width,
-            Height = height,
-            Margin = new Thickness(compact ? 2 : 4),
-            CornerRadius = new CornerRadius(compact ? 5 : 7),
-            BorderThickness = new Thickness(1),
-        };
-
-        if (faceDown)
-        {
-            border.Background = UiBrush("ActionBackgroundBrush");
-            border.BorderBrush = UiBrush("AccentBrush");
-            border.Child = new TextBlock
-            {
-                Text = "♠",
-                FontSize = compact ? 24 : 36,
-                FontWeight = FontWeights.Bold,
-                Foreground = UiBrush("AccentBrush"),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center,
-            };
-            ApplyEquippedCardSet(border);
-            AnimateEntrance(border, compact);
-            return border;
-        }
-
-        bool red = card.Suit is Suit.Hearts or Suit.Diamonds;
-        Brush ink = red ? Brush("#B82931") : Brush("#171A18");
-        border.Background = Brushes.WhiteSmoke;
-        border.BorderBrush = Brush("#D8D8D2");
-
-        var grid = new Grid { Margin = new Thickness(compact ? 5 : 8) };
-        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        grid.RowDefinitions.Add(new RowDefinition());
-        grid.Children.Add(new TextBlock
-        {
-            Text = RankText(card.Rank),
-            FontSize = rankSize,
-            FontWeight = FontWeights.Bold,
-            Foreground = ink,
-        });
-        var suit = new TextBlock
-        {
-            Text = SuitText(card.Suit),
-            FontSize = suitSize,
-            Foreground = ink,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        Grid.SetRow(suit, 1);
-        grid.Children.Add(suit);
-        border.Child = grid;
-        ApplyEquippedCardSet(border);
+        Border border = PlayingCardPresentation.Create(card, faceDown, compact,
+            progressionController?.Profile.EquippedCardSetId);
         AnimateEntrance(border, compact);
         return border;
     }

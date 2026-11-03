@@ -83,6 +83,7 @@ internal static class Program
     private static async Task Check(ManorWindow w,ManorController c,ManorPersistence persistence)
     {
         await PortraitSmoke.Check(output);
+        ShopCosmeticsSmoke.Check(output);
         await AudioSmoke.Check(output);
         await Task.Delay(100); Capture(w,"01-cabinet");
         CheckDropdown(w,"SpeedBox"); CheckDropdown(w,"AutoBox");
