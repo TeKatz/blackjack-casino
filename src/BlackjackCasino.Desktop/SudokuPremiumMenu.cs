@@ -147,7 +147,10 @@ internal static class SudokuPremiumMenu
             Margin = new Thickness(52, 39, 40, 26),
             VerticalAlignment = VerticalAlignment.Top,
         };
-        leftCopy.Children.Add(Label("S U D O K U", 17, Gold, true));
+        var sudokuTitle = Label("S U D O K U", 17, Gold, true, TextAlignment.Center);
+        sudokuTitle.HorizontalAlignment = HorizontalAlignment.Stretch;
+        sudokuTitle.Margin = new Thickness(0, 0, 0, 9);
+        leftCopy.Children.Add(sudokuTitle);
         leftCopy.Children.Add(new TextBlock
         {
             Text = "One grid. No clock to beat.",
