@@ -11,8 +11,9 @@ namespace BlackjackCasino.Desktop;
 
 internal partial class NineLivesWindow : Window
 {
-    private static readonly double[] ReelX = [366, 639, 912];
-    private static readonly double[] ReelY = [185, 399, 609];
+    private static readonly double[] ReelX = [553, 775, 997];
+    private static readonly double[] ReelY = [166, 386, 606];
+    private const double ReelSize = 210;
     private static readonly Brush Gold = FrozenBrush("#FFD56A");
     private static readonly Brush Violet = FrozenBrush("#B34DFF");
     private static readonly Brush DimGold = FrozenBrush("#9D6B2C");
@@ -93,7 +94,8 @@ internal partial class NineLivesWindow : Window
                 symbolScale[index] = scale;
                 var image = new Image
                 {
-                    Stretch = Stretch.UniformToFill,
+                    Stretch = Stretch.Uniform,
+                    Margin = new Thickness(5),
                     RenderTransform = scale,
                     RenderTransformOrigin = new Point(0.5, 0.5),
                     SnapsToDevicePixels = true,
@@ -103,12 +105,12 @@ internal partial class NineLivesWindow : Window
 
                 var frame = new Border
                 {
-                    Width = 257,
-                    Height = 199,
-                    CornerRadius = new CornerRadius(13),
-                    BorderThickness = new Thickness(2),
+                    Width = ReelSize,
+                    Height = ReelSize,
+                    CornerRadius = new CornerRadius(17),
+                    BorderThickness = new Thickness(2.5),
                     BorderBrush = DimGold,
-                    Background = new SolidColorBrush(Color.FromArgb(245, 8, 6, 15)),
+                    Background = new LinearGradientBrush(Color.FromRgb(31, 12, 37), Color.FromRgb(5, 7, 19), 90),
                     ClipToBounds = true,
                     Child = image,
                     SnapsToDevicePixels = true,
@@ -467,7 +469,7 @@ internal partial class NineLivesWindow : Window
     {
         int row = index / NineLivesRules.Reels;
         int reel = index % NineLivesRules.Reels;
-        return new Point(ReelX[reel] + 128.5, ReelY[row] + 99.5);
+        return new Point(ReelX[reel] + ReelSize / 2, ReelY[row] + ReelSize / 2);
     }
 
     private void ResetPresentation()

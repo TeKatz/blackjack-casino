@@ -65,8 +65,8 @@ internal partial class NineLivesWindow
         {
             var glow = new Border
             {
-                Width = 269,
-                Height = 633,
+                Width = ReelSize + 12,
+                Height = ReelY[^1] - ReelY[0] + ReelSize + 12,
                 CornerRadius = new CornerRadius(18),
                 BorderThickness = new Thickness(2),
                 BorderBrush = reel == 1 ? Violet : Gold,
@@ -92,7 +92,7 @@ internal partial class NineLivesWindow
             reelLightSweepTranslate[reel] = sweepTranslate;
             var sweep = new Rectangle
             {
-                Width = 243,
+                Width = ReelSize - 14,
                 Height = 92,
                 RadiusX = 18,
                 RadiusY = 18,

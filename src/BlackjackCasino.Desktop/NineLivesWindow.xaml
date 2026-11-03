@@ -4,8 +4,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:BlackjackCasino.Desktop"
         Title="Nine Lives"
-        Width="1536" Height="1024"
-        MinWidth="1080" MinHeight="720"
+        Width="1760" Height="960"
+        MinWidth="1100" MinHeight="690"
         WindowStartupLocation="CenterOwner"
         Background="#08060E"
         UseLayoutRounding="True"
@@ -161,7 +161,7 @@
 
     <Grid Background="#08060E">
         <Viewbox Stretch="Uniform" StretchDirection="Both" HorizontalAlignment="Center" VerticalAlignment="Center">
-            <Grid Width="1536" Height="1024" ClipToBounds="True">
+            <Grid x:Name="NineLivesStage" Width="1760" Height="960" ClipToBounds="True">
                 <Image x:Name="BackgroundArt" Stretch="UniformToFill" Opacity="0.09"
                        RenderOptions.BitmapScalingMode="HighQuality"/>
                 <Border Background="#D207050E"/>
@@ -177,20 +177,20 @@
                 </Ellipse>
 
                 <Canvas Panel.ZIndex="20">
-                    <Border Canvas.Left="34" Canvas.Top="22" Width="1468" Height="976"
+                    <Border Canvas.Left="28" Canvas.Top="20" Width="1704" Height="920"
                             Background="#C10A0712" BorderBrush="#8141B3" BorderThickness="3" CornerRadius="42"/>
 
                     <!-- Header -->
-                    <Button x:Name="CasinoButton" Canvas.Left="72" Canvas.Top="56" Width="168" Height="52"
+                    <Button x:Name="CasinoButton" Canvas.Left="70" Canvas.Top="56" Width="174" Height="52"
                             Style="{StaticResource ChromeButton}" Content="←  CASINO"
                             Click="CasinoButton_Click" ToolTip="Back to Casino (Esc)"/>
-                    <StackPanel Canvas.Left="438" Canvas.Top="40" Width="660">
+                    <StackPanel Canvas.Left="538" Canvas.Top="37" Width="684">
                         <TextBlock Text="NINE LIVES" HorizontalAlignment="Center" Foreground="#F2CF75"
                                    FontFamily="Georgia" FontSize="43" FontWeight="Bold"/>
                         <TextBlock Text="HIGH VOLATILITY · 3×3 · FIVE LINES" HorizontalAlignment="Center"
                                    Foreground="#AFA0BB" FontFamily="Segoe UI Semibold" FontSize="11" Margin="0,5,0,0"/>
                     </StackPanel>
-                    <Border Style="{StaticResource HudPanel}" Canvas.Left="1112" Canvas.Top="54" Width="150" Height="56">
+                    <Border Style="{StaticResource HudPanel}" Canvas.Left="1315" Canvas.Top="54" Width="155" Height="58">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                             <TextBlock Text="●" Foreground="#F0B34F" FontSize="19" Margin="0,0,8,0"/>
                             <StackPanel>
@@ -199,7 +199,7 @@
                             </StackPanel>
                         </StackPanel>
                     </Border>
-                    <Border Style="{StaticResource HudPanel}" Canvas.Left="1272" Canvas.Top="54" Width="118" Height="56">
+                    <Border Style="{StaticResource HudPanel}" Canvas.Left="1482" Canvas.Top="54" Width="129" Height="58">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                             <TextBlock Text="★" Foreground="#D75CFF" FontSize="18" Margin="0,0,7,0"/>
                             <StackPanel>
@@ -208,12 +208,12 @@
                             </StackPanel>
                         </StackPanel>
                     </Border>
-                    <Button x:Name="SettingsButton" Canvas.Left="1400" Canvas.Top="54" Width="66" Height="56"
+                    <Button x:Name="SettingsButton" Canvas.Left="1624" Canvas.Top="54" Width="67" Height="58"
                             Style="{StaticResource ChromeButton}" Padding="0" Content="SET"
                             Click="SettingsFlyoutButton_Click" ToolTip="Nine Lives settings"/>
 
                     <!-- Feature rail -->
-                    <Border Canvas.Left="72" Canvas.Top="164" Width="236" Height="650"
+                    <Border Canvas.Left="70" Canvas.Top="147" Width="330" Height="675"
                             Background="#D70D0917" BorderBrush="#482A57" BorderThickness="1.5" CornerRadius="20">
                         <StackPanel Margin="21">
                             <TextBlock Text="THE GAME" Style="{StaticResource PanelLabel}" Foreground="#C46DF0"/>
@@ -238,19 +238,19 @@
                     </Border>
 
                     <!-- Reel stage: sized around the authored reel coordinates through Y≈808 -->
-                    <Border Canvas.Left="340" Canvas.Top="164" Width="856" Height="650"
+                    <Border Canvas.Left="421" Canvas.Top="147" Width="918" Height="675"
                             Background="#EA0B0813" BorderBrush="#5B3471" BorderThickness="2" CornerRadius="26">
                         <Border.Effect>
                             <DropShadowEffect Color="#8E42C7" BlurRadius="28" ShadowDepth="0" Opacity="0.24"/>
                         </Border.Effect>
                     </Border>
-                    <Border Canvas.Left="352" Canvas.Top="176" Width="832" Height="626"
+                    <Border Canvas.Left="432" Canvas.Top="158" Width="896" Height="653"
                             Background="#7A0A0712" BorderBrush="#302038" BorderThickness="1" CornerRadius="18"/>
-                    <Canvas x:Name="ReelCanvas" Canvas.Left="0" Canvas.Top="0" Width="1536" Height="1024"/>
+                    <Canvas x:Name="ReelCanvas" Canvas.Left="0" Canvas.Top="0" Width="1760" Height="960"/>
                     <local:NineLivesWinCanvas x:Name="WinLineCanvas" Canvas.Left="0" Canvas.Top="0"
-                                              Width="1536" Height="1024" IsHitTestVisible="False"/>
+                                              Width="1760" Height="960" IsHitTestVisible="False"/>
 
-                    <Border x:Name="BonusBadge" Canvas.Left="610" Canvas.Top="126" Width="316" Height="36"
+                    <Border x:Name="BonusBadge" Canvas.Left="696" Canvas.Top="114" Width="368" Height="38"
                             Background="#E31A1024" BorderBrush="#E7B95E" BorderThickness="1" CornerRadius="15"
                             Visibility="Collapsed">
                         <TextBlock x:Name="BonusText" Style="{StaticResource HudText}" FontSize="15"
@@ -258,7 +258,7 @@
                     </Border>
 
                     <!-- Info rail -->
-                    <Border Canvas.Left="1228" Canvas.Top="164" Width="238" Height="650"
+                    <Border Canvas.Left="1360" Canvas.Top="147" Width="330" Height="675"
                             Background="#D70D0917" BorderBrush="#482A57" BorderThickness="1.5" CornerRadius="20">
                         <StackPanel Margin="21">
                             <TextBlock Text="TABLE INFO" Style="{StaticResource PanelLabel}" Foreground="#C46DF0"/>
@@ -296,7 +296,7 @@
                     </Border>
 
                     <!-- Status never overlaps the third reel row -->
-                    <Border x:Name="StatusBadge" Canvas.Left="430" Canvas.Top="820" Width="676" Height="38"
+                    <Border x:Name="StatusBadge" Canvas.Left="520" Canvas.Top="824" Width="720" Height="30"
                             Background="#E6100A1A" BorderBrush="#6F3E8D" BorderThickness="1.2" CornerRadius="16">
                         <Grid>
                             <Ellipse Width="7" Height="7" Fill="#C34FFF" HorizontalAlignment="Left" Margin="20,0,0,0"/>
@@ -307,16 +307,16 @@
                     </Border>
 
                     <!-- Bottom control deck uses a real Grid so controls cannot overlap -->
-                    <Border Canvas.Left="72" Canvas.Top="870" Width="1394" Height="94"
+                    <Border Canvas.Left="70" Canvas.Top="861" Width="1620" Height="79"
                             Background="#E80C0914" BorderBrush="#3F2949" BorderThickness="1.5" CornerRadius="20">
                         <Grid Margin="14,12">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="142"/><ColumnDefinition Width="18"/>
-                                <ColumnDefinition Width="54"/><ColumnDefinition Width="120"/><ColumnDefinition Width="54"/>
-                                <ColumnDefinition Width="20"/><ColumnDefinition Width="138"/><ColumnDefinition Width="20"/>
-                                <ColumnDefinition Width="192"/><ColumnDefinition Width="20"/>
-                                <ColumnDefinition Width="138"/><ColumnDefinition Width="20"/>
-                                <ColumnDefinition Width="150"/><ColumnDefinition Width="*"/><ColumnDefinition Width="142"/>
+                                <ColumnDefinition Width="165"/><ColumnDefinition Width="15"/>
+                                <ColumnDefinition Width="58"/><ColumnDefinition Width="138"/><ColumnDefinition Width="58"/>
+                                <ColumnDefinition Width="19"/><ColumnDefinition Width="154"/><ColumnDefinition Width="19"/>
+                                <ColumnDefinition Width="232"/><ColumnDefinition Width="19"/>
+                                <ColumnDefinition Width="155"/><ColumnDefinition Width="19"/>
+                                <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <Button x:Name="InfoButton" Grid.Column="0" Style="{StaticResource ChromeButton}"
                                     Content="PAYTABLE" Click="PaytableButton_Click" ToolTip="Paytable"/>
@@ -342,13 +342,13 @@
                                     <TextBlock x:Name="WinText" Style="{StaticResource HudText}" FontSize="21" HorizontalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
-                            <Button x:Name="MenuButton" Grid.Column="14" Style="{StaticResource ChromeButton}" Content="← CASINO"
+                            <Button x:Name="MenuButton" Grid.Column="12" Visibility="Collapsed" Style="{StaticResource ChromeButton}" Content="← CASINO"
                                     Click="CasinoButton_Click" ToolTip="Back to Casino"/>
                         </Grid>
                     </Border>
 
                     <!-- Custom themed settings flyout; no native Windows ContextMenu -->
-                    <Border x:Name="SettingsFlyout" Canvas.Left="1238" Canvas.Top="122" Width="228" Height="176"
+                    <Border x:Name="SettingsFlyout" Canvas.Left="1461" Canvas.Top="120" Width="228" Height="176"
                             Visibility="Collapsed" Panel.ZIndex="80" Background="#FC0D0916"
                             BorderBrush="#8E4FA9" BorderThickness="1.5" CornerRadius="16">
                         <Border.Effect><DropShadowEffect BlurRadius="24" ShadowDepth="5" Opacity="0.5" Color="#000000"/></Border.Effect>
@@ -366,7 +366,7 @@
                     </Border>
 
                     <!-- In-app paytable replaces native MessageBox -->
-                    <Border x:Name="PaytableFlyout" Canvas.Left="435" Canvas.Top="214" Width="666" Height="500"
+                    <Border x:Name="PaytableFlyout" Canvas.Left="530" Canvas.Top="206" Width="700" Height="500"
                             Visibility="Collapsed" Panel.ZIndex="90" Background="#FC0C0815"
                             BorderBrush="#9B55B7" BorderThickness="2" CornerRadius="22">
                         <Border.Effect><DropShadowEffect BlurRadius="32" ShadowDepth="8" Opacity="0.62" Color="#000000"/></Border.Effect>

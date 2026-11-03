@@ -115,11 +115,14 @@ internal static class Program
                 Image[] reelImages = Find<Image>(window)
                     .Where(image => image.IsVisible
                         && image.Parent is Border frame
-                        && Math.Abs(frame.Width - 257d) < 0.1
-                        && Math.Abs(frame.Height - 199d) < 0.1)
+                        && Math.Abs(frame.Width - 210d) < 0.1
+                        && Math.Abs(frame.Height - 210d) < 0.1)
                     .ToArray();
                 Require(reelImages.Length == 9,
                     $"Nine Lives did not expose exactly nine reel artwork surfaces; found {reelImages.Length}.");
+                Grid nineLivesStage = Find<Grid>(window).Single(grid => grid.Name == "NineLivesStage");
+                Require(nineLivesStage.Width / nineLivesStage.Height > 1.8, "Nine Lives reverted to its letterboxed 3:2 canvas.");
+                Require(reelImages.All(image => image.Stretch == Stretch.Uniform), "Nine Lives symbol art is stretched or cropped.");
                 Require(reelImages.All(image => image.Source is BitmapSource),
                     "Nine Lives regressed to replacement vector symbols instead of the restored concept-art set.");
                 Require(reelImages.All(image => image.Source is BitmapSource bitmap

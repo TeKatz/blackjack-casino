@@ -22,7 +22,7 @@ internal partial class NineLivesWindow
         polishedLayoutApplied = true;
 
         // Let the authored rooftop/moon artwork participate in the composition again.
-        BackgroundArt.Opacity = 0.22;
+        BackgroundArt.Opacity = 0.36;
 
         // The restored concept-art symbols are square compositions. Uniform rendering keeps
         // the full cats/objects visible and high-quality scaling avoids the harsh nearest-neighbour look.
@@ -41,12 +41,7 @@ internal partial class NineLivesWindow
         // made the footer noisy and looked like a second back-arrow bug.
         MenuButton.Visibility = Visibility.Collapsed;
 
-        // Reuse the freed footer space for the information that matters after a spin.
-        if (WinText.Parent is StackPanel winStack && winStack.Parent is Border winPanel)
-        {
-            Grid.SetColumnSpan(winPanel, 3);
-            winPanel.Margin = new Thickness(0);
-        }
+        // LAST WIN occupies the entire flexible console column.
 
         // The shortcut cheat-sheet is secondary information and no longer belongs on the
         // permanent machine surface. Search from the hosted canvas instead of the Window:
