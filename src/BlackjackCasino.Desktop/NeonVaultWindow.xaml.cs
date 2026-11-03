@@ -100,7 +100,7 @@ internal partial class NeonVaultWindow : Window
 
             var reelGrid = new Grid
             {
-                Margin = new Thickness(5, 0, 5, 0),
+                Margin = new Thickness(3, 0, 3, 0),
                 RenderTransform = motion,
                 RenderTransformOrigin = new Point(0.5, 0.5),
                 SnapsToDevicePixels = true,
@@ -112,12 +112,12 @@ internal partial class NeonVaultWindow : Window
                 SymbolPresenter presenter = CreateSymbolPresenter();
                 var frame = new Border
                 {
-                    Margin = new Thickness(0, 4, 0, 4),
-                    Padding = new Thickness(4),
-                    CornerRadius = new CornerRadius(8),
-                    Background = Ink("#A9090B14"),
-                    BorderBrush = Ink("#26304E"),
-                    BorderThickness = new Thickness(1),
+                    Margin = new Thickness(0, 3, 0, 3),
+                    Padding = new Thickness(2),
+                    CornerRadius = new CornerRadius(13),
+                    Background = FrozenGradient("#19264C", "#090E24"),
+                    BorderBrush = Ink("#4A8DC5"),
+                    BorderThickness = new Thickness(1.35),
                     ClipToBounds = true,
                     SnapsToDevicePixels = true,
                     Child = presenter.Card,
@@ -130,11 +130,11 @@ internal partial class NeonVaultWindow : Window
 
             var reelBorder = new Border
             {
-                Background = Ink("#3A0A0D17"),
-                BorderBrush = Ink("#34415F"),
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(10),
-                Padding = new Thickness(3),
+                Background = FrozenGradient("#1A1742", "#090F2A"),
+                BorderBrush = Ink("#5E70BD"),
+                BorderThickness = new Thickness(1.7),
+                CornerRadius = new CornerRadius(16),
+                Padding = new Thickness(2.5),
                 Child = reelGrid,
                 SnapsToDevicePixels = true,
             };
@@ -155,11 +155,11 @@ internal partial class NeonVaultWindow : Window
         };
         var label = new TextBlock
         {
-            FontSize = 8,
+            FontSize = 9,
             FontWeight = FontWeights.SemiBold,
             Foreground = Ink("#D9DCF0"),
             HorizontalAlignment = HorizontalAlignment.Center,
-            Margin = new Thickness(2, 0, 2, 5),
+            Margin = new Thickness(2, 0, 2, 3),
         };
 
         var grid = new Grid();
@@ -171,8 +171,8 @@ internal partial class NeonVaultWindow : Window
 
         var card = new Border
         {
-            Margin = new Thickness(2),
-            CornerRadius = new CornerRadius(7),
+            Margin = new Thickness(1),
+            CornerRadius = new CornerRadius(12),
             Child = grid,
             SnapsToDevicePixels = true,
         };
@@ -662,9 +662,17 @@ internal partial class NeonVaultWindow : Window
 
         ScanlineTransform.BeginAnimation(
             TranslateTransform.YProperty,
-            new DoubleAnimation(0, 610, TimeSpan.FromSeconds(8.2))
+            new DoubleAnimation(0, 775, TimeSpan.FromSeconds(9.4))
             {
                 RepeatBehavior = RepeatBehavior.Forever,
+            });
+
+        ReelScanBeamTransform.BeginAnimation(
+            TranslateTransform.YProperty,
+            new DoubleAnimation(-30, 690, TimeSpan.FromSeconds(5.8))
+            {
+                RepeatBehavior = RepeatBehavior.Forever,
+                EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut },
             });
     }
 
@@ -747,6 +755,8 @@ internal partial class NeonVaultWindow : Window
             AmbientGlow.Opacity = 0.20;
             ScanlineTransform.BeginAnimation(TranslateTransform.YProperty, null);
             ScanlineTransform.Y = 0;
+            ReelScanBeamTransform.BeginAnimation(TranslateTransform.YProperty, null);
+            ReelScanBeamTransform.Y = 0;
         }
     }
 
@@ -782,6 +792,7 @@ internal partial class NeonVaultWindow : Window
         previewTimer.Tick -= PreviewTimer_Tick;
         AmbientGlow.BeginAnimation(OpacityProperty, null);
         ScanlineTransform.BeginAnimation(TranslateTransform.YProperty, null);
+        ReelScanBeamTransform.BeginAnimation(TranslateTransform.YProperty, null);
 
         for (int reel = 0; reel < reelFrames.Length; reel++)
         {

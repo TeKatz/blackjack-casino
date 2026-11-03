@@ -21,7 +21,7 @@ internal partial class NeonVaultWindow
 
     private readonly DispatcherTimer enhancedFeedbackTimer = new()
     {
-        Interval = TimeSpan.FromMilliseconds(33),
+        Interval = TimeSpan.FromMilliseconds(50),
     };
 
     private readonly Image?[,] enhancedArtwork = new Image?[NeonVaultRules.Rows, NeonVaultRules.Reels];
@@ -88,7 +88,7 @@ internal partial class NeonVaultWindow
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     VerticalAlignment = VerticalAlignment.Stretch,
                     Stretch = Stretch.Uniform,
-                    Margin = new Thickness(2, 2, 2, 1),
+                    Margin = new Thickness(0, 0, 0, 0),
                     IsHitTestVisible = false,
                     SnapsToDevicePixels = true,
                 };
@@ -101,7 +101,7 @@ internal partial class NeonVaultWindow
                 // Keep the original lightweight TextBlock alive because ApplySymbol updates it,
                 // but replace its visible output with the generated artwork above.
                 presenter.Icon.Visibility = Visibility.Collapsed;
-                presenter.Label.FontSize = 7.5;
+                presenter.Label.FontSize = 8.5;
                 presenter.Label.FontWeight = FontWeights.Bold;
                 presenter.Label.Foreground = Ink("#E8EBF8");
             }
@@ -204,7 +204,8 @@ internal partial class NeonVaultWindow
         }
 
         enhancedLowQualityScaling = lowQuality;
-        BitmapScalingMode mode = lowQuality ? BitmapScalingMode.LowQuality : BitmapScalingMode.HighQuality;
+        // Native DrawingImage vectors are resolution-independent; keep crisp edges even during spins.
+        BitmapScalingMode mode = BitmapScalingMode.HighQuality;
         foreach (Image? image in enhancedArtwork)
         {
             if (image is not null)
@@ -525,11 +526,44 @@ internal partial class NeonVaultWindow
 
         foreach (EnhancedWinGroup group in selected)
         {
-            var line = new Polyline
+            Color accent = group.Symbol switch
             {
-                Stroke = Palettes[group.Symbol].BorderBrush,
-                StrokeThickness = winning ? 3.2 : 2.0,
-                Opacity = winning ? 0.92 : 0.62,
+                NeonVaultSymbol.Pulse => (Color)ColorConverter.ConvertFromString("#54ECFF"),
+                NeonVaultSymbol.Prism => (Color)ColorConverter.ConvertFromString("#AA73FF"),
+                NeonVaultSymbol.Chip => (Color)ColorConverter.ConvertFromString("#5AF2DA"),
+                NeonVaultSymbol.Crown => (Color)ColorConverter.ConvertFromString("#FFD77B"),
+                _ => (Color)ColorConverter.ConvertFromString("#FFAF6B"),
+            };
+            PointCollection points = new();
+            foreach (int index in group.PathCells)
+            {
+                int row = IndexRow(index);
+                int reel = IndexReel(index);
+                points.Add(new Point(
+                    (reel + 0.5) * width / NeonVaultRules.Reels,
+                    (row + 0.5) * height / NeonVaultRules.Rows));
+            }
+
+            // Outer bloom, saturated glass-core and a narrow specular highlight.
+            var glow = new Polyline
+            {
+                Points = points,
+                Stroke = new SolidColorBrush(Color.FromArgb(winning ? (byte)68 : (byte)36,
+                    accent.R, accent.G, accent.B)),
+                StrokeThickness = winning ? 17 : 10,
+                StrokeLineJoin = PenLineJoin.Round,
+                StrokeStartLineCap = PenLineCap.Round,
+                StrokeEndLineCap = PenLineCap.Round,
+                IsHitTestVisible = false,
+            };
+            enhancedPathCanvas.Children.Add(glow);
+
+            var core = new Polyline
+            {
+                Points = points,
+                Stroke = new LinearGradientBrush(accent, Color.FromRgb(240, 250, 255), 0),
+                StrokeThickness = winning ? 5 : 3,
+                Opacity = winning ? 1 : .75,
                 StrokeLineJoin = PenLineJoin.Round,
                 StrokeStartLineCap = PenLineCap.Round,
                 StrokeEndLineCap = PenLineCap.Round,
@@ -537,19 +571,79 @@ internal partial class NeonVaultWindow
             };
             if (!winning)
             {
-                line.StrokeDashArray = new DoubleCollection { 2.5, 2.0 };
+                core.StrokeDashArray = new DoubleCollection { 3, 1.8 };
+                if (AnimationsEnabled)
+                {
+                    core.BeginAnimation(Shape.StrokeDashOffsetProperty,
+                        new DoubleAnimation(5, 0, TimeSpan.FromMilliseconds(Pace(650)))
+                        {
+                            RepeatBehavior = new RepeatBehavior(2),
+                        });
+                }
             }
+            enhancedPathCanvas.Children.Add(core);
 
-            foreach (int index in group.PathCells)
+            if (!winning)
             {
-                int row = IndexRow(index);
-                int reel = IndexReel(index);
-                line.Points.Add(new Point(
-                    (reel + 0.5) * width / NeonVaultRules.Reels,
-                    (row + 0.5) * height / NeonVaultRules.Rows));
+                continue;
             }
 
-            enhancedPathCanvas.Children.Add(line);
+            var highlight = new Polyline
+            {
+                Points = points,
+                Stroke = new SolidColorBrush(Color.FromArgb(205, 235, 252, 255)),
+                StrokeThickness = 1.5,
+                StrokeLineJoin = PenLineJoin.Round,
+                StrokeStartLineCap = PenLineCap.Round,
+                StrokeEndLineCap = PenLineCap.Round,
+                IsHitTestVisible = false,
+            };
+            enhancedPathCanvas.Children.Add(highlight);
+
+            // Node flares reveal where the actual matching symbols sit.
+            foreach (Point point in points)
+            {
+                var bloom = new Ellipse
+                {
+                    Width = 29, Height = 29,
+                    Fill = new RadialGradientBrush(
+                        Color.FromArgb(215, accent.R, accent.G, accent.B),
+                        Color.FromArgb(0, accent.R, accent.G, accent.B)),
+                    IsHitTestVisible = false,
+                };
+                Canvas.SetLeft(bloom, point.X - 14.5);
+                Canvas.SetTop(bloom, point.Y - 14.5);
+                enhancedPathCanvas.Children.Add(bloom);
+
+                var spark = new Ellipse
+                {
+                    Width = 6, Height = 6,
+                    Fill = Brushes.White,
+                    IsHitTestVisible = false,
+                };
+                Canvas.SetLeft(spark, point.X - 3);
+                Canvas.SetTop(spark, point.Y - 3);
+                enhancedPathCanvas.Children.Add(spark);
+                if (AnimationsEnabled)
+                {
+                    bloom.BeginAnimation(OpacityProperty,
+                        new DoubleAnimation(.55, 1, TimeSpan.FromMilliseconds(Pace(330)))
+                        {
+                            AutoReverse = true,
+                            RepeatBehavior = new RepeatBehavior(3),
+                        });
+                }
+            }
+
+            if (AnimationsEnabled)
+            {
+                core.Opacity = 0;
+                core.BeginAnimation(OpacityProperty,
+                    new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(Pace(320)))
+                    {
+                        FillBehavior = FillBehavior.HoldEnd,
+                    });
+            }
         }
     }
 
@@ -614,9 +708,10 @@ internal partial class NeonVaultWindow
         Border frame = cells[row, reel];
         frame.BeginAnimation(OpacityProperty, null);
         frame.Opacity = 1;
-        frame.BorderBrush = Ink("#26304E");
-        frame.BorderThickness = new Thickness(1);
-        frame.Background = Ink("#A9090B14");
+        frame.BorderBrush = Ink("#4A8DC5");
+        frame.BorderThickness = new Thickness(1.35);
+        frame.Background = FrozenGradient("#19264C", "#090E24");
+        frame.Effect = null;
         ClearScaleAnimation(frame);
     }
 
@@ -627,6 +722,7 @@ internal partial class NeonVaultWindow
         frame.Opacity = opacity;
         frame.BorderBrush = Ink("#1B2238");
         frame.BorderThickness = new Thickness(0.8);
+        frame.Effect = null;
         ClearScaleAnimation(frame);
     }
 
@@ -637,8 +733,14 @@ internal partial class NeonVaultWindow
         frame.Opacity = 1;
         frame.Background = Ink(strong ? "#E3161A2A" : "#CA111827");
         frame.BorderBrush = Palettes[symbol].BorderBrush;
-        frame.BorderThickness = new Thickness(strong ? 3.0 : 2.2);
-        SetStaticScale(frame, strong ? 1.045 : 1.025);
+        frame.BorderThickness = new Thickness(strong ? 2.7 : 1.9);
+        frame.Effect = strong ? new System.Windows.Media.Effects.DropShadowEffect
+        {
+            Color = ((SolidColorBrush)Palettes[symbol].BorderBrush).Color,
+            BlurRadius = 15, ShadowDepth = 0, Opacity = .62,
+            RenderingBias = System.Windows.Media.Effects.RenderingBias.Performance,
+        } : null;
+        SetStaticScale(frame, strong ? 1.035 : 1.015);
     }
 
     private void ApplyWinningCell(int row, int reel, NeonVaultSymbol symbol)
@@ -648,7 +750,13 @@ internal partial class NeonVaultWindow
         frame.Opacity = 1;
         frame.Background = Ink("#F0182036");
         frame.BorderBrush = Palettes[symbol].BorderBrush;
-        frame.BorderThickness = new Thickness(3.0);
+        frame.BorderThickness = new Thickness(2.8);
+        frame.Effect = new System.Windows.Media.Effects.DropShadowEffect
+        {
+            Color = ((SolidColorBrush)Palettes[symbol].BorderBrush).Color,
+            BlurRadius = 18, ShadowDepth = 0, Opacity = .75,
+            RenderingBias = System.Windows.Media.Effects.RenderingBias.Performance,
+        };
         frame.RenderTransformOrigin = new Point(0.5, 0.5);
 
         var scale = new ScaleTransform(1.025, 1.025);
@@ -688,8 +796,9 @@ internal partial class NeonVaultWindow
         Border frame = reelFrames[reel];
         frame.BeginAnimation(OpacityProperty, null);
         frame.Opacity = 1;
-        frame.BorderBrush = Ink("#34415F");
-        frame.BorderThickness = new Thickness(1);
+        frame.BorderBrush = Ink("#5E70BD");
+        frame.BorderThickness = new Thickness(1.7);
+        frame.Effect = null;
         ClearScaleAnimation(frame);
     }
 
