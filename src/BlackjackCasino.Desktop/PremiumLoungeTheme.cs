@@ -125,14 +125,34 @@ internal static class PremiumLoungeTheme
         layout.Children.Add(plate);
 
         var scene = new Grid { ClipToBounds = true };
+        bool puzzleStudy = featureArt.StartsWith("lounge:", StringComparison.Ordinal);
+        // Preserve the premium full-resolution room painting. The game's dedicated
+        // puzzle artwork is a smaller illustrated detail, never enlarged to fill the
+        // full 740-DIP panel from its original compact source.
         scene.Children.Add(new Image
         {
-            Source = Art(featureArt, 950),
+            Source = Art(puzzleStudy ? "penthouse-club.png" : featureArt, 950),
             Stretch = Stretch.UniformToFill,
             Opacity = .67,
             IsHitTestVisible = false,
             CacheMode = new BitmapCache(),
         });
+        if (puzzleStudy)
+        {
+            scene.Children.Add(new Image
+            {
+                Source = Art(featureArt, 420),
+                Width = 390,
+                Height = 505,
+                Stretch = Stretch.Uniform,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Bottom,
+                Margin = new Thickness(0, 0, 12, 4),
+                Opacity = .83,
+                IsHitTestVisible = false,
+                CacheMode = new BitmapCache(),
+            });
+        }
         scene.Children.Add(new Border
         {
             IsHitTestVisible = false,
