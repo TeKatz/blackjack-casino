@@ -517,8 +517,10 @@ internal static class PremiumLoungeTheme
             image.BeginInit();
             image.CacheOption = BitmapCacheOption.OnLoad;
             image.DecodePixelWidth = decodeWidth;
+            string folder = file.StartsWith("lounge:", StringComparison.Ordinal) ? "Lounge" : "Empire";
+            string asset = folder == "Lounge" ? file["lounge:".Length..] : file;
             image.UriSource = new Uri(
-                $"pack://application:,,,/BlackjackCasino.Desktop;component/Assets/Empire/{file}",
+                $"pack://application:,,,/BlackjackCasino.Desktop;component/Assets/{folder}/{asset}",
                 UriKind.Absolute);
             image.EndInit();
             image.Freeze();
