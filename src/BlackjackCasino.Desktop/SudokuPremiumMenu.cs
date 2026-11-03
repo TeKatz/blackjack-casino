@@ -310,10 +310,35 @@ internal static class SudokuPremiumMenu
         content.Children.Add(fresh);
 
         row.Child = content;
-        row.MouseEnter += (_, _) => FadeLine(line, entry.CanResume ? "#86FFF1" : "#C9A56B");
-        row.MouseLeave += (_, _) => FadeLine(line, entry.CanResume ? "#4FE0CC" : "#4D6768");
+        if (entry.CanResume)
+            row.Effect = new DropShadowEffect
+            {
+                Color = Color.FromRgb(37, 219, 195), BlurRadius = 13,
+                ShadowDepth = 0, Opacity = .30,
+            };
+        row.MouseEnter += (_, _) =>
+        {
+            FadeLine(line, entry.CanResume ? "#86FFF1" : "#C9A56B");
+            row.Effect = new DropShadowEffect
+            {
+                Color = Color.FromRgb(45, 225, 199), BlurRadius = 15,
+                ShadowDepth = 0, Opacity = .47,
+            };
+        };
+        row.MouseLeave += (_, _) =>
+        {
+            FadeLine(line, entry.CanResume ? "#4FE0CC" : "#4D6768");
+            row.Effect = entry.CanResume ? new DropShadowEffect
+            {
+                Color = Color.FromRgb(37, 219, 195), BlurRadius = 13,
+                ShadowDepth = 0, Opacity = .30,
+            } : null;
+        };
         return row;
     }
+
+    internal static Button NavigationButton(string text) =>
+        ActionButton(text, false, text.Contains("CLUB", StringComparison.Ordinal) ? 188 : 142, 42);
 
     private static Button ActionButton(string text, bool primary, double width, double height, bool isGold = false)
     {
@@ -340,6 +365,16 @@ internal static class SudokuPremiumMenu
             Template = ButtonTemplate,
             RenderTransform = new ScaleTransform(1, 1),
             RenderTransformOrigin = new Point(.5, .5),
+        };
+        button.GotKeyboardFocus += (_, _) =>
+        {
+            FadeLine(outline, "#FFF0B5");
+            AnimateScale(button, 1.025);
+        };
+        button.LostKeyboardFocus += (_, _) =>
+        {
+            FadeLine(outline, rim);
+            AnimateScale(button, 1);
         };
         button.MouseEnter += (_, _) =>
         {
