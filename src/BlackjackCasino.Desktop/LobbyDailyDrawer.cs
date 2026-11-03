@@ -149,6 +149,7 @@ internal sealed class LobbyDailyDrawer : Grid
             FontSize = 11,
             Foreground = Ink("#8FA69B"),
             TextAlignment = TextAlignment.Center,
+            TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 8, 0, 0),
         };
         Grid.SetRow(nextReward, 1);
@@ -159,11 +160,13 @@ internal sealed class LobbyDailyDrawer : Grid
         rewardBurst = new TextBlock
         {
             FontFamily = new FontFamily("Georgia"),
-            FontSize = 30,
+            FontSize = 24,
             FontWeight = FontWeights.Bold,
             Foreground = Ink("#FFE7A1"),
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
+            TextAlignment = TextAlignment.Center,
+            TextWrapping = TextWrapping.Wrap,
             Opacity = 0,
             IsHitTestVisible = false,
             Effect = new DropShadowEffect { Color = Color.FromRgb(238, 192, 90), BlurRadius = 18, ShadowDepth = 0, Opacity = .72 },
@@ -275,15 +278,16 @@ internal sealed class LobbyDailyDrawer : Grid
             row.State.Foreground = claimedToday || done ? Ink("#72E0AE") : active && state.CanClaim ? Ink("#D8B96F") : Ink("#60786E");
         }
 
+        DailyLoginRewardDefinition nextDefinition = DailyLoginRewardSchedule.GetDefinition(state.TotalClaims);
         tabReward.Text = state.CanClaim ? $"${state.ActiveReward:N0}" : "✓";
         tabDot.Visibility = state.CanClaim ? Visibility.Visible : Visibility.Collapsed;
         claimButton.IsEnabled = state.CanClaim;
-        claimButton.Content = state.CanClaim ? $"CLAIM ${state.ActiveReward:N0}" : "CLAIMED TODAY";
+        claimButton.Content = state.CanClaim ? $"CLAIM DAY {state.ActiveStep} REWARDS" : "CLAIMED TODAY";
         claimButton.Background = state.CanClaim ? Ink("#D8B96F") : Ink("#274238");
         claimButton.Foreground = state.CanClaim ? Ink("#102019") : Ink("#93B2A4");
         nextReward.Text = state.CanClaim
-            ? $"Reward {state.ActiveStep}/{DailyLoginRewardSchedule.CycleLength} · claim whenever you are ready"
-            : $"Next visit: reward {state.NextStep}/{DailyLoginRewardSchedule.CycleLength} · ${state.NextReward:N0}";
+            ? $"Reward {state.ActiveStep}/{DailyLoginRewardSchedule.CycleLength} · {RewardSummary(nextDefinition)}"
+            : $"Next visit: reward {state.NextStep}/{DailyLoginRewardSchedule.CycleLength} · {RewardSummary(nextDefinition)}";
 
         SyncTabPulse(state.CanClaim);
         if (allowAutoOpen && state.CanClaim && lastAutoOpenedTotalClaims != state.TotalClaims)
@@ -320,13 +324,14 @@ internal sealed class LobbyDailyDrawer : Grid
         };
         layout.Children.Add(day);
 
-        decimal rewardValue = DailyLoginRewardSchedule.GetReward(step - 1);
+        DailyLoginRewardDefinition definition = DailyLoginRewardSchedule.GetDefinition(step - 1);
         var reward = new TextBlock
         {
-            Text = $"${rewardValue:N0}",
+            Text = RewardSummary(definition, multilinePack: true),
             FontFamily = new FontFamily("Georgia"),
-            FontSize = step == DailyLoginRewardSchedule.CycleLength ? 18 : 16,
+            FontSize = step == DailyLoginRewardSchedule.CycleLength ? 15 : 14,
             FontWeight = FontWeights.SemiBold,
+            TextWrapping = TextWrapping.Wrap,
             VerticalAlignment = VerticalAlignment.Center,
         };
         Grid.SetColumn(reward, 1);
@@ -344,7 +349,7 @@ internal sealed class LobbyDailyDrawer : Grid
 
         var shell = new Border
         {
-            Height = 47,
+            Height = definition.PackRarity.HasValue ? 58 : 47,
             Margin = new Thickness(0, 0, 0, 6),
             Padding = new Thickness(12, 0, 12, 0),
             CornerRadius = new CornerRadius(8),
@@ -364,12 +369,17 @@ internal sealed class LobbyDailyDrawer : Grid
         }
 
         Refresh();
-        AnimateRewardBurst(claim.Reward);
+        AnimateRewardBurst(DailyLoginRewardSchedule.GetDefinition(claim.TotalClaims - 1));
     }
 
-    private void AnimateRewardBurst(decimal reward)
+    private void AnimateRewardBurst(DailyLoginRewardDefinition reward)
     {
-        rewardBurst.Text = $"+${reward:N0}";
+        rewardBurst.Text = $"+${reward.Bankroll:N0} · +{reward.CosmeticCoins:N0} ◆";
+        if (reward.PackRarity is { } rarity)
+        {
+            rewardBurst.Text += $"\n+ {rarity} card pack";
+        }
+
         if (!animations())
         {
             rewardBurst.Opacity = 0;
@@ -388,6 +398,16 @@ internal sealed class LobbyDailyDrawer : Grid
         {
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
         });
+    }
+
+    private static string RewardSummary(DailyLoginRewardDefinition reward, bool multilinePack = false)
+    {
+        string summary = $"${reward.Bankroll:N0} · ◆ {reward.CosmeticCoins:N0}";
+        if (reward.PackRarity is { } rarity)
+        {
+            summary += multilinePack ? $"\n{rarity.ToString().ToUpperInvariant()} PACK" : $" · {rarity} pack";
+        }
+        return summary;
     }
 
     private void SetOpen(bool open, bool? animate = null)
