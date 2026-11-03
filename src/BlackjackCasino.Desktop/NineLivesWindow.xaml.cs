@@ -61,6 +61,8 @@ internal partial class NineLivesWindow : Window
         selectedBet = ClosestBet(Math.Clamp(bet, NineLivesRules.MinimumBet, NineLivesRules.MaximumBet));
 
         BackgroundArt.Source = NineLivesArtwork.Background;
+        NineLivesFeatureIllustration.Source = NineLivesArtwork.Symbol(NineLivesSymbol.BlackCat);
+        NineLivesInfoIllustration.Source = NineLivesArtwork.Symbol(NineLivesSymbol.Wild);
         BuildReels();
         SetGrid(
         [

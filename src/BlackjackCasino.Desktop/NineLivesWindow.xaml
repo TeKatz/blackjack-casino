@@ -300,7 +300,20 @@
                     <!-- Feature rail -->
                     <Border Canvas.Left="70" Canvas.Top="147" Width="330" Height="675"
                             Background="{StaticResource NineLivesEnamel}" BorderBrush="{StaticResource NineLivesIris}" BorderThickness="2.2" CornerRadius="24">
-                        <StackPanel Margin="26">
+                        <Grid>
+                        <Image x:Name="NineLivesFeatureIllustration" Width="245" Height="245"
+                               Stretch="Uniform" Opacity="0.28" IsHitTestVisible="False"
+                               HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,14"
+                               RenderOptions.BitmapScalingMode="HighQuality">
+                            <Image.OpacityMask>
+                                <RadialGradientBrush Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.70" RadiusY="0.70">
+                                    <GradientStop Color="#F0FFFFFF" Offset="0"/>
+                                    <GradientStop Color="#D0FFFFFF" Offset="0.42"/>
+                                    <GradientStop Color="#00FFFFFF" Offset="1"/>
+                                </RadialGradientBrush>
+                            </Image.OpacityMask>
+                        </Image>
+                            <StackPanel Margin="26">
                             <TextBlock Text="THE GAME" Style="{StaticResource PanelLabel}" Foreground="#C46DF0"/>
                             <TextBlock Text="One dangerous cat. Five lines. No quiet wins."
                                        Foreground="#F4EAF8" FontFamily="Georgia" FontSize="20" TextWrapping="Wrap"
@@ -319,7 +332,8 @@
                             <TextBlock Text="WINS" Style="{StaticResource PanelLabel}"/>
                             <TextBlock Text="Winning symbols glow while the full line sweeps across the grid."
                                        Foreground="#81758B" FontSize="12" TextWrapping="Wrap" Margin="0,6,0,0"/>
-                        </StackPanel>
+                            </StackPanel>
+                        </Grid>
                     </Border>
 
                     <!-- Reel stage: sized around the authored reel coordinates through Y≈808 -->
@@ -360,7 +374,20 @@
                     <!-- Info rail -->
                     <Border Canvas.Left="1360" Canvas.Top="147" Width="330" Height="675"
                             Background="{StaticResource NineLivesEnamel}" BorderBrush="{StaticResource NineLivesIris}" BorderThickness="2.2" CornerRadius="24">
-                        <StackPanel Margin="26">
+                        <Grid>
+                        <Image x:Name="NineLivesInfoIllustration" Width="250" Height="250"
+                               Stretch="Uniform" Opacity="0.28" IsHitTestVisible="False"
+                               HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,14"
+                               RenderOptions.BitmapScalingMode="HighQuality">
+                            <Image.OpacityMask>
+                                <RadialGradientBrush Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.70" RadiusY="0.70">
+                                    <GradientStop Color="#F0FFFFFF" Offset="0"/>
+                                    <GradientStop Color="#D0FFFFFF" Offset="0.42"/>
+                                    <GradientStop Color="#00FFFFFF" Offset="1"/>
+                                </RadialGradientBrush>
+                            </Image.OpacityMask>
+                        </Image>
+                            <StackPanel Margin="26">
                             <TextBlock Text="TABLE INFO" Style="{StaticResource PanelLabel}" Foreground="#C46DF0"/>
                             <Grid Margin="0,16,0,15">
                                 <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
@@ -390,7 +417,8 @@
                                 </StackPanel>
                             </Border>
 
-                        </StackPanel>
+                            </StackPanel>
+                        </Grid>
                     </Border>
 
                     <!-- Status never overlaps the third reel row -->

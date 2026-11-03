@@ -49,7 +49,7 @@ internal static class NineLivesArtwork
             [NineLivesSymbol.Bonus] = LazySymbol(NineLivesArtData.Bonus, nameof(NineLivesSymbol.Bonus)),
         };
 
-    private static Lazy<ImageSource> LazySymbol(string base64, string name, int pixelWidth = 192)
+    private static Lazy<ImageSource> LazySymbol(string base64, string name, int pixelWidth = 256)
         => new(() => DecodeOrFallback(base64, pixelWidth, name));
 
     private static ImageSource LoadPackagedSymbol(string fileName, string assetName)
