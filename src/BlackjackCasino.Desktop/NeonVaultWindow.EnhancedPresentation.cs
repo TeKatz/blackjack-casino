@@ -218,10 +218,10 @@ internal partial class NeonVaultWindow
     private static string EnhancedLabel(NeonVaultSymbol symbol) => symbol switch
     {
         NeonVaultSymbol.Pulse => "PULSE CORE",
-        NeonVaultSymbol.Prism => "QUEEN",
+        NeonVaultSymbol.Prism => "PRISM",
         NeonVaultSymbol.Chip => "NEON CHIP",
-        NeonVaultSymbol.Crown => "KING",
-        NeonVaultSymbol.Key => "SECURITY EYE",
+        NeonVaultSymbol.Crown => "CROWN",
+        NeonVaultSymbol.Key => "VAULT KEY",
         NeonVaultSymbol.Wild => "WILD",
         NeonVaultSymbol.Scatter => "VAULT BREAK",
         NeonVaultSymbol.VaultKey => "ACCESS KEY",
