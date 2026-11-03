@@ -36,7 +36,7 @@ public sealed partial class EmpireService
     public int OpenRooms => Estate.Levels.Values.Count(level => level > 0);
     public decimal CreditsPerSecond => ProductionForEstate(Estate, ActivePropertyId);
     public decimal TotalCreditsPerSecond => state.Properties.Sum(pair => ProductionForEstate(pair.Value, pair.Key));
-    public decimal CashPerHour => Math.Min(60m, Math.Min(40m, 2m + state.Properties.Values.Sum(p => p.Levels.Values.Sum()) * .3m)
+    public decimal CashPerHour => Math.Min(72m, Math.Min(48m, 3m + state.Properties.Values.Sum(p => p.Levels.Values.Sum()) * .4m)
         * (1 + ResearchRank("guests") * .05m + state.Properties.Values.Count(p => p.Projects.Contains("penthouse-suites")) * .05m));
     public decimal DividendCapacity => Math.Min(640m, EmpireRules.MaximumDividend + ResearchRank("guests") * 40m + state.Properties.Values.Count(p => p.Projects.Contains("casino-vault")) * 160m);
     public TimeSpan OfflineCapacity => EmpireRules.MaximumCatchUp + TimeSpan.FromHours(ResearchRank("night-shift") * 2);
