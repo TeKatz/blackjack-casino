@@ -346,7 +346,7 @@ internal sealed class AdventureLibraryHubControl : UserControl
 
         Button toggle = PremiumLoungeTheme.Button(
             settings.MusicEnabled ? "MUSIC · ON" : "MUSIC · OFF",
-            "AdventureMusicToggle", () => Commit(!settings.MusicEnabled, settings.MusicVolume),
+            "AdventureMusicToggle", () => { },
             width: 102, height: 34);
         toggle.VerticalAlignment = VerticalAlignment.Center;
         toggle.Margin = new Thickness(6, 0, 6, 0);
@@ -368,6 +368,7 @@ internal sealed class AdventureLibraryHubControl : UserControl
             toggle.Content = settings.MusicEnabled ? "MUSIC · ON" : "MUSIC · OFF";
             label.Text = $"MUSIC VOLUME · {Math.Round(settings.MusicVolume / .32 * 100):0}%";
         }
+        toggle.Click += (_, _) => Commit(!settings.MusicEnabled, slider.Value);
         slider.ValueChanged += (_, args) => Commit(settings.MusicEnabled, args.NewValue);
         panel.Child = grid;
         return panel;
