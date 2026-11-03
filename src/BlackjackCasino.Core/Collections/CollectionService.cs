@@ -14,14 +14,15 @@ public sealed class CollectionState
 public sealed record CollectionDraw(string CardId, bool IsNew, int DuplicatePoints);
 public sealed record CollectionOpening(Guid Id, CollectionRarity PackRarity, IReadOnlyList<CollectionDraw> Cards, int PointsEarned, int PacksEarned);
 public sealed record CollectionActionResult(bool Success, string Message, CollectionOpening? Opening = null);
-public sealed record CollectionThemeCompletionReward(long Coins, CollectionRarity PackRarity, int PackCount = 1);
+public sealed record CollectionThemeCompletionReward(long Coins, CollectionRarity PackRarity, int PackCount = 1, decimal Bankroll = 0m);
 public sealed record CollectionThemeRewardClaimResult(
     bool Success,
     string Message,
     string ThemeId,
     long Coins = 0,
     CollectionRarity? PackRarity = null,
-    int PackCount = 0);
+    int PackCount = 0,
+    decimal Bankroll = 0m);
 
 /// <summary>Profile-owned collection; presentation never rolls cards or awards inventory.</summary>
 public static class CollectionService
@@ -56,8 +57,8 @@ public static class CollectionService
     }
 
     public static CollectionThemeCompletionReward ThemeCompletionReward(CollectionTheme theme) => theme.UltraRare
-        ? new(750, CollectionRarity.Epic)
-        : new(300, CollectionRarity.Rare);
+        ? new(750, CollectionRarity.Epic, 1, 10_000m)
+        : new(300, CollectionRarity.Rare, 1, 2_500m);
 
     public static bool IsThemeComplete(PlayerProfileState profile, CollectionTheme theme)
     {
@@ -90,8 +91,8 @@ public static class CollectionService
             state.Packs[reward.PackRarity] = updatedPacks;
             state.ClaimedThemeRewardIds.Add(theme.Id);
             return new(true,
-                $"{theme.Name} complete! +{reward.Coins:N0} Cosmetic Coins and {reward.PackCount} {reward.PackRarity} pack awarded.",
-                theme.Id, reward.Coins, reward.PackRarity, reward.PackCount);
+                $"{theme.Name} complete! +{reward.Coins:N0} Cosmetic Coins, ${reward.Bankroll:N0} bankroll and {reward.PackCount} {reward.PackRarity} pack awarded.",
+                theme.Id, reward.Coins, reward.PackRarity, reward.PackCount, reward.Bankroll);
         }
     }
 
