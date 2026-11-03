@@ -15,6 +15,8 @@ internal static class CasinoClientWindowFrame
     private const int WmGetMinMaxInfo = 0x0024;
     private const int WmNcCalcSize = 0x0083;
     private const int WmNcHitTest = 0x0084;
+    private const int WmNcPaint = 0x0085;
+    private const int WmNcActivate = 0x0086;
     private const int HtLeft = 10;
     private const int HtRight = 11;
     private const int HtTop = 12;
@@ -64,11 +66,18 @@ internal static class CasinoClientWindowFrame
         return result != 0 || color == DwmColorNone;
     }
 
+    internal static int GetSuppressedNonClientActivationCount(Window window)
+        => States.TryGetValue(window, out FrameState? state)
+            ? state.SuppressedNonClientActivationCount
+            : 0;
+
     private sealed class FrameState : IDisposable
     {
         private readonly Window window;
         private readonly FrameworkElement titleBar;
         private readonly HwndSource source;
+
+        internal int SuppressedNonClientActivationCount { get; private set; }
 
         internal FrameState(Window window, FrameworkElement titleBar, HwndSource source)
         {
@@ -90,6 +99,24 @@ internal static class CasinoClientWindowFrame
                 // activation/frame recalculation. Letting either form through can temporarily resurrect the
                 // invisible non-client resize frame as bright inactive strips. The full native window is our
                 // client area in both forms; WmNcHitTest below continues to provide resizing while restored.
+                handled = true;
+                return IntPtr.Zero;
+            }
+
+            if (message == WmNcActivate)
+            {
+                // The complete HWND is client area, so there is no native frame whose active/inactive state
+                // should be painted. Returning TRUE still permits the activation change while preventing
+                // USER32/DWM from laying stale non-client pixels over the WPF surface.
+                SuppressedNonClientActivationCount++;
+                handled = true;
+                return new IntPtr(1);
+            }
+
+            if (message == WmNcPaint)
+            {
+                // Nothing outside the client area exists to paint. Native non-client painting can otherwise
+                // leave bright strips that only disappear as WPF invalidates regions under the mouse.
                 handled = true;
                 return IntPtr.Zero;
             }
