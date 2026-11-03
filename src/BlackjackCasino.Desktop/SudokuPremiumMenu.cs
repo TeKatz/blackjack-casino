@@ -32,8 +32,8 @@ internal static class SudokuPremiumMenu
     private const string Teal = "#52E0CE";
     private const string Muted = "#9AB4B0";
 
-    private static readonly BitmapSource AmbientArt = LoadArtwork("sky-bar.png", 1400);
-    private static readonly BitmapSource InteriorArt = LoadArtwork("private-gaming-salon.png", 900);
+    private static readonly Lazy<BitmapSource> AmbientArt = new(() => LoadArtwork("sky-bar.png", 1400));
+    private static readonly Lazy<BitmapSource> InteriorArt = new(() => LoadArtwork("private-gaming-salon.png", 900));
     private static readonly ControlTemplate ButtonTemplate = CreateButtonTemplate();
 
     internal static UIElement Build(
@@ -53,7 +53,7 @@ internal static class SudokuPremiumMenu
         var stage = new Grid { Width = 1760, Height = 938, ClipToBounds = true };
         stage.Children.Add(new Image
         {
-            Source = AmbientArt,
+            Source = AmbientArt.Value,
             Stretch = Stretch.UniformToFill,
             IsHitTestVisible = false,
             CacheMode = new BitmapCache(),
@@ -110,7 +110,7 @@ internal static class SudokuPremiumMenu
         var scene = new Grid { ClipToBounds = true };
         scene.Children.Add(new Image
         {
-            Source = InteriorArt,
+            Source = InteriorArt.Value,
             Stretch = Stretch.UniformToFill,
             Opacity = .64,
             IsHitTestVisible = false,
@@ -200,7 +200,7 @@ internal static class SudokuPremiumMenu
         right.Children.Add(rows);
 
         var timerSection = new StackPanel { Margin = new Thickness(0, 6, 0, 0) };
-        var timerButton = ActionButton(showTimer ? "◷   TIMER · VISIBLE" : "◷   TIMER · HIDDEN", false, 520, 43);
+        var timerButton = ActionButton(showTimer ? "◷   TIMER · VISIBLE" : "◷   TIMER · HIDDEN", false, 750, 43);
         timerButton.Name = "SudokuTimerToggle";
         timerButton.Click += (_, _) => toggleTimer();
         timerSection.Children.Add(timerButton);
@@ -220,7 +220,7 @@ internal static class SudokuPremiumMenu
             dailyFinished
                 ? "▣   TODAY'S DAILY · COMPLETE"
                 : $"▣   TODAY'S DAILY · {daily.Difficulty.ToString().ToUpperInvariant()}",
-            true, 520, 46, isGold: true);
+            true, 750, 46, isGold: true);
         dailyButton.Name = "SudokuDailyButton";
         dailyButton.Click += (_, _) => openDaily();
         dailySection.Children.Add(dailyButton);
