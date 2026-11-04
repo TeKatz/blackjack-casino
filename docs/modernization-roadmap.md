@@ -1,6 +1,6 @@
 # Modern casino frontend — staged migration roadmap
 
-**Implementation status (2026-11-04):** The game director authorized the pilot and requested ongoing Development testing directly from the feature branch, without merging into main. Branch `feature/manor-modernization-phase-1` begins the migration with a **read-only, optional modern Manor preview**. The existing WPF Manor remains the only playable path. React/TypeScript/PixiJS/WebView2 are introduced for visual inspection, but no JavaScript action can place a bet, change money or resolve a feature.
+**Implementation status (2026-11-04):** The game director authorized the pilot and requested ongoing Development testing directly from the feature branch, without merging into main. Branch `feature/manor-modernization-phase-1` now includes the **Phase-2 playable alternative**: React/TypeScript/PixiJS/WebView2 renders the Manor, and a restricted, revisioned C# bridge commits paid spins, free spins and room decisions. The WPF Manor remains the primary path and fallback. The frontend does not determine outcomes or directly modify wallets.
 
 ## Why this direction
 
@@ -32,13 +32,13 @@ Do **not** rewrite existing engines merely to port the UI. Use adapters and expl
 
 **Exit:** baseline screenshots, behavior matrix, freeze of save compatibility, approved visual/gameplay specification.
 
-### M2 — Bridge and rendering vertical slice (read-only preview foundation)
+### M2 — Bridge and rendering vertical slice (Phase-2 playable slice)
 
 - Introduce a versioned C# application interface: open/close, game snapshot, bet, spin, feature choice, sound/presentation preferences, recover.
 - Add typed request/response/event schemas and a WebView2 adapter. Enforce origin, version, command validation and once-only settlement.
 - Build React HUD and a PixiJS Manor reel scene loading exclusively from local assets.
 
-**Initial sub-milestone:** the prototype shows committed `ManorSessionState` through a strictly allow-listed, origin-checked WebView2 protocol. Navigation has a separate optional lobby action; the legacy Manor remains primary. The snapshot is read-only. **Full M2 exit remains:** existing Core resolves real paid spins from validated commands, the frontend renders results and pending bonus choices, and recovery is tested.
+**Implemented:** The optional modern surface accepts paid spin, free spin, room move, candle, cash out, follow policy and auto-resolve intents. Commands require a durable revision; the C# service commits once to the existing Manor checkpoint, exposes the authoritative snapshot, and rejects stale replay. The browser may not provide outcomes or payouts. C# and TypeScript contract tests plus Windows smoke and checkpoint recovery tests validate this slice. **Still pending tester acceptance:** full animation flow, premium art, sound, multilingual copy and performance baselines.
 
 ### M3 — Manor premium presentation and mechanics
 
@@ -80,7 +80,16 @@ See [AGENTS.md](../AGENTS.md), [architecture](architecture.md), [Midnight Manor 
 
 - Added `frontend/` with TypeScript, React, PixiJS, Vite and Vitest. Top-level dependencies are exact-version pinned; **transitive lockfile still required** before full rollout.
 - WPF WebView2 preview maps a local folder to `https://midnight-manor.local/index.html`. Navigation and messages are origin-checked. Allowed command types: `client.ready`, `snapshot.request`, `ui.close`.
-- Only read-only `ManorSessionState` values are sent to JavaScript. Money is rendered as formatted strings, never settled in the browser. Empty saves display fixed, non-random symbols.
-- The existing Midnight Manor lobby action remains fully playable; a secondary button opens the preview only when compiled frontend files exist.
+- Phase 1 sent only read-only snapshots. Phase 2 additionally accepts strictly validated user *intents*. Money is formatted and settled only in C#, with no browser balance or result authority. Empty saves use fixed, non-random symbols.
+- The existing Midnight Manor primary action remains fully playable; a secondary **MODERN MANOR · PLAYTEST** action opens the Phase-2 alternative only when compiled frontend files exist.
 - CI, Development and Stable publisher workflows now install/test/build the frontend before dotnet build/publish. No updater protocol changes.
 - Remaining before replacement: end-to-end WebView2 smoke with screenshots, locked transitive dependencies, measured performance baseline, complete state/action bridge, full feature screens, graphic assets, accessibility and tester acceptance.
+
+## Phase-2 game integration and tester boundaries
+
+- The gameplay command protocol is v2: `spin.paid` (whole-dollar play-money stake), `spin.free`, `run.move`, `run.candle`, `run.cashout`, `run.follow` and `run.auto`. Read-only commands are `client.ready`, `snapshot.request` and `ui.close`.
+- Each mutation requires `expectedRevision` and a unique `requestId`; a committed `Revision` and `LastModernCommandId` are added to the existing JSON game state with backward-compatible defaults. The controller advances the revision for legacy WPF mutations too. Stale commands are rejected; the last acknowledged request can be replayed without repeating its payout.
+- The C# controller persists the full wallet/profile/state aggregate through the existing write-ahead checkpoint. If storage fails after a possible journal write, the modern window disables further mutations and requires close/reopen so startup recovery can establish the committed state. Client timeouts refresh the snapshot; they never automatically resend a wager.
+- Free Spins and Escape the Manor remain committed, manual-resume features. The modern interface does **not** auto-consume bonuses on startup. Existing paytables, payout bounds, progression and old saved states remain unchanged.
+- The test suite covers invalid-origin/version/stake/room messages, deterministic room action integration, replay protection across controller reinstantiation, legacy paytable version and wallet accounting. Windows startup smoke checks that React gameplay controls appear but does not wager with the runner's profile.
+- This phase does **not** yet implement reel motion, parallax effects, real symbol artwork, Manor-specific audio, user-facing German strings, the final gameplay rework or a measured 60 FPS guarantee. These belong to later work and player feedback.

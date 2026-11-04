@@ -40,4 +40,4 @@ Continue Manor development on the existing feature branch; do not spawn a branch
 
 ## Modernization
 
-The first frontend migration is **Midnight Manor**. Its initial branch adds a read-only renderer preview while the established playable Manor and C# gameplay engine remain authoritative. See [modernization roadmap](docs/modernization-roadmap.md). Existing C# game engines remain authoritative; PixiJS and React are a presentation layer, not a replacement for casino rules.
+The first frontend migration is **Midnight Manor**. Phase 2 adds an optional playable modern UI backed by the original C# Manor engine, durable journal and player wallet, while the legacy WPF mode remains the primary fallback. See [modernization roadmap](docs/modernization-roadmap.md). Existing C# game engines remain authoritative; PixiJS and React are a presentation layer, not a replacement for casino rules.

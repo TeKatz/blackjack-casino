@@ -21,7 +21,7 @@ This file is the repository-level instruction for coding assistants and ChatGPT 
 - The game director authorized consolidation of the validated cumulative work into `main`; the owner confirmed that the CI is green and old branches were cleaned up.
 - The Development publisher follows **`feature/manor-modernization-phase-1`**, with the workflow push filter and job guard both pinned there. Future pushes to this branch publish Development after tests; no merge to `main` is required.
 - Historical casino-quality and shop branches were consolidated and cleaned by the owner. Continue related Manor work on this **one long-lived migration branch**, not one new branch per update.
-- **Midnight Manor modernization is underway** on `feature/manor-modernization-phase-1` with a read-only React/TypeScript/PixiJS/WebView2 preview and the old playable WPF Manor intact. Roulette is deferred. Do not claim the preview already supports wagering or replaces Manor.
+- **Midnight Manor Phase 2** is underway on `feature/manor-modernization-phase-1`: the modern React/TypeScript/PixiJS/WebView2 playtest now sends paid spin, free spin and room-choice intents into the existing C# transaction engine. The WPF Manor remains the default fallback. Roulette is deferred. Do not claim the playtest is already the final graphic/gameplay overhaul.
 - A prior agent incorrectly merged Phase 1 via PR #35 when only a Development channel switch was intended; its content is being reversed on main without rewriting history. **Publishing to Development is never permission to merge into main. Do not merge, delete branches or switch channel sources without the user's explicit instruction.**
 - Refresh this dated note as branch ownership changes.
 

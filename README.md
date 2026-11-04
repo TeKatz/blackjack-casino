@@ -1,8 +1,8 @@
 # The Midnight Club — Blackjack Casino
 
-**Offline-first, single-player, play-money casino for Windows.** No real-money wagers, payments, advertising, account requirement or online service are needed to play. The repository's executable client is currently **WPF/.NET 10**. The first experimental step of the React/TypeScript/PixiJS modernization is on `feature/manor-modernization-phase-1`: an optional, read-only Midnight Manor renderer preview. The installed `main` application still uses WPF, and the playable Manor remains unchanged.
+**Offline-first, single-player, play-money casino for Windows.** No real-money wagers, payments, advertising, account requirement or online service are needed to play. The repository's executable client is currently **WPF/.NET 10**. The first two development phases of the React/TypeScript/PixiJS modernization are on `feature/manor-modernization-phase-1`. Phase 2 adds a **playable alternative Manor interface** connected to the existing C# rules, bankroll and durable checkpoint. The main branch retains the WPF baseline.
 
-> **Manor migration development (2026-11-04).** Stable `main` is the protected baseline. The **Development** channel publishes directly from the long-lived `feature/manor-modernization-phase-1` branch after Windows checks. New Manor changes can be tested in-game **without merging to main**. The React/PixiJS preview is still read-only; the existing WPF Manor remains playable. See [Development delivery](docs/development-update-delivery.md) and [agent workflow](AGENTS.md).
+> **Manor migration development (2026-11-04).** Stable `main` is the protected baseline. The **Development** channel publishes directly from the long-lived `feature/manor-modernization-phase-1` branch after Windows checks. New Manor changes can be tested in-game **without merging to main**. The modern Manor playtest now supports real C#-settled spins and bonus choices; the established WPF Manor remains playable as a fallback. See [Development delivery](docs/development-update-delivery.md) and [agent workflow](AGENTS.md).
 
 ## Play modes at a glance
 
@@ -54,7 +54,7 @@ Full details: [architecture](docs/architecture.md).
 
 ### Experimental frontend
 
-The first Manor migration pilot is in `frontend/`. Using Node.js 22, run `npm install`, `npm test` and `npm run build` in that directory. Windows CI and release packaging build the frontend automatically. The preview is read-only and does not change player saves or replace the playable Manor mode.
+The first Manor migration pilot is in `frontend/`. Using Node.js 22, run `npm install`, `npm test` and `npm run build` in that directory. Windows CI and release packaging build the frontend automatically. The Phase-2 playtest intentionally uses the same local Manor checkpoint and play-money balance as the existing WPF game, so its paid spins and room choices are real. The original Manor remains the primary lobby action and a fallback.
 
 ## Build and validation
 
@@ -76,7 +76,7 @@ The GitHub workflows also run screenshot/runtime checks including presentation, 
 
 The **game director** owns gameplay vision and hands-on bug testing. Coding agents/ChatGPT Work own implementation, maintenance, tests and delivery; the game director should not need to write code or manage builds. Contributions use small scoped branches, automated checks, game tester feedback and release gates. Read [AGENTS.md](AGENTS.md), [CONTRIBUTING.md](CONTRIBUTING.md) and [pull request checklist](.github/pull_request_template.md).
 
-**Rendering pilot in progress: Midnight Manor.** The experimental branch adds a read-only React/TypeScript + PixiJS presentation hosted in WebView2. It can display a saved Manor spin but **cannot place bets, play bonuses or change money**. The primary Midnight Manor tile action remains the playable WPF version; a second lobby action opens the preview when packaged. Future phases migrate gameplay controls and richer art. See [modernization roadmap](docs/modernization-roadmap.md).
+**Midnight Manor Phase 2 – playable alternative:** The secondary **MODERN MANOR · PLAYTEST** lobby action opens the React/TypeScript/PixiJS presentation. It can place valid play-money wagers ($1–$1,000), run paid spins/free spins, move through Escape the Manor, use a candle, cash out, follow one policy step or auto-finish a run. All actions use the C# Manor engine and the existing wallet/profile/recovery journal. The backend rejects stale revisions and recognizes the last committed request ID to avoid duplicate settlements. **This is a testable migration slice, not a polished replacement**: art, animations, sounds, full localization and UI accessibility still need work. The standard Manor tile continues to launch WPF; both use the same player state. See [modernization roadmap](docs/modernization-roadmap.md).
 
 For package/runtime maintenance status and deliberate upgrade gates, see [maintenance audit](docs/maintenance-audit.md).
 
