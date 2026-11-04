@@ -67,6 +67,11 @@ public sealed class ManorPreviewProtocolTests
         Assert.Equal("$1,234.50",snapshot.Bankroll);
         Assert.Equal("$20.00",snapshot.SelectedBet);
         Assert.Equal("7",snapshot.Revision);
+        Assert.Equal("en",snapshot.Language);
+        Assert.Equal(2,snapshot.Rules.Version);
+        Assert.Equal(14,snapshot.Rules.Symbols.Length);
+        Assert.Equal(20,snapshot.Rules.Paylines.Length);
+        Assert.Equal(ManorRules.Symbols[0].Five,snapshot.Rules.Symbols[0].Five);
         Assert.Equal(15,snapshot.Cells.Length);
         Assert.Equal(state.LastSpin!.Wins.Length,snapshot.WinningLineDetails.Length);
         Assert.True(snapshot.CanFreeSpin);
@@ -121,6 +126,24 @@ public sealed class ManorPreviewProtocolTests
             Assert.Equal(ManorRules.Paylines[win.Line],display.Rows);
             Assert.Equal("$"+win.Amount.ToString("N2",System.Globalization.CultureInfo.GetCultureInfo("en-US")),display.Amount);
         }
+    }
+
+    [Fact]
+    public void LanguageAndLegacyPaytableAreReadOnlyPresentationMetadata()
+    {
+        var previous=new ManorSessionState
+        {
+            Bankroll=250m,Bet=25m,CycleActive=true,
+            PaytableVersion=1,FreeSpinsRemaining=1,
+        };
+        string before=JsonSerializer.Serialize(previous);
+        var german=ManorPreviewProtocol.CreateSnapshot(previous,false,language:"de");
+        Assert.Equal("de",german.Language);
+        Assert.Equal(1,german.Rules.Version);
+        Assert.Equal(ManorRules.SymbolDefinitions(1)[0].Three,german.Rules.Symbols[0].Three);
+        Assert.Equal(20,german.Rules.Paylines.Length);
+        Assert.Equal(before,JsonSerializer.Serialize(previous));
+        Assert.Equal("en",ManorPreviewProtocol.CreateSnapshot(previous,false,language:"unknown").Language);
     }
 
     [Fact]

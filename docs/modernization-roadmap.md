@@ -140,3 +140,9 @@ See [AGENTS.md](../AGENTS.md), [architecture](architecture.md), [Midnight Manor 
 - A tester-enabled renderer diagnostics panel samples real Pixi ticker intervals and reports observed FPS estimate, mean/p95 frame interval, frames above 16.7 ms, CSS viewport and pixel ratio. It is disabled by default, purely local, low-frequency and does not alter the game or upload telemetry.
 - With reduced motion enabled, the panel explicitly reports a stopped ticker rather than misleadingly claiming zero FPS. Samples ignore long background-tab pauses. This is **not** GPU profiling or evidence of stable 60 FPS; full session memory/VRAM and real multi-monitor hardware tests remain outstanding.
 - Pure regression tests cover layouts at 1.25×, 1.5× and 2×, unusual viewport ratios, bounded pixel ratios and non-invented measurement calculations.
+
+### M3 seventh delivery — authoritative bilingual presentation foundation
+
+- The v2 browser snapshot adds read-only active language and authoritative paytable metadata (versioned symbol credits and all 20 line patterns). Existing mutation contracts and journal schemas do not change.
+- The global persisted casino language preference flows from C# to React. The active old paytable is preserved during saved legacy free-spin cycles; otherwise the next paid-spin table is current.
+- The browser-only layout preview carries a visibly non-playable table sample. Test coverage guards language whitelist, paytable shape/version, and preservation of the C# save aggregate.

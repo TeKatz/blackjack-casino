@@ -20,6 +20,8 @@ internal static class ManorPreviewProtocol
     // Authoritative presentation metadata, not client-side navigation rules.
     internal sealed record Passage(int From,int To,bool RequiresKey);
     internal sealed record WinningLineDetail(int Number,int Count,int[] Rows,string Amount);
+    internal sealed record PaytableEntry(string Symbol,string Name,int Three,int Four,int Five);
+    internal sealed record RulesInfo(int Version,PaytableEntry[] Symbols,int[][] Paylines);
     internal sealed record RunSnapshot(string Status,string Message,string GhostClue,int PlayerRoom,
         int Turn,int ExitTarget,string Current,string Banked,bool HasCandle,bool HasKey,bool HasCharm,
         Room[] Rooms,Passage[] Passages);
@@ -28,7 +30,7 @@ internal static class ManorPreviewProtocol
         string[] Cells,int[] WinningCells,bool CycleActive,int FreeSpinsRemaining,string Feature,
         bool AnimationsEnabled,bool HasCommittedSpin,string Revision,bool CanSpin,bool CanFreeSpin,
         bool LastSpinFree,int Scatters,int Doors,int WinningLines,RunSnapshot? Run,
-        string? SaveNotice,WinningLineDetail[] WinningLineDetails);
+        string? SaveNotice,WinningLineDetail[] WinningLineDetails,string Language,RulesInfo Rules);
 
     internal static bool IsTrustedSource(string? source)
     {
@@ -109,7 +111,7 @@ internal static class ManorPreviewProtocol
     }
 
     internal static Snapshot CreateSnapshot(ManorSessionState state,bool animationsEnabled,
-        decimal selectedBet=25m,string? saveNotice=null)
+        decimal selectedBet=25m,string? saveNotice=null,string language="en")
     {
         ArgumentNullException.ThrowIfNull(state);
         ManorSpin? spin=state.LastSpin;
@@ -155,6 +157,13 @@ internal static class ManorPreviewProtocol
                 : state.FreeSpinsRemaining>0
                     ? "Haunted Night · "+state.FreeSpinsRemaining+" free spins saved"
                     : state.CycleActive ? "Saved cycle in progress" : "The house awaits";
+        // A running legacy free-spin cycle must keep its persisted payout table.
+        int tableVersion=state.CycleActive ? state.PaytableVersion : ManorRules.CurrentPaytableVersion;
+        var rules=new RulesInfo(tableVersion,
+            ManorRules.SymbolDefinitions(tableVersion)
+                .Select(entry=>new PaytableEntry(entry.Symbol.ToString(),entry.Name,
+                    entry.Three,entry.Four,entry.Five)).ToArray(),
+            ManorRules.Paylines.Select(line=>line.ToArray()).ToArray());
         bool canSpin=!state.CycleActive;
         bool canFree=state.CycleActive && runSnapshot is null && state.FreeSpinsRemaining>0;
         return new Snapshot(Money(state.Bankroll),Money(state.Bet),Money(selectedBet),Money(state.CycleReturned),
@@ -166,7 +175,7 @@ internal static class ManorPreviewProtocol
             spin?.Wins.Where(win=>win.Line is >=0 and <20 && win.Count is >=3 and <=5)
                 .Select(win=>new WinningLineDetail(win.Line+1,win.Count,
                     ManorRules.Paylines[win.Line].ToArray(),Money(win.Amount))).ToArray()
-                ?? []);
+                ?? [],language=="de" ? "de" : "en",rules);
     }
 
     internal static string SerializeSnapshot(Snapshot snapshot,string requestId)=>

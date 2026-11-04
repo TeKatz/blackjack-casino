@@ -14,6 +14,12 @@ export type ManorRoom = {
 
 export type ManorPassage = { from: number; to: number; requiresKey: boolean };
 export type ManorWinningLine = { number: number; count: number; rows: number[]; amount: string };
+export type ManorPaytableEntry = {
+  symbol: string; name: string; three: number; four: number; five: number;
+};
+export type ManorRulesInfo = {
+  version: number; symbols: ManorPaytableEntry[]; paylines: number[][];
+};
 
 export type ManorRun = {
   status: string;
@@ -52,6 +58,8 @@ export type ManorSnapshot = {
   doors: number;
   winningLines: number;
   winningLineDetails: ManorWinningLine[];
+  language: 'en' | 'de';
+  rules: ManorRulesInfo;
   run: ManorRun | null;
   saveNotice: string | null;
 };
@@ -122,6 +130,14 @@ export function isSnapshot(value: unknown): value is ManorSnapshot {
       nonnegative(line.count) && line.count >= 3 && line.count <= 5 &&
       text(line.amount) && Array.isArray(line.rows) && line.rows.length === 5 &&
       line.rows.every(row => nonnegative(row) && row <= 2)) &&
+    (value.language === 'en' || value.language === 'de') &&
+    dictionary(value.rules) && (value.rules.version === 1 || value.rules.version === 2) &&
+    Array.isArray(value.rules.symbols) && value.rules.symbols.length === 14 &&
+    value.rules.symbols.every(entry => dictionary(entry) && text(entry.symbol) &&
+      text(entry.name) && ['three', 'four', 'five'].every(k => nonnegative(entry[k]))) &&
+    Array.isArray(value.rules.paylines) && value.rules.paylines.length === 20 &&
+    value.rules.paylines.every(line => Array.isArray(line) && line.length === 5 &&
+      line.every(row => nonnegative(row) && row <= 2)) &&
     (value.run === null || isRun(value.run)) &&
     (value.saveNotice === null || text(value.saveNotice));
 }
@@ -193,6 +209,27 @@ export const browserPreview: ManorSnapshot = {
   animationsEnabled: true, hasCommittedSpin: false, revision: '0', canSpin: false,
   canFreeSpin: false, lastSpinFree: false, scatters: 0, doors: 0, winningLines: 0,
   run: null, saveNotice: null, winningLineDetails: [],
+  language: 'en',
+  rules: {
+    version: 2,
+    symbols: [
+      ['Jack', 'Victorian J', 14, 36, 90], ['Queen', 'Victorian Q', 18, 45, 112],
+      ['King', 'Victorian K', 22, 54, 135], ['Ace', 'Victorian A', 27, 68, 180],
+      ['Candelabrum', 'Candelabrum', 36, 90, 270], ['Watch', 'Pocket watch', 45, 112, 360],
+      ['Raven', 'Raven', 68, 180, 540], ['Key', 'Antique key', 81, 225, 675],
+      ['Portrait', 'Haunted portrait', 90, 270, 900], ['Rose', 'Black rose', 112, 338, 1125],
+      ['Lady', 'Lady of the Manor', 180, 675, 2700], ['Wild', 'Haunted mirror / Wild', 0, 0, 0],
+      ['Scatter', 'Manor moon / Scatter', 0, 0, 0], ['Bonus', 'Manor door / Bonus', 0, 0, 0],
+    ].map(([symbol, name, three, four, five]) => ({
+      symbol: String(symbol), name: String(name), three: Number(three),
+      four: Number(four), five: Number(five),
+    })),
+    paylines: [
+      '11111', '00000', '22222', '01210', '21012', '00100', '22122', '11011',
+      '11211', '01110', '21112', '10001', '12221', '01010', '21212', '10101',
+      '12121', '02020', '20202', '02120',
+    ].map(line => [...line].map(Number)),
+  },
 };
 
 export function availableActions(snapshot: ManorSnapshot): GameAction[] {

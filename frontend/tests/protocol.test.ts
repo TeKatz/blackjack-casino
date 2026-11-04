@@ -25,6 +25,9 @@ describe('Manor v2 bridge contract', () => {
     expect(isSnapshot({ ...browserPreview, winningCells: [15] })).toBe(false);
     expect(isSnapshot({ ...browserPreview, revision: -1 })).toBe(false);
     expect(isSnapshot({ ...browserPreview, revision: '1.5' })).toBe(false);
+    expect(isSnapshot({ ...browserPreview, language: 'fr' })).toBe(false);
+    expect(isSnapshot({ ...browserPreview, rules: { ...browserPreview.rules, paylines: [] } })).toBe(false);
+    expect(isSnapshot({ ...browserPreview, rules: { ...browserPreview.rules, symbols: [] } })).toBe(false);
     expect(isSnapshot({ ...browserPreview, winningLineDetails: [
       { number: 21, count: 3, rows: [0, 0, 0, 0, 0], amount: '$5.00' },
     ] })).toBe(false);
