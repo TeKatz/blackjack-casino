@@ -262,4 +262,50 @@ The board grows as the investigation uncovers people, places, evidence, leads an
   <data name="Adventure.black-stag.Act.act-iii" xml:space="preserve"><value>Act III — The Broken Antlers</value></data>
   <data name="Adventure.black-stag.Act.act-iv" xml:space="preserve"><value>Act IV — The Hunt</value></data>
   <data name="Adventure.black-stag.Act.act-v" xml:space="preserve"><value>Act V — The Crown</value></data>
+  <data name="Adventure.dead-mans-hand.Board.arthur-vane.Description" xml:space="preserve"><value>Industrialist. Missing after checking into room 306 at the Hotel Mirabelle.</value></data>
+  <data name="Adventure.dead-mans-hand.Board.arthur-vane.Subtitle" xml:space="preserve"><value>Missing person</value></data>
+  <data name="Adventure.dead-mans-hand.Board.evelyn-vane.Description" xml:space="preserve"><value>Arthur's wife and the person who hired you. She is withholding at least part of the story.</value></data>
+  <data name="Adventure.dead-mans-hand.Board.evelyn-vane.Subtitle" xml:space="preserve"><value>Client</value></data>
+  <data name="Adventure.dead-mans-hand.Board.elias-hale.Description" xml:space="preserve"><value>City detective who insists Vane is not a police matter while knowing details he was never told.</value></data>
+  <data name="Adventure.dead-mans-hand.Board.elias-hale.Subtitle" xml:space="preserve"><value>Police</value></data>
+  <data name="Adventure.dead-mans-hand.Board.vincent-moretti.Description" xml:space="preserve"><value>Organizer, casino power broker and practical owner of the Ivory Room.</value></data>
+  <data name="Adventure.dead-mans-hand.Board.vincent-moretti.Subtitle" xml:space="preserve"><value>Underworld</value></data>
+  <data name="Adventure.dead-mans-hand.Board.hotel-mirabelle.Description" xml:space="preserve"><value>Arthur Vane's last confirmed location. Room 306 is the center of the opening timeline.</value></data>
+  <data name="Adventure.dead-mans-hand.Board.hotel-mirabelle.Subtitle" xml:space="preserve"><value>Last known location</value></data>
+  <data name="Adventure.dead-mans-hand.Board.ivory-room.Title" xml:space="preserve"><value>The Ivory Room</value></data>
+  <data name="Adventure.dead-mans-hand.Board.ivory-room.Description" xml:space="preserve"><value>Invitation-only gaming room above the Monarch Casino.</value></data>
+  <data name="Adventure.dead-mans-hand.Board.ivory-room.Subtitle" xml:space="preserve"><value>Private casino room</value></data>
+  <data name="Adventure.dead-mans-hand.Board.key-306.Title" xml:space="preserve"><value>Duplicate Key · 306</value></data>
+  <data name="Adventure.dead-mans-hand.Board.key-306.Description" xml:space="preserve"><value>Hotel duplicate for room 306. The original key was never returned.</value></data>
+  <data name="Adventure.dead-mans-hand.Board.key-306.Subtitle" xml:space="preserve"><value>Physical evidence</value></data>
+  <data name="Adventure.dead-mans-hand.Board.switchboard-log.Title" xml:space="preserve"><value>Switchboard Log</value></data>
+  <data name="Adventure.dead-mans-hand.Board.switchboard-log.Description" xml:space="preserve"><value>The second room-306 call entry was removed cleanly with a blade.</value></data>
+  <data name="Adventure.dead-mans-hand.Board.switchboard-log.Subtitle" xml:space="preserve"><value>Document</value></data>
+  <data name="Adventure.dead-mans-hand.Board.cufflink.Title" xml:space="preserve"><value>Bent Brass Cufflink</value></data>
+  <data name="Adventure.dead-mans-hand.Board.cufflink.Description" xml:space="preserve"><value>Recovered beneath the radiator in room 306. The stem was torn sideways under force.</value></data>
+  <data name="Adventure.dead-mans-hand.Board.cufflink.Subtitle" xml:space="preserve"><value>Physical evidence</value></data>
+  <data name="Adventure.dead-mans-hand.Board.torn-photo.Title" xml:space="preserve"><value>Torn Photograph</value></data>
+  <data name="Adventure.dead-mans-hand.Board.torn-photo.Description" xml:space="preserve"><value>Arthur Vane and Vincent Moretti outside the Ivory Room. A third person was deliberately removed.</value></data>
+  <data name="Adventure.dead-mans-hand.Board.torn-photo.Subtitle" xml:space="preserve"><value>Photograph</value></data>
+  <data name="Adventure.dead-mans-hand.Board.lead-where-vane.Title" xml:space="preserve"><value>Where is Arthur Vane?</value></data>
+  <data name="Adventure.dead-mans-hand.Board.lead-where-vane.Description" xml:space="preserve"><value>The original disappearance. No body, luggage or voluntary departure has been established.</value></data>
+  <data name="Adventure.dead-mans-hand.Board.lead-where-vane.Subtitle" xml:space="preserve"><value>Open question</value></data>
+  <data name="Adventure.dead-mans-hand.Board.lead-room-call.Title" xml:space="preserve"><value>Who called room 306?</value></data>
+  <data name="Adventure.dead-mans-hand.Board.lead-room-call.Description" xml:space="preserve"><value>A call exists in the timeline, but its switchboard entry was removed.</value></data>
+  <data name="Adventure.dead-mans-hand.Board.lead-room-call.Subtitle" xml:space="preserve"><value>Open question</value></data>
+  <data name="Adventure.dead-mans-hand.Board.lead-why-ivory.Title" xml:space="preserve"><value>Why was Vane tied to the Ivory Room?</value></data>
+  <data name="Adventure.dead-mans-hand.Board.lead-why-ivory.Description" xml:space="preserve"><value>Arthur claimed he stopped going. The surviving evidence says otherwise.</value></data>
+  <data name="Adventure.dead-mans-hand.Board.lead-why-ivory.Subtitle" xml:space="preserve"><value>Open question</value></data>
+  <data name="Adventure.dead-mans-hand.Board.theory-evelyn-withholding.Title" xml:space="preserve"><value>Evelyn is withholding part of Arthur's casino history.</value></data>
+  <data name="Adventure.dead-mans-hand.Board.theory-evelyn-withholding.Description" xml:space="preserve"><value>A working thought, not a fact.</value></data>
+  <data name="Adventure.dead-mans-hand.Board.theory-evelyn-withholding.Subtitle" xml:space="preserve"><value>Working theory</value></data>
+  <data name="Adventure.dead-mans-hand.Board.theory-hale-knows-more.Title" xml:space="preserve"><value>Hale knows more than he admitted.</value></data>
+  <data name="Adventure.dead-mans-hand.Board.theory-hale-knows-more.Description" xml:space="preserve"><value>His knowledge of room 306 may predate the official investigation.</value></data>
+  <data name="Adventure.dead-mans-hand.Board.theory-hale-knows-more.Subtitle" xml:space="preserve"><value>Working theory</value></data>
+  <data name="Adventure.dead-mans-hand.Board.theory-vane-knew-visitor.Title" xml:space="preserve"><value>Vane may have known whoever entered room 306.</value></data>
+  <data name="Adventure.dead-mans-hand.Board.theory-vane-knew-visitor.Description" xml:space="preserve"><value>The scene lacks signs of forced entry but shows evidence of violence.</value></data>
+  <data name="Adventure.dead-mans-hand.Board.theory-vane-knew-visitor.Subtitle" xml:space="preserve"><value>Working theory</value></data>
+  <data name="Adventure.dead-mans-hand.Board.theory-record-erased.Title" xml:space="preserve"><value>Someone deliberately altered the Mirabelle record.</value></data>
+  <data name="Adventure.dead-mans-hand.Board.theory-record-erased.Description" xml:space="preserve"><value>The missing call entry and modified telephone line suggest preparation, not panic cleanup.</value></data>
+  <data name="Adventure.dead-mans-hand.Board.theory-record-erased.Subtitle" xml:space="preserve"><value>Working theory</value></data>
 </root>
