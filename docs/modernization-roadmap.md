@@ -1,6 +1,6 @@
 # Modern casino frontend — staged migration roadmap
 
-**Planning status (2026-11-04):** architecture decision recorded, **no frontend migration started**. Branch consolidation into `main` was authorized. Jigsaw tester acceptance is still required before invasive frontend work. This document is a forward-looking plan, not a claim of implemented TypeScript, React, PixiJS, WebView2 or wallet-bridge components.
+**Implementation status (2026-11-04):** The game director authorized the pilot after the green main consolidation. Branch `feature/manor-modernization-phase-1` begins the migration with a **read-only, optional modern Manor preview**. The existing WPF Manor remains the only playable path. React/TypeScript/PixiJS/WebView2 are introduced for visual inspection, but no JavaScript action can place a bet, change money or resolve a feature.
 
 ## Why this direction
 
@@ -24,7 +24,7 @@ Do **not** rewrite existing engines merely to port the UI. Use adapters and expl
 
 **Exit:** reviewed consolidation PR, CI green, actual Development manifest published from `main`, save compatibility preserved.
 
-### M1 — Midnight Manor baseline audit and design
+### M1 — Midnight Manor baseline audit and design (in progress)
 
 - After branch consolidation and Jigsaw tester acceptance, inventory `ManorController`, `ManorPersistence`, `ManorWindow`, the Manor Core engine, effects, assets, saves, current RTP/versioning and CI evidence.
 - Capture current screen states, visual defects, frame-time/performance baseline and save recovery tests.
@@ -32,13 +32,13 @@ Do **not** rewrite existing engines merely to port the UI. Use adapters and expl
 
 **Exit:** baseline screenshots, behavior matrix, freeze of save compatibility, approved visual/gameplay specification.
 
-### M2 — Bridge and rendering vertical slice
+### M2 — Bridge and rendering vertical slice (read-only preview foundation)
 
 - Introduce a versioned C# application interface: open/close, game snapshot, bet, spin, feature choice, sound/presentation preferences, recover.
 - Add typed request/response/event schemas and a WebView2 adapter. Enforce origin, version, command validation and once-only settlement.
 - Build React HUD and a PixiJS Manor reel scene loading exclusively from local assets.
 
-**Exit:** existing Manor Core resolves paid spins, the new UI renders them consistently, and legacy Manor can still be opened as a fallback.
+**Initial sub-milestone:** the prototype shows committed `ManorSessionState` through a strictly allow-listed, origin-checked WebView2 protocol. Navigation has a separate optional lobby action; the legacy Manor remains primary. The snapshot is read-only. **Full M2 exit remains:** existing Core resolves real paid spins from validated commands, the frontend renders results and pending bonus choices, and recovery is tested.
 
 ### M3 — Manor premium presentation and mechanics
 
@@ -75,3 +75,12 @@ Do **not** rewrite existing engines merely to port the UI. Use adapters and expl
 7. Test evidence must distinguish measured improvement from visual aspirations.
 
 See [AGENTS.md](../AGENTS.md), [architecture](architecture.md), [Midnight Manor design](midnight-manor-design.md), [Manor acceptance](midnight-manor-acceptance.md) and [Development release delivery](development-update-delivery.md).
+
+## Phase-1 implementation and safety boundary
+
+- Added `frontend/` with TypeScript, React, PixiJS, Vite and Vitest. Top-level dependencies are exact-version pinned; **transitive lockfile still required** before full rollout.
+- WPF WebView2 preview maps a local folder to `https://midnight-manor.local/index.html`. Navigation and messages are origin-checked. Allowed command types: `client.ready`, `snapshot.request`, `ui.close`.
+- Only read-only `ManorSessionState` values are sent to JavaScript. Money is rendered as formatted strings, never settled in the browser. Empty saves display fixed, non-random symbols.
+- The existing Midnight Manor lobby action remains fully playable; a secondary button opens the preview only when compiled frontend files exist.
+- CI, Development and Stable publisher workflows now install/test/build the frontend before dotnet build/publish. No updater protocol changes.
+- Remaining before replacement: end-to-end WebView2 smoke with screenshots, locked transitive dependencies, measured performance baseline, complete state/action bridge, full feature screens, graphic assets, accessibility and tester acceptance.
