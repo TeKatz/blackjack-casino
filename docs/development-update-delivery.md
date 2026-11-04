@@ -12,25 +12,32 @@ Before publication, the workflow validates localization resources, builds, runs 
 
 Versioning rule: start a new Development cycle on a version base strictly above the latest final version. Preserve SemVer ordering; do not offer silent downgrades. PR preview artifacts use dev.0 and are superseded by the published Development run number.
 
-## Current test channel: Shop cosmetics expansion
+## Current test channel: Casino quality – Phase 4
 
-The shared `development` release is pinned to `feature/shop-cosmetics-expansion`,
-created fresh from main at `c4b72ef075104cff05d9426a9bffbe161f10d360`.
-The publisher's push trigger and job guard both select this branch. The existing
-in-app manifest URL, package names and updater schema remain unchanged.
+The mutable in-app `development` release is now pinned to
+`feature/casino-quality-phase-4`, building on all work from Phases 1–3
+and the earlier shop-cosmetics expansion. Both the workflow push filter and
+the job-level guard select this branch. The pinned branch is the only intended
+source for future Development builds; do not publish the superseded branch.
 
-Versions continue as `0.10.1-dev.N` using the existing increasing workflow run
-number. Every publication validates the complete application, actual Windows UI
-behavior, package hash and size, application/manifest version agreement and the
-published release target before reporting success.
+The installed client's Development manifest URL is unchanged, as are
+the package, updater executable, updater schema and SHA-256 validation.
+The publisher produces `0.10.1-dev.N` builds in monotonically
+increasing workflow-run order, subject to normal SemVer precedence.
 
-This branch adds six card sets and six dice sets across three price tiers,
-refines Ruby Velvet and Aurora Prism with subtle glows, and replaces the nine
-requested default and season portraits with individually generated artwork.
-The Windows checks export full/compact card faces and backs, D6/D20 palettes and
-circular portrait crops. Cosmetic purchases, equipment and save compatibility
-are covered by the complete unit suite. See `shop-cosmetics-expansion.md` for
-prices, rendering details and image prompts.
+Phase 4 brings offline, version-matched release notes and the ongoing
+German localization of Tales from the Backroom. German content coverage
+is being expanded incrementally and remains incomplete outside translated
+scenes and UI. The publisher gates on resource parity, the adventure
+localization sanity checker, the full Windows test/smoke suite, and
+release-package/version verification before replacing the mutable release.
+
+### Switching channels
+
+If a different branch takes over Development, update the workflow's
+`on.push.branches` filter and `publish-development.if` guard together,
+then update this document. Existing installations will find the newer
+version through the same `development/update-manifest.json` URL.
 
 `tools/check_localization.py` is a mandatory CI and Development-publisher gate. Every translated resource file must contain exactly the neutral English key set and every value must be non-empty. English remains the fallback when a runtime key cannot be resolved in a selected translation. Proper product and mode names such as The Midnight Club, Midnight Solitaire, Midnight Manor and Neon Vault remain untranslated unless explicitly changed by product direction.
 

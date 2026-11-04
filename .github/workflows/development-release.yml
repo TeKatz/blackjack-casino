@@ -2,7 +2,7 @@ name: Development Release
 
 on:
   push:
-    branches: ["feature/shop-cosmetics-expansion"]
+    branches: ["feature/casino-quality-phase-4"]
   workflow_dispatch:
 
 permissions:
@@ -14,8 +14,8 @@ concurrency:
 
 jobs:
   publish-development:
-    # The shared in-app Development channel follows the active shop cosmetics branch.
-    if: github.ref == 'refs/heads/feature/shop-cosmetics-expansion'
+    # The shared Development channel follows the latest cumulative casino quality branch.
+    if: github.ref == 'refs/heads/feature/casino-quality-phase-4'
     runs-on: windows-latest
     timeout-minutes: 20
 
@@ -43,6 +43,9 @@ jobs:
 
       - name: Localization resource parity
         run: python tools/check_localization.py
+
+      - name: Adventure localization sanity checks
+        run: python tools/check_adventure_localization.py
 
       - name: Collection artwork coverage
         run: python -X warn_default_encoding -W error::EncodingWarning tools/check_collection_art.py
