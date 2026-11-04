@@ -302,8 +302,8 @@ internal sealed class AdventureLibraryHubControl : UserControl
         {
             AdventureClassDefinition definition = AdventureCharacterCatalog.AllFor(adventure)
                 .First(item => item.Id == SelectedClassId(classes));
-            className.Text = definition.Name;
-            description.Text = definition.Description;
+            className.Text = AdventureTextLocalization.ClassName(adventure, definition);
+            description.Text = AdventureTextLocalization.ClassDescription(adventure, definition);
             string abilityLine = string.Join(" · ", Enum.GetValues<AdventureAbility>().Select(ability =>
             {
                 int score = definition.Abilities.TryGetValue(ability, out int value) ? value : 10;
@@ -311,7 +311,7 @@ internal sealed class AdventureLibraryHubControl : UserControl
             }));
             string special = string.IsNullOrWhiteSpace(definition.SpecialMechanicName)
                 ? string.Empty
-                : $"\n{AdventureTextLocalization.Ui("Special", "SPECIAL")} · {definition.SpecialMechanicName}";
+                : $"\n{AdventureTextLocalization.Ui("Special", "SPECIAL")} · {AdventureTextLocalization.ClassSpecial(adventure, definition)}";
             stats.Text = $"HP {definition.MaxHitPoints} · Armor {definition.Armor}\n{abilityLine}{special}";
         }
         classes.SelectionChanged += (_, _) => UpdatePreview();
@@ -339,7 +339,7 @@ internal sealed class AdventureLibraryHubControl : UserControl
         {
             var item = new ComboBoxItem
             {
-                Content = definition.Name,
+                Content = AdventureTextLocalization.ClassName(adventure, definition),
                 Tag = definition.Id,
                 FontFamily = new FontFamily("Georgia"),
                 FontSize = 14,

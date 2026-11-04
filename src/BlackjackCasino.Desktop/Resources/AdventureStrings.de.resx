@@ -1333,4 +1333,66 @@ Im Verlauf deiner Ermittlungen füllt sich die Tafel mit Personen, Orten, Beweis
   <data name="Adventure.dead-mans-hand.Choice.fallguy-end" xml:space="preserve"><value>Lass die Beschwerde mit ihren unbeantworteten Lücken auf dem Tisch liegen.</value></data>
   <data name="Adventure.dead-mans-hand.Choice.witness-end" xml:space="preserve"><value>Schütze die Zeugin und untersuche die offenen Fragen weiter.</value></data>
   <data name="Adventure.dead-mans-hand.Choice.cold-end" xml:space="preserve"><value>Lass die Akte offen.</value></data>
+  <data name="Adventure.dead-mans-hand.Board.arthur-vane.Title" xml:space="preserve"><value>Arthur Vane</value></data>
+  <data name="Adventure.dead-mans-hand.Board.evelyn-vane.Title" xml:space="preserve"><value>Evelyn Vane</value></data>
+  <data name="Adventure.dead-mans-hand.Board.elias-hale.Title" xml:space="preserve"><value>Detektiv Elias Hale</value></data>
+  <data name="Adventure.dead-mans-hand.Board.vincent-moretti.Title" xml:space="preserve"><value>Vincent Moretti</value></data>
+  <data name="Adventure.dead-mans-hand.Board.hotel-mirabelle.Title" xml:space="preserve"><value>Hotel Mirabelle</value></data>
+  <data name="Adventure.dead-mans-hand.Board.rook.Title" xml:space="preserve"><value>Polizeipräsident Edmund Rook</value></data>
+  <data name="Adventure.dead-mans-hand.Board.rook.Description" xml:space="preserve"><value>Die Schutzbefehle und der geplante offizielle Schlussbericht führen in sein Büro.</value></data>
+  <data name="Adventure.dead-mans-hand.Board.rook.Subtitle" xml:space="preserve"><value>Polizeipräsident</value></data>
+  <data name="Adventure.dead-mans-hand.Board.lena-vale.Title" xml:space="preserve"><value>Lena Vale</value></data>
+  <data name="Adventure.dead-mans-hand.Board.lena-vale.Description" xml:space="preserve"><value>Sängerin im Elfenbeinsaal und Hales Schwester. Ihre Aussage kann gesichert werden, ohne ihre Schutzadresse zu veröffentlichen.</value></data>
+  <data name="Adventure.dead-mans-hand.Board.lena-vale.Subtitle" xml:space="preserve"><value>Zeugin</value></data>
+  <data name="Adventure.dead-mans-hand.Board.photographer.Title" xml:space="preserve"><value>Bells Fotostudio</value></data>
+  <data name="Adventure.dead-mans-hand.Board.photographer.Description" xml:space="preserve"><value>Otto Bell besitzt das unbeschnittene, datierte Negativ und bietet einen Raum mit Hinterausgang.</value></data>
+  <data name="Adventure.dead-mans-hand.Board.photographer.Subtitle" xml:space="preserve"><value>Flussviertel</value></data>
+  <data name="Adventure.dead-mans-hand.Board.river-docks.Title" xml:space="preserve"><value>Flusslagerhäuser</value></data>
+  <data name="Adventure.dead-mans-hand.Board.river-docks.Description" xml:space="preserve"><value>Städtische Fracht wird unter privater Bewachung transportiert. Hier liegen zurückbehaltene Durchschläge.</value></data>
+  <data name="Adventure.dead-mans-hand.Board.river-docks.Subtitle" xml:space="preserve"><value>Frachtweg</value></data>
+  <data name="Adventure.dead-mans-hand.Board.pump-house.Title" xml:space="preserve"><value>Pumpenhaus Vier</value></data>
+  <data name="Adventure.dead-mans-hand.Board.pump-house.Description" xml:space="preserve"><value>Ort von Vanes nicht registrierter Haft und des geplanten Transports am Morgen.</value></data>
+  <data name="Adventure.dead-mans-hand.Board.pump-house.Subtitle" xml:space="preserve"><value>Spur zur vermissten Person</value></data>
+  <data name="Adventure.dead-mans-hand.Board.precinct.Title" xml:space="preserve"><value>Zentralrevier</value></data>
+  <data name="Adventure.dead-mans-hand.Board.precinct.Description" xml:space="preserve"><value>Hales Büro und das städtische Verwahrarchiv. Vorschriften können Beweise schützen oder verbergen.</value></data>
+  <data name="Adventure.dead-mans-hand.Board.precinct.Subtitle" xml:space="preserve"><value>Polizeiarchiv</value></data>
+  <data name="Adventure.dead-mans-hand.Board.gazette.Title" xml:space="preserve"><value>Die Calder Gazette</value></data>
+  <data name="Adventure.dead-mans-hand.Board.gazette.Description" xml:space="preserve"><value>Ruth Bell kann unabhängige Kopien sichern und einen durch Belege gestützten Bericht veröffentlichen.</value></data>
+  <data name="Adventure.dead-mans-hand.Board.gazette.Subtitle" xml:space="preserve"><value>Unabhängige Verwahrstelle</value></data>
+  <data name="Adventure.dead-mans-hand.Board.shipping-carbon.Title" xml:space="preserve"><value>Aufbewahrter Frachtdurchschlag</value></data>
+  <data name="Adventure.dead-mans-hand.Board.shipping-carbon.Description" xml:space="preserve"><value>Ein unabhängiger Frachtnachweis führt Vane als lebendig unter Polizeischutz transportierte Person.</value></data>
+  <data name="Adventure.dead-mans-hand.Board.shipping-carbon.Subtitle" xml:space="preserve"><value>Dokument</value></data>
+  <data name="Adventure.dead-mans-hand.Board.uncut-negative.Title" xml:space="preserve"><value>Unbeschnittenes Negativ mit Datum</value></data>
+  <data name="Adventure.dead-mans-hand.Board.uncut-negative.Description" xml:space="preserve"><value>Hale, Vane und Lena sind gemeinsam abgebildet. Ihre Anwesenheit beweist nicht allein, wer den Befehl gab.</value></data>
+  <data name="Adventure.dead-mans-hand.Board.uncut-negative.Subtitle" xml:space="preserve"><value>Fotografischer Beweis</value></data>
+  <data name="Adventure.dead-mans-hand.Board.signed-ledger.Title" xml:space="preserve"><value>Unterschriebenes Sanierungshauptbuch</value></data>
+  <data name="Adventure.dead-mans-hand.Board.signed-ledger.Description" xml:space="preserve"><value>Arthurs Überweisungen und Rooks Schutzbefehle verbinden gestohlene Entschädigungen mit amtlichem Handeln.</value></data>
+  <data name="Adventure.dead-mans-hand.Board.signed-ledger.Subtitle" xml:space="preserve"><value>Originaldokument</value></data>
+  <data name="Adventure.dead-mans-hand.Board.rook-recording.Title" xml:space="preserve"><value>Die Aufnahme aus der Vermittlung</value></data>
+  <data name="Adventure.dead-mans-hand.Board.rook-recording.Description" xml:space="preserve"><value>Der aufgezeichnete Befehl und sein Verbindungsnachweis benennen Pumpenhaus Vier.</value></data>
+  <data name="Adventure.dead-mans-hand.Board.rook-recording.Subtitle" xml:space="preserve"><value>Aufgezeichneter Befehl</value></data>
+  <data name="Adventure.dead-mans-hand.Board.witness-statement.Title" xml:space="preserve"><value>Unterschriebene Zeugenaussage</value></data>
+  <data name="Adventure.dead-mans-hand.Board.witness-statement.Description" xml:space="preserve"><value>Eine unterschriebene Aussage muss von Schlussfolgerungen getrennt sein; ihre lebendige Quelle braucht Schutz.</value></data>
+  <data name="Adventure.dead-mans-hand.Board.witness-statement.Subtitle" xml:space="preserve"><value>Zeugenaussage</value></data>
+  <data name="Adventure.dead-mans-hand.Board.impound-register.Title" xml:space="preserve"><value>Städtisches Verwahrregister</value></data>
+  <data name="Adventure.dead-mans-hand.Board.impound-register.Description" xml:space="preserve"><value>Das Hauptbuch besitzt eine Beweisnummer und einen Stornierungsbefehl. Die Beweiskette ist entscheidend.</value></data>
+  <data name="Adventure.dead-mans-hand.Board.impound-register.Subtitle" xml:space="preserve"><value>Amtlicher Nachweis</value></data>
+  <data name="Adventure.dead-mans-hand.Class.private-eye.Name" xml:space="preserve"><value>Privatdetektiv</value></data>
+  <data name="Adventure.dead-mans-hand.Class.private-eye.Description" xml:space="preserve"><value>Klassischer Ermittler. Erkennt Menschen, Widersprüche und die Stimmung eines Raums, bevor er eine Theorie aufstellt.</value></data>
+  <data name="Adventure.dead-mans-hand.Class.private-eye.Special" xml:space="preserve"><value>Ahnung</value></data>
+  <data name="Adventure.dead-mans-hand.Class.fixer.Name" xml:space="preserve"><value>Der Vermittler</value></data>
+  <data name="Adventure.dead-mans-hand.Class.fixer.Description" xml:space="preserve"><value>Ein bestens vernetzter Problemlöser, der mit Gefälligkeiten, Empfehlungen und Schulden arbeitet, die irgendwann fällig werden.</value></data>
+  <data name="Adventure.dead-mans-hand.Class.fixer.Special" xml:space="preserve"><value>Gefälligkeiten</value></data>
+  <data name="Adventure.dead-mans-hand.Class.reporter.Name" xml:space="preserve"><value>Der Reporter</value></data>
+  <data name="Adventure.dead-mans-hand.Class.reporter.Description" xml:space="preserve"><value>Informationsspezialist mit gepflegten Quellen und der gefährlichen Gewohnheit, eine Frage zu viel zu stellen.</value></data>
+  <data name="Adventure.dead-mans-hand.Class.reporter.Special" xml:space="preserve"><value>Quellen</value></data>
+  <data name="Adventure.dead-mans-hand.Class.ex-cop.Name" xml:space="preserve"><value>Der Ex-Polizist</value></data>
+  <data name="Adventure.dead-mans-hand.Class.ex-cop.Description" xml:space="preserve"><value>Kennt die Vorschriften, Tatorte und genau jene Türen im Revier, die in keinem Verzeichnis stehen.</value></data>
+  <data name="Adventure.dead-mans-hand.Class.ex-cop.Special" xml:space="preserve"><value>Ruf</value></data>
+  <data name="Adventure.dead-mans-hand.Class.grifter.Name" xml:space="preserve"><value>Der Hochstapler</value></data>
+  <data name="Adventure.dead-mans-hand.Class.grifter.Description" xml:space="preserve"><value>Betrüger und Spieler. Verschafft sich Zugang, indem er genau die Person wird, die ein Raum erwartet.</value></data>
+  <data name="Adventure.dead-mans-hand.Class.grifter.Special" xml:space="preserve"><value>Aufsehen</value></data>
+  <data name="Adventure.dead-mans-hand.Class.veteran.Name" xml:space="preserve"><value>Der Veteran</value></data>
+  <data name="Adventure.dead-mans-hand.Class.veteran.Description" xml:space="preserve"><value>Schwer einzuschüchtern und noch schwerer aufzuhalten. Eröffnet entschlossene und schützende Wege, wenn leise Pläne scheitern.</value></data>
+  <data name="Adventure.dead-mans-hand.Class.veteran.Special" xml:space="preserve"><value>Entschlossenheit</value></data>
 </root>

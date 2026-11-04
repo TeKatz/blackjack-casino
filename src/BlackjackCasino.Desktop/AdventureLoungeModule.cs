@@ -510,21 +510,21 @@ internal sealed class AdventureView : UserControl
             Foreground = AdventureUi.Ink("#F4E2C5"),
             TextTrimming = TextTrimming.CharacterEllipsis,
         });
+        AdventureClassDefinition? archetype = AdventureCharacterCatalog.AllFor(engine.Definition)
+            .FirstOrDefault(item => string.Equals(item.Id, character.ClassId, StringComparison.OrdinalIgnoreCase));
         identity.Children.Add(new TextBlock
         {
-            Text = $"{character.ClassName} · Level {character.Level}",
+            Text = $"{(archetype is null ? character.ClassName : AdventureTextLocalization.ClassName(engine.Definition, archetype))} · {AdventureTextLocalization.Ui("Level", "LEVEL")} {character.Level}",
             Foreground = AdventureUi.Ink("#90D0B5"),
             FontFamily = new FontFamily("Georgia"),
             FontSize = 12.5,
             Margin = new Thickness(0, 1, 0, 0),
         });
-        AdventureClassDefinition? archetype = AdventureCharacterCatalog.AllFor(engine.Definition)
-            .FirstOrDefault(item => string.Equals(item.Id, character.ClassId, StringComparison.OrdinalIgnoreCase));
         if (!string.IsNullOrWhiteSpace(archetype?.SpecialMechanicName))
         {
             identity.Children.Add(new TextBlock
             {
-                Text = $"SPECIAL · {archetype.SpecialMechanicName!.ToUpperInvariant()}",
+                Text = $"{AdventureTextLocalization.Ui("Special", "SPECIAL")} · {AdventureTextLocalization.ClassSpecial(engine.Definition, archetype).ToUpperInvariant()}",
                 Foreground = AdventureUi.Ink("#C7AA68"),
                 FontFamily = new FontFamily("Georgia"),
                 FontSize = 9.5,

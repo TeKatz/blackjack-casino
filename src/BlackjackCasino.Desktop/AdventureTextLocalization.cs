@@ -37,6 +37,15 @@ internal static class AdventureTextLocalization
     internal static string Act(AdventureDefinition adventure, AdventureSceneDefinition scene, string original) =>
         scene.ActId is { } id ? L($"Adventure.{adventure.Id}.Act.{id}", original) : Title(adventure);
 
+    internal static string ClassName(AdventureDefinition adventure, AdventureClassDefinition definition) =>
+        L($"Adventure.{adventure.Id}.Class.{definition.Id}.Name", definition.Name);
+
+    internal static string ClassDescription(AdventureDefinition adventure, AdventureClassDefinition definition) =>
+        L($"Adventure.{adventure.Id}.Class.{definition.Id}.Description", definition.Description);
+
+    internal static string ClassSpecial(AdventureDefinition adventure, AdventureClassDefinition definition) =>
+        L($"Adventure.{adventure.Id}.Class.{definition.Id}.Special", definition.SpecialMechanicName ?? "");
+
     internal static string BoardTitle(AdventureDefinition adventure, CaseNodeDefinition node) =>
         L($"Adventure.{adventure.Id}.Board.{node.Id}.Title", node.Title);
 
