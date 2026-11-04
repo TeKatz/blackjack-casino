@@ -104,8 +104,9 @@ internal static class Program
 
                 Require(window.Modes.Modes.Any(mode => mode.Id == "nine-lives"), "Nine Lives was not registered in the lobby.");
 
-                // The modern Manor pilot must render inside the existing casino window.
-                // It deliberately has no commands that mutate funds or start paid spins.
+                // The modern Manor now has paid spins/free spins and room choices
+                // wired into the same transactional C# engine. This UI smoke does NOT
+                // place a paid test wager; isolated xUnit integration tests verify that.
                 Require(ModernManorPreviewWindow.IsAvailable, "Modern Manor assets were not copied to the smoke runner.");
                 Require(window.Modes.HasSecondary("midnight-manor"), "Modern Manor preview is missing from the lobby registry.");
                 window.Modes.OpenSecondary("midnight-manor");
@@ -130,10 +131,15 @@ internal static class Program
                 }
                 Require(modernTitle.Contains("MIDNIGHT MANOR", StringComparison.OrdinalIgnoreCase),
                     "Modern Manor WebView2 did not load its React interface.");
+                string modernGameplay = await modernBrowser.CoreWebView2.ExecuteScriptAsync(
+                    "document.querySelector('.gold-button')?.textContent || ''");
+                Require(modernGameplay.Contains("SPIN THE REELS", StringComparison.OrdinalIgnoreCase)
+                    || modernGameplay.Contains("PLAY FREE SPIN", StringComparison.OrdinalIgnoreCase),
+                    "Modern Manor did not expose gameplay controls after loading.");
                 Require(Application.Current.Windows.Cast<Window>().Count(w => w.IsVisible) == 1,
                     "Modern Manor opened another visible native window.");
                 Window modernShell = Application.Current.Windows.Cast<Window>()
-                    .Single(w => w.Title.Contains("Read-only preview", StringComparison.Ordinal));
+                    .Single(w => w.Title.Contains("Playtest", StringComparison.Ordinal));
                 modernShell.Close();
                 await Task.Delay(120);
                 Require(Find<CasinoLobbyView>(window).Any(v => v.IsVisible),
