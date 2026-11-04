@@ -88,6 +88,13 @@ internal static class JigsawSmoke
         window.UpdateLayout();
         Require(FindButton(window, "JigsawResume").IsVisible,
             "The puzzle was not resumable after leaving the board.");
+        Require(!Find<ScrollViewer>(galleryHub).Any(scroll => scroll.IsVisible),
+            "An active puzzle must not add scrolling to the selection menu.");
+        Button replacementAction = FindButton(window, "JigsawReplace");
+        Point replacementBottom = replacementAction.TranslatePoint(
+            new Point(0, replacementAction.ActualHeight), galleryHub);
+        Require(replacementBottom.Y <= galleryHub.ActualHeight + 0.5,
+            "The replacement action is clipped below the fixed-size menu.");
         Click(FindButton(window, "JigsawResume"));
         await Task.Delay(100);
         window.UpdateLayout();
