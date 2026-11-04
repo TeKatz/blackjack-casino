@@ -4,6 +4,7 @@ using System.Windows.Media;
 using BlackjackCasino.Core;
 using BlackjackCasino.Core.Adventure;
 using BlackjackCasino.Core.Empire;
+using BlackjackCasino.Core.Jigsaw;
 
 namespace BlackjackCasino.Desktop;
 
@@ -13,12 +14,11 @@ internal partial class ProgressionWindow
     {
         if (!collectionsInitialized) return;
         PlayerProfileState profile = controller.Profile;
-        var claimedIds = profile.ClaimedChallengeIds.ToHashSet(StringComparer.Ordinal);
         var entries = ChallengeRegistry.All.Select(challenge => new
         {
             Challenge = challenge,
             Complete = ChallengeRegistry.Complete(profile, challenge),
-            Claimed = claimedIds.Contains(challenge.Id),
+            Claimed = ChallengeRegistry.IsClaimed(profile, challenge),
         }).ToArray();
         var ready = entries.Where(entry => entry.Complete && !entry.Claimed).ToArray();
         long readyCoins = ready.Sum(entry => entry.Challenge.CoinReward);
@@ -57,7 +57,7 @@ internal partial class ProgressionWindow
     {
         decimal progress = ChallengeRegistry.Progress(controller.Profile, challenge);
         bool complete = progress >= challenge.Goal;
-        bool claimed = controller.Profile.ClaimedChallengeIds.Contains(challenge.Id, StringComparer.Ordinal);
+        bool claimed = ChallengeRegistry.IsClaimed(controller.Profile, challenge);
         EmpireAchievementBoost? empireReward = EmpireAchievementBoostCatalog.All.FirstOrDefault(boost => boost.ChallengeId == challenge.Id);
         var border = PanelBorder();
         border.Padding = new Thickness(18, 15, 18, 15);
@@ -91,6 +91,13 @@ internal partial class ProgressionWindow
 
         var rewardStack = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
         rewardStack.Children.Add(CoinText($"◆ {challenge.CoinReward:N0}", 12, FontWeights.Bold));
+        if (challenge.Category == ChallengeCategory.Jigsaw)
+            rewardStack.Children.Add(new TextBlock
+            {
+                Text = Localization.Language == UiLanguagePreference.German
+                    ? "Automatisch beim Puzzeln vergeben" : "Automatically awarded in Jigsaw Puzzle",
+                FontSize = 10, Foreground = MutedBrush, TextWrapping = TextWrapping.Wrap,
+            });
         if (ProgressionService.ChallengePack(challenge) is { } packReward)
         {
             rewardStack.Children.Add(new TextBlock { Text = $"+ {packReward} pack", FontSize = 10, Foreground = MutedBrush, TextWrapping = TextWrapping.Wrap });
@@ -111,7 +118,9 @@ internal partial class ProgressionWindow
         }
         footer.Children.Add(rewardStack);
 
-        var button = new Button { Tag = challenge.Id, Content = claimed ? "Claimed" : complete ? "Claim" : "In progress", IsEnabled = complete && !claimed, Margin = new Thickness(4, 0, 0, 0), Padding = new Thickness(8, 6, 8, 6), VerticalAlignment = VerticalAlignment.Center };
+        var button = new Button { Tag = challenge.Id, Content = claimed && challenge.Category == ChallengeCategory.Jigsaw
+            ? (Localization.Language == UiLanguagePreference.German ? "Vergeben" : "Awarded")
+            : claimed ? "Claimed" : complete ? "Claim" : "In progress", IsEnabled = complete && !claimed, Margin = new Thickness(4, 0, 0, 0), Padding = new Thickness(8, 6, 8, 6), VerticalAlignment = VerticalAlignment.Center };
         System.Windows.Automation.AutomationProperties.SetName(button, $"{button.Content}: {ChallengeName(challenge)}");
         button.Click += ChallengeClaim_Click;
         Grid.SetColumn(button, 1);
@@ -120,11 +129,32 @@ internal partial class ProgressionWindow
         return border;
     }
 
-    private static string ChallengeName(ChallengeDefinition challenge) =>
-        Localization.Language == UiLanguagePreference.German ? Localization.T($"Challenge.{challenge.Id}.Name") : challenge.Name;
+    private static string ChallengeName(ChallengeDefinition challenge)
+    {
+        if (challenge.Category == ChallengeCategory.Jigsaw)
+        {
+            JigsawAchievementDefinition? achievement = JigsawAchievements.All.FirstOrDefault(
+                a => challenge.Id == "jigsaw-" + a.Id);
+            if (achievement is not null)
+                return Localization.Language == UiLanguagePreference.German ? achievement.GermanName : achievement.Name;
+        }
+        return Localization.Language == UiLanguagePreference.German
+            ? Localization.T($"Challenge.{challenge.Id}.Name") : challenge.Name;
+    }
 
-    private static string ChallengeDescription(ChallengeDefinition challenge) =>
-        Localization.Language == UiLanguagePreference.German ? Localization.T($"Challenge.{challenge.Id}.Description") : challenge.Description;
+    private static string ChallengeDescription(ChallengeDefinition challenge)
+    {
+        if (challenge.Category == ChallengeCategory.Jigsaw)
+        {
+            JigsawAchievementDefinition? achievement = JigsawAchievements.All.FirstOrDefault(
+                a => challenge.Id == "jigsaw-" + a.Id);
+            if (achievement is not null)
+                return Localization.Language == UiLanguagePreference.German
+                    ? achievement.GermanDescription : achievement.Description;
+        }
+        return Localization.Language == UiLanguagePreference.German
+            ? Localization.T($"Challenge.{challenge.Id}.Description") : challenge.Description;
+    }
 
     private static string ChallengeCategoryLabel(ChallengeDefinition challenge) =>
         AdventureChallengeCatalog.IsAdventure(challenge) ? "Adventure" : CategoryName(challenge.Category);
