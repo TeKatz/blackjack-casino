@@ -29,6 +29,7 @@ internal static class Localization
         new("BlackjackCasino.Desktop.Resources.Phase2Strings", typeof(Localization).Assembly),
         new("BlackjackCasino.Desktop.Resources.AdventureStrings", typeof(Localization).Assembly),
         new("BlackjackCasino.Desktop.Resources.ChallengeStrings", typeof(Localization).Assembly),
+        new("BlackjackCasino.Desktop.Resources.AlbumLoreStrings", typeof(Localization).Assembly),
     ];
 
     private static readonly CultureInfo EnglishCulture = CultureInfo.GetCultureInfo("en-US");

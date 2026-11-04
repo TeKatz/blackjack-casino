@@ -121,7 +121,14 @@ internal static class CollectionLore
 
     internal static int AuthoredCount => Entries.Count;
     internal static bool Has(CollectionCard card) => Entries.ContainsKey(card.Id);
-    internal static string BodyFor(CollectionCard card) => Entries.TryGetValue(card.Id, out string? body)
-        ? body
-        : "This archive entry remains sealed. Rare, Epic and Legendary stories will be catalogued in a later lore pass.";
+    internal static string BodyFor(CollectionCard card)
+    {
+        if (Entries.TryGetValue(card.Id, out string? body))
+            return Localization.Language == UiLanguagePreference.German
+                ? Localization.T($"Album.Lore.{card.Id}")
+                : body;
+        return Localization.Language == UiLanguagePreference.German
+            ? "Dieser Archiveintrag ist noch versiegelt. Geschichten für seltene, epische und legendäre Karten folgen später."
+            : "This archive entry remains sealed. Rare, Epic and Legendary stories will be catalogued in a later lore pass.";
+    }
 }
