@@ -2,6 +2,14 @@
 
 **Implementation status (2026-11-04):** Midnight Manor's React/TypeScript/PixiJS/WebView2 presentation is the sole Manor lobby entry in Development. Phase-3 rendering, six bonus chambers, the restricted C# command bridge and crash-safe settlements are implemented. The replacement passed CI and Development package verification on `2114b05`; additional hardware/visual checks remain open. Development continues from `feature/manor-modernization-phase-1` without a merge to `main`. WPF Manor is retained in source for rollback only; the frontend never decides results or modifies wallets directly.
 
+## Modern lobby presentation (2026-11-04)
+
+The casino lobby is now a separate, read-only React/TypeScript/PixiJS page built alongside Midnight Manor. The legacy WPF lobby remains active underneath as a safe fallback if the WebView2 frontend fails. The generated emerald/gold concept artwork is packed locally as a lightweight game-art atlas and a transparent icon atlas; no external network resources or game-engine migration are required.
+
+**Delivered:** nine existing game routes, animated illustrations and gold controls, live header/progression widgets, responsive category navigation, PixiJS ambient particles with reduced-motion support, strict `/lobby.html` origin checks and a C# navigation-only message bridge. Existing Blackjack, Dice, Empire, Lounge and slot actions remain unchanged. React does not own wallets, payouts or saved data.
+
+**Still requiring human review:** image sharpness on high-DPI displays, hover/keyboard feel, fit at device-specific window dimensions, performance and GPU availability, and final visual comparison to the approved lobby reference. Automated builds and smoke tests cannot establish subjective presentation quality.
+
 ## Why this direction
 
 The current Windows UI is WPF. Gameplay engines are primarily in `BlackjackCasino.Core`, and the WPF desktop project provides orchestration, persistence and visual state. The planned frontend uses:
