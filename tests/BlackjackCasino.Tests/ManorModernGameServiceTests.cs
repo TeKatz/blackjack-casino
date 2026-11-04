@@ -76,7 +76,7 @@ public sealed class ManorModernGameServiceTests : IDisposable
         Assert.Equal(500m,state.Bankroll); // The room decision is not a new wager.
 
         ManorModernGameService.Apply(engine,new ManorPreviewProtocol.Command("run.cashout","leave-room",0));
-        Assert.True(state.Run.Status is ManorRunStatus.CashedOut);
+        Assert.Equal(ManorRunStatus.CashedOut,state.Run!.Status);
         Assert.False(state.CycleActive);
         Assert.True(state.RunPaid);
         decimal balance=state.Bankroll;
