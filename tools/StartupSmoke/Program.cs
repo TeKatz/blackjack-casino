@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO;
 using Microsoft.Web.WebView2.Wpf;
+using Microsoft.Web.WebView2.Core;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -136,6 +137,26 @@ internal static class Program
                 Require(modernGameplay.Contains("SPIN THE REELS", StringComparison.OrdinalIgnoreCase)
                     || modernGameplay.Contains("PLAY FREE SPIN", StringComparison.OrdinalIgnoreCase),
                     "Modern Manor did not expose gameplay controls after loading.");
+                // The DOM title alone is not enough: require the real Pixi canvas to
+                // initialize in the packaged WebView2 build and capture it for review.
+                var canvasClock = Stopwatch.StartNew();
+                string canvasReady = string.Empty;
+                while (canvasClock.Elapsed < TimeSpan.FromSeconds(12))
+                {
+                    canvasReady = await modernBrowser.CoreWebView2.ExecuteScriptAsync(
+                        "Boolean(document.querySelector('.manor-canvas canvas'))");
+                    if (canvasReady.Equals("true", StringComparison.OrdinalIgnoreCase)) break;
+                    await Task.Delay(150);
+                }
+                Require(canvasReady.Equals("true", StringComparison.OrdinalIgnoreCase),
+                    "Modern Manor PixiJS canvas did not initialize in the Windows WebView2 host.");
+                await Task.Delay(250);
+                await using (FileStream modernCapture = File.Create(
+                    Path.Combine(output, "modern-manor-phase3.png")))
+                {
+                    await modernBrowser.CoreWebView2.CapturePreviewAsync(
+                        CoreWebView2CapturePreviewImageFormat.Png, modernCapture);
+                }
                 Require(Application.Current.Windows.Cast<Window>().Count(w => w.IsVisible) == 1,
                     "Modern Manor opened another visible native window.");
                 Window modernShell = Application.Current.Windows.Cast<Window>()
