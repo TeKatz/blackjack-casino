@@ -679,4 +679,113 @@ The board grows as the investigation uncovers people, places, evidence, leads an
   <data name="Adventure.black-stag.Scene.ending-quiet-lie.Body" xml:space="preserve"><value>You hide the true ledger where neither faction can reach it and allow the public record to stand. The disappearances remain rumors. The network fractures. The Crown survives. You keep the names because somebody must — and discover that carrying a secret can resemble serving it.</value></data>
   <data name="Adventure.black-stag.Scene.ending-watchful.Title" xml:space="preserve"><value>Ending — The Watchful Hand</value></data>
   <data name="Adventure.black-stag.Scene.ending-watchful.Body" xml:space="preserve"><value>You accept Orven&apos;s key, but not his certainty. From inside the archive you begin changing small things: a warrant delayed, a child erased from a hunter&apos;s list, a corrupt official&apos;s sealed file copied twice. Whether you joined the machine or infected it will depend on what you become next.</value></data>
+  <data name="Adventure.black-stag.Choice.follow-isi-anyway" xml:space="preserve"><value>Follow her.</value></data>
+  <data name="Adventure.black-stag.Choice.accept-charm" xml:space="preserve"><value>Accept the carved Ashgrove charm she offers.</value></data>
+  <data name="Adventure.black-stag.Choice.skip-charm" xml:space="preserve"><value>Leave the charm. Ask about the three leads instead.</value></data>
+  <data name="Adventure.black-stag.Choice.treat-bleeding" xml:space="preserve"><value>Use a healing tonic on the wound before moving on.</value></data>
+  <data name="Adventure.black-stag.Choice.to-mill" xml:space="preserve"><value>Investigate the abandoned mill.</value></data>
+  <data name="Adventure.black-stag.Choice.to-chapel" xml:space="preserve"><value>Search Saint Orra&apos;s chapel.</value></data>
+  <data name="Adventure.black-stag.Choice.to-market" xml:space="preserve"><value>Ask questions in Grayfen market.</value></data>
+  <data name="Adventure.black-stag.Choice.enough-clues" xml:space="preserve"><value>You have enough pieces. Ask Isi where they point.</value></data>
+  <data name="Adventure.black-stag.Choice.mill-tracks" xml:space="preserve"><value>Follow the fresh tracks around the building.</value></data>
+  <data name="Adventure.black-stag.Choice.mill-force" xml:space="preserve"><value>Force the front door before whoever is inside can react.</value></data>
+  <data name="Adventure.black-stag.Choice.mill-sneak" xml:space="preserve"><value>Circle to the upper loading window.</value></data>
+  <data name="Adventure.black-stag.Choice.mill-rise" xml:space="preserve"><value>Get up and keep moving.</value></data>
+  <data name="Adventure.black-stag.Choice.take-rope" xml:space="preserve"><value>Take the rope before searching the drawer.</value></data>
+  <data name="Adventure.black-stag.Choice.open-drawer" xml:space="preserve"><value>Ignore the rope and inspect the locked drawer.</value></data>
+  <data name="Adventure.black-stag.Choice.take-mill-cache" xml:space="preserve"><value>Take the key and the coins, then read the records.</value></data>
+  <data name="Adventure.black-stag.Choice.pick-drawer" xml:space="preserve"><value>Work the old lock carefully.</value></data>
+  <data name="Adventure.black-stag.Choice.record-clue" xml:space="preserve"><value>Memorize the hospice reference and return to Isi.</value></data>
+  <data name="Adventure.black-stag.Choice.mill-return" xml:space="preserve"><value>Return to Isi with the records.</value></data>
+  <data name="Adventure.black-stag.Choice.chapel-grave" xml:space="preserve"><value>Examine the grave that faces the forest.</value></data>
+  <data name="Adventure.black-stag.Choice.chapel-rite" xml:space="preserve"><value>Study the old funerary symbols before entering.</value></data>
+  <data name="Adventure.black-stag.Choice.chapel-magic" xml:space="preserve"><value>Follow the magical residue in the stonework.</value></data>
+  <data name="Adventure.black-stag.Choice.avoid-needle" xml:space="preserve"><value>Pull your hand back before the mechanism fires.</value></data>
+  <data name="Adventure.black-stag.Choice.take-vial" xml:space="preserve"><value>Take the vial and accept the risk.</value></data>
+  <data name="Adventure.black-stag.Choice.drink-antidote" xml:space="preserve"><value>Drink the antidote immediately.</value></data>
+  <data name="Adventure.black-stag.Choice.endure-poison" xml:space="preserve"><value>Save the antidote and push on.</value></data>
+  <data name="Adventure.black-stag.Choice.copy-crypt" xml:space="preserve"><value>Make a charcoal rubbing of the oldest carving.</value></data>
+  <data name="Adventure.black-stag.Choice.chapel-return" xml:space="preserve"><value>Return to Isi with the chapel evidence.</value></data>
+  <data name="Adventure.black-stag.Choice.visit-apothecary" xml:space="preserve"><value>Visit the apothecary.</value></data>
+  <data name="Adventure.black-stag.Choice.visit-fence" xml:space="preserve"><value>Approach the fence.</value></data>
+  <data name="Adventure.black-stag.Choice.watch-clerk" xml:space="preserve"><value>Watch the royal clerk before speaking to anyone.</value></data>
+  <data name="Adventure.black-stag.Choice.buy-healing" xml:space="preserve"><value>Buy a healing tonic for 6 coins.</value></data>
+  <data name="Adventure.black-stag.Choice.buy-antidote" xml:space="preserve"><value>Buy an antidote for 5 coins.</value></data>
+  <data name="Adventure.black-stag.Choice.buy-rope" xml:space="preserve"><value>Buy rope from the chandlery for 4 coins.</value></data>
+  <data name="Adventure.black-stag.Choice.leave-shop" xml:space="preserve"><value>Leave without buying anything.</value></data>
+  <data name="Adventure.black-stag.Choice.pay-pell" xml:space="preserve"><value>Pay Pell five coins.</value></data>
+  <data name="Adventure.black-stag.Choice.persuade-pell" xml:space="preserve"><value>Convince him that surviving the week is worth more than five coins.</value></data>
+  <data name="Adventure.black-stag.Choice.intimidate-pell" xml:space="preserve"><value>Make the price feel negotiable.</value></data>
+  <data name="Adventure.black-stag.Choice.clerk-kind" xml:space="preserve"><value>Sit down without threatening him.</value></data>
+  <data name="Adventure.black-stag.Choice.clerk-direct" xml:space="preserve"><value>Put the ledger on the table and ask which names are false.</value></data>
+  <data name="Adventure.black-stag.Choice.market-return" xml:space="preserve"><value>Return to Isi with what you learned.</value></data>
+  <data name="Adventure.black-stag.Choice.go-hospice" xml:space="preserve"><value>Leave for Saint Orra&apos;s hospice before nightfall.</value></data>
+  <data name="Adventure.black-stag.Choice.ask-isi-why" xml:space="preserve"><value>Ask why this matters to her personally.</value></data>
+  <data name="Adventure.black-stag.Choice.promise-isi" xml:space="preserve"><value>Promise that the missing matter more than the politics.</value></data>
+  <data name="Adventure.black-stag.Choice.use-brass-key" xml:space="preserve"><value>Use the brass key on the service entrance.</value></data>
+  <data name="Adventure.black-stag.Choice.force-hospice" xml:space="preserve"><value>Break the chain at the front door.</value></data>
+  <data name="Adventure.black-stag.Choice.find-hospice-way" xml:space="preserve"><value>Circle the building for another entrance.</value></data>
+  <data name="Adventure.black-stag.Choice.hospice-hurry" xml:space="preserve"><value>Search the archive first.</value></data>
+  <data name="Adventure.black-stag.Choice.take-witness-list" xml:space="preserve"><value>Separate the verified names from the planted ones.</value></data>
+  <data name="Adventure.black-stag.Choice.listen-vael" xml:space="preserve"><value>Let Sister Vael tell the story in her own time.</value></data>
+  <data name="Adventure.black-stag.Choice.press-vael" xml:space="preserve"><value>Ask who falsified the ledger before the hunters arrive.</value></data>
+  <data name="Adventure.black-stag.Choice.follow-vael-map" xml:space="preserve"><value>Take Isi and follow Vael&apos;s map to the old Stag refuge.</value></data>
+  <data name="Adventure.black-stag.Choice.show-token" xml:space="preserve"><value>Show Vael&apos;s courier token and ask for the council.</value></data>
+  <data name="Adventure.black-stag.Choice.show-ledger" xml:space="preserve"><value>Place the ledger on the table and demand answers.</value></data>
+  <data name="Adventure.black-stag.Choice.question-merrow" xml:space="preserve"><value>Ask Merrow why his name appears in royal supply records.</value></data>
+  <data name="Adventure.black-stag.Choice.question-seran" xml:space="preserve"><value>Ask Seran why Edrin was hunting the courier.</value></data>
+  <data name="Adventure.black-stag.Choice.ask-isi" xml:space="preserve"><value>Let Isi choose.</value></data>
+  <data name="Adventure.black-stag.Choice.merrow-next" xml:space="preserve"><value>Ask who had access.</value></data>
+  <data name="Adventure.black-stag.Choice.seran-next" xml:space="preserve"><value>Ask what happened during the failed rescue.</value></data>
+  <data name="Adventure.black-stag.Choice.isi-person-first" xml:space="preserve"><value>Tell her you will look for her brother before deciding the network&apos;s fate.</value></data>
+  <data name="Adventure.black-stag.Choice.isi-truth-first" xml:space="preserve"><value>Tell her the wider truth has to come first.</value></data>
+  <data name="Adventure.black-stag.Choice.open-antler-vault" xml:space="preserve"><value>Open the ancient stone door and recover the original seal matrix.</value></data>
+  <data name="Adventure.black-stag.Choice.skip-vault" xml:space="preserve"><value>Leave the old relics alone and focus on the royal archive.</value></data>
+  <data name="Adventure.black-stag.Choice.resist-mark" xml:space="preserve"><value>Pull your hand away and study the vision rather than following it.</value></data>
+  <data name="Adventure.black-stag.Choice.follow-vision" xml:space="preserve"><value>Let the vision take you deeper.</value></data>
+  <data name="Adventure.black-stag.Choice.accept-mark" xml:space="preserve"><value>Keep moving. Whatever the mark is, you need the truth first.</value></data>
+  <data name="Adventure.black-stag.Choice.take-vision" xml:space="preserve"><value>Remember the promise and search the chamber.</value></data>
+  <data name="Adventure.black-stag.Choice.take-seal-copy" xml:space="preserve"><value>Take a wax copy of the royal counterseal.</value></data>
+  <data name="Adventure.black-stag.Choice.trust-edrin" xml:space="preserve"><value>Hear Edrin&apos;s plan.</value></data>
+  <data name="Adventure.black-stag.Choice.trust-stag" xml:space="preserve"><value>Stand with the refuge and prepare to move the witnesses.</value></data>
+  <data name="Adventure.black-stag.Choice.trust-isi" xml:space="preserve"><value>Let Isi decide which route keeps the missing alive.</value></data>
+  <data name="Adventure.black-stag.Choice.take-edrin-route" xml:space="preserve"><value>Take Edrin&apos;s route toward the capital.</value></data>
+  <data name="Adventure.black-stag.Choice.take-stag-route" xml:space="preserve"><value>Escort the last group through the forest road.</value></data>
+  <data name="Adventure.black-stag.Choice.take-isi-route" xml:space="preserve"><value>Trust Isi and take the Ashgrove trail.</value></data>
+  <data name="Adventure.black-stag.Choice.set-ambush" xml:space="preserve"><value>Turn the hunt around and set an ambush.</value></data>
+  <data name="Adventure.black-stag.Choice.move-fast" xml:space="preserve"><value>Push for the ravine before they close the road.</value></data>
+  <data name="Adventure.black-stag.Choice.take-scout-supplies" xml:space="preserve"><value>Take the antidote and follow the prison-wagon route.</value></data>
+  <data name="Adventure.black-stag.Choice.use-antidote-hunt" xml:space="preserve"><value>Drink an antidote while Isi covers you.</value></data>
+  <data name="Adventure.black-stag.Choice.carry-poison" xml:space="preserve"><value>Save your supplies and keep moving.</value></data>
+  <data name="Adventure.black-stag.Choice.use-rope" xml:space="preserve"><value>Anchor your rope and cross the broken span.</value></data>
+  <data name="Adventure.black-stag.Choice.jump-ravine" xml:space="preserve"><value>Make the jump before the hunters arrive.</value></data>
+  <data name="Adventure.black-stag.Choice.find-way-down" xml:space="preserve"><value>Climb into the ravine and use the streambed.</value></data>
+  <data name="Adventure.black-stag.Choice.ravine-recover" xml:space="preserve"><value>Get back on your feet and keep moving.</value></data>
+  <data name="Adventure.black-stag.Choice.free-brother" xml:space="preserve"><value>Free Isi&apos;s brother before going anywhere near the capital.</value></data>
+  <data name="Adventure.black-stag.Choice.follow-wagon" xml:space="preserve"><value>Follow the wagon. It may lead straight into the archive.</value></data>
+  <data name="Adventure.black-stag.Choice.cael-route" xml:space="preserve"><value>Take Cael&apos;s service route into the capital.</value></data>
+  <data name="Adventure.black-stag.Choice.follow-into-city" xml:space="preserve"><value>Use the wagon&apos;s route to enter the capital.</value></data>
+  <data name="Adventure.black-stag.Choice.service-entry" xml:space="preserve"><value>Use the archive service route.</value></data>
+  <data name="Adventure.black-stag.Choice.cael-entry" xml:space="preserve"><value>Follow Cael&apos;s knowledge of the staff passages.</value></data>
+  <data name="Adventure.black-stag.Choice.stag-entry" xml:space="preserve"><value>Use the Black Stag contact hidden among the court messengers.</value></data>
+  <data name="Adventure.black-stag.Choice.break-entry" xml:space="preserve"><value>Enter through the old aqueduct beneath the wall.</value></data>
+  <data name="Adventure.black-stag.Choice.escape-bindings" xml:space="preserve"><value>Work your hands free before the guard returns.</value></data>
+  <data name="Adventure.black-stag.Choice.use-seal-copy" xml:space="preserve"><value>Use the copied seal to bluff your way past the record keeper.</value></data>
+  <data name="Adventure.black-stag.Choice.pick-vault" xml:space="preserve"><value>Open the iron door quietly.</value></data>
+  <data name="Adventure.black-stag.Choice.force-vault" xml:space="preserve"><value>Force the lock and accept the noise.</value></data>
+  <data name="Adventure.black-stag.Choice.fight-up" xml:space="preserve"><value>Drive the nearest guard back and regain your feet.</value></data>
+  <data name="Adventure.black-stag.Choice.compare-ledgers" xml:space="preserve"><value>Compare the royal ledger with your verified witness list.</value></data>
+  <data name="Adventure.black-stag.Choice.take-ledger-final" xml:space="preserve"><value>Take the royal ledger and leave before anyone can stop you.</value></data>
+  <data name="Adventure.black-stag.Choice.orven-question" xml:space="preserve"><value>Ask what the intact stag symbol means.</value></data>
+  <data name="Adventure.black-stag.Choice.orven-refuse" xml:space="preserve"><value>Tell him no office gets to own the dead.</value></data>
+  <data name="Adventure.black-stag.Choice.orven-listen" xml:space="preserve"><value>Hear his offer before deciding.</value></data>
+  <data name="Adventure.black-stag.Choice.whole-stag-choice" xml:space="preserve"><value>Keep the older mystery for another night. Decide what to do with the proof.</value></data>
+  <data name="Adventure.black-stag.Choice.reject-offer" xml:space="preserve"><value>Reject the offer and decide the ledger&apos;s fate yourself.</value></data>
+  <data name="Adventure.black-stag.Choice.accept-offer" xml:space="preserve"><value>Accept the archive key and become part of the machine.</value></data>
+  <data name="Adventure.black-stag.Choice.expose-crown" xml:space="preserve"><value>Release the verified evidence and expose the Crown&apos;s disappearances.</value></data>
+  <data name="Adventure.black-stag.Choice.save-stag" xml:space="preserve"><value>Destroy the planted names, preserve the witness routes, and let the Black Stag survive.</value></data>
+  <data name="Adventure.black-stag.Choice.save-missing" xml:space="preserve"><value>Use the archive to recover the missing before exposing anyone.</value></data>
+  <data name="Adventure.black-stag.Choice.isi-ending" xml:space="preserve"><value>Give Isi the choice over the records tied to her grove.</value></data>
+  <data name="Adventure.black-stag.Choice.burn-both" xml:space="preserve"><value>Burn both ledgers. Deny the Crown and the Stag the power of the list.</value></data>
+  <data name="Adventure.black-stag.Choice.bury-truth" xml:space="preserve"><value>Hide the true ledger and leave the official story intact.</value></data>
 </root>

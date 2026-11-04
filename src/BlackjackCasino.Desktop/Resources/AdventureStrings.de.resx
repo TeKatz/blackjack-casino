@@ -679,4 +679,113 @@ Im Verlauf deiner Ermittlungen füllt sich die Tafel mit Personen, Orten, Beweis
   <data name="Adventure.black-stag.Scene.ending-quiet-lie.Body" xml:space="preserve"><value>Du versteckst das wahre Hauptbuch dort, wo keine der beiden Seiten es erreichen kann, und lässt die offiziellen Akten unangetastet. Die Vermissten bleiben Gerüchte. Das Netzwerk zerbricht. Die Krone besteht fort. Du bewahrst die Namen, weil es jemand tun muss – und merkst, dass ein Geheimnis zu hüten sich anfühlen kann, als diene man ihm.</value></data>
   <data name="Adventure.black-stag.Scene.ending-watchful.Title" xml:space="preserve"><value>Ende – Die wachsame Hand</value></data>
   <data name="Adventure.black-stag.Scene.ending-watchful.Body" xml:space="preserve"><value>Du nimmst Orvens Schlüssel an, nicht aber seine Gewissheit. Aus dem Inneren des Archivs beginnst du, Kleinigkeiten zu ändern: ein verzögerter Haftbefehl, ein Kind, das von einer Jägerliste verschwindet, eine versiegelte Akte eines korrupten Beamten, die zweimal kopiert wird. Ob du Teil der Maschine geworden bist oder sie angesteckt hast, wird sich erst zeigen.</value></data>
+  <data name="Adventure.black-stag.Choice.follow-isi-anyway" xml:space="preserve"><value>Folge ihr.</value></data>
+  <data name="Adventure.black-stag.Choice.accept-charm" xml:space="preserve"><value>Nimm den geschnitzten Glücksbringer aus Eschenhain an, den sie dir anbietet.</value></data>
+  <data name="Adventure.black-stag.Choice.skip-charm" xml:space="preserve"><value>Lass den Glücksbringer liegen. Frag stattdessen nach den drei Spuren.</value></data>
+  <data name="Adventure.black-stag.Choice.treat-bleeding" xml:space="preserve"><value>Behandle die Wunde mit einem Heiltrank, bevor ihr weitergeht.</value></data>
+  <data name="Adventure.black-stag.Choice.to-mill" xml:space="preserve"><value>Untersuche die verlassene Mühle.</value></data>
+  <data name="Adventure.black-stag.Choice.to-chapel" xml:space="preserve"><value>Durchsuche die Kapelle der heiligen Orra.</value></data>
+  <data name="Adventure.black-stag.Choice.to-market" xml:space="preserve"><value>Erkundige dich auf dem Markt von Grayfen.</value></data>
+  <data name="Adventure.black-stag.Choice.enough-clues" xml:space="preserve"><value>Du hast genügend Hinweise. Frag Isi, wohin sie führen.</value></data>
+  <data name="Adventure.black-stag.Choice.mill-tracks" xml:space="preserve"><value>Folge den frischen Spuren um das Gebäude.</value></data>
+  <data name="Adventure.black-stag.Choice.mill-force" xml:space="preserve"><value>Brich die Eingangstür auf, bevor jemand drinnen reagieren kann.</value></data>
+  <data name="Adventure.black-stag.Choice.mill-sneak" xml:space="preserve"><value>Schleiche zum oberen Ladefenster.</value></data>
+  <data name="Adventure.black-stag.Choice.mill-rise" xml:space="preserve"><value>Steh auf und geh weiter.</value></data>
+  <data name="Adventure.black-stag.Choice.take-rope" xml:space="preserve"><value>Nimm das Seil, bevor du die Schublade durchsuchst.</value></data>
+  <data name="Adventure.black-stag.Choice.open-drawer" xml:space="preserve"><value>Ignoriere das Seil und untersuche die verschlossene Schublade.</value></data>
+  <data name="Adventure.black-stag.Choice.take-mill-cache" xml:space="preserve"><value>Nimm den Schlüssel und die Münzen, dann lies die Aufzeichnungen.</value></data>
+  <data name="Adventure.black-stag.Choice.pick-drawer" xml:space="preserve"><value>Öffne das alte Schloss vorsichtig.</value></data>
+  <data name="Adventure.black-stag.Choice.record-clue" xml:space="preserve"><value>Präge dir den Hinweis auf das Hospiz ein und kehre zu Isi zurück.</value></data>
+  <data name="Adventure.black-stag.Choice.mill-return" xml:space="preserve"><value>Kehre mit den Aufzeichnungen zu Isi zurück.</value></data>
+  <data name="Adventure.black-stag.Choice.chapel-grave" xml:space="preserve"><value>Untersuche das Grab, das zum Wald ausgerichtet ist.</value></data>
+  <data name="Adventure.black-stag.Choice.chapel-rite" xml:space="preserve"><value>Untersuche die alten Begräbnissymbole, bevor du hineingehst.</value></data>
+  <data name="Adventure.black-stag.Choice.chapel-magic" xml:space="preserve"><value>Folge den magischen Rückständen im Mauerwerk.</value></data>
+  <data name="Adventure.black-stag.Choice.avoid-needle" xml:space="preserve"><value>Zieh die Hand zurück, bevor der Mechanismus auslöst.</value></data>
+  <data name="Adventure.black-stag.Choice.take-vial" xml:space="preserve"><value>Nimm die Phiole und geh das Risiko ein.</value></data>
+  <data name="Adventure.black-stag.Choice.drink-antidote" xml:space="preserve"><value>Trink sofort das Gegengift.</value></data>
+  <data name="Adventure.black-stag.Choice.endure-poison" xml:space="preserve"><value>Heb das Gegengift auf und geh weiter.</value></data>
+  <data name="Adventure.black-stag.Choice.copy-crypt" xml:space="preserve"><value>Fertige einen Kohleabrieb der ältesten Ritzzeichnung an.</value></data>
+  <data name="Adventure.black-stag.Choice.chapel-return" xml:space="preserve"><value>Kehre mit den Beweisen aus der Kapelle zu Isi zurück.</value></data>
+  <data name="Adventure.black-stag.Choice.visit-apothecary" xml:space="preserve"><value>Geh zum Apotheker.</value></data>
+  <data name="Adventure.black-stag.Choice.visit-fence" xml:space="preserve"><value>Sprich mit dem Hehler.</value></data>
+  <data name="Adventure.black-stag.Choice.watch-clerk" xml:space="preserve"><value>Beobachte den königlichen Schreiber, bevor du jemanden ansprichst.</value></data>
+  <data name="Adventure.black-stag.Choice.buy-healing" xml:space="preserve"><value>Kauf einen Heiltrank für 6 Münzen.</value></data>
+  <data name="Adventure.black-stag.Choice.buy-antidote" xml:space="preserve"><value>Kauf ein Gegengift für 5 Münzen.</value></data>
+  <data name="Adventure.black-stag.Choice.buy-rope" xml:space="preserve"><value>Kauf beim Schiffsausrüster ein Seil für 4 Münzen.</value></data>
+  <data name="Adventure.black-stag.Choice.leave-shop" xml:space="preserve"><value>Geh, ohne etwas zu kaufen.</value></data>
+  <data name="Adventure.black-stag.Choice.pay-pell" xml:space="preserve"><value>Zahl Pell fünf Münzen.</value></data>
+  <data name="Adventure.black-stag.Choice.persuade-pell" xml:space="preserve"><value>Überzeuge ihn, dass es mehr als fünf Münzen wert ist, die Woche zu überleben.</value></data>
+  <data name="Adventure.black-stag.Choice.intimidate-pell" xml:space="preserve"><value>Zeig ihm, dass der Preis verhandelbar ist.</value></data>
+  <data name="Adventure.black-stag.Choice.clerk-kind" xml:space="preserve"><value>Setz dich, ohne ihn zu bedrohen.</value></data>
+  <data name="Adventure.black-stag.Choice.clerk-direct" xml:space="preserve"><value>Leg das Hauptbuch auf den Tisch und frag, welche Namen falsch sind.</value></data>
+  <data name="Adventure.black-stag.Choice.market-return" xml:space="preserve"><value>Kehre mit deinen Erkenntnissen zu Isi zurück.</value></data>
+  <data name="Adventure.black-stag.Choice.go-hospice" xml:space="preserve"><value>Brich vor Einbruch der Nacht zum Hospiz der heiligen Orra auf.</value></data>
+  <data name="Adventure.black-stag.Choice.ask-isi-why" xml:space="preserve"><value>Frag Isi, weshalb ihr das persönlich so viel bedeutet.</value></data>
+  <data name="Adventure.black-stag.Choice.promise-isi" xml:space="preserve"><value>Versprich ihr, dass die Vermissten wichtiger sind als die Politik.</value></data>
+  <data name="Adventure.black-stag.Choice.use-brass-key" xml:space="preserve"><value>Benutz den Messingschlüssel am Dienstboteneingang.</value></data>
+  <data name="Adventure.black-stag.Choice.force-hospice" xml:space="preserve"><value>Spreng die Kette am Haupteingang.</value></data>
+  <data name="Adventure.black-stag.Choice.find-hospice-way" xml:space="preserve"><value>Umrunde das Gebäude auf der Suche nach einem anderen Eingang.</value></data>
+  <data name="Adventure.black-stag.Choice.hospice-hurry" xml:space="preserve"><value>Durchsuche zuerst das Archiv.</value></data>
+  <data name="Adventure.black-stag.Choice.take-witness-list" xml:space="preserve"><value>Trenn die bestätigten Namen von den eingeschleusten.</value></data>
+  <data name="Adventure.black-stag.Choice.listen-vael" xml:space="preserve"><value>Lass Schwester Vael die Geschichte in ihrem eigenen Tempo erzählen.</value></data>
+  <data name="Adventure.black-stag.Choice.press-vael" xml:space="preserve"><value>Frag, wer das Hauptbuch gefälscht hat, bevor die Jäger kommen.</value></data>
+  <data name="Adventure.black-stag.Choice.follow-vael-map" xml:space="preserve"><value>Nimm Isi mit und folge Vaels Karte zur alten Zuflucht des Hirsches.</value></data>
+  <data name="Adventure.black-stag.Choice.show-token" xml:space="preserve"><value>Zeig Vaels Kuriermarke und verlang, den Rat zu sprechen.</value></data>
+  <data name="Adventure.black-stag.Choice.show-ledger" xml:space="preserve"><value>Leg das Hauptbuch auf den Tisch und verlange Antworten.</value></data>
+  <data name="Adventure.black-stag.Choice.question-merrow" xml:space="preserve"><value>Frag Merrow, weshalb sein Name in den königlichen Versorgungsakten steht.</value></data>
+  <data name="Adventure.black-stag.Choice.question-seran" xml:space="preserve"><value>Frag Seran, weshalb Edrin den Kurier jagte.</value></data>
+  <data name="Adventure.black-stag.Choice.ask-isi" xml:space="preserve"><value>Sprich unter vier Augen mit Isi, bevor du entscheidest, wem du vertraust.</value></data>
+  <data name="Adventure.black-stag.Choice.merrow-next" xml:space="preserve"><value>Frag, wer Zugang hatte.</value></data>
+  <data name="Adventure.black-stag.Choice.seran-next" xml:space="preserve"><value>Frag, was bei der gescheiterten Rettung geschah.</value></data>
+  <data name="Adventure.black-stag.Choice.isi-person-first" xml:space="preserve"><value>Sag ihr, dass du zuerst nach ihrem Bruder suchen wirst, bevor du über das Netzwerk entscheidest.</value></data>
+  <data name="Adventure.black-stag.Choice.isi-truth-first" xml:space="preserve"><value>Sag ihr, dass die größere Wahrheit zuerst kommen muss.</value></data>
+  <data name="Adventure.black-stag.Choice.open-antler-vault" xml:space="preserve"><value>Öffne die uralte Steintür und hole die ursprüngliche Siegelmatrix.</value></data>
+  <data name="Adventure.black-stag.Choice.skip-vault" xml:space="preserve"><value>Lass die alten Relikte zurück und konzentriere dich auf das königliche Archiv.</value></data>
+  <data name="Adventure.black-stag.Choice.resist-mark" xml:space="preserve"><value>Zieh die Hand zurück und untersuche die Vision, statt ihr zu folgen.</value></data>
+  <data name="Adventure.black-stag.Choice.follow-vision" xml:space="preserve"><value>Lass dich tiefer in die Vision hineinziehen.</value></data>
+  <data name="Adventure.black-stag.Choice.accept-mark" xml:space="preserve"><value>Geh weiter. Was auch immer das Zeichen ist, du brauchst zuerst die Wahrheit.</value></data>
+  <data name="Adventure.black-stag.Choice.take-vision" xml:space="preserve"><value>Merk dir das Versprechen und durchsuche die Kammer.</value></data>
+  <data name="Adventure.black-stag.Choice.take-seal-copy" xml:space="preserve"><value>Nimm einen Wachsabdruck des königlichen Gegensiegels.</value></data>
+  <data name="Adventure.black-stag.Choice.trust-edrin" xml:space="preserve"><value>Hör dir Edrins Plan an.</value></data>
+  <data name="Adventure.black-stag.Choice.trust-stag" xml:space="preserve"><value>Stell dich auf die Seite der Zuflucht und bereite die Flucht der Zeugen vor.</value></data>
+  <data name="Adventure.black-stag.Choice.trust-isi" xml:space="preserve"><value>Lass Isi entscheiden, welcher Weg die Vermissten am Leben hält.</value></data>
+  <data name="Adventure.black-stag.Choice.take-edrin-route" xml:space="preserve"><value>Wähle Edrins Weg zur Hauptstadt.</value></data>
+  <data name="Adventure.black-stag.Choice.take-stag-route" xml:space="preserve"><value>Begleite die letzte Gruppe auf der Waldstraße.</value></data>
+  <data name="Adventure.black-stag.Choice.take-isi-route" xml:space="preserve"><value>Vertrau Isi und nimm den Eschenhainpfad.</value></data>
+  <data name="Adventure.black-stag.Choice.set-ambush" xml:space="preserve"><value>Dreh die Jagd um und leg einen Hinterhalt.</value></data>
+  <data name="Adventure.black-stag.Choice.move-fast" xml:space="preserve"><value>Beeil dich, die Schlucht zu erreichen, bevor die Jäger den Weg sperren.</value></data>
+  <data name="Adventure.black-stag.Choice.take-scout-supplies" xml:space="preserve"><value>Nimm das Gegengift und folge der Route des Gefangenenwagens.</value></data>
+  <data name="Adventure.black-stag.Choice.use-antidote-hunt" xml:space="preserve"><value>Trink ein Gegengift, während Isi dich deckt.</value></data>
+  <data name="Adventure.black-stag.Choice.carry-poison" xml:space="preserve"><value>Schone deine Vorräte und geh weiter.</value></data>
+  <data name="Adventure.black-stag.Choice.use-rope" xml:space="preserve"><value>Befestige dein Seil und überquere die zerstörte Brücke.</value></data>
+  <data name="Adventure.black-stag.Choice.jump-ravine" xml:space="preserve"><value>Wag den Sprung, bevor die Jäger kommen.</value></data>
+  <data name="Adventure.black-stag.Choice.find-way-down" xml:space="preserve"><value>Steig in die Schlucht hinab und nutze das Bachbett.</value></data>
+  <data name="Adventure.black-stag.Choice.ravine-recover" xml:space="preserve"><value>Rappel dich auf und geh weiter.</value></data>
+  <data name="Adventure.black-stag.Choice.free-brother" xml:space="preserve"><value>Befreie Isis Bruder, bevor ihr euch der Hauptstadt nähert.</value></data>
+  <data name="Adventure.black-stag.Choice.follow-wagon" xml:space="preserve"><value>Folge dem Wagen. Vielleicht führt er direkt ins Archiv.</value></data>
+  <data name="Adventure.black-stag.Choice.cael-route" xml:space="preserve"><value>Nimm Caels Dienstweg in die Hauptstadt.</value></data>
+  <data name="Adventure.black-stag.Choice.follow-into-city" xml:space="preserve"><value>Nutze die Route des Wagens, um in die Hauptstadt zu gelangen.</value></data>
+  <data name="Adventure.black-stag.Choice.service-entry" xml:space="preserve"><value>Benutz den Dienstbotenzugang des Archivs.</value></data>
+  <data name="Adventure.black-stag.Choice.cael-entry" xml:space="preserve"><value>Verlass dich auf Caels Kenntnis der Personalwege.</value></data>
+  <data name="Adventure.black-stag.Choice.stag-entry" xml:space="preserve"><value>Nutze den Kontakt des Schwarzen Hirsches unter den Hofboten.</value></data>
+  <data name="Adventure.black-stag.Choice.break-entry" xml:space="preserve"><value>Dring durch den alten Aquädukt unter der Mauer ein.</value></data>
+  <data name="Adventure.black-stag.Choice.escape-bindings" xml:space="preserve"><value>Befrei deine Hände, bevor der Wächter zurückkommt.</value></data>
+  <data name="Adventure.black-stag.Choice.use-seal-copy" xml:space="preserve"><value>Benutz den Siegelabdruck, um den Registrator zu täuschen.</value></data>
+  <data name="Adventure.black-stag.Choice.pick-vault" xml:space="preserve"><value>Öffne die Eisentür leise.</value></data>
+  <data name="Adventure.black-stag.Choice.force-vault" xml:space="preserve"><value>Brich das Schloss auf und nimm den Lärm in Kauf.</value></data>
+  <data name="Adventure.black-stag.Choice.fight-up" xml:space="preserve"><value>Dräng den nächsten Wächter zurück und komm auf die Beine.</value></data>
+  <data name="Adventure.black-stag.Choice.compare-ledgers" xml:space="preserve"><value>Vergleiche das königliche Hauptbuch mit deiner geprüften Zeugenliste.</value></data>
+  <data name="Adventure.black-stag.Choice.take-ledger-final" xml:space="preserve"><value>Nimm das königliche Hauptbuch und verschwinde, bevor dich jemand aufhält.</value></data>
+  <data name="Adventure.black-stag.Choice.orven-question" xml:space="preserve"><value>Frag, was das unversehrte Hirschsymbol bedeutet.</value></data>
+  <data name="Adventure.black-stag.Choice.orven-refuse" xml:space="preserve"><value>Sag ihm, dass kein Amt über die Toten bestimmen darf.</value></data>
+  <data name="Adventure.black-stag.Choice.orven-listen" xml:space="preserve"><value>Hör dir sein Angebot an, bevor du entscheidest.</value></data>
+  <data name="Adventure.black-stag.Choice.whole-stag-choice" xml:space="preserve"><value>Lass das ältere Rätsel für eine andere Nacht ruhen. Entscheide über die Beweise.</value></data>
+  <data name="Adventure.black-stag.Choice.reject-offer" xml:space="preserve"><value>Lehne das Angebot ab und entscheide selbst über das Hauptbuch.</value></data>
+  <data name="Adventure.black-stag.Choice.accept-offer" xml:space="preserve"><value>Nimm den Archivschlüssel und werde Teil der Maschine.</value></data>
+  <data name="Adventure.black-stag.Choice.expose-crown" xml:space="preserve"><value>Veröffentliche die geprüften Beweise und entlarve die Verschleppungen der Krone.</value></data>
+  <data name="Adventure.black-stag.Choice.save-stag" xml:space="preserve"><value>Vernichte die eingeschleusten Namen, erhalte die Zeugenwege und lass den Schwarzen Hirsch überleben.</value></data>
+  <data name="Adventure.black-stag.Choice.save-missing" xml:space="preserve"><value>Nutze das Archiv, um die Vermissten zurückzubringen, bevor du jemanden bloßstellst.</value></data>
+  <data name="Adventure.black-stag.Choice.isi-ending" xml:space="preserve"><value>Überlass Isi die Entscheidung über die Akten, die ihren Hain betreffen.</value></data>
+  <data name="Adventure.black-stag.Choice.burn-both" xml:space="preserve"><value>Verbrenne beide Hauptbücher. Entzieh Krone und Hirsch die Macht der Liste.</value></data>
+  <data name="Adventure.black-stag.Choice.bury-truth" xml:space="preserve"><value>Versteck das wahre Hauptbuch und lass die offizielle Geschichte bestehen.</value></data>
 </root>
