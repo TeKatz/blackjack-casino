@@ -151,7 +151,9 @@ internal sealed class MidnightMergeView : UserControl, IDisposable
         BuildWorkspace(body);
         BuildFooter(body);
 
-        Content = new Viewbox { Child = root, Stretch = Stretch.Uniform };
+        var responsiveViewbox = new Viewbox { Child = root, Stretch = Stretch.Uniform };
+        CrispViewboxText.SetEnabled(responsiveViewbox, true);
+        Content = responsiveViewbox;
         Refresh();
     }
 
