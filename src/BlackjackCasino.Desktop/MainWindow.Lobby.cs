@@ -23,7 +23,7 @@ public partial class MainWindow
         modeRegistry.Register(new("midnight-manor","Midnight Manor","Beyond the moonlit doors","Five haunted reels. Free Spins. A Manor whose rooms remember your choices.","#9170AC","☾","Video slots",()=>new ManorBackdrop {Scene="Exterior",Opacity=.85}),()=>
         {TableModeText.Text="Midnight Manor · video slots";EmbeddedManor_Click(this,new RoutedEventArgs());},
             secondaryOpen: OpenModernManorPreview,
-            secondaryLabel: "MODERN LOOK · PREVIEW",
+            secondaryLabel: "MODERN MANOR · PLAYTEST",
             canSecondaryOpen: () => ModernManorPreviewWindow.IsAvailable);
         modeRegistry.Register(new("casino-empire", "Casino Empire", "Your name above the door",
             "Build your midnight landmark with lasting upgrades, idle income and owner dividends.",
