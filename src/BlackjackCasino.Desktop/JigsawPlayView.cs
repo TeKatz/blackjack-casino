@@ -180,6 +180,7 @@ internal sealed class JigsawBoardSurface : FrameworkElement
     private readonly JigsawGameState game;
     private readonly Action commit;
     private readonly BitmapSource image;
+    private readonly int[] trayOrder;
     private readonly Dictionary<int, PieceSprite> spriteCache = [];
     private readonly Pen edges = new(LoungeUi.Ink("#F5E4CC"), 0.9);
     private readonly Pen lockedEdges = new(LoungeUi.Ink("#A6E9D5"), 0.7);
@@ -205,6 +206,8 @@ internal sealed class JigsawBoardSurface : FrameworkElement
         this.game = game;
         this.commit = commit;
         image = JigsawImages.Get(game.MotifId);
+        uint seed = BitConverter.ToUInt32(game.GameId.ToByteArray());
+        trayOrder = Enumerable.Range(0, game.PieceCount).OrderBy(id => TrayKey((uint)id ^ seed)).ToArray();
         Focusable = true;
         ClipToBounds = true;
         SnapsToDevicePixels = true;
@@ -231,7 +234,22 @@ internal sealed class JigsawBoardSurface : FrameworkElement
         Viewport.Y + (Viewport.Height - JigsawGame.BoardHeight * Scale) / 2 + panY);
 
     private int PageSize => Math.Clamp((int)((Tray.Width - 32) / 100), 3, 16);
-    private List<JigsawPieceState> Unplaced => game.Pieces.Where(p => !p.OnBoard).ToList();
+    private List<JigsawPieceState> Unplaced =>
+        trayOrder.Where(id => !game.Pieces[id].OnBoard).Select(id => game.Pieces[id]).ToList();
+
+    // Saved GUID is the deterministic shuffle seed. Tray order stays stable across reloads
+    // while the solved coordinates remain undisclosed instead of appearing left-to-right.
+    private static uint TrayKey(uint value)
+    {
+        unchecked
+        {
+            value ^= value >> 16;
+            value *= 0x7feb352d;
+            value ^= value >> 15;
+            value *= 0x846ca68b;
+            return value ^ (value >> 16);
+        }
+    }
     public int TrayPageCount => Math.Max(1, (Unplaced.Count + PageSize - 1) / PageSize);
     public int TrayPageNumber => Math.Min(trayPage, TrayPageCount - 1) + 1;
 
