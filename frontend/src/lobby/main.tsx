@@ -106,6 +106,7 @@ function LobbyApp() {
   const [data,setData] = useState<LobbySnapshot>(fallbackLobby);
   const [filter,setFilter] = useState<Filter>('all');
   const [lowMotion,setLowMotion] = useState(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const [nativeSnapshotReceived,setNativeSnapshotReceived] = useState(!embeddedLobby);
   useEffect(()=>{
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
     const listener = () => setLowMotion(media.matches);
@@ -113,11 +114,21 @@ function LobbyApp() {
     return ()=>media.removeEventListener('change',listener);
   },[]);
   useEffect(()=>{
-    const stop = onLobbySnapshot(setData);
+    // The native WebView2 host starts hidden. Hidden webviews can suspend
+    // requestAnimationFrame indefinitely, so a frame-based ready handshake
+    // would deadlock the lobby and leave the old WPF fallback visible.
+    const stop = onLobbySnapshot(snapshot=>{
+      setData(snapshot);
+      setNativeSnapshotReceived(true);
+    });
     lobbyCommand('lobby.ready');
-    const frame = window.requestAnimationFrame(()=>lobbyCommand('lobby.ui-ready'));
-    return ()=>{stop();window.cancelAnimationFrame(frame);};
+    return stop;
   },[]);
+  useEffect(()=>{
+    // Announce readiness only after React committed the real player snapshot.
+    // This effect does not depend on visibility, timers or animation frames.
+    if (nativeSnapshotReceived) lobbyCommand('lobby.ui-ready');
+  },[nativeSnapshotReceived]);
   useEffect(()=>{
     document.documentElement.lang=data.language;
     document.title='Blackjack Casino · Lobby';
