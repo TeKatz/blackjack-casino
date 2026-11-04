@@ -91,8 +91,8 @@ public sealed class ManorPreviewProtocolTests
         };
         var snapshot=ManorPreviewProtocol.CreateSnapshot(state,true);
         Assert.NotNull(snapshot.Run);
-        Assert.Equal(0,snapshot.Run.PlayerRoom);
-        Assert.Contains(snapshot.Run.Rooms,r=>r.Id==1 && r.Available);
+        Assert.Equal(0,snapshot.Run!.PlayerRoom);
+        Assert.Contains(snapshot.Run!.Rooms,r=>r.Id==1 && r.Available);
         Assert.DoesNotContain(snapshot.Run.Rooms,r=>r.Id==16 && r.Available);
         Assert.False(snapshot.CanFreeSpin);
         Assert.False(snapshot.CanSpin);
