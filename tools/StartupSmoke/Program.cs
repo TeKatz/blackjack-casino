@@ -131,7 +131,7 @@ internal static class Program
                 }
                 Require(modernTitle.Contains("MIDNIGHT MANOR", StringComparison.OrdinalIgnoreCase),
                     "Modern Manor WebView2 did not load its React interface.");
-                string modernGameplay = await modernBrowser.CoreWebView2.ExecuteScriptAsync(
+                string modernGameplay = await modernBrowser.CoreWebView2!.ExecuteScriptAsync(
                     "document.querySelector('.gold-button')?.textContent || ''");
                 Require(modernGameplay.Contains("SPIN THE REELS", StringComparison.OrdinalIgnoreCase)
                     || modernGameplay.Contains("PLAY FREE SPIN", StringComparison.OrdinalIgnoreCase),
