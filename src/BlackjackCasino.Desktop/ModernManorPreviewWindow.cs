@@ -18,7 +18,7 @@ internal sealed class ModernManorPreviewWindow : Window
     internal static string EntryPath => Path.Combine(AppContext.BaseDirectory,"ModernFrontend","index.html");
     internal static bool IsAvailable => File.Exists(EntryPath);
 
-    private readonly WebView2 browser=new();
+    private readonly WebView2 browser=new() { Visibility=Visibility.Hidden };
     private readonly TextBlock notice;
     private readonly Border splash;
     private readonly BackgroundMusic soundtrack=new(Soundtrack.Manor);
@@ -163,6 +163,7 @@ internal sealed class ModernManorPreviewWindow : Window
     {
         if(surfaceReady || closed) return;
         surfaceReady=true;
+        browser.Visibility=Visibility.Visible;
         var fade=new DoubleAnimation(1,0,TimeSpan.FromMilliseconds(360))
         { EasingFunction=new CubicEase { EasingMode=EasingMode.EaseOut } };
         fade.Completed+=(_,_)=>{ if(!closed) splash.Visibility=Visibility.Collapsed; };

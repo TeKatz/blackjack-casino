@@ -4,7 +4,7 @@ This is an explicit, revisable balance specification for the first implementatio
 
 ## Architecture and persistence assumptions
 
-Core is pure .NET; WPF only presents committed state. Existing bankroll is a decimal dollar balance; the public between-hand wallet operation preserves the Blackjack shoe/history. Profile XP uses existing grant APIs, never fabricated Blackjack hands. The new machine is a separate session with a serializable pending paid cycle, Free Spins and genuine Manor run state. A write-ahead aggregate checkpoint contains wallet, profile and machine state, is atomically replaced before projecting to existing files, and is replayed on startup if interrupted. Open features resume; closing is not a refund, forced loss or duplicate award.
+Core is pure .NET; React/PixiJS/WebView2 presents the current Manor game, while WPF Manor is retained as source-only rollback. Existing bankroll is a decimal dollar balance; the public between-hand wallet operation preserves the Blackjack shoe/history. Profile XP uses existing grant APIs, never fabricated Blackjack hands. The new machine is a separate session with a serializable pending paid cycle, Free Spins and genuine Manor run state. A write-ahead aggregate checkpoint contains wallet, profile and machine state, is atomically replaced before projecting to existing files, and is replayed on startup if interrupted. Open features resume; closing is not a refund, forced loss or duplicate award.
 
 A shared `SlotPlayController` owns busy/auto/speed semantics. Reels keeps its established presentation in this change; the new abstractions can support it later without a second autoplay implementation. Autoplay is never restarted merely by loading saved preferences. Unlimited means until stopped or funds/stop conditions intervene. Cancellation stops the next spin immediately, never a committed payout.
 
@@ -12,7 +12,7 @@ A shared `SlotPlayController` owns busy/auto/speed semantics. Reels keeps its es
 
 Five independent 64-stop cyclic strips, three consecutive visible symbols per reel. The strips contain the same symbol counts, with rotation 11 × reel index. Moon at indices 9 and 49, Door at 31, Mirror at 60; remaining positions are filled by cycling the regular symbols with remaining counts in catalog order. Thus a column never contains two Moons, two Doors, or both Moon and Door. RNG uniformly samples [0,64) independently per reel; Manor seed uniformly samples [0,16). No speed, animation, autoplay or interaction setting alters these draws.
 
-Total bet: whole play-money dollars from $1 to $1,000; one twentieth allocated to each of 20 fixed lines. Payouts include returned stakes; losses return zero. Paylines are indexed rows top=0, centre=1, bottom=2:
+Total bet: whole play-money dollars from $1 to $5,000; one twentieth allocated to each of 20 fixed lines. The maximum was raised solely for Manor to support fixed stakes of $50/$100/$250/$1,000/$2,500/$5,000. This scales the existing line awards without changing symbol probabilities, payout ratios or the fixed cycle multiplier bound. Payouts include returned stakes; losses return zero. Paylines are indexed rows top=0, centre=1, bottom=2:
 
 `11111 00000 22222 01210 21012 00100 22122 11011 11211 01110 21112 10001 12221 01010 21212 10101 12121 02020 20202 02120`
 
@@ -75,4 +75,4 @@ Reel stops add a brief moonlight impact and mechanical bounce; spinning reels ca
 
 ## Acceptance boundary
 
-Core tests, Windows build and WPF runtime smoke are required. Human audible-level, real-monitor DPI and gameplay acceptance remain gates for merging/Stable release. Development delivery was explicitly requested after initial implementation: `slots/midnight-manor` is now opted into the Development publisher alongside `main`; it builds/tests/runs the Windows smoke before replacing the existing Development assets. Version base is 0.7.0, which also makes this update visible to installed 0.6.5 clients without changing SemVer or allowing downgrades. The canonical package/manifest names and URL remain unchanged. Keep the PR as a draft until human acceptance, and keep all branches until authorized merge/publication checks are complete.
+The modern Manor is the single game-menu entry in Development. The release workflow validates frontend tests, C# transaction tests, the real Windows WebView2 host and the classic Manor engine smoke before publishing. Manual audio, monitor scaling, camera transitions and long-session performance checks remain separate. The stable branch and release channel are unchanged; see [Development delivery](development-update-delivery.md) for current build and version policy.

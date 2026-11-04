@@ -52,3 +52,14 @@ The Windows StartupSmoke tool opens the **packaged** WebView2 modern UI, verifie
 6. Compare animation enabled, fast/turbo, reduced-motion and all six room perspectives; evaluate visual quality and audio mix. The old WPF interface is a source-level rollback only.
 
 **Rollout state:** Modern Manor is already the sole selectable Manor game in Development, and its replacement commit passed CI and package validation. Manual hardware, audio, long-session performance and older-installation upgrade checks remain separate from this engineering validation. Neither a merge to `main` nor deletion of the WPF rollback source is part of the Development rollout.
+
+
+## Current Development presentation and controls
+
+The single Manor lobby tile opens the modern presentation. The previous WPF cabinet remains in source for controlled rollback, not as a selectable game. The Manor-specific play-money stake range is **$1–$5,000**, with quick choices **$50 / $100 / $250 / $1,000 / $2,500 / $5,000**. Automatic paid spins are offered in batches of **10 / 25 / 50 / 100**, processed sequentially through the normal C# command journal. A bonus, saved free spins, low bankroll, uncertain response or Stop command prevents the next paid spin. No precommitted batch of wagers is stored.
+
+The modern host plays the existing original Manor soundtrack through the casino's Windows audio mixer. WebView sound effects and ambient visuals are separate, so the real music/sound switches remain authoritative. A native branded cover remains visible while WebView2 initializes, and only reveals the illustrated Pixi stage after complete readiness. The Escape bonus adds a perspective pull-in and animated chamber transitions while keeping every room decision and reward authorized by C#.
+
+### Manual visual and sound checks for this pass
+
+Check first-open cold starts, the soundtrack with music on/off and varying master volume, all six stake buttons, stopping an auto-run during a spin, auto-run stopping on either bonus, the six rooms and their entrance/transition feedback, reduced-motion behavior, and compact 960×680/1080×720 layouts. Confirm no page scrolling or clipped controls, and measure actual CPU/GPU/RAM/VRAM on the target Windows PC. Automated smoke and contract tests do not substitute for these observations.

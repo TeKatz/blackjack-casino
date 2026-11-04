@@ -195,3 +195,13 @@ The [Phase-3 sign-off matrix](manor-phase-3-signoff.md) tracks the exact boundar
 - SVG symbols are now decoded at 1200×640; Pixi textures are drawn at the source's original 300:160 aspect, centered rather than stretched into 142×66 rectangles. Name labels remain separate and lower in the card.
 - Loss no longer creates an overlay over the slot. A short bilingual message temporarily replaces the secondary header alongside “The Haunted Five,” then returns to the 20-line label. Win and bonus overlays remain confined to the slot viewport.
 - Both side candles were rebuilt as ornamental gold/wax sconces with layered, ticker-driven flame and glow motion. Two retained container transforms update on the existing ticker; reduced motion freezes the flames without per-frame shape allocations.
+
+
+### M3 premium feedback pass — controls, audio, bonus depth and startup
+
+- The normal Manor view now exposes six preset play-money stakes ($50, $100, $250, $1,000, $2,500 and $5,000). The Manor-only maximum is $5,000; existing rules, payouts and cycle safety limits are unchanged. The player-state store preserves the selected stake across restart.
+- The 10/25/50/100 auto-spin controls dispatch one existing revision-checked C# paid spin at a time, only after the visible reel animation completes. Auto play stops when the balance is insufficient, a free-spin or Escape bonus is pending, a command outcome is uncertain or the page is hidden. A manual Stop button cancels future wagers without aborting an already committed spin.
+- The original Manor soundtrack now plays through the existing Windows PCM mixer, respecting global and Manor music settings. Optional Web Audio effects use a continuous mechanical reel texture and differentiated stopping cues; muting never affects gameplay outcomes.
+- The bonus entry uses a perspective camera push through arched frames; individual room decisions animate the next room view and intensify clue/lighting feedback. Ambient particles, slow background lighting and fog remain cosmetic and stop under reduced-motion settings.
+- The branded WPF startup cover is visible before WebView2 initializes. It fades only after the authoritative snapshot, Pixi renderer and original symbol artwork are ready, avoiding the initial empty black viewport and late illustration pop-in.
+- Windows startup smoke checks the six quick-bet controls, four auto-run options, absence of technical engine copy, and transition from splash to the loaded WebView2 interface. Dedicated-machine performance, sound-balance and bonus feel remain manual quality checks.

@@ -155,13 +155,6 @@ internal static class Program
                     "&& !document.body.innerText.includes('C#');})()");
                 Require(polishedControls.Equals("true",StringComparison.OrdinalIgnoreCase),
                     "The Manor must expose six fixed stakes, auto-spins, and no technical C# text.");
-                await Task.Delay(450);
-                var splashShell=Application.Current.Windows.OfType<ModernManorPreviewWindow>().Single();
-                var splashField=typeof(ModernManorPreviewWindow).GetField("splash",
-                    System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!;
-                var splashPanel=(Border)splashField.GetValue(splashShell)!;
-                Require(splashPanel.Visibility==Visibility.Collapsed,
-                    "The Manor branded startup cover never yielded to the ready WebView2 game.");
                 // The DOM title alone is not enough: require the real Pixi canvas to
                 // initialize in the packaged WebView2 build and capture it for review.
                 var canvasClock = Stopwatch.StartNew();
@@ -175,6 +168,18 @@ internal static class Program
                 }
                 Require(canvasReady.Equals("true", StringComparison.OrdinalIgnoreCase),
                     "Modern Manor PixiJS canvas did not initialize in the Windows WebView2 host.");
+                // Readiness includes artwork loading; no black flash or late
+                // illustration pop-in should be visible when the splash is lifted.
+                var splashShell=Application.Current.Windows.OfType<ModernManorPreviewWindow>().Single();
+                var splashField=typeof(ModernManorPreviewWindow).GetField("splash",
+                    System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!;
+                var splashPanel=(Border)splashField.GetValue(splashShell)!;
+                var bootClock=Stopwatch.StartNew();
+                while (bootClock.Elapsed < TimeSpan.FromSeconds(12)
+                    && splashPanel.Visibility!=Visibility.Collapsed)
+                    await Task.Delay(120);
+                Require(splashPanel.Visibility==Visibility.Collapsed && modernBrowser.IsVisible,
+                    "The branded Manor boot cover did not transition to the ready WebView2 game.");
                 // One-page desktop casino: the whole playing surface stays in the viewport.
                 string noPageScroll = await modernBrowser.CoreWebView2.ExecuteScriptAsync(
                     "(()=>{const root=document.querySelector('.manor-app');" +

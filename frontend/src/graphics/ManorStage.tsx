@@ -616,10 +616,14 @@ export function ManorStage({ snapshot, language, spinEpoch, reducedMotion, speed
       watchResolution();
       const state = latest.current;
       instance.update(state.snapshot, state.spinEpoch, state.reducedMotion, state.speed, state.language);
-      readyCue.current?.();
-      // Optional artwork decoding must not block a ready WebGL renderer.
+      // Keep the native startup cover until the real illustrated reels are
+      // available. A failed illustration decode still shows vector fallbacks.
       void loadManorArtwork().then(images => {
         if (!dead) instance.setArtwork(images);
+      }).catch(() => {
+        // No gameplay dependency on optional textures.
+      }).finally(() => {
+        if (!dead) readyCue.current?.();
       });
     })().catch(error => {
       if (!dead) host.textContent = 'Renderer unavailable: ' + String(error);

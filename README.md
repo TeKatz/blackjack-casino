@@ -25,8 +25,11 @@ A shared virtual bankroll connects the wagering games. The wider progression sys
 
 **In Development builds, Midnight Manor has one lobby entry.** It opens the modern React/PixiJS version directly; the separate playtest button and selectable legacy WPF version have been retired.
 
-- Five reels, scalable local symbol artwork, reel-stop effects and win feedback
-- Integrated Escape the Manor bonus with six room views and an interactive map
+- Five reels, scalable local symbol artwork, five staged reel stops and layered win feedback
+- Fixed play-money bets of $50, $100, $250, $1,000, $2,500 and $5,000 (manual stakes $1–$5,000)
+- 10/25/50/100 automatic paid-spin sessions with an immediate stop control; bonus games, free spins, insufficient balance and uncertain saves halt the queue
+- The original Manor soundtrack, continuous reel movement sounds and an ornate startup cover
+- Integrated Escape the Manor bonus with six room views, an interactive map, perspective entry and camera-like room transitions
 - German and English game controls and rules
 - Shared virtual wallet, progression, saved bonus state and crash recovery
 - Original C# game logic for random outcomes, payouts, bet validation and player decisions
