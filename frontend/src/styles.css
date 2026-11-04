@@ -53,3 +53,13 @@ h1{font-family:Georgia,serif;letter-spacing:.13em;font-size:18px;margin:4px 0 0}
 .speed-control select:focus-visible{outline:2px solid #f3d89c;outline-offset:2px}
 .display-hint{font-size:11px;line-height:1.5;color:#a99bac;margin:6px 0}
 @media(max-width:1050px){.manor-canvas{min-height:300px}}
+
+/* Keep the 960×500 Pixi scene at its native aspect ratio. The prior flex:1
+   stretched its host vertically and created a large empty letterboxed band. */
+.machine .manor-canvas{
+  flex:0 0 auto;
+  width:100%;
+  height:auto;
+  min-height:0;
+  aspect-ratio:960 / 500;
+}

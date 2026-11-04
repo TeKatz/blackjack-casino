@@ -150,6 +150,12 @@ internal static class Program
                 }
                 Require(canvasReady.Equals("true", StringComparison.OrdinalIgnoreCase),
                     "Modern Manor PixiJS canvas did not initialize in the Windows WebView2 host.");
+                string canvasGeometry = await modernBrowser.CoreWebView2.ExecuteScriptAsync(
+                    "(()=>{const host=document.querySelector('.manor-canvas');" +
+                    "if(!host)return false;const rect=host.getBoundingClientRect();" +
+                    "return rect.width>100&&Math.abs(rect.height/rect.width-500/960)<0.06;})()");
+                Require(canvasGeometry.Equals("true", StringComparison.OrdinalIgnoreCase),
+                    "Modern Manor reel stage is stretched vertically or letterboxed.");
                 await Task.Delay(250);
                 await using (FileStream modernCapture = File.Create(
                     Path.Combine(output, "modern-manor-phase3.png")))
