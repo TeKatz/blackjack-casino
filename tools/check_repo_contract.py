@@ -1,0 +1,80 @@
+#!/usr/bin/env python3
+"""Small dependency-free checks for repository docs and Development release guard.
+
+Run from any cwd: python tools/check_repo_contract.py
+"""
+from __future__ import annotations
+
+import re
+import sys
+from pathlib import Path
+from urllib.parse import unquote, urlsplit
+
+ROOT = Path(__file__).resolve().parents[1]
+REQUIRED = (
+    "README.md",
+    "AGENTS.md",
+    "CONTRIBUTING.md",
+    "docs/architecture.md",
+    "docs/development-update-delivery.md",
+    "docs/modernization-roadmap.md",
+    ".github/pull_request_template.md",
+    ".github/workflows/development-release.yml",
+)
+DOCS = (
+    "README.md",
+    "AGENTS.md",
+    "CONTRIBUTING.md",
+    "docs/modernization-roadmap.md",
+)
+LINK = re.compile(r"(?<!!)\[[^\]]+\]\(([^)]+)\)")
+BRANCH_FILTER = re.compile(r"(?m)^\s*branches:\s*\[\"([^\"]+)\"\]")
+JOB_GUARD = re.compile(r"(?m)^\s*if:\s*github\.ref\s*==\s*'refs/heads/([^']+)'")
+
+def main() -> int:
+    problems: list[str] = []
+    for name in REQUIRED:
+        if not (ROOT / name).is_file():
+            problems.append(f"Missing required file: {name}")
+
+    for name in DOCS:
+        file = ROOT / name
+        if not file.exists():
+            continue
+        source = file.read_text(encoding="utf-8")
+        for match in LINK.finditer(source):
+            destination = match.group(1).strip()
+            if not destination or destination.startswith(("#", "mailto:", "http:", "https:", "data:")):
+                continue
+            # Markdown links with titles are not part of our docs convention.
+            target = unquote(urlsplit(destination).path)
+            if not target:
+                continue
+            resolved = (file.parent / target).resolve()
+            if not resolved.is_relative_to(ROOT) or not resolved.exists():
+                line = source.count("\n", 0, match.start()) + 1
+                problems.append(f"{name}:{line}: broken relative link: {destination}")
+
+    release = ROOT / ".github/workflows/development-release.yml"
+    if release.exists():
+        workflow = release.read_text(encoding="utf-8")
+        filter_match = BRANCH_FILTER.search(workflow)
+        guard_match = JOB_GUARD.search(workflow)
+        if not filter_match or not guard_match:
+            problems.append("Development release must have a single branch push filter and a matching job ref guard")
+        elif filter_match.group(1) != guard_match.group(1):
+            problems.append(
+                "Development branch mismatch: push filter "
+                f"{filter_match.group(1)!r}, job guard {guard_match.group(1)!r}"
+            )
+
+    if problems:
+        print("Repository contract FAILED:")
+        for problem in problems:
+            print(f"  - {problem}")
+        return 1
+    print("Repository contract OK: required docs, relative links and Development branch guards")
+    return 0
+
+if __name__ == "__main__":
+    sys.exit(main())
