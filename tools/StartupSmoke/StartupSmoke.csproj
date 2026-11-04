@@ -7,6 +7,9 @@
     <AssemblyName>StartupSmoke</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="../../frontend/dist/**/*" Link="ModernFrontend/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" Condition="Exists('../../frontend/dist/index.html')" />
+  </ItemGroup>
+  <ItemGroup>
     <Compile Include="../PresentationSmoke/NavigationSmoke.cs" Link="NavigationSmoke.cs" />
     <ProjectReference Include="..\..\src\BlackjackCasino.Desktop\BlackjackCasino.Desktop.csproj" />
     <ProjectReference Include="..\..\src\BlackjackCasino.Core\BlackjackCasino.Core.csproj" />

@@ -40,4 +40,4 @@ Use the PR template and link supporting screenshots/benchmarks when relevant. A 
 
 ## Modernization
 
-The first planned new-frontend migration is **Midnight Manor**, after branch consolidation and Jigsaw tester acceptance. See [modernization roadmap](docs/modernization-roadmap.md). Existing C# game engines remain authoritative; PixiJS and React are a presentation layer, not a replacement for casino rules.
+The first frontend migration is **Midnight Manor**. Its initial branch adds a read-only renderer preview while the established playable Manor and C# gameplay engine remain authoritative. See [modernization roadmap](docs/modernization-roadmap.md). Existing C# game engines remain authoritative; PixiJS and React are a presentation layer, not a replacement for casino rules.

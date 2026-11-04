@@ -19,6 +19,23 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Setup Node for modern Manor frontend
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install modern frontend dependencies
+        working-directory: frontend
+        run: npm install --no-package-lock --no-audit --no-fund
+
+      - name: Test modern frontend
+        working-directory: frontend
+        run: npm test
+
+      - name: Build modern frontend
+        working-directory: frontend
+        run: npm run build
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
@@ -68,6 +85,16 @@ jobs:
 
           New-Item -ItemType Directory -Path artifacts/app/tools/updater -Force | Out-Null
           Copy-Item artifacts/updater/BlackjackCasino.Updater.exe artifacts/app/tools/updater/BlackjackCasino.Updater.exe
+
+      - name: Verify bundled Midnight Manor frontend assets
+        shell: pwsh
+        run: |
+          $index = "artifacts/app/ModernFrontend/index.html"
+          $assets = "artifacts/app/ModernFrontend/assets"
+          if (!(Test-Path $index)) { throw "Modern Manor index.html was not packaged." }
+          if (!(Test-Path $assets)) { throw "Modern Manor bundles were not packaged." }
+          $javascript = Get-ChildItem $assets -Filter "*.js" -File
+          if (!$javascript) { throw "Modern Manor JavaScript bundle missing." }
 
       - name: Generate installed release notes
         shell: pwsh
