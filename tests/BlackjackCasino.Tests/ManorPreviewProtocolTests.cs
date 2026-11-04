@@ -68,6 +68,7 @@ public sealed class ManorPreviewProtocolTests
         Assert.Equal("$20.00",snapshot.SelectedBet);
         Assert.Equal("7",snapshot.Revision);
         Assert.Equal(15,snapshot.Cells.Length);
+        Assert.Equal(state.LastSpin!.Wins.Length,snapshot.WinningLineDetails.Length);
         Assert.True(snapshot.CanFreeSpin);
         Assert.False(snapshot.CanSpin);
         Assert.False(snapshot.AnimationsEnabled);
@@ -94,10 +95,32 @@ public sealed class ManorPreviewProtocolTests
         Assert.Equal(0,snapshot.Run!.PlayerRoom);
         Assert.Contains(snapshot.Run!.Rooms,r=>r.Id==1 && r.Available);
         Assert.DoesNotContain(snapshot.Run.Rooms,r=>r.Id==16 && r.Available);
+        Assert.Equal(ManorMap.Edges.Count(edge=>edge.A<17 && edge.B<17),snapshot.Run.Passages.Length);
+        Assert.DoesNotContain(snapshot.Run.Passages,edge=>edge.From>=17 || edge.To>=17);
+        Assert.Contains(snapshot.Run.Passages,edge=>edge.From==6 && edge.To==11 && edge.RequiresKey);
+        Assert.Contains(snapshot.Run.Passages,edge=>edge.From==14 && edge.To==16 && edge.RequiresKey);
         Assert.False(snapshot.CanFreeSpin);
         Assert.False(snapshot.CanSpin);
         using JsonDocument json=JsonDocument.Parse(ManorPreviewProtocol.SerializeSnapshot(snapshot,"m1"));
         Assert.False(json.RootElement.GetProperty("payload").GetProperty("run").TryGetProperty("ghost",out _));
+    }
+
+    [Fact]
+    public void WinPresentationDetailsComeFromCommittedCorePaylines()
+    {
+        int[] stops=[0,53,42,31,20]; // Compensate for each reel's eleven-stop offset.
+        ManorSpin spin=ManorRules.Evaluate(stops,25m);
+        Assert.NotEmpty(spin.Wins);
+        var state=new ManorSessionState { Bankroll=1000m,Bet=25m,LastSpin=spin };
+        var snapshot=ManorPreviewProtocol.CreateSnapshot(state,true);
+        Assert.Equal(spin.Wins.Length,snapshot.WinningLineDetails.Length);
+        foreach(var win in spin.Wins)
+        {
+            var display=Assert.Single(snapshot.WinningLineDetails.Where(detail=>detail.Number==win.Line+1));
+            Assert.Equal(win.Count,display.Count);
+            Assert.Equal(ManorRules.Paylines[win.Line],display.Rows);
+            Assert.Equal("$"+win.Amount.ToString("N2",System.Globalization.CultureInfo.GetCultureInfo("en-US")),display.Amount);
+        }
     }
 
     [Fact]

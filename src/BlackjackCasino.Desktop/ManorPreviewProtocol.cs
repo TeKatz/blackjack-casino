@@ -17,15 +17,18 @@ internal static class ManorPreviewProtocol
 
     internal sealed record Command(string Type,string RequestId,long? ExpectedRevision=null,decimal? Bet=null,int? Room=null);
     internal sealed record Room(int Id,string Name,int X,int Y,string Area,bool Visited,bool Available,bool Locked);
+    // Authoritative presentation metadata, not client-side navigation rules.
+    internal sealed record Passage(int From,int To,bool RequiresKey);
+    internal sealed record WinningLineDetail(int Number,int Count,int[] Rows,string Amount);
     internal sealed record RunSnapshot(string Status,string Message,string GhostClue,int PlayerRoom,
         int Turn,int ExitTarget,string Current,string Banked,bool HasCandle,bool HasKey,bool HasCharm,
-        Room[] Rooms);
+        Room[] Rooms,Passage[] Passages);
     internal sealed record Snapshot(
         string Bankroll,string Bet,string SelectedBet,string CycleReturned,string Payout,
         string[] Cells,int[] WinningCells,bool CycleActive,int FreeSpinsRemaining,string Feature,
         bool AnimationsEnabled,bool HasCommittedSpin,string Revision,bool CanSpin,bool CanFreeSpin,
         bool LastSpinFree,int Scatters,int Doors,int WinningLines,RunSnapshot? Run,
-        string? SaveNotice);
+        string? SaveNotice,WinningLineDetail[] WinningLineDetails);
 
     internal static bool IsTrustedSource(string? source)
     {
@@ -139,7 +142,10 @@ internal static class ManorPreviewProtocol
                     (run.Collected & (1UL<<room.Id))!=0,
                     available.Contains(room.Id),
                     ManorMap.Locked(run.Player,room.Id) && !run.HasKey
-                )).ToArray());
+                )).ToArray(),
+                ManorMap.Edges.Where(edge=>edge.A<17 && edge.B<17)
+                    .Select(edge=>new Passage(edge.A,edge.B,ManorMap.Locked(edge.A,edge.B)))
+                    .ToArray());
         }
 
         string feature=runSnapshot is not null
@@ -156,7 +162,11 @@ internal static class ManorPreviewProtocol
             state.FreeSpinsRemaining,feature,animationsEnabled,spin is not null,
             state.Revision.ToString(CultureInfo.InvariantCulture),canSpin,canFree,
             spin?.Free ?? false,spin?.Scatters ?? 0,spin?.Doors ?? 0,spin?.Wins.Length ?? 0,
-            runSnapshot,saveNotice);
+            runSnapshot,saveNotice,
+            spin?.Wins.Where(win=>win.Line is >=0 and <20 && win.Count is >=3 and <=5)
+                .Select(win=>new WinningLineDetail(win.Line+1,win.Count,
+                    ManorRules.Paylines[win.Line].ToArray(),Money(win.Amount))).ToArray()
+                ?? []);
     }
 
     internal static string SerializeSnapshot(Snapshot snapshot,string requestId)=>
