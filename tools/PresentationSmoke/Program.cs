@@ -260,10 +260,18 @@ internal static partial class Program
         var preferencesField = typeof(MainWindow).GetField("preferences", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
         AppPreferences areaPrefs = (AppPreferences)preferencesField.GetValue(window)!;
         preferencesField.SetValue(window, areaPrefs.WithPresentation("casino-empire", areaPrefs.Presentation("casino-empire") with { AnimationsEnabled = true }));
+        // A reflection-only change bypasses the real preference UI. Deliver its
+        // presentation update to the view, just like the regular economy refresh does.
+        EmpireView currentEmpire = Find<EmpireView>(window).Single();
+        currentEmpire.RefreshLive();
+        EmpireRoomCard slotsCard = Find<EmpireRoomCard>(window).Single(card => card.Department.Id == "slots");
+        Require(currentEmpire.IsVisible && currentEmpire.IsLoaded && slotsCard.Artwork.Open,
+            "The open slot-room artwork is not mounted in the visible Empire.");
         var animationDeadline = System.Diagnostics.Stopwatch.StartNew();
         while (Find<EmpireRoomCard>(window).Single(card => card.Department.Id == "slots").Artwork.Phase == 0
             && animationDeadline.Elapsed < TimeSpan.FromSeconds(3)) await Task.Delay(50);
-        Require(Find<EmpireRoomCard>(window).Single(card=>card.Department.Id=="slots").Artwork.Phase>0,"Empire's own animations did not run within three seconds.");
+        Require(slotsCard.Artwork.Phase > 0,
+            $"Empire's local animation did not activate (view loaded={currentEmpire.IsLoaded}, visible={currentEmpire.IsVisible}, room open={slotsCard.Artwork.Open}, phase={slotsCard.Artwork.Phase}).");
         animationSetting.IsChecked=false;
         await Task.Delay(150);
         Require(Find<EmpireRoomCard>(window).Single(card=>card.Department.Id=="slots").Artwork.Phase>0,"Blackjack toggle stopped Empire's local effects.");

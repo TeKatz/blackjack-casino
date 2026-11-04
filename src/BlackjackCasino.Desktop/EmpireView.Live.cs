@@ -15,6 +15,7 @@ internal sealed partial class EmpireView
     {
         if (disposed) return;
 
+        EnsureAmbientAnimationActive();
         bool animate = animations() && IsVisible;
         credits.SetAmount(service.Credits, animate);
         production.SetAmount(service.TotalCreditsPerSecond, animate);

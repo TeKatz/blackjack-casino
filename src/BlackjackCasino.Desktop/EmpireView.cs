@@ -87,20 +87,7 @@ internal sealed partial class EmpireView : UserControl, IDisposable
         BuildCommandCenter(back, backLabel);
 
         animationTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(40) };
-        animationTimer.Tick += (_, _) =>
-        {
-            bool active = this.animations() && IsVisible && !disposed;
-            if (active)
-            {
-                phase += .08;
-                foreach (EmpireRoomCard card in cards.Where(card => card.IsVisible && card.Artwork.Open)) card.Artwork.Phase = phase;
-            }
-            else if (wasAnimating)
-            {
-                foreach (EmpireRoomCard card in cards) card.StopAnimation();
-            }
-            wasAnimating = active;
-        };
+        animationTimer.Tick += (_, _) => AdvanceAmbientAnimationFrame();
         Loaded += (_, _) => { if (!disposed) animationTimer.Start(); ResizeRooms(); };
         Unloaded += (_, _) => { animationTimer.Stop(); ClearPreview(); StopWorkspaceAnimation(); };
         Refresh();
@@ -212,6 +199,7 @@ internal sealed partial class EmpireView : UserControl, IDisposable
         managementView?.Refresh();
         RefreshCommandCenter();
         ResizeRooms();
+        EnsureAmbientAnimationActive();
     }
 
     internal void ShowOfflineReport(EmpireAccrual report)
