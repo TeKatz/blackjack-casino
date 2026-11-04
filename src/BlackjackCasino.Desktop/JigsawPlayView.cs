@@ -16,6 +16,8 @@ internal sealed class JigsawPlayView : UserControl, IDisposable
     private readonly Action<JigsawGameState> save;
     private readonly Func<JigsawGameState, string> complete;
     private readonly Action back;
+    private readonly Action<bool> timerPreference;
+    private Button timerButton = null!;
     private readonly DispatcherTimer timer = new() { Interval = TimeSpan.FromSeconds(1) };
     private readonly JigsawBoardSurface board;
     private readonly TextBlock status = PremiumLoungeTheme.Label("", 13, PremiumLoungeTheme.Cream);
@@ -27,18 +29,19 @@ internal sealed class JigsawPlayView : UserControl, IDisposable
     private int secondsSinceSave;
 
     public JigsawPlayView(JigsawGameState game, Action<JigsawGameState> save,
-        Func<JigsawGameState, string> complete, Action back)
+        Func<JigsawGameState, string> complete, Action back, Action<bool> timerPreference)
     {
         this.game = game;
         this.save = save;
         this.complete = complete;
         this.back = back;
+        this.timerPreference = timerPreference;
         board = new JigsawBoardSurface(game, OnBoardCommitted);
         Background = LoungeUi.Ink("#081819");
         Content = Build();
         Refresh();
         timer.Tick += ClockTick;
-        if (!game.Completed) timer.Start();
+        if (!game.Completed && game.TimerEnabled) timer.Start();
         Unloaded += (_, _) => Dispose();
     }
 
@@ -71,6 +74,9 @@ internal sealed class JigsawPlayView : UserControl, IDisposable
         actions.Children.Add(SmallButton("+ ZOOM", "JigsawZoomIn", () => board.ZoomBy(1.25)));
         actions.Children.Add(SmallButton(JigsawText.T("RESET VIEW", "ANSICHT"), "JigsawResetView", board.ResetView));
         actions.Children.Add(SmallButton(JigsawText.T("REFERENCE", "VORLAGE"), "JigsawReference", board.ToggleReference));
+        timerButton = SmallButton("", "JigsawTimerToggle", ToggleTimer);
+        actions.Children.Add(timerButton);
+        UpdateTimerButton();
         actions.Children.Add(SmallButton("← PUZZLES", "JigsawBackToMenu", back));
         Grid.SetColumn(actions, 1);
         header.Children.Add(actions);
@@ -101,11 +107,20 @@ internal sealed class JigsawPlayView : UserControl, IDisposable
             board.ChangeTrayPage(1);
             Refresh();
         }));
-        Grid.SetColumn(trayActions, 1);
-        strip.Children.Add(trayActions);
         Grid.SetRow(strip, 1);
         root.Children.Add(strip);
 
+        // WPF Border does not apply CornerRadius to its child's rendering clip.
+        // Clip the board host to the same rounded contour to eliminate the four square corners.
+        var boardHost = new Grid { ClipToBounds = true };
+        boardHost.Children.Add(board);
+        trayActions.HorizontalAlignment = HorizontalAlignment.Right;
+        trayActions.VerticalAlignment = VerticalAlignment.Bottom;
+        trayActions.Margin = new Thickness(0, 0, 20, 157);
+        trayActions.Background = LoungeUi.Ink("#DD102A29");
+        boardHost.Children.Add(trayActions);
+        boardHost.SizeChanged += (_, e) => boardHost.Clip = new RectangleGeometry(
+            new Rect(0, 0, e.NewSize.Width, e.NewSize.Height), 11, 11);
         var frame = new Border
         {
             Background = LoungeUi.Ink("#0D2525"),
@@ -113,7 +128,7 @@ internal sealed class JigsawPlayView : UserControl, IDisposable
             BorderThickness = new Thickness(1.2),
             CornerRadius = new CornerRadius(12),
             ClipToBounds = true,
-            Child = board,
+            Child = boardHost,
         };
         Grid.SetRow(frame, 2);
         root.Children.Add(frame);
@@ -127,6 +142,30 @@ internal sealed class JigsawPlayView : UserControl, IDisposable
         button.Margin = new Thickness(0, 0, 7, 0);
         button.Click += (_, _) => action();
         return button;
+    }
+
+    private void UpdateTimerButton()
+    {
+        timerButton.Content = game.TimerEnabled
+            ? JigsawText.T("TIMER: ON", "TIMER: AN")
+            : JigsawText.T("TIMER: OFF", "TIMER: AUS");
+        time.Visibility = game.TimerEnabled ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void ToggleTimer()
+    {
+        if (disposed || game.Completed) return;
+        game.TimerEnabled = !game.TimerEnabled;
+        if (game.TimerEnabled) timer.Start();
+        else
+        {
+            timer.Stop();
+            game.ElapsedSeconds = 0; // Disabling tracking also discards the elapsed measurement.
+        }
+        UpdateTimerButton();
+        timerPreference(game.TimerEnabled);
+        save(game);
+        Refresh();
     }
 
     private void OnBoardCommitted()
@@ -144,7 +183,7 @@ internal sealed class JigsawPlayView : UserControl, IDisposable
 
     private void ClockTick(object? sender, EventArgs e)
     {
-        if (disposed || game.Completed) return;
+        if (disposed || game.Completed || !game.TimerEnabled) return;
         game.ElapsedSeconds++;
         if (++secondsSinceSave >= 30)
         {
@@ -182,6 +221,15 @@ internal sealed class JigsawBoardSurface : FrameworkElement
     private readonly BitmapSource image;
     private readonly int[] trayOrder;
     private readonly Dictionary<int, PieceSprite> spriteCache = [];
+    // Rendered WPF drawings are retained between pointer moves; only the active group
+    // changes translation while dragging. This avoids redrawing 1000 sprites per frame.
+    private DrawingGroup? stationaryDrawing;
+    private DrawingGroup? movingDrawing;
+    private bool stationaryDirty = true;
+    private readonly HashSet<int> dragSet = [];
+    private int[] dragIds = [];
+    private double dragStartX;
+    private double dragStartY;
     private readonly Pen edges = new(LoungeUi.Ink("#F5E4CC"), 0.9);
     private readonly Pen lockedEdges = new(LoungeUi.Ink("#A6E9D5"), 0.7);
     private readonly Brush plate = LoungeUi.Ink("#102E2A");
@@ -217,12 +265,21 @@ internal sealed class JigsawBoardSurface : FrameworkElement
         MouseMove += MouseMoveHandler;
         MouseUp += MouseUpHandler;
         MouseWheel += MouseWheelHandler;
-        LostMouseCapture += (_, _) => { movingPiece = false; draggingFromTray = false; panning = false; };
+        LostMouseCapture += (_, _) =>
+        {
+            movingPiece = false;
+            draggingFromTray = false;
+            panning = false;
+            activePiece = null;
+            EndDrag();
+            InvalidateVisual();
+        };
         KeyDown += KeyDownHandler;
         Loaded += (_, _) => Focus();
     }
 
-    private Rect Viewport => new(22, 17, Math.Max(200, ActualWidth - 44), Math.Max(120, ActualHeight - 178));
+    // Reserve a band above the tray for paging controls; do not overlay the board.
+    private Rect Viewport => new(22, 17, Math.Max(200, ActualWidth - 44), Math.Max(120, ActualHeight - 223));
     private Rect Tray => new(18, Math.Max(150, ActualHeight - 146), Math.Max(200, ActualWidth - 36), 132);
     private JigsawSize Size => JigsawCatalog.Size(game.PieceCount);
     private double CellW => JigsawGame.BoardWidth / Size.Columns;
@@ -292,16 +349,23 @@ internal sealed class JigsawBoardSurface : FrameworkElement
             dc.Pop();
         }
 
-        foreach (JigsawPieceState piece in game.Pieces)
-            if (piece.OnBoard && piece.Locked) DrawPiece(dc, piece.Id, origin.X + piece.X * s, origin.Y + piece.Y * s, s, true);
-        foreach (JigsawPieceState piece in game.Pieces)
-            if (piece.OnBoard && !piece.Locked && piece.Id != activePiece)
-                DrawPiece(dc, piece.Id, origin.X + piece.X * s, origin.Y + piece.Y * s, s, false);
-        if (activePiece is int active && game.Pieces[active].OnBoard)
+        if (stationaryDirty)
         {
-            JigsawPieceState selected = game.Pieces[active];
-            DrawPiece(dc, active, origin.X + selected.X * s, origin.Y + selected.Y * s, s, false);
+            stationaryDrawing = BuildPieceDrawing(game.Pieces.Where(p => p.OnBoard && !dragSet.Contains(p.Id)));
+            stationaryDirty = false;
         }
+        dc.PushTransform(new TranslateTransform(origin.X, origin.Y));
+        dc.PushTransform(new ScaleTransform(s, s));
+        if (stationaryDrawing is not null) dc.DrawDrawing(stationaryDrawing);
+        if (movingDrawing is not null && activePiece is int active)
+        {
+            dc.PushTransform(new TranslateTransform(
+                game.Pieces[active].X - dragStartX, game.Pieces[active].Y - dragStartY));
+            dc.DrawDrawing(movingDrawing);
+            dc.Pop();
+        }
+        dc.Pop();
+        dc.Pop();
         dc.Pop();
 
         Rect tray = Tray;
@@ -342,6 +406,37 @@ internal sealed class JigsawBoardSurface : FrameworkElement
         List<JigsawPieceState> all = Unplaced;
         trayPage = Math.Clamp(trayPage, 0, Math.Max(0, (all.Count - 1) / PageSize));
         return all.Skip(trayPage * PageSize).Take(PageSize).ToArray();
+    }
+
+    private DrawingGroup BuildPieceDrawing(IEnumerable<JigsawPieceState> pieces)
+    {
+        var group = new DrawingGroup();
+        using (DrawingContext context = group.Open())
+        {
+            foreach (JigsawPieceState piece in pieces)
+                DrawPiece(context, piece.Id, piece.X, piece.Y, 1, piece.Locked);
+        }
+        group.Freeze();
+        return group;
+    }
+
+    private void BeginDrag(int id)
+    {
+        dragIds = JigsawGame.Connected(game, id).ToArray();
+        dragSet.Clear();
+        foreach (int pieceId in dragIds) dragSet.Add(pieceId);
+        dragStartX = game.Pieces[id].X;
+        dragStartY = game.Pieces[id].Y;
+        movingDrawing = BuildPieceDrawing(dragIds.Select(pieceId => game.Pieces[pieceId]));
+        stationaryDirty = true;
+    }
+
+    private void EndDrag()
+    {
+        dragIds = [];
+        dragSet.Clear();
+        movingDrawing = null;
+        stationaryDirty = true;
     }
 
     private void DrawPiece(DrawingContext dc, int id, double x, double y, double scale, bool locked)
@@ -421,6 +516,7 @@ internal sealed class JigsawBoardSurface : FrameworkElement
             if (piece is int trayReturnId && JigsawGame.ReturnToTray(game, trayReturnId))
             {
                 pendingTrayPiece = null;
+                stationaryDirty = true;
                 InvalidateVisual();
                 commit();
             }
@@ -453,6 +549,7 @@ internal sealed class JigsawBoardSurface : FrameworkElement
         {
             activePiece = id;
             movingPiece = true;
+            BeginDrag(id);
             previous = point;
             CaptureMouse();
             e.Handled = true;
@@ -467,6 +564,7 @@ internal sealed class JigsawBoardSurface : FrameworkElement
         pendingTrayPiece = null;
         draggingFromTray = false;
         movingPiece = true;
+        BeginDrag(id);
         previous = screen;
         CaptureMouse();
         InvalidateVisual();
@@ -492,7 +590,7 @@ internal sealed class JigsawBoardSurface : FrameworkElement
         if (!movingPiece || activePiece is not int piece) return;
         double dx = (point.X - previous.X) / Scale;
         double dy = (point.Y - previous.Y) / Scale;
-        if (JigsawGame.Move(game, piece, dx, dy))
+        if (JigsawGame.MoveGroup(game, dragIds, dx, dy))
         {
             previous = point;
             InvalidateVisual();
@@ -509,6 +607,7 @@ internal sealed class JigsawBoardSurface : FrameworkElement
             else JigsawGame.Snap(game, id);
             movingPiece = false;
             activePiece = null;
+            EndDrag();
             InvalidateVisual();
             commit();
         }
