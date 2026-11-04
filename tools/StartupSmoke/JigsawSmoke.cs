@@ -42,8 +42,9 @@ internal static class JigsawSmoke
         Button achievementChoice = FindButton(window, "JigsawAchievementsOpen");
         Point timerRight = timerChoice.TranslatePoint(new Point(timerChoice.ActualWidth, 0), galleryHub);
         Point achievementLeft = achievementChoice.TranslatePoint(new Point(0, 0), galleryHub);
-        Require(achievementLeft.X - timerRight.X >= 10,
-            "The timer and achievement buttons overlap or touch.");
+        double controlGap = achievementLeft.X - timerRight.X;
+        Require(controlGap >= 10,
+            $"Timer/Achievements gap is {controlGap:F1}px; expected at least 10px after scaling.");
 
         Button startButton = FindButton(window, "JigsawStart");
         Point startBottom = startButton.TranslatePoint(new Point(0, startButton.ActualHeight), galleryHub);
