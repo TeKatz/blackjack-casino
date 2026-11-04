@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Season.season-1-midnight-shift.Name" xml:space="preserve"><value>Mitternachtsschicht</value></data>
+  <data name="Season.season-1-midnight-shift.Description" xml:space="preserve"><value>Saison 1 · Der ursprüngliche kostenlose Pfad mit 50 Stufen. Erhaltene Belohnungen und Fortschritte bleiben dauerhaft verfügbar.</value></data>
+  <data name="Season.season-2-velvet-eclipse.Name" xml:space="preserve"><value>Samtene Finsternis</value></data>
+  <data name="Season.season-2-velvet-eclipse.Description" xml:space="preserve"><value>Saison 2 · Der ursprüngliche Langzeitpfad mit 100 Stufen. Erhaltene Belohnungen und Fortschritte bleiben dauerhaft verfügbar.</value></data>
+  <data name="Season.season-3-neon-dynasty.Name" xml:space="preserve"><value>Neon-Dynastie</value></data>
+  <data name="Season.season-3-neon-dynasty.Description" xml:space="preserve"><value>Saison 3 · Ein umfangreicher Luxuspass mit 120 Stufen, exklusiven Dynastie-Titeln, Porträts und animierten Rahmen.</value></data>
+  <data name="Season.Ui.PassLibrary" xml:space="preserve"><value>SAISONPASS-ARCHIV</value></data>
+  <data name="Season.Ui.ActivatePass" xml:space="preserve"><value>PASS AKTIVIEREN</value></data>
+  <data name="Season.Ui.ActivePass" xml:space="preserve"><value>AKTIVER PASS</value></data>
+  <data name="Season.Ui.Legacy" xml:space="preserve"><value>Archiviert</value></data>
+  <data name="Season.Ui.Current" xml:space="preserve"><value>Aktuell</value></data>
+  <data name="Season.Ui.Available" xml:space="preserve"><value>Verfügbar</value></data>
+  <data name="Season.Ui.Active" xml:space="preserve"><value>AKTIV</value></data>
+  <data name="Season.Ui.LegacyPass" xml:space="preserve"><value>ARCHIVIERTER PASS</value></data>
+  <data name="Season.Ui.CurrentPass" xml:space="preserve"><value>AKTUELLER PASS</value></data>
+  <data name="Season.Ui.AvailablePass" xml:space="preserve"><value>VERFÜGBARER PASS</value></data>
+  <data name="Season.Ui.Tier" xml:space="preserve"><value>Stufe</value></data>
+  <data name="Season.Ui.SeasonXp" xml:space="preserve"><value>Saison-EP</value></data>
+  <data name="Season.Ui.ActiveTip" xml:space="preserve"><value>Dieser Pass erhält derzeit alle neuen Saison-EP.</value></data>
+  <data name="Season.Ui.ActivateTip" xml:space="preserve"><value>Aktiviere</value></data>
+  <data name="Season.Ui.ActivateTipSuffix" xml:space="preserve"><value>Dein Fortschritt im derzeit aktiven Pass bleibt erhalten.</value></data>
+  <data name="Season.Ui.ActiveSeasonXp" xml:space="preserve"><value>alle neuen Saison-EP werden diesem Pass gutgeschrieben</value></data>
+  <data name="Season.Ui.Viewing" xml:space="preserve"><value>ANGEZEIGT</value></data>
+  <data name="Season.Ui.InactiveSeasonXp" xml:space="preserve"><value>Fortschritt wird separat gespeichert · aktiviere diesen Pass für neue Saison-EP</value></data>
+  <data name="Season.Ui.NextReward" xml:space="preserve"><value>NÄCHSTE BELOHNUNG</value></data>
+  <data name="Season.Ui.NextLevel" xml:space="preserve"><value>NÄCHSTE STUFE</value></data>
+  <data name="Season.Ui.RewardTrack" xml:space="preserve"><value>BELOHNUNGSPFAD</value></data>
+  <data name="Season.Ui.ProgressionTrack" xml:space="preserve"><value>FORTSCHRITTSPFAD</value></data>
+  <data name="Season.Ui.MilestoneRewards" xml:space="preserve"><value>MEILENSTEINBELOHNUNGEN</value></data>
+  <data name="Season.Ui.XpMilestones" xml:space="preserve"><value>EP-MEILENSTEINE</value></data>
+  <data name="Season.Ui.SpecialUnlocks" xml:space="preserve"><value>Besondere Freischaltungen auf wichtigen Stufen</value></data>
+  <data name="Season.Ui.LongForm" xml:space="preserve"><value>Meilensteine des Langzeitfortschritts</value></data>
+  <data name="Season.Ui.SeasonComplete" xml:space="preserve"><value>Saison abgeschlossen</value></data>
+  <data name="Season.Ui.All" xml:space="preserve"><value>Alle</value></data>
+  <data name="Season.Ui.RewardsUnlocked" xml:space="preserve"><value>Belohnungen freigeschaltet.</value></data>
+  <data name="Season.Ui.Coins" xml:space="preserve"><value>Münzen</value></data>
+  <data name="Season.Ui.Pack" xml:space="preserve"><value>Paket</value></data>
+  <data name="Season.Ui.CardPack" xml:space="preserve"><value>Kartenpaket</value></data>
+  <data name="Season.Ui.XpToUnlock" xml:space="preserve"><value>EP bis zur Freischaltung</value></data>
+  <data name="Season.Ui.Unlocked" xml:space="preserve"><value>FREIGESCHALTET</value></data>
+  <data name="Season.Ui.Next" xml:space="preserve"><value>NÄCHSTE</value></data>
+  <data name="Season.Ui.Locked" xml:space="preserve"><value>GESPERRT</value></data>
+  <data name="Season.Ui.Reached" xml:space="preserve"><value>ERREICHT</value></data>
+  <data name="Season.Ui.Checkpoint" xml:space="preserve"><value>MEILENSTEIN</value></data>
+  <data name="Season.Ui.PassComplete" xml:space="preserve"><value>Pass abgeschlossen</value></data>
+  <data name="Season.Ui.AllTiersReached" xml:space="preserve"><value>Stufen erreicht · Belohnungen werden separat zugewiesen.</value></data>
+  <data name="Season.Ui.XpToNext" xml:space="preserve"><value>EP bis zur nächsten Stufe · Belohnungsplatz reserviert</value></data>
+  <data name="Season.Ui.RewardReserved" xml:space="preserve"><value>Belohnungsplatz reserviert</value></data>
+  <data name="Season.Ui.Total" xml:space="preserve"><value>gesamt</value></data>
+  <data name="Season.Ui.Preview" xml:space="preserve"><value>Vorschau</value></data>
+</root>
