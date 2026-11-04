@@ -496,4 +496,90 @@ Anwesenregeln: Der Geist folgt den kürzesten Wegen, auch durch verschlossene T�
   <data name="Phase2.Empire.117" xml:space="preserve"><value>Ausbauoffensive</value></data>
   <data name="Phase2.Empire.118" xml:space="preserve"><value>Kaufe nach Annahme des Auftrags 50 Raumstufen.</value></data>
   <data name="Phase2.Empire.119" xml:space="preserve"><value>Baukosten −5 % für zwei Produktionsstunden</value></data>
+  <data name="Phase2.Static.189" xml:space="preserve"><value>Einser</value></data>
+  <data name="Phase2.Static.190" xml:space="preserve"><value>Zweier</value></data>
+  <data name="Phase2.Static.191" xml:space="preserve"><value>Dreier</value></data>
+  <data name="Phase2.Static.192" xml:space="preserve"><value>Vierer</value></data>
+  <data name="Phase2.Static.193" xml:space="preserve"><value>Fünfer</value></data>
+  <data name="Phase2.Static.194" xml:space="preserve"><value>Sechser</value></data>
+  <data name="Phase2.Static.195" xml:space="preserve"><value>Dreierpasch</value></data>
+  <data name="Phase2.Static.196" xml:space="preserve"><value>Viererpasch</value></data>
+  <data name="Phase2.Static.197" xml:space="preserve"><value>Full House</value></data>
+  <data name="Phase2.Static.198" xml:space="preserve"><value>Kleine Straße</value></data>
+  <data name="Phase2.Static.199" xml:space="preserve"><value>Große Straße</value></data>
+  <data name="Phase2.Static.200" xml:space="preserve"><value>Fünferpasch</value></data>
+  <data name="Phase2.Static.201" xml:space="preserve"><value>Chance</value></data>
+  <data name="Phase2.Static.202" xml:space="preserve"><value>Noch ein Fünferpasch! Eine Wertung bringt +50 Bonuspunkte und den Höchstwert in jedem freien Feld.</value></data>
+  <data name="Phase2.Static.203" xml:space="preserve"><value>Sammle Punkte oder ziele auf eine Kombination</value></data>
+  <data name="Phase2.Static.204" xml:space="preserve"><value>← Spiele</value></data>
+  <data name="Phase2.Static.205" xml:space="preserve"><value>Memory</value></data>
+  <data name="Phase2.Static.206" xml:space="preserve"><value>← LOUNGE</value></data>
+  <data name="Phase2.Static.207" xml:space="preserve"><value>Fortsetzen</value></data>
+  <data name="Phase2.Static.208" xml:space="preserve"><value>WÄHLE EIN SOLITAIRE-SPIEL</value></data>
+  <data name="Phase2.Static.209" xml:space="preserve"><value>PARTIE # STARTEN</value></data>
+  <data name="Phase2.Static.210" xml:space="preserve"><value>Alle Karten sichtbar · nummerierte und wiederholbare Partien.</value></data>
+  <data name="Phase2.Static.211" xml:space="preserve"><value>1 FARBE</value></data>
+  <data name="Phase2.Static.212" xml:space="preserve"><value>2 FARBEN</value></data>
+  <data name="Phase2.Static.213" xml:space="preserve"><value>4 FARBEN</value></data>
+  <data name="Phase2.Static.214" xml:space="preserve"><value>Sechs Spielweisen, um die Karten zur Ruhe kommen zu lassen.</value></data>
+  <data name="Phase2.Static.215" xml:space="preserve"><value>EINE RUHIGE ECKE</value></data>
+  <data name="Phase2.Static.216" xml:space="preserve"><value>Finde deinen Rhythmus.</value></data>
+  <data name="Phase2.Static.217" xml:space="preserve"><value>Keine Einsätze, keine Eile. Jedes gefundene Wort ist ein kleiner Sieg.</value></data>
+  <data name="Phase2.Static.218" xml:space="preserve"><value>Finde die Wörter.
+Bestimme dein Tempo.</value></data>
+  <data name="Phase2.Static.219" xml:space="preserve"><value>Durchsuche sorgfältig gestaltete Buchstabengitter in deinem Tempo. Wähle eine Schwierigkeit, verfolge die Buchstaben und speichere deinen Fortschritt jederzeit.</value></data>
+  <data name="Phase2.Static.220" xml:space="preserve"><value>Ziehe vom ersten bis zum letzten Buchstaben. Wörter dürfen sich überlappen. Hinweise zeigen einen Anfangsbuchstaben, ohne XP zu verringern.</value></data>
+  <data name="Phase2.Static.221" xml:space="preserve"><value>Wähle eine Schwierigkeit oder setze dein aktuelles Rätsel fort.</value></data>
+  <data name="Phase2.Static.222" xml:space="preserve"><value>Setze das aktuelle Rätsel fort oder beende es, bevor du ein neues beginnst.</value></data>
+  <data name="Phase2.Static.223" xml:space="preserve"><value>Ein ruhiger Sieg für heute.</value></data>
+  <data name="Phase2.Static.224" xml:space="preserve"><value>Finde dein eigenes Tempo.</value></data>
+  <data name="Phase2.Static.225" xml:space="preserve"><value>Memory-Kartenpaare</value></data>
+  <data name="Phase2.Static.226" xml:space="preserve"><value>Investitionsprojekte</value></data>
+  <data name="Phase2.Static.227" xml:space="preserve"><value>Einmalige Investitionen in diese Immobilie. Projekte bleiben nach Prestige erhalten. Raumstufen müssen beim Bau erfüllt sein; dauerhafte Etagen- und Systemfreischaltungen bleiben bestehen.</value></data>
+  <data name="Phase2.Static.228" xml:space="preserve"><value>Bauen</value></data>
+  <data name="Phase2.Static.229" xml:space="preserve"><value>Abgeschlossen</value></data>
+  <data name="Phase2.Static.230" xml:space="preserve"><value>Dein Managementteam</value></data>
+  <data name="Phase2.Static.231" xml:space="preserve"><value>Feste Spezialisten statt zufälliger Anstellungen. Die Geschäftsführung eröffnet einen aktiven Platz, Prestige V einen zweiten und der Vorstand einen dritten. Zuweisungen bleiben nach Prestige erhalten, aber zurückgesetzte Räume müssen wieder eröffnet werden.</value></data>
+  <data name="Phase2.Static.232" xml:space="preserve"><value>Zuweisen</value></data>
+  <data name="Phase2.Static.233" xml:space="preserve"><value>INAKTIV</value></data>
+  <data name="Phase2.Static.234" xml:space="preserve"><value>AKTIV · </value></data>
+  <data name="Phase2.Static.235" xml:space="preserve"><value>Verwaltungsautomatik</value></data>
+  <data name="Phase2.Static.236" xml:space="preserve"><value>Benötigt die Geschäftsführung und die Verwaltungsautomatik-Forschung. Alle 30 Produktionssekunden gibt das System höchstens den gewählten Budgetanteil aus und bewahrt die Reserve. Offline gilt derselbe Rhythmus. Höchstens 50 Ausbauschritte pro Entscheidung.</value></data>
+  <data name="Phase2.Static.237" xml:space="preserve"><value>Reserve (Credits)</value></data>
+  <data name="Phase2.Static.238" xml:space="preserve"><value>Budget je Entscheidung (%) · 1–50</value></data>
+  <data name="Phase2.Static.239" xml:space="preserve"><value>Zielstufe · 1–200</value></data>
+  <data name="Phase2.Static.240" xml:space="preserve"><value>Günstigster nächster Meilenstein</value></data>
+  <data name="Phase2.Static.241" xml:space="preserve"><value>Prioritätenfolge</value></data>
+  <data name="Phase2.Static.242" xml:space="preserve"><value>AUTO / GESPERRT</value></data>
+  <data name="Phase2.Static.243" xml:space="preserve"><value>AUTO / AKTIV</value></data>
+  <data name="Phase2.Static.244" xml:space="preserve"><value>AUTO / PAUSIERT</value></data>
+  <data name="Phase2.Static.245" xml:space="preserve"><value>Ziel erreicht</value></data>
+  <data name="Phase2.Static.246" xml:space="preserve"><value>Raum gesperrt</value></data>
+  <data name="Phase2.Static.247" xml:space="preserve"><value>Raum vorgemerkt</value></data>
+  <data name="Phase2.Static.248" xml:space="preserve"><value>Nicht in der Prioritätenliste</value></data>
+  <data name="Phase2.Static.249" xml:space="preserve"><value>günstigster Meilenstein</value></data>
+  <data name="Phase2.Static.250" xml:space="preserve"><value>Prioritätenfolge</value></data>
+  <data name="Phase2.Static.251" xml:space="preserve"><value>Team gesperrt · baue die Geschäftsführung.</value></data>
+  <data name="Phase2.Static.252" xml:space="preserve"><value>Nächster Schritt: Budget aufbauen.</value></data>
+  <data name="Phase2.Static.253" xml:space="preserve"><value>Baue andere Abteilungen aus.</value></data>
+  <data name="Phase2.Static.254" xml:space="preserve"><value>Alle Synergiestufen abgeschlossen.</value></data>
+  <data name="Phase2.Static.255" xml:space="preserve"><value>Unter Verwaltung findest du Forschung, Projekte und dein Immobilienportfolio.</value></data>
+  <data name="Phase2.Static.256" xml:space="preserve"><value>Raumanalyse</value></data>
+  <data name="Phase2.Static.257" xml:space="preserve"><value>RAUMANALYSE / </value></data>
+  <data name="Phase2.Static.258" xml:space="preserve"><value>ANWESENÜBERSICHT / </value></data>
+  <data name="Phase2.Static.259" xml:space="preserve"><value>TEAM</value></data>
+  <data name="Phase2.Static.260" xml:space="preserve"><value>PROJEKTE</value></data>
+  <data name="Phase2.Static.261" xml:space="preserve"><value>BETRIEB</value></data>
+  <data name="Phase2.Static.262" xml:space="preserve"><value>SPIELBETRIEB</value></data>
+  <data name="Phase2.Static.263" xml:space="preserve"><value>GASTFREUNDSCHAFT</value></data>
+  <data name="Phase2.Static.264" xml:space="preserve"><value>VORSCHAU</value></data>
+  <data name="Phase2.Static.265" xml:space="preserve"><value>Alle Räume</value></data>
+  <data name="Phase2.Static.266" xml:space="preserve"><value>PAUSIERT</value></data>
+  <data name="Phase2.Static.267" xml:space="preserve"><value>AKTIV</value></data>
+  <data name="Phase2.Static.268" xml:space="preserve"><value>BEENDET</value></data>
+  <data name="Phase2.Static.269" xml:space="preserve"><value>Empfohlen</value></data>
+  <data name="Phase2.Static.270" xml:space="preserve"><value>Nicht verfügbar</value></data>
+  <data name="Phase2.Static.271" xml:space="preserve"><value>AUTOMATIK</value></data>
+  <data name="Phase2.Static.272" xml:space="preserve"><value>FORSCHUNG</value></data>
+  <data name="Phase2.Static.273" xml:space="preserve"><value>VERWALTUNG</value></data>
 </root>

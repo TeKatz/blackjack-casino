@@ -496,4 +496,90 @@ Manor rules: the ghost follows shortest routes, including locked doors. It moves
   <data name="Phase2.Empire.117" xml:space="preserve"><value>Expansion Drive</value></data>
   <data name="Phase2.Empire.118" xml:space="preserve"><value>Purchase 50 room levels after accepting this brief.</value></data>
   <data name="Phase2.Empire.119" xml:space="preserve"><value>Construction −5% for 2 production hours</value></data>
+  <data name="Phase2.Static.189" xml:space="preserve"><value>Ones</value></data>
+  <data name="Phase2.Static.190" xml:space="preserve"><value>Twos</value></data>
+  <data name="Phase2.Static.191" xml:space="preserve"><value>Threes</value></data>
+  <data name="Phase2.Static.192" xml:space="preserve"><value>Fours</value></data>
+  <data name="Phase2.Static.193" xml:space="preserve"><value>Fives</value></data>
+  <data name="Phase2.Static.194" xml:space="preserve"><value>Sixes</value></data>
+  <data name="Phase2.Static.195" xml:space="preserve"><value>Three of a kind</value></data>
+  <data name="Phase2.Static.196" xml:space="preserve"><value>Four of a kind</value></data>
+  <data name="Phase2.Static.197" xml:space="preserve"><value>Full House</value></data>
+  <data name="Phase2.Static.198" xml:space="preserve"><value>Small straight</value></data>
+  <data name="Phase2.Static.199" xml:space="preserve"><value>Large straight</value></data>
+  <data name="Phase2.Static.200" xml:space="preserve"><value>Five of a kind</value></data>
+  <data name="Phase2.Static.201" xml:space="preserve"><value>Chance</value></data>
+  <data name="Phase2.Static.202" xml:space="preserve"><value>Another five of a kind! Scoring grants +50 bonus points and the maximum in any free box.</value></data>
+  <data name="Phase2.Static.203" xml:space="preserve"><value>Collect points or aim for a combination</value></data>
+  <data name="Phase2.Static.204" xml:space="preserve"><value>← Games</value></data>
+  <data name="Phase2.Static.205" xml:space="preserve"><value>Memory</value></data>
+  <data name="Phase2.Static.206" xml:space="preserve"><value>← LOUNGE</value></data>
+  <data name="Phase2.Static.207" xml:space="preserve"><value>Continue</value></data>
+  <data name="Phase2.Static.208" xml:space="preserve"><value>CHOOSE A SOLITAIRE GAME</value></data>
+  <data name="Phase2.Static.209" xml:space="preserve"><value>START #</value></data>
+  <data name="Phase2.Static.210" xml:space="preserve"><value>All cards visible · numbered, reproducible deals.</value></data>
+  <data name="Phase2.Static.211" xml:space="preserve"><value>1 SUIT</value></data>
+  <data name="Phase2.Static.212" xml:space="preserve"><value>2 SUITS</value></data>
+  <data name="Phase2.Static.213" xml:space="preserve"><value>4 SUITS</value></data>
+  <data name="Phase2.Static.214" xml:space="preserve"><value>Six ways to let the cards settle.</value></data>
+  <data name="Phase2.Static.215" xml:space="preserve"><value>A QUIETER CORNER</value></data>
+  <data name="Phase2.Static.216" xml:space="preserve"><value>Find your rhythm.</value></data>
+  <data name="Phase2.Static.217" xml:space="preserve"><value>No wagers, no rush. Each found word is a small victory worth enjoying.</value></data>
+  <data name="Phase2.Static.218" xml:space="preserve"><value>Find the words.
+Keep the pace yours.</value></data>
+  <data name="Phase2.Static.219" xml:space="preserve"><value>Search handcrafted word grids at your own pace. Choose a difficulty, follow the letters and save your progress whenever you like.</value></data>
+  <data name="Phase2.Static.220" xml:space="preserve"><value>Drag from the first letter to the last. Words can overlap. Hints reveal a starting letter without reducing XP.</value></data>
+  <data name="Phase2.Static.221" xml:space="preserve"><value>Choose a difficulty, or resume your current puzzle.</value></data>
+  <data name="Phase2.Static.222" xml:space="preserve"><value>Resume or finish the current puzzle before starting another one.</value></data>
+  <data name="Phase2.Static.223" xml:space="preserve"><value>A quiet win for today.</value></data>
+  <data name="Phase2.Static.224" xml:space="preserve"><value>Find your own pace.</value></data>
+  <data name="Phase2.Static.225" xml:space="preserve"><value>Memory card matching</value></data>
+  <data name="Phase2.Static.226" xml:space="preserve"><value>Capital projects</value></data>
+  <data name="Phase2.Static.227" xml:space="preserve"><value>One-time investments in this property. Projects remain after prestige. Department level requirements apply when building; permanent floor and system unlocks stay open afterwards.</value></data>
+  <data name="Phase2.Static.228" xml:space="preserve"><value>Build</value></data>
+  <data name="Phase2.Static.229" xml:space="preserve"><value>Completed</value></data>
+  <data name="Phase2.Static.230" xml:space="preserve"><value>Your management team</value></data>
+  <data name="Phase2.Static.231" xml:space="preserve"><value>Fixed specialists, no random hiring. Executive Offices unlock one active slot; Prestige V adds a second, Board of Directors research a third. Assignments persist through prestige, but a reset room must reopen to produce.</value></data>
+  <data name="Phase2.Static.232" xml:space="preserve"><value>Assign</value></data>
+  <data name="Phase2.Static.233" xml:space="preserve"><value>INACTIVE</value></data>
+  <data name="Phase2.Static.234" xml:space="preserve"><value>ACTIVE · </value></data>
+  <data name="Phase2.Static.235" xml:space="preserve"><value>Executive automation</value></data>
+  <data name="Phase2.Static.236" xml:space="preserve"><value>Requires Executive Offices and Executive Automation research. Each 30 production seconds, the system spends up to your chosen percentage of the current property budget while preserving the reserve. It follows the same schedule offline. At most 50 upgrade batches run per decision.</value></data>
+  <data name="Phase2.Static.237" xml:space="preserve"><value>Reserve (cr)</value></data>
+  <data name="Phase2.Static.238" xml:space="preserve"><value>Budget / decision (%) · 1–50</value></data>
+  <data name="Phase2.Static.239" xml:space="preserve"><value>Level target · 1–200</value></data>
+  <data name="Phase2.Static.240" xml:space="preserve"><value>Cheapest next milestone</value></data>
+  <data name="Phase2.Static.241" xml:space="preserve"><value>Priority order</value></data>
+  <data name="Phase2.Static.242" xml:space="preserve"><value>AUTO / LOCKED</value></data>
+  <data name="Phase2.Static.243" xml:space="preserve"><value>AUTO / RUNNING</value></data>
+  <data name="Phase2.Static.244" xml:space="preserve"><value>AUTO / PAUSED</value></data>
+  <data name="Phase2.Static.245" xml:space="preserve"><value>Target reached</value></data>
+  <data name="Phase2.Static.246" xml:space="preserve"><value>Room locked</value></data>
+  <data name="Phase2.Static.247" xml:space="preserve"><value>Room queued</value></data>
+  <data name="Phase2.Static.248" xml:space="preserve"><value>Not in priority queue</value></data>
+  <data name="Phase2.Static.249" xml:space="preserve"><value>cheapest milestone</value></data>
+  <data name="Phase2.Static.250" xml:space="preserve"><value>priority order</value></data>
+  <data name="Phase2.Static.251" xml:space="preserve"><value>Team locked · build Executive Offices.</value></data>
+  <data name="Phase2.Static.252" xml:space="preserve"><value>Next step: build the budget.</value></data>
+  <data name="Phase2.Static.253" xml:space="preserve"><value>Develop other departments.</value></data>
+  <data name="Phase2.Static.254" xml:space="preserve"><value>All synergy tiers complete.</value></data>
+  <data name="Phase2.Static.255" xml:space="preserve"><value>Development holds research, projects and the property portfolio.</value></data>
+  <data name="Phase2.Static.256" xml:space="preserve"><value>Room intelligence</value></data>
+  <data name="Phase2.Static.257" xml:space="preserve"><value>ROOM INTELLIGENCE / </value></data>
+  <data name="Phase2.Static.258" xml:space="preserve"><value>ESTATE OVERVIEW / </value></data>
+  <data name="Phase2.Static.259" xml:space="preserve"><value>TEAM</value></data>
+  <data name="Phase2.Static.260" xml:space="preserve"><value>PROJECTS</value></data>
+  <data name="Phase2.Static.261" xml:space="preserve"><value>OPERATIONS</value></data>
+  <data name="Phase2.Static.262" xml:space="preserve"><value>GAMING</value></data>
+  <data name="Phase2.Static.263" xml:space="preserve"><value>HOSPITALITY</value></data>
+  <data name="Phase2.Static.264" xml:space="preserve"><value>PREVIEW</value></data>
+  <data name="Phase2.Static.265" xml:space="preserve"><value>All rooms</value></data>
+  <data name="Phase2.Static.266" xml:space="preserve"><value>PAUSED</value></data>
+  <data name="Phase2.Static.267" xml:space="preserve"><value>RUNNING</value></data>
+  <data name="Phase2.Static.268" xml:space="preserve"><value>FINISHED</value></data>
+  <data name="Phase2.Static.269" xml:space="preserve"><value>Recommended</value></data>
+  <data name="Phase2.Static.270" xml:space="preserve"><value>Unavailable</value></data>
+  <data name="Phase2.Static.271" xml:space="preserve"><value>AUTOMATION</value></data>
+  <data name="Phase2.Static.272" xml:space="preserve"><value>RESEARCH</value></data>
+  <data name="Phase2.Static.273" xml:space="preserve"><value>MANAGEMENT</value></data>
 </root>
