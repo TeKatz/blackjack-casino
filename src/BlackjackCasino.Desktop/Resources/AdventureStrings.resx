@@ -480,4 +480,15 @@ The board grows as the investigation uncovers people, places, evidence, leads an
   <data name="Adventure.dead-mans-hand.Subtitle" xml:space="preserve"><value>Everyone lies. Some people just get paid for it.</value></data>
   <data name="Adventure.drowned-bell.Subtitle" xml:space="preserve"><value>A coastal mystery of fog, missing names and a bell that rings from beneath the sea.</value></data>
   <data name="Adventure.black-stag.Subtitle" xml:space="preserve"><value>A dark five-act mystery of hidden witnesses, broken loyalties and a symbol older than the kingdom that fears it.</value></data>
+  <data name="Adventure.Ui.BeyondCasino" xml:space="preserve"><value>BEYOND THE CASINO FLOOR</value></data>
+  <data name="Adventure.Ui.TalesTitle" xml:space="preserve"><value>TALES FROM THE BACKROOM</value></data>
+  <data name="Adventure.Ui.AvailableTales" xml:space="preserve"><value>AVAILABLE TALES</value></data>
+  <data name="Adventure.Ui.RunsStarted" xml:space="preserve"><value>RUNS STARTED</value></data>
+  <data name="Adventure.Ui.Selected" xml:space="preserve"><value>SELECTED</value></data>
+  <data name="Adventure.Ui.PersistenceInfo" xml:space="preserve"><value>Your investigation board, encounters, choices and character persist between sessions. Each tale can be continued independently.</value></data>
+  <data name="Adventure.Ui.Resume" xml:space="preserve"><value>RESUME</value></data>
+  <data name="Adventure.Ui.Select" xml:space="preserve"><value>SELECT</value></data>
+  <data name="Adventure.Ui.NewRun" xml:space="preserve"><value>NEW RUN</value></data>
+  <data name="Adventure.Ui.BeginNewRun" xml:space="preserve"><value>BEGIN NEW RUN</value></data>
+  <data name="Adventure.Ui.Special" xml:space="preserve"><value>SPECIAL</value></data>
 </root>

@@ -480,4 +480,15 @@ Im Verlauf deiner Ermittlungen füllt sich die Tafel mit Personen, Orten, Beweis
   <data name="Adventure.dead-mans-hand.Subtitle" xml:space="preserve"><value>Jeder lügt. Manche werden dafür bloß bezahlt.</value></data>
   <data name="Adventure.drowned-bell.Subtitle" xml:space="preserve"><value>Ein Küstenmysterium aus Nebel, verschwundenen Namen und einer Glocke, die tief unter dem Meer erklingt.</value></data>
   <data name="Adventure.black-stag.Subtitle" xml:space="preserve"><value>Ein düsteres Mysterium in fünf Akten über verborgene Zeugen, gebrochene Treue und ein Zeichen, das älter ist als das Königreich, das es fürchtet.</value></data>
+  <data name="Adventure.Ui.BeyondCasino" xml:space="preserve"><value>JENSEITS DES CASINOS</value></data>
+  <data name="Adventure.Ui.TalesTitle" xml:space="preserve"><value>GESCHICHTEN AUS DEM HINTERZIMMER</value></data>
+  <data name="Adventure.Ui.AvailableTales" xml:space="preserve"><value>VERFÜGBARE GESCHICHTEN</value></data>
+  <data name="Adventure.Ui.RunsStarted" xml:space="preserve"><value>BEGONNENE DURCHLÄUFE</value></data>
+  <data name="Adventure.Ui.Selected" xml:space="preserve"><value>AUSGEWÄHLT</value></data>
+  <data name="Adventure.Ui.PersistenceInfo" xml:space="preserve"><value>Deine Ermittlungstafel, Begegnungen, Entscheidungen und dein Charakter bleiben zwischen den Sitzungen erhalten. Jede Geschichte kann unabhängig fortgesetzt werden.</value></data>
+  <data name="Adventure.Ui.Resume" xml:space="preserve"><value>FORTSETZEN</value></data>
+  <data name="Adventure.Ui.Select" xml:space="preserve"><value>AUSWÄHLEN</value></data>
+  <data name="Adventure.Ui.NewRun" xml:space="preserve"><value>NEUER DURCHLAUF</value></data>
+  <data name="Adventure.Ui.BeginNewRun" xml:space="preserve"><value>NEUES ABENTEUER BEGINNEN</value></data>
+  <data name="Adventure.Ui.Special" xml:space="preserve"><value>BESONDERHEIT</value></data>
 </root>

@@ -199,17 +199,17 @@ internal sealed class AdventureLibraryHubControl : UserControl
         Content = PremiumLoungeTheme.Build(
             "convention-hall.png",
             "private-gaming-salon.png",
-            "BEYOND THE CASINO FLOOR",
+            AdventureTextLocalization.Ui("BeyondCasino", "BEYOND THE CASINO FLOOR"),
             AdventureTextLocalization.Ui("EveryDoor", "Every door has a story."),
             AdventureTextLocalization.Ui("HubSubtitle", "Make your choices, roll the dice and live with what follows."),
-            "TALES FROM THE BACKROOM",
+            AdventureTextLocalization.Ui("TalesTitle", "TALES FROM THE BACKROOM"),
             AdventureTextLocalization.Ui("ChooseTale", "Choose a tale."),
             AdventureTextLocalization.Ui("HubDescription", "Make your choices, roll the dice and carry the consequences. Every tale shares your character, inventory and encounters."),
             PremiumLoungeTheme.Stats(
-                $"AVAILABLE TALES   {AdventureCatalog.All.Count:N0}    ·    COMPLETED   {completed:N0}",
-                $"RUNS STARTED   {started:N0}    ·    SELECTED   {SelectedAdventure.Title.ToUpperInvariant()}"),
+                $"{AdventureTextLocalization.Ui("AvailableTales", "AVAILABLE TALES")}   {AdventureCatalog.All.Count:N0}    ·    {AdventureTextLocalization.Ui("Completed", "COMPLETED")}   {completed:N0}",
+                $"{AdventureTextLocalization.Ui("RunsStarted", "RUNS STARTED")}   {started:N0}    ·    {AdventureTextLocalization.Ui("Selected", "SELECTED")}   {AdventureTextLocalization.Title(SelectedAdventure).ToUpperInvariant()}"),
             right,
-            "Your investigation board, encounters, choices and character persist between sessions. Each tale can be continued independently.",
+            AdventureTextLocalization.Ui("PersistenceInfo", "Your investigation board, encounters, choices and character persist between sessions. Each tale can be continued independently."),
             leftSecondary: leftSettings,
             compactLeft: true,
             rightScrollable: false);
@@ -235,12 +235,12 @@ internal sealed class AdventureLibraryHubControl : UserControl
         if (run is not null && !run.Completed)
         {
             AdventureRunState continuation = run;
-            var resume = PremiumLoungeTheme.Button("RESUME", "AdventureResume_" + adventure.Id.Replace('-', '_'),
+            var resume = PremiumLoungeTheme.Button(AdventureTextLocalization.Ui("Resume", "RESUME"), "AdventureResume_" + adventure.Id.Replace('-', '_'),
                 () => ShowRun(adventure, continuation), width: 100);
             PremiumLoungeTheme.AddRowAction(row, resume, 108);
         }
 
-        var select = PremiumLoungeTheme.Button("SELECT", "AdventureSelect_" + adventure.Id.Replace('-', '_'),
+        var select = PremiumLoungeTheme.Button(AdventureTextLocalization.Ui("Select", "SELECT"), "AdventureSelect_" + adventure.Id.Replace('-', '_'),
             () =>
             {
                 selectedAdventureId = adventure.Id;
@@ -262,10 +262,10 @@ internal sealed class AdventureLibraryHubControl : UserControl
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
         var chooser = new StackPanel();
-        chooser.Children.Add(AdventureUi.Eyebrow("NEW RUN", 10));
+        chooser.Children.Add(AdventureUi.Eyebrow(AdventureTextLocalization.Ui("NewRun", "NEW RUN"), 10));
         chooser.Children.Add(new TextBlock
         {
-            Text = adventure.Title,
+            Text = AdventureTextLocalization.Title(adventure),
             FontFamily = new FontFamily("Georgia"),
             FontSize = 20,
             Foreground = AdventureUi.Ink("#F0E0C6"),
@@ -273,7 +273,7 @@ internal sealed class AdventureLibraryHubControl : UserControl
         });
         var classes = BuildClassSelector(adventure);
         chooser.Children.Add(classes);
-        Button start = PremiumLoungeTheme.Button("BEGIN NEW RUN", "AdventureBeginNewRun", () =>
+        Button start = PremiumLoungeTheme.Button(AdventureTextLocalization.Ui("BeginNewRun", "BEGIN NEW RUN"), "AdventureBeginNewRun", () =>
         {
             AdventureCharacterState character = AdventureCharacterCatalog.Create(adventure, SelectedClassId(classes), playerName());
             StartFreshRun(adventure, character);
@@ -311,7 +311,7 @@ internal sealed class AdventureLibraryHubControl : UserControl
             }));
             string special = string.IsNullOrWhiteSpace(definition.SpecialMechanicName)
                 ? string.Empty
-                : $"\nSPECIAL · {definition.SpecialMechanicName}";
+                : $"\n{AdventureTextLocalization.Ui("Special", "SPECIAL")} · {definition.SpecialMechanicName}";
             stats.Text = $"HP {definition.MaxHitPoints} · Armor {definition.Armor}\n{abilityLine}{special}";
         }
         classes.SelectionChanged += (_, _) => UpdatePreview();

@@ -649,7 +649,7 @@ internal sealed class AdventureCaseBoardView : Grid
 
     private void AddDetail(string heading, string content)
     {
-        AddPlainText(AdventureTextLocalization.Raw(heading), 9.5, "#A9805F", 0, 18, 0, 4);
+        AddPlainText(AdventureTextLocalization.BoardHeading(heading), 9.5, "#A9805F", 0, 18, 0, 4);
         if (details.Children[^1] is TextBlock label) label.FontWeight = FontWeights.Bold;
         AddPlainText(content, 11.5, "#C5B9A8", 0, 0, 0, 0, 18);
     }
