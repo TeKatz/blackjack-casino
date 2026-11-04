@@ -18,6 +18,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Repository documentation and release guard
+        run: python tools/check_repo_contract.py
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
