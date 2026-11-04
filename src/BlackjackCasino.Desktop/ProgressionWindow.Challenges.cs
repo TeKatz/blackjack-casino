@@ -98,7 +98,7 @@ internal partial class ProgressionWindow
                     ? "Automatisch beim Puzzeln vergeben" : "Automatically awarded in Jigsaw Puzzle",
                 FontSize = 10, Foreground = MutedBrush, TextWrapping = TextWrapping.Wrap,
             });
-        if (ProgressionService.ChallengePack(challenge) is { } packReward)
+        if (challenge.Category != ChallengeCategory.Jigsaw && ProgressionService.ChallengePack(challenge) is { } packReward)
         {
             rewardStack.Children.Add(new TextBlock { Text = $"+ {packReward} pack", FontSize = 10, Foreground = MutedBrush, TextWrapping = TextWrapping.Wrap });
         }
