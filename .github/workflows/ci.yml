@@ -21,6 +21,23 @@ jobs:
       - name: Repository documentation and release guard
         run: python tools/check_repo_contract.py
 
+      - name: Setup Node for modern Manor frontend
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install modern frontend dependencies
+        working-directory: frontend
+        run: npm install --no-package-lock --no-audit --no-fund
+
+      - name: Test modern frontend
+        working-directory: frontend
+        run: npm test
+
+      - name: Build modern frontend
+        working-directory: frontend
+        run: npm run build
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
