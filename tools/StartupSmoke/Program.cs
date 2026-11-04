@@ -159,6 +159,16 @@ internal static class Program
                     "&&document.body.scrollHeight<=innerHeight+2);})()");
                 Require(noPageScroll.Equals("true",StringComparison.OrdinalIgnoreCase),
                     "Modern Manor requires page scrolling to reach gameplay on the Windows host.");
+                string largerControls = await modernBrowser.CoreWebView2.ExecuteScriptAsync(
+                    "(()=>{const spin=document.querySelector('.action-console .gold-button');" +
+                    "const stake=document.querySelector('.action-console .bet-input');" +
+                    "if(!spin||!stake)return false;" +
+                    "const a=spin.getBoundingClientRect(),b=stake.getBoundingClientRect();" +
+                    "const minimum=innerHeight<=720?45:54;" +
+                    "return a.width>=190&&a.height>=minimum&&b.height>=minimum-7" +
+                    "&&a.bottom<=innerHeight&&b.bottom<=innerHeight;})()");
+                Require(largerControls.Equals("true",StringComparison.OrdinalIgnoreCase),
+                    "Modern Manor stake or primary spin control is small or clipped in Windows WebView2.");
                 string canvasGeometry = await modernBrowser.CoreWebView2.ExecuteScriptAsync(
                     "(()=>{const host=document.querySelector('.manor-canvas');" +
                     "if(!host)return false;const rect=host.getBoundingClientRect();" +

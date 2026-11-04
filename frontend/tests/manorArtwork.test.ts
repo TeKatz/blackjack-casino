@@ -11,7 +11,7 @@ describe('offline Victorian collectible texture pack', () => {
     expect(new Set(art).size).toBe(14);
     for (const image of art) {
       expect(image).toContain('<svg');
-      expect(image).toContain('width="1200" height="320"');
+      expect(image).toContain('width="1200" height="640"');
       expect(image).toContain('viewBox="0 0 300 160"');
       expect(image).toContain('</svg>');
       expect(image.length).toBeGreaterThan(1800);
