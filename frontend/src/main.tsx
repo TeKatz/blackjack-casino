@@ -5,14 +5,13 @@ import {
 } from './bridge/protocol';
 import type { GameAction, ManorSnapshot } from './bridge/protocol';
 import { ManorStage } from './graphics/ManorStage';
-import { ManorRunMap } from './graphics/ManorRunMap';
-import { ManorRoomScene } from './graphics/ManorRoomScene';
+import { ManorBonusStage } from './graphics/ManorBonusStage';
 import { ManorHelp } from './ManorHelp';
-import { localizeFeature, localizeRunText, t } from './i18n';
+import { localizeFeature, t } from './i18n';
 import type { ManorLanguage } from './i18n';
-import { ghostBand, ghostBandLabel } from './graphics/manorRunUi';
 import { ManorAudio } from './audio/manorAudio';
-import { localizeMoment, runCue, runMoment, spinCue, spinMoment } from './graphics/manorMoments';
+import { localizeMoment, runCue, runMoment, spinCue, settledSpinMoment } from './graphics/manorMoments';
+import { isFreshOwnSpin } from './graphics/presentationGate';
 import type { ManorMoment } from './graphics/manorMoments';
 import type { ReelSpeed } from './graphics/reelTiming';
 import type { RendererDiagnostics } from './graphics/rendererDiagnostics';
@@ -24,6 +23,10 @@ const defaultBet = (formatted: string): string =>
 
 function ManorApp() {
   const [snapshot, setSnapshot] = useState<ManorSnapshot>(browserPreview);
+  const [shownSnapshot, setShownSnapshot] = useState<ManorSnapshot>(browserPreview);
+  // The C# financial result may be committed while the player is still watching reels.
+  const awaitingPresentation = useRef<string | null>(null);
+  const [revealingReels, setRevealingReels] = useState(false);
   const [languageOverride, setLanguageOverride] = useState<ManorLanguage | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
   const closeHelp = useCallback(() => setHelpOpen(false), []);
@@ -41,7 +44,6 @@ function ManorApp() {
   const [ambient, setAmbient] = useState(true);
   const [lowMotion, setLowMotion] = useState(
     window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-  const [confirmAuto, setConfirmAuto] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [ambienceEnabled, setAmbienceEnabled] = useState(false);
   const [volume, setVolume] = useState(35);
@@ -51,43 +53,48 @@ function ManorApp() {
   const audio = useRef<ManorAudio | null>(null);
   if (audio.current === null) audio.current = new ManorAudio();
   useEffect(() => () => { audio.current?.dispose(); }, []);
-  const presentation = useRef({ onSpin: (result: ManorSnapshot) => {
-    setMoment(spinMoment(result));
-    const cue = spinCue(result);
-    if (cue) audio.current?.play(cue);
-  }, onReel: (_index: number) => { audio.current?.play('reel'); } });
+  const presentation = useRef({
+    onSpin: (_result: ManorSnapshot) => {},
+    onReel: (_index: number) => { audio.current?.play('reel'); },
+  });
   presentation.current.onSpin = (result: ManorSnapshot) => {
-    setMoment(spinMoment(result));
+    if (awaitingPresentation.current !== result.revision) return;
+    awaitingPresentation.current = null;
+    setRevealingReels(false);
+    setShownSnapshot(result);
+    setMoment(settledSpinMoment(result));
     const cue = spinCue(result);
     if (cue) audio.current?.play(cue);
   };
 
   useEffect(() => {
-    const applySnapshot = (next: ManorSnapshot) => {
-      // Ref is synchronous: compare against the last accepted C# revision even
-      // when React batches two WebView2 responses into the same render.
-      if (BigInt(next.revision) < BigInt(acceptedRevisionRef.current)) return;
+    const applySnapshot = (next: ManorSnapshot, conceal = false): boolean => {
+      if (BigInt(next.revision) < BigInt(acceptedRevisionRef.current)) return false;
       acceptedRevisionRef.current = next.revision;
       setSnapshot(next);
+      if (!conceal && awaitingPresentation.current === null) setShownSnapshot(next);
       setBet(defaultBet(next.selectedBet));
       setConnected(true);
+      return true;
     };
     const stop = subscribeToHost(message => {
       if (message.type === 'snapshot') {
-        const beforeRevision = acceptedRevisionRef.current;
-        applySnapshot(message.payload);
-        if ((pendingRef.current === message.requestId || pendingRef.current === 'recovering') &&
-            BigInt(message.payload.revision) > BigInt(beforeRevision)) {
-          const type = pendingTypeRef.current;
-          if (type?.startsWith('spin.')) {
-            setSpinEpoch(previous => previous + 1);
-            audio.current?.play('spin');
-          } else if (type?.startsWith('run.')) {
-            setMoment(runMoment(message.payload, type));
-            audio.current?.play(runCue(message.payload, type));
-          }
+        const previous = acceptedRevisionRef.current;
+        const ownSpin = isFreshOwnSpin(message.requestId, pendingRef.current,
+          pendingTypeRef.current, previous, message.payload.revision);
+        const accepted = applySnapshot(message.payload, ownSpin);
+        if (accepted && ownSpin) {
+          awaitingPresentation.current = message.payload.revision;
+          setRevealingReels(true);
+          setSpinEpoch(value => value + 1);
+          audio.current?.play('spin');
+        } else if (accepted &&
+          (pendingRef.current === message.requestId || pendingRef.current === 'recovering') &&
+          BigInt(message.payload.revision) > BigInt(previous) &&
+          pendingTypeRef.current?.startsWith('run.')) {
+          setMoment(runMoment(message.payload, pendingTypeRef.current));
+          audio.current?.play(runCue(message.payload, pendingTypeRef.current));
         }
-        // An explicit recovery snapshot can reconcile a lost response after a timeout.
         if (pendingRef.current === message.requestId || pendingRef.current === 'recovering') {
           pendingRef.current = null;
           setPending(null);
@@ -111,13 +118,21 @@ function ManorApp() {
 
   const actions = availableActions(snapshot);
   const motionOff = lowMotion || !ambient || !snapshot.animationsEnabled;
-  const disabled = !embedded || !connected || pending !== null || fatal || animating;
+  const disabled = !embedded || !connected || pending !== null || fatal || animating ||
+    revealingReels || awaitingPresentation.current !== null;
   const validBet = /^[0-9]{1,4}$/.test(bet) && Number(bet) >= 1 && Number(bet) <= 1000;
-  const run = snapshot.run;
+  const run = shownSnapshot.run;
   const language: ManorLanguage = languageOverride ?? snapshot.language;
-  const threat = run ? ghostBand(run.ghostClue) : null;
   const visibleMoment = moment ? localizeMoment(moment, language) : null;
   useEffect(() => { document.documentElement.lang = language; }, [language]);
+  useEffect(() => {
+    if (!moment) return;
+    const duration = moment.key === 'jackpot' ? 4300 :
+      moment.key === 'big' || moment.key === 'door' ? 2900 :
+        moment.key === 'loss' ? 1150 : 2200;
+    const timer = window.setTimeout(() => setMoment(null), duration);
+    return () => window.clearTimeout(timer);
+  }, [moment]);
   useEffect(() => {
     audio.current?.setHostPolicy(snapshot.globalSoundEnabled, snapshot.globalMusicEnabled,
       snapshot.globalMusicVolume);
@@ -125,12 +140,12 @@ function ManorApp() {
 
   function act(type: GameAction, extras: { bet?: string; room?: number } = {}) {
     // Immediate ref guard prevents two same-frame clicks from placing two wagers.
-    if (disabled || pendingRef.current !== null || !actions.includes(type)) return;
+    if (disabled || pendingRef.current !== null ||
+      awaitingPresentation.current !== null || !actions.includes(type)) return;
     if (type === 'spin.paid' && !validBet) {
       setError(t(language, 'invalidStake'));
       return;
     }
-    setConfirmAuto(false);
     setMoment(null);
     setError(null);
     // The first actual button press unlocks Web Audio in WebView2.
@@ -176,74 +191,66 @@ function ManorApp() {
         </div>
       </header>
 
-      <section className="headline">
-        <div>
-          <span className="eyebrow">{t(language, 'heroEyebrow')}</span>
-          <h2>{t(language, 'heroTitle')}</h2>
-          <p>{t(language, 'heroText')}</p>
-        </div>
-        <div className="stage-tag"><span className="tag-dot" /> {t(language, 'playtest')}</div>
-      </section>
-
       <div className="content-grid">
         <section className="machine" aria-label={t(language, 'hauntedFive')}>
           <div className="machine-title">
             <span>{t(language, 'hauntedFive')}</span>
             <span>{t(language, 'paylinesHeader')}</span>
           </div>
-          <ManorStage snapshot={snapshot} language={language} reducedMotion={motionOff} speed={reelSpeed}
-            spinEpoch={spinEpoch} onSpinningChange={setAnimating}
-            onReelStop={index => presentation.current.onReel(index)}
-            onSpinPresented={result => presentation.current.onSpin(result)}
-            onDiagnostics={showDiagnostics ? setRenderMetrics : undefined} />
-          {showDiagnostics && (
-            <div className="render-metrics" role="status" aria-live="off">
+          <div className={'slot-viewport' + (run ? ' bonus-active' : '') +
+            (motionOff ? ' no-motion' : '')}>
+            <div className="slot-reels">
+              <ManorStage snapshot={snapshot} language={language}
+                reducedMotion={motionOff || Boolean(run)} speed={reelSpeed}
+                spinEpoch={spinEpoch} onSpinningChange={setAnimating}
+                onReelStop={index => presentation.current.onReel(index)}
+                onSpinPresented={result => presentation.current.onSpin(result)}
+                onDiagnostics={showDiagnostics ? setRenderMetrics : undefined} />
+            </div>
+            {run && <div className="slot-bonus-portal">
+              <ManorBonusStage run={run} language={language} disabled={disabled}
+                reducedMotion={motionOff}
+                onAction={(action, room) => act(action, room === undefined ? {} : { room })} />
+            </div>}
+            {showDiagnostics && <div className="render-metrics slot-metrics"
+              role="status" aria-live="off">
               <strong>{t(language, 'diagnostics')}</strong>
               <span>{motionOff ? t(language, 'tickerPaused') :
-                renderMetrics
-                  ? t(language, 'fpsObserved', renderMetrics.fpsEstimate, renderMetrics.averageMs,
-                    renderMetrics.p95Ms, renderMetrics.overBudget, renderMetrics.frames)
-                  : t(language, 'sample')}</span>
+                renderMetrics ? t(language, 'fpsObserved', renderMetrics.fpsEstimate,
+                  renderMetrics.averageMs, renderMetrics.p95Ms, renderMetrics.overBudget,
+                  renderMetrics.frames) : t(language, 'sample')}</span>
               <small>{renderMetrics
-                ? t(language, 'dpiObserved', renderMetrics.width, renderMetrics.height, renderMetrics.pixelRatio)
-                : t(language, 'diagnosticsHint')}</small>
-            </div>
-          )}
-          {visibleMoment && (
-            <div className={'manor-moment ' + visibleMoment.key + (motionOff ? ' no-motion' : '')}
-              role="status" aria-live="polite">
-              <span className="manor-moment-crest" aria-hidden="true">
-                {visibleMoment.key === 'moon' ? '☾' : visibleMoment.key === 'door' ? '⌑' : '✦'}
-              </span>
-              <div className="manor-moment-copy">
-                <strong>{visibleMoment.heading}</strong>
-                <span>{visibleMoment.detail}</span>
-                {visibleMoment.secondary && <small>{visibleMoment.secondary}</small>}
+                ? t(language, 'dpiObserved', renderMetrics.width, renderMetrics.height,
+                  renderMetrics.pixelRatio) : t(language, 'diagnosticsHint')}</small>
+            </div>}
+            {visibleMoment && <div className={'slot-celebration ' + visibleMoment.key +
+              (motionOff ? ' no-motion' : '')} role="status" aria-live="polite">
+              <div className="slot-celebration-light" aria-hidden="true">
+                {Array.from({ length: 12 }, (_, i) => <i key={i}
+                  style={{ transform: 'rotate(' + (i * 30) + 'deg)' }} />)}
               </div>
-            </div>
-          )}
-          <div className="machine-footer">
-            <span>{snapshot.hasCommittedSpin
-              ? snapshot.lastSpinFree ? t(language, 'lastFree') : t(language, 'lastPaid')
-              : t(language, 'noSpin')}</span>
-            <span>{snapshot.winningLines} {t(language, 'paidLines')} · {snapshot.scatters} {t(language, 'moons')} · {snapshot.doors} {t(language, 'doors')}</span>
+              <div className={'manor-moment ' + visibleMoment.key +
+                (motionOff ? ' no-motion' : '')}>
+                <span className="manor-moment-crest" aria-hidden="true">
+                  {visibleMoment.key === 'moon' ? '☾' :
+                    visibleMoment.key === 'door' ? '⌑' :
+                      visibleMoment.key === 'loss' ? '·' : '✦'}
+                </span>
+                <div className="manor-moment-copy">
+                  <strong>{visibleMoment.heading}</strong>
+                  <span>{visibleMoment.detail}</span>
+                  {visibleMoment.secondary && <small>{visibleMoment.secondary}</small>}
+                </div>
+              </div>
+            </div>}
           </div>
-          {snapshot.winningLineDetails.length > 0 && (
-            <details className="win-details">
-              <summary>{t(language, 'viewWinLines', snapshot.winningLineDetails.length,
-                t(language, snapshot.winningLineDetails.length === 1 ? 'lineSingular' : 'linePlural'))}</summary>
-              <div className="win-line-grid">
-                {snapshot.winningLineDetails.map(win => (
-                  <div className="win-line-result" key={win.number}>
-                    <strong>{t(language, 'line')} {win.number}</strong>
-                    <span>{win.count} {t(language, 'matched')}</span>
-                    <b>{win.amount}</b>
-                  </div>
-                ))}
-              </div>
-            </details>
-          )}
-          <div className="action-console">
+          <div className="machine-footer">
+            <span>{shownSnapshot.hasCommittedSpin
+              ? shownSnapshot.lastSpinFree ? t(language, 'lastFree') : t(language, 'lastPaid')
+              : t(language, 'noSpin')}</span>
+            <span>{shownSnapshot.winningLines} {t(language, 'paidLines')} · {shownSnapshot.scatters} {t(language, 'moons')} · {shownSnapshot.doors} {t(language, 'doors')}</span>
+          </div>
+          {!run && <div className="action-console">
             <div className="stake-control">
               <label htmlFor="manor-bet">{t(language, 'stake')}</label>
               <div className="bet-input">
@@ -255,87 +262,55 @@ function ManorApp() {
               </div>
             </div>
             <div className="main-actions">
-              {snapshot.canFreeSpin ?
+              {shownSnapshot.canFreeSpin ?
                 <button className="gold-button" disabled={disabled}
-                  onClick={() => act('spin.free')}>{t(language, 'freeSpin', snapshot.freeSpinsRemaining)}</button> :
-                <button className="gold-button" disabled={disabled || !snapshot.canSpin || !validBet}
+                  onClick={() => act('spin.free')}>{t(language, 'freeSpin', shownSnapshot.freeSpinsRemaining)}</button> :
+                <button className="gold-button" disabled={disabled || !shownSnapshot.canSpin || !validBet}
                   onClick={() => act('spin.paid', { bet })}>
                   {pending ? t(language, 'saving') : t(language, 'spin')}
                 </button>}
               <span className="action-hint">{t(language, run ? 'runHint' :
-                snapshot.canFreeSpin ? 'freeHint' :
-                  snapshot.cycleActive ? 'cycleHint' : 'committedHint')}</span>
+                shownSnapshot.canFreeSpin ? 'freeHint' :
+                  shownSnapshot.cycleActive ? 'cycleHint' : 'committedHint')}</span>
             </div>
-          </div>
+          </div>}
 
-          {run && (
-            <section className="labyrinth" aria-label={t(language, 'runTitle')}>
-              <div className="labyrinth-heading">
-                <div><span className="eyebrow">{t(language, 'runEyebrow')}</span><h3>{t(language, 'runTitle')}</h3></div>
-                <div className="turn-counter">{t(language, 'turn')} {run.turn} / 24</div>
-              </div>
-              <p className="run-message">{localizeRunText(run.message, language)}</p>
-              <div className={'ghost-panel ' + threat} role="status" aria-live="polite">
-                <span className="ghost-panel-label">{language === 'en'
-                  ? ghostBandLabel[threat ?? 'uncertain']
-                  : t(language, threat === 'revealed' ? 'ghostRevealed' :
-                      threat === 'danger' ? 'ghostDanger' :
-                      threat === 'approaching' ? 'ghostApproaching' :
-                      threat === 'distant' ? 'ghostDistant' : 'ghostUnknown')}</span>
-                <p>{localizeRunText(run.ghostClue, language)}</p>
-              </div>
-              <div className="run-summary">
-                <span>{t(language, 'potential')} <strong>{run.current}</strong></span>
-                <span>{t(language, 'checkpoint')} <strong>{run.banked}</strong></span>
-                <span>{t(language, 'exit')} <strong>{run.exitTarget}×</strong></span>
-                <span>{t(language, run.hasKey ? 'keyFound' : 'noKey')}</span>
-                <span>{t(language, run.hasCharm ? 'charmReady' : 'noCharm')}</span>
-              </div>
-              <ManorRoomScene run={run} language={language} reducedMotion={motionOff} />
-              <p className="map-instructions">{t(language, 'routeInstruction')}</p>
-              <ManorRunMap run={run} disabled={disabled} language={language}
-                onMove={room => act('run.move', { room })} />
-              <div className="run-actions">
-                <button className="ghost-button" disabled={disabled || !run.hasCandle}
-                  onClick={() => act('run.candle')}>{t(language, 'candle')}</button>
-                <button className="ghost-button" disabled={disabled}
-                  onClick={() => act('run.follow')}>{t(language, 'follow')}</button>
-                <button className="ghost-button" disabled={disabled}
-                  onClick={() => act('run.cashout')}>{t(language, 'cashout')}</button>
-                {!confirmAuto ? (
-                  <button className="ghost-button" disabled={disabled}
-                    onClick={() => setConfirmAuto(true)}>{t(language, 'resolve')}</button>
-                ) : (
-                  <div className="confirm-auto" role="group" aria-label={t(language, 'confirmGroup')}>
-                    <span>{t(language, 'confirmQuestion')}</span>
-                    <button className="ghost-button" onClick={() => act('run.auto')}
-                      disabled={disabled}>{t(language, 'confirm')}</button>
-                    <button className="ghost-button" onClick={() => setConfirmAuto(false)}>{t(language, 'cancel')}</button>
-                  </div>
-                )}
-              </div>
-            </section>
-          )}
         </section>
 
         <aside className="sidebar" aria-label={t(language, 'account')}>
           <div className="status-card">
             <span className="eyebrow">{t(language, 'account')}</span>
             <h3>{t(language, 'chandelier')}</h3>
-            <div className="money-stat"><span>{t(language, 'balance')}</span><strong>{snapshot.bankroll}</strong></div>
-            <div className="money-stat"><span>{t(language, 'lastStake')}</span><strong>{snapshot.bet}</strong></div>
-            <div className="money-stat"><span>{t(language, 'lastReturn')}</span><strong>{snapshot.payout}</strong></div>
-            <div className="money-stat"><span>{t(language, 'cycleReturn')}</span><strong>{snapshot.cycleReturned}</strong></div>
+            <div className="money-stat"><span>{t(language, 'balance')}</span><strong>{shownSnapshot.bankroll}</strong></div>
+            <div className="money-stat"><span>{t(language, 'lastStake')}</span><strong>{shownSnapshot.bet}</strong></div>
+            <div className="money-stat"><span>{t(language, 'lastReturn')}</span><strong>{shownSnapshot.payout}</strong></div>
+            <div className="money-stat"><span>{t(language, 'cycleReturn')}</span><strong>{shownSnapshot.cycleReturned}</strong></div>
           </div>
+          {shownSnapshot.winningLineDetails.length > 0 && (
+            <details className="win-details">
+              <summary>{t(language, 'viewWinLines', shownSnapshot.winningLineDetails.length,
+                t(language, shownSnapshot.winningLineDetails.length === 1 ? 'lineSingular' : 'linePlural'))}</summary>
+              <div className="win-line-grid">
+                {shownSnapshot.winningLineDetails.map(win => (
+                  <div className="win-line-result" key={win.number}>
+                    <strong>{t(language, 'line')} {win.number}</strong>
+                    <span>{win.count} {t(language, 'matched')}</span>
+                    <b>{win.amount}</b>
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
           <div className="status-card feature-card">
             <span className="eyebrow">{t(language, 'watching')}</span>
-            <h3>{localizeFeature(snapshot.feature, language)}</h3>
+            <h3>{localizeFeature(shownSnapshot.feature, language)}</h3>
             <p>{t(language, run ? 'runDescription' :
-              snapshot.canFreeSpin ? 'freeDescription' :
-                snapshot.cycleActive ? 'cycleDescription' : 'idleDescription')}</p>
+              shownSnapshot.canFreeSpin ? 'freeDescription' :
+                shownSnapshot.cycleActive ? 'cycleDescription' : 'idleDescription')}</p>
           </div>
-          <div className="status-card">
-            <span className="eyebrow">{t(language, 'settings')}</span>
+          <details className="status-card settings-fold">
+            <summary className="eyebrow">{t(language, 'settings')}</summary>
+            <div className="settings-fold-body">
             <label className="switch-row"><span>{t(language, 'cabinetAnimation')}</span>
               <input type="checkbox" checked={ambient}
                 onChange={event => setAmbient(event.target.checked)} /></label>
@@ -404,10 +379,11 @@ function ManorApp() {
             <button className="ghost-button refresh"
               onClick={() => sendCommand('snapshot.request')} disabled={!embedded}>
               {t(language, 'refresh')}</button>
-          </div>
+            </div>
+          </details>
         </aside>
       </div>
-      {snapshot.saveNotice && <div className="save-notice" role="status">{snapshot.saveNotice}</div>}
+      {shownSnapshot.saveNotice && <div className="save-notice" role="status">{shownSnapshot.saveNotice}</div>}
       {error && <div className="error" role="alert">{error}</div>}
       {fatal && <div className="error" role="alert">{t(language, 'fatal')}</div>}
       {helpOpen && <ManorHelp language={language} rules={snapshot.rules}
