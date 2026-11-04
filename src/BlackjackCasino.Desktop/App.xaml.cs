@@ -55,19 +55,24 @@ public partial class App : Application
         }
 
         startupWelcomeQueued = true;
-        // The normal main window starts transparent; show the welcome news before revealing the lobby.
+        // MainWindow was initially transparent to prevent the unfinished Blackjack table
+        // flashing before the lobby was assembled in PresentationLoaded. Reveal the fully
+        // initialized lobby *before* showing its owned welcome dialog, not after it closes.
+        // Leaving the owner transparent causes the desktop to appear black behind the dialog.
+        main.Opacity = 1;
         Dispatcher.BeginInvoke(() =>
         {
             try
             {
-                StartupWelcomeWindow.ShowFor(main);
+                if (main.IsLoaded && main.IsVisible)
+                    StartupWelcomeWindow.ShowFor(main);
             }
             finally
             {
-                // An exception in the welcome dialog must never strand an invisible casino window.
+                // A failed or dismissed welcome must never strand an invisible casino.
                 main.Opacity = 1;
             }
-        }, DispatcherPriority.Loaded);
+        }, DispatcherPriority.ContextIdle);
     }
 
     private static void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)

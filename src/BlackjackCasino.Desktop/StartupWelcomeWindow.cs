@@ -160,22 +160,45 @@ internal sealed class StartupWelcomeWindow : Window
         {
             var item = new Grid { Margin = new Thickness(0, 0, 0, 12) };
             item.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(28) });
-            item.ColumnDefinitions.Add(new ColumnDefinition());
+            item.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 0 });
             item.Children.Add(new TextBlock { Text = "✦", Foreground = Ink(note.Accent), FontSize = 13, Margin = new Thickness(1, 2, 0, 0) });
             var copy = new StackPanel();
-            copy.Children.Add(new TextBlock { Text = note.Title, FontWeight = FontWeights.Bold, Foreground = Ink("#E9DFC9"), FontSize = 12 });
+            copy.Children.Add(new TextBlock
+            {
+                Text = note.Title,
+                FontWeight = FontWeights.Bold,
+                Foreground = Ink("#E9DFC9"),
+                FontSize = 12,
+                TextWrapping = TextWrapping.Wrap,
+                LineHeight = 17,
+                ToolTip = note.Title,
+            });
             if (!string.IsNullOrWhiteSpace(note.Description))
                 copy.Children.Add(new TextBlock { Text = note.Description, Foreground = Ink("#9FB1A8"), FontSize = 11, TextWrapping = TextWrapping.Wrap, LineHeight = 16, Margin = new Thickness(0, 3, 0, 0) });
             Grid.SetColumn(copy, 1);
             item.Children.Add(copy);
             notes.Children.Add(item);
         }
-        notesPanel.Child = new ScrollViewer
+        var notesScroll = new ScrollViewer
         {
             Content = notes,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            CanContentScroll = false,
         };
+        // A ScrollViewer can otherwise measure a StackPanel wider than its viewport.
+        // Bind its actual content width to the scrollable viewport (including the
+        // space reserved for a vertical scrollbar) so long release titles and
+        // descriptions wrap instead of disappearing behind the right border.
+        notesScroll.ScrollChanged += (_, e) =>
+        {
+            if (e.ViewportWidthChange == 0 || !double.IsFinite(notesScroll.ViewportWidth))
+                return;
+            double width = Math.Max(1, notesScroll.ViewportWidth);
+            if (double.IsNaN(notes.Width) || Math.Abs(notes.Width - width) > .5)
+                notes.Width = width;
+        };
+        notesPanel.Child = notesScroll;
 
         var footer = new Border
         {
