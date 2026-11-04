@@ -258,7 +258,19 @@ public static class JigsawGame
     public static bool Snap(JigsawGameState game, int id)
     {
         IReadOnlyList<int> group = Connected(game, id);
-        if (group.Count == 0 || group.Any(i => game.Pieces[i].Locked)) return game.Completed;
+        if (group.Count == 0) return game.Completed;
+        // An unlocked piece exactly touching an anchored group has already joined it.
+        // Anchor the whole connected component instead of refusing the drop.
+        if (group.Any(i => game.Pieces[i].Locked))
+        {
+            foreach (int i in group)
+            {
+                (game.Pieces[i].X, game.Pieces[i].Y) = Target(game, i);
+                game.Pieces[i].Locked = true;
+            }
+            if (game.Completed) game.CompletedAt ??= DateTimeOffset.UtcNow;
+            return game.Completed;
+        }
         JigsawSize size = JigsawCatalog.Size(game.PieceCount);
         double w = BoardWidth / size.Columns, h = BoardHeight / size.Rows;
         double radius = Math.Min(w, h) * .36;
