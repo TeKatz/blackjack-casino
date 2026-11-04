@@ -1,8 +1,10 @@
 import { useEffect, useRef } from 'react';
 import type { ManorRoom, ManorRun } from '../bridge/protocol';
 import { availableManorRooms, mapScrollLeft } from './manorRunUi';
+import { localizeArea, localizeRoom, t } from '../i18n';
+import type { ManorLanguage } from '../i18n';
 
-type Props = { run: ManorRun; disabled: boolean; onMove: (room: number) => void };
+type Props = { run: ManorRun; disabled: boolean; onMove: (room: number) => void; language: ManorLanguage };
 const FLOOR_NAMES: Record<string, string> = {
   Entrance: 'ENTRANCE', Library: 'LIBRARY', Ballroom: 'BALLROOM',
   Corridor: 'CORRIDOR', Attic: 'ATTIC', Crypt: 'FORBIDDEN',
@@ -17,7 +19,7 @@ export function roomPosition(room: Pick<ManorRoom, 'x' | 'y'>): { x: number; y: 
   return { x: 70 + room.x * 123, y: 70 + (room.y - 1) * 134 };
 }
 
-export function ManorRunMap({ run, disabled, onMove }: Props) {
+export function ManorRunMap({ run, disabled, onMove, language }: Props) {
   const rooms = new Map(run.rooms.map(room => [room.id, room]));
   const viewport = useRef<HTMLDivElement>(null);
   const moves = availableManorRooms(run);
@@ -33,38 +35,39 @@ export function ManorRunMap({ run, disabled, onMove }: Props) {
   }, [run.playerRoom]);
   return (
     <div className="manor-map-wrap">
-      <div className="manor-map-guide" aria-label="Map legend">
-        <span><i className="map-key player" /> Your location</span>
-        <span><i className="map-key available" /> Available move</span>
-        <span><i className="map-key visited" /> Explored</span>
-        <span><i className="map-key blocked" /> Requires key</span>
+      <div className="manor-map-guide" aria-label={t(language, 'mapLegend')}>
+        <span><i className="map-key player" /> {t(language, 'mapPlayer')}</span>
+        <span><i className="map-key available" /> {t(language, 'mapAvailable')}</span>
+        <span><i className="map-key visited" /> {t(language, 'mapVisited')}</span>
+        <span><i className="map-key blocked" /> {t(language, 'mapBlocked')}</span>
       </div>
       <div className="manor-route-chooser" role="group"
-        aria-label="Rooms available for your next move">
+        aria-label={t(language, 'chooseRoom')}>
         <div className="manor-route-heading">
-          <strong>CHOOSE YOUR NEXT ROOM</strong>
-          <span>{moves.length} {moves.length === 1 ? 'passage' : 'passages'} accessible</span>
+          <strong>{t(language, 'chooseRoom')}</strong>
+          <span>{moves.length} {t(language, moves.length === 1 ? 'passageSingular' : 'passagePlural')} {t(language, 'accessible')}</span>
         </div>
         <div className="manor-route-list">
           {moves.map(room => (
             <button key={room.id} type="button" className="manor-route-choice"
               disabled={disabled} onClick={() => onMove(room.id)}
-              aria-label={'Move to ' + room.name + (room.visited ? ', already explored' : ', unexplored')}>
+              aria-label={t(language, 'moveTo', localizeRoom(room.name, language)) +
+                ', ' + t(language, room.visited ? 'explored' : 'unexplored')}>
               <span aria-hidden="true">⌑</span>
-              <span>{room.name}<small>{room.visited ? 'ALREADY EXPLORED' : 'NOT YET EXPLORED'}</small></span>
-              <strong>ENTER</strong>
+              <span>{localizeRoom(room.name, language)}<small>{t(language, room.visited ? 'explored' : 'unexplored')}</small></span>
+              <strong>{t(language, 'enter')}</strong>
             </button>
           ))}
           {moves.length === 0 && <p className="manor-route-empty">
-            No adjacent room is available. Review your current run options.</p>}
+            {t(language, 'noAdjacent')}</p>}
         </div>
       </div>
       <div className="map-scroll" ref={viewport} role="region"
-        aria-label="Scrollable Manor floorplan (use horizontal scroll to inspect rooms)"
+        aria-label={t(language, 'mapRegion')}
         tabIndex={0}>
         <div className="manor-map-scene">
           <div className="map-moon" aria-hidden="true" />
-          <div className="map-watermark" aria-hidden="true">MIDNIGHT MANOR · FLOORPLAN</div>
+          <div className="map-watermark" aria-hidden="true">{t(language, 'floorplan')}</div>
           <svg className="map-passages" viewBox="0 0 1000 408" aria-hidden="true">
             {run.passages.map(edge => {
               const from = rooms.get(edge.from);
@@ -98,8 +101,8 @@ export function ManorRunMap({ run, disabled, onMove }: Props) {
             const position = roomPosition(room);
             const isGate = room.id === 16;
             const locked = room.locked && !run.hasKey;
-            const state = here ? 'current room' : room.available ? 'legal next move' :
-              locked ? 'needs the key' : room.visited ? 'already visited' : 'not reachable now';
+            const state = t(language, here ? 'currentRoom' : room.available ? 'nextMove' :
+              locked ? 'needsKey' : room.visited ? 'alreadyVisited' : 'notReachable');
             return (
               <button key={room.id} type="button"
                 style={{ left: position.x, top: position.y }}
@@ -107,25 +110,24 @@ export function ManorRunMap({ run, disabled, onMove }: Props) {
                   (here ? ' here' : '') + (room.available ? ' available' : '') +
                   (room.visited ? ' explored' : '') + (isGate ? ' exit-gate' : '')}
                 disabled={disabled || !room.available}
-                title={room.name + ' · ' + state}
-                aria-label={room.name + ', ' + state}
+                title={localizeRoom(room.name, language) + ' · ' + state}
+                aria-label={localizeRoom(room.name, language) + ', ' + state}
                 aria-current={here ? 'location' : undefined}
                 onClick={() => onMove(room.id)}>
                 <span className="map-room-sigil" aria-hidden="true">
                   {here ? '◆' : isGate ? '☾' : SIGILS[room.area] ?? '◇'}
                 </span>
-                <span className="map-room-name">{room.name}</span>
-                <span className="map-room-zone">{here ? 'YOU ARE HERE' :
-                  room.available ? 'ENTER' : FLOOR_NAMES[room.area] ?? room.area.toUpperCase()}</span>
+                <span className="map-room-name">{localizeRoom(room.name, language)}</span>
+                <span className="map-room-zone">{here ? t(language, 'here') :
+                  room.available ? t(language, 'enter') :
+                    language === 'de' ? localizeArea(room.area, language).toUpperCase() :
+                      FLOOR_NAMES[room.area] ?? room.area.toUpperCase()}</span>
               </button>
             );
           })}
         </div>
       </div>
-      <p className="map-privacy-note">The map follows your current room. Use the accessible
-        destination buttons above when the floorplan is wider than your window.
-        Only passages and moves authorized by the Manor engine are shown.
-        The ghost remains hidden unless your candle reveals it.</p>
+      <p className="map-privacy-note">{t(language, 'mapPrivacy')}</p>
     </div>
   );
 }

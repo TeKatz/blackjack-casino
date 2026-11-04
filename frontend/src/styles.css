@@ -196,3 +196,38 @@ h1{font-family:Georgia,serif;letter-spacing:.13em;font-size:18px;margin:4px 0 0}
 .render-metrics span{font-variant-numeric:tabular-nums}
 .render-metrics small{width:100%;color:#a8c3ce;font-size:10px}
 @media(max-width:740px){.render-metrics{flex-direction:column;align-items:flex-start}}
+
+/* Authoritative versioned C# payout table in a keyboard accessible help view. */
+.manor-help-scrim{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;
+ padding:clamp(10px,3vw,36px);background:#06070ce8;backdrop-filter:blur(6px)}
+.manor-help-sheet{width:min(960px,100%);max-height:min(90vh,980px);overflow:auto;
+ background:linear-gradient(140deg,#2e252f,#141b28 75%);border:2px solid #ac906a;
+ box-shadow:0 25px 80px #000b;border-radius:16px;color:#f6e7ce;padding:clamp(18px,2.6vw,32px)}
+.manor-help-heading{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;
+ border-bottom:1px solid #9c815b66;padding-bottom:15px}
+.manor-help-heading h2{font-size:clamp(26px,3vw,39px);margin:5px 0 0}
+.manor-help-heading button{min-width:125px}
+.rules-version{padding:12px 15px;background:#302b32;border-left:3px solid #d0ab75;
+ border-radius:5px;font-size:12px;line-height:1.6}
+.manor-rules-copy{font-size:13px;line-height:1.65;color:#e1d5cb}
+.manor-rules-copy h3{font-size:22px;color:#f4deb9;margin:22px 0 9px}
+.manor-paytable-scroll{overflow-x:auto;border-radius:9px;border:1px solid #897561}
+.manor-paytable{width:100%;border-collapse:collapse;font-size:12px}
+.manor-paytable th,.manor-paytable td{padding:8px 14px;border-bottom:1px solid #78677a55;text-align:right}
+.manor-paytable thead{background:#463744;color:#f8e4c5}
+.manor-paytable th:first-child,.manor-paytable td:first-child{text-align:left}
+.manor-paytable tbody th{font-weight:600;color:#f0ddc6;background:#252331}
+.manor-paytable tbody tr:nth-child(2n){background:#1c202a99}
+.manor-payline-gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:9px}
+.manor-line-card{display:flex;align-items:center;gap:10px;padding:9px;border:1px solid #6f6772;background:#20222d;border-radius:9px}
+.manor-line-card>strong{flex:0 0 22px;color:#f8dfb8;font-variant-numeric:tabular-nums}
+.manor-mini-line{display:flex;gap:5px;align-items:center}
+.manor-mini-reel{display:flex;flex-direction:column;gap:3px}
+.manor-mini-reel span{display:block;width:12px;height:9px;background:#635768;border-radius:2px}
+.manor-mini-reel span.marked{background:#f4ce89;box-shadow:0 0 7px #ffe7ac77}
+.rules-caution{padding:12px 14px;background:#3d2c38;border-left:3px solid #d9ae9f}
+.language-picker{display:flex;align-items:center;gap:8px;font-size:11px;color:#eadbc4}
+.language-picker select{color:#f1ddbb;background:#292331;border:1px solid #90765a;border-radius:6px;padding:8px 9px;min-height:40px}
+.language-picker select:focus-visible{outline:2px solid #f4dba5;outline-offset:2px}
+@media(max-width:680px){.manor-help-scrim{align-items:stretch}.manor-help-sheet{max-height:100%;padding:14px}
+ .manor-payline-gallery{grid-template-columns:repeat(2,minmax(0,1fr))}}

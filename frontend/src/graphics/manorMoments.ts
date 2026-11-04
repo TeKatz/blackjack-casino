@@ -1,5 +1,7 @@
 import type { GameAction, ManorSnapshot } from '../bridge/protocol';
 import type { ManorCue } from '../audio/manorAudio';
+import { localizeFeature, localizeRoom, localizeRunText, t } from '../i18n';
+import type { ManorLanguage } from '../i18n';
 
 export type ManorMoment = {
   key: 'jackpot' | 'big' | 'win' | 'door' | 'moon' | 'run';
@@ -82,4 +84,38 @@ export function runCue(snapshot: ManorSnapshot, action: GameAction): ManorCue {
   if (snapshot.run?.message.includes('Checkpoint secured')) return 'checkpoint';
   if (snapshot.run?.ghostClue.includes('CLOSE')) return 'threat';
   return 'footstep';
+}
+
+/** Translate a presentation event at render time, never replaying its audio. */
+export function localizeMoment(moment: ManorMoment, language: ManorLanguage): ManorMoment {
+  if (language === 'en') return moment;
+  const headings: Record<string, string> = {
+    WIN: t(language, 'momentWin'),
+    'BIG WIN': t(language, 'momentBig'),
+    'LEGENDARY WIN': t(language, 'momentEpic'),
+    'THE MANOR OPENS': t(language, 'momentDoor'),
+    'HAUNTED NIGHT': t(language, 'momentMoon'),
+    'A NEW CHAMBER': t(language, 'momentRun'),
+    'CANDLE LIT': t(language, 'momentCandle'),
+    'REWARD SECURED': t(language, 'momentCashout'),
+    'THE RUN ENDS': t(language, 'momentRunEnd'),
+  };
+  const name = moment.heading.toLowerCase().replace(/\b[a-z]/g, char => char.toUpperCase());
+  const translated = localizeRoom(name, language);
+  const heading = headings[moment.heading] ??
+    (translated !== name ? translated.toUpperCase() : moment.heading);
+  let detail = localizeRunText(moment.detail, language);
+  if (detail === moment.detail) detail = localizeFeature(detail, language);
+  const win = /^(.*) · (\d+) winning (line|lines)$/.exec(detail);
+  if (win) detail = t(language, 'winDetail', win[1], win[2],
+    t(language, win[3] === 'line' ? 'lineSingular' : 'linePlural'));
+  if (detail === t('en', 'doorDetail')) detail = t(language, 'doorDetail');
+  if (detail === t('en', 'moonDetail')) detail = t(language, 'moonDetail');
+  let secondary = moment.secondary ? localizeRunText(moment.secondary, language) : undefined;
+  if (secondary === t('en', 'comboDetail')) secondary = t(language, 'comboDetail');
+  if (secondary) {
+    const saved = /^(\d+) saved free spins$/.exec(secondary);
+    if (saved) secondary = t(language, 'savedSpins', saved[1]);
+  }
+  return { ...moment, heading, detail, secondary };
 }
