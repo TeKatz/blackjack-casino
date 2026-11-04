@@ -42,7 +42,8 @@ internal static class PremiumLoungeTheme
         bool compactLeft = false,
         bool rightScrollable = true,
         AlignmentX featureAlignmentX = AlignmentX.Center,
-        AlignmentY featureAlignmentY = AlignmentY.Center)
+        AlignmentY featureAlignmentY = AlignmentY.Center,
+        bool centeredFeatureCopy = false)
     {
         var stage = new Grid
         {
@@ -168,7 +169,8 @@ internal static class PremiumLoungeTheme
 
         var copy = new StackPanel
         {
-            Margin = compactLeft ? new Thickness(40, 20, 36, 12) : new Thickness(52, 34, 39, 24),
+            Margin = centeredFeatureCopy ? new Thickness(42, 16, 42, 12) :
+                compactLeft ? new Thickness(40, 20, 36, 12) : new Thickness(52, 34, 39, 24),
         };
         var gameTitle = Label(gameLabel, 17, Gold, true, TextAlignment.Center);
         gameTitle.HorizontalAlignment = HorizontalAlignment.Stretch;
@@ -182,7 +184,9 @@ internal static class PremiumLoungeTheme
             Foreground = Ink(Cream),
             TextWrapping = TextWrapping.Wrap,
             LineHeight = compactLeft ? 39 : 51,
-            MaxWidth = 565,
+            MaxWidth = centeredFeatureCopy ? double.PositiveInfinity : 565,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            TextAlignment = centeredFeatureCopy ? TextAlignment.Center : TextAlignment.Left,
             Margin = new Thickness(0, compactLeft ? 4 : 10, 0, compactLeft ? 9 : 17),
         });
         copy.Children.Add(new TextBlock
@@ -191,7 +195,9 @@ internal static class PremiumLoungeTheme
             FontSize = compactLeft ? 13.5 : 16,
             Foreground = Ink("#D8E6DE"),
             TextWrapping = TextWrapping.Wrap,
-            MaxWidth = 545,
+            MaxWidth = centeredFeatureCopy ? double.PositiveInfinity : 545,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            TextAlignment = centeredFeatureCopy ? TextAlignment.Center : TextAlignment.Left,
             LineHeight = compactLeft ? 20 : 25,
         });
         if (leftExtra is not null)
