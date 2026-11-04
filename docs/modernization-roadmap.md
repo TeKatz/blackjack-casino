@@ -146,3 +146,10 @@ See [AGENTS.md](../AGENTS.md), [architecture](architecture.md), [Midnight Manor 
 - The v2 browser snapshot adds read-only active language and authoritative paytable metadata (versioned symbol credits and all 20 line patterns). Existing mutation contracts and journal schemas do not change.
 - The global persisted casino language preference flows from C# to React. The active old paytable is preserved during saved legacy free-spin cycles; otherwise the next paid-spin table is current.
 - The browser-only layout preview carries a visibly non-playable table sample. Test coverage guards language whitelist, paytable shape/version, and preservation of the C# save aggregate.
+
+### M3 seventh delivery — complete bilingual playtest controls and C#-authored help
+
+- React controls, HUD, game actions, run choices, diagnostics, audio/display settings and machine labels are available in both German and English. C#'s saved language preference is the default; a local selector temporarily overrides it without touching saves.
+- A keyboard-dismissable rules dialog renders the C#-authored *active* table version, all fourteen symbols, their 3/4/5 awards and the twenty actual payline patterns. It clearly distinguishes an in-progress old saved free-spin table from new cycles and documents no-retrigger and player-choice consequences.
+- Canonical C# run messages and ghost clues are translated for German presentation only, with unknown text left untouched rather than inventing hidden events. Win/bonus acknowledgements translate on language change without replaying audio or mutating a journal.
+- No new RNG, client-side payouts, bridge actions or save schema changes. Manual screenreader, native 150/200% DPI and pronunciation review remain outstanding.

@@ -7,9 +7,12 @@ import { loadManorArtwork, MANOR_SYMBOL_NAMES } from './manorArtwork';
 import type { ManorSymbolName } from './manorArtwork';
 import { boundedPixelRatio, calculateCanvasLayout, summarizeFrameTimes } from './rendererDiagnostics';
 import type { RendererDiagnostics } from './rendererDiagnostics';
+import { t } from '../i18n';
+import type { ManorLanguage } from '../i18n';
 
 type Props = {
   snapshot: ManorSnapshot;
+  language: ManorLanguage;
   spinEpoch: number;
   reducedMotion: boolean;
   speed: ReelSpeed;
@@ -21,7 +24,8 @@ type Props = {
 type Tile = { root: Container; backing: Graphics; artwork: Graphics; illustration: Sprite; letter: Text; name: Text; symbol: string };
 type Reel = { tiles: Tile[] };
 type Renderer = {
-  update(snapshot: ManorSnapshot, epoch: number, motionOff: boolean, speed: ReelSpeed): void;
+  update(snapshot: ManorSnapshot, epoch: number, motionOff: boolean, speed: ReelSpeed,
+    language: ManorLanguage): void;
   setArtwork(images: Map<ManorSymbolName, HTMLImageElement>): void;
   dispose(): void;
 };
@@ -230,6 +234,7 @@ function createRenderer(app: Application, report: (value: boolean) => void,
   winningCaption.visible = false;
   scene.addChild(winningCaption);
   let shownLine = 0;
+  let uiLanguage: ManorLanguage = 'en';
   let lineElapsed = 0;
   let motionDisabled = false;
   function paintWinningLine(result: ManorSnapshot | null, index: number): void {
@@ -250,8 +255,8 @@ function createRenderer(app: Application, report: (value: boolean) => void,
       const y = 162 + win.rows[reel] * 100;
       winningTrace.circle(x, y, 12).stroke({ color: 0xffe4a9, width: 3, alpha: 0.92 });
     }
-    winningCaption.text = 'PAYLINE ' + win.number + ' · ' + win.count +
-      ' MATCHED · ' + win.amount;
+    winningCaption.text = t(uiLanguage, 'line') + ' ' + win.number + ' · ' +
+      win.count + ' ' + t(uiLanguage, 'matched') + ' · ' + win.amount;
     winningCaption.visible = true;
   }
   let epoch = -1;
@@ -347,7 +352,13 @@ function createRenderer(app: Application, report: (value: boolean) => void,
   };
   app.ticker.add(frameTick);
   return {
-    update(result, spinEpoch, motionOff, nextSpeed) {
+    update(result, spinEpoch, motionOff, nextSpeed, language) {
+      if (uiLanguage !== language) {
+        uiLanguage = language;
+        heading.text = t(language, 'hauntedFive');
+        footer.text = t(language, 'castleFooter');
+        if (presented && !animation) paintWinningLine(presented, shownLine);
+      }
       speed = nextSpeed;
       motionDisabled = motionOff;
       if (motionOff) {
@@ -418,17 +429,17 @@ function createRenderer(app: Application, report: (value: boolean) => void,
 }
 
 /** Pixi canvas, masks, and 20 tile objects survive all state refreshes and spins. */
-export function ManorStage({ snapshot, spinEpoch, reducedMotion, speed,
+export function ManorStage({ snapshot, language, spinEpoch, reducedMotion, speed,
   onSpinningChange, onReelStop, onSpinPresented, onDiagnostics }: Props) {
   const holder = useRef<HTMLDivElement>(null);
   const renderer = useRef<Renderer | null>(null);
-  const latest = useRef({ snapshot, spinEpoch, reducedMotion, speed });
+  const latest = useRef({ snapshot, spinEpoch, reducedMotion, speed, language });
   const changed = useRef(onSpinningChange);
   const stopCue = useRef(onReelStop);
   const presentationCue = useRef(onSpinPresented);
   const diagnosticCue = useRef(onDiagnostics);
   const currentSurface = useRef({ width: W, height: H, pixelRatio: 1 });
-  latest.current = { snapshot, spinEpoch, reducedMotion, speed };
+  latest.current = { snapshot, spinEpoch, reducedMotion, speed, language };
   changed.current = onSpinningChange;
   stopCue.current = onReelStop;
   presentationCue.current = onSpinPresented;
@@ -488,7 +499,7 @@ export function ManorStage({ snapshot, spinEpoch, reducedMotion, speed,
       window.addEventListener('resize', resize);
       watchResolution();
       const state = latest.current;
-      instance.update(state.snapshot, state.spinEpoch, state.reducedMotion, state.speed);
+      instance.update(state.snapshot, state.spinEpoch, state.reducedMotion, state.speed, state.language);
       // Never block the authoritative first snapshot or controls on art decoding.
       void loadManorArtwork().then(images => {
         if (!dead) instance.setArtwork(images);
@@ -507,12 +518,13 @@ export function ManorStage({ snapshot, spinEpoch, reducedMotion, speed,
     };
   }, []);
   useEffect(() => {
-    renderer.current?.update(snapshot, spinEpoch, reducedMotion, speed);
-  }, [snapshot, spinEpoch, reducedMotion, speed]);
+    renderer.current?.update(snapshot, spinEpoch, reducedMotion, speed, language);
+  }, [snapshot, spinEpoch, reducedMotion, speed, language]);
   return (
     <div className="manor-canvas" ref={holder} role="img"
-      aria-label={'Midnight Manor, five reels and three rows. Symbols: ' +
-        snapshot.cells.join(', ') + '. Winning cells: ' +
+      aria-label={(language === 'de' ? 'Midnight Manor, fünf Walzen und drei Reihen. Symbole: ' :
+        'Midnight Manor, five reels and three rows. Symbols: ') +
+        snapshot.cells.join(', ') + (language === 'de' ? '. Gewinnfelder: ' : '. Winning cells: ') +
         snapshot.winningCells.map(index => String(index + 1)).join(', ')} />
   );
 }

@@ -231,3 +231,6 @@ h1{font-family:Georgia,serif;letter-spacing:.13em;font-size:18px;margin:4px 0 0}
 .language-picker select:focus-visible{outline:2px solid #f4dba5;outline-offset:2px}
 @media(max-width:680px){.manor-help-scrim{align-items:stretch}.manor-help-sheet{max-height:100%;padding:14px}
  .manor-payline-gallery{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.topbar-actions{flex-wrap:wrap;justify-content:flex-end;gap:10px}
+@media(max-width:700px){.topbar{flex-wrap:wrap}.topbar-actions{justify-content:flex-start}}

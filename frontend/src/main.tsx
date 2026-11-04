@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
   availableActions, browserPreview, sendAction, sendCommand, subscribeToHost,
@@ -6,9 +6,12 @@ import {
 import type { GameAction, ManorSnapshot } from './bridge/protocol';
 import { ManorStage } from './graphics/ManorStage';
 import { ManorRunMap } from './graphics/ManorRunMap';
+import { ManorHelp } from './ManorHelp';
+import { localizeFeature, localizeRunText, t } from './i18n';
+import type { ManorLanguage } from './i18n';
 import { ghostBand, ghostBandLabel } from './graphics/manorRunUi';
 import { ManorAudio } from './audio/manorAudio';
-import { runCue, runMoment, spinCue, spinMoment } from './graphics/manorMoments';
+import { localizeMoment, runCue, runMoment, spinCue, spinMoment } from './graphics/manorMoments';
 import type { ManorMoment } from './graphics/manorMoments';
 import type { ReelSpeed } from './graphics/reelTiming';
 import type { RendererDiagnostics } from './graphics/rendererDiagnostics';
@@ -20,6 +23,9 @@ const defaultBet = (formatted: string): string =>
 
 function ManorApp() {
   const [snapshot, setSnapshot] = useState<ManorSnapshot>(browserPreview);
+  const [languageOverride, setLanguageOverride] = useState<ManorLanguage | null>(null);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const closeHelp = useCallback(() => setHelpOpen(false), []);
   const [connected, setConnected] = useState(!embedded);
   const [error, setError] = useState<string | null>(null);
   const [fatal, setFatal] = useState(false);
@@ -107,13 +113,16 @@ function ManorApp() {
   const disabled = !embedded || !connected || pending !== null || fatal || animating;
   const validBet = /^[0-9]{1,4}$/.test(bet) && Number(bet) >= 1 && Number(bet) <= 1000;
   const run = snapshot.run;
+  const language: ManorLanguage = languageOverride ?? snapshot.language;
   const threat = run ? ghostBand(run.ghostClue) : null;
+  const visibleMoment = moment ? localizeMoment(moment, language) : null;
+  useEffect(() => { document.documentElement.lang = language; }, [language]);
 
   function act(type: GameAction, extras: { bet?: string; room?: number } = {}) {
     // Immediate ref guard prevents two same-frame clicks from placing two wagers.
     if (disabled || pendingRef.current !== null || !actions.includes(type)) return;
     if (type === 'spin.paid' && !validBet) {
-      setError('Choose a whole-dollar bet between $1 and $1,000.');
+      setError(t(language, 'invalidStake'));
       return;
     }
     setConfirmAuto(false);
@@ -129,7 +138,7 @@ function ManorApp() {
     window.setTimeout(() => {
       if (pendingRef.current === requestId) {
         pendingRef.current = 'recovering';
-        setError('The reply is taking longer than expected. Reading the committed state; do not repeat your action.');
+        setError(t(language, 'timeout'));
         sendCommand('snapshot.request');
       }
     }, 12000);
@@ -140,79 +149,89 @@ function ManorApp() {
       <header className="topbar">
         <div className="brand">
           <span className="brand-mark" aria-hidden="true">☾</span>
-          <div><span className="eyebrow">THE MIDNIGHT CLUB</span><h1>MIDNIGHT MANOR</h1></div>
+          <div><span className="eyebrow">{t(language, 'club')}</span><h1>MIDNIGHT MANOR</h1></div>
         </div>
         <div className="topbar-actions">
           <span className={connected ? 'connection ready' : 'connection'}>
-            {connected && embedded ? 'C# ENGINE · CONNECTED' :
-              embedded ? 'CONNECTING TO CASINO' : 'BROWSER DESIGN PREVIEW'}
+            {connected && embedded ? t(language, 'ready') :
+              embedded ? t(language, 'connecting') : t(language, 'preview')}
           </span>
+          <label className="language-picker" htmlFor="manor-language">
+            <span>{t(language, 'language')}</span>
+            <select id="manor-language" value={language}
+              onChange={event => setLanguageOverride(event.target.value as ManorLanguage)}>
+              <option value="de">Deutsch</option>
+              <option value="en">English</option>
+            </select>
+          </label>
+          <button className="ghost-button" type="button"
+            onClick={() => setHelpOpen(true)}>{t(language, 'help')}</button>
           <button className="ghost-button" onClick={() =>
-            embedded ? sendCommand('ui.close') : window.close()}>Back to lobby</button>
+            embedded ? sendCommand('ui.close') : window.close()}>{t(language, 'back')}</button>
         </div>
       </header>
 
       <section className="headline">
         <div>
-          <span className="eyebrow">THE HOUSE REMEMBERS EVERY CHOICE</span>
-          <h2>The house knows your name.</h2>
-          <p>Every spin, payout and room choice comes from the original C# game engine.
-            Your balance and ongoing features are committed to the same saved game as classic Manor.</p>
+          <span className="eyebrow">{t(language, 'heroEyebrow')}</span>
+          <h2>{t(language, 'heroTitle')}</h2>
+          <p>{t(language, 'heroText')}</p>
         </div>
-        <div className="stage-tag"><span className="tag-dot" /> MIGRATION / PHASE 3 PLAYTEST</div>
+        <div className="stage-tag"><span className="tag-dot" /> {t(language, 'playtest')}</div>
       </section>
 
       <div className="content-grid">
-        <section className="machine" aria-label="Manor reel game">
+        <section className="machine" aria-label={t(language, 'hauntedFive')}>
           <div className="machine-title">
-            <span>THE HAUNTED FIVE</span>
-            <span>20 FIXED PAYLINES · 5 × 3</span>
+            <span>{t(language, 'hauntedFive')}</span>
+            <span>{t(language, 'paylinesHeader')}</span>
           </div>
-          <ManorStage snapshot={snapshot} reducedMotion={motionOff} speed={reelSpeed}
+          <ManorStage snapshot={snapshot} language={language} reducedMotion={motionOff} speed={reelSpeed}
             spinEpoch={spinEpoch} onSpinningChange={setAnimating}
             onReelStop={index => presentation.current.onReel(index)}
             onSpinPresented={result => presentation.current.onSpin(result)}
             onDiagnostics={showDiagnostics ? setRenderMetrics : undefined} />
           {showDiagnostics && (
             <div className="render-metrics" role="status" aria-live="off">
-              <strong>RENDER DIAGNOSTICS · LOCAL ONLY</strong>
-              <span>{motionOff ? 'Ticker paused (reduced motion / animation off)' :
+              <strong>{t(language, 'diagnostics')}</strong>
+              <span>{motionOff ? t(language, 'tickerPaused') :
                 renderMetrics
-                  ? `Observed ~${renderMetrics.fpsEstimate} fps · mean ${renderMetrics.averageMs} ms · p95 ${renderMetrics.p95Ms} ms · ${renderMetrics.overBudget}/${renderMetrics.frames} frames >16.7 ms`
-                  : 'Sampling Pixi ticker frames...'}</span>
+                  ? t(language, 'fpsObserved', renderMetrics.fpsEstimate, renderMetrics.averageMs,
+                    renderMetrics.p95Ms, renderMetrics.overBudget, renderMetrics.frames)
+                  : t(language, 'sample')}</span>
               <small>{renderMetrics
-                ? `${renderMetrics.width} × ${renderMetrics.height} CSS px · ${renderMetrics.pixelRatio}× backing ratio`
-                : 'Measures JavaScript ticker intervals, not GPU time or a hardware benchmark.'}</small>
+                ? t(language, 'dpiObserved', renderMetrics.width, renderMetrics.height, renderMetrics.pixelRatio)
+                : t(language, 'diagnosticsHint')}</small>
             </div>
           )}
-          {moment && (
-            <div className={'manor-moment ' + moment.key + (motionOff ? ' no-motion' : '')}
+          {visibleMoment && (
+            <div className={'manor-moment ' + visibleMoment.key + (motionOff ? ' no-motion' : '')}
               role="status" aria-live="polite">
               <span className="manor-moment-crest" aria-hidden="true">
-                {moment.key === 'moon' ? '☾' : moment.key === 'door' ? '⌑' : '✦'}
+                {visibleMoment.key === 'moon' ? '☾' : visibleMoment.key === 'door' ? '⌑' : '✦'}
               </span>
               <div className="manor-moment-copy">
-                <strong>{moment.heading}</strong>
-                <span>{moment.detail}</span>
-                {moment.secondary && <small>{moment.secondary}</small>}
+                <strong>{visibleMoment.heading}</strong>
+                <span>{visibleMoment.detail}</span>
+                {visibleMoment.secondary && <small>{visibleMoment.secondary}</small>}
               </div>
             </div>
           )}
           <div className="machine-footer">
             <span>{snapshot.hasCommittedSpin
-              ? snapshot.lastSpinFree ? 'LAST HAUNTED NIGHT FREE SPIN' : 'LAST PAID SPIN'
-              : 'NO STORED SPIN · PRESENTATION STAND-IN'}</span>
-            <span>{snapshot.winningLines} PAID LINES · {snapshot.scatters} MOONS · {snapshot.doors} DOORS</span>
+              ? snapshot.lastSpinFree ? t(language, 'lastFree') : t(language, 'lastPaid')
+              : t(language, 'noSpin')}</span>
+            <span>{snapshot.winningLines} {t(language, 'paidLines')} · {snapshot.scatters} {t(language, 'moons')} · {snapshot.doors} {t(language, 'doors')}</span>
           </div>
           {snapshot.winningLineDetails.length > 0 && (
             <details className="win-details">
-              <summary>View {snapshot.winningLineDetails.length} settled winning
-                {snapshot.winningLineDetails.length === 1 ? ' line' : ' lines'}</summary>
+              <summary>{t(language, 'viewWinLines', snapshot.winningLineDetails.length,
+                t(language, snapshot.winningLineDetails.length === 1 ? 'lineSingular' : 'linePlural'))}</summary>
               <div className="win-line-grid">
                 {snapshot.winningLineDetails.map(win => (
                   <div className="win-line-result" key={win.number}>
-                    <strong>LINE {win.number}</strong>
-                    <span>{win.count} MATCHED</span>
+                    <strong>{t(language, 'line')} {win.number}</strong>
+                    <span>{win.count} {t(language, 'matched')}</span>
                     <b>{win.amount}</b>
                   </div>
                 ))}
@@ -221,7 +240,7 @@ function ManorApp() {
           )}
           <div className="action-console">
             <div className="stake-control">
-              <label htmlFor="manor-bet">BET · PLAY MONEY</label>
+              <label htmlFor="manor-bet">{t(language, 'stake')}</label>
               <div className="bet-input">
                 <span>$</span>
                 <input id="manor-bet" type="number" inputMode="numeric"
@@ -233,59 +252,59 @@ function ManorApp() {
             <div className="main-actions">
               {snapshot.canFreeSpin ?
                 <button className="gold-button" disabled={disabled}
-                  onClick={() => act('spin.free')}>PLAY FREE SPIN · {snapshot.freeSpinsRemaining} LEFT</button> :
+                  onClick={() => act('spin.free')}>{t(language, 'freeSpin', snapshot.freeSpinsRemaining)}</button> :
                 <button className="gold-button" disabled={disabled || !snapshot.canSpin || !validBet}
                   onClick={() => act('spin.paid', { bet })}>
-                  {pending ? 'SAVING RESULT…' : 'SPIN THE REELS'}
+                  {pending ? t(language, 'saving') : t(language, 'spin')}
                 </button>}
-              <span className="action-hint">{run ? 'The Manor is open · choose your path below' :
-                snapshot.canFreeSpin ? 'No extra wager is charged for free spins' :
-                snapshot.cycleActive ? 'Resolve the current feature before a new wager' :
-                'C# determines and saves the result before the reels display it'}</span>
+              <span className="action-hint">{t(language, run ? 'runHint' :
+                snapshot.canFreeSpin ? 'freeHint' :
+                  snapshot.cycleActive ? 'cycleHint' : 'committedHint')}</span>
             </div>
           </div>
 
           {run && (
-            <section className="labyrinth" aria-label="Escape the Manor">
+            <section className="labyrinth" aria-label={t(language, 'runTitle')}>
               <div className="labyrinth-heading">
-                <div><span className="eyebrow">INTERACTIVE BONUS</span><h3>Escape the Manor</h3></div>
-                <div className="turn-counter">TURN {run.turn} / 24</div>
+                <div><span className="eyebrow">{t(language, 'runEyebrow')}</span><h3>{t(language, 'runTitle')}</h3></div>
+                <div className="turn-counter">{t(language, 'turn')} {run.turn} / 24</div>
               </div>
-              <p className="run-message">{run.message}</p>
+              <p className="run-message">{localizeRunText(run.message, language)}</p>
               <div className={'ghost-panel ' + threat} role="status" aria-live="polite">
-                <span className="ghost-panel-label">{ghostBandLabel[threat ?? 'uncertain']}</span>
-                <p>{run.ghostClue}</p>
+                <span className="ghost-panel-label">{language === 'en'
+                  ? ghostBandLabel[threat ?? 'uncertain']
+                  : t(language, threat === 'revealed' ? 'ghostRevealed' :
+                      threat === 'danger' ? 'ghostDanger' :
+                      threat === 'approaching' ? 'ghostApproaching' :
+                      threat === 'distant' ? 'ghostDistant' : 'ghostUnknown')}</span>
+                <p>{localizeRunText(run.ghostClue, language)}</p>
               </div>
               <div className="run-summary">
-                <span>Potential <strong>{run.current}</strong></span>
-                <span>Checkpoint <strong>{run.banked}</strong></span>
-                <span>Exit <strong>{run.exitTarget}×</strong></span>
-                <span>{run.hasKey ? 'KEY FOUND' : 'NO KEY'}</span>
-                <span>{run.hasCharm ? 'CHARM READY' : 'NO CHARM'}</span>
+                <span>{t(language, 'potential')} <strong>{run.current}</strong></span>
+                <span>{t(language, 'checkpoint')} <strong>{run.banked}</strong></span>
+                <span>{t(language, 'exit')} <strong>{run.exitTarget}×</strong></span>
+                <span>{t(language, run.hasKey ? 'keyFound' : 'noKey')}</span>
+                <span>{t(language, run.hasCharm ? 'charmReady' : 'noCharm')}</span>
               </div>
-              <p className="map-instructions">
-                The bright routes and buttons are legal choices from the C# engine.
-                Entering a room advances the ghost. Collected rewards and checkpoints
-                are committed with your choice. A locked shortcut requires a key.
-              </p>
-              <ManorRunMap run={run} disabled={disabled}
+              <p className="map-instructions">{t(language, 'routeInstruction')}</p>
+              <ManorRunMap run={run} disabled={disabled} language={language}
                 onMove={room => act('run.move', { room })} />
               <div className="run-actions">
                 <button className="ghost-button" disabled={disabled || !run.hasCandle}
-                  onClick={() => act('run.candle')}>Use candle</button>
+                  onClick={() => act('run.candle')}>{t(language, 'candle')}</button>
                 <button className="ghost-button" disabled={disabled}
-                  onClick={() => act('run.follow')}>Follow safest route · 1 step</button>
+                  onClick={() => act('run.follow')}>{t(language, 'follow')}</button>
                 <button className="ghost-button" disabled={disabled}
-                  onClick={() => act('run.cashout')}>Cash out now</button>
+                  onClick={() => act('run.cashout')}>{t(language, 'cashout')}</button>
                 {!confirmAuto ? (
                   <button className="ghost-button" disabled={disabled}
-                    onClick={() => setConfirmAuto(true)}>Auto-resolve entire run</button>
+                    onClick={() => setConfirmAuto(true)}>{t(language, 'resolve')}</button>
                 ) : (
-                  <div className="confirm-auto" role="group" aria-label="Confirm automatic resolution">
-                    <span>Finish the whole run automatically?</span>
+                  <div className="confirm-auto" role="group" aria-label={t(language, 'confirmGroup')}>
+                    <span>{t(language, 'confirmQuestion')}</span>
                     <button className="ghost-button" onClick={() => act('run.auto')}
-                      disabled={disabled}>Confirm</button>
-                    <button className="ghost-button" onClick={() => setConfirmAuto(false)}>Cancel</button>
+                      disabled={disabled}>{t(language, 'confirm')}</button>
+                    <button className="ghost-button" onClick={() => setConfirmAuto(false)}>{t(language, 'cancel')}</button>
                   </div>
                 )}
               </div>
@@ -293,34 +312,33 @@ function ManorApp() {
           )}
         </section>
 
-        <aside className="sidebar" aria-label="Game status">
+        <aside className="sidebar" aria-label={t(language, 'account')}>
           <div className="status-card">
-            <span className="eyebrow">YOUR MANOR ACCOUNT</span>
-            <h3>Under the chandelier</h3>
-            <div className="money-stat"><span>Balance</span><strong>{snapshot.bankroll}</strong></div>
-            <div className="money-stat"><span>Last stake</span><strong>{snapshot.bet}</strong></div>
-            <div className="money-stat"><span>Last reel return</span><strong>{snapshot.payout}</strong></div>
-            <div className="money-stat"><span>Current cycle return</span><strong>{snapshot.cycleReturned}</strong></div>
+            <span className="eyebrow">{t(language, 'account')}</span>
+            <h3>{t(language, 'chandelier')}</h3>
+            <div className="money-stat"><span>{t(language, 'balance')}</span><strong>{snapshot.bankroll}</strong></div>
+            <div className="money-stat"><span>{t(language, 'lastStake')}</span><strong>{snapshot.bet}</strong></div>
+            <div className="money-stat"><span>{t(language, 'lastReturn')}</span><strong>{snapshot.payout}</strong></div>
+            <div className="money-stat"><span>{t(language, 'cycleReturn')}</span><strong>{snapshot.cycleReturned}</strong></div>
           </div>
           <div className="status-card feature-card">
-            <span className="eyebrow">THE HOUSE IS WATCHING</span>
-            <h3>{snapshot.feature}</h3>
-            <p>{run ? 'Choose your rooms, reveal the ghost with a candle, bank a checkpoint or leave with your current reward.' :
-              snapshot.canFreeSpin ? 'Continue the saved free spins at your own pace. The same C# payout table is used.' :
-              snapshot.cycleActive ? 'A committed bonus is still being resolved.' :
-              'The existing C# engine controls all reels, payouts and bonus triggers.'}</p>
+            <span className="eyebrow">{t(language, 'watching')}</span>
+            <h3>{localizeFeature(snapshot.feature, language)}</h3>
+            <p>{t(language, run ? 'runDescription' :
+              snapshot.canFreeSpin ? 'freeDescription' :
+                snapshot.cycleActive ? 'cycleDescription' : 'idleDescription')}</p>
           </div>
           <div className="status-card">
-            <span className="eyebrow">DISPLAY SETTINGS</span>
-            <label className="switch-row"><span>Cabinet animation</span>
+            <span className="eyebrow">{t(language, 'settings')}</span>
+            <label className="switch-row"><span>{t(language, 'cabinetAnimation')}</span>
               <input type="checkbox" checked={ambient}
                 onChange={event => setAmbient(event.target.checked)} /></label>
-            <label className="switch-row"><span>Reduce motion</span>
+            <label className="switch-row"><span>{t(language, 'reduced')}</span>
               <input type="checkbox" checked={lowMotion}
                 onChange={event => setLowMotion(event.target.checked)} /></label>
-            <div className="audio-settings" aria-label="Local Manor sound">
-              <span className="eyebrow">MANOR SOUND</span>
-              <label className="switch-row"><span>Sound effects</span>
+            <div className="audio-settings" aria-label={t(language, 'soundGroup')}>
+              <span className="eyebrow">{t(language, 'sound')}</span>
+              <label className="switch-row"><span>{t(language, 'sfx')}</span>
                 <input type="checkbox" checked={soundEnabled}
                   onChange={event => {
                     const enabled = event.target.checked;
@@ -329,7 +347,7 @@ function ManorApp() {
                     if (enabled) audio.current?.arm();
                   }} />
               </label>
-              <label className="switch-row"><span>Quiet atmospheric hum</span>
+              <label className="switch-row"><span>{t(language, 'ambience')}</span>
                 <input type="checkbox" checked={ambienceEnabled}
                   disabled={!soundEnabled}
                   onChange={event => {
@@ -340,7 +358,7 @@ function ManorApp() {
                   }} />
               </label>
               <label className="audio-volume" htmlFor="manor-volume">
-                <span>Sound volume</span><output htmlFor="manor-volume">{volume}%</output>
+                <span>{t(language, 'volume')}</span><output htmlFor="manor-volume">{volume}%</output>
               </label>
               <input className="audio-slider" id="manor-volume" type="range" min={0} max={100}
                 step={5} value={volume} disabled={!soundEnabled}
@@ -349,11 +367,10 @@ function ManorApp() {
                   setVolume(level);
                   audio.current?.setVolume(level / 100);
                 }} />
-              <p className="display-hint">Offline audio starts only after your first action.
-                Muting never affects game results or your saved state.</p>
+              <p className="display-hint">{t(language, 'soundHint')}</p>
             </div>
             <label className="switch-row" htmlFor="manor-perf-diagnostics">
-              <span>Show render diagnostics</span>
+              <span>{t(language, 'diagnosticsToggle')}</span>
               <input type="checkbox" id="manor-perf-diagnostics"
                 checked={showDiagnostics}
                 onChange={event => {
@@ -361,29 +378,29 @@ function ManorApp() {
                   setRenderMetrics(null);
                 }} />
             </label>
-            <label className="speed-control" htmlFor="reel-speed">Reel motion speed
+            <label className="speed-control" htmlFor="reel-speed">{t(language, 'speed')}
               <select id="reel-speed" value={reelSpeed}
                 onChange={event => setReelSpeed(event.target.value as ReelSpeed)}>
-                <option value="normal">Normal</option>
-                <option value="fast">Fast</option>
-                <option value="turbo">Turbo</option>
+                <option value="normal">{t(language, 'normal')}</option>
+                <option value="fast">{t(language, 'fast')}</option>
+                <option value="turbo">{t(language, 'turbo')}</option>
               </select>
             </label>
-            <p className="display-hint">Reduced motion skips reel animation; every speed displays the same saved C# outcome.</p>
+            <p className="display-hint">{t(language, 'motionHint')}</p>
             <button className="ghost-button refresh"
               onClick={() => sendCommand('snapshot.request')} disabled={!embedded}>
-              Refresh saved state</button>
+              {t(language, 'refresh')}</button>
           </div>
         </aside>
       </div>
       {snapshot.saveNotice && <div className="save-notice" role="status">{snapshot.saveNotice}</div>}
       {error && <div className="error" role="alert">{error}</div>}
-      {fatal && <div className="error" role="alert">
-        The save outcome may already be committed. Close and reopen the modern Manor to recover
-        it. Do not place another wager in this window.</div>}
+      {fatal && <div className="error" role="alert">{t(language, 'fatal')}</div>}
+      {helpOpen && <ManorHelp language={language} rules={snapshot.rules}
+        cycleActive={snapshot.cycleActive} onClose={closeHelp} />}
       <footer className="footer">
-        <span>PLAY-MONEY ONLY · C# SETTLEMENT · DURABLE SAVE</span>
-        <span>{embedded ? 'CURRENT REVISION ' + snapshot.revision : 'BROWSER DESIGN PREVIEW · NO GAMEPLAY'}</span>
+        <span>{t(language, 'footer')}</span>
+        <span>{embedded ? t(language, 'revision', snapshot.revision) : t(language, 'browserFooter')}</span>
       </footer>
     </main>
   );
