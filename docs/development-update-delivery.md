@@ -42,3 +42,9 @@ version through the same `development/update-manifest.json` URL.
 `tools/check_localization.py` is a mandatory CI and Development-publisher gate. Every translated resource file must contain exactly the neutral English key set and every value must be non-empty. English remains the fallback when a runtime key cannot be resolved in a selected translation. Proper product and mode names such as The Midnight Club, Midnight Solitaire, Midnight Manor and Neon Vault remain untranslated unless explicitly changed by product direction.
 
 The source pin lives in the publishing workflow's push trigger and job guard. When changing the active feature branch again, update both fields together on the selected branch. Normal feature-branch CI previews remain available as artifacts and do not replace the shared Development release unless that branch is explicitly pinned here.
+
+## Repository-preparation branch (2026-11-04)
+
+`feature/repository-workflow-refresh` contains documentation, agent instructions and a repository-contract check only. It is based on the cumulative `feature/casino-quality-phase-4` snapshot and **does not** replace its Development publisher source. The ongoing Jigsaw changes, their review and subsequent branch consolidation take priority; incorporate this preparatory branch only after reconciling the newer cumulative code. The planned React/TypeScript/PixiJS Midnight Manor pilot has not started. See [modernization roadmap](modernization-roadmap.md).
+
+The lightweight repository-contract workflow checks required documentation, local README/guide links and consistency between the Development workflow's push branch filter and its job guard. It does not substitute for Windows gameplay/build/smoke validation.
