@@ -245,7 +245,7 @@ function ManorApp() {
                 <span className="manor-moment-crest" aria-hidden="true">
                   {visibleMoment.key === 'moon' ? '☾' :
                     visibleMoment.key === 'door' ? '⌑' :
-                      visibleMoment.key === 'loss' ? '·' : '✦'}
+                      '✦'}
                 </span>
                 <div className="manor-moment-copy">
                   <strong>{visibleMoment.heading}</strong>
