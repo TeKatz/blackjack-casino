@@ -14,11 +14,11 @@ Gameplay is deliberately unhurried: no time limit, scoring penalty, wager or onl
 ## Controls
 
 - Drag a piece from the paginated tray onto the picture area. A tray item can also be selected and then placed by clicking on the board.
-- Drag pieces on the board. Pieces with correctly connected edges move together.
+- Drag pieces on the board. Pieces with correctly connected edges move together. Drag loose pieces/groups back onto the tray, or right-click them, to put them away.
 - Release a piece/group near its correct location or matching neighbour to join. Once anchored to the final picture, pieces stay fixed.
 - Mouse wheel or zoom buttons: zoom. Middle-mouse drag, or Ctrl/Space + left-drag: pan. **Reset View** restores the overview.
 - **Reference** toggles a low-opacity image guide.
-- Use the tray arrows or Page Up/Down to browse parts. Escape deselects a tray item.
+- The tray is shuffled deterministically for each game, not sorted by solved location. Use the tray arrows or Page Up/Down to browse pieces. Escape deselects a tray item.
 - Return to the puzzle menu or Lounge hub at any time; the active session resumes later.
 
 ## Implementation
