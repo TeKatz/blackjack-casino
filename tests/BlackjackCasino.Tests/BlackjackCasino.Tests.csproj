@@ -16,6 +16,7 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="../../src/BlackjackCasino.Desktop/ManorPreviewProtocol.cs" Link="Presentation/ManorPreviewProtocol.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/LobbyProgressSnapshot.cs" Link="Presentation/LobbyProgressSnapshot.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/AreaPresentationSettings.cs" Link="Persistence/AreaPresentationSettings.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/AppPreferences.cs" Link="Persistence/AppPreferences.cs" />
