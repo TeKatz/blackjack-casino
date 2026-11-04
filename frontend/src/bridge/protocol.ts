@@ -12,6 +12,9 @@ export type ManorRoom = {
   locked: boolean;
 };
 
+export type ManorPassage = { from: number; to: number; requiresKey: boolean };
+export type ManorWinningLine = { number: number; count: number; rows: number[]; amount: string };
+
 export type ManorRun = {
   status: string;
   message: string;
@@ -25,6 +28,7 @@ export type ManorRun = {
   hasKey: boolean;
   hasCharm: boolean;
   rooms: ManorRoom[];
+  passages: ManorPassage[];
 };
 
 export type ManorSnapshot = {
@@ -47,6 +51,7 @@ export type ManorSnapshot = {
   scatters: number;
   doors: number;
   winningLines: number;
+  winningLineDetails: ManorWinningLine[];
   run: ManorRun | null;
   saveNotice: string | null;
 };
@@ -93,7 +98,11 @@ function isRun(value: unknown): value is ManorRun {
     Array.isArray(value.rooms) && value.rooms.every(room =>
       dictionary(room) && nonnegative(room.id) && text(room.name) &&
       Number.isInteger(room.x) && Number.isInteger(room.y) && text(room.area) &&
-      flag(room.visited) && flag(room.available) && flag(room.locked));
+      flag(room.visited) && flag(room.available) && flag(room.locked)) &&
+    Array.isArray(value.passages) && value.passages.length <= 30 &&
+    value.passages.every(edge => dictionary(edge) && nonnegative(edge.from) &&
+      edge.from < 17 && nonnegative(edge.to) && edge.to < 17 &&
+      edge.from !== edge.to && flag(edge.requiresKey));
 }
 
 export function isSnapshot(value: unknown): value is ManorSnapshot {
@@ -107,6 +116,12 @@ export function isSnapshot(value: unknown): value is ManorSnapshot {
     ['cycleActive', 'animationsEnabled', 'hasCommittedSpin', 'canSpin', 'canFreeSpin', 'lastSpinFree']
       .every(k => flag(value[k])) &&
     ['freeSpinsRemaining', 'scatters', 'doors', 'winningLines'].every(k => nonnegative(value[k])) &&
+    Array.isArray(value.winningLineDetails) && value.winningLineDetails.length <= 20 &&
+    value.winningLineDetails.every(line => dictionary(line) &&
+      nonnegative(line.number) && line.number >= 1 && line.number <= 20 &&
+      nonnegative(line.count) && line.count >= 3 && line.count <= 5 &&
+      text(line.amount) && Array.isArray(line.rows) && line.rows.length === 5 &&
+      line.rows.every(row => nonnegative(row) && row <= 2)) &&
     (value.run === null || isRun(value.run)) &&
     (value.saveNotice === null || text(value.saveNotice));
 }
@@ -177,7 +192,7 @@ export const browserPreview: ManorSnapshot = {
   feature: 'Browser design preview · no wagers executed',
   animationsEnabled: true, hasCommittedSpin: false, revision: '0', canSpin: false,
   canFreeSpin: false, lastSpinFree: false, scatters: 0, doors: 0, winningLines: 0,
-  run: null, saveNotice: null,
+  run: null, saveNotice: null, winningLineDetails: [],
 };
 
 export function availableActions(snapshot: ManorSnapshot): GameAction[] {

@@ -63,3 +63,62 @@ h1{font-family:Georgia,serif;letter-spacing:.13em;font-size:18px;margin:4px 0 0}
   min-height:0;
   aspect-ratio:960 / 500;
 }
+
+/* Phase 3C: navigable, engine-authored architectural floorplan */
+.manor-map-guide{display:flex;flex-wrap:wrap;align-items:center;gap:15px;margin:12px 0;color:#c7b6ad;font-size:10px;letter-spacing:.035em}
+.manor-map-guide span{display:inline-flex;align-items:center;gap:7px}
+.map-key{display:inline-block;width:10px;height:10px;border-radius:2px;border:1px solid #8b7a79;background:#39313b}
+.map-key.player{background:#d5b27a;border-color:#ffe4ae;box-shadow:0 0 8px #f8dba777}
+.map-key.available{background:#4c706b;border-color:#9bd5c5}
+.map-key.visited{background:#695b78;border-color:#9d89b0}
+.map-key.blocked{background:#873f59;border-color:#d8829a}
+.manor-map-wrap .map-scroll{padding:0;margin:10px 0 4px;overflow:auto;border:1px solid #79614e;border-radius:12px;background:#11121a}
+.manor-map-scene{position:relative;width:1000px;height:408px;overflow:hidden;
+  background:radial-gradient(ellipse at 70% 16%,#57425377,transparent 49%),
+    linear-gradient(135deg,#171b26,#24202a 54%,#141b26);
+  box-shadow:inset 0 0 75px #05080d}
+.manor-map-scene:before{content:'';position:absolute;inset:18px;border:1px solid #aa8a6244;pointer-events:none;
+  background:linear-gradient(90deg,transparent 49.9%,#886f5122 50%,transparent 50.1%),
+    repeating-linear-gradient(0deg,transparent 0 48px,#88735708 49px 50px)}
+.map-watermark{position:absolute;right:26px;bottom:12px;font:10px Georgia,serif;letter-spacing:.24em;color:#cfbb8b55}
+.map-moon{position:absolute;top:-53px;right:94px;border-radius:50%;width:164px;height:164px;
+  background:radial-gradient(circle at 40% 40%,#f2e2c45a,#d2c1ac0a 64%,transparent 70%);filter:blur(3px)}
+.map-passages{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.map-passage{fill:none;stroke:#9b826c;stroke-width:4;stroke-opacity:.7;stroke-linecap:round;stroke-linejoin:round}
+.map-passage.route-ready{stroke:#ddca98;stroke-width:6;stroke-opacity:.92;filter:drop-shadow(0 0 6px #d6bc9366)}
+.map-passage.sealed{stroke:#af6071;stroke-dasharray:8 7;stroke-opacity:.9}
+.map-lock-dot{stroke-width:1.5;fill:#422835}
+.map-lock-dot.sealed{stroke:#e296a4}
+.map-lock-dot.opened{fill:#314840;stroke:#b5d5b0}
+.map-lock-icon{fill:none;stroke:#f3d9bc;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.manor-map-room{position:absolute;transform:translate(-50%,-50%);width:108px;min-height:86px;
+  padding:7px 4px 6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  border:1px solid #a38d7455;border-radius:10px;color:#e6d8c9;cursor:default;text-align:center;
+  background:linear-gradient(155deg,#353038,#171b24);box-shadow:0 7px 15px #07080b99,inset 0 1px #ffffff15}
+.manor-map-room.library{border-color:#8cb2af77}.manor-map-room.ballroom{border-color:#ba8a9877}
+.manor-map-room.crypt{border-color:#9275ab77}.manor-map-room.attic{border-color:#8f9db377}
+.manor-map-room.corridor{border-color:#b7a07877}
+.manor-map-room .map-room-sigil{color:#d2b88f;font-size:18px;line-height:18px}
+.manor-map-room .map-room-name{font-family:Georgia,serif;font-size:11px;line-height:1.1;max-width:100px}
+.manor-map-room .map-room-zone{font-size:7px;letter-spacing:.12em;color:#a8a0a6;font-weight:800}
+.manor-map-room.explored{background:linear-gradient(145deg,#443449,#25212b)}
+.manor-map-room.available{border-color:#a0e1ca;color:#fff4da;cursor:pointer;
+  background:linear-gradient(150deg,#385450,#202f33);
+  box-shadow:0 0 17px #a5d7be50,0 7px 12px #0008}
+.manor-map-room.available .map-room-zone{color:#d8f3e5}
+.manor-map-room.here{border:2px solid #ffe3ad;color:#fff2cc;background:linear-gradient(140deg,#745238,#34262c);
+  box-shadow:0 0 18px #f2ca8488,0 8px 15px #0008}
+.manor-map-room.here .map-room-zone{color:#fff0ca}
+.manor-map-room.exit-gate .map-room-sigil{color:#e7d4ff}
+.manor-map-room.available:hover:not(:disabled){filter:brightness(1.24);transform:translate(-50%,-50%) scale(1.05)}
+.manor-map-room:focus-visible{outline:3px solid #fff0b6;outline-offset:3px;z-index:5}
+.manor-map-room:disabled{opacity:.84}
+.map-privacy-note{margin:8px 0 4px;color:#b6a6b9;font-size:10px;line-height:1.6}
+.win-details{margin:10px 4px 0;padding:11px 14px;border:1px solid #7d6b56;border-radius:10px;background:#1c1b27}
+.win-details summary{color:#eed3a5;font-weight:700;font-size:12px;cursor:pointer;letter-spacing:.03em}
+.win-details summary:focus-visible{outline:2px solid #fbe4ac;outline-offset:4px}
+.win-line-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:7px;margin-top:12px}
+.win-line-result{display:flex;align-items:center;justify-content:space-between;gap:7px;border:1px solid #695c60;
+  background:#292330;border-radius:7px;padding:8px 10px;font-size:10px;color:#cbbac2}
+.win-line-result strong,.win-line-result b{color:#f5d29a}
+@media(prefers-reduced-motion:reduce){.manor-map-room.available:hover:not(:disabled){transform:translate(-50%,-50%)}}

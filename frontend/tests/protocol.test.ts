@@ -25,6 +25,12 @@ describe('Manor v2 bridge contract', () => {
     expect(isSnapshot({ ...browserPreview, winningCells: [15] })).toBe(false);
     expect(isSnapshot({ ...browserPreview, revision: -1 })).toBe(false);
     expect(isSnapshot({ ...browserPreview, revision: '1.5' })).toBe(false);
+    expect(isSnapshot({ ...browserPreview, winningLineDetails: [
+      { number: 21, count: 3, rows: [0, 0, 0, 0, 0], amount: '$5.00' },
+    ] })).toBe(false);
+    expect(isSnapshot({ ...browserPreview, winningLineDetails: [
+      { number: 1, count: 3, rows: [0, 0, 4, 0, 0], amount: '$5.00' },
+    ] })).toBe(false);
   });
 
   it('accepts replay-safe error responses with an authoritative updated snapshot', () => {
@@ -47,12 +53,18 @@ describe('Manor v2 bridge contract', () => {
     const run = {
       status: 'Hunting', message: 'Enter the library', ghostClue: 'Far away',
       playerRoom: 0, turn: 0, exitTarget: 250, current: '5×', banked: '5×',
-      hasCandle: false, hasKey: false, hasCharm: false, rooms: [],
+      hasCandle: false, hasKey: false, hasCharm: false, rooms: [], passages: [],
     };
     expect(availableActions({ ...free, run })).toEqual([
       'run.move', 'run.cashout', 'run.follow', 'run.auto',
     ]);
     expect(availableActions({ ...free, run: { ...run, hasCandle: true } }))
       .toContain('run.candle');
+    expect(isSnapshot({ ...free, run, winningLineDetails: [
+      { number: 1, count: 3, rows: [1, 1, 1, 1, 1], amount: '$15.00' },
+    ] })).toBe(true);
+    expect(isSnapshot({ ...free, run: { ...run, passages: [
+      { from: 0, to: 17, requiresKey: false },
+    ] } })).toBe(false);
   });
 });

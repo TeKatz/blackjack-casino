@@ -101,3 +101,11 @@ See [AGENTS.md](../AGENTS.md), [architecture](architecture.md), [Midnight Manor 
 - Normal/Fast/Turbo and reduced-motion/off settings change presentation duration only; no new RNG, wagers, payout math, schema changes, or extra round resolution.
 - First locally drawn vector renditions of the fourteen symbols and a Gothic-luxury machine frame are in place. These are a **first presentation pass**, not final commissioned/high-resolution symbol art.
 - Windows renderer screenshots, measured FPS/VRAM use, sound, complete bonus map, bilingual interface and full Phase-3 art production remain outstanding and must not be marked complete without testing.
+
+### M3 second delivery — C#-authored payoff lines and connected Escape floorplan
+
+- The existing v2 snapshot includes **read-only additive presentation data**: C#-computed winning line numbers, shapes and payouts; actual room passage pairs with authored key locks. Browser commands, wallet, save schema and RNG remain unchanged.
+- The Pixi scene traces and rotates committed winning lines **after** the reels settle; reduced motion keeps a static, immediate result. A readable win breakdown can be expanded below the reels.
+- Escape the Manor now uses a scrollable Gothic architectural floorplan, with actual corridor connections and distinguishable key-locked shortcuts; legal destination buttons continue to come only from the authoritative C# `Available` flag. Ghost coordinates are not included in the snapshot.
+- Added TS shape-validation tests, mapped geometry checks and C# read-only snapshot assertions. This is a presentation milestone, not approval of new bonus odds or any change to the underlying Manor graph.
+- High-resolution premium icon paintings, music, complete localization, runtime frame-time benchmarks and final player acceptance remain open.

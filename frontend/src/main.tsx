@@ -5,6 +5,7 @@ import {
 } from './bridge/protocol';
 import type { GameAction, ManorSnapshot } from './bridge/protocol';
 import { ManorStage } from './graphics/ManorStage';
+import { ManorRunMap } from './graphics/ManorRunMap';
 import type { ReelSpeed } from './graphics/reelTiming';
 import './styles.css';
 
@@ -141,6 +142,21 @@ function ManorApp() {
               : 'NO STORED SPIN · PRESENTATION STAND-IN'}</span>
             <span>{snapshot.winningLines} PAID LINES · {snapshot.scatters} MOONS · {snapshot.doors} DOORS</span>
           </div>
+          {snapshot.winningLineDetails.length > 0 && (
+            <details className="win-details">
+              <summary>View {snapshot.winningLineDetails.length} settled winning
+                {snapshot.winningLineDetails.length === 1 ? ' line' : ' lines'}</summary>
+              <div className="win-line-grid">
+                {snapshot.winningLineDetails.map(win => (
+                  <div className="win-line-result" key={win.number}>
+                    <strong>LINE {win.number}</strong>
+                    <span>{win.count} MATCHED</span>
+                    <b>{win.amount}</b>
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
           <div className="action-console">
             <div className="stake-control">
               <label htmlFor="manor-bet">BET · PLAY MONEY</label>
@@ -186,25 +202,8 @@ function ManorApp() {
                 Your room is marked in gold. Click an illuminated adjacent room to move.
                 Blocked passages require a key. Room choices and prizes are committed immediately.
               </p>
-              <div className="map-scroll" role="region" aria-label="Manor room map" tabIndex={0}>
-                <div className="room-grid">
-                  {run.rooms.map(room => (
-                    <button key={room.id}
-                      style={{ gridColumn: room.x + 1, gridRow: room.y + 1 }}
-                      className={'room-node' +
-                        (room.id === run.playerRoom ? ' current' : '') +
-                        (room.available ? ' available' : '') +
-                        (room.visited ? ' visited' : '')}
-                      title={room.locked ? room.name + ' · requires key' : room.name}
-                      disabled={disabled || !room.available}
-                      onClick={() => act('run.move', { room: room.id })}>
-                      <span className="room-emblem">{room.id === run.playerRoom ? '◆' :
-                        room.available ? '◇' : room.visited ? '·' : '◌'}</span>
-                      <span>{room.name}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <ManorRunMap run={run} disabled={disabled}
+                onMove={room => act('run.move', { room })} />
               <div className="run-actions">
                 <button className="ghost-button" disabled={disabled || !run.hasCandle}
                   onClick={() => act('run.candle')}>Use candle</button>

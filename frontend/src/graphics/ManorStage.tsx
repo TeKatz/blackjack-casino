@@ -179,6 +179,37 @@ function createRenderer(app: Application, report: (value: boolean) => void): Ren
   const frame = new Graphics().roundRect(42, 39, 876, 421, 9)
     .stroke({ color: 0xe4b97c, width: 1.2, alpha: 0.5 });
   scene.addChild(frame);
+  const winningTrace = new Graphics();
+  scene.addChild(winningTrace);
+  const winningCaption = text('', 13, 0xf7dca6);
+  winningCaption.position.set(480, 433);
+  winningCaption.visible = false;
+  scene.addChild(winningCaption);
+  let shownLine = 0;
+  let lineElapsed = 0;
+  let motionDisabled = false;
+  function paintWinningLine(result: ManorSnapshot | null, index: number): void {
+    winningTrace.clear();
+    winningCaption.visible = false;
+    const details = result?.winningLineDetails ?? [];
+    if (!details.length) return;
+    const win = details[index % details.length];
+    for (let reel = 0; reel < 5; reel++) {
+      const x = 147 + 167 * reel;
+      const y = 162 + win.rows[reel] * 100;
+      if (reel === 0) winningTrace.moveTo(x, y);
+      else winningTrace.lineTo(x, y);
+    }
+    winningTrace.stroke({ color: 0xf1cd83, width: 4, alpha: 0.72, cap: 'round', join: 'round' });
+    for (let reel = 0; reel < win.count; reel++) {
+      const x = 147 + 167 * reel;
+      const y = 162 + win.rows[reel] * 100;
+      winningTrace.circle(x, y, 12).stroke({ color: 0xffe4a9, width: 3, alpha: 0.92 });
+    }
+    winningCaption.text = 'PAYLINE ' + win.number + ' · ' + win.count +
+      ' MATCHED · ' + win.amount;
+    winningCaption.visible = true;
+  }
   let epoch = -1;
   let presented: ManorSnapshot | null = null;
   let animation: { elapsed: number; stops: number[]; result: ManorSnapshot } | null = null;
@@ -203,13 +234,26 @@ function createRenderer(app: Application, report: (value: boolean) => void): Ren
     animation = null;
     for (let r = 0; r < 5; r++) settleColumn(r, result);
     presented = result;
+    shownLine = 0;
+    lineElapsed = 0;
+    paintWinningLine(result, shownLine);
     report(false);
   }
   const frameTick = (ticker: { deltaMS: number }): void => {
     const dt = Math.min(50, ticker.deltaMS);
     pulse += dt * 0.0015;
     frame.alpha = 0.7 + Math.sin(pulse) * 0.25;
-    if (!animation) return;
+    if (!animation) {
+      if (!motionDisabled && presented && presented.winningLineDetails.length > 1) {
+        lineElapsed += dt;
+        if (lineElapsed >= 1500) {
+          lineElapsed = 0;
+          shownLine = (shownLine + 1) % presented.winningLineDetails.length;
+          paintWinningLine(presented, shownLine);
+        }
+      }
+      return;
+    }
     const current = animation;
     current.elapsed += dt;
     for (let r = 0; r < 5; r++) {
@@ -233,6 +277,7 @@ function createRenderer(app: Application, report: (value: boolean) => void): Ren
   return {
     update(result, spinEpoch, motionOff, nextSpeed) {
       speed = nextSpeed;
+      motionDisabled = motionOff;
       if (motionOff) {
         finish();
         app.ticker.stop();
@@ -244,6 +289,7 @@ function createRenderer(app: Application, report: (value: boolean) => void): Ren
         epoch = spinEpoch;
         presented = result;
         for (let r = 0; r < 5; r++) settleColumn(r, result);
+        paintWinningLine(result, 0);
       } else if (epoch !== spinEpoch) {
         finish();
         epoch = spinEpoch;
@@ -251,15 +297,20 @@ function createRenderer(app: Application, report: (value: boolean) => void): Ren
         if (stops[4] > 0 && result.hasCommittedSpin) {
           animation = { elapsed: 0, stops, result };
           presented = result;
+          winningTrace.clear();
+          winningCaption.visible = false;
           report(true);
         } else {
           for (let r = 0; r < 5; r++) settleColumn(r, result);
           presented = result;
+          paintWinningLine(result, 0);
           report(false);
         }
       } else if (!animation && presented !== result) {
         for (let r = 0; r < 5; r++) settleColumn(r, result);
         presented = result;
+        shownLine = 0;
+        paintWinningLine(result, 0);
       }
       // A stopped ticker does not redraw a newly committed outcome by itself.
       if (motionOff) app.render();
