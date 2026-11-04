@@ -106,4 +106,24 @@ public sealed class JigsawTests
         Assert.Equal(ProgressionAward.None, xp.Process(record));
         Assert.Equal(1, service.State.Jigsaw.CompletedGames);
     }
+    [Fact]
+    public void LooseGroupsCanReturnToTrayButAnchoredPiecesCannot()
+    {
+        var game = JigsawGame.Start("ocean-depths", 48);
+        double width = JigsawGame.BoardWidth / JigsawCatalog.Size(48).Columns;
+        Assert.True(JigsawGame.Place(game, 0, 500, 400));
+        Assert.True(JigsawGame.Place(game, 1, 500 + width + 2, 400));
+        Assert.False(JigsawGame.Snap(game, 1));
+        Assert.Equal(2, JigsawGame.Connected(game, 0).Count);
+        Assert.True(JigsawGame.ReturnToTray(game, 0));
+        Assert.Equal(0, game.OnBoardCount);
+
+        (double x, double y) = JigsawGame.Target(game, 0);
+        Assert.True(JigsawGame.Place(game, 0, x, y));
+        Assert.False(JigsawGame.Snap(game, 0));
+        Assert.True(game.Pieces[0].Locked);
+        Assert.False(JigsawGame.ReturnToTray(game, 0));
+        Assert.Equal(1, game.OnBoardCount);
+    }
+
 }
