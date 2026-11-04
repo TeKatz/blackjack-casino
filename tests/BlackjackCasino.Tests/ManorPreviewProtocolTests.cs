@@ -60,7 +60,7 @@ public sealed class ManorPreviewProtocolTests
         {
             Bankroll=1_234.5m,Bet=20m,Revision=7,
             LastSpin=ManorRules.Evaluate([0,1,2,3,4],20m),
-            FreeSpinsRemaining=2,CycleActive=true
+            FreeSpinsRemaining=2,CycleActive=true,PaytableVersion=ManorRules.CurrentPaytableVersion
         };
         string before=JsonSerializer.Serialize(state);
         var snapshot=ManorPreviewProtocol.CreateSnapshot(state,false,selectedBet:20m);
