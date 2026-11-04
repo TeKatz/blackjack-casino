@@ -253,6 +253,22 @@ public static class JigsawGame
         return true;
     }
 
+    /// <summary>Put an unfinished connected group back into the tray.</summary>
+    public static bool ReturnToTray(JigsawGameState game, int id)
+    {
+        if (game.Completed) return false;
+        IReadOnlyList<int> group = Connected(game, id);
+        if (group.Count == 0 || group.Any(i => game.Pieces[i].Locked)) return false;
+        foreach (int i in group)
+        {
+            JigsawPieceState piece = game.Pieces[i];
+            piece.OnBoard = false;
+            piece.X = 0;
+            piece.Y = 0;
+        }
+        return true;
+    }
+
     // A complete connection aligns all of a group's pieces by one identical translation.
     // Groups can merge away from the board; touching a locked group anchors the entire group.
     public static bool Snap(JigsawGameState game, int id)
