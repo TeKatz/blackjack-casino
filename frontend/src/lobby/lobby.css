@@ -119,3 +119,53 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
 @media(max-height:660px){.casino-lobby-shell{min-height:660px;overflow-y:auto;}.lobby-hero{flex-basis:120px}.lobby-game-grid{grid-auto-rows:180px}.lobby-overview{min-height:600px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 .casino-lobby-shell[data-reduced="true"] *, .casino-lobby-shell[data-reduced="true"] *::before,.casino-lobby-shell[data-reduced="true"] *::after{animation:none!important;transition:none!important}
+
+
+/* Pre-rendered transparent icon atlas: 5 columns × 4 rows, cell = 64 source units.
+   Navigation, club actions, avatar and top status are separate from live DOM text. */
+.brand-spade{
+  color:transparent;font-size:0;overflow:hidden;
+  background-image:url('/lobby/lobby-icon-atlas.webp');
+  background-repeat:no-repeat;background-size:260px 208px;background-position:-156px -104px;
+}
+.nav-icon{
+  display:block;flex:0 0 26px;width:26px;height:26px;
+  font-size:0;color:transparent;overflow:hidden;
+  background-image:url('/lobby/lobby-icon-atlas.webp');
+  background-repeat:no-repeat;background-size:130px 104px;
+  transition:filter .2s,transform .2s;
+}
+.lobby-nav-item:hover .nav-icon,.lobby-nav-item.selected .nav-icon{filter:brightness(1.22) drop-shadow(0 0 5px #e5b85b);transform:scale(1.12);}
+.lobby-nav-item:nth-child(1) .nav-icon{background-position:0 0;}
+.lobby-nav-item:nth-child(2) .nav-icon{background-position:-26px 0;}
+.lobby-nav-item:nth-child(3) .nav-icon{background-position:-52px 0;}
+.lobby-nav-item:nth-child(4) .nav-icon{background-position:-78px 0;}
+.lobby-nav-item:nth-child(5) .nav-icon{background-position:-104px 0;}
+.lobby-nav-item:nth-child(6) .nav-icon{background-position:0 -26px;}
+.lobby-nav-item:nth-child(7) .nav-icon{background-position:-26px -26px;}
+.lobby-nav-item:nth-child(8) .nav-icon{background-position:-52px -26px;}
+.overview-icon{position:relative;color:transparent;font-size:0;text-shadow:none;overflow:visible;}
+.overview-icon::before{
+  content:"";position:absolute;left:50%;top:50%;width:54px;height:54px;
+  transform:translate(-50%,-50%);pointer-events:none;
+  background-image:url('/lobby/lobby-icon-atlas.webp');
+  background-repeat:no-repeat;background-size:270px 216px;
+  transition:transform .25s,filter .25s;
+}
+.overview-tile:hover .overview-icon::before{transform:translate(-50%,-50%) scale(1.11);filter:brightness(1.13) drop-shadow(0 0 7px #ebb65a);}
+.overview-icon-0::before{background-position:-162px -54px;}
+.overview-icon-1::before{background-position:-216px -54px;}
+.overview-icon-2::before{background-position:0 -108px;}
+.overview-icon-3::before{background-position:-54px -108px;}
+.overview-icon-4::before{background-position:-108px -108px;}
+.header-avatar{
+  color:transparent;font-size:0;overflow:hidden;
+  background-image:url('/lobby/lobby-icon-atlas.webp');
+  background-repeat:no-repeat;background-size:180px 144px;background-position:-36px -108px;
+}
+.header-emoji{font-size:0;color:transparent;overflow:hidden;background-image:url('/lobby/lobby-icon-atlas.webp');background-repeat:no-repeat;background-size:140px 112px;width:28px;height:28px;}
+.header-compact:first-child .header-emoji{background-position:-112px -56px;}
+.header-compact:nth-child(2) .header-emoji{background-position:0 -84px;}
+.vault-widget .header-emoji{background-position:-84px -84px;}
+.lobby-exit{position:relative;padding-left:44px;}
+.lobby-exit::before{content:"";position:absolute;left:8px;top:50%;width:30px;height:30px;transform:translateY(-50%);background-image:url('/lobby/lobby-icon-atlas.webp');background-size:150px 120px;background-position:-120px -90px;}
