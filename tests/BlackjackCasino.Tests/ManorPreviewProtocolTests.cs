@@ -116,7 +116,7 @@ public sealed class ManorPreviewProtocolTests
         Assert.Equal(spin.Wins.Length,snapshot.WinningLineDetails.Length);
         foreach(var win in spin.Wins)
         {
-            var display=Assert.Single(snapshot.WinningLineDetails.Where(detail=>detail.Number==win.Line+1));
+            var display=Assert.Single(snapshot.WinningLineDetails,detail=>detail.Number==win.Line+1);
             Assert.Equal(win.Count,display.Count);
             Assert.Equal(ManorRules.Paylines[win.Line],display.Rows);
             Assert.Equal("$"+win.Amount.ToString("N2",System.Globalization.CultureInfo.GetCultureInfo("en-US")),display.Amount);
