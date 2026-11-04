@@ -55,7 +55,7 @@ export const fallbackLobby: LobbySnapshot = {
 };
 
 type HostMessage = { type: string; data: unknown };
-export const embeddedLobby = Boolean(window.chrome?.webview);
+export const embeddedLobby = typeof window !== 'undefined' && Boolean(window.chrome?.webview);
 export function onLobbySnapshot(onSnapshot: (snapshot: LobbySnapshot) => void): () => void {
   const host = window.chrome?.webview;
   if (!host) return () => {};
