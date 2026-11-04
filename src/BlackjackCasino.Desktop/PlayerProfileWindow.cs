@@ -36,7 +36,7 @@ internal sealed class PlayerProfileWindow : Window
         this.openProgression = openProgression ?? (() => { });
         this.closePage = closePage ?? Close;
         this.openStatistics = openStatistics ?? (_ => { });
-        Title = "Player profile · Blackjack Casino";
+        Title = T("WindowTitle");
         Width = 1200; Height = 800; MinWidth = 940; MinHeight = 650;
         WindowStyle = WindowStyle.None;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
@@ -51,6 +51,9 @@ internal sealed class PlayerProfileWindow : Window
         MenuAudio.Attach(this);
         RefreshPlayer();
     }
+
+    private static string T(string key) => Localization.T("Shell.Profile." + key);
+    private static string F(string key, params object?[] args) => Localization.F("Shell.Profile." + key, args);
 
     private static Brush Brush(string color) => new SolidColorBrush((Color)ColorConverter.ConvertFromString(color));
     private static TextBlock Caption(string text) => new()
@@ -75,14 +78,14 @@ internal sealed class PlayerProfileWindow : Window
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         root.RowDefinitions.Add(new RowDefinition());
         var heading = new DockPanel { Margin = new Thickness(0, 0, 0, 18) };
-        var back = ActionButton("← Back", closePage);
+        var back = ActionButton(T("Back"), closePage);
         back.Name = "ProfileBackButton";
         DockPanel.SetDock(back, Dock.Right); heading.Children.Add(back);
         var title = new StackPanel();
-        title.Children.Add(Caption("BLACKJACK CASINO / PLAYER PROFILE"));
+        title.Children.Add(Caption(T("Header")));
         title.Children.Add(new TextBlock
         {
-            Text = "Your casino identity", FontSize = 27, FontWeight = FontWeights.Bold,
+            Text = T("Identity"), FontSize = 27, FontWeight = FontWeights.Bold,
             Foreground = Brush("#FFE09B"), Margin = new Thickness(0, 5, 0, 0),
         });
         heading.Children.Add(title); root.Children.Add(heading);
@@ -103,25 +106,32 @@ internal sealed class PlayerProfileWindow : Window
         levelLabel.FontSize = 20; levelLabel.FontWeight = FontWeights.Bold; levelLabel.LineHeight = 30;
         levelLabel.Foreground = CoinBrush; levelLabel.Margin = new Thickness(0, 5, 0, 18);
         levelLabel.TextWrapping = TextWrapping.Wrap; identity.Children.Add(levelLabel);
-        identity.Children.Add(Caption("DISPLAY NAME"));
+        identity.Children.Add(Caption(T("DisplayName")));
         nameBox.Name = "ProfileNameBox"; nameBox.Text = controller.Profile.DisplayName;
-        nameBox.MaxLength = 256; nameBox.ToolTip = "Profile name, up to 24 characters";
+        nameBox.MaxLength = 256; nameBox.ToolTip = T("NameHelp");
         nameBox.Margin = new Thickness(0, 8, 0, 0); identity.Children.Add(nameBox);
-        var saveName = ActionButton("Save name", () =>
+        var saveName = ActionButton(T("SaveName"), () =>
         {
-            controller.RenameProfile(nameBox.Text, out string message);
-            playerStatusText.Text = message; nameBox.Text = controller.Profile.DisplayName; RefreshPlayer();
+            bool saved = controller.RenameProfile(nameBox.Text, out string message);
+            playerStatusText.Text = saved ? T("NameSaved") : message switch
+            {
+                "Enter a profile name." => T("NameRequired"),
+                "Use at most 24 characters." => T("NameTooLong"),
+                _ => Localization.TranslateSource(message),
+            };
+            nameBox.Text = controller.Profile.DisplayName;
+            RefreshPlayer();
         });
         saveName.Name = "RenameProfileButton"; identity.Children.Add(saveName);
-        var progression = ActionButton("Progression & shop →", openProgression);
+        var progression = ActionButton(T("Progression"), openProgression);
         progression.Name = "ProfileProgressionButton";
-        var stats = ActionButton("Statistics →", () => openStatistics("Overview"));
+        var stats = ActionButton(T("Statistics"), () => openStatistics("Overview"));
         stats.Name = "ProfileStatisticsButton";
         stats.Margin = new Thickness(0, 20, 0, 0); identity.Children.Add(stats);
-        var history = ActionButton("Hand History →", () => openStatistics("Hand History"));
+        var history = ActionButton(T("HandHistory"), () => openStatistics("Hand History"));
         history.Name = "ProfileHandHistoryButton"; identity.Children.Add(history);
         progression.Margin = new Thickness(0, 12, 0, 0); identity.Children.Add(progression);
-        var export = new Button { Content = "Save Progress…", Margin = new Thickness(0, 8, 0, 0) };
+        var export = new Button { Content = T("Export"), Margin = new Thickness(0, 8, 0, 0) };
         export.Click += SaveProgress_Click; identity.Children.Add(export);
         playerStatusText.Foreground = PositiveBrush; playerStatusText.TextWrapping = TextWrapping.Wrap;
         playerStatusText.Margin = new Thickness(0, 14, 0, 0); identity.Children.Add(playerStatusText);
@@ -134,11 +144,11 @@ internal sealed class PlayerProfileWindow : Window
         gallery.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         gallery.RowDefinitions.Add(new RowDefinition());
         var galleryHeader = new StackPanel();
-        galleryHeader.Children.Add(Caption("YOUR COLLECTION · PORTRAITS & TITLES"));
+        galleryHeader.Children.Add(Caption(T("CollectionHeader")));
         collectionLabel.Foreground = MutedBrush; collectionLabel.Margin = new Thickness(0, 5, 0, 12);
         galleryHeader.Children.Add(collectionLabel); gallery.Children.Add(galleryHeader);
         portraitSearch.Name = "PortraitSearchBox";
-        portraitSearch.ToolTip = "Search owned portraits and titles";
+        portraitSearch.ToolTip = T("SearchHelp");
         portraitSearch.TextChanged += (_, _) => RefreshPlayer();
         portraitSearch.Margin = new Thickness(0, 0, 0, 12);
         Grid.SetRow(portraitSearch, 1); gallery.Children.Add(portraitSearch);
@@ -154,11 +164,11 @@ internal sealed class PlayerProfileWindow : Window
     private UIElement BuildIdentityCollections()
     {
         var stack = new StackPanel();
-        stack.Children.Add(Caption("PORTRAITS"));
+        stack.Children.Add(Caption(T("Portraits")));
         playerPortraitPanel.Margin = new Thickness(0, 12, 0, 12);
         stack.Children.Add(playerPortraitPanel);
         stack.Children.Add(new Border { Height = 1, Background = Brush("#34534D"), Margin = new Thickness(0, 6, 0, 20) });
-        stack.Children.Add(Caption("EARNED TITLES"));
+        stack.Children.Add(Caption(T("Titles")));
         playerTitlesPanel.Margin = new Thickness(0, 12, 0, 0);
         stack.Children.Add(playerTitlesPanel);
         return stack;
@@ -171,13 +181,13 @@ internal sealed class PlayerProfileWindow : Window
         CosmeticDefinition title = CosmeticCatalog.Get(profile.EquippedTitleId);
         titleLabel.Text = title.Name;
         titleLabel.Foreground = CosmeticAppearance.TitleBrush(title);
-        levelLabel.Text = $"Level {profile.Level} · Prestige {profile.Prestige}\n◆ {profile.Coins:N0} cosmetic coins";
+        levelLabel.Text = F("LevelSummary", profile.Level, profile.Prestige, profile.Coins);
         equippedPortraitHost.Content = ProgressionWindow.CreatePortraitVisual(CosmeticCatalog.Get(profile.EquippedPortraitId), 198);
         CosmeticDefinition[] owned = CosmeticCatalog.All.Where(x => x.Kind == CosmeticKind.Portrait
             && profile.OwnedCosmeticIds.Contains(x.Id, StringComparer.Ordinal)).ToArray();
         CosmeticDefinition[] titles = CosmeticCatalog.All.Where(x => x.Kind == CosmeticKind.Title
             && profile.OwnedCosmeticIds.Contains(x.Id, StringComparer.Ordinal)).ToArray();
-        collectionLabel.Text = $"{owned.Length} portraits · {titles.Length} titles · Choose your casino signature";
+        collectionLabel.Text = F("CollectionSummary", owned.Length, titles.Length);
         playerTitlesPanel.Children.Clear();
         foreach (CosmeticDefinition item in titles
             .Where(x => x.Name.Contains(portraitSearch.Text.Trim(), StringComparison.OrdinalIgnoreCase))
@@ -188,15 +198,15 @@ internal sealed class PlayerProfileWindow : Window
             card.BorderBrush = equipped ? CoinBrush : Brush("#315A43");
             var stack = new StackPanel();
             stack.Children.Add(new TextBlock { Text = "✦  " + item.Name, Foreground = CosmeticAppearance.TitleBrush(item), FontSize = 18, FontFamily = new FontFamily("Georgia"), TextWrapping = TextWrapping.Wrap, MinHeight = 52 });
-            var equip = ActionButton(equipped ? "Equipped" : "Use title", () =>
+            var equip = ActionButton(T(equipped ? "Equipped" : "UseTitle"), () =>
             {
-                if (controller.EquipCosmetic(item.Id)) { playerStatusText.Text = $"Using {item.Name}."; RefreshPlayer(); }
+                if (controller.EquipCosmetic(item.Id)) { playerStatusText.Text = F("Using", item.Name); RefreshPlayer(); }
             });
             equip.IsEnabled = !equipped;
             stack.Children.Add(equip); card.Child = stack; playerTitlesPanel.Children.Add(card);
         }
         if (playerTitlesPanel.Children.Count == 0)
-            playerTitlesPanel.Children.Add(new TextBlock { Text = "No titles match your search.", Foreground = MutedBrush });
+            playerTitlesPanel.Children.Add(new TextBlock { Text = T("NoTitles"), Foreground = MutedBrush });
         playerPortraitPanel.Children.Clear();
         foreach (CosmeticDefinition portrait in owned
             .Where(x => x.Name.Contains(portraitSearch.Text.Trim(), StringComparison.OrdinalIgnoreCase))
@@ -214,28 +224,28 @@ internal sealed class PlayerProfileWindow : Window
                 Text = portrait.Name, FontWeight = FontWeights.Bold, TextWrapping = TextWrapping.Wrap,
                 TextAlignment = TextAlignment.Center, MinHeight = 34, Margin = new Thickness(0, 8, 0, 4),
             });
-            var equip = ActionButton(selected ? "Equipped" : "Use portrait", () =>
+            var equip = ActionButton(T(selected ? "Equipped" : "UsePortrait"), () =>
             {
                 if (controller.EquipCosmetic(portrait.Id))
                 {
-                    playerStatusText.Text = $"Using {portrait.Name}."; RefreshPlayer();
+                    playerStatusText.Text = F("Using", portrait.Name); RefreshPlayer();
                 }
             });
             equip.IsEnabled = !selected; equip.FontSize = 12; equip.Padding = new Thickness(6);
             stack.Children.Add(equip); card.Child = stack; playerPortraitPanel.Children.Add(card);
         }
         if (playerPortraitPanel.Children.Count == 0)
-            playerPortraitPanel.Children.Add(new TextBlock { Text = "No portraits match your search.", Foreground = MutedBrush });
+            playerPortraitPanel.Children.Add(new TextBlock { Text = T("NoPortraits"), Foreground = MutedBrush });
     }
 
     private void SaveProgress_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new SaveFileDialog
         {
-            Title = "Save Player Progress",
+            Title = T("ExportTitle"),
             FileName = $"blackjack-casino-progress-{DateTime.Now:yyyy-MM-dd}.json",
             DefaultExt = ".json",
-            Filter = "JSON progress export (*.json)|*.json",
+            Filter = T("ExportFilter"),
             AddExtension = true,
             OverwritePrompt = true,
         };
@@ -286,14 +296,14 @@ internal sealed class PlayerProfileWindow : Window
             File.WriteAllText(dialog.FileName, JsonSerializer.Serialize(export, options));
             if (playerStatusText is not null)
             {
-                playerStatusText.Text = $"Progress exported to {dialog.FileName}";
+                playerStatusText.Text = F("Exported", dialog.FileName);
             }
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
         {
             if (playerStatusText is not null)
             {
-                playerStatusText.Text = "Export failed: " + ex.Message;
+                playerStatusText.Text = F("ExportFailed", ex.Message);
             }
         }
     }
