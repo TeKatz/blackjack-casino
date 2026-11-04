@@ -236,7 +236,7 @@ internal sealed class JigsawLoungeHub : UserControl, IDisposable
             JigsawText.T("A world in pieces.", "Eine Welt in Teilen."),
             JigsawText.T("Twelve curated scenes from the club's illustrated collection. Every scene can be played at any size.", "Zwölf ausgewählte Motive aus der illustrierten Sammlung des Clubs. Jedes Motiv ist in allen Größen spielbar."),
             left, right,
-            JigsawText.T("No time limits. No penalties for hints or reference pictures. Progress saves automatically.", "Kein Zeitlimit. Keine Nachteile durch die Bildvorlage. Dein Fortschritt wird automatisch gespeichert."),
+            JigsawText.T("No time limits. No penalties for using the reference picture. Progress saves automatically.", "Kein Zeitlimit. Keine Nachteile durch die Bildvorlage. Dein Fortschritt wird automatisch gespeichert."),
             compactLeft: true);
     }
 
