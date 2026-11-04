@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Phase2.KniffelView.001" xml:space="preserve"><value>THE MIDNIGHT CLUB  /  WÜRFEL-LOUNGE</value></data>
+  <data name="Phase2.KniffelView.002" xml:space="preserve"><value>Midnight Dice</value></data>
+  <data name="Phase2.KniffelView.003" xml:space="preserve"><value>ENTSPANNT · SOLO</value></data>
+  <data name="Phase2.KniffelView.004" xml:space="preserve"><value>Partieergebnisse</value></data>
+  <data name="Phase2.KniffelView.005" xml:space="preserve"><value>Neues Spiel</value></data>
+  <data name="Phase2.KniffelView.006" xml:space="preserve"><value>← Casino</value></data>
+  <data name="Phase2.KniffelView.007" xml:space="preserve"><value>DEIN WÜRFELTISCH</value></data>
+  <data name="Phase2.KniffelView.008" xml:space="preserve"><value>GESAMTPUNKTZAHL</value></data>
+  <data name="Phase2.KniffelView.009" xml:space="preserve"><value>Würfel anklicken, um sie zu behalten oder freizugeben</value></data>
+  <data name="Phase2.KniffelView.010" xml:space="preserve"><value>Punkteblätter der Gegner ansehen</value></data>
+  <data name="Phase2.KniffelView.011" xml:space="preserve"><value>Würfeln</value></data>
+  <data name="Phase2.KniffelView.012" xml:space="preserve"><value>Bis zu 3 Würfe · 13 Runden · kein Einsatz</value></data>
+  <data name="Phase2.KniffelView.013" xml:space="preserve"><value>Leuchtende Felder zeigen deine möglichen Punkte.
+Wähle ein Feld auf dem Punkteblatt und bestätige deine Wertung.</value></data>
+  <data name="Phase2.KniffelView.014" xml:space="preserve"><value>Dein Punkteblatt</value></data>
+  <data name="Phase2.KniffelView.015" xml:space="preserve"><value>PUNKTE</value></data>
+  <data name="Phase2.KniffelView.016" xml:space="preserve"><value>Punkte eintragen</value></data>
+  <data name="Phase2.KniffelView.017" xml:space="preserve"><value>Streichen</value></data>
+  <data name="Phase2.KniffelView.018" xml:space="preserve"><value>Dieses Feld mit null Punkten füllen</value></data>
+  <data name="Phase2.KniffelView.019" xml:space="preserve"><value>Neues Spiel beginnen?</value></data>
+  <data name="Phase2.KniffelView.020" xml:space="preserve"><value>Dadurch wird deine aktuelle Partie ersetzt. Du kannst jederzeit zum Casino zurückkehren und später weiterspielen.</value></data>
+  <data name="Phase2.KniffelView.021" xml:space="preserve"><value>Neues Spiel beginnen</value></data>
+  <data name="Phase2.KniffelView.022" xml:space="preserve"><value>Partie fortsetzen</value></data>
+  <data name="Phase2.SlotMachine.001" xml:space="preserve"><value>Midnight Reels · Blackjack Casino</value></data>
+  <data name="Phase2.SlotMachine.002" xml:space="preserve"><value>CASINO / SPIELAUTOMATEN</value></data>
+  <data name="Phase2.SlotMachine.003" xml:space="preserve"><value>MIDNIGHT REELS</value></data>
+  <data name="Phase2.SlotMachine.004" xml:space="preserve"><value>← Casino-Lobby  [Esc]</value></data>
+  <data name="Phase2.SlotMachine.005" xml:space="preserve"><value>DREI WALZEN · EINE GEWINNLINIE · SPIELGELD</value></data>
+  <data name="Phase2.SlotMachine.006" xml:space="preserve"><value>Deine kleine Auszeit.</value></data>
+  <data name="Phase2.SlotMachine.007" xml:space="preserve"><value>Wähle einen Einsatz und drehe die Walzen. Auch die Leertaste funktioniert.</value></data>
+  <data name="Phase2.SlotMachine.008" xml:space="preserve"><value>GEMEINSAMES GUTHABEN</value></data>
+  <data name="Phase2.SlotMachine.009" xml:space="preserve"><value>EINSATZ PRO DREHUNG</value></data>
+  <data name="Phase2.SlotMachine.010" xml:space="preserve"><value>DREHEN  [LEERTASTE]</value></data>
+  <data name="Phase2.SlotMachine.011" xml:space="preserve"><value>GEWINNTABELLE</value></data>
+  <data name="Phase2.SlotMachine.012" xml:space="preserve"><value>Drei gleiche Symbole auf der mittleren Linie</value></data>
+  <data name="Phase2.SlotMachine.013" xml:space="preserve"><value>Zwei Kirschen zahlen das 1-Fache deines Einsatzes.</value></data>
+  <data name="Phase2.SlotMachine.014" xml:space="preserve"><value>Gewinne enthalten den Einsatz. Nur die mittlere Linie zählt; alle anderen Kombinationen zahlen 0 $.</value></data>
+  <data name="Phase2.SlotMachine.015" xml:space="preserve"><value>Unabhängige, gewichtete Walzen · theoretische Auszahlungsquote 97,05 %.</value></data>
+  <data name="Phase2.SlotMachine.016" xml:space="preserve"><value>Pro Drehung: 20 XP + 15 Saison-XP.
+Bei Gewinn: +5 XP und +5 Saison-XP.
+Die Einsatzhöhe verändert die XP nicht.</value></data>
+  <data name="Phase2.SlotMachine.017" xml:space="preserve"><value>Automatengeräusche</value></data>
+  <data name="Phase2.SlotMachine.018" xml:space="preserve"><value>Walzen- und Lichtanimationen</value></data>
+  <data name="Phase2.SlotMachine.019" xml:space="preserve"><value>Nur kostenloses Offline-Spielgeld.</value></data>
+  <data name="Phase2.Manor.001" xml:space="preserve"><value>Midnight Manor · Blackjack Casino</value></data>
+  <data name="Phase2.Manor.002" xml:space="preserve"><value>BLACKJACK CASINO  /  EINE ANDERE ART VON NACHT</value></data>
+  <data name="Phase2.Manor.003" xml:space="preserve"><value>MIDNIGHT MANOR</value></data>
+  <data name="Phase2.Manor.004" xml:space="preserve"><value>GEMEINSAMES SPIELGELDGUTHABEN</value></data>
+  <data name="Phase2.Manor.006" xml:space="preserve"><value>DAS HAUS ERINNERT SICH</value></data>
+  <data name="Phase2.Manor.007" xml:space="preserve"><value>20 FESTE GEWINNLINIEN · FÜNF WALZEN · EINE SPUKNACHT</value></data>
+  <data name="Phase2.Manor.008" xml:space="preserve"><value>Eine stille Einladung.</value></data>
+  <data name="Phase2.Manor.009" xml:space="preserve"><value>Drei Monde: Freispielrunden. Zwei Türen: Betritt das Anwesen.</value></data>
+  <data name="Phase2.Manor.010" xml:space="preserve"><value>GESAMTEINSATZ</value></data>
+  <data name="Phase2.Manor.011" xml:space="preserve"><value>TEMPO</value></data>
+  <data name="Phase2.Manor.012" xml:space="preserve"><value>Normal</value></data>
+  <data name="Phase2.Manor.013" xml:space="preserve"><value>Schnell</value></data>
+  <data name="Phase2.Manor.014" xml:space="preserve"><value>Turbo</value></data>
+  <data name="Phase2.Manor.016" xml:space="preserve"><value>Unbegrenzt</value></data>
+  <data name="Phase2.Manor.017" xml:space="preserve"><value>AUTO STARTEN</value></data>
+  <data name="Phase2.Manor.018" xml:space="preserve"><value>STOPP</value></data>
+  <data name="Phase2.Manor.019" xml:space="preserve"><value>Gewinne</value></data>
+  <data name="Phase2.Manor.020" xml:space="preserve"><value>Einstellungen</value></data>
+  <data name="Phase2.Manor.021" xml:space="preserve"><value>Statistiken</value></data>
+  <data name="Phase2.Manor.022" xml:space="preserve"><value>3 / 4 / 5 GLEICHE SYMBOLE VON LINKS</value></data>
+  <data name="Phase2.Manor.023" xml:space="preserve"><value>Linienpunkte × Gesamteinsatz ÷ 20</value></data>
+  <data name="Phase2.Manor.024" xml:space="preserve"><value>Wild ersetzt reguläre Symbole. Pro Linie zählt nur der höchste Gewinn. Gewinne enthalten den Einsatz.
+
+3 / 4 / 5 Monde: 8 / 12 / 20 Freispiele mit doppelten Liniengewinnen. Während der Freispiele werden keine weiteren Features ausgelöst.
+
+2 Türen: Besuch im Anwesen, Ausgang 25× (alle Raumgewinne auf ein Zehntel reduziert). 3 / 4 / 5 Türen: volle Gewinne, Ausgang 250× / 500× / 1000×.
+Eintritt ins Anwesen: ungefähr einmal in 50 bezahlten Drehungen; unabhängige Zufallsziehungen, keine Garantie.
+
+Theoretische Auszahlungsquote bei Referenzstrategie: 95,0228 %. Manuelle Entscheidungen können Risiko und Ertrag verändern.</value></data>
+  <data name="Phase2.Manor.025" xml:space="preserve"><value>DEINE NACHT, DEIN TEMPO</value></data>
+  <data name="Phase2.Manor.026" xml:space="preserve"><value>Escape the Manor selbst spielen</value></data>
+  <data name="Phase2.Manor.027" xml:space="preserve"><value>Auto nutzt dieselbe Karte und dieselben Geisterregeln und folgt der Empfehlung. Keine Überspringgebühr und keine gekürzten Gewinne. Eigene Wege verändern Risiko und Ertrag.</value></data>
+  <data name="Phase2.Manor.028" xml:space="preserve"><value>Auto bei großem Gewinn stoppen (ab 25×)</value></data>
+  <data name="Phase2.Manor.029" xml:space="preserve"><value>Auto nach Anwesen-Bonus stoppen</value></data>
+  <data name="Phase2.Manor.030" xml:space="preserve"><value>Mindestguthaben für Auto ($)</value></data>
+  <data name="Phase2.Manor.031" xml:space="preserve"><value>Soundeffekte</value></data>
+  <data name="Phase2.Manor.032" xml:space="preserve"><value>Anwesen-Atmosphäre / Musik</value></data>
+  <data name="Phase2.Manor.033" xml:space="preserve"><value>Animationen</value></data>
+  <data name="Phase2.Manor.034" xml:space="preserve"><value>Die Lautstärke übernimmt die gespeicherte Casino-Einstellung. Beim Schließen bleiben aktive Features erhalten. Auto startet nach dem nächsten Öffnen niemals selbstständig.
+
+Anwesenregeln: Der Geist folgt den kürzesten Wegen, auch durch verschlossene Türen. Zwei Züge lang bewegt er sich langsam, danach einen Raum, gelegentlich mit kurzen Ausbrüchen; ab Spukstufe 6 zieht er zwei Räume. Jede Bewegung auf deiner Route lässt Zeit verstreichen. Die Kerze deckt auf, das Amulett wehrt einen Fangversuch ab und Kontrollpunkte sichern den aktuellen Multiplikator. Sobald du das Tor erreichst, endet die Verfolgung.</value></data>
+  <data name="Phase2.Manor.035" xml:space="preserve"><value>MIDNIGHT MANOR · STATISTIK</value></data>
+  <data name="Phase2.Manor.036" xml:space="preserve"><value>ESCAPE THE MANOR</value></data>
+  <data name="Phase2.Manor.037" xml:space="preserve"><value>AKTUELL / KONTROLLPUNKT</value></data>
+  <data name="Phase2.Manor.038" xml:space="preserve"><value>SPUK / 8</value></data>
+  <data name="Phase2.Manor.039" xml:space="preserve"><value>EMPFEHLUNG FOLGEN  [R]</value></data>
+  <data name="Phase2.Manor.040" xml:space="preserve"><value>KERZE  [C]</value></data>
+  <data name="Phase2.Manor.041" xml:space="preserve"><value>ANWESEN VERLASSEN  [L]</value></data>
+  <data name="Phase2.Manor.042" xml:space="preserve"><value>Nur Spielgeld · Einstellungen und offene Features werden automatisch gespeichert.</value></data>
+  <data name="Phase2.NeonVault.001" xml:space="preserve"><value>Neon Vault</value></data>
+  <data name="Phase2.NeonVault.002" xml:space="preserve"><value>←  LOBBY</value></data>
+  <data name="Phase2.NeonVault.003" xml:space="preserve"><value>NEON VAULT</value></data>
+  <data name="Phase2.NeonVault.004" xml:space="preserve"><value>BRICH DAS SYSTEM  ·  KNACKE DEN TRESOR</value></data>
+  <data name="Phase2.NeonVault.005" xml:space="preserve"><value>ZUGANGSSTUFE I</value></data>
+  <data name="Phase2.NeonVault.006" xml:space="preserve"><value>MINI</value></data>
+  <data name="Phase2.NeonVault.007" xml:space="preserve"><value>ZUGANGSSTUFE II</value></data>
+  <data name="Phase2.NeonVault.008" xml:space="preserve"><value>KLEIN</value></data>
+  <data name="Phase2.NeonVault.009" xml:space="preserve"><value>ZUGANGSSTUFE III</value></data>
+  <data name="Phase2.NeonVault.010" xml:space="preserve"><value>GROSS</value></data>
+  <data name="Phase2.NeonVault.011" xml:space="preserve"><value>ZUGANGSSTUFE IV</value></data>
+  <data name="Phase2.NeonVault.012" xml:space="preserve"><value>HAUPTTRESOR</value></data>
+  <data name="Phase2.NeonVault.013" xml:space="preserve"><value>SYSTEMSTATUS</value></data>
+  <data name="Phase2.NeonVault.014" xml:space="preserve"><value>TRESOR ONLINE</value></data>
+  <data name="Phase2.NeonVault.015" xml:space="preserve"><value>1.024 GEWINNWEGE AKTIV</value></data>
+  <data name="Phase2.NeonVault.016" xml:space="preserve"><value>FEATURE-MATRIX</value></data>
+  <data name="Phase2.NeonVault.017" xml:space="preserve"><value>WILD-AUSWEITUNG</value></data>
+  <data name="Phase2.NeonVault.018" xml:space="preserve"><value>BLACKOUT / ÜBERLASTUNG</value></data>
+  <data name="Phase2.NeonVault.019" xml:space="preserve"><value>TRESORBRUCH-FREISPIELE</value></data>
+  <data name="Phase2.NeonVault.020" xml:space="preserve"><value>JACKPOT-ZUGANGSSCHLÜSSEL</value></data>
+  <data name="Phase2.NeonVault.021" xml:space="preserve"><value>EINSATZKLASSE</value></data>
+  <data name="Phase2.NeonVault.022" xml:space="preserve"><value>STANDARDZUGANG</value></data>
+  <data name="Phase2.NeonVault.023" xml:space="preserve"><value>High-Roller-Darstellung ab 10.000 $. Tresorklasse ab 100.000 $.</value></data>
+  <data name="Phase2.NeonVault.024" xml:space="preserve"><value>TRESORENERGIE</value></data>
+  <data name="Phase2.NeonVault.025" xml:space="preserve"><value>Während der Freispiele aufladen, um die SICHERHEITSUMGEHUNG zu aktivieren.</value></data>
+  <data name="Phase2.NeonVault.026" xml:space="preserve"><value>TRESORBRUCH</value></data>
+  <data name="Phase2.NeonVault.027" xml:space="preserve"><value>KEINE FREISPIELE</value></data>
+  <data name="Phase2.NeonVault.028" xml:space="preserve"><value>Wilds auf den Walzen 2–4 breiten sich im Bonus automatisch aus.</value></data>
+  <data name="Phase2.NeonVault.029" xml:space="preserve"><value>LETZTER GEWINN</value></data>
+  <data name="Phase2.NeonVault.030" xml:space="preserve"><value>Zugang bereit.</value></data>
+  <data name="Phase2.NeonVault.031" xml:space="preserve"><value>EINSATZ</value></data>
+  <data name="Phase2.NeonVault.032" xml:space="preserve"><value>MAX</value></data>
+  <data name="Phase2.NeonVault.033" xml:space="preserve"><value>1.024 GEWINNWEGE  ·  FÜNF WALZEN  ·  VIER REIHEN</value></data>
+  <data name="Phase2.NeonVault.034" xml:space="preserve"><value>System bereit. Wähle deinen Einsatz.</value></data>
+  <data name="Phase2.NeonVault.035" xml:space="preserve"><value>Ausweitende Wilds · Blackout · Freispiele · Tresor-Jackpots</value></data>
+  <data name="Phase2.NeonVault.036" xml:space="preserve"><value>SOUND</value></data>
+  <data name="Phase2.NeonVault.037" xml:space="preserve"><value>ANIMATIONEN</value></data>
+  <data name="Phase2.NeonVault.039" xml:space="preserve"><value>SYSTEMEREIGNIS</value></data>
+  <data name="Phase2.NeonVault.040" xml:space="preserve"><value>BLACKOUT</value></data>
+  <data name="Phase2.NeonVault.041" xml:space="preserve"><value>SICHERHEITSGITTER OFFLINE</value></data>
+  <data name="Phase2.NeonVault.042" xml:space="preserve"><value>GROSSGEWINN</value></data>
+  <data name="Phase2.NineLives.001" xml:space="preserve"><value>Nine Lives</value></data>
+  <data name="Phase2.NineLives.002" xml:space="preserve"><value>←  CASINO</value></data>
+  <data name="Phase2.NineLives.003" xml:space="preserve"><value>Zurück zum Casino (Esc)</value></data>
+  <data name="Phase2.NineLives.004" xml:space="preserve"><value>NINE LIVES</value></data>
+  <data name="Phase2.NineLives.005" xml:space="preserve"><value>HOHE VOLATILITÄT · 3×3 · FÜNF LINIEN</value></data>
+  <data name="Phase2.NineLives.006" xml:space="preserve"><value>EINSTELLEN</value></data>
+  <data name="Phase2.NineLives.007" xml:space="preserve"><value>Einstellungen für Nine Lives</value></data>
+  <data name="Phase2.NineLives.008" xml:space="preserve"><value>DAS SPIEL</value></data>
+  <data name="Phase2.NineLives.009" xml:space="preserve"><value>Eine gefährliche Katze. Fünf Linien. Keine kleinen Siege.</value></data>
+  <data name="Phase2.NineLives.010" xml:space="preserve"><value>SPRUNG-WILD</value></data>
+  <data name="Phase2.NineLives.011" xml:space="preserve"><value>Die schwarze Katze kann nach dem Walzenstopp ein zweites Feld treffen.</value></data>
+  <data name="Phase2.NineLives.012" xml:space="preserve"><value>Drei Bonussymbole erwecken neun Freispiele.</value></data>
+  <data name="Phase2.NineLives.013" xml:space="preserve"><value>VOLLES RASTER</value></data>
+  <data name="Phase2.NineLives.014" xml:space="preserve"><value>Ein vollständiges 3×3-Raster mit gleichen Symbolen zahlt 5.000×.</value></data>
+  <data name="Phase2.NineLives.015" xml:space="preserve"><value>GEWINNE</value></data>
+  <data name="Phase2.NineLives.016" xml:space="preserve"><value>Gewinnsymbole leuchten, während die gesamte Gewinnlinie über das Raster gleitet.</value></data>
+  <data name="Phase2.NineLives.017" xml:space="preserve"><value>TISCHINFO</value></data>
+  <data name="Phase2.NineLives.018" xml:space="preserve"><value>GEWINNLINIEN</value></data>
+  <data name="Phase2.NineLives.019" xml:space="preserve"><value>FREISPIELE</value></data>
+  <data name="Phase2.NineLives.020" xml:space="preserve"><value>VOLATILITÄT</value></data>
+  <data name="Phase2.NineLives.021" xml:space="preserve"><value>HOCH</value></data>
+  <data name="Phase2.NineLives.022" xml:space="preserve"><value>HÖCHSTGEWINN</value></data>
+  <data name="Phase2.NineLives.023" xml:space="preserve"><value>MITTERNACHTSGLÜCK</value></data>
+  <data name="Phase2.NineLives.024" xml:space="preserve"><value>✦  LEGENDÄRE TREFFER</value></data>
+  <data name="Phase2.NineLives.025" xml:space="preserve"><value>Gewinnsymbole leuchten auf der Walze und zeichnen ihre Gewinnlinie nach.</value></data>
+  <data name="Phase2.NineLives.026" xml:space="preserve"><value>Fünf Linien. Drei Walzen. Eine gefährliche Katze.</value></data>
+  <data name="Phase2.NineLives.027" xml:space="preserve"><value>GEWINNTABELLE</value></data>
+  <data name="Phase2.NineLives.028" xml:space="preserve"><value>Gewinntabelle</value></data>
+  <data name="Phase2.NineLives.029" xml:space="preserve"><value>Einsatz verringern</value></data>
+  <data name="Phase2.NineLives.031" xml:space="preserve"><value>Einsatz erhöhen</value></data>
+  <data name="Phase2.NineLives.032" xml:space="preserve"><value>AUTO ×20</value></data>
+  <data name="Phase2.NineLives.033" xml:space="preserve"><value>Automatisch drehen</value></data>
+  <data name="Phase2.NineLives.034" xml:space="preserve"><value>DREHEN</value></data>
+  <data name="Phase2.NineLives.035" xml:space="preserve"><value>Drehen</value></data>
+  <data name="Phase2.NineLives.036" xml:space="preserve"><value>MAX. EINSATZ</value></data>
+  <data name="Phase2.NineLives.037" xml:space="preserve"><value>Höchstmöglicher Einsatz</value></data>
+  <data name="Phase2.NineLives.038" xml:space="preserve"><value>LETZTER GEWINN</value></data>
+  <data name="Phase2.NineLives.039" xml:space="preserve"><value>← CASINO</value></data>
+  <data name="Phase2.NineLives.040" xml:space="preserve"><value>Zurück zum Casino</value></data>
+  <data name="Phase2.NineLives.041" xml:space="preserve"><value>EINSTELLUNGEN</value></data>
+  <data name="Phase2.NineLives.042" xml:space="preserve"><value>Ton</value></data>
+  <data name="Phase2.NineLives.044" xml:space="preserve"><value>NINE LIVES · GEWINNTABELLE</value></data>
+  <data name="Phase2.NineLives.045" xml:space="preserve"><value>Fünf Gewinnlinien · hohe Volatilität · Höchstgewinn 5.000×</value></data>
+  <data name="Phase2.NineLives.046" xml:space="preserve"><value>GRUNDSPIEL</value></data>
+  <data name="Phase2.NineLives.047" xml:space="preserve"><value>Drei waagerechte Reihen und beide Diagonalen zahlen von links nach rechts über das ganze 3×3-Raster. Wild ersetzt reguläre Symbole.</value></data>
+  <data name="Phase2.NineLives.048" xml:space="preserve"><value>Ein gelandetes Wild kann nach dem Walzenstopp auf ein zweites Feld springen und in letzter Sekunde eine Gewinnlinie bilden.</value></data>
+  <data name="Phase2.NineLives.049" xml:space="preserve"><value>NINE-LIVES-BONUS</value></data>
+  <data name="Phase2.NineLives.050" xml:space="preserve"><value>Drei Nine-Lives-Symbole geben neun Freispiele. Sie verwenden den auslösenden Einsatz und kosten kein zusätzliches Guthaben.</value></data>
+  <data name="Phase2.NineLives.051" xml:space="preserve"><value>VOLLES-RASTER-FIEBER</value></data>
+  <data name="Phase2.NineLives.052" xml:space="preserve"><value>Fülle das gesamte 3×3-Raster mit einem einzigen regulären Symbol für den seltenen Höchstgewinn von 5.000×.</value></data>
+  <data name="Phase2.NineLives.053" xml:space="preserve"><value>ZURÜCK ZUM SPIEL</value></data>
+</root>
