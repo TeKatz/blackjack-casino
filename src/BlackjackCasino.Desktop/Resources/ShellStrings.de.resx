@@ -107,4 +107,20 @@
   <data name="Shell.Table.Dialog.Cancel" xml:space="preserve"><value>Abbrechen</value></data>
   <data name="Shell.Table.Dialog.Apply" xml:space="preserve"><value>Eigene Regeln verwenden</value></data>
   <data name="Shell.Table.Dialog.BetError" xml:space="preserve"><value>Mindest- und Höchsteinsatz müssen gültige Zahlen sein (z. B. 5 oder 2500).</value></data>
+  <data name="Shell.Profile.NameSaved" xml:space="preserve"><value>Profilname gespeichert.</value></data>
+  <data name="Shell.Profile.NameRequired" xml:space="preserve"><value>Gib einen Profilnamen ein.</value></data>
+  <data name="Shell.Profile.NameTooLong" xml:space="preserve"><value>Verwende höchstens 24 Zeichen.</value></data>
+  <data name="Shell.Table.CustomDescription" xml:space="preserve"><value>Deine gespeicherten Tischregeln. Die erweiterte Konfiguration betrifft nur dieses Profil.</value></data>
+  <data name="Shell.Table.Late" xml:space="preserve"><value>Spät</value></data>
+  <data name="Shell.Table.Off" xml:space="preserve"><value>Aus</value></data>
+  <data name="Shell.Table.Pays32" xml:space="preserve"><value>BLACKJACK ZAHLT 3 ZU 2</value></data>
+  <data name="Shell.Table.Pays65" xml:space="preserve"><value>BLACKJACK ZAHLT 6 ZU 5</value></data>
+  <data name="Shell.Table.DealerS17" xml:space="preserve"><value>DEALER BLEIBT BEI JEDER 17 STEHEN</value></data>
+  <data name="Shell.Table.DealerH17" xml:space="preserve"><value>DEALER ZIEHT BEI WEICHEN 17</value></data>
+  <data name="Shell.Table.Dialog.ErrorDecks" xml:space="preserve"><value>Die Anzahl der Decks muss zwischen 1 und 8 liegen.</value></data>
+  <data name="Shell.Table.Dialog.ErrorSplit" xml:space="preserve"><value>Die maximale Anzahl geteilter Hände muss zwischen 1 und 8 liegen.</value></data>
+  <data name="Shell.Table.Dialog.ErrorPayout" xml:space="preserve"><value>Die Blackjack-Auszahlung muss größer als null sein.</value></data>
+  <data name="Shell.Table.Dialog.ErrorPenetration" xml:space="preserve"><value>Der Durchmischungswert muss größer als 0 und kleiner als 1 sein.</value></data>
+  <data name="Shell.Table.Dialog.ErrorMinBet" xml:space="preserve"><value>Der Mindesteinsatz muss größer als null sein.</value></data>
+  <data name="Shell.Table.Dialog.ErrorMaxBet" xml:space="preserve"><value>Der Höchsteinsatz muss mindestens so hoch wie der Mindesteinsatz sein.</value></data>
 </root>

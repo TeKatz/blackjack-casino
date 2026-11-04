@@ -107,4 +107,20 @@
   <data name="Shell.Table.Dialog.Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Shell.Table.Dialog.Apply" xml:space="preserve"><value>Use custom rules</value></data>
   <data name="Shell.Table.Dialog.BetError" xml:space="preserve"><value>Minimum and maximum bet must be valid numbers (for example 5 or 2500).</value></data>
+  <data name="Shell.Profile.NameSaved" xml:space="preserve"><value>Profile name saved.</value></data>
+  <data name="Shell.Profile.NameRequired" xml:space="preserve"><value>Enter a profile name.</value></data>
+  <data name="Shell.Profile.NameTooLong" xml:space="preserve"><value>Use at most 24 characters.</value></data>
+  <data name="Shell.Table.CustomDescription" xml:space="preserve"><value>Your saved custom rules. Advanced setup changes only this profile.</value></data>
+  <data name="Shell.Table.Late" xml:space="preserve"><value>Late</value></data>
+  <data name="Shell.Table.Off" xml:space="preserve"><value>Off</value></data>
+  <data name="Shell.Table.Pays32" xml:space="preserve"><value>BLACKJACK PAYS 3 TO 2</value></data>
+  <data name="Shell.Table.Pays65" xml:space="preserve"><value>BLACKJACK PAYS 6 TO 5</value></data>
+  <data name="Shell.Table.DealerS17" xml:space="preserve"><value>DEALER STANDS ON ALL 17</value></data>
+  <data name="Shell.Table.DealerH17" xml:space="preserve"><value>DEALER HITS SOFT 17</value></data>
+  <data name="Shell.Table.Dialog.ErrorDecks" xml:space="preserve"><value>DeckCount must be between 1 and 8.</value></data>
+  <data name="Shell.Table.Dialog.ErrorSplit" xml:space="preserve"><value>MaxSplitHands must be between 1 and 8.</value></data>
+  <data name="Shell.Table.Dialog.ErrorPayout" xml:space="preserve"><value>BlackjackPayout must be positive.</value></data>
+  <data name="Shell.Table.Dialog.ErrorPenetration" xml:space="preserve"><value>Penetration must be between 0 and 1 (exclusive).</value></data>
+  <data name="Shell.Table.Dialog.ErrorMinBet" xml:space="preserve"><value>MinimumBet must be positive.</value></data>
+  <data name="Shell.Table.Dialog.ErrorMaxBet" xml:space="preserve"><value>MaximumBet must be greater than or equal to MinimumBet.</value></data>
 </root>
