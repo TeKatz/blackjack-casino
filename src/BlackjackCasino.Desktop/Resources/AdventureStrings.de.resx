@@ -1214,4 +1214,123 @@ Im Verlauf deiner Ermittlungen füllt sich die Tafel mit Personen, Orten, Beweis
   <data name="Adventure.dead-mans-hand.Scene.ending-open-file.Title" xml:space="preserve"><value>Die Akte bleibt offen</value></data>
   <data name="Adventure.dead-mans-hand.Scene.ending-open-file.Body" xml:space="preserve"><value>Kein bequemer Verdächtiger wird vorgeschoben, um die Lücken zu verdecken. Der fehlende Beweis bleibt fehlend, und deine Notizen sagen es deutlich. Manchmal besteht die Pflicht eines Detektivs darin, eine ehrliche Frage stehen zu lassen, wo ein mächtiger Mann eine angenehme Antwort haben wollte.</value></data>
   <data name="Adventure.dead-mans-hand.Scene.ending-open-file.Location" xml:space="preserve"><value>Calder City · Nach Sonnenaufgang</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.leave-room" xml:space="preserve"><value>Sichere die Beweise und entscheide, welcher Spur du zuerst folgst.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.return-to-room" xml:space="preserve"><value>Kehre in das Zimmer zurück. Vielleicht gibt es noch etwas zu finden.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.continue-investigation" xml:space="preserve"><value>Öffne dein Notizbuch und wähle die nächste Adresse.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.visit-evelyn" xml:space="preserve"><value>Besuche Evelyn erneut und frag, was Arthur mit seinen Casinoschulden kaufte.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.visit-ivory" xml:space="preserve"><value>Geh im Monarch Casino nach oben.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.visit-exchange" xml:space="preserve"><value>Besuche die Telefonvermittlung, bevor die Mitarbeiterin ihren Dienst beendet.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.visit-cabinet" xml:space="preserve"><value>Benutz den Zweitschlüssel am Wartungsschrank in Zimmer 306.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.visit-supplies" xml:space="preserve"><value>Kauf nützliche Werkzeuge in der Nachtapotheke.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.follow-freight" xml:space="preserve"><value>Folge dem nächtlichen Lieferwagen des Mirabelle zu den Lagerhäusern am Fluss.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.evelyn-trust" xml:space="preserve"><value>Versprich, Arthur zur Rede zu stellen, statt ihm Unschuld zu versprechen.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.evelyn-distance" xml:space="preserve"><value>Sag ihr, die Beweise würden über sein weiteres Schicksal entscheiden.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.cabinet-return" xml:space="preserve"><value>Nimm die Klammer und den Anrufzettel-Durchschlag zur nächsten Spur mit.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.buy-picks" xml:space="preserve"><value>Kauf das schmale Dietrichset für sechs Münzen.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.buy-dressing" xml:space="preserve"><value>Kauf einen versiegelten Wundverband für vier Münzen.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.leave-chemist" xml:space="preserve"><value>Steck deine Geldbörse weg und kehre zu den Ermittlungen zurück.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.patch-call" xml:space="preserve"><value>Leg den Anrufzettel und die Überbrückungsklammer vor, damit Nora die Verbindung nachvollziehen kann.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.ask-nora" xml:space="preserve"><value>Bitte Nora, das private Regal zu durchsuchen und dich die Aufzeichnung anhören zu lassen.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.leave-exchange" xml:space="preserve"><value>Lass die Vermittlerin aus der Sache heraus und folge einer anderen Spur.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.exchange-return" xml:space="preserve"><value>Schütze Noras Namen und nimm die Aufnahme.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.exchange-warning-return" xml:space="preserve"><value>Geh weiter. Der Fluss ist dein nächster Anhaltspunkt.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.show-pass" xml:space="preserve"><value>Zeig Evelyns Einladung und fahr mit dem Aufzug nach oben.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.talk-upstairs" xml:space="preserve"><value>Gib dich als den Gast aus, den der Liftboy erwartet.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.ivory-retreat" xml:space="preserve"><value>Erzwinge den Zugang nicht. Kehr auf die Straße zurück.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.service-to-floor" xml:space="preserve"><value>Betritt den Saal, als wärst du längst eingeladen.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.ask-moretti" xml:space="preserve"><value>Frag Moretti nach Vanes letzten Schulden.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.ask-lena" xml:space="preserve"><value>Warte bis zum Ende von Lenas Auftritt und geh zum Klavier.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.watch-cashier" xml:space="preserve"><value>Verfolge die Frachtbelege des Kassierers statt der Karten.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.leave-ivory" xml:space="preserve"><value>Verlass den Elfenbeinsaal im vorderen Aufzug mit deinem neuen Wissen.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.show-cufflink" xml:space="preserve"><value>Zeig ihm den Adler unter dem Scharnier des Manschettenknopfs.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.read-moretti" xml:space="preserve"><value>Lass ihn erklären, weshalb ein Polizeipräsident einen Casino-Lieferwagen braucht.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.moretti-refuse" xml:space="preserve"><value>Weigere dich, die Auftraggeberin zu benennen, und verlass seine Loge.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.moretti-back" xml:space="preserve"><value>Notiere die Adresse, ohne ihm etwas zu versprechen.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.moretti-price-back" xml:space="preserve"><value>Nimm den Hinweis mit und vergiss nicht, dass er absichtlich gestreut wurde.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.show-photo" xml:space="preserve"><value>Zeig Lena das zerrissene Foto und frag nach ihrer Version, bevor du jemanden beschuldigst.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.reassure-lena" xml:space="preserve"><value>Biete ihr einen Ausweg aus dem Saal, ohne zuerst eine Aussage zu verlangen.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.lena-trust-back" xml:space="preserve"><value>Bitte sie, den Eingang am Fluss zu benutzen, und lass ihren Namen aus deinen Notizen.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.lena-leaves-back" xml:space="preserve"><value>Gib ihr eine unauffällige Fluchtroute, auch wenn sie sie noch nicht nutzt.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.lift-carbon" xml:space="preserve"><value>Zieh den Frachtdurchschlag heraus, während er den Kassenbestand zählt.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.audit-carbon" xml:space="preserve"><value>Frag, weshalb städtische Fracht privaten Casinokonten belastet wird.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.carbon-back" xml:space="preserve"><value>Halte den Durchschlag trocken und kehre in den Saal zurück.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.cashier-warning-back" xml:space="preserve"><value>Kehre in den Saal zurück, bevor man dich hinausbegleitet.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.dock-office" xml:space="preserve"><value>Durchsuche das Versandbüro des Lagerhauses.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.dock-photo" xml:space="preserve"><value>Besuche den Passbildfotografen und frag nach dem unbeschnittenen Bild.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.dock-rescue" xml:space="preserve"><value>Finde das Pumpenhaus und erreiche Vane vor dem morgendlichen Transport.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.dock-badge" xml:space="preserve"><value>Bring deine Erkenntnisse zu Hales Revier und zwing die Stadt, schriftlich zu antworten.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.pick-warehouse" xml:space="preserve"><value>Benutz das Dietrichset; opfere einen feinen Dietrich, um die versiegelte Falle zu öffnen.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.force-warehouse" xml:space="preserve"><value>Öffne die Falle, ohne das Papiersiegel zu beschädigen.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.leave-warehouse" xml:space="preserve"><value>Lass das Siegel unversehrt und versuch einen anderen Weg.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.warehouse-back" xml:space="preserve"><value>Nimm den aufbewahrten Durchschlag und kehre zum Fluss zurück.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.warehouse-seen-back" xml:space="preserve"><value>Merke dir das Ziel und lass das bewachte Büro hinter dir.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.buy-negative" xml:space="preserve"><value>Zahl drei Münzen für das Originalnegativ und einen datierten Abzug.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.credit-negative" xml:space="preserve"><value>Bitte Bell, die Kosten anzuschreiben und den Abzug mit einem Datum zu versehen.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.photo-leave" xml:space="preserve"><value>Lass das Negativ liegen und kehre zu den Docks zurück.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.negative-back" xml:space="preserve"><value>Bewahre das Negativ getrennt von dem zerrissenen Abzug auf.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.photo-refused-back" xml:space="preserve"><value>Kehre zum Fluss zurück, bevor die Spur kalt wird.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.pump-quiet" xml:space="preserve"><value>Bring sie über den Wartungsvorsprung hinaus, während die Pumpe anspringt.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.pump-diversion" xml:space="preserve"><value>Zerschlag das Alarmglas auf dem Hof und lock die Wachen von der Servicetür fort.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.pursuit-treat" xml:space="preserve"><value>Hol ihn aus dem Wasser und sieh, was du noch tun kannst.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.dress-vane" xml:space="preserve"><value>Benutz den versiegelten Wundverband und halte den Druck aufrecht, bis Hilfe kommt.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.treat-vane" xml:space="preserve"><value>Improvisiere einen Druckverband und stabilisiere ihn für den Transport.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.summon-ambulance" xml:space="preserve"><value>Ruf anonym einen Krankenwagen und bring Lena fort, bevor die Wachen zurückkehren.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.safehouse-statement" xml:space="preserve"><value>Nimm Lenas Aussage auf, organisiere Schutz und kehre zu den übrigen Spuren am Hafen zurück.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.last-witness-back" xml:space="preserve"><value>Bewahre Lenas eidesstattliche Erklärung auf und setz die Ermittlungen fort.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.hale-private" xml:space="preserve"><value>Bitte Hale um ein Gespräch außer Hörweite des Schalterbeamten.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.archive-route" xml:space="preserve"><value>Such das Verwahrregister und Vanes unterschriebenes Buch.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.rook-route" xml:space="preserve"><value>Verlange ein Gespräch mit Polizeipräsident Rook.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.back-to-docks" xml:space="preserve"><value>Kehre zum Fluss zurück, um die Zeugin oder weitere Beweise zu finden.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.precinct-to-editor" xml:space="preserve"><value>Bring den Fall zur Nachtre­dakteurin der Morgenzeitung.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.show-negative" xml:space="preserve"><value>Leg das unbeschnittene Negativ auf seinen Tisch und frag, wen er beschützte.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.show-affidavit" xml:space="preserve"><value>Lass Hale Lenas unterschriebene Aussage in ihren eigenen Worten lesen.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.press-hale" xml:space="preserve"><value>Verlang eine Erklärung für die fehlenden siebzehn Minuten.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.hale-confession-back" xml:space="preserve"><value>Nimm die unterschriebene Aussage an, ohne Straffreiheit zu versprechen.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.hale-silence-back" xml:space="preserve"><value>Nimm die Archivnummer mit und verzichte vorerst auf eine Anklage.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.archive-with-witness" xml:space="preserve"><value>Reich Hales unterschriebene Anordnung zur Beweissicherung ein.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.archive-with-carbon" xml:space="preserve"><value>Nutze den Frachtdurchschlag, um der Stornierung schriftlich zu widersprechen.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.archive-with-recording" xml:space="preserve"><value>Lass die Aufnahme der Vermittlung als Beweis registrieren, bevor das Stück freigegeben wird.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.archive-with-picks" xml:space="preserve"><value>Benutz die Dietriche an der Servicetür; die Werkzeuge bleiben im beschädigten Schloss zurück.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.archive-procedure" xml:space="preserve"><value>Fechte die nicht unterschriebene Stornierung nach den Verwahrvorschriften an.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.archive-back" xml:space="preserve"><value>Merk dir die Archivnummer und such ein stärkeres Druckmittel.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.signed-book-back" xml:space="preserve"><value>Behalt das Original und kehre ins Revier zurück.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.archive-refusal-back" xml:space="preserve"><value>Kehre ins Revier zurück und überlege, wie du mit dem verbliebenen Wissen vorgehst.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.rook-refuse" xml:space="preserve"><value>Weise den vorbereiteten Bericht zurück und halte sein Angebot in deinen Notizen fest.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.rook-play" xml:space="preserve"><value>Lass ihn glauben, du würdest den Umschlag erwägen. Hör dir seine Bedingungen an.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.rook-consider" xml:space="preserve"><value>Lass das Angebot offen, ohne bisher Beweise herauszugeben.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.rook-walk" xml:space="preserve"><value>Schließ den Umschlag und lass ihn auf dem Schreibtisch liegen.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.copy-dossier" xml:space="preserve"><value>Fertige mit dem unterschriebenen Hauptbuch eine geschützte Kopie für Ruths Anwalt an.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.guard-witness" xml:space="preserve"><value>Prüfe die sichere Adresse und organisiere eine geschützte Verlegung der Zeugin.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.one-last-lead" xml:space="preserve"><value>Geh vor deiner letzten Entscheidung noch einmal ins Revier oder zum Fluss zurück.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.meet-broker" xml:space="preserve"><value>Hör dir Morettis Angebot für das Originalhauptbuch an.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.finish-investigation" xml:space="preserve"><value>Schließ das Notizbuch. Entscheide, was die Stadt bei Tagesanbruch erfahren soll.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.copy-back" xml:space="preserve"><value>Überlass unabhängigen Stellen die Kopien.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.quiet-transfer" xml:space="preserve"><value>Bring die Zeugin durch die Dienstgasse, bevor der Beobachter dich sieht.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.watched-transfer" xml:space="preserve"><value>Mehrere Beobachter sind dir auf den Fersen. Schüttel den hartnäckigsten ab, bevor du die Zeugin verlegst.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.transfer-by-cab" xml:space="preserve"><value>Gib fünf Münzen für zwei Taxis auf getrennten Wegen aus.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.decoy-back" xml:space="preserve"><value>Bestätige, dass die Zeugin in der Klinik angekommen ist, bevor du zurückkehrst.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.secured-back" xml:space="preserve"><value>Kehre zum Tisch zurück und entscheide über die Beweise.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.trade-ledger" xml:space="preserve"><value>Gib das Original im Austausch gegen sichere Durchreise und Schutz ab.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.keep-ledger" xml:space="preserve"><value>Behalt das Buch und weise seinen Schutz zurück.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.publish-full" xml:space="preserve"><value>Veröffentliche das geprüfte Hauptbuch, die unterschriebenen Aussagen und die Namen der Verantwortlichen.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.publish-recording" xml:space="preserve"><value>Veröffentliche die geschützte Akte mit der Aufnahme aus der Vermittlung als unabhängigem Beweis.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.file-court" xml:space="preserve"><value>Übergib das Originalhauptbuch und die geschützte Zeugin an Staatsanwältin Ada Mercer.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.print-ledger" xml:space="preserve"><value>Druck das beglaubigte Hauptbuch, ohne die Zeugin zu einem öffentlichen Auftritt zu zwingen.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.take-bargain" xml:space="preserve"><value>Nimm Morettis stillen Vergleich und den erkauften Schutz an.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.take-ferry" xml:space="preserve"><value>Nutze die beiden Fährplätze, um Arthur mit Evelyn aus der Stadt zu bringen.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.blackmail-rook" xml:space="preserve"><value>Nutze das Original als Druckmittel für einen Platz in Rooks Stadt.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.burn-book" xml:space="preserve"><value>Vernichte das Originalhauptbuch und schließ den Fall zu Evelyns Bedingungen.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.name-hale" xml:space="preserve"><value>Reiche die eng gefasste Beschwerde gegen Hale ein und lass die Institution bestehen.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.keep-witness" xml:space="preserve"><value>Stell die Sicherheit der überlebenden Zeugin über einen Fall, den du noch nicht beweisen kannst.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.leave-open" xml:space="preserve"><value>Weise eine bequeme Anschuldigung zurück. Lass die Akte offen, bis sich der fehlende Beweis findet.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.press-end" xml:space="preserve"><value>Lass die erste Ausgabe in Druck gehen.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.court-end" xml:space="preserve"><value>Unterschreib das Beweisübergabeprotokoll und bleib zur ersten Anhörung.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.ledger-end" xml:space="preserve"><value>Veröffentliche nur das, was die Unterlagen tatsächlich belegen.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.bargain-end" xml:space="preserve"><value>Nimm den Schutz und die damit verbundene Schuld an.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.ferry-end" xml:space="preserve"><value>Sieh der Fähre nach und bewahre die Beweise in deiner eigenen Fallakte.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.blackmail-end" xml:space="preserve"><value>Nimm den Umschlag und setz dich auf den angebotenen Stuhl.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.ashes-end" xml:space="preserve"><value>Schließ das Kamingitter und sag Evelyn, der Fall sei beendet.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.fallguy-end" xml:space="preserve"><value>Lass die Beschwerde mit ihren unbeantworteten Lücken auf dem Tisch liegen.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.witness-end" xml:space="preserve"><value>Schütze die Zeugin und untersuche die offenen Fragen weiter.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.cold-end" xml:space="preserve"><value>Lass die Akte offen.</value></data>
 </root>
