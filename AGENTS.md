@@ -12,16 +12,17 @@ This file is the repository-level instruction for coding assistants and ChatGPT 
 ## Before any edit
 
 1. Inspect current repository branches, open PRs, active Development release pin, and the source files involved; never infer the freshest branch from its name.
-2. Identify concurrent work and choose a separate branch that does not overwrite it. Do not delete, squash, force-push, reset, merge or repoint active branches without an explicit instruction.
+2. Identify concurrent work and reuse the active Manor migration branch for related iterations. Do not delete, squash, force-push, reset, merge or repoint active branches without an explicit instruction.
 3. Define a bounded scope, acceptance criteria, rollback and the tests that should prove it works. Prefer small reversible changes and incremental PRs.
 4. Review architecture and feature-specific docs; update the README and documentation when they are stale.
 
 ## Current coordination status (2026-11-04)
 
 - The game director authorized consolidation of the validated cumulative work into `main`; the owner confirmed that the CI is green and old branches were cleaned up.
-- The Development publisher now follows `main` in both the push filter and guard. Do not repoint it to a temporary feature branch.
-- Historical casino-quality and shop branches were consolidated and cleaned by the owner. New modernization branches must remain isolated and use reviewable PRs.
+- The Development publisher follows **`feature/manor-modernization-phase-1`**, with the workflow push filter and job guard both pinned there. Future pushes to this branch publish Development after tests; no merge to `main` is required.
+- Historical casino-quality and shop branches were consolidated and cleaned by the owner. Continue related Manor work on this **one long-lived migration branch**, not one new branch per update.
 - **Midnight Manor modernization is underway** on `feature/manor-modernization-phase-1` with a read-only React/TypeScript/PixiJS/WebView2 preview and the old playable WPF Manor intact. Roulette is deferred. Do not claim the preview already supports wagering or replaces Manor.
+- A prior agent incorrectly merged Phase 1 via PR #35 when only a Development channel switch was intended; its content is being reversed on main without rewriting history. **Publishing to Development is never permission to merge into main. Do not merge, delete branches or switch channel sources without the user's explicit instruction.**
 - Refresh this dated note as branch ownership changes.
 
 ## Architecture and modernization rules

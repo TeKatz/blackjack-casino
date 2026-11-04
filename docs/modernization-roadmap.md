@@ -1,6 +1,6 @@
 # Modern casino frontend — staged migration roadmap
 
-**Implementation status (2026-11-04):** The game director authorized the pilot after the green main consolidation. Branch `feature/manor-modernization-phase-1` begins the migration with a **read-only, optional modern Manor preview**. The existing WPF Manor remains the only playable path. React/TypeScript/PixiJS/WebView2 are introduced for visual inspection, but no JavaScript action can place a bet, change money or resolve a feature.
+**Implementation status (2026-11-04):** The game director authorized the pilot and requested ongoing Development testing directly from the feature branch, without merging into main. Branch `feature/manor-modernization-phase-1` begins the migration with a **read-only, optional modern Manor preview**. The existing WPF Manor remains the only playable path. React/TypeScript/PixiJS/WebView2 are introduced for visual inspection, but no JavaScript action can place a bet, change money or resolve a feature.
 
 ## Why this direction
 
@@ -20,9 +20,9 @@ Do **not** rewrite existing engines merely to port the UI. Use adapters and expl
 
 - Refresh user-facing README, architecture and active branch documentation.
 - Add repo-level agent instructions, contribution/PR process, and checks preventing broken documentation and mismatched Development branch guards.
-- Make no gameplay or updater protocol changes; bring validated cumulative work into `main`, then move the Development branch source to `main`.
+- Keep the cumulative main baseline unchanged, and publish ongoing test builds from the dedicated Manor feature branch without merges.
 
-**Exit:** reviewed consolidation PR, CI green, actual Development manifest published from `main`, save compatibility preserved.
+**Exit:** successful CI and Development manifest published from the Manor feature branch, no unintended merge, saves preserved.
 
 ### M1 — Midnight Manor baseline audit and design (in progress)
 
@@ -52,7 +52,7 @@ Do **not** rewrite existing engines merely to port the UI. Use adapters and expl
 
 - Integrate lobby navigation, progression/challenge/album updates, German/English strings, no duplicate audio and crash-safe pending features.
 - Keep WPF Manor as rollback until the modern experience passes Windows end-to-end and actual updater tests.
-- Keep Development publishing from `main`; coordinate pilot landing and rollback without repinning temporary branches.
+- Keep Development on the **single long-lived Manor migration branch** until the user explicitly authorizes a merge or channel change.
 
 **Exit:** tester-approved Development build, documented fallback path and measured results.
 

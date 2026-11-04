@@ -2,7 +2,7 @@
 
 **Offline-first, single-player, play-money casino for Windows.** No real-money wagers, payments, advertising, account requirement or online service are needed to play. The repository's executable client is currently **WPF/.NET 10**. The first experimental step of the React/TypeScript/PixiJS modernization is on `feature/manor-modernization-phase-1`: an optional, read-only Midnight Manor renderer preview. The installed `main` application still uses WPF, and the playable Manor remains unchanged.
 
-> **Consolidation — 2026-11-04.** The cumulative casino-quality, Jigsaw and workflow improvements are being consolidated into `main`. After merge, `main` also supplies the **Development** update channel. Older feature branches are historical and can be deleted by the owner once their unique changes are verified as integrated. Midnight Manor is the first *planned* rendering migration; no React/PixiJS frontend is shipped yet. See [Development delivery](docs/development-update-delivery.md) and [agent workflow](AGENTS.md).
+> **Manor migration development (2026-11-04).** Stable `main` is the protected baseline. The **Development** channel publishes directly from the long-lived `feature/manor-modernization-phase-1` branch after Windows checks. New Manor changes can be tested in-game **without merging to main**. The React/PixiJS preview is still read-only; the existing WPF Manor remains playable. See [Development delivery](docs/development-update-delivery.md) and [agent workflow](AGENTS.md).
 
 ## Play modes at a glance
 
@@ -35,7 +35,7 @@ Windows builds are published through [GitHub Releases](https://github.com/TeKatz
 
 The existing updater uses versioned manifests, package-size and SHA-256 verification, and staged replacement with a rollback path. Saves are outside the installation directory, under `%LOCALAPPDATA%\BlackjackCasino`, and should remain intact when updating. Preserve backups when testing migration scenarios.
 
-**Do not assume** a GitHub PR preview artifact is already published to the in-game Development updater. The publisher's source branch is deliberately pinned to `main` in `.github/workflows/development-release.yml` after consolidation; see [release delivery](docs/development-update-delivery.md).
+**Do not assume** a GitHub PR preview artifact is already published to the in-game Development updater. The publisher's source branch is pinned to `feature/manor-modernization-phase-1` in `.github/workflows/development-release.yml`; see [release delivery](docs/development-update-delivery.md).
 
 ## Repository layout
 

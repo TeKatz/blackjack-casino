@@ -2,7 +2,7 @@ name: Development Release
 
 on:
   push:
-    branches: ["main"]
+    branches: ["feature/manor-modernization-phase-1"]
   workflow_dispatch:
 
 permissions:
@@ -14,8 +14,8 @@ concurrency:
 
 jobs:
   publish-development:
-    # After consolidation, the shared Development release is published from main.
-    if: github.ref == 'refs/heads/main'
+    # Ongoing Manor migration test builds are published from the single long-lived feature branch.
+    if: github.ref == 'refs/heads/feature/manor-modernization-phase-1'
     runs-on: windows-latest
     timeout-minutes: 20
 
