@@ -4,32 +4,7 @@ namespace BlackjackCasino.Desktop;
 
 public partial class MainWindow
 {
-    private void Manor_Click(object sender,RoutedEventArgs e)
-    {
-        if(session.RoundInProgress) { StatusText.Text="Finish the current Blackjack hand before entering Midnight Manor."; return; }
-        if(progressionController is null) return;
-        ProcessLatestCompletedRound();
-        try
-        {
-            var controller=new ManorController(preferences,session.Bankroll,progressionController,committed=>
-            {
-                session.ResetBankroll(committed.Bankroll);
-                preferences=committed;
-                selectedBet=Math.Min(selectedBet,session.Bankroll);
-            });
-            backgroundMusic.SetEnabled(false);
-            var window=new ManorWindow(controller) { Owner=this };
-            window.ShowDialog();
-            preferences=window.Preferences;
-
-        }
-        catch(Exception ex) when(ex is System.IO.IOException or UnauthorizedAccessException or System.Text.Json.JsonException or ArgumentException)
-        { StatusText.Text="Midnight Manor could not open: "+ex.Message; }
-        finally
-        {
-            backgroundMusic.SetEnabled(HostMusicSettings.MusicEnabled);
-            backgroundMusic.SetVolume(HostMusicSettings.MusicVolume);
-            NormalizeBetForTable(); SavePreferences(); RefreshGameUi(); ApplyBetLimitState(); RefreshProfileButton();
-        }
-    }
+    // Every historical Manor entry now opens the same modern experience.
+    // Legacy ManorWindow code is retained for controlled source-level rollback only.
+    private void Manor_Click(object sender, RoutedEventArgs e) => OpenModernManor();
 }

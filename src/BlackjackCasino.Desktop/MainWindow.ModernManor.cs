@@ -4,7 +4,7 @@ namespace BlackjackCasino.Desktop;
 
 public partial class MainWindow
 {
-    private void OpenModernManorPreview()
+    private void OpenModernManor()
     {
         if(session.RoundInProgress)
         {
@@ -14,7 +14,7 @@ public partial class MainWindow
         if(progressionController is null) return;
         if(!ModernManorPreviewWindow.IsAvailable)
         {
-            StatusText.Text="The modern Manor frontend has not been included in this build.";
+            StatusText.Text="Midnight Manor cannot start because its frontend assets are missing. Reinstall the Development update.";
             return;
         }
 
@@ -29,18 +29,18 @@ public partial class MainWindow
                 selectedBet=Math.Min(selectedBet,session.Bankroll);
             });
             var modern=new ModernManorPreviewWindow(controller);
-            ShowEmbeddedGame(modern,"Midnight Manor 2.0 · Development playtest",
+            ShowEmbeddedGame(modern,"Midnight Manor · Blackjack Casino",
                 muteHostMusic:true,
                 closed:()=>
                 {
                     preferences=controller.Preferences;
-                    StatusText.Text="Returned from Midnight Manor 2.0. Your committed game state is saved.";
+                    StatusText.Text="Returned from Midnight Manor. Your committed game state is saved.";
                 });
         }
         catch(Exception ex) when(ex is IOException or UnauthorizedAccessException
             or System.Text.Json.JsonException or ArgumentException or InvalidDataException)
         {
-            StatusText.Text="Modern Manor unavailable: "+ex.Message;
+            StatusText.Text="Midnight Manor unavailable: "+ex.Message;
         }
     }
 }

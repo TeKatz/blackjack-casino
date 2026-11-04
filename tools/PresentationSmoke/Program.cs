@@ -44,6 +44,15 @@ internal static partial class Program
     {
         await Task.Delay(200);Capture(window,"01-lobby");
         Require(Find<CasinoLobbyView>(window).Any(v=>v.IsVisible),"Application did not start in the lobby");
+        Require(window.Modes.Modes.Count(m=>m.Id=="midnight-manor")==1,
+            "Midnight Manor must be registered exactly once.");
+        Require(window.Modes.CanOpen("midnight-manor"),
+            "The single Midnight Manor lobby action must remain enabled.");
+        Require(!window.Modes.HasSecondary("midnight-manor"),
+            "The retired Manor playtest/legacy selector is still registered.");
+        Require(Find<Button>(window).Count(b=>b.Name=="Mode_midnight_manor")==1
+            && !Find<Button>(window).Any(b=>b.Name=="ModeSecondary_midnight_manor"),
+            "Midnight Manor must have precisely one selectable lobby button.");
         foreach (var size in new[] { (1080d,720d), (1440d,900d), (1920d,1080d) })
         {
             window.Width = size.Item1; window.Height = size.Item2; window.UpdateLayout();

@@ -376,31 +376,6 @@ public partial class MainWindow
         });
     }
 
-    private void EmbeddedManor_Click(object sender, RoutedEventArgs e)
-    {
-        if (session.RoundInProgress)
-        {
-            StatusText.Text = "Finish the current Blackjack hand before entering Midnight Manor.";
-            return;
-        }
-        if (progressionController is null)
-        {
-            return;
-        }
-
-        ProcessLatestCompletedRound();
-        var controller = new ManorController(preferences, session.Bankroll, progressionController, committed =>
-        {
-            session.ResetBankroll(committed.Bankroll);
-            preferences = committed;
-            selectedBet = Math.Min(selectedBet, session.Bankroll);
-        });
-        var window = new ManorWindow(controller);
-
-        ShowEmbeddedGame(window, "Midnight Manor · Blackjack Casino", muteHostMusic: true, closed: () =>
-        {
-            preferences = window.Preferences;
-
-        });
-    }
+    // Historical entry point, kept for compatibility; never exposes the old WPF slot.
+    private void EmbeddedManor_Click(object sender, RoutedEventArgs e) => OpenModernManor();
 }

@@ -28,7 +28,7 @@ internal sealed class ModernManorPreviewWindow : Window
     {
         ArgumentNullException.ThrowIfNull(controller);
         game=new ManorModernGameService(controller);
-        Title="Midnight Manor 2.0 · Playtest";
+        Title="Midnight Manor";
         Width=1360;
         Height=870;
         MinWidth=940;
@@ -38,7 +38,7 @@ internal sealed class ModernManorPreviewWindow : Window
         var root=new Grid { Background=Background };
         notice=new TextBlock
         {
-            Text="Loading the new Manor renderer…",
+            Text="Loading Midnight Manor…",
             FontSize=17,
             Foreground=Brushes.Bisque,
             TextWrapping=TextWrapping.Wrap,
@@ -89,7 +89,7 @@ internal sealed class ModernManorPreviewWindow : Window
             core.NavigationCompleted+=(_,args)=>
             {
                 if(closed || args.IsSuccess) return;
-                notice.Text="Modern Manor failed to load: "+args.WebErrorStatus+". The existing game is unchanged.";
+                notice.Text="Midnight Manor failed to load: "+args.WebErrorStatus+". Reinstall the Development update if this persists.";
                 notice.Visibility=Visibility.Visible;
             };
             core.WebMessageReceived+=OnWebMessageReceived;
@@ -98,7 +98,7 @@ internal sealed class ModernManorPreviewWindow : Window
         catch(Exception ex) when(ex is FileNotFoundException or IOException or UnauthorizedAccessException
             or InvalidOperationException or System.Runtime.InteropServices.COMException)
         {
-            notice.Text="The modern Manor could not start. The existing Manor is available.\n\n"+ex.Message;
+            notice.Text="Midnight Manor could not start. Please check the Development installation.\n\n"+ex.Message;
             notice.Visibility=Visibility.Visible;
         }
     }
