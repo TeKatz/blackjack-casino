@@ -502,3 +502,6 @@ html,body,#root{height:100%;overflow:hidden}
  .bonus-stage-multipliers span{font-size:8px}
  .bonus-toolbar .ghost-button{font-size:8px}
 }
+
+/* An expanded map remains fully navigable in its internal scroll region. */
+.bonus-map-view .manor-map-scene{height:408px}

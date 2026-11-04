@@ -39,6 +39,7 @@ function ManorApp() {
   const acceptedRevisionRef = useRef('0');
   const [spinEpoch, setSpinEpoch] = useState(0);
   const [animating, setAnimating] = useState(false);
+  const [rendererReady, setRendererReady] = useState(false);
   const [reelSpeed, setReelSpeed] = useState<ReelSpeed>('normal');
   const [bet, setBet] = useState('25');
   const [ambient, setAmbient] = useState(true);
@@ -118,8 +119,10 @@ function ManorApp() {
 
   const actions = availableActions(snapshot);
   const motionOff = lowMotion || !ambient || !snapshot.animationsEnabled;
-  const disabled = !embedded || !connected || pending !== null || fatal || animating ||
+  const disabled = !embedded || !connected || !rendererReady ||
+    pending !== null || fatal || animating ||
     revealingReels || awaitingPresentation.current !== null;
+  const rolling = revealingReels || pendingTypeRef.current?.startsWith('spin.') === true;
   const validBet = /^[0-9]{1,4}$/.test(bet) && Number(bet) >= 1 && Number(bet) <= 1000;
   const run = shownSnapshot.run;
   const language: ManorLanguage = languageOverride ?? snapshot.language;
@@ -205,7 +208,8 @@ function ManorApp() {
                 spinEpoch={spinEpoch} onSpinningChange={setAnimating}
                 onReelStop={index => presentation.current.onReel(index)}
                 onSpinPresented={result => presentation.current.onSpin(result)}
-                onDiagnostics={showDiagnostics ? setRenderMetrics : undefined} />
+                onDiagnostics={showDiagnostics ? setRenderMetrics : undefined}
+                onReady={() => setRendererReady(true)} />
             </div>
             {run && <div className="slot-bonus-portal">
               <ManorBonusStage run={run} language={language} disabled={disabled}
@@ -245,10 +249,14 @@ function ManorApp() {
             </div>}
           </div>
           <div className="machine-footer">
-            <span>{shownSnapshot.hasCommittedSpin
-              ? shownSnapshot.lastSpinFree ? t(language, 'lastFree') : t(language, 'lastPaid')
-              : t(language, 'noSpin')}</span>
-            <span>{shownSnapshot.winningLines} {t(language, 'paidLines')} · {shownSnapshot.scatters} {t(language, 'moons')} · {shownSnapshot.doors} {t(language, 'doors')}</span>
+            <span>{rolling ? t(language, 'spinRolling') :
+              shownSnapshot.hasCommittedSpin
+                ? shownSnapshot.lastSpinFree ? t(language, 'lastFree') : t(language, 'lastPaid')
+                : t(language, 'noSpin')}</span>
+            <span>{rolling ? t(language, 'spinSealed') :
+              shownSnapshot.winningLines + ' ' + t(language, 'paidLines') + ' · ' +
+              shownSnapshot.scatters + ' ' + t(language, 'moons') + ' · ' +
+              shownSnapshot.doors + ' ' + t(language, 'doors')}</span>
           </div>
           {!run && <div className="action-console">
             <div className="stake-control">
@@ -267,7 +275,8 @@ function ManorApp() {
                   onClick={() => act('spin.free')}>{t(language, 'freeSpin', shownSnapshot.freeSpinsRemaining)}</button> :
                 <button className="gold-button" disabled={disabled || !shownSnapshot.canSpin || !validBet}
                   onClick={() => act('spin.paid', { bet })}>
-                  {pending ? t(language, 'saving') : t(language, 'spin')}
+                  {pending ? t(language, 'saving') : revealingReels ?
+                    t(language, 'spinRolling') : t(language, 'spin')}
                 </button>}
               <span className="action-hint">{t(language, run ? 'runHint' :
                 shownSnapshot.canFreeSpin ? 'freeHint' :
@@ -286,7 +295,7 @@ function ManorApp() {
             <div className="money-stat"><span>{t(language, 'lastReturn')}</span><strong>{shownSnapshot.payout}</strong></div>
             <div className="money-stat"><span>{t(language, 'cycleReturn')}</span><strong>{shownSnapshot.cycleReturned}</strong></div>
           </div>
-          {shownSnapshot.winningLineDetails.length > 0 && (
+          {!rolling && shownSnapshot.winningLineDetails.length > 0 && (
             <details className="win-details">
               <summary>{t(language, 'viewWinLines', shownSnapshot.winningLineDetails.length,
                 t(language, shownSnapshot.winningLineDetails.length === 1 ? 'lineSingular' : 'linePlural'))}</summary>
@@ -386,11 +395,11 @@ function ManorApp() {
       {shownSnapshot.saveNotice && <div className="save-notice" role="status">{shownSnapshot.saveNotice}</div>}
       {error && <div className="error" role="alert">{error}</div>}
       {fatal && <div className="error" role="alert">{t(language, 'fatal')}</div>}
-      {helpOpen && <ManorHelp language={language} rules={snapshot.rules}
-        cycleActive={snapshot.cycleActive} onClose={closeHelp} />}
+      {helpOpen && <ManorHelp language={language} rules={shownSnapshot.rules}
+        cycleActive={shownSnapshot.cycleActive} onClose={closeHelp} />}
       <footer className="footer">
         <span>{t(language, 'footer')}</span>
-        <span>{embedded ? t(language, 'revision', snapshot.revision) : t(language, 'browserFooter')}</span>
+        <span>{embedded ? t(language, 'revision', shownSnapshot.revision) : t(language, 'browserFooter')}</span>
       </footer>
     </main>
   );

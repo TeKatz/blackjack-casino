@@ -17,6 +17,7 @@ type Props = {
   reducedMotion: boolean;
   speed: ReelSpeed;
   onSpinningChange?: (spinning: boolean) => void;
+  onReady?: () => void;
   onReelStop?: (reel: number) => void;
   onSpinPresented?: (result: ManorSnapshot) => void;
   onDiagnostics?: (info: RendererDiagnostics) => void;
@@ -476,7 +477,7 @@ function createRenderer(app: Application, report: (value: boolean) => void,
 
 /** Pixi canvas, masks, and 20 tile objects survive all state refreshes and spins. */
 export function ManorStage({ snapshot, language, spinEpoch, reducedMotion, speed,
-  onSpinningChange, onReelStop, onSpinPresented, onDiagnostics }: Props) {
+  onSpinningChange, onReelStop, onSpinPresented, onDiagnostics, onReady }: Props) {
   const holder = useRef<HTMLDivElement>(null);
   const renderer = useRef<Renderer | null>(null);
   const latest = useRef({ snapshot, spinEpoch, reducedMotion, speed, language });
@@ -484,12 +485,14 @@ export function ManorStage({ snapshot, language, spinEpoch, reducedMotion, speed
   const stopCue = useRef(onReelStop);
   const presentationCue = useRef(onSpinPresented);
   const diagnosticCue = useRef(onDiagnostics);
+  const readyCue = useRef(onReady);
   const currentSurface = useRef({ width: W, height: H, pixelRatio: 1 });
   latest.current = { snapshot, spinEpoch, reducedMotion, speed, language };
   changed.current = onSpinningChange;
   stopCue.current = onReelStop;
   presentationCue.current = onSpinPresented;
   diagnosticCue.current = onDiagnostics;
+  readyCue.current = onReady;
   useEffect(() => {
     const host = holder.current;
     if (!host) return;
@@ -546,7 +549,8 @@ export function ManorStage({ snapshot, language, spinEpoch, reducedMotion, speed
       watchResolution();
       const state = latest.current;
       instance.update(state.snapshot, state.spinEpoch, state.reducedMotion, state.speed, state.language);
-      // Never block the authoritative first snapshot or controls on art decoding.
+      readyCue.current?.();
+      // Optional artwork decoding must not block a ready WebGL renderer.
       void loadManorArtwork().then(images => {
         if (!dead) instance.setArtwork(images);
       });
