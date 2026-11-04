@@ -25,6 +25,10 @@ public sealed class ManorSessionState
 {
     // Old JSON has no version; pending Free Spins keep its original payout table.
     public int PaytableVersion { get; set; }=1;
+    // Additive checkpoint fields. Older saves deserialize to revision zero with no command ID.
+    // The revision changes for every committed Manor action, including legacy WPF actions.
+    public long Revision { get; set; }
+    public string? LastModernCommandId { get; set; }
     public decimal Bankroll { get; set; }
     public decimal Bet { get; set; }=25;
     public Guid CycleId { get; set; }
