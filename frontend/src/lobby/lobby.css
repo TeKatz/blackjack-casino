@@ -61,7 +61,7 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
 .game-midnight-manor{border-color:#6f72a2;}
 .lobby-game:hover,.lobby-game.hovered{border-color:#f0c66c;transform:translateY(-4px);box-shadow:0 12px 32px #000b,0 0 14px #e2af534e;z-index:2;}
 .lobby-game.unavailable{filter:grayscale(.5);opacity:.55;}
-.game-art-window{position:relative;height:48%;min-height:85px;overflow:hidden;background:radial-gradient(ellipse at 54% 30%,#36674b,#0a1a18 70%);}
+.game-art-window{position:relative;height:38%;min-height:64px;overflow:hidden;background:radial-gradient(ellipse at 54% 30%,#36674b,#0a1a18 70%);}
 .game-art-image{position:absolute;left:50%;top:50%;width:256px;height:130px;transform:translate(-50%,-50%) scale(1.06);background-image:url('/lobby/lobby-atlas.webp');background-repeat:no-repeat;background-size:1024px 884px;transition:transform .55s cubic-bezier(.2,.9,.2,1),filter .4s;filter:saturate(1.08);}
 .game-art-window .art-blackjack{background-position:0 -480px;}
 .game-art-window .art-kniffel{background-position:-256px -480px;}
@@ -76,15 +76,15 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
 .art-shimmer{position:absolute;inset:0;background:linear-gradient(105deg,transparent 31%,#ffefb51b 47%,transparent 58%);transform:translateX(-150%);pointer-events:none;}
 .lobby-game:hover .art-shimmer{animation:lobbyShine .75s ease both;}
 @keyframes lobbyShine{to{transform:translateX(150%)}}
-.game-info{position:relative;flex:1;min-height:0;display:flex;flex-direction:column;padding:10px 12px;background:linear-gradient(170deg,#103027e8,#061917eb);}
+.game-info{position:relative;flex:1;min-height:0;display:flex;flex-direction:column;padding:8px 10px;background:linear-gradient(170deg,#103027e8,#061917eb);}
 .game-category{color:#7de4ba;font-size:9px;font-weight:750;letter-spacing:.06em;white-space:nowrap;}
 .game-midnight-reels .game-category,.game-casino-empire .game-category,.game-midnight-merge .game-category{color:#efbf6a;}
 .game-neon-vault .game-category{color:#76dfff;}
 .game-nine-lives .game-category{color:#e087f5;}
-.game-info h3{font:normal clamp(19px,1.6vw,26px)/1.07 Georgia,serif;color:#f9e9cb;margin:6px 0 5px;letter-spacing:-.025em;}
-.game-info p{font-size:clamp(10px,.72vw,12px);line-height:1.32;color:#b9c7bb;margin:0 0 8px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;}
+.game-info h3{font:normal clamp(18px,1.45vw,24px)/1.07 Georgia,serif;color:#f9e9cb;margin:4px 0 3px;letter-spacing:-.025em;}
+.game-info p{font-size:clamp(10px,.72vw,11px);line-height:1.27;color:#b9c7bb;margin:0 0 4px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;}
 .game-actions{display:flex;gap:6px;justify-content:flex-end;align-items:center;margin-top:auto;}
-.lobby-gold-button{display:inline-flex;align-items:center;gap:7px;justify-content:center;min-height:30px;border:1px solid #fae5a9;border-radius:10px;padding:5px 12px;background:linear-gradient(155deg,#ffe9a1,#c48b3a);color:#191808;font-size:12px;font-weight:800;box-shadow:0 0 13px #efc36977;transition:filter .18s,transform .18s;}
+.lobby-gold-button{display:inline-flex;align-items:center;gap:7px;justify-content:center;min-height:27px;border:1px solid #fae5a9;border-radius:10px;padding:4px 10px;background:linear-gradient(155deg,#ffe9a1,#c48b3a);color:#191808;font-size:12px;font-weight:800;box-shadow:0 0 13px #efc36977;transition:filter .18s,transform .18s;}
 .lobby-gold-button:hover{filter:brightness(1.18);transform:scale(1.04);}
 .lobby-gold-button:disabled{opacity:.55;cursor:not-allowed;}
 .lobby-gold-button span{font-size:10px;}
@@ -169,3 +169,17 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
 .vault-widget .header-emoji{background-position:-84px -84px;}
 .lobby-exit{position:relative;padding-left:44px;}
 .lobby-exit::before{content:"";position:absolute;left:8px;top:50%;width:30px;height:30px;transform:translateY(-50%);background-image:url('/lobby/lobby-icon-atlas.webp');background-size:150px 120px;background-position:-120px -90px;}
+
+@keyframes lobbyPageReveal{
+  from{opacity:0;transform:translateY(8px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.lobby-hero{animation:lobbyPageReveal .65s ease both;}
+.lobby-game-grid{animation:lobbyPageReveal .72s .08s ease both;}
+.lobby-overview{animation:lobbyPageReveal .72s .14s ease both;}
+@media(max-height:800px){
+  .game-info p{-webkit-line-clamp:1;}
+  .game-art-window{min-height:52px;}
+  .game-info{padding:6px 8px;}
+  .lobby-gold-button{min-height:25px;}
+}
