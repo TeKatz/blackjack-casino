@@ -193,23 +193,23 @@ internal sealed class JigsawLoungeHub : UserControl, IDisposable
             {
                 Children =
                 {
-                    PremiumLoungeTheme.Label("UNFINISHED PUZZLE", 13, PremiumLoungeTheme.Teal, true),
+                    PremiumLoungeTheme.Label(JigsawText.T("UNFINISHED PUZZLE", "UNFERTIGES PUZZLE"), 13, PremiumLoungeTheme.Teal, true),
                     PremiumLoungeTheme.Label(
-                        JigsawCatalog.Motif(active.MotifId).Name + " · " +
-                        active.PieceCount.ToString("N0") + " pieces · " +
-                        active.LockedCount.ToString("N0") + " placed",
+                        JigsawText.Motif(active.MotifId) + " · " +
+                        active.PieceCount.ToString("N0") + JigsawText.T(" pieces · ", " Teile · ") +
+                        active.LockedCount.ToString("N0") + JigsawText.T(" placed", " gelegt"),
                         15, PremiumLoungeTheme.Cream),
                 },
             });
             message.Margin = new Thickness(0, 0, 0, 10);
             right.Children.Add(message);
-            right.Children.Add(PremiumLoungeTheme.Button("RESUME PUZZLE", "JigsawResume",
+            right.Children.Add(PremiumLoungeTheme.Button(JigsawText.T("RESUME PUZZLE", "PUZZLE FORTSETZEN"), "JigsawResume",
                 () => Open(active), width: 250, height: 47, gold: true));
-            var restart = PremiumLoungeTheme.Button("START A NEW PUZZLE", "JigsawReplace",
+            var restart = PremiumLoungeTheme.Button(JigsawText.T("START A NEW PUZZLE", "NEUES PUZZLE STARTEN"), "JigsawReplace",
                 () =>
                 {
                     if (System.Windows.MessageBox.Show(
-                            "Discard the unfinished puzzle and start a new one?",
+                            JigsawText.T("Discard the unfinished puzzle and start a new one?", "Unfertiges Puzzle verwerfen und ein neues starten?"),
                             "Jigsaw Puzzle", MessageBoxButton.YesNo, MessageBoxImage.Question)
                         != MessageBoxResult.Yes) return;
                     StartNew();
@@ -219,7 +219,7 @@ internal sealed class JigsawLoungeHub : UserControl, IDisposable
         }
         else
         {
-            right.Children.Add(PremiumLoungeTheme.Button("START PUZZLE", "JigsawStart",
+            right.Children.Add(PremiumLoungeTheme.Button(JigsawText.T("START PUZZLE", "PUZZLE STARTEN"), "JigsawStart",
                 StartNew, width: 270, height: 49, gold: true));
         }
 
@@ -227,12 +227,12 @@ internal sealed class JigsawLoungeHub : UserControl, IDisposable
             "sky-bar.png", "penthouse-club.png",
             "THE MIDNIGHT CLUB · CHILL LOUNGE",
             "Jigsaw Puzzle",
-            "Find your own pace, one piece at a time.",
-            "THE PUZZLE STUDIO",
-            "A world in pieces.",
-            "Twelve curated scenes from the club's illustrated collection. Every scene can be played at any size.",
+            JigsawText.T("Find your own pace, one piece at a time.", "Finde dein eigenes Tempo, Teil für Teil."),
+            JigsawText.T("THE PUZZLE STUDIO", "DAS PUZZLE-ATELIER"),
+            JigsawText.T("A world in pieces.", "Eine Welt in Teilen."),
+            JigsawText.T("Twelve curated scenes from the club's illustrated collection. Every scene can be played at any size.", "Zwölf ausgewählte Motive aus der illustrierten Sammlung des Clubs. Jedes Motiv ist in allen Größen spielbar."),
             left, right,
-            "No time limits. No penalties for hints or reference pictures. Progress saves automatically.",
+            JigsawText.T("No time limits. No penalties for hints or reference pictures. Progress saves automatically.", "Kein Zeitlimit. Keine Nachteile durch die Bildvorlage. Dein Fortschritt wird automatisch gespeichert."),
             compactLeft: true);
     }
 
@@ -270,13 +270,13 @@ internal sealed class JigsawLoungeHub : UserControl, IDisposable
         {
             ProgressionAward award = recordCompletion(completion);
             return award.PlayerExperience > 0
-                ? "Completed! +" + award.PlayerExperience.ToString("N0") +
+                ? JigsawText.T("Completed! +", "Fertig! +") + award.PlayerExperience.ToString("N0") +
                   " XP · +" + award.SeasonExperience.ToString("N0") + " Season XP"
-                : "Completed! Your reward was already recorded.";
+                : JigsawText.T("Completed! Your reward was already recorded.", "Fertig! Deine Belohnung wurde bereits erfasst.");
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            return "Puzzle saved. Reopen the Chill Lounge to retry your reward.";
+            return JigsawText.T("Puzzle saved. Reopen the Chill Lounge to retry your reward.", "Puzzle gespeichert. Öffne die Chill Lounge erneut, um die Belohnung abzuholen.");
         }
     }
 
