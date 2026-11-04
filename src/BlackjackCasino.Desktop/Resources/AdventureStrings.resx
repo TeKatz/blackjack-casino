@@ -491,4 +491,66 @@ The board grows as the investigation uncovers people, places, evidence, leads an
   <data name="Adventure.Ui.NewRun" xml:space="preserve"><value>NEW RUN</value></data>
   <data name="Adventure.Ui.BeginNewRun" xml:space="preserve"><value>BEGIN NEW RUN</value></data>
   <data name="Adventure.Ui.Special" xml:space="preserve"><value>SPECIAL</value></data>
+  <data name="Adventure.strangers-wager.Title" xml:space="preserve"><value>The Stranger&apos;s Wager</value></data>
+  <data name="Adventure.strangers-wager.Subtitle" xml:space="preserve"><value>Encounter framework test · A short tavern story with real embedded blackjack and Five of a Kind encounters.</value></data>
+  <data name="Adventure.strangers-wager.Scene.rainy-tavern.Title" xml:space="preserve"><value>The Bent Lantern</value></data>
+  <data name="Adventure.strangers-wager.Scene.rainy-tavern.Body" xml:space="preserve"><value>Rain has driven half the road into the Bent Lantern. Near the hearth, a stranger in a charcoal coat sits alone with a deck of cards squared neatly between his hands. Five bone dice rest beside the deck. He has watched you since you entered, but only now does he tap the empty chair opposite him.</value></data>
+  <data name="Adventure.strangers-wager.Scene.rainy-tavern.Location" xml:space="preserve"><value>The Bent Lantern</value></data>
+  <data name="Adventure.strangers-wager.Scene.the-offer.Title" xml:space="preserve"><value>A Game for Something Real</value></data>
+  <data name="Adventure.strangers-wager.Scene.the-offer.Body" xml:space="preserve"><value>He turns the top card face down without looking at it. &quot;Coin is dull. Information is better. Tonight I only need proof that you know when chance has given you enough. Cards or dice. Your choice. Beat me and the token on this table is yours. Lose, and I take five coins.&quot;</value></data>
+  <data name="Adventure.strangers-wager.Scene.the-offer.Location" xml:space="preserve"><value>The Bent Lantern</value></data>
+  <data name="Adventure.strangers-wager.Scene.stakes-explained.Title" xml:space="preserve"><value>The Black Iron Token</value></data>
+  <data name="Adventure.strangers-wager.Scene.stakes-explained.Body" xml:space="preserve"><value>The token is no common tavern marker. A crowned raven has been stamped into one side; the other is smooth from years of handling. The stranger covers it with two fingers. &quot;Win first. Questions are cheaper after victory. Cards or dice; the token does not care.&quot;</value></data>
+  <data name="Adventure.strangers-wager.Scene.stakes-explained.Location" xml:space="preserve"><value>The Bent Lantern</value></data>
+  <data name="Adventure.strangers-wager.Scene.blackjack-table.Title" xml:space="preserve"><value>The Stranger&apos;s Wager</value></data>
+  <data name="Adventure.strangers-wager.Scene.blackjack-table.Body" xml:space="preserve"><value>The tavern seems to recede as the cards hit the wood. For the next few moments there is only the stranger, the deck and the decision of whether one more card will save you or ruin you.</value></data>
+  <data name="Adventure.strangers-wager.Scene.blackjack-table.Location" xml:space="preserve"><value>The Bent Lantern</value></data>
+  <data name="Adventure.strangers-wager.Scene.five-kind-table.Title" xml:space="preserve"><value>Bones on the Table</value></data>
+  <data name="Adventure.strangers-wager.Scene.five-kind-table.Body" xml:space="preserve"><value>The deck disappears beneath the stranger&apos;s sleeve. Five pale dice take its place. You each get one turn and no more than three throws. A die you trust can stay. When you bank the hand, its strongest real Five of a Kind score becomes the mark to beat.</value></data>
+  <data name="Adventure.strangers-wager.Scene.five-kind-table.Location" xml:space="preserve"><value>The Bent Lantern</value></data>
+  <data name="Adventure.strangers-wager.Scene.push.Title" xml:space="preserve"><value>No Winner</value></data>
+  <data name="Adventure.strangers-wager.Scene.push.Body" xml:space="preserve"><value>The stranger turns both hands over, studies the equal totals and gives a quiet laugh. &quot;The deck dislikes certainty. Again?&quot; He leaves the token where it is.</value></data>
+  <data name="Adventure.strangers-wager.Scene.push.Location" xml:space="preserve"><value>The Bent Lantern</value></data>
+  <data name="Adventure.strangers-wager.Scene.dice-push.Title" xml:space="preserve"><value>The Same Number</value></data>
+  <data name="Adventure.strangers-wager.Scene.dice-push.Body" xml:space="preserve"><value>For a moment the stranger simply looks from your dice to his. Then one corner of his mouth moves. &quot;Equal marks. The bones have a sense of humor. Again?&quot;</value></data>
+  <data name="Adventure.strangers-wager.Scene.dice-push.Location" xml:space="preserve"><value>The Bent Lantern</value></data>
+  <data name="Adventure.strangers-wager.Scene.ending-win.Title" xml:space="preserve"><value>Ending — The Raven Token</value></data>
+  <data name="Adventure.strangers-wager.Scene.ending-win.Body" xml:space="preserve"><value>The stranger stares at the final cards, then slides the black iron token across the table. &quot;Keep it. If someone shows you the same raven and asks where you earned yours, tell them the Bent Lantern. Nothing more.&quot; By the time you look up from the token, his chair is empty.</value></data>
+  <data name="Adventure.strangers-wager.Scene.ending-win.Location" xml:space="preserve"><value>The Bent Lantern</value></data>
+  <data name="Adventure.strangers-wager.Scene.ending-loss.Title" xml:space="preserve"><value>Ending — House Lesson</value></data>
+  <data name="Adventure.strangers-wager.Scene.ending-loss.Body" xml:space="preserve"><value>He collects five coins with no triumph in his expression. &quot;You played the cards honestly. That&apos;s rarer than winning.&quot; The black token disappears beneath his coat, and he returns to his drink as though the wager never happened.</value></data>
+  <data name="Adventure.strangers-wager.Scene.ending-loss.Location" xml:space="preserve"><value>The Bent Lantern</value></data>
+  <data name="Adventure.strangers-wager.Scene.ending-dice-win.Title" xml:space="preserve"><value>Ending — Five Bones, One Raven</value></data>
+  <data name="Adventure.strangers-wager.Scene.ending-dice-win.Body" xml:space="preserve"><value>Your final dice stop moving. The stranger studies the score, then the pattern on the table, and pushes the raven token to you with one finger. &quot;Chance is only noise until someone knows what to keep.&quot; When the next burst of tavern laughter turns your head, his chair is empty.</value></data>
+  <data name="Adventure.strangers-wager.Scene.ending-dice-win.Location" xml:space="preserve"><value>The Bent Lantern</value></data>
+  <data name="Adventure.strangers-wager.Scene.ending-dice-loss.Title" xml:space="preserve"><value>Ending — The Bones Remember</value></data>
+  <data name="Adventure.strangers-wager.Scene.ending-dice-loss.Body" xml:space="preserve"><value>The stranger&apos;s final die settles and leaves his mark above yours. He takes five coins, gathers the bone dice and nods once. &quot;You kept the right ones. The wrong ones simply answered louder.&quot; The raven token vanishes beneath his coat.</value></data>
+  <data name="Adventure.strangers-wager.Scene.ending-dice-loss.Location" xml:space="preserve"><value>The Bent Lantern</value></data>
+  <data name="Adventure.strangers-wager.Scene.ending-walk-away.Title" xml:space="preserve"><value>Ending — An Unplayed Wager</value></data>
+  <data name="Adventure.strangers-wager.Scene.ending-walk-away.Body" xml:space="preserve"><value>You leave the stranger to his cards and bone dice. Behind you, something rattles across wood and someone else takes the empty chair. Whatever the black token meant, it remains their problem tonight.</value></data>
+  <data name="Adventure.strangers-wager.Scene.ending-walk-away.Location" xml:space="preserve"><value>The Bent Lantern</value></data>
+  <data name="Adventure.strangers-wager.Choice.take-seat" xml:space="preserve"><value>Take the empty seat opposite the stranger.</value></data>
+  <data name="Adventure.strangers-wager.Choice.ignore-stranger" xml:space="preserve"><value>Keep your drink, keep your distance and leave him to his games.</value></data>
+  <data name="Adventure.strangers-wager.Choice.accept-now" xml:space="preserve"><value>Choose the cards. Play one hand of blackjack.</value></data>
+  <data name="Adventure.strangers-wager.Choice.choose-dice" xml:space="preserve"><value>Choose the bone dice. Three throws, best scored hand.</value></data>
+  <data name="Adventure.strangers-wager.Choice.ask-stakes" xml:space="preserve"><value>Ask why the black iron token matters.</value></data>
+  <data name="Adventure.strangers-wager.Choice.decline" xml:space="preserve"><value>Decline. Some games cost more than their stakes.</value></data>
+  <data name="Adventure.strangers-wager.Choice.accept-informed" xml:space="preserve"><value>Play the blackjack hand.</value></data>
+  <data name="Adventure.strangers-wager.Choice.dice-informed" xml:space="preserve"><value>Take the five bone dice instead.</value></data>
+  <data name="Adventure.strangers-wager.Choice.leave-informed" xml:space="preserve"><value>Leave the token and the stranger behind.</value></data>
+  <data name="Adventure.strangers-wager.Choice.encounter-win" xml:space="preserve"><value>[Encounter result: win]</value></data>
+  <data name="Adventure.strangers-wager.Choice.encounter-loss" xml:space="preserve"><value>[Encounter result: loss]</value></data>
+  <data name="Adventure.strangers-wager.Choice.encounter-draw" xml:space="preserve"><value>[Encounter result: draw]</value></data>
+  <data name="Adventure.strangers-wager.Choice.dice-encounter-win" xml:space="preserve"><value>[Encounter result: win]</value></data>
+  <data name="Adventure.strangers-wager.Choice.dice-encounter-loss" xml:space="preserve"><value>[Encounter result: loss]</value></data>
+  <data name="Adventure.strangers-wager.Choice.dice-encounter-draw" xml:space="preserve"><value>[Encounter result: draw]</value></data>
+  <data name="Adventure.strangers-wager.Choice.rematch" xml:space="preserve"><value>Play another hand.</value></data>
+  <data name="Adventure.strangers-wager.Choice.switch-to-dice" xml:space="preserve"><value>Let the cards rest. Settle it with the dice instead.</value></data>
+  <data name="Adventure.strangers-wager.Choice.leave-push" xml:space="preserve"><value>Call the push fair and walk away.</value></data>
+  <data name="Adventure.strangers-wager.Choice.dice-rematch" xml:space="preserve"><value>Roll another showdown.</value></data>
+  <data name="Adventure.strangers-wager.Choice.switch-to-cards" xml:space="preserve"><value>Change the wager. Deal the cards.</value></data>
+  <data name="Adventure.strangers-wager.Choice.leave-dice-push" xml:space="preserve"><value>Accept the draw and leave the table.</value></data>
+  <data name="Adventure.strangers-wager.Choice.black-iron-token" xml:space="preserve"><value>Black Iron Token</value></data>
+  <data name="Adventure.strangers-wager.Item.black-iron-token.Name" xml:space="preserve"><value>Black Iron Token</value></data>
+  <data name="Adventure.strangers-wager.Item.black-iron-token.Description" xml:space="preserve"><value>A heavy raven-stamped token won from the Ashen Stranger.</value></data>
 </root>

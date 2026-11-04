@@ -491,4 +491,66 @@ Im Verlauf deiner Ermittlungen füllt sich die Tafel mit Personen, Orten, Beweis
   <data name="Adventure.Ui.NewRun" xml:space="preserve"><value>NEUER DURCHLAUF</value></data>
   <data name="Adventure.Ui.BeginNewRun" xml:space="preserve"><value>NEUES ABENTEUER BEGINNEN</value></data>
   <data name="Adventure.Ui.Special" xml:space="preserve"><value>BESONDERHEIT</value></data>
+  <data name="Adventure.strangers-wager.Title" xml:space="preserve"><value>Die Wette des Fremden</value></data>
+  <data name="Adventure.strangers-wager.Subtitle" xml:space="preserve"><value>Eine kurze Tavernengeschichte mit Blackjack- und Fünflingsbegegnungen.</value></data>
+  <data name="Adventure.strangers-wager.Scene.rainy-tavern.Title" xml:space="preserve"><value>Zur krummen Laterne</value></data>
+  <data name="Adventure.strangers-wager.Scene.rainy-tavern.Body" xml:space="preserve"><value>Der Regen hat die halbe Landstraße in die Taverne Zur krummen Laterne getrieben. Am Kamin sitzt ein Fremder im anthrazitfarbenen Mantel, ein sorgfältig geordnetes Kartenspiel zwischen den Händen. Daneben liegen fünf Würfel aus Knochen. Seit du eingetreten bist, beobachtet er dich. Erst jetzt tippt er auf den freien Stuhl gegenüber.</value></data>
+  <data name="Adventure.strangers-wager.Scene.rainy-tavern.Location" xml:space="preserve"><value>Zur krummen Laterne</value></data>
+  <data name="Adventure.strangers-wager.Scene.the-offer.Title" xml:space="preserve"><value>Ein Spiel um etwas Echtes</value></data>
+  <data name="Adventure.strangers-wager.Scene.the-offer.Body" xml:space="preserve"><value>Ohne hinzusehen dreht er die oberste Karte um. „Münzen sind langweilig. Informationen sind wertvoller. Heute Nacht will ich nur wissen, ob du erkennst, wann das Glück dir genug gegeben hat. Karten oder Würfel – deine Wahl. Gewinnst du, gehört dir die Marke auf dem Tisch. Verlierst du, nehme ich fünf Münzen.“</value></data>
+  <data name="Adventure.strangers-wager.Scene.the-offer.Location" xml:space="preserve"><value>Zur krummen Laterne</value></data>
+  <data name="Adventure.strangers-wager.Scene.stakes-explained.Title" xml:space="preserve"><value>Die schwarze Eisenmarke</value></data>
+  <data name="Adventure.strangers-wager.Scene.stakes-explained.Body" xml:space="preserve"><value>Die Marke ist kein gewöhnlicher Tavernenjeton. Auf einer Seite ist ein gekrönter Rabe eingeprägt, die andere ist nach Jahren des Gebrauchs glatt gerieben. Der Fremde bedeckt sie mit zwei Fingern. „Gewinne zuerst. Nach einem Sieg sind Fragen billiger. Karten oder Würfel – der Marke ist es gleich.“</value></data>
+  <data name="Adventure.strangers-wager.Scene.stakes-explained.Location" xml:space="preserve"><value>Zur krummen Laterne</value></data>
+  <data name="Adventure.strangers-wager.Scene.blackjack-table.Title" xml:space="preserve"><value>Die Wette des Fremden</value></data>
+  <data name="Adventure.strangers-wager.Scene.blackjack-table.Body" xml:space="preserve"><value>Die Taverne scheint zu verblassen, als die Karten auf das Holz fallen. Für die nächsten Augenblicke gibt es nur den Fremden, das Blatt und die Entscheidung, ob eine weitere Karte dich rettet oder zugrunde richtet.</value></data>
+  <data name="Adventure.strangers-wager.Scene.blackjack-table.Location" xml:space="preserve"><value>Zur krummen Laterne</value></data>
+  <data name="Adventure.strangers-wager.Scene.five-kind-table.Title" xml:space="preserve"><value>Knochen auf dem Tisch</value></data>
+  <data name="Adventure.strangers-wager.Scene.five-kind-table.Body" xml:space="preserve"><value>Das Kartenspiel verschwindet unter seinem Ärmel. An seine Stelle treten fünf helle Würfel. Jeder von euch hat einen Zug mit höchstens drei Würfen. Würfel, denen du vertraust, darfst du behalten. Am Ende zählt der höchste echte Fünflingswert als Ergebnis, das es zu schlagen gilt.</value></data>
+  <data name="Adventure.strangers-wager.Scene.five-kind-table.Location" xml:space="preserve"><value>Zur krummen Laterne</value></data>
+  <data name="Adventure.strangers-wager.Scene.push.Title" xml:space="preserve"><value>Kein Sieger</value></data>
+  <data name="Adventure.strangers-wager.Scene.push.Body" xml:space="preserve"><value>Der Fremde deckt beide Hände auf, betrachtet die gleichen Punktzahlen und lacht leise. „Das Blatt mag keine Gewissheit. Noch einmal?“ Die Marke bleibt liegen.</value></data>
+  <data name="Adventure.strangers-wager.Scene.push.Location" xml:space="preserve"><value>Zur krummen Laterne</value></data>
+  <data name="Adventure.strangers-wager.Scene.dice-push.Title" xml:space="preserve"><value>Dieselbe Zahl</value></data>
+  <data name="Adventure.strangers-wager.Scene.dice-push.Body" xml:space="preserve"><value>Einen Augenblick lang sieht der Fremde nur von deinen Würfeln zu seinen. Dann zuckt ein Mundwinkel. „Gleichstand. Die Knochen haben Humor. Noch einmal?“</value></data>
+  <data name="Adventure.strangers-wager.Scene.dice-push.Location" xml:space="preserve"><value>Zur krummen Laterne</value></data>
+  <data name="Adventure.strangers-wager.Scene.ending-win.Title" xml:space="preserve"><value>Ende – Die Rabenmarke</value></data>
+  <data name="Adventure.strangers-wager.Scene.ending-win.Body" xml:space="preserve"><value>Der Fremde starrt auf die letzten Karten und schiebt dir die schwarze Eisenmarke über den Tisch. „Behalt sie. Wenn dir jemand denselben Raben zeigt und wissen will, woher du deine Marke hast, sag: Zur krummen Laterne. Mehr nicht.“ Als du von der Marke aufblickst, ist sein Stuhl leer.</value></data>
+  <data name="Adventure.strangers-wager.Scene.ending-win.Location" xml:space="preserve"><value>Zur krummen Laterne</value></data>
+  <data name="Adventure.strangers-wager.Scene.ending-loss.Title" xml:space="preserve"><value>Ende – Eine Lektion des Hauses</value></data>
+  <data name="Adventure.strangers-wager.Scene.ending-loss.Body" xml:space="preserve"><value>Ohne jede Siegerpose sammelt er fünf Münzen ein. „Du hast die Karten ehrlich gespielt. Das ist seltener, als zu gewinnen.“ Die schwarze Marke verschwindet unter seinem Mantel; er wendet sich wieder seinem Getränk zu, als hätte die Wette nie stattgefunden.</value></data>
+  <data name="Adventure.strangers-wager.Scene.ending-loss.Location" xml:space="preserve"><value>Zur krummen Laterne</value></data>
+  <data name="Adventure.strangers-wager.Scene.ending-dice-win.Title" xml:space="preserve"><value>Ende – Fünf Knochen, ein Rabe</value></data>
+  <data name="Adventure.strangers-wager.Scene.ending-dice-win.Body" xml:space="preserve"><value>Deine letzten Würfel kommen zur Ruhe. Der Fremde betrachtet den Wert und das Muster auf dem Tisch. Dann schiebt er dir mit einem Finger die Rabenmarke zu. „Zufall ist nur Lärm, bis jemand weiß, was er behalten muss.“ Als dich das nächste Gelächter ablenkt, ist sein Stuhl leer.</value></data>
+  <data name="Adventure.strangers-wager.Scene.ending-dice-win.Location" xml:space="preserve"><value>Zur krummen Laterne</value></data>
+  <data name="Adventure.strangers-wager.Scene.ending-dice-loss.Title" xml:space="preserve"><value>Ende – Die Knochen erinnern sich</value></data>
+  <data name="Adventure.strangers-wager.Scene.ending-dice-loss.Body" xml:space="preserve"><value>Sein letzter Würfel fällt und besiegelt einen höheren Wert als deinen. Er nimmt fünf Münzen, sammelt die Knochenwürfel ein und nickt. „Du hast die richtigen behalten. Die falschen waren nur lauter.“ Die Rabenmarke verschwindet unter seinem Mantel.</value></data>
+  <data name="Adventure.strangers-wager.Scene.ending-dice-loss.Location" xml:space="preserve"><value>Zur krummen Laterne</value></data>
+  <data name="Adventure.strangers-wager.Scene.ending-walk-away.Title" xml:space="preserve"><value>Ende – Eine ungespielte Wette</value></data>
+  <data name="Adventure.strangers-wager.Scene.ending-walk-away.Body" xml:space="preserve"><value>Du lässt den Fremden bei seinen Karten und Knochenwürfeln zurück. Hinter dir klappert etwas über Holz, und jemand anderes setzt sich auf den freien Stuhl. Was immer die schwarze Marke bedeutet: Heute Nacht ist es das Problem anderer Leute.</value></data>
+  <data name="Adventure.strangers-wager.Scene.ending-walk-away.Location" xml:space="preserve"><value>Zur krummen Laterne</value></data>
+  <data name="Adventure.strangers-wager.Choice.take-seat" xml:space="preserve"><value>Setz dich auf den freien Stuhl gegenüber.</value></data>
+  <data name="Adventure.strangers-wager.Choice.ignore-stranger" xml:space="preserve"><value>Behalt dein Getränk, halte Abstand und überlass ihm seine Spiele.</value></data>
+  <data name="Adventure.strangers-wager.Choice.accept-now" xml:space="preserve"><value>Wähle die Karten. Spiele eine Hand Blackjack.</value></data>
+  <data name="Adventure.strangers-wager.Choice.choose-dice" xml:space="preserve"><value>Wähle die Knochenwürfel. Drei Würfe, die beste Hand zählt.</value></data>
+  <data name="Adventure.strangers-wager.Choice.ask-stakes" xml:space="preserve"><value>Frag, weshalb die schwarze Eisenmarke wichtig ist.</value></data>
+  <data name="Adventure.strangers-wager.Choice.decline" xml:space="preserve"><value>Lehne ab. Manche Spiele kosten mehr als den Einsatz.</value></data>
+  <data name="Adventure.strangers-wager.Choice.accept-informed" xml:space="preserve"><value>Spiele die Blackjack-Hand.</value></data>
+  <data name="Adventure.strangers-wager.Choice.dice-informed" xml:space="preserve"><value>Nimm stattdessen die fünf Knochenwürfel.</value></data>
+  <data name="Adventure.strangers-wager.Choice.leave-informed" xml:space="preserve"><value>Lass die Marke und den Fremden zurück.</value></data>
+  <data name="Adventure.strangers-wager.Choice.encounter-win" xml:space="preserve"><value>[Begegnungsergebnis: Sieg]</value></data>
+  <data name="Adventure.strangers-wager.Choice.encounter-loss" xml:space="preserve"><value>[Begegnungsergebnis: Niederlage]</value></data>
+  <data name="Adventure.strangers-wager.Choice.encounter-draw" xml:space="preserve"><value>[Begegnungsergebnis: Unentschieden]</value></data>
+  <data name="Adventure.strangers-wager.Choice.dice-encounter-win" xml:space="preserve"><value>[Begegnungsergebnis: Sieg]</value></data>
+  <data name="Adventure.strangers-wager.Choice.dice-encounter-loss" xml:space="preserve"><value>[Begegnungsergebnis: Niederlage]</value></data>
+  <data name="Adventure.strangers-wager.Choice.dice-encounter-draw" xml:space="preserve"><value>[Begegnungsergebnis: Unentschieden]</value></data>
+  <data name="Adventure.strangers-wager.Choice.rematch" xml:space="preserve"><value>Spiele eine weitere Hand.</value></data>
+  <data name="Adventure.strangers-wager.Choice.switch-to-dice" xml:space="preserve"><value>Lass die Karten ruhen. Entscheide die Wette mit Würfeln.</value></data>
+  <data name="Adventure.strangers-wager.Choice.leave-push" xml:space="preserve"><value>Akzeptiere den Gleichstand und geh.</value></data>
+  <data name="Adventure.strangers-wager.Choice.dice-rematch" xml:space="preserve"><value>Würfle eine weitere Entscheidungsrunde.</value></data>
+  <data name="Adventure.strangers-wager.Choice.switch-to-cards" xml:space="preserve"><value>Ändere die Wette. Lass die Karten geben.</value></data>
+  <data name="Adventure.strangers-wager.Choice.leave-dice-push" xml:space="preserve"><value>Akzeptiere das Unentschieden und verlasse den Tisch.</value></data>
+  <data name="Adventure.strangers-wager.Choice.black-iron-token" xml:space="preserve"><value>Schwarze Eisenmarke</value></data>
+  <data name="Adventure.strangers-wager.Item.black-iron-token.Name" xml:space="preserve"><value>Schwarze Eisenmarke</value></data>
+  <data name="Adventure.strangers-wager.Item.black-iron-token.Description" xml:space="preserve"><value>Eine schwere Marke mit Rabenprägung, gewonnen vom Aschgrauen Fremden.</value></data>
 </root>

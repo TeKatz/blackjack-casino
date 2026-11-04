@@ -30,6 +30,7 @@ def main() -> None:
         ("black-stag", "crooked-crown"),
         ("drowned-bell", "greyhaven-road"),
         ("dead-mans-hand", "rain-office"),
+        ("strangers-wager", "rainy-tavern"),
     ]
     for campaign, opening in required:
         for field in ("Title", "Body"):
