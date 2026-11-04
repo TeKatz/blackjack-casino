@@ -914,4 +914,103 @@ Im Verlauf deiner Ermittlungen füllt sich die Tafel mit Personen, Orten, Beweis
   <data name="Adventure.drowned-bell.Scene.escape-with-truth.Body" xml:space="preserve"><value>Die Passagierliste sicher unter dem Mantel, wendest du dich der Oberfläche zu. Die Flut hat einen Teil des Rückwegs verschlungen. Hinter dir setzt die Glocke ihr langsames, unmögliches Schwingen fort. Vor dir sind Greyhavens Lichter nur eine blasse Ahnung jenseits von Fels und Wasser.</value></data>
   <data name="Adventure.drowned-bell.Scene.village-reckoning.Title" xml:space="preserve"><value>Greyhaven hört zu</value></data>
   <data name="Adventure.drowned-bell.Scene.village-reckoning.Body" xml:space="preserve"><value>Bei Tagesanbruch hat sich das Dorf in der Kapelle der heiligen Orra versammelt. Tomas steht neben Nell, falls du ihn gerettet hast. Rowan legt die ursprüngliche Passagierliste auf den Altar. Varro bleibt hinten, sein Gesicht unergründlich. Du kannst noch immer entscheiden, wie viel von der Wahrheit allen gehört.</value></data>
+  <data name="Adventure.drowned-bell.Choice.hub-tomas" xml:space="preserve"><value>Durchsuche das Zimmer von Tomas Rook.</value></data>
+  <data name="Adventure.drowned-bell.Choice.hub-chapel" xml:space="preserve"><value>Besuche Vater Rowan in der Kapelle der heiligen Orra.</value></data>
+  <data name="Adventure.drowned-bell.Choice.hub-lighthouse" xml:space="preserve"><value>Steig zum verlassenen Leuchtturm hinauf.</value></data>
+  <data name="Adventure.drowned-bell.Choice.hub-harbor" xml:space="preserve"><value>Untersuche das Lagerhaus von Kapitän Varro.</value></data>
+  <data name="Adventure.drowned-bell.Choice.hub-enough" xml:space="preserve"><value>Breite die gesammelten Beweise aus.</value></data>
+  <data name="Adventure.drowned-bell.Choice.ask-nell-room" xml:space="preserve"><value>Frag Nell, woran Tomas geforscht hat.</value></data>
+  <data name="Adventure.drowned-bell.Choice.take-page" xml:space="preserve"><value>Nimm die veränderte Seite aus der Passagierliste.</value></data>
+  <data name="Adventure.drowned-bell.Choice.record-families" xml:space="preserve"><value>Halte das Muster der Familiennamen in deinen Notizen fest.</value></data>
+  <data name="Adventure.drowned-bell.Choice.ask-original" xml:space="preserve"><value>Frag, wo ein Original erhalten geblieben sein könnte.</value></data>
+  <data name="Adventure.drowned-bell.Choice.mark-false-deaths" xml:space="preserve"><value>Markiere den Widerspruch.</value></data>
+  <data name="Adventure.drowned-bell.Choice.tell-rowan" xml:space="preserve"><value>Zeig Rowan, was die Zeichen bedeuten.</value></data>
+  <data name="Adventure.drowned-bell.Choice.use-rope-crypt" xml:space="preserve"><value>Benutze ein Seil, um den Seitengang zu erreichen.</value></data>
+  <data name="Adventure.drowned-bell.Choice.leave-crypt" xml:space="preserve"><value>Erzwinge den Zugang zum alten Fundament noch nicht.</value></data>
+  <data name="Adventure.drowned-bell.Choice.note-recess" xml:space="preserve"><value>Notiere die glockenförmige Vertiefung und kehre nach oben zurück.</value></data>
+  <data name="Adventure.drowned-bell.Choice.take-key" xml:space="preserve"><value>Nimm den rostigen Gezeitenschlüssel.</value></data>
+  <data name="Adventure.drowned-bell.Choice.continue-tower" xml:space="preserve"><value>Geh direkt zum Turm weiter.</value></data>
+  <data name="Adventure.drowned-bell.Choice.ask-elias" xml:space="preserve"><value>Frag, was unter dem Leuchtturm liegt.</value></data>
+  <data name="Adventure.drowned-bell.Choice.take-log-copy" xml:space="preserve"><value>Bitte Elias um die Seite.</value></data>
+  <data name="Adventure.drowned-bell.Choice.take-drain" xml:space="preserve"><value>Nutze den Entwässerungsbogen.</value></data>
+  <data name="Adventure.drowned-bell.Choice.mark-drain" xml:space="preserve"><value>Geh noch nicht hinein; markiere ihn als Weg unter den Leuchtturm.</value></data>
+  <data name="Adventure.drowned-bell.Choice.trace-line" xml:space="preserve"><value>Verfolge die Leitung so weit, wie es gefahrlos möglich ist.</value></data>
+  <data name="Adventure.drowned-bell.Choice.keep-lamp" xml:space="preserve"><value>Nimm die blaue Salzlaterne und kehre in die Stadt zurück.</value></data>
+  <data name="Adventure.drowned-bell.Choice.watch-warehouse" xml:space="preserve"><value>Beobachte, wohin die Nachtarbeiter die Kisten tragen.</value></data>
+  <data name="Adventure.drowned-bell.Choice.record-cart" xml:space="preserve"><value>Notiere die falsche Dienstroute.</value></data>
+  <data name="Adventure.drowned-bell.Choice.take-evidence" xml:space="preserve"><value>Kopiere die Zahlungen und nimm den Messingschlüssel für den Dienstzugang.</value></data>
+  <data name="Adventure.drowned-bell.Choice.ask-mara-varro" xml:space="preserve"><value>Frag Mara, wohin Varro geht, wenn er ungestört sein will.</value></data>
+  <data name="Adventure.drowned-bell.Choice.confront-varro" xml:space="preserve"><value>Geh direkt zu Kapitän Varro.</value></data>
+  <data name="Adventure.drowned-bell.Choice.accept-invitation" xml:space="preserve"><value>Nimm die Einladung an.</value></data>
+  <data name="Adventure.drowned-bell.Choice.go-game" xml:space="preserve"><value>Triff dich heute Nacht mit ihm.</value></data>
+  <data name="Adventure.drowned-bell.Choice.approach-varro-game" xml:space="preserve"><value>Setz dich Kapitän Varro gegenüber.</value></data>
+  <data name="Adventure.drowned-bell.Choice.approach-bram-game" xml:space="preserve"><value>Frag Bram nach den Knochenwürfeln.</value></data>
+  <data name="Adventure.drowned-bell.Choice.play-varro" xml:space="preserve"><value>Spiele die Hand.</value></data>
+  <data name="Adventure.drowned-bell.Choice.leave-varro" xml:space="preserve"><value>Lehne ab und sprich stattdessen mit Bram.</value></data>
+  <data name="Adventure.drowned-bell.Choice.varro-game-win" xml:space="preserve"><value>[Begegnungsergebnis: Sieg]</value></data>
+  <data name="Adventure.drowned-bell.Choice.varro-game-loss" xml:space="preserve"><value>[Begegnungsergebnis: Niederlage]</value></data>
+  <data name="Adventure.drowned-bell.Choice.varro-game-draw" xml:space="preserve"><value>[Begegnungsergebnis: Unentschieden]</value></data>
+  <data name="Adventure.drowned-bell.Choice.take-chart" xml:space="preserve"><value>Steck die Karte ein und befrage auch Bram.</value></data>
+  <data name="Adventure.drowned-bell.Choice.leave-games-win" xml:space="preserve"><value>Geh mit der Karte und bereite den Abstieg zur Klippe vor.</value></data>
+  <data name="Adventure.drowned-bell.Choice.accept-loss" xml:space="preserve"><value>Halte dein Wort und wende dich an Bram.</value></data>
+  <data name="Adventure.drowned-bell.Choice.leave-games-loss" xml:space="preserve"><value>Geh, bevor dich dein Stolz noch mehr kostet.</value></data>
+  <data name="Adventure.drowned-bell.Choice.varro-rematch" xml:space="preserve"><value>Spiele eine weitere Hand.</value></data>
+  <data name="Adventure.drowned-bell.Choice.switch-dice" xml:space="preserve"><value>Akzeptiere den Gleichstand und fordere Bram heraus.</value></data>
+  <data name="Adventure.drowned-bell.Choice.leave-push" xml:space="preserve"><value>Geh mit dem Wissen, das du bereits hast.</value></data>
+  <data name="Adventure.drowned-bell.Choice.play-bram" xml:space="preserve"><value>Spiele mit Bram eine Runde Fünfling.</value></data>
+  <data name="Adventure.drowned-bell.Choice.leave-bram" xml:space="preserve"><value>Verlass den Tisch und bereite den Abstieg vor.</value></data>
+  <data name="Adventure.drowned-bell.Choice.bram-game-win" xml:space="preserve"><value>[Begegnungsergebnis: Sieg]</value></data>
+  <data name="Adventure.drowned-bell.Choice.bram-game-loss" xml:space="preserve"><value>[Begegnungsergebnis: Niederlage]</value></data>
+  <data name="Adventure.drowned-bell.Choice.bram-game-draw" xml:space="preserve"><value>[Begegnungsergebnis: Unentschieden]</value></data>
+  <data name="Adventure.drowned-bell.Choice.take-tomas-map" xml:space="preserve"><value>Nimm die Karte und bereite den Weg unter den Leuchtturm vor.</value></data>
+  <data name="Adventure.drowned-bell.Choice.thank-bram" xml:space="preserve"><value>Bedank dich bei ihm und bereite den Abstieg vor.</value></data>
+  <data name="Adventure.drowned-bell.Choice.take-warning" xml:space="preserve"><value>Präge dir die Warnung ein und geh.</value></data>
+  <data name="Adventure.drowned-bell.Choice.bram-rematch" xml:space="preserve"><value>Würfle erneut.</value></data>
+  <data name="Adventure.drowned-bell.Choice.leave-draw" xml:space="preserve"><value>Akzeptiere das Unentschieden und geh.</value></data>
+  <data name="Adventure.drowned-bell.Choice.bring-nell" xml:space="preserve"><value>Lass Nell mitkommen.</value></data>
+  <data name="Adventure.drowned-bell.Choice.keep-nell-safe" xml:space="preserve"><value>Bitte Nell zu bleiben und sich bereitzuhalten, Hilfe zu holen.</value></data>
+  <data name="Adventure.drowned-bell.Choice.enter-drain" xml:space="preserve"><value>Betritt den Abfluss unter dem Leuchtturm.</value></data>
+  <data name="Adventure.drowned-bell.Choice.use-service-key" xml:space="preserve"><value>Benutz Varros Dienstschlüssel an der Klippenluke.</value></data>
+  <data name="Adventure.drowned-bell.Choice.follow-tomas-map" xml:space="preserve"><value>Folge Tomas’ markiertem oberen Weg.</value></data>
+  <data name="Adventure.drowned-bell.Choice.take-tonic" xml:space="preserve"><value>Nimm einen Heiltrank und geh weiter.</value></data>
+  <data name="Adventure.drowned-bell.Choice.move-fast-service" xml:space="preserve"><value>Lass die Vorräte zurück und beeil dich.</value></data>
+  <data name="Adventure.drowned-bell.Choice.follow-scarf" xml:space="preserve"><value>Folge Tomas’ Markierungen.</value></data>
+  <data name="Adventure.drowned-bell.Choice.wade-forward" xml:space="preserve"><value>Wate zum behauenen Bogen.</value></data>
+  <data name="Adventure.drowned-bell.Choice.take-ledge" xml:space="preserve"><value>Folge dem Vorsprung tiefer hinein.</value></data>
+  <data name="Adventure.drowned-bell.Choice.push-through-cold" xml:space="preserve"><value>Geh weiter, bevor das Wasser noch höher steigt.</value></data>
+  <data name="Adventure.drowned-bell.Choice.drink-tonic-cold" xml:space="preserve"><value>Benutz einen Heiltrank und wärm dich kurz auf.</value></data>
+  <data name="Adventure.drowned-bell.Choice.follow-cough" xml:space="preserve"><value>Folge der menschlichen Stimme.</value></data>
+  <data name="Adventure.drowned-bell.Choice.follow-bell" xml:space="preserve"><value>Folge den Kapellenreliefs in Richtung Glocke.</value></data>
+  <data name="Adventure.drowned-bell.Choice.free-tomas-key" xml:space="preserve"><value>Öffne das alte Eisenschloss mit dem Gezeitenschlüssel.</value></data>
+  <data name="Adventure.drowned-bell.Choice.bind-and-move" xml:space="preserve"><value>Verbinde die Wunde und geh weiter.</value></data>
+  <data name="Adventure.drowned-bell.Choice.ask-manifest" xml:space="preserve"><value>Frag Tomas, wo er die ursprüngliche Passagierliste versteckt hat.</value></data>
+  <data name="Adventure.drowned-bell.Choice.send-tomas-back" xml:space="preserve"><value>Schick Tomas zur Oberfläche zurück und geh allein weiter.</value></data>
+  <data name="Adventure.drowned-bell.Choice.bring-tomas" xml:space="preserve"><value>Nimm Tomas als Führer mit.</value></data>
+  <data name="Adventure.drowned-bell.Choice.use-names-rubbing" xml:space="preserve"><value>Lies die elf wiedergefundenen Namen laut vor.</value></data>
+  <data name="Adventure.drowned-bell.Choice.force-forward" xml:space="preserve"><value>Zwing dich, zur Heiligennische weiterzugehen.</value></data>
+  <data name="Adventure.drowned-bell.Choice.take-manifest" xml:space="preserve"><value>Nimm die ursprüngliche Passagierliste.</value></data>
+  <data name="Adventure.drowned-bell.Choice.accept-truth" xml:space="preserve"><value>Bring die Wahrheit in die Glockenkammer.</value></data>
+  <data name="Adventure.drowned-bell.Choice.trust-varro" xml:space="preserve"><value>Glaub ihm, dass er das Geheimnis eindämmte, statt es zu erschaffen.</value></data>
+  <data name="Adventure.drowned-bell.Choice.reject-varro" xml:space="preserve"><value>Sag Varro, dass die Lebenden nicht für die Toten Schweigen wählen dürfen.</value></data>
+  <data name="Adventure.drowned-bell.Choice.take-honesty" xml:space="preserve"><value>Nutze die Wahrheit, ohne ihm zu vergeben.</value></data>
+  <data name="Adventure.drowned-bell.Choice.open-with-key" xml:space="preserve"><value>Öffne die Bronzetür mit dem Gezeitenschlüssel.</value></data>
+  <data name="Adventure.drowned-bell.Choice.enter-high-water" xml:space="preserve"><value>Betritt die Glockenkammer.</value></data>
+  <data name="Adventure.drowned-bell.Choice.approach-bell" xml:space="preserve"><value>Nähere dich der Glocke und hör zu.</value></data>
+  <data name="Adventure.drowned-bell.Choice.inspect-gold" xml:space="preserve"><value>Untersuche zuerst die aufgebrochene Lohnkiste.</value></data>
+  <data name="Adventure.drowned-bell.Choice.leave-gold" xml:space="preserve"><value>Lass das Gold dort liegen, wo die Toten es sehen können.</value></data>
+  <data name="Adventure.drowned-bell.Choice.take-gold" xml:space="preserve"><value>Nimm die Reste und überlass das alte Verbrechen dem Meer.</value></data>
+  <data name="Adventure.drowned-bell.Choice.show-manifest" xml:space="preserve"><value>Halte die ursprüngliche Passagierliste hoch und antworte mit ihren Namen.</value></data>
+  <data name="Adventure.drowned-bell.Choice.silence-bell" xml:space="preserve"><value>Entscheide, dass es am sichersten ist, die Glocke für immer zum Schweigen zu bringen.</value></data>
+  <data name="Adventure.drowned-bell.Choice.take-truth-up" xml:space="preserve"><value>Bring die Beweise zurück nach Greyhaven und enthülle alles.</value></data>
+  <data name="Adventure.drowned-bell.Choice.perform-rite" xml:space="preserve"><value>Vollende den Gedenkritus.</value></data>
+  <data name="Adventure.drowned-bell.Choice.expose-instead" xml:space="preserve"><value>Bring die Liste ins Dorf, statt dem Ritual zu vertrauen.</value></data>
+  <data name="Adventure.drowned-bell.Choice.destroy-after-names" xml:space="preserve"><value>Gib ihnen ihre Namen zurück und zerstöre dann die Glocke.</value></data>
+  <data name="Adventure.drowned-bell.Choice.ring-eleven" xml:space="preserve"><value>Läute die Glocke elfmal und begleiche die Schuld.</value></data>
+  <data name="Adventure.drowned-bell.Choice.not-enough" xml:space="preserve"><value>Du kannst den Ritus nicht vollständig vollenden; trag die Wahrheit stattdessen nach oben.</value></data>
+  <data name="Adventure.drowned-bell.Choice.use-rope-bell" xml:space="preserve"><value>Benutz das Seil und die alte Rolle, um die Glocke sicher hinabzulassen.</value></data>
+  <data name="Adventure.drowned-bell.Choice.escape-upper-map" xml:space="preserve"><value>Nutze Tomas’ oberen Weg, um den gefluteten Gang zu umgehen.</value></data>
+  <data name="Adventure.drowned-bell.Choice.escape-chart" xml:space="preserve"><value>Nutze Varros eingezeichneten Dienstweg.</value></data>
+  <data name="Adventure.drowned-bell.Choice.publish-all" xml:space="preserve"><value>Lies die ursprüngliche Passagierliste und die Beweise des Leuchtturmwärters laut vor.</value></data>
+  <data name="Adventure.drowned-bell.Choice.quiet-record" xml:space="preserve"><value>Gib den Namen ihren Platz im Kirchenbuch zurück, ohne öffentlich Nachkommen zu benennen.</value></data>
+  <data name="Adventure.drowned-bell.Choice.bury-truth" xml:space="preserve"><value>Gib Greyhaven die Namen zurück, aber verschweige die Einzelheiten des Verbrechens.</value></data>
 </root>

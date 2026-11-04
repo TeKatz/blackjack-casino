@@ -914,4 +914,103 @@ The board grows as the investigation uncovers people, places, evidence, leads an
   <data name="Adventure.drowned-bell.Scene.escape-with-truth.Body" xml:space="preserve"><value>With the manifest protected beneath your coat, you turn for the surface. The tide has claimed part of the return route. Behind you the bell continues its slow impossible swing. Ahead, Greyhaven&apos;s lights are only a pale suggestion through rock and water.</value></data>
   <data name="Adventure.drowned-bell.Scene.village-reckoning.Title" xml:space="preserve"><value>Greyhaven Hears</value></data>
   <data name="Adventure.drowned-bell.Scene.village-reckoning.Body" xml:space="preserve"><value>Dawn finds the village gathered inside Saint Orra&apos;s. Tomas stands beside Nell if you rescued him. Rowan places the original manifest on the altar. Varro remains at the back, expression unreadable. You can still decide how much of the truth belongs to everyone.</value></data>
+  <data name="Adventure.drowned-bell.Choice.hub-tomas" xml:space="preserve"><value>Search Tomas Rook&apos;s room.</value></data>
+  <data name="Adventure.drowned-bell.Choice.hub-chapel" xml:space="preserve"><value>Visit Father Rowan at Saint Orra&apos;s.</value></data>
+  <data name="Adventure.drowned-bell.Choice.hub-lighthouse" xml:space="preserve"><value>Climb to the abandoned lighthouse.</value></data>
+  <data name="Adventure.drowned-bell.Choice.hub-harbor" xml:space="preserve"><value>Investigate Captain Varro&apos;s warehouse.</value></data>
+  <data name="Adventure.drowned-bell.Choice.hub-enough" xml:space="preserve"><value>Lay out the evidence you have gathered.</value></data>
+  <data name="Adventure.drowned-bell.Choice.ask-nell-room" xml:space="preserve"><value>Ask Nell what Tomas had been researching.</value></data>
+  <data name="Adventure.drowned-bell.Choice.take-page" xml:space="preserve"><value>Take the altered manifest page.</value></data>
+  <data name="Adventure.drowned-bell.Choice.record-families" xml:space="preserve"><value>Add the family pattern to your notes.</value></data>
+  <data name="Adventure.drowned-bell.Choice.ask-original" xml:space="preserve"><value>Ask where an original might have survived.</value></data>
+  <data name="Adventure.drowned-bell.Choice.mark-false-deaths" xml:space="preserve"><value>Mark the discrepancy.</value></data>
+  <data name="Adventure.drowned-bell.Choice.tell-rowan" xml:space="preserve"><value>Show Rowan what the marks mean.</value></data>
+  <data name="Adventure.drowned-bell.Choice.use-rope-crypt" xml:space="preserve"><value>Use rope to reach the side passage.</value></data>
+  <data name="Adventure.drowned-bell.Choice.leave-crypt" xml:space="preserve"><value>Do not force the old foundation yet.</value></data>
+  <data name="Adventure.drowned-bell.Choice.note-recess" xml:space="preserve"><value>Record the bell-shaped recess and return upstairs.</value></data>
+  <data name="Adventure.drowned-bell.Choice.take-key" xml:space="preserve"><value>Take the rusted tide key.</value></data>
+  <data name="Adventure.drowned-bell.Choice.continue-tower" xml:space="preserve"><value>Continue straight to the tower.</value></data>
+  <data name="Adventure.drowned-bell.Choice.ask-elias" xml:space="preserve"><value>Ask what is below the lighthouse.</value></data>
+  <data name="Adventure.drowned-bell.Choice.take-log-copy" xml:space="preserve"><value>Ask Elias for the page.</value></data>
+  <data name="Adventure.drowned-bell.Choice.take-drain" xml:space="preserve"><value>Use the drainage arch.</value></data>
+  <data name="Adventure.drowned-bell.Choice.mark-drain" xml:space="preserve"><value>Do not enter yet; mark it as a route below the lighthouse.</value></data>
+  <data name="Adventure.drowned-bell.Choice.trace-line" xml:space="preserve"><value>Trace the line as far as you safely can.</value></data>
+  <data name="Adventure.drowned-bell.Choice.keep-lamp" xml:space="preserve"><value>Take the blue salt-lantern and return to town.</value></data>
+  <data name="Adventure.drowned-bell.Choice.watch-warehouse" xml:space="preserve"><value>Watch where the night workers carry crates.</value></data>
+  <data name="Adventure.drowned-bell.Choice.record-cart" xml:space="preserve"><value>Record the false service route.</value></data>
+  <data name="Adventure.drowned-bell.Choice.take-evidence" xml:space="preserve"><value>Copy the payments and take the brass service key.</value></data>
+  <data name="Adventure.drowned-bell.Choice.ask-mara-varro" xml:space="preserve"><value>Ask Mara where Varro goes when he wants privacy.</value></data>
+  <data name="Adventure.drowned-bell.Choice.confront-varro" xml:space="preserve"><value>Go directly to Captain Varro.</value></data>
+  <data name="Adventure.drowned-bell.Choice.accept-invitation" xml:space="preserve"><value>Accept the invitation.</value></data>
+  <data name="Adventure.drowned-bell.Choice.go-game" xml:space="preserve"><value>Meet him tonight.</value></data>
+  <data name="Adventure.drowned-bell.Choice.approach-varro-game" xml:space="preserve"><value>Sit across from Captain Varro.</value></data>
+  <data name="Adventure.drowned-bell.Choice.approach-bram-game" xml:space="preserve"><value>Ask Bram about the bone dice.</value></data>
+  <data name="Adventure.drowned-bell.Choice.play-varro" xml:space="preserve"><value>Play the hand.</value></data>
+  <data name="Adventure.drowned-bell.Choice.leave-varro" xml:space="preserve"><value>Refuse and speak to Bram instead.</value></data>
+  <data name="Adventure.drowned-bell.Choice.varro-game-win" xml:space="preserve"><value>[Encounter result: win]</value></data>
+  <data name="Adventure.drowned-bell.Choice.varro-game-loss" xml:space="preserve"><value>[Encounter result: loss]</value></data>
+  <data name="Adventure.drowned-bell.Choice.varro-game-draw" xml:space="preserve"><value>[Encounter result: draw]</value></data>
+  <data name="Adventure.drowned-bell.Choice.take-chart" xml:space="preserve"><value>Pocket the chart and question Bram as well.</value></data>
+  <data name="Adventure.drowned-bell.Choice.leave-games-win" xml:space="preserve"><value>Leave with the chart and prepare for the cliff.</value></data>
+  <data name="Adventure.drowned-bell.Choice.accept-loss" xml:space="preserve"><value>Keep your word and turn to Bram.</value></data>
+  <data name="Adventure.drowned-bell.Choice.leave-games-loss" xml:space="preserve"><value>Leave before pride costs more.</value></data>
+  <data name="Adventure.drowned-bell.Choice.varro-rematch" xml:space="preserve"><value>Play another hand.</value></data>
+  <data name="Adventure.drowned-bell.Choice.switch-dice" xml:space="preserve"><value>Leave the push and challenge Bram.</value></data>
+  <data name="Adventure.drowned-bell.Choice.leave-push" xml:space="preserve"><value>Leave with what you already know.</value></data>
+  <data name="Adventure.drowned-bell.Choice.play-bram" xml:space="preserve"><value>Play Five of a Kind against Bram.</value></data>
+  <data name="Adventure.drowned-bell.Choice.leave-bram" xml:space="preserve"><value>Leave the table and prepare for the cliff.</value></data>
+  <data name="Adventure.drowned-bell.Choice.bram-game-win" xml:space="preserve"><value>[Encounter result: win]</value></data>
+  <data name="Adventure.drowned-bell.Choice.bram-game-loss" xml:space="preserve"><value>[Encounter result: loss]</value></data>
+  <data name="Adventure.drowned-bell.Choice.bram-game-draw" xml:space="preserve"><value>[Encounter result: draw]</value></data>
+  <data name="Adventure.drowned-bell.Choice.take-tomas-map" xml:space="preserve"><value>Take the map and prepare to go below the lighthouse.</value></data>
+  <data name="Adventure.drowned-bell.Choice.thank-bram" xml:space="preserve"><value>Thank him and prepare for the cliff.</value></data>
+  <data name="Adventure.drowned-bell.Choice.take-warning" xml:space="preserve"><value>Remember the warning and leave.</value></data>
+  <data name="Adventure.drowned-bell.Choice.bram-rematch" xml:space="preserve"><value>Roll again.</value></data>
+  <data name="Adventure.drowned-bell.Choice.leave-draw" xml:space="preserve"><value>Call the draw fair and leave.</value></data>
+  <data name="Adventure.drowned-bell.Choice.bring-nell" xml:space="preserve"><value>Let Nell come with you.</value></data>
+  <data name="Adventure.drowned-bell.Choice.keep-nell-safe" xml:space="preserve"><value>Ask Nell to stay and be ready to get help.</value></data>
+  <data name="Adventure.drowned-bell.Choice.enter-drain" xml:space="preserve"><value>Enter through the lighthouse drain.</value></data>
+  <data name="Adventure.drowned-bell.Choice.use-service-key" xml:space="preserve"><value>Use Varro&apos;s service key on the cliff hatch.</value></data>
+  <data name="Adventure.drowned-bell.Choice.follow-tomas-map" xml:space="preserve"><value>Follow Tomas&apos;s marked upper route.</value></data>
+  <data name="Adventure.drowned-bell.Choice.take-tonic" xml:space="preserve"><value>Take a healing tonic and continue.</value></data>
+  <data name="Adventure.drowned-bell.Choice.move-fast-service" xml:space="preserve"><value>Leave the supplies and move quickly.</value></data>
+  <data name="Adventure.drowned-bell.Choice.follow-scarf" xml:space="preserve"><value>Follow Tomas&apos;s markers.</value></data>
+  <data name="Adventure.drowned-bell.Choice.wade-forward" xml:space="preserve"><value>Wade toward the carved arch.</value></data>
+  <data name="Adventure.drowned-bell.Choice.take-ledge" xml:space="preserve"><value>Follow the ledge deeper.</value></data>
+  <data name="Adventure.drowned-bell.Choice.push-through-cold" xml:space="preserve"><value>Keep moving before the water rises further.</value></data>
+  <data name="Adventure.drowned-bell.Choice.drink-tonic-cold" xml:space="preserve"><value>Use a healing tonic and warm yourself briefly.</value></data>
+  <data name="Adventure.drowned-bell.Choice.follow-cough" xml:space="preserve"><value>Follow the human voice.</value></data>
+  <data name="Adventure.drowned-bell.Choice.follow-bell" xml:space="preserve"><value>Follow the chapel carvings toward the bell.</value></data>
+  <data name="Adventure.drowned-bell.Choice.free-tomas-key" xml:space="preserve"><value>Use the tide key on the old iron lock.</value></data>
+  <data name="Adventure.drowned-bell.Choice.bind-and-move" xml:space="preserve"><value>Bind the wound and move.</value></data>
+  <data name="Adventure.drowned-bell.Choice.ask-manifest" xml:space="preserve"><value>Ask Tomas where he hid the original manifest.</value></data>
+  <data name="Adventure.drowned-bell.Choice.send-tomas-back" xml:space="preserve"><value>Send Tomas toward the surface and continue alone.</value></data>
+  <data name="Adventure.drowned-bell.Choice.bring-tomas" xml:space="preserve"><value>Keep Tomas with you as a guide.</value></data>
+  <data name="Adventure.drowned-bell.Choice.use-names-rubbing" xml:space="preserve"><value>Read the eleven recovered names aloud.</value></data>
+  <data name="Adventure.drowned-bell.Choice.force-forward" xml:space="preserve"><value>Force yourself toward the saint&apos;s niche.</value></data>
+  <data name="Adventure.drowned-bell.Choice.take-manifest" xml:space="preserve"><value>Take the original manifest.</value></data>
+  <data name="Adventure.drowned-bell.Choice.accept-truth" xml:space="preserve"><value>Carry the truth to the bell chamber.</value></data>
+  <data name="Adventure.drowned-bell.Choice.trust-varro" xml:space="preserve"><value>Accept that he was containing the secret, not creating it.</value></data>
+  <data name="Adventure.drowned-bell.Choice.reject-varro" xml:space="preserve"><value>Tell Varro the living do not get to choose silence for the dead.</value></data>
+  <data name="Adventure.drowned-bell.Choice.take-honesty" xml:space="preserve"><value>Use the truth without forgiving him.</value></data>
+  <data name="Adventure.drowned-bell.Choice.open-with-key" xml:space="preserve"><value>Open the bronze door with the tide key.</value></data>
+  <data name="Adventure.drowned-bell.Choice.enter-high-water" xml:space="preserve"><value>Enter the bell chamber.</value></data>
+  <data name="Adventure.drowned-bell.Choice.approach-bell" xml:space="preserve"><value>Approach the bell and listen.</value></data>
+  <data name="Adventure.drowned-bell.Choice.inspect-gold" xml:space="preserve"><value>Inspect the opened payroll chest first.</value></data>
+  <data name="Adventure.drowned-bell.Choice.leave-gold" xml:space="preserve"><value>Leave the gold where the dead can see it.</value></data>
+  <data name="Adventure.drowned-bell.Choice.take-gold" xml:space="preserve"><value>Take what remains and leave the old crime to the sea.</value></data>
+  <data name="Adventure.drowned-bell.Choice.show-manifest" xml:space="preserve"><value>Hold up the original manifest and answer with their names.</value></data>
+  <data name="Adventure.drowned-bell.Choice.silence-bell" xml:space="preserve"><value>Decide the safest answer is to silence the bell forever.</value></data>
+  <data name="Adventure.drowned-bell.Choice.take-truth-up" xml:space="preserve"><value>Take the evidence back to Greyhaven and expose everything.</value></data>
+  <data name="Adventure.drowned-bell.Choice.perform-rite" xml:space="preserve"><value>Complete the memorial rite.</value></data>
+  <data name="Adventure.drowned-bell.Choice.expose-instead" xml:space="preserve"><value>Take the manifest to the village instead of trusting the ritual.</value></data>
+  <data name="Adventure.drowned-bell.Choice.destroy-after-names" xml:space="preserve"><value>Give them their names, then destroy the bell.</value></data>
+  <data name="Adventure.drowned-bell.Choice.ring-eleven" xml:space="preserve"><value>Ring the bell eleven times and complete the debt.</value></data>
+  <data name="Adventure.drowned-bell.Choice.not-enough" xml:space="preserve"><value>You cannot complete every part of the rite; carry the truth upward instead.</value></data>
+  <data name="Adventure.drowned-bell.Choice.use-rope-bell" xml:space="preserve"><value>Use the rope and old pulley to drop it safely.</value></data>
+  <data name="Adventure.drowned-bell.Choice.escape-upper-map" xml:space="preserve"><value>Use Tomas&apos;s upper route to avoid the flooded passage.</value></data>
+  <data name="Adventure.drowned-bell.Choice.escape-chart" xml:space="preserve"><value>Use Varro&apos;s marked service route.</value></data>
+  <data name="Adventure.drowned-bell.Choice.publish-all" xml:space="preserve"><value>Read the original manifest and keeper&apos;s evidence aloud.</value></data>
+  <data name="Adventure.drowned-bell.Choice.quiet-record" xml:space="preserve"><value>Restore the names to the parish record without publicly naming descendants.</value></data>
+  <data name="Adventure.drowned-bell.Choice.bury-truth" xml:space="preserve"><value>Give Greyhaven the names but bury the details of the crime.</value></data>
 </root>
