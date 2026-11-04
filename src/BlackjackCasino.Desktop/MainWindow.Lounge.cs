@@ -122,7 +122,6 @@ public partial class MainWindow
                     state.Normalize();
                     preferences = preferences with { Jigsaw = state };
                     if (!testSession) SavePreferences();
-                    RecordJigsawCompletions(state);
                 },
                 jigsawStats,
                 RecordJigsawCompletion),
