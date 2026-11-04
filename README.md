@@ -2,7 +2,7 @@
 
 An **offline-first, single-player casino for Windows**, built around virtual credits and progression. No real-money gambling, payments, accounts, advertisements or online services are required for gameplay.
 
-The desktop application uses **.NET 10 and WPF**. Midnight Manor is the first game with a modern **React + TypeScript + PixiJS** presentation, hosted locally through **WebView2** and backed by the existing C# game engine.
+The desktop application uses **.NET 10 and WPF**. The casino lobby and Midnight Manor now have separate **React + TypeScript + PixiJS** presentations, hosted locally through **WebView2**. Existing game logic and persistent player data remain in C#.
 
 ## Games and experiences
 
@@ -20,6 +20,18 @@ The desktop application uses **.NET 10 and WPF**. Midnight Manor is the first ga
 | **Tales from the Backroom** | Branching adventures and investigations, including *Dead Man's Hand* |
 
 A shared virtual bankroll connects the wagering games. The wider progression system includes experience, Prestige, Seasons, challenges, cosmetic Coins, the Collector's Album, a cosmetic shop and the Casino Vault. Casino Empire maintains a separate construction economy.
+
+## Casino lobby: modern presentation
+
+The Development lobby uses its own React/TypeScript entry point (`frontend/lobby.html`) beside the Midnight Manor game. It keeps **all nine casino activities**, a category navigation rail, the player's live header and a compact overview of Season Pass, album, cosmetics, challenges and statistics. Its design follows the emerald-and-gold Midnight Club reference.
+
+- Offline-local **generated artwork atlases** in `frontend/public/lobby/`: the background, hero, eight standard game illustrations, Midnight Merge and decorative navigation/profile/overview icons. The browser never downloads art from a server.
+- Responsive DOM layout with accessible keyboard-focus states, compact screen-height handling, card hover lift, image zoom, reflected highlights and gold button feedback.
+- Transparent **PixiJS particle atmosphere**, limited to 30 FPS and paused while the document is hidden; it respects reduced-motion settings and the game's animation preference.
+- **C#-owned** player balances, progression and mode availability. The isolated WebView2 lobby sends only allowed navigation intents; it cannot calculate rewards or change saved finances.
+- The original **WPF lobby remains as a working fallback** if WebView2 is unavailable or the modern page does not load. Every existing game opens through the original registered C# action, including Casino Empire's detached-window option.
+
+For native builds, run `npm run build` from `frontend/` before the .NET build. Vite emits both `index.html` (Manor) and `lobby.html`, plus their local assets into `frontend/dist/`; the desktop project packages that whole directory as `ModernFrontend`.
 
 ## Midnight Manor: modern presentation
 
@@ -60,7 +72,7 @@ See [Development update delivery](docs/development-update-delivery.md) for relea
 | --- | --- |
 | `src/BlackjackCasino.Core/` | Game rules, bankroll, rewards, progression and state models |
 | `src/BlackjackCasino.Desktop/` | Windows shell, existing WPF games, WebView2 host, settings and persistence |
-| `frontend/` | Modern Midnight Manor interface and PixiJS rendering |
+| `frontend/` | Modern lobby and Midnight Manor pages, local generated asset atlases and PixiJS effects |
 | `src/BlackjackCasino.Update/` | Update manifest, version and package validation |
 | `src/BlackjackCasino.Updater/` | Staged installation and restart helper |
 | `tests/BlackjackCasino.Tests/` | Unit and integration tests |
@@ -99,7 +111,7 @@ Windows CI additionally runs actual desktop startup, Manor runtime and presentat
 ## Current engineering boundaries
 
 - **Midnight Manor:** modern presentation is the default in Development; remaining subjective audio, display-scaling and long-session performance checks are tracked separately.
-- **Other game interfaces:** still use the existing WPF presentation until migrated individually.
+- **Other game interfaces:** still use WPF until migrated individually; the lobby and Midnight Manor are already modern, with WPF lobby fallback retained.
 - **Localization:** English/German shell support is present; some older game and adventure content still needs translation.
 - **Player data and financial outcomes:** preserve backward compatibility, deterministic payout tests and exactly-once committed transitions.
 - **Releases:** `main` and Stable do not inherit Development changes automatically.
