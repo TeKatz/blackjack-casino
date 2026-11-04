@@ -31,6 +31,7 @@ export function ManorStage({ snapshot, reducedMotion }: Props) {
     if (!host) return;
     const app = new Application();
     let disposed = false;
+    let initialized = false;
     let resizeObserver: ResizeObserver | undefined;
     let pulse: Graphics | undefined;
     let tick = 0;
@@ -44,7 +45,8 @@ export function ManorStage({ snapshot, reducedMotion }: Props) {
         resolution: Math.min(window.devicePixelRatio || 1, 2),
         autoDensity: true,
       });
-      if (disposed) { app.destroy(true); return; }
+      initialized = true;
+      if (disposed) { app.destroy(true, { children: true }); return; }
       host.appendChild(app.canvas);
       app.canvas.setAttribute('aria-label', 'Five reels and three rows of Midnight Manor symbols');
       app.canvas.style.width = '100%';
@@ -111,7 +113,7 @@ export function ManorStage({ snapshot, reducedMotion }: Props) {
     return () => {
       disposed = true;
       resizeObserver?.disconnect();
-      if (app.renderer) app.destroy(true, { children: true });
+      if (initialized) app.destroy(true, { children: true });
     };
   }, [snapshot, reducedMotion]);
   return <div className="manor-canvas" ref={holder} role="img" aria-label="Midnight Manor five-reel preview" />;
