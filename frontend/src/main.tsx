@@ -6,6 +6,9 @@ import {
 import type { GameAction, ManorSnapshot } from './bridge/protocol';
 import { ManorStage } from './graphics/ManorStage';
 import { ManorRunMap } from './graphics/ManorRunMap';
+import { ManorAudio } from './audio/manorAudio';
+import { runCue, runMoment, spinCue, spinMoment } from './graphics/manorMoments';
+import type { ManorMoment } from './graphics/manorMoments';
 import type { ReelSpeed } from './graphics/reelTiming';
 import './styles.css';
 
@@ -30,6 +33,23 @@ function ManorApp() {
   const [lowMotion, setLowMotion] = useState(
     window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const [confirmAuto, setConfirmAuto] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [ambienceEnabled, setAmbienceEnabled] = useState(false);
+  const [volume, setVolume] = useState(35);
+  const [moment, setMoment] = useState<ManorMoment | null>(null);
+  const audio = useRef<ManorAudio | null>(null);
+  if (audio.current === null) audio.current = new ManorAudio();
+  useEffect(() => () => { audio.current?.dispose(); }, []);
+  const presentation = useRef({ onSpin: (result: ManorSnapshot) => {
+    setMoment(spinMoment(result));
+    const cue = spinCue(result);
+    if (cue) audio.current?.play(cue);
+  }, onReel: (_index: number) => { audio.current?.play('reel'); } });
+  presentation.current.onSpin = (result: ManorSnapshot) => {
+    setMoment(spinMoment(result));
+    const cue = spinCue(result);
+    if (cue) audio.current?.play(cue);
+  };
 
   useEffect(() => {
     const applySnapshot = (next: ManorSnapshot) => {
@@ -46,9 +66,15 @@ function ManorApp() {
         const beforeRevision = acceptedRevisionRef.current;
         applySnapshot(message.payload);
         if ((pendingRef.current === message.requestId || pendingRef.current === 'recovering') &&
-            BigInt(message.payload.revision) > BigInt(beforeRevision) &&
-            pendingTypeRef.current?.startsWith('spin.')) {
-          setSpinEpoch(previous => previous + 1);
+            BigInt(message.payload.revision) > BigInt(beforeRevision)) {
+          const type = pendingTypeRef.current;
+          if (type?.startsWith('spin.')) {
+            setSpinEpoch(previous => previous + 1);
+            audio.current?.play('spin');
+          } else if (type?.startsWith('run.')) {
+            setMoment(runMoment(message.payload, type));
+            audio.current?.play(runCue(message.payload, type));
+          }
         }
         // An explicit recovery snapshot can reconcile a lost response after a timeout.
         if (pendingRef.current === message.requestId || pendingRef.current === 'recovering') {
@@ -86,7 +112,10 @@ function ManorApp() {
       return;
     }
     setConfirmAuto(false);
+    setMoment(null);
     setError(null);
+    // The first actual button press unlocks Web Audio in WebView2.
+    audio.current?.arm();
     const requestId = sendAction(type, { expectedRevision: snapshot.revision, ...extras });
     pendingRef.current = requestId;
     pendingTypeRef.current = type;
@@ -135,7 +164,22 @@ function ManorApp() {
             <span>20 FIXED PAYLINES · 5 × 3</span>
           </div>
           <ManorStage snapshot={snapshot} reducedMotion={motionOff} speed={reelSpeed}
-            spinEpoch={spinEpoch} onSpinningChange={setAnimating} />
+            spinEpoch={spinEpoch} onSpinningChange={setAnimating}
+            onReelStop={index => presentation.current.onReel(index)}
+            onSpinPresented={result => presentation.current.onSpin(result)} />
+          {moment && (
+            <div className={'manor-moment ' + moment.key + (motionOff ? ' no-motion' : '')}
+              role="status" aria-live="polite">
+              <span className="manor-moment-crest" aria-hidden="true">
+                {moment.key === 'moon' ? '☾' : moment.key === 'door' ? '⌑' : '✦'}
+              </span>
+              <div className="manor-moment-copy">
+                <strong>{moment.heading}</strong>
+                <span>{moment.detail}</span>
+                {moment.secondary && <small>{moment.secondary}</small>}
+              </div>
+            </div>
+          )}
           <div className="machine-footer">
             <span>{snapshot.hasCommittedSpin
               ? snapshot.lastSpinFree ? 'LAST HAUNTED NIGHT FREE SPIN' : 'LAST PAID SPIN'
@@ -190,7 +234,10 @@ function ManorApp() {
                 <div className="turn-counter">TURN {run.turn} / 24</div>
               </div>
               <p className="run-message">{run.message}</p>
-              <p className="ghost-warning">{run.ghostClue}</p>
+              <p className={'ghost-warning' +
+                (run.ghostClue.includes('CLOSE') ? ' ghost-close' : '')}>
+                {run.ghostClue}
+              </p>
               <div className="run-summary">
                 <span>Potential <strong>{run.current}</strong></span>
                 <span>Checkpoint <strong>{run.banked}</strong></span>
@@ -246,12 +293,46 @@ function ManorApp() {
           </div>
           <div className="status-card">
             <span className="eyebrow">DISPLAY SETTINGS</span>
-            <label className="switch-row"><span>Ambient effects</span>
+            <label className="switch-row"><span>Cabinet animation</span>
               <input type="checkbox" checked={ambient}
                 onChange={event => setAmbient(event.target.checked)} /></label>
             <label className="switch-row"><span>Reduce motion</span>
               <input type="checkbox" checked={lowMotion}
                 onChange={event => setLowMotion(event.target.checked)} /></label>
+            <div className="audio-settings" aria-label="Local Manor sound">
+              <span className="eyebrow">MANOR SOUND</span>
+              <label className="switch-row"><span>Sound effects</span>
+                <input type="checkbox" checked={soundEnabled}
+                  onChange={event => {
+                    const enabled = event.target.checked;
+                    setSoundEnabled(enabled);
+                    audio.current?.setEnabled(enabled);
+                    if (enabled) audio.current?.arm();
+                  }} />
+              </label>
+              <label className="switch-row"><span>Quiet atmospheric hum</span>
+                <input type="checkbox" checked={ambienceEnabled}
+                  disabled={!soundEnabled}
+                  onChange={event => {
+                    const enabled = event.target.checked;
+                    setAmbienceEnabled(enabled);
+                    audio.current?.setAmbience(enabled);
+                    if (enabled) audio.current?.arm();
+                  }} />
+              </label>
+              <label className="audio-volume" htmlFor="manor-volume">
+                <span>Sound volume</span><output htmlFor="manor-volume">{volume}%</output>
+              </label>
+              <input className="audio-slider" id="manor-volume" type="range" min={0} max={100}
+                step={5} value={volume} disabled={!soundEnabled}
+                onChange={event => {
+                  const level = Number(event.target.value);
+                  setVolume(level);
+                  audio.current?.setVolume(level / 100);
+                }} />
+              <p className="display-hint">Offline audio starts only after your first action.
+                Muting never affects game results or your saved state.</p>
+            </div>
             <label className="speed-control" htmlFor="reel-speed">Reel motion speed
               <select id="reel-speed" value={reelSpeed}
                 onChange={event => setReelSpeed(event.target.value as ReelSpeed)}>

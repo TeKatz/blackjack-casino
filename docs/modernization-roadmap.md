@@ -116,3 +116,12 @@ See [AGENTS.md](../AGENTS.md), [architecture](architecture.md), [Midnight Manor 
 - The retained Pixi scene keeps the same twenty tile containers, shares fourteen loaded GPU textures and switches references during cosmetic spins. Illustration decode failures leave the previous Graphics symbols available and never block C# snapshots or wagers.
 - After the committed reels stop, a subtle staggered glint tracks the five column stops; animation-off/reduced motion suppresses these transient effects. The win-line geometry and original C# outcome remain unchanged.
 - The pure artwork suite confirms fourteen unique local compositions, dimensions and no external image dependencies. Final hand-painted/commissioned imagery, calibrated audio, tiered large-win sequences and monitored real-hardware frame timing remain separate acceptance items.
+
+### M3 fourth delivery — consent-gated, local audio and reward presentation
+
+- New Web Audio synthesis plays low-level original cues for accepted spins, sequential reel stops, payout tiers, doors, moons and C#-confirmed Manor actions. No remote sound assets or external services. Sound only initializes after a gameplay/settings user gesture, and audio failures cannot interrupt the settlement path.
+- Separate sound-effects, optional subdued ambient hum, and bounded 0–100% volume controls. Audio runs only in the playtest view; it does not change WPF sound preferences or persistent save schemas.
+- Distinct presentation-only win tiers use the *already committed* payout and saved stake (25× / 100× display thresholds). Actual credits and the legal result remain exactly as returned by C#.
+- The reward ribbon is created only after an acknowledged, strictly newer C# revision and appears after visual reels have settled. Initial loads, ordinary refreshes and replayed responses do not trigger a celebration. Simultaneous Moon/Door grants retain both messages.
+- Escape room movement, checkpoint, candle and cash-out use authoritative run messages and legal action acknowledgements, never predicted outcomes or invisible ghost coordinates. Reduced motion removes entry transitions and reel-stop accents.
+- The run-ack and spin-ack callbacks are presentation-only; no additional gameplay command is issued. Tests cover sound envelope limits, volume edge cases, bonus combination presentation and payout-tier classification. Manual audio audition (different speakers/headsets and volume settings) remains necessary before final acceptance.

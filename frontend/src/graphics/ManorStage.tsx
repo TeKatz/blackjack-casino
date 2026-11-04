@@ -12,6 +12,8 @@ type Props = {
   reducedMotion: boolean;
   speed: ReelSpeed;
   onSpinningChange?: (spinning: boolean) => void;
+  onReelStop?: (reel: number) => void;
+  onSpinPresented?: (result: ManorSnapshot) => void;
 };
 type Tile = { root: Container; backing: Graphics; artwork: Graphics; illustration: Sprite; letter: Text; name: Text; symbol: string };
 type Reel = { tiles: Tile[] };
@@ -157,7 +159,9 @@ function decorate(tile: Tile, symbol: string, winning: boolean, dim: boolean,
     tile.letter.visible = Boolean(LETTERS[symbol]);
   }
 }
-function createRenderer(app: Application, report: (value: boolean) => void): Renderer {
+function createRenderer(app: Application, report: (value: boolean) => void,
+  reelStop: (reel: number) => void,
+  presentedSpin: (result: ManorSnapshot) => void): Renderer {
   const scene = new Container();
   app.stage.addChild(scene);
   scene.addChild(new Graphics()
@@ -263,7 +267,7 @@ function createRenderer(app: Application, report: (value: boolean) => void): Ren
       }
     }
   }
-  function finish(): void {
+  function finish(announce = true): void {
     if (!animation) return;
     const result = animation.result;
     animation = null;
@@ -273,6 +277,7 @@ function createRenderer(app: Application, report: (value: boolean) => void): Ren
     lineElapsed = 0;
     paintWinningLine(result, shownLine);
     report(false);
+    if (announce) presentedSpin(result);
   }
   const frameTick = (ticker: { deltaMS: number }): void => {
     const dt = Math.min(50, ticker.deltaMS);
@@ -301,6 +306,7 @@ function createRenderer(app: Application, report: (value: boolean) => void): Ren
         if (!stoppedReels.has(r)) {
           stoppedReels.add(r);
           stopGlowMs[r] = 260;
+          reelStop(r);
         }
         settleColumn(r, current.result);
         continue;
@@ -335,7 +341,7 @@ function createRenderer(app: Application, report: (value: boolean) => void): Ren
         for (let r = 0; r < 5; r++) settleColumn(r, result);
         paintWinningLine(result, 0);
       } else if (epoch !== spinEpoch) {
-        finish();
+        finish(false);
         epoch = spinEpoch;
         const stops = reelStops(speed, motionOff);
         if (stops[4] > 0 && result.hasCommittedSpin) {
@@ -351,6 +357,7 @@ function createRenderer(app: Application, report: (value: boolean) => void): Ren
           presented = result;
           paintWinningLine(result, 0);
           report(false);
+          presentedSpin(result);
         }
       } else if (!animation && presented !== result) {
         for (let r = 0; r < 5; r++) settleColumn(r, result);
@@ -389,13 +396,18 @@ function createRenderer(app: Application, report: (value: boolean) => void): Ren
 }
 
 /** Pixi canvas, masks, and 20 tile objects survive all state refreshes and spins. */
-export function ManorStage({ snapshot, spinEpoch, reducedMotion, speed, onSpinningChange }: Props) {
+export function ManorStage({ snapshot, spinEpoch, reducedMotion, speed,
+  onSpinningChange, onReelStop, onSpinPresented }: Props) {
   const holder = useRef<HTMLDivElement>(null);
   const renderer = useRef<Renderer | null>(null);
   const latest = useRef({ snapshot, spinEpoch, reducedMotion, speed });
   const changed = useRef(onSpinningChange);
+  const stopCue = useRef(onReelStop);
+  const presentationCue = useRef(onSpinPresented);
   latest.current = { snapshot, spinEpoch, reducedMotion, speed };
   changed.current = onSpinningChange;
+  stopCue.current = onReelStop;
+  presentationCue.current = onSpinPresented;
   useEffect(() => {
     const host = holder.current;
     if (!host) return;
@@ -416,7 +428,8 @@ export function ManorStage({ snapshot, spinEpoch, reducedMotion, speed, onSpinni
       app.canvas.style.display = 'block';
       app.canvas.setAttribute('aria-hidden', 'true');
       host.appendChild(app.canvas);
-      const instance = createRenderer(app, value => changed.current?.(value));
+      const instance = createRenderer(app, value => changed.current?.(value),
+        reel => stopCue.current?.(reel), result => presentationCue.current?.(result));
       renderer.current = instance;
       const resize = () => {
         if (dead) return;
