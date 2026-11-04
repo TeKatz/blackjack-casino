@@ -1036,11 +1036,11 @@ public partial class MainWindow : Window
         TablePalette palette = theme switch
         {
             TableThemePreference.MidnightBlue => new TablePalette(
-                "#071019", "#0A1722", "#0B2637", "#091923", "#102C3D", "#315A70",
-                "#174660", "#102F41", "#D4A84F", "#F0CD7A", "#9EB5C2", "#7392A3", "#071E2C", "#5C8E9E"),
+                "#060F1B", "#0B1B2D", "#0D304A", "#0A2034", "#13364F", "#426A83",
+                "#1A5475", "#13374F", "#91C4DC", "#DCF2FF", "#B8CFE0", "#789CB5", "#08253E", "#82BED6"),
             TableThemePreference.Burgundy => new TablePalette(
-                "#180A0C", "#211012", "#351417", "#1F0E10", "#2B1518", "#704047",
-                "#5B272D", "#381A1E", "#D4A84F", "#F0CD7A", "#C2A0A4", "#98767B", "#260F12", "#8F625C"),
+                "#17090F", "#270F19", "#461D29", "#26111A", "#381B28", "#84505B",
+                "#71333E", "#4C202C", "#C8967F", "#F8D8B8", "#D7B0AD", "#A27783", "#35101D", "#BA7C83"),
             _ => new TablePalette(
                 "#07150E", "#091B12", "#0A291A", "#091B12", "#0B2117", "#31533F",
                 "#163D29", "#102A1D", "#D4A84F", "#F0CD7A", "#9EB1A4", "#789484", "#071D13", "#6A8F55"),
@@ -1060,6 +1060,8 @@ public partial class MainWindow : Window
         SetBrushResource("SoftTextBrush", palette.SoftText);
         SetBrushResource("StatusBackgroundBrush", palette.Status);
         SetBrushResource("AiWinBrush", palette.AiWin);
+        // The custom felt inlays and rail engravings must follow the selected theme too.
+        TableArt.Theme = theme;
     }
 
     private void SetBrushResource(string key, string hex) => Resources[key] = Brush(hex);

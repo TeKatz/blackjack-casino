@@ -180,7 +180,6 @@ internal sealed class CasinoLobbyView : UserControl
             "Season Pass",
             "SEASON REWARDS",
             "Follow your current season track and claim unlocked rewards.",
-            "✦",
             "#D2B363",
             progression));
         destinations.Children.Add(ProgressionTile(
@@ -188,7 +187,6 @@ internal sealed class CasinoLobbyView : UserControl
             "Cosmetic Shop",
             "PERSONAL STYLE",
             "Browse card sets, portraits and other ways to make the club yours.",
-            "◆",
             "#A78AC8",
             progression));
         destinations.Children.Add(ProgressionTile(
@@ -196,7 +194,6 @@ internal sealed class CasinoLobbyView : UserControl
             "Collector's Album",
             "CARD COLLECTION",
             "Open packs, complete themed collections and inspect discovered editions.",
-            "▣",
             "#D7B568",
             progression,
             showPackBadge: true));
@@ -205,7 +202,6 @@ internal sealed class CasinoLobbyView : UserControl
             "Challenges",
             "GOALS & REWARDS",
             "See active challenges, completed goals and rewards ready to claim.",
-            "✓",
             "#78B69A",
             progression));
         destinations.Children.Add(ProgressionTile(
@@ -213,7 +209,6 @@ internal sealed class CasinoLobbyView : UserControl
             "Statistics",
             "PLAYER STATISTICS",
             "Review lifetime results, game-by-game performance and your casino playtime.",
-            "◎",
             "#7FA9C2",
             progression));
 
@@ -226,7 +221,6 @@ internal sealed class CasinoLobbyView : UserControl
         string section,
         string eyebrow,
         string description,
-        string emblem,
         string accentHex,
         Action<string> progression,
         bool showPackBadge = false)
@@ -237,14 +231,50 @@ internal sealed class CasinoLobbyView : UserControl
         content.ColumnDefinitions.Add(new ColumnDefinition());
         content.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-        var emblemFrame = new Border
+        // The icon itself is bundled raster artwork, never a WPF-drawn glyph.
+        // Give every destination a shared jewel-case treatment in its own accent.
+        var accentColor = ((SolidColorBrush)accent).Color;
+        var iconScale = new ScaleTransform(1, 1);
+        var emblemFrame = new Grid
         {
-            Width = 70, Height = 70, CornerRadius = new CornerRadius(12),
-            BorderBrush = accent, BorderThickness = new Thickness(0),
-            Background = Brushes.Transparent,
+            Width = 70,
+            Height = 70,
             VerticalAlignment = VerticalAlignment.Center,
-            Child = new Viewbox { Child = ProgressionArtwork.Create(section, 68), Stretch = Stretch.Uniform },
+            RenderTransformOrigin = new Point(.5, .5),
+            RenderTransform = iconScale,
         };
+        emblemFrame.Children.Add(new Border
+        {
+            CornerRadius = new CornerRadius(14),
+            Background = new LinearGradientBrush(
+                Color.FromArgb(210, accentColor.R, accentColor.G, accentColor.B),
+                Color.FromRgb(8, 22, 24), 135),
+            BorderBrush = accent,
+            BorderThickness = new Thickness(1.5),
+            IsHitTestVisible = false,
+            Effect = new DropShadowEffect
+            {
+                Color = accentColor,
+                BlurRadius = 12,
+                ShadowDepth = 1,
+                Opacity = .23,
+            },
+        });
+        emblemFrame.Children.Add(new Border
+        {
+            Margin = new Thickness(4),
+            CornerRadius = new CornerRadius(10),
+            Background = Ink("#0A1C20"),
+            BorderBrush = Ink("#63796D"),
+            BorderThickness = new Thickness(.8),
+            Padding = new Thickness(3),
+            Child = new Viewbox
+            {
+                Child = ProgressionArtwork.Create(section, 64),
+                Stretch = Stretch.Uniform,
+                StretchDirection = StretchDirection.DownOnly,
+            },
+        });
         content.Children.Add(emblemFrame);
 
         var copy = new StackPanel { Margin = new Thickness(6, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
@@ -371,6 +401,22 @@ internal sealed class CasinoLobbyView : UserControl
                     if (lastProgress is { } snapshot) seasonStatus.Text = SeasonCaption(snapshot, compact);
                 }
             }
+        };
+        button.MouseEnter += (_, _) =>
+        {
+            if (!animations()) return;
+            var easing = new CubicEase { EasingMode = EasingMode.EaseOut };
+            iconScale.BeginAnimation(ScaleTransform.ScaleXProperty,
+                new DoubleAnimation(1.045, TimeSpan.FromMilliseconds(140)) { EasingFunction = easing });
+            iconScale.BeginAnimation(ScaleTransform.ScaleYProperty,
+                new DoubleAnimation(1.045, TimeSpan.FromMilliseconds(140)) { EasingFunction = easing });
+        };
+        button.MouseLeave += (_, _) =>
+        {
+            iconScale.BeginAnimation(ScaleTransform.ScaleXProperty,
+                new DoubleAnimation(1, TimeSpan.FromMilliseconds(140)));
+            iconScale.BeginAnimation(ScaleTransform.ScaleYProperty,
+                new DoubleAnimation(1, TimeSpan.FromMilliseconds(140)));
         };
         button.Click += (_, _) => progression(section);
         return button;

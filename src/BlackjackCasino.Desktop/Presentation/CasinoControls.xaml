@@ -5,7 +5,7 @@
     <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ToggleButton"><Border Background="Transparent"/></ControlTemplate></Setter.Value></Setter>
   </Style>
     <Style x:Key="CasinoScrollThumb" TargetType="Thumb">
-      <Setter Property="Background" Value="#426853" />
+      <Setter Property="Background" Value="{DynamicResource PanelBorderBrush}" />
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="Thumb">
@@ -31,12 +31,12 @@
     </Style>
 
     <Style TargetType="ScrollBar">
-      <Setter Property="Background" Value="#091C13" />
+      <Setter Property="Background" Value="{DynamicResource SideBackgroundBrush}" />
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="ScrollBar">
             <Grid Background="Transparent">
-              <Border Background="#0D2418" BorderBrush="#1F3D2E" BorderThickness="1" CornerRadius="8" Margin="2" />
+              <Border Background="{DynamicResource SideBackgroundBrush}" BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="1" CornerRadius="8" Margin="2" />
               <Track x:Name="PART_Track"
                      Orientation="{TemplateBinding Orientation}"
                      Minimum="{TemplateBinding Minimum}"
@@ -83,7 +83,7 @@
 
     <Style TargetType="ComboBoxItem">
       <Setter Property="Foreground" Value="#EEF3EF" />
-      <Setter Property="Background" Value="#0D281B" />
+      <Setter Property="Background" Value="{DynamicResource MutedButtonBackgroundBrush}" />
       <Setter Property="Padding" Value="10,7" />
       <Setter Property="HorizontalContentAlignment" Value="Stretch" />
       <Setter Property="Template">
@@ -94,11 +94,11 @@
             </Border>
             <ControlTemplate.Triggers>
               <Trigger Property="IsHighlighted" Value="True">
-                <Setter TargetName="ItemChrome" Property="Background" Value="#173A29" />
+                <Setter TargetName="ItemChrome" Property="Background" Value="{DynamicResource ActionBackgroundBrush}" />
                 <Setter Property="Foreground" Value="#F8F5EC" />
               </Trigger>
               <Trigger Property="IsSelected" Value="True">
-                <Setter TargetName="ItemChrome" Property="Background" Value="#1A3F2C" />
+                <Setter TargetName="ItemChrome" Property="Background" Value="{DynamicResource SeatBackgroundBrush}" />
                 <Setter Property="Foreground" Value="#F2CF7A" />
               </Trigger>
               <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.48" /></Trigger>
@@ -110,8 +110,8 @@
 
     <Style TargetType="ComboBox">
       <Setter Property="Foreground" Value="#EEF3EF" />
-      <Setter Property="Background" Value="#102C1F" />
-      <Setter Property="BorderBrush" Value="#385A46" />
+      <Setter Property="Background" Value="{DynamicResource MutedButtonBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
       <Setter Property="BorderThickness" Value="1" />
       <Setter Property="MinHeight" Value="31" />
       <Setter Property="VerticalContentAlignment" Value="Center" />
@@ -128,15 +128,15 @@
               </Border>
               <ToggleButton x:Name="DropDownToggle" Style="{StaticResource CasinoDropDownHitArea}" Focusable="False" Background="Transparent" BorderThickness="0" Cursor="Hand" IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}" />
               <Popup x:Name="PART_Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" AllowsTransparency="True" Focusable="False" PopupAnimation="Fade">
-                <Border Margin="0,4,0,0" MinWidth="{TemplateBinding ActualWidth}" Background="#0A2015" BorderBrush="#385A46" BorderThickness="1" CornerRadius="7">
+                <Border Margin="0,4,0,0" MinWidth="{TemplateBinding ActualWidth}" Background="{DynamicResource SideBackgroundBrush}" BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="1" CornerRadius="7">
                   <Border.Effect><DropShadowEffect Color="#000000" BlurRadius="12" ShadowDepth="3" Opacity="0.38" /></Border.Effect>
                   <ScrollViewer Margin="4" MaxHeight="260" CanContentScroll="True"><ItemsPresenter /></ScrollViewer>
                 </Border>
               </Popup>
             </Grid>
             <ControlTemplate.Triggers>
-              <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="ComboChrome" Property="BorderBrush" Value="#52715E" /></Trigger>
-              <Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="ComboChrome" Property="BorderBrush" Value="#A78848" /></Trigger>
+              <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="ComboChrome" Property="BorderBrush" Value="{DynamicResource AccentBrush}" /></Trigger>
+              <Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="ComboChrome" Property="BorderBrush" Value="{DynamicResource AccentLightBrush}" /></Trigger>
               <Trigger Property="IsEnabled" Value="False"><Setter TargetName="ComboChrome" Property="Opacity" Value="0.58" /><Setter Property="Cursor" Value="Arrow" /></Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
@@ -145,11 +145,11 @@
     </Style>
 
   <Style x:Key="CasinoButton" TargetType="Button">
-    <Setter Property="Foreground" Value="#F3E8D2"/><Setter Property="Background" Value="#142C27"/><Setter Property="BorderBrush" Value="#527066"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Padding" Value="14,10"/><Setter Property="MinHeight" Value="40"/><Setter Property="FontSize" Value="14"/><Setter Property="Cursor" Value="Hand"/>
+    <Setter Property="Foreground" Value="#F3E8D2"/><Setter Property="Background" Value="{DynamicResource ActionBackgroundBrush}"/><Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Padding" Value="14,10"/><Setter Property="MinHeight" Value="40"/><Setter Property="FontSize" Value="14"/><Setter Property="Cursor" Value="Hand"/>
     <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button"><Border x:Name="Chrome" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="7" Padding="{TemplateBinding Padding}"><ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center" TextElement.Foreground="{TemplateBinding Foreground}" RecognizesAccessKey="True"/></Border><ControlTemplate.Triggers>
-      <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Chrome" Property="BorderBrush" Value="#DEC18A"/><Setter TargetName="Chrome" Property="Background" Value="#233C34"/></Trigger>
-      <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Chrome" Property="BorderBrush" Value="#F1D79E"/></Trigger>
-      <Trigger Property="IsPressed" Value="True"><Setter TargetName="Chrome" Property="Background" Value="#30473B"/></Trigger>
+      <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/><Setter TargetName="Chrome" Property="Background" Value="{DynamicResource SeatBackgroundBrush}"/></Trigger>
+      <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource AccentLightBrush}"/></Trigger>
+      <Trigger Property="IsPressed" Value="True"><Setter TargetName="Chrome" Property="Background" Value="{DynamicResource MutedButtonBackgroundBrush}"/></Trigger>
       <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Chrome" Property="Opacity" Value="0.5"/><Setter Property="Cursor" Value="Arrow"/></Trigger>
     </ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter>
     <Setter Property="HorizontalContentAlignment" Value="Center"/>
@@ -157,11 +157,11 @@
   <Style TargetType="Button" BasedOn="{StaticResource CasinoButton}"/>
   <Style x:Key="CasinoCheckBox" TargetType="CheckBox">
     <Setter Property="Foreground" Value="#D6E4DB"/><Setter Property="MinHeight" Value="28"/><Setter Property="FontSize" Value="13"/><Setter Property="VerticalContentAlignment" Value="Center"/>
-    <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="CheckBox"><StackPanel Orientation="Horizontal" Background="Transparent"><Border x:Name="CheckChrome" Width="17" Height="17" BorderBrush="#789387" BorderThickness="1" Background="#10291E" CornerRadius="3" VerticalAlignment="Center"><Path x:Name="Check" Data="M2,7 L6,11 L13,3" Stroke="#EBD19A" StrokeThickness="2" Visibility="Collapsed" Margin="1"/></Border><ContentPresenter Margin="8,0,0,0" VerticalAlignment="Center" TextElement.Foreground="{TemplateBinding Foreground}"/></StackPanel><ControlTemplate.Triggers><Trigger Property="IsChecked" Value="True"><Setter TargetName="Check" Property="Visibility" Value="Visible"/></Trigger><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="CheckChrome" Property="BorderBrush" Value="#EBD19A"/></Trigger><Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.5"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter>
+    <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="CheckBox"><StackPanel Orientation="Horizontal" Background="Transparent"><Border x:Name="CheckChrome" Width="17" Height="17" BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="1" Background="{DynamicResource SideBackgroundBrush}" CornerRadius="3" VerticalAlignment="Center"><Path x:Name="Check" Data="M2,7 L6,11 L13,3" Stroke="#EBD19A" StrokeThickness="2" Visibility="Collapsed" Margin="1"/></Border><ContentPresenter Margin="8,0,0,0" VerticalAlignment="Center" TextElement.Foreground="{TemplateBinding Foreground}"/></StackPanel><ControlTemplate.Triggers><Trigger Property="IsChecked" Value="True"><Setter TargetName="Check" Property="Visibility" Value="Visible"/></Trigger><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="CheckChrome" Property="BorderBrush" Value="#EBD19A"/></Trigger><Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.5"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter>
   </Style>
   <Style TargetType="CheckBox" BasedOn="{StaticResource CasinoCheckBox}"/>
   <Style TargetType="TextBox">
-    <Setter Property="Foreground" Value="#F5EDDE"/><Setter Property="Background" Value="#10251D"/><Setter Property="BorderBrush" Value="#526D5F"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Padding" Value="9,7"/><Setter Property="CaretBrush" Value="#F3D799"/><Setter Property="SelectionBrush" Value="#426B5B"/>
+    <Setter Property="Foreground" Value="#F5EDDE"/><Setter Property="Background" Value="{DynamicResource SideBackgroundBrush}"/><Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Padding" Value="9,7"/><Setter Property="CaretBrush" Value="#F3D799"/><Setter Property="SelectionBrush" Value="#426B5B"/>
     <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="TextBox"><Border x:Name="TextChrome" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="5" Padding="{TemplateBinding Padding}"><ScrollViewer x:Name="PART_ContentHost"/></Border><ControlTemplate.Triggers><Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="TextChrome" Property="BorderBrush" Value="#D8BE86"/></Trigger><Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.5"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter>
   </Style>
 </ResourceDictionary>
