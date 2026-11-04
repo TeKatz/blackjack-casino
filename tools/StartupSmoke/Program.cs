@@ -242,6 +242,67 @@ internal static class Program
                     "Modern Manor opened another visible native window.");
                 Window modernShell = Application.Current.Windows.Cast<Window>()
                     .Single(w => w.Title.Contains("Playtest", StringComparison.Ordinal));
+                double savedWidth=modernShell.Width, savedHeight=modernShell.Height;
+                try
+                {
+                    // Real WPF/WebView2 narrow-window reflow (not a CSS-only unit test).
+                    modernShell.Width=960;
+                    modernShell.Height=680;
+                    await Task.Delay(260);
+                    modernShell.UpdateLayout();
+                    string narrowLayout=await modernBrowser.CoreWebView2.ExecuteScriptAsync(
+                        "(()=>{const host=document.querySelector('.manor-canvas');" +
+                        "const buttons=[...document.querySelectorAll('.topbar-actions button')];" +
+                        "if(!host||buttons.length<2)return false;" +
+                        "const r=host.getBoundingClientRect();" +
+                        "return r.width>100 && Math.abs(r.width/r.height-960/500)<.07 &&" +
+                        "buttons.every(b=>b.getBoundingClientRect().width>32);})()");
+                    Require(narrowLayout.Equals("true",StringComparison.OrdinalIgnoreCase),
+                        "Modern Manor controls or reel ratio failed at the compact host size.");
+                    await using(FileStream compactCapture=File.Create(
+                        Path.Combine(output,"modern-manor-compact-host.png")))
+                        await modernBrowser.CoreWebView2.CapturePreviewAsync(
+                            CoreWebView2CapturePreviewImageFormat.Png,compactCapture);
+                    modernShell.Width=savedWidth;
+                    modernShell.Height=savedHeight;
+                    await Task.Delay(230);
+                    modernShell.UpdateLayout();
+
+                    // Observe the packaged WebView2 idle event loop, not hypothetical 60 FPS.
+                    // No wagers are issued and the global animation-off setting is respected.
+                    await modernBrowser.CoreWebView2.ExecuteScriptAsync(
+                        "(()=>{const sample={count:0,gaps:[],start:performance.now()," +
+                        "heapStart:performance.memory?.usedJSHeapSize??null};" +
+                        "window.__manorPhase3Sample=sample;let previous=0;" +
+                        "const tick=now=>{if(previous>0&&now-previous<250){" +
+                        "sample.count++;sample.gaps.push(now-previous)}previous=now;" +
+                        "if(now-sample.start<3200)requestAnimationFrame(tick);" +
+                        "else sample.heapEnd=performance.memory?.usedJSHeapSize??null};" +
+                        "requestAnimationFrame(tick);return true;})()");
+                    await Task.Delay(3900);
+                    string sampleJson=await modernBrowser.CoreWebView2.ExecuteScriptAsync(
+                        "(()=>{const s=window.__manorPhase3Sample;" +
+                        "if(!s)return {frames:0};const ordered=[...s.gaps].sort((a,b)=>a-b);" +
+                        "const mean=ordered.reduce((a,b)=>a+b,0)/(ordered.length||1);" +
+                        "return {source:'Windows WebView2 requestAnimationFrame (idle, not Pixi/GPU FPS)'," +
+                        "frames:s.count,meanMs:mean,p95Ms:ordered[Math.ceil(ordered.length*.95)-1]??null," +
+                        "heapBytesStart:s.heapStart,heapBytesEnd:s.heapEnd??null," +
+                        "devicePixelRatio:window.devicePixelRatio," +
+                        "hostWidth:window.innerWidth,hostHeight:window.innerHeight};})()");
+                    using(System.Text.Json.JsonDocument sampleDoc=
+                        System.Text.Json.JsonDocument.Parse(sampleJson))
+                    {
+                        Require(sampleDoc.RootElement.GetProperty("frames").GetInt32()>=12,
+                            "Modern Manor idle WebView2 was not receiving animation frames.");
+                        File.WriteAllText(Path.Combine(output,"modern-manor-idle-frame-sample.json"),
+                            sampleDoc.RootElement.GetRawText());
+                    }
+                }
+                finally
+                {
+                    modernShell.Width=savedWidth;
+                    modernShell.Height=savedHeight;
+                }
                 modernShell.Close();
                 await Task.Delay(120);
                 Require(Find<CasinoLobbyView>(window).Any(v => v.IsVisible),

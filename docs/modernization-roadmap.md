@@ -155,3 +155,11 @@ See [AGENTS.md](../AGENTS.md), [architecture](architecture.md), [Midnight Manor 
 - No new RNG, client-side payouts, bridge actions or save schema changes. Manual screenreader, native 150/200% DPI and pronunciation review remain outstanding.
 
 - Windows startup smoke now verifies the real connected WebView2 host, opens the live C# paytable, checks all 14 symbols and 20 lines, takes English/German dialog screenshots, and switches the React HUD language without placing a wager.
+
+### M3 final quality gate — implementation and automated evidence
+
+- Sound-effects mute and optional atmospheric hum now obey the *actual global* saved SoundEnabled, MusicEnabled and MusicVolume preferences. The browser cannot override a desktop-wide mute. No new settings are written to the journal.
+- Unmounting an in-flight Pixi spin cannot emit a false win announcement. Cabinet filigree and sixteen retained atmospheric particles add subtle depth without changing reel results, introducing external art or allocating new scene objects on each frame. Reduced motion freezes decorative particles.
+- Cross-frontend restart tests cover an older saved active Manor run continued via modern room decisions, re-opening with the shared classic C# controller, one-time cash-out, revision-based replay and preservation of the old free-spin paytable.
+- Windows startup smoke now takes a compact-window image and writes a real requestAnimationFrame/JS heap sample from the packaged WebView2 surface, explicitly distinguishing idle host timing from Pixi ticker metrics, GPU time and dedicated-hardware performance. The smoke never wagers on the runner's profile.
+- Remaining human-owned acceptance: genuine long-session CPU/GPU/VRAM data at 125/150/200% on the tester's monitor(s), listening to the audio mix, route feel, and explicit permission to replace the fallback. These gates must remain open until actually checked.

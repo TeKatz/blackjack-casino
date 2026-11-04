@@ -196,6 +196,34 @@ function createRenderer(app: Application, report: (value: boolean) => void,
   const footer = text('EST. 1893 · THE HOUSE HOLDS ITS SECRETS', 12, 0xc6ac84);
   footer.position.set(480, 451);
   scene.addChild(heading, footer);
+  // Restrained carved-metal ornaments and stationary gilded scrollwork.
+  // They add depth without a post-processing pass or remote textures.
+  const carvings = new Graphics();
+  for (const side of [0, 1]) {
+    const x = side ? 890 : 69;
+    const mirror = side ? -1 : 1;
+    carvings.moveTo(x, 70).bezierCurveTo(x + 27 * mirror, 74,
+      x + 30 * mirror, 91, x + 12 * mirror, 99)
+      .stroke({ color: 0xe1c18c, width: 1.4, alpha: .68 });
+    carvings.moveTo(x, 70).bezierCurveTo(x + 9 * mirror, 83,
+      x + 9 * mirror, 93, x + 2 * mirror, 100)
+      .stroke({ color: 0x9f745a, width: 1, alpha: .45 });
+    carvings.circle(x, 69, 3).fill({ color: 0xf5d6a1, alpha: .7 });
+  }
+  carvings.moveTo(394, 84).quadraticCurveTo(480, 104, 566, 84)
+    .stroke({ color: 0xbc986f, width: 1.3, alpha: .55 });
+  scene.addChild(carvings);
+  const floatingDust: Graphics[] = [];
+  for (let i = 0; i < 16; i++) {
+    const mote = new Graphics()
+      .circle(0, 0, i % 4 === 0 ? 1.3 : .75)
+      .fill({ color: i % 3 === 0 ? 0xe7d6ad : 0xb4abce, alpha: .64 });
+    mote.x = 54 + (i * 137) % 845;
+    mote.y = 51 + (i * 71) % 390;
+    mote.alpha = .14;
+    scene.addChild(mote);
+    floatingDust.push(mote);
+  }
   const reels: Reel[] = [];
   const textures = new Map<string, Texture>();
   // Cosmetic reel-stop glints. The source of every final symbol is still the
@@ -249,7 +277,11 @@ function createRenderer(app: Application, report: (value: boolean) => void,
       if (reel === 0) winningTrace.moveTo(x, y);
       else winningTrace.lineTo(x, y);
     }
-    winningTrace.stroke({ color: 0xf1cd83, width: 4, alpha: 0.72, cap: 'round', join: 'round' });
+    // Bright lines retain a dark keyline, a gilt core and a fine ivory trace.
+    // No speculative line is drawn: these points come from C# WinningLineDetails.
+    winningTrace.stroke({ color: 0x101421, width: 10, alpha: .84, cap: 'round', join: 'round' });
+    winningTrace.stroke({ color: 0xe4bc73, width: 5, alpha: .95, cap: 'round', join: 'round' });
+    winningTrace.stroke({ color: 0xfff4d4, width: 1.5, alpha: .93, cap: 'round', join: 'round' });
     for (let reel = 0; reel < win.count; reel++) {
       const x = 147 + 167 * reel;
       const y = 162 + win.rows[reel] * 100;
@@ -309,7 +341,15 @@ function createRenderer(app: Application, report: (value: boolean) => void,
       frameWindow = 0;
     }
     pulse += dt * 0.0015;
-    frame.alpha = 0.7 + Math.sin(pulse) * 0.25;
+    frame.alpha = motionDisabled ? .75 : 0.7 + Math.sin(pulse) * 0.25;
+    // Move only 16 retained dust points. Reduced motion leaves them static.
+    for (let i = 0; i < floatingDust.length; i++) {
+      const mote = floatingDust[i];
+      if (motionDisabled) { mote.alpha = .08; continue; }
+      mote.y -= dt * (.0016 + (i % 4) * .0005);
+      if (mote.y < 46) mote.y = 449;
+      mote.alpha = .09 + .13 * (1 + Math.sin(pulse * (i % 3 + 1) + i)) / 2;
+    }
     for (let r = 0; r < 5; r++) {
       if (motionDisabled) stopGlowMs[r] = 0;
       else stopGlowMs[r] = Math.max(0, stopGlowMs[r] - dt);
@@ -365,6 +405,7 @@ function createRenderer(app: Application, report: (value: boolean) => void,
         finish();
         app.ticker.stop();
         frame.alpha = 0.75;
+        for (const mote of floatingDust) mote.alpha = .08;
       } else {
         app.ticker.start();
       }
