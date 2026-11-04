@@ -33,7 +33,7 @@ public partial class MainWindow
                 closed: () => StatusText.Text = "Returned from the read-only Midnight Manor preview.");
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
-            or System.Text.Json.JsonException or InvalidDataException or ArgumentException)
+            or System.Text.Json.JsonException or ArgumentException)
         {
             StatusText.Text = "Modern Manor preview unavailable: " + ex.Message;
         }
