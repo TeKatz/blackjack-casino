@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Adventure.Ui.CaseBoard" xml:space="preserve"><value>CASE BOARD</value></data>
+  <data name="Adventure.Ui.Adventures" xml:space="preserve"><value>← ADVENTURES</value></data>
+  <data name="Adventure.Ui.CharacterSheet" xml:space="preserve"><value>CHARACTER SHEET</value></data>
+  <data name="Adventure.Ui.Abilities" xml:space="preserve"><value>ABILITIES</value></data>
+  <data name="Adventure.Ui.TrainedSkills" xml:space="preserve"><value>TRAINED SKILLS</value></data>
+  <data name="Adventure.Ui.ActiveConditions" xml:space="preserve"><value>ACTIVE CONDITIONS</value></data>
+  <data name="Adventure.Ui.AdventureLibrary" xml:space="preserve"><value>ADVENTURE LIBRARY</value></data>
+  <data name="Adventure.Ui.CharacterNewRun" xml:space="preserve"><value>CHARACTER &amp; NEW RUN</value></data>
+  <data name="Adventure.Ui.EveryDoor" xml:space="preserve"><value>Every door has a story.</value></data>
+  <data name="Adventure.Ui.HubSubtitle" xml:space="preserve"><value>Make your choices, roll the dice and live with what follows.</value></data>
+  <data name="Adventure.Ui.ChooseTale" xml:space="preserve"><value>Choose a tale.</value></data>
+  <data name="Adventure.Ui.HubDescription" xml:space="preserve"><value>Make your choices, roll the dice and carry the consequences. Every tale shares your character, inventory and encounters.</value></data>
+  <data name="Adventure.Ui.Acts" xml:space="preserve"><value>acts</value></data>
+  <data name="Adventure.Ui.Scenes" xml:space="preserve"><value>scenes</value></data>
+  <data name="Adventure.black-stag.Title" xml:space="preserve"><value>The Black Stag</value></data>
+  <data name="Adventure.drowned-bell.Title" xml:space="preserve"><value>The Drowned Bell</value></data>
+  <data name="Adventure.dead-mans-hand.Title" xml:space="preserve"><value>Dead Man's Hand</value></data>
+  <data name="Adventure.dead-mans-hand.Act.act-1" xml:space="preserve"><value>Act I · Rain on Glass</value></data>
+  <data name="Adventure.dead-mans-hand.Act.act-2" xml:space="preserve"><value>Act II · The City Collects</value></data>
+  <data name="Adventure.dead-mans-hand.Act.act-3" xml:space="preserve"><value>Act III · Favors and Knives</value></data>
+  <data name="Adventure.dead-mans-hand.Act.act-4" xml:space="preserve"><value>Act IV · The Badge Has Teeth</value></data>
+  <data name="Adventure.dead-mans-hand.Act.act-5" xml:space="preserve"><value>Act V · Everyone Owes Someone</value></data>
+  <data name="Adventure.dead-mans-hand.Act.act-6" xml:space="preserve"><value>Act VI · Dead Man's Hand</value></data>
+  <data name="Adventure.dead-mans-hand.Scene.rain-office.Title" xml:space="preserve"><value>A Knock After Midnight</value></data>
+  <data name="Adventure.dead-mans-hand.Scene.rain-office.Body" xml:space="preserve"><value>Rain writes crooked lines down the office glass. The city outside is all wet pavement, tired neon and the kind of traffic that never quite stops. At twelve seventeen, Evelyn Vane walks in without an appointment. Her husband, Arthur Vane, left the Hotel Mirabelle yesterday evening and never came home. The police logged it as a rich man taking a private night away. Evelyn does not believe them. Neither does the envelope of cash she sets on your desk.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.ask-timeline" xml:space="preserve"><value>Start with the timeline. Make her account precise.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.ask-ivory-room" xml:space="preserve"><value>Ask why the Ivory Room name is written on the back of Arthur's hotel card.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.take-case" xml:space="preserve"><value>Take the case and go straight to the Hotel Mirabelle.</value></data>
+  <data name="Adventure.dead-mans-hand.Scene.timeline-clean.Title" xml:space="preserve"><value>Seventeen Missing Minutes</value></data>
+  <data name="Adventure.dead-mans-hand.Scene.timeline-clean.Body" xml:space="preserve"><value>Evelyn answers in the clipped rhythm of someone who has rehearsed the story because nobody official listened the first time. Arthur checked into room 306 at 6:42 p.m. He called home at 8:03. A hotel porter saw him return from the street at 9:11. At 9:28, the switchboard recorded an outgoing connection from his room. After that, seventeen minutes are missing from the hotel's internal log. Evelyn never mentions those seventeen minutes until you make her walk through the sequence twice.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.timeline-to-hotel" xml:space="preserve"><value>Go to the Mirabelle before the night staff changes.</value></data>
+  <data name="Adventure.dead-mans-hand.Scene.timeline-frayed.Title" xml:space="preserve"><value>A Story With Soft Edges</value></data>
+  <data name="Adventure.dead-mans-hand.Scene.timeline-frayed.Body" xml:space="preserve"><value>The sequence refuses to settle. Evelyn remembers the call, the hotel, the rain, and the fact that Arthur sounded afraid, but exact times slide away from her. Whether that is grief, exhaustion or concealment is impossible to tell tonight. You still get one useful fact: room 306, Hotel Mirabelle.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.frayed-to-hotel" xml:space="preserve"><value>Work with what you have. Go to the Mirabelle.</value></data>
+  <data name="Adventure.black-stag.Scene.crooked-crown.Title" xml:space="preserve"><value>The Crooked Crown</value></data>
+  <data name="Adventure.black-stag.Scene.crooked-crown.Body" xml:space="preserve"><value>Rain needles the windows of the Crooked Crown and turns the road outside into black glass. Mara Vey, the innkeeper, sets a sealed letter beside your cup without asking whether you want it. &quot;A stranger paid well to make sure this reached you.&quot; The wax is black. The mark pressed into it is a stag with one antler broken away.</value></data>
+  <data name="Adventure.black-stag.Choice.open-letter" xml:space="preserve"><value>Break the seal and read the letter.</value></data>
+  <data name="Adventure.black-stag.Choice.inspect-seal" xml:space="preserve"><value>Inspect the seal before touching the letter.</value></data>
+  <data name="Adventure.black-stag.Choice.question-keeper" xml:space="preserve"><value>Watch Mara carefully and ask who delivered it.</value></data>
+  <data name="Adventure.drowned-bell.Scene.greyhaven-road.Title" xml:space="preserve"><value>The Road into Fog</value></data>
+  <data name="Adventure.drowned-bell.Scene.greyhaven-road.Body" xml:space="preserve"><value>By the time the road falls toward Greyhaven, the sea has disappeared behind a wall of pearl-grey fog. Gulls wheel above fields you can no longer see, and every fence post wears a crust of salt. You came for a quiet night's shelter. The village below looks as though it has forgotten how to offer one.</value></data>
+  <data name="Adventure.drowned-bell.Choice.continue-road" xml:space="preserve"><value>Walk down into Greyhaven.</value></data>
+  <data name="Adventure.drowned-bell.Choice.read-weather" xml:space="preserve"><value>Study the fog before descending.</value></data>
+  <data name="Adventure.drowned-bell.Scene.fog-signs.Title" xml:space="preserve"><value>Weather That Does Not Move</value></data>
+  <data name="Adventure.drowned-bell.Scene.fog-signs.Body" xml:space="preserve"><value>The fog is wrong. Wind bends the grass inland, but the bank over Greyhaven barely shifts. Beneath the ordinary smell of brine sits something colder: iron, old stone and extinguished candles. Whatever waits below is not only weather.</value></data>
+  <data name="Adventure.drowned-bell.Choice.descend-aware" xml:space="preserve"><value>Keep that in mind and enter the village.</value></data>
+  <data name="Adventure.Ui.InvestigationBoard" xml:space="preserve"><value>INVESTIGATION BOARD</value></data>
+  <data name="Adventure.Ui.EmptyBoard" xml:space="preserve"><value>No evidence pinned yet.
+The board grows as the investigation uncovers people, places, evidence, leads and theories.</value></data>
+  <data name="Adventure.Ui.CaseNotes" xml:space="preserve"><value>CASE NOTES</value></data>
+  <data name="Adventure.Ui.SelectPinned" xml:space="preserve"><value>Select a pinned item</value></data>
+  <data name="Adventure.Ui.BoardHelp" xml:space="preserve"><value>Drag a selected card to rearrange the investigation. Connections follow it live. Right-click a card for board actions. FIT focuses known evidence; FRAME shows the complete workspace boundary.</value></data>
+  <data name="Adventure.Ui.Unplayed" xml:space="preserve"><value>UNPLAYED</value></data>
+  <data name="Adventure.Ui.Completed" xml:space="preserve"><value>COMPLETED</value></data>
+  <data name="Adventure.Ui.InProgress" xml:space="preserve"><value>IN PROGRESS</value></data>
+  <data name="Adventure.Ui.People" xml:space="preserve"><value>People</value></data>
+  <data name="Adventure.Ui.Locations" xml:space="preserve"><value>Locations</value></data>
+  <data name="Adventure.Ui.Evidence" xml:space="preserve"><value>Evidence</value></data>
+  <data name="Adventure.Ui.Leads" xml:space="preserve"><value>Leads</value></data>
+  <data name="Adventure.Ui.Theories" xml:space="preserve"><value>Theories</value></data>
+  <data name="Adventure.Ui.Fit" xml:space="preserve"><value>FIT</value></data>
+  <data name="Adventure.Ui.Frame" xml:space="preserve"><value>FRAME</value></data>
+  <data name="Adventure.Ui.Reset" xml:space="preserve"><value>RESET</value></data>
+  <data name="Adventure.Ui.Status" xml:space="preserve"><value>STATUS</value></data>
+  <data name="Adventure.Ui.Reliability" xml:space="preserve"><value>RELIABILITY</value></data>
+  <data name="Adventure.Ui.Discovery" xml:space="preserve"><value>DISCOVERY</value></data>
+  <data name="Adventure.Ui.KnownFacts" xml:space="preserve"><value>KNOWN FACTS</value></data>
+  <data name="Adventure.Ui.NotesQuotes" xml:space="preserve"><value>NOTES / QUOTES</value></data>
+  <data name="Adventure.Ui.KnownConnections" xml:space="preserve"><value>KNOWN CONNECTIONS</value></data>
+  <data name="Adventure.Ui.BoardLimit" xml:space="preserve"><value>BOARD LIMIT</value></data>
+</root>

@@ -164,12 +164,18 @@ internal sealed class StartupWelcomeWindow : Window
             item.Children.Add(new TextBlock { Text = "✦", Foreground = Ink(note.Accent), FontSize = 13, Margin = new Thickness(1, 2, 0, 0) });
             var copy = new StackPanel();
             copy.Children.Add(new TextBlock { Text = note.Title, FontWeight = FontWeights.Bold, Foreground = Ink("#E9DFC9"), FontSize = 12 });
-            copy.Children.Add(new TextBlock { Text = note.Description, Foreground = Ink("#9FB1A8"), FontSize = 11, TextWrapping = TextWrapping.Wrap, LineHeight = 16, Margin = new Thickness(0, 3, 0, 0) });
+            if (!string.IsNullOrWhiteSpace(note.Description))
+                copy.Children.Add(new TextBlock { Text = note.Description, Foreground = Ink("#9FB1A8"), FontSize = 11, TextWrapping = TextWrapping.Wrap, LineHeight = 16, Margin = new Thickness(0, 3, 0, 0) });
             Grid.SetColumn(copy, 1);
             item.Children.Add(copy);
             notes.Children.Add(item);
         }
-        notesPanel.Child = notes;
+        notesPanel.Child = new ScrollViewer
+        {
+            Content = notes,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+        };
 
         var footer = new Border
         {
@@ -255,15 +261,3 @@ internal sealed class StartupWelcomeWindow : Window
     private static SolidColorBrush Ink(string color) => new((Color)ColorConverter.ConvertFromString(color));
 }
 
-internal sealed record ReleaseNote(string Title, string Description, string Accent);
-
-internal static class ReleaseNotesCatalog
-{
-    internal static IReadOnlyList<ReleaseNote> Current { get; } =
-    [
-        new("Dead Man's Hand & Investigation Board", "The noir campaign foundation is playable. Case nodes can be moved, filtered and inspected, with live story synchronization in the detached board window.", "#D1AC63"),
-        new("Case-board workspace polish", "A bounded scalable workspace, custom window chrome, category icons and improved board interaction make larger investigations easier to manage.", "#9DB7C8"),
-        new("Prestige presentation", "Player Prestige and Casino Empire Prestige now receive a dedicated premium confirmation experience instead of standard Windows prompts.", "#E0BD70"),
-        new("Casino Lobby quality-of-life", "A new Exit Game action sits directly in the lobby, and this welcome screen now summarizes your profile and the current version on every launch.", "#86C7AF"),
-    ];
-}

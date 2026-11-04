@@ -37,6 +37,19 @@ jobs:
       - name: Localization resource parity
         run: python tools/check_localization.py
 
+      - name: Adventure localization sanity checks
+        run: python tools/check_adventure_localization.py
+
+      - name: Versioned release-notes smoke
+        shell: pwsh
+        run: |
+          python tools/generate_release_notes.py --version 0.10.1-dev.0 --channel development --output-json artifacts/release-notes-ci.json --output-markdown artifacts/release-notes-ci.md
+          $notes = Get-Content artifacts/release-notes-ci.json -Raw | ConvertFrom-Json
+          if ($notes.version -ne "0.10.1-dev.0" -or $notes.channel -ne "development" -or $notes.changes.Count -lt 1) {
+            throw "Generated changelog has incorrect version, channel, or missing entries."
+          }
+          if (!(Test-Path artifacts/release-notes-ci.md)) { throw "Missing Markdown changelog." }
+
       - name: Collection artwork coverage
         run: python -X warn_default_encoding -W error::EncodingWarning tools/check_collection_art.py
 

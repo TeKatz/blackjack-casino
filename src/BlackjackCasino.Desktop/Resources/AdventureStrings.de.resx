@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Adventure.Ui.CaseBoard" xml:space="preserve"><value>FALLTAFEL</value></data>
+  <data name="Adventure.Ui.Adventures" xml:space="preserve"><value>← ABENTEUER</value></data>
+  <data name="Adventure.Ui.CharacterSheet" xml:space="preserve"><value>CHARAKTERBOGEN</value></data>
+  <data name="Adventure.Ui.Abilities" xml:space="preserve"><value>ATTRIBUTE</value></data>
+  <data name="Adventure.Ui.TrainedSkills" xml:space="preserve"><value>ERLERNTE FERTIGKEITEN</value></data>
+  <data name="Adventure.Ui.ActiveConditions" xml:space="preserve"><value>AKTIVE ZUSTÄNDE</value></data>
+  <data name="Adventure.Ui.AdventureLibrary" xml:space="preserve"><value>ABENTEUERBIBLIOTHEK</value></data>
+  <data name="Adventure.Ui.CharacterNewRun" xml:space="preserve"><value>CHARAKTER &amp; NEUER DURCHLAUF</value></data>
+  <data name="Adventure.Ui.EveryDoor" xml:space="preserve"><value>Hinter jeder Tür verbirgt sich eine Geschichte.</value></data>
+  <data name="Adventure.Ui.HubSubtitle" xml:space="preserve"><value>Triff Entscheidungen, wirf die Würfel und lebe mit den Folgen.</value></data>
+  <data name="Adventure.Ui.ChooseTale" xml:space="preserve"><value>Wähle eine Geschichte.</value></data>
+  <data name="Adventure.Ui.HubDescription" xml:space="preserve"><value>Deine Entscheidungen und Würfelwürfe haben Folgen. Dein Charakter, sein Inventar und die Begegnungen begleiten dich durch jede Geschichte.</value></data>
+  <data name="Adventure.Ui.Acts" xml:space="preserve"><value>Akte</value></data>
+  <data name="Adventure.Ui.Scenes" xml:space="preserve"><value>Szenen</value></data>
+  <data name="Adventure.black-stag.Title" xml:space="preserve"><value>Der Schwarze Hirsch</value></data>
+  <data name="Adventure.drowned-bell.Title" xml:space="preserve"><value>Die versunkene Glocke</value></data>
+  <data name="Adventure.dead-mans-hand.Title" xml:space="preserve"><value>Dead Man’s Hand</value></data>
+  <data name="Adventure.dead-mans-hand.Act.act-1" xml:space="preserve"><value>Akt I · Regen auf Glas</value></data>
+  <data name="Adventure.dead-mans-hand.Act.act-2" xml:space="preserve"><value>Akt II · Die Stadt fordert ihren Preis</value></data>
+  <data name="Adventure.dead-mans-hand.Act.act-3" xml:space="preserve"><value>Akt III · Gefallen und Messer</value></data>
+  <data name="Adventure.dead-mans-hand.Act.act-4" xml:space="preserve"><value>Akt IV · Die Marke zeigt Zähne</value></data>
+  <data name="Adventure.dead-mans-hand.Act.act-5" xml:space="preserve"><value>Akt V · Jeder steht bei jemandem in der Schuld</value></data>
+  <data name="Adventure.dead-mans-hand.Act.act-6" xml:space="preserve"><value>Akt VI · Dead Man’s Hand</value></data>
+  <data name="Adventure.dead-mans-hand.Scene.rain-office.Title" xml:space="preserve"><value>Ein Klopfen nach Mitternacht</value></data>
+  <data name="Adventure.dead-mans-hand.Scene.rain-office.Body" xml:space="preserve"><value>Der Regen zieht schiefe Linien über die Scheibe deines Büros. Draußen besteht die Stadt aus nassem Asphalt, müdem Neonlicht und Verkehr, der niemals ganz zur Ruhe kommt. Um siebzehn Minuten nach Mitternacht tritt Evelyn Vane ohne Termin ein. Ihr Mann Arthur hat gestern Abend das Hotel Mirabelle verlassen und ist nicht nach Hause zurückgekehrt. Für die Polizei ist er nur ein reicher Mann, der sich eine heimliche Nacht gönnt. Evelyn glaubt das nicht. Und der Umschlag mit Bargeld, den sie auf deinen Schreibtisch legt, spricht ebenfalls dagegen.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.ask-timeline" xml:space="preserve"><value>Beginne mit der zeitlichen Abfolge. Lass sie jedes Detail genau schildern.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.ask-ivory-room" xml:space="preserve"><value>Frag, warum auf der Rückseite von Arthurs Hotelkarte der Name Ivory Room steht.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.take-case" xml:space="preserve"><value>Übernimm den Fall und fahr direkt zum Hotel Mirabelle.</value></data>
+  <data name="Adventure.dead-mans-hand.Scene.timeline-clean.Title" xml:space="preserve"><value>Siebzehn verschwundene Minuten</value></data>
+  <data name="Adventure.dead-mans-hand.Scene.timeline-clean.Body" xml:space="preserve"><value>Evelyn antwortet mit der abgehackten Präzision eines Menschen, der seine Geschichte einstudiert hat, weil beim ersten Mal niemand von den Behörden zuhören wollte. Arthur bezog Zimmer 306 um 18:42 Uhr. Um 20:03 Uhr rief er zu Hause an. Ein Hotelpage sah ihn um 21:11 Uhr von der Straße zurückkehren. Um 21:28 Uhr verzeichnete die Telefonzentrale einen ausgehenden Anruf aus seinem Zimmer. Danach fehlen siebzehn Minuten im internen Protokoll des Hotels. Evelyn erwähnt diese Lücke erst, als du sie die Ereignisse ein zweites Mal durchgehen lässt.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.timeline-to-hotel" xml:space="preserve"><value>Fahr zum Mirabelle, bevor die Nachtschicht wechselt.</value></data>
+  <data name="Adventure.dead-mans-hand.Scene.timeline-frayed.Title" xml:space="preserve"><value>Eine Geschichte voller Unschärfen</value></data>
+  <data name="Adventure.dead-mans-hand.Scene.timeline-frayed.Body" xml:space="preserve"><value>Die zeitliche Abfolge will sich nicht fügen. Evelyn erinnert sich an den Anruf, das Hotel, den Regen und daran, dass Arthur verängstigt klang. Nur die genauen Uhrzeiten entgleiten ihr. Ob dahinter Trauer, Erschöpfung oder Absicht steckt, lässt sich heute Nacht nicht sagen. Eine brauchbare Information bleibt dennoch: Zimmer 306, Hotel Mirabelle.</value></data>
+  <data name="Adventure.dead-mans-hand.Choice.frayed-to-hotel" xml:space="preserve"><value>Arbeite mit dem, was du weißt. Fahr zum Mirabelle.</value></data>
+  <data name="Adventure.black-stag.Scene.crooked-crown.Title" xml:space="preserve"><value>Die Schiefe Krone</value></data>
+  <data name="Adventure.black-stag.Scene.crooked-crown.Body" xml:space="preserve"><value>Der Regen prasselt wie Nadelstiche gegen die Fenster der Schiefen Krone und verwandelt die Straße draußen in schwarzes Glas. Mara Vey, die Wirtin, legt einen versiegelten Brief neben deine Tasse, ohne zu fragen, ob du ihn überhaupt haben willst. „Ein Fremder hat gut dafür bezahlt, dass dich dieser Brief erreicht.“ Das Siegelwachs ist schwarz. Darin prangt ein Hirsch, dessen eine Geweihstange abgebrochen ist.</value></data>
+  <data name="Adventure.black-stag.Choice.open-letter" xml:space="preserve"><value>Brich das Siegel und lies den Brief.</value></data>
+  <data name="Adventure.black-stag.Choice.inspect-seal" xml:space="preserve"><value>Untersuche das Siegel, bevor du den Brief anfasst.</value></data>
+  <data name="Adventure.black-stag.Choice.question-keeper" xml:space="preserve"><value>Beobachte Mara aufmerksam und frag, wer den Brief abgegeben hat.</value></data>
+  <data name="Adventure.drowned-bell.Scene.greyhaven-road.Title" xml:space="preserve"><value>Der Weg in den Nebel</value></data>
+  <data name="Adventure.drowned-bell.Scene.greyhaven-road.Body" xml:space="preserve"><value>Als die Straße sich nach Greyhaven hinabsenkt, ist das Meer längst hinter einer Wand aus perlgrauem Nebel verschwunden. Möwen kreisen über Feldern, die du nicht mehr sehen kannst, und an jedem Zaunpfahl klebt eine Salzkruste. Du bist gekommen, um für eine Nacht ein ruhiges Dach über dem Kopf zu finden. Doch das Dorf unter dir scheint vergessen zu haben, wie man Fremden Zuflucht gewährt.</value></data>
+  <data name="Adventure.drowned-bell.Choice.continue-road" xml:space="preserve"><value>Geh hinunter nach Greyhaven.</value></data>
+  <data name="Adventure.drowned-bell.Choice.read-weather" xml:space="preserve"><value>Untersuche den Nebel, bevor du hinabsteigst.</value></data>
+  <data name="Adventure.drowned-bell.Scene.fog-signs.Title" xml:space="preserve"><value>Wetter, das sich nicht rührt</value></data>
+  <data name="Adventure.drowned-bell.Scene.fog-signs.Body" xml:space="preserve"><value>Mit diesem Nebel stimmt etwas nicht. Der Wind beugt das Gras landeinwärts, doch über Greyhaven bewegt sich die Nebelbank kaum. Unter dem vertrauten Geruch von Salz liegt etwas Kälteres: Eisen, alter Stein und erloschene Kerzen. Was dort unten wartet, ist mehr als bloßes Wetter.</value></data>
+  <data name="Adventure.drowned-bell.Choice.descend-aware" xml:space="preserve"><value>Behalte das im Hinterkopf und betritt das Dorf.</value></data>
+  <data name="Adventure.Ui.InvestigationBoard" xml:space="preserve"><value>ERMITTLUNGSTAFEL</value></data>
+  <data name="Adventure.Ui.EmptyBoard" xml:space="preserve"><value>Noch keine Beweise angeheftet.
+Im Verlauf deiner Ermittlungen füllt sich die Tafel mit Personen, Orten, Beweismitteln, Spuren und Theorien.</value></data>
+  <data name="Adventure.Ui.CaseNotes" xml:space="preserve"><value>FALLNOTIZEN</value></data>
+  <data name="Adventure.Ui.SelectPinned" xml:space="preserve"><value>Wähle eine angeheftete Karte</value></data>
+  <data name="Adventure.Ui.BoardHelp" xml:space="preserve"><value>Ziehe eine Karte, um die Ermittlungen neu anzuordnen. Die Verbindungen bewegen sich mit. Per Rechtsklick öffnest du weitere Aktionen. ANPASSEN zeigt bekannte Spuren, RAHMEN die gesamte Tafel.</value></data>
+  <data name="Adventure.Ui.Unplayed" xml:space="preserve"><value>NOCH NICHT GESPIELT</value></data>
+  <data name="Adventure.Ui.Completed" xml:space="preserve"><value>ABGESCHLOSSEN</value></data>
+  <data name="Adventure.Ui.InProgress" xml:space="preserve"><value>IN ARBEIT</value></data>
+  <data name="Adventure.Ui.People" xml:space="preserve"><value>Personen</value></data>
+  <data name="Adventure.Ui.Locations" xml:space="preserve"><value>Orte</value></data>
+  <data name="Adventure.Ui.Evidence" xml:space="preserve"><value>Beweismittel</value></data>
+  <data name="Adventure.Ui.Leads" xml:space="preserve"><value>Spuren</value></data>
+  <data name="Adventure.Ui.Theories" xml:space="preserve"><value>Theorien</value></data>
+  <data name="Adventure.Ui.Fit" xml:space="preserve"><value>ANPASSEN</value></data>
+  <data name="Adventure.Ui.Frame" xml:space="preserve"><value>RAHMEN</value></data>
+  <data name="Adventure.Ui.Reset" xml:space="preserve"><value>ZURÜCKSETZEN</value></data>
+  <data name="Adventure.Ui.Status" xml:space="preserve"><value>STATUS</value></data>
+  <data name="Adventure.Ui.Reliability" xml:space="preserve"><value>ZUVERLÄSSIGKEIT</value></data>
+  <data name="Adventure.Ui.Discovery" xml:space="preserve"><value>ENTDECKUNG</value></data>
+  <data name="Adventure.Ui.KnownFacts" xml:space="preserve"><value>BEKANNTE FAKTEN</value></data>
+  <data name="Adventure.Ui.NotesQuotes" xml:space="preserve"><value>NOTIZEN / ZITATE</value></data>
+  <data name="Adventure.Ui.KnownConnections" xml:space="preserve"><value>BEKANNTE VERBINDUNGEN</value></data>
+  <data name="Adventure.Ui.BoardLimit" xml:space="preserve"><value>TAFELGRENZE</value></data>
+</root>

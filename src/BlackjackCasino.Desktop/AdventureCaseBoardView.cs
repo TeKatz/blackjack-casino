@@ -154,7 +154,7 @@ internal sealed class AdventureCaseBoardView : Grid
         var toolbarBody = new StackPanel();
         toolbarBody.Children.Add(new TextBlock
         {
-            Text = $"{definition.Title.ToUpperInvariant()}   ·   INVESTIGATION BOARD",
+            Text = $"{AdventureTextLocalization.Raw(definition.Title).ToUpperInvariant()}   ·   {AdventureTextLocalization.Ui("InvestigationBoard", "INVESTIGATION BOARD")}",
             FontFamily = new FontFamily("Georgia"),
             FontSize = 16.5,
             FontWeight = FontWeights.Bold,
@@ -173,7 +173,7 @@ internal sealed class AdventureCaseBoardView : Grid
         {
             var check = new CheckBox
             {
-                Content = CategoryLabel(category),
+                Content = AdventureTextLocalization.Raw(CategoryLabel(category)),
                 IsChecked = true,
                 Tag = category,
                 Margin = new Thickness(0, 0, 14, 4),
@@ -188,9 +188,9 @@ internal sealed class AdventureCaseBoardView : Grid
         controls.Children.Add(new Border { Width = 1, Height = 24, Background = AdventureUi.Ink("#51463A"), Margin = new Thickness(2, 0, 8, 4) });
         controls.Children.Add(ActionButton("−", "Zoom out", () => ChangeZoom(-.12)));
         controls.Children.Add(ActionButton("+", "Zoom in", () => ChangeZoom(.12)));
-        controls.Children.Add(ActionButton("FIT", "Fit known nodes", FitKnownNodes));
-        controls.Children.Add(ActionButton("FRAME", "Show complete board boundary", FitBoardFrame));
-        controls.Children.Add(ActionButton("RESET", "Reset zoom and pan", ResetView));
+        controls.Children.Add(ActionButton(AdventureTextLocalization.Ui("Fit", "FIT"), "Fit known nodes", FitKnownNodes));
+        controls.Children.Add(ActionButton(AdventureTextLocalization.Ui("Frame", "FRAME"), "Show complete board boundary", FitBoardFrame));
+        controls.Children.Add(ActionButton(AdventureTextLocalization.Ui("Reset", "RESET"), "Reset zoom and pan", ResetView));
         toolbarBody.Children.Add(controls);
         toolbar.Child = toolbarBody;
 
@@ -294,7 +294,8 @@ internal sealed class AdventureCaseBoardView : Grid
         {
             var empty = new TextBlock
             {
-                Text = "No evidence pinned yet.\nThe board grows as the investigation uncovers people, places, evidence, leads and theories.",
+                Text = AdventureTextLocalization.Ui("EmptyBoard",
+                    "No evidence pinned yet.\nThe board grows as the investigation uncovers people, places, evidence, leads and theories."),
                 FontFamily = new FontFamily("Georgia"),
                 FontSize = 20,
                 LineHeight = 30,
@@ -339,7 +340,7 @@ internal sealed class AdventureCaseBoardView : Grid
         var content = new StackPanel();
         content.Children.Add(new TextBlock
         {
-            Text = CategoryLabel(node.Category).ToUpperInvariant(),
+            Text = AdventureTextLocalization.Raw(CategoryLabel(node.Category)).ToUpperInvariant(),
             FontFamily = new FontFamily("Georgia"),
             FontSize = 9.5,
             FontWeight = FontWeights.Bold,
@@ -353,7 +354,7 @@ internal sealed class AdventureCaseBoardView : Grid
         heading.Children.Add(icon);
         var title = new TextBlock
         {
-            Text = node.Title,
+            Text = AdventureTextLocalization.BoardTitle(engine.Definition, node),
             FontFamily = new FontFamily("Georgia"),
             FontSize = 18,
             FontWeight = FontWeights.Bold,
@@ -365,7 +366,9 @@ internal sealed class AdventureCaseBoardView : Grid
         content.Children.Add(heading);
         content.Children.Add(new TextBlock
         {
-            Text = string.IsNullOrWhiteSpace(node.Subtitle) ? Shorten(node.Description, 96) : node.Subtitle,
+            Text = string.IsNullOrWhiteSpace(node.Subtitle)
+                ? Shorten(AdventureTextLocalization.BoardDescription(engine.Definition, node), 96)
+                : AdventureTextLocalization.BoardSubtitle(engine.Definition, node),
             FontFamily = new FontFamily("Georgia"),
             FontSize = 11.5,
             LineHeight = 16,
@@ -456,7 +459,7 @@ internal sealed class AdventureCaseBoardView : Grid
         var stack = new StackPanel { Width = 224 };
         stack.Children.Add(new TextBlock
         {
-            Text = node.Title,
+            Text = AdventureTextLocalization.BoardTitle(engine.Definition, node),
             FontFamily = new FontFamily("Georgia"),
             FontSize = 11.5,
             FontWeight = FontWeights.Bold,
@@ -584,11 +587,11 @@ internal sealed class AdventureCaseBoardView : Grid
         FrameworkElement icon = BuildCategoryIcon(node.Category, true);
         icon.Margin = new Thickness(0, 0, 7, 0);
         category.Children.Add(icon);
-        category.Children.Add(AdventureUi.Eyebrow(CategoryLabel(node.Category).ToUpperInvariant(), 10));
+        category.Children.Add(AdventureUi.Eyebrow(AdventureTextLocalization.Raw(CategoryLabel(node.Category)).ToUpperInvariant(), 10));
         details.Children.Add(category);
         details.Children.Add(new TextBlock
         {
-            Text = node.Title,
+            Text = AdventureTextLocalization.BoardTitle(engine.Definition, node),
             FontFamily = new FontFamily("Georgia"),
             FontSize = 25,
             FontWeight = FontWeights.Bold,
@@ -597,8 +600,8 @@ internal sealed class AdventureCaseBoardView : Grid
             TextWrapping = TextWrapping.Wrap,
         });
         if (!string.IsNullOrWhiteSpace(node.Subtitle))
-            AddPlainText(node.Subtitle!, 11, "#A98B6C", 0, 0, 0, 10);
-        AddPlainText(node.Description, 13, "#CBBEAA", 0, 0, 0, 0, 20);
+            AddPlainText(AdventureTextLocalization.BoardSubtitle(engine.Definition, node), 11, "#A98B6C", 0, 0, 0, 10);
+        AddPlainText(AdventureTextLocalization.BoardDescription(engine.Definition, node), 13, "#CBBEAA", 0, 0, 0, 0, 20);
         AddDetail("STATUS", StateLabel(node, state));
         AddDetail("RELIABILITY", state.Reliability.ToString());
         if (!string.IsNullOrWhiteSpace(node.DiscoveryContext)) AddDetail("DISCOVERY", node.DiscoveryContext!);
@@ -623,9 +626,9 @@ internal sealed class AdventureCaseBoardView : Grid
     private void ShowEmptyDetails()
     {
         details.Children.Clear();
-        details.Children.Add(AdventureUi.Eyebrow("CASE NOTES", 10));
-        AddPlainText("Select a pinned item", 23, "#DCCBAF", 0, 7, 0, 8);
-        AddPlainText("Drag a selected card to rearrange the investigation. Connections follow it live. Right-click a card for board actions. FIT focuses known evidence; FRAME shows the complete workspace boundary.", 12.5, "#9F9485", 0, 0, 0, 0, 20);
+        details.Children.Add(AdventureUi.Eyebrow(AdventureTextLocalization.Ui("CaseNotes", "CASE NOTES"), 10));
+        AddPlainText(AdventureTextLocalization.Ui("SelectPinned", "Select a pinned item"), 23, "#DCCBAF", 0, 7, 0, 8);
+        AddPlainText(AdventureTextLocalization.Ui("BoardHelp", "Drag a selected card to rearrange the investigation. Connections follow it live. Right-click a card for board actions. FIT focuses known evidence; FRAME shows the complete workspace boundary."), 12.5, "#9F9485", 0, 0, 0, 0, 20);
         AddDetail("BOARD LIMIT", $"{boardWidth:0} × {boardHeight:0} workspace units");
     }
 
@@ -646,7 +649,7 @@ internal sealed class AdventureCaseBoardView : Grid
 
     private void AddDetail(string heading, string content)
     {
-        AddPlainText(heading, 9.5, "#A9805F", 0, 18, 0, 4);
+        AddPlainText(AdventureTextLocalization.Raw(heading), 9.5, "#A9805F", 0, 18, 0, 4);
         if (details.Children[^1] is TextBlock label) label.FontWeight = FontWeights.Bold;
         AddPlainText(content, 11.5, "#C5B9A8", 0, 0, 0, 0, 18);
     }
@@ -905,11 +908,11 @@ internal sealed class AdventureCaseBoardView : Grid
 
     private static string CategoryLabel(CaseNodeCategory category) => category switch
     {
-        CaseNodeCategory.Person => "People",
-        CaseNodeCategory.Location => "Locations",
-        CaseNodeCategory.Evidence => "Evidence",
-        CaseNodeCategory.Lead => "Leads",
-        CaseNodeCategory.Theory => "Theories",
+        CaseNodeCategory.Person => AdventureTextLocalization.Ui("People", "People"),
+        CaseNodeCategory.Location => AdventureTextLocalization.Ui("Locations", "Locations"),
+        CaseNodeCategory.Evidence => AdventureTextLocalization.Ui("Evidence", "Evidence"),
+        CaseNodeCategory.Lead => AdventureTextLocalization.Ui("Leads", "Leads"),
+        CaseNodeCategory.Theory => AdventureTextLocalization.Ui("Theories", "Theories"),
         _ => category.ToString(),
     };
 
