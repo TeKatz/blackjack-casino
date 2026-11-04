@@ -2,7 +2,7 @@ name: Development Release
 
 on:
   push:
-    branches: ["feature/casino-quality-phase-4"]
+    branches: ["main"]
   workflow_dispatch:
 
 permissions:
@@ -14,8 +14,8 @@ concurrency:
 
 jobs:
   publish-development:
-    # The shared Development channel follows the latest cumulative casino quality branch.
-    if: github.ref == 'refs/heads/feature/casino-quality-phase-4'
+    # After consolidation, the shared Development release is published from main.
+    if: github.ref == 'refs/heads/main'
     runs-on: windows-latest
     timeout-minutes: 20
 

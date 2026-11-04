@@ -45,3 +45,7 @@ The existing suite links some Desktop persistence and presentation helper files 
 - The intended first PixiJS/TypeScript proof of migration is Midnight Manor, **not** a current installed feature.
 
 See [roadmap](modernization-roadmap.md), [agent workflow](../AGENTS.md), and [Development delivery](development-update-delivery.md).
+
+## Consolidation follow-up (2026-11-04)
+
+The consolidated branch changes the Development publisher from `feature/casino-quality-phase-4` to `main` in **both** required workflow gates. The older note above describes the preparatory state before consolidation. NuGet/xUnit upgrades remain deferred and require a separate testable change. Verify actual main CI and the Development artifact before deleting old feature branches.

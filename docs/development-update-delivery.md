@@ -1,5 +1,10 @@
 # Development update delivery
 
+## Current Development publisher after consolidation
+
+The source branch is **`main`**, selected in both the `on.push.branches` filter and the `publish-development.if` guard of `.github/workflows/development-release.yml`. The in-app Development manifest URL, updater, package naming and SHA-256 verification do not change. Check successful Windows CI and the published Development manifest before deleting historical branches; merging code alone does not verify an installable release.
+
+
 The in-app Development manifest remains:
 
 `https://github.com/TeKatz/blackjack-casino/releases/download/development/update-manifest.json`
@@ -12,13 +17,12 @@ Before publication, the workflow validates localization resources, builds, runs 
 
 Versioning rule: start a new Development cycle on a version base strictly above the latest final version. Preserve SemVer ordering; do not offer silent downgrades. PR preview artifacts use dev.0 and are superseded by the published Development run number.
 
-## Current test channel: Casino quality – Phase 4
+## Historical test channel: Casino quality – Phase 4
 
-The mutable in-app `development` release is now pinned to
+Before consolidation, the mutable in-app `development` release was pinned to
 `feature/casino-quality-phase-4`, building on all work from Phases 1–3
 and the earlier shop-cosmetics expansion. Both the workflow push filter and
-the job-level guard select this branch. The pinned branch is the only intended
-source for future Development builds; do not publish the superseded branch.
+the job-level guard select this branch. The historical pin has been superseded by `main` and must not be reinstated.
 
 The installed client's Development manifest URL is unchanged, as are
 the package, updater executable, updater schema and SHA-256 validation.
@@ -43,8 +47,8 @@ version through the same `development/update-manifest.json` URL.
 
 The source pin lives in the publishing workflow's push trigger and job guard. When changing the active feature branch again, update both fields together on the selected branch. Normal feature-branch CI previews remain available as artifacts and do not replace the shared Development release unless that branch is explicitly pinned here.
 
-## Repository-preparation branch (2026-11-04)
+## Repository-preparation branch (historical, 2026-11-04)
 
-`feature/repository-workflow-refresh` contains documentation, agent instructions and a repository-contract check only. It is based on the cumulative `feature/casino-quality-phase-4` snapshot and **does not** replace its Development publisher source. The ongoing Jigsaw changes, their review and subsequent branch consolidation take priority; incorporate this preparatory branch only after reconciling the newer cumulative code. The planned React/TypeScript/PixiJS Midnight Manor pilot has not started. See [modernization roadmap](modernization-roadmap.md).
+`feature/repository-workflow-refresh` contains documentation, agent instructions and a repository-contract check only. It was based on the cumulative `feature/casino-quality-phase-4` snapshot. During consolidation, its documentation and checks became part of `main`, which also became the publisher source. The owner controls when historical branches are deleted. The planned React/TypeScript/PixiJS Midnight Manor pilot has not started. See [modernization roadmap](modernization-roadmap.md).
 
 The lightweight repository-contract workflow checks required documentation, local README/guide links and consistency between the Development workflow's push branch filter and its job guard. It does not substitute for Windows gameplay/build/smoke validation.

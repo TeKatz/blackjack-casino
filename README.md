@@ -2,7 +2,7 @@
 
 **Offline-first, single-player, play-money casino for Windows.** No real-money wagers, payments, advertising, account requirement or online service are needed to play. The repository's executable client is currently **WPF/.NET 10**. The planned React/TypeScript/PixiJS modernization is **not yet implemented**.
 
-> **Development snapshot — 2026-11-04.** The current cumulative work is on `feature/casino-quality-phase-4`, which also supplies the **Development** update channel. The `main` branch is not necessarily the newest playable development state. Jigsaw improvements are still in progress; do not consolidate branches or start the planned Manor migration until that work is verified. See [Development delivery](docs/development-update-delivery.md) and [agent workflow](AGENTS.md).
+> **Consolidation — 2026-11-04.** The cumulative casino-quality, Jigsaw and workflow improvements are being consolidated into `main`. After merge, `main` also supplies the **Development** update channel. Older feature branches are historical and can be deleted by the owner once their unique changes are verified as integrated. Midnight Manor is the first *planned* rendering migration; no React/PixiJS frontend is shipped yet. See [Development delivery](docs/development-update-delivery.md) and [agent workflow](AGENTS.md).
 
 ## Play modes at a glance
 
@@ -23,7 +23,7 @@ The main lobby connects these experiences into one Windows application. Games wi
 
 ### Recently expanded areas
 
-- **Jigsaw Puzzle:** 12 collection-art motifs, puzzle sizes from 24 to 1,000 pieces, resumable saves, timer toggle, completion screen and 30 achievements tied into shared challenges. **Further UI/performance changes are actively being worked on.** See [Jigsaw guide](docs/jigsaw.md).
+- **Jigsaw Puzzle:** 12 collection-art motifs, puzzle sizes from 24 to 1,000 pieces, resumable saves, timer toggle, completion screen and 30 achievements tied into shared challenges. **Recent UI/performance improvements have entered the cumulative development line; game-tester acceptance is still required.** See [Jigsaw guide](docs/jigsaw.md).
 - **Tales from the Backroom:** *Dead Man's Hand* has six investigation acts, multiple branching endings, evidence items and a case board. See [campaign documentation](docs/dead-mans-hand.md).
 - **Cosmetics and collection:** new card/dice sets, portrait art and visual refinements; the collectible album tracks permanent collections and duplicate recycling. See [shop expansion](docs/shop-cosmetics-expansion.md) and [album](docs/collectible-album.md).
 - **Localization:** English and German resources are supported, but the migration of all legacy strings and adventure text is **still incomplete**. A green shell localization check is not proof of full program coverage. See [localization plan](docs/localization-overhaul.md).
@@ -35,7 +35,7 @@ Windows builds are published through [GitHub Releases](https://github.com/TeKatz
 
 The existing updater uses versioned manifests, package-size and SHA-256 verification, and staged replacement with a rollback path. Saves are outside the installation directory, under `%LOCALAPPDATA%\BlackjackCasino`, and should remain intact when updating. Preserve backups when testing migration scenarios.
 
-**Do not assume** a GitHub PR preview artifact is already published to the in-game Development updater. The publisher's source branch is deliberately pinned in `.github/workflows/development-release.yml`; see [release delivery](docs/development-update-delivery.md).
+**Do not assume** a GitHub PR preview artifact is already published to the in-game Development updater. The publisher's source branch is deliberately pinned to `main` in `.github/workflows/development-release.yml` after consolidation; see [release delivery](docs/development-update-delivery.md).
 
 ## Repository layout
 
@@ -72,7 +72,7 @@ The GitHub workflows also run screenshot/runtime checks including presentation, 
 
 The **game director** owns gameplay vision and hands-on bug testing. Coding agents/ChatGPT Work own implementation, maintenance, tests and delivery; the game director should not need to write code or manage builds. Contributions use small scoped branches, automated checks, game tester feedback and release gates. Read [AGENTS.md](AGENTS.md), [CONTRIBUTING.md](CONTRIBUTING.md) and [pull request checklist](.github/pull_request_template.md).
 
-**Next rendering pilot: Midnight Manor.** After Jigsaw has been completed and the branch history consolidated, we plan to build a React/TypeScript + PixiJS presentation hosted initially through WebView2, while keeping the C# core authoritative for game results and save data. This is a staged replacement of WPF, **not** a one-shot rewrite and **not** an already-shipped feature. See [modernization roadmap](docs/modernization-roadmap.md).
+**Next rendering pilot: Midnight Manor.** Following consolidation and Jigsaw acceptance, we plan to build a React/TypeScript + PixiJS presentation hosted initially through WebView2, while keeping the C# core authoritative for game results and save data. This is a staged replacement of WPF, **not** a one-shot rewrite and **not** an already-shipped feature. See [modernization roadmap](docs/modernization-roadmap.md).
 
 For package/runtime maintenance status and deliberate upgrade gates, see [maintenance audit](docs/maintenance-audit.md).
 

@@ -117,7 +117,7 @@ GitHub excludes prereleases from `latest`, so Development cannot accidentally be
 
 ### Development
 
-`.github/workflows/development-release.yml` publishes successful development builds from the explicitly pinned branch, currently `feature/casino-quality-phase-4` (as of 2026-11-04). Both its push trigger and job guard select that source. Builds use versions such as `0.10.1-dev.N` and replace the assets of the mutable GitHub prerelease tagged `development`.
+`.github/workflows/development-release.yml` publishes successful development builds from the explicitly pinned branch, currently `main` after the 2026-11-04 consolidation. Both its push trigger and job guard select that source. Builds use versions such as `0.10.1-dev.N` and replace the assets of the mutable GitHub prerelease tagged `development`.
 
 The client reads:
 
@@ -148,4 +148,4 @@ The updater protocol is schema-versioned. `minimumUpdaterVersion` allows an old 
 
 A staged move from WPF to React + TypeScript + HTML/CSS and PixiJS is planned, **starting with Midnight Manor after the active Jigsaw work ends**. The initial rendering adapter will live in the existing WPF shell via WebView2; only after every migrated mode and updater path passes acceptance would a smaller native .NET host replace WPF. The planned frontend is not allowed to generate outcomes, change the bankroll or own durable rewards. C# Core remains authoritative; any new application/bridge service must have versioned command schemas, origin validation and idempotent settlement. See [modernization roadmap](modernization-roadmap.md) and [agent working agreement](../AGENTS.md).
 
-For current session-scoped work, do not delete branches or change the Development publisher's pin. The current cumulative release branch and workflow instructions are documented in [Development delivery](development-update-delivery.md).
+After consolidation, do not delete branches automatically or change the Development publisher's pin without an explicit release decision. The current cumulative release branch and workflow instructions are documented in [Development delivery](development-update-delivery.md).

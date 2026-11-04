@@ -4,7 +4,7 @@ The Midnight Club is an offline-first, play-money Windows casino. Gameplay and v
 
 ## Before starting
 
-1. Inspect recent branches and open pull requests. The current Development publisher is explicitly pinned in `.github/workflows/development-release.yml`; it is not necessarily `main`.
+1. Inspect recent branches and open pull requests. After consolidation, the Development publisher is pinned to `main` in `.github/workflows/development-release.yml`. Verify the workflow before changing its source.
 2. Start from the most recent **validated cumulative base**, not the oldest feature branch. Never overwrite another active workstream.
 3. Create a focused `feature/*` or `fix/*` branch. Keep PRs reviewable and avoid changing release pins as a side effect.
 4. Read [AGENTS.md](AGENTS.md), [architecture](docs/architecture.md), [Development delivery](docs/development-update-delivery.md), and the relevant game-specific documentation.
@@ -40,4 +40,4 @@ Use the PR template and link supporting screenshots/benchmarks when relevant. A 
 
 ## Modernization
 
-The first planned new-frontend migration is **Midnight Manor**, after ongoing Jigsaw work concludes. See [modernization roadmap](docs/modernization-roadmap.md). Existing C# game engines remain authoritative; PixiJS and React are a presentation layer, not a replacement for casino rules.
+The first planned new-frontend migration is **Midnight Manor**, after branch consolidation and Jigsaw tester acceptance. See [modernization roadmap](docs/modernization-roadmap.md). Existing C# game engines remain authoritative; PixiJS and React are a presentation layer, not a replacement for casino rules.

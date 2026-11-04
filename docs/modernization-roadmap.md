@@ -1,6 +1,6 @@
 # Modern casino frontend — staged migration roadmap
 
-**Planning status (2026-11-04):** architecture decision recorded, **no frontend migration started**. Jigsaw improvements are in progress, and branch consolidation is explicitly deferred. This document is a forward-looking plan, not a claim of implemented TypeScript, React, PixiJS, WebView2 or wallet-bridge components.
+**Planning status (2026-11-04):** architecture decision recorded, **no frontend migration started**. Branch consolidation into `main` was authorized. Jigsaw tester acceptance is still required before invasive frontend work. This document is a forward-looking plan, not a claim of implemented TypeScript, React, PixiJS, WebView2 or wallet-bridge components.
 
 ## Why this direction
 
@@ -20,13 +20,13 @@ Do **not** rewrite existing engines merely to port the UI. Use adapters and expl
 
 - Refresh user-facing README, architecture and active branch documentation.
 - Add repo-level agent instructions, contribution/PR process, and checks preventing broken documentation and mismatched Development branch guards.
-- Make no gameplay or updater protocol changes, and do not disturb the ongoing Jigsaw branch.
+- Make no gameplay or updater protocol changes; bring validated cumulative work into `main`, then move the Development branch source to `main`.
 
-**Exit:** isolated PR, contract-check workflow green, no change to active Development source.
+**Exit:** reviewed consolidation PR, CI green, actual Development manifest published from `main`, save compatibility preserved.
 
 ### M1 — Midnight Manor baseline audit and design
 
-- After the Jigsaw work is complete and branches are reconciled, inventory `ManorController`, `ManorPersistence`, `ManorWindow`, the Manor Core engine, effects, assets, saves, current RTP/versioning and CI evidence.
+- After branch consolidation and Jigsaw tester acceptance, inventory `ManorController`, `ManorPersistence`, `ManorWindow`, the Manor Core engine, effects, assets, saves, current RTP/versioning and CI evidence.
 - Capture current screen states, visual defects, frame-time/performance baseline and save recovery tests.
 - Propose any changed rules/odds as a separate reviewed game-design change, never incidental to rendering.
 
@@ -52,7 +52,7 @@ Do **not** rewrite existing engines merely to port the UI. Use adapters and expl
 
 - Integrate lobby navigation, progression/challenge/album updates, German/English strings, no duplicate audio and crash-safe pending features.
 - Keep WPF Manor as rollback until the modern experience passes Windows end-to-end and actual updater tests.
-- Move Development branch source only after Jigsaw work and pilot review.
+- Keep Development publishing from `main`; coordinate pilot landing and rollback without repinning temporary branches.
 
 **Exit:** tester-approved Development build, documented fallback path and measured results.
 

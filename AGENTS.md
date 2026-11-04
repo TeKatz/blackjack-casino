@@ -16,12 +16,13 @@ This file is the repository-level instruction for coding assistants and ChatGPT 
 3. Define a bounded scope, acceptance criteria, rollback and the tests that should prove it works. Prefer small reversible changes and incremental PRs.
 4. Review architecture and feature-specific docs; update the README and documentation when they are stale.
 
-## Current coordination hold (2026-11-04)
+## Current coordination status (2026-11-04)
 
-- Jigsaw Puzzle improvements are ongoing. Let that work finish and be validated before branch consolidation or invasive game migrations.
-- `feature/casino-quality-phase-4` is the currently pinned Development publisher source. Do not change the release workflow's source branch or the in-app channel during repository preparation.
-- This repository/workflow refresh is preparatory only. The first planned rendering migration is **Midnight Manor**, not Roulette; implementation begins only after the Jigsaw work is settled and branches are reconciled. See `docs/modernization-roadmap.md`.
-- Refresh these time-sensitive coordination notes when active branches change; do not treat them as permanent rules.
+- The game director authorized consolidation of the validated cumulative work into `main`. Verify Jigsaw testing before starting invasive new game changes.
+- The Development publisher moves from `feature/casino-quality-phase-4` to `main` **as part of consolidation**, with the push filter and job guard updated together. Verify the actual main CI and published Development manifest before suggesting branch deletion.
+- Earlier casino-quality, shop-cosmetics and repository-refresh branches are historical after their functional changes reach `main`. Do not delete them automatically; the owner manages final cleanup.
+- Midnight Manor is the first planned React/TypeScript/PixiJS migration; Roulette is deferred. No frontend migration has begun.
+- Refresh this dated note as branch ownership changes.
 
 ## Architecture and modernization rules
 
