@@ -14,6 +14,7 @@ public enum ChallengeCategory
     MidnightMerge,
     WordSearch,
     Memory,
+    Jigsaw,
 }
 
 public enum ChallengeMetric
@@ -92,6 +93,7 @@ public enum ChallengeMetric
     MergeMerges, MergeOrdersCompleted, MergeRenovationPoints, MergeHighestTier, MergeMilestones, MergeAreasCompleted,
     WordSearchCompleted, WordSearchWordsFound, WordSearchNoHintCompleted, WordSearchExpertCompleted, WordSearchMasterCompleted,
     MemoryGamesCompleted, MemoryPairsFound, MemoryPerfectGames, MemoryExpertCompleted, MemoryMasterCompleted, MemoryBestStreak,
+    JigsawAchievement,
 }
 
 public sealed record ChallengeDefinition(
@@ -338,13 +340,24 @@ public static class ChallengeCatalog
         E("prestige-10", ChallengeCategory.Prestige, "Eternal High Roller", "Reach Prestige 10.", ChallengeMetric.PrestigeCount, 10, 7500),
     });
 
-    public static IReadOnlyList<ChallengeDefinition> All => Challenges;
+    // The Jigsaw milestones are also the central challenges. They are automatically awarded
+    // by the puzzle completion transaction, not claimable a second time for more coins.
+    private static readonly IReadOnlyList<ChallengeDefinition> JigsawChallenges =
+        Jigsaw.JigsawAchievements.All.Select(a => new ChallengeDefinition(
+            "jigsaw-" + a.Id, ChallengeCategory.Jigsaw,
+            a.Name, a.Description, ChallengeMetric.JigsawAchievement, a.Goal,
+            a.CoinReward, a.Tier == Jigsaw.JigsawAchievementTier.Platinum)).ToArray();
+
+    private static readonly IReadOnlyList<ChallengeDefinition> AllChallenges =
+        Challenges.Concat(JigsawChallenges).ToArray();
+
+    public static IReadOnlyList<ChallengeDefinition> All => AllChallenges;
 
     public static IReadOnlyList<ChallengeDefinition> For(ChallengeCategory category) =>
-        Challenges.Where(x => x.Category == category).ToArray();
+        AllChallenges.Where(x => x.Category == category).ToArray();
 
     public static ChallengeDefinition? TryGet(string id) =>
-        Challenges.FirstOrDefault(x => string.Equals(x.Id, id, StringComparison.Ordinal));
+        AllChallenges.FirstOrDefault(x => string.Equals(x.Id, id, StringComparison.Ordinal));
 
     public static decimal Progress(PlayerProfileState profile, ChallengeDefinition challenge)
     {
@@ -461,6 +474,7 @@ public static class ChallengeCatalog
             ChallengeMetric.MemoryExpertCompleted => profile.Memory.ExpertCompleted,
             ChallengeMetric.MemoryMasterCompleted => profile.Memory.MasterCompleted,
             ChallengeMetric.MemoryBestStreak => profile.Memory.BestStreak,
+            ChallengeMetric.JigsawAchievement => JigsawProgress(profile, challenge),
 
             ChallengeMetric.LifetimeExperience => profile.LifetimeExperience,
             ChallengeMetric.LifetimePlaytimeSeconds => profile.TotalPlaytimeSeconds,
@@ -472,6 +486,15 @@ public static class ChallengeCatalog
             ChallengeMetric.PrestigeCount => profile.Prestige,
             _ => 0,
         };
+    }
+
+    private static decimal JigsawProgress(PlayerProfileState profile, ChallengeDefinition challenge)
+    {
+        Jigsaw.JigsawAchievementDefinition? goal = Jigsaw.JigsawAchievements.All.FirstOrDefault(
+            item => string.Equals("jigsaw-" + item.Id, challenge.Id, StringComparison.Ordinal));
+        if (goal is null) return 0;
+        Jigsaw.JigsawStatistics stats = profile.Jigsaw;
+        return Math.Max(goal.Current(stats), stats.UnlockedAchievementIds.Contains(goal.Id) ? goal.Goal : 0);
     }
 
     public static bool Complete(PlayerProfileState profile, ChallengeDefinition challenge) =>
