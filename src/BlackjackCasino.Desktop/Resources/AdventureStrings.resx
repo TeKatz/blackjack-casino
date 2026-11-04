@@ -1395,4 +1395,161 @@ The board grows as the investigation uncovers people, places, evidence, leads an
   <data name="Adventure.dead-mans-hand.Class.veteran.Name" xml:space="preserve"><value>The Veteran</value></data>
   <data name="Adventure.dead-mans-hand.Class.veteran.Description" xml:space="preserve"><value>Hard to frighten and harder to stop. Opens forceful and protective solutions when subtle plans collapse.</value></data>
   <data name="Adventure.dead-mans-hand.Class.veteran.Special" xml:space="preserve"><value>Resolve</value></data>
+  <data name="Adventure.black-stag.Scene.crooked-crown.Location" xml:space="preserve"><value>The Crooked Crown</value></data>
+  <data name="Adventure.black-stag.Scene.forged-seal.Location" xml:space="preserve"><value>The Crooked Crown</value></data>
+  <data name="Adventure.black-stag.Scene.seal-uncertain.Location" xml:space="preserve"><value>The Crooked Crown</value></data>
+  <data name="Adventure.black-stag.Scene.keeper-truth.Location" xml:space="preserve"><value>The Crooked Crown</value></data>
+  <data name="Adventure.black-stag.Scene.keeper-guarded.Location" xml:space="preserve"><value>The Crooked Crown</value></data>
+  <data name="Adventure.black-stag.Scene.letter-opened.Location" xml:space="preserve"><value>The Crooked Crown</value></data>
+  <data name="Adventure.black-stag.Scene.seal-residue.Location" xml:space="preserve"><value>The Crooked Crown</value></data>
+  <data name="Adventure.black-stag.Scene.remembered-mark.Location" xml:space="preserve"><value>The Crooked Crown</value></data>
+  <data name="Adventure.black-stag.Scene.north-road.Location" xml:space="preserve"><value>Saint Orra&apos;s Bridge</value></data>
+  <data name="Adventure.black-stag.Scene.hunter-disarmed.Location" xml:space="preserve"><value>Saint Orra&apos;s Bridge</value></data>
+  <data name="Adventure.black-stag.Scene.hunter-defeated.Location" xml:space="preserve"><value>Saint Orra&apos;s Bridge</value></data>
+  <data name="Adventure.black-stag.Scene.lower-ledge.Location" xml:space="preserve"><value>Saint Orra&apos;s Bridge</value></data>
+  <data name="Adventure.black-stag.Scene.hunter-hesitates.Location" xml:space="preserve"><value>Saint Orra&apos;s Bridge</value></data>
+  <data name="Adventure.black-stag.Scene.hunter-warning.Location" xml:space="preserve"><value>Saint Orra&apos;s Bridge</value></data>
+  <data name="Adventure.black-stag.Scene.wounded-escape.Location" xml:space="preserve"><value>Saint Orra&apos;s Bridge</value></data>
+  <data name="Adventure.black-stag.Scene.ledger-revealed.Location" xml:space="preserve"><value>North Road</value></data>
+  <data name="Adventure.black-stag.Scene.grayfen-road.Location" xml:space="preserve"><value>Grayfen Road</value></data>
+  <data name="Adventure.black-stag.Scene.isi-first-meeting.Location" xml:space="preserve"><value>Grayfen Road</value></data>
+  <data name="Adventure.black-stag.Scene.isi-sees-lie.Location" xml:space="preserve"><value>Grayfen Road</value></data>
+  <data name="Adventure.black-stag.Scene.isi-camp.Location" xml:space="preserve"><value>Isi&apos;s Camp</value></data>
+  <data name="Adventure.black-stag.Scene.grayfen-hub.Location" xml:space="preserve"><value>Grayfen</value></data>
+  <data name="Adventure.black-stag.Scene.mill-yard.Location" xml:space="preserve"><value>Old Mill</value></data>
+  <data name="Adventure.black-stag.Scene.mill-fall.Location" xml:space="preserve"><value>Old Mill</value></data>
+  <data name="Adventure.black-stag.Scene.mill-front-door.Location" xml:space="preserve"><value>Old Mill</value></data>
+  <data name="Adventure.black-stag.Scene.mill-hidden-door.Location" xml:space="preserve"><value>Old Mill</value></data>
+  <data name="Adventure.black-stag.Scene.mill-drawer.Location" xml:space="preserve"><value>Old Mill</value></data>
+  <data name="Adventure.black-stag.Scene.mill-records.Location" xml:space="preserve"><value>Old Mill</value></data>
+  <data name="Adventure.black-stag.Scene.chapel-gate.Location" xml:space="preserve"><value>Saint Orra&apos;s Chapel</value></data>
+  <data name="Adventure.black-stag.Scene.chapel-altar.Location" xml:space="preserve"><value>Saint Orra&apos;s Chapel</value></data>
+  <data name="Adventure.black-stag.Scene.chapel-poisoned.Location" xml:space="preserve"><value>Saint Orra&apos;s Chapel</value></data>
+  <data name="Adventure.black-stag.Scene.chapel-crypt.Location" xml:space="preserve"><value>Saint Orra&apos;s Crypt</value></data>
+  <data name="Adventure.black-stag.Scene.chapel-rubbing.Location" xml:space="preserve"><value>Saint Orra&apos;s Chapel</value></data>
+  <data name="Adventure.black-stag.Scene.market-square.Location" xml:space="preserve"><value>Grayfen Market</value></data>
+  <data name="Adventure.black-stag.Scene.market-apothecary.Location" xml:space="preserve"><value>Grayfen Market</value></data>
+  <data name="Adventure.black-stag.Scene.market-fence.Location" xml:space="preserve"><value>Grayfen Market</value></data>
+  <data name="Adventure.black-stag.Scene.market-clerk.Location" xml:space="preserve"><value>Grayfen Market</value></data>
+  <data name="Adventure.black-stag.Scene.market-clue.Location" xml:space="preserve"><value>Grayfen Market</value></data>
+  <data name="Adventure.black-stag.Scene.isi-connects-clues.Location" xml:space="preserve"><value>Isi&apos;s Camp</value></data>
+  <data name="Adventure.black-stag.Scene.isi-personal.Location" xml:space="preserve"><value>Isi&apos;s Camp</value></data>
+  <data name="Adventure.black-stag.Scene.hospice-gate.Location" xml:space="preserve"><value>Saint Orra&apos;s Hospice</value></data>
+  <data name="Adventure.black-stag.Scene.hospice-alarm.Location" xml:space="preserve"><value>Saint Orra&apos;s Hospice</value></data>
+  <data name="Adventure.black-stag.Scene.hospice-archive.Location" xml:space="preserve"><value>Saint Orra&apos;s Hospice</value></data>
+  <data name="Adventure.black-stag.Scene.hospice-survivor.Location" xml:space="preserve"><value>Saint Orra&apos;s Hospice</value></data>
+  <data name="Adventure.black-stag.Scene.act2-reveal.Location" xml:space="preserve"><value>Saint Orra&apos;s Hospice</value></data>
+  <data name="Adventure.black-stag.Scene.stag-safehouse.Location" xml:space="preserve"><value>Black Stag Refuge</value></data>
+  <data name="Adventure.black-stag.Scene.stag-council.Location" xml:space="preserve"><value>Black Stag Refuge</value></data>
+  <data name="Adventure.black-stag.Scene.merrow-answer.Location" xml:space="preserve"><value>Black Stag Refuge</value></data>
+  <data name="Adventure.black-stag.Scene.seran-answer.Location" xml:space="preserve"><value>Black Stag Refuge</value></data>
+  <data name="Adventure.black-stag.Scene.isi-confession.Location" xml:space="preserve"><value>Black Stag Refuge</value></data>
+  <data name="Adventure.black-stag.Scene.truth-fractured.Location" xml:space="preserve"><value>Black Stag Refuge</value></data>
+  <data name="Adventure.black-stag.Scene.antler-vault.Location" xml:space="preserve"><value>Antler Vault</value></data>
+  <data name="Adventure.black-stag.Scene.vault-marked.Location" xml:space="preserve"><value>Antler Vault</value></data>
+  <data name="Adventure.black-stag.Scene.vault-vision.Location" xml:space="preserve"><value>Antler Vault</value></data>
+  <data name="Adventure.black-stag.Scene.vault-seal.Location" xml:space="preserve"><value>Antler Vault</value></data>
+  <data name="Adventure.black-stag.Scene.hunter-return.Location" xml:space="preserve"><value>Black Stag Refuge</value></data>
+  <data name="Adventure.black-stag.Scene.edrin-plan.Location" xml:space="preserve"><value>Black Stag Refuge</value></data>
+  <data name="Adventure.black-stag.Scene.refuge-evacuation.Location" xml:space="preserve"><value>Black Stag Refuge</value></data>
+  <data name="Adventure.black-stag.Scene.isi-route.Location" xml:space="preserve"><value>Black Stag Refuge</value></data>
+  <data name="Adventure.black-stag.Scene.ash-road.Location" xml:space="preserve"><value>Ash Road</value></data>
+  <data name="Adventure.black-stag.Scene.ambush-success.Location" xml:space="preserve"><value>Ash Road</value></data>
+  <data name="Adventure.black-stag.Scene.ambush-failure.Location" xml:space="preserve"><value>Ash Road</value></data>
+  <data name="Adventure.black-stag.Scene.ravine.Location" xml:space="preserve"><value>Ashgrove Ravine</value></data>
+  <data name="Adventure.black-stag.Scene.ravine-fall.Location" xml:space="preserve"><value>Ashgrove Ravine</value></data>
+  <data name="Adventure.black-stag.Scene.prison-road.Location" xml:space="preserve"><value>Old Royal Road</value></data>
+  <data name="Adventure.black-stag.Scene.wagon-rescue.Location" xml:space="preserve"><value>Old Royal Road</value></data>
+  <data name="Adventure.black-stag.Scene.wagon-follow.Location" xml:space="preserve"><value>Capital Outskirts</value></data>
+  <data name="Adventure.black-stag.Scene.city-gates.Location" xml:space="preserve"><value>The Capital</value></data>
+  <data name="Adventure.black-stag.Scene.archive-captured.Location" xml:space="preserve"><value>East Archive Cells</value></data>
+  <data name="Adventure.black-stag.Scene.archive-entry.Location" xml:space="preserve"><value>East Archive</value></data>
+  <data name="Adventure.black-stag.Scene.archive-fight.Location" xml:space="preserve"><value>East Archive</value></data>
+  <data name="Adventure.black-stag.Scene.archive-vault.Location" xml:space="preserve"><value>East Archive Vault</value></data>
+  <data name="Adventure.black-stag.Scene.orven-arrives.Location" xml:space="preserve"><value>East Archive Vault</value></data>
+  <data name="Adventure.black-stag.Scene.whole-stag.Location" xml:space="preserve"><value>East Archive Vault</value></data>
+  <data name="Adventure.black-stag.Scene.orven-offer.Location" xml:space="preserve"><value>East Archive Vault</value></data>
+  <data name="Adventure.black-stag.Scene.final-choice.Location" xml:space="preserve"><value>East Archive Vault</value></data>
+  <data name="Adventure.drowned-bell.Scene.greyhaven-road.Location" xml:space="preserve"><value>North Road</value></data>
+  <data name="Adventure.drowned-bell.Scene.fog-signs.Location" xml:space="preserve"><value>North Road</value></data>
+  <data name="Adventure.drowned-bell.Scene.village-gate.Location" xml:space="preserve"><value>Greyhaven</value></data>
+  <data name="Adventure.drowned-bell.Scene.harbor-dusk.Location" xml:space="preserve"><value>Greyhaven Harbor</value></data>
+  <data name="Adventure.drowned-bell.Scene.bent-anchor.Location" xml:space="preserve"><value>The Bent Anchor</value></data>
+  <data name="Adventure.drowned-bell.Scene.room-tension.Location" xml:space="preserve"><value>The Bent Anchor</value></data>
+  <data name="Adventure.drowned-bell.Scene.mara-welcome.Location" xml:space="preserve"><value>The Bent Anchor</value></data>
+  <data name="Adventure.drowned-bell.Scene.mara-rumor.Location" xml:space="preserve"><value>The Bent Anchor</value></data>
+  <data name="Adventure.drowned-bell.Scene.nell-enters.Location" xml:space="preserve"><value>The Bent Anchor</value></data>
+  <data name="Adventure.drowned-bell.Scene.meet-nell.Location" xml:space="preserve"><value>The Bent Anchor</value></data>
+  <data name="Adventure.drowned-bell.Scene.tomas-note.Location" xml:space="preserve"><value>The Bent Anchor</value></data>
+  <data name="Adventure.drowned-bell.Scene.rowan-arrives.Location" xml:space="preserve"><value>The Bent Anchor</value></data>
+  <data name="Adventure.drowned-bell.Scene.rowan-symbol.Location" xml:space="preserve"><value>The Bent Anchor</value></data>
+  <data name="Adventure.drowned-bell.Scene.first-bell.Location" xml:space="preserve"><value>The Bent Anchor</value></data>
+  <data name="Adventure.drowned-bell.Scene.bell-window.Location" xml:space="preserve"><value>The Bent Anchor</value></data>
+  <data name="Adventure.drowned-bell.Scene.bell-listen.Location" xml:space="preserve"><value>The Bent Anchor</value></data>
+  <data name="Adventure.drowned-bell.Scene.night-after-bell.Location" xml:space="preserve"><value>The Bent Anchor</value></data>
+  <data name="Adventure.drowned-bell.Scene.salt-trace.Location" xml:space="preserve"><value>The Bent Anchor</value></data>
+  <data name="Adventure.drowned-bell.Scene.morning-greyhaven.Location" xml:space="preserve"><value>Greyhaven</value></data>
+  <data name="Adventure.drowned-bell.Scene.investigation-hub.Location" xml:space="preserve"><value>Greyhaven</value></data>
+  <data name="Adventure.drowned-bell.Scene.tomas-room.Location" xml:space="preserve"><value>Rook House</value></data>
+  <data name="Adventure.drowned-bell.Scene.tomas-cache.Location" xml:space="preserve"><value>Rook House</value></data>
+  <data name="Adventure.drowned-bell.Scene.tomas-obvious.Location" xml:space="preserve"><value>Rook House</value></data>
+  <data name="Adventure.drowned-bell.Scene.chapel-archive.Location" xml:space="preserve"><value>Saint Orra&apos;s Chapel</value></data>
+  <data name="Adventure.drowned-bell.Scene.false-deaths.Location" xml:space="preserve"><value>Saint Orra&apos;s Chapel</value></data>
+  <data name="Adventure.drowned-bell.Scene.funeral-code.Location" xml:space="preserve"><value>Saint Orra&apos;s Chapel</value></data>
+  <data name="Adventure.drowned-bell.Scene.rowan-crypt.Location" xml:space="preserve"><value>Old Saint Orra&apos;s</value></data>
+  <data name="Adventure.drowned-bell.Scene.crypt-blocked.Location" xml:space="preserve"><value>Old Saint Orra&apos;s</value></data>
+  <data name="Adventure.drowned-bell.Scene.old-chapel.Location" xml:space="preserve"><value>Old Saint Orra&apos;s</value></data>
+  <data name="Adventure.drowned-bell.Scene.lighthouse-path.Location" xml:space="preserve"><value>Lighthouse Cliff</value></data>
+  <data name="Adventure.drowned-bell.Scene.elias-hut.Location" xml:space="preserve"><value>Keeper&apos;s Hut</value></data>
+  <data name="Adventure.drowned-bell.Scene.elias-truth.Location" xml:space="preserve"><value>Keeper&apos;s Hut</value></data>
+  <data name="Adventure.drowned-bell.Scene.lighthouse-door.Location" xml:space="preserve"><value>Old Lighthouse</value></data>
+  <data name="Adventure.drowned-bell.Scene.lighthouse-drain.Location" xml:space="preserve"><value>Lighthouse Drain</value></data>
+  <data name="Adventure.drowned-bell.Scene.lighthouse-inside.Location" xml:space="preserve"><value>Old Lighthouse</value></data>
+  <data name="Adventure.drowned-bell.Scene.lighthouse-mechanism.Location" xml:space="preserve"><value>Old Lighthouse</value></data>
+  <data name="Adventure.drowned-bell.Scene.warehouse-front.Location" xml:space="preserve"><value>Varro Warehouse</value></data>
+  <data name="Adventure.drowned-bell.Scene.warehouse-alley.Location" xml:space="preserve"><value>Varro Warehouse</value></data>
+  <data name="Adventure.drowned-bell.Scene.warehouse-office.Location" xml:space="preserve"><value>Varro Warehouse</value></data>
+  <data name="Adventure.drowned-bell.Scene.evidence-table.Location" xml:space="preserve"><value>The Bent Anchor</value></data>
+  <data name="Adventure.drowned-bell.Scene.varro-confrontation.Location" xml:space="preserve"><value>Varro Warehouse</value></data>
+  <data name="Adventure.drowned-bell.Scene.varro-cracks.Location" xml:space="preserve"><value>Varro Warehouse</value></data>
+  <data name="Adventure.drowned-bell.Scene.games-in-lantern.Location" xml:space="preserve"><value>Bent Anchor Back Room</value></data>
+  <data name="Adventure.drowned-bell.Scene.varro-offer.Location" xml:space="preserve"><value>Bent Anchor Back Room</value></data>
+  <data name="Adventure.drowned-bell.Scene.varro-blackjack.Location" xml:space="preserve"><value>Bent Anchor Back Room</value></data>
+  <data name="Adventure.drowned-bell.Scene.varro-win.Location" xml:space="preserve"><value>Bent Anchor Back Room</value></data>
+  <data name="Adventure.drowned-bell.Scene.varro-loss.Location" xml:space="preserve"><value>Bent Anchor Back Room</value></data>
+  <data name="Adventure.drowned-bell.Scene.varro-draw.Location" xml:space="preserve"><value>Bent Anchor Back Room</value></data>
+  <data name="Adventure.drowned-bell.Scene.bram-offer.Location" xml:space="preserve"><value>Bent Anchor Back Room</value></data>
+  <data name="Adventure.drowned-bell.Scene.bram-dice.Location" xml:space="preserve"><value>Bent Anchor Back Room</value></data>
+  <data name="Adventure.drowned-bell.Scene.bram-win.Location" xml:space="preserve"><value>Bent Anchor Back Room</value></data>
+  <data name="Adventure.drowned-bell.Scene.bram-gives-map.Location" xml:space="preserve"><value>Bent Anchor Back Room</value></data>
+  <data name="Adventure.drowned-bell.Scene.bram-loss.Location" xml:space="preserve"><value>Bent Anchor Back Room</value></data>
+  <data name="Adventure.drowned-bell.Scene.bram-draw.Location" xml:space="preserve"><value>Bent Anchor Back Room</value></data>
+  <data name="Adventure.drowned-bell.Scene.after-games.Location" xml:space="preserve"><value>The Bent Anchor</value></data>
+  <data name="Adventure.drowned-bell.Scene.cliff-descent.Location" xml:space="preserve"><value>Lighthouse Cliff</value></data>
+  <data name="Adventure.drowned-bell.Scene.service-tunnel.Location" xml:space="preserve"><value>Service Tunnel</value></data>
+  <data name="Adventure.drowned-bell.Scene.upper-cave.Location" xml:space="preserve"><value>Upper Sea Caves</value></data>
+  <data name="Adventure.drowned-bell.Scene.lower-choir.Location" xml:space="preserve"><value>Lower Choir</value></data>
+  <data name="Adventure.drowned-bell.Scene.dry-ledge.Location" xml:space="preserve"><value>Lower Choir</value></data>
+  <data name="Adventure.drowned-bell.Scene.cold-crossing.Location" xml:space="preserve"><value>Lower Choir</value></data>
+  <data name="Adventure.drowned-bell.Scene.fork-below.Location" xml:space="preserve"><value>Lower Choir</value></data>
+  <data name="Adventure.drowned-bell.Scene.tomas-alive.Location" xml:space="preserve"><value>Smuggler Holding Cave</value></data>
+  <data name="Adventure.drowned-bell.Scene.tomas-cost.Location" xml:space="preserve"><value>Smuggler Holding Cave</value></data>
+  <data name="Adventure.drowned-bell.Scene.tomas-freed.Location" xml:space="preserve"><value>Smuggler Holding Cave</value></data>
+  <data name="Adventure.drowned-bell.Scene.manifest-route.Location" xml:space="preserve"><value>Lower Choir</value></data>
+  <data name="Adventure.drowned-bell.Scene.flooded-gallery.Location" xml:space="preserve"><value>Drowned Gallery</value></data>
+  <data name="Adventure.drowned-bell.Scene.dread-gallery.Location" xml:space="preserve"><value>Drowned Gallery</value></data>
+  <data name="Adventure.drowned-bell.Scene.saints-niche.Location" xml:space="preserve"><value>Drowned Gallery</value></data>
+  <data name="Adventure.drowned-bell.Scene.truth-of-marow.Location" xml:space="preserve"><value>Drowned Gallery</value></data>
+  <data name="Adventure.drowned-bell.Scene.varro-below.Location" xml:space="preserve"><value>Drowned Gallery</value></data>
+  <data name="Adventure.drowned-bell.Scene.varro-honest.Location" xml:space="preserve"><value>Drowned Gallery</value></data>
+  <data name="Adventure.drowned-bell.Scene.bell-threshold.Location" xml:space="preserve"><value>Drowned Chapel</value></data>
+  <data name="Adventure.drowned-bell.Scene.tide-crash.Location" xml:space="preserve"><value>Drowned Chapel</value></data>
+  <data name="Adventure.drowned-bell.Scene.bell-chamber.Location" xml:space="preserve"><value>Bell Chamber</value></data>
+  <data name="Adventure.drowned-bell.Scene.gold-chest.Location" xml:space="preserve"><value>Bell Chamber</value></data>
+  <data name="Adventure.drowned-bell.Scene.eleven-voices.Location" xml:space="preserve"><value>Bell Chamber</value></data>
+  <data name="Adventure.drowned-bell.Scene.names-restored.Location" xml:space="preserve"><value>Bell Chamber</value></data>
+  <data name="Adventure.drowned-bell.Scene.rite-preparation.Location" xml:space="preserve"><value>Bell Chamber</value></data>
+  <data name="Adventure.drowned-bell.Scene.break-bell-choice.Location" xml:space="preserve"><value>Bell Chamber</value></data>
+  <data name="Adventure.drowned-bell.Scene.escape-with-truth.Location" xml:space="preserve"><value>Lower Choir</value></data>
+  <data name="Adventure.drowned-bell.Scene.village-reckoning.Location" xml:space="preserve"><value>Saint Orra&apos;s Chapel</value></data>
 </root>
