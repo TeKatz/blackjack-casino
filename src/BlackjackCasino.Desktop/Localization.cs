@@ -150,8 +150,10 @@ internal static class Localization
     private static string TranslatePattern(string source)
     {
         string translated = LocalizationPatterns.Translate(source, Culture);
+        if (!string.Equals(translated, source, StringComparison.Ordinal)) return translated;
+        translated = LocalizationSupplementalPatterns.Translate(source, Culture);
         return string.Equals(translated, source, StringComparison.Ordinal)
-            ? LocalizationSupplementalPatterns.Translate(source, Culture)
+            ? LocalizationPhase2Patterns.Translate(source, Culture)
             : translated;
     }
 
