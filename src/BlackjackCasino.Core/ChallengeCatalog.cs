@@ -346,7 +346,7 @@ public static class ChallengeCatalog
         Jigsaw.JigsawAchievements.All.Select(a => new ChallengeDefinition(
             "jigsaw-" + a.Id, ChallengeCategory.Jigsaw,
             a.Name, a.Description, ChallengeMetric.JigsawAchievement, a.Goal,
-            a.CoinReward)).ToArray();
+            a.CoinReward, a.Tier == Jigsaw.JigsawAchievementTier.Platinum)).ToArray();
 
     private static readonly IReadOnlyList<ChallengeDefinition> AllChallenges =
         Challenges.Concat(JigsawChallenges).ToArray();
