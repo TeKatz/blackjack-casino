@@ -42,23 +42,27 @@ internal static class JigsawLoungeModule
 internal static class JigsawImages
 {
     private static readonly Dictionary<string, BitmapSource> Images = new(StringComparer.Ordinal);
+    private static readonly Dictionary<string, BitmapSource> Thumbnails = new(StringComparer.Ordinal);
 
-    public static BitmapSource Get(string id)
+    public static BitmapSource Get(string id) => Load(id, 1600, Images);
+    public static BitmapSource Thumbnail(string id) => Load(id, 320, Thumbnails);
+
+    private static BitmapSource Load(string id, int width, Dictionary<string, BitmapSource> cache)
     {
         JigsawMotif motif = JigsawCatalog.Motif(id);
-        lock (Images)
+        lock (cache)
         {
-            if (Images.TryGetValue(motif.Id, out BitmapSource? cached)) return cached;
+            if (cache.TryGetValue(motif.Id, out BitmapSource? cached)) return cached;
             var image = new BitmapImage();
             image.BeginInit();
             image.CacheOption = BitmapCacheOption.OnLoad;
-            image.DecodePixelWidth = 1600;
+            image.DecodePixelWidth = width;
             image.UriSource = new Uri(
                 "pack://application:,,,/BlackjackCasino.Desktop;component/Assets/CollectionArt/" + motif.Asset,
                 UriKind.Absolute);
             image.EndInit();
             image.Freeze();
-            Images.Add(motif.Id, image);
+            cache.Add(motif.Id, image);
             return image;
         }
     }
@@ -73,7 +77,7 @@ internal sealed class JigsawTileArtwork : FrameworkElement
         var area = new Rect((ActualWidth - 242) / 2, (ActualHeight - 108) / 2, 242, 108);
         dc.DrawRoundedRectangle(LoungeUi.Ink("#15342E"), new Pen(LoungeUi.Ink("#BC9C67"), 1.3), area, 9, 9);
         dc.PushClip(new RectangleGeometry(new Rect(area.X + 8, area.Y + 6, area.Width - 16, area.Height - 12), 5, 5));
-        dc.DrawImage(JigsawImages.Get("enchanted-forest"),
+        dc.DrawImage(JigsawImages.Thumbnail("enchanted-forest"),
             new Rect(area.X + 8, area.Y + 6, area.Width - 16, area.Height - 12));
         for (int c = 1; c < 5; c++)
             dc.DrawLine(new Pen(LoungeUi.Ink("#F5E3C5"), .9),
@@ -135,7 +139,7 @@ internal sealed class JigsawLoungeHub : UserControl, IDisposable
             var preview = new StackPanel();
             preview.Children.Add(new Image
             {
-                Source = JigsawImages.Get(motif.Id),
+                Source = JigsawImages.Thumbnail(motif.Id),
                 Height = 85,
                 Width = 165,
                 Stretch = Stretch.UniformToFill,
