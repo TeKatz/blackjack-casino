@@ -12,7 +12,7 @@ internal static class JigsawSmoke
         NavigationSmoke.OpenCovered(window, "chill-lounge");
         await Task.Delay(120);
         window.UpdateLayout();
-        Button tile = Button(window, "LoungeGame_jigsaw");
+        Button tile = FindButton(window, "LoungeGame_jigsaw");
         Require(tile.IsVisible, "Jigsaw tile is missing from Chill Lounge.");
         Click(tile);
         await Task.Delay(120);
@@ -24,10 +24,10 @@ internal static class JigsawSmoke
             "The Jigsaw setup is missing one of the eight piece counts.");
         Capture(window, Path.Combine(output, "jigsaw-gallery.png"));
 
-        Click(Button(window, "JigsawSize_1000"));
+        Click(FindButton(window, "JigsawSize_1000"));
         await Task.Delay(90);
         window.UpdateLayout();
-        Click(Button(window, "JigsawStart"));
+        Click(FindButton(window, "JigsawStart"));
         await Task.Delay(150);
         window.UpdateLayout();
         Require(Find<FrameworkElement>(window).Any(b => b.IsVisible && b.GetType().Name == "JigsawBoardSurface"),
@@ -36,20 +36,20 @@ internal static class JigsawSmoke
             "Jigsaw's paginated piece tray is missing.");
         Capture(window, Path.Combine(output, "jigsaw-board-1000.png"));
 
-        Click(Button(window, "JigsawBackToMenu"));
+        Click(FindButton(window, "JigsawBackToMenu"));
         await Task.Delay(100);
         window.UpdateLayout();
-        Require(Button(window, "JigsawResume").IsVisible,
+        Require(FindButton(window, "JigsawResume").IsVisible,
             "The puzzle was not resumable after leaving the board.");
-        Click(Button(window, "JigsawResume"));
+        Click(FindButton(window, "JigsawResume"));
         await Task.Delay(100);
         window.UpdateLayout();
         Require(Find<FrameworkElement>(window).Any(b => b.IsVisible && b.GetType().Name == "JigsawBoardSurface"),
             "Resuming a puzzle did not restore the board.");
-        Click(Button(window, "LoungeGamesHeaderBack"));
+        Click(FindButton(window, "LoungeGamesHeaderBack"));
         await Task.Delay(70);
         window.UpdateLayout();
-        Require(Button(window, "LoungeGame_jigsaw").IsVisible,
+        Require(FindButton(window, "LoungeGame_jigsaw").IsVisible,
             "Back-to-games did not restore the Chill Lounge menu.");
         Click(Find<Button>(window).Single(b => b.IsVisible && Equals(b.Content, "RETURN TO CLUB")));
         await Task.Delay(70);
@@ -58,7 +58,7 @@ internal static class JigsawSmoke
             "PASS: Jigsaw tile, gallery, eight piece counts, 1000-piece board, tray and resume.");
     }
 
-    private static Button Button(MainWindow window, string name) =>
+    private static Button FindButton(MainWindow window, string name) =>
         Find<Button>(window).Single(x => x.Name == name && x.IsVisible);
 
     private static void Click(Button button) => button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
