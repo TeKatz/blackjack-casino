@@ -1,5 +1,6 @@
 using BlackjackCasino.Core;
 using BlackjackCasino.Core.Jigsaw;
+using BlackjackCasino.Core.Adventure;
 
 namespace BlackjackCasino.Tests;
 
