@@ -86,6 +86,7 @@ public sealed class PlayerProfileState
     public Solitaire.SolitaireStatistics Solitaire { get; set; } = new();
     public WordSearch.WordSearchStatistics WordSearch { get; set; } = new();
     public Memory.MemoryStatistics Memory { get; set; } = new();
+    public Jigsaw.JigsawStatistics Jigsaw { get; set; } = new();
     public MidnightMerge.MidnightMergeStatistics MidnightMerge { get; set; } = new();
     public Manor.ManorStatistics Manor { get; set; } = new();
     public Collections.CollectionState Collection { get; set; } = new();
