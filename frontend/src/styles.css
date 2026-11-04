@@ -278,3 +278,227 @@ h1{font-family:Georgia,serif;letter-spacing:.13em;font-size:18px;margin:4px 0 0}
 .manor-vignette.still .manor-vignette-mist{animation:none}
 @media(prefers-reduced-motion:reduce){.manor-vignette-mist{animation:none}}
 @media(max-width:620px){.manor-vignette figcaption{padding:10px 35px 12px 12px}}
+
+
+/* Phase-3 playtest revision: the game is a viewport, not a long document.
+   The five-reel Pixi canvas remains one retained instance at native proportions. */
+html,body,#root{height:100%;overflow:hidden}
+.manor-app{
+  height:100dvh;min-height:0;overflow:hidden;
+  display:grid;grid-template-rows:auto minmax(0,1fr) auto;
+  padding:clamp(8px,1.1vh,15px) clamp(9px,1.3vw,20px);
+  gap:7px;
+}
+.topbar{min-height:48px;gap:12px;min-width:0}
+.brand-mark{font-size:28px}
+.brand h1{font-size:16px}
+.topbar-actions{gap:7px}
+.topbar .ghost-button{padding:7px 12px;min-height:34px;font-size:11px}
+.language-picker select{min-height:34px;padding:5px 8px}
+.content-grid{height:100%;min-height:0;grid-template-columns:minmax(0,1fr) minmax(212px,255px);gap:10px}
+.machine{height:100%;min-height:0;padding:8px 10px 9px;display:flex;flex-direction:column;gap:5px}
+.machine-title{font-size:9px;letter-spacing:.10em;padding:6px 5px 8px}
+.machine-footer{flex:0 0 auto;padding:7px 5px;margin:0;min-height:26px;gap:8px;flex-wrap:wrap}
+.slot-viewport{position:relative;min-height:0;flex:1 1 0;isolation:isolate;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+  container-type:size;background:radial-gradient(circle at 50% 40%,#403044,#11121c 70%);
+  border:1px solid #806952;border-radius:10px}
+.slot-reels{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  transition:transform .65s cubic-bezier(.2,.82,.2,1),opacity .42s ease;
+  transform-origin:center;min-width:0;min-height:0}
+.machine .slot-reels .manor-canvas{
+  flex:0 0 auto;
+  width:min(100cqw,192cqh);
+  height:auto;
+  min-height:0;max-height:100%;
+  aspect-ratio:960 / 500;
+  margin:auto;border:0;border-radius:7px;
+}
+.slot-viewport.bonus-active .slot-reels{transform:scale(.90);opacity:.15;pointer-events:none}
+.slot-bonus-portal{position:absolute;inset:0;z-index:3;overflow:hidden;
+  border:1px solid #e0b985;background:linear-gradient(125deg,#191b29,#2d2335 65%,#161927);
+  box-shadow:inset 0 0 54px #040811d9;animation:manor-portal-arrival .75s cubic-bezier(.2,.8,.25,1) both}
+.slot-bonus-portal::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse at 50% -10%,#efcfb31f,transparent 66%)}
+@keyframes manor-portal-arrival{
+ from{opacity:0;transform:translateY(11%) scale(.955);filter:brightness(.7)}
+ to{opacity:1;transform:translateY(0) scale(1);filter:brightness(1)}
+}
+.slot-viewport.no-motion .slot-reels,.slot-viewport.no-motion .slot-bonus-portal{
+ transition:none;animation:none}
+.slot-viewport.bonus-active{background:#111824}
+.action-console{flex:0 0 auto;min-height:67px;margin:0;padding:8px 4px 2px;gap:12px}
+.action-console .gold-button{min-height:41px;font-size:12px;padding:8px 12px}
+.action-console .stake-control{gap:5px}
+.action-console .bet-input{padding:5px 9px}
+.action-console .bet-input input{font-size:16px}
+.action-console .action-hint{font-size:10px}
+.sidebar{height:100%;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:9px;
+  padding-right:3px;scrollbar-width:thin}
+.sidebar .status-card{flex:0 0 auto;padding:11px 13px;border-radius:10px}
+.sidebar .status-card h3{font-size:17px;margin:5px 0 8px}
+.sidebar .money-stat{padding:7px 0;font-size:11px}
+.sidebar .money-stat strong{font-size:14px}
+.sidebar .feature-card h3{font-size:15px;margin:6px 0}
+.sidebar .feature-card p{font-size:11px;line-height:1.45}
+.sidebar .win-details{margin:0;padding:9px 11px;flex:0 0 auto}
+.sidebar .win-line-grid{max-height:135px;overflow-y:auto}
+.settings-fold{padding:0!important}
+.settings-fold>summary{list-style:disclosure-closed;cursor:pointer;padding:12px 13px;user-select:none}
+.settings-fold[open]>summary{list-style:disclosure-open;border-bottom:1px solid #a4826555}
+.settings-fold summary:focus-visible{outline:2px solid #f1d39b;outline-offset:-2px}
+.settings-fold-body{padding:5px 13px 13px}
+.settings-fold .display-hint{font-size:10px}
+.slot-metrics{position:absolute;z-index:6;left:8px;bottom:8px;max-width:min(94%,390px);
+  pointer-events:none;margin:0;padding:7px 9px;background:#101721d9;border-radius:8px;
+  backdrop-filter:blur(4px);gap:4px 7px}
+.slot-metrics strong,.slot-metrics span{font-size:9px}
+.slot-metrics small{font-size:8px}
+.footer{min-height:16px;margin:0;padding:0 3px;font-size:8px;letter-spacing:.07em}
+.save-notice,.error{position:fixed;z-index:25;right:16px;bottom:27px;
+  width:min(440px,calc(100vw - 32px));box-shadow:0 9px 30px #0009}
+.error~.error{bottom:110px}
+
+/* Reel-settled celebrations: layered glints, spring-scale text, never pre-commit. */
+.slot-celebration{position:absolute;inset:0;z-index:5;pointer-events:none;
+  display:flex;align-items:center;justify-content:center;padding:14px;isolation:isolate}
+.slot-celebration .manor-moment{position:relative;z-index:2;
+  width:min(92%,570px);margin:0;min-height:94px;justify-content:center;
+  box-shadow:0 18px 55px #000c,0 0 35px #eab97933;
+  animation:manor-celebrate .65s cubic-bezier(.11,.9,.19,1.2) both}
+.slot-celebration .manor-moment strong{font-size:clamp(23px,3vw,38px);
+  text-shadow:0 0 14px #f6cd8f66}
+.slot-celebration .manor-moment .manor-moment-crest{flex:0 0 64px;width:64px;height:64px}
+.slot-celebration.win .manor-moment{border-color:#e9b969}
+.slot-celebration.big .manor-moment,.slot-celebration.jackpot .manor-moment{
+  background:radial-gradient(ellipse at 26% 19%,#997145c9,#422f35 55%,#202333);
+  border-color:#ffe6a4}
+.slot-celebration.jackpot .manor-moment strong{font-size:clamp(26px,3.6vw,47px);
+  text-shadow:0 0 19px #ffdda4}
+.slot-celebration.door .manor-moment{border-color:#ecd1a8}
+.slot-celebration.moon .manor-moment{border-color:#cfbcf5}
+.slot-celebration.loss{align-items:flex-end;padding-bottom:26px}
+.slot-celebration.loss .manor-moment{min-height:50px;width:auto;max-width:85%;
+  padding:8px 20px;opacity:.90;background:#181c26eb;border-color:#665a6b;
+  box-shadow:0 8px 18px #0009;animation:manor-loss-appear .28s ease-out both}
+.slot-celebration.loss .manor-moment-crest{display:none}
+.slot-celebration.loss .manor-moment strong{font-size:16px;color:#d7ccce;text-shadow:none}
+.slot-celebration.loss .manor-moment span{font-size:10px}
+.slot-celebration-light{position:absolute;inset:0;z-index:1;
+  animation:manor-light-bloom 2s ease-out both}
+.slot-celebration-light i{position:absolute;left:50%;top:50%;width:2px;
+  height:49%;transform-origin:0 0;opacity:.45;
+  background:linear-gradient(to bottom,#ffe6a5bb,transparent 90%);
+  filter:drop-shadow(0 0 5px #ffc678);animation:manor-light-spark 1.65s ease-out both}
+.slot-celebration.moon .slot-celebration-light i{background:linear-gradient(#d9cbffbb,transparent)}
+.slot-celebration.loss .slot-celebration-light,
+.slot-celebration.run .slot-celebration-light{display:none}
+@keyframes manor-celebrate{from{opacity:0;transform:translateY(18px) scale(.78)}
+  65%{opacity:1;transform:translateY(-5px) scale(1.045)}
+  to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes manor-loss-appear{from{opacity:0;transform:translateY(8px)}
+  to{opacity:.9;transform:translateY(0)}}
+@keyframes manor-light-bloom{from{opacity:0;transform:scale(.6)}
+  25%{opacity:1}to{opacity:0;transform:scale(1.15)}}
+@keyframes manor-light-spark{from{opacity:0;height:8%}35%{opacity:.7;height:55%}
+  to{opacity:0;height:60%}}
+.slot-celebration.no-motion .manor-moment,
+.slot-celebration.no-motion .slot-celebration-light,
+.slot-celebration.no-motion .slot-celebration-light i{animation:none}
+@media(prefers-reduced-motion:reduce){
+ .slot-celebration .manor-moment,.slot-celebration-light,
+ .slot-celebration-light i,.slot-bonus-portal{animation:none!important}
+ .slot-reels{transition:none!important}
+}
+
+/* In-cabinet bonus, with rooms and all primary decisions visible at normal desktop sizes. */
+.manor-bonus-stage{position:relative;z-index:1;display:grid;
+  grid-template-rows:auto auto minmax(0,1fr) auto;gap:6px;
+  height:100%;min-height:0;padding:10px;overflow:hidden}
+.bonus-stage-header{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:34px}
+.bonus-stage-header h2{font-size:clamp(20px,2vw,28px);margin:2px 0 0;line-height:1}
+.bonus-stage-header h2:focus{outline:none}
+.bonus-stage-header .eyebrow{font-size:8px}
+.bonus-map-toggle{min-height:32px!important;font-size:10px!important;padding:5px 10px!important}
+.bonus-stage-multipliers{display:flex;flex-wrap:wrap;align-items:center;gap:5px}
+.bonus-stage-multipliers span{padding:5px 8px;border:1px solid #7d716e;
+  background:#121923bd;border-radius:5px;color:#ddd0c9;font-size:10px}
+.bonus-stage-multipliers strong{color:#ffe1a6}
+.bonus-stage-content{display:grid;grid-template-columns:minmax(0,1fr) minmax(188px,.87fr);
+  gap:9px;min-height:0;overflow:hidden}
+.bonus-story{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.bonus-story .manor-vignette{flex:1 1 0;min-height:70px;margin:0 0 5px;overflow:hidden}
+.bonus-story .manor-vignette-svg{height:100%;min-height:70px}
+.bonus-story .manor-vignette figcaption{padding:7px 24px 9px 9px;gap:3px}
+.bonus-story .manor-vignette figcaption strong{font-size:clamp(13px,1.6vw,20px)}
+.bonus-story .manor-vignette figcaption span,.bonus-story .manor-vignette figcaption small{font-size:8px}
+.bonus-message,.bonus-ghost-clue{flex:0 0 auto;margin:0 0 3px;padding:0 2px;font-size:10px;
+  line-height:1.3;color:#e7d6c9;max-height:2.6em;overflow-y:auto}
+.bonus-ghost-clue{color:#c2bfd1;max-height:2.6em}
+.bonus-ghost-clue.danger{color:#ffc5d4}
+.bonus-choices{min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.bonus-choices-title{font-size:10px;letter-spacing:.09em;color:#dfcba8;margin-bottom:5px}
+.bonus-room-buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  align-content:start;gap:6px;overflow-y:auto;min-height:0;padding:1px 2px 3px}
+.bonus-room-button{min-width:0;min-height:37px;display:flex;align-items:center;gap:6px;
+  padding:6px 8px;border:1px solid #79ac9e;border-radius:7px;
+  color:#f8f1dc;background:linear-gradient(145deg,#344f4c,#232d36);font-size:11px}
+.bonus-room-button>span:first-child{flex:0 0 auto;color:#b9e3d2}
+.bonus-room-button>span:nth-child(2){flex:1;min-width:0;line-height:1.2}
+.bonus-room-button small{font-size:8px;color:#a7d9c8}
+.bonus-room-button:hover:not(:disabled){border-color:#d2efda;filter:brightness(1.16)}
+.bonus-room-button:focus-visible,.bonus-toolbar button:focus-visible{
+ outline:2px solid #ffe6b7;outline-offset:2px}
+.bonus-room-button:disabled{opacity:.4}
+.bonus-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:5px;
+  min-height:34px;padding-top:6px;border-top:1px solid #8a765b77}
+.bonus-toolbar .ghost-button{min-height:31px;font-size:9px;padding:6px 9px;border-radius:6px}
+.bonus-toolbar .ghost-button:disabled{opacity:.40}
+.bonus-auto-confirm{display:flex;align-items:center;flex-wrap:wrap;gap:5px;
+  padding:4px 7px;background:#322e35;border:1px solid #b7937d;border-radius:7px;
+  font-size:9px;color:#f1dfc4}
+.bonus-map-view{min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;
+  background:#0c131d90;border:1px solid #776655;border-radius:7px}
+.bonus-map-view .manor-route-chooser{margin:5px;padding:5px}
+.bonus-map-view .manor-route-heading{font-size:9px;margin:0 0 4px}
+.bonus-map-view .manor-route-list{grid-template-columns:repeat(2,minmax(0,1fr))}
+.bonus-map-view .manor-route-choice{min-height:33px;padding:4px 7px;font-size:10px}
+.bonus-map-view .manor-route-choice>span:nth-child(2){font-size:10px}
+.bonus-map-view .manor-map-guide{margin:6px 2px;font-size:9px;gap:8px}
+.bonus-map-view .manor-map-scene{height:270px}
+.bonus-map-view .map-privacy-note{font-size:9px}
+
+/* Preserve a full-slot playing area when accessibility zoom makes space tight. */
+@media(max-height:720px){
+ .manor-app{padding-top:6px;padding-bottom:6px;gap:5px}
+ .topbar{min-height:41px}
+ .machine{padding:6px 9px}
+ .action-console{min-height:59px}
+ .sidebar .feature-card p{display:none}
+ .bonus-stage-multipliers span{padding:3px 6px}
+ .manor-bonus-stage{padding:7px;gap:4px}
+ .bonus-toolbar .ghost-button{min-height:27px;padding:3px 7px}
+}
+@media(max-width:720px){
+ .content-grid{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto}
+ .sidebar{height:auto;max-height:105px;display:flex;flex-direction:row;
+  flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;padding-bottom:2px}
+ .sidebar .status-card{flex:0 0 215px;overflow-y:auto}
+ .sidebar .feature-card{display:none}
+ .sidebar .settings-fold{flex-basis:110px}
+ .sidebar .win-details{flex:0 0 210px}
+ .topbar{flex-wrap:nowrap;min-height:41px}
+ .topbar-actions{flex-wrap:wrap}
+ .topbar .connection{display:none}
+ .bonus-stage-content{grid-template-columns:minmax(0,1fr) minmax(160px,.9fr)}
+ .bonus-room-buttons{grid-template-columns:1fr}
+}
+@media(max-width:520px){
+ .topbar{flex-wrap:wrap}
+ .topbar .brand{display:none}
+ .sidebar{max-height:91px}
+ .machine-footer{font-size:8px}
+ .bonus-stage-header h2{font-size:17px}
+ .bonus-stage-multipliers span{font-size:8px}
+ .bonus-toolbar .ghost-button{font-size:8px}
+}

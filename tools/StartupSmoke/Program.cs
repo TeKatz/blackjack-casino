@@ -150,6 +150,15 @@ internal static class Program
                 }
                 Require(canvasReady.Equals("true", StringComparison.OrdinalIgnoreCase),
                     "Modern Manor PixiJS canvas did not initialize in the Windows WebView2 host.");
+                // One-page desktop casino: the whole playing surface stays in the viewport.
+                string noPageScroll = await modernBrowser.CoreWebView2.ExecuteScriptAsync(
+                    "(()=>{const root=document.querySelector('.manor-app');" +
+                    "const surface=document.querySelector('.slot-viewport');" +
+                    "return Boolean(root&&surface&&surface.getBoundingClientRect().height>160" +
+                    "&&document.documentElement.scrollHeight<=innerHeight+2" +
+                    "&&document.body.scrollHeight<=innerHeight+2);})()");
+                Require(noPageScroll.Equals("true",StringComparison.OrdinalIgnoreCase),
+                    "Modern Manor requires page scrolling to reach gameplay on the Windows host.");
                 string canvasGeometry = await modernBrowser.CoreWebView2.ExecuteScriptAsync(
                     "(()=>{const host=document.querySelector('.manor-canvas');" +
                     "if(!host)return false;const rect=host.getBoundingClientRect();" +
@@ -259,6 +268,11 @@ internal static class Program
                         "buttons.every(b=>b.getBoundingClientRect().width>32);})()");
                     Require(narrowLayout.Equals("true",StringComparison.OrdinalIgnoreCase),
                         "Modern Manor controls or reel ratio failed at the compact host size.");
+                    string compactNoScroll = await modernBrowser.CoreWebView2.ExecuteScriptAsync(
+                        "document.documentElement.scrollHeight<=innerHeight+2 &&" +
+                        "document.body.scrollHeight<=innerHeight+2");
+                    Require(compactNoScroll.Equals("true",StringComparison.OrdinalIgnoreCase),
+                        "Compact Modern Manor still requires page scrolling to reach reels.");
                     await using(FileStream compactCapture=File.Create(
                         Path.Combine(output,"modern-manor-compact-host.png")))
                         await modernBrowser.CoreWebView2.CapturePreviewAsync(
