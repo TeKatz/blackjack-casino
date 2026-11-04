@@ -2,7 +2,7 @@ name: Development Release
 
 on:
   push:
-    branches: ["feature/shop-cosmetics-expansion"]
+    branches: ["feature/casino-quality-phase-4"]
   workflow_dispatch:
 
 permissions:
@@ -14,8 +14,8 @@ concurrency:
 
 jobs:
   publish-development:
-    # The shared in-app Development channel follows the active shop cosmetics branch.
-    if: github.ref == 'refs/heads/feature/shop-cosmetics-expansion'
+    # Superseded on this branch. Phase 4 is the sole active Development publisher.
+    if: github.ref == 'refs/heads/feature/casino-quality-phase-4'
     runs-on: windows-latest
     timeout-minutes: 20
 
