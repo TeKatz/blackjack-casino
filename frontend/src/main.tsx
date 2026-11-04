@@ -5,6 +5,7 @@ import {
 } from './bridge/protocol';
 import type { GameAction, ManorSnapshot } from './bridge/protocol';
 import { ManorStage } from './graphics/ManorStage';
+import type { ReelSpeed } from './graphics/reelTiming';
 import './styles.css';
 
 const embedded = Boolean(window.chrome?.webview);
@@ -18,6 +19,10 @@ function ManorApp() {
   const [fatal, setFatal] = useState(false);
   const [pending, setPending] = useState<string | null>(null);
   const pendingRef = useRef<string | null>(null);
+  const pendingTypeRef = useRef<GameAction | null>(null);
+  const [spinEpoch, setSpinEpoch] = useState(0);
+  const [animating, setAnimating] = useState(false);
+  const [reelSpeed, setReelSpeed] = useState<ReelSpeed>('normal');
   const [bet, setBet] = useState('25');
   const [ambient, setAmbient] = useState(true);
   const [lowMotion, setLowMotion] = useState(
@@ -34,10 +39,15 @@ function ManorApp() {
     const stop = subscribeToHost(message => {
       if (message.type === 'snapshot') {
         applySnapshot(message.payload);
+        if ((pendingRef.current === message.requestId || pendingRef.current === 'recovering') &&
+            pendingTypeRef.current?.startsWith('spin.')) {
+          setSpinEpoch(previous => previous + 1);
+        }
         // An explicit recovery snapshot can reconcile a lost response after a timeout.
         if (pendingRef.current === message.requestId || pendingRef.current === 'recovering') {
           pendingRef.current = null;
           setPending(null);
+          pendingTypeRef.current = null;
         }
         setError(null);
       } else {
@@ -45,6 +55,7 @@ function ManorApp() {
         if (pendingRef.current === message.requestId) {
           pendingRef.current = null;
           setPending(null);
+          pendingTypeRef.current = null;
         }
         setError(message.payload.message);
         if (message.payload.fatal) setFatal(true);
@@ -56,7 +67,7 @@ function ManorApp() {
 
   const actions = availableActions(snapshot);
   const motionOff = lowMotion || !ambient || !snapshot.animationsEnabled;
-  const disabled = !embedded || !connected || pending !== null || fatal;
+  const disabled = !embedded || !connected || pending !== null || fatal || animating;
   const validBet = /^[0-9]{1,4}$/.test(bet) && Number(bet) >= 1 && Number(bet) <= 1000;
   const run = snapshot.run;
 
@@ -71,6 +82,7 @@ function ManorApp() {
     setError(null);
     const requestId = sendAction(type, { expectedRevision: snapshot.revision, ...extras });
     pendingRef.current = requestId;
+    pendingTypeRef.current = type;
     setPending(requestId);
     // Do not resend a timed-out wager. Ask the C# host for its committed state.
     window.setTimeout(() => {
@@ -106,7 +118,7 @@ function ManorApp() {
           <p>Every spin, payout and room choice comes from the original C# game engine.
             Your balance and ongoing features are committed to the same saved game as classic Manor.</p>
         </div>
-        <div className="stage-tag"><span className="tag-dot" /> MIGRATION / PHASE 2</div>
+        <div className="stage-tag"><span className="tag-dot" /> MIGRATION / PHASE 3 PLAYTEST</div>
       </section>
 
       <div className="content-grid">
@@ -115,7 +127,8 @@ function ManorApp() {
             <span>THE HAUNTED FIVE</span>
             <span>20 FIXED PAYLINES · 5 × 3</span>
           </div>
-          <ManorStage snapshot={snapshot} reducedMotion={motionOff} />
+          <ManorStage snapshot={snapshot} reducedMotion={motionOff} speed={reelSpeed}
+            spinEpoch={spinEpoch} onSpinningChange={setAnimating} />
           <div className="machine-footer">
             <span>{snapshot.hasCommittedSpin
               ? snapshot.lastSpinFree ? 'LAST HAUNTED NIGHT FREE SPIN' : 'LAST PAID SPIN'
@@ -234,6 +247,15 @@ function ManorApp() {
             <label className="switch-row"><span>Reduce motion</span>
               <input type="checkbox" checked={lowMotion}
                 onChange={event => setLowMotion(event.target.checked)} /></label>
+            <label className="speed-control" htmlFor="reel-speed">Reel motion speed
+              <select id="reel-speed" value={reelSpeed}
+                onChange={event => setReelSpeed(event.target.value as ReelSpeed)}>
+                <option value="normal">Normal</option>
+                <option value="fast">Fast</option>
+                <option value="turbo">Turbo</option>
+              </select>
+            </label>
+            <p className="display-hint">Reduced motion skips reel animation; every speed displays the same saved C# outcome.</p>
             <button className="ghost-button refresh"
               onClick={() => sendCommand('snapshot.request')} disabled={!embedded}>
               Refresh saved state</button>

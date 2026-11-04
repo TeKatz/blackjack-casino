@@ -93,3 +93,11 @@ See [AGENTS.md](../AGENTS.md), [architecture](architecture.md), [Midnight Manor 
 - Free Spins and Escape the Manor remain committed, manual-resume features. The modern interface does **not** auto-consume bonuses on startup. Existing paytables, payout bounds, progression and old saved states remain unchanged.
 - The test suite covers invalid-origin/version/stake/room messages, deterministic room action integration, replay protection across controller reinstantiation, legacy paytable version and wallet accounting. Windows startup smoke checks that React gameplay controls appear but does not wager with the runner's profile.
 - This phase does **not** yet implement reel motion, parallax effects, real symbol artwork, Manor-specific audio, user-facing German strings, the final gameplay rework or a measured 60 FPS guarantee. These belong to later work and player feedback.
+
+### M3 first delivery — retained renderer and reel motion
+
+- The optional Manor playtest keeps one PixiJS Application, scene, masks, and reusable cell graphics across committed C# snapshots. Resize adjusts the renderer without recreating the scene.
+- Five columns visibly scroll and stop sequentially using display-only deterministic symbols before revealing the exact committed C# cells. Only acknowledged paid/free spin intents start this animation; reloads, room moves, and ordinary status refreshes do not spin.
+- Normal/Fast/Turbo and reduced-motion/off settings change presentation duration only; no new RNG, wagers, payout math, schema changes, or extra round resolution.
+- First locally drawn vector renditions of the fourteen symbols and a Gothic-luxury machine frame are in place. These are a **first presentation pass**, not final commissioned/high-resolution symbol art.
+- Windows renderer screenshots, measured FPS/VRAM use, sound, complete bonus map, bilingual interface and full Phase-3 art production remain outstanding and must not be marked complete without testing.
