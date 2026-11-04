@@ -215,6 +215,20 @@ internal sealed class PlayerProgressionController : IDisposable
         }
     }
 
+    public ProgressionAward ProcessJigsaw(BlackjackCasino.Core.Jigsaw.JigsawCompletionRecord completion)
+    {
+        lock (Profile)
+        {
+            AccruePlaytime();
+            PlayerProfileState candidate = PlayerProfileTransactionSnapshot.Create(Profile, RoutineProfileTransactionArea.Jigsaw);
+            ProgressionAward award = new BlackjackCasino.Core.Jigsaw.JigsawProgression(ProgressionService.ForNormalizedSnapshot(candidate)).Process(completion);
+            if (award == ProgressionAward.None) return award;
+            if (persistKniffelRewards) saveKniffelProfile(candidate);
+            AdoptManorProfile(candidate);
+            return award;
+        }
+    }
+
     public PurchaseResult PurchaseCosmetic(string cosmeticId)
     {
         PurchaseResult result = Service.PurchaseCosmetic(cosmeticId);
@@ -395,6 +409,7 @@ internal sealed class PlayerProgressionController : IDisposable
         Profile.Solitaire = committed.Solitaire;
         Profile.WordSearch = committed.WordSearch;
         Profile.Memory = committed.Memory;
+        Profile.Jigsaw = committed.Jigsaw;
         Profile.MidnightMerge = committed.MidnightMerge;
         Profile.Manor = committed.Manor;
         Profile.Vault = committed.Vault;
