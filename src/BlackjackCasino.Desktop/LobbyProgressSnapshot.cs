@@ -1,3 +1,4 @@
+using BlackjackCasino.Core.Adventure;
 using BlackjackCasino.Core;
 
 namespace BlackjackCasino.Desktop;
@@ -18,13 +19,12 @@ internal sealed record LobbyProgressSnapshot(
         SeasonTierDefinition? next = season.Tiers.FirstOrDefault(t => t.RequiredExperience > xp);
         long floor = season.Tiers.LastOrDefault(t => t.RequiredExperience <= xp)?.RequiredExperience ?? 0;
         int reached = season.Tiers.Count(t => t.RequiredExperience <= xp);
-        var claimed = profile.ClaimedChallengeIds.ToHashSet(StringComparer.Ordinal);
         ChallengeDefinition? closest = null;
         decimal value = 0, fraction = -1;
         int ready = 0; long coins = 0;
         foreach (ChallengeDefinition challenge in ChallengeCatalog.All)
         {
-            if (claimed.Contains(challenge.Id)) continue;
+            if (ChallengeRegistry.IsClaimed(profile, challenge)) continue;
             decimal progress = Math.Max(0, ChallengeCatalog.Progress(profile, challenge));
             if (progress >= challenge.Goal) { ready++; coins += challenge.CoinReward; continue; }
             decimal ratio = progress / Math.Max(1, challenge.Goal);
