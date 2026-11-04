@@ -186,6 +186,16 @@ jobs:
           New-Item -ItemType Directory -Path artifacts/preview-app/tools/updater -Force | Out-Null
           Copy-Item artifacts/preview-updater/BlackjackCasino.Updater.exe artifacts/preview-app/tools/updater/BlackjackCasino.Updater.exe
 
+      - name: Verify bundled Midnight Manor frontend assets
+        shell: pwsh
+        run: |
+          $index = "artifacts/preview-app/ModernFrontend/index.html"
+          $assets = "artifacts/preview-app/ModernFrontend/assets"
+          if (!(Test-Path $index)) { throw "Modern Manor index.html was not packaged." }
+          if (!(Test-Path $assets)) { throw "Modern Manor bundles were not packaged." }
+          $javascript = Get-ChildItem $assets -Filter "*.js" -File
+          if (!$javascript) { throw "Modern Manor JavaScript bundle missing." }
+
       - name: Upload Windows preview
         if: github.event_name == 'push' || github.event_name == 'pull_request'
         uses: actions/upload-artifact@v7
