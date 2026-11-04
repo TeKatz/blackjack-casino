@@ -354,8 +354,8 @@ internal sealed class JigsawLoungeHub : UserControl, IDisposable
             JigsawText.T("TIME   ", "ZEIT   ") + (game.TimerEnabled
                 ? TimeSpan.FromSeconds(game.ElapsedSeconds).ToString(@"hh\:mm\:ss")
                 : JigsawText.T("Not tracked", "Nicht erfasst")),
-            "PLAYER XP   +" + award.PlayerExperience.ToString("N0"),
-            "SEASON XP   +" + award.SeasonExperience.ToString("N0"),
+            JigsawText.T("PLAYER XP   +", "SPIELER-EP   +") + award.PlayerExperience.ToString("N0"),
+            JigsawText.T("SEASON XP   +", "SAISON-EP   +") + award.SeasonExperience.ToString("N0"),
             JigsawText.T("COINS   +", "MÜNZEN   +") + award.CoinsEarned.ToString("N0")));
         right.Children.Add(PremiumLoungeTheme.Heading(
             JigsawText.T("ACHIEVEMENTS UNLOCKED", "ERFOLGE FREIGESCHALTET") + " · " + unlocked.Count, 17));
@@ -427,7 +427,7 @@ internal sealed class JigsawLoungeHub : UserControl, IDisposable
         var stack = new StackPanel();
         stack.Children.Add(PremiumLoungeTheme.Label(
             (unlocked ? "✓  " : "◇  ") + JigsawText.T(a.Name, a.GermanName) +
-            " · " + a.Tier.ToString().ToUpperInvariant(),
+            " · " + JigsawText.Tier(a.Tier),
             15, unlocked ? PremiumLoungeTheme.Teal : PremiumLoungeTheme.Cream, true));
         stack.Children.Add(PremiumLoungeTheme.Label(JigsawText.T(a.Description, a.GermanDescription),
             12, PremiumLoungeTheme.Muted));
