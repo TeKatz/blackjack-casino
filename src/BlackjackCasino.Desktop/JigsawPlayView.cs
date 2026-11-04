@@ -56,21 +56,21 @@ internal sealed class JigsawPlayView : UserControl, IDisposable
         heading.Children.Add(PremiumLoungeTheme.Label("CHILL LOUNGE · JIGSAW PUZZLE", 11, PremiumLoungeTheme.Teal, true));
         heading.Children.Add(new TextBlock
         {
-            Text = JigsawCatalog.Motif(game.MotifId).Name,
+            Text = JigsawText.Motif(game.MotifId),
             FontFamily = new FontFamily("Georgia"),
             FontSize = 28,
             Foreground = LoungeUi.Ink("#F6E8D0"),
         });
         heading.Children.Add(PremiumLoungeTheme.Label(
-            game.PieceCount.ToString("N0") + " pieces · Drag from the tray and connect matching edges.",
+            game.PieceCount.ToString("N0") + JigsawText.T(" pieces · Drag from the tray and connect matching edges.", " Teile · Aus der Ablage ziehen und passende Kanten verbinden."),
             12, PremiumLoungeTheme.Muted));
         header.Children.Add(heading);
 
         var actions = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
         actions.Children.Add(SmallButton("− ZOOM", "JigsawZoomOut", () => board.ZoomBy(1 / 1.25)));
         actions.Children.Add(SmallButton("+ ZOOM", "JigsawZoomIn", () => board.ZoomBy(1.25)));
-        actions.Children.Add(SmallButton("RESET VIEW", "JigsawResetView", board.ResetView));
-        actions.Children.Add(SmallButton("REFERENCE", "JigsawReference", board.ToggleReference));
+        actions.Children.Add(SmallButton(JigsawText.T("RESET VIEW", "ANSICHT"), "JigsawResetView", board.ResetView));
+        actions.Children.Add(SmallButton(JigsawText.T("REFERENCE", "VORLAGE"), "JigsawReference", board.ToggleReference));
         actions.Children.Add(SmallButton("← PUZZLES", "JigsawBackToMenu", back));
         Grid.SetColumn(actions, 1);
         header.Children.Add(actions);
@@ -157,12 +157,12 @@ internal sealed class JigsawPlayView : UserControl, IDisposable
     private void Refresh()
     {
         count.Text = game.LockedCount.ToString("N0") + " / " +
-                     game.PieceCount.ToString("N0") + " placed";
+                     game.PieceCount.ToString("N0") + JigsawText.T(" placed", " gelegt");
         time.Text = TimeSpan.FromSeconds(game.ElapsedSeconds).ToString(@"hh\:mm\:ss", CultureInfo.InvariantCulture);
-        page.Text = "TRAY " + board.TrayPageNumber + " / " + board.TrayPageCount;
+        page.Text = JigsawText.T("TRAY ", "ABLAGE ") + board.TrayPageNumber + " / " + board.TrayPageCount;
         if (!completionReported)
-            status.Text = game.OnBoardCount.ToString("N0") + " on board · " +
-                          (game.PieceCount - game.OnBoardCount).ToString("N0") + " in tray";
+            status.Text = game.OnBoardCount.ToString("N0") + JigsawText.T(" on board · ", " auf dem Tisch · ") +
+                          (game.PieceCount - game.OnBoardCount).ToString("N0") + JigsawText.T(" in tray", " in der Ablage");
     }
 
     public void Dispose()
@@ -288,7 +288,7 @@ internal sealed class JigsawBoardSurface : FrameworkElement
 
         Rect tray = Tray;
         dc.DrawRoundedRectangle(trayFill, new Pen(LoungeUi.Ink("#6E805E"), 1), tray, 9, 9);
-        DrawText(dc, "PIECE TRAY · Select, then drag to the board", new Point(tray.X + 16, tray.Y + 8), 12,
+        DrawText(dc, JigsawText.T("PIECE TRAY · Select, then drag to the board", "TEILEABLAGE · Auswählen und aufs Spielfeld ziehen"), new Point(tray.X + 16, tray.Y + 8), 12,
             LoungeUi.Ink("#DBBB7B"));
         IReadOnlyList<JigsawPieceState> pending = CurrentPage();
         double pitch = Math.Min(102, (tray.Width - 32) / Math.Max(1, PageSize));
@@ -308,7 +308,7 @@ internal sealed class JigsawBoardSurface : FrameworkElement
                 previewScale, false);
         }
         if (pending.Count == 0)
-            DrawText(dc, "All pieces are on the table.", new Point(tray.X + 22, tray.Y + 66), 14,
+            DrawText(dc, JigsawText.T("All pieces are on the table.", "Alle Teile liegen auf dem Tisch."), new Point(tray.X + 22, tray.Y + 66), 14,
                 LoungeUi.Ink("#A9DCC7"));
     }
 
