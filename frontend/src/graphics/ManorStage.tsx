@@ -89,7 +89,7 @@ export function ManorStage({ snapshot, reducedMotion }: Props) {
       }
       pulse = new Graphics().roundRect(42, 42, 876, 416, 14).stroke({ color: 0xc0a5ee, alpha: 0.15, width: 2 });
       scene.addChild(pulse);
-      addText(scene, 'MIDNIGHT MANOR   /   PRESENTATION PROTOTYPE', 480, 449, 12, 0xa38f9d);
+      addText(scene, 'MIDNIGHT MANOR  /  C# ENGINE CONNECTED', 480, 449, 12, 0xa38f9d);
 
       const resize = () => {
         if (disposed) return;
