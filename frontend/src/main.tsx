@@ -6,6 +6,7 @@ import {
 import type { GameAction, ManorSnapshot } from './bridge/protocol';
 import { ManorStage } from './graphics/ManorStage';
 import { ManorRunMap } from './graphics/ManorRunMap';
+import { ghostBand, ghostBandLabel } from './graphics/manorRunUi';
 import { ManorAudio } from './audio/manorAudio';
 import { runCue, runMoment, spinCue, spinMoment } from './graphics/manorMoments';
 import type { ManorMoment } from './graphics/manorMoments';
@@ -103,6 +104,7 @@ function ManorApp() {
   const disabled = !embedded || !connected || pending !== null || fatal || animating;
   const validBet = /^[0-9]{1,4}$/.test(bet) && Number(bet) >= 1 && Number(bet) <= 1000;
   const run = snapshot.run;
+  const threat = run ? ghostBand(run.ghostClue) : null;
 
   function act(type: GameAction, extras: { bet?: string; room?: number } = {}) {
     // Immediate ref guard prevents two same-frame clicks from placing two wagers.
@@ -234,10 +236,10 @@ function ManorApp() {
                 <div className="turn-counter">TURN {run.turn} / 24</div>
               </div>
               <p className="run-message">{run.message}</p>
-              <p className={'ghost-warning' +
-                (run.ghostClue.includes('CLOSE') ? ' ghost-close' : '')}>
-                {run.ghostClue}
-              </p>
+              <div className={'ghost-panel ' + threat} role="status" aria-live="polite">
+                <span className="ghost-panel-label">{ghostBandLabel[threat ?? 'uncertain']}</span>
+                <p>{run.ghostClue}</p>
+              </div>
               <div className="run-summary">
                 <span>Potential <strong>{run.current}</strong></span>
                 <span>Checkpoint <strong>{run.banked}</strong></span>
@@ -246,8 +248,9 @@ function ManorApp() {
                 <span>{run.hasCharm ? 'CHARM READY' : 'NO CHARM'}</span>
               </div>
               <p className="map-instructions">
-                Your room is marked in gold. Click an illuminated adjacent room to move.
-                Blocked passages require a key. Room choices and prizes are committed immediately.
+                The bright routes and buttons are legal choices from the C# engine.
+                Entering a room advances the ghost. Collected rewards and checkpoints
+                are committed with your choice. A locked shortcut requires a key.
               </p>
               <ManorRunMap run={run} disabled={disabled}
                 onMove={room => act('run.move', { room })} />

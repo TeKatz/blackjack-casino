@@ -125,3 +125,11 @@ See [AGENTS.md](../AGENTS.md), [architecture](architecture.md), [Midnight Manor 
 - The reward ribbon is created only after an acknowledged, strictly newer C# revision and appears after visual reels have settled. Initial loads, ordinary refreshes and replayed responses do not trigger a celebration. Simultaneous Moon/Door grants retain both messages.
 - Escape room movement, checkpoint, candle and cash-out use authoritative run messages and legal action acknowledgements, never predicted outcomes or invisible ghost coordinates. Reduced motion removes entry transitions and reel-stop accents.
 - The run-ack and spin-ack callbacks are presentation-only; no additional gameplay command is issued. Tests cover sound envelope limits, volume edge cases, bonus combination presentation and payout-tier classification. Manual audio audition (different speakers/headsets and volume settings) remains necessary before final acceptance.
+
+### M3 fifth delivery — discoverable, accessible bonus navigation
+
+- Escape the Manor now presents C#-authorized adjacent room destinations as explicit keyboard-focusable buttons **ahead of** the scrollable floorplan. There is no inferred client pathfinding, no move prediction and no new command type.
+- The architectural map recenters on the current saved room when the player enters it; every viewport width remains scrollable. Scrolling is presentation-only and does not advance the ghost.
+- Ghost warnings derive exclusively from the public clue string: distant / approaching / close / candle-revealed. No hidden ghost coordinates, reward guarantees or invented risk percentages are exposed.
+- Larger map names, larger click targets and a narrow-window single-column destination layout improve tester usability. All action buttons remain disabled while awaiting a committed response.
+- Tests cover legal-only destinations, unknown clue handling and viewport-scroll bounds. Manual 125%/150%/200% Windows DPI and keyboard usability remain acceptance tasks; no unmeasured FPS improvement is claimed.

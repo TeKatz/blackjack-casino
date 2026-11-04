@@ -1,4 +1,6 @@
+import { useEffect, useRef } from 'react';
 import type { ManorRoom, ManorRun } from '../bridge/protocol';
+import { availableManorRooms, mapScrollLeft } from './manorRunUi';
 
 type Props = { run: ManorRun; disabled: boolean; onMove: (room: number) => void };
 const FLOOR_NAMES: Record<string, string> = {
@@ -17,6 +19,18 @@ export function roomPosition(room: Pick<ManorRoom, 'x' | 'y'>): { x: number; y: 
 
 export function ManorRunMap({ run, disabled, onMove }: Props) {
   const rooms = new Map(run.rooms.map(room => [room.id, room]));
+  const viewport = useRef<HTMLDivElement>(null);
+  const moves = availableManorRooms(run);
+  useEffect(() => {
+    const scroll = viewport.current;
+    const current = rooms.get(run.playerRoom);
+    if (scroll && current) {
+      scroll.scrollLeft = mapScrollLeft(roomPosition(current).x,
+        scroll.clientWidth, scroll.scrollWidth);
+    }
+    // Only recenter after a confirmed player move, not during status refreshes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [run.playerRoom]);
   return (
     <div className="manor-map-wrap">
       <div className="manor-map-guide" aria-label="Map legend">
@@ -25,7 +39,29 @@ export function ManorRunMap({ run, disabled, onMove }: Props) {
         <span><i className="map-key visited" /> Explored</span>
         <span><i className="map-key blocked" /> Requires key</span>
       </div>
-      <div className="map-scroll" role="region" aria-label="Scrollable Manor floorplan" tabIndex={0}>
+      <div className="manor-route-chooser" role="group"
+        aria-label="Rooms available for your next move">
+        <div className="manor-route-heading">
+          <strong>CHOOSE YOUR NEXT ROOM</strong>
+          <span>{moves.length} {moves.length === 1 ? 'passage' : 'passages'} accessible</span>
+        </div>
+        <div className="manor-route-list">
+          {moves.map(room => (
+            <button key={room.id} type="button" className="manor-route-choice"
+              disabled={disabled} onClick={() => onMove(room.id)}
+              aria-label={'Move to ' + room.name + (room.visited ? ', already explored' : ', unexplored')}>
+              <span aria-hidden="true">⌑</span>
+              <span>{room.name}<small>{room.visited ? 'ALREADY EXPLORED' : 'NOT YET EXPLORED'}</small></span>
+              <strong>ENTER</strong>
+            </button>
+          ))}
+          {moves.length === 0 && <p className="manor-route-empty">
+            No adjacent room is available. Review your current run options.</p>}
+        </div>
+      </div>
+      <div className="map-scroll" ref={viewport} role="region"
+        aria-label="Scrollable Manor floorplan (use horizontal scroll to inspect rooms)"
+        tabIndex={0}>
         <div className="manor-map-scene">
           <div className="map-moon" aria-hidden="true" />
           <div className="map-watermark" aria-hidden="true">MIDNIGHT MANOR · FLOORPLAN</div>
@@ -86,7 +122,9 @@ export function ManorRunMap({ run, disabled, onMove }: Props) {
           })}
         </div>
       </div>
-      <p className="map-privacy-note">Only passages and moves authorized by the Manor engine are shown.
+      <p className="map-privacy-note">The map follows your current room. Use the accessible
+        destination buttons above when the floorplan is wider than your window.
+        Only passages and moves authorized by the Manor engine are shown.
         The ghost remains hidden unless your candle reveals it.</p>
     </div>
   );

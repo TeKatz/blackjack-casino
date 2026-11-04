@@ -154,3 +154,36 @@ h1{font-family:Georgia,serif;letter-spacing:.13em;font-size:18px;margin:4px 0 0}
 .ghost-warning.ghost-close{border-left-color:#eb8ca2;background:#7132466b;color:#fff0f3}
 @media(prefers-reduced-motion:reduce){.manor-moment{animation:none}}
 @media(max-width:520px){.manor-moment{padding:12px 14px;gap:12px}.manor-moment strong{font-size:18px}.manor-moment-crest{flex-basis:44px;width:44px;height:44px;font-size:29px}}
+
+/* Phase 3E: keyboard-friendly choices first; map remains a companion, not the only input. */
+.manor-route-chooser{margin:12px 0 8px;padding:14px;border:1px solid #86775f;
+  background:linear-gradient(125deg,#22232e,#181b26);border-radius:11px}
+.manor-route-heading{display:flex;justify-content:space-between;flex-wrap:wrap;align-items:center;gap:8px;
+  margin-bottom:11px;color:#e7cb9d;font-size:12px;letter-spacing:.075em}
+.manor-route-heading span{font-size:11px;letter-spacing:0;color:#b7a8b9}
+.manor-route-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:9px}
+.manor-route-choice{display:flex;align-items:center;gap:11px;min-height:62px;width:100%;
+  border:1px solid #85b8a6;background:linear-gradient(145deg,#38504c,#26313a);
+  color:#f9e9d0;border-radius:9px;text-align:left;padding:10px 12px}
+.manor-route-choice>span:first-child{font-size:23px;color:#b2dece;line-height:1}
+.manor-route-choice>span:nth-child(2){display:flex;flex:1;flex-direction:column;gap:5px;
+  font-family:Georgia,serif;font-size:14px}
+.manor-route-choice small{font:700 9px "Segoe UI",sans-serif;color:#b7d4c9;letter-spacing:.08em}
+.manor-route-choice strong{font-size:9px;letter-spacing:.1em;color:#d7f4e5}
+.manor-route-choice:hover:not(:disabled){filter:brightness(1.16);border-color:#d2f4df}
+.manor-route-choice:focus-visible,.map-scroll:focus-visible{outline:3px solid #ffe2a7;outline-offset:2px}
+.manor-route-choice:disabled{opacity:.53;cursor:wait}
+.manor-route-empty{font-size:12px;line-height:1.5;color:#c6b1b5}
+.ghost-panel{padding:12px 15px;border-left:4px solid #8b9ba9;background:#27313b;
+  border-radius:0 9px 9px 0;margin:10px 0}
+.ghost-panel-label{font-size:10px;letter-spacing:.18em;font-weight:800;color:#e5d7c0}
+.ghost-panel p{font-size:13px;line-height:1.55;margin:6px 0 0;color:#f3dce9}
+.ghost-panel.danger{border-left-color:#ed8d9c;background:#5c293a}
+.ghost-panel.approaching{border-left-color:#dbb27f;background:#483541}
+.ghost-panel.revealed{border-left-color:#b5d9ee;background:#293d4a}
+.ghost-panel.distant{border-left-color:#87b8a8;background:#223a39}
+.map-privacy-note{font-size:12px;line-height:1.55}
+.manor-map-room .map-room-name{font-size:12px}
+.manor-map-room .map-room-zone{font-size:8px}
+@media(max-width:740px){.manor-route-chooser{padding:12px}
+ .manor-route-list{grid-template-columns:1fr}.manor-map-guide{gap:10px}}
