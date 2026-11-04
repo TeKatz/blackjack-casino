@@ -101,8 +101,11 @@ public sealed class JigsawTests
         var record = new JigsawCompletionRecord(Guid.NewGuid(), "neon-city", 1000, 250000,
             DateTimeOffset.UtcNow);
         var first = xp.Process(record);
-        Assert.Equal(2200, first.PlayerExperience);
-        Assert.Equal(1100, first.SeasonExperience);
+        // First 1,000-piece completion also unlocks the size, first-completion and piece milestones.
+        Assert.True(first.PlayerExperience > 2200);
+        Assert.True(first.SeasonExperience > 1100);
+        Assert.Contains("size-1000", service.State.Jigsaw.UnlockedAchievementIds);
+        Assert.Contains("total-1", service.State.Jigsaw.UnlockedAchievementIds);
         Assert.Equal(ProgressionAward.None, xp.Process(record));
         Assert.Equal(1, service.State.Jigsaw.CompletedGames);
     }
@@ -124,6 +127,74 @@ public sealed class JigsawTests
         Assert.True(game.Pieces[0].Locked);
         Assert.False(JigsawGame.ReturnToTray(game, 0));
         Assert.Equal(1, game.OnBoardCount);
+    }
+
+    [Fact]
+    public void ThirtyAchievementsHaveUniqueIdsAndIncreasingDifficultyRewards()
+    {
+        Assert.Equal(30, JigsawAchievements.All.Count);
+        Assert.Equal(30, JigsawAchievements.All.Select(a => a.Id).Distinct(StringComparer.Ordinal).Count());
+        var ranks = JigsawAchievements.All.GroupBy(a => a.Tier)
+            .ToDictionary(group => group.Key, group => group.First());
+        Assert.True(ranks[JigsawAchievementTier.Bronze].ExperienceReward <
+                    ranks[JigsawAchievementTier.Silver].ExperienceReward);
+        Assert.True(ranks[JigsawAchievementTier.Silver].CoinReward <
+                    ranks[JigsawAchievementTier.Gold].CoinReward);
+        Assert.True(ranks[JigsawAchievementTier.Gold].CoinReward <
+                    ranks[JigsawAchievementTier.Platinum].CoinReward);
+    }
+
+    [Fact]
+    public void EveryAchievementIsClaimedOnceWhenItsMilestoneIsReached()
+    {
+        var service = new ProgressionService(new PlayerProfileState());
+        var progression = new JigsawProgression(service);
+        var one = new JigsawCompletionRecord(Guid.NewGuid(), "enchanted-forest", 24, 0, DateTimeOffset.UtcNow);
+        ProgressionAward reward = progression.Process(one);
+        Assert.Contains("size-24", service.State.Jigsaw.UnlockedAchievementIds);
+        Assert.Contains("total-1", service.State.Jigsaw.UnlockedAchievementIds);
+        Assert.Contains("motif-enchanted-forest", service.State.Jigsaw.UnlockedAchievementIds);
+        Assert.Equal(3, service.State.Jigsaw.UnlockedAchievementIds.Count);
+        Assert.True(reward.CoinsEarned >= 300);
+        Assert.Equal(ProgressionAward.None, progression.Process(one));
+        Assert.Equal(3, service.State.Jigsaw.UnlockedAchievementIds.Count);
+        Assert.Equal(1, service.State.Jigsaw.CompletedBySize[24]);
+        Assert.Equal(1, service.State.Jigsaw.CompletedByMotif["enchanted-forest"]);
+
+        var two = new JigsawCompletionRecord(Guid.NewGuid(), "ocean-depths", 96, 0, DateTimeOffset.UtcNow);
+        _ = progression.Process(two);
+        Assert.Contains("scenes-2", service.State.Jigsaw.UnlockedAchievementIds);
+        Assert.Contains("motif-ocean-depths", service.State.Jigsaw.UnlockedAchievementIds);
+        Assert.Equal(2, service.State.Jigsaw.CompletedByMotif.Count);
+    }
+
+    [Fact]
+    public void ClockPreferencePersistsAndCanDisableTimingCompletely()
+    {
+        var progress = new JigsawProgressState
+        {
+            TimerEnabled = false,
+            ActiveGame = JigsawGame.Start("neon-city", 48),
+        };
+        progress.ActiveGame.TimerEnabled = false;
+        var restored = JsonSerializer.Deserialize<JigsawProgressState>(JsonSerializer.Serialize(progress))!;
+        restored.Normalize();
+        Assert.False(restored.TimerEnabled);
+        Assert.False(restored.ActiveGame!.TimerEnabled);
+    }
+
+    [Fact]
+    public void MovingCachedGroupGivesTheSameResultAsConnectedMovement()
+    {
+        var game = JigsawGame.Start("ocean-depths", 48);
+        double width = JigsawGame.BoardWidth / JigsawCatalog.Size(48).Columns;
+        Assert.True(JigsawGame.Place(game, 0, 500, 400));
+        Assert.True(JigsawGame.Place(game, 1, 500 + width, 400));
+        int[] group = JigsawGame.Connected(game, 0).ToArray();
+        Assert.Equal(2, group.Length);
+        Assert.True(JigsawGame.MoveGroup(game, group, 17, -3));
+        Assert.Equal(517, game.Pieces[0].X);
+        Assert.Equal(500 + width + 17, game.Pieces[1].X);
     }
 
 }
