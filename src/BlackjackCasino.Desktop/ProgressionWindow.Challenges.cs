@@ -30,7 +30,7 @@ internal partial class ProgressionWindow
 
         ChallengeCategory? category = (ChallengeCategoryFilter.SelectedItem as FilterChoice)?.Value is ChallengeCategory selected ? selected : null;
         var filtered = entries.Where(entry => (!category.HasValue || entry.Challenge.Category == category)
-            && MatchesSearch(ChallengeSearchBox.Text, entry.Challenge.Name, entry.Challenge.Description, ChallengeCategoryLabel(entry.Challenge), entry.Challenge.IsEndgame ? "Endgame" : "Milestone")
+            && MatchesSearch(ChallengeSearchBox.Text, ChallengeName(entry.Challenge), ChallengeDescription(entry.Challenge), ChallengeCategoryLabel(entry.Challenge), entry.Challenge.IsEndgame ? "Endgame" : "Milestone")
             && (ChallengeStatusFilter.SelectedIndex switch
             {
                 1 => entry.Complete && !entry.Claimed,
@@ -70,9 +70,9 @@ internal partial class ProgressionWindow
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         var text = new StackPanel();
         text.Children.Add(new TextBlock { Text = ChallengeCategoryLabel(challenge).ToUpperInvariant() + (challenge.IsEndgame ? " · ENDGAME" : ""), FontSize = 9, Foreground = CoinMutedBrush, FontWeight = FontWeights.Bold });
-        text.Children.Add(new TextBlock { Text = challenge.Name, FontFamily = new FontFamily("Georgia"), FontSize = 19, Foreground = complete ? CoinBrush : new SolidColorBrush(Rgb(244, 225, 184)), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 6, 0, 7) });
+        text.Children.Add(new TextBlock { Text = ChallengeName(challenge), FontFamily = new FontFamily("Georgia"), FontSize = 19, Foreground = complete ? CoinBrush : new SolidColorBrush(Rgb(244, 225, 184)), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 6, 0, 7) });
         grid.Children.Add(text);
-        var description = new TextBlock { Text = challenge.Description, Foreground = MutedBrush, FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 12) };
+        var description = new TextBlock { Text = ChallengeDescription(challenge), Foreground = MutedBrush, FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 12) };
         Grid.SetRow(description, 1); grid.Children.Add(description);
         var progressStack = new StackPanel { Margin = new Thickness(0, 0, 0, 13) };
         progressStack.Children.Add(new TextBlock { Text = $"{FormatChallengeValue(challenge, Math.Min(progress, challenge.Goal))} / {FormatChallengeValue(challenge, challenge.Goal)}", FontSize = 11, Foreground = complete ? PositiveBrush : MutedBrush });
@@ -112,13 +112,19 @@ internal partial class ProgressionWindow
         footer.Children.Add(rewardStack);
 
         var button = new Button { Tag = challenge.Id, Content = claimed ? "Claimed" : complete ? "Claim" : "In progress", IsEnabled = complete && !claimed, Margin = new Thickness(4, 0, 0, 0), Padding = new Thickness(8, 6, 8, 6), VerticalAlignment = VerticalAlignment.Center };
-        System.Windows.Automation.AutomationProperties.SetName(button, $"{button.Content}: {challenge.Name}");
+        System.Windows.Automation.AutomationProperties.SetName(button, $"{button.Content}: {ChallengeName(challenge)}");
         button.Click += ChallengeClaim_Click;
         Grid.SetColumn(button, 1);
         footer.Children.Add(button);
         border.Child = grid;
         return border;
     }
+
+    private static string ChallengeName(ChallengeDefinition challenge) =>
+        Localization.Language == UiLanguagePreference.German ? Localization.T($"Challenge.{challenge.Id}.Name") : challenge.Name;
+
+    private static string ChallengeDescription(ChallengeDefinition challenge) =>
+        Localization.Language == UiLanguagePreference.German ? Localization.T($"Challenge.{challenge.Id}.Description") : challenge.Description;
 
     private static string ChallengeCategoryLabel(ChallengeDefinition challenge) =>
         AdventureChallengeCatalog.IsAdventure(challenge) ? "Adventure" : CategoryName(challenge.Category);
