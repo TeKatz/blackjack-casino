@@ -261,6 +261,8 @@ function createRenderer(app: Application, report: (value: boolean) => void): Ren
         for (let r = 0; r < 5; r++) settleColumn(r, result);
         presented = result;
       }
+      // A stopped ticker does not redraw a newly committed outcome by itself.
+      if (motionOff) app.render();
     },
     dispose() {
       finish();
@@ -306,6 +308,7 @@ export function ManorStage({ snapshot, spinEpoch, reducedMotion, speed, onSpinni
         const scale = Math.min(w / W, h / H);
         app.stage.scale.set(scale);
         app.stage.position.set((w - W * scale) / 2, (h - H * scale) / 2);
+        if (latest.current.reducedMotion) app.render();
       };
       observer = new ResizeObserver(resize);
       observer.observe(host);

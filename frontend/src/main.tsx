@@ -20,6 +20,7 @@ function ManorApp() {
   const [pending, setPending] = useState<string | null>(null);
   const pendingRef = useRef<string | null>(null);
   const pendingTypeRef = useRef<GameAction | null>(null);
+  const acceptedRevisionRef = useRef('0');
   const [spinEpoch, setSpinEpoch] = useState(0);
   const [animating, setAnimating] = useState(false);
   const [reelSpeed, setReelSpeed] = useState<ReelSpeed>('normal');
@@ -31,15 +32,20 @@ function ManorApp() {
 
   useEffect(() => {
     const applySnapshot = (next: ManorSnapshot) => {
-      // Late WebView2 replies must never roll the displayed revision backward.
-      setSnapshot(previous => BigInt(next.revision) >= BigInt(previous.revision) ? next : previous);
+      // Ref is synchronous: compare against the last accepted C# revision even
+      // when React batches two WebView2 responses into the same render.
+      if (BigInt(next.revision) < BigInt(acceptedRevisionRef.current)) return;
+      acceptedRevisionRef.current = next.revision;
+      setSnapshot(next);
       setBet(defaultBet(next.selectedBet));
       setConnected(true);
     };
     const stop = subscribeToHost(message => {
       if (message.type === 'snapshot') {
+        const beforeRevision = acceptedRevisionRef.current;
         applySnapshot(message.payload);
         if ((pendingRef.current === message.requestId || pendingRef.current === 'recovering') &&
+            BigInt(message.payload.revision) > BigInt(beforeRevision) &&
             pendingTypeRef.current?.startsWith('spin.')) {
           setSpinEpoch(previous => previous + 1);
         }
