@@ -24,6 +24,32 @@ internal static class JigsawSmoke
             "The Jigsaw gallery did not offer all twelve themes.");
         Require(Find<Button>(window).Count(b => b.Name.StartsWith("JigsawSize_", StringComparison.Ordinal)) == 8,
             "The Jigsaw setup is missing one of the eight piece counts.");
+
+        FrameworkElement galleryHub = Find<FrameworkElement>(window)
+            .Single(element => element.IsVisible && element.GetType().Name == "JigsawLoungeHub");
+        Require(!Find<ScrollViewer>(galleryHub).Any(scroll => scroll.IsVisible),
+            "The Jigsaw selection menu unexpectedly introduced a scrollbar.");
+        Button[] motifCards = Find<Button>(galleryHub)
+            .Where(button => button.IsVisible && button.Name.StartsWith("JigsawMotif_", StringComparison.Ordinal)).ToArray();
+        var motifLocations = motifCards
+            .Select(button => button.TranslatePoint(new Point(0, 0), galleryHub)).ToArray();
+        Require(motifLocations.Select(point => Math.Round(point.X / 20)).Distinct().Count() == 4,
+            "The motif gallery must form four columns.");
+        Require(motifLocations.Select(point => Math.Round(point.Y / 20)).Distinct().Count() == 3,
+            "The motif gallery must form three rows.");
+
+        Button timerChoice = FindButton(window, "JigsawMenuTimer");
+        Button achievementChoice = FindButton(window, "JigsawAchievementsOpen");
+        Point timerRight = timerChoice.TranslatePoint(new Point(timerChoice.ActualWidth, 0), galleryHub);
+        Point achievementLeft = achievementChoice.TranslatePoint(new Point(0, 0), galleryHub);
+        Require(achievementLeft.X - timerRight.X >= 10,
+            "The timer and achievement buttons overlap or touch.");
+
+        Button startButton = FindButton(window, "JigsawStart");
+        Point startBottom = startButton.TranslatePoint(new Point(0, startButton.ActualHeight), galleryHub);
+        Require(startBottom.Y <= galleryHub.ActualHeight + 0.5,
+            "The start button is clipped below the fixed-size menu.");
+
         Capture(window, Path.Combine(output, "jigsaw-gallery.png"));
 
         Require(FindButton(window, "JigsawMenuTimer").IsVisible, "The timer option is missing.");
