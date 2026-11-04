@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Memory.Deck.casino-icons.Name" xml:space="preserve"><value>Casino-Symbole</value></data>
+  <data name="Memory.Deck.casino-icons.Description" xml:space="preserve"><value>Ein hochwertiges Midnight-Club-Set mit Tischklassikern, Glückszeichen und Details für High Roller.</value></data>
+  <data name="Memory.Symbol.casino-icons-01.Name" xml:space="preserve"><value>Casinojeton</value></data>
+  <data name="Memory.Symbol.casino-icons-02.Name" xml:space="preserve"><value>Glückswürfel</value></data>
+  <data name="Memory.Symbol.casino-icons-03.Name" xml:space="preserve"><value>Rouletterad</value></data>
+  <data name="Memory.Symbol.casino-icons-04.Name" xml:space="preserve"><value>Glückssieben</value></data>
+  <data name="Memory.Symbol.casino-icons-05.Name" xml:space="preserve"><value>Jackpot-Glocke</value></data>
+  <data name="Memory.Symbol.casino-icons-06.Name" xml:space="preserve"><value>Goldtresor</value></data>
+  <data name="Memory.Symbol.casino-icons-07.Name" xml:space="preserve"><value>High-Roller-Krone</value></data>
+  <data name="Memory.Symbol.casino-icons-08.Name" xml:space="preserve"><value>Mitternachtscocktail</value></data>
+  <data name="Memory.Symbol.casino-icons-09.Name" xml:space="preserve"><value>Ass hoch</value></data>
+  <data name="Memory.Symbol.casino-icons-10.Name" xml:space="preserve"><value>Glückshufeisen</value></data>
+  <data name="Memory.Symbol.casino-icons-11.Name" xml:space="preserve"><value>Jackpotstern</value></data>
+  <data name="Memory.Symbol.casino-icons-12.Name" xml:space="preserve"><value>Hausdiamant</value></data>
+  <data name="Memory.Symbol.casino-icons-13.Name" xml:space="preserve"><value>Slotwalzen</value></data>
+  <data name="Memory.Symbol.casino-icons-14.Name" xml:space="preserve"><value>Kartenfächer</value></data>
+  <data name="Memory.Symbol.casino-icons-15.Name" xml:space="preserve"><value>Geldstapel</value></data>
+  <data name="Memory.Symbol.casino-icons-16.Name" xml:space="preserve"><value>Tresorschlüssel</value></data>
+  <data name="Memory.Symbol.casino-icons-17.Name" xml:space="preserve"><value>BAR</value></data>
+  <data name="Memory.Symbol.casino-icons-18.Name" xml:space="preserve"><value>VIP-Pass</value></data>
+  <data name="Memory.Symbol.casino-icons-19.Name" xml:space="preserve"><value>Goldbarren</value></data>
+  <data name="Memory.Symbol.casino-icons-20.Name" xml:space="preserve"><value>Hausjeton</value></data>
+  <data name="Memory.Symbol.casino-icons-21.Name" xml:space="preserve"><value>Glücksrad</value></data>
+  <data name="Memory.Symbol.casino-icons-22.Name" xml:space="preserve"><value>Dealerknopf</value></data>
+  <data name="Memory.Symbol.casino-icons-23.Name" xml:space="preserve"><value>Grüner Tisch</value></data>
+  <data name="Memory.Symbol.casino-icons-24.Name" xml:space="preserve"><value>Mitternachtsmond</value></data>
+  <data name="Memory.Symbol.casino-icons-25.Name" xml:space="preserve"><value>Clubwappen</value></data>
+  <data name="Memory.Symbol.casino-icons-26.Name" xml:space="preserve"><value>Drehmarkierung</value></data>
+  <data name="Memory.Symbol.casino-icons-27.Name" xml:space="preserve"><value>Königszeichen</value></data>
+  <data name="Memory.Symbol.casino-icons-28.Name" xml:space="preserve"><value>Königinnenzeichen</value></data>
+  <data name="Memory.Symbol.casino-icons-29.Name" xml:space="preserve"><value>Bubenzeichen</value></data>
+  <data name="Memory.Symbol.casino-icons-30.Name" xml:space="preserve"><value>Blackjack 21</value></data>
+  <data name="Memory.Symbol.casino-icons-31.Name" xml:space="preserve"><value>Glücksklee</value></data>
+  <data name="Memory.Symbol.casino-icons-32.Name" xml:space="preserve"><value>Midnight Club</value></data>
+  <data name="Memory.Deck.card-suits.Name" xml:space="preserve"><value>Kartenfarben</value></data>
+  <data name="Memory.Deck.card-suits.Description" xml:space="preserve"><value>Ein edles Spielkartenset mit elfenbeinfarbenen Karten, klassischen Farben und Art-déco-Verzierungen.</value></data>
+  <data name="Memory.Symbol.card-suits-01.Name" xml:space="preserve"><value>Ass Pik</value></data>
+  <data name="Memory.Symbol.card-suits-02.Name" xml:space="preserve"><value>König Pik</value></data>
+  <data name="Memory.Symbol.card-suits-03.Name" xml:space="preserve"><value>Dame Pik</value></data>
+  <data name="Memory.Symbol.card-suits-04.Name" xml:space="preserve"><value>Bube Pik</value></data>
+  <data name="Memory.Symbol.card-suits-05.Name" xml:space="preserve"><value>10 Pik</value></data>
+  <data name="Memory.Symbol.card-suits-06.Name" xml:space="preserve"><value>9 Pik</value></data>
+  <data name="Memory.Symbol.card-suits-07.Name" xml:space="preserve"><value>8 Pik</value></data>
+  <data name="Memory.Symbol.card-suits-08.Name" xml:space="preserve"><value>7 Pik</value></data>
+  <data name="Memory.Symbol.card-suits-09.Name" xml:space="preserve"><value>Ass Herz</value></data>
+  <data name="Memory.Symbol.card-suits-10.Name" xml:space="preserve"><value>König Herz</value></data>
+  <data name="Memory.Symbol.card-suits-11.Name" xml:space="preserve"><value>Dame Herz</value></data>
+  <data name="Memory.Symbol.card-suits-12.Name" xml:space="preserve"><value>Bube Herz</value></data>
+  <data name="Memory.Symbol.card-suits-13.Name" xml:space="preserve"><value>10 Herz</value></data>
+  <data name="Memory.Symbol.card-suits-14.Name" xml:space="preserve"><value>9 Herz</value></data>
+  <data name="Memory.Symbol.card-suits-15.Name" xml:space="preserve"><value>8 Herz</value></data>
+  <data name="Memory.Symbol.card-suits-16.Name" xml:space="preserve"><value>7 Herz</value></data>
+  <data name="Memory.Symbol.card-suits-17.Name" xml:space="preserve"><value>Ass Karo</value></data>
+  <data name="Memory.Symbol.card-suits-18.Name" xml:space="preserve"><value>König Karo</value></data>
+  <data name="Memory.Symbol.card-suits-19.Name" xml:space="preserve"><value>Dame Karo</value></data>
+  <data name="Memory.Symbol.card-suits-20.Name" xml:space="preserve"><value>Bube Karo</value></data>
+  <data name="Memory.Symbol.card-suits-21.Name" xml:space="preserve"><value>10 Karo</value></data>
+  <data name="Memory.Symbol.card-suits-22.Name" xml:space="preserve"><value>9 Karo</value></data>
+  <data name="Memory.Symbol.card-suits-23.Name" xml:space="preserve"><value>8 Karo</value></data>
+  <data name="Memory.Symbol.card-suits-24.Name" xml:space="preserve"><value>7 Karo</value></data>
+  <data name="Memory.Symbol.card-suits-25.Name" xml:space="preserve"><value>Ass Kreuz</value></data>
+  <data name="Memory.Symbol.card-suits-26.Name" xml:space="preserve"><value>König Kreuz</value></data>
+  <data name="Memory.Symbol.card-suits-27.Name" xml:space="preserve"><value>Dame Kreuz</value></data>
+  <data name="Memory.Symbol.card-suits-28.Name" xml:space="preserve"><value>Bube Kreuz</value></data>
+  <data name="Memory.Symbol.card-suits-29.Name" xml:space="preserve"><value>10 Kreuz</value></data>
+  <data name="Memory.Symbol.card-suits-30.Name" xml:space="preserve"><value>9 Kreuz</value></data>
+  <data name="Memory.Symbol.card-suits-31.Name" xml:space="preserve"><value>8 Kreuz</value></data>
+  <data name="Memory.Symbol.card-suits-32.Name" xml:space="preserve"><value>7 Kreuz</value></data>
+  <data name="Memory.Deck.animals.Name" xml:space="preserve"><value>Tiere</value></data>
+  <data name="Memory.Deck.animals.Description" xml:space="preserve"><value>Gemütliche illustrierte Tiermedaillons in ruhigen Waldtönen.</value></data>
+  <data name="Memory.Symbol.animals-01.Name" xml:space="preserve"><value>Katze</value></data>
+  <data name="Memory.Symbol.animals-02.Name" xml:space="preserve"><value>Hund</value></data>
+  <data name="Memory.Symbol.animals-03.Name" xml:space="preserve"><value>Kaninchen</value></data>
+  <data name="Memory.Symbol.animals-04.Name" xml:space="preserve"><value>Fuchs</value></data>
+  <data name="Memory.Symbol.animals-05.Name" xml:space="preserve"><value>Bär</value></data>
+  <data name="Memory.Symbol.animals-06.Name" xml:space="preserve"><value>Panda</value></data>
+  <data name="Memory.Symbol.animals-07.Name" xml:space="preserve"><value>Koala</value></data>
+  <data name="Memory.Symbol.animals-08.Name" xml:space="preserve"><value>Tiger</value></data>
+  <data name="Memory.Symbol.animals-09.Name" xml:space="preserve"><value>Löwe</value></data>
+  <data name="Memory.Symbol.animals-10.Name" xml:space="preserve"><value>Kuh</value></data>
+  <data name="Memory.Symbol.animals-11.Name" xml:space="preserve"><value>Schwein</value></data>
+  <data name="Memory.Symbol.animals-12.Name" xml:space="preserve"><value>Frosch</value></data>
+  <data name="Memory.Symbol.animals-13.Name" xml:space="preserve"><value>Affe</value></data>
+  <data name="Memory.Symbol.animals-14.Name" xml:space="preserve"><value>Huhn</value></data>
+  <data name="Memory.Symbol.animals-15.Name" xml:space="preserve"><value>Pinguin</value></data>
+  <data name="Memory.Symbol.animals-16.Name" xml:space="preserve"><value>Singvogel</value></data>
+  <data name="Memory.Symbol.animals-17.Name" xml:space="preserve"><value>Eule</value></data>
+  <data name="Memory.Symbol.animals-18.Name" xml:space="preserve"><value>Ente</value></data>
+  <data name="Memory.Symbol.animals-19.Name" xml:space="preserve"><value>Schmetterling</value></data>
+  <data name="Memory.Symbol.animals-20.Name" xml:space="preserve"><value>Biene</value></data>
+  <data name="Memory.Symbol.animals-21.Name" xml:space="preserve"><value>Marienkäfer</value></data>
+  <data name="Memory.Symbol.animals-22.Name" xml:space="preserve"><value>Schildkröte</value></data>
+  <data name="Memory.Symbol.animals-23.Name" xml:space="preserve"><value>Schlange</value></data>
+  <data name="Memory.Symbol.animals-24.Name" xml:space="preserve"><value>Eidechse</value></data>
+  <data name="Memory.Symbol.animals-25.Name" xml:space="preserve"><value>Oktopus</value></data>
+  <data name="Memory.Symbol.animals-26.Name" xml:space="preserve"><value>Delfin</value></data>
+  <data name="Memory.Symbol.animals-27.Name" xml:space="preserve"><value>Wal</value></data>
+  <data name="Memory.Symbol.animals-28.Name" xml:space="preserve"><value>Hai</value></data>
+  <data name="Memory.Symbol.animals-29.Name" xml:space="preserve"><value>Tropenfisch</value></data>
+  <data name="Memory.Symbol.animals-30.Name" xml:space="preserve"><value>Krabbe</value></data>
+  <data name="Memory.Symbol.animals-31.Name" xml:space="preserve"><value>Schnecke</value></data>
+  <data name="Memory.Symbol.animals-32.Name" xml:space="preserve"><value>Eichhörnchen</value></data>
+  <data name="Memory.Deck.fruits.Name" xml:space="preserve"><value>Obst und Leckereien</value></data>
+  <data name="Memory.Deck.fruits.Description" xml:space="preserve"><value>Leuchtende Früchte und Café-Lieblinge wie aus einem nächtlichen Dessertwagen.</value></data>
+  <data name="Memory.Symbol.fruits-01.Name" xml:space="preserve"><value>Apfel</value></data>
+  <data name="Memory.Symbol.fruits-02.Name" xml:space="preserve"><value>Birne</value></data>
+  <data name="Memory.Symbol.fruits-03.Name" xml:space="preserve"><value>Orange</value></data>
+  <data name="Memory.Symbol.fruits-04.Name" xml:space="preserve"><value>Zitrone</value></data>
+  <data name="Memory.Symbol.fruits-05.Name" xml:space="preserve"><value>Banane</value></data>
+  <data name="Memory.Symbol.fruits-06.Name" xml:space="preserve"><value>Wassermelone</value></data>
+  <data name="Memory.Symbol.fruits-07.Name" xml:space="preserve"><value>Trauben</value></data>
+  <data name="Memory.Symbol.fruits-08.Name" xml:space="preserve"><value>Erdbeere</value></data>
+  <data name="Memory.Symbol.fruits-09.Name" xml:space="preserve"><value>Heidelbeeren</value></data>
+  <data name="Memory.Symbol.fruits-10.Name" xml:space="preserve"><value>Melone</value></data>
+  <data name="Memory.Symbol.fruits-11.Name" xml:space="preserve"><value>Kirschen</value></data>
+  <data name="Memory.Symbol.fruits-12.Name" xml:space="preserve"><value>Pfirsich</value></data>
+  <data name="Memory.Symbol.fruits-13.Name" xml:space="preserve"><value>Mango</value></data>
+  <data name="Memory.Symbol.fruits-14.Name" xml:space="preserve"><value>Ananas</value></data>
+  <data name="Memory.Symbol.fruits-15.Name" xml:space="preserve"><value>Kiwi</value></data>
+  <data name="Memory.Symbol.fruits-16.Name" xml:space="preserve"><value>Tomate</value></data>
+  <data name="Memory.Symbol.fruits-17.Name" xml:space="preserve"><value>Kokosnuss</value></data>
+  <data name="Memory.Symbol.fruits-18.Name" xml:space="preserve"><value>Croissant</value></data>
+  <data name="Memory.Symbol.fruits-19.Name" xml:space="preserve"><value>Brezel</value></data>
+  <data name="Memory.Symbol.fruits-20.Name" xml:space="preserve"><value>Käse</value></data>
+  <data name="Memory.Symbol.fruits-21.Name" xml:space="preserve"><value>Toast</value></data>
+  <data name="Memory.Symbol.fruits-22.Name" xml:space="preserve"><value>Törtchen</value></data>
+  <data name="Memory.Symbol.fruits-23.Name" xml:space="preserve"><value>Kuchen</value></data>
+  <data name="Memory.Symbol.fruits-24.Name" xml:space="preserve"><value>Keks</value></data>
+  <data name="Memory.Symbol.fruits-25.Name" xml:space="preserve"><value>Schokolade</value></data>
+  <data name="Memory.Symbol.fruits-26.Name" xml:space="preserve"><value>Bonbon</value></data>
+  <data name="Memory.Symbol.fruits-27.Name" xml:space="preserve"><value>Kaffee</value></data>
+  <data name="Memory.Symbol.fruits-28.Name" xml:space="preserve"><value>Tee</value></data>
+  <data name="Memory.Symbol.fruits-29.Name" xml:space="preserve"><value>Milchshake</value></data>
+  <data name="Memory.Symbol.fruits-30.Name" xml:space="preserve"><value>Honig</value></data>
+  <data name="Memory.Symbol.fruits-31.Name" xml:space="preserve"><value>Erdnüsse</value></data>
+  <data name="Memory.Symbol.fruits-32.Name" xml:space="preserve"><value>Popcorn</value></data>
+</root>

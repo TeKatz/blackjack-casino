@@ -32,7 +32,7 @@ internal static class MemoryLoungeModule
             SortOrder: 40,
             Status: () => progress.ActiveGame is null
                 ? $"{progress.CompletedGames.Count:N0} games complete"
-                : $"Resume · {progress.ActiveGame.Difficulty} · {MemoryCatalog.GetDeck(progress.ActiveGame.DeckId).Name}");
+                : $"Resume · {progress.ActiveGame.Difficulty} · {MemoryTextLocalization.Deck(MemoryCatalog.GetDeck(progress.ActiveGame.DeckId)).Name}");
 
         return new LoungeHostedGame(
             definition,
@@ -121,7 +121,7 @@ internal sealed class MemoryLoungeHub : UserControl, IDisposable
             var resumePanel = Panel();
             var resumeStack = new StackPanel();
             resumeStack.Children.Add(Label("CURRENT TABLE", 10, "#D5B879"));
-            resumeStack.Children.Add(Label(MemoryCatalog.GetDeck(active.DeckId).Name, 19, "#F2E3C5", FontWeights.SemiBold));
+            resumeStack.Children.Add(Label(MemoryTextLocalization.Deck(MemoryCatalog.GetDeck(active.DeckId)).Name, 19, "#F2E3C5", FontWeights.SemiBold));
             resumeStack.Children.Add(Label($"{active.Difficulty} · {active.PairsFound} / {active.PairCount} pairs · {active.Moves} moves", 11, "#9DB2A8"));
             Button resume = ActionButton("RESUME", "MemoryResume");
             resume.Margin = new Thickness(0, 12, 0, 0);
@@ -135,12 +135,13 @@ internal sealed class MemoryLoungeHub : UserControl, IDisposable
         deckPanel.Margin = new Thickness(0, progress.ActiveGame is null ? 0 : 12, 0, 0);
         var deckStack = new StackPanel();
         deckStack.Children.Add(Label("CARD DECK", 10, "#D5B879"));
+        MemoryDeckDefinition[] displayDecks = MemoryTextLocalization.Decks();
         var deckPicker = new ComboBox
         {
             Name = "MemoryDeckPicker",
-            ItemsSource = MemoryCatalog.Decks,
+            ItemsSource = displayDecks,
             DisplayMemberPath = nameof(MemoryDeckDefinition.Name),
-            SelectedItem = MemoryCatalog.GetDeck(progress.PreferredDeckId),
+            SelectedItem = displayDecks.First(deck => deck.Id == progress.PreferredDeckId),
             Margin = new Thickness(0, 8, 0, 0),
             Padding = new Thickness(8, 6, 8, 6),
             IsEnabled = progress.ActiveGame is null,
@@ -166,7 +167,7 @@ internal sealed class MemoryLoungeHub : UserControl, IDisposable
         deckStack.Children.Add(deckPicker);
         deckStack.Children.Add(preview);
         deckStack.Children.Add(description);
-        RefreshDeckPresentation(MemoryCatalog.GetDeck(progress.PreferredDeckId));
+        RefreshDeckPresentation(MemoryTextLocalization.Deck(MemoryCatalog.GetDeck(progress.PreferredDeckId)));
         deckPanel.Child = deckStack;
         side.Children.Add(deckPanel);
 
@@ -368,7 +369,7 @@ internal sealed class MemoryView : UserControl, IDisposable
         root.RowDefinitions.Add(new RowDefinition());
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-        MemoryDeckDefinition deck = MemoryCatalog.GetDeck(game.DeckId);
+        MemoryDeckDefinition deck = MemoryTextLocalization.Deck(MemoryCatalog.GetDeck(game.DeckId));
         var header = new Grid { Margin = new Thickness(0, 0, 0, 14) };
         header.ColumnDefinitions.Add(new ColumnDefinition());
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -578,7 +579,7 @@ internal sealed class MemoryView : UserControl, IDisposable
         if (!cardButtons.TryGetValue(index, out Button? card)) return;
         bool matched = game.MatchedIndices.Contains(index);
         bool faceUp = matched || game.FaceUpIndices.Contains(index);
-        MemorySymbol? symbol = faceUp ? MemoryCatalog.Symbol(game.DeckId, game.Cards[index]) : null;
+        MemorySymbol? symbol = faceUp ? MemoryTextLocalization.Symbol(MemoryCatalog.Symbol(game.DeckId, game.Cards[index])) : null;
         card.Content = new MemoryCardArtwork(game.DeckId, symbol, matched);
         card.ToolTip = faceUp && symbol is not null ? symbol.Name : "Flip card";
         card.Opacity = 1;
