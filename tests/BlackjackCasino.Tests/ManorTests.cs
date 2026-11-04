@@ -70,6 +70,21 @@ public sealed class ManorTests
         Assert.Throws<OverflowException>(()=>new ManorSession(overflow).Start(1));
     }
 
+    [Fact]
+    public void HighManorBetSurvivesSettingsSaveAndReload()
+    {
+        string directory=Path.Combine(Path.GetTempPath(),"manor-highbet-"+Guid.NewGuid().ToString("N"));
+        try
+        {
+            PlayerStateStore.SaveOrThrow(new AppPreferences { ManorBet=5_000m },directory);
+            Assert.Equal(5_000m,PlayerStateStore.Load(directory).ManorBet);
+        }
+        finally
+        {
+            if(Directory.Exists(directory)) Directory.Delete(directory,true);
+        }
+    }
+
     [Theory]
     [InlineData(2_500)]
     [InlineData(5_000)]

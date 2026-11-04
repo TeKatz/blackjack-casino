@@ -29,9 +29,15 @@ public sealed class ManorPreviewProtocolTests
         Assert.Equal(25m,command.Bet);
         foreach(string highBet in new[]{"2500","5000"})
         {
-            Assert.True(ManorPreviewProtocol.TryParseCommand(url,
-                "{\\"protocolVersion\\":2,\\"type\\":\\"spin.paid\\",\\"requestId\\":\\"highBet\\",\\"expectedRevision\\":\\"0\\",\\"bet\\":\\""+highBet+"\\"}",
-                out var highCommand));
+            string body=JsonSerializer.Serialize(new
+            {
+                protocolVersion=2,
+                type="spin.paid",
+                requestId="highBet",
+                expectedRevision="0",
+                bet=highBet,
+            });
+            Assert.True(ManorPreviewProtocol.TryParseCommand(url,body,out var highCommand));
             Assert.Equal(decimal.Parse(highBet),highCommand!.Bet);
         }
         Assert.True(ManorPreviewProtocol.TryParseCommand(

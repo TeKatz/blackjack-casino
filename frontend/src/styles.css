@@ -654,7 +654,7 @@ html,body,#root{height:100%;overflow:hidden}
   align-items:center;column-gap:14px;min-height:136px;padding:8px 6px 4px}
 .machine .stake-control{min-width:0;gap:6px}
 .machine .stake-control label{font-size:10px;line-height:1.15}
-.machine .bet-input{min-height:45px;max-width:210px;padding:5px 12px}
+.machine .bet-input{min-height:51px;max-width:210px;padding:5px 12px}
 .machine .bet-input input{font-size:21px;width:125px}
 .preset-bets{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
 .bet-chip,.auto-chip{border:1px solid #886d5e;background:linear-gradient(160deg,#322634,#1d222c);
@@ -666,7 +666,7 @@ html,body,#root{height:100%;overflow:hidden}
 .bet-chip:disabled,.auto-chip:disabled{opacity:.34;cursor:not-allowed}
 .bet-chip:focus-visible,.auto-chip:focus-visible{outline:2px solid #ffe5b6;outline-offset:2px}
 .machine .main-actions{min-width:0;align-items:stretch;gap:7px}
-.machine .main-actions .gold-button{width:100%;max-width:none;min-width:0;min-height:50px;
+.machine .main-actions .gold-button{width:100%;max-width:none;min-width:0;min-height:58px;
   padding:9px 12px;font-size:14px}
 .auto-spin-controls{display:flex;justify-content:space-between;align-items:center;
   gap:8px;flex-wrap:wrap;min-height:30px}
@@ -678,9 +678,9 @@ html,body,#root{height:100%;overflow:hidden}
   min-width:120px}
 @media(max-height:720px){
  .machine .action-console{min-height:113px;padding:4px;gap:10px}
- .machine .bet-input{min-height:38px}
+ .machine .bet-input{min-height:40px}
  .machine .bet-input input{font-size:18px}
- .machine .main-actions .gold-button{min-height:44px;font-size:12px}
+ .machine .main-actions .gold-button{min-height:45px;font-size:12px}
  .bet-chip,.auto-chip{min-height:24px;font-size:9px}
  .auto-spin-controls{min-height:25px}
  .bonus-story .bonus-message,.bonus-story .bonus-ghost-clue{padding:2px 5px;font-size:9px}

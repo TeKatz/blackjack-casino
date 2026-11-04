@@ -146,6 +146,22 @@ internal static class Program
                 Require(modernGameplay.Contains("SPIN THE REELS", StringComparison.OrdinalIgnoreCase)
                     || modernGameplay.Contains("PLAY FREE SPIN", StringComparison.OrdinalIgnoreCase),
                     "Modern Manor did not expose gameplay controls after loading.");
+                string polishedControls = await modernBrowser.CoreWebView2.ExecuteScriptAsync(
+                    "(()=>{const bets=[...document.querySelectorAll('.preset-bets .bet-chip')];" +
+                    "const auto=[...document.querySelectorAll('.auto-buttons .auto-chip')];" +
+                    "return bets.length===6 && auto.length===4" +
+                    "&& bets.some(b=>b.textContent?.includes('5,000'))" +
+                    "&& document.querySelector('#manor-bet')?.max==='5000'" +
+                    "&& !document.body.innerText.includes('C#');})()");
+                Require(polishedControls.Equals("true",StringComparison.OrdinalIgnoreCase),
+                    "The Manor must expose six fixed stakes, auto-spins, and no technical C# text.");
+                await Task.Delay(450);
+                var splashShell=Application.Current.Windows.OfType<ModernManorPreviewWindow>().Single();
+                var splashField=typeof(ModernManorPreviewWindow).GetField("splash",
+                    System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!;
+                var splashPanel=(Border)splashField.GetValue(splashShell)!;
+                Require(splashPanel.Visibility==Visibility.Collapsed,
+                    "The Manor branded startup cover never yielded to the ready WebView2 game.");
                 // The DOM title alone is not enough: require the real Pixi canvas to
                 // initialize in the packaged WebView2 build and capture it for review.
                 var canvasClock = Stopwatch.StartNew();
