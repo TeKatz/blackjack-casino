@@ -44,6 +44,9 @@ jobs:
       - name: Localization resource parity
         run: python tools/check_localization.py
 
+      - name: Migrated German shell coverage
+        run: python tools/check_localization_coverage.py --strict-shell
+
       - name: Adventure localization sanity checks
         run: python tools/check_adventure_localization.py
 
