@@ -105,12 +105,21 @@ internal static class Program
 
                 Require(window.Modes.Modes.Any(mode => mode.Id == "nine-lives"), "Nine Lives was not registered in the lobby.");
 
-                // The modern Manor now has paid spins/free spins and room choices
-                // wired into the same transactional C# engine. This UI smoke does NOT
-                // place a paid test wager; isolated xUnit integration tests verify that.
+                // The approved Manor replacement has a single primary lobby action.
+                // Verify that we enter the modern WebView2 presentation, rather than
+                // relying on a retired secondary playtest or WPF legacy selector.
+                // This UI smoke does not wager; xUnit covers transactional settlement.
                 Require(ModernManorPreviewWindow.IsAvailable, "Modern Manor assets were not copied to the smoke runner.");
-                Require(window.Modes.HasSecondary("midnight-manor"), "Modern Manor preview is missing from the lobby registry.");
-                window.Modes.OpenSecondary("midnight-manor");
+                Require(window.Modes.Modes.Count(mode => mode.Id == "midnight-manor") == 1,
+                    "The lobby must register exactly one Midnight Manor game.");
+                Require(window.Modes.CanOpen("midnight-manor") && !window.Modes.HasSecondary("midnight-manor"),
+                    "Midnight Manor must open solely through the primary lobby action.");
+                Require(Find<Button>(window).Count(button => button.Name == "Mode_midnight_manor") == 1
+                    && !Find<Button>(window).Any(button => button.Name == "ModeSecondary_midnight_manor"),
+                    "Midnight Manor has duplicate player-selectable buttons.");
+                window.Modes.Open("midnight-manor");
+                Require(window.Title == "Midnight Manor · Blackjack Casino",
+                    "The primary Manor action did not activate the modern game host.");
                 await Task.Delay(200);
                 WebView2 modernBrowser = Find<WebView2>(window).Single();
                 var modernClock = Stopwatch.StartNew();
@@ -259,8 +268,9 @@ internal static class Program
                 }
                 Require(Application.Current.Windows.Cast<Window>().Count(w => w.IsVisible) == 1,
                     "Modern Manor opened another visible native window.");
-                Window modernShell = Application.Current.Windows.Cast<Window>()
-                    .Single(w => w.Title.Contains("Playtest", StringComparison.Ordinal));
+                // The modern game is embedded in MainWindow: no separate native
+                // Playtest window exists after the official Manor replacement.
+                Window modernShell = window;
                 double savedWidth=modernShell.Width, savedHeight=modernShell.Height;
                 try
                 {
@@ -330,7 +340,7 @@ internal static class Program
                 modernShell.Close();
                 await Task.Delay(120);
                 Require(Find<CasinoLobbyView>(window).Any(v => v.IsVisible),
-                    "Modern Manor preview did not restore the casino lobby.");
+                    "Modern Manor did not restore the casino lobby.");
 
                 NavigationSmoke.OpenCovered(window, "nine-lives");
                 await Task.Delay(260);
