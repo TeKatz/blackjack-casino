@@ -2,7 +2,7 @@
 
 ## Current Development publisher for Midnight Manor modernization (2026-11-04)
 
-The current source branch is **`feature/manor-modernization-phase-1`**, selected in both the `on.push.branches` filter and the `publish-development.if` guard of `.github/workflows/development-release.yml`. All future tested pushes on the same branch can publish through the usual in-app Development channel **without merging into main**. The manifest URL, updater, package naming, SemVer ordering and SHA-256 verification do not change. The unintended Phase-1 merge to main is corrected in a non-force follow-up commit.
+The current source branch is **`feature/manor-modernization-phase-1`**, selected in both the `on.push.branches` filter and the `publish-development.if` guard of `.github/workflows/development-release.yml`. All future tested pushes on the same branch can publish through the usual in-app Development channel **without merging into main**. The modern Manor is now the sole lobby-launched Manor; legacy WPF code remains only as a source-level rollback option. The manifest URL, updater, package naming, SemVer ordering and SHA-256 verification do not change. The unintended Phase-1 merge to main is corrected in a non-force follow-up commit.
 
 
 The in-app Development manifest remains:

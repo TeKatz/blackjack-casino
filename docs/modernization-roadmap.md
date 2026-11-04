@@ -1,6 +1,6 @@
 # Modern casino frontend — staged migration roadmap
 
-**Implementation status (2026-11-04):** The game director authorized the pilot and requested ongoing Development testing directly from the feature branch, without merging into main. Branch `feature/manor-modernization-phase-1` now includes the **Phase-3 engineering-complete premium pilot**: React/TypeScript/PixiJS/WebView2 renders modern reels and six bonus chamber scenes, while a restricted, revisioned C# bridge commits spins, bonus choices and recovery-safe settlements. The WPF Manor remains the primary path and fallback. The frontend does not determine outcomes or directly modify wallets.
+**Implementation status (2026-11-04):** The game director authorized the pilot and requested ongoing Development testing directly from the feature branch, without merging into main. Branch `feature/manor-modernization-phase-1` now includes the **Phase-3 engineering-complete premium pilot**: React/TypeScript/PixiJS/WebView2 renders modern reels and six bonus chamber scenes, while a restricted, revisioned C# bridge commits spins, bonus choices and recovery-safe settlements. As of 2026-11-04, the modern Manor is the only lobby-selectable Manor. The WPF implementation remains in source for deliberate rollback only. The frontend does not determine outcomes or directly modify wallets.
 
 ## Why this direction
 
@@ -81,7 +81,7 @@ See [AGENTS.md](../AGENTS.md), [architecture](architecture.md), [Midnight Manor 
 - Added `frontend/` with TypeScript, React, PixiJS, Vite and Vitest. Top-level dependencies are exact-version pinned; **transitive lockfile still required** before full rollout.
 - WPF WebView2 preview maps a local folder to `https://midnight-manor.local/index.html`. Navigation and messages are origin-checked. Allowed command types: `client.ready`, `snapshot.request`, `ui.close`.
 - Phase 1 sent only read-only snapshots. Phase 2 additionally accepts strictly validated user *intents*. Money is formatted and settled only in C#, with no browser balance or result authority. Empty saves use fixed, non-random symbols.
-- The existing Midnight Manor primary action remains fully playable; a secondary **MODERN MANOR · PLAYTEST** action opens the Phase-2 alternative only when compiled frontend files exist.
+- Phase-1 history: WPF initially owned the primary Manor tile and a secondary **MODERN MANOR · PLAYTEST** action launched the alternative. This has been superseded: the primary tile opens modern Manor, with no secondary selection.
 - CI, Development and Stable publisher workflows now install/test/build the frontend before dotnet build/publish. No updater protocol changes.
 - Remaining before replacement: end-to-end WebView2 smoke with screenshots, locked transitive dependencies, measured performance baseline, complete state/action bridge, full feature screens, graphic assets, accessibility and tester acceptance.
 

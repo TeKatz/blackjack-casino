@@ -1,7 +1,7 @@
 # Midnight Manor 2.0 — Phase 3 technical closeout and player sign-off
 
-**Status:** Phase-3 engineering scope implemented. CI and Development publisher must pass on the final branch HEAD; game-director acceptance remains open.
-**Branch:** `feature/manor-modernization-phase-1`. **Release channel:** existing `development`. **Main and WPF baseline:** unchanged.
+**Status:** Phase-3 engineering scope implemented. On 2026-11-04 the game director authorized the modern Manor as the only selectable lobby presentation, replacing the original WPF view. CI/Development publication for this switch must still pass; real-hardware visual, sound and performance testing remains ongoing.
+**Branch:** `feature/manor-modernization-phase-1`. **Release channel:** existing `development`. **Main:** unchanged. **WPF:** source-only rollback, no lobby option.
 
 ## Testable deliverables
 
@@ -22,10 +22,10 @@
 - Development tag target exactly equals the tested feature branch SHA; ZIP, updater manifest and checksum asset match.
 - StartupSmoke evidence contains `modern-manor-rules-en.png`, `modern-manor-rules-de.png`, `modern-manor-bilingual-hud.png` or the latest phase-3 PNG, `modern-manor-compact-host.png` and `modern-manor-idle-frame-sample.json`.
 - No new RNG/paytable/payout calculation, wager side effect, external media dependency or save-format migration.
-- The original WPF Manor and existing Development updater remain usable as rollback mechanisms.
+- The original WPF Manor remains in source for a controlled rollback build, not as an in-app fallback; the Development updater remains unchanged.
 
 ## Remaining game-director checks (not automatable here)
 
 Install and play from the Development channel, test audio on real speakers/headset and display scaling at 100/125/150/200%. Run for 30 minutes on the target gaming PC, record CPU/GPU/RAM/VRAM and Pixi diagnostics, and try all saved-feature reopen paths. Confirm subjective readability of six rooms, symbols and bonus announcements. If issues arise, keep Phase 3 open for fixes; otherwise approve the pilot's visual/audio quality separately.
 
-**Do not merge to main, retarget the updater, delete the WPF implementation or start the final shell migration without explicit authorization.**
+**The Manor presentation switch was authorized. No merge to main, updater retargeting, WPF source deletion or complete shell migration was authorized.**
