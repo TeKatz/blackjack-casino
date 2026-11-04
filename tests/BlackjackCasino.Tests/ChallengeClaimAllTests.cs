@@ -27,7 +27,11 @@ public sealed class ChallengeClaimAllTests
     [Fact]
     public void EveryEndgameGoalRequiresItsExactBoundaryAndCanBeClaimedOnlyOnce()
     {
-        foreach (ChallengeDefinition challenge in ChallengeCatalog.All.Where(challenge => challenge.IsEndgame))
+        // Jigsaw Platinum achievements are auto-awarded with their puzzle completion
+        // transaction, not independently claimable. Their cross-menu idempotence and
+        // goal tracking are covered by JigsawCentralChallengeTests.
+        foreach (ChallengeDefinition challenge in ChallengeCatalog.All.Where(challenge =>
+                     challenge.IsEndgame && challenge.Category != ChallengeCategory.Jigsaw))
         {
             var profile = new PlayerProfileState();
             var service = new ProgressionService(profile);
