@@ -337,10 +337,16 @@ internal static class Program
                     modernShell.Width=savedWidth;
                     modernShell.Height=savedHeight;
                 }
-                modernShell.Close();
-                await Task.Delay(120);
-                Require(Find<CasinoLobbyView>(window).Any(v => v.IsVisible),
-                    "Modern Manor did not restore the casino lobby.");
+                // Leave through the actual frontend Back control. Closing modernShell
+                // here would close MainWindow itself, not the embedded Manor game.
+                await modernBrowser.CoreWebView2.ExecuteScriptAsync(
+                    "document.querySelector('.topbar-actions button:last-of-type')?.click()");
+                var returnClock = Stopwatch.StartNew();
+                while (returnClock.Elapsed < TimeSpan.FromSeconds(5)
+                    && !Find<CasinoLobbyView>(window).Any(v => v.IsVisible))
+                    await Task.Delay(80);
+                Require(window.IsVisible && Find<CasinoLobbyView>(window).Any(v => v.IsVisible),
+                    "Modern Manor Back control did not return to the visible casino lobby.");
 
                 NavigationSmoke.OpenCovered(window, "nine-lives");
                 await Task.Delay(260);
