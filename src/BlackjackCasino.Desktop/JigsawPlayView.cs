@@ -418,7 +418,7 @@ internal sealed class JigsawBoardSurface : FrameworkElement
         if (e.ChangedButton == MouseButton.Right)
         {
             int? piece = BoardHit(point);
-            if (piece is int id && JigsawGame.ReturnToTray(game, id))
+            if (piece is int trayReturnId && JigsawGame.ReturnToTray(game, trayReturnId))
             {
                 pendingTrayPiece = null;
                 InvalidateVisual();
