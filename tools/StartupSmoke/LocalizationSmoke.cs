@@ -7,6 +7,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using BlackjackCasino.Desktop;
+using BlackjackCasino.Core;
 
 internal static class LocalizationSmoke
 {
@@ -44,6 +45,7 @@ internal static class LocalizationSmoke
         Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "PLATZ NEHMEN   →"),
             "Casino lobby call-to-action did not switch to German.");
 
+        CheckGermanShellWindows(window);
         SaveScreenshot(window, Path.Combine(output, "localization-german-lobby.png"));
 
         window.Modes.Open("blackjack");
@@ -175,6 +177,61 @@ internal static class LocalizationSmoke
             "Casino lobby headline did not switch back to English without a restart.");
         Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "VAULT FULL"),
             "Dynamic Vault header did not switch back to English.");
+    }
+
+    private static void CheckGermanShellWindows(MainWindow owner)
+    {
+        var profile = new PlayerProfileState { DisplayName = "Testspieler", Level = 75, Prestige = 3, Coins = 1500 };
+        Type welcomeType = typeof(MainWindow).Assembly.GetType(
+            "BlackjackCasino.Desktop.StartupWelcomeWindow", throwOnError: true)!;
+        ConstructorInfo constructor = welcomeType.GetConstructor(
+            BindingFlags.Instance | BindingFlags.NonPublic,
+            binder: null, new[] { typeof(PlayerProfileState) }, modifiers: null)
+            ?? throw new InvalidOperationException("Missing startup welcome constructor.");
+        var welcome = (Window)constructor.Invoke([profile]);
+        welcome.Owner = owner;
+        try
+        {
+            welcome.Show();
+            welcome.UpdateLayout();
+            Require(Find<TextBlock>(welcome).Any(x => x.Text == "Willkommen zurück, Testspieler."),
+                "German welcome failed to localize its personalized greeting.");
+            Require(Find<TextBlock>(welcome).Any(x => x.Text == "Änderungen dieser Version"),
+                "German welcome still displays an English changelog heading.");
+            Require(Find<Button>(welcome).Any(x => Equals(x.Content, "CLUB BETRETEN  →")),
+                "German welcome action remained English.");
+        }
+        finally { welcome.Close(); }
+
+        using var controller = new PlayerProgressionController(profile);
+        var playerWindow = new PlayerProfileWindow(controller) { Owner = owner };
+        try
+        {
+            playerWindow.Show();
+            playerWindow.UpdateLayout();
+            Require(Find<TextBlock>(playerWindow).Any(x => x.Text == "Deine Casino-Identität"),
+                "Player profile identity heading remained English.");
+            Require(Find<TextBlock>(playerWindow).Any(x => x.Text.Contains("Stufe 75", StringComparison.Ordinal)),
+                "Player profile level summary remained English.");
+            Require(Find<Button>(playerWindow).Any(x => Equals(x.Content, "Fortschritt & Shop →")),
+                "Player profile progression action remained English.");
+        }
+        finally { playerWindow.Close(); }
+
+        var rulesWindow = new TableRulesDialog(TablePresets.Get(TablePresetId.Casual).Rules) { Owner = owner };
+        try
+        {
+            rulesWindow.Show();
+            rulesWindow.UpdateLayout();
+            Require(Find<TextBlock>(rulesWindow).Any(x => x.Text == "Erweiterte Tischregeln"),
+                "Advanced table rules heading remained English.");
+            Require(Find<Button>(rulesWindow).Any(x => Equals(x.Content, "Eigene Regeln verwenden")),
+                "Advanced table setup action remained English.");
+            Require(Find<ComboBox>(rulesWindow).Any(x =>
+                x.Items.OfType<string>().Any(v => v.Contains("weichen 17", StringComparison.Ordinal))),
+                "Advanced table setup combo-box values remained English.");
+        }
+        finally { rulesWindow.Close(); }
     }
 
     private static bool IsVisibleGamesButton(Button button, string label)
