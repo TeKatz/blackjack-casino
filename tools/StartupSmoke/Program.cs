@@ -75,6 +75,7 @@ internal static class Program
                 await Task.Delay(180);
                 window.UpdateLayout();
                 Require(window.IsVisible, "Main window never became visible.");
+                CheckWelcomeOverlay(window, profile, output);
                 Require(window.Icon is not null && window.Template.FindName("CasinoTitleBar", window) is FrameworkElement { IsVisible: true }, "The desktop icon or custom title bar is missing.");
                 await WindowFrameSmoke.Run(window);
                 object originalContent = window.Content;
@@ -259,6 +260,57 @@ internal static class Program
         window.Show();
         app.Run();
         return exit;
+    }
+
+    // Exercise the actual WPF welcome layout with intentionally long generated titles,
+    // rather than trusting a short static announcement as the only test case.
+    private static void CheckWelcomeOverlay(MainWindow owner, PlayerProfileState profile, string output)
+    {
+        Require(owner.IsLoaded && owner.IsVisible &&
+            Find<CasinoLobbyView>(owner).Any(lobby => lobby.IsVisible),
+            "The casino lobby must be fully prepared before showing the startup welcome.");
+
+        Type welcomeType = typeof(MainWindow).Assembly.GetType(
+            "BlackjackCasino.Desktop.StartupWelcomeWindow", throwOnError: true)!;
+        var constructor = welcomeType.GetConstructor(
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic,
+            binder: null, new[] { typeof(PlayerProfileState) }, modifiers: null)
+            ?? throw new InvalidOperationException("Welcome constructor is missing.");
+        var welcome = (Window)constructor.Invoke([profile]);
+        welcome.Owner = owner;
+        try
+        {
+            welcome.Show();
+            welcome.UpdateLayout();
+            ScrollViewer notesScroll = Find<ScrollViewer>(welcome).Single(scroll =>
+                scroll.Content is StackPanel notes &&
+                Find<TextBlock>(notes).Any(label => label.Text == "Tonight's changes"));
+            StackPanel content = (StackPanel)notesScroll.Content;
+            TextBlock longHeading = Find<TextBlock>(content).First(label =>
+                label.FontWeight == FontWeights.Bold && Math.Abs(label.FontSize - 12) < .01);
+            longHeading.Text = "Translate Dead Man's Hand investigation decisions, evidence board " +
+                "and consequences for all chapters while preserving loaded adventure saves and " +
+                "making every release note readable without horizontal clipping.";
+            welcome.UpdateLayout();
+            notesScroll.UpdateLayout();
+
+            Require(owner.Opacity > .99 && Find<CasinoLobbyView>(owner).Any(lobby => lobby.IsVisible),
+                "The welcome dialog must have a visible casino lobby as its owner/backdrop.");
+            Require(notesScroll.HorizontalScrollBarVisibility == ScrollBarVisibility.Disabled &&
+                notesScroll.VerticalScrollBarVisibility == ScrollBarVisibility.Auto,
+                "Release notes must scroll vertically, not clip or scroll sideways.");
+            Require(notesScroll.ViewportWidth > 200,
+                "Release notes have no usable viewport width.");
+            Require(longHeading.TextWrapping == TextWrapping.Wrap && longHeading.ActualHeight > 30,
+                "Long changelog headings did not wrap onto multiple lines.");
+            Require(longHeading.ActualWidth <= notesScroll.ViewportWidth - 24,
+                "Changelog heading exceeds its available text column.");
+            SaveScreenshot(welcome, Path.Combine(output, "startup-welcome-long-news.png"));
+        }
+        finally
+        {
+            welcome.Close();
+        }
     }
 
     private static void SaveScreenshot(FrameworkElement element, string path)
