@@ -1,0 +1,41 @@
+name: Modern Manor frontend
+
+on:
+  push:
+    branches: [main, "feature/**", "fix/**"]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/modern-frontend.yml"
+  pull_request:
+    paths:
+      - "frontend/**"
+      - ".github/workflows/modern-frontend.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  frontend-test-build:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install exact top-level dependencies
+        working-directory: frontend
+        run: npm install --no-package-lock --no-audit --no-fund
+      - name: Frontend bridge tests
+        working-directory: frontend
+        run: npm test
+      - name: Type-check and build PixiJS/React
+        working-directory: frontend
+        run: npm run build
+      - uses: actions/upload-artifact@v7
+        with:
+          name: modern-manor-frontend
+          path: frontend/dist
+          if-no-files-found: error
+          retention-days: 14
