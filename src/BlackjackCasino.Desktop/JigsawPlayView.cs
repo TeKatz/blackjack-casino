@@ -288,7 +288,7 @@ internal sealed class JigsawBoardSurface : FrameworkElement
 
         Rect tray = Tray;
         dc.DrawRoundedRectangle(trayFill, new Pen(LoungeUi.Ink("#6E805E"), 1), tray, 9, 9);
-        DrawText(dc, JigsawText.T("PIECE TRAY · Select, then drag to the board", "TEILEABLAGE · Auswählen und aufs Spielfeld ziehen"), new Point(tray.X + 16, tray.Y + 8), 12,
+        DrawText(dc, JigsawText.T("PIECE TRAY · Drag to board, drag back to return", "TEILEABLAGE · Aufs Spielfeld ziehen oder zurücklegen"), new Point(tray.X + 16, tray.Y + 8), 12,
             LoungeUi.Ink("#DBBB7B"));
         IReadOnlyList<JigsawPieceState> pending = CurrentPage();
         double pitch = Math.Min(102, (tray.Width - 32) / Math.Max(1, PageSize));
@@ -397,6 +397,18 @@ internal sealed class JigsawBoardSurface : FrameworkElement
             e.Handled = true;
             return;
         }
+        if (e.ChangedButton == MouseButton.Right)
+        {
+            int? piece = BoardHit(point);
+            if (piece is int id && JigsawGame.ReturnToTray(game, id))
+            {
+                pendingTrayPiece = null;
+                InvalidateVisual();
+                commit();
+            }
+            e.Handled = true;
+            return;
+        }
         if (e.ChangedButton != MouseButton.Left) return;
         Focus();
         int? tray = TrayHit(point);
@@ -474,7 +486,9 @@ internal sealed class JigsawBoardSurface : FrameworkElement
         if (e.ChangedButton != MouseButton.Left && e.ChangedButton != MouseButton.Middle) return;
         if (movingPiece && activePiece is int id)
         {
-            JigsawGame.Snap(game, id);
+            // A dropped group returns to the tray instead of vanishing off-screen.
+            if (Tray.Contains(e.GetPosition(this))) JigsawGame.ReturnToTray(game, id);
+            else JigsawGame.Snap(game, id);
             movingPiece = false;
             activePiece = null;
             InvalidateVisual();
