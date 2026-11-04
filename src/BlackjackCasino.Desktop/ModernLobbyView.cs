@@ -37,6 +37,9 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
     internal bool Ready => ready && !failed;
     internal bool Failed => failed;
     internal string? FailureReason { get; private set; }
+    internal string? LastNavigation { get; private set; }
+    internal string? LastMessageSource { get; private set; }
+    internal string? LastMessageType { get; private set; }
     internal WebView2 Browser => browser;
 
     internal ModernLobbyView(CasinoModeRegistry modes, Func<object> snapshot,
@@ -101,6 +104,7 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
             core.PermissionRequested += (_, args) => args.State = CoreWebView2PermissionState.Deny;
             core.NavigationCompleted += (_, args) =>
             {
+                LastNavigation = args.IsSuccess ? "success" : "failure: " + args.WebErrorStatus;
                 if (!args.IsSuccess) Fail("Lobby navigation failed: " + args.WebErrorStatus);
             };
             core.ProcessFailed += (_, args) => Fail("Lobby browser process failed: " + args.ProcessFailedKind);
@@ -128,6 +132,8 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
 
     private void OnMessage(object? sender, CoreWebView2WebMessageReceivedEventArgs args)
     {
+        LastMessageSource = args.Source;
+        LastMessageType = args.WebMessageAsJson.Length <= 1024 ? args.WebMessageAsJson : "oversize";
         if (disposed || failed || !Trusted(args.Source) || args.WebMessageAsJson.Length > 1024) return;
         try
         {
