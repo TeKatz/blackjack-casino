@@ -20,6 +20,7 @@ public sealed class JigsawCentralChallengeTests
             Assert.Equal(achievement.Goal, entry.Goal);
             Assert.Equal(achievement.CoinReward, entry.CoinReward);
             Assert.Equal(ChallengeMetric.JigsawAchievement, entry.Metric);
+            Assert.Equal(achievement.Tier == JigsawAchievementTier.Platinum, entry.IsEndgame);
         });
     }
 
