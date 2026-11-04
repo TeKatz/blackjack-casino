@@ -121,7 +121,8 @@ internal static class Program
                 Require(window.Title == "Midnight Manor · Blackjack Casino",
                     "The primary Manor action did not activate the modern game host.");
                 await Task.Delay(200);
-                WebView2 modernBrowser = Find<WebView2>(window).Single();
+                // The modern lobby has its own WebView2; target the embedded Manor browser explicitly.
+                WebView2 modernBrowser = Find<WebView2>(window).Single(browser => browser.Name == "ModernManorBrowser");
                 var modernClock = Stopwatch.StartNew();
                 string modernTitle = string.Empty;
                 while (modernClock.Elapsed < TimeSpan.FromSeconds(15))
