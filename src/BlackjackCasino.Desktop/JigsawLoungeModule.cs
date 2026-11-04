@@ -122,20 +122,35 @@ internal sealed class JigsawLoungeHub : UserControl, IDisposable
         JigsawStatistics stats = statistics();
         stats.Normalize();
         var left = new StackPanel();
-        left.Children.Add(PremiumLoungeTheme.Heading(JigsawText.T("A moment of calm", "Ein Moment der Ruhe")));
-        left.Children.Add(PremiumLoungeTheme.Label(
-            JigsawText.T("Pick the artwork you love. Choose a piece count from 24 to 1,000, then take your time.", "Wähle dein Lieblingsmotiv und zwischen 24 und 1.000 Teilen. Du hast alle Zeit der Welt."),
-            15, PremiumLoungeTheme.Cream));
-        left.Children.Add(PremiumLoungeTheme.Stats(
+        var intro = PremiumLoungeTheme.Heading(JigsawText.T("A moment of calm", "Ein Moment der Ruhe"));
+        intro.Margin = new Thickness(6, 0, 6, 8);
+        left.Children.Add(intro);
+        var invitation = PremiumLoungeTheme.Label(
+            JigsawText.T("Choose your favorite scene and puzzle at your own pace.",
+                "Wähle dein Lieblingsmotiv und puzzle ganz in deinem Tempo."),
+            14, PremiumLoungeTheme.Cream);
+        invitation.Margin = new Thickness(6, 0, 6, 16);
+        left.Children.Add(invitation);
+        var statsFrame = (Border)PremiumLoungeTheme.Stats(
             JigsawText.T("COMPLETED   ", "ABGESCHLOSSEN   ") + stats.CompletedGames.ToString("N0"),
             JigsawText.T("PIECES PLACED   ", "TEILE GELEGT   ") + stats.PiecesCompleted.ToString("N0"),
-            JigsawText.T("LARGEST PUZZLE   ", "GRÖSSTES PUZZLE   ") + stats.LargestPuzzle.ToString("N0")));
+            JigsawText.T("LARGEST PUZZLE   ", "GRÖSSTES PUZZLE   ") + stats.LargestPuzzle.ToString("N0"));
+        statsFrame.Margin = new Thickness(0, 0, 0, 13);
+        left.Children.Add(statsFrame);
 
-        // Difficulty and options stay below statistics on the left; the right remains an artwork gallery.
-        left.Children.Add(PremiumLoungeTheme.Heading(JigsawText.T("01  SELECT PIECE COUNT", "01  TEILEANZAHL AUSWÄHLEN")));
+        var sizeContents = new StackPanel();
+        var sizeHeading = PremiumLoungeTheme.Heading(
+            JigsawText.T("01  SELECT PIECE COUNT", "01  TEILEANZAHL AUSWÄHLEN"));
+        sizeHeading.Margin = new Thickness(3, 1, 0, 11);
+        sizeContents.Children.Add(sizeHeading);
         var right = new StackPanel();
-        right.Children.Add(PremiumLoungeTheme.Heading(JigsawText.T("02  CHOOSE YOUR SCENE", "02  MOTIV AUSWÄHLEN")));
-        var motifs = new WrapPanel { Margin = new Thickness(0, 0, 0, 18) };
+        var motifHeading = PremiumLoungeTheme.Heading(
+            JigsawText.T("02  CHOOSE YOUR SCENE", "02  MOTIV AUSWÄHLEN"));
+        motifHeading.Margin = new Thickness(4, 0, 0, 10);
+        right.Children.Add(motifHeading);
+        // Four columns, three rows: unlike WrapPanel, the gallery always fits the
+        // fixed 1760×938 Lounge canvas and never needs a vertical scrollbar.
+        var motifs = new UniformGrid { Columns = 4, Rows = 3, Margin = new Thickness(0, 0, 0, 10) };
         foreach (JigsawMotif motif in JigsawCatalog.Motifs)
         {
             bool selected = motif.Id == progress.SelectedMotifId;
@@ -143,21 +158,21 @@ internal sealed class JigsawLoungeHub : UserControl, IDisposable
             preview.Children.Add(new Image
             {
                 Source = JigsawImages.Thumbnail(motif.Id),
-                Height = 85,
-                Width = 165,
+                Height = 78,
+                Width = 150,
                 Stretch = Stretch.UniformToFill,
             });
-            preview.Children.Add(PremiumLoungeTheme.Label(JigsawText.Motif(motif.Id), 13, PremiumLoungeTheme.Cream, true,
+            preview.Children.Add(PremiumLoungeTheme.Label(JigsawText.Motif(motif.Id), 12, PremiumLoungeTheme.Cream, true,
                 TextAlignment.Center));
-            preview.Children.Add(PremiumLoungeTheme.Label(JigsawText.Category(motif.Category), 10, PremiumLoungeTheme.Muted,
+            preview.Children.Add(PremiumLoungeTheme.Label(JigsawText.Category(motif.Category), 9.5, PremiumLoungeTheme.Muted,
                 false, TextAlignment.Center));
             var option = new Button
             {
                 Name = "JigsawMotif_" + motif.Id.Replace('-', '_'),
                 Content = preview,
-                Width = 188,
-                Margin = new Thickness(0, 0, 9, 9),
-                Padding = new Thickness(7),
+                Width = 176,
+                Margin = new Thickness(0, 0, 8, 8),
+                Padding = new Thickness(6),
                 BorderThickness = new Thickness(selected ? 2 : 1),
                 BorderBrush = LoungeUi.Ink(selected ? "#5CF0D7" : "#60766D"),
                 Background = LoungeUi.Ink(selected ? "#154A47" : "#102A2B"),
@@ -174,7 +189,7 @@ internal sealed class JigsawLoungeHub : UserControl, IDisposable
         }
         right.Children.Add(motifs);
 
-        var sizes = new UniformGrid { Columns = 4, Margin = new Thickness(0, 12, 0, 15) };
+        var sizes = new UniformGrid { Columns = 4, Margin = new Thickness(0, 0, 0, 0) };
         foreach (JigsawSize size in JigsawCatalog.Sizes)
         {
             bool selected = size.Count == progress.SelectedPieceCount;
@@ -188,12 +203,26 @@ internal sealed class JigsawLoungeHub : UserControl, IDisposable
                     Content = BuildMenu();
                 },
                 primary: selected, width: 118, height: 38, gold: selected);
-            option.Margin = new Thickness(3, 3, 3, 4);
+            option.Margin = new Thickness(4, 3, 4, 5);
             sizes.Children.Add(option);
         }
-        left.Children.Add(sizes);
+        sizeContents.Children.Add(sizes);
+        left.Children.Add(new Border
+        {
+            Background = LoungeUi.Ink("#CF091E24"),
+            BorderBrush = LoungeUi.Ink("#AA8A54"),
+            BorderThickness = new Thickness(1.4),
+            CornerRadius = new CornerRadius(12),
+            Padding = new Thickness(16, 13, 16, 12),
+            Child = sizeContents,
+        });
 
-        var options = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 12) };
+        var options = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Margin = new Thickness(0, 13, 0, 7),
+        };
         options.Children.Add(PremiumLoungeTheme.Button(
             progress.TimerEnabled ? JigsawText.T("TIMER: ON", "TIMER: AN") : JigsawText.T("TIMER: OFF", "TIMER: AUS"),
             "JigsawMenuTimer",
@@ -208,10 +237,12 @@ internal sealed class JigsawLoungeHub : UserControl, IDisposable
                 persist(progress);
                 Content = BuildMenu();
             }, primary: false, width: 175, height: 39));
-        options.Children.Add(PremiumLoungeTheme.Button(
+        var achievementsButton = PremiumLoungeTheme.Button(
             JigsawText.T("ACHIEVEMENTS", "ERFOLGE") + " " + stats.UnlockedAchievementIds.Count + "/30",
             "JigsawAchievementsOpen", () => Content = BuildAchievements(),
-            primary: false, width: 275, height: 39, gold: false));
+            primary: false, width: 275, height: 39, gold: false);
+        achievementsButton.Margin = new Thickness(14, 0, 0, 0);
+        options.Children.Add(achievementsButton);
         left.Children.Add(options);
 
         if (progress.ActiveGame is JigsawGameState active)
@@ -260,7 +291,7 @@ internal sealed class JigsawLoungeHub : UserControl, IDisposable
             JigsawText.T("Twelve curated scenes from the club's illustrated collection. Every scene can be played at any size.", "Zwölf ausgewählte Motive aus der illustrierten Sammlung des Clubs. Jedes Motiv ist in allen Größen spielbar."),
             left, right,
             JigsawText.T("No time limits. No penalties for using the reference picture. Progress saves automatically.", "Kein Zeitlimit. Keine Nachteile durch die Bildvorlage. Dein Fortschritt wird automatisch gespeichert."),
-            compactLeft: true);
+            compactLeft: true, rightScrollable: false, centeredFeatureCopy: true);
     }
 
     private void StartNew()
