@@ -158,6 +158,16 @@ jobs:
           New-Item -ItemType Directory -Path artifacts/app/tools/updater -Force | Out-Null
           Copy-Item artifacts/updater/BlackjackCasino.Updater.exe artifacts/app/tools/updater/BlackjackCasino.Updater.exe
 
+      - name: Verify bundled Midnight Manor frontend assets
+        shell: pwsh
+        run: |
+          $index = "artifacts/app/ModernFrontend/index.html"
+          $assets = "artifacts/app/ModernFrontend/assets"
+          if (!(Test-Path $index)) { throw "Modern Manor index.html was not packaged." }
+          if (!(Test-Path $assets)) { throw "Modern Manor bundles were not packaged." }
+          $javascript = Get-ChildItem $assets -Filter "*.js" -File
+          if (!$javascript) { throw "Modern Manor JavaScript bundle missing." }
+
       - name: Generate installed release notes
         shell: pwsh
         env:
