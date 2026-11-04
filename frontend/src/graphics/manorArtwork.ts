@@ -1,4 +1,4 @@
-/** Original offline-only 600x320 SVG textures. Fourteen unique Victorian collectibles.
+/** Original offline-only 1200x640 SVG textures. Fourteen unique Victorian collectibles.
  * SVG markup is kept in source control as text, decoded once, then shared by Pixi tiles.
  * No network requests, third-party fonts, remote art, procedural payout or RNG.
  */
@@ -124,7 +124,7 @@ const palettes: Record<ManorSymbolName, [string, string]> = {
 /** Suitable for 2x/4x DPI display without upscaling a 128px bitmap. */
 export function manorSymbolSvg(name: ManorSymbolName): string {
   const [accent, base] = palettes[name];
-  return '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="320" viewBox="0 0 300 160">' +
+  return '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="640" viewBox="0 0 300 160">' +
     '<defs>' +
     '<radialGradient id="night"><stop stop-color="' + base + '"/><stop offset="1" stop-color="#111522"/></radialGradient>' +
     '<linearGradient id="brass" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#fff0bc"/><stop offset=".28" stop-color="#b88d53"/><stop offset=".54" stop-color="#f1d6a1"/><stop offset="1" stop-color="#846044"/></linearGradient>' +

@@ -188,3 +188,10 @@ The [Phase-3 sign-off matrix](manor-phase-3-signoff.md) tracks the exact boundar
 - Escape runs transition into the **same slot viewport**, with a first-person chamber, authorized room choices, persistent action bar and optional floorplan tab. Reduced motion suppresses the portal movement.
 - Symbol captions sit below smaller illustrations, with additional vertical breathing room; tiered win, bonus and loss feedback is time-bounded, and displayed only after the real outcome is presented.
 - A compact single-screen cabinet layout uses a folded settings drawer and fixed viewport grid at usable desktop sizes; on extremely small accessibility windows, nonessential information can scroll inside its own region rather than clipping controls.
+
+### M3 owner follow-up: control scale, crisp symbols, understated loss and animated sconces
+
+- Increased the bet field and main spin control while preserving the no-page-scroll cabinet layout, including a compact-height variant.
+- SVG symbols are now decoded at 1200×640; Pixi textures are drawn at the source's original 300:160 aspect, centered rather than stretched into 142×66 rectangles. Name labels remain separate and lower in the card.
+- Loss no longer creates an overlay over the slot. A short bilingual message temporarily replaces the secondary header alongside “The Haunted Five,” then returns to the 20-line label. Win and bonus overlays remain confined to the slot viewport.
+- Both side candles were rebuilt as ornamental gold/wax sconces with layered, ticker-driven flame and glow motion. Two retained container transforms update on the existing ticker; reduced motion freezes the flames without per-frame shape allocations.

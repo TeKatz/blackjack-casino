@@ -132,7 +132,7 @@ function ManorApp() {
     if (!moment) return;
     const duration = moment.key === 'jackpot' ? 4300 :
       moment.key === 'big' || moment.key === 'door' ? 2900 :
-        moment.key === 'loss' ? 1150 : 2200;
+        moment.key === 'loss' ? 1750 : 2200;
     const timer = window.setTimeout(() => setMoment(null), duration);
     return () => window.clearTimeout(timer);
   }, [moment]);
@@ -198,7 +198,13 @@ function ManorApp() {
         <section className="machine" aria-label={t(language, 'hauntedFive')}>
           <div className="machine-title">
             <span>{t(language, 'hauntedFive')}</span>
-            <span>{t(language, 'paylinesHeader')}</span>
+            <span className={'machine-inline-status' +
+              (visibleMoment?.key === 'loss' ? ' machine-loss-caption' : '')}
+              role="status" aria-live="polite">
+              {visibleMoment?.key === 'loss'
+                ? visibleMoment.heading + ' · ' + visibleMoment.detail
+                : t(language, 'paylinesHeader')}
+            </span>
           </div>
           <div className={'slot-viewport' + (run ? ' bonus-active' : '') +
             (motionOff ? ' no-motion' : '')}>
@@ -227,7 +233,8 @@ function ManorApp() {
                 ? t(language, 'dpiObserved', renderMetrics.width, renderMetrics.height,
                   renderMetrics.pixelRatio) : t(language, 'diagnosticsHint')}</small>
             </div>}
-            {visibleMoment && <div className={'slot-celebration ' + visibleMoment.key +
+            {visibleMoment && visibleMoment.key !== 'loss' &&
+              <div className={'slot-celebration ' + visibleMoment.key +
               (motionOff ? ' no-motion' : '')} role="status" aria-live="polite">
               <div className="slot-celebration-light" aria-hidden="true">
                 {Array.from({ length: 12 }, (_, i) => <i key={i}

@@ -33,7 +33,8 @@ type Renderer = {
 const W = 960, H = 500, H_CELL = 100;
 // Artwork and name have their own distinct baselines inside each 97px symbol card.
 export const MANOR_ARTWORK_TOP = 4;
-export const MANOR_ARTWORK_HEIGHT = 66;
+export const MANOR_ARTWORK_HEIGHT = 70;
+export const MANOR_ARTWORK_WIDTH = MANOR_ARTWORK_HEIGHT * (300 / 160);
 export const MANOR_SYMBOL_LABEL_Y = 88;
 const SYMBOLS = MANOR_SYMBOL_NAMES;
 const LETTERS: Record<string, string> = { Jack: 'J', Queen: 'Q', King: 'K', Ace: 'A' };
@@ -128,7 +129,7 @@ function makeTile(): Tile {
   const backing = new Graphics();
   const artwork = new Graphics();
   const illustration = new Sprite(Texture.EMPTY);
-  illustration.position.set(5, MANOR_ARTWORK_TOP);
+  illustration.position.set((152 - MANOR_ARTWORK_WIDTH) / 2, MANOR_ARTWORK_TOP);
   illustration.visible = false;
   const letter = text('', 62, 0xe9ca92);
   const name = text('', 9, 0xd9c3a6);
@@ -159,7 +160,7 @@ function decorate(tile: Tile, symbol: string, winning: boolean, dim: boolean,
   if (texture) {
     if (tile.illustration.texture !== texture) {
       tile.illustration.texture = texture;
-      tile.illustration.width = 142;
+      tile.illustration.width = MANOR_ARTWORK_WIDTH;
       tile.illustration.height = MANOR_ARTWORK_HEIGHT;
     }
     tile.illustration.visible = true;
@@ -190,11 +191,60 @@ function createRenderer(app: Application, report: (value: boolean) => void,
       .roundRect(x - 5, 107, 163, 307, 9).fill(0x090e18)
       .roundRect(x - 5, 107, 163, 307, 9).stroke({ color: 0xa48a60, width: 2 }));
   }
-  for (const x of [54, 906]) {
-    scene.addChild(new Graphics()
-      .roundRect(x - 5, 225, 10, 95, 2).fill(0x998363)
-      .ellipse(x, 219, 8, 13).fill(0xf7a95d)
-      .ellipse(x, 219, 4, 8).fill(0xffebba));
+  // Two retained gilt wall sconces: carved brass, wax relief and layered flames.
+  // Only the flame transforms animate; no Graphics geometry is redrawn per tick.
+  const sconceFlames: Array<{ flame: Container; halo: Graphics; ember: Graphics }> = [];
+  for (const [index, x] of [54, 906].entries()) {
+    const metal = new Graphics();
+    metal.moveTo(x - 19, 307).quadraticCurveTo(x, 322, x + 19, 307)
+      .stroke({ color: 0x8b6a49, width: 4, alpha: .85 });
+    metal.moveTo(x, 308).lineTo(x, 340)
+      .stroke({ color: 0xb9996b, width: 5, alpha: .8 });
+    metal.moveTo(x - 15, 301).quadraticCurveTo(x, 285, x + 15, 301)
+      .stroke({ color: 0xf1d09b, width: 2.2 });
+    metal.ellipse(x, 318, 8, 4).fill({ color: 0xc6a26f, alpha: .85 });
+    metal.roundRect(x - 11, 225, 22, 77, 5)
+      .fill(0xe7cda3).stroke({ color: 0x7e5d43, width: 2 });
+    metal.roundRect(x - 8, 229, 5, 65, 2).fill({ color: 0xffeed2, alpha: .52 });
+    metal.roundRect(x + 5, 232, 3, 61, 1).fill({ color: 0x92735b, alpha: .52 });
+    metal.moveTo(x - 9, 244).quadraticCurveTo(x - 15, 257, x - 9, 265)
+      .stroke({ color: 0xc1a47f, width: 3.2, alpha: .9 });
+    metal.moveTo(x + 11, 234).quadraticCurveTo(x + 14, 245, x + 10, 254)
+      .stroke({ color: 0xb99d7a, width: 2.2 });
+    metal.ellipse(x, 225, 12, 4).fill(0xd7b48b)
+      .stroke({ color: 0xffe6bd, width: 1.2 });
+    metal.moveTo(x, 220).lineTo(x, 215)
+      .stroke({ color: 0x44302c, width: 2.4 });
+    metal.moveTo(x - 18, 303).quadraticCurveTo(x - 28, 302, x - 24, 290)
+      .stroke({ color: 0xc6a06c, width: 2 });
+    metal.moveTo(x + 18, 303).quadraticCurveTo(x + 28, 302, x + 24, 290)
+      .stroke({ color: 0xc6a06c, width: 2 });
+    scene.addChild(metal);
+
+    const halo = new Graphics()
+      .ellipse(0, -15, 30, 37).fill({ color: 0xffba69, alpha: .24 })
+      .ellipse(0, -14, 19, 26).fill({ color: 0xffdd9a, alpha: .20 });
+    halo.position.set(x, 217);
+    scene.addChild(halo);
+    const flame = new Container();
+    flame.position.set(x, 217);
+    const outer = new Graphics();
+    outer.moveTo(0, 1).bezierCurveTo(-13, -8, -13, -20, -5, -29)
+      .quadraticCurveTo(-1, -33, 1, -42)
+      .bezierCurveTo(10, -26, 14, -14, 7, -5)
+      .quadraticCurveTo(4, 0, 0, 1).closePath()
+      .fill(0xef9446).stroke({ color: 0xffd18b, width: 1.3, alpha: .9 });
+    const inner = new Graphics();
+    inner.moveTo(0, -1).bezierCurveTo(-8, -10, -5, -18, -1, -24)
+      .quadraticCurveTo(2, -18, 6, -12)
+      .quadraticCurveTo(6, -5, 0, -1).closePath()
+      .fill(0xfff3c9);
+    flame.addChild(outer, inner);
+    scene.addChild(flame);
+    const ember = new Graphics().circle(0, 0, 1.6).fill(0xffe6aa);
+    ember.position.set(x + (index === 0 ? 8 : -8), 191);
+    scene.addChild(ember);
+    sconceFlames.push({ flame, halo, ember });
   }
   const heading = text('THE HAUNTED FIVE', 23, 0xe8d2a5);
   heading.position.set(480, 70);
@@ -347,6 +397,16 @@ function createRenderer(app: Application, report: (value: boolean) => void,
     }
     pulse += dt * 0.0015;
     frame.alpha = motionDisabled ? .75 : 0.7 + Math.sin(pulse) * 0.25;
+    for (let i = 0; i < sconceFlames.length; i++) {
+      const light = sconceFlames[i];
+      const phase = pulse * 3.8 + i * 2.1;
+      const flicker = motionDisabled ? 0 : Math.sin(phase) * .07 + Math.sin(phase * 1.83) * .035;
+      light.flame.scale.set(1 + flicker, 1 + flicker * .45);
+      light.flame.rotation = motionDisabled ? 0 : Math.sin(phase * .71) * .055;
+      light.halo.alpha = motionDisabled ? .52 : .58 + Math.sin(phase * 1.17) * .15;
+      light.ember.alpha = motionDisabled ? .32 : .12 + (1 + Math.sin(phase * 1.41)) * .22;
+      light.ember.y = 191 - (motionDisabled ? 0 : (1 + Math.sin(phase)) * 3);
+    }
     // Move only 16 retained dust points. Reduced motion leaves them static.
     for (let i = 0; i < floatingDust.length; i++) {
       const mote = floatingDust[i];
@@ -411,6 +471,13 @@ function createRenderer(app: Application, report: (value: boolean) => void,
         app.ticker.stop();
         frame.alpha = 0.75;
         for (const mote of floatingDust) mote.alpha = .08;
+        for (const light of sconceFlames) {
+          light.flame.scale.set(1);
+          light.flame.rotation = 0;
+          light.halo.alpha = .52;
+          light.ember.alpha = .32;
+          light.ember.y = 191;
+        }
       } else {
         app.ticker.start();
       }
