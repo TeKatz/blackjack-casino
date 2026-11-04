@@ -74,6 +74,8 @@ The **game director** owns gameplay vision and hands-on bug testing. Coding agen
 
 **Next rendering pilot: Midnight Manor.** After Jigsaw has been completed and the branch history consolidated, we plan to build a React/TypeScript + PixiJS presentation hosted initially through WebView2, while keeping the C# core authoritative for game results and save data. This is a staged replacement of WPF, **not** a one-shot rewrite and **not** an already-shipped feature. See [modernization roadmap](docs/modernization-roadmap.md).
 
+For package/runtime maintenance status and deliberate upgrade gates, see [maintenance audit](docs/maintenance-audit.md).
+
 ## Feature documentation
 
 - [Blackjack/table and player experience](docs/table-profile-progression.md)

@@ -24,7 +24,7 @@ Do **not** rewrite existing engines merely to port the UI. Use adapters and expl
 
 **Exit:** isolated PR, contract-check workflow green, no change to active Development source.
 
-### M1 — Midnights Manor baseline audit and design
+### M1 — Midnight Manor baseline audit and design
 
 - After the Jigsaw work is complete and branches are reconciled, inventory `ManorController`, `ManorPersistence`, `ManorWindow`, the Manor Core engine, effects, assets, saves, current RTP/versioning and CI evidence.
 - Capture current screen states, visual defects, frame-time/performance baseline and save recovery tests.

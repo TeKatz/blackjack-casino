@@ -21,12 +21,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 
@@ -76,7 +76,7 @@ jobs:
 
       - name: Upload startup smoke evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: desktop-startup-smoke
           path: artifacts/startup-smoke
@@ -85,7 +85,7 @@ jobs:
 
       - name: Upload casino presentation evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: casino-presentation-regression
           path: artifacts/presentation-regression
@@ -110,7 +110,7 @@ jobs:
 
       - name: Upload Manor runtime evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: manor-development-smoke
           path: artifacts/manor-development-smoke

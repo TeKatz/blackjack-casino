@@ -16,13 +16,13 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Repository documentation and release guard
         run: python tools/check_repo_contract.py
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 
@@ -90,7 +90,7 @@ jobs:
 
       - name: Upload startup smoke evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: desktop-startup-smoke
           path: artifacts/startup-smoke
@@ -99,7 +99,7 @@ jobs:
 
       - name: Upload casino presentation evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: casino-presentation-regression
           path: artifacts/presentation-regression
@@ -111,7 +111,7 @@ jobs:
 
       - name: Upload Manor runtime evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: manor-windows-runtime-evidence
           path: artifacts/manor-windows-smoke
@@ -122,7 +122,7 @@ jobs:
         run: dotnet run --project tools/AudioRender --configuration Release -- artifacts/audio-review
 
       - name: Upload audio review
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: casino-audio-review
           path: artifacts/audio-review
@@ -130,7 +130,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-results
           path: TestResults
@@ -167,7 +167,7 @@ jobs:
 
       - name: Upload Windows preview
         if: github.event_name == 'push' || github.event_name == 'pull_request'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: blackjack-casino-preview-win-x64
           path: artifacts/preview-app
