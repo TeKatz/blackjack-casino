@@ -1,6 +1,4 @@
-using System.Diagnostics;
 using System.IO;
-using Microsoft.Web.WebView2.Wpf;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -103,41 +101,6 @@ internal static class Program
                 SaveScreenshot(window, Path.Combine(output, "global-header-polish.png"));
 
                 Require(window.Modes.Modes.Any(mode => mode.Id == "nine-lives"), "Nine Lives was not registered in the lobby.");
-
-                // The modern Manor pilot must render inside the existing casino window.
-                // It deliberately has no commands that mutate funds or start paid spins.
-                Require(ModernManorPreviewWindow.IsAvailable, "Modern Manor assets were not copied to the smoke runner.");
-                Require(window.Modes.HasSecondary("midnight-manor"), "Modern Manor preview is missing from the lobby registry.");
-                window.Modes.OpenSecondary("midnight-manor");
-                await Task.Delay(200);
-                WebView2 modernBrowser = Find<WebView2>(window).Single();
-                var modernClock = Stopwatch.StartNew();
-                string modernTitle = string.Empty;
-                while (modernClock.Elapsed < TimeSpan.FromSeconds(15))
-                {
-                    if (modernBrowser.CoreWebView2 is not null)
-                    {
-                        try
-                        {
-                            modernTitle = await modernBrowser.CoreWebView2.ExecuteScriptAsync(
-                                "document.querySelector('h1')?.textContent || ''");
-                        }
-                        catch (InvalidOperationException) { }
-                    }
-                    if (modernTitle.Contains("MIDNIGHT MANOR", StringComparison.OrdinalIgnoreCase))
-                        break;
-                    await Task.Delay(150);
-                }
-                Require(modernTitle.Contains("MIDNIGHT MANOR", StringComparison.OrdinalIgnoreCase),
-                    "Modern Manor WebView2 did not load its React interface.");
-                Require(Application.Current.Windows.Cast<Window>().Count(w => w.IsVisible) == 1,
-                    "Modern Manor opened another visible native window.");
-                Window modernShell = Application.Current.Windows.Cast<Window>()
-                    .Single(w => w.Title.Contains("Read-only preview", StringComparison.Ordinal));
-                modernShell.Close();
-                await Task.Delay(120);
-                Require(Find<CasinoLobbyView>(window).Any(v => v.IsVisible),
-                    "Modern Manor preview did not restore the casino lobby.");
 
                 NavigationSmoke.OpenCovered(window, "nine-lives");
                 await Task.Delay(260);

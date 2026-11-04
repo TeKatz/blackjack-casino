@@ -49,3 +49,7 @@ See [roadmap](modernization-roadmap.md), [agent workflow](../AGENTS.md), and [De
 ## Consolidation follow-up (2026-11-04)
 
 The consolidated branch changes the Development publisher from `feature/casino-quality-phase-4` to `main` in **both** required workflow gates. The older note above describes the preparatory state before consolidation. NuGet/xUnit upgrades remain deferred and require a separate testable change. Verify actual main CI and the Development artifact before deleting old feature branches.
+
+## Manor Development branch correction (2026-11-04)
+
+The active Development publisher is `feature/manor-modernization-phase-1` rather than main. This preserves a clean pre-migration main working tree while allowing iterative updates from the same feature branch without merges. PR #35 was merged in error and reversed by a non-forced forward-only commit. The merge and correction remain in history; future deliberate reintroduction to main needs a reviewed strategy.

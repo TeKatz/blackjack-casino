@@ -1,8 +1,8 @@
 # Development update delivery
 
-## Current Development publisher after consolidation
+## Current Development publisher for Manor modernization
 
-The source branch is **`main`**, selected in both the `on.push.branches` filter and the `publish-development.if` guard of `.github/workflows/development-release.yml`. The in-app Development manifest URL, updater, package naming and SHA-256 verification do not change. Check successful Windows CI and the published Development manifest before deleting historical branches; merging code alone does not verify an installable release.
+The Development release publishes only from **`feature/manor-modernization-phase-1`**, selected in both the workflow push branch filter and the job-level guard. Every validated push to this branch can create a new in-app Development update **without any merge into main**. Manifest URL, updater, package names, SHA-256 verification and SemVer ordering are unchanged. The earlier Phase-1 merge into main (PR #35) was unintended; its changes were reversed through a history-preserving commit, and any future intentional main integration must account for that revert.
 
 
 The in-app Development manifest remains:
@@ -22,7 +22,7 @@ Versioning rule: start a new Development cycle on a version base strictly above 
 Before consolidation, the mutable in-app `development` release was pinned to
 `feature/casino-quality-phase-4`, building on all work from Phases 1–3
 and the earlier shop-cosmetics expansion. Both the workflow push filter and
-the job-level guard select this branch. The historical pin has been superseded by `main` and must not be reinstated.
+the job-level guard select this branch. The historical pin was superseded during consolidation and the active source now follows `feature/manor-modernization-phase-1`.
 
 The installed client's Development manifest URL is unchanged, as are
 the package, updater executable, updater schema and SHA-256 validation.
@@ -49,6 +49,6 @@ The source pin lives in the publishing workflow's push trigger and job guard. Wh
 
 ## Repository-preparation branch (historical, 2026-11-04)
 
-`feature/repository-workflow-refresh` contains documentation, agent instructions and a repository-contract check only. It was based on the cumulative `feature/casino-quality-phase-4` snapshot. During consolidation, its documentation and checks became part of `main`, which also became the publisher source. The owner controls when historical branches are deleted. The planned React/TypeScript/PixiJS Midnight Manor pilot has not started. See [modernization roadmap](modernization-roadmap.md).
+`feature/repository-workflow-refresh` contains documentation, agent instructions and a repository-contract check only. It was based on the cumulative `feature/casino-quality-phase-4` snapshot. During consolidation, its documentation and checks became part of `main`. The Manor React/TypeScript/PixiJS pilot is now active only on `feature/manor-modernization-phase-1`; updates from it do not require a merge. The owner controls historical branch cleanup. See [modernization roadmap](modernization-roadmap.md).
 
 The lightweight repository-contract workflow checks required documentation, local README/guide links and consistency between the Development workflow's push branch filter and its job guard. It does not substitute for Windows gameplay/build/smoke validation.

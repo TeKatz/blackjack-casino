@@ -21,10 +21,6 @@
     <Resource Include="Assets\NineLives\*.jpg" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Web.WebView2" />
-    <Content Include="../../frontend/dist/**/*" Link="ModernFrontend/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Condition="Exists('../../frontend/dist/index.html')" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\BlackjackCasino.Core\BlackjackCasino.Core.csproj" />
     <ProjectReference Include="..\BlackjackCasino.Update\BlackjackCasino.Update.csproj" />
   </ItemGroup>
