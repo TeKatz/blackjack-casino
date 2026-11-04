@@ -241,7 +241,8 @@ internal sealed class JigsawLoungeHub : UserControl, IDisposable
             JigsawText.T("ACHIEVEMENTS", "ERFOLGE") + " " + stats.UnlockedAchievementIds.Count + "/30",
             "JigsawAchievementsOpen", () => Content = BuildAchievements(),
             primary: false, width: 275, height: 39, gold: false);
-        achievementsButton.Margin = new Thickness(14, 0, 0, 0);
+        // Keep a visibly separate control group after Viewbox downscaling on smaller windows.
+        achievementsButton.Margin = new Thickness(28, 0, 0, 0);
         options.Children.Add(achievementsButton);
         left.Children.Add(options);
 
