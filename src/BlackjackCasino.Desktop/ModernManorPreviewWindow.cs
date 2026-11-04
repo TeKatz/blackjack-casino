@@ -72,7 +72,6 @@ internal sealed class ModernManorPreviewWindow : Window
             Text="THE MIDNIGHT CLUB",
             FontSize=12,
             FontWeight=FontWeights.Bold,
-            CharacterSpacing=180,
             TextAlignment=TextAlignment.Center,
             Foreground=new SolidColorBrush(Color.FromRgb(189,157,119)),
             Margin=new Thickness(0,10,0,8),

@@ -26,6 +26,12 @@ describe('Midnight Manor audio safety contract', () => {
     expect(hostAudioPolicy(true, true, .1).ambientGain).toBeCloseTo(.0025);
     expect(hostAudioPolicy(true, true, Number.POSITIVE_INFINITY).ambientGain).toBe(0);
   });
+  it('has a layered mechanical spin and a substantial, restrained reel-stop cue', () => {
+    expect(MANOR_CUES.spin.length).toBeGreaterThanOrEqual(3);
+    expect(MANOR_CUES.reel.length).toBeGreaterThanOrEqual(3);
+    expect(MANOR_CUES.reel.some(tone => tone.hz <= 100)).toBe(true);
+  });
+
   it('clamps volume and fails closed for invalid values', () => {
     expect(boundedVolume(-2)).toBe(0);
     expect(boundedVolume(0.4)).toBe(.4);

@@ -541,3 +541,176 @@ html,body,#root{height:100%;overflow:hidden}
  .machine .main-actions .gold-button{min-width:0;width:100%}
 }
 @media(prefers-reduced-motion:reduce){.machine-title .machine-loss-caption{animation:none}}
+
+
+
+/* Midnight Manor: premium feel pass. No new graphics ticker or per-frame DOM work. */
+.manor-app{position:relative;
+  background:radial-gradient(ellipse at 50% -18%,#4c314b 0%,transparent 64%),
+    radial-gradient(ellipse at -12% 68%,#1b3541 0%,transparent 53%),
+    radial-gradient(ellipse at 116% 45%,#402b43 0%,transparent 51%),#0b0e17}
+.manor-app::before{content:'';position:absolute;inset:0;pointer-events:none;opacity:.25;
+  background:repeating-linear-gradient(113deg,transparent 0 30px,#dbb88408 31px 32px,transparent 33px 110px);
+  animation:manor-wall-light 26s ease-in-out infinite alternate}
+.manor-app>.topbar,.manor-app>.content-grid,.manor-app>.footer{position:relative;z-index:1}
+@keyframes manor-wall-light{from{opacity:.12;transform:translateX(-1%)}to{opacity:.33;transform:translateX(1%)}}
+.machine{box-shadow:0 12px 42px #000a,inset 0 1px #f3dcb41a}
+.machine-title{background:linear-gradient(90deg,#9c744812,transparent)}
+.sidebar .status-card{background:linear-gradient(144deg,#322433e8,#151924f0);
+  box-shadow:inset 0 1px #f1d3ac1a,0 12px 24px #0007}
+.slot-viewport::before{content:'';position:absolute;inset:-25%;z-index:1;
+  pointer-events:none;opacity:.40;
+  background:conic-gradient(from 48deg at 50% 40%,transparent 0deg,#dcb47d11 23deg,
+  transparent 56deg,transparent 179deg,#b392e00e 205deg,transparent 250deg);
+  animation:manor-light-sweep 24s ease-in-out infinite alternate}
+@keyframes manor-light-sweep{from{transform:rotate(-4deg) scale(1.04)}
+  to{transform:rotate(8deg) scale(1.1)}}
+.slot-dust{position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden;
+  mix-blend-mode:screen}
+.slot-dust i{position:absolute;width:3px;height:3px;border-radius:50%;
+  background:#f9d9a1;opacity:0;box-shadow:0 0 9px 3px #ffe6b82f;
+  animation:manor-dust-rise 15s ease-in-out infinite}
+.slot-dust i:nth-child(3n){width:2px;height:2px;background:#c7acd8}
+.slot-dust i:nth-child(4n){width:4px;height:4px;filter:blur(1px)}
+@keyframes manor-dust-rise{0%{opacity:0;transform:translate3d(-5px,18px,0) scale(.7)}
+  28%{opacity:.48}75%{opacity:.28}100%{opacity:0;transform:translate3d(10px,-36px,0) scale(1.2)}}
+.slot-viewport{perspective:1150px}
+.slot-reels{z-index:1;backface-visibility:hidden}
+.slot-viewport.bonus-active .slot-reels{
+  transform:scale(1.52) translateZ(160px);filter:blur(11px);opacity:.07;
+  transition:transform 1.05s cubic-bezier(.12,.68,.18,1),filter 1s ease,opacity .9s}
+.slot-bonus-portal{z-index:3;transform-origin:center center;backface-visibility:hidden;
+  background:radial-gradient(ellipse at 48% 27%,#463447,#151923 65%,#0e121f);
+  animation:manor-depth-entry 1.15s cubic-bezier(.1,.74,.16,1) both}
+@keyframes manor-depth-entry{
+  0%{opacity:0;transform:translateZ(-680px) rotateX(22deg) scale(.30);filter:blur(16px)}
+  52%{opacity:1;transform:translateZ(65px) rotateX(0) scale(1.04);filter:blur(2px)}
+  100%{opacity:1;transform:translateZ(0) rotateX(0) scale(1);filter:blur(0)}
+}
+.bonus-depth-tunnel{position:absolute;inset:-8%;pointer-events:none;z-index:5;opacity:0;
+  background:radial-gradient(ellipse at 50% 52%,transparent 24%,#0c101cf0 97%);
+  animation:manor-tunnel-vanish 1.4s ease-in both}
+.bonus-depth-tunnel i{position:absolute;inset:8% 15%;border-radius:48% 48% 9% 9%;
+  border:4px solid #bc987eaa;box-shadow:0 0 70px #edcb8b44,inset 0 0 55px #0b0e1d88;
+  transform-origin:center;animation:manor-arch-pass .95s ease-in both}
+.bonus-depth-tunnel i:nth-child(2){animation-delay:.12s;inset:15% 21%;opacity:.7}
+.bonus-depth-tunnel i:nth-child(3){animation-delay:.24s;inset:23% 29%;opacity:.5}
+@keyframes manor-tunnel-vanish{0%{opacity:1}70%{opacity:1}100%{opacity:0;visibility:hidden}}
+@keyframes manor-arch-pass{from{transform:scale(.22);filter:blur(9px)}to{transform:scale(3.8);filter:blur(1px)}}
+
+/* Cinematic bonus chambers: a brief perspective push and slowly breathing light. */
+.manor-bonus-stage{isolation:isolate}
+.bonus-scene-atmosphere{position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(ellipse at 48% -20%,#d8bb9423,transparent 65%)}
+.bonus-scene-atmosphere .bonus-orb{position:absolute;left:16%;top:28%;height:100px;width:100px;
+  border-radius:100%;background:#f4dab923;filter:blur(34px);
+  animation:manor-chamber-orb 11s ease-in-out infinite alternate}
+.bonus-scene-atmosphere .two{left:69%;top:17%;width:80px;height:120px;
+  background:#ab87be27;animation-duration:13s;animation-delay:-4s}
+.bonus-scene-atmosphere .three{left:49%;top:75%;width:120px;height:80px;
+  background:#95a8bf16;animation-duration:16s;animation-delay:-8s}
+@keyframes manor-chamber-orb{from{transform:translate3d(-12px,5px,0);opacity:.24}
+  to{transform:translate3d(19px,-17px,0);opacity:.72}}
+.bonus-stage-header,.bonus-stage-multipliers,.bonus-stage-content,.bonus-map-view,
+.bonus-toolbar{position:relative;z-index:1}
+.bonus-story .manor-vignette{perspective:750px}
+.manor-vignette:not(.still){animation:manor-room-arrival .95s cubic-bezier(.1,.79,.26,1) both}
+@keyframes manor-room-arrival{
+  0%{opacity:.30;transform:perspective(850px) translateZ(-310px) rotateY(-7deg) scale(.88);filter:blur(6px)}
+  65%{opacity:1;transform:perspective(850px) translateZ(20px) rotateY(1deg) scale(1.015);filter:blur(0)}
+  100%{opacity:1;transform:perspective(850px) translateZ(0) rotateY(0) scale(1);filter:blur(0)}
+}
+.room-parallax{position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden}
+.room-parallax i{position:absolute;inset:-30%;opacity:.2;
+  background:radial-gradient(ellipse at 40% 50%,transparent 23%,#dbd5dc27 63%,transparent 80%);
+  animation:manor-room-mist 8s ease-in-out infinite alternate}
+.room-parallax i:nth-child(2){opacity:.12;animation-duration:13s;animation-delay:-4s;
+  background:radial-gradient(ellipse at 72% 45%,#c7b9ed55,transparent 67%)}
+.room-parallax i:nth-child(3){opacity:.1;animation-duration:19s;animation-delay:-10s;
+  background:radial-gradient(ellipse at 22% 20%,#ffe0b577,transparent 50%)}
+@keyframes manor-room-mist{from{transform:translateX(-8%) scale(1.02)}
+  to{transform:translateX(8%) scale(1.12)}}
+.room-lightfall{position:absolute;inset:0;z-index:3;pointer-events:none;
+  background:linear-gradient(110deg,transparent 35%,#e3caa30b 50%,transparent 65%);
+  animation:manor-room-light 10s ease-in-out infinite alternate}
+@keyframes manor-room-light{from{opacity:.2;transform:translateX(-9%)}
+  to{opacity:.9;transform:translateX(9%)}}
+.bonus-message,.bonus-ghost-clue{border-radius:5px;padding:5px 8px;
+  background:#0e1622a9;border-left:2px solid #b5a17c;
+  animation:manor-scene-message .5s ease-out both}
+.bonus-message span,.bonus-ghost-clue span{color:#d6bb8c;margin-right:6px}
+.bonus-ghost-clue{border-left-color:#8d839e}
+.bonus-ghost-clue.danger{border-left-color:#e28d9f;box-shadow:inset 0 0 14px #b94c5050;
+  animation:manor-scene-message .5s ease-out,manor-threat-pulse 3.8s ease-in-out infinite}
+@keyframes manor-scene-message{from{opacity:.15;transform:translateX(-12px)}
+  to{opacity:1;transform:translateX(0)}}
+@keyframes manor-threat-pulse{50%{box-shadow:inset 0 0 22px #d06a6c75}}
+.bonus-room-button{transition:filter .16s ease,box-shadow .16s ease,transform .15s}
+.bonus-room-button:hover:not(:disabled){box-shadow:0 0 16px #96cab344;transform:translateY(-1px)}
+.bonus-room-button:active:not(:disabled){transform:scale(.975)}
+
+/* Compact one-screen betting: exact selectable stakes and sequential auto-spins. */
+.machine .action-console{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  align-items:center;column-gap:14px;min-height:136px;padding:8px 6px 4px}
+.machine .stake-control{min-width:0;gap:6px}
+.machine .stake-control label{font-size:10px;line-height:1.15}
+.machine .bet-input{min-height:45px;max-width:210px;padding:5px 12px}
+.machine .bet-input input{font-size:21px;width:125px}
+.preset-bets{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
+.bet-chip,.auto-chip{border:1px solid #886d5e;background:linear-gradient(160deg,#322634,#1d222c);
+  color:#e6c69d;min-width:0;min-height:29px;border-radius:7px;padding:4px 3px;
+  font-size:10px;font-weight:700;transition:background .16s,box-shadow .16s}
+.bet-chip:hover:not(:disabled),.auto-chip:hover:not(:disabled){background:#5c3c42;border-color:#e1b77c}
+.bet-chip.selected{background:linear-gradient(140deg,#c2a06b,#856042);color:#161019;
+  border-color:#f9dcaa;box-shadow:0 0 12px #e0af7255}
+.bet-chip:disabled,.auto-chip:disabled{opacity:.34;cursor:not-allowed}
+.bet-chip:focus-visible,.auto-chip:focus-visible{outline:2px solid #ffe5b6;outline-offset:2px}
+.machine .main-actions{min-width:0;align-items:stretch;gap:7px}
+.machine .main-actions .gold-button{width:100%;max-width:none;min-width:0;min-height:50px;
+  padding:9px 12px;font-size:14px}
+.auto-spin-controls{display:flex;justify-content:space-between;align-items:center;
+  gap:8px;flex-wrap:wrap;min-height:30px}
+.auto-label{color:#c7b5a3;font-size:9px;letter-spacing:.10em;
+  font-weight:750;white-space:nowrap}
+.auto-buttons{display:flex;gap:4px;flex:1;justify-content:flex-end}
+.auto-chip{min-width:42px;min-height:29px}
+.auto-chip.auto-stop{background:#633039;color:#ffe4dc;border-color:#dc9a92;
+  min-width:120px}
+@media(max-height:720px){
+ .machine .action-console{min-height:113px;padding:4px;gap:10px}
+ .machine .bet-input{min-height:38px}
+ .machine .bet-input input{font-size:18px}
+ .machine .main-actions .gold-button{min-height:44px;font-size:12px}
+ .bet-chip,.auto-chip{min-height:24px;font-size:9px}
+ .auto-spin-controls{min-height:25px}
+ .bonus-story .bonus-message,.bonus-story .bonus-ghost-clue{padding:2px 5px;font-size:9px}
+}
+@media(max-width:960px){
+ .machine .action-console{gap:8px;grid-template-columns:minmax(0,1fr) minmax(0,.88fr)}
+ .bet-chip{font-size:9px;padding:3px 1px}
+ .auto-spin-controls{gap:5px}
+ .auto-chip{min-width:35px;font-size:9px}
+}
+@media(max-width:720px){
+ .machine .action-console{grid-template-columns:1fr;min-height:0;gap:5px}
+ .machine .bet-input{min-height:37px}
+ .preset-bets{grid-template-columns:repeat(6,minmax(0,1fr))}
+ .machine .main-actions .gold-button{min-height:40px}
+}
+.slot-viewport.no-motion::before,
+.slot-viewport.no-motion .slot-dust i,
+.slot-viewport.no-motion .bonus-depth-tunnel,
+.slot-viewport.no-motion .bonus-depth-tunnel i,
+.slot-viewport.no-motion .bonus-scene-atmosphere i,
+.slot-viewport.no-motion .room-parallax i,
+.slot-viewport.no-motion .room-lightfall,
+.slot-viewport.no-motion .manor-vignette,
+.slot-viewport.no-motion .bonus-message,
+.slot-viewport.no-motion .bonus-ghost-clue,
+.manor-bonus-stage.no-motion .bonus-scene-atmosphere i{animation:none!important}
+.slot-viewport.no-motion .slot-bonus-portal{filter:none;transform:none}
+@media(prefers-reduced-motion:reduce){
+ .manor-app::before,.slot-viewport::before,.slot-dust i,
+ .bonus-depth-tunnel,.bonus-depth-tunnel i,.bonus-scene-atmosphere i,
+ .room-parallax i,.room-lightfall,.manor-vignette{animation:none!important}
+}

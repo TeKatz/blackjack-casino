@@ -16,12 +16,14 @@ export type ManorTone = Readonly<{
 // by the volume slider and master bus, and each voice uses a short fade-out.
 export const MANOR_CUES: Readonly<Record<ManorCue, readonly ManorTone[]>> = {
   spin: [
-    { hz: 128, offset: 0, duration: .24, level: .10, wave: 'triangle', endHz: 93 },
-    { hz: 94, offset: .10, duration: .30, level: .065, wave: 'sine', endHz: 70 },
+    { hz: 132, offset: 0, duration: .20, level: .12, wave: 'triangle', endHz: 83 },
+    { hz: 74, offset: .08, duration: .38, level: .07, wave: 'sine', endHz: 63 },
+    { hz: 245, offset: .03, duration: .095, level: .045, wave: 'triangle', endHz: 105 },
   ],
   reel: [
-    { hz: 330, offset: 0, duration: .13, level: .075, wave: 'triangle', endHz: 280 },
-    { hz: 156, offset: .025, duration: .18, level: .055, wave: 'sine' },
+    { hz: 245, offset: 0, duration: .11, level: .085, wave: 'triangle', endHz: 138 },
+    { hz: 85, offset: .018, duration: .23, level: .10, wave: 'sine', endHz: 58 },
+    { hz: 392, offset: .015, duration: .06, level: .026, wave: 'sine', endHz: 245 },
   ],
   smallWin: [
     { hz: 392, offset: 0, duration: .30, level: .095, wave: 'sine' },
@@ -86,6 +88,8 @@ export class ManorAudio {
   private bus: GainNode | null = null;
   private hum: OscillatorNode[] = [];
   private humLevel: GainNode | null = null;
+  private reelLoop: { source: AudioBufferSourceNode; lowpass: BiquadFilterNode;
+    gain: GainNode } | null = null;
   private enabled = true;
   private ambience = false;
   private volume = .35;
@@ -125,6 +129,7 @@ export class ManorAudio {
 
   setEnabled(enabled: boolean): void {
     this.enabled = enabled;
+    if (!enabled) this.stopReels();
     this.mix();
     this.syncHum();
   }
@@ -140,7 +145,8 @@ export class ManorAudio {
     this.syncHum();
   }
 
-  play(cue: ManorCue): void {
+  /** Sound-design pitch variation is cosmetic and never affects reel outcomes. */
+  play(cue: ManorCue, pitch = 1): void {
     const context = this.context;
     const bus = this.bus;
     if (!this.enabled || !this.hostSoundEnabled || !context || !bus || this.volume === 0) return;
@@ -152,9 +158,10 @@ export class ManorAudio {
         const at = start + tone.offset;
         const end = at + tone.duration;
         voice.type = tone.wave;
-        voice.frequency.setValueAtTime(tone.hz, at);
+        const factor = Number.isFinite(pitch) ? Math.max(.8, Math.min(1.2, pitch)) : 1;
+        voice.frequency.setValueAtTime(tone.hz * factor, at);
         if (tone.endHz)
-          voice.frequency.exponentialRampToValueAtTime(tone.endHz, end);
+          voice.frequency.exponentialRampToValueAtTime(tone.endHz * factor, end);
         gain.gain.setValueAtTime(.0001, at);
         gain.gain.linearRampToValueAtTime(tone.level, at + Math.min(.035, tone.duration / 4));
         gain.gain.exponentialRampToValueAtTime(.0001, end);
@@ -167,6 +174,57 @@ export class ManorAudio {
     } catch {
       // Never surface optional audio issues as a gameplay error.
     }
+  }
+
+  /** Continuous low mechanical rustle while the visual reels move. Generated in
+   * memory and faded out after the last stop; no network or audio files needed. */
+  startReels(): void {
+    this.stopReels();
+    const context = this.context;
+    const bus = this.bus;
+    if (!this.enabled || !this.hostSoundEnabled || !context || !bus || this.volume === 0)
+      return;
+    try {
+      const buffer = context.createBuffer(1, context.sampleRate, context.sampleRate);
+      const samples = buffer.getChannelData(0);
+      // Noise is decorative only. Wagers and final reel stops come from the C# host.
+      for (let i = 0; i < samples.length; i++)
+        samples[i] = (Math.random() * 2 - 1) * .18;
+      const source = context.createBufferSource();
+      source.buffer = buffer;
+      source.loop = true;
+      const lowpass = context.createBiquadFilter();
+      lowpass.type = 'lowpass';
+      lowpass.frequency.value = 620;
+      const gain = context.createGain();
+      const now = context.currentTime;
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(.13, now + .14);
+      source.connect(lowpass);
+      lowpass.connect(gain);
+      gain.connect(bus);
+      source.start();
+      this.reelLoop = { source, lowpass, gain };
+    } catch {
+      // Audio device and decoding errors never block a committed spin.
+    }
+  }
+
+  stopReels(): void {
+    if (!this.reelLoop) return;
+    const { source, lowpass, gain } = this.reelLoop;
+    this.reelLoop = null;
+    try {
+      const now = this.context?.currentTime ?? 0;
+      gain.gain.cancelScheduledValues(now);
+      gain.gain.setTargetAtTime(0, now, .06);
+      source.stop(now + .25);
+    } catch { /* The loop was already stopped. */ }
+    source.onended = () => {
+      source.disconnect();
+      lowpass.disconnect();
+      gain.disconnect();
+    };
   }
 
   private mix(): void {
@@ -209,6 +267,7 @@ export class ManorAudio {
   }
 
   dispose(): void {
+    this.stopReels();
     this.setAmbience(false);
     const context = this.context;
     this.context = null;
