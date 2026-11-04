@@ -6,6 +6,7 @@ import {
 import type { GameAction, ManorSnapshot } from './bridge/protocol';
 import { ManorStage } from './graphics/ManorStage';
 import { ManorRunMap } from './graphics/ManorRunMap';
+import { ManorRoomScene } from './graphics/ManorRoomScene';
 import { ManorHelp } from './ManorHelp';
 import { localizeFeature, localizeRunText, t } from './i18n';
 import type { ManorLanguage } from './i18n';
@@ -290,6 +291,7 @@ function ManorApp() {
                 <span>{t(language, run.hasKey ? 'keyFound' : 'noKey')}</span>
                 <span>{t(language, run.hasCharm ? 'charmReady' : 'noCharm')}</span>
               </div>
+              <ManorRoomScene run={run} language={language} reducedMotion={motionOff} />
               <p className="map-instructions">{t(language, 'routeInstruction')}</p>
               <ManorRunMap run={run} disabled={disabled} language={language}
                 onMove={room => act('run.move', { room })} />

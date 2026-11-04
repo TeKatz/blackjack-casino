@@ -256,3 +256,25 @@ h1{font-family:Georgia,serif;letter-spacing:.13em;font-size:18px;margin:4px 0 0}
 @keyframes manor-shine{from{left:-35%}to{left:130%}}
 .manor-moment.no-motion::after{animation:none;display:none}
 @media(prefers-reduced-motion:reduce){.manor-moment::after{animation:none!important;display:none}}
+
+/* Six source-authored scalable first-person bonus room views; presentation only. */
+.manor-vignette{position:relative;overflow:hidden;border:1px solid #af987e;border-radius:12px;
+ background:#171a29;margin:14px 0 12px;box-shadow:0 10px 25px #06070d99}
+.manor-vignette-svg{display:block;width:100%;height:clamp(185px,25vw,275px)}
+.manor-vignette figcaption{position:absolute;bottom:0;left:0;max-width:84%;display:flex;
+ flex-direction:column;gap:6px;padding:15px 60px 17px 18px;text-shadow:0 2px 5px #000;
+ background:linear-gradient(90deg,#0b111de9 50%,#0b111d00)}
+.manor-vignette figcaption span{font-size:10px;color:#cfbba3;letter-spacing:.12em;text-transform:uppercase}
+.manor-vignette figcaption strong{font:normal clamp(20px,2.4vw,28px) Georgia,serif;color:#ffe6b9}
+.manor-vignette figcaption small{font-size:11px;color:#d8cbd7}
+.manor-vignette.area-library{border-color:#80a6a0}
+.manor-vignette.area-ballroom{border-color:#c7a784}
+.manor-vignette.area-attic{border-color:#b48e69}
+.manor-vignette.area-crypt{border-color:#ab88ac}
+.manor-vignette.threat-danger{border-color:#d994a4;box-shadow:inset 0 0 29px #a34d6566,0 12px 25px #06070d99}
+.manor-vignette-mist{animation:manor-vignette-fog 6s ease-in-out infinite alternate}
+@keyframes manor-vignette-fog{from{opacity:.055;transform:translateX(-11px)}
+ to{opacity:.13;transform:translateX(11px)}}
+.manor-vignette.still .manor-vignette-mist{animation:none}
+@media(prefers-reduced-motion:reduce){.manor-vignette-mist{animation:none}}
+@media(max-width:620px){.manor-vignette figcaption{padding:10px 35px 12px 12px}}

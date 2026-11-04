@@ -132,6 +132,7 @@ export class ManorAudio {
   setVolume(value: number): void {
     this.volume = boundedVolume(value);
     this.mix();
+    this.syncHum();
   }
 
   setAmbience(enabled: boolean): void {

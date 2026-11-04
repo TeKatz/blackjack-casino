@@ -163,3 +163,10 @@ See [AGENTS.md](../AGENTS.md), [architecture](architecture.md), [Midnight Manor 
 - Cross-frontend restart tests cover an older saved active Manor run continued via modern room decisions, re-opening with the shared classic C# controller, one-time cash-out, revision-based replay and preservation of the old free-spin paytable.
 - Windows startup smoke now takes a compact-window image and writes a real requestAnimationFrame/JS heap sample from the packaged WebView2 surface, explicitly distinguishing idle host timing from Pixi ticker metrics, GPU time and dedicated-hardware performance. The smoke never wagers on the runner's profile.
 - Remaining human-owned acceptance: genuine long-session CPU/GPU/VRAM data at 125/150/200% on the tester's monitor(s), listening to the audio mix, route feel, and explicit permission to replace the fallback. These gates must remain open until actually checked.
+
+### M3 scenic completion — six offline perspective rooms
+
+- The interactive Escape bonus now includes six distinct scalable first-person SVG rooms (Entrance, Library, Ballroom, Corridor, Attic and Crypt), above the engine-authorized architectural route map.
+- The room depiction and threat annotation derive strictly from the saved player room and public C# ghost clue. No hidden ghost coordinates, rewards, routing probabilities or new action requests are introduced.
+- Atmospheric mist stops when animation is off or reduced motion is requested. The layouts share one React component and no remote or independently licensed image files.
+- Unit tests verify all six themes, undefined-area fallback and safe unknown-clue behavior. Final subjective art acceptance remains the game director's decision.
