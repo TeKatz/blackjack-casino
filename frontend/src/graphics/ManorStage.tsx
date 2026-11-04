@@ -1,8 +1,10 @@
 import { useEffect, useRef } from 'react';
-import { Application, Container, Graphics, Text } from 'pixi.js';
+import { Application, Container, Graphics, Sprite, Text, Texture } from 'pixi.js';
 import type { ManorSnapshot } from '../bridge/protocol';
 import { reelStops, visualIndex } from './reelTiming';
 import type { ReelSpeed } from './reelTiming';
+import { loadManorArtwork, MANOR_SYMBOL_NAMES } from './manorArtwork';
+import type { ManorSymbolName } from './manorArtwork';
 
 type Props = {
   snapshot: ManorSnapshot;
@@ -11,12 +13,15 @@ type Props = {
   speed: ReelSpeed;
   onSpinningChange?: (spinning: boolean) => void;
 };
-type Tile = { root: Container; backing: Graphics; artwork: Graphics; letter: Text; name: Text; symbol: string };
+type Tile = { root: Container; backing: Graphics; artwork: Graphics; illustration: Sprite; letter: Text; name: Text; symbol: string };
 type Reel = { tiles: Tile[] };
-type Renderer = { update(snapshot: ManorSnapshot, epoch: number, motionOff: boolean, speed: ReelSpeed): void; dispose(): void };
+type Renderer = {
+  update(snapshot: ManorSnapshot, epoch: number, motionOff: boolean, speed: ReelSpeed): void;
+  setArtwork(images: Map<ManorSymbolName, HTMLImageElement>): void;
+  dispose(): void;
+};
 const W = 960, H = 500, H_CELL = 100;
-const SYMBOLS = ['Jack', 'Queen', 'King', 'Ace', 'Candelabrum', 'Watch', 'Raven',
-  'Key', 'Portrait', 'Rose', 'Lady', 'Wild', 'Scatter', 'Bonus'] as const;
+const SYMBOLS = MANOR_SYMBOL_NAMES;
 const LETTERS: Record<string, string> = { Jack: 'J', Queen: 'Q', King: 'K', Ace: 'A' };
 const accents: Record<string, number> = {
   Wild: 0x9cdee3, Scatter: 0xc7b8f7, Bonus: 0xe9bc79,
@@ -108,14 +113,18 @@ function makeTile(): Tile {
   const root = new Container();
   const backing = new Graphics();
   const artwork = new Graphics();
+  const illustration = new Sprite(Texture.EMPTY);
+  illustration.position.set(5, 4);
+  illustration.visible = false;
   const letter = text('', 62, 0xe9ca92);
   const name = text('', 10, 0xd9c3a6);
   letter.position.set(76, 43);
   name.position.set(76, 81);
-  root.addChild(backing, artwork, letter, name);
-  return { root, backing, artwork, letter, name, symbol: '' };
+  root.addChild(backing, illustration, artwork, letter, name);
+  return { root, backing, artwork, illustration, letter, name, symbol: '' };
 }
-function decorate(tile: Tile, symbol: string, winning: boolean, dim: boolean): void {
+function decorate(tile: Tile, symbol: string, winning: boolean, dim: boolean,
+  textures: ReadonlyMap<string, Texture>): void {
   const color = accent(symbol);
   tile.backing.clear();
   tile.backing.roundRect(0, 1, 152, 97, 5)
@@ -123,7 +132,7 @@ function decorate(tile: Tile, symbol: string, winning: boolean, dim: boolean): v
     .stroke({ color: winning ? 0xf3d69a : 0x60505e, width: winning ? 2.5 : 1 });
   tile.backing.roundRect(5, 6, 142, 87, 4)
     .stroke({ color, width: 0.8, alpha: winning ? 0.7 : 0.25 });
-  tile.artwork.alpha = tile.letter.alpha = dim ? 0.45 : 1;
+  tile.artwork.alpha = tile.letter.alpha = tile.illustration.alpha = dim ? 0.45 : 1;
   tile.name.alpha = dim ? 0.5 : 1;
   if (tile.symbol !== symbol) {
     tile.symbol = symbol;
@@ -131,6 +140,21 @@ function decorate(tile: Tile, symbol: string, winning: boolean, dim: boolean): v
     tile.letter.text = LETTERS[symbol] ?? '';
     tile.letter.style.fill = color;
     tile.name.text = symbol.toUpperCase();
+  }
+  const texture = textures.get(symbol);
+  if (texture) {
+    if (tile.illustration.texture !== texture) {
+      tile.illustration.texture = texture;
+      tile.illustration.width = 142;
+      tile.illustration.height = 76;
+    }
+    tile.illustration.visible = true;
+    tile.artwork.visible = false;
+    tile.letter.visible = false;
+  } else {
+    tile.illustration.visible = false;
+    tile.artwork.visible = true;
+    tile.letter.visible = Boolean(LETTERS[symbol]);
   }
 }
 function createRenderer(app: Application, report: (value: boolean) => void): Renderer {
@@ -160,6 +184,12 @@ function createRenderer(app: Application, report: (value: boolean) => void): Ren
   footer.position.set(480, 451);
   scene.addChild(heading, footer);
   const reels: Reel[] = [];
+  const textures = new Map<string, Texture>();
+  // Cosmetic reel-stop glints. The source of every final symbol is still the
+  // committed C# snapshot; these lights do not request or resolve game actions.
+  const stopGlints: Graphics[] = [];
+  const stopGlowMs = [0, 0, 0, 0, 0];
+  const stoppedReels = new Set<number>();
   for (let r = 0; r < 5; r++) {
     const x = 71 + 167 * r;
     const mask = new Graphics().rect(x, 112, 152, 300).fill(0xffffff);
@@ -175,6 +205,11 @@ function createRenderer(app: Application, report: (value: boolean) => void): Ren
       tiles.push(tile);
     }
     reels.push({ tiles });
+    const glint = new Graphics().roundRect(x - 6, 107, 164, 307, 10)
+      .stroke({ color: 0xffdfa0, width: 6, alpha: 0.85 });
+    glint.alpha = 0;
+    scene.addChild(glint);
+    stopGlints.push(glint);
   }
   const frame = new Graphics().roundRect(42, 39, 876, 421, 9)
     .stroke({ color: 0xe4b97c, width: 1.2, alpha: 0.5 });
@@ -224,7 +259,7 @@ function createRenderer(app: Application, report: (value: boolean) => void): Ren
       if (row < 3) {
         const index = r * 3 + row;
         const winning = result.winningCells.includes(index);
-        decorate(tile, result.cells[index] ?? 'Jack', winning, wins && !winning);
+        decorate(tile, result.cells[index] ?? 'Jack', winning, wins && !winning, textures);
       }
     }
   }
@@ -243,6 +278,11 @@ function createRenderer(app: Application, report: (value: boolean) => void): Ren
     const dt = Math.min(50, ticker.deltaMS);
     pulse += dt * 0.0015;
     frame.alpha = 0.7 + Math.sin(pulse) * 0.25;
+    for (let r = 0; r < 5; r++) {
+      if (motionDisabled) stopGlowMs[r] = 0;
+      else stopGlowMs[r] = Math.max(0, stopGlowMs[r] - dt);
+      stopGlints[r].alpha = stopGlowMs[r] > 0 ? 0.55 * (stopGlowMs[r] / 260) : 0;
+    }
     if (!animation) {
       if (!motionDisabled && presented && presented.winningLineDetails.length > 1) {
         lineElapsed += dt;
@@ -258,6 +298,10 @@ function createRenderer(app: Application, report: (value: boolean) => void): Ren
     current.elapsed += dt;
     for (let r = 0; r < 5; r++) {
       if (current.elapsed >= current.stops[r]) {
+        if (!stoppedReels.has(r)) {
+          stoppedReels.add(r);
+          stopGlowMs[r] = 260;
+        }
         settleColumn(r, current.result);
         continue;
       }
@@ -268,7 +312,7 @@ function createRenderer(app: Application, report: (value: boolean) => void): Ren
         tile.root.visible = true;
         tile.root.y = row * H_CELL - offset;
         const symbol = SYMBOLS[visualIndex(step, r, row)];
-        if (tile.symbol !== symbol) decorate(tile, symbol, false, false);
+        if (tile.symbol !== symbol) decorate(tile, symbol, false, false, textures);
       }
     }
     if (current.elapsed >= current.stops[4]) finish();
@@ -296,6 +340,8 @@ function createRenderer(app: Application, report: (value: boolean) => void): Ren
         const stops = reelStops(speed, motionOff);
         if (stops[4] > 0 && result.hasCommittedSpin) {
           animation = { elapsed: 0, stops, result };
+          stoppedReels.clear();
+          stopGlowMs.fill(0);
           presented = result;
           winningTrace.clear();
           winningCaption.visible = false;
@@ -315,9 +361,29 @@ function createRenderer(app: Application, report: (value: boolean) => void): Ren
       // A stopped ticker does not redraw a newly committed outcome by itself.
       if (motionOff) app.render();
     },
+    setArtwork(images) {
+      // Individual failures are harmless: retain the local Graphics fallback.
+      for (const [symbol, image] of images) {
+        try {
+          textures.set(symbol, Texture.from(image));
+        } catch {
+          // A browser may reject SVG image sources when WebGL is unavailable.
+        }
+      }
+      if (presented && !animation) {
+        for (let r = 0; r < 5; r++) settleColumn(r, presented);
+      } else if (animation) {
+        for (const reel of reels)
+          for (const tile of reel.tiles)
+            if (tile.symbol) decorate(tile, tile.symbol, false, false, textures);
+      }
+      if (motionDisabled) app.render();
+    },
     dispose() {
       finish();
       app.ticker.remove(frameTick);
+      textures.forEach(texture => texture.destroy(true));
+      textures.clear();
     },
   };
 }
@@ -366,6 +432,10 @@ export function ManorStage({ snapshot, spinEpoch, reducedMotion, speed, onSpinni
       resize();
       const state = latest.current;
       instance.update(state.snapshot, state.spinEpoch, state.reducedMotion, state.speed);
+      // Never block the authoritative first snapshot or controls on art decoding.
+      void loadManorArtwork().then(images => {
+        if (!dead) instance.setArtwork(images);
+      });
     })().catch(error => {
       if (!dead) host.textContent = 'Renderer unavailable: ' + String(error);
     });

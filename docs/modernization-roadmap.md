@@ -109,3 +109,10 @@ See [AGENTS.md](../AGENTS.md), [architecture](architecture.md), [Midnight Manor 
 - Escape the Manor now uses a scrollable Gothic architectural floorplan, with actual corridor connections and distinguishable key-locked shortcuts; legal destination buttons continue to come only from the authoritative C# `Available` flag. Ghost coordinates are not included in the snapshot.
 - Added TS shape-validation tests, mapped geometry checks and C# read-only snapshot assertions. This is a presentation milestone, not approval of new bonus odds or any change to the underlying Manor graph.
 - High-resolution premium icon paintings, music, complete localization, runtime frame-time benchmarks and final player acceptance remain open.
+
+### M3 third delivery — scalable offline illustration textures and reel-stop light
+
+- Fourteen source-authored Victorian illustration compositions (rank monograms, candlestick, watch, raven, key, portrait, black rose, lady, haunted mirror, moon, door) are decoded locally as **600×320 SVG images**, not fetched from a CDN or stretched from a low-resolution thumbnail.
+- The retained Pixi scene keeps the same twenty tile containers, shares fourteen loaded GPU textures and switches references during cosmetic spins. Illustration decode failures leave the previous Graphics symbols available and never block C# snapshots or wagers.
+- After the committed reels stop, a subtle staggered glint tracks the five column stops; animation-off/reduced motion suppresses these transient effects. The win-line geometry and original C# outcome remain unchanged.
+- The pure artwork suite confirms fourteen unique local compositions, dimensions and no external image dependencies. Final hand-painted/commissioned imagery, calibrated audio, tiered large-win sequences and monitored real-hardware frame timing remain separate acceptance items.
