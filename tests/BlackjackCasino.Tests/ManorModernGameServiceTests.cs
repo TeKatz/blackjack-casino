@@ -105,6 +105,105 @@ public sealed class ManorModernGameServiceTests : IDisposable
         Assert.False(state.CycleActive);
     }
 
+    [Fact]
+    public void SavedClassicRunCanResumeThroughModernCommandsAndReopenWithoutDuplicatePay()
+    {
+        // The legacy UI and modern bridge both operate on this exact Manor journal.
+        var profile=new PlayerProfileState();
+        var preferences=new AppPreferences { Bankroll=500m,ManorBet=25m };
+        var state=new ManorSessionState
+        {
+            Bankroll=500m,Bet=25m,PaytableVersion=ManorRules.CurrentPaytableVersion,
+            CycleActive=true,CycleId=Guid.NewGuid(),Run=ManorRun.Create(3,2).State,
+        };
+        var store=new ManorPersistence(folder);
+        Assert.Null(store.Commit(new ManorCheckpoint(1,true,preferences,profile,state)));
+        using var session=new PlayerProgressionController(profile);
+        var controller=new ManorController(preferences,500m,session,_=>{},store);
+        var modern=new ManorModernGameService(controller);
+        Assert.NotNull(modern.Snapshot().Run);
+        Assert.Equal(0,modern.Snapshot().Run!.PlayerRoom);
+        var firstCommand=new ManorPreviewProtocol.Command("run.move","legacy-room-step",0,Room:1);
+        var first=modern.Execute(firstCommand);
+        Assert.Equal("1",first.Revision);
+        Assert.Equal(1,first.Run!.PlayerRoom);
+        Assert.Equal(500m,controller.State.Bankroll);
+        Assert.Equal(1,controller.State.Statistics.InteractiveRuns);
+
+        var reopenedCheckpoint=store.Load()!;
+        using var reopenedProgression=new PlayerProgressionController(reopenedCheckpoint.Profile);
+        var reopened=new ManorController(reopenedCheckpoint.Preferences,reopenedCheckpoint.Machine.Bankroll,
+            reopenedProgression,_=>{},store);
+        var continuation=new ManorModernGameService(reopened);
+        Assert.Equal(first.Revision,continuation.Execute(firstCommand).Revision);
+        Assert.Equal(500m,reopened.State.Bankroll);
+        Assert.Equal(1,reopened.State.Statistics.InteractiveRuns);
+
+        var exit=continuation.Execute(new ManorPreviewProtocol.Command("run.cashout","leave-manor",1));
+        Assert.Null(exit.Run);
+        Assert.Equal("2",exit.Revision);
+        Assert.True(reopened.State.RunPaid);
+        Assert.False(reopened.State.CycleActive);
+        Assert.Equal(1,reopened.State.Statistics.CashOuts);
+        decimal settledBalance=reopened.State.Bankroll;
+        Assert.True(settledBalance>500m);
+        Assert.Equal(0,reopened.State.Statistics.PaidSpins);
+        var finalCheckpoint=store.Load()!;
+        using var lastProgression=new PlayerProgressionController(finalCheckpoint.Profile);
+        var classicResume=new ManorController(finalCheckpoint.Preferences,
+            finalCheckpoint.Machine.Bankroll,lastProgression,_=>{},store);
+        Assert.Equal(settledBalance,classicResume.State.Bankroll);
+        Assert.Equal("leave-manor",classicResume.State.LastModernCommandId);
+        Assert.Equal(2,classicResume.State.Revision);
+        Assert.Equal(1,classicResume.State.Statistics.CashOuts);
+        Assert.True(classicResume.State.RunPaid);
+    }
+
+    [Fact]
+    public void SavedOldTableFreeSpinsResolveInModernAndStaySettledAfterClassicReopen()
+    {
+        var profile=new PlayerProfileState();
+        var preferences=new AppPreferences { Bankroll=500m,ManorBet=25m };
+        var state=new ManorSessionState
+        {
+            Bankroll=500m,Bet=25m,CycleActive=true,
+            PaytableVersion=1,FreeSpinsRemaining=1,FreeSpinsAwarded=8,
+            CycleId=Guid.NewGuid()
+        };
+        var store=new ManorPersistence(folder);
+        Assert.Null(store.Commit(new ManorCheckpoint(1,true,preferences,profile,state)));
+        using var progression=new PlayerProgressionController(profile);
+        var modernController=new ManorController(preferences,500m,progression,_=>{},store,_=>0);
+        var service=new ManorModernGameService(modernController);
+        Assert.Equal(1,service.Snapshot().Rules.Version);
+        Assert.True(service.Snapshot().CanFreeSpin);
+        var command=new ManorPreviewProtocol.Command("spin.free","old-table-free",0);
+        var finished=service.Execute(command);
+        Assert.Equal("1",finished.Revision);
+        Assert.Equal(0,finished.FreeSpinsRemaining);
+        Assert.True(modernController.State.LastSpin!.Free);
+        Assert.Equal(1,modernController.State.LastSpin.PaytableVersion);
+        Assert.Equal(0,modernController.State.Statistics.PaidSpins);
+        Assert.Equal(1,modernController.State.Statistics.FreeSpins);
+        Assert.Equal(0,modernController.State.Statistics.TotalWagered);
+        Assert.False(modernController.State.CycleActive);
+        decimal balance=modernController.State.Bankroll;
+        Assert.Equal(500m+modernController.State.LastSpin.Payout,balance);
+
+        var saved=store.Load()!;
+        using var afterProgression=new PlayerProgressionController(saved.Profile);
+        var classic=new ManorController(saved.Preferences,saved.Machine.Bankroll,
+            afterProgression,_=>{},store,_=>0);
+        Assert.Equal(balance,classic.State.Bankroll);
+        Assert.Equal(1,classic.State.Statistics.FreeSpins);
+        Assert.Equal(1,classic.State.LastSpin!.PaytableVersion);
+        var replay=new ManorModernGameService(classic).Execute(command);
+        Assert.Equal(finished.Revision,replay.Revision);
+        Assert.Equal(balance,classic.State.Bankroll);
+        Assert.Equal(1,classic.State.Statistics.FreeSpins);
+        Assert.Equal(1,classic.State.Revision);
+    }
+
     public void Dispose()
     {
         if(Directory.Exists(folder)) Directory.Delete(folder,true);
