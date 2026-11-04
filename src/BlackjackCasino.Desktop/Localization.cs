@@ -20,6 +20,7 @@ internal static class Localization
     private static readonly ResourceManager[] ResourceManagers =
     [
         new("BlackjackCasino.Desktop.Resources.Strings", typeof(Localization).Assembly),
+        new("BlackjackCasino.Desktop.Resources.ShellStrings", typeof(Localization).Assembly),
         new("BlackjackCasino.Desktop.Resources.LobbyStrings", typeof(Localization).Assembly),
         new("BlackjackCasino.Desktop.Resources.VaultShellStrings", typeof(Localization).Assembly),
         new("BlackjackCasino.Desktop.Resources.MergeStrings", typeof(Localization).Assembly),
