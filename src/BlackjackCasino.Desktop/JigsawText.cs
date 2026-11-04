@@ -5,6 +5,15 @@ internal static class JigsawText
     internal static bool German => Localization.Language == UiLanguagePreference.German;
     internal static string T(string english, string german) => German ? german : english;
 
+    internal static string Tier(BlackjackCasino.Core.Jigsaw.JigsawAchievementTier tier) => tier switch
+    {
+        BlackjackCasino.Core.Jigsaw.JigsawAchievementTier.Bronze => "BRONZE",
+        BlackjackCasino.Core.Jigsaw.JigsawAchievementTier.Silver => T("SILVER", "SILBER"),
+        BlackjackCasino.Core.Jigsaw.JigsawAchievementTier.Gold => "GOLD",
+        BlackjackCasino.Core.Jigsaw.JigsawAchievementTier.Platinum => T("PLATINUM", "PLATIN"),
+        _ => tier.ToString().ToUpperInvariant(),
+    };
+
     internal static string Motif(string id) => id switch
     {
         "enchanted-forest" => T("Enchanted Forest", "Verzauberter Wald"),
