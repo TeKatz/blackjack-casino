@@ -1,20 +1,58 @@
 import { describe, expect, it } from 'vitest';
-import { browserPreview, isSnapshot, parseServerMessage } from '../src/bridge/protocol';
+import {
+  availableActions, browserPreview, isSnapshot, parseHostMessage,
+} from '../src/bridge/protocol';
 
-describe('Manor read-only WebView2 protocol', () => {
-  it('accepts a correctly versioned snapshot', () => {
-    const msg = { protocolVersion: 1, type: 'snapshot', requestId: 'r1', payload: browserPreview };
-    expect(parseServerMessage(msg)).toEqual(msg);
-    expect(parseServerMessage(JSON.stringify(msg))).toEqual(msg);
+describe('Manor v2 bridge contract', () => {
+  it('accepts a valid revisioned C# snapshot and preserves it', () => {
+    const envelope = {
+      protocolVersion: 2, type: 'snapshot', requestId: 'r1', payload: browserPreview,
+    };
+    expect(parseHostMessage(envelope)).toEqual(envelope);
+    expect(parseHostMessage(JSON.stringify(envelope))).toEqual(envelope);
   });
-  it('rejects other versions and unsupported commands', () => {
-    expect(parseServerMessage({ protocolVersion: 2, type: 'snapshot', requestId: 'x', payload: browserPreview })).toBeNull();
-    expect(parseServerMessage({ protocolVersion: 1, type: 'settle', requestId: 'x', payload: browserPreview })).toBeNull();
-    expect(parseServerMessage('{')).toBeNull();
-  });
-  it('rejects malformed reel and balance states', () => {
+
+  it('rejects stale protocol versions, malformed spins, and non-snapshot results', () => {
+    expect(parseHostMessage({
+      protocolVersion: 1, type: 'snapshot', requestId: 'r1', payload: browserPreview,
+    })).toBeNull();
+    expect(parseHostMessage({
+      protocolVersion: 2, type: 'spin.paid', requestId: 'r1', payload: browserPreview,
+    })).toBeNull();
+    expect(parseHostMessage('{')).toBeNull();
     expect(isSnapshot({ ...browserPreview, cells: ['Wild'] })).toBe(false);
     expect(isSnapshot({ ...browserPreview, bankroll: 1000 })).toBe(false);
     expect(isSnapshot({ ...browserPreview, winningCells: [15] })).toBe(false);
+    expect(isSnapshot({ ...browserPreview, revision: -1 })).toBe(false);
+    expect(isSnapshot({ ...browserPreview, revision: '1.5' })).toBe(false);
+  });
+
+  it('accepts replay-safe error responses with an authoritative updated snapshot', () => {
+    const response = {
+      protocolVersion: 2, type: 'error', requestId: 'a1',
+      payload: { message: 'Stale command', fatal: false, snapshot: browserPreview },
+    };
+    expect(parseHostMessage(response)).toEqual(response);
+    expect(parseHostMessage({
+      ...response, payload: { ...response.payload, snapshot: null },
+    })).toBeNull();
+  });
+
+  it('exposes only the next legal phase of gameplay', () => {
+    expect(availableActions(browserPreview)).toEqual([]);
+    const ready = { ...browserPreview, canSpin: true };
+    expect(availableActions(ready)).toEqual(['spin.paid']);
+    const free = { ...ready, canSpin: false, canFreeSpin: true, cycleActive: true };
+    expect(availableActions(free)).toEqual(['spin.free']);
+    const run = {
+      status: 'Hunting', message: 'Enter the library', ghostClue: 'Far away',
+      playerRoom: 0, turn: 0, exitTarget: 250, current: '5×', banked: '5×',
+      hasCandle: false, hasKey: false, hasCharm: false, rooms: [],
+    };
+    expect(availableActions({ ...free, run })).toEqual([
+      'run.move', 'run.cashout', 'run.follow', 'run.auto',
+    ]);
+    expect(availableActions({ ...free, run: { ...run, hasCandle: true } }))
+      .toContain('run.candle');
   });
 });
