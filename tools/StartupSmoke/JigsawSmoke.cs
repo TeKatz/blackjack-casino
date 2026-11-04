@@ -30,7 +30,7 @@ internal static class JigsawSmoke
         Click(Button(window, "JigsawStart"));
         await Task.Delay(150);
         window.UpdateLayout();
-        Require(Find<JigsawBoardSurface>(window).Any(b => b.IsVisible),
+        Require(Find<FrameworkElement>(window).Any(b => b.IsVisible && b.GetType().Name == "JigsawBoardSurface"),
             "Jigsaw did not open the interactive puzzle surface.");
         Require(Find<Button>(window).Any(b => b.Name == "JigsawNextTray"),
             "Jigsaw's paginated piece tray is missing.");
@@ -44,7 +44,7 @@ internal static class JigsawSmoke
         Click(Button(window, "JigsawResume"));
         await Task.Delay(100);
         window.UpdateLayout();
-        Require(Find<JigsawBoardSurface>(window).Any(b => b.IsVisible),
+        Require(Find<FrameworkElement>(window).Any(b => b.IsVisible && b.GetType().Name == "JigsawBoardSurface"),
             "Resuming a puzzle did not restore the board.");
         Click(Button(window, "LoungeGamesHeaderBack"));
         await Task.Delay(70);
