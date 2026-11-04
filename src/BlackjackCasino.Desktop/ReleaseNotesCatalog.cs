@@ -52,8 +52,8 @@ internal static class ReleaseNotesCatalog
         catch (UnauthorizedAccessException) { }
         catch (JsonException) { }
 
-        return [new ReleaseNote("Release notes unavailable",
-            $"No version-matched changelog was bundled with {installedVersion}.",
+        return [new ReleaseNote(Localization.T("Shell.Welcome.NotesMissingTitle"),
+            Localization.F("Shell.Welcome.NotesMissingBody", installedVersion),
             "#9DB7C8")];
     }
 

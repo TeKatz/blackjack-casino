@@ -13,7 +13,7 @@ internal sealed class StartupWelcomeWindow : Window
 {
     private StartupWelcomeWindow(PlayerProfileState profile)
     {
-        Title = "Welcome to The Midnight Club";
+        Title = T("WindowTitle");
         Width = 940;
         Height = 620;
         MinWidth = 940;
@@ -80,7 +80,7 @@ internal sealed class StartupWelcomeWindow : Window
         titleDock.Children.Add(close);
         titleDock.Children.Add(new TextBlock
         {
-            Text = "THE MIDNIGHT CLUB   ·   WELCOME",
+            Text = T("TopBar"),
             VerticalAlignment = VerticalAlignment.Center,
             FontFamily = new FontFamily("Georgia"),
             FontWeight = FontWeights.Bold,
@@ -98,10 +98,10 @@ internal sealed class StartupWelcomeWindow : Window
         root.Children.Add(body);
 
         var left = new StackPanel();
-        left.Children.Add(Eyebrow($"VERSION {AppVersion.Current}"));
+        left.Children.Add(Eyebrow(F("Version", AppVersion.Current)));
         left.Children.Add(new TextBlock
         {
-            Text = $"Welcome back, {profile.DisplayName}.",
+            Text = F("Back", profile.DisplayName),
             FontFamily = new FontFamily("Georgia"),
             FontSize = 31,
             FontWeight = FontWeights.Bold,
@@ -111,7 +111,7 @@ internal sealed class StartupWelcomeWindow : Window
         });
         left.Children.Add(new TextBlock
         {
-            Text = "The tables are ready. Here is your club at a glance before the night begins.",
+            Text = T("Intro"),
             FontSize = 12.5,
             Foreground = Ink("#A4B7AE"),
             TextWrapping = TextWrapping.Wrap,
@@ -122,14 +122,15 @@ internal sealed class StartupWelcomeWindow : Window
         var stats = new UniformGrid { Columns = 2 };
         decimal totalWagered = TotalWagered(profile);
         decimal totalNet = TotalNet(profile);
-        stats.Children.Add(Stat("PLAYER", $"P{profile.Prestige} · LV {profile.Level}", "Prestige & current level", "#E0BD70"));
-        stats.Children.Add(Stat("PLAYTIME", FormatDuration(TimeSpan.FromSeconds(profile.TotalPlaytimeSeconds)), "Lifetime at the club", "#86C7AF"));
-        stats.Children.Add(Stat("WAGERED", Money(totalWagered), "Across casino games", "#9DB7C8"));
-        stats.Children.Add(Stat("CASINO NET", SignedMoney(totalNet), totalNet >= 0 ? "Lifetime profit" : "Lifetime result", totalNet >= 0 ? "#8CCB8D" : "#D98A85"));
+        stats.Children.Add(Stat(T("Player"), $"P{profile.Prestige} · LV {profile.Level}", T("PlayerDetail"), "#E0BD70"));
+        stats.Children.Add(Stat(T("Playtime"), FormatDuration(TimeSpan.FromSeconds(profile.TotalPlaytimeSeconds)), T("PlaytimeDetail"), "#86C7AF"));
+        stats.Children.Add(Stat(T("Wagered"), Money(totalWagered), T("WageredDetail"), "#9DB7C8"));
+        stats.Children.Add(Stat(T("Net"), SignedMoney(totalNet), T(totalNet >= 0 ? "NetProfit" : "NetResult"), totalNet >= 0 ? "#8CCB8D" : "#D98A85"));
         left.Children.Add(stats);
         left.Children.Add(new TextBlock
         {
-            Text = $"◆ {profile.Coins:N0} cosmetic coins   ·   {profile.OwnedCosmeticIds.Count:N0} cosmetics owned",
+            Text = F("Cosmetics", profile.Coins, profile.OwnedCosmeticIds.Count),
+            TextWrapping = TextWrapping.Wrap,
             Foreground = Ink("#9CB0A7"),
             FontSize = 11,
             Margin = new Thickness(4, 12, 0, 0),
@@ -147,10 +148,10 @@ internal sealed class StartupWelcomeWindow : Window
         Grid.SetColumn(notesPanel, 2);
         body.Children.Add(notesPanel);
         var notes = new StackPanel();
-        notes.Children.Add(Eyebrow("WHAT'S NEW"));
+        notes.Children.Add(Eyebrow(T("WhatsNew")));
         notes.Children.Add(new TextBlock
         {
-            Text = "Tonight's changes",
+            Text = T("Changes"),
             FontFamily = new FontFamily("Georgia"),
             FontSize = 25,
             Foreground = Ink("#F0DFC0"),
@@ -209,7 +210,7 @@ internal sealed class StartupWelcomeWindow : Window
         var footerDock = new DockPanel();
         var enter = new Button
         {
-            Content = "ENTER THE CLUB  →",
+            Content = T("Enter"),
             MinWidth = 180,
             Height = 42,
             Padding = new Thickness(18, 7, 18, 7),
@@ -227,7 +228,7 @@ internal sealed class StartupWelcomeWindow : Window
         footerDock.Children.Add(enter);
         footerDock.Children.Add(new TextBlock
         {
-            Text = "Your progress is loaded locally and ready.",
+            Text = T("Ready"),
             Foreground = Ink("#7F978C"),
             FontSize = 10.5,
             VerticalAlignment = VerticalAlignment.Center,
@@ -243,7 +244,7 @@ internal sealed class StartupWelcomeWindow : Window
         var stack = new StackPanel();
         stack.Children.Add(new TextBlock { Text = caption, Foreground = Ink("#81978D"), FontSize = 9, FontWeight = FontWeights.Bold });
         stack.Children.Add(new TextBlock { Text = value, Foreground = Ink(accent), FontSize = 18, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 4, 0, 1), TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = value });
-        stack.Children.Add(new TextBlock { Text = detail, Foreground = Ink("#758A81"), FontSize = 9.5 });
+        stack.Children.Add(new TextBlock { Text = detail, Foreground = Ink("#758A81"), FontSize = 9.5, TextWrapping = TextWrapping.Wrap });
         return new Border
         {
             Background = Ink("#0D1A18"),
@@ -275,6 +276,9 @@ internal sealed class StartupWelcomeWindow : Window
         Foreground = Ink("#B8C7BE"),
         Cursor = CasinoCursors.Hand,
     };
+
+    private static string T(string key) => Localization.T("Shell.Welcome." + key);
+    private static string F(string key, params object?[] args) => Localization.F("Shell.Welcome." + key, args);
 
     private static decimal TotalWagered(PlayerProfileState p) => p.LifetimeStatistics.TotalWagered + p.Slots.TotalWagered + p.NeonVault.TotalWagered + p.NineLives.TotalWagered + p.Manor.TotalWagered + p.LegacyPooledSlots.TotalWagered + p.Kniffel.TotalWagered;
     private static decimal TotalNet(PlayerProfileState p) => p.LifetimeStatistics.NetProfit + p.Slots.NetProfit + p.NeonVault.NetProfit + p.NineLives.NetProfit + p.Manor.NetProfit + p.LegacyPooledSlots.NetProfit + p.Kniffel.NetProfit;
