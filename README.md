@@ -1,6 +1,6 @@
 # The Midnight Club — Blackjack Casino
 
-**Offline-first, single-player, play-money casino for Windows.** No real-money wagers, payments, advertising, account requirement or online service are needed to play. The repository's executable client is currently **WPF/.NET 10**. The planned React/TypeScript/PixiJS modernization is **not yet implemented**.
+**Offline-first, single-player, play-money casino for Windows.** No real-money wagers, payments, advertising, account requirement or online service are needed to play. The repository's executable client is currently **WPF/.NET 10**. The first experimental step of the React/TypeScript/PixiJS modernization is on `feature/manor-modernization-phase-1`: an optional, read-only Midnight Manor renderer preview. The installed `main` application still uses WPF, and the playable Manor remains unchanged.
 
 > **Consolidation — 2026-11-04.** The cumulative casino-quality, Jigsaw and workflow improvements are being consolidated into `main`. After merge, `main` also supplies the **Development** update channel. Older feature branches are historical and can be deleted by the owner once their unique changes are verified as integrated. Midnight Manor is the first *planned* rendering migration; no React/PixiJS frontend is shipped yet. See [Development delivery](docs/development-update-delivery.md) and [agent workflow](AGENTS.md).
 
@@ -52,6 +52,10 @@ The existing updater uses versioned manifests, package-size and SHA-256 verifica
 
 Full details: [architecture](docs/architecture.md).
 
+### Experimental frontend
+
+The first Manor migration pilot is in `frontend/`. Using Node.js 22, run `npm install`, `npm test` and `npm run build` in that directory. Windows CI and release packaging build the frontend automatically. The preview is read-only and does not change player saves or replace the playable Manor mode.
+
 ## Build and validation
 
 Install the [.NET 10 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/10.0) on Windows. [global.json](global.json) defines the SDK roll-forward policy. The existing desktop client and visual smoke tools require Windows.
@@ -72,7 +76,7 @@ The GitHub workflows also run screenshot/runtime checks including presentation, 
 
 The **game director** owns gameplay vision and hands-on bug testing. Coding agents/ChatGPT Work own implementation, maintenance, tests and delivery; the game director should not need to write code or manage builds. Contributions use small scoped branches, automated checks, game tester feedback and release gates. Read [AGENTS.md](AGENTS.md), [CONTRIBUTING.md](CONTRIBUTING.md) and [pull request checklist](.github/pull_request_template.md).
 
-**Next rendering pilot: Midnight Manor.** Following consolidation and Jigsaw acceptance, we plan to build a React/TypeScript + PixiJS presentation hosted initially through WebView2, while keeping the C# core authoritative for game results and save data. This is a staged replacement of WPF, **not** a one-shot rewrite and **not** an already-shipped feature. See [modernization roadmap](docs/modernization-roadmap.md).
+**Rendering pilot in progress: Midnight Manor.** The experimental branch adds a read-only React/TypeScript + PixiJS presentation hosted in WebView2. It can display a saved Manor spin but **cannot place bets, play bonuses or change money**. The primary Midnight Manor tile action remains the playable WPF version; a second lobby action opens the preview when packaged. Future phases migrate gameplay controls and richer art. See [modernization roadmap](docs/modernization-roadmap.md).
 
 For package/runtime maintenance status and deliberate upgrade gates, see [maintenance audit](docs/maintenance-audit.md).
 
