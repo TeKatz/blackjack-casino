@@ -36,6 +36,8 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
 
     internal bool Ready => ready && !failed;
     internal bool Failed => failed;
+    internal string? FailureReason { get; private set; }
+    internal WebView2 Browser => browser;
 
     internal ModernLobbyView(CasinoModeRegistry modes, Func<object> snapshot,
         Action<string> progression, Action profile, Action vault, Action exit,
@@ -70,14 +72,14 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
             var message = new { type = "lobby.snapshot", data = snapshot() };
             browser.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(message, Json));
         }
-        catch (InvalidOperationException) { Fail(); }
+        catch (InvalidOperationException ex) { Fail("Snapshot delivery failed: " + ex.Message); }
     }
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
         if (initialized || disposed || failed) return;
         initialized = true;
-        if (!IsAvailable) { Fail(); return; }
+        if (!IsAvailable) { Fail("The packaged ModernFrontend/lobby.html is missing."); return; }
 
         try
         {
@@ -97,14 +99,18 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
             core.NavigationStarting += (_, args) => { if (!Trusted(args.Uri)) args.Cancel = true; };
             core.NewWindowRequested += (_, args) => args.Handled = true;
             core.PermissionRequested += (_, args) => args.State = CoreWebView2PermissionState.Deny;
-            core.NavigationCompleted += (_, args) => { if (!args.IsSuccess) Fail(); };
+            core.NavigationCompleted += (_, args) =>
+            {
+                if (!args.IsSuccess) Fail("Lobby navigation failed: " + args.WebErrorStatus);
+            };
+            core.ProcessFailed += (_, args) => Fail("Lobby browser process failed: " + args.ProcessFailedKind);
             core.WebMessageReceived += OnMessage;
             browser.Source = new Uri(EntryPoint);
         }
         catch (Exception ex) when (ex is FileNotFoundException or IOException or UnauthorizedAccessException
             or InvalidOperationException or System.Runtime.InteropServices.COMException)
         {
-            Fail();
+            Fail("Lobby WebView initialization failed: " + ex.Message);
         }
     }
 
@@ -186,9 +192,11 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
         catch (JsonException) { }
     }
 
-    private void Fail()
+    private void Fail(string reason)
     {
         if (failed || disposed) return;
+        FailureReason = reason;
+        System.Diagnostics.Trace.TraceWarning("Modern Lobby fallback activated: " + reason);
         failed = true;
         ready = false;
         IsHitTestVisible = false;
