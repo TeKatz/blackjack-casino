@@ -46,6 +46,18 @@ internal static class AdventureTextLocalization
     internal static string BoardSubtitle(AdventureDefinition adventure, CaseNodeDefinition node) =>
         L($"Adventure.{adventure.Id}.Board.{node.Id}.Subtitle", node.Subtitle ?? "");
 
+    internal static string ItemName(AdventureDefinition adventure, AdventureItemDefinition item) =>
+        L($"Adventure.{adventure.Id}.Item.{item.Id}.Name", item.Name);
+
+    internal static string ItemDescription(AdventureDefinition adventure, AdventureItemDefinition item) =>
+        L($"Adventure.{adventure.Id}.Item.{item.Id}.Description", item.Description);
+
+    internal static string ConditionName(AdventureDefinition adventure, AdventureStatusDefinition condition) =>
+        L($"Adventure.{adventure.Id}.Condition.{condition.Id}.Name", condition.Name);
+
+    internal static string ConditionDescription(AdventureDefinition adventure, AdventureStatusDefinition condition) =>
+        L($"Adventure.{adventure.Id}.Condition.{condition.Id}.Description", condition.Description);
+
     internal static string Choice(AdventureDefinition adventure, AdventureChoiceDefinition choice) =>
         L(choice.LocalizationKey ?? $"Adventure.{adventure.Id}.Choice.{choice.Id}", choice.Text);
 }

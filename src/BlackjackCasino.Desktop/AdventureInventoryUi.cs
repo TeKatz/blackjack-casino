@@ -84,18 +84,22 @@ internal static class AdventureInventoryUi
     private static FrameworkElement BuildInventory(AdventureEngine engine, Func<string, Task>? useChoice)
     {
         var stack = new StackPanel();
-        stack.Children.Add(AdventureUi.Eyebrow("PACK & COINS", 10.5));
+        stack.Children.Add(AdventureUi.Eyebrow(AdventureTextLocalization.Ui("PackCoins", "PACK & COINS"), 10.5));
 
         var wrap = new WrapPanel { Margin = new Thickness(0, 7, 0, 0) };
-        wrap.Children.Add(ItemChip("coin", "Coins", engine.State.Coins.ToString(System.Globalization.CultureInfo.InvariantCulture), "Spendable during this adventure.", "#D6B860"));
+        wrap.Children.Add(ItemChip("coin",
+            AdventureTextLocalization.Ui("Coins", "Coins"), engine.State.Coins.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            AdventureTextLocalization.Ui("SpendableCoins", "Spendable during this adventure."), "#D6B860"));
 
         foreach (AdventureItemState state in engine.State.ItemStacks.Values.Where(item => item.Quantity > 0).OrderBy(item => item.ItemId))
         {
             AdventureItemDefinition? definition = engine.ItemDefinition(state.ItemId);
-            string name = definition?.Name ?? Humanize(state.ItemId);
+            string name = definition is null ? Humanize(state.ItemId) : AdventureTextLocalization.ItemName(engine.Definition, definition);
             string icon = definition?.IconKey ?? "item";
             string quantity = state.Quantity > 1 ? $"×{state.Quantity}" : "";
-            string description = definition?.Description ?? "Adventure item.";
+            string description = definition is null
+                ? AdventureTextLocalization.Ui("AdventureItem", "Adventure item.")
+                : AdventureTextLocalization.ItemDescription(engine.Definition, definition);
             string accent = definition?.Kind switch
             {
                 AdventureItemKind.Quest => "#D8BD76",
@@ -113,11 +117,11 @@ internal static class AdventureInventoryUi
                 chip.Cursor = CasinoCursors.Hand;
                 chip.Focusable = true;
                 chip.BorderBrush = AdventureUi.Ink("#E0C883");
-                chip.ToolTip = description + "\n\nClick to use here.";
+                chip.ToolTip = description + "\n\n" + AdventureTextLocalization.Ui("ClickToUse", "Click to use here.");
                 var menu = new ContextMenu { Background = AdventureUi.Ink("#13201C"), Foreground = AdventureUi.Ink("#F0E0C6") };
                 foreach (AdventureChoiceDefinition choice in uses)
                 {
-                    var option = new MenuItem { Header = choice.Text, Background = menu.Background, Foreground = menu.Foreground };
+                    var option = new MenuItem { Header = AdventureTextLocalization.Choice(engine.Definition, choice), Background = menu.Background, Foreground = menu.Foreground };
                     option.Click += async (_, _) => await useChoice(choice.Id);
                     menu.Items.Add(option);
                 }
@@ -128,7 +132,7 @@ internal static class AdventureInventoryUi
                     if (e.Key is not System.Windows.Input.Key.Enter and not System.Windows.Input.Key.Space) return;
                     menu.PlacementTarget = chip; menu.IsOpen = true; e.Handled = true;
                 };
-                System.Windows.Automation.AutomationProperties.SetName(chip, "Use " + name);
+                System.Windows.Automation.AutomationProperties.SetName(chip, AdventureTextLocalization.Ui("Use", "Use") + " " + name);
             }
             wrap.Children.Add(chip);
         }
@@ -137,7 +141,7 @@ internal static class AdventureInventoryUi
         {
             wrap.Children.Add(new TextBlock
             {
-                Text = "No carried items yet.",
+                Text = AdventureTextLocalization.Ui("NoItems", "No carried items yet."),
                 Foreground = AdventureUi.Ink("#6F857D"),
                 FontFamily = new FontFamily("Georgia"),
                 FontSize = 11,
@@ -156,18 +160,21 @@ internal static class AdventureInventoryUi
     private static FrameworkElement BuildConditions(AdventureEngine engine)
     {
         var stack = new StackPanel();
-        stack.Children.Add(AdventureUi.Eyebrow("CONDITIONS", 10.5));
+        stack.Children.Add(AdventureUi.Eyebrow(AdventureTextLocalization.Ui("Conditions", "CONDITIONS"), 10.5));
         var wrap = new WrapPanel { Margin = new Thickness(0, 7, 0, 0) };
 
         foreach (AdventureStatusState state in engine.State.ActiveConditions.Values.OrderBy(condition => condition.ConditionId))
         {
             AdventureStatusDefinition? definition = engine.ConditionDefinition(state.ConditionId);
-            string name = definition?.Name ?? Humanize(state.ConditionId);
+            string name = definition is null ? Humanize(state.ConditionId) :
+                AdventureTextLocalization.ConditionName(engine.Definition, definition);
             string duration = state.Unit == AdventureDurationUnit.Permanent
-                ? "UNTIL CLEARED"
+                ? AdventureTextLocalization.Ui("UntilCleared", "UNTIL CLEARED")
                 : $"{state.Remaining} {state.Unit.ToString().ToUpperInvariant()}{(state.Remaining == 1 ? "" : "S")}";
             string accent = definition?.Beneficial == true ? "#76BA97" : state.ConditionId == "bleeding" ? "#C66D67" : "#C2A664";
-            Border chip = ItemChip(definition?.IconKey ?? "status", name, duration, definition?.Description ?? "Temporary condition.", accent);
+            Border chip = ItemChip(definition?.IconKey ?? "status", name, duration,
+                definition is null ? AdventureTextLocalization.Ui("TemporaryCondition", "Temporary condition.")
+                    : AdventureTextLocalization.ConditionDescription(engine.Definition, definition), accent);
             chip.Effect = new DropShadowEffect
             {
                 BlurRadius = 9,
@@ -182,7 +189,7 @@ internal static class AdventureInventoryUi
         {
             wrap.Children.Add(new TextBlock
             {
-                Text = "No active conditions.",
+                Text = AdventureTextLocalization.Ui("NoConditions", "No active conditions."),
                 Foreground = AdventureUi.Ink("#6F857D"),
                 FontFamily = new FontFamily("Georgia"),
                 FontSize = 11,

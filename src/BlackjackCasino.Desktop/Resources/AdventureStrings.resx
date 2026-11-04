@@ -308,4 +308,176 @@ The board grows as the investigation uncovers people, places, evidence, leads an
   <data name="Adventure.dead-mans-hand.Board.theory-record-erased.Title" xml:space="preserve"><value>Someone deliberately altered the Mirabelle record.</value></data>
   <data name="Adventure.dead-mans-hand.Board.theory-record-erased.Description" xml:space="preserve"><value>The missing call entry and modified telephone line suggest preparation, not panic cleanup.</value></data>
   <data name="Adventure.dead-mans-hand.Board.theory-record-erased.Subtitle" xml:space="preserve"><value>Working theory</value></data>
+  <data name="Adventure.black-stag.Item.black-stag-letter.Name" xml:space="preserve"><value>Black Stag Letter</value></data>
+  <data name="Adventure.black-stag.Item.black-stag-letter.Description" xml:space="preserve"><value>A terse invitation sealed with the broken-antler sigil.</value></data>
+  <data name="Adventure.black-stag.Item.brass-key.Name" xml:space="preserve"><value>Brass Key</value></data>
+  <data name="Adventure.black-stag.Item.brass-key.Description" xml:space="preserve"><value>A heavy old key stamped with the crest of Saint Orra's hospice.</value></data>
+  <data name="Adventure.black-stag.Item.rope.Name" xml:space="preserve"><value>Hemp Rope</value></data>
+  <data name="Adventure.black-stag.Item.rope.Description" xml:space="preserve"><value>Fifty feet of weathered but reliable rope.</value></data>
+  <data name="Adventure.black-stag.Item.healing-potion.Name" xml:space="preserve"><value>Healing Tonic</value></data>
+  <data name="Adventure.black-stag.Item.healing-potion.Description" xml:space="preserve"><value>A red herbal tonic that restores health when consumed.</value></data>
+  <data name="Adventure.black-stag.Item.antidote.Name" xml:space="preserve"><value>Antidote</value></data>
+  <data name="Adventure.black-stag.Item.antidote.Description" xml:space="preserve"><value>A bitter green draught used to purge common poisons.</value></data>
+  <data name="Adventure.black-stag.Item.courier-token.Name" xml:space="preserve"><value>Courier Token</value></data>
+  <data name="Adventure.black-stag.Item.courier-token.Description" xml:space="preserve"><value>A blackened silver token bearing one intact antler and one broken one.</value></data>
+  <data name="Adventure.black-stag.Item.black-stag-ledger.Name" xml:space="preserve"><value>Black Stag Ledger</value></data>
+  <data name="Adventure.black-stag.Item.black-stag-ledger.Description" xml:space="preserve"><value>A coded ledger of payments, disappearances and names that should belong to the dead.</value></data>
+  <data name="Adventure.black-stag.Item.chapel-rubbing.Name" xml:space="preserve"><value>Chapel Rubbing</value></data>
+  <data name="Adventure.black-stag.Item.chapel-rubbing.Description" xml:space="preserve"><value>A charcoal rubbing of an old stag motif found beneath Saint Orra's altar.</value></data>
+  <data name="Adventure.black-stag.Item.ashgrove-charm.Name" xml:space="preserve"><value>Ashgrove Charm</value></data>
+  <data name="Adventure.black-stag.Item.ashgrove-charm.Description" xml:space="preserve"><value>A carved wooden charm given by Isi. The grain forms the outline of a running stag.</value></data>
+  <data name="Adventure.black-stag.Item.royal-seal-copy.Name" xml:space="preserve"><value>Copied Royal Seal</value></data>
+  <data name="Adventure.black-stag.Item.royal-seal-copy.Description" xml:space="preserve"><value>A cast impression linking the conspiracy to a royal administrative office.</value></data>
+  <data name="Adventure.black-stag.Item.witness-list.Name" xml:space="preserve"><value>Witness List</value></data>
+  <data name="Adventure.black-stag.Item.witness-list.Description" xml:space="preserve"><value>A verified list separating genuine victims from planted names.</value></data>
+  <data name="Adventure.drowned-bell.Item.manifest-fragment.Name" xml:space="preserve"><value>Altered Manifest Page</value></data>
+  <data name="Adventure.drowned-bell.Item.manifest-fragment.Description" xml:space="preserve"><value>A torn Saint Marrow ledger page with names changed in newer ink.</value></data>
+  <data name="Adventure.drowned-bell.Item.tide-key.Name" xml:space="preserve"><value>Tide Key</value></data>
+  <data name="Adventure.drowned-bell.Item.tide-key.Description" xml:space="preserve"><value>A rusted key from Old Saint Orra's, marked with a three-wave sigil.</value></data>
+  <data name="Adventure.drowned-bell.Item.names-rubbing.Name" xml:space="preserve"><value>Eleven Names Rubbing</value></data>
+  <data name="Adventure.drowned-bell.Item.names-rubbing.Description" xml:space="preserve"><value>A charcoal rubbing preserving eleven names hidden beneath chapel limewash.</value></data>
+  <data name="Adventure.drowned-bell.Item.keeper-log.Name" xml:space="preserve"><value>Keeper's Log Page</value></data>
+  <data name="Adventure.drowned-bell.Item.keeper-log.Description" xml:space="preserve"><value>Proof that Greyhaven's lighthouse was deliberately extinguished on the Saint Marrow night.</value></data>
+  <data name="Adventure.drowned-bell.Item.salt-lantern.Name" xml:space="preserve"><value>Blue Salt-Lantern</value></data>
+  <data name="Adventure.drowned-bell.Item.salt-lantern.Description" xml:space="preserve"><value>An alchemical signal lamp taken from the abandoned lighthouse.</value></data>
+  <data name="Adventure.drowned-bell.Item.varro-ledger.Name" xml:space="preserve"><value>Varro Ledger Copy</value></data>
+  <data name="Adventure.drowned-bell.Item.varro-ledger.Description" xml:space="preserve"><value>Payments for maintenance beneath the dead lighthouse.</value></data>
+  <data name="Adventure.drowned-bell.Item.service-key.Name" xml:space="preserve"><value>Brass Service Key</value></data>
+  <data name="Adventure.drowned-bell.Item.service-key.Description" xml:space="preserve"><value>A newer key used by Varro's crews to enter the cliff service tunnel.</value></data>
+  <data name="Adventure.drowned-bell.Item.old-sea-chart.Name" xml:space="preserve"><value>Lower Choir Chart</value></data>
+  <data name="Adventure.drowned-bell.Item.old-sea-chart.Description" xml:space="preserve"><value>Varro's marked route through the service tunnels and tidal caves.</value></data>
+  <data name="Adventure.drowned-bell.Item.tomas-map.Name" xml:space="preserve"><value>Tomas's Oilskin Map</value></data>
+  <data name="Adventure.drowned-bell.Item.tomas-map.Description" xml:space="preserve"><value>A hand-drawn map marking the drowned chapel and safer upper route.</value></data>
+  <data name="Adventure.drowned-bell.Item.saint-marrow-manifest.Name" xml:space="preserve"><value>Saint Marrow Manifest</value></data>
+  <data name="Adventure.drowned-bell.Item.saint-marrow-manifest.Description" xml:space="preserve"><value>The original passenger manifest proving eleven survivors reached Greyhaven alive.</value></data>
+  <data name="Adventure.drowned-bell.Item.rope.Name" xml:space="preserve"><value>Hemp Rope</value></data>
+  <data name="Adventure.drowned-bell.Item.rope.Description" xml:space="preserve"><value>A reliable coil useful on the cliff and around the old bell machinery.</value></data>
+  <data name="Adventure.drowned-bell.Item.healing-potion.Name" xml:space="preserve"><value>Healing Tonic</value></data>
+  <data name="Adventure.drowned-bell.Item.healing-potion.Description" xml:space="preserve"><value>A bitter red coastal tonic that restores health.</value></data>
+  <data name="Adventure.dead-mans-hand.Item.dmh-key.Name" xml:space="preserve"><value>Mirabelle Duplicate Key</value></data>
+  <data name="Adventure.dead-mans-hand.Item.dmh-key.Description" xml:space="preserve"><value>Opens room 306 and its locked service cabinet. The clerk wants it back when the case is over.</value></data>
+  <data name="Adventure.dead-mans-hand.Item.dmh-cufflink.Name" xml:space="preserve"><value>Bent Brass Cufflink</value></data>
+  <data name="Adventure.dead-mans-hand.Item.dmh-cufflink.Description" xml:space="preserve"><value>An eagle stamped beneath the hinge; show it to people who know the city's uniforms.</value></data>
+  <data name="Adventure.dead-mans-hand.Item.dmh-photo.Name" xml:space="preserve"><value>Torn Photograph</value></data>
+  <data name="Adventure.dead-mans-hand.Item.dmh-photo.Description" xml:space="preserve"><value>Vane, Moretti and a gloved stranger outside the Ivory Room. A witness may recognize the missing face.</value></data>
+  <data name="Adventure.dead-mans-hand.Item.dmh-log.Name" xml:space="preserve"><value>Switchboard Copy</value></data>
+  <data name="Adventure.dead-mans-hand.Item.dmh-log.Description" xml:space="preserve"><value>A copied call sheet. A bridge clip can recover the route behind the missing entry.</value></data>
+  <data name="Adventure.dead-mans-hand.Item.dmh-bridge.Name" xml:space="preserve"><value>Telephone Bridge Clip</value></data>
+  <data name="Adventure.dead-mans-hand.Item.dmh-bridge.Description" xml:space="preserve"><value>A maintenance clip recovered at the Mirabelle. Use it with the call sheet at the exchange.</value></data>
+  <data name="Adventure.dead-mans-hand.Item.dmh-pass.Name" xml:space="preserve"><value>Ivory Room Invitation</value></data>
+  <data name="Adventure.dead-mans-hand.Item.dmh-pass.Description" xml:space="preserve"><value>Evelyn's invitation admits one guest through the Monarch's private lift.</value></data>
+  <data name="Adventure.dead-mans-hand.Item.dmh-picks.Name" xml:space="preserve"><value>Lockpick Roll</value></data>
+  <data name="Adventure.dead-mans-hand.Item.dmh-picks.Description" xml:space="preserve"><value>A narrow set of tools; useful at a warehouse office or police service door. A forced lock can ruin the set.</value></data>
+  <data name="Adventure.dead-mans-hand.Item.dmh-aid.Name" xml:space="preserve"><value>Field Dressing</value></data>
+  <data name="Adventure.dead-mans-hand.Item.dmh-aid.Description" xml:space="preserve"><value>One sealed dressing with antiseptic and a pressure pad. Can stabilize the wounded witness.</value></data>
+  <data name="Adventure.dead-mans-hand.Item.dmh-carbon.Name" xml:space="preserve"><value>Shipping Carbon</value></data>
+  <data name="Adventure.dead-mans-hand.Item.dmh-carbon.Description" xml:space="preserve"><value>The retained copy of a police-protected freight transfer. Independent corroboration for the ledger.</value></data>
+  <data name="Adventure.dead-mans-hand.Item.dmh-negative.Name" xml:space="preserve"><value>Uncut Negative</value></data>
+  <data name="Adventure.dead-mans-hand.Item.dmh-negative.Description" xml:space="preserve"><value>The uncropped hotel photograph identifies Hale beside Vane. It can buy a candid conversation.</value></data>
+  <data name="Adventure.dead-mans-hand.Item.dmh-ledger.Name" xml:space="preserve"><value>Signed Redevelopment Ledger</value></data>
+  <data name="Adventure.dead-mans-hand.Item.dmh-ledger.Description" xml:space="preserve"><value>Original transfers signed by Commissioner Rook and Arthur Vane. Can be copied, presented, traded or destroyed.</value></data>
+  <data name="Adventure.dead-mans-hand.Item.dmh-recording.Name" xml:space="preserve"><value>Switchboard Recording</value></data>
+  <data name="Adventure.dead-mans-hand.Item.dmh-recording.Description" xml:space="preserve"><value>A wax dictation cylinder preserved by the exchange operator: Rook orders Vane moved before dawn.</value></data>
+  <data name="Adventure.dead-mans-hand.Item.dmh-affidavit.Name" xml:space="preserve"><value>Witness Affidavit</value></data>
+  <data name="Adventure.dead-mans-hand.Item.dmh-affidavit.Description" xml:space="preserve"><value>Lena Vale's signed account, naming the transfer and the man who ordered it. Needs a living witness to stand behind it.</value></data>
+  <data name="Adventure.dead-mans-hand.Item.dmh-ticket.Name" xml:space="preserve"><value>Two Ferry Berths</value></data>
+  <data name="Adventure.dead-mans-hand.Item.dmh-ticket.Description" xml:space="preserve"><value>Passage out of the city before the morning roadblocks. Present it at Pier Seven.</value></data>
+  <data name="Adventure.black-stag.Condition.blinded.Name" xml:space="preserve"><value>Blinded</value></data>
+  <data name="Adventure.black-stag.Condition.blinded.Description" xml:space="preserve"><value>Vision is lost or severely impaired until the effect ends.</value></data>
+  <data name="Adventure.black-stag.Condition.charmed.Name" xml:space="preserve"><value>Charmed</value></data>
+  <data name="Adventure.black-stag.Condition.charmed.Description" xml:space="preserve"><value>Your judgment has been magically or emotionally compromised by another creature.</value></data>
+  <data name="Adventure.black-stag.Condition.deafened.Name" xml:space="preserve"><value>Deafened</value></data>
+  <data name="Adventure.black-stag.Condition.deafened.Description" xml:space="preserve"><value>You cannot rely on hearing while this condition is active.</value></data>
+  <data name="Adventure.black-stag.Condition.exhaustion.Name" xml:space="preserve"><value>Exhaustion</value></data>
+  <data name="Adventure.black-stag.Condition.exhaustion.Description" xml:space="preserve"><value>Accumulated fatigue makes demanding actions harder.</value></data>
+  <data name="Adventure.black-stag.Condition.frightened.Name" xml:space="preserve"><value>Frightened</value></data>
+  <data name="Adventure.black-stag.Condition.frightened.Description" xml:space="preserve"><value>Fear disrupts your confidence and decision-making.</value></data>
+  <data name="Adventure.black-stag.Condition.grappled.Name" xml:space="preserve"><value>Grappled</value></data>
+  <data name="Adventure.black-stag.Condition.grappled.Description" xml:space="preserve"><value>Your movement is being physically controlled by another creature.</value></data>
+  <data name="Adventure.black-stag.Condition.incapacitated.Name" xml:space="preserve"><value>Incapacitated</value></data>
+  <data name="Adventure.black-stag.Condition.incapacitated.Description" xml:space="preserve"><value>You are temporarily unable to take meaningful actions.</value></data>
+  <data name="Adventure.black-stag.Condition.invisible.Name" xml:space="preserve"><value>Invisible</value></data>
+  <data name="Adventure.black-stag.Condition.invisible.Description" xml:space="preserve"><value>You are hidden from ordinary sight until the effect ends.</value></data>
+  <data name="Adventure.black-stag.Condition.paralyzed.Name" xml:space="preserve"><value>Paralyzed</value></data>
+  <data name="Adventure.black-stag.Condition.paralyzed.Description" xml:space="preserve"><value>Your body is locked in place and cannot respond normally.</value></data>
+  <data name="Adventure.black-stag.Condition.petrified.Name" xml:space="preserve"><value>Petrified</value></data>
+  <data name="Adventure.black-stag.Condition.petrified.Description" xml:space="preserve"><value>Your body is transformed into an inert, stone-like state.</value></data>
+  <data name="Adventure.black-stag.Condition.poisoned.Name" xml:space="preserve"><value>Poisoned</value></data>
+  <data name="Adventure.black-stag.Condition.poisoned.Description" xml:space="preserve"><value>Toxins cloud your focus and make difficult actions less reliable.</value></data>
+  <data name="Adventure.black-stag.Condition.prone.Name" xml:space="preserve"><value>Prone</value></data>
+  <data name="Adventure.black-stag.Condition.prone.Description" xml:space="preserve"><value>You have been knocked down and must recover your footing.</value></data>
+  <data name="Adventure.black-stag.Condition.restrained.Name" xml:space="preserve"><value>Restrained</value></data>
+  <data name="Adventure.black-stag.Condition.restrained.Description" xml:space="preserve"><value>Bindings or force sharply limit your movement.</value></data>
+  <data name="Adventure.black-stag.Condition.stunned.Name" xml:space="preserve"><value>Stunned</value></data>
+  <data name="Adventure.black-stag.Condition.stunned.Description" xml:space="preserve"><value>You are reeling and briefly unable to react properly.</value></data>
+  <data name="Adventure.black-stag.Condition.unconscious.Name" xml:space="preserve"><value>Unconscious</value></data>
+  <data name="Adventure.black-stag.Condition.unconscious.Description" xml:space="preserve"><value>You are unaware of your surroundings and cannot act.</value></data>
+  <data name="Adventure.black-stag.Condition.bleeding.Name" xml:space="preserve"><value>Bleeding</value></data>
+  <data name="Adventure.black-stag.Condition.bleeding.Description" xml:space="preserve"><value>An open wound costs 1 HP whenever a story scene advances until treated.</value></data>
+  <data name="Adventure.black-stag.Condition.blessed.Name" xml:space="preserve"><value>Blessed</value></data>
+  <data name="Adventure.black-stag.Condition.blessed.Description" xml:space="preserve"><value>A protective blessing steadies you for the duration of the effect.</value></data>
+  <data name="Adventure.black-stag.Condition.hidden.Name" xml:space="preserve"><value>Hidden</value></data>
+  <data name="Adventure.black-stag.Condition.hidden.Description" xml:space="preserve"><value>You have broken line of sight and are difficult to locate.</value></data>
+  <data name="Adventure.black-stag.Condition.marked.Name" xml:space="preserve"><value>Marked</value></data>
+  <data name="Adventure.black-stag.Condition.marked.Description" xml:space="preserve"><value>Someone or something has placed a supernatural mark on you.</value></data>
+  <data name="Adventure.drowned-bell.Condition.blinded.Name" xml:space="preserve"><value>Blinded</value></data>
+  <data name="Adventure.drowned-bell.Condition.blinded.Description" xml:space="preserve"><value>Vision is lost or severely impaired until the effect ends.</value></data>
+  <data name="Adventure.drowned-bell.Condition.charmed.Name" xml:space="preserve"><value>Charmed</value></data>
+  <data name="Adventure.drowned-bell.Condition.charmed.Description" xml:space="preserve"><value>Your judgment has been magically or emotionally compromised by another creature.</value></data>
+  <data name="Adventure.drowned-bell.Condition.deafened.Name" xml:space="preserve"><value>Deafened</value></data>
+  <data name="Adventure.drowned-bell.Condition.deafened.Description" xml:space="preserve"><value>You cannot rely on hearing while this condition is active.</value></data>
+  <data name="Adventure.drowned-bell.Condition.exhaustion.Name" xml:space="preserve"><value>Exhaustion</value></data>
+  <data name="Adventure.drowned-bell.Condition.exhaustion.Description" xml:space="preserve"><value>Accumulated fatigue makes demanding actions harder.</value></data>
+  <data name="Adventure.drowned-bell.Condition.frightened.Name" xml:space="preserve"><value>Frightened</value></data>
+  <data name="Adventure.drowned-bell.Condition.frightened.Description" xml:space="preserve"><value>Fear disrupts your confidence and decision-making.</value></data>
+  <data name="Adventure.drowned-bell.Condition.grappled.Name" xml:space="preserve"><value>Grappled</value></data>
+  <data name="Adventure.drowned-bell.Condition.grappled.Description" xml:space="preserve"><value>Your movement is being physically controlled by another creature.</value></data>
+  <data name="Adventure.drowned-bell.Condition.incapacitated.Name" xml:space="preserve"><value>Incapacitated</value></data>
+  <data name="Adventure.drowned-bell.Condition.incapacitated.Description" xml:space="preserve"><value>You are temporarily unable to take meaningful actions.</value></data>
+  <data name="Adventure.drowned-bell.Condition.invisible.Name" xml:space="preserve"><value>Invisible</value></data>
+  <data name="Adventure.drowned-bell.Condition.invisible.Description" xml:space="preserve"><value>You are hidden from ordinary sight until the effect ends.</value></data>
+  <data name="Adventure.drowned-bell.Condition.paralyzed.Name" xml:space="preserve"><value>Paralyzed</value></data>
+  <data name="Adventure.drowned-bell.Condition.paralyzed.Description" xml:space="preserve"><value>Your body is locked in place and cannot respond normally.</value></data>
+  <data name="Adventure.drowned-bell.Condition.petrified.Name" xml:space="preserve"><value>Petrified</value></data>
+  <data name="Adventure.drowned-bell.Condition.petrified.Description" xml:space="preserve"><value>Your body is transformed into an inert, stone-like state.</value></data>
+  <data name="Adventure.drowned-bell.Condition.poisoned.Name" xml:space="preserve"><value>Poisoned</value></data>
+  <data name="Adventure.drowned-bell.Condition.poisoned.Description" xml:space="preserve"><value>Toxins cloud your focus and make difficult actions less reliable.</value></data>
+  <data name="Adventure.drowned-bell.Condition.prone.Name" xml:space="preserve"><value>Prone</value></data>
+  <data name="Adventure.drowned-bell.Condition.prone.Description" xml:space="preserve"><value>You have been knocked down and must recover your footing.</value></data>
+  <data name="Adventure.drowned-bell.Condition.restrained.Name" xml:space="preserve"><value>Restrained</value></data>
+  <data name="Adventure.drowned-bell.Condition.restrained.Description" xml:space="preserve"><value>Bindings or force sharply limit your movement.</value></data>
+  <data name="Adventure.drowned-bell.Condition.stunned.Name" xml:space="preserve"><value>Stunned</value></data>
+  <data name="Adventure.drowned-bell.Condition.stunned.Description" xml:space="preserve"><value>You are reeling and briefly unable to react properly.</value></data>
+  <data name="Adventure.drowned-bell.Condition.unconscious.Name" xml:space="preserve"><value>Unconscious</value></data>
+  <data name="Adventure.drowned-bell.Condition.unconscious.Description" xml:space="preserve"><value>You are unaware of your surroundings and cannot act.</value></data>
+  <data name="Adventure.drowned-bell.Condition.bleeding.Name" xml:space="preserve"><value>Bleeding</value></data>
+  <data name="Adventure.drowned-bell.Condition.bleeding.Description" xml:space="preserve"><value>An open wound costs 1 HP whenever a story scene advances until treated.</value></data>
+  <data name="Adventure.drowned-bell.Condition.blessed.Name" xml:space="preserve"><value>Blessed</value></data>
+  <data name="Adventure.drowned-bell.Condition.blessed.Description" xml:space="preserve"><value>A protective blessing steadies you for the duration of the effect.</value></data>
+  <data name="Adventure.drowned-bell.Condition.hidden.Name" xml:space="preserve"><value>Hidden</value></data>
+  <data name="Adventure.drowned-bell.Condition.hidden.Description" xml:space="preserve"><value>You have broken line of sight and are difficult to locate.</value></data>
+  <data name="Adventure.drowned-bell.Condition.marked.Name" xml:space="preserve"><value>Marked</value></data>
+  <data name="Adventure.drowned-bell.Condition.marked.Description" xml:space="preserve"><value>Someone or something has placed a supernatural mark on you.</value></data>
+  <data name="Adventure.drowned-bell.Condition.soaked.Name" xml:space="preserve"><value>Soaked</value></data>
+  <data name="Adventure.drowned-bell.Condition.soaked.Description" xml:space="preserve"><value>Salt water has saturated your clothing and equipment.</value></data>
+  <data name="Adventure.drowned-bell.Condition.cold.Name" xml:space="preserve"><value>Cold</value></data>
+  <data name="Adventure.drowned-bell.Condition.cold.Description" xml:space="preserve"><value>Cold has settled into your hands and concentration, imposing disadvantage on ability checks.</value></data>
+  <data name="Adventure.drowned-bell.Condition.dread.Name" xml:space="preserve"><value>Dread</value></data>
+  <data name="Adventure.drowned-bell.Condition.dread.Description" xml:space="preserve"><value>The drowned voices keep pulling your thoughts away from the present.</value></data>
+  <data name="Adventure.drowned-bell.Condition.saltburn.Name" xml:space="preserve"><value>Saltburn</value></data>
+  <data name="Adventure.drowned-bell.Condition.saltburn.Description" xml:space="preserve"><value>Raw saltwater wounds cost 1 HP as scenes advance until treated.</value></data>
+  <data name="Adventure.Ui.PackCoins" xml:space="preserve"><value>PACK &amp; COINS</value></data>
+  <data name="Adventure.Ui.Coins" xml:space="preserve"><value>Coins</value></data>
+  <data name="Adventure.Ui.SpendableCoins" xml:space="preserve"><value>Spendable during this adventure.</value></data>
+  <data name="Adventure.Ui.AdventureItem" xml:space="preserve"><value>Adventure item.</value></data>
+  <data name="Adventure.Ui.ClickToUse" xml:space="preserve"><value>Click to use here.</value></data>
+  <data name="Adventure.Ui.Use" xml:space="preserve"><value>Use</value></data>
+  <data name="Adventure.Ui.NoItems" xml:space="preserve"><value>No carried items yet.</value></data>
+  <data name="Adventure.Ui.Conditions" xml:space="preserve"><value>CONDITIONS</value></data>
+  <data name="Adventure.Ui.UntilCleared" xml:space="preserve"><value>UNTIL CLEARED</value></data>
+  <data name="Adventure.Ui.TemporaryCondition" xml:space="preserve"><value>Temporary condition.</value></data>
+  <data name="Adventure.Ui.NoConditions" xml:space="preserve"><value>No active conditions.</value></data>
+  <data name="Adventure.dead-mans-hand.Subtitle" xml:space="preserve"><value>Everyone lies. Some people just get paid for it.</value></data>
+  <data name="Adventure.drowned-bell.Subtitle" xml:space="preserve"><value>A coastal mystery of fog, missing names and a bell that rings from beneath the sea.</value></data>
+  <data name="Adventure.black-stag.Subtitle" xml:space="preserve"><value>A dark five-act mystery of hidden witnesses, broken loyalties and a symbol older than the kingdom that fears it.</value></data>
 </root>
