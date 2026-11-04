@@ -42,6 +42,8 @@ public partial class MainWindow
         lobby.IsVisibleChanged += (_, _) =>
         {
             LobbyButton.Visibility = lobby.IsVisible ? Visibility.Collapsed : Visibility.Visible;
+            modernLobby?.SetLobbyVisible(lobby.IsVisible);
+            UpdateHostHeaderVisibility(embeddedGameOverlay?.IsVisible == true);
             SyncHostMusic();
             RefreshProfileButton();
         };
@@ -50,6 +52,7 @@ public partial class MainWindow
         TableModeText.Text="Casino lobby";
         RefreshCollectionAlbumHeaderButton();
         RefreshChallengeHeaderButton();
+        InitializeModernLobby();
 
         // InitializeLobby is invoked from PresentationLoaded, so registering another Loaded
         // handler here would be too late. Configure the embedded surface synchronously now.
@@ -71,7 +74,8 @@ public partial class MainWindow
     {
         if(CasinoHeader.Parent is UIElement hostHeader)
         {
-            hostHeader.Visibility=embeddedGameVisible ? Visibility.Collapsed : Visibility.Visible;
+            hostHeader.Visibility=embeddedGameVisible || modernLobby is { Ready: true, IsVisible: true }
+                ? Visibility.Collapsed : Visibility.Visible;
         }
     }
     private void Lobby_Click(object sender,RoutedEventArgs e)
@@ -79,6 +83,7 @@ public partial class MainWindow
         if(session.RoundInProgress) {StatusText.Text="Finish your hand before returning to the lobby.";return;}
         CloseEmbeddedGame();
         if(lobby is not null) lobby.Visibility=Visibility.Visible;
+        modernLobby?.Refresh();
         LobbyButton.Visibility=Visibility.Collapsed;
         TableModeText.Text="Casino lobby";
         RefreshCollectionAlbumHeaderButton();
