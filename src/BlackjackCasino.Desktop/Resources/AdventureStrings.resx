@@ -124,4 +124,71 @@ The board grows as the investigation uncovers people, places, evidence, leads an
   <data name="Adventure.dead-mans-hand.Choice.photo-conclude" xml:space="preserve"><value>Keep the photograph. The casino is now part of the case.</value></data>
   <data name="Adventure.dead-mans-hand.Choice.phone-conclude" xml:space="preserve"><value>The missing call was engineered. Add it to the board.</value></data>
   <data name="Adventure.dead-mans-hand.Choice.foundation-end" xml:space="preserve"><value>Close the current foundation preview.</value></data>
+  <data name="Adventure.drowned-bell.Scene.village-gate.Title" xml:space="preserve"><value>Greyhaven</value></data>
+  <data name="Adventure.drowned-bell.Scene.village-gate.Body" xml:space="preserve"><value>Greyhaven is built in layers down the cliff: slate roofs, narrow stairs, black timber and lamps already burning though dusk is an hour away. A weathered board beside the road reads GREYHAVEN — KEEP THE LIGHT. Someone has carved beneath it: IF THE BELL CALLS, DO NOT ANSWER.</value></data>
+  <data name="Adventure.drowned-bell.Scene.harbor-dusk.Title" xml:space="preserve"><value>The Empty Harbor</value></data>
+  <data name="Adventure.drowned-bell.Scene.harbor-dusk.Body" xml:space="preserve"><value>Fishing boats knock gently against the quay. Too many are tied up for a working evening. A young woman in a waxed coat is pinning another missing notice to a piling. She looks at every face that passes, as though comparing it against someone she has memorized.</value></data>
+  <data name="Adventure.drowned-bell.Scene.bent-anchor.Title" xml:space="preserve"><value>The Bent Anchor</value></data>
+  <data name="Adventure.drowned-bell.Scene.bent-anchor.Body" xml:space="preserve"><value>The Bent Anchor is warm, crowded and almost silent. Conversations soften when the door opens, then slowly resume when everyone decides you are merely a stranger. Behind the bar, Mara Holt dries the same glass three times while watching you through its rim.</value></data>
+  <data name="Adventure.drowned-bell.Scene.room-tension.Title" xml:space="preserve"><value>Everyone Heard It</value></data>
+  <data name="Adventure.drowned-bell.Scene.room-tension.Body" xml:space="preserve"><value>Three details emerge once you stop looking for conversation and start looking for avoidance: nobody sits near the windows, every table falls quiet when the sea is mentioned, and a brass handbell behind the bar has been wrapped tightly in cloth. Mara notices you noticing it.</value></data>
+  <data name="Adventure.drowned-bell.Scene.mara-welcome.Title" xml:space="preserve"><value>A Room with the Shutters Closed</value></data>
+  <data name="Adventure.drowned-bell.Scene.mara-welcome.Body" xml:space="preserve"><value>Mara takes your coins, pushes a bowl of fish stew across the bar and gives you a room key. 'Shutters stay closed after midnight,' she says. 'If you hear anything from the water, it is wind. If it sounds like a bell, it is still wind.' Her tone makes clear that Greyhaven has agreed on this lie together.</value></data>
+  <data name="Adventure.drowned-bell.Scene.mara-rumor.Title" xml:space="preserve"><value>Three Nights Missing</value></data>
+  <data name="Adventure.drowned-bell.Scene.mara-rumor.Body" xml:space="preserve"><value>Mara's jaw tightens. Three villagers have disappeared in eight days. One walked from his bed. One vanished from a boat tied to the quay. The third was Nell Rook's brother, Tomas. Each disappearance followed the sound of a bell somewhere beyond the breakwater. 'There is no bell out there,' Mara finishes. 'Not anymore.'</value></data>
+  <data name="Adventure.drowned-bell.Scene.nell-enters.Title" xml:space="preserve"><value>Nell Rook</value></data>
+  <data name="Adventure.drowned-bell.Scene.nell-enters.Body" xml:space="preserve"><value>The young woman from the harbor enters carrying rain with her. Nell Rook is tired enough to sway when she stops walking, but anger keeps her upright. She sees the stranger asking questions, sees Mara's expression, and comes straight over. 'If you're another person telling us Tomas ran away, save your breath.'</value></data>
+  <data name="Adventure.drowned-bell.Scene.meet-nell.Title" xml:space="preserve"><value>The Last Thing Tomas Said</value></data>
+  <data name="Adventure.drowned-bell.Scene.meet-nell.Body" xml:space="preserve"><value>Tomas heard the bell before anyone else admitted hearing it. He said it was coming from beneath the old lighthouse, not from the tower. On the night he vanished he left a note: THE NAMES ARE WRONG. Nell has searched the cliff paths every day since.</value></data>
+  <data name="Adventure.drowned-bell.Scene.tomas-note.Title" xml:space="preserve"><value>The Names Are Wrong</value></data>
+  <data name="Adventure.drowned-bell.Scene.tomas-note.Body" xml:space="preserve"><value>Nell unfolds a damp scrap of paper. Tomas wrote four surnames beneath his warning, all old Greyhaven families. One has been crossed out so violently the paper tore. On the back is a crude drawing of a ship's bell and a small chapel window.</value></data>
+  <data name="Adventure.drowned-bell.Scene.rowan-arrives.Title" xml:space="preserve"><value>Father Rowan</value></data>
+  <data name="Adventure.drowned-bell.Scene.rowan-arrives.Body" xml:space="preserve"><value>A broad-shouldered priest in a salt-stained black coat pauses beside your table. Father Rowan has the look of a man who has not slept because sleep would require surrender. 'If you're involving yourself,' he says, 'come to Saint Orra's tomorrow. There are records Tomas was reading. I would rather someone sensible see them before the village decides to burn them.'</value></data>
+  <data name="Adventure.drowned-bell.Scene.rowan-symbol.Title" xml:space="preserve"><value>A Chapel beneath a Chapel</value></data>
+  <data name="Adventure.drowned-bell.Scene.rowan-symbol.Body" xml:space="preserve"><value>Rowan recognizes the window shape immediately. Saint Orra's current chapel has no such window, but the older foundation beneath it did. That lower chapel was sealed after the Saint Marrow wreck seventy years ago. Rowan stops there, suddenly aware he has said more than he intended.</value></data>
+  <data name="Adventure.drowned-bell.Scene.first-bell.Title" xml:space="preserve"><value>The First Toll</value></data>
+  <data name="Adventure.drowned-bell.Scene.first-bell.Body" xml:space="preserve"><value>At 11:47, every conversation in the Bent Anchor dies at once. Far beyond the shuttered windows comes a single low note. It is too deep to be a handbell and too clear to be a buoy. Glass trembles on the shelves. Nell closes her eyes. Mara whispers, 'Don't count them.' A second toll rolls in through the walls.</value></data>
+  <data name="Adventure.drowned-bell.Scene.bell-window.Title" xml:space="preserve"><value>A Light in the Dead Tower</value></data>
+  <data name="Adventure.drowned-bell.Scene.bell-window.Body" xml:space="preserve"><value>Fog fills the street like pale smoke. Above the roofs, the abandoned lighthouse should be black. Instead a weak blue-white light circles once behind its cracked lantern glass and vanishes. Nobody else in the room comes to the window.</value></data>
+  <data name="Adventure.drowned-bell.Scene.bell-listen.Title" xml:space="preserve"><value>Below the Note</value></data>
+  <data name="Adventure.drowned-bell.Scene.bell-listen.Body" xml:space="preserve"><value>You listen past the bell itself. Beneath it is a second sound: many voices speaking at once, too low to distinguish. One syllable repeats with each toll. It might be a name. It might be many names layered together.</value></data>
+  <data name="Adventure.drowned-bell.Scene.night-after-bell.Title" xml:space="preserve"><value>No One Sleeps</value></data>
+  <data name="Adventure.drowned-bell.Scene.night-after-bell.Body" xml:space="preserve"><value>The bell stops after seven tolls. Nobody comments on the number. Chairs scrape, doors close and the Bent Anchor empties faster than seems possible. In your room, seawater beads along the inside of the window frame despite the shutters being dry.</value></data>
+  <data name="Adventure.drowned-bell.Scene.salt-trace.Title" xml:space="preserve"><value>Not Seawater Alone</value></data>
+  <data name="Adventure.drowned-bell.Scene.salt-trace.Body" xml:space="preserve"><value>The droplets contain fine black ash. Arcane residue clings to it in a repeating pattern, not a spell exactly but the memory of one. Something is using a ritual structure to carry sound through water and stone.</value></data>
+  <data name="Adventure.drowned-bell.Scene.morning-greyhaven.Title" xml:space="preserve"><value>Act II — The Missing</value></data>
+  <data name="Adventure.drowned-bell.Scene.morning-greyhaven.Body" xml:space="preserve"><value>Morning brings no sunlight, only a brighter shade of fog. Greyhaven offers several trails at once: Tomas's room, Father Rowan's archives, the dead lighthouse and Captain Varro's harbor warehouse. Somewhere among them is the reason the bell has started calling names.</value></data>
+  <data name="Adventure.drowned-bell.Choice.to-inn" xml:space="preserve"><value>Find the nearest inn.</value></data>
+  <data name="Adventure.drowned-bell.Choice.to-harbor" xml:space="preserve"><value>Walk toward the harbor first.</value></data>
+  <data name="Adventure.drowned-bell.Choice.speak-nell-early" xml:space="preserve"><value>Ask about the missing notice.</value></data>
+  <data name="Adventure.drowned-bell.Choice.leave-harbor" xml:space="preserve"><value>Give her space and continue to the inn.</value></data>
+  <data name="Adventure.drowned-bell.Choice.ask-room" xml:space="preserve"><value>Ask Mara for a room and something hot.</value></data>
+  <data name="Adventure.drowned-bell.Choice.read-room" xml:space="preserve"><value>Read the room before speaking.</value></data>
+  <data name="Adventure.drowned-bell.Choice.ask-bell" xml:space="preserve"><value>Ask why the handbell is wrapped.</value></data>
+  <data name="Adventure.drowned-bell.Choice.ask-mara" xml:space="preserve"><value>Ask what happened here.</value></data>
+  <data name="Adventure.drowned-bell.Choice.sit-fire" xml:space="preserve"><value>Take the stew and watch the room.</value></data>
+  <data name="Adventure.drowned-bell.Choice.who-nell" xml:space="preserve"><value>Ask where to find Nell.</value></data>
+  <data name="Adventure.drowned-bell.Choice.promise-help" xml:space="preserve"><value>Tell Nell you will listen, not judge.</value></data>
+  <data name="Adventure.drowned-bell.Choice.ask-facts" xml:space="preserve"><value>Ask for facts first.</value></data>
+  <data name="Adventure.drowned-bell.Choice.stay-out" xml:space="preserve"><value>Tell her this is not your business.</value></data>
+  <data name="Adventure.drowned-bell.Choice.take-case" xml:space="preserve"><value>Promise to help find Tomas.</value></data>
+  <data name="Adventure.drowned-bell.Choice.ask-note" xml:space="preserve"><value>Ask to see Tomas's note.</value></data>
+  <data name="Adventure.drowned-bell.Choice.return-note" xml:space="preserve"><value>Return the note and agree to investigate.</value></data>
+  <data name="Adventure.drowned-bell.Choice.agree-rowan" xml:space="preserve"><value>Agree to visit the chapel.</value></data>
+  <data name="Adventure.drowned-bell.Choice.religious-symbol" xml:space="preserve"><value>Ask about the chapel symbol on Tomas's note.</value></data>
+  <data name="Adventure.drowned-bell.Choice.keep-confidence" xml:space="preserve"><value>Do not press him here.</value></data>
+  <data name="Adventure.drowned-bell.Choice.open-shutters" xml:space="preserve"><value>Open the shutters and look toward the sea.</value></data>
+  <data name="Adventure.drowned-bell.Choice.listen" xml:space="preserve"><value>Stay still and listen carefully.</value></data>
+  <data name="Adventure.drowned-bell.Choice.heed-mara" xml:space="preserve"><value>Leave the shutters closed.</value></data>
+  <data name="Adventure.drowned-bell.Choice.mark-light" xml:space="preserve"><value>Remember exactly where the light appeared.</value></data>
+  <data name="Adventure.drowned-bell.Choice.remember-voices" xml:space="preserve"><value>Hold onto the sound.</value></data>
+  <data name="Adventure.drowned-bell.Choice.sleep" xml:space="preserve"><value>Try to sleep before morning.</value></data>
+  <data name="Adventure.drowned-bell.Choice.inspect-water" xml:space="preserve"><value>Inspect the salt water at the window.</value></data>
+  <data name="Adventure.drowned-bell.Choice.save-sample" xml:space="preserve"><value>Keep the observation for later.</value></data>
+  <data name="Adventure.drowned-bell.Choice.begin-investigation" xml:space="preserve"><value>Start with the village and follow what you find.</value></data>
+  <data name="Adventure.drowned-bell.Act.act-1" xml:space="preserve"><value>Fog over Greyhaven</value></data>
+  <data name="Adventure.drowned-bell.Act.act-2" xml:space="preserve"><value>The Missing</value></data>
+  <data name="Adventure.drowned-bell.Act.act-3" xml:space="preserve"><value>Games in the Lantern</value></data>
+  <data name="Adventure.drowned-bell.Act.act-4" xml:space="preserve"><value>Below the Tide</value></data>
+  <data name="Adventure.drowned-bell.Act.act-5" xml:space="preserve"><value>The Bell Beneath</value></data>
 </root>
