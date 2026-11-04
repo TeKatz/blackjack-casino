@@ -90,13 +90,21 @@ internal static class SudokuPremiumMenu
             16, "#D9E0D8", false, TextAlignment.Center));
         layout.Children.Add(hero);
 
+        var cardShadow = new Border
+        {
+            Background = Brush("#E8071D20"),
+            CornerRadius = new CornerRadius(24),
+            IsHitTestVisible = false,
+            Effect = new DropShadowEffect { Color = Colors.Black, BlurRadius = 33, ShadowDepth = 12, Opacity = .73 },
+        };
+        Grid.SetRow(cardShadow, 1);
+        layout.Children.Add(cardShadow);
         var card = new Border
         {
             CornerRadius = new CornerRadius(24),
             BorderThickness = new Thickness(2),
             BorderBrush = Brush("#C7A25F"),
             Background = Brush("#E8071D20"),
-            Effect = new DropShadowEffect { Color = Colors.Black, BlurRadius = 33, ShadowDepth = 12, Opacity = .73 },
             ClipToBounds = true,
         };
         var inside = new Grid();
@@ -258,19 +266,14 @@ internal static class SudokuPremiumMenu
         Grid.SetRow(footer, 2);
         layout.Children.Add(footer);
 
-        return new Grid
+        var viewbox = new Viewbox
         {
-            Background = Brush("#071214"),
-            Children =
-            {
-                new Viewbox
-                {
-                    Stretch = Stretch.Uniform,
-                    StretchDirection = StretchDirection.Both,
-                    Child = stage,
-                },
-            },
+            Stretch = Stretch.Uniform,
+            StretchDirection = StretchDirection.Both,
+            Child = stage,
         };
+        CrispViewboxText.SetEnabled(viewbox, true);
+        return new Grid { Background = Brush("#071214"), Children = { viewbox } };
     }
 
     private static Border BuildDifficulty(DifficultyEntry entry)
@@ -326,29 +329,16 @@ internal static class SudokuPremiumMenu
         content.Children.Add(fresh);
 
         row.Child = content;
-        if (entry.CanResume)
-            row.Effect = new DropShadowEffect
-            {
-                Color = Color.FromRgb(37, 219, 195), BlurRadius = 13,
-                ShadowDepth = 0, Opacity = .30,
-            };
+        if (entry.CanResume) row.BorderThickness = new Thickness(2);
         row.MouseEnter += (_, _) =>
         {
             FadeLine(line, entry.CanResume ? "#86FFF1" : "#C9A56B");
-            row.Effect = new DropShadowEffect
-            {
-                Color = Color.FromRgb(45, 225, 199), BlurRadius = 15,
-                ShadowDepth = 0, Opacity = .47,
-            };
+            // The animated outline is the hover highlight; the text stays vector-rendered.
         };
         row.MouseLeave += (_, _) =>
         {
             FadeLine(line, entry.CanResume ? "#4FE0CC" : "#4D6768");
-            row.Effect = entry.CanResume ? new DropShadowEffect
-            {
-                Color = Color.FromRgb(37, 219, 195), BlurRadius = 13,
-                ShadowDepth = 0, Opacity = .30,
-            } : null;
+            // Do not apply a bitmap effect to the entire row.
         };
         return row;
     }
@@ -398,18 +388,14 @@ internal static class SudokuPremiumMenu
             FadeLine(fill, overColor);
             FadeLine(outline, isGold ? "#FFE0A4" : "#7CFFF0");
             AnimateScale(button, 1.025);
-            button.Effect = new DropShadowEffect
-            {
-                Color = isGold ? Color.FromRgb(249, 191, 91) : Color.FromRgb(50, 231, 202),
-                BlurRadius = 15, ShadowDepth = 0, Opacity = .55,
-            };
+            // The color and scale changes provide hover feedback without caption blur.
         };
         button.MouseLeave += (_, _) =>
         {
             FadeLine(fill, baseColor);
             FadeLine(outline, rim);
             AnimateScale(button, 1);
-            button.Effect = null;
+            // No bitmap effect to clear.
         };
         return button;
     }

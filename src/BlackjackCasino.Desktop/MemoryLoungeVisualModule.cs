@@ -35,7 +35,7 @@ internal static class MemoryLoungeModuleVisual
             SortOrder: 40,
             Status: () => progress.ActiveGame is null
                 ? $"{progress.CompletedGames.Count:N0} games complete"
-                : $"Resume · {progress.ActiveGame.Difficulty} · {MemoryCatalog.GetDeck(progress.ActiveGame.DeckId).Name}");
+                : $"Resume · {progress.ActiveGame.Difficulty} · {MemoryTextLocalization.Deck(MemoryCatalog.GetDeck(progress.ActiveGame.DeckId)).Name}");
 
         return new LoungeHostedGame(
             definition,
@@ -125,12 +125,13 @@ internal sealed class MemoryLoungeHubVisual : UserControl, IDisposable
         var deckContents = (StackPanel)decks.Child;
         deckContents.Children.Add(PremiumLoungeTheme.Heading("CARD DECK"));
 
+        MemoryDeckDefinition[] displayDecks = MemoryTextLocalization.Decks();
         var picker = new ComboBox
         {
             Name = "MemoryDeckPicker",
-            ItemsSource = MemoryCatalog.Decks,
+            ItemsSource = displayDecks,
             DisplayMemberPath = nameof(MemoryDeckDefinition.Name),
-            SelectedItem = MemoryCatalog.GetDeck(progress.PreferredDeckId),
+            SelectedItem = displayDecks.First(deck => deck.Id == progress.PreferredDeckId),
             IsEnabled = progress.ActiveGame is null,
             Height = 36,
         };
@@ -165,7 +166,7 @@ internal sealed class MemoryLoungeHubVisual : UserControl, IDisposable
             persist(progress);
             status.Text = $"{deck.Name} selected.";
         };
-        UpdatePreview(MemoryCatalog.GetDeck(progress.PreferredDeckId));
+        UpdatePreview(MemoryTextLocalization.Deck(MemoryCatalog.GetDeck(progress.PreferredDeckId)));
 
         deckContents.Children.Add(preview);
         deckContents.Children.Add(descriptionText);
@@ -361,7 +362,7 @@ internal sealed class MemoryLoungeHubVisual : UserControl, IDisposable
 
     private FrameworkElement BuildCompletionScreen(MemoryGameState completedGame, ProgressionAward award)
     {
-        MemoryDeckDefinition deck = MemoryCatalog.GetDeck(completedGame.DeckId);
+        MemoryDeckDefinition deck = MemoryTextLocalization.Deck(MemoryCatalog.GetDeck(completedGame.DeckId));
         var root = new Grid { Margin = new Thickness(30) };
 
         var panel = new Border

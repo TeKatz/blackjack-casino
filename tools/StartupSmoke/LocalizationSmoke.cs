@@ -7,6 +7,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using BlackjackCasino.Desktop;
+using BlackjackCasino.Core;
 
 internal static class LocalizationSmoke
 {
@@ -43,6 +44,9 @@ internal static class LocalizationSmoke
             "Blackjack lobby subtitle did not switch to German.");
         Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "PLATZ NEHMEN   →"),
             "Casino lobby call-to-action did not switch to German.");
+
+        CheckGermanShellWindows(window);
+        CheckPhase2Translations();
 
         SaveScreenshot(window, Path.Combine(output, "localization-german-lobby.png"));
 
@@ -175,6 +179,96 @@ internal static class LocalizationSmoke
             "Casino lobby headline did not switch back to English without a restart.");
         Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "VAULT FULL"),
             "Dynamic Vault header did not switch back to English.");
+    }
+
+    private static void CheckPhase2Translations()
+    {
+        (string Source, string German)[] samples =
+        [
+            ("YOUR DICE TABLE", "DEIN WÜRFELTISCH"),
+            ("THREE REELS · ONE PAYLINE · PLAY MONEY", "DREI WALZEN · EINE GEWINNLINIE · SPIELGELD"),
+            ("THE HOUSE REMEMBERS", "DAS HAUS ERINNERT SICH"),
+            ("ACCESS LEVEL I", "ZUGANGSSTUFE I"),
+            ("HIGH VOLATILITY · 3×3 · FIVE LINES", "HOHE VOLATILITÄT · 3×3 · FÜNF LINIEN"),
+            ("WORDS TO DISCOVER", "WÖRTER ZU FINDEN"),
+            ("PAIRS FOUND", "PAARE GEFUNDEN"),
+            ("Slot Gallery", "Spielautomatengalerie"),
+            ("Warm lights, brass cabinets and the first heartbeat of your casino.",
+                "Warmes Licht, Messinggehäuse und der erste Herzschlag deines Casinos."),
+            ("Turn 3 of 13", "Runde 3 von 13"),
+            ("Roll 2 / 3", "Wurf 2 / 3"),
+            ("Record 13 points", "13 Punkte eintragen"),
+            ("Upper: 35 points · Bonus: 0 / 35 (at 63)",
+                "Oben: 35 Punkte · Bonus: 0 / 35 (bei 63)"),
+            ("NINE LIVES · 4 SPINS LEFT", "NINE LIVES · 4 FREISPIELE ÜBRIG"),
+            ("Found FOREST. Saved.", "FOREST gefunden. Gespeichert."),
+            ("Hint: FOREST begins at the glowing letter.",
+                "Hinweis: FOREST beginnt beim leuchtenden Buchstaben."),
+            ("7 / 12 words found · 03:12 · 2 hints",
+                "7 / 12 Wörter gefunden · 03:12 · 2 Hinweise"),
+            ("Active managers: 1/3", "Aktive Manager: 1/3"),
+        ];
+        foreach ((string source, string german) in samples)
+        {
+            string actual = Localization.TranslateSource(source);
+            Require(string.Equals(actual, german, StringComparison.Ordinal),
+                $"Game translation mismatch for '{source}': expected '{german}', got '{actual}'.");
+        }
+    }
+
+    private static void CheckGermanShellWindows(MainWindow owner)
+    {
+        var profile = new PlayerProfileState { DisplayName = "Testspieler", Level = 75, Prestige = 3, Coins = 1500 };
+        Type welcomeType = typeof(MainWindow).Assembly.GetType(
+            "BlackjackCasino.Desktop.StartupWelcomeWindow", throwOnError: true)!;
+        ConstructorInfo constructor = welcomeType.GetConstructor(
+            BindingFlags.Instance | BindingFlags.NonPublic,
+            binder: null, new[] { typeof(PlayerProfileState) }, modifiers: null)
+            ?? throw new InvalidOperationException("Missing startup welcome constructor.");
+        var welcome = (Window)constructor.Invoke([profile]);
+        welcome.Owner = owner;
+        try
+        {
+            welcome.Show();
+            welcome.UpdateLayout();
+            Require(Find<TextBlock>(welcome).Any(x => x.Text == "Willkommen zurück, Testspieler."),
+                "German welcome failed to localize its personalized greeting.");
+            Require(Find<TextBlock>(welcome).Any(x => x.Text == "Änderungen dieser Version"),
+                "German welcome still displays an English changelog heading.");
+            Require(Find<Button>(welcome).Any(x => Equals(x.Content, "CLUB BETRETEN  →")),
+                "German welcome action remained English.");
+        }
+        finally { welcome.Close(); }
+
+        using var controller = new PlayerProgressionController(profile);
+        var playerWindow = new PlayerProfileWindow(controller) { Owner = owner };
+        try
+        {
+            playerWindow.Show();
+            playerWindow.UpdateLayout();
+            Require(Find<TextBlock>(playerWindow).Any(x => x.Text == "Deine Casino-Identität"),
+                "Player profile identity heading remained English.");
+            Require(Find<TextBlock>(playerWindow).Any(x => x.Text.Contains("Stufe 75", StringComparison.Ordinal)),
+                "Player profile level summary remained English.");
+            Require(Find<Button>(playerWindow).Any(x => Equals(x.Content, "Fortschritt & Shop →")),
+                "Player profile progression action remained English.");
+        }
+        finally { playerWindow.Close(); }
+
+        var rulesWindow = new TableRulesDialog(TablePresets.Get(TablePresetId.Casual).Rules) { Owner = owner };
+        try
+        {
+            rulesWindow.Show();
+            rulesWindow.UpdateLayout();
+            Require(Find<TextBlock>(rulesWindow).Any(x => x.Text == "Erweiterte Tischregeln"),
+                "Advanced table rules heading remained English.");
+            Require(Find<Button>(rulesWindow).Any(x => Equals(x.Content, "Eigene Regeln verwenden")),
+                "Advanced table setup action remained English.");
+            Require(Find<ComboBox>(rulesWindow).Any(x =>
+                x.Items.OfType<string>().Any(v => v.Contains("weichen 17", StringComparison.Ordinal))),
+                "Advanced table setup combo-box values remained English.");
+        }
+        finally { rulesWindow.Close(); }
     }
 
     private static bool IsVisibleGamesButton(Button button, string label)

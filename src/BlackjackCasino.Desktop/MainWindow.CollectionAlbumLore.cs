@@ -55,6 +55,8 @@ public partial class MainWindow
 
         body.Name = "AlbumLoreBody";
         body.Text = CollectionLore.BodyFor(card);
-        AutomationProperties.SetName(body, card.Name + " archive lore");
+        AutomationProperties.SetName(body, Localization.Language == UiLanguagePreference.German
+            ? card.Name + " – Archivtext"
+            : card.Name + " archive lore");
     }
 }

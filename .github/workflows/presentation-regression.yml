@@ -11,10 +11,10 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Reject unsafe dropdown templates
         run: python tools/check_control_templates.py --self-test
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
       - name: Collection artwork coverage
@@ -24,7 +24,7 @@ jobs:
         run: dotnet run --project tools/PresentationSmoke --configuration Release -- artifacts/presentation-regression
       - name: Upload screenshots and state evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: casino-presentation-regression
           path: artifacts/presentation-regression

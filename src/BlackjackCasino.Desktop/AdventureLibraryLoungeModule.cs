@@ -140,15 +140,36 @@ internal sealed class AdventureLibraryHubControl : UserControl
         this.setMusicActive = setMusicActive ?? throw new ArgumentNullException(nameof(setMusicActive));
         _ = backToGames ?? throw new ArgumentNullException(nameof(backToGames));
 
+        bool upgraded = false;
+        foreach (AdventureDefinition adventure in AdventureCatalog.All)
+            if (this.progress.Runs.TryGetValue(adventure.Id, out AdventureRunState? saved))
+                upgraded |= AdventureRunMigrations.Apply(adventure, saved);
+        if (upgraded) this.persist(this.progress);
+
         selectedAdventureId = ResolveInitialAdventureId();
-        Loaded += (_, _) => this.setMusicActive(true);
-        Unloaded += (_, _) => this.setMusicActive(false);
+        Loaded += (_, _) =>
+        {
+            this.setMusicActive(true);
+            Localization.LanguageChanged += OnAdventureLanguageChanged;
+        };
+        Unloaded += (_, _) =>
+        {
+            this.setMusicActive(false);
+            Localization.LanguageChanged -= OnAdventureLanguageChanged;
+        };
         ShowHub();
+    }
+
+    private void OnAdventureLanguageChanged(object? sender, EventArgs e)
+    {
+        if (Content is not AdventureEncounterRunHost) ShowHub();
     }
 
     private string ResolveInitialAdventureId()
     {
-        if (progress.LastAdventureId is string last && AdventureCatalog.TryGet(last, out _)) return last;
+        if (progress.LastAdventureId is string last &&
+            AdventureCatalog.All.Any(item => string.Equals(item.Id, last, StringComparison.OrdinalIgnoreCase)))
+            return last;
         return AdventureCatalog.All.FirstOrDefault()?.Id
             ?? throw new InvalidOperationException("Tales from the Backroom requires at least one registered adventure.");
     }
@@ -161,13 +182,15 @@ internal sealed class AdventureLibraryHubControl : UserControl
     private void ShowHub()
     {
         var right = new StackPanel { VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 36, 0, 0) };
-        right.Children.Add(PremiumLoungeTheme.Heading("ADVENTURE LIBRARY"));
+        right.Children.Add(PremiumLoungeTheme.Heading(
+            AdventureTextLocalization.Ui("AdventureLibrary", "ADVENTURE LIBRARY")));
 
         foreach (AdventureDefinition tale in AdventureCatalog.All)
             right.Children.Add(BuildAdventureCard(tale));
 
         var leftSettings = new StackPanel();
-        leftSettings.Children.Add(PremiumLoungeTheme.Heading("CHARACTER & NEW RUN", 13));
+        leftSettings.Children.Add(PremiumLoungeTheme.Heading(
+            AdventureTextLocalization.Ui("CharacterNewRun", "CHARACTER & NEW RUN"), 13));
         leftSettings.Children.Add(BuildCharacterCreator(SelectedAdventure));
         leftSettings.Children.Add(BuildMusicPanel());
 
@@ -176,17 +199,17 @@ internal sealed class AdventureLibraryHubControl : UserControl
         Content = PremiumLoungeTheme.Build(
             "convention-hall.png",
             "private-gaming-salon.png",
-            "BEYOND THE CASINO FLOOR",
-            "Every door has a story.",
-            "Make your choices, roll the dice and live with what follows.",
-            "TALES FROM THE BACKROOM",
-            "Choose a tale.",
-            "Make your choices, roll the dice and carry the consequences. Every tale shares your character, inventory and encounters.",
+            AdventureTextLocalization.Ui("BeyondCasino", "BEYOND THE CASINO FLOOR"),
+            AdventureTextLocalization.Ui("EveryDoor", "Every door has a story."),
+            AdventureTextLocalization.Ui("HubSubtitle", "Make your choices, roll the dice and live with what follows."),
+            AdventureTextLocalization.Ui("TalesTitle", "TALES FROM THE BACKROOM"),
+            AdventureTextLocalization.Ui("ChooseTale", "Choose a tale."),
+            AdventureTextLocalization.Ui("HubDescription", "Make your choices, roll the dice and carry the consequences. Every tale shares your character, inventory and encounters."),
             PremiumLoungeTheme.Stats(
-                $"AVAILABLE TALES   {AdventureCatalog.All.Count:N0}    ·    COMPLETED   {completed:N0}",
-                $"RUNS STARTED   {started:N0}    ·    SELECTED   {SelectedAdventure.Title.ToUpperInvariant()}"),
+                $"{AdventureTextLocalization.Ui("AvailableTales", "AVAILABLE TALES")}   {AdventureCatalog.All.Count:N0}    ·    {AdventureTextLocalization.Ui("Completed", "COMPLETED")}   {completed:N0}",
+                $"{AdventureTextLocalization.Ui("RunsStarted", "RUNS STARTED")}   {started:N0}    ·    {AdventureTextLocalization.Ui("Selected", "SELECTED")}   {AdventureTextLocalization.Title(SelectedAdventure).ToUpperInvariant()}"),
             right,
-            "Your investigation board, encounters, choices and character persist between sessions. Each tale can be continued independently.",
+            AdventureTextLocalization.Ui("PersistenceInfo", "Your investigation board, encounters, choices and character persist between sessions. Each tale can be continued independently."),
             leftSecondary: leftSettings,
             compactLeft: true,
             rightScrollable: false);
@@ -196,25 +219,28 @@ internal sealed class AdventureLibraryHubControl : UserControl
     {
         progress.Runs.TryGetValue(adventure.Id, out AdventureRunState? run);
         bool selected = string.Equals(adventure.Id, selectedAdventureId, StringComparison.OrdinalIgnoreCase);
-        string state = run is null ? "UNPLAYED" : run.Completed ? "COMPLETED" : "IN PROGRESS";
+        string state = run is null ? AdventureTextLocalization.Ui("Unplayed", "UNPLAYED")
+            : run.Completed ? AdventureTextLocalization.Ui("Completed", "COMPLETED")
+            : AdventureTextLocalization.Ui("InProgress", "IN PROGRESS");
         var row = PremiumLoungeTheme.Row(
-            adventure.Title,
-            $"{adventure.Acts?.Count ?? 0} acts · {adventure.Scenes.Count} scenes · {state}",
+            AdventureTextLocalization.Title(adventure),
+            $"{adventure.Acts?.Count ?? 0} {AdventureTextLocalization.Ui("Acts", "acts")} · {adventure.Scenes.Count} {AdventureTextLocalization.Ui("Scenes", "scenes")} · {AdventureTextLocalization.Raw(state)}",
             selected: selected, height: 93);
         var body = (StackPanel)PremiumLoungeTheme.RowContent(row).Children[1];
-        var description = PremiumLoungeTheme.Label(adventure.Subtitle, 11, PremiumLoungeTheme.Muted);
+        var description = PremiumLoungeTheme.Label(
+            AdventureTextLocalization.Subtitle(adventure), 11, PremiumLoungeTheme.Muted);
         description.Margin = new Thickness(0, 5, 4, 0);
         body.Children.Add(description);
 
         if (run is not null && !run.Completed)
         {
             AdventureRunState continuation = run;
-            var resume = PremiumLoungeTheme.Button("RESUME", "AdventureResume_" + adventure.Id.Replace('-', '_'),
+            var resume = PremiumLoungeTheme.Button(AdventureTextLocalization.Ui("Resume", "RESUME"), "AdventureResume_" + adventure.Id.Replace('-', '_'),
                 () => ShowRun(adventure, continuation), width: 100);
             PremiumLoungeTheme.AddRowAction(row, resume, 108);
         }
 
-        var select = PremiumLoungeTheme.Button("SELECT", "AdventureSelect_" + adventure.Id.Replace('-', '_'),
+        var select = PremiumLoungeTheme.Button(AdventureTextLocalization.Ui("Select", "SELECT"), "AdventureSelect_" + adventure.Id.Replace('-', '_'),
             () =>
             {
                 selectedAdventureId = adventure.Id;
@@ -236,10 +262,10 @@ internal sealed class AdventureLibraryHubControl : UserControl
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
         var chooser = new StackPanel();
-        chooser.Children.Add(AdventureUi.Eyebrow("NEW RUN", 10));
+        chooser.Children.Add(AdventureUi.Eyebrow(AdventureTextLocalization.Ui("NewRun", "NEW RUN"), 10));
         chooser.Children.Add(new TextBlock
         {
-            Text = adventure.Title,
+            Text = AdventureTextLocalization.Title(adventure),
             FontFamily = new FontFamily("Georgia"),
             FontSize = 20,
             Foreground = AdventureUi.Ink("#F0E0C6"),
@@ -247,7 +273,7 @@ internal sealed class AdventureLibraryHubControl : UserControl
         });
         var classes = BuildClassSelector(adventure);
         chooser.Children.Add(classes);
-        Button start = PremiumLoungeTheme.Button("BEGIN NEW RUN", "AdventureBeginNewRun", () =>
+        Button start = PremiumLoungeTheme.Button(AdventureTextLocalization.Ui("BeginNewRun", "BEGIN NEW RUN"), "AdventureBeginNewRun", () =>
         {
             AdventureCharacterState character = AdventureCharacterCatalog.Create(adventure, SelectedClassId(classes), playerName());
             StartFreshRun(adventure, character);
@@ -276,8 +302,8 @@ internal sealed class AdventureLibraryHubControl : UserControl
         {
             AdventureClassDefinition definition = AdventureCharacterCatalog.AllFor(adventure)
                 .First(item => item.Id == SelectedClassId(classes));
-            className.Text = definition.Name;
-            description.Text = definition.Description;
+            className.Text = AdventureTextLocalization.ClassName(adventure, definition);
+            description.Text = AdventureTextLocalization.ClassDescription(adventure, definition);
             string abilityLine = string.Join(" · ", Enum.GetValues<AdventureAbility>().Select(ability =>
             {
                 int score = definition.Abilities.TryGetValue(ability, out int value) ? value : 10;
@@ -285,7 +311,7 @@ internal sealed class AdventureLibraryHubControl : UserControl
             }));
             string special = string.IsNullOrWhiteSpace(definition.SpecialMechanicName)
                 ? string.Empty
-                : $"\nSPECIAL · {definition.SpecialMechanicName}";
+                : $"\n{AdventureTextLocalization.Ui("Special", "SPECIAL")} · {AdventureTextLocalization.ClassSpecial(adventure, definition)}";
             stats.Text = $"HP {definition.MaxHitPoints} · Armor {definition.Armor}\n{abilityLine}{special}";
         }
         classes.SelectionChanged += (_, _) => UpdatePreview();
@@ -313,7 +339,7 @@ internal sealed class AdventureLibraryHubControl : UserControl
         {
             var item = new ComboBoxItem
             {
-                Content = definition.Name,
+                Content = AdventureTextLocalization.ClassName(adventure, definition),
                 Tag = definition.Id,
                 FontFamily = new FontFamily("Georgia"),
                 FontSize = 14,

@@ -1,5 +1,6 @@
 <Window x:Class="BlackjackCasino.Desktop.SlotMachineWindow" x:ClassModifier="internal"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:local="clr-namespace:BlackjackCasino.Desktop"
         Title="Midnight Reels · Blackjack Casino" Width="1100" Height="800" MinWidth="900" MinHeight="680"
         WindowStartupLocation="CenterOwner" Background="#100D18" Foreground="#F7EEDB" FontFamily="Segoe UI"
         PreviewKeyDown="Window_KeyDown" Closed="Window_Closed">
@@ -19,7 +20,7 @@
       <StackPanel><TextBlock Text="CASINO / SLOTS" Foreground="#B39CBE" FontSize="11"/><TextBlock Text="MIDNIGHT REELS" FontSize="23" FontWeight="Bold"/></StackPanel>
       <Button x:Name="ReelsBackButton" Content="← Casino lobby  [Esc]" Style="{StaticResource SlotButton}" HorizontalAlignment="Right" Click="Back_Click"/>
     </Grid>
-    <Viewbox Grid.Row="1" Stretch="Uniform" Margin="0,12,0,0">
+    <Viewbox Grid.Row="1" Stretch="Uniform" Margin="0,12,0,0" local:CrispViewboxText.Enabled="True">
       <Grid Width="1000" Height="650">
         <Grid.ColumnDefinitions><ColumnDefinition Width="674"/><ColumnDefinition Width="20"/><ColumnDefinition Width="306"/></Grid.ColumnDefinitions>
         <Border Background="{StaticResource SlotCabinet}" BorderBrush="{StaticResource SlotGold}" BorderThickness="3" CornerRadius="26" Padding="20">

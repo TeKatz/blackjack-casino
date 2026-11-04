@@ -49,7 +49,7 @@ internal partial class ProgressionWindow
 
         if (overview.Children.Count > 0 && overview.Children[0] is TextBlock caption)
         {
-            caption.Text = "SEASON PASS LIBRARY";
+            caption.Text = SeasonTextLocalization.Ui("PassLibrary", "SEASON PASS LIBRARY");
         }
 
         var selector = new ComboBox
@@ -65,7 +65,7 @@ internal partial class ProgressionWindow
 
         var activateButton = new Button
         {
-            Content = "ACTIVATE PASS",
+            Content = SeasonTextLocalization.Ui("ActivatePass", "ACTIVATE PASS"),
             MinWidth = 132,
             Margin = new Thickness(10, 0, 18, 0),
             VerticalAlignment = VerticalAlignment.Center,
@@ -114,15 +114,15 @@ internal partial class ProgressionWindow
             {
                 SeasonProgressState progress = controller.Service.GetOrCreateSeasonProgress(season.Id);
                 string catalogState = season.Archived
-                    ? "Legacy"
+                    ? SeasonTextLocalization.Ui("Legacy", "Legacy")
                     : string.Equals(season.Id, SeasonCatalog.Current.Id, StringComparison.Ordinal)
-                        ? "Current"
-                        : "Available";
-                string activeState = string.Equals(season.Id, activeId, StringComparison.Ordinal) ? " · ACTIVE" : string.Empty;
+                        ? SeasonTextLocalization.Ui("Current", "Current")
+                        : SeasonTextLocalization.Ui("Available", "Available");
+                string activeState = string.Equals(season.Id, activeId, StringComparison.Ordinal) ? " · " + SeasonTextLocalization.Ui("Active", "ACTIVE") : string.Empty;
 
                 seasonPassSelector.Items.Add(new SeasonPassChoice(
                     season.Id,
-                    $"{season.Name} · {catalogState} · Tier {progress.Tier}/{season.Tiers.Count}{activeState}"));
+                    $"{SeasonTextLocalization.Name(season)} · {catalogState} · {SeasonTextLocalization.Ui("Tier", "Tier")} {progress.Tier}/{season.Tiers.Count}{activeState}"));
             }
 
             seasonPassSelector.SelectedItem = seasonPassSelector.Items
@@ -199,25 +199,25 @@ internal partial class ProgressionWindow
 
         bool isActive = string.Equals(viewed.Id, controller.Profile.ActiveSeasonId, StringComparison.Ordinal);
         string passKind = viewed.Archived
-            ? "LEGACY PASS"
+            ? SeasonTextLocalization.Ui("LegacyPass", "LEGACY PASS")
             : string.Equals(viewed.Id, SeasonCatalog.Current.Id, StringComparison.Ordinal)
-                ? "CURRENT PASS"
-                : "AVAILABLE PASS";
+                ? SeasonTextLocalization.Ui("CurrentPass", "CURRENT PASS")
+                : SeasonTextLocalization.Ui("AvailablePass", "AVAILABLE PASS");
 
         if (seasonPassActivateButton is not null)
         {
             seasonPassActivateButton.IsEnabled = !isActive;
-            seasonPassActivateButton.Content = isActive ? "ACTIVE PASS" : "ACTIVATE PASS";
+            seasonPassActivateButton.Content = isActive ? SeasonTextLocalization.Ui("ActivePass", "ACTIVE PASS") : "ACTIVATE PASS";
             seasonPassActivateButton.ToolTip = isActive
-                ? "This pass currently receives all new Season XP."
-                : $"Activate {viewed.Name}. Your progress on the currently active pass will be preserved.";
+                ? SeasonTextLocalization.Ui("ActiveTip", "This pass currently receives all new Season XP.")
+                : $"{SeasonTextLocalization.Ui("ActivateTip", "Activate")} {SeasonTextLocalization.Name(viewed)}. {SeasonTextLocalization.Ui("ActivateTipSuffix", "Your progress on the currently active pass will be preserved.")}";
         }
 
         if (seasonPassStateText is not null)
         {
             seasonPassStateText.Text = isActive
-                ? $"{passKind} · ACTIVE · all new Season XP is earned on this pass"
-                : $"{passKind} · VIEWING · progress is saved separately · activate this pass to send new Season XP here";
+                ? $"{passKind} · {SeasonTextLocalization.Ui("Active", "ACTIVE")} · {SeasonTextLocalization.Ui("ActiveSeasonXp", "all new Season XP is earned on this pass")}"
+                : $"{passKind} · {SeasonTextLocalization.Ui("Viewing", "VIEWING")} · {SeasonTextLocalization.Ui("InactiveSeasonXp", "progress is saved separately · activate this pass to send new Season XP here")}";
             seasonPassStateText.Foreground = isActive ? PositiveBrush : MutedBrush;
         }
     }
@@ -231,9 +231,9 @@ internal partial class ProgressionWindow
         }
 
         SeasonProgressState progress = controller.Service.GetOrCreateSeasonProgress(season.Id);
-        SeasonTitleText.Text = season.Name;
-        SeasonDescriptionText.Text = season.Description;
-        SeasonTierText.Text = $"Tier {progress.Tier} / {season.Tiers.Count} · {progress.Experience:N0} Season XP";
+        SeasonTitleText.Text = SeasonTextLocalization.Name(season);
+        SeasonDescriptionText.Text = SeasonTextLocalization.Description(season);
+        SeasonTierText.Text = $"{SeasonTextLocalization.Ui("Tier", "Tier")} {progress.Tier} / {season.Tiers.Count} · {progress.Experience:N0} {SeasonTextLocalization.Ui("SeasonXp", "Season XP")}";
         SeasonProgress.Maximum = season.Tiers[^1].RequiredExperience;
         SeasonProgress.Value = Math.Min(progress.Experience, season.Tiers[^1].RequiredExperience);
 
@@ -255,14 +255,14 @@ internal partial class ProgressionWindow
         if (SeasonNextRewardText.Parent is StackPanel nextPanel
             && nextPanel.Children.OfType<TextBlock>().FirstOrDefault() is { } nextCaption)
         {
-            nextCaption.Text = rewardsEnabled ? "NEXT REWARD" : "NEXT LEVEL";
+            nextCaption.Text = rewardsEnabled ? SeasonTextLocalization.Ui("NextReward", "NEXT REWARD") : SeasonTextLocalization.Ui("NextLevel", "NEXT LEVEL");
         }
 
         if (SeasonRewardsPanel.Parent is ScrollViewer rewardsScroll
             && rewardsScroll.Parent is Grid rewardsGrid
             && rewardsGrid.Children.OfType<TextBlock>().FirstOrDefault() is { } rewardsCaption)
         {
-            rewardsCaption.Text = rewardsEnabled ? "REWARD TRACK" : "PROGRESSION TRACK";
+            rewardsCaption.Text = rewardsEnabled ? SeasonTextLocalization.Ui("RewardTrack", "REWARD TRACK") : SeasonTextLocalization.Ui("ProgressionTrack", "PROGRESSION TRACK");
         }
 
         if (SeasonMilestonesPanel.Parent is ScrollViewer milestonesScroll
@@ -272,11 +272,11 @@ internal partial class ProgressionWindow
             TextBlock[] labels = milestoneHeader.Children.OfType<TextBlock>().ToArray();
             if (labels.Length > 0)
             {
-                labels[0].Text = rewardsEnabled ? "MILESTONE REWARDS" : "XP MILESTONES";
+                labels[0].Text = rewardsEnabled ? SeasonTextLocalization.Ui("MilestoneRewards", "MILESTONE REWARDS") : SeasonTextLocalization.Ui("XpMilestones", "XP MILESTONES");
             }
             if (labels.Length > 1)
             {
-                labels[1].Text = rewardsEnabled ? "Special unlocks at key tiers" : "Long-form progression checkpoints";
+                labels[1].Text = rewardsEnabled ? SeasonTextLocalization.Ui("SpecialUnlocks", "Special unlocks at key tiers") : SeasonTextLocalization.Ui("LongForm", "Long-form progression checkpoints");
             }
         }
     }
@@ -287,22 +287,22 @@ internal partial class ProgressionWindow
         SeasonNextRewardText.Inlines.Clear();
         if (next is null)
         {
-            SeasonNextRewardText.Text = "Season complete";
-            SeasonNextRewardXpText.Text = $"All {season.Tiers.Count} rewards unlocked.";
+            SeasonNextRewardText.Text = SeasonTextLocalization.Ui("SeasonComplete", "Season complete");
+            SeasonNextRewardXpText.Text = $"{SeasonTextLocalization.Ui("All", "All")} {season.Tiers.Count} {SeasonTextLocalization.Ui("RewardsUnlocked", "rewards unlocked.")}";
         }
         else
         {
-            SeasonNextRewardText.Inlines.Add(new Run($"Tier {next.Tier} · "));
-            SeasonNextRewardText.Inlines.Add(new Run($"◆ {next.Coins:N0} coins") { Foreground = CoinBrush, FontWeight = FontWeights.Bold });
+            SeasonNextRewardText.Inlines.Add(new Run($"{SeasonTextLocalization.Ui("Tier", "Tier")} {next.Tier} · "));
+            SeasonNextRewardText.Inlines.Add(new Run($"◆ {next.Coins:N0} {SeasonTextLocalization.Ui("Coins", "coins")}") { Foreground = CoinBrush, FontWeight = FontWeights.Bold });
             if (next.CosmeticId is not null)
             {
                 SeasonNextRewardText.Inlines.Add(new Run($" + {CosmeticCatalog.Get(next.CosmeticId).Name}"));
             }
             if (CollectionCatalog.SeasonPack(next.Tier) is { } nextPack)
             {
-                SeasonNextRewardText.Inlines.Add(new Run($" + {nextPack} pack"));
+                SeasonNextRewardText.Inlines.Add(new Run($" + {nextPack} {SeasonTextLocalization.Ui("Pack", "pack")}"));
             }
-            SeasonNextRewardXpText.Text = $"{Math.Max(0, next.RequiredExperience - progress.Experience):N0} XP to unlock";
+            SeasonNextRewardXpText.Text = $"{Math.Max(0, next.RequiredExperience - progress.Experience):N0} {SeasonTextLocalization.Ui("XpToUnlock", "XP to unlock")}";
         }
 
         SeasonMilestonesPanel.Children.Clear();
@@ -324,7 +324,7 @@ internal partial class ProgressionWindow
                 Opacity = unlocked ? 1 : 0.78,
             };
             var stack = new StackPanel();
-            stack.Children.Add(new TextBlock { Text = $"TIER {tier.Tier}", FontSize = 10, FontWeight = FontWeights.Bold, Foreground = unlocked ? PositiveBrush : MutedBrush });
+            stack.Children.Add(new TextBlock { Text = $"{SeasonTextLocalization.Ui("Tier", "Tier").ToUpperInvariant()} {tier.Tier}", FontSize = 10, FontWeight = FontWeights.Bold, Foreground = unlocked ? PositiveBrush : MutedBrush });
             if (tier.CosmeticId is not null)
             {
                 CosmeticDefinition cosmetic = CosmeticCatalog.Get(tier.CosmeticId);
@@ -366,7 +366,7 @@ internal partial class ProgressionWindow
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(126) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(90) });
 
-            string state = unlocked ? "UNLOCKED" : isNext ? "NEXT" : "LOCKED";
+            string state = unlocked ? SeasonTextLocalization.Ui("Unlocked", "UNLOCKED") : isNext ? SeasonTextLocalization.Ui("Next", "NEXT") : SeasonTextLocalization.Ui("Locked", "LOCKED");
             var badge = new Border
             {
                 Background = unlocked
@@ -398,10 +398,10 @@ internal partial class ProgressionWindow
                 FontWeight = cosmetic is null ? FontWeights.Normal : FontWeights.SemiBold,
                 Margin = new Thickness(8, 0, 8, 0),
             };
-            reward.Inlines.Add(new Run($"◆ {tier.Coins:N0} coins") { Foreground = CoinBrush, FontWeight = FontWeights.SemiBold });
+            reward.Inlines.Add(new Run($"◆ {tier.Coins:N0} {SeasonTextLocalization.Ui("Coins", "coins")}") { Foreground = CoinBrush, FontWeight = FontWeights.SemiBold });
             if (pack is { } tierPack)
             {
-                reward.Inlines.Add(new Run($" · {tierPack} card pack"));
+                reward.Inlines.Add(new Run($" · {tierPack} {SeasonTextLocalization.Ui("CardPack", "card pack")}"));
             }
             if (cosmetic is not null)
             {
@@ -475,7 +475,7 @@ internal partial class ProgressionWindow
                 Child = CreateCosmeticPreview(cosmetic),
                 ToolTip = $"{cosmetic.Name} · {cosmetic.Kind}",
             };
-            System.Windows.Automation.AutomationProperties.SetName(preview, $"{cosmetic.Name} preview");
+            System.Windows.Automation.AutomationProperties.SetName(preview, $"{cosmetic.Name} {SeasonTextLocalization.Ui("Preview", "preview")}");
             panel.Children.Add(preview);
         }
 
@@ -536,10 +536,10 @@ internal partial class ProgressionWindow
     {
         SeasonTierDefinition? next = season.Tiers.FirstOrDefault(tier => tier.Tier > progress.Tier);
         SeasonNextRewardText.Inlines.Clear();
-        SeasonNextRewardText.Text = next is null ? "Pass complete" : $"Tier {next.Tier}";
+        SeasonNextRewardText.Text = next is null ? SeasonTextLocalization.Ui("PassComplete", "Pass complete") : $"Tier {next.Tier}";
         SeasonNextRewardXpText.Text = next is null
-            ? $"All {season.Tiers.Count} tiers reached · rewards will be assigned separately."
-            : $"{Math.Max(0, next.RequiredExperience - progress.Experience):N0} XP to next tier · reward slot reserved";
+            ? $"{season.Tiers.Count} {SeasonTextLocalization.Ui("AllTiersReached", "tiers reached · rewards will be assigned separately.")}"
+            : $"{Math.Max(0, next.RequiredExperience - progress.Experience):N0} {SeasonTextLocalization.Ui("XpToNext", "XP to next tier · reward slot reserved")}";
 
         SeasonRewardsPanel.Children.Clear();
         long previousRequirement = 0;
@@ -598,7 +598,7 @@ internal partial class ProgressionWindow
 
             var placeholder = new TextBlock
             {
-                Text = "Reward slot reserved",
+                Text = SeasonTextLocalization.Ui("RewardReserved", "Reward slot reserved"),
                 Foreground = MutedBrush,
                 VerticalAlignment = VerticalAlignment.Center,
             };
@@ -607,7 +607,7 @@ internal partial class ProgressionWindow
 
             var xp = new TextBlock
             {
-                Text = $"+{tierCost:N0} XP · {tier.RequiredExperience:N0} total",
+                Text = $"+{tierCost:N0} XP · {tier.RequiredExperience:N0} {SeasonTextLocalization.Ui("Total", "total")}",
                 Foreground = MutedBrush,
                 HorizontalAlignment = HorizontalAlignment.Right,
                 VerticalAlignment = VerticalAlignment.Center,
@@ -617,7 +617,7 @@ internal partial class ProgressionWindow
 
             var status = new TextBlock
             {
-                Text = reached ? "REACHED" : isNext ? "NEXT" : "LOCKED",
+                Text = reached ? SeasonTextLocalization.Ui("Reached", "REACHED") : isNext ? SeasonTextLocalization.Ui("Next", "NEXT") : SeasonTextLocalization.Ui("Locked", "LOCKED"),
                 FontSize = 10,
                 FontWeight = FontWeights.Bold,
                 Foreground = reached
@@ -657,20 +657,20 @@ internal partial class ProgressionWindow
             var stack = new StackPanel();
             stack.Children.Add(new TextBlock
             {
-                Text = $"TIER {tier.Tier}",
+                Text = $"{SeasonTextLocalization.Ui("Tier", "Tier").ToUpperInvariant()} {tier.Tier}",
                 FontSize = 10,
                 FontWeight = FontWeights.Bold,
                 Foreground = reached ? PositiveBrush : MutedBrush,
             });
             stack.Children.Add(new TextBlock
             {
-                Text = $"{tier.RequiredExperience:N0} XP total",
+                Text = $"{tier.RequiredExperience:N0} XP {SeasonTextLocalization.Ui("Total", "total")}",
                 Margin = new Thickness(0, 5, 0, 0),
                 FontWeight = FontWeights.SemiBold,
             });
             stack.Children.Add(new TextBlock
             {
-                Text = reached ? "REACHED" : "CHECKPOINT",
+                Text = reached ? SeasonTextLocalization.Ui("Reached", "REACHED") : SeasonTextLocalization.Ui("Checkpoint", "CHECKPOINT"),
                 FontSize = 9,
                 Foreground = MutedBrush,
                 Margin = new Thickness(0, 3, 0, 0),

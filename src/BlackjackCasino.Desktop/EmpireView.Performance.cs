@@ -38,7 +38,7 @@ internal sealed partial class EmpireView
             view.ambientVisibilityHooked = true;
         }
 
-        view.SynchronizeAmbientAnimationClock();
+        view.EnsureAmbientAnimationActive();
     }
 
     private static void OnEmpireViewIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -46,7 +46,36 @@ internal sealed partial class EmpireView
         if (sender is EmpireView view)
         {
             view.SynchronizeAmbientAnimationClock();
+            if ((bool)e.NewValue) view.EnsureAmbientAnimationActive();
         }
+    }
+
+    // A WPF view can remain visible while its DispatcherTimer is suspended by a
+    // transient unload/reparent. The economy's independent 1 Hz refresh and real
+    // presentation changes must be capable of restoring ambient motion themselves.
+    // This also makes the very first enabled frame deterministic rather than depending
+    // on a timer tick racing a new preference value.
+    private void EnsureAmbientAnimationActive()
+    {
+        if (disposed || !IsLoaded || !IsVisible) return;
+        SynchronizeAmbientAnimationClock();
+        if (animations() && !wasAnimating) AdvanceAmbientAnimationFrame();
+    }
+
+    private void AdvanceAmbientAnimationFrame()
+    {
+        bool active = !disposed && IsVisible && animations();
+        if (active)
+        {
+            phase += .08;
+            foreach (EmpireRoomCard card in cards)
+                if (card.IsVisible && card.Artwork.Open) card.Artwork.Phase = phase;
+        }
+        else if (wasAnimating)
+        {
+            foreach (EmpireRoomCard card in cards) card.StopAnimation();
+        }
+        wasAnimating = active;
     }
 
     private void SynchronizeAmbientAnimationClock()

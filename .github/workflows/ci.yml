@@ -16,10 +16,13 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+
+      - name: Repository documentation and release guard
+        run: python tools/check_repo_contract.py
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 
@@ -36,6 +39,27 @@ jobs:
 
       - name: Localization resource parity
         run: python tools/check_localization.py
+
+      - name: Migrated German shell coverage
+        run: python tools/check_localization_coverage.py --strict-shell
+
+      - name: Adventure localization sanity checks
+        run: python tools/check_adventure_localization.py
+
+      - name: Versioned release-notes smoke
+        shell: pwsh
+        run: |
+          python tools/generate_release_notes.py --version 0.10.1-dev.0 --channel development --output-json artifacts/release-notes-ci.json --output-markdown artifacts/release-notes-ci.md
+          $notes = Get-Content artifacts/release-notes-ci.json -Raw | ConvertFrom-Json
+          if ($notes.version -ne "0.10.1-dev.0" -or $notes.channel -ne "development" -or $notes.changes.Count -lt 1) {
+            throw "Generated changelog has incorrect version, channel, or missing entries."
+          }
+          if (!(Test-Path artifacts/release-notes-ci.md)) { throw "Missing Markdown changelog." }
+          foreach ($change in $notes.changes) {
+            if ([string]::IsNullOrWhiteSpace($change.titleDe) -or [string]::IsNullOrWhiteSpace($change.descriptionDe)) {
+              throw "Generated changelog entry is missing German editorial text."
+            }
+          }
 
       - name: Collection artwork coverage
         run: python -X warn_default_encoding -W error::EncodingWarning tools/check_collection_art.py
@@ -66,7 +90,7 @@ jobs:
 
       - name: Upload startup smoke evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: desktop-startup-smoke
           path: artifacts/startup-smoke
@@ -75,7 +99,7 @@ jobs:
 
       - name: Upload casino presentation evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: casino-presentation-regression
           path: artifacts/presentation-regression
@@ -87,7 +111,7 @@ jobs:
 
       - name: Upload Manor runtime evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: manor-windows-runtime-evidence
           path: artifacts/manor-windows-smoke
@@ -98,7 +122,7 @@ jobs:
         run: dotnet run --project tools/AudioRender --configuration Release -- artifacts/audio-review
 
       - name: Upload audio review
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: casino-audio-review
           path: artifacts/audio-review
@@ -106,7 +130,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-results
           path: TestResults
@@ -143,7 +167,7 @@ jobs:
 
       - name: Upload Windows preview
         if: github.event_name == 'push' || github.event_name == 'pull_request'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: blackjack-casino-preview-win-x64
           path: artifacts/preview-app

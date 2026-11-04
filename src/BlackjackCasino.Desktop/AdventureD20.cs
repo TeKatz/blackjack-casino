@@ -47,6 +47,7 @@ internal sealed class AdventureD20 : FrameworkElement
         set
         {
             visualVariant = string.IsNullOrWhiteSpace(value) ? "dice-ivory" : value;
+            palette = DiceAppearance.For(visualVariant);
             InvalidateVisual();
         }
     }
@@ -71,16 +72,7 @@ internal sealed class AdventureD20 : FrameworkElement
 
     internal void PlayRollMotion() => BeginControlledRollMotion(RollMotionMilliseconds);
 
-    private (Color Top, Color Bottom, Color Number, Color Edge) Palette => visualVariant switch
-    {
-        "dice-obsidian" => (Rgb("#35404A"), Rgb("#0C1119"), Rgb("#F4D483"), Rgb("#C4A05B")),
-        "dice-jade" => (Rgb("#4A987D"), Rgb("#123E36"), Rgb("#F5EDD5"), Rgb("#97C7A4")),
-        "dice-violet" => (Rgb("#9471B7"), Rgb("#35224D"), Rgb("#FFE5A5"), Rgb("#CBA7E7")),
-        "dice-ice" => (Rgb("#B7DAEE"), Rgb("#4D7594"), Rgb("#132F49"), Rgb("#D5EDFA")),
-        "dice-ruby" => (Rgb("#AE5668"), Rgb("#491F32"), Rgb("#FFF0D2"), Rgb("#E1A287")),
-        "dice-aurora" => (Rgb("#348B88"), Rgb("#663D84"), Rgb("#E1FFF4"), Rgb("#85E6D0")),
-        _ => (Rgb("#FFFCEE"), Rgb("#D7CBB2"), Rgb("#2D3730"), Rgb("#BDA36E")),
-    };
+    private DiceAppearance palette = DiceAppearance.For("dice-ivory");
 
     private void BeginControlledRollMotion(int durationMilliseconds)
     {
@@ -136,12 +128,19 @@ internal sealed class AdventureD20 : FrameworkElement
         }
         geometry.Freeze();
 
-        var palette = Palette;
+        if (palette.Glow is Color glow)
+        {
+            dc.DrawGeometry(null, DiceAppearance.Halo(glow, 8, 15), geometry);
+            dc.DrawGeometry(null, DiceAppearance.Halo(glow, 4, 38), geometry);
+        }
         var fill = new LinearGradientBrush(palette.Top, palette.Bottom, 70);
         var edge = new Pen(new SolidColorBrush(active ? Rgb("#E8C982") : palette.Edge), active ? 3 : 1.8);
         dc.DrawGeometry(fill, edge, geometry);
 
-        var facetPen = new Pen(new SolidColorBrush(Color.FromArgb(95, palette.Number.R, palette.Number.G, palette.Number.B)), 1);
+        if (palette.Glow is not null || palette.Engraved)
+            dc.DrawGeometry(palette.Reflection, null, geometry);
+
+        var facetPen = new Pen(new SolidColorBrush(Color.FromArgb(95, palette.Pips.R, palette.Pips.G, palette.Pips.B)), 1);
         Point centre = P(.50, .52);
         foreach (Point point in outer) dc.DrawLine(facetPen, centre, point);
         dc.DrawLine(facetPen, outer[7], outer[2]);
@@ -152,7 +151,7 @@ internal sealed class AdventureD20 : FrameworkElement
         string text = value == 0 ? "20" : value.ToString(CultureInfo.InvariantCulture);
         var formatted = new FormattedText(text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
             new Typeface(new FontFamily("Georgia"), FontStyles.Normal, FontWeights.Bold, FontStretches.Normal),
-            size * (text.Length == 1 ? .25 : .21), new SolidColorBrush(palette.Number), VisualTreeHelper.GetDpi(this).PixelsPerDip);
+            size * (text.Length == 1 ? .25 : .21), new SolidColorBrush(palette.Pips), VisualTreeHelper.GetDpi(this).PixelsPerDip);
         dc.DrawText(formatted, new Point(centre.X - formatted.Width / 2, centre.Y - formatted.Height / 2 - size * .01));
 
         if (active)

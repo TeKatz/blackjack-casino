@@ -229,6 +229,16 @@ public static class ChallengeRegistry
     public static bool Complete(PlayerProfileState profile, ChallengeDefinition challenge) =>
         Progress(profile, challenge) >= challenge.Goal;
 
+    /// <summary>
+    /// Jigsaw milestones are paid automatically by JigsawProgression. Expose them in the
+    /// shared Challenges screen as already claimed; never award their coins twice.
+    /// </summary>
+    public static bool IsClaimed(PlayerProfileState profile, ChallengeDefinition challenge) =>
+        profile.ClaimedChallengeIds.Contains(challenge.Id, StringComparer.Ordinal)
+        || (challenge.Category == ChallengeCategory.Jigsaw
+            && challenge.Id.StartsWith("jigsaw-", StringComparison.Ordinal)
+            && profile.Jigsaw.UnlockedAchievementIds.Contains(challenge.Id["jigsaw-".Length..]));
+
     public static string CategoryName(ChallengeDefinition challenge) =>
         AdventureChallengeCatalog.IsAdventure(challenge) ? "Adventure" : challenge.Category.ToString();
 }

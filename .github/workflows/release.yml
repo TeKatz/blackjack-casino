@@ -15,10 +15,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 
@@ -67,6 +69,12 @@ jobs:
           New-Item -ItemType Directory -Path artifacts/app/tools/updater -Force | Out-Null
           Copy-Item artifacts/updater/BlackjackCasino.Updater.exe artifacts/app/tools/updater/BlackjackCasino.Updater.exe
 
+      - name: Generate installed release notes
+        shell: pwsh
+        run: |
+          python tools/generate_release_notes.py --version $env:VERSION --channel stable --output-json artifacts/release-notes.json --output-markdown artifacts/release-notes.md
+          Copy-Item artifacts/release-notes.json artifacts/app/release-notes.json
+
       - name: Package and create update manifest
         shell: pwsh
         run: |
@@ -104,5 +112,6 @@ jobs:
             "artifacts/blackjack-casino-win-x64.zip" `
             "artifacts/blackjack-casino-win-x64.zip.sha256" `
             "artifacts/update-manifest.json" `
+            "artifacts/release-notes.json" `
             --title "Blackjack Casino ${{ github.ref_name }}" `
-            --generate-notes
+            --notes-file "artifacts/release-notes.md"

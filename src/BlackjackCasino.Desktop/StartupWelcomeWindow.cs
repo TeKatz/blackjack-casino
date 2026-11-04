@@ -13,7 +13,7 @@ internal sealed class StartupWelcomeWindow : Window
 {
     private StartupWelcomeWindow(PlayerProfileState profile)
     {
-        Title = "Welcome to The Midnight Club";
+        Title = T("WindowTitle");
         Width = 940;
         Height = 620;
         MinWidth = 940;
@@ -80,7 +80,7 @@ internal sealed class StartupWelcomeWindow : Window
         titleDock.Children.Add(close);
         titleDock.Children.Add(new TextBlock
         {
-            Text = "THE MIDNIGHT CLUB   ·   WELCOME",
+            Text = T("TopBar"),
             VerticalAlignment = VerticalAlignment.Center,
             FontFamily = new FontFamily("Georgia"),
             FontWeight = FontWeights.Bold,
@@ -98,10 +98,10 @@ internal sealed class StartupWelcomeWindow : Window
         root.Children.Add(body);
 
         var left = new StackPanel();
-        left.Children.Add(Eyebrow($"VERSION {AppVersion.Current}"));
+        left.Children.Add(Eyebrow(F("Version", AppVersion.Current)));
         left.Children.Add(new TextBlock
         {
-            Text = $"Welcome back, {profile.DisplayName}.",
+            Text = F("Back", profile.DisplayName),
             FontFamily = new FontFamily("Georgia"),
             FontSize = 31,
             FontWeight = FontWeights.Bold,
@@ -111,7 +111,7 @@ internal sealed class StartupWelcomeWindow : Window
         });
         left.Children.Add(new TextBlock
         {
-            Text = "The tables are ready. Here is your club at a glance before the night begins.",
+            Text = T("Intro"),
             FontSize = 12.5,
             Foreground = Ink("#A4B7AE"),
             TextWrapping = TextWrapping.Wrap,
@@ -122,14 +122,15 @@ internal sealed class StartupWelcomeWindow : Window
         var stats = new UniformGrid { Columns = 2 };
         decimal totalWagered = TotalWagered(profile);
         decimal totalNet = TotalNet(profile);
-        stats.Children.Add(Stat("PLAYER", $"P{profile.Prestige} · LV {profile.Level}", "Prestige & current level", "#E0BD70"));
-        stats.Children.Add(Stat("PLAYTIME", FormatDuration(TimeSpan.FromSeconds(profile.TotalPlaytimeSeconds)), "Lifetime at the club", "#86C7AF"));
-        stats.Children.Add(Stat("WAGERED", Money(totalWagered), "Across casino games", "#9DB7C8"));
-        stats.Children.Add(Stat("CASINO NET", SignedMoney(totalNet), totalNet >= 0 ? "Lifetime profit" : "Lifetime result", totalNet >= 0 ? "#8CCB8D" : "#D98A85"));
+        stats.Children.Add(Stat(T("Player"), $"P{profile.Prestige} · LV {profile.Level}", T("PlayerDetail"), "#E0BD70"));
+        stats.Children.Add(Stat(T("Playtime"), FormatDuration(TimeSpan.FromSeconds(profile.TotalPlaytimeSeconds)), T("PlaytimeDetail"), "#86C7AF"));
+        stats.Children.Add(Stat(T("Wagered"), Money(totalWagered), T("WageredDetail"), "#9DB7C8"));
+        stats.Children.Add(Stat(T("Net"), SignedMoney(totalNet), T(totalNet >= 0 ? "NetProfit" : "NetResult"), totalNet >= 0 ? "#8CCB8D" : "#D98A85"));
         left.Children.Add(stats);
         left.Children.Add(new TextBlock
         {
-            Text = $"◆ {profile.Coins:N0} cosmetic coins   ·   {profile.OwnedCosmeticIds.Count:N0} cosmetics owned",
+            Text = F("Cosmetics", profile.Coins, profile.OwnedCosmeticIds.Count),
+            TextWrapping = TextWrapping.Wrap,
             Foreground = Ink("#9CB0A7"),
             FontSize = 11,
             Margin = new Thickness(4, 12, 0, 0),
@@ -147,10 +148,10 @@ internal sealed class StartupWelcomeWindow : Window
         Grid.SetColumn(notesPanel, 2);
         body.Children.Add(notesPanel);
         var notes = new StackPanel();
-        notes.Children.Add(Eyebrow("WHAT'S NEW"));
+        notes.Children.Add(Eyebrow(T("WhatsNew")));
         notes.Children.Add(new TextBlock
         {
-            Text = "Tonight's changes",
+            Text = T("Changes"),
             FontFamily = new FontFamily("Georgia"),
             FontSize = 25,
             Foreground = Ink("#F0DFC0"),
@@ -160,16 +161,45 @@ internal sealed class StartupWelcomeWindow : Window
         {
             var item = new Grid { Margin = new Thickness(0, 0, 0, 12) };
             item.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(28) });
-            item.ColumnDefinitions.Add(new ColumnDefinition());
+            item.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 0 });
             item.Children.Add(new TextBlock { Text = "✦", Foreground = Ink(note.Accent), FontSize = 13, Margin = new Thickness(1, 2, 0, 0) });
             var copy = new StackPanel();
-            copy.Children.Add(new TextBlock { Text = note.Title, FontWeight = FontWeights.Bold, Foreground = Ink("#E9DFC9"), FontSize = 12 });
-            copy.Children.Add(new TextBlock { Text = note.Description, Foreground = Ink("#9FB1A8"), FontSize = 11, TextWrapping = TextWrapping.Wrap, LineHeight = 16, Margin = new Thickness(0, 3, 0, 0) });
+            copy.Children.Add(new TextBlock
+            {
+                Text = note.Title,
+                FontWeight = FontWeights.Bold,
+                Foreground = Ink("#E9DFC9"),
+                FontSize = 12,
+                TextWrapping = TextWrapping.Wrap,
+                LineHeight = 17,
+                ToolTip = note.Title,
+            });
+            if (!string.IsNullOrWhiteSpace(note.Description))
+                copy.Children.Add(new TextBlock { Text = note.Description, Foreground = Ink("#9FB1A8"), FontSize = 11, TextWrapping = TextWrapping.Wrap, LineHeight = 16, Margin = new Thickness(0, 3, 0, 0) });
             Grid.SetColumn(copy, 1);
             item.Children.Add(copy);
             notes.Children.Add(item);
         }
-        notesPanel.Child = notes;
+        var notesScroll = new ScrollViewer
+        {
+            Content = notes,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            CanContentScroll = false,
+        };
+        // A ScrollViewer can otherwise measure a StackPanel wider than its viewport.
+        // Bind its actual content width to the scrollable viewport (including the
+        // space reserved for a vertical scrollbar) so long release titles and
+        // descriptions wrap instead of disappearing behind the right border.
+        notesScroll.ScrollChanged += (_, e) =>
+        {
+            if (e.ViewportWidthChange == 0 || !double.IsFinite(notesScroll.ViewportWidth))
+                return;
+            double width = Math.Max(1, notesScroll.ViewportWidth);
+            if (double.IsNaN(notes.Width) || Math.Abs(notes.Width - width) > .5)
+                notes.Width = width;
+        };
+        notesPanel.Child = notesScroll;
 
         var footer = new Border
         {
@@ -180,7 +210,7 @@ internal sealed class StartupWelcomeWindow : Window
         var footerDock = new DockPanel();
         var enter = new Button
         {
-            Content = "ENTER THE CLUB  →",
+            Content = T("Enter"),
             MinWidth = 180,
             Height = 42,
             Padding = new Thickness(18, 7, 18, 7),
@@ -198,7 +228,7 @@ internal sealed class StartupWelcomeWindow : Window
         footerDock.Children.Add(enter);
         footerDock.Children.Add(new TextBlock
         {
-            Text = "Your progress is loaded locally and ready.",
+            Text = T("Ready"),
             Foreground = Ink("#7F978C"),
             FontSize = 10.5,
             VerticalAlignment = VerticalAlignment.Center,
@@ -214,7 +244,7 @@ internal sealed class StartupWelcomeWindow : Window
         var stack = new StackPanel();
         stack.Children.Add(new TextBlock { Text = caption, Foreground = Ink("#81978D"), FontSize = 9, FontWeight = FontWeights.Bold });
         stack.Children.Add(new TextBlock { Text = value, Foreground = Ink(accent), FontSize = 18, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 4, 0, 1), TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = value });
-        stack.Children.Add(new TextBlock { Text = detail, Foreground = Ink("#758A81"), FontSize = 9.5 });
+        stack.Children.Add(new TextBlock { Text = detail, Foreground = Ink("#758A81"), FontSize = 9.5, TextWrapping = TextWrapping.Wrap });
         return new Border
         {
             Background = Ink("#0D1A18"),
@@ -247,6 +277,9 @@ internal sealed class StartupWelcomeWindow : Window
         Cursor = CasinoCursors.Hand,
     };
 
+    private static string T(string key) => Localization.T("Shell.Welcome." + key);
+    private static string F(string key, params object?[] args) => Localization.F("Shell.Welcome." + key, args);
+
     private static decimal TotalWagered(PlayerProfileState p) => p.LifetimeStatistics.TotalWagered + p.Slots.TotalWagered + p.NeonVault.TotalWagered + p.NineLives.TotalWagered + p.Manor.TotalWagered + p.LegacyPooledSlots.TotalWagered + p.Kniffel.TotalWagered;
     private static decimal TotalNet(PlayerProfileState p) => p.LifetimeStatistics.NetProfit + p.Slots.NetProfit + p.NeonVault.NetProfit + p.NineLives.NetProfit + p.Manor.NetProfit + p.LegacyPooledSlots.NetProfit + p.Kniffel.NetProfit;
     private static string Money(decimal value) => value.ToString("C0", CultureInfo.GetCultureInfo("en-US"));
@@ -255,15 +288,3 @@ internal sealed class StartupWelcomeWindow : Window
     private static SolidColorBrush Ink(string color) => new((Color)ColorConverter.ConvertFromString(color));
 }
 
-internal sealed record ReleaseNote(string Title, string Description, string Accent);
-
-internal static class ReleaseNotesCatalog
-{
-    internal static IReadOnlyList<ReleaseNote> Current { get; } =
-    [
-        new("Dead Man's Hand & Investigation Board", "The noir campaign foundation is playable. Case nodes can be moved, filtered and inspected, with live story synchronization in the detached board window.", "#D1AC63"),
-        new("Case-board workspace polish", "A bounded scalable workspace, custom window chrome, category icons and improved board interaction make larger investigations easier to manage.", "#9DB7C8"),
-        new("Prestige presentation", "Player Prestige and Casino Empire Prestige now receive a dedicated premium confirmation experience instead of standard Windows prompts.", "#E0BD70"),
-        new("Casino Lobby quality-of-life", "A new Exit Game action sits directly in the lobby, and this welcome screen now summarizes your profile and the current version on every launch.", "#86C7AF"),
-    ];
-}

@@ -5,7 +5,12 @@ namespace BlackjackCasino.Desktop;
 
 public partial class MainWindow
 {
-    private sealed record LanguageOption(UiLanguagePreference Language, string DisplayName);
+    // The shared custom ComboBox template can render SelectionBoxItem directly.
+    // Provide a display-safe string even when its item template is not applied.
+    private sealed record LanguageOption(UiLanguagePreference Language, string DisplayName)
+    {
+        public override string ToString() => DisplayName;
+    }
 
     private static readonly LanguageOption[] LanguageOptions =
     [
@@ -104,6 +109,7 @@ public partial class MainWindow
         }
 
         RefreshGameUi();
+        if (tableRulesInitialized) UpdateTableRulePresentation();
         Localization.ApplyTree(this);
     }
 }

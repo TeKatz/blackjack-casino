@@ -13,11 +13,13 @@ public partial class MainWindow
         lobby?.IsVisible == true ? "lobby" : "blackjack");
 
     private AreaPresentationSettings HostMusicSettings => preferences.Presentation(
+        keepHostMusicForEmbeddedGame ? "midnight-merge" :
         EmpirePageOpen ? "casino-empire" : lobby?.IsVisible == true ? "lobby" : "blackjack");
 
     private void SyncHostMusic()
     {
-        backgroundMusic.SetEnabled(HostMusicSettings.MusicEnabled && !KniffelPageOpen && embeddedGameShell is null);
+        backgroundMusic.SetEnabled(HostMusicSettings.MusicEnabled && !KniffelPageOpen &&
+            (embeddedGameShell is null || keepHostMusicForEmbeddedGame));
         backgroundMusic.SetVolume(HostMusicSettings.MusicVolume);
     }
 

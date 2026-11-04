@@ -1,5 +1,6 @@
 using BlackjackCasino.Core.Adventure;
 using BlackjackCasino.Core.Memory;
+using BlackjackCasino.Core.Jigsaw;
 using BlackjackCasino.Core.Solitaire;
 using BlackjackCasino.Core.Sudoku;
 using BlackjackCasino.Core.WordSearch;
@@ -27,6 +28,8 @@ public partial class MainWindow
         RecordWordSearchCompletions(preferences.WordSearch);
         preferences.Memory.Normalize();
         RecordMemoryCompletions(preferences.Memory);
+        preferences.Jigsaw.Normalize();
+        RecordJigsawCompletions(preferences.Jigsaw);
         preferences = preferences with { Adventure = AdventureProgressState.Normalize(preferences.Adventure) };
 
         bool loungeClosing = false;
@@ -70,6 +73,7 @@ public partial class MainWindow
         Func<SolitaireStatistics> solitaireStats = () => progressionController?.Profile.Solitaire ?? new SolitaireStatistics();
         Func<WordSearchStatistics> wordSearchStats = () => progressionController?.Profile.WordSearch ?? new WordSearchStatistics();
         Func<MemoryStatistics> memoryStats = () => progressionController?.Profile.Memory ?? new MemoryStatistics();
+        Func<JigsawStatistics> jigsawStats = () => progressionController?.Profile.Jigsaw ?? new JigsawStatistics();
 
         LoungeHostedGameRegistry.SetSessionModules([
             LoungeVisualUpgrade.UpgradeSolitaire(SolitaireLoungeModule.Create(
@@ -111,6 +115,16 @@ public partial class MainWindow
                 () => preferences.Presentation("chill-lounge").SoundEnabled,
                 () => preferences.Presentation("chill-lounge").AnimationsEnabled),
                 memoryStats),
+            JigsawLoungeModule.Create(
+                preferences.Jigsaw,
+                state =>
+                {
+                    state.Normalize();
+                    preferences = preferences with { Jigsaw = state };
+                    if (!testSession) SavePreferences();
+                },
+                jigsawStats,
+                RecordJigsawCompletion),
             AdventureLibraryLoungeModule.Create(
                 preferences.Adventure,
                 state =>
@@ -296,4 +310,28 @@ public partial class MainWindow
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return ProgressionAward.None; }
     }
+    private void RecordJigsawCompletions(JigsawProgressState state)
+    {
+        if (progressionController is null) return;
+        state.Normalize();
+        foreach (JigsawCompletionRecord completion in state.CompletedGames)
+        {
+            if (progressionController.Profile.Jigsaw.RecordedGameIds.Contains(completion.GameId)) continue;
+            try
+            {
+                ProgressionAward award = progressionController.ProcessJigsaw(completion);
+                CreditProgressionBankrollReward(award.BankrollEarned, "Jigsaw reward");
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return; }
+        }
+    }
+
+    private ProgressionAward RecordJigsawCompletion(JigsawCompletionRecord completion)
+    {
+        if (progressionController is null) return ProgressionAward.None;
+        ProgressionAward award = progressionController.ProcessJigsaw(completion);
+        CreditProgressionBankrollReward(award.BankrollEarned, "Jigsaw reward");
+        return award;
+    }
+
 }

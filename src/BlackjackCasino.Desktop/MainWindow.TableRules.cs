@@ -209,9 +209,9 @@ public partial class MainWindow
         if (announce)
         {
             string name = currentTablePreset == TablePresetId.Custom
-                ? "Custom"
-                : TablePresets.Get(currentTablePreset).Name;
-            StatusText.Text = $"{name} table ready. Place a bet to begin.";
+                ? Localization.T("Shell.Table.Custom")
+                : Localization.T($"Shell.Table.Preset.{currentTablePreset}.Name");
+            StatusText.Text = Localization.F("Shell.Table.Ready", name);
         }
 
         SavePreferences();
@@ -278,8 +278,8 @@ public partial class MainWindow
         if (tablePresetDescription is not null)
         {
             tablePresetDescription.Text = currentTablePreset == TablePresetId.Custom
-                ? "Your saved custom rules. Advanced setup changes only this profile."
-                : TablePresets.Get(currentTablePreset).Description;
+                ? Localization.T("Shell.Table.CustomDescription")
+                : Localization.T($"Shell.Table.Preset.{currentTablePreset}.Description");
         }
 
         if (ResetBankrollButton.Parent is StackPanel tableSection
@@ -287,21 +287,15 @@ public partial class MainWindow
         {
             SetSummaryValue(summary, 1, RuleHeadline());
             SetSummaryValue(summary, 2, BlackjackPayoutText());
-            SetSummaryValue(summary, 3, currentTableRules.AllowLateSurrender ? "Late" : "Off");
+            SetSummaryValue(summary, 3, Localization.T(currentTableRules.AllowLateSurrender ? "Shell.Table.Late" : "Shell.Table.Off"));
         }
 
-        TextBlock[] tablePrint = FindVisualChildren<TextBlock>(TableSurface).ToArray();
-        TextBlock? payout = tablePrint.FirstOrDefault(x => x.Text.StartsWith("BLACKJACK PAYS", StringComparison.Ordinal));
-        if (payout is not null)
-        {
-            payout.Text = currentTableRules.BlackjackPayout == 1.2m ? "BLACKJACK PAYS 6 TO 5" : "BLACKJACK PAYS 3 TO 2";
-        }
-
-        TextBlock? dealerRule = tablePrint.FirstOrDefault(x => x.Text.StartsWith("DEALER ", StringComparison.Ordinal) && x.Text.Contains("17", StringComparison.Ordinal));
-        if (dealerRule is not null)
-        {
-            dealerRule.Text = currentTableRules.DealerHitsSoft17 ? "DEALER HITS SOFT 17" : "DEALER STANDS ON ALL 17";
-        }
+        // Resolve by stable XAML names, not by English display text: otherwise changing
+        // language prevents subsequent rule changes from finding the two table labels.
+        TablePayoutRuleText.Text = Localization.T(currentTableRules.BlackjackPayout == 1.2m
+            ? "Shell.Table.Pays65" : "Shell.Table.Pays32");
+        TableDealerSoft17RuleText.Text = Localization.T(currentTableRules.DealerHitsSoft17
+            ? "Shell.Table.DealerH17" : "Shell.Table.DealerS17");
     }
 
     private string RuleHeadline()

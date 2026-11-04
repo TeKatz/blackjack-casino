@@ -151,7 +151,7 @@
 
       <Grid>
         <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
-        <StackPanel IsHitTestVisible="False" HorizontalAlignment="Center" Grid.Row="1" Margin="0,12,0,18" Opacity="0.55"><TextBlock Text="BLACKJACK PAYS 3 TO 2" Foreground="{DynamicResource AccentLightBrush}" FontSize="22" FontWeight="SemiBold" HorizontalAlignment="Center"/><TextBlock Text="DEALER STANDS ON ALL 17" Foreground="#C4D2C9" FontSize="11" Margin="0,5,0,0" HorizontalAlignment="Center"/></StackPanel>
+        <StackPanel IsHitTestVisible="False" HorizontalAlignment="Center" Grid.Row="1" Margin="0,12,0,18" Opacity="0.55"><TextBlock x:Name="TablePayoutRuleText" Text="BLACKJACK PAYS 3 TO 2" Foreground="{DynamicResource AccentLightBrush}" FontSize="22" FontWeight="SemiBold" HorizontalAlignment="Center"/><TextBlock x:Name="TableDealerSoft17RuleText" Text="DEALER STANDS ON ALL 17" Foreground="#C4D2C9" FontSize="11" Margin="0,5,0,0" HorizontalAlignment="Center"/></StackPanel>
         <StackPanel Grid.Row="0" Margin="24,20,24,4" HorizontalAlignment="Center"><TextBlock Text="DEALER" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource MutedTextBrush}" HorizontalAlignment="Center" /><StackPanel x:Name="DealerCardsPanel" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8,0,4" /><TextBlock x:Name="DealerValueText" FontSize="16" FontWeight="SemiBold" Foreground="#E0E9E3" HorizontalAlignment="Center" /></StackPanel>
         <Grid Grid.Row="2">
           <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>

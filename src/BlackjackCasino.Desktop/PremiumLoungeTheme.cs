@@ -42,7 +42,8 @@ internal static class PremiumLoungeTheme
         bool compactLeft = false,
         bool rightScrollable = true,
         AlignmentX featureAlignmentX = AlignmentX.Center,
-        AlignmentY featureAlignmentY = AlignmentY.Center)
+        AlignmentY featureAlignmentY = AlignmentY.Center,
+        bool centeredFeatureCopy = false)
     {
         var stage = new Grid
         {
@@ -97,12 +98,12 @@ internal static class PremiumLoungeTheme
         hero.Children.Add(Label(heroSubtitle, 16, "#D9E0D8", false, TextAlignment.Center));
         layout.Children.Add(hero);
 
-        var plate = new Border
+        // Apply the large shadow only to a decorative sibling, not to text descendants.
+        var plateShadow = new Border
         {
-            BorderThickness = new Thickness(2),
-            BorderBrush = Ink("#C7A25F"),
-            CornerRadius = new CornerRadius(24),
             Background = Ink("#E8071D20"),
+            CornerRadius = new CornerRadius(24),
+            IsHitTestVisible = false,
             Effect = new DropShadowEffect
             {
                 Color = Colors.Black,
@@ -110,6 +111,15 @@ internal static class PremiumLoungeTheme
                 ShadowDepth = 12,
                 Opacity = .73,
             },
+        };
+        Grid.SetRow(plateShadow, 1);
+        layout.Children.Add(plateShadow);
+        var plate = new Border
+        {
+            BorderThickness = new Thickness(2),
+            BorderBrush = Ink("#C7A25F"),
+            CornerRadius = new CornerRadius(24),
+            Background = Ink("#E8071D20"),
         };
         var interior = new Grid();
         interior.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(.47, GridUnitType.Star) });
@@ -159,7 +169,8 @@ internal static class PremiumLoungeTheme
 
         var copy = new StackPanel
         {
-            Margin = compactLeft ? new Thickness(40, 20, 36, 12) : new Thickness(52, 34, 39, 24),
+            Margin = centeredFeatureCopy ? new Thickness(42, 16, 42, 12) :
+                compactLeft ? new Thickness(40, 20, 36, 12) : new Thickness(52, 34, 39, 24),
         };
         var gameTitle = Label(gameLabel, 17, Gold, true, TextAlignment.Center);
         gameTitle.HorizontalAlignment = HorizontalAlignment.Stretch;
@@ -173,7 +184,9 @@ internal static class PremiumLoungeTheme
             Foreground = Ink(Cream),
             TextWrapping = TextWrapping.Wrap,
             LineHeight = compactLeft ? 39 : 51,
-            MaxWidth = 565,
+            MaxWidth = centeredFeatureCopy ? double.PositiveInfinity : 565,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            TextAlignment = centeredFeatureCopy ? TextAlignment.Center : TextAlignment.Left,
             Margin = new Thickness(0, compactLeft ? 4 : 10, 0, compactLeft ? 9 : 17),
         });
         copy.Children.Add(new TextBlock
@@ -182,7 +195,9 @@ internal static class PremiumLoungeTheme
             FontSize = compactLeft ? 13.5 : 16,
             Foreground = Ink("#D8E6DE"),
             TextWrapping = TextWrapping.Wrap,
-            MaxWidth = 545,
+            MaxWidth = centeredFeatureCopy ? double.PositiveInfinity : 545,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            TextAlignment = centeredFeatureCopy ? TextAlignment.Center : TextAlignment.Left,
             LineHeight = compactLeft ? 20 : 25,
         });
         if (leftExtra is not null)
@@ -235,19 +250,14 @@ internal static class PremiumLoungeTheme
         Grid.SetRow(footerText, 2);
         layout.Children.Add(footerText);
 
-        return new Grid
+        var viewbox = new Viewbox
         {
-            Background = Ink("#071214"),
-            Children =
-            {
-                new Viewbox
-                {
-                    Stretch = Stretch.Uniform,
-                    StretchDirection = StretchDirection.Both,
-                    Child = stage,
-                },
-            },
+            Stretch = Stretch.Uniform,
+            StretchDirection = StretchDirection.Both,
+            Child = stage,
         };
+        CrispViewboxText.SetEnabled(viewbox, true);
+        return new Grid { Background = Ink("#071214"), Children = { viewbox } };
     }
 
     internal static TextBlock Label(string text, double size, string hex, bool bold = false,
@@ -346,17 +356,17 @@ internal static class PremiumLoungeTheme
         };
         if (selected)
         {
-            row.Effect = Halo(.27);
+            row.BorderThickness = new Thickness(2);
         }
         row.MouseEnter += (_, _) =>
         {
             Fade(outline, selected ? "#86FFF1" : "#C9A56B");
-            row.Effect = Halo(.44);
+            // Border tint animates without rasterizing live text.
         };
         row.MouseLeave += (_, _) =>
         {
             Fade(outline, selected ? "#4FE0CC" : "#4D6768");
-            row.Effect = selected ? Halo(.27) : null;
+            // Restore the original tint, keeping all text live.
         };
         var grid = new Grid();
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(30) });
@@ -431,14 +441,14 @@ internal static class PremiumLoungeTheme
             Fade(fill, hover);
             Fade(rim, gold ? "#FFE0A4" : "#7CFFF0");
             Scale(control, 1.025);
-            control.Effect = Halo(.55, gold);
+            // Retain the color and scale feedback, but avoid rasterizing the caption.
         };
         control.MouseLeave += (_, _) =>
         {
             Fade(fill, normal);
             Fade(rim, border);
             Scale(control, 1);
-            control.Effect = null;
+            // No bitmap effect to clear.
         };
         control.GotKeyboardFocus += (_, _) =>
         {

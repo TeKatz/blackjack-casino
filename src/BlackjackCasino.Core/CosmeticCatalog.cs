@@ -33,8 +33,16 @@ public static class CosmeticCatalog
         new("diceset-jade", "Jade Palace", CosmeticKind.DiceSet, 3200, true, "Polished jade and ivory pips. Appearance only.", "dice-jade"),
         new("diceset-violet", "Royal Amethyst", CosmeticKind.DiceSet, 4200, true, "Violet crystal and pale gold pips. Appearance only.", "dice-violet"),
         new("diceset-ice", "Moonstone", CosmeticKind.DiceSet, 5200, true, "Moonlit blue and silver pips. Appearance only.", "dice-ice"),
-        new("diceset-ruby", "Ruby Velvet", CosmeticKind.DiceSet, 6200, true, "Deep ruby and cream pips. Appearance only.", "dice-ruby"),
-        new("diceset-aurora", "Aurora Prism", CosmeticKind.DiceSet, 8000, true, "Teal and violet with luminous pips. Appearance only.", "dice-aurora"),
+        new("diceset-ruby", "Ruby Velvet", CosmeticKind.DiceSet, 6200, true, "Deep ruby velvet, cream pips and a soft garnet glow. Appearance only.", "dice-ruby"),
+        new("diceset-aurora", "Aurora Prism", CosmeticKind.DiceSet, 8000, true, "Teal-violet crystal with a subtle aurora halo. Appearance only.", "dice-aurora"),
+
+        // Shop expansion: two standard, two mid-range and two premium dice sets.
+        new("diceset-porcelain", "Porcelain Blue", CosmeticKind.DiceSet, 750, true, "Standard collection: glazed ivory, cobalt pips and a blue enamel rim. Appearance only.", "dice-porcelain"),
+        new("diceset-forest", "Forest Resin", CosmeticKind.DiceSet, 1200, true, "Standard collection: deep pine resin with warm ivory pips. Appearance only.", "dice-forest"),
+        new("diceset-copper", "Copper Forge", CosmeticKind.DiceSet, 5600, true, "Mid-range collection: burnished copper, charcoal pips and engraved corners. Appearance only.", "dice-copper"),
+        new("diceset-sapphire", "Sapphire Inlay", CosmeticKind.DiceSet, 6800, true, "Mid-range collection: deep sapphire glass with silver inlays. Appearance only.", "dice-sapphire"),
+        new("diceset-astral-opal", "Astral Opal", CosmeticKind.DiceSet, 11000, true, "Premium collection: opalescent lavender, teal reflections and a quiet astral glow. Appearance only.", "dice-astral-opal"),
+        new("diceset-solar-crown", "Solar Crown", CosmeticKind.DiceSet, 14500, true, "Premium collection: obsidian and champagne gold with a soft solar halo. Appearance only.", "dice-solar-crown"),
 
         // Shop titles.
         new("title-night-owl", "Night Owl", CosmeticKind.Title, 300, true, "For sessions that somehow became 2 AM."),
@@ -57,7 +65,7 @@ public static class CosmeticCatalog
         new("frame-royal-violet", "Royal Violet", CosmeticKind.Frame, 4200, true, "A violet-gold gradient with a slow regal shimmer.", "royal-violet"),
         new("frame-obsidian-pulse", "Obsidian Pulse", CosmeticKind.Frame, 5200, true, "Nearly black glass with a razor-thin cyan pulse.", "obsidian-pulse"),
 
-        // Shop portraits. These are original vector-style profile images rendered by the desktop client.
+        // Shop portraits. Original bundled artwork is shared by previews and equipped portraits.
         new("portrait-night-dealer", "Night Dealer", CosmeticKind.Portrait, 700, true, "A sharp-suited dealer beneath a single table light.", "portrait-night-dealer"),
         new("portrait-card-shark", "Card Shark", CosmeticKind.Portrait, 900, true, "A silver-framed shark in a tailored petrol suit.", "portrait-card-shark"),
         new("portrait-moon-cat", "Moon Cat", CosmeticKind.Portrait, 1100, true, "A casino cat who absolutely knows the count.", "portrait-moon-cat"),
@@ -73,6 +81,14 @@ public static class CosmeticCatalog
         new("cardset-emerald-house", "Emerald House", CosmeticKind.CardSet, 3400, true, "House green, warm gold and a classic private-table finish.", "card-emerald-house"),
         new("cardset-midnight-blue", "Midnight Blue", CosmeticKind.CardSet, 4600, true, "Cool moonlit faces with navy backs and pale silver details.", "card-midnight-blue"),
         new("cardset-midnight-sovereign", "Midnight Sovereign", CosmeticKind.CardSet, 12500, true, "Prestige collection: obsidian faces, antique gold trim and a royal Midnight Club back.", "card-midnight-sovereign", 1),
+
+        // Shop expansion: premium finishes are cosmetic and do not require prestige.
+        new("cardset-linen", "Linen Ivory", CosmeticKind.CardSet, 650, true, "Standard collection: warm linen faces, graphite ink and a woven ivory back.", "card-linen"),
+        new("cardset-harbor", "Harbor Blue", CosmeticKind.CardSet, 950, true, "Standard collection: crisp blue-white faces and a nautical blue lattice back.", "card-harbor"),
+        new("cardset-rosewood", "Rosewood Club", CosmeticKind.CardSet, 5600, true, "Mid-range collection: parchment faces, rosewood backs and engraved copper diamonds.", "card-rosewood"),
+        new("cardset-jade-filigree", "Jade Filigree", CosmeticKind.CardSet, 6800, true, "Mid-range collection: pale celadon faces with jade and gold fan filigree.", "card-jade-filigree"),
+        new("cardset-celestial-opal", "Celestial Opal", CosmeticKind.CardSet, 14500, true, "Premium collection: pearl-lilac faces, opalescent edge reflections and a luminous star back.", "card-celestial-opal"),
+        new("cardset-solar-eclipse", "Solar Eclipse", CosmeticKind.CardSet, 18000, true, "Premium collection: obsidian faces, a soft gold corona and an eclipsed-sun back.", "card-solar-eclipse"),
 
         // Prestige rewards.
         new("title-prestige-1", "The Regular", CosmeticKind.Title, 0, false, "Prestige I reward."),

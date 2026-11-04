@@ -16,7 +16,7 @@
   <Style TargetType="TextBox"><Setter Property="Background" Value="#19151F"/><Setter Property="Foreground" Value="#ECE3D5"/><Setter Property="BorderBrush" Value="#68545F"/><Setter Property="Padding" Value="8,6"/></Style>
   </ResourceDictionary>
  </Window.Resources>
- <Viewbox Stretch="Uniform" Margin="16">
+ <Viewbox Stretch="Uniform" Margin="16" local:CrispViewboxText.Enabled="True">
   <Grid Width="1180" Height="760">
    <Grid.RowDefinitions><RowDefinition Height="66"/><RowDefinition Height="622"/><RowDefinition Height="72"/></Grid.RowDefinitions>
    <Grid><StackPanel><TextBlock Text="BLACKJACK CASINO  /  A DIFFERENT KIND OF NIGHT" FontSize="10" Foreground="#9E91A9"/><TextBlock Text="MIDNIGHT MANOR" FontSize="29" FontFamily="Georgia" FontWeight="Bold" Foreground="#D9BE88"/></StackPanel><StackPanel HorizontalAlignment="Right" Orientation="Horizontal"><StackPanel Margin="0,0,20,0"><TextBlock Text="SHARED PLAY-MONEY BANKROLL" Foreground="#A798B3" FontSize="10" HorizontalAlignment="Right"/><TextBlock x:Name="BalanceText" FontSize="23" FontWeight="Bold" HorizontalAlignment="Right"/></StackPanel><Button Content="← Casino lobby  [Esc]" Style="{StaticResource ManorButton}" Click="Back_Click" VerticalAlignment="Top"/></StackPanel></Grid>

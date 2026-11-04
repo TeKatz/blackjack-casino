@@ -29,6 +29,36 @@ public static class WordSearchCatalog
         new("Kitchen", ["KITCHEN", "PLATE", "SPOON", "KNIFE", "BREAD", "PASTA", "HERBS", "OVEN", "PAN", "BOWL", "SUGAR", "CREAM", "LEMON", "HONEY", "SAUCE", "APPLE", "GARLIC", "TOAST"]),
     ];
 
+
+    // The localized list changes only the authored puzzle vocabulary, never the stable
+    // puzzle ID, difficulty, seed, completion receipt or serialized in-progress grid.
+    // Existing active games therefore remain playable after a language switch.
+    private static readonly IReadOnlyDictionary<string, ThemeWords> GermanThemes =
+        new Dictionary<string, ThemeWords>(StringComparer.Ordinal)
+        {
+            ["Midnight Club"] = new("Mitternachtsclub", ["CASINO", "SAMT", "LOUNGE", "TISCH", "JETON", "GEBER", "KARTE", "JAZZ", "GOLD", "NACHT", "LICHT", "BAR", "BUEHNE", "SUITE", "GLUECK", "MUSIK", "GLAS", "WUERFEL"]),
+            ["Quiet Morning"] = new("Stiller Morgen", ["KAFFEE", "TEE", "SONNE", "FENSTER", "RUHE", "PAPIER", "TASSE", "TOAST", "LICHT", "BUCH", "STUHL", "WIND", "BALKON", "HONIG", "UHR", "PFLANZE", "STILLE", "WOLKE"]),
+            ["City Lights"] = new("Lichter der Stadt", ["STADT", "TURM", "NEON", "STRASSE", "ZUG", "BRUECKE", "TAXI", "PLATZ", "HOTEL", "SCHILD", "DACH", "METRO", "PARK", "NACHT", "BLOCK", "LICHT", "CAFE", "FLUSS"]),
+            ["Book Nook"] = new("Leseecke", ["ROMAN", "SEITEN", "STORY", "GEDICHT", "AUTOR", "REGAL", "PLOT", "KAPITEL", "TINTE", "PAPIER", "BUCH", "EINBAND", "PROSA", "SAGE", "LESER", "VERS", "WORT", "LESEN"]),
+            ["Jazz Night"] = new("Jazznacht", ["JAZZ", "PIANO", "BASS", "TROMMEL", "TROMPETE", "SAXOFON", "RHYTHMUS", "SWING", "SOLO", "CLUB", "BUEHNE", "NOTE", "MELODIE", "BAND", "BLUES", "BLECH", "TEMPO", "LIED"]),
+            ["Ocean Air"] = new("Meeresluft", ["MEER", "WELLEN", "MUSCHEL", "KORALLE", "FLUT", "STRAND", "SAND", "INSEL", "RIFF", "BOOT", "SEGEL", "BRISE", "SCHAUM", "BUCHT", "HAFEN", "MOEWE", "DUENE", "KUESTE"]),
+            ["Forest Walk"] = new("Waldspaziergang", ["WALD", "MOOS", "FARN", "PFAD", "KIEFER", "EICHE", "LAUB", "BACH", "STEIN", "HIRSCH", "VOEGEL", "SCHATTEN", "WURZEL", "HAIN", "RINDE", "WEG", "REGEN", "WIESE"]),
+            ["Night Sky"] = new("Nachthimmel", ["STERNE", "MOND", "KOMET", "BAHN", "ALL", "NOVA", "PLANET", "GALAXIE", "KOSMOS", "METEOR", "FINSTERNIS", "VENUS", "MARS", "SATURN", "LUNAR", "SONNE", "HIMMEL", "DAEMMER"]),
+            ["Autumn"] = new("Herbst", ["HERBST", "BERNSTEIN", "BLAETTER", "EICHEL", "AHORN", "MOST", "SCHAL", "BRISE", "ERNTE", "KUERBIS", "KERZE", "KUPFER", "REGEN", "APFEL", "WOLLE", "GOLD", "NEBEL", "PFAD"]),
+            ["Cinema"] = new("Kino", ["KINO", "FILM", "LEINWAND", "MIME", "SZENE", "KAMERA", "TICKET", "DRAMA", "KOMOEDIE", "REGIE", "LICHT", "TON", "BILD", "STUDIO", "ABSPANN", "ROLLE", "SKRIPT", "POPCORN"]),
+            ["Road Trip"] = new("Autoreise", ["REISE", "ROUTE", "STRASSE", "KARTE", "MOTEL", "RADIO", "BRUECKE", "TUNNEL", "TAL", "MEILEN", "BENZIN", "PICKNICK", "KAMERA", "KUESTE", "SCHILD", "FAHRT", "SONNE", "TASCHE"]),
+            ["Kitchen"] = new("Kueche", ["KUECHE", "TELLER", "LOEFFEL", "MESSER", "BROT", "NUDEL", "KRAUT", "OFEN", "PFANNE", "SCHALE", "ZUCKER", "SAHNE", "ZITRONE", "HONIG", "SOSSE", "APFEL", "KNOBLAUCH", "TOAST"]),
+        };
+
+    public static WordSearchPuzzleDefinition ForLanguage(WordSearchPuzzleDefinition definition, string? language)
+    {
+        ArgumentNullException.ThrowIfNull(definition);
+        return language?.StartsWith("de", StringComparison.OrdinalIgnoreCase) == true
+               && GermanThemes.TryGetValue(definition.Theme, out ThemeWords? german)
+            ? definition with { Theme = german.Theme, WordBank = german.Words }
+            : definition;
+    }
+
     private static readonly IReadOnlyList<WordSearchPuzzleDefinition> puzzles = Build();
     public static IReadOnlyList<WordSearchPuzzleDefinition> All => puzzles;
 

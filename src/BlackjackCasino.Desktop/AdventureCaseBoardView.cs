@@ -13,7 +13,7 @@ namespace BlackjackCasino.Desktop;
 
 internal sealed class AdventureCaseBoardView : Grid
 {
-    private const int CurrentLayoutVersion = 2;
+    private const int CurrentLayoutVersion = 3;
     private const double LegacyWidth = 1440;
     private const double LegacyHeight = 900;
     private const double CardWidth = 280;
@@ -77,6 +77,7 @@ internal sealed class AdventureCaseBoardView : Grid
         Loaded += (_, _) =>
         {
             if (migrated) Dispatcher.BeginInvoke(FitKnownNodes, DispatcherPriority.Loaded);
+            else Dispatcher.BeginInvoke(ConstrainCamera, DispatcherPriority.Loaded);
         };
         Unloaded += (_, _) => ClosePopup();
     }
@@ -107,6 +108,8 @@ internal sealed class AdventureCaseBoardView : Grid
     {
         var surface = new Grid
         {
+            HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = VerticalAlignment.Top,
             Width = boardWidth,
             Height = boardHeight,
             Background = AdventureUi.Ink("#17110E"),
@@ -139,7 +142,7 @@ internal sealed class AdventureCaseBoardView : Grid
     private void BuildShell()
     {
         Background = AdventureUi.Ink("#070A0B");
-        ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 560 });
+        ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 0 });
         ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(340) });
         RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
@@ -151,7 +154,7 @@ internal sealed class AdventureCaseBoardView : Grid
         var toolbarBody = new StackPanel();
         toolbarBody.Children.Add(new TextBlock
         {
-            Text = $"{definition.Title.ToUpperInvariant()}   ·   INVESTIGATION BOARD",
+            Text = $"{AdventureTextLocalization.Raw(definition.Title).ToUpperInvariant()}   ·   {AdventureTextLocalization.Ui("InvestigationBoard", "INVESTIGATION BOARD")}",
             FontFamily = new FontFamily("Georgia"),
             FontSize = 16.5,
             FontWeight = FontWeights.Bold,
@@ -170,7 +173,7 @@ internal sealed class AdventureCaseBoardView : Grid
         {
             var check = new CheckBox
             {
-                Content = CategoryLabel(category),
+                Content = AdventureTextLocalization.Raw(CategoryLabel(category)),
                 IsChecked = true,
                 Tag = category,
                 Margin = new Thickness(0, 0, 14, 4),
@@ -185,9 +188,9 @@ internal sealed class AdventureCaseBoardView : Grid
         controls.Children.Add(new Border { Width = 1, Height = 24, Background = AdventureUi.Ink("#51463A"), Margin = new Thickness(2, 0, 8, 4) });
         controls.Children.Add(ActionButton("−", "Zoom out", () => ChangeZoom(-.12)));
         controls.Children.Add(ActionButton("+", "Zoom in", () => ChangeZoom(.12)));
-        controls.Children.Add(ActionButton("FIT", "Fit known nodes", FitKnownNodes));
-        controls.Children.Add(ActionButton("FRAME", "Show complete board boundary", FitBoardFrame));
-        controls.Children.Add(ActionButton("RESET", "Reset zoom and pan", ResetView));
+        controls.Children.Add(ActionButton(AdventureTextLocalization.Ui("Fit", "FIT"), "Fit known nodes", FitKnownNodes));
+        controls.Children.Add(ActionButton(AdventureTextLocalization.Ui("Frame", "FRAME"), "Show complete board boundary", FitBoardFrame));
+        controls.Children.Add(ActionButton(AdventureTextLocalization.Ui("Reset", "RESET"), "Reset zoom and pan", ResetView));
         toolbarBody.Children.Add(controls);
         toolbar.Child = toolbarBody;
 
@@ -198,7 +201,8 @@ internal sealed class AdventureCaseBoardView : Grid
         viewport.Cursor = CasinoCursors.Hand;
         viewport.SnapsToDevicePixels = true;
         viewport.UseLayoutRounding = true;
-        viewport.MouseWheel += (_, e) => { ChangeZoom(e.Delta > 0 ? .1 : -.1); e.Handled = true; };
+        viewport.SizeChanged += (_, _) => ConstrainCamera();
+        viewport.MouseWheel += (_, e) => { ChangeZoom(e.Delta > 0 ? .1 : -.1, e.GetPosition(viewport)); e.Handled = true; };
         viewport.MouseLeftButtonDown += OnPanStart;
         viewport.MouseMove += OnPanMove;
         viewport.MouseLeftButtonUp += OnPanEnd;
@@ -207,12 +211,26 @@ internal sealed class AdventureCaseBoardView : Grid
         transforms.Children.Add(scale);
         transforms.Children.Add(translate);
         boardSurface.RenderTransform = transforms;
-        viewport.Child = boardSurface;
+        // A world-sized Grid directly inside Border acquires a layout clip BEFORE its
+        // RenderTransform. Canvas arranges it at its full desired extent at origin (0,0);
+        // only the outer viewport clips the transformed world.
+        var worldHost = new Canvas { Name = "CaseBoardWorldHost", Background = Brushes.Transparent, ClipToBounds = false };
+        worldHost.Children.Add(boardSurface);
+        Canvas.SetLeft(boardSurface, 0);
+        Canvas.SetTop(boardSurface, 0);
+        viewport.Name = "CaseBoardViewport";
+        boardSurface.Name = "CaseBoardSurface";
+        canvas.Name = "CaseBoardNodes";
+        viewport.Child = worldHost;
         Grid.SetRow(viewport, 1);
         Children.Add(viewport);
 
         Border detailPanel = AdventureUi.Panel("#111315", "#090A0C", "#40382F", new Thickness(22), radius: 0, shadow: false);
-        detailPanel.Child = details;
+        detailPanel.Child = new ScrollViewer
+        {
+            Content = details, VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+        };
         Grid.SetColumn(detailPanel, 1);
         Grid.SetRow(detailPanel, 1);
         Children.Add(detailPanel);
@@ -276,7 +294,8 @@ internal sealed class AdventureCaseBoardView : Grid
         {
             var empty = new TextBlock
             {
-                Text = "No evidence pinned yet.\nThe board grows as the investigation uncovers people, places, evidence, leads and theories.",
+                Text = AdventureTextLocalization.Ui("EmptyBoard",
+                    "No evidence pinned yet.\nThe board grows as the investigation uncovers people, places, evidence, leads and theories."),
                 FontFamily = new FontFamily("Georgia"),
                 FontSize = 20,
                 LineHeight = 30,
@@ -321,7 +340,7 @@ internal sealed class AdventureCaseBoardView : Grid
         var content = new StackPanel();
         content.Children.Add(new TextBlock
         {
-            Text = CategoryLabel(node.Category).ToUpperInvariant(),
+            Text = AdventureTextLocalization.Raw(CategoryLabel(node.Category)).ToUpperInvariant(),
             FontFamily = new FontFamily("Georgia"),
             FontSize = 9.5,
             FontWeight = FontWeights.Bold,
@@ -335,7 +354,7 @@ internal sealed class AdventureCaseBoardView : Grid
         heading.Children.Add(icon);
         var title = new TextBlock
         {
-            Text = node.Title,
+            Text = AdventureTextLocalization.BoardTitle(engine.Definition, node),
             FontFamily = new FontFamily("Georgia"),
             FontSize = 18,
             FontWeight = FontWeights.Bold,
@@ -347,7 +366,9 @@ internal sealed class AdventureCaseBoardView : Grid
         content.Children.Add(heading);
         content.Children.Add(new TextBlock
         {
-            Text = string.IsNullOrWhiteSpace(node.Subtitle) ? Shorten(node.Description, 96) : node.Subtitle,
+            Text = string.IsNullOrWhiteSpace(node.Subtitle)
+                ? Shorten(AdventureTextLocalization.BoardDescription(engine.Definition, node), 96)
+                : AdventureTextLocalization.BoardSubtitle(engine.Definition, node),
             FontFamily = new FontFamily("Georgia"),
             FontSize = 11.5,
             LineHeight = 16,
@@ -438,7 +459,7 @@ internal sealed class AdventureCaseBoardView : Grid
         var stack = new StackPanel { Width = 224 };
         stack.Children.Add(new TextBlock
         {
-            Text = node.Title,
+            Text = AdventureTextLocalization.BoardTitle(engine.Definition, node),
             FontFamily = new FontFamily("Georgia"),
             FontSize = 11.5,
             FontWeight = FontWeights.Bold,
@@ -566,11 +587,11 @@ internal sealed class AdventureCaseBoardView : Grid
         FrameworkElement icon = BuildCategoryIcon(node.Category, true);
         icon.Margin = new Thickness(0, 0, 7, 0);
         category.Children.Add(icon);
-        category.Children.Add(AdventureUi.Eyebrow(CategoryLabel(node.Category).ToUpperInvariant(), 10));
+        category.Children.Add(AdventureUi.Eyebrow(AdventureTextLocalization.Raw(CategoryLabel(node.Category)).ToUpperInvariant(), 10));
         details.Children.Add(category);
         details.Children.Add(new TextBlock
         {
-            Text = node.Title,
+            Text = AdventureTextLocalization.BoardTitle(engine.Definition, node),
             FontFamily = new FontFamily("Georgia"),
             FontSize = 25,
             FontWeight = FontWeights.Bold,
@@ -579,8 +600,8 @@ internal sealed class AdventureCaseBoardView : Grid
             TextWrapping = TextWrapping.Wrap,
         });
         if (!string.IsNullOrWhiteSpace(node.Subtitle))
-            AddPlainText(node.Subtitle!, 11, "#A98B6C", 0, 0, 0, 10);
-        AddPlainText(node.Description, 13, "#CBBEAA", 0, 0, 0, 0, 20);
+            AddPlainText(AdventureTextLocalization.BoardSubtitle(engine.Definition, node), 11, "#A98B6C", 0, 0, 0, 10);
+        AddPlainText(AdventureTextLocalization.BoardDescription(engine.Definition, node), 13, "#CBBEAA", 0, 0, 0, 0, 20);
         AddDetail("STATUS", StateLabel(node, state));
         AddDetail("RELIABILITY", state.Reliability.ToString());
         if (!string.IsNullOrWhiteSpace(node.DiscoveryContext)) AddDetail("DISCOVERY", node.DiscoveryContext!);
@@ -605,9 +626,9 @@ internal sealed class AdventureCaseBoardView : Grid
     private void ShowEmptyDetails()
     {
         details.Children.Clear();
-        details.Children.Add(AdventureUi.Eyebrow("CASE NOTES", 10));
-        AddPlainText("Select a pinned item", 23, "#DCCBAF", 0, 7, 0, 8);
-        AddPlainText("Drag a selected card to rearrange the investigation. Connections follow it live. Right-click a card for board actions. FIT focuses known evidence; FRAME shows the complete workspace boundary.", 12.5, "#9F9485", 0, 0, 0, 0, 20);
+        details.Children.Add(AdventureUi.Eyebrow(AdventureTextLocalization.Ui("CaseNotes", "CASE NOTES"), 10));
+        AddPlainText(AdventureTextLocalization.Ui("SelectPinned", "Select a pinned item"), 23, "#DCCBAF", 0, 7, 0, 8);
+        AddPlainText(AdventureTextLocalization.Ui("BoardHelp", "Drag a selected card to rearrange the investigation. Connections follow it live. Right-click a card for board actions. FIT focuses known evidence; FRAME shows the complete workspace boundary."), 12.5, "#9F9485", 0, 0, 0, 0, 20);
         AddDetail("BOARD LIMIT", $"{boardWidth:0} × {boardHeight:0} workspace units");
     }
 
@@ -628,7 +649,7 @@ internal sealed class AdventureCaseBoardView : Grid
 
     private void AddDetail(string heading, string content)
     {
-        AddPlainText(heading, 9.5, "#A9805F", 0, 18, 0, 4);
+        AddPlainText(AdventureTextLocalization.BoardHeading(heading), 9.5, "#A9805F", 0, 18, 0, 4);
         if (details.Children[^1] is TextBlock label) label.FontWeight = FontWeights.Bold;
         AddPlainText(content, 11.5, "#C5B9A8", 0, 0, 0, 0, 18);
     }
@@ -637,65 +658,20 @@ internal sealed class AdventureCaseBoardView : Grid
     {
         BoardLayoutState layout = engine.State.CaseBoard.Layout;
         if (layout.LayoutVersion >= CurrentLayoutVersion) return false;
-
-        Dictionary<string, CaseBoardNodePosition> positions = layout.NodePositions;
-        (double originX, double originY) = LegacyOrigin();
-        (double brokenWidth, double brokenHeight) = PreviousBrokenExtent(definition.Nodes.Count);
-        double brokenScaleX = (brokenWidth - 2 * (FrameInset + EdgePadding) - CardWidth) / LegacyWidth;
-        double brokenScaleY = (brokenHeight - 2 * (FrameInset + EdgePadding) - CardHeight) / LegacyHeight;
-        double brokenOffset = FrameInset + EdgePadding;
-
-        CaseNodeDefinition[] comparable = definition.Nodes
-            .Where(n => n.X is not null && n.Y is not null && positions.ContainsKey(n.Id))
-            .ToArray();
-        int brokenMatches = comparable.Count(n =>
-        {
-            CaseBoardNodePosition p = positions[n.Id];
-            double expectedX = brokenOffset + n.X!.Value * brokenScaleX;
-            double expectedY = brokenOffset + n.Y!.Value * brokenScaleY;
-            return Math.Abs(p.X - expectedX) < 150 && Math.Abs(p.Y - expectedY) < 150;
-        });
-        bool stretchedByBrokenMigration = comparable.Length >= 2 && brokenMatches >= Math.Max(2, (int)Math.Ceiling(comparable.Length * .55));
-
+        // Preserve hand-arranged cards. V3 repairs the viewport and camera, rather than
+        // stretching saved coordinates or discarding investigation progress.
         foreach (CaseNodeDefinition node in definition.Nodes)
         {
-            if (!positions.TryGetValue(node.Id, out CaseBoardNodePosition? position))
-            {
-                Point fallback = DefaultPosition(node);
-                positions[node.Id] = new CaseBoardNodePosition { X = fallback.X, Y = fallback.Y };
-                continue;
-            }
-
-            double legacyX = position.X;
-            double legacyY = position.Y;
-            if (stretchedByBrokenMigration)
-            {
-                legacyX = (position.X - brokenOffset) / brokenScaleX;
-                legacyY = (position.Y - brokenOffset) / brokenScaleY;
-            }
-
-            position.X = Math.Clamp(originX + legacyX, FrameInset + EdgePadding, boardWidth - CardWidth - FrameInset - EdgePadding);
-            position.Y = Math.Clamp(originY + legacyY, FrameInset + EdgePadding, boardHeight - CardHeight - FrameInset - EdgePadding);
+            CaseBoardNodePosition position = ResolvePosition(node);
+            double min = FrameInset + EdgePadding;
+            position.X = Math.Clamp(position.X, min, boardWidth - CardWidth - min);
+            position.Y = Math.Clamp(position.Y, min, boardHeight - CardHeight - min);
         }
-
         layout.LayoutVersion = CurrentLayoutVersion;
         layout.Zoom = 1;
-        layout.PanX = 0;
-        layout.PanY = 0;
+        layout.PanX = layout.PanY = 0;
         persist(engine.State);
         return true;
-    }
-
-    private (double X, double Y) LegacyOrigin() =>
-        (Math.Max(FrameInset + EdgePadding, (boardWidth - LegacyWidth) / 2),
-         Math.Max(FrameInset + EdgePadding, (boardHeight - LegacyHeight) / 2));
-
-    private static (double Width, double Height) PreviousBrokenExtent(int nodeCount)
-    {
-        int count = Math.Max(1, nodeCount);
-        int columns = Math.Max(6, (int)Math.Ceiling(Math.Sqrt(count * 1.75)));
-        int rows = (int)Math.Ceiling(count / (double)columns);
-        return (Math.Max(3200, 620 + columns * 430), Math.Max(2000, 620 + rows * 310));
     }
 
     private CaseBoardNodePosition ResolvePosition(CaseNodeDefinition node)
@@ -709,19 +685,18 @@ internal sealed class AdventureCaseBoardView : Grid
 
     private Point DefaultPosition(CaseNodeDefinition node)
     {
-        (double originX, double originY) = LegacyOrigin();
         if (node.X is double definedX && node.Y is double definedY)
         {
             double min = FrameInset + EdgePadding;
             return new Point(
-                Math.Clamp(originX + definedX, min, boardWidth - CardWidth - min),
-                Math.Clamp(originY + definedY, min, boardHeight - CardHeight - min));
+                Math.Clamp(definedX, min, boardWidth - CardWidth - min),
+                Math.Clamp(definedY, min, boardHeight - CardHeight - min));
         }
 
         int index = Math.Max(0, definition.Nodes.IndexOf(node));
         int columns = Math.Max(5, (int)Math.Floor((boardWidth - 360) / 420));
-        double x = originX + 80 + (index % columns) * 360 + ((index / columns) % 2) * 38;
-        double y = originY + 70 + (index / columns) * 245 + (index % 2) * 20;
+        double x = FrameInset + EdgePadding + (index % columns) * 360 + ((index / columns) % 2) * 38;
+        double y = FrameInset + EdgePadding + (index / columns) * 245 + (index % 2) * 20;
         double edge = FrameInset + EdgePadding;
         return new Point(Math.Clamp(x, edge, boardWidth - CardWidth - edge), Math.Clamp(y, edge, boardHeight - CardHeight - edge));
     }
@@ -734,10 +709,10 @@ internal sealed class AdventureCaseBoardView : Grid
         return new Point(p.X + CardWidth / 2, p.Y + CardHeight / 2);
     }
 
-    private void ChangeZoom(double delta)
+    private void ChangeZoom(double delta, Point? pointer = null)
     {
         ClosePopup();
-        Point focus = Mouse.GetPosition(viewport);
+        Point focus = pointer ?? new Point(viewport.ActualWidth / 2, viewport.ActualHeight / 2);
         double oldZoom = scale.ScaleX;
         double next = Math.Clamp(oldZoom + delta, .18, 3.6);
         if (Math.Abs(next - oldZoom) < .001) return;
@@ -795,11 +770,23 @@ internal sealed class AdventureCaseBoardView : Grid
 
     private void SaveView()
     {
+        ConstrainCamera();
         BoardLayoutState layout = engine.State.CaseBoard.Layout;
         layout.Zoom = scale.ScaleX;
         layout.PanX = translate.X;
         layout.PanY = translate.Y;
         persist(engine.State);
+    }
+
+    private void ConstrainCamera()
+    {
+        double width = viewport.ActualWidth - viewport.BorderThickness.Left - viewport.BorderThickness.Right;
+        double height = viewport.ActualHeight - viewport.BorderThickness.Top - viewport.BorderThickness.Bottom;
+        if (width <= 0 || height <= 0) return;
+        double scaledWidth = boardWidth * scale.ScaleX;
+        double scaledHeight = boardHeight * scale.ScaleY;
+        translate.X = scaledWidth <= width ? (width - scaledWidth) / 2 : Math.Clamp(translate.X, width - scaledWidth, 0);
+        translate.Y = scaledHeight <= height ? (height - scaledHeight) / 2 : Math.Clamp(translate.Y, height - scaledHeight, 0);
     }
 
     private void OnPanStart(object sender, MouseButtonEventArgs e)
@@ -819,6 +806,7 @@ internal sealed class AdventureCaseBoardView : Grid
         Point current = e.GetPosition(this);
         translate.X = panStartX + current.X - origin.X;
         translate.Y = panStartY + current.Y - origin.Y;
+        ConstrainCamera();
     }
 
     private void OnPanEnd(object sender, MouseButtonEventArgs e)
@@ -920,11 +908,11 @@ internal sealed class AdventureCaseBoardView : Grid
 
     private static string CategoryLabel(CaseNodeCategory category) => category switch
     {
-        CaseNodeCategory.Person => "People",
-        CaseNodeCategory.Location => "Locations",
-        CaseNodeCategory.Evidence => "Evidence",
-        CaseNodeCategory.Lead => "Leads",
-        CaseNodeCategory.Theory => "Theories",
+        CaseNodeCategory.Person => AdventureTextLocalization.Ui("People", "People"),
+        CaseNodeCategory.Location => AdventureTextLocalization.Ui("Locations", "Locations"),
+        CaseNodeCategory.Evidence => AdventureTextLocalization.Ui("Evidence", "Evidence"),
+        CaseNodeCategory.Lead => AdventureTextLocalization.Ui("Leads", "Leads"),
+        CaseNodeCategory.Theory => AdventureTextLocalization.Ui("Theories", "Theories"),
         _ => category.ToString(),
     };
 

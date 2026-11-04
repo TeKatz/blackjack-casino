@@ -1,0 +1,415 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Challenge.sudoku-first.Name" xml:space="preserve"><value>Erstes Raster</value></data>
+  <data name="Challenge.sudoku-first.Description" xml:space="preserve"><value>Löse dein erstes Sudoku.</value></data>
+  <data name="Challenge.sudoku-10.Name" xml:space="preserve"><value>Gut eingespielt</value></data>
+  <data name="Challenge.sudoku-10.Description" xml:space="preserve"><value>Löse 10 Sudokus.</value></data>
+  <data name="Challenge.sudoku-50.Name" xml:space="preserve"><value>Stiller Stammgast</value></data>
+  <data name="Challenge.sudoku-50.Description" xml:space="preserve"><value>Löse 50 Sudokus.</value></data>
+  <data name="Challenge.sudoku-250.Name" xml:space="preserve"><value>Tausend kleine Kästchen</value></data>
+  <data name="Challenge.sudoku-250.Description" xml:space="preserve"><value>Löse 250 Sudokus.</value></data>
+  <data name="Challenge.sudoku-daily-1.Name" xml:space="preserve"><value>Das heutige Raster</value></data>
+  <data name="Challenge.sudoku-daily-1.Description" xml:space="preserve"><value>Löse dein erstes Tages-Sudoku.</value></data>
+  <data name="Challenge.sudoku-daily-30.Name" xml:space="preserve"><value>Ein Monat voller Rätsel</value></data>
+  <data name="Challenge.sudoku-daily-30.Description" xml:space="preserve"><value>Löse 30 Tages-Sudokus. Sie müssen nicht aufeinanderfolgen.</value></data>
+  <data name="Challenge.sudoku-clean-1.Name" xml:space="preserve"><value>Ganz ohne Tipp</value></data>
+  <data name="Challenge.sudoku-clean-1.Description" xml:space="preserve"><value>Löse ein Sudoku, ohne einen Hinweis zu benutzen.</value></data>
+  <data name="Challenge.sudoku-clean-25.Name" xml:space="preserve"><value>Stift und Geduld</value></data>
+  <data name="Challenge.sudoku-clean-25.Description" xml:space="preserve"><value>Löse 25 Sudokus ohne Hinweise.</value></data>
+  <data name="Challenge.sudoku-expert-10.Name" xml:space="preserve"><value>Tiefe Konzentration</value></data>
+  <data name="Challenge.sudoku-expert-10.Description" xml:space="preserve"><value>Löse 10 Experten-Sudokus.</value></data>
+  <data name="Challenge.sudoku-master-1.Name" xml:space="preserve"><value>Meisterschlüssel</value></data>
+  <data name="Challenge.sudoku-master-1.Description" xml:space="preserve"><value>Löse dein erstes Meister-Sudoku.</value></data>
+  <data name="Challenge.sudoku-master-25.Name" xml:space="preserve"><value>Innere Ruhe</value></data>
+  <data name="Challenge.sudoku-master-25.Description" xml:space="preserve"><value>Löse 25 Meister-Sudokus.</value></data>
+  <data name="Challenge.sudoku-25.Name" xml:space="preserve"><value>Ruhige Abende</value></data>
+  <data name="Challenge.sudoku-25.Description" xml:space="preserve"><value>Löse 25 Sudokus.</value></data>
+  <data name="Challenge.sudoku-100.Name" xml:space="preserve"><value>Ein Regal voller Raster</value></data>
+  <data name="Challenge.sudoku-100.Description" xml:space="preserve"><value>Löse 100 Sudokus.</value></data>
+  <data name="Challenge.sudoku-500.Name" xml:space="preserve"><value>Geduldiger Geist</value></data>
+  <data name="Challenge.sudoku-500.Description" xml:space="preserve"><value>Löse 500 Sudokus.</value></data>
+  <data name="Challenge.sudoku-daily-7.Name" xml:space="preserve"><value>Sieben ruhige Tage</value></data>
+  <data name="Challenge.sudoku-daily-7.Description" xml:space="preserve"><value>Löse 7 Tages-Sudokus. Keine Serie erforderlich.</value></data>
+  <data name="Challenge.sudoku-daily-100.Name" xml:space="preserve"><value>Tägliches Ritual</value></data>
+  <data name="Challenge.sudoku-daily-100.Description" xml:space="preserve"><value>Löse 100 Tages-Sudokus. Keine Serie erforderlich.</value></data>
+  <data name="Challenge.sudoku-clean-10.Name" xml:space="preserve"><value>Vertrau deinem Stift</value></data>
+  <data name="Challenge.sudoku-clean-10.Description" xml:space="preserve"><value>Löse 10 Sudokus ohne Hinweise.</value></data>
+  <data name="Challenge.sudoku-clean-100.Name" xml:space="preserve"><value>Klarer Kopf</value></data>
+  <data name="Challenge.sudoku-clean-100.Description" xml:space="preserve"><value>Löse 100 Sudokus ohne Hinweise.</value></data>
+  <data name="Challenge.sudoku-expert-1.Name" xml:space="preserve"><value>Ein schwierigeres Raster</value></data>
+  <data name="Challenge.sudoku-expert-1.Description" xml:space="preserve"><value>Löse dein erstes Experten-Sudoku.</value></data>
+  <data name="Challenge.sudoku-expert-50.Name" xml:space="preserve"><value>Expertentreff</value></data>
+  <data name="Challenge.sudoku-expert-50.Description" xml:space="preserve"><value>Löse 50 Experten-Sudokus.</value></data>
+  <data name="Challenge.sudoku-master-10.Name" xml:space="preserve"><value>Besonnener Meister</value></data>
+  <data name="Challenge.sudoku-master-10.Description" xml:space="preserve"><value>Löse 10 Meister-Sudokus.</value></data>
+  <data name="Challenge.word-search-first.Name" xml:space="preserve"><value>Erster Fund</value></data>
+  <data name="Challenge.word-search-first.Description" xml:space="preserve"><value>Löse dein erstes Wortsuchrätsel.</value></data>
+  <data name="Challenge.word-search-10.Name" xml:space="preserve"><value>Stammgast der Buchstabenlounge</value></data>
+  <data name="Challenge.word-search-10.Description" xml:space="preserve"><value>Löse 10 Wortsuchrätsel.</value></data>
+  <data name="Challenge.word-search-25.Name" xml:space="preserve"><value>Wortjäger</value></data>
+  <data name="Challenge.word-search-25.Description" xml:space="preserve"><value>Löse 25 Wortsuchrätsel.</value></data>
+  <data name="Challenge.word-search-50.Name" xml:space="preserve"><value>Eine Sammlung voller Wörter</value></data>
+  <data name="Challenge.word-search-50.Description" xml:space="preserve"><value>Löse 50 Wortsuchrätsel.</value></data>
+  <data name="Challenge.word-search-100.Name" xml:space="preserve"><value>Hundert Buchstabengitter</value></data>
+  <data name="Challenge.word-search-100.Description" xml:space="preserve"><value>Löse 100 Wortsuchrätsel.</value></data>
+  <data name="Challenge.word-search-144.Name" xml:space="preserve"><value>Jedes Rätsel der Lounge</value></data>
+  <data name="Challenge.word-search-144.Description" xml:space="preserve"><value>Löse alle 144 einzigartigen Wortsuchrätsel.</value></data>
+  <data name="Challenge.word-search-words-25.Name" xml:space="preserve"><value>Scharfe Augen</value></data>
+  <data name="Challenge.word-search-words-25.Description" xml:space="preserve"><value>Finde insgesamt 25 Wörter in abgeschlossenen Rätseln.</value></data>
+  <data name="Challenge.word-search-words-100.Name" xml:space="preserve"><value>Wortsammler</value></data>
+  <data name="Challenge.word-search-words-100.Description" xml:space="preserve"><value>Finde insgesamt 100 Wörter in abgeschlossenen Rätseln.</value></data>
+  <data name="Challenge.word-search-words-500.Name" xml:space="preserve"><value>Vor aller Augen verborgen</value></data>
+  <data name="Challenge.word-search-words-500.Description" xml:space="preserve"><value>Finde insgesamt 500 Wörter in abgeschlossenen Rätseln.</value></data>
+  <data name="Challenge.word-search-words-1000.Name" xml:space="preserve"><value>Wandelndes Wörterbuch</value></data>
+  <data name="Challenge.word-search-words-1000.Description" xml:space="preserve"><value>Finde insgesamt 1.000 Wörter in abgeschlossenen Rätseln.</value></data>
+  <data name="Challenge.word-search-words-1368.Name" xml:space="preserve"><value>Bis zum letzten Wort</value></data>
+  <data name="Challenge.word-search-words-1368.Description" xml:space="preserve"><value>Finde alle 1.368 Wörter in den 144 einzigartigen Rätseln.</value></data>
+  <data name="Challenge.word-search-clean-1.Name" xml:space="preserve"><value>Kein Hinweis nötig</value></data>
+  <data name="Challenge.word-search-clean-1.Description" xml:space="preserve"><value>Löse ein Wortsuchrätsel ohne Hinweise.</value></data>
+  <data name="Challenge.word-search-clean-10.Name" xml:space="preserve"><value>Vertrau deinen Augen</value></data>
+  <data name="Challenge.word-search-clean-10.Description" xml:space="preserve"><value>Löse 10 Wortsuchrätsel ohne Hinweise.</value></data>
+  <data name="Challenge.word-search-clean-50.Name" xml:space="preserve"><value>Klare Sicht</value></data>
+  <data name="Challenge.word-search-clean-50.Description" xml:space="preserve"><value>Löse 50 Wortsuchrätsel ohne Hinweise.</value></data>
+  <data name="Challenge.word-search-clean-100.Name" xml:space="preserve"><value>Unbeirrter Entdecker</value></data>
+  <data name="Challenge.word-search-clean-100.Description" xml:space="preserve"><value>Löse 100 Wortsuchrätsel ohne Hinweise.</value></data>
+  <data name="Challenge.word-search-expert-1.Name" xml:space="preserve"><value>Gründliche Suche</value></data>
+  <data name="Challenge.word-search-expert-1.Description" xml:space="preserve"><value>Löse dein erstes Experten-Wortsuchrätsel.</value></data>
+  <data name="Challenge.word-search-expert-10.Name" xml:space="preserve"><value>Expertenblick</value></data>
+  <data name="Challenge.word-search-expert-10.Description" xml:space="preserve"><value>Löse 10 Experten-Wortsuchrätsel.</value></data>
+  <data name="Challenge.word-search-expert-24.Name" xml:space="preserve"><value>Expertensammlung</value></data>
+  <data name="Challenge.word-search-expert-24.Description" xml:space="preserve"><value>Löse alle 24 Experten-Wortsuchrätsel.</value></data>
+  <data name="Challenge.word-search-master-1.Name" xml:space="preserve"><value>Meistersucher</value></data>
+  <data name="Challenge.word-search-master-1.Description" xml:space="preserve"><value>Löse dein erstes Meister-Wortsuchrätsel.</value></data>
+  <data name="Challenge.word-search-master-10.Name" xml:space="preserve"><value>Meister der Buchstaben</value></data>
+  <data name="Challenge.word-search-master-10.Description" xml:space="preserve"><value>Löse 10 Meister-Wortsuchrätsel.</value></data>
+  <data name="Challenge.word-search-master-24.Name" xml:space="preserve"><value>Das letzte versteckte Wort</value></data>
+  <data name="Challenge.word-search-master-24.Description" xml:space="preserve"><value>Löse alle 24 Meister-Wortsuchrätsel.</value></data>
+  <data name="Challenge.memory-pair-1.Name" xml:space="preserve"><value>Erstes Paar</value></data>
+  <data name="Challenge.memory-pair-1.Description" xml:space="preserve"><value>Finde dein erstes Kartenpaar bei Memory.</value></data>
+  <data name="Challenge.memory-pair-100.Name" xml:space="preserve"><value>Paarsammler</value></data>
+  <data name="Challenge.memory-pair-100.Description" xml:space="preserve"><value>Finde 100 Kartenpaare bei Memory.</value></data>
+  <data name="Challenge.memory-pair-1000.Name" xml:space="preserve"><value>Perfekter Vermittler</value></data>
+  <data name="Challenge.memory-pair-1000.Description" xml:space="preserve"><value>Finde 1.000 Kartenpaare bei Memory.</value></data>
+  <data name="Challenge.memory-pair-5000.Name" xml:space="preserve"><value>Totale Erinnerung</value></data>
+  <data name="Challenge.memory-pair-5000.Description" xml:space="preserve"><value>Finde 5.000 Kartenpaare bei Memory.</value></data>
+  <data name="Challenge.memory-game-1.Name" xml:space="preserve"><value>Tisch abgeräumt</value></data>
+  <data name="Challenge.memory-game-1.Description" xml:space="preserve"><value>Schließe dein erstes Memory-Spielfeld ab.</value></data>
+  <data name="Challenge.memory-game-10.Name" xml:space="preserve"><value>Schon vertraut</value></data>
+  <data name="Challenge.memory-game-10.Description" xml:space="preserve"><value>Schließe 10 Memory-Spielfelder ab.</value></data>
+  <data name="Challenge.memory-game-50.Name" xml:space="preserve"><value>Lounge-Stammgast</value></data>
+  <data name="Challenge.memory-game-50.Description" xml:space="preserve"><value>Schließe 50 Memory-Spielfelder ab.</value></data>
+  <data name="Challenge.memory-game-100.Name" xml:space="preserve"><value>Eine gute Gewohnheit</value></data>
+  <data name="Challenge.memory-game-100.Description" xml:space="preserve"><value>Schließe 100 Memory-Spielfelder ab.</value></data>
+  <data name="Challenge.memory-game-250.Name" xml:space="preserve"><value>Fotografisches Gedächtnis</value></data>
+  <data name="Challenge.memory-game-250.Description" xml:space="preserve"><value>Schließe 250 Memory-Spielfelder ab.</value></data>
+  <data name="Challenge.memory-perfect-1.Name" xml:space="preserve"><value>Kein einziger Fehler</value></data>
+  <data name="Challenge.memory-perfect-1.Description" xml:space="preserve"><value>Schließe ein Memory-Spielfeld ohne falsches Paar ab.</value></data>
+  <data name="Challenge.memory-perfect-10.Name" xml:space="preserve"><value>Makellose Erinnerung</value></data>
+  <data name="Challenge.memory-perfect-10.Description" xml:space="preserve"><value>Schließe 10 Memory-Spielfelder fehlerfrei ab.</value></data>
+  <data name="Challenge.memory-perfect-50.Name" xml:space="preserve"><value>Kristallklar</value></data>
+  <data name="Challenge.memory-perfect-50.Description" xml:space="preserve"><value>Schließe 50 Memory-Spielfelder fehlerfrei ab.</value></data>
+  <data name="Challenge.memory-perfect-100.Name" xml:space="preserve"><value>Gedächtnispalast</value></data>
+  <data name="Challenge.memory-perfect-100.Description" xml:space="preserve"><value>Schließe 100 Memory-Spielfelder fehlerfrei ab.</value></data>
+  <data name="Challenge.memory-expert-1.Name" xml:space="preserve"><value>Großes Feld, heller Kopf</value></data>
+  <data name="Challenge.memory-expert-1.Description" xml:space="preserve"><value>Schließe dein erstes Experten-Memory ab.</value></data>
+  <data name="Challenge.memory-expert-25.Name" xml:space="preserve"><value>Tief im Gedächtnis</value></data>
+  <data name="Challenge.memory-expert-25.Description" xml:space="preserve"><value>Schließe 25 Experten-Memory-Spielfelder ab.</value></data>
+  <data name="Challenge.memory-expert-100.Name" xml:space="preserve"><value>Memory-Experte</value></data>
+  <data name="Challenge.memory-expert-100.Description" xml:space="preserve"><value>Schließe 100 Experten-Memory-Spielfelder ab.</value></data>
+  <data name="Challenge.memory-master-1.Name" xml:space="preserve"><value>Memory-Meister</value></data>
+  <data name="Challenge.memory-master-1.Description" xml:space="preserve"><value>Schließe dein erstes Meister-Memory ab.</value></data>
+  <data name="Challenge.memory-master-25.Name" xml:space="preserve"><value>Langzeitgedächtnis</value></data>
+  <data name="Challenge.memory-master-25.Description" xml:space="preserve"><value>Schließe 25 Meister-Memory-Spielfelder ab.</value></data>
+  <data name="Challenge.memory-master-100.Name" xml:space="preserve"><value>Erinnerungsarchiv</value></data>
+  <data name="Challenge.memory-master-100.Description" xml:space="preserve"><value>Schließe 100 Meister-Memory-Spielfelder ab.</value></data>
+  <data name="Challenge.memory-streak-5.Name" xml:space="preserve"><value>Glückssträhne</value></data>
+  <data name="Challenge.memory-streak-5.Description" xml:space="preserve"><value>Finde 5 Paare hintereinander ohne Fehler.</value></data>
+  <data name="Challenge.memory-streak-10.Name" xml:space="preserve"><value>Voll konzentriert</value></data>
+  <data name="Challenge.memory-streak-10.Description" xml:space="preserve"><value>Finde 10 Paare hintereinander ohne Fehler.</value></data>
+  <data name="Challenge.memory-streak-20.Name" xml:space="preserve"><value>Lückenlose Erinnerung</value></data>
+  <data name="Challenge.memory-streak-20.Description" xml:space="preserve"><value>Finde 20 Paare hintereinander ohne Fehler.</value></data>
+  <data name="Challenge.merge-first.Name" xml:space="preserve"><value>Aus zwei wird eins</value></data>
+  <data name="Challenge.merge-first.Description" xml:space="preserve"><value>Erstelle deinen ersten zusammengeführten Gegenstand.</value></data>
+  <data name="Challenge.merge-100.Name" xml:space="preserve"><value>Den Rhythmus gefunden</value></data>
+  <data name="Challenge.merge-100.Description" xml:space="preserve"><value>Führe 100 Gegenstände zusammen.</value></data>
+  <data name="Challenge.merge-1000.Name" xml:space="preserve"><value>Nachtschicht</value></data>
+  <data name="Challenge.merge-1000.Description" xml:space="preserve"><value>Führe 1.000 Gegenstände zusammen.</value></data>
+  <data name="Challenge.merge-10000.Name" xml:space="preserve"><value>Merge-Legende</value></data>
+  <data name="Challenge.merge-10000.Description" xml:space="preserve"><value>Führe 10.000 Gegenstände zusammen.</value></data>
+  <data name="Challenge.merge-order-1.Name" xml:space="preserve"><value>Erste Lieferung</value></data>
+  <data name="Challenge.merge-order-1.Description" xml:space="preserve"><value>Erfülle deinen ersten Lieferauftrag.</value></data>
+  <data name="Challenge.merge-order-25.Name" xml:space="preserve"><value>Zuverlässiger Lieferant</value></data>
+  <data name="Challenge.merge-order-25.Description" xml:space="preserve"><value>Erfülle 25 Lieferaufträge.</value></data>
+  <data name="Challenge.merge-order-100.Name" xml:space="preserve"><value>Hauslieferant</value></data>
+  <data name="Challenge.merge-order-100.Description" xml:space="preserve"><value>Erfülle 100 Lieferaufträge.</value></data>
+  <data name="Challenge.merge-order-500.Name" xml:space="preserve"><value>Jeder kennt deinen Namen</value></data>
+  <data name="Challenge.merge-order-500.Description" xml:space="preserve"><value>Erfülle 500 Lieferaufträge.</value></data>
+  <data name="Challenge.merge-order-2500.Name" xml:space="preserve"><value>Unerschöpflicher Nachschub</value></data>
+  <data name="Challenge.merge-order-2500.Description" xml:space="preserve"><value>Erfülle 2.500 Lieferaufträge.</value></data>
+  <data name="Challenge.merge-renovation-20.Name" xml:space="preserve"><value>Weg mit dem Staub</value></data>
+  <data name="Challenge.merge-renovation-20.Description" xml:space="preserve"><value>Verdiene 20 Renovierungspunkte.</value></data>
+  <data name="Challenge.merge-renovation-50.Name" xml:space="preserve"><value>Es werde Licht</value></data>
+  <data name="Challenge.merge-renovation-50.Description" xml:space="preserve"><value>Verdiene 50 Renovierungspunkte.</value></data>
+  <data name="Challenge.merge-renovation-1000.Name" xml:space="preserve"><value>Renovierungsprofi</value></data>
+  <data name="Challenge.merge-renovation-1000.Description" xml:space="preserve"><value>Verdiene 1.000 Renovierungspunkte.</value></data>
+  <data name="Challenge.merge-renovation-10000.Name" xml:space="preserve"><value>Von Staub zu Gold</value></data>
+  <data name="Challenge.merge-renovation-10000.Description" xml:space="preserve"><value>Verdiene 10.000 Renovierungspunkte.</value></data>
+  <data name="Challenge.merge-tier-6.Name" xml:space="preserve"><value>Oberstes Regal</value></data>
+  <data name="Challenge.merge-tier-6.Description" xml:space="preserve"><value>Erstelle einen Gegenstand der Stufe VI.</value></data>
+  <data name="Challenge.merge-milestones-3.Name" xml:space="preserve"><value>Die Lobby erstrahlt neu</value></data>
+  <data name="Challenge.merge-milestones-3.Description" xml:space="preserve"><value>Erreiche alle drei Meilensteine der Lobby-Restaurierung.</value></data>
+  <data name="Challenge.merge-area-1.Name" xml:space="preserve"><value>Große Wiedereröffnung</value></data>
+  <data name="Challenge.merge-area-1.Description" xml:space="preserve"><value>Restauriere deinen ersten Bereich des Midnight Club vollständig.</value></data>
+  <data name="Challenge.dice-game-1.Name" xml:space="preserve"><value>Erster Spielbogen</value></data>
+  <data name="Challenge.dice-game-1.Description" xml:space="preserve"><value>Beende eine Partie Midnight Dice in einem beliebigen Modus.</value></data>
+  <data name="Challenge.dice-games-10.Name" xml:space="preserve"><value>Stammgast der Würfellounge</value></data>
+  <data name="Challenge.dice-games-10.Description" xml:space="preserve"><value>Beende 10 Partien Midnight Dice.</value></data>
+  <data name="Challenge.dice-games-50.Name" xml:space="preserve"><value>Ein Stapel Spielbögen</value></data>
+  <data name="Challenge.dice-games-50.Description" xml:space="preserve"><value>Beende 50 Partien Midnight Dice.</value></data>
+  <data name="Challenge.dice-games-250.Name" xml:space="preserve"><value>Langer Würfelabend</value></data>
+  <data name="Challenge.dice-games-250.Description" xml:space="preserve"><value>Beende 250 Partien Midnight Dice.</value></data>
+  <data name="Challenge.dice-score-200.Name" xml:space="preserve"><value>Deinen Rhythmus gefunden</value></data>
+  <data name="Challenge.dice-score-200.Description" xml:space="preserve"><value>Erziele mindestens 200 Punkte in einer Partie.</value></data>
+  <data name="Challenge.dice-score-250.Name" xml:space="preserve"><value>Ein prächtiger Spielbogen</value></data>
+  <data name="Challenge.dice-score-250.Description" xml:space="preserve"><value>Erziele mindestens 250 Punkte in einer Partie.</value></data>
+  <data name="Challenge.dice-score-300.Name" xml:space="preserve"><value>Club der Dreihundert</value></data>
+  <data name="Challenge.dice-score-300.Description" xml:space="preserve"><value>Erziele mindestens 300 Punkte in einer Partie.</value></data>
+  <data name="Challenge.dice-bonus-1.Name" xml:space="preserve"><value>Über der Linie</value></data>
+  <data name="Challenge.dice-bonus-1.Description" xml:space="preserve"><value>Beende eine Partie mit dem Bonus für den oberen Block.</value></data>
+  <data name="Challenge.dice-bonus-25.Name" xml:space="preserve"><value>Obere Führungsetage</value></data>
+  <data name="Challenge.dice-bonus-25.Description" xml:space="preserve"><value>Erhalte den Bonus für den oberen Block in 25 abgeschlossenen Partien.</value></data>
+  <data name="Challenge.dice-five-1.Name" xml:space="preserve"><value>Alle zusammen</value></data>
+  <data name="Challenge.dice-five-1.Description" xml:space="preserve"><value>Erreiche einen Fünfling und beende die Partie.</value></data>
+  <data name="Challenge.dice-five-50.Name" xml:space="preserve"><value>Fünf-Sterne-Stammgast</value></data>
+  <data name="Challenge.dice-five-50.Description" xml:space="preserve"><value>Erziele 50 Fünflinge in abgeschlossenen Partien.</value></data>
+  <data name="Challenge.dice-full-10.Name" xml:space="preserve"><value>Full-House-Gast</value></data>
+  <data name="Challenge.dice-full-10.Description" xml:space="preserve"><value>Trage in 10 abgeschlossenen Partien ein Full House ein.</value></data>
+  <data name="Challenge.dice-straight-10.Name" xml:space="preserve"><value>Geradeaus zum Ziel</value></data>
+  <data name="Challenge.dice-straight-10.Description" xml:space="preserve"><value>Trage in 10 abgeschlossenen Partien eine große Straße ein.</value></data>
+  <data name="Challenge.dice-table-1.Name" xml:space="preserve"><value>Nimm Platz</value></data>
+  <data name="Challenge.dice-table-1.Description" xml:space="preserve"><value>Beende dein erstes Casino-Würfelspiel gegen drei KI-Gegner.</value></data>
+  <data name="Challenge.dice-win-1.Name" xml:space="preserve"><value>Champion am Tisch</value></data>
+  <data name="Challenge.dice-win-1.Description" xml:space="preserve"><value>Belege den ersten Platz bei einem Casino-Würfelspiel. Ein geteilter Sieg zählt.</value></data>
+  <data name="Challenge.dice-wins-10.Name" xml:space="preserve"><value>Liebling des Hauses</value></data>
+  <data name="Challenge.dice-wins-10.Description" xml:space="preserve"><value>Belege bei 10 Casino-Würfelspielen den ersten Platz.</value></data>
+  <data name="Challenge.dice-wins-50.Name" xml:space="preserve"><value>Samtene Krone</value></data>
+  <data name="Challenge.dice-wins-50.Description" xml:space="preserve"><value>Belege bei 50 Casino-Würfelspielen den ersten Platz.</value></data>
+  <data name="Challenge.dice-podium-10.Name" xml:space="preserve"><value>Immer vorne dabei</value></data>
+  <data name="Challenge.dice-podium-10.Description" xml:space="preserve"><value>Belege bei 10 Casino-Würfelspielen einen der ersten beiden Plätze.</value></data>
+  <data name="Challenge.dice-wager-100000.Name" xml:space="preserve"><value>Ein Platz mit Einsatz</value></data>
+  <data name="Challenge.dice-wager-100000.Description" xml:space="preserve"><value>Zahle insgesamt 100.000 $ an Startgeldern für Casino-Würfelspiele.</value></data>
+  <data name="Challenge.dice-payout-100000.Name" xml:space="preserve"><value>Goldener Spielbogen</value></data>
+  <data name="Challenge.dice-payout-100000.Description" xml:space="preserve"><value>Erhalte mindestens 100.000 $ bei einem Casino-Würfelspiel.</value></data>
+  <data name="Challenge.dice-games-25.Name" xml:space="preserve"><value>Abendritual</value></data>
+  <data name="Challenge.dice-games-25.Description" xml:space="preserve"><value>Beende 25 Partien Midnight Dice.</value></data>
+  <data name="Challenge.dice-games-100.Name" xml:space="preserve"><value>Hundert Spielbögen</value></data>
+  <data name="Challenge.dice-games-100.Description" xml:space="preserve"><value>Beende 100 Partien Midnight Dice.</value></data>
+  <data name="Challenge.dice-score-275.Name" xml:space="preserve"><value>Fast perfekt</value></data>
+  <data name="Challenge.dice-score-275.Description" xml:space="preserve"><value>Erziele mindestens 275 Punkte in einer Partie.</value></data>
+  <data name="Challenge.dice-bonus-10.Name" xml:space="preserve"><value>Über dem Durchschnitt</value></data>
+  <data name="Challenge.dice-bonus-10.Description" xml:space="preserve"><value>Erhalte den Bonus für den oberen Block in 10 abgeschlossenen Partien.</value></data>
+  <data name="Challenge.dice-five-10.Name" xml:space="preserve"><value>Fünf mit Stil</value></data>
+  <data name="Challenge.dice-five-10.Description" xml:space="preserve"><value>Erziele 10 Fünflinge in abgeschlossenen Partien.</value></data>
+  <data name="Challenge.dice-full-50.Name" xml:space="preserve"><value>Full-House-Sammler</value></data>
+  <data name="Challenge.dice-full-50.Description" xml:space="preserve"><value>Trage in 50 abgeschlossenen Partien ein Full House ein.</value></data>
+  <data name="Challenge.dice-straight-50.Name" xml:space="preserve"><value>Klare Ansage</value></data>
+  <data name="Challenge.dice-straight-50.Description" xml:space="preserve"><value>Trage in 50 abgeschlossenen Partien eine große Straße ein.</value></data>
+  <data name="Challenge.dice-table-10.Name" xml:space="preserve"><value>Der Stammtisch</value></data>
+  <data name="Challenge.dice-table-10.Description" xml:space="preserve"><value>Beende 10 Casino-Würfelspiele.</value></data>
+  <data name="Challenge.dice-podium-50.Name" xml:space="preserve"><value>Dauergast auf dem Podest</value></data>
+  <data name="Challenge.dice-podium-50.Description" xml:space="preserve"><value>Belege bei 50 Casino-Würfelspielen einen der ersten beiden Plätze.</value></data>
+  <data name="Challenge.dice-returned-1000000.Name" xml:space="preserve"><value>Samtenes Vermögen</value></data>
+  <data name="Challenge.dice-returned-1000000.Description" xml:space="preserve"><value>Erhalte insgesamt 1.000.000 $ an Casino-Würfelgewinnen.</value></data>
+  <data name="Challenge.bj-rounds-10.Name" xml:space="preserve"><value>Nimm Platz</value></data>
+  <data name="Challenge.bj-rounds-10.Description" xml:space="preserve"><value>Beende 10 Blackjack-Runden.</value></data>
+  <data name="Challenge.bj-rounds-50.Name" xml:space="preserve"><value>Gut eingespielt</value></data>
+  <data name="Challenge.bj-rounds-50.Description" xml:space="preserve"><value>Beende 50 Blackjack-Runden.</value></data>
+  <data name="Challenge.bj-rounds-250.Name" xml:space="preserve"><value>Stammgast am Tisch</value></data>
+  <data name="Challenge.bj-rounds-250.Description" xml:space="preserve"><value>Beende 250 Blackjack-Runden.</value></data>
+  <data name="Challenge.bj-rounds-1000.Name" xml:space="preserve"><value>Nachtschicht</value></data>
+  <data name="Challenge.bj-rounds-1000.Description" xml:space="preserve"><value>Beende 1.000 Blackjack-Runden.</value></data>
+  <data name="Challenge.bj-hands-500.Name" xml:space="preserve"><value>Viele Hände</value></data>
+  <data name="Challenge.bj-hands-500.Description" xml:space="preserve"><value>Spiele 500 Blackjack-Hände einschließlich geteilter Hände.</value></data>
+  <data name="Challenge.bj-win-1.Name" xml:space="preserve"><value>Erster Sieg</value></data>
+  <data name="Challenge.bj-win-1.Description" xml:space="preserve"><value>Gewinne deine erste Blackjack-Hand.</value></data>
+  <data name="Challenge.bj-win-25.Name" xml:space="preserve"><value>Auf der Siegerstraße</value></data>
+  <data name="Challenge.bj-win-25.Description" xml:space="preserve"><value>Gewinne 25 Blackjack-Hände.</value></data>
+  <data name="Challenge.bj-win-100.Name" xml:space="preserve"><value>Tischveteran</value></data>
+  <data name="Challenge.bj-win-100.Description" xml:space="preserve"><value>Gewinne 100 Blackjack-Hände.</value></data>
+  <data name="Challenge.bj-win-500.Name" xml:space="preserve"><value>Schrecken des Hauses</value></data>
+  <data name="Challenge.bj-win-500.Description" xml:space="preserve"><value>Gewinne 500 Blackjack-Hände.</value></data>
+  <data name="Challenge.bj-blackjack-5.Name" xml:space="preserve"><value>Naturtalent</value></data>
+  <data name="Challenge.bj-blackjack-5.Description" xml:space="preserve"><value>Erziele 5 natürliche Blackjacks.</value></data>
+  <data name="Challenge.bj-blackjack-25.Name" xml:space="preserve"><value>Blackjack-Jäger</value></data>
+  <data name="Challenge.bj-blackjack-25.Description" xml:space="preserve"><value>Erziele 25 natürliche Blackjacks.</value></data>
+  <data name="Challenge.bj-blackjack-100.Name" xml:space="preserve"><value>Wie dafür geboren</value></data>
+  <data name="Challenge.bj-blackjack-100.Description" xml:space="preserve"><value>Erziele 100 natürliche Blackjacks.</value></data>
+  <data name="Challenge.bj-double-10.Name" xml:space="preserve"><value>Einsatz verdoppelt</value></data>
+  <data name="Challenge.bj-double-10.Description" xml:space="preserve"><value>Verdopple den Einsatz bei 10 Händen.</value></data>
+  <data name="Challenge.bj-double-win-10.Name" xml:space="preserve"><value>Doppelter Ärger</value></data>
+  <data name="Challenge.bj-double-win-10.Description" xml:space="preserve"><value>Gewinne 10 Hände mit verdoppeltem Einsatz.</value></data>
+  <data name="Challenge.bj-double-win-50.Name" xml:space="preserve"><value>Fest entschlossen</value></data>
+  <data name="Challenge.bj-double-win-50.Description" xml:space="preserve"><value>Gewinne 50 Hände mit verdoppeltem Einsatz.</value></data>
+  <data name="Challenge.bj-split-10.Name" xml:space="preserve"><value>Geteilte Entscheidung</value></data>
+  <data name="Challenge.bj-split-10.Description" xml:space="preserve"><value>Teile 10 Paare.</value></data>
+  <data name="Challenge.bj-split-50.Name" xml:space="preserve"><value>Doppelte Persönlichkeit</value></data>
+  <data name="Challenge.bj-split-50.Description" xml:space="preserve"><value>Teile 50 Paare.</value></data>
+  <data name="Challenge.bj-surrender-10.Name" xml:space="preserve"><value>Wissen, wann man aufgibt</value></data>
+  <data name="Challenge.bj-surrender-10.Description" xml:space="preserve"><value>Nutze 10-mal die Aufgabe-Option.</value></data>
+  <data name="Challenge.bj-insurance-10.Name" xml:space="preserve"><value>Abgesichert</value></data>
+  <data name="Challenge.bj-insurance-10.Description" xml:space="preserve"><value>Nimm 10-mal eine Versicherung.</value></data>
+  <data name="Challenge.bj-wager-5000.Name" xml:space="preserve"><value>Jetons in Bewegung</value></data>
+  <data name="Challenge.bj-wager-5000.Description" xml:space="preserve"><value>Setze insgesamt 5.000 $ bei Blackjack.</value></data>
+  <data name="Challenge.bj-wager-25000.Name" xml:space="preserve"><value>Ernsthafte Einsätze</value></data>
+  <data name="Challenge.bj-wager-25000.Description" xml:space="preserve"><value>Setze insgesamt 25.000 $ bei Blackjack.</value></data>
+  <data name="Challenge.bj-profit-1000.Name" xml:space="preserve"><value>Dem Haus voraus</value></data>
+  <data name="Challenge.bj-profit-1000.Description" xml:space="preserve"><value>Erreiche 1.000 $ lebenslangen Blackjack-Nettogewinn.</value></data>
+  <data name="Challenge.bj-biggest-500.Name" xml:space="preserve"><value>Eine große Hand</value></data>
+  <data name="Challenge.bj-biggest-500.Description" xml:space="preserve"><value>Erziele mindestens 500 $ Gewinn in einer Blackjack-Runde.</value></data>
+  <data name="Challenge.bj-streak-5.Name" xml:space="preserve"><value>Siegesserie</value></data>
+  <data name="Challenge.bj-streak-5.Description" xml:space="preserve"><value>Erreiche eine Siegesserie von 5 Runden.</value></data>
+  <data name="Challenge.bj-streak-10.Name" xml:space="preserve"><value>Ungebrochen</value></data>
+  <data name="Challenge.bj-streak-10.Description" xml:space="preserve"><value>Erreiche eine Siegesserie von 10 Runden.</value></data>
+  <data name="Challenge.reels-spins-25.Name" xml:space="preserve"><value>Walzen aufwärmen</value></data>
+  <data name="Challenge.reels-spins-25.Description" xml:space="preserve"><value>Spiele 25 Runden Midnight Reels.</value></data>
+  <data name="Challenge.reels-spins-100.Name" xml:space="preserve"><value>Nur noch ein Dreh</value></data>
+  <data name="Challenge.reels-spins-100.Description" xml:space="preserve"><value>Spiele 100 Runden Midnight Reels.</value></data>
+  <data name="Challenge.reels-spins-500.Name" xml:space="preserve"><value>Walzen-Stammgast</value></data>
+  <data name="Challenge.reels-spins-500.Description" xml:space="preserve"><value>Spiele 500 Runden Midnight Reels.</value></data>
+  <data name="Challenge.reels-wins-25.Name" xml:space="preserve"><value>Lichter auf Gewinnlinie</value></data>
+  <data name="Challenge.reels-wins-25.Description" xml:space="preserve"><value>Gewinne 25 Runden Midnight Reels.</value></data>
+  <data name="Challenge.reels-wins-100.Name" xml:space="preserve"><value>Klassisches Glück</value></data>
+  <data name="Challenge.reels-wins-100.Description" xml:space="preserve"><value>Gewinne 100 Runden Midnight Reels.</value></data>
+  <data name="Challenge.reels-wager-5000.Name" xml:space="preserve"><value>Münzen im Umlauf</value></data>
+  <data name="Challenge.reels-wager-5000.Description" xml:space="preserve"><value>Setze 5.000 $ bei Midnight Reels.</value></data>
+  <data name="Challenge.reels-return-10000.Name" xml:space="preserve"><value>Zurück in die Schale</value></data>
+  <data name="Challenge.reels-return-10000.Description" xml:space="preserve"><value>Erhalte insgesamt 10.000 $ Auszahlungen bei Midnight Reels.</value></data>
+  <data name="Challenge.reels-payout-500.Name" xml:space="preserve"><value>Glockenschlag</value></data>
+  <data name="Challenge.reels-payout-500.Description" xml:space="preserve"><value>Erziele mindestens 500 $ Auszahlung in einer Runde Midnight Reels.</value></data>
+  <data name="Challenge.reels-profit-1000.Name" xml:space="preserve"><value>Klassischer Vorsprung</value></data>
+  <data name="Challenge.reels-profit-1000.Description" xml:space="preserve"><value>Erreiche 1.000 $ Nettogewinn bei Midnight Reels.</value></data>
+  <data name="Challenge.reels-spins-1500.Name" xml:space="preserve"><value>Mechanisches Gedächtnis</value></data>
+  <data name="Challenge.reels-spins-1500.Description" xml:space="preserve"><value>Spiele 1.500 Runden Midnight Reels.</value></data>
+  <data name="Challenge.manor-spins-25.Name" xml:space="preserve"><value>Einladung angenommen</value></data>
+  <data name="Challenge.manor-spins-25.Description" xml:space="preserve"><value>Spiele 25 kostenpflichtige Runden Midnight Manor.</value></data>
+  <data name="Challenge.manor-spins-100.Name" xml:space="preserve"><value>Das Haus kennt dich</value></data>
+  <data name="Challenge.manor-spins-100.Description" xml:space="preserve"><value>Spiele 100 kostenpflichtige Runden Midnight Manor.</value></data>
+  <data name="Challenge.manor-free-50.Name" xml:space="preserve"><value>Spuknacht</value></data>
+  <data name="Challenge.manor-free-50.Description" xml:space="preserve"><value>Spiele 50 Freirunden in Midnight Manor.</value></data>
+  <data name="Challenge.manor-free-sessions-5.Name" xml:space="preserve"><value>Im Mondlicht</value></data>
+  <data name="Challenge.manor-free-sessions-5.Description" xml:space="preserve"><value>Starte 5 Freirundenserien.</value></data>
+  <data name="Challenge.manor-bonus-5.Name" xml:space="preserve"><value>Öffne die Tür</value></data>
+  <data name="Challenge.manor-bonus-5.Description" xml:space="preserve"><value>Starte 5-mal Escape the Manor.</value></data>
+  <data name="Challenge.manor-exit-1.Name" xml:space="preserve"><value>Entkommen</value></data>
+  <data name="Challenge.manor-exit-1.Description" xml:space="preserve"><value>Erreiche einmal das Mondlichttor.</value></data>
+  <data name="Challenge.manor-exit-10.Name" xml:space="preserve"><value>Ausbruchskünstler</value></data>
+  <data name="Challenge.manor-exit-10.Description" xml:space="preserve"><value>Erreiche 10-mal das Mondlichttor.</value></data>
+  <data name="Challenge.manor-max-exit-1.Name" xml:space="preserve"><value>Die unmögliche Tür</value></data>
+  <data name="Challenge.manor-max-exit-1.Description" xml:space="preserve"><value>Entkomme durch ein Mondlichttor mit 1.000-fachem Multiplikator.</value></data>
+  <data name="Challenge.manor-caught-5.Name" xml:space="preserve"><value>Das Anwesen hat dich gefunden</value></data>
+  <data name="Challenge.manor-caught-5.Description" xml:space="preserve"><value>Lass dich 5-mal vom Geist erwischen.</value></data>
+  <data name="Challenge.manor-best-250.Name" xml:space="preserve"><value>Tief im Anwesen</value></data>
+  <data name="Challenge.manor-best-250.Description" xml:space="preserve"><value>Beende einen Midnight-Manor-Lauf mit mindestens 250-fachem Multiplikator.</value></data>
+  <data name="Challenge.neon-spins-25.Name" xml:space="preserve"><value>Betritt den Tresor</value></data>
+  <data name="Challenge.neon-spins-25.Description" xml:space="preserve"><value>Spiele 25 Runden Neon Vault.</value></data>
+  <data name="Challenge.neon-spins-100.Name" xml:space="preserve"><value>Zutritt gewährt</value></data>
+  <data name="Challenge.neon-spins-100.Description" xml:space="preserve"><value>Spiele 100 Runden Neon Vault.</value></data>
+  <data name="Challenge.neon-spins-500.Name" xml:space="preserve"><value>Tresor-Stammgast</value></data>
+  <data name="Challenge.neon-spins-500.Description" xml:space="preserve"><value>Spiele 500 Runden Neon Vault.</value></data>
+  <data name="Challenge.neon-wins-100.Name" xml:space="preserve"><value>Elektrisches Glück</value></data>
+  <data name="Challenge.neon-wins-100.Description" xml:space="preserve"><value>Gewinne 100 Runden Neon Vault.</value></data>
+  <data name="Challenge.neon-free-100.Name" xml:space="preserve"><value>Zutritt nach Feierabend</value></data>
+  <data name="Challenge.neon-free-100.Description" xml:space="preserve"><value>Spiele 100 Freirunden in Neon Vault.</value></data>
+  <data name="Challenge.neon-sessions-10.Name" xml:space="preserve"><value>Schlüssel zum Tresor</value></data>
+  <data name="Challenge.neon-sessions-10.Description" xml:space="preserve"><value>Starte 10 Freirundenserien in Neon Vault.</value></data>
+  <data name="Challenge.neon-jackpots-5.Name" xml:space="preserve"><value>Tresorknacker</value></data>
+  <data name="Challenge.neon-jackpots-5.Description" xml:space="preserve"><value>Erziele 5 Jackpots in Neon Vault.</value></data>
+  <data name="Challenge.neon-blackouts-25.Name" xml:space="preserve"><value>Lichter aus</value></data>
+  <data name="Challenge.neon-blackouts-25.Description" xml:space="preserve"><value>Erlebe 25 Blackouts beliebiger Art in Neon Vault.</value></data>
+  <data name="Challenge.neon-wager-25000.Name" xml:space="preserve"><value>Tresorumsatz</value></data>
+  <data name="Challenge.neon-wager-25000.Description" xml:space="preserve"><value>Setze 25.000 $ bei kostenpflichtigen Neon-Vault-Runden.</value></data>
+  <data name="Challenge.neon-multiplier-250.Name" xml:space="preserve"><value>Energieschub</value></data>
+  <data name="Challenge.neon-multiplier-250.Description" xml:space="preserve"><value>Erziele in Neon Vault eine Auszahlung von 250-mal deinem Rundeneinsatz.</value></data>
+  <data name="Challenge.nine-spins-25.Name" xml:space="preserve"><value>Neugier</value></data>
+  <data name="Challenge.nine-spins-25.Description" xml:space="preserve"><value>Spiele 25 Runden Nine Lives.</value></data>
+  <data name="Challenge.nine-spins-100.Name" xml:space="preserve"><value>Katzennickerchen abgesagt</value></data>
+  <data name="Challenge.nine-spins-100.Description" xml:space="preserve"><value>Spiele 100 Runden Nine Lives.</value></data>
+  <data name="Challenge.nine-spins-500.Name" xml:space="preserve"><value>Stammgast auf dem Dach</value></data>
+  <data name="Challenge.nine-spins-500.Description" xml:space="preserve"><value>Spiele 500 Runden Nine Lives.</value></data>
+  <data name="Challenge.nine-wins-100.Name" xml:space="preserve"><value>Glückspfoten</value></data>
+  <data name="Challenge.nine-wins-100.Description" xml:space="preserve"><value>Gewinne 100 Runden Nine Lives.</value></data>
+  <data name="Challenge.nine-bonus-50.Name" xml:space="preserve"><value>Neun weitere Leben</value></data>
+  <data name="Challenge.nine-bonus-50.Description" xml:space="preserve"><value>Spiele 50 Bonusrunden in Nine Lives.</value></data>
+  <data name="Challenge.nine-sessions-10.Name" xml:space="preserve"><value>Leben im Überfluss</value></data>
+  <data name="Challenge.nine-sessions-10.Description" xml:space="preserve"><value>Starte 10 Bonusserien in Nine Lives.</value></data>
+  <data name="Challenge.nine-pounce-25.Name" xml:space="preserve"><value>Sprung!</value></data>
+  <data name="Challenge.nine-pounce-25.Description" xml:space="preserve"><value>Löse 25 Pounce-Wild-Verwandlungen aus.</value></data>
+  <data name="Challenge.nine-wager-25000.Name" xml:space="preserve"><value>Wolle in Bewegung</value></data>
+  <data name="Challenge.nine-wager-25000.Description" xml:space="preserve"><value>Setze 25.000 $ bei kostenpflichtigen Nine-Lives-Runden.</value></data>
+  <data name="Challenge.nine-multiplier-250.Name" xml:space="preserve"><value>Zahltag im Mondschein</value></data>
+  <data name="Challenge.nine-multiplier-250.Description" xml:space="preserve"><value>Erziele in Nine Lives eine Auszahlung von 250-mal deinem Rundeneinsatz.</value></data>
+  <data name="Challenge.nine-frenzy-1.Name" xml:space="preserve"><value>Alle neun</value></data>
+  <data name="Challenge.nine-frenzy-1.Description" xml:space="preserve"><value>Erziele einmal Full Grid Frenzy.</value></data>
+  <data name="Challenge.bj-rounds-10000.Name" xml:space="preserve"><value>Hüter des Tisches</value></data>
+  <data name="Challenge.bj-rounds-10000.Description" xml:space="preserve"><value>Beende 10.000 Blackjack-Runden.</value></data>
+  <data name="Challenge.bj-wins-5000.Name" xml:space="preserve"><value>Legende des Hauses</value></data>
+  <data name="Challenge.bj-wins-5000.Description" xml:space="preserve"><value>Gewinne 5.000 Blackjack-Hände.</value></data>
+  <data name="Challenge.bj-blackjacks-1000.Name" xml:space="preserve"><value>Tausend natürliche Blackjacks</value></data>
+  <data name="Challenge.bj-blackjacks-1000.Description" xml:space="preserve"><value>Erziele 1.000 natürliche Blackjacks.</value></data>
+  <data name="Challenge.bj-double-wins-1000.Name" xml:space="preserve"><value>Doppelte Dynastie</value></data>
+  <data name="Challenge.bj-double-wins-1000.Description" xml:space="preserve"><value>Gewinne 1.000 Blackjack-Hände mit verdoppeltem Einsatz.</value></data>
+  <data name="Challenge.bj-wager-1000000.Name" xml:space="preserve"><value>Millionentisch</value></data>
+  <data name="Challenge.bj-wager-1000000.Description" xml:space="preserve"><value>Setze insgesamt 1.000.000 $ bei Blackjack.</value></data>
+  <data name="Challenge.reels-spins-10000.Name" xml:space="preserve"><value>Uhrwerk-Legende</value></data>
+  <data name="Challenge.reels-spins-10000.Description" xml:space="preserve"><value>Spiele 10.000 separat erfasste Runden Midnight Reels.</value></data>
+  <data name="Challenge.reels-wins-2500.Name" xml:space="preserve"><value>Meister der Walzen</value></data>
+  <data name="Challenge.reels-wins-2500.Description" xml:space="preserve"><value>Gewinne 2.500 separat erfasste Runden Midnight Reels.</value></data>
+  <data name="Challenge.reels-return-1000000.Name" xml:space="preserve"><value>Goldene Münzschale</value></data>
+  <data name="Challenge.reels-return-1000000.Description" xml:space="preserve"><value>Erhalte insgesamt 1.000.000 $ aus separat erfassten Midnight-Reels-Runden.</value></data>
+  <data name="Challenge.reels-wager-1000000.Name" xml:space="preserve"><value>Institution der Walzen</value></data>
+  <data name="Challenge.reels-wager-1000000.Description" xml:space="preserve"><value>Setze 1.000.000 $ bei separat erfassten Midnight-Reels-Runden.</value></data>
+  <data name="Challenge.manor-spins-10000.Name" xml:space="preserve"><value>Dauergast</value></data>
+  <data name="Challenge.manor-spins-10000.Description" xml:space="preserve"><value>Spiele 10.000 kostenpflichtige Runden Midnight Manor.</value></data>
+  <data name="Challenge.manor-free-5000.Name" xml:space="preserve"><value>Endlose Spuknacht</value></data>
+  <data name="Challenge.manor-free-5000.Description" xml:space="preserve"><value>Spiele 5.000 Freirunden in Midnight Manor.</value></data>
+  <data name="Challenge.manor-exits-100.Name" xml:space="preserve"><value>Meister des Tores</value></data>
+  <data name="Challenge.manor-exits-100.Description" xml:space="preserve"><value>Erreiche 100-mal das Mondlichttor.</value></data>
+  <data name="Challenge.manor-max-exits-10.Name" xml:space="preserve"><value>Zehn Unmöglichkeiten</value></data>
+  <data name="Challenge.manor-max-exits-10.Description" xml:space="preserve"><value>Entkomme 10-mal durch ein Mondlichttor mit 1.000-fachem Multiplikator.</value></data>
+  <data name="Challenge.neon-paid-10000.Name" xml:space="preserve"><value>Tresor-Institution</value></data>
+  <data name="Challenge.neon-paid-10000.Description" xml:space="preserve"><value>Spiele 10.000 separat erfasste kostenpflichtige Neon-Vault-Runden.</value></data>
+  <data name="Challenge.neon-free-5000.Name" xml:space="preserve"><value>Unbegrenzter Zutritt</value></data>
+  <data name="Challenge.neon-free-5000.Description" xml:space="preserve"><value>Spiele 5.000 separat erfasste Freirunden in Neon Vault.</value></data>
+  <data name="Challenge.neon-grand-10.Name" xml:space="preserve"><value>Große Tresorlegende</value></data>
+  <data name="Challenge.neon-grand-10.Description" xml:space="preserve"><value>Erziele 10 separat erfasste Grand-Jackpots in Neon Vault.</value></data>
+  <data name="Challenge.neon-total-blackouts-100.Name" xml:space="preserve"><value>Jenseits des Blackouts</value></data>
+  <data name="Challenge.neon-total-blackouts-100.Description" xml:space="preserve"><value>Erlebe 100 separat erfasste vollständige Blackouts in Neon Vault.</value></data>
+  <data name="Challenge.neon-overrides-250.Name" xml:space="preserve"><value>Systemarchitekt</value></data>
+  <data name="Challenge.neon-overrides-250.Description" xml:space="preserve"><value>Aktiviere 250 separat erfasste Sicherheitsüberbrückungen in Neon Vault.</value></data>
+  <data name="Challenge.nine-paid-10000.Name" xml:space="preserve"><value>Nine-Lives-Institution</value></data>
+  <data name="Challenge.nine-paid-10000.Description" xml:space="preserve"><value>Spiele 10.000 separat erfasste kostenpflichtige Nine-Lives-Runden.</value></data>
+  <data name="Challenge.nine-bonus-5000.Name" xml:space="preserve"><value>Endloses Dach</value></data>
+  <data name="Challenge.nine-bonus-5000.Description" xml:space="preserve"><value>Spiele 5.000 Bonusrunden in Nine Lives.</value></data>
+  <data name="Challenge.nine-pounce-500.Name" xml:space="preserve"><value>Raubtierinstinkt</value></data>
+  <data name="Challenge.nine-pounce-500.Description" xml:space="preserve"><value>Löse 500 Pounce-Wild-Verwandlungen aus.</value></data>
+  <data name="Challenge.nine-frenzy-10.Name" xml:space="preserve"><value>Neun mal neun</value></data>
+  <data name="Challenge.nine-frenzy-10.Description" xml:space="preserve"><value>Erziele 10-mal Full Grid Frenzy.</value></data>
+  <data name="Challenge.lifetime-xp-1000000.Name" xml:space="preserve"><value>Casino-Institution</value></data>
+  <data name="Challenge.lifetime-xp-1000000.Description" xml:space="preserve"><value>Sammle insgesamt 1.000.000 Spieler-EP in allen Spielen.</value></data>
+  <data name="Challenge.lifetime-hours-250.Name" xml:space="preserve"><value>Die lange Nacht</value></data>
+  <data name="Challenge.lifetime-hours-250.Description" xml:space="preserve"><value>Erreiche insgesamt 250 Stunden Spielzeit im Casino.</value></data>
+  <data name="Challenge.lifetime-wager-10000000.Name" xml:space="preserve"><value>Zehn Millionen im Umlauf</value></data>
+  <data name="Challenge.lifetime-wager-10000000.Description" xml:space="preserve"><value>Setze insgesamt 10.000.000 $ in allen Spielen, einschließlich übernommener gemeinsamer Slot-Verläufe.</value></data>
+  <data name="Challenge.lifetime-plays-100000.Name" xml:space="preserve"><value>Hunderttausend Nächte</value></data>
+  <data name="Challenge.lifetime-plays-100000.Description" xml:space="preserve"><value>Schließe insgesamt 100.000 Blackjack-Runden, Würfelspiele, Sudoku- und Wortsuchrätsel, Merge-Aufträge und Slot-Runden ab, einschließlich übernommener gemeinsamer Slot-Verläufe.</value></data>
+  <data name="Challenge.prestige-3.Name" xml:space="preserve"><value>Zum dritten Mal gekrönt</value></data>
+  <data name="Challenge.prestige-3.Description" xml:space="preserve"><value>Erreiche Prestige 3.</value></data>
+  <data name="Challenge.prestige-5.Name" xml:space="preserve"><value>Fünffache Legende</value></data>
+  <data name="Challenge.prestige-5.Description" xml:space="preserve"><value>Erreiche Prestige 5.</value></data>
+  <data name="Challenge.prestige-10.Name" xml:space="preserve"><value>Ewiger High Roller</value></data>
+  <data name="Challenge.prestige-10.Description" xml:space="preserve"><value>Erreiche Prestige 10.</value></data>
+</root>

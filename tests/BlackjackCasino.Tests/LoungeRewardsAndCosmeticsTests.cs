@@ -74,7 +74,7 @@ public sealed class LoungeRewardsAndCosmeticsTests
         var restored = JsonSerializer.Deserialize<PlayerProfileState>(JsonSerializer.Serialize(profile))!;
         _ = new ProgressionService(restored);
         Assert.Equal("diceset-jade", restored.EquippedDiceSetId);
-        Assert.Equal(6, CosmeticCatalog.ShopItems.Count(c => c.Kind == CosmeticKind.DiceSet));
+        Assert.Equal(12, CosmeticCatalog.ShopItems.Count(c => c.Kind == CosmeticKind.DiceSet));
     }
 
     [Fact]

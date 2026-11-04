@@ -76,6 +76,7 @@ public sealed class AdventureEngine
             throw new ArgumentException($"Run belongs to '{State.AdventureId}', not '{definition.Id}'.", nameof(state));
         if (!scenes.ContainsKey(State.CurrentSceneId))
             throw new ArgumentException($"Run references missing scene '{State.CurrentSceneId}'.", nameof(state));
+        AdventureRunMigrations.Apply(definition, State);
     }
 
     public AdventureDefinition Definition { get; }
@@ -148,7 +149,7 @@ public sealed class AdventureEngine
                 State.ActiveConditions.ContainsKey(condition.Key) == condition.Expected,
             AdventureConditionKind.CoinsMinimum => State.Coins >= condition.Value,
             AdventureConditionKind.CounterMinimum =>
-                State.Counters.TryGetValue(condition.Key, out int counter) && counter >= condition.Value,
+                (State.Counters.GetValueOrDefault(condition.Key) >= condition.Value) == condition.Expected,
             AdventureConditionKind.CaseNodeKnown =>
                 (State.CaseBoard.Nodes.TryGetValue(condition.Key, out CaseNodeState? nodeState) && nodeState.IsKnown) == condition.Expected,
             AdventureConditionKind.CaseConnectionKnown =>

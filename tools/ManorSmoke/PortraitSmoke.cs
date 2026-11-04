@@ -62,8 +62,18 @@ internal static class PortraitSmoke
             profileWindow.Width = profileWindow.MinWidth; profileWindow.Height = profileWindow.MinHeight;
             profileWindow.UpdateLayout(); Save(profileWindow, System.IO.Path.Combine(output, "portraits-player-minimum.png"));
             profileWindow.Close();
-            Require(PortraitArtwork.Get(CosmeticCatalog.DefaultPortraitId) is null, "Default/season artwork was unexpectedly replaced");
-            File.WriteAllText(System.IO.Path.Combine(output, "portraits-result.txt"), "PASS: all 8 embedded images loaded, distinct and cached; true circular clipping with transparent corners; actual shop previews, purchase/equip and Player portrait; regular/minimum window captures. No live profile was used.");
+            foreach (CosmeticDefinition portrait in CosmeticCatalog.All.Where(c => c.Kind == CosmeticKind.Portrait && !c.ShopAvailable))
+            {
+                BitmapSource image = PortraitArtwork.Get(portrait.Id) ?? throw new Exception("Missing default/season artwork: " + portrait.Id);
+                Require(image.IsFrozen && image.PixelWidth == 512 && image.PixelHeight == 512, "Invalid default/season portrait " + portrait.Id);
+                Require(ReferenceEquals(image, PortraitArtwork.Get(portrait.Id)), "Default/season cache was bypassed");
+                Require(sources.Add(image), "Default/season portrait reused another image");
+                FrameworkElement visual = ProgressionWindow.CreatePortraitVisual(portrait, 112);
+                visual.Measure(new Size(112, 112)); visual.Arrange(new Rect(0, 0, 112, 112));
+                CheckCircle(visual);
+                Save(visual, System.IO.Path.Combine(output, portrait.Id + "-circle.png"), 3);
+            }
+            File.WriteAllText(System.IO.Path.Combine(output, "portraits-result.txt"), "PASS: all 17 embedded portraits loaded, distinct and cached; true circular clipping with transparent corners; actual shop previews, purchase/equip and Player portrait; regular/minimum window captures. No live profile was used.");
         }
         finally { window.Close(); }
     }

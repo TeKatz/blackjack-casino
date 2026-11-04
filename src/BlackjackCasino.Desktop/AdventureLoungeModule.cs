@@ -74,8 +74,18 @@ internal sealed class AdventureView : UserControl
         this.diceSetId = diceSetId ?? throw new ArgumentNullException(nameof(diceSetId));
         this.animationsEnabled = animationsEnabled ?? throw new ArgumentNullException(nameof(animationsEnabled));
         feedback = engine.DrainFeedback();
-        Unloaded += (_, _) => caseBoardWindow.Close();
+        Loaded += (_, _) => Localization.LanguageChanged += OnAdventureLanguageChanged;
+        Unloaded += (_, _) =>
+        {
+            Localization.LanguageChanged -= OnAdventureLanguageChanged;
+            caseBoardWindow.Close();
+        };
         Render();
+    }
+
+    private void OnAdventureLanguageChanged(object? sender, EventArgs e)
+    {
+        if (!rolling && !transitioning) Render();
     }
 
     private void Render(bool animateStoryIn = false)
@@ -97,7 +107,7 @@ internal sealed class AdventureView : UserControl
         Grid.SetRowSpan(sheet, 2);
         root.Children.Add(sheet);
 
-        Border hud = AdventureInventoryUi.Build(engine);
+        Border hud = AdventureInventoryUi.Build(engine, AdvanceChoiceAsync);
         Grid.SetRow(hud, 1);
         Grid.SetColumn(hud, 0);
         root.Children.Add(hud);
@@ -121,10 +131,12 @@ internal sealed class AdventureView : UserControl
         string act = scene.ActId is not null && engine.Definition.Acts?.TryGetValue(scene.ActId, out string? actName) == true
             ? actName
             : engine.Definition.Title;
-        title.Children.Add(AdventureUi.Eyebrow(act.ToUpperInvariant(), 11));
+        title.Children.Add(AdventureUi.Eyebrow(
+            AdventureTextLocalization.Act(engine.Definition, scene, act).ToUpperInvariant(), 11));
         title.Children.Add(new TextBlock
         {
-            Text = scene.Title,
+            Text = AdventureTextLocalization.SceneTitle(engine.Definition, scene),
+            TextWrapping = TextWrapping.Wrap,
             FontFamily = new FontFamily("Georgia"),
             FontSize = 40,
             Foreground = AdventureUi.Ink("#F4E3C8"),
@@ -134,7 +146,7 @@ internal sealed class AdventureView : UserControl
         {
             title.Children.Add(new TextBlock
             {
-                Text = scene.Location.ToUpperInvariant(),
+                Text = AdventureTextLocalization.SceneLocation(engine.Definition, scene).ToUpperInvariant(),
                 FontFamily = new FontFamily("Georgia"),
                 FontSize = 10,
                 Foreground = AdventureUi.Ink("#708E83"),
@@ -150,7 +162,7 @@ internal sealed class AdventureView : UserControl
         };
         if (engine.Definition.CaseBoard is not null)
         {
-            Button board = AdventureUi.Button("CASE BOARD", accent: true, fontSize: 11.5, scaleOnHover: false);
+            Button board = AdventureUi.Button(AdventureTextLocalization.Ui("CaseBoard", "CASE BOARD"), accent: true, fontSize: 11.5, scaleOnHover: false);
             board.Margin = new Thickness(0, 0, 8, 0);
             board.IsEnabled = !rolling;
             board.Click += (_, _) =>
@@ -161,7 +173,7 @@ internal sealed class AdventureView : UserControl
             headerActions.Children.Add(board);
         }
 
-        Button back = AdventureUi.Button("← ADVENTURES", fontSize: 11.5, scaleOnHover: false);
+        Button back = AdventureUi.Button(AdventureTextLocalization.Ui("Adventures", "← ADVENTURES"), fontSize: 11.5, scaleOnHover: false);
         back.IsEnabled = !rolling;
         back.Click += (_, _) =>
         {
@@ -195,7 +207,7 @@ internal sealed class AdventureView : UserControl
         }
         body.Children.Add(new TextBlock
         {
-            Text = scene.Body,
+            Text = AdventureTextLocalization.SceneBody(engine.Definition, scene),
             FontFamily = new FontFamily("Georgia"),
             FontSize = 20,
             LineHeight = 32,
@@ -324,7 +336,7 @@ internal sealed class AdventureView : UserControl
         var copy = new StackPanel();
         copy.Children.Add(new TextBlock
         {
-            Text = choice.Text,
+            Text = AdventureTextLocalization.Choice(engine.Definition, choice),
             TextWrapping = TextWrapping.Wrap,
             FontFamily = new FontFamily("Georgia"),
             FontSize = 15,
@@ -483,7 +495,7 @@ internal sealed class AdventureView : UserControl
         var body = new StackPanel();
         AdventureCharacterState character = engine.State.Character;
 
-        body.Children.Add(AdventureUi.Eyebrow("CHARACTER SHEET", 11));
+        body.Children.Add(AdventureUi.Eyebrow(AdventureTextLocalization.Ui("CharacterSheet", "CHARACTER SHEET"), 11));
 
         var identityRow = new Grid { Margin = new Thickness(0, 5, 0, 6) };
         identityRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -498,21 +510,21 @@ internal sealed class AdventureView : UserControl
             Foreground = AdventureUi.Ink("#F4E2C5"),
             TextTrimming = TextTrimming.CharacterEllipsis,
         });
+        AdventureClassDefinition? archetype = AdventureCharacterCatalog.AllFor(engine.Definition)
+            .FirstOrDefault(item => string.Equals(item.Id, character.ClassId, StringComparison.OrdinalIgnoreCase));
         identity.Children.Add(new TextBlock
         {
-            Text = $"{character.ClassName} · Level {character.Level}",
+            Text = $"{(archetype is null ? character.ClassName : AdventureTextLocalization.ClassName(engine.Definition, archetype))} · {AdventureTextLocalization.Ui("Level", "LEVEL")} {character.Level}",
             Foreground = AdventureUi.Ink("#90D0B5"),
             FontFamily = new FontFamily("Georgia"),
             FontSize = 12.5,
             Margin = new Thickness(0, 1, 0, 0),
         });
-        AdventureClassDefinition? archetype = AdventureCharacterCatalog.AllFor(engine.Definition)
-            .FirstOrDefault(item => string.Equals(item.Id, character.ClassId, StringComparison.OrdinalIgnoreCase));
         if (!string.IsNullOrWhiteSpace(archetype?.SpecialMechanicName))
         {
             identity.Children.Add(new TextBlock
             {
-                Text = $"SPECIAL · {archetype.SpecialMechanicName!.ToUpperInvariant()}",
+                Text = $"{AdventureTextLocalization.Ui("Special", "SPECIAL")} · {AdventureTextLocalization.ClassSpecial(engine.Definition, archetype).ToUpperInvariant()}",
                 Foreground = AdventureUi.Ink("#C7AA68"),
                 FontFamily = new FontFamily("Georgia"),
                 FontSize = 9.5,
@@ -541,7 +553,7 @@ internal sealed class AdventureView : UserControl
         vitals.Children.Add(xp);
         body.Children.Add(vitals);
 
-        body.Children.Add(AdventureUi.SectionLabel("ABILITIES"));
+        body.Children.Add(AdventureUi.SectionLabel(AdventureTextLocalization.Ui("Abilities", "ABILITIES")));
         var abilities = new UniformGrid { Columns = 3, Margin = new Thickness(0, 2, 0, 13) };
         foreach (AdventureAbility ability in Enum.GetValues<AdventureAbility>())
         {
@@ -552,7 +564,7 @@ internal sealed class AdventureView : UserControl
         }
         body.Children.Add(abilities);
 
-        body.Children.Add(AdventureUi.SectionLabel("TRAINED SKILLS"));
+        body.Children.Add(AdventureUi.SectionLabel(AdventureTextLocalization.Ui("TrainedSkills", "TRAINED SKILLS")));
         foreach (AdventureSkillState skill in character.Skills.Values.OrderBy(item => item.Name))
         {
             bool highlighted = string.Equals(pending?.SkillId, skill.Id, StringComparison.OrdinalIgnoreCase);
@@ -561,7 +573,7 @@ internal sealed class AdventureView : UserControl
             line.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             line.Children.Add(new TextBlock
             {
-                Text = skill.Name,
+                Text = AdventureTextLocalization.Raw(skill.Name),
                 FontFamily = new FontFamily("Georgia"),
                 Foreground = AdventureUi.Ink(highlighted ? "#E8CE89" : "#B6C8C0"),
                 FontSize = 12,
@@ -582,7 +594,7 @@ internal sealed class AdventureView : UserControl
 
         if (engine.State.ActiveConditions.Count > 0)
         {
-            body.Children.Add(AdventureUi.SectionLabel("ACTIVE CONDITIONS"));
+            body.Children.Add(AdventureUi.SectionLabel(AdventureTextLocalization.Ui("ActiveConditions", "ACTIVE CONDITIONS")));
             body.Children.Add(new TextBlock
             {
                 Text = string.Join(" · ", engine.State.ActiveConditions.Values.Select(state =>

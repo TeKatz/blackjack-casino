@@ -20,11 +20,18 @@ internal static class Localization
     private static readonly ResourceManager[] ResourceManagers =
     [
         new("BlackjackCasino.Desktop.Resources.Strings", typeof(Localization).Assembly),
+        new("BlackjackCasino.Desktop.Resources.ShellStrings", typeof(Localization).Assembly),
         new("BlackjackCasino.Desktop.Resources.LobbyStrings", typeof(Localization).Assembly),
         new("BlackjackCasino.Desktop.Resources.VaultShellStrings", typeof(Localization).Assembly),
         new("BlackjackCasino.Desktop.Resources.MergeStrings", typeof(Localization).Assembly),
         new("BlackjackCasino.Desktop.Resources.AlbumStrings", typeof(Localization).Assembly),
         new("BlackjackCasino.Desktop.Resources.GameStrings", typeof(Localization).Assembly),
+        new("BlackjackCasino.Desktop.Resources.Phase2Strings", typeof(Localization).Assembly),
+        new("BlackjackCasino.Desktop.Resources.AdventureStrings", typeof(Localization).Assembly),
+        new("BlackjackCasino.Desktop.Resources.ChallengeStrings", typeof(Localization).Assembly),
+        new("BlackjackCasino.Desktop.Resources.AlbumLoreStrings", typeof(Localization).Assembly),
+        new("BlackjackCasino.Desktop.Resources.MemoryStrings", typeof(Localization).Assembly),
+        new("BlackjackCasino.Desktop.Resources.SeasonStrings", typeof(Localization).Assembly),
     ];
 
     private static readonly CultureInfo EnglishCulture = CultureInfo.GetCultureInfo("en-US");
@@ -147,8 +154,10 @@ internal static class Localization
     private static string TranslatePattern(string source)
     {
         string translated = LocalizationPatterns.Translate(source, Culture);
+        if (!string.Equals(translated, source, StringComparison.Ordinal)) return translated;
+        translated = LocalizationSupplementalPatterns.Translate(source, Culture);
         return string.Equals(translated, source, StringComparison.Ordinal)
-            ? LocalizationSupplementalPatterns.Translate(source, Culture)
+            ? LocalizationPhase2Patterns.Translate(source, Culture)
             : translated;
     }
 
