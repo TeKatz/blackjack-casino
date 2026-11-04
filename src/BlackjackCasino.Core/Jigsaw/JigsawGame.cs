@@ -288,14 +288,22 @@ public static class JigsawGame
         return seen.ToArray();
     }
 
-    public static bool Move(JigsawGameState game, int id, double dx, double dy)
+    public static bool Move(JigsawGameState game, int id, double dx, double dy) =>
+        MoveGroup(game, Connected(game, id), dx, dy);
+
+    /// <summary>
+    /// Move an already identified group without rerunning connected-component discovery on
+    /// every pointer event. UI owns the grouping snapshot for the lifetime of a drag.
+    /// </summary>
+    public static bool MoveGroup(JigsawGameState game, IReadOnlyList<int> group, double dx, double dy)
     {
-        if (game.Completed || !double.IsFinite(dx) || !double.IsFinite(dy)) return false;
-        IReadOnlyList<int> connected = Connected(game, id);
-        if (connected.Count == 0 || connected.Any(i => game.Pieces[i].Locked)) return false;
-        if (connected.Any(i => Math.Abs(game.Pieces[i].X + dx) > 4000 ||
-                               Math.Abs(game.Pieces[i].Y + dy) > 4000)) return false;
-        foreach (int i in connected) { game.Pieces[i].X += dx; game.Pieces[i].Y += dy; }
+        if (game.Completed || group is null || group.Count == 0 ||
+            !double.IsFinite(dx) || !double.IsFinite(dy)) return false;
+        if (group.Any(i => i < 0 || i >= game.PieceCount || !game.Pieces[i].OnBoard || game.Pieces[i].Locked))
+            return false;
+        if (group.Any(i => Math.Abs(game.Pieces[i].X + dx) > 4000 ||
+                           Math.Abs(game.Pieces[i].Y + dy) > 4000)) return false;
+        foreach (int i in group) { game.Pieces[i].X += dx; game.Pieces[i].Y += dy; }
         return true;
     }
 
