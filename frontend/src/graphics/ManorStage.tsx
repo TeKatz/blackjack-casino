@@ -420,7 +420,8 @@ function createRenderer(app: Application, report: (value: boolean) => void,
       if (motionDisabled) app.render();
     },
     dispose() {
-      finish();
+      // Unmounting cannot turn an in-flight visual into a second win announcement.
+      finish(false);
       app.ticker.remove(frameTick);
       textures.forEach(texture => texture.destroy(true));
       textures.clear();

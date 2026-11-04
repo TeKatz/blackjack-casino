@@ -76,6 +76,10 @@ export const MANOR_CUES: Readonly<Record<ManorCue, readonly ManorTone[]>> = {
 export const boundedVolume = (value: number): number =>
   Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0;
 
+export function hostAudioPolicy(sound: boolean, music: boolean, musicVolume: number) {
+  return { sound, music, ambientGain: .025 * boundedVolume(musicVolume) };
+}
+
 /** All audio is created after an explicit user gesture. Failures never block a spin. */
 export class ManorAudio {
   private context: AudioContext | null = null;
@@ -85,9 +89,25 @@ export class ManorAudio {
   private enabled = true;
   private ambience = false;
   private volume = .35;
+  private hostSoundEnabled = false;
+  private hostMusicEnabled = false;
+  private hostAmbientGain = 0;
+
+  /** Global desktop preferences are an upper bound; local toggles cannot override mute. */
+  setHostPolicy(soundEnabled: boolean, musicEnabled: boolean, musicVolume: number): void {
+    const policy = hostAudioPolicy(soundEnabled, musicEnabled, musicVolume);
+    this.hostSoundEnabled = policy.sound;
+    this.hostMusicEnabled = policy.music;
+    this.hostAmbientGain = policy.ambientGain;
+    this.mix();
+    this.syncHum();
+    if (this.humLevel && this.context)
+      this.humLevel.gain.setTargetAtTime(this.hostAmbientGain,
+        this.context.currentTime, .06);
+  }
 
   arm(): void {
-    if (!this.enabled) return;
+    if (!this.enabled || !this.hostSoundEnabled) return;
     try {
       if (!this.context) {
         this.context = new AudioContext({ latencyHint: 'interactive' });
@@ -122,7 +142,7 @@ export class ManorAudio {
   play(cue: ManorCue): void {
     const context = this.context;
     const bus = this.bus;
-    if (!this.enabled || !context || !bus || this.volume === 0) return;
+    if (!this.enabled || !this.hostSoundEnabled || !context || !bus || this.volume === 0) return;
     try {
       const start = context.currentTime + .007;
       for (const tone of MANOR_CUES[cue]) {
@@ -150,13 +170,14 @@ export class ManorAudio {
 
   private mix(): void {
     if (this.bus && this.context)
-      this.bus.gain.setTargetAtTime(this.enabled ? this.volume * .50 : 0,
+      this.bus.gain.setTargetAtTime(this.enabled && this.hostSoundEnabled ? this.volume * .50 : 0,
         this.context.currentTime, .025);
   }
 
   private syncHum(): void {
     if (!this.context || !this.bus) return;
-    const desired = this.enabled && this.ambience && this.volume > 0;
+    const desired = this.enabled && this.hostSoundEnabled && this.hostMusicEnabled &&
+      this.ambience && this.volume > 0 && this.hostAmbientGain > 0;
     if (!desired) {
       for (const voice of this.hum) {
         try { voice.stop(); } catch { /* Already stopped. */ }
@@ -170,7 +191,7 @@ export class ManorAudio {
     if (this.hum.length) return;
     try {
       const gain = this.context.createGain();
-      gain.gain.value = .025;
+      gain.gain.value = this.hostAmbientGain;
       gain.connect(this.bus);
       for (const hz of [55, 82.41]) {
         const osc = this.context.createOscillator();

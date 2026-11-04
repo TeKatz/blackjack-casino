@@ -117,6 +117,10 @@ function ManorApp() {
   const threat = run ? ghostBand(run.ghostClue) : null;
   const visibleMoment = moment ? localizeMoment(moment, language) : null;
   useEffect(() => { document.documentElement.lang = language; }, [language]);
+  useEffect(() => {
+    audio.current?.setHostPolicy(snapshot.globalSoundEnabled, snapshot.globalMusicEnabled,
+      snapshot.globalMusicVolume);
+  }, [snapshot.globalSoundEnabled, snapshot.globalMusicEnabled, snapshot.globalMusicVolume]);
 
   function act(type: GameAction, extras: { bet?: string; room?: number } = {}) {
     // Immediate ref guard prevents two same-frame clicks from placing two wagers.
@@ -339,7 +343,8 @@ function ManorApp() {
             <div className="audio-settings" aria-label={t(language, 'soundGroup')}>
               <span className="eyebrow">{t(language, 'sound')}</span>
               <label className="switch-row"><span>{t(language, 'sfx')}</span>
-                <input type="checkbox" checked={soundEnabled}
+                <input type="checkbox" checked={soundEnabled && snapshot.globalSoundEnabled}
+                  disabled={!snapshot.globalSoundEnabled}
                   onChange={event => {
                     const enabled = event.target.checked;
                     setSoundEnabled(enabled);
@@ -349,7 +354,7 @@ function ManorApp() {
               </label>
               <label className="switch-row"><span>{t(language, 'ambience')}</span>
                 <input type="checkbox" checked={ambienceEnabled}
-                  disabled={!soundEnabled}
+                  disabled={!soundEnabled || !snapshot.globalSoundEnabled || !snapshot.globalMusicEnabled}
                   onChange={event => {
                     const enabled = event.target.checked;
                     setAmbienceEnabled(enabled);
@@ -361,13 +366,20 @@ function ManorApp() {
                 <span>{t(language, 'volume')}</span><output htmlFor="manor-volume">{volume}%</output>
               </label>
               <input className="audio-slider" id="manor-volume" type="range" min={0} max={100}
-                step={5} value={volume} disabled={!soundEnabled}
+                step={5} value={volume} disabled={!soundEnabled || !snapshot.globalSoundEnabled}
                 onChange={event => {
                   const level = Number(event.target.value);
                   setVolume(level);
                   audio.current?.setVolume(level / 100);
                 }} />
               <p className="display-hint">{t(language, 'soundHint')}</p>
+              {!snapshot.globalSoundEnabled && <p className="audio-host-policy" role="status">
+                {language === 'de' ? 'Ton ist in den Casino-Einstellungen global deaktiviert.' :
+                  'Sound is disabled in the casino-wide settings.'}</p>}
+              {snapshot.globalSoundEnabled && !snapshot.globalMusicEnabled &&
+                <p className="audio-host-policy">
+                  {language === 'de' ? 'Hintergrundmusik ist global deaktiviert.' :
+                    'Background music is disabled in the casino-wide settings.'}</p>}
             </div>
             <label className="switch-row" htmlFor="manor-perf-diagnostics">
               <span>{t(language, 'diagnosticsToggle')}</span>

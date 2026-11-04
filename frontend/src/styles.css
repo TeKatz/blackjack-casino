@@ -234,3 +234,6 @@ h1{font-family:Georgia,serif;letter-spacing:.13em;font-size:18px;margin:4px 0 0}
 
 .topbar-actions{flex-wrap:wrap;justify-content:flex-end;gap:10px}
 @media(max-width:700px){.topbar{flex-wrap:wrap}.topbar-actions{justify-content:flex-start}}
+
+.audio-host-policy{border-left:3px solid #e2bb8f;background:#392d33;
+  padding:9px 12px;color:#f5e3c9;font-size:12px;line-height:1.55;margin:10px 0}

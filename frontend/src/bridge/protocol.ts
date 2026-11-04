@@ -60,6 +60,10 @@ export type ManorSnapshot = {
   winningLineDetails: ManorWinningLine[];
   language: 'en' | 'de';
   rules: ManorRulesInfo;
+  /** Read-only desktop-level audio constraints, not a separate persisted preference. */
+  globalSoundEnabled: boolean;
+  globalMusicEnabled: boolean;
+  globalMusicVolume: number;
   run: ManorRun | null;
   saveNotice: string | null;
 };
@@ -130,6 +134,10 @@ export function isSnapshot(value: unknown): value is ManorSnapshot {
       nonnegative(line.count) && line.count >= 3 && line.count <= 5 &&
       text(line.amount) && Array.isArray(line.rows) && line.rows.length === 5 &&
       line.rows.every(row => nonnegative(row) && row <= 2)) &&
+    flag(value.globalSoundEnabled) && flag(value.globalMusicEnabled) &&
+    typeof value.globalMusicVolume === 'number' &&
+    Number.isFinite(value.globalMusicVolume) &&
+    value.globalMusicVolume >= 0 && value.globalMusicVolume <= 1 &&
     (value.language === 'en' || value.language === 'de') &&
     dictionary(value.rules) && (value.rules.version === 1 || value.rules.version === 2) &&
     Array.isArray(value.rules.symbols) && value.rules.symbols.length === 14 &&
@@ -210,6 +218,7 @@ export const browserPreview: ManorSnapshot = {
   canFreeSpin: false, lastSpinFree: false, scatters: 0, doors: 0, winningLines: 0,
   run: null, saveNotice: null, winningLineDetails: [],
   language: 'en',
+  globalSoundEnabled: false, globalMusicEnabled: false, globalMusicVolume: 0,
   rules: {
     version: 2,
     symbols: [

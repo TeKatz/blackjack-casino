@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { boundedVolume, MANOR_CUES } from '../src/audio/manorAudio';
+import { boundedVolume, hostAudioPolicy, MANOR_CUES } from '../src/audio/manorAudio';
 
 describe('Midnight Manor audio safety contract', () => {
   it('has an entirely local, low-volume sound cue for each presentation', () => {
@@ -17,6 +17,14 @@ describe('Midnight Manor audio safety contract', () => {
         expect(voice.offset).toBeLessThan(1);
       }
     }
+  });
+  it('enforces the persisted casino-wide sound and music switches', () => {
+    expect(hostAudioPolicy(false, true, 1)).toEqual({
+      sound: false, music: true, ambientGain: .025,
+    });
+    expect(hostAudioPolicy(true, false, .1).music).toBe(false);
+    expect(hostAudioPolicy(true, true, .1).ambientGain).toBeCloseTo(.0025);
+    expect(hostAudioPolicy(true, true, Number.POSITIVE_INFINITY).ambientGain).toBe(0);
   });
   it('clamps volume and fails closed for invalid values', () => {
     expect(boundedVolume(-2)).toBe(0);

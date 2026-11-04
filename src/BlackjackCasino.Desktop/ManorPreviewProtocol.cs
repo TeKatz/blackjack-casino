@@ -30,7 +30,8 @@ internal static class ManorPreviewProtocol
         string[] Cells,int[] WinningCells,bool CycleActive,int FreeSpinsRemaining,string Feature,
         bool AnimationsEnabled,bool HasCommittedSpin,string Revision,bool CanSpin,bool CanFreeSpin,
         bool LastSpinFree,int Scatters,int Doors,int WinningLines,RunSnapshot? Run,
-        string? SaveNotice,WinningLineDetail[] WinningLineDetails,string Language,RulesInfo Rules);
+        string? SaveNotice,WinningLineDetail[] WinningLineDetails,string Language,RulesInfo Rules,
+        bool GlobalSoundEnabled,bool GlobalMusicEnabled,double GlobalMusicVolume);
 
     internal static bool IsTrustedSource(string? source)
     {
@@ -111,7 +112,8 @@ internal static class ManorPreviewProtocol
     }
 
     internal static Snapshot CreateSnapshot(ManorSessionState state,bool animationsEnabled,
-        decimal selectedBet=25m,string? saveNotice=null,string language="en")
+        decimal selectedBet=25m,string? saveNotice=null,string language="en",
+        bool globalSoundEnabled=true,bool globalMusicEnabled=true,double globalMusicVolume=.1d)
     {
         ArgumentNullException.ThrowIfNull(state);
         ManorSpin? spin=state.LastSpin;
@@ -175,7 +177,9 @@ internal static class ManorPreviewProtocol
             spin?.Wins.Where(win=>win.Line is >=0 and <20 && win.Count is >=3 and <=5)
                 .Select(win=>new WinningLineDetail(win.Line+1,win.Count,
                     ManorRules.Paylines[win.Line].ToArray(),Money(win.Amount))).ToArray()
-                ?? [],language=="de" ? "de" : "en",rules);
+                ?? [],language=="de" ? "de" : "en",rules,
+            globalSoundEnabled,globalMusicEnabled,
+            double.IsFinite(globalMusicVolume) ? Math.Clamp(globalMusicVolume,0d,1d) : 0d);
     }
 
     internal static string SerializeSnapshot(Snapshot snapshot,string requestId)=>

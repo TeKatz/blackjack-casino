@@ -19,7 +19,10 @@ internal sealed class ManorModernGameService(ManorController controller)
             controller.Preferences.Presentation("midnight-manor").AnimationsEnabled,
             controller.Preferences.ManorBet,
             controller.SaveNotice,
-            controller.Preferences.Language==UiLanguagePreference.German ? "de" : "en");
+            controller.Preferences.Language==UiLanguagePreference.German ? "de" : "en",
+            controller.Preferences.SoundEnabled,
+            controller.Preferences.MusicEnabled,
+            controller.Preferences.MusicVolume);
 
     internal ManorPreviewProtocol.Snapshot Execute(ManorPreviewProtocol.Command command)
     {

@@ -68,6 +68,9 @@ public sealed class ManorPreviewProtocolTests
         Assert.Equal("$20.00",snapshot.SelectedBet);
         Assert.Equal("7",snapshot.Revision);
         Assert.Equal("en",snapshot.Language);
+        Assert.True(snapshot.GlobalSoundEnabled);
+        Assert.True(snapshot.GlobalMusicEnabled);
+        Assert.Equal(.1d,snapshot.GlobalMusicVolume);
         Assert.Equal(2,snapshot.Rules.Version);
         Assert.Equal(14,snapshot.Rules.Symbols.Length);
         Assert.Equal(20,snapshot.Rules.Paylines.Length);
@@ -144,6 +147,13 @@ public sealed class ManorPreviewProtocolTests
         Assert.Equal(20,german.Rules.Paylines.Length);
         Assert.Equal(before,JsonSerializer.Serialize(previous));
         Assert.Equal("en",ManorPreviewProtocol.CreateSnapshot(previous,false,language:"unknown").Language);
+        var disabledAudio=ManorPreviewProtocol.CreateSnapshot(previous,false,
+            globalSoundEnabled:false,globalMusicEnabled:false,globalMusicVolume:2);
+        Assert.False(disabledAudio.GlobalSoundEnabled);
+        Assert.False(disabledAudio.GlobalMusicEnabled);
+        Assert.Equal(1d,disabledAudio.GlobalMusicVolume);
+        Assert.Equal(0d,ManorPreviewProtocol.CreateSnapshot(previous,false,
+            globalMusicVolume:double.NaN).GlobalMusicVolume);
     }
 
     [Fact]
