@@ -71,7 +71,6 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
             browser.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(message, Json));
         }
         catch (InvalidOperationException) { Fail(); }
-        catch (ObjectDisposedException) { Fail(); }
     }
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
@@ -154,8 +153,8 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
                     ready = true;
                     browser.Visibility = Visibility.Visible;
                     IsHitTestVisible = true;
-                    browser.Opacity = 0;
-                    browser.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1,
+                    Opacity = 0;
+                    BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1,
                         TimeSpan.FromMilliseconds(280))
                     { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
                     readyChanged();
