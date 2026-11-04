@@ -46,6 +46,8 @@ internal static class LocalizationSmoke
             "Casino lobby call-to-action did not switch to German.");
 
         CheckGermanShellWindows(window);
+        CheckPhase2Translations();
+
         SaveScreenshot(window, Path.Combine(output, "localization-german-lobby.png"));
 
         window.Modes.Open("blackjack");
@@ -177,6 +179,41 @@ internal static class LocalizationSmoke
             "Casino lobby headline did not switch back to English without a restart.");
         Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "VAULT FULL"),
             "Dynamic Vault header did not switch back to English.");
+    }
+
+    private static void CheckPhase2Translations()
+    {
+        (string Source, string German)[] samples =
+        [
+            ("YOUR DICE TABLE", "DEIN WÜRFELTISCH"),
+            ("THREE REELS · ONE PAYLINE · PLAY MONEY", "DREI WALZEN · EINE GEWINNLINIE · SPIELGELD"),
+            ("THE HOUSE REMEMBERS", "DAS HAUS ERINNERT SICH"),
+            ("ACCESS LEVEL I", "ZUGANGSSTUFE I"),
+            ("HIGH VOLATILITY · 3×3 · FIVE LINES", "HOHE VOLATILITÄT · 3×3 · FÜNF LINIEN"),
+            ("WORDS TO DISCOVER", "WÖRTER ZU FINDEN"),
+            ("PAIRS FOUND", "PAARE GEFUNDEN"),
+            ("Slot Gallery", "Spielautomatengalerie"),
+            ("Warm lights, brass cabinets and the first heartbeat of your casino.",
+                "Warmes Licht, Messinggehäuse und der erste Herzschlag deines Casinos."),
+            ("Turn 3 of 13", "Runde 3 von 13"),
+            ("Roll 2 / 3", "Wurf 2 / 3"),
+            ("Record 13 points", "13 Punkte eintragen"),
+            ("Upper: 35 points · Bonus: 0 / 35 (at 63)",
+                "Oben: 35 Punkte · Bonus: 0 / 35 (bei 63)"),
+            ("NINE LIVES · 4 SPINS LEFT", "NINE LIVES · 4 FREISPIELE ÜBRIG"),
+            ("Found FOREST. Saved.", "FOREST gefunden. Gespeichert."),
+            ("Hint: FOREST begins at the glowing letter.",
+                "Hinweis: FOREST beginnt beim leuchtenden Buchstaben."),
+            ("7 / 12 words found · 03:12 · 2 hints",
+                "7 / 12 Wörter gefunden · 03:12 · 2 Hinweise"),
+            ("Active managers: 1/3", "Aktive Manager: 1/3"),
+        ];
+        foreach ((string source, string german) in samples)
+        {
+            string actual = Localization.TranslateSource(source);
+            Require(string.Equals(actual, german, StringComparison.Ordinal),
+                $"Game translation mismatch for '{source}': expected '{german}', got '{actual}'.");
+        }
     }
 
     private static void CheckGermanShellWindows(MainWindow owner)
