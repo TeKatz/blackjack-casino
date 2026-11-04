@@ -565,7 +565,8 @@ internal static class Program
         Require(modern.Ready && modern.IsVisible && modern.Browser.CoreWebView2 is not null,
             "Modern lobby failed to replace the WPF fallback. Ready=" + modern.Ready
             + ", Failed=" + modern.Failed + ", Reason=" + (modern.FailureReason ?? "no ready signal")
-            + ", Source=" + modern.Browser.Source);
+            + ", Source=" + modern.Browser.Source + ", Navigation=" + modern.LastNavigation
+            + ", LastMessageSource=" + modern.LastMessageSource + ", LastMessage=" + modern.LastMessageType);
 
         // Do not accept the static browser preview or a blank canvas. The host
         // must have delivered the real seeded C# profile and all registered modes.
