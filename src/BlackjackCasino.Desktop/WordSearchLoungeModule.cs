@@ -208,7 +208,7 @@ internal sealed class WordSearchLoungeHub : UserControl, IDisposable
             return;
         }
         WordSearchPuzzleDefinition definition = WordSearchGame.NextPuzzle(progress, difficulty);
-        progress.ActiveGame = WordSearchGame.Start(definition);
+        progress.ActiveGame = WordSearchGame.Start(definition, language: Localization.Language == UiLanguagePreference.German ? "de" : "en");
         persist(progress);
         ShowGame(progress.ActiveGame);
     }

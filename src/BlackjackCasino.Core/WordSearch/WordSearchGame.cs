@@ -2,11 +2,11 @@ namespace BlackjackCasino.Core.WordSearch;
 
 public static class WordSearchGame
 {
-    public static WordSearchGameState Start(WordSearchPuzzleDefinition definition, DateTimeOffset? now = null)
+    public static WordSearchGameState Start(WordSearchPuzzleDefinition definition, DateTimeOffset? now = null, string? language = null)
     {
         return new WordSearchGameState
         {
-            Puzzle = WordSearchGenerator.Generate(definition),
+            Puzzle = WordSearchGenerator.Generate(WordSearchCatalog.ForLanguage(definition, language)),
             StartedAt = now ?? DateTimeOffset.UtcNow,
         };
     }

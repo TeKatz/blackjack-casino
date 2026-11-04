@@ -41,6 +41,41 @@ public sealed class WordSearchTests
         }
     }
 
+
+    [Fact]
+    public void EveryGermanPuzzleBuildsAStableGermanGridWithUnchangedIdentity()
+    {
+        foreach (WordSearchPuzzleDefinition definition in WordSearchCatalog.All)
+        {
+            WordSearchPuzzle first = WordSearchGame.Start(definition, language: "de").Puzzle;
+            WordSearchPuzzle second = WordSearchGame.Start(definition, language: "de-DE").Puzzle;
+            Assert.Equal(definition.Id, first.Id);
+            Assert.Equal(definition.Difficulty, first.Difficulty);
+            Assert.Equal(definition.Size * definition.Size, first.Grid.Length);
+            Assert.Equal(definition.WordCount, first.Placements.Count);
+            Assert.Equal(first.Grid, second.Grid);
+            Assert.Equal(JsonSerializer.Serialize(first.Placements), JsonSerializer.Serialize(second.Placements));
+            Assert.All(first.Grid, character => Assert.InRange(character, 'A', 'Z'));
+            Assert.DoesNotContain(first.Placements, placement => !WordSearchCatalog.ForLanguage(definition, "de").WordBank.Contains(placement.Word));
+        }
+    }
+
+    [Fact]
+    public void GermanPuzzleSurvivesSaveReloadWithoutEnglishRegeneration()
+    {
+        var definition = WordSearchCatalog.All[0];
+        var active = WordSearchGame.Start(definition, language: "de");
+        var originalGrid = active.Puzzle.Grid;
+        var progress = new WordSearchProgressState { ActiveGame = active };
+        var loaded = JsonSerializer.Deserialize<WordSearchProgressState>(JsonSerializer.Serialize(progress))!;
+        loaded.Normalize();
+        Assert.NotNull(loaded.ActiveGame);
+        Assert.Equal(originalGrid, loaded.ActiveGame!.Puzzle.Grid);
+        Assert.Equal(active.Puzzle.Placements, loaded.ActiveGame.Puzzle.Placements);
+        Assert.Equal(definition.Id, loaded.ActiveGame.Puzzle.Id);
+        Assert.NotEqual(WordSearchGame.Start(definition, language: "en").Puzzle.Grid, originalGrid);
+    }
+
     [Fact]
     public void RelaxedNeverUsesDiagonalOrBackwardPlacements()
     {
