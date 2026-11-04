@@ -39,6 +39,8 @@ internal sealed class ManorController
         next.Statistics=profile.Manor;
         var machine=new ManorSession(next,rng);
         action(machine);
+        // Advance the durable optimistic-concurrency token only after a valid transition.
+        next.Revision=checked(next.Revision+1);
         var grants=ProgressionService.ForNormalizedSnapshot(profile);
         ProgressionAward award=ManorProgression.Award(grants,next);
         // Paid Manor spins update TotalWagered while free spins and room decisions do not.
