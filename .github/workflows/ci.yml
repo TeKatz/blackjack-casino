@@ -52,6 +52,11 @@ jobs:
             throw "Generated changelog has incorrect version, channel, or missing entries."
           }
           if (!(Test-Path artifacts/release-notes-ci.md)) { throw "Missing Markdown changelog." }
+          foreach ($change in $notes.changes) {
+            if ([string]::IsNullOrWhiteSpace($change.titleDe) -or [string]::IsNullOrWhiteSpace($change.descriptionDe)) {
+              throw "Generated changelog entry is missing German editorial text."
+            }
+          }
 
       - name: Collection artwork coverage
         run: python -X warn_default_encoding -W error::EncodingWarning tools/check_collection_art.py

@@ -63,6 +63,39 @@ def classify(title: str) -> tuple[str, str]:
     return category, text or title
 
 
+
+def german_editorial(category: str, title: str) -> tuple[str, str]:
+    """Curated German summary. Unknown developer commits never leak untranslated."""
+    lower = title.casefold()
+    topics = [
+        (("localiz", "german", "translation", "language"), "Deutsche Übersetzung", "Weitere deutsche Texte und Sprachwechsel wurden überarbeitet."),
+        (("word search", "word-search"), "Wortsuche", "Inhalte oder Bedienung der Wortsuche wurden verbessert."),
+        (("release note", "changelog"), "Versionshinweise", "Die Anzeige der Versionshinweise wurde überarbeitet."),
+        (("adventure", "tales", "case board", "dead man's hand", "backroom"), "Tales from the Backroom", "Abenteuerinhalte oder ihre Darstellung wurden überarbeitet."),
+        (("empire",), "Casino Empire", "Die Casinoverwaltung wurde verbessert."),
+        (("midnight merge",), "Midnight Merge", "Inhalte oder Darstellung von Midnight Merge wurden verbessert."),
+        (("midnight dice", "kniffel"), "Midnight Dice", "Inhalte oder Darstellung von Midnight Dice wurden verbessert."),
+        (("midnight reels", "reels", "slot"), "Midnight Reels", "Spielinhalte oder Darstellung der Walzen wurden verbessert."),
+        (("midnight manor", "manor"), "Midnight Manor", "Spielinhalte oder Darstellung von Midnight Manor wurden verbessert."),
+        (("neon vault", "neon"), "Neon Vault", "Spielinhalte oder Darstellung von Neon Vault wurden verbessert."),
+        (("nine lives",), "Nine Lives", "Spielinhalte oder Darstellung von Nine Lives wurden verbessert."),
+        (("casino lobby", "lobby"), "Casino-Lobby", "Die Übersicht und Bedienung der Casino-Lobby wurden verbessert."),
+        (("challenge",), "Herausforderungen", "Herausforderungen oder Fortschrittsanzeigen wurden überarbeitet."),
+        (("album", "collection", "card set", "portrait", "cosmetic"), "Sammlung und Gestaltung", "Sammelinhalte oder kosmetische Darstellungen wurden überarbeitet."),
+        (("startup",), "Programmstart", "Das Startverhalten wurde überarbeitet."),
+        (("performance", "render", "frame"), "Leistung", "Abläufe wurden auf bessere Leistung hin überarbeitet."),
+        (("sound", "music", "audio"), "Musik und Klänge", "Audioinhalte oder ihre Wiedergabe wurden überarbeitet."),
+    ]
+    for terms, heading, body in topics:
+        if any(token in lower for token in terms):
+            return heading, body
+    return {
+        "Features": ("Neue Funktionen", "Das Spiel wurde um weitere Inhalte oder Funktionen erweitert."),
+        "Fixes": ("Fehlerbehebung", "Ein Fehler im Spiel wurde behoben."),
+        "Performance": ("Leistungsverbesserung", "Die Leistung des Spiels wurde verbessert."),
+        "Improvements": ("Allgemeine Verbesserung", "Bestehende Funktionen oder Ansichten wurden überarbeitet."),
+    }.get(category, ("Wartung", "Technische Wartungsarbeiten wurden durchgeführt."))
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--version", required=True)
@@ -77,13 +110,17 @@ def main() -> None:
         category, title = classify(subject)
         if category == "Maintenance" or title.casefold() in seen:
             continue
-        changes.append({"title": title, "description": description, "category": category})
+        title_de, description_de = german_editorial(category, title)
+        changes.append({"title": title, "description": description,
+                        "titleDe": title_de, "descriptionDe": description_de, "category": category})
         seen.add(title.casefold())
         if len(changes) >= 24:
             break
     if not changes:
         changes = [{"title": "No user-facing changes noted",
                     "description": "This build contains no individually documented feature or fix entries.",
+                    "titleDe": "Keine dokumentierten Neuerungen",
+                    "descriptionDe": "Für diese Version liegen keine einzelnen Änderungen vor.",
                     "category": "Maintenance"}]
 
     document = {"schemaVersion": 1, "version": args.version, "channel": args.channel,
