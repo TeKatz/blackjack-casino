@@ -191,4 +191,75 @@ Im Verlauf deiner Ermittlungen füllt sich die Tafel mit Personen, Orten, Beweis
   <data name="Adventure.drowned-bell.Act.act-3" xml:space="preserve"><value>Spiele im Laternenlicht</value></data>
   <data name="Adventure.drowned-bell.Act.act-4" xml:space="preserve"><value>Unter der Flut</value></data>
   <data name="Adventure.drowned-bell.Act.act-5" xml:space="preserve"><value>Die Glocke in der Tiefe</value></data>
+  <data name="Adventure.black-stag.Scene.forged-seal.Title" xml:space="preserve"><value>Ein gefälschtes Siegel</value></data>
+  <data name="Adventure.black-stag.Scene.forged-seal.Body" xml:space="preserve"><value>Das Wachs selbst ist gewöhnlich, doch der Abdruck stimmt nicht. Winzige doppelte Linien umgeben die abgebrochene Geweihstange – die verräterische Kante einer abgegossenen Kopie. Wer den Brief verschickte, wollte, dass du das Zeichen erkennst, ohne das ursprüngliche Siegel zu besitzen.</value></data>
+  <data name="Adventure.black-stag.Scene.seal-uncertain.Title" xml:space="preserve"><value>Kaltes Wachs</value></data>
+  <data name="Adventure.black-stag.Scene.seal-uncertain.Body" xml:space="preserve"><value>Du drehst das Siegel im Lampenlicht hin und her, doch der vom Regen gebrochene Schein und der Ruß lassen jeden Kratzer bedeutsam wirken. Mara poliert unablässig dasselbe Glas. Was immer sie weiß, sie hat beschlossen, dass du es dir verdienen musst.</value></data>
+  <data name="Adventure.black-stag.Scene.keeper-truth.Title" xml:space="preserve"><value>Was Mara sah</value></data>
+  <data name="Adventure.black-stag.Scene.keeper-truth.Body" xml:space="preserve"><value>Maras Gesicht spannt sich an. »Grauer Reisemantel. Schlamm bis zu den Knien. Silberbeschläge am Pferdegeschirr – teures Zeug. Er hat ständig zur alten Nordstraße hinübergeschaut.« Sie senkt die Stimme. »Und er hatte Angst. Nicht vor mir. Davor, verfolgt zu werden.«</value></data>
+  <data name="Adventure.black-stag.Scene.keeper-guarded.Title" xml:space="preserve"><value>Eine knappe Erinnerung</value></data>
+  <data name="Adventure.black-stag.Scene.keeper-guarded.Body" xml:space="preserve"><value>»Ein Reisender. Kapuze tief im Gesicht. Hat mit Silber bezahlt.« Mara antwortet zu schnell. Ob aus Furcht oder Verärgerung – sie hat beschlossen, dass du heute Nacht nicht mehr erfahren wirst.</value></data>
+  <data name="Adventure.black-stag.Scene.letter-opened.Title" xml:space="preserve"><value>Die Einladung</value></data>
+  <data name="Adventure.black-stag.Scene.letter-opened.Body" xml:space="preserve"><value>Der Brief enthält nur drei Zeilen: NORDSTRASSE. BRÜCKE VON SANKT ORRA. VOR MITTERNACHT. KOMM ALLEIN, WENN DU DIE VERSCHWUNDENEN NAMEN WILLST. Darunter ist mit Kohle ein Hirsch mit abgebrochener Geweihstange gezeichnet.</value></data>
+  <data name="Adventure.black-stag.Scene.seal-residue.Title" xml:space="preserve"><value>Ein Hauch alter Magie</value></data>
+  <data name="Adventure.black-stag.Scene.seal-residue.Body" xml:space="preserve"><value>Auf dem Brief liegt kein Zauber, doch am Wachs haftet ein schwacher Nachhall, wie der Geruch kalter Kiefernnadeln nach dem Regen. Die Spur ist zu alt, um vom Boten zu stammen. Dieses Zeichen ist offenbar schon früher mit Magie in Berührung gekommen.</value></data>
+  <data name="Adventure.black-stag.Scene.remembered-mark.Title" xml:space="preserve"><value>Eine ältere Geschichte</value></data>
+  <data name="Adventure.black-stag.Scene.remembered-mark.Body" xml:space="preserve"><value>Du erinnerst dich an eine geschwärzte Gerichtsakte: Der Schwarze Hirsch war der Name eines Botennetzes, das einst Aussagen transportierte, die zu gefährlich waren, um vor den königlichen Gerichten vorgetragen zu werden. Angeblich ging das Netz vor zwanzig Jahren unter. Doch das Zeichen auf dem Papier war um Jahrhunderte älter.</value></data>
+  <data name="Adventure.black-stag.Scene.north-road.Title" xml:space="preserve"><value>Die Brücke von Sankt Orra</value></data>
+  <data name="Adventure.black-stag.Scene.north-road.Body" xml:space="preserve"><value>Die Brücke ragt wie eine gebrochene Rippe aus dem Nebel. Neben der Brüstung wartet eine Gestalt mit Kapuze. Bevor einer von euch sprechen kann, schaben hinter dir Stiefel über Stein. Ein Jäger im dunklen Mantel versperrt den Rückweg. Eine Hand ruht bereits auf seinem Schwert.</value></data>
+  <data name="Adventure.black-stag.Scene.hunter-disarmed.Title" xml:space="preserve"><value>Stahl im Nebel</value></data>
+  <data name="Adventure.black-stag.Scene.hunter-disarmed.Body" xml:space="preserve"><value>Der Jäger greift zu früh an. Du packst sein Handgelenk, lenkst den Hieb ab und lässt sein Schwert über die nassen Steine schleudern. Die Botin lacht einmal ungläubig auf, dann drückt sie dir ein ledernes Päckchen in die Hand.</value></data>
+  <data name="Adventure.black-stag.Scene.hunter-defeated.Title" xml:space="preserve"><value>Ein schmaler Ausweg</value></data>
+  <data name="Adventure.black-stag.Scene.hunter-defeated.Body" xml:space="preserve"><value>Der Schlagabtausch ist schnell und hässlich, aber du drängst den Jäger weit genug zurück, damit die Botin zu dir gelangt. »Keine Zeit«, sagt sie. »Nimm das. Wenn ich falle, gib es niemandem, der eine Krone trägt.«</value></data>
+  <data name="Adventure.black-stag.Scene.lower-ledge.Title" xml:space="preserve"><value>Unter der Brücke</value></data>
+  <data name="Adventure.black-stag.Scene.lower-ledge.Body" xml:space="preserve"><value>Du lässt dich unter die Brüstung fallen, während über dir Stahl aufblitzt. Die Botin springt hinterher, kommt unglücklich auf, hält aber ihr ledernes Päckchen fest. Zehn Schritte weiter führt eine Wartungstür über einem schwarzen Fluss ins Mauerwerk.</value></data>
+  <data name="Adventure.black-stag.Scene.hunter-hesitates.Title" xml:space="preserve"><value>Die Frage hinter der Klinge</value></data>
+  <data name="Adventure.black-stag.Scene.hunter-hesitates.Body" xml:space="preserve"><value>Der Griff des Jägers lockert sich um einen Hauch. »Du weißt nicht, was sie bei sich trägt.« Die Botin antwortet zuerst: »Namen. Richter, Offiziere, Kaufleute. Jeder, der sich einen Platz bei diesem Verschwinden erkauft hat.«</value></data>
+  <data name="Adventure.black-stag.Scene.hunter-warning.Title" xml:space="preserve"><value>Ein gefährliches Verzeichnis</value></data>
+  <data name="Adventure.black-stag.Scene.hunter-warning.Body" xml:space="preserve"><value>»Weil die Hälfte der Namen Köder sind«, sagt der Jäger. »Die echte Liste ist kürzer. Jemand will eine Säuberung, keine Gerechtigkeit.« Die Botin schweigt. Das ist Antwort genug.</value></data>
+  <data name="Adventure.black-stag.Scene.wounded-escape.Title" xml:space="preserve"><value>Blut auf den Steinen</value></data>
+  <data name="Adventure.black-stag.Scene.wounded-escape.Body" xml:space="preserve"><value>Dein Plan versinkt in Lärm und Chaos. Du entkommst dem Jäger, aber nur knapp. Als der Nebel die Brücke endlich verschluckt, ist die Botin wieder an deiner Seite, und unter deinem Ärmel läuft dir warmes Blut den Arm hinab.</value></data>
+  <data name="Adventure.black-stag.Scene.ledger-revealed.Title" xml:space="preserve"><value>Die verschwundenen Namen</value></data>
+  <data name="Adventure.black-stag.Scene.ledger-revealed.Body" xml:space="preserve"><value>Im Päckchen liegt ein verschlüsseltes Register mit Daten, Zahlungen und Namen – darunter Menschen, die vor Jahren offiziell für tot erklärt wurden. Ein Eintrag ist frisch. Das heutige Datum. Daneben steht dein eigener Name. Die Botin zeigt auf einen Ort namens Grayfen und erklärt, dass dort jemand lebt, der dir sagen kann, welche Namen echt sind.</value></data>
+  <data name="Adventure.black-stag.Scene.ending-ledger.Title" xml:space="preserve"><value>Ende – Ein Name in Tinte</value></data>
+  <data name="Adventure.black-stag.Scene.ending-ledger.Body" xml:space="preserve"><value>Noch vor Tagesanbruch verlässt du die Straße. Das Register liegt unter deinem Mantel verborgen; Versprechen hast du niemandem gemacht. Irgendwo hinter dir suchen sowohl der Schwarze Hirsch als auch sein Jäger nach demselben verschwundenen Buch. Diesmal aber bestimmst du, wohin die Spur führt.</value></data>
+  <data name="Adventure.black-stag.Scene.grayfen-road.Title" xml:space="preserve"><value>Auf nach Grayfen</value></data>
+  <data name="Adventure.black-stag.Scene.grayfen-road.Body" xml:space="preserve"><value>Bis zum Morgen hat sich der Regen in kalten Nebel verwandelt. Grayfen liegt zwischen schwarzen Kiefern und überfluteten Wiesen, seine niedrigen Dächer drücken sich gegen den Himmel. Auf einer umgestürzten Eiche über der Straße wartet eine Gestalt: eine Waldelfe im moosdunklen Umhang, den Bogen entspannt, aber griffbereit. Sie mustert dich mit der Geduld einer Person, die längst beschlossen hat, dass Weglaufen zwecklos wäre.</value></data>
+  <data name="Adventure.black-stag.Scene.isi-first-meeting.Title" xml:space="preserve"><value>Die Elfe an der Straße</value></data>
+  <data name="Adventure.black-stag.Scene.isi-first-meeting.Body" xml:space="preserve"><value>»Isi«, sagt sie, nachdem du dich vorgestellt hast. Ihr Blick wandert zu den Umrissen des Registers unter deinem Mantel. »Wenn dich dieses Buch hergeführt hat, hat dich bereits jemand belogen. Die Frage ist nur, ob es der Hirsch war, die Krone – oder beide.« Sie bietet an, dich durch Grayfen zu führen. Vorausgesetzt, du beweist, dass du nicht nur ein weiterer Sammler von Namen bist.</value></data>
+  <data name="Adventure.black-stag.Choice.open-after-inspect" xml:space="preserve"><value>Öffne den Brief.</value></data>
+  <data name="Adventure.black-stag.Choice.press-keeper" xml:space="preserve"><value>Zeig Mara den Fehler im Siegel und dräng sie zu weiteren Einzelheiten.</value></data>
+  <data name="Adventure.black-stag.Choice.open-uncertain" xml:space="preserve"><value>Öffne den Brief trotzdem.</value></data>
+  <data name="Adventure.black-stag.Choice.ask-uncertain" xml:space="preserve"><value>Frag Mara, woran sie sich erinnert.</value></data>
+  <data name="Adventure.black-stag.Choice.thank-keeper" xml:space="preserve"><value>Bedank dich bei Mara und lies den Brief.</value></data>
+  <data name="Adventure.black-stag.Choice.leave-keeper" xml:space="preserve"><value>Hör auf zu drängen und lies den Brief.</value></data>
+  <data name="Adventure.black-stag.Choice.take-north-road" xml:space="preserve"><value>Brich zur Brücke von Sankt Orra auf.</value></data>
+  <data name="Adventure.black-stag.Choice.search-for-mark" xml:space="preserve"><value>Versuch dich an das Zeichen mit der gebrochenen Geweihstange zu erinnern.</value></data>
+  <data name="Adventure.black-stag.Choice.study-magic" xml:space="preserve"><value>Untersuche das Wachs auf magische Rückstände.</value></data>
+  <data name="Adventure.black-stag.Choice.go-after-residue" xml:space="preserve"><value>Behalte die Erkenntnis im Kopf und nimm die Nordstraße.</value></data>
+  <data name="Adventure.black-stag.Choice.go-informed" xml:space="preserve"><value>Behalte deine Erinnerung für dich und nimm die Nordstraße.</value></data>
+  <data name="Adventure.black-stag.Choice.draw-steel" xml:space="preserve"><value>Stell dich dem Jäger frontal.</value></data>
+  <data name="Adventure.black-stag.Choice.dive-cover" xml:space="preserve"><value>Spring über die Brüstung und nutze den unteren Wartungssims.</value></data>
+  <data name="Adventure.black-stag.Choice.talk-hunter" xml:space="preserve"><value>»Wenn du die Botin hättest töten wollen, hättest du längst zugeschlagen.«</value></data>
+  <data name="Adventure.black-stag.Choice.take-ledger-clean" xml:space="preserve"><value>Nimm das Päckchen und verlange die Wahrheit.</value></data>
+  <data name="Adventure.black-stag.Choice.take-ledger" xml:space="preserve"><value>Nimm das Lederpäckchen.</value></data>
+  <data name="Adventure.black-stag.Choice.force-door" xml:space="preserve"><value>Stemmt dich gegen die aufgequollene Wartungstür.</value></data>
+  <data name="Adventure.black-stag.Choice.take-packet" xml:space="preserve"><value>Schnapp dir das Päckchen und renn über den Sims.</value></data>
+  <data name="Adventure.black-stag.Choice.choose-courier" xml:space="preserve"><value>Stell dich auf die Seite der Botin und nimm das Päckchen.</value></data>
+  <data name="Adventure.black-stag.Choice.hear-hunter" xml:space="preserve"><value>Frag den Jäger, warum die Liste verschwinden muss.</value></data>
+  <data name="Adventure.black-stag.Choice.take-ledger-warning" xml:space="preserve"><value>Nimm das Register. Entscheide, nachdem du es geprüft hast.</value></data>
+  <data name="Adventure.black-stag.Choice.continue-wounded" xml:space="preserve"><value>Geh weiter und frag, wofür das alles gut war.</value></data>
+  <data name="Adventure.black-stag.Choice.keep-ledger" xml:space="preserve"><value>Nimm das Register und verschwinde, bevor eine der Seiten es zurückfordern kann.</value></data>
+  <data name="Adventure.black-stag.Choice.verify-first" xml:space="preserve"><value>Geh nach Grayfen und prüfe das Register, bevor du irgendwem vertraust.</value></data>
+  <data name="Adventure.black-stag.Choice.follow-stag" xml:space="preserve"><value>Folge den Anweisungen der Botin nach Grayfen.</value></data>
+  <data name="Adventure.black-stag.Choice.go-grayfen" xml:space="preserve"><value>Wenn dein Name darinsteht, brauchst du Antworten. Geh nach Grayfen.</value></data>
+  <data name="Adventure.black-stag.Choice.meet-isi" xml:space="preserve"><value>Bleib dort stehen, wo sie deine Hände sehen kann.</value></data>
+  <data name="Adventure.black-stag.Choice.isi-honest" xml:space="preserve"><value>Zeig Isi das Register und erzähl ihr genau, wie du daran gekommen bist.</value></data>
+  <data name="Adventure.black-stag.Choice.isi-cautious" xml:space="preserve"><value>Sag genug, um ein Gespräch zu beginnen, aber verberge das Register.</value></data>
+  <data name="Adventure.black-stag.Choice.isi-threat" xml:space="preserve"><value>Befiehl ihr, den Weg freizumachen, oder räum sie beiseite.</value></data>
+  <data name="Adventure.black-stag.Act.act-i" xml:space="preserve"><value>Akt I – Der Brief</value></data>
+  <data name="Adventure.black-stag.Act.act-ii" xml:space="preserve"><value>Akt II – Die verschwundenen Namen</value></data>
+  <data name="Adventure.black-stag.Act.act-iii" xml:space="preserve"><value>Akt III – Das gebrochene Geweih</value></data>
+  <data name="Adventure.black-stag.Act.act-iv" xml:space="preserve"><value>Akt IV – Die Jagd</value></data>
+  <data name="Adventure.black-stag.Act.act-v" xml:space="preserve"><value>Akt V – Die Krone</value></data>
 </root>

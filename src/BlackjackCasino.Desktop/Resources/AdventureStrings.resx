@@ -191,4 +191,75 @@ The board grows as the investigation uncovers people, places, evidence, leads an
   <data name="Adventure.drowned-bell.Act.act-3" xml:space="preserve"><value>Games in the Lantern</value></data>
   <data name="Adventure.drowned-bell.Act.act-4" xml:space="preserve"><value>Below the Tide</value></data>
   <data name="Adventure.drowned-bell.Act.act-5" xml:space="preserve"><value>The Bell Beneath</value></data>
+  <data name="Adventure.black-stag.Scene.forged-seal.Title" xml:space="preserve"><value>A False Signet</value></data>
+  <data name="Adventure.black-stag.Scene.forged-seal.Body" xml:space="preserve"><value>The wax itself is ordinary, but the impression is wrong. Tiny doubled lines ring the broken antler — the telltale edge of a cast copy. Whoever sent this wanted the symbol recognized without owning the original signet.</value></data>
+  <data name="Adventure.black-stag.Scene.seal-uncertain.Title" xml:space="preserve"><value>Cold Wax</value></data>
+  <data name="Adventure.black-stag.Scene.seal-uncertain.Body" xml:space="preserve"><value>You turn the seal beneath the lamplight, but the rainlight and soot make every scratch look meaningful. Mara keeps polishing the same glass. Whatever she knows, she has decided to make you earn it.</value></data>
+  <data name="Adventure.black-stag.Scene.keeper-truth.Title" xml:space="preserve"><value>What Mara Saw</value></data>
+  <data name="Adventure.black-stag.Scene.keeper-truth.Body" xml:space="preserve"><value>Mara's expression tightens. "Grey travelling coat. Mud to the knees. Silver tack on the horse — expensive. He kept looking toward the old north road." She lowers her voice. "And he was afraid. Not of me. Of being followed."</value></data>
+  <data name="Adventure.black-stag.Scene.keeper-guarded.Title" xml:space="preserve"><value>A Short Memory</value></data>
+  <data name="Adventure.black-stag.Scene.keeper-guarded.Body" xml:space="preserve"><value>"Traveller. Hood up. Paid in silver." Mara delivers the answer too quickly. Whether from fear or irritation, she has decided that is all you are getting tonight.</value></data>
+  <data name="Adventure.black-stag.Scene.letter-opened.Title" xml:space="preserve"><value>The Invitation</value></data>
+  <data name="Adventure.black-stag.Scene.letter-opened.Body" xml:space="preserve"><value>The letter contains only three lines: NORTH ROAD. SAINT ORRA'S BRIDGE. BEFORE MIDNIGHT. COME ALONE IF YOU WANT THE MISSING NAMES. Beneath the words is a charcoal sketch of the broken-antler stag.</value></data>
+  <data name="Adventure.black-stag.Scene.seal-residue.Title" xml:space="preserve"><value>A Trace of Old Magic</value></data>
+  <data name="Adventure.black-stag.Scene.seal-residue.Body" xml:space="preserve"><value>There is no spell on the letter, but the wax carries a faint residue like cold pine needles after rain. It is too old to belong to the courier. The symbol itself has been used around magic before.</value></data>
+  <data name="Adventure.black-stag.Scene.remembered-mark.Title" xml:space="preserve"><value>An Older Story</value></data>
+  <data name="Adventure.black-stag.Scene.remembered-mark.Body" xml:space="preserve"><value>You remember a censored court record: the Black Stag was the name of a courier network that once moved testimony too dangerous to enter the royal courts openly. The network supposedly died twenty years ago. The symbol on the page was older than the network by centuries.</value></data>
+  <data name="Adventure.black-stag.Scene.north-road.Title" xml:space="preserve"><value>Saint Orra's Bridge</value></data>
+  <data name="Adventure.black-stag.Scene.north-road.Body" xml:space="preserve"><value>The bridge rises from the fog like a broken rib. A hooded courier waits beside the parapet. Before either of you can speak, boots scrape stone behind you. A hunter in a dark coat blocks the road back, one hand already on his sword.</value></data>
+  <data name="Adventure.black-stag.Scene.hunter-disarmed.Title" xml:space="preserve"><value>Steel in the Fog</value></data>
+  <data name="Adventure.black-stag.Scene.hunter-disarmed.Body" xml:space="preserve"><value>The hunter commits too early. You catch his wrist, turn the strike, and send the sword spinning across wet stone. The courier laughs once in disbelief, then thrusts a leather packet toward you.</value></data>
+  <data name="Adventure.black-stag.Scene.hunter-defeated.Title" xml:space="preserve"><value>A Narrow Opening</value></data>
+  <data name="Adventure.black-stag.Scene.hunter-defeated.Body" xml:space="preserve"><value>The exchange is fast and ugly, but you force the hunter back far enough for the courier to reach you. "No time," she says. "Take this. If I fall, don't give it to anyone wearing a crown."</value></data>
+  <data name="Adventure.black-stag.Scene.lower-ledge.Title" xml:space="preserve"><value>Below the Bridge</value></data>
+  <data name="Adventure.black-stag.Scene.lower-ledge.Body" xml:space="preserve"><value>You drop beneath the parapet as steel flashes overhead. The courier follows, landing badly but keeping hold of a leather packet. A maintenance door waits ten paces away above a black river.</value></data>
+  <data name="Adventure.black-stag.Scene.hunter-hesitates.Title" xml:space="preserve"><value>The Question Behind the Blade</value></data>
+  <data name="Adventure.black-stag.Scene.hunter-hesitates.Body" xml:space="preserve"><value>The hunter's grip loosens by a fraction. "You don't know what she's carrying." The courier answers first: "Names. Judges, officers, merchants. Everyone who bought a place in the disappearances."</value></data>
+  <data name="Adventure.black-stag.Scene.hunter-warning.Title" xml:space="preserve"><value>A Dangerous Ledger</value></data>
+  <data name="Adventure.black-stag.Scene.hunter-warning.Body" xml:space="preserve"><value>"Because half the names are bait," the hunter says. "The real list is shorter. Someone wants a purge, not justice." The courier says nothing, which is answer enough.</value></data>
+  <data name="Adventure.black-stag.Scene.wounded-escape.Title" xml:space="preserve"><value>Blood on the Stones</value></data>
+  <data name="Adventure.black-stag.Scene.wounded-escape.Body" xml:space="preserve"><value>The plan collapses into noise. You escape the hunter, but only just. When the fog finally swallows the bridge, the courier is beside you and there is blood running warm beneath your sleeve.</value></data>
+  <data name="Adventure.black-stag.Scene.ledger-revealed.Title" xml:space="preserve"><value>The Missing Names</value></data>
+  <data name="Adventure.black-stag.Scene.ledger-revealed.Body" xml:space="preserve"><value>Inside the packet is a coded ledger of dates, payments and names — including people officially declared dead years ago. One entry is fresh. Tonight's date. Your own name is written beside it. The courier points to a place called Grayfen and says one person there can tell you which names are real.</value></data>
+  <data name="Adventure.black-stag.Scene.ending-ledger.Title" xml:space="preserve"><value>Ending — A Name in Ink</value></data>
+  <data name="Adventure.black-stag.Scene.ending-ledger.Body" xml:space="preserve"><value>You leave the road before dawn with the ledger hidden beneath your coat and no promises made. Somewhere behind you, both the Black Stag and its hunter begin searching for the same missing book. This time, however, you are the one deciding where the trail leads.</value></data>
+  <data name="Adventure.black-stag.Scene.grayfen-road.Title" xml:space="preserve"><value>Into Grayfen</value></data>
+  <data name="Adventure.black-stag.Scene.grayfen-road.Body" xml:space="preserve"><value>By morning the rain has become a cold mist. Grayfen sits between black pines and flooded meadows, its roofs low against the sky. A figure waits on a fallen oak above the road: a wood elf in a moss-dark cloak, bow unstrung but close to hand. She studies you with the patience of someone who has already decided running is pointless.</value></data>
+  <data name="Adventure.black-stag.Scene.isi-first-meeting.Title" xml:space="preserve"><value>The Elf on the Road</value></data>
+  <data name="Adventure.black-stag.Scene.isi-first-meeting.Body" xml:space="preserve"><value>"Isi," she says after you give your name. Her eyes move to the shape of the ledger beneath your coat. "If that book brought you here, then someone has already lied to you. The question is whether it was the Stag, the Crown, or both." She offers to guide you through Grayfen — if you prove you are not another collector of names.</value></data>
+  <data name="Adventure.black-stag.Choice.open-after-inspect" xml:space="preserve"><value>Open the letter.</value></data>
+  <data name="Adventure.black-stag.Choice.press-keeper" xml:space="preserve"><value>Show Mara the flaw and press her for details.</value></data>
+  <data name="Adventure.black-stag.Choice.open-uncertain" xml:space="preserve"><value>Open the letter anyway.</value></data>
+  <data name="Adventure.black-stag.Choice.ask-uncertain" xml:space="preserve"><value>Ask Mara what she remembers.</value></data>
+  <data name="Adventure.black-stag.Choice.thank-keeper" xml:space="preserve"><value>Thank Mara and read the letter.</value></data>
+  <data name="Adventure.black-stag.Choice.leave-keeper" xml:space="preserve"><value>Stop pushing and read the letter.</value></data>
+  <data name="Adventure.black-stag.Choice.take-north-road" xml:space="preserve"><value>Leave for Saint Orra's bridge.</value></data>
+  <data name="Adventure.black-stag.Choice.search-for-mark" xml:space="preserve"><value>Search your memory for the broken-antler mark.</value></data>
+  <data name="Adventure.black-stag.Choice.study-magic" xml:space="preserve"><value>Test the wax for magical residue.</value></data>
+  <data name="Adventure.black-stag.Choice.go-after-residue" xml:space="preserve"><value>Take the north road with that thought in mind.</value></data>
+  <data name="Adventure.black-stag.Choice.go-informed" xml:space="preserve"><value>Keep the memory to yourself and take the north road.</value></data>
+  <data name="Adventure.black-stag.Choice.draw-steel" xml:space="preserve"><value>Meet the hunter head-on.</value></data>
+  <data name="Adventure.black-stag.Choice.dive-cover" xml:space="preserve"><value>Vault the parapet and use the lower maintenance ledge.</value></data>
+  <data name="Adventure.black-stag.Choice.talk-hunter" xml:space="preserve"><value>"If you wanted the courier dead, you would have struck already."</value></data>
+  <data name="Adventure.black-stag.Choice.take-ledger-clean" xml:space="preserve"><value>Take the packet and demand the truth.</value></data>
+  <data name="Adventure.black-stag.Choice.take-ledger" xml:space="preserve"><value>Take the leather packet.</value></data>
+  <data name="Adventure.black-stag.Choice.force-door" xml:space="preserve"><value>Force the swollen maintenance door.</value></data>
+  <data name="Adventure.black-stag.Choice.take-packet" xml:space="preserve"><value>Take the packet and run the ledge.</value></data>
+  <data name="Adventure.black-stag.Choice.choose-courier" xml:space="preserve"><value>Side with the courier and take the packet.</value></data>
+  <data name="Adventure.black-stag.Choice.hear-hunter" xml:space="preserve"><value>Ask the hunter why the list must disappear.</value></data>
+  <data name="Adventure.black-stag.Choice.take-ledger-warning" xml:space="preserve"><value>Take the ledger. Decide after you verify it.</value></data>
+  <data name="Adventure.black-stag.Choice.continue-wounded" xml:space="preserve"><value>Keep moving. Ask what this was all for.</value></data>
+  <data name="Adventure.black-stag.Choice.keep-ledger" xml:space="preserve"><value>Take the ledger and disappear before either side can reclaim it.</value></data>
+  <data name="Adventure.black-stag.Choice.verify-first" xml:space="preserve"><value>Go to Grayfen and verify the ledger before trusting anyone.</value></data>
+  <data name="Adventure.black-stag.Choice.follow-stag" xml:space="preserve"><value>Follow the courier's instructions toward Grayfen.</value></data>
+  <data name="Adventure.black-stag.Choice.go-grayfen" xml:space="preserve"><value>If your name is on the page, you need answers. Go to Grayfen.</value></data>
+  <data name="Adventure.black-stag.Choice.meet-isi" xml:space="preserve"><value>Stop where she can see your hands.</value></data>
+  <data name="Adventure.black-stag.Choice.isi-honest" xml:space="preserve"><value>Show Isi the ledger and tell her exactly how you got it.</value></data>
+  <data name="Adventure.black-stag.Choice.isi-cautious" xml:space="preserve"><value>Tell her enough to earn a conversation, but keep the ledger hidden.</value></data>
+  <data name="Adventure.black-stag.Choice.isi-threat" xml:space="preserve"><value>Tell her to move or be moved.</value></data>
+  <data name="Adventure.black-stag.Act.act-i" xml:space="preserve"><value>Act I — The Letter</value></data>
+  <data name="Adventure.black-stag.Act.act-ii" xml:space="preserve"><value>Act II — The Missing Names</value></data>
+  <data name="Adventure.black-stag.Act.act-iii" xml:space="preserve"><value>Act III — The Broken Antlers</value></data>
+  <data name="Adventure.black-stag.Act.act-iv" xml:space="preserve"><value>Act IV — The Hunt</value></data>
+  <data name="Adventure.black-stag.Act.act-v" xml:space="preserve"><value>Act V — The Crown</value></data>
 </root>
