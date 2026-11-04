@@ -211,12 +211,12 @@ internal sealed class TableRulesDialog : Window
         foreach (int value in new[] { 1, 2, 4, 6, 8 }) decks.Items.Add(value);
         decks.SelectedItem = initial.DeckCount;
 
-        dealer17.Items.Add("Stand on soft 17 (S17)");
-        dealer17.Items.Add("Hit soft 17 (H17)");
+        dealer17.Items.Add(Localization.T("Shell.Table.Dialog.S17"));
+        dealer17.Items.Add(Localization.T("Shell.Table.Dialog.H17"));
         dealer17.SelectedIndex = initial.DealerHitsSoft17 ? 1 : 0;
 
-        holeCard.Items.Add("US hole card");
-        holeCard.Items.Add("European no-hole-card (ENHC)");
+        holeCard.Items.Add(Localization.T("Shell.Table.Dialog.UsHole"));
+        holeCard.Items.Add(Localization.T("Shell.Table.Dialog.EuroHole"));
         holeCard.SelectedIndex = initial.DealerTakesHoleCard ? 0 : 1;
         holeCard.SelectionChanged += (_, _) => UpdatePeekAvailability();
 
@@ -224,9 +224,9 @@ internal sealed class TableRulesDialog : Window
         blackjackPayout.Items.Add("6:5");
         blackjackPayout.SelectedIndex = initial.BlackjackPayout == 1.2m ? 1 : 0;
 
-        doubleRule.Items.Add("Any first two cards");
-        doubleRule.Items.Add("Totals 9–11 only");
-        doubleRule.Items.Add("Totals 10–11 only");
+        doubleRule.Items.Add(Localization.T("Shell.Table.Dialog.AnyTwo"));
+        doubleRule.Items.Add(Localization.T("Shell.Table.Dialog.NineEleven"));
+        doubleRule.Items.Add(Localization.T("Shell.Table.Dialog.TenEleven"));
         doubleRule.SelectedIndex = (int)initial.DoubleRule;
 
         for (int i = 2; i <= 8; i++) maxSplitHands.Items.Add(i);
@@ -350,7 +350,7 @@ internal sealed class TableRulesDialog : Window
         }
         catch (Exception ex)
         {
-            validationText.Text = ex.Message;
+            validationText.Text = Localization.TranslateSource(ex.Message);
             return;
         }
 

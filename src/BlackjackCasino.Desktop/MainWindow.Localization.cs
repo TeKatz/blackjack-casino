@@ -109,6 +109,7 @@ public partial class MainWindow
         }
 
         RefreshGameUi();
+        if (tableRulesInitialized) UpdateTableRulePresentation();
         Localization.ApplyTree(this);
     }
 }
