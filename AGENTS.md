@@ -18,10 +18,10 @@ This file is the repository-level instruction for coding assistants and ChatGPT 
 
 ## Current coordination status (2026-11-04)
 
-- The game director authorized consolidation of the validated cumulative work into `main`. Verify Jigsaw testing before starting invasive new game changes.
-- The Development publisher moves from `feature/casino-quality-phase-4` to `main` **as part of consolidation**, with the push filter and job guard updated together. Verify the actual main CI and published Development manifest before suggesting branch deletion.
-- Earlier casino-quality, shop-cosmetics and repository-refresh branches are historical after their functional changes reach `main`. Do not delete them automatically; the owner manages final cleanup.
-- Midnight Manor is the first planned React/TypeScript/PixiJS migration; Roulette is deferred. No frontend migration has begun.
+- The game director authorized consolidation of the validated cumulative work into `main`; the owner confirmed that the CI is green and old branches were cleaned up.
+- The Development publisher now follows `main` in both the push filter and guard. Do not repoint it to a temporary feature branch.
+- Historical casino-quality and shop branches were consolidated and cleaned by the owner. New modernization branches must remain isolated and use reviewable PRs.
+- **Midnight Manor modernization is underway** on `feature/manor-modernization-phase-1` with a read-only React/TypeScript/PixiJS/WebView2 preview and the old playable WPF Manor intact. Roulette is deferred. Do not claim the preview already supports wagering or replaces Manor.
 - Refresh this dated note as branch ownership changes.
 
 ## Architecture and modernization rules
