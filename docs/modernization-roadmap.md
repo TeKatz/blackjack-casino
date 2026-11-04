@@ -1,6 +1,6 @@
 # Modern casino frontend — staged migration roadmap
 
-**Implementation status (2026-11-04):** The game director authorized the pilot and requested ongoing Development testing directly from the feature branch, without merging into main. Branch `feature/manor-modernization-phase-1` now includes the **Phase-2 playable alternative**: React/TypeScript/PixiJS/WebView2 renders the Manor, and a restricted, revisioned C# bridge commits paid spins, free spins and room decisions. The WPF Manor remains the primary path and fallback. The frontend does not determine outcomes or directly modify wallets.
+**Implementation status (2026-11-04):** The game director authorized the pilot and requested ongoing Development testing directly from the feature branch, without merging into main. Branch `feature/manor-modernization-phase-1` now includes the **Phase-3 engineering-complete premium pilot**: React/TypeScript/PixiJS/WebView2 renders modern reels and six bonus chamber scenes, while a restricted, revisioned C# bridge commits spins, bonus choices and recovery-safe settlements. The WPF Manor remains the primary path and fallback. The frontend does not determine outcomes or directly modify wallets.
 
 ## Why this direction
 
@@ -24,7 +24,7 @@ Do **not** rewrite existing engines merely to port the UI. Use adapters and expl
 
 **Exit:** successful CI and Development manifest published from the Manor feature branch, no unintended merge, saves preserved.
 
-### M1 — Midnight Manor baseline audit and design (in progress)
+### M1 — Midnight Manor baseline audit and design (implemented; acceptance retained)
 
 - After branch consolidation and Jigsaw tester acceptance, inventory `ManorController`, `ManorPersistence`, `ManorWindow`, the Manor Core engine, effects, assets, saves, current RTP/versioning and CI evidence.
 - Capture current screen states, visual defects, frame-time/performance baseline and save recovery tests.
@@ -170,3 +170,13 @@ See [AGENTS.md](../AGENTS.md), [architecture](architecture.md), [Midnight Manor 
 - The room depiction and threat annotation derive strictly from the saved player room and public C# ghost clue. No hidden ghost coordinates, rewards, routing probabilities or new action requests are introduced.
 - Atmospheric mist stops when animation is off or reduced motion is requested. The layouts share one React component and no remote or independently licensed image files.
 - Unit tests verify all six themes, undefined-area fallback and safe unknown-clue behavior. Final subjective art acceptance remains the game director's decision.
+
+## Phase 3 engineering closeout versus owner sign-off
+
+**Implementation scope completed** on the long-lived Development branch: original local graphics, visually distinct bonus rooms, cosmetic win/bonus animation, engine-authored symbols/lines/map, sound respecting global preferences, English/German UI, keyboard-accessible help and moves, display-resize diagnostics, deterministic bridge/state tests and Windows smoke evidence.
+
+**Only mark automated acceptance green when the relevant SHA has completed its actual CI, presentation-regression, frontend and Development Release checks.** Successful build/package verification does not certify real monitor VRAM/CPU, all audio devices, or the player's visual taste.
+
+Human game-tester sign-off remains a prerequisite to switching the default Manor tile or retiring the WPF implementation. Phase 4 can reuse the pilot once this decision is made; no change of main branch, release guards, stable channel or long-lived Development branch is permitted without explicit approval.
+
+The [Phase-3 sign-off matrix](manor-phase-3-signoff.md) tracks the exact boundary and manual test scenarios.
