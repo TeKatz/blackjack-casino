@@ -14,15 +14,15 @@ This file is the repository-level instruction for coding assistants and ChatGPT 
 1. Inspect current repository branches, open PRs, active Development release pin, and the source files involved; never infer the freshest branch from its name.
 2. Identify concurrent work and reuse the active Manor migration branch for related iterations. Do not delete, squash, force-push, reset, merge or repoint active branches without an explicit instruction.
 3. Define a bounded scope, acceptance criteria, rollback and the tests that should prove it works. Prefer small reversible changes and incremental PRs.
-4. Review architecture and feature-specific docs; update the README and documentation when they are stale.
+4. Review architecture and feature-specific docs; update the README and documentation when they are stale. Write from the perspective of the project, not from a transcript of decisions.
 
 ## Current coordination status (2026-11-04)
 
-- The game director authorized consolidation of the validated cumulative work into `main`; the owner confirmed that the CI is green and old branches were cleaned up.
+- The validated cumulative baseline was consolidated into `main`; historical feature branches were cleaned up after successful CI.
 - The Development publisher follows **`feature/manor-modernization-phase-1`**, with the workflow push filter and job guard both pinned there. Future pushes to this branch publish Development after tests; no merge to `main` is required.
 - Historical casino-quality and shop branches were consolidated and cleaned by the owner. Continue related Manor work on this **one long-lived migration branch**, not one new branch per update.
-- **Midnight Manor Phase 3 engineering** is implemented on `feature/manor-modernization-phase-1`: the React/TypeScript/PixiJS/WebView2 playtest renders original offline symbols, animation and six bonus chambers; the durable C# bridge owns every paid/free spin and room choice. The modern Manor is now the only player-selectable Manor presentation by game-director authorization. The WPF source remains solely for a deliberate rollback build; manual hardware, visual and audio checks remain ongoing. Roulette is deferred. Do not mark subjective acceptance complete based on CI.
-- A prior agent incorrectly merged Phase 1 via PR #35 when only a Development channel switch was intended; its content is being reversed on main without rewriting history. **Publishing to Development is never permission to merge into main. Do not merge, delete branches or switch channel sources without the user's explicit instruction.**
+- **Midnight Manor modernization:** the React/TypeScript/PixiJS/WebView2 interface is the sole Manor entry in Development. It renders offline symbols, animations and six bonus chambers, while the C# bridge owns spins, decisions, wallet changes and recovery. Legacy WPF Manor is retained for source-level rollback only. Device-specific performance, display, visual and audio checks remain ongoing. Roulette is deferred; CI cannot establish subjective quality.
+- Historical incident: PR #35 unintentionally merged an earlier Manor phase during a Development-channel change. The merge was corrected without rewriting history. **Publishing to Development never implies a merge to `main`. Merges, branch deletion, release-source switches and channel retargeting require separate, explicit project approval.**
 - Refresh this dated note as branch ownership changes.
 
 ## Architecture and modernization rules
@@ -33,6 +33,13 @@ This file is the repository-level instruction for coding assistants and ChatGPT 
 - RNG/outcome determination precedes visualization; no animation, skip, sound or speed preference may alter outcomes.
 - No full-window scaling of text UI as raster content. Check legibility, pointer targets, keyboard behavior, reduced-motion preferences, resize/DPI, and Win10/Win11 behavior where practical.
 - Do not move the complete casino to a new shell in one change. Run legacy and migrated modes side-by-side; remove WPF code only after acceptance and save-compatibility verification.
+
+## Documentation style
+
+- Document the **current product state, architecture, release policy, verified behavior, and outstanding work**. Historical sections must be clearly identified as such.
+- Avoid conversational provenance and attributions of product decisions to individual participants. State what is implemented, enabled, approved for a channel, or awaiting verification without retelling who asked for it.
+- Keep the README a concise entry point; place detailed milestones and technical decisions in linked documentation.
+- The repository contract scans Markdown files for conversation-style directive phrasing. Resolve failures by rewriting the passage, not by excluding the affected file.
 
 ## Quality gates
 

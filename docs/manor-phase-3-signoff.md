@@ -1,13 +1,13 @@
 # Midnight Manor 2.0 — Phase 3 technical closeout and player sign-off
 
-**Status:** Phase-3 engineering scope implemented. On 2026-11-04 the game director authorized the modern Manor as the only selectable lobby presentation, replacing the original WPF view. CI/Development publication for this switch must still pass; real-hardware visual, sound and performance testing remains ongoing.
+**Status (2026-11-04):** Phase-3 engineering complete; the modern Manor has replaced the legacy WPF game as the single lobby entry in Development. The replacement passed CI and Development package verification on commit `2114b05` (version `0.10.1-dev.1009`). Each newer commit requires its own checks; visual, sound and long-session hardware testing remain ongoing.
 **Branch:** `feature/manor-modernization-phase-1`. **Release channel:** existing `development`. **Main:** unchanged. **WPF:** source-only rollback, no lobby option.
 
 ## Testable deliverables
 
-| Acceptance point | Automated proof | Owner check |
+| Acceptance point | Automated proof | Manual verification |
 | --- | --- | --- |
-| C# owns RNG, wagers, return, bonuses and wallet | Service/protocol, engine and journal tests | Confirm outcomes and bankroll in both frontends |
+| C# owns RNG, wagers, return, bonuses and wallet | Service/protocol, engine and journal tests | Confirm outcomes and bankroll after a modern session and restart |
 | Playable premium slot | Retained Pixi scene, 14 local vector illustrations, winning-line tests, WebView2 screenshot | Subjective art and animation quality |
 | Escape the Manor | 6 SVG chamber views, real map/passages, legal-only room buttons, saved-run continuation | Real decisions, clue readability and route satisfaction |
 | Haunted Night and payouts | Old/current paytables, 20 C# paylines, no-retrigger tests | Pause/reopen while free spins remain |
@@ -24,8 +24,8 @@
 - No new RNG/paytable/payout calculation, wager side effect, external media dependency or save-format migration.
 - The original WPF Manor remains in source for a controlled rollback build, not as an in-app fallback; the Development updater remains unchanged.
 
-## Remaining game-director checks (not automatable here)
+## Remaining manual checks (not automatable here)
 
-Install and play from the Development channel, test audio on real speakers/headset and display scaling at 100/125/150/200%. Run for 30 minutes on the target gaming PC, record CPU/GPU/RAM/VRAM and Pixi diagnostics, and try all saved-feature reopen paths. Confirm subjective readability of six rooms, symbols and bonus announcements. If issues arise, keep Phase 3 open for fixes; otherwise approve the pilot's visual/audio quality separately.
+Install and play from the Development channel, test audio on real speakers/headset and display scaling at 100/125/150/200%. Run for 30 minutes on the target gaming PC, record CPU/GPU/RAM/VRAM and Pixi diagnostics, and try all saved-feature reopen paths. Confirm subjective readability of six rooms, symbols and bonus announcements. If issues arise, track targeted fixes; otherwise record visual/audio quality as manually verified.
 
-**The Manor presentation switch was authorized. No merge to main, updater retargeting, WPF source deletion or complete shell migration was authorized.**
+**Scope:** The Manor lobby replacement is included in Development. This does not merge to `main`, retarget release channels, remove legacy WPF source or migrate the rest of the casino shell.

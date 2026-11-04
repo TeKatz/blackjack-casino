@@ -1,94 +1,117 @@
 # The Midnight Club — Blackjack Casino
 
-**Offline-first, single-player, play-money casino for Windows.** No real-money wagers, payments, advertising, account requirement or online service are needed to play. The repository's executable client is currently **WPF/.NET 10**. The first three engineering phases of the React/TypeScript/PixiJS modernization are on `feature/manor-modernization-phase-1`. Phase 3 completes the **playable premium Manor pilot** with retained PixiJS scenes, local scalable art, bilingual rules, bonus chamber vignettes, C#-owned outcomes, wallet and durable recovery checks. The main branch retains the WPF baseline.
+An **offline-first, single-player casino for Windows**, built around virtual credits and progression. No real-money gambling, payments, accounts, advertisements or online services are required for gameplay.
 
-> **Manor replacement in Development (2026-11-04).** The single Midnight Manor lobby entry now opens the modern React/TypeScript/PixiJS game. The original WPF slot and separate playtest option are no longer selectable. The same authoritative C# rules, wallet and durable save/checkpoint continue to be used. Legacy WPF code is retained only for a deliberate rollback build. Development still publishes from `feature/manor-modernization-phase-1` without merging into `main`. See [Development delivery](docs/development-update-delivery.md).
+The desktop application uses **.NET 10 and WPF**. Midnight Manor is the first game with a modern **React + TypeScript + PixiJS** presentation, hosted locally through **WebView2** and backed by the existing C# game engine.
 
-## Play modes at a glance
+## Games and experiences
 
-| Area | Available experience | Key systems |
-| --- | --- | --- |
-| **Blackjack** | Solo or full AI table | Hit, Stand, Double, Split, Surrender, Insurance, configurable rules, persistent shoe and table themes |
-| **Midnight Dice** | Solo and AI-table Kniffel | Five dice, scorecard, persistent rounds, achievements and progression |
-| **Midnight Reels** | Classic three-reel slot | Animated reels, shared play-money bankroll |
-| **Midnight Manor** | Gothic 5×3 video slot | 20 paylines, Haunted Night free spins, Escape the Manor, resumable features |
-| **Neon Vault** | 5×4 high-roller video slot | 1,024 Ways, Wilds, BLACKOUT events, jackpots and large virtual stakes |
-| **Nine Lives** | Cat-themed 3×3 video slot | Five lines, Pounce Wilds, nine-spin bonus and Full Grid Frenzy |
-| **Casino Empire** | Offline-capable management/idle game | Multiple properties, departments, research, Prestige, automation and owner dividends |
-| **Chill Lounge** | No-wager single-player games | Sudoku, Midnight Solitaire, Word Search, Memory and Jigsaw Puzzle |
-| **Midnight Merge** | Collection/merge game | Persistent orders, combinations and progression |
-| **Tales from the Backroom** | Story-driven tabletop adventures | Characters, inventory, branching scenes and persistent cases; Dead Man's Hand is a six-act noir investigation |
+| Mode | Gameplay |
+| --- | --- |
+| **Blackjack** | Solo and AI tables with Hit, Stand, Double, Split, Surrender, Insurance and configurable table rules |
+| **Midnight Reels** | Traditional three-reel slot machine |
+| **Midnight Manor** | Gothic five-reel slot with 20 paylines, Haunted Night free spins and the resumable Escape the Manor bonus |
+| **Neon Vault** | High-stakes five-reel video slot, 1,024 ways and Vault Break free spins |
+| **Nine Lives** | Cat-themed slot with Pounce Wilds and bonus spins |
+| **Midnight Dice** | Kniffel-style dice game, solo or against AI |
+| **Casino Empire** | Casino management with properties, research, upgrades and offline progression |
+| **Chill Lounge** | Sudoku, Midnight Solitaire, Word Search, Memory and Jigsaw Puzzle |
+| **Midnight Merge** | Collection and combination gameplay with persistent orders |
+| **Tales from the Backroom** | Branching adventures and investigations, including *Dead Man's Hand* |
 
-The main lobby connects these experiences into one Windows application. Games with wagers share a play-money balance; progression includes player level, Prestige, Seasons, cosmetic Coins, challenges and game-specific statistics. The Collector's Album, Casino Vault, profile customization and cosmetic shop provide additional long-term systems. Casino Empire also maintains its own construction-credit economy.
+A shared virtual bankroll connects the wagering games. The wider progression system includes experience, Prestige, Seasons, challenges, cosmetic Coins, the Collector's Album, a cosmetic shop and the Casino Vault. Casino Empire maintains a separate construction economy.
 
-### Recently expanded areas
+## Midnight Manor: modern presentation
 
-- **Jigsaw Puzzle:** 12 collection-art motifs, puzzle sizes from 24 to 1,000 pieces, resumable saves, timer toggle, completion screen and 30 achievements tied into shared challenges. **Recent UI/performance improvements have entered the cumulative development line; game-tester acceptance is still required.** See [Jigsaw guide](docs/jigsaw.md).
-- **Tales from the Backroom:** *Dead Man's Hand* has six investigation acts, multiple branching endings, evidence items and a case board. See [campaign documentation](docs/dead-mans-hand.md).
-- **Cosmetics and collection:** new card/dice sets, portrait art and visual refinements; the collectible album tracks permanent collections and duplicate recycling. See [shop expansion](docs/shop-cosmetics-expansion.md) and [album](docs/collectible-album.md).
-- **Localization:** English and German resources are supported, but the migration of all legacy strings and adventure text is **still incomplete**. A green shell localization check is not proof of full program coverage. See [localization plan](docs/localization-overhaul.md).
-- **Desktop quality:** ongoing sharpening, layout, runtime regression and release-note work is developed on the cumulative casino-quality branches. Some visual polish remains in progress.
+**In Development builds, Midnight Manor has one lobby entry.** It opens the modern React/PixiJS version directly; the separate playtest button and selectable legacy WPF version have been retired.
+
+- Five reels, scalable local symbol artwork, reel-stop effects and win feedback
+- Integrated Escape the Manor bonus with six room views and an interactive map
+- German and English game controls and rules
+- Shared virtual wallet, progression, saved bonus state and crash recovery
+- Original C# game logic for random outcomes, payouts, bet validation and player decisions
+- Local rendering and audio; the browser interface cannot directly change a balance or award
+
+The legacy WPF Manor source remains available for a controlled rollback build, but is **not a second player-selectable game**. Its removal from the menu does not change the save format, payout tables or game rules.
+
+Technical details: [modernization roadmap](docs/modernization-roadmap.md), [Manor design](docs/midnight-manor-design.md), [acceptance and recovery tests](docs/midnight-manor-acceptance.md).
 
 ## Installation and updates
 
-Windows builds are published through [GitHub Releases](https://github.com/TeKatz/blackjack-casino/releases). Use a released Windows package, not the source ZIP, to run the game. The **Stable** channel follows the latest normal release; the opt-in **Development** channel follows the mutable `development` prerelease. The Development manifest is at [development/update-manifest.json](https://github.com/TeKatz/blackjack-casino/releases/download/development/update-manifest.json).
+Download a packaged Windows build from [GitHub Releases](https://github.com/TeKatz/blackjack-casino/releases). A GitHub source-code archive is not an installable application.
 
-The existing updater uses versioned manifests, package-size and SHA-256 verification, and staged replacement with a rollback path. Saves are outside the installation directory, under `%LOCALAPPDATA%\BlackjackCasino`, and should remain intact when updating. Preserve backups when testing migration scenarios.
+| Channel | Purpose | Delivery |
+| --- | --- | --- |
+| **Stable** | Regular releases | Latest stable GitHub release |
+| **Development** | Early access to validated changes | Mutable [development release](https://github.com/TeKatz/blackjack-casino/releases/tag/development), also available through the in-app updater |
 
-**Do not assume** a GitHub PR preview artifact is already published to the in-game Development updater. The publisher's source branch is pinned to `feature/manor-modernization-phase-1` in `.github/workflows/development-release.yml`; see [release delivery](docs/development-update-delivery.md).
+The updater validates package size and SHA-256 before staged installation. Player data is stored outside the installation directory, in `%LOCALAPPDATA%\BlackjackCasino`. Keep a backup when validating changes to persistence or updating an older installation.
 
-## Repository layout
+**Active development source:** `feature/manor-modernization-phase-1`. The Development publisher builds directly from this branch, without merging into `main`. Its source is pinned in both the push trigger and job guard of [development-release.yml](.github/workflows/development-release.yml). The usual [update manifest](https://github.com/TeKatz/blackjack-casino/releases/download/development/update-manifest.json) remains unchanged. Branch builds and PR preview artifacts do not automatically become in-app updates.
+
+See [Development update delivery](docs/development-update-delivery.md) for release mechanics, versioning and verification.
+
+## Technology and repository layout
 
 | Path | Responsibility |
 | --- | --- |
-| `src/BlackjackCasino.Core` | UI-independent game rules, persistent game state, math, progression and statistics |
-| `src/BlackjackCasino.Desktop` | Existing WPF shell, game presentation, navigation, settings, local persistence and integration |
-| `src/BlackjackCasino.Update` | Manifest and package validation, semantic versions |
-| `src/BlackjackCasino.Updater` | External Windows staged replacement and restart helper |
-| `tests/BlackjackCasino.Tests` | Gameplay, state, progression, wallet-related, save and updater unit/regression tests |
-| `tools/` | Windows visual and runtime smokes, reports, localization checks and repository checks |
-| `docs/` | Current feature specs, historical work, release details and modernization direction |
-| `.github/workflows/` | Windows CI, presentation checks, release publishing and repository-contract checks |
+| `src/BlackjackCasino.Core/` | Game rules, bankroll, rewards, progression and state models |
+| `src/BlackjackCasino.Desktop/` | Windows shell, existing WPF games, WebView2 host, settings and persistence |
+| `frontend/` | Modern Midnight Manor interface and PixiJS rendering |
+| `src/BlackjackCasino.Update/` | Update manifest, version and package validation |
+| `src/BlackjackCasino.Updater/` | Staged installation and restart helper |
+| `tests/BlackjackCasino.Tests/` | Unit and integration tests |
+| `tools/` | Build safeguards, localization checks and Windows smoke tests |
+| `docs/` | Architecture, gameplay specifications and implementation history |
+| `.github/workflows/` | CI, frontend, presentation and release workflows |
 
-Full details: [architecture](docs/architecture.md).
+**Architecture principle:** C# remains authoritative for random results, payouts and saved progression. React/PixiJS handles presentation only. The game must remain fully playable offline.
 
-### Active Midnight Manor frontend
+Read the [architecture guide](docs/architecture.md) for service boundaries and the [modernization roadmap](docs/modernization-roadmap.md) for the phased migration of other game interfaces.
 
-The first Manor migration pilot is in `frontend/`. Using Node.js 22, run `npm install`, `npm test` and `npm run build` in that directory. Windows CI and release packaging build the frontend automatically. The modern Manor is the only Manor launched from the casino lobby. Its paid spins and bonus-room choices use the existing C# engine, persistent play-money wallet and journal. The legacy WPF presentation is retained in source for rollback, but has no player-facing launch path.
+## Building and testing
 
-## Build and validation
+Development requires Windows and the **.NET 10 SDK** compatible with [global.json](global.json). The modern frontend uses **Node.js 22**.
 
-Install the [.NET 10 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/10.0) on Windows. [global.json](global.json) defines the SDK roll-forward policy. The existing desktop client and visual smoke tools require Windows.
+Build the frontend before the Windows client so its bundled files are included in the desktop output:
 
 ```powershell
+cd frontend
+npm install --no-package-lock --no-audit --no-fund
+npm test
+npm run build
+cd ..
+
 python tools/check_repo_contract.py
 python tools/check_localization.py
 python tools/check_localization_coverage.py --strict-shell
 python tools/check_adventure_localization.py
 dotnet restore BlackjackCasino.sln
-dotnet build BlackjackCasino.sln -c Release
-dotnet test BlackjackCasino.sln -c Release --no-build
+dotnet build BlackjackCasino.sln --configuration Release
+dotnet test BlackjackCasino.sln --configuration Release --no-build
 ```
 
-The GitHub workflows also run screenshot/runtime checks including presentation, startup and Manor smoke tools. Always report **which checks actually ran**; passing a documentation check alone does not establish a playable Windows build.
+Windows CI additionally runs actual desktop startup, Manor runtime and presentation regression tests. A successful frontend build or documentation check alone does not prove an installable Windows release. Production packages are created and verified by the release workflows.
 
-## Team workflow and planned modernization
+## Current engineering boundaries
 
-The **game director** owns gameplay vision and hands-on bug testing. Coding agents/ChatGPT Work own implementation, maintenance, tests and delivery; the game director should not need to write code or manage builds. Contributions use small scoped branches, automated checks, game tester feedback and release gates. Read [AGENTS.md](AGENTS.md), [CONTRIBUTING.md](CONTRIBUTING.md) and [pull request checklist](.github/pull_request_template.md).
+- **Midnight Manor:** modern presentation is the default in Development; remaining subjective audio, display-scaling and long-session performance checks are tracked separately.
+- **Other game interfaces:** still use the existing WPF presentation until migrated individually.
+- **Localization:** English/German shell support is present; some older game and adventure content still needs translation.
+- **Player data and financial outcomes:** preserve backward compatibility, deterministic payout tests and exactly-once committed transitions.
+- **Releases:** `main` and Stable do not inherit Development changes automatically.
 
-**Midnight Manor – the Development replacement:** The ordinary Manor tile now opens the React/TypeScript/PixiJS/WebView2 presentation. The separate **MODERN MANOR · PLAYTEST** button has been removed. C# owns wagers ($1–$1,000), paid and free spins, Escape the Manor decisions, payouts, progression and crash-safe save/recovery. The original WPF view remains in source only, not the game menu. CI plus real-machine visual, audio, DPI and performance checks remain important for new Development builds. See [modernization roadmap](docs/modernization-roadmap.md) and [Phase-3 sign-off checklist](docs/manor-phase-3-signoff.md).
+The roadmap tracks completed migration stages and outstanding quality gates; historical milestone notes are not separate active feature variants.
 
-For package/runtime maintenance status and deliberate upgrade gates, see [maintenance audit](docs/maintenance-audit.md).
+## Development guides
 
-## Feature documentation
-
-- [Blackjack/table and player experience](docs/table-profile-progression.md)
-- [Midnight Dice](docs/kniffel.md)
-- [Midnight Manor rules and recovery](docs/midnight-manor-design.md)
-- [Neon Vault](docs/neon-vault.md)
+- [Contributing](CONTRIBUTING.md) and [coding-agent agreement](AGENTS.md)
+- [Modernization roadmap](docs/modernization-roadmap.md)
+- [Development release and updater](docs/development-update-delivery.md)
+- [Manor quality and release acceptance](docs/manor-phase-3-signoff.md)
+- [Localization status](docs/localization-overhaul.md)
+- [Maintenance audit](docs/maintenance-audit.md)
+- [Jigsaw Puzzle](docs/jigsaw.md)
+- [Cosmetic shop expansion](docs/shop-cosmetics-expansion.md)
 - [Casino Empire](docs/casino-empire.md)
-- [Chill Lounge infrastructure](docs/chill-game-infrastructure.md)
-- [Sudoku](docs/sudoku.md)
-- [Jigsaw](docs/jigsaw.md)
 - [Tales from the Backroom](docs/adventure-engine.md)
-- [Development updating](docs/development-update-delivery.md)

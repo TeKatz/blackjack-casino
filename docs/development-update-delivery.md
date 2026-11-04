@@ -11,7 +11,7 @@ The in-app Development manifest remains:
 
 The original Manor PR only uploaded a CI artifact. Its `slots/midnight-manor` branch was outside the Development publisher's triggers, leaving the public channel at `0.6.5-dev.71` from main. A final `0.6.5` also sorts above any `0.6.5-dev.N` under SemVer. Changing a URL or comparison only in a new executable cannot repair an already-installed client.
 
-At the user's request, the Manor branch was explicitly included in the Development workflow, and later feature branches have taken over the same mutable Development channel. No Stable release is required for Development test delivery. The active source branch is selected explicitly in the publisher workflow.
+The Development workflow explicitly includes the active Manor branch, following earlier publisher transitions across feature branches. No Stable release is required for Development test delivery. The active source branch is selected in both publisher guards.
 
 Before publication, the workflow validates localization resources, builds, runs all tests and the actual Windows WPF smoke, and packages the application with its separate updater. It then verifies the release target and required assets. Package/manifest filenames, SHA-256 verification and updater schema are unchanged. Mutable-manifest requests send Cache-Control: no-cache, no-store to revalidate subsequent checks. The UI shows installed/available versions when no newer update is found.
 
@@ -49,6 +49,6 @@ The source pin lives in the publishing workflow's push trigger and job guard. Wh
 
 ## Repository-preparation branch (historical, 2026-11-04)
 
-`feature/repository-workflow-refresh` contains documentation, agent instructions and a repository-contract check only. It was based on the cumulative `feature/casino-quality-phase-4` snapshot. During consolidation, its documentation and checks became part of `main`. The owner controls when historical branches are deleted. The React/TypeScript/PixiJS Manor pilot is under active development on a dedicated branch and publishes through the shared Development channel without merging. See [modernization roadmap](modernization-roadmap.md).
+`feature/repository-workflow-refresh` contains documentation, agent instructions and a repository-contract check only. It was based on the cumulative `feature/casino-quality-phase-4` snapshot. During consolidation, its documentation and checks became part of `main`. The owner controls when historical branches are deleted. The React/TypeScript/PixiJS Manor is now the only lobby-selectable Manor interface in Development, and updates ship directly from the active feature branch without merging. See [modernization roadmap](modernization-roadmap.md).
 
 The lightweight repository-contract workflow checks required documentation, local README/guide links and consistency between the Development workflow's push branch filter and its job guard. It does not substitute for Windows gameplay/build/smoke validation.

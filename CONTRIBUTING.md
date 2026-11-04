@@ -6,7 +6,7 @@ The Midnight Club is an offline-first, play-money Windows casino. Gameplay and v
 
 1. Inspect recent branches and open pull requests. For the Manor modernization, the Development publisher is pinned to `feature/manor-modernization-phase-1` in `.github/workflows/development-release.yml`. Verify the workflow before changing its source.
 2. Start from the most recent **validated cumulative base**, not the oldest feature branch. Never overwrite another active workstream.
-3. Create a focused `feature/*` or `fix/*` branch. Keep PRs reviewable and avoid changing release pins as a side effect.
+3. Create a focused `feature/*` or `fix/*` branch for independent changes. Continue Manor follow-ups on its existing long-lived branch. Keep PRs reviewable and avoid changing release pins as a side effect.
 4. Read [AGENTS.md](AGENTS.md), [architecture](docs/architecture.md), [Development delivery](docs/development-update-delivery.md), and the relevant game-specific documentation.
 
 ## Local validation (Windows)
@@ -34,10 +34,14 @@ For affected visual surfaces, run the corresponding Windows presentation/startup
 - CI passes, or blockers are explicitly reported and fixed before a Development release is repointed.
 - The final report distinguishes implemented functionality, tests actually run, and remaining work.
 
+## Documentation
+
+Write release notes, README sections and feature guides as project documentation rather than a transcript. Describe functionality, constraints, verified outcomes and remaining work without attributing decisions to conversations or specific participants. The repository contract checks this convention across project Markdown files.
+
 ## Pull requests and releases
 
 Continue Manor development on the existing feature branch; do not spawn a branch per iteration or merge into `main` without explicit authorization. Use the PR template and link supporting screenshots/benchmarks when relevant. A preview is not automatically a Development release. Development switches require an explicit source-branch update in **both** workflow guards, a valid increasing SemVer and successful package/updater verification. Do not merge, delete branches, repoint Development or release during another ongoing game change without coordinating it.
 
 ## Modernization
 
-The first frontend migration is **Midnight Manor**. Phase 2 adds an optional playable modern UI backed by the original C# Manor engine, durable journal and player wallet, while the legacy WPF mode remains the primary fallback. See [modernization roadmap](docs/modernization-roadmap.md). Existing C# game engines remain authoritative; PixiJS and React are a presentation layer, not a replacement for casino rules.
+**Midnight Manor** is the first modernized game and the only Manor selection in Development. React/PixiJS renders the game via WebView2 while the C# engine, persistent journal and player wallet remain authoritative. The legacy WPF Manor is retained for a source-level rollback build only. Subsequent modes migrate incrementally; see [modernization roadmap](docs/modernization-roadmap.md).

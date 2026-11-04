@@ -17,7 +17,7 @@ CI runs this on `windows-latest` after the full suite. It creates an isolated pr
 
 A 2× bitmap export verifies rendering resolution; it does **not** prove actual monitor DPI switching. Automated routed input does not replace a human keyboard/usability check.
 
-## Remaining human Windows checks before merge
+## Manual Windows checks before Stable rollout
 
 - Listen to effects and long-session ambience at the actual saved music volume; verify soft mix, no clipping, readable stops and anticipation ducking.
 - Play on a normal monitor and at 125/150/200% Windows scaling; move between monitors and check text, map routes, reel alignment and focus.
@@ -34,21 +34,21 @@ Midnight Reels is left byte-for-byte intact. Shared speed/auto infrastructure is
 
 ## Release gate
 
-Human acceptance remains required for merge and Stable release. The user subsequently requested delivery through the in-app Development updater, so the feature branch is now explicitly opted into `development-release.yml`. That publisher builds/tests/runs the Windows WPF smoke before publishing. `main` remains in its push list; `release.yml` is unchanged. Asset names and the existing `development` manifest URL are retained. Version 0.7.0-dev.N is newer than both 0.6.5 and 0.6.5-dev.N, so even existing clients can detect it. See [Development update delivery](development-update-delivery.md). After an authorized merge, verify the three release assets, SHA-256, manifest URL and final main target before deleting branches.
+Modern Manor ships through the in-app Development channel from `feature/manor-modernization-phase-1`. That workflow builds, tests and runs Windows startup and Manor smoke tests before publishing. The manifest URL and updater protocol remain unchanged. This section records earlier WPF acceptance work; the current source pin and SemVer policy are documented in [Development update delivery](development-update-delivery.md). A Stable rollout remains a separate gate requiring package, checksum, installed-updater and player-save verification.
 
 ## Modern Manor Phase 3 evidence and human gate
 
-The optional modern interface now has independent coverage for the authoritative C# line table, active legacy-paytable display, bilingual HUD/help, frame/DPI math, six SVG room vignettes, local Web Audio and global sound/mute constraints. New controller tests take a **stored active run** from the classic shared journal through a modern room choice and cash-out, reopen it through the same classic C# controller and verify no duplicate reward. Another test resumes a v1 free-spin table and confirms replay idempotency after restart.
+The modern Manor interface has independent coverage for the authoritative C# line table, active legacy-paytable display, bilingual HUD/help, frame/DPI math, six SVG room vignettes, local Web Audio and global sound/mute constraints. New controller tests take a **stored active run** from the classic shared journal through a modern room choice and cash-out, reopen it through the same classic C# controller and verify no duplicate reward. Another test resumes a v1 free-spin table and confirms replay idempotency after restart.
 
 The Windows StartupSmoke tool opens the **packaged** WebView2 modern UI, verifies that its C# snapshot is connected, opens the real 14-symbol/20-line payout dialog in English and German, captures screenshots, verifies the compact host's responsive reel aspect ratio and records `modern-manor-idle-frame-sample.json`. The sample is explicitly **idle WebView2 requestAnimationFrame timing and optional JS heap only**, not measured animated Pixi frames, GPU timestamps or long-session VRAM. No tests trigger paid spins against the runner profile. Existing ManorSmoke and financial recovery tests continue to cover older WPF flows.
 
-**Human checks still mandatory before adoption / Phase-4 default switch:**
+**Manual checks for the current Development release and any later Stable rollout:**
 
 1. Install the latest passing Development package using the actual updater from an older installation. Confirm old profile balance, Coins, season and wardrobe remain unchanged.
 2. Listen to reel stops, awards, free spins and optional ambient hum on speakers and headset, with global sound/music toggled off and volume near zero. The engine must remain playable when audio is unavailable.
 3. Play at 100%, 125%, 150% and 200% scaling; move the window between real monitors, check all original bonus chambers, visible font clipping, keyboard focus and route controls.
 4. Leave the modern view active for at least 30 minutes with multiple paid spins and bonuses. Note PC/GPU model, resolution, average/p95 frame intervals from the optional Pixi diagnostics panel, Task Manager RAM/VRAM, and any cumulative increase.
-5. Start a free-spin cycle and an Escape run, exit to the lobby, reopen Modern Manor and classic Manor, close/restart Windows, then verify exact bankroll, final reward and completed XP with no extra wager. Include candle/key/checkpoint/ghost warnings.
-6. Compare animation enabled, fast/turbo, reduced-motion, the six room perspectives and the old Manor fallback; decide whether the visual quality and audio mix meet the desired product standard.
+5. Start a free-spin cycle and an Escape run, exit to the lobby, reopen Manor through its single modern entry, close/restart Windows, then verify exact bankroll, final reward and completed XP with no extra wager. Include candle/key/checkpoint/ghost warnings.
+6. Compare animation enabled, fast/turbo, reduced-motion and all six room perspectives; evaluate visual quality and audio mix. The old WPF interface is a source-level rollback only.
 
-**Sign-off state:** Engineering implementation and CI are independently verifiable. Owner hardware, perception, installation and default-switch authorization remain **open** until explicitly reported. This document does not authorize merging, deleting the WPF fallback or switching the Development channel.
+**Rollout state:** Modern Manor is already the sole selectable Manor game in Development, and its replacement commit passed CI and package validation. Manual hardware, audio, long-session performance and older-installation upgrade checks remain separate from this engineering validation. Neither a merge to `main` nor deletion of the WPF rollback source is part of the Development rollout.

@@ -30,6 +30,16 @@ DOCS = (
 LINK = re.compile(r"(?<!!)\[[^\]]+\]\(([^)]+)\)")
 BRANCH_FILTER = re.compile(r"(?m)^\s*branches:\s*\[\"([^\"]+)\"\]")
 JOB_GUARD = re.compile(r"(?m)^\s*if:\s*github\.ref\s*==\s*'refs/heads/([^']+)'")
+# Documentation should describe current project decisions, never the conversation
+# that produced them. Restrict this lint to Markdown, not source-code identifiers
+# such as user-visible, which describe functionality rather than decision history.
+CONVERSATION_NARRATION = re.compile(
+    r"(?i)\b(?:the\s+)?(?:user|owner|game[ -]?director)\s+"
+    r"(?:(?:has|had)\s+)?(?:explicitly\s+)?"
+    r"(?:requested|instructed|asked|authorized|approved|clarified|directed|confirmed)\b"
+    r"|\b(?:at|per)\s+(?:the\s+)?user(?:'s)?\s+request\b"
+    r"|\bas\s+requested\s+by\s+(?:the\s+)?(?:user|owner)\b"
+)
 
 def main() -> int:
     problems: list[str] = []
@@ -55,6 +65,15 @@ def main() -> int:
                 line = source.count("\n", 0, match.start()) + 1
                 problems.append(f"{name}:{line}: broken relative link: {destination}")
 
+    # Scan project Markdown, excluding generated dependency/build directories.
+    ignored = {".git", "node_modules", "bin", "obj", "dist", "artifacts", ".venv"}
+    for file in ROOT.rglob("*.md"):
+        if any(part in ignored for part in file.relative_to(ROOT).parts):
+            continue
+        for line_number, line in enumerate(file.read_text(encoding="utf-8").splitlines(), 1):
+            if CONVERSATION_NARRATION.search(line):
+                problems.append(f"{file.relative_to(ROOT)}:{line_number}: use project-state language instead of conversation narration")
+
     release = ROOT / ".github/workflows/development-release.yml"
     if release.exists():
         workflow = release.read_text(encoding="utf-8")
@@ -73,7 +92,7 @@ def main() -> int:
         for problem in problems:
             print(f"  - {problem}")
         return 1
-    print("Repository contract OK: required docs, relative links and Development branch guards")
+    print("Repository contract OK: required docs, relative links, documentation style and Development branch guards")
     return 0
 
 if __name__ == "__main__":

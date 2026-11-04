@@ -39,10 +39,10 @@ The existing suite links some Desktop persistence and presentation helper files 
 
 ## Known non-blocking debt
 
-- Some older architecture/feature documents are historical and refer to the WPF implementation; they remain useful reference material, but the new frontend is **only planned**.
+- Some architecture/feature documents cover historical WPF-only implementations; modern Manor is already active in Development, while other modes remain on WPF.
 - Full German localization remains incomplete; `--strict-shell` checks only its explicitly covered surfaces.
-- Jigsaw is in active development; defer branch cleanup, game engine migration and disruptive toolchain changes until that work completes.
-- The intended first PixiJS/TypeScript proof of migration is Midnight Manor, **not** a current installed feature.
+- Jigsaw has its own regression and quality gates. Coordinate broad dependency updates and branch cleanup with other active development workstreams.
+- Midnight Manor is the first shipped React/PixiJS game in Development, with a single lobby entry and source-only WPF rollback.
 
 See [roadmap](modernization-roadmap.md), [agent workflow](../AGENTS.md), and [Development delivery](development-update-delivery.md).
 
@@ -52,4 +52,4 @@ The consolidated branch changes the Development publisher from `feature/casino-q
 
 ## Manor Development channel ownership (2026-11-04)
 
-The game director explicitly requested iterative testing from `feature/manor-modernization-phase-1` without merging into `main`. Both Development release workflow gates target the feature branch. The prior main-publishing notes are historical; the unintended merge was corrected without force-pushing. Subsequent iterations stay on the same feature branch.
+The active Manor development and testing branch is `feature/manor-modernization-phase-1`, without merging into `main`. Both Development release workflow guards target that branch. Earlier main-publishing notes are historical; the unintended merge was corrected without force-pushing. Manor iterations continue on the same feature branch.

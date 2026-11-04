@@ -1,6 +1,6 @@
 # Modern casino frontend — staged migration roadmap
 
-**Implementation status (2026-11-04):** The game director authorized the pilot and requested ongoing Development testing directly from the feature branch, without merging into main. Branch `feature/manor-modernization-phase-1` now includes the **Phase-3 engineering-complete premium pilot**: React/TypeScript/PixiJS/WebView2 renders modern reels and six bonus chamber scenes, while a restricted, revisioned C# bridge commits spins, bonus choices and recovery-safe settlements. As of 2026-11-04, the modern Manor is the only lobby-selectable Manor. The WPF implementation remains in source for deliberate rollback only. The frontend does not determine outcomes or directly modify wallets.
+**Implementation status (2026-11-04):** Midnight Manor's React/TypeScript/PixiJS/WebView2 presentation is the sole Manor lobby entry in Development. Phase-3 rendering, six bonus chambers, the restricted C# command bridge and crash-safe settlements are implemented. The replacement passed CI and Development package verification on `2114b05`; additional hardware/visual checks remain open. Development continues from `feature/manor-modernization-phase-1` without a merge to `main`. WPF Manor is retained in source for rollback only; the frontend never decides results or modifies wallets directly.
 
 ## Why this direction
 
@@ -38,7 +38,7 @@ Do **not** rewrite existing engines merely to port the UI. Use adapters and expl
 - Add typed request/response/event schemas and a WebView2 adapter. Enforce origin, version, command validation and once-only settlement.
 - Build React HUD and a PixiJS Manor reel scene loading exclusively from local assets.
 
-**Implemented:** The optional modern surface accepts paid spin, free spin, room move, candle, cash out, follow policy and auto-resolve intents. Commands require a durable revision; the C# service commits once to the existing Manor checkpoint, exposes the authoritative snapshot, and rejects stale replay. The browser may not provide outcomes or payouts. C# and TypeScript contract tests plus Windows smoke and checkpoint recovery tests validate this slice. **Still pending tester acceptance:** full animation flow, premium art, sound, multilingual copy and performance baselines.
+**Implemented in Phase 2:** The modern surface accepts paid spin, free spin, room move, candle, cash out, follow policy and auto-resolve intents. Commands require a durable revision; the C# service commits once to the existing Manor checkpoint, exposes the authoritative snapshot, and rejects stale replay. The browser may not provide outcomes or payouts. C# and TypeScript contract tests plus Windows smoke and checkpoint recovery tests validate this slice. **At that phase:** animation, final art, audio, translation and measurements remained future milestones; most presentation features were implemented later.
 
 ### M3 — Manor premium presentation and mechanics
 
@@ -51,10 +51,10 @@ Do **not** rewrite existing engines merely to port the UI. Use adapters and expl
 ### M4 — Pilot release and adoption
 
 - Integrate lobby navigation, progression/challenge/album updates, German/English strings, no duplicate audio and crash-safe pending features.
-- Keep WPF Manor as rollback until the modern experience passes Windows end-to-end and actual updater tests.
-- Keep Development on the **single long-lived Manor migration branch** until the user explicitly authorizes a merge or channel change.
+- Retain WPF Manor **in source** as a rollback option; there is no second in-app Manor choice.
+- Keep Development on the **single long-lived Manor migration branch**; merges and channel-source changes require separate project approval.
 
-**Exit:** tester-approved Development build, documented fallback path and measured results.
+**Status:** the modern Manor is the Development default, backed by passing automated release checks; source-only rollback and device-level quality validation remain documented.
 
 ### M5 — Incremental casino-wide rollout
 
@@ -83,7 +83,7 @@ See [AGENTS.md](../AGENTS.md), [architecture](architecture.md), [Midnight Manor 
 - Phase 1 sent only read-only snapshots. Phase 2 additionally accepts strictly validated user *intents*. Money is formatted and settled only in C#, with no browser balance or result authority. Empty saves use fixed, non-random symbols.
 - Phase-1 history: WPF initially owned the primary Manor tile and a secondary **MODERN MANOR · PLAYTEST** action launched the alternative. This has been superseded: the primary tile opens modern Manor, with no secondary selection.
 - CI, Development and Stable publisher workflows now install/test/build the frontend before dotnet build/publish. No updater protocol changes.
-- Remaining before replacement: end-to-end WebView2 smoke with screenshots, locked transitive dependencies, measured performance baseline, complete state/action bridge, full feature screens, graphic assets, accessibility and tester acceptance.
+- Historical Phase-1 gaps included WebView2 smoke, full bridge, final art and bonus screens; later phases delivered the playable integration. Dedicated hardware performance and accessibility review remain ongoing.
 
 ## Phase-2 game integration and tester boundaries
 
@@ -92,7 +92,7 @@ See [AGENTS.md](../AGENTS.md), [architecture](architecture.md), [Midnight Manor 
 - The C# controller persists the full wallet/profile/state aggregate through the existing write-ahead checkpoint. If storage fails after a possible journal write, the modern window disables further mutations and requires close/reopen so startup recovery can establish the committed state. Client timeouts refresh the snapshot; they never automatically resend a wager.
 - Free Spins and Escape the Manor remain committed, manual-resume features. The modern interface does **not** auto-consume bonuses on startup. Existing paytables, payout bounds, progression and old saved states remain unchanged.
 - The test suite covers invalid-origin/version/stake/room messages, deterministic room action integration, replay protection across controller reinstantiation, legacy paytable version and wallet accounting. Windows startup smoke checks that React gameplay controls appear but does not wager with the runner's profile.
-- This phase does **not** yet implement reel motion, parallax effects, real symbol artwork, Manor-specific audio, user-facing German strings, the final gameplay rework or a measured 60 FPS guarantee. These belong to later work and player feedback.
+- **Historical Phase-2 boundary:** reel motion, parallax, symbols, audio and German controls were added in subsequent phases. A universal 60 FPS guarantee and real-hardware performance certification are not claimed.
 
 ### M3 first delivery — retained renderer and reel motion
 
@@ -100,7 +100,7 @@ See [AGENTS.md](../AGENTS.md), [architecture](architecture.md), [Midnight Manor 
 - Five columns visibly scroll and stop sequentially using display-only deterministic symbols before revealing the exact committed C# cells. Only acknowledged paid/free spin intents start this animation; reloads, room moves, and ordinary status refreshes do not spin.
 - Normal/Fast/Turbo and reduced-motion/off settings change presentation duration only; no new RNG, wagers, payout math, schema changes, or extra round resolution.
 - First locally drawn vector renditions of the fourteen symbols and a Gothic-luxury machine frame are in place. These are a **first presentation pass**, not final commissioned/high-resolution symbol art.
-- Windows renderer screenshots, measured FPS/VRAM use, sound, complete bonus map, bilingual interface and full Phase-3 art production remain outstanding and must not be marked complete without testing.
+- **At this early milestone**, Windows runtime screenshots, measured hardware performance, sound, complete bonus rooms and localization had not yet shipped; later milestones cover their implementation and remaining external verification.
 
 ### M3 second delivery — C#-authored payoff lines and connected Escape floorplan
 
@@ -108,7 +108,7 @@ See [AGENTS.md](../AGENTS.md), [architecture](architecture.md), [Midnight Manor 
 - The Pixi scene traces and rotates committed winning lines **after** the reels settle; reduced motion keeps a static, immediate result. A readable win breakdown can be expanded below the reels.
 - Escape the Manor now uses a scrollable Gothic architectural floorplan, with actual corridor connections and distinguishable key-locked shortcuts; legal destination buttons continue to come only from the authoritative C# `Available` flag. Ghost coordinates are not included in the snapshot.
 - Added TS shape-validation tests, mapped geometry checks and C# read-only snapshot assertions. This is a presentation milestone, not approval of new bonus odds or any change to the underlying Manor graph.
-- High-resolution premium icon paintings, music, complete localization, runtime frame-time benchmarks and final player acceptance remain open.
+- At this intermediate milestone, premium art, music, localization and performance validation were still pending; see later milestones for implemented work and remaining manual checks.
 
 ### M3 third delivery — scalable offline illustration textures and reel-stop light
 
@@ -162,34 +162,34 @@ See [AGENTS.md](../AGENTS.md), [architecture](architecture.md), [Midnight Manor 
 - Unmounting an in-flight Pixi spin cannot emit a false win announcement. Cabinet filigree and sixteen retained atmospheric particles add subtle depth without changing reel results, introducing external art or allocating new scene objects on each frame. Reduced motion freezes decorative particles.
 - Cross-frontend restart tests cover an older saved active Manor run continued via modern room decisions, re-opening with the shared classic C# controller, one-time cash-out, revision-based replay and preservation of the old free-spin paytable.
 - Windows startup smoke now takes a compact-window image and writes a real requestAnimationFrame/JS heap sample from the packaged WebView2 surface, explicitly distinguishing idle host timing from Pixi ticker metrics, GPU time and dedicated-hardware performance. The smoke never wagers on the runner's profile.
-- Remaining human-owned acceptance: genuine long-session CPU/GPU/VRAM data at 125/150/200% on the tester's monitor(s), listening to the audio mix, route feel, and explicit permission to replace the fallback. These gates must remain open until actually checked.
+- Remaining manual acceptance: long-session CPU/GPU/VRAM and DPI data on actual hardware, audio mixing and route readability. The menu replacement is complete; retiring legacy WPF **source** remains a separate decision.
 
 ### M3 scenic completion — six offline perspective rooms
 
 - The interactive Escape bonus now includes six distinct scalable first-person SVG rooms (Entrance, Library, Ballroom, Corridor, Attic and Crypt), above the engine-authorized architectural route map.
 - The room depiction and threat annotation derive strictly from the saved player room and public C# ghost clue. No hidden ghost coordinates, rewards, routing probabilities or new action requests are introduced.
 - Atmospheric mist stops when animation is off or reduced motion is requested. The layouts share one React component and no remote or independently licensed image files.
-- Unit tests verify all six themes, undefined-area fallback and safe unknown-clue behavior. Final subjective art acceptance remains the game director's decision.
+- Unit tests verify all six themes, undefined-area fallback and safe unknown-clue behavior. Subjective artwork quality is evaluated separately from the automated checks.
 
-## Phase 3 engineering closeout versus owner sign-off
+## Phase 3 engineering closeout and remaining manual quality checks
 
 **Implementation scope completed** on the long-lived Development branch: original local graphics, visually distinct bonus rooms, cosmetic win/bonus animation, engine-authored symbols/lines/map, sound respecting global preferences, English/German UI, keyboard-accessible help and moves, display-resize diagnostics, deterministic bridge/state tests and Windows smoke evidence.
 
 **Only mark automated acceptance green when the relevant SHA has completed its actual CI, presentation-regression, frontend and Development Release checks.** Successful build/package verification does not certify real monitor VRAM/CPU, all audio devices, or the player's visual taste.
 
-Human game-tester sign-off remains a prerequisite to switching the default Manor tile or retiring the WPF implementation. Phase 4 can reuse the pilot once this decision is made; no change of main branch, release guards, stable channel or long-lived Development branch is permitted without explicit approval.
+The default Manor tile has been switched in Development and the corresponding implementation passed automated release validation. Manual hardware and perceptual checks are still required before claiming complete quality acceptance. Retiring legacy WPF source, merging to `main` and altering channel pins remain independent changes requiring explicit project approval.
 
 The [Phase-3 sign-off matrix](manor-phase-3-signoff.md) tracks the exact boundary and manual test scenarios.
 
 ### M3 playtester findings — viewport, bonus presentation and delayed win
 
-- The game director confirmed the smooth, stable Pixi renderer and significantly improved visual baseline, while identifying page-scroll, the bonus panel below the slot, overlapping symbol labels, premature win/lose information, and weak celebratory animation.
+- Initial gameplay testing found the Pixi renderer smooth and the visual baseline improved, while identifying page scrolling, the bonus panel below the slot, overlapping symbol labels, premature result disclosure and weak win animations.
 - The correction keeps a *separate last-visible snapshot* while the real C# spin is saved. The browser hides bankroll, new payout, free spins, triggers, feature and win-line counts until the final reel stops; the C# settlement and replay semantics are unchanged.
 - Escape runs transition into the **same slot viewport**, with a first-person chamber, authorized room choices, persistent action bar and optional floorplan tab. Reduced motion suppresses the portal movement.
 - Symbol captions sit below smaller illustrations, with additional vertical breathing room; tiered win, bonus and loss feedback is time-bounded, and displayed only after the real outcome is presented.
 - A compact single-screen cabinet layout uses a folded settings drawer and fixed viewport grid at usable desktop sizes; on extremely small accessibility windows, nonessential information can scroll inside its own region rather than clipping controls.
 
-### M3 owner follow-up: control scale, crisp symbols, understated loss and animated sconces
+### M3 presentation polish: control scale, crisp symbols, understated loss and animated sconces
 
 - Increased the bet field and main spin control while preserving the no-page-scroll cabinet layout, including a compact-height variant.
 - SVG symbols are now decoded at 1200×640; Pixi textures are drawn at the source's original 300:160 aspect, centered rather than stretched into 142×66 rectangles. Name labels remain separate and lower in the card.
