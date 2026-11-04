@@ -4,6 +4,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using BlackjackCasino.Core;
 using BlackjackCasino.Core.Jigsaw;
 
@@ -130,8 +131,10 @@ internal sealed class JigsawLoungeHub : UserControl, IDisposable
             JigsawText.T("PIECES PLACED   ", "TEILE GELEGT   ") + stats.PiecesCompleted.ToString("N0"),
             JigsawText.T("LARGEST PUZZLE   ", "GRÖSSTES PUZZLE   ") + stats.LargestPuzzle.ToString("N0")));
 
+        // Difficulty and options stay below statistics on the left; the right remains an artwork gallery.
+        left.Children.Add(PremiumLoungeTheme.Heading(JigsawText.T("01  SELECT PIECE COUNT", "01  TEILEANZAHL AUSWÄHLEN")));
         var right = new StackPanel();
-        right.Children.Add(PremiumLoungeTheme.Heading(JigsawText.T("01  CHOOSE YOUR SCENE", "01  MOTIV AUSWÄHLEN")));
+        right.Children.Add(PremiumLoungeTheme.Heading(JigsawText.T("02  CHOOSE YOUR SCENE", "02  MOTIV AUSWÄHLEN")));
         var motifs = new WrapPanel { Margin = new Thickness(0, 0, 0, 18) };
         foreach (JigsawMotif motif in JigsawCatalog.Motifs)
         {
@@ -171,8 +174,7 @@ internal sealed class JigsawLoungeHub : UserControl, IDisposable
         }
         right.Children.Add(motifs);
 
-        right.Children.Add(PremiumLoungeTheme.Heading(JigsawText.T("02  SELECT PIECE COUNT", "02  TEILEANZAHL AUSWÄHLEN")));
-        var sizes = new UniformGrid { Columns = 4, Margin = new Thickness(0, 0, 0, 17) };
+        var sizes = new UniformGrid { Columns = 4, Margin = new Thickness(0, 12, 0, 15) };
         foreach (JigsawSize size in JigsawCatalog.Sizes)
         {
             bool selected = size.Count == progress.SelectedPieceCount;
@@ -185,11 +187,32 @@ internal sealed class JigsawLoungeHub : UserControl, IDisposable
                     persist(progress);
                     Content = BuildMenu();
                 },
-                primary: selected, width: 175, height: 40, gold: selected);
+                primary: selected, width: 118, height: 38, gold: selected);
             option.Margin = new Thickness(3, 3, 3, 4);
             sizes.Children.Add(option);
         }
-        right.Children.Add(sizes);
+        left.Children.Add(sizes);
+
+        var options = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 12) };
+        options.Children.Add(PremiumLoungeTheme.Button(
+            progress.TimerEnabled ? JigsawText.T("TIMER: ON", "TIMER: AN") : JigsawText.T("TIMER: OFF", "TIMER: AUS"),
+            "JigsawMenuTimer",
+            () =>
+            {
+                progress.TimerEnabled = !progress.TimerEnabled;
+                if (progress.ActiveGame is not null)
+                {
+                    progress.ActiveGame.TimerEnabled = progress.TimerEnabled;
+                    if (!progress.TimerEnabled) progress.ActiveGame.ElapsedSeconds = 0;
+                }
+                persist(progress);
+                Content = BuildMenu();
+            }, primary: false, width: 175, height: 39));
+        options.Children.Add(PremiumLoungeTheme.Button(
+            JigsawText.T("ACHIEVEMENTS", "ERFOLGE") + " " + stats.UnlockedAchievementIds.Count + "/30",
+            "JigsawAchievementsOpen", () => Content = BuildAchievements(),
+            primary: false, width: 275, height: 39, gold: false));
+        left.Children.Add(options);
 
         if (progress.ActiveGame is JigsawGameState active)
         {
@@ -243,6 +266,7 @@ internal sealed class JigsawLoungeHub : UserControl, IDisposable
     private void StartNew()
     {
         progress.ActiveGame = JigsawGame.Start(progress.SelectedMotifId, progress.SelectedPieceCount);
+        progress.ActiveGame.TimerEnabled = progress.TimerEnabled;
         persist(progress);
         Open(progress.ActiveGame);
     }
@@ -250,7 +274,12 @@ internal sealed class JigsawLoungeHub : UserControl, IDisposable
     private void Open(JigsawGameState game)
     {
         playView?.Dispose();
-        playView = new JigsawPlayView(game, Save, Complete, ReturnToHub);
+        game.TimerEnabled = progress.TimerEnabled;
+        playView = new JigsawPlayView(game, Save, Complete, ReturnToHub, enabled =>
+        {
+            progress.TimerEnabled = enabled;
+            persist(progress);
+        });
         Content = playView;
     }
 
@@ -266,22 +295,150 @@ internal sealed class JigsawLoungeHub : UserControl, IDisposable
         if (!game.Completed) return "";
         var completion = new JigsawCompletionRecord(game.GameId, game.MotifId,
             game.PieceCount, game.ElapsedSeconds, game.CompletedAt ?? DateTimeOffset.UtcNow);
+        HashSet<string> before = statistics().UnlockedAchievementIds.ToHashSet(StringComparer.Ordinal);
         if (!progress.CompletedGames.Any(c => c.GameId == completion.GameId))
             progress.CompletedGames.Add(completion);
         progress.ActiveGame = null;
         persist(progress);
+
+        ProgressionAward award = ProgressionAward.None;
+        string message;
         try
         {
-            ProgressionAward award = recordCompletion(completion);
-            return award.PlayerExperience > 0
-                ? JigsawText.T("Completed! +", "Fertig! +") + award.PlayerExperience.ToString("N0") +
-                  " XP · +" + award.SeasonExperience.ToString("N0") + " Season XP"
-                : JigsawText.T("Completed! Your reward was already recorded.", "Fertig! Deine Belohnung wurde bereits erfasst.");
+            award = recordCompletion(completion);
+            message = award.PlayerExperience > 0
+                ? JigsawText.T("Puzzle complete!", "Puzzle abgeschlossen!")
+                : JigsawText.T("Puzzle complete! Rewards were already credited.", "Puzzle abgeschlossen! Belohnungen wurden bereits gutgeschrieben.");
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            return JigsawText.T("Puzzle saved. Reopen the Chill Lounge to retry your reward.", "Puzzle gespeichert. Öffne die Chill Lounge erneut, um die Belohnung abzuholen.");
+            message = JigsawText.T("Puzzle saved. Rewards will be retried when you return to the Lounge.",
+                "Puzzle gespeichert. Belohnungen werden beim nächsten Besuch der Lounge nachgeholt.");
         }
+
+        JigsawAchievementDefinition[] unlocked = JigsawAchievements.All
+            .Where(a => !before.Contains(a.Id) && statistics().UnlockedAchievementIds.Contains(a.Id))
+            .ToArray();
+        ProgressionAward finalAward = award;
+        string finalMessage = message;
+        // Transition after the piece-drop event, so the board is not disposed in its own callback.
+        Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+        {
+            if (disposed) return;
+            playView?.Dispose();
+            playView = null;
+            Content = BuildCompletion(game, finalAward, unlocked, finalMessage);
+        }));
+        return message;
+    }
+
+    private UIElement BuildCompletion(JigsawGameState game, ProgressionAward award,
+        IReadOnlyList<JigsawAchievementDefinition> unlocked, string message)
+    {
+        var left = new StackPanel();
+        left.Children.Add(PremiumLoungeTheme.Heading(JigsawText.T("THE FINISHED PICTURE", "DAS FERTIGE BILD")));
+        left.Children.Add(PremiumLoungeTheme.Panel(new Image
+        {
+            Source = JigsawImages.Get(game.MotifId),
+            Width = 480, Height = 300, Stretch = Stretch.Uniform,
+        }, 8));
+        left.Children.Add(PremiumLoungeTheme.Label(JigsawText.Motif(game.MotifId), 19,
+            PremiumLoungeTheme.Cream, true, TextAlignment.Center));
+        left.Children.Add(PremiumLoungeTheme.Label(message, 14, PremiumLoungeTheme.Teal, false,
+            TextAlignment.Center));
+
+        var right = new StackPanel();
+        right.Children.Add(PremiumLoungeTheme.Heading(JigsawText.T("PUZZLE COMPLETED", "PUZZLE ABGESCHLOSSEN"), 22));
+        right.Children.Add(PremiumLoungeTheme.Stats(
+            JigsawText.T("PIECES   ", "TEILE   ") + game.PieceCount.ToString("N0"),
+            JigsawText.T("TIME   ", "ZEIT   ") + (game.TimerEnabled
+                ? TimeSpan.FromSeconds(game.ElapsedSeconds).ToString(@"hh\:mm\:ss")
+                : JigsawText.T("Not tracked", "Nicht erfasst")),
+            "PLAYER XP   +" + award.PlayerExperience.ToString("N0"),
+            "SEASON XP   +" + award.SeasonExperience.ToString("N0"),
+            JigsawText.T("COINS   +", "MÜNZEN   +") + award.CoinsEarned.ToString("N0")));
+        right.Children.Add(PremiumLoungeTheme.Heading(
+            JigsawText.T("ACHIEVEMENTS UNLOCKED", "ERFOLGE FREIGESCHALTET") + " · " + unlocked.Count, 17));
+        if (unlocked.Count == 0)
+            right.Children.Add(PremiumLoungeTheme.Label(
+                JigsawText.T("No new achievements this time. Keep puzzling!", "Diesmal keine neuen Erfolge. Puzzle weiter!"),
+                14, PremiumLoungeTheme.Muted));
+        else
+            foreach (JigsawAchievementDefinition achievement in unlocked)
+                right.Children.Add(AchievementRow(achievement, statistics(), true));
+
+        var actions = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 20, 0, 0) };
+        actions.Children.Add(PremiumLoungeTheme.Button(
+            JigsawText.T("PLAY ANOTHER", "WEITERES PUZZLE"), "JigsawResultAgain",
+            StartNew, width: 220, height: 48, gold: true));
+        var back = PremiumLoungeTheme.Button(JigsawText.T("PUZZLE MENU", "PUZZLE-MENÜ"), "JigsawResultBack",
+            ReturnToHub, width: 200, height: 48, primary: false);
+        back.Margin = new Thickness(12, 0, 0, 0);
+        actions.Children.Add(back);
+        right.Children.Add(actions);
+
+        return PremiumLoungeTheme.Build(
+            "sky-bar.png", "penthouse-club.png",
+            "THE MIDNIGHT CLUB · CHILL LOUNGE", "Jigsaw Puzzle",
+            JigsawText.T("Every piece has found its place.", "Jedes Teil hat seinen Platz gefunden."),
+            JigsawText.T("YOUR MASTERPIECE", "DEIN MEISTERWERK"),
+            JigsawText.T("Picture complete.", "Bild vollendet."),
+            JigsawText.T("No rushing. No missed details. Enjoy the result.",
+                "Ganz ohne Eile. Genieße dein fertiges Bild."),
+            left, right, JigsawText.T("Your completion is saved automatically.", "Dein Abschluss wurde automatisch gespeichert."),
+            compactLeft: true);
+    }
+
+    private UIElement BuildAchievements()
+    {
+        JigsawStatistics stats = statistics();
+        stats.Normalize();
+        var left = new StackPanel();
+        left.Children.Add(PremiumLoungeTheme.Heading(JigsawText.T("THE ACHIEVEMENT GALLERY", "DIE ERFOLGSGALERIE")));
+        left.Children.Add(PremiumLoungeTheme.Label(
+            JigsawText.T("Thirty milestones across puzzle sizes, completed pictures, placed pieces and scenes.",
+                "Dreißig Meilensteine für Teileanzahl, fertige Bilder, gelegte Teile und Motive."),
+            15, PremiumLoungeTheme.Cream));
+        left.Children.Add(PremiumLoungeTheme.Stats(
+            JigsawText.T("UNLOCKED   ", "FREIGESCHALTET   ") + stats.UnlockedAchievementIds.Count + " / 30",
+            JigsawText.T("PIECES PLACED   ", "TEILE GELEGT   ") + stats.PiecesCompleted.ToString("N0")));
+        left.Children.Add(PremiumLoungeTheme.Button(JigsawText.T("← PUZZLE MENU", "← PUZZLE-MENÜ"),
+            "JigsawAchievementsBack", () => Content = BuildMenu(), width: 250, height: 44));
+
+        var right = new StackPanel();
+        foreach (JigsawAchievementDefinition achievement in JigsawAchievements.All)
+            right.Children.Add(AchievementRow(achievement, stats,
+                stats.UnlockedAchievementIds.Contains(achievement.Id)));
+        return PremiumLoungeTheme.Build(
+            "sky-bar.png", "penthouse-club.png",
+            "THE MIDNIGHT CLUB · CHILL LOUNGE",
+            JigsawText.T("Achievements", "Erfolge"),
+            JigsawText.T("Thirty achievements. Four reward tiers.", "Dreißig Erfolge. Vier Belohnungsstufen."),
+            JigsawText.T("REWARDS", "BELOHNUNGEN"),
+            JigsawText.T("Every piece counts.", "Jedes Teil zählt."),
+            JigsawText.T("Bronze, Silver, Gold and Platinum grant progressively higher XP and coins.",
+                "Bronze, Silber, Gold und Platin gewähren steigende EP- und Münzbelohnungen."),
+            left, right, JigsawText.T("Achievements are awarded once per account.", "Erfolge werden pro Profil nur einmal belohnt."),
+            compactLeft: true);
+    }
+
+    private static FrameworkElement AchievementRow(JigsawAchievementDefinition a, JigsawStatistics stats, bool unlocked)
+    {
+        var stack = new StackPanel();
+        stack.Children.Add(PremiumLoungeTheme.Label(
+            (unlocked ? "✓  " : "◇  ") + JigsawText.T(a.Name, a.GermanName) +
+            " · " + a.Tier.ToString().ToUpperInvariant(),
+            15, unlocked ? PremiumLoungeTheme.Teal : PremiumLoungeTheme.Cream, true));
+        stack.Children.Add(PremiumLoungeTheme.Label(JigsawText.T(a.Description, a.GermanDescription),
+            12, PremiumLoungeTheme.Muted));
+        stack.Children.Add(PremiumLoungeTheme.Label(
+            Math.Min(a.Current(stats), a.Goal).ToString("N0") + " / " + a.Goal.ToString("N0") +
+            "   ·   +" + a.ExperienceReward.ToString("N0") + " XP   ·   +" +
+            a.CoinReward.ToString("N0") + JigsawText.T(" coins", " Münzen"),
+            12, PremiumLoungeTheme.Gold, true));
+        var row = PremiumLoungeTheme.Panel(stack, 11);
+        row.Margin = new Thickness(0, 0, 0, 8);
+        return row;
     }
 
     private void ReturnToHub()
