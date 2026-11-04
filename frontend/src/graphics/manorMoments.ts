@@ -4,7 +4,7 @@ import { localizeFeature, localizeRoom, localizeRunText, t } from '../i18n';
 import type { ManorLanguage } from '../i18n';
 
 export type ManorMoment = {
-  key: 'jackpot' | 'big' | 'win' | 'door' | 'moon' | 'run';
+  key: 'jackpot' | 'big' | 'win' | 'door' | 'moon' | 'run' | 'loss';
   heading: string;
   detail: string;
   secondary?: string;
@@ -51,6 +51,13 @@ export function spinMoment(snapshot: ManorSnapshot): ManorMoment | null {
   };
 }
 
+/** Only called after the fifth reel settles, never on receiving the C# reply. */
+export function settledSpinMoment(snapshot: ManorSnapshot): ManorMoment {
+  return spinMoment(snapshot) ?? {
+    key: 'loss', heading: 'NO WIN', detail: 'The house falls silent',
+  };
+}
+
 export function spinCue(snapshot: ManorSnapshot): ManorCue | null {
   if (snapshot.doors >= 2) return 'door';
   if (snapshot.scatters >= 3 && !snapshot.lastSpinFree) return 'moon';
@@ -91,6 +98,7 @@ export function localizeMoment(moment: ManorMoment, language: ManorLanguage): Ma
   if (language === 'en') return moment;
   const headings: Record<string, string> = {
     WIN: t(language, 'momentWin'),
+    'NO WIN': t(language, 'momentNoWin'),
     'BIG WIN': t(language, 'momentBig'),
     'LEGENDARY WIN': t(language, 'momentEpic'),
     'THE MANOR OPENS': t(language, 'momentDoor'),
@@ -109,6 +117,7 @@ export function localizeMoment(moment: ManorMoment, language: ManorLanguage): Ma
   const win = /^(.*) · (\d+) winning (line|lines)$/.exec(detail);
   if (win) detail = t(language, 'winDetail', win[1], win[2],
     t(language, win[3] === 'line' ? 'lineSingular' : 'linePlural'));
+  if (detail === t('en', 'noWinDetail')) detail = t(language, 'noWinDetail');
   if (detail === t('en', 'doorDetail')) detail = t(language, 'doorDetail');
   if (detail === t('en', 'moonDetail')) detail = t(language, 'moonDetail');
   let secondary = moment.secondary ? localizeRunText(moment.secondary, language) : undefined;

@@ -30,6 +30,10 @@ type Renderer = {
   dispose(): void;
 };
 const W = 960, H = 500, H_CELL = 100;
+// Artwork and name have their own distinct baselines inside each 97px symbol card.
+export const MANOR_ARTWORK_TOP = 4;
+export const MANOR_ARTWORK_HEIGHT = 66;
+export const MANOR_SYMBOL_LABEL_Y = 88;
 const SYMBOLS = MANOR_SYMBOL_NAMES;
 const LETTERS: Record<string, string> = { Jack: 'J', Queen: 'Q', King: 'K', Ace: 'A' };
 const accents: Record<string, number> = {
@@ -123,12 +127,12 @@ function makeTile(): Tile {
   const backing = new Graphics();
   const artwork = new Graphics();
   const illustration = new Sprite(Texture.EMPTY);
-  illustration.position.set(5, 4);
+  illustration.position.set(5, MANOR_ARTWORK_TOP);
   illustration.visible = false;
   const letter = text('', 62, 0xe9ca92);
-  const name = text('', 10, 0xd9c3a6);
+  const name = text('', 9, 0xd9c3a6);
   letter.position.set(76, 43);
-  name.position.set(76, 81);
+  name.position.set(76, MANOR_SYMBOL_LABEL_Y);
   root.addChild(backing, illustration, artwork, letter, name);
   return { root, backing, artwork, illustration, letter, name, symbol: '' };
 }
@@ -155,7 +159,7 @@ function decorate(tile: Tile, symbol: string, winning: boolean, dim: boolean,
     if (tile.illustration.texture !== texture) {
       tile.illustration.texture = texture;
       tile.illustration.width = 142;
-      tile.illustration.height = 76;
+      tile.illustration.height = MANOR_ARTWORK_HEIGHT;
     }
     tile.illustration.visible = true;
     tile.artwork.visible = false;

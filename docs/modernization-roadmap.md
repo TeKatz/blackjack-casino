@@ -180,3 +180,11 @@ See [AGENTS.md](../AGENTS.md), [architecture](architecture.md), [Midnight Manor 
 Human game-tester sign-off remains a prerequisite to switching the default Manor tile or retiring the WPF implementation. Phase 4 can reuse the pilot once this decision is made; no change of main branch, release guards, stable channel or long-lived Development branch is permitted without explicit approval.
 
 The [Phase-3 sign-off matrix](manor-phase-3-signoff.md) tracks the exact boundary and manual test scenarios.
+
+### M3 playtester findings — viewport, bonus presentation and delayed win
+
+- The game director confirmed the smooth, stable Pixi renderer and significantly improved visual baseline, while identifying page-scroll, the bonus panel below the slot, overlapping symbol labels, premature win/lose information, and weak celebratory animation.
+- The correction keeps a *separate last-visible snapshot* while the real C# spin is saved. The browser hides bankroll, new payout, free spins, triggers, feature and win-line counts until the final reel stops; the C# settlement and replay semantics are unchanged.
+- Escape runs transition into the **same slot viewport**, with a first-person chamber, authorized room choices, persistent action bar and optional floorplan tab. Reduced motion suppresses the portal movement.
+- Symbol captions sit below smaller illustrations, with additional vertical breathing room; tiered win, bonus and loss feedback is time-bounded, and displayed only after the real outcome is presented.
+- A compact single-screen cabinet layout uses a folded settings drawer and fixed viewport grid at usable desktop sizes; on extremely small accessibility windows, nonessential information can scroll inside its own region rather than clipping controls.
