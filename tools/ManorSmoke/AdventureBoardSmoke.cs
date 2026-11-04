@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -76,8 +77,21 @@ internal static class AdventureBoardSmoke
             {
                 detached.Show(); await Task.Delay(100);
                 engine.SelectChoice("take-case");
-                await Task.Delay(700); detached.UpdateLayout();
-                Require(Find<Border>(detached).Any(b => Equals(b.Tag, "hotel-mirabelle")), "Detached board failed to synchronize new story evidence");
+                Require(engine.State.CaseBoard.Nodes["hotel-mirabelle"].IsKnown,
+                    "Story choice did not discover the expected case-board evidence");
+                // A background-priority WPF dispatcher timer may not tick within a fixed
+                // 700 ms on a heavily loaded Windows runner. Verify eventual visible
+                // synchronization with a bounded deadline instead of racing one tick.
+                var syncClock = Stopwatch.StartNew();
+                bool synchronized;
+                do
+                {
+                    detached.UpdateLayout();
+                    synchronized = Find<Border>(detached).Any(b => Equals(b.Tag, "hotel-mirabelle"));
+                    if (synchronized || syncClock.Elapsed >= TimeSpan.FromSeconds(6)) break;
+                    await Task.Delay(100);
+                } while (true);
+                Require(synchronized, "Detached board failed to synchronize new story evidence within six seconds");
                 Save(Render((FrameworkElement)detached.Content), Path.Combine(output, "case-board-detached-live.png"));
             }
             finally { detached.Close(); }
