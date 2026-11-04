@@ -230,7 +230,7 @@ public sealed class ProgressionService
                 return new ChallengeClaimResult(false, "Unknown challenge.");
             }
 
-            if (State.ClaimedChallengeIds.Contains(challenge.Id, StringComparer.Ordinal))
+            if (ChallengeRegistry.IsClaimed(State, challenge))
             {
                 return new ChallengeClaimResult(false, "Challenge reward already claimed.", challenge);
             }
@@ -261,9 +261,9 @@ public sealed class ProgressionService
         // A profile can be shared by multiple services. Single and bulk claims use the same gate.
         lock (State)
         {
-            var claimed = State.ClaimedChallengeIds.ToHashSet(StringComparer.Ordinal);
             ChallengeDefinition[] available = ChallengeRegistry.All
-                .Where(challenge => !claimed.Contains(challenge.Id) && ChallengeRegistry.Complete(State, challenge))
+                .Where(challenge => !ChallengeRegistry.IsClaimed(State, challenge)
+                    && ChallengeRegistry.Complete(State, challenge))
                 .ToArray();
             if (available.Length == 0)
             {
