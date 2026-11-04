@@ -51,6 +51,7 @@ internal partial class ProgressionWindow
         ChallengeCategory.MidnightMerge => "Midnight Merge",
         ChallengeCategory.WordSearch => "Word Search",
         ChallengeCategory.Memory => "Memory",
+        ChallengeCategory.Jigsaw => "Jigsaw Puzzle",
         _ => category.ToString(),
     };
 
