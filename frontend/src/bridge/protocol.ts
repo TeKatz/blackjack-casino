@@ -1,9 +1,36 @@
-/** Versioned read-only bridge contract for the first Midnight Manor migration slice. */
-export const PROTOCOL_VERSION = 1 as const;
+/** V2 WebView2 bridge. Browser sends intent only; C# owns rules and settlement. */
+export const PROTOCOL_VERSION = 2 as const;
+
+export type ManorRoom = {
+  id: number;
+  name: string;
+  x: number;
+  y: number;
+  area: string;
+  visited: boolean;
+  available: boolean;
+  locked: boolean;
+};
+
+export type ManorRun = {
+  status: string;
+  message: string;
+  ghostClue: string;
+  playerRoom: number;
+  turn: number;
+  exitTarget: number;
+  current: string;
+  banked: string;
+  hasCandle: boolean;
+  hasKey: boolean;
+  hasCharm: boolean;
+  rooms: ManorRoom[];
+};
 
 export type ManorSnapshot = {
   bankroll: string;
   bet: string;
+  selectedBet: string;
   cycleReturned: string;
   payout: string;
   cells: string[];
@@ -13,11 +40,31 @@ export type ManorSnapshot = {
   feature: string;
   animationsEnabled: boolean;
   hasCommittedSpin: boolean;
+  revision: string;
+  canSpin: boolean;
+  canFreeSpin: boolean;
+  lastSpinFree: boolean;
+  scatters: number;
+  doors: number;
+  winningLines: number;
+  run: ManorRun | null;
+  saveNotice: string | null;
 };
 
-export type ServerEnvelope =
-  | { protocolVersion: 1; type: 'snapshot'; requestId: string; payload: ManorSnapshot }
-  | { protocolVersion: 1; type: 'error'; requestId: string; payload: { message: string } };
+export type HostEnvelope =
+  | { protocolVersion: 2; type: 'snapshot'; requestId: string; payload: ManorSnapshot }
+  | { protocolVersion: 2; type: 'error'; requestId: string; payload: {
+    message: string; fatal: boolean; snapshot: ManorSnapshot;
+  } };
+
+export type GameAction = 'spin.paid' | 'spin.free' | 'run.move' | 'run.candle'
+  | 'run.cashout' | 'run.follow' | 'run.auto';
+
+export type ActionArguments = {
+  expectedRevision: string;
+  bet?: string;
+  room?: number;
+};
 
 type WebView = {
   postMessage(message: object): void;
@@ -31,64 +78,115 @@ declare global {
   }
 }
 
-export function isSnapshot(value: unknown): value is ManorSnapshot {
-  if (typeof value !== 'object' || value === null) return false;
-  const s = value as Record<string, unknown>;
-  return (
-    ['bankroll', 'bet', 'cycleReturned', 'payout', 'feature'].every(k => typeof s[k] === 'string') &&
-    Array.isArray(s.cells) && s.cells.length === 15 && s.cells.every(x => typeof x === 'string') &&
-    Array.isArray(s.winningCells) && s.winningCells.every(x => Number.isInteger(x) && x >= 0 && x < 15) &&
-    typeof s.cycleActive === 'boolean' &&
-    typeof s.hasCommittedSpin === 'boolean' &&
-    typeof s.animationsEnabled === 'boolean' &&
-    Number.isInteger(s.freeSpinsRemaining) && Number(s.freeSpinsRemaining) >= 0
-  );
+const text = (value: unknown): value is string => typeof value === 'string';
+const flag = (value: unknown): value is boolean => typeof value === 'boolean';
+const nonnegative = (value: unknown): value is number =>
+  Number.isInteger(value) && typeof value === 'number' && value >= 0;
+const dictionary = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === 'object' && !Array.isArray(value);
+
+function isRun(value: unknown): value is ManorRun {
+  if (!dictionary(value)) return false;
+  return ['status', 'message', 'ghostClue', 'current', 'banked'].every(k => text(value[k])) &&
+    nonnegative(value.playerRoom) && nonnegative(value.turn) && nonnegative(value.exitTarget) &&
+    flag(value.hasCandle) && flag(value.hasKey) && flag(value.hasCharm) &&
+    Array.isArray(value.rooms) && value.rooms.every(room =>
+      dictionary(room) && nonnegative(room.id) && text(room.name) &&
+      Number.isInteger(room.x) && Number.isInteger(room.y) && text(room.area) &&
+      flag(room.visited) && flag(room.available) && flag(room.locked));
 }
 
-export function parseServerMessage(input: unknown): ServerEnvelope | null {
-  let value: unknown = input;
+export function isSnapshot(value: unknown): value is ManorSnapshot {
+  if (!dictionary(value)) return false;
+  return ['bankroll', 'bet', 'selectedBet', 'cycleReturned', 'payout', 'feature', 'revision']
+    .every(k => text(value[k])) &&
+    /^[0-9]{1,19}$/.test(value.revision as string) &&
+    Array.isArray(value.cells) && value.cells.length === 15 && value.cells.every(text) &&
+    Array.isArray(value.winningCells) &&
+    value.winningCells.every(x => nonnegative(x) && x < 15) &&
+    ['cycleActive', 'animationsEnabled', 'hasCommittedSpin', 'canSpin', 'canFreeSpin', 'lastSpinFree']
+      .every(k => flag(value[k])) &&
+    ['freeSpinsRemaining', 'scatters', 'doors', 'winningLines'].every(k => nonnegative(value[k])) &&
+    (value.run === null || isRun(value.run)) &&
+    (value.saveNotice === null || text(value.saveNotice));
+}
+
+export function parseHostMessage(input: unknown): HostEnvelope | null {
+  let data: unknown = input;
   if (typeof input === 'string') {
-    try { value = JSON.parse(input) as unknown; } catch { return null; }
+    try { data = JSON.parse(input) as unknown; } catch { return null; }
   }
-  if (typeof value !== 'object' || value === null) return null;
-  const record = value as Record<string, unknown>;
-  if (record.protocolVersion !== PROTOCOL_VERSION || typeof record.requestId !== 'string') return null;
-  if (record.type === 'snapshot' && isSnapshot(record.payload)) {
-    return { protocolVersion: 1, type: 'snapshot', requestId: record.requestId, payload: record.payload };
+  if (!dictionary(data) || data.protocolVersion !== PROTOCOL_VERSION ||
+    !text(data.requestId) || data.requestId.length > 64) return null;
+  if (data.type === 'snapshot' && isSnapshot(data.payload)) {
+    return {
+      protocolVersion: 2, type: 'snapshot', requestId: data.requestId,
+      payload: data.payload,
+    };
   }
-  if (record.type === 'error' &&
-      typeof record.payload === 'object' && record.payload !== null &&
-      typeof (record.payload as Record<string, unknown>).message === 'string') {
-    return { protocolVersion: 1, type: 'error', requestId: record.requestId, payload: { message: (record.payload as { message: string }).message } };
+  if (data.type === 'error' && dictionary(data.payload) &&
+    text(data.payload.message) && flag(data.payload.fatal) &&
+    isSnapshot(data.payload.snapshot)) {
+    return {
+      protocolVersion: 2, type: 'error', requestId: data.requestId,
+      payload: {
+        message: data.payload.message, fatal: data.payload.fatal,
+        snapshot: data.payload.snapshot,
+      },
+    };
   }
   return null;
 }
 
 let counter = 0;
-export function sendCommand(type: 'client.ready' | 'snapshot.request' | 'ui.close'): void {
-  window.chrome?.webview?.postMessage({
-    protocolVersion: PROTOCOL_VERSION, type, requestId: String(++counter),
-  });
+function nextId(): string {
+  // Unique across reopens; the C# journal stores the last committed mutation ID.
+  return window.crypto?.randomUUID?.() ?? 'local-' + String(++counter);
 }
 
-export function subscribeToHost(handler: (message: ServerEnvelope) => void): () => void {
+export function sendCommand(type: 'client.ready' | 'snapshot.request' | 'ui.close'): string {
+  const requestId = nextId();
+  window.chrome?.webview?.postMessage({ protocolVersion: 2, type, requestId });
+  return requestId;
+}
+
+export function sendAction(type: GameAction, args: ActionArguments): string {
+  const requestId = nextId();
+  window.chrome?.webview?.postMessage({ protocolVersion: 2, type, requestId, ...args });
+  return requestId;
+}
+
+export function subscribeToHost(handler: (message: HostEnvelope) => void): () => void {
   const webview = window.chrome?.webview;
   if (!webview) return () => {};
   const listener = (event: MessageEvent) => {
-    const message = parseServerMessage(event.data);
+    const message = parseHostMessage(event.data);
     if (message) handler(message);
   };
   webview.addEventListener('message', listener);
   return () => webview.removeEventListener('message', listener);
 }
 
+// Never simulate paid rounds in an ordinary browser: the standalone dev build
+// is only a visual preview until the real C# WebView2 host is connected.
 export const browserPreview: ManorSnapshot = {
-  bankroll: '—', bet: '—', cycleReturned: '—', payout: '—',
-  cells: [
-    'Rose','Watch','Raven', 'Queen','Wild','Portrait', 'Scatter','Lady','Ace',
-    'Candelabrum','Key','Jack', 'Bonus','King','Rose',
-  ],
+  bankroll: '—', bet: '—', selectedBet: '$25.00', cycleReturned: '—', payout: '—',
+  cells: ['Rose', 'Watch', 'Raven', 'Queen', 'Wild', 'Portrait', 'Scatter', 'Lady', 'Ace',
+    'Candelabrum', 'Key', 'Jack', 'Bonus', 'King', 'Rose'],
   winningCells: [], cycleActive: false, freeSpinsRemaining: 0,
-  feature: 'Browser design preview · no game actions',
-  animationsEnabled: true, hasCommittedSpin: false,
+  feature: 'Browser design preview · no wagers executed',
+  animationsEnabled: true, hasCommittedSpin: false, revision: '0', canSpin: false,
+  canFreeSpin: false, lastSpinFree: false, scatters: 0, doors: 0, winningLines: 0,
+  run: null, saveNotice: null,
 };
+
+export function availableActions(snapshot: ManorSnapshot): GameAction[] {
+  if (snapshot.run) {
+    return snapshot.run.hasCandle
+      ? ['run.move', 'run.candle', 'run.cashout', 'run.follow', 'run.auto']
+      : ['run.move', 'run.cashout', 'run.follow', 'run.auto'];
+  }
+  if (snapshot.canFreeSpin) return ['spin.free'];
+  if (snapshot.canSpin) return ['spin.paid'];
+  return [];
+}
