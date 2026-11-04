@@ -24,16 +24,16 @@ internal static class JigsawLoungeModule
             new LoungeGame(
                 "jigsaw",
                 "Jigsaw Puzzle",
-                "One picture. A thousand little moments.",
-                "Choose a scene, then decide how many pieces to put together. No countdown, no pressure.",
+                JigsawText.T("One picture. A thousand little moments.", "Ein Bild. Tausend kleine Momente."),
+                JigsawText.T("Choose a scene, then decide how many pieces to put together. No countdown, no pressure.", "Wähle ein Motiv und bestimme die Teileanzahl. Ohne Zeitdruck."),
                 () => { },
                 Artwork: () => new JigsawTileArtwork(),
                 SortOrder: 50,
                 Status: () => progress.ActiveGame is null
-                    ? progress.CompletedGames.Count.ToString("N0") + " puzzles completed"
-                    : "Resume " + JigsawCatalog.Motif(progress.ActiveGame.MotifId).Name +
+                    ? progress.CompletedGames.Count.ToString("N0") + JigsawText.T(" puzzles completed", " Puzzle abgeschlossen")
+                    : JigsawText.T("Resume ", "Fortsetzen: ") + JigsawText.Motif(progress.ActiveGame.MotifId) +
                       " · " + progress.ActiveGame.LockedCount.ToString("N0") + " / " +
-                      progress.ActiveGame.PieceCount.ToString("N0") + " pieces"),
+                      progress.ActiveGame.PieceCount.ToString("N0") + JigsawText.T(" pieces", " Teile")),
             back => new JigsawLoungeHub(progress, persist, statistics, recordCompletion, back),
             UseShellBackNavigation: true);
     }
@@ -117,17 +117,17 @@ internal sealed class JigsawLoungeHub : UserControl, IDisposable
         JigsawStatistics stats = statistics();
         stats.Normalize();
         var left = new StackPanel();
-        left.Children.Add(PremiumLoungeTheme.Heading("A moment of calm"));
+        left.Children.Add(PremiumLoungeTheme.Heading(JigsawText.T("A moment of calm", "Ein Moment der Ruhe")));
         left.Children.Add(PremiumLoungeTheme.Label(
-            "Pick the artwork you love. Choose a piece count from 24 to 1,000, then take your time.",
+            JigsawText.T("Pick the artwork you love. Choose a piece count from 24 to 1,000, then take your time.", "Wähle dein Lieblingsmotiv und zwischen 24 und 1.000 Teilen. Du hast alle Zeit der Welt."),
             15, PremiumLoungeTheme.Cream));
         left.Children.Add(PremiumLoungeTheme.Stats(
-            "COMPLETED   " + stats.CompletedGames.ToString("N0"),
-            "PIECES PLACED   " + stats.PiecesCompleted.ToString("N0"),
-            "LARGEST PUZZLE   " + stats.LargestPuzzle.ToString("N0")));
+            JigsawText.T("COMPLETED   ", "ABGESCHLOSSEN   ") + stats.CompletedGames.ToString("N0"),
+            JigsawText.T("PIECES PLACED   ", "TEILE GELEGT   ") + stats.PiecesCompleted.ToString("N0"),
+            JigsawText.T("LARGEST PUZZLE   ", "GRÖSSTES PUZZLE   ") + stats.LargestPuzzle.ToString("N0")));
 
         var right = new StackPanel();
-        right.Children.Add(PremiumLoungeTheme.Heading("01  CHOOSE YOUR SCENE"));
+        right.Children.Add(PremiumLoungeTheme.Heading(JigsawText.T("01  CHOOSE YOUR SCENE", "01  MOTIV AUSWÄHLEN")));
         var motifs = new WrapPanel { Margin = new Thickness(0, 0, 0, 18) };
         foreach (JigsawMotif motif in JigsawCatalog.Motifs)
         {
@@ -140,9 +140,9 @@ internal sealed class JigsawLoungeHub : UserControl, IDisposable
                 Width = 165,
                 Stretch = Stretch.UniformToFill,
             });
-            preview.Children.Add(PremiumLoungeTheme.Label(motif.Name, 13, PremiumLoungeTheme.Cream, true,
+            preview.Children.Add(PremiumLoungeTheme.Label(JigsawText.Motif(motif.Id), 13, PremiumLoungeTheme.Cream, true,
                 TextAlignment.Center));
-            preview.Children.Add(PremiumLoungeTheme.Label(motif.Category, 10, PremiumLoungeTheme.Muted,
+            preview.Children.Add(PremiumLoungeTheme.Label(JigsawText.Category(motif.Category), 10, PremiumLoungeTheme.Muted,
                 false, TextAlignment.Center));
             var option = new Button
             {
@@ -155,7 +155,7 @@ internal sealed class JigsawLoungeHub : UserControl, IDisposable
                 BorderBrush = LoungeUi.Ink(selected ? "#5CF0D7" : "#60766D"),
                 Background = LoungeUi.Ink(selected ? "#154A47" : "#102A2B"),
                 Cursor = Cursors.Hand,
-                ToolTip = motif.Name,
+                ToolTip = JigsawText.Motif(motif.Id),
             };
             option.Click += (_, _) =>
             {
@@ -167,7 +167,7 @@ internal sealed class JigsawLoungeHub : UserControl, IDisposable
         }
         right.Children.Add(motifs);
 
-        right.Children.Add(PremiumLoungeTheme.Heading("02  SELECT PIECE COUNT"));
+        right.Children.Add(PremiumLoungeTheme.Heading(JigsawText.T("02  SELECT PIECE COUNT", "02  TEILEANZAHL AUSWÄHLEN")));
         var sizes = new UniformGrid { Columns = 4, Margin = new Thickness(0, 0, 0, 17) };
         foreach (JigsawSize size in JigsawCatalog.Sizes)
         {
