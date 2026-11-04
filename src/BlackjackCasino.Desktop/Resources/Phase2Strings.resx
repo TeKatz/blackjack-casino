@@ -377,4 +377,123 @@ Manor rules: the ghost follows shortest routes, including locked doors. It moves
   <data name="Phase2.Static.186" xml:space="preserve"><value>Permanent performance, current run and room production.</value></data>
   <data name="Phase2.Static.187" xml:space="preserve"><value>ESTATE PROGRESSION</value></data>
   <data name="Phase2.Static.188" xml:space="preserve"><value>PORTFOLIO &amp; LEGACY</value></data>
+  <data name="Phase2.Empire.001" xml:space="preserve"><value>Slot Gallery</value></data>
+  <data name="Phase2.Empire.002" xml:space="preserve"><value>Warm lights, brass cabinets and the first heartbeat of your casino.</value></data>
+  <data name="Phase2.Empire.003" xml:space="preserve"><value>Card Salon</value></data>
+  <data name="Phase2.Empire.004" xml:space="preserve"><value>Velvet tables and fresh decks. A quiet room with a growing reputation.</value></data>
+  <data name="Phase2.Empire.005" xml:space="preserve"><value>Midnight Bar</value></data>
+  <data name="Phase2.Empire.006" xml:space="preserve"><value>Polished glass, soft jazz and a reason to stay for another round.</value></data>
+  <data name="Phase2.Empire.007" xml:space="preserve"><value>Roulette Room</value></data>
+  <data name="Phase2.Empire.008" xml:space="preserve"><value>The turn of a wheel brings a little more grandeur to the floor.</value></data>
+  <data name="Phase2.Empire.009" xml:space="preserve"><value>VIP Lounge</value></data>
+  <data name="Phase2.Empire.010" xml:space="preserve"><value>Private booths, golden details and the finest corner of your empire.</value></data>
+  <data name="Phase2.Empire.011" xml:space="preserve"><value>High Limit Slots</value></data>
+  <data name="Phase2.Empire.012" xml:space="preserve"><value>Private cabinets, tailored service and a floor built for very large nights.</value></data>
+  <data name="Phase2.Empire.013" xml:space="preserve"><value>Poker Room</value></data>
+  <data name="Phase2.Empire.014" xml:space="preserve"><value>Invitation-only tables where patience, reputation and long sessions pay.</value></data>
+  <data name="Phase2.Empire.015" xml:space="preserve"><value>Fine Dining</value></data>
+  <data name="Phase2.Empire.016" xml:space="preserve"><value>A destination restaurant that keeps premium guests inside your estate.</value></data>
+  <data name="Phase2.Empire.017" xml:space="preserve"><value>Grand Stage</value></data>
+  <data name="Phase2.Empire.018" xml:space="preserve"><value>Live entertainment turns a gaming floor into a place guests plan a night around.</value></data>
+  <data name="Phase2.Empire.019" xml:space="preserve"><value>Private Gaming Salon</value></data>
+  <data name="Phase2.Empire.020" xml:space="preserve"><value>The most exclusive room in the house: discreet, expensive and exceptionally productive.</value></data>
+  <data name="Phase2.Empire.021" xml:space="preserve"><value>Luxury Hotel</value></data>
+  <data name="Phase2.Empire.022" xml:space="preserve"><value>A destination stay linking every part of the resort.</value></data>
+  <data name="Phase2.Empire.023" xml:space="preserve"><value>Spa &amp; Wellness</value></data>
+  <data name="Phase2.Empire.024" xml:space="preserve"><value>A peaceful retreat with premium hospitality.</value></data>
+  <data name="Phase2.Empire.025" xml:space="preserve"><value>Sky Bar</value></data>
+  <data name="Phase2.Empire.026" xml:space="preserve"><value>Drinks and music above the city lights.</value></data>
+  <data name="Phase2.Empire.027" xml:space="preserve"><value>Convention Hall</value></data>
+  <data name="Phase2.Empire.028" xml:space="preserve"><value>A permanent destination for casino gatherings.</value></data>
+  <data name="Phase2.Empire.029" xml:space="preserve"><value>Penthouse Club</value></data>
+  <data name="Phase2.Empire.030" xml:space="preserve"><value>A private address above your growing empire.</value></data>
+  <data name="Phase2.Empire.031" xml:space="preserve"><value>Gaming</value></data>
+  <data name="Phase2.Empire.032" xml:space="preserve"><value>Hospitality</value></data>
+  <data name="Phase2.Empire.033" xml:space="preserve"><value>Entertainment</value></data>
+  <data name="Phase2.Empire.034" xml:space="preserve"><value>Resort</value></data>
+  <data name="Phase2.Empire.035" xml:space="preserve"><value>Main Floor</value></data>
+  <data name="Phase2.Empire.036" xml:space="preserve"><value>Upper Floor</value></data>
+  <data name="Phase2.Empire.037" xml:space="preserve"><value>Resort Floor</value></data>
+  <data name="Phase2.Empire.038" xml:space="preserve"><value>The Midnight Club</value></data>
+  <data name="Phase2.Empire.039" xml:space="preserve"><value>A balanced estate. The home of your casino career.</value></data>
+  <data name="Phase2.Empire.040" xml:space="preserve"><value>Neon Bay Resort</value></data>
+  <data name="Phase2.Empire.041" xml:space="preserve"><value>A coastal skyline built around modern slots.</value></data>
+  <data name="Phase2.Empire.042" xml:space="preserve"><value>Crown Palace</value></data>
+  <data name="Phase2.Empire.043" xml:space="preserve"><value>Private tables, discreet service and a royal guest list.</value></data>
+  <data name="Phase2.Empire.044" xml:space="preserve"><value>Aurora International</value></data>
+  <data name="Phase2.Empire.045" xml:space="preserve"><value>A destination for hospitality, entertainment and grand occasions.</value></data>
+  <data name="Phase2.Empire.046" xml:space="preserve"><value>High Roller Circuit</value></data>
+  <data name="Phase2.Empire.047" xml:space="preserve"><value>Build the VIP circuit together.</value></data>
+  <data name="Phase2.Empire.048" xml:space="preserve"><value>Night Out</value></data>
+  <data name="Phase2.Empire.049" xml:space="preserve"><value>A complete evening: drinks, dinner and a live show.</value></data>
+  <data name="Phase2.Empire.050" xml:space="preserve"><value>Classic Casino</value></data>
+  <data name="Phase2.Empire.051" xml:space="preserve"><value>Keep the original gaming floor at the heart of the estate.</value></data>
+  <data name="Phase2.Empire.052" xml:space="preserve"><value>Destination Resort</value></data>
+  <data name="Phase2.Empire.053" xml:space="preserve"><value>A balanced resort rewards every department.</value></data>
+  <data name="Phase2.Empire.054" xml:space="preserve"><value>Efficient Construction</value></data>
+  <data name="Phase2.Empire.055" xml:space="preserve"><value>Upgrade costs −2% per rank (up to −6%).</value></data>
+  <data name="Phase2.Empire.056" xml:space="preserve"><value>Night Shift</value></data>
+  <data name="Phase2.Empire.057" xml:space="preserve"><value>Offline storage +2 hours per rank (up to 12 hours).</value></data>
+  <data name="Phase2.Empire.058" xml:space="preserve"><value>Compound Growth</value></data>
+  <data name="Phase2.Empire.059" xml:space="preserve"><value>+8% per rank at each room level 50 / 100 / 150 milestone.</value></data>
+  <data name="Phase2.Empire.060" xml:space="preserve"><value>Executive Automation</value></data>
+  <data name="Phase2.Empire.061" xml:space="preserve"><value>Unlock automatic upgrades; requires Executive Offices to operate.</value></data>
+  <data name="Phase2.Empire.062" xml:space="preserve"><value>Board of Directors</value></data>
+  <data name="Phase2.Empire.063" xml:space="preserve"><value>One additional active manager slot.</value></data>
+  <data name="Phase2.Empire.064" xml:space="preserve"><value>Table Authority</value></data>
+  <data name="Phase2.Empire.065" xml:space="preserve"><value>Table departments +8% production per rank.</value></data>
+  <data name="Phase2.Empire.066" xml:space="preserve"><value>Mechanical Empire</value></data>
+  <data name="Phase2.Empire.067" xml:space="preserve"><value>Slot departments +8% production per rank.</value></data>
+  <data name="Phase2.Empire.068" xml:space="preserve"><value>High Roller Network</value></data>
+  <data name="Phase2.Empire.069" xml:space="preserve"><value>VIP / High Limit production +5% per rank for each 50 room levels.</value></data>
+  <data name="Phase2.Empire.070" xml:space="preserve"><value>Stay Another Night</value></data>
+  <data name="Phase2.Empire.071" xml:space="preserve"><value>Hospitality and entertainment production +8% per rank.</value></data>
+  <data name="Phase2.Empire.072" xml:space="preserve"><value>Entertainment at level 50 gives gaming +5% per rank.</value></data>
+  <data name="Phase2.Empire.073" xml:space="preserve"><value>Premium Guests</value></data>
+  <data name="Phase2.Empire.074" xml:space="preserve"><value>Owner rate +5% and reserve +40 cash per rank, globally bounded.</value></data>
+  <data name="Phase2.Empire.075" xml:space="preserve"><value>Operations</value></data>
+  <data name="Phase2.Empire.076" xml:space="preserve"><value>Grand Entrance</value></data>
+  <data name="Phase2.Empire.077" xml:space="preserve"><value>Permanent +5% estate production. Requires 250 total room levels.</value></data>
+  <data name="Phase2.Empire.078" xml:space="preserve"><value>Adds $160 to the shared owner reserve; caps at $640 across the empire.</value></data>
+  <data name="Phase2.Empire.079" xml:space="preserve"><value>Luxury Atrium</value></data>
+  <data name="Phase2.Empire.080" xml:space="preserve"><value>Hospitality +20%; Bar and Dining must both reach level 50.</value></data>
+  <data name="Phase2.Empire.081" xml:space="preserve"><value>High Roller Elevator</value></data>
+  <data name="Phase2.Empire.082" xml:space="preserve"><value>VIP / High Limit +10% and stronger High Roller Circuit.</value></data>
+  <data name="Phase2.Empire.083" xml:space="preserve"><value>Executive Offices</value></data>
+  <data name="Phase2.Empire.084" xml:space="preserve"><value>Unlock one active manager; research can unlock automation.</value></data>
+  <data name="Phase2.Empire.085" xml:space="preserve"><value>Convention Center</value></data>
+  <data name="Phase2.Empire.086" xml:space="preserve"><value>Event production boosts are 25% stronger. Grand Stage level 100.</value></data>
+  <data name="Phase2.Empire.087" xml:space="preserve"><value>Penthouse Suites</value></data>
+  <data name="Phase2.Empire.088" xml:space="preserve"><value>VIP +15% and owner rate +5%. VIP Lounge level 100.</value></data>
+  <data name="Phase2.Empire.089" xml:space="preserve"><value>Resort Wing</value></data>
+  <data name="Phase2.Empire.090" xml:space="preserve"><value>Permanently opens the five-room Resort Floor. Complete the Grand Entrance first.</value></data>
+  <data name="Phase2.Empire.091" xml:space="preserve"><value>Skyline Property Office</value></data>
+  <data name="Phase2.Empire.092" xml:space="preserve"><value>Authorizes the purchase of additional independent properties.</value></data>
+  <data name="Phase2.Empire.093" xml:space="preserve"><value>Floor Manager</value></data>
+  <data name="Phase2.Empire.094" xml:space="preserve"><value>Assigned department +15% production.</value></data>
+  <data name="Phase2.Empire.095" xml:space="preserve"><value>High Roller Host</value></data>
+  <data name="Phase2.Empire.096" xml:space="preserve"><value>VIP / High Limit departments +12% production.</value></data>
+  <data name="Phase2.Empire.097" xml:space="preserve"><value>Entertainment Director</value></data>
+  <data name="Phase2.Empire.098" xml:space="preserve"><value>Night Out / Resort synergies are 25% stronger.</value></data>
+  <data name="Phase2.Empire.099" xml:space="preserve"><value>Operations Director</value></data>
+  <data name="Phase2.Empire.100" xml:space="preserve"><value>Assigned department upgrade costs −8%.</value></data>
+  <data name="Phase2.Empire.101" xml:space="preserve"><value>Blackjack Championship</value></data>
+  <data name="Phase2.Empire.102" xml:space="preserve"><value>Table departments host a half-hour tournament. Play 10 Blackjack rounds for an encore.</value></data>
+  <data name="Phase2.Empire.103" xml:space="preserve"><value>Midnight Dice League</value></data>
+  <data name="Phase2.Empire.104" xml:space="preserve"><value>A community dice night for tables and entertainment. Finish a dice game for an encore.</value></data>
+  <data name="Phase2.Empire.105" xml:space="preserve"><value>Neon Nights</value></data>
+  <data name="Phase2.Empire.106" xml:space="preserve"><value>High Limit Slots +75%, other VIP rooms +25%. Play 25 Neon Vault spins for an encore.</value></data>
+  <data name="Phase2.Empire.107" xml:space="preserve"><value>Haunted Halloween</value></data>
+  <data name="Phase2.Empire.108" xml:space="preserve"><value>A theatrical evening for hospitality and entertainment. Play 20 Manor spins for an encore.</value></data>
+  <data name="Phase2.Empire.109" xml:space="preserve"><value>Quiet Sunday</value></data>
+  <data name="Phase2.Empire.110" xml:space="preserve"><value>A relaxed evening for hospitality. Complete a Sudoku for an encore.</value></data>
+  <data name="Phase2.Empire.111" xml:space="preserve"><value>Tourist Weekend</value></data>
+  <data name="Phase2.Empire.112" xml:space="preserve"><value>Produce 5M Hospitality credits at your own pace.</value></data>
+  <data name="Phase2.Empire.113" xml:space="preserve"><value>Hospitality +15% for 2 production hours</value></data>
+  <data name="Phase2.Empire.114" xml:space="preserve"><value>High Roller Invitation</value></data>
+  <data name="Phase2.Empire.115" xml:space="preserve"><value>Produce 20M VIP credits; the brief remains until completed.</value></data>
+  <data name="Phase2.Empire.116" xml:space="preserve"><value>VIP +15% for 2 production hours</value></data>
+  <data name="Phase2.Empire.117" xml:space="preserve"><value>Expansion Drive</value></data>
+  <data name="Phase2.Empire.118" xml:space="preserve"><value>Purchase 50 room levels after accepting this brief.</value></data>
+  <data name="Phase2.Empire.119" xml:space="preserve"><value>Construction −5% for 2 production hours</value></data>
 </root>
