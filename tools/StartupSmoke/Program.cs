@@ -549,6 +549,19 @@ internal static class Program
         Stopwatch watch = Stopwatch.StartNew();
         while (!modern.Ready && !modern.Failed && watch.Elapsed < TimeSpan.FromSeconds(18))
             await Task.Delay(150);
+        if (!modern.Ready)
+        {
+            string browserState = modern.Browser.CoreWebView2 is null ? "CoreWebView2 not initialized"
+                : await modern.Browser.CoreWebView2.ExecuteScriptAsync(
+                    "JSON.stringify({state:document.readyState, url:location.href,"
+                    + "title:document.title, html:document.body?.innerHTML?.slice(0,600),"
+                    + "react:!!document.querySelector('.casino-lobby-shell'),"
+                    + "scripts:[...document.querySelectorAll('script')].map(s=>s.src),"
+                    + "resourceCount:performance.getEntriesByType('resource').length,"
+                    + "webview:!!window.chrome?.webview})");
+            File.WriteAllText(Path.Combine(output, "modern-lobby-browser-diagnostic.txt"), browserState);
+            Console.Error.WriteLine("Lobby browser diagnostic: " + browserState);
+        }
         Require(modern.Ready && modern.IsVisible && modern.Browser.CoreWebView2 is not null,
             "Modern lobby failed to replace the WPF fallback. Ready=" + modern.Ready
             + ", Failed=" + modern.Failed + ", Reason=" + (modern.FailureReason ?? "no ready signal")
