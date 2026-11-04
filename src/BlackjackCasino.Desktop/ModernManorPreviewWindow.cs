@@ -88,6 +88,12 @@ internal sealed class ModernManorPreviewWindow : Window
                 if (!ManorPreviewProtocol.IsTrustedSource(args.Uri))
                     args.Cancel = true;
             };
+            core.NavigationCompleted += (_, args) =>
+            {
+                if (closed || args.IsSuccess) return;
+                notice.Text = "Modern Manor navigation failed: " + args.WebErrorStatus + ". The original game is unchanged.";
+                notice.Visibility = Visibility.Visible;
+            };
             core.WebMessageReceived += OnWebMessageReceived;
             browser.Source = new Uri(ManorPreviewProtocol.EntryPoint);
         }
