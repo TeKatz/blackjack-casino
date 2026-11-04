@@ -133,3 +133,10 @@ See [AGENTS.md](../AGENTS.md), [architecture](architecture.md), [Midnight Manor 
 - Ghost warnings derive exclusively from the public clue string: distant / approaching / close / candle-revealed. No hidden ghost coordinates, reward guarantees or invented risk percentages are exposed.
 - Larger map names, larger click targets and a narrow-window single-column destination layout improve tester usability. All action buttons remain disabled while awaiting a committed response.
 - Tests cover legal-only destinations, unknown clue handling and viewport-scroll bounds. Manual 125%/150%/200% Windows DPI and keyboard usability remain acceptance tasks; no unmeasured FPS improvement is claimed.
+
+### M3 sixth delivery — native DPI scaling and opt-in frame diagnostics
+
+- The retained Pixi renderer now passes the current 1–2× pixel ratio explicitly to `resize(width, height, resolution)` and listens for both host layout changes and monitor resolution media-query changes, so a move between different Windows display scales does not require recreating the game scene. Stage transforms continue to preserve the authored 960×500 logical coordinate space.
+- A tester-enabled renderer diagnostics panel samples real Pixi ticker intervals and reports observed FPS estimate, mean/p95 frame interval, frames above 16.7 ms, CSS viewport and pixel ratio. It is disabled by default, purely local, low-frequency and does not alter the game or upload telemetry.
+- With reduced motion enabled, the panel explicitly reports a stopped ticker rather than misleadingly claiming zero FPS. Samples ignore long background-tab pauses. This is **not** GPU profiling or evidence of stable 60 FPS; full session memory/VRAM and real multi-monitor hardware tests remain outstanding.
+- Pure regression tests cover layouts at 1.25×, 1.5× and 2×, unusual viewport ratios, bounded pixel ratios and non-invented measurement calculations.

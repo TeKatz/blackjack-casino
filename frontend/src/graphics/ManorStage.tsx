@@ -5,6 +5,8 @@ import { reelStops, visualIndex } from './reelTiming';
 import type { ReelSpeed } from './reelTiming';
 import { loadManorArtwork, MANOR_SYMBOL_NAMES } from './manorArtwork';
 import type { ManorSymbolName } from './manorArtwork';
+import { boundedPixelRatio, calculateCanvasLayout, summarizeFrameTimes } from './rendererDiagnostics';
+import type { RendererDiagnostics } from './rendererDiagnostics';
 
 type Props = {
   snapshot: ManorSnapshot;
@@ -14,6 +16,7 @@ type Props = {
   onSpinningChange?: (spinning: boolean) => void;
   onReelStop?: (reel: number) => void;
   onSpinPresented?: (result: ManorSnapshot) => void;
+  onDiagnostics?: (info: RendererDiagnostics) => void;
 };
 type Tile = { root: Container; backing: Graphics; artwork: Graphics; illustration: Sprite; letter: Text; name: Text; symbol: string };
 type Reel = { tiles: Tile[] };
@@ -161,7 +164,9 @@ function decorate(tile: Tile, symbol: string, winning: boolean, dim: boolean,
 }
 function createRenderer(app: Application, report: (value: boolean) => void,
   reelStop: (reel: number) => void,
-  presentedSpin: (result: ManorSnapshot) => void): Renderer {
+  presentedSpin: (result: ManorSnapshot) => void,
+  diagnostics: (samples: readonly number[]) => void,
+  monitoring: () => boolean): Renderer {
   const scene = new Container();
   app.stage.addChild(scene);
   scene.addChild(new Graphics()
@@ -254,6 +259,8 @@ function createRenderer(app: Application, report: (value: boolean) => void,
   let animation: { elapsed: number; stops: number[]; result: ManorSnapshot } | null = null;
   let speed: ReelSpeed = 'normal';
   let pulse = 0;
+  let frameSamples: number[] = [];
+  let frameWindow = 0;
   function settleColumn(r: number, result: ManorSnapshot): void {
     const wins = result.winningCells.length > 0;
     for (let row = 0; row < 4; row++) {
@@ -279,8 +286,23 @@ function createRenderer(app: Application, report: (value: boolean) => void,
     report(false);
     if (announce) presentedSpin(result);
   }
-  const frameTick = (ticker: { deltaMS: number }): void => {
+  const frameTick = (ticker: { deltaMS: number; elapsedMS: number }): void => {
     const dt = Math.min(50, ticker.deltaMS);
+    if (monitoring()) {
+      if (ticker.elapsedMS > 0 && ticker.elapsedMS <= 250) {
+        if (frameSamples.length >= 240) frameSamples.shift();
+        frameSamples.push(ticker.elapsedMS);
+        frameWindow += ticker.elapsedMS;
+      }
+      if (frameWindow >= 2400) {
+        diagnostics(frameSamples);
+        frameSamples = [];
+        frameWindow = 0;
+      }
+    } else if (frameSamples.length) {
+      frameSamples = [];
+      frameWindow = 0;
+    }
     pulse += dt * 0.0015;
     frame.alpha = 0.7 + Math.sin(pulse) * 0.25;
     for (let r = 0; r < 5; r++) {
@@ -397,17 +419,20 @@ function createRenderer(app: Application, report: (value: boolean) => void,
 
 /** Pixi canvas, masks, and 20 tile objects survive all state refreshes and spins. */
 export function ManorStage({ snapshot, spinEpoch, reducedMotion, speed,
-  onSpinningChange, onReelStop, onSpinPresented }: Props) {
+  onSpinningChange, onReelStop, onSpinPresented, onDiagnostics }: Props) {
   const holder = useRef<HTMLDivElement>(null);
   const renderer = useRef<Renderer | null>(null);
   const latest = useRef({ snapshot, spinEpoch, reducedMotion, speed });
   const changed = useRef(onSpinningChange);
   const stopCue = useRef(onReelStop);
   const presentationCue = useRef(onSpinPresented);
+  const diagnosticCue = useRef(onDiagnostics);
+  const currentSurface = useRef({ width: W, height: H, pixelRatio: 1 });
   latest.current = { snapshot, spinEpoch, reducedMotion, speed };
   changed.current = onSpinningChange;
   stopCue.current = onReelStop;
   presentationCue.current = onSpinPresented;
+  diagnosticCue.current = onDiagnostics;
   useEffect(() => {
     const host = holder.current;
     if (!host) return;
@@ -415,10 +440,19 @@ export function ManorStage({ snapshot, spinEpoch, reducedMotion, speed,
     let dead = false;
     let initialized = false;
     let observer: ResizeObserver | null = null;
+    let resolutionWatcher: MediaQueryList | null = null;
+    let resize: (() => void) | null = null;
+    const watchResolution = () => {
+      resolutionWatcher?.removeEventListener('change', watchResolution);
+      resize?.();
+      // Re-register for the *new* scaling ratio when a window switches monitors.
+      resolutionWatcher = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+      resolutionWatcher.addEventListener('change', watchResolution);
+    };
     void (async () => {
       await app.init({
         width: W, height: H, background: 0x10121c, antialias: true,
-        preference: 'webgl', resolution: Math.min(window.devicePixelRatio || 1, 2),
+        preference: 'webgl', resolution: boundedPixelRatio(window.devicePixelRatio),
         autoDensity: true,
       });
       initialized = true;
@@ -429,20 +463,30 @@ export function ManorStage({ snapshot, spinEpoch, reducedMotion, speed,
       app.canvas.setAttribute('aria-hidden', 'true');
       host.appendChild(app.canvas);
       const instance = createRenderer(app, value => changed.current?.(value),
-        reel => stopCue.current?.(reel), result => presentationCue.current?.(result));
+        reel => stopCue.current?.(reel), result => presentationCue.current?.(result),
+        samples => {
+          const bounds = currentSurface.current;
+          const info = summarizeFrameTimes(samples, bounds.width, bounds.height, bounds.pixelRatio);
+          if (info) diagnosticCue.current?.(info);
+        },
+        () => Boolean(diagnosticCue.current));
       renderer.current = instance;
-      const resize = () => {
+      resize = () => {
         if (dead) return;
-        const w = Math.max(1, host.clientWidth), h = Math.max(1, host.clientHeight);
-        app.renderer.resize(w, h);
-        const scale = Math.min(w / W, h / H);
-        app.stage.scale.set(scale);
-        app.stage.position.set((w - W * scale) / 2, (h - H * scale) / 2);
+        const bounds = calculateCanvasLayout(host.clientWidth, host.clientHeight,
+          window.devicePixelRatio);
+        currentSurface.current = {
+          width: bounds.width, height: bounds.height, pixelRatio: bounds.pixelRatio,
+        };
+        app.renderer.resize(bounds.width, bounds.height, bounds.pixelRatio);
+        app.stage.scale.set(bounds.scale);
+        app.stage.position.set(bounds.x, bounds.y);
         if (latest.current.reducedMotion) app.render();
       };
       observer = new ResizeObserver(resize);
       observer.observe(host);
-      resize();
+      window.addEventListener('resize', resize);
+      watchResolution();
       const state = latest.current;
       instance.update(state.snapshot, state.spinEpoch, state.reducedMotion, state.speed);
       // Never block the authoritative first snapshot or controls on art decoding.
@@ -455,6 +499,8 @@ export function ManorStage({ snapshot, spinEpoch, reducedMotion, speed,
     return () => {
       dead = true;
       observer?.disconnect();
+      if (resize) window.removeEventListener('resize', resize);
+      resolutionWatcher?.removeEventListener('change', watchResolution);
       renderer.current?.dispose();
       renderer.current = null;
       if (initialized) app.destroy(true, { children: true });

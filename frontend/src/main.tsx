@@ -11,6 +11,7 @@ import { ManorAudio } from './audio/manorAudio';
 import { runCue, runMoment, spinCue, spinMoment } from './graphics/manorMoments';
 import type { ManorMoment } from './graphics/manorMoments';
 import type { ReelSpeed } from './graphics/reelTiming';
+import type { RendererDiagnostics } from './graphics/rendererDiagnostics';
 import './styles.css';
 
 const embedded = Boolean(window.chrome?.webview);
@@ -37,6 +38,8 @@ function ManorApp() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [ambienceEnabled, setAmbienceEnabled] = useState(false);
   const [volume, setVolume] = useState(35);
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
+  const [renderMetrics, setRenderMetrics] = useState<RendererDiagnostics | null>(null);
   const [moment, setMoment] = useState<ManorMoment | null>(null);
   const audio = useRef<ManorAudio | null>(null);
   if (audio.current === null) audio.current = new ManorAudio();
@@ -168,7 +171,20 @@ function ManorApp() {
           <ManorStage snapshot={snapshot} reducedMotion={motionOff} speed={reelSpeed}
             spinEpoch={spinEpoch} onSpinningChange={setAnimating}
             onReelStop={index => presentation.current.onReel(index)}
-            onSpinPresented={result => presentation.current.onSpin(result)} />
+            onSpinPresented={result => presentation.current.onSpin(result)}
+            onDiagnostics={showDiagnostics ? setRenderMetrics : undefined} />
+          {showDiagnostics && (
+            <div className="render-metrics" role="status" aria-live="off">
+              <strong>RENDER DIAGNOSTICS · LOCAL ONLY</strong>
+              <span>{motionOff ? 'Ticker paused (reduced motion / animation off)' :
+                renderMetrics
+                  ? `Observed ~${renderMetrics.fpsEstimate} fps · mean ${renderMetrics.averageMs} ms · p95 ${renderMetrics.p95Ms} ms · ${renderMetrics.overBudget}/${renderMetrics.frames} frames >16.7 ms`
+                  : 'Sampling Pixi ticker frames...'}</span>
+              <small>{renderMetrics
+                ? `${renderMetrics.width} × ${renderMetrics.height} CSS px · ${renderMetrics.pixelRatio}× backing ratio`
+                : 'Measures JavaScript ticker intervals, not GPU time or a hardware benchmark.'}</small>
+            </div>
+          )}
           {moment && (
             <div className={'manor-moment ' + moment.key + (motionOff ? ' no-motion' : '')}
               role="status" aria-live="polite">
@@ -336,6 +352,15 @@ function ManorApp() {
               <p className="display-hint">Offline audio starts only after your first action.
                 Muting never affects game results or your saved state.</p>
             </div>
+            <label className="switch-row" htmlFor="manor-perf-diagnostics">
+              <span>Show render diagnostics</span>
+              <input type="checkbox" id="manor-perf-diagnostics"
+                checked={showDiagnostics}
+                onChange={event => {
+                  setShowDiagnostics(event.target.checked);
+                  setRenderMetrics(null);
+                }} />
+            </label>
             <label className="speed-control" htmlFor="reel-speed">Reel motion speed
               <select id="reel-speed" value={reelSpeed}
                 onChange={event => setReelSpeed(event.target.value as ReelSpeed)}>

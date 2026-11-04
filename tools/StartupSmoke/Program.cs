@@ -156,6 +156,18 @@ internal static class Program
                     "return rect.width>100&&Math.abs(rect.height/rect.width-500/960)<0.06;})()");
                 Require(canvasGeometry.Equals("true", StringComparison.OrdinalIgnoreCase),
                     "Modern Manor reel stage is stretched vertically or letterboxed.");
+                // Debug metrics are opt-in and never require a wager or touch a save.
+                string diagnosticsControl = await modernBrowser.CoreWebView2.ExecuteScriptAsync(
+                    "(()=>{const input=document.querySelector('#manor-perf-diagnostics');" +
+                    "return Boolean(input && input.type==='checkbox' && !input.checked);})()");
+                Require(diagnosticsControl.Equals("true", StringComparison.OrdinalIgnoreCase),
+                    "Modern Manor renderer diagnostics must start disabled and remain optional.");
+                string responsiveReel = await modernBrowser.CoreWebView2.ExecuteScriptAsync(
+                    "(()=>{const canvas=document.querySelector('.manor-canvas canvas');" +
+                    "if(!canvas)return false;const r=canvas.getBoundingClientRect();" +
+                    "return r.width>100&&Math.abs(r.height/r.width-500/960)<.06;})()");
+                Require(responsiveReel.Equals("true", StringComparison.OrdinalIgnoreCase),
+                    "Modern Manor canvas has the wrong aspect ratio after actual Windows layout.");
                 await Task.Delay(250);
                 await using (FileStream modernCapture = File.Create(
                     Path.Combine(output, "modern-manor-phase3.png")))

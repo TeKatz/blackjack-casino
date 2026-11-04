@@ -187,3 +187,12 @@ h1{font-family:Georgia,serif;letter-spacing:.13em;font-size:18px;margin:4px 0 0}
 .manor-map-room .map-room-zone{font-size:8px}
 @media(max-width:740px){.manor-route-chooser{padding:12px}
  .manor-route-list{grid-template-columns:1fr}.manor-map-guide{gap:10px}}
+
+/* Phase 3F: opt-in diagnostics for real-machine FPS/DPI acceptance. */
+.render-metrics{display:flex;flex-wrap:wrap;align-items:center;gap:8px 15px;padding:12px 14px;
+ background:#131d27;border:1px solid #768e9b;border-radius:9px;margin-top:8px;
+ font-size:11px;color:#d7e6ee}
+.render-metrics strong{font-size:10px;letter-spacing:.09em;color:#b2dfec}
+.render-metrics span{font-variant-numeric:tabular-nums}
+.render-metrics small{width:100%;color:#a8c3ce;font-size:10px}
+@media(max-width:740px){.render-metrics{flex-direction:column;align-items:flex-start}}
