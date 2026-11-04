@@ -49,6 +49,8 @@ public sealed class JigsawGameState
     public int PieceCount { get; set; } = 96;
     public List<JigsawPieceState> Pieces { get; set; } = [];
     public long ElapsedSeconds { get; set; }
+    // Disabled means the clock is stopped, not merely hidden.
+    public bool TimerEnabled { get; set; } = true;
     public DateTimeOffset StartedAt { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? CompletedAt { get; set; }
     public bool Completed => Pieces.Count == PieceCount && Pieces.All(x => x.Locked);
@@ -102,6 +104,7 @@ public sealed class JigsawProgressState
     public int SchemaVersion { get; set; } = Schema;
     public string SelectedMotifId { get; set; } = JigsawCatalog.Motifs[0].Id;
     public int SelectedPieceCount { get; set; } = 96;
+    public bool TimerEnabled { get; set; } = true;
     public JigsawGameState? ActiveGame { get; set; }
     public List<JigsawCompletionRecord> CompletedGames { get; set; } = [];
 
@@ -138,6 +141,9 @@ public sealed class JigsawStatistics
     public long CompletedGames { get; set; }
     public long PiecesCompleted { get; set; }
     public int LargestPuzzle { get; set; }
+    public Dictionary<int, int> CompletedBySize { get; set; } = [];
+    public Dictionary<string, int> CompletedByMotif { get; set; } = new(StringComparer.Ordinal);
+    public HashSet<string> UnlockedAchievementIds { get; set; } = new(StringComparer.Ordinal);
 
     public void Normalize()
     {
@@ -146,6 +152,14 @@ public sealed class JigsawStatistics
         CompletedGames = Math.Max(0, CompletedGames);
         PiecesCompleted = Math.Max(0, PiecesCompleted);
         LargestPuzzle = Math.Max(0, LargestPuzzle);
+        CompletedBySize ??= [];
+        CompletedByMotif ??= new(StringComparer.Ordinal);
+        UnlockedAchievementIds ??= new(StringComparer.Ordinal);
+        foreach (int key in CompletedBySize.Keys.ToArray())
+            if (!JigsawCatalog.Sizes.Any(x => x.Count == key) || CompletedBySize[key] <= 0) CompletedBySize.Remove(key);
+        foreach (string key in CompletedByMotif.Keys.ToArray())
+            if (!JigsawCatalog.Motifs.Any(x => x.Id == key) || CompletedByMotif[key] <= 0) CompletedByMotif.Remove(key);
+        UnlockedAchievementIds.RemoveWhere(id => !JigsawAchievements.All.Any(a => a.Id == id));
     }
 
     public bool Record(JigsawCompletionRecord completion)
@@ -155,6 +169,8 @@ public sealed class JigsawStatistics
         CompletedGames = checked(CompletedGames + 1);
         PiecesCompleted = checked(PiecesCompleted + completion.PieceCount);
         LargestPuzzle = Math.Max(LargestPuzzle, completion.PieceCount);
+        CompletedBySize[completion.PieceCount] = CompletedBySize.GetValueOrDefault(completion.PieceCount) + 1;
+        CompletedByMotif[completion.MotifId] = CompletedByMotif.GetValueOrDefault(completion.MotifId) + 1;
         return true;
     }
 }
@@ -168,11 +184,41 @@ public sealed class JigsawProgression(ProgressionService progression)
         _ => throw new ArgumentOutOfRangeException(nameof(pieces)),
     };
 
-    public ProgressionAward Process(JigsawCompletionRecord completion) =>
-        LoungeProgression.GrantOnce(progression,
-            () => progression.State.Jigsaw.Record(completion),
+    public ProgressionAward Process(JigsawCompletionRecord completion)
+    {
+        ArgumentNullException.ThrowIfNull(completion);
+        JigsawStatistics statistics = progression.State.Jigsaw;
+        long bonusXp = 0, bonusSeasonXp = 0, bonusCoins = 0;
+
+        ProgressionAward standard = LoungeProgression.GrantOnce(
+            progression,
+            () =>
+            {
+                if (!statistics.Record(completion)) return false;
+                foreach (JigsawAchievementDefinition achievement in JigsawAchievements.NewlyEarned(statistics))
+                {
+                    if (!statistics.UnlockedAchievementIds.Add(achievement.Id)) continue;
+                    bonusXp = checked(bonusXp + achievement.ExperienceReward);
+                    bonusSeasonXp = checked(bonusSeasonXp + achievement.SeasonExperienceReward);
+                    bonusCoins = checked(bonusCoins + achievement.CoinReward);
+                }
+                return true;
+            },
             PlayerExperience(completion.PieceCount),
             PlayerExperience(completion.PieceCount) / 2);
+        if (standard == ProgressionAward.None) return standard;
+        ProgressionAward player = progression.GrantPlayerExperience(bonusXp);
+        ProgressionAward season = progression.GrantSeasonExperience(progression.State.ActiveSeasonId, bonusSeasonXp);
+        progression.State.Coins = checked(progression.State.Coins + bonusCoins);
+        return new ProgressionAward(
+            standard.PlayerExperience + bonusXp,
+            standard.SeasonExperience + bonusSeasonXp,
+            standard.LevelsGained.Concat(player.LevelsGained).ToArray(),
+            standard.SeasonTiersGained + season.SeasonTiersGained,
+            standard.CoinsEarned + player.CoinsEarned + season.CoinsEarned + bonusCoins,
+            standard.CosmeticsUnlocked.Concat(player.CosmeticsUnlocked).Concat(season.CosmeticsUnlocked).ToArray(),
+            standard.BankrollEarned + player.BankrollEarned + season.BankrollEarned);
+    }
 }
 
 public static class JigsawGame
