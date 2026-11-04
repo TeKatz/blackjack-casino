@@ -1,6 +1,6 @@
 # Architecture
 
-The repository is split into UI-independent domain logic, desktop presentation and update/install components. Blackjack, slots, progression and persistence share infrastructure where appropriate, but game-specific rules and statistics remain separated.
+The repository is currently split into UI-independent domain logic, WPF desktop presentation and update/install components. Blackjack, slots, progression and persistence share infrastructure where appropriate, but game-specific rules and statistics remain separated.
 
 ## `BlackjackCasino.Core`
 
@@ -10,6 +10,7 @@ UI-independent domain logic. It owns:
 - Midnight Reels progression integration contracts;
 - Midnight Manor rules, math and session state;
 - Neon Vault rules, symbol weighting, 1,024-Ways evaluation, features and jackpot resolution;
+- Nine Lives, Midnight Dice, Jigsaw, other Chill Lounge games, Midnight Merge, Empire and adventure rules/state;
 - player progression, levels, Prestige, Season state, challenges and cosmetic catalog metadata;
 - normalized statistics models and compatibility helpers.
 
@@ -50,7 +51,8 @@ Global progression is shared across casino modes, while verified per-game statis
 - Blackjack;
 - Midnight Reels;
 - Midnight Manor;
-- Neon Vault.
+- Neon Vault;
+- Nine Lives and additional typed game-mode statistics/achievements where supported.
 
 Older saves created before Reels and Neon Vault were distinguishable may contain pooled slot history. That history is preserved as legacy/earlier-slot history for totals instead of being guessed into one modern slot bucket. See [progression tracking migration](progression-tracking-migration.md).
 
@@ -115,7 +117,7 @@ GitHub excludes prereleases from `latest`, so Development cannot accidentally be
 
 ### Development
 
-`.github/workflows/development-release.yml` publishes successful development builds from the explicitly pinned branch, currently `feature/collectible-card-album`. Both its push trigger and job guard select that source. Builds use versions such as `0.10.1-dev.N` and replace the assets of the mutable GitHub prerelease tagged `development`.
+`.github/workflows/development-release.yml` publishes successful development builds from the explicitly pinned branch, currently `feature/casino-quality-phase-4` (as of 2026-11-04). Both its push trigger and job guard select that source. Builds use versions such as `0.10.1-dev.N` and replace the assets of the mutable GitHub prerelease tagged `development`.
 
 The client reads:
 
@@ -141,3 +143,9 @@ These checks intentionally cover both domain correctness and WPF integration bec
 ## Protocol compatibility
 
 The updater protocol is schema-versioned. `minimumUpdaterVersion` allows an old client/updater to be rejected before it consumes a future incompatible package format.
+
+## Planned modern presentation (not implemented yet)
+
+A staged move from WPF to React + TypeScript + HTML/CSS and PixiJS is planned, **starting with Midnight Manor after the active Jigsaw work ends**. The initial rendering adapter will live in the existing WPF shell via WebView2; only after every migrated mode and updater path passes acceptance would a smaller native .NET host replace WPF. The planned frontend is not allowed to generate outcomes, change the bankroll or own durable rewards. C# Core remains authoritative; any new application/bridge service must have versioned command schemas, origin validation and idempotent settlement. See [modernization roadmap](modernization-roadmap.md) and [agent working agreement](../AGENTS.md).
+
+For current session-scoped work, do not delete branches or change the Development publisher's pin. The current cumulative release branch and workflow instructions are documented in [Development delivery](development-update-delivery.md).
