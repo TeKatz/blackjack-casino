@@ -33,6 +33,10 @@ export function ManorBonusStage({ run, language, disabled, reducedMotion, onActi
   return (
     <section className={'manor-bonus-stage' + (reducedMotion ? ' no-motion' : '')}
       aria-label={t(language, 'runTitle')}>
+      <div className="bonus-scene-atmosphere" aria-hidden="true">
+        <i className="bonus-orb one"/><i className="bonus-orb two"/>
+        <i className="bonus-orb three"/>
+      </div>
       <div className="bonus-stage-header">
         <div>
           <span className="eyebrow">{t(language, 'runEyebrow')} · {t(language, 'turn')} {run.turn} / 24</span>
@@ -58,9 +62,12 @@ export function ManorBonusStage({ run, language, disabled, reducedMotion, onActi
       ) : (
         <div className="bonus-stage-content">
           <div className="bonus-story">
-            <ManorRoomScene run={run} language={language} reducedMotion={reducedMotion} />
-            <p className="bonus-message" role="status">{localizeRunText(run.message, language)}</p>
-            <p className={'bonus-ghost-clue ' + threat}>{localizeRunText(run.ghostClue, language)}</p>
+            <ManorRoomScene key={run.playerRoom + '-' + run.turn}
+              run={run} language={language} reducedMotion={reducedMotion} />
+            <p className="bonus-message" key={'message-' + run.turn} role="status">
+              <span aria-hidden="true">✦</span>{localizeRunText(run.message, language)}</p>
+            <p className={'bonus-ghost-clue ' + threat} key={'clue-' + run.turn}>
+              <span aria-hidden="true">☾</span>{localizeRunText(run.ghostClue, language)}</p>
           </div>
           <div className="bonus-choices" role="group" aria-label={t(language, 'chooseRoom')}>
             <strong className="bonus-choices-title">{t(language, 'chooseRoom')}</strong>

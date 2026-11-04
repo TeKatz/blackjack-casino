@@ -24,6 +24,8 @@ export function ManorRoomScene({ run, language, reducedMotion }: {
     <figure className={'manor-vignette area-' + view.area.toLowerCase() +
       ' threat-' + view.threat + (reducedMotion ? ' still' : '')}
       aria-label={t(language,'currentRoom') + ': ' + localizeRoom(view.name,language)}>
+      <div className="room-parallax" aria-hidden="true"><i/><i/><i/></div>
+      <div className="room-lightfall" aria-hidden="true"/>
       <svg className="manor-vignette-svg" viewBox="0 0 960 280" aria-hidden="true"
         preserveAspectRatio="xMidYMid slice">
         <defs>

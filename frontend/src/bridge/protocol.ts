@@ -183,7 +183,7 @@ function nextId(): string {
   return window.crypto?.randomUUID?.() ?? 'local-' + String(++counter);
 }
 
-export function sendCommand(type: 'client.ready' | 'snapshot.request' | 'ui.close'): string {
+export function sendCommand(type: 'client.ready' | 'snapshot.request' | 'ui.close' | 'ui.ready'): string {
   const requestId = nextId();
   window.chrome?.webview?.postMessage({ protocolVersion: 2, type, requestId });
   return requestId;
