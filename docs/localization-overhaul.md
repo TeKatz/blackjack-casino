@@ -17,8 +17,14 @@ channel continues to use the existing release manifest URL and publisher.
 ## Phase 2 — gameplay and casino management
 - Midnight Dice, Midnight Reels, Midnight Manor, Neon Vault and Nine Lives;
   also Midnight Merge, Solitaire, Sudoku, Memory, Word Search UI and Empire.
-- Localize XAML, runtime labels, scoring, errors, instructions, tooltips,
-  menus and accessibility names; extend strict CI coverage per completed module.
+- The five game XAML screens have explicit de-DE resource coverage and now
+  participate in the strict `--strict-shell` gate. Phase-2 runtime C# modules
+  are inventoried separately because not all dynamic copies are localized yet.
+- The phase-2 resource catalog covers major gameplay prompts, memory and
+  lounge copy, Empire rooms, properties, research, managers and contracts.
+  Runtime-composed scores and counters use narrowly scoped German patterns.
+- Continue migrating the reported dynamic C# strings and verify live game
+  screens at multiple DPI/window sizes before treating phase 2 as complete.
 - Preserve all gameplay IDs, save schemas, visual assets, rules and payouts.
 
 ## Phase 3 — large content catalogs and full acceptance

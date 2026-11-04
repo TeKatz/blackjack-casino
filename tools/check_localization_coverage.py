@@ -24,6 +24,22 @@ PHASE1_XAML = {
     "MainWindow.xaml",
     "Presentation/CasinoWindow.xaml",
 }
+PHASE2_XAML = {
+    "KniffelView.xaml",
+    "SlotMachineWindow.xaml",
+    "ManorWindow.xaml",
+    "NeonVaultWindow.xaml",
+    "NineLivesWindow.xaml",
+}
+PHASE2_CODE_AUDIT = {
+    "KniffelSetupView.cs", "KniffelView.xaml.cs", "KniffelMatchResultView.cs",
+    "SlotMachineWindow.xaml.cs", "ManorWindow.xaml.cs",
+    "NeonVaultWindow.xaml.cs", "NineLivesWindow.xaml.cs",
+    "MemoryLoungeModule.cs", "MemoryLoungeVisualModule.cs",
+    "SolitaireLoungeModule.cs", "WordSearchLoungeModule.cs",
+    "SudokuPremiumMenu.cs", "EmpireView.cs", "EmpireManagementView.cs",
+    "EmpireManagementView.Research.cs", "EmpireView.Intelligence.cs",
+}
 PHASE1_CODE = {
     "StartupWelcomeWindow.cs",
     "PlayerProfileWindow.cs",
@@ -110,18 +126,27 @@ def story_debt(keys: set[str]) -> dict[str, dict[str, int]]:
 def audit(strict: bool) -> int:
     values, keys = resource_values()
     shell_gaps = []
+    phase2_xaml_gaps = []
     legacy_xaml = {}
     for path in sorted(DESKTOP.rglob("*.xaml")):
         rel = path.relative_to(DESKTOP).as_posix()
         gaps = xaml_missing(path, values)
         if rel in PHASE1_XAML:
             shell_gaps.extend({"file": rel, **gap} for gap in gaps)
+        elif rel in PHASE2_XAML:
+            phase2_xaml_gaps.extend({"file": rel, **gap} for gap in gaps)
         elif gaps:
             legacy_xaml[rel] = len(gaps)
 
     for rel in sorted(PHASE1_CODE):
         for gap in source_missing(DESKTOP / rel, values):
             shell_gaps.append({"file": rel, **gap})
+
+    phase2_code_gaps = {
+        rel: len(gaps)
+        for rel in sorted(PHASE2_CODE_AUDIT)
+        if (gaps := source_missing(DESKTOP / rel, values))
+    }
 
     challenges = CHALLENGE.findall((CORE / "ChallengeCatalog.cs").read_text(encoding="utf-8"))
     challenges_missing = sum(
@@ -134,6 +159,8 @@ def audit(strict: bool) -> int:
 
     report = {
         "phase1ShellMissing": shell_gaps,
+        "phase2GameXamlMissing": phase2_xaml_gaps,
+        "phase2RuntimeSourceCandidates": phase2_code_gaps,
         "legacyXamlUnmappedByFile": legacy_xaml,
         "challengeEntries": len(challenges),
         "challengesMissingNameOrDescription": challenges_missing,
@@ -143,17 +170,20 @@ def audit(strict: bool) -> int:
         "note": "Unmapped is an audit candidate, not always an untranslated visible string.",
     }
     print(json.dumps(report, ensure_ascii=False, indent=2))
-    if strict and shell_gaps:
-        print(f"FAIL: {len(shell_gaps)} unlocalized Phase-1 shell literals.", file=sys.stderr)
+    if strict and (shell_gaps or phase2_xaml_gaps):
+        print(f"FAIL: {len(shell_gaps)} unlocalized shell and "
+              f"{len(phase2_xaml_gaps)} unlocalized Phase-2 game XAML literals.",
+              file=sys.stderr)
         return 1
-    print("PASS: Phase-1 shell coverage. Remaining game and story debt is reported above.")
+    print("PASS: migrated shell and Phase-2 game XAML coverage. "
+          "Runtime and remaining content debt is reported above.")
     return 0
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--strict-shell", action="store_true",
-                        help="Fail CI for unmapped literals in migrated shell surfaces")
+                        help="Fail CI for unmapped literals in migrated shell and Phase-2 game XAML")
     args = parser.parse_args()
     return audit(args.strict_shell)
 
