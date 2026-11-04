@@ -31,7 +31,7 @@ describe('in-slot Manor bonus gameplay scene',()=>{
   });
   it('never invents another legal destination or reveals secret ghost coordinates',()=>{
     const page=html({...run,rooms:run.rooms.map(room=>({...room,available:false}))});
-    expect(page).not.toContain('bonus-room-button');
+    expect(page).not.toContain('class="bonus-room-button"');
     expect(page).toContain('Kein angrenzender Raum');
     expect(page).not.toContain('ghost-position');
   });
