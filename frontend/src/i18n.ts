@@ -267,7 +267,7 @@ export function localizeRunText(value: string, language: ManorLanguage): string 
     return 'Die Kerze zeigt ihre Position für einen Zug durch die Wände.';
   if (value === 'The night closes in. Your checkpoint is secured.')
     return 'Die Nacht holt dich ein. Dein Kontrollpunkt ist gesichert.';
-  const entering = /^You enter (.+)\.(.*)$/.exec(value);
+  const entering = /^You enter (.+?)\.(.*)$/.exec(value);
   if (entering) {
     let suffix = entering[2].replace('Checkpoint secured.', 'Kontrollpunkt gesichert.')
       .replace('Key found.', 'Schlüssel gefunden.')
