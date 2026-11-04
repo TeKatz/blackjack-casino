@@ -2,6 +2,7 @@ using System.IO;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media.Animation;
 using System.Windows.Media;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.Wpf;
@@ -19,6 +20,11 @@ internal sealed class ModernManorPreviewWindow : Window
 
     private readonly WebView2 browser=new();
     private readonly TextBlock notice;
+    private readonly Border splash;
+    private readonly BackgroundMusic soundtrack=new(Soundtrack.Manor);
+    private readonly bool musicEnabled;
+    private readonly double musicVolume;
+    private bool surfaceReady;
     private readonly ManorModernGameService game;
     private bool initialized;
     private bool closed;
@@ -28,6 +34,8 @@ internal sealed class ModernManorPreviewWindow : Window
     {
         ArgumentNullException.ThrowIfNull(controller);
         game=new ManorModernGameService(controller);
+        musicEnabled=controller.Preferences.MusicEnabled && controller.Preferences.Presentation("midnight-manor").MusicEnabled;
+        musicVolume=controller.Preferences.MusicVolume;
         Title="Midnight Manor";
         Width=1360;
         Height=870;
@@ -38,22 +46,63 @@ internal sealed class ModernManorPreviewWindow : Window
         var root=new Grid { Background=Background };
         notice=new TextBlock
         {
-            Text="Loading Midnight Manor…",
-            FontSize=17,
-            Foreground=Brushes.Bisque,
-            TextWrapping=TextWrapping.Wrap,
+            Text="The house is stirring…",
+            FontSize=16,
+            Foreground=new SolidColorBrush(Color.FromRgb(209,190,169)),
+            TextAlignment=TextAlignment.Center,
+            Margin=new Thickness(0,20,0,0),
+        };
+        var splashCopy=new StackPanel
+        {
             HorizontalAlignment=HorizontalAlignment.Center,
             VerticalAlignment=VerticalAlignment.Center,
-            Margin=new Thickness(40),
-            Visibility=Visibility.Collapsed,
+            MaxWidth=660,
+            Margin=new Thickness(30),
+        };
+        splashCopy.Children.Add(new TextBlock
+        {
+            Text="☾",
+            FontFamily=new FontFamily("Georgia"),
+            FontSize=72,
+            Foreground=new SolidColorBrush(Color.FromRgb(214,173,114)),
+            HorizontalAlignment=HorizontalAlignment.Center,
+        });
+        splashCopy.Children.Add(new TextBlock
+        {
+            Text="THE MIDNIGHT CLUB",
+            FontSize=12,
+            FontWeight=FontWeights.Bold,
+            CharacterSpacing=180,
+            TextAlignment=TextAlignment.Center,
+            Foreground=new SolidColorBrush(Color.FromRgb(189,157,119)),
+            Margin=new Thickness(0,10,0,8),
+        });
+        splashCopy.Children.Add(new TextBlock
+        {
+            Text="MIDNIGHT MANOR",
+            FontFamily=new FontFamily("Georgia"),
+            FontSize=44,
+            TextAlignment=TextAlignment.Center,
+            Foreground=new SolidColorBrush(Color.FromRgb(246,220,172)),
+        });
+        splashCopy.Children.Add(notice);
+        splash=new Border
+        {
+            Background=new LinearGradientBrush(
+                Color.FromRgb(39,29,44),Color.FromRgb(10,15,25),95),
+            Child=splashCopy,
+            Visibility=Visibility.Visible,
+            BorderBrush=new SolidColorBrush(Color.FromRgb(125,94,78)),
+            BorderThickness=new Thickness(2),
         };
         root.Children.Add(browser);
-        root.Children.Add(notice);
+        root.Children.Add(splash);
         Content=root;
         browser.Loaded+=Browser_Loaded;
         Closed+=(_,_)=>
         {
             closed=true;
+            soundtrack.Dispose();
             browser.Dispose();
         };
     }
@@ -62,6 +111,7 @@ internal sealed class ModernManorPreviewWindow : Window
     {
         if(initialized || closed) return;
         initialized=true;
+        soundtrack.Start(musicEnabled,musicVolume);
         try
         {
             if(!IsAvailable)
@@ -89,8 +139,7 @@ internal sealed class ModernManorPreviewWindow : Window
             core.NavigationCompleted+=(_,args)=>
             {
                 if(closed || args.IsSuccess) return;
-                notice.Text="Midnight Manor failed to load: "+args.WebErrorStatus+". Reinstall the Development update if this persists.";
-                notice.Visibility=Visibility.Visible;
+                ShowStartupError("Midnight Manor failed to load: "+args.WebErrorStatus+". Reinstall the Development update if this persists.");
             };
             core.WebMessageReceived+=OnWebMessageReceived;
             browser.Source=new Uri(ManorPreviewProtocol.EntryPoint);
@@ -98,9 +147,27 @@ internal sealed class ModernManorPreviewWindow : Window
         catch(Exception ex) when(ex is FileNotFoundException or IOException or UnauthorizedAccessException
             or InvalidOperationException or System.Runtime.InteropServices.COMException)
         {
-            notice.Text="Midnight Manor could not start. Please check the Development installation.\n\n"+ex.Message;
-            notice.Visibility=Visibility.Visible;
+            ShowStartupError("Midnight Manor could not start. Please check the Development installation.\n\n"+ex.Message);
         }
+    }
+
+    private void ShowStartupError(string message)
+    {
+        splash.BeginAnimation(OpacityProperty,null);
+        splash.Opacity=1;
+        splash.Visibility=Visibility.Visible;
+        notice.Text=message;
+        notice.TextWrapping=TextWrapping.Wrap;
+    }
+
+    private void RevealGame()
+    {
+        if(surfaceReady || closed) return;
+        surfaceReady=true;
+        var fade=new DoubleAnimation(1,0,TimeSpan.FromMilliseconds(360))
+        { EasingFunction=new CubicEase { EasingMode=EasingMode.EaseOut } };
+        fade.Completed+=(_,_)=>{ if(!closed) splash.Visibility=Visibility.Collapsed; };
+        splash.BeginAnimation(OpacityProperty,fade);
     }
 
     private void OnWebMessageReceived(object? sender,CoreWebView2WebMessageReceivedEventArgs args)
@@ -109,6 +176,11 @@ internal sealed class ModernManorPreviewWindow : Window
             args.Source,args.WebMessageAsJson,out ManorPreviewProtocol.Command? command) || command is null)
             return;
 
+        if(command.Type=="ui.ready")
+        {
+            RevealGame();
+            return;
+        }
         if(command.Type=="ui.close")
         {
             Close();

@@ -27,6 +27,16 @@ public sealed class ManorPreviewProtocolTests
         Assert.Equal("spin.paid",command!.Type);
         Assert.Equal(0,command.ExpectedRevision);
         Assert.Equal(25m,command.Bet);
+        foreach(string highBet in new[]{"2500","5000"})
+        {
+            Assert.True(ManorPreviewProtocol.TryParseCommand(url,
+                "{\\"protocolVersion\\":2,\\"type\\":\\"spin.paid\\",\\"requestId\\":\\"highBet\\",\\"expectedRevision\\":\\"0\\",\\"bet\\":\\""+highBet+"\\"}",
+                out var highCommand));
+            Assert.Equal(decimal.Parse(highBet),highCommand!.Bet);
+        }
+        Assert.True(ManorPreviewProtocol.TryParseCommand(
+            url,"""{"protocolVersion":2,"type":"ui.ready","requestId":"surface"}""",out var ready));
+        Assert.Equal("ui.ready",ready!.Type);
 
         Assert.True(ManorPreviewProtocol.TryParseCommand(
             url,"""{"protocolVersion":2,"type":"run.move","requestId":"room_1","expectedRevision":"17","room":4}""",out var move));
@@ -39,7 +49,7 @@ public sealed class ManorPreviewProtocolTests
             """{"protocolVersion":2,"type":"spin.paid","requestId":"x","bet":"25"}""",
             """{"protocolVersion":2,"type":"spin.paid","requestId":"x","expectedRevision":"-1","bet":"25"}""",
             """{"protocolVersion":2,"type":"spin.paid","requestId":"x","expectedRevision":"0","bet":"1.5"}""",
-            """{"protocolVersion":2,"type":"spin.paid","requestId":"x","expectedRevision":"0","bet":"1001"}""",
+            """{"protocolVersion":2,"type":"spin.paid","requestId":"x","expectedRevision":"0","bet":"5001"}""",
             """{"protocolVersion":2,"type":"run.move","requestId":"x","expectedRevision":"0","room":17}""",
             """{"protocolVersion":2,"type":"run.move","requestId":"x","expectedRevision":"0","room":"4"}""",
             """{"protocolVersion":2,"type":"roulette.placeBet","requestId":"x","expectedRevision":"0"}""",

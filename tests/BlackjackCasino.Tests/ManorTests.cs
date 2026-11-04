@@ -52,7 +52,7 @@ public sealed class ManorTests
     [Fact]
     public void EveryStopAndStakeBoundaryIsValidatedBeforeDebit()
     {
-        foreach(decimal bet in new[]{0m,0.9m,1.01m,1001m})
+        foreach(decimal bet in new[]{0m,0.9m,1.01m,5001m})
         {
             var state=new ManorSessionState {Bankroll=1_000};
             Assert.Throws<ArgumentOutOfRangeException>(()=>new ManorSession(state,_=>throw new Exception("No draw")).Start(bet));
@@ -68,6 +68,20 @@ public sealed class ManorTests
         Assert.Throws<InvalidOperationException>(()=>new ManorSession(tooPoor,_=>throw new Exception()).Start(25));
         var overflow=new ManorSessionState {Bankroll=decimal.MaxValue};
         Assert.Throws<OverflowException>(()=>new ManorSession(overflow).Start(1));
+    }
+
+    [Theory]
+    [InlineData(2_500)]
+    [InlineData(5_000)]
+    public void HighManorStakesUseExistingEngineAndDebitExactlyOnce(int stake)
+    {
+        var state=new ManorSessionState { Bankroll=10_000m };
+        var machine=new ManorSession(state,_=>0);
+        ManorSpin spin=machine.Start(stake);
+        Assert.Equal(stake,state.Bet);
+        Assert.Equal(10_000m-stake+spin.Payout,state.Bankroll);
+        Assert.Equal(stake,state.Statistics.TotalWagered);
+        Assert.Equal(1,state.Statistics.PaidSpins);
     }
 
     [Theory]

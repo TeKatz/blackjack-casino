@@ -68,7 +68,7 @@ internal static class ManorPreviewProtocol
                 || id.Any(c=>!char.IsAsciiLetterOrDigit(c) && c is not ('-' or '_')))
                 return false;
 
-            if(name is "client.ready" or "snapshot.request" or "ui.close")
+            if(name is "client.ready" or "snapshot.request" or "ui.close" or "ui.ready")
             {
                 command=new(name,id);
                 return true;
