@@ -310,4 +310,71 @@ Anwesenregeln: Der Geist folgt den kürzesten Wegen, auch durch verschlossene T�
   <data name="Phase2.Static.119" xml:space="preserve"><value>Auf dieser Linie liegt keines der gesuchten Wörter. Such weiter.</value></data>
   <data name="Phase2.Static.120" xml:space="preserve"><value>Alle Wörter wurden bereits gefunden.</value></data>
   <data name="Phase2.Static.121" xml:space="preserve"><value>Ziehe in beliebiger Richtung über ein gesuchtes Wort.</value></data>
+  <data name="Phase2.Static.122" xml:space="preserve"><value>Dein Casino arbeitet weiter. Wähle einen Raum, um ihn zu eröffnen oder auszubauen.</value></data>
+  <data name="Phase2.Static.123" xml:space="preserve"><value>Geld abholen</value></data>
+  <data name="Phase2.Static.124" xml:space="preserve"><value>Vollständig ausgebaut</value></data>
+  <data name="Phase2.Static.125" xml:space="preserve"><value>Prestige noch nicht beansprucht</value></data>
+  <data name="Phase2.Static.126" xml:space="preserve"><value>PRESTIGE GESPERRT</value></data>
+  <data name="Phase2.Static.127" xml:space="preserve"><value>WILLKOMMEN ZURÜCK, BOSS</value></data>
+  <data name="Phase2.Static.128" xml:space="preserve"><value>Das Casino hat weitergearbeitet.</value></data>
+  <data name="Phase2.Static.129" xml:space="preserve"><value>Offline für </value></data>
+  <data name="Phase2.Static.130" xml:space="preserve"><value>AUSGEWÄHLTES ANWESEN · RAUMEINNAHMEN</value></data>
+  <data name="Phase2.Static.131" xml:space="preserve"><value>Die Offline-Produktion hat das </value></data>
+  <data name="Phase2.Static.132" xml:space="preserve"><value>EINSAMMELN &amp; FORTFAHREN</value></data>
+  <data name="Phase2.Static.133" xml:space="preserve"><value>Änderungen werden sofort gespeichert. Alle Boni gelten nur innerhalb des Empire-Modus.</value></data>
+  <data name="Phase2.Static.134" xml:space="preserve"><value>← Anwesenübersicht</value></data>
+  <data name="Phase2.Static.135" xml:space="preserve"><value>Projekte &amp; Immobilien</value></data>
+  <data name="Phase2.Static.136" xml:space="preserve"><value>Alle Stufen abgeschlossen</value></data>
+  <data name="Phase2.Static.137" xml:space="preserve"><value>ABGESCHLOSSEN · DAUERHAFT</value></data>
+  <data name="Phase2.Static.138" xml:space="preserve"><value>Deaktivieren</value></data>
+  <data name="Phase2.Static.139" xml:space="preserve"><value>Automatische Ausbauten aktivieren</value></data>
+  <data name="Phase2.Static.140" xml:space="preserve"><value>Prioritätswarteschlange</value></data>
+  <data name="Phase2.Static.141" xml:space="preserve"><value>Wird im Prioritätenmodus verwendet. Wähle eine Abteilung, um sie zu verschieben oder zu entfernen.</value></data>
+  <data name="Phase2.Static.142" xml:space="preserve"><value>Nach oben</value></data>
+  <data name="Phase2.Static.143" xml:space="preserve"><value>Nach unten</value></data>
+  <data name="Phase2.Static.144" xml:space="preserve"><value>Automatik speichern</value></data>
+  <data name="Phase2.Static.145" xml:space="preserve"><value>Gib gültige Zahlen für Reserve, Budget und Zielstufe ein.</value></data>
+  <data name="Phase2.Static.146" xml:space="preserve"><value>Automatik bereit · Entscheidungen alle 30 Produktionssekunden.</value></data>
+  <data name="Phase2.Static.147" xml:space="preserve"><value>Gesperrt · baue die Geschäftsführung und erforsche die Verwaltungsautomatik.</value></data>
+  <data name="Phase2.Static.148" xml:space="preserve"><value>Ereignis starten</value></data>
+  <data name="Phase2.Static.149" xml:space="preserve"><value>Erfüllten Auftrag abholen</value></data>
+  <data name="Phase2.Static.150" xml:space="preserve"><value>Auftrag annehmen</value></data>
+  <data name="Phase2.Static.151" xml:space="preserve"><value>Anwesen verwalten</value></data>
+  <data name="Phase2.Static.152" xml:space="preserve"><value>Immobilie kaufen</value></data>
+  <data name="Phase2.Static.153" xml:space="preserve"><value>Wähle einen Knoten zur Ansicht. Die Linien zeigen die genauen Voraussetzungen. Forschungen kosten Vermächtnispunkte aus dem Prestige.</value></data>
+  <data name="Phase2.Static.154" xml:space="preserve"><value>◆ VORAUSSETZUNG ERFORDERLICH</value></data>
+  <data name="Phase2.Static.155" xml:space="preserve"><value>● BEREIT ZUR FORSCHUNG</value></data>
+  <data name="Phase2.Static.156" xml:space="preserve"><value>◇ VERMÄCHTNISPUNKTE SPAREN</value></data>
+  <data name="Phase2.Static.157" xml:space="preserve"><value>Dauerhaft gemeistert</value></data>
+  <data name="Phase2.Static.158" xml:space="preserve"><value>Nächsten Rang erforschen  ✦</value></data>
+  <data name="Phase2.Static.159" xml:space="preserve"><value>Voraussetzungen nicht erfüllt</value></data>
+  <data name="Phase2.Static.160" xml:space="preserve"><value>ANWESENÜBERSICHT</value></data>
+  <data name="Phase2.Static.161" xml:space="preserve"><value>Zeige mit der Maus auf eine Aktion, um die Kosten zu sehen</value></data>
+  <data name="Phase2.Static.162" xml:space="preserve"><value>Alle eigenen Immobilien · laufende Produktion</value></data>
+  <data name="Phase2.Static.163" xml:space="preserve"><value>Wähle oben einen Raum, um Ausbau, Betrieb, Verbindungen und Leistung zu untersuchen.</value></data>
+  <data name="Phase2.Static.164" xml:space="preserve"><value>Spezialisten wechseln</value></data>
+  <data name="Phase2.Static.165" xml:space="preserve"><value>Alle Meilensteine abgeschlossen.</value></data>
+  <data name="Phase2.Static.166" xml:space="preserve"><value>Der nächste Ausbau ist bezahlbar.</value></data>
+  <data name="Phase2.Static.167" xml:space="preserve"><value>Kein aktiver Spezialist in diesem Raum.</value></data>
+  <data name="Phase2.Static.168" xml:space="preserve"><value>Automatik pausieren</value></data>
+  <data name="Phase2.Static.169" xml:space="preserve"><value>Automatik fortsetzen</value></data>
+  <data name="Phase2.Static.170" xml:space="preserve"><value>(Basis einschließlich Stufenmeilensteinen) × Prestige × Erfolge × (1 + begrenzter Strategiebonus). Die endgültige Raumproduktion ist auf 100 Qi Credits/Sek. gedeckelt. Die Automatik kauft Ausbauten und verdient Ansehen.</value></data>
+  <data name="Phase2.Static.171" xml:space="preserve"><value>Zukünftiger Verbund · Etage muss erst freigeschaltet werden</value></data>
+  <data name="Phase2.Static.172" xml:space="preserve"><value>Alle Stufen aktiv.</value></data>
+  <data name="Phase2.Static.173" xml:space="preserve"><value>Noch keine Verbünde beeinflussen diesen Raum.</value></data>
+  <data name="Phase2.Static.174" xml:space="preserve"><value>VORSCHAU / keine Baukosten</value></data>
+  <data name="Phase2.Static.175" xml:space="preserve"><value>Keine Räume entsprechen diesem Filter. Wähle Alle Räume, um die Etage zu sehen.</value></data>
+  <data name="Phase2.Static.176" xml:space="preserve"><value>Casino Empire</value></data>
+  <data name="Phase2.Static.177" xml:space="preserve"><value>Produktion aller eigenen Immobilien. Zeige mit der Maus auf eine Aktion, um die Auswirkungen zu sehen.</value></data>
+  <data name="Phase2.Static.178" xml:space="preserve"><value>Bauguthaben im ausgewählten Anwesen.</value></data>
+  <data name="Phase2.Static.179" xml:space="preserve"><value>AUSGEWÄHLTER RAUM / AKTIONEN</value></data>
+  <data name="Phase2.Static.180" xml:space="preserve"><value>IN DIESEN RAUM INVESTIEREN</value></data>
+  <data name="Phase2.Static.181" xml:space="preserve"><value>NÄCHSTER PRODUKTIONSMEILENSTEIN</value></data>
+  <data name="Phase2.Static.182" xml:space="preserve"><value>Detaillierte Casino-Empire-Statistiken öffnen</value></data>
+  <data name="Phase2.Static.183" xml:space="preserve"><value>ZURÜCK ZUM EMPIRE</value></data>
+  <data name="Phase2.Static.184" xml:space="preserve"><value>CASINO EMPIRE / STATISTIKEN</value></data>
+  <data name="Phase2.Static.185" xml:space="preserve"><value>Anwesenbuch</value></data>
+  <data name="Phase2.Static.186" xml:space="preserve"><value>Dauerhafte Leistung, aktueller Durchlauf und Raumproduktion.</value></data>
+  <data name="Phase2.Static.187" xml:space="preserve"><value>ANWESENFORTSCHRITT</value></data>
+  <data name="Phase2.Static.188" xml:space="preserve"><value>IMMOBILIEN &amp; VERMÄCHTNIS</value></data>
 </root>

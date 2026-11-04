@@ -310,4 +310,71 @@ Manor rules: the ghost follows shortest routes, including locked doors. It moves
   <data name="Phase2.Static.119" xml:space="preserve"><value>No listed word on that line. Keep looking.</value></data>
   <data name="Phase2.Static.120" xml:space="preserve"><value>Every word is already found.</value></data>
   <data name="Phase2.Static.121" xml:space="preserve"><value>Drag across a listed word in either direction.</value></data>
+  <data name="Phase2.Static.122" xml:space="preserve"><value>Your casino is working. Select a room to open or upgrade it.</value></data>
+  <data name="Phase2.Static.123" xml:space="preserve"><value>Claim cash</value></data>
+  <data name="Phase2.Static.124" xml:space="preserve"><value>Fully upgraded</value></data>
+  <data name="Phase2.Static.125" xml:space="preserve"><value>Prestige not yet claimed</value></data>
+  <data name="Phase2.Static.126" xml:space="preserve"><value>PRESTIGE LOCKED</value></data>
+  <data name="Phase2.Static.127" xml:space="preserve"><value>WELCOME BACK, BOSS</value></data>
+  <data name="Phase2.Static.128" xml:space="preserve"><value>The house kept working.</value></data>
+  <data name="Phase2.Static.129" xml:space="preserve"><value>Offline for </value></data>
+  <data name="Phase2.Static.130" xml:space="preserve"><value>SELECTED PROPERTY · ROOM EARNINGS</value></data>
+  <data name="Phase2.Static.131" xml:space="preserve"><value>Offline production reached the </value></data>
+  <data name="Phase2.Static.132" xml:space="preserve"><value>COLLECT &amp; CONTINUE</value></data>
+  <data name="Phase2.Static.133" xml:space="preserve"><value>Changes save immediately. All bonuses apply only inside Empire.</value></data>
+  <data name="Phase2.Static.134" xml:space="preserve"><value>← Estate overview</value></data>
+  <data name="Phase2.Static.135" xml:space="preserve"><value>Projects &amp; Properties</value></data>
+  <data name="Phase2.Static.136" xml:space="preserve"><value>All tiers complete</value></data>
+  <data name="Phase2.Static.137" xml:space="preserve"><value>COMPLETED · PERMANENT</value></data>
+  <data name="Phase2.Static.138" xml:space="preserve"><value>Make inactive</value></data>
+  <data name="Phase2.Static.139" xml:space="preserve"><value>Enable automatic upgrades</value></data>
+  <data name="Phase2.Static.140" xml:space="preserve"><value>Priority queue</value></data>
+  <data name="Phase2.Static.141" xml:space="preserve"><value>Used by Priority order mode. Select a department to move it or remove it.</value></data>
+  <data name="Phase2.Static.142" xml:space="preserve"><value>Move up</value></data>
+  <data name="Phase2.Static.143" xml:space="preserve"><value>Move down</value></data>
+  <data name="Phase2.Static.144" xml:space="preserve"><value>Save automation</value></data>
+  <data name="Phase2.Static.145" xml:space="preserve"><value>Enter valid numbers for reserve, budget and level target.</value></data>
+  <data name="Phase2.Static.146" xml:space="preserve"><value>Automation ready · decisions every 30 production seconds.</value></data>
+  <data name="Phase2.Static.147" xml:space="preserve"><value>Locked · build Executive Offices and research Executive Automation.</value></data>
+  <data name="Phase2.Static.148" xml:space="preserve"><value>Start event</value></data>
+  <data name="Phase2.Static.149" xml:space="preserve"><value>Claim completed contract</value></data>
+  <data name="Phase2.Static.150" xml:space="preserve"><value>Accept brief</value></data>
+  <data name="Phase2.Static.151" xml:space="preserve"><value>Manage estate</value></data>
+  <data name="Phase2.Static.152" xml:space="preserve"><value>Purchase property</value></data>
+  <data name="Phase2.Static.153" xml:space="preserve"><value>Select a node to inspect it. Lines show the exact prerequisite; research spends Legacy Points earned through prestige.</value></data>
+  <data name="Phase2.Static.154" xml:space="preserve"><value>◆ PREREQUISITE REQUIRED</value></data>
+  <data name="Phase2.Static.155" xml:space="preserve"><value>● READY TO RESEARCH</value></data>
+  <data name="Phase2.Static.156" xml:space="preserve"><value>◇ SAVE LEGACY POINTS</value></data>
+  <data name="Phase2.Static.157" xml:space="preserve"><value>Mastered permanently</value></data>
+  <data name="Phase2.Static.158" xml:space="preserve"><value>Research next rank  ✦</value></data>
+  <data name="Phase2.Static.159" xml:space="preserve"><value>Requirements not met</value></data>
+  <data name="Phase2.Static.160" xml:space="preserve"><value>ESTATE OVERVIEW</value></data>
+  <data name="Phase2.Static.161" xml:space="preserve"><value>Hover an action to preview its cost</value></data>
+  <data name="Phase2.Static.162" xml:space="preserve"><value>All owned properties · live production</value></data>
+  <data name="Phase2.Static.163" xml:space="preserve"><value>Select a room above to explore growth, operations, connections and performance.</value></data>
+  <data name="Phase2.Static.164" xml:space="preserve"><value>Change specialist</value></data>
+  <data name="Phase2.Static.165" xml:space="preserve"><value>All milestones complete.</value></data>
+  <data name="Phase2.Static.166" xml:space="preserve"><value>Next upgrade is affordable.</value></data>
+  <data name="Phase2.Static.167" xml:space="preserve"><value>No active specialist for this room.</value></data>
+  <data name="Phase2.Static.168" xml:space="preserve"><value>Pause automation</value></data>
+  <data name="Phase2.Static.169" xml:space="preserve"><value>Resume automation</value></data>
+  <data name="Phase2.Static.170" xml:space="preserve"><value>(Base including level milestones) × Prestige × Achievements × (1 + capped strategic total). Final room output is capped at 100 Qi cr/sec. Automation buys upgrades and earns reputation.</value></data>
+  <data name="Phase2.Static.171" xml:space="preserve"><value>Future circuit · floor unlock required</value></data>
+  <data name="Phase2.Static.172" xml:space="preserve"><value>All tiers active.</value></data>
+  <data name="Phase2.Static.173" xml:space="preserve"><value>No circuits affect this room yet.</value></data>
+  <data name="Phase2.Static.174" xml:space="preserve"><value>PREVIEW / no construction cost</value></data>
+  <data name="Phase2.Static.175" xml:space="preserve"><value>No rooms match this filter. Choose All rooms to see this floor.</value></data>
+  <data name="Phase2.Static.176" xml:space="preserve"><value>Casino Empire</value></data>
+  <data name="Phase2.Static.177" xml:space="preserve"><value>Production across all owned properties. Hover an action to preview its portfolio impact.</value></data>
+  <data name="Phase2.Static.178" xml:space="preserve"><value>Construction credits in the selected estate.</value></data>
+  <data name="Phase2.Static.179" xml:space="preserve"><value>SELECTED ROOM / ACTIONS</value></data>
+  <data name="Phase2.Static.180" xml:space="preserve"><value>INVEST IN THIS ROOM</value></data>
+  <data name="Phase2.Static.181" xml:space="preserve"><value>NEXT PRODUCTION MILESTONE</value></data>
+  <data name="Phase2.Static.182" xml:space="preserve"><value>Open detailed Casino Empire statistics</value></data>
+  <data name="Phase2.Static.183" xml:space="preserve"><value>BACK TO EMPIRE</value></data>
+  <data name="Phase2.Static.184" xml:space="preserve"><value>CASINO EMPIRE / STATISTICS</value></data>
+  <data name="Phase2.Static.185" xml:space="preserve"><value>Estate Ledger</value></data>
+  <data name="Phase2.Static.186" xml:space="preserve"><value>Permanent performance, current run and room production.</value></data>
+  <data name="Phase2.Static.187" xml:space="preserve"><value>ESTATE PROGRESSION</value></data>
+  <data name="Phase2.Static.188" xml:space="preserve"><value>PORTFOLIO &amp; LEGACY</value></data>
 </root>
