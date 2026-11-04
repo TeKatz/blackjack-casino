@@ -79,6 +79,7 @@ internal static class Program
                 window.UpdateLayout();
                 Require(window.IsVisible, "Main window never became visible.");
                 CheckWelcomeOverlay(window, profile, output);
+                await VerifyPackagedModernLobby(window, output);
                 Require(window.Icon is not null && window.Template.FindName("CasinoTitleBar", window) is FrameworkElement { IsVisible: true }, "The desktop icon or custom title bar is missing.");
                 await WindowFrameSmoke.Run(window);
                 object originalContent = window.Content;
@@ -532,6 +533,47 @@ internal static class Program
         window.Show();
         app.Run();
         return exit;
+    }
+
+    /// <summary>
+    /// RenderTargetBitmap cannot capture a WebView2 HWND, so WPF-only screenshots
+    /// can silently show the legacy fallback even when the React lobby is broken.
+    /// Require the actual packaged browser to load, receive live C# profile data,
+    /// expose the full nine-game navigation and produce a real WebView2 capture.
+    /// </summary>
+    private static async Task VerifyPackagedModernLobby(MainWindow window, string output)
+    {
+        Require(ModernLobbyView.IsAvailable,
+            "The packaged modern lobby HTML is missing from ModernFrontend.");
+        ModernLobbyView modern = Find<ModernLobbyView>(window).Single();
+        Stopwatch watch = Stopwatch.StartNew();
+        while (!modern.Ready && !modern.Failed && watch.Elapsed < TimeSpan.FromSeconds(18))
+            await Task.Delay(150);
+        Require(modern.Ready && modern.IsVisible && modern.Browser.CoreWebView2 is not null,
+            "Modern lobby failed to replace the WPF fallback. Ready=" + modern.Ready
+            + ", Failed=" + modern.Failed + ", Reason=" + (modern.FailureReason ?? "no ready signal")
+            + ", Source=" + modern.Browser.Source);
+
+        // Do not accept the static browser preview or a blank canvas. The host
+        // must have delivered the real seeded C# profile and all registered modes.
+        string result = await modern.Browser.CoreWebView2!.ExecuteScriptAsync(
+            "(()=>{const shell=document.querySelector('.casino-lobby-shell');"
+            + "const games=[...document.querySelectorAll('.lobby-game')];"
+            + "const profile=document.querySelector('.profile-widget');"
+            + "const nav=document.querySelectorAll('.lobby-nav-item');"
+            + "return Boolean(shell&&games.length===9&&nav.length===8"
+            + "&&profile?.textContent?.includes('Startup Smoke')"
+            + "&&document.querySelector('.lobby-hero h1')?.textContent?.length>5);})()");
+        Require(result.Equals("true", StringComparison.OrdinalIgnoreCase),
+            "Packaged React lobby did not render nine real games and live profile state. "
+            + "DOM validation returned " + result);
+
+        await Task.Delay(400);
+        using var capture = File.Create(Path.Combine(output, "modern-lobby-webview2-live.png"));
+        await modern.Browser.CoreWebView2.CapturePreviewAsync(
+            CoreWebView2CapturePreviewImageFormat.Png, capture);
+        Require(capture.Length > 15_000,
+            "Modern lobby WebView2 preview is unexpectedly small or empty.");
     }
 
     // Exercise the actual WPF welcome layout with intentionally long generated titles,
