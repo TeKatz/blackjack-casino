@@ -153,3 +153,5 @@ See [AGENTS.md](../AGENTS.md), [architecture](architecture.md), [Midnight Manor 
 - A keyboard-dismissable rules dialog renders the C#-authored *active* table version, all fourteen symbols, their 3/4/5 awards and the twenty actual payline patterns. It clearly distinguishes an in-progress old saved free-spin table from new cycles and documents no-retrigger and player-choice consequences.
 - Canonical C# run messages and ghost clues are translated for German presentation only, with unknown text left untouched rather than inventing hidden events. Win/bonus acknowledgements translate on language change without replaying audio or mutating a journal.
 - No new RNG, client-side payouts, bridge actions or save schema changes. Manual screenreader, native 150/200% DPI and pronunciation review remain outstanding.
+
+- Windows startup smoke now verifies the real connected WebView2 host, opens the live C# paytable, checks all 14 symbols and 20 lines, takes English/German dialog screenshots, and switches the React HUD language without placing a wager.

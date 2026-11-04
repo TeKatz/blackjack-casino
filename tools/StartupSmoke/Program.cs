@@ -168,6 +168,69 @@ internal static class Program
                     "return r.width>100&&Math.abs(r.height/r.width-500/960)<.06;})()");
                 Require(responsiveReel.Equals("true", StringComparison.OrdinalIgnoreCase),
                     "Modern Manor canvas has the wrong aspect ratio after actual Windows layout.");
+                // Exercise the *actual packaged WebView2* bilingual controls and
+                // backend-authored paytable, without placing a wager or changing saves.
+                var manorLocaleClock = Stopwatch.StartNew();
+                string hostConnected = "false";
+                while(manorLocaleClock.Elapsed < TimeSpan.FromSeconds(8))
+                {
+                    hostConnected = await modernBrowser.CoreWebView2.ExecuteScriptAsync(
+                        "Boolean(document.querySelector('.connection.ready'))");
+                    if(hostConnected.Equals("true",StringComparison.OrdinalIgnoreCase)) break;
+                    await Task.Delay(100);
+                }
+                Require(hostConnected.Equals("true",StringComparison.OrdinalIgnoreCase),
+                    "Modern Manor did not receive its authoritative C# snapshot.");
+                string initialLanguage = await modernBrowser.CoreWebView2.ExecuteScriptAsync(
+                    "document.querySelector('#manor-language')?.value || ''");
+                Require(initialLanguage.Contains("en",StringComparison.OrdinalIgnoreCase),
+                    "Modern Manor did not reflect the casino's English preference.");
+                string openedRules = await modernBrowser.CoreWebView2.ExecuteScriptAsync(
+                    "(()=>{const btn=[...document.querySelectorAll('button')]" +
+                    ".find(b=>b.textContent?.includes('Rules & payout table'));" +
+                    "if(!btn)return false;btn.click();return true;})()");
+                Require(openedRules.Equals("true",StringComparison.OrdinalIgnoreCase),
+                    "Modern Manor rules dialog button is missing.");
+                await Task.Delay(130);
+                string tablePresent = await modernBrowser.CoreWebView2.ExecuteScriptAsync(
+                    "(()=>{const dialog=document.querySelector('[role=dialog]');" +
+                    "return Boolean(dialog&&dialog.querySelectorAll('.manor-paytable tbody tr').length===14" +
+                    "&&dialog.querySelectorAll('.manor-line-card').length===20" +
+                    "&&dialog.textContent.includes('version 2'));})()");
+                Require(tablePresent.Equals("true",StringComparison.OrdinalIgnoreCase),
+                    "Modern Manor rules dialog does not show all C# symbols and twenty lines.");
+                await using(FileStream ruleCapture=File.Create(
+                    Path.Combine(output,"modern-manor-rules-en.png")))
+                    await modernBrowser.CoreWebView2.CapturePreviewAsync(
+                        CoreWebView2CapturePreviewImageFormat.Png,ruleCapture);
+                await modernBrowser.CoreWebView2.ExecuteScriptAsync(
+                    "document.querySelector('.manor-help-heading button')?.click()");
+                await Task.Delay(80);
+                string switchedGerman = await modernBrowser.CoreWebView2.ExecuteScriptAsync(
+                    "(()=>{const picker=document.querySelector('#manor-language');" +
+                    "if(!picker)return false;picker.value='de';" +
+                    "picker.dispatchEvent(new Event('change',{bubbles:true}));return true;})()");
+                Require(switchedGerman.Equals("true",StringComparison.OrdinalIgnoreCase),
+                    "Modern Manor German language switch is unavailable.");
+                await Task.Delay(140);
+                string germanHud = await modernBrowser.CoreWebView2.ExecuteScriptAsync(
+                    "Boolean(document.querySelector('.money-stat span')?.textContent==='Guthaben')");
+                Require(germanHud.Equals("true",StringComparison.OrdinalIgnoreCase),
+                    "Modern Manor German-language HUD did not update.");
+                string germanHelp = await modernBrowser.CoreWebView2.ExecuteScriptAsync(
+                    "(()=>{const btn=[...document.querySelectorAll('button')]" +
+                    ".find(b=>b.textContent?.includes('Regeln & Gewinnübersicht'));" +
+                    "if(!btn)return false;btn.click();return true;})()");
+                Require(germanHelp.Equals("true",StringComparison.OrdinalIgnoreCase),
+                    "Modern Manor rules dialog was not translated to German.");
+                await Task.Delay(100);
+                await using(FileStream germanCapture=File.Create(
+                    Path.Combine(output,"modern-manor-rules-de.png")))
+                    await modernBrowser.CoreWebView2.CapturePreviewAsync(
+                        CoreWebView2CapturePreviewImageFormat.Png,germanCapture);
+                await modernBrowser.CoreWebView2.ExecuteScriptAsync(
+                    "document.querySelector('.manor-help-heading button')?.click()");
+                await Task.Delay(70);
                 await Task.Delay(250);
                 await using (FileStream modernCapture = File.Create(
                     Path.Combine(output, "modern-manor-phase3.png")))
