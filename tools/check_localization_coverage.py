@@ -35,15 +35,15 @@ PHASE1_CODE = {
 BRANDING = {"Blackjack Casino", "THE MIDNIGHT CLUB", "BLACKJACK CASINO"}
 DISPLAY_ATTRIBUTES = {"Text", "Content", "ToolTip", "Header", "Title"}
 CODE_DISPLAY_STRING = re.compile(
-    r'\\b(?:Text|Content|ToolTip|Header|Title)\\s*=\\s*"((?:\\\\.|[^"\\\\])*)"'
+    r'\b(?:Text|Content|ToolTip|Header|Title)\s*=\s*"((?:\\.|[^"\\])*)"'
 )
 CHALLENGE = re.compile(
-    r'\\b[CE]\\s*\\(\\s*"([^"]+)"\\s*,\\s*ChallengeCategory\\.\\w+'
-    r'\\s*,\\s*"[^"]+"\\s*,\\s*"[^"]+"'
+    r'\b[CE]\s*\(\s*"([^"]+)"\s*,\s*ChallengeCategory\.\w+'
+    r'\s*,\s*"[^"]+"\s*,\s*"[^"]+"'
 )
 STORY_SCENE = {
-    "black-stag": re.compile(r'\\b(?:Scene|Ending)\\s*\\(\\s*"([^"]+)"\\s*,\\s*"[^"]+"\\s*,\\s*"'),
-    "drowned-bell": re.compile(r'\\bS\\s*\\(\\s*"([^"]+)"\\s*,\\s*"[^"]+"\\s*,\\s*"'),
+    "black-stag": re.compile(r'\b(?:Scene|Ending)\s*\(\s*"([^"]+)"\s*,\s*"[^"]+"\s*,\s*"'),
+    "drowned-bell": re.compile(r'\bS\s*\(\s*"([^"]+)"\s*,\s*"[^"]+"\s*,\s*"'),
 }
 
 
@@ -88,7 +88,7 @@ def source_missing(path: Path, values: set[str]) -> list[dict[str, str | int]]:
         if line.lstrip().startswith(("//", "*", "/*")):
             continue
         for match in CODE_DISPLAY_STRING.finditer(line):
-            value = match.group(1).replace(r'\\"', '"').strip()
+            value = match.group(1).replace(r'\"', '"').strip()
             if is_display_copy(value) and value not in values:
                 result.append({"line": number, "text": value[:180]})
     return result
@@ -129,7 +129,7 @@ def audit(strict: bool) -> int:
         for id in challenges
     )
     archive = (DESKTOP / "CollectionLore.cs").read_text(encoding="utf-8")
-    lore_ids = re.findall(r'\\["([\\w-]+-\\d+)"\\]\\s*=', archive)
+    lore_ids = re.findall(r'\["([\w-]+-\d+)"\]\s*=', archive)
     lore_missing = sum(f"Album.Lore.{id}" not in keys for id in lore_ids)
 
     report = {
