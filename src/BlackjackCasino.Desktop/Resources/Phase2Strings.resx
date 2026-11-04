@@ -189,4 +189,125 @@ Manor rules: the ghost follows shortest routes, including locked doors. It moves
   <data name="Phase2.NineLives.051" xml:space="preserve"><value>FULL GRID FRENZY</value></data>
   <data name="Phase2.NineLives.052" xml:space="preserve"><value>Fill the complete 3×3 field with one matching regular symbol for the rare 5,000× top hit.</value></data>
   <data name="Phase2.NineLives.053" xml:space="preserve"><value>BACK TO GAME</value></data>
+  <data name="Phase2.Static.001" xml:space="preserve"><value>Choose your dice night</value></data>
+  <data name="Phase2.Static.002" xml:space="preserve"><value>Two ways to play. Your casual sheet and paid table save separately.</value></data>
+  <data name="Phase2.Static.003" xml:space="preserve"><value>A game at your pace</value></data>
+  <data name="Phase2.Static.004" xml:space="preserve"><value>Free entry · completion XP · no opponents</value></data>
+  <data name="Phase2.Static.005" xml:space="preserve"><value>Roll, hold and fill your sheet whenever you feel like it.</value></data>
+  <data name="Phase2.Static.006" xml:space="preserve"><value>Continue saved game</value></data>
+  <data name="Phase2.Static.007" xml:space="preserve"><value>New casual game</value></data>
+  <data name="Phase2.Static.008" xml:space="preserve"><value>Starting a new game replaces this casual sheet.</value></data>
+  <data name="Phase2.Static.009" xml:space="preserve"><value>No casual game in progress yet.</value></data>
+  <data name="Phase2.Static.010" xml:space="preserve"><value>CASINO · YOU + 3 AI</value></data>
+  <data name="Phase2.Static.011" xml:space="preserve"><value>Take a seat at the table</value></data>
+  <data name="Phase2.Static.012" xml:space="preserve"><value>Mara · balanced   /   Felix · collector   /   June · adventurous</value></data>
+  <data name="Phase2.Static.013" xml:space="preserve"><value>13 turns each · same rules · independent dice</value></data>
+  <data name="Phase2.Static.014" xml:space="preserve"><value>ENTRY FEE</value></data>
+  <data name="Phase2.Static.015" xml:space="preserve"><value>Prizes include your stake. Ties share the occupied places' prizes, rounded down to cents.</value></data>
+  <data name="Phase2.Static.016" xml:space="preserve"><value>Pay entry &amp; start table</value></data>
+  <data name="Phase2.Static.017" xml:space="preserve"><value>A paid table is already in progress</value></data>
+  <data name="Phase2.Static.018" xml:space="preserve"><value>Forfeit table…</value></data>
+  <data name="Phase2.Static.019" xml:space="preserve"><value>Confirm forfeit</value></data>
+  <data name="Phase2.Static.020" xml:space="preserve"><value>Forfeit loses your entry with no prize or XP. Back to game keeps your table.</value></data>
+  <data name="Phase2.Static.021" xml:space="preserve"><value>Paid once. Leaving the table pauses your game.</value></data>
+  <data name="Phase2.Static.022" xml:space="preserve"><value>Back to game</value></data>
+  <data name="Phase2.Static.023" xml:space="preserve"><value>Casino table · opponent score sheets</value></data>
+  <data name="Phase2.Static.024" xml:space="preserve"><value>Back to table</value></data>
+  <data name="Phase2.Static.025" xml:space="preserve"><value>THE MIDNIGHT CLUB  /  MATCH RECEIPT</value></data>
+  <data name="Phase2.Static.026" xml:space="preserve"><value>Table forfeited</value></data>
+  <data name="Phase2.Static.027" xml:space="preserve"><value>Your sheet is complete</value></data>
+  <data name="Phase2.Static.028" xml:space="preserve"><value>Top of the table</value></data>
+  <data name="Phase2.Static.029" xml:space="preserve"><value>One last look at the table</value></data>
+  <data name="Phase2.Static.030" xml:space="preserve"><value>ENTRY PAID</value></data>
+  <data name="Phase2.Static.031" xml:space="preserve"><value>PRIZE RETURNED</value></data>
+  <data name="Phase2.Static.032" xml:space="preserve"><value>NET WIN</value></data>
+  <data name="Phase2.Static.033" xml:space="preserve"><value>NET LOSS</value></data>
+  <data name="Phase2.Static.034" xml:space="preserve"><value>BREAK EVEN</value></data>
+  <data name="Phase2.Static.035" xml:space="preserve"><value>Prize returned minus entry paid</value></data>
+  <data name="Phase2.Static.036" xml:space="preserve"><value>Current casino bankroll: </value></data>
+  <data name="Phase2.Static.037" xml:space="preserve"><value> · Cash already saved</value></data>
+  <data name="Phase2.Static.038" xml:space="preserve"><value>Tied scores share the prizes for their occupied places, rounded down to cents.</value></data>
+  <data name="Phase2.Static.039" xml:space="preserve"><value>Casual game · No entry fee or casino cash payout</value></data>
+  <data name="Phase2.Static.040" xml:space="preserve"><value>SCORES WHEN YOU LEFT</value></data>
+  <data name="Phase2.Static.041" xml:space="preserve"><value>FINAL STANDINGS &amp; SCORE BREAKDOWN</value></data>
+  <data name="Phase2.Static.042" xml:space="preserve"><value>Scored combinations: </value></data>
+  <data name="Phase2.Static.043" xml:space="preserve"><value>No completion XP · Forfeited tables do not earn completion rewards.</value></data>
+  <data name="Phase2.Static.044" xml:space="preserve"><value>Back to score sheet</value></data>
+  <data name="Phase2.Static.045" xml:space="preserve"><value>Game setup</value></data>
+  <data name="Phase2.Static.046" xml:space="preserve"><value>Return to casino</value></data>
+  <data name="Phase2.Static.047" xml:space="preserve"><value>Roll first, then hold dice and reroll or choose a score. Your game saves automatically.</value></data>
+  <data name="Phase2.Static.048" xml:space="preserve"><value>The game could not be saved. Your last action was not applied; please try again.</value></data>
+  <data name="Phase2.Static.049" xml:space="preserve"><value>CASINO · 4 PLAYERS</value></data>
+  <data name="Phase2.Static.050" xml:space="preserve"><value>Table closed</value></data>
+  <data name="Phase2.Static.051" xml:space="preserve"><value>Your score is saved. Mara, Felix and June are playing their turns …</value></data>
+  <data name="Phase2.Static.052" xml:space="preserve"><value>The dice are rolling …</value></data>
+  <data name="Phase2.Static.053" xml:space="preserve"><value>Game complete</value></data>
+  <data name="Phase2.Static.054" xml:space="preserve"><value>All 13 boxes are filled.</value></data>
+  <data name="Phase2.Static.055" xml:space="preserve"><value>Rolling dice …</value></data>
+  <data name="Phase2.Static.056" xml:space="preserve"><value>Game finished</value></data>
+  <data name="Phase2.Static.057" xml:space="preserve"><value>Roll again</value></data>
+  <data name="Phase2.Static.058" xml:space="preserve"><value>Choose a box</value></data>
+  <data name="Phase2.Static.059" xml:space="preserve"><value>Five dice. Your decision.</value></data>
+  <data name="Phase2.Static.060" xml:space="preserve"><value>New game. Good luck with your rolls!</value></data>
+  <data name="Phase2.Static.061" xml:space="preserve"><value>Reels rolling…</value></data>
+  <data name="Phase2.Static.062" xml:space="preserve"><value>One centre payline. Let it roll.</value></data>
+  <data name="Phase2.Static.063" xml:space="preserve"><value>ROLLING…</value></data>
+  <data name="Phase2.Static.064" xml:space="preserve"><value>Out of play money. Reset your bankroll at the Blackjack table.</value></data>
+  <data name="Phase2.Static.065" xml:space="preserve"><value>Choose a smaller bet to keep playing.</value></data>
+  <data name="Phase2.Static.066" xml:space="preserve"><value>VAULT BREAK ACTIVE</value></data>
+  <data name="Phase2.Static.067" xml:space="preserve"><value>REELS ENERGIZED</value></data>
+  <data name="Phase2.Static.068" xml:space="preserve"><value>Free Spin resolving…</value></data>
+  <data name="Phase2.Static.069" xml:space="preserve"><value>Vault reels spinning…</value></data>
+  <data name="Phase2.Static.070" xml:space="preserve"><value>Outcome settled. The reels now present the result.</value></data>
+  <data name="Phase2.Static.071" xml:space="preserve"><value>SYSTEM STABLE</value></data>
+  <data name="Phase2.Static.072" xml:space="preserve"><value>AUTOMATIC FREE SPIN SEQUENCE</value></data>
+  <data name="Phase2.Static.073" xml:space="preserve"><value>ANTICIPATION MODE</value></data>
+  <data name="Phase2.Static.074" xml:space="preserve"><value>RESOLVING…</value></data>
+  <data name="Phase2.Static.075" xml:space="preserve"><value>Selected exposure exceeds the current play-money bankroll.</value></data>
+  <data name="Phase2.Static.076" xml:space="preserve"><value>Not enough bankroll for that bet.</value></data>
+  <data name="Phase2.Static.077" xml:space="preserve"><value>Two lives are glowing. One more can open the night…</value></data>
+  <data name="Phase2.Static.078" xml:space="preserve"><value>POUNCE WILD — the black cat struck another cell.</value></data>
+  <data name="Phase2.Static.079" xml:space="preserve"><value>Auto spin stopped.</value></data>
+  <data name="Phase2.Static.080" xml:space="preserve"><value>FREE SPIN</value></data>
+  <data name="Phase2.Static.081" xml:space="preserve"><value>Resuming your saved feature. No new wager has been charged.</value></data>
+  <data name="Phase2.Static.082" xml:space="preserve"><value> Your last committed checkpoint is retained.</value></data>
+  <data name="Phase2.Static.083" xml:space="preserve"><value>HAUNTED NIGHT · 2× LINE WINS</value></data>
+  <data name="Phase2.Static.084" xml:space="preserve"><value>The reels awaken…</value></data>
+  <data name="Phase2.Static.085" xml:space="preserve"><value>A VISIT TO THE MANOR</value></data>
+  <data name="Phase2.Static.086" xml:space="preserve"><value>Auto-resolved with the same map and ghost rules</value></data>
+  <data name="Phase2.Static.087" xml:space="preserve"><value>Already visited</value></data>
+  <data name="Phase2.Static.088" xml:space="preserve"><value>1000× · THE MOONLIT GATE</value></data>
+  <data name="Phase2.Static.089" xml:space="preserve"><value>Auto stopped. Any committed feature remains yours.</value></data>
+  <data name="Phase2.Static.090" xml:space="preserve"><value>RESUME FEATURE</value></data>
+  <data name="Phase2.Static.091" xml:space="preserve"><value> · MANOR PAUSED</value></data>
+  <data name="Phase2.Static.092" xml:space="preserve"><value>CHILL LOUNGE · MEMORY</value></data>
+  <data name="Phase2.Static.093" xml:space="preserve"><value>Find the pairs. Take all the time you need.</value></data>
+  <data name="Phase2.Static.094" xml:space="preserve"><value>PAIRS FOUND</value></data>
+  <data name="Phase2.Static.095" xml:space="preserve"><value>BEST STREAK</value></data>
+  <data name="Phase2.Static.096" xml:space="preserve"><value>CURRENT TABLE</value></data>
+  <data name="Phase2.Static.097" xml:space="preserve"><value>CARD DECK</value></data>
+  <data name="Phase2.Static.098" xml:space="preserve"><value>HOW IT WORKS</value></data>
+  <data name="Phase2.Static.099" xml:space="preserve"><value>Flip two cards. A matching pair stays open; a miss turns back over. Consecutive matches build your streak.</value></data>
+  <data name="Phase2.Static.100" xml:space="preserve"><value>Choose a table size, or resume your current game.</value></data>
+  <data name="Phase2.Static.101" xml:space="preserve"><value>Resume or finish the current table before starting another one.</value></data>
+  <data name="Phase2.Static.102" xml:space="preserve"><value>MATCH STREAK</value></data>
+  <data name="Phase2.Static.103" xml:space="preserve"><value>Consecutive pairs without a miss.</value></data>
+  <data name="Phase2.Static.104" xml:space="preserve"><value>TABLE NOTES</value></data>
+  <data name="Phase2.Static.105" xml:space="preserve"><value>One card open · choose its match.</value></data>
+  <data name="Phase2.Static.106" xml:space="preserve"><value>Not a pair · remember where they were.</value></data>
+  <data name="Phase2.Static.107" xml:space="preserve"><value>Flip two cards and find every pair.</value></data>
+  <data name="Phase2.Static.108" xml:space="preserve"><value>Flip card</value></data>
+  <data name="Phase2.Static.109" xml:space="preserve"><value>RESUME TABLE</value></data>
+  <data name="Phase2.Static.110" xml:space="preserve"><value>Clear every pair</value></data>
+  <data name="Phase2.Static.111" xml:space="preserve"><value>Perfect Memory</value></data>
+  <data name="Phase2.Static.112" xml:space="preserve"><value>Board Cleared</value></data>
+  <data name="Phase2.Static.113" xml:space="preserve"><value>COMPLETION REWARD</value></data>
+  <data name="Phase2.Static.114" xml:space="preserve"><value>FREECELL DEAL #</value></data>
+  <data name="Phase2.Static.115" xml:space="preserve"><value>Pencil marks, undo/redo, optional hints and autosave. Each Free Play difficulty keeps its own paused puzzle, while Daily puzzles remain in a completely separate library.</value></data>
+  <data name="Phase2.Static.116" xml:space="preserve"><value>Your elapsed time is always preserved in the save.</value></data>
+  <data name="Phase2.Static.117" xml:space="preserve"><value>WORDS TO DISCOVER</value></data>
+  <data name="Phase2.Static.118" xml:space="preserve"><value>HINT · reveal a starting letter</value></data>
+  <data name="Phase2.Static.119" xml:space="preserve"><value>No listed word on that line. Keep looking.</value></data>
+  <data name="Phase2.Static.120" xml:space="preserve"><value>Every word is already found.</value></data>
+  <data name="Phase2.Static.121" xml:space="preserve"><value>Drag across a listed word in either direction.</value></data>
 </root>

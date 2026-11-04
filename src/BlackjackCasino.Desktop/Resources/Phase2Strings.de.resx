@@ -189,4 +189,125 @@ Anwesenregeln: Der Geist folgt den kürzesten Wegen, auch durch verschlossene T�
   <data name="Phase2.NineLives.051" xml:space="preserve"><value>VOLLES-RASTER-FIEBER</value></data>
   <data name="Phase2.NineLives.052" xml:space="preserve"><value>Fülle das gesamte 3×3-Raster mit einem einzigen regulären Symbol für den seltenen Höchstgewinn von 5.000×.</value></data>
   <data name="Phase2.NineLives.053" xml:space="preserve"><value>ZURÜCK ZUM SPIEL</value></data>
+  <data name="Phase2.Static.001" xml:space="preserve"><value>Wähle deinen Würfelabend</value></data>
+  <data name="Phase2.Static.002" xml:space="preserve"><value>Zwei Spielweisen. Deine entspannte Partie und der Casinotisch werden getrennt gespeichert.</value></data>
+  <data name="Phase2.Static.003" xml:space="preserve"><value>Ein Spiel in deinem Tempo</value></data>
+  <data name="Phase2.Static.004" xml:space="preserve"><value>Kein Eintritt · XP beim Abschluss · keine Gegner</value></data>
+  <data name="Phase2.Static.005" xml:space="preserve"><value>Würfle, halte Würfel fest und fülle dein Blatt in deinem eigenen Tempo.</value></data>
+  <data name="Phase2.Static.006" xml:space="preserve"><value>Gespeicherte Partie fortsetzen</value></data>
+  <data name="Phase2.Static.007" xml:space="preserve"><value>Neue entspannte Partie</value></data>
+  <data name="Phase2.Static.008" xml:space="preserve"><value>Eine neue Partie ersetzt dieses entspannte Punkteblatt.</value></data>
+  <data name="Phase2.Static.009" xml:space="preserve"><value>Noch keine entspannte Partie aktiv.</value></data>
+  <data name="Phase2.Static.010" xml:space="preserve"><value>CASINO · DU + 3 KI</value></data>
+  <data name="Phase2.Static.011" xml:space="preserve"><value>Nimm am Tisch Platz</value></data>
+  <data name="Phase2.Static.012" xml:space="preserve"><value>Mara · ausgewogen   /   Felix · Sammler   /   June · risikofreudig</value></data>
+  <data name="Phase2.Static.013" xml:space="preserve"><value>Je 13 Runden · gleiche Regeln · eigene Würfel</value></data>
+  <data name="Phase2.Static.014" xml:space="preserve"><value>EINTRITTSGEBÜHR</value></data>
+  <data name="Phase2.Static.015" xml:space="preserve"><value>Preise enthalten den Einsatz. Bei Gleichstand werden die Preise der belegten Plätze geteilt und auf Cent abgerundet.</value></data>
+  <data name="Phase2.Static.016" xml:space="preserve"><value>Eintritt zahlen &amp; Partie starten</value></data>
+  <data name="Phase2.Static.017" xml:space="preserve"><value>Eine bezahlte Partie läuft bereits</value></data>
+  <data name="Phase2.Static.018" xml:space="preserve"><value>Tischpartie aufgeben…</value></data>
+  <data name="Phase2.Static.019" xml:space="preserve"><value>Aufgabe bestätigen</value></data>
+  <data name="Phase2.Static.020" xml:space="preserve"><value>Beim Aufgeben verlierst du den Einsatz und erhältst weder Preis noch XP. Zurück zum Spiel erhält die Partie.</value></data>
+  <data name="Phase2.Static.021" xml:space="preserve"><value>Einmal bezahlt. Beim Verlassen wird deine Partie pausiert.</value></data>
+  <data name="Phase2.Static.022" xml:space="preserve"><value>Zurück zum Spiel</value></data>
+  <data name="Phase2.Static.023" xml:space="preserve"><value>Casinotisch · Punkteblätter der Gegner</value></data>
+  <data name="Phase2.Static.024" xml:space="preserve"><value>Zurück zum Tisch</value></data>
+  <data name="Phase2.Static.025" xml:space="preserve"><value>THE MIDNIGHT CLUB  /  PARTIEERGEBNIS</value></data>
+  <data name="Phase2.Static.026" xml:space="preserve"><value>Tischpartie aufgegeben</value></data>
+  <data name="Phase2.Static.027" xml:space="preserve"><value>Dein Punkteblatt ist vollständig</value></data>
+  <data name="Phase2.Static.028" xml:space="preserve"><value>Tabellenspitze</value></data>
+  <data name="Phase2.Static.029" xml:space="preserve"><value>Ein letzter Blick auf den Tisch</value></data>
+  <data name="Phase2.Static.030" xml:space="preserve"><value>EINTRITT BEZAHLT</value></data>
+  <data name="Phase2.Static.031" xml:space="preserve"><value>PREIS AUSGEZAHLT</value></data>
+  <data name="Phase2.Static.032" xml:space="preserve"><value>NETTOGEWINN</value></data>
+  <data name="Phase2.Static.033" xml:space="preserve"><value>NETTOVERLUST</value></data>
+  <data name="Phase2.Static.034" xml:space="preserve"><value>AUSGEGLICHEN</value></data>
+  <data name="Phase2.Static.035" xml:space="preserve"><value>Ausgezahlter Preis abzüglich Eintritt</value></data>
+  <data name="Phase2.Static.036" xml:space="preserve"><value>Aktuelles Casino-Guthaben: </value></data>
+  <data name="Phase2.Static.037" xml:space="preserve"><value> · Geld bereits gespeichert</value></data>
+  <data name="Phase2.Static.038" xml:space="preserve"><value>Bei Punktegleichstand werden die Preise der belegten Plätze geteilt und auf Cent abgerundet.</value></data>
+  <data name="Phase2.Static.039" xml:space="preserve"><value>Entspanntes Spiel · kein Eintritt und keine Geldprämie</value></data>
+  <data name="Phase2.Static.040" xml:space="preserve"><value>PUNKTSTAND BEIM VERLASSEN</value></data>
+  <data name="Phase2.Static.041" xml:space="preserve"><value>ENDSTAND &amp; PUNKTEÜBERSICHT</value></data>
+  <data name="Phase2.Static.042" xml:space="preserve"><value>Gewertete Kombinationen: </value></data>
+  <data name="Phase2.Static.043" xml:space="preserve"><value>Keine Abschluss-XP · für aufgegebene Partien gibt es keine Abschlussbelohnung.</value></data>
+  <data name="Phase2.Static.044" xml:space="preserve"><value>Zurück zum Punkteblatt</value></data>
+  <data name="Phase2.Static.045" xml:space="preserve"><value>Spieleinstellungen</value></data>
+  <data name="Phase2.Static.046" xml:space="preserve"><value>Zurück zum Casino</value></data>
+  <data name="Phase2.Static.047" xml:space="preserve"><value>Würfle zuerst, halte Würfel fest und würfle erneut oder wähle eine Wertung. Deine Partie wird automatisch gespeichert.</value></data>
+  <data name="Phase2.Static.048" xml:space="preserve"><value>Die Partie konnte nicht gespeichert werden. Deine letzte Aktion wurde nicht übernommen; versuche es erneut.</value></data>
+  <data name="Phase2.Static.049" xml:space="preserve"><value>CASINO · 4 SPIELER</value></data>
+  <data name="Phase2.Static.050" xml:space="preserve"><value>Tisch geschlossen</value></data>
+  <data name="Phase2.Static.051" xml:space="preserve"><value>Deine Punkte wurden gespeichert. Mara, Felix und June spielen ihre Runden …</value></data>
+  <data name="Phase2.Static.052" xml:space="preserve"><value>Die Würfel rollen …</value></data>
+  <data name="Phase2.Static.053" xml:space="preserve"><value>Partie beendet</value></data>
+  <data name="Phase2.Static.054" xml:space="preserve"><value>Alle 13 Felder sind ausgefüllt.</value></data>
+  <data name="Phase2.Static.055" xml:space="preserve"><value>Würfel rollen …</value></data>
+  <data name="Phase2.Static.056" xml:space="preserve"><value>Partie beendet</value></data>
+  <data name="Phase2.Static.057" xml:space="preserve"><value>Erneut würfeln</value></data>
+  <data name="Phase2.Static.058" xml:space="preserve"><value>Feld auswählen</value></data>
+  <data name="Phase2.Static.059" xml:space="preserve"><value>Fünf Würfel. Deine Entscheidung.</value></data>
+  <data name="Phase2.Static.060" xml:space="preserve"><value>Neue Partie. Viel Glück beim Würfeln!</value></data>
+  <data name="Phase2.Static.061" xml:space="preserve"><value>Die Walzen drehen sich …</value></data>
+  <data name="Phase2.Static.062" xml:space="preserve"><value>Eine mittlere Gewinnlinie. Los geht's.</value></data>
+  <data name="Phase2.Static.063" xml:space="preserve"><value>DREHT SICH …</value></data>
+  <data name="Phase2.Static.064" xml:space="preserve"><value>Kein Spielgeld mehr. Setze dein Guthaben am Blackjack-Tisch zurück.</value></data>
+  <data name="Phase2.Static.065" xml:space="preserve"><value>Wähle einen kleineren Einsatz, um weiterzuspielen.</value></data>
+  <data name="Phase2.Static.066" xml:space="preserve"><value>TRESORBRUCH AKTIV</value></data>
+  <data name="Phase2.Static.067" xml:space="preserve"><value>WALZEN AKTIVIERT</value></data>
+  <data name="Phase2.Static.068" xml:space="preserve"><value>Freispiel wird ausgewertet …</value></data>
+  <data name="Phase2.Static.069" xml:space="preserve"><value>Tresorwalzen drehen sich …</value></data>
+  <data name="Phase2.Static.070" xml:space="preserve"><value>Ergebnis steht fest. Die Walzen zeigen jetzt den Gewinn.</value></data>
+  <data name="Phase2.Static.071" xml:space="preserve"><value>SYSTEM STABIL</value></data>
+  <data name="Phase2.Static.072" xml:space="preserve"><value>AUTOMATISCHE FREISPIELFOLGE</value></data>
+  <data name="Phase2.Static.073" xml:space="preserve"><value>SPANNUNGSMODUS</value></data>
+  <data name="Phase2.Static.074" xml:space="preserve"><value>WIRD AUSGEWERTET …</value></data>
+  <data name="Phase2.Static.075" xml:space="preserve"><value>Der gewählte Einsatz übersteigt dein aktuelles Spielgeldguthaben.</value></data>
+  <data name="Phase2.Static.076" xml:space="preserve"><value>Dein Guthaben reicht für diesen Einsatz nicht aus.</value></data>
+  <data name="Phase2.Static.077" xml:space="preserve"><value>Zwei Leben leuchten. Ein weiteres kann die Nacht eröffnen …</value></data>
+  <data name="Phase2.Static.078" xml:space="preserve"><value>SPRUNG-WILD – die schwarze Katze ist auf ein weiteres Feld gesprungen.</value></data>
+  <data name="Phase2.Static.079" xml:space="preserve"><value>Automatische Drehungen beendet.</value></data>
+  <data name="Phase2.Static.080" xml:space="preserve"><value>FREISPIEL</value></data>
+  <data name="Phase2.Static.081" xml:space="preserve"><value>Dein gespeichertes Feature wird fortgesetzt. Es wurde kein neuer Einsatz abgebucht.</value></data>
+  <data name="Phase2.Static.082" xml:space="preserve"><value> Dein letzter gespeicherter Kontrollpunkt bleibt erhalten.</value></data>
+  <data name="Phase2.Static.083" xml:space="preserve"><value>SPUKNACHT · DOPPELTE LINIENGEWINNE</value></data>
+  <data name="Phase2.Static.084" xml:space="preserve"><value>Die Walzen erwachen …</value></data>
+  <data name="Phase2.Static.085" xml:space="preserve"><value>EIN BESUCH IM ANWESEN</value></data>
+  <data name="Phase2.Static.086" xml:space="preserve"><value>Automatisch mit derselben Karte und denselben Geisterregeln abgeschlossen</value></data>
+  <data name="Phase2.Static.087" xml:space="preserve"><value>Bereits besucht</value></data>
+  <data name="Phase2.Static.088" xml:space="preserve"><value>1000× · DAS MONDLICHTTOR</value></data>
+  <data name="Phase2.Static.089" xml:space="preserve"><value>Auto gestoppt. Alle gespeicherten Features bleiben erhalten.</value></data>
+  <data name="Phase2.Static.090" xml:space="preserve"><value>FEATURE FORTSETZEN</value></data>
+  <data name="Phase2.Static.091" xml:space="preserve"><value> · ANWESEN PAUSIERT</value></data>
+  <data name="Phase2.Static.092" xml:space="preserve"><value>CHILL LOUNGE · MEMORY</value></data>
+  <data name="Phase2.Static.093" xml:space="preserve"><value>Finde die Paare. Lass dir alle Zeit, die du brauchst.</value></data>
+  <data name="Phase2.Static.094" xml:space="preserve"><value>PAARE GEFUNDEN</value></data>
+  <data name="Phase2.Static.095" xml:space="preserve"><value>BESTE SERIE</value></data>
+  <data name="Phase2.Static.096" xml:space="preserve"><value>AKTUELLES SPIELFELD</value></data>
+  <data name="Phase2.Static.097" xml:space="preserve"><value>KARTENSET</value></data>
+  <data name="Phase2.Static.098" xml:space="preserve"><value>SO FUNKTIONIERT'S</value></data>
+  <data name="Phase2.Static.099" xml:space="preserve"><value>Decke zwei Karten auf. Ein passendes Paar bleibt sichtbar, ein Fehlversuch wird wieder umgedreht. Aufeinanderfolgende Treffer erhöhen deine Serie.</value></data>
+  <data name="Phase2.Static.100" xml:space="preserve"><value>Wähle eine Feldgröße oder setze deine aktuelle Partie fort.</value></data>
+  <data name="Phase2.Static.101" xml:space="preserve"><value>Setze die aktuelle Partie fort oder beende sie, bevor du eine neue beginnst.</value></data>
+  <data name="Phase2.Static.102" xml:space="preserve"><value>TREFFERSERIE</value></data>
+  <data name="Phase2.Static.103" xml:space="preserve"><value>Paare in Folge ohne Fehlversuch.</value></data>
+  <data name="Phase2.Static.104" xml:space="preserve"><value>SPIELNOTIZEN</value></data>
+  <data name="Phase2.Static.105" xml:space="preserve"><value>Eine Karte ist aufgedeckt · finde ihr Gegenstück.</value></data>
+  <data name="Phase2.Static.106" xml:space="preserve"><value>Kein Paar · merk dir die Positionen.</value></data>
+  <data name="Phase2.Static.107" xml:space="preserve"><value>Decke zwei Karten auf und finde alle Paare.</value></data>
+  <data name="Phase2.Static.108" xml:space="preserve"><value>Karte aufdecken</value></data>
+  <data name="Phase2.Static.109" xml:space="preserve"><value>PARTIE FORTSETZEN</value></data>
+  <data name="Phase2.Static.110" xml:space="preserve"><value>Finde alle Paare</value></data>
+  <data name="Phase2.Static.111" xml:space="preserve"><value>Perfektes Gedächtnis</value></data>
+  <data name="Phase2.Static.112" xml:space="preserve"><value>Feld abgeschlossen</value></data>
+  <data name="Phase2.Static.113" xml:space="preserve"><value>ABSCHLUSSBELONUNG</value></data>
+  <data name="Phase2.Static.114" xml:space="preserve"><value>FREECELL-PARTIE #</value></data>
+  <data name="Phase2.Static.115" xml:space="preserve"><value>Notizen, Rückgängig/Wiederholen, optionale Hinweise und automatisches Speichern. Jede Schwierigkeit im freien Spiel behält ihr eigenes pausiertes Rätsel. Tägliche Rätsel haben eine separate Bibliothek.</value></data>
+  <data name="Phase2.Static.116" xml:space="preserve"><value>Deine bisherige Spielzeit bleibt immer im Spielstand erhalten.</value></data>
+  <data name="Phase2.Static.117" xml:space="preserve"><value>WÖRTER ZU FINDEN</value></data>
+  <data name="Phase2.Static.118" xml:space="preserve"><value>HINWEIS · Anfangsbuchstaben aufdecken</value></data>
+  <data name="Phase2.Static.119" xml:space="preserve"><value>Auf dieser Linie liegt keines der gesuchten Wörter. Such weiter.</value></data>
+  <data name="Phase2.Static.120" xml:space="preserve"><value>Alle Wörter wurden bereits gefunden.</value></data>
+  <data name="Phase2.Static.121" xml:space="preserve"><value>Ziehe in beliebiger Richtung über ein gesuchtes Wort.</value></data>
 </root>
