@@ -41,6 +41,9 @@ jobs:
           $version = "$baseVersion-dev.${{ github.run_number }}"
           "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append
 
+      - name: Repository documentation and release guard
+        run: python tools/check_repo_contract.py
+
       - name: Localization resource parity
         run: python tools/check_localization.py
 
