@@ -38,9 +38,35 @@ internal static class LocalizationSmoke
             await Task.Delay(50);
         window.UpdateLayout();
 
-        // The legacy Blackjack preferences remain available in Blackjack mode, not
-        // underneath the modern landing page. Confirm they reflect the React choice.
+        // The normal Blackjack route is now React. Its German UI must respond
+        // to the same native language preference as the React casino lobby.
         window.Modes.Open("blackjack");
+        ModernBlackjackView? modernBlackjack = null;
+        for (int i = 0; i < 160; i++)
+        {
+            await Task.Delay(75);
+            modernBlackjack = Find<ModernBlackjackView>(window).FirstOrDefault();
+            if (modernBlackjack is { Ready: true, Failed: false }) break;
+        }
+        Require(modernBlackjack is { Ready: true, Failed: false, IsVisible: true },
+            "German Blackjack did not open its primary React table.");
+        string translatedBlackjack = await modernBlackjack!.Browser.CoreWebView2!.ExecuteScriptAsync(
+            "Boolean(document.querySelector('.bj-app[data-language=de]')"
+            + "&&document.querySelector('.bj-player')?.textContent?.includes('DEIN PLATZ')"
+            + "&&[...document.querySelectorAll('.bj-actions button')].some(x=>x.textContent?.includes('KARTE'))"
+            + "&&document.querySelector('.bj-sidebar')?.textContent?.includes('TISCHEINSTELLUNGEN'))");
+        Require(translatedBlackjack == "true",
+            "The primary React Blackjack table is not localized to German.");
+        await modernBlackjack.Browser.CoreWebView2.ExecuteScriptAsync(
+            "document.querySelector('.bj-back')?.click()");
+        for (int i=0; i<100 && Find<ModernBlackjackView>(window).Any(v=>v.IsVisible); i++)
+            await Task.Delay(60);
+        Require(!Find<ModernBlackjackView>(window).Any(v=>v.IsVisible),
+            "Localized React Blackjack did not return to the lobby.");
+
+        // Keep the original WPF translation checks as emergency fallback
+        // coverage, without routing players back to the legacy surface.
+        ShowLegacyBlackjackForLocalization(window);
         await Task.Delay(100);
         window.UpdateLayout();
 
@@ -74,7 +100,7 @@ internal static class LocalizationSmoke
 
         SaveScreenshot(window, Path.Combine(output, "localization-german-lobby.png"));
 
-        window.Modes.Open("blackjack");
+        ShowLegacyBlackjackForLocalization(window);
         await Task.Delay(80);
         window.UpdateLayout();
         Button deal = Find<Button>(window).Single(button => button.Name == "DealButton");
@@ -232,6 +258,14 @@ internal static class LocalizationSmoke
             Require(reactEnglish.Equals("true", StringComparison.OrdinalIgnoreCase),
                 "React lobby did not restore English labels and Vault navigation.");
         }
+    }
+
+    private static void ShowLegacyBlackjackForLocalization(MainWindow window)
+    {
+        // Native gameplay remains exclusively as WebView2 emergency fallback;
+        // reflection allows the historical visual translation smoke to run.
+        typeof(MainWindow).GetMethod("ShowBlackjackTable",
+            BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(window, null);
     }
 
     private static void CheckPhase2Translations()
