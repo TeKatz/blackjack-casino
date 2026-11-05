@@ -21,7 +21,9 @@ public partial class MainWindow
 
         modernLobby = new ModernLobbyView(
             modeRegistry, GetModernLobbySnapshot, GetModernShopSnapshot,
-            ModernShopCosmeticAction, ModernShopPackAction, OnModernShopClosed, OpenProgression,
+            ModernShopCosmeticAction, ModernShopPackAction, OnModernShopClosed,
+            GetModernChallengesSnapshot, GetModernStatisticsSnapshot,
+            ModernChallengeClaim, ModernChallengesClaimAll, OnModernProgressionClosed, OpenProgression,
             OpenPlayerProfile, () => VaultButton_Click(this, new RoutedEventArgs()),
             () => { ClaimDailyLoginFromDrawer(); modernLobby?.Refresh(); },
             Close, OnModernLobbyStateChanged);

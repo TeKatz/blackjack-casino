@@ -31,10 +31,18 @@ public partial class MainWindow
     private void OpenProgressionPage(string tab)
     {
         if (progressionController is null) return;
-        if (tab == "Cosmetic Shop" && modernLobby is { Ready: true })
+        if (modernLobby is { Ready: true })
         {
-            OpenModernShopFromProgression();
-            return;
+            if (tab == "Cosmetic Shop")
+            {
+                OpenModernShopFromProgression();
+                return;
+            }
+            if (tab is "Challenges" or "Statistics" or "Overview")
+            {
+                OpenModernProgression(tab == "Challenges" ? "challenges" : "statistics");
+                return;
+            }
         }
         progressionController.AccruePlaytime();
         ProcessLatestCompletedRound();
@@ -43,7 +51,10 @@ public partial class MainWindow
         page.RemoveProfileTabs();
         page.ConfigureEmbeddedPresentation(CloseMetaPage);
         if (modernLobby is { Ready: true })
+        {
             page.ConfigureModernShop(OpenModernShopFromProgression);
+            page.ConfigureModernRecords(OpenModernProgression);
+        }
         page.SelectTab(tab);
         ShowMetaPage(page);
     }
@@ -51,6 +62,11 @@ public partial class MainWindow
     private void OpenProfileStatistics(string section)
     {
         if (progressionController is null) return;
+        if (section != "Hand History" && modernLobby is { Ready: true })
+        {
+            OpenModernProgression("statistics");
+            return;
+        }
         var page = new ProgressionWindow(progressionController, preferences.Presentation("progression").AnimationsEnabled, preferences.Presentation("progression").SoundEnabled);
         page.ConfigureProfileSection(section);
         page.ConfigureEmbeddedPresentation(CloseMetaPage);

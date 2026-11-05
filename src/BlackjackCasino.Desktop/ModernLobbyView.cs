@@ -26,6 +26,11 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
     private readonly Func<string, (bool Success, string Message)> cosmeticAction;
     private readonly Func<string, (bool Success, string Message)> packAction;
     private readonly Action shopClosed;
+    private readonly Func<object> challengesSnapshot;
+    private readonly Func<object> statisticsSnapshot;
+    private readonly Func<string, (bool Success, string Message)> claimChallenge;
+    private readonly Func<(bool Success, string Message)> claimAllChallenges;
+    private readonly Action recordsClosed;
     private readonly CasinoModeRegistry modes;
     private readonly Action<string> progression;
     private readonly Action profile;
@@ -36,12 +41,14 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
     private bool initialized;
     private bool listening;
     private bool shopOpen;
+    private string? recordsPage;
     private bool ready;
     private bool failed;
     private bool disposed;
 
     internal bool Ready => ready && !failed;
     internal bool ShopOpen => shopOpen;
+    internal string? RecordsPage => recordsPage;
     internal bool Failed => failed;
     internal string? FailureReason { get; private set; }
     internal string? LastNavigation { get; private set; }
@@ -53,6 +60,9 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
         Func<object> shopSnapshot,
         Func<string, (bool Success, string Message)> cosmeticAction,
         Func<string, (bool Success, string Message)> packAction, Action shopClosed,
+        Func<object> challengesSnapshot, Func<object> statisticsSnapshot,
+        Func<string, (bool Success, string Message)> claimChallenge,
+        Func<(bool Success, string Message)> claimAllChallenges, Action recordsClosed,
         Action<string> progression, Action profile, Action vault, Action dailyClaim, Action exit,
         Action readyChanged)
     {
@@ -62,6 +72,11 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
         this.cosmeticAction = cosmeticAction;
         this.packAction = packAction;
         this.shopClosed = shopClosed;
+        this.challengesSnapshot = challengesSnapshot;
+        this.statisticsSnapshot = statisticsSnapshot;
+        this.claimChallenge = claimChallenge;
+        this.claimAllChallenges = claimAllChallenges;
+        this.recordsClosed = recordsClosed;
         this.progression = progression;
         this.profile = profile;
         this.vault = vault;
@@ -83,6 +98,7 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
         {
             Refresh();
             if (shopOpen) RefreshShop();
+            if (recordsPage is not null) RefreshRecords();
         }
     }
 
@@ -102,6 +118,25 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
         catch (InvalidOperationException ex) { Fail("Snapshot delivery failed: " + ex.Message); }
     }
 
+    private void RefreshRecords()
+    {
+        if (recordsPage is null || !listening || disposed || failed || browser.CoreWebView2 is null) return;
+        PostMessage("lobby.records.snapshot", new
+        {
+            Page = recordsPage,
+            Snapshot = recordsPage == "challenges" ? challengesSnapshot() : statisticsSnapshot(),
+        });
+    }
+
+    internal void ShowProgression(string page)
+    {
+        if (!Ready || disposed || failed || page is not ("challenges" or "statistics")) return;
+        shopOpen = false;
+        recordsPage = page;
+        PostMessage("lobby.records.show", new { Page = page });
+        RefreshRecords();
+    }
+
     private void RefreshShop()
     {
         if (!shopOpen || !listening || disposed || failed || browser.CoreWebView2 is null) return;
@@ -111,6 +146,7 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
     internal void ShowShop()
     {
         if (!Ready || !listening || disposed || failed) return;
+        recordsPage = null;
         shopOpen = true;
         PostMessage("lobby.shop.show", null);
         RefreshShop();
@@ -211,8 +247,35 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
                     break;
                 case "lobby.refresh":
                     Refresh();
+                    if (recordsPage is not null) RefreshRecords();
                     break;
+                case "lobby.records.open" when id is "challenges" or "statistics":
+                    shopOpen = false;
+                    recordsPage = id;
+                    RefreshRecords();
+                    break;
+                case "lobby.records.close":
+                    recordsPage = null;
+                    recordsClosed();
+                    break;
+                case "lobby.records.claim" when recordsPage == "challenges" && id is not null:
+                {
+                    var result = claimChallenge(id);
+                    PostMessage("lobby.records.result", new { result.Success, result.Message, Id = id });
+                    RefreshRecords();
+                    Refresh();
+                    break;
+                }
+                case "lobby.records.claim-all" when recordsPage == "challenges":
+                {
+                    var result = claimAllChallenges();
+                    PostMessage("lobby.records.result", new { result.Success, result.Message, Id = "all" });
+                    RefreshRecords();
+                    Refresh();
+                    break;
+                }
                 case "lobby.shop.open":
+                    recordsPage = null;
                     shopOpen = true;
                     RefreshShop();
                     break;
