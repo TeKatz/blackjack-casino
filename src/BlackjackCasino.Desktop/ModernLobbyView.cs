@@ -31,6 +31,8 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
     private readonly Func<object> accountSnapshot;
     private readonly Func<object> historySnapshot;
     private readonly Func<object> seasonsSnapshot;
+    private readonly Func<object> vaultSnapshot;
+    private readonly Func<(bool Success, string Message, object? Reward)> vaultOpen;
     private readonly Func<string, (bool Success, string Message)> renameProfile;
     private readonly Func<string, (bool Success, string Message)> equipProfile;
     private readonly Func<string, (bool Success, string Message)> activateSeason;
@@ -69,9 +71,10 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
         Func<string, (bool Success, string Message)> packAction, Action shopClosed,
         Func<object> challengesSnapshot, Func<object> statisticsSnapshot,
         Func<object> accountSnapshot, Func<object> historySnapshot, Func<object> seasonsSnapshot,
-        Func<string, (bool Success, string Message)> renameProfile,
+        Func<object> vaultSnapshot, Func<string, (bool Success, string Message)> renameProfile,
         Func<string, (bool Success, string Message)> equipProfile,
         Func<string, (bool Success, string Message)> activateSeason,
+        Func<(bool Success, string Message, object? Reward)> vaultOpen,
         Func<string, (bool Success, string Message)> claimChallenge,
         Func<(bool Success, string Message)> claimAllChallenges, Action recordsClosed,
         Action<string> progression, Action profile, Action vault, Action dailyClaim,
@@ -88,6 +91,8 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
         this.accountSnapshot = accountSnapshot;
         this.historySnapshot = historySnapshot;
         this.seasonsSnapshot = seasonsSnapshot;
+        this.vaultSnapshot = vaultSnapshot;
+        this.vaultOpen = vaultOpen;
         this.renameProfile = renameProfile;
         this.equipProfile = equipProfile;
         this.activateSeason = activateSeason;
@@ -149,6 +154,7 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
                 "profile" => accountSnapshot(),
                 "history" => historySnapshot(),
                 "season" => seasonsSnapshot(),
+                "vault" => vaultSnapshot(),
                 _ => throw new InvalidOperationException("Unsupported progression route."),
             },
         });
@@ -156,7 +162,7 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
 
     internal void ShowProgression(string page)
     {
-        if (!Ready || disposed || failed || page is not ("challenges" or "statistics" or "profile" or "history" or "season")) return;
+        if (!Ready || disposed || failed || page is not ("challenges" or "statistics" or "profile" or "history" or "season" or "vault")) return;
         shopOpen = false;
         recordsPage = page;
         PostMessage("lobby.records.show", new { Page = page });
@@ -283,7 +289,7 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
                     Refresh();
                     if (recordsPage is not null) RefreshRecords();
                     break;
-                case "lobby.records.open" when id is "challenges" or "statistics" or "profile" or "history" or "season":
+                case "lobby.records.open" when id is "challenges" or "statistics" or "profile" or "history" or "season" or "vault":
                     shopOpen = false;
                     recordsPage = id;
                     RefreshRecords();
@@ -292,6 +298,14 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
                     recordsPage = null;
                     recordsClosed();
                     break;
+                case "lobby.records.vault.open" when recordsPage == "vault":
+                {
+                    var result = vaultOpen();
+                    PostMessage("lobby.records.vault.result", new { result.Success, result.Message, result.Reward });
+                    RefreshRecords();
+                    Refresh();
+                    break;
+                }
                 case "lobby.profile.rename" when recordsPage == "profile" && profileName is not null:
                 {
                     var result = renameProfile(profileName);

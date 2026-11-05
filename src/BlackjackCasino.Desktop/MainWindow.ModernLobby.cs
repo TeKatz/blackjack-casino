@@ -24,9 +24,10 @@ public partial class MainWindow
             ModernShopCosmeticAction, ModernShopPackAction, OnModernShopClosed,
             GetModernChallengesSnapshot, GetModernStatisticsSnapshot,
             GetModernAccountSnapshot, GetModernHistorySnapshot, GetModernSeasonsSnapshot,
-            ModernProfileRename, ModernProfileEquip, ActivateModernSeason,
+            GetModernVaultSnapshot, ModernProfileRename, ModernProfileEquip,
+            ActivateModernSeason, ModernVaultOpen,
             ModernChallengeClaim, ModernChallengesClaimAll, OnModernProgressionClosed, OpenProgression,
-            OpenNativePlayerProfile, () => VaultButton_Click(this, new RoutedEventArgs()),
+            OpenNativePlayerProfile, () => OpenModernProgression("vault"),
             () => { ClaimDailyLoginFromDrawer(); modernLobby?.Refresh(); },
             SetModernLobbyLanguage, Close, OnModernLobbyStateChanged);
 

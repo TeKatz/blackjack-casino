@@ -369,6 +369,65 @@ public partial class MainWindow
         return (success, success ? item.Name + " equipped." : "Could not equip this cosmetic.");
     }
 
+
+    private object GetModernVaultSnapshot()
+    {
+        CasinoVaultSnapshot vault = CasinoVaultService.Snapshot(progressionController!.Profile);
+        return new
+        {
+            Tier = vault.Tier.Name,
+            TierId = vault.Tier.Id,
+            Accent = vault.Tier.Accent,
+            Current = RecordMoney(vault.CurrentAmount),
+            Capacity = RecordMoney(vault.Tier.Capacity),
+            Progress = (double)Math.Clamp(vault.Progress, 0m, 1m),
+            ContributionRate = (double)vault.ContributionRate,
+            BonusRate = (double)vault.Tier.FullBonusRate,
+            vault.IsFull,
+            vault.PayoutPending,
+            UnlockedTier = vault.UnlockedTier.Name,
+            NextTier = vault.NextTier?.Name,
+            NextTierWager = vault.NextTier is null ? null : RecordMoney(vault.NextTier.RequiredLifetimeWager),
+            LifetimeContributions = RecordMoney(vault.LifetimeContributions),
+            LifetimePayouts = RecordMoney(vault.LifetimePayouts),
+            LifetimeBonuses = RecordMoney(vault.LifetimeBonuses),
+            vault.VaultsOpened,
+            BiggestPayout = RecordMoney(vault.BiggestPayout),
+            LifetimeEligibleWager = RecordMoney(vault.LifetimeEligibleWager),
+        };
+    }
+
+    private (bool Success, string Message, object? Reward) ModernVaultOpen()
+    {
+        if (progressionController is null || lobby?.Visibility != System.Windows.Visibility.Visible
+            || session.RoundInProgress || embeddedGameShell is not null || EmpirePageOpen
+            || KniffelPageOpen || MetaPageOpen || vaultOverlay is not null)
+            return (false, "Return to the lobby and finish the active game before opening the Vault.", null);
+        CasinoVaultSnapshot before = CasinoVaultService.Snapshot(progressionController.Profile);
+        if (before.PayoutPending || !before.IsFull)
+            return (false, before.PayoutPending ? "A Vault payout is pending recovery." : "The Vault is not full.", null);
+        try
+        {
+            CasinoVaultOpenResult result = OpenCasinoVault();
+            RefreshVaultButton();
+            RefreshProfileButton();
+            RefreshGameUi();
+            int tier = CasinoVaultTierCatalog.All.ToList().FindIndex(t => t.Id == result.TierId);
+            return (true, "Payout transferred to your play-money bankroll.", new
+            {
+                Tier = before.Tier.Name,
+                BaseAmount = RecordMoney(result.BaseAmount),
+                BonusAmount = RecordMoney(result.BonusAmount),
+                Total = RecordMoney(result.TotalPayout),
+                Pack = ((BlackjackCasino.Core.Collections.CollectionRarity)Math.Clamp(tier, 0, 4)).ToString(),
+            });
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or IOException or UnauthorizedAccessException)
+        {
+            return (false, "Vault payout could not be completed: " + ex.Message, null);
+        }
+    }
+
     private object GetModernHistorySnapshot()
     {
         PlayerProgressionController controller = progressionController!;
@@ -451,6 +510,7 @@ public partial class MainWindow
             if (page == "profile") OpenNativePlayerProfile();
             else if (page == "statistics") OpenProfileStatistics("Statistics");
             else if (page == "history") OpenProfileStatistics("Hand History");
+            else if (page == "vault") VaultButton_Click(this, new System.Windows.RoutedEventArgs());
             else OpenProgressionPage(page == "season" ? "Season Pass" : "Challenges");
             return;
         }
