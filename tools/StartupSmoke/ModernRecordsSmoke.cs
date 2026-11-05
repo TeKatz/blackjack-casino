@@ -70,6 +70,8 @@ internal static class ModernRecordsSmoke
             "Challenge category filters are missing.");
         long beforeAll=profile.Coins;
         await web.ExecuteScriptAsync("document.querySelector('.record-claim-all')?.click()");
+        await Until(() => outstanding.All(c => ChallengeRegistry.IsClaimed(profile,c)),
+            "Claim All did not finish the native reward transaction.");
         await WaitFor(web,
             "Boolean(document.querySelector('.record-claim-all')?.disabled)",
             "Claim All did not refresh its enabled state.");
