@@ -88,7 +88,7 @@ export function onRecordsMessage(handle:(message:RecordsMessage)=>void):()=>void
   const listener=(event:MessageEvent)=>{
     const m:unknown=event.data;
     if(!obj(m)||!str(m.type)||!obj(m.data))return;
-    if(m.type==='lobby.records.show'&&(['challenges','statistics','profile','season'].includes(String(m.data.page))))
+    if(m.type==='lobby.records.show'&&(m.data.page==='challenges'||m.data.page==='statistics'||m.data.page==='profile'||m.data.page==='season'))
       handle({type:m.type,data:{page:m.data.page}});
     if(m.type==='lobby.records.snapshot'
       && ((m.data.page==='challenges'&&isChallenges(m.data.snapshot))
