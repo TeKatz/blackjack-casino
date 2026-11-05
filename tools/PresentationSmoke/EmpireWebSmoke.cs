@@ -28,6 +28,7 @@ internal static class EmpireWebSmoke
     {
         var old = (EmpireService)Field("empire").GetValue(window)!;
         var oldPreferences = (AppPreferences)Field("preferences").GetValue(window)!;
+        UiLanguagePreference oldLanguage = Localization.Language;
         var originalSession = (CasinoSession)Field("session").GetValue(window)!;
         decimal originalBankroll = originalSession.Bankroll;
         var fixture = Fixture();
@@ -48,12 +49,25 @@ internal static class EmpireWebSmoke
             await Click(view, "floor-3");
             await Check(view, "document.querySelectorAll('.empire-gallery .empire-room').length===5", "Resort gallery lost a department.");
             await Click(view, "room-hotel");
+            var viewports = new List<object>();
             foreach (var size in new[] { (1080d, 720d), (1366d, 768d), (1920d, 1080d) })
             {
                 window.Width = size.Item1; window.Height = size.Item2; window.UpdateLayout(); await Task.Delay(150);
+                // Hosted runners can clamp native windows to their virtual monitor.
+                // Exercise exact CSS viewports separately and record both dimensions.
+                await view.Browser.CoreWebView2.CallDevToolsProtocolMethodAsync("Emulation.setDeviceMetricsOverride",
+                    JsonSerializer.Serialize(new { width = (int)size.Item1, height = (int)size.Item2, deviceScaleFactor = 1, mobile = false }));
+                await Task.Delay(100);
+                await Check(view, $"innerWidth=={(int)size.Item1} && innerHeight=={(int)size.Item2}", "Emulated viewport dimensions were not applied.");
+                viewports.Add(new { RequestedWidth = size.Item1, RequestedHeight = size.Item2,
+                    NativeClientWidth = view.ActualWidth, NativeClientHeight = view.ActualHeight });
                 await Check(view, "document.documentElement.scrollWidth<=innerWidth+1 && document.querySelectorAll('canvas').length===1 && document.querySelector('[data-testid=upgrade]').getBoundingClientRect().bottom<=innerHeight+1 && [...document.querySelectorAll('.empire-room')].every(e=>e.getBoundingClientRect().right<=innerWidth+1)", "Empire clips at " + size);
-                await Capture(view, Path.Combine(output, "empire-react-" + (int)size.Item1 + ".png"));
+                string capture = await view.Browser.CoreWebView2.CallDevToolsProtocolMethodAsync("Page.captureScreenshot", "{\"format\":\"png\",\"captureBeyondViewport\":true,\"fromSurface\":true}");
+                using var image = JsonDocument.Parse(capture);
+                File.WriteAllBytes(Path.Combine(output, "empire-react-" + (int)size.Item1 + ".png"), Convert.FromBase64String(image.RootElement.GetProperty("data").GetString()!));
             }
+            await view.Browser.CoreWebView2.CallDevToolsProtocolMethodAsync("Emulation.clearDeviceMetricsOverride", "{}");
+            File.WriteAllText(Path.Combine(output, "empire-viewports.json"), JsonSerializer.Serialize(viewports, new JsonSerializerOptions { WriteIndented = true }));
             int before = fixture.Level("hotel");
             await Script(view, "document.querySelector('[data-testid=upgrade]').dispatchEvent(new FocusEvent('focusin',{bubbles:true})); true");
             await Task.Delay(250);
@@ -82,6 +96,7 @@ internal static class EmpireWebSmoke
             await Click(view, "nav-contracts"); await Click(view, "contract-expansion-drive");
             await Wait(() => fixture.ActiveContract?.Id == "expansion-drive", "Contract did not start.");
             await Click(view, "nav-estate"); await Click(view, "floor-1"); await Click(view, "room-tables");
+            await Capture(view, Path.Combine(output, "empire-react-main-floor.png"));
             await Script(view, "[...document.querySelectorAll('.empire-bulk button')].find(e=>e.textContent==='×50').click();true");
             await Click(view, "upgrade"); await Wait(() => fixture.CanClaimContract, "Construction did not advance the contract.");
             await Click(view, "nav-contracts"); await Click(view, "contract-claim");
@@ -100,6 +115,10 @@ internal static class EmpireWebSmoke
             await Click(view, "claim-dividend");
             await Wait(() => casino.Bankroll == cash + dividend, "Dividend did not settle into the casino wallet.");
             await Check(view, "document.querySelector('[data-testid=claim-dividend]').disabled", "Empty reserve can be collected again.");
+            Localization.SetLanguage(UiLanguagePreference.German); view.Refresh();
+            await Check(view, "document.documentElement.lang==='de' && document.querySelector('[data-testid=nav-estate]').textContent.includes('Dein Anwesen')", "German Empire controls did not localize.");
+            await Capture(view, Path.Combine(output, "empire-react-german.png"));
+            Localization.SetLanguage(oldLanguage); view.Refresh();
             await Click(view, "overview");
             Require(fixture.CanPrestige, "Prestige fixture did not meet its requirements.");
             await Click(view, "prestige");
@@ -129,7 +148,7 @@ internal static class EmpireWebSmoke
             typeof(MainWindow).GetMethod("CloseEmpire", Flags)!.Invoke(window, null);
             if (Field("empireDetachedWindow").GetValue(window) is Window detached) detached.Close();
             Field("empire").SetValue(window, old); Field("preferences").SetValue(window, oldPreferences);
-            originalSession.ResetBankroll(originalBankroll);
+            originalSession.ResetBankroll(originalBankroll); Localization.SetLanguage(oldLanguage);
         }
     }
     internal static async Task<string> Script(ModernEmpireView view, string script)

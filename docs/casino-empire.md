@@ -76,16 +76,21 @@ math, strategy, offline and persistence tests remain applicable. Frontend tests
 cover snapshot/receipt validation, decimal policy editing and retained room data.
 The Windows presentation and startup smokes exercise the actual WebView2 bridge,
 all management routes, upgrades, research, projects, specialists, automation,
-events, contracts, properties, dividend settlement, prestige, three viewport
-sizes and detached/minimized hosting.
+events, contracts, properties, dividend settlement, prestige, three exact CSS viewport
+sizes through WebView2 device emulation, observed native host dimensions, and
+detached/minimized hosting.
 
 The startup smoke also runs sequential read-only WPF and modern fixtures at
-1080×720, 1366×768 and 1920×1080: one property, all 15 rooms at level 100, Prestige
+requested native window sizes of 1080×720, 1366×768 and 1920×1080: one property, all 15 rooms at level 100, Prestige
 25, Resort Floor with Luxury Hotel selected, animation enabled and 1 Hz economy.
 It writes `empire-presentation-performance.json` with mean/p95 host composition
 intervals, modern browser rAF intervals, CPU and memory. CPU/memory include the
 host and all processes in the shared WebView2 environment, including the hidden
-lobby, in both cases. The 500 ms warm-up and four-second samples are short runner
+lobby when alive, in both cases. The runner may clamp native windows to its
+virtual monitor; recorded actual client dimensions are authoritative. Exact CSS
+viewports are tested separately and never represented as physical monitor tests.
+Reduced motion is disabled for the modern benchmark and its ticker must actually
+be running. The 500 ms warm-up and four-second samples are short runner
 diagnostics. Composition/rAF/ticker clocks have different semantics; none is GPU
 frame time. GPU utilization/VRAM and long-session behavior remain unmeasured.
 No performance improvement is asserted without inspecting an actual result file.

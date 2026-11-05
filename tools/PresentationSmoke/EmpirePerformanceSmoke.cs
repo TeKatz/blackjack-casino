@@ -15,7 +15,7 @@ internal static class EmpirePerformanceSmoke
     internal static async Task Run(MainWindow main, string output)
     {
         var results = new List<object>();
-        var environment = Find<ModernLobbyView>(main).FirstOrDefault()?.Browser.CoreWebView2?.Environment;
+        var lobbyEnvironment = Find<ModernLobbyView>(main).FirstOrDefault()?.Browser.CoreWebView2?.Environment;
         var host = new Window { Title = "Empire performance fixture", Width = 1366, Height = 768, Owner = main,
             WindowStartupLocation = WindowStartupLocation.CenterOwner };
         bool visible = main.IsVisible;
@@ -53,7 +53,8 @@ internal static class EmpirePerformanceSmoke
                             await EmpireWebSmoke.Wait(() => web.Ready, "Performance fixture did not load.");
                             await EmpireWebSmoke.Click(web, "floor-3");
                             await EmpireWebSmoke.Click(web, "room-hotel");
-                            environment = web.Browser.CoreWebView2.Environment;
+                            await web.Browser.CoreWebView2.CallDevToolsProtocolMethodAsync("Emulation.setEmulatedMedia", "{\"features\":[{\"name\":\"prefers-reduced-motion\",\"value\":\"no-preference\"}]}");
+                            await EmpireWebSmoke.Check(web, "document.querySelector('.empire-pixi').dataset.ticker==='running'", "The modern benchmark is not actually animating.");
                             await EmpireWebSmoke.Script(web, "window.__empireFrames=[];let previous=0;window.__empireSampling=true;const frame=t=>{if(!window.__empireSampling)return;if(previous)window.__empireFrames.push(t-previous);previous=t;requestAnimationFrame(frame);};requestAnimationFrame(frame);true");
                         }
                         else
@@ -62,7 +63,14 @@ internal static class EmpirePerformanceSmoke
                             Find<Button>(host).Single(b => b.Name == "EmpireRoom_hotel").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                         }
                         await Task.Delay(500);
-                        int[] Processes() => new[] { Environment.ProcessId }.Concat(environment?.GetProcessInfos().Select(p => p.ProcessId) ?? []).Distinct().ToArray();
+                        if (web is not null) await EmpireWebSmoke.Script(web, "window.__empireFrames=[];true");
+                        int[] Processes()
+                        {
+                            var ids = new HashSet<int> { Environment.ProcessId };
+                            foreach (var environment in new[] { lobbyEnvironment, web?.Browser.CoreWebView2?.Environment }.Where(e => e is not null).Distinct())
+                                foreach (var info in environment!.GetProcessInfos()) ids.Add(info.ProcessId);
+                            return ids.ToArray();
+                        }
                         var before = ReadProcesses(Processes());
                         var frames = new List<double>(); TimeSpan previous = TimeSpan.Zero;
                         void Render(object? sender, EventArgs e)
@@ -76,6 +84,7 @@ internal static class EmpirePerformanceSmoke
                         var watch = Stopwatch.StartNew();
                         try { await Task.Delay(4000); }
                         finally { CompositionTarget.Rendering -= Render; }
+                        double elapsedSeconds = watch.Elapsed.TotalSeconds;
                         var after = ReadProcesses(Processes());
                         double cpuMs = after.Sum(p => Math.Max(0, p.Value.Cpu - before.GetValueOrDefault(p.Key).Cpu));
                         object? browserFrames = null;
@@ -86,10 +95,13 @@ internal static class EmpirePerformanceSmoke
                             await EmpireWebSmoke.Capture(web, Path.Combine(output, "empire-benchmark-modern-" + (int)size.Item1 + ".png"));
                         }
                         results.Add(new { Presentation = modern ? "React/Pixi/WebView2" : "WPF retained rollback source",
-                            Width = size.Item1, Height = size.Item2, PropertyCount = service.OwnedProperties.Count,
+                            RequestedWindowWidth = size.Item1, RequestedWindowHeight = size.Item2,
+                            ActualClientWidth = ((FrameworkElement)host.Content).ActualWidth, ActualClientHeight = ((FrameworkElement)host.Content).ActualHeight,
+                            PropertyCount = service.OwnedProperties.Count,
                             Scene = "Resort Floor, selected Luxury Hotel, all 15 rooms level 100, prestige 25",
-                            AnimationEnabled = true, EconomyHz = 1, SampleSeconds = watch.Elapsed.TotalSeconds,
-                            ProcessCount = after.Count, CpuPercentOfMachine = cpuMs / watch.Elapsed.TotalMilliseconds / Environment.ProcessorCount * 100,
+                            AnimationEnabled = true, ModernTickerVerifiedRunning = modern, EconomyHz = 1, SampleSeconds = elapsedSeconds,
+                            ProcessCount = after.Count, CpuPercentOfMachine = cpuMs / (elapsedSeconds * 1000) / Environment.ProcessorCount * 100,
+                            HostCpuPercentOfMachine = Math.Max(0, after.GetValueOrDefault(Environment.ProcessId).Cpu - before.GetValueOrDefault(Environment.ProcessId).Cpu) / (elapsedSeconds * 1000) / Environment.ProcessorCount * 100,
                             PrivateBytesBefore = before.Sum(p => p.Value.Private), PrivateBytesAfter = after.Sum(p => p.Value.Private),
                             WorkingSetAfter = after.Sum(p => p.Value.Working), HostCompositionIntervals = Summary(frames), BrowserRafIntervals = browserFrames });
                     }
@@ -100,7 +112,7 @@ internal static class EmpirePerformanceSmoke
             {
                 Environment = new { OS = Environment.OSVersion.ToString(), Runtime = Environment.Version.ToString(), Environment.ProcessorCount,
                     Dpi = VisualTreeHelper.GetDpi(host).PixelsPerDip },
-                Notes = "Sequential read-only Windows fixtures. CPU/private memory include host plus all shared WebView2 environment processes, including hidden lobby. WPF composition and browser rAF are distinct callback clocks, not GPU frame times. Warm-up 500ms; 4s samples are CI diagnostics, not long-session certification.",
+                Notes = "Sequential read-only Windows fixtures. CPU/private memory include host plus all shared WebView2 environment processes, including hidden lobby when alive. Requested native sizes may be clamped by the runner; ActualClientWidth/Height are authoritative. Modern reduced motion is explicitly disabled and the ticker is verified running. WPF composition and browser rAF are distinct callback clocks, not GPU frame times. Warm-up 500ms; 4s samples are CI diagnostics, not long-session certification.",
                 Gpu = "Not measured: no GPU timing, utilization or VRAM counter is available in this smoke.", Results = results,
             }, new JsonSerializerOptions { WriteIndented = true }));
         }

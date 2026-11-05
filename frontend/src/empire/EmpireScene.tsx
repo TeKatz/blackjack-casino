@@ -8,7 +8,7 @@ const files:Record<string,string>={'high-limit-slots':'high-limit-slots',poker:'
 export function roomArt(id:string):CSSProperties {
   if(files[id])return {backgroundImage:`url('./empire-art/${files[id]}.png')`};
   const i=Math.max(0,['slots','tables','bar','roulette','vip'].indexOf(id));
-  return {backgroundImage:"url('./empire-art/rooms-atlas.png')",backgroundSize:'300% 200%',backgroundPosition:`${(i%3)*50}% ${Math.floor(i/3)*100}%`};
+  return {backgroundImage:"url('./empire-art/rooms-atlas.png')",backgroundSize:'max(300cqw, 300cqh) auto',backgroundPosition:`calc(50cqw - ${i%3+.5} * max(100cqw, 100cqh)) calc(50cqh - ${Math.floor(i/3)+.5} * max(100cqw, 100cqh))`};
 }
 export const EmpireScene=memo(function EmpireScene({roomId,enabled,diagnostics,onReady}:{roomId:string;enabled:boolean;diagnostics:boolean;onReady:()=>void}) {
   const target=useRef<HTMLDivElement>(null);

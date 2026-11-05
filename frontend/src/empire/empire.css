@@ -32,3 +32,7 @@
  .empire-bulk button{padding:7px}.empire-upgrade{padding:10px!important}
 }
 @media(max-width:900px){.empire-estate:not([hidden]){display:block}.empire-estate>.empire-workspace{display:grid}.empire-estate .empire-inspector{grid-column:auto;grid-row:auto}}
+
+/* Each atlas tile is a source-authored square: cover and center its crop without
+   stretching furniture or leaking neighboring rooms into the selected scene. */
+.empire-scene,.empire-room{container-type:size}
