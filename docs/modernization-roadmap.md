@@ -22,6 +22,28 @@ The casino lobby is now a separate, read-only React/TypeScript/PixiJS page built
 - Native games and Blackjack-table-specific settings stay WPF until replacement. The WPF Album, Vault and profile editor remain only for emergency/legacy-game fallbacks, never as primary modern-lobby pages.
 - The full native fallback casino lobby and old Manor source remain temporarily because Windows presentation smoke tests directly exercise their controls. They will be removed in a separate tested cleanup, not by disabling coverage.
 
+## Casino Empire presentation migration (2026-11-05)
+
+Empire now has a separate React/TypeScript entry point (`empire.html`) for both
+embedded and detached hosting. Its gallery/inspector, floors, research, projects,
+properties, circuits, specialists, automation, events, contracts, statistics and
+prestige call the unchanged C# economy. The original high-resolution artwork is
+packaged locally. A single retained Pixi lighting scene replaces the normal
+WPF room-art animation path and pauses when hidden/minimized or motion is off.
+
+The versioned origin-checked bridge validates user intents, session/revision and
+request IDs; it keeps session receipts and never automatically repeats uncertain
+purchases. Exact decimal strings, isolated Core previews and the existing atomic
+save/dividend callbacks preserve the financial boundary and save schema.
+
+Automated coverage includes bridge/preview tests, frontend validation, live
+Windows management/navigation smokes and a sequential WPF/modern performance
+fixture. Actual CI results and generated metrics must be inspected per commit;
+implementation alone does not establish acceptance or measured speed. Native
+DPI, long-session GPU/memory, audio and final visual review remain manual checks.
+The old WPF Empire source remains only for rollback and benchmark comparison.
+See [Empire verification](casino-empire.md) for exact measurement limitations.
+
 ## Why this direction
 
 The current Windows UI is WPF. Gameplay engines are primarily in `BlackjackCasino.Core`, and the WPF desktop project provides orchestration, persistence and visual state. The planned frontend uses:
@@ -225,3 +247,4 @@ The [Phase-3 sign-off matrix](manor-phase-3-signoff.md) tracks the exact boundar
 - The bonus entry uses a perspective camera push through arched frames; individual room decisions animate the next room view and intensify clue/lighting feedback. Ambient particles, slow background lighting and fog remain cosmetic and stop under reduced-motion settings.
 - The branded WPF startup cover is visible before WebView2 initializes. It fades only after the authoritative snapshot, Pixi renderer and original symbol artwork are ready, avoiding the initial empty black viewport and late illustration pop-in.
 - Windows startup smoke checks the six quick-bet controls, four auto-run options, absence of technical engine copy, and transition from splash to the loaded WebView2 interface. Dedicated-machine performance, sound-balance and bonus feel remain manual quality checks.
+

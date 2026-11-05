@@ -15,6 +15,7 @@
     <Resource Include="Assets\Portraits\*.jpg" />
     <Resource Include="Assets\Navigation\*.png" />
     <Resource Include="Assets\Empire\*.png" />
+    <Content Include="Assets/Empire/*.png" Link="ModernFrontend/empire-art/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Resource Include="Assets\Lounge\*.jpg" />
     <Resource Include="Assets/midnight-club.ico" />
     <Resource Include="Assets\NineLives\*.png" />

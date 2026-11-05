@@ -11,7 +11,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="../PresentationSmoke/NavigationSmoke.cs" Link="NavigationSmoke.cs" />
+    <Compile Include="../PresentationSmoke/EmpireWebSmoke.cs" Link="EmpireWebSmoke.cs" />
+    <Compile Include="../PresentationSmoke/EmpirePerformanceSmoke.cs" Link="EmpirePerformanceSmoke.cs" />
     <ProjectReference Include="..\..\src\BlackjackCasino.Desktop\BlackjackCasino.Desktop.csproj" />
     <ProjectReference Include="..\..\src\BlackjackCasino.Core\BlackjackCasino.Core.csproj" />
   </ItemGroup>
 </Project>
+

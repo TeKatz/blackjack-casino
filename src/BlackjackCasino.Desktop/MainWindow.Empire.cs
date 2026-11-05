@@ -11,8 +11,8 @@ namespace BlackjackCasino.Desktop;
 public partial class MainWindow
 {
     private EmpireService? empire;
-    private EmpireView? empireView;
-    private EmpireView? empireDetachedView;
+    private ModernEmpireView? empireView;
+    private ModernEmpireView? empireDetachedView;
     private Window? empireDetachedWindow;
     private DispatcherTimer? empireTimer;
     private DateTimeOffset empireLastSave;
@@ -82,16 +82,7 @@ public partial class MainWindow
         ProcessLatestCompletedRound();
         EnsureEmbeddedGameHost();
         StartEmpireSession();
-        empireView = new EmpireView(
-            empire,
-            UpgradeEmpire,
-            ClaimEmpireDividend,
-            PrestigeEmpire,
-            CloseEmpire,
-            () => preferences.Presentation("casino-empire").AnimationsEnabled,
-            "←  Casino lobby",
-            MutateEmpire);
-        EmpireStatisticsPage.Attach(empireView, empire);
+        empireView = CreateModernEmpireView(CloseEmpire);
         foreach (UIElement covered in CasinoRoot.Children.OfType<UIElement>().Where(child => child != embeddedGameOverlay))
         {
             empireCoveredElements.Add((covered, covered.IsEnabled));
@@ -128,23 +119,13 @@ public partial class MainWindow
             Title = "Casino Empire · Detached",
             Width = 1280,
             Height = 820,
-            MinWidth = 940,
-            MinHeight = 650,
+            MinWidth = 800,
+            MinHeight = 600,
             Background = new SolidColorBrush(Color.FromRgb(8, 20, 19)),
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             Owner = this,
         };
-        EmpireView? view = null;
-        view = new EmpireView(
-            empire,
-            UpgradeEmpire,
-            ClaimEmpireDividend,
-            PrestigeEmpire,
-            () => window.Close(),
-            () => preferences.Presentation("casino-empire").AnimationsEnabled,
-            "Close Empire window",
-            MutateEmpire);
-        EmpireStatisticsPage.Attach(view, empire);
+        ModernEmpireView view = CreateModernEmpireView(() => window.Close());
         window.Content = view;
         window.Closed += (_, _) =>
         {
@@ -163,6 +144,21 @@ public partial class MainWindow
         Dispatcher.BeginInvoke(() => ShowStartupEmpireReport(view));
     }
 
+    private ModernEmpireView CreateModernEmpireView(Action close)
+        => new(() => new
+        {
+            Language = Localization.Language == UiLanguagePreference.German ? "de" : "en",
+            AnimationsEnabled = preferences.Presentation("casino-empire").AnimationsEnabled,
+            SoundEnabled = preferences.SoundEnabled,
+            Detached = EmpireDetachedOpen,
+            CanClaimDividend = !session.RoundInProgress && embeddedGameShell is null && !KniffelPageOpen,
+            Economy = EmpireModernSnapshot.Create(empire!),
+        }, command => command.Action == "dividend"
+            ? new(ClaimEmpireDividend(), "Owner dividend collection. Finish any active game before collecting; the reserve must contain at least one cent.")
+            : MutateEmpire(candidate => EmpireModernProtocol.Apply(candidate, command, DateTimeOffset.UtcNow)),
+            command => EmpireModernSnapshot.Preview(empire!.Preview(command.RoomId ?? command.Id ?? "slots",
+                (candidate, at) => EmpireModernProtocol.Apply(candidate, command, at))), close);
+
     private void StartEmpireSession()
     {
         if (empire is null) return;
@@ -174,7 +170,7 @@ public partial class MainWindow
         RefreshEmpireHeader();
     }
 
-    private void ShowStartupEmpireReport(EmpireView? target)
+    private void ShowStartupEmpireReport(ModernEmpireView? target)
     {
         if (target is null || empireStartupReportShown || empireStartupCatchUp is null) return;
         empireStartupReportShown = true;
@@ -316,3 +312,4 @@ public partial class MainWindow
         EmpireHeaderRate.Text = "+" + EmpireView.Number(empire.CreditsPerSecond) + " cr / sec";
     }
 }
+

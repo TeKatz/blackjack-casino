@@ -6,57 +6,97 @@ outbound connection is a bounded owner cash dividend. Empire never changes
 Blackjack rules, dice outcomes, slot odds or RTP. Claimed challenges and completed
 game activity can benefit Empire in the other direction.
 
-## Estate command center
+## Modern estate command center
 
-The Estate page gives the room gallery priority. Four quiet navigation groups
-keep every system reachable: Estate (rooms, floors, circuits), Development
-(research, projects, properties), Operations (team, automation) and Opportunities
-(events, contracts). Section pages use only their group's local navigation and
-remain in the same native window. The updater still follows
-`feature/empire-command-center`.
+`frontend/empire.html` is the sole normal Empire presentation in embedded and
+detached windows. The WPF shell owns lifecycle and the original `EmpireService`;
+React owns the gallery/inspector and the Estate, Development, Operations,
+Opportunities and Statistics navigation. Development continues from
+`feature/manor-modernization-phase-1` with the existing release guards.
 
-The right inspector holds room upgrades, bulk quantities, cost, production and
-the next milestone. One Room Intelligence surface below the gallery explains
-growth, actual operating specialists, automation requirements and policy,
-participating/benefiting circuits, their individual members and limiting rooms,
-and the exact production factors. Select a room again or use Estate overview to
-clear selection; the panel then shows estate progress, useful next steps and the
-prestige action. Future-floor circuit members can be expanded when relevant.
-There are no permanent research/project/team/opportunity cards or global circuit
-row on the main screen. Long contextual details have local scroll fallbacks for
-small windows; the gallery preserves five cards per floor at standard widths.
+The gallery shows five departments per floor at standard desktop widths. Floors,
+operating/closed filters, room selection, bulk quantities (1/5/10/25/50/100),
+production breakdowns and milestone progress remain accessible. Estate overview
+contains the prestige action with a confirmation dialog. Research keeps all
+three branches, rank costs and prerequisite links. Each specialist can be
+assigned to any operating department or made inactive. Automation keeps editable
+reserve, budget, target, milestone strategy and ordered room priorities without
+replacing unsaved input on production ticks. Contracts show progress and claims;
+events show their goal, end time and encore. Statistics include portfolio and
+property lifetime totals, tag production, construction, contracts, events,
+achievements, owner cash and offline capacity. Startup catch-up retains per-room
+and per-property earnings.
 
-Hover or keyboard-focus an upgrade quantity or purchase button to preview its
-construction cost, portfolio production delta, room level/output, milestones and
-circuit progress. Specialists can be previewed in the contextual selector or Team;
-automation can be previewed at the contextual toggle or Save automation. Cyan
-values explicitly labelled PREVIEW are temporary. Leaving, changing room, estate,
-floor, filter or section, committing, editing a management form, and unloading
-clear previews. Current values remain separate from their projected effects.
+One Pixi application stays mounted across section and room changes. It animates
+retained light beams and particles over the original room artwork. Gallery cards
+use static high-resolution backgrounds and stable React room references; there
+is no renderer per card and no per-frame shape redraw. DPR is bounded at 2,
+resize and monitor-DPI changes update the existing renderer, and decorative
+motion stops on hidden documents, hidden/minimized native windows, management
+routes, reduced motion or the Empire animation preference. GPU initialization
+failure keeps the DOM controls and static artwork usable. Assets are copied from
+`Assets/Empire` to `ModernFrontend/empire-art` at build/publish time; browser-only
+Vite previews need those local files for artwork.
 
-`EmpireService.Preview` runs real commands on an isolated state at the simulation's
-current instant, with the same achievements and activity snapshot. It never
-accrues future time or calls persistence/wallet callbacks. Portfolio totals include
-other owned properties; an upgrade can affect other rooms through circuits or
-research. `ProductionBreakdown` and live production share the same calculation:
-base (including level milestones) × prestige × achievements × (1 + capped
-strategic additions), with the existing final room cap. Automation purchases
-upgrades every 30 production seconds and does **not** grant an output multiplier;
-specialists have fixed effects, not a fictional manager-level progression.
+## Bridge and transaction boundary
 
-The palette uses deep club greens, warm ivory, restrained milestone/prestige gold
-and a distinct cyan preview accent. Original vector insignia share a 24-unit grid
-for economy, navigation, room categories, operations and performance. Selection,
-preview entry, circuit progress, purchases and numeric transitions respect Empire's
-animation preference and replace in-flight animations rather than queuing them.
+`EmpireModernProtocol` version 1 accepts intents only from the exact packaged
+HTTPS `/empire.html` origin. Catalog IDs, quantities, policy bounds, UUID request
+IDs, session epoch and expected revision are validated. All production, prices,
+quotes, eligibility and preview outcomes come from C#. Credit amounts cross the
+bridge as invariant decimal strings; display abbreviation never determines a
+purchase. Policy fields support German decimal commas in the UI and are sent
+as exact invariant decimal strings.
 
-Research retains its three branch diagrams, rank prerequisites and exact costs.
-Catalog pages retain pagination and automation form inputs remain stable during
-production refreshes. The Windows smoke covers the revised navigation at
-1080×720, 1366×768 and 1920×1080, hover isolation/cleanup, estate overview, room
-changes, catalog purchases and detached hosting. Core regression tests compare
-previews with committed upgrades, cross-room synergy effects, specialist moves,
-automation policies, achievements, level caps and multiple properties.
+Mutations use the existing `MutateEmpire` / `EmpireService.Transact` path.
+Dividends keep the original atomic shared-wallet callback and active-game guard.
+No Core economy formula, balance, save schema or release pin changes. Each
+mounted host has an unpredictable epoch and monotonic command revision; it
+retains up to 4,096 receipts without eviction, then requires reopening. Explicit
+user actions increment that revision, while independent deterministic accrual
+continues at 1 Hz and Core revalidates affordability at commit. A new browser
+cannot replay an old epoch. This is session deduplication, not a new durable
+command journal; durable correctness remains in the existing save transaction.
+
+Previews run actual commands against `EmpireService.Preview`'s isolated copy,
+never persistence or wallet callbacks. Explicit previews are available alongside
+upgrade hover/focus previews and show construction budget, portfolio/room output,
+levels and resulting circuit tiers. Section/room/filter changes, edits and
+commits clear the preview. A command timeout requests a read-only snapshot and
+blocks further mutations until its receipt arrives or the view is reopened.
+Snapshots carry the last receipt so a missing acknowledgement can be recovered
+without automatically resending an action.
+
+## Verification and performance evidence
+
+`EmpireModernBridgeTests` covers the trusted origin, validation, revisions,
+duplicate requests, expired epochs, failed saves, exact German policy decimals,
+read-only snapshots and previews versus committed Core results. Existing Empire
+math, strategy, offline and persistence tests remain applicable. Frontend tests
+cover snapshot/receipt validation, decimal policy editing and retained room data.
+The Windows presentation and startup smokes exercise the actual WebView2 bridge,
+all management routes, upgrades, research, projects, specialists, automation,
+events, contracts, properties, dividend settlement, prestige, three viewport
+sizes and detached/minimized hosting.
+
+The startup smoke also runs sequential read-only WPF and modern fixtures at
+1080×720, 1366×768 and 1920×1080: one property, all 15 rooms at level 100, Prestige
+25, Resort Floor with Luxury Hotel selected, animation enabled and 1 Hz economy.
+It writes `empire-presentation-performance.json` with mean/p95 host composition
+intervals, modern browser rAF intervals, CPU and memory. CPU/memory include the
+host and all processes in the shared WebView2 environment, including the hidden
+lobby, in both cases. The 500 ms warm-up and four-second samples are short runner
+diagnostics. Composition/rAF/ticker clocks have different semantics; none is GPU
+frame time. GPU utilization/VRAM and long-session behavior remain unmeasured.
+No performance improvement is asserted without inspecting an actual result file.
+
+Manual acceptance remains required for German/English text and keyboard use,
+125/150/200% DPI and monitor moves, initial loading and artwork quality, a
+30-minute detached session beside a live game (including blocked dividend
+collection), offline save/reopen and a simulated failed save. Compare baseline
+and modern CPU/private-memory trends on the same machine, graphics device,
+viewport, fixture and duration. Retiring the rollback source is a separate
+post-acceptance cleanup.
 
 ## Departments, floors and properties
 
@@ -259,3 +299,4 @@ command center adds three-resolution visibility checks, every research branch,
 prerequisite connectors, catalog pagination and input stability across refreshes. Existing
 presentation tests retain upgrade/dividend/navigation checks at three sizes.
 See `docs/empire-balancing.md` for simulation results and reproducible commands.
+

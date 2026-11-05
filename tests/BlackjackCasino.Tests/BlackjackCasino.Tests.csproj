@@ -16,6 +16,8 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="../../src/BlackjackCasino.Desktop/EmpireModernProtocol.cs" Link="Presentation/EmpireModernProtocol.cs" />
+    <Compile Include="../../src/BlackjackCasino.Desktop/EmpireModernSnapshot.cs" Link="Presentation/EmpireModernSnapshot.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/ManorController.cs" Link="Persistence/ManorController.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/ManorModernGameService.cs" Link="Presentation/ManorModernGameService.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/ManorPreviewProtocol.cs" Link="Presentation/ManorPreviewProtocol.cs" />
@@ -45,3 +47,4 @@
   </ItemGroup>
   <ItemGroup><EmbeddedResource Include="../../src/BlackjackCasino.Desktop/Assets/Music/*.wav" LogicalName="BlackjackCasino.Music.%(Filename)%(Extension)" /></ItemGroup>
 </Project>
+

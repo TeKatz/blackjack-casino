@@ -9,7 +9,8 @@ export default defineConfig({
     emptyOutDir: true,
     target: 'es2022',
     sourcemap: false,
-    rollupOptions: { input: { manor: 'index.html', lobby: 'lobby.html' } },
+    rollupOptions: { input: { manor: 'index.html', lobby: 'lobby.html', empire: 'empire.html' } },
   },
   server: { host: '127.0.0.1', port: 5173, strictPort: true },
 });
+
