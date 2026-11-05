@@ -1,3 +1,4 @@
+using System.IO;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
@@ -24,8 +25,8 @@ internal static partial class Program
         }
         if (table is not { Ready: true, Failed: false, IsVisible: true })
         {
-            var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
-            var overlay = typeof(MainWindow).GetField("embeddedGameOverlay", flags)?.GetValue(window)
+            var diagnosticFlags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+            var overlay = typeof(MainWindow).GetField("embeddedGameOverlay", diagnosticFlags)?.GetValue(window)
                 as FrameworkElement;
             var lobby = Find<CasinoLobbyView>(window).FirstOrDefault();
             string reason = "Primary modern Blackjack route did not initialize. "
