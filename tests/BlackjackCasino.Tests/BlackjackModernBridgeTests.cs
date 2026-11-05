@@ -29,10 +29,11 @@ public sealed class BlackjackModernBridgeTests
         var epoch = new BlackjackModernSession();
         Assert.NotNull(BlackjackModernProtocol.Parse(Message(epoch)));
         Assert.NotNull(BlackjackModernProtocol.Parse(Message(epoch, "bet.set", "25.50")));
+        Assert.NotNull(BlackjackModernProtocol.Parse(Message(epoch, "bet.set", "5001")));
         foreach (string bad in new[]
         {
             Message(epoch, "bet.set", "NaN"), Message(epoch, "bet.set", "-1"),
-            Message(epoch, "bet.set", "1,5"), Message(epoch, "bet.set", "5001"),
+            Message(epoch, "bet.set", "1,5"), Message(epoch, "bet.set", "1000001"),
             Message(epoch, "hit", "extra"), Message(epoch, "payout", "100"),
             Message(epoch, "mode.set", "admin"), Message(epoch, "seats.set", "6"),
             "[]", "invalid json", new string('x', 4097),
@@ -80,6 +81,35 @@ public sealed class BlackjackModernBridgeTests
         Assert.Equal("King", settled.GetProperty("round").GetProperty("dealerCards")[1]
             .GetProperty("rank").GetString());
         Assert.Equal("Settled", settled.GetProperty("round").GetProperty("phase").GetString());
+    }
+
+    [Fact]
+    public void CustomRulesPreserveInvariantAmountsAndRejectMalformedOrUnsafeSettings()
+    {
+        var epoch = new BlackjackModernSession();
+        var rules = new
+        {
+            deckCount = 6, dealerHitsSoft17 = true, dealerPeeksForBlackjack = false,
+            dealerTakesHoleCard = false, allowInsurance = true, allowLateSurrender = false,
+            doubleRule = "NineToEleven", doubleAfterSplit = true, resplitAces = false,
+            hitSplitAces = false, maxSplitHands = 4, blackjackPayout = "1.5",
+            penetration = "0.75", minimumBet = "1.25", maximumBet = "10000",
+        };
+        string data = JsonSerializer.Serialize(rules);
+        BlackjackModernCommand? command = BlackjackModernProtocol.Parse(Message(epoch, "rules.custom.set", data));
+        Assert.NotNull(command);
+        Assert.NotNull(command.CustomRules);
+        Assert.Equal(1.25m, command.CustomRules.MinimumBet);
+        Assert.Equal(10_000m, command.CustomRules.MaximumBet);
+        Assert.False(command.CustomRules.DealerTakesHoleCard);
+        Assert.Equal(DoubleRule.NineToEleven, command.CustomRules.DoubleRule);
+        Assert.Null(BlackjackModernProtocol.Parse(Message(epoch, "rules.custom.set",
+            data.Replace("\"0.75\"", "\"1.20\""))));
+        Assert.Null(BlackjackModernProtocol.Parse(Message(epoch, "rules.custom.set",
+            data.Replace("\"10000\"", "\"0\""))));
+        Assert.Null(BlackjackModernProtocol.Parse(Message(epoch, "rules.custom.set",
+            data.Replace("\"NineToEleven\"", "\"invalid\""))));
+        Assert.Null(BlackjackModernProtocol.Parse(Message(epoch, "rules.custom.set", "{}")));
     }
 
     private static JsonElement Snapshot(CasinoSession session) =>

@@ -34,6 +34,8 @@ internal static class BlackjackModernSnapshot
             Preset = preset,
             Theme = theme,
             CardSetId = cardSetId,
+            CardVariant = CosmeticCatalog.TryGet(cardSetId) is { Kind: CosmeticKind.CardSet } cardSet
+                ? cardSet.VisualVariant : "card-classic",
             SoundEnabled = soundEnabled,
             AnimationsEnabled = animationsEnabled,
             Status = status,
@@ -43,6 +45,7 @@ internal static class BlackjackModernSnapshot
                 rules.DealerTakesHoleCard, rules.AllowInsurance, rules.AllowLateSurrender,
                 DoubleRule = rules.DoubleRule.ToString(), rules.DoubleAfterSplit,
                 rules.ResplitAces, rules.HitSplitAces, rules.MaxSplitHands,
+                rules.Penetration,
                 BlackjackPayout = Money(rules.BlackjackPayout),
                 MinimumBet = Money(rules.MinimumBet), MaximumBet = Money(rules.MaximumBet),
             },

@@ -1,11 +1,12 @@
 using System.Globalization;
 using System.Text.Json;
+using BlackjackCasino.Core;
 
 namespace BlackjackCasino.Desktop;
 
 // User intents only. Card order, payouts, eligibility and bankroll remain C#-owned.
 internal sealed record BlackjackModernCommand(string RequestId, string Session, long ExpectedRevision,
-    string Action, string? Value);
+    string Action, string? Value, GameRules? CustomRules = null);
 internal sealed record BlackjackModernReply(string RequestId, bool Success, string Message, long Revision);
 
 internal static class BlackjackModernProtocol
@@ -42,18 +43,22 @@ internal static class BlackjackModernProtocol
             {
                 "bet.set" => value is not null &&
                     decimal.TryParse(value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture,
-                        out decimal amount) && amount >= 0m && amount <= 5000m,
+                        out decimal amount) && amount >= 0m && amount <= 1_000_000m,
                 "mode.set" => value is "solo" or "full",
                 "seats.set" => value is "1" or "2" or "3" or "4" or "5",
                 "preset.set" => value is "Casual" or "LasVegasStrip" or "DowntownVegas"
                     or "AtlanticCity" or "European" or "SingleDeck" or "Custom",
+                "rules.custom.set" => BlackjackModernRules.TryParse(value, out _),
                 "theme.set" => value is "ClassicGreen" or "MidnightBlue" or "Burgundy",
                 "sound.set" or "animations.set" => value is "true" or "false",
-                "bet.clear" or "deal" or "hit" or "stand" or "double" or "split"
+                "bet.clear" or "bankroll.reset" or "deal" or "hit" or "stand" or "double" or "split"
                     or "surrender" or "insurance.take" or "insurance.decline" => value is null,
                 _ => false,
             };
-            return valid ? new(requestId!, session!, expected, action!, value) : null;
+            GameRules? customRules = null;
+            if (valid && action == "rules.custom.set" && !BlackjackModernRules.TryParse(value, out customRules))
+                return null;
+            return valid ? new(requestId!, session!, expected, action!, value, customRules) : null;
         }
         catch (Exception ex) when (ex is JsonException or InvalidOperationException or FormatException or OverflowException)
         {

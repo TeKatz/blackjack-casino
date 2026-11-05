@@ -129,11 +129,19 @@ public partial class MainWindow
                 case "mode.set":
                 case "seats.set":
                 case "preset.set":
+                case "rules.custom.set":
                     if (inHand) return (false, "Finish the current round before changing table settings.");
                     if (command.Action == "mode.set")
                         playMode = command.Value == "full" ? PlayModePreference.FullTable : PlayModePreference.Solo;
                     else if (command.Action == "seats.set")
                         aiSeatCount = int.Parse(command.Value!, CultureInfo.InvariantCulture);
+                    else if (command.Action == "rules.custom.set")
+                    {
+                        if (command.CustomRules is null) return (false, "Invalid custom rules.");
+                        customTableRules = command.CustomRules with { };
+                        currentTableRules = customTableRules with { };
+                        currentTablePreset = TablePresetId.Custom;
+                    }
                     else
                     {
                         TablePresetId choice = Enum.Parse<TablePresetId>(command.Value!);
@@ -165,6 +173,14 @@ public partial class MainWindow
                     break;
                 case "animations.set":
                     AnimationsCheckBox.IsChecked = command.Value == "true";
+                    break;
+                case "bankroll.reset":
+                    if (inHand) return (false, "Finish the current round before resetting bankroll.");
+                    session.ResetBankroll();
+                    selectedBet = 25m;
+                    StatusText.Text = "Bankroll reset. Place a bet to begin.";
+                    SavePreferences();
+                    RefreshGameUi();
                     break;
                 default:
                     return (false, "Unsupported table action.");
