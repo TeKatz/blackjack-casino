@@ -306,6 +306,11 @@ public partial class MainWindow
 
     private void CloseEmbeddedGame()
     {
+        if (ModernBlackjackOpen)
+        {
+            CloseModernBlackjack();
+            return;
+        }
         if (KniffelPageOpen)
         {
             CloseKniffel();
