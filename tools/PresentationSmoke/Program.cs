@@ -209,10 +209,10 @@ internal static partial class Program
                 "[...document.querySelectorAll('.lobby-nav-item')].find(x=>/Shop/.test(x.textContent||''))?.click()");
             for (int i = 0; i < 60; i++)
             {
-                string ready = await browser.ExecuteScriptAsync(
+                string shopReady = await browser.ExecuteScriptAsync(
                     "Boolean(document.querySelector('.modern-shop')"
                     + "&&document.querySelectorAll('.shop-product').length===" + CosmeticCatalog.All.Count + ")");
-                if (ready == "true") break;
+                if (shopReady == "true") break;
                 await Task.Delay(100);
             }
             string view = await browser.ExecuteScriptAsync(
