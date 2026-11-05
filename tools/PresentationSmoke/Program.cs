@@ -155,7 +155,8 @@ internal static partial class Program
             RequireWithin(window,Find<TextBox>(window).Single(b=>b.Name=="ProfileNameBox"),"Profile name");
             Capture(window,"06-profile-"+(int)size.Item1);
         }
-        foreach (string destination in new[] { "ProfileStatisticsButton", "ProfileHandHistoryButton" })
+        // Hand History remains a native page; lifetime statistics now live in React.
+        foreach (string destination in new[] { "ProfileHandHistoryButton" })
         {
             Find<Button>(window).Single(b => b.Name == destination).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             await Task.Delay(40); window.UpdateLayout();
@@ -164,11 +165,30 @@ internal static partial class Program
             Find<Button>(window).Single(b => b.Name == "ProgressionBackButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             await Task.Delay(40); window.UpdateLayout();
         }
-        Find<Button>(window).Single(b=>b.Name=="ProfileProgressionButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        ModernLobbyView? profileRecords = Find<ModernLobbyView>(window).FirstOrDefault(v => v.Ready);
+        if (profileRecords is not null)
+        {
+            Find<Button>(window).Single(b=>b.Name=="ProfileStatisticsButton" && b.IsVisible)
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            for (int i=0;i<70 && profileRecords.RecordsPage!="statistics";i++) await Task.Delay(80);
+            Require(profileRecords.RecordsPage=="statistics" && profileRecords.IsVisible,
+                "Profile Statistics did not migrate to React.");
+            string statsFromProfile=await profileRecords.Browser.CoreWebView2!.ExecuteScriptAsync(
+                "Boolean(document.querySelector('.statistics-page [data-stat-game=\"blackjack\"]'))");
+            Require(statsFromProfile=="true","Profile Statistics lacks the real Blackjack lifetime card.");
+            await profileRecords.Browser.CoreWebView2.ExecuteScriptAsync(
+                "document.querySelector('.statistics-page .shop-back')?.click()");
+            await Task.Delay(80);
+            await profileRecords.Browser.CoreWebView2.ExecuteScriptAsync(
+                "document.querySelector('.profile-widget')?.click()");
+            await Task.Delay(80);
+        }
+        Find<Button>(window).Single(b=>b.Name=="ProfileProgressionButton" && b.IsVisible)
+            .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(100);window.UpdateLayout();RequireSingleHost(window,"Progression from profile");
         TabControl progressionTabs=Find<TabControl>(window).Single(t=>t.Items.OfType<TabItem>().Any(i=>Equals(i.Header,"Challenges")));
         Require(!progressionTabs.Items.OfType<TabItem>().Any(t => t.Name is "StatisticsTab" or "HandHistoryTab"), "Statistics/history remain in Progression & Shop.");
-        foreach(string tab in new[]{"Season Pass","Challenges"})
+        foreach(string tab in new[]{"Season Pass"})
         {
             progressionTabs.SelectedItem=progressionTabs.Items.OfType<TabItem>().Single(t=>Equals(t.Header,tab));
             foreach(var size in new[]{(1080d,720d),(1440d,900d)})
@@ -177,21 +197,6 @@ internal static partial class Program
                 Capture(window,"06-progression-"+tab.Replace(' ','-')+"-"+(int)size.Item1);
             }
         }
-        progressionTabs.SelectedItem=progressionTabs.Items.OfType<TabItem>().Single(t=>Equals(t.Header,"Challenges"));window.UpdateLayout();
-        var challengeSearch=Find<TextBox>(window).Single(t=>t.Name=="ChallengeSearchBox");
-        Require(Find<UniformGrid>(window).Single(p=>p.Name=="ChallengesPanel").Children.OfType<Border>().Count()>=4,"Challenge grid did not fill the available page");
-        CheckCollectionPaging(window,"ChallengesPanel","ChallengeNextButton","ChallengePreviousButton");
-        ChallengeDefinition[] ready=ChallengeCatalog.All.Where(c=>ChallengeCatalog.Complete(qaProfile,c) && !qaProfile.ClaimedChallengeIds.Contains(c.Id)).ToArray();
-        Require(ready.Length>0,"QA profile did not prepare claimable challenges");
-        challengeSearch.Text="Neon Vault";window.UpdateLayout();
-        long coinsBefore=qaProfile.Coins;
-        Find<Button>(window).Single(b=>b.Name=="ClaimAllButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-        Require(qaProfile.Coins==coinsBefore+ready.Sum(c=>c.CoinReward),"UI Claim All omitted rewards hidden by the active search");
-        Require(ready.All(c=>qaProfile.ClaimedChallengeIds.Contains(c.Id)),"UI Claim All did not retain all claimed IDs");
-        Require(!Find<Button>(window).Single(b=>b.Name=="ClaimAllButton").IsEnabled,"Claim All stayed enabled after all ready rewards were claimed");
-        challengeSearch.Text="__no_matching_challenge__";window.UpdateLayout();
-        Require(!Find<Button>(window).Any(b=>b.Tag is string id && ChallengeCatalog.TryGet(id) is not null),"Challenge search did not filter rows");
-        challengeSearch.Clear();
         await CheckAlbum(window, qaProfile, progressionTabs);
         Find<Button>(window).Single(b=>b.Name=="ProgressionBackButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(40);window.UpdateLayout();
@@ -249,20 +254,74 @@ internal static partial class Program
             .FirstOrDefault(view => view.Ready && view.IsVisible);
         if (modernChallenges is not null)
         {
-            string selector = "[...document.querySelectorAll('.lobby-nav-item')]"
-                + ".find(x=>/Challenges|Aufgaben/.test(x.textContent||''))";
-            string enabled = await modernChallenges.Browser.CoreWebView2!.ExecuteScriptAsync(
-                "Boolean(" + selector + ")");
-            Require(enabled == "true", "React lobby is missing the Challenges shortcut");
-            await modernChallenges.Browser.CoreWebView2.ExecuteScriptAsync(selector + "?.click()");
+            var web = modernChallenges.Browser.CoreWebView2!;
+            var readyChallenges = ChallengeCatalog.All.Where(c =>
+                ChallengeCatalog.Complete(qaProfile,c) && !qaProfile.ClaimedChallengeIds.Contains(c.Id)).ToArray();
+            Require(readyChallenges.Length>0, "QA profile lacks ready challenges for claim-all acceptance.");
+            long beforeClaims = qaProfile.Coins;
+            await web.ExecuteScriptAsync(
+                "[...document.querySelectorAll('.lobby-nav-item')].find(x=>/Challenges|Aufgaben/.test(x.textContent||''))?.click()");
+            for (int i=0;i<70 && modernChallenges.RecordsPage!="challenges";i++) await Task.Delay(70);
+            Require(modernChallenges.RecordsPage=="challenges","Lobby Challenges did not open React.");
+            for (int i=0;i<70;i++)
+            {
+                string populated=await web.ExecuteScriptAsync(
+                    "Boolean(document.querySelectorAll('.record-challenge').length>0)");
+                if(populated=="true")break;
+                await Task.Delay(70);
+            }
+            string challengeUi=await web.ExecuteScriptAsync(
+                "Boolean(document.querySelector('.record-challenge')"
+                + "&&document.querySelector('.record-claim-all')"
+                + "&&document.querySelector('.record-search input'))");
+            Require(challengeUi=="true","React Challenge board did not render its real controls.");
+            await web.ExecuteScriptAsync(
+                "(()=>{const input=document.querySelector('.record-search input');"
+                + "input.value='___no_challenge___';input.dispatchEvent(new Event('input',{bubbles:true}));})()");
+            // The Claim All button must operate on every native reward regardless
+            // of client-side filters, including entries hidden by the current page.
+            await web.ExecuteScriptAsync("document.querySelector('.record-claim-all')?.click()");
+            for (int i=0;i<70 && qaProfile.Coins==beforeClaims;i++) await Task.Delay(80);
+            Require(qaProfile.Coins==beforeClaims+readyChallenges.Sum(c=>c.CoinReward),
+                "React Claim All did not credit every reward, including hidden challenges.");
+            Require(readyChallenges.All(c=>qaProfile.ClaimedChallengeIds.Contains(c.Id)),
+                "React Claim All did not persist the complete reward set.");
+            await using (FileStream shot = File.Create(Path.Combine(output,"modern-challenges-presentation.png")))
+                await web.CapturePreviewAsync(
+                    Microsoft.Web.WebView2.Core.CoreWebView2CapturePreviewImageFormat.Png,shot);
+            await web.ExecuteScriptAsync("document.querySelector('.record-page .shop-back')?.click()");
+            for(int i=0;i<30 && modernChallenges.RecordsPage is not null;i++)await Task.Delay(70);
+            Require(modernChallenges.RecordsPage is null,"Challenges did not return to lobby.");
+
+            await web.ExecuteScriptAsync(
+                "[...document.querySelectorAll('.lobby-nav-item')].find(x=>/Statistics|Statistik/.test(x.textContent||''))?.click()");
+            for(int i=0;i<70 && modernChallenges.RecordsPage!="statistics";i++)await Task.Delay(70);
+            Require(modernChallenges.RecordsPage=="statistics","React Statistics navigation failed.");
+            string statsUi=await web.ExecuteScriptAsync(
+                "(()=>{const root=document.querySelector('.statistics-page');"
+                + "return Boolean(root&&root.querySelector('[data-stat-game=\"blackjack\"]')"
+                + "&&root.querySelector('[data-stat-game=\"midnight-dice\"]')"
+                + "&&root.querySelector('[data-stat-game=\"neon-vault\"]')"
+                + "&&root.querySelector('.stat-table'));})()");
+            Require(statsUi=="true","Statistics missing game breakdown, session or table statistics.");
+            await using(FileStream shot=File.Create(Path.Combine(output,"modern-statistics-presentation.png")))
+                await web.CapturePreviewAsync(
+                    Microsoft.Web.WebView2.Core.CoreWebView2CapturePreviewImageFormat.Png,shot);
+            await web.ExecuteScriptAsync("document.querySelector('.record-page .shop-back')?.click()");
+            for(int i=0;i<30 && modernChallenges.RecordsPage is not null;i++)await Task.Delay(70);
+            Require(modernChallenges.RecordsPage is null,"Statistics failed to return to lobby.");
         }
         else
+        {
             Find<Button>(window).Single(b=>b.Name=="LobbyProgression_Challenges" && b.IsVisible)
                 .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-        await Task.Delay(60);window.UpdateLayout();RequireSingleHost(window,"Lobby Challenges");
-        Require(Find<TabControl>(window).Any(t=>t.SelectedItem is TabItem item && Equals(item.Header,"Challenges")),"Lobby shortcut selected the wrong tab");
-        Find<Button>(window).Single(b=>b.Name=="ProgressionBackButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-        await Task.Delay(40);
+            await Task.Delay(60);window.UpdateLayout();
+            Require(Find<TabControl>(window).Any(t=>t.SelectedItem is TabItem item && Equals(item.Header,"Challenges")),
+                "WPF fallback challenge navigation failed.");
+            Find<Button>(window).Single(b=>b.Name=="ProgressionBackButton" && b.IsVisible)
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            await Task.Delay(40);
+        }
         await CheckEmpire(window);
         window.Width=1440;window.Height=900;window.Modes.Open("blackjack");mode.SelectedIndex=1;theme.SelectedIndex=0;
         ((Button)window.FindName("DealButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
