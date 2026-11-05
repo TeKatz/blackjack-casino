@@ -7,11 +7,11 @@ const snapshot={
   version:1,session:'epoch',revision:0,state:{
     bankroll:'975',selectedBet:'25',shoeNumber:1,cardsRemaining:307,
     fullTable:false,aiSeatCount:0,preset:'Casual',theme:'ClassicGreen',
-    cardSetId:'card-classic',soundEnabled:true,animationsEnabled:true,status:'Ready',
+    cardSetId:'cardset-classic',cardVariant:'card-classic',soundEnabled:true,animationsEnabled:true,status:'Ready',
     rules:{deckCount:6,dealerHitsSoft17:false,dealerPeeksForBlackjack:true,
       dealerTakesHoleCard:true,allowInsurance:true,allowLateSurrender:true,
       doubleRule:'AnyTwo',doubleAfterSplit:true,resplitAces:false,hitSplitAces:false,
-      maxSplitHands:4,blackjackPayout:'1.5',minimumBet:'1',maximumBet:'5000'},
+      maxSplitHands:4,blackjackPayout:'1.5',penetration:0.75,minimumBet:'1',maximumBet:'5000'},
     presets:[{id:'Casual',name:'Casual',description:'Table'}],
     canDeal:false,availableActions:['Hit','Stand'],
     round:{phase:'PlayerTurn',activeHandIndex:0,initialBet:'25',insuranceBet:'0',
@@ -26,6 +26,8 @@ describe('Blackjack modern transport',()=>{
     expect(isTableSnapshot(snapshot)).toBe(true);
     expect(isTableSnapshot({...snapshot,version:2})).toBe(false);
     expect(isTableSnapshot({...snapshot,state:{...snapshot.state,bankroll:975}})).toBe(false);
+    expect(isTableSnapshot({...snapshot,state:{...snapshot.state,cardVariant:undefined}})).toBe(false);
+    expect(isTableSnapshot({...snapshot,state:{...snapshot.state,rules:{...snapshot.state.rules,penetration:undefined}}})).toBe(false);
     expect(isTableSnapshot({...snapshot,state:{...snapshot.state,round:{...snapshot.state.round,
       dealerCards:[face,{rank:'King',suit:'Clubs',faceDown:true}]}}})).toBe(false);
   });

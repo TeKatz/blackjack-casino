@@ -12,6 +12,13 @@ Delivered:
   values are transported as exact invariant decimal strings. The dealer hole
   card is not included until settlement; its face-down placeholder carries
   neither rank nor suit.
+- Full native-authoritative custom-table rule editing from React. A strict
+  fifteen-field validated rules payload is applied only between hands,
+  preserving Core's shoe/insurance/split behavior and persisted preferences.
+  The React table also exposes the original play-money bankroll reset.
+- Equipped card sets now use the same collection variants and theme colors
+  as native WPF cards, including premium dark faces and face-down markings.
+  No unrevealed dealer card values are transmitted.
 - A versioned intent parser restricted to the exact packaged Blackjack origin,
   finite wager range, legal command names, session epoch, request UUID and
   expected revision. Unique receipts prevent repeated card or money actions

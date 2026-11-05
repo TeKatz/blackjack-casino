@@ -10,12 +10,12 @@ export type TableRound = {phase:string;activeHandIndex:number;initialBet:string;
   aiSeats:{name:string;hands:{index:number;bet:string;value:number;cards:CardFace[];outcome:string|null}[]}[];
   totalNet:string|null;insuranceNet:string|null};
 export type TableState = {bankroll:string;selectedBet:string;shoeNumber:number;cardsRemaining:number;
-  fullTable:boolean;aiSeatCount:number;preset:string;theme:string;cardSetId:string;
+  fullTable:boolean;aiSeatCount:number;preset:string;theme:string;cardSetId:string;cardVariant:string;
   soundEnabled:boolean;animationsEnabled:boolean;status:string;
   rules:{deckCount:number;dealerHitsSoft17:boolean;dealerPeeksForBlackjack:boolean;
     dealerTakesHoleCard:boolean;allowInsurance:boolean;allowLateSurrender:boolean;
     doubleRule:string;doubleAfterSplit:boolean;resplitAces:boolean;hitSplitAces:boolean;
-    maxSplitHands:number;blackjackPayout:string;minimumBet:string;maximumBet:string};
+    maxSplitHands:number;blackjackPayout:string;penetration:number;minimumBet:string;maximumBet:string};
   presets:{id:string;name:string;description:string}[];
   canDeal:boolean;availableActions:string[];round:TableRound|null};
 export type TableSnapshot={version:1;session:string;revision:number;state:TableState};
@@ -48,13 +48,13 @@ export function isTableSnapshot(x:unknown):x is TableSnapshot{
   const s=x.state;
   if(!money(s.bankroll)||!money(s.selectedBet)||!integer(s.shoeNumber)||!integer(s.cardsRemaining)||
     typeof s.fullTable!=='boolean'||!integer(s.aiSeatCount)||s.aiSeatCount>5||
-    !['preset','theme','cardSetId','status'].every(k=>typeof s[k]==='string')||
+    !['preset','theme','cardSetId','cardVariant','status'].every(k=>typeof s[k]==='string')||
     !['soundEnabled','animationsEnabled','canDeal'].every(k=>typeof s[k]==='boolean')||
     !Array.isArray(s.availableActions)||!s.availableActions.every((a:unknown)=>typeof a==='string')||
     !Array.isArray(s.presets)||!s.presets.every((p:unknown)=>record(p)&&
       ['id','name','description'].every(k=>typeof p[k]==='string'))||!record(s.rules))return false;
   const rules=s.rules;
-  return integer(rules.deckCount)&&integer(rules.maxSplitHands)&&
+  return integer(rules.deckCount)&&integer(rules.maxSplitHands)&&typeof rules.penetration==='number'&&Number.isFinite(rules.penetration)&&rules.penetration>0&&rules.penetration<1&&
     ['dealerHitsSoft17','dealerPeeksForBlackjack','dealerTakesHoleCard','allowInsurance',
       'allowLateSurrender','doubleAfterSplit','resplitAces','hitSplitAces'].every(k=>typeof rules[k]==='boolean')&&
     typeof rules.doubleRule==='string'&&money(rules.blackjackPayout)&&

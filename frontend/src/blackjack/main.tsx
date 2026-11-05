@@ -1,5 +1,9 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
 import {createRoot} from 'react-dom/client';
+import type {CSSProperties} from 'react';
+import {CustomRulesEditor} from './CustomRulesEditor';
+import {resolveCardSkin} from './cardSkins';
+import type {CardSkin} from './cardSkins';
 import {listen,send} from './bridge';
 import type {CardFace,TableIntent,TableReply,TableSnapshot} from './bridge';
 import './table.css';
@@ -8,11 +12,19 @@ const rank:Record<string,string>={Ace:'A',Jack:'J',Queen:'Q',King:'K',Two:'2',Th
 const suit:Record<string,string>={Clubs:'♣',Diamonds:'♦',Hearts:'♥',Spades:'♠'};
 const money=(s:string)=>s.replace(/\B(?=(\d{3})+(?!\d))/g,',');
 const showMoney=(s:string)=>'$'+money(s);
-function PlayingCard({card}:{card:CardFace}){
-  if(card.faceDown)return <div className="bj-card back" role="img" aria-label="Face-down card"><span>♠</span></div>;
-  return <div className={'bj-card'+(card.suit==='Hearts'||card.suit==='Diamonds'?' red':'')}
+function PlayingCard({card,skin}:{card:CardFace;skin:CardSkin}){
+  const styles={
+    '--card-face-a':skin.faceA,'--card-face-b':skin.faceB,'--card-border':skin.border,
+    '--card-black':skin.black,'--card-red':skin.red,'--card-back-a':skin.backA,
+    '--card-back-b':skin.backB,'--card-accent':skin.accent,
+  } as CSSProperties;
+  if(card.faceDown)return <div className={'bj-card back'+(skin.premium?' premium':'')}
+    style={styles} role="img" aria-label="Face-down card"><span>{skin.mark}</span></div>;
+  return <div style={styles} className={'bj-card'+(card.suit==='Hearts'||card.suit==='Diamonds'?' red':'')+(skin.dark?' dark':'')+(skin.premium?' premium':'')}
     role="img" aria-label={(card.rank??'')+' of '+(card.suit??'')}>
-    <span className="bj-rank">{rank[card.rank??'']??card.rank}</span><span className="bj-suit">{suit[card.suit??'']}</span>
+    <span className="bj-rank">{rank[card.rank??'']??card.rank}</span>
+    <span className="bj-suit">{suit[card.suit??'']}</span>
+    {skin.premium&&<span className="bj-ornament" aria-hidden="true">{skin.mark}</span>}
   </div>;
 }
 function BlackjackApp(){
@@ -21,6 +33,8 @@ function BlackjackApp(){
   const [message,setMessage]=useState<string|null>(null);
   const [uncertain,setUncertain]=useState(false);
   const [bet,setBet]=useState('25');
+  const [rulesOpen,setRulesOpen]=useState(false);
+  const [resetOpen,setResetOpen]=useState(false);
   const current=useRef<TableSnapshot|null>(null),pendingRef=useRef<string|null>(null);
   const accept=useCallback((reply:TableReply)=>{
     if(reply.requestId!==pendingRef.current)return;
@@ -71,6 +85,7 @@ function BlackjackApp(){
     <p>{window.chrome?.webview?'Opening your table…':'Open Blackjack in the desktop application.'}</p>
     <button onClick={close}>← Casino lobby</button></div>;
   const s=snapshot.state,round=s.round,locked=!!pending||uncertain,inHand=!!round&&round.phase!=='Settled';
+  const skin=resolveCardSkin(s.cardVariant);
   const allowed=(key:string)=>!locked&&s.availableActions.includes(key);
   const commitBet=()=>{
     const value=bet.trim().replace(',','.');
@@ -87,20 +102,20 @@ function BlackjackApp(){
       <main className="bj-table">
         <div className="bj-felt">
           <section className="bj-dealer"><small>DEALER · SHOE {s.shoeNumber} · {s.cardsRemaining} CARDS</small>
-            <div className="bj-cards">{round?.dealerCards.map((card,i)=><PlayingCard card={card} key={i}/>)??<em>Waiting for your bet</em>}</div>
+            <div className="bj-cards">{round?.dealerCards.map((card,i)=><PlayingCard card={card} skin={skin} key={i}/>)??<em>Waiting for your bet</em>}</div>
             {round?.dealerValue!=null&&<span>Dealer {round.dealerValue}</span>}
           </section>
           {round&&round.aiSeats.length>0&&<div className="bj-ai">
             {round.aiSeats.map((seat,i)=><div className="bj-ai-seat" key={i}><small>{seat.name}</small>
               {seat.hands.map((hand,j)=><div key={j}><div className="bj-cards compact">
-                {hand.cards.map((card,k)=><PlayingCard card={card} key={k}/>)}</div>
+                {hand.cards.map((card,k)=><PlayingCard card={card} skin={skin} key={k}/>)}</div>
                 <small>{showMoney(hand.bet)} · {hand.value} {hand.outcome??''}</small></div>)}</div>)}
           </div>}
           <section className="bj-player"><small>YOUR SEAT</small><div className="bj-hands">
             {round?round.playerHands.map(hand=><article key={hand.index} className={'bj-hand'+(hand.active?' active':'')}>
               <div className="bj-hand-heading"><span>{round.playerHands.length>1?'HAND '+(hand.index+1):'YOUR HAND'}</span>
                 <strong>{showMoney(hand.bet)}</strong></div>
-              <div className="bj-cards">{hand.cards.map((card,j)=><PlayingCard key={j} card={card}/>)}</div>
+              <div className="bj-cards">{hand.cards.map((card,j)=><PlayingCard key={j} card={card} skin={skin}/>)}</div>
               <p>{hand.value}{hand.isSoft?' (soft)':''} · {hand.outcome??(hand.active?'Your move':'')}
                 {hand.net!==null?' · '+showMoney(hand.net):''}</p>
             </article>):<div className="bj-empty">Place a wager and deal to begin.</div>}
@@ -144,15 +159,29 @@ function BlackjackApp(){
             {s.presets.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
             {s.preset==='Custom'&&<option value="Custom">Custom</option>}</select></label>
           <div className="bj-rule">{s.rules.deckCount}D · {s.rules.dealerHitsSoft17?'H17':'S17'} · {s.rules.blackjackPayout}:1 · {s.rules.dealerTakesHoleCard?'Hole card':'ENHC'}</div>
+          <button type="button" data-testid="blackjack-edit-rules" disabled={locked||inHand}
+            onClick={()=>setRulesOpen(true)}>Edit custom rules</button>
+          <div className="bj-rule">Equipped cards: {s.cardVariant.replace(/^card-/,'').replace(/-/g,' ')}</div>
           <label>Felt<select value={s.theme} disabled={locked} onChange={e=>act({action:'theme.set',value:e.target.value})}>
             <option value="ClassicGreen">Green</option><option value="MidnightBlue">Midnight blue</option><option value="Burgundy">Burgundy</option></select></label>
           <label className="bj-check"><input type="checkbox" checked={s.soundEnabled} disabled={locked}
             onChange={e=>act({action:'sound.set',value:String(e.target.checked)})}/> Sound</label>
           <label className="bj-check"><input type="checkbox" checked={s.animationsEnabled} disabled={locked}
             onChange={e=>act({action:'animations.set',value:String(e.target.checked)})}/> Animations</label>
+          <button type="button" disabled={locked||inHand}
+            onClick={()=>setResetOpen(true)}>Reset play-money bankroll</button>
         </section>
       </aside>
     </div>
+    {rulesOpen&&<CustomRulesEditor initial={s.rules}
+      onSave={rules=>{setRulesOpen(false);act({action:'rules.custom.set',value:JSON.stringify(rules)});}}
+      onClose={()=>setRulesOpen(false)}/>}
+    {resetOpen&&<div className="bj-modal-wrap"><div className="bj-confirm" role="dialog" aria-modal="true" aria-labelledby="bj-reset-title">
+      <h2 id="bj-reset-title">Reset local bankroll?</h2>
+      <p>Your play-money bankroll will return to $1,000. This cannot be undone.</p>
+      <div><button onClick={()=>setResetOpen(false)}>Cancel</button>
+      <button data-testid="blackjack-reset-confirm" onClick={()=>{
+        setResetOpen(false);act({action:'bankroll.reset'});}}>Reset bankroll</button></div></div></div>}
   </div>;
 }
 createRoot(document.getElementById('root')!).render(<BlackjackApp/>);
