@@ -196,6 +196,19 @@ jobs:
           $javascript = Get-ChildItem $assets -Filter "*.js" -File
           if (!$javascript) { throw "Modern Manor JavaScript bundle missing." }
 
+      - name: Verify published single-file Empire artwork
+        shell: pwsh
+        run: ./tools/verify_published_artwork.ps1 -AppDirectory artifacts/preview-app -OutputDirectory artifacts/published-artwork-smoke
+
+      - name: Upload published artwork evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: published-artwork-smoke
+          path: artifacts/published-artwork-smoke
+          if-no-files-found: ignore
+          retention-days: 14
+
       - name: Upload Windows preview
         if: github.event_name == 'push' || github.event_name == 'pull_request'
         uses: actions/upload-artifact@v7
@@ -203,4 +216,34 @@ jobs:
           name: blackjack-casino-preview-win-x64
           path: artifacts/preview-app
           if-no-files-found: error
+          retention-days: 14
+
+  published-artwork:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build local frontend
+        working-directory: frontend
+        run: |
+          npm install --no-package-lock --no-audit --no-fund
+          npm run build
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - name: Publish actual single-file desktop
+        run: dotnet publish src/BlackjackCasino.Desktop/BlackjackCasino.Desktop.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:DebugType=None -o artifacts/single-file-app
+      - name: Decode embedded and browser artwork in published executable
+        shell: pwsh
+        run: ./tools/verify_published_artwork.ps1 -AppDirectory artifacts/single-file-app -OutputDirectory artifacts/single-file-artwork-smoke
+      - name: Upload packaged regression result
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: single-file-artwork-regression
+          path: artifacts/single-file-artwork-smoke
+          if-no-files-found: ignore
           retention-days: 14

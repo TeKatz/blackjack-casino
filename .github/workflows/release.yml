@@ -96,6 +96,19 @@ jobs:
           $javascript = Get-ChildItem $assets -Filter "*.js" -File
           if (!$javascript) { throw "Modern Manor JavaScript bundle missing." }
 
+      - name: Verify published single-file Empire artwork
+        shell: pwsh
+        run: ./tools/verify_published_artwork.ps1 -AppDirectory artifacts/app -OutputDirectory artifacts/published-artwork-smoke
+
+      - name: Upload published artwork evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: published-artwork-smoke
+          path: artifacts/published-artwork-smoke
+          if-no-files-found: ignore
+          retention-days: 14
+
       - name: Generate installed release notes
         shell: pwsh
         run: |

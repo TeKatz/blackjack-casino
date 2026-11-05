@@ -5,13 +5,29 @@ import json
 import re
 import struct
 import zlib
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 ART = ROOT / 'src/BlackjackCasino.Desktop/Assets/Empire'
 
 
+def resource_content_collisions(project: Path) -> set[Path]:
+    root = ET.parse(project).getroot()
+    def sources(kind: str) -> set[Path]:
+        files: set[Path] = set()
+        for item in root.findall('.//' + kind):
+            pattern = item.get('Include', '').replace('\\', '/')
+            if pattern:
+                files.update(path.resolve() for path in project.parent.glob(pattern) if path.is_file())
+        return files
+    return sources('Resource') & sources('Content')
+
+
 def main():
+    project = ROOT / 'src/BlackjackCasino.Desktop/BlackjackCasino.Desktop.csproj'
+    collisions = resource_content_collisions(project)
+    assert not collisions, 'WPF Resource/Content collision breaks single-file pack URIs: ' + ', '.join(str(p.relative_to(ROOT)) for p in sorted(collisions))
     catalog = (ROOT / 'src/BlackjackCasino.Core/Empire/EmpireCatalog.cs').read_text(encoding='utf-8')
     rooms = set(re.findall(r'new\("([^"]+)",[^\n]+, [23], EmpireTag\.', catalog))
     source = (ROOT / 'src/BlackjackCasino.Desktop/EmpireRoomArtwork.cs').read_text(encoding='utf-8')
@@ -43,7 +59,7 @@ def main():
         digest = hashlib.sha256(decoded).digest()
         assert digest not in pixels, f'{room}: duplicated room artwork'
         pixels.add(digest)
-    print('PASS: 10 individually assigned rooms, valid square PNGs, unique image data and recorded generation prompts.')
+    print('PASS: no WPF Resource/Content collisions; 10 individually assigned rooms, valid square PNGs, unique image data and recorded generation prompts.')
 
 
 if __name__ == '__main__':

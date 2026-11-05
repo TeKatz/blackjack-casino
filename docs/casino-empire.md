@@ -95,6 +95,23 @@ diagnostics. Composition/rAF/ticker clocks have different semantics; none is GPU
 frame time. GPU utilization/VRAM and long-session behavior remain unmeasured.
 No performance improvement is asserted without inspecting an actual result file.
 
+### Published single-file resource regression
+
+Empire PNGs remain WPF `Resource` items. Their browser copies use MSBuild `None`
+items with output/publish target paths; the source PNGs must never also be
+registered as WPF `Content`. Associated-content metadata takes priority over
+embedded pack resources and can resolve through an absent assembly directory in
+a single-file executable, crashing the legacy lobby artwork during startup.
+
+The artwork integrity check rejects overlapping `Resource` / `Content` source
+files. CI and both publishers also launch the actual published executable with
+`--packaged-artwork-smoke` from an unrelated temporary working directory. This
+isolated diagnostic starts before normal windows/player stores, decodes all six
+atlas crops and ten upper/resort rooms through the same WPF loader, and verifies
+all eleven loose browser images and `empire.html`. It writes
+`published-artwork-smoke/packaged-artwork.json`; publishing is blocked on failure.
+Build-directory startup tests alone do not cover this regression.
+
 ### Recorded Windows runner comparison — 2026-11-05
 
 [Raw measurements](performance/empire-presentation-a37e354.json) retain the full
