@@ -79,7 +79,11 @@ export function send(snapshot:EmpireSnapshot,intent:Intent):string {
   window.chrome?.webview?.postMessage({type:'empire.command',version:1,session:snapshot.session,expectedRevision:snapshot.revision,requestId,...intent});
   return requestId;
 }
-export type EmpireMessage = {type:'snapshot';data:EmpireSnapshot}|{type:'result';data:Reply}|{type:'visibility';visible:boolean}|{type:'escape'}|{type:'invalid'};
+export type EmpireMessage = {type:'snapshot';data:EmpireSnapshot}|{type:'result';data:Reply}|{type:'visibility';visible:boolean}|{type:'activated';visitId:number}|{type:'escape'}|{type:'invalid'};
+export function isEmpireActivation(value:unknown):value is {type:'empire.activated';data:{visitId:number}} {
+  return record(value)&&value.type==='empire.activated'&&record(value.data)
+    &&integer(value.data.visitId)&&value.data.visitId>0;
+}
 export function listen(receive:(message:EmpireMessage)=>void):()=>void {
   const host=window.chrome?.webview;
   const handler=(event:MessageEvent)=>{
@@ -87,6 +91,7 @@ export function listen(receive:(message:EmpireMessage)=>void):()=>void {
     if(m.type==='empire.snapshot'&&isEmpireSnapshot(m.data))receive({type:'snapshot',data:m.data});
     else if(m.type==='empire.result'&&isReply(m.data))receive({type:'result',data:m.data});
     else if(m.type==='empire.visibility'&&record(m.data)&&typeof m.data.visible==='boolean')receive({type:'visibility',visible:m.data.visible});
+    else if(isEmpireActivation(m))receive({type:'activated',visitId:m.data.visitId});
     else if(m.type==='empire.escape')receive({type:'escape'});
     else if(m.type==='empire.invalid')receive({type:'invalid'});
   };

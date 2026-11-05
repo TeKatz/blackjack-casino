@@ -14,7 +14,10 @@ namespace BlackjackCasino.Desktop;
 internal sealed class ModernEmpireView : ContentControl, IDisposable
 {
     private static readonly JsonSerializerOptions Json = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-    private readonly WebView2 browser = new() { Name = "ModernEmpireBrowser", Visibility = Visibility.Hidden,
+    // Keep WebView2 in WPF's native composition tree from the first layout pass.
+    // Hiding its HWND until React finishes can leave the WPF surface visually stale
+    // until a later pointer/hover invalidation, even though the bridge is ready.
+    private readonly WebView2 browser = new() { Name = "ModernEmpireBrowser", Visibility = Visibility.Visible,
         DefaultBackgroundColor = System.Drawing.Color.FromArgb(255, 6, 22, 20) };
     private readonly EmpireModernSession commands = new();
     private readonly Func<object> snapshot;
@@ -47,7 +50,9 @@ internal sealed class ModernEmpireView : ContentControl, IDisposable
         visitTimings.Clear();
         Mark("host_view_ready");
         if (browser.CoreWebView2 is not null) Mark("webview_reused");
-        browser.IsEnabled = false; // Old values cannot be acted on until the new snapshot is rendered.
+        // Rendering and the in-browser Back action remain available; the native
+        // command bridge stays closed until this visit's DOM acknowledgement.
+        Ready = false;
         startupTimeout.Stop();
         startupTimeout.Start();
         if (!Ready) SetStage(Local("Browser vorbereiten…", "Preparing browser…"));
@@ -136,14 +141,17 @@ internal sealed class ModernEmpireView : ContentControl, IDisposable
                     if (!listening || !IsVisible || !root.TryGetProperty("visitId", out var visit) ||
                         visit.ValueKind != JsonValueKind.Number || !visit.TryGetInt32(out int acceptedVisit) || acceptedVisit != visitId) break;
                     Mark("dom_usable"); Ready = true; startupTimeout.Stop();
-                    browser.Visibility = Visibility.Visible; browser.IsEnabled = true; PostVisibility(); break;
+                    // Acknowledging the current snapshot opens the management controls,
+                    // without toggling WPF WebView2 visibility or disturbing its HWND.
+                    Post("empire.activated", new { VisitId = visitId });
+                    PostVisibility(); break;
                 case "empire.graphics-ready":
                     Mark("graphics_ready"); break;
                 case "empire.refresh": Refresh(); break;
                 case "empire.close": close(); break;
                 case "empire.dismiss-offline": offline = null; Refresh(); break;
                 case "empire.command" when listening && Ready && IsVisible &&
-                    owner?.WindowState != WindowState.Minimized && browser.IsEnabled:
+                    owner?.WindowState != WindowState.Minimized:
                     EmpireModernCommand? command = EmpireModernProtocol.Parse(args.WebMessageAsJson);
                     if (command is null)
                     {
@@ -194,7 +202,8 @@ internal sealed class ModernEmpireView : ContentControl, IDisposable
     private void Fail(string message)
     {
         Ready = false; Failed = true; listening = false; startupTimeout.Stop(); browser.Visibility = Visibility.Hidden;
-        browser.IsEnabled = false; status.FontSize = 15; SetStage(message);
+        // Only the failed-browser path hides the HWND to expose native retry/Back.
+        status.FontSize = 15; SetStage(message);
         retryButton.Visibility = retry is null ? Visibility.Collapsed : Visibility.Visible;
     }
     public void Dispose()

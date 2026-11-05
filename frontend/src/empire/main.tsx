@@ -100,10 +100,11 @@ function EmpireApp(){
   const [snapshot,setSnapshot]=useState<EmpireSnapshot|null>(null),[page,setPage]=useState<Page>('estate');
   const [selected,setSelected]=useState<string|null>('slots'),[floor,setFloor]=useState(1),[filter,setFilter]=useState('all'),[bulk,setBulk]=useState(1);
   const [pending,setPending]=useState<string|null>(null),[uncertain,setUncertain]=useState(false),[notice,setNotice]=useState<string|null>(null);
-  const [preview,setPreview]=useState<Preview|null>(null),[visible,setVisible]=useState(true),[motion,setMotion]=useState(true),[diagnostics,setDiagnostics]=useState(false);
+  const [preview,setPreview]=useState<Preview|null>(null),[visible,setVisible]=useState(true),[activeVisitId,setActiveVisitId]=useState<number|null>(null),[motion,setMotion]=useState(true),[diagnostics,setDiagnostics]=useState(false);
   const [lowMotion,setLowMotion]=useState(matchMedia('(prefers-reduced-motion: reduce)').matches),[confirmation,setConfirmation]=useState(false);
   const [researchBranch,setResearchBranch]=useState('Operations');
   const live=useRef(snapshot);live.current=snapshot;
+  const activeVisit=useRef(activeVisitId);activeVisit.current=activeVisitId;
   const pageRef=useRef(page);pageRef.current=page;
   const pendingRef=useRef<string|null>(null),previewId=useRef<string|null>(null),previewTimer=useRef<ReturnType<typeof setTimeout>|undefined>(undefined);
   const clearPreview=useCallback(()=>{clearTimeout(previewTimer.current);previewId.current=null;setPreview(null);},[]);
@@ -126,7 +127,8 @@ function EmpireApp(){
           return next;
         });
       }else if(message.type==='result')accept(message.data);
-      else if(message.type==='visibility'){setVisible(message.visible);if(!message.visible)clearPreview();}
+      else if(message.type==='activated'){setActiveVisitId(message.visitId);}
+      else if(message.type==='visibility'){setVisible(message.visible);if(!message.visible){setActiveVisitId(null);clearPreview();}}
       else if(message.type==='escape'){
         clearPreview();if(pageRef.current!=='estate')setPage('estate');else post('empire.close');
       }else if(message.type==='invalid'){setNotice('Invalid command. Reopen Empire before continuing.');setUncertain(true);}
@@ -154,11 +156,11 @@ function EmpireApp(){
   },[page,confirmation,clearPreview]);
   useEffect(()=>{document.documentElement.lang=snapshot?.state.language??'en';},[snapshot?.state.language]);
   const act=(intent:Intent)=>{
-    if(!visible||!live.current||pendingRef.current||uncertain)return;
+    if(!visible||!live.current||activeVisit.current!==live.current.visitId||pendingRef.current||uncertain)return;
     clearPreview();const id=send(live.current,intent);pendingRef.current=id;setPending(id);setNotice(null);
   };
   const showPreview=(intent:Intent)=>{
-    if(!visible||!live.current||pendingRef.current||uncertain)return;
+    if(!visible||!live.current||activeVisit.current!==live.current.visitId||pendingRef.current||uncertain)return;
     clearPreview();previewTimer.current=setTimeout(()=>{
       if(live.current&&!pendingRef.current)previewId.current=send(live.current,{...intent,preview:true,inspectRoomId:selected??'slots'});
     },120);
@@ -178,7 +180,8 @@ function EmpireApp(){
     }).join(' · ');
   };
   const n=(v:string)=>display(v,language),money=(v:string)=>'$'+display(v,language,false);
-  const disabled=!!pending||uncertain;
+  const managementActive=visible&&snapshot.visitId!==undefined&&activeVisitId===snapshot.visitId;
+  const disabled=!!pending||uncertain||!managementActive;
   const room=e.rooms.find(r=>r.id===selected),quote=room?.quotes.find(q=>q.requestedLevels===bulk);
   const property=e.properties.find(p=>p.id===e.activePropertyId)!;
   const currentPage=pages.find(p=>p.id===page)!;
@@ -190,7 +193,7 @@ function EmpireApp(){
       <div>{de?'Raumproduktion':'Room production'}<strong>{n(preview.roomBefore.final)} → {n(preview.roomAfter.final)} cr/s</strong></div>
       <details><summary>{de?'Synergien nach der Aktion':'Circuits after action'}</summary>{preview.synergiesAfter.map(s=><p key={s.id}>{t(e.synergies.find(y=>y.id===s.id)?.name??s.id)}: {s.tier} · {Number(s.bonus)*100}%</p>)}</details></>}
     <button onClick={clearPreview}>{de?'Vorschau schließen':'Close preview'}</button></aside>;
-  return <div className="empire-shell" data-motion={enabled} data-page={page} data-testid="empire-ready">
+  return <div className="empire-shell" data-motion={enabled} data-page={page} data-visit-active={managementActive} data-testid="empire-ready">
     <header className="empire-header"><button className="empire-back" data-testid="back" onClick={close}>← <span>{state.detached?(de?'Fenster schließen':'Close window'):'Casino lobby'}</span></button>
       <div className="empire-wordmark"><span>THE MIDNIGHT CLUB</span><h1>CASINO EMPIRE</h1></div>
       <label className="empire-property"><span>{de?'ANWESEN':'PROPERTY'}</span><select aria-label={de?'Anwesen':'Property'} value={e.activePropertyId} disabled={disabled} onChange={event=>{setSelected('slots');clearPreview();act({action:'property.select',id:event.target.value});}}>

@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {decimalInput,fractionToPercent,isEmpireSnapshot,isReply,percentToFraction,retainRooms} from '../src/empire/empireBridge';
+import {decimalInput,fractionToPercent,isEmpireActivation,isEmpireSnapshot,isReply,percentToFraction,retainRooms} from '../src/empire/empireBridge';
 import fixture from './fixtures/empire-snapshot.json';
 
 describe('Empire bridge contract',()=>{
@@ -17,6 +17,14 @@ describe('Empire bridge contract',()=>{
     expect(isEmpireSnapshot({...fixture,visitId:0})).toBe(false);
     expect(isEmpireSnapshot({...fixture,visitId:-1})).toBe(false);
     expect(isEmpireSnapshot({...fixture,visitId:1.5})).toBe(false);
+  });
+  it('accepts only a valid native activation for the current visit generation',()=>{
+    expect(isEmpireActivation({type:'empire.activated',data:{visitId:2}})).toBe(true);
+    for(const value of [{type:'empire.activated',data:{visitId:0}},
+      {type:'empire.activated',data:{visitId:1.5}},
+      {type:'empire.activated',data:{visitId:'2'}},
+      {type:'empire.visibility',data:{visitId:2}},null])
+      expect(isEmpireActivation(value)).toBe(false);
   });
   it('rejects malformed receipts without unlocking purchases',()=>{
     expect(isReply({requestId:'a',success:true,message:'Saved',revision:1,preview:null})).toBe(true);

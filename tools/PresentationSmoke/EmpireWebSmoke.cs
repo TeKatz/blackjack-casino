@@ -41,7 +41,16 @@ internal static class EmpireWebSmoke
             window.UpdateLayout();
             await Wait(() => Find<ModernEmpireView>(window).Any(), "Empire host did not mount after navigation.");
             var view = Find<ModernEmpireView>(window).Single();
-            await Wait(() => view.Ready, "Modern Empire did not complete its native handshake.");
+            // Navigation is invoked by the registry; no pointer movement, hover,
+            // click or keyboard input is performed to release the native surface.
+            Require(view.Browser.Visibility == Visibility.Visible,
+                "Empire WebView2 starts hidden: a late WPF visibility transition may need hover to repaint.");
+            await Wait(() => view.Ready && view.Browser.IsVisible,
+                "Cold Empire did not become natively visible without mouse interaction.");
+            await Check(view, "document.querySelector('[data-testid=empire-ready]')?.dataset.visitActive==='true'",
+                "Cold estate controls were not activated by the validated visit ID.");
+            Require(view.Browser.Visibility == Visibility.Visible && view.Browser.IsVisible,
+                "Cold Empire browser became hidden after the readiness handshake.");
             Require(!Find<EmpireView>(window).Any(), "A legacy Empire view is rendering behind React.");
             Require(Application.Current.Windows.Count == nativeWindows, "Embedded Empire created another native window.");
             Require(!((FrameworkElement)window.FindName("CasinoHeader")).IsVisible, "Native header covers Empire.");
@@ -136,7 +145,13 @@ internal static class EmpireWebSmoke
             Require(ReferenceEquals(Field("cachedEmpireView").GetValue(window), view), "Embedded Empire browser was destroyed.");
             await Check(view, "document.querySelector('.empire-pixi').dataset.ticker==='stopped'", "Hidden Empire keeps its Pixi ticker running.");
             window.Modes.Open("casino-empire");
-            await Wait(() => view.VisitTimings.ContainsKey("dom_usable"), "Warm reopen never acknowledged a fresh snapshot.");
+            Require(!view.Ready, "Warm reopen briefly retained authorization from the previous visit.");
+            Require(view.Browser.Visibility == Visibility.Visible,
+                "Warm reopen must not toggle the cached WebView2 HWND visibility.");
+            await Wait(() => view.VisitTimings.ContainsKey("dom_usable") && view.Ready && view.Browser.IsVisible,
+                "Warm reopen never acknowledged a fresh snapshot without pointer input.");
+            await Check(view, "document.querySelector('[data-testid=empire-ready]')?.dataset.visitActive==='true'",
+                "Warm estate controls were not activated for the latest visit.");
             Require(ReferenceEquals(Field("empireView").GetValue(window), view), "Warm reopen created another browser.");
             var warmTimings = view.VisitTimings;
             await Check(view, "document.querySelector('[data-testid=empire-ready]')!==null", "Warm reopen lost its usable DOM.");
@@ -149,7 +164,12 @@ internal static class EmpireWebSmoke
             window.Modes.OpenSecondary("casino-empire");
             Window detached = Application.Current.Windows.Cast<Window>().Single(w => w != window && Find<ModernEmpireView>(w).Any());
             var detachedView = Find<ModernEmpireView>(detached).Single();
-            await Wait(() => detachedView.Ready, "Detached modern Empire did not load.");
+            Require(detachedView.Browser.Visibility == Visibility.Visible,
+                "Detached WebView2 must not wait hidden for its React handshake.");
+            await Wait(() => detachedView.Ready && detachedView.Browser.IsVisible,
+                "Detached modern Empire did not load without pointer input.");
+            await Check(detachedView, "document.querySelector('[data-testid=empire-ready]')?.dataset.visitActive==='true'",
+                "Detached management controls were not activated.");
             detached.WindowState = WindowState.Minimized; await Task.Delay(150);
             await Check(detachedView, "document.querySelector('.empire-pixi').dataset.ticker==='stopped'", "Minimized Empire keeps animating.");
             detached.WindowState = WindowState.Normal; await Task.Delay(150);

@@ -51,6 +51,17 @@ browser is disposed with the main window, not persisted across application
 restarts. This policy trades one resident idle browser for faster repeated visits;
 memory and long-session resource use still need measurement on player hardware.
 
+The healthy WPF WebView2 control is visible from its first layout pass, rather
+than changing native HWND visibility only after the React handshake. This avoids
+a native-composition repaint that might otherwise wait for a pointer hover.
+The packaged HTML has its own immediate boot splash with a Back action until
+React replaces it. The browser stays interactive for Back while the C# command
+bridge rejects all management mutations until a matching `visitId` arrives.
+C# then sends an `empire.activated` acknowledgement; React keeps purchases and
+previews gated until that acknowledgement is received. Each reopen resets
+authorization without disposing or reparenting the cached browser. Only a failed
+browser is hidden to expose the WPF error/retry surface.
+
 A loading surface appears immediately, with browser setup and estate handshake
 phases, a lobby return action, a 20-second timeout and an explicit retry path.
 Startup milestones are recorded relative to the native opening action for WebView2
@@ -65,8 +76,9 @@ No invented percent progress or asset-wide preloading is used.
 
 The Windows Empire smoke records cold and warm phase timings to
 `empire-startup-timings.json`, verifies browser identity across two visits,
-asserts the hidden Pixi ticker has stopped, and exercises the detached window
-separately. These CI timings are observed test-runner milestones, not a universal
+asserts that the native browser is already visible before its handshake,
+checks automatic DOM activation without mouse/keyboard input, confirms the
+hidden Pixi ticker has stopped, and exercises the detached window separately. These CI timings are observed test-runner milestones, not a universal
 end-user speed guarantee. A retained WebView2 can use more idle private memory;
 verify CPU, memory and resume behavior during extended native testing.
 
