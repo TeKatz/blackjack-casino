@@ -18,6 +18,12 @@ Delivered:
   on duplicate messages. The parser and session are NOT YET wired to the game.
 - A matching TypeScript contract, rejecting malformed responses and snapshots,
   plus C# and TypeScript boundary regression tests.
+- A standalone responsive React Blackjack entry point and a live WebView2
+  preview, accessible via the Modern Blackjack (Preview) button on the native
+  Blackjack sidebar when assets are installed. It invokes the same native
+  CasinoSession, wager actions, preset rules and existing settlement handler.
+  The default Blackjack lobby route deliberately remains WPF until parity tests
+  and the native custom-rule editor have a safe replacement.
 
 Next implementation milestones:
 1. Connect the existing CasinoSession and table rule/preset preferences to
