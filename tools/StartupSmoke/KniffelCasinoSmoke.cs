@@ -92,20 +92,58 @@ internal static class KniffelCasinoSmoke
         Require(Find<TextBlock>(view).Single(t => t.Name == "MatchNetText").Text == "−$100.00", "Forfeit receipt does not show the lost entry.");
         Click(view, "ResultCasinoButton");
         await OpenLobbyProgression(window, "Statistics", "LobbyProgression_Overview");
-        await Task.Delay(120);
-        Require(Find<TextBlock>(window).Any(text => text.Text.Contains("MIDNIGHT DICE", StringComparison.Ordinal)), "Statistics overview has no Midnight Dice card.");
-        Find<TextBlock>(window).First(text => text.Text.Contains("MIDNIGHT DICE", StringComparison.Ordinal)).BringIntoView();
-        await Task.Delay(80);
-        Capture(window, Path.Combine(output, "dice-statistics.png"));
-        Click(window, "ProgressionBackButton");
+        ModernLobbyView? modern = Find<ModernLobbyView>(window)
+            .FirstOrDefault(view => view.Ready && view.IsVisible);
+        if (modern is not null)
+        {
+            var web = modern.Browser.CoreWebView2!;
+            await Until(() => modern.RecordsPage == "statistics");
+            string diceStats = await web.ExecuteScriptAsync(
+                "Boolean(document.querySelector('.statistics-page [data-stat-game=\"midnight-dice\"]'))");
+            Require(diceStats == "true", "React lifetime statistics have no Midnight Dice card.");
+            await using(FileStream capture = File.Create(Path.Combine(output,"dice-statistics.png")))
+                await web.CapturePreviewAsync(
+                    Microsoft.Web.WebView2.Core.CoreWebView2CapturePreviewImageFormat.Png,capture);
+            await web.ExecuteScriptAsync("document.querySelector('.statistics-page .shop-back')?.click()");
+            await Until(() => modern.RecordsPage is null);
+        }
+        else
+        {
+            await Task.Delay(120);
+            Require(Find<TextBlock>(window).Any(text => text.Text.Contains("MIDNIGHT DICE", StringComparison.Ordinal)),
+                "Statistics overview has no Midnight Dice card.");
+            Capture(window, Path.Combine(output, "dice-statistics.png"));
+            Click(window, "ProgressionBackButton");
+        }
         await OpenLobbyProgression(window, "Challenges", "LobbyProgression_Challenges");
-        await Task.Delay(100);
-        ComboBox filter = Find<ComboBox>(window).Single(combo => combo.Name == "ChallengeCategoryFilter");
-        filter.SelectedItem = filter.Items.Cast<object>().Single(item => item.ToString() == "Midnight Dice");
-        await Task.Delay(60);
-        Require(Find<TextBlock>(window).Any(text => text.Text.Contains("First Sheet", StringComparison.Ordinal)), "Dice achievements did not appear in the filtered challenge screen.");
-        Capture(window, Path.Combine(output, "dice-achievements.png"));
-        Click(window, "ProgressionBackButton");
+        if (modern is not null)
+        {
+            var web = modern.Browser.CoreWebView2!;
+            await Until(() => modern.RecordsPage == "challenges");
+            string selected = await web.ExecuteScriptAsync(
+                "(()=>{const button=[...document.querySelectorAll('.record-category')]"
+                + ".find(x=>x.textContent?.includes('Midnight Dice'));button?.click();return !!button;})()");
+            Require(selected == "true", "React Challenges lacks Midnight Dice category.");
+            string firstSheet = await web.ExecuteScriptAsync(
+                "Boolean([...document.querySelectorAll('.record-challenge h3')].some(x=>x.textContent==='First Sheet'))");
+            Require(firstSheet == "true", "Midnight Dice achievement is absent from the React challenge board.");
+            await using(FileStream capture = File.Create(Path.Combine(output,"dice-achievements.png")))
+                await web.CapturePreviewAsync(
+                    Microsoft.Web.WebView2.Core.CoreWebView2CapturePreviewImageFormat.Png,capture);
+            await web.ExecuteScriptAsync("document.querySelector('.record-page .shop-back')?.click()");
+            await Until(() => modern.RecordsPage is null);
+        }
+        else
+        {
+            await Task.Delay(100);
+            ComboBox filter = Find<ComboBox>(window).Single(combo => combo.Name == "ChallengeCategoryFilter");
+            filter.SelectedItem = filter.Items.Cast<object>().Single(item => item.ToString() == "Midnight Dice");
+            await Task.Delay(60);
+            Require(Find<TextBlock>(window).Any(text => text.Text.Contains("First Sheet", StringComparison.Ordinal)),
+                "Dice achievements did not appear in WPF fallback challenges.");
+            Capture(window, Path.Combine(output, "dice-achievements.png"));
+            Click(window, "ProgressionBackButton");
+        }
         File.WriteAllText(Path.Combine(output, "dice-casino-result.txt"), "PASS: paid entry, three legal AI seats, full 13-turn table, opponent sheets, pending-turn resume, exact rank payout, no duplicate settlement/XP, confirmed forfeit, statistics and filtered achievements.");
     }
     private static async Task OpenLobbyProgression(MainWindow window, string destination, string fallbackName)
@@ -121,14 +159,12 @@ internal static class KniffelCasinoSmoke
         string label = destination == "Statistics" ? "Statistics|Statistik" : "Challenges|Aufgaben";
         string expression = "[...document.querySelectorAll('.lobby-nav-item')]"
             + ".find(x=>/" + label + "/.test(x.textContent||''))";
-        string found = await modern.Browser.CoreWebView2!.ExecuteScriptAsync(
-            "Boolean(" + expression + ")");
+        string found = await modern.Browser.CoreWebView2!.ExecuteScriptAsync("Boolean(" + expression + ")");
         Require(found.Equals("true", StringComparison.OrdinalIgnoreCase),
             "React lobby does not expose " + destination + " navigation.");
         await modern.Browser.CoreWebView2.ExecuteScriptAsync(expression + "?.click()");
-        await Until(() => Find<Button>(window).Any(button =>
-            button.Name == "ProgressionBackButton" && button.IsVisible));
-        Require(!modern.IsVisible, "React lobby still obscures the native " + destination + " page.");
+        await Until(() => modern.RecordsPage == (destination == "Statistics" ? "statistics" : "challenges"));
+        Require(modern.IsVisible, "React records did not remain in the shared lobby compositor.");
     }
 
     private static async Task Until(Func<bool> condition)
