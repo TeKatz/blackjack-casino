@@ -50,10 +50,38 @@ internal static class UiResponsivenessSmoke
                 var bank = (FrameworkElement)window.FindName("BankrollPanel");
                 var shortcuts = Find<FrameworkElement>(window).Single(e => e.Name == "CasinoHeaderShortcuts");
                 var credits = (FrameworkElement)window.FindName("EmpireBalancePanel");
-                Rect a = Bounds(shortcuts, window), b = Bounds(bank, window), c = Bounds(credits, window);
-                Require(a.Right + 4 <= b.Left && b.Right + 4 <= c.Left, "Header money overlaps shortcuts or Empire credits.");
-                Rect header = Bounds((FrameworkElement)window.FindName("CasinoHeader"), window);
-                Require(c.Right <= window.ActualWidth && b.Top >= header.Top && b.Bottom <= header.Bottom + 1, "Header money left the header.");
+                FrameworkElement nativeHeader = (FrameworkElement)window.FindName("CasinoHeader");
+                if (nativeHeader.IsVisible)
+                {
+                    // Keep the original WPF fallback geometry contract.
+                    Rect a = Bounds(shortcuts, window), b = Bounds(bank, window), c = Bounds(credits, window);
+                    Require(a.Right + 4 <= b.Left && b.Right + 4 <= c.Left,
+                        "Header money overlaps shortcuts or Empire credits.");
+                    Rect header = Bounds(nativeHeader, window);
+                    Require(c.Right <= window.ActualWidth && b.Top >= header.Top && b.Bottom <= header.Bottom + 1,
+                        "Header money left the header.");
+                }
+                else
+                {
+                    // The React lobby deliberately replaces the native casino header.
+                    // Inspect the *visible WebView2 DOM*, rather than measuring an
+                    // invisible WPF header and declaring it clipped.
+                    ModernLobbyView modern = Find<ModernLobbyView>(window)
+                        .Single(view => view.Ready && view.IsVisible);
+                    string headerGeometry = await modern.Browser.CoreWebView2!.ExecuteScriptAsync(
+                        "(()=>{const top=document.querySelector('.lobby-topbar');"
+                        + "const wallet=document.querySelector('.lobby-finances');"
+                        + "const brand=document.querySelector('.lobby-brand');"
+                        + "if(!top||!wallet||!brand)return false;"
+                        + "const a=top.getBoundingClientRect(),b=wallet.getBoundingClientRect(),"
+                        + "c=brand.getBoundingClientRect();"
+                        + "return a.height>=45&&b.width>60&&c.width>100&&"
+                        + "b.left>=a.left&&b.right<=a.right+2&&"
+                        + "b.top>=a.top&&b.bottom<=a.bottom+2;})()");
+                    Require(headerGeometry.Equals("true", StringComparison.OrdinalIgnoreCase),
+                        "React lobby header money is clipped or outside the visible topbar at "
+                        + size.Item1 + "x" + size.Item2 + ".");
+                }
                 Border hub = Find<Border>(window).Single(e => e.Name == "LobbyOverviewHub");
                 foreach (string title in new[] { "Season Pass", "Cosmetic Shop", "Collector's Album", "Challenges", "Statistics" })
                 {
