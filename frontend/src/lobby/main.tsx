@@ -11,6 +11,9 @@ import { ModernAlbum } from './ModernAlbum';
 import {previewAlbum} from './albumBridge';
 import type {AlbumSnapshot,AlbumResult,AlbumRarity} from './albumBridge';
 import { ModernSeasons } from './ModernSeasons';
+import { ModernUpdates } from './ModernUpdates';
+import {fallbackUpdates,onUpdateSnapshot} from './updatesBridge';
+import type {LobbyUpdatesSnapshot} from './updatesBridge';
 import { onRecordsMessage, previewChallenges, previewStatistics, previewAccount, previewHistory, previewVault, previewSeasons } from './recordsBridge';
 import type { ChallengesSnapshot, StatisticsSnapshot, AccountSnapshot, HistorySnapshot, VaultSnapshot, VaultReward, SeasonsSnapshot, RecordsPage } from './recordsBridge';
 import { onShopMessages, previewShop } from './shopBridge';
@@ -167,6 +170,8 @@ function LobbyApp() {
   const [shopPending,setShopPending] = useState<string|null>(null);
   const [shopNotice,setShopNotice] = useState<{success:boolean;message:string}|null>(null);
   const [filter,setFilter] = useState<Filter>('all');
+  const [updates,setUpdates] = useState<LobbyUpdatesSnapshot>(fallbackUpdates);
+  const [updatesOpen,setUpdatesOpen] = useState(false);
   const [dailyOpen,setDailyOpen] = useState(false);
   const [lowMotion,setLowMotion] = useState(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const [nativeSnapshotReceived,setNativeSnapshotReceived] = useState(!embeddedLobby);
@@ -213,6 +218,7 @@ function LobbyApp() {
     });
     return stop;
   },[]);
+  useEffect(()=>onUpdateSnapshot(setUpdates),[]);
   useEffect(()=>{
     // The native WebView2 host starts hidden. Hidden webviews can suspend
     // requestAnimationFrame indefinitely, so a frame-based ready handshake
@@ -288,6 +294,15 @@ function LobbyApp() {
     setDailyOpen(false);
     setFilter(id);
   };
+  const openUpdates = () => {
+    setUpdatesOpen(true);
+    lobbyCommand('lobby.updates.open');
+  };
+  const closeUpdates = () => {
+    if(updates.busy)return;
+    setUpdatesOpen(false);
+    lobbyCommand('lobby.updates.close');
+  };
   const modes = data.modes
     .filter(x=>matchesFilter(x.id,filter))
     .sort((a,b)=>artOrder.indexOf(a.id)-artOrder.indexOf(b.id));
@@ -332,6 +347,7 @@ function LobbyApp() {
     </header>
     <div className={'lobby-body '+(shopVisible?'shop-active':recordsVisible?'records-active':'')}>
       <nav className="lobby-nav" aria-label={de?'Casino-Navigation':'Casino navigation'}>
+        <div className="lobby-nav-scroll">
         {navigation.map(n=><button type="button" key={n.id}
           aria-current={(shopVisible?n.id==='shop':recordsVisible?n.id===(recordsVisible==='challenges'?'challenges':recordsVisible==='statistics'?'stats':recordsVisible==='history'?'profile':recordsVisible==='vault'?'vault':recordsVisible==='album'?'collections':recordsVisible==='season'?'season':'profile'):n.id===filter)?'page':undefined}
           className={'lobby-nav-item '+((shopVisible?n.id==='shop':recordsVisible?n.id===(recordsVisible==='challenges'?'challenges':recordsVisible==='statistics'?'stats':recordsVisible==='vault'?'vault':recordsVisible==='album'?'collections':recordsVisible==='season'?'season':'profile'):n.id===filter)?'selected':'')+(n.id==='daily'?' daily-nav':'')}
@@ -342,6 +358,14 @@ function LobbyApp() {
             <span className="nav-ready" aria-label={de?'Belohnungen bereit':'Rewards ready'}>{data.challengesReady}</span>}
         </button>)}
         <div className="lobby-nav-decoration" aria-hidden="true">♣</div>
+        </div>
+        <button type="button" className="lobby-updates-entry" data-testid="lobby-updates-entry"
+          aria-haspopup="dialog" aria-expanded={updatesOpen}
+          onClick={openUpdates}>
+          <span className="lobby-updates-glyph" aria-hidden="true">⚙</span>
+          <span>{de?'Updates':'Updates'}</span>
+          {updates.updateAvailable&&<span className="lobby-updates-dot" aria-label={de?'Update verfügbar':'Update available'}/>}
+        </button>
       </nav>
       {recordsVisible==='challenges'?<ModernChallenges data={challenges}
         language={data.language} loaded={challengesLoaded} pending={recordsPending}
@@ -403,6 +427,10 @@ function LobbyApp() {
         onClose={()=>setDailyOpen(false)} mobileOpen={dailyOpen}/>
       </>}
     </div>
+    {updatesOpen&&<ModernUpdates state={updates} language={data.language}
+      onClose={closeUpdates} onChannel={value=>lobbyCommand('lobby.updates.channel.set',value)}
+      onCheck={()=>lobbyCommand('lobby.updates.check')}
+      onInstall={()=>lobbyCommand('lobby.updates.install')}/>}
     {shopNotice&&<div role="status" className={'shop-notice '+(shopNotice.success?'success':'error')}>
       <span>{shopNotice.message}</span>
       <button type="button" onClick={()=>setShopNotice(null)} aria-label="Dismiss message">×</button>

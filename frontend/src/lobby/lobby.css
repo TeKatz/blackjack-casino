@@ -349,3 +349,38 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
  background:rgba(13,48,37,.86);color:#ecd6a6;font-weight:700;font-size:12px;letter-spacing:.09em;
  cursor:pointer;transition:border-color .18s,background .18s;}
 .lobby-language:hover,.lobby-language:focus-visible{border-color:#f4d7a0;background:#1f523e;}
+
+/* Update access belongs to the casino lobby, never the Blackjack table.
+   Keep the entry anchored to the lower left even when categories overflow. */
+.lobby-nav{overflow:hidden;}
+.lobby-nav-scroll{display:flex;flex-direction:column;min-height:0;flex:1;gap:8px;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:#507258 #0c261b;}
+.lobby-nav-scroll .lobby-nav-decoration{font-size:70px;line-height:.65;opacity:.3;}
+.lobby-updates-entry{flex:0 0 auto;min-height:44px;display:flex;align-items:center;justify-content:flex-start;gap:9px;border:1px solid #a68a54;border-radius:10px;padding:8px 10px;background:linear-gradient(125deg,#1d4331,#0e241e);color:#efd5a0;font-size:12px;font-weight:700;white-space:nowrap;}
+.lobby-updates-entry:hover{border-color:#e2be70;background:#305640;}
+.lobby-updates-entry[aria-expanded=true]{border-color:#e9c57a;box-shadow:0 0 12px #d8ba6e44;}
+.lobby-updates-glyph{font-size:20px;width:25px;flex:0 0 25px;text-align:center;}
+.lobby-updates-dot{width:7px;height:7px;border-radius:50%;background:#e6bb69;box-shadow:0 0 8px #f7c859;}
+.lobby-updates-backdrop{position:absolute;inset:0;z-index:30;background:#010b09da;display:flex;align-items:center;justify-content:center;padding:18px;}
+.lobby-updates-panel{width:min(490px,100%);max-height:calc(100vh - 36px);overflow-y:auto;border:1px solid #ac9055;border-radius:14px;background:linear-gradient(140deg,#143727,#081e1c);box-shadow:0 20px 70px #000b,inset 0 1px #e9dcad24;padding:24px;display:flex;flex-direction:column;gap:17px;}
+.lobby-updates-header{display:flex;gap:16px;justify-content:space-between;align-items:flex-start;}
+.lobby-updates-header small{color:#c7a66c;font-weight:700;font-size:10px;letter-spacing:.18em;}
+.lobby-updates-header h2{font:29px Georgia,serif;color:#f2dcab;margin:6px 0;}
+.lobby-updates-header p{margin:0;font-size:12px;color:#b7cbbf;}
+.lobby-updates-panel button{padding:10px 13px;border-radius:7px;border:1px solid #7d956f;background:#183e30;color:#ebead8;font-weight:650;}
+.lobby-updates-panel button:hover:not(:disabled){background:#305a41;border-color:#ddb96a;}
+.lobby-updates-panel button:disabled{opacity:.5;cursor:default;}
+.lobby-updates-panel .lobby-updates-close{background:transparent;font-size:22px;padding:4px 12px;}
+.lobby-updates-panel label{display:grid;gap:8px;font-size:12px;color:#d0ddce;}
+.lobby-updates-panel select{width:100%;min-height:43px;padding:9px;background:#091f19;border:1px solid #5c8168;color:#f2f0e3;border-radius:7px;font:inherit;}
+.lobby-updates-status{border:1px solid #55745a;background:#081e17bb;border-radius:9px;padding:12px;color:#c7d9c6;font-size:13px;line-height:1.5;overflow-wrap:anywhere;}
+.lobby-updates-status strong{color:#edcf89;display:block;margin-bottom:5px;font-size:11px;letter-spacing:.08em;}
+.lobby-updates-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.lobby-updates-actions .install{background:linear-gradient(130deg,#e4cb8a,#b68d51);color:#162b21;border-color:#b28b51;}
+.lobby-updates-actions .install:hover:not(:disabled){background:#e3c077;}
+.lobby-updates-confirm{padding:12px;border:1px solid #a58b56;border-radius:9px;background:#282b1cbf;}
+.lobby-updates-confirm p{font-size:13px;line-height:1.5;}
+.lobby-updates-confirm div{display:flex;gap:9px;justify-content:flex-end;}
+.lobby-updates-confirm .confirm{background:#c9a561;color:#16251b;}
+.lobby-updates-panel .lobby-updates-progress{color:#dec790;font-size:11px;}
+@media(max-height:800px){.lobby-nav-scroll{gap:2px}.lobby-updates-entry{min-height:39px}.lobby-nav-scroll .lobby-nav-decoration{display:none;}}
+@media(max-width:1100px){.lobby-updates-entry{padding:6px}.lobby-updates-glyph{width:19px;flex-basis:19px;}}
