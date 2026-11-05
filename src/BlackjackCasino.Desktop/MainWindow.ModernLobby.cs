@@ -88,7 +88,10 @@ public partial class MainWindow
 
     private void OnModernLobbyStateChanged()
     {
-        bool fallback = modernLobby is null || modernLobby.Failed;
+        // A visible legacy frame during initialization would be a real flash:
+        // the visibility event can run before InitializeModernLobby creates
+        // the browser. Only use WPF when assets are absent or WebView2 fails.
+        bool fallback = !ModernLobbyView.IsAvailable || modernLobby?.Failed == true;
         if (lobby is not null)
         {
             // Visibility still tracks the active mode for existing game navigation.
