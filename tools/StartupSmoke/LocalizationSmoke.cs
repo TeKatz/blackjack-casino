@@ -31,7 +31,10 @@ internal static class LocalizationSmoke
 
         await react.Browser.CoreWebView2!.ExecuteScriptAsync(
             "document.querySelector('.lobby-language')?.click()");
-        for (int i = 0; i < 60 && CultureInfo.CurrentUICulture.Name != "de-DE"; i++)
+        // An async smoke test carries its own captured ExecutionContext. CurrentUICulture
+        // inside this continuation may therefore remain English even after the WPF host
+        // changes the application locale in WebView2's message callback.
+        for (int i = 0; i < 60 && Localization.Language != UiLanguagePreference.German; i++)
             await Task.Delay(50);
         window.UpdateLayout();
 
@@ -41,8 +44,10 @@ internal static class LocalizationSmoke
         await Task.Delay(100);
         window.UpdateLayout();
 
-        Require(CultureInfo.CurrentUICulture.Name == "de-DE",
-            $"German selection did not switch CurrentUICulture to de-DE (was {CultureInfo.CurrentUICulture.Name}).");
+        Require(Localization.Language == UiLanguagePreference.German
+            && Localization.Culture.Name == "de-DE"
+            && CultureInfo.DefaultThreadCurrentUICulture?.Name == "de-DE",
+            $"German selection did not update application culture (active: {Localization.Language}, default: {CultureInfo.DefaultThreadCurrentUICulture?.Name}).");
         Require(language.SelectedIndex == 1 && SelectedLanguageName(language) == "Deutsch",
             $"Language selector changed the UI to German but still displays '{SelectedLanguageName(language)}'.");
         Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "DARSTELLUNG"),
@@ -186,12 +191,14 @@ internal static class LocalizationSmoke
         Require(languageLobby?.Browser.CoreWebView2 is not null, "Returning from Lounge lost the modern lobby.");
         await languageLobby!.Browser.CoreWebView2!.ExecuteScriptAsync(
             "document.querySelector('.lobby-language')?.click()");
-        for (int i = 0; i < 60 && CultureInfo.CurrentUICulture.Name != "en-US"; i++)
+        for (int i = 0; i < 60 && Localization.Language != UiLanguagePreference.English; i++)
             await Task.Delay(50);
         window.UpdateLayout();
 
-        Require(CultureInfo.CurrentUICulture.Name == "en-US",
-            $"English selection did not restore CurrentUICulture to en-US (was {CultureInfo.CurrentUICulture.Name}).");
+        Require(Localization.Language == UiLanguagePreference.English
+            && Localization.Culture.Name == "en-US"
+            && CultureInfo.DefaultThreadCurrentUICulture?.Name == "en-US",
+            $"English selection did not restore application culture (active: {Localization.Language}, default: {CultureInfo.DefaultThreadCurrentUICulture?.Name}).");
         Require(language.SelectedIndex == 0 && SelectedLanguageName(language) == "English",
             $"Language selector did not visibly return to English; it shows '{SelectedLanguageName(language)}'.");
         TextBlock languageLabel = typeof(MainWindow).GetField("languageLabel",

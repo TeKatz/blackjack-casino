@@ -333,14 +333,22 @@ internal static partial class Program
                 "[...document.querySelectorAll('.lobby-nav-item')].find(x=>/Statistics|Statistik/.test(x.textContent||''))?.click()");
             for(int i=0;i<70 && modernChallenges.RecordsPage!="statistics";i++)await Task.Delay(70);
             Require(modernChallenges.RecordsPage=="statistics","React Statistics navigation failed.");
-            string statsUi=await web.ExecuteScriptAsync(
-                "(()=>{const root=document.querySelector('.statistics-page');"
-                + "return Boolean(root&&root.querySelector('[data-stat-game=\"blackjack\"]')"
-                + "&&root.querySelector('[data-stat-game=\"midnight-dice\"]')"
-                + "&&root.querySelector('[data-stat-game=\"neon-vault\"]')"
-                + "&&root.querySelector('.session-metrics')"
-                + "&&root.querySelector('.table-archive'));})()");
-            Require(statsUi=="true","Statistics missing game breakdown, session or table statistics.");
+            // Native RecordsPage changes when WebView2 receives the command, before
+            // React necessarily commits its asynchronously delivered statistics snapshot.
+            // Wait for real data cards, not merely the route flag or an empty page shell.
+            string statsUi = "false";
+            for (int i = 0; i < 100 && statsUi != "true"; i++)
+            {
+                statsUi = await web.ExecuteScriptAsync(
+                    "(()=>{const root=document.querySelector('.statistics-page');"
+                    + "return Boolean(root&&root.querySelector('[data-stat-game=\"blackjack\"]')"
+                    + "&&root.querySelector('[data-stat-game=\"midnight-dice\"]')"
+                    + "&&root.querySelector('[data-stat-game=\"neon-vault\"]')"
+                    + "&&root.querySelector('.session-metrics')"
+                    + "&&root.querySelector('.table-archive'));})()");
+                if (statsUi != "true") await Task.Delay(80);
+            }
+            Require(statsUi=="true","Statistics missing game breakdown, session or table statistics after snapshot delivery.");
             await using(FileStream shot=File.Create(Path.Combine(output,"modern-statistics-presentation.png")))
                 await web.CapturePreviewAsync(
                     Microsoft.Web.WebView2.Core.CoreWebView2CapturePreviewImageFormat.Png,shot);
