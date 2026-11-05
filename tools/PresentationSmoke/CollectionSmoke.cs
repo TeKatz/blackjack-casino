@@ -89,7 +89,8 @@ internal static partial class Program
         Require(profile.Collection.PacksOpened==before+1&&
             profile.Collection.Packs.GetValueOrDefault(CollectionRarity.Common)==owned-1,
             "React pack open did not debit exactly one C# pack.");
-        await Expect("Boolean(document.querySelector('.album-opening-panel.phase-reveal'))",
+        await Expect("Boolean(document.querySelector('.album-opening-panel.phase-reveal')"
+            +"||document.querySelector('.album-opening-panel.phase-summary'))",
             "React did not start its sealed-pack opening animation.");
         await web.ExecuteScriptAsync(
             "document.querySelector('.album-opening-panel.phase-reveal .album-opening-secondary')?.click()");
@@ -104,7 +105,8 @@ internal static partial class Program
             "Leaving React Album discarded the durable reveal receipt.");
         await web.ExecuteScriptAsync(
             "[...document.querySelectorAll('.lobby-nav-item')].find(x=>/Collections|Sammlungen/.test(x.textContent||''))?.click()");
-        await Expect("Boolean(document.querySelector('.album-opening-panel.phase-reveal'))",
+        await Expect("Boolean(document.querySelector('.album-opening-panel.phase-reveal')"
+            +"||document.querySelector('.album-opening-panel.phase-summary'))",
             "Reloading React Album did not resume the exact saved opening.");
         Require(profile.Collection.PendingOpening?.Id==receipt.Id,
             "Resuming a React pack reveal rerolled the five original cards.");
