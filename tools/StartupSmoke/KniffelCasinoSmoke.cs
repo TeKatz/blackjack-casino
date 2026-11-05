@@ -91,14 +91,14 @@ internal static class KniffelCasinoSmoke
         await Until(() => Find<Button>(view).Any(b => b.Name == "ResultCasinoButton" && b.IsVisible));
         Require(Find<TextBlock>(view).Single(t => t.Name == "MatchNetText").Text == "−$100.00", "Forfeit receipt does not show the lost entry.");
         Click(view, "ResultCasinoButton");
-        Click(window, "LobbyProgression_Overview");
+        await OpenLobbyProgression(window, "Statistics", "LobbyProgression_Overview");
         await Task.Delay(120);
         Require(Find<TextBlock>(window).Any(text => text.Text.Contains("MIDNIGHT DICE", StringComparison.Ordinal)), "Statistics overview has no Midnight Dice card.");
         Find<TextBlock>(window).First(text => text.Text.Contains("MIDNIGHT DICE", StringComparison.Ordinal)).BringIntoView();
         await Task.Delay(80);
         Capture(window, Path.Combine(output, "dice-statistics.png"));
         Click(window, "ProgressionBackButton");
-        Click(window, "LobbyProgression_Challenges");
+        await OpenLobbyProgression(window, "Challenges", "LobbyProgression_Challenges");
         await Task.Delay(100);
         ComboBox filter = Find<ComboBox>(window).Single(combo => combo.Name == "ChallengeCategoryFilter");
         filter.SelectedItem = filter.Items.Cast<object>().Single(item => item.ToString() == "Midnight Dice");
@@ -108,6 +108,29 @@ internal static class KniffelCasinoSmoke
         Click(window, "ProgressionBackButton");
         File.WriteAllText(Path.Combine(output, "dice-casino-result.txt"), "PASS: paid entry, three legal AI seats, full 13-turn table, opponent sheets, pending-turn resume, exact rank payout, no duplicate settlement/XP, confirmed forfeit, statistics and filtered achievements.");
     }
+    private static async Task OpenLobbyProgression(MainWindow window, string destination, string fallbackName)
+    {
+        ModernLobbyView? modern = Find<ModernLobbyView>(window)
+            .FirstOrDefault(view => view.Ready && view.IsVisible);
+        if (modern is null)
+        {
+            Click(window, fallbackName);
+            return;
+        }
+
+        string label = destination == "Statistics" ? "Statistics|Statistik" : "Challenges|Aufgaben";
+        string expression = "[...document.querySelectorAll('.lobby-nav-item')]"
+            + ".find(x=>/" + label + "/.test(x.textContent||''))";
+        string found = await modern.Browser.CoreWebView2!.ExecuteScriptAsync(
+            "Boolean(" + expression + ")");
+        Require(found.Equals("true", StringComparison.OrdinalIgnoreCase),
+            "React lobby does not expose " + destination + " navigation.");
+        await modern.Browser.CoreWebView2.ExecuteScriptAsync(expression + "?.click()");
+        await Until(() => Find<Button>(window).Any(button =>
+            button.Name == "ProgressionBackButton" && button.IsVisible));
+        Require(!modern.IsVisible, "React lobby still obscures the native " + destination + " page.");
+    }
+
     private static async Task Until(Func<bool> condition)
     {
         var time = Stopwatch.StartNew();
