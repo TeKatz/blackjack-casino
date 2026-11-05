@@ -28,7 +28,7 @@ internal static class EmpireWebSmoke
     {
         var old = (EmpireService)Field("empire").GetValue(window)!;
         var oldPreferences = (AppPreferences)Field("preferences").GetValue(window)!;
-        UiLanguagePreference oldLanguage = Localization.Language;
+        UiLanguagePreference oldLanguage = BlackjackCasino.Desktop.Localization.Language;
         var originalSession = (CasinoSession)Field("session").GetValue(window)!;
         decimal originalBankroll = originalSession.Bankroll;
         var fixture = Fixture();
@@ -115,10 +115,10 @@ internal static class EmpireWebSmoke
             await Click(view, "claim-dividend");
             await Wait(() => casino.Bankroll == cash + dividend, "Dividend did not settle into the casino wallet.");
             await Check(view, "document.querySelector('[data-testid=claim-dividend]').disabled", "Empty reserve can be collected again.");
-            Localization.SetLanguage(UiLanguagePreference.German); view.Refresh();
+            BlackjackCasino.Desktop.Localization.SetLanguage(UiLanguagePreference.German); view.Refresh();
             await Check(view, "document.documentElement.lang==='de' && document.querySelector('[data-testid=nav-estate]').textContent.includes('Dein Anwesen')", "German Empire controls did not localize.");
             await Capture(view, Path.Combine(output, "empire-react-german.png"));
-            Localization.SetLanguage(oldLanguage); view.Refresh();
+            BlackjackCasino.Desktop.Localization.SetLanguage(oldLanguage); view.Refresh();
             await Click(view, "overview");
             Require(fixture.CanPrestige, "Prestige fixture did not meet its requirements.");
             await Click(view, "prestige");
@@ -148,7 +148,7 @@ internal static class EmpireWebSmoke
             typeof(MainWindow).GetMethod("CloseEmpire", Flags)!.Invoke(window, null);
             if (Field("empireDetachedWindow").GetValue(window) is Window detached) detached.Close();
             Field("empire").SetValue(window, old); Field("preferences").SetValue(window, oldPreferences);
-            originalSession.ResetBankroll(originalBankroll); Localization.SetLanguage(oldLanguage);
+            originalSession.ResetBankroll(originalBankroll); BlackjackCasino.Desktop.Localization.SetLanguage(oldLanguage);
         }
     }
     internal static async Task<string> Script(ModernEmpireView view, string script)
