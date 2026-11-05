@@ -4,15 +4,17 @@ import { LobbyAmbient } from './LobbyAmbient';
 import { ModernShop } from './ModernShop';
 import { ModernChallenges } from './ModernChallenges';
 import { ModernStatistics } from './ModernStatistics';
-import { onRecordsMessage, previewChallenges, previewStatistics } from './recordsBridge';
-import type { ChallengesSnapshot, StatisticsSnapshot, RecordsPage } from './recordsBridge';
+import { ModernAccount } from './ModernAccount';
+import { ModernSeasons } from './ModernSeasons';
+import { onRecordsMessage, previewChallenges, previewStatistics, previewAccount, previewSeasons } from './recordsBridge';
+import type { ChallengesSnapshot, StatisticsSnapshot, AccountSnapshot, SeasonsSnapshot, RecordsPage } from './recordsBridge';
 import { onShopMessages, previewShop } from './shopBridge';
 import type { ShopSnapshot } from './shopBridge';
 import { embeddedLobby, fallbackLobby, lobbyCommand, onLobbySnapshot } from './lobbyBridge';
 import type { LobbyMode, LobbySnapshot } from './lobbyBridge';
 import './lobby.css';
 
-type Filter = 'all'|'tables'|'slots'|'relax'|'empire'|'collections'|'shop'|'stats'|'season'|'challenges'|'vault'|'daily';
+type Filter = 'all'|'tables'|'slots'|'relax'|'empire'|'collections'|'shop'|'stats'|'season'|'challenges'|'vault'|'daily'|'profile';
 const artOrder = ['blackjack','kniffel','chill-lounge','casino-empire','midnight-reels',
   'neon-vault','nine-lives','midnight-manor','midnight-merge'];
 const categoryById: Record<string, string> = {
@@ -30,6 +32,7 @@ const navigation: {id: Filter; icon: string; en: string; de: string}[] = [
   {id:'challenges',icon:'♛',en:'Challenges',de:'Aufgaben'},
   {id:'vault',icon:'⬡',en:'Vault',de:'Tresor'},
   {id:'daily',icon:'✦',en:'Daily Login',de:'Täglicher Login'},
+  {id:'profile',icon:'♠',en:'Player Profile',de:'Spielerprofil'},
 ];
 function percent(n: number): string { return Math.round(n * 100) + '%'; }
 function matchesFilter(id: string, filter: Filter): boolean {
@@ -138,8 +141,12 @@ function LobbyApp() {
   const [recordsVisible,setRecordsVisible] = useState<RecordsPage|null>(null);
   const [challenges,setChallenges] = useState<ChallengesSnapshot>(previewChallenges);
   const [statistics,setStatistics] = useState<StatisticsSnapshot>(previewStatistics);
+  const [account,setAccount] = useState<AccountSnapshot>(previewAccount);
+  const [seasons,setSeasons] = useState<SeasonsSnapshot>(previewSeasons);
   const [challengesLoaded,setChallengesLoaded] = useState(!embeddedLobby);
   const [statisticsLoaded,setStatisticsLoaded] = useState(!embeddedLobby);
+  const [accountLoaded,setAccountLoaded] = useState(!embeddedLobby);
+  const [seasonsLoaded,setSeasonsLoaded] = useState(!embeddedLobby);
   const [recordsPending,setRecordsPending] = useState<string|null>(null);
   const [shopVisible,setShopVisible] = useState(false);
   const [shopLoaded,setShopLoaded] = useState(!embeddedLobby);
@@ -161,7 +168,9 @@ function LobbyApp() {
         setRecordsVisible(message.data.page);setShopVisible(false);setDailyOpen(false);
       }else if(message.type==='lobby.records.snapshot'){
         if(message.data.page==='challenges'){setChallenges(message.data.snapshot);setChallengesLoaded(true);}
-        else {setStatistics(message.data.snapshot);setStatisticsLoaded(true);}
+        else if(message.data.page==='statistics'){setStatistics(message.data.snapshot);setStatisticsLoaded(true);}
+        else if(message.data.page==='profile'){setAccount(message.data.snapshot);setAccountLoaded(true);}
+        else {setSeasons(message.data.snapshot);setSeasonsLoaded(true);}
       }else if(message.type==='lobby.records.result'){
         setRecordsPending(null);
         setShopNotice({success:message.data.success,message:message.data.message});
@@ -210,7 +219,9 @@ function LobbyApp() {
     if(shopVisible)closeShop();
     setRecordsVisible(page);setDailyOpen(false);setShopNotice(null);setRecordsPending(null);
     if(page==='challenges')setChallengesLoaded(!embeddedLobby);
-    else setStatisticsLoaded(!embeddedLobby);
+    else if(page==='statistics')setStatisticsLoaded(!embeddedLobby);
+    else if(page==='profile')setAccountLoaded(!embeddedLobby);
+    else setSeasonsLoaded(!embeddedLobby);
     lobbyCommand('lobby.records.open',page);
   };
   const openShop = () => {
@@ -227,7 +238,9 @@ function LobbyApp() {
   const openSecondary = (id:string)=>lobbyCommand('lobby.open-secondary',id);
   const openProgression = (id:string)=>{
     if(id==='Cosmetic Shop'){openShop();return;}
-    if(id==='Challenges'||id==='Statistics'){openRecords(id==='Challenges'?'challenges':'statistics');return;}
+    if(id==='Challenges'||id==='Statistics'||id==='Season Pass'){
+      openRecords(id==='Challenges'?'challenges':id==='Season Pass'?'season':'statistics');return;
+    }
     if(shopVisible)closeShop();
     if(recordsVisible)closeRecords();
     lobbyCommand('lobby.progression',id);
@@ -242,6 +255,7 @@ function LobbyApp() {
     if(id==='challenges') {openProgression('Challenges');return;}
     if(id==='vault') {lobbyCommand('lobby.vault');return;}
     if(id==='daily') {setDailyOpen(true);return;}
+    if(id==='profile') {openRecords('profile');return;}
     setDailyOpen(false);
     setFilter(id);
   };
@@ -263,7 +277,7 @@ function LobbyApp() {
         <button className="header-widget header-compact" onClick={()=>openProgression("Collector's Album")}>
           <span className="header-emoji">▤</span><span><small>ALBUM</small><b>{data.albumOwned} / {data.albumTotal}</b></span>
         </button>
-        <button className="header-widget profile-widget" onClick={()=>lobbyCommand('lobby.profile')}>
+        <button className="header-widget profile-widget" onClick={()=>openRecords('profile')}>
           <span className="header-avatar">♠</span><span><b>{data.displayName}</b>
           <small>LV {data.level} · ◆ {data.coins}</small><em>{data.title}</em></span>
           {data.prestige>0&&<span className="prestige-badge">✦<br/>P{data.prestige}</span>}
@@ -285,7 +299,7 @@ function LobbyApp() {
     <div className={'lobby-body '+(shopVisible?'shop-active':recordsVisible?'records-active':'')}>
       <nav className="lobby-nav" aria-label={de?'Casino-Navigation':'Casino navigation'}>
         {navigation.map(n=><button type="button" key={n.id}
-          aria-current={(shopVisible?n.id==='shop':recordsVisible?n.id===(recordsVisible==='challenges'?'challenges':'stats'):n.id===filter)?'page':undefined}
+          aria-current={(shopVisible?n.id==='shop':recordsVisible?n.id===(recordsVisible==='challenges'?'challenges':recordsVisible==='statistics'?'stats':recordsVisible==='season'?'season':'profile'):n.id===filter)?'page':undefined}
           className={'lobby-nav-item '+((shopVisible?n.id==='shop':recordsVisible?n.id===(recordsVisible==='challenges'?'challenges':'stats'):n.id===filter)?'selected':'')+(n.id==='daily'?' daily-nav':'')}
           onClick={()=>chooseNav(n.id)}>
           <span className="nav-icon" aria-hidden="true">{n.icon}</span>
@@ -303,6 +317,14 @@ function LobbyApp() {
       recordsVisible==='statistics'?<ModernStatistics data={statistics}
         language={data.language} loaded={statisticsLoaded}
         onBack={()=>{closeRecords();setFilter('all');}}/>:
+      recordsVisible==='profile'?<ModernAccount data={account} loaded={accountLoaded}
+        language={data.language} onBack={()=>{closeRecords();setFilter('all');}}
+        onRoute={route=>route==='shop'?openShop():route==='album'?openProgression("Collector's Album"):
+          openRecords(route as RecordsPage)}
+        onEdit={()=>lobbyCommand('lobby.profile.native')}/>:
+      recordsVisible==='season'?<ModernSeasons data={seasons} loaded={seasonsLoaded}
+        language={data.language} pending={recordsPending} onBack={()=>{closeRecords();setFilter('all');}}
+        onActivate={id=>{setRecordsPending(id);lobbyCommand('lobby.records.season.activate',id);}}/>:
       shopVisible?<ModernShop shop={shop} loaded={shopLoaded} language={data.language} pending={shopPending}
         onBack={()=>{closeShop();setFilter('all');}}
         onCosmetic={id=>{setShopPending(id);lobbyCommand('lobby.shop.action',id);}}

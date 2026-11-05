@@ -149,3 +149,34 @@
   .record-summary>div{padding:10px}
   .record-filters{padding:10px}
 }
+
+.account-panel{padding:22px;margin-top:18px;background:#09251d;border:1px solid #42634d;border-radius:14px;}
+.account-panel h2{font:normal 27px Georgia,serif;color:#f2d9a6;margin:0 0 12px;}
+.account-panel p{font-size:13px;line-height:1.7;color:#b7d1bf;}
+.account-name,.season-title{font-size:clamp(20px,2.3vw,28px)!important;}
+.account-routes{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;}
+.account-routes button{display:flex;gap:10px;align-items:center;text-align:left;background:#13372a;color:#e9d6af;
+ border:1px solid #64805e;border-radius:11px;padding:18px;transition:transform .18s;}
+.account-routes button:hover,.account-routes button:focus-visible{transform:translateY(-2px);border-color:#e2be79;}
+.account-routes button span{font-size:26px}.account-routes button strong{font:normal 19px Georgia,serif;}
+.account-summary{margin-top:20px;}
+.season-library{display:flex;gap:12px;flex-wrap:wrap;margin-top:17px;}
+.season-library button{min-width:160px;flex:1;display:flex;flex-direction:column;gap:5px;
+ background:#0b2a20;border:1px solid #49644d;border-radius:10px;padding:15px;color:#d9e3d2;text-align:left;}
+.season-library button.selected{border-color:#d4b272;background:#194131;}
+.season-library strong{font:normal 20px Georgia,serif;color:#f3d9a9;}
+.season-library span,.season-library small{font-size:12px;color:#b9cbb6;}
+.season-library small{color:#85d8ac;font-weight:bold;}
+.season-heading{display:flex;align-items:start;justify-content:space-between;gap:18px;flex-wrap:wrap;}
+.season-heading p{max-width:760px;}
+.season-meta{display:flex;justify-content:space-between;gap:12px;margin:6px 0;color:#d5dfcb;font-size:13px;}
+.season-meter{margin-bottom:25px;}
+.season-tiers{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:9px;}
+.season-tiers article{position:relative;display:flex;flex-direction:column;gap:9px;min-height:120px;
+ background:#102e25;border:1px solid #48644d;border-radius:9px;padding:13px;}
+.season-tiers article.earned{border-color:#9a8756;background:#203c2b;}
+.season-tiers article b{font:normal 20px Georgia,serif;color:#f0daac;}
+.season-tiers article small{color:#b7c9b8;}
+.season-tiers article span{font-size:12px;color:#e0c993;}
+.season-tiers article em{position:absolute;right:12px;top:10px;font-size:16px;color:#85dea2;}
+@media(max-width:750px){.record-hero{flex-wrap:wrap}.record-hero-side{min-width:0;width:100%}.account-panel{padding:15px}}
