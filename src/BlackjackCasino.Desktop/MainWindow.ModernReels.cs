@@ -72,6 +72,9 @@ public partial class MainWindow
         embeddedGameHost!.Content = modernReelsView;
         embeddedGameOverlay!.Visibility = Visibility.Visible;
         KeyboardNavigation.SetTabNavigation(modernReelsView, KeyboardNavigationMode.Cycle);
+        // Hiding the lobby raises a host-music synchronization event before
+        // the new view is attached. Reapply the mute now that Reels owns audio.
+        SyncHostMusic();
         modeRegistry.NotifyStateChanged();
     }
 
