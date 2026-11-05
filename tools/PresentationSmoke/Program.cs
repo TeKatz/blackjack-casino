@@ -168,7 +168,7 @@ internal static partial class Program
         await Task.Delay(100);window.UpdateLayout();RequireSingleHost(window,"Progression from profile");
         TabControl progressionTabs=Find<TabControl>(window).Single(t=>t.Items.OfType<TabItem>().Any(i=>Equals(i.Header,"Challenges")));
         Require(!progressionTabs.Items.OfType<TabItem>().Any(t => t.Name is "StatisticsTab" or "HandHistoryTab"), "Statistics/history remain in Progression & Shop.");
-        foreach(string tab in new[]{"Season Pass","Challenges","Cosmetic Shop"})
+        foreach(string tab in new[]{"Season Pass","Challenges"})
         {
             progressionTabs.SelectedItem=progressionTabs.Items.OfType<TabItem>().Single(t=>Equals(t.Header,tab));
             foreach(var size in new[]{(1080d,720d),(1440d,900d)})
@@ -192,20 +192,6 @@ internal static partial class Program
         challengeSearch.Text="__no_matching_challenge__";window.UpdateLayout();
         Require(!Find<Button>(window).Any(b=>b.Tag is string id && ChallengeCatalog.TryGet(id) is not null),"Challenge search did not filter rows");
         challengeSearch.Clear();
-        progressionTabs.SelectedItem=progressionTabs.Items.OfType<TabItem>().Single(t=>Equals(t.Header,"Cosmetic Shop"));window.UpdateLayout();
-        var shopSearch=Find<TextBox>(window).Single(t=>t.Name=="ShopSearchBox");
-        StackPanel shopPanel = Find<StackPanel>(window).Single(panel => panel.Name == "ShopPanel");
-        Require(shopPanel.Children.Count == CosmeticCatalog.All.Count, "Shop did not expose the full filtered collection in one scroll view");
-        Require(!Find<Button>(window).Any(button => button.Name is "ShopNextButton" or "ShopPreviousButton" or "ShopCardSetsTab"), "Obsolete shop pagination/card-set shortcut remains");
-        ScrollViewer shopScroll = Find<ScrollViewer>(window).Single(scroll => scroll.Name == "ShopScroll");
-        Require(shopScroll.ScrollableHeight > 0, "Shop collection cannot scroll");
-        shopScroll.ScrollToBottom(); window.UpdateLayout();
-        Require(shopScroll.VerticalOffset > 0, "Shop scroll did not reach later items");
-        Require(Math.Abs(shopSearch.ActualHeight - Find<ComboBox>(window).Single(combo => combo.Name == "ShopKindFilter").ActualHeight) < 2, "Shop search height is inconsistent with filters");
-        Capture(window, "shop-scroll-bottom");
-        shopSearch.Text="Moon Cat";window.UpdateLayout();
-        Require(Find<Button>(window).Any(b=>Equals(b.Tag,"portrait-moon-cat")),"Shop search failed to find the requested portrait");
-        shopSearch.Clear();
         await CheckAlbum(window, qaProfile, progressionTabs);
         Find<Button>(window).Single(b=>b.Name=="ProgressionBackButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(40);window.UpdateLayout();
@@ -213,6 +199,52 @@ internal static partial class Program
         Find<Button>(window).Single(b=>b.Name=="ProfileBackButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(40);window.UpdateLayout();
         Require(Find<CasinoLobbyView>(window).Any(v=>v.IsVisible),"Closing the profile lost the previous lobby");
+
+        ModernLobbyView? modernShop = Find<ModernLobbyView>(window)
+            .FirstOrDefault(view => view.Ready && view.IsVisible);
+        if (modernShop is not null)
+        {
+            var browser = modernShop.Browser.CoreWebView2!;
+            await browser.ExecuteScriptAsync(
+                "[...document.querySelectorAll('.lobby-nav-item')].find(x=>/Shop/.test(x.textContent||''))?.click()");
+            for (int i = 0; i < 60; i++)
+            {
+                string ready = await browser.ExecuteScriptAsync(
+                    "Boolean(document.querySelector('.modern-shop')"
+                    + "&&document.querySelectorAll('.shop-product').length===CosmeticCatalog.All.Count)");
+                if (ready == "true") break;
+                await Task.Delay(100);
+            }
+            string view = await browser.ExecuteScriptAsync(
+                "(()=>{const root=document.querySelector('.modern-shop');"
+                + "return Boolean(root&&root.querySelectorAll('.shop-product').length>60"
+                + "&&root.querySelectorAll('.shop-pack').length===5"
+                + "&&root.querySelector('[data-cosmetic-id="portrait-moon-cat"]')"
+                + "&&root.querySelector('[data-cosmetic-id="diceset-aurora"]'));})()");
+            Require(view == "true", "Modern Shop does not expose full live cosmetic/pack inventory.");
+            await using (FileStream capture = File.Create(Path.Combine(output, "modern-shop-presentation.png")))
+                await browser.CapturePreviewAsync(
+                    Microsoft.Web.WebView2.Core.CoreWebView2CapturePreviewImageFormat.Png, capture);
+            await browser.ExecuteScriptAsync("document.querySelector('.shop-back')?.click()");
+            await Task.Delay(90);
+            Require(!modernShop.ShopOpen, "Shop did not return to the shared React lobby.");
+
+            // Opening Shop from a native Season page must also migrate to the
+            // same React instance rather than showing the retired WPF shop.
+            await browser.ExecuteScriptAsync(
+                "[...document.querySelectorAll('.lobby-nav-item')].find(x=>/Season Pass/.test(x.textContent||''))?.click()");
+            await Task.Delay(180); window.UpdateLayout();
+            TabControl nativeSeason = Find<TabControl>(window).Single(t =>
+                t.IsVisible && t.Items.OfType<TabItem>().Any(tab => Equals(tab.Header, "Cosmetic Shop")));
+            nativeSeason.SelectedItem = nativeSeason.Items.OfType<TabItem>()
+                .Single(tab => Equals(tab.Header, "Cosmetic Shop"));
+            for (int i = 0; i < 70 && !modernShop.ShopOpen; i++) await Task.Delay(100);
+            Require(modernShop.ShopOpen && modernShop.IsVisible,
+                "Native Season shop tab did not open the React shop.");
+            await browser.ExecuteScriptAsync("document.querySelector('.shop-back')?.click()");
+            await Task.Delay(80);
+        }
+
         ModernLobbyView? modernChallenges = Find<ModernLobbyView>(window)
             .FirstOrDefault(view => view.Ready && view.IsVisible);
         if (modernChallenges is not null)

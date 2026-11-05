@@ -113,7 +113,7 @@ public partial class MainWindow
         // When the player comes from a native Season/Challenges page, close that
         // page before revealing the existing React compositor. No duplicate WPF
         // shop or second WebView2 is created.
-        if (MetaPageOpen)
+        while (MetaPageOpen)
             CloseMetaPage();
         modernLobby.SetLobbyVisible(true);
         modernLobby.ShowShop();
