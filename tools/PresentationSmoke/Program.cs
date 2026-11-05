@@ -46,6 +46,7 @@ internal static partial class Program
         Require(Find<CasinoLobbyView>(window).Any(v=>v.IsVisible),"Application did not start in the lobby");
         Require(((FrameworkElement)window.FindName("TableSurface")).Visibility == Visibility.Collapsed
             && ((FrameworkElement)window.FindName("BlackjackSidebar")).Visibility == Visibility.Collapsed
+            && !((Button)window.FindName("DealButton")).IsEnabled
             && ((FrameworkElement)window.FindName("CasinoHeader")).IsVisible == !ModernLobbyView.IsAvailable,
             "The startup casino header did not match the modern/fallback lobby state.");
         Require(window.Modes.Modes.Count(m=>m.Id=="midnight-manor")==1,
