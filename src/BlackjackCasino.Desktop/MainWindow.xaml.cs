@@ -64,6 +64,7 @@ public partial class MainWindow : Window
     private int aiSeatCount;
     private decimal selectedBet;
     private UpdateManifest? pendingManifest;
+    private bool updateOperationBusy;
     private bool suppressPreferenceEvents;
     private bool animateNextRender;
     private int animationSequence;
@@ -225,7 +226,7 @@ public partial class MainWindow : Window
 
         pendingManifest = null;
         InstallUpdateButton.IsEnabled = false;
-        UpdateStatusText.Text = "Channel changed. Check for updates.";
+        SetUpdateMessage("Channel changed. Check for updates.");
         SavePreferences();
     }
 
@@ -869,16 +870,17 @@ public partial class MainWindow : Window
     }
 
     private async void InstallUpdateButton_Click(object sender, RoutedEventArgs e)
+        => await InstallUpdateAsync();
+
+    private async Task InstallUpdateAsync()
     {
-        if (pendingManifest is null)
-        {
+        if (updateOperationBusy || pendingManifest is null || !UpdaterLauncher.IsAvailable)
             return;
-        }
 
         try
         {
             SetUpdateBusy(true);
-            UpdateStatusText.Text = "Downloading update…";
+            SetUpdateMessage("Downloading update…");
 
             string updateDirectory = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -886,7 +888,7 @@ public partial class MainWindow : Window
                 "Updates");
 
             var progress = new Progress<double>(value =>
-                UpdateStatusText.Text = $"Downloading update… {value:P0}");
+                SetUpdateMessage($"Downloading update… {value:P0}"));
 
             var downloader = new PackageDownloader(httpClient);
             string packagePath = await downloader.DownloadAndVerifyAsync(
@@ -895,19 +897,20 @@ public partial class MainWindow : Window
                 progress);
 
             SavePreferences();
-            UpdateStatusText.Text = "Update verified. Restarting…";
+            SetUpdateMessage("Update verified. Restarting…");
             UpdaterLauncher.Launch(packagePath, pendingManifest.Package.Sha256);
             Application.Current.Shutdown();
         }
         catch (Exception ex)
         {
-            UpdateStatusText.Text = $"Update failed: {ex.Message}";
+            SetUpdateMessage($"Update failed: {ex.Message}");
             SetUpdateBusy(false);
         }
     }
 
     private async Task CheckForUpdatesAsync(bool silent)
     {
+        if (updateOperationBusy) return;
         UpdateChannel channel = SelectedUpdateChannel;
 
         try
@@ -915,7 +918,7 @@ public partial class MainWindow : Window
             SetUpdateBusy(true);
             if (!silent)
             {
-                UpdateStatusText.Text = $"Checking {channel}…";
+                SetUpdateMessage($"Checking {channel}…");
             }
 
             var source = new HttpManifestUpdateSource(httpClient, GetManifestUri(channel));
@@ -925,7 +928,7 @@ public partial class MainWindow : Window
             if (!result.UpdateAvailable)
             {
                 pendingManifest = null;
-                UpdateStatusText.Text = $"{channel}: up to date (installed {result.CurrentVersion}, available {result.LatestVersion})";
+                SetUpdateMessage($"{channel}: up to date (installed {result.CurrentVersion}, available {result.LatestVersion})");
                 InstallUpdateButton.IsEnabled = false;
                 return;
             }
@@ -935,33 +938,33 @@ public partial class MainWindow : Window
             if (minimumUpdater > updaterVersion)
             {
                 pendingManifest = null;
-                UpdateStatusText.Text = $"Update {result.LatestVersion} requires updater {minimumUpdater} or newer (installed {updaterVersion}).";
+                SetUpdateMessage($"Update {result.LatestVersion} requires updater {minimumUpdater} or newer (installed {updaterVersion}).");
                 InstallUpdateButton.IsEnabled = false;
                 return;
             }
 
             pendingManifest = result.Manifest;
-            UpdateStatusText.Text = $"{channel}: version {result.LatestVersion} is available";
+            SetUpdateMessage($"{channel}: version {result.LatestVersion} is available");
             InstallUpdateButton.IsEnabled = UpdaterLauncher.IsAvailable;
 
             if (!UpdaterLauncher.IsAvailable)
             {
-                UpdateStatusText.Text += " (updater helper missing in this development build)";
+                AppendUpdateMessage(" (updater helper missing in this development build)");
             }
         }
         catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
             pendingManifest = null;
-            UpdateStatusText.Text = $"No {channel} release channel has been published yet";
+            SetUpdateMessage($"No {channel} release channel has been published yet");
             InstallUpdateButton.IsEnabled = false;
         }
         catch (Exception ex)
         {
             pendingManifest = null;
             InstallUpdateButton.IsEnabled = false;
-            UpdateStatusText.Text = silent
+            SetUpdateMessage(silent
                 ? $"{channel} update check unavailable"
-                : $"Update check failed: {ex.Message}";
+                : $"Update check failed: {ex.Message}");
         }
         finally
         {
@@ -976,8 +979,17 @@ public partial class MainWindow : Window
         _ => throw new ArgumentOutOfRangeException(nameof(channel), channel, null),
     };
 
+    private void SetUpdateMessage(string message)
+    {
+        UpdateStatusText.Text = message;
+        modernLobby?.RefreshUpdates();
+    }
+
+    private void AppendUpdateMessage(string text) => SetUpdateMessage(UpdateStatusText.Text + text);
+
     private void SetUpdateBusy(bool busy)
     {
+        updateOperationBusy = busy;
         CheckUpdateButton.IsEnabled = !busy;
         UpdateChannelComboBox.IsEnabled = !busy;
         if (busy)
@@ -988,6 +1000,7 @@ public partial class MainWindow : Window
         {
             InstallUpdateButton.IsEnabled = UpdaterLauncher.IsAvailable;
         }
+        modernLobby?.RefreshUpdates();
     }
 
     private void SavePreferences()

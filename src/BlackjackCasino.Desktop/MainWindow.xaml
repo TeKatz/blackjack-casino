@@ -188,9 +188,31 @@
               <Button Content="Toggle fullscreen  [F11]" Style="{StaticResource MutedButton}" Margin="4,10,4,0" Click="Fullscreen_Click" />
             </StackPanel>
           </Border>
-          <Border Style="{StaticResource SidebarSection}" Margin="0"><StackPanel><TextBlock Text="UPDATES" Style="{StaticResource SectionHeader}" /><ComboBox x:Name="UpdateChannelComboBox" SelectedIndex="0"><ComboBoxItem Content="Stable" /><ComboBoxItem Content="Development" /></ComboBox><TextBlock x:Name="UpdateStatusText" Text="Not checked yet" Margin="2,8" Foreground="#D1DED5" TextWrapping="Wrap" FontSize="12" /><Button x:Name="CheckUpdateButton" Content="Check for updates" Style="{StaticResource MutedButton}" Click="CheckUpdateButton_Click" /><Button x:Name="InstallUpdateButton" Content="Install update" Style="{StaticResource PrimaryButton}" IsEnabled="False" Click="InstallUpdateButton_Click" /></StackPanel></Border>
+
         </StackPanel>
       </ScrollViewer>
     </Border>
+    <!-- Legacy host updater controls remain active but leave the Blackjack
+         sidebar. This is the native lobby fallback when WebView2 is missing. -->
+    <Grid x:Name="NativeUpdateOverlay" Visibility="Collapsed" Grid.RowSpan="2" Grid.ColumnSpan="2" Panel.ZIndex="990" Background="#DD03120E">
+      <Border Width="440" Padding="20" CornerRadius="14" Background="#0A271B" BorderBrush="#C7A35D"
+              BorderThickness="1" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <StackPanel>
+          <Button x:Name="CloseNativeUpdatesButton" Content="← Casino lobby" Style="{StaticResource MutedButton}"
+                  HorizontalAlignment="Left" Click="CloseNativeUpdates_Click" />
+          <TextBlock Text="UPDATES" Style="{StaticResource SectionHeader}" Margin="4,12,4,10" FontSize="20"/>
+          <TextBlock Text="Select release channel" Foreground="#BFD0C5" Margin="4,2"/>
+          <ComboBox x:Name="UpdateChannelComboBox" SelectedIndex="0">
+            <ComboBoxItem Content="Stable" /><ComboBoxItem Content="Development" />
+          </ComboBox>
+          <TextBlock x:Name="UpdateStatusText" Text="Not checked yet" Margin="4,12" Foreground="#D1DED5"
+                     TextWrapping="Wrap" FontSize="13"/>
+          <Button x:Name="CheckUpdateButton" Content="Check for updates" Style="{StaticResource MutedButton}"
+                  Click="CheckUpdateButton_Click" />
+          <Button x:Name="InstallUpdateButton" Content="Install update" Style="{StaticResource PrimaryButton}"
+                  IsEnabled="False" Click="InstallUpdateButton_Click" />
+        </StackPanel>
+      </Border>
+    </Grid>
   </Grid>
 </Window>

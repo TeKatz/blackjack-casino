@@ -41,7 +41,7 @@ public partial class MainWindow
         modeRegistry.Register(new("kniffel", "Midnight Dice", "The dice lounge",
             "Five dice and your score sheet. Play solo or join a casino table with three AI opponents.",
             "#9DD6B3", "⚄", "Table games", () => new LoungeGameArtwork(true)), OpenKniffel);
-        lobby=new CasinoLobbyView(modeRegistry,OpenProgression, () => preferences.Presentation("lobby").AnimationsEnabled);
+        lobby=new CasinoLobbyView(modeRegistry,OpenProgression, () => preferences.Presentation("lobby").AnimationsEnabled,OpenNativeUpdates);
         // Use the WPF lobby only on genuine frontend failure. Keep its logical
         // visibility for native navigation, but never allow its art to flash
         // underneath the new React compositor during mode transitions.
@@ -67,6 +67,15 @@ public partial class MainWindow
         // handler here would be too late. Configure the embedded surface synchronously now.
         ConfigureEmbeddedGameSurface();
     }
+    private void OpenNativeUpdates()
+    {
+        if (lobby?.IsVisible == true && (!ModernLobbyView.IsAvailable || modernLobby?.Failed == true))
+            NativeUpdateOverlay.Visibility = Visibility.Visible;
+    }
+
+    private void CloseNativeUpdates_Click(object sender, RoutedEventArgs e)
+        => NativeUpdateOverlay.Visibility = Visibility.Collapsed;
+
     private void HideBlackjackTable()
     {
         TableSurface.Visibility = Visibility.Collapsed;
