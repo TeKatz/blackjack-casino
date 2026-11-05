@@ -151,6 +151,7 @@ public partial class MainWindow
                             tablePresetComboBox.SelectedIndex = PresetIndex(currentTablePreset);
                     }
                     finally { suppressPreferenceEvents = false; }
+                    ProcessLatestCompletedRound();
                     RecreateSessionForConfiguredRules(announce: true);
                     break;
                 case "theme.set":
@@ -168,6 +169,10 @@ public partial class MainWindow
                 default:
                     return (false, "Unsupported table action.");
             }
+            // Browser buttons do not raise WPF's progression click handlers.
+            // Commit XP/rewards before the player can switch preset or table mode.
+            if (session.CurrentRound?.Phase == RoundPhase.Settled)
+                ProcessLatestCompletedRound();
             return (true, StatusText.Text);
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or OverflowException)
