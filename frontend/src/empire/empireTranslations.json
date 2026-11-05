@@ -128,5 +128,6 @@
   "Events": "Events",
   "Contracts": "Verträge",
   "StrategicBonus": "Strategiebonus",
-  "Final": "Gesamt"
+  "Final": "Gesamt",
+  "The owner reserve is empty, a game is active, or the dividend could not be saved. Your unclaimed reserve remains available.": "Die Inhaberreserve ist leer, ein Spiel ist noch aktiv oder die Dividende konnte nicht gespeichert werden. Deine nicht abgeholte Reserve bleibt erhalten."
 }

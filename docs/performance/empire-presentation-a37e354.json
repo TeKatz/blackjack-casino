@@ -1,0 +1,177 @@
+{
+  "Environment": {
+    "OS": "Microsoft Windows NT 10.0.26100.0",
+    "Runtime": "10.0.14",
+    "ProcessorCount": 4,
+    "Dpi": 1
+  },
+  "Notes": "Sequential read-only Windows fixtures. CPU/private memory include host plus all shared WebView2 environment processes, including hidden lobby when alive. Requested native sizes may be clamped by the runner; ActualClientWidth/Height are authoritative. Modern reduced motion is explicitly disabled and the ticker is verified running. WPF composition and browser rAF are distinct callback clocks, not GPU frame times. Warm-up 500ms; 4s samples are CI diagnostics, not long-session certification.",
+  "Gpu": "Not measured: no GPU timing, utilization or VRAM counter is available in this smoke.",
+  "Results": [
+    {
+      "Presentation": "WPF retained rollback source",
+      "RequestedWindowWidth": 1080,
+      "RequestedWindowHeight": 720,
+      "ActualClientWidth": 1042,
+      "ActualClientHeight": 684,
+      "PropertyCount": 1,
+      "Scene": "Resort Floor, selected Luxury Hotel, all 15 rooms level 100, prestige 25",
+      "AnimationEnabled": true,
+      "ModernTickerVerifiedRunning": false,
+      "EconomyHz": 1,
+      "SampleSeconds": 4.0177519,
+      "ProcessCount": 6,
+      "CpuPercentOfMachine": 3.6945412184361106,
+      "HostCpuPercentOfMachine": 3.6945412184361106,
+      "PrivateBytesBefore": 797724672,
+      "PrivateBytesAfter": 768667648,
+      "WorkingSetAfter": 1249505280,
+      "HostCompositionIntervals": {
+        "Count": 243,
+        "MeanMs": 16.562851028806584,
+        "P95Ms": 31.25
+      },
+      "BrowserRafIntervals": null
+    },
+    {
+      "Presentation": "React/Pixi/WebView2",
+      "RequestedWindowWidth": 1080,
+      "RequestedWindowHeight": 720,
+      "ActualClientWidth": 1042,
+      "ActualClientHeight": 684,
+      "PropertyCount": 1,
+      "Scene": "Resort Floor, selected Luxury Hotel, all 15 rooms level 100, prestige 25",
+      "AnimationEnabled": true,
+      "ModernTickerVerifiedRunning": true,
+      "EconomyHz": 1,
+      "SampleSeconds": 4.0246589,
+      "ProcessCount": 7,
+      "CpuPercentOfMachine": 0.9705791464712699,
+      "HostCpuPercentOfMachine": 0.48528957323563493,
+      "PrivateBytesBefore": 840011776,
+      "PrivateBytesAfter": 805937152,
+      "WorkingSetAfter": 1389301760,
+      "HostCompositionIntervals": {
+        "Count": 257,
+        "MeanMs": 15.683727626459143,
+        "P95Ms": 15.625
+      },
+      "BrowserRafIntervals": {
+        "Count": 260,
+        "MeanMs": 15.625000000000002,
+        "P95Ms": 15.700000000000273
+      }
+    },
+    {
+      "Presentation": "WPF retained rollback source",
+      "RequestedWindowWidth": 1366,
+      "RequestedWindowHeight": 768,
+      "ActualClientWidth": 1042,
+      "ActualClientHeight": 732,
+      "PropertyCount": 1,
+      "Scene": "Resort Floor, selected Luxury Hotel, all 15 rooms level 100, prestige 25",
+      "AnimationEnabled": true,
+      "ModernTickerVerifiedRunning": false,
+      "EconomyHz": 1,
+      "SampleSeconds": 4.0149858,
+      "ProcessCount": 6,
+      "CpuPercentOfMachine": 5.05917106855023,
+      "HostCpuPercentOfMachine": 5.05917106855023,
+      "PrivateBytesBefore": 768782336,
+      "PrivateBytesAfter": 761507840,
+      "WorkingSetAfter": 1241620480,
+      "HostCompositionIntervals": {
+        "Count": 243,
+        "MeanMs": 16.602519341563788,
+        "P95Ms": 31.25
+      },
+      "BrowserRafIntervals": null
+    },
+    {
+      "Presentation": "React/Pixi/WebView2",
+      "RequestedWindowWidth": 1366,
+      "RequestedWindowHeight": 768,
+      "ActualClientWidth": 1042,
+      "ActualClientHeight": 732,
+      "PropertyCount": 1,
+      "Scene": "Resort Floor, selected Luxury Hotel, all 15 rooms level 100, prestige 25",
+      "AnimationEnabled": true,
+      "ModernTickerVerifiedRunning": true,
+      "EconomyHz": 1,
+      "SampleSeconds": 4.0303269,
+      "ProcessCount": 7,
+      "CpuPercentOfMachine": 0.7753713476690934,
+      "HostCpuPercentOfMachine": 0.3876856738345467,
+      "PrivateBytesBefore": 820539392,
+      "PrivateBytesAfter": 798142464,
+      "WorkingSetAfter": 1380978688,
+      "HostCompositionIntervals": {
+        "Count": 258,
+        "MeanMs": 15.644699224806201,
+        "P95Ms": 15.625
+      },
+      "BrowserRafIntervals": {
+        "Count": 259,
+        "MeanMs": 15.625096525096524,
+        "P95Ms": 15.700000000000728
+      }
+    },
+    {
+      "Presentation": "WPF retained rollback source",
+      "RequestedWindowWidth": 1920,
+      "RequestedWindowHeight": 1080,
+      "ActualClientWidth": 1042,
+      "ActualClientHeight": 752,
+      "PropertyCount": 1,
+      "Scene": "Resort Floor, selected Luxury Hotel, all 15 rooms level 100, prestige 25",
+      "AnimationEnabled": true,
+      "ModernTickerVerifiedRunning": false,
+      "EconomyHz": 1,
+      "SampleSeconds": 4.0232748,
+      "ProcessCount": 6,
+      "CpuPercentOfMachine": 7.281847861846274,
+      "HostCpuPercentOfMachine": 7.184756557021658,
+      "PrivateBytesBefore": 767741952,
+      "PrivateBytesAfter": 759627776,
+      "WorkingSetAfter": 1241821184,
+      "HostCompositionIntervals": {
+        "Count": 227,
+        "MeanMs": 17.767344933920704,
+        "P95Ms": 31.25
+      },
+      "BrowserRafIntervals": null
+    },
+    {
+      "Presentation": "React/Pixi/WebView2",
+      "RequestedWindowWidth": 1920,
+      "RequestedWindowHeight": 1080,
+      "ActualClientWidth": 1042,
+      "ActualClientHeight": 752,
+      "PropertyCount": 1,
+      "Scene": "Resort Floor, selected Luxury Hotel, all 15 rooms level 100, prestige 25",
+      "AnimationEnabled": true,
+      "ModernTickerVerifiedRunning": true,
+      "EconomyHz": 1,
+      "SampleSeconds": 4.0041288,
+      "ProcessCount": 7,
+      "CpuPercentOfMachine": 1.2682221910543936,
+      "HostCpuPercentOfMachine": 0.8779999784222725,
+      "PrivateBytesBefore": 828260352,
+      "PrivateBytesAfter": 802996224,
+      "WorkingSetAfter": 1390899200,
+      "HostCompositionIntervals": {
+        "Count": 253,
+        "MeanMs": 15.834145454545453,
+        "P95Ms": 15.625
+      },
+      "BrowserRafIntervals": {
+        "Count": 258,
+        "MeanMs": 15.625193798449613,
+        "P95Ms": 15.700000000000273
+      }
+    }
+  ],
+  "SourceCommit": "a37e3547239f3213f45f638042c7e68266178926",
+  "WorkflowRun": "https://github.com/TeKatz/blackjack-casino/actions/runs/42050427790",
+  "CapturedDate": "2026-11-05"
+}

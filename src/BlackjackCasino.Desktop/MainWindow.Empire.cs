@@ -154,10 +154,22 @@ public partial class MainWindow
             CanClaimDividend = !session.RoundInProgress && embeddedGameShell is null && !KniffelPageOpen,
             Economy = EmpireModernSnapshot.Create(empire!),
         }, command => command.Action == "dividend"
-            ? new(ClaimEmpireDividend(), "Owner dividend collection. Finish any active game before collecting; the reserve must contain at least one cent.")
+            ? CollectModernEmpireDividend()
             : MutateEmpire(candidate => EmpireModernProtocol.Apply(candidate, command, DateTimeOffset.UtcNow)),
             command => EmpireModernSnapshot.Preview(empire!.Preview(command.InspectRoomId ?? command.RoomId ?? EmpireCatalog.Find(command.Id ?? "")?.Id ?? "slots",
                 (candidate, at) => EmpireModernProtocol.Apply(candidate, command, at))), close);
+
+    private EmpireActionResult CollectModernEmpireDividend()
+    {
+        decimal before = session.Bankroll;
+        bool success = ClaimEmpireDividend();
+        if (success)
+        {
+            string amount = (session.Bankroll - before).ToString("C2", CultureInfo.GetCultureInfo("en-US"));
+            return new(true, $"Owner dividend: {amount} added to your casino cash.");
+        }
+        return new(false, "The owner reserve is empty, a game is active, or the dividend could not be saved. Your unclaimed reserve remains available.");
+    }
 
     private void StartEmpireSession()
     {

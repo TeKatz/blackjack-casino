@@ -1,7 +1,7 @@
 import {memo,useCallback,useEffect,useRef,useState} from 'react';
 import type {FormEvent,ReactNode} from 'react';
 import {createRoot} from 'react-dom/client';
-import {EmpireScene,roomArt} from './EmpireScene';
+import {EmpireScene,isAtlasRoom,roomArt} from './EmpireScene';
 import {decimalInput,display,fractionToPercent,listen,percentToFraction,post,retainRooms,send} from './empireBridge';
 import type {Automation,EmpireSnapshot,Intent,Manager,Preview,Reply,Room} from './empireBridge';
 import translations from './empireTranslations.json';
@@ -26,7 +26,7 @@ const RoomCard=memo(function RoomCard({room,selected,onSelect,language}:{room:Ro
   const de=language==='de',q=room.quotes[0];
   return <button className={'empire-room '+(selected?'selected ':'')+(q.unlocked?'':'locked')} type="button"
     data-testid={'room-'+room.id} aria-pressed={selected} onClick={()=>onSelect(room.id)}>
-    <div className="empire-room-art" style={roomArt(room.id)}/>
+    <div className={'empire-room-art '+(isAtlasRoom(room.id)?'empire-atlas':'')} style={roomArt(room.id)}/>
     <div className="empire-room-top"><span>{q.unlocked?(room.level?de?'IN BETRIEB':'OPERATING':de?'VERFÜGBAR':'AVAILABLE'):'◆ '+(de?'GESPERRT':'LOCKED')}</span><b>{String(room.floor).padStart(2,'0')}</b></div>
     <div className="empire-room-copy"><span>{de?dictionary[room.category]??room.category:room.category}</span>
       <h3>{de?dictionary[room.name]??room.name:room.name}</h3><div><b>{de?'Stufe':'Level'} {room.level}</b><span>{display(room.rate,language)} cr/s</span></div>
@@ -41,21 +41,20 @@ function Confirm({children,onConfirm,onCancel,label}:{children:ReactNode;onConfi
     <h2>{label}</h2>{children}<div className="empire-actions"><button onClick={onCancel}>←</button><button className="empire-gold" onClick={onConfirm}>{label}</button></div>
   </dialog>;
 }
-function AutomationForm({initial,unlocked,disabled,language,onSave,onPreview,onClear}:{initial:Automation;unlocked:boolean;disabled:boolean;language:'de'|'en';onSave:(a:Automation)=>void;onPreview:(a:Automation)=>void;onClear:()=>void}){
+function AutomationForm({initial,rooms,unlocked,disabled,language,onSave,onPreview,onClear}:{initial:Automation;rooms:Room[];unlocked:boolean;disabled:boolean;language:'de'|'en';onSave:(a:Automation)=>void;onPreview:(a:Automation)=>void;onClear:()=>void}){
   const de=language==='de';
   const [form,setForm]=useState(initial),[dirty,setDirty]=useState(false),[error,setError]=useState('');
   useEffect(()=>{if(!dirty)setForm(initial);},[initial,dirty]);
   const update=(values:Partial<Automation>)=>{setForm(f=>({...f,...values}));setDirty(true);setError('');onClear();};
   const [percent,setPercent]=useState(fractionToPercent(initial.spendPercent));
-  const [priorities,setPriorities]=useState(initial.priorities.join(', '));
-  useEffect(()=>{if(!dirty){setPercent(fractionToPercent(initial.spendPercent));setPriorities(initial.priorities.join(', '));}},[initial,dirty]);
+  useEffect(()=>{if(!dirty){setPercent(fractionToPercent(initial.spendPercent));}},[initial,dirty]);
   const parse=():Automation|null=>{
     const reserve=decimalInput(form.reserve),budget=decimalInput(percent);
     if(!reserve||!budget||Number(budget)<1||Number(budget)>50||!Number.isInteger(form.targetLevel)||form.targetLevel<1||form.targetLevel>200){
       setError(de?'Reserve, Budget (1–50 %) und Zielstufe (1–200) prüfen.':'Check reserve, budget (1–50%) and target level (1–200).');return null;
     }
     // Policy percentage only. Construction money remains an exact decimal string.
-    return {...form,reserve,spendPercent:percentToFraction(budget)!,priorities:priorities.split(',').map(s=>s.trim()).filter(Boolean)};
+    return {...form,reserve,spendPercent:percentToFraction(budget)!};
   };
   const submit=(e:FormEvent)=>{e.preventDefault();const next=parse();if(next)onSave(next);};
   return <form className="empire-panel empire-form" onSubmit={submit} data-testid="automation-form">
@@ -67,10 +66,20 @@ function AutomationForm({initial,unlocked,disabled,language,onSave,onPreview,onC
     <label>{de?'Budget pro Prüfung (%)':'Budget per evaluation (%)'}<input name="percent" inputMode="decimal" value={percent} onChange={e=>{setPercent(e.target.value);update({});}}/></label>
     <label>{de?'Zielstufe':'Target level'}<input name="target" type="number" min={1} max={200} value={form.targetLevel} onChange={e=>update({targetLevel:Number(e.target.value)})}/></label>
     <label className="empire-check"><input type="checkbox" checked={form.cheapestMilestone} onChange={e=>update({cheapestMilestone:e.target.checked})}/>{de?'Günstigsten Meilenstein bevorzugen':'Prefer cheapest milestone'}</label>
-    <label>{de?'Prioritäten (Raum-IDs, durch Komma getrennt)':'Priorities (room IDs, comma separated)'}<input name="priorities" value={priorities} onChange={e=>{setPriorities(e.target.value);update({});}}/></label>
-    <p>{de?'Raum-IDs findest du im Rauminspektor.':'Room IDs appear in the room inspector.'}</p>
+    <fieldset className="empire-priorities" disabled={form.cheapestMilestone}>
+      <legend>{de?'Reihenfolge der Abteilungen':'Department priority order'}</legend>
+      <p>{de?'Diese Reihenfolge gilt, wenn die Strategie „Günstigster Meilenstein“ ausgeschaltet ist.':'This order applies when the cheapest-milestone strategy is off.'}</p>
+      {form.priorities.map((id,index)=><div key={index}>
+        <select aria-label={(de?'Priorität ':'Priority ')+(index+1)} value={id} onChange={event=>update({priorities:form.priorities.map((old,i)=>i===index?event.target.value:old)})}>
+          {rooms.map(room=><option key={room.id} value={room.id} disabled={room.id!==id&&form.priorities.includes(room.id)}>{de?dictionary[room.name]??room.name:room.name}</option>)}</select>
+        <button type="button" disabled={index===0} aria-label={de?'Nach oben':'Move up'} onClick={()=>{const next=[...form.priorities];[next[index-1],next[index]]=[next[index],next[index-1]];update({priorities:next});}}>↑</button>
+        <button type="button" disabled={index===form.priorities.length-1} aria-label={de?'Nach unten':'Move down'} onClick={()=>{const next=[...form.priorities];[next[index],next[index+1]]=[next[index+1],next[index]];update({priorities:next});}}>↓</button>
+        <button type="button" aria-label={de?'Abteilung entfernen':'Remove department'} onClick={()=>update({priorities:form.priorities.filter((_,i)=>i!==index)})}>×</button>
+      </div>)}
+      <button type="button" disabled={form.priorities.length>=rooms.length} onClick={()=>{const next=rooms.find(room=>!form.priorities.includes(room.id));if(next)update({priorities:[...form.priorities,next.id]});}}>+ {de?'Abteilung hinzufügen':'Add department'}</button>
+    </fieldset>
     {error&&<p role="alert">{error}</p>}
-    <button type="button" disabled={disabled} onClick={()=>{setForm(initial);setPercent(fractionToPercent(initial.spendPercent));setPriorities(initial.priorities.join(', '));setDirty(false);setError('');onClear();}}>{de?'Gespeicherte Werte laden':'Restore saved values'}</button>
+    <button type="button" disabled={disabled} onClick={()=>{setForm(initial);setPercent(fractionToPercent(initial.spendPercent));setDirty(false);setError('');onClear();}}>{de?'Gespeicherte Werte laden':'Restore saved values'}</button>
     <div className="empire-actions"><button type="button" disabled={!unlocked||disabled} onClick={()=>{const a=parse();if(a)onPreview(a);}}>{de?'Vorschau':'Preview'}</button>
       <button className="empire-gold" disabled={!unlocked||disabled} type="submit" data-testid="automation-save">{de?'Baupolitik speichern':'Save policy'}</button></div>
   </form>;
@@ -155,6 +164,8 @@ function EmpireApp(){
   const {state}=snapshot,e=state.economy,de=state.language==='de',language=state.language;
   const t=(source:string):string=>{
     if(!de)return source;if(dictionary[source])return dictionary[source];
+    const dividend=/^Owner dividend: (.+) added to your casino cash\.$/.exec(source);
+    if(dividend)return 'Inhaberdividende: '+dividend[1]+' wurde deinem Casino-Guthaben hinzugefügt.';
     return source.split(' · ').map(part=>{
       if(dictionary[part])return dictionary[part];
       return part.replace(/^Empire Prestige /,'Empire-Prestige ').replace(/^Reputation /,'Ruf ')
@@ -218,7 +229,7 @@ function EmpireApp(){
         {!e.floors.find(f=>f.id===floor)?.unlocked&&<p className="empire-lock">◆ {t(e.floors.find(f=>f.id===floor)?.requirement??'')}</p>}
         <div className="empire-workspace"><div><div className="empire-gallery">{e.rooms.filter(r=>r.floor===floor&&(filter==='all'||(filter==='open'?r.level>0:r.level===0))).map(r=><RoomCard key={r.id} room={r} selected={selected===r.id} onSelect={selectRoom} language={language}/>)}</div>
           <button className="empire-overview" data-testid="overview" onClick={()=>{setSelected(null);clearPreview();}}>{de?'Anwesenübersicht':'Estate overview'} ↗</button>
-          {room&&<section className="empire-panel empire-intelligence"><h2>{de?'Raumwissen':'Room intelligence'}</h2><p>{room.id} · {t(room.tags)} · {t(room.requirement)}</p>
+          {room&&<section className="empire-panel empire-intelligence"><h2>{de?'Raumwissen':'Room intelligence'}</h2><p>{t(room.tags)} · {t(room.requirement)}</p>
             <div className="empire-breakdown">{Object.entries(room.breakdown).map(([key,value])=><div key={key}><span>{t(key[0].toUpperCase()+key.slice(1))}</span><strong>{key==='base'||key==='final'?n(value)+' cr/s':key==='prestige'||key==='achievements'?'×'+value:'+'+display(String(Number(value)*100),language)+'%'}</strong></div>)}</div>
             <h3>{de?'Aktive Spezialisten':'Active specialists'}</h3>{e.managers.filter(m=>m.assignment!==null).map(m=><p key={m.id}>{m.name} → {t(e.rooms.find(r=>r.id===m.assignment)?.name??'')} · {t(m.description)}</p>)}
             <button onClick={()=>go('team')}>{de?'Team verwalten':'Manage team'}</button><button onClick={()=>go('synergies')}>{de?'Synergien prüfen':'Inspect circuits'}</button>
@@ -250,7 +261,7 @@ function EmpireApp(){
       {page==='synergies'&&<div className="empire-catalog">{e.synergies.map(s=><article key={s.id} className="empire-panel"><span className="empire-eyebrow">{de?'SYNERGIESTUFE':'CIRCUIT TIER'} {s.tier}</span><h2>{t(s.name)}</h2><p>{t(s.description)}</p><strong>+{Number(s.bonus)*100}%</strong><p>{de?'Nächste Raumstufe':'Next room level'}: {s.nextLevel??'MAX'}</p>
         <ul>{s.members.map(m=><li key={m.id}><button onClick={()=>{setFloor(e.rooms.find(r=>r.id===m.id)!.floor);setSelected(m.id);go('estate');}}>{t(m.name)} <b>{m.level}</b>{m.level===s.minimumLevel?' ◇':''}</button></li>)}</ul></article>)}</div>}
       {page==='team'&&<><p>{Object.keys(e.managerAssignments).length}/{e.managerSlots} {de?'Managerplätze belegt':'manager slots occupied'}</p><div className="empire-catalog">{e.managers.map(m=><ManagerCard key={e.activePropertyId+m.id+(m.assignment??'')} manager={m} rooms={e.rooms} disabled={disabled} language={language} onClear={clearPreview} onAction={(id,roomId)=>act({action:'manager',id,roomId})} onPreview={(id,roomId)=>showPreview({action:'manager',id,roomId})}/>)}</div></>}
-      {page==='automation'&&<AutomationForm key={e.activePropertyId} initial={e.automation} unlocked={e.automationUnlocked} disabled={disabled} language={language} onSave={automation=>act({action:'automation',automation})} onPreview={automation=>showPreview({action:'automation',automation})} onClear={clearPreview}/>}
+      {page==='automation'&&<AutomationForm key={e.activePropertyId} initial={e.automation} rooms={e.rooms} unlocked={e.automationUnlocked} disabled={disabled} language={language} onSave={automation=>act({action:'automation',automation})} onPreview={automation=>showPreview({action:'automation',automation})} onClear={clearPreview}/>}
       {page==='events'&&<><p>{de?'Ein Event je Anwesen. Freiwillige Spielziele verlängern es, ohne Spielregeln zu verändern.':'One event per property. Optional game goals extend it without changing game rules.'}</p>
         {e.activeEvent&&<aside className="empire-notice">{t(e.events.find(v=>v.id===e.activeEvent?.id)?.name??'')} · {e.activeEvent.progress}/{e.events.find(v=>v.id===e.activeEvent?.id)?.activityGoal} · {de?'Endet':'Ends'} {new Date(e.activeEvent.endsAt).toLocaleString(language)} {e.activeEvent.encore?'✦ Encore':''}</aside>}
         <div className="empire-catalog">{e.events.map(v=><article key={v.id} className="empire-panel"><span className="empire-eyebrow">{v.durationMinutes} min</span><h2>{t(v.name)}</h2><p>{t(v.description)}</p><p>{t(v.requirement)}</p><button className="empire-gold" data-testid={'event-'+v.id} disabled={disabled||!v.canBuy} onClick={()=>act({action:'event',id:v.id})}>{de?'Starten':'Host event'} · {n(v.cost)} cr</button></article>)}</div></>}

@@ -95,6 +95,28 @@ diagnostics. Composition/rAF/ticker clocks have different semantics; none is GPU
 frame time. GPU utilization/VRAM and long-session behavior remain unmeasured.
 No performance improvement is asserted without inspecting an actual result file.
 
+### Recorded Windows runner comparison — 2026-11-05
+
+[Raw measurements](performance/empire-presentation-a37e354.json) retain the full
+unrounded data and source commit/run. The four-core Windows 10.0.26100 runner
+measured the same late-career fixture sequentially with animations verified on.
+The actual native client sizes below reflect its virtual-monitor limits.
+
+| Actual client | WPF CPU | Modern CPU | Private memory WPF / modern (MiB) | Host callback p95 WPF / modern |
+| --- | ---: | ---: | ---: | ---: |
+| 1042×684 | 3.69% | 0.97% | 733.1 / 768.6 | 31.25 / 15.62 ms |
+| 1042×732 | 5.06% | 0.78% | 726.2 / 761.2 | 31.25 / 15.62 ms |
+| 1042×752 | 7.28% | 1.27% | 724.4 / 765.8 | 31.25 / 15.62 ms |
+
+These four-second samples show lower CPU use and roughly 35–41 MiB more private
+memory for the modern surface in this fixture. Host composition callbacks are
+not GPU frame times or a universal FPS guarantee. Modern browser rAF p95 was
+15.7 ms; raw mean/p95/count values and process accounting remain in the JSON.
+Long-session CPU/memory, GPU/VRAM and native high-DPI acceptance remain open.
+Exact 1080×720, 1366×768 and 1920×1080 CSS layouts are tested separately through
+WebView2 emulation; these measurements do not pretend the runner has those
+physical monitors.
+
 Manual acceptance remains required for German/English text and keyboard use,
 125/150/200% DPI and monitor moves, initial loading and artwork quality, a
 30-minute detached session beside a live game (including blocked dividend
