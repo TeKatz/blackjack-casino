@@ -201,7 +201,6 @@
           <Button x:Name="CloseNativeUpdatesButton" Content="← Casino lobby" Style="{StaticResource MutedButton}"
                   HorizontalAlignment="Left" Click="CloseNativeUpdates_Click" />
           <TextBlock Text="UPDATES" Style="{StaticResource SectionHeader}" Margin="4,12,4,10" FontSize="20"/>
-          <TextBlock Text="Select release channel" Foreground="#BFD0C5" Margin="4,2"/>
           <ComboBox x:Name="UpdateChannelComboBox" SelectedIndex="0">
             <ComboBoxItem Content="Stable" /><ComboBoxItem Content="Development" />
           </ComboBox>

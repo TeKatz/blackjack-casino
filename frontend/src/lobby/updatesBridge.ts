@@ -16,8 +16,8 @@ export function isLobbyUpdatesSnapshot(value:unknown):value is LobbyUpdatesSnaps
     &&(value.channel==='stable'||value.channel==='development')
     &&typeof value.status==='string'&&value.status.length<=2048
     &&['busy','canCheck','canInstall','updateAvailable'].every(k=>typeof value[k]==='boolean')
-    &&(!value.canInstall||value.updateAvailable&&!value.busy)
-    &&(!value.busy||!value.canCheck);
+    &&(value.canInstall!==true||(value.updateAvailable===true&&value.busy===false))
+    &&(value.busy!==true||value.canCheck===false);
 }
 export const fallbackUpdates:LobbyUpdatesSnapshot={
   installedVersion:'—',channel:'stable',status:'Not checked yet',
