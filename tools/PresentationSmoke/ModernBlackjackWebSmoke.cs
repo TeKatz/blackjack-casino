@@ -26,6 +26,23 @@ internal static partial class Program
             "Boolean(document.querySelector('.bj-app[data-phase]') && document.querySelector('[data-testid=\"blackjack-deal\"]'))") == "true",
             "Modern Blackjack React DOM was not mounted.");
 
+        // A custom rule edit must make a complete native rules snapshot, not
+        // reconfigure the frontend alone. This also ensures the rule modal can
+        // be used without the old WPF dialog.
+        await web.ExecuteScriptAsync("document.querySelector('[data-testid=\"blackjack-edit-rules\"]')?.click()");
+        Require(await web.ExecuteScriptAsync(
+            "Boolean(document.querySelector('[data-testid=\"blackjack-custom-rules\"]'))") == "true",
+            "The React custom-rule editor was not available.");
+        await web.ExecuteScriptAsync("document.querySelector('[data-testid=\"blackjack-rules-save\"]')?.click()");
+        bool custom = false;
+        for (int i = 0; i < 80; i++)
+        {
+            await Task.Delay(60);
+            custom = await web.ExecuteScriptAsync(
+                "document.querySelector('.bj-app')?.getAttribute('data-preset') === 'Custom'") == "true";
+            if (custom) break;
+        }
+        Require(custom, "Custom rules were not committed to the native C# session.");
         Require(await web.ExecuteScriptAsync(
             "Boolean(document.querySelector('[data-testid=\"blackjack-deal\"]:not(:disabled)'))") == "true",
             "Native table rules did not authorize the initial playable wager.");
@@ -52,6 +69,9 @@ internal static partial class Program
         Require(await web.ExecuteScriptAsync(
             "Boolean(document.querySelector('.bj-dealer .bj-card') && document.querySelector('.bj-hand'))") == "true",
             "Dealer/player cards were not presented in the modern table.");
+        Require(await web.ExecuteScriptAsync(
+            "Boolean(document.querySelector('.bj-app[data-card-variant] .bj-card[style*=card-face-a]'))") == "true",
+            "Equipped native card palette was not applied to the modern table.");
         await web.ExecuteScriptAsync("document.querySelector('.bj-back')?.click()");
         bool returned = false;
         for (int i = 0; i < 70; i++)

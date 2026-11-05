@@ -1,9 +1,9 @@
-# Blackjack table modernization — first implementation slice
+# Blackjack table modernization — gameplay parity phase
 
 Branch: feature/manor-modernization-phase-1
 
-The existing WPF Blackjack table remains the normal player route during the
-first migration slice. The goal is to change presentation without touching
+The existing WPF Blackjack table remains the standard route during the
+parity and native-host verification phase. The goal is to change presentation without touching
 the casino economy, RNG, settlement, rules, saved progression or hand history.
 
 Delivered:
@@ -22,7 +22,8 @@ Delivered:
 - A versioned intent parser restricted to the exact packaged Blackjack origin,
   finite wager range, legal command names, session epoch, request UUID and
   expected revision. Unique receipts prevent repeated card or money actions
-  on duplicate messages. The parser and session are NOT YET wired to the game.
+  on duplicate messages. The parser and session are wired to the native
+  CasinoSession through the opt-in WebView2 gameplay preview.
 - A matching TypeScript contract, rejecting malformed responses and snapshots,
   plus C# and TypeScript boundary regression tests.
 - A standalone responsive React Blackjack entry point and a live WebView2
@@ -33,19 +34,15 @@ Delivered:
   and the native custom-rule editor have a safe replacement.
 
 Next implementation milestones:
-1. Connect the existing CasinoSession and table rule/preset preferences to
-   a WebView2 host. Keep processing completed rounds through the original
-   progression services. Reject actions which Core says are illegal.
-2. Author the playable React table with dealer and player hands, insurance,
-   split hands and up to five AI seats. Render optional PixiJS atmosphere
-   separately from the DOM-ready event, to avoid the old Empire startup bug.
-3. Support the existing custom-rule editor, themes, card-set cosmetics,
-   keyboard input, sound and reduced-motion preference.
-4. Verify startup/return navigation, 1080x720 and higher DPI windows,
-   saved balances and rewards, split/insurance/European no-hole-card paths,
-   and no hidden dealer information before switching the default route.
-5. Remove native WPF Blackjack visuals only after parity and Windows
-   presentation acceptance.
+1. Complete native Windows and browser-level acceptance for custom rules,
+   1–5 AI seats, split hands, insurance and European no-hole-card behavior.
+2. Verify resize/DPI, save/reload, recovery and keyboard accessibility against
+   the existing WPF table, plus any optional nonblocking PixiJS ambience.
+3. Change the primary Blackjack lobby route to the React table only after
+   regression checks establish parity; retain native table fallback for
+   missing/broken browser assets.
+4. Remove native WPF controls only after the fallback and smoke suites have
+   been migrated to equivalent modern assertions.
 
 No new branches or main merges; Development publishing continues from
 feature/manor-modernization-phase-1.
