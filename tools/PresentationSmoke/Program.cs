@@ -108,7 +108,7 @@ internal static partial class Program
         bool cursor=SetCursorPos((int)point.X,(int)point.Y);await Task.Delay(100);System.Windows.Input.Mouse.Synchronize();
         File.WriteAllText(Path.Combine(output,"hover-input.txt"),$"Native cursor request: {cursor}; ComboBox IsMouseOver: {mode.IsMouseOver}. All state templates and composed dark pixels are required regardless of headless input support.");
         await CheckCombo(mode);Capture(window,"03-hover-minimum");
-        NavigationSmoke.OpenCovered(window, "midnight-reels");await Task.Delay(100);
+        await CheckModernReelsRoute(window, qaProfile);await Task.Delay(100);
         Require(!((FrameworkElement)window.FindName("CasinoHeader")).IsVisible,"Host casino header remained visible over embedded Midnight Reels");
         foreach(var size in new[]{(1080d,720d),(1440d,900d),(1920d,1080d),(2560d,1440d)})
         {
