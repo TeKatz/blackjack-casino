@@ -19,7 +19,7 @@ public partial class MainWindow
     private void SyncHostMusic()
     {
         backgroundMusic.SetEnabled(HostMusicSettings.MusicEnabled && !KniffelPageOpen &&
-            (embeddedGameShell is null || keepHostMusicForEmbeddedGame));
+            !ModernReelsOpen && (embeddedGameShell is null || keepHostMusicForEmbeddedGame));
         backgroundMusic.SetVolume(HostMusicSettings.MusicVolume);
     }
 
@@ -38,7 +38,8 @@ public partial class MainWindow
         InitializeTableWagerPresentation();
         InitializeLobby();
         var tableAtmosphere=new System.Windows.Threading.DispatcherTimer {Interval=TimeSpan.FromMilliseconds(80)};
-        tableAtmosphere.Tick+=(_,_)=> {if(AnimationsEnabled && !EmpirePageOpen && lobby?.Visibility!=Visibility.Visible && embeddedGameShell is null) TableArt.Phase+=.08;};
+        tableAtmosphere.Tick+=(_,_)=> {if(AnimationsEnabled && !EmpirePageOpen && !ModernReelsOpen && !ModernBlackjackOpen &&
+            lobby?.Visibility!=Visibility.Visible && embeddedGameShell is null) TableArt.Phase+=.08;};
         tableAtmosphere.Start(); Closed+=(_,_)=>tableAtmosphere.Stop();
 
         suppressPreferenceEvents = true;
