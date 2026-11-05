@@ -2,6 +2,10 @@ import { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { LobbyAmbient } from './LobbyAmbient';
 import { ModernShop } from './ModernShop';
+import { ModernChallenges } from './ModernChallenges';
+import { ModernStatistics } from './ModernStatistics';
+import { onRecordsMessage, previewChallenges, previewStatistics } from './recordsBridge';
+import type { ChallengesSnapshot, StatisticsSnapshot, RecordsPage } from './recordsBridge';
 import { onShopMessages, previewShop } from './shopBridge';
 import type { ShopSnapshot } from './shopBridge';
 import { embeddedLobby, fallbackLobby, lobbyCommand, onLobbySnapshot } from './lobbyBridge';
@@ -131,6 +135,12 @@ function DailyLogin({data,onClaim,onClose,mobileOpen}:{data:LobbySnapshot;onClai
 function LobbyApp() {
   const [data,setData] = useState<LobbySnapshot>(fallbackLobby);
   const [shop,setShop] = useState<ShopSnapshot>(previewShop);
+  const [recordsVisible,setRecordsVisible] = useState<RecordsPage|null>(null);
+  const [challenges,setChallenges] = useState<ChallengesSnapshot>(previewChallenges);
+  const [statistics,setStatistics] = useState<StatisticsSnapshot>(previewStatistics);
+  const [challengesLoaded,setChallengesLoaded] = useState(!embeddedLobby);
+  const [statisticsLoaded,setStatisticsLoaded] = useState(!embeddedLobby);
+  const [recordsPending,setRecordsPending] = useState<string|null>(null);
   const [shopVisible,setShopVisible] = useState(false);
   const [shopLoaded,setShopLoaded] = useState(!embeddedLobby);
   const [shopPending,setShopPending] = useState<string|null>(null);
@@ -146,13 +156,27 @@ function LobbyApp() {
     return ()=>media.removeEventListener('change',listener);
   },[]);
   useEffect(()=>{
+    const stop = onRecordsMessage(message=>{
+      if(message.type==='lobby.records.show'){
+        setRecordsVisible(message.data.page);setShopVisible(false);setDailyOpen(false);
+      }else if(message.type==='lobby.records.snapshot'){
+        if(message.data.page==='challenges'){setChallenges(message.data.snapshot);setChallengesLoaded(true);}
+        else {setStatistics(message.data.snapshot);setStatisticsLoaded(true);}
+      }else if(message.type==='lobby.records.result'){
+        setRecordsPending(null);
+        setShopNotice({success:message.data.success,message:message.data.message});
+      }
+    });
+    return stop;
+  },[]);
+  useEffect(()=>{
     const stop = onShopMessages(message=>{
       if(message.type==='lobby.shop.snapshot'){setShop(message.data);setShopLoaded(true);}
       else if(message.type==='lobby.shop.result'){
         setShopPending(null);
         setShopNotice({success:message.data.success,message:message.data.message});
       }
-      else if(message.type==='lobby.shop.show'){setShopVisible(true);setDailyOpen(false);}
+      else if(message.type==='lobby.shop.show'){setShopVisible(true);setRecordsVisible(null);setDailyOpen(false);}
       else if(message.type==='lobby.shop.hide'){setShopVisible(false);}
     });
     return stop;
@@ -178,7 +202,19 @@ function LobbyApp() {
     document.title='Blackjack Casino · Lobby';
   },[data.language]);
   const de = data.language==='de';
+  const closeRecords = () => {
+    setRecordsVisible(null);setRecordsPending(null);setShopNotice(null);
+    lobbyCommand('lobby.records.close');
+  };
+  const openRecords = (page:RecordsPage) => {
+    if(shopVisible)closeShop();
+    setRecordsVisible(page);setDailyOpen(false);setShopNotice(null);setRecordsPending(null);
+    if(page==='challenges')setChallengesLoaded(!embeddedLobby);
+    else setStatisticsLoaded(!embeddedLobby);
+    lobbyCommand('lobby.records.open',page);
+  };
   const openShop = () => {
+    if(recordsVisible)closeRecords();
     setShopNotice(null);
     setShopVisible(true);setShopLoaded(!embeddedLobby);setDailyOpen(false);
     lobbyCommand('lobby.shop.open');
@@ -187,17 +223,20 @@ function LobbyApp() {
     setShopVisible(false);setShopNotice(null);setShopPending(null);
     lobbyCommand('lobby.shop.close');
   };
-  const openMode = (id:string)=>{if(shopVisible)closeShop();lobbyCommand('lobby.open',id);};
+  const openMode = (id:string)=>{if(shopVisible)closeShop();if(recordsVisible)closeRecords();lobbyCommand('lobby.open',id);};
   const openSecondary = (id:string)=>lobbyCommand('lobby.open-secondary',id);
   const openProgression = (id:string)=>{
     if(id==='Cosmetic Shop'){openShop();return;}
+    if(id==='Challenges'||id==='Statistics'){openRecords(id==='Challenges'?'challenges':'statistics');return;}
     if(shopVisible)closeShop();
+    if(recordsVisible)closeRecords();
     lobbyCommand('lobby.progression',id);
   };
   const chooseNav = (id:Filter)=>{
     if(id==='collections') {openProgression("Collector's Album");return;}
     if(id==='shop') {openShop();return;}
     if(shopVisible)closeShop();
+    if(recordsVisible)closeRecords();
     if(id==='stats') {openProgression('Statistics');return;}
     if(id==='season') {openProgression('Season Pass');return;}
     if(id==='challenges') {openProgression('Challenges');return;}
@@ -212,7 +251,7 @@ function LobbyApp() {
   return <div className="casino-lobby-shell" data-reduced={lowMotion || !data.animationsEnabled}>
     <LobbyAmbient enabled={!lowMotion && data.animationsEnabled}/>
     <header className="lobby-topbar">
-      <button className="lobby-brand" type="button" onClick={()=>{if(shopVisible)closeShop();setFilter('all');}}>
+      <button className="lobby-brand" type="button" onClick={()=>{if(shopVisible)closeShop();if(recordsVisible)closeRecords();setFilter('all');}}>
         <span className="brand-spade" aria-hidden="true">♠</span>
         <span><b>BLACKJACK CASINO</b><i>THE MIDNIGHT CLUB</i></span>
       </button>
@@ -243,11 +282,11 @@ function LobbyApp() {
         ↪ <span>{de?'Beenden':'Exit'}</span>
       </button>
     </header>
-    <div className={'lobby-body '+(shopVisible?'shop-active':'')}>
+    <div className={'lobby-body '+(shopVisible?'shop-active':recordsVisible?'records-active':'')}>
       <nav className="lobby-nav" aria-label={de?'Casino-Navigation':'Casino navigation'}>
         {navigation.map(n=><button type="button" key={n.id}
-          aria-current={n.id===filter?'page':undefined}
-          className={'lobby-nav-item '+((shopVisible?n.id==='shop':n.id===filter)?'selected':'')+(n.id==='daily'?' daily-nav':'')}
+          aria-current={(shopVisible?n.id==='shop':recordsVisible?n.id===(recordsVisible==='challenges'?'challenges':'stats'):n.id===filter)?'page':undefined}
+          className={'lobby-nav-item '+((shopVisible?n.id==='shop':recordsVisible?n.id===(recordsVisible==='challenges'?'challenges':'stats'):n.id===filter)?'selected':'')+(n.id==='daily'?' daily-nav':'')}
           onClick={()=>chooseNav(n.id)}>
           <span className="nav-icon" aria-hidden="true">{n.icon}</span>
           <span>{de?n.de:n.en}</span>
@@ -256,7 +295,15 @@ function LobbyApp() {
         </button>)}
         <div className="lobby-nav-decoration" aria-hidden="true">♣</div>
       </nav>
-      {shopVisible?<ModernShop shop={shop} loaded={shopLoaded} language={data.language} pending={shopPending}
+      {recordsVisible==='challenges'?<ModernChallenges data={challenges}
+        language={data.language} loaded={challengesLoaded} pending={recordsPending}
+        onBack={()=>{closeRecords();setFilter('all');}}
+        onClaim={id=>{setRecordsPending(id);lobbyCommand('lobby.records.claim',id);}}
+        onClaimAll={()=>{setRecordsPending('all');lobbyCommand('lobby.records.claim-all');}}/>:
+      recordsVisible==='statistics'?<ModernStatistics data={statistics}
+        language={data.language} loaded={statisticsLoaded}
+        onBack={()=>{closeRecords();setFilter('all');}}/>:
+      shopVisible?<ModernShop shop={shop} loaded={shopLoaded} language={data.language} pending={shopPending}
         onBack={()=>{closeShop();setFilter('all');}}
         onCosmetic={id=>{setShopPending(id);lobbyCommand('lobby.shop.action',id);}}
         onPack={rarity=>{setShopPending(rarity);lobbyCommand('lobby.shop.pack',rarity);}}
