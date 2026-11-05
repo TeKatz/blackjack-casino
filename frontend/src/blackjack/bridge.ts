@@ -11,7 +11,7 @@ export type TableRound = {phase:string;activeHandIndex:number;initialBet:string;
   totalNet:string|null;insuranceNet:string|null};
 export type TableState = {bankroll:string;selectedBet:string;shoeNumber:number;cardsRemaining:number;
   fullTable:boolean;aiSeatCount:number;preset:string;theme:string;cardSetId:string;cardVariant:string;
-  soundEnabled:boolean;animationsEnabled:boolean;status:string;
+  soundEnabled:boolean;animationsEnabled:boolean;status:string;language:'de'|'en';
   rules:{deckCount:number;dealerHitsSoft17:boolean;dealerPeeksForBlackjack:boolean;
     dealerTakesHoleCard:boolean;allowInsurance:boolean;allowLateSurrender:boolean;
     doubleRule:string;doubleAfterSplit:boolean;resplitAces:boolean;hitSplitAces:boolean;
@@ -49,6 +49,7 @@ export function isTableSnapshot(x:unknown):x is TableSnapshot{
   if(!money(s.bankroll)||!money(s.selectedBet)||!integer(s.shoeNumber)||!integer(s.cardsRemaining)||
     typeof s.fullTable!=='boolean'||!integer(s.aiSeatCount)||s.aiSeatCount>5||
     !['preset','theme','cardSetId','cardVariant','status'].every(k=>typeof s[k]==='string')||
+    (s.language!=='de'&&s.language!=='en')||
     !['soundEnabled','animationsEnabled','canDeal'].every(k=>typeof s[k]==='boolean')||
     !Array.isArray(s.availableActions)||!s.availableActions.every((a:unknown)=>typeof a==='string')||
     !Array.isArray(s.presets)||!s.presets.every((p:unknown)=>record(p)&&

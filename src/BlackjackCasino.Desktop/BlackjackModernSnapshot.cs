@@ -17,7 +17,7 @@ internal static class BlackjackModernSnapshot
 
     internal static object Create(CasinoSession session, decimal selectedBet, bool fullTable,
         int aiSeatCount, string preset, string theme, string cardSetId, bool soundEnabled,
-        bool animationsEnabled, string status)
+        bool animationsEnabled, string status, string language = "en")
     {
         ArgumentNullException.ThrowIfNull(session);
         BlackjackRound? round = session.CurrentRound;
@@ -39,6 +39,7 @@ internal static class BlackjackModernSnapshot
             SoundEnabled = soundEnabled,
             AnimationsEnabled = animationsEnabled,
             Status = status,
+            Language = language,
             Rules = new
             {
                 rules.DeckCount, rules.DealerHitsSoft17, rules.DealerPeeksForBlackjack,

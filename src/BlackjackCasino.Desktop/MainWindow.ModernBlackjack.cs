@@ -40,7 +40,8 @@ public partial class MainWindow
                 playMode == PlayModePreference.FullTable, aiSeatCount,
                 currentTablePreset.ToString(), SelectedTheme.ToString(),
                 progressionController?.Profile.EquippedCardSetId ?? CosmeticCatalog.DefaultCardSetId,
-                SoundEnabled, AnimationsEnabled, StatusText.Text),
+                SoundEnabled, AnimationsEnabled, StatusText.Text,
+                Localization.Language == UiLanguagePreference.German ? "de" : "en"),
             ApplyModernBlackjackAction, CloseModernBlackjack, OnModernBlackjackFailed);
         foreach (UIElement covered in CasinoRoot.Children.OfType<UIElement>()
             .Where(child => child != embeddedGameOverlay))
