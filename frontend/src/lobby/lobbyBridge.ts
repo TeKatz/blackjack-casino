@@ -97,7 +97,8 @@ export function onLobbySnapshot(onSnapshot: (snapshot: LobbySnapshot) => void): 
 }
 export function lobbyCommand(type: string, id?: string): void {
   const allowed = ['lobby.ready','lobby.ui-ready','lobby.open','lobby.open-secondary',
-    'lobby.progression','lobby.profile','lobby.vault','lobby.daily.claim','lobby.exit','lobby.refresh'];
+    'lobby.progression','lobby.profile','lobby.vault','lobby.daily.claim','lobby.exit','lobby.refresh',
+    'lobby.shop.open','lobby.shop.close','lobby.shop.action','lobby.shop.pack'];
   if (!allowed.includes(type)) return;
   window.chrome?.webview?.postMessage(id === undefined ? { type } : { type, id });
 }

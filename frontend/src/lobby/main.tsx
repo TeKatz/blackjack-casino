@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { LobbyAmbient } from './LobbyAmbient';
+import { ModernShop } from './ModernShop';
+import { onShopMessages, previewShop } from './shopBridge';
+import type { ShopSnapshot } from './shopBridge';
 import { embeddedLobby, fallbackLobby, lobbyCommand, onLobbySnapshot } from './lobbyBridge';
 import type { LobbyMode, LobbySnapshot } from './lobbyBridge';
 import './lobby.css';
@@ -127,6 +130,11 @@ function DailyLogin({data,onClaim,onClose,mobileOpen}:{data:LobbySnapshot;onClai
 }
 function LobbyApp() {
   const [data,setData] = useState<LobbySnapshot>(fallbackLobby);
+  const [shop,setShop] = useState<ShopSnapshot>(previewShop);
+  const [shopVisible,setShopVisible] = useState(false);
+  const [shopLoaded,setShopLoaded] = useState(!embeddedLobby);
+  const [shopPending,setShopPending] = useState<string|null>(null);
+  const [shopNotice,setShopNotice] = useState<{success:boolean;message:string}|null>(null);
   const [filter,setFilter] = useState<Filter>('all');
   const [dailyOpen,setDailyOpen] = useState(false);
   const [lowMotion,setLowMotion] = useState(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -136,6 +144,18 @@ function LobbyApp() {
     const listener = () => setLowMotion(media.matches);
     media.addEventListener('change',listener);
     return ()=>media.removeEventListener('change',listener);
+  },[]);
+  useEffect(()=>{
+    const stop = onShopMessages(message=>{
+      if(message.type==='lobby.shop.snapshot'){setShop(message.data);setShopLoaded(true);}
+      else if(message.type==='lobby.shop.result'){
+        setShopPending(null);
+        setShopNotice({success:message.data.success,message:message.data.message});
+      }
+      else if(message.type==='lobby.shop.show'){setShopVisible(true);setDailyOpen(false);}
+      else if(message.type==='lobby.shop.hide'){setShopVisible(false);}
+    });
+    return stop;
   },[]);
   useEffect(()=>{
     // The native WebView2 host starts hidden. Hidden webviews can suspend
@@ -158,12 +178,26 @@ function LobbyApp() {
     document.title='Blackjack Casino · Lobby';
   },[data.language]);
   const de = data.language==='de';
-  const openMode = (id:string)=>lobbyCommand('lobby.open',id);
+  const openShop = () => {
+    setShopNotice(null);
+    setShopVisible(true);setShopLoaded(!embeddedLobby);setDailyOpen(false);
+    lobbyCommand('lobby.shop.open');
+  };
+  const closeShop = () => {
+    setShopVisible(false);setShopNotice(null);setShopPending(null);
+    lobbyCommand('lobby.shop.close');
+  };
+  const openMode = (id:string)=>{if(shopVisible)closeShop();lobbyCommand('lobby.open',id);};
   const openSecondary = (id:string)=>lobbyCommand('lobby.open-secondary',id);
-  const openProgression = (id:string)=>lobbyCommand('lobby.progression',id);
+  const openProgression = (id:string)=>{
+    if(id==='Cosmetic Shop'){openShop();return;}
+    if(shopVisible)closeShop();
+    lobbyCommand('lobby.progression',id);
+  };
   const chooseNav = (id:Filter)=>{
     if(id==='collections') {openProgression("Collector's Album");return;}
-    if(id==='shop') {openProgression('Cosmetic Shop');return;}
+    if(id==='shop') {openShop();return;}
+    if(shopVisible)closeShop();
     if(id==='stats') {openProgression('Statistics');return;}
     if(id==='season') {openProgression('Season Pass');return;}
     if(id==='challenges') {openProgression('Challenges');return;}
@@ -178,7 +212,7 @@ function LobbyApp() {
   return <div className="casino-lobby-shell" data-reduced={lowMotion || !data.animationsEnabled}>
     <LobbyAmbient enabled={!lowMotion && data.animationsEnabled}/>
     <header className="lobby-topbar">
-      <button className="lobby-brand" type="button" onClick={()=>setFilter('all')}>
+      <button className="lobby-brand" type="button" onClick={()=>{if(shopVisible)closeShop();setFilter('all');}}>
         <span className="brand-spade" aria-hidden="true">♠</span>
         <span><b>BLACKJACK CASINO</b><i>THE MIDNIGHT CLUB</i></span>
       </button>
@@ -209,11 +243,11 @@ function LobbyApp() {
         ↪ <span>{de?'Beenden':'Exit'}</span>
       </button>
     </header>
-    <div className="lobby-body">
+    <div className={'lobby-body '+(shopVisible?'shop-active':'')}>
       <nav className="lobby-nav" aria-label={de?'Casino-Navigation':'Casino navigation'}>
         {navigation.map(n=><button type="button" key={n.id}
           aria-current={n.id===filter?'page':undefined}
-          className={'lobby-nav-item '+(n.id===filter?'selected':'')+(n.id==='daily'?' daily-nav':'')}
+          className={'lobby-nav-item '+((shopVisible?n.id==='shop':n.id===filter)?'selected':'')+(n.id==='daily'?' daily-nav':'')}
           onClick={()=>chooseNav(n.id)}>
           <span className="nav-icon" aria-hidden="true">{n.icon}</span>
           <span>{de?n.de:n.en}</span>
@@ -222,6 +256,11 @@ function LobbyApp() {
         </button>)}
         <div className="lobby-nav-decoration" aria-hidden="true">♣</div>
       </nav>
+      {shopVisible?<ModernShop shop={shop} loaded={shopLoaded} language={data.language} pending={shopPending}
+        onBack={()=>{closeShop();setFilter('all');}}
+        onCosmetic={id=>{setShopPending(id);lobbyCommand('lobby.shop.action',id);}}
+        onPack={rarity=>{setShopPending(rarity);lobbyCommand('lobby.shop.pack',rarity);}}
+        onAlbum={()=>openProgression("Collector's Album")}/>:<>
       <main className="lobby-main">
         <div className="lobby-hero">
           <div className="lobby-hero-picture" aria-hidden="true"/>
@@ -242,7 +281,12 @@ function LobbyApp() {
       </main>
       <DailyLogin data={data} onClaim={()=>lobbyCommand('lobby.daily.claim')}
         onClose={()=>setDailyOpen(false)} mobileOpen={dailyOpen}/>
+      </>}
     </div>
+    {shopNotice&&<div role="status" className={'shop-notice '+(shopNotice.success?'success':'error')}>
+      <span>{shopNotice.message}</span>
+      <button type="button" onClick={()=>setShopNotice(null)} aria-label="Dismiss message">×</button>
+    </div>}
   </div>;
 }
 

@@ -141,3 +141,9 @@
 @media(max-width:1360px){.lobby-body.shop-active{grid-template-columns:145px minmax(0,1fr)}}
 @media(max-width:1100px){.lobby-body.shop-active{grid-template-columns:122px minmax(0,1fr)}.shop-hero{padding:14px;min-height:170px}.shop-wallet{min-width:145px;padding:10px}.shop-scroll{padding:10px}}
 @media(max-height:800px){.shop-hero{min-height:140px}.shop-hero h1{font-size:28px}.shop-featured{padding:9px}}
+
+.shop-notice{position:absolute;z-index:30;bottom:19px;right:22px;max-width:min(480px,85vw);
+ display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 14px;border-radius:11px;
+ border:1px solid #6cb187;background:#15382df3;color:#f3f0d6;box-shadow:0 10px 28px #0009;font-size:13px;}
+.shop-notice.error{border-color:#b97174;background:#462727f5;}
+.shop-notice button{border:0;color:#f8e1af;background:transparent;font-size:21px;}
