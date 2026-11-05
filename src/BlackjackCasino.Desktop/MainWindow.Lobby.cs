@@ -14,6 +14,7 @@ public partial class MainWindow
         HideBlackjackTable();
         InitializeHeaderLayout();
         InitializeEmpire();
+        InitializeModernBlackjackPreview();
         modeRegistry.Register(new("blackjack","Blackjack","The velvet tables","A quiet seat, a fresh shoe and your next decision. Solo or with the house regulars.","#537D66","♠","Table games",()=>new LobbyGameArtwork(false)),()=>
         {ShowBlackjackTable();TableModeText.Text="Blackjack · your table";});
         modeRegistry.Register(new("midnight-reels","Midnight Reels","The golden floor","Three reels, a centre payline and a little old-school casino charm.","#C69A51","7 7 7","Classic slots",()=>new LobbyGameArtwork(true)),()=>
