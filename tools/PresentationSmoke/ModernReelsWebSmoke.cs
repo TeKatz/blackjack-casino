@@ -47,6 +47,29 @@ internal static partial class Program
         Require(five, "React $5 wager was not accepted by the native slot session.");
         // Switch off animations to assert instantaneous Core settlement. The
         // Windows scene is also separately checked in the animated state.
+        // A fresh QA profile can start with animations disabled already.
+        // Exercise a real off->on->off round trip, not an assumed state.
+        for(int i=0;i<80;i++)
+        {
+            if(await browser.ExecuteScriptAsync(
+                "Boolean(document.querySelector('[data-testid=\"reels-animation\"]:not(:disabled)'))")=="true")break;
+            await Task.Delay(65);
+        }
+        if(await browser.ExecuteScriptAsync(
+            "document.querySelector('[data-testid=\"reels-animation\"]')?.checked===false")=="true")
+        {
+            await browser.ExecuteScriptAsync(
+                "document.querySelector('[data-testid=\"reels-animation\"]')?.click()");
+            for(int i=0;i<80;i++)
+            {
+                await Task.Delay(65);
+                if(await browser.ExecuteScriptAsync(
+                    "Boolean(document.querySelector('[data-testid=\"reels-animation\"]:checked:not(:disabled)'))")=="true")break;
+            }
+            Require(await browser.ExecuteScriptAsync(
+                "Boolean(document.querySelector('[data-testid=\"reels-animation\"]:checked:not(:disabled)'))")=="true",
+                "Native presentation did not enable animations via React.");
+        }
         await browser.ExecuteScriptAsync("document.querySelector('[data-testid=\"reels-animation\"]')?.click()");
         for (int i = 0; i < 80; i++)
         {
