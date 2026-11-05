@@ -73,6 +73,8 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
  const [inspectorId,setInspectorId]=useState<string|null>(null);
  const [notice,setNotice]=useState<string|null>(null);
  const lastReceipt=useRef<string|null>(null);
+ const artReady=useRef(false);
+ const revealSuspended=useRef(false);
  const claimPending=useRef<string|null>(null);
  const [claimedId,setClaimedId]=useState<string|null>(null);
  const themes=data.themes;
@@ -93,6 +95,8 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
  useEffect(()=>{
   if(!data.pending||lastReceipt.current===data.pending.id)return;
   lastReceipt.current=data.pending.id;
+  artReady.current=false;
+  revealSuspended.current=false;
   setDisplayOpening(data.pending);
   setRarity(data.pending.rarity);
   setRevealed(0);
@@ -104,11 +108,16 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
    (url):url is string=>url!==null)));
   const images=urls.map(url=>{const img=new Image();img.src=url;return img;});
   let cancelled=false;
-  const timeout=window.setTimeout(()=>{if(!cancelled)setPhase('reveal');},4000);
+  const markReady=()=>{
+   if(cancelled)return;
+   artReady.current=true;
+   if(!revealSuspended.current)setPhase('reveal');
+  };
+  const timeout=window.setTimeout(markReady,4000);
   void Promise.all(images.map(img=>img.decode().catch(()=>{}))).then(()=>{
    if(cancelled)return;
    window.clearTimeout(timeout);
-   setPhase('reveal');
+   markReady();
   });
   return()=>{cancelled=true;window.clearTimeout(timeout);};
  },[data.pending?.id]);
@@ -159,7 +168,7 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
   const listener=(event:KeyboardEvent)=>{
    if(event.key!=='Escape')return;
    if(inspectorId){setInspectorId(null);event.stopPropagation();}
-   else if(openActive){setPhase('browse');setBatchRemaining(0);event.stopPropagation();}
+   else if(openActive){revealSuspended.current=true;setPhase('browse');setBatchRemaining(0);event.stopPropagation();}
   };
   window.addEventListener('keydown',listener);
   return()=>window.removeEventListener('keydown',listener);
@@ -168,9 +177,10 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
   setNotice(null);
   setRarity(r);
   if(data.pending){
+   revealSuspended.current=false;
    setDisplayOpening(data.pending);
    setRevealed(0);
-   setPhase('reveal');
+   setPhase(artReady.current?'reveal':'await');
   }else{
    setPhase('stage');
   }
@@ -278,7 +288,7 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
   </>}
   {loaded&&openActive&&<div className="album-opening-scrim" role="dialog" aria-modal="true" aria-label={stageHeader}>
    <div className={'album-opening-panel phase-'+phase} style={{'--card-rarity':rarityColors[rarity]} as CSSProperties}>
-    <button type="button" className="album-opening-exit" onClick={()=>{setPhase('browse');setBatchRemaining(0);}}>
+    <button type="button" className="album-opening-exit" onClick={()=>{revealSuspended.current=true;setPhase('browse');setBatchRemaining(0);}}>
      {de?'‹ Zum Album':'‹ Back to album'}</button>
     <div className="album-opening-intro"><span className="shop-eyebrow">MIDNIGHT CLUB · BOOSTER REVEAL</span>
      <h2>{stageHeader}</h2>
