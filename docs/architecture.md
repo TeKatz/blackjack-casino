@@ -18,7 +18,7 @@ The desktop UI must not reimplement outcome rules. Presentation may animate or a
 
 ## `BlackjackCasino.Desktop`
 
-The WPF desktop project is the visible casino shell. It owns:
+The WPF desktop project remains the native host for the React casino lobby and existing game UIs. It owns:
 
 - the casino lobby and mode registry;
 - Blackjack table presentation and configurable table setup;
@@ -146,6 +146,6 @@ The updater protocol is schema-versioned. `minimumUpdaterVersion` allows an old 
 
 ## Planned modern presentation (not implemented yet)
 
-A staged move from WPF to React + TypeScript + HTML/CSS and PixiJS has begun with an optional, read-only Midnight Manor preview. The initial rendering adapter will live in the existing WPF shell via WebView2; only after every migrated mode and updater path passes acceptance would a smaller native .NET host replace WPF. The planned frontend is not allowed to generate outcomes, change the bankroll or own durable rewards. C# Core remains authoritative; any new application/bridge service must have versioned command schemas, origin validation and idempotent settlement. See [modernization roadmap](modernization-roadmap.md) and [agent working agreement](../AGENTS.md).
+The staged migration now includes the React casino lobby, playable Midnight Manor, shop, challenges, statistics, Season Pass, profile identity editor, Blackjack hand history and React Casino Vault. The presentation adapter lives inside the WPF host via WebView2; only after every migrated mode, album, updater and save path passes acceptance would a smaller native .NET host replace WPF. The planned frontend is not allowed to generate outcomes, change the bankroll or own durable rewards. C# Core remains authoritative; any new application/bridge service must have versioned command schemas, origin validation and idempotent settlement. See [modernization roadmap](modernization-roadmap.md) and [agent working agreement](../AGENTS.md).
 
 After consolidation, do not delete branches automatically or change the Development publisher's pin without an explicit release decision. The current cumulative release branch and workflow instructions are documented in [Development delivery](development-update-delivery.md).

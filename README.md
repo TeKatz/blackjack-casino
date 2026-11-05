@@ -2,7 +2,7 @@
 
 An **offline-first, single-player casino for Windows**, built around virtual credits and progression. No real-money gambling, payments, accounts, advertisements or online services are required for gameplay.
 
-The desktop application uses **.NET 10 and WPF**. The casino lobby and Midnight Manor now have separate **React + TypeScript + PixiJS** presentations, hosted locally through **WebView2**. Profile navigation and Season Pass management also live in React; the native profile editor, export and Collector’s Album remain available while being migrated. Existing game logic and persistent player data remain in C#.
+The desktop application uses **.NET 10 and WPF**. The casino lobby and Midnight Manor now have separate **React + TypeScript + PixiJS** presentations, hosted locally through **WebView2**. Player profile editing (display name, owned titles/portraits), Season Pass management, Blackjack Hand History and the lobby's Casino Vault now live in React, alongside the shop, challenges and statistics. Progress export and the detailed Collector's Album remain native while being migrated. Existing game logic and persistent player data remain in C#.
 
 ## Games and experiences
 
@@ -80,7 +80,7 @@ See [Development update delivery](docs/development-update-delivery.md) for relea
 | `docs/` | Architecture, gameplay specifications and implementation history |
 | `.github/workflows/` | CI, frontend, presentation and release workflows |
 
-**Architecture principle:** C# remains authoritative for random results, payouts and saved progression. React/PixiJS handles presentation only. The game must remain fully playable offline.
+**Architecture principle:** C# remains authoritative for random results, payouts and saved progression. React/PixiJS handles presentation only. In particular, the React Casino Vault uses the existing crash-recoverable C# payout transaction; React profile actions go through the original identity validation, cosmetic ownership and persistence services. The game must remain fully playable offline.
 
 Read the [architecture guide](docs/architecture.md) for service boundaries and the [modernization roadmap](docs/modernization-roadmap.md) for the phased migration of other game interfaces.
 

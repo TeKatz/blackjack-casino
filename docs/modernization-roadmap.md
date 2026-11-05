@@ -14,8 +14,10 @@ The casino lobby is now a separate, read-only React/TypeScript/PixiJS page built
 
 - The main window starts with the native Blackjack table and its sidebar **collapsed**. They are exposed only by the explicit Blackjack game route; the modern lobby is the initial presentation. The startup news popup no longer overlays the landing page.
 - Daily Login is owned by React. Its obsolete native WPF drawer and initialization hooks have been removed; native C# reward/persistence logic remains intact.
-- React now owns the player-account navigation hub and the Season Pass library (pass browsing, reward tiers, active-pass selection), alongside the existing React Shop, Challenges and Statistics. The native C# profile service alone persists active-season changes.
-- Profile editing/export, Hand History, Collector's Album, Vault and remaining games stay native until their replacement passes the same save/UX acceptance gates. The native profile editor remains explicitly reachable from the React account hub.
+- React owns the account hub, full owned-portrait/title picker and display-name editing; the name is validated, equipped cosmetics verified, and changes persisted by the original C# services. Progress export remains available from the separate native fallback editor.
+- React owns the Season Pass library (pass browsing, reward tiers, active-pass selection), Shop, Challenges, Statistics and the last 250 Blackjack rounds of Hand History, all through native read-only snapshots.
+- The lobby Casino Vault now has a React reserve chamber, tier library and payout receipt. It invokes the original crash-recoverable C# Vault open transaction; no browser-side cash arithmetic, bonuses, or collectible grants.
+- Collector's Album, native games and Blackjack-table-specific settings stay WPF until complete replacement and Windows acceptance. The native Vault and profile editor remain as emergency/game-shell fallbacks, not primary lobby pages.
 - The full native fallback casino lobby and old Manor source remain temporarily because Windows presentation smoke tests directly exercise their controls. They will be removed in a separate tested cleanup, not by disabling coverage.
 
 ## Why this direction
