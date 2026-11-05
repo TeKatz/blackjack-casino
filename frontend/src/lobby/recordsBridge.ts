@@ -144,8 +144,10 @@ export function onRecordsMessage(handle:(message:RecordsMessage)=>void):()=>void
         ||(m.data.page==='vault'&&isVault(m.data.snapshot))
         ||(m.data.page==='album'&&isAlbum(m.data.snapshot))))
       handle({type:m.type,data:m.data as RecordsMessage & never});
-    if(m.type==='lobby.album.result'&&isAlbumResult(m.data))
+    if(m.type==='lobby.album.result'&&isAlbumResult(m.data)){
       handle({type:'lobby.album.result',data:m.data});
+      return;
+    }
     if(m.type==='lobby.records.vault.result'
       &&typeof m.data.success==='boolean'&&str(m.data.message)
       &&m.data.message.length<800&&(m.data.reward===null||isVaultReward(m.data.reward)))
