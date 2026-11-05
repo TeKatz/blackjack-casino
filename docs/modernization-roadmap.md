@@ -17,7 +17,9 @@ The casino lobby is now a separate, read-only React/TypeScript/PixiJS page built
 - React owns the account hub, full owned-portrait/title picker and display-name editing; the name is validated, equipped cosmetics verified, and changes persisted by the original C# services. Progress export remains available from the separate native fallback editor.
 - React owns the Season Pass library (pass browsing, reward tiers, active-pass selection), Shop, Challenges, Statistics and the last 250 Blackjack rounds of Hand History, all through native read-only snapshots.
 - The lobby Casino Vault now has a React reserve chamber, tier library and payout receipt. It invokes the original crash-recoverable C# Vault open transaction; no browser-side cash arithmetic, bonuses, or collectible grants.
-- Collector's Album, native games and Blackjack-table-specific settings stay WPF until complete replacement and Windows acceptance. The native Vault and profile editor remain as emergency/game-shell fallbacks, not primary lobby pages.
+- The Collector's Album is now a React archive with all 16 themed galleries and 136 individually cropped original illustrations. The pack-overhaul adds sealed-pack staging, animated tearing, sequential 3D card flips, rarity glow, foil sweeps, reduced-motion support, original audio cues respecting the native Album sound preference, and a resumable authoritative receipt.
+- React's Open All works as a series of individually saved native pack openings: the next cannot be opened until the previous pending receipt has been completed. Theme reward claims still use the established C# transaction and bankroll-reward handler.
+- Native games and Blackjack-table-specific settings stay WPF until replacement. The WPF Album, Vault and profile editor remain only for emergency/legacy-game fallbacks, never as primary modern-lobby pages.
 - The full native fallback casino lobby and old Manor source remain temporarily because Windows presentation smoke tests directly exercise their controls. They will be removed in a separate tested cleanup, not by disabling coverage.
 
 ## Why this direction
