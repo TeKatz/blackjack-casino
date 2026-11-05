@@ -114,9 +114,18 @@ internal static partial class Program
             "Duplicate recycling does not consistently expose the numeric point total");
         Capture(window, "album-dedicated-1920");
 
-        // Return once and reopen through the header shortcut so both requested access paths stay covered.
+        // Return all the way to the React lobby before testing its header shortcut.
+        // Old WPF navigation could access the underlying Blackjack header while a
+        // native Profile/Progression page was still foregrounded; that is now hidden.
         Find<Button>(window).Single(b => b.Name == "AlbumBackButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(40); window.UpdateLayout();
+        if (Find<Button>(window).Any(b => b.Name == "ProgressionBackButton" && b.IsVisible))
+            Find<Button>(window).Single(b => b.Name == "ProgressionBackButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        await Task.Delay(40); window.UpdateLayout();
+        if (Find<Button>(window).Any(b => b.Name == "ProfileBackButton" && b.IsVisible))
+            Find<Button>(window).Single(b => b.Name == "ProfileBackButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        await WaitUntil(() => Find<ModernLobbyView>(window).Any(v => v.Ready && v.IsVisible),
+            "Album Back did not restore the React lobby");
         Require(Find<CasinoLobbyView>(window).Any(v => v.IsVisible), "Album Back did not restore the lobby");
         await OpenAlbumFromLobby(window, fromHeader: true);
         await Task.Delay(60); window.UpdateLayout();
