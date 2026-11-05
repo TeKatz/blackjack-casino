@@ -52,7 +52,8 @@ export function isReelsSnapshot(v:unknown):v is ReelsSnapshot{
   // A browser snapshot must never depict different symbols at the given stops.
   if(s.lastSpin!==null){
     const spin=s.lastSpin as ReelsSpin;
-    if(spin.stops.some((stop,i)=>s.reelStrip[stop]!==spin.symbols[i]))return false;
+    const strip=s.reelStrip as ReelSymbol[];
+    if(spin.stops.some((stop,i)=>strip[stop]!==spin.symbols[i]))return false;
   }
   return true;
 }
