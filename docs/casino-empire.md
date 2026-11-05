@@ -38,6 +38,38 @@ failure keeps the DOM controls and static artwork usable. Assets are copied from
 `Assets/Empire` to `ModernFrontend/empire-art` at build/publish time; browser-only
 Vite previews need those local files for artwork.
 
+## Loading and return-to-estate lifecycle
+
+The first embedded visit creates one dedicated WebView2 control in a separate,
+permanent overlay child. Returning to the lobby collapses that child without
+disposing its browser. Other games continue to use their independent shared
+embedded-game host, so the cached Empire visual is never reparented through their
+content controls. The retained browser is reused on later visits; a failed host
+is disposed and rebuilt on retry or next entry. Detached windows retain their
+own independent lifecycle and are disposed when closed. The cached embedded
+browser is disposed with the main window, not persisted across application
+restarts. This policy trades one resident idle browser for faster repeated visits;
+memory and long-session resource use still need measurement on player hardware.
+
+A loading surface appears immediately, with browser setup and estate handshake
+phases, a lobby return action, a 20-second timeout and an explicit retry path.
+Startup milestones are recorded relative to the native opening action for WebView2
+initialization, navigation, bridge readiness and DOM usability. A per-visit ID
+travels with the latest authoritative C# snapshot; React acknowledges it after
+committing the management DOM. Until that acknowledgment, the hosted browser is
+not input-enabled, including on a warm return. This prevents old displayed values
+from accepting commands. PixiJS is imported in a separate, lazy frontend chunk:
+static room artwork and management controls do not wait for the GPU renderer.
+Visual effects only animate while the host is visible and animation is enabled.
+No invented percent progress or asset-wide preloading is used.
+
+The Windows Empire smoke records cold and warm phase timings to
+`empire-startup-timings.json`, verifies browser identity across two visits,
+asserts the hidden Pixi ticker has stopped, and exercises the detached window
+separately. These CI timings are observed test-runner milestones, not a universal
+end-user speed guarantee. A retained WebView2 can use more idle private memory;
+verify CPU, memory and resume behavior during extended native testing.
+
 ## Bridge and transaction boundary
 
 `EmpireModernProtocol` version 1 accepts intents only from the exact packaged
