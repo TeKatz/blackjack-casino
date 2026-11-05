@@ -21,7 +21,7 @@ export type EmpireEconomy = {
   statistics:{lifetimeCredits:string;runCredits:string;lifetimeCashClaimed:string;propertyLifetimeCredits:string;levelsPurchased:string;automatedLevels:string;eventsCompleted:string;eventEncores:string;contractsCompleted:string;producedByTag:Record<string,string>};
   achievementBoosts:{name:string;roomId:string|null;percent:string}[];
 };
-export type EmpireSnapshot = {version:1;session:string;revision:number;notice:string|null;lastReply:Reply|null;
+export type EmpireSnapshot = {version:1;session:string;revision:number;visitId?:number;notice:string|null;lastReply:Reply|null;
   offline:{credits:string;dividend:string;seconds:number;capped:boolean;rooms:Record<string,string>;properties:Record<string,string>}|null;
   state:{language:'de'|'en';animationsEnabled:boolean;soundEnabled:boolean;detached:boolean;canClaimDividend:boolean;economy:EmpireEconomy}};
 export type Preview = {success:boolean;message:string;budgetBefore:string;budgetAfter:string;portfolioBefore:string;portfolioAfter:string;levelBefore:number;levelAfter:number;roomBefore:Breakdown;roomAfter:Breakdown;synergiesAfter:{id:string;tier:number;minimumLevel:number;bonus:string}[];automationAfter:Automation};
@@ -41,7 +41,7 @@ function breakdown(x:unknown):boolean {return record(x)&&['base','prestige','ach
 function catalog(x:unknown):boolean {return record(x)&&strings(x,['id','name','description','requirement'])&&decimal(x.cost)&&typeof x.canBuy==='boolean';}
 function room(x:unknown):boolean {return record(x)&&strings(x,['id','name','description','category','tags','accent','requirement'])&&integer(x.floor)&&integer(x.level)&&x.level<=200&&decimal(x.rate)&&breakdown(x.breakdown)&&list(x.quotes,q=>record(q)&&['requestedLevels','levels','targetLevel'].every(k=>integer(q[k]))&&decimal(q.cost)&&bools(q,['unlocked','canBuy']));}
 export function isEmpireSnapshot(x:unknown):x is EmpireSnapshot {
-  if(!record(x)||x.version!==1||typeof x.session!=='string'||!integer(x.revision)||!nullableString(x.notice)||(x.lastReply!==null&&!isReply(x.lastReply))||!record(x.state))return false;
+  if(!record(x)||x.version!==1||typeof x.session!=='string'||!integer(x.revision)||(x.visitId!==undefined&&(!integer(x.visitId)||x.visitId<1))||!nullableString(x.notice)||(x.lastReply!==null&&!isReply(x.lastReply))||!record(x.state))return false;
   const s=x.state,e=s.economy;
   if(!['en','de'].includes(String(s.language))||!bools(s,['animationsEnabled','soundEnabled','detached','canClaimDividend'])||!record(e))return false;
   if(!strings(e,['activePropertyId','prestigeRequirement'])||!['credits','dividend','dividendCapacity','rate','portfolioRate','cashPerHour','contractProgress','prestigeRunCreditRequirement'].every(k=>decimal(e[k]))
@@ -73,7 +73,7 @@ export function retainRooms(previous:Room[],next:Room[]):Room[] {
   const old=new Map(previous.map(r=>[r.id,r]));
   return next.map(r=>{const before=old.get(r.id);return before&&JSON.stringify(before)===JSON.stringify(r)?before:r;});
 }
-export function post(type:string):void {window.chrome?.webview?.postMessage({type});}
+export function post(type:string,fields:Record<string,unknown>={}):void {window.chrome?.webview?.postMessage({type,...fields});}
 export function send(snapshot:EmpireSnapshot,intent:Intent):string {
   const requestId=crypto.randomUUID();
   window.chrome?.webview?.postMessage({type:'empire.command',version:1,session:snapshot.session,expectedRevision:snapshot.revision,requestId,...intent});
