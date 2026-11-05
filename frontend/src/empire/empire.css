@@ -6,3 +6,29 @@
 @media(max-width:620px){.empire-shell{grid-template-columns:1fr;grid-template-rows:70px 48px minmax(0,1fr)}.empire-header{gap:10px;padding:10px}.empire-wordmark h1{font-size:17px}.empire-wordmark>span{display:none}.empire-sidebar{grid-row:2;border:0;padding:0;display:block;overflow:auto;white-space:nowrap}.empire-sidebar nav{display:flex;height:100%}.empire-sidebar nav>div{flex-shrink:0}.empire-sidebar nav button{height:100%;font-size:11px;padding:10px}.empire-nav-group,.empire-sidebar-foot{display:none}.empire-main{grid-row:3}.empire-gallery{grid-template-columns:repeat(2,minmax(0,1fr))}.empire-room{min-height:230px}.empire-room-copy h3{font-size:22px}.empire-room-copy>div:not(.empire-room-meter){flex-direction:row;font-size:11px}.empire-scene-badge{display:none}.empire-metrics{padding:12px}.empire-metrics strong{font-size:20px}.empire-section-heading>span{display:none}.empire-preview{width:calc(100% - 28px)}.empire-breakdown{grid-template-columns:repeat(2,1fr)}.empire-catalog{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
 .empire-shell[data-motion=false] *,.empire-shell[data-motion=false] *::before,.empire-shell[data-motion=false] *::after{transition:none!important;animation:none!important}
+
+/* The inspector starts beside the scene so upgrade controls remain near the
+   selected room, including short desktop windows. */
+.empire-estate:not([hidden]){display:grid;grid-template-columns:minmax(0,1fr) 260px;column-gap:18px;align-items:start}
+.empire-estate>.empire-scene-frame,.empire-estate>.empire-floorbar,.empire-estate>.empire-lock{grid-column:1}
+.empire-estate>.empire-workspace{display:contents}
+.empire-estate>.empire-workspace>div{grid-column:1;min-width:0}
+.empire-estate .empire-inspector{grid-column:2;grid-row:1/span 5}
+@media(min-width:1600px){.empire-estate:not([hidden]){grid-template-columns:minmax(0,1fr) 310px;column-gap:25px}}
+@media(max-width:1180px){.empire-estate:not([hidden]){grid-template-columns:minmax(0,1fr) 218px;column-gap:13px}}
+@media(max-height:850px) and (min-width:901px){
+ .empire-shell{grid-template-rows:72px minmax(0,1fr)}
+ .empire-main{padding:14px 22px 28px}
+ .empire-metrics{padding:12px 18px}
+ .empire-section-heading{margin:16px 0 13px}.empire-section-heading h2{font-size:25px}
+ .empire-scene-frame{height:165px}.empire-scene-title{left:21px;bottom:21px;max-width:75%}
+ .empire-scene-title h2{font-size:28px;margin:6px 0}.empire-scene-title p{font-size:11px}
+ .empire-scene-badge{top:12px;right:12px;font-size:8px;padding:8px}
+ .empire-floorbar{margin:14px 0}.empire-floorbar button{font-size:10px;padding:8px 10px}
+ .empire-filter>span{display:none}.empire-filter select{font-size:10px;max-width:120px}
+ .empire-room{min-height:215px}.empire-inspector{gap:10px;padding:17px}
+ .empire-inspector>p:first-of-type{display:none}.empire-inspector h2{font-size:23px}.empire-inspector p{font-size:11px;line-height:1.5}
+ .empire-inspector-numbers{padding:10px 0}.empire-inspector-numbers strong{font-size:22px}
+ .empire-bulk button{padding:7px}.empire-upgrade{padding:10px!important}
+}
+@media(max-width:900px){.empire-estate:not([hidden]){display:block}.empire-estate>.empire-workspace{display:grid}.empire-estate .empire-inspector{grid-column:auto;grid-row:auto}}

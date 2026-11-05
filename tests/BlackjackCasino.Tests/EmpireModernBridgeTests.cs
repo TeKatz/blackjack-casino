@@ -13,7 +13,8 @@ public sealed class EmpireModernBridgeTests
         var state = EmpireState.Normalize(new() { Started = true, LastAccruedAt = Now, Prestige = 25,
             Credits = EmpireRules.MaximumCredits, Levels = EmpireCatalog.Departments.ToDictionary(r => r.Id, _ => 100),
             Research = new() { ["construction"] = 2, ["compound"] = 1, ["automation"] = 1 } });
-        var property = state.Properties[state.ActivePropertyId] with { Projects = new(["executive-offices", "resort-wing", "skyline-property"]) };
+        var property = state.Properties[state.ActivePropertyId] with { Projects = new(["executive-offices", "resort-wing", "skyline-property"]),
+            Levels = EmpireCatalog.Departments.ToDictionary(r => r.Id, _ => 100) };
         return new(state with { Properties = new(state.Properties) { [state.ActivePropertyId] = property } });
     }
     private static string Message(EmpireModernSession session, string action = "upgrade", string? id = "slots", object? automation = null)

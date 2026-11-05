@@ -20,7 +20,8 @@ internal static class EmpireWebSmoke
             Prestige = 25, Credits = EmpireRules.MaximumCredits,
             Levels = EmpireCatalog.Departments.ToDictionary(r => r.Id, _ => 100),
             Research = new() { ["construction"] = 2, ["compound"] = 1, ["automation"] = 1 } });
-        var estate = state.Properties[state.ActivePropertyId] with { Projects = new(["grand-entrance", "executive-offices", "resort-wing", "skyline-property"]) };
+        var estate = state.Properties[state.ActivePropertyId] with { Projects = new(["grand-entrance", "executive-offices", "resort-wing", "skyline-property"]),
+            Levels = EmpireCatalog.Departments.ToDictionary(r => r.Id, _ => 100) };
         return new(state with { Properties = new(state.Properties) { [state.ActivePropertyId] = estate } });
     }
     internal static async Task Run(MainWindow window, string output, bool benchmark = false)
@@ -30,6 +31,7 @@ internal static class EmpireWebSmoke
         var originalSession = (CasinoSession)Field("session").GetValue(window)!;
         decimal originalBankroll = originalSession.Bankroll;
         var fixture = Fixture();
+        Require(fixture.OpenRooms == 15, "Late-career fixture must retain all Resort levels.");
         Field("empire").SetValue(window, fixture);
         int nativeWindows = Application.Current.Windows.Count;
         try
@@ -49,7 +51,7 @@ internal static class EmpireWebSmoke
             foreach (var size in new[] { (1080d, 720d), (1366d, 768d), (1920d, 1080d) })
             {
                 window.Width = size.Item1; window.Height = size.Item2; window.UpdateLayout(); await Task.Delay(150);
-                await Check(view, "document.documentElement.scrollWidth<=innerWidth+1 && document.querySelectorAll('canvas').length===1 && [...document.querySelectorAll('.empire-room')].every(e=>e.getBoundingClientRect().right<=innerWidth+1)", "Empire clips at " + size);
+                await Check(view, "document.documentElement.scrollWidth<=innerWidth+1 && document.querySelectorAll('canvas').length===1 && document.querySelector('[data-testid=upgrade]').getBoundingClientRect().bottom<=innerHeight+1 && [...document.querySelectorAll('.empire-room')].every(e=>e.getBoundingClientRect().right<=innerWidth+1)", "Empire clips at " + size);
                 await Capture(view, Path.Combine(output, "empire-react-" + (int)size.Item1 + ".png"));
             }
             int before = fixture.Level("hotel");
