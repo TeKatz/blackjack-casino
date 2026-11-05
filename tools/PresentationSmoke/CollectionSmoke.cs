@@ -305,6 +305,33 @@ internal static partial class Program
         Find<Button>(window).Single(b => b.Name == "AlbumBackButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(40); window.UpdateLayout();
         await OpenAlbumFromLobby(window, fromHeader: true);
+        ModernLobbyView? resumedReact = Find<ModernLobbyView>(window)
+            .FirstOrDefault(view => view.Ready && view.IsVisible);
+        if (resumedReact is not null)
+        {
+            // The public Album route now belongs to React. Confirm it resumes the
+            // exact previously persisted receipt before deliberately switching to
+            // the WPF fallback to test its own historical resume behavior.
+            var web = resumedReact.Browser.CoreWebView2!;
+            bool resumed = false;
+            for (int i = 0; i < 110 && !resumed; i++)
+            {
+                resumed = await web.ExecuteScriptAsync(
+                    "Boolean(document.querySelector('.album-opening-panel.phase-reveal')"
+                    + "||document.querySelector('.album-opening-panel.phase-summary'))") == "true";
+                if (!resumed) await Task.Delay(40);
+            }
+            Require(resumed, "React Album did not resume the saved pack opening.");
+            Require(profile.Collection.PendingOpening is not null,
+                "React Album discarded the original C# opening receipt.");
+            await web.ExecuteScriptAsync("document.querySelector('.album-opening-exit')?.click()");
+            await web.ExecuteScriptAsync("document.querySelector('.album-page .shop-back')?.click()");
+            await WaitUntil(() => resumedReact.RecordsPage is null,
+                "React Album failed to return to lobby after resuming a saved pack.");
+            window.OpenNativeCollectionAlbumPage();
+            await WaitUntil(() => Find<Grid>(window).Any(g => g.Name == "CollectionAlbumRoot" && g.IsVisible),
+                "WPF fallback did not reopen the saved pack for its legacy regression.");
+        }
         await Task.Delay(60); window.UpdateLayout();
         openingOverlay = Find<Border>(window).Single(b => b.Name == "AlbumOpeningOverlay");
         browse = Find<Grid>(window).Single(g => g.Name == "AlbumBrowseSurface");
