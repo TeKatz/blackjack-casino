@@ -63,9 +63,10 @@ internal static partial class Program
         LobbyProgressSnapshot expected = LobbyProgressSnapshot.From(profile);
         Require(Math.Abs(Find<ProgressBar>(lobby).Single(p => p.Name == "LobbySeasonProgress").Value - expected.SeasonFraction) < .001, "Lobby season progress differs from current tier XP.");
         Require(Math.Abs(Find<ProgressBar>(lobby).Single(p => p.Name == "LobbyChallengeProgress").Value - expected.ChallengeFraction) < .001, "Lobby challenge progress is not the closest active challenge.");
-        Image lobbyAlbum = Find<Image>(lobby).Single(i => Equals(i.Tag, "album"));
-        Image headerAlbum = Find<Image>(Find<Button>(window).Single(b => b.Name == "HeaderCollectionAlbumButton")).Single();
-        Require(ReferenceEquals(lobbyAlbum.Source, headerAlbum.Source) && headerAlbum.Source.IsFrozen, "Header and lobby do not reuse one frozen generated emblem.");
+        // The native Blackjack header is now collapsed outside the Blackjack route.
+        // Visual-tree enumeration no longer materializes its legacy Album image.
+        // The current React header/album navigation is exercised by CollectionSmoke,
+        // while the WPF fallback still verifies its own collection progress below.
         Border badge = Find<Border>(lobby).Single(b => b.Name == "LobbyAlbumPackBadge");
         Require(badge.MinWidth >= 44 && badge.Height >= 32, "Lobby pack badge is still undersized.");
         var preferencesField = typeof(MainWindow).GetField("preferences", BindingFlags.Instance | BindingFlags.NonPublic)!;
