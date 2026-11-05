@@ -94,12 +94,22 @@ internal static class Program
                     "Interactive casino cursor must remain distinct from the default casino arrow.");
                 Require(Application.Current.TryFindResource(typeof(ToolTip)) is Style,
                     "Global casino tooltip style is not available to application controls.");
-                Button challenges = Find<Button>(window).Single(button => button.Name == "HeaderChallengesButton" && button.IsVisible);
+                // The React lobby owns the visible header. Keep validating the native
+                // WPF fallback's reward state without requiring its hidden header to be visible.
+                Button challenges = Find<Button>(window).Single(button => button.Name == "HeaderChallengesButton");
                 Require(Find<TextBlock>(challenges).Any(text => text.Text.Contains("READY", StringComparison.Ordinal)),
                     "Completed challenge did not surface a READY indicator in the global header.");
                 Require(challenges.Effect is DropShadowEffect,
                     "Completed challenge did not activate the global header glow cue.");
-                Button vaultHeader = Find<Button>(window).Single(button => button.Name == "CasinoVaultButton" && button.IsVisible);
+                Button vaultHeader = Find<Button>(window).Single(button => button.Name == "CasinoVaultButton");
+                ModernLobbyView reactLobby = Find<ModernLobbyView>(window).Single();
+                string clubNavigation = await reactLobby.Browser.CoreWebView2!.ExecuteScriptAsync(
+                    "(()=>{const links=[...document.querySelectorAll('.lobby-nav-item')].map(x=>x.textContent);"
+                    + "const ready=document.querySelector('.overview-challenges')?.textContent||'';"
+                    + "return links.some(x=>x.includes('Challenges'))&&links.some(x=>x.includes('Vault'))"
+                    + "&&links.some(x=>x.includes('Season Pass'))&&ready.includes('Rewards ready');})()");
+                Require(clubNavigation.Equals("true", StringComparison.OrdinalIgnoreCase),
+                    "Compact React lobby hides claimable rewards or Vault navigation.");
                 Require(Find<VaultHeaderArtwork>(vaultHeader).Any(),
                     "Casino Vault header card is missing its vault artwork.");
                 SaveScreenshot(window, Path.Combine(output, "global-header-polish.png"));
@@ -575,7 +585,7 @@ internal static class Program
             + "const games=[...document.querySelectorAll('.lobby-game')];"
             + "const profile=document.querySelector('.profile-widget');"
             + "const nav=document.querySelectorAll('.lobby-nav-item');"
-            + "return Boolean(shell&&games.length===9&&nav.length===8"
+            + "return Boolean(shell&&games.length===9&&nav.length>=11"
             + "&&profile?.textContent?.includes('Startup Smoke')"
             + "&&document.querySelector('.lobby-hero h1')?.textContent?.length>5);})()");
         Require(result.Equals("true", StringComparison.OrdinalIgnoreCase),
