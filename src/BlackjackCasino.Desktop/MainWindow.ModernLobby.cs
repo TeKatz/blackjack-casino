@@ -23,8 +23,9 @@ public partial class MainWindow
             modeRegistry, GetModernLobbySnapshot, GetModernShopSnapshot,
             ModernShopCosmeticAction, ModernShopPackAction, OnModernShopClosed,
             GetModernChallengesSnapshot, GetModernStatisticsSnapshot,
+            GetModernAccountSnapshot, GetModernSeasonsSnapshot, ActivateModernSeason,
             ModernChallengeClaim, ModernChallengesClaimAll, OnModernProgressionClosed, OpenProgression,
-            OpenPlayerProfile, () => VaultButton_Click(this, new RoutedEventArgs()),
+            OpenNativePlayerProfile, () => VaultButton_Click(this, new RoutedEventArgs()),
             () => { ClaimDailyLoginFromDrawer(); modernLobby?.Refresh(); },
             Close, OnModernLobbyStateChanged);
 

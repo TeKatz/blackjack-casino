@@ -28,6 +28,9 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
     private readonly Action shopClosed;
     private readonly Func<object> challengesSnapshot;
     private readonly Func<object> statisticsSnapshot;
+    private readonly Func<object> accountSnapshot;
+    private readonly Func<object> seasonsSnapshot;
+    private readonly Func<string, (bool Success, string Message)> activateSeason;
     private readonly Func<string, (bool Success, string Message)> claimChallenge;
     private readonly Func<(bool Success, string Message)> claimAllChallenges;
     private readonly Action recordsClosed;
@@ -61,6 +64,8 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
         Func<string, (bool Success, string Message)> cosmeticAction,
         Func<string, (bool Success, string Message)> packAction, Action shopClosed,
         Func<object> challengesSnapshot, Func<object> statisticsSnapshot,
+        Func<object> accountSnapshot, Func<object> seasonsSnapshot,
+        Func<string, (bool Success, string Message)> activateSeason,
         Func<string, (bool Success, string Message)> claimChallenge,
         Func<(bool Success, string Message)> claimAllChallenges, Action recordsClosed,
         Action<string> progression, Action profile, Action vault, Action dailyClaim, Action exit,
@@ -74,6 +79,9 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
         this.shopClosed = shopClosed;
         this.challengesSnapshot = challengesSnapshot;
         this.statisticsSnapshot = statisticsSnapshot;
+        this.accountSnapshot = accountSnapshot;
+        this.seasonsSnapshot = seasonsSnapshot;
+        this.activateSeason = activateSeason;
         this.claimChallenge = claimChallenge;
         this.claimAllChallenges = claimAllChallenges;
         this.recordsClosed = recordsClosed;
@@ -124,13 +132,20 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
         PostMessage("lobby.records.snapshot", new
         {
             Page = recordsPage,
-            Snapshot = recordsPage == "challenges" ? challengesSnapshot() : statisticsSnapshot(),
+            Snapshot = recordsPage switch
+            {
+                "challenges" => challengesSnapshot(),
+                "statistics" => statisticsSnapshot(),
+                "profile" => accountSnapshot(),
+                "season" => seasonsSnapshot(),
+                _ => throw new InvalidOperationException("Unsupported progression route."),
+            },
         });
     }
 
     internal void ShowProgression(string page)
     {
-        if (!Ready || disposed || failed || page is not ("challenges" or "statistics")) return;
+        if (!Ready || disposed || failed || page is not ("challenges" or "statistics" or "profile" or "season")) return;
         shopOpen = false;
         recordsPage = page;
         PostMessage("lobby.records.show", new { Page = page });
@@ -249,7 +264,7 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
                     Refresh();
                     if (recordsPage is not null) RefreshRecords();
                     break;
-                case "lobby.records.open" when id is "challenges" or "statistics":
+                case "lobby.records.open" when id is "challenges" or "statistics" or "profile" or "season":
                     shopOpen = false;
                     recordsPage = id;
                     RefreshRecords();
@@ -258,6 +273,14 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
                     recordsPage = null;
                     recordsClosed();
                     break;
+                case "lobby.records.season.activate" when recordsPage == "season" && id is not null:
+                {
+                    var result = activateSeason(id);
+                    PostMessage("lobby.records.result", new { result.Success, result.Message, Id = id });
+                    RefreshRecords();
+                    Refresh();
+                    break;
+                }
                 case "lobby.records.claim" when recordsPage == "challenges" && id is not null:
                 {
                     var result = claimChallenge(id);
@@ -310,6 +333,9 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
                     progression(id);
                     break;
                 case "lobby.profile":
+                    ShowProgression("profile");
+                    break;
+                case "lobby.profile.native":
                     profile();
                     break;
                 case "lobby.vault":

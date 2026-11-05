@@ -312,12 +312,82 @@ public partial class MainWindow
         };
     }
 
+
+    // Native services retain ownership of progression and season selection.
+    // The browser receives display-only snapshots and can only request a catalog-approved selection.
+    private object GetModernAccountSnapshot()
+    {
+        PlayerProfileState profile = progressionController!.Profile;
+        return new
+        {
+            profile.DisplayName,
+            profile.Level,
+            profile.Prestige,
+            Coins = RecordNumber(profile.Coins),
+            Title = CosmeticCatalog.Get(profile.EquippedTitleId).Name,
+            PortraitId = profile.EquippedPortraitId,
+            ProfileExperience = RecordNumber(profile.LifetimeExperience),
+            Playtime = RecordDuration(progressionController.TotalPlaytime),
+            OwnedCosmetics = profile.OwnedCosmeticIds.Count,
+            OwnedCards = profile.Collection.OwnedCardIds.Count,
+            TotalCards = CollectionCatalog.Cards.Count,
+            Season = SeasonTextLocalization.Name(SeasonCatalog.Get(profile.ActiveSeasonId)),
+            Created = profile.CreatedAt.ToLocalTime().ToString("d", CultureInfo.CurrentCulture),
+        };
+    }
+
+    private object GetModernSeasonsSnapshot()
+    {
+        PlayerProfileState profile = progressionController!.Profile;
+        return new
+        {
+            profile.ActiveSeasonId,
+            Seasons = SeasonCatalog.All.Select(season =>
+            {
+                profile.Seasons.TryGetValue(season.Id, out SeasonProgressState? progress);
+                long xp = Math.Max(0, progress?.Experience ?? 0);
+                return new
+                {
+                    season.Id,
+                    Name = SeasonTextLocalization.Name(season),
+                    Description = SeasonTextLocalization.Description(season),
+                    season.Archived,
+                    season.RewardsEnabled,
+                    Tier = Math.Max(0, progress?.Tier ?? 0),
+                    Experience = xp,
+                    TotalTiers = season.Tiers.Count,
+                    MaxExperience = season.Tiers[^1].RequiredExperience,
+                    Tiers = season.Tiers.Select(tier => new
+                    {
+                        tier.Tier,
+                        tier.RequiredExperience,
+                        tier.Coins,
+                        tier.CosmeticId,
+                        tier.BankrollReward,
+                    }).ToArray(),
+                };
+            }).ToArray(),
+        };
+    }
+
+    private (bool Success, string Message) ActivateModernSeason(string id)
+    {
+        if (progressionController is null) return (false, "Player profile is not available.");
+        if (SeasonCatalog.TryGet(id) is not { } season) return (false, "Unknown Season Pass.");
+        if (progressionController.Profile.ActiveSeasonId == id) return (true, "This Season Pass is already active.");
+        if (!progressionController.Service.SelectSeason(season.Id)) return (false, "Season Pass could not be activated.");
+        progressionController.SaveAll();
+        RefreshProfileButton();
+        return (true, SeasonTextLocalization.Name(season) + " is now active.");
+    }
+
     private void OpenModernProgression(string page)
     {
         if (modernLobby is not { Ready: true } || modernLobby.Failed)
         {
-            if (page == "statistics") OpenProfileStatistics("Statistics");
-            else OpenProgressionPage("Challenges");
+            if (page == "profile") OpenNativePlayerProfile();
+            else if (page == "statistics") OpenProfileStatistics("Statistics");
+            else OpenProgressionPage(page == "season" ? "Season Pass" : "Challenges");
             return;
         }
         if (progressionController is null) return;

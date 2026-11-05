@@ -20,6 +20,16 @@ public partial class MainWindow
 
     private void OpenPlayerProfile()
     {
+        if (modernLobby is { Ready: true } && !modernLobby.Failed)
+        {
+            OpenModernProgression("profile");
+            return;
+        }
+        OpenNativePlayerProfile();
+    }
+
+    private void OpenNativePlayerProfile()
+    {
         if (progressionController is null || MetaPageOpen) return;
         progressionController.AccruePlaytime();
         ProcessLatestCompletedRound();
@@ -38,9 +48,9 @@ public partial class MainWindow
                 OpenModernShopFromProgression();
                 return;
             }
-            if (tab is "Challenges" or "Statistics" or "Overview")
+            if (tab is "Challenges" or "Statistics" or "Overview" or "Season Pass")
             {
-                OpenModernProgression(tab == "Challenges" ? "challenges" : "statistics");
+                OpenModernProgression(tab == "Challenges" ? "challenges" : tab == "Season Pass" ? "season" : "statistics");
                 return;
             }
         }
