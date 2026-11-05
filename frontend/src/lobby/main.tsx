@@ -5,12 +5,13 @@ import { ModernShop } from './ModernShop';
 import { ModernChallenges } from './ModernChallenges';
 import { ModernStatistics } from './ModernStatistics';
 import { ModernAccount } from './ModernAccount';
+import { ModernHistory } from './ModernHistory';
 import { ModernSeasons } from './ModernSeasons';
-import { onRecordsMessage, previewChallenges, previewStatistics, previewAccount, previewSeasons } from './recordsBridge';
-import type { ChallengesSnapshot, StatisticsSnapshot, AccountSnapshot, SeasonsSnapshot, RecordsPage } from './recordsBridge';
+import { onRecordsMessage, previewChallenges, previewStatistics, previewAccount, previewHistory, previewSeasons } from './recordsBridge';
+import type { ChallengesSnapshot, StatisticsSnapshot, AccountSnapshot, HistorySnapshot, SeasonsSnapshot, RecordsPage } from './recordsBridge';
 import { onShopMessages, previewShop } from './shopBridge';
 import type { ShopSnapshot } from './shopBridge';
-import { embeddedLobby, fallbackLobby, lobbyCommand, onLobbySnapshot } from './lobbyBridge';
+import { embeddedLobby, fallbackLobby, lobbyCommand, onLobbySnapshot, renamePlayer } from './lobbyBridge';
 import type { LobbyMode, LobbySnapshot } from './lobbyBridge';
 import './lobby.css';
 
@@ -142,10 +143,12 @@ function LobbyApp() {
   const [challenges,setChallenges] = useState<ChallengesSnapshot>(previewChallenges);
   const [statistics,setStatistics] = useState<StatisticsSnapshot>(previewStatistics);
   const [account,setAccount] = useState<AccountSnapshot>(previewAccount);
+  const [history,setHistory] = useState<HistorySnapshot>(previewHistory);
   const [seasons,setSeasons] = useState<SeasonsSnapshot>(previewSeasons);
   const [challengesLoaded,setChallengesLoaded] = useState(!embeddedLobby);
   const [statisticsLoaded,setStatisticsLoaded] = useState(!embeddedLobby);
   const [accountLoaded,setAccountLoaded] = useState(!embeddedLobby);
+  const [historyLoaded,setHistoryLoaded] = useState(!embeddedLobby);
   const [seasonsLoaded,setSeasonsLoaded] = useState(!embeddedLobby);
   const [recordsPending,setRecordsPending] = useState<string|null>(null);
   const [shopVisible,setShopVisible] = useState(false);
@@ -170,6 +173,7 @@ function LobbyApp() {
         if(message.data.page==='challenges'){setChallenges(message.data.snapshot);setChallengesLoaded(true);}
         else if(message.data.page==='statistics'){setStatistics(message.data.snapshot);setStatisticsLoaded(true);}
         else if(message.data.page==='profile'){setAccount(message.data.snapshot);setAccountLoaded(true);}
+        else if(message.data.page==='history'){setHistory(message.data.snapshot);setHistoryLoaded(true);}
         else {setSeasons(message.data.snapshot);setSeasonsLoaded(true);}
       }else if(message.type==='lobby.records.result'){
         setRecordsPending(null);
@@ -221,6 +225,7 @@ function LobbyApp() {
     if(page==='challenges')setChallengesLoaded(!embeddedLobby);
     else if(page==='statistics')setStatisticsLoaded(!embeddedLobby);
     else if(page==='profile')setAccountLoaded(!embeddedLobby);
+    else if(page==='history')setHistoryLoaded(!embeddedLobby);
     else setSeasonsLoaded(!embeddedLobby);
     lobbyCommand('lobby.records.open',page);
   };
@@ -304,8 +309,8 @@ function LobbyApp() {
     <div className={'lobby-body '+(shopVisible?'shop-active':recordsVisible?'records-active':'')}>
       <nav className="lobby-nav" aria-label={de?'Casino-Navigation':'Casino navigation'}>
         {navigation.map(n=><button type="button" key={n.id}
-          aria-current={(shopVisible?n.id==='shop':recordsVisible?n.id===(recordsVisible==='challenges'?'challenges':recordsVisible==='statistics'?'stats':recordsVisible==='season'?'season':'profile'):n.id===filter)?'page':undefined}
-          className={'lobby-nav-item '+((shopVisible?n.id==='shop':recordsVisible?n.id===(recordsVisible==='challenges'?'challenges':'stats'):n.id===filter)?'selected':'')+(n.id==='daily'?' daily-nav':'')}
+          aria-current={(shopVisible?n.id==='shop':recordsVisible?n.id===(recordsVisible==='challenges'?'challenges':recordsVisible==='statistics'?'stats':recordsVisible==='history'?'profile':recordsVisible==='season'?'season':'profile'):n.id===filter)?'page':undefined}
+          className={'lobby-nav-item '+((shopVisible?n.id==='shop':recordsVisible?n.id===(recordsVisible==='challenges'?'challenges':recordsVisible==='statistics'?'stats':recordsVisible==='season'?'season':'profile'):n.id===filter)?'selected':'')+(n.id==='daily'?' daily-nav':'')}
           onClick={()=>chooseNav(n.id)}>
           <span className="nav-icon" aria-hidden="true">{n.icon}</span>
           <span>{de?n.de:n.en}</span>
@@ -322,11 +327,15 @@ function LobbyApp() {
       recordsVisible==='statistics'?<ModernStatistics data={statistics}
         language={data.language} loaded={statisticsLoaded}
         onBack={()=>{closeRecords();setFilter('all');}}/>:
-      recordsVisible==='profile'?<ModernAccount data={account} loaded={accountLoaded}
+      recordsVisible==='profile'?<ModernAccount data={account} loaded={accountLoaded} pending={recordsPending}
         language={data.language} onBack={()=>{closeRecords();setFilter('all');}}
         onRoute={route=>route==='shop'?openShop():route==='album'?openProgression("Collector's Album"):
           openRecords(route as RecordsPage)}
+        onRename={name=>{setRecordsPending('rename');renamePlayer(name);}}
+        onEquip={id=>{setRecordsPending(id);lobbyCommand('lobby.profile.equip',id);}}
         onEdit={()=>lobbyCommand('lobby.profile.native')}/>:
+      recordsVisible==='history'?<ModernHistory data={history} loaded={historyLoaded}
+        language={data.language} onBack={()=>{closeRecords();setFilter('all');}}/>:
       recordsVisible==='season'?<ModernSeasons data={seasons} loaded={seasonsLoaded}
         language={data.language} pending={recordsPending} onBack={()=>{closeRecords();setFilter('all');}}
         onActivate={id=>{setRecordsPending(id);lobbyCommand('lobby.records.season.activate',id);}}/>:

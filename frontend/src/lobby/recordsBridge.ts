@@ -20,19 +20,27 @@ export type StatisticsSnapshot={
   session:{rounds:string;hands:string;playtime:string;won:string;lost:string;pushes:string;wagered:string;net:string;blackjacks:string;bestStreak:string};
   tables:{name:string;hands:string;net:string;positive:boolean;rounds:string;winRate:string}[];
 };
+export type CosmeticIdentityOption={id:string;name:string;description:string};
 export type AccountSnapshot={
  displayName:string;level:number;prestige:number;coins:string;title:string;portraitId:string;
+ equippedTitleId:string;equippedPortraitId:string;
+ portraits:CosmeticIdentityOption[];titles:CosmeticIdentityOption[];
  profileExperience:string;playtime:string;ownedCosmetics:number;ownedCards:number;totalCards:number;
  season:string;created:string;
 };
+export type HistoricalHand={name:string;cards:string;outcome:string;net:string;
+ doubled:boolean;split:boolean;surrendered:boolean};
+export type HistoryEntry={id:string;completed:string;net:string;positive:boolean;bet:string;
+ insurance:string;dealer:string;hands:HistoricalHand[]};
+export type HistorySnapshot={total:number;entries:HistoryEntry[]};
 export type SeasonTier={tier:number;requiredExperience:number;coins:number;cosmeticId:string|null;bankrollReward:number};
 export type SeasonEntry={id:string;name:string;description:string;archived:boolean;rewardsEnabled:boolean;
  tier:number;experience:number;totalTiers:number;maxExperience:number;tiers:SeasonTier[]};
 export type SeasonsSnapshot={activeSeasonId:string;seasons:SeasonEntry[]};
-export type RecordsPage='challenges'|'statistics'|'profile'|'season';
+export type RecordsPage='challenges'|'statistics'|'profile'|'history'|'season';
 export type RecordsMessage=
   {type:'lobby.records.show';data:{page:RecordsPage}}|
-  {type:'lobby.records.snapshot';data:{page:'challenges';snapshot:ChallengesSnapshot}|{page:'statistics';snapshot:StatisticsSnapshot}|{page:'profile';snapshot:AccountSnapshot}|{page:'season';snapshot:SeasonsSnapshot}}|
+  {type:'lobby.records.snapshot';data:{page:'challenges';snapshot:ChallengesSnapshot}|{page:'statistics';snapshot:StatisticsSnapshot}|{page:'profile';snapshot:AccountSnapshot}|{page:'history';snapshot:HistorySnapshot}|{page:'season';snapshot:SeasonsSnapshot}}|
   {type:'lobby.records.result';data:{success:boolean;message:string;id:string}};
 export type ChallengeStatus='all'|'ready'|'progress'|'claimed'|'unclaimed';
 const obj=(x:unknown):x is Record<string,unknown>=>x!==null&&typeof x==='object'&&!Array.isArray(x);
@@ -70,8 +78,20 @@ export function isStatistics(x:unknown):x is StatisticsSnapshot{
       &&typeof t.positive==='boolean');
 }
 export function isAccount(x:unknown):x is AccountSnapshot{
- return obj(x)&&['displayName','coins','title','portraitId','profileExperience','playtime','season','created']
- .every(k=>str(x[k]))&&['level','prestige','ownedCosmetics','ownedCards','totalCards'].every(k=>count(x[k]));
+ if(!obj(x)||!['displayName','coins','title','portraitId','equippedTitleId','equippedPortraitId',
+    'profileExperience','playtime','season','created'].every(k=>str(x[k]))
+    ||!['level','prestige','ownedCosmetics','ownedCards','totalCards'].every(k=>count(x[k])))return false;
+ return ['portraits','titles'].every(k=>Array.isArray(x[k])&&(x[k] as unknown[]).length<=500
+    &&(x[k] as unknown[]).every(v=>obj(v)&&str(v.id)&&str(v.name)&&str(v.description)));
+}
+export function isHistory(x:unknown):x is HistorySnapshot{
+ return obj(x)&&count(x.total)&&Array.isArray(x.entries)&&x.entries.length<=250
+    &&x.entries.every((entry:unknown)=>obj(entry)
+      &&['id','completed','net','bet','insurance','dealer'].every(k=>str(entry[k]))
+      &&typeof entry.positive==='boolean'&&Array.isArray(entry.hands)&&entry.hands.length<=32
+      &&entry.hands.every((hand:unknown)=>obj(hand)
+        &&['name','cards','outcome','net'].every(k=>str(hand[k]))
+        &&['doubled','split','surrendered'].every(k=>typeof hand[k]==='boolean')));
 }
 export function isSeasons(x:unknown):x is SeasonsSnapshot{
  return obj(x)&&str(x.activeSeasonId)&&Array.isArray(x.seasons)&&x.seasons.length<=30
@@ -88,12 +108,13 @@ export function onRecordsMessage(handle:(message:RecordsMessage)=>void):()=>void
   const listener=(event:MessageEvent)=>{
     const m:unknown=event.data;
     if(!obj(m)||!str(m.type)||!obj(m.data))return;
-    if(m.type==='lobby.records.show'&&(m.data.page==='challenges'||m.data.page==='statistics'||m.data.page==='profile'||m.data.page==='season'))
+    if(m.type==='lobby.records.show'&&(m.data.page==='challenges'||m.data.page==='statistics'||m.data.page==='profile'||m.data.page==='history'||m.data.page==='season'))
       handle({type:m.type,data:{page:m.data.page}});
     if(m.type==='lobby.records.snapshot'
       && ((m.data.page==='challenges'&&isChallenges(m.data.snapshot))
         ||(m.data.page==='statistics'&&isStatistics(m.data.snapshot))
         ||(m.data.page==='profile'&&isAccount(m.data.snapshot))
+        ||(m.data.page==='history'&&isHistory(m.data.snapshot))
         ||(m.data.page==='season'&&isSeasons(m.data.snapshot))))
       handle({type:m.type,data:m.data as RecordsMessage & never});
     if(m.type==='lobby.records.result'
@@ -129,9 +150,13 @@ export const previewChallenges:ChallengesSnapshot={
 };
 export const previewAccount:AccountSnapshot={
  displayName:'Guest',level:1,prestige:0,coins:'0',title:'Midnight Dealer',
- portraitId:'portrait-default',profileExperience:'0',playtime:'0m',ownedCosmetics:5,
+ portraitId:'portrait-classic',equippedTitleId:'title-rookie',equippedPortraitId:'portrait-classic',
+ portraits:[{id:'portrait-classic',name:'House Guest',description:'Classic casino portrait'}],
+ titles:[{id:'title-rookie',name:'Rookie',description:'Your first title'}],
+ profileExperience:'0',playtime:'0m',ownedCosmetics:5,
  ownedCards:0,totalCards:136,season:'Neon Dynasty',created:'—'
 };
+export const previewHistory:HistorySnapshot={total:0,entries:[]};
 export const previewSeasons:SeasonsSnapshot={
  activeSeasonId:'season-3-neon-dynasty',seasons:[{
  id:'season-3-neon-dynasty',name:'Neon Dynasty',description:'Current Season Pass',
