@@ -45,10 +45,12 @@ export function isChallenges(x:unknown):x is ChallengesSnapshot{
 export function isStatistics(x:unknown):x is StatisticsSnapshot{
   if(!obj(x)||!obj(x.overview)||!obj(x.session)||!Array.isArray(x.games)||!Array.isArray(x.tables)
     ||x.games.length>60||x.tables.length>200)return false;
-  if(!['net','wagered','slotSpins','playtime','rounds'].every(k=>str(x.overview[k]))
-    ||typeof x.overview.netPositive!=='boolean'||!count(x.overview.gamesTracked))return false;
+  const overview=x.overview as Record<string,unknown>;
+  const session=x.session as Record<string,unknown>;
+  if(!['net','wagered','slotSpins','playtime','rounds'].every(k=>str(overview[k]))
+    ||typeof overview.netPositive!=='boolean'||!count(overview.gamesTracked))return false;
   if(!['rounds','hands','playtime','won','lost','pushes','wagered','net','blackjacks','bestStreak']
-    .every(k=>str(x.session[k])))return false;
+    .every(k=>str(session[k])))return false;
   return x.games.every((g:unknown)=>obj(g)&&str(g.id)&&str(g.title)
     &&['tables','slots','relaxed'].includes(String(g.category))
     &&(g.net===null||str(g.net))&&typeof g.positive==='boolean'
