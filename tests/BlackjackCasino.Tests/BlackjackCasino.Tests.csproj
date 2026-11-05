@@ -19,6 +19,8 @@
     <Compile Include="../../src/BlackjackCasino.Desktop/BlackjackModernRules.cs" Link="Presentation/BlackjackModernRules.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/BlackjackModernProtocol.cs" Link="Presentation/BlackjackModernProtocol.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/BlackjackModernSnapshot.cs" Link="Presentation/BlackjackModernSnapshot.cs" />
+    <Compile Include="../../src/BlackjackCasino.Desktop/ModernReelsProtocol.cs" Link="Presentation/ModernReelsProtocol.cs" />
+    <Compile Include="../../src/BlackjackCasino.Desktop/ModernReelsSnapshot.cs" Link="Presentation/ModernReelsSnapshot.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/EmpireModernProtocol.cs" Link="Presentation/EmpireModernProtocol.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/EmpireModernSnapshot.cs" Link="Presentation/EmpireModernSnapshot.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/ManorController.cs" Link="Persistence/ManorController.cs" />
