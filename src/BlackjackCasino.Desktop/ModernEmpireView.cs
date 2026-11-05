@@ -135,7 +135,8 @@ internal sealed class ModernEmpireView : ContentControl, IDisposable
                 case "empire.refresh": Refresh(); break;
                 case "empire.close": close(); break;
                 case "empire.dismiss-offline": offline = null; Refresh(); break;
-                case "empire.command" when listening:
+                case "empire.command" when listening && Ready && IsVisible &&
+                    owner?.WindowState != WindowState.Minimized && browser.IsEnabled:
                     EmpireModernCommand? command = EmpireModernProtocol.Parse(args.WebMessageAsJson);
                     if (command is null)
                     {
