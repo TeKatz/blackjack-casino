@@ -59,7 +59,8 @@ internal partial class ProgressionWindow : Window
             if ((ProgressionTabs.SelectedItem as TabItem)?.Tag as string == "Cosmetic Shop"
                 && openModernShop is not null)
             {
-                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background,
+                // Queue before WPF Render so the retired tab never paints a frame.
+                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Send,
                     () => openModernShop?.Invoke());
                 return;
             }

@@ -115,8 +115,10 @@ public partial class MainWindow
         // shop or second WebView2 is created.
         while (MetaPageOpen)
             CloseMetaPage();
-        modernLobby.SetLobbyVisible(true);
+        // Change the React route while the browser is still hidden, then reveal
+        // its prepared shop surface. This avoids a single-frame lobby flash.
         modernLobby.ShowShop();
+        modernLobby.SetLobbyVisible(true);
         UpdateHostHeaderVisibility(embeddedGameOverlay?.IsVisible == true);
     }
 
