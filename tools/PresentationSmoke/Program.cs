@@ -213,7 +213,19 @@ internal static partial class Program
         Find<Button>(window).Single(b=>b.Name=="ProfileBackButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(40);window.UpdateLayout();
         Require(Find<CasinoLobbyView>(window).Any(v=>v.IsVisible),"Closing the profile lost the previous lobby");
-        Find<Button>(window).Single(b=>b.Name=="LobbyProgression_Challenges" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        ModernLobbyView? modernChallenges = Find<ModernLobbyView>(window)
+            .FirstOrDefault(view => view.Ready && view.IsVisible);
+        if (modernChallenges is not null)
+        {
+            string enabled = await modernChallenges.Browser.CoreWebView2!.ExecuteScriptAsync(
+                "Boolean(document.querySelector('.overview-challenges'))");
+            Require(enabled == "true", "React lobby is missing the Challenges shortcut");
+            await modernChallenges.Browser.CoreWebView2.ExecuteScriptAsync(
+                "document.querySelector('.overview-challenges').click()");
+        }
+        else
+            Find<Button>(window).Single(b=>b.Name=="LobbyProgression_Challenges" && b.IsVisible)
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(60);window.UpdateLayout();RequireSingleHost(window,"Lobby Challenges");
         Require(Find<TabControl>(window).Any(t=>t.SelectedItem is TabItem item && Equals(item.Header,"Challenges")),"Lobby shortcut selected the wrong tab");
         Find<Button>(window).Single(b=>b.Name=="ProgressionBackButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
@@ -335,7 +347,9 @@ internal static partial class Program
         Find<Button>(window).Single(b=>b.Name=="EmpireBackButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(40);window.UpdateLayout();
         Require(Find<CasinoLobbyView>(window).Any(v=>v.IsVisible),"Empire Back did not restore the lobby");
-        Require(((FrameworkElement)window.FindName("CasinoHeader")).IsVisible,"Empire Back did not restore the host header");
+        Require(((FrameworkElement)window.FindName("CasinoHeader")).IsVisible
+            == !Find<ModernLobbyView>(window).Any(v => v.Ready && v.IsVisible),
+            "Empire Back did not restore the appropriate React/WPF lobby header");
         NavigationSmoke.OpenCovered(window, "casino-empire");await Task.Delay(40);window.UpdateLayout();
         Require(service.Level("slots")>=2 && service.Credits==credits,"Reopening Casino Empire reset progress");
         var source=PresentationSource.FromVisual(window)!;
