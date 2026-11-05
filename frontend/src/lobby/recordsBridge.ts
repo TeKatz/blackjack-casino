@@ -1,0 +1,112 @@
+/** Typed, read-only data for React Challenges and lifetime statistics. */
+export type ChallengeEntry={
+  id:string;name:string;description:string;category:string;isAdventure:boolean;isEndgame:boolean;
+  progress:number;goal:number;progressLabel:string;goalLabel:string;fraction:number;
+  complete:boolean;claimed:boolean;canClaim:boolean;automaticallyAwarded:boolean;
+  coinReward:number;pack:string|null;empireBoost:string|null;
+};
+export type ChallengesSnapshot={
+  total:number;complete:number;claimed:number;ready:number;readyCoins:number;
+  categories:string[];entries:ChallengeEntry[];
+};
+export type StatMetric={label:string;value:string};
+export type GameStatistics={
+  id:string;title:string;category:'tables'|'slots'|'relaxed';net:string|null;positive:boolean;
+  metrics:StatMetric[];
+};
+export type StatisticsSnapshot={
+  overview:{net:string;netPositive:boolean;wagered:string;slotSpins:string;playtime:string;rounds:string;gamesTracked:number};
+  games:GameStatistics[];
+  session:{rounds:string;hands:string;playtime:string;won:string;lost:string;pushes:string;wagered:string;net:string;blackjacks:string;bestStreak:string};
+  tables:{name:string;hands:string;net:string;positive:boolean;rounds:string;winRate:string}[];
+};
+export type RecordsPage='challenges'|'statistics';
+export type RecordsMessage=
+  {type:'lobby.records.show';data:{page:RecordsPage}}|
+  {type:'lobby.records.snapshot';data:{page:'challenges';snapshot:ChallengesSnapshot}|{page:'statistics';snapshot:StatisticsSnapshot}}|
+  {type:'lobby.records.result';data:{success:boolean;message:string;id:string}};
+export type ChallengeStatus='all'|'ready'|'progress'|'claimed'|'unclaimed';
+const obj=(x:unknown):x is Record<string,unknown>=>x!==null&&typeof x==='object'&&!Array.isArray(x);
+const str=(x:unknown):x is string=>typeof x==='string';
+const num=(x:unknown):x is number=>typeof x==='number'&&Number.isFinite(x)&&x>=0;
+const count=(x:unknown):x is number=>num(x)&&Number.isSafeInteger(x);
+const pct=(x:unknown)=>num(x)&&x<=1;
+export function isChallenges(x:unknown):x is ChallengesSnapshot{
+  if(!obj(x)||!count(x.total)||!count(x.complete)||!count(x.claimed)||!count(x.ready)
+    ||!count(x.readyCoins)||!Array.isArray(x.categories)||x.categories.length>35
+    ||!x.categories.every(str)||!Array.isArray(x.entries)||x.entries.length>1000
+    ||x.total!==x.entries.length)return false;
+  return x.entries.every((e:unknown)=>obj(e)&&str(e.id)&&/^[a-z0-9-]{1,80}$/.test(e.id)
+    &&['name','description','category','progressLabel','goalLabel'].every(k=>str(e[k]))
+    &&['isAdventure','isEndgame','complete','claimed','canClaim','automaticallyAwarded'].every(k=>typeof e[k]==='boolean')
+    &&num(e.progress)&&num(e.goal)&&pct(e.fraction)&&count(e.coinReward)
+    &&(e.pack===null||str(e.pack))&&(e.empireBoost===null||str(e.empireBoost)));
+}
+export function isStatistics(x:unknown):x is StatisticsSnapshot{
+  if(!obj(x)||!obj(x.overview)||!obj(x.session)||!Array.isArray(x.games)||!Array.isArray(x.tables)
+    ||x.games.length>60||x.tables.length>200)return false;
+  if(!['net','wagered','slotSpins','playtime','rounds'].every(k=>str(x.overview[k]))
+    ||typeof x.overview.netPositive!=='boolean'||!count(x.overview.gamesTracked))return false;
+  if(!['rounds','hands','playtime','won','lost','pushes','wagered','net','blackjacks','bestStreak']
+    .every(k=>str(x.session[k])))return false;
+  return x.games.every((g:unknown)=>obj(g)&&str(g.id)&&str(g.title)
+    &&['tables','slots','relaxed'].includes(String(g.category))
+    &&(g.net===null||str(g.net))&&typeof g.positive==='boolean'
+    &&Array.isArray(g.metrics)&&g.metrics.length<=40&&g.metrics.every((m:unknown)=>
+      obj(m)&&str(m.label)&&str(m.value)))
+    &&x.tables.every((t:unknown)=>obj(t)
+      &&['name','hands','net','rounds','winRate'].every(k=>str(t[k]))
+      &&typeof t.positive==='boolean');
+}
+export function onRecordsMessage(handle:(message:RecordsMessage)=>void):()=>void{
+  const host=window.chrome?.webview;
+  if(!host)return()=>{};
+  const listener=(event:MessageEvent)=>{
+    const m:unknown=event.data;
+    if(!obj(m)||!str(m.type)||!obj(m.data))return;
+    if(m.type==='lobby.records.show'&&(m.data.page==='challenges'||m.data.page==='statistics'))
+      handle({type:m.type,data:{page:m.data.page}});
+    if(m.type==='lobby.records.snapshot'
+      && ((m.data.page==='challenges'&&isChallenges(m.data.snapshot))
+        ||(m.data.page==='statistics'&&isStatistics(m.data.snapshot))))
+      handle({type:m.type,data:m.data as RecordsMessage & never});
+    if(m.type==='lobby.records.result'
+      &&typeof m.data.success==='boolean'&&str(m.data.message)&&m.data.message.length<800&&str(m.data.id))
+      handle({type:m.type,data:{success:m.data.success,message:m.data.message,id:m.data.id}});
+  };
+  host.addEventListener('message',listener);
+  return()=>host.removeEventListener('message',listener);
+}
+export function filterChallenges(entries:ChallengeEntry[],category:string,status:ChallengeStatus,query:string){
+  const term=query.trim().toLocaleLowerCase();
+  return entries.filter(e=>(category==='All'||e.category===category)
+    &&(!term||(e.name+' '+e.description+' '+e.category+' '+(e.isEndgame?'endgame ':'')).toLocaleLowerCase().includes(term))
+    &&(status==='all'||(status==='ready'&&e.canClaim)||(status==='progress'&&!e.complete&&!e.claimed)
+      ||(status==='claimed'&&e.claimed)||(status==='unclaimed'&&!e.claimed)))
+    .sort((a,b)=>(a.claimed?2:a.canClaim?0:1)-(b.claimed?2:b.canClaim?0:1)
+      ||a.category.localeCompare(b.category)||a.name.localeCompare(b.name));
+}
+export const previewChallenges:ChallengesSnapshot={
+  total:3,complete:1,claimed:0,ready:1,readyCoins:250,
+  categories:['Blackjack','Midnight Manor'],
+  entries:[
+    {id:'bj-50',name:'A Seat at the Table',description:'Play 50 Blackjack rounds.',category:'Blackjack',
+      isAdventure:false,isEndgame:false,progress:50,goal:50,progressLabel:'50',goalLabel:'50',
+      fraction:1,complete:true,claimed:false,canClaim:true,automaticallyAwarded:false,coinReward:250,pack:'Common',empireBoost:null},
+    {id:'manor-500',name:'After Dark',description:'Play 500 paid spins in Midnight Manor.',category:'Midnight Manor',
+      isAdventure:false,isEndgame:false,progress:180,goal:500,progressLabel:'180',goalLabel:'500',
+      fraction:.36,complete:false,claimed:false,canClaim:false,automaticallyAwarded:false,coinReward:500,pack:null,empireBoost:null},
+    {id:'bj-1000',name:'Master Dealer',description:'Play 1000 rounds.',category:'Blackjack',
+      isAdventure:false,isEndgame:true,progress:50,goal:1000,progressLabel:'50',goalLabel:'1,000',
+      fraction:.05,complete:false,claimed:false,canClaim:false,automaticallyAwarded:false,coinReward:1200,pack:null,empireBoost:null},
+  ],
+};
+export const previewStatistics:StatisticsSnapshot={
+  overview:{net:'+$1,230.00',netPositive:true,wagered:'$14,000.00',slotSpins:'592',playtime:'14h 20m',rounds:'59',gamesTracked:2},
+  games:[{id:'blackjack',title:'Blackjack',category:'tables',net:'+$300.00',positive:true,metrics:[
+    {label:'Rounds',value:'59'},{label:'Hands',value:'60'},{label:'Hand win rate',value:'47.5%'},{label:'Biggest round win',value:'$320.00'}]},
+  {id:'midnight-manor',title:'Midnight Manor',category:'slots',net:'+$930.00',positive:true,metrics:[
+    {label:'Paid spins',value:'592'},{label:'Free spins',value:'42'},{label:'Total wagered',value:'$12,000.00'}]}],
+  session:{rounds:'3',hands:'3',playtime:'19m',won:'2',lost:'1',pushes:'0',wagered:'$120.00',net:'+$30.00',blackjacks:'0',bestStreak:'2'},
+  tables:[{name:'Velvet Table',hands:'48',net:'+$300.00',positive:true,rounds:'42',winRate:'50.0%'}],
+};
