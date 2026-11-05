@@ -352,8 +352,16 @@ internal static partial class Program
                 "document.querySelector('.profile-widget').click()");
             await WaitUntil(() => activeLobby.RecordsPage=="profile",
                 "React account hub did not open from the profile widget");
+            bool editorReady = false;
+            for (int i = 0; i < 100 && !editorReady; i++)
+            {
+                editorReady = await activeLobby.Browser.CoreWebView2.ExecuteScriptAsync(
+                    "Boolean(document.querySelector('.account-page .account-routes button:last-child'))") == "true";
+                if (!editorReady) await Task.Delay(50);
+            }
+            Require(editorReady, "The React account editor action was not rendered.");
             await activeLobby.Browser.CoreWebView2.ExecuteScriptAsync(
-                "document.querySelector('.account-routes button:last-child')?.click()");
+                "document.querySelector('.account-page .account-routes button:last-child')?.click()");
         }
         else
         {

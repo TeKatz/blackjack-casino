@@ -151,8 +151,16 @@ internal static partial class Program
         {
             for (int i=0;i<60 && profileHub.RecordsPage!="profile";i++) await Task.Delay(75);
             Require(profileHub.RecordsPage=="profile","Native profile shortcut did not open React account hub.");
+            bool accountEditorReady = false;
+            for(int i=0;i<100 && !accountEditorReady;i++)
+            {
+                accountEditorReady = await profileHub.Browser.CoreWebView2!.ExecuteScriptAsync(
+                    "Boolean(document.querySelector('.account-page .account-routes button:last-child'))") == "true";
+                if(!accountEditorReady) await Task.Delay(50);
+            }
+            Require(accountEditorReady,"React account edit control is missing.");
             await profileHub.Browser.CoreWebView2!.ExecuteScriptAsync(
-                "document.querySelector('.account-routes button:last-child')?.click()");
+                "document.querySelector('.account-page .account-routes button:last-child')?.click()");
             for (int i=0;i<60 && !Find<Button>(window).Any(b=>b.Name=="ProfileNameBox" || b.Name=="RenameProfileButton");i++) await Task.Delay(75);
         }
         RequireSingleHost(window,"Profile");
@@ -201,8 +209,16 @@ internal static partial class Program
             await profileRecords.Browser.CoreWebView2.ExecuteScriptAsync(
                 "document.querySelector('.profile-widget')?.click()");
             for(int i=0;i<60 && profileRecords.RecordsPage!="profile";i++) await Task.Delay(80);
+            bool editorAvailable = false;
+            for(int i=0;i<100 && !editorAvailable;i++)
+            {
+                editorAvailable = await profileRecords.Browser.CoreWebView2.ExecuteScriptAsync(
+                    "Boolean(document.querySelector('.account-page .account-routes button:last-child'))") == "true";
+                if(!editorAvailable) await Task.Delay(50);
+            }
+            Require(editorAvailable,"React account edit action has not rendered.");
             await profileRecords.Browser.CoreWebView2.ExecuteScriptAsync(
-                "document.querySelector('.account-routes button:last-child')?.click()");
+                "document.querySelector('.account-page .account-routes button:last-child')?.click()");
             for(int i=0;i<60 && !Find<Button>(window).Any(b=>b.Name=="ProfileProgressionButton"&&b.IsVisible);i++) await Task.Delay(80);
         }
         Find<Button>(window).Single(b=>b.Name=="ProfileProgressionButton" && b.IsVisible)
