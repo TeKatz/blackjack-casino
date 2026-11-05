@@ -50,13 +50,15 @@ internal sealed class ModernEmpireView : ContentControl, IDisposable
         browser.IsEnabled = false; // Old values cannot be acted on until the new snapshot is rendered.
         startupTimeout.Stop();
         startupTimeout.Start();
-        if (!Ready) SetStage("Browser vorbereiten…");
+        if (!Ready) SetStage(Local("Browser vorbereiten…", "Preparing browser…"));
     }
     internal void PauseVisit() { startupTimeout.Stop(); }
     private void Mark(string stage)
     {
         if (visitStarted != 0) visitTimings[stage] = Math.Round(Stopwatch.GetElapsedTime(visitStarted).TotalMilliseconds, 2);
     }
+    private static string Local(string german, string english)
+        => Localization.Language == UiLanguagePreference.German ? german : english;
     private void SetStage(string text) { status.Text = text; }
     internal ModernEmpireView(Func<object> snapshot, Func<EmpireModernCommand, EmpireActionResult> commit,
         Func<EmpireModernCommand, object> preview, Action close, Action? retry = null)
@@ -65,15 +67,17 @@ internal sealed class ModernEmpireView : ContentControl, IDisposable
         Name = "ModernEmpirePresentation";
         var back = new Button { Content = "← Casino lobby", HorizontalAlignment = HorizontalAlignment.Left,
             VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(20) };
+        back.Content = Local("← Casino-Lobby", "← Casino lobby");
         back.Click += (_, _) => close();
         var indicator = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
         indicator.Children.Add(new TextBlock { Text = "CASINO EMPIRE", FontSize = 28, Foreground = Brushes.Wheat,
             HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 18) });
         indicator.Children.Add(status);
+        retryButton.Content = Local("Erneut versuchen", "Retry");
         retryButton.Click += (_, _) => this.retry?.Invoke();
         indicator.Children.Add(retryButton);
         Content = new Grid { Background = new SolidColorBrush(Color.FromRgb(6, 22, 20)), Children = { indicator, back, browser } };
-        startupTimeout.Tick += (_, _) => Fail("Laden dauert zu lange. Zur Lobby zurückkehren oder erneut versuchen. / Loading timed out.");
+        startupTimeout.Tick += (_, _) => Fail(Local("Das Laden dauert zu lange. Zur Lobby zurückkehren oder erneut versuchen.", "Loading timed out. Return to the lobby or retry."));
         BeginVisit(Stopwatch.GetTimestamp());
         Loaded += OnLoaded;
         IsVisibleChanged += OnVisibility;
@@ -86,7 +90,7 @@ internal sealed class ModernEmpireView : ContentControl, IDisposable
         owner = Window.GetWindow(this);
         if (owner is not null) owner.StateChanged += OnWindowState;
         string folder = Path.Combine(AppContext.BaseDirectory, "ModernFrontend");
-        if (!File.Exists(Path.Combine(folder, "empire.html"))) { Fail("Empire presentation is missing. Return to the lobby and update the application."); return; }
+        if (!File.Exists(Path.Combine(folder, "empire.html"))) { Fail(Local("Die Casino-Empire-Dateien fehlen. Bitte die Anwendung aktualisieren.", "Empire presentation is missing. Update the application.")); return; }
         try
         {
             await browser.EnsureCoreWebView2Async();
@@ -104,17 +108,17 @@ internal sealed class ModernEmpireView : ContentControl, IDisposable
             core.PermissionRequested += (_, args) => args.State = CoreWebView2PermissionState.Deny;
             core.NavigationCompleted += (_, args) =>
             {
-                if (!args.IsSuccess) Fail("Anwesen konnte nicht geladen werden. / Empire could not load.");
-                else if (!Failed) { Mark("navigation_completed"); SetStage("Anwesen laden… / Loading estate…"); }
+                if (!args.IsSuccess) Fail(Local("Das Anwesen konnte nicht geladen werden.", "Empire could not load."));
+                else if (!Failed) { Mark("navigation_completed"); SetStage(Local("Anwesen laden…", "Loading estate…")); }
             };
-            core.ProcessFailed += (_, _) => Fail("Empire presentation stopped. Reopen it to restore the saved state.");
+            core.ProcessFailed += (_, _) => Fail(Local("Die Empire-Ansicht wurde beendet. Erneut öffnen, um den gespeicherten Stand zu laden.", "Empire presentation stopped. Reopen it to restore the saved state."));
             core.WebMessageReceived += OnMessage;
-            SetStage("Browser vorbereiten… / Preparing browser…");
+            SetStage(Local("Browser vorbereiten…", "Preparing browser…"));
             Mark("navigation_started");
             browser.Source = new Uri("https://" + ManorPreviewProtocol.VirtualHost + "/empire.html");
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException or System.Runtime.InteropServices.COMException)
-        { Fail("Empire could not start: " + ex.Message); }
+        { Fail(Local("Empire konnte nicht gestartet werden: ", "Empire could not start: ") + ex.Message); }
     }
     private void OnMessage(object? sender, CoreWebView2WebMessageReceivedEventArgs args)
     {
