@@ -37,7 +37,6 @@ public partial class MainWindow
         InitializeSplitOpportunityCue();
         InitializeTableWagerPresentation();
         InitializeLobby();
-        InitializeDailyLoginDrawer();
         var tableAtmosphere=new System.Windows.Threading.DispatcherTimer {Interval=TimeSpan.FromMilliseconds(80)};
         tableAtmosphere.Tick+=(_,_)=> {if(AnimationsEnabled && !EmpirePageOpen && lobby?.Visibility!=Visibility.Visible && embeddedGameShell is null) TableArt.Phase+=.08;};
         tableAtmosphere.Start(); Closed+=(_,_)=>tableAtmosphere.Stop();
@@ -54,7 +53,6 @@ public partial class MainWindow
 
     private void PresentationClosed(object? sender, EventArgs e)
     {
-        ShutdownDailyLoginDrawer();
         ShutdownVaultFeature();
         ShutdownProgressionFeature();
         backgroundMusic.Dispose();

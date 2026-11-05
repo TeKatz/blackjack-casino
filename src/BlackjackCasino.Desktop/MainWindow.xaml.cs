@@ -80,10 +80,8 @@ public partial class MainWindow : Window
     {
         initialProfile=profile; testSession=initialPreferences is not null;
         InitializeComponent();
-        // The Blackjack table is constructed by XAML, but should never be seen before
-        // the startup news and prepared casino lobby. Smoke tests use a plain Application.
-        if (!testSession && Application.Current is App)
-            Opacity = 0;
+        // Blackjack visuals stay collapsed until the player chooses the table.
+        // The lobby loading cover is the initial visible application surface.
 
         string? manorRecoveryNotice = null;
         try { if(!testSession) new ManorPersistence(ManorPersistence.DefaultDirectory).Recover(); }

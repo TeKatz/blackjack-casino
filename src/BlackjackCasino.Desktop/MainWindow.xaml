@@ -144,7 +144,7 @@
       </Grid>
     </Border>
 
-    <Grid x:Name="TableSurface" Grid.Row="1" Background="{DynamicResource TableBackgroundBrush}" ClipToBounds="True">
+    <Grid x:Name="TableSurface" Visibility="Collapsed" Grid.Row="1" Background="{DynamicResource TableBackgroundBrush}" ClipToBounds="True">
       <local:CasinoTableBackdrop x:Name="TableArt" Felt="{DynamicResource TableBackgroundBrush}" IsHitTestVisible="False"/>
       <Viewbox Stretch="Uniform" Margin="42,38,42,22" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
       <Grid Width="850" Height="900">
@@ -168,7 +168,7 @@
       </Grid></Viewbox>
     </Grid>
 
-    <Border Grid.Row="1" Grid.Column="1" Background="{DynamicResource SideBackgroundBrush}" BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="1,0,0,0" Panel.ZIndex="4">
+    <Border x:Name="BlackjackSidebar" Visibility="Collapsed" Grid.Row="1" Grid.Column="1" Background="{DynamicResource SideBackgroundBrush}" BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="1,0,0,0" Panel.ZIndex="4">
       <Border.Effect><DropShadowEffect Color="#000000" BlurRadius="20" ShadowDepth="5" Direction="180" Opacity="0.42" /></Border.Effect>
       <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <StackPanel Margin="14,16,14,20">

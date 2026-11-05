@@ -605,7 +605,7 @@ internal static class Program
             + "DOM validation returned " + result);
 
         RequireNoLegacyLobbyFrame(window, "rendered React lobby");
-        Require(!Find<LobbyDailyDrawer>(window).Any(drawer => drawer.IsVisible),
+        Require(!Find<FrameworkElement>(window).Any(drawer => drawer.Name == "LobbyDailyDrawer" && drawer.IsVisible),
             "The obsolete daily-login drawer is still layered over the React lobby.");
 
         await Task.Delay(400);

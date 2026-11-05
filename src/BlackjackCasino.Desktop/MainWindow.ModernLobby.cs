@@ -108,9 +108,6 @@ public partial class MainWindow
                 && lobby?.Visibility == Visibility.Visible
                 ? Visibility.Visible : Visibility.Collapsed;
 
-        // The old slide-out daily drawer belongs only to the WPF fallback.
-        if (fallback && lobby is not null && dailyLoginDrawer is null)
-            InitializeDailyLoginDrawer();
 
         UpdateHostHeaderVisibility(embeddedGameOverlay?.IsVisible == true);
     }
