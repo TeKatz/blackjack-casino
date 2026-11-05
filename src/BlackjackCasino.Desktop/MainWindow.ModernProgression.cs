@@ -316,14 +316,17 @@ public partial class MainWindow
     {
         if (modernLobby is not { Ready: true } || modernLobby.Failed)
         {
-            OpenProgressionPage(page == "statistics" ? "Overview" : "Challenges");
+            if (page == "statistics") OpenProfileStatistics("Statistics");
+            else OpenProgressionPage("Challenges");
             return;
         }
         if (progressionController is null) return;
         progressionController.AccruePlaytime();
         ProcessLatestCompletedRound();
-        while (MetaPageOpen) CloseMetaPage();
+        // Prepare React's destination while the native overlay is still opaque.
+        // This prevents a brief exposure of the previous React lobby page.
         modernLobby.ShowProgression(page);
+        while (MetaPageOpen) CloseMetaPage();
         modernLobby.SetLobbyVisible(true);
         UpdateHostHeaderVisibility(embeddedGameOverlay?.IsVisible == true);
     }

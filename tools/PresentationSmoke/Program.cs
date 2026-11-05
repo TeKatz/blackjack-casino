@@ -302,7 +302,8 @@ internal static partial class Program
                 + "return Boolean(root&&root.querySelector('[data-stat-game=\"blackjack\"]')"
                 + "&&root.querySelector('[data-stat-game=\"midnight-dice\"]')"
                 + "&&root.querySelector('[data-stat-game=\"neon-vault\"]')"
-                + "&&root.querySelector('.stat-table'));})()");
+                + "&&root.querySelector('.session-metrics')"
+                + "&&root.querySelector('.table-archive'));})()");
             Require(statsUi=="true","Statistics missing game breakdown, session or table statistics.");
             await using(FileStream shot=File.Create(Path.Combine(output,"modern-statistics-presentation.png")))
                 await web.CapturePreviewAsync(
