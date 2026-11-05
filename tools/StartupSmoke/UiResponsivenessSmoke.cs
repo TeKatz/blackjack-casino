@@ -132,7 +132,26 @@ internal static class UiResponsivenessSmoke
             var counter = (EmpireBalanceCounter)window.FindName("EmpireHeaderBalance");
             Require(!DependencyPropertyHelper.GetValueSource(counter, EmpireBalanceCounter.DisplayedAmountProperty).IsAnimated,
                 "The hidden Empire header continues to animate underneath a menu.");
-            Find<Button>(window).Single(b => b.Name == "ProgressionBackButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            ModernLobbyView? modernRecords = Find<ModernLobbyView>(window)
+                .FirstOrDefault(view => view.Ready && view.IsVisible);
+            if (modernRecords is not null)
+            {
+                for (int i = 0; i < 90 && modernRecords.RecordsPage != "challenges"; i++)
+                    await Task.Delay(60);
+                Require(modernRecords.RecordsPage == "challenges",
+                    "The responsiveness test did not reach React Challenges.");
+                await modernRecords.Browser.CoreWebView2!.ExecuteScriptAsync(
+                    "document.querySelector('.record-page .shop-back')?.click()");
+                for (int i = 0; i < 70 && modernRecords.RecordsPage is not null; i++)
+                    await Task.Delay(60);
+                Require(modernRecords.RecordsPage is null,
+                    "React Challenges did not release the casino header.");
+            }
+            else
+            {
+                Find<Button>(window).Single(b => b.Name == "ProgressionBackButton" && b.IsVisible)
+                    .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            }
             File.WriteAllText(Path.Combine(output, "ui-responsiveness-result.txt"), "PASS: right-aligned bankroll rail; readable unscaled hub text; loaded/equipped card styling; no per-layout card scans; stopped covered header clocks; rendering and input latency samples recorded.");
         }
         finally

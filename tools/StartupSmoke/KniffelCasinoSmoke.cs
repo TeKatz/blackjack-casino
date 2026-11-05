@@ -98,9 +98,14 @@ internal static class KniffelCasinoSmoke
         {
             var web = modern.Browser.CoreWebView2!;
             await Until(() => modern.RecordsPage == "statistics");
-            string diceStats = await web.ExecuteScriptAsync(
-                "Boolean(document.querySelector('.statistics-page [data-stat-game=\"midnight-dice\"]'))");
-            Require(diceStats == "true", "React lifetime statistics have no Midnight Dice card.");
+            bool diceStats = false;
+            for (int i = 0; i < 100 && !diceStats; i++)
+            {
+                diceStats = await web.ExecuteScriptAsync(
+                    "Boolean(document.querySelector('.statistics-page [data-stat-game=\"midnight-dice\"]'))") == "true";
+                if (!diceStats) await Task.Delay(75);
+            }
+            Require(diceStats, "React lifetime statistics have no Midnight Dice card.");
             await using(FileStream capture = File.Create(Path.Combine(output,"dice-statistics.png")))
                 await web.CapturePreviewAsync(
                     Microsoft.Web.WebView2.Core.CoreWebView2CapturePreviewImageFormat.Png,capture);
@@ -120,13 +125,23 @@ internal static class KniffelCasinoSmoke
         {
             var web = modern.Browser.CoreWebView2!;
             await Until(() => modern.RecordsPage == "challenges");
-            string selected = await web.ExecuteScriptAsync(
-                "(()=>{const button=[...document.querySelectorAll('.record-category')]"
-                + ".find(x=>x.textContent?.includes('Midnight Dice'));button?.click();return !!button;})()");
-            Require(selected == "true", "React Challenges lacks Midnight Dice category.");
-            string firstSheet = await web.ExecuteScriptAsync(
-                "Boolean([...document.querySelectorAll('.record-challenge h3')].some(x=>x.textContent==='First Sheet'))");
-            Require(firstSheet == "true", "Midnight Dice achievement is absent from the React challenge board.");
+            bool selected = false;
+            for (int i = 0; i < 100 && !selected; i++)
+            {
+                selected = await web.ExecuteScriptAsync(
+                    "(()=>{const button=[...document.querySelectorAll('.record-category')]"
+                    + ".find(x=>x.textContent?.includes('Midnight Dice'));button?.click();return !!button;})()") == "true";
+                if(!selected) await Task.Delay(75);
+            }
+            Require(selected, "React Challenges lacks Midnight Dice category.");
+            bool firstSheet = false;
+            for (int i = 0; i < 100 && !firstSheet; i++)
+            {
+                firstSheet = await web.ExecuteScriptAsync(
+                    "Boolean([...document.querySelectorAll('.record-challenge h3')].some(x=>x.textContent==='First Sheet'))") == "true";
+                if(!firstSheet) await Task.Delay(75);
+            }
+            Require(firstSheet, "Midnight Dice achievement is absent from the React challenge board.");
             await using(FileStream capture = File.Create(Path.Combine(output,"dice-achievements.png")))
                 await web.CapturePreviewAsync(
                     Microsoft.Web.WebView2.Core.CoreWebView2CapturePreviewImageFormat.Png,capture);

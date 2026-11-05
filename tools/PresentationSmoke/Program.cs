@@ -173,9 +173,14 @@ internal static partial class Program
             for (int i=0;i<70 && profileRecords.RecordsPage!="statistics";i++) await Task.Delay(80);
             Require(profileRecords.RecordsPage=="statistics" && profileRecords.IsVisible,
                 "Profile Statistics did not migrate to React.");
-            string statsFromProfile=await profileRecords.Browser.CoreWebView2!.ExecuteScriptAsync(
-                "Boolean(document.querySelector('.statistics-page [data-stat-game=\"blackjack\"]'))");
-            Require(statsFromProfile=="true","Profile Statistics lacks the real Blackjack lifetime card.");
+            bool statsFromProfile=false;
+            for(int i=0;i<100&&!statsFromProfile;i++)
+            {
+                statsFromProfile=await profileRecords.Browser.CoreWebView2!.ExecuteScriptAsync(
+                    "Boolean(document.querySelector('.statistics-page [data-stat-game=\"blackjack\"]'))")=="true";
+                if(!statsFromProfile)await Task.Delay(75);
+            }
+            Require(statsFromProfile,"Profile Statistics lacks the real Blackjack lifetime card.");
             await profileRecords.Browser.CoreWebView2.ExecuteScriptAsync(
                 "document.querySelector('.statistics-page .shop-back')?.click()");
             await Task.Delay(80);
