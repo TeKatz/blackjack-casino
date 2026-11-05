@@ -112,6 +112,10 @@ public partial class MainWindow
         metaPages.Push(new MetaPage(shell, content));
         metaHost!.Content = content;
         metaOverlay.Visibility = Visibility.Visible;
+        // WebView2 is an HWND/composition surface: keep it out of the native page's
+        // airspace while an embedded WPF profile, shop or album is foregrounded.
+        modernLobby?.SetLobbyVisible(false);
+        UpdateHostHeaderVisibility(embeddedGameOverlay?.IsVisible == true);
         Dispatcher.BeginInvoke(() => content.MoveFocus(new TraversalRequest(FocusNavigationDirection.First)));
     }
 
@@ -176,6 +180,10 @@ public partial class MainWindow
             metaCoveredElements.Clear();
             if (metaPreviousFocus is not null) Keyboard.Focus(metaPreviousFocus);
             metaPreviousFocus = null;
+            // The lobby is visible underneath the native meta page, so its own
+            // IsVisibleChanged handler never fires. Restore React explicitly.
+            modernLobby?.SetLobbyVisible(lobby?.Visibility == Visibility.Visible);
+            UpdateHostHeaderVisibility(embeddedGameOverlay?.IsVisible == true);
         }
     }
 
