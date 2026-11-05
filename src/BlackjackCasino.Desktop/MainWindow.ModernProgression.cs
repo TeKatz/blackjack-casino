@@ -514,6 +514,7 @@ public partial class MainWindow
             else if (page == "statistics") OpenProfileStatistics("Statistics");
             else if (page == "history") OpenProfileStatistics("Hand History");
             else if (page == "vault") VaultButton_Click(this, new System.Windows.RoutedEventArgs());
+            else if (page == "album") OpenNativeCollectionAlbumPage();
             else OpenProgressionPage(page == "season" ? "Season Pass" : "Challenges");
             return;
         }

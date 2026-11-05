@@ -48,9 +48,9 @@ public partial class MainWindow
                 OpenModernShopFromProgression();
                 return;
             }
-            if (tab is "Challenges" or "Statistics" or "Overview" or "Season Pass" or "Hand History")
+            if (tab is "Challenges" or "Statistics" or "Overview" or "Season Pass" or "Hand History" or "Album" or "Collector's Album")
             {
-                OpenModernProgression(tab == "Challenges" ? "challenges" : tab == "Season Pass" ? "season" : tab == "Hand History" ? "history" : "statistics");
+                OpenModernProgression(tab == "Challenges" ? "challenges" : tab == "Season Pass" ? "season" : tab == "Hand History" ? "history" : tab is "Album" or "Collector's Album" ? "album" : "statistics");
                 return;
             }
         }
@@ -92,6 +92,17 @@ public partial class MainWindow
     }
 
     private void OpenCollectionAlbumPage()
+    {
+        if (modernLobby is { Ready: true } && !modernLobby.Failed)
+        {
+            OpenModernProgression("album");
+            return;
+        }
+        OpenNativeCollectionAlbumPage();
+    }
+
+    // Kept only for WPF fallback, plus the existing detailed native regression suite.
+    internal void OpenNativeCollectionAlbumPage()
     {
         if (progressionController is null || MetaPageOpen) return;
         progressionController.AccruePlaytime();

@@ -32,6 +32,10 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
     private readonly Func<object> historySnapshot;
     private readonly Func<object> seasonsSnapshot;
     private readonly Func<object> vaultSnapshot;
+    private readonly Func<object> albumSnapshot;
+    private readonly Func<string, (bool Success, string Message)> albumOpen;
+    private readonly Func<string, (bool Success, string Message)> albumComplete;
+    private readonly Func<string, (bool Success, string Message)> albumClaim;
     private readonly Func<(bool Success, string Message, object? Reward)> vaultOpen;
     private readonly Func<string, (bool Success, string Message)> renameProfile;
     private readonly Func<string, (bool Success, string Message)> equipProfile;
@@ -71,7 +75,11 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
         Func<string, (bool Success, string Message)> packAction, Action shopClosed,
         Func<object> challengesSnapshot, Func<object> statisticsSnapshot,
         Func<object> accountSnapshot, Func<object> historySnapshot, Func<object> seasonsSnapshot,
-        Func<object> vaultSnapshot, Func<string, (bool Success, string Message)> renameProfile,
+        Func<object> vaultSnapshot, Func<object> albumSnapshot,
+        Func<string, (bool Success, string Message)> albumOpen,
+        Func<string, (bool Success, string Message)> albumComplete,
+        Func<string, (bool Success, string Message)> albumClaim,
+        Func<string, (bool Success, string Message)> renameProfile,
         Func<string, (bool Success, string Message)> equipProfile,
         Func<string, (bool Success, string Message)> activateSeason,
         Func<(bool Success, string Message, object? Reward)> vaultOpen,
@@ -92,6 +100,10 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
         this.historySnapshot = historySnapshot;
         this.seasonsSnapshot = seasonsSnapshot;
         this.vaultSnapshot = vaultSnapshot;
+        this.albumSnapshot = albumSnapshot;
+        this.albumOpen = albumOpen;
+        this.albumComplete = albumComplete;
+        this.albumClaim = albumClaim;
         this.vaultOpen = vaultOpen;
         this.renameProfile = renameProfile;
         this.equipProfile = equipProfile;
@@ -155,6 +167,7 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
                 "history" => historySnapshot(),
                 "season" => seasonsSnapshot(),
                 "vault" => vaultSnapshot(),
+                "album" => albumSnapshot(),
                 _ => throw new InvalidOperationException("Unsupported progression route."),
             },
         });
@@ -162,7 +175,7 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
 
     internal void ShowProgression(string page)
     {
-        if (!Ready || disposed || failed || page is not ("challenges" or "statistics" or "profile" or "history" or "season" or "vault")) return;
+        if (!Ready || disposed || failed || page is not ("challenges" or "statistics" or "profile" or "history" or "season" or "vault" or "album")) return;
         shopOpen = false;
         recordsPage = page;
         PostMessage("lobby.records.show", new { Page = page });
@@ -289,7 +302,7 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
                     Refresh();
                     if (recordsPage is not null) RefreshRecords();
                     break;
-                case "lobby.records.open" when id is "challenges" or "statistics" or "profile" or "history" or "season" or "vault":
+                case "lobby.records.open" when id is "challenges" or "statistics" or "profile" or "history" or "season" or "vault" or "album":
                     shopOpen = false;
                     recordsPage = id;
                     RefreshRecords();
@@ -298,6 +311,30 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
                     recordsPage = null;
                     recordsClosed();
                     break;
+                case "lobby.album.open" when recordsPage == "album" && id is not null:
+                {
+                    var result = albumOpen(id);
+                    PostMessage("lobby.album.result", new { Operation = "open", Id = id, result.Success, result.Message });
+                    RefreshRecords();
+                    Refresh();
+                    break;
+                }
+                case "lobby.album.complete" when recordsPage == "album" && id is not null:
+                {
+                    var result = albumComplete(id);
+                    PostMessage("lobby.album.result", new { Operation = "complete", Id = id, result.Success, result.Message });
+                    RefreshRecords();
+                    Refresh();
+                    break;
+                }
+                case "lobby.album.claim" when recordsPage == "album" && id is not null:
+                {
+                    var result = albumClaim(id);
+                    PostMessage("lobby.album.result", new { Operation = "claim", Id = id, result.Success, result.Message });
+                    RefreshRecords();
+                    Refresh();
+                    break;
+                }
                 case "lobby.records.vault.open" when recordsPage == "vault":
                 {
                     var result = vaultOpen();
