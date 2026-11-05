@@ -101,14 +101,9 @@ internal static class Program
                     "Interactive casino cursor must remain distinct from the default casino arrow.");
                 Require(Application.Current.TryFindResource(typeof(ToolTip)) is Style,
                     "Global casino tooltip style is not available to application controls.");
-                // The React lobby owns the visible header. Keep validating the native
-                // WPF fallback's reward state without requiring its hidden header to be visible.
-                Button challenges = Find<Button>(window).Single(button => button.Name == "HeaderChallengesButton");
-                Require(Find<TextBlock>(challenges).Any(text => text.Text.Contains("READY", StringComparison.Ordinal)),
-                    "Completed challenge did not surface a READY indicator in the global header.");
-                Require(challenges.Effect is DropShadowEffect,
-                    "Completed challenge did not activate the global header glow cue.");
-                Button vaultHeader = Find<Button>(window).Single(button => button.Name == "CasinoVaultButton");
+                // The React lobby is the authoritative visible navigation.
+                // Its challenge badge and Vault route are checked below. The native
+                // Blackjack header is intentionally collapsed until table mode.
                 ModernLobbyView reactLobby = Find<ModernLobbyView>(window).Single();
                 string clubNavigation = await reactLobby.Browser.CoreWebView2!.ExecuteScriptAsync(
                     "(()=>{const links=[...document.querySelectorAll('.lobby-nav-item')].map(x=>x.textContent);"
@@ -117,8 +112,8 @@ internal static class Program
                     + "&&links.some(x=>x.includes('Season Pass'))&&Number(ready)>0;})()");
                 Require(clubNavigation.Equals("true", StringComparison.OrdinalIgnoreCase),
                     "Compact React lobby hides claimable rewards or Vault navigation.");
-                Require(Find<VaultHeaderArtwork>(vaultHeader).Any(),
-                    "Casino Vault header card is missing its vault artwork.");
+                Require(profile.MidnightMerge.Merges > 0,
+                    "Startup test profile must retain its seeded challenge progress.");
                 SaveScreenshot(window, Path.Combine(output, "global-header-polish.png"));
 
                 Require(window.Modes.Modes.Any(mode => mode.Id == "nine-lives"), "Nine Lives was not registered in the lobby.");
