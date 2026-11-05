@@ -74,6 +74,13 @@ internal sealed class ModernBlackjackView : ContentControl, IDisposable
             Children = { status, back, browser },
         };
         Loaded += OnLoaded;
+        IsVisibleChanged += (_, _) =>
+        {
+            // A ready message can arrive before a newly hosted browser has
+            // completed its first WPF visibility/layout pass. Retry the native
+            // snapshot when the view really becomes visible.
+            if (IsVisible && listening && !disposed && !Failed) Refresh();
+        };
     }
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
@@ -128,6 +135,9 @@ internal sealed class ModernBlackjackView : ContentControl, IDisposable
                 case "blackjack.ready":
                     listening = true;
                     Refresh();
+                    // Do not rely exclusively on the synchronous first
+                    // IsVisible check: the view may still be attaching.
+                    Dispatcher.BeginInvoke(new Action(Refresh), DispatcherPriority.Loaded);
                     break;
                 case "blackjack.ui-ready":
                     if (listening)

@@ -22,8 +22,23 @@ internal static partial class Program
             if (table is { Ready: true }) break;
             if (table is { Failed: true }) break;
         }
-        Require(table is { Ready: true, Failed: false, IsVisible: true },
-            "Primary modern Blackjack route failed to initialize WebView2 and native snapshot.");
+        if (table is not { Ready: true, Failed: false, IsVisible: true })
+        {
+            var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+            var overlay = typeof(MainWindow).GetField("embeddedGameOverlay", flags)?.GetValue(window)
+                as FrameworkElement;
+            var lobby = Find<CasinoLobbyView>(window).FirstOrDefault();
+            string reason = "Primary modern Blackjack route did not initialize. "
+                + $"FrontendPresent={ModernBlackjackView.IsAvailable}; "
+                + $"HostOverlay={overlay?.Visibility}/{overlay?.IsVisible}; "
+                + $"LegacyLobby={lobby?.Visibility}/{lobby?.IsVisible}; "
+                + $"NativeSurface={((FrameworkElement)window.FindName("TableSurface")).Visibility}; "
+                + $"ModernViews={Find<ModernBlackjackView>(window).Count()}; "
+                + $"BrowserSource={table?.Browser.Source}; "
+                + $"Ready={table?.Ready}; Failed={table?.Failed}; Visible={table?.IsVisible}.";
+            File.WriteAllText(Path.Combine(output, "modern-blackjack-route-diagnostic.txt"), reason);
+            throw new InvalidOperationException(reason);
+        }
         var web = table!.Browser.CoreWebView2!;
         Require(await web.ExecuteScriptAsync(
             "Boolean(document.querySelector('.bj-app[data-phase]') && document.querySelector('[data-testid=\"blackjack-deal\"]'))") == "true",

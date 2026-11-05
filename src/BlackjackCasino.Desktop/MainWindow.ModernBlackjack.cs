@@ -30,6 +30,11 @@ public partial class MainWindow
             || MetaPageOpen || embeddedGameShell is not null || !ModernBlackjackView.IsAvailable) return;
         EnsureEmbeddedGameHost();
         ProcessLatestCompletedRound();
+        // Hide the active lobby browser before attaching Blackjack's WebView2.
+        // The preview formerly did this indirectly by opening the native table
+        // first. Keep both launch paths identical during host initialization.
+        HideBlackjackTable();
+        if (lobby is not null) lobby.Visibility = Visibility.Collapsed;
         modernBlackjackView = new ModernBlackjackView(
             () => BlackjackModernSnapshot.Create(session, selectedBet,
                 playMode == PlayModePreference.FullTable, aiSeatCount,
@@ -45,8 +50,6 @@ public partial class MainWindow
         }
         embeddedGameHost!.Content = modernBlackjackView;
         embeddedGameOverlay!.Visibility = Visibility.Visible;
-        HideBlackjackTable();
-        if (lobby is not null) lobby.Visibility = Visibility.Collapsed;
         KeyboardNavigation.SetTabNavigation(modernBlackjackView, KeyboardNavigationMode.Cycle);
         modeRegistry.NotifyStateChanged();
     }
