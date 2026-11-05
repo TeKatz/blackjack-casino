@@ -13,7 +13,7 @@ internal static class NavigationSmoke
         void Check(object sender, DependencyPropertyChangedEventArgs e)
         {
             if ((bool)e.NewValue) return;
-            if (overlay is not { IsVisible: true } || overlay.Children.OfType<ContentControl>().FirstOrDefault()?.Content is null)
+            if (overlay is not { IsVisible: true } || !overlay.Children.OfType<ContentControl>().Any(host => host.Visibility == Visibility.Visible && host.Content is not null))
                 throw new InvalidOperationException("Blackjack table exposed before destination was ready: " + id);
         }
         lobby.IsVisibleChanged += Check;
