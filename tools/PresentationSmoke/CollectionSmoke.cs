@@ -124,8 +124,10 @@ internal static partial class Program
         await Task.Delay(40); window.UpdateLayout();
         if (Find<Button>(window).Any(b => b.Name == "ProfileBackButton" && b.IsVisible))
             Find<Button>(window).Single(b => b.Name == "ProfileBackButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-        await WaitUntil(() => Find<ModernLobbyView>(window).Any(v => v.Ready && v.IsVisible),
-            "Album Back did not restore the React lobby");
+        await WaitUntil(() => Find<CasinoLobbyView>(window).Any(v => v.IsVisible)
+            && (!ModernLobbyView.IsAvailable
+                || Find<ModernLobbyView>(window).Any(v => v.Ready && v.IsVisible)),
+            "Album Back did not restore the active casino lobby");
         Require(Find<CasinoLobbyView>(window).Any(v => v.IsVisible), "Album Back did not restore the lobby");
         await OpenAlbumFromLobby(window, fromHeader: true);
         await Task.Delay(60); window.UpdateLayout();
