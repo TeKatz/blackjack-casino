@@ -20,7 +20,8 @@ public partial class MainWindow
             return;
 
         modernLobby = new ModernLobbyView(
-            modeRegistry, GetModernLobbySnapshot, OpenProgression,
+            modeRegistry, GetModernLobbySnapshot, GetModernShopSnapshot,
+            ModernShopCosmeticAction, ModernShopPackAction, OnModernShopClosed, OpenProgression,
             OpenPlayerProfile, () => VaultButton_Click(this, new RoutedEventArgs()),
             () => { ClaimDailyLoginFromDrawer(); modernLobby?.Refresh(); },
             Close, OnModernLobbyStateChanged);

@@ -22,6 +22,10 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
 
     private readonly WebView2 browser = new() { Visibility = Visibility.Hidden };
     private readonly Func<object> snapshot;
+    private readonly Func<object> shopSnapshot;
+    private readonly Func<string, (bool Success, string Message)> cosmeticAction;
+    private readonly Func<string, (bool Success, string Message)> packAction;
+    private readonly Action shopClosed;
     private readonly CasinoModeRegistry modes;
     private readonly Action<string> progression;
     private readonly Action profile;
@@ -31,11 +35,13 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
     private readonly Action readyChanged;
     private bool initialized;
     private bool listening;
+    private bool shopOpen;
     private bool ready;
     private bool failed;
     private bool disposed;
 
     internal bool Ready => ready && !failed;
+    internal bool ShopOpen => shopOpen;
     internal bool Failed => failed;
     internal string? FailureReason { get; private set; }
     internal string? LastNavigation { get; private set; }
@@ -44,11 +50,18 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
     internal WebView2 Browser => browser;
 
     internal ModernLobbyView(CasinoModeRegistry modes, Func<object> snapshot,
+        Func<object> shopSnapshot,
+        Func<string, (bool Success, string Message)> cosmeticAction,
+        Func<string, (bool Success, string Message)> packAction, Action shopClosed,
         Action<string> progression, Action profile, Action vault, Action dailyClaim, Action exit,
         Action readyChanged)
     {
         this.modes = modes;
         this.snapshot = snapshot;
+        this.shopSnapshot = shopSnapshot;
+        this.cosmeticAction = cosmeticAction;
+        this.packAction = packAction;
+        this.shopClosed = shopClosed;
         this.progression = progression;
         this.profile = profile;
         this.vault = vault;
@@ -69,15 +82,35 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
         if (visible) Refresh();
     }
 
+    private void PostMessage(string type, object? data)
+    {
+        if (!listening || disposed || failed || browser.CoreWebView2 is null) return;
+        browser.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(new { type, data }, Json));
+    }
+
     internal void Refresh()
     {
         if (!listening || disposed || failed || browser.CoreWebView2 is null) return;
         try
         {
-            var message = new { type = "lobby.snapshot", data = snapshot() };
-            browser.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(message, Json));
+            PostMessage("lobby.snapshot", snapshot());
+            if (shopOpen) RefreshShop();
         }
         catch (InvalidOperationException ex) { Fail("Snapshot delivery failed: " + ex.Message); }
+    }
+
+    private void RefreshShop()
+    {
+        if (!shopOpen || !listening || disposed || failed || browser.CoreWebView2 is null) return;
+        PostMessage("lobby.shop.snapshot", shopSnapshot());
+    }
+
+    internal void ShowShop()
+    {
+        if (!Ready || !listening || disposed || failed) return;
+        shopOpen = true;
+        PostMessage("lobby.shop.show", null);
+        RefreshShop();
     }
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
@@ -176,6 +209,30 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
                 case "lobby.refresh":
                     Refresh();
                     break;
+                case "lobby.shop.open":
+                    shopOpen = true;
+                    RefreshShop();
+                    break;
+                case "lobby.shop.close":
+                    shopOpen = false;
+                    shopClosed();
+                    break;
+                case "lobby.shop.action" when shopOpen && id is not null:
+                {
+                    var result = cosmeticAction(id);
+                    PostMessage("lobby.shop.result", new { Id = id, result.Success, result.Message });
+                    RefreshShop();
+                    Refresh();
+                    break;
+                }
+                case "lobby.shop.pack" when shopOpen && id is not null:
+                {
+                    var result = packAction(id);
+                    PostMessage("lobby.shop.result", new { Id = id, result.Success, result.Message });
+                    RefreshShop();
+                    Refresh();
+                    break;
+                }
                 case "lobby.open" when id is not null:
                     modes.Open(id);
                     break;

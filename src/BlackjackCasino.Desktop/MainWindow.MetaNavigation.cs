@@ -31,12 +31,19 @@ public partial class MainWindow
     private void OpenProgressionPage(string tab)
     {
         if (progressionController is null) return;
+        if (tab == "Cosmetic Shop" && modernLobby is { Ready: true })
+        {
+            OpenModernShopFromProgression();
+            return;
+        }
         progressionController.AccruePlaytime();
         ProcessLatestCompletedRound();
         var page = new ProgressionWindow(progressionController, preferences.Presentation("progression").AnimationsEnabled, preferences.Presentation("progression").SoundEnabled);
         page.RemoveAlbumTab();
         page.RemoveProfileTabs();
         page.ConfigureEmbeddedPresentation(CloseMetaPage);
+        if (modernLobby is { Ready: true })
+            page.ConfigureModernShop(OpenModernShopFromProgression);
         page.SelectTab(tab);
         ShowMetaPage(page);
     }
