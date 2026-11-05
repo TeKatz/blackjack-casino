@@ -29,6 +29,23 @@ internal static class VaultSmoke
                 // The Vault is a native-authoritative React page. The old WPF modal
                 // remains available only for fallback and table-mode navigation.
                 CoreWebView2 web = modern.Browser.CoreWebView2!;
+                // The WebView2 message handler may run in a different async
+                // ExecutionContext than this test. Switch the application locale
+                // itself so the UI and C# payout formatter are both German.
+                bool startedGerman = await web.ExecuteScriptAsync(
+                    "document.documentElement.lang==='de'") == "true";
+                if (!startedGerman)
+                {
+                    await web.ExecuteScriptAsync("document.querySelector('.lobby-language')?.click()");
+                    bool germanReady = false;
+                    for (int i=0;i<100 && !germanReady;i++)
+                    {
+                        germanReady = await web.ExecuteScriptAsync(
+                            "document.documentElement.lang==='de'") == "true";
+                        if (!germanReady) await Task.Delay(50);
+                    }
+                    Require(germanReady,"React Vault smoke did not activate the persisted German casino locale.");
+                }
                 string link = await web.ExecuteScriptAsync(
                     "Boolean([...document.querySelectorAll('.lobby-nav-item')]"
                     + ".find(x=>/Vault|Tresor/.test(x.textContent||'')))");
@@ -61,7 +78,15 @@ internal static class VaultSmoke
                     if (rewarded) break;
                     await Task.Delay(75);
                 }
-                Require(rewarded, "React Vault did not display the German-formatted Gold $60,000 payout.");
+                if (!rewarded)
+                {
+                    string diagnostics = await web.ExecuteScriptAsync(
+                        "JSON.stringify({notice:document.querySelector('.vault-notice')?.textContent,"
+                        + "reward:document.querySelector('.vault-reward')?.textContent,"
+                        + "button:document.querySelector('.vault-break')?.textContent})");
+                    throw new InvalidOperationException(
+                        "React Vault did not display the German-formatted Gold $60,000 payout. DOM: " + diagnostics);
+                }
                 Require(await web.ExecuteScriptAsync(
                     "Boolean(document.querySelector('.vault-break:disabled'))") == "true",
                     "A paid Vault can still be opened a second time.");
@@ -72,6 +97,18 @@ internal static class VaultSmoke
                 await web.ExecuteScriptAsync("document.querySelector('.vault-page .shop-back')?.click()");
                 for (int i = 0; i < 100 && modern.RecordsPage is not null; i++) await Task.Delay(60);
                 Require(modern.RecordsPage is null, "React Vault did not return to the lobby.");
+                if (!startedGerman)
+                {
+                    await web.ExecuteScriptAsync("document.querySelector('.lobby-language')?.click()");
+                    for (int i=0;i<100;i++)
+                    {
+                        if (await web.ExecuteScriptAsync(
+                            "document.documentElement.lang==='en'") == "true") break;
+                        await Task.Delay(50);
+                    }
+                    Require(await web.ExecuteScriptAsync("document.documentElement.lang==='en'") == "true",
+                        "React Vault smoke did not restore the English casino locale.");
+                }
                 File.WriteAllText(Path.Combine(output, "vault-result.txt"),
                     "PASS: React Vault opened through its native C# transaction, paid the Gold reserve with the full bonus, and returned to lobby without a WPF overlay.");
                 return;
