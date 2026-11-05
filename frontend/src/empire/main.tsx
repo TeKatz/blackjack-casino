@@ -154,11 +154,11 @@ function EmpireApp(){
   },[page,confirmation,clearPreview]);
   useEffect(()=>{document.documentElement.lang=snapshot?.state.language??'en';},[snapshot?.state.language]);
   const act=(intent:Intent)=>{
-    if(!live.current||pendingRef.current||uncertain)return;
+    if(!visible||!live.current||pendingRef.current||uncertain)return;
     clearPreview();const id=send(live.current,intent);pendingRef.current=id;setPending(id);setNotice(null);
   };
   const showPreview=(intent:Intent)=>{
-    if(!live.current||pendingRef.current||uncertain)return;
+    if(!visible||!live.current||pendingRef.current||uncertain)return;
     clearPreview();previewTimer.current=setTimeout(()=>{
       if(live.current&&!pendingRef.current)previewId.current=send(live.current,{...intent,preview:true,inspectRoomId:selected??'slots'});
     },120);
