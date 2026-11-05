@@ -21,7 +21,7 @@ internal static class LocalizationSmoke
         ComboBox language = typeof(MainWindow).GetField("languageComboBox",
             BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(window) as ComboBox
             ?? throw new InvalidOperationException("Blackjack's native language preferences were not initialized.");
-        Require(await react.Browser.CoreWebView2.ExecuteScriptAsync(
+        Require(await react.Browser.CoreWebView2!.ExecuteScriptAsync(
             "Boolean(document.querySelector('.lobby-language'))") == "true",
             "React lobby does not expose the language switch.");
 
@@ -29,7 +29,7 @@ internal static class LocalizationSmoke
         Require(language.SelectedIndex == 0 && SelectedLanguageName(language) == "English",
             "Existing/default preferences should visibly start in English.");
 
-        await react.Browser.CoreWebView2.ExecuteScriptAsync(
+        await react.Browser.CoreWebView2!.ExecuteScriptAsync(
             "document.querySelector('.lobby-language')?.click()");
         for (int i = 0; i < 60 && CultureInfo.CurrentUICulture.Name != "de-DE"; i++)
             await Task.Delay(50);
@@ -184,7 +184,7 @@ internal static class LocalizationSmoke
 
         ModernLobbyView? languageLobby = Find<ModernLobbyView>(window).FirstOrDefault(view => view.Ready && view.IsVisible);
         Require(languageLobby?.Browser.CoreWebView2 is not null, "Returning from Lounge lost the modern lobby.");
-        await languageLobby.Browser.CoreWebView2.ExecuteScriptAsync(
+        await languageLobby!.Browser.CoreWebView2!.ExecuteScriptAsync(
             "document.querySelector('.lobby-language')?.click()");
         for (int i = 0; i < 60 && CultureInfo.CurrentUICulture.Name != "en-US"; i++)
             await Task.Delay(50);
