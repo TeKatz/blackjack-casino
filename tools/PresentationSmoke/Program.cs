@@ -115,7 +115,9 @@ internal static partial class Program
         Require(!scoped.SoundEnabled && !scoped.AnimationsEnabled && !scoped.Presentation("neon-vault").SoundEnabled, "Reels settings leaked into another destination.");
 
         Require(Find<CasinoLobbyView>(window).Any(v=>v.IsVisible),"Leaving a slot did not return to the lobby");
-        Require(((FrameworkElement)window.FindName("CasinoHeader")).IsVisible,"Host casino header did not return after leaving Midnight Reels");
+        Require(((FrameworkElement)window.FindName("CasinoHeader")).IsVisible
+            == !Find<ModernLobbyView>(window).Any(v => v.Ready && v.IsVisible),
+            "Lobby header visibility did not match the active React/WPF presentation after Midnight Reels");
 
         NavigationSmoke.OpenCovered(window, "neon-vault");await Task.Delay(120);window.UpdateLayout();
         Require(Find<CheckBox>(window).Single(b => b.Name == "SoundToggle").IsChecked == false, "Neon Vault inherited Reels sound toggle.");
@@ -133,7 +135,9 @@ internal static partial class Program
         }
         Find<Button>(window).Single(b=>b.Name=="BackButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Task.Delay(50);
         Require(Find<CasinoLobbyView>(window).Any(v=>v.IsVisible),"Leaving Neon Vault did not return to the lobby");
-        Require(((FrameworkElement)window.FindName("CasinoHeader")).IsVisible,"Host casino header did not return after leaving Neon Vault");
+        Require(((FrameworkElement)window.FindName("CasinoHeader")).IsVisible
+            == !Find<ModernLobbyView>(window).Any(v => v.Ready && v.IsVisible),
+            "Lobby header visibility did not match the active React/WPF presentation after Neon Vault");
 
         Find<Button>(window).Single(b=>b.Name=="PlayerProfileButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(100);window.UpdateLayout();
