@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using BlackjackCasino.Desktop;
 
 internal static class VaultSmoke
 {
@@ -20,9 +21,29 @@ internal static class VaultSmoke
             CultureInfo.CurrentUICulture = german;
 
             int visibleWindowsBefore = Application.Current.Windows.Cast<Window>().Count(w => w.IsVisible);
-            Button vault = Find<Button>(window).Single(button => button.Name == "CasinoVaultButton" && button.IsVisible);
-            vault.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            await Task.Delay(90);
+            ModernLobbyView? modern = Find<ModernLobbyView>(window)
+                .FirstOrDefault(view => view.Ready && view.IsVisible);
+            if (modern is not null)
+            {
+                // The WPF header is deliberately hidden by the React replacement.
+                // Open the Vault via a real React control, including compact layouts.
+                string link = await modern.Browser.CoreWebView2!.ExecuteScriptAsync(
+                    "Boolean([...document.querySelectorAll('.lobby-nav-item')]"
+                    + ".find(x=>/Vault|Tresor/.test(x.textContent||'')))");
+                Require(link.Equals("true", StringComparison.OrdinalIgnoreCase),
+                    "Modern lobby is missing its Vault navigation entry.");
+                await modern.Browser.CoreWebView2.ExecuteScriptAsync(
+                    "[...document.querySelectorAll('.lobby-nav-item')]"
+                    + ".find(x=>/Vault|Tresor/.test(x.textContent||''))?.click()");
+            }
+            else
+            {
+                Button vault = Find<Button>(window).Single(button => button.Name == "CasinoVaultButton" && button.IsVisible);
+                vault.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            }
+            for (int i = 0; i < 30 && !Find<Grid>(window)
+                .Any(grid => grid.Name == "CasinoVaultOverlay" && grid.IsVisible); i++)
+                await Task.Delay(50);
             window.UpdateLayout();
 
             Grid overlay = Find<Grid>(window).Single(grid => grid.Name == "CasinoVaultOverlay" && grid.IsVisible);
