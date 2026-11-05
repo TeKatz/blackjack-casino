@@ -177,9 +177,18 @@ internal static partial class Program
             RequireWithin(window,Find<TextBox>(window).Single(b=>b.Name=="ProfileNameBox"),"Profile name");
             Capture(window,"06-profile-"+(int)size.Item1);
         }
-        // Hand History and lifetime statistics now belong to the React shell.
-        // In the legacy no-WebView2 run both destinations remain native fallbacks.
-        if (profileHub is { Ready: true } modernProfile)
+        // WebView2 can finish initializing while the native Profile fallback is
+        // being exercised. Re-read Ready now rather than relying on an earlier
+        // point-in-time choice (otherwise Windows CI races the migration).
+        ModernLobbyView? readyProfile = Find<ModernLobbyView>(window).FirstOrDefault(v=>v.Ready);
+        for(int i=0;i<90 && readyProfile is null && ModernLobbyView.IsAvailable;i++)
+        {
+            await Task.Delay(75);
+            readyProfile = Find<ModernLobbyView>(window).FirstOrDefault(v=>v.Ready);
+        }
+        // Hand History and statistics belong to React whenever the host is ready.
+        // When WebView2 really is unavailable, the native fallback stays valid.
+        if (readyProfile is { Ready: true } modernProfile)
         {
             Find<Button>(window).Single(b=>b.Name=="ProfileHandHistoryButton" && b.IsVisible)
                 .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
