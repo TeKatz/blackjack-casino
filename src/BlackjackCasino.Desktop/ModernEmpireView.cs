@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.IO;
+using System.Windows.Threading;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
@@ -19,24 +21,59 @@ internal sealed class ModernEmpireView : ContentControl, IDisposable
     private readonly Func<EmpireModernCommand, EmpireActionResult> commit;
     private readonly Func<EmpireModernCommand, object> preview;
     private readonly Action close;
-    private readonly TextBlock status = new() { Text = "CASINO EMPIRE", FontSize = 28, Foreground = Brushes.Wheat,
-        HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+    private readonly Action? retry;
+    private readonly DispatcherTimer startupTimeout = new() { Interval = TimeSpan.FromSeconds(20) };
+    private readonly Dictionary<string, double> visitTimings = new();
+    private long visitStarted;
+    private int visitId;
+    private readonly TextBlock status = new() { Text = "Browser vorbereiten…", FontSize = 17, Foreground = Brushes.Wheat,
+        HorizontalAlignment = HorizontalAlignment.Center, TextAlignment = TextAlignment.Center };
+    private readonly Button retryButton = new() { Content = "Erneut versuchen / Retry", Margin = new Thickness(10), Visibility = Visibility.Collapsed };
+
     private bool initialized, listening, disposed;
     private string? notice;
     private object? offline;
     private EmpireModernReply? lastReply;
     private Window? owner;
     internal bool Ready { get; private set; }
+    internal bool Failed { get; private set; }
     internal WebView2 Browser => browser;
-    internal ModernEmpireView(Func<object> snapshot, Func<EmpireModernCommand, EmpireActionResult> commit,
-        Func<EmpireModernCommand, object> preview, Action close)
+    internal IReadOnlyDictionary<string, double> VisitTimings => new Dictionary<string, double>(visitTimings);
+    internal void BeginVisit(long startedAt)
     {
-        this.snapshot = snapshot; this.commit = commit; this.preview = preview; this.close = close;
+        if (disposed) return;
+        visitStarted = startedAt;
+        visitId++;
+        visitTimings.Clear();
+        if (browser.CoreWebView2 is not null) Mark("webview_reused");
+        browser.IsEnabled = false; // Old values cannot be acted on until the new snapshot is rendered.
+        startupTimeout.Stop();
+        startupTimeout.Start();
+        if (!Ready) SetStage("Browser vorbereiten…");
+    }
+    internal void PauseVisit() { startupTimeout.Stop(); }
+    private void Mark(string stage)
+    {
+        if (visitStarted != 0) visitTimings[stage] = Math.Round(Stopwatch.GetElapsedTime(visitStarted).TotalMilliseconds, 2);
+    }
+    private void SetStage(string text) { status.Text = text; }
+    internal ModernEmpireView(Func<object> snapshot, Func<EmpireModernCommand, EmpireActionResult> commit,
+        Func<EmpireModernCommand, object> preview, Action close, Action? retry = null)
+    {
+        this.snapshot = snapshot; this.commit = commit; this.preview = preview; this.close = close; this.retry = retry;
         Name = "ModernEmpirePresentation";
         var back = new Button { Content = "← Casino lobby", HorizontalAlignment = HorizontalAlignment.Left,
             VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(20) };
         back.Click += (_, _) => close();
-        Content = new Grid { Background = new SolidColorBrush(Color.FromRgb(6, 22, 20)), Children = { status, back, browser } };
+        var indicator = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        indicator.Children.Add(new TextBlock { Text = "CASINO EMPIRE", FontSize = 28, Foreground = Brushes.Wheat,
+            HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 18) });
+        indicator.Children.Add(status);
+        retryButton.Click += (_, _) => this.retry?.Invoke();
+        indicator.Children.Add(retryButton);
+        Content = new Grid { Background = new SolidColorBrush(Color.FromRgb(6, 22, 20)), Children = { indicator, back, browser } };
+        startupTimeout.Tick += (_, _) => Fail("Laden dauert zu lange. Zur Lobby zurückkehren oder erneut versuchen. / Loading timed out.");
+        BeginVisit(Stopwatch.GetTimestamp());
         Loaded += OnLoaded;
         IsVisibleChanged += OnVisibility;
     }
@@ -52,6 +89,7 @@ internal sealed class ModernEmpireView : ContentControl, IDisposable
         {
             await browser.EnsureCoreWebView2Async();
             if (disposed) return;
+            Mark("webview_initialized");
             var core = browser.CoreWebView2;
             core.Settings.AreDefaultContextMenusEnabled = false;
             core.Settings.AreDevToolsEnabled = false;
@@ -62,9 +100,14 @@ internal sealed class ModernEmpireView : ContentControl, IDisposable
             core.NavigationStarting += (_, args) => { if (!EmpireModernProtocol.Trusted(args.Uri)) args.Cancel = true; };
             core.NewWindowRequested += (_, args) => args.Handled = true;
             core.PermissionRequested += (_, args) => args.State = CoreWebView2PermissionState.Deny;
-            core.NavigationCompleted += (_, args) => { if (!args.IsSuccess) Fail("Empire could not load. Return to the lobby and retry."); };
+            core.NavigationCompleted += (_, args) =>
+            {
+                if (!args.IsSuccess) Fail("Anwesen konnte nicht geladen werden. / Empire could not load.");
+                else if (!Failed) { Mark("navigation_completed"); SetStage("Anwesen laden… / Loading estate…"); }
+            };
             core.ProcessFailed += (_, _) => Fail("Empire presentation stopped. Reopen it to restore the saved state.");
             core.WebMessageReceived += OnMessage;
+            SetStage("Browser vorbereiten… / Preparing browser…");
             browser.Source = new Uri("https://" + ManorPreviewProtocol.VirtualHost + "/empire.html");
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException or System.Runtime.InteropServices.COMException)
@@ -80,10 +123,15 @@ internal sealed class ModernEmpireView : ContentControl, IDisposable
             if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("type", out var type) || type.ValueKind != JsonValueKind.String) return;
             switch (type.GetString())
             {
-                case "empire.ready": listening = true; Refresh(); break;
+                case "empire.ready":
+                    listening = true; Mark("bridge_ready"); SetStage("Anwesen laden… / Loading estate…"); Refresh(); break;
                 case "empire.ui-ready":
-                    if (!listening) break;
-                    Ready = true; browser.Visibility = Visibility.Visible; PostVisibility(); break;
+                    if (!listening || !IsVisible || !root.TryGetProperty("visitId", out var visit) ||
+                        visit.ValueKind != JsonValueKind.Number || !visit.TryGetInt32(out int acceptedVisit) || acceptedVisit != visitId) break;
+                    Mark("dom_usable"); Ready = true; startupTimeout.Stop();
+                    browser.Visibility = Visibility.Visible; browser.IsEnabled = true; PostVisibility(); break;
+                case "empire.graphics-ready":
+                    Mark("graphics_ready"); break;
                 case "empire.refresh": Refresh(); break;
                 case "empire.close": close(); break;
                 case "empire.dismiss-offline": offline = null; Refresh(); break;
@@ -118,7 +166,7 @@ internal sealed class ModernEmpireView : ContentControl, IDisposable
     {
         if (!listening || disposed || !IsVisible || owner?.WindowState == WindowState.Minimized) return;
         Post("empire.snapshot", new { Version = EmpireModernProtocol.Version, Session = commands.Id,
-            commands.Revision, Notice = notice is null ? null : Localization.TranslateSource(notice), Offline = offline, LastReply = lastReply, State = snapshot() });
+            commands.Revision, VisitId = visitId, Notice = notice is null ? null : Localization.TranslateSource(notice), Offline = offline, LastReply = lastReply, State = snapshot() });
     }
     internal void RefreshLive() => Refresh();
     internal void SetNotice(string message) => notice = message;
@@ -132,18 +180,20 @@ internal sealed class ModernEmpireView : ContentControl, IDisposable
     }
     internal void StopVisualAnimations() => Refresh();
     internal bool TryCloseManagement() { Post("empire.escape", null); return true; }
-    private void OnVisibility(object sender, DependencyPropertyChangedEventArgs e) { PostVisibility(); if (IsVisible) Refresh(); }
+    private void OnVisibility(object sender, DependencyPropertyChangedEventArgs e) { if (IsVisible) Refresh(); PostVisibility(); }
     private void OnWindowState(object? sender, EventArgs e) { PostVisibility(); Refresh(); }
     private void PostVisibility() => Post("empire.visibility", new { Visible = IsVisible && owner?.WindowState != WindowState.Minimized });
     private void Fail(string message)
     {
-        Ready = false; listening = false; browser.Visibility = Visibility.Hidden;
-        status.FontSize = 16; status.Text = message;
+        Ready = false; Failed = true; listening = false; startupTimeout.Stop(); browser.Visibility = Visibility.Hidden;
+        browser.IsEnabled = false; status.FontSize = 15; SetStage(message);
+        retryButton.Visibility = retry is null ? Visibility.Collapsed : Visibility.Visible;
     }
     public void Dispose()
     {
         if (disposed) return;
         Post("empire.visibility", new { Visible = false });
+        PauseVisit();
         disposed = true;
         Loaded -= OnLoaded; IsVisibleChanged -= OnVisibility;
         if (owner is not null) owner.StateChanged -= OnWindowState;
