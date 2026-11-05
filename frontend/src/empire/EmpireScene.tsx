@@ -5,12 +5,18 @@ import {boundedPixelRatio,summarizeFrameTimes} from '../graphics/rendererDiagnos
 import type {RendererDiagnostics} from '../graphics/rendererDiagnostics';
 
 const files:Record<string,string>={'high-limit-slots':'high-limit-slots',poker:'poker-room',dining:'fine-dining',stage:'grand-stage','private-salon':'private-gaming-salon',hotel:'luxury-hotel',spa:'spa-wellness','sky-bar':'sky-bar','convention-hall':'convention-hall','penthouse-club':'penthouse-club'};
-export function isAtlasRoom(id:string):boolean {return !files[id];}
 export function roomArt(id:string):CSSProperties {
-  if(files[id])return {backgroundImage:`url('./empire-art/${files[id]}.png')`};
-  const i=Math.max(0,['slots','tables','bar','roulette','vip'].indexOf(id));
-  return {backgroundImage:"url('./empire-art/rooms-atlas.png')",backgroundSize:'300% 200%',backgroundPosition:`${(i%3)*50}% ${Math.floor(i/3)*100}%`};
+  return {backgroundImage:`url('./empire-art/${files[id]??'rooms-atlas'}.png')`};
 }
+export const EmpireArtwork=memo(function EmpireArtwork({roomId,className}:{roomId:string;className:string}){
+  if(files[roomId])return <div className={className} style={roomArt(roomId)} aria-hidden="true"/>;
+  const index=Math.max(0,['slots','tables','bar','roulette','vip'].indexOf(roomId));
+  // An exact source-tile viewport, then aspect-preserving cover into any DOM box.
+  // SVG clipping avoids CSS percentage/container-size ambiguity on button elements.
+  return <svg className={className+' empire-atlas-art'} viewBox="0 0 512 512" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+    <image href="./empire-art/rooms-atlas.png" x={-(index%3)*512} y={-Math.floor(index/3)*512} width={1536} height={1024}/>
+  </svg>;
+});
 export const EmpireScene=memo(function EmpireScene({roomId,enabled,diagnostics,onReady}:{roomId:string;enabled:boolean;diagnostics:boolean;onReady:()=>void}) {
   const target=useRef<HTMLDivElement>(null);
   const control=useRef<{sync:()=>void}|null>(null);
@@ -85,7 +91,7 @@ export const EmpireScene=memo(function EmpireScene({roomId,enabled,diagnostics,o
   },[]);
   useEffect(()=>{control.current?.sync();},[enabled,diagnostics]);
   return <div className="empire-scene" data-room={roomId}>
-    <div className={'empire-scene-art '+(isAtlasRoom(roomId)?'empire-atlas':'')} style={roomArt(roomId)}/><div className="empire-scene-shade"/>
+    <EmpireArtwork className="empire-scene-art" roomId={roomId}/><div className="empire-scene-shade"/>
     <div ref={target} className="empire-pixi" data-fallback={fallback}/>
     {diagnostics&&<output className="empire-diagnostics">{!enabled?'Ticker paused':fallback?'Static artwork':sample?
       `Ticker ${sample.fpsEstimate}/s · mean ${sample.averageMs} ms · p95 ${sample.p95Ms} ms · ${sample.width}×${sample.height} @${sample.pixelRatio}`:'Sampling ticker intervals…'}</output>}

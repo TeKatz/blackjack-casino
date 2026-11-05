@@ -1,7 +1,7 @@
 import {memo,useCallback,useEffect,useRef,useState} from 'react';
 import type {FormEvent,ReactNode} from 'react';
 import {createRoot} from 'react-dom/client';
-import {EmpireScene,isAtlasRoom,roomArt} from './EmpireScene';
+import {EmpireArtwork,EmpireScene} from './EmpireScene';
 import {decimalInput,display,fractionToPercent,listen,percentToFraction,post,retainRooms,send} from './empireBridge';
 import type {Automation,EmpireSnapshot,Intent,Manager,Preview,Reply,Room} from './empireBridge';
 import translations from './empireTranslations.json';
@@ -26,7 +26,7 @@ const RoomCard=memo(function RoomCard({room,selected,onSelect,language}:{room:Ro
   const de=language==='de',q=room.quotes[0];
   return <button className={'empire-room '+(selected?'selected ':'')+(q.unlocked?'':'locked')} type="button"
     data-testid={'room-'+room.id} aria-pressed={selected} onClick={()=>onSelect(room.id)}>
-    <div className={'empire-room-art '+(isAtlasRoom(room.id)?'empire-atlas':'')} style={roomArt(room.id)}/>
+    <EmpireArtwork className="empire-room-art" roomId={room.id}/>
     <div className="empire-room-top"><span>{q.unlocked?(room.level?de?'IN BETRIEB':'OPERATING':de?'VERFÜGBAR':'AVAILABLE'):'◆ '+(de?'GESPERRT':'LOCKED')}</span><b>{String(room.floor).padStart(2,'0')}</b></div>
     <div className="empire-room-copy"><span>{de?dictionary[room.category]??room.category:room.category}</span>
       <h3>{de?dictionary[room.name]??room.name:room.name}</h3><div><b>{de?'Stufe':'Level'} {room.level}</b><span>{display(room.rate,language)} cr/s</span></div>
