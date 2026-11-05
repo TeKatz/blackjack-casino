@@ -5,12 +5,15 @@ using BlackjackCasino.Desktop;
 
 internal static partial class Program
 {
-    private static async Task CheckModernBlackjackPreview(MainWindow window)
+    private static async Task CheckModernBlackjackRoute(MainWindow window)
     {
-        Button preview = Find<Button>(window)
-            .SingleOrDefault(b => b.Name == "ModernBlackjackPreviewButton")
-            ?? throw new InvalidOperationException("Modern Blackjack preview button is missing.");
-        preview.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        window.Modes.Open("blackjack");
+        window.UpdateLayout();
+        Require(((FrameworkElement)window.FindName("TableSurface")).Visibility == Visibility.Collapsed
+            && ((FrameworkElement)window.FindName("BlackjackSidebar")).Visibility == Visibility.Collapsed,
+            "Primary Blackjack navigation exposed the old WPF table.");
+        Require(!Find<Button>(window).Any(button => button.Name == "ModernBlackjackPreviewButton"),
+            "The obsolete Blackjack preview entry still exists.");
         ModernBlackjackView? table = null;
         for (int i = 0; i < 120; i++)
         {
@@ -20,7 +23,7 @@ internal static partial class Program
             if (table is { Failed: true }) break;
         }
         Require(table is { Ready: true, Failed: false, IsVisible: true },
-            "Modern Blackjack preview failed to initialize WebView2 and native snapshot.");
+            "Primary modern Blackjack route failed to initialize WebView2 and native snapshot.");
         var web = table!.Browser.CoreWebView2!;
         Require(await web.ExecuteScriptAsync(
             "Boolean(document.querySelector('.bj-app[data-phase]') && document.querySelector('[data-testid=\"blackjack-deal\"]'))") == "true",
@@ -85,6 +88,25 @@ internal static partial class Program
         }
         Require(returned, "Modern Blackjack did not return to the lobby after settlement.");
         Require(!Find<ModernBlackjackView>(window).Any(v => v.IsVisible),
-            "The modern Blackjack preview remained hosted after returning to the lobby.");
+            "The modern Blackjack view remained hosted after returning to the lobby.");
+        // A second entry must also be fully functional without the WPF preview
+        // button and without any native hover or mouse-move event.
+        window.Modes.Open("blackjack");
+        ModernBlackjackView? reopened = null;
+        for (int i = 0; i < 120; i++)
+        {
+            await Task.Delay(75);
+            reopened = Find<ModernBlackjackView>(window).FirstOrDefault();
+            if (reopened is { Ready: true, Failed: false }) break;
+        }
+        Require(reopened is { Ready: true, Failed: false, IsVisible: true },
+            "Reopening the normal Blackjack route did not produce a playable React table.");
+        Require(((FrameworkElement)window.FindName("TableSurface")).Visibility == Visibility.Collapsed,
+            "Reopening Blackjack exposed the retired WPF surface.");
+        await reopened!.Browser.CoreWebView2!.ExecuteScriptAsync("document.querySelector('.bj-back')?.click()");
+        for (int i = 0; i < 70 && Find<ModernBlackjackView>(window).Any(v => v.IsVisible); i++)
+            await Task.Delay(75);
+        Require(!Find<ModernBlackjackView>(window).Any(v => v.IsVisible),
+            "Second Blackjack entry did not release its WebView after lobby return.");
     }
 }

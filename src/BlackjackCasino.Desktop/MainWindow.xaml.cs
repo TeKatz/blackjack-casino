@@ -509,6 +509,16 @@ public partial class MainWindow : Window
             AiSeatCountComboBox.IsEnabled = tableActive && betting;
             AiSettingsPanel.Visibility = playMode == PlayModePreference.FullTable ? Visibility.Visible : Visibility.Collapsed;
 
+            // React owns Blackjack presentation on the normal player route.
+            // Avoid rebuilding hidden WPF card panels on every WebView action;
+            // ShowBlackjackTable will rehydrate them if fallback is required.
+            if (!tableActive)
+            {
+                SetActionAvailability(new HashSet<PlayerAction>());
+                InsurancePanel.Visibility = Visibility.Collapsed;
+                return;
+            }
+
             DealerCardsPanel.Children.Clear();
             PlayerHandsPanel.Children.Clear();
             AiTableSeatsPanel.Children.Clear();

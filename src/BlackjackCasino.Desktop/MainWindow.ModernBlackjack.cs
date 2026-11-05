@@ -12,26 +12,16 @@ public partial class MainWindow
     private readonly List<(UIElement Element, bool Enabled)> blackjackCoveredElements = [];
     private bool ModernBlackjackOpen => modernBlackjackView is not null;
 
-    // Until presentation smoke and custom rules reach parity, the old table is
-    // still the standard route. The preview button makes the new gameplay
-    // inspectable without replacing an established player flow.
-    private void InitializeModernBlackjackPreview()
+    // The lobby always opens the React table when packaged browser assets are
+    // present. The native table is retained only as a browser/asset fallback.
+    private void OpenBlackjackMode()
     {
-        if (!ModernBlackjackView.IsAvailable) return;
-        if (BlackjackSidebar.Child is not ScrollViewer scroll
-            || scroll.Content is not StackPanel sidebar
-            || sidebar.Children.Count == 0
-            || sidebar.Children[0] is not Border first
-            || first.Child is not StackPanel panel) return;
-        var preview = new Button
-        {
-            Name = "ModernBlackjackPreviewButton",
-            Content = "Modern Blackjack (Preview)",
-            Margin = new Thickness(2, 10, 2, 2),
-            ToolTip = "Try the React table. Your bankroll and round remain native.",
-        };
-        preview.Click += (_, _) => OpenModernBlackjack();
-        panel.Children.Add(preview);
+        if (ModernBlackjackOpen || EmpirePageOpen || KniffelPageOpen
+            || MetaPageOpen || embeddedGameShell is not null) return;
+        if (ModernBlackjackView.IsAvailable)
+            OpenModernBlackjack();
+        else
+            ShowBlackjackTable();
     }
 
     private void OpenModernBlackjack()
@@ -46,7 +36,7 @@ public partial class MainWindow
                 currentTablePreset.ToString(), SelectedTheme.ToString(),
                 progressionController?.Profile.EquippedCardSetId ?? CosmeticCatalog.DefaultCardSetId,
                 SoundEnabled, AnimationsEnabled, StatusText.Text),
-            ApplyModernBlackjackAction, CloseModernBlackjack);
+            ApplyModernBlackjackAction, CloseModernBlackjack, OnModernBlackjackFailed);
         foreach (UIElement covered in CasinoRoot.Children.OfType<UIElement>()
             .Where(child => child != embeddedGameOverlay))
         {
@@ -197,6 +187,15 @@ public partial class MainWindow
         }
     }
 
+    private void OnModernBlackjackFailed()
+    {
+        // The WebView host notifies us on the next dispatcher turn, outside
+        // WebMessageReceived/NavigationCompleted. Preserve the Core hand, and
+        // make the native table playable even if the browser fails mid-round.
+        if (modernBlackjackView?.Failed == true)
+            CloseModernBlackjack();
+    }
+
     private void CloseModernBlackjack()
     {
         if (modernBlackjackView is null) return;
@@ -217,7 +216,7 @@ public partial class MainWindow
         ProcessLatestCompletedRound();
         NormalizeBetForTable();
         SavePreferences();
-        if (failed && session.RoundInProgress)
+        if (failed)
             ShowBlackjackTable();
         else if (lobby is not null)
             lobby.Visibility = Visibility.Visible;

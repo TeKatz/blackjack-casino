@@ -14,9 +14,8 @@ public partial class MainWindow
         HideBlackjackTable();
         InitializeHeaderLayout();
         InitializeEmpire();
-        InitializeModernBlackjackPreview();
         modeRegistry.Register(new("blackjack","Blackjack","The velvet tables","A quiet seat, a fresh shoe and your next decision. Solo or with the house regulars.","#537D66","♠","Table games",()=>new LobbyGameArtwork(false)),()=>
-        {ShowBlackjackTable();TableModeText.Text="Blackjack · your table";});
+        {OpenBlackjackMode();TableModeText.Text="Blackjack · your table";});
         modeRegistry.Register(new("midnight-reels","Midnight Reels","The golden floor","Three reels, a centre payline and a little old-school casino charm.","#C69A51","7 7 7","Classic slots",()=>new LobbyGameArtwork(true)),()=>
         {TableModeText.Text="Midnight Reels · classic slots";EmbeddedSlots_Click(this,new RoutedEventArgs());});
         modeRegistry.Register(new("neon-vault","Neon Vault","The high-voltage floor","Five reels, 1,024 ways and Vault Break Free Spins. High Roller stakes up to $250K.","#55DDF8","◇","Video slots",()=>new NeonVaultArtwork()),()=>

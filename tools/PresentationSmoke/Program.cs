@@ -91,9 +91,8 @@ internal static partial class Program
         window.UpdateLayout();
         Button added=Find<Button>(window).Single(b=>Equals(b.Tag,"future-room"));added.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         Require(future,"Newly registered mode did not appear or invoke its command");
-        window.Modes.Open("blackjack");window.UpdateLayout();
-        await CheckModernBlackjackPreview(window);
-        window.Modes.Open("blackjack");window.UpdateLayout();
+        await CheckModernBlackjackRoute(window);
+        OpenLegacyBlackjackForVisualRegression(window);window.UpdateLayout();
         Require(!Find<ComboBox>((DependencyObject)window.FindName("BlackjackSidebar"))
             .Any(c => c.Name == "UpdateChannelComboBox"),
             "Legacy Blackjack sidebar still contains updater controls.");
@@ -430,7 +429,7 @@ internal static partial class Program
             await Task.Delay(40);
         }
         await CheckEmpire(window);
-        window.Width=1440;window.Height=900;window.Modes.Open("blackjack");mode.SelectedIndex=1;theme.SelectedIndex=0;
+        window.Width=1440;window.Height=900;OpenLegacyBlackjackForVisualRegression(window);mode.SelectedIndex=1;theme.SelectedIndex=0;
         Require(((FrameworkElement)window.FindName("TableSurface")).IsVisible
             && ((FrameworkElement)window.FindName("BlackjackSidebar")).IsVisible
             && ((FrameworkElement)window.FindName("CasinoHeader")).IsVisible,
@@ -443,6 +442,15 @@ internal static partial class Program
         Capture(window,"07-blackjack-dealt");
         await CheckWagerGeometry(window);
         await CheckResultDeal(window);
+    }
+
+    private static void OpenLegacyBlackjackForVisualRegression(MainWindow window)
+    {
+        // The old panel is no longer a player-visible mode. Keep its historical
+        // visual tests active while it remains the emergency WebView fallback.
+        var show = typeof(MainWindow).GetMethod("ShowBlackjackTable",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        show.Invoke(window, null);
     }
 
     private static Task CheckEmpire(MainWindow window) => EmpireWebSmoke.Run(window, output);

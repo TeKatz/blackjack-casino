@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Threading;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.Wpf;
 
@@ -22,6 +23,11 @@ internal sealed class ModernBlackjackView : ContentControl, IDisposable
     private readonly Func<object> snapshot;
     private readonly Func<BlackjackModernCommand, (bool Success, string Message)> commit;
     private readonly Action close;
+    private readonly Action onFailure;
+    private readonly DispatcherTimer readinessWatchdog = new(DispatcherPriority.Background)
+    {
+        Interval = TimeSpan.FromSeconds(18),
+    };
     private readonly TextBlock status = new()
     {
         Text = "BLACKJACK — Preparing your table…",
@@ -38,11 +44,19 @@ internal sealed class ModernBlackjackView : ContentControl, IDisposable
         "ModernFrontend", "blackjack.html"));
 
     internal ModernBlackjackView(Func<object> snapshot,
-        Func<BlackjackModernCommand, (bool Success, string Message)> commit, Action close)
+        Func<BlackjackModernCommand, (bool Success, string Message)> commit, Action close,
+        Action onFailure)
     {
         this.snapshot = snapshot;
         this.commit = commit;
         this.close = close;
+        this.onFailure = onFailure;
+        readinessWatchdog.Tick += (_, _) =>
+        {
+            readinessWatchdog.Stop();
+            if (!Ready && !Failed && !disposed)
+                Fail("Blackjack frontend did not respond. Opening native table.");
+        };
         Name = "ModernBlackjackPresentation";
         var back = new Button
         {
@@ -66,6 +80,7 @@ internal sealed class ModernBlackjackView : ContentControl, IDisposable
     {
         if (initialized || disposed) return;
         initialized = true;
+        readinessWatchdog.Start();
         if (!IsAvailable) { Fail("Blackjack frontend is missing. Return to the table."); return; }
         try
         {
@@ -115,7 +130,11 @@ internal sealed class ModernBlackjackView : ContentControl, IDisposable
                     Refresh();
                     break;
                 case "blackjack.ui-ready":
-                    if (listening) Ready = true;
+                    if (listening)
+                    {
+                        Ready = true;
+                        readinessWatchdog.Stop();
+                    }
                     break;
                 case "blackjack.refresh":
                     Refresh();
@@ -156,17 +175,22 @@ internal sealed class ModernBlackjackView : ContentControl, IDisposable
 
     private void Fail(string message)
     {
+        if (disposed || Failed) return;
+        readinessWatchdog.Stop();
         Failed = true;
         Ready = false;
         listening = false;
         status.Text = message;
         browser.Visibility = Visibility.Collapsed;
+        // Avoid disposing WebView2 while its own callback is still executing.
+        Dispatcher.BeginInvoke(onFailure, DispatcherPriority.Background);
     }
 
     public void Dispose()
     {
         if (disposed) return;
         disposed = true;
+        readinessWatchdog.Stop();
         Loaded -= OnLoaded;
         browser.Dispose();
     }
