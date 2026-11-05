@@ -177,8 +177,27 @@ internal static class LocalizationSmoke
             "Sound setting did not restore its English resource value.");
         Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "A different kind of night."),
             "Casino lobby headline did not switch back to English without a restart.");
-        Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "VAULT FULL"),
+        // The visible header belongs to React while the WPF header remains the
+        // fallback. Its localized text still has to be correct, but not IsVisible.
+        Require(Find<TextBlock>(window).Any(text => text.Text == "VAULT FULL"),
             "Dynamic Vault header did not switch back to English.");
+        ModernLobbyView? modernLobby = Find<ModernLobbyView>(window)
+            .FirstOrDefault(view => view.Ready && view.IsVisible);
+        if (modernLobby is not null)
+        {
+            string reactEnglish = string.Empty;
+            for (int i = 0; i < 20; i++)
+            {
+                reactEnglish = await modernLobby.Browser.CoreWebView2!.ExecuteScriptAsync(
+                    "document.documentElement.lang==='en' &&"
+                    + "Boolean([...document.querySelectorAll('.lobby-nav-item')]"
+                    + ".find(x=>x.textContent?.includes('Vault')))");
+                if (reactEnglish.Equals("true", StringComparison.OrdinalIgnoreCase)) break;
+                await Task.Delay(120);
+            }
+            Require(reactEnglish.Equals("true", StringComparison.OrdinalIgnoreCase),
+                "React lobby did not restore English labels and Vault navigation.");
+        }
     }
 
     private static void CheckPhase2Translations()
