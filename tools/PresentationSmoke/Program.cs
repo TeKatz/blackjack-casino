@@ -177,49 +177,79 @@ internal static partial class Program
             RequireWithin(window,Find<TextBox>(window).Single(b=>b.Name=="ProfileNameBox"),"Profile name");
             Capture(window,"06-profile-"+(int)size.Item1);
         }
-        // Hand History remains a native page; lifetime statistics now live in React.
-        foreach (string destination in new[] { "ProfileHandHistoryButton" })
+        // Hand History and lifetime statistics now belong to the React shell.
+        // In the legacy no-WebView2 run both destinations remain native fallbacks.
+        if (profileHub is { Ready: true } modernProfile)
         {
-            Find<Button>(window).Single(b => b.Name == destination).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            await Task.Delay(40); window.UpdateLayout();
-            Require(!Find<TabControl>(window).Any(t => t.Items.OfType<TabItem>().Any(i => Equals(i.Header, "Cosmetic Shop"))), "Profile statistics retained shop navigation.");
-            Require(Find<TabControl>(window).Any(t => t.Items.Count == 1), "Profile statistics/history did not open their own page.");
-            Find<Button>(window).Single(b => b.Name == "ProgressionBackButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            await Task.Delay(40); window.UpdateLayout();
-        }
-        ModernLobbyView? profileRecords = Find<ModernLobbyView>(window).FirstOrDefault(v => v.Ready);
-        if (profileRecords is not null)
-        {
-            Find<Button>(window).Single(b=>b.Name=="ProfileStatisticsButton" && b.IsVisible)
+            Find<Button>(window).Single(b=>b.Name=="ProfileHandHistoryButton" && b.IsVisible)
                 .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            for (int i=0;i<70 && profileRecords.RecordsPage!="statistics";i++) await Task.Delay(80);
-            Require(profileRecords.RecordsPage=="statistics" && profileRecords.IsVisible,
+            for (int i=0;i<100 && modernProfile.RecordsPage!="history";i++) await Task.Delay(75);
+            Require(modernProfile.RecordsPage=="history" && modernProfile.IsVisible,
+                "Native profile History shortcut did not navigate to React.");
+            bool historyRendered=false;
+            for (int i=0;i<100 && !historyRendered;i++)
+            {
+                historyRendered=await modernProfile.Browser.CoreWebView2!.ExecuteScriptAsync(
+                    "Boolean(document.querySelector('.history-page .history-filters'))")=="true";
+                if(!historyRendered)await Task.Delay(75);
+            }
+            Require(historyRendered,"React Hand History did not render its search and result controls.");
+            await modernProfile.Browser.CoreWebView2!.ExecuteScriptAsync(
+                "document.querySelector('.history-page .shop-back')?.click()");
+            for(int i=0;i<70 && modernProfile.RecordsPage is not null;i++)await Task.Delay(75);
+            Require(modernProfile.RecordsPage is null,"React Hand History did not return to the lobby.");
+
+            await modernProfile.Browser.CoreWebView2.ExecuteScriptAsync(
+                "document.querySelector('.profile-widget')?.click()");
+            for(int i=0;i<70 && modernProfile.RecordsPage!="profile";i++)await Task.Delay(75);
+            Require(modernProfile.RecordsPage=="profile","React account hub did not reopen after Hand History.");
+            await modernProfile.Browser.CoreWebView2.ExecuteScriptAsync(
+                "[...document.querySelectorAll('.account-routes button')].find(x=>/Statistics|Statistik/.test(x.textContent||''))?.click()");
+            for (int i=0;i<70 && modernProfile.RecordsPage!="statistics";i++) await Task.Delay(80);
+            Require(modernProfile.RecordsPage=="statistics" && modernProfile.IsVisible,
                 "Profile Statistics did not migrate to React.");
             bool statsFromProfile=false;
-            for(int i=0;i<100&&!statsFromProfile;i++)
+            for(int i=0;i<100 && !statsFromProfile;i++)
             {
-                statsFromProfile=await profileRecords.Browser.CoreWebView2!.ExecuteScriptAsync(
+                statsFromProfile=await modernProfile.Browser.CoreWebView2.ExecuteScriptAsync(
                     "Boolean(document.querySelector('.statistics-page [data-stat-game=\"blackjack\"]'))")=="true";
                 if(!statsFromProfile)await Task.Delay(75);
             }
             Require(statsFromProfile,"Profile Statistics lacks the real Blackjack lifetime card.");
-            await profileRecords.Browser.CoreWebView2.ExecuteScriptAsync(
+            await modernProfile.Browser.CoreWebView2.ExecuteScriptAsync(
                 "document.querySelector('.statistics-page .shop-back')?.click()");
-            await Task.Delay(80);
-            await profileRecords.Browser.CoreWebView2.ExecuteScriptAsync(
+            for(int i=0;i<70 && modernProfile.RecordsPage is not null;i++)await Task.Delay(75);
+
+            // Native Profile is retained only for export/advanced fallback features.
+            await modernProfile.Browser.CoreWebView2.ExecuteScriptAsync(
                 "document.querySelector('.profile-widget')?.click()");
-            for(int i=0;i<60 && profileRecords.RecordsPage!="profile";i++) await Task.Delay(80);
-            bool editorAvailable = false;
-            for(int i=0;i<100 && !editorAvailable;i++)
+            for(int i=0;i<70 && modernProfile.RecordsPage!="profile";i++)await Task.Delay(75);
+            bool exportReady = false;
+            for(int i=0;i<100 && !exportReady;i++)
             {
-                editorAvailable = await profileRecords.Browser.CoreWebView2.ExecuteScriptAsync(
-                    "Boolean(document.querySelector('.account-page .account-routes button:last-child'))") == "true";
-                if(!editorAvailable) await Task.Delay(50);
+                exportReady=await modernProfile.Browser.CoreWebView2.ExecuteScriptAsync(
+                    "Boolean(document.querySelector('.account-page .account-routes button:last-child'))")=="true";
+                if(!exportReady)await Task.Delay(50);
             }
-            Require(editorAvailable,"React account edit action has not rendered.");
-            await profileRecords.Browser.CoreWebView2.ExecuteScriptAsync(
+            Require(exportReady,"React account export fallback is not available.");
+            await modernProfile.Browser.CoreWebView2.ExecuteScriptAsync(
                 "document.querySelector('.account-page .account-routes button:last-child')?.click()");
-            for(int i=0;i<60 && !Find<Button>(window).Any(b=>b.Name=="ProfileProgressionButton"&&b.IsVisible);i++) await Task.Delay(80);
+            for(int i=0;i<70 && !Find<Button>(window).Any(b=>b.Name=="ProfileProgressionButton"&&b.IsVisible);i++)
+                await Task.Delay(80);
+        }
+        else
+        {
+            Find<Button>(window).Single(b=>b.Name=="ProfileHandHistoryButton" && b.IsVisible)
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            await Task.Delay(40);window.UpdateLayout();
+            Require(!Find<TabControl>(window).Any(t=>t.Items.OfType<TabItem>()
+                .Any(i=>Equals(i.Header,"Cosmetic Shop"))),
+                "Native Hand History retained shop navigation.");
+            Require(Find<TabControl>(window).Any(t=>t.Items.Count==1),
+                "Native fallback Hand History did not open its own page.");
+            Find<Button>(window).Single(b=>b.Name=="ProgressionBackButton" && b.IsVisible)
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            await Task.Delay(40);window.UpdateLayout();
         }
         Find<Button>(window).Single(b=>b.Name=="ProfileProgressionButton" && b.IsVisible)
             .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
