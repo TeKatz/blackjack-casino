@@ -571,11 +571,24 @@ internal static partial class Program
         combo.ApplyTemplate();var toggle=(ToggleButton)combo.Template.FindName("DropDownToggle",combo);toggle.ApplyTemplate();
         Require(toggle.Template.Triggers.Count==0,"Dropdown hit surface regained Windows hover/disabled triggers");
         Require(VisualTreeHelper.GetChild(toggle,0) is Border {Background:SolidColorBrush {Color.A:0}},"Dropdown hit area is no longer transparent");
-        CheckDark(combo);combo.Focus();CheckDark(combo);
-        combo.IsDropDownOpen=true;await Task.Delay(25);
-        var popup=(Popup)combo.Template.FindName("PART_Popup",combo);
-        Require(popup.IsOpen,"Dropdown did not open");
-        combo.IsDropDownOpen=false;bool enabled=combo.IsEnabled;combo.IsEnabled=false;CheckDark(combo);combo.IsEnabled=enabled;
+        CheckDark(combo);
+        bool enabled=combo.IsEnabled;
+        // Disabled selectors must retain dark chrome, but WPF correctly refuses to open
+        // their native popups. Do not mistake that for a broken dropdown template.
+        if (enabled)
+        {
+            combo.Focus();CheckDark(combo);
+            combo.IsDropDownOpen=true;
+            var popup=(Popup)combo.Template.FindName("PART_Popup",combo);
+            for (int attempt=0; !popup.IsOpen && attempt<12; attempt++)
+            {
+                await Task.Delay(30);
+                combo.UpdateLayout();
+            }
+            Require(popup.IsOpen,"Enabled dropdown did not open: "+combo.Name);
+            combo.IsDropDownOpen=false;
+        }
+        combo.IsEnabled=false;CheckDark(combo);combo.IsEnabled=enabled;
     }
     private static void CheckDark(FrameworkElement element)
     {
