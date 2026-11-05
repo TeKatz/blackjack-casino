@@ -11,6 +11,13 @@ describe('Empire bridge contract',()=>{
       {...fixture,state:{...fixture.state,canClaimDividend:undefined}},
       {...fixture,lastReply:{requestId:'wrong'}}])expect(isEmpireSnapshot(value)).toBe(false);
   });
+  it('validates a per-visit native snapshot generation without changing the economy schema',()=>{
+    expect(isEmpireSnapshot({...fixture,visitId:1})).toBe(true);
+    expect(isEmpireSnapshot({...fixture,visitId:2})).toBe(true);
+    expect(isEmpireSnapshot({...fixture,visitId:0})).toBe(false);
+    expect(isEmpireSnapshot({...fixture,visitId:-1})).toBe(false);
+    expect(isEmpireSnapshot({...fixture,visitId:1.5})).toBe(false);
+  });
   it('rejects malformed receipts without unlocking purchases',()=>{
     expect(isReply({requestId:'a',success:true,message:'Saved',revision:1,preview:null})).toBe(true);
     expect(isReply({requestId:'a',success:true,message:'Saved',revision:NaN,preview:null})).toBe(false);
