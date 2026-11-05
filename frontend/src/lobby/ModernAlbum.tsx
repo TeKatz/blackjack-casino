@@ -108,8 +108,10 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
    (url):url is string=>url!==null)));
   const images=urls.map(url=>{const img=new Image();img.src=url;return img;});
   let cancelled=false;
+  let advanced=false;
   const markReady=()=>{
-   if(cancelled)return;
+   if(cancelled||advanced)return;
+   advanced=true;
    artReady.current=true;
    if(!revealSuspended.current)setPhase('reveal');
   };
