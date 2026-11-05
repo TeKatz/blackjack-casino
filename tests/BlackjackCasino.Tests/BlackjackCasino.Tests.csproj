@@ -16,6 +16,8 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="../../src/BlackjackCasino.Desktop/BlackjackModernProtocol.cs" Link="Presentation/BlackjackModernProtocol.cs" />
+    <Compile Include="../../src/BlackjackCasino.Desktop/BlackjackModernSnapshot.cs" Link="Presentation/BlackjackModernSnapshot.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/EmpireModernProtocol.cs" Link="Presentation/EmpireModernProtocol.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/EmpireModernSnapshot.cs" Link="Presentation/EmpireModernSnapshot.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/ManorController.cs" Link="Persistence/ManorController.cs" />
