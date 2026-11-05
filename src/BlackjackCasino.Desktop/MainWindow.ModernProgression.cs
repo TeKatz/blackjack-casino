@@ -370,6 +370,9 @@ public partial class MainWindow
     }
 
 
+    private static string VaultMoney(decimal amount) =>
+        "$" + amount.ToString("N2", Localization.Culture);
+
     private object GetModernVaultSnapshot()
     {
         CasinoVaultSnapshot vault = CasinoVaultService.Snapshot(progressionController!.Profile);
@@ -378,8 +381,8 @@ public partial class MainWindow
             Tier = vault.Tier.Name,
             TierId = vault.Tier.Id,
             Accent = vault.Tier.Accent,
-            Current = Money(vault.CurrentAmount),
-            Capacity = Money(vault.Tier.Capacity),
+            Current = VaultMoney(vault.CurrentAmount),
+            Capacity = VaultMoney(vault.Tier.Capacity),
             Progress = (double)Math.Clamp(vault.Progress, 0m, 1m),
             ContributionRate = (double)vault.ContributionRate,
             BonusRate = (double)vault.Tier.FullBonusRate,
@@ -387,13 +390,13 @@ public partial class MainWindow
             vault.PayoutPending,
             UnlockedTier = vault.UnlockedTier.Name,
             NextTier = vault.NextTier?.Name,
-            NextTierWager = vault.NextTier is null ? null : Money(vault.NextTier.RequiredLifetimeWager),
-            LifetimeContributions = Money(vault.LifetimeContributions),
-            LifetimePayouts = Money(vault.LifetimePayouts),
-            LifetimeBonuses = Money(vault.LifetimeBonuses),
+            NextTierWager = vault.NextTier is null ? null : VaultMoney(vault.NextTier.RequiredLifetimeWager),
+            LifetimeContributions = VaultMoney(vault.LifetimeContributions),
+            LifetimePayouts = VaultMoney(vault.LifetimePayouts),
+            LifetimeBonuses = VaultMoney(vault.LifetimeBonuses),
             vault.VaultsOpened,
-            BiggestPayout = Money(vault.BiggestPayout),
-            LifetimeEligibleWager = Money(vault.LifetimeEligibleWager),
+            BiggestPayout = VaultMoney(vault.BiggestPayout),
+            LifetimeEligibleWager = VaultMoney(vault.LifetimeEligibleWager),
         };
     }
 
@@ -416,9 +419,9 @@ public partial class MainWindow
             return (true, "Payout transferred to your play-money bankroll.", new
             {
                 Tier = before.Tier.Name,
-                BaseAmount = Money(result.BaseAmount),
-                BonusAmount = Money(result.BonusAmount),
-                Total = Money(result.TotalPayout),
+                BaseAmount = VaultMoney(result.BaseAmount),
+                BonusAmount = VaultMoney(result.BonusAmount),
+                Total = VaultMoney(result.TotalPayout),
                 Pack = ((BlackjackCasino.Core.Collections.CollectionRarity)Math.Clamp(tier, 0, 4)).ToString(),
             });
         }
