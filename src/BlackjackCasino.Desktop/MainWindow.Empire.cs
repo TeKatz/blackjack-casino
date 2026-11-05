@@ -307,6 +307,7 @@ public partial class MainWindow
         // A failed browser must be rebuilt on the next visit. A healthy browser
         // remains attached but completely hidden, so no WebView2 cold restart occurs.
         bool failed = empireView.Failed;
+        empireView.PauseVisit();
         empireView = null;
         if (empireCacheHost is not null) empireCacheHost.Visibility = Visibility.Collapsed;
         if (failed)
