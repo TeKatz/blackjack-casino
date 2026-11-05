@@ -59,13 +59,14 @@ internal static partial class Program
             Require(condition(), message);
         }
 
-        // Pack purchasing remains part of the cosmetic shop, but browsing/opening the album is now
-        // a first-class casino page rather than a cramped Progression tab.
-        WrapPanel shop = Find<WrapPanel>(window).Single(p => p.Name == "PackShopPanel");
-        Require(shop.Children.Count == 5, "Shop must offer all five pack rarities");
+        // The migrated React shop is independently exercised through real WebView2
+        // purchase controls in ModernShopSmoke. For this dedicated Album test,
+        // prepare the inventory through the same authoritative collection service
+        // without resurrecting the retired WPF Shop panel.
         int commonBefore = profile.Collection.Packs.GetValueOrDefault(CollectionRarity.Common);
         long coinsBefore = profile.Coins;
-        Find<Button>(shop).Single(b => Equals(b.Tag, CollectionRarity.Common)).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        CollectionActionResult pack = CollectionService.PurchasePack(profile, CollectionRarity.Common);
+        Require(pack.Success, "Unable to prepare a card pack for album acceptance.");
         Require(profile.Coins == coinsBefore - 100, "Pack purchase did not debit exactly 100 coins");
         Require(profile.Collection.Packs[CollectionRarity.Common] == commonBefore + 1, "Purchased pack was not stored");
         Require(!tabs.Items.OfType<TabItem>().Any(t => Equals(t.Header, "Album")), "Legacy Album tab is still present in Progression");
