@@ -8,6 +8,45 @@ using BlackjackCasino.Desktop;
 
 internal static partial class Program
 {
+    /// <summary>Exercise the actual React controls when active, not a hidden WPF fallback.</summary>
+    private static async Task OpenAlbumFromLobby(MainWindow window, bool fromHeader)
+    {
+        ModernLobbyView? modern = Find<ModernLobbyView>(window)
+            .FirstOrDefault(view => view.Ready && view.IsVisible);
+        if (modern is not null)
+        {
+            string selector = fromHeader
+                ? ".lobby-top-status .header-compact:nth-child(2)"
+                : ".overview-album";
+            string result = await modern.Browser.CoreWebView2!.ExecuteScriptAsync(
+                "Boolean(document.querySelector('" + selector + "'))");
+            Require(result == "true", "React lobby is missing the Collector's Album shortcut: " + selector);
+            await modern.Browser.CoreWebView2.ExecuteScriptAsync(
+                "document.querySelector('" + selector + "').click()");
+        }
+        else
+        {
+            string name = fromHeader ? "HeaderCollectionAlbumButton" : "LobbyProgression_Album";
+            Find<Button>(window).Single(b => b.Name == name && b.IsVisible)
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        }
+
+        // Clicking the WebView2 DOM crosses an asynchronous native IPC boundary.
+        // Wait for the dedicated page instead of assuming WPF has already handled the click.
+        for (int i = 0; i < 110; i++)
+        {
+            window.UpdateLayout();
+            if (Find<Grid>(window).Any(g => g.Name == "CollectionAlbumRoot" && g.IsVisible))
+            {
+                Require(!Find<ModernLobbyView>(window).Any(v => v.IsVisible && v.Ready),
+                    "The React lobby still covers the native Collector's Album page");
+                return;
+            }
+            await Task.Delay(40);
+        }
+        throw new InvalidOperationException("Collector's Album did not open through the active lobby UI.");
+    }
+
     private static async Task CheckAlbum(MainWindow window, PlayerProfileState profile, TabControl tabs)
     {
         async Task WaitUntil(Func<bool> condition, string message, int attempts = 140)
@@ -38,9 +77,7 @@ internal static partial class Program
         Find<Button>(window).Single(b => b.Name == "ProfileBackButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(40); window.UpdateLayout();
         Require(Find<CasinoLobbyView>(window).Any(v => v.IsVisible), "Album test did not return to the lobby");
-        Button lobbyAlbum = Find<Button>(window).Single(b => b.Name == "LobbyProgression_Album" && b.IsVisible);
-        Require(Find<Button>(window).Any(b => b.Name == "HeaderCollectionAlbumButton" && b.IsVisible), "Album header shortcut is missing");
-        lobbyAlbum.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        await OpenAlbumFromLobby(window, fromHeader: false);
         await Task.Delay(70); window.UpdateLayout();
         RequireSingleHost(window, "Collector album from lobby");
         Require(Find<Grid>(window).Any(g => g.Name == "CollectionAlbumRoot" && g.IsVisible), "Lobby Album shortcut did not open the dedicated page");
@@ -81,7 +118,7 @@ internal static partial class Program
         Find<Button>(window).Single(b => b.Name == "AlbumBackButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(40); window.UpdateLayout();
         Require(Find<CasinoLobbyView>(window).Any(v => v.IsVisible), "Album Back did not restore the lobby");
-        Find<Button>(window).Single(b => b.Name == "HeaderCollectionAlbumButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        await OpenAlbumFromLobby(window, fromHeader: true);
         await Task.Delay(60); window.UpdateLayout();
         Require(Find<Grid>(window).Any(g => g.Name == "CollectionAlbumRoot" && g.IsVisible), "Header Album shortcut did not open the dedicated page");
 
@@ -153,7 +190,7 @@ internal static partial class Program
 
         Find<Button>(window).Single(b => b.Name == "AlbumBackButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(40); window.UpdateLayout();
-        Find<Button>(window).Single(b => b.Name == "HeaderCollectionAlbumButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        await OpenAlbumFromLobby(window, fromHeader: true);
         await Task.Delay(60); window.UpdateLayout();
         openingOverlay = Find<Border>(window).Single(b => b.Name == "AlbumOpeningOverlay");
         browse = Find<Grid>(window).Single(g => g.Name == "AlbumBrowseSurface");
