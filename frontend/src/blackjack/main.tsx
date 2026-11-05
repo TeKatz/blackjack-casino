@@ -78,7 +78,7 @@ function BlackjackApp(){
     if(Number(value)>Number(s.bankroll)||Number(value)>Number(s.rules.maximumBet)){setMessage('Wager exceeds the table limit or available bankroll.');return;}
     if(value!==s.selectedBet)act({action:'bet.set',value});
   };
-  return <div className="bj-app" data-theme={s.theme} data-motion={s.animationsEnabled}>
+  return <div className="bj-app" data-theme={s.theme} data-motion={s.animationsEnabled} data-phase={round?.phase??"none"}>
     <header><button onClick={close} className="bj-back">← Casino lobby</button>
       <div className="bj-logo"><small>THE MIDNIGHT CLUB</small><h1>BLACKJACK</h1></div>
       <div className="bj-money"><small>BANKROLL</small><strong>{showMoney(s.bankroll)}</strong></div>

@@ -88,6 +88,8 @@ internal static partial class Program
         Button added=Find<Button>(window).Single(b=>Equals(b.Tag,"future-room"));added.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         Require(future,"Newly registered mode did not appear or invoke its command");
         window.Modes.Open("blackjack");window.UpdateLayout();
+        await CheckModernBlackjackPreview(window);
+        window.Modes.Open("blackjack");window.UpdateLayout();
         ComboBox mode=(ComboBox)window.FindName("GameModeComboBox");
         mode.SelectedIndex=1;window.UpdateLayout();
         foreach(ComboBox combo in Find<ComboBox>(window).Where(c=>c.IsVisible).ToArray()) await CheckCombo(combo);
