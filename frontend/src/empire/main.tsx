@@ -1,7 +1,8 @@
-import {memo,useCallback,useEffect,useRef,useState} from 'react';
+import {lazy,memo,Suspense,useCallback,useEffect,useRef,useState} from 'react';
 import type {FormEvent,ReactNode} from 'react';
 import {createRoot} from 'react-dom/client';
-import {EmpireArtwork,EmpireScene} from './EmpireScene';
+import {EmpireArtwork} from './EmpireArtwork';
+const EmpireScene=lazy(()=>import('./EmpireScene').then(module=>({default:module.EmpireScene})));
 import {decimalInput,display,fractionToPercent,listen,percentToFraction,post,retainRooms,send} from './empireBridge';
 import type {Automation,EmpireSnapshot,Intent,Manager,Preview,Reply,Room} from './empireBridge';
 import translations from './empireTranslations.json';
@@ -99,7 +100,7 @@ function EmpireApp(){
   const [snapshot,setSnapshot]=useState<EmpireSnapshot|null>(null),[page,setPage]=useState<Page>('estate');
   const [selected,setSelected]=useState<string|null>('slots'),[floor,setFloor]=useState(1),[filter,setFilter]=useState('all'),[bulk,setBulk]=useState(1);
   const [pending,setPending]=useState<string|null>(null),[uncertain,setUncertain]=useState(false),[notice,setNotice]=useState<string|null>(null);
-  const [preview,setPreview]=useState<Preview|null>(null),[visible,setVisible]=useState(true),[motion,setMotion]=useState(true),[diagnostics,setDiagnostics]=useState(false),[rendererReady,setRendererReady]=useState(false);
+  const [preview,setPreview]=useState<Preview|null>(null),[visible,setVisible]=useState(true),[motion,setMotion]=useState(true),[diagnostics,setDiagnostics]=useState(false);
   const [lowMotion,setLowMotion]=useState(matchMedia('(prefers-reduced-motion: reduce)').matches),[confirmation,setConfirmation]=useState(false);
   const [researchBranch,setResearchBranch]=useState('Operations');
   const live=useRef(snapshot);live.current=snapshot;
@@ -107,7 +108,7 @@ function EmpireApp(){
   const pendingRef=useRef<string|null>(null),previewId=useRef<string|null>(null),previewTimer=useRef<ReturnType<typeof setTimeout>|undefined>(undefined);
   const clearPreview=useCallback(()=>{clearTimeout(previewTimer.current);previewId.current=null;setPreview(null);},[]);
   const selectRoom=useCallback((id:string)=>{setSelected(old=>old===id?null:id);clearPreview();},[clearPreview]);
-  const sceneReady=useCallback(()=>setRendererReady(true),[]);
+  const sceneReady=useCallback(()=>post('empire.graphics-ready'),[]);
   const go=(next:Page)=>{setPage(next);clearPreview();};
   const close=()=>post('empire.close');
   useEffect(()=>{
@@ -135,9 +136,11 @@ function EmpireApp(){
     media.addEventListener('change',change);
     return()=>{stop();media.removeEventListener('change',change);clearTimeout(previewTimer.current);};
   },[clearPreview]);
+  // The authoritative snapshot is sufficient for management. The PixiJS chunk,
+  // GPU setup and optional animations never delay actionable DOM controls.
   useEffect(()=>{
-    if(snapshot&&rendererReady)post('empire.ui-ready');
-  },[!!snapshot,rendererReady]);
+    if(snapshot?.visitId!==undefined)post('empire.ui-ready',{visitId:snapshot.visitId});
+  },[snapshot?.visitId]);
   useEffect(()=>{
     if(!pending)return;
     const timer=setTimeout(()=>{setUncertain(true);post('empire.refresh');},8000);
@@ -219,7 +222,7 @@ function EmpireApp(){
         <span>{e.openRooms}/15 {de?'Räume':'rooms'} · {e.totalLevels} {de?'Stufen':'levels'}</span></div>
       {/* Keep the sole Pixi application mounted across all management routes. */}
       <section className="empire-estate" hidden={page!=='estate'}>
-        <div className="empire-scene-frame"><EmpireScene roomId={room?.id??'slots'} enabled={enabled&&page==='estate'} diagnostics={diagnostics} onReady={sceneReady}/>
+        <div className="empire-scene-frame"><Suspense fallback={<div className="empire-scene" data-testid="empire-artwork-fallback"><EmpireArtwork className="empire-scene-art" roomId={room?.id??'slots'}/><div className="empire-scene-shade"/></div>}><EmpireScene roomId={room?.id??'slots'} enabled={enabled&&page==='estate'} diagnostics={diagnostics} onReady={sceneReady}/></Suspense>
           <div className="empire-scene-title"><span className="empire-eyebrow">{room?t(room.category):de?'DEIN WAHRZEICHEN':'YOUR MIDNIGHT LANDMARK'}</span><h2>{room?t(room.name):property.name}</h2><p>{room?t(room.description):t(property.description)}</p></div>
           <span className="empire-scene-badge">{de?'PRESTIGE':'PRESTIGE'} {e.prestige}</span></div>
         <div className="empire-floorbar"><div role="group" aria-label={de?'Etagen':'Floors'}>{e.floors.map(f=><button key={f.id} data-testid={'floor-'+f.id} aria-pressed={floor===f.id} title={t(f.requirement)} onClick={()=>{setFloor(f.id);clearPreview();}}>{f.unlocked?'':'◆ '}{t(f.displayName)}</button>)}</div>
