@@ -44,6 +44,10 @@ internal static partial class Program
     {
         await Task.Delay(200);Capture(window,"01-lobby");
         Require(Find<CasinoLobbyView>(window).Any(v=>v.IsVisible),"Application did not start in the lobby");
+        Require(Find<Button>(window).Any(v => v.Name == "LobbyNativeUpdatesButton"),
+            "WPF lobby fallback has no update entry.");
+        Require(((FrameworkElement)window.FindName("NativeUpdateOverlay")).Visibility == Visibility.Collapsed,
+            "Native updates overlay was visible at startup.");
         Require(((FrameworkElement)window.FindName("TableSurface")).Visibility == Visibility.Collapsed
             && ((FrameworkElement)window.FindName("BlackjackSidebar")).Visibility == Visibility.Collapsed
             && !((Button)window.FindName("DealButton")).IsEnabled
@@ -90,6 +94,9 @@ internal static partial class Program
         window.Modes.Open("blackjack");window.UpdateLayout();
         await CheckModernBlackjackPreview(window);
         window.Modes.Open("blackjack");window.UpdateLayout();
+        Require(!Find<ComboBox>((DependencyObject)window.FindName("BlackjackSidebar"))
+            .Any(c => c.Name == "UpdateChannelComboBox"),
+            "Legacy Blackjack sidebar still contains updater controls.");
         ComboBox mode=(ComboBox)window.FindName("GameModeComboBox");
         mode.SelectedIndex=1;window.UpdateLayout();
         foreach(ComboBox combo in Find<ComboBox>(window).Where(c=>c.IsVisible).ToArray()) await CheckCombo(combo);

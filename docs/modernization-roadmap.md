@@ -248,3 +248,24 @@ The [Phase-3 sign-off matrix](manor-phase-3-signoff.md) tracks the exact boundar
 - The branded WPF startup cover is visible before WebView2 initializes. It fades only after the authoritative snapshot, Pixi renderer and original symbol artwork are ready, avoiding the initial empty black viewport and late illustration pop-in.
 - Windows startup smoke checks the six quick-bet controls, four auto-run options, absence of technical engine copy, and transition from splash to the loaded WebView2 interface. Dedicated-machine performance, sound-balance and bonus feel remain manual quality checks.
 
+
+
+## Update controls ownership during Blackjack migration
+
+Update checking and installing no longer depend on navigating to the native
+Blackjack sidebar. The React Casino Lobby has a bottom-left Updates entry that
+opens a panel showing the installed version, Stable/Development channel, current
+native update status and Check/Install actions. Downloads, SHA-256 verification,
+restart and channel persistence remain in the authoritative C# updater.
+Messages from the packaged lobby origin are validated before dispatch.
+
+The legacy WPF update controls moved into an initially hidden native lobby
+fallback overlay, reachable from the WPF lobby only when the modern WebView2
+lobby is unavailable. This keeps updates accessible during browser failures,
+without showing a duplicate control on the game table.
+
+Windows startup smoke verifies the React button position, panel opening,
+original C# update-channel selection and closing; presentation regression
+asserts the native fallback exists and the Blackjack sidebar has no update UI.
+Do not delete the original updater or preferences until the migration is
+complete and its download/restart lifecycle remains tested.

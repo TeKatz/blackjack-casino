@@ -607,6 +607,7 @@ internal static class Program
             + "DOM validation returned " + result);
 
         RequireNoLegacyLobbyFrame(window, "rendered React lobby");
+        await CheckModernLobbyUpdates(window, modern);
         Require(!Find<FrameworkElement>(window).Any(drawer => drawer.Name == "LobbyDailyDrawer" && drawer.IsVisible),
             "The obsolete daily-login drawer is still layered over the React lobby.");
 
@@ -616,6 +617,64 @@ internal static class Program
             CoreWebView2CapturePreviewImageFormat.Png, capture);
         Require(capture.Length > 15_000,
             "Modern lobby WebView2 preview is unexpectedly small or empty.");
+    }
+
+    private static async Task CheckModernLobbyUpdates(MainWindow window, ModernLobbyView modern)
+    {
+        var core = modern.Browser.CoreWebView2!;
+        // Update access must remain at the bottom-left of the lobby, not hidden
+        // behind a Blackjack table that will eventually be removed.
+        Require(await core.ExecuteScriptAsync(
+            "(()=>{const b=document.querySelector('[data-testid=\"lobby-updates-entry\"]');"
+            + "const r=b?.getBoundingClientRect();"
+            + "return Boolean(r&&r.width>70&&r.left<185&&innerHeight-r.bottom<90)})()") == "true",
+            "React lobby updater entry is missing or not anchored at the lower left.");
+
+        Require(window.FindName("NativeUpdateOverlay") is FrameworkElement { Visibility: Visibility.Collapsed },
+            "Native fallback updater was unexpectedly exposed over the React lobby.");
+
+        await core.ExecuteScriptAsync("document.querySelector('[data-testid=\"lobby-updates-entry\"]').click()");
+        bool panelOpen = false;
+        for (int i = 0; i < 50; i++)
+        {
+            await Task.Delay(60);
+            panelOpen = await core.ExecuteScriptAsync(
+                "Boolean(document.querySelector('[data-testid=\"lobby-updates-panel\"]')"
+                + "&&document.querySelector('[data-testid=\"lobby-update-channel\"]')"
+                + "&&document.querySelector('[data-testid=\"lobby-update-check\"]')"
+                + "&&document.querySelector('[data-testid=\"lobby-update-install\"]'))") == "true";
+            if (panelOpen) break;
+        }
+        Require(panelOpen, "Lobby update modal did not receive a valid native status snapshot.");
+
+        // A release-channel change must invoke the original C# preference
+        // control; selecting a channel in React must not be cosmetic only.
+        ComboBox nativeChannel = (ComboBox)window.FindName("UpdateChannelComboBox");
+        await core.ExecuteScriptAsync(
+            "(()=>{const s=document.querySelector('[data-testid=\"lobby-update-channel\"]');"
+            + "s.value='development';s.dispatchEvent(new Event('change',{bubbles:true}));})()");
+        for (int i = 0; i < 50 && nativeChannel.SelectedIndex != 1; i++)
+            await Task.Delay(50);
+        Require(nativeChannel.SelectedIndex == 1,
+            "React lobby Development channel did not reach native update preferences.");
+
+        await core.ExecuteScriptAsync(
+            "(()=>{const s=document.querySelector('[data-testid=\"lobby-update-channel\"]');"
+            + "s.value='stable';s.dispatchEvent(new Event('change',{bubbles:true}));})()");
+        for (int i = 0; i < 50 && nativeChannel.SelectedIndex != 0; i++)
+            await Task.Delay(50);
+        Require(nativeChannel.SelectedIndex == 0,
+            "React lobby Stable channel did not reach native update preferences.");
+
+        await core.ExecuteScriptAsync("document.querySelector('.lobby-updates-close').click()");
+        for (int i = 0; i < 40; i++)
+        {
+            if (await core.ExecuteScriptAsync(
+                "Boolean(document.querySelector('[data-testid=\"lobby-updates-panel\"]'))") == "false")
+                return;
+            await Task.Delay(50);
+        }
+        throw new InvalidOperationException("Lobby update modal did not close.");
     }
 
     private static void RequireNoLegacyLobbyFrame(MainWindow window, string moment)
