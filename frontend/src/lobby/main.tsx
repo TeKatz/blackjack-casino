@@ -292,6 +292,11 @@ function LobbyApp() {
         <span><small>BANKROLL</small><strong>{data.bankroll}</strong></span>
         <span className="empire-wallet"><small>EMPIRE CREDITS</small><strong>{data.empireCredits}</strong></span>
       </div>
+      <button type="button" className="lobby-language" aria-label={de?'Sprache wechseln: Englisch':'Switch language: German'}
+        title={de?'Switch to English':'Zu Deutsch wechseln'}
+        onClick={()=>lobbyCommand('lobby.language.set',de?'en':'de')}>
+        <span>{de?'EN':'DE'}</span>
+      </button>
       <button type="button" className="lobby-exit" onClick={()=>lobbyCommand('lobby.exit')}>
         ↪ <span>{de?'Beenden':'Exit'}</span>
       </button>

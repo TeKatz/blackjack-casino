@@ -27,7 +27,7 @@ public partial class MainWindow
             ModernChallengeClaim, ModernChallengesClaimAll, OnModernProgressionClosed, OpenProgression,
             OpenNativePlayerProfile, () => VaultButton_Click(this, new RoutedEventArgs()),
             () => { ClaimDailyLoginFromDrawer(); modernLobby?.Refresh(); },
-            Close, OnModernLobbyStateChanged);
+            SetModernLobbyLanguage, Close, OnModernLobbyStateChanged);
 
         // Replace the legacy WPF artwork *before* WebView2 starts. Never display
         // the old lobby during navigation or while React is still loading.
@@ -88,6 +88,16 @@ public partial class MainWindow
             modernLobbyRefresh?.Stop();
             modernLobby?.Dispose();
         };
+    }
+
+    private void SetModernLobbyLanguage(string id)
+    {
+        UiLanguagePreference requested = id == "de" ? UiLanguagePreference.German : UiLanguagePreference.English;
+        if (preferences.Language == requested) return;
+        preferences = preferences with { Language = requested };
+        Localization.SetLanguage(requested);
+        SavePreferences();
+        modernLobby?.Refresh();
     }
 
     private void OnModernLobbyStateChanged()

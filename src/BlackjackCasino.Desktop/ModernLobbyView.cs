@@ -39,6 +39,7 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
     private readonly Action profile;
     private readonly Action vault;
     private readonly Action dailyClaim;
+    private readonly Action<string> languageChange;
     private readonly Action exit;
     private readonly Action readyChanged;
     private bool initialized;
@@ -68,8 +69,8 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
         Func<string, (bool Success, string Message)> activateSeason,
         Func<string, (bool Success, string Message)> claimChallenge,
         Func<(bool Success, string Message)> claimAllChallenges, Action recordsClosed,
-        Action<string> progression, Action profile, Action vault, Action dailyClaim, Action exit,
-        Action readyChanged)
+        Action<string> progression, Action profile, Action vault, Action dailyClaim,
+        Action<string> languageChange, Action exit, Action readyChanged)
     {
         this.modes = modes;
         this.snapshot = snapshot;
@@ -89,6 +90,7 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
         this.profile = profile;
         this.vault = vault;
         this.dailyClaim = dailyClaim;
+        this.languageChange = languageChange;
         this.exit = exit;
         this.readyChanged = readyChanged;
         Name = "ModernLobbyPresentation";
@@ -343,6 +345,10 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
                     break;
                 case "lobby.daily.claim":
                     dailyClaim();
+                    Refresh();
+                    break;
+                case "lobby.language.set" when id is "en" or "de":
+                    languageChange(id);
                     Refresh();
                     break;
                 case "lobby.exit":

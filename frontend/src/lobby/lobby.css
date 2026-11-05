@@ -342,3 +342,10 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
   font:38px Georgia,serif;letter-spacing:.1em;color:#ffe6a1;
   text-shadow:0 4px 10px #07140d,0 0 16px #ce9e60;
 }
+
+/* The lobby owns its own locale switch; native settings are only visible at the Blackjack table. */
+.lobby-language{flex:0 0 auto;min-width:42px;height:38px;margin:0 4px;
+ border:1px solid rgba(218,183,112,.55);border-radius:8px;
+ background:rgba(13,48,37,.86);color:#ecd6a6;font-weight:700;font-size:12px;letter-spacing:.09em;
+ cursor:pointer;transition:border-color .18s,background .18s;}
+.lobby-language:hover,.lobby-language:focus-visible{border-color:#f4d7a0;background:#1f523e;}
