@@ -329,6 +329,8 @@ public partial class MainWindow
 
         vaultOverlay = overlay;
         CasinoRoot.Children.Add(overlay);
+        modernLobby?.SetLobbyVisible(false);
+        UpdateHostHeaderVisibility(embeddedGameOverlay?.IsVisible == true);
         overlay.Focus();
     }
 
@@ -347,6 +349,8 @@ public partial class MainWindow
 
         if (refreshUi)
         {
+            modernLobby?.SetLobbyVisible(lobby?.Visibility == Visibility.Visible);
+            UpdateHostHeaderVisibility(embeddedGameOverlay?.IsVisible == true);
             RefreshVaultButton();
             RefreshProfileButton();
             RefreshGameUi();
