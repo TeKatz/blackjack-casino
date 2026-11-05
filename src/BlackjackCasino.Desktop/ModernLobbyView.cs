@@ -51,6 +51,11 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
     private readonly Action<string> languageChange;
     private readonly Action exit;
     private readonly Action readyChanged;
+    private readonly Func<object> updateSnapshot;
+    private readonly Action<string> setUpdateChannel;
+    private readonly Func<Task> checkUpdate;
+    private readonly Func<Task> installUpdate;
+    private bool updatesOpen;
     private bool initialized;
     private bool listening;
     private bool shopOpen;
@@ -86,7 +91,9 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
         Func<string, (bool Success, string Message)> claimChallenge,
         Func<(bool Success, string Message)> claimAllChallenges, Action recordsClosed,
         Action<string> progression, Action profile, Action vault, Action dailyClaim,
-        Action<string> languageChange, Action exit, Action readyChanged)
+        Action<string> languageChange, Action exit, Action readyChanged,
+        Func<object> updateSnapshot, Action<string> setUpdateChannel,
+        Func<Task> checkUpdate, Func<Task> installUpdate)
     {
         this.modes = modes;
         this.snapshot = snapshot;
@@ -118,6 +125,10 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
         this.languageChange = languageChange;
         this.exit = exit;
         this.readyChanged = readyChanged;
+        this.updateSnapshot = updateSnapshot;
+        this.setUpdateChannel = setUpdateChannel;
+        this.checkUpdate = checkUpdate;
+        this.installUpdate = installUpdate;
         Name = "ModernLobbyPresentation";
         Background = Brushes.Transparent;
         IsHitTestVisible = false;
@@ -134,6 +145,7 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
             Refresh();
             if (shopOpen) RefreshShop();
             if (recordsPage is not null) RefreshRecords();
+            RefreshUpdates();
         }
     }
 
@@ -151,6 +163,12 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
             PostMessage("lobby.snapshot", snapshot());
         }
         catch (InvalidOperationException ex) { Fail("Snapshot delivery failed: " + ex.Message); }
+    }
+
+    internal void RefreshUpdates()
+    {
+        if (!updatesOpen || !Ready || !IsVisible) return;
+        PostMessage("lobby.updates.snapshot", updateSnapshot());
     }
 
     private void RefreshRecords()
@@ -434,6 +452,23 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
                 case "lobby.language.set" when id is "en" or "de":
                     languageChange(id);
                     Refresh();
+                    break;
+                case "lobby.updates.open" when ready && IsVisible:
+                    updatesOpen = true;
+                    RefreshUpdates();
+                    break;
+                case "lobby.updates.close":
+                    updatesOpen = false;
+                    break;
+                case "lobby.updates.channel.set" when updatesOpen && ready && IsVisible && (id is "stable" or "development"):
+                    setUpdateChannel(id);
+                    RefreshUpdates();
+                    break;
+                case "lobby.updates.check" when updatesOpen && ready && IsVisible:
+                    _ = checkUpdate();
+                    break;
+                case "lobby.updates.install" when updatesOpen && ready && IsVisible:
+                    _ = installUpdate();
                     break;
                 case "lobby.exit":
                     exit();

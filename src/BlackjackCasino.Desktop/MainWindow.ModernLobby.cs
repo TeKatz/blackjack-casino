@@ -30,7 +30,9 @@ public partial class MainWindow
             ModernChallengeClaim, ModernChallengesClaimAll, OnModernProgressionClosed, OpenProgression,
             OpenNativePlayerProfile, () => OpenModernProgression("vault"),
             () => { ClaimDailyLoginFromDrawer(); modernLobby?.Refresh(); },
-            SetModernLobbyLanguage, Close, OnModernLobbyStateChanged);
+            SetModernLobbyLanguage, Close, OnModernLobbyStateChanged,
+            GetModernUpdateSnapshot, SetModernUpdateChannel,
+            () => CheckForUpdatesAsync(silent: false), InstallUpdateAsync);
 
         // Replace the legacy WPF artwork *before* WebView2 starts. Never display
         // the old lobby during navigation or while React is still loading.
@@ -91,6 +93,24 @@ public partial class MainWindow
             modernLobbyRefresh?.Stop();
             modernLobby?.Dispose();
         };
+    }
+
+    private object GetModernUpdateSnapshot() => new
+    {
+        InstalledVersion = AppVersion.Current.ToString(),
+        Channel = SelectedUpdateChannel == BlackjackCasino.Update.UpdateChannel.Development ? "development" : "stable",
+        Status = UpdateStatusText.Text,
+        Busy = updateOperationBusy,
+        CanCheck = CheckUpdateButton.IsEnabled,
+        CanInstall = InstallUpdateButton.IsEnabled && pendingManifest is not null,
+        UpdateAvailable = pendingManifest is not null,
+    };
+
+    private void SetModernUpdateChannel(string channel)
+    {
+        if (updateOperationBusy || channel is not ("stable" or "development")) return;
+        UpdateChannelComboBox.SelectedIndex = channel == "development" ? 1 : 0;
+        modernLobby?.RefreshUpdates();
     }
 
     private void SetModernLobbyLanguage(string id)
