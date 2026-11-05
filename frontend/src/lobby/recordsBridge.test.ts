@@ -1,5 +1,14 @@
 import {describe,it,expect} from 'vitest';
+import {isAlbum,isAlbumResult,previewAlbum} from './albumBridge';
 import {filterChallenges,isChallenges,isStatistics,isAccount,isHistory,isVault,previewChallenges,previewStatistics,previewAccount,previewHistory,previewVault} from './recordsBridge';
+describe('Album bridge',()=>{
+ it('rejects incomplete catalogues and forged pack receipts',()=>{
+   expect(isAlbum(previewAlbum)).toBe(false);
+   expect(isAlbumResult({operation:'open',id:'Common',success:true,message:'Opened'})).toBe(true);
+   expect(isAlbumResult({operation:'grant',id:'Common',success:true,message:'fake'})).toBe(false);
+   expect(isAlbumResult({operation:'complete',id:'a',success:'yes',message:'fake'})).toBe(false);
+ });
+});
 describe('Challenges and Statistics bridge',()=>{
   it('validates native data and rejects malformed rewards',()=>{
     expect(isChallenges(previewChallenges)).toBe(true);

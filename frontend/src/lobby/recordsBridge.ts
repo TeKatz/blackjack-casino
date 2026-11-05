@@ -1,4 +1,6 @@
-/** Typed, read-only data for React Challenges and lifetime statistics. */
+/** Typed, read-only data for React progression and the Collection Album. */
+import {isAlbum,isAlbumResult} from './albumBridge';
+import type {AlbumSnapshot,AlbumResult} from './albumBridge';
 export type ChallengeEntry={
   id:string;name:string;description:string;category:string;isAdventure:boolean;isEndgame:boolean;
   progress:number;goal:number;progressLabel:string;goalLabel:string;fraction:number;
@@ -45,12 +47,13 @@ export type VaultSnapshot={
  vaultsOpened:number;biggestPayout:string;lifetimeEligibleWager:string;
 };
 export type VaultReward={tier:string;baseAmount:string;bonusAmount:string;total:string;pack:string};
-export type RecordsPage='challenges'|'statistics'|'profile'|'history'|'season'|'vault';
+export type RecordsPage='challenges'|'statistics'|'profile'|'history'|'season'|'vault'|'album';
 export type RecordsMessage=
   {type:'lobby.records.show';data:{page:RecordsPage}}|
-  {type:'lobby.records.snapshot';data:{page:'challenges';snapshot:ChallengesSnapshot}|{page:'statistics';snapshot:StatisticsSnapshot}|{page:'profile';snapshot:AccountSnapshot}|{page:'history';snapshot:HistorySnapshot}|{page:'season';snapshot:SeasonsSnapshot}|{page:'vault';snapshot:VaultSnapshot}}|
+  {type:'lobby.records.snapshot';data:{page:'challenges';snapshot:ChallengesSnapshot}|{page:'statistics';snapshot:StatisticsSnapshot}|{page:'profile';snapshot:AccountSnapshot}|{page:'history';snapshot:HistorySnapshot}|{page:'season';snapshot:SeasonsSnapshot}|{page:'vault';snapshot:VaultSnapshot}|{page:'album';snapshot:AlbumSnapshot}}|
   {type:'lobby.records.result';data:{success:boolean;message:string;id:string}}|
-  {type:'lobby.records.vault.result';data:{success:boolean;message:string;reward:VaultReward|null}};
+  {type:'lobby.records.vault.result';data:{success:boolean;message:string;reward:VaultReward|null}}|
+  {type:'lobby.album.result';data:AlbumResult};
 export type ChallengeStatus='all'|'ready'|'progress'|'claimed'|'unclaimed';
 const obj=(x:unknown):x is Record<string,unknown>=>x!==null&&typeof x==='object'&&!Array.isArray(x);
 const str=(x:unknown):x is string=>typeof x==='string';
@@ -130,7 +133,7 @@ export function onRecordsMessage(handle:(message:RecordsMessage)=>void):()=>void
   const listener=(event:MessageEvent)=>{
     const m:unknown=event.data;
     if(!obj(m)||!str(m.type)||!obj(m.data))return;
-    if(m.type==='lobby.records.show'&&(m.data.page==='challenges'||m.data.page==='statistics'||m.data.page==='profile'||m.data.page==='history'||m.data.page==='season'||m.data.page==='vault'))
+    if(m.type==='lobby.records.show'&&(m.data.page==='challenges'||m.data.page==='statistics'||m.data.page==='profile'||m.data.page==='history'||m.data.page==='season'||m.data.page==='vault'||m.data.page==='album'))
       handle({type:m.type,data:{page:m.data.page}});
     if(m.type==='lobby.records.snapshot'
       && ((m.data.page==='challenges'&&isChallenges(m.data.snapshot))
@@ -138,8 +141,11 @@ export function onRecordsMessage(handle:(message:RecordsMessage)=>void):()=>void
         ||(m.data.page==='profile'&&isAccount(m.data.snapshot))
         ||(m.data.page==='history'&&isHistory(m.data.snapshot))
         ||(m.data.page==='season'&&isSeasons(m.data.snapshot))
-        ||(m.data.page==='vault'&&isVault(m.data.snapshot))))
+        ||(m.data.page==='vault'&&isVault(m.data.snapshot))
+        ||(m.data.page==='album'&&isAlbum(m.data.snapshot))))
       handle({type:m.type,data:m.data as RecordsMessage & never});
+    if(m.type==='lobby.album.result'&&isAlbumResult(m.data))
+      handle({type:'lobby.album.result',data:m.data});
     if(m.type==='lobby.records.vault.result'
       &&typeof m.data.success==='boolean'&&str(m.data.message)
       &&m.data.message.length<800&&(m.data.reward===null||isVaultReward(m.data.reward)))

@@ -7,6 +7,9 @@ import { ModernStatistics } from './ModernStatistics';
 import { ModernAccount } from './ModernAccount';
 import { ModernHistory } from './ModernHistory';
 import { ModernVault } from './ModernVault';
+import { ModernAlbum } from './ModernAlbum';
+import {previewAlbum} from './albumBridge';
+import type {AlbumSnapshot,AlbumResult,AlbumRarity} from './albumBridge';
 import { ModernSeasons } from './ModernSeasons';
 import { onRecordsMessage, previewChallenges, previewStatistics, previewAccount, previewHistory, previewVault, previewSeasons } from './recordsBridge';
 import type { ChallengesSnapshot, StatisticsSnapshot, AccountSnapshot, HistorySnapshot, VaultSnapshot, VaultReward, SeasonsSnapshot, RecordsPage } from './recordsBridge';
@@ -146,6 +149,8 @@ function LobbyApp() {
   const [account,setAccount] = useState<AccountSnapshot>(previewAccount);
   const [history,setHistory] = useState<HistorySnapshot>(previewHistory);
   const [vault,setVault] = useState<VaultSnapshot>(previewVault);
+  const [album,setAlbum] = useState<AlbumSnapshot>(previewAlbum);
+  const [albumResult,setAlbumResult] = useState<AlbumResult|null>(null);
   const [vaultReward,setVaultReward] = useState<VaultReward|null>(null);
   const [vaultNotice,setVaultNotice] = useState<string|null>(null);
   const [seasons,setSeasons] = useState<SeasonsSnapshot>(previewSeasons);
@@ -154,6 +159,7 @@ function LobbyApp() {
   const [accountLoaded,setAccountLoaded] = useState(!embeddedLobby);
   const [historyLoaded,setHistoryLoaded] = useState(!embeddedLobby);
   const [vaultLoaded,setVaultLoaded] = useState(!embeddedLobby);
+  const [albumLoaded,setAlbumLoaded] = useState(!embeddedLobby);
   const [seasonsLoaded,setSeasonsLoaded] = useState(!embeddedLobby);
   const [recordsPending,setRecordsPending] = useState<string|null>(null);
   const [shopVisible,setShopVisible] = useState(false);
@@ -180,7 +186,10 @@ function LobbyApp() {
         else if(message.data.page==='profile'){setAccount(message.data.snapshot);setAccountLoaded(true);}
         else if(message.data.page==='history'){setHistory(message.data.snapshot);setHistoryLoaded(true);}
         else if(message.data.page==='vault'){setVault(message.data.snapshot);setVaultLoaded(true);}
+        else if(message.data.page==='album'){setAlbum(message.data.snapshot);setAlbumLoaded(true);}
         else {setSeasons(message.data.snapshot);setSeasonsLoaded(true);}
+      }else if(message.type==='lobby.album.result'){
+        setAlbumResult(message.data);
       }else if(message.type==='lobby.records.vault.result'){
         setRecordsPending(null);
         setVaultNotice(message.data.message);
@@ -226,18 +235,20 @@ function LobbyApp() {
   },[data.language]);
   const de = data.language==='de';
   const closeRecords = () => {
-    setRecordsVisible(null);setRecordsPending(null);setShopNotice(null);setVaultReward(null);setVaultNotice(null);
+    setRecordsVisible(null);setRecordsPending(null);setShopNotice(null);setVaultReward(null);setVaultNotice(null);setAlbumResult(null);
     lobbyCommand('lobby.records.close');
   };
   const openRecords = (page:RecordsPage) => {
     if(shopVisible)closeShop();
     setRecordsVisible(page);setDailyOpen(false);setShopNotice(null);setRecordsPending(null);
     if(page==='vault'){setVaultReward(null);setVaultNotice(null);}
+    if(page==='album')setAlbumResult(null);
     if(page==='challenges')setChallengesLoaded(!embeddedLobby);
     else if(page==='statistics')setStatisticsLoaded(!embeddedLobby);
     else if(page==='profile')setAccountLoaded(!embeddedLobby);
     else if(page==='history')setHistoryLoaded(!embeddedLobby);
     else if(page==='vault')setVaultLoaded(!embeddedLobby);
+    else if(page==='album')setAlbumLoaded(!embeddedLobby);
     else setSeasonsLoaded(!embeddedLobby);
     lobbyCommand('lobby.records.open',page);
   };
@@ -255,6 +266,7 @@ function LobbyApp() {
   const openSecondary = (id:string)=>lobbyCommand('lobby.open-secondary',id);
   const openProgression = (id:string)=>{
     if(id==='Cosmetic Shop'){openShop();return;}
+    if(id==="Collector's Album"||id==='Album'){openRecords('album');return;}
     if(id==='Challenges'||id==='Statistics'||id==='Season Pass'){
       openRecords(id==='Challenges'?'challenges':id==='Season Pass'?'season':'statistics');return;
     }
@@ -321,8 +333,8 @@ function LobbyApp() {
     <div className={'lobby-body '+(shopVisible?'shop-active':recordsVisible?'records-active':'')}>
       <nav className="lobby-nav" aria-label={de?'Casino-Navigation':'Casino navigation'}>
         {navigation.map(n=><button type="button" key={n.id}
-          aria-current={(shopVisible?n.id==='shop':recordsVisible?n.id===(recordsVisible==='challenges'?'challenges':recordsVisible==='statistics'?'stats':recordsVisible==='history'?'profile':recordsVisible==='vault'?'vault':recordsVisible==='season'?'season':'profile'):n.id===filter)?'page':undefined}
-          className={'lobby-nav-item '+((shopVisible?n.id==='shop':recordsVisible?n.id===(recordsVisible==='challenges'?'challenges':recordsVisible==='statistics'?'stats':recordsVisible==='vault'?'vault':recordsVisible==='season'?'season':'profile'):n.id===filter)?'selected':'')+(n.id==='daily'?' daily-nav':'')}
+          aria-current={(shopVisible?n.id==='shop':recordsVisible?n.id===(recordsVisible==='challenges'?'challenges':recordsVisible==='statistics'?'stats':recordsVisible==='history'?'profile':recordsVisible==='vault'?'vault':recordsVisible==='album'?'collections':recordsVisible==='season'?'season':'profile'):n.id===filter)?'page':undefined}
+          className={'lobby-nav-item '+((shopVisible?n.id==='shop':recordsVisible?n.id===(recordsVisible==='challenges'?'challenges':recordsVisible==='statistics'?'stats':recordsVisible==='vault'?'vault':recordsVisible==='album'?'collections':recordsVisible==='season'?'season':'profile'):n.id===filter)?'selected':'')+(n.id==='daily'?' daily-nav':'')}
           onClick={()=>chooseNav(n.id)}>
           <span className="nav-icon" aria-hidden="true">{n.icon}</span>
           <span>{de?n.de:n.en}</span>
@@ -348,6 +360,13 @@ function LobbyApp() {
         onEdit={()=>lobbyCommand('lobby.profile.native')}/>:
       recordsVisible==='history'?<ModernHistory data={history} loaded={historyLoaded}
         language={data.language} onBack={()=>{closeRecords();setFilter('all');}}/>:
+      recordsVisible==='album'?<ModernAlbum data={album} loaded={albumLoaded}
+        language={data.language} animate={!lowMotion&&data.animationsEnabled} result={albumResult}
+        onBack={()=>{closeRecords();setFilter('all');}}
+        onOpen={(rarity:AlbumRarity)=>lobbyCommand('lobby.album.open',rarity)}
+        onComplete={id=>lobbyCommand('lobby.album.complete',id)}
+        onClaim={id=>lobbyCommand('lobby.album.claim',id)}
+        onShop={openShop}/>:
       recordsVisible==='vault'?<ModernVault data={vault} loaded={vaultLoaded}
         language={data.language} pending={recordsPending==='vault'} reward={vaultReward} notice={vaultNotice}
         onBack={()=>{closeRecords();setFilter('all');}}
