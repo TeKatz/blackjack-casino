@@ -29,7 +29,10 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
     private readonly Func<object> challengesSnapshot;
     private readonly Func<object> statisticsSnapshot;
     private readonly Func<object> accountSnapshot;
+    private readonly Func<object> historySnapshot;
     private readonly Func<object> seasonsSnapshot;
+    private readonly Func<string, (bool Success, string Message)> renameProfile;
+    private readonly Func<string, (bool Success, string Message)> equipProfile;
     private readonly Func<string, (bool Success, string Message)> activateSeason;
     private readonly Func<string, (bool Success, string Message)> claimChallenge;
     private readonly Func<(bool Success, string Message)> claimAllChallenges;
@@ -65,7 +68,9 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
         Func<string, (bool Success, string Message)> cosmeticAction,
         Func<string, (bool Success, string Message)> packAction, Action shopClosed,
         Func<object> challengesSnapshot, Func<object> statisticsSnapshot,
-        Func<object> accountSnapshot, Func<object> seasonsSnapshot,
+        Func<object> accountSnapshot, Func<object> historySnapshot, Func<object> seasonsSnapshot,
+        Func<string, (bool Success, string Message)> renameProfile,
+        Func<string, (bool Success, string Message)> equipProfile,
         Func<string, (bool Success, string Message)> activateSeason,
         Func<string, (bool Success, string Message)> claimChallenge,
         Func<(bool Success, string Message)> claimAllChallenges, Action recordsClosed,
@@ -81,7 +86,10 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
         this.challengesSnapshot = challengesSnapshot;
         this.statisticsSnapshot = statisticsSnapshot;
         this.accountSnapshot = accountSnapshot;
+        this.historySnapshot = historySnapshot;
         this.seasonsSnapshot = seasonsSnapshot;
+        this.renameProfile = renameProfile;
+        this.equipProfile = equipProfile;
         this.activateSeason = activateSeason;
         this.claimChallenge = claimChallenge;
         this.claimAllChallenges = claimAllChallenges;
@@ -139,6 +147,7 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
                 "challenges" => challengesSnapshot(),
                 "statistics" => statisticsSnapshot(),
                 "profile" => accountSnapshot(),
+                "history" => historySnapshot(),
                 "season" => seasonsSnapshot(),
                 _ => throw new InvalidOperationException("Unsupported progression route."),
             },
@@ -147,7 +156,7 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
 
     internal void ShowProgression(string page)
     {
-        if (!Ready || disposed || failed || page is not ("challenges" or "statistics" or "profile" or "season")) return;
+        if (!Ready || disposed || failed || page is not ("challenges" or "statistics" or "profile" or "history" or "season")) return;
         shopOpen = false;
         recordsPage = page;
         PostMessage("lobby.records.show", new { Page = page });
@@ -235,6 +244,14 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
                 return;
 
             string? command = type.GetString();
+            string? profileName = null;
+            if (command == "lobby.profile.rename")
+            {
+                if (!value.TryGetProperty("value", out JsonElement rawName)
+                    || rawName.ValueKind != JsonValueKind.String) return;
+                profileName = rawName.GetString();
+                if (profileName is null || profileName.Length > 256) return;
+            }
             string? id = null;
             if (value.TryGetProperty("id", out JsonElement rawId))
             {
@@ -266,7 +283,7 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
                     Refresh();
                     if (recordsPage is not null) RefreshRecords();
                     break;
-                case "lobby.records.open" when id is "challenges" or "statistics" or "profile" or "season":
+                case "lobby.records.open" when id is "challenges" or "statistics" or "profile" or "history" or "season":
                     shopOpen = false;
                     recordsPage = id;
                     RefreshRecords();
@@ -275,6 +292,22 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
                     recordsPage = null;
                     recordsClosed();
                     break;
+                case "lobby.profile.rename" when recordsPage == "profile" && profileName is not null:
+                {
+                    var result = renameProfile(profileName);
+                    PostMessage("lobby.records.result", new { result.Success, result.Message, Id = "rename" });
+                    RefreshRecords();
+                    Refresh();
+                    break;
+                }
+                case "lobby.profile.equip" when recordsPage == "profile" && id is not null:
+                {
+                    var result = equipProfile(id);
+                    PostMessage("lobby.records.result", new { result.Success, result.Message, Id = id });
+                    RefreshRecords();
+                    Refresh();
+                    break;
+                }
                 case "lobby.records.season.activate" when recordsPage == "season" && id is not null:
                 {
                     var result = activateSeason(id);

@@ -48,9 +48,9 @@ public partial class MainWindow
                 OpenModernShopFromProgression();
                 return;
             }
-            if (tab is "Challenges" or "Statistics" or "Overview" or "Season Pass")
+            if (tab is "Challenges" or "Statistics" or "Overview" or "Season Pass" or "Hand History")
             {
-                OpenModernProgression(tab == "Challenges" ? "challenges" : tab == "Season Pass" ? "season" : "statistics");
+                OpenModernProgression(tab == "Challenges" ? "challenges" : tab == "Season Pass" ? "season" : tab == "Hand History" ? "history" : "statistics");
                 return;
             }
         }
@@ -80,9 +80,9 @@ public partial class MainWindow
     private void OpenProfileStatistics(string section)
     {
         if (progressionController is null) return;
-        if (section != "Hand History" && modernLobby is { Ready: true })
+        if (modernLobby is { Ready: true })
         {
-            OpenModernProgression("statistics");
+            OpenModernProgression(section == "Hand History" ? "history" : "statistics");
             return;
         }
         var page = new ProgressionWindow(progressionController, preferences.Presentation("progression").AnimationsEnabled, preferences.Presentation("progression").SoundEnabled);

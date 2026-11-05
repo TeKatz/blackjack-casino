@@ -327,6 +327,14 @@ public partial class MainWindow
             Coins = RecordNumber(profile.Coins),
             Title = CosmeticCatalog.Get(profile.EquippedTitleId).Name,
             PortraitId = profile.EquippedPortraitId,
+            EquippedTitleId = profile.EquippedTitleId,
+            EquippedPortraitId = profile.EquippedPortraitId,
+            Portraits = CosmeticCatalog.All.Where(item => item.Kind == CosmeticKind.Portrait
+                && profile.OwnedCosmeticIds.Contains(item.Id, StringComparer.Ordinal))
+                .Select(item => new { item.Id, item.Name, item.Description }).ToArray(),
+            Titles = CosmeticCatalog.All.Where(item => item.Kind == CosmeticKind.Title
+                && profile.OwnedCosmeticIds.Contains(item.Id, StringComparer.Ordinal))
+                .Select(item => new { item.Id, item.Name, item.Description }).ToArray(),
             ProfileExperience = RecordNumber(profile.LifetimeExperience),
             Playtime = RecordDuration(progressionController.TotalPlaytime),
             OwnedCosmetics = profile.OwnedCosmeticIds.Count,
@@ -334,6 +342,60 @@ public partial class MainWindow
             TotalCards = CollectionCatalog.Cards.Count,
             Season = SeasonTextLocalization.Name(SeasonCatalog.Get(profile.ActiveSeasonId)),
             Created = profile.CreatedAt.ToLocalTime().ToString("d", CultureInfo.CurrentCulture),
+        };
+    }
+
+
+    // All player identity mutations are performed by the existing C# controller,
+    // preserving validation, ownership checks and the production save path.
+    private (bool Success, string Message) ModernProfileRename(string name)
+    {
+        if (progressionController is null) return (false, "Profile unavailable.");
+        bool saved = progressionController.RenameProfile(name, out string message);
+        if (saved) RefreshProfileButton();
+        return (saved, message);
+    }
+
+    private (bool Success, string Message) ModernProfileEquip(string id)
+    {
+        if (progressionController is null) return (false, "Profile unavailable.");
+        CosmeticDefinition? item = CosmeticCatalog.All.FirstOrDefault(c => c.Id == id);
+        if (item is null || item.Kind is not (CosmeticKind.Portrait or CosmeticKind.Title))
+            return (false, "This item is not an equippable profile cosmetic.");
+        if (!progressionController.Profile.OwnedCosmeticIds.Contains(id, StringComparer.Ordinal))
+            return (false, "This cosmetic is not owned by the player.");
+        bool success = progressionController.EquipCosmetic(id);
+        if (success) RefreshProfileButton();
+        return (success, success ? item.Name + " equipped." : "Could not equip this cosmetic.");
+    }
+
+    private object GetModernHistorySnapshot()
+    {
+        PlayerProgressionController controller = progressionController!;
+        RoundHistoryEntry[] history = controller.History.OrderByDescending(h => h.CompletedAt).Take(250).ToArray();
+        return new
+        {
+            Total = controller.History.Count,
+            Entries = history.Select(round => new
+            {
+                Id = round.RoundId.ToString("N"),
+                Completed = round.CompletedAt.ToLocalTime().ToString("g", CultureInfo.CurrentCulture),
+                Net = RecordNet(round.TotalNet),
+                Positive = round.TotalNet >= 0m,
+                Bet = RecordMoney(round.InitialBet),
+                Insurance = RecordMoney(round.InsuranceBet),
+                Dealer = string.Join(" · ", round.DealerCards.Select(card => card.ToString())),
+                Hands = round.PlayerHands.Select((hand, index) => new
+                {
+                    Name = "Hand " + (index + 1),
+                    Cards = string.Join(" · ", hand.Cards.Select(card => card.ToString())),
+                    Outcome = hand.Outcome.ToString(),
+                    Net = RecordNet(hand.Net),
+                    Doubled = hand.IsDoubled,
+                    Split = hand.IsSplitHand,
+                    Surrendered = hand.IsSurrendered,
+                }).ToArray(),
+            }).ToArray(),
         };
     }
 
@@ -388,6 +450,7 @@ public partial class MainWindow
         {
             if (page == "profile") OpenNativePlayerProfile();
             else if (page == "statistics") OpenProfileStatistics("Statistics");
+            else if (page == "history") OpenProfileStatistics("Hand History");
             else OpenProgressionPage(page == "season" ? "Season Pass" : "Challenges");
             return;
         }
