@@ -2,7 +2,7 @@
 
 An **offline-first, single-player casino for Windows**, built around virtual credits and progression. No real-money gambling, payments, accounts, advertisements or online services are required for gameplay.
 
-The desktop application uses **.NET 10 and WPF**. The casino lobby and Midnight Manor now have separate **React + TypeScript + PixiJS** presentations, hosted locally through **WebView2**. Existing game logic and persistent player data remain in C#.
+The desktop application uses **.NET 10 and WPF**. The casino lobby and Midnight Manor now have separate **React + TypeScript + PixiJS** presentations, hosted locally through **WebView2**. Profile navigation and Season Pass management also live in React; the native profile editor, export and Collector’s Album remain available while being migrated. Existing game logic and persistent player data remain in C#.
 
 ## Games and experiences
 
@@ -29,7 +29,7 @@ The Development lobby uses its own React/TypeScript entry point (`frontend/lobby
 - Responsive DOM layout with accessible keyboard-focus states, compact screen-height handling, card hover lift, image zoom, reflected highlights and gold button feedback.
 - Transparent **PixiJS particle atmosphere**, limited to 30 FPS and paused while the document is hidden; it respects reduced-motion settings and the game's animation preference.
 - **C#-owned** player balances, progression and mode availability. The isolated WebView2 lobby sends only allowed navigation intents; it cannot calculate rewards or change saved finances.
-- The original **WPF lobby remains as a working fallback** if WebView2 is unavailable or the modern page does not load. Every existing game opens through the original registered C# action, including Casino Empire's detached-window option.
+- The original **WPF lobby remains as an emergency fallback** if WebView2 is unavailable or the modern page does not load; the Blackjack table is never the startup surface. The obsolete native Daily Login drawer and automatic startup welcome were removed from the normal startup path. Every existing game opens through the original registered C# action, including Casino Empire's detached-window option.
 
 For native builds, run `npm run build` from `frontend/` before the .NET build. Vite emits both `index.html` (Manor) and `lobby.html`, plus their local assets into `frontend/dist/`; the desktop project packages that whole directory as `ModernFrontend`.
 

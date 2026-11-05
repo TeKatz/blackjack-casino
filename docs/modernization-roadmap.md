@@ -10,6 +10,14 @@ The casino lobby is now a separate, read-only React/TypeScript/PixiJS page built
 
 **Still requiring human review:** image sharpness on high-DPI displays, hover/keyboard feel, fit at device-specific window dimensions, performance and GPU availability, and final visual comparison to the approved lobby reference. Automated builds and smoke tests cannot establish subjective presentation quality.
 
+## Startup and progression routing (2026-11-05)
+
+- The main window starts with the native Blackjack table and its sidebar **collapsed**. They are exposed only by the explicit Blackjack game route; the modern lobby is the initial presentation. The startup news popup no longer overlays the landing page.
+- Daily Login is owned by React. Its obsolete native WPF drawer and initialization hooks have been removed; native C# reward/persistence logic remains intact.
+- React now owns the player-account navigation hub and the Season Pass library (pass browsing, reward tiers, active-pass selection), alongside the existing React Shop, Challenges and Statistics. The native C# profile service alone persists active-season changes.
+- Profile editing/export, Hand History, Collector's Album, Vault and remaining games stay native until their replacement passes the same save/UX acceptance gates. The native profile editor remains explicitly reachable from the React account hub.
+- The full native fallback casino lobby and old Manor source remain temporarily because Windows presentation smoke tests directly exercise their controls. They will be removed in a separate tested cleanup, not by disabling coverage.
+
 ## Why this direction
 
 The current Windows UI is WPF. Gameplay engines are primarily in `BlackjackCasino.Core`, and the WPF desktop project provides orchestration, persistence and visual state. The planned frontend uses:

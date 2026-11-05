@@ -339,6 +339,10 @@ internal static partial class Program
             Require(available == "true", "Modern lobby has no player-profile shortcut");
             await activeLobby.Browser.CoreWebView2.ExecuteScriptAsync(
                 "document.querySelector('.profile-widget').click()");
+            await WaitUntil(() => activeLobby.RecordsPage=="profile",
+                "React account hub did not open from the profile widget");
+            await activeLobby.Browser.CoreWebView2.ExecuteScriptAsync(
+                "document.querySelector('.account-routes button:last-child')?.click()");
         }
         else
         {

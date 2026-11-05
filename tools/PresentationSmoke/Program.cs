@@ -141,6 +141,15 @@ internal static partial class Program
 
         Find<Button>(window).Single(b=>b.Name=="PlayerProfileButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(100);window.UpdateLayout();
+        ModernLobbyView? profileHub = Find<ModernLobbyView>(window).FirstOrDefault(v=>v.Ready);
+        if (profileHub is not null)
+        {
+            for (int i=0;i<60 && profileHub.RecordsPage!="profile";i++) await Task.Delay(75);
+            Require(profileHub.RecordsPage=="profile","Native profile shortcut did not open React account hub.");
+            await profileHub.Browser.CoreWebView2!.ExecuteScriptAsync(
+                "document.querySelector('.account-routes button:last-child')?.click()");
+            for (int i=0;i<60 && !Find<Button>(window).Any(b=>b.Name=="ProfileNameBox" || b.Name=="RenameProfileButton");i++) await Task.Delay(75);
+        }
         RequireSingleHost(window,"Profile");
         Require(!((Button)window.FindName("DealButton")).IsEnabled,"Covered table can still receive keyboard activation");
         await CheckMetaFocusCycle(window);
@@ -186,7 +195,10 @@ internal static partial class Program
             await Task.Delay(80);
             await profileRecords.Browser.CoreWebView2.ExecuteScriptAsync(
                 "document.querySelector('.profile-widget')?.click()");
-            await Task.Delay(80);
+            for(int i=0;i<60 && profileRecords.RecordsPage!="profile";i++) await Task.Delay(80);
+            await profileRecords.Browser.CoreWebView2.ExecuteScriptAsync(
+                "document.querySelector('.account-routes button:last-child')?.click()");
+            for(int i=0;i<60 && !Find<Button>(window).Any(b=>b.Name=="ProfileProgressionButton"&&b.IsVisible);i++) await Task.Delay(80);
         }
         Find<Button>(window).Single(b=>b.Name=="ProfileProgressionButton" && b.IsVisible)
             .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
@@ -239,18 +251,16 @@ internal static partial class Program
             await Task.Delay(90);
             Require(!modernShop.ShopOpen, "Shop did not return to the shared React lobby.");
 
-            // Opening Shop from a native Season page must also migrate to the
-            // same React instance rather than showing the retired WPF shop.
+            // Season Pass and Shop now share one React compositor.
             await browser.ExecuteScriptAsync(
                 "[...document.querySelectorAll('.lobby-nav-item')].find(x=>/Season Pass/.test(x.textContent||''))?.click()");
-            await Task.Delay(180); window.UpdateLayout();
-            TabControl nativeSeason = Find<TabControl>(window).Single(t =>
-                t.IsVisible && t.Items.OfType<TabItem>().Any(tab => Equals(tab.Header, "Cosmetic Shop")));
-            nativeSeason.SelectedItem = nativeSeason.Items.OfType<TabItem>()
-                .Single(tab => Equals(tab.Header, "Cosmetic Shop"));
+            for (int i=0;i<70 && modernShop.RecordsPage!="season";i++) await Task.Delay(80);
+            Require(modernShop.RecordsPage=="season","Season Pass did not open in React.");
+            await browser.ExecuteScriptAsync(
+                "[...document.querySelectorAll('.lobby-nav-item')].find(x=>/Shop/.test(x.textContent||''))?.click()");
             for (int i = 0; i < 70 && !modernShop.ShopOpen; i++) await Task.Delay(100);
             Require(modernShop.ShopOpen && modernShop.IsVisible,
-                "Native Season shop tab did not open the React shop.");
+                "Modern Season -> Shop navigation did not preserve the React host.");
             await browser.ExecuteScriptAsync("document.querySelector('.shop-back')?.click()");
             await Task.Delay(80);
         }

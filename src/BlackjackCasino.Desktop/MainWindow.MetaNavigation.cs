@@ -34,7 +34,7 @@ public partial class MainWindow
         progressionController.AccruePlaytime();
         ProcessLatestCompletedRound();
         var profile = new PlayerProfileWindow(progressionController,
-            () => OpenProgressionPage("Season Pass"), CloseMetaPage, OpenProfileStatistics);
+            () => OpenNativeProgressionPage("Season Pass"), CloseMetaPage, OpenProfileStatistics);
         ShowMetaPage(profile);
     }
 
@@ -54,6 +54,14 @@ public partial class MainWindow
                 return;
             }
         }
+        OpenNativeProgressionPage(tab);
+    }
+
+    // A dedicated fallback for the still-native profile editor and detailed album smoke.
+    // The ordinary lobby and Season Pass navigation never use this WPF route.
+    private void OpenNativeProgressionPage(string tab)
+    {
+        if (progressionController is null) return;
         progressionController.AccruePlaytime();
         ProcessLatestCompletedRound();
         var page = new ProgressionWindow(progressionController, preferences.Presentation("progression").AnimationsEnabled, preferences.Presentation("progression").SoundEnabled);

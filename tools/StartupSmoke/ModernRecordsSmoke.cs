@@ -101,38 +101,47 @@ internal static class ModernRecordsSmoke
             "Statistics failed to return to the lobby.");
         Require(modern.RecordsPage is null,"Statistics remained open after Back.");
 
-        // Test a navigation path originating in WPF itself. The old page must
-        // not flash or remain active as the player selects the Challenges tab.
+        // Season Pass is a React page with native-authoritative season selection.
         await web.ExecuteScriptAsync(
             "[...document.querySelectorAll('.lobby-nav-item')].find(x=>/Season Pass/.test(x.textContent||''))?.click()");
-        await Until(()=>Find<Button>(window).Any(b=>b.Name=="ProgressionBackButton"&&b.IsVisible),
-            "The native Season Pass failed to open.");
-        TabControl tabs=Find<TabControl>(window).Single(t=>t.IsVisible
-            &&t.Items.OfType<TabItem>().Any(tab=>Equals(tab.Header,"Challenges")));
-        tabs.SelectedItem=tabs.Items.OfType<TabItem>().Single(t=>Equals(t.Header,"Challenges"));
-        await Until(()=>modern.RecordsPage=="challenges"&&modern.IsVisible,
-            "Season Pass did not hand over to the React Challenges page.");
-        await WaitFor(web,"Boolean(document.querySelector('.record-challenge'))",
-            "Native-to-React Challenges transition left an empty surface.");
-        Require(Find<ProgressionWindow>(window).All(x=>!x.IsVisible),
-            "The native Season page remained visible over Challenges.");
-        await web.ExecuteScriptAsync("document.querySelector('.record-page .shop-back')?.click()");
-        await Until(()=>modern.RecordsPage is null,"Native-to-React challenge Back did not close the route.");
+        await WaitFor(web,"Boolean(document.querySelector('.season-page .season-tiers article'))",
+            "React Season Pass is missing its reward track.");
+        Require(modern.RecordsPage=="season","Season Pass did not open in React.");
+        string originalSeason=profile.ActiveSeasonId;
+        string alternate=SeasonCatalog.All.First(s=>s.Id!=originalSeason).Id;
+        await web.ExecuteScriptAsync(
+            "document.querySelectorAll('.season-library button')["
+            + SeasonCatalog.All.ToList().FindIndex(s=>s.Id==alternate)
+            + "]?.click()");
+        await web.ExecuteScriptAsync("document.querySelector('.season-heading .record-claim-all')?.click()");
+        await Until(()=>profile.ActiveSeasonId==alternate,
+            "Season selection did not commit to the native profile.");
+        await web.ExecuteScriptAsync(
+            "document.querySelectorAll('.season-library button')["
+            + SeasonCatalog.All.ToList().FindIndex(s=>s.Id==originalSeason)
+            + "]?.click()");
+        await web.ExecuteScriptAsync("document.querySelector('.season-heading .record-claim-all')?.click()");
+        await Until(()=>profile.ActiveSeasonId==originalSeason,
+            "Season selection did not restore the original active pass.");
+        await Capture(web,Path.Combine(output,"modern-season-native.png"));
+        await web.ExecuteScriptAsync("document.querySelector('.season-page .shop-back')?.click()");
+        await Until(()=>modern.RecordsPage is null,"Season Pass did not return to lobby.");
 
-        // The profile's Statistics entry also shares exactly this same page.
+        // The profile header opens a React account hub; its navigation returns to React statistics.
         await web.ExecuteScriptAsync("document.querySelector('.profile-widget')?.click()");
-        await Until(()=>Find<Button>(window).Any(b=>b.Name=="ProfileStatisticsButton"&&b.IsVisible),
-            "Player profile does not expose its Statistics entry.");
-        Find<Button>(window).Single(b=>b.Name=="ProfileStatisticsButton"&&b.IsVisible)
-            .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        await WaitFor(web,"Boolean(document.querySelector('.account-page .account-routes'))",
+            "Player profile did not open the React account hub.");
+        Require(modern.RecordsPage=="profile","Profile route was not activated.");
+        await web.ExecuteScriptAsync(
+            "[...document.querySelectorAll('.account-routes button')].find(x=>/Statistics|Statistik/.test(x.textContent||''))?.click()");
         await Until(()=>modern.RecordsPage=="statistics"&&modern.IsVisible,
             "Profile Statistics did not open React.");
         await WaitFor(web,"Boolean(document.querySelector('.statistics-page'))",
-            "Profile Statistics retained the retired WPF rendering.");
+            "Profile statistics did not render.");
         await web.ExecuteScriptAsync("document.querySelector('.statistics-page .shop-back')?.click()");
         await Until(()=>modern.RecordsPage is null,"Profile Statistics did not close properly.");
         File.WriteAllText(Path.Combine(output,"modern-records-result.txt"),
-            "PASS: React Challenges and Statistics, single claim, duplicate-claim guard, Claim All across filters, stats/game/session data, native Season and Profile entry and clean return to lobby.");
+            "PASS: React Challenges and Statistics, single claim, duplicate-claim guard, Claim All across filters, stats/game/session data, React Season and Profile navigation, native season activation and clean return to lobby.");
     }
 
     private static async Task Capture(CoreWebView2 web,string path)
