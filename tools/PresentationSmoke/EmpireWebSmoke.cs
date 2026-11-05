@@ -129,8 +129,23 @@ internal static class EmpireWebSmoke
             Field("preferences").SetValue(window, area.WithPresentation("casino-empire", area.Presentation("casino-empire") with { AnimationsEnabled = false }));
             view.Refresh(); await Task.Delay(150);
             await Check(view, "document.querySelector('.empire-pixi').dataset.ticker==='stopped'", "Animation-off did not stop Pixi.");
+            var coldTimings = view.VisitTimings;
+            Require(coldTimings.ContainsKey("dom_usable"), "Cold startup has no DOM-ready milestone.");
             await Click(view, "back");
-            await Wait(() => !Find<ModernEmpireView>(window).Any(), "Back did not restore the lobby.");
+            await Wait(() => Field("empireView").GetValue(window) is null, "Back did not restore the lobby.");
+            Require(ReferenceEquals(Field("cachedEmpireView").GetValue(window), view), "Embedded Empire browser was destroyed.");
+            await Check(view, "document.querySelector('.empire-pixi').dataset.ticker==='stopped'", "Hidden Empire keeps its Pixi ticker running.");
+            window.Modes.Open("casino-empire");
+            await Wait(() => view.VisitTimings.ContainsKey("dom_usable"), "Warm reopen never acknowledged a fresh snapshot.");
+            Require(ReferenceEquals(Field("empireView").GetValue(window), view), "Warm reopen created another browser.");
+            var warmTimings = view.VisitTimings;
+            await Check(view, "document.querySelector('[data-testid=empire-ready]')!==null", "Warm reopen lost its usable DOM.");
+            File.WriteAllText(Path.Combine(output, "empire-startup-timings.json"),
+                JsonSerializer.Serialize(new { Source = "Windows WebView2 smoke", Cold = coldTimings, Warm = warmTimings,
+                    Limitations = "Milliseconds from native OpenEmpire entry until each observed stage. Single CI runner fixture, not end-user hardware." },
+                    new JsonSerializerOptions { WriteIndented = true }));
+            await Click(view, "back");
+            await Wait(() => Field("empireView").GetValue(window) is null, "Warm back did not restore the lobby.");
             window.Modes.OpenSecondary("casino-empire");
             Window detached = Application.Current.Windows.Cast<Window>().Single(w => w != window && Find<ModernEmpireView>(w).Any());
             var detachedView = Find<ModernEmpireView>(detached).Single();
