@@ -217,11 +217,12 @@ internal static partial class Program
             .FirstOrDefault(view => view.Ready && view.IsVisible);
         if (modernChallenges is not null)
         {
+            string selector = "[...document.querySelectorAll('.lobby-nav-item')]"
+                + ".find(x=>/Challenges|Aufgaben/.test(x.textContent||''))";
             string enabled = await modernChallenges.Browser.CoreWebView2!.ExecuteScriptAsync(
-                "Boolean(document.querySelector('.overview-challenges'))");
+                "Boolean(" + selector + ")");
             Require(enabled == "true", "React lobby is missing the Challenges shortcut");
-            await modernChallenges.Browser.CoreWebView2.ExecuteScriptAsync(
-                "document.querySelector('.overview-challenges').click()");
+            await modernChallenges.Browser.CoreWebView2.ExecuteScriptAsync(selector + "?.click()");
         }
         else
             Find<Button>(window).Single(b=>b.Name=="LobbyProgression_Challenges" && b.IsVisible)

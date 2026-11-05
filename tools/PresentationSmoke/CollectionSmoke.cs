@@ -16,13 +16,12 @@ internal static partial class Program
         if (modern is not null)
         {
             string selector = fromHeader
-                ? ".lobby-top-status .header-compact:nth-child(2)"
-                : ".overview-album";
+                ? "document.querySelector('.lobby-top-status .header-compact:nth-child(2)')"
+                : "[...document.querySelectorAll('.lobby-nav-item')].find(x=>/Collections|Sammlungen/.test(x.textContent||''))";
             string result = await modern.Browser.CoreWebView2!.ExecuteScriptAsync(
-                "Boolean(document.querySelector('" + selector + "'))");
+                "Boolean(" + selector + ")");
             Require(result == "true", "React lobby is missing the Collector's Album shortcut: " + selector);
-            await modern.Browser.CoreWebView2.ExecuteScriptAsync(
-                "document.querySelector('" + selector + "').click()");
+            await modern.Browser.CoreWebView2.ExecuteScriptAsync(selector + "?.click()");
         }
         else
         {

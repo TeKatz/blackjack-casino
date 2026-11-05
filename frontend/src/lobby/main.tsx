@@ -217,6 +217,8 @@ function LobbyApp() {
           onClick={()=>chooseNav(n.id)}>
           <span className="nav-icon" aria-hidden="true">{n.icon}</span>
           <span>{de?n.de:n.en}</span>
+          {n.id==='challenges'&&data.challengesReady>0&&
+            <span className="nav-ready" aria-label={de?'Belohnungen bereit':'Rewards ready'}>{data.challengesReady}</span>}
         </button>)}
         <div className="lobby-nav-decoration" aria-hidden="true">♣</div>
       </nav>

@@ -106,9 +106,9 @@ internal static class Program
                 ModernLobbyView reactLobby = Find<ModernLobbyView>(window).Single();
                 string clubNavigation = await reactLobby.Browser.CoreWebView2!.ExecuteScriptAsync(
                     "(()=>{const links=[...document.querySelectorAll('.lobby-nav-item')].map(x=>x.textContent);"
-                    + "const ready=document.querySelector('.overview-challenges')?.textContent||'';"
+                    + "const ready=document.querySelector('.nav-ready')?.textContent||'0';"
                     + "return links.some(x=>x.includes('Challenges'))&&links.some(x=>x.includes('Vault'))"
-                    + "&&links.some(x=>x.includes('Season Pass'))&&ready.includes('Rewards ready');})()");
+                    + "&&links.some(x=>x.includes('Season Pass'))&&Number(ready)>0;})()");
                 Require(clubNavigation.Equals("true", StringComparison.OrdinalIgnoreCase),
                     "Compact React lobby hides claimable rewards or Vault navigation.");
                 Require(Find<VaultHeaderArtwork>(vaultHeader).Any(),
