@@ -88,7 +88,9 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
  &&(!query.trim()||(c.name+' '+theme.name+' '+c.rarity).toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())))??[],
  [theme,filter,query]);
  const selectedPackCount=data.pending?0:(currentPack?.owned??0);
- const hasQueuedBatch=batchRemaining>1;
+ // The last pack in an Open All batch must also finish automatically.
+ // Zero means a manually opened single pack, which waits for Collect.
+ const hasQueuedBatch=batchRemaining>0;
 
  // A persisted receipt is the only source of revealed cards. Returning from
  // another page or restarting the application resumes the same five results.
@@ -189,7 +191,7 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
  }
  function startPack(all:boolean){
   if(busy||data.pending||selectedPackCount<=0)return;
-  setBatchRemaining(all?selectedPackCount:1);
+  setBatchRemaining(all?selectedPackCount:0);
   setRevealed(0);
   setBusy(true);
   setPhase('await');
