@@ -118,7 +118,7 @@ internal sealed class ModernEmpireView : ContentControl, IDisposable
     }
     private void OnMessage(object? sender, CoreWebView2WebMessageReceivedEventArgs args)
     {
-        if (disposed || !EmpireModernProtocol.Trusted(args.Source) || args.WebMessageAsJson.Length > 8192) return;
+        if (disposed || Failed || !EmpireModernProtocol.Trusted(args.Source) || args.WebMessageAsJson.Length > 8192) return;
         try
         {
             using var doc = JsonDocument.Parse(args.WebMessageAsJson);
