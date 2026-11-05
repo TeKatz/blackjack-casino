@@ -306,6 +306,11 @@ public partial class MainWindow
 
     private void CloseEmbeddedGame()
     {
+        if (ModernReelsOpen)
+        {
+            CloseModernReels();
+            return;
+        }
         if (ModernBlackjackOpen)
         {
             CloseModernBlackjack();

@@ -7,7 +7,10 @@ public partial class MainWindow
 {
     private SlotProgression? slotProgression;
 
-    private void Slots_Click(object sender, RoutedEventArgs e)
+    // Legacy table sidebar command follows the modern casino route.
+    private void Slots_Click(object sender, RoutedEventArgs e) => OpenMidnightReels();
+
+    private void LegacySlotsDialog_Click(object sender, RoutedEventArgs e)
     {
         if (session.RoundInProgress)
         {

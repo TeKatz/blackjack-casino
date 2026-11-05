@@ -17,7 +17,7 @@ public partial class MainWindow
         modeRegistry.Register(new("blackjack","Blackjack","The velvet tables","A quiet seat, a fresh shoe and your next decision. Solo or with the house regulars.","#537D66","♠","Table games",()=>new LobbyGameArtwork(false)),()=>
         {OpenBlackjackMode();TableModeText.Text="Blackjack · your table";});
         modeRegistry.Register(new("midnight-reels","Midnight Reels","The golden floor","Three reels, a centre payline and a little old-school casino charm.","#C69A51","7 7 7","Classic slots",()=>new LobbyGameArtwork(true)),()=>
-        {TableModeText.Text="Midnight Reels · classic slots";EmbeddedSlots_Click(this,new RoutedEventArgs());});
+        {TableModeText.Text="Midnight Reels · classic slots";OpenMidnightReels();});
         modeRegistry.Register(new("neon-vault","Neon Vault","The high-voltage floor","Five reels, 1,024 ways and Vault Break Free Spins. High Roller stakes up to $250K.","#55DDF8","◇","Video slots",()=>new NeonVaultArtwork()),()=>
         {TableModeText.Text="Neon Vault · high roller slots";EmbeddedNeonVault_Click(this,new RoutedEventArgs());});
         modeRegistry.Register(new("nine-lives","Nine Lives","The moonlit rooftop","Five lines, Pounce Wilds and nine bonus spins. Chase the 5,000× Full Grid Frenzy.","#C95CFF","9","Video slots",()=>new NineLivesLobbyArtwork()),()=>

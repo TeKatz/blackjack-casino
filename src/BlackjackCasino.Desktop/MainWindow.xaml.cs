@@ -828,7 +828,7 @@ public partial class MainWindow : Window
         }
 
         // The hosted view owns its shortcuts and Escape; never route them to Blackjack.
-        if (KniffelPageOpen || ModernBlackjackOpen) return;
+        if (KniffelPageOpen || ModernBlackjackOpen || ModernReelsOpen) return;
 
         if (EmpirePageOpen)
         {
