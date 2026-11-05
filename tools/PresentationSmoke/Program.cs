@@ -203,11 +203,25 @@ internal static partial class Program
                 "document.querySelector('.profile-widget')?.click()");
             for(int i=0;i<70 && modernProfile.RecordsPage!="profile";i++)await Task.Delay(75);
             Require(modernProfile.RecordsPage=="profile","React account hub did not reopen after Hand History.");
+            // Native route state can change before the next React commit. Waiting
+            // only on RecordsPage and immediately clicking the old DOM is racy.
+            bool accountRoutesRendered=false;
+            for(int i=0;i<120 && !accountRoutesRendered;i++)
+            {
+                accountRoutesRendered=await modernProfile.Browser.CoreWebView2.ExecuteScriptAsync(
+                    "Boolean([...document.querySelectorAll('.account-page .account-routes button')]"
+                    +".find(x=>/Statistics|Statistik/.test(x.textContent||'')))")=="true";
+                if(!accountRoutesRendered)await Task.Delay(65);
+            }
+            Require(accountRoutesRendered,"React account routes did not render after Hand History.");
             await modernProfile.Browser.CoreWebView2.ExecuteScriptAsync(
-                "[...document.querySelectorAll('.account-routes button')].find(x=>/Statistics|Statistik/.test(x.textContent||''))?.click()");
-            for (int i=0;i<70 && modernProfile.RecordsPage!="statistics";i++) await Task.Delay(80);
+                "[...document.querySelectorAll('.account-page .account-routes button')]"
+                +".find(x=>/Statistics|Statistik/.test(x.textContent||''))?.click()");
+            for (int i=0;i<110 && (modernProfile.RecordsPage!="statistics" || !modernProfile.IsVisible);i++)
+                await Task.Delay(75);
             Require(modernProfile.RecordsPage=="statistics" && modernProfile.IsVisible,
-                "Profile Statistics did not migrate to React.");
+                "Profile Statistics did not migrate to React. Route: "
+                +(modernProfile.RecordsPage??"<closed>")+" / Visible: "+modernProfile.IsVisible);
             bool statsFromProfile=false;
             for(int i=0;i<100 && !statsFromProfile;i++)
             {
