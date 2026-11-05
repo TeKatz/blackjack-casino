@@ -70,6 +70,10 @@ public partial class MainWindow
     {
         TableSurface.Visibility = Visibility.Collapsed;
         BlackjackSidebar.Visibility = Visibility.Collapsed;
+        // A hidden native table must not retain enabled game actions.
+        DealButton.IsEnabled = false;
+        ClearBetButton.IsEnabled = false;
+        SetActionAvailability(new HashSet<PlayerAction>());
     }
 
     private void ShowBlackjackTable()

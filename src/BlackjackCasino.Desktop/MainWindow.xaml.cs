@@ -262,7 +262,7 @@ public partial class MainWindow : Window
 
     private void Chip_Click(object sender, RoutedEventArgs e)
     {
-        if (session.RoundInProgress || sender is not Button { Tag: string raw } || !decimal.TryParse(raw, CultureInfo.InvariantCulture, out decimal chip))
+        if (TableSurface.Visibility != Visibility.Visible || session.RoundInProgress || sender is not Button { Tag: string raw } || !decimal.TryParse(raw, CultureInfo.InvariantCulture, out decimal chip))
         {
             return;
         }
@@ -275,7 +275,7 @@ public partial class MainWindow : Window
 
     private void ClearBet_Click(object sender, RoutedEventArgs e)
     {
-        if (!session.RoundInProgress)
+        if (TableSurface.Visibility == Visibility.Visible && !session.RoundInProgress)
         {
             selectedBet = 0m;
             SavePreferences();
@@ -287,7 +287,8 @@ public partial class MainWindow : Window
 
     private void Deal()
     {
-        if (session.RoundInProgress || selectedBet <= 0m || selectedBet > session.Bankroll)
+        if (TableSurface.Visibility != Visibility.Visible
+            || session.RoundInProgress || selectedBet <= 0m || selectedBet > session.Bankroll)
         {
             return;
         }
@@ -496,14 +497,15 @@ public partial class MainWindow : Window
 
             BlackjackRound? round = session.CurrentRound;
             bool betting = !session.RoundInProgress;
-            bool canDeal = betting && selectedBet > 0m && selectedBet <= session.Bankroll;
+            bool tableActive = TableSurface.Visibility == Visibility.Visible;
+            bool canDeal = tableActive && betting && selectedBet > 0m && selectedBet <= session.Bankroll;
 
             DealButton.IsEnabled = canDeal;
             ResultDealButton.Visibility = round is not null && betting ? Visibility.Visible : Visibility.Collapsed;
-            ClearBetButton.IsEnabled = betting && selectedBet > 0m;
-            ResetBankrollButton.IsEnabled = betting;
-            GameModeComboBox.IsEnabled = betting;
-            AiSeatCountComboBox.IsEnabled = betting;
+            ClearBetButton.IsEnabled = tableActive && betting && selectedBet > 0m;
+            ResetBankrollButton.IsEnabled = tableActive && betting;
+            GameModeComboBox.IsEnabled = tableActive && betting;
+            AiSeatCountComboBox.IsEnabled = tableActive && betting;
             AiSettingsPanel.Visibility = playMode == PlayModePreference.FullTable ? Visibility.Visible : Visibility.Collapsed;
 
             DealerCardsPanel.Children.Clear();
@@ -786,11 +788,12 @@ public partial class MainWindow : Window
 
     private void SetActionAvailability(IReadOnlySet<PlayerAction> actions)
     {
-        HitButton.IsEnabled = actions.Contains(PlayerAction.Hit);
-        StandButton.IsEnabled = actions.Contains(PlayerAction.Stand);
-        DoubleButton.IsEnabled = actions.Contains(PlayerAction.DoubleDown);
-        SplitButton.IsEnabled = actions.Contains(PlayerAction.Split);
-        SurrenderButton.IsEnabled = actions.Contains(PlayerAction.Surrender);
+        bool active = TableSurface.Visibility == Visibility.Visible;
+        HitButton.IsEnabled = active && actions.Contains(PlayerAction.Hit);
+        StandButton.IsEnabled = active && actions.Contains(PlayerAction.Stand);
+        DoubleButton.IsEnabled = active && actions.Contains(PlayerAction.DoubleDown);
+        SplitButton.IsEnabled = active && actions.Contains(PlayerAction.Split);
+        SurrenderButton.IsEnabled = active && actions.Contains(PlayerAction.Surrender);
     }
 
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
