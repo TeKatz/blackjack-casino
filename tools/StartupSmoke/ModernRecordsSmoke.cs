@@ -132,6 +132,47 @@ internal static class ModernRecordsSmoke
         await WaitFor(web,"Boolean(document.querySelector('.account-page .account-routes'))",
             "Player profile did not open the React account hub.");
         Require(modern.RecordsPage=="profile","Profile route was not activated.");
+        await web.ExecuteScriptAsync("document.querySelector('.account-edit-route')?.click()");
+        await WaitFor(web,"Boolean(document.querySelector('.identity-editor #identity-name')"
+            + "&&document.querySelector('.identity-cosmetics'))",
+            "React identity editor did not render owned cosmetics and display-name input.");
+        Require(!Find<PlayerProfileWindow>(window).Any(w=>w.IsVisible),
+            "Profile editing unexpectedly opened the native WPF profile window.");
+
+        // Exercise the actual React controlled input and original native name validator.
+        string previousName=profile.DisplayName;
+        string updatedName="Migration QA";
+        string editScript(string value)=>"(()=>{const input=document.querySelector('#identity-name');"
+            +"const set=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set;"
+            +"set.call(input,"+JsonSerializer.Serialize(value)+");"
+            +"input.dispatchEvent(new Event('input',{bubbles:true}));return input.value;})()";
+        await web.ExecuteScriptAsync(editScript(updatedName));
+        await WaitFor(web,"document.querySelector('#identity-name')?.value==='Migration QA'",
+            "React did not accept the new profile name.");
+        await web.ExecuteScriptAsync("document.querySelector('.identity-rename button[type=submit]')?.click()");
+        await Until(()=>profile.DisplayName==updatedName,
+            "React profile rename did not commit through the native controller.");
+        await WaitFor(web,"document.querySelector('.account-name')?.textContent==='Migration QA'",
+            "React profile header did not refresh after native name persistence.");
+        await web.ExecuteScriptAsync(editScript(previousName));
+        await web.ExecuteScriptAsync("document.querySelector('.identity-rename button[type=submit]')?.click()");
+        await Until(()=>profile.DisplayName==previousName,
+            "React profile rename did not restore the original name.");
+
+        await web.ExecuteScriptAsync(
+            "[...document.querySelectorAll('.account-routes button')].find(x=>/Hand History|Spielverlauf/.test(x.textContent||''))?.click()");
+        await WaitFor(web,"Boolean(document.querySelector('.history-page .history-filters')"
+            +"&&document.querySelector('.history-page .record-search input'))",
+            "Blackjack Hand History is still not an interactive React page.");
+        Require(modern.RecordsPage=="history","Native Hand History did not use the React records route.");
+        await Capture(web,Path.Combine(output,"modern-history-native.png"));
+        await web.ExecuteScriptAsync("document.querySelector('.history-page .shop-back')?.click()");
+        await Until(()=>modern.RecordsPage is null,"React Hand History did not return to the lobby.");
+
+        // Reopen profile before following its Statistics navigation.
+        await web.ExecuteScriptAsync("document.querySelector('.profile-widget')?.click()");
+        await WaitFor(web,"Boolean(document.querySelector('.account-page .account-routes'))",
+            "React profile could not reopen after visiting Hand History.");
         await web.ExecuteScriptAsync(
             "[...document.querySelectorAll('.account-routes button')].find(x=>/Statistics|Statistik/.test(x.textContent||''))?.click()");
         await Until(()=>modern.RecordsPage=="statistics"&&modern.IsVisible,
@@ -141,7 +182,7 @@ internal static class ModernRecordsSmoke
         await web.ExecuteScriptAsync("document.querySelector('.statistics-page .shop-back')?.click()");
         await Until(()=>modern.RecordsPage is null,"Profile Statistics did not close properly.");
         File.WriteAllText(Path.Combine(output,"modern-records-result.txt"),
-            "PASS: React Challenges and Statistics, single claim, duplicate-claim guard, Claim All across filters, stats/game/session data, React Season and Profile navigation, native season activation and clean return to lobby.");
+            "PASS: React Challenges, Statistics, Season, Profile identity editor and Hand History; C#-persisted rename and season activation; native rewards validated; clean lobby navigation.");
     }
 
     private static async Task Capture(CoreWebView2 web,string path)
