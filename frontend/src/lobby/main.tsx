@@ -5,7 +5,7 @@ import { embeddedLobby, fallbackLobby, lobbyCommand, onLobbySnapshot } from './l
 import type { LobbyMode, LobbySnapshot } from './lobbyBridge';
 import './lobby.css';
 
-type Filter = 'all'|'tables'|'slots'|'relax'|'empire'|'collections'|'shop'|'stats'|'season'|'challenges'|'vault';
+type Filter = 'all'|'tables'|'slots'|'relax'|'empire'|'collections'|'shop'|'stats'|'season'|'challenges'|'vault'|'daily';
 const artOrder = ['blackjack','kniffel','chill-lounge','casino-empire','midnight-reels',
   'neon-vault','nine-lives','midnight-manor','midnight-merge'];
 const categoryById: Record<string, string> = {
@@ -22,6 +22,7 @@ const navigation: {id: Filter; icon: string; en: string; de: string}[] = [
   {id:'season',icon:'✦',en:'Season Pass',de:'Saisonpass'},
   {id:'challenges',icon:'♛',en:'Challenges',de:'Aufgaben'},
   {id:'vault',icon:'⬡',en:'Vault',de:'Tresor'},
+  {id:'daily',icon:'✦',en:'Daily Login',de:'Täglicher Login'},
 ];
 function percent(n: number): string { return Math.round(n * 100) + '%'; }
 function matchesFilter(id: string, filter: Filter): boolean {
@@ -68,11 +69,12 @@ function GameTile({ mode, language, onOpen, onSecondary }:{
     </div>
   </article>;
 }
-function DailyLogin({data,onClaim}:{data:LobbySnapshot;onClaim:()=>void}) {
+function DailyLogin({data,onClaim,onClose,mobileOpen}:{data:LobbySnapshot;onClaim:()=>void;onClose:()=>void;mobileOpen:boolean}) {
   const de = data.language==='de';
   const daily = data.dailyLogin;
-  return <aside className="lobby-daily" aria-label={de?'Tägliche Belohnungen':'Daily rewards'}>
+  return <aside className={"lobby-daily "+(mobileOpen?"mobile-open":"")} aria-label={de?'Tägliche Belohnungen':'Daily rewards'}>
     <div className="daily-header">
+      <button className="daily-close" type="button" onClick={onClose} aria-label={de?"Tägliche Belohnungen schließen":"Close daily rewards"}>×</button>
       <span className="lobby-eyebrow">✦ {de?'DEIN MIDNIGHT CLUB':'THE MIDNIGHT CLUB'}</span>
       <h2>{de?'Täglicher Login':'Daily Login'}</h2>
       <p>{de?'Eine kleine Belohnung für deinen Besuch. Ohne Verlust von Serien: Die nächste Belohnung wartet auf dich.':
@@ -126,6 +128,7 @@ function DailyLogin({data,onClaim}:{data:LobbySnapshot;onClaim:()=>void}) {
 function LobbyApp() {
   const [data,setData] = useState<LobbySnapshot>(fallbackLobby);
   const [filter,setFilter] = useState<Filter>('all');
+  const [dailyOpen,setDailyOpen] = useState(false);
   const [lowMotion,setLowMotion] = useState(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const [nativeSnapshotReceived,setNativeSnapshotReceived] = useState(!embeddedLobby);
   useEffect(()=>{
@@ -165,6 +168,8 @@ function LobbyApp() {
     if(id==='season') {openProgression('Season Pass');return;}
     if(id==='challenges') {openProgression('Challenges');return;}
     if(id==='vault') {lobbyCommand('lobby.vault');return;}
+    if(id==='daily') {setDailyOpen(true);return;}
+    setDailyOpen(false);
     setFilter(id);
   };
   const modes = data.modes
@@ -208,7 +213,7 @@ function LobbyApp() {
       <nav className="lobby-nav" aria-label={de?'Casino-Navigation':'Casino navigation'}>
         {navigation.map(n=><button type="button" key={n.id}
           aria-current={n.id===filter?'page':undefined}
-          className={'lobby-nav-item '+(n.id===filter?'selected':'')}
+          className={'lobby-nav-item '+(n.id===filter?'selected':'')+(n.id==='daily'?' daily-nav':'')}
           onClick={()=>chooseNav(n.id)}>
           <span className="nav-icon" aria-hidden="true">{n.icon}</span>
           <span>{de?n.de:n.en}</span>
@@ -233,7 +238,8 @@ function LobbyApp() {
         </section>
         {!embeddedLobby&&<small className="browser-note">Browser preview · navigation requires the Windows client.</small>}
       </main>
-      <DailyLogin data={data} onClaim={()=>lobbyCommand('lobby.daily.claim')}/>
+      <DailyLogin data={data} onClaim={()=>lobbyCommand('lobby.daily.claim')}
+        onClose={()=>setDailyOpen(false)} mobileOpen={dailyOpen}/>
     </div>
   </div>;
 }

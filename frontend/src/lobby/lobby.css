@@ -298,3 +298,23 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
   .daily-footer p{font-size:9px;}
   .daily-claim{min-height:36px;}
 }
+
+/* At compact widths the rewards stay accessible from the left-hand Daily Login
+   navigation, rather than vanishing along with the former overview column. */
+.lobby-body{position:relative;}
+.lobby-nav-item.daily-nav{display:none;}
+.daily-close{display:none;}
+@media(max-width:1100px){
+  .lobby-nav-item.daily-nav{display:flex;}
+  .lobby-daily.mobile-open{
+    display:flex;position:absolute;z-index:9;
+    top:8px;right:8px;bottom:8px;width:min(355px,calc(100% - 145px));
+    overflow-y:auto;box-shadow:0 16px 50px #000c;
+  }
+  .daily-close{
+    display:grid;place-items:center;position:absolute;right:1px;top:-6px;
+    width:30px;height:30px;font-size:24px;color:#efd8a0;
+    border:1px solid #6c7550;border-radius:7px;background:#123027;
+  }
+  .daily-header{position:relative;}
+}
