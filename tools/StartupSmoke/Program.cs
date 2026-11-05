@@ -78,6 +78,11 @@ internal static class Program
                 await Task.Delay(180);
                 window.UpdateLayout();
                 Require(window.IsVisible, "Main window never became visible.");
+                Require(((FrameworkElement)window.FindName("TableSurface")).Visibility == Visibility.Collapsed
+                    && ((FrameworkElement)window.FindName("BlackjackSidebar")).Visibility == Visibility.Collapsed,
+                    "Blackjack visual tree is visible at startup instead of the casino lobby.");
+                Require(!((FrameworkElement)window.FindName("CasinoHeader")).IsVisible,
+                    "The old Blackjack header is visible above the startup lobby.");
                 CheckWelcomeOverlay(window, profile, output);
                 await VerifyPackagedModernLobby(window, output);
                 RequireNoLegacyLobbyFrame(window, "startup");

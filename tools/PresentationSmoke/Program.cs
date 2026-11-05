@@ -44,6 +44,10 @@ internal static partial class Program
     {
         await Task.Delay(200);Capture(window,"01-lobby");
         Require(Find<CasinoLobbyView>(window).Any(v=>v.IsVisible),"Application did not start in the lobby");
+        Require(((FrameworkElement)window.FindName("TableSurface")).Visibility == Visibility.Collapsed
+            && ((FrameworkElement)window.FindName("BlackjackSidebar")).Visibility == Visibility.Collapsed
+            && !((FrameworkElement)window.FindName("CasinoHeader")).IsVisible,
+            "The native Blackjack layout was rendered before its game route.");
         Require(window.Modes.Modes.Count(m=>m.Id=="midnight-manor")==1,
             "Midnight Manor must be registered exactly once.");
         Require(window.Modes.CanOpen("midnight-manor"),
@@ -338,6 +342,10 @@ internal static partial class Program
         }
         await CheckEmpire(window);
         window.Width=1440;window.Height=900;window.Modes.Open("blackjack");mode.SelectedIndex=1;theme.SelectedIndex=0;
+        Require(((FrameworkElement)window.FindName("TableSurface")).IsVisible
+            && ((FrameworkElement)window.FindName("BlackjackSidebar")).IsVisible
+            && ((FrameworkElement)window.FindName("CasinoHeader")).IsVisible,
+            "The Blackjack route did not reveal its native game surface.");
         ((Button)window.FindName("DealButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(500);window.UpdateLayout();
         var viewport=(ScrollViewer)window.FindName("PlayerHandViewport");var hands=(FrameworkElement)window.FindName("PlayerHandsPanel");

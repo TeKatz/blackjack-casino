@@ -132,7 +132,7 @@
     <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="336" /></Grid.ColumnDefinitions>
     <Grid.RowDefinitions><RowDefinition Height="70" /><RowDefinition Height="*" /></Grid.RowDefinitions>
 
-    <Border Grid.ColumnSpan="2" Background="{DynamicResource HeaderBackgroundBrush}" BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="0,0,0,1" Effect="{StaticResource HeaderShadow}" Panel.ZIndex="5">
+    <Border Visibility="Collapsed" Grid.ColumnSpan="2" Background="{DynamicResource HeaderBackgroundBrush}" BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="0,0,0,1" Effect="{StaticResource HeaderShadow}" Panel.ZIndex="5">
       <Grid x:Name="CasinoHeader" Margin="22,0">
         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
         <DockPanel VerticalAlignment="Center" Margin="0,0,16,0" ClipToBounds="True"><Button x:Name="LobbyButton" DockPanel.Dock="Left" Content="← LOBBY" Style="{StaticResource MutedButton}" Click="Lobby_Click" Margin="0,0,16,0"/><StackPanel><TextBlock Text="BLACKJACK CASINO" FontSize="23" FontWeight="Bold" Foreground="#FFF9ED" TextTrimming="CharacterEllipsis" /><TextBlock x:Name="TableModeText" Text="Solo table" FontSize="11" Foreground="{DynamicResource MutedTextBrush}" TextTrimming="CharacterEllipsis" /></StackPanel></DockPanel>
