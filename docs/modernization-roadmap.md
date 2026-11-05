@@ -269,3 +269,22 @@ original C# update-channel selection and closing; presentation regression
 asserts the native fallback exists and the Blackjack sidebar has no update UI.
 Do not delete the original updater or preferences until the migration is
 complete and its download/restart lifecycle remains tested.
+
+
+## Midnight Reels migration (2026-11-06)
+
+The normal \`midnight-reels\` lobby route now targets a separate React
+cabinet hosted via the same WPF/WebView2 overlay as modern Blackjack.
+The old WPF \`SlotMachineWindow\` remains as a non-primary browser
+fallback and visual regression fixture. C# \`SlotMachineSession\` still
+generates every weighted stop, computes multiplier/payout, and updates
+the single casino bankroll; \`SlotProgression\` records XP/statistics
+before React animates anything. The protocol is origin-, epoch-,
+revision- and receipt-validated; frontend messages cannot alter
+results or award XP. Sound, animation and previous bet are persisted
+to the existing \`midnight-reels\` preference area.
+
+Windows tests must verify the normal React launch, a native spin,
+wallet/progression persistence, route reentry and simulated browser
+failure returning to a playable native fallback. No old WPF game
+views will be removed until all their fallback coverage is replaced.
