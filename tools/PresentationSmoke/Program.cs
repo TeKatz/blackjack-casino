@@ -211,7 +211,7 @@ internal static partial class Program
             {
                 string ready = await browser.ExecuteScriptAsync(
                     "Boolean(document.querySelector('.modern-shop')"
-                    + "&&document.querySelectorAll('.shop-product').length===CosmeticCatalog.All.Count)");
+                    + "&&document.querySelectorAll('.shop-product').length===" + CosmeticCatalog.All.Count + ")");
                 if (ready == "true") break;
                 await Task.Delay(100);
             }
@@ -219,8 +219,8 @@ internal static partial class Program
                 "(()=>{const root=document.querySelector('.modern-shop');"
                 + "return Boolean(root&&root.querySelectorAll('.shop-product').length>60"
                 + "&&root.querySelectorAll('.shop-pack').length===5"
-                + "&&root.querySelector('[data-cosmetic-id="portrait-moon-cat"]')"
-                + "&&root.querySelector('[data-cosmetic-id="diceset-aurora"]'));})()");
+                + "&&root.querySelector('[data-cosmetic-id=\"portrait-moon-cat\"]')"
+                + "&&root.querySelector('[data-cosmetic-id=\"diceset-aurora\"]'));})()");
             Require(view == "true", "Modern Shop does not expose full live cosmetic/pack inventory.");
             await using (FileStream capture = File.Create(Path.Combine(output, "modern-shop-presentation.png")))
                 await browser.CapturePreviewAsync(
