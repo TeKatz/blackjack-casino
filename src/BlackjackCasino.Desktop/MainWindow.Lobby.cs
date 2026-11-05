@@ -98,7 +98,13 @@ public partial class MainWindow
     {
         if(CasinoHeader.Parent is UIElement hostHeader)
         {
-            hostHeader.Visibility=embeddedGameVisible || lobby?.IsVisible == true || modernLobby is { Ready: true, IsVisible: true }
+            // Do not expose the native Blackjack header over a functioning or loading
+            // modern lobby. If the modern entry is missing or its browser has failed,
+            // the legacy fallback needs its native profile, album and settings actions.
+            bool modernOwnsLobby = ModernLobbyView.IsAvailable && modernLobby?.Failed != true;
+            hostHeader.Visibility = embeddedGameVisible
+                || (lobby?.IsVisible == true && modernOwnsLobby)
+                || modernLobby is { Ready: true, IsVisible: true }
                 ? Visibility.Collapsed : Visibility.Visible;
         }
     }
