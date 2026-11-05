@@ -37,11 +37,20 @@ export type SeasonTier={tier:number;requiredExperience:number;coins:number;cosme
 export type SeasonEntry={id:string;name:string;description:string;archived:boolean;rewardsEnabled:boolean;
  tier:number;experience:number;totalTiers:number;maxExperience:number;tiers:SeasonTier[]};
 export type SeasonsSnapshot={activeSeasonId:string;seasons:SeasonEntry[]};
-export type RecordsPage='challenges'|'statistics'|'profile'|'history'|'season';
+export type VaultSnapshot={
+ tier:string;tierId:string;accent:string;current:string;capacity:string;progress:number;
+ contributionRate:number;bonusRate:number;isFull:boolean;payoutPending:boolean;
+ unlockedTier:string;nextTier:string|null;nextTierWager:string|null;
+ lifetimeContributions:string;lifetimePayouts:string;lifetimeBonuses:string;
+ vaultsOpened:number;biggestPayout:string;lifetimeEligibleWager:string;
+};
+export type VaultReward={tier:string;baseAmount:string;bonusAmount:string;total:string;pack:string};
+export type RecordsPage='challenges'|'statistics'|'profile'|'history'|'season'|'vault';
 export type RecordsMessage=
   {type:'lobby.records.show';data:{page:RecordsPage}}|
-  {type:'lobby.records.snapshot';data:{page:'challenges';snapshot:ChallengesSnapshot}|{page:'statistics';snapshot:StatisticsSnapshot}|{page:'profile';snapshot:AccountSnapshot}|{page:'history';snapshot:HistorySnapshot}|{page:'season';snapshot:SeasonsSnapshot}}|
-  {type:'lobby.records.result';data:{success:boolean;message:string;id:string}};
+  {type:'lobby.records.snapshot';data:{page:'challenges';snapshot:ChallengesSnapshot}|{page:'statistics';snapshot:StatisticsSnapshot}|{page:'profile';snapshot:AccountSnapshot}|{page:'history';snapshot:HistorySnapshot}|{page:'season';snapshot:SeasonsSnapshot}|{page:'vault';snapshot:VaultSnapshot}}|
+  {type:'lobby.records.result';data:{success:boolean;message:string;id:string}}|
+  {type:'lobby.records.vault.result';data:{success:boolean;message:string;reward:VaultReward|null}};
 export type ChallengeStatus='all'|'ready'|'progress'|'claimed'|'unclaimed';
 const obj=(x:unknown):x is Record<string,unknown>=>x!==null&&typeof x==='object'&&!Array.isArray(x);
 const str=(x:unknown):x is string=>typeof x==='string';
@@ -77,6 +86,19 @@ export function isStatistics(x:unknown):x is StatisticsSnapshot{
       &&['name','hands','net','rounds','winRate'].every(k=>str(t[k]))
       &&typeof t.positive==='boolean');
 }
+export function isVault(x:unknown):x is VaultSnapshot{
+ return obj(x)&&['tier','tierId','accent','current','capacity','unlockedTier',
+    'lifetimeContributions','lifetimePayouts','lifetimeBonuses','biggestPayout',
+    'lifetimeEligibleWager'].every(k=>str(x[k]))
+    &&(x.nextTier===null||str(x.nextTier))
+    &&(x.nextTierWager===null||str(x.nextTierWager))
+    &&pct(x.progress)&&pct(x.bonusRate)&&pct(x.contributionRate)
+    &&count(x.vaultsOpened)&&typeof x.isFull==='boolean'
+    &&typeof x.payoutPending==='boolean';
+}
+export function isVaultReward(x:unknown):x is VaultReward{
+ return obj(x)&&['tier','baseAmount','bonusAmount','total','pack'].every(k=>str(x[k]));
+}
 export function isAccount(x:unknown):x is AccountSnapshot{
  if(!obj(x)||!['displayName','coins','title','portraitId','equippedTitleId','equippedPortraitId',
     'profileExperience','playtime','season','created'].every(k=>str(x[k]))
@@ -108,15 +130,20 @@ export function onRecordsMessage(handle:(message:RecordsMessage)=>void):()=>void
   const listener=(event:MessageEvent)=>{
     const m:unknown=event.data;
     if(!obj(m)||!str(m.type)||!obj(m.data))return;
-    if(m.type==='lobby.records.show'&&(m.data.page==='challenges'||m.data.page==='statistics'||m.data.page==='profile'||m.data.page==='history'||m.data.page==='season'))
+    if(m.type==='lobby.records.show'&&(m.data.page==='challenges'||m.data.page==='statistics'||m.data.page==='profile'||m.data.page==='history'||m.data.page==='season'||m.data.page==='vault'))
       handle({type:m.type,data:{page:m.data.page}});
     if(m.type==='lobby.records.snapshot'
       && ((m.data.page==='challenges'&&isChallenges(m.data.snapshot))
         ||(m.data.page==='statistics'&&isStatistics(m.data.snapshot))
         ||(m.data.page==='profile'&&isAccount(m.data.snapshot))
         ||(m.data.page==='history'&&isHistory(m.data.snapshot))
-        ||(m.data.page==='season'&&isSeasons(m.data.snapshot))))
+        ||(m.data.page==='season'&&isSeasons(m.data.snapshot))
+        ||(m.data.page==='vault'&&isVault(m.data.snapshot))))
       handle({type:m.type,data:m.data as RecordsMessage & never});
+    if(m.type==='lobby.records.vault.result'
+      &&typeof m.data.success==='boolean'&&str(m.data.message)
+      &&m.data.message.length<800&&(m.data.reward===null||isVaultReward(m.data.reward)))
+      handle({type:m.type,data:{success:m.data.success,message:m.data.message,reward:m.data.reward}});
     if(m.type==='lobby.records.result'
       &&typeof m.data.success==='boolean'&&str(m.data.message)&&m.data.message.length<800&&str(m.data.id))
       handle({type:m.type,data:{success:m.data.success,message:m.data.message,id:m.data.id}});
@@ -157,6 +184,13 @@ export const previewAccount:AccountSnapshot={
  ownedCards:0,totalCards:136,season:'Neon Dynasty',created:'—'
 };
 export const previewHistory:HistorySnapshot={total:0,entries:[]};
+export const previewVault:VaultSnapshot={
+ tier:'Bronze Vault',tierId:'bronze',accent:'#B87947',current:'$2,500.00',
+ capacity:'$10,000.00',progress:.25,contributionRate:.02,bonusRate:.10,isFull:false,payoutPending:false,
+ unlockedTier:'Bronze Vault',nextTier:'Silver Vault',nextTierWager:'$250,000.00',
+ lifetimeContributions:'$2,500.00',lifetimePayouts:'$0.00',lifetimeBonuses:'$0.00',
+ vaultsOpened:0,biggestPayout:'$0.00',lifetimeEligibleWager:'$125,000.00',
+};
 export const previewSeasons:SeasonsSnapshot={
  activeSeasonId:'season-3-neon-dynasty',seasons:[{
  id:'season-3-neon-dynasty',name:'Neon Dynasty',description:'Current Season Pass',

@@ -220,3 +220,59 @@
 .history-hands small{color:#adbcac;}
 .history-more{display:block;margin:12px auto;}
 @media(max-width:700px){.identity-rename>div{flex-wrap:wrap}.identity-rename button{width:100%;}}
+
+/* React Vault: live native balance and transactional C# payout, no WPF modal in the lobby. */
+.vault-hero{background:linear-gradient(110deg,#071b17e8,#273424d9,#10221bea),url('/lobby/art/hero.png') center/cover;}
+.vault-tier-name{font-size:clamp(21px,2.3vw,29px)!important;}
+.vault-chamber{--vault-accent:#b87947;display:grid;grid-template-columns:minmax(180px,.7fr) minmax(0,1.4fr);
+ gap:22px;align-items:center;margin:17px 0;padding:26px;
+ border:1px solid var(--vault-accent);border-radius:15px;
+ background:radial-gradient(ellipse at 23% 45%,#1f4334,#0a211a 61%);
+ box-shadow:inset 0 0 45px #0008,0 12px 25px #0005;}
+.vault-chamber-art{min-height:240px;display:grid;place-items:center;perspective:750px;}
+.vault-door{width:min(220px,100%);aspect-ratio:1;border:12px ridge var(--vault-accent);
+ border-radius:50%;display:grid;place-items:center;
+ background:radial-gradient(circle at 43% 36%,#375543,#0b1b18 72%);
+ box-shadow:inset 0 0 32px #000b,0 0 35px #0009;
+ transition:transform .7s cubic-bezier(.22,1,.36,1),filter .3s;}
+.vault-door span{font:normal 86px Georgia,serif;color:var(--vault-accent);
+ text-shadow:0 0 23px #f0d08973;transform:rotate(-14deg);}
+.vault-chamber.is-ready .vault-door{animation:vault-breathe 2.8s ease-in-out infinite;}
+@keyframes vault-breathe{50%{filter:brightness(1.28);transform:rotateY(7deg)}}
+.vault-chamber-details h2{font:normal clamp(25px,3vw,42px) Georgia,serif;color:#f9dda8;margin:12px 0 18px;}
+.vault-chamber-details h2 small{font:normal 17px Georgia,serif;color:#a5bba9;}
+.vault-progress-track{height:18px;border:1px solid #779377;background:#041a15;overflow:hidden;border-radius:11px;}
+.vault-progress-track span{display:block;height:100%;background:linear-gradient(90deg,#476647,var(--vault-accent));
+ box-shadow:0 0 15px var(--vault-accent);transition:width .4s ease;}
+.vault-progress-label{display:flex;justify-content:space-between;gap:10px;margin:9px 0 24px;
+ color:#bdd0bd;font-size:12px;}
+.vault-progress-label strong{color:#f4daa2;}
+.vault-break{width:100%;padding:16px;border:1px solid #f3d48c;border-radius:9px;
+ color:#233025;background:linear-gradient(125deg,#fae8ad,#b68d43);font-size:15px;font-weight:850;
+ letter-spacing:.07em;transition:filter .2s,box-shadow .2s;}
+.vault-break:disabled{opacity:.4;cursor:not-allowed;filter:grayscale(.5);}
+.vault-break:not(:disabled):hover{filter:brightness(1.16);box-shadow:0 0 22px #e0b75b77;}
+.vault-tier-track{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:18px 0;}
+.vault-tier-track span{border:1px solid #526b51;border-radius:8px;padding:12px 5px;
+ background:#153528;text-align:center;color:#a6b9a8;font-size:10px;font-weight:800;}
+.vault-tier-track span.active{border-color:#dbbd75;color:#f3dea9;background:#355035;}
+.vault-details-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;}
+.vault-details-grid>div{display:flex;flex-direction:column;gap:7px;padding:15px;
+ border:1px solid #4a6851;border-radius:10px;background:#102c22;}
+.vault-details-grid span{color:#a6c3b0;font-size:11px;}
+.vault-details-grid strong{font:normal 20px Georgia,serif;color:#efd8a3;overflow-wrap:anywhere;}
+.vault-details-grid small{font-size:10px;color:#a8c3b0;}
+.vault-notice{padding:13px 18px;border:1px solid #b2a16b;border-radius:8px;color:#f3dca7;background:#213b29;}
+.vault-reward{padding:20px;margin:18px 0;border:1px solid #d8ba6d;border-radius:12px;
+ background:linear-gradient(110deg,#273d2b,#10261d);animation:vault-reveal .65s ease both;}
+.vault-reward h2{font:normal 30px Georgia,serif;color:#ffe1a2;}
+.vault-reward>div{display:flex;justify-content:space-between;gap:15px;padding:10px 0;
+ border-bottom:1px solid #567054;color:#bdd8c0;}
+.vault-reward strong{color:#f8e3b5;}
+.vault-reward .vault-total strong{font-size:24px;color:#a7e5af;}
+.vault-reward p{font-size:12px;color:#c4dcc5;}
+@keyframes vault-reveal{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:760px){.vault-chamber{grid-template-columns:1fr;padding:16px}.vault-chamber-art{min-height:120px}
+ .vault-door{width:120px;border-width:7px}.vault-door span{font-size:45px}
+ .vault-tier-track{grid-template-columns:repeat(auto-fit,minmax(90px,1fr));}}
+@media(prefers-reduced-motion:reduce){.vault-chamber.is-ready .vault-door,.vault-reward{animation:none;}}

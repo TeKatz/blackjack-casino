@@ -99,7 +99,8 @@ export function lobbyCommand(type: string, id?: string): void {
   const allowed = ['lobby.ready','lobby.ui-ready','lobby.open','lobby.open-secondary',
     'lobby.progression','lobby.profile','lobby.profile.native','lobby.profile.equip','lobby.vault','lobby.daily.claim','lobby.language.set','lobby.exit','lobby.refresh',
     'lobby.shop.open','lobby.shop.close','lobby.shop.action','lobby.shop.pack',
-    'lobby.records.open','lobby.records.close','lobby.records.claim','lobby.records.claim-all','lobby.records.season.activate'];
+    'lobby.records.open','lobby.records.close','lobby.records.claim','lobby.records.claim-all','lobby.records.season.activate',
+    'lobby.records.vault.open'];
   if (!allowed.includes(type)) return;
   window.chrome?.webview?.postMessage(id === undefined ? { type } : { type, id });
 }
