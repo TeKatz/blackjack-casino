@@ -17,7 +17,7 @@ export type LobbySnapshot = {
   seasonFraction: number; seasonComplete: boolean; challengeName: string;
   challengeFraction: number; challengesReady: number; vaultTier: string;
   vaultAmount: string; vaultCapacity: string; vaultFraction: number;
-  animationsEnabled: boolean; language: 'de' | 'en'; modes: LobbyMode[];
+  animationsEnabled: boolean; albumSoundEnabled: boolean; language: 'de' | 'en'; modes: LobbyMode[];
 };
 
 const object = (x: unknown): x is Record<string, unknown> =>
@@ -41,7 +41,8 @@ export function isLobbySnapshot(x: unknown): x is LobbySnapshot {
   if (!['level','prestige','albumOwned','albumTotal','seasonTier','seasonNextTier',
     'seasonExperience','seasonRequired','challengesReady'].every(k => numeric(x[k]) && Number(x[k]) >= 0)) return false;
   if (!['seasonFraction','challengeFraction','vaultFraction'].every(k => fraction(x[k]))) return false;
-  if (typeof x.seasonComplete !== 'boolean' || typeof x.animationsEnabled !== 'boolean'
+  if (typeof x.seasonComplete !== 'boolean' || typeof x.albumSoundEnabled !== 'boolean'
+    || typeof x.animationsEnabled !== 'boolean'
     || (x.language !== 'de' && x.language !== 'en')
     || !Array.isArray(x.modes) || x.modes.length > 40) return false;
   return x.modes.every(m => object(m) && string(m.id) && /^[a-z0-9-]{1,48}$/.test(m.id)
@@ -69,7 +70,7 @@ export const fallbackLobby: LobbySnapshot = {
   seasonFraction: 0, seasonComplete: false, challengeName: 'Unbroken',
   challengeFraction: 0, challengesReady: 0, vaultTier: 'BRONZE',
   vaultAmount: '$0.00', vaultCapacity: '$100,000.00', vaultFraction: 0,
-  animationsEnabled: true, language: 'en', modes: [
+  animationsEnabled: true, albumSoundEnabled:true, language: 'en', modes: [
     {id:'blackjack',title:'Blackjack',category:'Table games',description:'A quiet seat, a fresh shoe and your next decision.',enabled:true,secondary:false},
     {id:'kniffel',title:'Midnight Dice',category:'Table games',description:'Five dice and your score sheet. Play solo or with AI opponents.',enabled:true,secondary:false},
     {id:'chill-lounge',title:'Chill Lounge',category:'Relaxed games',description:'Offline games at your own pace: Sudoku and Solitaire.',enabled:true,secondary:false},

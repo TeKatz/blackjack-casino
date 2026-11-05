@@ -361,7 +361,8 @@ function LobbyApp() {
       recordsVisible==='history'?<ModernHistory data={history} loaded={historyLoaded}
         language={data.language} onBack={()=>{closeRecords();setFilter('all');}}/>:
       recordsVisible==='album'?<ModernAlbum data={album} loaded={albumLoaded}
-        language={data.language} animate={!lowMotion&&data.animationsEnabled} result={albumResult}
+        language={data.language} animate={!lowMotion&&data.animationsEnabled}
+        soundEnabled={data.albumSoundEnabled} result={albumResult}
         onBack={()=>{closeRecords();setFilter('all');}}
         onOpen={(rarity:AlbumRarity)=>lobbyCommand('lobby.album.open',rarity)}
         onComplete={id=>lobbyCommand('lobby.album.complete',id)}

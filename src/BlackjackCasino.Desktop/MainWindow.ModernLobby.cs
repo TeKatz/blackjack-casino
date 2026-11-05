@@ -189,6 +189,7 @@ public partial class MainWindow
             VaultCapacity = Money(vault.Tier.Capacity),
             VaultFraction = Math.Clamp((double)vault.Progress, 0, 1),
             AnimationsEnabled = preferences.Presentation("lobby").AnimationsEnabled,
+            AlbumSoundEnabled = preferences.Presentation("album").SoundEnabled,
             Language = Localization.Language == UiLanguagePreference.German ? "de" : "en",
             Modes = modeRegistry.Modes.Select(mode => new
             {

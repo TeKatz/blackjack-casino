@@ -4,9 +4,10 @@ import {albumArtStyle} from './albumArt';
 import {rarityOrder} from './albumBridge';
 import type {AlbumCard,AlbumDraw,AlbumOpening,AlbumRarity,AlbumResult,AlbumSnapshot,AlbumTheme} from './albumBridge';
 import './album.css';
+import {playAlbumCue} from './albumAudio';
 
 type Props={
- data:AlbumSnapshot;loaded:boolean;language:'en'|'de';animate:boolean;result:AlbumResult|null;
+ data:AlbumSnapshot;loaded:boolean;language:'en'|'de';animate:boolean;soundEnabled:boolean;result:AlbumResult|null;
  onBack:()=>void;onOpen:(rarity:AlbumRarity)=>void;onComplete:(id:string)=>void;
  onClaim:(id:string)=>void;onShop:()=>void;
 };
@@ -58,7 +59,7 @@ function drawCardView(draw:AlbumDraw,de:boolean):CardView{
  return {id:draw.id,name:draw.name,rarity:draw.rarity,owned:true,theme:draw.theme,
  ultraRare:draw.ultraRare,badge:draw.isNew?(de?'NEU':'NEW'):draw.duplicatePoints>0?'+'+draw.duplicatePoints+' DP':undefined};
 }
-export function ModernAlbum({data,loaded,language,animate,result,onBack,onOpen,onComplete,onClaim,onShop}:Props){
+export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,onBack,onOpen,onComplete,onClaim,onShop}:Props){
  const de=language==='de';
  const [themeId,setThemeId]=useState('velvet-table');
  const [filter,setFilter]=useState<'all'|'owned'|'missing'>('all');
@@ -102,9 +103,12 @@ export function ModernAlbum({data,loaded,language,animate,result,onBack,onOpen,o
   if(phase!=='reveal'||!data.pending)return;
   if(revealed>=data.pending.cards.length){setPhase('summary');return;}
   const extra=animate?(revealed===0?830:320+Math.min(revealed,4)*90):15;
-  const timer=window.setTimeout(()=>setRevealed(v=>Math.min(v+1,data.pending!.cards.length)),extra);
+  const timer=window.setTimeout(()=>{
+   playAlbumCue('flip',soundEnabled,data.pending!.cards[revealed].rarity);
+   setRevealed(v=>Math.min(v+1,data.pending!.cards.length));
+  },extra);
   return()=>window.clearTimeout(timer);
- },[phase,revealed,data.pending,animate]);
+ },[phase,revealed,data.pending,animate,soundEnabled]);
  // "Open all" is a sequence of *individual* durable native transactions.
  // Never open the next pack before the preceding receipt was completed.
  useEffect(()=>{
@@ -124,6 +128,7 @@ export function ModernAlbum({data,loaded,language,animate,result,onBack,onOpen,o
    return;
   }
   if(result.operation==='open'){setBusy(false);return;}
+  if(batchRemaining<=1)playAlbumCue('finish',soundEnabled,rarity);
   // C# has now durably cleared the receipt. React may request the next pack.
   setBusy(false);
   if(batchRemaining>1){
@@ -131,7 +136,7 @@ export function ModernAlbum({data,loaded,language,animate,result,onBack,onOpen,o
    setPhase('await');
    setRevealed(0);
    const next=rarity;
-   const timer=window.setTimeout(()=>{setBusy(true);onOpen(next);},animate?280:30);
+   const timer=window.setTimeout(()=>{setBusy(true);playAlbumCue('seal',soundEnabled,next);onOpen(next);},animate?280:30);
    return()=>window.clearTimeout(timer);
   }
   setBatchRemaining(0);
@@ -164,6 +169,7 @@ export function ModernAlbum({data,loaded,language,animate,result,onBack,onOpen,o
   setBusy(true);
   setPhase('await');
   setNotice(null);
+  playAlbumCue('seal',soundEnabled,rarity);
   onOpen(rarity);
  }
  function finishPack(){
