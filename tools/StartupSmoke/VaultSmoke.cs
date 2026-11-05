@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using BlackjackCasino.Desktop;
+using Microsoft.Web.WebView2.Core;
 
 internal static class VaultSmoke
 {
@@ -25,22 +26,58 @@ internal static class VaultSmoke
                 .FirstOrDefault(view => view.Ready && view.IsVisible);
             if (modern is not null)
             {
-                // The WPF header is deliberately hidden by the React replacement.
-                // Open the Vault via a real React control, including compact layouts.
-                string link = await modern.Browser.CoreWebView2!.ExecuteScriptAsync(
+                // The Vault is a native-authoritative React page. The old WPF modal
+                // remains available only for fallback and table-mode navigation.
+                CoreWebView2 web = modern.Browser.CoreWebView2!;
+                string link = await web.ExecuteScriptAsync(
                     "Boolean([...document.querySelectorAll('.lobby-nav-item')]"
                     + ".find(x=>/Vault|Tresor/.test(x.textContent||'')))");
-                Require(link.Equals("true", StringComparison.OrdinalIgnoreCase),
-                    "Modern lobby is missing its Vault navigation entry.");
-                await modern.Browser.CoreWebView2.ExecuteScriptAsync(
+                Require(link == "true", "React lobby is missing the Vault navigation entry.");
+                await web.ExecuteScriptAsync(
                     "[...document.querySelectorAll('.lobby-nav-item')]"
                     + ".find(x=>/Vault|Tresor/.test(x.textContent||''))?.click()");
+                for (int i = 0; i < 100 && modern.RecordsPage != "vault"; i++) await Task.Delay(60);
+                Require(modern.RecordsPage == "vault", "Native Vault route did not activate React.");
+                for (int i = 0; i < 100; i++)
+                {
+                    if (await web.ExecuteScriptAsync(
+                        "Boolean(document.querySelector('.vault-page .vault-break:not(:disabled)'))") == "true") break;
+                    await Task.Delay(60);
+                }
+                Require(await web.ExecuteScriptAsync(
+                    "Boolean(document.querySelector('.vault-page .vault-break:not(:disabled)'))") == "true",
+                    "A full Gold Vault is not ready to open in React.");
+                Require(!Find<Grid>(window).Any(g => g.Name == "CasinoVaultOverlay" && g.IsVisible),
+                    "The old WPF Vault was opened over the modern presentation.");
+                await using (FileStream beforeShot = File.Create(Path.Combine(output, "casino-vault-in-app.png")))
+                    await web.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png, beforeShot);
+                await web.ExecuteScriptAsync("document.querySelector('.vault-break')?.click()");
+                bool rewarded = false;
+                for (int i = 0; i < 100; i++)
+                {
+                    rewarded = await web.ExecuteScriptAsync(
+                        "Boolean(document.querySelector('.vault-reward .vault-total strong')"
+                        + "?.textContent?.includes('60.000,00'))") == "true";
+                    if (rewarded) break;
+                    await Task.Delay(75);
+                }
+                Require(rewarded, "React Vault did not display the German-formatted Gold $60,000 payout.");
+                Require(await web.ExecuteScriptAsync(
+                    "Boolean(document.querySelector('.vault-break:disabled'))") == "true",
+                    "A paid Vault can still be opened a second time.");
+                Require(Application.Current.Windows.Cast<Window>().Count(w => w.IsVisible) == visibleWindowsBefore,
+                    "React Vault unexpectedly opened a second native window.");
+                await using (FileStream rewardShot = File.Create(Path.Combine(output, "casino-vault-opened.png")))
+                    await web.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png, rewardShot);
+                await web.ExecuteScriptAsync("document.querySelector('.vault-page .shop-back')?.click()");
+                for (int i = 0; i < 100 && modern.RecordsPage is not null; i++) await Task.Delay(60);
+                Require(modern.RecordsPage is null, "React Vault did not return to the lobby.");
+                File.WriteAllText(Path.Combine(output, "vault-result.txt"),
+                    "PASS: React Vault opened through its native C# transaction, paid the Gold reserve with the full bonus, and returned to lobby without a WPF overlay.");
+                return;
             }
-            else
-            {
-                Button vault = Find<Button>(window).Single(button => button.Name == "CasinoVaultButton" && button.IsVisible);
-                vault.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            }
+            Button vault = Find<Button>(window).Single(button => button.Name == "CasinoVaultButton" && button.IsVisible);
+            vault.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             for (int i = 0; i < 30 && !Find<Grid>(window)
                 .Any(grid => grid.Name == "CasinoVaultOverlay" && grid.IsVisible); i++)
                 await Task.Delay(50);

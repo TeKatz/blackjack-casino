@@ -378,8 +378,8 @@ public partial class MainWindow
             Tier = vault.Tier.Name,
             TierId = vault.Tier.Id,
             Accent = vault.Tier.Accent,
-            Current = RecordMoney(vault.CurrentAmount),
-            Capacity = RecordMoney(vault.Tier.Capacity),
+            Current = Money(vault.CurrentAmount),
+            Capacity = Money(vault.Tier.Capacity),
             Progress = (double)Math.Clamp(vault.Progress, 0m, 1m),
             ContributionRate = (double)vault.ContributionRate,
             BonusRate = (double)vault.Tier.FullBonusRate,
@@ -387,13 +387,13 @@ public partial class MainWindow
             vault.PayoutPending,
             UnlockedTier = vault.UnlockedTier.Name,
             NextTier = vault.NextTier?.Name,
-            NextTierWager = vault.NextTier is null ? null : RecordMoney(vault.NextTier.RequiredLifetimeWager),
-            LifetimeContributions = RecordMoney(vault.LifetimeContributions),
-            LifetimePayouts = RecordMoney(vault.LifetimePayouts),
-            LifetimeBonuses = RecordMoney(vault.LifetimeBonuses),
+            NextTierWager = vault.NextTier is null ? null : Money(vault.NextTier.RequiredLifetimeWager),
+            LifetimeContributions = Money(vault.LifetimeContributions),
+            LifetimePayouts = Money(vault.LifetimePayouts),
+            LifetimeBonuses = Money(vault.LifetimeBonuses),
             vault.VaultsOpened,
-            BiggestPayout = RecordMoney(vault.BiggestPayout),
-            LifetimeEligibleWager = RecordMoney(vault.LifetimeEligibleWager),
+            BiggestPayout = Money(vault.BiggestPayout),
+            LifetimeEligibleWager = Money(vault.LifetimeEligibleWager),
         };
     }
 
@@ -416,9 +416,9 @@ public partial class MainWindow
             return (true, "Payout transferred to your play-money bankroll.", new
             {
                 Tier = before.Tier.Name,
-                BaseAmount = RecordMoney(result.BaseAmount),
-                BonusAmount = RecordMoney(result.BonusAmount),
-                Total = RecordMoney(result.TotalPayout),
+                BaseAmount = Money(result.BaseAmount),
+                BonusAmount = Money(result.BonusAmount),
+                Total = Money(result.TotalPayout),
                 Pack = ((BlackjackCasino.Core.Collections.CollectionRarity)Math.Clamp(tier, 0, 4)).ToString(),
             });
         }
