@@ -14,7 +14,6 @@ public partial class App : Application
         if (e.Args.Length == 2 && e.Args[0] == "--packaged-artwork-smoke")
         {
             packagedArtworkSmoke = true;
-            StartupUri = null!;
             ShutdownMode = ShutdownMode.OnExplicitShutdown;
             Shutdown(PackagedArtworkSmoke.Run(e.Args[1]));
             return;
@@ -26,6 +25,9 @@ public partial class App : Application
         CasinoUxEnhancements.Install();
         CasinoWindowFrame.Install();
         base.OnStartup(e);
+        // Keep normal window creation explicit so the isolated diagnostic launch
+        // can exit without creating MainWindow or touching player preferences.
+        new MainWindow().Show();
     }
 
     private static void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
