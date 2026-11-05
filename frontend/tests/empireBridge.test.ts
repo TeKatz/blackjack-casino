@@ -25,6 +25,7 @@ describe('Empire bridge contract',()=>{
   });
   it('converts automation percentages with decimal shifts',()=>{
     expect(percentToFraction('12,5')).toBe('0.125');
+    expect(percentToFraction('0012,5')).toBe('0.125');
     expect(percentToFraction('1.1')).toBe('0.011');
     expect(percentToFraction('50')).toBe('0.50');
     expect(percentToFraction('51')).toBeNull();

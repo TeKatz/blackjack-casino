@@ -57,7 +57,7 @@ function AutomationForm({initial,unlocked,disabled,language,onSave,onPreview,onC
     // Policy percentage only. Construction money remains an exact decimal string.
     return {...form,reserve,spendPercent:percentToFraction(budget)!,priorities:priorities.split(',').map(s=>s.trim()).filter(Boolean)};
   };
-  const submit=(e:FormEvent)=>{e.preventDefault();const next=parse();if(next){onSave(next);setDirty(false);}};
+  const submit=(e:FormEvent)=>{e.preventDefault();const next=parse();if(next)onSave(next);};
   return <form className="empire-panel empire-form" onSubmit={submit} data-testid="automation-form">
     <h2>{de?'Deine Baupolitik':'Your construction policy'}</h2>
     <p>{de?'Alle 30 Produktionssekunden werden begrenzte Upgrades geprüft. Es entsteht kein zusätzlicher Produktionsbonus.':'Bounded upgrades are evaluated every 30 production seconds. Automation does not add a production multiplier.'}</p>
@@ -70,6 +70,7 @@ function AutomationForm({initial,unlocked,disabled,language,onSave,onPreview,onC
     <label>{de?'Prioritäten (Raum-IDs, durch Komma getrennt)':'Priorities (room IDs, comma separated)'}<input name="priorities" value={priorities} onChange={e=>{setPriorities(e.target.value);update({});}}/></label>
     <p>{de?'Raum-IDs findest du im Rauminspektor.':'Room IDs appear in the room inspector.'}</p>
     {error&&<p role="alert">{error}</p>}
+    <button type="button" disabled={disabled} onClick={()=>{setForm(initial);setPercent(fractionToPercent(initial.spendPercent));setPriorities(initial.priorities.join(', '));setDirty(false);setError('');onClear();}}>{de?'Gespeicherte Werte laden':'Restore saved values'}</button>
     <div className="empire-actions"><button type="button" disabled={!unlocked||disabled} onClick={()=>{const a=parse();if(a)onPreview(a);}}>{de?'Vorschau':'Preview'}</button>
       <button className="empire-gold" disabled={!unlocked||disabled} type="submit" data-testid="automation-save">{de?'Baupolitik speichern':'Save policy'}</button></div>
   </form>;

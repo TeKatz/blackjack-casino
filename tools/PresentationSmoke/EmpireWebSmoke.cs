@@ -35,6 +35,8 @@ internal static class EmpireWebSmoke
         try
         {
             NavigationSmoke.OpenCovered(window, "casino-empire");
+            window.UpdateLayout();
+            await Wait(() => Find<ModernEmpireView>(window).Any(), "Empire host did not mount after navigation.");
             var view = Find<ModernEmpireView>(window).Single();
             await Wait(() => view.Ready, "Modern Empire did not complete its native handshake.");
             Require(!Find<EmpireView>(window).Any(), "A legacy Empire view is rendering behind React.");

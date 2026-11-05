@@ -109,7 +109,7 @@ export function decimalInput(value:string):string|null {
 export function percentToFraction(value:string):string|null {
   const parsed=decimalInput(value);if(!parsed||Number(parsed)<1||Number(parsed)>50)return null;
   const [whole,fraction='']=parsed.split('.');
-  return '0.'+whole.padStart(2,'0')+fraction;
+  return '0.'+String(Number(whole)).padStart(2,'0')+fraction;
 }
 export function fractionToPercent(value:string):string {
   const [whole,fraction='']=value.split('.');
