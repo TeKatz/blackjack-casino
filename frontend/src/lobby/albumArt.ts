@@ -19,3 +19,8 @@ export function albumArtStyle(id:string):CSSProperties{
  };
 }
 export function hasAlbumArt(id:string):boolean{return crops.has(id);}
+export function albumAtlasUrl(id:string):string|null{
+ const crop=crops.get(id);
+ const atlas=crop?atlases.get(crop.Atlas):undefined;
+ return atlas?'/album/atlas/'+encodeURIComponent(atlas.File):null;
+}

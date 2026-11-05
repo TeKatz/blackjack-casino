@@ -1,6 +1,6 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
 import type {CSSProperties} from 'react';
-import {albumArtStyle} from './albumArt';
+import {albumArtStyle,albumAtlasUrl} from './albumArt';
 import {rarityOrder} from './albumBridge';
 import type {AlbumCard,AlbumDraw,AlbumOpening,AlbumRarity,AlbumResult,AlbumSnapshot,AlbumTheme} from './albumBridge';
 import './album.css';
@@ -97,8 +97,21 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
   setRarity(data.pending.rarity);
   setRevealed(0);
   setBusy(false);
-  setPhase('reveal');
- },[data.pending]);
+  // Decode the exact original illustrated atlases before the first flip.
+  // A slow PNG must never flash a blank face during the cinematic reveal.
+  setPhase('await');
+  const urls=Array.from(new Set(data.pending.cards.map(card=>albumAtlasUrl(card.id)).filter(
+   (url):url is string=>url!==null)));
+  const images=urls.map(url=>{const img=new Image();img.src=url;return img;});
+  let cancelled=false;
+  const timeout=window.setTimeout(()=>{if(!cancelled)setPhase('reveal');},4000);
+  void Promise.all(images.map(img=>img.decode().catch(()=>{}))).then(()=>{
+   if(cancelled)return;
+   window.clearTimeout(timeout);
+   setPhase('reveal');
+  });
+  return()=>{cancelled=true;window.clearTimeout(timeout);};
+ },[data.pending?.id]);
  useEffect(()=>{
   if(phase!=='reveal'||!data.pending)return;
   if(revealed>=data.pending.cards.length){setPhase('summary');return;}

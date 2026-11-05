@@ -1,6 +1,6 @@
 import {describe,it,expect} from 'vitest';
 import manifest from './albumArtManifest.json';
-import {albumArtStyle,hasAlbumArt} from './albumArt';
+import {albumArtStyle,hasAlbumArt,albumAtlasUrl} from './albumArt';
 import {isAlbum,isAlbumResult} from './albumBridge';
 import type {AlbumSnapshot} from './albumBridge';
 
@@ -11,6 +11,7 @@ describe('Original Collector Album atlas',()=>{
   expect(new Set(manifest.Cards.map(c=>c.Id)).size).toBe(136);
   for(const card of manifest.Cards){
    expect(hasAlbumArt(card.Id)).toBe(true);
+   expect(albumAtlasUrl(card.Id)).toBe('/album/atlas/'+card.Atlas+'.png');
    const style=albumArtStyle(card.Id);
    expect(style.backgroundImage).toContain('/album/atlas/'+card.Atlas+'.png');
    expect(style.backgroundSize).toContain('%');
