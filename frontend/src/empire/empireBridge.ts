@@ -26,7 +26,7 @@ export type EmpireSnapshot = {version:1;session:string;revision:number;notice:st
   state:{language:'de'|'en';animationsEnabled:boolean;soundEnabled:boolean;detached:boolean;canClaimDividend:boolean;economy:EmpireEconomy}};
 export type Preview = {success:boolean;message:string;budgetBefore:string;budgetAfter:string;portfolioBefore:string;portfolioAfter:string;levelBefore:number;levelAfter:number;roomBefore:Breakdown;roomAfter:Breakdown;synergiesAfter:{id:string;tier:number;minimumLevel:number;bonus:string}[];automationAfter:Automation};
 export type Reply = {requestId:string;success:boolean;message:string;revision:number;preview:Preview|null};
-export type Intent = {action:'upgrade'|'research'|'project'|'property.buy'|'property.select'|'manager'|'automation'|'event'|'contract.accept'|'contract.claim'|'prestige'|'dividend';id?:string;roomId?:string;levels?:number;automation?:Automation;preview?:boolean};
+export type Intent = {action:'upgrade'|'research'|'project'|'property.buy'|'property.select'|'manager'|'automation'|'event'|'contract.accept'|'contract.claim'|'prestige'|'dividend';id?:string;roomId?:string;inspectRoomId?:string;levels?:number;automation?:Automation;preview?:boolean};
 
 const record = (x:unknown):x is Record<string,unknown> => !!x && typeof x==='object' && !Array.isArray(x);
 const decimal = (x:unknown):x is string => typeof x==='string' && /^\d+(?:\.\d+)?$/.test(x) && x.length<=60;

@@ -89,7 +89,15 @@ internal sealed class ModernEmpireView : ContentControl, IDisposable
                 case "empire.dismiss-offline": offline = null; Refresh(); break;
                 case "empire.command" when listening:
                     EmpireModernCommand? command = EmpireModernProtocol.Parse(args.WebMessageAsJson);
-                    if (command is null) { Post("empire.invalid", new { Message = "Invalid Empire command. Refresh and retry." }); break; }
+                    if (command is null)
+                    {
+                        if (root.TryGetProperty("requestId", out var id) && id.ValueKind == JsonValueKind.String
+                            && Guid.TryParseExact(id.GetString(), "D", out _))
+                            Post("empire.result", new EmpireModernReply(id.GetString()!, false,
+                                Localization.TranslateSource("Invalid Empire command. Check the selected options and retry."), commands.Revision));
+                        else Post("empire.invalid", new { Message = "Invalid Empire command." });
+                        break;
+                    }
                     EmpireModernReply result = commands.Execute(command, commit, preview);
                     result = result with { Message = Localization.TranslateSource(result.Message) };
                     if (!command.Preview) lastReply = result;

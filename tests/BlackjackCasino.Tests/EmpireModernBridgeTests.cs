@@ -116,6 +116,20 @@ public sealed class EmpireModernBridgeTests
     }
 
     [Fact]
+    public void InspectingARoomDoesNotTurnManagerRemovalIntoAnAssignment()
+    {
+        var service = Estate();
+        Assert.True(service.AssignManager("elena", "hotel", Now).Success);
+        var command = Command(new EmpireModernSession(), "manager", "elena") with { InspectRoomId = "hotel" };
+        var preview = service.Preview(command.InspectRoomId!, (candidate, at) => EmpireModernProtocol.Apply(candidate, command, at));
+        Assert.True(preview.Success);
+        Assert.Equal("hotel", service.ManagerAssignments["elena"]);
+        Assert.True(EmpireModernProtocol.Apply(service, command, Now).Success);
+        Assert.False(service.ManagerAssignments.ContainsKey("elena"));
+        Assert.Equal(preview.RoomAfter, service.ProductionBreakdown("hotel"));
+    }
+
+    [Fact]
     public void ReadOnlySnapshotPreservesSaveSchemaAndEveryCatalogEntry()
     {
         var service = Estate(); var before = JsonSerializer.Serialize(service.Snapshot);

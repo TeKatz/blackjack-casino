@@ -6,7 +6,7 @@ namespace BlackjackCasino.Desktop;
 
 // Presentation intents only. No client money, rates, outcomes or timestamps are accepted.
 internal sealed record EmpireModernCommand(string RequestId, string Session, long ExpectedRevision,
-    string Action, string? Id, string? RoomId, int Levels, bool Preview, EmpireAutomationState? Automation);
+    string Action, string? Id, string? RoomId, int Levels, bool Preview, EmpireAutomationState? Automation, string? InspectRoomId = null);
 internal sealed record EmpireModernReply(string RequestId, bool Success, string Message, long Revision, object? Preview = null);
 
 internal static class EmpireModernProtocol
@@ -26,13 +26,13 @@ internal static class EmpireModernProtocol
             if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("version", out var version)
                 || !version.TryGetInt32(out int v) || v != Version) return null;
             string? Read(string key) => root.TryGetProperty(key, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
-            string? request = Read("requestId"), session = Read("session"), action = Read("action"), id = Read("id"), room = Read("roomId");
+            string? request = Read("requestId"), session = Read("session"), action = Read("action"), id = Read("id"), room = Read("roomId"), inspect = Read("inspectRoomId");
             if (!Guid.TryParseExact(request, "D", out _) || !Guid.TryParseExact(session, "D", out _)
                 || !root.TryGetProperty("expectedRevision", out var revision) || !revision.TryGetInt64(out long rev) || rev < 0) return null;
             if (action is not ("upgrade" or "research" or "project" or "property.buy" or "property.select"
                 or "manager" or "automation" or "event" or "contract.accept" or "contract.claim" or "prestige" or "dividend")) return null;
             if (id is not null && (id.Length > 80 || id.Any(c => !char.IsAsciiLetterOrDigit(c) && c != '-'))) return null;
-            if (room is not null && EmpireCatalog.Find(room) is null) return null;
+            if (room is not null && EmpireCatalog.Find(room) is null || inspect is not null && EmpireCatalog.Find(inspect) is null) return null;
             int levels = 1;
             if (root.TryGetProperty("levels", out var rawLevels) && (!rawLevels.TryGetInt32(out levels) || levels is < 1 or > 100)) return null;
             bool preview = root.TryGetProperty("preview", out var p) && p.ValueKind == JsonValueKind.True;
@@ -73,7 +73,7 @@ internal static class EmpireModernProtocol
                 automation = new() { Enabled = enabled.GetBoolean(), Reserve = cash, SpendPercent = spend,
                     TargetLevel = level, CheapestMilestone = cheapest.GetBoolean(), Priorities = ids.ToArray() };
             }
-            return new(request!, session!, rev, action, id, room, levels, preview, automation);
+            return new(request!, session!, rev, action, id, room, levels, preview, automation, inspect);
         }
         catch (Exception ex) when (ex is JsonException or InvalidOperationException or FormatException or OverflowException) { return null; }
     }

@@ -156,7 +156,7 @@ public partial class MainWindow
         }, command => command.Action == "dividend"
             ? new(ClaimEmpireDividend(), "Owner dividend collection. Finish any active game before collecting; the reserve must contain at least one cent.")
             : MutateEmpire(candidate => EmpireModernProtocol.Apply(candidate, command, DateTimeOffset.UtcNow)),
-            command => EmpireModernSnapshot.Preview(empire!.Preview(command.RoomId ?? command.Id ?? "slots",
+            command => EmpireModernSnapshot.Preview(empire!.Preview(command.InspectRoomId ?? command.RoomId ?? EmpireCatalog.Find(command.Id ?? "")?.Id ?? "slots",
                 (candidate, at) => EmpireModernProtocol.Apply(candidate, command, at))), close);
 
     private void StartEmpireSession()

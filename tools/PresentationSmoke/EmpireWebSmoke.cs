@@ -146,6 +146,9 @@ internal static class EmpireWebSmoke
     {
         await Check(view, "document.querySelector('main[aria-busy=true]')===null", "An Empire command is stuck.");
         string result = await Script(view, "const e=document.querySelector('[data-testid=" + id + "]');if(!e||e.disabled)return false;e.click();return true;");
+        // Closing the view may dispose WebView2 before ExecuteScript's result is
+        // delivered. The caller verifies the restored native lobby afterwards.
+        if (id == "back") { await Task.Delay(100); return; }
         Require(result == "true", "Empire control is unavailable: " + id);
         await Task.Delay(100);
         await Check(view, "document.querySelector('main[aria-busy=true]')===null", "An Empire command was not acknowledged: " + id);

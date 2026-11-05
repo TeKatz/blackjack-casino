@@ -75,11 +75,11 @@ function AutomationForm({initial,unlocked,disabled,language,onSave,onPreview,onC
       <button className="empire-gold" disabled={!unlocked||disabled} type="submit" data-testid="automation-save">{de?'Baupolitik speichern':'Save policy'}</button></div>
   </form>;
 }
-function ManagerCard({manager,rooms,disabled,onAction,onPreview,language}:{manager:Manager;rooms:Room[];disabled:boolean;onAction:(id:string,room?:string)=>void;onPreview:(id:string,room?:string)=>void;language:'de'|'en'}){
+function ManagerCard({manager,rooms,disabled,onAction,onPreview,onClear,language}:{manager:Manager;rooms:Room[];disabled:boolean;onAction:(id:string,room?:string)=>void;onPreview:(id:string,room?:string)=>void;onClear:()=>void;language:'de'|'en'}){
   const [room,setRoom]=useState(manager.assignment??'');const de=language==='de';
   return <article className="empire-panel"><span className="empire-eyebrow">{de?dictionary[manager.role]??manager.role:manager.role}</span><h2>{manager.name}</h2>
     <p>{de?dictionary[manager.description]??manager.description:manager.description}</p><p>{de?'Benötigt Prestige':'Requires Prestige'} {manager.requiredPrestige}</p>
-    <label>{de?'Abteilung':'Department'}<select value={room} onChange={e=>setRoom(e.target.value)} aria-label={manager.name}>
+    <label>{de?'Abteilung':'Department'}<select value={room} onChange={e=>{setRoom(e.target.value);onClear();}} aria-label={manager.name}>
       <option value="">{de?'Inaktiv':'Inactive'}</option>{rooms.filter(r=>r.level>0).map(r=><option key={r.id} value={r.id}>{de?dictionary[r.name]??r.name:r.name}</option>)}</select></label>
     <div className="empire-actions"><button disabled={disabled||(!manager.available&&!manager.assignment)} onClick={()=>onPreview(manager.id,room||undefined)}>{de?'Vorschau':'Preview'}</button>
     <button className="empire-gold" data-testid={'assign-'+manager.id} disabled={disabled||(!manager.available&&!manager.assignment)} onClick={()=>onAction(manager.id,room||undefined)}>{de?'Zuweisung speichern':'Save assignment'}</button></div>
@@ -103,7 +103,7 @@ function EmpireApp(){
   const close=()=>post('empire.close');
   useEffect(()=>{
     const accept=(reply:Reply)=>{
-      if(reply.requestId===previewId.current){setPreview(reply.preview);return;}
+      if(reply.requestId===previewId.current){setPreview(reply.preview);if(!reply.success)setNotice(reply.message);return;}
       if(reply.requestId===pendingRef.current){pendingRef.current=null;setPending(null);setUncertain(false);setNotice(reply.message);clearPreview();}
     };
     const stop=listen(message=>{
@@ -148,7 +148,7 @@ function EmpireApp(){
   const showPreview=(intent:Intent)=>{
     if(!live.current||pendingRef.current||uncertain)return;
     clearPreview();previewTimer.current=setTimeout(()=>{
-      if(live.current&&!pendingRef.current)previewId.current=send(live.current,{...intent,preview:true,roomId:intent.roomId??selected??'slots'});
+      if(live.current&&!pendingRef.current)previewId.current=send(live.current,{...intent,preview:true,inspectRoomId:selected??'slots'});
     },120);
   };
   if(!snapshot)return <main className="empire-loading"><span>♜</span><h1>CASINO EMPIRE</h1><p>{window.chrome?.webview?'Opening your estate…':'Open Casino Empire in the desktop application.'}</p><button onClick={()=>post('empire.close')}>← Casino lobby</button></main>;
@@ -249,7 +249,7 @@ function EmpireApp(){
           <button className="empire-gold" data-testid={(page==='projects'?'project-':'property-')+p.id} disabled={disabled||(page==='properties'&&p.owned?p.id===e.activePropertyId:!p.canBuy)} onClick={()=>act({action:page==='projects'?'project':p.owned?'property.select':'property.buy',id:p.id})}>{p.owned?(page==='projects'?'✓':de?'Verwalten':'Manage'):de?'Kaufen':'Purchase'}</button></div></article>)}</div>}
       {page==='synergies'&&<div className="empire-catalog">{e.synergies.map(s=><article key={s.id} className="empire-panel"><span className="empire-eyebrow">{de?'SYNERGIESTUFE':'CIRCUIT TIER'} {s.tier}</span><h2>{t(s.name)}</h2><p>{t(s.description)}</p><strong>+{Number(s.bonus)*100}%</strong><p>{de?'Nächste Raumstufe':'Next room level'}: {s.nextLevel??'MAX'}</p>
         <ul>{s.members.map(m=><li key={m.id}><button onClick={()=>{setFloor(e.rooms.find(r=>r.id===m.id)!.floor);setSelected(m.id);go('estate');}}>{t(m.name)} <b>{m.level}</b>{m.level===s.minimumLevel?' ◇':''}</button></li>)}</ul></article>)}</div>}
-      {page==='team'&&<><p>{Object.keys(e.managerAssignments).length}/{e.managerSlots} {de?'Managerplätze belegt':'manager slots occupied'}</p><div className="empire-catalog">{e.managers.map(m=><ManagerCard key={e.activePropertyId+m.id+(m.assignment??'')} manager={m} rooms={e.rooms} disabled={disabled} language={language} onAction={(id,roomId)=>act({action:'manager',id,roomId})} onPreview={(id,roomId)=>showPreview({action:'manager',id,roomId})}/>)}</div></>}
+      {page==='team'&&<><p>{Object.keys(e.managerAssignments).length}/{e.managerSlots} {de?'Managerplätze belegt':'manager slots occupied'}</p><div className="empire-catalog">{e.managers.map(m=><ManagerCard key={e.activePropertyId+m.id+(m.assignment??'')} manager={m} rooms={e.rooms} disabled={disabled} language={language} onClear={clearPreview} onAction={(id,roomId)=>act({action:'manager',id,roomId})} onPreview={(id,roomId)=>showPreview({action:'manager',id,roomId})}/>)}</div></>}
       {page==='automation'&&<AutomationForm key={e.activePropertyId} initial={e.automation} unlocked={e.automationUnlocked} disabled={disabled} language={language} onSave={automation=>act({action:'automation',automation})} onPreview={automation=>showPreview({action:'automation',automation})} onClear={clearPreview}/>}
       {page==='events'&&<><p>{de?'Ein Event je Anwesen. Freiwillige Spielziele verlängern es, ohne Spielregeln zu verändern.':'One event per property. Optional game goals extend it without changing game rules.'}</p>
         {e.activeEvent&&<aside className="empire-notice">{t(e.events.find(v=>v.id===e.activeEvent?.id)?.name??'')} · {e.activeEvent.progress}/{e.events.find(v=>v.id===e.activeEvent?.id)?.activityGoal} · {de?'Endet':'Ends'} {new Date(e.activeEvent.endsAt).toLocaleString(language)} {e.activeEvent.encore?'✦ Encore':''}</aside>}
