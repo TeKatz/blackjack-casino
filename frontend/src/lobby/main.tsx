@@ -23,13 +23,6 @@ const navigation: {id: Filter; icon: string; en: string; de: string}[] = [
   {id:'challenges',icon:'♛',en:'Challenges',de:'Aufgaben'},
   {id:'vault',icon:'⬡',en:'Vault',de:'Tresor'},
 ];
-const progression: {id: string; icon: string; de: string; en: string; detail: string}[] = [
-  {id:'Season Pass',icon:'✦',en:'Season Pass',de:'Season Pass',detail:'season'},
-  {id:'Cosmetic Shop',icon:'◈',en:'Cosmetic Shop',de:'Kosmetik-Shop',detail:'shop'},
-  {id:"Collector's Album",icon:'▤',en:"Collector’s Album",de:'Sammelalbum',detail:'album'},
-  {id:'Challenges',icon:'♛',en:'Challenges',de:'Herausforderungen',detail:'challenges'},
-  {id:'Statistics',icon:'▥',en:'Statistics',de:'Statistiken',detail:'stats'},
-];
 function percent(n: number): string { return Math.round(n * 100) + '%'; }
 function matchesFilter(id: string, filter: Filter): boolean {
   if (filter === 'all') return true;
@@ -75,34 +68,58 @@ function GameTile({ mode, language, onOpen, onSecondary }:{
     </div>
   </article>;
 }
-function Overview({data, open}:{data:LobbySnapshot;open:(id:string)=>void}) {
+function DailyLogin({data,onClaim}:{data:LobbySnapshot;onClaim:()=>void}) {
   const de = data.language==='de';
-  return <aside className="lobby-overview">
-    <span className="lobby-eyebrow">{de?'DEIN MIDNIGHT CLUB':'YOUR MIDNIGHT CLUB'}</span>
-    <h2>{de?'Auf einen Blick.':'At a glance.'}</h2>
-    <p className="overview-intro">{de?'Belohnungen, Stil und Fortschritt – alles an einem Ort.':
-      'Rewards, style, goals and your casino career — all in one place.'}</p>
-    <div className="overview-items">
-      {progression.map((item,i)=><button className={'overview-tile overview-'+item.detail}
-        type="button" key={item.id} onClick={()=>open(item.id)}>
-        <span className={'overview-icon overview-icon-'+i} aria-hidden="true">{item.icon}</span>
-        <span className="overview-copy">
-          <strong>{de?item.de:item.en}</strong>
-          {item.detail==='season'?<>
-            <small>{de?'Verfolge deine Saison und sichere Belohnungen.':'Follow your season track and claim rewards.'}</small>
-            <Progress value={data.seasonFraction} tone="gold"/>
-            <em>{de?'Stufe':'Tier'} {data.seasonTier} → {data.seasonNextTier} · {data.seasonExperience.toLocaleString()} / {data.seasonRequired.toLocaleString()} XP</em>
-          </>:item.detail==='challenges'?<>
-            <small>{data.challengesReady>0?
-              (de?'Belohnungen verfügbar: ':'Rewards ready: ')+data.challengesReady:
-              data.challengeName}</small>
-            <Progress value={data.challengeFraction}/>
-          </>:item.detail==='album'?<small>{data.albumOwned} / {data.albumTotal} {de?'Karten entdeckt':'cards discovered'}</small>:
-          item.detail==='shop'?<small>{de?'Karten, Porträts und neue Looks.':'Card sets, portraits and more ways to customize.'}</small>:
-          <small>{de?'Deine Ergebnisse und dein Spielerprofil.':'Lifetime results and your casino story.'}</small>}
-        </span>
-        <span className="overview-arrow" aria-hidden="true">›</span>
-      </button>)}
+  const daily = data.dailyLogin;
+  return <aside className="lobby-daily" aria-label={de?'Tägliche Belohnungen':'Daily rewards'}>
+    <div className="daily-header">
+      <span className="lobby-eyebrow">✦ {de?'DEIN MIDNIGHT CLUB':'THE MIDNIGHT CLUB'}</span>
+      <h2>{de?'Täglicher Login':'Daily Login'}</h2>
+      <p>{de?'Eine kleine Belohnung für deinen Besuch. Ohne Verlust von Serien: Die nächste Belohnung wartet auf dich.':
+        'A little something for stopping by. No streaks, no pressure. Your next reward always waits.'}</p>
+    </div>
+    <div className="daily-visual" aria-hidden="true">
+      <div className="daily-visual-copy">
+        <span>{de?'DEIN HEUTIGER BONUS':'TODAY AT THE CLUB'}</span>
+        <strong>{daily.canClaim?daily.activeReward:(de?'Bis morgen':'See you tomorrow')}</strong>
+      </div>
+    </div>
+    <div className="daily-cycle-heading">
+      <strong>{de?'7-Tage-Belohnungen':'7-day rewards'}</strong>
+      <span>{daily.totalClaims} {de?'Besuche belohnt':'claims earned'}</span>
+    </div>
+    <div className="daily-rewards">
+      {daily.rewards.map(reward=>{
+        const completed = reward.day <= daily.cycleCompletedSteps;
+        const active = daily.canClaim && reward.day === daily.activeStep;
+        const claimedToday = daily.claimedToday && reward.day === daily.activeStep;
+        return <div key={reward.day} className={'daily-reward '+(active?'current ':completed?'claimed ':'upcoming ')+(reward.pack?'has-pack':'')}
+          aria-current={active?'step':undefined}>
+          <span className="daily-reward-top">
+            <b>{de?'Tag':'Day'} {reward.day}</b>
+            <span aria-hidden="true">{completed?'✓':active?'✦':reward.pack?'◆':'◇'}</span>
+          </span>
+          <strong className="daily-reward-bankroll">{reward.bankroll}</strong>
+          <small>◆ {reward.coins} {de?'Münzen':'coins'}</small>
+          {reward.pack&&<span className="daily-pack">{reward.pack} {de?'Paket':'pack'}</span>}
+          <span className="daily-reward-state">
+            {active?(de?'ABHOLBEREIT':'READY'):claimedToday?(de?'HEUTE ERHALTEN':'CLAIMED TODAY'):
+              completed?(de?'ERHALTEN':'CLAIMED'):(de?'ALS NÄCHSTES':'UP NEXT')}
+          </span>
+        </div>;
+      })}
+    </div>
+    <div className="daily-footer">
+      <p>{daily.canClaim?
+        (de?'Tag '+daily.activeStep+' wartet auf dich.':'Day '+daily.activeStep+' is ready for you.'):
+        (de?'Für heute bereits abgeholt. Nächste Belohnung: '+daily.nextReward:
+          'Claimed today. Next visit: '+daily.nextReward)}</p>
+      <button type="button" className={'daily-claim '+(daily.canClaim?'ready':'claimed')}
+        onClick={onClaim} disabled={!daily.canClaim}>
+        <span aria-hidden="true">{daily.canClaim?'✦':'✓'}</span>
+        {daily.canClaim?(de?'BELOHNUNG ABHOLEN':'CLAIM REWARD'):
+          (de?'HEUTE ABGEHOLT':'CLAIMED TODAY')}
+      </button>
     </div>
   </aside>;
 }
@@ -216,7 +233,7 @@ function LobbyApp() {
         </section>
         {!embeddedLobby&&<small className="browser-note">Browser preview · navigation requires the Windows client.</small>}
       </main>
-      <Overview data={data} open={openProgression}/>
+      <DailyLogin data={data} onClaim={()=>lobbyCommand('lobby.daily.claim')}/>
     </div>
   </div>;
 }

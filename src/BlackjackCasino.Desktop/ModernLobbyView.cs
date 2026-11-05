@@ -26,6 +26,7 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
     private readonly Action<string> progression;
     private readonly Action profile;
     private readonly Action vault;
+    private readonly Action dailyClaim;
     private readonly Action exit;
     private readonly Action readyChanged;
     private bool initialized;
@@ -43,7 +44,7 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
     internal WebView2 Browser => browser;
 
     internal ModernLobbyView(CasinoModeRegistry modes, Func<object> snapshot,
-        Action<string> progression, Action profile, Action vault, Action exit,
+        Action<string> progression, Action profile, Action vault, Action dailyClaim, Action exit,
         Action readyChanged)
     {
         this.modes = modes;
@@ -51,6 +52,7 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
         this.progression = progression;
         this.profile = profile;
         this.vault = vault;
+        this.dailyClaim = dailyClaim;
         this.exit = exit;
         this.readyChanged = readyChanged;
         Name = "ModernLobbyPresentation";
@@ -189,6 +191,10 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
                     break;
                 case "lobby.vault":
                     vault();
+                    break;
+                case "lobby.daily.claim":
+                    dailyClaim();
+                    Refresh();
                     break;
                 case "lobby.exit":
                     exit();

@@ -3,7 +3,14 @@ export type LobbyMode = {
   id: string; title: string; category: string; description: string;
   enabled: boolean; secondary: boolean;
 };
+export type DailyLoginSnapshot = {
+  canClaim: boolean; claimedToday: boolean; totalClaims: number;
+  activeStep: number; nextStep: number; cycleCompletedSteps: number;
+  activeReward: string; nextReward: string;
+  rewards: {day:number;bankroll:string;coins:number;pack:string|null}[];
+};
 export type LobbySnapshot = {
+  dailyLogin: DailyLoginSnapshot;
   displayName: string; level: number; coins: string; prestige: number; title: string;
   bankroll: string; empireCredits: string; albumOwned: number; albumTotal: number;
   seasonTier: number; seasonNextTier: number; seasonExperience: number; seasonRequired: number;
@@ -20,7 +27,15 @@ const numeric = (x: unknown): x is number => typeof x === 'number' && Number.isF
 const fraction = (x: unknown) => numeric(x) && x >= 0 && x <= 1;
 
 export function isLobbySnapshot(x: unknown): x is LobbySnapshot {
-  if (!object(x)) return false;
+  if (!object(x) || !object(x.dailyLogin)) return false;
+  const daily = x.dailyLogin;
+  if (typeof daily.canClaim !== 'boolean' || typeof daily.claimedToday !== 'boolean'
+    || !['totalClaims','activeStep','nextStep','cycleCompletedSteps'].every(k => numeric(daily[k]) && Number(daily[k]) >= 0)
+    || !string(daily.activeReward) || !string(daily.nextReward)
+    || !Array.isArray(daily.rewards) || daily.rewards.length !== 7
+    || !daily.rewards.every((r:unknown,i:number)=>object(r)&&r.day===i+1
+      && string(r.bankroll)&&numeric(r.coins)&&r.coins>=0
+      && (r.pack===null||string(r.pack)))) return false;
   if (!['displayName','coins','title','bankroll','empireCredits','challengeName',
     'vaultTier','vaultAmount','vaultCapacity'].every(k => string(x[k]))) return false;
   if (!['level','prestige','albumOwned','albumTotal','seasonTier','seasonNextTier',
@@ -35,6 +50,19 @@ export function isLobbySnapshot(x: unknown): x is LobbySnapshot {
 }
 
 export const fallbackLobby: LobbySnapshot = {
+  dailyLogin: {
+    canClaim:true,claimedToday:false,totalClaims:0,activeStep:1,nextStep:1,
+    cycleCompletedSteps:0,activeReward:'$1,000.00',nextReward:'$1,000.00',
+    rewards:[
+      {day:1,bankroll:'$1,000.00',coins:40,pack:'Common'},
+      {day:2,bankroll:'$1,500.00',coins:40,pack:null},
+      {day:3,bankroll:'$2,000.00',coins:40,pack:null},
+      {day:4,bankroll:'$2,500.00',coins:40,pack:'Rare'},
+      {day:5,bankroll:'$3,000.00',coins:40,pack:null},
+      {day:6,bankroll:'$3,500.00',coins:40,pack:null},
+      {day:7,bankroll:'$4,000.00',coins:80,pack:'Epic'},
+    ],
+  },
   displayName: 'Guest', level: 1, coins: '0', prestige: 0, title: 'Midnight Dealer',
   bankroll: '$1,000.00', empireCredits: '0 cr', albumOwned: 0, albumTotal: 136,
   seasonTier: 0, seasonNextTier: 1, seasonExperience: 0, seasonRequired: 2000,
@@ -69,7 +97,7 @@ export function onLobbySnapshot(onSnapshot: (snapshot: LobbySnapshot) => void): 
 }
 export function lobbyCommand(type: string, id?: string): void {
   const allowed = ['lobby.ready','lobby.ui-ready','lobby.open','lobby.open-secondary',
-    'lobby.progression','lobby.profile','lobby.vault','lobby.exit','lobby.refresh'];
+    'lobby.progression','lobby.profile','lobby.vault','lobby.daily.claim','lobby.exit','lobby.refresh'];
   if (!allowed.includes(type)) return;
   window.chrome?.webview?.postMessage(id === undefined ? { type } : { type, id });
 }

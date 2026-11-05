@@ -189,3 +189,112 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
   .game-info{padding:6px 8px;}
   .lobby-gold-button{min-height:25px;}
 }
+
+
+
+/* High-resolution direct source artwork: unlike the legacy 256×130 sprite
+   atlas, each image remains sharp on HiDPI screens and during hover zoom. */
+.casino-lobby-shell::before{
+  opacity:.15;
+  background-image:linear-gradient(180deg,transparent,#03140f),url('/lobby/art/ambient.png');
+  background-size:cover; background-position:center;
+}
+.lobby-hero-picture{
+  top:0;right:0;transform:none;width:100%;height:100%;
+  background-image:url('/lobby/art/hero.png');
+  background-position:70% 50%;background-size:cover;
+}
+.game-art-image,.lobby-merge .game-art-image{
+  inset:0; width:100%;height:100%;left:0;top:0;right:auto;
+  background-size:cover;background-position:center;background-repeat:no-repeat;
+  transform:scale(1.02);opacity:1;
+}
+.game-art-window .art-blackjack{background-image:url('/lobby/art/blackjack.png');background-position:50% 49%;}
+.game-art-window .art-kniffel{background-image:url('/lobby/art/dice.png');background-position:50% 51%;}
+.game-art-window .art-chill-lounge{background-image:url('/lobby/art/chill.png');background-position:50% 53%;}
+.game-art-window .art-casino-empire{background-image:url('/lobby/art/empire.png');background-position:50% 48%;}
+.game-art-window .art-midnight-reels{background-image:url('/lobby/art/reels.png');background-position:50% 50%;}
+.game-art-window .art-neon-vault{background-image:url('/lobby/art/neon.png');background-position:50% 53%;}
+.game-art-window .art-nine-lives{background-image:url('/lobby/art/nine-lives.jpg');background-position:50% 45%;}
+.game-art-window .art-midnight-manor{background-image:url('/lobby/art/manor.png');background-position:50% 40%;}
+.game-art-window .art-midnight-merge{background-image:url('/lobby/art/merge.png');background-position:58% 50%;}
+.lobby-game:hover .game-art-image{transform:scale(1.11);filter:saturate(1.2) brightness(1.08);}
+.lobby-merge .game-art-window{min-width:50%;}
+.lobby-merge:hover .game-art-image{transform:scale(1.06);}
+
+/* The old "At a glance" links duplicate the primary left navigation.
+   Its space is now occupied by the fully functional seven-day Login panel. */
+.lobby-daily{
+  display:flex;flex-direction:column;min-height:0;min-width:0;gap:11px;
+  border:1px solid #42735b;border-radius:19px;
+  padding:16px 13px 14px;
+  background:linear-gradient(158deg,#083126ed,#061a17f5 72%);
+  box-shadow:0 9px 24px #0005,inset 0 1px #d1e9ae24;
+}
+.daily-header{text-align:center;flex:0 0 auto;}
+.daily-header h2{font:normal 29px Georgia,serif;color:#f4ddb1;margin:5px 0 4px;}
+.daily-header p{margin:0 auto;max-width:290px;line-height:1.35;color:#b8cabb;font-size:11px;}
+.daily-visual{
+  position:relative;flex:0 1 145px;min-height:85px;border-radius:12px;
+  background:linear-gradient(0deg,#08251beb,transparent 80%),url('/lobby/art/daily.png') center 43%/cover;
+  border:1px solid #745d3499;overflow:hidden;
+}
+.daily-visual::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 80% 22%,#f4d38311,transparent 55%);}
+.daily-visual-copy{position:absolute;bottom:10px;left:12px;text-shadow:0 2px 8px #000;display:flex;flex-direction:column;gap:4px;}
+.daily-visual-copy span{font-size:9px;color:#e2bb70;letter-spacing:.1em;font-weight:800;}
+.daily-visual-copy strong{font:normal 23px Georgia,serif;color:#ffe8ac;}
+.daily-cycle-heading{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+.daily-cycle-heading strong{font:normal 16px Georgia,serif;color:#f0d7a1;}
+.daily-cycle-heading span{font-size:10px;color:#94b4a5;}
+.daily-rewards{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  grid-auto-rows:minmax(70px,1fr);gap:8px;flex:1;min-height:0;
+}
+.daily-reward{
+  border:1px solid #416554;border-radius:10px;
+  background:linear-gradient(155deg,#0c362b,#061e1b);
+  display:flex;flex-direction:column;min-width:0;min-height:0;padding:9px;gap:3px;
+  overflow:hidden;transition:border-color .2s,box-shadow .2s,transform .2s;
+}
+.daily-reward:nth-child(7){grid-column:span 2;background:linear-gradient(100deg,#243622,#092b25);}
+.daily-reward.current{border-color:#ffcd68;box-shadow:inset 0 0 9px #ebac422a,0 0 13px #e9bd6930;}
+.daily-reward.claimed{border-color:#3d7e60;}
+.daily-reward-top{display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#ddcc9c;}
+.daily-reward-top span{color:#f6d184;}
+.daily-reward.claimed .daily-reward-top span{color:#78d9a6;}
+.daily-reward-bankroll{font:normal 17px Georgia,serif;color:#f9e5ae;white-space:nowrap;}
+.daily-reward small{font-size:10px;color:#add2b6;}
+.daily-pack{font-size:9px;text-transform:uppercase;letter-spacing:.04em;color:#ebc087;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.daily-reward-state{margin-top:auto;font-size:9px;letter-spacing:.05em;font-weight:800;color:#93b5a4;}
+.daily-reward.current .daily-reward-state{color:#f2cf79;}
+.daily-footer{display:flex;flex-direction:column;gap:7px;flex:0 0 auto;}
+.daily-footer p{text-align:center;margin:0;font-size:10px;color:#b5c9bc;}
+.daily-claim{
+  width:100%;min-height:44px;padding:7px 10px;border-radius:10px;
+  border:1px solid #fae3a2;background:linear-gradient(150deg,#ffe9ab,#c08a3a);
+  color:#172118;font-weight:800;font-size:13px;box-shadow:0 0 18px #f9bf4c3c;
+}
+.daily-claim.ready:hover{filter:brightness(1.13);transform:translateY(-1px);}
+.daily-claim.claimed{background:linear-gradient(135deg,#244a39,#153b31);color:#b7d8c5;border-color:#376e56;box-shadow:none;cursor:default;}
+.daily-claim span{margin-right:8px;}
+@media(max-width:1360px){
+  .lobby-daily{padding:11px 9px;gap:7px;}
+  .daily-header h2{font-size:23px;}
+  .daily-visual{flex-basis:100px;}
+  .daily-rewards{gap:5px;grid-auto-rows:minmax(65px,1fr);}
+  .daily-reward{padding:6px;}
+}
+@media(max-width:1100px){.lobby-daily{display:none;}}
+@media(max-height:800px){
+  .lobby-daily{gap:5px;padding:8px;}
+  .daily-header h2{font-size:21px;}
+  .daily-header p{font-size:10px;}
+  .daily-visual{flex-basis:76px;min-height:62px;}
+  .daily-cycle-heading strong{font-size:13px;}
+  .daily-rewards{gap:4px;grid-auto-rows:minmax(55px,1fr);}
+  .daily-reward{gap:1px;padding:5px;}
+  .daily-reward-bankroll{font-size:14px;}
+  .daily-reward-state,.daily-pack{font-size:8px;}
+  .daily-footer p{font-size:9px;}
+  .daily-claim{min-height:36px;}
+}

@@ -13,7 +13,8 @@ public partial class MainWindow
 
     private void InitializeDailyLoginDrawer()
     {
-        if (dailyLoginDrawer is not null || lobby is null)
+        if (dailyLoginDrawer is not null || lobby is null
+            || (ModernLobbyView.IsAvailable && modernLobby?.Failed != true))
         {
             return;
         }

@@ -39,11 +39,16 @@ public partial class MainWindow
             "Five dice and your score sheet. Play solo or join a casino table with three AI opponents.",
             "#9DD6B3", "⚄", "Table games", () => new LoungeGameArtwork(true)), OpenKniffel);
         lobby=new CasinoLobbyView(modeRegistry,OpenProgression, () => preferences.Presentation("lobby").AnimationsEnabled);
+        // Use the WPF lobby only on genuine frontend failure. Keep its logical
+        // visibility for native navigation, but never allow its art to flash
+        // underneath the new React compositor during mode transitions.
+        lobby.Opacity = ModernLobbyView.IsAvailable ? 0d : 1d;
+        lobby.IsHitTestVisible = !ModernLobbyView.IsAvailable;
         lobby.IsVisibleChanged += (_, _) =>
         {
             LobbyButton.Visibility = lobby.IsVisible ? Visibility.Collapsed : Visibility.Visible;
             modernLobby?.SetLobbyVisible(lobby.IsVisible);
-            UpdateHostHeaderVisibility(embeddedGameOverlay?.IsVisible == true);
+            OnModernLobbyStateChanged();
             SyncHostMusic();
             RefreshProfileButton();
         };
