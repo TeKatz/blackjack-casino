@@ -29,7 +29,7 @@ const theme=(v:unknown):v is AlbumTheme=>obj(v)&&['id','name','symbol','accent',
  .every(k=>text(v[k]))&&typeof v.ultraRare==='boolean'&&typeof v.rewardReady==='boolean'
  &&typeof v.rewardClaimed==='boolean'&&integer(v.owned)&&integer(v.total)
  &&integer(v.rewardCoins)&&rarity(v.rewardPack)&&Array.isArray(v.cards)
- &&v.cards.length===v.total&&v.cards.length<=10&&v.owned<=v.total&&v.cards.every(card);
+ &&v.cards.length===v.total&&v.cards.length<=10&&Number(v.owned)<=Number(v.total)&&v.cards.every(card);
 const pack=(v:unknown):v is AlbumPack=>obj(v)&&rarity(v.rarity)&&rarity(v.guaranteed)
  &&integer(v.price)&&integer(v.owned)&&fraction(v.ultraRareChance);
 const draw=(v:unknown):v is AlbumDraw=>obj(v)
@@ -42,7 +42,7 @@ export function isAlbum(x:unknown):x is AlbumSnapshot{
  ||!Array.isArray(x.packs)||x.packs.length!==5||!x.packs.every(pack)
  ||!Array.isArray(x.themes)||x.themes.length!==16||!x.themes.every(theme)
  ||x.totalCards!==x.themes.reduce((n:number,t:AlbumTheme)=>n+t.total,0)
- ||x.ownedCards>x.totalCards||x.completedThemes>x.themes.length)return false;
+ ||Number(x.ownedCards)>Number(x.totalCards)||Number(x.completedThemes)>x.themes.length)return false;
  if(x.pending===null)return true;
  const p=x.pending;
  return obj(p)&&typeof p.id==='string'&&/^[a-f0-9]{32}$/.test(p.id)
