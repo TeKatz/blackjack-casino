@@ -5,7 +5,7 @@ import { embeddedLobby, fallbackLobby, lobbyCommand, onLobbySnapshot } from './l
 import type { LobbyMode, LobbySnapshot } from './lobbyBridge';
 import './lobby.css';
 
-type Filter = 'all'|'tables'|'slots'|'relax'|'empire'|'collections'|'shop'|'stats';
+type Filter = 'all'|'tables'|'slots'|'relax'|'empire'|'collections'|'shop'|'stats'|'season'|'challenges'|'vault';
 const artOrder = ['blackjack','kniffel','chill-lounge','casino-empire','midnight-reels',
   'neon-vault','nine-lives','midnight-manor','midnight-merge'];
 const categoryById: Record<string, string> = {
@@ -18,6 +18,10 @@ const navigation: {id: Filter; icon: string; en: string; de: string}[] = [
   {id:'slots',icon:'▣',en:'Slots',de:'Slots'}, {id:'relax',icon:'☕',en:'Relaxed',de:'Entspannt'},
   {id:'empire',icon:'♛',en:'Empire',de:'Empire'}, {id:'collections',icon:'▤',en:'Collections',de:'Sammlungen'},
   {id:'shop',icon:'♢',en:'Shop',de:'Shop'}, {id:'stats',icon:'▥',en:'Statistics',de:'Statistik'},
+  // Remain accessible when the compact viewport hides the topbar and overview widgets.
+  {id:'season',icon:'✦',en:'Season Pass',de:'Saisonpass'},
+  {id:'challenges',icon:'♛',en:'Challenges',de:'Aufgaben'},
+  {id:'vault',icon:'⬡',en:'Vault',de:'Tresor'},
 ];
 const progression: {id: string; icon: string; de: string; en: string; detail: string}[] = [
   {id:'Season Pass',icon:'✦',en:'Season Pass',de:'Season Pass',detail:'season'},
@@ -141,6 +145,9 @@ function LobbyApp() {
     if(id==='collections') {openProgression("Collector's Album");return;}
     if(id==='shop') {openProgression('Cosmetic Shop');return;}
     if(id==='stats') {openProgression('Statistics');return;}
+    if(id==='season') {openProgression('Season Pass');return;}
+    if(id==='challenges') {openProgression('Challenges');return;}
+    if(id==='vault') {lobbyCommand('lobby.vault');return;}
     setFilter(id);
   };
   const modes = data.modes
