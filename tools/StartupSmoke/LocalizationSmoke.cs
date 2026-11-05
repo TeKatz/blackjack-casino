@@ -15,15 +15,30 @@ internal static class LocalizationSmoke
     {
         Localization.InstallAutomaticTranslation();
 
-        ComboBox language = Find<ComboBox>(window).FirstOrDefault(combo => combo.Name == "LanguageComboBox")
-            ?? throw new InvalidOperationException("Presentation settings do not expose the Language selector.");
+        ModernLobbyView react = Find<ModernLobbyView>(window).Single(view => view.Ready && view.IsVisible);
+        Require(react.Browser.CoreWebView2 is not null,
+            "React lobby is not ready for the visible language switch.");
+        ComboBox language = typeof(MainWindow).GetField("languageComboBox",
+            BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(window) as ComboBox
+            ?? throw new InvalidOperationException("Blackjack's native language preferences were not initialized.");
+        Require(await react.Browser.CoreWebView2.ExecuteScriptAsync(
+            "Boolean(document.querySelector('.lobby-language'))") == "true",
+            "React lobby does not expose the language switch.");
 
         Require(language.Items.Count == 2, $"Language selector should expose English and Deutsch; found {language.Items.Count} items.");
         Require(language.SelectedIndex == 0 && SelectedLanguageName(language) == "English",
             "Existing/default preferences should visibly start in English.");
 
-        language.SelectedIndex = 1;
-        await Task.Delay(120);
+        await react.Browser.CoreWebView2.ExecuteScriptAsync(
+            "document.querySelector('.lobby-language')?.click()");
+        for (int i = 0; i < 60 && CultureInfo.CurrentUICulture.Name != "de-DE"; i++)
+            await Task.Delay(50);
+        window.UpdateLayout();
+
+        // The legacy Blackjack preferences remain available in Blackjack mode, not
+        // underneath the modern landing page. Confirm they reflect the React choice.
+        window.Modes.Open("blackjack");
+        await Task.Delay(100);
         window.UpdateLayout();
 
         Require(CultureInfo.CurrentUICulture.Name == "de-DE",
@@ -38,6 +53,10 @@ internal static class LocalizationSmoke
             "Blackjack action text did not switch to German.");
         Require(Find<TextBlock>(window).Any(text => text.Text == "Sprache"),
             "Language selector label did not switch to German.");
+        Find<Button>(window).Single(button => button.Name == "LobbyButton" && button.IsVisible)
+            .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        await Task.Delay(100);
+        window.UpdateLayout();
         Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "Eine andere Art von Nacht."),
             "Casino lobby headline did not switch to German without a restart.");
         Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "DIE SAMTTISCHE"),
@@ -163,24 +182,32 @@ internal static class LocalizationSmoke
         await Task.Delay(100);
         window.UpdateLayout();
 
-        language.SelectedIndex = 0;
-        await Task.Delay(120);
+        ModernLobbyView? languageLobby = Find<ModernLobbyView>(window).FirstOrDefault(view => view.Ready && view.IsVisible);
+        Require(languageLobby?.Browser.CoreWebView2 is not null, "Returning from Lounge lost the modern lobby.");
+        await languageLobby.Browser.CoreWebView2.ExecuteScriptAsync(
+            "document.querySelector('.lobby-language')?.click()");
+        for (int i = 0; i < 60 && CultureInfo.CurrentUICulture.Name != "en-US"; i++)
+            await Task.Delay(50);
         window.UpdateLayout();
 
         Require(CultureInfo.CurrentUICulture.Name == "en-US",
             $"English selection did not restore CurrentUICulture to en-US (was {CultureInfo.CurrentUICulture.Name}).");
         Require(language.SelectedIndex == 0 && SelectedLanguageName(language) == "English",
             $"Language selector did not visibly return to English; it shows '{SelectedLanguageName(language)}'.");
-        Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "PRESENTATION"),
-            "Presentation header did not switch back to English without a restart.");
-        Require(Find<CheckBox>(window).Any(check => check.Name == "SoundCheckBox" && Equals(check.Content, "Casino sound effects")),
+        TextBlock languageLabel = typeof(MainWindow).GetField("languageLabel",
+            BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(window) as TextBlock
+            ?? throw new InvalidOperationException("Native language label was not initialized.");
+        Require(languageLabel.Text == "Language",
+            "Native language settings did not restore their English label.");
+        Require(Equals(((CheckBox)window.FindName("SoundCheckBox")).Content, "Casino sound effects"),
             "Sound setting did not restore its English resource value.");
         Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "A different kind of night."),
             "Casino lobby headline did not switch back to English without a restart.");
         // The visible header belongs to React while the WPF header remains the
         // fallback. Its localized text still has to be correct, but not IsVisible.
-        Require(Find<TextBlock>(window).Any(text => text.Text == "VAULT FULL"),
-            "Dynamic Vault header did not switch back to English.");
+        Require(await languageLobby!.Browser.CoreWebView2!.ExecuteScriptAsync(
+            "Boolean(document.querySelector('.vault-widget')?.textContent?.includes('VAULT'))") == "true",
+            "React Vault widget did not restore English navigation.");
         ModernLobbyView? modernLobby = Find<ModernLobbyView>(window)
             .FirstOrDefault(view => view.Ready && view.IsVisible);
         if (modernLobby is not null)
