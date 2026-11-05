@@ -80,6 +80,7 @@ internal static class Program
                 Require(window.IsVisible, "Main window never became visible.");
                 CheckWelcomeOverlay(window, profile, output);
                 await VerifyPackagedModernLobby(window, output);
+                RequireNoLegacyLobbyFrame(window, "startup");
                 Require(window.Icon is not null && window.Template.FindName("CasinoTitleBar", window) is FrameworkElement { IsVisible: true }, "The desktop icon or custom title bar is missing.");
                 await WindowFrameSmoke.Run(window);
                 object originalContent = window.Content;
@@ -383,6 +384,7 @@ internal static class Program
                     await Task.Delay(80);
                 Require(window.IsVisible && Find<CasinoLobbyView>(window).Any(v => v.IsVisible),
                     "Modern Manor Back control did not return to the visible casino lobby.");
+                RequireNoLegacyLobbyFrame(window, "Manor return");
 
                 NavigationSmoke.OpenCovered(window, "nine-lives");
                 await Task.Delay(260);
@@ -475,6 +477,7 @@ internal static class Program
                     "Nine Lives remained hosted after using the Casino/back button.");
                 Require(Find<Button>(window).Any(button => button.Name == "Mode_nine_lives" && button.IsVisible),
                     "Casino lobby was not restored after leaving Nine Lives.");
+                RequireNoLegacyLobbyFrame(window, "Nine Lives return");
 
                 // Neon Vault: scalable cyber artwork, no legacy 128px thumbnails, in-app navigation.
                 NavigationSmoke.OpenCovered(window, "neon-vault");
@@ -505,6 +508,7 @@ internal static class Program
                 window.UpdateLayout();
                 Require(Find<Button>(window).Any(button => button.Name == "Mode_neon_vault" && button.IsVisible),
                     "Casino lobby did not return after closing Neon Vault.");
+                RequireNoLegacyLobbyFrame(window, "Neon Vault return");
 
 
 
@@ -585,12 +589,22 @@ internal static class Program
             + "const games=[...document.querySelectorAll('.lobby-game')];"
             + "const profile=document.querySelector('.profile-widget');"
             + "const nav=document.querySelectorAll('.lobby-nav-item');"
+            + "const daily=document.querySelector('.lobby-daily');"
+            + "const rewards=document.querySelectorAll('.daily-reward');"
+            + "const art=getComputedStyle(document.querySelector('.art-blackjack')).backgroundImage;"
+            + "const hero=getComputedStyle(document.querySelector('.lobby-hero-picture')).backgroundImage;"
             + "return Boolean(shell&&games.length===9&&nav.length>=11"
+            + "&&daily&&rewards.length===7&&!document.querySelector('.lobby-overview')"
+            + "&&art.includes('/lobby/art/blackjack.png')&&hero.includes('/lobby/art/hero.png')"
             + "&&profile?.textContent?.includes('Startup Smoke')"
             + "&&document.querySelector('.lobby-hero h1')?.textContent?.length>5);})()");
         Require(result.Equals("true", StringComparison.OrdinalIgnoreCase),
             "Packaged React lobby did not render nine real games and live profile state. "
             + "DOM validation returned " + result);
+
+        RequireNoLegacyLobbyFrame(window, "rendered React lobby");
+        Require(!Find<LobbyDailyDrawer>(window).Any(drawer => drawer.IsVisible),
+            "The obsolete daily-login drawer is still layered over the React lobby.");
 
         await Task.Delay(400);
         using var capture = File.Create(Path.Combine(output, "modern-lobby-webview2-live.png"));
@@ -598,6 +612,15 @@ internal static class Program
             CoreWebView2CapturePreviewImageFormat.Png, capture);
         Require(capture.Length > 15_000,
             "Modern lobby WebView2 preview is unexpectedly small or empty.");
+    }
+
+    private static void RequireNoLegacyLobbyFrame(MainWindow window, string moment)
+    {
+        if (!ModernLobbyView.IsAvailable) return;
+        CasinoLobbyView legacy = Find<CasinoLobbyView>(window).Single();
+        Require(legacy.Opacity <= .001 && !legacy.IsHitTestVisible,
+            "The old WPF lobby can flash or steal input during " + moment
+            + " (opacity=" + legacy.Opacity + ").");
     }
 
     // Exercise the actual WPF welcome layout with intentionally long generated titles,
