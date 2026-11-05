@@ -45,6 +45,7 @@ internal sealed class ModernEmpireView : ContentControl, IDisposable
         visitStarted = startedAt;
         visitId++;
         visitTimings.Clear();
+        Mark("host_view_ready");
         if (browser.CoreWebView2 is not null) Mark("webview_reused");
         browser.IsEnabled = false; // Old values cannot be acted on until the new snapshot is rendered.
         startupTimeout.Stop();
@@ -81,6 +82,7 @@ internal sealed class ModernEmpireView : ContentControl, IDisposable
     {
         if (initialized || disposed) return;
         initialized = true;
+        Mark("host_loaded");
         owner = Window.GetWindow(this);
         if (owner is not null) owner.StateChanged += OnWindowState;
         string folder = Path.Combine(AppContext.BaseDirectory, "ModernFrontend");
@@ -108,6 +110,7 @@ internal sealed class ModernEmpireView : ContentControl, IDisposable
             core.ProcessFailed += (_, _) => Fail("Empire presentation stopped. Reopen it to restore the saved state.");
             core.WebMessageReceived += OnMessage;
             SetStage("Browser vorbereiten… / Preparing browser…");
+            Mark("navigation_started");
             browser.Source = new Uri("https://" + ManorPreviewProtocol.VirtualHost + "/empire.html");
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException or System.Runtime.InteropServices.COMException)
@@ -124,7 +127,7 @@ internal sealed class ModernEmpireView : ContentControl, IDisposable
             switch (type.GetString())
             {
                 case "empire.ready":
-                    listening = true; Mark("bridge_ready"); SetStage("Anwesen laden… / Loading estate…"); Refresh(); break;
+                    listening = true; Mark("react_first_render"); Mark("bridge_ready"); SetStage("Anwesen laden… / Loading estate…"); Refresh(); break;
                 case "empire.ui-ready":
                     if (!listening || !IsVisible || !root.TryGetProperty("visitId", out var visit) ||
                         visit.ValueKind != JsonValueKind.Number || !visit.TryGetInt32(out int acceptedVisit) || acceptedVisit != visitId) break;
