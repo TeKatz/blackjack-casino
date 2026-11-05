@@ -276,3 +276,9 @@
  .vault-door{width:120px;border-width:7px}.vault-door span{font-size:45px}
  .vault-tier-track{grid-template-columns:repeat(auto-fit,minmax(90px,1fr));}}
 @media(prefers-reduced-motion:reduce){.vault-chamber.is-ready .vault-door,.vault-reward{animation:none;}}
+
+/* Owned profile portraits reuse the actual locally packaged Shop artwork, never placeholders. */
+.identity-cosmetic-symbol{position:relative;overflow:hidden;}
+.identity-cosmetic-symbol img{position:absolute;inset:0;width:100%;height:100%;
+ object-fit:cover;object-position:center top;border-radius:8px;filter:saturate(1.03);}
+.identity-cosmetic.selected .identity-cosmetic-symbol{outline:2px solid #d2b26f;outline-offset:2px;}

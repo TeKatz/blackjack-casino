@@ -20,7 +20,7 @@ export type StatisticsSnapshot={
   session:{rounds:string;hands:string;playtime:string;won:string;lost:string;pushes:string;wagered:string;net:string;blackjacks:string;bestStreak:string};
   tables:{name:string;hands:string;net:string;positive:boolean;rounds:string;winRate:string}[];
 };
-export type CosmeticIdentityOption={id:string;name:string;description:string};
+export type CosmeticIdentityOption={id:string;name:string;description:string;visualVariant:string};
 export type AccountSnapshot={
  displayName:string;level:number;prestige:number;coins:string;title:string;portraitId:string;
  equippedTitleId:string;equippedPortraitId:string;
@@ -104,7 +104,7 @@ export function isAccount(x:unknown):x is AccountSnapshot{
     'profileExperience','playtime','season','created'].every(k=>str(x[k]))
     ||!['level','prestige','ownedCosmetics','ownedCards','totalCards'].every(k=>count(x[k])))return false;
  return ['portraits','titles'].every(k=>Array.isArray(x[k])&&(x[k] as unknown[]).length<=500
-    &&(x[k] as unknown[]).every(v=>obj(v)&&str(v.id)&&str(v.name)&&str(v.description)));
+    &&(x[k] as unknown[]).every(v=>obj(v)&&str(v.id)&&str(v.name)&&str(v.description)&&str(v.visualVariant)));
 }
 export function isHistory(x:unknown):x is HistorySnapshot{
  return obj(x)&&count(x.total)&&Array.isArray(x.entries)&&x.entries.length<=250
@@ -178,8 +178,8 @@ export const previewChallenges:ChallengesSnapshot={
 export const previewAccount:AccountSnapshot={
  displayName:'Guest',level:1,prestige:0,coins:'0',title:'Midnight Dealer',
  portraitId:'portrait-classic',equippedTitleId:'title-rookie',equippedPortraitId:'portrait-classic',
- portraits:[{id:'portrait-classic',name:'House Guest',description:'Classic casino portrait'}],
- titles:[{id:'title-rookie',name:'Rookie',description:'Your first title'}],
+ portraits:[{id:'portrait-classic',name:'House Guest',description:'Classic casino portrait',visualVariant:'portrait-house-guest'}],
+ titles:[{id:'title-rookie',name:'Rookie',description:'Your first title',visualVariant:'standard'}],
  profileExperience:'0',playtime:'0m',ownedCosmetics:5,
  ownedCards:0,totalCards:136,season:'Neon Dynasty',created:'—'
 };

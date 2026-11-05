@@ -331,10 +331,10 @@ public partial class MainWindow
             EquippedPortraitId = profile.EquippedPortraitId,
             Portraits = CosmeticCatalog.All.Where(item => item.Kind == CosmeticKind.Portrait
                 && profile.OwnedCosmeticIds.Contains(item.Id, StringComparer.Ordinal))
-                .Select(item => new { item.Id, item.Name, item.Description }).ToArray(),
+                .Select(item => new { item.Id, item.Name, item.Description, item.VisualVariant }).ToArray(),
             Titles = CosmeticCatalog.All.Where(item => item.Kind == CosmeticKind.Title
                 && profile.OwnedCosmeticIds.Contains(item.Id, StringComparer.Ordinal))
-                .Select(item => new { item.Id, item.Name, item.Description }).ToArray(),
+                .Select(item => new { item.Id, item.Name, item.Description, item.VisualVariant }).ToArray(),
             ProfileExperience = RecordNumber(profile.LifetimeExperience),
             Playtime = RecordDuration(progressionController.TotalPlaytime),
             OwnedCosmetics = profile.OwnedCosmeticIds.Count,
