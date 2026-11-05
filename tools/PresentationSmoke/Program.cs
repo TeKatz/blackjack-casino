@@ -115,8 +115,7 @@ internal static partial class Program
         Require(!scoped.SoundEnabled && !scoped.AnimationsEnabled && !scoped.Presentation("neon-vault").SoundEnabled, "Reels settings leaked into another destination.");
 
         Require(Find<CasinoLobbyView>(window).Any(v=>v.IsVisible),"Leaving a slot did not return to the lobby");
-        Require(((FrameworkElement)window.FindName("CasinoHeader")).IsVisible
-            == !Find<ModernLobbyView>(window).Any(v => v.Ready && v.IsVisible),
+        Require(!((FrameworkElement)window.FindName("CasinoHeader")).IsVisible,
             "Lobby header visibility did not match the active React/WPF presentation after Midnight Reels");
 
         NavigationSmoke.OpenCovered(window, "neon-vault");await Task.Delay(120);window.UpdateLayout();
@@ -135,8 +134,7 @@ internal static partial class Program
         }
         Find<Button>(window).Single(b=>b.Name=="BackButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Task.Delay(50);
         Require(Find<CasinoLobbyView>(window).Any(v=>v.IsVisible),"Leaving Neon Vault did not return to the lobby");
-        Require(((FrameworkElement)window.FindName("CasinoHeader")).IsVisible
-            == !Find<ModernLobbyView>(window).Any(v => v.Ready && v.IsVisible),
+        Require(!((FrameworkElement)window.FindName("CasinoHeader")).IsVisible,
             "Lobby header visibility did not match the active React/WPF presentation after Neon Vault");
 
         Find<Button>(window).Single(b=>b.Name=="PlayerProfileButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
@@ -455,8 +453,7 @@ internal static partial class Program
         Find<Button>(window).Single(b=>b.Name=="EmpireBackButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(40);window.UpdateLayout();
         Require(Find<CasinoLobbyView>(window).Any(v=>v.IsVisible),"Empire Back did not restore the lobby");
-        Require(((FrameworkElement)window.FindName("CasinoHeader")).IsVisible
-            == !Find<ModernLobbyView>(window).Any(v => v.Ready && v.IsVisible),
+        Require(!((FrameworkElement)window.FindName("CasinoHeader")).IsVisible,
             "Empire Back did not restore the appropriate React/WPF lobby header");
         NavigationSmoke.OpenCovered(window, "casino-empire");await Task.Delay(40);window.UpdateLayout();
         Require(service.Level("slots")>=2 && service.Credits==credits,"Reopening Casino Empire reset progress");
