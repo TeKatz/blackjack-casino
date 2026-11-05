@@ -527,6 +527,7 @@ internal static class Program
                 await EmpireStrategySmoke.Run(window, output);
                 await VaultSmoke.Run(window, output);
                 await ModernShopSmoke.Run(window, profile, output);
+                await ModernRecordsSmoke.Run(window, profile, output);
 
                 File.WriteAllText(Path.Combine(output, "result.txt"),
                     "PASS: window bounds; EN/DE live localization; Nine Lives presentation; Chill Lounge Sudoku, Solitaire and Memory; Midnight Merge foundation; Midnight Dice; Casino Empire; and in-app Casino Vault acceptance all passed.");
