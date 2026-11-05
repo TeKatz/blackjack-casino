@@ -79,7 +79,11 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
     {
         if (disposed || failed) return;
         Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
-        if (visible) Refresh();
+        if (visible)
+        {
+            Refresh();
+            if (shopOpen) RefreshShop();
+        }
     }
 
     private void PostMessage(string type, object? data)
@@ -94,7 +98,6 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
         try
         {
             PostMessage("lobby.snapshot", snapshot());
-            if (shopOpen) RefreshShop();
         }
         catch (InvalidOperationException ex) { Fail("Snapshot delivery failed: " + ex.Message); }
     }

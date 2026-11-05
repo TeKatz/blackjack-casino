@@ -147,3 +147,7 @@
  border:1px solid #6cb187;background:#15382df3;color:#f3f0d6;box-shadow:0 10px 28px #0009;font-size:13px;}
 .shop-notice.error{border-color:#b97174;background:#462727f5;}
 .shop-notice button{border:0;color:#f8e1af;background:transparent;font-size:21px;}
+
+/* Keep the small return link and breadcrumb on separate lines even when compact. */
+.shop-back{display:flex;width:max-content;margin-bottom:13px;}
+.shop-eyebrow{display:block;}

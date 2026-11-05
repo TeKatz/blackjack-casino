@@ -22,6 +22,8 @@ const portraitsJpg=new Set([
 ]);
 const variantPalette=(variant:string)=>{
   const v=variant.toLowerCase();
+  if(/slate|graphite|charcoal/.test(v))return ['#9facb8','#34444d','#e1e6e9'];
+  if(/pearl|linen|ivory|porcelain/.test(v))return ['#e8d9bf','#776b5e','#fff9e7'];
   if(/ruby|crimson|rose|burgundy|ember|red|copper/.test(v))return ['#dc747b','#68303e','#ffd3a9'];
   if(/opal|aurora|celestial|astral|violet|amethyst|moon|eclipse|starlight/.test(v))return ['#bc96f0','#3f316f','#f1e2ff'];
   if(/neon|cyan|sapphire|ice|blue|harbor|midnight/.test(v))return ['#78c8f7','#1e4062','#e2f5ff'];
