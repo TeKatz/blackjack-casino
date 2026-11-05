@@ -330,9 +330,25 @@ internal static partial class Program
         // exercising the old Back contract after this helper returns.
         Find<Button>(window).Single(b => b.Name == "AlbumBackButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(40); window.UpdateLayout();
-        Find<Button>(window).Single(b => b.Name == "PlayerProfileButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-        await Task.Delay(50); window.UpdateLayout();
-        Find<Button>(window).Single(b => b.Name == "ProfileProgressionButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        ModernLobbyView? activeLobby = Find<ModernLobbyView>(window)
+            .FirstOrDefault(view => view.Ready && view.IsVisible);
+        if (activeLobby is not null)
+        {
+            string available = await activeLobby.Browser.CoreWebView2!.ExecuteScriptAsync(
+                "Boolean(document.querySelector('.profile-widget'))");
+            Require(available == "true", "Modern lobby has no player-profile shortcut");
+            await activeLobby.Browser.CoreWebView2.ExecuteScriptAsync(
+                "document.querySelector('.profile-widget').click()");
+        }
+        else
+        {
+            Find<Button>(window).Single(b => b.Name == "PlayerProfileButton" && b.IsVisible)
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        }
+        await WaitUntil(() => Find<Button>(window).Any(b => b.Name == "ProfileProgressionButton" && b.IsVisible),
+            "Modern lobby did not open the native profile page");
+        Find<Button>(window).Single(b => b.Name == "ProfileProgressionButton" && b.IsVisible)
+            .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(60); window.UpdateLayout();
         Require(Find<TabControl>(window).Any(t => t.Items.OfType<TabItem>().Any(i => Equals(i.Header, "Challenges"))), "Album smoke did not restore Progression");
         Require(!Find<TabControl>(window).Where(t => t.IsVisible).SelectMany(t => t.Items.OfType<TabItem>()).Any(i => Equals(i.Header, "Album")), "Restored Progression exposed the legacy Album tab");
