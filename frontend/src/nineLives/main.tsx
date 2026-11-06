@@ -116,8 +116,25 @@ function App(){
      window.chrome?.webview?.postMessage({type:'nine-lives.animation-complete',spinId:last.id});
    };
    if(!snap.state.animationsEnabled||reduced){finish();return;}
-   setAnim atingPlaceholder();
-   function setAnim atingPlaceholder(){} 
+   setAnimating(true);
+   setSpinningColumns([0,1,2]);
+   visualTick.current=0;
+   // The rolling symbols are cosmetic. The settled C# grid is immutable.
+   intervalRef.current=setInterval(()=>{
+     visualTick.current++;
+     setGrid(previous=>previous.map((value,index)=>
+       Math.floor(index%3)<3 && visualTick.current<1000
+       ? symbols[(visualTick.current+index*3)%symbols.length] : value));
+   },85);
+   [900,1480,2040].forEach((delay,reel)=>{
+     timerRef.current.push(setTimeout(()=>{
+       setSpinningColumns(previous=>previous.filter(x=>x!==reel));
+       setGrid(previous=>previous.map((value,index)=>
+         index%3===reel?last.grid[index]:value));
+       window.chrome?.webview?.postMessage({type:'nine-lives.reel-stop',spinId:last.id,reel});
+     },delay));
+   });
+   timerRef.current.push(setTimeout(finish,2380));
  },[last?.id,snap?.state.animationsEnabled,cleanTimers]);
  const close=useCallback(()=>{
    setAutoRemaining(0);
