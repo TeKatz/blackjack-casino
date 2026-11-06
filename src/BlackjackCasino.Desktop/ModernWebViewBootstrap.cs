@@ -10,6 +10,15 @@ namespace BlackjackCasino.Desktop;
 /// </summary>
 internal static class ModernWebViewBootstrap
 {
+    // Never place Chromium's mutable profile inside the directory swapped by the updater.
+    // Reuse one environment for all local browser surfaces, including the detached board.
+    private static readonly Lazy<Task<CoreWebView2Environment>> SharedEnvironment =
+        new(() => CoreWebView2Environment.CreateAsync(userDataFolder: UserDataFolder));
+
+    internal static string UserDataFolder => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "BlackjackCasino", "WebView2");
+
     internal static async Task<CoreWebView2?> InitializeAsync(
         WebView2 browser,
         Func<bool> isClosed,
@@ -21,7 +30,13 @@ internal static class ModernWebViewBootstrap
         ArgumentException.ThrowIfNullOrWhiteSpace(frontendFolder);
         ArgumentNullException.ThrowIfNull(trustedPage);
 
-        await browser.EnsureCoreWebView2Async();
+        // A shared user-local browser profile prevents lingering WebView2 processes
+        // from locking the installation directory during an out-of-process update.
+        // Avoid initializing a browser if its owning view has already been closed.
+        if (isClosed()) return null;
+        CoreWebView2Environment environment = await SharedEnvironment.Value;
+        if (isClosed()) return null;
+        await browser.EnsureCoreWebView2Async(environment);
         // Closing a game while WebView2 initializes must not resurrect a
         // browser, attach handlers or navigate away from the casino lobby.
         if (isClosed()) return null;

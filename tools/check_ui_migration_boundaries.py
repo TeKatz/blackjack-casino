@@ -150,7 +150,9 @@ def main() -> int:
     else:
         policy = text(webview_policy)
         for token in (
-            "EnsureCoreWebView2Async()", "CoreWebView2HostResourceAccessKind.DenyCors",
+            "EnsureCoreWebView2Async(environment)", "CoreWebView2HostResourceAccessKind.DenyCors",
+            "CoreWebView2Environment.CreateAsync(userDataFolder: UserDataFolder)",
+            "Environment.SpecialFolder.LocalApplicationData",
             "AreDevToolsEnabled = false", "AreHostObjectsAllowed = false",
             "AreDefaultContextMenusEnabled = false",
             "IsWebMessageEnabled = true", "NewWindowRequested",
