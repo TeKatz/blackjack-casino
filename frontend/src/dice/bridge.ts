@@ -45,7 +45,8 @@ const game=(v:unknown):v is DiceGame=>obj(v)&&guid(v.gameId)
  &&[v.kniffelsScored,v.upperSubtotal,v.upperBonus,v.lowerSubtotal,v.additionalKniffelBonus,v.total].every(x=>count(x,3000))
  &&Array.isArray(v.categories)&&v.categories.length===13&&v.categories.every(score)
  &&new Set(v.categories.map(x=>(x as DiceScore).id)).size===13
- &&(v.rollsUsed>0||v.dice.every(x=>x===0)&&v.held.every(x=>x===false))
+ &&((v.rollsUsed===0&&v.dice.every(x=>x===0)&&v.held.every(x=>x===false))
+   ||(v.rollsUsed>0&&v.dice.every(x=>x>=1&&x<=6)))
  &&v.filledCount===v.categories.filter(x=>(x as DiceScore).stored!==null).length
  &&v.isComplete===(v.filledCount===13);
 const table=(v:unknown):v is DiceTable=>obj(v)&&cash(v.stake)&&typeof v.settled==='boolean'
