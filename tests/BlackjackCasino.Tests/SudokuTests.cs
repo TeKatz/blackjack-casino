@@ -77,6 +77,30 @@ public sealed class SudokuTests
     }
 
     [Fact]
+    public void ClonedSudokuCandidateKeepsCachedSolutionAndDoesNotMutateLiveState()
+    {
+        SudokuPuzzle puzzle = SudokuLibrary.Normal.Last(p => p.Difficulty == SudokuDifficulty.Master);
+        var original = new SudokuBoard(puzzle);
+        int editable = Enumerable.Range(0, 81).First(index => !original.IsGiven(index));
+        Assert.True(original.ToggleNote(editable, 3));
+        SudokuBoard clone = original.Clone();
+        Assert.Equal(original.CurrentGrid, clone.CurrentGrid);
+        Assert.Equal(original.NotesAt(editable), clone.NotesAt(editable));
+        Assert.Equal(original.HintsUsed, clone.HintsUsed);
+
+        Assert.True(clone.SetValue(editable, 2));
+        Assert.Equal(0, original.ValueAt(editable));
+        Assert.NotEqual(0, original.NotesAt(editable));
+        Assert.Equal(2, clone.ValueAt(editable));
+
+        SudokuBoard hinted = original.Clone();
+        Assert.Equal(editable, hinted.ApplyHint(editable));
+        Assert.True(hinted.IsCorrectAt(editable));
+        Assert.Equal(1, hinted.HintsUsed);
+        Assert.Equal(0, original.HintsUsed);
+    }
+
+    [Fact]
     public void IncorrectValuesAreDetectedAndHintsCorrectThemBeforeEmptyCells()
     {
         SudokuPuzzle puzzle = SudokuLibrary.Normal[0];

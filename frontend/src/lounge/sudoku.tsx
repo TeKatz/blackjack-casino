@@ -89,13 +89,19 @@ export function SudokuScreen({state,language,pending,error,command}:Props) {
      if(ctrl&&e.key.toLowerCase()==='z'){e.preventDefault();if(game.canUndo)command({action:'sudoku.undo'});return;}
      if(ctrl&&e.key.toLowerCase()==='y'){e.preventDefault();if(game.canRedo)command({action:'sudoku.redo'});return;}
      if(ctrl)return;
-     if(e.key===' '){e.preventDefault();setPencil(v=>!v);return;}
+     if(e.key===' '){
+       // Preserve Space activation for focused controls outside the Sudoku grid.
+       if(target instanceof HTMLElement && target.closest('button:not(.sudoku-cell)'))return;
+       e.preventDefault();setPencil(v=>!v);return;
+     }
      if(e.key.toLowerCase()==='g'){e.preventDefault();command({action:'sudoku.guides',value:state.showGuides?'false':'true'});return;}
      if(e.key==='Backspace'||e.key==='Delete'||e.key==='0'){e.preventDefault();edit('sudoku.erase');return;}
      if(/^[1-9]$/.test(e.key)){e.preventDefault();enterDigit(Number(e.key));return;}
      const direction:Record<string,[number,number]>={ArrowUp:[-1,0],ArrowDown:[1,0],ArrowLeft:[0,-1],ArrowRight:[0,1]};
      const step=direction[e.key];
-     if(step){e.preventDefault();const n=Math.max(0,selected);
+     if(step){
+       if(!(target instanceof HTMLElement && target.closest('.sudoku-board')))return;
+       e.preventDefault();const n=Math.max(0,selected);
        const row=Math.max(0,Math.min(8,Math.floor(n/9)+step[0]));
        const col=Math.max(0,Math.min(8,n%9+step[1]));setSelected(row*9+col);boardRef.current?.focus();}
    };

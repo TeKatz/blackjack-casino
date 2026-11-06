@@ -266,7 +266,7 @@ internal sealed class ModernSudokuService
 
     private (bool, string) Mutate(Func<SudokuBoard, bool> apply, string message, int? checkedIndex = null)
     {
-        SudokuBoard candidate = new(puzzle!, board!.Snapshot(CurrentSeconds));
+        SudokuBoard candidate = board!.Clone();
         if (!apply(candidate)) return (false, "No Sudoku change was needed.");
         SaveCandidate(candidate);
         undo.Push(board.CaptureFrame()); redo.Clear();
@@ -284,7 +284,7 @@ internal sealed class ModernSudokuService
     private (bool, string) RestoreHistory(Stack<SudokuBoardFrame> from, Stack<SudokuBoardFrame> into,
         string message)
     {
-        SudokuBoard candidate = new(puzzle!, board!.Snapshot(CurrentSeconds));
+        SudokuBoard candidate = board!.Clone();
         candidate.RestoreFrame(from.Peek());
         SaveCandidate(candidate);
         into.Push(board.CaptureFrame());

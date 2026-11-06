@@ -23,7 +23,7 @@ Only `ModernSudokuService` can select puzzles, validate digits, resolve hints, d
 
 The WebView2 host accepts messages only from the exact local `https://midnight-manor.local/lounge.html` origin, with a 2-KiB limit. Invalid, stale, wrong-session or duplicated requests cannot commit a second move. Results are sent as receipts followed by the new authoritative snapshot. React never transmits its own grid, a solution, currency, XP or a payout.
 
-Board mutations are computed on a cloned `SudokuBoard`, then stored through `SudokuProgressState.SaveGame` and the existing app preference persistence before the live board is swapped. An uncertain I/O outcome is never automatically retried by the browser. Puzzle completion is recorded using the existing Sudoku completion ledger; duplicate loads, browser restarts and hints do not repeat player or Season XP.
+Board mutations are computed on a cloned `SudokuBoard` that reuses the original native solver result (no repeated solve on each move), then stored through `SudokuProgressState.SaveGame` and the existing app preference persistence before the live board is swapped. An uncertain I/O outcome is never automatically retried by the browser. Puzzle completion is recorded using the existing Sudoku completion ledger; duplicate loads, browser restarts and hints do not repeat player or Season XP.
 
 ## Migration verification
 
