@@ -303,6 +303,7 @@ public partial class MainWindow
 
     private void CloseEmbeddedGame()
     {
+        if (ModernDiceOpen) { CloseModernDice(); return; }
         if (ModernMergeOpen) { CloseModernMerge(); return; }
         if (ModernNeonVaultOpen) { CloseModernNeonVault(); return; }
         if (ModernNineLivesOpen) { CloseModernNineLives(); return; }
