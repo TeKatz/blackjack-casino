@@ -6,6 +6,7 @@ using BlackjackCasino.Core.Sudoku;
 using BlackjackCasino.Core.Solitaire;
 using BlackjackCasino.Core.WordSearch;
 using BlackjackCasino.Core.Memory;
+using BlackjackCasino.Core.Jigsaw;
 
 namespace BlackjackCasino.Desktop;
 
@@ -20,6 +21,8 @@ public partial class MainWindow
     private ModernWordSearchService? modernWordSearch;
     private ModernMemorySession? modernMemorySession;
     private ModernMemoryService? modernMemory;
+    private ModernJigsawSession? modernJigsawSession;
+    private ModernJigsawService? modernJigsaw;
     private readonly object modernMemoryAudioOwner = new();
     private static readonly Lazy<IReadOnlyDictionary<MemoryCue, AudioClip>> ModernMemoryCues =
         new(() => Enum.GetValues<MemoryCue>().ToDictionary(cue => cue, MemorySoundSynthesis.Build));
@@ -36,6 +39,7 @@ public partial class MainWindow
                 "solitaire" => CurrentModernSolitaireStatus(),
                 "word-search" => CurrentModernWordSearchStatus(),
                 "memory" => CurrentModernMemoryStatus(),
+                "jigsaw" => CurrentModernJigsawStatus(),
                 _ => module.Definition.Status?.Invoke(),
             },
         }).ToList();
@@ -59,6 +63,9 @@ public partial class MainWindow
             MemorySession = modernMemorySession?.Id ?? string.Empty,
             MemoryRevision = modernMemorySession?.Revision ?? 0L,
             Memory = modernMemory?.Snapshot(),
+            JigsawSession = modernJigsawSession?.Id ?? string.Empty,
+            JigsawRevision = modernJigsawSession?.Revision ?? 0L,
+            Jigsaw = modernJigsaw?.Snapshot(),
             Language = Localization.Language == UiLanguagePreference.German ? "de" : "en",
             MusicEnabled = preferences.Presentation("chill-lounge").MusicEnabled,
             SoundEnabled = preferences.Presentation("chill-lounge").SoundEnabled,
@@ -90,6 +97,14 @@ public partial class MainWindow
             : $"Resume · {progress.ActiveGame.Difficulty} · {MemoryCatalog.GetDeck(progress.ActiveGame.DeckId).Name}";
     }
 
+    private string CurrentModernJigsawStatus()
+    {
+        JigsawProgressState state = preferences.Jigsaw;
+        return state.ActiveGame is null
+            ? $"{state.CompletedGames.Count:N0} puzzles complete"
+            : $"Resume · {JigsawText.Motif(state.ActiveGame.MotifId)} · {state.ActiveGame.LockedCount:N0}/{state.ActiveGame.PieceCount:N0}";
+    }
+
     private void OpenModernLounge()
     {
         if (ModernLoungeOpen || embeddedGameShell is not null) return;
@@ -98,11 +113,13 @@ public partial class MainWindow
         modernSolitaireSession = new ModernSolitaireSession();
         modernWordSearchSession = new ModernWordSearchSession();
         modernMemorySession = new ModernMemorySession();
+        modernJigsawSession = new ModernJigsawSession();
         modernLoungeView = new ModernLoungeView(CreateModernLoungeSnapshot,
             OnModernLoungeGameSelected, ApplyModernSudokuCommand, CheckpointModernSudoku,
             ApplyModernSolitaireCommand, CheckpointModernSolitaire,
             ApplyModernWordSearchCommand, CheckpointModernWordSearch,
             ApplyModernMemoryCommand, CheckpointModernMemory,
+            ApplyModernJigsawCommand, CheckpointModernJigsaw,
             CloseModernLounge, OnModernLoungeFailed);
         foreach (UIElement element in CasinoRoot.Children.OfType<UIElement>()
             .Where(element => element != embeddedGameOverlay))
@@ -153,6 +170,15 @@ public partial class MainWindow
                 () => progressionController?.Profile.WordSearch ?? new WordSearchStatistics(),
                 RecordWordSearchCompletion,
                 () => Localization.Language == UiLanguagePreference.German ? "de" : "en");
+            modernLoungeView?.Refresh();
+            return;
+        }
+        if (id == "jigsaw")
+        {
+            modernJigsaw ??= new ModernJigsawService(preferences.Jigsaw,
+                SaveModernJigsawProgress,
+                () => progressionController?.Profile.Jigsaw ?? new JigsawStatistics(),
+                RecordJigsawCompletion);
             modernLoungeView?.Refresh();
             return;
         }
@@ -259,6 +285,45 @@ public partial class MainWindow
                     : ex.Message);
             }
         });
+    }
+
+    private ModernJigsawReply ApplyModernJigsawCommand(ModernJigsawCommand command)
+    {
+        if (modernJigsawSession is null || modernJigsaw is null)
+            return new ModernJigsawReply(command.RequestId, false, "Jigsaw is not open.", 0);
+        return modernJigsawSession.Execute(command, intent =>
+        {
+            try
+            {
+                (bool success, string message) = modernJigsaw.Execute(intent);
+                if (success && intent.Action == "jigsaw.exit") modernJigsaw = null;
+                return (success, message);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+                or ArgumentException or InvalidOperationException or OverflowException)
+            {
+                return (false, ex is IOException or UnauthorizedAccessException
+                    ? "Jigsaw save failed. The last committed board is unchanged."
+                    : ex.Message);
+            }
+        });
+    }
+
+    private void SaveModernJigsawProgress(JigsawProgressState state)
+    {
+        AppPreferences previous = preferences;
+        preferences = preferences with { Jigsaw = state };
+        try { if (!testSession) SavePreferences(); }
+        catch { preferences = previous; throw; }
+    }
+
+    private void CheckpointModernJigsaw()
+    {
+        try { modernJigsaw?.CheckpointClock(); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            StatusText.Text = "Jigsaw timer checkpoint failed: " + ex.Message;
+        }
     }
 
     private void PlayModernMemoryCue(MemoryFlipOutcome outcome, bool perfect)
@@ -400,6 +465,13 @@ public partial class MainWindow
         }
         modernMemory = null;
         modernMemorySession = null;
+        try { modernJigsaw?.Stop(); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            StatusText.Text = "Jigsaw timer checkpoint failed: " + ex.Message;
+        }
+        modernJigsaw = null;
+        modernJigsawSession = null;
         CasinoAudio.Mixer.Stop(modernMemoryAudioOwner);
         modernLoungeView.Dispose();
         modernLoungeView = null;

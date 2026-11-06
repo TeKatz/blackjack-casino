@@ -35,6 +35,8 @@ internal sealed class ModernLoungeView : ContentControl, IDisposable
     private readonly Action wordSearchTick;
     private readonly Func<ModernMemoryCommand, ModernMemoryReply> memoryCommand;
     private readonly Action memoryTick;
+    private readonly Func<ModernJigsawCommand, ModernJigsawReply> jigsawCommand;
+    private readonly Action jigsawTick;
     private readonly Action close;
     private readonly Action failure;
     private readonly DispatcherTimer watchdog = new(DispatcherPriority.Background)
@@ -57,6 +59,7 @@ internal sealed class ModernLoungeView : ContentControl, IDisposable
         Func<ModernSolitaireCommand, ModernSolitaireReply> solitaireCommand, Action solitaireTick,
         Func<ModernWordSearchCommand, ModernWordSearchReply> wordSearchCommand, Action wordSearchTick,
         Func<ModernMemoryCommand, ModernMemoryReply> memoryCommand, Action memoryTick,
+        Func<ModernJigsawCommand, ModernJigsawReply> jigsawCommand, Action jigsawTick,
         Action close, Action failure)
     {
         this.snapshot = snapshot;
@@ -69,6 +72,8 @@ internal sealed class ModernLoungeView : ContentControl, IDisposable
         this.wordSearchTick = wordSearchTick;
         this.memoryCommand = memoryCommand;
         this.memoryTick = memoryTick;
+        this.jigsawCommand = jigsawCommand;
+        this.jigsawTick = jigsawTick;
         refreshClock.Tick += (_, _) =>
         {
             if (!Ready || !IsVisible || disposed) return;
@@ -76,6 +81,7 @@ internal sealed class ModernLoungeView : ContentControl, IDisposable
             solitaireTick();
             wordSearchTick();
             memoryTick();
+            jigsawTick();
             Refresh();
         };
         this.close = close;
@@ -210,6 +216,13 @@ internal sealed class ModernLoungeView : ContentControl, IDisposable
                     if (memoryRequest is null) break;
                     ModernMemoryReply memoryResult = memoryCommand(memoryRequest);
                     Post("lounge.memory.result", memoryResult);
+                    Refresh();
+                    break;
+                case "lounge.jigsaw.command" when listening && Ready && IsVisible:
+                    ModernJigsawCommand? jigsawRequest = ModernJigsawProtocol.Parse(e.WebMessageAsJson);
+                    if (jigsawRequest is null) break;
+                    ModernJigsawReply jigsawResult = jigsawCommand(jigsawRequest);
+                    Post("lounge.jigsaw.result", jigsawResult);
                     Refresh();
                     break;
                 case "lounge.open" when listening && Ready && IsVisible:
