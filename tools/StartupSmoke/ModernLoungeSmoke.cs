@@ -22,6 +22,8 @@ internal static class ModernLoungeSmoke
                 v.Ready && v.IsVisible && v.Browser.CoreWebView2 is not null),
             "React Lounge never became ready.");
         CoreWebView2 web = view.Browser.CoreWebView2!;
+        Require(LoungeHostedGameRegistry.Snapshot.Count == 0,
+            "Opening React Lounge must not register or instantiate WPF rollback modules.");
         await UntilAsync(async () => await web.ExecuteScriptAsync(
             "document.querySelectorAll('.chill-card').length") == "6",
             "React Lounge must show all six activities.");
