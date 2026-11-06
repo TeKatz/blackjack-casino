@@ -42,7 +42,8 @@ internal static class ModernDiceSmokeHelper
                     string clientState = await diagnosticCore.ExecuteScriptAsync(
                         "(()=>JSON.stringify({url:location.href,load:document.readyState,"
                         + "root:!!document.getElementById('root'),game:!!document.querySelector('[data-testid=\\\"modern-dice-app\\\"]'),"
-                        + "html:document.body?.innerText?.slice(0,450),scripts:document.scripts.length}))()");
+                        + "html:document.body?.innerText?.slice(0,450),scripts:document.scripts.length,"
+                        + "snapshotDiagnostics:window.__diceBridgeDiagnostics??'no bridge snapshot received'}))()");
                     details += "; browser=" + clientState;
                 }
                 catch (Exception ex) when (ex is InvalidOperationException

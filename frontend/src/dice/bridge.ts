@@ -94,8 +94,43 @@ export function listenDice(onEvent:(event:{type:'snapshot';data:DiceSnapshot}|
  const handler=(event:MessageEvent)=>{
    const msg:unknown=event.data;
    if(!obj(msg))return;
-   if(msg.type==='midnight-dice.snapshot'&&isDiceSnapshot(msg.data))
-     onEvent({type:'snapshot',data:msg.data});
+   if(msg.type==='midnight-dice.snapshot'){
+     const valid=isDiceSnapshot(msg.data);
+     const envelope=obj(msg.data)?msg.data:null;
+     const s=envelope&&obj(envelope.state)?envelope.state:null;
+     const checks:Record<string,boolean>={
+       envelope:!!envelope&&envelope.version===1&&guid(envelope.session)&&count(envelope.revision),
+       state:!!s,
+       language:!!s&&(s.language==='en'||s.language==='de'),
+       mode:!!s&&(s.mode==='casual'||s.mode==='casino'),
+       money:!!s&&cash(s.bankroll),
+       stakes:!!s&&Array.isArray(s.stakeOptions)&&s.stakeOptions.length===6&&s.stakeOptions.every(cash),
+       stakePrizes:!!s&&Array.isArray(s.stakePrizes)&&s.stakePrizes.length===6&&s.stakePrizes.every(x=>
+         obj(x)&&cash(x.stake)&&Array.isArray(x.prizes)&&x.prizes.length===4&&x.prizes.every(cash)),
+       casual:!!s&&typeof s.casualHasSaved==='boolean'&&typeof s.casualCompleted==='boolean',
+       game:!!s&&game(s.game),
+       table:!!s&&(s.table===null||table(s.table))&&(s.mode!=='casino'||s.table!==null),
+       profile:!!s&&(s.profile===null||(obj(s.profile)&&count(s.profile.level)&&count(s.profile.prestige)&&count(s.profile.coins))),
+       variant:!!s&&txt(s.diceVariant),
+       palette:!!s&&palette(s.dicePalette),
+       preferences:!!s&&typeof s.soundEnabled==='boolean'&&typeof s.animationsEnabled==='boolean'
+         &&typeof s.musicEnabled==='boolean'&&typeof s.musicVolume==='number'&&s.musicVolume>=0&&s.musicVolume<=1,
+       strings:!!s&&txt(s.notice)&&txt(s.completionNotice),
+       events:!!s&&Array.isArray(s.events)&&s.events.length<=24&&s.events.every(celebration),
+       roll:!!s&&count(s.rollToken)&&Array.isArray(s.rollingIndices)&&s.rollingIndices.length<=5
+        &&s.rollingIndices.every(x=>count(x,4))&&new Set(s.rollingIndices).size===s.rollingIndices.length,
+       rewards:!!s&&count(s.completionXp)&&count(s.completionSeasonXp),
+     };
+     (window as Window & {__diceBridgeDiagnostics?:string}).__diceBridgeDiagnostics=JSON.stringify({
+       valid,failed:Object.entries(checks).filter(([,pass])=>!pass).map(([key])=>key),
+       stateKeys:s?Object.keys(s):[],gameKeys:s&&obj(s.game)?Object.keys(s.game):[],
+       die:s&&obj(s.game)?s.game.dice:null,
+       stakeCount:s&&Array.isArray(s.stakeOptions)?s.stakeOptions.length:null,
+       prizeCount:s&&Array.isArray(s.stakePrizes)?s.stakePrizes.length:null,
+       mode:s?.mode,version:envelope?.version,
+     });
+     if(valid)onEvent({type:'snapshot',data:msg.data as DiceSnapshot});
+   }
    if(msg.type==='midnight-dice.result'&&isDiceReply(msg.data))
      onEvent({type:'reply',data:msg.data});
  };
