@@ -95,7 +95,7 @@ internal static partial class Program
         Require(Guid.TryParse(spinId, out _), "Spin result did not reach the modern React cabinet.");
         Require(profile.Slots.Spins == spinsBefore + 1,
             "React spin did not commit exactly one authoritative native progression event.");
-        CasinoSession shared = (CasinoSession)typeof(MainWindow).GetField("session", flags)!.GetValue(window)!;
+        CasinoSession shared = session;
         SlotMachineSession machine = (SlotMachineSession)typeof(MainWindow).GetField("modernReelsMachine", flags)!.GetValue(window)!;
         Require(shared.Bankroll == machine.Bankroll && shared.Bankroll >= 0
             && (shared.Bankroll != walletBefore || profile.Slots.Spins > spinsBefore),
@@ -134,7 +134,7 @@ internal static partial class Program
         Require(!Find<ModernReelsView>(window).Any(v => v.IsVisible)
             && Find<Button>(window).Any(b => b.Name == "SpinButton" && b.IsVisible),
             "WebView2 crash failed to restore the playable WPF Midnight Reels fallback.");
-        Require(((CasinoSession)typeof(MainWindow).GetField("session", flags)!.GetValue(window)!).Bankroll == shared.Bankroll,
+        Require(session.Bankroll == shared.Bankroll,
             "Reels fallback discarded the already committed shared bankroll.");
     }
 }

@@ -54,7 +54,7 @@ internal static class EmpireWebSmoke
             Require(!Find<EmpireView>(window).Any(), "A legacy Empire view is rendering behind React.");
             Require(Application.Current.Windows.Count == nativeWindows, "Embedded Empire created another native window.");
             Require(!((FrameworkElement)window.FindName("CasinoHeader")).IsVisible, "Native header covers Empire.");
-            Require(!((Button)window.FindName("DealButton")).IsEnabled, "Covered Blackjack controls remain active.");
+            Require(window.FindName("DealButton") is null, "The retired native Blackjack button was recreated over Empire.");
             await Click(view, "floor-3");
             await Check(view, "document.querySelectorAll('.empire-gallery .empire-room').length===5", "Resort gallery lost a department.");
             await Click(view, "room-hotel");

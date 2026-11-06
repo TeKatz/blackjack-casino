@@ -18,16 +18,12 @@ internal static class LocalizationSmoke
         ModernLobbyView react = Find<ModernLobbyView>(window).Single(view => view.Ready && view.IsVisible);
         Require(react.Browser.CoreWebView2 is not null,
             "React lobby is not ready for the visible language switch.");
-        ComboBox language = typeof(MainWindow).GetField("languageComboBox",
-            BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(window) as ComboBox
-            ?? throw new InvalidOperationException("Blackjack's native language preferences were not initialized.");
+        Require(window.FindName("SoundCheckBox") is null &&
+            window.FindName("GameModeComboBox") is null,
+            "Obsolete WPF Blackjack settings were not removed.");
         Require(await react.Browser.CoreWebView2!.ExecuteScriptAsync(
             "Boolean(document.querySelector('.lobby-language'))") == "true",
             "React lobby does not expose the language switch.");
-
-        Require(language.Items.Count == 2, $"Language selector should expose English and Deutsch; found {language.Items.Count} items.");
-        Require(language.SelectedIndex == 0 && SelectedLanguageName(language) == "English",
-            "Existing/default preferences should visibly start in English.");
 
         await react.Browser.CoreWebView2!.ExecuteScriptAsync(
             "document.querySelector('.lobby-language')?.click()");
@@ -64,77 +60,16 @@ internal static class LocalizationSmoke
         Require(!Find<ModernBlackjackView>(window).Any(v=>v.IsVisible),
             "Localized React Blackjack did not return to the lobby.");
 
-        // Keep the original WPF translation checks as emergency fallback
-        // coverage, without routing players back to the legacy surface.
-        ShowLegacyBlackjackForLocalization(window);
-        await Task.Delay(100);
-        window.UpdateLayout();
-
         Require(Localization.Language == UiLanguagePreference.German
             && Localization.Culture.Name == "de-DE"
             && CultureInfo.DefaultThreadCurrentUICulture?.Name == "de-DE",
-            $"German selection did not update application culture (active: {Localization.Language}, default: {CultureInfo.DefaultThreadCurrentUICulture?.Name}).");
-        Require(language.SelectedIndex == 1 && SelectedLanguageName(language) == "Deutsch",
-            $"Language selector changed the UI to German but still displays '{SelectedLanguageName(language)}'.");
-        Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "DARSTELLUNG"),
-            "Presentation header did not switch to German without a restart.");
-        Require(Find<CheckBox>(window).Any(check => check.Name == "SoundCheckBox" && Equals(check.Content, "Casino-Soundeffekte")),
-            "Sound setting did not switch to its German resource value.");
-        Require(Find<Button>(window).Any(button => button.Name == "HitButton" && Equals(button.Content, "KARTE  [H]")),
-            "Blackjack action text did not switch to German.");
-        Require(Find<TextBlock>(window).Any(text => text.Text == "Sprache"),
-            "Language selector label did not switch to German.");
-        Find<Button>(window).Single(button => button.Name == "LobbyButton" && button.IsVisible)
-            .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-        await Task.Delay(100);
-        window.UpdateLayout();
-        Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "Eine andere Art von Nacht."),
-            "Casino lobby headline did not switch to German without a restart.");
-        Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "DIE SAMTTISCHE"),
-            "Blackjack lobby subtitle did not switch to German.");
-        Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "PLATZ NEHMEN   →"),
-            "Casino lobby call-to-action did not switch to German.");
-
+            $"German selection did not update application culture (active: {Localization.Language}).");
+        Require(await react.Browser.CoreWebView2!.ExecuteScriptAsync(
+            "Boolean(document.documentElement.lang==='de' && document.querySelector('.lobby-hero h1')?.textContent?.includes('Eine Nacht'))") == "true",
+            "The React lobby did not retain German presentation after Blackjack.");
         CheckGermanShellWindows(window);
         CheckPhase2Translations();
-
         SaveScreenshot(window, Path.Combine(output, "localization-german-lobby.png"));
-
-        ShowLegacyBlackjackForLocalization(window);
-        await Task.Delay(80);
-        window.UpdateLayout();
-        Button deal = Find<Button>(window).Single(button => button.Name == "DealButton");
-        Require(deal.IsEnabled, "Blackjack localization smoke could not start its test hand.");
-        Click(deal);
-        await Task.Delay(100);
-        window.UpdateLayout();
-        Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text.StartsWith("DEINE HAND", StringComparison.Ordinal)),
-            "Blackjack player-hand label remained English during an actual hand.");
-
-        // Settlement can include dealer presentation/animation work. Do not assume that a fixed 100 ms
-        // delay is enough before testing another header surface; wait for the table to become deal-ready.
-        await WaitForBlackjackSettlement(window);
-
-        TextBlock status = Find<TextBlock>(window).Single(text => text.Name == "StatusText");
-        Require(!status.Text.Contains("You win", StringComparison.Ordinal) && !status.Text.Contains("You lose", StringComparison.Ordinal),
-            $"Blackjack settlement remained English: {status.Text}");
-        Require(!Find<TextBlock>(window).Any(text => text.IsVisible && (text.Text.Contains(" · Loss ", StringComparison.Ordinal) || text.Text.Contains(" · Win ", StringComparison.Ordinal))),
-            "Blackjack hand outcome remained English after settlement.");
-        SaveScreenshot(window, Path.Combine(output, "localization-german-blackjack.png"));
-
-        Button vault = Find<Button>(window).Single(button => button.Name == "CasinoVaultButton" && button.IsVisible);
-        Grid overlay = await OpenVault(window, vault);
-        Require(Find<TextBlock>(overlay).Any(text => text.IsVisible && text.Text == "BEITRAG"),
-            "Casino Vault contribution row remained English.");
-        Require(Find<TextBlock>(overlay).Any(text => text.IsVisible && text.Text == "VOLLER VAULT"),
-            "Casino Vault full-vault row remained English.");
-        Require(Find<TextBlock>(overlay).Any(text => text.IsVisible && text.Text == "KEIN HAKEN"),
-            "Casino Vault no-catch row remained English.");
-        Require(Find<Button>(overlay).Any(button => button.Name == "CasinoVaultOpenButton" && button.Content?.ToString()?.StartsWith("AUFBRECHEN", StringComparison.Ordinal) == true),
-            "Casino Vault primary action remained English.");
-        SaveScreenshot(window, Path.Combine(output, "localization-german-vault.png"));
-        Click(Find<Button>(overlay).Single(button => button.Name == "CasinoVaultCloseButton"));
-        await Task.Delay(60);
 
         NavigationSmoke.OpenCovered(window, "chill-lounge");
         await Task.Delay(140);
@@ -225,15 +160,6 @@ internal static class LocalizationSmoke
             && Localization.Culture.Name == "en-US"
             && CultureInfo.DefaultThreadCurrentUICulture?.Name == "en-US",
             $"English selection did not restore application culture (active: {Localization.Language}, default: {CultureInfo.DefaultThreadCurrentUICulture?.Name}).");
-        Require(language.SelectedIndex == 0 && SelectedLanguageName(language) == "English",
-            $"Language selector did not visibly return to English; it shows '{SelectedLanguageName(language)}'.");
-        TextBlock languageLabel = typeof(MainWindow).GetField("languageLabel",
-            BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(window) as TextBlock
-            ?? throw new InvalidOperationException("Native language label was not initialized.");
-        Require(languageLabel.Text == "Language",
-            "Native language settings did not restore their English label.");
-        Require(Equals(((CheckBox)window.FindName("SoundCheckBox")).Content, "Casino sound effects"),
-            "Sound setting did not restore its English resource value.");
         Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "A different kind of night."),
             "Casino lobby headline did not switch back to English without a restart.");
         // The visible header belongs to React while the WPF header remains the
@@ -260,15 +186,7 @@ internal static class LocalizationSmoke
         }
     }
 
-    private static void ShowLegacyBlackjackForLocalization(MainWindow window)
-    {
-        // Native gameplay remains exclusively as WebView2 emergency fallback;
-        // reflection allows the historical visual translation smoke to run.
-        typeof(MainWindow).GetMethod("ShowBlackjackTable",
-            BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(window, null);
-    }
-
-    private static void CheckPhase2Translations()
+    private static void CheckPhase2Translations()    private static void CheckPhase2Translations()
     {
         (string Source, string German)[] samples =
         [
@@ -342,20 +260,6 @@ internal static class LocalizationSmoke
         }
         finally { playerWindow.Close(); }
 
-        var rulesWindow = new TableRulesDialog(TablePresets.Get(TablePresetId.Casual).Rules) { Owner = owner };
-        try
-        {
-            rulesWindow.Show();
-            rulesWindow.UpdateLayout();
-            Require(Find<TextBlock>(rulesWindow).Any(x => x.Text == "Erweiterte Tischregeln"),
-                "Advanced table rules heading remained English.");
-            Require(Find<Button>(rulesWindow).Any(x => Equals(x.Content, "Eigene Regeln verwenden")),
-                "Advanced table setup action remained English.");
-            Require(Find<ComboBox>(rulesWindow).Any(x =>
-                x.Items.OfType<string>().Any(v => v.Contains("weichen 17", StringComparison.Ordinal))),
-                "Advanced table setup combo-box values remained English.");
-        }
-        finally { rulesWindow.Close(); }
     }
 
     private static bool IsVisibleGamesButton(Button button, string label)
@@ -363,50 +267,6 @@ internal static class LocalizationSmoke
         if (!button.IsVisible || button.Content is not string text) return false;
         return text.Contains(label, StringComparison.OrdinalIgnoreCase) &&
                !text.Contains("LOUNGE", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static async Task WaitForBlackjackSettlement(MainWindow window)
-    {
-        for (int attempt = 0; attempt < 120; attempt++)
-        {
-            window.UpdateLayout();
-            Button? deal = Find<Button>(window).FirstOrDefault(button => button.Name == "DealButton");
-            if (deal is { IsEnabled: true }) return;
-
-            Button? decline = Find<Button>(window).FirstOrDefault(button => button.Name == "DeclineInsuranceButton" && button.IsVisible && button.IsEnabled);
-            if (decline is not null) Click(decline);
-            Button? stand = Find<Button>(window).FirstOrDefault(button => button.Name == "StandButton" && button.IsEnabled);
-            if (stand is not null) Click(stand);
-
-            await Task.Delay(75);
-        }
-
-        TextBlock? status = Find<TextBlock>(window).FirstOrDefault(text => text.Name == "StatusText");
-        throw new InvalidOperationException("Localized Blackjack hand did not return to a deal-ready state. Status: " + status?.Text);
-    }
-
-    private static async Task<Grid> OpenVault(MainWindow window, Button vault)
-    {
-        await WaitForBlackjackSettlement(window);
-        Click(vault);
-
-        for (int attempt = 0; attempt < 40; attempt++)
-        {
-            await Task.Delay(50);
-            window.UpdateLayout();
-            Grid? overlay = Find<Grid>(window).FirstOrDefault(grid => grid.Name == "CasinoVaultOverlay" && grid.IsVisible);
-            if (overlay is not null) return overlay;
-        }
-
-        TextBlock? status = Find<TextBlock>(window).FirstOrDefault(text => text.Name == "StatusText");
-        throw new InvalidOperationException("Casino Vault overlay did not open after Blackjack reached its deal-ready state. Status: " + status?.Text);
-    }
-
-    private static string SelectedLanguageName(ComboBox combo)
-    {
-        object? selected = combo.SelectedItem;
-        PropertyInfo? display = selected?.GetType().GetProperty("DisplayName", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-        return display?.GetValue(selected)?.ToString() ?? combo.Text;
     }
 
     private static bool IsPlayingCard(Border border) =>
