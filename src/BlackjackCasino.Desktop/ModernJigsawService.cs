@@ -11,6 +11,8 @@ internal sealed class ModernJigsawService
     private readonly Action<JigsawProgressState> persist;
     private readonly Func<JigsawStatistics> statistics;
     private readonly Func<JigsawCompletionRecord, ProgressionAward> reward;
+    private readonly Func<string,string> motifLabel, categoryLabel;
+    private readonly Func<JigsawAchievementDefinition,string> achievementName, achievementDescription, achievementTier;
     private JigsawGameState? active;
     private JigsawGameState? completed;
     private readonly Stopwatch clock = new();
@@ -18,13 +20,22 @@ internal sealed class ModernJigsawService
     private string screen = "library", notice = "", rewardNotice = "";
 
     internal ModernJigsawService(JigsawProgressState saved, Action<JigsawProgressState> persist,
-        Func<JigsawStatistics> statistics, Func<JigsawCompletionRecord, ProgressionAward> reward)
+        Func<JigsawStatistics> statistics, Func<JigsawCompletionRecord, ProgressionAward> reward,
+        Func<string,string>? motifLabel = null, Func<string,string>? categoryLabel = null,
+        Func<JigsawAchievementDefinition,string>? achievementName = null,
+        Func<JigsawAchievementDefinition,string>? achievementDescription = null,
+        Func<JigsawAchievementDefinition,string>? achievementTier = null)
     {
         saved.Normalize();
         progress = Copy(saved);
         this.persist = persist;
         this.statistics = statistics;
         this.reward = reward;
+        this.motifLabel = motifLabel ?? (id => JigsawCatalog.Motif(id).Name);
+        this.categoryLabel = categoryLabel ?? (category => category);
+        this.achievementName = achievementName ?? (a => a.Name);
+        this.achievementDescription = achievementDescription ?? (a => a.Description);
+        this.achievementTier = achievementTier ?? (a => a.Tier.ToString());
     }
 
     internal JigsawGameState? CurrentGame => active;
@@ -57,7 +68,7 @@ internal sealed class ModernJigsawService
             Screen = screen, progress.SelectedMotifId, progress.SelectedPieceCount,
             progress.TimerEnabled, Game = board, Resume = resume,
             Motifs = JigsawCatalog.Motifs.Select(m => new
-            { m.Id, Name = JigsawText.Motif(m.Id), Category = JigsawText.Category(m.Category),
+            { m.Id, Name = motifLabel(m.Id), Category = categoryLabel(m.Category),
               m.Asset }).ToArray(),
             Sizes = JigsawCatalog.Sizes.Select(s => new { s.Count, s.Columns, s.Rows,
                 RewardXp = JigsawProgression.PlayerExperience(s.Count) }).ToArray(),
@@ -65,9 +76,9 @@ internal sealed class ModernJigsawService
                 AchievementsUnlocked = stats.UnlockedAchievementIds.Count },
             Achievements = JigsawAchievements.All.Select(a => new
             {
-                a.Id, Name = JigsawText.T(a.Name, a.GermanName),
-                Description = JigsawText.T(a.Description, a.GermanDescription),
-                Tier = JigsawText.Tier(a.Tier), a.Goal, Current = Math.Min(a.Goal, a.Current(stats)),
+                a.Id, Name = achievementName(a),
+                Description = achievementDescription(a),
+                Tier = achievementTier(a), a.Goal, Current = Math.Min(a.Goal, a.Current(stats)),
                 Unlocked = stats.UnlockedAchievementIds.Contains(a.Id),
                 RewardXp = a.ExperienceReward, RewardCoins = a.CoinReward,
             }).ToArray(),

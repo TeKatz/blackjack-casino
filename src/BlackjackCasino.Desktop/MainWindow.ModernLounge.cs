@@ -178,7 +178,11 @@ public partial class MainWindow
             modernJigsaw ??= new ModernJigsawService(preferences.Jigsaw,
                 SaveModernJigsawProgress,
                 () => progressionController?.Profile.Jigsaw ?? new JigsawStatistics(),
-                RecordJigsawCompletion);
+                RecordJigsawCompletion,
+                JigsawText.Motif, JigsawText.Category,
+                a => JigsawText.T(a.Name, a.GermanName),
+                a => JigsawText.T(a.Description, a.GermanDescription),
+                a => JigsawText.Tier(a.Tier));
             modernLoungeView?.Refresh();
             return;
         }
