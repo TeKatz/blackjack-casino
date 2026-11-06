@@ -284,8 +284,8 @@ internal sealed class NativeShellForm : Form
                 case "blackjack.ready" when activeMode == "blackjack":
                 case "reels.ready" when activeMode == "reels":
                     listening = true;
-                    Refresh();
-                    BeginInvoke(new Action(Refresh));
+                    RefreshGameSnapshot();
+                    BeginInvoke(new Action(RefreshGameSnapshot));
                     break;
                 case "blackjack.ui-ready" when activeMode == "blackjack":
                 case "reels.ui-ready" when activeMode == "reels":
@@ -296,7 +296,7 @@ internal sealed class NativeShellForm : Form
                     break;
                 case "blackjack.refresh" when activeMode == "blackjack":
                 case "reels.refresh" when activeMode == "reels":
-                    Refresh();
+                    RefreshGameSnapshot();
                     break;
                 case "blackjack.close" when activeMode == "blackjack":
                 case "reels.close" when activeMode == "reels":
@@ -309,7 +309,7 @@ internal sealed class NativeShellForm : Form
                     BlackjackModernReply reply = blackjackEpoch.Execute(command, runtime.ApplyBlackjack);
                     Post("blackjack.result", reply);
                     status.Text = reply.Message;
-                    Refresh();
+                    RefreshGameSnapshot();
                     break;
                 }
                 case "reels.command" when activeMode == "reels" && listening && ready:
@@ -319,7 +319,7 @@ internal sealed class NativeShellForm : Form
                     ModernReelsReply reply = reelsEpoch.Execute(command, runtime.ApplyReels);
                     Post("reels.result", reply);
                     status.Text = reply.Message;
-                    Refresh();
+                    RefreshGameSnapshot();
                     break;
                 }
                 // Reel-stop and animation-complete signals are presentation cues,
@@ -329,7 +329,7 @@ internal sealed class NativeShellForm : Form
         catch (JsonException) { }
     }
 
-    private void Refresh()
+    private void RefreshGameSnapshot()
     {
         if (closing || browserFailed || browser?.CoreWebView2 is null || !listening)
             return;

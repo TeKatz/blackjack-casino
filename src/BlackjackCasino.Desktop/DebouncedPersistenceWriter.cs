@@ -29,7 +29,7 @@ internal sealed class DebouncedPersistenceWriter<TPayload> : IDisposable
     private readonly object gate = new();
     private readonly TimeSpan delay;
     private readonly Action<TPayload> write;
-    private readonly Timer timer;
+    private readonly System.Threading.Timer timer;
     private TPayload? pendingPayload;
     private bool writeInProgress;
     private bool disposed;
@@ -43,7 +43,7 @@ internal sealed class DebouncedPersistenceWriter<TPayload> : IDisposable
 
         this.delay = delay;
         this.write = write ?? throw new ArgumentNullException(nameof(write));
-        timer = new Timer(OnTimer, null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+        timer = new System.Threading.Timer(OnTimer, null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
     }
 
     public void Schedule(TPayload payload)
