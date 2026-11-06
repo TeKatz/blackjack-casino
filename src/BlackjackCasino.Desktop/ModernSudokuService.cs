@@ -141,7 +141,7 @@ internal sealed class ModernSudokuService
                 if (!CanEdit(command.Index!.Value) || board.IsDigitComplete(command.Digit!.Value))
                     return (false, "Choose an editable cell and an available digit.");
                 return Mutate(candidate => candidate.SetValue(command.Index!.Value, command.Digit!.Value),
-                    "Number saved.");
+                    "Number saved.", command.Index);
             case "sudoku.note":
                 if (!CanEdit(command.Index!.Value) || board.ValueAt(command.Index!.Value) != 0 ||
                     board.IsDigitComplete(command.Digit!.Value))
@@ -264,7 +264,7 @@ internal sealed class ModernSudokuService
         found = p; state = clean; return true;
     }
 
-    private (bool, string) Mutate(Func<SudokuBoard, bool> apply, string message)
+    private (bool, string) Mutate(Func<SudokuBoard, bool> apply, string message, int? checkedIndex = null)
     {
         SudokuBoard candidate = new(puzzle!, board!.Snapshot(CurrentSeconds));
         if (!apply(candidate)) return (false, "No Sudoku change was needed.");
@@ -276,16 +276,9 @@ internal sealed class ModernSudokuService
             elapsed.Stop();
             notice = "Sudoku complete. Your reward was recorded in C#.";
         }
-        else notice = candidate.IsIncorrectAt(FindLastChange(board, undo.Peek()))
+        else notice = checkedIndex is >= 0 and < 81 && candidate.IsIncorrectAt(checkedIndex.Value)
             ? "This number does not belong in this cell." : message;
         return (true, notice);
-    }
-
-    private static int FindLastChange(SudokuBoard next, SudokuBoardFrame before)
-    {
-        for (int index = 0; index < 81; index++)
-            if (next.ValueAt(index) != before.Board[index] - '0') return index;
-        return 0;
     }
 
     private (bool, string) RestoreHistory(Stack<SudokuBoardFrame> from, Stack<SudokuBoardFrame> into,

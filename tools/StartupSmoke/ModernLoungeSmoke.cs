@@ -43,6 +43,7 @@ internal static class ModernLoungeSmoke
         Require(await web.ExecuteScriptAsync(
             "Boolean(document.querySelector('[data-testid=\"sudoku-daily\"]'))") == "true",
             "The offline Daily Sudoku route is missing.");
+        await Capture(web, Path.Combine(output, "modern-sudoku-library.png"));
 
         // Native fallback Sudoku smoke runs earlier in the same test profile; a
         // fresh Relaxed puzzle avoids changing that test's expected saved states.
@@ -54,6 +55,7 @@ internal static class ModernLoungeSmoke
         Require(await web.ExecuteScriptAsync(
             "document.querySelectorAll('.sudoku-cell').length") == "81",
             "The 9x9 React Sudoku board does not contain 81 cells.");
+        await Capture(web, Path.Combine(output, "modern-sudoku-board.png"));
 
         string? id = JsonSerializer.Deserialize<string>(await web.ExecuteScriptAsync(
             "document.querySelector('[data-testid=\"modern-sudoku-game\"]').dataset.puzzleId"));
@@ -117,6 +119,12 @@ internal static class ModernLoungeSmoke
 
         File.WriteAllText(Path.Combine(output, "modern-lounge-result.txt"),
             "PASS: React six-game Lounge; six Sudoku difficulty levels and Daily; 81 cells; notes; undo/redo; wrong-value C# feedback; native hint; persisted resume; navigation.");
+    }
+
+    private static async Task Capture(CoreWebView2 web, string path)
+    {
+        using FileStream stream = File.Create(path);
+        await web.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png, stream);
     }
 
     private static async Task ClickAndWait(CoreWebView2 web, string selector, string predicate, string error)

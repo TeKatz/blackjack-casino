@@ -42,7 +42,7 @@
 .sudoku-saved{font-size:11px;color:#81cba1}
 .sudoku-play-columns{display:grid;grid-template-columns:minmax(450px,1fr) minmax(280px,350px);gap:22px;align-items:start}
 .sudoku-board-panel{min-width:0;padding:12px;background:#081d1c;border:1px solid #608577;border-radius:14px;box-shadow:0 15px 28px #0007}
-.sudoku-board{display:grid;grid-template-columns:repeat(9,1fr);aspect-ratio:1;width:100%;max-height:min(73vh,780px);margin:auto;outline:none}
+.sudoku-board{display:grid;grid-template-columns:repeat(9,1fr);aspect-ratio:1;width:min(100%,73vh,780px);margin:auto;outline:none}
 .sudoku-cell{min-width:0;min-height:0;display:flex;align-items:center;justify-content:center;position:relative;border-style:solid;border-color:#69847c;background:#182d2d;color:#9bdec1;font-weight:650;font-size:clamp(16px,2.1vw,31px);padding:0;font-family:"Segoe UI",sans-serif;line-height:1;transition:background .1s;aspect-ratio:1}
 .sudoku-cell.given{color:#f0e1c8;font-weight:800}
 .sudoku-cell.related{background:#253d38}

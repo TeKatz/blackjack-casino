@@ -26,6 +26,14 @@ The casino lobby is now a separate, read-only React/TypeScript/PixiJS page built
 
 A new local React Lounge landing page (`lounge.html`) is the standard entry from the casino lobby. Its read-only, origin-checked WebView2 bridge exposes just six allow-listed navigation intents and cannot change player state. Each tile opens the selected existing WPF module directly, preserving all current saves, rewards, gameplay and emergency fallback. The Back to Games route reopens React. This isolates the shared lounge navigation so Sudoku, Solitaire, Word Search, Memory, Jigsaw and Tales from the Backroom can be migrated individually; no native game has been retired in this first slice. Follow-up work must replace these six play surfaces and their smoke tests before deleting `LoungeWindow` or switching away from the WPF host.
 
+## Sudoku React gameplay migration (2026-11-06)
+
+The **normal Sudoku route** now stays inside the React Chill Lounge: the library offers six difficulty tiers with independent new/resume saves and the established deterministic offline daily schedule. The browser renders all 81 cells, 3×3 boundaries, notes, matching values, conflicting and incorrect entries, hints, completed-digit disabling, undo/redo, guide and timer preferences, keyboard controls, completion status and player/Season XP. No random puzzle selection, solving, reward, or game state mutation occurs in TypeScript.
+
+A narrowly validated `lounge.sudoku.command` boundary allows only legal game intents, requires a GUID request/session and matching revision, caches replies and never accepts a board, solved value, timestamp, XP or bankroll from the browser. Each mutation works on a candidate `SudokuBoard` and is committed via the existing `SudokuProgressState.SaveGame` persistence before the native board is replaced. Uncertain writes fail without applying browser changes; resumes use the original save schema. The C# completion receipt path retains exactly-once progression, with periodic elapsed-time checkpoints.
+
+Unit tests cover protocol rejection, command replay/stale-session safety, failed-write rollback and completion idempotency. A new real WebView2 smoke exercises the React Sudoku library, input, notes, undo/redo, native incorrect-value feedback, hint and resume. The extensive legacy WPF Sudoku smoke is temporarily retained as rollback coverage. Hardware visual acceptance and the later deletion of the WPF Sudoku/Lounge source are still open and **not** claimed complete. See [Sudoku modernization](sudoku-modernization.md).
+
 ## Casino Empire presentation migration (2026-11-05)
 
 Empire now has a separate React/TypeScript entry point (`empire.html`) for both
