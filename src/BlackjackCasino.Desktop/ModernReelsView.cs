@@ -83,20 +83,10 @@ internal sealed class ModernReelsView : ContentControl, IDisposable
         if (!IsAvailable) { Fail(); return; }
         try
         {
-            await browser.EnsureCoreWebView2Async();
-            if (disposed) return;
-            CoreWebView2 core = browser.CoreWebView2;
-            core.Settings.AreDefaultContextMenusEnabled = false;
-            core.Settings.AreDevToolsEnabled = false;
-            core.Settings.AreHostObjectsAllowed = false;
-            core.Settings.IsStatusBarEnabled = false;
-            core.Settings.IsZoomControlEnabled = false;
-            core.SetVirtualHostNameToFolderMapping(ManorPreviewProtocol.VirtualHost,
-                Path.Combine(AppContext.BaseDirectory, "ModernFrontend"),
-                CoreWebView2HostResourceAccessKind.DenyCors);
-            core.NavigationStarting += (_, e) => { if (!ModernReelsProtocol.Trusted(e.Uri)) e.Cancel = true; };
-            core.NewWindowRequested += (_, e) => e.Handled = true;
-            core.PermissionRequested += (_, e) => e.State = CoreWebView2PermissionState.Deny;
+            CoreWebView2? core = await ModernWebViewBootstrap.InitializeAsync(
+                browser, () => disposed, Path.Combine(AppContext.BaseDirectory, "ModernFrontend"),
+                ModernReelsProtocol.Trusted);
+            if (core is null) return;
             core.NavigationCompleted += (_, e) => { if (!e.IsSuccess) Fail(); };
             core.ProcessFailed += (_, _) => Fail();
             core.WebMessageReceived += OnMessage;

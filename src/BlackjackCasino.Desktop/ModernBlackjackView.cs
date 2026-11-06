@@ -91,20 +91,10 @@ internal sealed class ModernBlackjackView : ContentControl, IDisposable
         if (!IsAvailable) { Fail("Blackjack frontend is missing. Return to the table."); return; }
         try
         {
-            await browser.EnsureCoreWebView2Async();
-            if (disposed) return;
-            CoreWebView2 core = browser.CoreWebView2;
-            core.Settings.AreDefaultContextMenusEnabled = false;
-            core.Settings.AreDevToolsEnabled = false;
-            core.Settings.AreHostObjectsAllowed = false;
-            core.Settings.IsStatusBarEnabled = false;
-            core.Settings.IsZoomControlEnabled = false;
-            core.SetVirtualHostNameToFolderMapping(ManorPreviewProtocol.VirtualHost,
-                Path.Combine(AppContext.BaseDirectory, "ModernFrontend"),
-                CoreWebView2HostResourceAccessKind.DenyCors);
-            core.NavigationStarting += (_, args) => { if (!BlackjackModernProtocol.Trusted(args.Uri)) args.Cancel = true; };
-            core.NewWindowRequested += (_, args) => args.Handled = true;
-            core.PermissionRequested += (_, args) => args.State = CoreWebView2PermissionState.Deny;
+            CoreWebView2? core = await ModernWebViewBootstrap.InitializeAsync(
+                browser, () => disposed, Path.Combine(AppContext.BaseDirectory, "ModernFrontend"),
+                BlackjackModernProtocol.Trusted);
+            if (core is null) return;
             core.NavigationCompleted += (_, args) =>
             {
                 if (!args.IsSuccess) Fail("Blackjack could not load. Return to the native table.");

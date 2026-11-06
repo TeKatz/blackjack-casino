@@ -116,25 +116,10 @@ internal sealed class ModernManorPreviewWindow : Window
             if(!IsAvailable)
                 throw new FileNotFoundException("The modern Manor frontend is missing from this build.",EntryPath);
 
-            await browser.EnsureCoreWebView2Async();
-            if(closed) return;
-            CoreWebView2 core=browser.CoreWebView2;
-            core.Settings.AreDefaultContextMenusEnabled=false;
-            core.Settings.AreDevToolsEnabled=false;
-            core.Settings.AreHostObjectsAllowed=false;
-            core.Settings.IsStatusBarEnabled=false;
-            core.Settings.IsWebMessageEnabled=true;
-            core.Settings.IsZoomControlEnabled=false;
-            core.SetVirtualHostNameToFolderMapping(
-                ManorPreviewProtocol.VirtualHost,
-                Path.GetDirectoryName(EntryPath)!,
-                CoreWebView2HostResourceAccessKind.DenyCors);
-            core.NavigationStarting+=(_,args)=>
-            {
-                if(!ManorPreviewProtocol.IsTrustedSource(args.Uri)) args.Cancel=true;
-            };
-            core.NewWindowRequested+=(_,args)=>args.Handled=true;
-            core.PermissionRequested+=(_,args)=>args.State=CoreWebView2PermissionState.Deny;
+            CoreWebView2? core = await ModernWebViewBootstrap.InitializeAsync(
+                browser, () => closed, Path.GetDirectoryName(EntryPath)!,
+                ManorPreviewProtocol.IsTrustedSource);
+            if (core is null) return;
             core.NavigationCompleted+=(_,args)=>
             {
                 if(closed || args.IsSuccess) return;

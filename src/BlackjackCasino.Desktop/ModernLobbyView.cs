@@ -226,22 +226,10 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
 
         try
         {
-            await browser.EnsureCoreWebView2Async();
-            if (disposed) return;
-            CoreWebView2 core = browser.CoreWebView2;
-            core.Settings.AreDefaultContextMenusEnabled = false;
-            core.Settings.AreDevToolsEnabled = false;
-            core.Settings.AreHostObjectsAllowed = false;
-            core.Settings.IsStatusBarEnabled = false;
-            core.Settings.IsZoomControlEnabled = false;
-            core.Settings.IsWebMessageEnabled = true;
-            core.SetVirtualHostNameToFolderMapping(
-                ManorPreviewProtocol.VirtualHost,
-                Path.GetDirectoryName(EntryPath)!,
-                CoreWebView2HostResourceAccessKind.DenyCors);
-            core.NavigationStarting += (_, args) => { if (!Trusted(args.Uri)) args.Cancel = true; };
-            core.NewWindowRequested += (_, args) => args.Handled = true;
-            core.PermissionRequested += (_, args) => args.State = CoreWebView2PermissionState.Deny;
+            CoreWebView2? core = await ModernWebViewBootstrap.InitializeAsync(
+                browser, () => disposed, Path.GetDirectoryName(EntryPath)!,
+                Trusted);
+            if (core is null) return;
             core.NavigationCompleted += (_, args) =>
             {
                 LastNavigation = args.IsSuccess ? "success" : "failure: " + args.WebErrorStatus;

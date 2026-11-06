@@ -98,19 +98,11 @@ internal sealed class ModernEmpireView : ContentControl, IDisposable
         if (!File.Exists(Path.Combine(folder, "empire.html"))) { Fail(Local("Die Casino-Empire-Dateien fehlen. Bitte die Anwendung aktualisieren.", "Empire presentation is missing. Update the application.")); return; }
         try
         {
-            await browser.EnsureCoreWebView2Async();
-            if (disposed) return;
+            CoreWebView2? core = await ModernWebViewBootstrap.InitializeAsync(
+                browser, () => disposed, folder,
+                EmpireModernProtocol.Trusted);
+            if (core is null) return;
             Mark("webview_initialized");
-            var core = browser.CoreWebView2;
-            core.Settings.AreDefaultContextMenusEnabled = false;
-            core.Settings.AreDevToolsEnabled = false;
-            core.Settings.AreHostObjectsAllowed = false;
-            core.Settings.IsStatusBarEnabled = false;
-            core.Settings.IsZoomControlEnabled = false;
-            core.SetVirtualHostNameToFolderMapping(ManorPreviewProtocol.VirtualHost, folder, CoreWebView2HostResourceAccessKind.DenyCors);
-            core.NavigationStarting += (_, args) => { if (!EmpireModernProtocol.Trusted(args.Uri)) args.Cancel = true; };
-            core.NewWindowRequested += (_, args) => args.Handled = true;
-            core.PermissionRequested += (_, args) => args.State = CoreWebView2PermissionState.Deny;
             core.NavigationCompleted += (_, args) =>
             {
                 if (!args.IsSuccess) Fail(Local("Das Anwesen konnte nicht geladen werden.", "Empire could not load."));
