@@ -126,7 +126,17 @@ internal static class MidnightMergeSmoke
         object retained = typeof(MainWindow).GetField("modernMergeBoard", Flags)!.GetValue(window)!;
         typeof(ModernMergeView).GetMethod("Fail", Flags)!.Invoke(view, null);
         await WaitForExit(window);
-        NavigationSmoke.OpenCovered(window, "midnight-merge");
+        BrowserRecoveryView? recovery = null;
+        for (int i = 0; i < 90; i++)
+        {
+            await Task.Delay(75);
+            recovery = Find<BrowserRecoveryView>(window).FirstOrDefault(v => v.IsVisible);
+            if (recovery is not null) break;
+        }
+        Require(recovery is not null && recovery.RetryButton.IsEnabled
+            && !recovery.LegacyButton.IsEnabled,
+            "React Merge browser failure bypassed independent recovery.");
+        recovery.RetryButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         view = await WaitForView(window);
         Require(ReferenceEquals(retained, typeof(MainWindow).GetField("modernMergeBoard", Flags)!.GetValue(window))
             && JsonSerializer.Serialize(State(window)) == serialized,

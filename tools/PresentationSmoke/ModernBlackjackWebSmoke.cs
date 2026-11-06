@@ -126,20 +126,24 @@ internal static partial class Program
         var currentSession = controller.GetType().GetProperty("Session", flags)!.GetValue(controller);
         typeof(ModernBlackjackView).GetMethod("Fail", flags)!
             .Invoke(reopened, ["Simulated WebView2 failure during Blackjack"]);
-        bool recovered = false;
+        BrowserRecoveryView? recovery = null;
         for (int i = 0; i < 80; i++)
         {
             await Task.Delay(75);
-            recovered = Find<CasinoLobbyView>(window).Any(v => v.IsVisible)
-                && !Find<ModernBlackjackView>(window).Any(v => v.IsVisible);
-            if (recovered) break;
+            recovery = Find<BrowserRecoveryView>(window).FirstOrDefault(v => v.IsVisible);
+            if (recovery is not null) break;
         }
-        Require(recovered, "Blackjack browser failure did not return to the casino lobby.");
+        Require(recovery is not null
+            && !Find<ModernBlackjackView>(window).Any(v => v.IsVisible),
+            "Blackjack WebView failure did not show the independent recovery screen.");
+        Require(recovery!.RetryButton.IsEnabled && recovery.LobbyButton.IsEnabled
+            && !recovery.LegacyButton.IsEnabled,
+            "Blackjack recovery incorrectly offered a removed WPF table.");
         Require(window.FindName("TableSurface") is null,
             "Blackjack failure recreated a retired native table.");
         Require(ReferenceEquals(controller.GetType().GetProperty("Session", flags)!.GetValue(controller), currentSession),
             "Blackjack failure replaced the authoritative Core session.");
-        window.Modes.Open("blackjack");
+        recovery.RetryButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         ModernBlackjackView? resumed = null;
         for (int i = 0; i < 120; i++)
         {

@@ -104,9 +104,17 @@ internal static class ModernNeonVaultWebSmoke
         object retained = machineField.GetValue(window)!;
         typeof(ModernNeonVaultView).GetMethod("Fail", Flags)!.Invoke(reopened, null);
         await WaitForExit(window);
-        Require(Find<CasinoLobbyView>(window).Any(x => x.IsVisible),
-            "Neon Vault WebView failure did not return to the lobby.");
-        window.Modes.Open("neon-vault");
+        BrowserRecoveryView? recovery = null;
+        for (int n = 0; n < 90; n++)
+        {
+            await Task.Delay(75);
+            recovery = Find<BrowserRecoveryView>(window).FirstOrDefault(x => x.IsVisible);
+            if (recovery is not null) break;
+        }
+        Require(recovery is not null && recovery.RetryButton.IsEnabled
+            && !recovery.LegacyButton.IsEnabled,
+            "Neon Vault WebView failure did not show modern-only recovery.");
+        recovery.RetryButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         ModernNeonVaultView recovered = await WaitForView(window);
         Require(recovered.Ready && !recovered.Failed, "Neon Vault WebView failed to recover.");
         Require(ReferenceEquals(retained, machineField.GetValue(window)),

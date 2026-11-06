@@ -125,15 +125,28 @@ internal static partial class Program
         Require(reopened is { Ready: true, Failed: false, IsVisible: true },
             "Midnight Reels could not be reopened after returning to the lobby.");
         typeof(ModernReelsView).GetMethod("Fail", flags)!.Invoke(reopened, null);
+        BrowserRecoveryView? recovery = null;
         for (int i = 0; i < 100; i++)
         {
             await Task.Delay(75);
-            if (!Find<ModernReelsView>(window).Any(v => v.IsVisible)
-                && Find<Button>(window).Any(b => b.Name == "SpinButton" && b.IsVisible)) break;
+            recovery = Find<BrowserRecoveryView>(window).FirstOrDefault(v => v.IsVisible);
+            if (recovery is not null) break;
         }
-        Require(!Find<ModernReelsView>(window).Any(v => v.IsVisible)
-            && Find<Button>(window).Any(b => b.Name == "SpinButton" && b.IsVisible),
-            "WebView2 crash failed to restore the playable WPF Midnight Reels fallback.");
+        Require(recovery is not null && !Find<ModernReelsView>(window).Any(v => v.IsVisible)
+            && !Find<Button>(window).Any(b => b.Name == "SpinButton" && b.IsVisible),
+            "WebView2 crash silently opened the old WPF slot instead of recovery.");
+        Require(recovery!.LegacyButton.IsEnabled && recovery.RetryButton.IsEnabled,
+            "Reels recovery did not offer explicit legacy and modern routes.");
+        // Exercise the user-selected legacy route to retain the old WPF layout
+        // coverage without making it the default response to a browser failure.
+        recovery.LegacyButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        for (int i = 0; i < 100; i++)
+        {
+            await Task.Delay(75);
+            if (Find<Button>(window).Any(b => b.Name == "SpinButton" && b.IsVisible)) break;
+        }
+        Require(Find<Button>(window).Any(b => b.Name == "SpinButton" && b.IsVisible),
+            "The explicit Midnight Reels native fallback is no longer playable.");
         Require(session.Bankroll == shared.Bankroll,
             "Reels fallback discarded the already committed shared bankroll.");
     }

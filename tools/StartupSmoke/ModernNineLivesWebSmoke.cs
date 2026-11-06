@@ -102,7 +102,17 @@ internal static class ModernNineLivesWebSmoke
             await Task.Delay(75);
         Require(!Find<ModernNineLivesView>(window).Any(v => v.IsVisible),
             "Nine Lives failure did not dispose its browser host.");
-        window.Modes.Open("nine-lives");
+        BrowserRecoveryView? recovery = null;
+        for (int i = 0; i < 80; i++)
+        {
+            await Task.Delay(75);
+            recovery = Find<BrowserRecoveryView>(window).FirstOrDefault(v => v.IsVisible);
+            if (recovery is not null) break;
+        }
+        Require(recovery is not null && recovery.RetryButton.IsEnabled
+            && !recovery.LegacyButton.IsEnabled,
+            "Nine Lives browser crash did not show modern-only recovery.");
+        recovery.RetryButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         ModernNineLivesView? recovered = null;
         for (int i = 0; i < 150; i++)
         {
