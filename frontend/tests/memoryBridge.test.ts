@@ -34,7 +34,7 @@ describe('C# Memory snapshot is a private view of the real table',()=>{
   expect(isMemoryState({...state,screen:'game',game:{...game,cards:cards.map((c,i)=>i===2?{...c,index:3}:c)}})).toBe(false);
   expect(isMemoryState({...state,screen:'game',game:{...game,pairCount:7}})).toBe(false);
   expect(isMemoryState({...state,screen:'game',game:{...game,completed:true}})).toBe(false);
-  expect(isMemoryState({...state,preferredDeckId:'custom'}})).toBe(false);
+  expect(isMemoryState({...state,preferredDeckId:'custom'})).toBe(false);
   expect(isMemoryState({...state,decks:decks.slice(1)})).toBe(false);
  });
  it('accepts GUID native receipts with nonnegative revision only',()=>{
