@@ -390,38 +390,8 @@ internal static class Program
                 await ModernNineLivesWebSmoke.Run(window, profile, output);
                 RequireNoLegacyLobbyFrame(window, "Modern Nine Lives return");
 
-                // Neon Vault: scalable cyber artwork, no legacy 128px thumbnails, in-app navigation.
-                NavigationSmoke.OpenCovered(window, "neon-vault");
-                await Task.Delay(280);
-                window.UpdateLayout();
-                Grid cyberStage = Find<Grid>(window).Single(grid => grid.Name == "NeonVaultStage");
-                Require(cyberStage.Width / cyberStage.Height > 1.8, "Neon Vault reverted to a narrow letterboxed layout.");
-                Image[] cyberSymbols = Find<Image>(cyberStage)
-                    .Where(image => image.IsVisible && image.Source is BitmapSource)
-                    .ToArray();
-                Require(cyberSymbols.Length >= 20, $"Neon Vault rendered only {cyberSymbols.Length} cached reel symbols.");
-                Require(cyberSymbols.All(image => image.Source is BitmapSource art &&
-                    art.IsFrozen && art.PixelWidth >= 384 && art.PixelHeight >= 384),
-                    "Neon Vault symbols must be high-resolution, frozen, shared raster textures.");
-                Require(cyberSymbols.All(image => image.Stretch == Stretch.Uniform),
-                    "Neon Vault is stretching or cropping symbol artwork.");
-                Require(cyberSymbols.Select(image => image.Source).Distinct().Count() >= 6,
-                    "Neon Vault has reverted to repeated placeholder artwork instead of the eight-symbol gallery.");
-                Border cyberReelFrame = Find<Border>(window).Single(border => border.Name == "ReelFrame");
-                Require(cyberReelFrame.ActualWidth > 720 && cyberReelFrame.ActualHeight > 475,
-                    "Neon Vault reel stage failed to use the 1080p design area.");
-                Require(Find<Button>(window).Any(button => button.Name == "SpinButton" && button.IsVisible),
-                    "Neon Vault spin control is missing.");
-                SaveScreenshot(window, Path.Combine(output, "neon-vault-overhaul.png"));
-                Button neonBack = Find<Button>(window).Single(button => button.Name == "BackButton" && button.IsVisible);
-                neonBack.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                await Task.Delay(160);
-                window.UpdateLayout();
-                Require(Find<Button>(window).Any(button => button.Name == "Mode_neon_vault" && button.IsVisible),
-                    "Casino lobby did not return after closing Neon Vault.");
-                RequireNoLegacyLobbyFrame(window, "Neon Vault return");
-
-
+                await ModernNeonVaultWebSmoke.Run(window, profile, output);
+                RequireNoLegacyLobbyFrame(window, "Modern Neon Vault return");
 
                 await UiResponsivenessSmoke.Run(window, output);
                 await LocalizationSmoke.Run(window, output);
