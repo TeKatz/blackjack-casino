@@ -122,8 +122,13 @@ def main() -> int:
         if file_name == "MainWindow.ModernReels.cs":
             close_start = source.find("private void CloseModernReels()")
             close_body = source[close_start:]
-            if "EmbeddedSlots_Click(" in close_body or "EmbeddedSlots_Click(" in failure_body:
+            # The explicit recovery callback legitimately references the old slot.
+            # Only launching it from CloseModernReels itself is a silent fallback.
+            if "EmbeddedSlots_Click(" in close_body:
                 issues.append("Midnight Reels silently launches native WPF slots on crash.")
+            if "ShowBrowserRecovery(" not in failure_body or (
+                    "EmbeddedSlots_Click(" not in failure_body):
+                issues.append("Midnight Reels lost its explicit native recovery option.")
     if recovery_host.is_file():
         host = text(recovery_host)
         policy = text(recovery_logic)
