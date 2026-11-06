@@ -12,32 +12,32 @@ public partial class MainWindow
     {
         InitializeHeaderLayout();
         InitializeEmpire();
-        modeRegistry.Register(new("blackjack","Blackjack","The velvet tables","A quiet seat, a fresh shoe and your next decision. Solo or with the house regulars.","#537D66","♠","Table games",()=>new LobbyGameArtwork(false)),()=>
+        modeRegistry.Register(new("blackjack","Blackjack","The velvet tables","A quiet seat, a fresh shoe and your next decision. Solo or with the house regulars.","#537D66","♠","Table games"),()=>
         {OpenBlackjackMode();TableModeText.Text="Blackjack · your table";});
-        modeRegistry.Register(new("midnight-reels","Midnight Reels","The golden floor","Three reels, a centre payline and a little old-school casino charm.","#C69A51","7 7 7","Classic slots",()=>new LobbyGameArtwork(true)),()=>
+        modeRegistry.Register(new("midnight-reels","Midnight Reels","The golden floor","Three reels, a centre payline and a little old-school casino charm.","#C69A51","7 7 7","Classic slots"),()=>
         {TableModeText.Text="Midnight Reels · classic slots";OpenMidnightReels();});
-        modeRegistry.Register(new("neon-vault","Neon Vault","The high-voltage floor","Five reels, 1,024 ways and Vault Break Free Spins. High Roller stakes up to $250K.","#55DDF8","◇","Video slots",()=>new NeonVaultArtwork()),()=>
+        modeRegistry.Register(new("neon-vault","Neon Vault","The high-voltage floor","Five reels, 1,024 ways and Vault Break Free Spins. High Roller stakes up to $250K.","#55DDF8","◇","Video slots"),()=>
         {TableModeText.Text="Neon Vault · high roller slots";EmbeddedNeonVault_Click(this,new RoutedEventArgs());});
-        modeRegistry.Register(new("nine-lives","Nine Lives","The moonlit rooftop","Five lines, Pounce Wilds and nine bonus spins. Chase the 5,000× Full Grid Frenzy.","#C95CFF","9","Video slots",()=>new NineLivesLobbyArtwork()),()=>
+        modeRegistry.Register(new("nine-lives","Nine Lives","The moonlit rooftop","Five lines, Pounce Wilds and nine bonus spins. Chase the 5,000× Full Grid Frenzy.","#C95CFF","9","Video slots"),()=>
         {TableModeText.Text="Nine Lives · high risk slots";EmbeddedNineLives_Click(this,new RoutedEventArgs());});
-        modeRegistry.Register(new("midnight-manor","Midnight Manor","Beyond the moonlit doors","Five haunted reels. Free Spins. A Manor whose rooms remember your choices.","#9170AC","☾","Video slots",()=>new ManorBackdrop {Scene="Exterior",Opacity=.85}),()=>
+        modeRegistry.Register(new("midnight-manor","Midnight Manor","Beyond the moonlit doors","Five haunted reels. Free Spins. A Manor whose rooms remember your choices.","#9170AC","☾","Video slots"),()=>
         {TableModeText.Text="Midnight Manor · video slots";OpenModernManor();});
         modeRegistry.Register(new("casino-empire", "Casino Empire", "Your name above the door",
             "Build your midnight landmark with lasting upgrades, idle income and owner dividends.",
-            "#CBA66B", "♜", "Idle casino", () => new EmpireFloorArtwork()),
+            "#CBA66B", "♜", "Idle casino"),
             OpenEmpire,
             canOpen: () => !EmpireDetachedOpen,
             secondaryOpen: OpenEmpireDetached,
             secondaryLabel: "OPEN IN NEW WINDOW",
             canSecondaryOpen: () => !EmpirePageOpen);
         modeRegistry.Register(new("midnight-merge", "Merge.Title", "Merge.Subtitle",
-            "Merge.Description", "#CBA66B", "◈", "Merge.Category", () => new MergeLobbyArtwork(), UseResourceKeys: true), OpenMidnightMerge);
+            "Merge.Description", "#CBA66B", "◈", "Merge.Category", UseResourceKeys: true), OpenMidnightMerge);
         modeRegistry.Register(new("chill-lounge", "Chill Lounge", "A quieter corner",
             "Offline games at your own pace. Settle into Sudoku or Midnight Solitaire — no wagers, no rush.",
-            "#7FB49F", "✦", "Relaxed games", () => new LoungeGameArtwork(false)), OpenLounge);
+            "#7FB49F", "✦", "Relaxed games"), OpenLounge);
         modeRegistry.Register(new("kniffel", "Midnight Dice", "The dice lounge",
             "Five dice and your score sheet. Play solo or join a casino table with three AI opponents.",
-            "#9DD6B3", "⚄", "Table games", () => new LoungeGameArtwork(true)), OpenKniffel);
+            "#9DD6B3", "⚄", "Table games"), OpenKniffel);
         lobby=new CasinoLobbyView(modeRegistry,OpenProgression, () => preferences.Presentation("lobby").AnimationsEnabled,OpenNativeUpdates);
         // Use the WPF lobby only on genuine frontend failure. Keep its logical
         // visibility for native navigation, but never allow its art to flash

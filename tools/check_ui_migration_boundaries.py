@@ -154,6 +154,21 @@ def main() -> int:
     if "LoungeHostedGameRegistry.Snapshot.Count == 0" not in smoke:
         issues.append("Windows smoke must verify no legacy factories for React Lounge.")
 
+    # Casino navigation descriptors must be reusable by a non-WPF native shell.
+    registry_path = ROOT / "src/BlackjackCasino.Desktop/CasinoModeRegistry.cs"
+    fallback_art = ROOT / "src/BlackjackCasino.Desktop/NativeLobbyArtwork.cs"
+    native_lobby = ROOT / "src/BlackjackCasino.Desktop/CasinoLobbyView.cs"
+    if not all(p.is_file() for p in (registry_path, fallback_art, native_lobby)):
+        issues.append("WPF-free game routing registry or native artwork adapter is missing.")
+    else:
+        registry_source = text(registry_path)
+        if "System.Windows" in registry_source or "FrameworkElement" in registry_source:
+            issues.append("CasinoModeRegistry must not depend on WPF view types.")
+        if "NativeLobbyArtwork.Create(mode.Id)" not in text(native_lobby):
+            issues.append("Emergency WPF lobby no longer owns its artwork factories.")
+        if "new LobbyGameArtwork" in text(ROOT / "src/BlackjackCasino.Desktop/MainWindow.Lobby.cs"):
+            issues.append("Casino mode registration reintroduced WPF artwork factories.")
+
     # Phase 5: the interim WPF shell must have one presentation owner instead
     # of seven independent browser overlays / input-disabling implementations.
     surface_path = ROOT / "src/BlackjackCasino.Desktop/ModernGameSurface.cs"

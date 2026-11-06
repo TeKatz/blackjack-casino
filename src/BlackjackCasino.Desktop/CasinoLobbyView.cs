@@ -478,7 +478,9 @@ internal sealed class CasinoLobbyView : UserControl
                 ClipToBounds = true,
                 Background = new LinearGradientBrush(((SolidColorBrush)accent).Color, Color.FromRgb(9, 17, 22), 65),
             };
-            if (mode.Artwork is not null) art.Children.Add(mode.Artwork());
+            // Only this emergency native lobby depends on WPF artwork.
+            FrameworkElement? nativeArtwork = NativeLobbyArtwork.Create(mode.Id);
+            if (nativeArtwork is not null) art.Children.Add(nativeArtwork);
             else art.Children.Add(new TextBlock
             {
                 Text = mode.Emblem,
