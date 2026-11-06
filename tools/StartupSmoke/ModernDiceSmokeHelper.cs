@@ -31,8 +31,25 @@ internal static class ModernDiceSmokeHelper
             view = Find<ModernDiceView>(host).FirstOrDefault();
             if (view is { Ready: true } or { Failed: true }) break;
         }
-        Require(view is { Ready: true, Failed: false, IsVisible: true },
-            "The primary Midnight Dice route did not load its packaged WebView2 game.");
+        if (view is not { Ready: true, Failed: false, IsVisible: true })
+        {
+            string details = $"view={view is not null}; ready={view?.Ready}; failed={view?.Failed}; visible={view?.IsVisible}; "
+                + $"frontendFile={ModernDiceView.IsAvailable}; webCore={view?.Browser.CoreWebView2 is not null}";
+            if (view?.Browser.CoreWebView2 is { } diagnosticCore)
+            {
+                try
+                {
+                    string clientState = await diagnosticCore.ExecuteScriptAsync(
+                        "(()=>JSON.stringify({url:location.href,load:document.readyState,"
+                        + "root:!!document.getElementById('root'),game:!!document.querySelector('[data-testid=\\\"modern-dice-app\\\"]'),"
+                        + "html:document.body?.innerText?.slice(0,450),scripts:document.scripts.length}))()");
+                    details += "; browser=" + clientState;
+                }
+                catch (Exception ex) when (ex is InvalidOperationException
+                    or System.Runtime.InteropServices.COMException) { details += "; scriptError=" + ex.Message; }
+            }
+            throw new InvalidOperationException("The primary Midnight Dice route did not load: " + details);
+        }
         Require(await JavaScript(view!.Browser.CoreWebView2!,
             "Boolean(document.querySelector('[data-testid=\"modern-dice-app\"]')"
             + "&&document.querySelectorAll('[data-testid^=\"dice-die-\"]').length===5"
