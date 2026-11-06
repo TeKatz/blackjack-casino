@@ -17,7 +17,18 @@ internal static class NavigationSmoke
                 throw new InvalidOperationException("Blackjack table exposed before destination was ready: " + id);
         }
         lobby.IsVisibleChanged += Check;
-        try { window.Modes.Open(id); }
+        try
+        {
+            if (id == "chill-lounge")
+            {
+                // Retained legacy-game regression tests exercise the WPF rollback
+                // entry explicitly. ModernLoungeSmoke checks the normal React route.
+                var openNative = typeof(MainWindow).GetMethod("OpenLoungeCore",
+                    BindingFlags.Instance | BindingFlags.NonPublic)!;
+                openNative.Invoke(window, [null, true]);
+            }
+            else window.Modes.Open(id);
+        }
         finally { lobby.IsVisibleChanged -= Check; }
     }
 }

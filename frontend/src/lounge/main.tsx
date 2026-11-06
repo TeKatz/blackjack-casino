@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { isLoungeId, loungeIds, readLoungeSnapshot, sendLoungeCommand } from './bridge';
+import { isLoungeId, readLoungeSnapshot, sendLoungeCommand } from './bridge';
 import type { LoungeId, LoungeSnapshot } from './bridge';
 import './lounge.css';
 
@@ -77,7 +77,7 @@ function App() {
  },[snapshot]);
  const language:Language=snapshot?.language??'en', t=words[language];
  const filtered=useMemo(()=>catalog.filter(game=>filter==='all'||game.category===filter),[filter]);
- const statusMap=useMemo(()=>new Map(snapshot?.games.map(game=>[game.id,game.status])??[]),[snapshot]);
+ const statusMap=useMemo(()=>new Map<LoungeId,string|null>((snapshot?.games??[]).map(game=>[game.id,game.status] as const)),[snapshot]);
  const groups: {id:Filter;name:string}[]=[
    {id:'all',name:t.all},{id:'puzzles',name:t.puzzles},
    {id:'cards',name:t.cards},{id:'stories',name:t.stories},
