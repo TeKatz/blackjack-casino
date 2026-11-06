@@ -313,4 +313,14 @@ The playable Neon Vault route is exclusively `neon-vault.html`. The native C# Ne
 
 The native bridge enforces a versioned local origin, valid intents, session epoch, request receipt and revision; C# settles wallet and progression before delivering visual snapshots. Browser failure can rehost the in-memory game without rerolling or discarding a pending bonus. Automatic tests cover the bridge, React data shape, Windows visual/runtime route and failure recovery. Visual/audio, Win10/11 GPU and prolonged-play acceptance remain manual.
 
-**Still WPF:** Midnight Merge, Midnight Dice, Chill Lounge and the shared host/fallback lobby. Midnight Reels maintains a native fallback until its own final source retirement.
+**Historical status before the Merge replacement:** Midnight Merge, Midnight Dice and Chill Lounge were still WPF. Midnight Merge is now React; see the subsequent entry.
+
+## Midnight Merge — React/PixiJS replacement (2026-11-06)
+
+Midnight Merge now opens as the local `midnight-merge.html` WebView2 page from the standard casino lobby. React provides a responsive board, typed tokens, order cards and live EN/DE translations; PixiJS draws cosmetic ambient particles. The 7×6 core board, original chip/bar chains and all fourteen supply orders and points thresholds are unchanged.
+
+The C# `MergeBoard` still serializes and persists **each operation before exposing it**. The desktop adapter continues to use `AppPreferences.MidnightMerge` schema 2, the same atomic `PlayerStateStore`, stable GUIDs/order receipts, global profile XP/coins and milestone bankroll rewards. `ModernMergeProtocol` rejects forged score/reward intents, validates item/target/order arguments and enforces an exact local origin, session GUID, expected board revision and command deduplication. Browser failure does not modify the board or rerun rewards: a new WebView receives the committed state and original ledger.
+
+The old gameplay `MidnightMergeView` has been retired. The original WPF artwork class remains only to serve the native emergency lobby's preview tile and can be removed with that lobby. Automated acceptance verifies current UI route, cell moves/merges, atomic file save/load, orders, milestones, German translation, 1080p–compact layout and in-memory browser rehosting. Real-device long-session CPU/GPU/audio and subjective effects quality still need separate acceptance.
+
+**Remaining WPF game modes:** Midnight Dice and Chill Lounge, plus the still-native emergency lobby and shared WPF host. Midnight Reels retains a native fallback for now.
