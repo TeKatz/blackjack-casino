@@ -36,10 +36,8 @@ public partial class MainWindow : Window
     }
     private readonly CasinoStatusState StatusText = new();
 
-    private readonly HttpClient httpClient = new()
-    {
-        Timeout = TimeSpan.FromSeconds(20),
-    };
+    private readonly DesktopUpdateService updateService = new();
+    private readonly CasinoWindowGeometry windowGeometry;
 
     private AppPreferences preferences;
     private BlackjackTableController blackjack = null!;
@@ -50,11 +48,6 @@ public partial class MainWindow : Window
     private UpdateManifest? pendingManifest;
     private bool updateOperationBusy;
     private bool suppressPreferenceEvents;
-    private bool isFullscreen;
-    private WindowState previousWindowState;
-    private WindowStyle previousWindowStyle;
-    private ResizeMode previousResizeMode;
-    private Rect previousWindowBounds;
 
     private readonly PlayerProfileState? initialProfile;
     private readonly bool testSession;
@@ -63,6 +56,7 @@ public partial class MainWindow : Window
     {
         initialProfile=profile; testSession=initialPreferences is not null;
         InitializeComponent();
+        windowGeometry = new CasinoWindowGeometry(this);
         // The lobby is the startup surface; Blackjack has no native WPF table.
 
         string? manorRecoveryNotice = null;
@@ -99,7 +93,7 @@ public partial class MainWindow : Window
         Closed += (_, _) =>
         {
             SavePreferences();
-            httpClient.Dispose();
+            updateService.Dispose();
         };
     }
 
@@ -124,40 +118,7 @@ public partial class MainWindow : Window
         SavePreferences();
     }
 
-    private void ToggleFullscreen()
-    {
-        if (!isFullscreen)
-        {
-            previousWindowState = WindowState;
-            previousWindowStyle = WindowStyle;
-            previousResizeMode = ResizeMode;
-            previousWindowBounds = WindowState == WindowState.Normal
-                ? new Rect(Left, Top, ActualWidth, ActualHeight)
-                : RestoreBounds;
-
-            CasinoWindowFrame.SetIsFullscreen(this, true);
-            WindowState = WindowState.Normal;
-            WindowStyle = WindowStyle.None;
-            ResizeMode = ResizeMode.NoResize;
-            WindowState = WindowState.Maximized;
-            isFullscreen = true;
-            return;
-        }
-
-        WindowState = WindowState.Normal;
-        CasinoWindowFrame.SetIsFullscreen(this, false);
-        WindowStyle = previousWindowStyle;
-        ResizeMode = previousResizeMode;
-        if (previousWindowBounds.Width >= MinWidth && previousWindowBounds.Height >= MinHeight)
-        {
-            Left = previousWindowBounds.Left;
-            Top = previousWindowBounds.Top;
-            Width = previousWindowBounds.Width;
-            Height = previousWindowBounds.Height;
-        }
-        WindowState = previousWindowState;
-        isFullscreen = false;
-    }
+    private void ToggleFullscreen() => windowGeometry.ToggleFullscreen();
 
     private void HandleRoundStateAfterMutation(string fallbackStatus)
     {
@@ -274,19 +235,10 @@ public partial class MainWindow : Window
             SetUpdateBusy(true);
             SetUpdateMessage("Downloading update…");
 
-            string updateDirectory = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "BlackjackCasino",
-                "Updates");
-
             var progress = new Progress<double>(value =>
                 SetUpdateMessage($"Downloading update… {value:P0}"));
 
-            var downloader = new PackageDownloader(httpClient);
-            string packagePath = await downloader.DownloadAndVerifyAsync(
-                pendingManifest.Package,
-                updateDirectory,
-                progress);
+            string packagePath = await updateService.DownloadAsync(pendingManifest.Package, progress);
 
             SavePreferences();
             SetUpdateMessage("Update verified. Restarting…");
@@ -313,9 +265,7 @@ public partial class MainWindow : Window
                 SetUpdateMessage($"Checking {channel}…");
             }
 
-            var source = new HttpManifestUpdateSource(httpClient, GetManifestUri(channel));
-            var client = new UpdateClient(source, channel.ToManifestValue());
-            UpdateCheckResult result = await client.CheckAsync(AppVersion.Current);
+            UpdateCheckResult result = await updateService.CheckAsync(channel, AppVersion.Current);
 
             if (!result.UpdateAvailable)
             {
@@ -325,7 +275,7 @@ public partial class MainWindow : Window
                 return;
             }
 
-            SemanticVersion minimumUpdater = SemanticVersion.Parse(result.Manifest.MinimumUpdaterVersion);
+            SemanticVersion minimumUpdater = DesktopUpdateService.MinimumUpdaterVersion(result.Manifest);
             SemanticVersion updaterVersion = UpdaterLauncher.CurrentVersion ?? AppVersion.Current;
             if (minimumUpdater > updaterVersion)
             {
@@ -364,13 +314,6 @@ public partial class MainWindow : Window
         }
     }
 
-    private static Uri GetManifestUri(UpdateChannel channel) => channel switch
-    {
-        UpdateChannel.Stable => new Uri("https://github.com/TeKatz/blackjack-casino/releases/latest/download/update-manifest.json"),
-        UpdateChannel.Development => new Uri("https://github.com/TeKatz/blackjack-casino/releases/download/development/update-manifest.json"),
-        _ => throw new ArgumentOutOfRangeException(nameof(channel), channel, null),
-    };
-
     private void SetUpdateMessage(string message)
     {
         UpdateStatusText.Text = message;
@@ -398,21 +341,9 @@ public partial class MainWindow : Window
     private void SavePreferences()
     {
         if(testSession) return;
-        Rect bounds;
-        bool maximized;
-
-        if (isFullscreen)
-        {
-            bounds = previousWindowBounds;
-            maximized = previousWindowState == WindowState.Maximized;
-        }
-        else
-        {
-            bounds = WindowState == WindowState.Normal
-                ? new Rect(Left, Top, ActualWidth, ActualHeight)
-                : RestoreBounds;
-            maximized = WindowState == WindowState.Maximized;
-        }
+        CasinoWindowPlacement placement = windowGeometry.GetSavedPlacement();
+        Rect bounds = placement.Bounds;
+        bool maximized = placement.Maximized;
 
         double width = bounds.Width >= MinWidth ? bounds.Width : preferences.WindowWidth;
         double height = bounds.Height >= MinHeight ? bounds.Height : preferences.WindowHeight;

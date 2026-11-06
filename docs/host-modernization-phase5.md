@@ -46,3 +46,11 @@ The Windows StartupSmoke now checks hardened settings on initialized, packaged L
 ## Next host steps
 
 Next continue separating the oversized frame's responsibilities into focused shell services (window chrome, updater, saved preferences, navigation, audio, foreground view ownership). Only after emergency recovery, detached windows, release-upgrade behavior, Windows 10/11 and 125–200% DPI acceptance can the WPF executable be replaced by a smaller native shell. No merge to `main` or stable-channel rollout is part of this milestone.
+
+## Third extraction — updater and window placement
+
+The desktop's update transport now lives in `DesktopUpdateService`, without WPF references. It retains the same Stable/Development manifest URLs, channel verification, 20-second HTTP timeout, minimum-updater check, verified package downloader, and user-local staging directory. `MainWindow` still owns UI messages, busy/selection state, the exact pending manifest, explicit updater launch and application shutdown; no installer or update recovery semantics were changed. Unit regression tests check pinned channel URLs, minimum-updater parsing and transport request/channel validation.
+
+The fullscreen transition and persisted restore-bounds computation now live in `CasinoWindowGeometry`. `MainWindow` delegates the existing F11 command and the window dimensions saved into `player-state.json`; the original WPF frame styling, DPI behavior, fullscreen restore sequence and preference schema remain unchanged. A real Windows startup smoke tests the adapter's enter/exit behavior and its saved window placement while fullscreen.
+
+**Boundary:** This does not remove WPF from the executable. Navigation, audio orchestration, legacy recovery windows and the final shell swap are still separate work. No game engines, React/CSS, saves or updater binaries were changed in this extraction.

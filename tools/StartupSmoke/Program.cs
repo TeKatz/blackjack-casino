@@ -90,6 +90,7 @@ internal static class Program
                 RequireNoLegacyLobbyFrame(window, "startup");
                 Require(window.Icon is not null && window.Template.FindName("CasinoTitleBar", window) is FrameworkElement { IsVisible: true }, "The desktop icon or custom title bar is missing.");
                 await WindowFrameSmoke.Run(window);
+                CasinoWindowGeometrySmoke.Run(window);
                 object originalContent = window.Content;
                 CasinoWindowFrame.SetIsFullscreen(window, true); window.UpdateLayout();
                 Require(window.Template.FindName("CasinoTitleBar", window) is FrameworkElement { IsVisible: false }, "Full screen retained the custom title bar.");
