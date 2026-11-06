@@ -30,6 +30,8 @@
     <Compile Include="../../src/BlackjackCasino.Desktop/ModernSudokuService.cs" Link="Presentation/ModernSudokuService.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/ModernSolitaireProtocol.cs" Link="Presentation/ModernSolitaireProtocol.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/ModernSolitaireService.cs" Link="Presentation/ModernSolitaireService.cs" />
+    <Compile Include="../../src/BlackjackCasino.Desktop/ModernWordSearchProtocol.cs" Link="Presentation/ModernWordSearchProtocol.cs" />
+    <Compile Include="../../src/BlackjackCasino.Desktop/ModernWordSearchService.cs" Link="Presentation/ModernWordSearchService.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/ModernNeonVaultSnapshot.cs" Link="Presentation/ModernNeonVaultSnapshot.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/ModernReelsSnapshot.cs" Link="Presentation/ModernReelsSnapshot.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/EmpireModernProtocol.cs" Link="Presentation/EmpireModernProtocol.cs" />

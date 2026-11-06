@@ -1,0 +1,149 @@
+using System.Text.Json;
+using BlackjackCasino.Core;
+using BlackjackCasino.Core.WordSearch;
+using BlackjackCasino.Desktop;
+
+namespace BlackjackCasino.Tests;
+
+public sealed class ModernWordSearchBridgeTests
+{
+    private static string Request(ModernWordSearchSession s, string action,
+        WordSearchDifficulty? difficulty = null,
+        int? sr = null, int? sc = null, int? er = null, int? ec = null,
+        long? revision = null, string? id = null) =>
+        JsonSerializer.Serialize(new Dictionary<string,object?>
+        {
+            ["type"] = "lounge.word-search.command", ["version"] = 1,
+            ["requestId"] = id ?? Guid.NewGuid().ToString("D"),
+            ["session"] = s.Id, ["expectedRevision"] = revision ?? s.Revision,
+            ["action"] = action, ["difficulty"] = difficulty?.ToString(),
+            ["startRow"] = sr, ["startColumn"] = sc, ["endRow"] = er, ["endColumn"] = ec,
+        }.Where(pair => pair.Value is not null).ToDictionary(pair => pair.Key, pair => pair.Value));
+
+    [Fact]
+    public void ProtocolAllowsOnlyBoundedLinesAndSupportedGameIntents()
+    {
+        var s = new ModernWordSearchSession();
+        foreach (string valid in new[]
+        {
+            Request(s,"word-search.start",WordSearchDifficulty.Relaxed),
+            Request(s,"word-search.start",WordSearchDifficulty.Master),
+            Request(s,"word-search.resume"),Request(s,"word-search.hint"),
+            Request(s,"word-search.back"),Request(s,"word-search.exit"),
+            Request(s,"word-search.select",sr:0,sc:0,er:0,ec:7),
+            Request(s,"word-search.select",sr:12,sc:12,er:0,ec:0),
+            Request(s,"word-search.select",sr:0,sc:12,er:12,ec:0),
+        }) Assert.NotNull(ModernWordSearchProtocol.Parse(valid));
+
+        foreach (string invalid in new[]
+        {
+            Request(s,"word-search.start"),
+            Request(s,"word-search.hint",WordSearchDifficulty.Easy),
+            Request(s,"word-search.select",sr:-1,sc:0,er:0,ec:0),
+            Request(s,"word-search.select",sr:0,sc:0,er:13,ec:0),
+            Request(s,"word-search.select",sr:0,sc:0,er:2,ec:3),
+            Request(s,"word-search.select",sr:0,sc:0,er:0,ec:0),
+            Request(s,"word-search.select",sr:0,sc:0,er:1),
+            Request(s,"word-search.reward"), "{}", "[]", "bad-json", new string('X',2049),
+            Request(s,"word-search.resume",revision:-1),
+        }) Assert.Null(ModernWordSearchProtocol.Parse(invalid));
+    }
+
+    [Fact]
+    public void ReplayAndStaleSessionCannotCommitTwoWords()
+    {
+        var s = new ModernWordSearchSession();
+        var cmd=ModernWordSearchProtocol.Parse(Request(s,"word-search.resume"))!;
+        int writes=0;
+        (bool Success,string Message) Commit(ModernWordSearchCommand _) { writes++;return(true,"Saved"); }
+        ModernWordSearchReply first=s.Execute(cmd,Commit);
+        Assert.True(first.Success);
+        Assert.Equal(1L,s.Revision);
+        Assert.Equal(first,s.Execute(cmd,Commit));
+        Assert.False(s.Execute(cmd with{ RequestId=Guid.NewGuid().ToString("D")},Commit).Success);
+        Assert.False(s.Execute(cmd with{ RequestId=Guid.NewGuid().ToString("D"),Session=Guid.NewGuid().ToString("D")},Commit).Success);
+        Assert.Equal(1,writes);
+    }
+
+    [Fact]
+    public void NativeWordFindAndHintSaveAfterCommitAndResumeWithoutRegeneration()
+    {
+        WordSearchProgressState saved = new();
+        int writes=0;
+        var service=new ModernWordSearchService(saved,next=>{saved=next;writes++;},
+            ()=>new WordSearchStatistics(),_=>ProgressionAward.None,()=> "de");
+        var s=new ModernWordSearchSession();
+        void Execute(string action,WordSearchDifficulty? difficulty=null,int? sr=null,int? sc=null,int? er=null,int? ec=null)
+        {
+            var command=ModernWordSearchProtocol.Parse(Request(s,action,difficulty,sr,sc,er,ec))!;
+            Assert.True(s.Execute(command,service.Execute).Success);
+        }
+
+        Execute("word-search.start",WordSearchDifficulty.Relaxed);
+        WordSearchGameState first=service.CurrentGame!;
+        Assert.Equal(8,first.Puzzle.Size);
+        Assert.Equal(6,first.Puzzle.Placements.Count);
+        Assert.Equal(first.Puzzle.Grid,saved.ActiveGame!.Puzzle.Grid);
+        WordSearchPlacement target=first.Puzzle.Placements[0];
+        Execute("word-search.select",sr:target.EndRow,sc:target.EndColumn,er:target.StartRow,ec:target.StartColumn);
+        Assert.Single(saved.ActiveGame!.FoundWords);
+        Execute("word-search.hint");
+        Assert.Equal(1,service.CurrentGame!.HintsUsed);
+        Execute("word-search.back");
+        Assert.NotNull(saved.ActiveGame);
+        Execute("word-search.resume");
+        Assert.Equal(first.Puzzle.Grid,service.CurrentGame!.Puzzle.Grid);
+        Assert.Equal(1,service.CurrentGame.HintsUsed);
+        Assert.Single(service.CurrentGame.FoundWords);
+        Assert.True(writes>=3);
+    }
+
+    [Fact]
+    public void FailedWritePreservesNativePuzzleAndCompletionReceiptIsGrantedOnlyOnce()
+    {
+        WordSearchProgressState saved = new();
+        bool fail=false;
+        int rewards=0;
+        var service=new ModernWordSearchService(saved,next=>{
+            if(fail)throw new IOException("Disk offline");
+            saved=next;
+        },()=>new WordSearchStatistics(),_=>{rewards++;return ProgressionAward.None;},()=> "en");
+        var s=new ModernWordSearchSession();
+        ModernWordSearchReply Do(string action,WordSearchDifficulty? d=null,WordSearchPlacement? p=null)
+        {
+            var cmd=ModernWordSearchProtocol.Parse(Request(s,action,d,
+                p?.StartRow,p?.StartColumn,p?.EndRow,p?.EndColumn))!;
+            return s.Execute(cmd,service.Execute);
+        }
+        Assert.True(Do("word-search.start",WordSearchDifficulty.Relaxed).Success);
+        var placements=service.CurrentGame!.Puzzle.Placements.ToArray();
+        fail=true;
+        Assert.Throws<IOException>(()=>Do("word-search.select",p:placements[0]));
+        Assert.Empty(service.CurrentGame!.FoundWords);
+        Assert.Empty(saved.ActiveGame!.FoundWords);
+        fail=false;
+        foreach(var placement in placements)Assert.True(Do("word-search.select",p:placement).Success);
+        Assert.True(service.CurrentGame!.Completed);
+        Assert.Null(saved.ActiveGame);
+        Assert.Single(saved.CompletedGames);
+        Assert.Equal(1,rewards);
+        Assert.True(Do("word-search.back").Success);
+        Assert.False(Do("word-search.resume").Success);
+    }
+
+    [Fact]
+    public void PreviouslySavedEnglishGridRemainsIdenticalIfUserResumesInGerman()
+    {
+        WordSearchGameState original=WordSearchGame.Start(WordSearchCatalog.For(WordSearchDifficulty.Hard)[0],language:"en");
+        original.FoundWords.Add(original.Puzzle.Placements[0].Word);
+        var progress=new WordSearchProgressState{ActiveGame=original};
+        var service=new ModernWordSearchService(progress,_=>{},()=>new WordSearchStatistics(),
+            _=>ProgressionAward.None,()=> "de");
+        var s=new ModernWordSearchSession();
+        var cmd=ModernWordSearchProtocol.Parse(Request(s,"word-search.resume"))!;
+        Assert.True(s.Execute(cmd,service.Execute).Success);
+        Assert.Equal(original.Puzzle.Grid,service.CurrentGame!.Puzzle.Grid);
+        Assert.Equal(original.Puzzle.Theme,service.CurrentGame.Puzzle.Theme);
+        Assert.Contains(original.Puzzle.Placements[0].Word,service.CurrentGame.FoundWords);
+    }
+}
