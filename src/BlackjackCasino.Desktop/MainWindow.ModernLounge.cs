@@ -5,6 +5,7 @@ using System.Windows.Threading;
 using BlackjackCasino.Core.Sudoku;
 using BlackjackCasino.Core.Solitaire;
 using BlackjackCasino.Core.WordSearch;
+using BlackjackCasino.Core.Memory;
 
 namespace BlackjackCasino.Desktop;
 
@@ -17,6 +18,8 @@ public partial class MainWindow
     private ModernSolitaireService? modernSolitaire;
     private ModernWordSearchSession? modernWordSearchSession;
     private ModernWordSearchService? modernWordSearch;
+    private ModernMemorySession? modernMemorySession;
+    private ModernMemoryService? modernMemory;
     private readonly List<(UIElement Element, bool Enabled)> modernLoungeCoveredElements = [];
     private bool ModernLoungeOpen => modernLoungeView is not null;
 
@@ -29,6 +32,7 @@ public partial class MainWindow
             {
                 "solitaire" => CurrentModernSolitaireStatus(),
                 "word-search" => CurrentModernWordSearchStatus(),
+                "memory" => CurrentModernMemoryStatus(),
                 _ => module.Definition.Status?.Invoke(),
             },
         }).ToList();
@@ -49,6 +53,9 @@ public partial class MainWindow
             WordSearchSession = modernWordSearchSession?.Id ?? string.Empty,
             WordSearchRevision = modernWordSearchSession?.Revision ?? 0L,
             WordSearch = modernWordSearch?.Snapshot(),
+            MemorySession = modernMemorySession?.Id ?? string.Empty,
+            MemoryRevision = modernMemorySession?.Revision ?? 0L,
+            Memory = modernMemory?.Snapshot(),
             Language = Localization.Language == UiLanguagePreference.German ? "de" : "en",
             MusicEnabled = preferences.Presentation("chill-lounge").MusicEnabled,
             SoundEnabled = preferences.Presentation("chill-lounge").SoundEnabled,
@@ -72,6 +79,14 @@ public partial class MainWindow
             : $"Resume · {progress.ActiveGame.Puzzle.Theme}";
     }
 
+    private string CurrentModernMemoryStatus()
+    {
+        MemoryProgressState progress = preferences.Memory;
+        return progress.ActiveGame is null
+            ? $"{progress.CompletedGames.Count:N0} games complete"
+            : $"Resume · {progress.ActiveGame.Difficulty} · {MemoryCatalog.GetDeck(progress.ActiveGame.DeckId).Name}";
+    }
+
     private void OpenModernLounge()
     {
         if (ModernLoungeOpen || embeddedGameShell is not null) return;
@@ -79,10 +94,12 @@ public partial class MainWindow
         modernSudokuSession = new ModernSudokuSession();
         modernSolitaireSession = new ModernSolitaireSession();
         modernWordSearchSession = new ModernWordSearchSession();
+        modernMemorySession = new ModernMemorySession();
         modernLoungeView = new ModernLoungeView(CreateModernLoungeSnapshot,
             OnModernLoungeGameSelected, ApplyModernSudokuCommand, CheckpointModernSudoku,
             ApplyModernSolitaireCommand, CheckpointModernSolitaire,
             ApplyModernWordSearchCommand, CheckpointModernWordSearch,
+            ApplyModernMemoryCommand, CheckpointModernMemory,
             CloseModernLounge, OnModernLoungeFailed);
         foreach (UIElement element in CasinoRoot.Children.OfType<UIElement>()
             .Where(element => element != embeddedGameOverlay))
@@ -133,6 +150,15 @@ public partial class MainWindow
                 () => progressionController?.Profile.WordSearch ?? new WordSearchStatistics(),
                 RecordWordSearchCompletion,
                 () => Localization.Language == UiLanguagePreference.German ? "de" : "en");
+            modernLoungeView?.Refresh();
+            return;
+        }
+        if (id == "memory")
+        {
+            modernMemory ??= new ModernMemoryService(preferences.Memory,
+                SaveModernMemoryProgress,
+                () => progressionController?.Profile.Memory ?? new MemoryStatistics(),
+                RecordMemoryCompletion);
             modernLoungeView?.Refresh();
             return;
         }
@@ -206,6 +232,45 @@ public partial class MainWindow
                     : ex.Message);
             }
         });
+    }
+
+    private ModernMemoryReply ApplyModernMemoryCommand(ModernMemoryCommand command)
+    {
+        if (modernMemorySession is null || modernMemory is null)
+            return new ModernMemoryReply(command.RequestId, false, "Memory is not open.", 0);
+        return modernMemorySession.Execute(command, intent =>
+        {
+            try
+            {
+                (bool success, string message) = modernMemory.Execute(intent);
+                if (success && intent.Action == "memory.exit") modernMemory = null;
+                return (success, message);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+                or ArgumentException or InvalidOperationException or OverflowException)
+            {
+                return (false, ex is IOException or UnauthorizedAccessException
+                    ? "Memory could not be saved. Your last committed table is unchanged."
+                    : ex.Message);
+            }
+        });
+    }
+
+    private void SaveModernMemoryProgress(MemoryProgressState state)
+    {
+        AppPreferences old = preferences;
+        preferences = preferences with { Memory = state };
+        try { if (!testSession) SavePreferences(); }
+        catch { preferences = old; throw; }
+    }
+
+    private void CheckpointModernMemory()
+    {
+        try { modernMemory?.CheckpointClock(); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            StatusText.Text = "Memory clock checkpoint could not be saved: " + ex.Message;
+        }
     }
 
     private void SaveModernWordSearchProgress(WordSearchProgressState state)
@@ -310,6 +375,13 @@ public partial class MainWindow
         }
         modernWordSearch = null;
         modernWordSearchSession = null;
+        try { modernMemory?.Stop(); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            StatusText.Text = "Memory time checkpoint could not be saved: " + ex.Message;
+        }
+        modernMemory = null;
+        modernMemorySession = null;
         modernLoungeView.Dispose();
         modernLoungeView = null;
         if (embeddedGameHost is not null) embeddedGameHost.Content = null;

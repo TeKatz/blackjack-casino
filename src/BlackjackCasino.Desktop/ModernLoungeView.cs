@@ -33,6 +33,8 @@ internal sealed class ModernLoungeView : ContentControl, IDisposable
     private readonly Action solitaireTick;
     private readonly Func<ModernWordSearchCommand, ModernWordSearchReply> wordSearchCommand;
     private readonly Action wordSearchTick;
+    private readonly Func<ModernMemoryCommand, ModernMemoryReply> memoryCommand;
+    private readonly Action memoryTick;
     private readonly Action close;
     private readonly Action failure;
     private readonly DispatcherTimer watchdog = new(DispatcherPriority.Background)
@@ -54,6 +56,7 @@ internal sealed class ModernLoungeView : ContentControl, IDisposable
         Func<ModernSudokuCommand, ModernSudokuReply> sudokuCommand, Action sudokuTick,
         Func<ModernSolitaireCommand, ModernSolitaireReply> solitaireCommand, Action solitaireTick,
         Func<ModernWordSearchCommand, ModernWordSearchReply> wordSearchCommand, Action wordSearchTick,
+        Func<ModernMemoryCommand, ModernMemoryReply> memoryCommand, Action memoryTick,
         Action close, Action failure)
     {
         this.snapshot = snapshot;
@@ -64,12 +67,15 @@ internal sealed class ModernLoungeView : ContentControl, IDisposable
         this.solitaireTick = solitaireTick;
         this.wordSearchCommand = wordSearchCommand;
         this.wordSearchTick = wordSearchTick;
+        this.memoryCommand = memoryCommand;
+        this.memoryTick = memoryTick;
         refreshClock.Tick += (_, _) =>
         {
             if (!Ready || !IsVisible || disposed) return;
             sudokuTick();
             solitaireTick();
             wordSearchTick();
+            memoryTick();
             Refresh();
         };
         this.close = close;
@@ -197,6 +203,13 @@ internal sealed class ModernLoungeView : ContentControl, IDisposable
                     if (wordSearchRequest is null) break;
                     ModernWordSearchReply wordSearchResult = wordSearchCommand(wordSearchRequest);
                     Post("lounge.word-search.result", wordSearchResult);
+                    Refresh();
+                    break;
+                case "lounge.memory.command" when listening && Ready && IsVisible:
+                    ModernMemoryCommand? memoryRequest = ModernMemoryProtocol.Parse(e.WebMessageAsJson);
+                    if (memoryRequest is null) break;
+                    ModernMemoryReply memoryResult = memoryCommand(memoryRequest);
+                    Post("lounge.memory.result", memoryResult);
                     Refresh();
                     break;
                 case "lounge.open" when listening && Ready && IsVisible:
