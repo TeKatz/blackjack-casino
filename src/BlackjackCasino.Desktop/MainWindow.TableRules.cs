@@ -4,7 +4,6 @@ namespace BlackjackCasino.Desktop;
 
 public partial class MainWindow
 {
-    private bool tableRulesInitialized;
     private GameRules currentTableRules => blackjack.CurrentRules;
     private GameRules customTableRules => blackjack.CustomRules;
     private TablePresetId currentTablePreset => blackjack.CurrentPreset;
@@ -13,7 +12,6 @@ public partial class MainWindow
     {
         // Rules, selected preset and bankroll were already restored into the
         // WPF-independent controller in the MainWindow constructor.
-        tableRulesInitialized = true;
     }
 
     private void RecreateSessionForConfiguredRules(bool announce)
