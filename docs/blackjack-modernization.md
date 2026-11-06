@@ -1,51 +1,31 @@
-# Blackjack table modernization — React primary route
+# Modern Blackjack — WPF table retirement
 
-Branch: feature/manor-modernization-phase-1
+**Development branch:** `feature/manor-modernization-phase-1`
 
-The React/WebView2 Blackjack table is the normal lobby destination. The former
-WPF table is retained solely as an emergency fallback for missing frontend
-assets or WebView2 startup/process failure. C# remains authoritative for
-economy, RNG, settlement, rules, saved progression and hand history.
+Blackjack is presented exclusively in React/TypeScript inside the packaged local WebView2 host. The former native WPF Blackjack table, sidebar, controls, table renderer, wager-chip visuals, rule dialog, and visual-fallback routing have been removed. This is the first game area to finish both its *presentation replacement* and the removal of its obsolete WPF presentation. The wider casino shell and other legacy games still use WPF.
 
-Delivered:
-- A C#-owned, read-only round snapshot covering table rules, presets, dealer,
-  player hands, AI seats, stake, bankroll, legal actions and cosmetics. Monetary
-  values are transported as exact invariant decimal strings. The dealer hole
-  card is not included until settlement; its face-down placeholder carries
-  neither rank nor suit.
-- Full native-authoritative custom-table rule editing from React. A strict
-  fifteen-field validated rules payload is applied only between hands,
-  preserving Core's shoe/insurance/split behavior and persisted preferences.
-  The React table also exposes the original play-money bankroll reset.
-- Equipped card sets now use the same collection variants and theme colors
-  as native WPF cards, including premium dark faces and face-down markings.
-  No unrevealed dealer card values are transmitted.
-- A versioned intent parser restricted to the exact packaged Blackjack origin,
-  finite wager range, legal command names, session epoch, request UUID and
-  expected revision. Unique receipts prevent repeated card or money actions
-  on duplicate messages. The parser and session are wired to the native
-  CasinoSession through the opt-in WebView2 gameplay preview.
-- A matching TypeScript contract, rejecting malformed responses and snapshots,
-  plus C# and TypeScript boundary regression tests.
-- The standalone responsive React table now owns the default Blackjack route
-  from both React and native fallback lobbies. The old preview button is removed.
-  The original native table is reachable only when assets are missing or the
-  WebView2 engine fails; even a mid-hand browser failure preserves the C#
-  session and returns players to a playable native table. A no-response
-  watchdog prevents permanent black/loading screens. A completed React round
-  still uses the original settlement, reward, and persistence services.
+## Runtime boundaries
 
-Acceptance and remaining work:
-1. The primary mode opens the React table twice consecutively without a
-   WPF preview button, mouse hover, stale browser session or blank table.
-2. The existing Windows smoke suite continues exercising the WPF card renderer
-   only through a private, test-only reflection path, not the player route.
-3. React startup, custom rules, dealer hole-card secrecy, AI hands and
-   settlement remain covered by native and browser regression tests.
-4. Keep native WPF emergency fallback until missing-asset and browser
-   recovery have been validated on a production Windows install.
-5. Later remove WPF visuals and historical tests after true parity is
-   established. Do not retire the C# gameplay logic or updater.
+- `BlackjackTableController` owns the live `CasinoSession`, play mode, AI seats, bet, active preset/custom rules, theme, sound and animation settings without any WPF types. Recreating a WebView does not replace the game session.
+- `BlackjackCasino.Core` remains authoritative for shoe, game rules, legal actions, RNG, payout and bankroll changes.
+- `MainWindow.ModernBlackjack.cs` is a thin native host adapter: it creates the WebView, routes already-validated commands into the controller, commits existing settings/progression, and handles browser disposal.
+- `BlackjackModernProtocol` validates exact offline origin, version, bounded parameters, unique request IDs and a session revision. A replay cannot cause a second wager.
+- `BlackjackModernSnapshot` projects only visible information, never leaking the dealer's unrevealed card.
+- The global native host keeps lifecycle, shared wallet, progression and updater integration until the **remaining games** are migrated.
 
-No new branches or main merges; Development publishing continues from
-feature/manor-modernization-phase-1.
+## Recovery and safeguards
+
+A missing Blackjack frontend cannot fall back to an obsolete game. The lobby stays accessible and the user receives an installation error. If WebView2 fails during play, the host returns to the lobby **without replacing the live C# CasinoSession**. Opening Blackjack again mounts a fresh React host against the preserved hand. No wager is automatically replayed. On actual Windows builds, the native host presents a failure explanation; the automated smoke deliberately avoids blocking on this modal dialog.
+
+This preserves **in-memory** round continuity across a browser-host failure. It does **not** introduce new durable persistence of an unfinished Blackjack hand across application termination; the pre-existing profile and completed-hand save guarantees are unchanged.
+
+## Automated regression
+
+- Dedicated `BlackjackTableControllerTests` cover persisted preset settings, full tables, native rules, bankroll, table reconfiguration, and invalid mutations during a hand.
+- `BlackjackModernBridgeTests` cover origin, intent, receipts, custom rule validation and concealed dealer information.
+- Windows `ModernBlackjackWebSmoke` exercises the real React route, custom rules, live C# hand settlement, lobby return, re-entry, simulated WebView failure, and a second React re-entry with the same C# session.
+- Startup and presentation smoke verify that the retired Blackjack XAML controls are absent.
+
+The legacy table screenshots and wager-chip tests are no longer quality gates for the React implementation; they have been removed with their source and replaced by modern Blackjack coverage. Real Windows keyboard/DPI/audio, long-session WebView memory, and a user-driven error-recovery pass remain manual acceptance items.
+
+This work does **not** remove WPF from the wider casino shell, change game odds, or migrate saved player data to a new format.

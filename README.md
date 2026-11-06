@@ -33,6 +33,10 @@ The Development lobby uses its own React/TypeScript entry point (`frontend/lobby
 
 For native builds, run `npm run build` from `frontend/` before the .NET build. Vite emits `index.html` (Manor), `lobby.html`, `empire.html`, `blackjack.html` and `reels.html`, plus their local assets into `frontend/dist/`; the desktop project packages that whole directory as `ModernFrontend`.
 
+## Blackjack: native table removed
+
+The sole playable Blackjack interface is React/TypeScript (`frontend/blackjack.html`). `BlackjackTableController` holds the current Core session, wagers, rules, AI seats and presentation preferences without hidden WPF table controls. The old XAML table and fallback are gone; a failed browser returns to the casino lobby, preserving the current in-memory hand for a fresh React opening. See [Blackjack modernization](docs/blackjack-modernization.md).
+
 ## Casino Empire: modern presentation
 
 Empire opens directly in React/TypeScript/WebView2, both inside the casino and in its optional detached window. The estate gallery, room inspector, floors, circuits, research, projects, properties, specialists, automation, events, contracts, statistics and prestige use the existing C# economy and transaction/save paths. One retained PixiJS lighting scene decorates the selected room; text and controls remain DOM content. Original room artwork is packaged offline at its existing source resolution.
@@ -119,7 +123,8 @@ Windows CI additionally runs actual desktop startup, Manor runtime and presentat
 ## Current engineering boundaries
 
 - **Midnight Manor:** modern presentation is the default in Development; remaining subjective audio, display-scaling and long-session performance checks are tracked separately.
-- **Other game interfaces:** still use WPF until migrated individually; the lobby and Midnight Manor are already modern, with WPF lobby fallback retained.
+- **Blackjack:** the retired native table, sidebar and custom rule dialog have been removed. React is the only player-facing Blackjack table; its C# session survives a WebView failure and can be rehosted.
+- **Other game interfaces:** Neon Vault, Nine Lives, Midnight Merge, Midnight Dice and Chill Lounge still use WPF. The host and emergency WPF lobby remain until these modes are migrated.
 - **Localization:** English/German shell support is present; some older game and adventure content still needs translation.
 - **Player data and financial outcomes:** preserve backward compatibility, deterministic payout tests and exactly-once committed transitions.
 - **Releases:** `main` and Stable do not inherit Development changes automatically.

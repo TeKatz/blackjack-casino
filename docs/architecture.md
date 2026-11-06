@@ -21,7 +21,7 @@ The desktop UI must not reimplement outcome rules. Presentation may animate or a
 The WPF desktop project remains the native host for the React casino lobby and existing game UIs. It owns:
 
 - the casino lobby and mode registry;
-- Blackjack table presentation and configurable table setup;
+- native WebView2 hosting for the fully modern Blackjack table; `BlackjackTableController` supplies UI-independent session state and rules;
 - embedded hosting for Midnight Reels, Midnight Manor and Neon Vault;
 - profile/progression navigation with an in-app back stack;
 - custom casino controls, themes, audio and animation preferences;
@@ -150,3 +150,7 @@ The staged migration now includes the React casino lobby, playable Midnight Mano
 
 After consolidation, do not delete branches automatically or change the Development publisher's pin without an explicit release decision. The current cumulative release branch and workflow instructions are documented in [Development delivery](development-update-delivery.md).
 
+
+## Blackjack native presentation retirement (2026-11-06)
+
+Blackjack has no WPF table, sidebar, custom-rules dialog or WPF wager renderer. The live C# session and table preferences are owned by `BlackjackTableController` and projected into React via the versioned Blackjack protocol. Browser failure closes the modern view without replacing the session; reopening mounts a new React browser against the same Core hand. The outer WPF application remains until the other games and window-level services can be migrated. See [Blackjack modernization](blackjack-modernization.md).

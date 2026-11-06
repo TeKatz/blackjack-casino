@@ -100,8 +100,8 @@ jobs:
       - name: Shared controls regression contract
         run: python tools/check_control_templates.py --self-test
 
-      - name: Table wager presentation regression
-        run: dotnet run --project tools/TableWagerTests --configuration Release
+      - name: Modern Blackjack controller regression
+        run: dotnet test tests/BlackjackCasino.Tests/BlackjackCasino.Tests.csproj --configuration Release --no-build --filter "FullyQualifiedName~BlackjackTableControllerTests"
 
       - name: Casino presentation runtime regression
         run: dotnet run --project tools/PresentationSmoke --configuration Release -- artifacts/presentation-regression

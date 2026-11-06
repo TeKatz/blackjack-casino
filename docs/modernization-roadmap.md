@@ -288,3 +288,9 @@ Windows tests must verify the normal React launch, a native spin,
 wallet/progression persistence, route reentry and simulated browser
 failure returning to a playable native fallback. No old WPF game
 views will be removed until all their fallback coverage is replaced.
+
+## Blackjack legacy-surface retirement (2026-11-06)
+
+The normal Blackjack lobby route is React-only. Its C# session, rule presets/custom rules, play mode, AI seats, current bet, theme, sound and animation preferences live in a presentation-independent `BlackjackTableController`; the previous WPF table and its sidebar, custom-rules dialog and wager-chip renderer have been removed from the desktop project. All game results and payouts still come from `BlackjackCasino.Core`, with the existing session-revision and request-receipt validation.
+
+WebView2 failures now return to the lobby while retaining the in-memory C# hand. Re-entry creates a new browser, not a new game session. Windows and unit smoke verify recovery, the absent legacy controls and rules/bankroll invariants. This is an important milestone toward a WPF-free host, not the final replacement of the shell or other modes. Outstanding manual checks cover keyboard navigation, DPI, sound and prolonged WebView2 usage.

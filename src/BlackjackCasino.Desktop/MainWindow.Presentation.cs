@@ -25,7 +25,6 @@ public partial class MainWindow
 
     private void PresentationLoaded(object sender, RoutedEventArgs e)
     {
-        InitializeTableRulesFeature();
         InitializeProgressionFeature();
         InitializeCardSetStyling();
         InitializeVaultFeature();

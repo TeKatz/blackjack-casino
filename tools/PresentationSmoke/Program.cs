@@ -418,7 +418,7 @@ internal static partial class Program
 
     private static Task CheckEmpire(MainWindow window) => EmpireWebSmoke.Run(window, output);
 
-    private static void CheckCollectionPaging    private static void CheckCollectionPaging(MainWindow window,string panelName,string nextName,string previousName)
+    private static void CheckCollectionPaging(MainWindow window,string panelName,string nextName,string previousName)
     {
         string[] Ids()=>Find<Panel>(window).Single(p=>p.Name==panelName).Children.OfType<Border>()
             .SelectMany(p=>Find<Button>(p)).Select(b=>b.Tag).OfType<string>().ToArray();

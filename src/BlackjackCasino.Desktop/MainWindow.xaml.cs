@@ -63,8 +63,7 @@ public partial class MainWindow : Window
     {
         initialProfile=profile; testSession=initialPreferences is not null;
         InitializeComponent();
-        // Blackjack visuals stay collapsed until the player chooses the table.
-        // The lobby loading cover is the initial visible application surface.
+        // The lobby is the startup surface; Blackjack has no native WPF table.
 
         string? manorRecoveryNotice = null;
         try { if(!testSession) new ManorPersistence(ManorPersistence.DefaultDirectory).Recover(); }
@@ -467,7 +466,6 @@ public partial class MainWindow : Window
         SetBrushResource("SoftTextBrush", palette.SoftText);
         SetBrushResource("StatusBackgroundBrush", palette.Status);
         SetBrushResource("AiWinBrush", palette.AiWin);
-        // The custom felt inlays and rail engravings must follow the selected theme too.
     }
 
     private void SetBrushResource(string key, string hex) => Resources[key] = Brush(hex);
