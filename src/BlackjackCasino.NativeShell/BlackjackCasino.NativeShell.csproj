@@ -33,9 +33,16 @@
     <Compile Include="../BlackjackCasino.Desktop/ModernNeonVaultSnapshot.cs" Link="Shared/ModernNeonVaultSnapshot.cs" />
     <Compile Include="../BlackjackCasino.Desktop/ModernNineLivesProtocol.cs" Link="Shared/ModernNineLivesProtocol.cs" />
     <Compile Include="../BlackjackCasino.Desktop/ModernNineLivesSnapshot.cs" Link="Shared/ModernNineLivesSnapshot.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ModernMergeProtocol.cs" Link="Shared/ModernMergeProtocol.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ModernMergeSnapshot.cs" Link="Shared/ModernMergeSnapshot.cs" />
     <Compile Include="../BlackjackCasino.Desktop/ManorPreviewProtocol.cs" Link="Shared/ManorPreviewProtocol.cs" />
     <Compile Include="../BlackjackCasino.Desktop/CasinoModeRegistry.cs" Link="Shared/CasinoModeRegistry.cs" />
     <Compile Include="../BlackjackCasino.Desktop/BrowserRecoverySession.cs" Link="Shared/BrowserRecoverySession.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Compile the existing neutral and German Merge resources under this shell's own root namespace. -->
+    <EmbeddedResource Include="../BlackjackCasino.Desktop/Resources/MergeStrings.resx" Link="Resources/MergeStrings.resx" />
+    <EmbeddedResource Include="../BlackjackCasino.Desktop/Resources/MergeStrings.de.resx" Link="Resources/MergeStrings.de.resx" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="../../frontend/dist/**/*"

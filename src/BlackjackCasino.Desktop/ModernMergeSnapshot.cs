@@ -8,17 +8,19 @@ internal static class ModernMergeSnapshot
 {
     internal static object Create(MergeBoard board, PlayerProfileState? profile,
         bool soundEnabled, bool animationsEnabled, string feedback,
-        long playerXp, long seasonXp, bool progressionSaveFailed, MergeActionResult? lastAction)
+        long playerXp, long seasonXp, bool progressionSaveFailed, MergeActionResult? lastAction,
+        Func<string, string> translate, UiLanguagePreference language)
     {
+        ArgumentNullException.ThrowIfNull(translate);
         MergeCatalog catalog = MergeCatalog.Default;
         MergeGameState state = board.Snapshot;
         MergeArea area = MergeProgression.ActiveArea(catalog, state.RenovationPoints);
         MergeMilestone current = MergeProgression.Current(area, state.RenovationPoints);
         MergeMilestone? next = MergeProgression.Next(area, state.RenovationPoints);
-        string Text(string key) => Localization.T(key);
+        string Text(string key) => translate(key);
         return new
         {
-            Language = Localization.Language == UiLanguagePreference.German ? "de" : "en",
+            Language = language == UiLanguagePreference.German ? "de" : "en",
             state.SchemaVersion,
             state.Revision,
             Columns = MergeGameState.Columns,

@@ -2,6 +2,8 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using BlackjackCasino.Core;
+using BlackjackCasino.Core.MidnightMerge;
+using BlackjackCasino.NativeShell;
 
 namespace BlackjackCasino.Desktop;
 
@@ -27,6 +29,11 @@ internal sealed class NativePreviewRuntime : IDisposable
     private NineLivesSpinResult? nineLastSpin;
     private ProgressionAward? nineAward;
     private decimal nineBet;
+    private MergeBoard? mergeBoard;
+    private MergeActionResult? mergeLastAction;
+    private string mergeFeedback = "Select a producer and restore the Midnight Club.";
+    private long mergePlayerXp, mergeSeasonXp;
+    private bool mergeProgressionSaveFailed;
     private bool disposed;
     private string status = "Choose a game from the native shell.";
 
@@ -357,6 +364,143 @@ internal sealed class NativePreviewRuntime : IDisposable
         Persist();
     }
 
+
+    internal void OpenMerge()
+    {
+        if (disposed || HandInProgress)
+            throw new InvalidOperationException("Finish the Blackjack hand before Midnight Merge.");
+        AccountCompletedRound();
+        if (mergeBoard is null)
+        {
+            void SaveCandidate(MergeGameState candidate)
+            {
+                // MergeBoard applies its new state ONLY AFTER this durable write.
+                var updated = Preferences with { MidnightMerge = candidate, Bankroll = Bankroll };
+                PlayerStateStore.SaveOrThrow(updated, directory);
+                Preferences = updated;
+            }
+            mergeBoard = new MergeBoard(Preferences.MidnightMerge, SaveCandidate);
+            SaveCandidate(mergeBoard.Snapshot);
+            mergeLastAction = null;
+            mergeFeedback = NativeMergeText.Translate("Merge.Help", Preferences.Language);
+            mergePlayerXp = mergeSeasonXp = 0;
+            mergeProgressionSaveFailed = false;
+        }
+        SyncMergeProgression();
+        status = "Midnight Merge ready.";
+    }
+
+    internal long MergeRevision => mergeBoard?.Snapshot.Revision ?? 0;
+
+    internal object MergeSnapshot()
+    {
+        MergeBoard board = mergeBoard ??
+            throw new InvalidOperationException("Midnight Merge is not active.");
+        AreaPresentationSettings presentation = Preferences.Presentation("midnight-merge");
+        return ModernMergeSnapshot.Create(board, Profile,
+            presentation.SoundEnabled, presentation.AnimationsEnabled,
+            mergeFeedback, mergePlayerXp, mergeSeasonXp,
+            mergeProgressionSaveFailed, mergeLastAction,
+            key => NativeMergeText.Translate(key, Preferences.Language), Preferences.Language);
+    }
+
+    private void SyncMergeProgression()
+    {
+        if (mergeBoard is null) return;
+        try
+        {
+            MergeProfileSyncResult sync = progression.ProcessMidnightMerge(mergeBoard.Snapshot);
+            if (sync.Award.BankrollEarned > 0m)
+                table.Session.CreditBankroll(sync.Award.BankrollEarned);
+            mergeProgressionSaveFailed = false;
+            if (sync.Award.PlayerExperience > 0 || sync.Award.SeasonExperience > 0)
+            {
+                mergePlayerXp = sync.Award.PlayerExperience;
+                mergeSeasonXp = sync.Award.SeasonExperience;
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // The board checkpoint survives; the idempotent Core ledger will
+            // reconcile a profile save interruption when the game reopens.
+            mergeProgressionSaveFailed = true;
+        }
+    }
+
+    internal (bool Success, string Message, long Revision) ApplyMerge(ModernMergeCommand command)
+    {
+        if (disposed || mergeBoard is null)
+            return (false, "Midnight Merge is not active.", MergeRevision);
+        try
+        {
+            if (command.Action is "sound.set" or "animations.set")
+            {
+                AreaPresentationSettings area = Preferences.Presentation("midnight-merge");
+                bool enabled = command.Value == "true";
+                area = command.Action == "sound.set" ? area with { SoundEnabled = enabled }
+                    : area with { AnimationsEnabled = enabled };
+                Preferences = Preferences.WithPresentation("midnight-merge", area);
+                Persist();
+                return (true, "Presentation updated.", MergeRevision);
+            }
+
+            MergeActionResult result = command.Action switch
+            {
+                "spawn" => mergeBoard.TrySpawn(command.ProducerId!),
+                "drop" => mergeBoard.TryDrop(Guid.Parse(command.ItemId!), command.Target!.Value),
+                "deliver" => mergeBoard.TryComplete(Guid.Parse(command.OrderId!)),
+                _ => new MergeActionResult(MergeOutcome.UnknownDefinition),
+            };
+            mergeFeedback = NativeMergeText.Translate("Merge.Feedback." + result.Outcome,
+                Preferences.Language);
+            if (!result.Success) return (false, mergeFeedback, MergeRevision);
+
+            mergeLastAction = result;
+            SyncMergeProgression();
+            if (result.Outcome == MergeOutcome.OrderCompleted)
+                mergeFeedback = string.Format(
+                    Preferences.Language == UiLanguagePreference.German ? CultureInfo.GetCultureInfo("de")
+                        : CultureInfo.GetCultureInfo("en"),
+                    NativeMergeText.Translate("Merge.Reward", Preferences.Language), result.Reward);
+            if (result.Milestones is { Count: > 0 })
+            {
+                MergeArea area = MergeProgression.ActiveArea(
+                    MergeCatalog.Default, mergeBoard.Snapshot.RenovationPoints);
+                mergeFeedback = string.Format(
+                    Preferences.Language == UiLanguagePreference.German ? CultureInfo.GetCultureInfo("de")
+                        : CultureInfo.GetCultureInfo("en"),
+                    NativeMergeText.Translate("Merge.Milestone", Preferences.Language),
+                    NativeMergeText.Translate(
+                        MergeProgression.Current(area, mergeBoard.Snapshot.RenovationPoints).DisplayName,
+                        Preferences.Language),
+                    result.Reward);
+            }
+
+            Persist();
+            return (true, mergeFeedback, MergeRevision);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            mergeFeedback = NativeMergeText.Translate("Merge.SaveFailed", Preferences.Language);
+            return (false, mergeFeedback, MergeRevision);
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException
+            or OverflowException or FormatException)
+        {
+            return (false, ex.Message, MergeRevision);
+        }
+    }
+
+    internal void CloseMerge(bool interrupted = false)
+    {
+        if (mergeBoard is null) return;
+        Persist();
+        if (!interrupted)
+        {
+            mergeBoard = null;
+            mergeLastAction = null;
+        }
+    }
     internal void Persist()
     {
         if (disposed) return;
@@ -375,6 +519,7 @@ internal sealed class NativePreviewRuntime : IDisposable
             SlotBet = reelsBet,
             NeonVaultBet = neonBet,
             NineLivesBet = nineBet,
+            MidnightMerge = mergeBoard?.Snapshot ?? Preferences.MidnightMerge,
         };
         // This isolated preview directory is NEVER the production save folder.
         PlayerStateStore.SaveOrThrow(Preferences, directory);
@@ -430,6 +575,7 @@ internal sealed class NativePreviewRuntime : IDisposable
             if (reelsMachine is not null) CloseReels();
             if (neonMachine is not null) CloseNeonVault();
             if (nineMachine is not null) CloseNineLives();
+            if (mergeBoard is not null) CloseMerge();
             AccountCompletedRound();
             Persist();
         }

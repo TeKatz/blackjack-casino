@@ -28,7 +28,9 @@ internal static class NativeShellContractSmoke
                 || !ModernNeonVaultProtocol.Trusted("https://midnight-manor.local/neon-vault.html")
                 || ModernNeonVaultProtocol.Trusted("https://midnight-manor.local/nine-lives.html")
                 || !ModernNineLivesProtocol.Trusted("https://midnight-manor.local/nine-lives.html")
-                || ModernNineLivesProtocol.Trusted("https://example.com/nine-lives.html"))
+                || ModernNineLivesProtocol.Trusted("https://example.com/nine-lives.html")
+                || !ModernMergeProtocol.Trusted("https://midnight-manor.local/midnight-merge.html")
+                || ModernMergeProtocol.Trusted("https://example.com/midnight-merge.html"))
                 throw new InvalidOperationException("Browser page trust is not isolated.");
 
             using (var session = new NativePreviewRuntime(directory))
@@ -77,6 +79,19 @@ internal static class NativeShellContractSmoke
                         _ => throw new Exception("Duplicate Nine Lives spin!")) != nineReceipt)
                     throw new InvalidOperationException("Nine Lives receipt was not idempotent.");
                 session.CloseNineLives();
+
+                session.OpenMerge();
+                var mergeEpoch = new ModernMergeSession();
+                var spawn = new ModernMergeCommand(Guid.NewGuid().ToString("D"),
+                    mergeEpoch.Id, session.MergeRevision, "spawn", "chip-case",
+                    null, null, null, null);
+                ModernMergeReply mergeReceipt = mergeEpoch.Execute(spawn,
+                    session.MergeRevision, session.ApplyMerge);
+                if (!mergeReceipt.Success || mergeReceipt.Revision != session.MergeRevision ||
+                    mergeEpoch.Execute(spawn, session.MergeRevision,
+                        _ => throw new Exception("Duplicate Merge spawn!")) != mergeReceipt)
+                    throw new InvalidOperationException("Merge receipt was not idempotent.");
+                session.CloseMerge();
                 session.Persist();
             }
             AppPreferences saved = PlayerStateStore.Load(directory);
