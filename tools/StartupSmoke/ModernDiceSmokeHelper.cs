@@ -1,0 +1,122 @@
+using System.Diagnostics;
+using System.Globalization;
+using System.Reflection;
+using System.Text.Json;
+using System.Windows;
+using System.Windows.Media;
+using BlackjackCasino.Core.Kniffel;
+using BlackjackCasino.Desktop;
+using Microsoft.Web.WebView2.Core;
+
+internal static class ModernDiceSmokeHelper
+{
+    private static readonly BindingFlags Flags = BindingFlags.Instance | BindingFlags.NonPublic;
+    internal static KniffelGame Game(MainWindow host) =>
+        (KniffelGame)typeof(MainWindow).GetField("modernDiceGame", Flags)!.GetValue(host)!;
+    internal static ModernDiceSession Session(MainWindow host) =>
+        (ModernDiceSession)typeof(MainWindow).GetField("modernDiceCommands", Flags)!.GetValue(host)!;
+
+    internal static async Task<ModernDiceView> Open(MainWindow host)
+    {
+        NavigationSmoke.OpenCovered(host, "kniffel");
+        return await WaitForView(host);
+    }
+    internal static async Task<ModernDiceView> WaitForView(MainWindow host)
+    {
+        ModernDiceView? view = null;
+        for (int i = 0; i < 190; i++)
+        {
+            await Task.Delay(75);
+            view = Find<ModernDiceView>(host).FirstOrDefault();
+            if (view is { Ready: true } or { Failed: true }) break;
+        }
+        Require(view is { Ready: true, Failed: false, IsVisible: true },
+            "The primary Midnight Dice route did not load its packaged WebView2 game.");
+        Require(await JavaScript(view!.Browser.CoreWebView2!,
+            "Boolean(document.querySelector('[data-testid=\"modern-dice-app\"]')"
+            + "&&document.querySelectorAll('[data-testid^=\"dice-die-\"]').length===5"
+            + "&&document.querySelectorAll('[data-testid^=\"dice-category-\"]').length===13)"),
+            "The React dice table has no five dice or thirteen score categories.");
+        return view!;
+    }
+    internal static async Task Click(CoreWebView2 web, string testId, bool requiresRevision = true)
+    {
+        long revision = await Revision(web);
+        string selector = "[data-testid=" + JsonSerializer.Serialize(testId) + "]";
+        string script = "(()=>{const element=document.querySelector("
+            + JsonSerializer.Serialize(selector)
+            + ");if(!element||element.disabled)return false;element.click();return true})()";
+        Require(await JavaScript(web, script), "Unavailable React dice action: " + testId);
+        if (requiresRevision)
+        {
+            for (int i = 0; i < 160; i++)
+            {
+                await Task.Delay(65);
+                if (await Revision(web) > revision) return;
+            }
+            throw new InvalidOperationException("Dice action did not commit a new revision: " + testId);
+        }
+    }
+    internal static async Task Select(CoreWebView2 web, string category)
+    {
+        await Click(web, "dice-category-" + category, false);
+        Require(await JavaScript(web, "Boolean(document.querySelector('.md-category.selected'))"),
+            "Selected score row was not visibly highlighted.");
+    }
+    internal static async Task SetAnimations(CoreWebView2 web, bool enabled)
+    {
+        await Click(web, "dice-settings", false);
+        string script = "(()=>{const input=document.querySelectorAll('[data-testid=\"dice-settings-panel\"] input')[1];"
+            + "if(!input||input.checked===" + (enabled ? "true" : "false") + ")return false;input.click();return true})()";
+        long previous = await Revision(web);
+        Require(await JavaScript(web, script), "Animation toggle did not render.");
+        for (int i = 0; i < 100; i++)
+        {
+            await Task.Delay(65);
+            if (await Revision(web) > previous) break;
+        }
+        Require(await Revision(web) > previous, "Animation preference did not persist to C#.");
+        await Click(web, "dice-settings", false);
+    }
+    internal static async Task<long> Revision(CoreWebView2 web)
+    {
+        string raw = await web.ExecuteScriptAsync(
+            "document.querySelector('[data-testid=\"modern-dice-app\"]')?.dataset.revision??'-1'");
+        string? value = JsonSerializer.Deserialize<string>(raw);
+        return long.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out long parsed) ? parsed : -1;
+    }
+    internal static async Task<bool> JavaScript(CoreWebView2 web, string code) =>
+        await web.ExecuteScriptAsync(code) == "true";
+    internal static async Task WaitFor(MainWindow host, Func<bool> condition, string message, int seconds = 45)
+    {
+        var clock = Stopwatch.StartNew();
+        while (!condition())
+        {
+            if (clock.Elapsed.TotalSeconds >= seconds) throw new InvalidOperationException(message);
+            await Task.Delay(65);
+        }
+    }
+    internal static async Task WaitForExit(MainWindow host)
+    {
+        for (int i = 0; i < 100 && Find<ModernDiceView>(host).Any(v => v.IsVisible); i++)
+            await Task.Delay(75);
+        Require(!Find<ModernDiceView>(host).Any(v => v.IsVisible), "Midnight Dice did not return to the lobby.");
+    }
+    internal static async Task Capture(CoreWebView2 web, string output)
+    {
+        using FileStream stream = File.Create(output);
+        await web.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png, stream);
+    }
+    internal static IEnumerable<T> Find<T>(DependencyObject root) where T : DependencyObject
+    {
+        if (root is T item) yield return item;
+        int count = root is Visual or System.Windows.Media.Media3D.Visual3D
+            ? VisualTreeHelper.GetChildrenCount(root) : 0;
+        for (int i = 0; i < count; i++)
+            foreach (T nested in Find<T>(VisualTreeHelper.GetChild(root, i))) yield return nested;
+    }
+    internal static void Require(bool condition, string message)
+    {
+        if (!condition) throw new InvalidOperationException(message);
+    }
+}
