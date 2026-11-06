@@ -5,6 +5,14 @@ namespace BlackjackCasino.Update;
 public static class PackageInstaller
 {
     public static void InstallFromZip(string packagePath, string targetDirectory, string restartExecutable)
+        => InstallFromZip(packagePath, targetDirectory, restartExecutable, onRetry: null);
+
+    /// <summary>
+    /// Stage and validate the complete package before replacing anything.
+    /// The optional callback reports temporary Windows filesystem contention.
+    /// </summary>
+    public static void InstallFromZip(string packagePath, string targetDirectory,
+        string restartExecutable, Action<string, int, Exception>? onRetry)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(packagePath);
         ArgumentException.ThrowIfNullOrWhiteSpace(targetDirectory);
@@ -41,19 +49,33 @@ public static class PackageInstaller
             bool movedExistingInstall = false;
             if (Directory.Exists(target))
             {
-                Directory.Move(target, backup);
+                MoveDirectoryWithRetries(target, backup,
+                    onRetry: (attempt, error) => onRetry?.Invoke("move-existing", attempt, error));
                 movedExistingInstall = true;
             }
 
             try
             {
-                Directory.Move(staging, target);
+                MoveDirectoryWithRetries(staging, target,
+                    onRetry: (attempt, error) => onRetry?.Invoke("activate-package", attempt, error));
             }
-            catch
+            catch (Exception installError)
             {
                 if (movedExistingInstall && Directory.Exists(backup) && !Directory.Exists(target))
                 {
-                    Directory.Move(backup, target);
+                    try
+                    {
+                        MoveDirectoryWithRetries(backup, target,
+                            onRetry: (attempt, error) => onRetry?.Invoke("restore-existing", attempt, error));
+                    }
+                    catch (Exception recoveryError)
+                    {
+                        // Never delete this backup: it is the last remaining
+                        // copy of the old installation if restoration failed.
+                        throw new AggregateException(
+                            "Update activation and restoration of the previous installation failed. "
+                            + "The backup is at " + backup, installError, recoveryError);
+                    }
                 }
 
                 throw;
@@ -64,6 +86,40 @@ public static class PackageInstaller
         finally
         {
             TryDeleteDirectory(staging);
+        }
+    }
+
+    /// <summary>
+    /// A just-exited WPF/WebView2 process or an antivirus scan can temporarily
+    /// deny renaming the installation directory. Retry only filesystem-lock
+    /// errors; keep rename operations atomic and the retry budget bounded.
+    /// Injection points make transient and permanent failures deterministic in tests.
+    /// </summary>
+    internal static void MoveDirectoryWithRetries(string source, string destination,
+        Action<string, string>? move = null, Action<TimeSpan>? delay = null,
+        int maxAttempts = 12, Action<int, Exception>? onRetry = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(source);
+        ArgumentException.ThrowIfNullOrWhiteSpace(destination);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxAttempts);
+        move ??= Directory.Move;
+        delay ??= Thread.Sleep;
+
+        for (int attempt = 1; ; attempt++)
+        {
+            try
+            {
+                move(source, destination);
+                return;
+            }
+            catch (Exception ex) when ((ex is IOException or UnauthorizedAccessException)
+                && attempt < maxAttempts)
+            {
+                onRetry?.Invoke(attempt, ex);
+                // At most ~15 seconds including antivirus/WebView2 shutdown.
+                int delayMs = Math.Min(1500, 150 * attempt * attempt);
+                delay(TimeSpan.FromMilliseconds(delayMs));
+            }
         }
     }
 

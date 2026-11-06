@@ -5,32 +5,107 @@ namespace BlackjackCasino.Updater;
 
 internal static class Program
 {
+    private static readonly string LogPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "BlackjackCasino", "Updates", "updater.log");
+
     private static async Task<int> Main(string[] args)
     {
+        UpdaterArguments? options = null;
         try
         {
-            UpdaterArguments options = UpdaterArguments.Parse(args);
+            Log("Updater process launched.");
+            options = UpdaterArguments.Parse(args);
 
             if (options.ParentProcessId is int pid)
             {
+                Log("Waiting for the casino process to exit.");
                 WaitForProcess(pid);
             }
 
             if (!File.Exists(options.PackagePath))
-            {
                 throw new FileNotFoundException("Update package was not found.", options.PackagePath);
-            }
 
+            Log("Verifying downloaded package SHA-256.");
             await PackageDownloader.VerifySha256Async(options.PackagePath, options.Sha256);
-            PackageInstaller.InstallFromZip(options.PackagePath, options.TargetDirectory, options.RestartExecutable);
+            Log("Verified. Installing staged package.");
+            PackageInstaller.InstallFromZip(
+                options.PackagePath, options.TargetDirectory, options.RestartExecutable,
+                (stage, attempt, error) => Log(
+                    $"Temporary installation lock during {stage}, retry {attempt}: {error.Message}"));
+
+            Log("Package activated. Restarting the casino.");
             Restart(options);
+            Log("Casino restart launched successfully.");
             TryDelete(options.PackagePath);
             return 0;
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine(ex);
+            Log("Update failed.", ex);
+            // A failed rename leaves the existing directory intact or restores
+            // its backup. Do not strand the player with a closed casino.
+            bool recovered = TryRestartAvailableInstallation(options);
+            string message = recovered
+                ? "The update could not be installed. The available casino installation has been restarted."
+                : "The update could not be installed or the casino could not be restarted. "
+                  + "Open BlackjackCasino.Desktop.exe from the installation folder.";
+            ShowFailure(message + Environment.NewLine + Environment.NewLine
+                + "Details: " + ex.Message + Environment.NewLine
+                + "Diagnostic log: " + LogPath);
             return 1;
+        }
+    }
+
+    private static bool TryRestartAvailableInstallation(UpdaterArguments? options)
+    {
+        if (options is null) return false;
+        try
+        {
+            string path = PackageInstaller.GetRestartPath(
+                options.TargetDirectory, options.RestartExecutable);
+            if (!File.Exists(path))
+            {
+                Log("No executable at the installation target; recovery launch unavailable.");
+                return false;
+            }
+            Restart(options);
+            Log("Recovery restart launched.");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Log("Recovery restart failed.", ex);
+            return false;
+        }
+    }
+
+    private static void ShowFailure(string message)
+    {
+        try
+        {
+            System.Windows.Forms.MessageBox.Show(message, "Blackjack Casino update failed",
+                System.Windows.Forms.MessageBoxButtons.OK,
+                System.Windows.Forms.MessageBoxIcon.Error);
+        }
+        catch
+        {
+            // Diagnostics remain available even if Windows cannot display a dialog.
+        }
+    }
+
+    private static void Log(string message, Exception? exception = null)
+    {
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(LogPath)!);
+            File.AppendAllText(LogPath, $"[{DateTimeOffset.Now:O}] {message}"
+                + Environment.NewLine
+                + (exception is null ? "" : exception + Environment.NewLine));
+        }
+        catch
+        {
+            // Logging is best effort and must never block recovery.
         }
     }
 

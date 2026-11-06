@@ -54,6 +54,64 @@ public sealed class PackageInstallerTests : IDisposable
         Assert.Equal("keep", File.ReadAllText(Path.Combine(target, "keep.txt")));
     }
 
+    [Fact]
+    public void DirectoryMove_TransientWindowsLocksAreRetriedWithoutReextracting()
+    {
+        string source = Path.Combine(root, "locked-app");
+        string destination = Path.Combine(root, "restored-app");
+        Directory.CreateDirectory(source);
+        File.WriteAllText(Path.Combine(source, "save-safe.txt"), "preserve");
+        int tries = 0;
+        int delays = 0;
+        PackageInstaller.MoveDirectoryWithRetries(source, destination,
+            move: (from, to) =>
+            {
+                if (++tries < 4) throw new IOException("File is temporarily locked.");
+                Directory.Move(from, to);
+            },
+            delay: _ => delays++,
+            maxAttempts: 5);
+
+        Assert.Equal(4, tries);
+        Assert.Equal(3, delays);
+        Assert.False(Directory.Exists(source));
+        Assert.Equal("preserve", File.ReadAllText(Path.Combine(destination, "save-safe.txt")));
+    }
+
+    [Fact]
+    public void DirectoryMove_PermanentLockStopsAfterBoundedRetryBudget()
+    {
+        string source = Path.Combine(root, "still-locked");
+        string destination = Path.Combine(root, "should-not-exist");
+        Directory.CreateDirectory(source);
+        int attempts = 0;
+        Assert.Throws<UnauthorizedAccessException>(() =>
+            PackageInstaller.MoveDirectoryWithRetries(source, destination,
+                move: (_, _) =>
+                {
+                    attempts++;
+                    throw new UnauthorizedAccessException("Cannot rename.");
+                },
+                delay: _ => { }, maxAttempts: 3));
+        Assert.Equal(3, attempts);
+        Assert.True(Directory.Exists(source));
+        Assert.False(Directory.Exists(destination));
+    }
+
+    [Fact]
+    public void DirectoryMove_NonFilesystemErrorIsNotRetried()
+    {
+        int attempts = 0;
+        Assert.Throws<InvalidOperationException>(() =>
+            PackageInstaller.MoveDirectoryWithRetries("a", "b",
+                move: (_, _) =>
+                {
+                    attempts++;
+                    throw new InvalidOperationException("Invalid update operation.");
+                }, delay: _ => { }, maxAttempts: 6));
+        Assert.Equal(1, attempts);
+    }
+
     [Theory]
     [InlineData("../outside.exe")]
     [InlineData("folder/../../outside.exe")]
