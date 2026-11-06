@@ -7,6 +7,7 @@ using BlackjackCasino.Core.Solitaire;
 using BlackjackCasino.Core.WordSearch;
 using BlackjackCasino.Core.Memory;
 using BlackjackCasino.Core.Jigsaw;
+using BlackjackCasino.Core.Adventure;
 
 namespace BlackjackCasino.Desktop;
 
@@ -23,6 +24,8 @@ public partial class MainWindow
     private ModernMemoryService? modernMemory;
     private ModernJigsawSession? modernJigsawSession;
     private ModernJigsawService? modernJigsaw;
+    private ModernAdventureSession? modernAdventureSession;
+    private ModernAdventureService? modernAdventure;
     private readonly object modernMemoryAudioOwner = new();
     private static readonly Lazy<IReadOnlyDictionary<MemoryCue, AudioClip>> ModernMemoryCues =
         new(() => Enum.GetValues<MemoryCue>().ToDictionary(cue => cue, MemorySoundSynthesis.Build));
@@ -40,6 +43,7 @@ public partial class MainWindow
                 "word-search" => CurrentModernWordSearchStatus(),
                 "memory" => CurrentModernMemoryStatus(),
                 "jigsaw" => CurrentModernJigsawStatus(),
+                "tales-backroom" => CurrentModernAdventureStatus(),
                 _ => module.Definition.Status?.Invoke(),
             },
         }).ToList();
@@ -66,6 +70,9 @@ public partial class MainWindow
             JigsawSession = modernJigsawSession?.Id ?? string.Empty,
             JigsawRevision = modernJigsawSession?.Revision ?? 0L,
             Jigsaw = modernJigsaw?.Snapshot(),
+            AdventureSession = modernAdventureSession?.Id ?? string.Empty,
+            AdventureRevision = modernAdventureSession?.Revision ?? 0L,
+            Adventure = modernAdventure?.Snapshot(),
             Language = Localization.Language == UiLanguagePreference.German ? "de" : "en",
             MusicEnabled = preferences.Presentation("chill-lounge").MusicEnabled,
             SoundEnabled = preferences.Presentation("chill-lounge").SoundEnabled,
@@ -105,6 +112,15 @@ public partial class MainWindow
             : $"Resume · {JigsawText.Motif(state.ActiveGame.MotifId)} · {state.ActiveGame.LockedCount:N0}/{state.ActiveGame.PieceCount:N0}";
     }
 
+    private string CurrentModernAdventureStatus()
+    {
+        var progress = preferences.Adventure;
+        int active = progress.Runs.Values.Count(run => !run.Completed);
+        int completed = progress.Runs.Values.Count(run => run.Completed);
+        return active > 0 ? $"{active} adventure runs in progress"
+            : $"{AdventureCatalog.All.Count} adventures · {completed} completed";
+    }
+
     private void OpenModernLounge()
     {
         if (ModernLoungeOpen || embeddedGameShell is not null) return;
@@ -114,12 +130,14 @@ public partial class MainWindow
         modernWordSearchSession = new ModernWordSearchSession();
         modernMemorySession = new ModernMemorySession();
         modernJigsawSession = new ModernJigsawSession();
+        modernAdventureSession = new ModernAdventureSession();
         modernLoungeView = new ModernLoungeView(CreateModernLoungeSnapshot,
             OnModernLoungeGameSelected, ApplyModernSudokuCommand, CheckpointModernSudoku,
             ApplyModernSolitaireCommand, CheckpointModernSolitaire,
             ApplyModernWordSearchCommand, CheckpointModernWordSearch,
             ApplyModernMemoryCommand, CheckpointModernMemory,
             ApplyModernJigsawCommand, CheckpointModernJigsaw,
+            ApplyModernAdventureCommand,
             CloseModernLounge, OnModernLoungeFailed);
         foreach (UIElement element in CasinoRoot.Children.OfType<UIElement>()
             .Where(element => element != embeddedGameOverlay))
@@ -170,6 +188,23 @@ public partial class MainWindow
                 () => progressionController?.Profile.WordSearch ?? new WordSearchStatistics(),
                 RecordWordSearchCompletion,
                 () => Localization.Language == UiLanguagePreference.German ? "de" : "en");
+            modernLoungeView?.Refresh();
+            return;
+        }
+        if (id == "tales-backroom")
+        {
+            modernAdventure ??= new ModernAdventureService(preferences.Adventure,
+                SaveModernAdventureProgress, RecordModernAdventureCompletion,
+                () => progressionController?.Profile.DisplayName,
+                new ModernAdventureCopy(
+                    AdventureTextLocalization.Title, AdventureTextLocalization.Subtitle,
+                    AdventureTextLocalization.SceneTitle, AdventureTextLocalization.SceneBody,
+                    AdventureTextLocalization.SceneLocation, AdventureTextLocalization.Choice,
+                    AdventureTextLocalization.ClassName, AdventureTextLocalization.ClassDescription,
+                    AdventureTextLocalization.BoardTitle, AdventureTextLocalization.BoardDescription,
+                    AdventureTextLocalization.ItemName, AdventureTextLocalization.ItemDescription,
+                    AdventureTextLocalization.ConditionName),
+                AdventureTextLocalization.Raw);
             modernLoungeView?.Refresh();
             return;
         }
@@ -289,6 +324,46 @@ public partial class MainWindow
                     : ex.Message);
             }
         });
+    }
+
+    private ModernAdventureReply ApplyModernAdventureCommand(ModernAdventureCommand command)
+    {
+        if (modernAdventureSession is null || modernAdventure is null)
+            return new ModernAdventureReply(command.RequestId, false, "Adventure not open.", 0);
+        return modernAdventureSession.Execute(command, intent =>
+        {
+            try
+            {
+                (bool success, string message) = modernAdventure.Execute(intent);
+                if (success && intent.Action == "adventure.exit") modernAdventure = null;
+                return (success, message);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or
+                ArgumentException or InvalidOperationException or OverflowException or NotSupportedException)
+            {
+                return (false, ex is IOException or UnauthorizedAccessException
+                    ? "Adventure could not be saved. The last committed scene remains unchanged."
+                    : ex.Message);
+            }
+        });
+    }
+
+    private void SaveModernAdventureProgress(AdventureProgressState state)
+    {
+        AppPreferences previous = preferences;
+        preferences = preferences with { Adventure = AdventureProgressState.Normalize(state) };
+        try { if (!testSession) SavePreferences(); }
+        catch { preferences = previous; throw; }
+    }
+
+    private AdventureCompletionMetaResult RecordModernAdventureCompletion(
+        AdventureDefinition definition, AdventureRunState run)
+    {
+        if (progressionController is null)
+            return new AdventureCompletionMetaResult(false, false,
+                run.EndingId is null ? string.Empty :
+                AdventureProgressionService.EndingKey(definition.Id, run.EndingId), [], null);
+        return progressionController.RecordAdventureCompletion(definition, run);
     }
 
     private ModernJigsawReply ApplyModernJigsawCommand(ModernJigsawCommand command)
@@ -476,6 +551,8 @@ public partial class MainWindow
         }
         modernJigsaw = null;
         modernJigsawSession = null;
+        modernAdventure = null;
+        modernAdventureSession = null;
         CasinoAudio.Mixer.Stop(modernMemoryAudioOwner);
         modernLoungeView.Dispose();
         modernLoungeView = null;

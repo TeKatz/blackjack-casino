@@ -37,6 +37,7 @@ internal sealed class ModernLoungeView : ContentControl, IDisposable
     private readonly Action memoryTick;
     private readonly Func<ModernJigsawCommand, ModernJigsawReply> jigsawCommand;
     private readonly Action jigsawTick;
+    private readonly Func<ModernAdventureCommand, ModernAdventureReply> adventureCommand;
     private readonly Action close;
     private readonly Action failure;
     private readonly DispatcherTimer watchdog = new(DispatcherPriority.Background)
@@ -60,6 +61,7 @@ internal sealed class ModernLoungeView : ContentControl, IDisposable
         Func<ModernWordSearchCommand, ModernWordSearchReply> wordSearchCommand, Action wordSearchTick,
         Func<ModernMemoryCommand, ModernMemoryReply> memoryCommand, Action memoryTick,
         Func<ModernJigsawCommand, ModernJigsawReply> jigsawCommand, Action jigsawTick,
+        Func<ModernAdventureCommand, ModernAdventureReply> adventureCommand,
         Action close, Action failure)
     {
         this.snapshot = snapshot;
@@ -74,6 +76,7 @@ internal sealed class ModernLoungeView : ContentControl, IDisposable
         this.memoryTick = memoryTick;
         this.jigsawCommand = jigsawCommand;
         this.jigsawTick = jigsawTick;
+        this.adventureCommand = adventureCommand;
         refreshClock.Tick += (_, _) =>
         {
             if (!Ready || !IsVisible || disposed) return;
@@ -223,6 +226,13 @@ internal sealed class ModernLoungeView : ContentControl, IDisposable
                     if (jigsawRequest is null) break;
                     ModernJigsawReply jigsawResult = jigsawCommand(jigsawRequest);
                     Post("lounge.jigsaw.result", jigsawResult);
+                    Refresh();
+                    break;
+                case "lounge.adventure.command" when listening && Ready && IsVisible:
+                    ModernAdventureCommand? taleRequest = ModernAdventureProtocol.Parse(e.WebMessageAsJson);
+                    if (taleRequest is null) break;
+                    ModernAdventureReply taleReply = adventureCommand(taleRequest);
+                    Post("lounge.adventure.result", taleReply);
                     Refresh();
                     break;
                 case "lounge.open" when listening && Ready && IsVisible:
