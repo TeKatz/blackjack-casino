@@ -180,3 +180,25 @@ button:focus-visible,input:focus-visible{outline:2px solid #7ef0fc;outline-offse
  .vault-spin{height:42px}
  .vault-sidebar{max-height:calc(100vh - 76px)}
 }
+
+/* Mid-height Windows displays need an independent cabinet composition.
+   1440×900 previously let the Spin control fall below the visible WebView. */
+@media(min-width:921px) and (min-height:761px) and (max-height:930px){
+ .vault-layout{padding-block:6px}
+ .vault-machine{padding-block:6px}
+ .vault-machine-head{margin-bottom:3px}
+ .vault-featurebar{padding-block:3px;margin-bottom:4px}
+ .vault-board-decoration{display:none}
+ .vault-grid{aspect-ratio:2.55}
+ .vault-feedback{min-height:39px}
+ .vault-console{gap:4px}
+ .vault-bets button{padding-block:4px}
+ .vault-spin{height:43px}
+}
+@media(min-width:921px) and (min-height:931px) and (max-height:1130px){
+ .vault-grid{aspect-ratio:2.18}
+ .vault-layout{padding-block:10px}
+ .vault-machine{padding-block:11px}
+ .vault-feedback{min-height:54px}
+ .vault-console{gap:7px}
+}
