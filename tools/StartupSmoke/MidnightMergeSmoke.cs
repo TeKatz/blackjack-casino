@@ -2,6 +2,7 @@ using System.IO;
 using System.Reflection;
 using System.Text.Json;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using BlackjackCasino.Core.MidnightMerge;
 using BlackjackCasino.Desktop;
@@ -136,7 +137,7 @@ internal static class MidnightMergeSmoke
         Require(recovery is not null && recovery.RetryButton.IsEnabled
             && !recovery.LegacyButton.IsEnabled,
             "React Merge browser failure bypassed independent recovery.");
-        recovery.RetryButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        recovery!.RetryButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         view = await WaitForView(window);
         Require(ReferenceEquals(retained, typeof(MainWindow).GetField("modernMergeBoard", Flags)!.GetValue(window))
             && JsonSerializer.Serialize(State(window)) == serialized,

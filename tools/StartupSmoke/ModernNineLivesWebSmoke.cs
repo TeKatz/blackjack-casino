@@ -112,7 +112,7 @@ internal static class ModernNineLivesWebSmoke
         Require(recovery is not null && recovery.RetryButton.IsEnabled
             && !recovery.LegacyButton.IsEnabled,
             "Nine Lives browser crash did not show modern-only recovery.");
-        recovery.RetryButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        recovery!.RetryButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         ModernNineLivesView? recovered = null;
         for (int i = 0; i < 150; i++)
         {

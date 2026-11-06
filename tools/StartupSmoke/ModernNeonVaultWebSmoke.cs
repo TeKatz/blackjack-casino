@@ -114,7 +114,7 @@ internal static class ModernNeonVaultWebSmoke
         Require(recovery is not null && recovery.RetryButton.IsEnabled
             && !recovery.LegacyButton.IsEnabled,
             "Neon Vault WebView failure did not show modern-only recovery.");
-        recovery.RetryButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        recovery!.RetryButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         ModernNeonVaultView recovered = await WaitForView(window);
         Require(recovered.Ready && !recovered.Failed, "Neon Vault WebView failed to recover.");
         Require(ReferenceEquals(retained, machineField.GetValue(window)),
