@@ -83,8 +83,6 @@ internal static class KniffelSmoke
         Require(view.Game.FilledCount == 0, "A new game did not clear the score sheet.");
 
         // Enable actual roll animation, close while it is running, then resume the result.
-        CheckBox animationSetting = Find<CheckBox>(window).Single(box => box.Name == "AnimationsCheckBox");
-        animationSetting.IsChecked = true;
         var preferencesField = typeof(MainWindow).GetField("preferences", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
         AppPreferences previousPreferences = (AppPreferences)preferencesField.GetValue(window)!;
         Require(!previousPreferences.Presentation("kniffel").AnimationsEnabled, "Blackjack animation setting leaked into Midnight Dice.");
@@ -110,7 +108,6 @@ internal static class KniffelSmoke
         Click(view, "CloseDiceSetupButton");
         Require(view.Game.RollsUsed == 2, "Cancelling restart discarded the turn.");
         Click(view, "KniffelBackButton");
-        animationSetting.IsChecked = false;
         AppPreferences currentPreferences = (AppPreferences)preferencesField.GetValue(window)!;
         preferencesField.SetValue(window, currentPreferences.WithPresentation("kniffel", previousPreferences.Presentation("kniffel")));
         File.WriteAllText(Path.Combine(output, "kniffel-result.txt"),
