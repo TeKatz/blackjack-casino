@@ -384,3 +384,11 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
 .lobby-updates-panel .lobby-updates-progress{color:#dec790;font-size:11px;}
 @media(max-height:800px){.lobby-nav-scroll{gap:2px}.lobby-updates-entry{min-height:39px}.lobby-nav-scroll .lobby-nav-decoration{display:none;}}
 @media(max-width:1100px){.lobby-updates-entry{padding:6px}.lobby-updates-glyph{width:19px;flex-basis:19px;}}
+
+/* Global host preferences moved out of the retired WPF Blackjack sidebar. */
+.lobby-settings-entry{margin-bottom:4px;border-color:#628d76;color:#d3e5d2;}
+.lobby-settings-panel .lobby-settings-check{display:flex;align-items:center;gap:12px;font-size:13px;line-height:1.5;}
+.lobby-settings-check input{width:18px;height:18px;accent-color:#d6b475;flex:0 0 auto;}
+.lobby-settings-panel .lobby-settings-volume{display:grid;gap:10px;font-size:13px;}
+.lobby-settings-volume span{display:flex;align-items:center;justify-content:space-between;}
+.lobby-settings-volume input[type=range]{width:100%;accent-color:#ddb86d;cursor:pointer;}

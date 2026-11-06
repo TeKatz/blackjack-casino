@@ -55,6 +55,7 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
     private readonly Action<string> setUpdateChannel;
     private readonly Func<Task> checkUpdate;
     private readonly Func<Task> installUpdate;
+    private readonly Action<string, string?> presentationSetting;
     private bool updatesOpen;
     private bool initialized;
     private bool listening;
@@ -93,7 +94,8 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
         Action<string> progression, Action profile, Action vault, Action dailyClaim,
         Action<string> languageChange, Action exit, Action readyChanged,
         Func<object> updateSnapshot, Action<string> setUpdateChannel,
-        Func<Task> checkUpdate, Func<Task> installUpdate)
+        Func<Task> checkUpdate, Func<Task> installUpdate,
+        Action<string, string?> presentationSetting)
     {
         this.modes = modes;
         this.snapshot = snapshot;
@@ -129,6 +131,7 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
         this.setUpdateChannel = setUpdateChannel;
         this.checkUpdate = checkUpdate;
         this.installUpdate = installUpdate;
+        this.presentationSetting = presentationSetting;
         Name = "ModernLobbyPresentation";
         Background = Brushes.Transparent;
         IsHitTestVisible = false;
@@ -469,6 +472,20 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
                     break;
                 case "lobby.updates.install" when updatesOpen && ready && IsVisible:
                     _ = installUpdate();
+                    break;
+                case "lobby.settings.music" when ready && IsVisible && (id is "true" or "false"):
+                case "lobby.settings.empire" when ready && IsVisible && (id is "true" or "false"):
+                    presentationSetting(command!, id);
+                    Refresh();
+                    break;
+                case "lobby.settings.volume" when ready && IsVisible
+                    && int.TryParse(id, out int volume) && volume is >= 0 and <= 32:
+                    presentationSetting(command!, id);
+                    Refresh();
+                    break;
+                case "lobby.settings.fullscreen" when ready && IsVisible:
+                    presentationSetting(command!, null);
+                    Refresh();
                     break;
                 case "lobby.exit":
                     exit();

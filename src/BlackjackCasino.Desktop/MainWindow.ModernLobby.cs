@@ -32,7 +32,8 @@ public partial class MainWindow
             () => { ClaimDailyLoginFromDrawer(); modernLobby?.Refresh(); },
             SetModernLobbyLanguage, Close, OnModernLobbyStateChanged,
             GetModernUpdateSnapshot, SetModernUpdateChannel,
-            () => CheckForUpdatesAsync(silent: false), InstallUpdateAsync);
+            () => CheckForUpdatesAsync(silent: false), InstallUpdateAsync,
+            ChangeModernLobbyPresentation);
 
         // Replace the legacy WPF artwork *before* WebView2 starts. Never display
         // the old lobby during navigation or while React is still loading.
@@ -93,6 +94,50 @@ public partial class MainWindow
             modernLobbyRefresh?.Stop();
             modernLobby?.Dispose();
         };
+    }
+
+    private void ChangeModernLobbyPresentation(string command, string? value)
+    {
+        switch (command)
+        {
+            case "lobby.settings.music" when value is "true" or "false":
+            {
+                bool enabled = value == "true";
+                preferences = preferences with
+                {
+                    MusicEnabled = enabled,
+                    AreaPresentation = preferences.AreaPresentation.ToDictionary(
+                        item => item.Key, item => item.Value with { MusicEnabled = enabled },
+                        StringComparer.Ordinal),
+                };
+                SyncHostMusic();
+                break;
+            }
+            case "lobby.settings.volume" when int.TryParse(value, out int units) && units is >= 0 and <= 32:
+            {
+                double volume = units / 100d;
+                preferences = preferences with
+                {
+                    MusicVolume = volume,
+                    AreaPresentation = preferences.AreaPresentation.ToDictionary(
+                        item => item.Key, item => item.Value with { MusicVolume = volume },
+                        StringComparer.Ordinal),
+                };
+                SyncHostMusic();
+                break;
+            }
+            case "lobby.settings.empire" when value is "true" or "false":
+                preferences = preferences with { ShowEmpireBalance = value == "true" };
+                RefreshEmpireHeader();
+                break;
+            case "lobby.settings.fullscreen":
+                ToggleFullscreen();
+                break;
+            default:
+                return;
+        }
+        SavePreferences();
+        modernLobby?.Refresh();
     }
 
     private object GetModernUpdateSnapshot() => new
@@ -210,6 +255,9 @@ public partial class MainWindow
             VaultFraction = Math.Clamp((double)vault.Progress, 0, 1),
             AnimationsEnabled = preferences.Presentation("lobby").AnimationsEnabled,
             AlbumSoundEnabled = preferences.Presentation("album").SoundEnabled,
+            MusicEnabled = preferences.MusicEnabled,
+            MusicVolume = preferences.MusicVolume,
+            ShowEmpireBalance = preferences.ShowEmpireBalance,
             Language = Localization.Language == UiLanguagePreference.German ? "de" : "en",
             Modes = modeRegistry.Modes.Select(mode => new
             {

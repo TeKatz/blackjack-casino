@@ -17,7 +17,9 @@ export type LobbySnapshot = {
   seasonFraction: number; seasonComplete: boolean; challengeName: string;
   challengeFraction: number; challengesReady: number; vaultTier: string;
   vaultAmount: string; vaultCapacity: string; vaultFraction: number;
-  animationsEnabled: boolean; albumSoundEnabled: boolean; language: 'de' | 'en'; modes: LobbyMode[];
+  animationsEnabled: boolean; albumSoundEnabled: boolean;
+  musicEnabled: boolean; musicVolume: number; showEmpireBalance: boolean;
+  language: 'de' | 'en'; modes: LobbyMode[];
 };
 
 const object = (x: unknown): x is Record<string, unknown> =>
@@ -43,6 +45,8 @@ export function isLobbySnapshot(x: unknown): x is LobbySnapshot {
   if (!['seasonFraction','challengeFraction','vaultFraction'].every(k => fraction(x[k]))) return false;
   if (typeof x.seasonComplete !== 'boolean' || typeof x.albumSoundEnabled !== 'boolean'
     || typeof x.animationsEnabled !== 'boolean'
+    || typeof x.musicEnabled !== 'boolean' || typeof x.showEmpireBalance !== 'boolean'
+    || !numeric(x.musicVolume) || x.musicVolume < 0 || x.musicVolume > 0.32
     || (x.language !== 'de' && x.language !== 'en')
     || !Array.isArray(x.modes) || x.modes.length > 40) return false;
   return x.modes.every(m => object(m) && string(m.id) && /^[a-z0-9-]{1,48}$/.test(m.id)
@@ -70,7 +74,9 @@ export const fallbackLobby: LobbySnapshot = {
   seasonFraction: 0, seasonComplete: false, challengeName: 'Unbroken',
   challengeFraction: 0, challengesReady: 0, vaultTier: 'BRONZE',
   vaultAmount: '$0.00', vaultCapacity: '$100,000.00', vaultFraction: 0,
-  animationsEnabled: true, albumSoundEnabled:true, language: 'en', modes: [
+  animationsEnabled: true, albumSoundEnabled:true,
+  musicEnabled:true, musicVolume:0.10, showEmpireBalance:true,
+  language: 'en', modes: [
     {id:'blackjack',title:'Blackjack',category:'Table games',description:'A quiet seat, a fresh shoe and your next decision.',enabled:true,secondary:false},
     {id:'kniffel',title:'Midnight Dice',category:'Table games',description:'Five dice and your score sheet. Play solo or with AI opponents.',enabled:true,secondary:false},
     {id:'chill-lounge',title:'Chill Lounge',category:'Relaxed games',description:'Offline games at your own pace: Sudoku and Solitaire.',enabled:true,secondary:false},
@@ -103,7 +109,8 @@ export function lobbyCommand(type: string, id?: string): void {
     'lobby.records.open','lobby.records.close','lobby.records.claim','lobby.records.claim-all','lobby.records.season.activate',
     'lobby.records.vault.open','lobby.album.open','lobby.album.complete','lobby.album.claim',
     'lobby.updates.open','lobby.updates.close','lobby.updates.channel.set',
-    'lobby.updates.check','lobby.updates.install'];
+    'lobby.updates.check','lobby.updates.install',
+    'lobby.settings.music','lobby.settings.volume','lobby.settings.empire','lobby.settings.fullscreen'];
   if (!allowed.includes(type)) return;
   window.chrome?.webview?.postMessage(id === undefined ? { type } : { type, id });
 }

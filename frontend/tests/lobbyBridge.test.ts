@@ -19,6 +19,10 @@ describe('Modern lobby bridge: read-only C# snapshots', () => {
     expect(isLobbySnapshot({ ...fallbackLobby, challengeFraction: NaN })).toBe(false);
     expect(isLobbySnapshot({ ...fallbackLobby, vaultFraction: -0.2 })).toBe(false);
     expect(isLobbySnapshot({ ...fallbackLobby, language: 'fr' })).toBe(false);
+    expect(isLobbySnapshot({ ...fallbackLobby, musicVolume: Number.NaN })).toBe(false);
+    expect(isLobbySnapshot({ ...fallbackLobby, musicVolume: 1.2 })).toBe(false);
+    expect(isLobbySnapshot({ ...fallbackLobby, musicEnabled: 'yes' })).toBe(false);
+    expect(isLobbySnapshot({ ...fallbackLobby, showEmpireBalance: null })).toBe(false);
     expect(isLobbySnapshot({ ...fallbackLobby, modes: [] })).toBe(true);
     expect(isLobbySnapshot({
       ...fallbackLobby, modes: fallbackLobby.modes.map((m, i) =>

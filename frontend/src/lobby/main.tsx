@@ -172,6 +172,7 @@ function LobbyApp() {
   const [filter,setFilter] = useState<Filter>('all');
   const [updates,setUpdates] = useState<LobbyUpdatesSnapshot>(fallbackUpdates);
   const [updatesOpen,setUpdatesOpen] = useState(false);
+  const [settingsOpen,setSettingsOpen] = useState(false);
   const [dailyOpen,setDailyOpen] = useState(false);
   const [lowMotion,setLowMotion] = useState(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const [nativeSnapshotReceived,setNativeSnapshotReceived] = useState(!embeddedLobby);
@@ -295,6 +296,7 @@ function LobbyApp() {
     setFilter(id);
   };
   const openUpdates = () => {
+    setSettingsOpen(false);
     setUpdatesOpen(true);
     lobbyCommand('lobby.updates.open');
   };
@@ -334,7 +336,7 @@ function LobbyApp() {
       </div>
       <div className="lobby-finances">
         <span><small>BANKROLL</small><strong>{data.bankroll}</strong></span>
-        <span className="empire-wallet"><small>EMPIRE CREDITS</small><strong>{data.empireCredits}</strong></span>
+        {data.showEmpireBalance&&<span className="empire-wallet"><small>EMPIRE CREDITS</small><strong>{data.empireCredits}</strong></span>}
       </div>
       <button type="button" className="lobby-language" aria-label={de?'Sprache wechseln: Englisch':'Switch language: German'}
         title={de?'Switch to English':'Zu Deutsch wechseln'}
@@ -359,6 +361,12 @@ function LobbyApp() {
         </button>)}
         <div className="lobby-nav-decoration" aria-hidden="true">♣</div>
         </div>
+        <button type="button" className="lobby-updates-entry lobby-settings-entry" data-testid="lobby-settings-entry"
+          aria-haspopup="dialog" aria-expanded={settingsOpen}
+          onClick={()=>{setUpdatesOpen(false);setSettingsOpen(true);}}>
+          <span className="lobby-updates-glyph" aria-hidden="true">♫</span>
+          <span>{de?'Einstellungen':'Settings'}</span>
+        </button>
         <button type="button" className="lobby-updates-entry" data-testid="lobby-updates-entry"
           aria-haspopup="dialog" aria-expanded={updatesOpen}
           onClick={openUpdates}>
@@ -427,6 +435,38 @@ function LobbyApp() {
         onClose={()=>setDailyOpen(false)} mobileOpen={dailyOpen}/>
       </>}
     </div>
+    {settingsOpen&&<div className="lobby-updates-backdrop">
+      <section className="lobby-updates-panel lobby-settings-panel" role="dialog" aria-modal="true"
+        aria-label={de?'Casino-Einstellungen':'Casino settings'}>
+        <header className="lobby-updates-header">
+          <div><small>THE MIDNIGHT CLUB</small>
+            <h2>{de?'Einstellungen':'Settings'}</h2>
+            <p>{de?'Musik und die gemeinsame Casino-Anzeige verwalten.':'Manage music and the shared casino display.'}</p>
+          </div>
+          <button type="button" className="lobby-updates-close" aria-label={de?'Schließen':'Close'}
+            onClick={()=>setSettingsOpen(false)}>×</button>
+        </header>
+        <label className="lobby-settings-check">
+          <input type="checkbox" data-testid="lobby-music-enabled" checked={data.musicEnabled}
+            onChange={e=>lobbyCommand('lobby.settings.music',String(e.target.checked))}/>
+          <span>{de?'Hintergrundmusik':'Background music'}</span>
+        </label>
+        <label className="lobby-settings-volume">
+          <span>{de?'Musiklautstärke':'Music volume'}: <strong>{Math.round(data.musicVolume*100)}%</strong></span>
+          <input type="range" data-testid="lobby-music-volume" min={0} max={32} step={2}
+            value={Math.round(data.musicVolume*100)}
+            onChange={e=>lobbyCommand('lobby.settings.volume',e.target.value)}/>
+        </label>
+        <label className="lobby-settings-check">
+          <input type="checkbox" data-testid="lobby-empire-balance" checked={data.showEmpireBalance}
+            onChange={e=>lobbyCommand('lobby.settings.empire',String(e.target.checked))}/>
+          <span>{de?'Empire-Guthaben in der Kopfzeile anzeigen':'Show Empire balance in header'}</span>
+        </label>
+        <button type="button" onClick={()=>lobbyCommand('lobby.settings.fullscreen')}>
+          {de?'Vollbild umschalten (F11)':'Toggle fullscreen (F11)'}
+        </button>
+      </section>
+    </div>}
     {updatesOpen&&<ModernUpdates state={updates} language={data.language}
       onClose={closeUpdates} onChannel={value=>lobbyCommand('lobby.updates.channel.set',value)}
       onCheck={()=>lobbyCommand('lobby.updates.check')}
