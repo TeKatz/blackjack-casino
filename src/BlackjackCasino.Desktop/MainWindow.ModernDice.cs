@@ -271,7 +271,7 @@ public partial class MainWindow
                     if (!KniffelCasinoMode) RefreshProfileButton();
                 }
                 if (KniffelCasinoMode && ModernDiceWaiting)
-                    Dispatcher.BeginInvoke(new Action(AdvanceModernDiceOpponents));
+                    _ = Dispatcher.BeginInvoke(new Action(AdvanceModernDiceOpponents));
                 break;
         }
         return (true, "Dice state saved.");
@@ -331,7 +331,7 @@ public partial class MainWindow
         {
             modernDiceAdvancing = false;
             if (!ReferenceEquals(view, modernDiceView) && ModernDiceWaiting)
-                Dispatcher.BeginInvoke(new Action(AdvanceModernDiceOpponents));
+                _ = Dispatcher.BeginInvoke(new Action(AdvanceModernDiceOpponents));
         }
     }
 
