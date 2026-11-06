@@ -17,7 +17,7 @@ internal static class KniffelCasinoSmoke
         ModernDiceView view = await Open(window);
         CoreWebView2 web = view.Browser.CoreWebView2!;
         await ModernDiceSmokeHelper.Click(web, "dice-setup", false);
-        await Capture(web, Path.Combine(output, "dice-modern-casino-setup.png"));
+        await ModernDiceSmokeHelper.Capture(web, Path.Combine(output, "dice-modern-casino-setup.png"));
         decimal initialCash = window.DiceCasinoBankroll;
         await ModernDiceSmokeHelper.Click(web, "dice-casino-start");
         Require(window.DiceCasinoBankroll == initialCash - 100m,
@@ -68,9 +68,9 @@ internal static class KniffelCasinoSmoke
                     + "&&document.querySelector('[data-testid=\"dice-opponents-panel\"]')?.textContent.includes('Felix')"
                     + "&&document.querySelector('[data-testid=\"dice-opponents-panel\"]')?.textContent.includes('June'))"),
                     "Opponent score sheet is missing named, independently saved AI seats.");
-                await Capture(web, Path.Combine(output, "dice-modern-opponents.png"));
+                await ModernDiceSmokeHelper.Capture(web, Path.Combine(output, "dice-modern-opponents.png"));
                 await ModernDiceSmokeHelper.Click(web, "dice-opponents-close", false);
-                await Capture(web, Path.Combine(output, "dice-modern-casino-table.png"));
+                await ModernDiceSmokeHelper.Capture(web, Path.Combine(output, "dice-modern-casino-table.png"));
             }
         }
 
@@ -96,7 +96,7 @@ internal static class KniffelCasinoSmoke
             "Boolean(document.querySelector('.md-receipt-money')"
             + "&&document.querySelector('.md-results-standings .md-result-seat.player'))"),
             "Modern match receipt lacks net-prize breakdown and ranked player score.");
-        await Capture(web, Path.Combine(output, "dice-modern-casino-result.png"));
+        await ModernDiceSmokeHelper.Capture(web, Path.Combine(output, "dice-modern-casino-result.png"));
 
         await ModernDiceSmokeHelper.Click(web, "dice-result-close", false);
         await ModernDiceSmokeHelper.Click(web, "dice-result", false);
@@ -149,20 +149,20 @@ internal static class KniffelCasinoSmoke
             .FirstOrDefault(view => view.Ready && view.IsVisible);
         if (modern is not null)
         {
-            var web = modern.Browser.CoreWebView2!;
+            var lobbyWeb = modern.Browser.CoreWebView2!;
             await Until(() => modern.RecordsPage == "statistics");
             bool diceStats = false;
             for (int i = 0; i < 100 && !diceStats; i++)
             {
-                diceStats = await web.ExecuteScriptAsync(
+                diceStats = await lobbyWeb.ExecuteScriptAsync(
                     "Boolean(document.querySelector('.statistics-page [data-stat-game=\"midnight-dice\"]'))") == "true";
                 if (!diceStats) await Task.Delay(75);
             }
             Require(diceStats, "React lifetime statistics have no Midnight Dice card.");
             await using(FileStream capture = File.Create(Path.Combine(output,"dice-statistics.png")))
-                await web.CapturePreviewAsync(
+                await lobbyWeb.CapturePreviewAsync(
                     Microsoft.Web.WebView2.Core.CoreWebView2CapturePreviewImageFormat.Png,capture);
-            await web.ExecuteScriptAsync("document.querySelector('.statistics-page .shop-back')?.click()");
+            await lobbyWeb.ExecuteScriptAsync("document.querySelector('.statistics-page .shop-back')?.click()");
             await Until(() => modern.RecordsPage is null);
         }
         else
@@ -176,12 +176,12 @@ internal static class KniffelCasinoSmoke
         await OpenLobbyProgression(window, "Challenges", "LobbyProgression_Challenges");
         if (modern is not null)
         {
-            var web = modern.Browser.CoreWebView2!;
+            var lobbyWeb = modern.Browser.CoreWebView2!;
             await Until(() => modern.RecordsPage == "challenges");
             bool selected = false;
             for (int i = 0; i < 100 && !selected; i++)
             {
-                selected = await web.ExecuteScriptAsync(
+                selected = await lobbyWeb.ExecuteScriptAsync(
                     "(()=>{const button=[...document.querySelectorAll('.record-category')]"
                     + ".find(x=>x.textContent?.includes('Midnight Dice'));button?.click();return !!button;})()") == "true";
                 if(!selected) await Task.Delay(75);
@@ -190,15 +190,15 @@ internal static class KniffelCasinoSmoke
             bool firstSheet = false;
             for (int i = 0; i < 100 && !firstSheet; i++)
             {
-                firstSheet = await web.ExecuteScriptAsync(
+                firstSheet = await lobbyWeb.ExecuteScriptAsync(
                     "Boolean([...document.querySelectorAll('.record-challenge h3')].some(x=>x.textContent==='First Sheet'))") == "true";
                 if(!firstSheet) await Task.Delay(75);
             }
             Require(firstSheet, "Midnight Dice achievement is absent from the React challenge board.");
             await using(FileStream capture = File.Create(Path.Combine(output,"dice-achievements.png")))
-                await web.CapturePreviewAsync(
+                await lobbyWeb.CapturePreviewAsync(
                     Microsoft.Web.WebView2.Core.CoreWebView2CapturePreviewImageFormat.Png,capture);
-            await web.ExecuteScriptAsync("document.querySelector('.record-page .shop-back')?.click()");
+            await lobbyWeb.ExecuteScriptAsync("document.querySelector('.record-page .shop-back')?.click()");
             await Until(() => modern.RecordsPage is null);
         }
         else
