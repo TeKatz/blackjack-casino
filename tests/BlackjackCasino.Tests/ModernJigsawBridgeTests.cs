@@ -52,7 +52,7 @@ public sealed class ModernJigsawBridgeTests
             JsonRequest(session,"jigsaw.motif",motifId:"unknown"),
             JsonRequest(session,"jigsaw.start",confirmReplace:false),
             JsonRequest(session,"jigsaw.move",index:1000,x:0,y:0),
-            JsonRequest(session,"jigsaw.move",index:0,x:double.NaN,y:0),
+            JsonRequest(session,"jigsaw.move",index:0,x:0,y:0).Replace("\"x\":0", "\"x\":\"NaN\""),
             JsonRequest(session,"jigsaw.place",index:0,x:1400,y:0),
             JsonRequest(session,"jigsaw.tray",index:0,x:10),
             JsonRequest(session,"jigsaw.timer"),

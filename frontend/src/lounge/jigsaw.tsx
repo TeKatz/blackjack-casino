@@ -1,5 +1,5 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
-import type {PointerEvent as ReactPointerEvent,MouseEvent as ReactMouseEvent} from 'react';
+import type {PointerEvent as ReactPointerEvent,MouseEvent as ReactMouseEvent,WheelEvent as ReactWheelEvent} from 'react';
 import {Application,Assets,Container,Graphics,Rectangle,Sprite,Texture} from 'pixi.js';
 import type {JigsawGame,JigsawIntent,JigsawPiece,JigsawState} from './jigsawBridge';
 import './jigsaw.css';
@@ -166,7 +166,7 @@ function PixiBoard({game,reference,view,selected,onPlace,onMove,onReturn,onSelec
    y:((event.clientY-r.top)*600/r.height-view.y)/view.zoom};
   const id=pick(at);if(id!==null)onReturn(id);
  };
- const wheel=(event:React.WheelEvent<HTMLDivElement>)=>{
+ const wheel=(event:ReactWheelEvent<HTMLDivElement>)=>{
   event.preventDefault();
   const change=event.deltaY<0?1.25:.8;
   onView({...view,zoom:Math.min(3,Math.max(1,view.zoom*change))});
