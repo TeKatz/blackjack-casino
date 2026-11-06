@@ -24,7 +24,7 @@ export type JigsawReply={requestId:string;success:boolean;message:string;revisio
 const record=(v:unknown):v is Record<string,unknown>=>v!==null&&typeof v==='object'&&!Array.isArray(v);
 const int=(v:unknown,max=Number.MAX_SAFE_INTEGER):v is number=>
  typeof v==='number'&&Number.isSafeInteger(v)&&v>=0&&v<=max;
-const number=(v:unknown)=>typeof v==='number'&&Number.isFinite(v);
+const number=(v:unknown):v is number=>typeof v==='number'&&Number.isFinite(v);
 const guid=(v:unknown)=>typeof v==='string'&&/^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i.test(v);
 const label=(v:unknown,max=240)=>typeof v==='string'&&v.length<=max;
 export const sizes=[24,48,96,150,300,500,750,1000] as const;
@@ -32,7 +32,7 @@ export const motifs=['enchanted-forest','sakura-garden','ocean-depths','frost-ki
  'celestial-voyage','pirate-cove','midnight-manor','neon-city','eternal-casino',
  'clockwork','desert-gold','primordial-dragons'] as const;
 const hasMotif=(v:unknown)=>typeof v==='string'&&motifs.some(id=>id===v);
-const hasSize=(v:unknown)=>typeof v==='number'&&sizes.some(s=>s===v);
+const hasSize=(v:unknown):v is number=>typeof v==='number'&&sizes.some(s=>s===v);
 const image=(v:unknown):v is JigsawMotif=>record(v)&&hasMotif(v.id)
  &&label(v.name)&&label(v.category)&&v.asset===v.id+'.png';
 const size=(v:unknown):v is JigsawSize=>record(v)&&hasSize(v.count)
