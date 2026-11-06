@@ -26,7 +26,7 @@ public partial class MainWindow
     {
         if (session.RoundInProgress || progressionController is null || ModernNeonVaultOpen
             || ModernReelsOpen || ModernBlackjackOpen || EmpirePageOpen || KniffelPageOpen
-            || MetaPageOpen || embeddedGameShell is not null) return;
+            || MetaPageOpen || ModernNineLivesOpen || embeddedGameShell is not null) return;
         if (!ModernNeonVaultView.IsAvailable)
         {
             StatusText.Text = "Neon Vault frontend missing. Reinstall the Development build.";
@@ -62,7 +62,6 @@ public partial class MainWindow
         modernNeonVaultMusic = new BackgroundMusic(Soundtrack.Reels);
         modernNeonVaultMusic.Start(presentation.MusicEnabled, presentation.MusicVolume);
         backgroundMusic.SetEnabled(false);
-        if (lobby is not null) lobby.Visibility = Visibility.Collapsed;
         modernNeonVaultView = new ModernNeonVaultView(
             modernNeonVaultCommands!,
             () => ModernNeonVaultSnapshot.Create(modernNeonVaultMachine!, modernNeonVaultBet,
@@ -80,6 +79,9 @@ public partial class MainWindow
         }
         embeddedGameHost!.Content = modernNeonVaultView;
         embeddedGameOverlay!.Visibility = Visibility.Visible;
+        // Attach the live WebView before collapsing the lobby: WPF must never
+        // briefly expose the retired Blackjack surface between destinations.
+        if (lobby is not null) lobby.Visibility = Visibility.Collapsed;
         KeyboardNavigation.SetTabNavigation(modernNeonVaultView, KeyboardNavigationMode.Cycle);
         SyncHostMusic();
         modeRegistry.NotifyStateChanged();
