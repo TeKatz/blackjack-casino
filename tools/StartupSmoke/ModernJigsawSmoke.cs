@@ -25,8 +25,12 @@ internal static class ModernJigsawSmoke
         await Click(web,".jigsaw-actions .jigsaw-primary:last-child",
             "document.querySelectorAll('.jigsaw-tray-grid button').length===24",
             "C# did not open a fresh 24-piece Jigsaw board.");
-        await Wait(web,"Boolean(document.querySelector('.jigsaw-board canvas'))",
+        await Wait(web,"Boolean(document.querySelector('.jigsaw-board[data-renderer-ready=true] canvas'))",
             "PixiJS did not mount the real Jigsaw canvas.");
+        Require(await Js(web,"document.querySelector('.jigsaw-actions button[aria-pressed]')?.getAttribute('aria-pressed')==='false'"),
+            "The finished puzzle reference must start hidden.");
+        Require(await Js(web,"[...document.querySelectorAll('.jigsaw-tray-grid button')].some((b,i)=>Number(b.dataset.pieceId)!==i)"),
+            "Jigsaw tray must not expose solved row-by-row piece order.");
         await Capture(web,Path.Combine(output,"modern-jigsaw-board.png"));
 
         const BindingFlags flags=BindingFlags.Instance|BindingFlags.NonPublic;
@@ -37,7 +41,7 @@ internal static class ModernJigsawSmoke
         Guid id=game.GameId;
         Require(game.PieceCount==24 && game.Pieces.Count==24,"The native puzzle has wrong dimensions.");
 
-        await web.ExecuteScriptAsync("document.querySelector('.jigsaw-tray-grid button:first-child')?.click()");
+        await web.ExecuteScriptAsync("document.querySelector('.jigsaw-tray-grid [data-piece-id=\"0\"]')?.click()");
         // Click the exact native target center of piece zero. React sends coordinates;
         // only the authoritative C# engine can lock the piece.
         await web.ExecuteScriptAsync(@"(()=>{

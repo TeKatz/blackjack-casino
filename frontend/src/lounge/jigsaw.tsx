@@ -274,7 +274,7 @@ export function JigsawScreen({state,language,pending,error,command,animations,so
    <p className="jigsaw-hint">{t.guide}</p><p className="jigsaw-placement-notice" role="status">{state.notice}</p>{error&&<p role="alert" className="jigsaw-error">{error}</p>}</div>
    <aside className="jigsaw-tray"><h2>{t.tray}</h2><p>{available.length} {t.left}</p>
     <div className="jigsaw-tray-grid">{available.slice(currentPage*32,(currentPage+1)*32).map(p=><button
-     key={p.id} aria-disabled={pending} aria-pressed={selected===p.id} className={selected===p.id?'selected':''} draggable={!pending} onDragStart={e=>{e.dataTransfer.setData('application/x-midnight-piece',String(p.id));e.dataTransfer.effectAllowed='move';}}
+     key={p.id} data-piece-id={p.id} aria-disabled={pending} aria-pressed={selected===p.id} className={selected===p.id?'selected':''} draggable={!pending} onDragStart={e=>{e.dataTransfer.setData('application/x-midnight-piece',String(p.id));e.dataTransfer.effectAllowed='move';}}
      title={'Piece '+(p.id+1)} onClick={()=>setSelected(v=>v===p.id?null:p.id)}>
      <svg viewBox="-20 -20 140 140" aria-hidden="true"><defs><clipPath id={'tray-piece-'+p.id}><path d={piecePath(p.id,game.columns,game.rows,100,100)}/></clipPath></defs>
       <image href={images(game.motifId)} x={-(p.id%game.columns)*100} y={-Math.floor(p.id/game.columns)*100}
