@@ -144,3 +144,8 @@
  .backroom-dice-row button,.backroom-dice-row>span{width:52px;height:60px}
  .backroom-shell{padding:14px 8px}.backroom-board-viewport{height:440px}}
 @media(prefers-reduced-motion:reduce){.backroom-shell *{animation:none!important;transition:none!important}}
+
+.backroom-music{margin:14px 0;padding:15px;border:1px solid #7b704f;border-radius:10px;background:#0e2119;display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.backroom-music>strong{width:100%;font:700 11px system-ui,sans-serif;letter-spacing:.09em;color:#d4ba7b}
+.backroom-music>label{display:flex;flex-direction:column;flex:1;gap:7px;font:700 10px system-ui,sans-serif;color:#abc5b2}
+.backroom-music input[type=range]{width:100%;accent-color:#d3b57b}

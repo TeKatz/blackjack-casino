@@ -21,6 +21,10 @@ internal static class ModernAdventureSmoke
             "Native character archetypes missing in React.");
         await Capture(web,Path.Combine(output,"modern-adventure-library.png"));
 
+        if (!await Js(web,"Boolean(document.querySelector('.backroom-tale-grid article:first-child.selected'))"))
+            await Click(web,".backroom-tale-grid article:first-child .backroom-tale-actions button:first-child",
+                "Boolean(document.querySelector('.backroom-tale-grid article:first-child.selected'))",
+                "The original Black Stag story could not be selected.");
         await Click(web,".backroom-creator .backroom-primary",
             "Boolean(document.querySelector('[data-testid=\"modern-adventure-story\"]'))",
             "The native AdventureEngine did not begin a run.");
@@ -44,14 +48,14 @@ internal static class ModernAdventureSmoke
             await Click(web,".backroom-choice:first-of-type",
                 "Boolean(document.querySelector('.backroom-story-prose'))",
                 "Native choice did not return a valid story snapshot.");
-            Require(service.ActiveRun!.Statistics.ChoicesMade>=1,
+            await UntilAsync(() => service.ActiveRun?.Statistics.ChoicesMade>=1,
                 "The browser choice never reached authoritative C# statistics.");
             if (service.ActiveRun.PendingChoiceId is not null)
             {
                 await Click(web,".backroom-d20.active button",
                     "Boolean(document.querySelector('.backroom-story-prose'))",
                     "Native D20 roll was not accepted.");
-                Require(service.ActiveRun!.RollsMade>=1,
+                await UntilAsync(() => service.ActiveRun?.RollsMade>=1,
                     "The browser did not use the native C# die resolver.");
             }
         }
@@ -68,7 +72,7 @@ internal static class ModernAdventureSmoke
             await Click(web,selector,
                 "Boolean(document.querySelector('[data-testid=\"modern-adventure-story\"]'))",
                 "Resuming an unchanged C# story failed.");
-            Require(service.ActiveRun?.RunId==runId,
+            await UntilAsync(() => service.ActiveRun?.RunId==runId,
                 "Resume replaced the existing character or story identity.");
             await Capture(web,Path.Combine(output,"modern-adventure-resumed.png"));
         }

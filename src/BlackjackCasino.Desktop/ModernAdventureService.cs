@@ -439,7 +439,9 @@ internal sealed class ModernAdventureService
     {
         if (screen != "board" || playingId is null) return (false, "Board not open.");
         var updated = Clone(progress);
-        BoardLayoutState layout = updated.Runs[playingId].CaseBoard.Layout;
+        AdventureRunState run = updated.Runs[playingId];
+        run.CaseBoard = AdventureCaseBoard.Initialize(Definition(playingId).CaseBoard, run.CaseBoard);
+        BoardLayoutState layout = run.CaseBoard.Layout;
         layout.Zoom = zoom;
         layout.PanX = x;
         layout.PanY = y;

@@ -64,6 +64,10 @@ The normal Jigsaw route now stays inside the React Chill Lounge, with the twelve
 
 xUnit, Vitest and a real Windows WebView2 startup smoke cover protocol validation, all puzzle sizes, original save compatibility, failed persistence, first-piece snap and resume. Final 1,000-piece graphics/performance measurements, interlocking silhouette presentation and hardware accessibility remain open acceptance gates. See [Jigsaw modernization](jigsaw-modernization.md).
 
+## Tales from the Backroom React gameplay migration (2026-11-06)
+
+All six normal Chill Lounge routes now stay inside React/WebView2. Tales uses the original AdventureEngine and AdventureProgressState for the three public stories, retaining character classes, inventory/conditions, D20, caseboard, branching and original reward receipts. The retired Strangers' Wager story remains loadable for legacy saves and encounter tests but is not a public fourth card. React presents native Blackjack and Five-of-a-Kind encounters without owning random outcomes. GUID/revision commands reject stale or forged mutations; story changes save detached C# copies before becoming live. The original WPF adventure UI stays for emergency fallback. Unit, frontend and real WebView2 smoke tests cover the modernization. Extended Windows hardware, ending-path, sound and accessibility signoff remain open. See [Tales modernization](adventure-modernization.md).
+
 ## Casino Empire presentation migration (2026-11-05)
 
 Empire now has a separate React/TypeScript entry point (`empire.html`) for both

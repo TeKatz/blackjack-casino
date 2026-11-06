@@ -41,7 +41,7 @@ The sole playable Blackjack interface is React/TypeScript (`frontend/blackjack.h
 
 Midnight Merge runs as a responsive local React/PixiJS experience (`frontend/midnight-merge.html`): a persistent 7×6 board with drag/drop and keyboard-friendly click selection, both original producer chains, fourteen supply orders, staged lobby/bar restoration, translated milestones, profile XP and native audio. `MergeBoard` remains the C# authority for spawning, moving, combining, delivering and saving. Every accepted action is saved atomically before the browser renders it; the versioned receipt protocol prevents duplicate rewards and stale commands across a WebView2 failure. The former `MidnightMergeView` WPF gameplay view has been retired, without changing the durable game schema or rewards. See [Midnight Merge architecture](docs/midnight-merge-foundation.md).
 
-## Chill Lounge: Sudoku, Solitaire, Word Search, Memory and Jigsaw in React
+## Chill Lounge: all six games in React
 
 The Chill Lounge uses a local React/TypeScript hub (`frontend/lounge.html`) with responsive navigation, six activity tiles and German/English labels. **Sudoku is now rendered and played directly inside this React Lounge**, without opening the old WPF board in normal navigation. Its six difficulties, seeded and generated offline puzzle pools, daily assignments, 81-cell board, wrong-value feedback, hints, pencil notes, undo/redo, number completion, selectable guides, keyboard shortcuts, elapsed time, automatic saves and rewards are all supported. React sends allow-listed actions and displays C#-verified results; the C# `SudokuBoard`, `SudokuProgressState` and progression services remain authoritative and save-compatible. Completion XP is granted at most once through the existing profile receipts. See [Sudoku modernization](docs/sudoku-modernization.md).
 
@@ -51,7 +51,7 @@ The Chill Lounge uses a local React/TypeScript hub (`frontend/lounge.html`) with
 
 **Memory now plays directly in the React Lounge** as well. It preserves the five original table sizes (4×4, 4×5, 6×6, 6×8 and 8×8), all four curated decks (Casino Icons, Card Suits, Animals and Fruits & Treats), the native C# match/mismatch rules, flipped-card animations, the original flip/match/miss/perfect sound effects, streaks, accuracy, autosaved resume, and the completion summary with exactly-once XP awards. Only face-up and matched cards have identifying symbols in the browser: the native shuffle/solution remains private. See [Memory modernization](docs/memory-modernization.md).
 
-**Jigsaw Puzzle now plays in the React Lounge with a PixiJS board.** The twelve offline images, eight grid sizes (24–1,000), saved piece positions, native snapping/group movement, thirty achievements and completion rewards remain compatible with the original C# implementation. The new studio includes the gallery, tray, zoom/panning, reference view, resume and completion. See [Jigsaw modernization](docs/jigsaw-modernization.md). Tales from the Backroom still runs in WPF. Old Lounge/Jigsaw screens remain solely for rollback and comparison until final device acceptance.
+**Jigsaw Puzzle now plays in the React Lounge with a PixiJS board.** The twelve offline images, eight grid sizes (24–1,000), saved piece positions, native snapping/group movement, thirty achievements and completion rewards remain compatible with the original C# implementation. The new studio includes the gallery, tray, zoom/panning, reference view, resume and completion. See [Jigsaw modernization](docs/jigsaw-modernization.md). **Tales from the Backroom** now also runs in React, completing the six normal Chill Lounge routes. Its three public stories retain the native AdventureEngine, character classes, inventory and conditions, D20 checks, mystery board, Blackjack/Five-of-a-Kind encounters, saves and completion progression. The older Strangers' Wager remains a loadable compatibility/test story rather than a fourth public adventure. Legacy WPF presentations remain as rollback coverage. See [Tales modernization](docs/adventure-modernization.md).
 
 ## Midnight Dice: React/PixiJS dice lounge
 
@@ -152,7 +152,7 @@ Windows CI additionally runs actual desktop startup, Manor runtime and presentat
 
 - **Midnight Manor:** modern presentation is the default in Development; remaining subjective audio, display-scaling and long-session performance checks are tracked separately.
 - **Blackjack:** the retired native table, sidebar and custom rule dialog have been removed. React is the only player-facing Blackjack table; its C# session survives a WebView failure and can be rehosted.
-- **Other game interfaces:** the Chill Lounge hub, Sudoku, all six Midnight Solitaire variants, Word Search and Memory are React. Jigsaw and Tales from the Backroom remain native WPF. Old Sudoku, Solitaire, Word Search and Memory presentations persist only for fallback and legacy regression checks, not normal navigation. The Midnight Dice WPF source remains for rollback and legacy visual tests, but its normal play route is React. The shared WPF host and emergency lobby remain until all destinations are accepted.
+- **Other game interfaces:** the Chill Lounge hub and all six activities—Sudoku, six Midnight Solitaire variants, Word Search, Memory, Jigsaw and Tales from the Backroom—are React. The old Lounge/Jigsaw/Adventure WPF code remains as emergency fallback and regression coverage. Old Sudoku, Solitaire, Word Search and Memory presentations persist only for fallback and legacy regression checks, not normal navigation. The Midnight Dice WPF source remains for rollback and legacy visual tests, but its normal play route is React. The shared WPF host and emergency lobby remain until all destinations are accepted.
 - **Localization:** English/German shell support is present; some older game and adventure content still needs translation.
 - **Player data and financial outcomes:** preserve backward compatibility, deterministic payout tests and exactly-once committed transitions.
 - **Releases:** `main` and Stable do not inherit Development changes automatically.
@@ -172,4 +172,5 @@ The roadmap tracks completed migration stages and outstanding quality gates; his
 - [Cosmetic shop expansion](docs/shop-cosmetics-expansion.md)
 - [Casino Empire](docs/casino-empire.md)
 - [Tales from the Backroom](docs/adventure-engine.md)
+- [Tales React migration](docs/adventure-modernization.md)
 
