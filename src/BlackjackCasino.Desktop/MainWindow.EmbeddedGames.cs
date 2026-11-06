@@ -148,7 +148,7 @@ public partial class MainWindow
 
         if (muteHostMusic)
         {
-            backgroundMusic.SetEnabled(false);
+            hostMusic.Mute();
         }
 
         // Window.Loaded belongs to the detached shell rather than the rehosted visual tree.

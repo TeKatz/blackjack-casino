@@ -54,3 +54,9 @@ The desktop's update transport now lives in `DesktopUpdateService`, without WPF 
 The fullscreen transition and persisted restore-bounds computation now live in `CasinoWindowGeometry`. `MainWindow` delegates the existing F11 command and the window dimensions saved into `player-state.json`; the original WPF frame styling, DPI behavior, fullscreen restore sequence and preference schema remain unchanged. A real Windows startup smoke tests the adapter's enter/exit behavior and its saved window placement while fullscreen.
 
 **Boundary:** This does not remove WPF from the executable. Navigation, audio orchestration, legacy recovery windows and the final shell swap are still separate work. No game engines, React/CSS, saves or updater binaries were changed in this extraction.
+
+## Fourth extraction — shared host music ownership
+
+`CasinoHostMusic` now owns the existing background soundtrack's startup, prewarm, mode-aware enable/volume updates, temporary native-window mute and disposal. `MainWindow` still determines which casino area is visible, but it no longer handles the audio player's lifecycle directly. The old WPF embedded game host requests silence through the same router. No tracks, volume formulae, audio synthesis or area settings changed.
+
+The host is now split into bounded presentation ownership (`ModernGameSurface`), offline browser security (`ModernWebViewBootstrap`), update transport (`DesktopUpdateService`), fullscreen/restore bounds (`CasinoWindowGeometry`) and music ownership (`CasinoHostMusic`). These adapters do not themselves retire the legacy WPF recovery/navigation shell.

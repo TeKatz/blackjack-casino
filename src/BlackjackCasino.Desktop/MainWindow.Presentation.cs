@@ -14,13 +14,12 @@ public partial class MainWindow
         keepHostMusicForEmbeddedGame ? "midnight-merge" :
         EmpirePageOpen ? "casino-empire" : lobby?.IsVisible == true ? "lobby" : "blackjack");
 
-    private readonly BackgroundMusic backgroundMusic = new();
+    private readonly CasinoHostMusic hostMusic = new();
 
     private void SyncHostMusic()
     {
-        backgroundMusic.SetEnabled(HostMusicSettings.MusicEnabled && !KniffelPageOpen &&
+        hostMusic.Sync(HostMusicSettings, !KniffelPageOpen &&
             !ModernLoungeOpen && !ModernReelsOpen && !ModernNineLivesOpen && !ModernNeonVaultOpen && (embeddedGameShell is null || keepHostMusicForEmbeddedGame));
-        backgroundMusic.SetVolume(HostMusicSettings.MusicVolume);
     }
 
     private void PresentationLoaded(object sender, RoutedEventArgs e)
@@ -30,16 +29,14 @@ public partial class MainWindow
         InitializeVaultFeature();
         ApplyCasinoDropdownStyles();
         InitializeLobby();
-        backgroundMusic.Start(HostMusicSettings.MusicEnabled, HostMusicSettings.MusicVolume);
-        BackgroundMusic.Prewarm();
-        SlotAudio.Prewarm();
+        hostMusic.Start(HostMusicSettings);
     }
 
     private void PresentationClosed(object? sender, EventArgs e)
     {
         ShutdownVaultFeature();
         ShutdownProgressionFeature();
-        backgroundMusic.Dispose();
+        hostMusic.Dispose();
     }
 
     private void ApplyCasinoDropdownStyles()
