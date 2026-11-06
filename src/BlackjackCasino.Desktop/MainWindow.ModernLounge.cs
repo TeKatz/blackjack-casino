@@ -35,27 +35,18 @@ public partial class MainWindow
 
     private object CreateModernLoungeSnapshot()
     {
-        var games = LoungeHostedGameRegistry.Snapshot.Select(module => new
+        var games = ModernLoungeCatalog.Create(id => id switch
         {
-            module.Definition.Id,
-            Status = module.Definition.Id switch
-            {
-                "solitaire" => CurrentModernSolitaireStatus(),
-                "word-search" => CurrentModernWordSearchStatus(),
-                "memory" => CurrentModernMemoryStatus(),
-                "jigsaw" => CurrentModernJigsawStatus(),
-                "tales-backroom" => CurrentModernAdventureStatus(),
-                _ => module.Definition.Status?.Invoke(),
-            },
-        }).ToList();
-        games.Insert(0, new
-        {
-            Id = "sudoku",
-            Status = (string?)null,
+            "solitaire" => CurrentModernSolitaireStatus(),
+            "word-search" => CurrentModernWordSearchStatus(),
+            "memory" => CurrentModernMemoryStatus(),
+            "jigsaw" => CurrentModernJigsawStatus(),
+            "tales-backroom" => CurrentModernAdventureStatus(),
+            _ => null,
         });
         return new
         {
-            Version = 1,
+            Version = ModernLoungeCatalog.SnapshotVersion,
             Session = modernSudokuSession?.Id ?? string.Empty,
             Revision = modernSudokuSession?.Revision ?? 0L,
             Sudoku = modernSudoku?.Snapshot(),
@@ -238,10 +229,9 @@ public partial class MainWindow
             modernLoungeView?.Refresh();
             return;
         }
-        CloseModernLounge();
-        // Other native gameplay screens are retained until each game's React bridge
-        // has been tested; the new hub is not allowed to mutate game state.
-        Dispatcher.BeginInvoke(new Action(() => OpenLoungeCore(id)), DispatcherPriority.Loaded);
+        // All six catalog activities have an in-page React route. An unknown ID
+        // is not a request to create or navigate to an old WPF game.
+        StatusText.Text = "Unsupported Chill Lounge activity.";
     }
 
     private ModernSudokuReply ApplyModernSudokuCommand(ModernSudokuCommand command)

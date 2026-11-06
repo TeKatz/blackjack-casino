@@ -21,8 +21,6 @@ public partial class MainWindow
             return;
         }
         ProcessLatestCompletedRound();
-        SudokuLoungePolish.EnsureInstalled();
-        LoungeVisualUpgrade.EnsureInstalled(() => preferences.Sudoku);
         RecordSudokuCompletions(preferences.Sudoku);
 
         preferences = preferences with { Solitaire = SolitaireProgressState.Normalize(preferences.Solitaire) };
@@ -33,6 +31,26 @@ public partial class MainWindow
         preferences.Jigsaw.Normalize();
         RecordJigsawCompletions(preferences.Jigsaw);
         preferences = preferences with { Adventure = AdventureProgressState.Normalize(preferences.Adventure) };
+
+        // React starts without creating WPF game factories or presentation resources.
+        if (!forceLegacy && nativeGameId is null && ModernLoungeView.IsAvailable)
+        {
+            LoungeHostedGameRegistry.ClearSessionModules();
+            OpenModernLounge();
+            return;
+        }
+
+        OpenLegacyLounge(nativeGameId);
+    }
+
+    /// <summary>
+    /// Emergency native fallback only. WPF factories, styles and shell lifecycle
+    /// cannot be initialized by the ordinary React Lounge route.
+    /// </summary>
+    private void OpenLegacyLounge(string? nativeGameId)
+    {
+        SudokuLoungePolish.EnsureInstalled();
+        LoungeVisualUpgrade.EnsureInstalled(() => preferences.Sudoku);
 
         bool loungeClosing = false;
         bool adventureMusicActive = false;
@@ -142,12 +160,6 @@ public partial class MainWindow
                 UpdateAdventurePresentation,
                 SetLoungeSoundtrack)
         ]);
-
-        if (!forceLegacy && nativeGameId is null && ModernLoungeView.IsAvailable)
-        {
-            OpenModernLounge();
-            return;
-        }
 
         bool returnToModernHub = false;
         var window = new LoungeWindow(
