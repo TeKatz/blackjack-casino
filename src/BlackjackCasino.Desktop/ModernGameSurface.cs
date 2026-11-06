@@ -41,7 +41,7 @@ internal sealed class ModernGameSurface
 
         try
         {
-            foreach ((UIElement element, _) in previous)
+            foreach (var (element, _) in previous)
                 element.SetCurrentValue(UIElement.IsEnabledProperty, false);
             content.Content = view;
             overlay.Visibility = Visibility.Visible;

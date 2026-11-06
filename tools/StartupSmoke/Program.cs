@@ -84,6 +84,7 @@ internal static class Program
                     "Retired native Blackjack controls must not be part of the window.");
                 Require(!((FrameworkElement)window.FindName("CasinoHeader")).IsVisible,
                     "The old Blackjack header is visible above the startup lobby.");
+                ModernGameSurfaceSmoke.Run();
                 CheckWelcomeOverlay(window, profile, output);
                 await VerifyPackagedModernLobby(window, output);
                 RequireNoLegacyLobbyFrame(window, "startup");
