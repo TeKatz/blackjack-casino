@@ -31,8 +31,9 @@ const obj=(v:unknown):v is Record<string,unknown>=>v!==null&&typeof v==='object'
 const count=(v:unknown,max=1000000000):v is number=>typeof v==='number'&&Number.isSafeInteger(v)&&v>=0&&v<=max;
 const txt=(v:unknown):v is string=>typeof v==='string'&&v.length<=8192;
 const guid=(v:unknown):v is string=>typeof v==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
-const cash=(v:unknown):v is string=>typeof v==='string'&&/^(0|[1-9]\d{0,14})(\.\d{1,4})?$/.test(v);
-const signedCash=(v:unknown):v is string=>typeof v==='string'&&/^-?(0|[1-9]\d{0,14})(\.\d{1,4})?$/.test(v);
+// Native bankrolls can retain full System.Decimal precision after multi-game settlements.
+const cash=(v:unknown):v is string=>typeof v==='string'&&/^(0|[1-9]\d{0,28})(\.\d{1,28})?$/.test(v);
+const signedCash=(v:unknown):v is string=>typeof v==='string'&&/^-?(0|[1-9]\d{0,28})(\.\d{1,28})?$/.test(v);
 const color=(v:unknown):v is string=>typeof v==='string'&&/^#[a-f0-9]{6}$/i.test(v);
 const score=(v:unknown):v is DiceScore=>obj(v)&&categories.includes(v.id as DiceCategory)&&txt(v.name)
  &&(v.stored===null||count(v.stored,1000))&&(v.preview===null||count(v.preview,1000))&&typeof v.upper==='boolean';
@@ -127,7 +128,7 @@ export function listenDice(onEvent:(event:{type:'snapshot';data:DiceSnapshot}|
        die:s&&obj(s.game)?s.game.dice:null,
        stakeCount:s&&Array.isArray(s.stakeOptions)?s.stakeOptions.length:null,
        prizeCount:s&&Array.isArray(s.stakePrizes)?s.stakePrizes.length:null,
-       mode:s?.mode,version:envelope?.version,
+       mode:s?.mode,version:envelope?.version,bankrollPreview:typeof s?.bankroll==='string'?s.bankroll.slice(0,64):null,
      });
      if(valid)onEvent({type:'snapshot',data:msg.data as DiceSnapshot});
    }
