@@ -45,7 +45,7 @@ internal static class ModernLoungeSmoke
             "document.querySelectorAll('.chill-card').length") == "6",
             "Lounge filter did not restore all six activities.");
 
-        await browser.ExecuteScriptAsync("document.querySelector('.chill-sudoku')?.click()");
+        await DispatchNavigation(browser, "document.querySelector('.chill-sudoku')?.click()");
         await UntilAsync(() => Find<Button>(window).Any(button =>
             button.IsVisible && button.Name == "SudokuNew_Medium"), 
             "React Sudoku tile did not open the existing saved C# game route.");
@@ -62,13 +62,22 @@ internal static class ModernLoungeSmoke
         Require(await returned.Browser.CoreWebView2!.ExecuteScriptAsync(
             "document.querySelectorAll('.chill-card').length") == "6",
             "The returned React Lounge lost activity navigation.");
-        await returned.Browser.CoreWebView2!.ExecuteScriptAsync(
+        await DispatchNavigation(returned.Browser.CoreWebView2!,
             "document.querySelector('.chill-exit')?.click()");
         await UntilAsync(() => Find<ModernLoungeView>(window).All(view => !view.IsVisible),
             "React Lounge could not return to the casino lobby.");
 
         File.WriteAllText(Path.Combine(output, "modern-lounge-result.txt"),
             "PASS: React six-game activity hub; puzzle filter; native Sudoku handoff; return to React; return to casino.");
+    }
+
+    private static async Task DispatchNavigation(CoreWebView2 browser, string script)
+    {
+        // A working click may dispose its own WebView2 before its JS result arrives.
+        // Dispatch once, then prove navigation by observing the native destination.
+        try { _ = await browser.ExecuteScriptAsync(script); }
+        catch (Exception ex) when (ex is InvalidOperationException
+            or System.Runtime.InteropServices.COMException) { }
     }
 
     private static async Task<T> UntilAsync<T>(Func<T?> get, string message) where T : class
