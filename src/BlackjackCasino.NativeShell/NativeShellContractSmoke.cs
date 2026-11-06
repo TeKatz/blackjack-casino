@@ -24,7 +24,11 @@ internal static class NativeShellContractSmoke
             if (!BlackjackModernProtocol.Trusted("https://midnight-manor.local/blackjack.html")
                 || BlackjackModernProtocol.Trusted("https://midnight-manor.local/reels.html")
                 || !ModernReelsProtocol.Trusted("https://midnight-manor.local/reels.html")
-                || ModernReelsProtocol.Trusted("https://example.com/reels.html"))
+                || ModernReelsProtocol.Trusted("https://example.com/reels.html")
+                || !ModernNeonVaultProtocol.Trusted("https://midnight-manor.local/neon-vault.html")
+                || ModernNeonVaultProtocol.Trusted("https://midnight-manor.local/nine-lives.html")
+                || !ModernNineLivesProtocol.Trusted("https://midnight-manor.local/nine-lives.html")
+                || ModernNineLivesProtocol.Trusted("https://example.com/nine-lives.html"))
                 throw new InvalidOperationException("Browser page trust is not isolated.");
 
             using (var session = new NativePreviewRuntime(directory))
@@ -54,13 +58,32 @@ internal static class NativeShellContractSmoke
                 if (spinEpoch.Execute(spin, _ => throw new Exception("Replayed spin!")) != receipt)
                     throw new InvalidOperationException("Reels spin executed twice.");
                 session.CloseReels();
+                session.OpenNeonVault();
+                var neonEpoch = new ModernNeonVaultSession();
+                var neonCommand = new ModernNeonVaultCommand(Guid.NewGuid().ToString("D"),
+                    neonEpoch.Id, 0, "spin", null);
+                ModernNeonVaultReply neonReceipt = neonEpoch.Execute(neonCommand, session.ApplyNeonVault);
+                if (!neonReceipt.Success || neonEpoch.Execute(neonCommand,
+                        _ => throw new Exception("Duplicate Neon Vault spin!")) != neonReceipt)
+                    throw new InvalidOperationException("Neon Vault receipt was not idempotent.");
+                session.CloseNeonVault();
+
+                session.OpenNineLives();
+                var nineEpoch = new ModernNineLivesSession();
+                var nineCommand = new ModernNineLivesCommand(Guid.NewGuid().ToString("D"),
+                    nineEpoch.Id, 0, "spin", null);
+                ModernNineLivesReply nineReceipt = nineEpoch.Execute(nineCommand, session.ApplyNineLives);
+                if (!nineReceipt.Success || nineEpoch.Execute(nineCommand,
+                        _ => throw new Exception("Duplicate Nine Lives spin!")) != nineReceipt)
+                    throw new InvalidOperationException("Nine Lives receipt was not idempotent.");
+                session.CloseNineLives();
                 session.Persist();
             }
             AppPreferences saved = PlayerStateStore.Load(directory);
             if (saved.Bankroll < 0 || !File.Exists(Path.Combine(directory, "profile.json")))
                 throw new InvalidOperationException("Isolated native-shell checkpoint was not stored.");
             Console.WriteLine("PASS: independent WinForms host, exact React protocol, Core Blackjack/Reels, "
-                + "receipts and preview-only save location; no WPF assembly reference.");
+                + "Neon Vault/Nine Lives receipts and preview-only save location; no WPF reference.");
             return 0;
         }
         catch (Exception ex)

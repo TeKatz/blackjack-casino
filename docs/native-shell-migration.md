@@ -1,7 +1,7 @@
 # WPF-free native shell: implementation and parity gate
 
 **Branch:** \`feature/manor-modernization-phase-1\`  
-**Status:** Independent WinForms/WebView2 executable with genuine native Blackjack and Midnight Reels game bridges. **Preview, not release replacement.** The production installer and auto-updater still package \`BlackjackCasino.Desktop.exe\` (WPF).
+**Status:** Independent WinForms/WebView2 executable with genuine native Blackjack, Midnight Reels, Neon Vault and Nine Lives game bridges. **Preview, not release replacement.** The production installer and auto-updater still package \`BlackjackCasino.Desktop.exe\` (WPF).
 
 ## What is already functional without WPF
 
@@ -11,7 +11,7 @@
 - Browser init/readiness watchdog, retry/lobby recovery without automatic wagers, and fresh browser command sessions. Reels recovery retains native game result state.
 - Source-linked preferences, profile, progression, receipt and save contracts from the actual desktop application, not a newly invented game-engine implementation.
 - A **separate preview save directory** under \`%LOCALAPPDATA%\BlackjackCasino\NativeShellPreview\`. This pilot never writes over production \`player-state.json\`, \`profile.json\` or history. A clean profile and bankroll are expected on first run; this is deliberately not a production-state migration.
-- Windows CI builds the project, runs the headless protocol, replay and isolated-storage smoke, publishes a *separate* native-shell pilot artifact, and checks that both React documents are bundled. The Development updater's WPF executable, channel, manifest, user saves and release package remain unchanged.
+- Windows CI builds the project, runs the headless protocol, replay and isolated-storage smoke, publishes a *separate* native-shell pilot artifact, and checks that all four React documents are bundled. The Development updater's WPF executable, channel, manifest, user saves and release package remain unchanged.
 
 ## Run the independent shell
 

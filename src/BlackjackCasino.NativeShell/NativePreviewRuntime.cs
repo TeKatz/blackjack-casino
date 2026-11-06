@@ -19,6 +19,14 @@ internal sealed class NativePreviewRuntime : IDisposable
     private SlotSpinResult? reelsLastSpin;
     private ProgressionAward? reelsAward;
     private decimal reelsBet;
+    private NeonVaultSession? neonMachine;
+    private NeonVaultSpinResult? neonLastSpin;
+    private ProgressionAward? neonAward;
+    private decimal neonBet;
+    private NineLivesSession? nineMachine;
+    private NineLivesSpinResult? nineLastSpin;
+    private ProgressionAward? nineAward;
+    private decimal nineBet;
     private bool disposed;
     private string status = "Choose a game from the native shell.";
 
@@ -36,6 +44,8 @@ internal sealed class NativePreviewRuntime : IDisposable
         progression = new PlayerProgressionController(LoadPreviewProfile(directory));
         table = new BlackjackTableController(Preferences);
         reelsBet = Math.Clamp(Preferences.SlotBet, SlotMachineRules.MinimumBet, SlotMachineRules.MaximumBet);
+        neonBet = NeonVaultRules.Bets.OrderBy(bet => Math.Abs(bet - Preferences.NeonVaultBet)).First();
+        nineBet = NineLivesRules.Bets.OrderBy(bet => Math.Abs(bet - Preferences.NineLivesBet)).First();
     }
 
     internal object BlackjackSnapshot() => BlackjackModernSnapshot.Create(
@@ -170,6 +180,183 @@ internal sealed class NativePreviewRuntime : IDisposable
         Persist();
     }
 
+
+    internal void OpenNeonVault()
+    {
+        if (disposed || HandInProgress)
+            throw new InvalidOperationException("Finish the Blackjack hand before Neon Vault.");
+        AccountCompletedRound();
+        if (neonMachine is null)
+        {
+            neonMachine = new NeonVaultSession(Bankroll);
+            neonBet = NeonVaultRules.Bets.OrderBy(bet => Math.Abs(bet - Preferences.NeonVaultBet)).First();
+            neonLastSpin = null;
+            neonAward = null;
+        }
+        else
+        {
+            neonMachine.SynchronizeBankroll(Bankroll);
+        }
+        status = "Neon Vault ready.";
+    }
+
+    internal object NeonVaultSnapshot()
+    {
+        if (neonMachine is null) throw new InvalidOperationException("Neon Vault is not active.");
+        AreaPresentationSettings presentation = Preferences.Presentation("neon-vault");
+        return ModernNeonVaultSnapshot.Create(neonMachine, neonBet, neonLastSpin, neonAward,
+            Profile, presentation.SoundEnabled, presentation.AnimationsEnabled,
+            Preferences.Language == UiLanguagePreference.German ? "de" : "en");
+    }
+
+    internal (bool Success, string Message) ApplyNeonVault(ModernNeonVaultCommand command)
+    {
+        if (disposed || neonMachine is null) return (false, "Neon Vault is not active.");
+        try
+        {
+            switch (command.Action)
+            {
+                case "bet.set":
+                    if (neonMachine.BonusActive)
+                        return (false, "Finish free spins before changing the wager.");
+                    decimal wager = decimal.Parse(command.Value!, CultureInfo.InvariantCulture);
+                    if (wager > neonMachine.Bankroll) return (false, "Not enough play money.");
+                    neonBet = wager;
+                    status = "Wager selected.";
+                    break;
+                case "sound.set":
+                case "animations.set":
+                    AreaPresentationSettings area = Preferences.Presentation("neon-vault");
+                    bool enabled = command.Value == "true";
+                    area = command.Action == "sound.set"
+                        ? area with { SoundEnabled = enabled }
+                        : area with { AnimationsEnabled = enabled };
+                    Preferences = Preferences.WithPresentation("neon-vault", area);
+                    status = "Presentation updated.";
+                    break;
+                case "spin":
+                    if (!neonMachine.BonusActive && neonBet > neonMachine.Bankroll)
+                        return (false, "Place an affordable wager.");
+                    NeonVaultSpinResult result = neonMachine.Spin(neonBet);
+                    table.Session.ResetBankroll(result.BankrollAfter);
+                    neonAward = new SlotProgression(progression.Service).Process(result);
+                    neonLastSpin = result;
+                    status = "Neon Vault spin settled.";
+                    break;
+                default:
+                    return (false, "Unsupported Neon Vault action.");
+            }
+            Persist();
+            return (true, status);
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException
+            or OverflowException or FormatException)
+        {
+            return (false, ex.Message);
+        }
+    }
+
+    internal void CloseNeonVault(bool interrupted = false)
+    {
+        if (neonMachine is null) return;
+        Preferences = Preferences with { NeonVaultBet = neonBet };
+        if (!interrupted)
+        {
+            neonMachine = null;
+            neonLastSpin = null;
+            neonAward = null;
+        }
+        Persist();
+    }
+
+    internal void OpenNineLives()
+    {
+        if (disposed || HandInProgress)
+            throw new InvalidOperationException("Finish the Blackjack hand before Nine Lives.");
+        AccountCompletedRound();
+        if (nineMachine is null)
+        {
+            nineMachine = new NineLivesSession(Bankroll);
+            nineBet = NineLivesRules.Bets.OrderBy(bet => Math.Abs(bet - Preferences.NineLivesBet)).First();
+            nineLastSpin = null;
+            nineAward = null;
+        }
+        else
+        {
+            nineMachine.SynchronizeBankroll(Bankroll);
+        }
+        status = "Nine Lives ready.";
+    }
+
+    internal object NineLivesSnapshot()
+    {
+        if (nineMachine is null) throw new InvalidOperationException("Nine Lives is not active.");
+        AreaPresentationSettings presentation = Preferences.Presentation("nine-lives");
+        return ModernNineLivesSnapshot.Create(nineMachine, nineBet, nineLastSpin, nineAward,
+            Profile, presentation.SoundEnabled, presentation.AnimationsEnabled,
+            Preferences.Language == UiLanguagePreference.German ? "de" : "en");
+    }
+
+    internal (bool Success, string Message) ApplyNineLives(ModernNineLivesCommand command)
+    {
+        if (disposed || nineMachine is null) return (false, "Nine Lives is not active.");
+        try
+        {
+            switch (command.Action)
+            {
+                case "bet.set":
+                    if (nineMachine.BonusActive)
+                        return (false, "Finish bonus spins before changing the wager.");
+                    decimal wager = decimal.Parse(command.Value!, CultureInfo.InvariantCulture);
+                    if (wager > nineMachine.Bankroll) return (false, "Not enough play money.");
+                    nineBet = wager;
+                    status = "Wager selected.";
+                    break;
+                case "sound.set":
+                case "animations.set":
+                    AreaPresentationSettings area = Preferences.Presentation("nine-lives");
+                    bool enabled = command.Value == "true";
+                    area = command.Action == "sound.set"
+                        ? area with { SoundEnabled = enabled }
+                        : area with { AnimationsEnabled = enabled };
+                    Preferences = Preferences.WithPresentation("nine-lives", area);
+                    status = "Presentation updated.";
+                    break;
+                case "spin":
+                    if (!nineMachine.BonusActive && nineBet > nineMachine.Bankroll)
+                        return (false, "Place an affordable wager.");
+                    NineLivesSpinResult result = nineMachine.Spin(nineBet);
+                    table.Session.ResetBankroll(result.BankrollAfter);
+                    nineAward = new SlotProgression(progression.Service).Process(result);
+                    nineLastSpin = result;
+                    status = "Nine Lives spin settled.";
+                    break;
+                default:
+                    return (false, "Unsupported Nine Lives action.");
+            }
+            Persist();
+            return (true, status);
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException
+            or OverflowException or FormatException)
+        {
+            return (false, ex.Message);
+        }
+    }
+
+    internal void CloseNineLives(bool interrupted = false)
+    {
+        if (nineMachine is null) return;
+        Preferences = Preferences with { NineLivesBet = nineBet };
+        if (!interrupted)
+        {
+            nineMachine = null;
+            nineLastSpin = null;
+            nineAward = null;
+        }
+        Persist();
+    }
+
     internal void Persist()
     {
         if (disposed) return;
@@ -186,6 +373,8 @@ internal sealed class NativePreviewRuntime : IDisposable
             SoundEnabled = table.SoundEnabled,
             AnimationsEnabled = table.AnimationsEnabled,
             SlotBet = reelsBet,
+            NeonVaultBet = neonBet,
+            NineLivesBet = nineBet,
         };
         // This isolated preview directory is NEVER the production save folder.
         PlayerStateStore.SaveOrThrow(Preferences, directory);
@@ -239,6 +428,8 @@ internal sealed class NativePreviewRuntime : IDisposable
         try
         {
             if (reelsMachine is not null) CloseReels();
+            if (neonMachine is not null) CloseNeonVault();
+            if (nineMachine is not null) CloseNineLives();
             AccountCompletedRound();
             Persist();
         }
