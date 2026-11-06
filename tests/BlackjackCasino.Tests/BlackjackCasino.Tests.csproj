@@ -24,6 +24,7 @@
     <Compile Include="../../src/BlackjackCasino.Desktop/ModernNineLivesProtocol.cs" Link="Presentation/ModernNineLivesProtocol.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/ModernNineLivesSnapshot.cs" Link="Presentation/ModernNineLivesSnapshot.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/ModernNeonVaultProtocol.cs" Link="Presentation/ModernNeonVaultProtocol.cs" />
+    <Compile Include="../../src/BlackjackCasino.Desktop/ModernMergeProtocol.cs" Link="Presentation/ModernMergeProtocol.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/ModernNeonVaultSnapshot.cs" Link="Presentation/ModernNeonVaultSnapshot.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/ModernReelsSnapshot.cs" Link="Presentation/ModernReelsSnapshot.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/EmpireModernProtocol.cs" Link="Presentation/EmpireModernProtocol.cs" />
