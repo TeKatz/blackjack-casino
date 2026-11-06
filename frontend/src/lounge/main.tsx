@@ -5,12 +5,15 @@ import type { LoungeId, LoungeSnapshot } from './bridge';
 import { SudokuScreen } from './sudoku';
 import { SolitaireScreen } from './solitaire';
 import { WordSearchScreen } from './wordSearch';
+import { MemoryScreen } from './memory';
 import { isSudokuReply, issueSudokuIntent } from './sudokuBridge';
 import type { SudokuIntent } from './sudokuBridge';
 import { isSolitaireReply, issueSolitaireIntent } from './solitaireBridge';
 import type { SolitaireIntent } from './solitaireBridge';
 import { isWordSearchReply, issueWordSearchIntent } from './wordSearchBridge';
 import type { WordSearchIntent } from './wordSearchBridge';
+import { isMemoryReply, issueMemoryIntent } from './memoryBridge';
+import type { MemoryIntent } from './memoryBridge';
 import './lounge.css';
 
 type Language = 'de' | 'en';
@@ -73,6 +76,8 @@ function App() {
  const [solitaireError,setSolitaireError]=useState('');
  const [wordSearchPending,setWordSearchPending]=useState<string|null>(null);
  const [wordSearchError,setWordSearchError]=useState('');
+ const [memoryPending,setMemoryPending]=useState<string|null>(null);
+ const [memoryError,setMemoryError]=useState('');
  const signalled=useRef(false);
  useEffect(()=>{
    const webview=window.chrome?.webview;
@@ -101,6 +106,13 @@ function App() {
        const reply=msg.data;
        setWordSearchPending(prev=>prev===reply.requestId?null:prev);
        setWordSearchError(reply.success?'':reply.message);
+     }
+     if(msg&&typeof msg==='object'&&!Array.isArray(msg)
+       &&'type' in msg&&msg.type==='lounge.memory.result'
+       &&'data' in msg&&isMemoryReply(msg.data)){
+       const reply=msg.data;
+       setMemoryPending(prev=>prev===reply.requestId?null:prev);
+       setMemoryError(reply.success?'':reply.message);
      }
    };
    webview?.addEventListener('message',handler);
@@ -136,13 +148,23 @@ function App() {
    setWordSearchError('');
    setWordSearchPending(issueWordSearchIntent(snapshot.wordSearchSession,snapshot.wordSearchRevision,intent));
  }
+ function memoryCommand(intent:MemoryIntent){
+   if(!snapshot||memoryPending||!snapshot.memory)return;
+   setMemoryError('');
+   setMemoryPending(issueMemoryIntent(snapshot.memorySession,snapshot.memoryRevision,intent));
+ }
  return <main className="chill-shell">
    <div className="chill-sparkles" aria-hidden="true"/>
    <header className="chill-header">
      <div className="chill-mark" aria-hidden="true">✦</div>
      <div className="chill-brand"><span>{t.club}</span><strong>Chill Lounge</strong></div>
      <span className="chill-local">{t.version}</span>
-     {snapshot?.wordSearch
+     {snapshot?.memory
+       ? <button className="chill-exit" disabled={!!memoryPending}
+           onClick={()=>memoryCommand({action:snapshot.memory?.screen==='library'?'memory.exit':'memory.back'})}>
+           {snapshot.memory.screen==='library'?'← Chill Lounge'
+             :(language==='de'?'← Memory-Auswahl':'← Memory cabinet')}</button>
+       : snapshot?.wordSearch
        ? <button className="chill-exit" disabled={!!wordSearchPending}
            onClick={()=>wordSearchCommand({action:snapshot.wordSearch?.screen==='game'?'word-search.back':'word-search.exit'})}>
            {snapshot.wordSearch.screen==='game'
@@ -163,7 +185,10 @@ function App() {
        : <button className="chill-exit" onClick={()=>sendLoungeCommand('lounge.close')}>{t.back}</button>}
    </header>
    <div className="chill-content">
-    {snapshot?.wordSearch
+    {snapshot?.memory
+      ? <MemoryScreen state={snapshot.memory} language={language} pending={!!memoryPending}
+          error={memoryError} command={memoryCommand} animations={snapshot.animationsEnabled}/>
+      : snapshot?.wordSearch
       ? <WordSearchScreen state={snapshot.wordSearch} language={language} pending={!!wordSearchPending}
           error={wordSearchError} command={wordSearchCommand} animations={snapshot.animationsEnabled}/>
       : snapshot?.solitaire
