@@ -46,18 +46,18 @@ const puzzle=(v:unknown):v is WordSearchPuzzle=>{
  new Set(v.found).size!==v.found.length||
  !(v.found as string[]).every(w=>(v.words as string[]).includes(w))||
  !Array.isArray(v.foundPaths)||v.foundPaths.length!==v.found.length||
- !v.foundPaths.every(p=>path(p,v.size))||
+ !v.foundPaths.every(p=>path(p,v.size as number))||
  new Set(v.foundPaths.map((p:WordSearchPath)=>p.word)).size!==v.found.length||
  !(v.foundPaths as WordSearchPath[]).every(p=>{
   if(!(v.found as string[]).includes(p.word))return false;
   const deltaR=Math.sign(p.endRow-p.startRow),deltaC=Math.sign(p.endColumn-p.startColumn);
   const len=Math.max(Math.abs(p.endRow-p.startRow),Math.abs(p.endColumn-p.startColumn))+1;
   if(len!==p.word.length)return false;
-  for(let i=0;i<len;i++)if(v.grid[(p.startRow+i*deltaR)*v.size+p.startColumn+i*deltaC]!==p.word[i])return false;
+  for(let i=0;i<len;i++)if((v.grid as string)[(p.startRow+i*deltaR)*(v.size as number)+p.startColumn+i*deltaC]!==p.word[i])return false;
   return true;
  })||
  !(v.hint===null||(record(v.hint)&&word(v.hint.word)&&
-  (v.words as string[]).includes(v.hint.word)&&
+  (v.words as string[]).includes(v.hint.word as string)&&
   integer(v.hint.startRow,v.size-1)&&integer(v.hint.startColumn,v.size-1)))||
  !integer(v.hintsUsed)||!integer(v.elapsedSeconds)||typeof v.completed!=='boolean'||
  !integer(v.rewardXp,10000))return false;
