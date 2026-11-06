@@ -65,7 +65,7 @@ public sealed class ModernMergeBridgeTests
 
         ModernMergeReply first = commands.Execute(spawn, board.Snapshot.Revision, Commit);
         Assert.True(first.Success);
-        Assert.Equal(1, board.Snapshot.Items.Count);
+        Assert.Single(board.Snapshot.Items);
         Assert.Equal(1, board.Snapshot.Revision);
         Assert.Equal(first, commands.Execute(spawn, board.Snapshot.Revision, Commit));
         Assert.Equal(1, executions);
@@ -76,7 +76,7 @@ public sealed class ModernMergeBridgeTests
         };
         Assert.False(commands.Execute(stale, board.Snapshot.Revision, Commit).Success);
         Assert.False(new ModernMergeSession().Execute(spawn, board.Snapshot.Revision, Commit).Success);
-        Assert.Equal(1, board.Snapshot.Items.Count);
+        Assert.Single(board.Snapshot.Items);
     }
 
     [Fact]
@@ -96,7 +96,7 @@ public sealed class ModernMergeBridgeTests
 
         MergeBoard rehosted = new(saved);
         Assert.Equal(10, rehosted.Snapshot.RenovationPoints);
-        Assert.Equal(1, rehosted.Snapshot.Receipts.Count);
+        Assert.Single(rehosted.Snapshot.Receipts);
         Assert.Equal(board.Snapshot.Revision, rehosted.Snapshot.Revision);
         Assert.Equal(MergeOutcome.AlreadyCompleted, rehosted.TryComplete(order.Id).Outcome);
         Assert.Equal(10, rehosted.Snapshot.RenovationPoints);
