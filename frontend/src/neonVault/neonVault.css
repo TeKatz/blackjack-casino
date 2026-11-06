@@ -20,7 +20,7 @@ button:focus-visible,input:focus-visible{outline:2px solid #7ef0fc;outline-offse
 .vault-brand>div{color:#7da7bd;letter-spacing:.17em;font-size:8px;font-weight:700}
 .vault-header-wallet{text-align:right;justify-self:end}.vault-header-wallet small{display:block;font-size:10px;color:#7eacc8}
 .vault-header-wallet strong{font-size:clamp(16px,2.3vw,24px);color:#e8fbff;white-space:nowrap}
-.vault-layout{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:clamp(12px,1.6vw,25px);
+.vault-layout{flex:1;display:grid;align-items:start;min-height:0;grid-template-columns:minmax(0,1fr) 310px;gap:clamp(12px,1.6vw,25px);
  width:min(1600px,100%);margin:0 auto;padding:clamp(10px,1.6vw,24px)}
 .vault-machine{position:relative;isolation:isolate;min-width:0;display:flex;flex-direction:column;align-items:center;
  border:3px solid #256a92;border-radius:21px;padding:16px clamp(12px,2.2vw,29px) 20px;
@@ -99,7 +99,8 @@ button:focus-visible,input:focus-visible{outline:2px solid #7ef0fc;outline-offse
 .vault-spin:hover:not(:disabled){filter:brightness(1.12)}
 .vault-auto{border:1px solid #8158ba;background:linear-gradient(#4d367b,#242254);border-radius:9px;font-weight:800}
 .vault-auto:hover:not(:disabled){background:#6147a0}
-.vault-sidebar{min-width:0;display:flex;flex-direction:column;gap:12px}
+.vault-sidebar{min-width:0;display:flex;flex-direction:column;gap:12px;max-height:calc(100vh - 100px);
+ overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#315d85 transparent;}
 .vault-panel{background:linear-gradient(145deg,#131b35,#0c1426);border:1px solid #305178;border-radius:15px;padding:13px 15px}
 .vault-panel h2{font:700 20px Georgia,serif;color:#bdeefe;margin:0}
 .vault-panel-title{display:flex;align-items:center;gap:8px;margin-bottom:10px}
@@ -149,7 +150,7 @@ button:focus-visible,input:focus-visible{outline:2px solid #7ef0fc;outline-offse
  .vault-jackpot{padding:5px}.vault-panel>p{margin:5px 0}.vault-payrow{padding:1px}
  .vault-payrow .vault-symbol{height:25px;width:25px}.vault-payrow{grid-template-columns:26px minmax(0,1fr) auto}}
 @media(max-width:1200px){.vault-layout{grid-template-columns:minmax(0,1fr) 263px;gap:9px}.vault-panel{padding-inline:9px}}
-@media(max-width:920px){.vault-layout{grid-template-columns:1fr}.vault-sidebar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:920px){.vault-layout{grid-template-columns:1fr}.vault-sidebar{max-height:none;overflow:visible;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
  .vault-settings{grid-column:1/-1;margin-top:0}.vault-grid{max-height:none;aspect-ratio:1.82}.vault-board{max-width:850px}}
 @media(max-width:620px){.vault-header{grid-template-columns:1fr 1fr;gap:4px}.vault-brand{grid-column:1/-1;grid-row:1}
  .vault-back{grid-row:2}.vault-header-wallet{grid-row:2}.vault-featurebar{grid-template-columns:80px minmax(0,1fr);gap:4px}
@@ -161,3 +162,21 @@ button:focus-visible,input:focus-visible{outline:2px solid #7ef0fc;outline-offse
  .vault-actions{grid-template-columns:1fr 105px}.vault-spin{font-size:15px;gap:4px}.vault-spin kbd{display:none}
  .vault-sidebar{grid-template-columns:1fr}.vault-record-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(prefers-reduced-motion:reduce){.vault-cell,.vault-cell .vault-symbol,.vault-bonus-badge{transition:none!important;animation:none!important}}
+
+/* Preserve reachable wagering controls on compact desktop windows.
+   The informational sidebar scrolls independently instead of stretching
+   the slot cabinet beyond the viewport (especially at 1080×720). */
+@media(max-height:760px) and (min-width:921px){
+ .vault-layout{padding-block:5px}
+ .vault-machine{padding-block:6px}
+ .vault-board-decoration{display:none}
+ .vault-grid{aspect-ratio:2.55}
+ .vault-featurebar{padding:3px 8px;margin-bottom:4px}
+ .vault-machine-head{margin-bottom:4px}
+ .vault-feedback{min-height:39px}
+ .vault-console{gap:4px}
+ .vault-meters>div{padding:2px}
+ .vault-bets button{padding-block:4px}
+ .vault-spin{height:42px}
+ .vault-sidebar{max-height:calc(100vh - 76px)}
+}
