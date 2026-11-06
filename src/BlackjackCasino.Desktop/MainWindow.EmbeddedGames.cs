@@ -96,7 +96,10 @@ public partial class MainWindow
     private void ShowEmbeddedGame(Window shell, string title, bool muteHostMusic, Action closed)
     {
         EnsureEmbeddedGameHost();
-        if (embeddedGameShell is not null || embeddedGameOverlay is null || embeddedGameHost is null)
+        // A legacy WPF window (including Manor rollback) must not steal a
+        // mounted React page; ModernGameSurface already enforces the reverse.
+        if (embeddedGameShell is not null || modernGameSurface?.IsOccupied == true
+            || embeddedGameOverlay is null || embeddedGameHost is null)
         {
             return;
         }
