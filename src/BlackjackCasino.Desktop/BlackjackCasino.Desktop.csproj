@@ -25,6 +25,8 @@
     <Resource Include="Assets\NineLives\*.jpg" />
   </ItemGroup>
   <ItemGroup>
+    <None Remove="Assets/NineLives/*.jpg" />
+    <None Include="Assets/NineLives/*.jpg" Link="ModernFrontend/nine-lives-art/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <PackageReference Include="Microsoft.Web.WebView2" />
     <Content Include="../../frontend/dist/**/*" Link="ModernFrontend/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Condition="Exists('../../frontend/dist/index.html')" />
   </ItemGroup>

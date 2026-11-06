@@ -303,6 +303,7 @@ public partial class MainWindow
 
     private void CloseEmbeddedGame()
     {
+        if (ModernNineLivesOpen) { CloseModernNineLives(); return; }
         if (ModernReelsOpen)
         {
             CloseModernReels();

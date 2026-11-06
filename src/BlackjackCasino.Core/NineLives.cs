@@ -208,6 +208,14 @@ public sealed class NineLivesSession
     public int BonusSpinsRemaining { get; private set; }
     public bool BonusActive => BonusSpinsRemaining > 0;
 
+    /// <summary>Synchronize the shared wallet when a WebView2 presentation is rehosted.
+    /// Existing free spins and all RNG state remain unchanged.</summary>
+    public void SynchronizeBankroll(decimal value)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(value);
+        Bankroll = value;
+    }
+
     public NineLivesSpinResult Spin(decimal requestedBet)
     {
         bool bonusSpin = BonusSpinsRemaining > 0;
