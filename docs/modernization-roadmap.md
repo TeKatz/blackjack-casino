@@ -34,6 +34,14 @@ A narrowly validated `lounge.sudoku.command` boundary allows only legal game int
 
 Unit tests cover protocol rejection, command replay/stale-session safety, failed-write rollback and completion idempotency. A new real WebView2 smoke exercises the React Sudoku library, input, notes, undo/redo, native incorrect-value feedback, hint and resume. The extensive legacy WPF Sudoku smoke is temporarily retained as rollback coverage. Hardware visual acceptance and the later deletion of the WPF Sudoku/Lounge source are still open and **not** claimed complete. See [Sudoku modernization](sudoku-modernization.md).
 
+## Midnight Solitaire React gameplay migration (2026-11-06)
+
+All six Solitaire variants now run through the shared React Chill Lounge: Klondike, FreeCell, Spider (1, 2 or 4 suits), Pyramid, Golf and TriPeaks. The 8 table choices preserve per-mode save slots and the original layout, stock/discard/foundation semantics, face-down cards, C#-validated moves, deterministic numbered FreeCell deals, completion, milestone achievements and rewards. The active cosmetic card palette is resolved from the existing collection; the card UI is not a replacement game engine.
+
+The `lounge.solitaire.command` protocol accepts only a session/revision GUID-verified allow-list of `new`, `resume`, `draw`, `move`, `activate`, `auto`, `back` and `exit`. Every legal move is applied to a detached C# copy and durably saved before it replaces the current deal. Start, abandonment and completion records use the existing idempotent C# progression ledger. Browser-side state cannot submit a shuffle, win, bankroll or player reward. Resuming a saved game never incurs a second start receipt.
+
+Dedicated xUnit, Vitest and real Windows WebView2 smokes cover variant dealing, replay prevention, failed persistence, 81-card-equivalent visual layouts where applicable, original FreeCell numbers, native draw/resume and navigation. The old Solitaire WPF interface remains for emergency fallback and comparison only; the main WPF host and the remaining four Lounge destinations are still to be migrated. See [Solitaire modernization](solitaire-modernization.md).
+
 ## Casino Empire presentation migration (2026-11-05)
 
 Empire now has a separate React/TypeScript entry point (`empire.html`) for both

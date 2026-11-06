@@ -116,7 +116,7 @@ function layout(g:SolitaireGame):Slot[]{
  }
  return s;
 }
-function CardFace({card,backLabel}:{card:SolitaireCard;backLabel:string}){
+function CardFace({card,backLabel,mark}:{card:SolitaireCard;backLabel:string;mark:string}){
  const sym=suitSymbols[card.suit]||'♠',isRed=card.suit==='Hearts'||card.suit==='Diamonds';
  return card.faceUp
   ? <span className={'sol-card-face '+(isRed?'red':'black')}>
@@ -125,7 +125,7 @@ function CardFace({card,backLabel}:{card:SolitaireCard;backLabel:string}){
      <span className="sol-corner bottom"><b>{rankSymbol(card.rank)}</b><span>{sym}</span></span>
     </span>
   : <span className="sol-card-back" aria-label={backLabel}>
-      <span className="sol-back-frame"><span>✦</span></span>
+      <span className="sol-back-frame"><span>{mark}</span></span>
     </span>;
 }
 function GameTable({game,skinId,selected,setSelected,pending,command,language}:{
@@ -216,7 +216,7 @@ function GameTable({game,skinId,selected,setSelected,pending,command,language}:{
             else clicked(slot.id,index,card);
           }}
           onDoubleClick={e=>{e.stopPropagation();doubleClicked(slot.id,index);}}>
-          <CardFace card={card} backLabel={t.cardBack}/>
+          <CardFace card={card} backLabel={t.cardBack} mark={skin.mark}/>
          </button>;
        })}
        {isStock&&cards.length>0&&<span className="sol-stock-count">{cards.length}</span>}
