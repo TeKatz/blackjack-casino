@@ -43,7 +43,7 @@ internal static class ModernMemorySmoke
             throw new InvalidOperationException("Native Memory engine never started.");
         Guid firstGameId=game.GameId;
         Require(game.DeckId=="animals","Deck selection did not reach the C# native game.");
-        int mate=Enumerable.Range(1,game.Cards.Count).Single(i=>game.Cards[i]==game.Cards[0]);
+        int mate=Enumerable.Range(1,game.Cards.Count-1).Single(i=>game.Cards[i]==game.Cards[0]);
 
         await Flip(web,0,"document.querySelector('[data-testid=\"memory-card-0\"]')?.dataset.faceUp==='true'");
         Require(await Js(web,
