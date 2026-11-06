@@ -25,6 +25,9 @@ jobs:
       - name: Repository documentation and release guard
         run: python tools/check_repo_contract.py
 
+      - name: React and legacy WPF separation audit
+        run: python tools/check_ui_migration_boundaries.py
+
       - name: Setup Node for modern Manor frontend
         uses: actions/setup-node@v4
         with:
