@@ -92,6 +92,9 @@ internal static class ModernSolitaireSmoke
         await Click(web, ".chill-exit",
             "Boolean(document.querySelector('.chill-solitaire'))",
             "Solitaire cabinet did not return to the React Lounge.");
+        Require(await Js(web,
+            "document.querySelector('.chill-solitaire .chill-card-bottom span')?.textContent?.includes('8 active')===true"),
+            "React Lounge card retained stale Solitaire progress after the native game updates.");
         File.WriteAllText(Path.Combine(output,"modern-solitaire-result.txt"),
             "PASS: native C# React Solitaire across Klondike, numbered FreeCell, all Spider suit modes, Pyramid, Golf and TriPeaks; stock draw, durable resume, achievements, cabinet and Lounge back navigation.");
     }

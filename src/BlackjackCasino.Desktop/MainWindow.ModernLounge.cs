@@ -22,7 +22,9 @@ public partial class MainWindow
         var games = LoungeHostedGameRegistry.Snapshot.Select(module => new
         {
             module.Definition.Id,
-            Status = module.Definition.Status?.Invoke(),
+            Status = module.Definition.Id == "solitaire"
+                ? CurrentModernSolitaireStatus()
+                : module.Definition.Status?.Invoke(),
         }).ToList();
         games.Insert(0, new
         {
@@ -44,6 +46,13 @@ public partial class MainWindow
             AnimationsEnabled = preferences.Presentation("chill-lounge").AnimationsEnabled,
             Games = games,
         };
+    }
+
+    private string CurrentModernSolitaireStatus()
+    {
+        SolitaireStatistics stats = progressionController?.Profile.Solitaire ?? new SolitaireStatistics();
+        int active = preferences.Solitaire.ActiveGames.Values.Count(game => !game.Won);
+        return $"{stats.Wins:N0} wins · {active} active · {SolitaireAchievementCatalog.Completed(stats)}/{SolitaireAchievementCatalog.All.Count} achievements";
     }
 
     private void OpenModernLounge()
