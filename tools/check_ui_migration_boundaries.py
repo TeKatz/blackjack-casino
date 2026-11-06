@@ -169,11 +169,13 @@ def main() -> int:
             issues.append("Independent shell must be WinForms/WebView2 without WPF.")
         if any(token in form for token in ("System.Windows.Controls", "System.Windows.Threading", "PresentationFramework")):
             issues.append("New native shell reintroduced WPF types.")
-        if any(page not in form for page in ("blackjack.html", "reels.html", "neon-vault.html", "nine-lives.html")):
-            issues.append("Native shell lost a validated four-game browser route.")
+        if any(page not in form for page in ("blackjack.html", "reels.html", "neon-vault.html", "nine-lives.html", "midnight-merge.html")):
+            issues.append("Native shell lost a validated five-game browser route.")
         if "BlackjackCasino.NativeShell/BlackjackCasino.NativeShell.csproj" not in text(
                 ROOT / ".github/workflows/ci.yml"):
             issues.append("Windows CI no longer exercises the WPF-free host.")
+        if "--web-smoke" not in text(ROOT / ".github/workflows/ci.yml"):
+            issues.append("Real independent WPF-free WebView2 startup smoke is missing.")
         release = text(ROOT / ".github/workflows/development-release.yml")
         if "dotnet publish src/BlackjackCasino.NativeShell" in release:
             issues.append("Experimental native shell has been mistakenly switched into Development updates.")

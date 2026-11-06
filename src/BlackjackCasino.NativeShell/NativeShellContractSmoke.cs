@@ -97,7 +97,12 @@ internal static class NativeShellContractSmoke
             AppPreferences saved = PlayerStateStore.Load(directory);
             if (saved.Bankroll < 0 || !File.Exists(Path.Combine(directory, "profile.json")))
                 throw new InvalidOperationException("Isolated native-shell checkpoint was not stored.");
-            Console.WriteLine("PASS: independent WinForms host, exact React protocol, Core Blackjack/Reels, "
+            string english = NativeMergeText.Translate("Merge.Title", UiLanguagePreference.English);
+            string german = NativeMergeText.Translate("Merge.Eyebrow", UiLanguagePreference.German);
+            if (english != "Midnight Merge" || !german.Contains("RESTAURIERUNG", StringComparison.Ordinal))
+                throw new InvalidOperationException("Original English/German Merge resources were not loaded.");
+
+            Console.WriteLine("PASS: independent WinForms host, exact React protocol, Core Blackjack/Reels, 
                 + "Neon Vault/Nine Lives receipts and preview-only save location; no WPF reference.");
             return 0;
         }

@@ -1,7 +1,7 @@
 # WPF-free native shell: implementation and parity gate
 
 **Branch:** `feature/manor-modernization-phase-1`  
-**Status:** Independent WinForms/WebView2 executable with genuine native Blackjack, Midnight Reels, Neon Vault and Nine Lives game bridges. **Preview, not release replacement.** The production installer and auto-updater still package `BlackjackCasino.Desktop.exe` (WPF).
+**Status:** Independent WinForms/WebView2 executable with genuine native Blackjack, Midnight Reels, Neon Vault, Nine Lives and Midnight Merge game bridges. **Preview, not release replacement.** The production installer and auto-updater still package `BlackjackCasino.Desktop.exe` (WPF).
 
 ## What is already functional without WPF
 
@@ -11,7 +11,7 @@
 - Browser init/readiness watchdog, retry/lobby recovery without automatic wagers, and fresh browser command sessions. Reels recovery retains native game result state.
 - Source-linked preferences, profile, progression, receipt and save contracts from the actual desktop application, not a newly invented game-engine implementation.
 - A **separate preview save directory** under `%LOCALAPPDATA%\BlackjackCasino\NativeShellPreview`. This pilot never writes over production `player-state.json`, `profile.json` or history. A clean profile and bankroll are expected on first run; this is deliberately not a production-state migration.
-- Windows CI builds the project, runs the headless protocol, replay and isolated-storage smoke, publishes a *separate* native-shell pilot artifact, and checks that all four React documents are bundled. The Development updater's WPF executable, channel, manifest, user saves and release package remain unchanged.
+- Windows CI builds the project, runs the headless protocol, replay and isolated-storage smoke, publishes a *separate* native-shell pilot artifact, and checks that all five React documents are bundled. The Development updater's WPF executable, channel, manifest, user saves and release package remain unchanged.
 
 ## Run the independent shell
 
@@ -42,3 +42,7 @@ For packaged binary, use the CI artifact **blackjack-casino-native-shell-preview
 | Release gate | Windows 10/11 runtime parity; update, rollback, restart and crash tests; all old WPF smoke tests replaced by equivalent real WebView2 tests |
 
 A successful CI build of this pilot **does not prove** full migration. Do not set the Development/stable publisher to it, delete `BlackjackCasino.Desktop`, disable WPF smokes or claim WPF has been removed. Only switch the release target after every row is implemented and the old/new host runs pass the same functional acceptance suite.
+
+## Independent real-WebView2 acceptance
+
+The separate Windows CI `--web-smoke` mode now opens all five native-host routes through the real WinForms WebView2 control and the packaged React pages, requires the UI-ready handshake and a rendered document, then verifies lobby return. Each run uses its own temporary browser profile and player state. The existing headless `--smoke` additionally validates original EN/DE Merge resource lookup, native game actions, spin/order receipts and rejection of replay. This tests host startup and native command bridging; it does **not** replace complete game interaction, player migration, audio, update or screen-reader acceptance.

@@ -40,9 +40,9 @@ internal sealed class NativeShellForm : Form
     private bool listening, ready, browserFailed, closing;
     private readonly string frontendFolder = Path.Combine(AppContext.BaseDirectory, "ModernFrontend");
 
-    internal NativeShellForm()
+    internal NativeShellForm(string? previewDirectory = null)
     {
-        string previewDirectory = Path.Combine(
+        previewDirectory ??= Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "BlackjackCasino", "NativeShellPreview");
         runtime = new NativePreviewRuntime(previewDirectory);
@@ -109,6 +109,13 @@ internal sealed class NativeShellForm : Form
         };
         ShowHome();
     }
+
+    // Minimal internal acceptance interface; never used by React or game commands.
+    internal bool PreviewReady => ready && !browserFailed;
+    internal string? PreviewMode => activeMode;
+    internal CoreWebView2? PreviewBrowser => browser?.CoreWebView2;
+    internal Task OpenForAcceptanceAsync(string mode) => OpenModeAsync(mode);
+    internal void ReturnForAcceptance() => ReturnToHome();
 
     private static Button MakeButton(string label, Action click)
     {

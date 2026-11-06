@@ -9,10 +9,17 @@ internal static class Program
     {
         if (args is ["--smoke"])
             return NativeShellContractSmoke.Run();
+        if (args is ["--web-smoke"])
+        {
+            System.Windows.Forms.Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
+            System.Windows.Forms.Application.EnableVisualStyles();
+            System.Windows.Forms.Application.SetCompatibleTextRenderingDefault(false);
+            return NativeShellWebSmoke.Run();
+        }
 
         if (args.Length != 0)
         {
-            Console.Error.WriteLine("Usage: BlackjackCasino.NativeShell.exe [--smoke]");
+            Console.Error.WriteLine("Usage: BlackjackCasino.NativeShell.exe [--smoke|--web-smoke]");
             return 2;
         }
 
