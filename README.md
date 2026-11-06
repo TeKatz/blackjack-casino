@@ -29,7 +29,7 @@ The Development lobby uses its own React/TypeScript entry point (`frontend/lobby
 - Responsive DOM layout with accessible keyboard-focus states, compact screen-height handling, card hover lift, image zoom, reflected highlights and gold button feedback.
 - Transparent **PixiJS particle atmosphere**, limited to 30 FPS and paused while the document is hidden; it respects reduced-motion settings and the game's animation preference.
 - **C#-owned** player balances, progression and mode availability. The isolated WebView2 lobby sends only allowed navigation intents; it cannot calculate rewards or change saved finances.
-- The original **WPF lobby remains as an emergency fallback** if WebView2 is unavailable or the modern page does not load; the Blackjack table is never the startup surface. The obsolete native Daily Login drawer and automatic startup welcome were removed from the normal startup path. Every existing game opens through the original registered C# action, including Casino Empire's detached-window option.
+- The original **WPF lobby remains as an emergency fallback** if WebView2 is unavailable or the modern page does not load; the Blackjack table is never the startup surface. The obsolete native Daily Login drawer is removed, and the unused WPF startup-welcome window has been deleted. Every existing game opens through the original registered C# action, including Casino Empire's detached-window option.
 
 For native builds, run `npm run build` from `frontend/` before the .NET build. Vite emits `index.html` (Manor), `lobby.html`, `empire.html`, `blackjack.html` and `reels.html`, plus their local assets into `frontend/dist/`; the desktop project packages that whole directory as `ModernFrontend`.
 
@@ -148,6 +148,10 @@ dotnet test BlackjackCasino.sln --configuration Release --no-build
 
 Windows CI additionally runs actual desktop startup, Manor runtime and presentation regression tests. A successful frontend build or documentation check alone does not prove an installable Windows release. Production packages are created and verified by the release workflows.
 
+## WPF cleanup and React Lounge separation
+
+All six normal Chill Lounge routes are now registered by `ModernLoungeCatalog`, independent of the emergency native game registry. Opening React does not create legacy WPF game screens or load their presentation decorators. `OpenLegacyLounge` is reserved for the explicit WebView2 failure/unavailable fallback. The unused startup-welcome WPF dialog was removed, together with its obsolete reflection-only smoke. The automated [WPF cleanup inventory](docs/legacy-wpf-inventory.md) records the remaining compiled native dependencies; these must not be deleted before device and recovery acceptance.
+
 ## Current engineering boundaries
 
 - **Midnight Manor:** modern presentation is the default in Development; remaining subjective audio, display-scaling and long-session performance checks are tracked separately.
@@ -173,4 +177,5 @@ The roadmap tracks completed migration stages and outstanding quality gates; his
 - [Casino Empire](docs/casino-empire.md)
 - [Tales from the Backroom](docs/adventure-engine.md)
 - [Tales React migration](docs/adventure-modernization.md)
+- [Legacy WPF cleanup inventory](docs/legacy-wpf-inventory.md)
 

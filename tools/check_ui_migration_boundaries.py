@@ -109,16 +109,16 @@ def main() -> int:
     contents = [(p, text(p)) for p in source_paths]
 
     for name in CANDIDATES:
-        has_source = (ROOT / "src/BlackjackCasino.Desktop" / (name + ".cs")).exists() or (
-            ROOT / "src/BlackjackCasino.Desktop" / (name + ".xaml")).exists()
-        if not has_source:
-            print(f"  {name:<34} REMOVED / NOT A TOP-LEVEL SOURCE FILE")
+        declaration = re.compile(r"\b(?:class|struct|record)\s+" + re.escape(name) + r"\b")
+        owning = {p for p, body in contents if declaration.search(body)}
+        if not owning:
+            print(f"  {name:<34} NO COMPILED TYPE DECLARATION")
             continue
         pattern = re.compile(r"\b" + re.escape(name) + r"\b")
         references: list[str] = []
         for path, body in contents:
-            # The class's own .cs/.xaml or partial files aren't external usage.
-            if path.name == name + ".cs" or path.name == name + ".xaml" or path.name.startswith(name + "."):
+            # A class's own declaration and partial implementation are not usage.
+            if path in owning or path.name == name + ".xaml" or path.name.startswith(name + "."):
                 continue
             if pattern.search(body):
                 references.append(str(path.relative_to(ROOT)).replace("\\", "/"))

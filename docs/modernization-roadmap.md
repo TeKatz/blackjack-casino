@@ -22,7 +22,9 @@ The casino lobby is now a separate, read-only React/TypeScript/PixiJS page built
 - Native games and Blackjack-table-specific settings stay WPF until replacement. The WPF Album, Vault and profile editor remain only for emergency/legacy-game fallbacks, never as primary modern-lobby pages.
 - The full native fallback casino lobby and old Manor source remain temporarily because Windows presentation smoke tests directly exercise their controls. They will be removed in a separate tested cleanup, not by disabling coverage.
 
-## Chill Lounge modern hub (2026-11-06)
+## Chill Lounge modern hub — historical first slice (2026-11-06)
+
+*The paragraph below records the initial navigation-only rollout; all six game routes have since been migrated into React, and the WPF registration has been isolated to the emergency fallback.*
 
 A new local React Lounge landing page (`lounge.html`) is the standard entry from the casino lobby. Its read-only, origin-checked WebView2 bridge exposes just six allow-listed navigation intents and cannot change player state. Each tile opens the selected existing WPF module directly, preserving all current saves, rewards, gameplay and emergency fallback. The Back to Games route reopens React. This isolates the shared lounge navigation so Sudoku, Solitaire, Word Search, Memory, Jigsaw and Tales from the Backroom can be migrated individually; no native game has been retired in this first slice. Follow-up work must replace these six play surfaces and their smoke tests before deleting `LoungeWindow` or switching away from the WPF host.
 
@@ -67,6 +69,12 @@ xUnit, Vitest and a real Windows WebView2 startup smoke cover protocol validatio
 ## Tales from the Backroom React gameplay migration (2026-11-06)
 
 All six normal Chill Lounge routes now stay inside React/WebView2. Tales uses the original AdventureEngine and AdventureProgressState for the three public stories, retaining character classes, inventory/conditions, D20, caseboard, branching and original reward receipts. The retired Strangers' Wager story remains loadable for legacy saves and encounter tests but is not a public fourth card. React presents native Blackjack and Five-of-a-Kind encounters without owning random outcomes. GUID/revision commands reject stale or forged mutations; story changes save detached C# copies before becoming live. The original WPF adventure UI stays for emergency fallback. Unit, frontend and real WebView2 smoke tests cover the modernization. Extended Windows hardware, ending-path, sound and accessibility signoff remain open. See [Tales modernization](adventure-modernization.md).
+
+## Legacy WPF separation and first cleanup (2026-11-06)
+
+The ordinary React Chill Lounge now uses the six-entry `ModernLoungeCatalog` without consuming `LoungeHostedGameRegistry` or starting WPF game factories and visual decorators. `OpenLoungeCore` routes to WebView2 before `OpenLegacyLounge` can initialize any WPF game modules; a browser failure still opens the same native emergency lounge. All six in-page routes are handled explicitly and unknown IDs no longer silently cross to WPF. An independent .NET test checks catalog order/uniqueness, Windows StartupSmoke checks that no WPF modules are registered on React launch, and `tools/check_ui_migration_boundaries.py` enforces source-level boundaries and prints the conservative fallback dependency inventory in CI.
+
+The retired WPF startup welcome and its obsolete reflection-based smoke tests were removed. Actual packaged React lobby, Update panel, live profile, language switching and presentation are already verified by the current browser smokes. The remaining WPF Lounge, Solitaire, Memory, Jigsaw and Adventure views continue to provide a real crash/unavailable-WebView fallback; removing them now would silently break that recovery path. They are documented in [legacy WPF inventory](legacy-wpf-inventory.md) and must be retired only after an alternative recovery mechanism and manual device acceptance.
 
 ## Casino Empire presentation migration (2026-11-05)
 
