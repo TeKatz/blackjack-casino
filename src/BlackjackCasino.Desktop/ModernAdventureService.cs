@@ -168,7 +168,7 @@ internal sealed class ModernAdventureService
                 Conditions = conditions,
                 Feedback = engine.State.PendingFeedback.TakeLast(8).Select(f => new
                 {
-                    Type = f.Kind.ToString(), f.Title, f.Description,
+                    Type = f.Kind.ToString(), f.Title, Description = f.Detail,
                 }).ToArray(),
                 Board = BuildBoard(definition, engine.State.CaseBoard),
                 Statistics = new
