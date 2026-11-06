@@ -26,8 +26,6 @@ internal static class UiResponsivenessSmoke
         string oldCards = profile.EquippedCardSetId, oldFrame = profile.EquippedFrameId;
         int oldPrestige = profile.Prestige;
         string[] oldOwned = profile.OwnedCosmeticIds.ToArray();
-        var animationCheck = (CheckBox)window.FindName("AnimationsCheckBox");
-        bool? oldAnimations = animationCheck.IsChecked;
         var host = new Grid { IsHitTestVisible = false, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Bottom };
         var root = (Grid)window.Content;
         Grid.SetRowSpan(host, 2); Grid.SetColumnSpan(host, 2);
@@ -39,7 +37,6 @@ internal static class UiResponsivenessSmoke
                 Levels = EmpireCatalog.Departments.ToDictionary(room => room.Id, room => room.Floor == 1 ? 20 : 0),
             })));
             prefsField.SetValue(window, oldPrefs.WithPresentation("lobby", oldPrefs.Presentation("lobby") with { AnimationsEnabled = true }));
-            animationCheck.IsChecked = true;
             profile.Prestige = 3; profile.EquippedFrameId = "frame-prestige-10";
             profile.OwnedCosmeticIds.Add("frame-prestige-10"); profile.OwnedCosmeticIds.Add("cardset-emerald-house");
             Call(window, "RefreshProfileButton"); Call(window, "RefreshEmpireHeader");
@@ -159,7 +156,7 @@ internal static class UiResponsivenessSmoke
             root.Children.Remove(host);
             profile.EquippedCardSetId = oldCards; profile.EquippedFrameId = oldFrame; profile.Prestige = oldPrestige;
             profile.OwnedCosmeticIds.Clear(); foreach (string id in oldOwned) profile.OwnedCosmeticIds.Add(id);
-            prefsField.SetValue(window, oldPrefs); empireField.SetValue(window, oldEmpire); animationCheck.IsChecked = oldAnimations;
+            prefsField.SetValue(window, oldPrefs); empireField.SetValue(window, oldEmpire);
             Call(window, "RefreshProfileButton"); Call(window, "RefreshEmpireHeader");
         }
     }
