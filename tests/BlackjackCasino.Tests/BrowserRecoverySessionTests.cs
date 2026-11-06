@@ -30,6 +30,28 @@ public sealed class BrowserRecoverySessionTests
     }
 
     [Fact]
+    public void ModernOnlyGameCannotLaunchLegacyUiAndCanStillRetry()
+    {
+        var session = new BrowserRecoverySession(
+            modernAssetsAvailable: true, legacyGamesAvailable: false);
+        Assert.False(session.TryChoose(BrowserRecoveryAction.OpenLegacyGames));
+        Assert.False(session.Completed);
+        Assert.True(session.TryChoose(BrowserRecoveryAction.RetryModern));
+        Assert.False(session.TryChoose(BrowserRecoveryAction.ReturnToLobby));
+    }
+
+    [Fact]
+    public void MissingModernAssetsAndNoLegacyUiCanStillReturnToLobby()
+    {
+        var session = new BrowserRecoverySession(
+            modernAssetsAvailable: false, legacyGamesAvailable: false);
+        Assert.False(session.TryChoose(BrowserRecoveryAction.RetryModern));
+        Assert.False(session.TryChoose(BrowserRecoveryAction.OpenLegacyGames));
+        Assert.True(session.TryChoose(BrowserRecoveryAction.ReturnToLobby));
+        Assert.True(session.Completed);
+    }
+
+    [Fact]
     public void UnrecognizedActionsCannotConsumeRecovery()
     {
         var session = new BrowserRecoverySession(modernAssetsAvailable: true);

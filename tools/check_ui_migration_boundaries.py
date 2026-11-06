@@ -99,6 +99,39 @@ def main() -> int:
     if "ShowLoungeBrowserRecovery(assetsAvailable: false)" not in lounge:
         issues.append("Missing browser assets must route to explicit recovery choices.")
 
+    # Generic recovery must service all six primary React casino routes; no
+    # non-Lounge game may silently fall back to WPF, discard a pending wager,
+    # or replace the browser with a modal error-only dead end.
+    casino_recovery = (
+        ("MainWindow.ModernBlackjack.cs", "OnModernBlackjackFailed"),
+        ("MainWindow.ModernDice.cs", "OnModernDiceFailed"),
+        ("MainWindow.ModernReels.cs", "OnModernReelsFailed"),
+        ("MainWindow.ModernNeonVault.cs", "OnModernNeonVaultFailed"),
+        ("MainWindow.ModernNineLives.cs", "OnModernNineLivesFailed"),
+        ("MainWindow.MidnightMerge.cs", "OnModernMergeFailed"),
+    )
+    for file_name, failure_method in casino_recovery:
+        source = text(ROOT / "src/BlackjackCasino.Desktop" / file_name)
+        if source.count("ShowBrowserRecovery(") < 2:
+            issues.append(f"{file_name}: missing frontend or browser crash bypasses recovery.")
+        start = source.find(f"private void {failure_method}()")
+        stop = source.find("private void ", start + 1)
+        failure_body = source[start:stop if stop >= 0 else None]
+        if start < 0 or "ShowBrowserRecovery(" not in failure_body:
+            issues.append(f"{file_name}: browser crash does not offer recovery choices.")
+        if file_name == "MainWindow.ModernReels.cs":
+            close_start = source.find("private void CloseModernReels()")
+            close_body = source[close_start:]
+            if "EmbeddedSlots_Click(" in close_body or "EmbeddedSlots_Click(" in failure_body:
+                issues.append("Midnight Reels silently launches native WPF slots on crash.")
+    if recovery_host.is_file():
+        host = text(recovery_host)
+        policy = text(recovery_logic)
+        if "openLegacyGames is not null" not in host:
+            issues.append("Generic browser recovery must gate legacy actions by availability.")
+        if "legacyGamesAvailable" not in policy:
+            issues.append("Browser recovery policy must reject unavailable native games.")
+
     def ids(source: str, marker: str, end: str) -> list[str]:
         start = source.find(marker)
         stop = source.find(end, start + len(marker))
