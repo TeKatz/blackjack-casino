@@ -168,13 +168,26 @@ internal sealed class ModernAdventureEncounter
             AdventureFiveOfAKindOpponentStyle.Balanced => KniffelAiStyle.Balanced,
             _ => KniffelAiStyle.Adventurous,
         };
-        KniffelAi.PlayTurn(opponentDice, style);
-        KniffelEntry opponentEntry = opponentDice.Snapshot.Entries.Single();
-        opponentCategory = opponentEntry.Category;
-        opponentScore = opponentEntry.Points;
-        // The opponent's committed dice are cleared by KniffelGame.Commit.
-        // Keep the publicly scored category; do not fake any roll in the browser.
-        opponentFinal = [];
+        // Use the same native Kniffel AI choices as the WPF encounter, retaining the
+        // final five rolled dice before Commit clears the turn state.
+        opponentDice.Roll();
+        while (true)
+        {
+            KniffelAiChoice choice = KniffelAi.Choose(opponentDice, style);
+            if (choice.ScoreNow || opponentDice.RollsUsed == 3)
+            {
+                opponentFinal = opponentDice.Dice.ToArray();
+                opponentCategory = choice.Category;
+                opponentScore = opponentDice.Commit(choice.Category);
+                break;
+            }
+            for (int i = 0; i < 5; i++)
+            {
+                bool shouldHold = (choice.HoldMask & (1 << i)) != 0;
+                if (opponentDice.Held[i] != shouldHold) opponentDice.ToggleHold(i);
+            }
+            opponentDice.Roll();
+        }
         outcome = playerScore > opponentScore ? AdventureEncounterOutcome.Win
             : playerScore < opponentScore ? AdventureEncounterOutcome.Loss
             : AdventureEncounterOutcome.Draw;
