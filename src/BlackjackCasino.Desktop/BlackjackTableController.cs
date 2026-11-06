@@ -20,6 +20,7 @@ internal sealed class BlackjackTableController
         ("Jordan", 25m), ("Riley", 100m),
     ];
 
+    private readonly Func<ICardShoe>? shoeFactory;
     internal CasinoSession Session { get; private set; }
     internal PlayModePreference PlayMode { get; private set; }
     internal int AiSeatCount { get; private set; }
@@ -31,8 +32,9 @@ internal sealed class BlackjackTableController
     internal bool SoundEnabled { get; private set; }
     internal bool AnimationsEnabled { get; private set; }
 
-    internal BlackjackTableController(AppPreferences preferences)
+    internal BlackjackTableController(AppPreferences preferences, Func<ICardShoe>? shoeFactory = null)
     {
+        this.shoeFactory = shoeFactory;
         PlayMode = preferences.PlayMode;
         AiSeatCount = Math.Clamp(preferences.AiSeatCount, 1, AiRoster.Length);
         CurrentPreset = preferences.TablePreset;
@@ -52,7 +54,7 @@ internal sealed class BlackjackTableController
         IReadOnlyList<AiPlayerProfile> players = PlayMode == PlayModePreference.FullTable
             ? AiRoster.Take(AiSeatCount).Select(entry =>
                 new AiPlayerProfile(entry.Name, entry.Bet)).ToArray() : [];
-        return new CasinoSession(CurrentRules with { }, bankroll, aiPlayers: players);
+        return new CasinoSession(CurrentRules with { }, bankroll, shoeFactory, aiPlayers: players);
     }
 
     internal void RecreateConfiguredSession()

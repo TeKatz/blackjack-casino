@@ -10,9 +10,9 @@ internal static partial class Program
     {
         window.Modes.Open("blackjack");
         window.UpdateLayout();
-        Require(((FrameworkElement)window.FindName("TableSurface")).Visibility == Visibility.Collapsed
-            && ((FrameworkElement)window.FindName("BlackjackSidebar")).Visibility == Visibility.Collapsed,
-            "Primary Blackjack navigation exposed the old WPF table.");
+        Require(window.FindName("TableSurface") is null
+            && window.FindName("BlackjackSidebar") is null,
+            "Primary Blackjack navigation still contains the retired WPF table.");
         Require(!Find<Button>(window).Any(button => button.Name == "ModernBlackjackPreviewButton"),
             "The obsolete Blackjack preview entry still exists.");
         ModernBlackjackView? table = null;
@@ -33,7 +33,7 @@ internal static partial class Program
                 + $"FrontendPresent={ModernBlackjackView.IsAvailable}; "
                 + $"HostOverlay={overlay?.Visibility}/{overlay?.IsVisible}; "
                 + $"LegacyLobby={lobby?.Visibility}/{lobby?.IsVisible}; "
-                + $"NativeSurface={((FrameworkElement)window.FindName("TableSurface")).Visibility}; "
+                + $"LegacyTableRemoved={window.FindName("TableSurface") is null}; "
                 + $"ModernViews={Find<ModernBlackjackView>(window).Count()}; "
                 + $"BrowserSource={table?.Browser.Source}; "
                 + $"Ready={table?.Ready}; Failed={table?.Failed}; Visible={table?.IsVisible}.";
@@ -117,26 +117,44 @@ internal static partial class Program
         }
         Require(reopened is { Ready: true, Failed: false, IsVisible: true },
             "Reopening the normal Blackjack route did not produce a playable React table.");
-        Require(((FrameworkElement)window.FindName("TableSurface")).Visibility == Visibility.Collapsed,
-            "Reopening Blackjack exposed the retired WPF surface.");
-        // Simulate WebView2 failing *after* the modern table has opened.
-        // The route must recover automatically to the original playable table
-        // without discarding the authoritative CasinoSession.
+        Require(window.FindName("TableSurface") is null,
+            "Reopening Blackjack restored the retired WPF surface.");
+        // WebView failure must preserve the controller and round without bringing
+        // back a second WPF implementation. A new React host must be usable.
         var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
-        var session = typeof(MainWindow).GetField("session", flags)!.GetValue(window);
+        var controller = typeof(MainWindow).GetField("blackjack", flags)!.GetValue(window)!;
+        var currentSession = controller.GetType().GetProperty("Session", flags)!.GetValue(controller);
         typeof(ModernBlackjackView).GetMethod("Fail", flags)!
             .Invoke(reopened, ["Simulated WebView2 failure during Blackjack"]);
-        bool nativeRecovered = false;
+        bool recovered = false;
         for (int i = 0; i < 80; i++)
         {
             await Task.Delay(75);
-            nativeRecovered = ((FrameworkElement)window.FindName("TableSurface")).IsVisible
-                && ((FrameworkElement)window.FindName("BlackjackSidebar")).IsVisible
+            recovered = Find<CasinoLobbyView>(window).Any(v => v.IsVisible)
                 && !Find<ModernBlackjackView>(window).Any(v => v.IsVisible);
-            if (nativeRecovered) break;
+            if (recovered) break;
         }
-        Require(nativeRecovered, "Modern Blackjack browser failure did not recover to the native table.");
-        Require(ReferenceEquals(session, typeof(MainWindow).GetField("session", flags)!.GetValue(window)),
-            "WebView2 fallback replaced the authoritative Blackjack session.");
+        Require(recovered, "Blackjack browser failure did not return to the casino lobby.");
+        Require(window.FindName("TableSurface") is null,
+            "Blackjack failure recreated a retired native table.");
+        Require(ReferenceEquals(controller.GetType().GetProperty("Session", flags)!.GetValue(controller), currentSession),
+            "Blackjack failure replaced the authoritative Core session.");
+        window.Modes.Open("blackjack");
+        ModernBlackjackView? resumed = null;
+        for (int i = 0; i < 120; i++)
+        {
+            await Task.Delay(75);
+            resumed = Find<ModernBlackjackView>(window).FirstOrDefault(v => v is { Ready: true, Failed: false });
+            if (resumed is not null) break;
+        }
+        Require(resumed is { Ready: true, IsVisible: true },
+            "Reopening after browser failure did not restore a playable React host.");
+        Require(ReferenceEquals(controller.GetType().GetProperty("Session", flags)!.GetValue(controller), currentSession),
+            "Reopening after a browser failure discarded the Core session.");
+        await resumed!.Browser.CoreWebView2!.ExecuteScriptAsync("document.querySelector('.bj-back')?.click()");
+        for (int i = 0; i < 80 && Find<ModernBlackjackView>(window).Any(v => v.IsVisible); i++)
+            await Task.Delay(75);
+        Require(!Find<ModernBlackjackView>(window).Any(v => v.IsVisible),
+            "Blackjack was still hosted after its recovery smoke.");
     }
 }

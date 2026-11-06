@@ -107,10 +107,11 @@ public partial class MainWindow
         // silently replaces React with a second, obsolete game implementation.
         if (modernBlackjackView?.Failed != true) return;
         CloseModernBlackjack();
-        System.Windows.MessageBox.Show(this,
-            "The Blackjack browser failed. The current in-memory hand is preserved. " +
-            "Open Blackjack from the casino lobby to retry. No wager is replayed automatically.",
-            "Blackjack presentation error", MessageBoxButton.OK, MessageBoxImage.Warning);
+        if (!testSession)
+            System.Windows.MessageBox.Show(this,
+                "The Blackjack browser failed. The current in-memory hand is preserved. " +
+                "Open Blackjack from the casino lobby to retry. No wager is replayed automatically.",
+                "Blackjack presentation error", MessageBoxButton.OK, MessageBoxImage.Warning);
     }
 
     private void CloseModernBlackjack()

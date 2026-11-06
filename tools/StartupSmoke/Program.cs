@@ -78,10 +78,10 @@ internal static class Program
                 await Task.Delay(180);
                 window.UpdateLayout();
                 Require(window.IsVisible, "Main window never became visible.");
-                Require(((FrameworkElement)window.FindName("TableSurface")).Visibility == Visibility.Collapsed
-                    && ((FrameworkElement)window.FindName("BlackjackSidebar")).Visibility == Visibility.Collapsed
-                    && !((Button)window.FindName("DealButton")).IsEnabled,
-                    "Native Blackjack controls are visible or enabled at startup instead of the casino lobby.");
+                Require(window.FindName("TableSurface") is null &&
+                    window.FindName("BlackjackSidebar") is null &&
+                    window.FindName("DealButton") is null,
+                    "Retired native Blackjack controls must not be part of the window.");
                 Require(!((FrameworkElement)window.FindName("CasinoHeader")).IsVisible,
                     "The old Blackjack header is visible above the startup lobby.");
                 CheckWelcomeOverlay(window, profile, output);

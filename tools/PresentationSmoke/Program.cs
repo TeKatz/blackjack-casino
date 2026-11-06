@@ -48,11 +48,11 @@ internal static partial class Program
             "WPF lobby fallback has no update entry.");
         Require(((FrameworkElement)window.FindName("NativeUpdateOverlay")).Visibility == Visibility.Collapsed,
             "Native updates overlay was visible at startup.");
-        Require(((FrameworkElement)window.FindName("TableSurface")).Visibility == Visibility.Collapsed
-            && ((FrameworkElement)window.FindName("BlackjackSidebar")).Visibility == Visibility.Collapsed
-            && !((Button)window.FindName("DealButton")).IsEnabled
+        Require(window.FindName("TableSurface") is null
+            && window.FindName("BlackjackSidebar") is null
+            && window.FindName("DealButton") is null
             && ((FrameworkElement)window.FindName("CasinoHeader")).IsVisible == !ModernLobbyView.IsAvailable,
-            "The startup casino header did not match the modern/fallback lobby state.");
+            "Retired Blackjack WPF controls remained, or the lobby header was incorrect.");
         Require(window.Modes.Modes.Count(m=>m.Id=="midnight-manor")==1,
             "Midnight Manor must be registered exactly once.");
         Require(window.Modes.CanOpen("midnight-manor"),
@@ -92,22 +92,6 @@ internal static partial class Program
         Button added=Find<Button>(window).Single(b=>Equals(b.Tag,"future-room"));added.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         Require(future,"Newly registered mode did not appear or invoke its command");
         await CheckModernBlackjackRoute(window);
-        OpenLegacyBlackjackForVisualRegression(window);window.UpdateLayout();
-        Require(!Find<ComboBox>((DependencyObject)window.FindName("BlackjackSidebar"))
-            .Any(c => c.Name == "UpdateChannelComboBox"),
-            "Legacy Blackjack sidebar still contains updater controls.");
-        ComboBox mode=(ComboBox)window.FindName("GameModeComboBox");
-        mode.SelectedIndex=1;window.UpdateLayout();
-        foreach(ComboBox combo in Find<ComboBox>(window).Where(c=>c.IsVisible).ToArray()) await CheckCombo(combo);
-        mode.SelectedIndex=0;
-        ComboBox theme=(ComboBox)window.FindName("ThemeComboBox");
-        for(int i=0;i<3;i++){theme.SelectedIndex=i;window.UpdateLayout();Capture(window,"02-table-theme-"+i);}
-        window.Width=1080;window.Height=720;window.Left=0;window.Top=0;window.Activate();window.UpdateLayout();
-        mode.BringIntoView();window.UpdateLayout();await Task.Delay(50);
-        Point point=mode.PointToScreen(new Point(mode.ActualWidth/2,mode.ActualHeight/2));
-        bool cursor=SetCursorPos((int)point.X,(int)point.Y);await Task.Delay(100);System.Windows.Input.Mouse.Synchronize();
-        File.WriteAllText(Path.Combine(output,"hover-input.txt"),$"Native cursor request: {cursor}; ComboBox IsMouseOver: {mode.IsMouseOver}. All state templates and composed dark pixels are required regardless of headless input support.");
-        await CheckCombo(mode);Capture(window,"03-hover-minimum");
         await CheckModernReelsRoute(window, qaProfile);await Task.Delay(100);
         Require(!((FrameworkElement)window.FindName("CasinoHeader")).IsVisible,"Host casino header remained visible over embedded Midnight Reels");
         foreach(var size in new[]{(1080d,720d),(1440d,900d),(1920d,1080d),(2560d,1440d)})
@@ -172,7 +156,7 @@ internal static partial class Program
             for (int i=0;i<60 && !Find<Button>(window).Any(b=>b.Name=="ProfileNameBox" || b.Name=="RenameProfileButton");i++) await Task.Delay(75);
         }
         RequireSingleHost(window,"Profile");
-        Require(!((Button)window.FindName("DealButton")).IsEnabled,"Covered table can still receive keyboard activation");
+        Require(window.FindName("DealButton") is null,"A covered legacy Blackjack input still exists.");
         await CheckMetaFocusCycle(window);
         TextBox name=Find<TextBox>(window).Single(t=>t.Name=="ProfileNameBox");name.Text="Midnight Timo";
         Find<Button>(window).Single(b=>b.Name=="RenameProfileButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
@@ -429,125 +413,12 @@ internal static partial class Program
             await Task.Delay(40);
         }
         await CheckEmpire(window);
-        window.Width=1440;window.Height=900;OpenLegacyBlackjackForVisualRegression(window);mode.SelectedIndex=1;theme.SelectedIndex=0;
-        Require(((FrameworkElement)window.FindName("TableSurface")).IsVisible
-            && ((FrameworkElement)window.FindName("BlackjackSidebar")).IsVisible
-            && ((FrameworkElement)window.FindName("CasinoHeader")).IsVisible,
-            "The Blackjack route did not reveal its native game surface.");
-        ((Button)window.FindName("DealButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-        await Task.Delay(500);window.UpdateLayout();
-        var viewport=(ScrollViewer)window.FindName("PlayerHandViewport");var hands=(FrameworkElement)window.FindName("PlayerHandsPanel");
-        Rect handBounds=hands.TransformToAncestor(viewport).TransformBounds(new Rect(0,0,hands.ActualWidth,hands.ActualHeight));
-        Require(handBounds.Top>=-1 && handBounds.Bottom<=viewport.ActualHeight+1 && handBounds.Height>=90,"Player cards clipped or reduced below readable size in AI table");
-        Capture(window,"07-blackjack-dealt");
-        await CheckWagerGeometry(window);
-        await CheckResultDeal(window);
-    }
 
-    private static void OpenLegacyBlackjackForVisualRegression(MainWindow window)
-    {
-        // The old panel is no longer a player-visible mode. Keep its historical
-        // visual tests active while it remains the emergency WebView fallback.
-        var show = typeof(MainWindow).GetMethod("ShowBlackjackTable",
-            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
-        show.Invoke(window, null);
     }
 
     private static Task CheckEmpire(MainWindow window) => EmpireWebSmoke.Run(window, output);
-    private sealed class WagerShoe : ICardShoe
-    {
-        public int Remaining {get;private set;}=312;
-        public Card Draw(){Remaining--;return new Card(Rank.Eight,Suit.Clubs);}
-    }
-    private static async Task CheckWagerGeometry(MainWindow window)
-    {
-        var flags=System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic;
-        var sessionField=typeof(MainWindow).GetField("session",flags)!;
-        var refresh=typeof(MainWindow).GetMethod("RefreshGameUi",flags)!;
-        foreach(bool fullTable in new[]{false,true})
-        foreach(int handCount in new[]{1,2,4})
-        {
-            typeof(MainWindow).GetMethod("SwitchTable",flags)!.Invoke(window,[fullTable?PlayModePreference.FullTable:PlayModePreference.Solo,5]);
-            ((ComboBox)window.FindName("GameModeComboBox")).SelectedIndex=fullTable?1:0;
-            ((ComboBox)window.FindName("AiSeatCountComboBox")).SelectedIndex=4;
-            AiPlayerProfile[] ai=fullTable?[new("A",10m),new("B",10m),new("C",10m),new("D",10m),new("E",10m)]:[];
-            var fixture=new CasinoSession(new GameRules {MaxSplitHands=4,AllowInsurance=false},10_000m,()=>new WagerShoe(),ai);
-            fixture.StartRound(138.25m);
-            for(int i=1;i<handCount;i++) fixture.Act(PlayerAction.Split);
-            sessionField.SetValue(window,fixture);refresh.Invoke(window,null);
-            foreach(var size in new[]{(1080d,720d),(1440d,900d),(2560d,1440d)})
-            {
-                window.Width=size.Item1;window.Height=size.Item2;window.UpdateLayout();await Task.Delay(30);
-                Capture(window,"08-wager-"+(fullTable?"full":"solo")+"-"+handCount+"-"+(int)size.Item1);
-                var viewport=(ScrollViewer)window.FindName("PlayerHandViewport");
-                var table=(FrameworkElement)window.FindName("TableArt");
-                Require(((ScrollViewer)window.FindName("AiSeatsScrollViewer")).IsVisible==fullTable,"Fixture did not enter requested table mode");
-                var wagers=Find<TableWagerView>(window).ToArray();
-                Require(wagers.Length==handCount,"Wager count differs from player hands");
-                foreach(var wager in wagers)
-                {
-                    Require(System.Windows.Automation.AutomationProperties.GetName(wager).Contains(TableWagerPresentation.Amount(138.25m)),"Chip label does not match actual wager");
-                    Rect bounds=wager.TransformToAncestor(viewport).TransformBounds(new Rect(0,0,wager.ActualWidth,wager.ActualHeight));
-                    Require(bounds.Top>=-1 && bounds.Bottom<=viewport.ActualHeight+1,"Wager clipped in "+size+" / "+handCount+" hands");
-                }
-                TextBlock[] headings=Find<TextBlock>(window).Where(t=>t.Text=="YOUR HAND" || (t.Text.StartsWith("HAND ") && t.Text.Length<=6)).ToArray();
-                Require(headings.Length==handCount,"Player hand headings are missing");
-                foreach(double offset in new[]{0d,viewport.ScrollableWidth}.Distinct())
-                {
-                    viewport.ScrollToHorizontalOffset(offset);window.UpdateLayout();
-                    int visibleHeadings=0;
-                    foreach(TextBlock heading in headings)
-                    {
-                        Rect inViewport=heading.TransformToAncestor(viewport).TransformBounds(new Rect(0,0,heading.ActualWidth,heading.ActualHeight));
-                        // Resplits intentionally scroll horizontally to keep cards legible.
-                        // Offscreen content has no relationship to the native felt arc.
-                        if(inViewport.Left<0 || inViewport.Right>viewport.ActualWidth) continue;
-                        visibleHeadings++;
-                        Rect bounds=heading.TransformToVisual(table).TransformBounds(new Rect(0,0,heading.ActualWidth,heading.ActualHeight));
-                        for(int sample=0;sample<=200;sample++)
-                        {
-                            double t=sample/200d,u=1-t;
-                            double x=table.ActualWidth*(u*u*u*.14+3*u*u*t*.32+3*u*t*t*.68+t*t*t*.86);
-                            double y=table.ActualHeight*(u*u*u*.66+3*u*u*t*.39+3*u*t*t*.39+t*t*t*.66);
-                            if(x>=bounds.Left && x<=bounds.Right)
-                                Require(bounds.Top>=y+4,"Player heading overlaps the felt arc in "+size+" / "+handCount+" hands / full="+fullTable+"; heading="+bounds.Top+", arc="+y);
-                        }
-                    }
-                    Require(visibleHeadings>0,"No player heading is visible in the hand viewport");
-                }
-                Capture(window,"08-wager-"+(fullTable?"full":"solo")+"-"+handCount+"-"+(int)size.Item1);
-            }
-        }
-        var animations=(CheckBox)window.FindName("AnimationsCheckBox");
-        animations.IsChecked=true;
-        var last=(CasinoSession)sessionField.GetValue(window)!;
-        last.Act(PlayerAction.DoubleDown);refresh.Invoke(window,null);window.UpdateLayout();
-        Require(Find<TableChipDrawing>(window).Any(chips=>chips.HasAnimatedProperties),"Changing a wager did not animate its chips");
-        animations.IsChecked=false;
-        Require(Find<TableChipDrawing>(window).All(chips=>!chips.HasAnimatedProperties),"Disabling animations did not stop active chip clocks immediately");
-    }
-    private static async Task CheckResultDeal(MainWindow window)
-    {
-        const System.Reflection.BindingFlags flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
-        var fixture = new CasinoSession(new GameRules { AllowInsurance = false }, 10000m, () => new WagerShoe());
-        fixture.StartRound(100m);
-        fixture.Act(PlayerAction.Stand);
-        Require(!fixture.RoundInProgress, "Result Deal fixture did not settle");
-        typeof(MainWindow).GetField("session", flags)!.SetValue(window, fixture);
-        typeof(MainWindow).GetField("selectedBet", flags)!.SetValue(window, 100m);
-        typeof(MainWindow).GetMethod("RefreshGameUi", flags)!.Invoke(window, null);
-        await Task.Delay(60); window.UpdateLayout();
-        var original = (Button)window.FindName("DealButton");
-        var resultDeal = (Button)window.FindName("ResultDealButton");
-        Require(resultDeal.IsVisible && resultDeal.IsEnabled == original.IsEnabled && resultDeal.IsEnabled, "Result Deal is missing or out of sync with betting controls");
-        var round = fixture.CurrentRound;
-        Capture(window, "blackjack-result-deal");
-        resultDeal.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-        window.UpdateLayout();
-        Require(!ReferenceEquals(round, fixture.CurrentRound), "Result Deal did not use the normal deal action");
-        Require(!resultDeal.IsVisible || !fixture.RoundInProgress, "Result Deal remained visible during play");
-    }
-    private static void CheckCollectionPaging(MainWindow window,string panelName,string nextName,string previousName)
+
+    private static void CheckCollectionPaging    private static void CheckCollectionPaging(MainWindow window,string panelName,string nextName,string previousName)
     {
         string[] Ids()=>Find<Panel>(window).Single(p=>p.Name==panelName).Children.OfType<Border>()
             .SelectMany(p=>Find<Button>(p)).Select(b=>b.Tag).OfType<string>().ToArray();
