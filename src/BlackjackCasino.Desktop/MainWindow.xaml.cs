@@ -348,23 +348,9 @@ public partial class MainWindow : Window
         double width = bounds.Width >= MinWidth ? bounds.Width : preferences.WindowWidth;
         double height = bounds.Height >= MinHeight ? bounds.Height : preferences.WindowHeight;
 
-        preferences = preferences with
-        {
-            Empire = empire?.Snapshot ?? preferences.Empire,
-            Bankroll = session.Bankroll,
-            SelectedBet = Math.Min(selectedBet, session.Bankroll),
-            PlayMode = playMode,
-            AiSeatCount = aiSeatCount,
-            Theme = SelectedTheme,
-            SoundEnabled = SoundEnabled,
-            AnimationsEnabled = AnimationsEnabled,
-            ShowEmpireBalance = preferences.ShowEmpireBalance,
-            UpdateChannel = SelectedUpdateChannel,
-            WindowWidth = width,
-            WindowHeight = height,
-            WindowMaximized = maximized,
-        };
-
+        preferences = CasinoHostPreferences.Capture(
+            preferences, blackjack, empire?.Snapshot, SelectedUpdateChannel,
+            width, height, maximized);
         PlayerStateStore.Save(preferences);
     }
 

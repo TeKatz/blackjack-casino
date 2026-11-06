@@ -60,3 +60,7 @@ The fullscreen transition and persisted restore-bounds computation now live in `
 `CasinoHostMusic` now owns the existing background soundtrack's startup, prewarm, mode-aware enable/volume updates, temporary native-window mute and disposal. `MainWindow` still determines which casino area is visible, but it no longer handles the audio player's lifecycle directly. The old WPF embedded game host requests silence through the same router. No tracks, volume formulae, audio synthesis or area settings changed.
 
 The host is now split into bounded presentation ownership (`ModernGameSurface`), offline browser security (`ModernWebViewBootstrap`), update transport (`DesktopUpdateService`), fullscreen/restore bounds (`CasinoWindowGeometry`) and music ownership (`CasinoHostMusic`). These adapters do not themselves retire the legacy WPF recovery/navigation shell.
+
+## Fifth extraction — durable preference snapshot
+
+The existing `SavePreferences` entry point now delegates its model projection to WPF-independent `CasinoHostPreferences.Capture`. The snapshot retains the authoritative C# bankroll, selected-bet cap, table preferences, optional Casino Empire state, selected update channel and window placement, while leaving all unrelated save fields intact. `MainWindow` continues to own when writes happen and `PlayerStateStore` remains the same persistence implementation. The helper has deterministic unit tests and changes no save schema.
