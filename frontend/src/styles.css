@@ -716,4 +716,6 @@ html,body,#root{height:100%;overflow:hidden}
 }
 
 
-.machine .main-actions .gold-button{min-height:46px;font-size:clamp(12px,1.15vw,16px);padding:10px 16px;letter-spacing:.06em;line-height:1.35}
+.machine .main-actions .gold-button{min-height:54px;font-size:clamp(12px,1.15vw,16px);padding:10px 16px;letter-spacing:.06em;line-height:1.35}
+
+@media(max-height:720px){.machine .main-actions .gold-button{min-height:45px}}
