@@ -138,6 +138,9 @@ internal sealed class ModernNineLivesView : ContentControl, IDisposable
                 case "nine-lives.close":
                     close();
                     break;
+                case "nine-lives.recover" when listening && Ready:
+                    Fail();
+                    break;
                 case "nine-lives.command" when listening && Ready && IsVisible:
                     ModernNineLivesCommand? intent = ModernNineLivesProtocol.Parse(e.WebMessageAsJson);
                     if (intent is null) break;
