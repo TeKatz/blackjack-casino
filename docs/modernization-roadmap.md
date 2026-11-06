@@ -324,3 +324,13 @@ The C# `MergeBoard` still serializes and persists **each operation before exposi
 The old gameplay `MidnightMergeView` has been retired. The original WPF artwork class remains only to serve the native emergency lobby's preview tile and can be removed with that lobby. Automated acceptance verifies current UI route, cell moves/merges, atomic file save/load, orders, milestones, German translation, 1080p–compact layout and in-memory browser rehosting. Real-device long-session CPU/GPU/audio and subjective effects quality still need separate acceptance.
 
 **Remaining WPF game modes:** Midnight Dice and Chill Lounge, plus the still-native emergency lobby and shared WPF host. Midnight Reels retains a native fallback for now.
+
+## Midnight Dice — React/PixiJS game replacement (2026-11-06)
+
+The normal Midnight Dice lobby destination now opens the local `midnight-dice.html` React/PixiJS page inside the shared WebView2 host. It replaces the interactive WPF dice view with five scalable premium-palette dice, a 13-category paper-style score sheet, visual score previews, bounded roll/celebration animations, local game setup, separate casual and casino progress, three actual AI score sheets, placement receipts and EN/DE controls. PixiJS provides decorative ambient elements only.
+
+The `KniffelGame`, `KniffelTable`, `KniffelCash`, `KniffelProgression` and the existing `KniffelState`/`KniffelTableState` persistence schemas remain C#-authoritative and unchanged. The desktop `MainWindow.ModernDice` adapter saves each roll/hold/score and casino payment/settlement before releasing a projected result. It continues the original shared wallet and XP/Season receipt machinery. The `ModernDiceProtocol` accepts only versioned legal intents from the exact offline page origin and uses native session/revision/request ledgers to deduplicate delayed or repeated UI messages. A WebView2 failure can rehost the same C# state without charging an entry or settling a prize again. All six legal stakes, tied placements and forfeit behavior are unchanged.
+
+The established WPF `KniffelView` implementation is retained solely for rollback/reference and legacy feedback regression tests; it is no longer the player-facing lobby game. The primary React and native bridge have unit/contract tests. Windows startup acceptance executes the native casual game, full paid AI table, result/reward checks, save/reopen, responsive viewport and browser failure scenarios. Long-run GPU/audio feel, DPI and user-visible visual quality remain hardware acceptance items.
+
+**Remaining WPF playable experience:** Chill Lounge subgames, in addition to WPF hosting, emergency lobby and selected legacy fallback surfaces. This phase does not migrate the whole desktop shell.
