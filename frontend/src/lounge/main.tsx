@@ -3,8 +3,11 @@ import { createRoot } from 'react-dom/client';
 import { isLoungeId, readLoungeSnapshot, sendLoungeCommand } from './bridge';
 import type { LoungeId, LoungeSnapshot } from './bridge';
 import { SudokuScreen } from './sudoku';
+import { SolitaireScreen } from './solitaire';
 import { isSudokuReply, issueSudokuIntent } from './sudokuBridge';
 import type { SudokuIntent } from './sudokuBridge';
+import { isSolitaireReply, issueSolitaireIntent } from './solitaireBridge';
+import type { SolitaireIntent } from './solitaireBridge';
 import './lounge.css';
 
 type Language = 'de' | 'en';
@@ -63,6 +66,8 @@ function App() {
  const [filter,setFilter]=useState<Filter>('all');
  const [pending,setPending]=useState<string|null>(null);
  const [sudokuError,setSudokuError]=useState('');
+ const [solitairePending,setSolitairePending]=useState<string|null>(null);
+ const [solitaireError,setSolitaireError]=useState('');
  const signalled=useRef(false);
  useEffect(()=>{
    const webview=window.chrome?.webview;
@@ -77,6 +82,13 @@ function App() {
        setPending(prev=>prev===reply.requestId?null:prev);
        if(!reply.success)setSudokuError(reply.message);
        else setSudokuError('');
+     }
+     if(msg&&typeof msg==='object'&&!Array.isArray(msg)
+       &&'type' in msg&&msg.type==='lounge.solitaire.result'
+       &&'data' in msg&&isSolitaireReply(msg.data)){
+       const reply=msg.data;
+       setSolitairePending(prev=>prev===reply.requestId?null:prev);
+       setSolitaireError(reply.success?'':reply.message);
      }
    };
    webview?.addEventListener('message',handler);
@@ -102,13 +114,24 @@ function App() {
    setSudokuError('');
    setPending(issueSudokuIntent(snapshot.session,snapshot.revision,intent));
  }
+ function solitaireCommand(intent:SolitaireIntent){
+   if(!snapshot||solitairePending||!snapshot.solitaire)return;
+   setSolitaireError('');
+   setSolitairePending(issueSolitaireIntent(snapshot.solitaireSession,snapshot.solitaireRevision,intent));
+ }
  return <main className="chill-shell">
    <div className="chill-sparkles" aria-hidden="true"/>
    <header className="chill-header">
      <div className="chill-mark" aria-hidden="true">✦</div>
      <div className="chill-brand"><span>{t.club}</span><strong>Chill Lounge</strong></div>
      <span className="chill-local">{t.version}</span>
-     {snapshot?.sudoku
+     {snapshot?.solitaire
+       ? <button className="chill-exit" disabled={!!solitairePending}
+           onClick={()=>solitaireCommand({action:snapshot.solitaire?.screen==='game'?'solitaire.back':'solitaire.exit'})}>
+           {snapshot.solitaire.screen==='game'
+             ? (language==='de'?'← Solitaire-Auswahl':'← Solitaire cabinet')
+             : '← Chill Lounge'}</button>
+       : snapshot?.sudoku
        ? <button className="chill-exit" disabled={!!pending}
            onClick={()=>command({action:snapshot.sudoku?.screen==='game'?'sudoku.back':'sudoku.exit'})}>
            {snapshot.sudoku.screen==='game'
@@ -117,7 +140,10 @@ function App() {
        : <button className="chill-exit" onClick={()=>sendLoungeCommand('lounge.close')}>{t.back}</button>}
    </header>
    <div className="chill-content">
-    {snapshot?.sudoku
+    {snapshot?.solitaire
+      ? <SolitaireScreen state={snapshot.solitaire} language={language} pending={!!solitairePending}
+          error={solitaireError} command={solitaireCommand}/>
+      : snapshot?.sudoku
       ? <SudokuScreen key="sudoku" state={snapshot.sudoku} language={language}
           pending={!!pending} error={sudokuError} command={command}/>
       : <>
