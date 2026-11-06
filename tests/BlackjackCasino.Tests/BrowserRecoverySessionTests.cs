@@ -5,11 +5,12 @@ namespace BlackjackCasino.Tests;
 public sealed class BrowserRecoverySessionTests
 {
     [Theory]
-    [InlineData(BrowserRecoveryAction.RetryModern)]
-    [InlineData(BrowserRecoveryAction.OpenLegacyGames)]
-    [InlineData(BrowserRecoveryAction.ReturnToLobby)]
-    public void AvailableAssetsAllowExactlyOneExplicitChoice(BrowserRecoveryAction choice)
+    [InlineData("RetryModern")]
+    [InlineData("OpenLegacyGames")]
+    [InlineData("ReturnToLobby")]
+    public void AvailableAssetsAllowExactlyOneExplicitChoice(string name)
     {
+        BrowserRecoveryAction choice = Enum.Parse<BrowserRecoveryAction>(name);
         var session = new BrowserRecoverySession(modernAssetsAvailable: true);
         Assert.False(session.Completed);
         Assert.True(session.TryChoose(choice));
