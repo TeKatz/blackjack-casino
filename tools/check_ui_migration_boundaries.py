@@ -154,6 +154,30 @@ def main() -> int:
     if "LoungeHostedGameRegistry.Snapshot.Count == 0" not in smoke:
         issues.append("Windows smoke must verify no legacy factories for React Lounge.")
 
+    # The separate WinForms candidate is compiled and smoke-tested by Windows CI.
+    # It must not smuggle XAML/PresentationFramework into its project or become
+    # the production release target before the parity matrix has been accepted.
+    native_shell_project = ROOT / "src/BlackjackCasino.NativeShell/BlackjackCasino.NativeShell.csproj"
+    native_shell_form = ROOT / "src/BlackjackCasino.NativeShell/NativeShellForm.cs"
+    native_shell_doc = ROOT / "docs/native-shell-migration.md"
+    if not all(path.is_file() for path in (native_shell_project, native_shell_form, native_shell_doc)):
+        issues.append("WPF-free native shell candidate and parity documentation are missing.")
+    else:
+        candidate = text(native_shell_project)
+        form = text(native_shell_form)
+        if "<UseWPF>false</UseWPF>" not in candidate or "<UseWindowsForms>true</UseWindowsForms>" not in candidate:
+            issues.append("Independent shell must be WinForms/WebView2 without WPF.")
+        if any(token in form for token in ("System.Windows.Controls", "System.Windows.Threading", "PresentationFramework")):
+            issues.append("New native shell reintroduced WPF types.")
+        if any(page not in form for page in ("blackjack.html", "reels.html", "neon-vault.html", "nine-lives.html")):
+            issues.append("Native shell lost a validated four-game browser route.")
+        if "BlackjackCasino.NativeShell/BlackjackCasino.NativeShell.csproj" not in text(
+                ROOT / ".github/workflows/ci.yml"):
+            issues.append("Windows CI no longer exercises the WPF-free host.")
+        release = text(ROOT / ".github/workflows/development-release.yml")
+        if "dotnet publish src/BlackjackCasino.NativeShell" in release:
+            issues.append("Experimental native shell has been mistakenly switched into Development updates.")
+
     # Casino navigation descriptors must be reusable by a non-WPF native shell.
     registry_path = ROOT / "src/BlackjackCasino.Desktop/CasinoModeRegistry.cs"
     fallback_art = ROOT / "src/BlackjackCasino.Desktop/NativeLobbyArtwork.cs"
