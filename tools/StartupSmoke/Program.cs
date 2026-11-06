@@ -165,7 +165,7 @@ internal static class Program
                     "const auto=[...document.querySelectorAll('.auto-buttons .auto-chip')];" +
                     "return bets.length===6 && auto.length===4" +
                     "&& bets.some(b=>b.textContent?.includes('5,000'))" +
-                    "&& document.querySelector('#manor-bet')?.max==='5000'" +
+                    "&& document.querySelector('#manor-bet')?.readOnly===true" +
                     "&& !document.body.innerText.includes('C#');})()");
                 Require(polishedControls.Equals("true",StringComparison.OrdinalIgnoreCase),
                     "The Manor must expose six fixed stakes, auto-spins, and no technical C# text.");
