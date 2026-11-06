@@ -65,7 +65,26 @@ internal static class ModernDiceSmokeHelper
         string script = "(()=>{const element=document.querySelector("
             + JsonSerializer.Serialize(selector)
             + ");if(!element||element.disabled)return false;element.click();return true})()";
-        Require(await JavaScript(web, script), "Unavailable React dice action: " + testId);
+        // A revision can render from the authoritative snapshot before React has
+        // processed the matching command receipt and cleared its pending lock.
+        // Wait for the actual enabled control rather than racing the WebView2 event loop.
+        bool clicked = false;
+        for (int i = 0; i < 150 && !clicked; i++)
+        {
+            clicked = await JavaScript(web, script);
+            if (!clicked) await Task.Delay(40);
+        }
+        if (!clicked)
+        {
+            string diagnostics = await web.ExecuteScriptAsync(
+                "(()=>{const el=document.querySelector(" + JsonSerializer.Serialize(selector)
+                + ");const app=document.querySelector('[data-testid=\\\"modern-dice-app\\\"]');"
+                + "return {exists:!!el,disabled:el?.disabled,revision:app?.dataset.revision,"
+                + "mode:app?.dataset.mode,status:document.querySelector('[data-testid=\\\"dice-notice\\\"]')?.textContent,"
+                + "saving:document.querySelector('.md-status small')?.textContent}})()");
+            throw new InvalidOperationException("Unavailable React dice action: " + testId
+                + "; browser state: " + diagnostics);
+        }
         if (requiresRevision)
         {
             for (int i = 0; i < 160; i++)
