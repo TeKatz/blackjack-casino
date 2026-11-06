@@ -93,6 +93,7 @@ public partial class MainWindow
             modernSolitaire ??= new ModernSolitaireService(preferences.Solitaire,
                 SaveModernSolitaireProgress,
                 () => progressionController?.Profile.Solitaire ?? new SolitaireStatistics(),
+                () => progressionController?.Profile.EquippedCardSetId,
                 RecordSolitaireStart, RecordSolitaireAbandon, RecordSolitaireCompletion);
             modernLoungeView?.Refresh();
             return;

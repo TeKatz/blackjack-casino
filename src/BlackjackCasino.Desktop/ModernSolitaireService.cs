@@ -14,6 +14,7 @@ internal sealed class ModernSolitaireService
     private SolitaireGameState? game;
     private readonly Action<SolitaireProgressState> persist;
     private readonly Func<SolitaireStatistics> statistics;
+    private readonly Func<string?> cardSetId;
     private readonly Action<SolitaireStartRecord> started;
     private readonly Action<SolitaireAbandonRecord> abandoned;
     private readonly Func<SolitaireCompletionRecord, string> completed;
@@ -24,6 +25,7 @@ internal sealed class ModernSolitaireService
     internal ModernSolitaireService(SolitaireProgressState initial,
         Action<SolitaireProgressState> persist,
         Func<SolitaireStatistics> statistics,
+        Func<string?> cardSetId,
         Action<SolitaireStartRecord> started,
         Action<SolitaireAbandonRecord> abandoned,
         Func<SolitaireCompletionRecord, string> completed)
@@ -31,6 +33,7 @@ internal sealed class ModernSolitaireService
         progress = CloneProgress(SolitaireProgressState.Normalize(initial));
         this.persist = persist;
         this.statistics = statistics;
+        this.cardSetId = cardSetId;
         this.started = started;
         this.abandoned = abandoned;
         this.completed = completed;
@@ -87,6 +90,7 @@ internal sealed class ModernSolitaireService
         {
             Screen = game is null ? "library" : "game",
             NextDealNumber = progress.NextDealNumber,
+            CardSetId = cardSetId() ?? "card-classic",
             Options = options,
             Stats = new
             {
