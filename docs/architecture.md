@@ -154,3 +154,7 @@ After consolidation, do not delete branches automatically or change the Developm
 ## Blackjack native presentation retirement (2026-11-06)
 
 Blackjack has no WPF table, sidebar, custom-rules dialog or WPF wager renderer. The live C# session and table preferences are owned by `BlackjackTableController` and projected into React via the versioned Blackjack protocol. Browser failure closes the modern view without replacing the session; reopening mounts a new React browser against the same Core hand. The outer WPF application remains until the other games and window-level services can be migrated. See [Blackjack modernization](blackjack-modernization.md).
+
+## Nine Lives presentation boundary (2026-11-06)
+
+`NineLivesSession` and `SlotProgression` remain C# authorities. The native `MainWindow.ModernNineLives` adapter runs each spin and commits the shared wallet, saved preferences and rewards before sending a read-only `ModernNineLivesSnapshot`. `ModernNineLivesProtocol` accepts only enumerated wagers, toggles and spin intents from the exact packaged `nine-lives.html` origin, with an idempotent request/epoch/revision ledger kept outside WebView2. Browser failure cannot reroll or drop bonus spins during in-memory recovery. React/PixiJS owns all Nine Lives game visuals. The old Nine Lives WPF Window was removed, while lobby preview art and remaining native host infrastructure are retained.

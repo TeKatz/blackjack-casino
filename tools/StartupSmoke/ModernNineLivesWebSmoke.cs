@@ -24,7 +24,7 @@ internal static class ModernNineLivesWebSmoke
         }
         Require(cabinet is { Ready: true, Failed: false, IsVisible: true },
             "Nine Lives did not open the packaged React/WebView2 cabinet.");
-        Require(!Find<NineLivesWindow>(window).Any(v => v.IsVisible),
+        Require(!Find<FrameworkElement>(window).Any(v => v.IsVisible && v.GetType().Name == "NineLivesWindow"),
             "The retired Nine Lives WPF view is still the game route.");
         Require(Application.Current.Windows.Cast<Window>().Count(w => w.IsVisible) == 1,
             "Nine Lives opened another visible native window.");

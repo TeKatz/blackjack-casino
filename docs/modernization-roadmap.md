@@ -294,3 +294,15 @@ views will be removed until all their fallback coverage is replaced.
 The normal Blackjack lobby route is React-only. Its C# session, rule presets/custom rules, play mode, AI seats, current bet, theme, sound and animation preferences live in a presentation-independent `BlackjackTableController`; the previous WPF table and its sidebar, custom-rules dialog and wager-chip renderer have been removed from the desktop project. All game results and payouts still come from `BlackjackCasino.Core`, with the existing session-revision and request-receipt validation.
 
 WebView2 failures now return to the lobby while retaining the in-memory C# hand. Re-entry creates a new browser, not a new game session. Windows and unit smoke verify recovery, the absent legacy controls and rules/bankroll invariants. This is an important milestone toward a WPF-free host, not the final replacement of the shell or other modes. Outstanding manual checks cover keyboard navigation, DPI, sound and prolonged WebView2 usage.
+
+## Nine Lives — React/PixiJS migration (2026-11-06)
+
+Nine Lives now opens directly from the primary casino lobby through the local `nine-lives.html` WebView2 presentation. The former native Nine Lives slot window, reel animation logic, input handlers and flyouts were removed from the desktop source; the WPF lobby preview artwork remains intentionally shared while the overall host is still WPF.
+
+- `NineLivesSession` in Core is unchanged in outcome math: three reels × three rows, five lines, the existing weighted eight symbols, Pounce Wild behavior, nine free spins, max bet of 25,000, and the 5,000× full-grid payout. Neither a JS animation nor a client command sets the bankroll.
+- `ModernNineLivesProtocol` validates only the versioned, exact offline origin and allowed wager/settings/spin intents. A persistent native receipt ledger rejects duplicate spin IDs and stale revisions across browser recovery.
+- The host commits each result to the shared C# bankroll and progression **before** delivering the React snapshot. The client renders the nine premium 1024px JPG images in a responsive 3×3 reel cabinet with PixiJS ambient particles, payline highlights, Pounce Wild feedback, keyboard actions, settings and auto-spin.
+- A WebView2 interruption preserves the **in-memory** Nine Lives machine, awarded free spins and replay ledger for a fresh view. A deliberate exit retires the transient bonus session as before. No new cross-process save format or RNG behavior was introduced.
+- CI verifies strict bridge parsing, duplicate receipts, bet legality, native projection, free-spin recovery, the packaged browser, complete 1024px asset loading, one-spin wallet and XP settlement, and view reopen/crash handling. Windows GPU, 1080p/1440p DPI, audio balance, visual polish and long-session performance still require device-level acceptance.
+
+**Remaining WPF UI:** Neon Vault, Midnight Merge, Midnight Dice, Chill Lounge, and the shared WPF shell/lobby fallback. Midnight Reels is modern but still maintains its native emergency fallback.

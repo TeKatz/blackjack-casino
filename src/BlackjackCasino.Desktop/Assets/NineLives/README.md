@@ -1,27 +1,18 @@
-# Nine Lives — HD symbol artwork
+# Nine Lives — source artwork shared with React
 
-The eight Nine Lives symbols were regenerated as a cohesive midnight-casino
-illustration set with gold ornaments and violet lighting.
+The eight original full-resolution 1024 × 1024 JPG slot symbols are retained unchanged in this folder:
 
-Packaged WPF resources (1024 × 1024 pixels each):
-
-| File | NineLivesSymbol |
+| Filename | NineLivesSymbol |
 | --- | --- |
-| `black-cat.jpg` | BlackCat |
-| `white-cat.jpg` | WhiteCat |
-| `tabby-cat.jpg` | TabbyCat |
-| `fishbone.jpg` | Fishbone |
-| `yarn.jpg` | Yarn |
-| `bell.jpg` | Bell |
-| `wild.jpg` | Wild |
-| `bonus.jpg` | Bonus |
+| black-cat.jpg | BlackCat |
+| white-cat.jpg | WhiteCat |
+| tabby-cat.jpg | TabbyCat |
+| fishbone.jpg | Fishbone |
+| yarn.jpg | Yarn |
+| bell.jpg | Bell |
+| wild.jpg | Wild |
+| bonus.jpg | Bonus |
 
-`NineLivesArtwork` loads each resource from its pack URI, decodes at full
-resolution, freezes and caches it once, and uses WPF high-quality
-`Stretch.Uniform` scaling at the reel. Source art (1254 × 1254 PNG) is kept in
-the accompanying artwork package, not duplicated in the production app.
+The desktop project copies these to `ModernFrontend/nine-lives-art/` when building or publishing, so the packaged React WebView2 cabinet serves them offline under the exact virtual host. No duplicated source binary art is required in `frontend/`.
 
-The former 112-pixel embedded symbol JPEG strings and yarn concept were
-removed. Vector drawings remain as safe fallbacks for missing/corrupt assets.
-The existing background artwork in `NineLivesArtData.Background*.cs` is
-intentionally retained as it is separate from the symbol replacement.
+The WPF source for the retired Nine Lives game window and its reel/canvas effects has been removed. `NineLivesArtwork` and the encoded `NineLivesArtData.Background*` remain **only** to render the WPF emergency lobby's existing Nine Lives preview; they are not part of the playable modern game and may be removed when the lobby fallback is retired.
