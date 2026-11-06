@@ -119,9 +119,6 @@ public partial class MainWindow
 
         // The Blackjack keyboard handler tunnels first. Disable table actions while the
         // overlay is active, then forward unconsumed keys to the original game shell.
-        DealButton.IsEnabled = false;
-        ClearBetButton.IsEnabled = false;
-        SetActionAvailability(new HashSet<PlayerAction>());
 
         content.PreviewKeyDown += (_, args) => ForwardEmbeddedKey(shell, args);
         if (content is FrameworkElement element)

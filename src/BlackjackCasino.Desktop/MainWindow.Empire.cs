@@ -335,20 +335,12 @@ public partial class MainWindow
         lobby?.MoveFocus(new TraversalRequest(FocusNavigationDirection.First));
     }
 
-    private void EmpireBalanceSettingChanged(object sender, RoutedEventArgs e)
-    {
-        // XAML may raise Checked before constructor preferences have been loaded.
-        if (empire is null || suppressPreferenceEvents) return;
-        RefreshEmpireHeader();
-        SavePreferences();
-    }
-
     private bool empireHeaderWasLive;
 
     private void RefreshEmpireHeader()
     {
         if (empire is null) return;
-        bool visible = empire.Started && EmpireBalanceCheckBox.IsChecked == true;
+        bool visible = empire.Started && preferences.ShowEmpireBalance;
         EmpireBalancePanel.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
         bool live = visible && EmpireBalancePanel.IsVisible && EmpireBalancePanel.IsEnabled && WindowState != WindowState.Minimized;
         if (!live)

@@ -109,7 +109,7 @@ internal sealed class ModernBlackjackView : ContentControl, IDisposable
             {
                 if (!args.IsSuccess) Fail("Blackjack could not load. Return to the native table.");
             };
-            core.ProcessFailed += (_, _) => Fail("Blackjack browser failed. Return to the native table.");
+            core.ProcessFailed += (_, _) => Fail("Blackjack browser failed. Reopen the table from the casino lobby.");
             core.WebMessageReceived += OnMessage;
             browser.Source = new Uri("https://" + ManorPreviewProtocol.VirtualHost + "/blackjack.html");
         }

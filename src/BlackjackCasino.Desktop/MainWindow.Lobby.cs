@@ -10,8 +10,6 @@ public partial class MainWindow
     internal CasinoModeRegistry Modes=>modeRegistry;
     private void InitializeLobby()
     {
-        // The native Blackjack surface is an opt-in game route, never the landing page.
-        HideBlackjackTable();
         InitializeHeaderLayout();
         InitializeEmpire();
         modeRegistry.Register(new("blackjack","Blackjack","The velvet tables","A quiet seat, a fresh shoe and your next decision. Solo or with the house regulars.","#537D66","♠","Table games",()=>new LobbyGameArtwork(false)),()=>
@@ -48,7 +46,6 @@ public partial class MainWindow
         lobby.IsHitTestVisible = !ModernLobbyView.IsAvailable;
         lobby.IsVisibleChanged += (_, _) =>
         {
-            if (lobby.IsVisible) HideBlackjackTable();
             LobbyButton.Visibility = lobby.IsVisible ? Visibility.Collapsed : Visibility.Visible;
             modernLobby?.SetLobbyVisible(lobby.IsVisible);
             OnModernLobbyStateChanged();
@@ -74,26 +71,6 @@ public partial class MainWindow
 
     private void CloseNativeUpdates_Click(object sender, RoutedEventArgs e)
         => NativeUpdateOverlay.Visibility = Visibility.Collapsed;
-
-    private void HideBlackjackTable()
-    {
-        TableSurface.Visibility = Visibility.Collapsed;
-        BlackjackSidebar.Visibility = Visibility.Collapsed;
-        // A hidden native table must not retain enabled game actions.
-        DealButton.IsEnabled = false;
-        ClearBetButton.IsEnabled = false;
-        SetActionAvailability(new HashSet<PlayerAction>());
-    }
-
-    private void ShowBlackjackTable()
-    {
-        if (lobby is null) return;
-        TableSurface.Visibility = Visibility.Visible;
-        BlackjackSidebar.Visibility = Visibility.Visible;
-        lobby.Visibility = Visibility.Collapsed;
-        UpdateHostHeaderVisibility(false);
-        RefreshGameUi();
-    }
 
     private void ConfigureEmbeddedGameSurface()
     {
@@ -125,7 +102,6 @@ public partial class MainWindow
     {
         if(session.RoundInProgress) {StatusText.Text="Finish your hand before returning to the lobby.";return;}
         CloseEmbeddedGame();
-        HideBlackjackTable();
         if(lobby is not null) lobby.Visibility=Visibility.Visible;
         modernLobby?.Refresh();
         LobbyButton.Visibility=Visibility.Collapsed;

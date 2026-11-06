@@ -53,7 +53,6 @@ public partial class MainWindow
 
         // Detach the lobby browser before hosting the new WebView, avoiding the
         // first-layout/hover deadlock that once affected Casino Empire.
-        HideBlackjackTable();
         if (lobby is not null) lobby.Visibility = Visibility.Collapsed;
         modernReelsView = new ModernReelsView(
             () => ModernReelsSnapshot.Create(modernReelsMachine!, modernReelsBet,
