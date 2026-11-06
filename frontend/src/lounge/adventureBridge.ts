@@ -60,7 +60,7 @@ const textOrNull=(v:unknown)=>v===null||label(v);
 const int=(v:unknown,max=Number.MAX_SAFE_INTEGER):v is number=>typeof v==='number'
  &&Number.isSafeInteger(v)&&v>=0&&v<=max;
 const num=(v:unknown):v is number=>typeof v==='number'&&Number.isFinite(v);
-const guid=(v:unknown)=>label(v,64)&&/^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i.test(v);
+const guid=(v:unknown):v is string=>typeof v==='string'&&v.length<=64&&/^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i.test(v);
 const words=(v:unknown,max=500)=>Array.isArray(v)&&v.length<=max&&v.every(x=>label(x,1000));
 const ability=(v:unknown)=>record(v)&&label(v.id,60)&&label(v.name,180)&&int(v.score,100);
 const classInfo=(v:unknown)=>record(v)&&label(v.id,100)&&label(v.name,200)
@@ -150,7 +150,7 @@ const game=(v:unknown):v is TaleRun=>{
   &&label(f.type,100)&&label(f.title,1000)&&label(f.description,4000))
  ||!(v.board===null||board(v.board))
  ||!record(v.statistics)||!['scenesVisited','choicesMade','checksSucceeded',
-  'checksFailed','encountersWon','encountersLost'].every(k=>int(v.statistics[k])))return false;
+  'checksFailed','encountersWon','encountersLost'].every(k=>int((v.statistics as Record<string,unknown>)[k])))return false;
  return true;
 };
 export function isTaleState(v:unknown):v is TaleState{
