@@ -23,7 +23,7 @@ public partial class MainWindow
         TableModeText.Text = "Chill Lounge · recovery";
         SyncHostMusic();
         modeRegistry.NotifyStateChanged();
-        Dispatcher.BeginInvoke(new Action(view.Focus));
+        Dispatcher.BeginInvoke(new Action(() => { view.Focus(); }));
     }
 
     private void ResolveLoungeBrowserRecovery(BrowserRecoveryAction action)
