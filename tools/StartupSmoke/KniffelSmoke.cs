@@ -70,8 +70,7 @@ internal static class KniffelSmoke
         await Click(web, "dice-roll");
         await Click(web, "dice-die-1");
         int[] faces = Game(window).Dice.ToArray();
-        await Click(web, "dice-back", false);
-        await WaitForExit(window);
+        await Close(window, web);
         Require(Find<CasinoLobbyView>(window).Any(x => x.IsVisible),
             "The casino lobby is not visible after the React Midnight Dice exit.");
 
@@ -105,8 +104,7 @@ internal static class KniffelSmoke
         await Click(web, "dice-result-close", false);
         await Capture(web, Path.Combine(output, "kniffel-modern-complete.png"));
 
-        await Click(web, "dice-back", false);
-        await WaitForExit(window);
+        await Close(window, web);
         view = await Open(window);web = view.Browser.CoreWebView2!;
         Require(Game(window).IsComplete && profile.LifetimeExperience == xpBefore + xpEarned,
             "Reopening the completed game awarded duplicate XP.");
@@ -122,8 +120,7 @@ internal static class KniffelSmoke
         Require(Game(window).RollsUsed == 1,
             "Animated roll did not settle natively before the animation.");
         faces = Game(window).Dice.ToArray();
-        await Click(web, "dice-back", false);
-        await WaitForExit(window);
+        await Close(window, web);
         view = await Open(window);web = view.Browser.CoreWebView2!;
         Require(Game(window).RollsUsed == 1 && faces.SequenceEqual(Game(window).Dice),
             "Exiting during dice animation changed the committed outcome.");
@@ -143,8 +140,7 @@ internal static class KniffelSmoke
         Require(Game(window).RollsUsed == 2, "Canceling a restart lost the committed dice.");
 
         await SetAnimations(web, false);
-        await Click(web, "dice-back", false);
-        await WaitForExit(window);
+        await Close(window, web);
         File.WriteAllText(Path.Combine(output, "kniffel-result.txt"),
             "PASS: modern 5-dice/13-score React route, equipped Aurora cosmetics, hold/reroll, preview and confirm, 13 turns and XP, durable exact resume, result receipt, new-game confirmation, animation independence, 1080x720 layout.");
     }

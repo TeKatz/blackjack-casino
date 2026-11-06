@@ -134,6 +134,30 @@ internal static class ModernDiceSmokeHelper
             await Task.Delay(65);
         }
     }
+    // Clicking a navigation control destroys the WebView2 which executed the script.
+    // The JS result can therefore be lost (or throw COMException) even though
+    // navigation succeeded. Verify the native host transition instead.
+    internal static async Task Close(MainWindow host, CoreWebView2 web, string testId = "dice-back")
+    {
+        string selector = "[data-testid=" + JsonSerializer.Serialize(testId) + "]";
+        string script = "(()=>{const element=document.querySelector("
+            + JsonSerializer.Serialize(selector)
+            + ");if(!element||element.disabled)return false;element.click();return true})()";
+        try
+        {
+            // Dispatch exactly once. Retrying a close against the disposed browser
+            // is not an idempotent action and can mask a working close command.
+            _ = await web.ExecuteScriptAsync(script);
+        }
+        catch (Exception ex) when (ex is InvalidOperationException
+            or System.Runtime.InteropServices.COMException)
+        {
+            // The host may have destroyed the WebView2 as a direct result of the click.
+            // WaitForExit still fails if no real exit occurred.
+        }
+        await WaitForExit(host);
+    }
+
     internal static async Task WaitForExit(MainWindow host)
     {
         for (int i = 0; i < 100 && Find<ModernDiceView>(host).Any(v => v.IsVisible); i++)

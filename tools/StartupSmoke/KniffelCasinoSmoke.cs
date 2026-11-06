@@ -47,8 +47,7 @@ internal static class KniffelCasinoSmoke
             if (turn == 1 || turn == 13)
             {
                 // Closing during a saved AI turn must not advance cash or rerun the seat.
-                await ModernDiceSmokeHelper.Click(web, "dice-back", false);
-                await WaitForExit(window);
+                await Close(window, web);
                 decimal cashWhileAway = window.DiceCasinoBankroll;
                 await Task.Delay(140);
                 Require(window.DiceCasinoBankroll == cashWhileAway,
@@ -142,8 +141,7 @@ internal static class KniffelCasinoSmoke
         Require(await JavaScript(web,
             "Boolean(document.querySelector('.md-receipt-money')?.textContent.includes('100.00'))"),
             "A forfeited table has no receipt for the lost entry.");
-        await ModernDiceSmokeHelper.Click(web, "dice-result-lobby", false);
-        await WaitForExit(window);
+        await Close(window, web, "dice-result-lobby");
         await OpenLobbyProgression(window, "Statistics", "LobbyProgression_Overview");
         ModernLobbyView? modern = Find<ModernLobbyView>(window)
             .FirstOrDefault(view => view.Ready && view.IsVisible);
