@@ -323,6 +323,14 @@ public sealed class NeonVaultSession
     public int VaultEnergy { get; private set; }
     public bool BonusActive => FreeSpinsRemaining > 0;
 
+    /// <summary>Reconcile the shared wallet when recovering a browser without
+    /// resetting free spins, Vault Energy, the RNG stream or Security Override.</summary>
+    public void SynchronizeBankroll(decimal value)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(value);
+        Bankroll = value;
+    }
+
     public NeonVaultSpinResult Spin(decimal requestedBet)
     {
         bool freeSpin = FreeSpinsRemaining > 0;

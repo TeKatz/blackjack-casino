@@ -19,7 +19,7 @@ public partial class MainWindow
     private void SyncHostMusic()
     {
         backgroundMusic.SetEnabled(HostMusicSettings.MusicEnabled && !KniffelPageOpen &&
-            !ModernReelsOpen && !ModernNineLivesOpen && (embeddedGameShell is null || keepHostMusicForEmbeddedGame));
+            !ModernReelsOpen && !ModernNineLivesOpen && !ModernNeonVaultOpen && (embeddedGameShell is null || keepHostMusicForEmbeddedGame));
         backgroundMusic.SetVolume(HostMusicSettings.MusicVolume);
     }
 
