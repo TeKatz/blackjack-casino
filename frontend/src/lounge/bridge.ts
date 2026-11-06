@@ -1,13 +1,19 @@
 export const loungeIds = ['sudoku','solitaire','word-search','memory','jigsaw','tales-backroom'] as const;
 export type LoungeId = typeof loungeIds[number];
 export type LoungeGame = { id: LoungeId; status: string | null };
+import { isSudokuState } from './sudokuBridge';
+import type { SudokuState } from './sudokuBridge';
 export type LoungeSnapshot = { version: 1; language: 'en' | 'de';
+  session:string;revision:number;sudoku:SudokuState|null;
   musicEnabled: boolean; soundEnabled: boolean; animationsEnabled: boolean; games: LoungeGame[] };
 const record = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === 'object' && !Array.isArray(v);
 export const isLoungeId = (value: unknown): value is LoungeId =>
   typeof value === 'string' && loungeIds.some(id => id === value);
 export function isLoungeSnapshot(value: unknown): value is LoungeSnapshot {
   if (!record(value) || value.version !== 1 || (value.language !== 'de' && value.language !== 'en')
+    || typeof value.session!=='string' || !/^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i.test(value.session)
+    || typeof value.revision!=='number'||!Number.isSafeInteger(value.revision)||value.revision<0
+    || !(value.sudoku===null||isSudokuState(value.sudoku))
     || typeof value.musicEnabled !== 'boolean' || typeof value.soundEnabled !== 'boolean'
     || typeof value.animationsEnabled !== 'boolean' || !Array.isArray(value.games)
     || value.games.length !== loungeIds.length) return false;

@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { isLoungeId, isLoungeSnapshot, loungeIds, readLoungeSnapshot } from '../src/lounge/bridge';
 
 const games = loungeIds.map(id => ({id,status:null}));
-const state = {version:1,language:'en',musicEnabled:true,soundEnabled:true,
+const state = {version:1,language:'en',
+  session:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',revision:0,sudoku:null,
+  musicEnabled:true,soundEnabled:true,
   animationsEnabled:true,games};
 
 describe('Chill Lounge native navigation snapshot',()=>{

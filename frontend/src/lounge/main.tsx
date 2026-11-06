@@ -2,6 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { isLoungeId, readLoungeSnapshot, sendLoungeCommand } from './bridge';
 import type { LoungeId, LoungeSnapshot } from './bridge';
+import { SudokuScreen } from './sudoku';
+import { isSudokuReply, issueSudokuIntent } from './sudokuBridge';
+import type { SudokuIntent } from './sudokuBridge';
 import './lounge.css';
 
 type Language = 'de' | 'en';
@@ -58,12 +61,23 @@ const words = {
 function App() {
  const [snapshot,setSnapshot]=useState<LoungeSnapshot|null>(null);
  const [filter,setFilter]=useState<Filter>('all');
+ const [pending,setPending]=useState<string|null>(null);
+ const [sudokuError,setSudokuError]=useState('');
  const signalled=useRef(false);
  useEffect(()=>{
    const webview=window.chrome?.webview;
    const handler=(event:MessageEvent)=>{
      const incoming=readLoungeSnapshot(event.data);
      if (incoming) setSnapshot(incoming);
+     const msg:unknown=event.data;
+     if(msg&&typeof msg==='object'&&!Array.isArray(msg)
+       &&'type' in msg&&msg.type==='lounge.sudoku.result'
+       &&'data' in msg&&isSudokuReply(msg.data)){
+       const reply=msg.data;
+       setPending(prev=>prev===reply.requestId?null:prev);
+       if(!reply.success)setSudokuError(reply.message);
+       else setSudokuError('');
+     }
    };
    webview?.addEventListener('message',handler);
    sendLoungeCommand('lounge.ready');
@@ -83,15 +97,30 @@ function App() {
    {id:'cards',name:t.cards},{id:'stories',name:t.stories},
  ];
  function open(id:LoungeId) { if(snapshot && isLoungeId(id))sendLoungeCommand('lounge.open',id); }
+ function command(intent:SudokuIntent) {
+   if(!snapshot||pending||!snapshot.sudoku)return;
+   setSudokuError('');
+   setPending(issueSudokuIntent(snapshot.session,snapshot.revision,intent));
+ }
  return <main className="chill-shell">
    <div className="chill-sparkles" aria-hidden="true"/>
    <header className="chill-header">
      <div className="chill-mark" aria-hidden="true">✦</div>
      <div className="chill-brand"><span>{t.club}</span><strong>Chill Lounge</strong></div>
      <span className="chill-local">{t.version}</span>
-     <button className="chill-exit" onClick={()=>sendLoungeCommand('lounge.close')}>{t.back}</button>
+     {snapshot?.sudoku
+       ? <button className="chill-exit" disabled={!!pending}
+           onClick={()=>command({action:snapshot.sudoku?.screen==='game'?'sudoku.back':'sudoku.exit'})}>
+           {snapshot.sudoku.screen==='game'
+             ? (language==='de'?'← Sudoku-Auswahl':'← Sudoku library')
+             : (language==='de'?'← Chill Lounge':'← Chill Lounge')}</button>
+       : <button className="chill-exit" onClick={()=>sendLoungeCommand('lounge.close')}>{t.back}</button>}
    </header>
    <div className="chill-content">
+    {snapshot?.sudoku
+      ? <SudokuScreen key="sudoku" state={snapshot.sudoku} language={language}
+          pending={!!pending} error={sudokuError} command={command}/>
+      : <>
      <section className="chill-hero" aria-labelledby="chill-title">
        <div className="chill-hero-copy">
          <p className="chill-kicker">{t.kicker}</p>
@@ -125,6 +154,7 @@ function App() {
        </button>)}
      </section>
      <footer className="chill-footer"><strong>{t.foot}</strong><span>{t.note}</span></footer>
+     </>}
    </div>
    {!snapshot && <div className="chill-loading" role="status">{t.loading}</div>}
  </main>;
