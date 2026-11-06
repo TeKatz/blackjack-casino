@@ -15,8 +15,8 @@ internal static class ModernAdventureSmoke
         await Click(web,".chill-tales-backroom",
             "Boolean(document.querySelector('[data-testid=\"modern-adventure-library\"]'))",
             "React Tales library failed to open.");
-        Require(await Js(web,"document.querySelectorAll('.backroom-tale-grid article').length===4"),
-            "The four original Tales must be in the modern library.");
+        Require(await Js(web,"document.querySelectorAll('.backroom-tale-grid article').length===3"),
+            "The three public Tales must be in the modern library.");
         Require(await Js(web,"document.querySelectorAll('.backroom-creator select option').length>=4"),
             "Native character archetypes missing in React.");
         await Capture(web,Path.Combine(output,"modern-adventure-library.png"));

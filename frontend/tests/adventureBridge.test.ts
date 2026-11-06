@@ -3,7 +3,7 @@ import {isTaleReply,isTaleState} from '../src/lounge/adventureBridge';
 
 const abilities=['Strength','Dexterity','Constitution','Intelligence','Wisdom','Charisma']
  .map(id=>({id,name:id,score:12}));
-const adventures=['black-stag','drowned-bell','strangers-wager','dead-mans-hand']
+const adventures=['black-stag','drowned-bell','dead-mans-hand']
  .map(id=>({id,title:id,subtitle:'A tale with consequences',acts:3,scenes:20,
  status:'unplayed',runId:null,lastSceneId:null}));
 const classes=[{id:'rogue',name:'Rogue',description:'A resourceful adventurer',

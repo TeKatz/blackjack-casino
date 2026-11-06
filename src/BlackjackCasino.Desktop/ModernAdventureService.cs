@@ -291,6 +291,13 @@ internal sealed class ModernAdventureService
             case "adventure.resume":
                 return Resume(command.AdventureId!);
             case "adventure.choice":
+                if (screen != "story" || playingId is null ||
+                    !progress.Runs.TryGetValue(playingId, out AdventureRunState? choiceRun) ||
+                    choiceRun.Completed) return (false, "No active story choice.");
+                var choiceEngine = new AdventureEngine(Definition(playingId), CloneState(choiceRun));
+                if (choiceEngine.PendingCheck is not null ||
+                    !choiceEngine.AvailableChoices().Any(c => c.Id == command.ChoiceId))
+                    return (false, "Choice is not available in this scene.");
                 return WithEngine(e => e.SelectChoice(command.ChoiceId!));
             case "adventure.roll":
                 return Roll();

@@ -168,7 +168,8 @@ public sealed class ModernAdventureBridgeTests
 
     private static AdventureProgressState StagedEncounter(string adventureId, string sceneId)
     {
-        AdventureDefinition tale = AdventureCatalog.All.Single(a=>a.Id==adventureId);
+        Assert.True(AdventureCatalog.TryGet(adventureId, out AdventureDefinition? found));
+        AdventureDefinition tale = found!;
         AdventureRunState run = AdventureEngine.StartNew(tale,
             AdventureCharacterCatalog.Create(tale,AdventureCharacterCatalog.AllFor(tale)[0].Id)).State;
         run.CurrentSceneId = sceneId;
