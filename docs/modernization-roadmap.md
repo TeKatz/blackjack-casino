@@ -22,6 +22,10 @@ The casino lobby is now a separate, read-only React/TypeScript/PixiJS page built
 - Native games and Blackjack-table-specific settings stay WPF until replacement. The WPF Album, Vault and profile editor remain only for emergency/legacy-game fallbacks, never as primary modern-lobby pages.
 - The full native fallback casino lobby and old Manor source remain temporarily because Windows presentation smoke tests directly exercise their controls. They will be removed in a separate tested cleanup, not by disabling coverage.
 
+## Chill Lounge modern hub (2026-11-06)
+
+A new local React Lounge landing page (`lounge.html`) is the standard entry from the casino lobby. Its read-only, origin-checked WebView2 bridge exposes just six allow-listed navigation intents and cannot change player state. Each tile opens the selected existing WPF module directly, preserving all current saves, rewards, gameplay and emergency fallback. The Back to Games route reopens React. This isolates the shared lounge navigation so Sudoku, Solitaire, Word Search, Memory, Jigsaw and Tales from the Backroom can be migrated individually; no native game has been retired in this first slice. Follow-up work must replace these six play surfaces and their smoke tests before deleting `LoungeWindow` or switching away from the WPF host.
+
 ## Casino Empire presentation migration (2026-11-05)
 
 Empire now has a separate React/TypeScript entry point (`empire.html`) for both

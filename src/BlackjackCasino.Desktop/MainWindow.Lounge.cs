@@ -12,9 +12,11 @@ public partial class MainWindow
     private BackgroundMusic? loungeBackgroundMusic;
     private string sudokuRewardNotice = "";
 
-    private void OpenLounge()
+    private void OpenLounge() => OpenLoungeCore(null);
+
+    private void OpenLoungeCore(string? nativeGameId, bool forceLegacy = false)
     {
-        if (session.RoundInProgress || MetaPageOpen || embeddedGameShell is not null || EmpirePageOpen || KniffelPageOpen)
+        if (session.RoundInProgress || MetaPageOpen || embeddedGameShell is not null || EmpirePageOpen || KniffelPageOpen || ModernLoungeOpen)
         {
             return;
         }
@@ -141,6 +143,13 @@ public partial class MainWindow
                 SetLoungeSoundtrack)
         ]);
 
+        if (!forceLegacy && nativeGameId is null && ModernLoungeView.IsAvailable)
+        {
+            OpenModernLounge();
+            return;
+        }
+
+        bool returnToModernHub = false;
         var window = new LoungeWindow(
             preferences.Sudoku,
             state =>
@@ -171,7 +180,9 @@ public partial class MainWindow
                     SavePreferences();
                 }
             },
-            rewardNotice: () => sudokuRewardNotice);
+            rewardNotice: () => sudokuRewardNotice,
+            initialGameId: nativeGameId,
+            modernHubBack: nativeGameId is null ? null : () => returnToModernHub = true);
 
         TableModeText.Text = "Chill Lounge";
         MenuAudio.Attach(window, () => preferences.Presentation("chill-lounge").SoundEnabled);
@@ -183,6 +194,8 @@ public partial class MainWindow
             loungeBackgroundMusic?.Dispose();
             loungeBackgroundMusic = null;
             TableModeText.Text = "Casino lobby";
+            if (returnToModernHub && IsLoaded)
+                Dispatcher.BeginInvoke(new Action(OpenLounge), System.Windows.Threading.DispatcherPriority.Loaded);
         });
         SetLoungeSoundtrack(adventureActive: false);
     }

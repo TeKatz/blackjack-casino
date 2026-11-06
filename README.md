@@ -2,7 +2,7 @@
 
 An **offline-first, single-player casino for Windows**, built around virtual credits and progression. No real-money gambling, payments, accounts, advertisements or online services are required for gameplay.
 
-The desktop application uses **.NET 10 with WPF as the Windows host**. The casino lobby, Blackjack table, Midnight Reels, Neon Vault, Nine Lives, Midnight Merge, Midnight Dice, Casino Empire and Midnight Manor now have modern **React + TypeScript** presentations, hosted locally through **WebView2**; PixiJS powers richer scenes where appropriate. Player profile editing (display name, owned titles/portraits), Season Pass management, Blackjack Hand History and the lobby's Casino Vault now live in React, alongside the shop, challenges and statistics. The Collector's Album (including its five-card pack-opening animations, artwork archive and sequential Open All) has also moved to React. Progress export and the emergency Album fallback remain native. Existing game logic and persistent player data remain in C#.
+The desktop application uses **.NET 10 with WPF as the Windows host**. The casino lobby, Chill Lounge hub, Blackjack table, Midnight Reels, Neon Vault, Nine Lives, Midnight Merge, Midnight Dice, Casino Empire and Midnight Manor now have modern **React + TypeScript** presentations, hosted locally through **WebView2**; PixiJS powers richer scenes where appropriate. Player profile editing (display name, owned titles/portraits), Season Pass management, Blackjack Hand History and the lobby's Casino Vault now live in React, alongside the shop, challenges and statistics. The Collector's Album (including its five-card pack-opening animations, artwork archive and sequential Open All) has also moved to React. Progress export and the emergency Album fallback remain native. Existing game logic and persistent player data remain in C#.
 
 ## Games and experiences
 
@@ -40,6 +40,10 @@ The sole playable Blackjack interface is React/TypeScript (`frontend/blackjack.h
 ## Midnight Merge: React/PixiJS restoration workshop
 
 Midnight Merge runs as a responsive local React/PixiJS experience (`frontend/midnight-merge.html`): a persistent 7×6 board with drag/drop and keyboard-friendly click selection, both original producer chains, fourteen supply orders, staged lobby/bar restoration, translated milestones, profile XP and native audio. `MergeBoard` remains the C# authority for spawning, moving, combining, delivering and saving. Every accepted action is saved atomically before the browser renders it; the versioned receipt protocol prevents duplicate rewards and stale commands across a WebView2 failure. The former `MidnightMergeView` WPF gameplay view has been retired, without changing the durable game schema or rewards. See [Midnight Merge architecture](docs/midnight-merge-foundation.md).
+
+## Chill Lounge: React hub, native games during transition
+
+The Chill Lounge now opens a local React/TypeScript hub (`frontend/lounge.html`) with responsive navigation, six activity tiles, German/English labels and read-only status data from C#. The hub only issues allow-listed navigation intents. The current Sudoku, Midnight Solitaire, Word Search, Memory, Jigsaw and Tales from the Backroom gameplay screens still run through their existing WPF modules; selecting a tile opens the requested game directly, and returning to Games reopens the modern hub. Native saves, achievements, rewards and audio ownership remain unchanged. If the hub fails to load, the existing WPF Lounge menu remains available. **This is the first Lounge migration slice, not a claim that its game views are already converted.**
 
 ## Midnight Dice: React/PixiJS dice lounge
 
@@ -140,7 +144,7 @@ Windows CI additionally runs actual desktop startup, Manor runtime and presentat
 
 - **Midnight Manor:** modern presentation is the default in Development; remaining subjective audio, display-scaling and long-session performance checks are tracked separately.
 - **Blackjack:** the retired native table, sidebar and custom rule dialog have been removed. React is the only player-facing Blackjack table; its C# session survives a WebView failure and can be rehosted.
-- **Other game interfaces:** Chill Lounge still uses native WPF gameplay. The Midnight Dice WPF source remains for rollback and legacy visual tests, but its normal play route is React. The shared WPF host and emergency lobby remain until all destinations are accepted.
+- **Other game interfaces:** the Chill Lounge hub is React, but its five games and adventure gameplay still use native WPF. They are the next migration targets. The Midnight Dice WPF source remains for rollback and legacy visual tests, but its normal play route is React. The shared WPF host and emergency lobby remain until all destinations are accepted.
 - **Localization:** English/German shell support is present; some older game and adventure content still needs translation.
 - **Player data and financial outcomes:** preserve backward compatibility, deterministic payout tests and exactly-once committed transitions.
 - **Releases:** `main` and Stable do not inherit Development changes automatically.

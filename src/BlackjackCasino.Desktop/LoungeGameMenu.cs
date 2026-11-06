@@ -10,15 +10,33 @@ internal sealed class LoungeGameMenu : UserControl
 {
     private readonly IReadOnlyList<LoungeGame> baseGames;
     private readonly Action<string?, Action?>? setShellNavigation;
+    private readonly Action? returnToModernHub;
     private Button? injectedShellBack;
     private Action? injectedShellBackAction;
 
-    internal LoungeGameMenu(IEnumerable<LoungeGame> games, Action<string?, Action?>? setShellNavigation = null)
+    internal LoungeGameMenu(IEnumerable<LoungeGame> games, Action<string?, Action?>? setShellNavigation = null,
+        Action? returnToModernHub = null)
     {
         baseGames = games?.ToArray() ?? throw new ArgumentNullException(nameof(games));
         this.setShellNavigation = setShellNavigation;
+        this.returnToModernHub = returnToModernHub;
         Loaded += (_, _) => ApplyInjectedShellNavigation();
         ShowMenu();
+    }
+
+    internal bool OpenGame(string id)
+    {
+        if (string.Equals(id, "sudoku", StringComparison.Ordinal))
+        {
+            LoungeGame? sudoku = baseGames.FirstOrDefault(game => game.Id == id);
+            if (sudoku is null) return false;
+            sudoku.Open();
+            return true;
+        }
+        LoungeHostedGame? module = LoungeHostedGameRegistry.Snapshot.FirstOrDefault(game => game.Definition.Id == id);
+        if (module is null) return false;
+        OpenHosted(module);
+        return true;
     }
 
     private void ShowMenu()
@@ -132,7 +150,7 @@ internal sealed class LoungeGameMenu : UserControl
     private void OpenHosted(LoungeHostedGame module)
     {
         string label = GamesBackLabel();
-        Action action = ShowMenu;
+        Action action = returnToModernHub ?? ShowMenu;
         ConfigureShellNavigation(label, action);
         Content = module.CreateContent(ShowMenu);
 

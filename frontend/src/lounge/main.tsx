@@ -1,0 +1,132 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { createRoot } from 'react-dom/client';
+import { isLoungeId, loungeIds, readLoungeSnapshot, sendLoungeCommand } from './bridge';
+import type { LoungeId, LoungeSnapshot } from './bridge';
+import './lounge.css';
+
+type Language = 'de' | 'en';
+type Filter = 'all' | 'puzzles' | 'cards' | 'stories';
+type Localized = { en: string; de: string };
+type GameInfo = { id: LoungeId; category: Exclude<Filter,'all'>; title: Localized; subtitle: Localized;
+  description: Localized; icon: string; decoration: string; };
+const catalog: GameInfo[] = [
+  { id:'sudoku', category:'puzzles', title:{en:'Sudoku',de:'Sudoku'},
+    subtitle:{en:'The quiet grid',de:'Das stille Raster'},
+    description:{en:'Six difficulties, daily puzzles and a saved game for every quiet moment.',
+      de:'Sechs Schwierigkeitsgrade, Tagesrätsel und gespeicherte Partien für jede ruhige Minute.'},
+    icon:'▦',decoration:'1  ·  9  ·  3' },
+  { id:'solitaire', category:'cards', title:{en:'Midnight Solitaire',de:'Midnight Solitaire'},
+    subtitle:{en:'A well-played hand',de:'Ein ruhiges Kartenspiel'},
+    description:{en:'Klondike, FreeCell, Spider, Pyramid, Golf and TriPeaks. Your deals stay saved.',
+      de:'Klondike, FreeCell, Spider, Pyramid, Golf und TriPeaks. Deine Partien bleiben gespeichert.'},
+    icon:'♠',decoration:'A  ♠  K  ♥' },
+  { id:'word-search',category:'puzzles',title:{en:'Word Search',de:'Wortsuche'},
+    subtitle:{en:'Find your words',de:'Finde deine Wörter'},
+    description:{en:'Explore themed letter grids without a countdown. Continue your last puzzle anytime.',
+      de:'Entdecke Themenrätsel ohne Zeitdruck. Dein letztes Rätsel lässt sich jederzeit fortsetzen.'},
+    icon:'⌕',decoration:'W  O  R  D' },
+  { id:'memory',category:'cards',title:{en:'Memory',de:'Memory'},
+    subtitle:{en:'A little recollection',de:'Eine kleine Erinnerung'},
+    description:{en:'Turn cards, uncover pairs and build your streak. Every match at your pace.',
+      de:'Decke Karten auf, finde Paare und baue deine Serie aus. Ganz in deinem Tempo.'},
+    icon:'◈',decoration:'◇  ◆  ◇  ◆' },
+  { id:'jigsaw',category:'puzzles',title:{en:'Jigsaw Puzzle',de:'Puzzle'},
+    subtitle:{en:'Piece by piece',de:'Stück für Stück'},
+    description:{en:'Pick a scene and a piece count. Leave and return to the same unfinished picture.',
+      de:'Wähle Motiv und Teilezahl. Ein begonnenes Bild wartet beim nächsten Besuch auf dich.'},
+    icon:'✧',decoration:'◪  ◩  ◰' },
+  { id:'tales-backroom',category:'stories',title:{en:'Tales from the Backroom',de:'Tales from the Backroom'},
+    subtitle:{en:'A story behind the door',de:'Geschichten hinter der Tür'},
+    description:{en:'Create a character, roll the d20 and follow a branching tabletop adventure.',
+      de:'Erstelle deinen Charakter, wirf den W20 und erlebe verzweigte Pen-&-Paper-Abenteuer.'},
+    icon:'✦',decoration:'D20  ·  STORY' },
+];
+const words = {
+ en: {club:'THE MIDNIGHT CLUB',back:'← Casino lobby',kicker:'A QUIETER CORNER',
+ title:'Your time, your pace.',intro:'Take a seat away from the casino floor. Six familiar ways to unwind, all available offline.',
+ all:'All activities',puzzles:'Puzzles',cards:'Cards & memory',stories:'Adventures',
+ play:'ENTER GAME',continued:'Your progress is preserved',loading:'Opening your lounge…',
+ foot:'THE CHILL LOUNGE',note:'No entry fees. No rush. Save states and rewards stay with your existing profile.',
+ version:'LOCAL · OFFLINE'},
+ de: {club:'THE MIDNIGHT CLUB',back:'← Casino-Lobby',kicker:'EINE RUHIGERE ECKE',
+ title:'Deine Zeit. Dein Tempo.',intro:'Eine kleine Auszeit vom Casino. Sechs vertraute Spiele, vollständig offline verfügbar.',
+ all:'Alle Aktivitäten',puzzles:'Rätsel',cards:'Karten & Memory',stories:'Abenteuer',
+ play:'SPIEL ÖFFNEN',continued:'Dein Fortschritt bleibt gespeichert',loading:'Deine Lounge wird geöffnet…',
+ foot:'THE CHILL LOUNGE',note:'Keine Einsätze. Kein Zeitdruck. Spielstände und Belohnungen bleiben erhalten.',
+ version:'LOKAL · OFFLINE'},
+};
+function App() {
+ const [snapshot,setSnapshot]=useState<LoungeSnapshot|null>(null);
+ const [filter,setFilter]=useState<Filter>('all');
+ const signalled=useRef(false);
+ useEffect(()=>{
+   const webview=window.chrome?.webview;
+   const handler=(event:MessageEvent)=>{
+     const incoming=readLoungeSnapshot(event.data);
+     if (incoming) setSnapshot(incoming);
+   };
+   webview?.addEventListener('message',handler);
+   sendLoungeCommand('lounge.ready');
+   return()=>webview?.removeEventListener('message',handler);
+ },[]);
+ useEffect(()=>{
+   if (snapshot && !signalled.current) {
+     signalled.current=true;
+     sendLoungeCommand('lounge.ui-ready');
+   }
+ },[snapshot]);
+ const language:Language=snapshot?.language??'en', t=words[language];
+ const filtered=useMemo(()=>catalog.filter(game=>filter==='all'||game.category===filter),[filter]);
+ const statusMap=useMemo(()=>new Map(snapshot?.games.map(game=>[game.id,game.status])??[]),[snapshot]);
+ const groups: {id:Filter;name:string}[]=[
+   {id:'all',name:t.all},{id:'puzzles',name:t.puzzles},
+   {id:'cards',name:t.cards},{id:'stories',name:t.stories},
+ ];
+ function open(id:LoungeId) { if(snapshot && isLoungeId(id))sendLoungeCommand('lounge.open',id); }
+ return <main className="chill-shell">
+   <div className="chill-sparkles" aria-hidden="true"/>
+   <header className="chill-header">
+     <div className="chill-mark" aria-hidden="true">✦</div>
+     <div className="chill-brand"><span>{t.club}</span><strong>Chill Lounge</strong></div>
+     <span className="chill-local">{t.version}</span>
+     <button className="chill-exit" onClick={()=>sendLoungeCommand('lounge.close')}>{t.back}</button>
+   </header>
+   <div className="chill-content">
+     <section className="chill-hero" aria-labelledby="chill-title">
+       <div className="chill-hero-copy">
+         <p className="chill-kicker">{t.kicker}</p>
+         <h1 id="chill-title">{t.title}</h1>
+         <p className="chill-intro">{t.intro}</p>
+       </div>
+       <div className="chill-lantern" aria-hidden="true"><span>✦</span></div>
+     </section>
+     <div className="chill-filter" role="group" aria-label={language==='de'?'Aktivitäten filtern':'Filter activities'}>
+       {groups.map(group=><button key={group.id} className={filter===group.id?'selected':''}
+         aria-pressed={filter===group.id} onClick={()=>setFilter(group.id)}>{group.name}</button>)}
+     </div>
+     <section className="chill-grid" aria-label={t.all}>
+       {filtered.map((game,index)=><button key={game.id} className={'chill-card chill-'+game.id}
+         onClick={()=>open(game.id)} disabled={!snapshot}
+         style={{animationDelay: String(index*55)+'ms'}}>
+         <span className="chill-card-art" aria-hidden="true">
+           <span className="chill-decoration">{game.decoration}</span>
+           <span className="chill-icon">{game.icon}</span>
+         </span>
+         <span className="chill-card-body">
+           <span className="chill-card-category">{groups.find(g=>g.id===game.category)?.name}</span>
+           <strong>{game.title[language]}</strong>
+           <em>{game.subtitle[language]}</em>
+           <span className="chill-description">{game.description[language]}</span>
+           <span className="chill-card-bottom">
+             <span>{statusMap.get(game.id) || t.continued}</span>
+             <b>{t.play} <span aria-hidden="true">→</span></b>
+           </span>
+         </span>
+       </button>)}
+     </section>
+     <footer className="chill-footer"><strong>{t.foot}</strong><span>{t.note}</span></footer>
+   </div>
+   {!snapshot && <div className="chill-loading" role="status">{t.loading}</div>}
+ </main>;
+}
+createRoot(document.getElementById('root')!).render(<App/>);
