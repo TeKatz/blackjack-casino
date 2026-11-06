@@ -15,7 +15,8 @@ public sealed class WordSearchTests
             var puzzles = WordSearchCatalog.For(difficulty);
             Assert.Equal(48, puzzles.Count);
             Assert.Equal(48, puzzles.Select(x => x.Id).Distinct(StringComparer.Ordinal).Count());
-            Assert.Equal(24, puzzles.Take(24).Count(p => p.Id.EndsWith("0" + "01", StringComparison.Ordinal) || int.Parse(p.Id[^3..]) <= 24));
+            Assert.Equal(Enumerable.Range(1, 48).Select(i => $"word-search-{difficulty.ToString().ToLowerInvariant()}-{i:000}"),
+                puzzles.Select(p => p.Id));
             Assert.Equal(12, puzzles.Skip(24).Select(p => p.Theme).Distinct(StringComparer.Ordinal).Count());
         }
     }
