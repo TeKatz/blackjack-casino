@@ -37,6 +37,10 @@ For native builds, run `npm run build` from `frontend/` before the .NET build. V
 
 The sole playable Blackjack interface is React/TypeScript (`frontend/blackjack.html`). `BlackjackTableController` holds the current Core session, wagers, rules, AI seats and presentation preferences without hidden WPF table controls. The old XAML table and fallback are gone; a failed browser returns to the casino lobby, preserving the current in-memory hand for a fresh React opening. See [Blackjack modernization](docs/blackjack-modernization.md).
 
+## Neon Vault: React/PixiJS high-voltage casino
+
+Neon Vault is now rendered in a responsive, local React/PixiJS cabinet (`frontend/neon-vault.html`). The established five-reel, four-row, 1,024-ways C# game resolves spins and all bonus features **before** the browser visualizes them. The modern client presents the existing tier ladder through $250K, the four Access Key jackpots, Vault Break free spins, expanding Wilds, Vault Energy / Security Override, three Blackout events and anticipation without calculating payouts. The original WPF slot window, reel animations and its old symbol textures are retired; the native host and lobby artwork remain until the surrounding shell is replaced. See [Neon Vault implementation](docs/neon-vault.md).
+
 ## Nine Lives: React/PixiJS rooftop
 
 The normal Nine Lives destination is now the responsive React/PixiJS cabinet (`frontend/nine-lives.html`) with the original eight 1024px symbol images served locally. The 3×3 slot, five paylines, Pounce Wilds, nine free spins, auto-spin, paytable, statistics and audio/animation preferences remain native-authoritative through `NineLivesSession` and a strict receipt/revision bridge. The former WPF Nine Lives window and reel renderer are no longer part of the desktop build. Browser failure returns to the lobby while retaining the already-settled native result and bonus-spin session. See [modernization roadmap](docs/modernization-roadmap.md).
@@ -128,7 +132,7 @@ Windows CI additionally runs actual desktop startup, Manor runtime and presentat
 
 - **Midnight Manor:** modern presentation is the default in Development; remaining subjective audio, display-scaling and long-session performance checks are tracked separately.
 - **Blackjack:** the retired native table, sidebar and custom rule dialog have been removed. React is the only player-facing Blackjack table; its C# session survives a WebView failure and can be rehosted.
-- **Other game interfaces:** Neon Vault, Midnight Merge, Midnight Dice and Chill Lounge still use WPF. The host and emergency WPF lobby remain until these modes are migrated.
+- **Other game interfaces:** Midnight Merge, Midnight Dice and Chill Lounge still use WPF. The host and emergency WPF lobby remain until these modes are migrated.
 - **Localization:** English/German shell support is present; some older game and adventure content still needs translation.
 - **Player data and financial outcomes:** preserve backward compatibility, deterministic payout tests and exactly-once committed transitions.
 - **Releases:** `main` and Stable do not inherit Development changes automatically.

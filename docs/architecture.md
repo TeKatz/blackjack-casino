@@ -158,3 +158,7 @@ Blackjack has no WPF table, sidebar, custom-rules dialog or WPF wager renderer. 
 ## Nine Lives presentation boundary (2026-11-06)
 
 `NineLivesSession` and `SlotProgression` remain C# authorities. The native `MainWindow.ModernNineLives` adapter runs each spin and commits the shared wallet, saved preferences and rewards before sending a read-only `ModernNineLivesSnapshot`. `ModernNineLivesProtocol` accepts only enumerated wagers, toggles and spin intents from the exact packaged `nine-lives.html` origin, with an idempotent request/epoch/revision ledger kept outside WebView2. Browser failure cannot reroll or drop bonus spins during in-memory recovery. React/PixiJS owns all Nine Lives game visuals. The old Nine Lives WPF Window was removed, while lobby preview art and remaining native host infrastructure are retained.
+
+## Neon Vault UI boundary (2026-11-06)
+
+`NeonVaultSession` is the sole C# RNG/paytable/bonus engine. The `MainWindow.ModernNeonVault` adapter commits each native result to the shared wallet, progression and profile before sending a `ModernNeonVaultSnapshot` to the offline local React page. The validated `ModernNeonVaultProtocol` rejects untrusted origins, invented wagers, stale revisions and duplicate request receipts. Its epoch and session survive WebView2 failure together with pending native free spins. The old WPF Neon Vault window and reel renderer have been removed. Browser feature effects cannot affect outcomes.

@@ -1,147 +1,43 @@
-# Neon Vault — Design and Implementation
+# Neon Vault — React/PixiJS presentation and native gameplay
 
-Neon Vault is the casino's modern high-roller video slot. It is intentionally more feature-heavy and theatrical than Midnight Reels while remaining fully deterministic at the rules layer: every spin result is resolved before any anticipation, Near Miss or win-presentation animation begins.
+Neon Vault is a high-voltage, offline play-money video slot in the modern casino lobby. The playable surface is now `frontend/neon-vault.html`, served locally through WebView2. React renders text, controls and result information; PixiJS renders a small decorative particle field. Eight bespoke scalable cyber-symbol SVG designs reproduce the distinctive Pulse, Prism, Chip, Crown, Key, Wild, Vault and Access Key identities. The retired WPF game window and its prerasterized symbol renderer have been deleted.
 
-## Core layout
+## Native game contract — unchanged
 
-- 5 reels × 4 rows;
-- 1,024 Ways evaluation;
-- shared play-money bankroll;
-- bet range from $1 to $250,000;
-- High Roller presentation begins at $10,000;
-- Vault Class presentation begins at $100,000;
-- $250,000 is the Max Exposure tier.
+`NeonVaultSession` in `BlackjackCasino.Core` remains the only outcome authority:
 
-The current bet ladder is owned by `NeonVaultRules` in `BlackjackCasino.Core`.
+- Five reels × four rows, 1,024-ways left-to-right evaluation (normalization and odds unchanged).
+- Original 16-step wager ladder from $1 to $250,000; High Roller >= $10,000; Vault Class >= $100,000; Max Exposure at $250,000.
+- Three / four / five Scatters grant eight / twelve / sixteen Vault Break free spins; retriggers work as before.
+- Expanding Wilds, persistent Vault Energy (target twelve), and an armed Security Override on a later free spin.
+- BLACKOUT, BLACKOUT OVERLOAD and TOTAL BLACKOUT feature events, plus presentation-only near misses.
+- Access Key MINI / MINOR / MAJOR / GRAND payouts of 25× / 75× / 250× / 1,000×.
+- The native `SlotProgression` writes Neon Vault statistics to its independent existing profile bucket, never the Blackjack hand ledger or Midnight Reels bucket.
 
-## Symbols
+No math, symbol weights, RNG, jackpot criteria, bonus schedule, saved-profile schema or award rules changed during the presentation migration.
 
-The engine currently uses eight symbol identities:
+## Architecture
 
-- Pulse;
-- Prism;
-- Chip;
-- Crown;
-- Key;
-- Wild;
-- Scatter;
-- VaultKey.
+The new `MainWindow.ModernNeonVault.cs` adapter creates the session, handles a shared C# wallet, routes native audio, updates preference and progression persistence and owns WebView2 lifetime. `ModernNeonVaultSnapshot` exposes **read-only** paytable, feature, grid and statistics data. An action from JavaScript is a small, versioned intent: `spin`, `bet.set` (only listed bet steps), `sound.set` or `animations.set`.
 
-The WPF presentation maps these stable engine identities to custom Neon Vault artwork. Keeping the engine enum stable prevents presentation changes from accidentally changing saved data, symbol weights or payout math.
+`ModernNeonVaultProtocol` requires the exact packaged HTTPS virtual origin `/neon-vault.html`, a GUID session/command ID and an expected revision. `ModernNeonVaultSession` deduplicates receipts and rejects stale or expired requests **outside** the disposable browser. A spin result and shared wallet are committed in native C# before React receives the result. UI speed, reduced-motion, animation callbacks, preview near misses and audio cannot change the outcome.
 
-Generated symbol artwork is stored as compact embedded data, decoded once and cached as frozen WPF image sources. The 20 reel cells reuse those images rather than recreating image/control trees while the reels are moving.
+A failed WebView2 navigates back to the lobby, preserves the **in-memory** Neon Vault C# machine (including pending Vault Break spins / Vault Energy / Security Override) and keeps the receipt ledger. Reentering instantiates a new browser against that state, without replaying any wager. On a deliberate exit, the transient game-local session retires; the React Back control follows the old native rule and is disabled while free spins are pending. A full process crash/restart does not yet persist an unfinished bonus sequence: durable mid-bonus recovery is a separate future scope.
 
-## Paying ways
+## Modern presentation
 
-Normal paying symbols evaluate from the leftmost reel across consecutive reels. Wild substitutes for paying symbols. The 5×4 layout produces up to 1,024 all-ways combinations, and payout normalization is handled by the core engine so the four-row layout does not multiply returns unintentionally.
+The modern cabinet includes:
 
-## Expanding Wilds
+- 20 scalable neon symbol cells, a five-reel staggered animation, left-to-right visual candidate emphasis, confirmed winning combinations and a staged BaseGrid → FinalGrid transformation (without independent game logic).
+- Feature-specific status overlays for Blackouts, Security Override, Wild expansion, Scatter free spins, Access Key jackpots and final results.
+- A live 12-unit Vault Energy meter, high roller tiers, all four wager-dependent jackpot values, complete 3/4/5 symbol paytable, scoped statistics, last return, balance, wager ladder and MAX shortcut.
+- Optional 20-spin automatic play, sound and animation preferences, EN/DE copy, keyboard shortcuts, focus and reduced-motion support. Browser motion can never issue an unacknowledged double wager.
+- GPU particle ambience that can pause when hidden, independent of React text accessibility, without an extra network dependency.
 
-Wilds can trigger reel expansion according to the core feature result. During presentation the reel is visually charged and the affected cells become Wild without changing the already-resolved outcome.
+## Verification
 
-Vault Break Free Spins strengthen the expanding-Wild behavior and can combine it with the Vault Energy system.
+`ModernNeonVaultBridgeTests` checks origin, strict intents, idempotent receipts, exact 20-cell grid, jackpot tiers, money projection and bonus-state recovery. `frontend/tests/neonVaultBridge.test.ts` checks that the browser rejects corrupt results and fabricated feature data. The Windows `ModernNeonVaultWebSmoke` opens the actual packaged page, checks all 20 symbols, all bet/chip options, feature and jackpot widgets, confirms one native spin and reward/wallet update, exercises navigation, injects a browser failure and verifies the original C# machine is retained. The full CI, frontend build, presentation regression and Development publishing remain release gates.
 
-## Vault Break Free Spins
+### Manual device acceptance
 
-Scatter awards are currently:
-
-- 3 Scatters → 8 Free Spins;
-- 4 Scatters → 12 Free Spins;
-- 5+ Scatters → 16 Free Spins.
-
-Free Spins may retrigger. The presentation changes status, feature overlays and energy feedback while the same `NeonVaultSession` owns the actual sequence state.
-
-## Vault Energy / Security Override
-
-Vault Energy fills during the bonus sequence. The target is 12. When the engine resolves a Security Override, a reel is forced into the Wild state by the resolved result and the presentation plays the dedicated override sequence.
-
-## BLACKOUT events
-
-Neon Vault has three escalating system events:
-
-- BLACKOUT;
-- BLACKOUT OVERLOAD;
-- TOTAL BLACKOUT.
-
-The engine determines whether an event occurs, which cells become Wild and whether a full reel is affected. The desktop layer only presents that resolved data using warning states, overlays, wild-cell updates and paced delays.
-
-A Blackout Near Miss may display a system-instability tease without granting the feature. It is presentation-only.
-
-## Access-Key jackpots
-
-`VaultKey` symbols feed the jackpot resolver. Current jackpot multipliers are:
-
-- MINI — 25× bet;
-- MINOR — 75× bet;
-- MAJOR — 250× bet;
-- GRAND VAULT — 1,000× bet.
-
-The exact key-count/reel conditions live in `NeonVaultRules.ResolveJackpot` and are tested in the core test suite.
-
-## Near Miss and anticipation policy
-
-Near Miss is never allowed to alter a spin result. The engine returns a presentation hint only after the real outcome has already been generated.
-
-The desktop layer may then:
-
-- slow the final reel;
-- emphasize Scatter or Access-Key candidates;
-- pulse the final reel frame;
-- show system-instability messaging;
-- let the teased symbol pass visually before the resolved grid is shown.
-
-This separation keeps presentation dramatic without coupling animation timing to game math.
-
-## Candidate and win feedback
-
-Neon Vault does not rely on a generic full-row flash. As reels settle, the presentation layer evaluates the already-visible symbols and marks plausible left-to-right candidate chains.
-
-Candidate presentation includes:
-
-- stronger cell borders;
-- a small scale emphasis;
-- dimming of irrelevant settled cells;
-- feature-specific accents for Wild, Scatter and Access Key states;
-- subtle neon connection paths between matching candidate cells.
-
-After the final grid is visible, the presentation switches from candidates to confirmed winning cells. Winning cells pulse more strongly and confirmed connection paths are rendered with a stronger treatment.
-
-The feedback layer does not participate in payout calculation.
-
-## Performance principles
-
-An early version of the slot rebuilt many WPF symbol trees on a short timer and applied expensive effects to continuously changing reel content. That approach produced visibly poor frame pacing.
-
-The current implementation therefore follows these rules:
-
-- build reel/cell controls once;
-- update existing presenters in place;
-- cache/freeze brushes and decoded image assets;
-- use transforms/opacity for repeated motion;
-- reserve expensive effects for short feature moments;
-- avoid outcome-dependent UI work inside the high-frequency preview tick where possible.
-
-## Embedded casino hosting
-
-Neon Vault opens from the casino lobby and is displayed inside the main application window. The player does not see a second taskbar/native game window.
-
-The hidden shell remains responsible for lifecycle and game-local resources while `MainWindow.EmbeddedGames` reparents the visible content into the casino host. Leaving Neon Vault returns to the lobby and restores the host header/state.
-
-## Progression and statistics
-
-Neon Vault shares global systems such as bankroll, player level, Prestige, Coins and Season progress, but its verified game statistics use a dedicated Neon Vault bucket.
-
-Midnight Reels and Neon Vault must not write to the same modern per-game statistics. Older saves created before source-aware slot tracking are preserved in the legacy earlier-slot-history bucket described in [progression-tracking-migration.md](progression-tracking-migration.md).
-
-## Regression coverage
-
-Current automated coverage includes:
-
-- `NeonVaultTests` for core rules/features;
-- ordinary solution build and unit tests;
-- Windows casino presentation regression at multiple window sizes;
-- verification that Neon Vault stays inside the single visible casino window;
-- checks for the Vault Energy target and high-roller controls;
-- preview/Development Windows publishing through CI.
-
-For the surrounding application structure see [architecture.md](architecture.md), and for the presentation test strategy see [presentation-regression.md](presentation-regression.md).
+Subjective 1080p/1440p/DPI readability, audio mix, effects layering, long autoplay sessions and perceived pacing need verification on target Windows hardware. The retired WPF layout and source are no longer fallbacks. Further work on the shared WPF shell is explicitly separate.

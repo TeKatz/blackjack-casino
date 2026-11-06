@@ -306,3 +306,11 @@ Nine Lives now opens directly from the primary casino lobby through the local `n
 - CI verifies strict bridge parsing, duplicate receipts, bet legality, native projection, free-spin recovery, the packaged browser, complete 1024px asset loading, one-spin wallet and XP settlement, and view reopen/crash handling. Windows GPU, 1080p/1440p DPI, audio balance, visual polish and long-session performance still require device-level acceptance.
 
 **Remaining WPF UI:** Neon Vault, Midnight Merge, Midnight Dice, Chill Lounge, and the shared WPF shell/lobby fallback. Midnight Reels is modern but still maintains its native emergency fallback.
+
+## Neon Vault — React/PixiJS game replacement (2026-11-06)
+
+The playable Neon Vault route is exclusively `neon-vault.html`. The native C# NeonVaultSession and SlotProgression preserve 1,024-ways math, 16 legal bets, high-roller tiers, Vault Break free spins, Vault Energy, Blackouts, expanding Wilds, Security Override, near-miss metadata and all jackpots. The React client provides the full responsive 20-symbol interface and a cosmetic PixiJS ambient layer. The WPF game window, animations and WPF-only symbol rasterizer are removed; the lobby's WPF fallback artwork remains temporarily.
+
+The native bridge enforces a versioned local origin, valid intents, session epoch, request receipt and revision; C# settles wallet and progression before delivering visual snapshots. Browser failure can rehost the in-memory game without rerolling or discarding a pending bonus. Automatic tests cover the bridge, React data shape, Windows visual/runtime route and failure recovery. Visual/audio, Win10/11 GPU and prolonged-play acceptance remain manual.
+
+**Still WPF:** Midnight Merge, Midnight Dice, Chill Lounge and the shared host/fallback lobby. Midnight Reels maintains a native fallback until its own final source retirement.
