@@ -6,6 +6,7 @@ import { SudokuScreen } from './sudoku';
 import { SolitaireScreen } from './solitaire';
 import { WordSearchScreen } from './wordSearch';
 import { MemoryScreen } from './memory';
+import { JigsawScreen } from './jigsaw';
 import { isSudokuReply, issueSudokuIntent } from './sudokuBridge';
 import type { SudokuIntent } from './sudokuBridge';
 import { isSolitaireReply, issueSolitaireIntent } from './solitaireBridge';
@@ -14,6 +15,8 @@ import { isWordSearchReply, issueWordSearchIntent } from './wordSearchBridge';
 import type { WordSearchIntent } from './wordSearchBridge';
 import { isMemoryReply, issueMemoryIntent } from './memoryBridge';
 import type { MemoryIntent } from './memoryBridge';
+import { isJigsawReply, issueJigsawIntent } from './jigsawBridge';
+import type { JigsawIntent } from './jigsawBridge';
 import './lounge.css';
 
 type Language = 'de' | 'en';
@@ -78,6 +81,8 @@ function App() {
  const [wordSearchError,setWordSearchError]=useState('');
  const [memoryPending,setMemoryPending]=useState<string|null>(null);
  const [memoryError,setMemoryError]=useState('');
+ const [jigsawPending,setJigsawPending]=useState<string|null>(null);
+ const [jigsawError,setJigsawError]=useState('');
  const signalled=useRef(false);
  useEffect(()=>{
    const webview=window.chrome?.webview;
@@ -114,6 +119,13 @@ function App() {
        setMemoryPending(prev=>prev===reply.requestId?null:prev);
        setMemoryError(reply.success?'':reply.message);
      }
+     if(msg&&typeof msg==='object'&&!Array.isArray(msg)
+       &&'type' in msg&&msg.type==='lounge.jigsaw.result'
+       &&'data' in msg&&isJigsawReply(msg.data)){
+       const reply=msg.data;
+       setJigsawPending(prev=>prev===reply.requestId?null:prev);
+       setJigsawError(reply.success?'':reply.message);
+     }
    };
    webview?.addEventListener('message',handler);
    sendLoungeCommand('lounge.ready');
@@ -148,6 +160,11 @@ function App() {
    setWordSearchError('');
    setWordSearchPending(issueWordSearchIntent(snapshot.wordSearchSession,snapshot.wordSearchRevision,intent));
  }
+ function jigsawCommand(intent:JigsawIntent){
+   if(!snapshot||jigsawPending||!snapshot.jigsaw)return;
+   setJigsawError('');
+   setJigsawPending(issueJigsawIntent(snapshot.jigsawSession,snapshot.jigsawRevision,intent));
+ }
  function memoryCommand(intent:MemoryIntent){
    if(!snapshot||memoryPending||!snapshot.memory)return;
    setMemoryError('');
@@ -159,7 +176,11 @@ function App() {
      <div className="chill-mark" aria-hidden="true">✦</div>
      <div className="chill-brand"><span>{t.club}</span><strong>Chill Lounge</strong></div>
      <span className="chill-local">{t.version}</span>
-     {snapshot?.memory
+     {snapshot?.jigsaw
+       ? <button className="chill-exit" disabled={!!jigsawPending}
+           onClick={()=>jigsawCommand({action:snapshot.jigsaw?.screen==='library'?'jigsaw.exit':'jigsaw.back'})}>
+           {snapshot.jigsaw.screen==='library'?'← Chill Lounge':'← Puzzle-Studio'}</button>
+       : snapshot?.memory
        ? <button className="chill-exit" disabled={!!memoryPending}
            onClick={()=>memoryCommand({action:snapshot.memory?.screen==='library'?'memory.exit':'memory.back'})}>
            {snapshot.memory.screen==='library'?'← Chill Lounge'
@@ -185,7 +206,10 @@ function App() {
        : <button className="chill-exit" onClick={()=>sendLoungeCommand('lounge.close')}>{t.back}</button>}
    </header>
    <div className="chill-content">
-    {snapshot?.memory
+    {snapshot?.jigsaw
+      ? <JigsawScreen state={snapshot.jigsaw} language={language} pending={!!jigsawPending}
+          error={jigsawError} command={jigsawCommand} animations={snapshot.animationsEnabled}/>
+      : snapshot?.memory
       ? <MemoryScreen state={snapshot.memory} language={language} pending={!!memoryPending}
           error={memoryError} command={memoryCommand} animations={snapshot.animationsEnabled}/>
       : snapshot?.wordSearch

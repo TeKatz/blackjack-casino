@@ -5,15 +5,18 @@ import { isSudokuState } from './sudokuBridge';
 import { isSolitaireState } from './solitaireBridge';
 import { isWordSearchState } from './wordSearchBridge';
 import { isMemoryState } from './memoryBridge';
+import { isJigsawState } from './jigsawBridge';
 import type { SudokuState } from './sudokuBridge';
 import type { SolitaireState } from './solitaireBridge';
 import type { WordSearchState } from './wordSearchBridge';
 import type { MemoryState } from './memoryBridge';
+import type { JigsawState } from './jigsawBridge';
 export type LoungeSnapshot = { version: 1; language: 'en' | 'de';
   session:string;revision:number;sudoku:SudokuState|null;
   solitaireSession:string;solitaireRevision:number;solitaire:SolitaireState|null;
   wordSearchSession:string;wordSearchRevision:number;wordSearch:WordSearchState|null;
   memorySession:string;memoryRevision:number;memory:MemoryState|null;
+  jigsawSession:string;jigsawRevision:number;jigsaw:JigsawState|null;
   musicEnabled: boolean; soundEnabled: boolean; animationsEnabled: boolean; games: LoungeGame[] };
 const record = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === 'object' && !Array.isArray(v);
 export const isLoungeId = (value: unknown): value is LoungeId =>
@@ -32,6 +35,9 @@ export function isLoungeSnapshot(value: unknown): value is LoungeSnapshot {
     || typeof value.memorySession!=='string'||!/^([\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12})$/i.test(value.memorySession)
     || typeof value.memoryRevision!=='number'||!Number.isSafeInteger(value.memoryRevision)||value.memoryRevision<0
     || !(value.memory===null||isMemoryState(value.memory))
+    || typeof value.jigsawSession!=='string'||!/^([\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12})$/i.test(value.jigsawSession)
+    || typeof value.jigsawRevision!=='number'||!Number.isSafeInteger(value.jigsawRevision)||value.jigsawRevision<0
+    || !(value.jigsaw===null||isJigsawState(value.jigsaw))
     || typeof value.musicEnabled !== 'boolean' || typeof value.soundEnabled !== 'boolean'
     || typeof value.animationsEnabled !== 'boolean' || !Array.isArray(value.games)
     || value.games.length !== loungeIds.length) return false;
