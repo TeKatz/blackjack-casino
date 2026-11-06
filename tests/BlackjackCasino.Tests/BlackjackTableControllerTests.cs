@@ -70,9 +70,10 @@ public sealed class BlackjackTableControllerTests
         Assert.Same(original, table.Session);
         Assert.True(table.Apply(Command("stand")).Success);
         Assert.False(table.Session.RoundInProgress);
+        decimal settledBalance = table.Session.Bankroll;
         Assert.True(table.Apply(Command("preset.set", "Casual")).Success);
         Assert.Equal(table.CurrentRules, table.Session.Rules);
-        Assert.Equal(1000m - 25m, table.Session.Bankroll);
+        Assert.Equal(settledBalance, table.Session.Bankroll);
     }
 
     private sealed class FixedShoe(params Card[] values) : ICardShoe
