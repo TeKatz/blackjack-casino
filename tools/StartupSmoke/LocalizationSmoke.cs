@@ -186,7 +186,7 @@ internal static class LocalizationSmoke
         }
     }
 
-    private static void CheckPhase2Translations()    private static void CheckPhase2Translations()
+    private static void CheckPhase2Translations()
     {
         (string Source, string German)[] samples =
         [
