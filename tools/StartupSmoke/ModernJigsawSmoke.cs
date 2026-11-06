@@ -75,6 +75,11 @@ internal static class ModernJigsawSmoke
             "PASS: twelve motifs, eight sizes, PixiJS render, native 24-piece state, first-piece snap, durable save, React resume and Lounge navigation.");
     }
 
+    private static void Require(bool condition, string message)
+    {
+        if (!condition) throw new InvalidOperationException(message);
+    }
+
     private static async Task Click(CoreWebView2 web,string selector,string ready,string failure)
     {
         string script="Boolean(document.querySelector("+System.Text.Json.JsonSerializer.Serialize(selector)+"))";
