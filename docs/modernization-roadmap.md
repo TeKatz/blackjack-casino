@@ -50,6 +50,14 @@ The offline puzzle catalog is **288 puzzles**, with **48 in each of six difficul
 
 The `lounge.word-search.command` protocol validates session/revision/request GUIDs and accepts only `start`, `resume`, `select`, `hint`, `back` or `exit`. Native `WordSearchGame.TryFind` validates endpoints in both directions against saved generated placements. Cloned candidate boards are persisted before becoming live; a completed puzzle is recorded and rewarded through the existing exactly-once C# completion ledger. Unit, Vitest and real Windows WebView2 smokes cover the catalog, replay safety, new vocabulary, save rollback, native hints, word selection, resume and completion. Existing WPF Word Search code remains for rollback until the host cleanup phase. See [Word Search modernization](word-search-modernization.md).
 
+## Memory React gameplay migration (2026-11-06)
+
+Memory runs entirely within the React Chill Lounge. The regular navigation no longer opens the WPF Memory view; its old implementation and smoke tests remain as fallback. All five native table sizes and four curated decks are preserved. The responsive React artwork supports the original card backs, casino motifs, suits, animals, fruit icons, face-up/matched visuals, animations (including reduced-motion), first-card flip, match and mismatch cues, timed mismatch flip-back, record streaks, saved active table, best-moves statistics and full completion/replay workflow. The original bilingual deck-symbol localization is reused.
+
+Native `MemoryGame.Flip`, `ResolveMismatch`, `Complete`, `MemoryProgressState` and `MemoryProgression` remain authoritative. The `lounge.memory.command` bridge supports a GUID session/request, increasing revision, allow-listed deck changes, start, resume, flip, back, exit and replay. The browser receives only the four public deck previews plus symbols for cards that are actually face-up or matched. It never receives the hidden table solution, shuffled card IDs or RNG seed. Moves commit an isolated C# state to the original save writer before becoming live. Exactly-once progression records and wallet handling are unchanged; time and misses never subtract earned XP.
+
+xUnit covers all 20 deck/difficulty pairings, private hidden cards, invalid commands, stale/replayed requests, failed persistence, saved resume and completion receipts. Vitest validates native snapshot shapes and hidden-card restrictions. Real Windows WebView2 acceptance exercises the 4×4 table, four deck previews, first flip, pair found, mismatch flip-back, resumable save, native full-table completion, result, replay and Lounge navigation. See [Memory modernization](memory-modernization.md).
+
 ## Casino Empire presentation migration (2026-11-05)
 
 Empire now has a separate React/TypeScript entry point (`empire.html`) for both

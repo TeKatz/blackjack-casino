@@ -17,6 +17,7 @@ internal sealed class ModernMemoryService
     private readonly Func<MemoryStatistics> stats;
     private readonly Func<MemoryCompletionRecord, ProgressionAward> reward;
     private readonly Action<MemoryFlipOutcome, bool>? feedback;
+    private readonly Func<MemoryDeckDefinition, MemoryDeckDefinition> localizeDeck;
     private readonly Stopwatch clock = new();
     private readonly Stopwatch mismatch = new();
     private long elapsedBase;
@@ -27,7 +28,8 @@ internal sealed class ModernMemoryService
         Action<MemoryProgressState> persist,
         Func<MemoryStatistics> stats,
         Func<MemoryCompletionRecord, ProgressionAward> reward,
-        Action<MemoryFlipOutcome, bool>? feedback = null)
+        Action<MemoryFlipOutcome, bool>? feedback = null,
+        Func<MemoryDeckDefinition, MemoryDeckDefinition>? localizeDeck = null)
     {
         saved.Normalize();
         progress = CloneProgress(saved);
@@ -35,6 +37,7 @@ internal sealed class ModernMemoryService
         this.stats = stats;
         this.reward = reward;
         this.feedback = feedback;
+        this.localizeDeck = localizeDeck ?? (deck => deck);
     }
 
     internal MemoryGameState? CurrentGame => game;
@@ -45,7 +48,7 @@ internal sealed class ModernMemoryService
     {
         MemoryStatistics lifetime = stats();
         lifetime.Normalize();
-        var decks = MemoryCatalog.Decks.Select(deck => new
+        var decks = MemoryCatalog.Decks.Select(localizeDeck).Select(deck => new
         {
             deck.Id, deck.Name, deck.Description,
             Preview = deck.Symbols.Take(4).Select(symbol => new
@@ -68,7 +71,7 @@ internal sealed class ModernMemoryService
         MemoryGameState? visibleGame = game ?? completedGame;
         if (visibleGame is not null)
         {
-            MemoryDeckDefinition deck = MemoryCatalog.GetDeck(visibleGame.DeckId);
+            MemoryDeckDefinition deck = localizeDeck(MemoryCatalog.GetDeck(visibleGame.DeckId));
             var symbolById = deck.Symbols.ToDictionary(symbol => symbol.Id, StringComparer.Ordinal);
             current = new
             {

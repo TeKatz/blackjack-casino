@@ -69,6 +69,7 @@ internal static class ModernMemorySmoke
             "document.querySelector('[data-testid=\"memory-card-0\"]')?.dataset.matched==='true'"),
             "The C# engine did not keep a completed pair face-up.");
 
+        game = service.CurrentGame!;
         int mismatchA=Enumerable.Range(0,game.Cards.Count).First(i=>!game.MatchedIndices.Contains(i));
         int mismatchB=Enumerable.Range(0,game.Cards.Count).First(i=>
             !game.MatchedIndices.Contains(i)&&i!=mismatchA&&game.Cards[i]!=game.Cards[mismatchA]);

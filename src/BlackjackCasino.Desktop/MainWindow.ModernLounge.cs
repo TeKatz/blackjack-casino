@@ -162,7 +162,8 @@ public partial class MainWindow
                 SaveModernMemoryProgress,
                 () => progressionController?.Profile.Memory ?? new MemoryStatistics(),
                 RecordMemoryCompletion,
-                PlayModernMemoryCue);
+                PlayModernMemoryCue,
+                MemoryTextLocalization.Deck);
             modernLoungeView?.Refresh();
             return;
         }
