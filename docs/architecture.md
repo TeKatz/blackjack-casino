@@ -22,6 +22,12 @@ The desktop UI must not reimplement outcome rules. Presentation may animate or a
 
 The retired native startup-welcome dialog is not shown during normal startup, but remains as regression-reference source. The remaining native WPF game modules provide tested emergency/fallback behavior and should remain until recovery, accessibility and device acceptance is complete. The [legacy inventory](legacy-wpf-inventory.md) describes which files are still reachable and why.
 
+## Shared modern desktop surface
+
+`ModernGameSurface` is the first extraction from the large WPF `MainWindow`. The seven foreground React game routes (Blackjack, Midnight Dice, Chill Lounge, Midnight Merge, Midnight Reels, Neon Vault and Nine Lives) use the same `MountModernSurface` / `UnmountModernSurface` boundary. The adapter captures the previous native control-enabled states, blocks input behind a mounted React game, rejects a second modern page or occupied native fallback, and restores the exact prior states on exit. Browser commands, wallet settlement and durable C# sessions are unaffected. Modern Manor still uses a native window rehost for WPF resource scope; the React lobby owns its own layered background until a later host step.
+
+The native `LoungeWindow` and other fallback source paths remain. This is a reduction in WPF hosting responsibilities, **not yet a non-WPF executable**. The source boundary and Windows lifecycle test are covered in [desktop host modernization](host-modernization-phase5.md).
+
 ## `BlackjackCasino.Desktop`
 
 The WPF desktop project remains the native host for the React casino lobby and existing game UIs. It owns:

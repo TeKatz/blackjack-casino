@@ -94,6 +94,46 @@ def main() -> int:
     if "LoungeHostedGameRegistry.Snapshot.Count == 0" not in smoke:
         issues.append("Windows smoke must verify no legacy factories for React Lounge.")
 
+    # Phase 5: the interim WPF shell must have one presentation owner instead
+    # of seven independent browser overlays / input-disabling implementations.
+    surface_path = ROOT / "src/BlackjackCasino.Desktop/ModernGameSurface.cs"
+    embedded_path = ROOT / "src/BlackjackCasino.Desktop/MainWindow.EmbeddedGames.cs"
+    surface_smoke = ROOT / "tools/StartupSmoke/ModernGameSurfaceSmoke.cs"
+    if not all(p.is_file() for p in (surface_path, embedded_path, surface_smoke)):
+        issues.append("Shared modern desktop surface or Windows lifecycle smoke is missing.")
+    else:
+        surface_source = text(surface_path)
+        embedded_source = text(embedded_path)
+        if not all(token in surface_source for token in (
+            "internal void Mount(UIElement view)",
+            "internal void Unmount(UIElement view)",
+            "content.Content is not null",
+            "ReferenceEquals(active, view)",
+            "element.SetCurrentValue(UIElement.IsEnabledProperty, enabled)",
+        )):
+            issues.append("Modern surface lost its single-page ownership or input restoration guard.")
+        if "modernGameSurface!.Mount(view)" not in embedded_source or (
+                "modernGameSurface.Unmount(view)" not in embedded_source):
+            issues.append("The desktop host does not delegate React mounting to the shared surface.")
+        if "ModernGameSurfaceSmoke.Run()" not in text(ROOT / "tools/StartupSmoke/Program.cs"):
+            issues.append("Windows startup must exercise the shared modern surface lifecycle.")
+
+    routes = (
+        "MainWindow.ModernBlackjack.cs", "MainWindow.ModernDice.cs",
+        "MainWindow.ModernLounge.cs", "MainWindow.MidnightMerge.cs",
+        "MainWindow.ModernNeonVault.cs", "MainWindow.ModernNineLives.cs",
+        "MainWindow.ModernReels.cs",
+    )
+    for filename in routes:
+        source = text(ROOT / "src/BlackjackCasino.Desktop" / filename)
+        if "MountModernSurface(" not in source or "UnmountModernSurface(" not in source:
+            issues.append(f"{filename}: React host lifecycle bypasses the shared surface.")
+        if "embeddedGameHost!.Content =" in source or (
+                "embeddedGameOverlay!.Visibility = Visibility.Visible" in source):
+            issues.append(f"{filename}: React route still manipulates the old overlay directly.")
+        if "CoveredElements.Add(" in source or "CoveredElements.Clear()" in source:
+            issues.append(f"{filename}: duplicate native-input coverage has returned.")
+
     print("React/WPF Lounge migration boundary:")
     print("  C# catalog:", ", ".join(backend))
     print("  Normal React snapshot independent of WPF factories:", "yes" if not issues else "review")
