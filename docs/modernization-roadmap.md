@@ -58,6 +58,12 @@ Native `MemoryGame.Flip`, `ResolveMismatch`, `Complete`, `MemoryProgressState` a
 
 xUnit covers all 20 deck/difficulty pairings, private hidden cards, invalid commands, stale/replayed requests, failed persistence, saved resume and completion receipts. Vitest validates native snapshot shapes and hidden-card restrictions. Real Windows WebView2 acceptance exercises the 4×4 table, four deck previews, first flip, pair found, mismatch flip-back, resumable save, native full-table completion, result, replay and Lounge navigation. See [Memory modernization](memory-modernization.md).
 
+## Jigsaw React/PixiJS gameplay migration (2026-11-06)
+
+The normal Jigsaw route now stays inside the React Chill Lounge, with the twelve curated motifs, eight grid sizes (24–1,000), PixiJS board, piece tray, bilingual gallery, zoom and pan, reference view, resume and achievements. The C# JigsawGame remains authoritative for placement, group movement, snapping and victory. ModernJigsawService persists a detached copy before switching live state; its versioned, revision/GUID-validated bridge rejects forged outcomes, stale requests and duplicate actions. Native Jigsaw progression remains exactly-once and saves the completion receipt before awards. The former WPF Jigsaw view remains for rollback.
+
+xUnit, Vitest and a real Windows WebView2 startup smoke cover protocol validation, all puzzle sizes, original save compatibility, failed persistence, first-piece snap and resume. Final 1,000-piece graphics/performance measurements, interlocking silhouette presentation and hardware accessibility remain open acceptance gates. See [Jigsaw modernization](jigsaw-modernization.md).
+
 ## Casino Empire presentation migration (2026-11-05)
 
 Empire now has a separate React/TypeScript entry point (`empire.html`) for both

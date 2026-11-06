@@ -1,6 +1,6 @@
 # Chill Lounge · Jigsaw Puzzle
 
-Jigsaw Puzzle is an offline-first, non-wagering, single-player Lounge game. It is registered as a `LoungeHostedGame` and uses the same illustrated `PremiumLoungeTheme` setup style as other Lounge games. The UI has English/German labels.
+Jigsaw Puzzle is an offline-first, non-wagering, single-player Lounge game. The normal route now uses the React/PixiJS studio, while C# remains responsible for all rules, saves and rewards. The WPF LoungeHostedGame and PremiumLoungeTheme specifications below describe the retained rollback/benchmark implementation. See [Jigsaw modernization](jigsaw-modernization.md).
 
 ## Starting a puzzle
 

@@ -41,7 +41,7 @@ The sole playable Blackjack interface is React/TypeScript (`frontend/blackjack.h
 
 Midnight Merge runs as a responsive local React/PixiJS experience (`frontend/midnight-merge.html`): a persistent 7×6 board with drag/drop and keyboard-friendly click selection, both original producer chains, fourteen supply orders, staged lobby/bar restoration, translated milestones, profile XP and native audio. `MergeBoard` remains the C# authority for spawning, moving, combining, delivering and saving. Every accepted action is saved atomically before the browser renders it; the versioned receipt protocol prevents duplicate rewards and stale commands across a WebView2 failure. The former `MidnightMergeView` WPF gameplay view has been retired, without changing the durable game schema or rewards. See [Midnight Merge architecture](docs/midnight-merge-foundation.md).
 
-## Chill Lounge: Sudoku, Solitaire, Word Search and Memory in React
+## Chill Lounge: Sudoku, Solitaire, Word Search, Memory and Jigsaw in React
 
 The Chill Lounge uses a local React/TypeScript hub (`frontend/lounge.html`) with responsive navigation, six activity tiles and German/English labels. **Sudoku is now rendered and played directly inside this React Lounge**, without opening the old WPF board in normal navigation. Its six difficulties, seeded and generated offline puzzle pools, daily assignments, 81-cell board, wrong-value feedback, hints, pencil notes, undo/redo, number completion, selectable guides, keyboard shortcuts, elapsed time, automatic saves and rewards are all supported. React sends allow-listed actions and displays C#-verified results; the C# `SudokuBoard`, `SudokuProgressState` and progression services remain authoritative and save-compatible. Completion XP is granted at most once through the existing profile receipts. See [Sudoku modernization](docs/sudoku-modernization.md).
 
@@ -51,7 +51,7 @@ The Chill Lounge uses a local React/TypeScript hub (`frontend/lounge.html`) with
 
 **Memory now plays directly in the React Lounge** as well. It preserves the five original table sizes (4×4, 4×5, 6×6, 6×8 and 8×8), all four curated decks (Casino Icons, Card Suits, Animals and Fruits & Treats), the native C# match/mismatch rules, flipped-card animations, the original flip/match/miss/perfect sound effects, streaks, accuracy, autosaved resume, and the completion summary with exactly-once XP awards. Only face-up and matched cards have identifying symbols in the browser: the native shuffle/solution remains private. See [Memory modernization](docs/memory-modernization.md).
 
-Jigsaw and Tales from the Backroom still open their native WPF gameplay modules until their individual conversions. The old WPF Sudoku, Solitaire, Word Search, Memory and Lounge screen sources remain **emergency/rollback code** and support legacy smoke tests, not normal player-selectable alternatives. A failed React Lounge still launches the native fallback; removing that code and converting its remaining legacy tests requires a separate accepted cleanup phase.
+**Jigsaw Puzzle now plays in the React Lounge with a PixiJS board.** The twelve offline images, eight grid sizes (24–1,000), saved piece positions, native snapping/group movement, thirty achievements and completion rewards remain compatible with the original C# implementation. The new studio includes the gallery, tray, zoom/panning, reference view, resume and completion. See [Jigsaw modernization](docs/jigsaw-modernization.md). Tales from the Backroom still runs in WPF. Old Lounge/Jigsaw screens remain solely for rollback and comparison until final device acceptance.
 
 ## Midnight Dice: React/PixiJS dice lounge
 
@@ -168,6 +168,7 @@ The roadmap tracks completed migration stages and outstanding quality gates; his
 - [Localization status](docs/localization-overhaul.md)
 - [Maintenance audit](docs/maintenance-audit.md)
 - [Jigsaw Puzzle](docs/jigsaw.md)
+- [Jigsaw React migration](docs/jigsaw-modernization.md)
 - [Cosmetic shop expansion](docs/shop-cosmetics-expansion.md)
 - [Casino Empire](docs/casino-empire.md)
 - [Tales from the Backroom](docs/adventure-engine.md)
