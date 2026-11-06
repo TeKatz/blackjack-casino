@@ -81,12 +81,18 @@ internal sealed class NativePreviewRuntime : IDisposable
         if (disposed || HandInProgress)
             throw new InvalidOperationException("Finish the Blackjack hand before visiting Reels.");
         AccountCompletedRound();
-        reelsMachine = new SlotMachineSession(Bankroll);
-        reelsBet = Math.Clamp(Preferences.SlotBet, SlotMachineRules.MinimumBet, SlotMachineRules.MaximumBet);
-        if (reelsMachine.Bankroll >= SlotMachineRules.MinimumBet)
-            reelsBet = Math.Min(reelsBet, decimal.Floor(reelsMachine.Bankroll * 100) / 100);
-        reelsLastSpin = null;
-        reelsAward = null;
+        // Recreating the WebView2 page after a browser fault must not reset
+        // a completed native spin, its award or the authoritative balance.
+        if (reelsMachine is null)
+        {
+            reelsMachine = new SlotMachineSession(Bankroll);
+            reelsBet = Math.Clamp(Preferences.SlotBet,
+                SlotMachineRules.MinimumBet, SlotMachineRules.MaximumBet);
+            if (reelsMachine.Bankroll >= SlotMachineRules.MinimumBet)
+                reelsBet = Math.Min(reelsBet, decimal.Floor(reelsMachine.Bankroll * 100) / 100);
+            reelsLastSpin = null;
+            reelsAward = null;
+        }
         status = "Midnight Reels ready.";
     }
 

@@ -100,6 +100,9 @@ jobs:
       - name: Test
         run: dotnet test BlackjackCasino.sln --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory TestResults
 
+      - name: WPF-free native shell protocol and storage smoke
+        run: dotnet run --project src/BlackjackCasino.NativeShell/BlackjackCasino.NativeShell.csproj --configuration Release --no-build -- --smoke
+
       - name: Shared controls regression contract
         run: python tools/check_control_templates.py --self-test
 
@@ -188,6 +191,32 @@ jobs:
 
           New-Item -ItemType Directory -Path artifacts/preview-app/tools/updater -Force | Out-Null
           Copy-Item artifacts/preview-updater/BlackjackCasino.Updater.exe artifacts/preview-app/tools/updater/BlackjackCasino.Updater.exe
+
+      - name: Publish WPF-free native shell preview (not the updater target)
+        if: github.event_name == 'push' || github.event_name == 'pull_request'
+        shell: pwsh
+        run: |
+          dotnet publish src/BlackjackCasino.NativeShell/BlackjackCasino.NativeShell.csproj `
+            --configuration Release `
+            --runtime win-x64 `
+            --self-contained true `
+            -p:PublishSingleFile=true `
+            -p:DebugType=None `
+            --output artifacts/native-shell-preview
+          foreach ($name in @("blackjack.html", "reels.html")) {
+            if (!(Test-Path "artifacts/native-shell-preview/ModernFrontend/$name")) {
+              throw "Native shell is missing packaged $name"
+            }
+          }
+
+      - name: Upload independent WPF-free native shell preview
+        if: github.event_name == 'push' || github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v7
+        with:
+          name: blackjack-casino-native-shell-preview-win-x64
+          path: artifacts/native-shell-preview
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Verify bundled Midnight Manor frontend assets
         shell: pwsh

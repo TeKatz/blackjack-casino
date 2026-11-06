@@ -82,6 +82,9 @@ jobs:
       - name: Test
         run: dotnet test BlackjackCasino.sln --configuration Release --no-build
 
+      - name: WPF-free native shell protocol and storage smoke
+        run: dotnet run --project src/BlackjackCasino.NativeShell/BlackjackCasino.NativeShell.csproj --configuration Release --no-build -- --smoke
+
       - name: Shared controls regression contract
         run: python tools/check_control_templates.py --self-test
 
