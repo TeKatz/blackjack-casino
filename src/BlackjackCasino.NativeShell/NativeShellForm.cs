@@ -35,6 +35,7 @@ internal sealed class NativeShellForm : Form
     private ModernReelsSession? reelsEpoch;
     private ModernNeonVaultSession? neonEpoch;
     private ModernNineLivesSession? nineEpoch;
+    private ModernMergeSession? mergeEpoch;
     private string? activeMode;
     private bool listening, ready, browserFailed, closing;
     private readonly string frontendFolder = Path.Combine(AppContext.BaseDirectory, "ModernFrontend");
@@ -79,6 +80,7 @@ internal sealed class NativeShellForm : Form
         navigation.Controls.Add(MakeButton("Midnight Reels", () => _ = OpenModeAsync("reels")));
         navigation.Controls.Add(MakeButton("Neon Vault", () => _ = OpenModeAsync("neon-vault")));
         navigation.Controls.Add(MakeButton("Nine Lives", () => _ = OpenModeAsync("nine-lives")));
+        navigation.Controls.Add(MakeButton("Midnight Merge", () => _ = OpenModeAsync("midnight-merge")));
         navigation.Controls.Add(new Label
         {
             AutoSize = true, Text = "NATIVE HOST • PREVIEW",
@@ -168,6 +170,7 @@ internal sealed class NativeShellForm : Form
         actions.Controls.Add(MakeButton("MIDNIGHT REELS", () => _ = OpenModeAsync("reels")));
         actions.Controls.Add(MakeButton("NEON VAULT", () => _ = OpenModeAsync("neon-vault")));
         actions.Controls.Add(MakeButton("NINE LIVES", () => _ = OpenModeAsync("nine-lives")));
+        actions.Controls.Add(MakeButton("MIDNIGHT MERGE", () => _ = OpenModeAsync("midnight-merge")));
         page.Controls.Add(actions, 0, 2);
         page.Controls.Add(new Label
         {
@@ -192,12 +195,18 @@ internal sealed class NativeShellForm : Form
         if (activeMode == "reels") runtime.CloseReels();
         if (activeMode == "neon-vault") runtime.CloseNeonVault();
         if (activeMode == "nine-lives") runtime.CloseNineLives();
+        if (activeMode == "midnight-merge")
+        {
+            runtime.CloseMerge();
+            mergeEpoch = null;
+        }
         ShowHome();
     }
 
     private async Task OpenModeAsync(string mode)
     {
-        if (closing || mode is not ("blackjack" or "reels" or "neon-vault" or "nine-lives")) return;
+        if (closing || mode is not ("blackjack" or "reels" or "neon-vault" or "nine-lives"
+            or "midnight-merge")) return;
         if (mode != "blackjack" && runtime.HandInProgress)
         {
             status.Text = "Finish the Blackjack hand first.";
@@ -206,9 +215,15 @@ internal sealed class NativeShellForm : Form
         if (activeMode == "reels" && mode != "reels") runtime.CloseReels();
         if (activeMode == "neon-vault" && mode != "neon-vault") runtime.CloseNeonVault();
         if (activeMode == "nine-lives" && mode != "nine-lives") runtime.CloseNineLives();
+        if (activeMode == "midnight-merge" && mode != "midnight-merge")
+        {
+            runtime.CloseMerge();
+            mergeEpoch = null;
+        }
         if (mode == "reels") runtime.OpenReels();
         if (mode == "neon-vault") runtime.OpenNeonVault();
         if (mode == "nine-lives") runtime.OpenNineLives();
+        if (mode == "midnight-merge") runtime.OpenMerge();
         DisposeBrowser();
         activeMode = mode;
         listening = ready = browserFailed = false;
@@ -216,6 +231,8 @@ internal sealed class NativeShellForm : Form
         reelsEpoch = mode == "reels" ? new ModernReelsSession() : null;
         neonEpoch = mode == "neon-vault" ? new ModernNeonVaultSession() : null;
         nineEpoch = mode == "nine-lives" ? new ModernNineLivesSession() : null;
+        // Keep Merge's request receipts when only the WebView process restarts.
+        mergeEpoch = mode == "midnight-merge" ? mergeEpoch ?? new ModernMergeSession() : null;
 
         content.Controls.Clear();
         string document = PageFor(mode);
@@ -279,6 +296,7 @@ internal sealed class NativeShellForm : Form
         "reels" => "reels.html",
         "neon-vault" => "neon-vault.html",
         "nine-lives" => "nine-lives.html",
+        "midnight-merge" => "midnight-merge.html",
         _ => throw new ArgumentOutOfRangeException(nameof(mode)),
     };
 
@@ -288,6 +306,7 @@ internal sealed class NativeShellForm : Form
         "reels" => ModernReelsProtocol.Trusted(source),
         "neon-vault" => ModernNeonVaultProtocol.Trusted(source),
         "nine-lives" => ModernNineLivesProtocol.Trusted(source),
+        "midnight-merge" => ModernMergeProtocol.Trusted(source),
         _ => false,
     };
 
@@ -310,6 +329,7 @@ internal sealed class NativeShellForm : Form
                 case "reels.ready" when activeMode == "reels":
                 case "neon-vault.ready" when activeMode == "neon-vault":
                 case "nine-lives.ready" when activeMode == "nine-lives":
+                case "midnight-merge.ready" when activeMode == "midnight-merge":
                     listening = true;
                     RefreshGameSnapshot();
                     BeginInvoke(new Action(RefreshGameSnapshot));
@@ -318,6 +338,7 @@ internal sealed class NativeShellForm : Form
                 case "reels.ui-ready" when activeMode == "reels":
                 case "neon-vault.ui-ready" when activeMode == "neon-vault":
                 case "nine-lives.ui-ready" when activeMode == "nine-lives":
+                case "midnight-merge.ui-ready" when activeMode == "midnight-merge":
                     if (!listening) break;
                     ready = true;
                     watchdog.Stop();
@@ -327,12 +348,14 @@ internal sealed class NativeShellForm : Form
                 case "reels.refresh" when activeMode == "reels":
                 case "neon-vault.refresh" when activeMode == "neon-vault":
                 case "nine-lives.refresh" when activeMode == "nine-lives":
+                case "midnight-merge.refresh" when activeMode == "midnight-merge":
                     RefreshGameSnapshot();
                     break;
                 case "blackjack.close" when activeMode == "blackjack":
                 case "reels.close" when activeMode == "reels":
                 case "neon-vault.close" when activeMode == "neon-vault":
                 case "nine-lives.close" when activeMode == "nine-lives":
+                case "midnight-merge.close" when activeMode == "midnight-merge":
                     BeginInvoke(new Action(ReturnToHome));
                     break;
                 case "blackjack.command" when activeMode == "blackjack" && listening && ready:
@@ -375,8 +398,20 @@ internal sealed class NativeShellForm : Form
                     RefreshGameSnapshot();
                     break;
                 }
+                case "midnight-merge.command" when activeMode == "midnight-merge" && listening && ready:
+                {
+                    ModernMergeCommand? command = ModernMergeProtocol.Parse(args.WebMessageAsJson);
+                    if (command is null || mergeEpoch is null) break;
+                    ModernMergeReply reply = mergeEpoch.Execute(command,
+                        runtime.MergeRevision, runtime.ApplyMerge);
+                    Post("midnight-merge.result", reply);
+                    status.Text = reply.Message;
+                    RefreshGameSnapshot();
+                    break;
+                }
                 case "neon-vault.recover" when activeMode == "neon-vault" && listening && ready:
                 case "nine-lives.recover" when activeMode == "nine-lives" && listening && ready:
+                case "midnight-merge.recover" when activeMode == "midnight-merge" && listening && ready:
                     ScheduleFailure("The game requested WebView2 recovery.");
                     break;
                 // Reel-stop and animation-complete signals are presentation cues,
@@ -421,6 +456,14 @@ internal sealed class NativeShellForm : Form
                 Session = nineEpoch.Id,
                 nineEpoch.Revision,
                 State = runtime.NineLivesSnapshot(),
+            });
+        else if (activeMode == "midnight-merge" && mergeEpoch is not null)
+            Post("midnight-merge.snapshot", new
+            {
+                Version = ModernMergeProtocol.Version,
+                Session = mergeEpoch.Id,
+                Revision = runtime.MergeRevision,
+                State = runtime.MergeSnapshot(),
             });
     }
 
