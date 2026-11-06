@@ -53,6 +53,11 @@ internal static class ModernDiceSnapshot
             Mode = casino ? "casino" : "casual",
             Bankroll = Money(bankroll),
             StakeOptions = KniffelTable.Stakes.Select(Money).ToArray(),
+            StakePrizes = KniffelTable.Stakes.Select(stake => new
+            {
+                Stake = Money(stake),
+                Prizes = Enumerable.Range(1, 4).Select(place => Money(KniffelTable.PrizeForPlace(stake, place))).ToArray(),
+            }).ToArray(),
             CasualHasSaved = casual.Entries.Length > 0 || casual.RollsUsed > 0,
             CasualCompleted = casual.Entries.Length == KniffelScoring.Categories.Count,
             Game = Scores(game),

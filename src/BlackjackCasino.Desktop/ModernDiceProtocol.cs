@@ -51,7 +51,7 @@ internal static class ModernDiceProtocol
                     && decimal.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out decimal stake)
                     && KniffelTable.Stakes.Contains(stake),
                 "casino.forfeit" => noArgs,
-                "sound.set" or "animations.set" => index is null && category is null && value is "true" or "false",
+                "sound.set" or "animations.set" or "music.set" => index is null && category is null && value is "true" or "false",
                 _ => false,
             };
             return valid ? new ModernDiceCommand(requestId!, session!, revision, action!, index, category, value) : null;

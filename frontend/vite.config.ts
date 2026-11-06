@@ -9,7 +9,7 @@ export default defineConfig({
     emptyOutDir: true,
     target: 'es2022',
     sourcemap: false,
-    rollupOptions: { input: { manor: 'index.html', lobby: 'lobby.html', empire: 'empire.html', blackjack: 'blackjack.html', reels: 'reels.html', nineLives: 'nine-lives.html', neonVault: 'neon-vault.html', midnightMerge: 'midnight-merge.html' } },
+    rollupOptions: { input: { manor: 'index.html', lobby: 'lobby.html', empire: 'empire.html', blackjack: 'blackjack.html', reels: 'reels.html', nineLives: 'nine-lives.html', neonVault: 'neon-vault.html', midnightMerge: 'midnight-merge.html', midnightDice: 'midnight-dice.html' } },
   },
   server: { host: '127.0.0.1', port: 5173, strictPort: true },
 });
