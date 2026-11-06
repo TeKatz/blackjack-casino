@@ -7,6 +7,7 @@ const state = {version:1,language:'en',
   solitaireSession:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',solitaireRevision:0,solitaire:null,
   wordSearchSession:'cccccccc-cccc-4ccc-8ccc-cccccccccccc',wordSearchRevision:0,wordSearch:null,
   memorySession:'dddddddd-dddd-4ddd-8ddd-dddddddddddd',memoryRevision:0,memory:null,
+  jigsawSession:'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',jigsawRevision:0,jigsaw:null,
   musicEnabled:true,soundEnabled:true,
   animationsEnabled:true,games};
 
