@@ -21,7 +21,7 @@ internal sealed class ModernMergeView : ContentControl, IDisposable
     };
     private readonly ModernMergeSession commands;
     private readonly Func<object> snapshot;
-    private readonly Func<ModernMergeCommand, (bool Success, string Message)> commit;
+    private readonly Func<ModernMergeCommand, (bool Success, string Message, long Revision)> commit;
     private readonly Action close;
     private readonly Action failure;
     private readonly Func<long> currentRevision;
@@ -37,7 +37,7 @@ internal sealed class ModernMergeView : ContentControl, IDisposable
         AppContext.BaseDirectory, "ModernFrontend", "midnight-merge.html"));
 
     internal ModernMergeView(ModernMergeSession commands, Func<object> snapshot,
-        Func<ModernMergeCommand, (bool Success, string Message)> commit,
+        Func<ModernMergeCommand, (bool Success, string Message, long Revision)> commit,
         Func<long> currentRevision, Action close, Action failure)
     {
         this.commands = commands;
