@@ -1,3 +1,4 @@
+using System.Net.Http;
 using BlackjackCasino.Update;
 
 namespace BlackjackCasino.Desktop;
