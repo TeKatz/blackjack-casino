@@ -49,7 +49,7 @@ export function isNineLivesSpin(v:unknown):v is NineLivesSpin{
   if(v.pounceWildCell!==null&&v.grid[v.pounceWildCell]!=='Wild')return false;
   if(v.bonusCount!==v.grid.filter(x=>x==='Bonus').length)return false;
   if(v.fullGridFrenzy&&v.grid.some(x=>x==='Bonus'))return false;
-  if(v.winningLines.some(line=>paylineCells[line].some(index=>!v.winningCells.includes(index))))return false;
+  if(v.winningLines.some(line=>paylineCells[line].some(index=>!(v.winningCells as number[]).includes(index))))return false;
   return true;
 }
 export function isNineLivesSnapshot(v:unknown):v is NineLivesSnapshot{
