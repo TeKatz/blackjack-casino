@@ -34,7 +34,7 @@ internal static partial class Program
         app.DispatcherUnhandledException+=(_,e)=> {File.WriteAllText(Path.Combine(output,"fatal.txt"),e.Exception.ToString());e.Handled=true;app.Shutdown(1);};
         window.ContentRendered+=async(_,_)=>
         {
-            try {await Check(window,qaProfile);File.WriteAllText(Path.Combine(output,"result.txt"),"PASS: startup lobby, registered future mode, shared hover/focus/open/disabled dropdown contracts, all table themes, proportional controls, embedded Reels and Neon Vault bounds, full-surface single-window casino hosting, embedded profile rename, nested profile/progression navigation, compact challenge pagination, scrolling shop and search.");}
+            try {await Check(window,qaProfile);File.WriteAllText(Path.Combine(output,"result.txt"),"PASS: startup lobby, registered future mode, shared hover/focus/open/disabled dropdown contracts, all table themes, proportional controls, embedded Reels and responsive React Neon Vault bounds, full-surface single-window casino hosting, embedded profile rename, nested profile/progression navigation, compact challenge pagination, scrolling shop and search.");}
             catch(Exception ex){exit=1;Console.Error.WriteLine(ex);File.WriteAllText(Path.Combine(output,"failure.txt"),ex.ToString());}
             finally {window.Close();CasinoAudio.Shutdown();app.Shutdown(exit);}
         };
@@ -116,25 +116,7 @@ internal static partial class Program
             == (!ModernLobbyView.IsAvailable || Find<ModernLobbyView>(window).Any(v=>v.Failed)),
             "Lobby header visibility did not match the active React/WPF presentation after Midnight Reels");
 
-        NavigationSmoke.OpenCovered(window, "neon-vault");await Task.Delay(120);window.UpdateLayout();
-        Require(Find<CheckBox>(window).Single(b => b.Name == "SoundToggle").IsChecked == false, "Neon Vault inherited Reels sound toggle.");
-        Require(Application.Current.Windows.Cast<Window>().Count(w=>w.IsVisible)==1,"Neon Vault opened a second visible native window instead of using the casino host");
-        Require(!((FrameworkElement)window.FindName("CasinoHeader")).IsVisible,"Host casino header remained visible over embedded Neon Vault");
-        Require(Find<ProgressBar>(window).Single(b=>b.Name=="EnergyBar").Maximum==NeonVaultRules.VaultEnergyTarget,"Neon Vault energy meter is not wired to the feature target");
-        foreach(var size in new[]{(1080d,720d),(1440d,900d),(1920d,1080d),(2560d,1440d)})
-        {
-            window.Width=size.Item1;window.Height=size.Item2;window.UpdateLayout();await Task.Delay(50);
-            Button spin=Find<Button>(window).Single(b=>b.Name=="SpinButton");
-            Rect bounds=spin.TransformToAncestor(window).TransformBounds(new Rect(0,0,spin.ActualWidth,spin.ActualHeight));
-            Require(bounds.Top>=60 && bounds.Bottom<=window.ActualHeight-8 && bounds.Left>=0 && bounds.Right<=window.ActualWidth,"Neon Vault Spin button clipped at "+size);
-            Require(Find<Button>(window).Any(b=>b.Name=="MaxBetButton" && b.IsVisible),"Neon Vault high-roller MAX bet control is missing");
-            Capture(window,"05-neon-vault-"+(int)size.Item1);
-        }
-        Find<Button>(window).Single(b=>b.Name=="BackButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Task.Delay(50);
-        Require(Find<CasinoLobbyView>(window).Any(v=>v.IsVisible),"Leaving Neon Vault did not return to the lobby");
-        Require(((FrameworkElement)window.FindName("CasinoHeader")).IsVisible
-            == (!ModernLobbyView.IsAvailable || Find<ModernLobbyView>(window).Any(v=>v.Failed)),
-            "Lobby header visibility did not match the active React/WPF presentation after Neon Vault");
+        await CheckModernNeonVaultRoute(window);
 
         Find<Button>(window).Single(b=>b.Name=="PlayerProfileButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(100);window.UpdateLayout();
