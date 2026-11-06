@@ -4,6 +4,7 @@ using System.Windows.Input;
 using System.Windows.Threading;
 using BlackjackCasino.Core.Sudoku;
 using BlackjackCasino.Core.Solitaire;
+using BlackjackCasino.Core.WordSearch;
 
 namespace BlackjackCasino.Desktop;
 
@@ -14,6 +15,8 @@ public partial class MainWindow
     private ModernSudokuService? modernSudoku;
     private ModernSolitaireSession? modernSolitaireSession;
     private ModernSolitaireService? modernSolitaire;
+    private ModernWordSearchSession? modernWordSearchSession;
+    private ModernWordSearchService? modernWordSearch;
     private readonly List<(UIElement Element, bool Enabled)> modernLoungeCoveredElements = [];
     private bool ModernLoungeOpen => modernLoungeView is not null;
 
@@ -22,9 +25,12 @@ public partial class MainWindow
         var games = LoungeHostedGameRegistry.Snapshot.Select(module => new
         {
             module.Definition.Id,
-            Status = module.Definition.Id == "solitaire"
-                ? CurrentModernSolitaireStatus()
-                : module.Definition.Status?.Invoke(),
+            Status = module.Definition.Id switch
+            {
+                "solitaire" => CurrentModernSolitaireStatus(),
+                "word-search" => CurrentModernWordSearchStatus(),
+                _ => module.Definition.Status?.Invoke(),
+            },
         }).ToList();
         games.Insert(0, new
         {
@@ -40,6 +46,9 @@ public partial class MainWindow
             SolitaireSession = modernSolitaireSession?.Id ?? string.Empty,
             SolitaireRevision = modernSolitaireSession?.Revision ?? 0L,
             Solitaire = modernSolitaire?.Snapshot(),
+            WordSearchSession = modernWordSearchSession?.Id ?? string.Empty,
+            WordSearchRevision = modernWordSearchSession?.Revision ?? 0L,
+            WordSearch = modernWordSearch?.Snapshot(),
             Language = Localization.Language == UiLanguagePreference.German ? "de" : "en",
             MusicEnabled = preferences.Presentation("chill-lounge").MusicEnabled,
             SoundEnabled = preferences.Presentation("chill-lounge").SoundEnabled,
@@ -55,15 +64,25 @@ public partial class MainWindow
         return $"{stats.Wins:N0} wins · {active} active · {SolitaireAchievementCatalog.Completed(stats)}/{SolitaireAchievementCatalog.All.Count} achievements";
     }
 
+    private string CurrentModernWordSearchStatus()
+    {
+        WordSearchProgressState progress = preferences.WordSearch;
+        return progress.ActiveGame is null
+            ? $"{progress.CompletedGames.Count:N0} puzzles complete"
+            : $"Resume · {progress.ActiveGame.Puzzle.Theme}";
+    }
+
     private void OpenModernLounge()
     {
         if (ModernLoungeOpen || embeddedGameShell is not null) return;
         EnsureEmbeddedGameHost();
         modernSudokuSession = new ModernSudokuSession();
         modernSolitaireSession = new ModernSolitaireSession();
+        modernWordSearchSession = new ModernWordSearchSession();
         modernLoungeView = new ModernLoungeView(CreateModernLoungeSnapshot,
             OnModernLoungeGameSelected, ApplyModernSudokuCommand, CheckpointModernSudoku,
             ApplyModernSolitaireCommand, CheckpointModernSolitaire,
+            ApplyModernWordSearchCommand, CheckpointModernWordSearch,
             CloseModernLounge, OnModernLoungeFailed);
         foreach (UIElement element in CasinoRoot.Children.OfType<UIElement>()
             .Where(element => element != embeddedGameOverlay))
@@ -104,6 +123,16 @@ public partial class MainWindow
                 () => progressionController?.Profile.Solitaire ?? new SolitaireStatistics(),
                 () => progressionController?.Profile.EquippedCardSetId,
                 RecordSolitaireStart, RecordSolitaireAbandon, RecordSolitaireCompletion);
+            modernLoungeView?.Refresh();
+            return;
+        }
+        if (id == "word-search")
+        {
+            modernWordSearch ??= new ModernWordSearchService(preferences.WordSearch,
+                SaveModernWordSearchProgress,
+                () => progressionController?.Profile.WordSearch ?? new WordSearchStatistics(),
+                RecordWordSearchCompletion,
+                () => Localization.Language == UiLanguagePreference.German ? "de" : "en");
             modernLoungeView?.Refresh();
             return;
         }
@@ -155,6 +184,46 @@ public partial class MainWindow
                     : ex.Message);
             }
         });
+    }
+
+    private ModernWordSearchReply ApplyModernWordSearchCommand(ModernWordSearchCommand command)
+    {
+        if (modernWordSearchSession is null || modernWordSearch is null)
+            return new ModernWordSearchReply(command.RequestId, false, "Word Search is not open.", 0);
+        return modernWordSearchSession.Execute(command, intent =>
+        {
+            try
+            {
+                (bool success, string message) = modernWordSearch.Execute(intent);
+                if (success && intent.Action == "word-search.exit") modernWordSearch = null;
+                return (success, message);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+                or ArgumentException or InvalidOperationException or OverflowException)
+            {
+                return (false, ex is IOException or UnauthorizedAccessException
+                    ? "Word Search could not be saved. Your last committed words are unchanged."
+                    : ex.Message);
+            }
+        });
+    }
+
+    private void SaveModernWordSearchProgress(WordSearchProgressState state)
+    {
+        AppPreferences old = preferences;
+        state.Normalize();
+        preferences = preferences with { WordSearch = state };
+        try { if (!testSession) SavePreferences(); }
+        catch { preferences = old; throw; }
+    }
+
+    private void CheckpointModernWordSearch()
+    {
+        try { modernWordSearch?.CheckpointClock(); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            StatusText.Text = "Word Search clock checkpoint could not be saved: " + ex.Message;
+        }
     }
 
     private void SaveModernSolitaireProgress(SolitaireProgressState state)
@@ -234,6 +303,13 @@ public partial class MainWindow
         }
         modernSolitaire = null;
         modernSolitaireSession = null;
+        try { modernWordSearch?.Stop(); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            StatusText.Text = "Word Search time checkpoint could not be saved: " + ex.Message;
+        }
+        modernWordSearch = null;
+        modernWordSearchSession = null;
         modernLoungeView.Dispose();
         modernLoungeView = null;
         if (embeddedGameHost is not null) embeddedGameHost.Content = null;
