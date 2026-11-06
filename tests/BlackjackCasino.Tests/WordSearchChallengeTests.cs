@@ -1,26 +1,29 @@
 using BlackjackCasino.Core;
+using BlackjackCasino.Core.WordSearch;
 
 namespace BlackjackCasino.Tests;
 
 public sealed class WordSearchChallengeTests
 {
-    // The challenge ceiling follows the fixed 144-puzzle offline catalog, so every goal must remain reachable.
+    // The expanded 288-puzzle offline catalog keeps previous milestone IDs and raises reachable endgame goals.
     [Fact]
     public void CatalogUsesReachableWordSearchGoalsAndNeverRewardsSpeed()
     {
         ChallengeDefinition[] challenges = ChallengeCatalog.For(ChallengeCategory.WordSearch).ToArray();
-        Assert.Equal(21, challenges.Length);
+        Assert.Equal(26, challenges.Length);
         Assert.Contains(challenges, challenge => challenge.Id == "word-search-first");
-        Assert.Contains(challenges, challenge => challenge.Id == "word-search-144" && challenge.IsEndgame);
+        Assert.Contains(challenges, challenge => challenge.Id == "word-search-144" && !challenge.IsEndgame);
+        Assert.Contains(challenges, challenge => challenge.Id == "word-search-288" && challenge.IsEndgame);
+        Assert.Contains(challenges, challenge => challenge.Id == "word-search-words-2736" && challenge.IsEndgame);
         Assert.All(challenges, challenge => Assert.True(challenge.CoinReward > 0));
 
         var maxima = new Dictionary<ChallengeMetric, decimal>
         {
-            [ChallengeMetric.WordSearchCompleted] = 144,
-            [ChallengeMetric.WordSearchWordsFound] = 1368,
-            [ChallengeMetric.WordSearchNoHintCompleted] = 144,
-            [ChallengeMetric.WordSearchExpertCompleted] = 24,
-            [ChallengeMetric.WordSearchMasterCompleted] = 24,
+            [ChallengeMetric.WordSearchCompleted] = WordSearchCatalog.All.Count,
+            [ChallengeMetric.WordSearchWordsFound] = WordSearchCatalog.All.Sum(x => x.WordCount),
+            [ChallengeMetric.WordSearchNoHintCompleted] = WordSearchCatalog.All.Count,
+            [ChallengeMetric.WordSearchExpertCompleted] = WordSearchCatalog.For(BlackjackCasino.Core.WordSearch.WordSearchDifficulty.Expert).Count,
+            [ChallengeMetric.WordSearchMasterCompleted] = WordSearchCatalog.For(BlackjackCasino.Core.WordSearch.WordSearchDifficulty.Master).Count,
         };
 
         Assert.All(challenges, challenge =>

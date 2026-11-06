@@ -30,6 +30,25 @@ public static class WordSearchCatalog
     ];
 
 
+    // Expansion pool: 12 additional bilingual themes, with two seeded layouts each.
+    // Keep the original 24 definitions per difficulty intact (ID, seed, bank and grid)
+    // so old saves and completion receipts remain byte-for-byte compatible.
+    private static readonly ThemeWords[] ExpansionThemes =
+    [
+        new("Mountain Trails", ["MOUNTAIN", "SUMMIT", "RIDGE", "CLIFF", "TRAIL", "VALLEY", "PEAK", "STONE", "HIKER", "ROPE", "CAMP", "BOOTS", "MAP", "FROST", "EAGLE", "CLOUD", "PINE", "ASCENT", "SLOPE", "CREST", "PATH", "RIVER", "CABIN", "MIST", "LAKE", "WIND"]),
+        new("Garden Paths", ["GARDEN", "PETAL", "BLOOM", "TULIP", "ROSE", "LILY", "DAISY", "SEED", "SOIL", "HEDGE", "POND", "HERB", "BASIL", "MINT", "BEES", "BUTTERFLY", "SPRING", "GLOVES", "WATER", "SHOVEL", "VINES", "ROOTS", "FLOWER", "BUD", "ORCHID", "THYME"]),
+        new("Winter Cabin", ["WINTER", "SNOW", "FROST", "ICICLE", "CABIN", "HEARTH", "FIRE", "COCOA", "BLANKET", "SCARF", "MITTEN", "SLED", "PINE", "FLAKE", "GLOW", "NIGHT", "SOCKS", "WOOD", "STOVE", "TEA", "EMBER", "COZY", "COLD", "WINDOW", "CANDLE", "FROZEN"]),
+        new("Desert Journey", ["DESERT", "DUNES", "OASIS", "CAMEL", "SAND", "SUN", "NOMAD", "CACTUS", "MIRAGE", "STONE", "LIZARD", "DUST", "TRAIL", "HEAT", "SHADE", "PALM", "WIND", "SCARF", "MAP", "GOLD", "NIGHT", "ROCK", "HORIZON", "TENT", "WATER", "CANYON"]),
+        new("Wildlife", ["OTTER", "FOX", "WOLF", "BEAR", "DEER", "MOOSE", "LYNX", "BISON", "RAVEN", "EAGLE", "OWL", "FALCON", "WHALE", "SHARK", "SEAL", "TIGER", "ZEBRA", "KOALA", "PANDA", "LEMUR", "GECKO", "FROG", "NEWT", "BEE", "SWAN", "CRANE"]),
+        new("Space Lab", ["ROCKET", "ASTRO", "ORBIT", "LUNAR", "COMET", "PROBE", "GALAXY", "SATURN", "VENUS", "MARS", "ENGINE", "MODULE", "DOCK", "RADAR", "SIGNAL", "SOLAR", "STARS", "PLASMA", "VACUUM", "ALIEN", "CRATER", "METEOR", "HELMET", "ROVER", "TELESCOPE", "THRUST"]),
+        new("Ancient Ruins", ["RUINS", "TEMPLE", "COLUMN", "MARBLE", "SCROLL", "MOSAIC", "TOMB", "ARCH", "STONE", "CRYPT", "ALTAR", "RELIC", "STATUE", "TORCH", "GATE", "WALL", "DUST", "CROWN", "GLYPH", "GOLD", "VAULT", "MYTH", "KING", "QUEEN", "PALACE", "BRONZE"]),
+        new("Night Market", ["MARKET", "STALL", "SPICE", "LANTERN", "STREET", "FRUIT", "MANGO", "DATES", "TEA", "BREAD", "BASKET", "COINS", "MUSIC", "FABRIC", "SILK", "CRAFT", "GLOW", "NIGHT", "SWEET", "LIGHT", "CROWD", "MERCHANT", "AROMA", "COLOR", "GIFT", "DANCE"]),
+        new("Lakeside", ["LAKE", "RIVER", "STREAM", "SHORE", "CANOE", "PADDLE", "REEDS", "WILLOW", "HERON", "PIER", "DOCK", "FISH", "WATER", "WAVES", "ISLAND", "MIST", "BRIDGE", "BOAT", "LILY", "OTTER", "SAND", "MOSS", "POND", "DELTA", "COVE", "SPLASH"]),
+        new("Workshop", ["WORKSHOP", "HAMMER", "NAILS", "SCREW", "WOOD", "METAL", "GLUE", "SAW", "DRILL", "GEARS", "BRUSH", "PAINT", "TOOLS", "BENCH", "CLAMP", "RULER", "LATHE", "FRAME", "WRENCH", "CRAFT", "SAND", "CHISEL", "SHELF", "BOLT", "COPPER", "HANDLE"]),
+        new("Summer Festival", ["FESTIVAL", "DANCE", "MUSIC", "DRUM", "SONG", "LIGHTS", "RIBBON", "STAGE", "CROWD", "TICKET", "SUMMER", "FIREWORK", "PARADE", "CARNIVAL", "FLAGS", "FOOD", "SWEET", "BALLOON", "NIGHT", "LAUGH", "GAMES", "WHEEL", "PARTY", "GLOW", "JOY", "BAND"]),
+        new("Mythic Tales", ["DRAGON", "PHOENIX", "GRIFFIN", "UNICORN", "GIANT", "FAIRY", "ELF", "DWARF", "QUEST", "MAGIC", "SPELL", "RUNE", "CASTLE", "FOREST", "SWORD", "SHIELD", "WIZARD", "KNIGHT", "CROWN", "GOBLIN", "POTION", "LEGEND", "TROLL", "ORACLE", "TEMPLE", "HERO"]),
+    ];
+
     // The localized list changes only the authored puzzle vocabulary, never the stable
     // puzzle ID, difficulty, seed, completion receipt or serialized in-progress grid.
     // Existing active games therefore remain playable after a language switch.
@@ -48,6 +67,18 @@ public static class WordSearchCatalog
             ["Cinema"] = new("Kino", ["KINO", "FILM", "LEINWAND", "MIME", "SZENE", "KAMERA", "TICKET", "DRAMA", "KOMOEDIE", "REGIE", "LICHT", "TON", "BILD", "STUDIO", "ABSPANN", "ROLLE", "SKRIPT", "POPCORN"]),
             ["Road Trip"] = new("Autoreise", ["REISE", "ROUTE", "STRASSE", "KARTE", "MOTEL", "RADIO", "BRUECKE", "TUNNEL", "TAL", "MEILEN", "BENZIN", "PICKNICK", "KAMERA", "KUESTE", "SCHILD", "FAHRT", "SONNE", "TASCHE"]),
             ["Kitchen"] = new("Kueche", ["KUECHE", "TELLER", "LOEFFEL", "MESSER", "BROT", "NUDEL", "KRAUT", "OFEN", "PFANNE", "SCHALE", "ZUCKER", "SAHNE", "ZITRONE", "HONIG", "SOSSE", "APFEL", "KNOBLAUCH", "TOAST"]),
+            ["Mountain Trails"] = new("Bergpfade", ["BERG", "GIPFEL", "GRAT", "FELS", "PFAD", "TAL", "KAMM", "STEIN", "WANDERER", "SEIL", "ZELT", "STIEFEL", "KARTE", "FROST", "ADLER", "WOLKE", "KIEFER", "ANSTIEG", "HANG", "GEBIRGE", "WEG", "BACH", "HUETTE", "NEBEL", "SEE", "WIND"]),
+            ["Garden Paths"] = new("Gartenwege", ["GARTEN", "BLUETE", "KNOSPE", "TULPE", "ROSE", "LILIE", "ASTER", "SAMEN", "ERDE", "HECKE", "TEICH", "KRAUT", "BASILIKUM", "MINZE", "BIENE", "FALTER", "FRUEHLING", "HANDSCHUH", "WASSER", "SPATEN", "RANKE", "WURZEL", "BLUME", "BLATT", "ORCHIDEE", "THYMIAN"]),
+            ["Winter Cabin"] = new("Winterhuette", ["WINTER", "SCHNEE", "FROST", "EISZAPFEN", "HUETTE", "KAMIN", "FEUER", "KAKAO", "DECKE", "SCHAL", "FÄUSTLING", "SCHLITTEN", "KIEFER", "FLOCKE", "SCHEIN", "NACHT", "SOCKEN", "HOLZ", "OFEN", "TEE", "GLUT", "WARM", "KALT", "FENSTER", "KERZE", "EIS"]),
+            ["Desert Journey"] = new("Wuestenreise", ["WUESTE", "DUENE", "OASE", "KAMEL", "SAND", "SONNE", "NOMADE", "KAKTUS", "FATA", "STEIN", "ECHSE", "STAUB", "PFAD", "HITZE", "SCHATTEN", "PALME", "WIND", "TUCH", "KARTE", "GOLD", "NACHT", "FELS", "FERNE", "ZELT", "WASSER", "SCHLUCHT"]),
+            ["Wildlife"] = new("Wildtiere", ["OTTER", "FUCHS", "WOLF", "BAER", "HIRSCH", "ELCH", "LUCHS", "BISON", "RABE", "ADLER", "EULE", "FALKE", "WAL", "HAI", "ROBBE", "TIGER", "ZEBRA", "KOALA", "PANDA", "LEMUR", "GECKO", "FROSCH", "MOLCH", "BIENE", "SCHWAN", "KRANICH"]),
+            ["Space Lab"] = new("Weltraumlabor", ["RAKETE", "ASTRO", "ORBIT", "MOND", "KOMET", "SONDE", "GALAXIE", "SATURN", "VENUS", "MARS", "MOTOR", "MODUL", "DOCK", "RADAR", "SIGNAL", "SONNE", "STERNE", "PLASMA", "VAKUUM", "ALIEN", "KRATER", "METEOR", "HELM", "ROVER", "TELESKOP", "SCHUB"]),
+            ["Ancient Ruins"] = new("Alte Ruinen", ["RUINE", "TEMPEL", "SAEULE", "MARMOR", "ROLLE", "MOSAIK", "GRAB", "BOGEN", "STEIN", "GRUFT", "ALTAR", "RELIKT", "STATUE", "FACKEL", "TOR", "MAUER", "STAUB", "KRONE", "RUNE", "GOLD", "KAMMER", "MYTHOS", "KOENIG", "KOENIGIN", "PALAST", "BRONZE"]),
+            ["Night Market"] = new("Nachtmarkt", ["MARKT", "STAND", "GEWUERZ", "LATERNE", "STRASSE", "OBST", "MANGO", "DATTEL", "TEE", "BROT", "KORB", "MUENZEN", "MUSIK", "STOFF", "SEIDE", "HANDWERK", "GLANZ", "NACHT", "SUESS", "LICHT", "MENGE", "HAENDLER", "DUFT", "FARBE", "GABE", "TANZ"]),
+            ["Lakeside"] = new("Am See", ["SEE", "FLUSS", "BACH", "UFER", "KANU", "PADDEL", "SCHILF", "WEIDE", "REIHER", "STEG", "HAFEN", "FISCH", "WASSER", "WELLE", "INSEL", "NEBEL", "BRUECKE", "BOOT", "LILIE", "OTTER", "SAND", "MOOS", "TEICH", "DELTA", "BUCHT", "SPRITZER"]),
+            ["Workshop"] = new("Werkstatt", ["WERKSTATT", "HAMMER", "NAGEL", "SCHRAUBE", "HOLZ", "METALL", "LEIM", "SAEGE", "BOHRER", "ZAHNRAD", "PINSEL", "FARBE", "WERKZEUG", "BANK", "ZWINGE", "LINEAL", "DREHEN", "RAHMEN", "SCHLUESSEL", "HANDWERK", "SAND", "MEISSEL", "REGAL", "BOLZEN", "KUPFER", "GRIFF"]),
+            ["Summer Festival"] = new("Sommerfest", ["FEST", "TANZ", "MUSIK", "TROMMEL", "LIED", "LICHT", "BAND", "BUEHNE", "MENGE", "KARTE", "SOMMER", "FEUERWERK", "UMZUG", "RUMMEL", "FAHNEN", "ESSEN", "SUESS", "BALLON", "NACHT", "LACHEN", "SPIELE", "RAD", "PARTY", "GLANZ", "FREUDE", "MELODIE"]),
+            ["Mythic Tales"] = new("Sagenwelt", ["DRACHE", "PHOENIX", "GREIF", "EINHORN", "RIESE", "FEE", "ELF", "ZWERG", "QUESTE", "MAGIE", "ZAUBER", "RUNE", "BURG", "WALD", "SCHWERT", "SCHILD", "MAGIER", "RITTER", "KRONE", "GOBLIN", "TRANK", "SAGE", "TROLL", "ORAKEL", "TEMPEL", "HELD"]),
         };
 
     public static WordSearchPuzzleDefinition ForLanguage(WordSearchPuzzleDefinition definition, string? language)
@@ -82,15 +113,22 @@ public static class WordSearchCatalog
 
     private static IReadOnlyList<WordSearchPuzzleDefinition> Build()
     {
-        var result = new List<WordSearchPuzzleDefinition>(144);
+        var result = new List<WordSearchPuzzleDefinition>(288);
         foreach (WordSearchDifficulty difficulty in Enum.GetValues<WordSearchDifficulty>())
         {
             (int size, int count) = Spec(difficulty);
-            for (int index = 0; index < 24; index++)
+            for (int index = 0; index < 48; index++)
             {
-                ThemeWords theme = Themes[index % Themes.Length];
-                int variant = index / Themes.Length;
-                int seed = 10_000 + (int)difficulty * 1_000 + index * 37 + variant * 101;
+                bool expansion = index >= 24;
+                int localIndex = expansion ? index - 24 : index;
+                ThemeWords theme = expansion
+                    ? ExpansionThemes[localIndex % ExpansionThemes.Length]
+                    : Themes[localIndex % Themes.Length];
+                int variant = localIndex / 12;
+                // Never modify a seed used by the original 144 puzzle definitions.
+                int seed = expansion
+                    ? 80_000 + (int)difficulty * 2_000 + localIndex * 61 + variant * 193
+                    : 10_000 + (int)difficulty * 1_000 + index * 37 + variant * 101;
                 string id = $"word-search-{difficulty.ToString().ToLowerInvariant()}-{index + 1:000}";
                 result.Add(new(id, difficulty, theme.Theme, size, count, seed, theme.Words));
             }

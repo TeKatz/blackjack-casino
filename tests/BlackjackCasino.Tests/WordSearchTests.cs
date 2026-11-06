@@ -7,14 +7,16 @@ namespace BlackjackCasino.Tests;
 public sealed class WordSearchTests
 {
     [Fact]
-    public void CatalogContainsTwentyFourDeterministicPuzzlesPerDifficulty()
+    public void CatalogContainsFortyEightDeterministicPuzzlesPerDifficulty()
     {
-        Assert.Equal(144, WordSearchCatalog.All.Count);
+        Assert.Equal(288, WordSearchCatalog.All.Count);
         foreach (WordSearchDifficulty difficulty in Enum.GetValues<WordSearchDifficulty>())
         {
             var puzzles = WordSearchCatalog.For(difficulty);
-            Assert.Equal(24, puzzles.Count);
-            Assert.Equal(24, puzzles.Select(x => x.Id).Distinct(StringComparer.Ordinal).Count());
+            Assert.Equal(48, puzzles.Count);
+            Assert.Equal(48, puzzles.Select(x => x.Id).Distinct(StringComparer.Ordinal).Count());
+            Assert.Equal(24, puzzles.Take(24).Count(p => p.Id.EndsWith("0" + "01", StringComparison.Ordinal) || int.Parse(p.Id[^3..]) <= 24));
+            Assert.Equal(12, puzzles.Skip(24).Select(p => p.Theme).Distinct(StringComparer.Ordinal).Count());
         }
     }
 
