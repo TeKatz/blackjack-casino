@@ -18,7 +18,6 @@ public partial class MainWindow
     private BackgroundMusic? modernNeonVaultMusic;
     private string? modernNeonVaultAudioSpinId;
     private readonly HashSet<int> modernNeonVaultStopped = [];
-    private readonly List<(UIElement Element, bool Enabled)> neonVaultCoveredElements = [];
     private bool modernNeonVaultOutcomePlayed, modernNeonVaultLevelUp;
     private bool ModernNeonVaultOpen => modernNeonVaultView is not null;
 
@@ -71,18 +70,10 @@ public partial class MainWindow
                 Localization.Language == UiLanguagePreference.German ? "de" : "en"),
             ApplyModernNeonVaultAction, CloseModernNeonVault, OnModernNeonVaultFailed,
             ModernNeonVaultStopSound, ModernNeonVaultCompleteSound);
-        foreach (UIElement element in CasinoRoot.Children.OfType<UIElement>()
-            .Where(child => child != embeddedGameOverlay))
-        {
-            neonVaultCoveredElements.Add((element, element.IsEnabled));
-            element.SetCurrentValue(IsEnabledProperty, false);
-        }
-        embeddedGameHost!.Content = modernNeonVaultView;
-        embeddedGameOverlay!.Visibility = Visibility.Visible;
+        MountModernSurface(modernNeonVaultView);
         // Attach the live WebView before collapsing the lobby: WPF must never
         // briefly expose the retired Blackjack surface between destinations.
         if (lobby is not null) lobby.Visibility = Visibility.Collapsed;
-        KeyboardNavigation.SetTabNavigation(modernNeonVaultView, KeyboardNavigationMode.Cycle);
         SyncHostMusic();
         modeRegistry.NotifyStateChanged();
     }
@@ -187,12 +178,8 @@ public partial class MainWindow
         if (modernNeonVaultView is null) return;
         bool failed = modernNeonVaultView.Failed;
         modernNeonVaultView.Dispose();
+        UnmountModernSurface(modernNeonVaultView);
         modernNeonVaultView = null;
-        embeddedGameHost!.Content = null;
-        embeddedGameOverlay!.Visibility = Visibility.Collapsed;
-        foreach ((UIElement element, bool enabled) in neonVaultCoveredElements)
-            element.SetCurrentValue(IsEnabledProperty, enabled);
-        neonVaultCoveredElements.Clear();
         modernNeonVaultMusic?.Dispose(); modernNeonVaultMusic = null;
         modernNeonVaultAudio?.Dispose(); modernNeonVaultAudio = null;
         preferences = preferences with { NeonVaultBet = modernNeonVaultBet };

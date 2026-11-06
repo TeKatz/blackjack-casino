@@ -8,7 +8,6 @@ namespace BlackjackCasino.Desktop;
 public partial class MainWindow
 {
     private ModernBlackjackView? modernBlackjackView;
-    private readonly List<(UIElement Element, bool Enabled)> blackjackCoveredElements = [];
     private bool ModernBlackjackOpen => modernBlackjackView is not null;
 
     private void OpenBlackjackMode()
@@ -40,15 +39,7 @@ public partial class MainWindow
                 SoundEnabled, AnimationsEnabled, StatusText.Text,
                 Localization.Language == UiLanguagePreference.German ? "de" : "en"),
             ApplyModernBlackjackAction, CloseModernBlackjack, OnModernBlackjackFailed);
-        foreach (UIElement covered in CasinoRoot.Children.OfType<UIElement>()
-            .Where(child => child != embeddedGameOverlay))
-        {
-            blackjackCoveredElements.Add((covered, covered.IsEnabled));
-            covered.SetCurrentValue(IsEnabledProperty, false);
-        }
-        embeddedGameHost!.Content = modernBlackjackView;
-        embeddedGameOverlay!.Visibility = Visibility.Visible;
-        KeyboardNavigation.SetTabNavigation(modernBlackjackView, KeyboardNavigationMode.Cycle);
+        MountModernSurface(modernBlackjackView);
         modeRegistry.NotifyStateChanged();
     }
 
@@ -125,12 +116,8 @@ public partial class MainWindow
         }
         bool failed = modernBlackjackView.Failed;
         modernBlackjackView.Dispose();
+        UnmountModernSurface(modernBlackjackView);
         modernBlackjackView = null;
-        embeddedGameHost!.Content = null;
-        embeddedGameOverlay!.Visibility = Visibility.Collapsed;
-        foreach ((UIElement element, bool enabled) in blackjackCoveredElements)
-            element.SetCurrentValue(IsEnabledProperty, enabled);
-        blackjackCoveredElements.Clear();
         ProcessLatestCompletedRound();
         NormalizeBetForTable();
         SavePreferences();

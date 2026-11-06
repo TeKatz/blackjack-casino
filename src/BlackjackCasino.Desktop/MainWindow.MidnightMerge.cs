@@ -16,7 +16,6 @@ public partial class MainWindow
     private readonly object modernMergeAudioOwner = new();
     private static readonly IReadOnlyDictionary<MergeCue, AudioClip> ModernMergeCues =
         Enum.GetValues<MergeCue>().ToDictionary(x => x, MergeSoundSynthesis.Build);
-    private readonly List<(UIElement Element, bool Enabled)> mergeCoveredElements = [];
     private string modernMergeFeedback = "";
     private long modernMergePlayerXp, modernMergeSeasonXp;
     private bool modernMergeProgressionSaveFailed, modernMergeLevelUp;
@@ -86,17 +85,8 @@ public partial class MainWindow
             CloseModernMerge,
             OnModernMergeFailed);
 
-        foreach (UIElement element in CasinoRoot.Children.OfType<UIElement>()
-            .Where(element => element != embeddedGameOverlay))
-        {
-            mergeCoveredElements.Add((element, element.IsEnabled));
-            element.SetCurrentValue(IsEnabledProperty, false);
-        }
-
-        embeddedGameHost!.Content = modernMergeView;
-        embeddedGameOverlay!.Visibility = Visibility.Visible;
+        MountModernSurface(modernMergeView);
         if (lobby is not null) lobby.Visibility = Visibility.Collapsed;
-        KeyboardNavigation.SetTabNavigation(modernMergeView, KeyboardNavigationMode.Cycle);
         keepHostMusicForEmbeddedGame = true;
         SyncHostMusic();
         modeRegistry.NotifyStateChanged();
@@ -212,12 +202,8 @@ public partial class MainWindow
         if (modernMergeView is null) return;
         bool failed = modernMergeView.Failed;
         modernMergeView.Dispose();
+        UnmountModernSurface(modernMergeView);
         modernMergeView = null;
-        embeddedGameHost!.Content = null;
-        embeddedGameOverlay!.Visibility = Visibility.Collapsed;
-        foreach ((UIElement element, bool enabled) in mergeCoveredElements)
-            element.SetCurrentValue(IsEnabledProperty, enabled);
-        mergeCoveredElements.Clear();
         CasinoAudio.Mixer.Stop(modernMergeAudioOwner);
         if (!failed)
         {

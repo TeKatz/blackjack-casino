@@ -12,6 +12,7 @@ public partial class MainWindow
 {
     private Grid? embeddedGameOverlay;
     private ContentControl? embeddedGameHost;
+    private ModernGameSurface? modernGameSurface;
     private Window? embeddedGameShell;
     // Merge intentionally reuses the host soundtrack; other embedded games own their music.
     private bool keepHostMusicForEmbeddedGame;
@@ -74,6 +75,22 @@ public partial class MainWindow
         Grid.SetColumnSpan(embeddedGameOverlay, Math.Max(1, root.ColumnDefinitions.Count));
         Panel.SetZIndex(embeddedGameOverlay, 1000);
         root.Children.Add(embeddedGameOverlay);
+        modernGameSurface = new ModernGameSurface(root, embeddedGameOverlay, embeddedGameHost);
+    }
+
+    // A single presentation boundary for all React game routes. The native WPF
+    // fallback still uses ShowEmbeddedGame and cannot be mounted at the same time.
+    private void MountModernSurface(UIElement view)
+    {
+        EnsureEmbeddedGameHost();
+        modernGameSurface!.Mount(view);
+    }
+
+    private void UnmountModernSurface(UIElement view)
+    {
+        if (modernGameSurface is null)
+            throw new InvalidOperationException("The modern game surface was not initialized.");
+        modernGameSurface.Unmount(view);
     }
 
     private void ShowEmbeddedGame(Window shell, string title, bool muteHostMusic, Action closed)

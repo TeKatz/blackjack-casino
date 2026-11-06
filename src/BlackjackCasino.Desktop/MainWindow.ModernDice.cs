@@ -19,7 +19,6 @@ public partial class MainWindow
     private long modernDiceRollToken, modernDiceEventCounter;
     private int[] modernDiceRollingIndices = [];
     private readonly List<ModernDiceCelebration> modernDiceEvents = [];
-    private readonly List<(UIElement Element, bool Enabled)> modernDiceCoveredElements = [];
     private bool modernDiceAdvancing;
     private bool ModernDiceOpen => modernDiceView is not null;
 
@@ -69,16 +68,8 @@ public partial class MainWindow
                 modernDiceRollToken, modernDiceRollingIndices),
             ApplyModernDiceAction, CloseModernDice, OnModernDiceFailed);
 
-        foreach (UIElement element in CasinoRoot.Children.OfType<UIElement>()
-            .Where(element => element != embeddedGameOverlay))
-        {
-            modernDiceCoveredElements.Add((element, element.IsEnabled));
-            element.SetCurrentValue(IsEnabledProperty, false);
-        }
-        embeddedGameHost!.Content = modernDiceView;
-        embeddedGameOverlay!.Visibility = Visibility.Visible;
+        MountModernSurface(modernDiceView);
         if (lobby is not null) lobby.Visibility = Visibility.Collapsed;
-        KeyboardNavigation.SetTabNavigation(modernDiceView, KeyboardNavigationMode.Cycle);
         modernDiceMusic = new BackgroundMusic(Soundtrack.DiceLounge);
         AreaPresentationSettings settings = preferences.Presentation("kniffel");
         modernDiceMusic.Start(settings.MusicEnabled, settings.MusicVolume);
@@ -346,12 +337,8 @@ public partial class MainWindow
         if (modernDiceView is null) return;
         bool failed = modernDiceView.Failed;
         modernDiceView.Dispose();
+        UnmountModernSurface(modernDiceView);
         modernDiceView = null;
-        embeddedGameHost!.Content = null;
-        embeddedGameOverlay!.Visibility = Visibility.Collapsed;
-        foreach ((UIElement element, bool enabled) in modernDiceCoveredElements)
-            element.SetCurrentValue(IsEnabledProperty, enabled);
-        modernDiceCoveredElements.Clear();
         modernDiceMusic?.Dispose(); modernDiceMusic = null;
         CasinoAudio.Mixer.Stop(kniffelAudioOwner);
         if (!failed)

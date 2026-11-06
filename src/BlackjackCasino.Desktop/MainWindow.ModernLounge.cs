@@ -31,7 +31,6 @@ public partial class MainWindow
     private readonly object modernMemoryAudioOwner = new();
     private static readonly Lazy<IReadOnlyDictionary<MemoryCue, AudioClip>> ModernMemoryCues =
         new(() => Enum.GetValues<MemoryCue>().ToDictionary(cue => cue, MemorySoundSynthesis.Build));
-    private readonly List<(UIElement Element, bool Enabled)> modernLoungeCoveredElements = [];
     private bool ModernLoungeOpen => modernLoungeView is not null;
 
     private object CreateModernLoungeSnapshot() => CreateModernLoungeSnapshot(false);
@@ -135,16 +134,8 @@ public partial class MainWindow
             ApplyModernJigsawCommand, CheckpointModernJigsaw,
             ApplyModernAdventureCommand,
             CloseModernLounge, OnModernLoungeFailed, OpenModernCaseBoardWindow);
-        foreach (UIElement element in CasinoRoot.Children.OfType<UIElement>()
-            .Where(element => element != embeddedGameOverlay))
-        {
-            modernLoungeCoveredElements.Add((element, element.IsEnabled));
-            element.SetCurrentValue(IsEnabledProperty, false);
-        }
-        embeddedGameHost!.Content = modernLoungeView;
-        embeddedGameOverlay!.Visibility = Visibility.Visible;
+        MountModernSurface(modernLoungeView);
         if (lobby is not null) lobby.Visibility = Visibility.Collapsed;
-        KeyboardNavigation.SetTabNavigation(modernLoungeView, KeyboardNavigationMode.Cycle);
         loungeBackgroundMusic?.Dispose();
         loungeBackgroundMusic = new BackgroundMusic(Soundtrack.ChillLounge);
         AreaPresentationSettings settings = preferences.Presentation("chill-lounge");
@@ -609,12 +600,8 @@ public partial class MainWindow
         modernAdventureSoundtrack = false;
         CasinoAudio.Mixer.Stop(modernMemoryAudioOwner);
         modernLoungeView.Dispose();
+        UnmountModernSurface(modernLoungeView);
         modernLoungeView = null;
-        if (embeddedGameHost is not null) embeddedGameHost.Content = null;
-        if (embeddedGameOverlay is not null) embeddedGameOverlay.Visibility = Visibility.Collapsed;
-        foreach ((UIElement element, bool enabled) in modernLoungeCoveredElements)
-            element.SetCurrentValue(IsEnabledProperty, enabled);
-        modernLoungeCoveredElements.Clear();
         loungeBackgroundMusic?.Dispose();
         loungeBackgroundMusic = null;
         if (lobby is not null) lobby.Visibility = Visibility.Visible;

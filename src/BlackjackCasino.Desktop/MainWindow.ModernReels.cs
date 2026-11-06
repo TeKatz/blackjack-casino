@@ -19,7 +19,6 @@ public partial class MainWindow
     private readonly HashSet<int> modernReelsStopped = [];
     private bool modernReelsOutcomePlayed;
     private bool modernReelsLevelUp;
-    private readonly List<(UIElement Element, bool Enabled)> reelsCoveredElements = [];
     private bool ModernReelsOpen => modernReelsView is not null;
 
     private void OpenMidnightReels()
@@ -62,15 +61,7 @@ public partial class MainWindow
                 Localization.Language == UiLanguagePreference.German ? "de" : "en"),
             ApplyModernReelsAction, CloseModernReels, OnModernReelsFailed,
             ModernReelsStopSound, ModernReelsCompleteSound);
-        foreach (UIElement element in CasinoRoot.Children.OfType<UIElement>()
-            .Where(child => child != embeddedGameOverlay))
-        {
-            reelsCoveredElements.Add((element, element.IsEnabled));
-            element.SetCurrentValue(IsEnabledProperty, false);
-        }
-        embeddedGameHost!.Content = modernReelsView;
-        embeddedGameOverlay!.Visibility = Visibility.Visible;
-        KeyboardNavigation.SetTabNavigation(modernReelsView, KeyboardNavigationMode.Cycle);
+        MountModernSurface(modernReelsView);
         // Hiding the lobby raises a host-music synchronization event before
         // the new view is attached. Reapply the mute now that Reels owns audio.
         SyncHostMusic();
@@ -174,12 +165,8 @@ public partial class MainWindow
         if (modernReelsView is null) return;
         bool failed = modernReelsView.Failed;
         modernReelsView.Dispose();
+        UnmountModernSurface(modernReelsView);
         modernReelsView = null;
-        embeddedGameHost!.Content = null;
-        embeddedGameOverlay!.Visibility = Visibility.Collapsed;
-        foreach ((UIElement element, bool enabled) in reelsCoveredElements)
-            element.SetCurrentValue(IsEnabledProperty, enabled);
-        reelsCoveredElements.Clear();
         modernReelsMusic?.Dispose();
         modernReelsMusic = null;
         modernReelsAudio?.Dispose();

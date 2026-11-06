@@ -18,7 +18,6 @@ public partial class MainWindow
     private BackgroundMusic? modernNineLivesMusic;
     private string? modernNineLivesAudioSpinId;
     private readonly HashSet<int> modernNineLivesStopped = [];
-    private readonly List<(UIElement Element, bool Enabled)> nineLivesCoveredElements = [];
     private bool modernNineLivesOutcomePlayed, modernNineLivesLevelUp;
     private bool ModernNineLivesOpen => modernNineLivesView is not null;
 
@@ -72,15 +71,7 @@ public partial class MainWindow
                 Localization.Language == UiLanguagePreference.German ? "de" : "en"),
             ApplyModernNineLivesAction, CloseModernNineLives, OnModernNineLivesFailed,
             ModernNineLivesStopSound, ModernNineLivesCompleteSound);
-        foreach (UIElement element in CasinoRoot.Children.OfType<UIElement>()
-            .Where(child => child != embeddedGameOverlay))
-        {
-            nineLivesCoveredElements.Add((element, element.IsEnabled));
-            element.SetCurrentValue(IsEnabledProperty, false);
-        }
-        embeddedGameHost!.Content = modernNineLivesView;
-        embeddedGameOverlay!.Visibility = Visibility.Visible;
-        KeyboardNavigation.SetTabNavigation(modernNineLivesView, KeyboardNavigationMode.Cycle);
+        MountModernSurface(modernNineLivesView);
         SyncHostMusic();
         modeRegistry.NotifyStateChanged();
     }
@@ -182,12 +173,8 @@ public partial class MainWindow
         if (modernNineLivesView is null) return;
         bool failed = modernNineLivesView.Failed;
         modernNineLivesView.Dispose();
+        UnmountModernSurface(modernNineLivesView);
         modernNineLivesView = null;
-        embeddedGameHost!.Content = null;
-        embeddedGameOverlay!.Visibility = Visibility.Collapsed;
-        foreach ((UIElement element, bool enabled) in nineLivesCoveredElements)
-            element.SetCurrentValue(IsEnabledProperty, enabled);
-        nineLivesCoveredElements.Clear();
         modernNineLivesMusic?.Dispose(); modernNineLivesMusic = null;
         modernNineLivesAudio?.Dispose(); modernNineLivesAudio = null;
         preferences = preferences with { NineLivesBet = modernNineLivesBet };
