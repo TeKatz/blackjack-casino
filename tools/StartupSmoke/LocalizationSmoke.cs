@@ -224,9 +224,27 @@ internal static class LocalizationSmoke
     private static void CheckGermanShellWindows(MainWindow owner)
     {
         var profile = new PlayerProfileState { DisplayName = "Testspieler", Level = 75, Prestige = 3, Coins = 1500 };
-        // The retired WPF startup welcome is no longer shown or built. The
-        // German React lobby, its profile and language selector are checked above,
-        // while the native profile fallback is still covered below.
+        Type welcomeType = typeof(MainWindow).Assembly.GetType(
+            "BlackjackCasino.Desktop.StartupWelcomeWindow", throwOnError: true)!;
+        ConstructorInfo constructor = welcomeType.GetConstructor(
+            BindingFlags.Instance | BindingFlags.NonPublic,
+            binder: null, new[] { typeof(PlayerProfileState) }, modifiers: null)
+            ?? throw new InvalidOperationException("Missing startup welcome constructor.");
+        var welcome = (Window)constructor.Invoke([profile]);
+        welcome.Owner = owner;
+        try
+        {
+            welcome.Show();
+            welcome.UpdateLayout();
+            Require(Find<TextBlock>(welcome).Any(x => x.Text == "Willkommen zurück, Testspieler."),
+                "German welcome failed to localize its personalized greeting.");
+            Require(Find<TextBlock>(welcome).Any(x => x.Text == "Änderungen dieser Version"),
+                "German welcome still displays an English changelog heading.");
+            Require(Find<Button>(welcome).Any(x => Equals(x.Content, "CLUB BETRETEN  →")),
+                "German welcome action remained English.");
+        }
+        finally { welcome.Close(); }
+
         using var controller = new PlayerProgressionController(profile);
         var playerWindow = new PlayerProfileWindow(controller) { Owner = owner };
         try
