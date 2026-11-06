@@ -20,7 +20,7 @@ The desktop UI must not reimplement outcome rules. Presentation may animate or a
 
 `MainWindow.Lounge.OpenLoungeCore` normalizes the established C# progress records and routes straight to `OpenModernLounge` when bundled WebView2 is available. `ModernLoungeCatalog` supplies the six stable game IDs and native read-only status summaries; it is independent of all WPF `LoungeHostedGame` factories. The WebView2 host owns only presentation and validated session/revision/receipt commands, with C# services handling every save and reward. A failed or unavailable WebView2 explicitly calls `OpenLegacyLounge`, which is the sole initializer for native WPF Lounge modules and their visual decorators.
 
-The retired native startup-welcome dialog is no longer compiled. The remaining native WPF game modules provide tested emergency/fallback behavior and should remain until recovery, accessibility and device acceptance is complete. The [legacy inventory](legacy-wpf-inventory.md) describes which files are still reachable and why.
+The retired native startup-welcome dialog is not shown during normal startup, but remains as regression-reference source. The remaining native WPF game modules provide tested emergency/fallback behavior and should remain until recovery, accessibility and device acceptance is complete. The [legacy inventory](legacy-wpf-inventory.md) describes which files are still reachable and why.
 
 ## `BlackjackCasino.Desktop`
 
