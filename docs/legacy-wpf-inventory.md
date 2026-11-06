@@ -9,7 +9,7 @@ The ordinary Chill Lounge opens the React hub and all six native-authoritative s
 
 \`OpenLegacyLounge\` owns WPF factories and visual decorators exclusively. The fallback remains invoked when the locally packaged WebView2 page is unavailable or fails. No C# game rules, progressive award ledgers, persistent schemas, save IDs or updater configuration were changed.
 
-The WPF \`StartupWelcomeWindow.cs\` was fully removed because it had no product route; it was only constructed by two obsolete reflection-based smokes. Those tests were retired, while real React lobby, profile, update panel and German locale smoke coverage remains.
+The WPF \`StartupWelcomeWindow.cs\` is not part of normal startup, but remains in source because two legacy regression tests exercise its language and visual presentation. The modern React lobby, profile, updates panel and German UI have additional direct browser smoke coverage.
 
 ## Conservative reference inventory
 
@@ -22,7 +22,7 @@ The CI tool \`tools/check_ui_migration_boundaries.py\` scans all \`.cs\` and \`.
 | \`AdventureLibraryLoungeModule\`, \`AdventureCaseBoardView\` and old story minigame screens | WPF emergency story flow and investigation screens | Keep until full native alternative or tested recovery is accepted |
 | \`ManorWindow\`, \`SlotMachineWindow\` and legacy Dice/Empire views | Emergency or controlled rollback and benchmark tests | Keep until independent per-game signoff |
 | \`PlayerProfileWindow\`, \`ProgressionWindow\` and older album editor | Native export/emergency tooling | Keep until export and recovery move |
-| \`StartupWelcomeWindow\` | No real product path | Removed together with reflection-only tests |
+| \`StartupWelcomeWindow\` | No normal startup route; legacy localization and visual regression references | Retain until its older test coverage is safely superseded |
 
 ## Automated gates
 
