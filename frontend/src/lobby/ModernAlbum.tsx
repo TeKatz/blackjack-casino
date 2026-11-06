@@ -321,7 +321,7 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
        (de?'Jede Karte wurde sicher gespeichert, bevor das Siegel geöffnet wurde.':
         'Every card was committed before this reveal began.')}</p></div>
     {(phase==='stage'||phase==='await')?<div className="album-booster-stage">
-     <AlbumBooster rarity={rarity} tearing={phase==='await'}/>
+     {/* Controls appear before decorative artwork, even on a short screen. */}
      <div className="album-opening-actions">
       {phase==='stage'&&<>
        <button type="button" className="album-opening-primary" disabled={busy||selectedPackCount<=0}
@@ -334,6 +334,7 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
        ?(de?'Du kannst sicher zum Album zurückkehren.':'You can safely return to the collection.')
        :(de?'Das nächste Pack wird sicher verarbeitet…':'Preparing the next committed pack…')}</p>}
      </div>
+     <AlbumBooster rarity={rarity} tearing={phase==='await'}/>
     </div>:<>
     <div className="album-reveal-banner"><span>{rarityTitle(rarity,de).toUpperCase()}</span>
      <span>{phase==='finished'?'✓':Math.min(revealed,5)+'/5'} {de?'Karten':'cards'}</span>

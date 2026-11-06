@@ -48,13 +48,16 @@ internal static class ModernAlbumSmoke
             &&profile.Collection.Packs.GetValueOrDefault(CollectionRarity.Common)==beforePacks,
             "Staging a pack consumed inventory before confirmation.");
         await Capture(web,Path.Combine(output,"modern-album-sealed-pack.png"));
-        Require(await web.ExecuteScriptAsync(
+        string pointerDiagnostic = await web.ExecuteScriptAsync(
             "(()=>{const buttons=[...document.querySelectorAll('.phase-stage .album-opening-actions button')];"
-            +"return buttons.length>=1&&buttons.every(button=>{"
-            +"const r=button.getBoundingClientRect();"
-            +"const hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);"
-            +"return r.width>0&&r.height>0&&(hit===button||button.contains(hit));})})()")=="true",
-            "Real mouse/touch coordinates are blocked over the Album pack action buttons.");
+            +"return JSON.stringify({height:innerHeight,width:innerWidth,actions:buttons.map(b=>{"
+            +"const r=b.getBoundingClientRect(),hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);"
+            +"return {name:b.textContent,top:r.top,left:r.left,width:r.width,height:r.height,"
+            +"hit:hit?.tagName,hitClass:hit?.className,visible:r.top>=0&&r.bottom<=innerHeight,"
+            +"reachable:hit===b||b.contains(hit)}})})})()");
+        Require(pointerDiagnostic.Contains("\\"reachable\\":true", StringComparison.Ordinal)
+            && !pointerDiagnostic.Contains("\\"reachable\\":false", StringComparison.Ordinal),
+            "Real pack buttons are not reachable: "+pointerDiagnostic);
         await web.ExecuteScriptAsync("document.querySelector('.album-opening-primary')?.click()");
         await Until(()=>profile.Collection.PendingOpening is not null,
             "Opening a React pack did not persist the native receipt.");

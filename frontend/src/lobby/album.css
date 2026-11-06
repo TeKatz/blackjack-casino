@@ -117,8 +117,23 @@ button.album-collection-card:hover:not(.is-missing){transform:translateY(-6px);
 .album-opening-intro{text-align:center;}
 .album-opening-intro h2{font:normal clamp(26px,3vw,40px) Georgia,serif;color:#f8dda6;margin:5px 0;}
 .album-opening-intro p{max-width:760px;margin:0 auto;color:#bad4c2;font-size:12px;}
-.album-booster-stage{display:flex;flex-direction:column;align-items:center;gap:16px;
- min-height:400px;justify-content:center;width:100%;perspective:950px;}
+.album-booster-stage{display:flex;flex-direction:column;align-items:center;gap:12px;
+ min-height:0;justify-content:flex-start;width:100%;perspective:950px;}
+/* The sealed-pack actions are the first focusable and visible row. Never put
+   them below a fixed-height decoration that can overflow the available window. */
+.album-booster-stage>.album-opening-actions{position:relative;z-index:8;flex:0 0 auto;
+ width:100%;padding:8px 4px;pointer-events:auto;}
+.album-booster-stage>.album-opening-actions button{position:relative;z-index:9;pointer-events:auto;}
+.album-booster-stage>.album-booster{pointer-events:none;flex:0 0 auto;
+ width:min(205px,max(145px,20vh));height:min(285px,max(195px,27vh));}
+.album-booster-stage .album-booster-sigil{width:min(117px,12vh);height:min(117px,12vh);
+ font-size:clamp(40px,7vh,65px);}
+@media(max-height:710px){
+ .album-opening-panel.phase-stage,.album-opening-panel.phase-await{gap:6px;padding:10px 15px;}
+ .album-opening-panel.phase-stage .album-booster,
+ .album-opening-panel.phase-await .album-booster{height:185px;width:145px;}
+ .album-booster-stage .album-booster-sigil{width:80px;height:80px;font-size:44px;}
+}
 .album-booster{--card-rarity:#d7c28c;position:relative;width:205px;height:285px;transform-style:preserve-3d;
  transform:rotate(-4deg);filter:drop-shadow(0 20px 26px #000a);
  animation:album-pack-hover 2.8s ease-in-out infinite;}
