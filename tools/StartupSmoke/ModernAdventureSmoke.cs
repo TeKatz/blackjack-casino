@@ -99,10 +99,20 @@ internal static class ModernAdventureSmoke
         if(!condition)throw new InvalidOperationException(message);
     }
 
+    private static async Task UntilAsync(Func<bool> predicate, string failure)
+    {
+        for (int attempt=0;attempt<150;attempt++)
+        {
+            if (predicate()) return;
+            await Task.Delay(100);
+        }
+        throw new InvalidOperationException(failure);
+    }
+
     private static async Task Click(CoreWebView2 web,string selector,string predicate,string failure)
     {
         await Wait(web,"Boolean(document.querySelector("+
-            System.Text.Json.JsonSerializer.Serialize(selector)+"))",
+            System.Text.Json.JsonSerializer.Serialize(selector+":not(:disabled)")+"))",
             "Missing Tales control: "+selector);
         await web.ExecuteScriptAsync("document.querySelector("+
             System.Text.Json.JsonSerializer.Serialize(selector)+")?.click()");
