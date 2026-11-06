@@ -76,7 +76,7 @@ export function isMemoryState(v:unknown):v is MemoryState{
  ||!Array.isArray(v.difficulties)||v.difficulties.length!==5||!v.difficulties.every(tier)
  ||new Set(v.difficulties.map((d:MemoryTier)=>d.difficulty)).size!==5
  ||!record(v.stats)||!['completedGames','pairsFound','cardsFlipped','wrongMatches',
-  'perfectGames','expertCompleted','masterCompleted','bestStreak'].every(k=>int(v.stats[k]))
+  'perfectGames','expertCompleted','masterCompleted','bestStreak'].every(k=>int((v.stats as Record<string,unknown>)[k]))
  ||!numberBetween(v.stats.bestAccuracy,1)
  ||!(v.resume===null||resume(v.resume))
  ||typeof v.notice!=='string'||v.notice.length>8192
