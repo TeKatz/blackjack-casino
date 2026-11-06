@@ -17,6 +17,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="../../src/BlackjackCasino.Desktop/BlackjackModernRules.cs" Link="Presentation/BlackjackModernRules.cs" />
+    <Compile Include="../../src/BlackjackCasino.Desktop/BlackjackTableController.cs" Link="Presentation/BlackjackTableController.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/BlackjackModernProtocol.cs" Link="Presentation/BlackjackModernProtocol.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/BlackjackModernSnapshot.cs" Link="Presentation/BlackjackModernSnapshot.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/ModernReelsProtocol.cs" Link="Presentation/ModernReelsProtocol.cs" />
