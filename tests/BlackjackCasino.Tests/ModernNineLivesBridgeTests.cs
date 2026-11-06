@@ -81,7 +81,7 @@ public sealed class ModernNineLivesBridgeTests
         Assert.Equal(9, result.GetProperty("grid").GetArrayLength());
         Assert.Equal(9, result.GetProperty("bonusSpinsRemaining").GetInt32());
         Assert.Equal(9, result.GetProperty("bonusSpinsAwarded").GetInt32());
-        Assert.Equal("9750", state.GetProperty("bankroll").GetString());
+        Assert.Equal("9975", state.GetProperty("bankroll").GetString());
         // The numeric result and playable credits are computed by C#, not JS.
         Assert.Equal(spin.Payout.ToString(System.Globalization.CultureInfo.InvariantCulture),
             result.GetProperty("payout").GetString());

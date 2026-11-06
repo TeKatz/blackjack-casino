@@ -63,6 +63,7 @@ function App(){
  const timerRef=useRef<ReturnType<typeof setTimeout>[]>([]);
  const intervalRef=useRef<ReturnType<typeof setInterval>|null>(null);
  const autoScheduled=useRef<string|null>(null),visualTick=useRef(0);
+ const stoppedColumns=useRef<Set<number>>(new Set());
  const cleanTimers=useCallback(()=>{
    timerRef.current.forEach(clearTimeout);timerRef.current=[];
    if(intervalRef.current!==null){clearInterval(intervalRef.current);intervalRef.current=null;}
@@ -119,15 +120,17 @@ function App(){
    setAnimating(true);
    setSpinningColumns([0,1,2]);
    visualTick.current=0;
+   stoppedColumns.current.clear();
    // The rolling symbols are cosmetic. The settled C# grid is immutable.
    intervalRef.current=setInterval(()=>{
      visualTick.current++;
      setGrid(previous=>previous.map((value,index)=>
-       Math.floor(index%3)<3 && visualTick.current<1000
+       !stoppedColumns.current.has(index%3)
        ? symbols[(visualTick.current+index*3)%symbols.length] : value));
    },85);
    [900,1480,2040].forEach((delay,reel)=>{
      timerRef.current.push(setTimeout(()=>{
+       stoppedColumns.current.add(reel);
        setSpinningColumns(previous=>previous.filter(x=>x!==reel));
        setGrid(previous=>previous.map((value,index)=>
          index%3===reel?last.grid[index]:value));
