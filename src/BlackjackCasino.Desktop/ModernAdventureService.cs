@@ -39,6 +39,8 @@ internal sealed class ModernAdventureService
     private readonly Func<string?> playerName;
     private readonly ModernAdventureCopy text;
     private readonly Func<string, string> localize;
+    private readonly Func<(bool Enabled, double Volume)> musicSettings;
+    private readonly Action<bool, double> saveMusic;
     private string selectedId, screen = "library";
     private string? playingId;
     private ModernAdventureEncounter? encounter;
@@ -49,7 +51,9 @@ internal sealed class ModernAdventureService
         Action<AdventureProgressState> persist,
         Func<AdventureDefinition, AdventureRunState, AdventureCompletionMetaResult> award,
         Func<string?>? playerName = null, ModernAdventureCopy? text = null,
-        Func<string, string>? localize = null)
+        Func<string, string>? localize = null,
+        Func<(bool Enabled, double Volume)>? musicSettings = null,
+        Action<bool, double>? saveMusic = null)
     {
         this.progress = Clone(saved);
         this.persist = persist;
@@ -57,6 +61,8 @@ internal sealed class ModernAdventureService
         this.playerName = playerName ?? (() => "Player");
         this.text = text ?? ModernAdventureCopy.English;
         this.localize = localize ?? (value => value);
+        this.musicSettings = musicSettings ?? (() => (true, .24));
+        this.saveMusic = saveMusic ?? ((_, _) => { });
         selectedId = AdventureCatalog.All.Any(a => a.Id == progress.LastAdventureId)
             ? progress.LastAdventureId! : AdventureCatalog.All[0].Id;
     }
@@ -207,6 +213,8 @@ internal sealed class ModernAdventureService
                 }).ToArray(),
             }).ToArray(),
             DefaultPlayerName = playerName() ?? "Player",
+            MusicEnabled = musicSettings().Enabled,
+            MusicVolume = musicSettings().Volume,
             Started = progress.Runs.Count,
             Completed = progress.Runs.Values.Count(r => r.Completed),
             Run = run, Encounter = encounter?.Snapshot(),
@@ -259,6 +267,10 @@ internal sealed class ModernAdventureService
     {
         switch (command.Action)
         {
+            case "adventure.music":
+                if (screen != "library") return (false, "Music controls are only available in the library.");
+                saveMusic(command.Enabled!.Value, command.Volume!.Value);
+                return (true, "Music settings saved.");
             case "adventure.select":
                 selectedId = command.AdventureId!;
                 var selected = Clone(progress);

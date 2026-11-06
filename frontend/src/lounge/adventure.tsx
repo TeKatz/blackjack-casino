@@ -298,6 +298,8 @@ function Completion({run,copy,meta,pending,send}:{
 }
 export function AdventureScreen({state,language,pending,error,command}:Props){
  const t=words[language], [classId,setClassId]=useState('rogue');
+ const [musicVolume,setMusicVolume]=useState(state.musicVolume);
+ useEffect(()=>setMusicVolume(state.musicVolume),[state.musicVolume]);
  const selected=state.adventures.find(tale=>tale.id===state.selectedAdventureId);
  const selectedClass=state.classes.find(c=>c.id===classId)??state.classes[0];
  useEffect(()=>{if(!state.classes.some(c=>c.id===classId))setClassId(state.classes[0]?.id??'rogue');},
@@ -342,6 +344,18 @@ export function AdventureScreen({state,language,pending,error,command}:Props){
        {a.name} <b>{a.score}</b></span>)}</div>
       {selectedClass.special&&<p>{t.special} · {selectedClass.special}</p>}</>}
      <p>{t.profile}: {state.defaultPlayerName}</p>
+     <div className="backroom-music"><strong>BACKROOM SCORE · Lanterns Beyond the Door</strong>
+      <button disabled={pending} onClick={()=>send({action:'adventure.music',
+       enabled:!state.musicEnabled,volume:musicVolume})}>
+       MUSIC: {state.musicEnabled?'ON':'OFF'}</button>
+      <label>VOLUME · {Math.round(musicVolume/.32*100)}%
+       <input type="range" min="0" max="0.32" step="0.01" value={musicVolume}
+        onChange={e=>setMusicVolume(Number(e.target.value))}
+        onPointerUp={e=>send({action:'adventure.music',enabled:state.musicEnabled,
+         volume:Number(e.currentTarget.value)})}
+        onKeyUp={e=>send({action:'adventure.music',enabled:state.musicEnabled,
+         volume:Number(e.currentTarget.value)})}/></label>
+     </div>
      <button className="backroom-primary" disabled={pending||!selectedClass} onClick={start}>
       {selected?.status==='active'?t.replace:t.newRun}</button>
      <small>{t.sound}</small>

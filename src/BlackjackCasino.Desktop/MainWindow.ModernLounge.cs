@@ -206,7 +206,10 @@ public partial class MainWindow
                     AdventureTextLocalization.BoardTitle, AdventureTextLocalization.BoardDescription,
                     AdventureTextLocalization.ItemName, AdventureTextLocalization.ItemDescription,
                     AdventureTextLocalization.ConditionName),
-                AdventureTextLocalization.Raw);
+                AdventureTextLocalization.Raw,
+                () => (preferences.Presentation("adventure").MusicEnabled,
+                    preferences.Presentation("adventure").MusicVolume),
+                SaveModernAdventureMusic);
             SetModernAdventureSoundtrack(true);
             modernLoungeView?.Refresh();
             return;
@@ -365,6 +368,19 @@ public partial class MainWindow
         loungeBackgroundMusic = new BackgroundMusic(adventureActive ? Soundtrack.Adventure : Soundtrack.ChillLounge);
         loungeBackgroundMusic.Start(settings.MusicEnabled, settings.MusicVolume);
         SyncHostMusic();
+    }
+
+    private void SaveModernAdventureMusic(bool enabled, double volume)
+    {
+        AreaPresentationSettings current = preferences.Presentation("adventure");
+        AreaPresentationSettings next = (current with
+        { MusicEnabled = enabled, MusicVolume = Math.Clamp(volume, 0, .32) }).Sanitize();
+        AppPreferences previous = preferences;
+        preferences = preferences.WithPresentation("adventure", next);
+        try { if (!testSession) SavePreferences(); }
+        catch { preferences = previous; throw; }
+        loungeBackgroundMusic?.SetEnabled(next.MusicEnabled);
+        loungeBackgroundMusic?.SetVolume(next.MusicVolume);
     }
 
     private void SaveModernAdventureProgress(AdventureProgressState state)

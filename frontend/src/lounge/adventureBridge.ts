@@ -39,6 +39,7 @@ export type TaleEncounter={id:string;type:'Blackjack'|'FiveOfAKind';title:string
  playerCategory:string|null;opponentCategory:string|null}};
 export type TaleState={screen:TaleScreen;selectedAdventureId:string;adventures:TaleCatalog[];
  classes:TaleClass[];defaultPlayerName:string;started:number;completed:number;
+ musicEnabled:boolean;musicVolume:number;
  run:TaleRun|null;encounter:TaleEncounter|null;notice:string;metaNotice:string};
 export type TaleIntent=
  |{action:'adventure.select'|'adventure.resume';adventureId:string}
@@ -48,6 +49,7 @@ export type TaleIntent=
  |{action:'adventure.board.move';nodeId:string;x:number;y:number}
  |{action:'adventure.board.view';zoom:number;panX:number;panY:number}
  |{action:'adventure.encounter.hold';index:number}
+ |{action:'adventure.music';enabled:boolean;volume:number}
  |{action:'adventure.roll'|'adventure.board.open'|'adventure.board.close'
   |'adventure.encounter.hit'|'adventure.encounter.stand'
   |'adventure.encounter.roll'|'adventure.encounter.bank'|'adventure.encounter.finish'
@@ -161,6 +163,7 @@ export function isTaleState(v:unknown):v is TaleState{
  ||!Array.isArray(v.classes)||v.classes.length<1||v.classes.length>100
  ||!v.classes.every(classInfo)||!label(v.defaultPlayerName,300)
  ||!int(v.started,10000)||!int(v.completed,10000)
+ ||typeof v.musicEnabled!=='boolean'||!num(v.musicVolume)||v.musicVolume<0||v.musicVolume>.32
  ||!label(v.notice,8192)||!label(v.metaNotice,8192))return false;
  if(v.screen==='library')return v.run===null&&v.encounter===null;
  if(!game(v.run))return false;

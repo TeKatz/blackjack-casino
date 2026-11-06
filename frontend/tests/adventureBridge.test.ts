@@ -10,7 +10,7 @@ const classes=[{id:'rogue',name:'Rogue',description:'A resourceful adventurer',
  maxHitPoints:16,armor:14,special:'',abilities}];
 const library={screen:'library',selectedAdventureId:'black-stag',
  adventures,classes,defaultPlayerName:'Player',started:0,completed:0,
- run:null,encounter:null,notice:'',metaNotice:''};
+ run:null,encounter:null,notice:'',metaNotice:'',musicEnabled:true,musicVolume:.24};
 const run={runId:'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',adventureId:'black-stag',
  completed:false,endingId:null,rollsMade:0,scene:{id:'opening',title:'The path',
  body:'The door creaks.',speaker:null,location:'Forest',act:'Act I'},

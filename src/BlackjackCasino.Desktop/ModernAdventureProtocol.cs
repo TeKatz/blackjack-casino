@@ -11,7 +11,7 @@ internal sealed record ModernAdventureCommand(
     string RequestId, string Session, long ExpectedRevision, string Action,
     string? AdventureId, string? ClassId, string? ChoiceId, string? NodeId,
     bool? ConfirmReplace, int? Index, double? X, double? Y,
-    double? Zoom, double? PanX, double? PanY);
+    double? Zoom, double? PanX, double? PanY, bool? Enabled, double? Volume);
 
 internal sealed record ModernAdventureReply(string RequestId, bool Success, string Message, long Revision);
 
@@ -34,7 +34,7 @@ internal static class ModernAdventureProtocol
 
             static bool Known(string key) => key is "type" or "version" or "requestId" or "session"
                 or "expectedRevision" or "action" or "adventureId" or "classId" or "choiceId" or "nodeId"
-                or "confirmReplace" or "index" or "x" or "y" or "zoom" or "panX" or "panY";
+                or "confirmReplace" or "index" or "x" or "y" or "zoom" or "panX" or "panY" or "enabled" or "volume";
             if (root.EnumerateObject().Any(p => !Known(p.Name) ||
                 p.Value.ValueKind == JsonValueKind.Null)) return null;
 
@@ -65,10 +65,10 @@ internal static class ModernAdventureProtocol
             string? id = Str("requestId"), session = Str("session"), action = Str("action");
             string? tale = Str("adventureId"), classId = Str("classId"),
                 choice = Str("choiceId"), node = Str("nodeId");
-            bool? confirm = Bool("confirmReplace");
+            bool? confirm = Bool("confirmReplace"), enabled = Bool("enabled");
             int? index = Int("index");
             double? x = Number("x"), y = Number("y"), zoom = Number("zoom"),
-                panX = Number("panX"), panY = Number("panY");
+                panX = Number("panX"), panY = Number("panY"), volume = Number("volume");
             if (!Guid.TryParseExact(id, "D", out _) || !Guid.TryParseExact(session, "D", out _) ||
                 action is null) return null;
             bool Empty(string field) => !root.TryGetProperty(field, out _);
@@ -76,7 +76,7 @@ internal static class ModernAdventureProtocol
             {
                 HashSet<string> wanted = fields.ToHashSet(StringComparer.Ordinal);
                 return new[] { "adventureId", "classId", "choiceId", "nodeId",
-                    "confirmReplace", "index", "x", "y", "zoom", "panX", "panY" }
+                    "confirmReplace", "index", "x", "y", "zoom", "panX", "panY", "enabled", "volume" }
                     .All(key => wanted.Contains(key) ? !Empty(key) : Empty(key));
             }
             bool Tale() => tale is { Length: > 0 and <= 100 } &&
@@ -89,6 +89,7 @@ internal static class ModernAdventureProtocol
             bool valid = action switch
             {
                 "adventure.select" or "adventure.resume" => Only("adventureId") && Tale(),
+                "adventure.music" => Only("enabled", "volume") && enabled is not null && volume is >= 0 and <= .32,
                 "adventure.start" => Tale() && classId is { Length: > 0 and <= 100 } &&
                     (Only("adventureId", "classId") ||
                     Only("adventureId", "classId", "confirmReplace") && confirm == true),
@@ -110,7 +111,7 @@ internal static class ModernAdventureProtocol
             };
             return valid
                 ? new(id!, session!, expected, action, tale, classId, choice, node,
-                    confirm, index, x, y, zoom, panX, panY)
+                    confirm, index, x, y, zoom, panX, panY, enabled, volume)
                 : null;
         }
         catch (Exception ex) when (ex is JsonException or InvalidOperationException or FormatException)
