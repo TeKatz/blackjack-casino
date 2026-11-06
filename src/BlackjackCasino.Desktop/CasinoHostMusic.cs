@@ -23,5 +23,13 @@ internal sealed class CasinoHostMusic : IDisposable
 
     internal void Mute() => backgroundMusic.SetEnabled(false);
 
+    // Native modal recovery preserves the original enable-only restore;
+    // closing Midnight Dice also updates the currently selected area's volume.
+    internal void Resume(AreaPresentationSettings settings, bool updateVolume = false)
+    {
+        backgroundMusic.SetEnabled(settings.MusicEnabled);
+        if (updateVolume) backgroundMusic.SetVolume(settings.MusicVolume);
+    }
+
     public void Dispose() => backgroundMusic.Dispose();
 }

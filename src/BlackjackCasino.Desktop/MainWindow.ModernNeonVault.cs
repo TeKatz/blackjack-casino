@@ -60,7 +60,7 @@ public partial class MainWindow
         var presentation = preferences.Presentation("neon-vault");
         modernNeonVaultMusic = new BackgroundMusic(Soundtrack.Reels);
         modernNeonVaultMusic.Start(presentation.MusicEnabled, presentation.MusicVolume);
-        backgroundMusic.SetEnabled(false);
+        hostMusic.Mute();
         modernNeonVaultView = new ModernNeonVaultView(
             modernNeonVaultCommands!,
             () => ModernNeonVaultSnapshot.Create(modernNeonVaultMachine!, modernNeonVaultBet,

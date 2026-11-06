@@ -48,7 +48,7 @@ public partial class MainWindow
         AreaPresentationSettings presentation = preferences.Presentation("midnight-reels");
         modernReelsMusic = new BackgroundMusic(Soundtrack.Reels);
         modernReelsMusic.Start(presentation.MusicEnabled, presentation.MusicVolume);
-        backgroundMusic.SetEnabled(false);
+        hostMusic.Mute();
 
         // Detach the lobby browser before hosting the new WebView, avoiding the
         // first-layout/hover deadlock that once affected Casino Empire.

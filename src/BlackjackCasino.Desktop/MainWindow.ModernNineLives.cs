@@ -60,7 +60,7 @@ public partial class MainWindow
         var presentation = preferences.Presentation("nine-lives");
         modernNineLivesMusic = new BackgroundMusic(Soundtrack.Manor);
         modernNineLivesMusic.Start(presentation.MusicEnabled, presentation.MusicVolume);
-        backgroundMusic.SetEnabled(false);
+        hostMusic.Mute();
         if (lobby is not null) lobby.Visibility = Visibility.Collapsed;
         modernNineLivesView = new ModernNineLivesView(
             modernNineLivesCommands!,

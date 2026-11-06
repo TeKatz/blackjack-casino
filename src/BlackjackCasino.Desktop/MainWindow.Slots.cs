@@ -41,9 +41,9 @@ public partial class MainWindow
                 levelUp |= award.HasLevelUp;
                 return award;
             }, musicEnabled: presentation.MusicEnabled, musicVolume: presentation.MusicVolume) { Owner = this };
-        backgroundMusic.SetEnabled(false);
+        hostMusic.Mute();
         try { window.ShowDialog(); }
-        finally { backgroundMusic.SetEnabled(HostMusicSettings.MusicEnabled); }
+        finally { hostMusic.Resume(HostMusicSettings); }
 
         preferences = preferences with { SlotBet = window.SelectedBet };
         preferences = preferences.WithPresentation("midnight-reels", presentation with { SoundEnabled = window.SoundsEnabled, AnimationsEnabled = window.AnimationsEnabled });

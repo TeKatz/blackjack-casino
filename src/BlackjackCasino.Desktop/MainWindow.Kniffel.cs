@@ -219,8 +219,7 @@ public partial class MainWindow
         CasinoAudio.Mixer.Stop(kniffelAudioOwner);
         kniffelMusic?.Dispose();
         kniffelMusic = null;
-        backgroundMusic.SetEnabled(HostMusicSettings.MusicEnabled);
-        backgroundMusic.SetVolume(HostMusicSettings.MusicVolume);
+        hostMusic.Resume(HostMusicSettings, updateVolume: true);
         if (lobby is not null) lobby.Visibility = Visibility.Visible;
         embeddedGameHost!.Content = null;
         kniffelView = null;
