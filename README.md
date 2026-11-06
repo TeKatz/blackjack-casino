@@ -4,7 +4,7 @@ An **offline-first, single-player casino for Windows**, built around virtual cre
 
 The desktop application uses **.NET 10 with WPF as the Windows host**. The casino lobby, Chill Lounge hub, Blackjack table, Midnight Reels, Neon Vault, Nine Lives, Midnight Merge, Midnight Dice, Casino Empire and Midnight Manor now have modern **React + TypeScript** presentations, hosted locally through **WebView2**; PixiJS powers richer scenes where appropriate. Player profile editing (display name, owned titles/portraits), Season Pass management, Blackjack Hand History and the lobby's Casino Vault now live in React, alongside the shop, challenges and statistics. The Collector's Album (including its five-card pack-opening animations, artwork archive and sequential Open All) has also moved to React. Progress export and the emergency Album fallback remain native. Existing game logic and persistent player data remain in C#.
 
-The current migration repairs and device acceptance checks are documented in [Migration regression repairs](docs/migration-regression-repairs.md). The first host-modernization step consolidates seven React game routes behind a single tested foreground-surface adapter; see [Desktop host modernization](docs/host-modernization-phase5.md).
+The current migration repairs and device acceptance checks are documented in [Migration regression repairs](docs/migration-regression-repairs.md). Phase 5 consolidates seven React game routes behind a shared foreground-surface adapter and the ten React page hosts behind a common offline WebView2 security bootstrap; see [Desktop host modernization](docs/host-modernization-phase5.md).
 
 ## Games and experiences
 

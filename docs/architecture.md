@@ -28,6 +28,10 @@ The retired native startup-welcome dialog is not shown during normal startup, bu
 
 The native `LoungeWindow` and other fallback source paths remain. This is a reduction in WPF hosting responsibilities, **not yet a non-WPF executable**. The source boundary and Windows lifecycle test are covered in [desktop host modernization](host-modernization-phase5.md).
 
+## Offline WebView2 initialization and trust boundary
+
+`ModernWebViewBootstrap` is the shared browser-initialization adapter for the ten local React page hosts. It configures the existing `DenyCors` static-resource mapping, disables browser tooling and native privileges, blocks new windows and permission prompts and delegates navigation allowlisting to the exact per-page trust function. If the owner closes while WebView2 initializes, it does not attach handlers or navigate. Each view still owns its navigation/process failure handling, message protocol, native C# transaction session and durable receipts. Real Windows Lobby/Lounge smokes assert the browser configuration; source-level CI prevents reintroduction of competing initializers.
+
 ## `BlackjackCasino.Desktop`
 
 The WPF desktop project remains the native host for the React casino lobby and existing game UIs. It owns:

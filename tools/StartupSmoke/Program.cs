@@ -468,6 +468,9 @@ internal static class Program
             + ", Source=" + modern.Browser.Source + ", Navigation=" + modern.LastNavigation
             + ", LastMessageSource=" + modern.LastMessageSource + ", LastMessage=" + modern.LastMessageType);
 
+        ModernWebViewBootstrapSmoke.RequireHardened(
+            modern.Browser.CoreWebView2!, "React lobby");
+
         // Do not accept the static browser preview or a blank canvas. The host
         // must have delivered the real seeded C# profile and all registered modes.
         string result = await modern.Browser.CoreWebView2!.ExecuteScriptAsync(

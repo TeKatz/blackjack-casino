@@ -22,6 +22,7 @@ internal static class ModernLoungeSmoke
                 v.Ready && v.IsVisible && v.Browser.CoreWebView2 is not null),
             "React Lounge never became ready.");
         CoreWebView2 web = view.Browser.CoreWebView2!;
+        ModernWebViewBootstrapSmoke.RequireHardened(web, "React Lounge");
         Require(LoungeHostedGameRegistry.Snapshot.Count == 0,
             "Opening React Lounge must not register or instantiate WPF rollback modules.");
         await UntilAsync(async () => await web.ExecuteScriptAsync(

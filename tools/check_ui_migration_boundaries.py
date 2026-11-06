@@ -134,6 +134,45 @@ def main() -> int:
         if "CoveredElements.Add(" in source or "CoveredElements.Clear()" in source:
             issues.append(f"{filename}: duplicate native-input coverage has returned.")
 
+    # Phase 5: all current React WebView2 hosts must apply exactly one
+    # shared offline-browser setup, while keeping each page's trusted URI
+    # predicate and independent failure/message callbacks.
+    webview_views = (
+        "ModernLobbyView.cs", "ModernLoungeView.cs",
+        "ModernBlackjackView.cs", "ModernDiceView.cs",
+        "ModernReelsView.cs", "ModernNineLivesView.cs",
+        "ModernNeonVaultView.cs", "ModernMergeView.cs",
+        "ModernEmpireView.cs", "ModernManorPreviewWindow.cs",
+    )
+    webview_policy = ROOT / "src/BlackjackCasino.Desktop/ModernWebViewBootstrap.cs"
+    if not webview_policy.is_file():
+        issues.append("Shared offline WebView2 bootstrap was not found.")
+    else:
+        policy = text(webview_policy)
+        for token in (
+            "EnsureCoreWebView2Async()", "CoreWebView2HostResourceAccessKind.DenyCors",
+            "AreDevToolsEnabled = false", "AreHostObjectsAllowed = false",
+            "AreDefaultContextMenusEnabled = false",
+            "IsWebMessageEnabled = true", "NewWindowRequested",
+            "PermissionRequested", "NavigationStarting", "trustedPage(args.Uri)",
+            "if (isClosed()) return null;",
+        ):
+            if token not in policy:
+                issues.append("Shared WebView2 security policy lost: " + token)
+    for name in webview_views:
+        src = text(ROOT / "src/BlackjackCasino.Desktop" / name)
+        if src.count("ModernWebViewBootstrap.InitializeAsync(") != 1:
+            issues.append(f"{name}: the shared WebView2 startup must be invoked exactly once.")
+        if "SetVirtualHostNameToFolderMapping(" in src or "EnsureCoreWebView2Async(" in src:
+            issues.append(f"{name}: duplicate WebView2 initialization or host mapping remains.")
+        if "core.WebMessageReceived" not in src or "core.NavigationCompleted" not in src:
+            issues.append(f"{name}: native message bridge or navigation failure handling is missing.")
+    if "ModernWebViewBootstrapSmoke.RequireHardened(" not in text(
+            ROOT / "tools/StartupSmoke/Program.cs"):
+        issues.append("Real Windows lobby security smoke is missing.")
+    if "ModernWebViewBootstrapSmoke.RequireHardened(" not in smoke:
+        issues.append("Real Windows Lounge security smoke is missing.")
+
     print("React/WPF Lounge migration boundary:")
     print("  C# catalog:", ", ".join(backend))
     print("  Normal React snapshot independent of WPF factories:", "yes" if not issues else "review")

@@ -27,14 +27,22 @@ This split makes further host replacement possible without changing each game-sp
 - `tools/check_ui_migration_boundaries.py` asserts that each modern game route uses the common surface rather than reintroducing duplicated WPF overlay/coverage code.
 - Repository contracts, .NET unit tests, frontend tests, Windows presentation regression and packaged Development smoke remain required before a release.
 
+## Shared offline WebView2 startup (second extraction)
+
+`ModernWebViewBootstrap` now initializes the browser and enforces the same restrictive local-document host policy for ten views: lobby, six primary embedded games (Blackjack, Dice, Reels, Merge, Neon Vault, Nine Lives), the Chill Lounge, Empire, and Manor. It disables context menus, developer tools, host objects, status bar and zoom controls; enables only the existing validated browser-message channel; maps the packaged `ModernFrontend` directory with `DenyCors`; and rejects untrusted document navigation, pop-ups and permission requests.
+
+The helper accepts the *existing per-view trusted page predicate*. There is no new permissive origin list: `lobby.html` cannot navigate to `lounge.html` simply because both reside on the virtual host. The caller still owns WebView2 navigation failures, process restarts/crashes, page-specific bridge parsing, watchdogs, session/revision validation and exactly-once native receipts. If a view was closed before initialization completed, the helper returns without attaching handlers or navigating the browser.
+
+The Windows StartupSmoke now checks hardened settings on initialized, packaged Lobby and Lounge WebView2 instances. CI also audits all ten view classes to prevent duplicated or bypassed setup logic. Browser-origin/security behavior remains covered by the existing protocol tests and packaged runtime tests.
+
 ## Still in the old WPF host
 
 - The main window's frame, custom chrome, updater and preferences.
-- The WebView2 initialization, virtual-host mappings, origin checks and per-game bridge handlers. These are still intentionally separate to preserve their strict message contracts.
+- Shared browser startup and security are centralized. Per-game origin predicates, navigation/process-failure recovery, watchdogs and validated command/receipt bridges intentionally remain separate.
 - Legacy `ShowEmbeddedGame` for old WPF windows and Midnight Manor resource/lifecycle behavior.
 - The native emergency lobby and full fallback Lounge; deleting them before real-device recovery sign-off would lose functionality.
 - The separate Tales investigation window and its native owner relationship.
 
 ## Next host steps
 
-First extract the common WebView2 lifecycle/environment and trust policy in small test-backed changes while preserving per-route allowlists and session/receipt checks. Then replace the oversized frame's responsibilities with focused shell services (window chrome, updater, saved preferences, navigation, audio, foreground view ownership). Only after emergency recovery, detached windows, release-upgrade behavior, Windows 10/11 and 125–200% DPI acceptance can the WPF executable be replaced by a smaller native shell. No merge to `main` or stable-channel rollout is part of this milestone.
+Next continue separating the oversized frame's responsibilities into focused shell services (window chrome, updater, saved preferences, navigation, audio, foreground view ownership). Only after emergency recovery, detached windows, release-upgrade behavior, Windows 10/11 and 125–200% DPI acceptance can the WPF executable be replaced by a smaller native shell. No merge to `main` or stable-channel rollout is part of this milestone.
