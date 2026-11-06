@@ -42,6 +42,14 @@ The `lounge.solitaire.command` protocol accepts only a session/revision GUID-ver
 
 Dedicated xUnit, Vitest and real Windows WebView2 smokes cover variant dealing, replay prevention, failed persistence, 81-card-equivalent visual layouts where applicable, original FreeCell numbers, native draw/resume and navigation. The old Solitaire WPF interface remains for emergency fallback and comparison only; the main WPF host and the remaining four Lounge destinations are still to be migrated. See [Solitaire modernization](solitaire-modernization.md).
 
+## Word Search React gameplay and catalog expansion (2026-11-06)
+
+The normal Word Search route now stays inside the React Chill Lounge, with six difficulty panels, true 8×8 through 13×13 grids, click/keyboard or pointer-drag word selection, previously found highlights, start-letter hint feedback, the six original XP tiers, autosave/resume and a C#-authored completion screen. The browser is view-only for puzzle placement and progression: C# determines all answers, save states, elapsed time and awards.
+
+The offline puzzle catalog is **288 puzzles**, with **48 in each of six difficulties** rather than 24. The original 144 puzzle IDs, seeds and authored theme lists are unchanged for durable save/reward compatibility. Twelve extra bilingual themes (two seeded variations each) expand the original 12 themes to 24 and add hundreds of new words. Former completion challenge IDs remain unchanged; the new catalog has independent 288-puzzle, 2,736-word, 48-Expert, 48-Master and 200-no-hint milestones. No hint or time penalty was added.
+
+The `lounge.word-search.command` protocol validates session/revision/request GUIDs and accepts only `start`, `resume`, `select`, `hint`, `back` or `exit`. Native `WordSearchGame.TryFind` validates endpoints in both directions against saved generated placements. Cloned candidate boards are persisted before becoming live; a completed puzzle is recorded and rewarded through the existing exactly-once C# completion ledger. Unit, Vitest and real Windows WebView2 smokes cover the catalog, replay safety, new vocabulary, save rollback, native hints, word selection, resume and completion. Existing WPF Word Search code remains for rollback until the host cleanup phase. See [Word Search modernization](word-search-modernization.md).
+
 ## Casino Empire presentation migration (2026-11-05)
 
 Empire now has a separate React/TypeScript entry point (`empire.html`) for both
