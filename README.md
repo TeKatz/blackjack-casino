@@ -132,7 +132,7 @@ Build the frontend before the Windows client so its bundled files are included i
 
 ```powershell
 cd frontend
-npm install --no-package-lock --no-audit --no-fund
+npm ci --no-audit --no-fund
 npm test
 npm run build
 cd ..

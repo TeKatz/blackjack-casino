@@ -30,7 +30,7 @@ jobs:
           node-version: '22'
       - name: Install exact top-level dependencies
         working-directory: frontend
-        run: npm install --no-package-lock --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
       - name: Frontend bridge tests
         working-directory: frontend
         run: npm test

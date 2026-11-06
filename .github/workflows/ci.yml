@@ -32,7 +32,7 @@ jobs:
 
       - name: Install modern frontend dependencies
         working-directory: frontend
-        run: npm install --no-package-lock --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
       - name: Test modern frontend
         working-directory: frontend
@@ -229,7 +229,7 @@ jobs:
       - name: Build local frontend
         working-directory: frontend
         run: |
-          npm install --no-package-lock --no-audit --no-fund
+          npm ci --no-audit --no-fund
           npm run build
       - uses: actions/setup-dotnet@v6
         with:
