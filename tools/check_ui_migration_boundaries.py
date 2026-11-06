@@ -66,10 +66,8 @@ def main() -> int:
         issues.append("React Lounge snapshot boundary was not found.")
     elif "ModernLoungeCatalog.Create(" not in modern[snapshot_start:snapshot_end]:
         issues.append("React snapshot must be created from its independent modern catalog.")
-    if snapshot_start >= 0 and snapshot_end >= 0 and "LoungeHostedGameRegistry" in modern[snapshot_start:snapshot_end]:
-        issues.append("React snapshot still depends on the native WPF game registry.")
-    if "LoungeHostedGameRegistry.SetSessionModules(" in modern:
-        issues.append("React game routes may not register WPF game factories.")
+    if "LoungeHostedGameRegistry" in modern:
+        issues.append("React host must not reference native WPF game registration, even on close.")
     routing_start = modern.find("private void OnModernLoungeGameSelected(")
     routing_end = modern.find("private ModernSudokuReply ApplyModernSudokuCommand(", routing_start)
     if routing_start < 0 or routing_end < 0:

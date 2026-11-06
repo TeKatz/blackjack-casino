@@ -587,7 +587,6 @@ public partial class MainWindow
         foreach ((UIElement element, bool enabled) in modernLoungeCoveredElements)
             element.SetCurrentValue(IsEnabledProperty, enabled);
         modernLoungeCoveredElements.Clear();
-        LoungeHostedGameRegistry.ClearSessionModules();
         loungeBackgroundMusic?.Dispose();
         loungeBackgroundMusic = null;
         if (lobby is not null) lobby.Visibility = Visibility.Visible;
