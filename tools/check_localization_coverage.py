@@ -44,7 +44,6 @@ PHASE1_CODE = {
     "StartupWelcomeWindow.cs",
     "PlayerProfileWindow.cs",
     "MainWindow.TableRules.cs",
-    "TableRulesDialog.cs",
     "CasinoUxEnhancements.cs",
 }
 # Product identity is deliberately shared by both language versions.
