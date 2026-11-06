@@ -8,43 +8,51 @@ public partial class MainWindow
     private bool BrowserRecoveryOpen => browserRecoveryView is not null;
 
     /// <summary>
-    /// Offer recovery without creating LoungeWindow or any WPF game module.
-    /// Legacy gameplay remains a deliberate option until native recovery is retired.
+    /// Browser-independent error surface. The only way to start a native game is
+    /// the explicit legacy button, offered only where a real fallback exists.
+    /// A retry constructs a fresh WebView; it never replays a wager or command.
     /// </summary>
-    private void ShowLoungeBrowserRecovery(bool assetsAvailable)
+    private void ShowBrowserRecovery(string title, bool assetsAvailable, Action retry,
+        Action? openLegacyGames = null)
     {
-        if (BrowserRecoveryOpen || embeddedGameShell is not null || ModernLoungeOpen)
+        ArgumentException.ThrowIfNullOrWhiteSpace(title);
+        ArgumentNullException.ThrowIfNull(retry);
+        if (BrowserRecoveryOpen || embeddedGameShell is not null
+            || modernGameSurface?.IsOccupied == true)
             return;
 
-        var view = new BrowserRecoveryView(assetsAvailable, ResolveLoungeBrowserRecovery);
+        var view = new BrowserRecoveryView(title, assetsAvailable,
+            legacyGamesAvailable: openLegacyGames is not null, selected: action =>
+            {
+                if (!BrowserRecoveryOpen) return;
+                CloseBrowserRecovery();
+                switch (action)
+                {
+                    case BrowserRecoveryAction.RetryModern:
+                        retry();
+                        break;
+                    case BrowserRecoveryAction.OpenLegacyGames when openLegacyGames is not null:
+                        openLegacyGames();
+                        break;
+                    case BrowserRecoveryAction.ReturnToLobby:
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(action), action, null);
+                }
+            });
         MountModernSurface(view);
         browserRecoveryView = view;
         if (lobby is not null) lobby.Visibility = Visibility.Collapsed;
-        TableModeText.Text = "Chill Lounge · recovery";
+        TableModeText.Text = title + " · recovery";
         SyncHostMusic();
         modeRegistry.NotifyStateChanged();
         Dispatcher.BeginInvoke(new Action(() => { view.Focus(); }));
     }
 
-    private void ResolveLoungeBrowserRecovery(BrowserRecoveryAction action)
-    {
-        if (!BrowserRecoveryOpen) return;
-        CloseBrowserRecovery();
-
-        switch (action)
-        {
-            case BrowserRecoveryAction.RetryModern:
-                OpenLoungeCore(null);
-                break;
-            case BrowserRecoveryAction.OpenLegacyGames:
-                OpenLoungeCore(null, forceLegacy: true);
-                break;
-            case BrowserRecoveryAction.ReturnToLobby:
-                break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(action), action, null);
-        }
-    }
+    private void ShowLoungeBrowserRecovery(bool assetsAvailable)
+        => ShowBrowserRecovery("Chill Lounge", assetsAvailable,
+            () => OpenLoungeCore(null),
+            () => OpenLoungeCore(null, forceLegacy: true));
 
     private void CloseBrowserRecovery()
     {

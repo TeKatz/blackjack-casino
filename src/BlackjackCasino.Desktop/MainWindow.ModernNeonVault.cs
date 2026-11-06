@@ -28,10 +28,7 @@ public partial class MainWindow
             || MetaPageOpen || ModernNineLivesOpen || embeddedGameShell is not null) return;
         if (!ModernNeonVaultView.IsAvailable)
         {
-            StatusText.Text = "Neon Vault frontend missing. Reinstall the Development build.";
-            if (!testSession)
-                MessageBox.Show(this, StatusText.Text, "Neon Vault unavailable",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
+            ShowBrowserRecovery("Neon Vault", assetsAvailable: false, OpenModernNeonVault);
             return;
         }
         ProcessLatestCompletedRound();
@@ -170,7 +167,9 @@ public partial class MainWindow
 
     private void OnModernNeonVaultFailed()
     {
-        if (modernNeonVaultView?.Failed == true && IsLoaded) CloseModernNeonVault();
+        if (modernNeonVaultView?.Failed != true || !IsLoaded) return;
+        CloseModernNeonVault();
+        ShowBrowserRecovery("Neon Vault", ModernNeonVaultView.IsAvailable, OpenModernNeonVault);
     }
 
     private void CloseModernNeonVault()

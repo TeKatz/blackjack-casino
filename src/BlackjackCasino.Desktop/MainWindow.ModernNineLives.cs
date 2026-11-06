@@ -28,10 +28,7 @@ public partial class MainWindow
             || MetaPageOpen || embeddedGameShell is not null) return;
         if (!ModernNineLivesView.IsAvailable)
         {
-            StatusText.Text = "Nine Lives frontend missing. Reinstall the Development build.";
-            if (!testSession)
-                MessageBox.Show(this, StatusText.Text, "Nine Lives unavailable",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
+            ShowBrowserRecovery("Nine Lives", assetsAvailable: false, OpenModernNineLives);
             return;
         }
         ProcessLatestCompletedRound();
@@ -165,7 +162,9 @@ public partial class MainWindow
 
     private void OnModernNineLivesFailed()
     {
-        if (modernNineLivesView?.Failed == true && IsLoaded) CloseModernNineLives();
+        if (modernNineLivesView?.Failed != true || !IsLoaded) return;
+        CloseModernNineLives();
+        ShowBrowserRecovery("Nine Lives", ModernNineLivesView.IsAvailable, OpenModernNineLives);
     }
 
     private void CloseModernNineLives()

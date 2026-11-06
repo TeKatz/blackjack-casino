@@ -30,10 +30,7 @@ public partial class MainWindow
 
         if (!ModernMergeView.IsAvailable)
         {
-            StatusText.Text = "Midnight Merge frontend missing. Reinstall the Development build.";
-            if (!testSession)
-                MessageBox.Show(this, StatusText.Text, "Midnight Merge unavailable",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
+            ShowBrowserRecovery("Midnight Merge", assetsAvailable: false, OpenMidnightMerge);
             return;
         }
 
@@ -194,7 +191,9 @@ public partial class MainWindow
 
     private void OnModernMergeFailed()
     {
-        if (modernMergeView?.Failed == true && IsLoaded) CloseModernMerge();
+        if (modernMergeView?.Failed != true || !IsLoaded) return;
+        CloseModernMerge();
+        ShowBrowserRecovery("Midnight Merge", ModernMergeView.IsAvailable, OpenMidnightMerge);
     }
 
     private void CloseModernMerge()

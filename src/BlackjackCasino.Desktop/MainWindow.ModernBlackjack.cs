@@ -16,9 +16,7 @@ public partial class MainWindow
             || MetaPageOpen || embeddedGameShell is not null) return;
         if (!ModernBlackjackView.IsAvailable)
         {
-            StatusText.Text = "The Blackjack frontend is missing. Reinstall the Development build.";
-            System.Windows.MessageBox.Show(this, StatusText.Text, "Blackjack unavailable",
-                MessageBoxButton.OK, MessageBoxImage.Warning);
+            ShowBrowserRecovery("Blackjack", assetsAvailable: false, OpenBlackjackMode);
             return;
         }
         OpenModernBlackjack();
@@ -98,11 +96,8 @@ public partial class MainWindow
         // silently replaces React with a second, obsolete game implementation.
         if (modernBlackjackView?.Failed != true) return;
         CloseModernBlackjack();
-        if (!testSession)
-            System.Windows.MessageBox.Show(this,
-                "The Blackjack browser failed. The current in-memory hand is preserved. " +
-                "Open Blackjack from the casino lobby to retry. No wager is replayed automatically.",
-                "Blackjack presentation error", MessageBoxButton.OK, MessageBoxImage.Warning);
+        if (IsLoaded)
+            ShowBrowserRecovery("Blackjack", ModernBlackjackView.IsAvailable, OpenBlackjackMode);
     }
 
     private void CloseModernBlackjack()

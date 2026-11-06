@@ -28,7 +28,8 @@ public partial class MainWindow
             || MetaPageOpen || embeddedGameShell is not null) return;
         if (!ModernReelsView.IsAvailable)
         {
-            EmbeddedSlots_Click(this, new RoutedEventArgs());
+            ShowBrowserRecovery("Midnight Reels", assetsAvailable: false,
+                OpenMidnightReels, () => EmbeddedSlots_Click(this, new RoutedEventArgs()));
             return;
         }
         ProcessLatestCompletedRound();
@@ -156,8 +157,10 @@ public partial class MainWindow
 
     private void OnModernReelsFailed()
     {
-        if (modernReelsView?.Failed == true && IsLoaded)
-            CloseModernReels();
+        if (modernReelsView?.Failed != true || !IsLoaded) return;
+        CloseModernReels();
+        ShowBrowserRecovery("Midnight Reels", ModernReelsView.IsAvailable,
+            OpenMidnightReels, () => EmbeddedSlots_Click(this, new RoutedEventArgs()));
     }
 
     private void CloseModernReels()
@@ -178,16 +181,11 @@ public partial class MainWindow
         modernReelsAward = null;
         modernReelsAudioSpinId = null;
         SavePreferences();
+        // Never launch the old native slot automatically after browser failure.
+        // The caller offers it explicitly through the shared recovery screen.
+        if (lobby is not null) lobby.Visibility = Visibility.Visible;
         if (failed)
-        {
-            // A committed spin has already been synchronized to the shared
-            // bankroll. The native fallback opens at that exact balance.
-            EmbeddedSlots_Click(this, new RoutedEventArgs());
-        }
-        else if (lobby is not null)
-        {
-            lobby.Visibility = Visibility.Visible;
-        }
+            StatusText.Text = "Midnight Reels presentation interrupted. Choose retry or the original slot.";
         SyncHostMusic();
         NormalizeBetForTable();
         RefreshGameUi();

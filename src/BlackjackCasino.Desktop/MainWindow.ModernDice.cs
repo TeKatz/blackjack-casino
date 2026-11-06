@@ -29,10 +29,7 @@ public partial class MainWindow
             || ModernNeonVaultOpen || ModernBlackjackOpen) return;
         if (!ModernDiceView.IsAvailable)
         {
-            StatusText.Text = "Midnight Dice frontend missing. Reinstall the Development build.";
-            if (!testSession)
-                MessageBox.Show(this, StatusText.Text, "Midnight Dice unavailable",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
+            ShowBrowserRecovery("Midnight Dice", assetsAvailable: false, OpenModernDice);
             return;
         }
 
@@ -329,7 +326,9 @@ public partial class MainWindow
 
     private void OnModernDiceFailed()
     {
-        if (modernDiceView?.Failed == true && IsLoaded) CloseModernDice();
+        if (modernDiceView?.Failed != true || !IsLoaded) return;
+        CloseModernDice();
+        ShowBrowserRecovery("Midnight Dice", ModernDiceView.IsAvailable, OpenModernDice);
     }
 
     private void CloseModernDice()

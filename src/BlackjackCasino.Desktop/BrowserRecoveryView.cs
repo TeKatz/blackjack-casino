@@ -18,18 +18,26 @@ internal sealed class BrowserRecoveryView : UserControl
     internal Button LobbyButton { get; }
 
     internal BrowserRecoveryView(bool modernAssetsAvailable, Action<BrowserRecoveryAction> selected)
+        : this("Chill Lounge", modernAssetsAvailable, legacyGamesAvailable: true, selected)
     {
+    }
+
+    internal BrowserRecoveryView(string gameTitle, bool modernAssetsAvailable,
+        bool legacyGamesAvailable, Action<BrowserRecoveryAction> selected)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(gameTitle);
         ArgumentNullException.ThrowIfNull(selected);
-        session = new BrowserRecoverySession(modernAssetsAvailable);
+        session = new BrowserRecoverySession(modernAssetsAvailable, legacyGamesAvailable);
         bool german = Localization.Language == UiLanguagePreference.German;
-        string title = german ? "CHILL LOUNGE — WIEDERHERSTELLUNG" : "CHILL LOUNGE — RECOVERY";
+        string title = gameTitle.ToUpperInvariant()
+            + (german ? " — WIEDERHERSTELLUNG" : " — RECOVERY");
         string detail = modernAssetsAvailable
             ? german
-                ? "Die Browser-Oberfläche konnte nicht gestartet werden. Deine gespeicherten Spiele bleiben erhalten."
-                : "The browser interface could not start. Your saved games remain available."
+                ? "Die Browser-Oberfläche konnte nicht gestartet werden. Gespeicherte Fortschritte und bereits bestätigte Ergebnisse bleiben erhalten."
+                : "The browser interface could not start. Saved progress and committed results are preserved."
             : german
-                ? "Die lokalen Dateien der Browser-Oberfläche fehlen. Du kannst die ursprünglichen Spiele öffnen oder zur Lobby zurückkehren."
-                : "The local browser assets are missing. You can open the original games or return to the lobby.";
+                ? "Die lokalen Dateien der Browser-Oberfläche fehlen. Eine Neuinstallation des Development-Pakets kann das Problem beheben."
+                : "The local browser assets are missing. Reinstalling the Development package may resolve this issue.";
 
         Background = new SolidColorBrush(Color.FromRgb(7, 23, 20));
         var card = new StackPanel
@@ -60,19 +68,21 @@ internal sealed class BrowserRecoveryView : UserControl
         });
 
         RetryButton = MakeButton("RecoveryRetryButton",
-            german ? "Erneut versuchen" : "Retry modern Lounge",
+            german ? "Erneut versuchen" : "Retry game presentation",
             BrowserRecoveryAction.RetryModern, selected);
         RetryButton.IsEnabled = modernAssetsAvailable;
         LegacyButton = MakeButton("RecoveryLegacyButton",
             german ? "Ursprüngliche Spiele öffnen" : "Open original games",
             BrowserRecoveryAction.OpenLegacyGames, selected);
+        LegacyButton.IsEnabled = legacyGamesAvailable;
+        LegacyButton.Visibility = legacyGamesAvailable ? Visibility.Visible : Visibility.Collapsed;
         LobbyButton = MakeButton("RecoveryLobbyButton",
             german ? "Zur Casino-Lobby" : "Return to casino lobby",
             BrowserRecoveryAction.ReturnToLobby, selected);
 
         var actions = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center };
         actions.Children.Add(RetryButton);
-        actions.Children.Add(LegacyButton);
+        if (legacyGamesAvailable) actions.Children.Add(LegacyButton);
         actions.Children.Add(LobbyButton);
         card.Children.Add(actions);
 
