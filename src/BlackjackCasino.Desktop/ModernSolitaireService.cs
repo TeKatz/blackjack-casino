@@ -109,8 +109,14 @@ internal sealed class ModernSolitaireService
     {
         switch (command.Action)
         {
-            case "solitaire.new": return StartNew(command.Variant!.Value, command.SpiderSuits, command.DealNumber);
-            case "solitaire.resume": return Resume(command.Variant!.Value, command.SpiderSuits);
+            case "solitaire.new":
+                return game is null
+                    ? StartNew(command.Variant!.Value, command.SpiderSuits, command.DealNumber)
+                    : (false, "Return to the Solitaire cabinet before starting another deal.");
+            case "solitaire.resume":
+                return game is null
+                    ? Resume(command.Variant!.Value, command.SpiderSuits)
+                    : (false, "Return to the Solitaire cabinet before resuming another deal.");
             case "solitaire.back":
                 if (game is null) return (false, "No Solitaire game is open.");
                 SaveElapsed();
