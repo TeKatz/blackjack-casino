@@ -176,7 +176,7 @@ public sealed class ModernMemoryBridgeTests
         fail=false;
         Assert.True(session.Execute(flip,service.Execute).Success);
         Assert.Single(service.CurrentGame!.FaceUpIndices);
-        Assert.Equal(1,session.Revision);
+        Assert.Equal(revision + 1,session.Revision);
         Assert.Single(saved.ActiveGame!.FaceUpIndices);
     }
 
