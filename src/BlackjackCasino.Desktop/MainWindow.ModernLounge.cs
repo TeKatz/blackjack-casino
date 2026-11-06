@@ -26,6 +26,7 @@ public partial class MainWindow
     private ModernJigsawService? modernJigsaw;
     private ModernAdventureSession? modernAdventureSession;
     private ModernAdventureService? modernAdventure;
+    private bool modernAdventureSoundtrack;
     private readonly object modernMemoryAudioOwner = new();
     private static readonly Lazy<IReadOnlyDictionary<MemoryCue, AudioClip>> ModernMemoryCues =
         new(() => Enum.GetValues<MemoryCue>().ToDictionary(cue => cue, MemorySoundSynthesis.Build));
@@ -153,6 +154,7 @@ public partial class MainWindow
         loungeBackgroundMusic = new BackgroundMusic(Soundtrack.ChillLounge);
         AreaPresentationSettings settings = preferences.Presentation("chill-lounge");
         loungeBackgroundMusic.Start(settings.MusicEnabled, settings.MusicVolume);
+        modernAdventureSoundtrack = false;
         TableModeText.Text = "Chill Lounge";
         SyncHostMusic();
         modeRegistry.NotifyStateChanged();
@@ -205,6 +207,7 @@ public partial class MainWindow
                     AdventureTextLocalization.ItemName, AdventureTextLocalization.ItemDescription,
                     AdventureTextLocalization.ConditionName),
                 AdventureTextLocalization.Raw);
+            SetModernAdventureSoundtrack(true);
             modernLoungeView?.Refresh();
             return;
         }
@@ -335,7 +338,11 @@ public partial class MainWindow
             try
             {
                 (bool success, string message) = modernAdventure.Execute(intent);
-                if (success && intent.Action == "adventure.exit") modernAdventure = null;
+                if (success && intent.Action == "adventure.exit")
+                {
+                    modernAdventure = null;
+                    SetModernAdventureSoundtrack(false);
+                }
                 return (success, message);
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or
@@ -346,6 +353,18 @@ public partial class MainWindow
                     : ex.Message);
             }
         });
+    }
+
+    private void SetModernAdventureSoundtrack(bool adventureActive)
+    {
+        if (modernAdventureSoundtrack == adventureActive || modernLoungeView is null) return;
+        modernAdventureSoundtrack = adventureActive;
+        string area = adventureActive ? "adventure" : "chill-lounge";
+        AreaPresentationSettings settings = preferences.Presentation(area);
+        loungeBackgroundMusic?.Dispose();
+        loungeBackgroundMusic = new BackgroundMusic(adventureActive ? Soundtrack.Adventure : Soundtrack.ChillLounge);
+        loungeBackgroundMusic.Start(settings.MusicEnabled, settings.MusicVolume);
+        SyncHostMusic();
     }
 
     private void SaveModernAdventureProgress(AdventureProgressState state)
@@ -553,6 +572,7 @@ public partial class MainWindow
         modernJigsawSession = null;
         modernAdventure = null;
         modernAdventureSession = null;
+        modernAdventureSoundtrack = false;
         CasinoAudio.Mixer.Stop(modernMemoryAudioOwner);
         modernLoungeView.Dispose();
         modernLoungeView = null;
