@@ -1,0 +1,62 @@
+.ws-library,.ws-game{max-width:1500px;margin:0 auto;color:#f0e7d4}
+.ws-eyebrow{display:block;color:#dbba80;font-size:10px;letter-spacing:.18em;font-weight:800}
+.ws-hero{border:1px solid #5f8b71;border-radius:17px;padding:25px 33px;background:radial-gradient(ellipse at 80% 20%,#416c4e77,transparent 50%),linear-gradient(110deg,#163c2e,#081f1b);box-shadow:0 15px 31px #0007}
+.ws-hero h1,.ws-game-heading h1{font:normal clamp(28px,3vw,43px) Georgia,serif;margin:8px 0;color:#f7e8cc}
+.ws-hero p,.ws-game-heading p{font-size:13px;color:#b4ccba;line-height:1.6;max-width:790px;margin:0}
+.ws-stats{display:flex;gap:40px;flex-wrap:wrap;margin-top:20px}
+.ws-stats span{display:flex;flex-direction:column;gap:3px;color:#aac2af;font-size:10px}
+.ws-stats b{color:#f0d6a5;font:27px Georgia,serif}
+.ws-resume{margin:14px 0;display:flex;justify-content:space-between;gap:20px;align-items:center;border:1px solid #ccad6a;border-radius:13px;background:#263b2b;padding:15px 23px}
+.ws-resume h2{font:24px Georgia,serif;margin:6px 0}.ws-resume p{color:#c6d6c6;font-size:11px;margin:0}
+.ws-resume button,.ws-level button,.ws-hint-button,.ws-back,.ws-complete button{border-radius:8px;border:1px solid #cba66a;background:#4e4029;color:#f6e1ae;font-size:11px;font-weight:760;padding:11px 15px;transition:background .16s}
+.ws-resume button:hover:not(:disabled),.ws-level button:hover:not(:disabled),.ws-hint-button:hover:not(:disabled),.ws-back:hover:not(:disabled){background:#466247}
+.ws-resume button:disabled,.ws-level button:disabled,.ws-hint-button:disabled,.ws-back:disabled{opacity:.45;cursor:default}
+.ws-library-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:19px 0 12px}
+.ws-library-heading h2{font:25px Georgia,serif;margin:0}.ws-library-heading small{font-size:11px;color:#b6bf9f}
+.ws-levels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+.ws-level{border:1px solid #557b66;border-radius:13px;background:radial-gradient(ellipse at 100% 0,#4067468c,transparent 55%),linear-gradient(125deg,#1a3c2d,#09251f);padding:15px 18px;min-height:225px;display:flex;flex-direction:column;position:relative;overflow:hidden;box-shadow:0 11px 22px #0005}
+.ws-level-top{display:flex;justify-content:space-between;font-size:10px;color:#d8bf86;font-weight:700}
+.ws-decoration{position:absolute;right:16px;top:30px;font:63px Georgia,serif;color:#e5c58436;pointer-events:none}
+.ws-level h3{font:normal 26px Georgia,serif;margin:14px 0 6px;position:relative}
+.ws-level p{font-size:12px;color:#b7d7c0;margin:0}.ws-level small{font-size:10px;color:#a0bea9;margin-top:9px;min-height:17px}
+.ws-progress{height:6px;background:#081e1a;border:1px solid #315b49;border-radius:8px;overflow:hidden;margin:12px 0 0}
+.ws-progress>div{height:100%;background:linear-gradient(90deg,#78a986,#dfc47c);transition:width .25s}
+.ws-progress-text{font-size:10px;color:#c0d1b9;margin:8px 0 11px}
+.ws-level button{margin-top:auto}.ws-expansion{font-size:13px;color:#c5b47f;border:1px solid #798970;border-radius:10px;padding:13px;background:#203a2a}
+.ws-help{color:#9fbaaa;font-size:11px;line-height:1.5;text-align:center;margin:13px 0 0}
+.ws-alert{font-size:12px;color:#ffaca5}
+.ws-game-heading{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:5px 10px 17px}
+.ws-game-heading h1{margin:5px 0}.ws-game-stats{display:flex;gap:9px}
+.ws-game-stats span{display:flex;flex-direction:column;min-width:94px;padding:10px 12px;background:#16372b;border:1px solid #547565;border-radius:9px}
+.ws-game-stats small{font-size:10px;color:#a6c0b0}
+.ws-game-stats b{font-size:21px;color:#f4d89f;font-variant-numeric:tabular-nums}
+.ws-columns{display:grid;grid-template-columns:minmax(390px,1fr) minmax(255px,335px);gap:19px;align-items:start}
+.ws-board-frame{background:#081e19;border:1px solid #507a62;border-radius:14px;padding:14px;box-shadow:0 16px 31px #0006}
+.ws-board{display:grid;width:min(100%,74vh,790px);aspect-ratio:1;touch-action:none;user-select:none;-webkit-user-select:none;gap:2px;margin:0 auto}
+.ws-cell{min-width:0;min-height:0;aspect-ratio:1;border-radius:3px;background:#16372b;border:1px solid #416750;color:#f4e9d5;display:grid;place-items:center;font:750 clamp(13px,2.1vw,28px) "Segoe UI",sans-serif;padding:0;cursor:crosshair;touch-action:none;transition:background .13s,border .13s}
+.ws-cell:hover:not(:disabled){background:#335e46}.ws-cell.found{background:#376e4b;color:#e5f5d9;border-color:#8bc592}
+.ws-cell.selected{background:#b69655;color:#17281d;border-color:#ffdf97;box-shadow:inset 0 0 0 1px #f7dda1}
+.ws-cell.hint{background:#91723e;color:#fff1b4;border-color:#f5dc9a;animation:ws-hint 1.8s ease-in-out infinite}
+.ws-cell:focus-visible{outline:2px solid #fff2a2;z-index:2}
+.ws-side{background:#112b22;border:1px solid #527761;border-radius:13px;padding:16px;display:flex;flex-direction:column;gap:11px;box-shadow:0 11px 23px #0005}
+.ws-word-heading{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.ws-word-heading b{color:#f4d99f;font-size:16px}
+.ws-side .ws-progress{margin:0}
+.ws-words{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;max-height:min(46vh,460px);overflow:auto;padding:3px}
+.ws-words span{display:block;background:#18382c;border:1px solid #3d604c;border-radius:6px;color:#d7e1cf;padding:7px;font-size:11px;font-weight:700;overflow-wrap:anywhere}
+.ws-words b{color:#e0c17e}.ws-words span.found{background:#28513a;color:#97cfac;text-decoration:line-through}
+.ws-hint-button{min-height:43px}.ws-note{font-size:11px;color:#96b49f;line-height:1.5;margin:0}
+.ws-status{font-size:12px;color:#eed398;line-height:1.5;min-height:31px}
+.ws-saved{font-size:10px;color:#8dcc9e}.ws-back{background:#244535;border-color:#7c997a}
+.ws-complete{text-align:center;border:1px solid #d9b677;border-radius:14px;padding:23px;margin-top:20px;background:radial-gradient(ellipse at top,#3c5839,#172e26 70%);box-shadow:0 11px 29px #0005}
+.ws-complete h2{font:30px Georgia,serif;color:#f8dda7;margin:0}
+.ws-complete p{font-size:12px;color:#bfd2bc}
+.ws-complete>div{display:flex;justify-content:center;gap:30px}
+.ws-complete>div span{display:flex;flex-direction:column;font-size:11px;color:#aebca9}
+.ws-complete b{font:26px Georgia,serif;color:#e9d19b}
+.ws-bottom-note{text-align:center;margin-top:14px}
+@keyframes ws-hint{50%{box-shadow:0 0 16px #e4c479;transform:scale(1.025)}}
+@media(max-width:1000px){.ws-columns{grid-template-columns:minmax(340px,1fr) minmax(240px,280px);gap:10px}.ws-words{grid-template-columns:1fr}}
+@media(max-width:810px){.ws-levels{grid-template-columns:repeat(2,minmax(0,1fr))}.ws-game-heading{flex-wrap:wrap}.ws-game-stats{width:100%;justify-content:space-between}.ws-columns{grid-template-columns:1fr}.ws-words{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(prefers-reduced-motion:reduce){.ws-cell,.ws-progress>div{transition:none}.ws-cell.hint{animation:none}}
+.ws-board.reduced .ws-cell.hint{animation:none}
