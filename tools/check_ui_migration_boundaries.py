@@ -66,8 +66,10 @@ def main() -> int:
         issues.append("React Lounge snapshot boundary was not found.")
     elif "ModernLoungeCatalog.Create(" not in modern[snapshot_start:snapshot_end]:
         issues.append("React snapshot must be created from its independent modern catalog.")
-    if "LoungeHostedGameRegistry" in modern:
-        issues.append("React MainWindow still depends on the native WPF game registry.")
+    if snapshot_start >= 0 and snapshot_end >= 0 and "LoungeHostedGameRegistry" in modern[snapshot_start:snapshot_end]:
+        issues.append("React snapshot still depends on the native WPF game registry.")
+    if "LoungeHostedGameRegistry.SetSessionModules(" in modern:
+        issues.append("React game routes may not register WPF game factories.")
     routing_start = modern.find("private void OnModernLoungeGameSelected(")
     routing_end = modern.find("private ModernSudokuReply ApplyModernSudokuCommand(", routing_start)
     if routing_start < 0 or routing_end < 0:
@@ -109,6 +111,11 @@ def main() -> int:
     contents = [(p, text(p)) for p in source_paths]
 
     for name in CANDIDATES:
+        has_source = (ROOT / "src/BlackjackCasino.Desktop" / (name + ".cs")).exists() or (
+            ROOT / "src/BlackjackCasino.Desktop" / (name + ".xaml")).exists()
+        if not has_source:
+            print(f"  {name:<34} REMOVED / NOT A TOP-LEVEL SOURCE FILE")
+            continue
         pattern = re.compile(r"\b" + re.escape(name) + r"\b")
         references: list[str] = []
         for path, body in contents:
