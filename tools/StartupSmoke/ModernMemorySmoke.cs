@@ -77,11 +77,14 @@ internal static class ModernMemorySmoke
             !game.MatchedIndices.Contains(i)&&i!=mismatchA&&game.Cards[i]!=game.Cards[mismatchA]);
         await Flip(web,mismatchA,
             "document.querySelector('[data-testid=\"memory-card-"+mismatchA+"\"]')?.dataset.faceUp==='true'");
+        // Observe the mismatch counter and both visible faces in one browser
+        // snapshot. A separate query after the 760 ms native reveal period
+        // can see the cards already turned down on a busy Windows runner.
+        // This still requires the two wrong cards to be visibly face-up.
         await Flip(web,mismatchB,
-            "document.querySelector('[data-testid=\"memory-misses\"]')?.textContent==='1'");
-        Require(await Js(web,
-            "document.querySelector('[data-testid=\"memory-card-"+mismatchB+"\"]')?.dataset.faceUp==='true'"),
-            "Incorrect pair turned over before the user could see it.");
+            "document.querySelector('[data-testid=\"memory-misses\"]')?.textContent==='1'&&"
+           +"document.querySelector('[data-testid=\"memory-card-"+mismatchA+"\"]')?.dataset.faceUp==='true'&&"
+           +"document.querySelector('[data-testid=\"memory-card-"+mismatchB+"\"]')?.dataset.faceUp==='true'");
         await Wait(web,
             "document.querySelector('[data-testid=\"memory-card-"+mismatchA+"\"]')?.dataset.faceUp==='false'&&"
            +"document.querySelector('[data-testid=\"memory-card-"+mismatchB+"\"]')?.dataset.faceUp==='false'",
