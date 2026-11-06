@@ -33,6 +33,8 @@ internal sealed class NativeShellForm : Form
     private WebView2? browser;
     private BlackjackModernSession? blackjackEpoch;
     private ModernReelsSession? reelsEpoch;
+    private ModernNeonVaultSession? neonEpoch;
+    private ModernNineLivesSession? nineEpoch;
     private string? activeMode;
     private bool listening, ready, browserFailed, closing;
     private readonly string frontendFolder = Path.Combine(AppContext.BaseDirectory, "ModernFrontend");
@@ -75,6 +77,8 @@ internal sealed class NativeShellForm : Form
         navigation.Controls.Add(MakeButton("Lobby", ReturnToHome));
         navigation.Controls.Add(MakeButton("Blackjack", () => _ = OpenModeAsync("blackjack")));
         navigation.Controls.Add(MakeButton("Midnight Reels", () => _ = OpenModeAsync("reels")));
+        navigation.Controls.Add(MakeButton("Neon Vault", () => _ = OpenModeAsync("neon-vault")));
+        navigation.Controls.Add(MakeButton("Nine Lives", () => _ = OpenModeAsync("nine-lives")));
         navigation.Controls.Add(new Label
         {
             AutoSize = true, Text = "NATIVE HOST • PREVIEW",
@@ -151,7 +155,7 @@ internal sealed class NativeShellForm : Form
             ForeColor = Color.FromArgb(190, 218, 201),
             Font = new Font("Segoe UI", 13),
             Text = "WPF-freier Windows-Host mit echten React-Oberflächen und C#-Spielregeln.\n"
-                + "In dieser isolierten Testversion sind Blackjack und Midnight Reels angebunden.\n"
+                + "In dieser isolierten Testversion sind Blackjack, Reels, Neon Vault und Nine Lives angebunden.\n"
                 + "Die übrigen Casino-Bereiche verbleiben vorerst in der regulären Desktop-Anwendung.",
         }, 0, 1);
         var actions = new FlowLayoutPanel
@@ -162,6 +166,8 @@ internal sealed class NativeShellForm : Form
         };
         actions.Controls.Add(MakeButton("BLACKJACK SPIELEN", () => _ = OpenModeAsync("blackjack")));
         actions.Controls.Add(MakeButton("MIDNIGHT REELS", () => _ = OpenModeAsync("reels")));
+        actions.Controls.Add(MakeButton("NEON VAULT", () => _ = OpenModeAsync("neon-vault")));
+        actions.Controls.Add(MakeButton("NINE LIVES", () => _ = OpenModeAsync("nine-lives")));
         page.Controls.Add(actions, 0, 2);
         page.Controls.Add(new Label
         {
@@ -184,27 +190,35 @@ internal sealed class NativeShellForm : Form
             return;
         }
         if (activeMode == "reels") runtime.CloseReels();
+        if (activeMode == "neon-vault") runtime.CloseNeonVault();
+        if (activeMode == "nine-lives") runtime.CloseNineLives();
         ShowHome();
     }
 
     private async Task OpenModeAsync(string mode)
     {
-        if (closing || mode is not ("blackjack" or "reels")) return;
-        if (mode == "reels" && runtime.HandInProgress)
+        if (closing || mode is not ("blackjack" or "reels" or "neon-vault" or "nine-lives")) return;
+        if (mode != "blackjack" && runtime.HandInProgress)
         {
             status.Text = "Finish the Blackjack hand first.";
             return;
         }
         if (activeMode == "reels" && mode != "reels") runtime.CloseReels();
+        if (activeMode == "neon-vault" && mode != "neon-vault") runtime.CloseNeonVault();
+        if (activeMode == "nine-lives" && mode != "nine-lives") runtime.CloseNineLives();
         if (mode == "reels") runtime.OpenReels();
+        if (mode == "neon-vault") runtime.OpenNeonVault();
+        if (mode == "nine-lives") runtime.OpenNineLives();
         DisposeBrowser();
         activeMode = mode;
         listening = ready = browserFailed = false;
         blackjackEpoch = mode == "blackjack" ? new BlackjackModernSession() : null;
         reelsEpoch = mode == "reels" ? new ModernReelsSession() : null;
+        neonEpoch = mode == "neon-vault" ? new ModernNeonVaultSession() : null;
+        nineEpoch = mode == "nine-lives" ? new ModernNineLivesSession() : null;
 
         content.Controls.Clear();
-        string document = mode == "blackjack" ? "blackjack.html" : "reels.html";
+        string document = PageFor(mode);
         if (!File.Exists(Path.Combine(frontendFolder, document)))
         {
             ShowRecovery(mode, "The packaged React game files are missing.", assetsAvailable: false);
@@ -219,7 +233,7 @@ internal sealed class NativeShellForm : Form
         };
         browser = web;
         content.Controls.Add(web);
-        status.Text = "Loading " + (mode == "blackjack" ? "Blackjack" : "Midnight Reels") + "…";
+        status.Text = "Loading " + mode + "…";
         watchdog.Start();
         try
         {
@@ -259,10 +273,21 @@ internal sealed class NativeShellForm : Form
         }
     }
 
+    private static string PageFor(string mode) => mode switch
+    {
+        "blackjack" => "blackjack.html",
+        "reels" => "reels.html",
+        "neon-vault" => "neon-vault.html",
+        "nine-lives" => "nine-lives.html",
+        _ => throw new ArgumentOutOfRangeException(nameof(mode)),
+    };
+
     private static bool IsTrusted(string? mode, string? source) => mode switch
     {
         "blackjack" => BlackjackModernProtocol.Trusted(source),
         "reels" => ModernReelsProtocol.Trusted(source),
+        "neon-vault" => ModernNeonVaultProtocol.Trusted(source),
+        "nine-lives" => ModernNineLivesProtocol.Trusted(source),
         _ => false,
     };
 
@@ -283,12 +308,16 @@ internal sealed class NativeShellForm : Form
             {
                 case "blackjack.ready" when activeMode == "blackjack":
                 case "reels.ready" when activeMode == "reels":
+                case "neon-vault.ready" when activeMode == "neon-vault":
+                case "nine-lives.ready" when activeMode == "nine-lives":
                     listening = true;
                     RefreshGameSnapshot();
                     BeginInvoke(new Action(RefreshGameSnapshot));
                     break;
                 case "blackjack.ui-ready" when activeMode == "blackjack":
                 case "reels.ui-ready" when activeMode == "reels":
+                case "neon-vault.ui-ready" when activeMode == "neon-vault":
+                case "nine-lives.ui-ready" when activeMode == "nine-lives":
                     if (!listening) break;
                     ready = true;
                     watchdog.Stop();
@@ -296,10 +325,14 @@ internal sealed class NativeShellForm : Form
                     break;
                 case "blackjack.refresh" when activeMode == "blackjack":
                 case "reels.refresh" when activeMode == "reels":
+                case "neon-vault.refresh" when activeMode == "neon-vault":
+                case "nine-lives.refresh" when activeMode == "nine-lives":
                     RefreshGameSnapshot();
                     break;
                 case "blackjack.close" when activeMode == "blackjack":
                 case "reels.close" when activeMode == "reels":
+                case "neon-vault.close" when activeMode == "neon-vault":
+                case "nine-lives.close" when activeMode == "nine-lives":
                     BeginInvoke(new Action(ReturnToHome));
                     break;
                 case "blackjack.command" when activeMode == "blackjack" && listening && ready:
@@ -322,6 +355,30 @@ internal sealed class NativeShellForm : Form
                     RefreshGameSnapshot();
                     break;
                 }
+                case "neon-vault.command" when activeMode == "neon-vault" && listening && ready:
+                {
+                    ModernNeonVaultCommand? command = ModernNeonVaultProtocol.Parse(args.WebMessageAsJson);
+                    if (command is null || neonEpoch is null) break;
+                    ModernNeonVaultReply reply = neonEpoch.Execute(command, runtime.ApplyNeonVault);
+                    Post("neon-vault.result", reply);
+                    status.Text = reply.Message;
+                    RefreshGameSnapshot();
+                    break;
+                }
+                case "nine-lives.command" when activeMode == "nine-lives" && listening && ready:
+                {
+                    ModernNineLivesCommand? command = ModernNineLivesProtocol.Parse(args.WebMessageAsJson);
+                    if (command is null || nineEpoch is null) break;
+                    ModernNineLivesReply reply = nineEpoch.Execute(command, runtime.ApplyNineLives);
+                    Post("nine-lives.result", reply);
+                    status.Text = reply.Message;
+                    RefreshGameSnapshot();
+                    break;
+                }
+                case "neon-vault.recover" when activeMode == "neon-vault" && listening && ready:
+                case "nine-lives.recover" when activeMode == "nine-lives" && listening && ready:
+                    ScheduleFailure("The game requested WebView2 recovery.");
+                    break;
                 // Reel-stop and animation-complete signals are presentation cues,
                 // never outcome calculations; the preview has no sound router yet.
             }
@@ -349,6 +406,22 @@ internal sealed class NativeShellForm : Form
                 reelsEpoch.Revision,
                 State = runtime.ReelsSnapshot(),
             });
+        else if (activeMode == "neon-vault" && neonEpoch is not null)
+            Post("neon-vault.snapshot", new
+            {
+                Version = ModernNeonVaultProtocol.Version,
+                Session = neonEpoch.Id,
+                neonEpoch.Revision,
+                State = runtime.NeonVaultSnapshot(),
+            });
+        else if (activeMode == "nine-lives" && nineEpoch is not null)
+            Post("nine-lives.snapshot", new
+            {
+                Version = ModernNineLivesProtocol.Version,
+                Session = nineEpoch.Id,
+                nineEpoch.Revision,
+                State = runtime.NineLivesSnapshot(),
+            });
     }
 
     private void Post(string type, object data)
@@ -370,8 +443,8 @@ internal sealed class NativeShellForm : Form
         watchdog.Stop();
         string mode = activeMode;
         DisposeBrowser();
-        ShowRecovery(mode, message, File.Exists(Path.Combine(frontendFolder,
-            mode == "blackjack" ? "blackjack.html" : "reels.html")));
+        ShowRecovery(mode, message,
+            File.Exists(Path.Combine(frontendFolder, PageFor(mode))));
     }
 
     private void ShowRecovery(string mode, string problem, bool assetsAvailable)
