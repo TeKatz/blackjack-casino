@@ -50,13 +50,14 @@ function connected(game:JigsawGame,id:number):number[]{
  }
  return queue;
 }
-function PixiBoard({game,reference,view,selected,onPlace,onMove,onReturn,onSelect}:{
+function PixiBoard({game,reference,view,selected,onPlace,onMove,onReturn,onSelect,onView}:{
  game:JigsawGame;reference:boolean;view:View;selected:number|null;
  onPlace:(index:number,x:number,y:number)=>void;onMove:(index:number,x:number,y:number)=>void;
- onReturn:(index:number)=>void;onSelect:(index:number|null)=>void;
+ onReturn:(index:number)=>void;onSelect:(index:number|null)=>void;onView:(next:View)=>void;
 }){
  const mount=useRef<HTMLDivElement>(null),instance=useRef<Application|null>(null);
  const layer=useRef<Container|null>(null),pieces=useRef<Sprite[]>([]);
+ const panning=useRef<{clientX:number;clientY:number;view:View}|null>(null);
  const live=useRef({game,reference,view}),drag=useRef<{
   id:number;original:JigsawPiece;start:{x:number;y:number};group:number[]
  }|null>(null);
@@ -122,6 +123,10 @@ function PixiBoard({game,reference,view,selected,onPlace,onMove,onReturn,onSelec
   return null;
  };
  const down=(event:ReactPointerEvent<HTMLDivElement>)=>{
+  if(event.button===1||event.ctrlKey||event.metaKey){
+   panning.current={clientX:event.clientX,clientY:event.clientY,view};
+   event.currentTarget.setPointerCapture(event.pointerId);return;
+  }
   if(event.button!==0)return;
   const at=point(event),id=pick(at);
   if(id!==null){
@@ -131,6 +136,11 @@ function PixiBoard({game,reference,view,selected,onPlace,onMove,onReturn,onSelec
   }
  };
  const move=(event:ReactPointerEvent<HTMLDivElement>)=>{
+  const pan=panning.current;
+  if(pan){const rect=event.currentTarget.getBoundingClientRect();
+   onView({...pan.view,x:pan.view.x+(event.clientX-pan.clientX)*960/rect.width,
+    y:pan.view.y+(event.clientY-pan.clientY)*600/rect.height});return;
+  }
   const d=drag.current;if(!d)return;
   const at=point(event),dx=at.x-d.start.x,dy=at.y-d.start.y;
   for(const id of d.group){
@@ -139,6 +149,7 @@ function PixiBoard({game,reference,view,selected,onPlace,onMove,onReturn,onSelec
   }
  };
  const up=(event:ReactPointerEvent<HTMLDivElement>)=>{
+  if(panning.current){panning.current=null;return;}
   const at=point(event),d=drag.current;drag.current=null;
   if(d){
    if(Math.hypot(at.x-d.start.x,at.y-d.start.y)>1)
@@ -155,9 +166,14 @@ function PixiBoard({game,reference,view,selected,onPlace,onMove,onReturn,onSelec
    y:((event.clientY-r.top)*600/r.height-view.y)/view.zoom};
   const id=pick(at);if(id!==null)onReturn(id);
  };
+ const wheel=(event:React.WheelEvent<HTMLDivElement>)=>{
+  event.preventDefault();
+  const change=event.deltaY<0?1.25:.8;
+  onView({...view,zoom:Math.min(3,Math.max(1,view.zoom*change))});
+ };
  return <div ref={mount} className="jigsaw-board" onPointerDown={down}
-   onPointerMove={move} onPointerUp={up} onPointerCancel={()=>{drag.current=null;}}
-   onContextMenu={context} role="group" aria-label="Jigsaw board"/>;
+   onPointerMove={move} onPointerUp={up} onPointerCancel={()=>{drag.current=null;panning.current=null;}}
+   onWheel={wheel} onContextMenu={context} role="group" aria-label="Jigsaw board"/>;
 }
 export function JigsawScreen({state,language,pending,error,command}:Props){
  const t=copy[language],game=state.game;
@@ -224,7 +240,7 @@ export function JigsawScreen({state,language,pending,error,command}:Props){
     <button disabled={pending} onClick={()=>on({action:'jigsaw.back'})}>{t.back}</button>
    </div></div>
   <div className="jigsaw-layout"><div className="jigsaw-board-panel">
-   <PixiBoard game={game} reference={reference} view={view} selected={selected}
+   <PixiBoard game={game} reference={reference} view={view} onView={setView} selected={selected}
     onSelect={setSelected} onPlace={(index,x,y)=>{
      on({action:'jigsaw.place',index,x:Math.round(x*100)/100,y:Math.round(y*100)/100});setSelected(null);
     }}
