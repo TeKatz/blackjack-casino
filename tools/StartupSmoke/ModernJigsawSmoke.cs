@@ -1,0 +1,111 @@
+using System.IO;
+using System.Reflection;
+using BlackjackCasino.Desktop;
+using BlackjackCasino.Core.Jigsaw;
+using Microsoft.Web.WebView2.Core;
+
+/// <summary>
+/// Exercises the packaged React/PixiJS Jigsaw board against the real native game,
+/// while the original WPF JigsawSmoke remains rollback comparison coverage.
+/// </summary>
+internal static class ModernJigsawSmoke
+{
+    internal static async Task Run(MainWindow window, CoreWebView2 web, string output)
+    {
+        await Click(web, ".chill-jigsaw",
+            "document.querySelectorAll('.jigsaw-gallery button').length===12",
+            "React Jigsaw did not open the twelve-scene gallery.");
+        Require(await Js(web,"document.querySelectorAll('.jigsaw-sizes button').length===8"),
+            "One of the eight original puzzle sizes is missing.");
+        await Capture(web,Path.Combine(output,"modern-jigsaw-gallery.png"));
+
+        await Click(web,".jigsaw-sizes button:first-child",
+            "document.querySelector('.jigsaw-sizes button:first-child')?.getAttribute('aria-pressed')==='true'",
+            "24-piece Jigsaw selection did not reach the native model.");
+        await Click(web,".jigsaw-actions .jigsaw-primary:last-child",
+            "document.querySelectorAll('.jigsaw-tray-grid button').length===24",
+            "C# did not open a fresh 24-piece Jigsaw board.");
+        await Wait(web,"Boolean(document.querySelector('.jigsaw-board canvas'))",
+            "PixiJS did not mount the real Jigsaw canvas.");
+        await Capture(web,Path.Combine(output,"modern-jigsaw-board.png"));
+
+        const BindingFlags flags=BindingFlags.Instance|BindingFlags.NonPublic;
+        ModernJigsawService service=(ModernJigsawService)
+            typeof(MainWindow).GetField("modernJigsaw",flags)!.GetValue(window)!;
+        JigsawGameState game=service.CurrentGame
+            ?? throw new InvalidOperationException("Native Jigsaw engine did not start.");
+        Guid id=game.GameId;
+        Require(game.PieceCount==24 && game.Pieces.Count==24,"The native puzzle has wrong dimensions.");
+
+        await web.ExecuteScriptAsync("document.querySelector('.jigsaw-tray-grid button:first-child')?.click()");
+        // Click the exact native target center of piece zero. React sends coordinates;
+        // only the authoritative C# engine can lock the piece.
+        await web.ExecuteScriptAsync(@"(()=>{
+          const b=document.querySelector('.jigsaw-board');
+          const r=b.getBoundingClientRect();
+          b.dispatchEvent(new PointerEvent('pointerup',{
+           bubbles:true,pointerId:11,clientX:r.left+r.width/12,
+           clientY:r.top+r.height/8
+          }));
+        })()");
+        await UntilAsync(()=>service.CurrentGame?.Pieces[0].Locked==true,
+            "Pixi board did not commit the native first-piece snap.");
+        Require(service.CurrentGame!.LockedCount==1,"One placement must not complete other pieces.");
+
+        await Click(web,".chill-exit",
+            "document.querySelectorAll('.jigsaw-gallery button').length===12",
+            "Back navigation lost the active saved Jigsaw puzzle.");
+        Require(await Js(web,"Boolean(document.querySelector('.jigsaw-actions .jigsaw-primary'))"),
+            "Saved Jigsaw resume is missing.");
+        await Click(web,".jigsaw-actions .jigsaw-primary",
+            "document.querySelectorAll('.jigsaw-tray-grid button').length===23",
+            "React Jigsaw did not restore the saved placed piece.");
+        Require(service.CurrentGame?.GameId==id && service.CurrentGame.Pieces[0].Locked,
+            "Saved Jigsaw session identity or locked piece was lost.");
+        await Capture(web,Path.Combine(output,"modern-jigsaw-resumed.png"));
+
+        await Click(web,".chill-exit",
+            "document.querySelectorAll('.jigsaw-gallery button').length===12",
+            "Jigsaw could not return to its React gallery.");
+        await Click(web,".chill-exit",
+            "Boolean(document.querySelector('.chill-jigsaw'))",
+            "Jigsaw could not return to the React Lounge.");
+
+        File.WriteAllText(Path.Combine(output,"modern-jigsaw-result.txt"),
+            "PASS: twelve motifs, eight sizes, PixiJS render, native 24-piece state, first-piece snap, durable save, React resume and Lounge navigation.");
+    }
+
+    private static async Task Click(CoreWebView2 web,string selector,string ready,string failure)
+    {
+        string script="Boolean(document.querySelector("+System.Text.Json.JsonSerializer.Serialize(selector)+"))";
+        await Wait(web,script,"Missing Jigsaw control: "+selector);
+        await web.ExecuteScriptAsync("document.querySelector("+
+            System.Text.Json.JsonSerializer.Serialize(selector)+")?.click()");
+        await Wait(web,ready,failure);
+    }
+    private static async Task<bool> Js(CoreWebView2 web,string predicate) =>
+        await web.ExecuteScriptAsync(predicate)=="true";
+    private static async Task Wait(CoreWebView2 web,string predicate,string failure)
+    {
+        for(int i=0;i<150;i++)
+        {
+            if(await Js(web,predicate))return;
+            await Task.Delay(100);
+        }
+        throw new InvalidOperationException(failure);
+    }
+    private static async Task UntilAsync(Func<bool> predicate,string failure)
+    {
+        for(int i=0;i<150;i++)
+        {
+            if(predicate())return;
+            await Task.Delay(100);
+        }
+        throw new InvalidOperationException(failure);
+    }
+    private static async Task Capture(CoreWebView2 web,string path)
+    {
+        using FileStream stream=File.Create(path);
+        await web.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png,stream);
+    }
+}
