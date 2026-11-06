@@ -116,6 +116,7 @@ internal static class ModernLoungeSmoke
         await ModernSolitaireSmoke.Run(web, output);
         await ModernWordSearchSmoke.Run(window, web, output);
         await ModernMemorySmoke.Run(window, web, output);
+        await ModernJigsawSmoke.Run(window, web, output);
         await DispatchNavigation(web, "document.querySelector('.chill-exit')?.click()");
         await UntilAsync(() => Find<ModernLoungeView>(window).All(v => !v.IsVisible),
             "React Lounge could not return to the casino.");
