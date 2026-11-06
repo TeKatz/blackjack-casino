@@ -11,7 +11,6 @@ public partial class MainWindow
     {
         PlayerProfileState profile = progressionController!.Profile;
         CollectionState collection = profile.Collection;
-        CollectionOpening? opening = collection.PendingOpening;
         return new
         {
             TotalCards = CollectionCatalog.Cards.Count,
@@ -60,7 +59,17 @@ public partial class MainWindow
                     }).ToArray(),
                 };
             }).ToArray(),
-            Pending = opening is null ? null : new
+            Pending = GetModernAlbumPendingSnapshot(),
+        };
+    }
+
+    // The durable five-card receipt can be returned with the command reply.
+    // It must not depend on validating the entire 136-card Album snapshot.
+    private object? GetModernAlbumPendingSnapshot()
+    {
+        CollectionOpening? opening = progressionController?.Profile.Collection.PendingOpening;
+        if (opening is null) return null;
+        return new
             {
                 Id = opening.Id.ToString("N"),
                 Rarity = opening.PackRarity.ToString(),
@@ -85,8 +94,7 @@ public partial class MainWindow
                         draw.DuplicatePoints,
                     };
                 }).ToArray(),
-            },
-        };
+            };
     }
 
     private (bool Success, string Message) ModernAlbumOpen(string rarity)

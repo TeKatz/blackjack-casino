@@ -200,6 +200,11 @@ function LobbyApp() {
         else if(message.data.page==='album'){setAlbum(message.data.snapshot);setAlbumLoaded(true);}
         else {setSeasons(message.data.snapshot);setSeasonsLoaded(true);}
       }else if(message.type==='lobby.album.result'){
+        // The native reply includes the durable opening receipt. Consume it
+        // directly so slow/invalid full archive snapshots cannot strand a
+        // committed pack on the "breaking seal" screen.
+        if(message.data.pending!==undefined)
+          setAlbum(previous=>({...previous,pending:message.data.pending!}));
         setAlbumResult(message.data);
       }else if(message.type==='lobby.records.vault.result'){
         setRecordsPending(null);

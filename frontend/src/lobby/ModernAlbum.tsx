@@ -69,6 +69,7 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
  const [phase,setPhase]=useState<Phase>('browse');
  const [revealed,setRevealed]=useState(0);
  const [busy,setBusy]=useState(false);
+ const [unresponsive,setUnresponsive]=useState(false);
  const [batchRemaining,setBatchRemaining]=useState(0);
  const [displayOpening,setDisplayOpening]=useState<AlbumOpening|null>(null);
  const [inspectorId,setInspectorId]=useState<string|null>(null);
@@ -107,6 +108,7 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
   // Decode the exact original illustrated atlases before the first flip.
   // A slow PNG must never flash a blank face during the cinematic reveal.
   setPhase('await');
+  setUnresponsive(false);
   const urls=Array.from(new Set(data.pending.cards.map(card=>albumAtlasUrl(card.id)).filter(
    (url):url is string=>url!==null)));
   const images=urls.map(url=>{const img=new Image();img.src=url;return img;});
@@ -148,6 +150,7 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
  },[phase,data.pending,hasQueuedBatch,busy,animate,onComplete]);
  useEffect(()=>{
   if(!result)return;
+  setUnresponsive(false);
   setNotice(result.message);
   if(result.operation==='claim'){claimPending.current=null;setClaimedId(null);return;}
   if(!result.success){setBusy(false);setBatchRemaining(0);
@@ -197,9 +200,23 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
   setBusy(true);
   setPhase('await');
   setNotice(null);
+  setUnresponsive(false);
   playAlbumCue('seal',soundEnabled,rarity);
   onOpen(rarity);
  }
+ // A lost browser reply must never look like an inert button. Do not
+ // retry an opening automatically: it may already be durably committed.
+ useEffect(()=>{
+  if(phase!=='await'||data.pending||unresponsive)return;
+  const timeout=window.setTimeout(()=>{
+   setUnresponsive(true);
+   setBusy(false);
+   setNotice(de
+    ?'Keine Rückmeldung zur Packöffnung. Die Karten können bereits gespeichert sein. Zur Sammlung zurückkehren und das Pack erneut aufrufen.'
+    :'No response to the pack opening. Cards may already be saved. Return to the collection and resume the pack.');
+  },8000);
+  return()=>window.clearTimeout(timeout);
+ },[phase,data.pending,unresponsive,de]);
  function finishPack(){
   if(!data.pending||busy||revealed<5)return;
   setBusy(true);onComplete(data.pending.id);
@@ -313,7 +330,9 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
         disabled={busy} onClick={()=>startPack(true)}>
         {de?`ALLE ${selectedPackCount} PACKS ÖFFNEN`:`OPEN ALL ${selectedPackCount} PACKS`}</button>}
       </>}
-      {phase==='await'&&<p role="status">{de?'Das nächste Pack wird sicher verarbeitet…':'Preparing the next committed pack…'}</p>}
+      {phase==='await'&&<p role="status">{unresponsive
+       ?(de?'Du kannst sicher zum Album zurückkehren.':'You can safely return to the collection.')
+       :(de?'Das nächste Pack wird sicher verarbeitet…':'Preparing the next committed pack…')}</p>}
      </div>
     </div>:<>
     <div className="album-reveal-banner"><span>{rarityTitle(rarity,de).toUpperCase()}</span>

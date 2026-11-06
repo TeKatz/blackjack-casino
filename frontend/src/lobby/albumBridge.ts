@@ -16,7 +16,8 @@ export type AlbumSnapshot={totalCards:number;ownedCards:number;completedThemes:n
  packsOpened:number;duplicatePoints:number;duplicatePackCost:number;coins:string;
  packs:AlbumPack[];themes:AlbumTheme[];pending:AlbumOpening|null};
 export type AlbumOperation='open'|'complete'|'claim';
-export type AlbumResult={operation:AlbumOperation;id:string;success:boolean;message:string};
+export type AlbumResult={operation:AlbumOperation;id:string;success:boolean;message:string;
+ pending?:AlbumOpening|null};
 
 const obj=(x:unknown):x is Record<string,unknown>=>x!==null&&typeof x==='object'&&!Array.isArray(x);
 const text=(x:unknown):x is string=>typeof x==='string'&&x.length<=3000;
@@ -44,7 +45,9 @@ export function isAlbum(x:unknown):x is AlbumSnapshot{
  ||x.totalCards!==x.themes.reduce((n:number,t:AlbumTheme)=>n+t.total,0)
  ||Number(x.ownedCards)>Number(x.totalCards)||Number(x.completedThemes)>x.themes.length)return false;
  if(x.pending===null)return true;
- const p=x.pending;
+ return isAlbumOpening(x.pending);
+}
+export function isAlbumOpening(p:unknown):p is AlbumOpening{
  return obj(p)&&typeof p.id==='string'&&/^[a-f0-9]{32}$/.test(p.id)
  &&rarity(p.rarity)&&integer(p.pointsEarned)&&integer(p.packsEarned)&&integer(p.newCards)
  &&Array.isArray(p.cards)&&p.cards.length===5&&p.cards.every(draw)
@@ -53,7 +56,8 @@ export function isAlbum(x:unknown):x is AlbumSnapshot{
 export function isAlbumResult(x:unknown):x is AlbumResult{
  return obj(x)&&['open','complete','claim'].includes(String(x.operation))
  &&text(x.id)&&x.id.length<=80&&typeof x.success==='boolean'
- &&text(x.message)&&x.message.length<=800;
+ &&text(x.message)&&x.message.length<=800
+ &&(!('pending' in x)||x.pending===null||isAlbumOpening(x.pending));
 }
 export const previewAlbum:AlbumSnapshot={
  totalCards:0,ownedCards:0,completedThemes:0,packsOpened:0,duplicatePoints:0,

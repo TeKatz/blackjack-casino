@@ -48,6 +48,13 @@ internal static class ModernAlbumSmoke
             &&profile.Collection.Packs.GetValueOrDefault(CollectionRarity.Common)==beforePacks,
             "Staging a pack consumed inventory before confirmation.");
         await Capture(web,Path.Combine(output,"modern-album-sealed-pack.png"));
+        Require(await web.ExecuteScriptAsync(
+            "(()=>{const buttons=[...document.querySelectorAll('.phase-stage .album-opening-actions button')];"
+            +"return buttons.length>=1&&buttons.every(button=>{"
+            +"const r=button.getBoundingClientRect();"
+            +"const hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);"
+            +"return r.width>0&&r.height>0&&(hit===button||button.contains(hit));})})()")=="true",
+            "Real mouse/touch coordinates are blocked over the Album pack action buttons.");
         await web.ExecuteScriptAsync("document.querySelector('.album-opening-primary')?.click()");
         await Until(()=>profile.Collection.PendingOpening is not null,
             "Opening a React pack did not persist the native receipt.");
@@ -101,6 +108,12 @@ internal static class ModernAlbumSmoke
         await web.ExecuteScriptAsync("document.querySelector('[data-pack-rarity=Uncommon]')?.click()");
         await Wait(web,"Boolean(document.querySelector('.phase-stage .album-opening-secondary'))",
             "The Open All Packs action was not available.");
+        Require(await web.ExecuteScriptAsync(
+            "(()=>{const b=document.querySelector('.phase-stage .album-opening-secondary');"
+            +"if(!b)return false;const r=b.getBoundingClientRect();"
+            +"const hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);"
+            +"return r.width>0&&r.height>0&&(hit===b||b.contains(hit));})()")=="true",
+            "Open All Packs is visually present but cannot receive a real pointer click.");
         await web.ExecuteScriptAsync("document.querySelector('.phase-stage .album-opening-secondary')?.click()");
         await Until(()=>profile.Collection.PacksOpened>=openedBeforeBatch+uncommon
             &&profile.Collection.PendingOpening is null,

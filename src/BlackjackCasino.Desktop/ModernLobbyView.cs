@@ -33,6 +33,7 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
     private readonly Func<object> seasonsSnapshot;
     private readonly Func<object> vaultSnapshot;
     private readonly Func<object> albumSnapshot;
+    private readonly Func<object?> albumPendingSnapshot;
     private readonly Func<string, (bool Success, string Message)> albumOpen;
     private readonly Func<string, (bool Success, string Message)> albumComplete;
     private readonly Func<string, (bool Success, string Message)> albumClaim;
@@ -82,6 +83,7 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
         Func<object> challengesSnapshot, Func<object> statisticsSnapshot,
         Func<object> accountSnapshot, Func<object> historySnapshot, Func<object> seasonsSnapshot,
         Func<object> vaultSnapshot, Func<object> albumSnapshot,
+        Func<object?> albumPendingSnapshot,
         Func<string, (bool Success, string Message)> albumOpen,
         Func<string, (bool Success, string Message)> albumComplete,
         Func<string, (bool Success, string Message)> albumClaim,
@@ -110,6 +112,7 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
         this.seasonsSnapshot = seasonsSnapshot;
         this.vaultSnapshot = vaultSnapshot;
         this.albumSnapshot = albumSnapshot;
+        this.albumPendingSnapshot = albumPendingSnapshot;
         this.albumOpen = albumOpen;
         this.albumComplete = albumComplete;
         this.albumClaim = albumClaim;
@@ -323,7 +326,13 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
                 case "lobby.album.open" when recordsPage == "album" && id is not null:
                 {
                     var result = albumOpen(id);
-                    PostMessage("lobby.album.result", new { Operation = "open", Id = id, result.Success, result.Message });
+                    // A successful command carries its committed receipt as
+                    // part of the acknowledgement. The browser no longer depends
+                    // on a separate full-collection snapshot to begin revealing.
+                    PostMessage("lobby.album.result", new {
+                        Operation = "open", Id = id, result.Success, result.Message,
+                        Pending = albumPendingSnapshot()
+                    });
                     RefreshRecords();
                     Refresh();
                     break;
@@ -331,7 +340,10 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
                 case "lobby.album.complete" when recordsPage == "album" && id is not null:
                 {
                     var result = albumComplete(id);
-                    PostMessage("lobby.album.result", new { Operation = "complete", Id = id, result.Success, result.Message });
+                    PostMessage("lobby.album.result", new {
+                        Operation = "complete", Id = id, result.Success, result.Message,
+                        Pending = albumPendingSnapshot()
+                    });
                     RefreshRecords();
                     Refresh();
                     break;
