@@ -14,6 +14,11 @@ internal static class EmpireWebSmoke
 {
     private const BindingFlags Flags = BindingFlags.Instance | BindingFlags.NonPublic;
     private static FieldInfo Field(string name) => typeof(MainWindow).GetField(name, Flags)!;
+    private static CasinoSession CasinoSessionFor(MainWindow window)
+    {
+        object controller = Field("blackjack").GetValue(window)!;
+        return (CasinoSession)controller.GetType().GetProperty("Session", Flags)!.GetValue(controller)!;
+    }
     internal static EmpireService Fixture()
     {
         EmpireState state = EmpireState.Normalize(new() { Started = true, LastAccruedAt = DateTimeOffset.UtcNow,
@@ -29,7 +34,7 @@ internal static class EmpireWebSmoke
         var old = (EmpireService)Field("empire").GetValue(window)!;
         var oldPreferences = (AppPreferences)Field("preferences").GetValue(window)!;
         UiLanguagePreference oldLanguage = BlackjackCasino.Desktop.Localization.Language;
-        var originalSession = (CasinoSession)Field("session").GetValue(window)!;
+        var originalSession = CasinoSessionFor(window);
         decimal originalBankroll = originalSession.Bankroll;
         var fixture = Fixture();
         Require(fixture.OpenRooms == 15, "Late-career fixture must retain all Resort levels.");
@@ -118,7 +123,7 @@ internal static class EmpireWebSmoke
             await Wait(() => fixture.ActivePropertyId == "midnight-club", "Original property was lost.");
             foreach (string route in new[] { "synergies", "statistics", "estate" }) await Click(view, "nav-" + route);
             fixture.Accrue(DateTimeOffset.UtcNow.AddHours(1)); view.Refresh(); await Task.Delay(150);
-            var casino = (CasinoSession)Field("session").GetValue(window)!;
+            var casino = CasinoSessionFor(window);
             decimal cash = casino.Bankroll, dividend = fixture.ClaimableDividend;
             Require(dividend > 0, "Dividend fixture has no reserve.");
             await Click(view, "claim-dividend");
