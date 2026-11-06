@@ -5,6 +5,7 @@ const games = loungeIds.map(id => ({id,status:null}));
 const state = {version:1,language:'en',
   session:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',revision:0,sudoku:null,
   solitaireSession:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',solitaireRevision:0,solitaire:null,
+  wordSearchSession:'cccccccc-cccc-4ccc-8ccc-cccccccccccc',wordSearchRevision:0,wordSearch:null,
   musicEnabled:true,soundEnabled:true,
   animationsEnabled:true,games};
 

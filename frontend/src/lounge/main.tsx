@@ -4,10 +4,13 @@ import { isLoungeId, readLoungeSnapshot, sendLoungeCommand } from './bridge';
 import type { LoungeId, LoungeSnapshot } from './bridge';
 import { SudokuScreen } from './sudoku';
 import { SolitaireScreen } from './solitaire';
+import { WordSearchScreen } from './wordSearch';
 import { isSudokuReply, issueSudokuIntent } from './sudokuBridge';
 import type { SudokuIntent } from './sudokuBridge';
 import { isSolitaireReply, issueSolitaireIntent } from './solitaireBridge';
 import type { SolitaireIntent } from './solitaireBridge';
+import { isWordSearchReply, issueWordSearchIntent } from './wordSearchBridge';
+import type { WordSearchIntent } from './wordSearchBridge';
 import './lounge.css';
 
 type Language = 'de' | 'en';
@@ -68,6 +71,8 @@ function App() {
  const [sudokuError,setSudokuError]=useState('');
  const [solitairePending,setSolitairePending]=useState<string|null>(null);
  const [solitaireError,setSolitaireError]=useState('');
+ const [wordSearchPending,setWordSearchPending]=useState<string|null>(null);
+ const [wordSearchError,setWordSearchError]=useState('');
  const signalled=useRef(false);
  useEffect(()=>{
    const webview=window.chrome?.webview;
@@ -89,6 +94,13 @@ function App() {
        const reply=msg.data;
        setSolitairePending(prev=>prev===reply.requestId?null:prev);
        setSolitaireError(reply.success?'':reply.message);
+     }
+     if(msg&&typeof msg==='object'&&!Array.isArray(msg)
+       &&'type' in msg&&msg.type==='lounge.word-search.result'
+       &&'data' in msg&&isWordSearchReply(msg.data)){
+       const reply=msg.data;
+       setWordSearchPending(prev=>prev===reply.requestId?null:prev);
+       setWordSearchError(reply.success?'':reply.message);
      }
    };
    webview?.addEventListener('message',handler);
@@ -119,13 +131,24 @@ function App() {
    setSolitaireError('');
    setSolitairePending(issueSolitaireIntent(snapshot.solitaireSession,snapshot.solitaireRevision,intent));
  }
+ function wordSearchCommand(intent:WordSearchIntent){
+   if(!snapshot||wordSearchPending||!snapshot.wordSearch)return;
+   setWordSearchError('');
+   setWordSearchPending(issueWordSearchIntent(snapshot.wordSearchSession,snapshot.wordSearchRevision,intent));
+ }
  return <main className="chill-shell">
    <div className="chill-sparkles" aria-hidden="true"/>
    <header className="chill-header">
      <div className="chill-mark" aria-hidden="true">✦</div>
      <div className="chill-brand"><span>{t.club}</span><strong>Chill Lounge</strong></div>
      <span className="chill-local">{t.version}</span>
-     {snapshot?.solitaire
+     {snapshot?.wordSearch
+       ? <button className="chill-exit" disabled={!!wordSearchPending}
+           onClick={()=>wordSearchCommand({action:snapshot.wordSearch?.screen==='game'?'word-search.back':'word-search.exit'})}>
+           {snapshot.wordSearch.screen==='game'
+             ? (language==='de'?'← Wortsuche-Auswahl':'← Word Search library')
+             : '← Chill Lounge'}</button>
+       : snapshot?.solitaire
        ? <button className="chill-exit" disabled={!!solitairePending}
            onClick={()=>solitaireCommand({action:snapshot.solitaire?.screen==='game'?'solitaire.back':'solitaire.exit'})}>
            {snapshot.solitaire.screen==='game'
@@ -140,7 +163,10 @@ function App() {
        : <button className="chill-exit" onClick={()=>sendLoungeCommand('lounge.close')}>{t.back}</button>}
    </header>
    <div className="chill-content">
-    {snapshot?.solitaire
+    {snapshot?.wordSearch
+      ? <WordSearchScreen state={snapshot.wordSearch} language={language} pending={!!wordSearchPending}
+          error={wordSearchError} command={wordSearchCommand} animations={snapshot.animationsEnabled}/>
+      : snapshot?.solitaire
       ? <SolitaireScreen state={snapshot.solitaire} language={language} pending={!!solitairePending}
           error={solitaireError} command={solitaireCommand}/>
       : snapshot?.sudoku

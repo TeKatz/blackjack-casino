@@ -3,11 +3,14 @@ export type LoungeId = typeof loungeIds[number];
 export type LoungeGame = { id: LoungeId; status: string | null };
 import { isSudokuState } from './sudokuBridge';
 import { isSolitaireState } from './solitaireBridge';
+import { isWordSearchState } from './wordSearchBridge';
 import type { SudokuState } from './sudokuBridge';
 import type { SolitaireState } from './solitaireBridge';
+import type { WordSearchState } from './wordSearchBridge';
 export type LoungeSnapshot = { version: 1; language: 'en' | 'de';
   session:string;revision:number;sudoku:SudokuState|null;
   solitaireSession:string;solitaireRevision:number;solitaire:SolitaireState|null;
+  wordSearchSession:string;wordSearchRevision:number;wordSearch:WordSearchState|null;
   musicEnabled: boolean; soundEnabled: boolean; animationsEnabled: boolean; games: LoungeGame[] };
 const record = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === 'object' && !Array.isArray(v);
 export const isLoungeId = (value: unknown): value is LoungeId =>
@@ -20,6 +23,9 @@ export function isLoungeSnapshot(value: unknown): value is LoungeSnapshot {
     || typeof value.solitaireSession!=='string'||!/^([\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12})$/i.test(value.solitaireSession)
     || typeof value.solitaireRevision!=='number'||!Number.isSafeInteger(value.solitaireRevision)||value.solitaireRevision<0
     || !(value.solitaire===null||isSolitaireState(value.solitaire))
+    || typeof value.wordSearchSession!=='string'||!/^([\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12})$/i.test(value.wordSearchSession)
+    || typeof value.wordSearchRevision!=='number'||!Number.isSafeInteger(value.wordSearchRevision)||value.wordSearchRevision<0
+    || !(value.wordSearch===null||isWordSearchState(value.wordSearch))
     || typeof value.musicEnabled !== 'boolean' || typeof value.soundEnabled !== 'boolean'
     || typeof value.animationsEnabled !== 'boolean' || !Array.isArray(value.games)
     || value.games.length !== loungeIds.length) return false;

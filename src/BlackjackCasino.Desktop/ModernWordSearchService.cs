@@ -77,6 +77,7 @@ internal sealed class ModernWordSearchService
         {
             Screen = game is null ? "library" : "game",
             CatalogTotal = WordSearchCatalog.All.Count,
+            ThemeTotal = WordSearchCatalog.All.Select(x => x.Theme).Distinct(StringComparer.Ordinal).Count(),
             CompletedTotal = progress.CompletedGames.Count,
             Difficulties = difficulties,
             Stats = new
