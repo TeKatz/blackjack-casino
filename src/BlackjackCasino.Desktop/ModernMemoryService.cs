@@ -16,6 +16,7 @@ internal sealed class ModernMemoryService
     private readonly Action<MemoryProgressState> persist;
     private readonly Func<MemoryStatistics> stats;
     private readonly Func<MemoryCompletionRecord, ProgressionAward> reward;
+    private readonly Action<MemoryFlipOutcome, bool>? feedback;
     private readonly Stopwatch clock = new();
     private readonly Stopwatch mismatch = new();
     private long elapsedBase;
@@ -25,13 +26,15 @@ internal sealed class ModernMemoryService
     internal ModernMemoryService(MemoryProgressState saved,
         Action<MemoryProgressState> persist,
         Func<MemoryStatistics> stats,
-        Func<MemoryCompletionRecord, ProgressionAward> reward)
+        Func<MemoryCompletionRecord, ProgressionAward> reward,
+        Action<MemoryFlipOutcome, bool>? feedback = null)
     {
         saved.Normalize();
         progress = CloneProgress(saved);
         this.persist = persist;
         this.stats = stats;
         this.reward = reward;
+        this.feedback = feedback;
     }
 
     internal MemoryGameState? CurrentGame => game;
@@ -227,10 +230,12 @@ internal sealed class ModernMemoryService
             rewardNotice = award.PlayerExperience > 0
                 ? $"+{award.PlayerExperience:N0} player XP · +{award.SeasonExperience:N0} season XP"
                 : "Table complete and saved.";
+            feedback?.Invoke(flip.Outcome, candidate.Perfect);
             return (true, notice);
         }
 
         PersistActive(candidate);
+        feedback?.Invoke(flip.Outcome, false);
         switch (flip.Outcome)
         {
             case MemoryFlipOutcome.FirstCard:

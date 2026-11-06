@@ -20,6 +20,9 @@ public partial class MainWindow
     private ModernWordSearchService? modernWordSearch;
     private ModernMemorySession? modernMemorySession;
     private ModernMemoryService? modernMemory;
+    private readonly object modernMemoryAudioOwner = new();
+    private static readonly Lazy<IReadOnlyDictionary<MemoryCue, AudioClip>> ModernMemoryCues =
+        new(() => Enum.GetValues<MemoryCue>().ToDictionary(cue => cue, MemorySoundSynthesis.Build));
     private readonly List<(UIElement Element, bool Enabled)> modernLoungeCoveredElements = [];
     private bool ModernLoungeOpen => modernLoungeView is not null;
 
@@ -158,7 +161,8 @@ public partial class MainWindow
             modernMemory ??= new ModernMemoryService(preferences.Memory,
                 SaveModernMemoryProgress,
                 () => progressionController?.Profile.Memory ?? new MemoryStatistics(),
-                RecordMemoryCompletion);
+                RecordMemoryCompletion,
+                PlayModernMemoryCue);
             modernLoungeView?.Refresh();
             return;
         }
@@ -254,6 +258,19 @@ public partial class MainWindow
                     : ex.Message);
             }
         });
+    }
+
+    private void PlayModernMemoryCue(MemoryFlipOutcome outcome, bool perfect)
+    {
+        if (!preferences.Presentation("chill-lounge").SoundEnabled) return;
+        MemoryCue cue = outcome switch
+        {
+            MemoryFlipOutcome.Match => MemoryCue.Match,
+            MemoryFlipOutcome.Mismatch => MemoryCue.Mismatch,
+            MemoryFlipOutcome.Completed => perfect ? MemoryCue.Perfect : MemoryCue.Complete,
+            _ => MemoryCue.Flip,
+        };
+        CasinoAudio.Play(ModernMemoryCues.Value[cue], modernMemoryAudioOwner, .5);
     }
 
     private void SaveModernMemoryProgress(MemoryProgressState state)
@@ -382,6 +399,7 @@ public partial class MainWindow
         }
         modernMemory = null;
         modernMemorySession = null;
+        CasinoAudio.Mixer.Stop(modernMemoryAudioOwner);
         modernLoungeView.Dispose();
         modernLoungeView = null;
         if (embeddedGameHost is not null) embeddedGameHost.Content = null;
