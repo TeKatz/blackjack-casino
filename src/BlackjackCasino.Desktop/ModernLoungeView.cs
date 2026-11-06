@@ -10,8 +10,8 @@ using Microsoft.Web.WebView2.Wpf;
 namespace BlackjackCasino.Desktop;
 
 /// <summary>
-/// React Lounge and Sudoku presentation. Native C# retains all rules, saves and rewards;
-/// this browser only opens allow-listed games and submits validated Sudoku intentions.
+/// Shared React Lounge, Sudoku and Solitaire presentation. Native C# retains rules, saves and rewards;
+/// this browser sends only versioned, whitelisted gameplay intentions.
 /// </summary>
 internal sealed class ModernLoungeView : ContentControl, IDisposable
 {
@@ -29,6 +29,8 @@ internal sealed class ModernLoungeView : ContentControl, IDisposable
     private readonly Action<string> openGame;
     private readonly Func<ModernSudokuCommand, ModernSudokuReply> sudokuCommand;
     private readonly Action sudokuTick;
+    private readonly Func<ModernSolitaireCommand, ModernSolitaireReply> solitaireCommand;
+    private readonly Action solitaireTick;
     private readonly Action close;
     private readonly Action failure;
     private readonly DispatcherTimer watchdog = new(DispatcherPriority.Background)
@@ -48,16 +50,20 @@ internal sealed class ModernLoungeView : ContentControl, IDisposable
 
     internal ModernLoungeView(Func<object> snapshot, Action<string> openGame,
         Func<ModernSudokuCommand, ModernSudokuReply> sudokuCommand, Action sudokuTick,
+        Func<ModernSolitaireCommand, ModernSolitaireReply> solitaireCommand, Action solitaireTick,
         Action close, Action failure)
     {
         this.snapshot = snapshot;
         this.openGame = openGame;
         this.sudokuCommand = sudokuCommand;
         this.sudokuTick = sudokuTick;
+        this.solitaireCommand = solitaireCommand;
+        this.solitaireTick = solitaireTick;
         refreshClock.Tick += (_, _) =>
         {
             if (!Ready || !IsVisible || disposed) return;
             sudokuTick();
+            solitaireTick();
             Refresh();
         };
         this.close = close;
@@ -171,6 +177,13 @@ internal sealed class ModernLoungeView : ContentControl, IDisposable
                     if (request is null) break;
                     ModernSudokuReply result = sudokuCommand(request);
                     Post("lounge.sudoku.result", result);
+                    Refresh();
+                    break;
+                case "lounge.solitaire.command" when listening && Ready && IsVisible:
+                    ModernSolitaireCommand? solitaireRequest = ModernSolitaireProtocol.Parse(e.WebMessageAsJson);
+                    if (solitaireRequest is null) break;
+                    ModernSolitaireReply solitaireResult = solitaireCommand(solitaireRequest);
+                    Post("lounge.solitaire.result", solitaireResult);
                     Refresh();
                     break;
                 case "lounge.open" when listening && Ready && IsVisible:

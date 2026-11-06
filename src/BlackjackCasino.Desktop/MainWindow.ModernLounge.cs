@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
 using BlackjackCasino.Core.Sudoku;
+using BlackjackCasino.Core.Solitaire;
 
 namespace BlackjackCasino.Desktop;
 
@@ -11,6 +12,8 @@ public partial class MainWindow
     private ModernLoungeView? modernLoungeView;
     private ModernSudokuSession? modernSudokuSession;
     private ModernSudokuService? modernSudoku;
+    private ModernSolitaireSession? modernSolitaireSession;
+    private ModernSolitaireService? modernSolitaire;
     private readonly List<(UIElement Element, bool Enabled)> modernLoungeCoveredElements = [];
     private bool ModernLoungeOpen => modernLoungeView is not null;
 
@@ -32,6 +35,9 @@ public partial class MainWindow
             Session = modernSudokuSession?.Id ?? string.Empty,
             Revision = modernSudokuSession?.Revision ?? 0L,
             Sudoku = modernSudoku?.Snapshot(),
+            SolitaireSession = modernSolitaireSession?.Id ?? string.Empty,
+            SolitaireRevision = modernSolitaireSession?.Revision ?? 0L,
+            Solitaire = modernSolitaire?.Snapshot(),
             Language = Localization.Language == UiLanguagePreference.German ? "de" : "en",
             MusicEnabled = preferences.Presentation("chill-lounge").MusicEnabled,
             SoundEnabled = preferences.Presentation("chill-lounge").SoundEnabled,
@@ -45,8 +51,10 @@ public partial class MainWindow
         if (ModernLoungeOpen || embeddedGameShell is not null) return;
         EnsureEmbeddedGameHost();
         modernSudokuSession = new ModernSudokuSession();
+        modernSolitaireSession = new ModernSolitaireSession();
         modernLoungeView = new ModernLoungeView(CreateModernLoungeSnapshot,
             OnModernLoungeGameSelected, ApplyModernSudokuCommand, CheckpointModernSudoku,
+            ApplyModernSolitaireCommand, CheckpointModernSolitaire,
             CloseModernLounge, OnModernLoungeFailed);
         foreach (UIElement element in CasinoRoot.Children.OfType<UIElement>()
             .Where(element => element != embeddedGameOverlay))
@@ -80,8 +88,17 @@ public partial class MainWindow
             modernLoungeView?.Refresh();
             return;
         }
+        if (id == "solitaire")
+        {
+            modernSolitaire ??= new ModernSolitaireService(preferences.Solitaire,
+                SaveModernSolitaireProgress,
+                () => progressionController?.Profile.Solitaire ?? new SolitaireStatistics(),
+                RecordSolitaireStart, RecordSolitaireAbandon, RecordSolitaireCompletion);
+            modernLoungeView?.Refresh();
+            return;
+        }
         CloseModernLounge();
-        // The native gameplay screens are retained until each game's React bridge
+        // Other native gameplay screens are retained until each game's React bridge
         // has been tested; the new hub is not allowed to mutate game state.
         Dispatcher.BeginInvoke(new Action(() => OpenLoungeCore(id)), DispatcherPriority.Loaded);
     }
@@ -106,6 +123,45 @@ public partial class MainWindow
                     : ex.Message);
             }
         });
+    }
+
+    private ModernSolitaireReply ApplyModernSolitaireCommand(ModernSolitaireCommand command)
+    {
+        if (modernSolitaireSession is null || modernSolitaire is null)
+            return new ModernSolitaireReply(command.RequestId, false, "Solitaire is not open.", 0);
+        return modernSolitaireSession.Execute(command, intent =>
+        {
+            try
+            {
+                (bool success, string message) = modernSolitaire.Execute(intent);
+                if (success && intent.Action == "solitaire.exit") modernSolitaire = null;
+                return (success, message);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+                or InvalidOperationException or ArgumentException or OverflowException)
+            {
+                return (false, ex is IOException or UnauthorizedAccessException
+                    ? "Solitaire could not be saved. The last committed deal is preserved."
+                    : ex.Message);
+            }
+        });
+    }
+
+    private void SaveModernSolitaireProgress(SolitaireProgressState state)
+    {
+        AppPreferences previous = preferences;
+        preferences = preferences with { Solitaire = SolitaireProgressState.Normalize(state) };
+        try { if (!testSession) SavePreferences(); }
+        catch { preferences = previous; throw; }
+    }
+
+    private void CheckpointModernSolitaire()
+    {
+        try { modernSolitaire?.CheckpointClock(); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            StatusText.Text = "Solitaire timer checkpoint could not be saved: " + ex.Message;
+        }
     }
 
     private void SaveModernSudokuProgress(SudokuProgressState state)
@@ -161,6 +217,13 @@ public partial class MainWindow
         }
         modernSudoku = null;
         modernSudokuSession = null;
+        try { modernSolitaire?.Stop(); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            StatusText.Text = "Solitaire time checkpoint could not be saved: " + ex.Message;
+        }
+        modernSolitaire = null;
+        modernSolitaireSession = null;
         modernLoungeView.Dispose();
         modernLoungeView = null;
         if (embeddedGameHost is not null) embeddedGameHost.Content = null;
