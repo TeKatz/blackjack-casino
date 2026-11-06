@@ -40,3 +40,9 @@ The CI tool \`tools/check_ui_migration_boundaries.py\` scans all \`.cs\` and \`.
 5. After cleanup, proceed to a smaller, WPF-independent Windows shell (phase 5), followed by device QA (phase 6) and stable-channel readiness (phase 7).
 
 The feature branch remains separate from \`main\` and Stable. The Development publisher and update-channel guard remain unchanged.
+
+## Browser recovery decoupling (2026-11-06)
+
+A React Chill Lounge startup/process/navigation failure no longer **automatically** creates the full legacy `LoungeWindow` with its six WPF game module factories. A small, standalone `BrowserRecoveryView` uses the same exclusive foreground surface to offer explicit Retry (when packaged assets exist), Original Games, and Casino Lobby actions. Missing `lounge.html` goes to this independent screen as well. `BrowserRecoverySession` is a WPF-free choice guard that accepts only one authorized action; the native game factory is still invoked **only** when the player explicitly chooses Original Games. The player-state and reward services are untouched.
+
+The original native fallback is intentionally **not deleted**, because it remains the only gameplay path when WebView2 cannot run. The recovery screen still renders within the interim WPF host; it is independent of *legacy WPF game UIs*, not a complete WPF-free application shell. Do not interpret this as permission to remove the old Lounge, its test coverage, or the other WPF game fallbacks yet.

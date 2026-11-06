@@ -64,3 +64,9 @@ The host is now split into bounded presentation ownership (`ModernGameSurface`),
 ## Fifth extraction — durable preference snapshot
 
 The existing `SavePreferences` entry point now delegates its model projection to WPF-independent `CasinoHostPreferences.Capture`. The snapshot retains the authoritative C# bankroll, selected-bet cap, table preferences, optional Casino Empire state, selected update channel and window placement, while leaving all unrelated save fields intact. `MainWindow` continues to own when writes happen and `PlayerStateStore` remains the same persistence implementation. The helper has deterministic unit tests and changes no save schema.
+
+## Next host recovery slice — independent Chill Lounge failure UI
+
+On missing packaged browser assets, browser initialization failure, navigation failure or WebView2 crash, the Chill Lounge now enters a compact recoverable host screen **without** initializing the old WPF game registry. The player decides whether to retry React (only if assets exist), open original games intentionally, or go back to the casino lobby. Dismissal restores the original native input states through `ModernGameSurface`. Selection cannot run twice. The original WPF games remain available on explicit demand; no saves, gameplay rules or reward ledgers changed. Windows STA smoke tests screen actions, input restoration and absence of old game module registration; xUnit tests cover the pure recovery decision contract.
+
+Scope still open: apply the common recovery contract to the entire casino lobby and all standalone game views; replace full legacy gameplay with a verified fallback before deleting those WPF views or the WPF desktop shell.

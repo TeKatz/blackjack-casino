@@ -16,7 +16,7 @@ public partial class MainWindow
 
     private void OpenLoungeCore(string? nativeGameId, bool forceLegacy = false)
     {
-        if (session.RoundInProgress || MetaPageOpen || embeddedGameShell is not null || EmpirePageOpen || KniffelPageOpen || ModernLoungeOpen)
+        if (session.RoundInProgress || MetaPageOpen || embeddedGameShell is not null || EmpirePageOpen || KniffelPageOpen || ModernLoungeOpen || BrowserRecoveryOpen)
         {
             return;
         }
@@ -33,10 +33,13 @@ public partial class MainWindow
         preferences = preferences with { Adventure = AdventureProgressState.Normalize(preferences.Adventure) };
 
         // React starts without creating WPF game factories or presentation resources.
-        if (!forceLegacy && nativeGameId is null && ModernLoungeView.IsAvailable)
+        if (!forceLegacy && nativeGameId is null)
         {
             LoungeHostedGameRegistry.ClearSessionModules();
-            OpenModernLounge();
+            if (ModernLoungeView.IsAvailable)
+                OpenModernLounge();
+            else
+                ShowLoungeBrowserRecovery(assetsAvailable: false);
             return;
         }
 

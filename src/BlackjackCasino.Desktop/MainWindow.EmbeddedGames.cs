@@ -323,6 +323,7 @@ public partial class MainWindow
 
     private void CloseEmbeddedGame()
     {
+        if (BrowserRecoveryOpen) { CloseBrowserRecovery(); return; }
         if (ModernLoungeOpen) { CloseModernLounge(); return; }
         if (ModernDiceOpen) { CloseModernDice(); return; }
         if (ModernMergeOpen) { CloseModernMerge(); return; }

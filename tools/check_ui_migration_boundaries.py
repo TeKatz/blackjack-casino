@@ -51,7 +51,7 @@ def main() -> int:
     lounge, modern, catalog = text(L), text(M), text(C)
     bridge, frontend, smoke = text(TS), text(UI), text(SMOKE)
 
-    modern_guard = lounge.find("if (!forceLegacy && nativeGameId is null && ModernLoungeView.IsAvailable)")
+    modern_guard = lounge.find("if (!forceLegacy && nativeGameId is null)")
     fallback_def = lounge.find("private void OpenLegacyLounge(")
     native_register = lounge.find("LoungeHostedGameRegistry.SetSessionModules(")
     native_styles = lounge.find("SudokuLoungePolish.EnsureInstalled(")
@@ -74,8 +74,30 @@ def main() -> int:
         issues.append("Modern game-selection routing boundary was not found.")
     elif "OpenLoungeCore(" in modern[routing_start:routing_end]:
         issues.append("React gameplay selection may not silently reopen a WPF game.")
-    if "OpenLoungeCore(null, forceLegacy: true)" not in modern:
-        issues.append("WPF emergency recovery must remain available on WebView2 failure.")
+    recovery_host = ROOT / "src/BlackjackCasino.Desktop/MainWindow.BrowserRecovery.cs"
+    recovery_view = ROOT / "src/BlackjackCasino.Desktop/BrowserRecoveryView.cs"
+    recovery_logic = ROOT / "src/BlackjackCasino.Desktop/BrowserRecoverySession.cs"
+    recovery_smoke = ROOT / "tools/StartupSmoke/BrowserRecoverySmoke.cs"
+    if not all(p.is_file() for p in (recovery_host, recovery_view, recovery_logic, recovery_smoke)):
+        issues.append("Independent Lounge recovery UI, policy or Windows smoke is missing.")
+    else:
+        host = text(recovery_host)
+        view = text(recovery_view)
+        if "OpenLoungeCore(null, forceLegacy: true)" not in host:
+            issues.append("Explicit native Lounge recovery must remain available.")
+        if "MountModernSurface(view)" not in host or "UnmountModernSurface(view)" not in host:
+            issues.append("Recovery UI bypasses the exclusive modern desktop surface.")
+        if "LoungeWindow" in view or "LoungeHostedGameRegistry" in view:
+            issues.append("Recovery UI must not instantiate native WPF game factories.")
+        if "BrowserRecoverySmoke.Run();" not in text(ROOT / "tools/StartupSmoke/Program.cs"):
+            issues.append("Windows recovery screen lifecycle smoke is missing.")
+    failure_start = modern.find("private void OnModernLoungeFailed()")
+    failure_end = modern.find("private void OpenModernCaseBoardWindow()", failure_start)
+    if failure_start < 0 or failure_end < 0 or (
+            "OpenLoungeCore(" in modern[failure_start:failure_end]):
+        issues.append("React browser failure must not silently launch WPF games.")
+    if "ShowLoungeBrowserRecovery(assetsAvailable: false)" not in lounge:
+        issues.append("Missing browser assets must route to explicit recovery choices.")
 
     def ids(source: str, marker: str, end: str) -> list[str]:
         start = source.find(marker)

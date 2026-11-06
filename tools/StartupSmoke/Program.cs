@@ -85,6 +85,7 @@ internal static class Program
                 Require(!((FrameworkElement)window.FindName("CasinoHeader")).IsVisible,
                     "The old Blackjack header is visible above the startup lobby.");
                 ModernGameSurfaceSmoke.Run();
+                BrowserRecoverySmoke.Run();
                 CheckWelcomeOverlay(window, profile, output);
                 await VerifyPackagedModernLobby(window, output);
                 RequireNoLegacyLobbyFrame(window, "startup");

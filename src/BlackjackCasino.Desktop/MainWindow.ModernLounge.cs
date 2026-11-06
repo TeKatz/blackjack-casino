@@ -530,9 +530,8 @@ public partial class MainWindow
     {
         if (modernLoungeView?.Failed != true || !IsLoaded) return;
         CloseModernLounge();
-        StatusText.Text = "Chill Lounge browser unavailable. Opening the original saved games.";
-        Dispatcher.BeginInvoke(new Action(() => OpenLoungeCore(null, forceLegacy: true)),
-            DispatcherPriority.Loaded);
+        StatusText.Text = "Chill Lounge browser unavailable. Choose retry, native backup or lobby.";
+        ShowLoungeBrowserRecovery(assetsAvailable: ModernLoungeView.IsAvailable);
     }
 
     private void OpenModernCaseBoardWindow()
