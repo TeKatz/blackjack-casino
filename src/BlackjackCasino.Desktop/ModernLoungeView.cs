@@ -10,8 +10,8 @@ using Microsoft.Web.WebView2.Wpf;
 namespace BlackjackCasino.Desktop;
 
 /// <summary>
-/// Read-only React Lounge hub. Native C# retains every game's rules, saves and rewards;
-/// this page can only open an allow-listed game or close back to the casino.
+/// React Lounge and Sudoku presentation. Native C# retains all rules, saves and rewards;
+/// this browser only opens allow-listed games and submits validated Sudoku intentions.
 /// </summary>
 internal sealed class ModernLoungeView : ContentControl, IDisposable
 {
@@ -27,11 +27,17 @@ internal sealed class ModernLoungeView : ContentControl, IDisposable
     };
     private readonly Func<object> snapshot;
     private readonly Action<string> openGame;
+    private readonly Func<ModernSudokuCommand, ModernSudokuReply> sudokuCommand;
+    private readonly Action sudokuTick;
     private readonly Action close;
     private readonly Action failure;
     private readonly DispatcherTimer watchdog = new(DispatcherPriority.Background)
     {
         Interval = TimeSpan.FromSeconds(18),
+    };
+    private readonly DispatcherTimer refreshClock = new(DispatcherPriority.Background)
+    {
+        Interval = TimeSpan.FromSeconds(1),
     };
     private bool initialized, disposed, listening;
     internal bool Ready { get; private set; }
@@ -41,10 +47,19 @@ internal sealed class ModernLoungeView : ContentControl, IDisposable
         AppContext.BaseDirectory, "ModernFrontend", "lounge.html"));
 
     internal ModernLoungeView(Func<object> snapshot, Action<string> openGame,
+        Func<ModernSudokuCommand, ModernSudokuReply> sudokuCommand, Action sudokuTick,
         Action close, Action failure)
     {
         this.snapshot = snapshot;
         this.openGame = openGame;
+        this.sudokuCommand = sudokuCommand;
+        this.sudokuTick = sudokuTick;
+        refreshClock.Tick += (_, _) =>
+        {
+            if (!Ready || !IsVisible || disposed) return;
+            sudokuTick();
+            Refresh();
+        };
         this.close = close;
         this.failure = failure;
         Name = "ModernLoungePresentation";
@@ -146,9 +161,17 @@ internal sealed class ModernLoungeView : ContentControl, IDisposable
                 case "lounge.ui-ready" when listening:
                     Ready = true;
                     watchdog.Stop();
+                    refreshClock.Start();
                     break;
                 case "lounge.close" when listening && Ready:
                     close();
+                    break;
+                case "lounge.sudoku.command" when listening && Ready && IsVisible:
+                    ModernSudokuCommand? request = ModernSudokuProtocol.Parse(e.WebMessageAsJson);
+                    if (request is null) break;
+                    ModernSudokuReply result = sudokuCommand(request);
+                    Post("lounge.sudoku.result", result);
+                    Refresh();
                     break;
                 case "lounge.open" when listening && Ready && IsVisible:
                     if (!root.TryGetProperty("id", out JsonElement id)
@@ -182,6 +205,7 @@ internal sealed class ModernLoungeView : ContentControl, IDisposable
         Ready = false;
         listening = false;
         watchdog.Stop();
+        refreshClock.Stop();
         browser.Visibility = Visibility.Collapsed;
         Dispatcher.BeginInvoke(failure, DispatcherPriority.Background);
     }
@@ -191,6 +215,7 @@ internal sealed class ModernLoungeView : ContentControl, IDisposable
         if (disposed) return;
         disposed = true;
         watchdog.Stop();
+        refreshClock.Stop();
         Loaded -= OnLoaded;
         Localization.LanguageChanged -= LanguageChanged;
         browser.Dispose();

@@ -2,12 +2,15 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
+using BlackjackCasino.Core.Sudoku;
 
 namespace BlackjackCasino.Desktop;
 
 public partial class MainWindow
 {
     private ModernLoungeView? modernLoungeView;
+    private ModernSudokuSession? modernSudokuSession;
+    private ModernSudokuService? modernSudoku;
     private readonly List<(UIElement Element, bool Enabled)> modernLoungeCoveredElements = [];
     private bool ModernLoungeOpen => modernLoungeView is not null;
 
@@ -26,6 +29,9 @@ public partial class MainWindow
         return new
         {
             Version = 1,
+            Session = modernSudokuSession?.Id ?? string.Empty,
+            Revision = modernSudokuSession?.Revision ?? 0L,
+            Sudoku = modernSudoku?.Snapshot(),
             Language = Localization.Language == UiLanguagePreference.German ? "de" : "en",
             MusicEnabled = preferences.Presentation("chill-lounge").MusicEnabled,
             SoundEnabled = preferences.Presentation("chill-lounge").SoundEnabled,
@@ -38,8 +44,10 @@ public partial class MainWindow
     {
         if (ModernLoungeOpen || embeddedGameShell is not null) return;
         EnsureEmbeddedGameHost();
+        modernSudokuSession = new ModernSudokuSession();
         modernLoungeView = new ModernLoungeView(CreateModernLoungeSnapshot,
-            OnModernLoungeGameSelected, CloseModernLounge, OnModernLoungeFailed);
+            OnModernLoungeGameSelected, ApplyModernSudokuCommand, CheckpointModernSudoku,
+            CloseModernLounge, OnModernLoungeFailed);
         foreach (UIElement element in CasinoRoot.Children.OfType<UIElement>()
             .Where(element => element != embeddedGameOverlay))
         {
@@ -62,10 +70,76 @@ public partial class MainWindow
     private void OnModernLoungeGameSelected(string id)
     {
         if (!ModernLoungeOpen) return;
+        if (id == "sudoku")
+        {
+            modernSudoku ??= new ModernSudokuService(preferences.Sudoku,
+                SaveModernSudokuProgress, () => preferences.SudokuShowTimer,
+                value => SaveModernSudokuTimer(value),
+                () => preferences.SudokuShowGuides,
+                value => SaveModernSudokuGuides(value), () => sudokuRewardNotice);
+            modernLoungeView?.Refresh();
+            return;
+        }
         CloseModernLounge();
         // The native gameplay screens are retained until each game's React bridge
         // has been tested; the new hub is not allowed to mutate game state.
         Dispatcher.BeginInvoke(new Action(() => OpenLoungeCore(id)), DispatcherPriority.Loaded);
+    }
+
+    private ModernSudokuReply ApplyModernSudokuCommand(ModernSudokuCommand command)
+    {
+        if (modernSudokuSession is null || modernSudoku is null)
+            return new ModernSudokuReply(command.RequestId, false, "Sudoku is not open.", 0);
+        return modernSudokuSession.Execute(command, intent =>
+        {
+            try
+            {
+                (bool success, string message) = modernSudoku.Execute(intent);
+                if (success && intent.Action == "sudoku.exit") modernSudoku = null;
+                return (success, message);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+                or ArgumentException or InvalidOperationException or OverflowException)
+            {
+                return (false, ex is IOException or UnauthorizedAccessException
+                    ? "Sudoku could not be saved. Your last committed board is unchanged."
+                    : ex.Message);
+            }
+        });
+    }
+
+    private void SaveModernSudokuProgress(SudokuProgressState state)
+    {
+        AppPreferences previous = preferences;
+        preferences = preferences with { Sudoku = state };
+        try { if (!testSession) SavePreferences(); }
+        catch { preferences = previous; throw; }
+        RecordSudokuCompletions(state);
+    }
+
+    private void SaveModernSudokuTimer(bool value)
+    {
+        AppPreferences old = preferences;
+        preferences = preferences with { SudokuShowTimer = value };
+        try { if (!testSession) SavePreferences(); }
+        catch { preferences = old; throw; }
+    }
+
+    private void SaveModernSudokuGuides(bool value)
+    {
+        AppPreferences old = preferences;
+        preferences = preferences with { SudokuShowGuides = value };
+        try { if (!testSession) SavePreferences(); }
+        catch { preferences = old; throw; }
+    }
+
+    private void CheckpointModernSudoku()
+    {
+        try { modernSudoku?.CheckpointClock(); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            StatusText.Text = "Sudoku timer checkpoint could not be saved: " + ex.Message;
+        }
     }
 
     private void OnModernLoungeFailed()
@@ -80,6 +154,13 @@ public partial class MainWindow
     private void CloseModernLounge()
     {
         if (modernLoungeView is null) return;
+        try { modernSudoku?.Stop(); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            StatusText.Text = "Sudoku time checkpoint could not be saved: " + ex.Message;
+        }
+        modernSudoku = null;
+        modernSudokuSession = null;
         modernLoungeView.Dispose();
         modernLoungeView = null;
         if (embeddedGameHost is not null) embeddedGameHost.Content = null;
