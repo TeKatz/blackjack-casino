@@ -102,8 +102,7 @@ internal static class KniffelCasinoSmoke
         await ModernDiceSmokeHelper.Click(web, "dice-result-close", false);
         decimal settledCash = window.DiceCasinoBankroll;
         long settledXp = profile.LifetimeExperience;
-        await ModernDiceSmokeHelper.Click(web, "dice-back", false);
-        await WaitForExit(window);
+        await Close(window, web);
         view = await Open(window);web = view.Browser.CoreWebView2!;
         Require(window.DiceCasinoBankroll == settledCash && profile.LifetimeExperience == settledXp,
             "Reopening completed casino dice paid cash or XP again.");
