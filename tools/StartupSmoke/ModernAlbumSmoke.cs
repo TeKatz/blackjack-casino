@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.Json;
 using System.IO;
 using System.Windows;
 using System.Windows.Media;
@@ -55,9 +56,14 @@ internal static class ModernAlbumSmoke
             +"return {name:b.textContent,top:r.top,left:r.left,width:r.width,height:r.height,"
             +"hit:hit?.tagName,hitClass:hit?.className,visible:r.top>=0&&r.bottom<=innerHeight,"
             +"reachable:hit===b||b.contains(hit)}})})})()");
-        Require(pointerDiagnostic.Contains("\\"reachable\\":true", StringComparison.Ordinal)
-            && !pointerDiagnostic.Contains("\\"reachable\\":false", StringComparison.Ordinal),
-            "Real pack buttons are not reachable: "+pointerDiagnostic);
+        string decoded = JsonSerializer.Deserialize<string>(pointerDiagnostic) ?? "{}";
+        using JsonDocument pointerState = JsonDocument.Parse(decoded);
+        JsonElement actions = pointerState.RootElement.GetProperty("actions");
+        Require(actions.GetArrayLength() >= 1
+            && actions.EnumerateArray().All(action =>
+                action.GetProperty("visible").GetBoolean()
+                && action.GetProperty("reachable").GetBoolean()),
+            "Real pack buttons are not reachable: " + decoded);
         await web.ExecuteScriptAsync("document.querySelector('.album-opening-primary')?.click()");
         await Until(()=>profile.Collection.PendingOpening is not null,
             "Opening a React pack did not persist the native receipt.");
