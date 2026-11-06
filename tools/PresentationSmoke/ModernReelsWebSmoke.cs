@@ -10,7 +10,9 @@ internal static partial class Program
     private static async Task CheckModernReelsRoute(MainWindow window, PlayerProfileState profile)
     {
         const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
-        decimal walletBefore = ((CasinoSession)typeof(MainWindow).GetField("session", flags)!.GetValue(window)!).Bankroll;
+        object controller = typeof(MainWindow).GetField("blackjack", flags)!.GetValue(window)!;
+        var session = (CasinoSession)controller.GetType().GetProperty("Session", flags)!.GetValue(controller)!;
+        decimal walletBefore = session.Bankroll;
         long spinsBefore = profile.Slots.Spins;
         window.Modes.Open("midnight-reels");
         ModernReelsView? cabinet = null;
