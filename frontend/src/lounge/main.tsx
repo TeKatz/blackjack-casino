@@ -7,6 +7,7 @@ import { SolitaireScreen } from './solitaire';
 import { WordSearchScreen } from './wordSearch';
 import { MemoryScreen } from './memory';
 import { JigsawScreen } from './jigsaw';
+import { AdventureScreen } from './adventure';
 import { isSudokuReply, issueSudokuIntent } from './sudokuBridge';
 import type { SudokuIntent } from './sudokuBridge';
 import { isSolitaireReply, issueSolitaireIntent } from './solitaireBridge';
@@ -17,6 +18,8 @@ import { isMemoryReply, issueMemoryIntent } from './memoryBridge';
 import type { MemoryIntent } from './memoryBridge';
 import { isJigsawReply, issueJigsawIntent } from './jigsawBridge';
 import type { JigsawIntent } from './jigsawBridge';
+import { isTaleReply, issueTaleIntent } from './adventureBridge';
+import type { TaleIntent } from './adventureBridge';
 import './lounge.css';
 
 type Language = 'de' | 'en';
@@ -83,6 +86,8 @@ function App() {
  const [memoryError,setMemoryError]=useState('');
  const [jigsawPending,setJigsawPending]=useState<string|null>(null);
  const [jigsawError,setJigsawError]=useState('');
+ const [adventurePending,setAdventurePending]=useState<string|null>(null);
+ const [adventureError,setAdventureError]=useState('');
  const signalled=useRef(false);
  useEffect(()=>{
    const webview=window.chrome?.webview;
@@ -126,6 +131,13 @@ function App() {
        setJigsawPending(prev=>prev===reply.requestId?null:prev);
        setJigsawError(reply.success?'':reply.message);
      }
+     if(msg&&typeof msg==='object'&&!Array.isArray(msg)
+       &&'type' in msg&&msg.type==='lounge.adventure.result'
+       &&'data' in msg&&isTaleReply(msg.data)){
+       const reply=msg.data;
+       setAdventurePending(prev=>prev===reply.requestId?null:prev);
+       setAdventureError(reply.success?'':reply.message);
+     }
    };
    webview?.addEventListener('message',handler);
    sendLoungeCommand('lounge.ready');
@@ -160,6 +172,11 @@ function App() {
    setWordSearchError('');
    setWordSearchPending(issueWordSearchIntent(snapshot.wordSearchSession,snapshot.wordSearchRevision,intent));
  }
+ function adventureCommand(intent:TaleIntent){
+   if(!snapshot||adventurePending||!snapshot.adventure)return;
+   setAdventureError('');
+   setAdventurePending(issueTaleIntent(snapshot.adventureSession,snapshot.adventureRevision,intent));
+ }
  function jigsawCommand(intent:JigsawIntent){
    if(!snapshot||jigsawPending||!snapshot.jigsaw)return;
    setJigsawError('');
@@ -176,7 +193,14 @@ function App() {
      <div className="chill-mark" aria-hidden="true">✦</div>
      <div className="chill-brand"><span>{t.club}</span><strong>Chill Lounge</strong></div>
      <span className="chill-local">{t.version}</span>
-     {snapshot?.jigsaw
+     {snapshot?.adventure
+       ? <button className="chill-exit" disabled={!!adventurePending||snapshot.adventure.screen==='encounter'}
+           onClick={()=>adventureCommand({action:snapshot.adventure?.screen==='library'?'adventure.exit':
+             snapshot.adventure?.screen==='board'?'adventure.board.close':'adventure.back'})}>
+           {snapshot.adventure.screen==='library'?'← Chill Lounge':
+             snapshot.adventure.screen==='board'?'← Zur Geschichte':
+             snapshot.adventure.screen==='encounter'?'Tabletop encounter':'← Abenteuer'}</button>
+       : snapshot?.jigsaw
        ? <button className="chill-exit" disabled={!!jigsawPending}
            onClick={()=>jigsawCommand({action:snapshot.jigsaw?.screen==='library'?'jigsaw.exit':'jigsaw.back'})}>
            {snapshot.jigsaw.screen==='library'?'← Chill Lounge':'← Puzzle-Studio'}</button>
@@ -206,7 +230,10 @@ function App() {
        : <button className="chill-exit" onClick={()=>sendLoungeCommand('lounge.close')}>{t.back}</button>}
    </header>
    <div className="chill-content">
-    {snapshot?.jigsaw
+    {snapshot?.adventure
+      ? <AdventureScreen state={snapshot.adventure} language={language} pending={!!adventurePending}
+          error={adventureError} command={adventureCommand} animations={snapshot.animationsEnabled}/>
+      : snapshot?.jigsaw
       ? <JigsawScreen state={snapshot.jigsaw} language={language} pending={!!jigsawPending}
           error={jigsawError} command={jigsawCommand} animations={snapshot.animationsEnabled}/>
       : snapshot?.memory
