@@ -154,8 +154,8 @@ function App(){
  const disabled=!!pending||uncertain;
  const available=state?.capacity!==undefined?state.capacity-state.items.length:42;
  const next=state?.restoration.next;
- const canMerge=(item:MergeItem):boolean=>
-   !!selectedItem&&selectedItem.id!==item.id&&selectedDef?.id===item.definitionId
+ const canMerge=(item:MergeItem|null):boolean=>
+   !!item&&!!selectedItem&&selectedItem.id!==item.id&&selectedDef?.id===item.definitionId
    &&selectedDef.mergeResult!==null;
  return <div className="merge-app" data-testid="midnight-merge-app"
    data-revision={snap?.revision??-1} data-language={lang} lang={lang}>
@@ -216,7 +216,7 @@ function App(){
                  data-definition={item?.definitionId??''} data-position={position}
                  disabled={disabled}
                  className={'merge-cell'+(item?' filled':' empty')+(own?' selected':'')
-                   +(target?' merge-target':'')+(canMerge(item!)?' compatible':'')
+                   +(target?' merge-target':'')+(canMerge(item)?' compatible':'')
                    +(animCell===position&&state.animationsEnabled?' created':'')}
                  aria-label={definition?definition.name+' · '+(Math.floor(position/7)+1)+':'+(position%7+1):
                    t.empty+' · '+(Math.floor(position/7)+1)+':'+(position%7+1)}
