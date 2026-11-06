@@ -25,6 +25,7 @@ export type StatisticsSnapshot={
 export type CosmeticIdentityOption={id:string;name:string;description:string;visualVariant:string};
 export type AccountSnapshot={
  displayName:string;level:number;prestige:number;coins:string;title:string;portraitId:string;
+ titleVariant?:string;portraitVariant?:string;frameVariant?:string;
  equippedTitleId:string;equippedPortraitId:string;
  portraits:CosmeticIdentityOption[];titles:CosmeticIdentityOption[];
  profileExperience:string;playtime:string;ownedCosmetics:number;ownedCards:number;totalCards:number;
@@ -103,6 +104,8 @@ export function isVaultReward(x:unknown):x is VaultReward{
  return obj(x)&&['tier','baseAmount','bonusAmount','total','pack'].every(k=>str(x[k]));
 }
 export function isAccount(x:unknown):x is AccountSnapshot{
+ if(!obj(x)||!['titleVariant','portraitVariant','frameVariant'].every(k=>x[k]===undefined||
+  str(x[k])&&/^[a-z0-9-]{1,100}$/.test(x[k] as string)))return false;
  if(!obj(x)||!['displayName','coins','title','portraitId','equippedTitleId','equippedPortraitId',
     'profileExperience','playtime','season','created'].every(k=>str(x[k]))
     ||!['level','prestige','ownedCosmetics','ownedCards','totalCards'].every(k=>count(x[k])))return false;

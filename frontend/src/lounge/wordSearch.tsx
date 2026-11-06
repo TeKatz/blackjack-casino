@@ -103,7 +103,7 @@ function Board({game,language,pending,command,animations}:{game:WordSearchPuzzle
    {Array.from({length:size*size},(_,i)=>{
     const row=Math.floor(i/size),column=i%size;
     return <button key={i} type="button" role="gridcell"
-      data-testid={'word-search-cell-'+row+'-'+column} disabled={pending||game.completed}
+      data-testid={'word-search-cell-'+row+'-'+column} disabled={game.completed} aria-disabled={pending||game.completed}
       className={'ws-cell'+(found.has(i)?' found':'')+(preview.has(i)?' selected':'')+
        (game.hint?.startRow===row&&game.hint?.startColumn===column?' hint':'')}
       aria-label={(language==='de'?'Zeile ':'Row ')+(row+1)+(language==='de'?' Spalte ':' column ')+(column+1)+' '+game.grid[i]}
@@ -132,7 +132,7 @@ export function WordSearchScreen({state,language,pending,error,command,animation
   {state.resume&&<div className="ws-resume">
    <div><span className="ws-eyebrow">{t.resume}</span><h2>{state.resume.theme}</h2>
     <p>{names[language][state.resume.difficulty]} · {state.resume.found}/{state.resume.total} {t.found.toLowerCase()} · {formatTime(state.resume.elapsedSeconds)}</p></div>
-   <button data-testid="word-search-resume" disabled={pending}
+   <button data-testid="word-search-resume" aria-disabled={pending}
     onClick={()=>command({action:'word-search.resume'})}>{t.resume} →</button>
   </div>}
   <div className="ws-library-heading"><h2>{t.library}</h2><small>{t.levels}</small></div>
@@ -144,7 +144,7 @@ export function WordSearchScreen({state,language,pending,error,command,animation
     <small>{i===0?t.dirRelaxed:i===1?t.dirEasy:t.dirHard}</small>
     <div className="ws-progress"><div style={{width:(d.completed/d.total*100)+'%'}}/></div>
     <span className="ws-progress-text">{d.completed}/{d.total} {t.solved.toLowerCase()}</span>
-    <button data-testid={'word-search-start-'+d.difficulty} disabled={pending||!!state.resume}
+    <button data-testid={'word-search-start-'+d.difficulty} disabled={!!state.resume} aria-disabled={pending||!!state.resume}
      onClick={()=>command({action:'word-search.start',difficulty:d.difficulty})}>
      {d.completed>=d.total?t.replay:t.play}</button>
    </article>)}
@@ -174,12 +174,12 @@ export function WordSearchScreen({state,language,pending,error,command,animation
       {game.words.map(word=><span key={word} className={found.has(word)?'found':''}>
         <b>{found.has(word)?'✓':'○'}</b> {word}</span>)}
      </div>
-     <button className="ws-hint-button" data-testid="word-search-hint" disabled={pending||game.completed}
+     <button className="ws-hint-button" data-testid="word-search-hint" disabled={game.completed} aria-disabled={pending||game.completed}
       onClick={()=>command({action:'word-search.hint'})}>{t.hint}</button>
      <p className="ws-note">{t.hintInfo}</p>
      <div className="ws-status" role="status">{error||state.notice}</div>
      {pending&&<small>{t.pending}</small>}<span className="ws-saved">{t.saved}</span>
-     <button className="ws-back" data-testid="word-search-back" disabled={pending}
+     <button className="ws-back" data-testid="word-search-back" aria-disabled={pending}
       onClick={()=>command({action:'word-search.back'})}>{t.back}</button>
     </aside>
    </div>

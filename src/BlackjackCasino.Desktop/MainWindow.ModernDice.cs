@@ -259,6 +259,7 @@ public partial class MainWindow
                 modernDiceNotice = $"Die {command.Index!.Value + 1} {(after.Held[command.Index.Value] ? "held" : "released")}.";
                 break;
             default:
+                CasinoFeedback.Menu(preferences.Presentation("kniffel").SoundEnabled);
                 modernDiceNotice = $"{KniffelView.CategoryName(category)}: {points} points recorded."
                     + (candidate.IsComplete ? $" Sheet complete with {candidate.Total} points." : $" Turn {candidate.FilledCount + 1} next.");
                 if (after.KniffelsScored > before.KniffelsScored)

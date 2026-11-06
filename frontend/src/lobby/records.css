@@ -282,3 +282,19 @@
 .identity-cosmetic-symbol img{position:absolute;inset:0;width:100%;height:100%;
  object-fit:cover;object-position:center top;border-radius:8px;filter:saturate(1.03);}
 .identity-cosmetic.selected .identity-cosmetic-symbol{outline:2px solid #d2b26f;outline-offset:2px;}
+
+
+.vault-safe-body{position:relative;width:160px;height:155px;perspective:550px;border:8px ridge var(--vault-accent);border-radius:15px;background:radial-gradient(ellipse,#fee79b,#735934 60%,#1d231d);box-shadow:inset 0 0 20px #000b,0 14px 30px #0008}
+.vault-safe-body .vault-door{position:absolute;inset:0;width:auto;height:auto;border:5px ridge var(--vault-accent);border-radius:8px;background:linear-gradient(135deg,#b4afa0,#3f4545 45%,#101e1e);transform-origin:left center;display:grid;place-items:center;transition:transform 1.4s cubic-bezier(.2,.7,.2,1)}
+.vault-door .vault-safe-wheel{font-size:60px;color:var(--vault-accent);text-shadow:0 0 15px var(--vault-accent)}.vault-door b{font-size:11px;letter-spacing:.12em;color:#ffeac1;position:absolute;bottom:8px}.vault-door i{position:absolute;right:10px;height:32px;width:8px;background:linear-gradient(90deg,#ddd,#555);border-radius:4px}
+.vault-chamber-art[data-tier=diamond] .vault-door{background:linear-gradient(135deg,#e2ffff,#537b91,#d7efff 70%,#5e8298)}
+.vault-chamber-art[data-tier=gold] .vault-door{background:linear-gradient(135deg,#e7c574,#68522c,#b69d57)}
+.vault-chamber-art[data-tier=bronze] .vault-door{background:linear-gradient(135deg,#ad8054,#513929,#a27a50)}
+.vault-opened .vault-safe-wheel{animation:vault-wheel-turn .7s ease-out both}.vault-opened .vault-door{transform:rotateY(-108deg);transition-delay:.6s}.vault-reward{animation:vault-reward-in .8s .8s both}
+@keyframes vault-wheel-turn{to{transform:rotate(180deg)}}@keyframes vault-reward-in{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.vault-door{transition:none!important}.vault-reward,.vault-safe-wheel{animation:none!important}}
+
+
+.record-page,.modern-shop{animation:casino-tab-in .24s ease-out both}
+@keyframes casino-tab-in{from{opacity:.35;transform:translateY(5px)}to{opacity:1;transform:none}}
+[data-reduced=true] .record-page,[data-reduced=true] .modern-shop{animation:none}

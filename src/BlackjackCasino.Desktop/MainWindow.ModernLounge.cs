@@ -14,6 +14,7 @@ namespace BlackjackCasino.Desktop;
 public partial class MainWindow
 {
     private ModernLoungeView? modernLoungeView;
+    private Window? modernCaseBoardWindow;
     private ModernSudokuSession? modernSudokuSession;
     private ModernSudokuService? modernSudoku;
     private ModernSolitaireSession? modernSolitaireSession;
@@ -33,7 +34,9 @@ public partial class MainWindow
     private readonly List<(UIElement Element, bool Enabled)> modernLoungeCoveredElements = [];
     private bool ModernLoungeOpen => modernLoungeView is not null;
 
-    private object CreateModernLoungeSnapshot()
+    private object CreateModernLoungeSnapshot() => CreateModernLoungeSnapshot(false);
+
+    private object CreateModernLoungeSnapshot(bool boardOnly)
     {
         var games = ModernLoungeCatalog.Create(id => id switch
         {
@@ -47,6 +50,7 @@ public partial class MainWindow
         return new
         {
             Version = ModernLoungeCatalog.SnapshotVersion,
+            BoardOnly = boardOnly,
             Session = modernSudokuSession?.Id ?? string.Empty,
             Revision = modernSudokuSession?.Revision ?? 0L,
             Sudoku = modernSudoku?.Snapshot(),
@@ -123,14 +127,14 @@ public partial class MainWindow
         modernMemorySession = new ModernMemorySession();
         modernJigsawSession = new ModernJigsawSession();
         modernAdventureSession = new ModernAdventureSession();
-        modernLoungeView = new ModernLoungeView(CreateModernLoungeSnapshot,
+        modernLoungeView = new ModernLoungeView(() => CreateModernLoungeSnapshot(),
             OnModernLoungeGameSelected, ApplyModernSudokuCommand, CheckpointModernSudoku,
             ApplyModernSolitaireCommand, CheckpointModernSolitaire,
             ApplyModernWordSearchCommand, CheckpointModernWordSearch,
             ApplyModernMemoryCommand, CheckpointModernMemory,
             ApplyModernJigsawCommand, CheckpointModernJigsaw,
             ApplyModernAdventureCommand,
-            CloseModernLounge, OnModernLoungeFailed);
+            CloseModernLounge, OnModernLoungeFailed, OpenModernCaseBoardWindow);
         foreach (UIElement element in CasinoRoot.Children.OfType<UIElement>()
             .Where(element => element != embeddedGameOverlay))
         {
@@ -331,6 +335,8 @@ public partial class MainWindow
             try
             {
                 (bool success, string message) = modernAdventure.Execute(intent);
+                if (success && (intent.Action is "adventure.back" or "adventure.exit"
+                    || modernAdventure.Screen is not ("story" or "board"))) modernCaseBoardWindow?.Close();
                 if (success && intent.Action == "adventure.exit")
                 {
                     modernAdventure = null;
@@ -538,9 +544,31 @@ public partial class MainWindow
             DispatcherPriority.Loaded);
     }
 
+    private void OpenModernCaseBoardWindow()
+    {
+        if (modernAdventure is null || modernLoungeView is null || !modernAdventure.HasCaseBoard
+            || modernAdventure.Screen is not ("story" or "board")) return;
+        if (modernCaseBoardWindow is not null) { modernCaseBoardWindow.Activate(); return; }
+        var host = new Window { Owner = this, Title = "Tales from the Backroom · Case Board",
+            Width = 1200, Height = 800, MinWidth = 800, MinHeight = 600,
+            Background = System.Windows.Media.Brushes.Black };
+        modernCaseBoardWindow = host;
+        ModernAdventureService service = modernAdventure;
+        service.DetachedBoardOpen = true;
+        var view = new ModernLoungeView(() => CreateModernLoungeSnapshot(true), _ => { },
+            ApplyModernSudokuCommand, () => { }, ApplyModernSolitaireCommand, () => { },
+            ApplyModernWordSearchCommand, () => { }, ApplyModernMemoryCommand, () => { },
+            ApplyModernJigsawCommand, () => { }, ApplyModernAdventureCommand,
+            () => host.Close(), () => host.Close(), boardOnly: true);
+        host.Content = view;
+        host.Closed += (_, _) => { view.Dispose(); service.DetachedBoardOpen = false; modernCaseBoardWindow = null; modernLoungeView?.Refresh(); };
+        host.Show();
+    }
+
     private void CloseModernLounge()
     {
         if (modernLoungeView is null) return;
+        modernCaseBoardWindow?.Close();
         try { modernSudoku?.Stop(); }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {

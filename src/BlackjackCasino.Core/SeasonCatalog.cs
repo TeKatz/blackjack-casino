@@ -67,7 +67,7 @@ public static class SeasonCatalog
             };
 
             long coins = tier % 10 == 0 ? 75 : tier % 5 == 0 ? 40 : 15;
-            tiers.Add(new SeasonTierDefinition(tier, tier * 200L, coins, cosmetic));
+            tiers.Add(new SeasonTierDefinition(tier, tier * 200L, coins, cosmetic, 100m));
         }
 
         return tiers;
@@ -102,7 +102,7 @@ public static class SeasonCatalog
                 _ when tier % 5 == 0 => 35,
                 _ => 12,
             };
-            tiers.Add(new SeasonTierDefinition(tier, required, coins, cosmetic));
+            tiers.Add(new SeasonTierDefinition(tier, required, coins, cosmetic, 100m));
         }
 
         return tiers;

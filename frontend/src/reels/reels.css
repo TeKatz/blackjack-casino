@@ -83,3 +83,16 @@ button:focus-visible,input:focus-visible{outline:2px solid #f4d08b;outline-offse
  .reels-sidebar{grid-template-columns:1fr}.reels-balances strong{font-size:18px}.reels-chips button{font-size:10px}
  .symbol-bar{height:32px}.symbol-bar strong{font-size:20px}.symbol-bar i{display:none}.symbol-seven{font-size:53px}}
 @media(prefers-reduced-motion:reduce){.reels-lightband.jackpot i{animation:none}}
+
+
+.reels-spin{flex-shrink:0;min-height:58px;height:auto;line-height:1.4;padding:12px 18px;overflow:visible}
+
+@media(min-width:1000px) and (min-height:600px){
+ .reels-app{height:100dvh;min-height:0;--reel-h:clamp(150px,calc(100dvh - 470px),430px)}
+ .reels-header{min-height:62px;padding-block:6px}.reels-body{width:100%;min-height:0;padding:12px;overflow:hidden;grid-template-columns:minmax(0,1fr) 290px}
+ .reels-cabinet{min-height:0;padding:10px 18px}.reels-brand h2{font-size:30px}.reels-tagline{margin:5px 0 8px}.reels-lightband{margin-bottom:7px}
+ .reels-stage{padding:8px 15px;width:100%;min-height:0}.reels-grid{max-width:none}.reels-reel{height:var(--reel-h)}.reels-symbol{height:calc(var(--reel-h)/3)}
+ .reels-payline{height:calc(var(--reel-h)/3);top:calc(50% - var(--reel-h)/6)}
+ .reels-status{min-height:40px;padding:5px 0}.reels-cabinet-footer{width:100%;gap:7px;flex-shrink:0}.reels-balances strong{font-size:22px}
+ .reels-chips button{padding:8px 2px}.reels-spin{min-height:48px;padding:8px 12px}.reels-sidebar{min-height:0;overflow:auto}.reels-sidebar section{padding:11px}
+}

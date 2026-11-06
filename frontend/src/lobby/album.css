@@ -258,3 +258,18 @@ button.album-collection-card:hover:not(.is-missing){transform:translateY(-6px);
 .casino-lobby-shell[data-reduced="true"] .album-reveal-slot.flipped .album-card-foil{animation:none!important;}
 .casino-lobby-shell[data-reduced="true"] .album-reveal-inner,
 .casino-lobby-shell[data-reduced="true"] .album-reveal-slot{transition:none!important;}
+
+
+.album-theme-grid{gap:10px}.album-card-grid{gap:10px}
+
+
+
+dialog.album-inspector-backdrop{position:fixed;inset:0;width:100vw;height:100dvh;max-width:none;max-height:none;margin:0;border:0;padding:28px;overscroll-behavior:contain;color:inherit}
+dialog.album-inspector-backdrop::backdrop{background:#000c}
+.album-stats{margin:10px 0;gap:8px}.album-stats>div{padding:8px 12px}
+.album-packs{padding:12px}.album-pack-choice{min-height:85px;padding:7px}.album-library{margin-top:10px;gap:10px}
+.album-themes{max-height:calc(100dvh - 250px);padding:10px 7px}.album-theme-item{padding:7px 5px}
+.album-gallery{padding:12px}.album-gallery-header{padding-bottom:8px}.album-gallery-header h2{font-size:25px}
+
+
+@media(min-width:1100px){.album-page .record-hero{min-height:135px;padding:14px 20px}.album-page .record-hero h1{font-size:32px}.album-page .record-hero-side{padding:10px;min-width:155px}.album-card-grid{grid-template-columns:repeat(6,minmax(0,1fr))}.album-card-grid.ultra{grid-template-columns:repeat(5,minmax(0,1fr))}.album-library{grid-template-columns:190px minmax(0,1fr)}}

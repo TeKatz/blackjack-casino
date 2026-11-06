@@ -1,7 +1,7 @@
 /** Visual-only timeline. Results and money always come from C#. */
 export type ReelSpeed = 'normal' | 'fast' | 'turbo';
 const TIMES: Record<ReelSpeed, readonly number[]> = {
-  normal: [750, 930, 1110, 1290, 1470],
+  normal: [1450, 1780, 2110, 2440, 2770],
   fast: [320, 415, 510, 605, 700],
   turbo: [145, 185, 225, 265, 305],
 };

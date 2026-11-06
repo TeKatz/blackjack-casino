@@ -90,6 +90,10 @@ internal static class ModernLoungeSmoke
             "document.querySelector('[data-testid=\"sudoku-cell-" + editable
             + "\"]')?.classList.contains('incorrect')===true",
             "Native C# solver did not flag the wrong value.");
+        await ClickAndWait(web, "[data-testid=\"sudoku-erase\"]",
+            "document.querySelector('[data-testid=\"sudoku-cell-" + editable
+            + "\"]')?.textContent?.trim()==='' && !document.querySelector('[data-testid=\"sudoku-back\"]')?.disabled",
+            "Erase did not clear the selected cell and release the Sudoku command lock.");
         await ClickAndWait(web, "[data-testid=\"sudoku-hint\"]",
             "document.querySelector('[data-testid=\"sudoku-cell-" + editable
             + "\"]')?.textContent?.trim()==='" + answer + "'",

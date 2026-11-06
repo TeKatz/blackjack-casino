@@ -96,3 +96,5 @@
 @media(max-width:460px){.memo-tier-grid{grid-template-columns:1fr}.memo-hero{flex-direction:column;align-items:flex-start}.memo-deck-grid{grid-template-columns:1fr 1fr}.memo-preview-card .memo-face-name{display:none}}
 @media(prefers-reduced-motion:reduce){.memo-card,.memo-progress-bar span{transition:none}.memo-card.face-up,.memo-card.matched{animation:none}}
 .memo-board-frame.reduced .memo-card{animation:none;transition:none}
+
+.memo-preview-card{position:relative;overflow:hidden;border-radius:4px}

@@ -1,0 +1,19 @@
+
+.native-preview{position:absolute;inset:0;display:grid;place-items:center;background:radial-gradient(ellipse,#193e31,#061912);overflow:hidden;transition:transform .45s}
+.lobby-game:hover .native-preview{transform:scale(1.06)}
+.preview-midnight-manor{background:linear-gradient(#100e1cbb,#100e1ccc),url('/album/atlas/midnight-manor.png') center/cover}
+.preview-neon-vault{background:radial-gradient(ellipse,#1b2a52,#0c0a22);box-shadow:inset 0 0 30px #b444de33}
+.preview-midnight-reels{background:radial-gradient(ellipse,#65405b,#1b1324)}
+.preview-reel-strip{display:flex;gap:8px;width:85%;height:75%;max-height:145px;padding:7px;border:3px ridge #b29b60;border-radius:10px;background:#07111d;box-shadow:0 0 20px #e7bf6c33}
+.preview-reel-strip>span{position:relative;display:grid;place-items:center;flex:1;min-width:0;background:linear-gradient(135deg,#fff8dc,#d4c09a);border-radius:5px;overflow:hidden}
+.preview-reel-strip svg,.preview-reel-strip img{width:100%;height:100%;object-fit:contain}.preview-reel-strip .symbol-seven{font:bold italic 58px Georgia,serif;color:#b4233b}.symbol-seven>span{font-size:15px}.preview-reel-strip .symbol-bar{border:2px solid #c6a05e;border-radius:5px;color:#ecd28c;background:#30202e;padding:9px 2px;display:grid;text-align:center;font:bold 20px Georgia,serif}.symbol-bar i{font-size:5px}
+.preview-reel-strip.neon-preview>span,.preview-reel-strip.manor-preview>span{background:radial-gradient(ellipse,#27304f,#0c1326)}
+.preview-blackjack-hand{display:flex;align-items:center;gap:8px;transform:rotate(-9deg)}.preview-blackjack-hand>span{width:65px;height:90px;border-radius:6px;background:linear-gradient(135deg,#fffae5,#dcd3b8);color:#172e25;border:2px solid #d3b57a;padding:5px 8px;font:bold 22px Georgia,serif;box-shadow:0 6px 10px #0007}.preview-blackjack-hand>span:nth-child(2){transform:rotate(17deg);color:#ac3548}.preview-blackjack-hand big{display:block;text-align:center;font-size:38px}.preview-blackjack-hand b{font:bold 42px Georgia,serif;color:#efce88;margin-left:14px}
+.preview-merge-grid{position:relative;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;width:150px;padding:6px;border:2px ridge #b4a071;border-radius:7px;background:#0b2229;transform:rotate(-5deg)}.preview-merge-grid span{display:grid;place-items:center;font-size:18px;aspect-ratio:1;background:#2e514d;border-radius:4px;color:#f0d091}.preview-merge-grid b{position:absolute;right:-35px;top:28px;font-size:42px;color:#f4ce83}
+.preview-empire{display:flex;align-items:end;color:#e0bd76;font-size:48px;gap:4px;text-shadow:0 4px 8px #000}.preview-empire strong{font-size:85px}.preview-empire span:nth-child(2),.preview-empire span:nth-child(4){font-size:60px}
+.preview-lounge-cards{display:flex;gap:10px}.preview-lounge-cards span{width:65px;height:83px;background:#174532;border:1px solid #dfc38c;border-radius:7px;color:#edcf94;display:grid;place-items:center;font:30px Georgia,serif;transform:rotate(-9deg)}.preview-lounge-cards span:nth-child(2){font-size:24px;transform:rotate(5deg);background:#324731}.preview-lounge-cards span:nth-child(3){transform:rotate(15deg)}
+
+.game-kniffel .game-art-window::after{content:none}
+@media(max-width:1100px){.lobby-game-grid:not(.filtered) .game-midnight-merge{order:1}.lobby-game-grid:not(.filtered) .game-midnight-manor{order:2}}
+
+.preview-merge-grid svg{width:100%;height:100%;display:block}.preview-casino-empire{background:linear-gradient(#04161255,#04161299),url('/empire-art/private-gaming-salon.png') center/cover}.preview-empire{filter:drop-shadow(0 3px 5px #000a)}

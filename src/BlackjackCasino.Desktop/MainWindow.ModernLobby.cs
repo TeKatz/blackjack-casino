@@ -10,6 +10,19 @@ namespace BlackjackCasino.Desktop;
 
 public partial class MainWindow
 {
+    private static string FormatModernEmpireCredits(decimal value)
+    {
+        (decimal divisor, string suffix) = value switch
+        {
+            >= 1_000_000_000_000m => (1_000_000_000_000m, "T"),
+            >= 1_000_000_000m => (1_000_000_000m, "B"),
+            >= 1_000_000m => (1_000_000m, "M"),
+            >= 1_000m => (1_000m, "K"),
+            _ => (1m, ""),
+        };
+        return (value / divisor).ToString(divisor == 1m ? "N0" : "0.#", CultureInfo.InvariantCulture) + suffix;
+    }
+
     private ModernLobbyView? modernLobby;
     private DispatcherTimer? modernLobbyRefresh;
     private Border? modernLobbyLoading;
@@ -236,8 +249,13 @@ public partial class MainWindow
             Coins = profile.Coins.ToString("N0", CultureInfo.InvariantCulture),
             Prestige = profile.Prestige,
             Title = CosmeticCatalog.Get(profile.EquippedTitleId).Name,
+            TitleVariant = CosmeticCatalog.Get(profile.EquippedTitleId).VisualVariant,
+            PortraitVariant = CosmeticCatalog.Get(profile.EquippedPortraitId).VisualVariant,
+            FrameVariant = CosmeticCatalog.Get(profile.EquippedFrameId).VisualVariant,
             Bankroll = Money(session.Bankroll),
-            EmpireCredits = empire is null ? "—" : $"{empire.Credits:N0} cr",
+            EmpireCredits = empire is null ? "—" : FormatModernEmpireCredits(empire.Credits) + " cr",
+            News = ReleaseNotesCatalog.Current,
+            InstalledVersion = AppVersion.Current.ToString(),
             AlbumOwned = profile.Collection.OwnedCardIds.Count,
             AlbumTotal = CollectionCatalog.Cards.Count,
             SeasonTier = progress.SeasonTier,

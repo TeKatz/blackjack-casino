@@ -162,3 +162,19 @@ button:disabled{opacity:.45;cursor:default}button:focus-visible,input:focus-visi
  .merge-milestone-labels{display:none}.merge-rewards{display:none}.merge-footer{grid-template-columns:1fr auto}
  .merge-settings{grid-column:2;grid-row:1}}
 @media(prefers-reduced-motion:reduce){.merge-cell,.merge-cell .merge-item-art,.merge-unlock,.merge-loading-symbol{animation:none!important;transition:none!important}}
+
+
+@media(min-width:1000px) and (min-height:600px){
+ .merge-app{min-height:0;height:100dvh}.merge-scroll{overflow:hidden;flex:1;padding-top:8px;gap:8px}
+ .merge-restoration{flex-shrink:0;padding:6px 10px}.merge-scene{height:clamp(60px,11vh,150px)}
+ .merge-board-section{height:calc(100% - 30px);grid-template-columns:minmax(0,1fr) 175px;align-items:start}
+ .merge-board{width:min(100%,calc((100dvh - 365px)*7/6));height:auto;max-height:none;min-height:0;aspect-ratio:7/6;margin-inline:auto;flex-shrink:0}
+ .merge-workspace{flex:1;overflow:hidden}.merge-board-panel{display:flex;flex-direction:column}.merge-board-section{flex:1;min-height:0}
+ .merge-supply{height:100%;min-height:0;gap:5px}.merge-producer{min-height:54px;padding:5px}.merge-producer-art{width:34px;height:34px;flex-basis:34px}
+ .merge-help{margin-top:8px;padding:7px}.merge-help p{font-size:10px;line-height:1.4}.merge-orders{overflow:auto}
+}
+
+@media(min-width:1000px) and (min-height:600px){
+ .merge-board-section{height:auto;container-type:size;grid-template-rows:minmax(0,1fr)}
+ .merge-board{width:min(100%,calc(100cqh * 7 / 6));height:auto;max-height:100%}
+}

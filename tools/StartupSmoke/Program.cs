@@ -487,6 +487,10 @@ internal static class Program
             "Packaged React lobby did not render nine real games and live profile state. "
             + "DOM validation returned " + result);
 
+        Require(await modern.Browser.CoreWebView2.ExecuteScriptAsync("Boolean(document.querySelector('dialog.casino-news:modal'))") == "true",
+            "The React startup news dialog is missing.");
+        await modern.Browser.CoreWebView2.ExecuteScriptAsync("document.querySelector('.casino-news .lobby-gold-button')?.click()");
+        await Task.Delay(100);
         RequireNoLegacyLobbyFrame(window, "rendered React lobby");
         await CheckModernLobbyUpdates(window, modern);
         Require(!Find<FrameworkElement>(window).Any(drawer => drawer.Name == "LobbyDailyDrawer" && drawer.IsVisible),

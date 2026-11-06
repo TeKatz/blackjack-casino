@@ -11,6 +11,7 @@ export type DailyLoginSnapshot = {
 };
 export type LobbySnapshot = {
   dailyLogin: DailyLoginSnapshot;
+ titleVariant?:string;portraitVariant?:string;frameVariant?:string;
   displayName: string; level: number; coins: string; prestige: number; title: string;
   bankroll: string; empireCredits: string; albumOwned: number; albumTotal: number;
   seasonTier: number; seasonNextTier: number; seasonExperience: number; seasonRequired: number;
@@ -19,6 +20,7 @@ export type LobbySnapshot = {
   vaultAmount: string; vaultCapacity: string; vaultFraction: number;
   animationsEnabled: boolean; albumSoundEnabled: boolean;
   musicEnabled: boolean; musicVolume: number; showEmpireBalance: boolean;
+  news?:{title:string;description:string;accent:string}[];installedVersion?:string;
   language: 'de' | 'en'; modes: LobbyMode[];
 };
 
@@ -30,6 +32,12 @@ const fraction = (x: unknown) => numeric(x) && x >= 0 && x <= 1;
 
 export function isLobbySnapshot(x: unknown): x is LobbySnapshot {
   if (!object(x) || !object(x.dailyLogin)) return false;
+  if (!['titleVariant','portraitVariant','frameVariant'].every(k=>x[k]===undefined||
+    typeof x[k]==='string'&&/^[a-z0-9-]{1,100}$/.test(x[k] as string)))return false;
+  if(x.installedVersion!==undefined&&(!string(x.installedVersion)||x.installedVersion.length>80))return false;
+  if(x.news!==undefined&&(!Array.isArray(x.news)||x.news.length>24||!x.news.every(n=>object(n)&&
+    string(n.title)&&n.title.length<=2000&&string(n.description)&&n.description.length<=12000&&
+    string(n.accent)&&/^#[0-9a-f]{6}$/i.test(n.accent))))return false;
   const daily = x.dailyLogin;
   if (typeof daily.canClaim !== 'boolean' || typeof daily.claimedToday !== 'boolean'
     || !['totalClaims','activeStep','nextStep','cycleCompletedSteps'].every(k => numeric(daily[k]) && Number(daily[k]) >= 0)

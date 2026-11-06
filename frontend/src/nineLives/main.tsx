@@ -189,7 +189,7 @@ function App(){
    result.bonusCount===2?t.near:t.noWin);
  const canChangeBet=!locked&&!s.bonusActive;
  const selectedIndex=s.bets.indexOf(s.bet);
- return <div className="nine-app" lang={s.language} data-language={s.language}
+ return <div className="nine-app" data-motion={s.animationsEnabled} lang={s.language} data-language={s.language}
    data-testid="nine-lives-app" data-spin-id={result?.id??''}
    data-animating={animating} data-bonus={s.bonusActive}>
    <RooftopAmbient enabled={!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches&&s.animationsEnabled}/>

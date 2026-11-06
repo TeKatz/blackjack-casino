@@ -40,6 +40,8 @@ internal sealed class ModernLoungeView : ContentControl, IDisposable
     private readonly Func<ModernAdventureCommand, ModernAdventureReply> adventureCommand;
     private readonly Action close;
     private readonly Action failure;
+    private readonly Action? openBoardWindow;
+    private readonly bool boardOnly;
     private readonly DispatcherTimer watchdog = new(DispatcherPriority.Background)
     {
         Interval = TimeSpan.FromSeconds(18),
@@ -62,9 +64,11 @@ internal sealed class ModernLoungeView : ContentControl, IDisposable
         Func<ModernMemoryCommand, ModernMemoryReply> memoryCommand, Action memoryTick,
         Func<ModernJigsawCommand, ModernJigsawReply> jigsawCommand, Action jigsawTick,
         Func<ModernAdventureCommand, ModernAdventureReply> adventureCommand,
-        Action close, Action failure)
+        Action close, Action failure, Action? openBoardWindow = null, bool boardOnly = false)
     {
         this.snapshot = snapshot;
+        this.openBoardWindow = openBoardWindow;
+        this.boardOnly = boardOnly;
         this.openGame = openGame;
         this.sudokuCommand = sudokuCommand;
         this.sudokuTick = sudokuTick;
@@ -228,14 +232,19 @@ internal sealed class ModernLoungeView : ContentControl, IDisposable
                     Post("lounge.jigsaw.result", jigsawResult);
                     Refresh();
                     break;
+                case "lounge.adventure.board-window" when listening && Ready && IsVisible && !boardOnly:
+                    openBoardWindow?.Invoke();
+                    break;
                 case "lounge.adventure.command" when listening && Ready && IsVisible:
                     ModernAdventureCommand? taleRequest = ModernAdventureProtocol.Parse(e.WebMessageAsJson);
                     if (taleRequest is null) break;
+                    if (boardOnly && taleRequest.Action == "adventure.board.close") { close(); break; }
+                    if (boardOnly && taleRequest.Action is not ("adventure.board.move" or "adventure.board.view")) break;
                     ModernAdventureReply taleReply = adventureCommand(taleRequest);
                     Post("lounge.adventure.result", taleReply);
                     Refresh();
                     break;
-                case "lounge.open" when listening && Ready && IsVisible:
+                case "lounge.open" when listening && Ready && IsVisible && !boardOnly:
                     if (!root.TryGetProperty("id", out JsonElement id)
                         || id.ValueKind != JsonValueKind.String) return;
                     string? route = id.GetString();

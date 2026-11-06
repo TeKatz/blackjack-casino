@@ -69,3 +69,8 @@ export function issueSudokuIntent(session:string,revision:number,intent:SudokuIn
    session,expectedRevision:revision,...intent});
  return requestId;
 }
+
+export function sudokuEditIntent(action:'sudoku.erase'|'sudoku.hint',selected:number):SudokuIntent|null {
+ if(!Number.isInteger(selected)||selected < (action==='sudoku.hint'?-1:0)||selected>80)return null;
+ return {action,index:selected};
+}

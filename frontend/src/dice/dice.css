@@ -294,3 +294,14 @@ button:disabled{cursor:default;opacity:.48}
 @media(prefers-reduced-motion:reduce){
  .md-die,.md-die-image,.md-celebration,.md-loading span{animation:none!important;transition:none!important}
 }
+
+
+.md-die.rolling{animation:md-tumble .9s cubic-bezier(.15,.65,.25,1) both;transform-origin:50% 85%;will-change:transform}
+.md-die.rolling:nth-child(2){animation-delay:40ms}.md-die.rolling:nth-child(3){animation-delay:75ms}.md-die.rolling:nth-child(4){animation-delay:25ms}.md-die.rolling:nth-child(5){animation-delay:100ms}
+@keyframes md-tumble{0%{transform:translateY(0) rotate(0)}20%{transform:translate(-12px,-45px) rotate(-95deg) scale(.9)}45%{transform:translate(9px,-15px) rotate(180deg)}65%{transform:translate(-3px,-28px) rotate(300deg)}85%{transform:translateY(3px) rotate(365deg)}100%{transform:none}}
+@media(prefers-reduced-motion:reduce){.md-die.rolling{animation:none!important}}
+
+
+.md-app[data-motion=false] *,.md-app[data-motion=false] *::before,.md-app[data-motion=false] *::after{animation:none!important;transition:none!important}
+
+.md-die.rolling .md-die-image{animation:none}

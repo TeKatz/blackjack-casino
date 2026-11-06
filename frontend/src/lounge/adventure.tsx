@@ -59,16 +59,21 @@ const outcomeLabel=(outcome:string,language:Lang)=>{
  Win:['Victory','Sieg'],Loss:['Defeat','Niederlage'],Draw:['Draw','Unentschieden']};
  return labels[outcome]?.[language==='de'?1:0]??outcome;
 };
+function eventLabel(event:string,de:boolean){
+ const map:Record<string,[string,string]>={AddItem:['Item','Gegenstand'],RemoveItem:['Item used','Gegenstand verwendet'],ApplyCondition:['Condition','Zustand'],RemoveCondition:['Recovery','Erholung'],DiscoverCaseNode:['Clue','Hinweis'],RevealCaseConnection:['Connection','Verbindung'],ConfirmCaseConnection:['Evidence','Beweis'],ChangeCoins:['Coins','Münzen'],ChangeHitPoints:['Health','Gesundheit'],UnlockTheory:['Theory','Theorie']};
+ return map[event]?.[de?1:0]??(de?'Ereignis':'Event');
+}
 function ChoiceButtons({run,copy,pending,send}:{
  run:TaleRun;copy:Copy;pending:boolean;send:(intent:TaleIntent)=>void}){
  return <div className="backroom-choices" aria-label={copy.what}>
   <h3>{copy.what}</h3>
-  {run.choices.map((choice,i)=><button key={choice.id} disabled={pending}
-   className={'backroom-choice'+(choice.encounter?' encounter':'')}
+  {run.choices.map((choice,i)=><button key={choice.id} aria-disabled={pending}
+   className={'backroom-choice'+(choice.encounter?' encounter':'')+(choice.events?.length?' event-choice':'')}
    onClick={()=>send({action:'adventure.choice',choiceId:choice.id})}>
    <span className="backroom-choice-index">{String(i+1).padStart(2,'0')}</span>
    <span className="backroom-choice-copy"><strong>{choice.text}</strong>
    {choice.check&&<small>{choice.check.ability} · DC {choice.check.difficulty}</small>}
+   {choice.events?.length&&<small className="backroom-choice-event">✦ {choice.events.map(event=>eventLabel(event,copy.roll==='W20 WÜRFELN')).join(' · ')}</small>}
    {choice.encounter&&<small>{choice.encounter==='Blackjack'?'BLACKJACK':'FIVE OF A KIND'} · ENCOUNTER</small>}</span>
   </button>)}
  </div>;
@@ -76,6 +81,9 @@ function ChoiceButtons({run,copy,pending,send}:{
 function CharacterSheet({run,copy,pending,send}:{
  run:TaleRun;copy:Copy;pending:boolean;send:(intent:TaleIntent)=>void}){
  const character=run.character;
+ const [rolling,setRolling]=useState(false),[shownRoll,setShownRoll]=useState(run.lastRoll?.chosenRoll??20);
+ useEffect(()=>{if(!rolling)setShownRoll(run.lastRoll?.chosenRoll??20);},[run.lastRoll?.chosenRoll,rolling]);
+ useEffect(()=>{if(!rolling)return;const timer=window.setTimeout(()=>setRolling(false),950);return()=>window.clearTimeout(timer);},[rolling]);
  return <aside className="backroom-sheet">
   <small className="backroom-eyebrow">{copy.stats}</small>
   <h2>{character.name}</h2><p>{character.classId} · {copy.level} {character.level}</p>
@@ -95,12 +103,12 @@ function CharacterSheet({run,copy,pending,send}:{
   {run.conditions.length>0&&<><h3>{copy.conditions}</h3>
    <div className="backroom-conditions">{run.conditions.map(c=><span key={c.conditionId}
      title={c.remaining+' scenes'}>{c.name} · {c.remaining}</span>)}</div></>}
-  <div className={'backroom-d20 '+(run.pending?'active':'')}>
+  <div className={'backroom-d20 '+(run.pending?'active ':'')+(rolling?'rolling':'')}>
    <strong>D20</strong>
-   <span>{run.pending?copy.waiting:run.lastRoll?run.lastRoll.chosenRoll:'20'}</span>
+   <span className="backroom-d20-shape"><svg viewBox="0 0 140 150" aria-hidden="true"><defs><linearGradient id="d20-metal" x2="1" y2="1"><stop stopColor="#d6bf83"/><stop offset=".5" stopColor="#334b48"/><stop offset="1" stopColor="#101f27"/></linearGradient></defs><path d="M70 4L128 35L135 105L70 146L5 105L12 35Z" fill="url(#d20-metal)" stroke="#f3d58d" strokeWidth="3"/><path d="M70 4L30 94L110 94Z M12 35L30 94L5 105 M128 35L110 94L135 105 M30 94L70 146L110 94" fill="none" stroke="#d9c08b" strokeWidth="1.5"/></svg><b>{rolling?'✦':shownRoll}</b></span>
    {run.pending?<><small>{run.pending.ability} · DC {run.pending.difficulty} · {copy.mod} {signed(run.pending.modifier)}
     {run.pending.mode==='Advantage'?' · '+copy.adv:run.pending.mode==='Disadvantage'?' · '+copy.disadv:''}</small>
-    <button className="backroom-primary" disabled={pending} onClick={()=>send({action:'adventure.roll'})}>{copy.roll}</button>
+    <button className="backroom-primary" disabled={rolling} aria-disabled={pending||rolling} onClick={()=>{setRolling(true);send({action:'adventure.roll'});}}>{copy.roll}</button>
    </>:run.lastRoll&&<small>{outcomeLabel(run.lastRoll.outcome,'en')} · {run.lastRoll.total}/{run.lastRoll.difficulty}</small>}
   </div>
  </aside>;
@@ -113,12 +121,12 @@ function Inventory({run,copy,pending,send}:{
    {run.inventory.length===0&&<p>{copy.empty}</p>}
    {run.inventory.map(item=><div key={item.itemId} className="backroom-item" title={item.description}>
      <strong>{item.name}</strong><small>{item.kind} · ×{item.quantity}</small>
-     {item.useChoices.map(choice=><button key={choice.id} disabled={pending}
+     {item.useChoices.map(choice=><button key={choice.id} aria-disabled={pending}
        onClick={()=>send({action:'adventure.choice',choiceId:choice.id})}>
        {copy.use}: {choice.text}</button>)}
     </div>)}</div>
   {run.feedback.length>0&&<div className="backroom-feed" aria-live="polite">
-   {run.feedback.slice(-3).map((event,i)=><p key={i}><strong>{event.title}</strong> {event.description}</p>)}
+   {run.feedback.map((event,i)=><p className={'event-'+event.type.toLowerCase()+(event.type==='ItemAcquired'&&run.inventory.some(item=>item.kind==='Relic'&&event.title.includes(item.name))?' rare-event':'')} key={event.type+event.title+event.description+i}><strong>{event.title}</strong> {event.description}</p>)}
   </div>}
  </section>;
 }
@@ -126,13 +134,13 @@ function Story({run,copy,pending,send}:{
  run:TaleRun;copy:Copy;pending:boolean;send:(intent:TaleIntent)=>void}){
  return <div className="backroom-story-grid">
   <div className="backroom-story-column">
-   <section className="backroom-story-panel">
+   <section className="backroom-story-panel" key={run.scene.id}>
     <div className="backroom-scene-top">
      <div><small className="backroom-eyebrow">{run.scene.act}</small>
       <h1>{run.scene.title}</h1>{run.scene.location&&<span>{run.scene.location}</span>}</div>
      <div className="backroom-top-actions">
-      {run.board&&<button disabled={pending} onClick={()=>send({action:'adventure.board.open'})}>{copy.openBoard}</button>}
-      <button disabled={pending} onClick={()=>send({action:'adventure.back'})}>{copy.back}</button>
+      {run.board&&<button aria-disabled={pending} onClick={()=>send({action:'adventure.board.open'})}>{copy.openBoard}</button>}{run.board&&<button onClick={()=>window.chrome?.webview?.postMessage({type:'lounge.adventure.board-window',version:1})} title={copy.board}>↗ {copy.board}</button>}
+      <button aria-disabled={pending} onClick={()=>send({action:'adventure.back'})}>{copy.back}</button>
      </div></div>
     <div className="backroom-story-prose">
      {run.scene.speaker&&<small className="backroom-speaker">{run.scene.speaker}</small>}
@@ -151,8 +159,8 @@ function Story({run,copy,pending,send}:{
   <CharacterSheet run={run} copy={copy} pending={pending} send={send}/>
  </div>;
 }
-function CaseBoard({board,copy,pending,send}:{
- board:TaleBoard;copy:Copy;pending:boolean;send:(intent:TaleIntent)=>void}){
+function CaseBoard({board,copy,pending,send,error}:{
+ board:TaleBoard;copy:Copy;pending:boolean;send:(intent:TaleIntent)=>void;error:string}){
  const [selected,setSelected]=useState<string|null>(null);
  const [visibleCategories,setVisibleCategories]=useState<Set<string>>(new Set(['Person','Location','Evidence','Lead','Theory']));
  const [local,setLocal]=useState<{id:string;x:number;y:number}|null>(null);
@@ -166,7 +174,7 @@ function CaseBoard({board,copy,pending,send}:{
  const start=(event:ReactPointerEvent<HTMLButtonElement>,n:TaleBoardNode)=>{
   if(event.button!==0)return;
   event.currentTarget.setPointerCapture(event.pointerId);
-  drag.current={id:n.id,startX:event.clientX,startY:event.clientY,x:n.x,y:n.y};
+  drag.current={id:n.id,startX:event.clientX,startY:event.clientY,x:effective(n).x,y:effective(n).y};
   setSelected(n.id);
  };
  const movement=(event:ReactPointerEvent<HTMLButtonElement>)=>{
@@ -178,24 +186,35 @@ function CaseBoard({board,copy,pending,send}:{
  const end=()=>{
   if(drag.current&&local&&local.id===drag.current.id)
    send({action:'adventure.board.move',nodeId:local.id,x:Math.round(local.x),y:Math.round(local.y)});
-  drag.current=null;setLocal(null);
+  drag.current=null;
+ };
+ useEffect(()=>{if(local&&!drag.current){const saved=board.nodes.find(n=>n.id===local.id);
+  if((saved&&Math.abs(saved.x-local.x)<1&&Math.abs(saved.y-local.y)<1)||!!error)setLocal(null);}
+ },[board.nodes,pending,local,error]);
+ const viewport=useRef<HTMLDivElement>(null);
+ const fit=()=>{const host=viewport.current;if(!host||!nodes.length)return;
+  const minX=Math.min(...nodes.map(n=>n.x)),minY=Math.min(...nodes.map(n=>n.y));
+  const w=Math.max(...nodes.map(n=>n.x+280))-minX,h=Math.max(...nodes.map(n=>n.y+150))-minY;
+  const zoom=Math.max(.2,Math.min(1.2,(host.clientWidth-50)/w,(host.clientHeight-50)/h));
+  commitCamera({zoom,panX:Math.max(-5000,Math.min(5000,25-minX*zoom)),panY:Math.max(-5000,Math.min(5000,25-minY*zoom))});
  };
  const categories=['Person','Location','Evidence','Lead','Theory'];
  return <div className="backroom-board-page">
   <div className="backroom-board-top"><div><small className="backroom-eyebrow">{copy.board}</small>
     <h1>{board.title}</h1></div>
     <div className="backroom-top-actions">
-     <button disabled={pending} onClick={()=>send({action:'adventure.board.close'})}>{copy.backStory}</button>
+     <button onClick={()=>window.chrome?.webview?.postMessage({type:'lounge.adventure.board-window',version:1})}>↗ {copy.board}</button>
+     <button aria-disabled={pending} onClick={()=>send({action:'adventure.board.close'})}>{copy.backStory}</button>
      <button onClick={()=>commitCamera({...camera,zoom:Math.min(4,camera.zoom*1.25)})}>{copy.zoomIn}</button>
      <button onClick={()=>commitCamera({...camera,zoom:Math.max(.2,camera.zoom*.8)})}>{copy.zoomOut}</button>
-     <button onClick={()=>commitCamera({zoom:1,panX:0,panY:0})}>{copy.reset}</button>
+     <button onClick={fit}>{copy.reset}</button>
     </div></div>
   <div className="backroom-board-filters">{categories.map(c=><label key={c}><input type="checkbox"
    checked={visibleCategories.has(c)} onChange={e=>setVisibleCategories(previous=>{
     const next=new Set(previous);if(e.target.checked)next.add(c);else next.delete(c);return next;
    })}/>{c}</label>)}</div>
   <div className="backroom-board-grid">
-   <div className="backroom-board-viewport">
+   <div className="backroom-board-viewport" ref={viewport}>
     <div className="backroom-board-world" style={{
      transform:'translate('+camera.panX+'px,'+camera.panY+'px) scale('+camera.zoom+')'}}>
      <svg className="backroom-board-lines" width="5000" height="5000" viewBox="0 0 5000 5000"
@@ -205,7 +224,7 @@ function CaseBoard({board,copy,pending,send}:{
         return <line key={c.id} x1={a.x+130} y1={a.y+60} x2={b.x+130} y2={b.y+60}
          className={c.status.toLowerCase()}/>;})}</svg>
      {nodes.map(n=>{const p=effective(n);return <button key={n.id}
-      className={'backroom-board-node '+n.category.toLowerCase()+(selected===n.id?' selected':'')}
+      aria-disabled={pending} className={'backroom-board-node '+n.category.toLowerCase()+(selected===n.id?' selected':'')}
       style={{left:p.x,top:p.y}} title={n.description}
       onPointerDown={e=>start(e,n)} onPointerMove={movement} onPointerUp={end}
       onPointerCancel={()=>{drag.current=null;setLocal(null);}}>
@@ -248,7 +267,7 @@ function Encounter({encounter,copy,pending,send}:{
   {dice&&<div className="backroom-dice-table">
    <h3>{copy.hand} · {copy.played} {dice.rollsUsed}/3</h3>
    <div className="backroom-dice-row">{dice.player.map((value,i)=><button key={i}
-    disabled={pending||!dice.canBank&&dice.rollsUsed===3||encounter.outcome!==null||dice.rollsUsed===0}
+    disabled={!dice.canBank&&dice.rollsUsed===3||encounter.outcome!==null||dice.rollsUsed===0} aria-disabled={pending||!dice.canBank&&dice.rollsUsed===3||encounter.outcome!==null||dice.rollsUsed===0}
     aria-pressed={dice.held[i]} className={dice.held[i]?'held':''}
     onClick={()=>send({action:'adventure.encounter.hold',index:i})}>
     {value||'◇'}<small>{dice.held[i]?copy.hold:''}</small></button>)}</div>
@@ -263,14 +282,14 @@ function Encounter({encounter,copy,pending,send}:{
    <strong>{outcomeLabel(encounter.outcome,'en')}</strong></div>}
   <div className="backroom-actions">
    {bj&&encounter.outcome===null&&<>
-    <button disabled={pending||!bj.canHit} onClick={()=>send({action:'adventure.encounter.hit'})}>{copy.hit}</button>
-    <button className="backroom-primary" disabled={pending||!bj.canStand}
+    <button disabled={!bj.canHit} aria-disabled={pending||!bj.canHit} onClick={()=>send({action:'adventure.encounter.hit'})}>{copy.hit}</button>
+    <button className="backroom-primary" disabled={!bj.canStand} aria-disabled={pending||!bj.canStand}
      onClick={()=>send({action:'adventure.encounter.stand'})}>{copy.stand}</button></>}
    {dice&&encounter.outcome===null&&<>
-    <button disabled={pending||!dice.canRoll} onClick={()=>send({action:'adventure.encounter.roll'})}>{copy.rollDice}</button>
-    <button className="backroom-primary" disabled={pending||!dice.canBank}
+    <button disabled={!dice.canRoll} aria-disabled={pending||!dice.canRoll} onClick={()=>send({action:'adventure.encounter.roll'})}>{copy.rollDice}</button>
+    <button className="backroom-primary" disabled={!dice.canBank} aria-disabled={pending||!dice.canBank}
      onClick={()=>send({action:'adventure.encounter.bank'})}>{copy.bank}</button></>}
-   {encounter.outcome&&<button className="backroom-primary" disabled={pending}
+   {encounter.outcome&&<button className="backroom-primary" aria-disabled={pending}
     onClick={()=>send({action:'adventure.encounter.finish'})}>{copy.result}</button>}
   </div>
  </section>;
@@ -291,9 +310,9 @@ function Completion({run,copy,meta,pending,send}:{
   </div>
   {meta&&<p className="backroom-reward">{meta}</p>}
   <div className="backroom-actions">
-   <button className="backroom-primary" disabled={pending}
+   <button className="backroom-primary" aria-disabled={pending}
     onClick={()=>send({action:'adventure.restart',adventureId:run.adventureId})}>{copy.another}</button>
-   <button disabled={pending} onClick={()=>send({action:'adventure.back'})}>{copy.return}</button>
+   <button aria-disabled={pending} onClick={()=>send({action:'adventure.back'})}>{copy.return}</button>
   </div></section>;
 }
 export function AdventureScreen({state,language,pending,error,command}:Props){
@@ -327,9 +346,9 @@ export function AdventureScreen({state,language,pending,error,command}:Props){
       <h2>{tale.title}</h2><p>{tale.subtitle}</p>
       <small>{tale.acts} {t.acts} · {tale.scenes} {t.scenes}</small>
       <div className="backroom-tale-actions">
-       <button disabled={pending||tale.id===state.selectedAdventureId}
+       <button disabled={tale.id===state.selectedAdventureId} aria-disabled={pending||tale.id===state.selectedAdventureId}
         onClick={()=>send({action:'adventure.select',adventureId:tale.id})}>{t.select}</button>
-       {tale.status!=='unplayed'&&<button className="backroom-primary" disabled={pending}
+       {tale.status!=='unplayed'&&<button className="backroom-primary" aria-disabled={pending}
         onClick={()=>send({action:'adventure.resume',adventureId:tale.id})}>{t.resume}</button>}
       </div></article>)}</div>
     </section>
@@ -345,7 +364,7 @@ export function AdventureScreen({state,language,pending,error,command}:Props){
       {selectedClass.special&&<p>{t.special} · {selectedClass.special}</p>}</>}
      <p>{t.profile}: {state.defaultPlayerName}</p>
      <div className="backroom-music"><strong>BACKROOM SCORE · Lanterns Beyond the Door</strong>
-      <button disabled={pending} onClick={()=>send({action:'adventure.music',
+      <button aria-disabled={pending} onClick={()=>send({action:'adventure.music',
        enabled:!state.musicEnabled,volume:musicVolume})}>
        MUSIC: {state.musicEnabled?'ON':'OFF'}</button>
       <label>VOLUME · {Math.round(musicVolume/.32*100)}%
@@ -356,7 +375,7 @@ export function AdventureScreen({state,language,pending,error,command}:Props){
         onKeyUp={e=>send({action:'adventure.music',enabled:state.musicEnabled,
          volume:Number(e.currentTarget.value)})}/></label>
      </div>
-     <button className="backroom-primary" disabled={pending||!selectedClass} onClick={start}>
+     <button className="backroom-primary" disabled={!selectedClass} aria-disabled={pending||!selectedClass} onClick={start}>
       {selected?.status==='active'?t.replace:t.newRun}</button>
      <small>{t.sound}</small>
     </aside>
@@ -364,7 +383,7 @@ export function AdventureScreen({state,language,pending,error,command}:Props){
   </>:state.run&&state.screen==='story'
    ?<Story run={state.run} copy={t} pending={pending} send={send}/>
    :state.run&&state.screen==='board'&&state.run.board
-   ?<CaseBoard board={state.run.board} copy={t} pending={pending} send={send}/>
+   ?<CaseBoard board={state.run.board} copy={t} pending={pending} send={send} error={error}/>
    :state.run&&state.screen==='encounter'&&state.encounter
    ?<Encounter encounter={state.encounter} copy={t} pending={pending} send={send}/>
    :state.run&&state.screen==='complete'

@@ -45,7 +45,7 @@ const accents: Record<string, number> = {
 const accent = (name: string) => accents[name] ?? 0xd9bd8b;
 
 function text(value: string, size: number, color: number): Text {
-  const result = new Text({ text: value, style: {
+  const result = new Text({ text: value, resolution: Math.min(3,Math.max(2,window.devicePixelRatio||1)), style: {
     fontFamily: 'Georgia, serif', fontSize: size, fill: color,
     align: 'center', fontWeight: 'bold',
   } });

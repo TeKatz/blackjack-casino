@@ -68,6 +68,8 @@ internal sealed class ModernAdventureService
     }
 
     internal string Screen => screen;
+    internal bool DetachedBoardOpen { get; set; }
+    internal bool HasCaseBoard => playingId is not null && Definition(playingId).CaseBoard is not null;
     internal AdventureRunState? ActiveRun => playingId is not null &&
         progress.Runs.TryGetValue(playingId, out AdventureRunState? run) ? run : null;
     internal string SelectedId => selectedId;
@@ -116,6 +118,8 @@ internal sealed class ModernAdventureService
                                 choice.Check.Difficulty, choice.Check.SkillId,
                             },
                             Encounter = triggered?.Type.ToString(),
+                            Events = (choice.Effects ?? []).Concat(choice.SuccessEffects ?? [])
+                                .Concat(choice.FailureEffects ?? []).Select(e => e.Kind.ToString()).Distinct().ToArray(),
                         };
                     }).ToArray(),
                 Pending = check is null ? null : new
@@ -419,7 +423,8 @@ internal sealed class ModernAdventureService
 
     private (bool, string) MoveBoard(string nodeId, double x, double y)
     {
-        if (screen != "board" || playingId is null) return (false, "Board not open.");
+        if ((screen != "board" && !(screen == "story" && DetachedBoardOpen)) || playingId is null || !HasCaseBoard)
+            return (false, "Board not open.");
         AdventureDefinition definition = Definition(playingId);
         if (definition.CaseBoard is not { } board ||
             !board.Nodes.Any(n => n.Id == nodeId)) return (false, "Unknown clue.");
@@ -437,7 +442,8 @@ internal sealed class ModernAdventureService
 
     private (bool, string) ViewBoard(double zoom, double x, double y)
     {
-        if (screen != "board" || playingId is null) return (false, "Board not open.");
+        if ((screen != "board" && !(screen == "story" && DetachedBoardOpen)) || playingId is null || !HasCaseBoard)
+            return (false, "Board not open.");
         var updated = Clone(progress);
         AdventureRunState run = updated.Runs[playingId];
         run.CaseBoard = AdventureCaseBoard.Initialize(Definition(playingId).CaseBoard, run.CaseBoard);

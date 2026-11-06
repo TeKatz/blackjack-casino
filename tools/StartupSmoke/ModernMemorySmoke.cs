@@ -22,6 +22,8 @@ internal static class ModernMemorySmoke
             "The modern Memory cabinet lost one of the four original decks.");
         Require(await Js(web,"document.querySelectorAll('.memo-preview-card').length===16"),
             "React Memory is missing the curated card-art previews.");
+        Require(await Js(web,"[...document.querySelectorAll('.memo-preview-card')].every(c=>{const a=c.getBoundingClientRect(),b=c.querySelector('.memo-face').getBoundingClientRect();return a.width>0&&b.width<=a.width+1&&b.height<=a.height+1;})"),
+            "A Memory deck preview escaped its card and covered the cabinet.");
         await Capture(web,Path.Combine(output,"modern-memory-cabinet.png"));
 
         await Click(web,"[data-testid=\"memory-deck-animals\"]",

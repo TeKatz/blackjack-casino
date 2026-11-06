@@ -6,7 +6,7 @@
 .backroom-shell p{line-height:1.6;color:#bbc8bd}
 .backroom-shell button{font:inherit;color:#f0e1c9;cursor:pointer;border:1px solid #596d5a;background:#1a302b;padding:10px 14px;border-radius:8px}
 .backroom-shell button:hover:not(:disabled),.backroom-shell button:focus-visible{background:#285044;border-color:#d9bd80}
-.backroom-shell button:disabled{opacity:.52;cursor:wait}
+.backroom-shell button:disabled{opacity:.7;cursor:default}
 .backroom-shell .backroom-primary{border:1px solid #c6a86a;background:linear-gradient(110deg,#866c39,#d2ae68);color:#10211a;font-weight:bold}
 .backroom-library-header{display:flex;align-items:flex-end;justify-content:space-between;gap:30px;flex-wrap:wrap;margin-bottom:18px}
 .backroom-library-header>div:first-child{max-width:790px}
@@ -149,3 +149,19 @@
 .backroom-music>strong{width:100%;font:700 11px system-ui,sans-serif;letter-spacing:.09em;color:#d4ba7b}
 .backroom-music>label{display:flex;flex-direction:column;flex:1;gap:7px;font:700 10px system-ui,sans-serif;color:#abc5b2}
 .backroom-music input[type=range]{width:100%;accent-color:#d3b57b}
+
+
+.backroom-story-panel{animation:backroom-scene-in .45s ease-out both}
+.backroom-choice.event-choice{border-left:3px solid #d8bd78}.backroom-choice-event{color:#e8c688!important;letter-spacing:.04em}
+.backroom-d20 .backroom-d20-shape{position:relative;width:140px;height:150px;padding:0;clip-path:none;border:0;background:none;isolation:isolate}
+.backroom-d20-shape svg{position:absolute;inset:0;width:100%;height:100%;filter:drop-shadow(0 4px 7px #0009)}
+.backroom-d20 .backroom-d20-shape b{position:relative;font:bold 36px Georgia,serif;color:#fff0bc;text-shadow:0 2px 4px #000}
+.backroom-d20.rolling .backroom-d20-shape{animation:backroom-roll .95s cubic-bezier(.18,.7,.3,1) both}
+.backroom-feed{display:grid;gap:7px}.backroom-feed p{padding:10px 12px;margin:0;border:1px solid #63826c;border-left:3px solid #d7bd7b;border-radius:7px;background:linear-gradient(110deg,#294333,#14281e);animation:backroom-event .45s ease-out both}
+.backroom-feed .event-conditionapplied{border-left-color:#d68f9c}.backroom-feed .event-itemacquired{border-left-color:#8cdab8}
+.backroom-feed .rare-event{border-color:#d2a1f2;box-shadow:0 0 18px #b978e744;background:linear-gradient(110deg,#403152,#192c25)}
+.backroom-board-node{transition:border-color .15s,box-shadow .15s;touch-action:none}.backroom-board-node:disabled{opacity:1}
+.backroom-board-viewport{height:calc(100dvh - 250px);min-height:300px}.backroom-board-details{max-height:calc(100dvh - 250px)}
+@keyframes backroom-scene-in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes backroom-event{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:none}}
+@keyframes backroom-roll{0%{transform:rotate(0) translateY(0)}35%{transform:rotate(155deg) translateY(-25px) scale(.85)}70%{transform:rotate(310deg) translateY(5px)}100%{transform:rotate(360deg)}}

@@ -1,3 +1,4 @@
+import {Modal} from './Modal';
 import {useEffect,useMemo,useRef,useState} from 'react';
 import type {CSSProperties} from 'react';
 import {albumArtStyle,albumAtlasUrl} from './albumArt';
@@ -352,8 +353,7 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
     {notice&&<p className="album-opening-notice" role="status">{notice}</p>}
    </div>
   </div>}
-  {inspectorId&&activeCard?.card.owned&&<div className="album-inspector-backdrop" role="dialog" aria-modal="true"
-   aria-label={activeCard.card.name} onClick={()=>setInspectorId(null)}>
+  {inspectorId&&activeCard?.card.owned&&<Modal className="album-inspector-backdrop" label={activeCard.card.name} onClose={()=>setInspectorId(null)}>
    <div className="album-inspector" onClick={e=>e.stopPropagation()}>
     <button type="button" className="album-inspector-close" onClick={()=>setInspectorId(null)}
      aria-label={de?'Schließen':'Close'}>×</button>
@@ -367,6 +367,6 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
       {de?'Zurück zum Album':'Return to album'}</button>
     </div>
    </div>
-  </div>}
+  </Modal>}
  </div></main>;
 }

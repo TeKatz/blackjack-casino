@@ -187,6 +187,8 @@ function GameTable({game,skinId,selected,setSelected,pending,command,language}:{
       const display=isTopOnly?cards.slice(-1).map((card)=>({card,index:cards.length-1})):
          cards.map((card,index)=>({card,index}));
       let offset=0;
+      const naturalEnd=cards.slice(0,-1).reduce((sum,card)=>sum+(card.faceUp?slot.step:15),0);
+      const fanScale=naturalEnd>0?Math.min(1,Math.max(0,640-slot.y-108-16)/naturalEnd):1;
       return <div className={'sol-slot '+(selected&&selected.pile!==slot.id?'destination':'')}
          key={slot.id} data-testid={'solitaire-pile-'+slot.id}
          style={{left:slot.x/1120*100+'%',top:slot.y/640*100+'%',zIndex:10+slotIndex}}
@@ -199,14 +201,14 @@ function GameTable({game,skinId,selected,setSelected,pending,command,language}:{
        {display.map(({card,index},n)=>{
         if(!isTopOnly){
           offset=0;
-          for(let i=0;i<index;i++)offset+=(cards[i].faceUp?slot.step:15);
+          for(let i=0;i<index;i++)offset+=(cards[i].faceUp?slot.step:15)*fanScale;
         }
         const isSelected=selected?.pile===slot.id&&selected.index===index;
         const title=card.faceUp?rankSymbol(card.rank)+suitSymbols[card.suit]:t.cardBack;
         return <button key={index} type="button" draggable={card.selectable&&!game.won&&!pending}
           data-testid={'solitaire-card-'+slot.id+'-'+index}
           title={title} aria-label={title+(card.selectable?' · '+t.select:'')}
-          aria-pressed={isSelected} disabled={pending||game.won}
+          aria-pressed={isSelected} disabled={game.won} aria-disabled={pending||game.won}
           className={'sol-playing-card '+(isSelected?'selected ':'')+(!card.faceUp?'is-back ':'')+(!card.selectable?'not-selectable':'')}
           style={{top:offset/108*100+'%',zIndex:index+1}}
           onDragStart={e=>dragStart(e,slot.id,index,card)}
@@ -281,11 +283,11 @@ export function SolitaireScreen({state,language,pending,error,command}:Props){
        <small>{option?.canResume? (option.won?t.solved:t.saved)+' · #'+option.dealNumber+' · '+option.moves+' '+t.moves.toLowerCase() : t.noSaved}</small>
        <div className="sol-option-actions">
         <button data-testid={'solitaire-resume-'+variant+'-'+suits}
-          disabled={!option?.canResume||pending}
+          disabled={!option?.canResume} aria-disabled={!option?.canResume||pending}
           onClick={()=>command({action:'solitaire.resume',variant,spiderSuits:suits})}>
            {option?.won?t.view:t.resume}</button>
         <button data-testid={'solitaire-new-'+variant+'-'+suits} className="primary"
-          disabled={pending} onClick={()=>start(variant,suits)}>{t.new}</button>
+          aria-disabled={pending} onClick={()=>start(variant,suits)}>{t.new}</button>
        </div>
       </article>;
     }))}
@@ -296,7 +298,7 @@ export function SolitaireScreen({state,language,pending,error,command}:Props){
     <div className="sol-deal-entry"><input type="text" inputMode="numeric" maxLength={10}
       aria-label={t.freeCellNumber} data-testid="solitaire-deal-number"
       value={dealNumber} onChange={e=>setDealNumber(e.target.value.replace(/\D/g,''))}/>
-      <button data-testid="solitaire-numbered" disabled={pending} onClick={numberStart}>{t.numbered}</button></div>
+      <button data-testid="solitaire-numbered" aria-disabled={pending} onClick={numberStart}>{t.numbered}</button></div>
    </div>
    <div className="sol-achievements">
     <button data-testid="solitaire-achievements-toggle" aria-expanded={showAchievements}
@@ -340,7 +342,7 @@ export function SolitaireScreen({state,language,pending,error,command}:Props){
      <p className="sol-notice" role="status">{error||state.notice}</p>
      {pending&&<small>{t.waiting}</small>}
     </div>
-   <button data-testid="solitaire-back" disabled={pending}
+   <button data-testid="solitaire-back" aria-disabled={pending}
      onClick={()=>command({action:'solitaire.back'})}>{t.back}</button>
   </div>
   {game.won&&<div className="sol-win" data-testid="solitaire-win">

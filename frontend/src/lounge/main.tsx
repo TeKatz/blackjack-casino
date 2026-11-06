@@ -20,6 +20,7 @@ import { isJigsawReply, issueJigsawIntent } from './jigsawBridge';
 import type { JigsawIntent } from './jigsawBridge';
 import { isTaleReply, issueTaleIntent } from './adventureBridge';
 import type { TaleIntent } from './adventureBridge';
+import {LoungePreview} from './LoungePreview';
 import './lounge.css';
 
 type Language = 'de' | 'en';
@@ -149,6 +150,20 @@ function App() {
      sendLoungeCommand('lounge.ui-ready');
    }
  },[snapshot]);
+ useEffect(()=>{
+  if(!pending&&!solitairePending&&!wordSearchPending&&!memoryPending&&!jigsawPending&&!adventurePending)return;
+  const id=window.setTimeout(()=>{
+   const message=snapshot?.language==='de'?'Bestätigung fehlt. Der aktuelle Spielstand wird neu geladen.':'Confirmation missing. Refreshing the saved game.';
+   if(pending){setPending(null);setSudokuError(message);}
+   if(solitairePending){setSolitairePending(null);setSolitaireError(message);}
+   if(wordSearchPending){setWordSearchPending(null);setWordSearchError(message);}
+   if(memoryPending){setMemoryPending(null);setMemoryError(message);}
+   if(jigsawPending){setJigsawPending(null);setJigsawError(message);}
+   if(adventurePending){setAdventurePending(null);setAdventureError(message);}
+   sendLoungeCommand('lounge.ready');
+  },8000);
+  return()=>window.clearTimeout(id);
+ },[pending,solitairePending,wordSearchPending,memoryPending,jigsawPending,adventurePending,snapshot?.language]);
  const language:Language=snapshot?.language??'en', t=words[language];
  const filtered=useMemo(()=>catalog.filter(game=>filter==='all'||game.category===filter),[filter]);
  const statusMap=useMemo(()=>new Map<LoungeId,string|null>((snapshot?.games??[]).map(game=>[game.id,game.status] as const)),[snapshot]);
@@ -187,7 +202,7 @@ function App() {
    setMemoryError('');
    setMemoryPending(issueMemoryIntent(snapshot.memorySession,snapshot.memoryRevision,intent));
  }
- return <main className="chill-shell">
+ return <main className={"chill-shell"+(snapshot?.boardOnly?" board-only":"")} data-pending={!!(pending||solitairePending||wordSearchPending||memoryPending||jigsawPending||adventurePending)} data-motion={snapshot?.animationsEnabled??true}>
    <div className="chill-sparkles" aria-hidden="true"/>
    <header className="chill-header">
      <div className="chill-mark" aria-hidden="true">✦</div>
@@ -231,10 +246,10 @@ function App() {
    </header>
    <div className="chill-content">
     {snapshot?.adventure
-      ? <AdventureScreen state={snapshot.adventure} language={language} pending={!!adventurePending}
+      ? <AdventureScreen state={snapshot.boardOnly&&snapshot.adventure.run?.board?{...snapshot.adventure,screen:'board'}:snapshot.adventure} language={language} pending={!!adventurePending}
           error={adventureError} command={adventureCommand} animations={snapshot.animationsEnabled}/>
       : snapshot?.jigsaw
-      ? <JigsawScreen state={snapshot.jigsaw} language={language} pending={!!jigsawPending}
+      ? <JigsawScreen state={snapshot.jigsaw} language={language} pending={!!jigsawPending} soundEnabled={snapshot.soundEnabled}
           error={jigsawError} command={jigsawCommand} animations={snapshot.animationsEnabled}/>
       : snapshot?.memory
       ? <MemoryScreen state={snapshot.memory} language={language} pending={!!memoryPending}
@@ -267,7 +282,7 @@ function App() {
          style={{animationDelay: String(index*55)+'ms'}}>
          <span className="chill-card-art" aria-hidden="true">
            <span className="chill-decoration">{game.decoration}</span>
-           <span className="chill-icon">{game.icon}</span>
+           <LoungePreview id={game.id}/>
          </span>
          <span className="chill-card-body">
            <span className="chill-card-category">{groups.find(g=>g.id===game.category)?.name}</span>

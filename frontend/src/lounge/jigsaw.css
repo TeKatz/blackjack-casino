@@ -4,7 +4,7 @@
 .jigsaw-shell p{color:#adc6b8}.jigsaw-shell small{font-size:11px;color:#a0bcae;letter-spacing:.06em}
 .jigsaw-shell button{border:1px solid #776d4a;border-radius:8px;background:#172f2b;color:#f4e2c1;
  padding:10px 12px;cursor:pointer}
-.jigsaw-shell button:disabled{opacity:.5;cursor:wait}
+.jigsaw-shell button:disabled{opacity:.7;cursor:default}
 .jigsaw-shell button:hover:not(:disabled),.jigsaw-shell button:focus-visible{border-color:#e2c98b;background:#205046}
 .jigsaw-shell .selected{outline:2px solid #dcc184;background:#234c41}
 .jigsaw-shell .jigsaw-primary{border-color:#e1c888;background:linear-gradient(130deg,#ac8442,#dec17d);
@@ -51,3 +51,21 @@
  .jigsaw-tray-grid{grid-template-columns:repeat(5,minmax(0,1fr))}
  .jigsaw-achievements{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){.jigsaw-shell *{animation:none!important;transition:none!important}}
+
+
+.jigsaw-tray-grid svg{display:block;width:100%;height:100%;overflow:visible;pointer-events:none}.jigsaw-tray-grid button{background:#18342e;border-color:#425d4d;cursor:grab}
+.jigsaw-placement-notice{font-size:12px;color:#e2ce95!important;min-height:18px}
+@media(min-width:1000px) and (min-height:600px){
+ .jigsaw-shell{padding:0;max-width:none}.jigsaw-heading h1{font-size:28px;margin:4px 0}.jigsaw-heading p{margin:4px 0;font-size:12px}.jigsaw-shell h2{margin:10px 0 7px}
+ .jigsaw-gallery{grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}.jigsaw-gallery button{padding:6px}.jigsaw-gallery img{height:clamp(65px,13vh,140px)}.jigsaw-gallery strong{font-size:12px}.jigsaw-gallery small{font-size:9px}
+ .jigsaw-sizes button{padding:7px;font-size:17px}.jigsaw-sizes small{font-size:9px}.jigsaw-actions{margin:8px 0;gap:6px}.jigsaw-actions button{padding:8px;font-size:11px}
+ .jigsaw-playing .jigsaw-heading{flex-wrap:nowrap;gap:15px}.jigsaw-layout{grid-template-columns:minmax(0,1fr) 250px;gap:12px}
+ .jigsaw-board{width:min(100%,calc((100dvh - 250px)*1.6));margin:auto}.jigsaw-tray{padding:9px}.jigsaw-tray-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+ .jigsaw-tray-grid button{aspect-ratio:1.1;padding:2px}.jigsaw-tray p{font-size:11px;margin:5px 0}.jigsaw-pages{margin-top:7px}
+ .jigsaw-hint{font-size:10px;margin:5px 0}
+}
+
+
+
+.jigsaw-playing.piece-placed .jigsaw-board{animation:puzzle-snap .65s ease-out}
+@keyframes puzzle-snap{35%{box-shadow:0 0 22px #91dfae88;border-color:#c4e6ae}}

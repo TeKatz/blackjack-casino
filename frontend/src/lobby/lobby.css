@@ -392,3 +392,12 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
 .lobby-settings-panel .lobby-settings-volume{display:grid;gap:10px;font-size:13px;}
 .lobby-settings-volume span{display:flex;align-items:center;justify-content:space-between;}
 .lobby-settings-volume input[type=range]{width:100%;accent-color:#ddb86d;cursor:pointer;}
+
+
+.lobby-nav .nav-section-start{border-top:1px solid #c7ad6a88;margin-top:12px;padding-top:12px;height:56px;border-radius:0}
+
+
+
+.casino-news{width:min(690px,90vw);max-height:80dvh;overflow:hidden;padding:24px;color:#f0e4ca;background:linear-gradient(140deg,#17392b,#0b201b);border:1px solid #d2b273;border-radius:16px;box-shadow:0 30px 90px #000a}
+.casino-news::backdrop{background:#030b09ba}.casino-news header{display:flex;justify-content:space-between;align-items:start;gap:20px}.casino-news small{color:#d2b273;letter-spacing:.12em}.casino-news h2{font:32px Georgia,serif;margin:8px 0}.casino-news header button{border:1px solid #798c6c;background:#24372a;color:#f0e4ca;border-radius:6px;padding:4px 12px;font-size:24px}
+.casino-news-items{max-height:50dvh;overflow:auto;overscroll-behavior:contain;margin:15px 0}.casino-news article{border-left:3px solid;padding:4px 15px;margin:12px 0}.casino-news h3{font-size:17px;margin:5px 0}.casino-news p{color:#c2d1bd;line-height:1.6;font-size:13px}

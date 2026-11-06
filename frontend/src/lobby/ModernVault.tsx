@@ -19,8 +19,8 @@ export function ModernVault({data,loaded,language,pending,reward,notice,onBack,o
   <small>{de?'Freigeschaltet':'Unlocked'} · {data.unlockedTier}</small></div>
  </header>
  {!loaded?<p className="record-empty" role="status">{de?'Tresor wird geladen…':'Loading the Vault…'}</p>:<>
- <section className={'vault-chamber '+(data.isFull?'is-ready':'')} style={{'--vault-accent':data.accent} as React.CSSProperties}>
- <div className="vault-chamber-art" aria-hidden="true"><div className="vault-door"><span>♣</span></div></div>
+ <section className={'vault-chamber '+(data.isFull?'is-ready ':'')+(reward?'vault-opened':'')} style={{'--vault-accent':data.accent} as React.CSSProperties}>
+ <div className="vault-chamber-art" data-tier={data.tierId} aria-hidden="true"><div className="vault-safe-body"><div className="vault-door"><span className="vault-safe-wheel">✥</span><i/><b>{data.tier}</b></div></div></div>
  <div className="vault-chamber-details">
   <span className="shop-eyebrow">{data.payoutPending?(de?'AUSZAHLUNG AUSSTEHEND':'PAYOUT RECOVERY'):
    data.isFull?(de?'BEREIT ZUM ÖFFNEN':'READY TO UNLOCK'):(de?'TRESOR FÜLLT SICH':'FILLING THE VAULT')}</span>

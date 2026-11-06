@@ -5,11 +5,13 @@ internal enum SlotSound { Start, Tick, Stop, Win, Jackpot, Push, Loss, Anticipat
 /// <summary>Original synthesized mechanical and musical cues, offline and asset-free.</summary>
 internal sealed class SlotAudio : IDisposable
 {
-    private static readonly IReadOnlyDictionary<SlotSound,AudioClip> Cues = Enum.GetValues<SlotSound>().ToDictionary(c => c, c => AudioClip.FromWave(BuildCue(c)));
+    private static readonly IReadOnlyDictionary<SlotSound,Lazy<AudioClip>> Cues = Enum.GetValues<SlotSound>()
+        .ToDictionary(c => c, c => new Lazy<AudioClip>(() => AudioClip.FromWave(BuildCue(c))));
+    internal static void Prewarm() => _ = Task.Run(() => { foreach (var cue in Cues.Values) _ = cue.Value; });
     private readonly object owner = new();
     public void Play(SlotSound sound, bool enabled)
     {
-        if (enabled) CasinoAudio.Play(Cues[sound], owner);
+        if (enabled) CasinoAudio.Play(Cues[sound].Value, owner);
     }
     public void Stop() => CasinoAudio.Mixer.Stop(owner);
     public void Dispose() => Stop();

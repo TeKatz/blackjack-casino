@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import {PlayerPortrait,CosmeticTitle,VaultIcon} from './Cosmetics';
+import {Modal} from './Modal';
+import {GamePreview} from './GamePreview';
 import { LobbyAmbient } from './LobbyAmbient';
 import { ModernShop } from './ModernShop';
 import { ModernChallenges } from './ModernChallenges';
@@ -61,12 +64,12 @@ function GameTile({ mode, language, onOpen, onSecondary }:{
   mode:LobbyMode; language:'de'|'en'; onOpen:(id:string)=>void; onSecondary:(id:string)=>void;
 }) {
   const [hover, setHover] = useState(false);
-  const wide = mode.id === 'midnight-merge';
+  const wide = false;
   return <article className={'lobby-game '+(wide?'lobby-merge ':'')+'game-'+mode.id+
       (hover?' hovered':'')+(mode.enabled?'':' unavailable')}
       onPointerEnter={()=>setHover(true)} onPointerLeave={()=>setHover(false)}>
     <div className="game-art-window" aria-hidden="true">
-      <div className={'game-art-image art-'+mode.id}/>
+      <div className={'game-art-image art-'+mode.id}/><GamePreview id={mode.id}/>
       <div className="art-shimmer"/>
     </div>
     <div className="game-info">
@@ -172,6 +175,8 @@ function LobbyApp() {
   const [filter,setFilter] = useState<Filter>('all');
   const [updates,setUpdates] = useState<LobbyUpdatesSnapshot>(fallbackUpdates);
   const [updatesOpen,setUpdatesOpen] = useState(false);
+  const [newsOpen,setNewsOpen]=useState(false);
+  const [newsShown,setNewsShown]=useState(false);
   const [settingsOpen,setSettingsOpen] = useState(false);
   const [dailyOpen,setDailyOpen] = useState(false);
   const [lowMotion,setLowMotion] = useState(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -240,6 +245,7 @@ function LobbyApp() {
     document.documentElement.lang=data.language;
     document.title='Blackjack Casino · Lobby';
   },[data.language]);
+  useEffect(()=>{if(nativeSnapshotReceived&&!newsShown){setNewsOpen(true);setNewsShown(true);}},[nativeSnapshotReceived,newsShown]);
   const de = data.language==='de';
   const closeRecords = () => {
     setRecordsVisible(null);setRecordsPending(null);setShopNotice(null);setVaultReward(null);setVaultNotice(null);setAlbumResult(null);
@@ -324,12 +330,12 @@ function LobbyApp() {
           <span className="header-emoji">▤</span><span><small>ALBUM</small><b>{data.albumOwned} / {data.albumTotal}</b></span>
         </button>
         <button className="header-widget profile-widget" onClick={()=>openRecords('profile')}>
-          <span className="header-avatar">♠</span><span><b>{data.displayName}</b>
-          <small>LV {data.level} · ◆ {data.coins}</small><em>{data.title}</em></span>
+          <PlayerPortrait portrait={data.portraitVariant} frame={data.frameVariant}/><span><b>{data.displayName}</b>
+          <small>LV {data.level} · ◆ {data.coins}</small><em><CosmeticTitle variant={data.titleVariant}>{data.title}</CosmeticTitle></em></span>
           {data.prestige>0&&<span className="prestige-badge">✦<br/>P{data.prestige}</span>}
         </button>
         <button className="header-widget vault-widget" onClick={()=>openRecords('vault')}>
-          <span className="header-emoji">⬡</span><span>
+          <VaultIcon tier={data.vaultTier}/><span>
             <small>VAULT · {data.vaultTier}</small><b>{data.vaultAmount} / {data.vaultCapacity}</b>
             <Progress value={data.vaultFraction} tone="gold"/></span>
         </button>
@@ -350,9 +356,10 @@ function LobbyApp() {
     <div className={'lobby-body '+(shopVisible?'shop-active':recordsVisible?'records-active':'')}>
       <nav className="lobby-nav" aria-label={de?'Casino-Navigation':'Casino navigation'}>
         <div className="lobby-nav-scroll">
+        <button className="lobby-nav-item" onClick={()=>setNewsOpen(true)}><span className="nav-icon" aria-hidden="true">▧</span><span>News</span></button>
         {navigation.map(n=><button type="button" key={n.id}
           aria-current={(shopVisible?n.id==='shop':recordsVisible?n.id===(recordsVisible==='challenges'?'challenges':recordsVisible==='statistics'?'stats':recordsVisible==='history'?'profile':recordsVisible==='vault'?'vault':recordsVisible==='album'?'collections':recordsVisible==='season'?'season':'profile'):n.id===filter)?'page':undefined}
-          className={'lobby-nav-item '+((shopVisible?n.id==='shop':recordsVisible?n.id===(recordsVisible==='challenges'?'challenges':recordsVisible==='statistics'?'stats':recordsVisible==='vault'?'vault':recordsVisible==='album'?'collections':recordsVisible==='season'?'season':'profile'):n.id===filter)?'selected':'')+(n.id==='daily'?' daily-nav':'')}
+          className={'lobby-nav-item '+((shopVisible?n.id==='shop':recordsVisible?n.id===(recordsVisible==='challenges'?'challenges':recordsVisible==='statistics'?'stats':recordsVisible==='vault'?'vault':recordsVisible==='album'?'collections':recordsVisible==='season'?'season':'profile'):n.id===filter)?'selected':'')+(n.id==='daily'?' daily-nav':'')+(n.id==='collections'?' nav-section-start':'')}
           onClick={()=>chooseNav(n.id)}>
           <span className="nav-icon" aria-hidden="true">{n.icon}</span>
           <span>{de?n.de:n.en}</span>
@@ -435,6 +442,13 @@ function LobbyApp() {
         onClose={()=>setDailyOpen(false)} mobileOpen={dailyOpen}/>
       </>}
     </div>
+    {newsOpen&&<Modal className="casino-news" label="News" onClose={()=>setNewsOpen(false)}>
+      <header><div><small>THE MIDNIGHT CLUB · {data.installedVersion??updates.installedVersion}</small><h2>{de?'Neuigkeiten':'News'}</h2></div>
+       <button onClick={()=>setNewsOpen(false)} aria-label={de?'Schließen':'Close'}>×</button></header>
+      <div className="casino-news-items">{(data.news??[]).map((note,i)=><article key={i} style={{borderColor:note.accent}}><h3>{note.title}</h3><p>{note.description}</p></article>)}
+       {!data.news?.length&&<p>{de?'Für diese Vorschau sind keine Versionshinweise geladen.':'Release notes are unavailable in this preview.'}</p>}</div>
+      <button className="lobby-gold-button" onClick={()=>setNewsOpen(false)}>{de?'ZUM CASINO':'ENTER CASINO'}</button>
+    </Modal>}
     {settingsOpen&&<div className="lobby-updates-backdrop">
       <section className="lobby-updates-panel lobby-settings-panel" role="dialog" aria-modal="true"
         aria-label={de?'Casino-Einstellungen':'Casino settings'}>

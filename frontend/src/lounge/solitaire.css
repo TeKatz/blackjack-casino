@@ -78,3 +78,13 @@
 @media(max-width:1150px){.sol-options{grid-template-columns:repeat(2,minmax(0,1fr))}.sol-table{min-width:820px}.sol-banner h1{font-size:35px}}
 @media(max-width:800px){.sol-game-header,.sol-numbered{flex-wrap:wrap}.sol-game-stats{width:100%;justify-content:space-around}.sol-career{gap:15px}.sol-option h3{font-size:21px}.sol-achievement-grid{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){.sol-playing-card,.sol-option button{transition:none}}
+
+
+.sol-table-ornament{top:auto;bottom:1.5%;left:30%;right:30%;text-align:center;pointer-events:none;z-index:0}
+@media(min-width:900px) and (min-height:600px){
+ .sol-game-header{margin:0 0 8px;padding:0}.sol-game h1{font-size:28px}.sol-game-header p{font-size:11px}
+ .sol-table-scroll{overflow:visible;width:min(100%,calc((100dvh - 250px)*1.75));margin:auto;padding:8px}
+ .sol-table{min-width:0}.sol-game-footer{margin-top:8px}
+ .sol-banner{padding:14px 24px}.sol-banner h1{font-size:32px}.sol-career{margin-top:10px;gap:24px}
+ .sol-option{min-height:175px;padding:12px;gap:4px}.sol-option h3{font-size:22px}.sol-options{gap:10px}.sol-numbered{padding:10px 16px;margin-top:10px}
+}

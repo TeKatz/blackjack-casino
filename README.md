@@ -4,6 +4,8 @@ An **offline-first, single-player casino for Windows**, built around virtual cre
 
 The desktop application uses **.NET 10 with WPF as the Windows host**. The casino lobby, Chill Lounge hub, Blackjack table, Midnight Reels, Neon Vault, Nine Lives, Midnight Merge, Midnight Dice, Casino Empire and Midnight Manor now have modern **React + TypeScript** presentations, hosted locally through **WebView2**; PixiJS powers richer scenes where appropriate. Player profile editing (display name, owned titles/portraits), Season Pass management, Blackjack Hand History and the lobby's Casino Vault now live in React, alongside the shop, challenges and statistics. The Collector's Album (including its five-card pack-opening animations, artwork archive and sequential Open All) has also moved to React. Progress export and the emergency Album fallback remain native. Existing game logic and persistent player data remain in C#.
 
+The current migration repairs and device acceptance checks are documented in [Migration regression repairs](docs/migration-regression-repairs.md).
+
 ## Games and experiences
 
 | Mode | Gameplay |
@@ -25,7 +27,7 @@ A shared virtual bankroll connects the wagering games. The wider progression sys
 
 The Development lobby uses its own React/TypeScript entry point (`frontend/lobby.html`) beside the Midnight Manor game. It keeps **all nine casino activities**, a category navigation rail, the player's live header and a compact overview of Season Pass, album, cosmetics, challenges and statistics. Its design follows the emerald-and-gold Midnight Club reference.
 
-- Offline-local **generated artwork atlases** in `frontend/public/lobby/`: the background, hero, eight standard game illustrations, Midnight Merge and decorative navigation/profile/overview icons. The browser never downloads art from a server.
+- Offline-local **generated artwork atlases** in `frontend/public/lobby/`: the background, hero, background illustrations and decorative navigation icons; mode previews reuse their actual card, dice and symbol artwork. The browser never downloads art from a server.
 - Responsive DOM layout with accessible keyboard-focus states, compact screen-height handling, card hover lift, image zoom, reflected highlights and gold button feedback.
 - Transparent **PixiJS particle atmosphere**, limited to 30 FPS and paused while the document is hidden; it respects reduced-motion settings and the game's animation preference.
 - **C#-owned** player balances, progression and mode availability. The isolated WebView2 lobby sends only allowed navigation intents; it cannot calculate rewards or change saved finances.
@@ -178,4 +180,3 @@ The roadmap tracks completed migration stages and outstanding quality gates; his
 - [Tales from the Backroom](docs/adventure-engine.md)
 - [Tales React migration](docs/adventure-modernization.md)
 - [Legacy WPF cleanup inventory](docs/legacy-wpf-inventory.md)
-

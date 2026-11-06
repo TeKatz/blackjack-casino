@@ -19,7 +19,7 @@ public partial class MainWindow
     private void SyncHostMusic()
     {
         backgroundMusic.SetEnabled(HostMusicSettings.MusicEnabled && !KniffelPageOpen &&
-            !ModernReelsOpen && !ModernNineLivesOpen && !ModernNeonVaultOpen && (embeddedGameShell is null || keepHostMusicForEmbeddedGame));
+            !ModernLoungeOpen && !ModernReelsOpen && !ModernNineLivesOpen && !ModernNeonVaultOpen && (embeddedGameShell is null || keepHostMusicForEmbeddedGame));
         backgroundMusic.SetVolume(HostMusicSettings.MusicVolume);
     }
 
@@ -32,6 +32,7 @@ public partial class MainWindow
         InitializeLobby();
         backgroundMusic.Start(HostMusicSettings.MusicEnabled, HostMusicSettings.MusicVolume);
         BackgroundMusic.Prewarm();
+        SlotAudio.Prewarm();
     }
 
     private void PresentationClosed(object? sender, EventArgs e)

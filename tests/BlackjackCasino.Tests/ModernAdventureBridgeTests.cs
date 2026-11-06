@@ -241,4 +241,27 @@ public sealed class ModernAdventureBridgeTests
             service.Execute).Success);
         Assert.Equal(1.5,saved.Runs[tale.Id].CaseBoard.Layout.Zoom);
     }
+    [Fact]
+    public void DetachedCaseBoardPreservesStoryAndRequiresAnOpenHost()
+    {
+        AdventureDefinition tale = AdventureCatalog.DeadMansHand;
+        var saved = new AdventureProgressState();
+        var service = new ModernAdventureService(saved,p=>saved=p,
+            (_,_)=>new AdventureCompletionMetaResult(false,false,"",[],null));
+        var session = new ModernAdventureSession();
+        Assert.True(session.Execute(Command(session,"adventure.start",adventureId:tale.Id,
+            classId:AdventureCharacterCatalog.AllFor(tale)[0].Id),service.Execute).Success);
+        Assert.Equal("story",service.Screen);
+        Assert.True(service.HasCaseBoard);
+        Assert.False(session.Execute(Command(session,"adventure.board.view",zoom:1.5,panX:0,panY:0),service.Execute).Success);
+        service.DetachedBoardOpen = true;
+        Assert.True(session.Execute(Command(session,"adventure.board.view",zoom:1.5,panX:120,panY:60),service.Execute).Success);
+        Assert.Equal("story",service.Screen);
+        Assert.Equal(1.5,saved.Runs[tale.Id].CaseBoard.Layout.Zoom);
+        CaseNodeDefinition hidden = tale.CaseBoard!.Nodes.First(n=>!service.ActiveRun!.CaseBoard.Nodes[n.Id].IsKnown);
+        Assert.False(session.Execute(Command(session,"adventure.board.move",nodeId:hidden.Id,x:20,y:20),service.Execute).Success);
+        service.DetachedBoardOpen = false;
+        Assert.False(session.Execute(Command(session,"adventure.board.view",zoom:1,panX:0,panY:0),service.Execute).Success);
+    }
+
 }

@@ -714,3 +714,6 @@ html,body,#root{height:100%;overflow:hidden}
  .bonus-depth-tunnel,.bonus-depth-tunnel i,.bonus-scene-atmosphere i,
  .room-parallax i,.room-lightfall,.manor-vignette{animation:none!important}
 }
+
+
+.machine .main-actions .gold-button{min-height:46px;font-size:clamp(12px,1.15vw,16px);padding:10px 16px;letter-spacing:.06em;line-height:1.35}

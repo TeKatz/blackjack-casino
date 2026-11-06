@@ -12,7 +12,7 @@ The casino lobby is now a separate, read-only React/TypeScript/PixiJS page built
 
 ## Startup and progression routing (2026-11-05)
 
-- The main window starts with the native Blackjack table and its sidebar **collapsed**. They are exposed only by the explicit Blackjack game route; the modern lobby is the initial presentation. The startup news popup no longer overlays the landing page.
+- The main window starts with the native Blackjack table and its sidebar **collapsed**. They are exposed only by the explicit Blackjack game route; the modern lobby is the initial presentation. The React startup News dialog overlays the landing page once per process and shows the installed build’s bundled release notes.
 - Daily Login is owned by React. Its obsolete native WPF drawer and initialization hooks have been removed; native C# reward/persistence logic remains intact.
 - React owns the account hub, full owned-portrait/title picker and display-name editing; the name is validated, equipped cosmetics verified, and changes persisted by the original C# services. Progress export remains available from the separate native fallback editor.
 - React owns the Season Pass library (pass browsing, reward tiers, active-pass selection), Shop, Challenges, Statistics and the last 250 Blackjack rounds of Hand History, all through native read-only snapshots.
@@ -64,7 +64,7 @@ xUnit covers all 20 deck/difficulty pairings, private hidden cards, invalid comm
 
 The normal Jigsaw route now stays inside the React Chill Lounge, with the twelve curated motifs, eight grid sizes (24–1,000), PixiJS board, piece tray, bilingual gallery, zoom and pan, reference view, resume and achievements. The C# JigsawGame remains authoritative for placement, group movement, snapping and victory. ModernJigsawService persists a detached copy before switching live state; its versioned, revision/GUID-validated bridge rejects forged outcomes, stale requests and duplicate actions. Native Jigsaw progression remains exactly-once and saves the completion receipt before awards. The former WPF Jigsaw view remains for rollback.
 
-xUnit, Vitest and a real Windows WebView2 startup smoke cover protocol validation, all puzzle sizes, original save compatibility, failed persistence, first-piece snap and resume. Final 1,000-piece graphics/performance measurements, interlocking silhouette presentation and hardware accessibility remain open acceptance gates. See [Jigsaw modernization](jigsaw-modernization.md).
+xUnit, Vitest and a real Windows WebView2 startup smoke cover protocol validation, all puzzle sizes, original save compatibility, failed persistence, first-piece snap and resume. Complementary interlocking silhouettes, mixed tray order, direct tray drag/drop and optional reference are implemented. Final 1,000-piece Windows graphics/performance measurements and hardware accessibility remain open acceptance gates. See [Jigsaw modernization](jigsaw-modernization.md).
 
 ## Tales from the Backroom React gameplay migration (2026-11-06)
 

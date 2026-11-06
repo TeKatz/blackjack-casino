@@ -264,7 +264,7 @@ function App(){
   return (sign&&n>0?'+':n<0?'−':'')+'$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
  };
  const message=error??state?.notice??t.ready;
- return <div className="md-app" data-testid="modern-dice-app" data-revision={snapshot?.revision??-1}
+ return <div className="md-app" data-motion={animations} data-testid="modern-dice-app" data-revision={snapshot?.revision??-1}
   data-mode={state?.mode??'loading'} lang={lang}>
   <DiceAmbient enabled={animations}/>
   <header className="md-header">
@@ -306,7 +306,7 @@ function App(){
                  onClick={()=>report({action:'hold',index:i})}>
                   <Die value={number} palette={palette}/>
                   <span className="md-die-status">{game.held[i]?t.held:game.rollsUsed===3?t.result:t.free}</span>
-                  <span className="md-die-number">{i+1}</span>
+
                </button>)}
             </div>
             <div className="md-felt-hint">{t.hold}</div>

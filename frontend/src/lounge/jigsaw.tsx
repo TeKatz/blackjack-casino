@@ -1,11 +1,13 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
 import type {PointerEvent as ReactPointerEvent,MouseEvent as ReactMouseEvent,WheelEvent as ReactWheelEvent} from 'react';
-import {Application,Assets,Container,Graphics,Rectangle,Sprite,Texture} from 'pixi.js';
+import {Application,Assets,Container,Graphics,Sprite,Texture} from 'pixi.js';
 import type {JigsawGame,JigsawIntent,JigsawPiece,JigsawState} from './jigsawBridge';
+import {ManorAudio} from '../audio/manorAudio';
+import {pieceSegments,piecePath,trayRank} from './puzzleGeometry';
 import './jigsaw.css';
 
 type Lang='en'|'de';
-type Props={state:JigsawState;language:Lang;pending:boolean;error:string;animations:boolean;
+type Props={state:JigsawState;language:Lang;pending:boolean;error:string;animations:boolean;soundEnabled?:boolean;
  command:(intent:JigsawIntent)=>void};
 type View={zoom:number;x:number;y:number};
 const images=(id:string)=>'/album/atlas/'+id+'.png';
@@ -56,7 +58,7 @@ function PixiBoard({game,reference,view,selected,onPlace,onMove,onReturn,onSelec
  onReturn:(index:number)=>void;onSelect:(index:number|null)=>void;onView:(next:View)=>void;
 }){
  const mount=useRef<HTMLDivElement>(null),instance=useRef<Application|null>(null);
- const layer=useRef<Container|null>(null),pieces=useRef<Sprite[]>([]);
+ const layer=useRef<Container|null>(null),pieces=useRef<Container[]>([]);
  const panning=useRef<{clientX:number;clientY:number;view:View}|null>(null);
  const live=useRef({game,reference,view}),drag=useRef<{
   id:number;original:JigsawPiece;start:{x:number;y:number};group:number[]
@@ -75,20 +77,24 @@ function PixiBoard({game,reference,view,selected,onPlace,onMove,onReturn,onSelec
    const texture=await Assets.load<Texture>(images(game.motifId));
    if(cancelled)return;
    const backing=new Sprite(texture);
-   backing.width=960;backing.height=600;backing.alpha=.12;stage.addChild(backing);
-   const tx=texture.width/game.columns,ty=texture.height/game.rows;
+   backing.width=960;backing.height=600;backing.alpha=live.current.reference?.27:0;stage.addChild(backing);
    const cw=960/game.columns,ch=600/game.rows;
-   const sprites:Sprite[]=[];
+   const sprites:Container[]=[];
    for(let id=0;id<game.pieceCount;id++){
-    const x=id%game.columns,y=Math.floor(id/game.columns);
-    const tile=new Sprite(new Texture({source:texture.source,frame:new Rectangle(tx*x,ty*y,tx,ty)}));
-    tile.width=cw;tile.height=ch;stage.addChild(tile);sprites.push(tile);
+    const tile=new Container(),image=new Sprite(texture),mask=new Graphics(),outline=new Graphics();
+    image.width=960;image.height=600;image.position.set(-(id%game.columns)*cw,-Math.floor(id/game.columns)*ch);
+    for(const segment of pieceSegments(id,game.columns,game.rows,cw,ch)){
+     const v=segment.values;
+     for(const g of [mask,outline]){
+      if(segment.kind==='M')g.moveTo(v[0],v[1]);
+      else if(segment.kind==='L')g.lineTo(v[0],v[1]);
+      else g.bezierCurveTo(v[0],v[1],v[2],v[3],v[4],v[5]);
+     }
+    }
+    mask.closePath().fill(0xffffff);outline.closePath().stroke({color:0xe7d6aa,width:.65,alpha:.7});
+    image.mask=mask;tile.addChild(image,mask,outline);stage.addChild(tile);sprites.push(tile);
    }
-   pieces.current=sprites;
-   const grid=new Graphics();
-   for(let i=0;i<=game.columns;i++)grid.moveTo(i*cw,0).lineTo(i*cw,600);
-   for(let i=0;i<=game.rows;i++)grid.moveTo(0,i*ch).lineTo(960,i*ch);
-   grid.stroke({color:0xd1b677,width:.4,alpha:.35});stage.addChild(grid);
+   pieces.current=sprites;host.dataset.rendererReady='true';
    const current=live.current;
    stage.position.set(current.view.x,current.view.y);
    stage.scale.set(current.view.zoom);
@@ -103,9 +109,10 @@ function PixiBoard({game,reference,view,selected,onPlace,onMove,onReturn,onSelec
  useEffect(()=>{
   if(!layer.current)return;
   layer.current.position.set(view.x,view.y);layer.current.scale.set(view.zoom);
-  if(layer.current.children[0])layer.current.children[0].alpha=reference?.27:.12;
+  if(layer.current.children[0])layer.current.children[0].alpha=reference?.27:0;
   for(let i=0;i<pieces.current.length;i++){
    const p=game.pieces[i],s=pieces.current[i];
+   if(drag.current?.group.includes(i))continue;
    s.visible=p.onBoard;s.position.set(p.x,p.y);s.alpha=p.locked?1:.93;
   }
  },[game,view,reference]);
@@ -173,18 +180,36 @@ function PixiBoard({game,reference,view,selected,onPlace,onMove,onReturn,onSelec
  };
  return <div ref={mount} className="jigsaw-board" onPointerDown={down}
    onPointerMove={move} onPointerUp={up} onPointerCancel={()=>{drag.current=null;panning.current=null;}}
+   onDragOver={e=>{if(e.dataTransfer.types.includes('application/x-midnight-piece')){e.preventDefault();e.dataTransfer.dropEffect='move';}}}
+   onDrop={e=>{e.preventDefault();if(!e.dataTransfer.types.includes('application/x-midnight-piece'))return;const id=Number(e.dataTransfer.getData('application/x-midnight-piece'));
+    if(!Number.isInteger(id)||id<0||id>=game.pieceCount||game.pieces[id].onBoard)return;
+    const r=e.currentTarget.getBoundingClientRect();
+    const x=((e.clientX-r.left)*960/r.width-view.x)/view.zoom-480/game.columns;
+    const y=((e.clientY-r.top)*600/r.height-view.y)/view.zoom-300/game.rows;
+    onPlace(id,x,y);}}
    onWheel={wheel} onContextMenu={context} role="group" aria-label="Jigsaw board"/>;
 }
-export function JigsawScreen({state,language,pending,error,command}:Props){
+export function JigsawScreen({state,language,pending,error,command,animations,soundEnabled=false}:Props){
  const t=copy[language],game=state.game;
+ const audio=useMemo(()=>new ManorAudio(),[]),previous=useRef({id:'',placed:0,locked:0});
+ const [feedback,setFeedback]=useState(false);
+ useEffect(()=>{audio.setHostPolicy(soundEnabled,false,0);},[audio,soundEnabled]);
+ useEffect(()=>()=>audio.dispose(),[audio]);
+ useEffect(()=>{if(!game)return;const last=previous.current;
+  if(last.id===game.gameId&&(game.onBoardCount>last.placed||game.lockedCount>last.locked)){
+   audio.play(game.lockedCount>last.locked?'checkpoint':'reel');setFeedback(true);
+  }
+  previous.current={id:game.gameId,placed:game.onBoardCount,locked:game.lockedCount};
+ },[game?.gameId,game?.onBoardCount,game?.lockedCount,audio]);
+ useEffect(()=>{if(!feedback)return;const id=window.setTimeout(()=>setFeedback(false),650);return()=>window.clearTimeout(id);},[feedback]);
  const [selected,setSelected]=useState<number|null>(null),[page,setPage]=useState(0);
  const [view,setView]=useState<View>({zoom:1,x:0,y:0}),[reference,setReference]=useState(false);
- const available=useMemo(()=>game?.pieces.filter(p=>!p.onBoard)??[],[game]);
+ const available=useMemo(()=>game?.pieces.filter(p=>!p.onBoard).sort((a,b)=>trayRank(a.id,game.gameId)-trayRank(b.id,game.gameId))??[],[game]);
  const pages=Math.max(1,Math.ceil(available.length/32)),currentPage=Math.min(page,pages-1);
  const on=(intent:JigsawIntent)=>{if(!pending)command(intent);};
  const zoom=(factor:number)=>setView(v=>({...v,zoom:Math.max(1,Math.min(3,v.zoom*factor))}));
  const motif=state.motifs.find(x=>x.id===(game?.motifId??state.selectedMotifId));
- useEffect(()=>{setPage(0);setSelected(null);setView({zoom:1,x:0,y:0});},[game?.gameId]);
+ useEffect(()=>{setPage(0);setSelected(null);setView({zoom:1,x:0,y:0});setReference(false);},[game?.gameId]);
  const base=<div className="jigsaw-heading"><div><small>THE MIDNIGHT CLUB · CHILL LOUNGE</small>
   <h1>{t.title}</h1><p>{t.intro}</p></div>
   <div className="jigsaw-stats"><span>{t.completed} <b>{state.stats.completedGames}</b></span>
@@ -198,23 +223,23 @@ export function JigsawScreen({state,language,pending,error,command}:Props){
   </article>)}</div></section>;
  if(state.screen==='library')return <section className="jigsaw-shell">
   {base}<h2>{t.motif}</h2>
-  <div className="jigsaw-gallery">{state.motifs.map(m=><button key={m.id} disabled={pending}
+  <div className="jigsaw-gallery">{state.motifs.map(m=><button key={m.id} aria-disabled={pending}
    aria-pressed={state.selectedMotifId===m.id} className={state.selectedMotifId===m.id?'selected':''}
    onClick={()=>on({action:'jigsaw.motif',motifId:m.id})}>
    <img src={images(m.id)} alt=""/><strong>{m.name}</strong><small>{m.category}</small>
   </button>)}</div>
   <h2>{t.size}</h2><div className="jigsaw-sizes">{state.sizes.map(s=><button key={s.count}
-   disabled={pending} aria-pressed={state.selectedPieceCount===s.count}
+   aria-disabled={pending} aria-pressed={state.selectedPieceCount===s.count}
    className={state.selectedPieceCount===s.count?'selected':''}
    onClick={()=>on({action:'jigsaw.size',pieceCount:s.count})}>
    {s.count}<small>{s.columns}×{s.rows} · {s.rewardXp} XP</small></button>)}</div>
   <div className="jigsaw-actions">
-   <button disabled={pending} onClick={()=>on({action:'jigsaw.timer',enabled:!state.timerEnabled})}>
+   <button aria-disabled={pending} onClick={()=>on({action:'jigsaw.timer',enabled:!state.timerEnabled})}>
     {t.timer}: {state.timerEnabled?t.on:t.off}</button>
    <button onClick={()=>on({action:'jigsaw.achievements'})}>{t.achievements} {state.stats.achievementsUnlocked}/30</button>
-   {state.resume&&<button className="jigsaw-primary" disabled={pending}
+   {state.resume&&<button className="jigsaw-primary" aria-disabled={pending}
     onClick={()=>on({action:'jigsaw.resume'})}>{t.resume} · {state.resume.lockedCount}/{state.resume.pieceCount}</button>}
-   <button className="jigsaw-primary" disabled={pending} onClick={()=>{
+   <button className="jigsaw-primary" aria-disabled={pending} onClick={()=>{
     if(state.resume&&!window.confirm(t.ask))return;
     on({action:'jigsaw.start',...(state.resume?{confirmReplace:true as const}:{})});
    }}>{state.resume?t.replace:t.start}</button></div>
@@ -226,18 +251,18 @@ export function JigsawScreen({state,language,pending,error,command}:Props){
   <h2>{motif?.name}</h2><p>{t.finish}</p>
   <p>{game.pieceCount} · {game.timerEnabled?fmt(game.elapsedSeconds):t.none}</p>
   <p className="jigsaw-rewards">{state.rewardNotice}</p>
-  <button className="jigsaw-primary" disabled={pending} onClick={()=>on({action:'jigsaw.back'})}>{t.another}</button>
+  <button className="jigsaw-primary" aria-disabled={pending} onClick={()=>on({action:'jigsaw.back'})}>{t.another}</button>
  </section>;
- return <section className="jigsaw-shell jigsaw-playing">
+ return <section className={"jigsaw-shell jigsaw-playing"+(feedback&&animations?" piece-placed":"")} onPointerDownCapture={()=>audio.arm()}>
   <div className="jigsaw-heading"><div><small>CHILL LOUNGE · JIGSAW PUZZLE</small>
    <h1>{motif?.name}</h1><p>{game.lockedCount}/{game.pieceCount} · {game.timerEnabled?fmt(game.elapsedSeconds):t.none}</p></div>
    <div className="jigsaw-actions"><button onClick={()=>zoom(.8)}>{t.zoomOut}</button>
     <button onClick={()=>zoom(1.25)}>{t.zoomIn}</button>
     <button onClick={()=>setView({zoom:1,x:0,y:0})}>{t.reset}</button>
     <button aria-pressed={reference} onClick={()=>setReference(v=>!v)}>{t.reference}</button>
-    <button disabled={pending} onClick={()=>on({action:'jigsaw.timer',enabled:!state.timerEnabled})}>
+    <button aria-disabled={pending} onClick={()=>on({action:'jigsaw.timer',enabled:!state.timerEnabled})}>
      {t.timer}: {game.timerEnabled?t.on:t.off}</button>
-    <button disabled={pending} onClick={()=>on({action:'jigsaw.back'})}>{t.back}</button>
+    <button aria-disabled={pending} onClick={()=>on({action:'jigsaw.back'})}>{t.back}</button>
    </div></div>
   <div className="jigsaw-layout"><div className="jigsaw-board-panel">
    <PixiBoard game={game} reference={reference} view={view} onView={setView} selected={selected}
@@ -246,15 +271,16 @@ export function JigsawScreen({state,language,pending,error,command}:Props){
     }}
     onMove={(index,x,y)=>on({action:'jigsaw.move',index,x:Math.round(x*100)/100,y:Math.round(y*100)/100})}
     onReturn={index=>on({action:'jigsaw.tray',index})}/>
-   <p className="jigsaw-hint">{t.guide}</p>{error&&<p role="alert" className="jigsaw-error">{error}</p>}</div>
+   <p className="jigsaw-hint">{t.guide}</p><p className="jigsaw-placement-notice" role="status">{state.notice}</p>{error&&<p role="alert" className="jigsaw-error">{error}</p>}</div>
    <aside className="jigsaw-tray"><h2>{t.tray}</h2><p>{available.length} {t.left}</p>
     <div className="jigsaw-tray-grid">{available.slice(currentPage*32,(currentPage+1)*32).map(p=><button
-     key={p.id} disabled={pending} aria-pressed={selected===p.id} className={selected===p.id?'selected':''}
+     key={p.id} aria-disabled={pending} aria-pressed={selected===p.id} className={selected===p.id?'selected':''} draggable={!pending} onDragStart={e=>{e.dataTransfer.setData('application/x-midnight-piece',String(p.id));e.dataTransfer.effectAllowed='move';}}
      title={'Piece '+(p.id+1)} onClick={()=>setSelected(v=>v===p.id?null:p.id)}>
-     <span style={{backgroundImage:'url('+images(game.motifId)+')',
-      backgroundSize:(game.columns*100)+'% '+(game.rows*100)+'%',
-      backgroundPosition:(p.id%game.columns)/(game.columns-1)*100+'% '+
-       Math.floor(p.id/game.columns)/(game.rows-1)*100+'%'}}/></button>)}</div>
+     <svg viewBox="-20 -20 140 140" aria-hidden="true"><defs><clipPath id={'tray-piece-'+p.id}><path d={piecePath(p.id,game.columns,game.rows,100,100)}/></clipPath></defs>
+      <image href={images(game.motifId)} x={-(p.id%game.columns)*100} y={-Math.floor(p.id/game.columns)*100}
+       width={game.columns*100} height={game.rows*100} preserveAspectRatio="none" clipPath={'url(#tray-piece-'+p.id+')'}/>
+      <path d={piecePath(p.id,game.columns,game.rows,100,100)} fill="none" stroke="#dfc993" strokeWidth="1.5"/>
+     </svg></button>)}</div>
     <div className="jigsaw-pages"><button disabled={currentPage===0} onClick={()=>setPage(v=>Math.max(0,v-1))}>◀</button>
      <span>{t.page} {currentPage+1}/{pages}</span>
      <button disabled={currentPage>=pages-1} onClick={()=>setPage(v=>Math.min(pages-1,v+1))}>▶</button></div>

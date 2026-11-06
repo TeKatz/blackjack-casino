@@ -1,3 +1,4 @@
+import {PlayerPortrait,CosmeticTitle} from './Cosmetics';
 import {useEffect,useState} from 'react';
 import type {AccountSnapshot} from './recordsBridge';
 const jpgPortraits = new Set(['house-guest','eclipse-raven','eclipse-lady','eclipse-moon',
@@ -31,8 +32,9 @@ export function ModernAccount({data,loaded,language,pending,onBack,onRoute,onEdi
  <h1>{de?'Spielerprofil':'Player profile'}</h1>
  <p>{de?'Identität, Sammlung und Fortschritt an einem Ort.':'Identity, collection and progression in one place.'}</p>
  </div><div className="record-hero-side"><span>{de?'SPIELER':'PLAYER'}</span>
- <strong className="account-name">{loaded?data.displayName:'…'}</strong><small>{data.title} · P{data.prestige}</small></div></header>
+ <strong className="account-name">{loaded?data.displayName:'…'}</strong><small><CosmeticTitle variant={data.titleVariant}>{data.title}</CosmeticTitle></small>{data.prestige>0&&<span className="prestige-badge">✦ P{data.prestige}</span>}</div></header>
  {!loaded?<p className="record-empty" role="status">{de?'Profil wird geladen…':'Loading profile…'}</p>:<>
+ <div className="account-portrait"><PlayerPortrait portrait={data.portraitVariant??data.portraits.find(p=>p.id===data.equippedPortraitId)?.visualVariant} frame={data.frameVariant} large/><div><strong>{data.displayName}</strong><CosmeticTitle variant={data.titleVariant}>{data.title}</CosmeticTitle></div></div>
  <div className="record-summary account-summary">
  <div><span>LEVEL</span><strong>{data.level}</strong></div>
  <div><span>{de?'MÜNZEN':'COINS'}</span><strong>{data.coins}</strong></div>
@@ -76,7 +78,7 @@ export function ModernAccount({data,loaded,language,pending,onBack,onRoute,onEdi
  <img alt="" src={portraitImage(item.visualVariant)!} loading="lazy"
  onError={e=>{e.currentTarget.style.display='none';}}/>:group==='portraits'?'♠':'✦'}
  </div>
- <div><strong>{item.name}</strong><p>{item.description}</p></div>
+ <div><strong>{group==='titles'?<CosmeticTitle variant={item.visualVariant}>{item.name}</CosmeticTitle>:item.name}</strong><p>{item.description}</p></div>
  <button type="button" disabled={active||pending!==null} onClick={()=>onEquip(item.id)}>
  {active?(de?'AUSGERÜSTET':'EQUIPPED'):pending===item.id?'…':(de?'AUSRÜSTEN':'EQUIP')}</button>
  </article>;

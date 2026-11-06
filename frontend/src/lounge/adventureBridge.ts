@@ -4,7 +4,7 @@ export type TaleCatalog={id:string;title:string;subtitle:string;acts:number;scen
 export type TaleClass={id:string;name:string;description:string;maxHitPoints:number;armor:number;
  special:string;abilities:{id:string;name:string;score:number}[]};
 export type TaleChoice={id:string;text:string;check:null|{ability:string;difficulty:number;skillId:string|null};
- encounter:null|string};
+ encounter:null|string;events?:string[]};
 export type TaleBoardNode={id:string;category:string;title:string;description:string;
  subtitle:string;reliability:string;lead:string;theory:string;facts:string[];
  quotes:string[];x:number;y:number};
@@ -74,6 +74,7 @@ const catalog=(v:unknown)=>record(v)&&label(v.id,100)&&label(v.title,300)
  &&['unplayed','active','completed'].includes(String(v.status))&&textOrNull(v.runId)
  &&textOrNull(v.lastSceneId);
 const choice=(v:unknown)=>record(v)&&label(v.id,128)&&label(v.text,8000)
+ &&(v.events===undefined||(Array.isArray(v.events)&&v.events.length<=30&&v.events.every(e=>label(e,80))))
  &&textOrNull(v.encounter)&&(v.check===null||(record(v.check)
  &&label(v.check.ability,200)&&int(v.check.difficulty,10000)&&textOrNull(v.check.skillId)));
 const card=(v:unknown)=>record(v)&&typeof v.hidden==='boolean'

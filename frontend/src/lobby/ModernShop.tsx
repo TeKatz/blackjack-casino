@@ -1,3 +1,5 @@
+import {ProfileFrame,DicePreview,CosmeticTitle} from './Cosmetics';
+import {resolveCardSkin} from '../blackjack/cardSkins';
 import {useMemo,useState} from 'react';
 import type {CSSProperties} from 'react';
 import {filterShop} from './shopBridge';
@@ -32,7 +34,8 @@ const variantPalette=(variant:string)=>{
   return ['#d9c5a0','#655343','#fff2d1'];
 };
 function Preview({item}:{item:ShopItem}){
-  const [accent,dark,light]=variantPalette(item.visualVariant);
+  const skin=resolveCardSkin(item.visualVariant);
+  const [accent,dark,light]=item.kind==='CardSet'?[skin.accent,skin.backA,skin.faceA]:variantPalette(item.visualVariant);
   const style={'--preview-accent':accent,'--preview-dark':dark,'--preview-light':light} as CSSProperties;
   if(item.kind==='Portrait'){
     const portrait=item.visualVariant.replace(/^portrait-/,'');
@@ -42,18 +45,13 @@ function Preview({item}:{item:ShopItem}){
       <span className="portrait-ring" aria-hidden="true"/></div>;
   }
   if(item.kind==='CardSet')return <div className="cosmetic-visual cards-visual" style={style} aria-hidden="true">
-    <div className="shop-playing-card card-reverse"><span>♠</span><span className="card-ornament">✥</span><span>♠</span></div>
-    <div className="shop-playing-card card-front"><span>A</span><span>♠</span><span>A</span></div>
+    <div className="shop-playing-card card-reverse" style={{background:'linear-gradient(135deg,'+skin.backA+','+skin.backB+')',color:skin.accent,borderColor:skin.accent}}><span>♠</span><span className="card-ornament">{skin.mark}</span><span>♠</span></div>
+    <div className="shop-playing-card card-front" style={{background:'linear-gradient(135deg,'+skin.faceA+','+skin.faceB+')',color:skin.black,borderColor:skin.border}}><span>A</span><span>♠</span><span>A</span></div>
   </div>;
-  if(item.kind==='DiceSet')return <div className="cosmetic-visual dice-visual" style={style} aria-hidden="true">
-    <div className="shop-die die-back"><span>•</span><span>•</span><span>•</span><span>•</span></div>
-    <div className="shop-die die-front"><span>•</span><span>•</span><span>•</span><span>•</span><span>•</span></div>
-  </div>;
-  if(item.kind==='Frame')return <div className="cosmetic-visual frame-visual" style={style} aria-hidden="true">
-    <div className="shop-profile-frame"><span>♛</span></div>
-  </div>;
+  if(item.kind==='DiceSet')return <div className="cosmetic-visual dice-visual"><DicePreview variant={item.visualVariant}/></div>;
+  if(item.kind==='Frame')return <div className="cosmetic-visual frame-visual"><ProfileFrame variant={item.visualVariant} large/></div>;
   return <div className="cosmetic-visual title-visual" style={style}>
-    <div className="shop-title-preview"><span>THE MIDNIGHT CLUB</span><strong>{item.name}</strong><i>✦ &nbsp; ✦ &nbsp; ✦</i></div>
+    <div className="shop-title-preview"><span>THE MIDNIGHT CLUB</span><strong><CosmeticTitle variant={item.visualVariant}>{item.name}</CosmeticTitle></strong><i>✦ &nbsp; ✦ &nbsp; ✦</i></div>
   </div>;
 }
 const labelKind=(kind:ShopKind,de:boolean)=>({

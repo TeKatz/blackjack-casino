@@ -351,9 +351,7 @@ function ManorApp() {
               <label htmlFor="manor-bet">{t(language, 'stake')}</label>
               <div className="bet-input">
                 <span>$</span>
-                <input id="manor-bet" type="number" inputMode="numeric"
-                  min={1} max={5000} step={1} value={bet}
-                  onChange={event => setBet(event.target.value)}
+                <input id="manor-bet" type="text" readOnly value={bet}
                   disabled={disabled || autoRemaining !== null || !snapshot.canSpin} />
               </div>
               <div className="preset-bets" role="group" aria-label={t(language, 'quickBet')}>

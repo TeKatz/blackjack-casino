@@ -134,7 +134,7 @@ function BlackjackApp(){
               <button disabled={!allowed('Hit')} onClick={()=>act({action:'hit'})}>{t.hit} <kbd>H</kbd></button>
               <button disabled={!allowed('Stand')} onClick={()=>act({action:'stand'})}>{t.stand} <kbd>S</kbd></button>
               <button disabled={!allowed('DoubleDown')} onClick={()=>act({action:'double'})}>{t.double} <kbd>D</kbd></button>
-              <button disabled={!allowed('Split')} onClick={()=>act({action:'split'})}>{t.split} <kbd>P</kbd></button>
+              <button className={allowed('Split')?'bj-split-ready':''} disabled={!allowed('Split')} onClick={()=>act({action:'split'})}>{t.split} <kbd>P</kbd></button>
               <button disabled={!allowed('Surrender')} onClick={()=>act({action:'surrender'})}>{t.surrender} <kbd>R</kbd></button>
             </>}
           </div>
@@ -142,7 +142,7 @@ function BlackjackApp(){
       </main>
       <aside className="bj-sidebar">
         <section><small>{t.wager}</small><strong className="bj-bet">{showMoney(s.selectedBet)}</strong>
-          <div className="bj-chips">{[5,25,100,500].map(amount=>
+          <div className="bj-chips">{[5,25,100,500,1000,2500].map(amount=>
             <button key={amount} disabled={locked||inHand}
               onClick={()=>act({action:'bet.set',value:String(Math.min(Number(s.selectedBet)+amount,Number(s.bankroll),Number(s.rules.maximumBet)))})}>+{amount}</button>)}</div>
           <label>{t.exact}<input data-wager="true" value={bet} inputMode="decimal" disabled={locked||inHand}

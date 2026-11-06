@@ -88,14 +88,14 @@ export function MemoryScreen({state,language,pending,error,animations,command}:P
      <div><span className="memo-kicker">{t.resume}</span>
       <h2>{difficultyName[language][state.resume.difficulty]} · {deckNames[language][state.resume.deckId]}</h2>
       <p>{state.resume.pairsFound}/{state.resume.pairCount} {t.pairs.toLowerCase()} · {state.resume.moves} {t.moves.toLowerCase()}</p></div>
-     <button data-testid="memory-resume" disabled={pending}
+     <button data-testid="memory-resume" aria-disabled={pending}
        onClick={()=>command({action:'memory.resume'})}>{t.resume} →</button>
     </div>}
    <div className="memo-cabinet">
     <section className="memo-decks"><h2>{t.decks}</h2>
      <div className="memo-deck-grid">
       {state.decks.map(deck=><button className={'memo-deck'+(state.preferredDeckId===deck.id?' active':'')}
-       key={deck.id} data-testid={'memory-deck-'+deck.id} disabled={pending||!!state.resume}
+       key={deck.id} data-testid={'memory-deck-'+deck.id} disabled={!!state.resume} aria-disabled={pending||!!state.resume}
        aria-pressed={state.preferredDeckId===deck.id} onClick={()=>command({action:'memory.deck',deckId:deck.id})}>
         <span className="memo-deck-label">{deckNames[language][deck.id]}{state.preferredDeckId===deck.id&&<b>✓</b>}</span>
         <span className="memo-preview">
@@ -117,7 +117,7 @@ export function MemoryScreen({state,language,pending,error,animations,command}:P
        <div className="memo-tier-main"><h3>{difficultyName[language][d.difficulty]}</h3>
         <b>{d.rows} × {d.columns}</b><span>{d.pairs} {t.pairs.toLowerCase()}</span></div>
        <div className="memo-tier-record">{d.bestMoves>0?t.bestMoves+' · '+d.bestMoves:t.noBest}</div>
-       <button data-testid={'memory-start-'+d.difficulty} disabled={pending||!!state.resume}
+       <button data-testid={'memory-start-'+d.difficulty} disabled={!!state.resume} aria-disabled={pending||!!state.resume}
         onClick={()=>command({action:'memory.start',difficulty:d.difficulty})}>{t.new}</button>
       </article>)}
      </div>
@@ -147,7 +147,7 @@ export function MemoryScreen({state,language,pending,error,animations,command}:P
        {game.cards.map(card=><button type="button" key={card.index} role="gridcell"
          className={'memo-card '+(card.faceUp?'face-up ':'face-down ')+(card.matched?'matched':'')}
          data-testid={'memory-card-'+card.index} data-face-up={card.faceUp} data-matched={card.matched}
-         disabled={pending||closed||card.faceUp||game.resolvingMismatch}
+         disabled={closed||card.faceUp||game.resolvingMismatch} aria-disabled={pending||closed||card.faceUp||game.resolvingMismatch}
          aria-label={card.faceUp?(card.name??''):(language==='de'?'Verdeckte Karte ':'Hidden card ')+(card.index+1)}
          onClick={()=>command({action:'memory.flip',index:card.index})}>
          {card.faceUp&&card.glyph&&card.name&&card.accent
@@ -171,7 +171,7 @@ export function MemoryScreen({state,language,pending,error,animations,command}:P
       <p className="memo-notice" role="status">{error||state.notice}</p>
       {game.resolvingMismatch&&<p className="memo-mismatch">{t.waiting}</p>}
       <p className="memo-saved">{t.saved}</p>
-      {!closed&&<button className="memo-back" data-testid="memory-back" disabled={pending}
+      {!closed&&<button className="memo-back" data-testid="memory-back" aria-disabled={pending}
        onClick={()=>command({action:'memory.back'})}>{t.back}</button>}
      </aside>
     </div>

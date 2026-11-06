@@ -13,7 +13,8 @@ import type { WordSearchState } from './wordSearchBridge';
 import type { MemoryState } from './memoryBridge';
 import type { JigsawState } from './jigsawBridge';
 import type { TaleState } from './adventureBridge';
-export type LoungeSnapshot = { version: 1; language: 'en' | 'de';
+export type LoungeSnapshot = {
+  boardOnly?:boolean; version: 1; language: 'en' | 'de';
   session:string;revision:number;sudoku:SudokuState|null;
   solitaireSession:string;solitaireRevision:number;solitaire:SolitaireState|null;
   wordSearchSession:string;wordSearchRevision:number;wordSearch:WordSearchState|null;
@@ -25,7 +26,7 @@ const record = (v: unknown): v is Record<string, unknown> => v !== null && typeo
 export const isLoungeId = (value: unknown): value is LoungeId =>
   typeof value === 'string' && loungeIds.some(id => id === value);
 export function isLoungeSnapshot(value: unknown): value is LoungeSnapshot {
-  if (!record(value) || value.version !== 1 || (value.language !== 'de' && value.language !== 'en')
+  if (!record(value) || (value.boardOnly!==undefined&&typeof value.boardOnly!=='boolean') || value.version !== 1 || (value.language !== 'de' && value.language !== 'en')
     || typeof value.session!=='string' || !/^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i.test(value.session)
     || typeof value.revision!=='number'||!Number.isSafeInteger(value.revision)||value.revision<0
     || !(value.sudoku===null||isSudokuState(value.sudoku))

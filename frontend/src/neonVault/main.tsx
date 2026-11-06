@@ -242,7 +242,7 @@ function VaultApp(){
  const highlight=(i:number)=>finished&&(winning.has(i)
    ||result?.expandedReels.includes(i%5)||result?.blackoutWildCells.includes(i)
    ||result?.securityOverrideReel===i%5);
- return <div className="vault-app" lang={s.language} data-testid="neon-vault-app"
+ return <div className="vault-app" data-motion={s.animationsEnabled} lang={s.language} data-testid="neon-vault-app"
    data-spin-id={result?.id??''} data-animating={animating} data-tier={s.betTier} data-bonus={s.bonusActive}>
    <VaultAmbient enabled={s.animationsEnabled&&!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches}/>
    <header className="vault-header">

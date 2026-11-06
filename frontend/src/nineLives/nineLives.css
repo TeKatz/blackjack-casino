@@ -104,7 +104,7 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d389;outline-offse
 .nine-loading span{font-size:34px;color:#bd8ade}.nine-loading h1{font:36px Georgia,serif;letter-spacing:.17em;margin:0}
 .nine-loading button{padding:12px 16px;background:#36214b;border:1px solid #ad8c71;border-radius:7px}
 @keyframes nine-win-pulse{50%{transform:scale(1.04);filter:brightness(1.25)}}
-@keyframes nine-reel-blur{to{transform:translateY(8px) scaleY(1.04);filter:blur(2.4px)}}
+@keyframes nine-reel-blur{to{transform:translateY(8px) scaleY(1.04);filter:none}}
 @keyframes nine-bonus-pulse{to{filter:brightness(1.35)}}
 @media(max-height:920px){.nine-header{min-height:65px}.nine-layout{padding-block:10px}
 .nine-machine{padding-block:8px}.nine-machine-heading h2{font-size:29px;margin:0}.nine-bonus-banner{min-height:23px}
@@ -123,3 +123,20 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d389;outline-offse
 .nine-meter strong{font-size:14px}.nine-spin{font-size:15px;gap:6px}.nine-spin kbd{display:none}
 .nine-sidebar{grid-template-columns:1fr}.nine-header-bank strong{font-size:16px}}
 @media(prefers-reduced-motion:reduce){.nine-cell,.nine-cell img,.nine-bonus-banner{transition:none!important;animation:none!important}}
+
+
+@media(min-width:1000px) and (min-height:600px){
+ .nine-app{height:100dvh;min-height:0}.nine-header{min-height:65px;padding-block:6px}
+ .nine-layout{width:100%;grid-template-columns:minmax(0,1fr) 280px;padding:12px;min-height:0;overflow:hidden}
+ .nine-machine{padding:9px 15px;min-height:0}.nine-machine-heading h2{font-size:28px;margin:0}.nine-bonus-banner{min-height:24px}
+ .nine-reels-outer{flex:1;min-height:100px;width:100%;margin:7px 0;justify-content:center}
+ .nine-reels{height:100%;width:100%;max-width:none;flex:1;aspect-ratio:auto}.nine-status{min-height:44px;padding:3px}.nine-console{width:100%;gap:6px;flex-shrink:0;margin-top:0}
+ .nine-meter>div{padding:4px}.nine-meter strong{font-size:20px}.nine-spin{min-height:48px}.nine-sidebar{min-height:0;overflow:auto}.nine-card{padding:10px}
+}
+.nine-moon{animation:nine-moon-drift 18s ease-in-out infinite alternate}.nine-horizon{animation:nine-night-drift 25s ease-in-out infinite alternate}
+@keyframes nine-moon-drift{to{transform:translate(-22px,9px);opacity:.45}}
+@keyframes nine-night-drift{to{transform:translateX(18px);opacity:.5}}
+@media(prefers-reduced-motion:reduce){.nine-moon,.nine-horizon{animation:none}}
+
+
+.nine-app[data-motion=false] *,.nine-app[data-motion=false] *::before,.nine-app[data-motion=false] *::after{animation:none!important;transition:none!important}

@@ -1,5 +1,5 @@
 import {describe,expect,it} from 'vitest';
-import {difficulties,isSudokuState,isSudokuReply} from '../src/lounge/sudokuBridge';
+import {difficulties,isSudokuState,isSudokuReply,sudokuEditIntent} from '../src/lounge/sudokuBridge';
 
 const givens='256000703000000010000200084000360020000800000498072000060007300102043508080005900';
 const board=givens;
@@ -30,5 +30,14 @@ describe('C#-authored Sudoku snapshot',()=>{
   expect(isSudokuReply(reply)).toBe(true);
   expect(isSudokuReply({...reply,revision:-1})).toBe(false);
   expect(isSudokuReply({...reply,requestId:'not-a-guid'})).toBe(false);
+ });
+});
+
+describe('selected Sudoku editing cell',()=>{
+ it('erases the selected cell rather than the hint auto-selection sentinel',()=>{
+  for(let i=0;i<81;i++)expect(sudokuEditIntent('sudoku.erase',i)).toEqual({action:'sudoku.erase',index:i});
+  expect(sudokuEditIntent('sudoku.erase',-1)).toBeNull();
+  expect(sudokuEditIntent('sudoku.hint',-1)).toEqual({action:'sudoku.hint',index:-1});
+  expect(sudokuEditIntent('sudoku.erase',81)).toBeNull();
  });
 });

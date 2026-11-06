@@ -1,6 +1,6 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
 import type {Difficulty,SudokuGame,SudokuIntent,SudokuState} from './sudokuBridge';
-import {difficulties} from './sudokuBridge';
+import {difficulties,sudokuEditIntent} from './sudokuBridge';
 import './sudoku.css';
 
 type Lang='en'|'de';
@@ -77,7 +77,7 @@ export function SudokuScreen({state,language,pending,error,command}:Props) {
  function edit(action:'sudoku.erase'|'sudoku.hint') {
    if(!game||pending)return;
    if(action==='sudoku.erase'&&!isEditable)return;
-   command({action,index:action==='sudoku.hint'?selected:-1});
+   const intent=sudokuEditIntent(action,selected);if(intent)command(intent);
  }
  useEffect(()=>{
    if(!game)return;
@@ -123,7 +123,7 @@ export function SudokuScreen({state,language,pending,error,command}:Props) {
    </div>
    <div className="sudoku-library-heading"><h2>{t.library}</h2>
      <button className={'sudoku-toggle '+(state.showTimer?'active':'')}
-       data-testid="sudoku-timer-toggle" disabled={pending}
+       data-testid="sudoku-timer-toggle" aria-disabled={pending}
        onClick={()=>command({action:'sudoku.timer',value:state.showTimer?'false':'true'})}>
        {t.timer}: {state.showTimer?'ON':'OFF'}</button></div>
    <div className="sudoku-difficulties">
@@ -134,9 +134,9 @@ export function SudokuScreen({state,language,pending,error,command}:Props) {
       <p>{entry.canResume?t.inProgress+' · '+formatTime(entry.elapsedSeconds):t.noSaved}</p>
       <span className="sudoku-solved-count">{entry.completed} {t.solved.toLowerCase()}</span>
       <div className="sudoku-tile-actions">
-        <button data-testid={'sudoku-resume-'+entry.id} disabled={!entry.canResume||pending}
+        <button data-testid={'sudoku-resume-'+entry.id} disabled={!entry.canResume} aria-disabled={!entry.canResume||pending}
           onClick={()=>command({action:'sudoku.resume',value:entry.id})}>{t.resume}</button>
-        <button className="primary" data-testid={'sudoku-new-'+entry.id} disabled={pending}
+        <button className="primary" data-testid={'sudoku-new-'+entry.id} aria-disabled={pending}
           onClick={()=>newGame(entry.id,entry.canResume)}>{t.new}</button>
       </div>
      </article>)}
@@ -145,7 +145,7 @@ export function SudokuScreen({state,language,pending,error,command}:Props) {
      <div><span className="sudoku-eyebrow">{state.daily.date}</span>
       <h2>{t.daily}</h2><p>{t.dailyDesc}</p>
       <small>{names[language][state.daily.difficulty]} · {state.daily.completed?t.doneDaily:t.inProgress}</small></div>
-     <button data-testid="sudoku-daily" disabled={pending}
+     <button data-testid="sudoku-daily" aria-disabled={pending}
        onClick={()=>command({action:'sudoku.daily'})}>{t.startDaily} →</button>
    </div>
    {error&&<p className="sudoku-alert" role="alert">{error}</p>}
@@ -201,26 +201,26 @@ export function SudokuScreen({state,language,pending,error,command}:Props) {
         {Array.from({length:9},(_,i)=><button key={i+1}
           data-testid={'sudoku-digit-'+(i+1)}
           className={selectedValue===i+1?'matching':''}
-          disabled={!isEditable||pending||completeDigits.has(i+1)}
+          disabled={!isEditable||completeDigits.has(i+1)} aria-disabled={!isEditable||pending||completeDigits.has(i+1)}
           onClick={()=>enterDigit(i+1)}>{i+1}</button>)}
       </div>
       <div className="sudoku-action-row">
         <button data-testid="sudoku-pencil" className={pencil?'active':''} aria-pressed={pencil}
           disabled={game.completed} onClick={()=>setPencil(v=>!v)}>{t.pencil}</button>
-        <button data-testid="sudoku-erase" disabled={!isEditable||pending}
+        <button data-testid="sudoku-erase" disabled={!isEditable} aria-disabled={!isEditable||pending}
           onClick={()=>edit('sudoku.erase')}>{t.erase}</button>
       </div>
       <div className="sudoku-action-row">
-        <button data-testid="sudoku-undo" disabled={!game.canUndo||pending}
+        <button data-testid="sudoku-undo" disabled={!game.canUndo} aria-disabled={!game.canUndo||pending}
           onClick={()=>command({action:'sudoku.undo'})}>{t.undo}</button>
-        <button data-testid="sudoku-redo" disabled={!game.canRedo||pending}
+        <button data-testid="sudoku-redo" disabled={!game.canRedo} aria-disabled={!game.canRedo||pending}
           onClick={()=>command({action:'sudoku.redo'})}>{t.redo}</button>
       </div>
       <button data-testid="sudoku-guides" className={'sudoku-wide '+(state.showGuides?'active':'')}
-        disabled={pending}
+        aria-disabled={pending}
         onClick={()=>command({action:'sudoku.guides',value:state.showGuides?'false':'true'})}>
         {t.guides} · {state.showGuides?'ON':'OFF'}</button>
-      <button data-testid="sudoku-hint" className="sudoku-wide sudoku-hint" disabled={pending||game.completed}
+      <button data-testid="sudoku-hint" className="sudoku-wide sudoku-hint" disabled={game.completed} aria-disabled={pending||game.completed}
         onClick={()=>edit('sudoku.hint')}>{t.hint}</button>
       <p className="sudoku-game-notice" role="status">{error||state.notice}</p>
       {pending&&<small className="sudoku-pending">{t.waiting}</small>}
@@ -231,7 +231,7 @@ export function SudokuScreen({state,language,pending,error,command}:Props) {
             <span><strong>{game.completionSeasonXp}</strong>{t.seasonXp}</span></div>
        {state.rewardNotice&&<p>{state.rewardNotice}</p>}
       </div>}
-      <button className="sudoku-back" data-testid="sudoku-back" disabled={pending}
+      <button className="sudoku-back" data-testid="sudoku-back" aria-disabled={pending}
         onClick={()=>command({action:'sudoku.back'})}>{t.back}</button>
     </div>
    </div>

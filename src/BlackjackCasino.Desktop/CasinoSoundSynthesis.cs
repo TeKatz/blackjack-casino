@@ -5,7 +5,7 @@ internal static class CasinoSoundSynthesis
 {
     internal static AudioClip Build(TableCue cue)
     {
-        double duration = cue switch { TableCue.DiceFiveOfAKind => 1.25, TableCue.DiceRoll => .62, TableCue.Deal => 0.17, TableCue.Menu => 0.055, TableCue.ReelSpin => 0.11, TableCue.Chip => 0.16, TableCue.Win => 0.56, TableCue.Loss => 0.48, _ => 0.38 };
+        double duration = cue switch { TableCue.DiceFiveOfAKind => 1.25, TableCue.DiceRoll => .62, TableCue.Deal => 0.28, TableCue.Menu => 0.055, TableCue.ReelSpin => 0.11, TableCue.Chip => 0.16, TableCue.Win => 0.56, TableCue.Loss => 0.48, _ => 0.38 };
         var samples = new float[(int)(duration * AudioClip.Rate) * 2];
         double low = 0, mid = 0;
         double[] notes = cue switch { TableCue.DiceFiveOfAKind => [659.25, 783.99, 987.77, 1174.66, 1318.51], TableCue.Win => [523.25,659.25,783.99], TableCue.Loss => [349.23,293.66,246.94], TableCue.Push => [440,440], TableCue.ReelLoss => [196,146.83], _ => [] };
@@ -16,8 +16,8 @@ internal static class CasinoSoundSynthesis
             low = low * 0.94 + noise * 0.06; mid = mid * 0.65 + noise * 0.35;
             double value = cue switch
             {
-                TableCue.Deal => ((mid-low)*0.16 + low*0.16)*Env(t,0.004,0.045)
-                    + ((mid-low)*0.09 + Math.Sin(2*Math.PI*170*t)*0.016)*Env(t-0.045,0.003,0.024),
+                TableCue.Deal => (low*.14 + (mid-low)*.065)*Env(t,.025,.085)
+                    + (low*.08 + Math.Sin(2*Math.PI*145*t)*.012)*Env(t-.055,.018,.06),
                 TableCue.Chip => (Math.Sin(2*Math.PI*1900*t)*0.095+Math.Sin(2*Math.PI*2750*t)*0.045+Math.Sin(2*Math.PI*3900*t)*0.018)*Env(t,0.0015,0.043),
                 TableCue.Menu => (Math.Sin(2*Math.PI*1140*t)*0.035+(mid-low)*0.028)*Env(t,0.002,0.009),
                 TableCue.ReelSpin => (Math.Sin(2*Math.PI*225*t)*0.14+(mid-low)*0.30)*Env(t,0.002,0.019),
