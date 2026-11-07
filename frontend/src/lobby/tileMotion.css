@@ -15,7 +15,7 @@
  radial-gradient(ellipse at 85% 30%,color-mix(in srgb,var(--tile-accent) 20%,transparent),transparent 48%);
  filter:blur(12px);transform:translate3d(-4%,3%,0);
  animation:tile-ambient-drift 8s ease-in-out infinite alternate}
-.tile-moving-beam{width:42%!important;left:-60%!important;
+.tile-motion-layers .tile-moving-beam{width:42%;left:-60%;
  background:linear-gradient(105deg,transparent 5%,#ffffff06 20%,
  color-mix(in srgb,var(--tile-accent) 18%,transparent) 49%,#ffffff10 57%,transparent 80%);
  transform:skewX(-21deg);animation:tile-beam-cross 8.2s cubic-bezier(.36,0,.4,1) infinite}
@@ -116,3 +116,9 @@
  .lobby-game:has(.tile-motion-layers) .game-art-image,
  .lobby-game:has(.tile-motion-layers):is(:hover,:focus-within) .game-art-image{transform:none!important;filter:none}
 }
+
+/* Disabled games and preference toggles never keep decorative animation alive. */
+.tile-motion-layers[data-running="false"] .tile-drift-haze,
+.tile-motion-layers[data-running="false"] .tile-moving-beam,
+.tile-motion-layers[data-running="false"] .tile-light-field,
+.tile-motion-layers[data-running="false"] .tile-signature{animation:none!important;opacity:0!important;}
