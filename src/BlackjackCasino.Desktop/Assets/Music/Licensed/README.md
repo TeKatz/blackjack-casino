@@ -5,7 +5,7 @@ The player supplied these four tracks in order. Put normalized MP3s here:
 | File | Plays in | Source file |
 | --- | --- | --- |
 | `midnight-manor.mp3` | Midnight Manor gameplay | `forest.ogg` |
-| `chill-lounge.mp3` | Chill Lounge hub/menu | `07 HoliznaCC0 - Glad To Be Stuck Inside.mp3.ogg` |
+| `chill-lounge.mp3` | Chill Lounge hub/menu only; activities retain original score | `07 HoliznaCC0 - Glad To Be Stuck Inside.mp3.ogg` |
 | `lobby.mp3` | Main casino lobby, not the Blackjack table | `03 HoliznaCC0 - Pretty Little Lies.mp3` |
 | `midnight-dice.mp3` | Midnight Dice gameplay | `02 HoliznaCC0 - Everything You Ever Dreamed.mp3` |
 

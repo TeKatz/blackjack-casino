@@ -20,6 +20,7 @@ public sealed class AudioOverhaulTests
     {
         Assert.Null(LicensedSoundtracks.FileName(Soundtrack.Blackjack));
         Assert.Null(LicensedSoundtracks.FileName(Soundtrack.Reels));
+        Assert.Null(LicensedSoundtracks.FileName(Soundtrack.ChillLoungeActivity));
         Assert.Null(LicensedSoundtracks.FileName(Soundtrack.Adventure));
         Assert.Equal(CasinoMusicSynthesis.Build(Soundtrack.Blackjack).Frames,
             CasinoMusicSynthesis.Build(Soundtrack.Lobby).Frames);

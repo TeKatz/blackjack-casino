@@ -28,6 +28,7 @@ public partial class MainWindow
     private ModernAdventureSession? modernAdventureSession;
     private ModernAdventureService? modernAdventure;
     private bool modernAdventureSoundtrack;
+    private bool modernLoungeMenuMusic = true;
     private readonly object modernMemoryAudioOwner = new();
     private static readonly Lazy<IReadOnlyDictionary<MemoryCue, AudioClip>> ModernMemoryCues =
         new(() => Enum.GetValues<MemoryCue>().ToDictionary(cue => cue, MemorySoundSynthesis.Build));
@@ -141,14 +142,29 @@ public partial class MainWindow
         AreaPresentationSettings settings = preferences.Presentation("chill-lounge");
         loungeBackgroundMusic.Start(settings.MusicEnabled, settings.MusicVolume);
         modernAdventureSoundtrack = false;
+        modernLoungeMenuMusic = true;
         TableModeText.Text = "Chill Lounge";
         SyncHostMusic();
         modeRegistry.NotifyStateChanged();
     }
 
+    private void SetModernLoungeMenuMusic(bool onMenu)
+    {
+        if (!ModernLoungeOpen || modernAdventureSoundtrack || modernLoungeMenuMusic == onMenu) return;
+        modernLoungeMenuMusic = onMenu;
+        loungeBackgroundMusic?.Dispose();
+        loungeBackgroundMusic = new BackgroundMusic(
+            onMenu ? Soundtrack.ChillLounge : Soundtrack.ChillLoungeActivity);
+        AreaPresentationSettings settings = preferences.Presentation("chill-lounge");
+        loungeBackgroundMusic.Start(settings.MusicEnabled, settings.MusicVolume);
+    }
+
     private void OnModernLoungeGameSelected(string id)
     {
         if (!ModernLoungeOpen) return;
+        // The user selected this song for the lounge menu, not individual games.
+        if (id is "sudoku" or "solitaire" or "word-search" or "memory" or "jigsaw")
+            SetModernLoungeMenuMusic(false);
         if (id == "sudoku")
         {
             modernSudoku ??= new ModernSudokuService(preferences.Sudoku,
@@ -238,7 +254,11 @@ public partial class MainWindow
             try
             {
                 (bool success, string message) = modernSudoku.Execute(intent);
-                if (success && intent.Action == "sudoku.exit") modernSudoku = null;
+                if (success && intent.Action == "sudoku.exit")
+                {
+                    modernSudoku = null;
+                    SetModernLoungeMenuMusic(true);
+                }
                 return (success, message);
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
@@ -260,7 +280,11 @@ public partial class MainWindow
             try
             {
                 (bool success, string message) = modernSolitaire.Execute(intent);
-                if (success && intent.Action == "solitaire.exit") modernSolitaire = null;
+                if (success && intent.Action == "solitaire.exit")
+                {
+                    modernSolitaire = null;
+                    SetModernLoungeMenuMusic(true);
+                }
                 return (success, message);
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
@@ -282,7 +306,11 @@ public partial class MainWindow
             try
             {
                 (bool success, string message) = modernWordSearch.Execute(intent);
-                if (success && intent.Action == "word-search.exit") modernWordSearch = null;
+                if (success && intent.Action == "word-search.exit")
+                {
+                    modernWordSearch = null;
+                    SetModernLoungeMenuMusic(true);
+                }
                 return (success, message);
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
@@ -304,7 +332,11 @@ public partial class MainWindow
             try
             {
                 (bool success, string message) = modernMemory.Execute(intent);
-                if (success && intent.Action == "memory.exit") modernMemory = null;
+                if (success && intent.Action == "memory.exit")
+                {
+                    modernMemory = null;
+                    SetModernLoungeMenuMusic(true);
+                }
                 return (success, message);
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
@@ -397,7 +429,11 @@ public partial class MainWindow
             try
             {
                 (bool success, string message) = modernJigsaw.Execute(intent);
-                if (success && intent.Action == "jigsaw.exit") modernJigsaw = null;
+                if (success && intent.Action == "jigsaw.exit")
+                {
+                    modernJigsaw = null;
+                    SetModernLoungeMenuMusic(true);
+                }
                 return (success, message);
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
@@ -597,6 +633,7 @@ public partial class MainWindow
         modernAdventure = null;
         modernAdventureSession = null;
         modernAdventureSoundtrack = false;
+        modernLoungeMenuMusic = true;
         CasinoAudio.Mixer.Stop(modernMemoryAudioOwner);
         modernLoungeView.Dispose();
         UnmountModernSurface(modernLoungeView);
