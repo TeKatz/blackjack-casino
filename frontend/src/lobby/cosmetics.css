@@ -27,3 +27,29 @@
 @keyframes cosmetic-sweep{to{background-position:0 0,100% 100%;box-shadow:0 0 12px color-mix(in srgb,var(--frame-b) 35%,transparent)}}
 
 .premium-vault-icon{width:42px;height:42px;flex:0 0 42px;filter:drop-shadow(0 0 5px currentColor)}
+
+/* Premium frame materials also follow an equipped item into the profile/toolbar.
+   Decorative detail stays within the tiny icon and never becomes a page-wide wipe. */
+.cosmetic-frame.animated::before{content:"";position:absolute;inset:-3px;z-index:2;
+ pointer-events:none;border-radius:inherit;border:1px solid color-mix(in srgb,var(--frame-a) 67%,transparent);
+ box-shadow:0 0 9px color-mix(in srgb,var(--frame-a) 20%,transparent),inset 0 0 7px color-mix(in srgb,var(--frame-b) 15%,transparent);
+ animation:frame-metal-breathe var(--frame-duration,4s) ease-in-out infinite alternate}
+.cosmetic-frame.animated::after{content:"";position:absolute;top:-4px;right:-4px;z-index:3;
+ width:6px;height:6px;pointer-events:none;transform:rotate(45deg);
+ background:var(--frame-b);border:1px solid #fffbe2b0;
+ box-shadow:0 0 5px var(--frame-a),0 0 11px var(--frame-b);
+ animation:frame-gem-breathe 3.3s ease-in-out infinite}
+.cosmetic-frame.animated.large::after{width:9px;height:9px;top:-6px;right:-6px}
+.cosmetic-frame[data-frame-motion=ember]::after{background:#ffad76;animation-duration:1.4s}
+.cosmetic-frame[data-frame-motion=orbit]::after{animation-duration:6s}
+.cosmetic-frame[data-frame-motion=prism]::before{border-style:double;border-width:3px;
+ box-shadow:0 0 10px var(--frame-a),0 0 17px color-mix(in srgb,var(--frame-b) 35%,transparent)}
+.cosmetic-frame[data-frame-motion=pulse]::before{border-width:2px}
+.cosmetic-frame[data-frame^=static-]::before,.cosmetic-frame[data-frame=classic]::before,
+.cosmetic-frame[data-frame^=static-]::after,.cosmetic-frame[data-frame=classic]::after{content:none}
+@keyframes frame-metal-breathe{to{border-color:var(--frame-b);opacity:.57}}
+@keyframes frame-gem-breathe{50%{opacity:.45;filter:brightness(1.5);transform:rotate(45deg) scale(.78)}}
+[data-reduced=true] .cosmetic-frame::before,[data-reduced=true] .cosmetic-frame::after{animation:none!important}
+@media(prefers-reduced-motion:reduce){
+ .cosmetic-frame::before,.cosmetic-frame::after{animation:none!important}
+}
