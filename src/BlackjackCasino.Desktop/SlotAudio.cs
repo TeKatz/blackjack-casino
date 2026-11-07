@@ -97,7 +97,10 @@ internal sealed class SlotAudio : IDisposable
                         + 0.18 * Math.Sin(2 * Math.PI * notes[note] * 2 * local)) * Envelope(local, 0.004, 0.11) * 0.4;
                 }
             }
-            writer.Write((short)(Math.Clamp(sample * 0.18, -1, 1) * short.MaxValue));
+            // Fade the last 180 ms of every synthesized cue. Long low-frequency
+            // lockdown signals otherwise stop at a nonzero phase and click.
+            double release = Math.Clamp((duration - t) / 0.18, 0, 1);
+            writer.Write((short)(Math.Clamp(sample * 0.18 * release, -1, 1) * short.MaxValue));
         }
         return stream.ToArray();
     }
