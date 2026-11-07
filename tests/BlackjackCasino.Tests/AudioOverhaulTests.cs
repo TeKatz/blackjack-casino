@@ -5,12 +5,13 @@ namespace BlackjackCasino.Tests;
 public sealed class AudioOverhaulTests
 {
     [Theory]
-    [InlineData(Soundtrack.Manor, "midnight-manor.mp3")]
-    [InlineData(Soundtrack.ChillLounge, "chill-lounge.mp3")]
-    [InlineData(Soundtrack.Lobby, "lobby.mp3")]
-    [InlineData(Soundtrack.DiceLounge, "midnight-dice.mp3")]
-    public void UserSelectedMusicMapsToItsRequestedArea(Soundtrack soundtrack, string fileName)
+    [InlineData("Manor", "midnight-manor.mp3")]
+    [InlineData("ChillLounge", "chill-lounge.mp3")]
+    [InlineData("Lobby", "lobby.mp3")]
+    [InlineData("DiceLounge", "midnight-dice.mp3")]
+    public void UserSelectedMusicMapsToItsRequestedArea(string trackName, string fileName)
     {
+        Soundtrack soundtrack = Enum.Parse<Soundtrack>(trackName);
         Assert.Equal(fileName, LicensedSoundtracks.FileName(soundtrack));
     }
 
