@@ -409,3 +409,60 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
 .lobby-daily .daily-cycle-heading span,.lobby-daily .daily-footer p{color:#d0c3d0;}
 .lobby-daily .daily-reward small{color:#c9c0d4;}
 .lobby-daily .daily-claim.claimed{border-color:#887861;background:linear-gradient(140deg,#3b3342,#202d38);color:#f0d9b5;}
+
+
+/* P2 Key Art: cinematic full-bleed images instead of miniaturized live game controls. */
+.game-art-window .art-chill-lounge{background-image:url('/lobby/keyart/chill-lounge.svg');background-size:cover;background-position:center;}
+.game-art-window .art-casino-empire{background-image:url('/lobby/keyart/casino-empire.svg');background-size:cover;background-position:center;}
+.game-art-window .art-midnight-reels{background-image:url('/lobby/keyart/midnight-reels.svg');background-size:cover;background-position:center;}
+.game-art-window .art-neon-vault{background-image:url('/lobby/keyart/neon-vault.svg');background-size:cover;background-position:center;}
+.game-art-window .art-midnight-manor{background-image:url('/lobby/keyart/midnight-manor.svg');background-size:cover;background-position:center;}
+/* The existing Midnight Dice illustration is already the correct single visual. */
+.game-art-window .art-kniffel{background-image:url('/lobby/art/dice.png');background-size:cover;background-position:center;}
+/* Unified treatment for every Slot tile: pictorial hero, luxurious glass/metal frame,
+   individual signature accent. Nine Lives retains its original high-detail black cat. */
+.lobby-game:is(.game-midnight-reels,.game-neon-vault,.game-nine-lives,.game-midnight-manor){
+ --slot-glint:#d3a36c;border-color:color-mix(in srgb,var(--slot-glint) 67%,#435b57);
+ background:linear-gradient(175deg,#182b27,#051713);
+}
+.lobby-game.game-midnight-reels{--slot-glint:#edb76a;}
+.lobby-game.game-neon-vault{--slot-glint:#60e6f1;}
+.lobby-game.game-nine-lives{--slot-glint:#d878f8;}
+.lobby-game.game-midnight-manor{--slot-glint:#baa0f0;}
+.lobby-game:is(.game-midnight-reels,.game-neon-vault,.game-nine-lives,.game-midnight-manor) .game-art-window{
+ position:relative;isolation:isolate;contain:paint;
+ background:#0c1319;min-height:78px;height:43%;
+}
+.lobby-game:is(.game-midnight-reels,.game-neon-vault,.game-nine-lives,.game-midnight-manor) .game-art-image{
+ background-size:cover;background-repeat:no-repeat;filter:saturate(1.1) contrast(1.03);
+ transform:scale(1.02);transition:transform .6s cubic-bezier(.2,.8,.2,1),filter .45s;
+}
+.lobby-game:is(.game-midnight-reels,.game-neon-vault,.game-nine-lives,.game-midnight-manor):hover .game-art-image{
+ transform:scale(1.08);filter:saturate(1.22) contrast(1.04) brightness(1.09);
+}
+.lobby-game:is(.game-midnight-reels,.game-neon-vault,.game-nine-lives,.game-midnight-manor) .game-art-window::after{
+ content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+ border:3px solid color-mix(in srgb,var(--slot-glint) 62%,transparent);
+ border-bottom:0;border-radius:10px 10px 0 0;
+ box-shadow:inset 0 0 20px #0008,inset 0 0 13px color-mix(in srgb,var(--slot-glint) 15%,transparent);
+ background:linear-gradient(180deg,#0002 0%,transparent 35%,#040c16a3 100%);
+}
+.lobby-game:is(.game-midnight-reels,.game-neon-vault,.game-nine-lives,.game-midnight-manor) .game-info{
+ border-top:2px solid color-mix(in srgb,var(--slot-glint) 62%,#152c24);
+ background:linear-gradient(173deg,#123027,#061a18);
+}
+/* Non-slot categories use their own identity instead of inheriting the slot motif. */
+.game-chill-lounge .game-art-image{filter:saturate(1.18) contrast(1.03);}
+.game-casino-empire .game-art-image{filter:saturate(1.08) contrast(1.08);}
+.game-chill-lounge .game-art-window,.game-casino-empire .game-art-window{
+ height:41%;min-height:75px;background:#101e22;
+}
+.game-chill-lounge .game-art-window::after,.game-casino-empire .game-art-window::after{
+ content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+ border-bottom:2px solid #bda36b70;
+ background:linear-gradient(180deg,#0002 30%,#0516158a);
+}
+@media(prefers-reduced-motion:reduce){
+ .lobby-game:is(.game-midnight-reels,.game-neon-vault,.game-nine-lives,.game-midnight-manor) .game-art-image{transition:none;}
+}
+.casino-lobby-shell[data-reduced="true"] .lobby-game .game-art-image{transition:none;}

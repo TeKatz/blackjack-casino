@@ -52,3 +52,11 @@ The collector archive keeps the actual cropped card illustrations and inspector,
 Casino Vault has a larger rendered safe with layered metal, hinges, rivets, a tier-specific accent and visible bronze/silver/gold/platinum/diamond milestones. Locked and ready actions retain their original state constraints. No contribution rate, payout formula, vault progression, rewarded pack, wallet or persisted state changed. The larger facade is CSS/DOM, not a new 3D engine.
 
 **Acceptance:** inspect 1080p, 1440p, compact and DPI-scaled Windows presentations; hover over the first four tiles without an art/info color stripe; confirm icon semantics after navigating and locale switching; verify that the theme picker does not scroll independently; inspect cards and the full card detail dialog; test locked/ready/pending/reward Vault states, including reduced motion. Automated frontend, .NET and real WebView2 CI smoke remain required; subjective quality depends on user device review.
+
+## P2 Block 2 — Season Pass + cinematic lobby key art (2026-11-07)
+
+The Season Pass React page now uses pass-specific Midnight, Eclipse, and Neon color tokens. Its premium reward timeline shows the nearest tiers by default, with Highlights and All filters. A dedicated next-milestone card and a reduced-motion-compatible progression treatment improve hierarchy without changing rewards, persisted XP, or native activation.
+
+Lobby key art now uses self-contained, authored vector illustrations for Chill Lounge, Casino Empire, Midnight Reels, Neon Vault and Midnight Manor. Their identities are tied to the games, not generic chess symbols or a 4x4 collector atlas. The four Slot tiles use the same full-bleed framed-image treatment as Nine Lives; its existing cat art remains untouched. Midnight Dice shows its single existing dice photo, not additional CSS or React dice.
+
+All SVGs are static, same-origin, no external fonts, scripts or remote assets. The Vite public asset pipeline copies them to the Windows publish. Regression checks cover preview overlay ownership and season pass presentation. Inspect the resulting tile artwork at 1080p and at compact 960px layouts, especially borders, long German labels, and the Season Pass at tiers 0, 50, 100, and 120.
