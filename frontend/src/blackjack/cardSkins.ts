@@ -18,7 +18,7 @@ const skins:Record<string,CardSkin>={
   'card-rosewood':{faceA:'#fff1dc',faceB:'#e5ccae',border:'#b47959',black:'#3d2825',red:'#9e3742',backA:'#683a34',backB:'#2e191b',accent:'#e4b18a',mark:'◆'},
   'card-jade-filigree':{faceA:'#eff7e8',faceB:'#cfdecc',border:'#92945f',black:'#1d463d',red:'#ac4a4b',backA:'#306a58',backB:'#112f2b',accent:'#e1cf91',mark:'❖'},
   'card-celestial-opal':{faceA:'#f9f1ff',faceB:'#d9eaef',border:'#a8bedd',black:'#383359',red:'#9b3763',backA:'#514b79',backB:'#163e4d',accent:'#d7fff5',mark:'✧',premium:true},
-  'card-solar-eclipse':{faceA:'#29232b',faceB:'#100f18',border:'#d2af69',black:'#f8e5b9',red:'#ff9fa2',backA:'#251d25',backB:'#080d18',accent:'#ffe0a0',mark:'☀',dark:true,premium:true},
+  'card-solar-eclipse':{faceA:'#382638',faceB:'#0b0a17',border:'#f2a85d',black:'#ffe7bc',red:'#ff988c',backA:'#492936',backB:'#0b0c1e',accent:'#ffb875',mark:'☀',dark:true,premium:true},
 };
 export function resolveCardSkin(variant:string):CardSkin{return skins[variant]??classic;}
 export function availableCardVariants():string[]{return Object.keys(skins);}

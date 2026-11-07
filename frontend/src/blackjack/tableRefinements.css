@@ -1,0 +1,202 @@
+/* Blackjack polish: the rail is stationary, cards are material-specific,
+   and all decorative chips remain fully separate from native settlement. */
+
+/* The older table.css animated ::before via bj-ambience. It shifted the entire
+   rail outline laterally because premiumTable.css reused that pseudo-element. */
+.bj-felt::before{animation:none!important;transform:none!important}
+.bj-felt{padding-bottom:clamp(48px,7.2vh,76px)!important}
+.bj-player{margin-top:auto}
+.bj-actions{align-self:center;width:100%;flex:0 0 auto;max-width:840px;
+ gap:clamp(6px,.8vw,12px);margin:3px auto 7px;min-height:45px;align-items:center}
+.bj-actions button{min-height:42px;padding:10px clamp(10px,1vw,17px);border-radius:10px;
+ white-space:nowrap}
+.bj-actions .bj-action-deal{min-width:134px;padding:11px clamp(15px,1.5vw,25px);
+ border:1px solid #f9dca1;color:#14271e;text-shadow:0 1px #fff3c7;
+ background:linear-gradient(145deg,#fff3c9 0%,#d9ad65 49%,#ac7d3e 100%);
+ box-shadow:inset 0 1px #fff9e8,inset 0 -3px #73552a,0 8px 17px #0008,0 0 16px #daae6755;
+ font-weight:900;letter-spacing:.12em}
+.bj-actions .bj-action-deal:hover:not(:disabled){
+ background:linear-gradient(145deg,#fff8d9,#e7be79 50%,#b5894f);
+ border-color:#fff1bf;box-shadow:inset 0 1px #fff,0 8px 20px #0009,0 0 22px #e5bf7580}
+.bj-actions .bj-action-deal:disabled{opacity:.48}
+.bj-status{margin-top:3px}
+/* Make mouse/keyboard presses visually stable in WebView2, while preserving an
+   intentional focus-visible outline for keyboard-only navigation. */
+.bj-app button,.bj-app input:not([type=checkbox]),.bj-app select{
+ -webkit-tap-highlight-color:transparent;-webkit-appearance:none;appearance:none}
+.bj-app button{outline:none;backface-visibility:hidden;transform:translateZ(0)}
+.bj-app button:focus-visible,.bj-app input:focus-visible,
+.bj-app [role="listbox"]:focus-visible{outline:2px solid #f1d28e;outline-offset:2px}
+.bj-app button:focus:not(:focus-visible){outline:none}
+.bj-app .bj-sidebar button:disabled{opacity:.85;filter:saturate(.72)}
+.bj-app .bj-actions button:disabled{opacity:.46;filter:saturate(.65)}
+.bj-app .bj-actions button:disabled.bj-action-deal{opacity:.48}
+.bj-app button:active:not(:disabled){filter:brightness(.98);transition:box-shadow .12s ease,filter .12s ease}
+.bj-app[data-ui-pending=true] .bj-actions button:disabled[data-native-action=true],
+.bj-app[data-ui-pending=true] .bj-sidebar button:disabled[data-native-action=true]{
+ opacity:1;filter:none}
+.bj-app[data-ui-pending=true] .bj-sidebar button:disabled:hover,
+.bj-app[data-ui-pending=true] .bj-actions button:disabled[data-native-action=true]:hover{
+ background:linear-gradient(145deg,#326451,#143e37);border-color:#ebc980;
+ box-shadow:inset 0 1px #ffecbc4b,inset 0 -2px #0005,0 9px 17px #0009}
+.bj-app[data-ui-pending=true] .bj-sidebar button.bj-deal:disabled:hover,
+.bj-app[data-ui-pending=true] .bj-actions button.bj-action-deal:disabled[data-native-action=true]:hover{
+ background:linear-gradient(145deg,#fff8d9,#e7be79 50%,#b5894f);color:#14271e}
+.bj-app[data-ui-pending=true] .bj-premium-select:disabled{
+ opacity:1!important;filter:none!important}
+.bj-app[data-ui-pending=true] .bj-premium-select:disabled:hover{
+ border-color:#e5c584!important;background:linear-gradient(155deg,#123831,#0a2422)!important}
+
+.bj-app button::-moz-focus-inner{border:0;padding:0}
+/* No translucent oversized white ellipse on dark collector decks. */
+.bj-card.premium .bj-card-front{
+ background:linear-gradient(145deg,var(--card-face-a),var(--card-face-b));
+ box-shadow:inset 0 0 0 1px #b4a07973,inset -3px -4px 8px #0008,0 7px 13px #000a}
+.bj-card.premium .bj-card-front::before{border-color:var(--card-accent);opacity:.62}
+/* Midnight Sovereign: cool onyx, engraved midnight-gold linework and a
+   diamond-shaped royal seal — intentionally not the Solar Eclipse treatment. */
+.bj-card[data-card-set="card-midnight-sovereign"] .bj-card-front{
+ background:radial-gradient(ellipse at 34% 22%,#2a3440 0%,#151923 37%,#05070c 100%);
+ border:2px solid #d5ae5f}
+.bj-card[data-card-set="card-midnight-sovereign"] .bj-card-front::before{
+ inset:5px;border:1px double #e5c27c91;border-radius:2px}
+.bj-card[data-card-set="card-midnight-sovereign"] .bj-card-front::after{
+ content:"";position:absolute;inset:11px;border:1px solid #a98c5940;
+ pointer-events:none;transform:none;border-radius:1px}
+.bj-card[data-card-set="card-midnight-sovereign"] .bj-card-skin-crest{
+ position:absolute;width:55%;height:53%;left:22.5%;top:24%;
+ border:1px solid #d6b56b43;transform:rotate(45deg) scale(.77);
+ border-radius:2px;box-shadow:inset 0 0 12px #aa8e4540;pointer-events:none}
+.bj-card[data-card-set="card-midnight-sovereign"] .bj-card-skin-crest::after{
+ content:"";position:absolute;inset:9px;border:1px solid #e1b86a45}
+.bj-card[data-card-set="card-midnight-sovereign"] .bj-suit{color:#e9ce91;
+ text-shadow:0 1px 2px #000,0 0 8px #b3923d37;z-index:1}
+.bj-card[data-card-set="card-midnight-sovereign"].red .bj-suit{color:#cd6872}
+.bj-card[data-card-set="card-midnight-sovereign"] .bj-card-back{
+ background:linear-gradient(135deg,#121925 0%,#04070c 72%);border-color:#bf964c}
+.bj-card[data-card-set="card-midnight-sovereign"] .bj-back-filigree{
+ inset:18%;border:2px double #c9a95d;transform:rotate(45deg);opacity:.75}
+.bj-card[data-card-set="card-midnight-sovereign"] .bj-back-engrave{color:#e8c774;text-shadow:0 0 7px #c2983e}
+/* Solar Eclipse: violet-obsidian, fixed copper/amber corona surrounding a
+   dim central disk. No white glare or full-card moving highlights. */
+.bj-card[data-card-set="card-solar-eclipse"] .bj-card-front{
+ background:radial-gradient(circle at 53% 48%,#211a22 0 21%,#d59b5350 24%,#6b392e6e 28%,#251a2e 43%,#0f101c 84%),
+ linear-gradient(145deg,#362437,#0c0c16);border:2px solid #f5ba7b}
+.bj-card[data-card-set="card-solar-eclipse"] .bj-card-front::before{
+ inset:5px;border:1px solid #e7a7669c;border-radius:7px}
+.bj-card[data-card-set="card-solar-eclipse"] .bj-card-skin-crest{
+ position:absolute;left:24%;top:24%;width:52%;height:52%;border-radius:50%;
+ border:2px solid #eabb71b2;
+ box-shadow:0 0 9px #f5b65b69,0 0 0 3px #8b4a3375,inset 0 0 8px #f8b9734d;
+ pointer-events:none}
+.bj-card[data-card-set="card-solar-eclipse"] .bj-card-skin-crest::after{
+ content:"";position:absolute;inset:-7px;border:1px dotted #ffd8995c;border-radius:50%}
+.bj-card[data-card-set="card-solar-eclipse"] .bj-suit{color:#ffe4ab;
+ text-shadow:0 1px 2px #000,0 0 11px #edb866ba;z-index:1}
+.bj-card[data-card-set="card-solar-eclipse"].red .bj-suit{color:#ff9376}
+.bj-card[data-card-set="card-solar-eclipse"] .bj-card-back{
+ background:radial-gradient(circle at 50% 50%,#070914 0 16%,#d5a255 19%,#7f472e 25%,#30203a 39%,#080c1b 80%);
+ border-color:#e9aa6e}
+.bj-card[data-card-set="card-solar-eclipse"] .bj-back-filigree{
+ inset:17%;transform:none;opacity:.9;border:2px solid #ffbe7d;border-radius:50%;
+ box-shadow:0 0 11px #ffbe7d66}
+.bj-card[data-card-set="card-solar-eclipse"] .bj-back-engrave{
+ color:#fff0b6;text-shadow:0 0 9px #ffae72}
+.bj-card-skin-crest{pointer-events:none;z-index:0}
+.bj-rank,.bj-corner-suit{z-index:2}
+/* Cosmetic chips: compact three-dimensional stacks next to the player's hand,
+   grouped safely inside the playing field and scaling with actual selected bet. */
+.bj-wager-display{position:absolute;z-index:2;right:clamp(38px,11%,165px);bottom:30%;
+ width:168px;height:118px;display:grid;place-items:end center;pointer-events:none;
+ user-select:none;filter:drop-shadow(0 8px 9px #0007)}
+.bj-wager-shadows{position:absolute;width:88%;height:24px;bottom:22px;left:6%;
+ border-radius:50%;background:radial-gradient(ellipse,#0009,transparent 72%);filter:blur(3px)}
+.bj-wager-stacks{position:absolute;bottom:33px;left:0;right:0;display:flex;
+ align-items:flex-end;justify-content:center;gap:4px;height:79px}
+.bj-wager-stack{width:48px;height:75px;position:relative;flex-shrink:0}
+.bj-wager-stack.stack-0{transform:rotate(-6deg)}
+.bj-wager-stack.stack-1{transform:rotate(2deg)}
+.bj-wager-stack.stack-2{transform:rotate(8deg)}
+.bj-wager-stack.stack-0{z-index:3}.bj-wager-stack.stack-1{z-index:2}.bj-wager-stack.stack-2{z-index:1}
+.bj-wager-chip{--chip-core:#195346;--chip-outer:#d7c28d;position:absolute;
+ left:3px;bottom:calc(var(--chip-height)*7px);
+ width:44px;height:17px;border:2px solid var(--chip-outer);border-radius:50%;
+ background:radial-gradient(ellipse at 50% 25%,#628c73,#174c3f 65%,#07261f);
+ box-shadow:0 3px 0 #061a18,0 5px 5px #0008,inset 0 2px #fff8;
+ transform:translate3d(0,0,0);
+ animation:bj-chip-deposit .43s cubic-bezier(.19,.86,.23,1.2) var(--chip-delay) both}
+.bj-wager-chip::before{content:"";position:absolute;inset:3px 8px;border-radius:50%;
+ border:1px dashed #eed69a9c;box-shadow:inset 0 1px #0f3328}
+.bj-wager-chip::after{content:"";position:absolute;left:4px;right:4px;bottom:-5px;height:7px;
+ border-radius:0 0 14px 14px;border-bottom:2px solid var(--chip-outer);
+ background:repeating-linear-gradient(90deg,#d0ae66 0 4px,#254637 4px 9px);
+ opacity:.82}
+.bj-wager-chip i{position:absolute;top:0;left:50%;transform:translateX(-50%);
+ font:normal 11px Georgia,serif;color:#f8e1a5;text-shadow:0 1px #000}
+.bj-wager-chip.token-1{--chip-outer:#d9a0a2;background:radial-gradient(ellipse at 50% 30%,#e1a9ac,#702a3b 64%,#32121c)}
+.bj-wager-chip.token-1::after{background:repeating-linear-gradient(90deg,#e6b0aa 0 4px,#7c324a 4px 9px)}
+.bj-wager-chip.token-2{--chip-outer:#c7bc85;background:radial-gradient(ellipse at 50% 30%,#e6dbad,#6a602a 66%,#352e12)}
+.bj-wager-chip.token-2::after{background:repeating-linear-gradient(90deg,#e2d9a4 0 4px,#675d26 4px 9px)}
+.bj-wager-display-label{position:absolute;bottom:8px;font:800 9px/1.3 sans-serif;
+ color:#e9d5ab;letter-spacing:.28em;text-shadow:0 2px 5px #000}
+@keyframes bj-chip-deposit{
+  0%{opacity:0;transform:translate3d(5px,-26px,0) scale(.85)}
+  72%{opacity:1;transform:translate3d(-1px,2px,0) scale(1.02)}
+  100%{opacity:1;transform:none}
+}
+/* Custom, portal-mounted dropdowns avoid the Windows native white option popup. */
+.bj-premium-select{display:flex!important;align-items:center;justify-content:space-between;
+ gap:10px;width:100%;min-width:0;min-height:40px;text-align:left!important;
+ padding:8px 11px!important;border-radius:9px!important;
+ border:1px solid #947a4f!important;
+ background:linear-gradient(155deg,#0c2725,#061819)!important;color:#f8e8c3!important;
+ box-shadow:inset 0 2px 5px #0007,0 1px #ffffff15!important;
+ font:500 12px/1.3 'Segoe UI',sans-serif!important;
+ transform:none!important;outline:none!important}
+.bj-premium-select:hover:not(:disabled){border-color:#e5c584!important;
+ background:linear-gradient(155deg,#123831,#0a2422)!important}
+.bj-premium-select:focus-visible{outline:2px solid #f3d491!important;outline-offset:2px!important}
+.bj-premium-select:disabled{opacity:.8!important;filter:none!important}
+.bj-select-value{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bj-select-chevron{width:9px;height:9px;flex-shrink:0;
+ border-right:2px solid #efdaaa;border-bottom:2px solid #efdaaa;
+ transform:rotate(45deg) translateY(-2px);margin-right:4px}
+.bj-select-popover{position:fixed;z-index:9999;overflow:auto;overscroll-behavior:contain;
+ padding:6px;border:1px solid #d0ab69;border-radius:10px;color:#faedcf;
+ background:linear-gradient(150deg,#14372e,#091e20 88%);
+ box-shadow:0 18px 45px #000d,0 0 0 1px #fff0c111,inset 0 1px #f4da9a3b;
+ scrollbar-color:#b89a65 #0b2320;scrollbar-width:thin;
+ font:12px/1.3 'Segoe UI',sans-serif;outline:none}
+.bj-select-option{min-height:37px;display:flex;align-items:center;justify-content:space-between;
+ gap:12px;padding:9px 10px;border-radius:6px;cursor:pointer;
+ background:transparent;color:#e8d6b6;transition:background .13s,color .13s}
+.bj-select-option[data-active=true]{background:#36574b;color:#fff3cf}
+.bj-select-option[aria-selected=true]{background:#71572d78;color:#ffe0a0;font-weight:750}
+.bj-select-option[data-active=true][aria-selected=true]{background:#806634;color:#fff1c9}
+.bj-select-option[aria-disabled=true]{opacity:.38;cursor:default}
+.bj-select-check{color:#f5d58f;font-weight:900}
+/* Never let modal controls inherit the default OS select colors. */
+.bj-rule-grid .bj-premium-select{width:100%;min-height:40px}
+@media(max-width:1100px){
+ .bj-wager-display{right:7%;bottom:28%;transform:scale(.84);transform-origin:right bottom}
+ .bj-actions{gap:6px}.bj-actions button{padding:8px 9px;font-size:12px}
+ .bj-actions .bj-action-deal{min-width:105px;padding:9px 12px}
+ .bj-felt{padding-bottom:49px!important}
+}
+@media(max-width:750px){
+ .bj-wager-display{right:4%;bottom:31%;transform:scale(.77)}
+ .bj-actions{gap:5px}
+ .bj-actions button{min-height:41px;padding:8px 10px}
+ .bj-actions .bj-action-deal{min-width:96px}
+}
+@media(max-width:500px){
+ .bj-wager-display{right:0;bottom:31%;transform:scale(.61)}
+ .bj-actions button{min-height:38px;font-size:11px;padding:7px 8px}
+ .bj-actions .bj-action-deal{min-width:80px;padding:8px 10px}
+ .bj-felt{padding-bottom:43px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ .bj-wager-chip{animation:none!important}
+ .bj-select-option{transition:none!important}
+}
+.bj-app[data-motion=false] .bj-wager-chip{animation:none!important}

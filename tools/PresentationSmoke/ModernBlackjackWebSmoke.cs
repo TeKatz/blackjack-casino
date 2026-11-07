@@ -44,6 +44,14 @@ internal static partial class Program
         Require(await web.ExecuteScriptAsync(
             "Boolean(document.querySelector('.bj-app[data-phase]') && document.querySelector('[data-testid=\"blackjack-deal\"]'))") == "true",
             "Modern Blackjack React DOM was not mounted.");
+        Require(await web.ExecuteScriptAsync(
+            "Boolean(document.querySelector('[data-testid=\"blackjack-action-deal\"]')"
+            + " && document.querySelector('.bj-premium-select[aria-haspopup=\"listbox\"]')"
+            + " && !document.querySelector('.bj-sidebar select'))") == "true",
+            "Premium Blackjack bottom DEAL action or custom dropdowns were not mounted.");
+        Require(await web.ExecuteScriptAsync(
+            "Boolean(document.querySelector('[data-testid=\"blackjack-table-wager-chips\"]'))") == "true",
+            "The decorative wager stacks did not render for the native selected bet.");
 
         // A custom rule edit must make a complete native rules snapshot, not
         // reconfigure the frontend alone. This also ensures the rule modal can
@@ -52,6 +60,10 @@ internal static partial class Program
         Require(await web.ExecuteScriptAsync(
             "Boolean(document.querySelector('[data-testid=\"blackjack-custom-rules\"]'))") == "true",
             "The React custom-rule editor was not available.");
+        Require(await web.ExecuteScriptAsync(
+            "document.querySelectorAll('.bj-modal .bj-premium-select').length === 7"
+            + " && !document.querySelector('.bj-modal select')") == "true",
+            "Blackjack custom rules still render native system dropdowns.");
         await web.ExecuteScriptAsync("document.querySelector('[data-testid=\"blackjack-rules-save\"]')?.click()");
         bool custom = false;
         for (int i = 0; i < 80; i++)

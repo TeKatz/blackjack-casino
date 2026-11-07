@@ -4,6 +4,8 @@ import {CustomRulesEditor} from './CustomRulesEditor';
 import {bjText,bjOutcome,bjStatus} from './locale';
 import {resolveCardSkin} from './cardSkins';
 import {PlayingCard} from './PlayingCard';
+import {PremiumSelect} from './PremiumSelect';
+import {TableWagerChips} from './TableWagerChips';
 import {WinCelebration} from './WinCelebration';
 import type {WinMoment} from './WinCelebration';
 import {tableVisualEvent} from './TablePresentation';
@@ -12,6 +14,7 @@ import {listen,send} from './bridge';
 import type {TableIntent,TableReply,TableSnapshot} from './bridge';
 import './table.css';
 import './premiumTable.css';
+import './tableRefinements.css';
 
 const money=(s:string)=>s.replace(/\B(?=(\d{3})+(?!\d))/g,',');
 const showMoney=(s:string)=>'$'+money(s);
@@ -82,7 +85,10 @@ function BlackjackApp(){
   useEffect(()=>{
     const keyboard=(event:KeyboardEvent)=>{
       if(event.repeat||event.altKey||event.ctrlKey||event.metaKey)return;
-      if(document.activeElement instanceof HTMLInputElement||document.activeElement instanceof HTMLSelectElement)return;
+      if(document.activeElement instanceof HTMLInputElement||
+         document.activeElement instanceof HTMLSelectElement||
+         (document.activeElement instanceof HTMLElement &&
+          document.activeElement.closest('button,[role="listbox"],textarea,[contenteditable="true"]')))return;
       if(event.key==='Escape'){event.preventDefault();close();return;}
       if(event.key==='Enter'&&current.current?.state.canDeal){event.preventDefault();act({action:'deal'});return;}
       const map:Record<string,[string,string]>={h:['hit','Hit'],s:['stand','Stand'],d:['double','DoubleDown'],p:['split','Split'],r:['surrender','Surrender']};
@@ -106,7 +112,7 @@ function BlackjackApp(){
     if(Number(value)>Number(s.bankroll)||Number(value)>Number(s.rules.maximumBet)){setMessage(t.large);return;}
     if(value!==s.selectedBet)act({action:'bet.set',value});
   };
-  return <div className="bj-app" lang={s.language} data-language={s.language} data-theme={s.theme} data-motion={s.animationsEnabled} data-phase={round?.phase??"none"} data-preset={s.preset} data-card-variant={s.cardVariant}>
+  return <div className="bj-app" lang={s.language} data-language={s.language} data-theme={s.theme} data-motion={s.animationsEnabled} data-phase={round?.phase??"none"} data-preset={s.preset} data-card-variant={s.cardVariant} data-ui-pending={locked}>
     <header><button onClick={close} className="bj-back">← {t.lobby}</button>
       <div className="bj-logo"><small>THE MIDNIGHT CLUB</small><h1>BLACKJACK</h1></div>
       <div className="bj-money"><small>{t.bankroll}</small><strong>{showMoney(s.bankroll)}</strong></div>
@@ -116,16 +122,17 @@ function BlackjackApp(){
         <div className="bj-table-scene" aria-hidden="true"><span/><span/><span/><span/><span/><span/><span/><span/></div>
         <div className="bj-felt">
           <span className="bj-felt-mark" aria-hidden="true">THE MIDNIGHT CLUB <b>◆</b> BLACKJACK</span>
+          <TableWagerChips wager={s.selectedBet} animationsEnabled={s.animationsEnabled}/>
           <section className="bj-dealer"><small>{t.dealer} · {t.shoe} {s.shoeNumber} · {s.cardsRemaining} {t.cards}</small>
             <div className="bj-cards">{round?.dealerCards.map((card,i)=><PlayingCard card={card} skin={skin}
-              dealIndex={i} key={'dealer-'+dealEpoch+'-'+i}/>)??<em>{t.waiting}</em>}</div>
+              variant={s.cardVariant} dealIndex={i} key={'dealer-'+dealEpoch+'-'+i}/>)??<em>{t.waiting}</em>}</div>
             {round?.dealerValue!=null&&<span>{t.dealer} {round.dealerValue}</span>}
           </section>
           {round&&round.aiSeats.length>0&&<div className="bj-ai">
             {round.aiSeats.map((seat,i)=><div className="bj-ai-seat" key={i}><small>{seat.name}</small>
               {seat.hands.map((hand,j)=><div key={j}><div className="bj-cards compact">
                 {hand.cards.map((card,k)=><PlayingCard card={card} skin={skin} compact
-                  dealIndex={k} key={'ai-'+dealEpoch+'-'+i+'-'+j+'-'+k}/>)}</div>
+                  variant={s.cardVariant} dealIndex={k} key={'ai-'+dealEpoch+'-'+i+'-'+j+'-'+k}/>)}</div>
                 <small>{showMoney(hand.bet)} · {hand.value} {bjOutcome(hand.outcome,s.language)}</small></div>)}</div>)}
           </div>}
           <section className="bj-player"><small>{t.seat}</small><div className="bj-hands">
@@ -133,7 +140,7 @@ function BlackjackApp(){
               <div className="bj-hand-heading"><span>{round.playerHands.length>1?t.hand+' '+(hand.index+1):t.yourHand}</span>
                 <strong>{showMoney(hand.bet)}</strong></div>
               <div className="bj-cards">{hand.cards.map((card,j)=><PlayingCard key={'player-'+dealEpoch+'-'+hand.index+'-'+j} card={card}
-                  skin={skin} dealIndex={j}/>)}</div>
+                  skin={skin} variant={s.cardVariant} dealIndex={j}/>)}</div>
               <p>{hand.value}{hand.isSoft?' ('+t.soft+')':''} · {hand.outcome?bjOutcome(hand.outcome,s.language):(hand.active?t.yourMove:'')}
                 {hand.net!==null?' · '+showMoney(hand.net):''}</p>
             </article>):<div className="bj-empty">{t.empty}</div>}
@@ -146,12 +153,16 @@ function BlackjackApp(){
               <button disabled={locked} onClick={()=>act({action:'insurance.take'})}>{t.yesInsurance}</button>
               <button disabled={locked} onClick={()=>act({action:'insurance.decline'})}>{t.noInsurance}</button>
             </>:<>
-              <button disabled={!allowed('Hit')} onClick={()=>act({action:'hit'})}>{t.hit} <kbd>H</kbd></button>
-              <button disabled={!allowed('Stand')} onClick={()=>act({action:'stand'})}>{t.stand} <kbd>S</kbd></button>
-              <button disabled={!allowed('DoubleDown')} onClick={()=>act({action:'double'})}>{t.double} <kbd>D</kbd></button>
-              <button className={allowed('Split')?'bj-split-ready':''} disabled={!allowed('Split')} onClick={()=>act({action:'split'})}>{t.split} <kbd>P</kbd></button>
-              <button disabled={!allowed('Surrender')} onClick={()=>act({action:'surrender'})}>{t.surrender} <kbd>R</kbd></button>
+              <button data-native-action={s.availableActions.includes('Hit')} disabled={!allowed('Hit')} onClick={()=>act({action:'hit'})}>{t.hit} <kbd>H</kbd></button>
+              <button data-native-action={s.availableActions.includes('Stand')} disabled={!allowed('Stand')} onClick={()=>act({action:'stand'})}>{t.stand} <kbd>S</kbd></button>
+              <button data-native-action={s.availableActions.includes('DoubleDown')} disabled={!allowed('DoubleDown')} onClick={()=>act({action:'double'})}>{t.double} <kbd>D</kbd></button>
+              <button className={allowed('Split')?'bj-split-ready':''} data-native-action={s.availableActions.includes('Split')} disabled={!allowed('Split')} onClick={()=>act({action:'split'})}>{t.split} <kbd>P</kbd></button>
+              <button data-native-action={s.availableActions.includes('Surrender')} disabled={!allowed('Surrender')} onClick={()=>act({action:'surrender'})}>{t.surrender} <kbd>R</kbd></button>
             </>}
+            <button type="button" className="bj-action-deal" data-testid="blackjack-action-deal" data-native-action={s.canDeal}
+              disabled={locked||!s.canDeal} onClick={()=>act({action:'deal'})}>
+              {t.deal} <kbd>↵</kbd>
+            </button>
           </div>
         </div>
       </main>
@@ -164,25 +175,33 @@ function BlackjackApp(){
             onChange={e=>setBet(e.target.value)} onBlur={commitBet}
             onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();commitBet();e.currentTarget.blur();}}}/></label>
           <button disabled={locked||inHand} onClick={()=>act({action:'bet.clear'})}>{t.clear}</button>
-          <button className="bj-deal" data-testid="blackjack-deal" disabled={locked||!s.canDeal} onClick={()=>act({action:'deal'})}>{t.deal} <kbd>ENTER</kbd></button>
+          <button className="bj-deal" data-testid="blackjack-deal" data-native-action={s.canDeal} disabled={locked||!s.canDeal} onClick={()=>act({action:'deal'})}>{t.deal} <kbd>ENTER</kbd></button>
           <small>{t.limits} {showMoney(s.rules.minimumBet)} – {showMoney(s.rules.maximumBet)}</small>
         </section>
         <section><small>{t.table}</small>
-          <label>{t.mode}<select disabled={locked||inHand} value={s.fullTable?'full':'solo'}
-            onChange={e=>act({action:'mode.set',value:e.target.value})}>
-            <option value="solo">{t.solo}</option><option value="full">{t.full}</option></select></label>
-          {s.fullTable&&<label>{t.aiSeats}<select disabled={locked||inHand} value={s.aiSeatCount}
-            onChange={e=>act({action:'seats.set',value:e.target.value})}>{[1,2,3,4,5].map(n=><option value={n} key={n}>{n}</option>)}</select></label>}
-          <label>{t.preset}<select disabled={locked||inHand} value={s.preset}
-            onChange={e=>act({action:'preset.set',value:e.target.value})}>
-            {s.presets.map(p=><option key={p.id} value={p.id}>{de&&p.id==='Custom'?t.custom:p.name}</option>)}
-            {s.preset==='Custom'&&<option value="Custom">{t.custom}</option>}</select></label>
+          <label>{t.mode}<PremiumSelect label={t.mode} disabled={locked||inHand}
+            value={s.fullTable?'full':'solo'}
+            onChange={value=>act({action:'mode.set',value})}
+            options={[{value:'solo',label:t.solo},{value:'full',label:t.full}]}/></label>
+          {s.fullTable&&<label>{t.aiSeats}<PremiumSelect label={t.aiSeats}
+            disabled={locked||inHand} value={String(s.aiSeatCount)}
+            onChange={value=>act({action:'seats.set',value})}
+            options={[1,2,3,4,5].map(n=>({value:String(n),label:String(n)}))}/></label>}
+          <label>{t.preset}<PremiumSelect label={t.preset} disabled={locked||inHand}
+            value={s.preset} onChange={value=>act({action:'preset.set',value})}
+            options={[
+              ...s.presets.map(p=>({value:p.id,label:de&&p.id==='Custom'?t.custom:p.name})),
+              ...(s.preset==='Custom'&&!s.presets.some(p=>p.id==='Custom')
+                ?[{value:'Custom',label:t.custom}]:[])
+            ]}/></label>
           <div className="bj-rule">{s.rules.deckCount}D · {s.rules.dealerHitsSoft17?'H17':'S17'} · {s.rules.blackjackPayout}:1 · {s.rules.dealerTakesHoleCard?t.holeCard:'ENHC'}</div>
           <button type="button" data-testid="blackjack-edit-rules" disabled={locked||inHand}
             onClick={()=>setRulesOpen(true)}>{t.editRules}</button>
           <div className="bj-rule">{t.equipped}: {s.cardVariant.replace(/^card-/,'').replace(/-/g,' ')}</div>
-          <label>{t.felt}<select value={s.theme} disabled={locked} onChange={e=>act({action:'theme.set',value:e.target.value})}>
-            <option value="ClassicGreen">{t.green}</option><option value="MidnightBlue">{t.blue}</option><option value="Burgundy">{t.burgundy}</option></select></label>
+          <label>{t.felt}<PremiumSelect label={t.felt} value={s.theme} disabled={locked}
+            onChange={value=>act({action:'theme.set',value})}
+            options={[{value:'ClassicGreen',label:t.green},{value:'MidnightBlue',label:t.blue},
+              {value:'Burgundy',label:t.burgundy}]}/></label>
           <label className="bj-check"><input type="checkbox" checked={s.soundEnabled} disabled={locked}
             onChange={e=>act({action:'sound.set',value:String(e.target.checked)})}/> {t.sound}</label>
           <label className="bj-check"><input type="checkbox" checked={s.animationsEnabled} disabled={locked}
