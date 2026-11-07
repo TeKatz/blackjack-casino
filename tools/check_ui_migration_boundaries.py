@@ -169,8 +169,8 @@ def main() -> int:
             issues.append("Independent shell must be WinForms/WebView2 without WPF.")
         if any(token in form for token in ("System.Windows.Controls", "System.Windows.Threading", "PresentationFramework")):
             issues.append("New native shell reintroduced WPF types.")
-        if any(page not in form for page in ("blackjack.html", "reels.html", "neon-vault.html", "nine-lives.html", "midnight-merge.html", "midnight-dice.html")):
-            issues.append("Native shell lost a validated six-game browser route.")
+        if any(page not in form for page in ("blackjack.html", "reels.html", "neon-vault.html", "nine-lives.html", "midnight-merge.html", "midnight-dice.html", "index.html")):
+            issues.append("Native shell lost a validated seven-game browser route.")
         if "BlackjackCasino.NativeShell/BlackjackCasino.NativeShell.csproj" not in text(
                 ROOT / ".github/workflows/ci.yml"):
             issues.append("Windows CI no longer exercises the WPF-free host.")

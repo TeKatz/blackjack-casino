@@ -32,7 +32,9 @@ internal static class NativeShellContractSmoke
                 || !ModernMergeProtocol.Trusted("https://midnight-manor.local/midnight-merge.html")
                 || ModernMergeProtocol.Trusted("https://example.com/midnight-merge.html")
                 || !ModernDiceProtocol.Trusted("https://midnight-manor.local/midnight-dice.html")
-                || ModernDiceProtocol.Trusted("https://example.com/midnight-dice.html"))
+                || ModernDiceProtocol.Trusted("https://example.com/midnight-dice.html")
+                || !ManorPreviewProtocol.IsTrustedSource("https://midnight-manor.local/index.html")
+                || ManorPreviewProtocol.IsTrustedSource("https://example.com/index.html"))
                 throw new InvalidOperationException("Browser page trust is not isolated.");
 
             using (var session = new NativePreviewRuntime(directory))

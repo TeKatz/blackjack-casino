@@ -883,7 +883,9 @@ internal sealed class NativePreviewRuntime : IDisposable
 
     internal void Persist()
     {
-        if (disposed) return;
+        // A possibly committed Manor aggregate journal is authoritative. Do
+        // not overwrite either mirror with stale in-memory state before restart.
+        if (disposed || ManorRequiresRestart) return;
         table.NormalizeBet();
         Preferences = Preferences with
         {
@@ -958,8 +960,11 @@ internal sealed class NativePreviewRuntime : IDisposable
             if (mergeBoard is not null) CloseMerge();
             if (diceGame is not null) CloseDice();
             if (manorController is not null) CloseManor();
-            AccountCompletedRound();
-            Persist();
+            if (!ManorRequiresRestart)
+            {
+                AccountCompletedRound();
+                Persist();
+            }
         }
         finally
         {

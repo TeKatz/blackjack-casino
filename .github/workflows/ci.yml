@@ -103,7 +103,7 @@ jobs:
       - name: WPF-free native shell protocol and storage smoke
         run: dotnet run --project src/BlackjackCasino.NativeShell/BlackjackCasino.NativeShell.csproj --configuration Release --no-build -- --smoke
 
-      - name: WPF-free native shell real WebView2 startup and six React routes
+      - name: WPF-free native shell real WebView2 startup and seven React routes
         run: dotnet run --project src/BlackjackCasino.NativeShell/BlackjackCasino.NativeShell.csproj --configuration Release --no-build -- --web-smoke
 
       - name: Shared controls regression contract
@@ -206,7 +206,7 @@ jobs:
             -p:PublishSingleFile=true `
             -p:DebugType=None `
             --output artifacts/native-shell-preview
-          foreach ($name in @("blackjack.html", "reels.html", "neon-vault.html", "nine-lives.html", "midnight-merge.html", "midnight-dice.html")) {
+          foreach ($name in @("blackjack.html", "reels.html", "neon-vault.html", "nine-lives.html", "midnight-merge.html", "midnight-dice.html", "index.html")) {
             if (!(Test-Path "artifacts/native-shell-preview/ModernFrontend/$name")) {
               throw "Native shell is missing packaged $name"
             }

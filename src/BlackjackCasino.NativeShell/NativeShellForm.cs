@@ -228,6 +228,11 @@ internal sealed class NativeShellForm : Form
     {
         if (closing || mode is not ("blackjack" or "reels" or "neon-vault" or "nine-lives"
             or "midnight-merge" or "midnight-dice" or "midnight-manor")) return;
+        if (runtime.ManorRequiresRestart)
+        {
+            status.Text = "Manor journal recovery requires an application restart.";
+            return;
+        }
         if (mode != "blackjack" && runtime.HandInProgress)
         {
             status.Text = "Finish the Blackjack hand first.";
