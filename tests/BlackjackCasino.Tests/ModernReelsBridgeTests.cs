@@ -58,6 +58,23 @@ public sealed class ModernReelsBridgeTests
     }
 
     [Fact]
+    public void ReadOnlySnapshotPreservesFractionalCentsFromLegacySaves()
+    {
+        var machine = new SlotMachineSession(975.125m);
+        var profile = new PlayerProfileState();
+        profile.Slots.TotalWagered = 25.0005m;
+        JsonElement state = JsonSerializer.SerializeToElement(
+            ModernReelsSnapshot.Create(machine,25m,null,null,profile,true,true,"en"),
+            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        Assert.Equal("975.125",state.GetProperty("bankroll").GetString());
+        Assert.Equal("-25.0005",state.GetProperty("stats").GetProperty("netProfit").GetString());
+        Assert.Equal(JsonValueKind.Null,state.GetProperty("lastSpin").ValueKind);
+        // Rendering must never round the real wallet or rewrite historical statistics.
+        Assert.Equal(975.125m,machine.Bankroll);
+        Assert.Equal(25.0005m,profile.Slots.TotalWagered);
+    }
+
+    [Fact]
     public void NativeResultAndWeightedStripMatchExactly()
     {
         var machine=new SlotMachineSession(1000m,_=>0);

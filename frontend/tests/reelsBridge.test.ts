@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {isReelsSnapshot,isReelsSpin,isReelsReply} from '../src/reels/bridge';
+import {isReelsSnapshot,isReelsSpin,isReelsReply,reelsSnapshotIssue} from '../src/reels/bridge';
 
 const strip=Array.from({length:32},(_,i)=>i<12?'Cherry':i<20?'Lemon':i<26?'Bell':i<30?'Bar':'Seven');
 const spin={id:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',bet:'25',
@@ -24,6 +24,25 @@ describe('Reels read-only browser contract',()=>{
   expect(isReelsSnapshot({...snapshot,state:{...snapshot.state,language:'fr'}})).toBe(false);
   expect(isReelsSnapshot({...snapshot,state:{...snapshot.state,reelStrip:strip.slice(1)}})).toBe(false);
   expect(isReelsSnapshot({...snapshot,revision:-1})).toBe(false);
+ });
+ it('accepts historical fractional cents without changing authoritative money',()=>{
+  const legacy={...snapshot,state:{...snapshot.state,
+    bankroll:'975.125',bet:'25.000',
+    stats:{...snapshot.state.stats,netProfit:'-25.0005',biggestPayout:'0.0001'},
+    lastSpin:{...spin,bankrollBefore:'1000.125',bankrollAfter:'975.125'}}};
+  expect(isReelsSnapshot(legacy)).toBe(true);
+  expect(reelsSnapshotIssue(legacy)).toBeNull();
+  expect(isReelsSnapshot({...legacy,state:{...legacy.state,bankroll:'-1.125'}})).toBe(false);
+  expect(isReelsSnapshot({...legacy,state:{...legacy.state,bankroll:'1e3'}})).toBe(false);
+  expect(isReelsSnapshot({...legacy,state:{...legacy.state,bankroll:'1.00000000000000000000000000000'}})).toBe(false);
+ });
+ it('reports the exact invalid field without echoing player data',()=>{
+  expect(reelsSnapshotIssue({...snapshot,state:{...snapshot.state,profile:{...snapshot.state.profile,coins:-1}}}))
+    .toBe('state.profile.coins');
+  expect(reelsSnapshotIssue({...snapshot,state:{...snapshot.state,stats:{...snapshot.state.stats,netProfit:'oops'}}}))
+    .toBe('state.stats.netProfit');
+  expect(reelsSnapshotIssue({...snapshot,state:{...snapshot.state,lastSpin:{...spin,symbols:['Seven','Lemon','Bell']}}}))
+    .toBe('state.lastSpin.symbols');
  });
  it('validates saved spin receipts and rejects fabricated amounts',()=>{
   expect(isReelsSpin(spin)).toBe(true);

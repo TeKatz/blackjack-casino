@@ -19,8 +19,11 @@ export type ReelsIntent={action:'spin'|'bet.set'|'sound.set'|'animations.set';va
 
 const record=(v:unknown):v is Record<string,unknown>=>v!==null&&typeof v==='object'&&!Array.isArray(v);
 const integer=(v:unknown):v is number=>typeof v==='number'&&Number.isSafeInteger(v)&&v>=0;
-const money=(v:unknown):v is string=>typeof v==='string'&&/^(?:0|[1-9]\d*)(?:\.\d{1,2})?$/.test(v);
-const signed=(v:unknown):v is string=>typeof v==='string'&&/^-?(?:0|[1-9]\d*)(?:\.\d{1,2})?$/.test(v);
+// C# decimal values loaded from older saves can contain fractional cents.
+// These are read-only display amounts; the host remains authoritative for
+ // wager validation and settlement. Do not reject a valid saved balance.
+const money=(v:unknown):v is string=>typeof v==='string'&&/^(?:0|[1-9]\d*)(?:\.\d{1,28})?$/.test(v);
+const signed=(v:unknown):v is string=>typeof v==='string'&&/^-?(?:0|[1-9]\d*)(?:\.\d{1,28})?$/.test(v);
 const symbol=(v:unknown):v is ReelSymbol=>reelSymbols.some(s=>s===v);
 const guid=(v:unknown):v is string=>typeof v==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
 
@@ -34,28 +37,48 @@ export function isReelsSpin(v:unknown):v is ReelsSpin{
     ||!Array.isArray(v.symbols)||v.symbols.length!==3||!v.symbols.every(symbol))return false;
   return true;
 }
-export function isReelsSnapshot(v:unknown):v is ReelsSnapshot{
-  if(!record(v)||v.version!==1||!guid(v.session)||!integer(v.revision)||!record(v.state))return false;
+// Return only the offending field path, never a wallet amount or player data.
+// A rejected snapshot must remain non-playable, but the recovery screen can
+ // now identify precisely which native/browser contract field needs repair.
+export function reelsSnapshotIssue(v:unknown):string|null{
+  if(!record(v))return 'envelope';
+  if(v.version!==1)return 'version';
+  if(!guid(v.session))return 'session';
+  if(!integer(v.revision))return 'revision';
+  if(!record(v.state))return 'state';
   const s=v.state;
-  if(s.language!=='en'&&s.language!=='de')return false;
-  if(!money(s.bankroll)||!money(s.bet)||typeof s.canSpin!=='boolean'
-    ||typeof s.soundEnabled!=='boolean'||typeof s.animationsEnabled!=='boolean'
-    ||!Array.isArray(s.reelStrip)||s.reelStrip.length!==32||!s.reelStrip.every(symbol)
-    ||!Array.isArray(s.paytable)||s.paytable.length!==5
+  if(s.language!=='en'&&s.language!=='de')return 'state.language';
+  if(!money(s.bankroll))return 'state.bankroll';
+  if(!money(s.bet))return 'state.bet';
+  if(typeof s.canSpin!=='boolean')return 'state.canSpin';
+  if(typeof s.soundEnabled!=='boolean')return 'state.soundEnabled';
+  if(typeof s.animationsEnabled!=='boolean')return 'state.animationsEnabled';
+  if(!Array.isArray(s.reelStrip)||s.reelStrip.length!==32||!s.reelStrip.every(symbol))
+    return 'state.reelStrip';
+  if(!Array.isArray(s.paytable)||s.paytable.length!==5
     ||!s.paytable.every((x:unknown)=>record(x)&&symbol(x.id)&&typeof x.name==='string'
-       &&integer(x.stops)&&integer(x.tripleMultiplier))
-    ||!record(s.profile)||!integer(s.profile.level)||!integer(s.profile.prestige)
-    ||!integer(s.profile.coins)||!record(s.stats)||!integer(s.stats.spins)
-    ||!integer(s.stats.wins)||!integer(s.stats.pushes)||!signed(s.stats.netProfit)
-    ||!money(s.stats.biggestPayout))return false;
-  if(s.lastSpin!==null&&!isReelsSpin(s.lastSpin))return false;
-  // A browser snapshot must never depict different symbols at the given stops.
+       &&integer(x.stops)&&integer(x.tripleMultiplier)))return 'state.paytable';
+  if(!record(s.profile))return 'state.profile';
+  if(!integer(s.profile.level))return 'state.profile.level';
+  if(!integer(s.profile.prestige))return 'state.profile.prestige';
+  if(!integer(s.profile.coins))return 'state.profile.coins';
+  if(!record(s.stats))return 'state.stats';
+  if(!integer(s.stats.spins))return 'state.stats.spins';
+  if(!integer(s.stats.wins))return 'state.stats.wins';
+  if(!integer(s.stats.pushes))return 'state.stats.pushes';
+  if(!signed(s.stats.netProfit))return 'state.stats.netProfit';
+  if(!money(s.stats.biggestPayout))return 'state.stats.biggestPayout';
   if(s.lastSpin!==null){
+    if(!isReelsSpin(s.lastSpin))return 'state.lastSpin';
     const spin=s.lastSpin as ReelsSpin;
     const strip=s.reelStrip as ReelSymbol[];
-    if(spin.stops.some((stop,i)=>strip[stop]!==spin.symbols[i]))return false;
+    if(spin.stops.some((stop,i)=>strip[stop]!==spin.symbols[i]))
+      return 'state.lastSpin.symbols';
   }
-  return true;
+  return null;
+}
+export function isReelsSnapshot(v:unknown):v is ReelsSnapshot{
+  return reelsSnapshotIssue(v)===null;
 }
 export function isReelsReply(v:unknown):v is ReelsReply{
   return record(v)&&guid(v.requestId)&&typeof v.success==='boolean'
@@ -75,7 +98,7 @@ export function listenReels(receive:(message:{type:'snapshot';data:ReelsSnapshot
     if(!record(payload))return;
     if(payload.type==='reels.snapshot'){
       if(isReelsSnapshot(payload.data))receive({type:'snapshot',data:payload.data});
-      else host?.postMessage({type:'reels.snapshot-invalid'});
+      else host?.postMessage({type:'reels.snapshot-invalid',field:reelsSnapshotIssue(payload.data)});
     }
     if(payload.type==='reels.result'&&isReelsReply(payload.data))
       receive({type:'result',data:payload.data});

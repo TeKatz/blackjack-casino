@@ -170,7 +170,16 @@ internal sealed class ModernReelsView : ContentControl, IDisposable
                     FailWithReason("Reels JavaScript or a required frontend module failed.");
                     break;
                 case "reels.snapshot-invalid":
-                    FailWithReason("Reels frontend rejected the native snapshot.");
+                    // Diagnostics use an allow-listed field path, never the
+                    // player data or an untrusted browser-supplied message.
+                    string? field = root.TryGetProperty("field", out var property)
+                        && property.ValueKind == JsonValueKind.String
+                        ? property.GetString() : null;
+                    if (field is not null && Regex.IsMatch(field,
+                        @"\A(?:envelope|version|session|revision|state(?:\.[a-zA-Z][a-zA-Z0-9]*){0,3})\z"))
+                        FailWithReason("Reels frontend rejected native snapshot at " + field + ".");
+                    else
+                        FailWithReason("Reels frontend rejected the native snapshot.");
                     break;
                 case "reels.ready":
                     listening = true;
