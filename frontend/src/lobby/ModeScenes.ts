@@ -155,8 +155,12 @@ function placeArt(s:Scene,time:number,motion:boolean){
   // Reduced-motion mode skips the transition entirely.
   s.reveal=motion?Math.min(1,s.reveal+.12):1;
   if(s.back){
+    // Nine Lives has decorative orange borders in the original photo.
+    // Crop those in BOTH idle and hover states, without replacing the image.
+    const crop=s.id==='nine-lives'?1.145:1.025;
+    const hoverZoom=s.id==='nine-lives'?.012:.04;
     const scale=coverSize(w,h,s.back.texture.width,s.back.texture.height)
-      *(1.025+s.energy*.04);
+      *(crop+s.energy*hoverZoom);
     s.back.alpha=s.reveal;
     s.back.scale.set(scale);
     if(s.cat){
@@ -188,10 +192,15 @@ function placeArt(s:Scene,time:number,motion:boolean){
     s.front.scale.set(coverSize(w,h,s.front.texture.width,s.front.texture.height)
       *(1.025+s.energy*.055));
   }
-  const artScale=coverSize(w,h);
+  // The SVG foreground and Pixi micro-objects share EXACTLY one transform.
+  // Using the base cover scale here made the lit windows, dice and merge
+  // objects drift off the painted positions whenever the card was hovered.
+  const artScale=s.front?.scale.x ?? coverSize(w,h);
+  const artCenterX=s.front?.position.x ?? w*.5;
+  const artCenterY=s.front?.position.y ?? h*.5;
   s.detail.layer.scale.set(artScale);
-  s.detail.layer.position.set(w*.5-480*artScale+dx*.15,
-    h*.5-220*artScale+dy*.15);
+  s.detail.layer.position.set(artCenterX-480*artScale,
+    artCenterY-220*artScale);
   s.hoverProgress=motion?Math.max(0,Math.min(1,s.hoverProgress+(hovered?.075:-.105))):0;
   s.detail.tick({hover:s.energy,progress:s.hoverProgress,time,enabled:motion});
   s.signature.position.set(s.id==='neon-vault'?w*.53:s.id==='nine-lives'?w*.5:w*.61,h*.48);

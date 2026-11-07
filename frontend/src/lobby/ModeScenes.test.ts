@@ -1,5 +1,6 @@
 import {describe,it,expect} from 'vitest';
-import {createMicroDetails,delayed,smooth} from './LobbyMicroMotion';
+import {createMicroDetails,delayed,smooth,EMPIRE_WINDOW_COLUMNS,EMPIRE_WINDOW_WIDTH,
+  MANOR_WINDOW_COLUMNS,MERGE_SLOT_CENTERS} from './LobbyMicroMotion';
 import {
   MODE_SCENE_IDS,MODE_PALETTES,modeSceneAssets,coverSize,rectVisible
 } from './ModeScenes';
@@ -70,5 +71,27 @@ describe('independent per-object PixiJS motion',()=>{
     const merge=modeSceneAssets('midnight-merge');
     expect(merge.back).toContain('/midnight-merge-back.svg');
     expect(merge.front).toContain('/midnight-merge-front.svg');
+  });
+});
+
+describe('artist-authored alignment regression',()=>{
+  it('places Empire windows symmetrically around the building center',()=>{
+    const columns=EMPIRE_WINDOW_COLUMNS;
+    expect(columns[0]+columns[3]+EMPIRE_WINDOW_WIDTH).toBe(968);
+    expect(columns[1]+columns[2]+EMPIRE_WINDOW_WIDTH).toBe(968);
+    expect(columns[1]-columns[0]).toBe(columns[3]-columns[2]);
+  });
+  it('keeps Manor glows inside the painted window openings',()=>{
+    expect(MANOR_WINDOW_COLUMNS).toEqual([101,794]);
+    for(const x of MANOR_WINDOW_COLUMNS){
+      expect(x+10).toBeGreaterThan(x+6);
+      expect(x+10+44).toBeLessThan(x+64-6);
+    }
+  });
+  it('centers Merge icons within their actual painted board slots',()=>{
+    expect(MERGE_SLOT_CENTERS).toEqual([252,421,730]);
+    for(const [i,left] of [179,348,657].entries()){
+      expect(Math.abs(MERGE_SLOT_CENTERS[i]-(left+73))).toBeLessThan(1);
+    }
   });
 });

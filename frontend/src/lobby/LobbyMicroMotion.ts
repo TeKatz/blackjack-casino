@@ -13,6 +13,12 @@ export const smooth=(value:number)=>{const x=clamp(value);return x*x*(3-2*x);};
 export const delayed=(progress:number,delay:number)=>smooth((progress-delay)/(1-delay));
 const gold=0xe8c17b;
 
+// Coordinates in the 960 × 440 art design space, matched to the SVGs.
+export const EMPIRE_WINDOW_COLUMNS=[284,346,583,645] as const;
+export const EMPIRE_WINDOW_WIDTH=39;
+export const MANOR_WINDOW_COLUMNS=[101,794] as const;
+export const MERGE_SLOT_CENTERS=[252,421,730] as const;
+
 function steam(layer:Container):MotionDetails {
   const trails=Array.from({length:3},(_,i)=>{
     const g=new Graphics();
@@ -107,10 +113,16 @@ function vault(layer:Container):MotionDetails{
   }};
 }
 function dieShape():Graphics{
-  const g=new Graphics().roundRect(-67,-65,134,130,19)
-    .fill(0x8d2746).stroke({width:7,color:0xe5b76d});
-  for(const [x,y] of [[-25,-27],[26,-27],[0,0],[-25,27],[26,27]]){
-    g.circle(x,y,10).fill(0xffe4ab).stroke({width:3,color:0x845333});
+  // Draw the ONE die that used to be baked into kniffel-front.svg.
+  // Match its exact silhouette and four pips at the same coordinates.
+  const g=new Graphics().roundRect(-72,-70,144,140,22)
+    .fill(0x782139).stroke({width:7,color:0xe5b76d});
+  g.moveTo(-60,-46).quadraticCurveTo(-60,-60,-45,-59)
+    .lineTo(48,-59).stroke({width:6,color:0xfff3d0,alpha:.85});
+  g.moveTo(58,-35).lineTo(58,44).quadraticCurveTo(58,55,45,55)
+    .lineTo(-35,55).stroke({width:12,color:0x040810,alpha:.53});
+  for(const [x,y] of [[-22,-22],[22,22],[-22,22],[22,-22]]){
+    g.circle(x,y,12).fill(0xffe6ac).stroke({width:3,color:0x966029});
   }
   return g;
 }
@@ -128,8 +140,8 @@ function dice(layer:Container):MotionDetails{
 function empire(layer:Container):MotionDetails{
   const windows:Graphics[]=[];
   for(let i=0;i<8;i++){
-    const x=285+(i%4)*106,y=224+Math.floor(i/4)*65;
-    const g=new Graphics().roundRect(x+2,y+2,33,40,3)
+    const x=EMPIRE_WINDOW_COLUMNS[i%4],y=224+Math.floor(i/4)*65;
+    const g=new Graphics().roundRect(x+4,y+4,EMPIRE_WINDOW_WIDTH-8,36,3)
       .fill(0xffd397);
     g.alpha=0;
     layer.addChild(g);windows.push(g);
@@ -161,8 +173,10 @@ function blackjack(layer:Container):MotionDetails{
 }
 function manor(layer:Container):MotionDetails{
   const windows:Graphics[]=[];
-  for(const x of [116,809]){
-    const g=new Graphics().roundRect(x,257,38,67,6).fill(0xffd79a);
+  for(const x of MANOR_WINDOW_COLUMNS){
+    // The painted windows start at x,245 and span 64×90.
+    // The glow sits INSIDE the same frame, not over its gold trim.
+    const g=new Graphics().roundRect(x+10,255,44,70,5).fill(0xffd79a);
     layer.addChild(g);windows.push(g);
   }
   const ghost=new Graphics()
@@ -189,7 +203,7 @@ function key():Graphics{
 }
 function merge(layer:Container):MotionDetails{
   const keys=[key(),key()];
-  const origins=[{x:252,y:217},{x:421,y:217}];
+  const origins=[{x:MERGE_SLOT_CENTERS[0],y:217},{x:MERGE_SLOT_CENTERS[1],y:217}];
   keys.forEach((g,i)=>{g.position.set(origins[i].x,origins[i].y);layer.addChild(g);});
   const item=new Graphics();
   item.moveTo(0,-63).lineTo(0,52).stroke({width:13,color:0xe6c48e});
@@ -200,19 +214,20 @@ function merge(layer:Container):MotionDetails{
     item.moveTo(x,-48).lineTo(x-8,-66).lineTo(x+8,-66).closePath().fill(0xffdb8d);
   }
   item.roundRect(-36,49,72,10,4).fill(0xffd893);
-  item.position.set(730,222);
+  item.position.set(MERGE_SLOT_CENTERS[2],220);
   layer.addChild(item);
   const sparkle=new Graphics().moveTo(0,-18).lineTo(0,18)
     .moveTo(-18,0).lineTo(18,0)
     .stroke({width:5,color:0xffe9b9});
-  sparkle.position.set(731,150);
+  sparkle.position.set(MERGE_SLOT_CENTERS[2],172);
   layer.addChild(sparkle);
   return {layer,tick:({progress,hover,time,enabled})=>{
     keys.forEach((g,i)=>{
       const p=delayed(progress,i*.12);
-      g.x=origins[i].x+(i===0?30:-30)*p;
-      g.y=origins[i].y-p*11;
-      g.rotation=(i===0?1:-1)*p*.16;
+      // Keep both keys within their own 146×158 slots throughout hover.
+      g.x=origins[i].x+(i===0?6:-6)*p;
+      g.y=origins[i].y-p*5;
+      g.rotation=(i===0?1:-1)*p*.075;
       g.alpha=1-.56*p;
     });
     item.scale.set(1+hover*.06);
