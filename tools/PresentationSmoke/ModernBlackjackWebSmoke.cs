@@ -77,6 +77,42 @@ internal static partial class Program
         Require(await web.ExecuteScriptAsync(
             "Boolean(document.querySelector('[data-testid=\"blackjack-deal\"]:not(:disabled)'))") == "true",
             "Native table rules did not authorize the initial playable wager.");
+        // Observe the actual WebView2 DOM through a native command round-trip.
+        // A transient command guard may reject duplicates but must never toggle
+        // disabled styles on unrelated controls (the original whole-panel flash).
+        for (int i = 0; i < 40; i++)
+        {
+            if (await web.ExecuteScriptAsync(
+                "document.querySelector('.bj-app')?.getAttribute('data-ui-pending') === 'false'") == "true") break;
+            await Task.Delay(50);
+        }
+        Require(await web.ExecuteScriptAsync(
+            "(() => {const root=document.querySelector('.bj-app');"
+            + "const target=root?.querySelector('.bj-chips button:not(:disabled)');"
+            + "if(!root||!target)return false;"
+            + "const tracked=[...root.querySelectorAll('.bj-sidebar button:not(:disabled),.bj-sidebar input:not(:disabled),.bj-actions button:not(:disabled)')];"
+            + "window.__bjFlashStats={changes:0,before:root.querySelector('.bj-bet')?.textContent};"
+            + "const observer=new MutationObserver(()=>{if(tracked.some(el=>el.disabled))window.__bjFlashStats.changes++;});"
+            + "observer.observe(root,{subtree:true,attributes:true,attributeFilter:['disabled']});"
+            + "window.__bjFlashObserver=observer;target.click();return true;})()") == "true",
+            "Could not start the native wager UI flicker smoke.");
+        bool wagerChanged = false;
+        for (int i = 0; i < 45; i++)
+        {
+            await Task.Delay(55);
+            wagerChanged = await web.ExecuteScriptAsync(
+                "document.querySelector('.bj-bet')?.textContent !== window.__bjFlashStats?.before"
+                + " && document.querySelector('.bj-app')?.getAttribute('data-ui-pending') === 'false'") == "true";
+            if (wagerChanged) break;
+        }
+        Require(wagerChanged, "Native wager did not update after the decorative chip stack action.");
+        Require(await web.ExecuteScriptAsync("window.__bjFlashStats?.changes === 0") == "true",
+            "Unrelated Blackjack controls were transiently disabled during a wager command.");
+        await web.ExecuteScriptAsync("window.__bjFlashObserver?.disconnect()");
+        Require(await web.ExecuteScriptAsync(
+            "Boolean(document.querySelector('.bj-wager-illustration .bj-wager-facing-coin')"
+            + " && document.querySelector('.bj-wager-illustration .bj-coin-layer'))") == "true",
+            "Premium engraved chip illustration was not mounted after the native wager update.");
         await web.ExecuteScriptAsync("document.querySelector('[data-testid=\"blackjack-deal\"]').click()");
         string phase = "none";
         for (int i = 0; i < 120; i++)

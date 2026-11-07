@@ -30,8 +30,8 @@ export function moveSelectIndex(current:number,direction:1|-1,options:readonly S
 }
 
 /** Accessible browser-rendered listbox; avoids native Windows select popup colors. */
-export function PremiumSelect({value,options,disabled=false,onChange,label,className=''}:{
- value:string;options:readonly SelectOption[];disabled?:boolean;
+export function PremiumSelect({value,options,disabled=false,busy=false,onChange,label,className=''}:{
+ value:string;options:readonly SelectOption[];disabled?:boolean;busy?:boolean;
  onChange:(value:string)=>void;label:string;className?:string;
 }){
  const [open,setOpen]=useState(false);
@@ -53,7 +53,7 @@ export function PremiumSelect({value,options,disabled=false,onChange,label,class
    if(returnFocus)trigger.current?.focus({preventScroll:true});
  };
  const reveal=(index=selected)=>{
-   if(disabled||options.length===0)return;
+   if(disabled||busy||options.length===0)return;
    const next=options[index]?.disabled?moveSelectIndex(index,1,options):index;
    setActive(next);
    locate();
@@ -61,7 +61,7 @@ export function PremiumSelect({value,options,disabled=false,onChange,label,class
  };
  const select=(index:number)=>{
    const option=options[index];
-   if(!option||option.disabled)return;
+   if(!option||option.disabled||busy)return;
    if(option.value!==value)onChange(option.value);
    close(true);
  };
@@ -82,7 +82,7 @@ export function PremiumSelect({value,options,disabled=false,onChange,label,class
      document.removeEventListener('scroll',refresh,true);
    };
  },[open,options.length]);
- useEffect(()=>{if(disabled&&open)setOpen(false);},[disabled,open]);
+ useEffect(()=>{if((disabled||busy)&&open)setOpen(false);},[disabled,busy,open]);
  const keys=(event:KeyboardEvent)=>{
    if(event.key==='Escape'){event.preventDefault();event.stopPropagation();close(true);return;}
    if(event.key==='Tab'){close();return;}
@@ -110,9 +110,9 @@ export function PremiumSelect({value,options,disabled=false,onChange,label,class
  }:{};
  return <>
   <button type="button" ref={trigger} className={'bj-premium-select '+className}
-    disabled={disabled} aria-label={label} aria-haspopup="listbox" aria-expanded={open}
+    disabled={disabled} aria-disabled={disabled||busy} aria-label={label} aria-haspopup="listbox" aria-expanded={open}
     aria-controls={open?popupId:undefined}
-    onClick={()=>open?close():reveal()} onKeyDown={keys}>
+    onClick={()=>{if(!busy){if(open)close();else reveal();}}} onKeyDown={keys}>
    <span className="bj-select-value">{chosen?.label??value}</span>
    <span className="bj-select-chevron" aria-hidden="true"/>
   </button>

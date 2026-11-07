@@ -37,3 +37,13 @@ The browser command-pending state remains functionally locked against duplicate 
 ### Validation
 
 Frontend unit tests cover unique visual card identities, material-specific variants, non-interactive wager stacks, scaling bounds, dropdown positioning and modal migration. Windows presentation smoke checks the new DEAL action, table chips and custom dropdown presence without weakening the native command or account safety checks. Desktop screenshot, DPI, pointer and audio quality still require an installed Windows build.
+
+## Collector alignment, premium wagers and stable command UI
+
+The desktop Blackjack collector decks use absolutely positioned rank indices, small corner pips and a **geometrically centered** principal suit. The card-face decoration is a non-interactive, vector-engraved ornament layer, never an extra CSS grid child. Midnight Sovereign uses precisely centered onyx/gold diamond filigree, while Solar Eclipse has a distinct radial solar corona. Card scale adapts to AI mini cards and compact Windows layouts.
+
+The wager display is a scalable, multi-material SVG sculpture with three physically layered chip denominations and an engraved gold-facing coin. The stacks still derive only from the authoritative C# selectedBet through the bounded `stackHeights` presentation mapping; they cannot be clicked or used to settle a bet. A small lazy PixiJS WebGL renderer creates masked/local sparkles and two slowly animated rings around the sculpture, capped at 30 FPS. Unavailable GPU devices fall back to the full SVG artwork, and reduced-motion settings suppress the animations. There are no fullscreen wipe effects.
+
+**Command UI flicker:** A command's in-flight guard continues to reject duplicate actions synchronously through `pendingRef`, but does **not** flip all other buttons' HTML `disabled` attributes. Native availability and round phase govern the actual disabled state. Temporary command-lock state uses accessibility `aria-disabled` and a visually stable busy guard on custom selectors; the wager text field is temporarily read-only. The Windows WebView2 smoke now observes a native bet change through a DOM MutationObserver and rejects unrelated transient disabled-state mutations. Keyboard focus and no-GPU table navigation remain available.
+
+The original Blackjack core, shuffle, payouts, purchases and save format are unchanged. Validation includes frontend SSR component/regression tests, the Windows host presentation smoke, CI and the Development release workflow; subjective GPU/animation and visual quality still require running the published Windows app.

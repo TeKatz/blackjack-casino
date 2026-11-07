@@ -15,6 +15,7 @@ import type {TableIntent,TableReply,TableSnapshot} from './bridge';
 import './table.css';
 import './premiumTable.css';
 import './tableRefinements.css';
+import './collectorVisuals.css';
 
 const money=(s:string)=>s.replace(/\B(?=(\d{3})+(?!\d))/g,',');
 const showMoney=(s:string)=>'$'+money(s);
@@ -150,17 +151,17 @@ function BlackjackApp(){
           <WinCelebration moment={winMoment} language={s.language}/>
           <div className="bj-actions">
             {round?.phase==='InsuranceDecision'?<>
-              <button disabled={locked} onClick={()=>act({action:'insurance.take'})}>{t.yesInsurance}</button>
-              <button disabled={locked} onClick={()=>act({action:'insurance.decline'})}>{t.noInsurance}</button>
+              <button aria-disabled={locked} onClick={()=>act({action:'insurance.take'})}>{t.yesInsurance}</button>
+              <button aria-disabled={locked} onClick={()=>act({action:'insurance.decline'})}>{t.noInsurance}</button>
             </>:<>
-              <button data-native-action={s.availableActions.includes('Hit')} disabled={!allowed('Hit')} onClick={()=>act({action:'hit'})}>{t.hit} <kbd>H</kbd></button>
-              <button data-native-action={s.availableActions.includes('Stand')} disabled={!allowed('Stand')} onClick={()=>act({action:'stand'})}>{t.stand} <kbd>S</kbd></button>
-              <button data-native-action={s.availableActions.includes('DoubleDown')} disabled={!allowed('DoubleDown')} onClick={()=>act({action:'double'})}>{t.double} <kbd>D</kbd></button>
-              <button className={allowed('Split')?'bj-split-ready':''} data-native-action={s.availableActions.includes('Split')} disabled={!allowed('Split')} onClick={()=>act({action:'split'})}>{t.split} <kbd>P</kbd></button>
-              <button data-native-action={s.availableActions.includes('Surrender')} disabled={!allowed('Surrender')} onClick={()=>act({action:'surrender'})}>{t.surrender} <kbd>R</kbd></button>
+              <button data-native-action={s.availableActions.includes('Hit')} disabled={!s.availableActions.includes('Hit')} aria-disabled={!allowed('Hit')} onClick={()=>act({action:'hit'})}>{t.hit} <kbd>H</kbd></button>
+              <button data-native-action={s.availableActions.includes('Stand')} disabled={!s.availableActions.includes('Stand')} aria-disabled={!allowed('Stand')} onClick={()=>act({action:'stand'})}>{t.stand} <kbd>S</kbd></button>
+              <button data-native-action={s.availableActions.includes('DoubleDown')} disabled={!s.availableActions.includes('DoubleDown')} aria-disabled={!allowed('DoubleDown')} onClick={()=>act({action:'double'})}>{t.double} <kbd>D</kbd></button>
+              <button className={s.availableActions.includes('Split')?'bj-split-ready':''} data-native-action={s.availableActions.includes('Split')} disabled={!s.availableActions.includes('Split')} aria-disabled={!allowed('Split')} onClick={()=>act({action:'split'})}>{t.split} <kbd>P</kbd></button>
+              <button data-native-action={s.availableActions.includes('Surrender')} disabled={!s.availableActions.includes('Surrender')} aria-disabled={!allowed('Surrender')} onClick={()=>act({action:'surrender'})}>{t.surrender} <kbd>R</kbd></button>
             </>}
             <button type="button" className="bj-action-deal" data-testid="blackjack-action-deal" data-native-action={s.canDeal}
-              disabled={locked||!s.canDeal} onClick={()=>act({action:'deal'})}>
+              disabled={!s.canDeal} aria-disabled={locked||!s.canDeal} onClick={()=>act({action:'deal'})}>
               {t.deal} <kbd>↵</kbd>
             </button>
           </div>
@@ -169,25 +170,25 @@ function BlackjackApp(){
       <aside className="bj-sidebar">
         <section><small>{t.wager}</small><strong className="bj-bet">{showMoney(s.selectedBet)}</strong>
           <div className="bj-chips">{[5,25,100,500,1000,2500].map(amount=>
-            <button key={amount} disabled={locked||inHand}
+            <button key={amount} disabled={inHand} aria-disabled={locked||inHand}
               onClick={()=>act({action:'bet.set',value:String(Math.min(Number(s.selectedBet)+amount,Number(s.bankroll),Number(s.rules.maximumBet)))})}>+{amount}</button>)}</div>
-          <label>{t.exact}<input data-wager="true" value={bet} inputMode="decimal" disabled={locked||inHand}
-            onChange={e=>setBet(e.target.value)} onBlur={commitBet}
+          <label>{t.exact}<input data-wager="true" value={bet} inputMode="decimal" disabled={inHand} readOnly={locked} aria-disabled={locked||inHand}
+            onChange={e=>{if(!locked)setBet(e.target.value);}} onBlur={commitBet}
             onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();commitBet();e.currentTarget.blur();}}}/></label>
-          <button disabled={locked||inHand} onClick={()=>act({action:'bet.clear'})}>{t.clear}</button>
-          <button className="bj-deal" data-testid="blackjack-deal" data-native-action={s.canDeal} disabled={locked||!s.canDeal} onClick={()=>act({action:'deal'})}>{t.deal} <kbd>ENTER</kbd></button>
+          <button disabled={inHand} aria-disabled={locked||inHand} onClick={()=>act({action:'bet.clear'})}>{t.clear}</button>
+          <button className="bj-deal" data-testid="blackjack-deal" data-native-action={s.canDeal} disabled={!s.canDeal} aria-disabled={locked||!s.canDeal} onClick={()=>act({action:'deal'})}>{t.deal} <kbd>ENTER</kbd></button>
           <small>{t.limits} {showMoney(s.rules.minimumBet)} – {showMoney(s.rules.maximumBet)}</small>
         </section>
         <section><small>{t.table}</small>
-          <label>{t.mode}<PremiumSelect label={t.mode} disabled={locked||inHand}
+          <label>{t.mode}<PremiumSelect label={t.mode} disabled={inHand} busy={locked}
             value={s.fullTable?'full':'solo'}
             onChange={value=>act({action:'mode.set',value})}
             options={[{value:'solo',label:t.solo},{value:'full',label:t.full}]}/></label>
           {s.fullTable&&<label>{t.aiSeats}<PremiumSelect label={t.aiSeats}
-            disabled={locked||inHand} value={String(s.aiSeatCount)}
+            disabled={inHand} busy={locked} value={String(s.aiSeatCount)}
             onChange={value=>act({action:'seats.set',value})}
             options={[1,2,3,4,5].map(n=>({value:String(n),label:String(n)}))}/></label>}
-          <label>{t.preset}<PremiumSelect label={t.preset} disabled={locked||inHand}
+          <label>{t.preset}<PremiumSelect label={t.preset} disabled={inHand} busy={locked}
             value={s.preset} onChange={value=>act({action:'preset.set',value})}
             options={[
               ...s.presets.map(p=>({value:p.id,label:de&&p.id==='Custom'?t.custom:p.name})),
@@ -195,19 +196,19 @@ function BlackjackApp(){
                 ?[{value:'Custom',label:t.custom}]:[])
             ]}/></label>
           <div className="bj-rule">{s.rules.deckCount}D · {s.rules.dealerHitsSoft17?'H17':'S17'} · {s.rules.blackjackPayout}:1 · {s.rules.dealerTakesHoleCard?t.holeCard:'ENHC'}</div>
-          <button type="button" data-testid="blackjack-edit-rules" disabled={locked||inHand}
-            onClick={()=>setRulesOpen(true)}>{t.editRules}</button>
+          <button type="button" data-testid="blackjack-edit-rules" disabled={inHand} aria-disabled={locked||inHand}
+            onClick={()=>{if(!locked)setRulesOpen(true);}}>{t.editRules}</button>
           <div className="bj-rule">{t.equipped}: {s.cardVariant.replace(/^card-/,'').replace(/-/g,' ')}</div>
-          <label>{t.felt}<PremiumSelect label={t.felt} value={s.theme} disabled={locked}
+          <label>{t.felt}<PremiumSelect label={t.felt} value={s.theme} busy={locked}
             onChange={value=>act({action:'theme.set',value})}
             options={[{value:'ClassicGreen',label:t.green},{value:'MidnightBlue',label:t.blue},
               {value:'Burgundy',label:t.burgundy}]}/></label>
-          <label className="bj-check"><input type="checkbox" checked={s.soundEnabled} disabled={locked}
+          <label className="bj-check"><input type="checkbox" checked={s.soundEnabled} aria-disabled={locked}
             onChange={e=>act({action:'sound.set',value:String(e.target.checked)})}/> {t.sound}</label>
-          <label className="bj-check"><input type="checkbox" checked={s.animationsEnabled} disabled={locked}
+          <label className="bj-check"><input type="checkbox" checked={s.animationsEnabled} aria-disabled={locked}
             onChange={e=>act({action:'animations.set',value:String(e.target.checked)})}/> {t.animations}</label>
-          <button type="button" disabled={locked||inHand}
-            onClick={()=>setResetOpen(true)}>{t.reset}</button>
+          <button type="button" disabled={inHand} aria-disabled={locked||inHand}
+            onClick={()=>{if(!locked)setResetOpen(true);}}>{t.reset}</button>
         </section>
       </aside>
     </div>
