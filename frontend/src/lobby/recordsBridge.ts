@@ -6,6 +6,7 @@ export type ChallengeEntry={
   progress:number;goal:number;progressLabel:string;goalLabel:string;fraction:number;
   complete:boolean;claimed:boolean;canClaim:boolean;automaticallyAwarded:boolean;
   coinReward:number;pack:string|null;empireBoost:string|null;
+  cosmeticReward?:string|null;cosmeticRewardVariant?:string|null;
 };
 export type ChallengesSnapshot={
   total:number;complete:number;claimed:number;ready:number;readyCoins:number;
@@ -70,7 +71,10 @@ export function isChallenges(x:unknown):x is ChallengesSnapshot{
     &&['name','description','category','progressLabel','goalLabel'].every(k=>str(e[k]))
     &&['isAdventure','isEndgame','complete','claimed','canClaim','automaticallyAwarded'].every(k=>typeof e[k]==='boolean')
     &&num(e.progress)&&num(e.goal)&&pct(e.fraction)&&count(e.coinReward)
-    &&(e.pack===null||str(e.pack))&&(e.empireBoost===null||str(e.empireBoost)));
+    &&(e.pack===null||str(e.pack))&&(e.empireBoost===null||str(e.empireBoost))
+    &&(e.cosmeticReward===undefined||e.cosmeticReward===null||str(e.cosmeticReward))
+    &&(e.cosmeticRewardVariant===undefined||e.cosmeticRewardVariant===null
+       ||str(e.cosmeticRewardVariant)&&/^[a-z0-9-]{1,100}$/.test(e.cosmeticRewardVariant)));
 }
 export function isStatistics(x:unknown):x is StatisticsSnapshot{
   if(!obj(x)||!obj(x.overview)||!obj(x.session)||!Array.isArray(x.games)||!Array.isArray(x.tables)

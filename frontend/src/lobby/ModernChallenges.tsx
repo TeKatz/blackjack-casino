@@ -1,6 +1,7 @@
 import {useMemo,useState} from 'react';
 import type {ChallengeStatus,ChallengesSnapshot,ChallengeEntry} from './recordsBridge';
 import './records.css';
+import {portraitPath} from './Cosmetics';
 
 type Props={
   data:ChallengesSnapshot;loaded:boolean;language:'en'|'de';pending:string|null;
@@ -42,6 +43,10 @@ function Card({entry,de,pending,onClaim}:{
       <div>
         <strong>◆ {entry.coinReward.toLocaleString('en-US')}</strong>
         {entry.pack&&<small>+ {entry.pack} {de?'Paket':'pack'}</small>}
+        {entry.cosmeticReward&&<span className="challenge-portrait-reward">
+          {entry.cosmeticRewardVariant&&<img src={portraitPath(entry.cosmeticRewardVariant)} alt="" loading="lazy"/>}
+          <small>+ {de?'Exklusives Porträt':'Exclusive portrait'}: {entry.cosmeticReward}</small>
+        </span>
         {entry.empireBoost&&<small className="empire-reward">EMPIRE {entry.empireBoost}</small>}
         {entry.automaticallyAwarded&&<small>{de?'Automatisch beim Puzzeln vergeben':'Automatically awarded in Jigsaw Puzzle'}</small>}
       </div>

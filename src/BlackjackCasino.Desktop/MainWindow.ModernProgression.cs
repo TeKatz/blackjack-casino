@@ -106,6 +106,10 @@ public partial class MainWindow
                 CanClaim = complete && !claimed && challenge.Category != ChallengeCategory.Jigsaw,
                 AutomaticallyAwarded = challenge.Category == ChallengeCategory.Jigsaw,
                 challenge.CoinReward,
+                CosmeticReward = challenge.CosmeticRewardId is string cosmeticId
+                    ? CosmeticCatalog.Get(cosmeticId).Name : null,
+                CosmeticRewardVariant = challenge.CosmeticRewardId is string variantId
+                    ? CosmeticCatalog.Get(variantId).VisualVariant : null,
                 Pack = challenge.Category == ChallengeCategory.Jigsaw ? null
                     : ProgressionService.ChallengePack(challenge)?.ToString(),
                 EmpireBoost = empire is null ? null

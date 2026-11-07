@@ -381,3 +381,8 @@
 }
 @media(prefers-reduced-motion:reduce){.vault-page .vault-chamber.is-ready .vault-safe-body{animation:none;}}
 .casino-lobby-shell[data-reduced="true"] .vault-page .vault-chamber.is-ready .vault-safe-body{animation:none;}
+
+/* A rare, challenge-only identity reward: no shared repaint animations. */
+.challenge-portrait-reward{display:flex;align-items:center;gap:10px;margin-top:5px;color:#f0d9a0}
+.challenge-portrait-reward img{width:42px;height:42px;flex:none;object-fit:cover;border-radius:50%;border:2px solid #d4b36d;box-shadow:0 0 0 3px rgba(17,45,42,.9),0 5px 15px rgba(0,0,0,.35)}
+.challenge-portrait-reward small{color:inherit;line-height:1.35}

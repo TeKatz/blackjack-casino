@@ -3,7 +3,8 @@ import dicePalettes from './dicePalettes.json';
 import frameThemes from './frameThemes.json';
 import './cosmetics.css';
 const jpg=new Set(['house-guest','eclipse-raven','eclipse-lady','eclipse-moon','eclipse-sovereign','dynasty-heiress','neon-overseer','neon-emperor','neon-croupier']);
-export function portraitPath(variant:string){const id=variant.replace(/^portrait-/,'');return /^[a-z0-9-]+$/.test(id)?'/shop/portraits/'+id+'.'+(jpg.has(id)?'jpg':'png'):'';}
+const svg=new Set(['secret-guest']);
+export function portraitPath(variant:string){const id=variant.replace(/^portrait-/,'');return /^[a-z0-9-]+$/.test(id)?'/shop/portraits/'+id+'.'+(svg.has(id)?'svg':jpg.has(id)?'jpg':'png'):'';}
 const titleColors:Record<string,string>={'title-violet':'#CEAAFF','title-gold':'#FFD877','title-teal':'#68E9CD','title-rose':'#FFAACD','title-ice':'#A7DEFF','title-amber':'#FFB968','title-neon-cyan':'#63F5F0','title-neon-magenta':'#FF6BC7','title-dynasty-gold':'#FFD36E','title-dynasty-prism':'#E7B6FF'};
 export function titleStyle(variant=''):CSSProperties{
  const gradient=variant==='title-adventure-names'?'linear-gradient(90deg,#D7C17B,#8FD5B4)':variant==='title-adventure-bell'?'linear-gradient(90deg,#65D7CF,#F0D38A)':null;

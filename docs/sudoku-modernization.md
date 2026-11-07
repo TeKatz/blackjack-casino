@@ -35,3 +35,9 @@ Board mutations are computed on a cloned `SudokuBoard` that reuses the original 
 ## Remaining quality and cleanup gates
 
 The old `SudokuView`, `SudokuPremiumMenu` and associated native Lounge tests remain for emergency rollback and comparison only; they are not on the normal route. Before deletion, perform manual DPI, mouse/keyboard, accessibility, German/English, long-session and reduced-motion acceptance on actual Windows devices, then remove the WPF source and convert any test coverage not yet exercised against the React DOM. This is separate from the general WPF host removal.
+
+## Exclusive Master Key portrait reward
+
+The existing `sudoku-master-1` / **Master Key** challenge now grants the unpurchasable `portrait-secret-guest` in addition to its original 250 cosmetic coins. Only an authoritative C# completion receipt for a Master-tier Sudoku advances the milestone. Either single claim or Claim All commits the portrait and coins in the existing transactional player-profile save; failed saves do not equip or grant it. The reward stays owned after reload and is equipable in both the modern account hub and the native fallback profile. Existing saves that claimed Master Key before the portrait was added receive the cosmetic during profile normalization without a second coin grant.
+
+The initial artwork is an explicitly non-personal keyhole placeholder, rendered offline in both React and WPF. It is **not** a likeness. A later portrait asset can replace that artwork while keeping the same cosmetic and challenge IDs, preserving existing saves. The repository is public, so publishing an identifiable portrait requires the depicted person's permission. No photograph or personal image is bundled in this revision.

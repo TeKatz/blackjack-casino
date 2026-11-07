@@ -104,7 +104,8 @@ public sealed record ChallengeDefinition(
     ChallengeMetric Metric,
     decimal Goal,
     long CoinReward,
-    bool IsEndgame = false);
+    bool IsEndgame = false,
+    string? CosmeticRewardId = null);
 
 public static class ChallengeCatalog
 {
@@ -121,7 +122,7 @@ public static class ChallengeCatalog
         C("sudoku-clean-1", ChallengeCategory.Sudoku, "No Nudge Needed", "Complete a Sudoku without using a hint.", ChallengeMetric.SudokuNoHintCompleted, 1, 75),
         C("sudoku-clean-25", ChallengeCategory.Sudoku, "Pencil and Patience", "Complete 25 Sudokus without using a hint.", ChallengeMetric.SudokuNoHintCompleted, 25, 350),
         C("sudoku-expert-10", ChallengeCategory.Sudoku, "Deep Focus", "Complete 10 Expert Sudokus.", ChallengeMetric.SudokuExpertCompleted, 10, 500),
-        C("sudoku-master-1", ChallengeCategory.Sudoku, "Master Key", "Complete your first Master Sudoku.", ChallengeMetric.SudokuMasterCompleted, 1, 250),
+        C("sudoku-master-1", ChallengeCategory.Sudoku, "Master Key", "Complete your first Master Sudoku to unlock the exclusive Secret Guest portrait.", ChallengeMetric.SudokuMasterCompleted, 1, 250, CosmeticCatalog.SecretGuestPortraitId),
         E("sudoku-master-25", ChallengeCategory.Sudoku, "Stillness", "Complete 25 Master Sudokus.", ChallengeMetric.SudokuMasterCompleted, 25, 1200),
         C("sudoku-25", ChallengeCategory.Sudoku, "Quiet Evenings", "Complete 25 Sudoku puzzles.", ChallengeMetric.SudokuCompleted, 25, 250),
         C("sudoku-100", ChallengeCategory.Sudoku, "A Shelf of Grids", "Complete 100 Sudoku puzzles.", ChallengeMetric.SudokuCompleted, 100, 750),
@@ -512,7 +513,9 @@ public static class ChallengeCatalog
         string description,
         ChallengeMetric metric,
         decimal goal,
-        long coins) => new(id, category, name, description, metric, goal, coins);
+        long coins,
+        string? cosmeticRewardId = null) => new(id, category, name, description, metric, goal, coins,
+            CosmeticRewardId: cosmeticRewardId);
 
     private static ChallengeDefinition E(
         string id,

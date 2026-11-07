@@ -91,6 +91,14 @@ internal partial class ProgressionWindow
 
         var rewardStack = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
         rewardStack.Children.Add(CoinText($"◆ {challenge.CoinReward:N0}", 12, FontWeights.Bold));
+        if (challenge.CosmeticRewardId is string cosmeticId)
+        {
+            rewardStack.Children.Add(new TextBlock
+            {
+                Text = "+ " + CosmeticCatalog.Get(cosmeticId).Name + " · exclusive portrait",
+                FontSize = 10, Foreground = CoinBrush, TextWrapping = TextWrapping.Wrap,
+            });
+        }
         if (challenge.Category == ChallengeCategory.Jigsaw)
             rewardStack.Children.Add(new TextBlock
             {

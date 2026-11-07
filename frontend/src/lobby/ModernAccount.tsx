@@ -1,13 +1,6 @@
-import {PlayerPortrait,CosmeticTitle} from './Cosmetics';
+import {PlayerPortrait,CosmeticTitle,portraitPath} from './Cosmetics';
 import {useEffect,useState} from 'react';
 import type {AccountSnapshot} from './recordsBridge';
-const jpgPortraits = new Set(['house-guest','eclipse-raven','eclipse-lady','eclipse-moon',
- 'eclipse-sovereign','dynasty-heiress','neon-overseer','neon-emperor','neon-croupier']);
-function portraitImage(variant:string):string|null {
- const id=variant.replace(/^portrait-/,'');
- if(!/^[a-z0-9-]+$/.test(id))return null;
- return '/shop/portraits/'+id+'.'+(jpgPortraits.has(id)?'jpg':'png');
-}
 type Props={
  data:AccountSnapshot;loaded:boolean;language:'en'|'de';pending:string|null;
  onBack:()=>void;onRoute:(route:string)=>void;
@@ -74,8 +67,8 @@ export function ModernAccount({data,loaded,language,pending,onBack,onRoute,onEdi
  const active=item.id===(group==='portraits'?data.equippedPortraitId:data.equippedTitleId);
  return <article className={'identity-cosmetic '+(active?'selected':'')} key={item.id}>
  <div className="identity-cosmetic-symbol" aria-hidden="true">
- {group==='portraits'&&portraitImage(item.visualVariant)?
- <img alt="" src={portraitImage(item.visualVariant)!} loading="lazy"
+ {group==='portraits'&&portraitPath(item.visualVariant)?
+ <img alt="" src={portraitPath(item.visualVariant)} loading="lazy"
  onError={e=>{e.currentTarget.style.display='none';}}/>:group==='portraits'?'♠':'✦'}
  </div>
  <div><strong>{group==='titles'?<CosmeticTitle variant={item.visualVariant}>{item.name}</CosmeticTitle>:item.name}</strong><p>{item.description}</p></div>

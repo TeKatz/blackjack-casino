@@ -23,7 +23,7 @@
   <data name="Challenge.sudoku-expert-10.Name" xml:space="preserve"><value>Tiefe Konzentration</value></data>
   <data name="Challenge.sudoku-expert-10.Description" xml:space="preserve"><value>Löse 10 Experten-Sudokus.</value></data>
   <data name="Challenge.sudoku-master-1.Name" xml:space="preserve"><value>Meisterschlüssel</value></data>
-  <data name="Challenge.sudoku-master-1.Description" xml:space="preserve"><value>Löse dein erstes Meister-Sudoku.</value></data>
+  <data name="Challenge.sudoku-master-1.Description" xml:space="preserve"><value>Löse dein erstes Meister-Sudoku und schalte das exklusive Porträt „Der geheime Gast“ frei.</value></data>
   <data name="Challenge.sudoku-master-25.Name" xml:space="preserve"><value>Innere Ruhe</value></data>
   <data name="Challenge.sudoku-master-25.Description" xml:space="preserve"><value>Löse 25 Meister-Sudokus.</value></data>
   <data name="Challenge.sudoku-25.Name" xml:space="preserve"><value>Ruhige Abende</value></data>

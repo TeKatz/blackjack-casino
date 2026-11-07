@@ -23,7 +23,7 @@
   <data name="Challenge.sudoku-expert-10.Name" xml:space="preserve"><value>Deep Focus</value></data>
   <data name="Challenge.sudoku-expert-10.Description" xml:space="preserve"><value>Complete 10 Expert Sudokus.</value></data>
   <data name="Challenge.sudoku-master-1.Name" xml:space="preserve"><value>Master Key</value></data>
-  <data name="Challenge.sudoku-master-1.Description" xml:space="preserve"><value>Complete your first Master Sudoku.</value></data>
+  <data name="Challenge.sudoku-master-1.Description" xml:space="preserve"><value>Complete your first Master Sudoku to unlock the exclusive Secret Guest portrait.</value></data>
   <data name="Challenge.sudoku-master-25.Name" xml:space="preserve"><value>Stillness</value></data>
   <data name="Challenge.sudoku-master-25.Description" xml:space="preserve"><value>Complete 25 Master Sudokus.</value></data>
   <data name="Challenge.sudoku-25.Name" xml:space="preserve"><value>Quiet Evenings</value></data>
