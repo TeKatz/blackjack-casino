@@ -298,3 +298,86 @@
 .record-page,.modern-shop{animation:casino-tab-in .24s ease-out both}
 @keyframes casino-tab-in{from{opacity:.35;transform:translateY(5px)}to{opacity:1;transform:none}}
 [data-reduced=true] .record-page,[data-reduced=true] .modern-shop{animation:none}
+
+/* P2 premium Vault facade; all economics and persisted receipts remain native. */
+.vault-page .vault-chamber{position:relative;isolation:isolate;overflow:hidden;
+ grid-template-columns:minmax(310px,.92fr) minmax(0,1.28fr);gap:32px;min-height:342px;padding:28px 36px;
+ border-color:color-mix(in srgb,var(--vault-accent) 75%,#ffe0a0);
+ background:radial-gradient(ellipse at 23% 45%,#52706469,transparent 44%),
+ radial-gradient(ellipse at 80% 10%,#806b453c,transparent 57%),
+ linear-gradient(140deg,#0f2726,#061a18 72%);
+ box-shadow:inset 0 1px #f4dab66b,inset 0 0 60px #0009,0 16px 34px #0006;}
+.vault-page .vault-chamber::before{content:"";position:absolute;inset:9px;
+ border:1px solid color-mix(in srgb,var(--vault-accent) 40%,transparent);
+ border-radius:9px;pointer-events:none;}
+.vault-page .vault-chamber-art{position:relative;min-height:282px;perspective:1000px;}
+.vault-page .vault-stage-glow{position:absolute;width:min(100%,390px);height:250px;border-radius:50%;
+ background:radial-gradient(ellipse,color-mix(in srgb,var(--vault-accent) 30%,transparent),transparent 72%);filter:blur(13px);}
+.vault-page .vault-safe-body{position:relative;width:min(100%,340px);height:272px;
+ border:10px ridge var(--vault-accent);border-radius:22px;
+ background:linear-gradient(135deg,#eee7c5 0%,#536660 14%,#1b302e 50%,#111b1c 85%,#9b9580);
+ box-shadow:inset 0 0 0 4px #061917,inset 0 0 30px #000c,
+ 0 18px 30px #000c,0 0 30px color-mix(in srgb,var(--vault-accent) 30%,transparent);
+ transform:rotateY(-8deg) rotateX(2deg);transform-style:preserve-3d;}
+.vault-page .vault-safe-body::after{content:"";position:absolute;inset:8px;
+ border:1px solid #f1e1aa77;border-radius:9px;pointer-events:none;}
+.vault-page .vault-door{position:absolute;inset:13px;border:7px ridge var(--vault-accent);
+ width:auto;height:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;
+ gap:7px;transform-origin:left center;border-radius:13px;
+ background:repeating-linear-gradient(125deg,#ffffff0a 0 2px,transparent 2px 7px),
+ radial-gradient(circle at 45% 28%,#8d9c92,#314d48 44%,#0a2222 90%);
+ box-shadow:inset 0 0 0 4px #142d2b,inset 0 0 24px #000b,0 0 14px #0008;}
+.vault-page .vault-door::before{content:"";position:absolute;inset:12px;
+ border:1px solid #eddca68c;border-radius:8px;pointer-events:none;}
+.vault-page .vault-door-engraving{font:bold 10px/1.2 Georgia,serif;letter-spacing:.24em;
+ color:#ffefbc;text-shadow:0 2px 4px #000;transform:none;}
+.vault-page .vault-safe-wheel{display:grid;place-items:center;width:114px;height:114px;
+ border:8px ridge var(--vault-accent);border-radius:50%;
+ background:radial-gradient(circle,#d5dec1,#627f78 24%,#132c2d 68%,#091c1e);
+ box-shadow:0 5px 14px #000b,inset 0 0 12px #000a,0 0 16px color-mix(in srgb,var(--vault-accent) 47%,transparent);
+ color:#f9eac4;font:normal 75px Georgia,serif!important;text-shadow:0 3px 8px #000;transform:none;}
+.vault-page .vault-door b{position:static;font:normal 13px Georgia,serif;
+ color:#ffebc3;letter-spacing:.06em;text-shadow:0 2px 5px #000;}
+.vault-page .vault-hinge{position:absolute;right:-13px;width:12px;height:86px;border-radius:6px;
+ background:linear-gradient(90deg,#162728,var(--vault-accent),#f3e6bd,#283635);box-shadow:0 0 9px #000b;}
+.vault-page .vault-bolt{position:absolute;width:13px;height:13px;z-index:2;
+ border:2px ridge #e9d2a0;border-radius:50%;background:#1a3432;box-shadow:0 1px 4px #000;}
+.vault-page .bolt-nw{top:7px;left:7px}.vault-page .bolt-ne{top:7px;right:7px}
+.vault-page .bolt-sw{bottom:7px;left:7px}.vault-page .bolt-se{bottom:7px;right:7px}
+.vault-page .vault-chamber-details{position:relative;z-index:1;min-width:0;}
+.vault-page .vault-chamber-details h2{color:#ffe8b9;}
+.vault-page .vault-progress-track{height:20px;border-color:#a69875;box-shadow:inset 0 2px 8px #000b;}
+.vault-page .vault-break:disabled{opacity:1;cursor:not-allowed;color:#d4d0b8;
+ border-color:#697867;background:linear-gradient(125deg,#4b5948,#273b33);
+ filter:none;box-shadow:inset 0 1px #e2d8b633;}
+.vault-page .vault-tier-track{gap:9px;margin:18px 0;}
+.vault-page .vault-tier-step{--tier-tone:#c99568;--tier-light:#f1d4a2;
+ position:relative;display:flex;align-items:center;justify-content:center;gap:9px;min-height:52px;
+ border-color:color-mix(in srgb,var(--tier-tone) 65%,#233d36);
+ background:linear-gradient(140deg,color-mix(in srgb,var(--tier-tone) 19%,#102a22),#0d261f);
+ color:var(--tier-light);font-size:11px;letter-spacing:.11em;
+ box-shadow:inset 0 1px color-mix(in srgb,var(--tier-light) 20%,transparent);}
+.vault-page .vault-tier-step[data-tier=silver]{--tier-tone:#a3bed2;--tier-light:#d4e7ee;}
+.vault-page .vault-tier-step[data-tier=gold]{--tier-tone:#eac575;--tier-light:#f8dfaa;}
+.vault-page .vault-tier-step[data-tier=platinum]{--tier-tone:#8ecdd1;--tier-light:#c6f3ec;}
+.vault-page .vault-tier-step[data-tier=diamond]{--tier-tone:#86d4ff;--tier-light:#d1f1ff;}
+.vault-page .vault-tier-gem{font-style:normal;color:var(--tier-tone);font-size:13px;}
+.vault-page .vault-tier-step.active{border-color:var(--tier-tone);
+ background:linear-gradient(135deg,color-mix(in srgb,var(--tier-tone) 35%,#16392e),#172b29);
+ color:#fff4d4;box-shadow:inset 0 1px #fff8d558,0 0 16px color-mix(in srgb,var(--tier-tone) 28%,transparent);}
+.vault-page .vault-tier-step:not(.active):not(.earned){opacity:.77;}
+.vault-page .vault-chamber.is-ready .vault-safe-body{animation:vault-premium-ready 3.6s ease-in-out infinite;}
+@keyframes vault-premium-ready{50%{filter:brightness(1.11);}}
+@media(max-width:1200px){
+ .vault-page .vault-chamber{grid-template-columns:minmax(235px,.8fr) minmax(0,1.2fr);gap:20px;padding:18px;}
+ .vault-page .vault-safe-body{width:min(100%,275px);height:235px;}
+ .vault-page .vault-chamber-art{min-height:235px;}
+}
+@media(max-width:800px){
+ .vault-page .vault-chamber{grid-template-columns:1fr;padding:18px;gap:7px;}
+ .vault-page .vault-safe-body{width:min(100%,250px);height:210px;}
+ .vault-page .vault-chamber-art{min-height:216px;}
+ .vault-page .vault-tier-track{grid-template-columns:repeat(auto-fit,minmax(115px,1fr));}
+}
+@media(prefers-reduced-motion:reduce){.vault-page .vault-chamber.is-ready .vault-safe-body{animation:none;}}
+.casino-lobby-shell[data-reduced="true"] .vault-page .vault-chamber.is-ready .vault-safe-body{animation:none;}

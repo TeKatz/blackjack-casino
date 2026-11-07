@@ -288,3 +288,22 @@ dialog.album-inspector-backdrop::backdrop{background:#000c}
 
 
 @media(min-width:1100px){.album-page .record-hero{min-height:135px;padding:14px 20px}.album-page .record-hero h1{font-size:32px}.album-page .record-hero-side{padding:10px;min-width:155px}.album-card-grid{grid-template-columns:repeat(6,minmax(0,1fr))}.album-card-grid.ultra{grid-template-columns:repeat(5,minmax(0,1fr))}.album-library{grid-template-columns:190px minmax(0,1fr)}}
+
+/* P2: one archive scroll surface; no nested scrollbar in Collections. */
+.album-page .album-themes{max-height:none;overflow:visible;align-self:start;padding:12px 8px;}
+.album-page .album-theme-item{min-height:36px;margin-bottom:4px;padding:7px 6px;gap:5px;}
+.album-page .album-theme-name{font-size:11px;}
+.album-page .album-card-grid,.album-page .album-card-grid.ultra{
+ display:grid;grid-template-columns:repeat(auto-fill,minmax(126px,156px));
+ gap:11px;justify-content:start;align-items:start;}
+.album-page .album-card-grid>.album-collection-card{max-width:156px;}
+.album-page .album-card-grid .album-card-details{min-height:45px;padding:5px 3px 2px;}
+.album-page .album-card-grid .album-card-details strong{font-size:12px;}
+@media(max-width:1150px){
+ .album-page .album-card-grid,.album-page .album-card-grid.ultra{
+  grid-template-columns:repeat(auto-fill,minmax(108px,145px));gap:9px;}
+}
+@media(max-width:710px){
+ .album-page .album-card-grid,.album-page .album-card-grid.ultra{
+  grid-template-columns:repeat(auto-fill,minmax(105px,1fr));}
+}

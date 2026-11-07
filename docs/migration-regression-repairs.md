@@ -42,3 +42,13 @@ Windows acceptance should include a fresh launch and News reopening, Sudoku eras
 ## Rollback and save compatibility
 
 The repair can be reverted as a source change. It introduces no save schema migration, new game RNG, payout override or replacement IDs. Existing saves and native completion receipts remain authoritative. The new $100 archived-season rewards apply only when a tier is newly completed; rollback does not revoke previously granted play money.
+
+## P2 Batch 1 — lobby navigation, Collections and Vault (2026-11-07)
+
+The migrated lobby uses semantic, inline gold-stroke navigation SVGs instead of deriving menu icons from atlas positions. The shared styling stays emerald/gold, while Daily Login is visually separated in indigo and champagne tones. The Midnight Dice artwork no longer receives a duplicate dice pseudo-layer. The hover presentation now uses an isolated, non-scaling preview layer with a covered art/info seam.
+
+The collector archive keeps the actual cropped card illustrations and inspector, but the browse grid uses smaller cards and the 16-theme collection picker grows inside the page's single scroll surface. The old nested Collections scrollbar is deliberately removed; pack-opening animations and their persisted receipts are untouched in this batch.
+
+Casino Vault has a larger rendered safe with layered metal, hinges, rivets, a tier-specific accent and visible bronze/silver/gold/platinum/diamond milestones. Locked and ready actions retain their original state constraints. No contribution rate, payout formula, vault progression, rewarded pack, wallet or persisted state changed. The larger facade is CSS/DOM, not a new 3D engine.
+
+**Acceptance:** inspect 1080p, 1440p, compact and DPI-scaled Windows presentations; hover over the first four tiles without an art/info color stripe; confirm icon semantics after navigating and locale switching; verify that the theme picker does not scroll independently; inspect cards and the full card detail dialog; test locked/ready/pending/reward Vault states, including reduced motion. Automated frontend, .NET and real WebView2 CI smoke remain required; subjective quality depends on user device review.
