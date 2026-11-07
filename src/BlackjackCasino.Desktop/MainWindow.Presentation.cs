@@ -18,8 +18,10 @@ public partial class MainWindow
 
     private void SyncHostMusic()
     {
-        hostMusic.Sync(HostMusicSettings, !KniffelPageOpen &&
-            !ModernLoungeOpen && !ModernReelsOpen && !ModernNineLivesOpen && !ModernNeonVaultOpen && (embeddedGameShell is null || keepHostMusicForEmbeddedGame));
+        bool hostAllowed = !KniffelPageOpen && !ModernDiceOpen &&
+            !ModernLoungeOpen && !ModernReelsOpen && !ModernNineLivesOpen && !ModernNeonVaultOpen &&
+            (embeddedGameShell is null || keepHostMusicForEmbeddedGame);
+        hostMusic.Sync(HostMusicSettings, hostAllowed, lobby?.IsVisible == true && hostAllowed);
     }
 
     private void PresentationLoaded(object sender, RoutedEventArgs e)
@@ -29,7 +31,7 @@ public partial class MainWindow
         InitializeVaultFeature();
         ApplyCasinoDropdownStyles();
         InitializeLobby();
-        hostMusic.Start(HostMusicSettings);
+        hostMusic.Start(HostMusicSettings, lobby?.IsVisible == true);
     }
 
     private void PresentationClosed(object? sender, EventArgs e)

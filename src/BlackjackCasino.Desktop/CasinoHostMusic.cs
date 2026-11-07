@@ -1,30 +1,43 @@
 namespace BlackjackCasino.Desktop;
 
-/// <summary>
-/// Host soundtrack lifecycle and exclusive game-audio handoff, independent of WPF.
-/// The caller selects the active area; this router owns the player and its cleanup.
-/// </summary>
+/// <summary>Host music handoff: the lobby has its own music, without overlap with game music.</summary>
 internal sealed class CasinoHostMusic : IDisposable
 {
-    private readonly BackgroundMusic backgroundMusic = new();
+    private BackgroundMusic backgroundMusic = new();
+    private Soundtrack activeTrack = Soundtrack.Blackjack;
+    private bool started;
 
-    internal void Start(AreaPresentationSettings settings)
+    internal void Start(AreaPresentationSettings settings, bool lobbyVisible = false)
     {
+        if (started) { Sync(settings, true, lobbyVisible); return; }
+        activeTrack = lobbyVisible ? Soundtrack.Lobby : Soundtrack.Blackjack;
+        backgroundMusic = new BackgroundMusic(activeTrack);
         backgroundMusic.Start(settings.MusicEnabled, settings.MusicVolume);
+        started = true;
         BackgroundMusic.Prewarm();
         SlotAudio.Prewarm();
     }
 
-    internal void Sync(AreaPresentationSettings settings, bool areaAllowsHostMusic)
+    internal void Sync(AreaPresentationSettings settings, bool areaAllowsHostMusic, bool lobbyVisible = false)
     {
-        backgroundMusic.SetEnabled(settings.MusicEnabled && areaAllowsHostMusic);
-        backgroundMusic.SetVolume(settings.MusicVolume);
+        if (!started) return;
+        Soundtrack desired = lobbyVisible ? Soundtrack.Lobby : Soundtrack.Blackjack;
+        if (areaAllowsHostMusic && activeTrack != desired)
+        {
+            backgroundMusic.Dispose();
+            activeTrack = desired;
+            backgroundMusic = new BackgroundMusic(desired);
+            backgroundMusic.Start(settings.MusicEnabled, settings.MusicVolume);
+        }
+        else
+        {
+            backgroundMusic.SetEnabled(settings.MusicEnabled && areaAllowsHostMusic);
+            backgroundMusic.SetVolume(settings.MusicVolume);
+        }
     }
 
     internal void Mute() => backgroundMusic.SetEnabled(false);
 
-    // Native modal recovery preserves the original enable-only restore;
-    // closing Midnight Dice also updates the currently selected area's volume.
     internal void Resume(AreaPresentationSettings settings, bool updateVolume = false)
     {
         backgroundMusic.SetEnabled(settings.MusicEnabled);

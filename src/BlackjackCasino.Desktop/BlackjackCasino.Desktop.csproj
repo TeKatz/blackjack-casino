@@ -21,6 +21,8 @@
     <None Include="Assets/Empire/*.png" Link="ModernFrontend/empire-art/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Resource Include="Assets\Lounge\*.jpg" />
     <Resource Include="Assets/midnight-club.ico" />
+    <!-- Optional user-supplied MP3s, copied into both build and publish outputs. -->
+    <None Include="Assets/Music/Licensed/*.mp3" Link="Music/Licensed/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Resource Include="Assets\NineLives\*.png" />
     <Resource Include="Assets\NineLives\*.jpg" />
   </ItemGroup>
