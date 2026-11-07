@@ -36,6 +36,8 @@ internal sealed class NativeShellForm : Form
     private ModernNeonVaultSession? neonEpoch;
     private ModernNineLivesSession? nineEpoch;
     private ModernMergeSession? mergeEpoch;
+    private ModernDiceSession? diceEpoch;
+    private bool diceAiScheduling;
     private string? activeMode;
     private bool listening, ready, browserFailed, closing;
     private readonly string frontendFolder = Path.Combine(AppContext.BaseDirectory, "ModernFrontend");
@@ -81,6 +83,7 @@ internal sealed class NativeShellForm : Form
         navigation.Controls.Add(MakeButton("Neon Vault", () => _ = OpenModeAsync("neon-vault")));
         navigation.Controls.Add(MakeButton("Nine Lives", () => _ = OpenModeAsync("nine-lives")));
         navigation.Controls.Add(MakeButton("Midnight Merge", () => _ = OpenModeAsync("midnight-merge")));
+        navigation.Controls.Add(MakeButton("Midnight Dice", () => _ = OpenModeAsync("midnight-dice")));
         navigation.Controls.Add(new Label
         {
             AutoSize = true, Text = "NATIVE HOST • PREVIEW",
@@ -178,6 +181,7 @@ internal sealed class NativeShellForm : Form
         actions.Controls.Add(MakeButton("NEON VAULT", () => _ = OpenModeAsync("neon-vault")));
         actions.Controls.Add(MakeButton("NINE LIVES", () => _ = OpenModeAsync("nine-lives")));
         actions.Controls.Add(MakeButton("MIDNIGHT MERGE", () => _ = OpenModeAsync("midnight-merge")));
+        actions.Controls.Add(MakeButton("MIDNIGHT DICE", () => _ = OpenModeAsync("midnight-dice")));
         page.Controls.Add(actions, 0, 2);
         page.Controls.Add(new Label
         {
@@ -207,13 +211,18 @@ internal sealed class NativeShellForm : Form
             runtime.CloseMerge();
             mergeEpoch = null;
         }
+        if (activeMode == "midnight-dice")
+        {
+            runtime.CloseDice();
+            diceEpoch = null;
+        }
         ShowHome();
     }
 
     private async Task OpenModeAsync(string mode)
     {
         if (closing || mode is not ("blackjack" or "reels" or "neon-vault" or "nine-lives"
-            or "midnight-merge")) return;
+            or "midnight-merge" or "midnight-dice")) return;
         if (mode != "blackjack" && runtime.HandInProgress)
         {
             status.Text = "Finish the Blackjack hand first.";
@@ -227,10 +236,16 @@ internal sealed class NativeShellForm : Form
             runtime.CloseMerge();
             mergeEpoch = null;
         }
+        if (activeMode == "midnight-dice" && mode != "midnight-dice")
+        {
+            runtime.CloseDice();
+            diceEpoch = null;
+        }
         if (mode == "reels") runtime.OpenReels();
         if (mode == "neon-vault") runtime.OpenNeonVault();
         if (mode == "nine-lives") runtime.OpenNineLives();
         if (mode == "midnight-merge") runtime.OpenMerge();
+        if (mode == "midnight-dice") runtime.OpenDice();
         DisposeBrowser();
         activeMode = mode;
         listening = ready = browserFailed = false;
@@ -240,6 +255,7 @@ internal sealed class NativeShellForm : Form
         nineEpoch = mode == "nine-lives" ? new ModernNineLivesSession() : null;
         // Keep Merge's request receipts when only the WebView process restarts.
         mergeEpoch = mode == "midnight-merge" ? mergeEpoch ?? new ModernMergeSession() : null;
+        diceEpoch = mode == "midnight-dice" ? diceEpoch ?? new ModernDiceSession() : null;
 
         content.Controls.Clear();
         string document = PageFor(mode);
@@ -304,6 +320,7 @@ internal sealed class NativeShellForm : Form
         "neon-vault" => "neon-vault.html",
         "nine-lives" => "nine-lives.html",
         "midnight-merge" => "midnight-merge.html",
+        "midnight-dice" => "midnight-dice.html",
         _ => throw new ArgumentOutOfRangeException(nameof(mode)),
     };
 
@@ -314,6 +331,7 @@ internal sealed class NativeShellForm : Form
         "neon-vault" => ModernNeonVaultProtocol.Trusted(source),
         "nine-lives" => ModernNineLivesProtocol.Trusted(source),
         "midnight-merge" => ModernMergeProtocol.Trusted(source),
+        "midnight-dice" => ModernDiceProtocol.Trusted(source),
         _ => false,
     };
 
@@ -337,6 +355,7 @@ internal sealed class NativeShellForm : Form
                 case "neon-vault.ready" when activeMode == "neon-vault":
                 case "nine-lives.ready" when activeMode == "nine-lives":
                 case "midnight-merge.ready" when activeMode == "midnight-merge":
+                case "midnight-dice.ready" when activeMode == "midnight-dice":
                     listening = true;
                     RefreshGameSnapshot();
                     BeginInvoke(new Action(RefreshGameSnapshot));
@@ -346,16 +365,19 @@ internal sealed class NativeShellForm : Form
                 case "neon-vault.ui-ready" when activeMode == "neon-vault":
                 case "nine-lives.ui-ready" when activeMode == "nine-lives":
                 case "midnight-merge.ui-ready" when activeMode == "midnight-merge":
+                case "midnight-dice.ui-ready" when activeMode == "midnight-dice":
                     if (!listening) break;
                     ready = true;
                     watchdog.Stop();
                     status.Text = runtime.Status;
+                    if (activeMode == "midnight-dice") _ = AdvanceDiceAiIfNeededAsync();
                     break;
                 case "blackjack.refresh" when activeMode == "blackjack":
                 case "reels.refresh" when activeMode == "reels":
                 case "neon-vault.refresh" when activeMode == "neon-vault":
                 case "nine-lives.refresh" when activeMode == "nine-lives":
                 case "midnight-merge.refresh" when activeMode == "midnight-merge":
+                case "midnight-dice.refresh" when activeMode == "midnight-dice":
                     RefreshGameSnapshot();
                     break;
                 case "blackjack.close" when activeMode == "blackjack":
@@ -363,6 +385,7 @@ internal sealed class NativeShellForm : Form
                 case "neon-vault.close" when activeMode == "neon-vault":
                 case "nine-lives.close" when activeMode == "nine-lives":
                 case "midnight-merge.close" when activeMode == "midnight-merge":
+                case "midnight-dice.close" when activeMode == "midnight-dice":
                     BeginInvoke(new Action(ReturnToHome));
                     break;
                 case "blackjack.command" when activeMode == "blackjack" && listening && ready:
@@ -416,9 +439,21 @@ internal sealed class NativeShellForm : Form
                     RefreshGameSnapshot();
                     break;
                 }
+                case "midnight-dice.command" when activeMode == "midnight-dice" && listening && ready:
+                {
+                    ModernDiceCommand? command = ModernDiceProtocol.Parse(args.WebMessageAsJson);
+                    if (command is null || diceEpoch is null) break;
+                    ModernDiceReply reply = diceEpoch.Execute(command, runtime.ApplyDice);
+                    Post("midnight-dice.result", reply);
+                    status.Text = reply.Message;
+                    RefreshGameSnapshot();
+                    if (runtime.DiceWaiting) _ = AdvanceDiceAiIfNeededAsync();
+                    break;
+                }
                 case "neon-vault.recover" when activeMode == "neon-vault" && listening && ready:
                 case "nine-lives.recover" when activeMode == "nine-lives" && listening && ready:
                 case "midnight-merge.recover" when activeMode == "midnight-merge" && listening && ready:
+                case "midnight-dice.recover" when activeMode == "midnight-dice" && listening && ready:
                     ScheduleFailure("The game requested WebView2 recovery.");
                     break;
                 // Reel-stop and animation-complete signals are presentation cues,
@@ -472,6 +507,39 @@ internal sealed class NativeShellForm : Form
                 Revision = runtime.MergeRevision,
                 State = runtime.MergeSnapshot(),
             });
+        else if (activeMode == "midnight-dice" && diceEpoch is not null)
+            Post("midnight-dice.snapshot", new
+            {
+                Version = ModernDiceProtocol.Version,
+                Session = diceEpoch.Id,
+                diceEpoch.Revision,
+                State = runtime.DiceSnapshot(),
+            });
+    }
+
+    private async Task AdvanceDiceAiIfNeededAsync()
+    {
+        if (closing || diceAiScheduling || activeMode != "midnight-dice"
+            || !runtime.DiceWaiting) return;
+        diceAiScheduling = true;
+        try
+        {
+            bool changed = await runtime.AdvanceDiceOpponentsAsync();
+            if (activeMode == "midnight-dice" && !closing)
+            {
+                if (changed) diceEpoch?.Bump();
+                RefreshGameSnapshot();
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+            or InvalidOperationException or OverflowException)
+        {
+            if (!closing) status.Text = "AI opponent recovery: " + ex.Message;
+        }
+        finally
+        {
+            diceAiScheduling = false;
+        }
     }
 
     private void Post(string type, object data)
