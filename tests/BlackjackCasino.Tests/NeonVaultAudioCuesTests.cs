@@ -6,14 +6,15 @@ namespace BlackjackCasino.Tests;
 public sealed class NeonVaultAudioCuesTests
 {
     [Theory]
-    [InlineData(SlotSound.NeonLockdown)]
-    [InlineData(SlotSound.NeonOverload)]
-    [InlineData(SlotSound.NeonTotalBlackout)]
-    [InlineData(SlotSound.NeonOverride)]
-    [InlineData(SlotSound.NeonBigWin)]
-    [InlineData(SlotSound.NeonMegaWin)]
-    public void HighRollerCuesAreOfflineDecodableAndBounded(SlotSound cue)
+    [InlineData("NeonLockdown")]
+    [InlineData("NeonOverload")]
+    [InlineData("NeonTotalBlackout")]
+    [InlineData("NeonOverride")]
+    [InlineData("NeonBigWin")]
+    [InlineData("NeonMegaWin")]
+    public void HighRollerCuesAreOfflineDecodableAndBounded(string cueName)
     {
+        SlotSound cue = Enum.Parse<SlotSound>(cueName);
         MethodInfo synthesis = typeof(SlotAudio).GetMethod("BuildCue",
             BindingFlags.Static | BindingFlags.NonPublic)!;
         byte[] wave = (byte[])synthesis.Invoke(null, [cue])!;
