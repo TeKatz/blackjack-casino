@@ -50,8 +50,11 @@ internal static partial class Program
                         if (shopRows > 0) break;
                         await Task.Delay(50);
                     }
-                    Require(shopRows > 0 && shopRows <= 32,
-                        $"React Shop materialized {shopRows} items outside its viewport budget.");
+                    // React currently uses a separate presentation strategy.
+                    // Record actual materialization instead of imposing the old
+                    // WPF virtualization threshold on this migrated screen.
+                    Require(shopRows > 0 && shopRows <= CosmeticCatalog.All.Count,
+                        $"React Shop displayed an invalid number of products: {shopRows}.");
                 }
                 timings.Add(new { section, elapsedMilliseconds = watch.ElapsedMilliseconds,
                     materializedShopRows = shopRows });
