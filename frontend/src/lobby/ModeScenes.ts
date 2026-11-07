@@ -195,9 +195,16 @@ function placeArt(s:Scene,time:number,motion:boolean){
   // The SVG foreground and Pixi micro-objects share EXACTLY one transform.
   // Using the base cover scale here made the lit windows, dice and merge
   // objects drift off the painted positions whenever the card was hovered.
-  const artScale=s.front?.scale.x ?? coverSize(w,h);
-  const artCenterX=s.front?.position.x ?? w*.5;
-  const artCenterY=s.front?.position.y ?? h*.5;
+  // Only the corrected tiles need a foreground-locked overlay. Preserve
+  // the already-approved Blackjack, Lounge, Reels and Vault motion exactly.
+  const foregroundLocked=s.id==='kniffel'||s.id==='casino-empire'
+    ||s.id==='midnight-manor'||s.id==='midnight-merge';
+  const artScale=foregroundLocked
+    ? (s.front?.scale.x ?? coverSize(w,h)) : coverSize(w,h);
+  const artCenterX=foregroundLocked
+    ? (s.front?.position.x ?? w*.5) : w*.5+dx*.15;
+  const artCenterY=foregroundLocked
+    ? (s.front?.position.y ?? h*.5) : h*.5+dy*.15;
   s.detail.layer.scale.set(artScale);
   s.detail.layer.position.set(artCenterX-480*artScale,
     artCenterY-220*artScale);
