@@ -18,7 +18,7 @@ public partial class MainWindow
     private BackgroundMusic? modernNeonVaultMusic;
     private string? modernNeonVaultAudioSpinId;
     private readonly HashSet<int> modernNeonVaultStopped = [];
-    private bool modernNeonVaultOutcomePlayed, modernNeonVaultLevelUp;
+    private bool modernNeonVaultOutcomePlayed, modernNeonVaultImpactPlayed, modernNeonVaultLevelUp;
     private bool ModernNeonVaultOpen => modernNeonVaultView is not null;
 
     private void OpenModernNeonVault()
@@ -52,6 +52,7 @@ public partial class MainWindow
         }
         modernNeonVaultAudioSpinId = modernNeonVaultLastSpin?.SpinId.ToString("D");
         modernNeonVaultOutcomePlayed = modernNeonVaultLastSpin is not null;
+        modernNeonVaultImpactPlayed = modernNeonVaultLastSpin is not null;
         modernNeonVaultStopped.Clear();
         modernNeonVaultAudio = new SlotAudio();
         var presentation = preferences.Presentation("neon-vault");
@@ -66,7 +67,7 @@ public partial class MainWindow
                 preferences.Presentation("neon-vault").AnimationsEnabled,
                 Localization.Language == UiLanguagePreference.German ? "de" : "en"),
             ApplyModernNeonVaultAction, CloseModernNeonVault, OnModernNeonVaultFailed,
-            ModernNeonVaultStopSound, ModernNeonVaultCompleteSound);
+            ModernNeonVaultStopSound, ModernNeonVaultImpactSound, ModernNeonVaultCompleteSound);
         MountModernSurface(modernNeonVaultView);
         // Attach the live WebView before collapsing the lobby: WPF must never
         // briefly expose the retired Blackjack surface between destinations.
@@ -127,6 +128,7 @@ public partial class MainWindow
                     modernNeonVaultAudioSpinId = spin.SpinId.ToString("D");
                     modernNeonVaultStopped.Clear();
                     modernNeonVaultOutcomePlayed = false;
+                    modernNeonVaultImpactPlayed = false;
                     modernNeonVaultAudio?.Play(SlotSound.Start,
                         preferences.Presentation("neon-vault").SoundEnabled);
                     if (!preferences.Presentation("neon-vault").AnimationsEnabled)
@@ -150,19 +152,47 @@ public partial class MainWindow
             preferences.Presentation("neon-vault").SoundEnabled);
     }
 
+    // The verified browser event is cosmetic only; this callback never touches
+    // the bankroll, RNG, progression or bonus state. A matching spin ID and an
+    // independent gate prevent duplicate impact audio after React rerenders.
+    private void ModernNeonVaultImpactSound(string id)
+    {
+        if (id != modernNeonVaultAudioSpinId || modernNeonVaultImpactPlayed
+            || modernNeonVaultLastSpin is null) return;
+        modernNeonVaultImpactPlayed = true;
+        NeonVaultSpinResult result = modernNeonVaultLastSpin;
+        SlotSound? cue = result.Blackout switch
+        {
+            NeonVaultBlackout.Total => SlotSound.NeonTotalBlackout,
+            NeonVaultBlackout.Overload => SlotSound.NeonOverload,
+            NeonVaultBlackout.Blackout => SlotSound.NeonLockdown,
+            _ => result.SecurityOverrideReel.HasValue ? SlotSound.NeonOverride
+                : result.ExpandedReels.Count > 0 ? SlotSound.Wild
+                : result.FreeSpinsAwarded > 0 ? SlotSound.FreeSpins
+                : null,
+        };
+        if (cue is SlotSound impact)
+            modernNeonVaultAudio?.Play(impact, preferences.Presentation("neon-vault").SoundEnabled);
+    }
+
     private void ModernNeonVaultCompleteSound(string id)
     {
-        if (id != modernNeonVaultAudioSpinId || modernNeonVaultOutcomePlayed || modernNeonVaultLastSpin is null) return;
+        if (id != modernNeonVaultAudioSpinId || modernNeonVaultOutcomePlayed
+            || modernNeonVaultLastSpin is null) return;
+        // Reduced motion / animations-off skips the visual impact frame. Native
+        // audio still fires once and does not rely on an untrusted animation tick.
+        ModernNeonVaultImpactSound(id);
         modernNeonVaultOutcomePlayed = true;
         NeonVaultSpinResult result = modernNeonVaultLastSpin;
         bool enabled = preferences.Presentation("neon-vault").SoundEnabled;
-        if (result.Blackout != NeonVaultBlackout.None)
-            modernNeonVaultAudio?.Play(SlotSound.Blackout, enabled);
-        else if (result.ExpandedReels.Count > 0 || result.SecurityOverrideReel.HasValue)
-            modernNeonVaultAudio?.Play(SlotSound.Wild, enabled);
-        modernNeonVaultAudio?.Play(result.Jackpot != NeonVaultJackpot.None ? SlotSound.Jackpot
+        SlotSound outcome = result.Jackpot != NeonVaultJackpot.None
+            ? result.Jackpot is NeonVaultJackpot.Grand or NeonVaultJackpot.Major
+                ? SlotSound.NeonMegaWin : SlotSound.Jackpot
+            : result.Payout > 0 && result.TotalMultiplier >= 50m ? SlotSound.NeonMegaWin
+            : result.Payout > 0 && result.TotalMultiplier >= 10m ? SlotSound.NeonBigWin
             : result.FreeSpinsAwarded > 0 ? SlotSound.FreeSpins
-            : result.Payout > 0 ? SlotSound.Win : SlotSound.Loss, enabled);
+            : result.Payout > 0 ? SlotSound.Win : SlotSound.Loss;
+        modernNeonVaultAudio?.Play(outcome, enabled);
     }
 
     private void OnModernNeonVaultFailed()

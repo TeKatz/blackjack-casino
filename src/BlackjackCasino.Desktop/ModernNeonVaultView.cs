@@ -25,6 +25,7 @@ internal sealed class ModernNeonVaultView : ContentControl, IDisposable
     private readonly Action close;
     private readonly Action failure;
     private readonly Action<string, int> reelStop;
+    private readonly Action<string> featureImpact;
     private readonly Action<string> spinComplete;
     private readonly DispatcherTimer watchdog = new(DispatcherPriority.Background)
     {
@@ -39,7 +40,8 @@ internal sealed class ModernNeonVaultView : ContentControl, IDisposable
 
     internal ModernNeonVaultView(ModernNeonVaultSession commands, Func<object> snapshot,
         Func<ModernNeonVaultCommand, (bool Success, string Message)> commit,
-        Action close, Action failure, Action<string, int> reelStop, Action<string> spinComplete)
+        Action close, Action failure, Action<string, int> reelStop,
+        Action<string> featureImpact, Action<string> spinComplete)
     {
         this.commands = commands;
         this.snapshot = snapshot;
@@ -47,6 +49,7 @@ internal sealed class ModernNeonVaultView : ContentControl, IDisposable
         this.close = close;
         this.failure = failure;
         this.reelStop = reelStop;
+        this.featureImpact = featureImpact;
         this.spinComplete = spinComplete;
         Name = "ModernNeonVaultPresentation";
         Content = new Grid
@@ -141,6 +144,9 @@ internal sealed class ModernNeonVaultView : ContentControl, IDisposable
                         && index.ValueKind == JsonValueKind.Number
                         && index.TryGetInt32(out int reel) && reel is >= 0 and < 5)
                         reelStop(stopId, reel);
+                    break;
+                case "neon-vault.feature-impact" when listening && Ready && IsVisible:
+                    if (ReadSpinId(root, out string impactId)) featureImpact(impactId);
                     break;
                 case "neon-vault.animation-complete" when listening && Ready && IsVisible:
                     if (ReadSpinId(root, out string spinId)) spinComplete(spinId);

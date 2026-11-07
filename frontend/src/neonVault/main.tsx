@@ -5,6 +5,8 @@ import {listenNeon,sendNeonIntent,symbols} from './bridge';
 import type {NeonIntent,NeonSnapshot,NeonSpin,NeonSymbol} from './bridge';
 import {SymbolArt} from './Symbols';
 import {VaultAmbient} from './Ambient';
+import {neonImpact,isImpactful} from './presentation';
+import type {NeonImpact} from './presentation';
 import './neonVault.css';
 
 const PREVIEW:NeonSymbol[]=[
@@ -37,6 +39,7 @@ const words={
    hint:'SPACE spins · A auto-spins · +/− changes bet · ESC returns to the lobby',
    uncertain:'The confirmation timed out. Reopen Neon Vault to recover the C# result; never spin again blindly.',
    welcome:'Authorizing the vault console…',xp:'Player XP',season:'Season XP',level:'LEVEL UP',
+   bigWin:'HIGH VOLTAGE WIN',megaWin:'VAULT-SHATTERING WIN',
    scatter:'SCATTER PAYOUT',waysWin:'WAYS RETURN',extra:'BONUS & JACKPOT',loading:'Establishing secure vault connection…'},
  de:{back:'Casino-Lobby',subtitle:'VIDEO-SLOTS UNTER HOCHSPANNUNG · 1.024 GEWINNWEGE',balance:'GEMEINSAMES GUTHABEN',
    total:'LETZTE AUSZAHLUNG',wager:'EINSATZ PRO DREH',spin:'DREHEN',freeSpin:'FREIDREH',auto:'AUTO ×20',
@@ -58,6 +61,7 @@ const words={
    hint:'LEERTASTE dreht · A startet Auto · +/− ändert Einsatz · ESC zur Lobby',
    uncertain:'Bestätigung fehlt. Öffne Neon Vault erneut, um das C#-Ergebnis sicher wiederherzustellen.',
    welcome:'Vault-Konsole wird autorisiert…',xp:'Spieler-XP',season:'Saison-XP',level:'LEVELAUFSTIEG',
+   bigWin:'HOCHSPANNUNGS-GEWINN',megaWin:'TRESOR-SPRENGENDER GEWINN',
    scatter:'SCATTER-AUSZAHLUNG',waysWin:'WEGE-AUSZAHLUNG',extra:'BONUS & JACKPOT',loading:'Sichere Verbindung zum Vault wird hergestellt…'},
 };
 type Banner={key:string;label:string};
@@ -89,6 +93,7 @@ function VaultApp(){
  const [grid,setGrid]=useState<NeonSymbol[]>(PREVIEW);
  const [moving,setMoving]=useState<number[]>([]);
  const [feature,setFeature]=useState<Banner|null>(null);
+ const [impact,setImpact]=useState<NeonImpact|null>(null);
  const [finished,setFinished]=useState(false);
  const [paytableOpen,setPaytableOpen]=useState(false);
  const [settingsOpen,setSettingsOpen]=useState(false);
@@ -108,7 +113,7 @@ function VaultApp(){
    if(!current||pendingRef.current||animating||uncertain)return;
    const id=sendNeonIntent(current,command);
    pendingRef.current=id;setPending(id);setNotice(null);
-   if(command.action==='spin'){setAnimating(true);setFinished(false);setFeature(null);}
+   if(command.action==='spin'){setAnimating(true);setFinished(false);setFeature(null);setImpact(null);}
  },[animating,uncertain]);
  useEffect(()=>{
    const unsubscribe=listenNeon(event=>{
@@ -145,13 +150,16 @@ function VaultApp(){
      return;
    }
    if(!result||lastId.current===result.id)return;
-   lastId.current=result.id;stopTimers();settled.current.clear();setFinished(false);
+   lastId.current=result.id;stopTimers();settled.current.clear();setFinished(false);setImpact(null);
    const reduce=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+   const reaction=neonImpact(result);
    const sendComplete=()=>window.chrome?.webview?.postMessage({
      type:'neon-vault.animation-complete',spinId:result.id});
    const complete=()=>{
      stopTimers();setGrid(result.finalGrid);setMoving([]);setAnimating(false);setFeature(null);
      setFinished(true);sendComplete();
+     // Keep a short, nonblocking afterglow after the reel transaction is complete.
+     timers.current.push(setTimeout(()=>setImpact(null),reaction.strength===3?2300:1450));
    };
    if(!snapshot.state.animationsEnabled||reduce){complete();return;}
    setAnimating(true);setMoving([0,1,2,3,4]);visual.current=0;
@@ -170,6 +178,10 @@ function VaultApp(){
    },delay)));
    const featureDelay=STOPS[4]+220;
    timers.current.push(setTimeout(()=>{
+     if(isImpactful(reaction)){
+       setImpact(reaction);
+       window.chrome?.webview?.postMessage({type:'neon-vault.feature-impact',spinId:result.id});
+     }
      if(result.blackout!=='None')
        setFeature({key:'blackout',label:result.blackout==='Total'
          ?words[snapshot.state.language].totalBlackout
@@ -179,10 +191,14 @@ function VaultApp(){
        setFeature({key:'override',label:words[snapshot.state.language].override});
      else if(result.expandedReels.length)
        setFeature({key:'wild',label:words[snapshot.state.language].wild});
-     else if(result.freeSpinsAwarded)
-       setFeature({key:'free',label:words[snapshot.state.language].break+' · +'+result.freeSpinsAwarded});
      else if(result.jackpot!=='None')
        setFeature({key:'jackpot',label:words[snapshot.state.language].jackpot+' · '+result.jackpot});
+     else if(result.freeSpinsAwarded)
+       setFeature({key:'free',label:words[snapshot.state.language].break+' · +'+result.freeSpinsAwarded});
+     else if(reaction.winTier==='mega')
+       setFeature({key:'mega-win',label:words[snapshot.state.language].megaWin});
+     else if(reaction.winTier==='big')
+       setFeature({key:'big-win',label:words[snapshot.state.language].bigWin});
      else setFeature(null);
      setGrid(result.finalGrid);
    },featureDelay));
@@ -244,8 +260,10 @@ function VaultApp(){
    ||result?.expandedReels.includes(i%5)||result?.blackoutWildCells.includes(i)
    ||result?.securityOverrideReel===i%5);
  return <div className="vault-app" data-motion={s.animationsEnabled} lang={s.language} data-testid="neon-vault-app"
-   data-spin-id={result?.id??''} data-animating={animating} data-tier={s.betTier} data-bonus={s.bonusActive}>
-   <VaultAmbient enabled={s.animationsEnabled&&!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches}/>
+   data-spin-id={result?.id??''} data-animating={animating} data-tier={s.betTier} data-bonus={s.bonusActive}
+   data-impact={impact?.kind??'idle'} data-win-tier={impact?.winTier??'none'}>
+   <VaultAmbient enabled={s.animationsEnabled&&!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches}
+     spinning={animating} energy={s.vaultEnergy} bonus={s.bonusActive} impact={impact}/>
    <header className="vault-header">
      <button className="vault-back" onClick={close} disabled={!!pending||s.bonusActive}>
        ← {t.back}<kbd>ESC</kbd></button>
@@ -254,8 +272,12 @@ function VaultApp(){
      <div className="vault-header-wallet"><small>{t.balance}</small><strong>{dollar(s.bankroll)}</strong></div>
    </header>
    <div className="vault-layout">
-     <main className="vault-machine">
+     <main className="vault-machine" data-impact={impact?.kind??'idle'}>
        <div className="vault-scanlines" aria-hidden="true"/>
+       <div className="vault-reactor-rail" aria-hidden="true"/>
+       <div className="vault-reactor-pins" aria-hidden="true">
+         {Array.from({length:12},(_,index)=><i key={index}/>)}
+       </div>
        <div className="vault-machine-head">
          <div className="vault-access"><span className="vault-access-light"/> ENCRYPTION: AES–09</div>
          <div className={'vault-tier tier-'+s.betTier}><span>◆</span> {tierLabel}</div>
@@ -273,6 +295,7 @@ function VaultApp(){
              t.freeRemaining+' · '+s.freeSpinsRemaining}</div>
        </div>
        <div className={'vault-board '+activeCols} data-testid="neon-vault-grid">
+         <div className="vault-board-hologram" aria-hidden="true"/>
          <div className="vault-board-decoration top" aria-hidden="true">V A U L T &nbsp; A C C E S S &nbsp; A R R A Y</div>
          <div className="vault-grid">
            {grid.map((symbol,i)=><div key={i} data-symbol={symbol}
@@ -288,6 +311,11 @@ function VaultApp(){
          <div className="vault-board-decoration bottom" aria-hidden="true">0 0 1 0 1 ◇ 0 1 1 0 0 ◇ S E C U R E D</div>
          {feature&&<div className={'vault-overlay overlay-'+feature.key} role="status">
            <span>◈</span><strong>{feature.label}</strong><span>◈</span></div>}
+         {impact&&impact.winTier!=='none'&&<div className="vault-win-fanfare" aria-hidden="true">
+           <span>{impact.winTier==='mega'?t.megaWin:t.bigWin}</span>
+           <strong>{dollar(impact.payout)}</strong>
+           <em>{impact.multiplier.toLocaleString(s.language==='de'?'de-DE':'en-US',{maximumFractionDigits:1})}×</em>
+         </div>}
        </div>
        <div className="vault-feedback" role="status" aria-live="polite">
          <strong>{status}</strong>

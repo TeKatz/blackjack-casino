@@ -41,3 +41,51 @@ The modern cabinet includes:
 ### Manual device acceptance
 
 Subjective 1080p/1440p/DPI readability, audio mix, effects layering, long autoplay sessions and perceived pacing need verification on target Windows hardware. The retired WPF layout and source are no longer fallbacks. Further work on the shared WPF shell is explicitly separate.
+
+
+## High-roller reactive cabinet (PixiJS 8 / React)
+
+The cabinet now uses a **single dedicated PixiJS 8 renderer** for both the
+permanent ambient field and its full-machine reactive FX, replacing the tiny
+standalone dust effect. It tracks the actual DOM bounds of the cabinet and
+20-cell reel window on each capped 30-FPS tick, and renders:
+
+- Additive-bloom perimeter lines, moving PCB conductors and 20 mobile neon
+  contacts wrapping the **entire** cabinet, not only the slot grid.
+- Forty-four ambient particles, a calm holographic reel scan, a subtle
+  per-symbol sheen and twelve energy nodes driven by the **real** C# energy
+  counter. Idle tint changes with high-roller wager tier and bonus state.
+- Thirty-six reusable sparks, three concentric energy rings and four
+  outward PCB traces on verified features and high wins. Blackout, overload,
+  total blackout, security override, Wild, free-spin award, major jackpot and
+  large win multipliers have distinct frame colors/intensities.
+- A short win-result ribbon, independent of the outcome status, for wins of
+  at least 10x the native wager. Wins of 50x+ or a GRAND jackpot get the
+  maximum reactor intensity. Blackout warnings retain priority when they
+  coincide with a payout; the win ribbon still reports the host payout.
+
+All effects are presentation-only: no JavaScript outcome generation, wager
+mutation, new game mechanics or save-schema changes. The native C# result
+drives `neonImpact` and its thresholds; old results on opening/recovery never
+replay the impact. Spinner/bonus/readiness and 16-step wager handling are
+unchanged. The engine stops when the page is hidden and destroys its canvas
+on unmount, gracefully keeping CSS presentation if WebGL is unavailable.
+Both the user's animation preference and OS reduced-motion setting disable
+GPU animation. The new CSS pulses affect dedicated border/light elements,
+**not** the entire WebView: this avoids global compositing flicker and does
+not move the buttons.
+
+The audio remains **native** instead of layering a second WebAudio mixer
+on top of the existing `CasinoAudio` PCM output. A dedicated, host-verified
+`neon-vault.feature-impact` event aligns a unique native cue with the
+first frame of the reaction (Lockdown, Overload, Total Blackout, Override).
+Big Win and Mega Win now have longer original synthesized victory fanfares
+from the existing `SlotAudio` engine, with separate volume/mute behavior
+inherited from Neon Vault. Both stages verify the active spin ID, guard
+against duplicate events and fall back to the native completion event when
+reduced motion skips animation. The interaction callback can only emit a
+sound; it has no effect on rewards, session state or the RNG.
+
+Acceptance checks cover the durable 20-cell layout, native spin persistence,
+frame/FX DOM surface and reel controls under compact and 1440p resolutions.
+`neonVaultPresentation.test.ts` verifies event classification and priority.

@@ -29,7 +29,10 @@ internal static class ModernNeonVaultWebSmoke
             + "&&document.querySelectorAll('.vault-payrow').length===8"
             + "&&document.querySelectorAll('.vault-bets button').length===16"
             + "&&document.querySelectorAll('.vault-jackpot').length===4"
-            + "&&document.querySelector('[data-testid=\"neon-vault-spin\"]'))") == "true",
+            + "&&document.querySelector('[data-testid=\"neon-vault-spin\"]')"
+            + "&&document.querySelector('.vault-machine[data-impact=\"idle\"]')"
+            + "&&document.querySelectorAll('.vault-reactor-pins i').length===12"
+            + "&&document.querySelector('[data-neon-engine=\"pixi-cabinet-v2\"]'))") == "true",
             "Neon Vault did not render five reels, four rows, all symbols and jackpots.");
         Require(await core.ExecuteScriptAsync(
             "Boolean(document.querySelector('.vault-energy')"

@@ -219,3 +219,135 @@ button:focus-visible,input:focus-visible{outline:2px solid #7ef0fc;outline-offse
 
 
 .vault-app[data-motion=false] *,.vault-app[data-motion=false] *::before,.vault-app[data-motion=false] *::after{animation:none!important;transition:none!important}
+
+
+/* NEON VAULT / Reactor cabinet v2 — the entire frame is an instrument.
+   Continuous ambient movement is gentle; confirmed security and payout events
+   animate only dedicated light surfaces, never the full WebView or control tree. */
+.vault-ambient{z-index:5;pointer-events:none;overflow:hidden;contain:paint;}
+.vault-ambient canvas{opacity:.80;mix-blend-mode:screen;pointer-events:none;}
+.vault-machine{--vault-reactor:#4bdfff;--vault-reactor-shadow:#25d1f866;}
+.vault-reactor-rail{position:absolute;inset:-2px;z-index:4;pointer-events:none;
+ border:2px solid var(--vault-reactor);border-radius:21px;opacity:.46;
+ box-shadow:inset 0 0 16px var(--vault-reactor-shadow),0 0 14px var(--vault-reactor-shadow);
+ animation:vault-rail-idle 5.5s ease-in-out infinite alternate;}
+.vault-reactor-rail::before,.vault-reactor-rail::after{
+ content:"";position:absolute;top:16%;bottom:16%;width:3px;pointer-events:none;
+ background:linear-gradient(transparent,var(--vault-reactor),transparent);opacity:.65;
+ box-shadow:0 0 13px var(--vault-reactor);
+ animation:vault-side-charge 4.8s ease-in-out infinite alternate;}
+.vault-reactor-rail::before{left:5px;}
+.vault-reactor-rail::after{right:5px;animation-delay:-2.1s;}
+.vault-reactor-pins{position:absolute;z-index:4;pointer-events:none;
+ left:13%;right:13%;top:-4px;display:flex;justify-content:space-between;}
+.vault-reactor-pins i{width:7px;height:4px;border-radius:1px 1px 4px 4px;
+ background:#65dff2;box-shadow:0 0 7px #55e6ff88;
+ animation:vault-led-wave 3.4s ease-in-out infinite;}
+.vault-reactor-pins i:nth-child(3n+2){animation-delay:-.7s;}
+.vault-reactor-pins i:nth-child(3n+3){animation-delay:-1.5s;}
+.vault-app[data-tier="HighRoller"] .vault-machine{--vault-reactor:#56f4ef;--vault-reactor-shadow:#32efdb70;}
+.vault-app[data-tier="VaultClass"] .vault-machine{--vault-reactor:#ffca7f;--vault-reactor-shadow:#ffb44d78;}
+.vault-app[data-tier="MaxExposure"] .vault-machine{--vault-reactor:#ff779e;--vault-reactor-shadow:#fb4a9277;}
+.vault-board{isolation:isolate;}
+.vault-board-hologram{position:absolute;inset:3px;z-index:2;pointer-events:none;
+ border-radius:12px;opacity:.25;overflow:hidden;
+ background:radial-gradient(ellipse at 20% 0%,#8ef3ff33,transparent 50%),
+   radial-gradient(ellipse at 85% 100%,#bb70ff22,transparent 52%);
+ animation:vault-hologram-idle 9s ease-in-out infinite alternate;}
+.vault-board-hologram::before{content:"";position:absolute;left:-70%;top:-30%;
+ width:55%;height:170%;transform:rotate(12deg);
+ background:linear-gradient(90deg,transparent,#9cedff1d,transparent);
+ animation:vault-hologram-sweep 8.5s linear infinite;}
+.vault-cell{isolation:isolate;}
+.vault-cell::after{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;
+ opacity:.30;background:linear-gradient(115deg,transparent 29%,#f6ffff20 46%,transparent 61%);
+ transform:translateX(-180%);animation:vault-symbol-sheen 8.8s ease-in-out infinite;}
+.vault-cell:nth-child(5n+2)::after{animation-delay:-2.5s;}
+.vault-cell:nth-child(5n+3)::after{animation-delay:-4.5s;}
+.vault-cell:nth-child(5n+4)::after{animation-delay:-6.5s;}
+.vault-cell:nth-child(5n+5)::after{animation-delay:-8s;}
+.vault-cell[data-symbol="Wild"]{border-color:#ab5aaf;box-shadow:inset 0 0 18px #923ce025;}
+.vault-cell[data-symbol="Scatter"]{border-color:#bba76e;}
+.vault-cell[data-symbol="VaultKey"]{border-color:#8c73ba;}
+.vault-cell.winner{z-index:1;}
+.vault-cell.rolling::after{opacity:.7;animation-duration:.6s;}
+.vault-cell.converted:before{content:"";position:absolute;z-index:2;pointer-events:none;
+ inset:0;background:radial-gradient(circle,#ff5aac55,transparent 70%);
+ animation:vault-converted-glow 1.4s ease-in-out infinite alternate;}
+.vault-board.blackout{border-color:#ed4c87;}
+.vault-machine[data-impact="blackout"],.vault-machine[data-impact="overload"],
+.vault-machine[data-impact="total-blackout"]{--vault-reactor:#ff4e8a;--vault-reactor-shadow:#ff3a7fb0;
+ border-color:#ec507b;box-shadow:inset 0 0 0 6px #050d1a,inset 0 0 45px #f92e6d45,
+ 0 18px 50px #000c,0 0 35px #ff357b80;}
+.vault-machine[data-impact="overload"]{--vault-reactor:#ff75b3;--vault-reactor-shadow:#ff488ccc;}
+.vault-machine[data-impact="total-blackout"]{--vault-reactor:#ff4961;--vault-reactor-shadow:#ff304cdd;}
+.vault-machine[data-impact="override"]{--vault-reactor:#ffdd85;--vault-reactor-shadow:#e7ac4e9c;}
+.vault-machine[data-impact="jackpot"],.vault-machine[data-impact="mega-win"]{
+ --vault-reactor:#ffda83;--vault-reactor-shadow:#ffe27cbf;border-color:#ddaf61;
+ box-shadow:inset 0 0 0 6px #0a101c,inset 0 0 34px #deb55344,0 18px 50px #000b,0 0 31px #f2c65786;}
+.vault-machine[data-impact="big-win"]{--vault-reactor:#80ffdf;--vault-reactor-shadow:#50ffc69a;}
+.vault-machine[data-impact="free-spins"]{--vault-reactor:#bf9cff;--vault-reactor-shadow:#ba8cff8d;}
+.vault-machine[data-impact="wild"]{--vault-reactor:#f17bdf;--vault-reactor-shadow:#dd66ed8c;}
+.vault-machine:not([data-impact="idle"]) .vault-reactor-rail{
+ opacity:1;animation:vault-reactor-impact .32s ease-out 6 alternate;
+ box-shadow:inset 0 0 35px var(--vault-reactor-shadow),0 0 29px var(--vault-reactor-shadow);}
+.vault-machine[data-impact="overload"] .vault-reactor-rail,
+.vault-machine[data-impact="total-blackout"] .vault-reactor-rail{
+ animation:vault-reactor-overload .23s steps(2,end) 12 alternate;}
+.vault-machine:not([data-impact="idle"]) .vault-reactor-pins i{
+ background:var(--vault-reactor);box-shadow:0 0 15px var(--vault-reactor);
+ animation:vault-impact-leds .24s ease-in-out 10 alternate;}
+.vault-machine:not([data-impact="idle"]) .vault-board-hologram{opacity:.72;}
+.vault-machine[data-impact="total-blackout"] .vault-board-hologram{
+ background:repeating-linear-gradient(120deg,transparent 0 18px,#fd336824 20px 23px,transparent 25px 50px);
+ animation:vault-lockdown-sweep .35s linear infinite;}
+.vault-machine[data-impact="jackpot"] .vault-jackpots,
+.vault-app[data-win-tier="mega"] .vault-jackpot.grand{
+ filter:drop-shadow(0 0 11px #ffe09055);}
+.vault-overlay.overlay-big-win{border-color:#7affdd;box-shadow:0 0 38px #35fdc57e;}
+.vault-overlay.overlay-big-win strong{color:#acffe3;}
+.vault-overlay.overlay-mega-win{border-color:#ffd77b;box-shadow:0 0 50px #ffc45ab1;
+ animation:vault-jackpot-celebrate .5s ease-in-out 3 alternate;}
+.vault-overlay.overlay-mega-win strong{color:#ffe4a3;}
+.vault-win-fanfare{position:absolute;z-index:6;pointer-events:none;left:50%;bottom:6%;
+ transform:translateX(-50%);display:flex;gap:11px;align-items:center;justify-content:center;
+ width:max-content;max-width:95%;min-width:200px;
+ padding:7px 15px;border:1px solid #ffd784d0;border-radius:9px;
+ background:linear-gradient(100deg,#13132bea,#382320f0,#13132bea);
+ box-shadow:0 0 22px #edbf5b88,0 3px 14px #000b;
+ animation:vault-fanfare-appear .3s cubic-bezier(.2,1.2,.3,1) both;}
+.vault-win-fanfare span{color:#f4d29b;font-size:9px;letter-spacing:.12em;font-weight:900;}
+.vault-win-fanfare strong{color:#fff0bb;font:900 clamp(15px,1.7vw,24px) Georgia,serif;white-space:nowrap;
+ text-shadow:0 0 12px #ffe395aa;}
+.vault-win-fanfare em{font-size:13px;font-style:normal;font-weight:900;color:#89f9dc;}
+.vault-app[data-impact="blackout"] .vault-feedback strong,
+.vault-app[data-impact="total-blackout"] .vault-feedback strong{color:#ff9bbc;text-shadow:0 0 16px #fd336788;}
+.vault-app[data-impact="jackpot"] .vault-feedback strong,
+.vault-app[data-impact="mega-win"] .vault-feedback strong{color:#ffe4a3;text-shadow:0 0 18px #f3c66b80;}
+@keyframes vault-rail-idle{to{opacity:.75;box-shadow:inset 0 0 22px var(--vault-reactor-shadow),0 0 23px var(--vault-reactor-shadow)}}
+@keyframes vault-side-charge{to{opacity:.25;transform:translateY(8%)}}
+@keyframes vault-led-wave{50%{opacity:.32;filter:brightness(.8)}}
+@keyframes vault-hologram-idle{to{opacity:.45;filter:hue-rotate(22deg)}}
+@keyframes vault-hologram-sweep{to{transform:translateX(350%) rotate(12deg)}}
+@keyframes vault-symbol-sheen{35%,100%{transform:translateX(180%)}}
+@keyframes vault-converted-glow{to{opacity:.3}}
+@keyframes vault-reactor-impact{to{opacity:.45;box-shadow:inset 0 0 10px var(--vault-reactor-shadow),0 0 65px var(--vault-reactor-shadow)}}
+@keyframes vault-reactor-overload{to{opacity:.38;border-color:#ffffff;box-shadow:0 0 56px var(--vault-reactor-shadow)}}
+@keyframes vault-impact-leds{to{opacity:.15;transform:scaleX(.7)}}
+@keyframes vault-lockdown-sweep{to{transform:translateX(9px)}}
+@keyframes vault-jackpot-celebrate{to{box-shadow:0 0 70px #ffd563dc;transform:scale(1.025)}}
+@keyframes vault-fanfare-appear{from{opacity:0;transform:translate(-50%,25px) scale(.87)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
+@media(max-width:620px){
+ .vault-reactor-pins{left:18%;right:18%;}
+ .vault-win-fanfare{bottom:3%;gap:6px;padding:4px 7px;min-width:160px;}
+ .vault-win-fanfare span{font-size:7px;max-width:78px;line-height:1.2;}
+ .vault-win-fanfare strong{font-size:14px;}
+ .vault-win-fanfare em{font-size:10px;}
+}
+@media(prefers-reduced-motion:reduce){
+ .vault-ambient{display:none!important;}
+ .vault-reactor-rail,.vault-reactor-rail::before,.vault-reactor-rail::after,
+ .vault-reactor-pins i,.vault-board-hologram,.vault-board-hologram::before,
+ .vault-cell::after,.vault-cell.converted:before,.vault-win-fanfare{animation:none!important;}
+}
+.vault-app[data-motion=false] .vault-ambient{display:none!important;}
