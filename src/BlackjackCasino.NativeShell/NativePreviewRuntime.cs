@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using BlackjackCasino.Core;
 using BlackjackCasino.Core.MidnightMerge;
+using BlackjackCasino.Core.Kniffel;
 using BlackjackCasino.NativeShell;
 
 namespace BlackjackCasino.Desktop;
@@ -34,6 +35,13 @@ internal sealed class NativePreviewRuntime : IDisposable
     private string mergeFeedback = "Select a producer and restore the Midnight Club.";
     private long mergePlayerXp, mergeSeasonXp;
     private bool mergeProgressionSaveFailed;
+    private KniffelGame? diceGame;
+    private string diceNotice = "";
+    private string diceReward = "";
+    private readonly List<ModernDiceCelebration> diceCelebrations = [];
+    private long diceEventCounter, diceRollToken;
+    private int[] diceRollingIndices = [];
+    private bool diceAdvancing;
     private bool disposed;
     private string status = "Choose a game from the native shell.";
 
@@ -501,6 +509,321 @@ internal sealed class NativePreviewRuntime : IDisposable
             mergeLastAction = null;
         }
     }
+    internal bool DiceCasinoMode =>
+        Preferences.KniffelCasinoSelected && Preferences.KniffelTable is not null;
+
+    internal bool DiceWaiting =>
+        DiceCasinoMode && Preferences.KniffelTable is { Settled: false } table
+        && KniffelTable.NeedsOpponents(table);
+
+    internal void OpenDice()
+    {
+        if (disposed || HandInProgress)
+            throw new InvalidOperationException("Finish the Blackjack hand before Midnight Dice.");
+        AccountCompletedRound();
+        if (diceGame is null)
+        {
+            KniffelState saved = DiceCasinoMode ? Preferences.KniffelTable!.Player : Preferences.Kniffel;
+            KniffelState normalized = KniffelGame.Normalize(saved);
+            diceGame = KniffelGame.Restore(normalized);
+            if (!DiceCasinoMode)
+                SaveDicePreferences(Preferences with { Kniffel = normalized, Bankroll = Bankroll });
+            diceNotice = diceGame.IsComplete
+                ? $"Game complete · {diceGame.Total} points."
+                : "Roll the dice, hold what you want, and record your scores. Progress saves automatically.";
+            diceReward = DiceCasinoMode && Preferences.KniffelTable is { Settled: true } completed
+                ? RecordDiceTable(completed)
+                : !DiceCasinoMode && diceGame.IsComplete
+                    ? RecordDiceCompletion(diceGame.Snapshot) : "";
+        }
+        status = "Midnight Dice ready.";
+    }
+
+    internal object DiceSnapshot()
+    {
+        KniffelGame game = diceGame ?? throw new InvalidOperationException("Midnight Dice is not active.");
+        string variant = CosmeticCatalog.Get(Profile.EquippedDiceSetId
+            ?? CosmeticCatalog.DefaultDiceSetId).VisualVariant;
+        return ModernDiceSnapshot.Create(game, Preferences.Kniffel,
+            Preferences.KniffelTable, Preferences.KniffelCasinoSelected,
+            Bankroll, Profile, variant, Preferences.Presentation("kniffel"),
+            diceNotice, diceReward, DiceWaiting, diceCelebrations, diceRollToken,
+            diceRollingIndices, Preferences.Language);
+    }
+
+    private void SaveDicePreferences(AppPreferences next)
+    {
+        PlayerStateStore.SaveOrThrow(next, directory);
+        Preferences = next;
+    }
+
+    private void CommitDiceCash(KniffelCashChange change)
+    {
+        SaveDicePreferences(Preferences with
+        {
+            Bankroll = change.Bankroll,
+            KniffelTable = change.Table,
+            KniffelCasinoSelected = true,
+        });
+        table.Session.ResetBankroll(change.Bankroll);
+    }
+
+    private string RecordDiceTable(KniffelTableState checkpoint)
+    {
+        ProgressionAward reward = progression.ProcessKniffelTable(checkpoint);
+        Persist();
+        return reward.PlayerExperience > 0
+            ? $"+{reward.PlayerExperience} XP · +{reward.SeasonExperience} Season XP."
+            : checkpoint.Forfeited
+                ? "Forfeited tables do not award completion XP."
+                : "Completion rewards already credited.";
+    }
+
+    private string RecordDiceCompletion(KniffelState checkpoint)
+    {
+        ProgressionAward reward = progression.ProcessKniffel(checkpoint);
+        Persist();
+        return reward.PlayerExperience > 0
+            ? $"+{reward.PlayerExperience} XP · +{reward.SeasonExperience} Season XP."
+            : "Completion rewards already credited.";
+    }
+
+    internal (bool Success, string Message) ApplyDice(ModernDiceCommand command)
+    {
+        if (disposed || diceGame is null)
+            return (false, "Midnight Dice is not active.");
+        try
+        {
+            switch (command.Action)
+            {
+                case "sound.set":
+                case "animations.set":
+                case "music.set":
+                {
+                    AreaPresentationSettings settings = Preferences.Presentation("kniffel");
+                    bool enabled = command.Value == "true";
+                    settings = command.Action switch
+                    {
+                        "sound.set" => settings with { SoundEnabled = enabled },
+                        "animations.set" => settings with { AnimationsEnabled = enabled },
+                        _ => settings with { MusicEnabled = enabled },
+                    };
+                    Preferences = Preferences.WithPresentation("kniffel", settings);
+                    Persist();
+                    status = "Presentation settings saved.";
+                    return (true, status);
+                }
+                case "casual.start":
+                case "casual.resume":
+                {
+                    KniffelState casual = command.Action == "casual.start"
+                        ? new KniffelGame().Snapshot : KniffelGame.Normalize(Preferences.Kniffel);
+                    SaveDicePreferences(Preferences with
+                    {
+                        KniffelCasinoSelected = false, Kniffel = casual, Bankroll = Bankroll,
+                    });
+                    diceGame = KniffelGame.Restore(casual);
+                    diceCelebrations.Clear();
+                    diceRollToken = 0;
+                    diceRollingIndices = [];
+                    diceReward = diceGame.IsComplete
+                        ? RecordDiceCompletion(diceGame.Snapshot) : "";
+                    diceNotice = "Casual game loaded. No entry fee.";
+                    status = "Casual dice table ready.";
+                    return (true, status);
+                }
+                case "casino.start":
+                {
+                    if (DiceWaiting || diceAdvancing)
+                        return (false, "Wait for the opponents to finish.");
+                    if (Preferences.KniffelTable is { Settled: true } previous)
+                        _ = progression.ProcessKniffelTable(previous);
+                    decimal stake = decimal.Parse(command.Value!, CultureInfo.InvariantCulture);
+                    KniffelCash.Start(Bankroll, Preferences.KniffelTable, stake, CommitDiceCash);
+                    diceGame = KniffelGame.Restore(Preferences.KniffelTable!.Player);
+                    diceCelebrations.Clear();
+                    diceRollToken = 0;
+                    diceRollingIndices = [];
+                    diceNotice = "Casino table joined. Entry paid and saved.";
+                    diceReward = "";
+                    Persist();
+                    status = "Casino entry committed once.";
+                    return (true, status);
+                }
+                case "casino.resume":
+                {
+                    if (Preferences.KniffelTable is not { } saved)
+                        return (false, "No paid table is saved.");
+                    SaveDicePreferences(Preferences with
+                    {
+                        KniffelCasinoSelected = true, Bankroll = Bankroll,
+                    });
+                    diceGame = KniffelGame.Restore(saved.Player);
+                    diceCelebrations.Clear();
+                    diceRollingIndices = [];
+                    diceNotice = saved.Settled
+                        ? "Previous casino table restored."
+                        : "Casino table resumed without another entry fee.";
+                    diceReward = saved.Settled ? RecordDiceTable(saved) : "";
+                    status = "Paid table restored.";
+                    return (true, status);
+                }
+                case "casino.forfeit":
+                {
+                    if (!DiceCasinoMode || Preferences.KniffelTable is not { Settled: false } current
+                        || DiceWaiting || diceAdvancing)
+                        return (false, "This casino table cannot be forfeited now.");
+                    KniffelCash.Apply(Bankroll, current, KniffelTable.Forfeit(current), CommitDiceCash);
+                    diceReward = RecordDiceTable(Preferences.KniffelTable!);
+                    diceNotice = "Table forfeited. The entry fee remains spent.";
+                    status = "Casino forfeit persisted.";
+                    return (true, status);
+                }
+                case "roll":
+                case "hold":
+                case "score":
+                case "scratch":
+                    return ApplyDiceTurn(command);
+                default:
+                    return (false, "Unsupported dice action.");
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException
+            or InvalidOperationException or OverflowException or FormatException)
+        {
+            diceNotice = ex is IOException or UnauthorizedAccessException
+                ? "Could not save. No dice operation was applied; try again."
+                : ex.Message;
+            return (false, diceNotice);
+        }
+    }
+
+    private (bool Success, string Message) ApplyDiceTurn(ModernDiceCommand command)
+    {
+        if (diceGame is null || diceAdvancing || DiceWaiting
+            || DiceCasinoMode && Preferences.KniffelTable is { Settled: true })
+            return (false, "Wait for the current table before playing.");
+
+        KniffelState before = diceGame.Snapshot;
+        KniffelGame candidate = KniffelGame.Restore(before);
+        int points = 0;
+        KniffelCategory category = default;
+        switch (command.Action)
+        {
+            case "roll": candidate.Roll(); break;
+            case "hold": candidate.ToggleHold(command.Index!.Value); break;
+            case "score":
+            case "scratch":
+                category = Enum.Parse<KniffelCategory>(command.Category!);
+                points = candidate.Commit(category, command.Action == "scratch");
+                break;
+            default:
+                return (false, "Unsupported dice action.");
+        }
+        KniffelState after = candidate.Snapshot;
+        if (DiceCasinoMode)
+        {
+            KniffelTableState tableState = Preferences.KniffelTable!;
+            KniffelTableState updated = KniffelTable.WithPlayer(tableState, after);
+            SaveDicePreferences(Preferences with { KniffelTable = updated, Bankroll = Bankroll });
+        }
+        else
+        {
+            SaveDicePreferences(Preferences with { Kniffel = after, Bankroll = Bankroll });
+        }
+        diceGame = candidate;
+
+        switch (command.Action)
+        {
+            case "roll":
+                diceRollToken++;
+                diceRollingIndices = Enumerable.Range(0, 5).Where(i => !before.Held[i]).ToArray();
+                diceNotice = candidate.IsAdditionalKniffel
+                    ? "Additional five of a kind! Commit an open box for +50 bonus."
+                    : candidate.RollsUsed == 3
+                        ? "Third roll: choose a box and record its score."
+                        : "Hold dice, roll again or record a score.";
+                break;
+            case "hold":
+                diceNotice = $"Die {command.Index!.Value + 1} " +
+                    (after.Held[command.Index.Value] ? "held." : "released.");
+                break;
+            default:
+                diceNotice = $"{KniffelCategoryLabels.For(category)}: {points} points recorded."
+                    + (candidate.IsComplete
+                        ? $" Sheet complete with {candidate.Total} points."
+                        : $" Turn {candidate.FilledCount + 1} next.");
+                AddDiceCelebration("You", before, after);
+                if (candidate.IsComplete)
+                    diceReward = DiceCasinoMode
+                        ? "Opponents are finishing the table."
+                        : RecordDiceCompletion(after);
+                break;
+        }
+        status = "Dice state saved.";
+        return (true, status);
+    }
+
+    private void AddDiceCelebration(string player, KniffelState before, KniffelState after)
+    {
+        if (after.KniffelsScored <= before.KniffelsScored) return;
+        KniffelEntry? entry = after.Entries.FirstOrDefault(item =>
+            before.Entries.All(previous => previous.Category != item.Category));
+        if (entry is null) return;
+        int bonus = (Math.Max(0, after.KniffelsScored - 1) -
+            Math.Max(0, before.KniffelsScored - 1)) * 50;
+        diceCelebrations.Add(new(++diceEventCounter, player, entry.Category.ToString(),
+            entry.Points, bonus, before.RollsUsed > 0 ? before.Dice[0] : 0));
+        if (diceCelebrations.Count > 24) diceCelebrations.RemoveAt(0);
+    }
+
+    internal async Task<bool> AdvanceDiceOpponentsAsync()
+    {
+        if (disposed || diceAdvancing || !DiceWaiting || diceGame is null
+            || HandInProgress || Preferences.KniffelTable is not { } snapshot)
+            return false;
+        diceAdvancing = true;
+        try
+        {
+            KniffelTableState next = await Task.Run(() => KniffelTable.Advance(snapshot));
+            KniffelTableState? current = Preferences.KniffelTable;
+            if (disposed || !DiceCasinoMode || HandInProgress || current is null
+                || current.Player.GameId != snapshot.Player.GameId || current.Settled)
+                return false;
+
+            KniffelCash.Apply(Bankroll, current, next, CommitDiceCash);
+            for (int i = 0; i < 3; i++)
+                AddDiceCelebration(KniffelTable.Names[i],
+                    snapshot.Opponents[i], next.Opponents[i]);
+            diceReward = next.Settled ? RecordDiceTable(next) : "";
+            diceNotice = next.Settled
+                ? $"Casino match complete · Place #{next.Placement}. Prize {next.Payout:N2}."
+                : string.Join(" · ", next.LastMoves) + ". Your turn.";
+            status = diceNotice;
+            Persist();
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+            or ArgumentException or InvalidOperationException or OverflowException)
+        {
+            diceNotice = "Opponents could not be saved. " + ex.Message;
+            return false;
+        }
+        finally
+        {
+            diceAdvancing = false;
+        }
+    }
+
+    internal void CloseDice()
+    {
+        if (diceGame is null) return;
+        Persist();
+        diceGame = null;
+        diceCelebrations.Clear();
+        diceRollingIndices = [];
+    }
+
     internal void Persist()
     {
         if (disposed) return;
@@ -576,6 +899,7 @@ internal sealed class NativePreviewRuntime : IDisposable
             if (neonMachine is not null) CloseNeonVault();
             if (nineMachine is not null) CloseNineLives();
             if (mergeBoard is not null) CloseMerge();
+            if (diceGame is not null) CloseDice();
             AccountCompletedRound();
             Persist();
         }
