@@ -122,6 +122,7 @@ function attachArt(s:Scene,resources:Map<ModeSceneId,{back:Texture;front:Texture
   back.anchor.set(.5);
   s.group.addChildAt(back,0);
   s.back=back;
+  s.art.dataset.pixiArtReady='true';
   if(data.front){
     const front=new Sprite(data.front);
     front.anchor.set(.5);

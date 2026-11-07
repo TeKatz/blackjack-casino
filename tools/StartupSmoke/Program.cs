@@ -482,16 +482,37 @@ internal static class Program
             + "const nav=document.querySelectorAll('.lobby-nav-item');"
             + "const daily=document.querySelector('.lobby-daily');"
             + "const rewards=document.querySelectorAll('.daily-reward');"
-            + "const art=getComputedStyle(document.querySelector('.art-blackjack')).backgroundImage;"
+            + "const art=games.map(g=>g.querySelector('.game-art-window'));"
+            + "const gpu=document.querySelector('.lobby-pixi');"
             + "const hero=getComputedStyle(document.querySelector('.lobby-hero-picture')).backgroundImage;"
             + "return Boolean(shell&&games.length===9&&nav.length>=11"
             + "&&daily&&rewards.length===7&&!document.querySelector('.lobby-overview')"
-            + "&&art.includes('/lobby/art/blackjack.png')&&hero.includes('/lobby/art/hero.png')"
+            + "&&gpu"
+            + "&&art.every(x=>x&&x.dataset.modeArt&&!x.firstElementChild)"
+            + "&&hero.includes('/lobby/art/hero.png')"
             + "&&profile?.textContent?.includes('Startup Smoke')"
             + "&&document.querySelector('.lobby-hero h1')?.textContent?.length>5);})()");
         Require(result.Equals("true", StringComparison.OrdinalIgnoreCase),
             "Packaged React lobby did not render nine real games and live profile state. "
             + "DOM validation returned " + result);
+
+        // The browser-side GPU art system loads local SVG texture pairs in the
+        // background. A visible Canvas alone is not proof that artwork loaded.
+        bool graphicsReady = false;
+        for (int attempt = 0; attempt < 80; attempt++)
+        {
+            string value = await modern.Browser.CoreWebView2.ExecuteScriptAsync(
+                "(()=>document.querySelectorAll('.lobby-game .game-art-window[data-pixi-art-ready]').length===9"
+                + "&&Boolean(document.querySelector('.lobby-pixi canvas')))()");
+            if (value.Equals("true", StringComparison.OrdinalIgnoreCase))
+            {
+                graphicsReady = true;
+                break;
+            }
+            await Task.Delay(100);
+        }
+        Require(graphicsReady,
+            "Not all nine PixiJS lobby mode scenes loaded their original packaged artwork.");
 
         Require(await modern.Browser.CoreWebView2.ExecuteScriptAsync("Boolean(document.querySelector('dialog.casino-news:modal'))") == "true",
             "The React startup news dialog is missing.");
