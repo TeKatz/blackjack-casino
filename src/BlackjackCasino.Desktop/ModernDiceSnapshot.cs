@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Windows.Media;
 using BlackjackCasino.Core;
 using BlackjackCasino.Core.Kniffel;
 
@@ -11,7 +10,6 @@ internal sealed record ModernDiceCelebration(long Id, string Player, string Cate
 internal static class ModernDiceSnapshot
 {
     private static string Money(decimal value) => value.ToString(CultureInfo.InvariantCulture);
-    private static string ColorHex(Color color) => $"#{color.R:X2}{color.G:X2}{color.B:X2}";
     private static object Scores(KniffelGame game) => new
     {
         GameId = game.GameId.ToString("D"),
@@ -32,7 +30,7 @@ internal static class ModernDiceSnapshot
         Categories = KniffelScoring.Categories.Select(category => new
         {
             Id = category.ToString(),
-            Name = KniffelView.CategoryName(category),
+            Name = KniffelCategoryLabels.For(category),
             Stored = game.ScoreFor(category),
             Preview = game.CanScore && game.ScoreFor(category) is null ? game.Preview(category) : (int?)null,
             Upper = category <= KniffelCategory.Sixes,
@@ -43,13 +41,13 @@ internal static class ModernDiceSnapshot
         bool casinoSelected, decimal bankroll, PlayerProfileState? profile,
         string diceVariant, AreaPresentationSettings settings, string notice,
         string completionNotice, bool waiting, IReadOnlyList<ModernDiceCelebration> events, long rollToken,
-        int[] rollingIndices)
+        int[] rollingIndices, UiLanguagePreference language)
     {
         bool casino = casinoSelected && table is not null;
-        DiceAppearance appearance = DiceAppearance.For(diceVariant);
+        DicePaletteTokens appearance = DicePaletteTokens.For(diceVariant);
         return new
         {
-            Language = Localization.Language == UiLanguagePreference.German ? "de" : "en",
+            Language = language == UiLanguagePreference.German ? "de" : "en",
             Mode = casino ? "casino" : "casual",
             Bankroll = Money(bankroll),
             StakeOptions = KniffelTable.Stakes.Select(Money).ToArray(),
@@ -82,11 +80,11 @@ internal static class ModernDiceSnapshot
             DiceVariant = diceVariant,
             DicePalette = new
             {
-                Top = ColorHex(appearance.Top),
-                Bottom = ColorHex(appearance.Bottom),
-                Pips = ColorHex(appearance.Pips),
-                Edge = ColorHex(appearance.Edge),
-                Glow = appearance.Glow is { } glow ? ColorHex(glow) : (string?)null,
+                appearance.Top,
+                appearance.Bottom,
+                appearance.Pips,
+                appearance.Edge,
+                appearance.Glow,
                 appearance.Engraved,
             },
             SoundEnabled = settings.SoundEnabled,

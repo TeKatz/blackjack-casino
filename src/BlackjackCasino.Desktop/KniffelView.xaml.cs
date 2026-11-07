@@ -401,14 +401,7 @@ public partial class KniffelView : UserControl, IDisposable
         StopRoll();
         foreach (var row in rows.Values) row.Button.Effect = null;
     }
-    internal static string CategoryName(KniffelCategory category) => category switch
-    {
-        KniffelCategory.Ones => "Ones", KniffelCategory.Twos => "Twos", KniffelCategory.Threes => "Threes",
-        KniffelCategory.Fours => "Fours", KniffelCategory.Fives => "Fives", KniffelCategory.Sixes => "Sixes",
-        KniffelCategory.ThreeOfAKind => "Three of a kind", KniffelCategory.FourOfAKind => "Four of a kind",
-        KniffelCategory.FullHouse => "Full House", KniffelCategory.SmallStraight => "Small straight",
-        KniffelCategory.LargeStraight => "Large straight", KniffelCategory.Kniffel => "Five of a kind", _ => "Chance",
-    };
+    internal static string CategoryName(KniffelCategory category) => KniffelCategoryLabels.For(category);
     private static TextBlock Label(string text, double size, string color) => new() { Text = text, FontSize = size, Foreground = Ink(color), VerticalAlignment = VerticalAlignment.Center };
     private static SolidColorBrush Ink(string color) => new((Color)ColorConverter.ConvertFromString(color));
 }

@@ -62,7 +62,7 @@ public partial class MainWindow
                     ?? CosmeticCatalog.DefaultDiceSetId).VisualVariant,
                 preferences.Presentation("kniffel"), modernDiceNotice,
                 modernDiceReward, ModernDiceWaiting, modernDiceEvents,
-                modernDiceRollToken, modernDiceRollingIndices),
+                modernDiceRollToken, modernDiceRollingIndices, Localization.Language),
             ApplyModernDiceAction, CloseModernDice, OnModernDiceFailed);
 
         MountModernSurface(modernDiceView);
