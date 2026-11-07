@@ -1,4 +1,5 @@
-import {Assets, Container, Graphics, Sprite, type Texture} from 'pixi.js';
+import {Assets, Container, Graphics, MeshPlane, Sprite, type Texture} from 'pixi.js';
+import {createMicroDetails, type MotionDetails} from './LobbyMicroMotion';
 
 /**
  * The nine lobby key-art windows share ONE PixiJS stage and GPU context.
@@ -54,9 +55,10 @@ function kindFromCard(card:HTMLElement):ModeSceneId|null {
 type Ember = {node:Graphics;u:number;v:number;phase:number;rate:number};
 type Scene = {
   id:ModeSceneId;art:HTMLElement;card:HTMLElement;
-  group:Container;mask:Graphics;back:Sprite|null;front:Sprite|null;
-  light:Graphics;signature:Graphics;em:Ember[];
-  x:number;y:number;w:number;h:number;energy:number;reveal:number;
+  group:Container;mask:Graphics;back:Sprite|MeshPlane|null;front:Sprite|null;
+  cat:MeshPlane|null;catVertices:Float32Array|null;
+  detail:MotionDetails;signature:Graphics;em:Ember[];
+  x:number;y:number;w:number;h:number;energy:number;reveal:number;hoverProgress:number;
 };
 
 function makeSignature(id:ModeSceneId,color:number):Graphics {
@@ -92,10 +94,9 @@ function createScene(stage:Container,art:HTMLElement,card:HTMLElement,id:ModeSce
   const group=new Container(),mask=new Graphics();
   stage.addChild(mask,group);
   group.mask=mask;
-  const light=new Graphics();
-  light.ellipse(0,0,115,43).fill({color:MODE_PALETTES[id][0],alpha:.13});
-  light.blendMode='add';
+  // No generic oval light patches: all lighting is attached to its object.
   const signature=makeSignature(id,MODE_PALETTES[id][0]);
+  const detail=createMicroDetails(id);
   const random=seeded(hash(id));
   const em:Ember[]=Array.from({length:id==='nine-lives'||id==='neon-vault'?12:8},(_,i)=>{
     const size=.8+random()*1.35;
@@ -104,9 +105,9 @@ function createScene(stage:Container,art:HTMLElement,card:HTMLElement,id:ModeSce
     group.addChild(node);
     return {node,u:random(),v:random(),phase:random()*Math.PI*2,rate:.3+random()*.6};
   });
-  group.addChild(light,signature);
-  return {id,art,card,group,mask,back:null,front:null,light,signature,em,
-    x:NaN,y:NaN,w:0,h:0,energy:0,reveal:0};
+  group.addChild(signature,detail.layer);
+  return {id,art,card,group,mask,back:null,front:null,cat:null,catVertices:null,
+    detail,signature,em,x:NaN,y:NaN,w:0,h:0,energy:0,reveal:0,hoverProgress:0};
 }
 function disposeScene(stage:Container,s:Scene){
   s.group.mask=null;
@@ -118,11 +119,22 @@ function attachArt(s:Scene,resources:Map<ModeSceneId,{back:Texture;front:Texture
   if(s.back)return;
   const data=resources.get(s.id);
   if(!data)return;
-  const back=new Sprite(data.back);
-  back.anchor.set(.5);
-  back.alpha=0;
-  s.group.addChildAt(back,0);
-  s.back=back;
+  if(s.id==='nine-lives'){
+    // Warp only the center of the existing cat photo. The outer vertices
+    // remain stationary: no hard masked cutout or duplicated cat head.
+    const plane=new MeshPlane({texture:data.back,verticesX:11,verticesY:9});
+    s.catVertices=Float32Array.from(plane.geometry.getAttribute('aPosition').buffer.data);
+    plane.alpha=0;
+    s.group.addChildAt(plane,0);
+    s.back=plane;
+    s.cat=plane;
+  }else{
+    const back=new Sprite(data.back);
+    back.anchor.set(.5);
+    back.alpha=0;
+    s.group.addChildAt(back,0);
+    s.back=back;
+  }
   s.art.dataset.pixiArtReady='true';
   if(data.front){
     const front=new Sprite(data.front);
@@ -143,25 +155,51 @@ function placeArt(s:Scene,time:number,motion:boolean){
   // Reduced-motion mode skips the transition entirely.
   s.reveal=motion?Math.min(1,s.reveal+.12):1;
   if(s.back){
+    const scale=coverSize(w,h,s.back.texture.width,s.back.texture.height)
+      *(1.025+s.energy*.04);
     s.back.alpha=s.reveal;
-    s.back.position.set(w*.5-dx*.35,h*.5-dy*.3);
-    s.back.scale.set(coverSize(w,h,s.back.texture.width,s.back.texture.height)*(1.035+s.energy*.065));
+    s.back.scale.set(scale);
+    if(s.cat){
+      s.back.position.set(w*.5-s.back.texture.width*scale*.5-dx*.35,
+        h*.5-s.back.texture.height*scale*.5-dy*.3);
+      const original=s.catVertices!;
+      const vertexBuffer=s.cat.geometry.getAttribute('aPosition').buffer;
+      const coords=vertexBuffer.data;
+      const tw=s.cat.texture.width,th=s.cat.texture.height;
+      const turn=motion?s.energy:0;
+      if(turn>.001 || s.hoverProgress>.001){
+        for(let i=0;i<original.length;i+=2){
+          const u=original[i]/tw,v=original[i+1]/th;
+          const ellipse=((u-.5)/.32)**2+((v-.47)/.44)**2;
+          const influence=Math.exp(-2*ellipse)*turn;
+          coords[i]=original[i]+influence*tw*.025*(.8+.25*v);
+          coords[i+1]=original[i+1]+influence*th*.011*(u-.48);
+        }
+        vertexBuffer.update();
+      }
+    }else{
+      s.back.position.set(w*.5-dx*.35,h*.5-dy*.3);
+    }
   }
   if(s.front){
     s.front.alpha=s.reveal;
     s.front.position.set(w*.5+dx*.58,h*.5+dy*.44-pulse*.7);
-    s.front.scale.set(coverSize(w,h,s.front.texture.width,s.front.texture.height)*(1.035+s.energy*.093));
+    s.front.scale.set(coverSize(w,h,s.front.texture.width,s.front.texture.height)
+      *(1.025+s.energy*.055));
   }
-  s.light.position.set(w*.5+dx*.6,h*.45+dy*.2);
-  s.light.scale.set(w/230,h/140);
-  s.light.alpha=motion ? .22+s.energy*.68 : 0;
+  const artScale=coverSize(w,h);
+  s.detail.layer.scale.set(artScale);
+  s.detail.layer.position.set(w*.5-480*artScale+dx*.15,
+    h*.5-220*artScale+dy*.15);
+  s.hoverProgress=Math.max(0,Math.min(1,s.hoverProgress+(hovered?.075:-.105)));
+  s.detail.tick({hover:s.energy,progress:s.hoverProgress,time,enabled:motion});
   s.signature.position.set(s.id==='neon-vault'?w*.53:s.id==='nine-lives'?w*.5:w*.61,h*.48);
   s.signature.scale.set(Math.min(w/230,h/112)*(1+s.energy*.08));
-  s.signature.rotation=motion&&s.id==='neon-vault'?time*.19:motion?Math.sin(time*.8)*.05:0;
-  s.signature.alpha=motion ? .3+s.energy*.5 : 0;
+  s.signature.rotation=motion&&s.id==='neon-vault'?time*.19*s.energy:0;
+  s.signature.alpha=motion ? s.energy*.28 : 0;
   for(const p of s.em){
-    p.node.visible=motion;
-    if(!motion)continue;
+    p.node.visible=motion && s.energy>.015;
+    if(!motion || s.energy<=.015)continue;
     const v=(p.v+time*.045*p.rate)%1;
     p.node.position.set((p.u+.02*Math.sin(time*.65+p.phase))*w,
       (1-v)*h);

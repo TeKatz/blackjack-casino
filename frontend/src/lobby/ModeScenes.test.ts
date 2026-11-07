@@ -1,4 +1,5 @@
 import {describe,it,expect} from 'vitest';
+import {createMicroDetails,delayed,smooth} from './LobbyMicroMotion';
 import {
   MODE_SCENE_IDS,MODE_PALETTES,modeSceneAssets,coverSize,rectVisible
 } from './ModeScenes';
@@ -42,5 +43,32 @@ describe('custom PixiJS lobby key art',()=>{
     expect(rectVisible(box(1320,140,260,120),root)).toBe(false);
     expect(rectVisible(box(140,801,260,120),root)).toBe(false);
     expect(rectVisible(box(100,140,0,120),root)).toBe(false);
+  });
+});
+
+describe('independent per-object PixiJS motion',()=>{
+  it('builds all mode-specific animated object layers without a DOM renderer',()=>{
+    for(const id of MODE_SCENE_IDS){
+      const details=createMicroDetails(id);
+      expect(details.layer).toBeTruthy();
+      details.tick({hover:0,progress:0,time:0,enabled:false});
+      details.tick({hover:1,progress:1,time:2.5,enabled:true});
+      if(id!=='nine-lives')expect(details.layer.children.length).toBeGreaterThan(0);
+      details.layer.destroy({children:true});
+    }
+  });
+  it('eases keyframes and offsets the three reel strips independently',()=>{
+    expect(smooth(-1)).toBe(0);
+    expect(smooth(0)).toBe(0);
+    expect(smooth(.5)).toBe(.5);
+    expect(smooth(1)).toBe(1);
+    expect(smooth(9)).toBe(1);
+    expect(delayed(.12,.18)).toBe(0);
+    expect(delayed(.8,.18)).toBeGreaterThan(.75);
+  });
+  it('preserves standard tile proportions for future game additions',()=>{
+    const merge=modeSceneAssets('midnight-merge');
+    expect(merge.back).toContain('/midnight-merge-back.svg');
+    expect(merge.front).toContain('/midnight-merge-front.svg');
   });
 });

@@ -13,5 +13,5 @@
  <filter id="shadow" x="-40%" y="-40%" width="180%" height="200%"><feDropShadow dx="0" dy="11" stdDeviation="13" flood-color="#000000" flood-opacity=".79"/></filter>
  <pattern id="grain" width="38" height="38" patternUnits="userSpaceOnUse"><path d="M0 35L35 0" fill="none" stroke="#ffffff" stroke-opacity=".045" stroke-width=".8"/><circle cx="21" cy="13" r="1" fill="#ffde9a" opacity=".12"/></pattern>
 </defs>
-<rect width="960" height="440" fill="#070d1b"/><ellipse cx="505" cy="194" rx="470" ry="278" fill="url(#aura)"/><path d="M0 0H960V440H0Z" fill="url(#grain)"/><g fill="none" stroke="#24c7e2" stroke-opacity=".38" stroke-width="3"><path d="M0 0V440"/><path d="M160 0V440"/><path d="M320 0V440"/><path d="M480 0V440"/><path d="M640 0V440"/><path d="M800 0V440"/><path d="M960 0V440"/><path d="M0 78H960M0 367H960"/></g><path d="M70 397H900" stroke="#bc72e9" opacity=".6" stroke-width="7"/>
+<rect width="960" height="440" fill="#070d1b"/><path d="M0 0H960V440H0Z" fill="url(#grain)"/><g fill="none" stroke="#24c7e2" stroke-opacity=".38" stroke-width="3"><path d="M0 0V440"/><path d="M160 0V440"/><path d="M320 0V440"/><path d="M480 0V440"/><path d="M640 0V440"/><path d="M800 0V440"/><path d="M960 0V440"/><path d="M0 78H960M0 367H960"/></g><path d="M70 397H900" stroke="#bc72e9" opacity=".6" stroke-width="7"/>
 </svg>

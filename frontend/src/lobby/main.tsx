@@ -65,7 +65,6 @@ function Progress({value, tone = 'green'}:{value:number; tone?:'green'|'gold'}) 
 function GameTile({ mode, language, motionEnabled, onOpen, onSecondary }:{
   mode:LobbyMode; language:'de'|'en'; motionEnabled:boolean; onOpen:(id:string)=>void; onSecondary:(id:string)=>void;
 }) {
-  const wide = mode.id === 'midnight-merge';
   const move=(event:ReactPointerEvent<HTMLElement>)=>{
     if(!motionEnabled||event.pointerType==='touch')return;
     const card=event.currentTarget,rect=card.getBoundingClientRect();
@@ -78,7 +77,7 @@ function GameTile({ mode, language, motionEnabled, onOpen, onSecondary }:{
     event.currentTarget.style.setProperty('--motion-x','0px');
     event.currentTarget.style.setProperty('--motion-y','0px');
   };
-  return <article className={'lobby-game '+(wide?'lobby-merge ':'')+'game-'+mode.id+
+  return <article className={'lobby-game game-'+mode.id+
       (mode.enabled?'':' unavailable')} onPointerMove={move} onPointerLeave={leave}>
     <div className="game-art-window" data-mode-art={mode.id} aria-hidden="true"/>
     <div className="game-info">
@@ -88,8 +87,8 @@ function GameTile({ mode, language, motionEnabled, onOpen, onSecondary }:{
       <div className="game-actions">
         <button type="button" className="lobby-gold-button" disabled={!mode.enabled}
           onClick={()=>onOpen(mode.id)}>
-          <span aria-hidden="true">{wide || mode.id==='casino-empire'?'↗':'▶'}</span>
-          {wide || mode.id==='casino-empire'? (language==='de'?'Öffnen':'Enter') :
+          <span aria-hidden="true">{mode.id==='casino-empire'?'↗':'▶'}</span>
+          {mode.id==='casino-empire'? (language==='de'?'Öffnen':'Enter') :
             (language==='de'?'Spielen':'Play')}
         </button>
         {mode.secondary && <button className="lobby-secondary" type="button"
