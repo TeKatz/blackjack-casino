@@ -1,33 +1,20 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
 import {createRoot} from 'react-dom/client';
-import type {CSSProperties} from 'react';
 import {CustomRulesEditor} from './CustomRulesEditor';
 import {bjText,bjOutcome,bjStatus} from './locale';
 import {resolveCardSkin} from './cardSkins';
-import type {CardSkin} from './cardSkins';
+import {PlayingCard} from './PlayingCard';
+import {WinCelebration} from './WinCelebration';
+import type {WinMoment} from './WinCelebration';
+import {tableVisualEvent} from './TablePresentation';
+import {SoftTableAudio} from './SoftTableAudio';
 import {listen,send} from './bridge';
-import type {CardFace,TableIntent,TableReply,TableSnapshot} from './bridge';
+import type {TableIntent,TableReply,TableSnapshot} from './bridge';
 import './table.css';
+import './premiumTable.css';
 
-const rank:Record<string,string>={Ace:'A',Jack:'J',Queen:'Q',King:'K',Two:'2',Three:'3',Four:'4',Five:'5',Six:'6',Seven:'7',Eight:'8',Nine:'9',Ten:'10'};
-const suit:Record<string,string>={Clubs:'♣',Diamonds:'♦',Hearts:'♥',Spades:'♠'};
 const money=(s:string)=>s.replace(/\B(?=(\d{3})+(?!\d))/g,',');
 const showMoney=(s:string)=>'$'+money(s);
-function PlayingCard({card,skin}:{card:CardFace;skin:CardSkin}){
-  const styles={
-    '--card-face-a':skin.faceA,'--card-face-b':skin.faceB,'--card-border':skin.border,
-    '--card-black':skin.black,'--card-red':skin.red,'--card-back-a':skin.backA,
-    '--card-back-b':skin.backB,'--card-accent':skin.accent,
-  } as CSSProperties;
-  if(card.faceDown)return <div className={'bj-card back'+(skin.premium?' premium':'')}
-    style={styles} role="img" aria-label="Face-down card"><span>{skin.mark}</span></div>;
-  return <div style={styles} className={'bj-card'+(card.suit==='Hearts'||card.suit==='Diamonds'?' red':'')+(skin.dark?' dark':'')+(skin.premium?' premium':'')}
-    role="img" aria-label={(card.rank??'')+' of '+(card.suit??'')}>
-    <span className="bj-rank">{rank[card.rank??'']??card.rank}</span>
-    <span className="bj-suit">{suit[card.suit??'']}</span>
-    {skin.premium&&<span className="bj-ornament" aria-hidden="true">{skin.mark}</span>}
-  </div>;
-}
 function BlackjackApp(){
   const [snapshot,setSnapshot]=useState<TableSnapshot|null>(null);
   const [pending,setPending]=useState<string|null>(null);
@@ -36,6 +23,9 @@ function BlackjackApp(){
   const [bet,setBet]=useState('25');
   const [rulesOpen,setRulesOpen]=useState(false);
   const [resetOpen,setResetOpen]=useState(false);
+  const [dealEpoch,setDealEpoch]=useState(0);
+  const [winMoment,setWinMoment]=useState<WinMoment|null>(null);
+  const audio=useRef<SoftTableAudio>(new SoftTableAudio());
   const current=useRef<TableSnapshot|null>(null),pendingRef=useRef<string|null>(null);
   const accept=useCallback((reply:TableReply)=>{
     if(reply.requestId!==pendingRef.current)return;
@@ -47,6 +37,15 @@ function BlackjackApp(){
       if(event.type==='result')accept(event.data);
       else{
         if(current.current&&current.current.session===event.data.session&&event.data.revision<current.current.revision)return;
+        const previous=current.current;
+        const visual=tableVisualEvent(previous,event.data);
+        if(visual.newRound){setDealEpoch(v=>v+1);setWinMoment(null);}
+        if(visual.newCards>0)audio.current.cards(visual.newCards,event.data.state.soundEnabled);
+        else if(visual.revealedCards>0)audio.current.cards(1,event.data.state.soundEnabled);
+        if(visual.win){
+          setWinMoment({id:event.data.revision,net:visual.win.net,blackjack:visual.win.blackjack});
+          audio.current.win(event.data.state.soundEnabled,visual.win.blackjack);
+        }
         current.current=event.data;setSnapshot(event.data);
         if(document.activeElement?.getAttribute('data-wager')!=='true')setBet(event.data.state.selectedBet);
       }
@@ -55,6 +54,12 @@ function BlackjackApp(){
     return stop;
   },[accept]);
   useEffect(()=>{if(snapshot)window.chrome?.webview?.postMessage({type:'blackjack.ui-ready'});},[!!snapshot]);
+  useEffect(()=>()=>audio.current.dispose(),[]);
+  useEffect(()=>{
+    if(!winMoment)return;
+    const timer=setTimeout(()=>setWinMoment(previous=>previous?.id===winMoment.id?null:previous),3100);
+    return()=>clearTimeout(timer);
+  },[winMoment]);
   useEffect(()=>{
     if(!pending)return;
     const id=setTimeout(()=>{setUncertain(true);setMessage(bjText[current.current?.state.language??'en'].late);},8000);
@@ -62,6 +67,10 @@ function BlackjackApp(){
   },[pending]);
   const act=useCallback((intent:TableIntent)=>{
     const state=current.current;if(!state||pendingRef.current||uncertain)return;
+    // User input unlocks the browser audio device; snapshots only trigger FX after validation.
+    audio.current.arm(state.state.soundEnabled||(intent.action==='sound.set'&&intent.value==='true'));
+    if(intent.action.startsWith('bet.')||intent.action==='deal')
+      audio.current.chip(state.state.soundEnabled);
     const id=send(state,intent);pendingRef.current=id;setPending(id);setMessage(null);
   },[uncertain]);
   const close=useCallback(()=>{
@@ -104,28 +113,34 @@ function BlackjackApp(){
     </header>
     <div className="bj-layout">
       <main className="bj-table">
+        <div className="bj-table-scene" aria-hidden="true"><span/><span/><span/><span/><span/><span/><span/><span/></div>
         <div className="bj-felt">
+          <span className="bj-felt-mark" aria-hidden="true">THE MIDNIGHT CLUB <b>◆</b> BLACKJACK</span>
           <section className="bj-dealer"><small>{t.dealer} · {t.shoe} {s.shoeNumber} · {s.cardsRemaining} {t.cards}</small>
-            <div className="bj-cards">{round?.dealerCards.map((card,i)=><PlayingCard card={card} skin={skin} key={i}/>)??<em>{t.waiting}</em>}</div>
+            <div className="bj-cards">{round?.dealerCards.map((card,i)=><PlayingCard card={card} skin={skin}
+              dealIndex={i} key={'dealer-'+dealEpoch+'-'+i}/>)??<em>{t.waiting}</em>}</div>
             {round?.dealerValue!=null&&<span>{t.dealer} {round.dealerValue}</span>}
           </section>
           {round&&round.aiSeats.length>0&&<div className="bj-ai">
             {round.aiSeats.map((seat,i)=><div className="bj-ai-seat" key={i}><small>{seat.name}</small>
               {seat.hands.map((hand,j)=><div key={j}><div className="bj-cards compact">
-                {hand.cards.map((card,k)=><PlayingCard card={card} skin={skin} key={k}/>)}</div>
+                {hand.cards.map((card,k)=><PlayingCard card={card} skin={skin} compact
+                  dealIndex={k} key={'ai-'+dealEpoch+'-'+i+'-'+j+'-'+k}/>)}</div>
                 <small>{showMoney(hand.bet)} · {hand.value} {bjOutcome(hand.outcome,s.language)}</small></div>)}</div>)}
           </div>}
           <section className="bj-player"><small>{t.seat}</small><div className="bj-hands">
             {round?round.playerHands.map(hand=><article key={hand.index} className={'bj-hand'+(hand.active?' active':'')}>
               <div className="bj-hand-heading"><span>{round.playerHands.length>1?t.hand+' '+(hand.index+1):t.yourHand}</span>
                 <strong>{showMoney(hand.bet)}</strong></div>
-              <div className="bj-cards">{hand.cards.map((card,j)=><PlayingCard key={j} card={card} skin={skin}/>)}</div>
+              <div className="bj-cards">{hand.cards.map((card,j)=><PlayingCard key={'player-'+dealEpoch+'-'+hand.index+'-'+j} card={card}
+                  skin={skin} dealIndex={j}/>)}</div>
               <p>{hand.value}{hand.isSoft?' ('+t.soft+')':''} · {hand.outcome?bjOutcome(hand.outcome,s.language):(hand.active?t.yourMove:'')}
                 {hand.net!==null?' · '+showMoney(hand.net):''}</p>
             </article>):<div className="bj-empty">{t.empty}</div>}
           </div></section>
           <div className="bj-status" role="status">{message??(de?bjStatus(s.language,round?.phase):s.status)}
             {round?.totalNet!=null&&<strong> · {t.net} {showMoney(round.totalNet)}</strong>}</div>
+          <WinCelebration moment={winMoment} language={s.language}/>
           <div className="bj-actions">
             {round?.phase==='InsuranceDecision'?<>
               <button disabled={locked} onClick={()=>act({action:'insurance.take'})}>{t.yesInsurance}</button>

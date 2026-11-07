@@ -75,7 +75,9 @@ public partial class MainWindow
             };
         }
 
-        if (result.CardSound) CasinoFeedback.PlayCard(SoundEnabled);
+        // The modern React table owns its soft, gesture-unlocked Web Audio cues.
+        // Replaying the legacy WPF card effect here would produce doubled sounds.
+        // Non-modern game surfaces retain their existing native feedback.
         if (result.RoundChanged)
             HandleRoundStateAfterMutation(result.Message);
         else
