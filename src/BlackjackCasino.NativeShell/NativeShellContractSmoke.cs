@@ -102,8 +102,8 @@ internal static class NativeShellContractSmoke
             if (english != "Midnight Merge" || !german.Contains("RESTAURIERUNG", StringComparison.Ordinal))
                 throw new InvalidOperationException("Original English/German Merge resources were not loaded.");
 
-            Console.WriteLine("PASS: independent WinForms host, exact React protocol, Core Blackjack/Reels, 
-                + "Neon Vault/Nine Lives receipts and preview-only save location; no WPF reference.");
+            Console.WriteLine("PASS: WPF-free WinForms host; Blackjack, Reels, Neon Vault, "
+                + "Nine Lives and Merge; original C# commands, replay protection and isolated saves.");
             return 0;
         }
         catch (Exception ex)
