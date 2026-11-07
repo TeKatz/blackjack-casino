@@ -172,7 +172,7 @@ public sealed class PackageInstallerTests : IDisposable
         // A handle without FILE_SHARE_DELETE blocks Directory.Move on the root
         // while still permitting updates to files within that directory.
         using (var lockedRoot = OpenDirectoryWithoutDeleteSharing(target,
-            0, 0x00000001 | 0x00000002, IntPtr.Zero, 3, 0x02000000, IntPtr.Zero))
+            0x00010000, 0x00000001 | 0x00000002, IntPtr.Zero, 3, 0x02000000, IntPtr.Zero))
         {
             if (lockedRoot.IsInvalid)
                 throw new System.ComponentModel.Win32Exception(
