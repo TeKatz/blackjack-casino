@@ -173,7 +173,7 @@ internal static class Program
                 }
                 Require(modernGameplay.Equals("true", StringComparison.OrdinalIgnoreCase),
                     "Modern Manor did not expose gameplay controls after loading.");
-                string polishedControls = await modernBrowser.CoreWebView2.ExecuteScriptAsync(
+                string polishedControls = await modernBrowser.CoreWebView2!.ExecuteScriptAsync(
                     "(()=>{const bets=[...document.querySelectorAll('.preset-bets .bet-chip')];" +
                     "const auto=[...document.querySelectorAll('.auto-buttons .auto-chip')];" +
                     "return bets.length===6 && auto.length===4" +
