@@ -42,6 +42,8 @@ internal sealed class NativePreviewRuntime : IDisposable
     private long diceEventCounter, diceRollToken;
     private int[] diceRollingIndices = [];
     private bool diceAdvancing;
+    private ManorController? manorController;
+    private ManorModernGameService? manorGame;
     private bool disposed;
     private string status = "Choose a game from the native shell.";
 
@@ -55,6 +57,9 @@ internal sealed class NativePreviewRuntime : IDisposable
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(previewDirectory);
         directory = Path.GetFullPath(previewDirectory);
+        // Recover any interrupted aggregate Manor journal BEFORE loading either
+        // player preference or profile mirrors, exactly as the regular app does.
+        new ManorPersistence(directory).Recover();
         Preferences = PlayerStateStore.Load(directory);
         progression = new PlayerProgressionController(LoadPreviewProfile(directory));
         table = new BlackjackTableController(Preferences);
@@ -824,6 +829,58 @@ internal sealed class NativePreviewRuntime : IDisposable
         diceRollingIndices = [];
     }
 
+    internal bool ManorRequiresRestart => manorGame?.RequiresRestart == true;
+
+    internal void OpenManor()
+    {
+        if (disposed || HandInProgress)
+            throw new InvalidOperationException("Finish the Blackjack hand before Midnight Manor.");
+        AccountCompletedRound();
+        if (manorGame?.RequiresRestart == true)
+            throw new InvalidOperationException(
+                "Manor journal recovery requires restarting the native shell.");
+        if (manorController is null)
+        {
+            manorController = new ManorController(Preferences, Bankroll, progression, committed =>
+            {
+                // The Manor journal holds the wallet and profile together before
+                // either native mirror or visible bankroll can be replaced.
+                table.Session.ResetBankroll(committed.Bankroll);
+                Preferences = committed;
+            }, new ManorPersistence(directory));
+            manorGame = new ManorModernGameService(manorController);
+        }
+        status = "Midnight Manor ready.";
+    }
+
+    internal ManorPreviewProtocol.Snapshot ManorSnapshot()
+        => manorGame?.Snapshot()
+            ?? throw new InvalidOperationException("Midnight Manor is not active.");
+
+    internal ManorPreviewProtocol.Snapshot ApplyManor(ManorPreviewProtocol.Command command)
+    {
+        if (disposed || manorGame is null)
+            throw new InvalidOperationException("Midnight Manor is not active.");
+        ManorPreviewProtocol.Snapshot reply = manorGame.Execute(command);
+        status = "Midnight Manor checkpoint committed.";
+        return reply;
+    }
+
+    internal void CloseManor(bool interrupted = false)
+    {
+        if (manorController is null) return;
+        // Do not override a potentially newer committed Manor journal with
+        // a stale ordinary player-state checkpoint when saving was uncertain.
+        if (manorGame?.RequiresRestart == true) return;
+        Preferences = manorController.Preferences;
+        if (!interrupted)
+        {
+            manorController = null;
+            manorGame = null;
+        }
+        Persist();
+    }
+
     internal void Persist()
     {
         if (disposed) return;
@@ -900,6 +957,7 @@ internal sealed class NativePreviewRuntime : IDisposable
             if (nineMachine is not null) CloseNineLives();
             if (mergeBoard is not null) CloseMerge();
             if (diceGame is not null) CloseDice();
+            if (manorController is not null) CloseManor();
             AccountCompletedRound();
             Persist();
         }

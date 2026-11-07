@@ -40,6 +40,8 @@
     <Compile Include="../BlackjackCasino.Desktop/KniffelCategoryLabels.cs" Link="Shared/KniffelCategoryLabels.cs" />
     <Compile Include="../BlackjackCasino.Desktop/DicePaletteTokens.cs" Link="Shared/DicePaletteTokens.cs" />
     <Compile Include="../BlackjackCasino.Desktop/ManorPreviewProtocol.cs" Link="Shared/ManorPreviewProtocol.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ManorController.cs" Link="Shared/ManorController.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ManorModernGameService.cs" Link="Shared/ManorModernGameService.cs" />
     <Compile Include="../BlackjackCasino.Desktop/CasinoModeRegistry.cs" Link="Shared/CasinoModeRegistry.cs" />
     <Compile Include="../BlackjackCasino.Desktop/BrowserRecoverySession.cs" Link="Shared/BrowserRecoverySession.cs" />
   </ItemGroup>

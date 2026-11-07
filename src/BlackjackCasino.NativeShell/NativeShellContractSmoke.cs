@@ -109,6 +109,19 @@ internal static class NativeShellContractSmoke
                     diceEpoch.Execute(roll, _ => throw new Exception("Replayed Dice roll!")) != rollReceipt)
                     throw new InvalidOperationException("Dice roll was not a single authoritative C# command.");
                 session.CloseDice();
+
+                session.OpenManor();
+                string manorId = Guid.NewGuid().ToString("D");
+                var manorSpin = new ManorPreviewProtocol.Command("spin.paid", manorId,
+                    session.ManorSnapshot().Revision,
+                    Bet: session.Preferences.ManorBet);
+                var manorBefore = session.ManorSnapshot();
+                ManorPreviewProtocol.Snapshot manorAfter = session.ApplyManor(manorSpin);
+                if (manorAfter.Revision != manorBefore.Revision + 1)
+                    throw new InvalidOperationException("Manor journal did not advance.");
+                if (session.ApplyManor(manorSpin).Revision != manorAfter.Revision)
+                    throw new InvalidOperationException("Manor replay was not idempotent.");
+                session.CloseManor();
                 session.Persist();
             }
             AppPreferences saved = PlayerStateStore.Load(directory);
