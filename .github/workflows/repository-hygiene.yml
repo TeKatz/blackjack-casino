@@ -24,3 +24,5 @@ jobs:
         run: python3 tools/check_repo_contract.py
       - name: React and legacy WPF separation audit
         run: python3 tools/check_ui_migration_boundaries.py
+      - name: Casino music importer URL and destination self-test
+        run: python3 tools/import_casino_music.py --self-test
