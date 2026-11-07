@@ -115,19 +115,14 @@ internal static class ModernRecordsSmoke
         Require(modern.RecordsPage=="season","Season Pass did not open in React.");
         string originalSeason=profile.ActiveSeasonId;
         string alternate=SeasonCatalog.All.First(s=>s.Id!=originalSeason).Id;
-        await web.ExecuteScriptAsync(
-            "document.querySelectorAll('.season-library button')["
-            + SeasonCatalog.All.ToList().FindIndex(s=>s.Id==alternate)
-            + "]?.click()");
-        await web.ExecuteScriptAsync("document.querySelector('.season-heading .record-claim-all')?.click()");
-        await Until(()=>profile.ActiveSeasonId==alternate,
+        int alternateIndex=SeasonCatalog.All.ToList().FindIndex(s=>s.Id==alternate);
+        int originalIndex=SeasonCatalog.All.ToList().FindIndex(s=>s.Id==originalSeason);
+        // Browser script calls do not wait for React to commit state. Confirm that
+        // the chosen tab rendered and the pending native request settled before
+        // clicking Activate; otherwise two fast calls can activate a stale tab.
+        await SelectAndActivateSeason(web, profile, alternateIndex, alternate,
             "Season selection did not commit to the native profile.");
-        await web.ExecuteScriptAsync(
-            "document.querySelectorAll('.season-library button')["
-            + SeasonCatalog.All.ToList().FindIndex(s=>s.Id==originalSeason)
-            + "]?.click()");
-        await web.ExecuteScriptAsync("document.querySelector('.season-heading .record-claim-all')?.click()");
-        await Until(()=>profile.ActiveSeasonId==originalSeason,
+        await SelectAndActivateSeason(web, profile, originalIndex, originalSeason,
             "Season selection did not restore the original active pass.");
         await Capture(web,Path.Combine(output,"modern-season-native.png"));
         await web.ExecuteScriptAsync("document.querySelector('.season-page .shop-back')?.click()");
@@ -189,6 +184,29 @@ internal static class ModernRecordsSmoke
         await Until(()=>modern.RecordsPage is null,"Profile Statistics did not close properly.");
         File.WriteAllText(Path.Combine(output,"modern-records-result.txt"),
             "PASS: React Challenges, Statistics, Season, Profile identity editor and Hand History; C#-persisted rename and season activation; native rewards validated; clean lobby navigation.");
+    }
+
+    private static async Task SelectAndActivateSeason(
+        CoreWebView2 web, PlayerProfileState profile, int index, string seasonId, string failureMessage)
+    {
+        await web.ExecuteScriptAsync(
+            "document.querySelectorAll('.season-library button')[" + index + "]?.click()");
+        await WaitFor(web,
+            "document.querySelectorAll('.season-library button')[" + index
+            + "]?.getAttribute('aria-selected')==='true'"
+            + "&&document.querySelector('.season-heading .season-activate')?.disabled===false",
+            "Season selection did not become actionable in the React view.");
+        await web.ExecuteScriptAsync(
+            "document.querySelector('.season-heading .season-activate')?.click()");
+        await Until(() => profile.ActiveSeasonId == seasonId, failureMessage);
+        // The host profile can commit before the browser receives the refreshed
+        // snapshot. Wait for the active badge and disabled Activate button so
+        // the following selection starts from a fully synchronized view.
+        await WaitFor(web,
+            "Boolean(document.querySelectorAll('.season-library button')[" + index
+            + "]?.querySelector('.season-library-state')?.textContent?.match(/ACTIVE|AKTIV/)"
+            + "&&document.querySelector('.season-heading .season-activate')?.disabled)",
+            "React Season Pass did not reflect the newly activated native season.");
     }
 
     private static async Task Capture(CoreWebView2 web,string path)
