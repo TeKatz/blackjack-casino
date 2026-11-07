@@ -68,6 +68,7 @@
     <Compile Include="../../src/BlackjackCasino.Desktop/ChillLoungeSynthesis.cs" Link="Audio/ChillLoungeSynthesis.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/AdventureSynthesis.cs" Link="Audio/AdventureSynthesis.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/CasinoMusicSynthesis.cs" Link="Audio/CasinoMusicSynthesis.cs" />
+    <Compile Include="../../src/BlackjackCasino.Desktop/LicensedSoundtracks.cs" Link="Audio/LicensedSoundtracks.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/CollectionSoundSynthesis.cs" Link="Audio/CollectionSoundSynthesis.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/CasinoSoundSynthesis.cs" Link="Audio/CasinoSoundSynthesis.cs" />
   </ItemGroup>
