@@ -56,7 +56,7 @@ type Ember = {node:Graphics;u:number;v:number;phase:number;rate:number};
 type Scene = {
   id:ModeSceneId;art:HTMLElement;card:HTMLElement;
   group:Container;mask:Graphics;back:Sprite|MeshPlane|null;front:Sprite|null;
-  cat:MeshPlane|null;catVertices:Float32Array|null;
+  cat:MeshPlane|null;catVertices:Float32Array|null;catWarped:boolean;
   detail:MotionDetails;signature:Graphics;em:Ember[];
   x:number;y:number;w:number;h:number;energy:number;reveal:number;hoverProgress:number;
 };
@@ -106,7 +106,7 @@ function createScene(stage:Container,art:HTMLElement,card:HTMLElement,id:ModeSce
     return {node,u:random(),v:random(),phase:random()*Math.PI*2,rate:.3+random()*.6};
   });
   group.addChild(signature,detail.layer);
-  return {id,art,card,group,mask,back:null,front:null,cat:null,catVertices:null,
+  return {id,art,card,group,mask,back:null,front:null,cat:null,catVertices:null,catWarped:false,
     detail,signature,em,x:NaN,y:NaN,w:0,h:0,energy:0,reveal:0,hoverProgress:0};
 }
 function disposeScene(stage:Container,s:Scene){
@@ -167,7 +167,7 @@ function placeArt(s:Scene,time:number,motion:boolean){
       const coords=vertexBuffer.data;
       const tw=s.cat.texture.width,th=s.cat.texture.height;
       const turn=motion?s.energy:0;
-      if(turn>.001 || s.hoverProgress>.001){
+      if(turn>.001 || s.catWarped){
         for(let i=0;i<original.length;i+=2){
           const u=original[i]/tw,v=original[i+1]/th;
           const ellipse=((u-.5)/.32)**2+((v-.47)/.44)**2;
@@ -176,6 +176,7 @@ function placeArt(s:Scene,time:number,motion:boolean){
           coords[i+1]=original[i+1]+influence*th*.011*(u-.48);
         }
         vertexBuffer.update();
+        s.catWarped=turn>.001;
       }
     }else{
       s.back.position.set(w*.5-dx*.35,h*.5-dy*.3);
@@ -191,7 +192,7 @@ function placeArt(s:Scene,time:number,motion:boolean){
   s.detail.layer.scale.set(artScale);
   s.detail.layer.position.set(w*.5-480*artScale+dx*.15,
     h*.5-220*artScale+dy*.15);
-  s.hoverProgress=Math.max(0,Math.min(1,s.hoverProgress+(hovered?.075:-.105)));
+  s.hoverProgress=motion?Math.max(0,Math.min(1,s.hoverProgress+(hovered?.075:-.105))):0;
   s.detail.tick({hover:s.energy,progress:s.hoverProgress,time,enabled:motion});
   s.signature.position.set(s.id==='neon-vault'?w*.53:s.id==='nine-lives'?w*.5:w*.61,h*.48);
   s.signature.scale.set(Math.min(w/230,h/112)*(1+s.energy*.08));
