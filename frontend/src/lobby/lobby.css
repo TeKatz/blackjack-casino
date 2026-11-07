@@ -468,3 +468,50 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
 .lobby-game:has(.tile-motion-layers){transform-style:preserve-3d}
 .lobby-game:has(.tile-motion-layers) .game-art-window{overflow:hidden;isolation:isolate}
 .lobby-game:has(.tile-motion-layers):hover{box-shadow:0 16px 36px #000d,0 0 22px color-mix(in srgb,var(--slot-glint,#e2b367) 43%,transparent)}
+
+/* Cinematic art is now rendered exclusively by the single shared PixiJS canvas.
+   CSS remains responsible for UI layout, borders and control feedback only. */
+.game-art-window{height:46%;min-height:82px;position:relative;isolation:isolate;
+  contain:layout paint;overflow:hidden;background:#071a1b}
+.lobby-game:is(.game-midnight-reels,.game-neon-vault,.game-nine-lives,.game-midnight-manor)
+  .game-art-window{height:46%;min-height:82px;background:#080f18}
+.game-chill-lounge .game-art-window,.game-casino-empire .game-art-window{height:46%;min-height:82px}
+.lobby-game{--lobby-tile-accent:#e5bb76;
+  box-shadow:0 4px 17px #0008,inset 0 1px #f3d6981d;
+  transition:transform .3s cubic-bezier(.18,.82,.2,1),border-color .26s,box-shadow .3s}
+.game-neon-vault{--lobby-tile-accent:#7de9f5}
+.game-nine-lives{--lobby-tile-accent:#da9cff}
+.game-midnight-manor{--lobby-tile-accent:#bfa5f0}
+.game-chill-lounge{--lobby-tile-accent:#ebd2a2}
+.game-casino-empire{--lobby-tile-accent:#f6d08d}
+.lobby-game:hover,.lobby-game:focus-within{
+  border-color:var(--lobby-tile-accent);transform:translateY(-5px);
+  box-shadow:0 19px 38px #000c,0 0 21px color-mix(in srgb,var(--lobby-tile-accent) 32%,transparent),
+    inset 0 1px color-mix(in srgb,var(--lobby-tile-accent) 48%,transparent)}
+.lobby-game .game-info{position:relative;
+  border-top:1px solid color-mix(in srgb,var(--lobby-tile-accent) 39%,#16382b)}
+/* Retire CSS-paint optical images; animated scene elements live on the GPU. */
+.lobby-game .game-art-window::after{
+  content:none!important;background:none!important;border:0!important;box-shadow:none!important}
+.lobby-game .game-actions .lobby-gold-button{
+  transition:transform .2s ease,box-shadow .25s ease,filter .2s ease}
+.lobby-game:hover .lobby-gold-button,.lobby-game:focus-within .lobby-gold-button{
+  box-shadow:0 0 19px #ffd99583,inset 0 1px #ffffff5e}
+.lobby-merge{grid-column:1/-1;min-height:170px;
+  display:flex;flex-direction:row;align-items:stretch;border-color:#ce9d60}
+.lobby-merge .game-art-window{order:2;flex:1;min-width:0;height:100%;min-height:0}
+.lobby-merge .game-info{order:1;flex:0 0 39%;padding:19px 23px}
+.lobby-merge .game-info h3{font-size:clamp(21px,1.6vw,30px)}
+.lobby-merge .game-info p{-webkit-line-clamp:3}
+@media(max-width:1100px){
+  .lobby-merge{grid-column:auto;display:flex;flex-direction:column}
+  .lobby-merge .game-art-window{order:0;flex:0 0 46%;min-width:0;min-height:82px}
+  .lobby-merge .game-info{order:1;flex:1;padding:8px}
+  .lobby-merge .game-info h3{font-size:19px}
+  .lobby-merge .game-info p{-webkit-line-clamp:2}
+}
+@media(prefers-reduced-motion:reduce){
+  .lobby-game,.lobby-game .game-actions .lobby-gold-button{transition:none!important}
+  .lobby-game:hover{transform:none}
+}
+.casino-lobby-shell[data-reduced="true"] .lobby-game:hover{transform:none}

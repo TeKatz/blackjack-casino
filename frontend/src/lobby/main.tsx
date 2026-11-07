@@ -4,8 +4,6 @@ import type {PointerEvent as ReactPointerEvent} from 'react';
 import { createRoot } from 'react-dom/client';
 import {PlayerPortrait,CosmeticTitle,VaultIcon} from './Cosmetics';
 import {Modal} from './Modal';
-import {GamePreview} from './GamePreview';
-import {PremiumTileLayers} from './PremiumTileLayers';
 import {NavIcon} from './NavIcon';
 import { LobbyAmbient } from './LobbyAmbient';
 import { ModernShop } from './ModernShop';
@@ -67,7 +65,7 @@ function Progress({value, tone = 'green'}:{value:number; tone?:'green'|'gold'}) 
 function GameTile({ mode, language, motionEnabled, onOpen, onSecondary }:{
   mode:LobbyMode; language:'de'|'en'; motionEnabled:boolean; onOpen:(id:string)=>void; onSecondary:(id:string)=>void;
 }) {
-  const wide = false;
+  const wide = mode.id === 'midnight-merge';
   const move=(event:ReactPointerEvent<HTMLElement>)=>{
     if(!motionEnabled||event.pointerType==='touch')return;
     const card=event.currentTarget,rect=card.getBoundingClientRect();
@@ -82,10 +80,7 @@ function GameTile({ mode, language, motionEnabled, onOpen, onSecondary }:{
   };
   return <article className={'lobby-game '+(wide?'lobby-merge ':'')+'game-'+mode.id+
       (mode.enabled?'':' unavailable')} onPointerMove={move} onPointerLeave={leave}>
-    <div className="game-art-window" aria-hidden="true">
-      <div className={'game-art-image art-'+mode.id}/><GamePreview id={mode.id}/>
-      <PremiumTileLayers id={mode.id} enabled={motionEnabled&&mode.enabled}/>
-    </div>
+    <div className="game-art-window" data-mode-art={mode.id} aria-hidden="true"/>
     <div className="game-info">
       <div className="game-category">{categoryById[mode.id] || mode.category.toUpperCase()}</div>
       <h3>{mode.title}</h3>
@@ -334,7 +329,7 @@ function LobbyApp() {
     .filter(x=>matchesFilter(x.id,filter))
     .sort((a,b)=>artOrder.indexOf(a.id)-artOrder.indexOf(b.id));
   return <div className="casino-lobby-shell" data-reduced={lowMotion || !data.animationsEnabled}>
-    <LobbyAmbient enabled={!lowMotion && data.animationsEnabled}/>
+    <LobbyAmbient motionEnabled={!lowMotion && data.animationsEnabled}/>
     <header className="lobby-topbar">
       <button className="lobby-brand" type="button" onClick={()=>{if(shopVisible)closeShop();if(recordsVisible)closeRecords();setFilter('all');}}>
         <span className="brand-spade" aria-hidden="true">♠</span>
