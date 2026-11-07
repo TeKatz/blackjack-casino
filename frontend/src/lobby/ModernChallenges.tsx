@@ -46,7 +46,7 @@ function Card({entry,de,pending,onClaim}:{
         {entry.cosmeticReward&&<span className="challenge-portrait-reward">
           {entry.cosmeticRewardVariant&&<img src={portraitPath(entry.cosmeticRewardVariant)} alt="" loading="lazy"/>}
           <small>+ {de?'Exklusives Porträt':'Exclusive portrait'}: {entry.cosmeticReward}</small>
-        </span>
+        </span>}
         {entry.empireBoost&&<small className="empire-reward">EMPIRE {entry.empireBoost}</small>}
         {entry.automaticallyAwarded&&<small>{de?'Automatisch beim Puzzeln vergeben':'Automatically awarded in Jigsaw Puzzle'}</small>}
       </div>
