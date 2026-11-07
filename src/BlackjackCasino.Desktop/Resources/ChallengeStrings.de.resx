@@ -412,4 +412,92 @@
   <data name="Challenge.prestige-5.Description" xml:space="preserve"><value>Erreiche Prestige 5.</value></data>
   <data name="Challenge.prestige-10.Name" xml:space="preserve"><value>Ewiger High Roller</value></data>
   <data name="Challenge.prestige-10.Description" xml:space="preserve"><value>Erreiche Prestige 10.</value></data>
+  <data name="Challenge.solitaire-first.Name" xml:space="preserve"><value>Erster Sieg</value></data>
+  <data name="Challenge.solitaire-first.Description" xml:space="preserve"><value>Gewinne dein erstes Midnight-Solitaire-Spiel.</value></data>
+  <data name="Challenge.solitaire-10.Name" xml:space="preserve"><value>Eine ruhige Hand</value></data>
+  <data name="Challenge.solitaire-10.Description" xml:space="preserve"><value>Gewinne 10 Solitaire-Spiele.</value></data>
+  <data name="Challenge.solitaire-25.Name" xml:space="preserve"><value>Karten nach Mitternacht</value></data>
+  <data name="Challenge.solitaire-25.Description" xml:space="preserve"><value>Gewinne 25 Solitaire-Spiele.</value></data>
+  <data name="Challenge.solitaire-50.Name" xml:space="preserve"><value>Solitaire-Stammgast</value></data>
+  <data name="Challenge.solitaire-50.Description" xml:space="preserve"><value>Gewinne 50 Solitaire-Spiele.</value></data>
+  <data name="Challenge.solitaire-100.Name" xml:space="preserve"><value>Geduldiger Kartengeber</value></data>
+  <data name="Challenge.solitaire-100.Description" xml:space="preserve"><value>Gewinne 100 Solitaire-Spiele.</value></data>
+  <data name="Challenge.solitaire-250.Name" xml:space="preserve"><value>Veteran des Kartenzimmers</value></data>
+  <data name="Challenge.solitaire-250.Description" xml:space="preserve"><value>Gewinne 250 Solitaire-Spiele.</value></data>
+  <data name="Challenge.solitaire-500.Name" xml:space="preserve"><value>Tausendmal gemischt</value></data>
+  <data name="Challenge.solitaire-500.Description" xml:space="preserve"><value>Gewinne 500 Solitaire-Spiele.</value></data>
+  <data name="Challenge.solitaire-1000.Name" xml:space="preserve"><value>Das endlose Deck</value></data>
+  <data name="Challenge.solitaire-1000.Description" xml:space="preserve"><value>Gewinne 1.000 Solitaire-Spiele.</value></data>
+  <data name="Challenge.solitaire-klondike.Name" xml:space="preserve"><value>Goldenes Klondike</value></data>
+  <data name="Challenge.solitaire-klondike.Description" xml:space="preserve"><value>Gewinne eine Partie Klondike.</value></data>
+  <data name="Challenge.solitaire-freecell.Name" xml:space="preserve"><value>Offene Geheimnisse</value></data>
+  <data name="Challenge.solitaire-freecell.Description" xml:space="preserve"><value>Gewinne eine Partie FreeCell.</value></data>
+  <data name="Challenge.solitaire-spider.Name" xml:space="preserve"><value>Im Spinnennetz</value></data>
+  <data name="Challenge.solitaire-spider.Description" xml:space="preserve"><value>Gewinne eine Partie Spider Solitaire.</value></data>
+  <data name="Challenge.solitaire-spider-four.Name" xml:space="preserve"><value>Vier-Farben-Meister</value></data>
+  <data name="Challenge.solitaire-spider-four.Description" xml:space="preserve"><value>Gewinne eine Partie Spider Solitaire mit vier Farben.</value></data>
+  <data name="Challenge.solitaire-spider-four-10.Name" xml:space="preserve"><value>Meister des Netzes</value></data>
+  <data name="Challenge.solitaire-spider-four-10.Description" xml:space="preserve"><value>Gewinne 10 Partien Spider Solitaire mit vier Farben.</value></data>
+  <data name="Challenge.solitaire-spider-four-50.Name" xml:space="preserve"><value>Das unzerreißbare Netz</value></data>
+  <data name="Challenge.solitaire-spider-four-50.Description" xml:space="preserve"><value>Gewinne 50 Partien Spider Solitaire mit vier Farben.</value></data>
+  <data name="Challenge.solitaire-pyramid.Name" xml:space="preserve"><value>Uralte Ordnung</value></data>
+  <data name="Challenge.solitaire-pyramid.Description" xml:space="preserve"><value>Gewinne eine Partie Pyramid Solitaire.</value></data>
+  <data name="Challenge.solitaire-golf.Name" xml:space="preserve"><value>Unter Par</value></data>
+  <data name="Challenge.solitaire-golf.Description" xml:space="preserve"><value>Gewinne eine Partie Golf Solitaire.</value></data>
+  <data name="Challenge.solitaire-tripeaks.Name" xml:space="preserve"><value>Drei Gipfel</value></data>
+  <data name="Challenge.solitaire-tripeaks.Description" xml:space="preserve"><value>Gewinne eine Partie TriPeaks Solitaire.</value></data>
+  <data name="Challenge.solitaire-variants-3.Name" xml:space="preserve"><value>Weite Horizonte</value></data>
+  <data name="Challenge.solitaire-variants-3.Description" xml:space="preserve"><value>Gewinne je eine Partie in drei verschiedenen Solitaire-Varianten.</value></data>
+  <data name="Challenge.solitaire-variants-6.Name" xml:space="preserve"><value>Die ganze Kartensammlung</value></data>
+  <data name="Challenge.solitaire-variants-6.Description" xml:space="preserve"><value>Gewinne mindestens eine Partie in jeder der sechs Solitaire-Varianten.</value></data>
+  <data name="Challenge.solitaire-streak-3.Name" xml:space="preserve"><value>Im Spielfluss</value></data>
+  <data name="Challenge.solitaire-streak-3.Description" xml:space="preserve"><value>Erreiche drei Solitaire-Siege hintereinander.</value></data>
+  <data name="Challenge.solitaire-streak-10.Name" xml:space="preserve"><value>Ungebrochene Konzentration</value></data>
+  <data name="Challenge.solitaire-streak-10.Description" xml:space="preserve"><value>Erreiche zehn Solitaire-Siege hintereinander.</value></data>
+  <data name="Challenge.solitaire-starts-100.Name" xml:space="preserve"><value>Immer weitergeben</value></data>
+  <data name="Challenge.solitaire-starts-100.Description" xml:space="preserve"><value>Beginne 100 verschiedene Solitaire-Partien.</value></data>
+  <data name="Challenge.lifetime-xp-10000.Name" xml:space="preserve"><value>Die ersten Zehntausend</value></data>
+  <data name="Challenge.lifetime-xp-10000.Description" xml:space="preserve"><value>Sammle insgesamt 10.000 Spieler-EP.</value></data>
+  <data name="Challenge.lifetime-xp-100000.Name" xml:space="preserve"><value>Absolvent der Nachtschule</value></data>
+  <data name="Challenge.lifetime-xp-100000.Description" xml:space="preserve"><value>Sammle insgesamt 100.000 Spieler-EP.</value></data>
+  <data name="Challenge.lifetime-xp-5000000.Name" xml:space="preserve"><value>Lebende Legende</value></data>
+  <data name="Challenge.lifetime-xp-5000000.Description" xml:space="preserve"><value>Sammle insgesamt 5.000.000 Spieler-EP.</value></data>
+  <data name="Challenge.lifetime-hours-10.Name" xml:space="preserve"><value>Ein langer Abend</value></data>
+  <data name="Challenge.lifetime-hours-10.Description" xml:space="preserve"><value>Erreiche insgesamt 10 Stunden Spielzeit.</value></data>
+  <data name="Challenge.lifetime-hours-50.Name" xml:space="preserve"><value>Nach Feierabend</value></data>
+  <data name="Challenge.lifetime-hours-50.Description" xml:space="preserve"><value>Erreiche insgesamt 50 Stunden Spielzeit.</value></data>
+  <data name="Challenge.lifetime-hours-100.Name" xml:space="preserve"><value>Fast schon Inventar</value></data>
+  <data name="Challenge.lifetime-hours-100.Description" xml:space="preserve"><value>Erreiche insgesamt 100 Stunden Spielzeit.</value></data>
+  <data name="Challenge.lifetime-hours-1000.Name" xml:space="preserve"><value>Tausend Stunden Mitternacht</value></data>
+  <data name="Challenge.lifetime-hours-1000.Description" xml:space="preserve"><value>Erreiche insgesamt 1.000 Stunden Spielzeit.</value></data>
+  <data name="Challenge.lifetime-plays-1000.Name" xml:space="preserve"><value>Tausend Spiele</value></data>
+  <data name="Challenge.lifetime-plays-1000.Description" xml:space="preserve"><value>Erreiche 1.000 kombinierte Spielrunden, Spins, abgeschlossene Rätsel, Solitaire-Siege und Abenteuer.</value></data>
+  <data name="Challenge.lifetime-plays-10000.Name" xml:space="preserve"><value>Das Haus schläft nie</value></data>
+  <data name="Challenge.lifetime-plays-10000.Description" xml:space="preserve"><value>Erreiche 10.000 kombinierte Spiele im Casino und in der Chill Lounge.</value></data>
+  <data name="Challenge.lifetime-plays-500000.Name" xml:space="preserve"><value>Eine halbe Million Momente</value></data>
+  <data name="Challenge.lifetime-plays-500000.Description" xml:space="preserve"><value>Erreiche 500.000 kombinierte Spiele im Casino und in der Chill Lounge.</value></data>
+  <data name="Challenge.lifetime-lounge-25.Name" xml:space="preserve"><value>Die ruhige Seite der Nacht</value></data>
+  <data name="Challenge.lifetime-lounge-25.Description" xml:space="preserve"><value>Schließe 25 Chill-Lounge-Spiele aus Sudoku, Solitaire, Wortsuche, Memory und Jigsaw ab.</value></data>
+  <data name="Challenge.lifetime-lounge-100.Name" xml:space="preserve"><value>Die stille Ecke</value></data>
+  <data name="Challenge.lifetime-lounge-100.Description" xml:space="preserve"><value>Schließe 100 Chill-Lounge-Spiele ab.</value></data>
+  <data name="Challenge.lifetime-lounge-500.Name" xml:space="preserve"><value>Institution der Lounge</value></data>
+  <data name="Challenge.lifetime-lounge-500.Description" xml:space="preserve"><value>Schließe 500 Chill-Lounge-Spiele ab.</value></data>
+  <data name="Challenge.lifetime-lounge-2000.Name" xml:space="preserve"><value>Die ewige Lounge</value></data>
+  <data name="Challenge.lifetime-lounge-2000.Description" xml:space="preserve"><value>Schließe 2.000 Chill-Lounge-Spiele ab.</value></data>
+  <data name="Challenge.lifetime-jigsaw-250.Name" xml:space="preserve"><value>Galerie der Geduld</value></data>
+  <data name="Challenge.lifetime-jigsaw-250.Description" xml:space="preserve"><value>Schließe 250 Jigsaw-Puzzles ab.</value></data>
+  <data name="Challenge.lifetime-adventure-25.Name" xml:space="preserve"><value>Geschichten nach Mitternacht</value></data>
+  <data name="Challenge.lifetime-adventure-25.Description" xml:space="preserve"><value>Schließe 25 Abenteuerdurchläufe in Tales from the Backroom ab.</value></data>
+  <data name="Challenge.prestige-1.Name" xml:space="preserve"><value>Erste Wiedergeburt</value></data>
+  <data name="Challenge.prestige-1.Description" xml:space="preserve"><value>Erreiche Spieler-Prestige 1.</value></data>
+  <data name="Challenge.prestige-2.Name" xml:space="preserve"><value>Zweimal verewigt</value></data>
+  <data name="Challenge.prestige-2.Description" xml:space="preserve"><value>Erreiche Spieler-Prestige 2.</value></data>
+  <data name="Challenge.prestige-7.Name" xml:space="preserve"><value>Sieben Kronen</value></data>
+  <data name="Challenge.prestige-7.Description" xml:space="preserve"><value>Erreiche Spieler-Prestige 7.</value></data>
+  <data name="Challenge.prestige-15.Name" xml:space="preserve"><value>Jenseits des Samtseils</value></data>
+  <data name="Challenge.prestige-15.Description" xml:space="preserve"><value>Erreiche Spieler-Prestige 15.</value></data>
+  <data name="Challenge.prestige-20.Name" xml:space="preserve"><value>Unsterblicher Stammgast</value></data>
+  <data name="Challenge.prestige-20.Description" xml:space="preserve"><value>Erreiche Spieler-Prestige 20.</value></data>
+  <data name="Challenge.prestige-25.Name" xml:space="preserve"><value>Aufstieg der Mitternacht</value></data>
+  <data name="Challenge.prestige-25.Description" xml:space="preserve"><value>Erreiche Spieler-Prestige 25.</value></data>
 </root>
