@@ -92,6 +92,12 @@ internal static class ModernRecordsSmoke
             + "&&document.querySelector('[data-stat-game=\"blackjack\"]')"
             + "&&document.querySelector('[data-stat-game=\"midnight-dice\"]')"
             + "&&document.querySelector('[data-stat-game=\"midnight-manor\"]')"
+            + "&&document.querySelector('[data-stat-game=\"solitaire\"]')"
+            + "&&document.querySelector('[data-stat-game=\"word-search\"]')"
+            + "&&document.querySelector('[data-stat-game=\"memory\"]')"
+            + "&&document.querySelector('[data-stat-game=\"jigsaw\"]')"
+            + "&&document.querySelector('[data-stat-game=\"midnight-merge\"]')"
+            + "&&document.querySelector('[data-stat-game=\"tales-backroom\"]')"
             + "&&document.querySelector('.session-metrics'))",
             "React lifetime statistics are missing real game and session metrics.");
         Require(modern.RecordsPage=="statistics","Native Statistics route was not activated.");

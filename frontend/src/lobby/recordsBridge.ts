@@ -18,7 +18,7 @@ export type GameStatistics={
   metrics:StatMetric[];
 };
 export type StatisticsSnapshot={
-  overview:{net:string;netPositive:boolean;wagered:string;slotSpins:string;playtime:string;rounds:string;gamesTracked:number};
+  overview:{net:string;netPositive:boolean;wagered:string;slotSpins:string;playtime:string;rounds:string;loungeCompletions:string;gamesTracked:number};
   games:GameStatistics[];
   session:{rounds:string;hands:string;playtime:string;won:string;lost:string;pushes:string;wagered:string;net:string;blackjacks:string;bestStreak:string};
   tables:{name:string;hands:string;net:string;positive:boolean;rounds:string;winRate:string}[];
@@ -81,7 +81,7 @@ export function isStatistics(x:unknown):x is StatisticsSnapshot{
     ||x.games.length>60||x.tables.length>200)return false;
   const overview=x.overview as Record<string,unknown>;
   const session=x.session as Record<string,unknown>;
-  if(!['net','wagered','slotSpins','playtime','rounds'].every(k=>str(overview[k]))
+  if(!['net','wagered','slotSpins','playtime','rounds','loungeCompletions'].every(k=>str(overview[k]))
     ||typeof overview.netPositive!=='boolean'||!count(overview.gamesTracked))return false;
   if(!['rounds','hands','playtime','won','lost','pushes','wagered','net','blackjacks','bestStreak']
     .every(k=>str(session[k])))return false;
@@ -214,7 +214,7 @@ export const previewSeasons:SeasonsSnapshot={
  {tier:2,requiredExperience:1200,coins:60,cosmeticId:null,bankrollReward:0}]
  }]};
 export const previewStatistics:StatisticsSnapshot={
-  overview:{net:'+$1,230.00',netPositive:true,wagered:'$14,000.00',slotSpins:'592',playtime:'14h 20m',rounds:'59',gamesTracked:2},
+  overview:{net:'+$1,230.00',netPositive:true,wagered:'$14,000.00',slotSpins:'592',playtime:'14h 20m',rounds:'59',loungeCompletions:'22',gamesTracked:2},
   games:[{id:'blackjack',title:'Blackjack',category:'tables',net:'+$300.00',positive:true,metrics:[
     {label:'Rounds',value:'59'},{label:'Hands',value:'60'},{label:'Hand win rate',value:'47.5%'},{label:'Biggest round win',value:'$320.00'}]},
   {id:'midnight-manor',title:'Midnight Manor',category:'slots',net:'+$930.00',positive:true,metrics:[

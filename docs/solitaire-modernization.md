@@ -37,3 +37,17 @@ The save schema and normal/deterministic deal numbers are unchanged. All eight t
 - The earlier WPF Solitaire smoke remains as comparison/rollback coverage, **not** as the normal route.
 
 The old `SolitaireLoungeModule`, `SolitaireHubControl`, `SolitaireView`, WPF table art and their dependency chain are still retained for emergency fallback and historical comparison. Removing them requires a separate, validated cleanup task; the shared WPF host itself also remains. This phase does **not** claim WPF is eliminated from the app.
+
+## Central challenges and statistics (2026-11-07)
+
+Midnight Solitaire now participates in the central, claimable Challenge Board.
+The 22 additional milestones use only existing durable Solitaire statistics:
+distinct started games, receipt-verified wins, individual variants, four-suit
+Spider mastery, the six-variant collection and longest winning streak. Wins
+from a repeated completion receipt do not count again. The older standalone
+Solitaire achievements remain available and are not silently converted to coins.
+
+The modern Statistics screen exposes the accumulated win rate, win/abandon
+counts, all six variants, 1/2/4-suit Spider results, records and completion
+time. Statistics are read directly from `PlayerProfileState.Solitaire`, not
+reconstructed from local browser state. Existing history counts retroactively.

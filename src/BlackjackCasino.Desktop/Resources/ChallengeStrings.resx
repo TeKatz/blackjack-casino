@@ -405,7 +405,7 @@
   <data name="Challenge.lifetime-wager-10000000.Name" xml:space="preserve"><value>Ten Million in Motion</value></data>
   <data name="Challenge.lifetime-wager-10000000.Description" xml:space="preserve"><value>Wager $10,000,000 across all games, including preserved pooled slot history.</value></data>
   <data name="Challenge.lifetime-plays-100000.Name" xml:space="preserve"><value>A Hundred Thousand Nights</value></data>
-  <data name="Challenge.lifetime-plays-100000.Description" xml:space="preserve"><value>Complete 100,000 Blackjack rounds, dice games, Sudoku and Word Search puzzles, Merge orders and slot spins combined, including preserved pooled slot history.</value></data>
+  <data name="Challenge.lifetime-plays-100000.Description" xml:space="preserve"><value>Record 100,000 total Blackjack rounds, dice games, slot spins, completed Chill Lounge games, Merge orders and adventures; preserved pooled slot history is included.</value></data>
   <data name="Challenge.prestige-3.Name" xml:space="preserve"><value>Third Time Crowned</value></data>
   <data name="Challenge.prestige-3.Description" xml:space="preserve"><value>Reach Prestige 3.</value></data>
   <data name="Challenge.prestige-5.Name" xml:space="preserve"><value>Fivefold Legend</value></data>

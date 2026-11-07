@@ -405,7 +405,7 @@
   <data name="Challenge.lifetime-wager-10000000.Name" xml:space="preserve"><value>Zehn Millionen im Umlauf</value></data>
   <data name="Challenge.lifetime-wager-10000000.Description" xml:space="preserve"><value>Setze insgesamt 10.000.000 $ in allen Spielen, einschließlich übernommener gemeinsamer Slot-Verläufe.</value></data>
   <data name="Challenge.lifetime-plays-100000.Name" xml:space="preserve"><value>Hunderttausend Nächte</value></data>
-  <data name="Challenge.lifetime-plays-100000.Description" xml:space="preserve"><value>Schließe insgesamt 100.000 Blackjack-Runden, Würfelspiele, Sudoku- und Wortsuchrätsel, Merge-Aufträge und Slot-Runden ab, einschließlich übernommener gemeinsamer Slot-Verläufe.</value></data>
+  <data name="Challenge.lifetime-plays-100000.Description" xml:space="preserve"><value>Erreiche 100.000 kombinierte Blackjack-Runden, Würfelspiele, Slot-Spins, abgeschlossene Chill-Lounge-Spiele, Merge-Aufträge und Abenteuer; übernommene Slot-Verläufe zählen mit.</value></data>
   <data name="Challenge.prestige-3.Name" xml:space="preserve"><value>Zum dritten Mal gekrönt</value></data>
   <data name="Challenge.prestige-3.Description" xml:space="preserve"><value>Erreiche Prestige 3.</value></data>
   <data name="Challenge.prestige-5.Name" xml:space="preserve"><value>Fünffache Legende</value></data>

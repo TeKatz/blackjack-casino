@@ -14,6 +14,111 @@ const symbols:Record<string,string>={
   'midnight-manor':'☽','neon-vault':'◇','nine-lives':'●',
   'neon-features':'◇','nine-features':'●','legacy-slots':'▣',
 };
+
+const germanMetrics:Record<string,string>={
+  "Games started": "Begonnene Partien",
+  "Games won": "Gewonnene Partien",
+  "Win rate": "Siegquote",
+  "Abandoned games": "Abgebrochene Partien",
+  "Best win streak": "Beste Siegesserie",
+  "Current win streak": "Aktuelle Siegesserie",
+  "Klondike / FreeCell wins": "Klondike / FreeCell · Siege",
+  "Spider wins (1 / 2 / 4 suits)": "Spider-Siege (1 / 2 / 4 Farben)",
+  "Pyramid / Golf / TriPeaks": "Pyramid / Golf / TriPeaks",
+  "Best completion time": "Schnellster Sieg",
+  "Fewest moves in a win": "Wenigste Züge bei Sieg",
+  "Total time in winning games": "Gesamtdauer gewonnener Partien",
+  "Completed puzzles": "Abgeschlossene Rätsel",
+  "Words found": "Gefundene Wörter",
+  "Completions without hints": "Ohne Hinweise gelöst",
+  "Expert / Master": "Experte / Meister",
+  "Best solve time": "Schnellste Lösung",
+  "Total solve time": "Gesamte Lösungszeit",
+  "Completed tables": "Abgeschlossene Spielfelder",
+  "Pairs found": "Gefundene Paare",
+  "Perfect tables": "Fehlerfreie Partien",
+  "Cards flipped": "Aufgedeckte Karten",
+  "Wrong matches": "Fehlversuche",
+  "Best match streak": "Längste Trefferfolge",
+  "Best accuracy": "Beste Trefferquote",
+  "Pieces placed": "Gesetzte Puzzleteile",
+  "Largest puzzle": "Größtes Puzzle",
+  "Different motifs": "Verschiedene Motive",
+  "Puzzle achievements": "Puzzle-Erfolge",
+  "1,000-piece puzzles": "1.000-Teile-Puzzles",
+  "Completed orders": "Erfüllte Aufträge",
+  "Total merges": "Kombinierte Gegenstände",
+  "Renovation points": "Renovierungspunkte",
+  "Areas restored": "Restaurierte Bereiche",
+  "Milestones reached": "Erreichte Meilensteine",
+  "Highest item tier": "Höchste Gegenstandsstufe",
+  "Items spawned": "Erzeugte Gegenstände",
+  "Completed adventures": "Abgeschlossene Abenteuer",
+  "Different endings": "Verschiedene Enden",
+  "Classes completed": "Abgeschlossene Klassen",
+  "Successful / failed checks": "Erfolgreiche / gescheiterte Proben",
+  "Natural 20s / 1s": "Natürliche 20er / 1er",
+  "Items found": "Gefundene Gegenstände",
+  "Encounters won / lost": "Begegnungen gewonnen / verloren",
+  "Blackjack / five-of-a-kind victories": "Blackjack- / Fünferpasch-Siege",
+  "Rounds": "Runden",
+  "Hands": "Hände",
+  "Hand win rate": "Gewinnquote der Hände",
+  "Won / lost / push": "Gewonnen / verloren / unentschieden",
+  "Total wagered": "Gesamteinsätze",
+  "Biggest round win": "Größter Rundengewinn",
+  "Blackjacks": "Blackjacks",
+  "Doubles / splits": "Verdoppelt / gesplittet",
+  "Surrenders / insurance": "Aufgaben / Versicherung",
+  "Double wins": "Gewonnene Verdopplungen",
+  "Completed games": "Abgeschlossene Spiele",
+  "Casual / casino": "Freizeit / Casino",
+  "Best / average score": "Bestwert / Durchschnitt",
+  "Casino wins / top two": "Casino-Siege / Top 2",
+  "Casino win rate": "Casino-Siegquote",
+  "Entries / forfeits": "Teilnahmen / Aufgaben",
+  "Total entry fees": "Gesamte Teilnahmegebühren",
+  "Total returned": "Gesamte Auszahlungen",
+  "Biggest payout": "Größte Auszahlung",
+  "Upper bonuses": "Obere Boni",
+  "Five of a kind": "Fünferpasch",
+  "Full house / large straight": "Full House / Große Straße",
+  "Free Play / Daily": "Freies Spiel / Tagesrätsel",
+  "No-hint solves": "Ohne Hinweis gelöst",
+  "Hints used": "Genutzte Hinweise",
+  "Average solve": "Durchschnittliche Lösungszeit",
+  "Fastest solve": "Schnellste Lösung",
+  "Fastest clean solve": "Schnellste Lösung ohne Hinweise",
+  "Relaxed / Easy / Medium": "Entspannt / Leicht / Mittel",
+  "Hard / Expert / Master": "Schwer / Experte / Meister",
+  "Spins": "Spins",
+  "Winning spins": "Gewonnene Spins",
+  "Spin win rate": "Spin-Gewinnquote",
+  "Pushes": "Unentschieden",
+  "Losing spins": "Verlorene Spins",
+  "Return / wagered": "Rücklaufquote",
+  "Paid spins": "Bezahlte Spins",
+  "Free spins": "Freispiele",
+  "Big wins": "Große Gewinne",
+  "Biggest win": "Größter Gewinn",
+  "Free spin triggers": "Freispiel-Auslösungen",
+  "Manor bonuses": "Manor-Boni",
+  "Best run": "Bester Durchlauf",
+  "Escapes / max exits": "Entkommen / Maximale Ausgänge",
+  "Caught / cash out": "Erwischt / Ausgezahlt",
+  "Interactive / auto": "Interaktiv / Automatisch",
+  "Paid / free spins": "Bezahlte / Freispiele",
+  "Free spin sessions": "Freispielserien",
+  "Spins awarded": "Vergebene Spins",
+  "Jackpots / grand": "Jackpots / Grand",
+  "Blackouts / total": "Blackouts / Total",
+  "Security overrides": "Sicherheits-Overrides",
+  "Best payout multiplier": "Bester Gewinnmultiplikator",
+  "Paid / bonus spins": "Bezahlte / Bonus-Spins",
+  "Bonus sessions": "Bonusrunden",
+  "Pounce Wilds": "Pounce-Wilds",
+  "Full Grid Frenzies": "Full-Grid-Frenzies"
+};
 export function ModernStatistics({data,loaded,language,onBack}:Props){
   const de=language==='de';
   const [group,setGroup]=useState<GameGroup>('all');
@@ -71,13 +176,14 @@ export function ModernStatistics({data,loaded,language,onBack}:Props){
           return <article key={game.id} data-stat-game={game.id} className={'stat-game-card '+(show?'expanded':'')}>
             <header className="stat-card-head">
               <span className="stat-game-symbol" aria-hidden="true">{symbols[game.id]||'♣'}</span>
-              <div><span>{game.category==='tables'?'TABLE GAMES':game.category==='slots'?'VIDEO SLOTS':'RELAXED GAMES'}</span>
+              <div><span>{game.category==='tables'?(de?'TISCHSPIELE':'TABLE GAMES'):
+                game.category==='slots'?'VIDEO SLOTS':(de?'CHILL LOUNGE':'RELAXED GAMES')}</span>
                 <h3>{game.title}</h3></div>
               {game.net&&<strong className={'stat-net '+(game.positive?'positive':'negative')}>{game.net}</strong>}
             </header>
             <div className="stat-metrics">
               {metrics.map((metric,i)=><div className="stat-metric" key={metric.label+'-'+i}>
-                <span>{metric.label}</span><strong>{metric.value}</strong>
+                <span>{de?(germanMetrics[metric.label]||metric.label):metric.label}</span><strong>{metric.value}</strong>
               </div>)}
             </div>
             {game.metrics.length>6&&<button className="stat-expand" type="button"
@@ -99,7 +205,7 @@ export function ModernStatistics({data,loaded,language,onBack}:Props){
             ['Won',data.session.won],['Lost',data.session.lost],['Pushes',data.session.pushes],
             ['Wagered',data.session.wagered],['Net',data.session.net],['Blackjacks',data.session.blackjacks],
             ['Best win streak',data.session.bestStreak],
-          ] as [string,string][]).map(([label,value])=><div key={label}><span>{label}</span><strong>{value}</strong></div>)}
+          ] as [string,string][]).map(([label,value])=><div key={label}><span>{de?(germanMetrics[label]||label):label}</span><strong>{value}</strong></div>)}
         </div>}
       </section>
       <section className="record-extra-section table-archive">

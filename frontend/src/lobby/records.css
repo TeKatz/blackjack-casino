@@ -28,6 +28,7 @@
 .record-summary span{font-size:10px;font-weight:750;letter-spacing:.09em;color:#9db9a6;}
 .record-summary strong{font:normal clamp(20px,2vw,31px) Georgia,serif;color:#f7dfab;white-space:nowrap;
   overflow:hidden;text-overflow:ellipsis;}
+.stats-summary{grid-template-columns:repeat(5,minmax(0,1fr));}
 .stats-summary strong{font-size:clamp(16px,1.8vw,27px);}
 .record-filters{border:1px solid #3f654e;background:#0c281ff0;border-radius:13px;padding:15px;margin-bottom:17px;}
 .record-filter-title{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
@@ -137,10 +138,14 @@
   .record-hero h1{font-size:26px}
   .record-hero-side{min-width:135px;padding:9px}
   .record-summary{gap:6px}
+  .stats-summary{grid-template-columns:repeat(3,minmax(0,1fr));}
   .record-summary>div{padding:10px}
   .record-stat-grid{grid-template-columns:1fr}
   .record-challenge-grid{grid-template-columns:repeat(auto-fill,minmax(235px,1fr))}
   .session-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:690px){
+  .stats-summary{grid-template-columns:repeat(2,minmax(0,1fr));}
 }
 @media(max-height:800px){
   .record-page-scroll{padding:10px}

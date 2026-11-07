@@ -77,3 +77,33 @@ failure restores the prior coin balance and claim ledger and returns a failure,
 so the batch can be retried. The strict save callback can be injected to verify
 the transaction without touching the user's profile. Core services still do no
 I/O. Normal gameplay and individual reward APIs retain their existing behavior.
+
+## 2026-11-07 Challenge Board and Chill Lounge statistics expansion
+
+The central catalog adds 44 new claimable milestones: **22 Solitaire**, **16
+Lifetime** and **6 Prestige**. All previously published challenge IDs and
+claims remain unchanged. Ordinary milestones scale into `IsEndgame` rewards;
+endgame still grants the established Epic collection pack. Prestige goals use
+the persistent `PlayerProfileState.Prestige`, not the player's current level,
+so a level reset does not erase challenge progress. Extra milestones require
+no schema change and apply retroactively to existing stat counters. Both
+single-claim and claim-all use the established atomic player-profile reward
+transaction.
+
+The React Statistics page now includes all six hosted Chill Lounge games:
+Sudoku, Midnight Solitaire, Word Search, Memory, Jigsaw Puzzle and Tales from
+the Backroom. It also shows Midnight Merge's independent production and
+restoration statistics. These displays use durable per-game counters; no
+placeholder zeros are fabricated for unknown history. A Chill Lounge
+completions summary and cross-game milestones count completed Sudoku and
+Word Search puzzles, Memory tables, Jigsaw puzzles and Solitaire wins once.
+The existing `LifetimePlays` metric additionally counts verified Solitaire
+wins, Jigsaw completions and completed adventures. Solitaire starts and
+abandoned games do not count as completions. No existing slot history is
+re-attributed or discarded, and no wagering odds, rewards or save schema
+are altered.
+
+German and English challenge names/descriptions are added in parallel and
+statistic metric captions have German equivalents in the React view.
+Acceptance covers the native challenge receipt flow, historical claims and
+all additional real game cards in the Windows WebView2 Statistics smoke.

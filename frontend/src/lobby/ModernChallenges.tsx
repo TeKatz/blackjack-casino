@@ -16,7 +16,7 @@ const statuses:{id:ChallengeStatus;en:string;de:string}[]=[
 ];
 const categoryIcons:Record<string,string>={
   Blackjack:'♠','Midnight Reels':'▣','Midnight Manor':'☽','Neon Vault':'◇','Nine Lives':'●',
-  'Midnight Dice':'⚄',Sudoku:'▦','Word Search':'⌕',Memory:'✦',
+  'Midnight Dice':'⚄',Sudoku:'▦','Word Search':'⌕',Memory:'✦',Solitaire:'♣',
   Jigsaw:'◈','Midnight Merge':'♛',Adventure:'⚔',Lifetime:'♜',Prestige:'♕',
 };
 const pct=(v:number)=>Math.round(Math.max(0,Math.min(1,v))*100);
@@ -116,7 +116,7 @@ export function ModernChallenges({data,loaded,language,pending,onBack,onClaim,on
             <button type="button" key={c} aria-pressed={category===c}
               className={'record-category '+(category===c?'active':'')}
               onClick={()=>{setCategory(c);resetPage();}}>
-              <span aria-hidden="true">{categoryIcons[c]||'✦'}</span> {c==='All'?(de?'Alle Spiele':'All games'):c}
+              <span aria-hidden="true">{categoryIcons[c]||'✦'}</span> {c==='All'?(de?'Alle Spiele':'All games'):c==='Lifetime'&&de?'Lebenszeit':c==='Prestige'?'Prestige':c}
             </button>)}
         </div>
         <div className="record-filter-bottom">

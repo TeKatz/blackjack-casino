@@ -33,6 +33,7 @@ public partial class MainWindow
         ChallengeCategory.NineLives => "Nine Lives",
         ChallengeCategory.MidnightMerge => "Midnight Merge",
         ChallengeCategory.WordSearch => "Word Search",
+        ChallengeCategory.Solitaire => "Solitaire",
         _ => category.ToString(),
     };
 
@@ -168,6 +169,14 @@ public partial class MainWindow
         ManorStatistics manor = profile.Manor;
         var dice = profile.Kniffel;
         SudokuStatistics sudoku = profile.Sudoku;
+        var solitaire = profile.Solitaire;
+        var wordSearch = profile.WordSearch;
+        var memory = profile.Memory;
+        var jigsaw = profile.Jigsaw;
+        var merge = profile.MidnightMerge;
+        var adventure = profile.Adventure;
+        long loungeCompletions = sudoku.CompletedPuzzles + solitaire.Wins
+            + wordSearch.CompletedPuzzles + memory.CompletedGames + jigsaw.CompletedGames;
         decimal wagered = blackjack.TotalWagered + reels.TotalWagered + legacy.TotalWagered
             + vault.TotalWagered + nine.TotalWagered + manor.TotalWagered + dice.TotalWagered;
         decimal net = blackjack.NetProfit + reels.NetProfit + legacy.NetProfit
@@ -239,6 +248,59 @@ public partial class MainWindow
                 RecordMetric("Fastest clean solve", sudoku.FastestNoHintSeconds <= 0 ? "—" : RecordDuration(TimeSpan.FromSeconds(sudoku.FastestNoHintSeconds))),
                 RecordMetric("Relaxed / Easy / Medium", $"{sudoku.RelaxedCompleted:N0} / {sudoku.EasyCompleted:N0} / {sudoku.MediumCompleted:N0}"),
                 RecordMetric("Hard / Expert / Master", $"{sudoku.HardCompleted:N0} / {sudoku.ExpertCompleted:N0} / {sudoku.MasterCompleted:N0}")),
+            Activity("solitaire", "Midnight Solitaire",
+                RecordMetric("Games started", RecordNumber(solitaire.GamesStarted)),
+                RecordMetric("Games won", RecordNumber(solitaire.Wins)),
+                RecordMetric("Win rate", RecordPercent(solitaire.Wins, solitaire.GamesStarted)),
+                RecordMetric("Abandoned games", RecordNumber(solitaire.GamesAbandoned)),
+                RecordMetric("Best win streak", RecordNumber(solitaire.BestWinStreak)),
+                RecordMetric("Current win streak", RecordNumber(solitaire.CurrentWinStreak)),
+                RecordMetric("Klondike / FreeCell wins", $"{solitaire.KlondikeWins:N0} / {solitaire.FreeCellWins:N0}"),
+                RecordMetric("Spider wins (1 / 2 / 4 suits)", $"{solitaire.SpiderOneSuitWins:N0} / {solitaire.SpiderTwoSuitWins:N0} / {solitaire.SpiderFourSuitWins:N0}"),
+                RecordMetric("Pyramid / Golf / TriPeaks", $"{solitaire.PyramidWins:N0} / {solitaire.GolfWins:N0} / {solitaire.TriPeaksWins:N0}"),
+                RecordMetric("Best completion time", solitaire.FastestWinSeconds == 0 ? "—" : RecordDuration(TimeSpan.FromSeconds(solitaire.FastestWinSeconds))),
+                RecordMetric("Fewest moves in a win", solitaire.FewestMoves == 0 ? "—" : RecordNumber(solitaire.FewestMoves)),
+                RecordMetric("Total time in winning games", RecordDuration(TimeSpan.FromSeconds(solitaire.TotalWinSeconds)))),
+            Activity("word-search", "Word Search",
+                RecordMetric("Completed puzzles", RecordNumber(wordSearch.CompletedPuzzles)),
+                RecordMetric("Words found", RecordNumber(wordSearch.WordsFound)),
+                RecordMetric("Completions without hints", RecordNumber(wordSearch.NoHintCompletions)),
+                RecordMetric("Expert / Master", $"{wordSearch.ExpertCompleted:N0} / {wordSearch.MasterCompleted:N0}"),
+                RecordMetric("Best solve time", wordSearch.BestSolveSeconds == 0 ? "—" : RecordDuration(TimeSpan.FromSeconds(wordSearch.BestSolveSeconds))),
+                RecordMetric("Total solve time", RecordDuration(TimeSpan.FromSeconds(wordSearch.TotalSolveSeconds)))),
+            Activity("memory", "Memory",
+                RecordMetric("Completed tables", RecordNumber(memory.CompletedGames)),
+                RecordMetric("Pairs found", RecordNumber(memory.PairsFound)),
+                RecordMetric("Perfect tables", RecordNumber(memory.PerfectGames)),
+                RecordMetric("Cards flipped", RecordNumber(memory.CardsFlipped)),
+                RecordMetric("Wrong matches", RecordNumber(memory.WrongMatches)),
+                RecordMetric("Best match streak", RecordNumber(memory.BestStreak)),
+                RecordMetric("Best accuracy", RecordPercent(memory.BestAccuracy, 1)),
+                RecordMetric("Expert / Master", $"{memory.ExpertCompleted:N0} / {memory.MasterCompleted:N0}")),
+            Activity("jigsaw", "Jigsaw Puzzle",
+                RecordMetric("Completed puzzles", RecordNumber(jigsaw.CompletedGames)),
+                RecordMetric("Pieces placed", RecordNumber(jigsaw.PiecesCompleted)),
+                RecordMetric("Largest puzzle", jigsaw.LargestPuzzle == 0 ? "—" : RecordNumber(jigsaw.LargestPuzzle) + " pieces"),
+                RecordMetric("Different motifs", RecordNumber(jigsaw.CompletedByMotif.Count(x => x.Value > 0))),
+                RecordMetric("Puzzle achievements", $"{jigsaw.UnlockedAchievementIds.Count:N0} / {JigsawAchievements.All.Count:N0}"),
+                RecordMetric("1,000-piece puzzles", RecordNumber(jigsaw.CompletedBySize.GetValueOrDefault(1000)))),
+            Activity("midnight-merge", "Midnight Merge",
+                RecordMetric("Completed orders", RecordNumber(merge.OrdersCompleted)),
+                RecordMetric("Total merges", RecordNumber(merge.Merges)),
+                RecordMetric("Renovation points", RecordNumber(merge.RenovationPointsEarned)),
+                RecordMetric("Areas restored", RecordNumber(merge.AreasCompleted)),
+                RecordMetric("Milestones reached", RecordNumber(merge.MilestonesReached)),
+                RecordMetric("Highest item tier", RecordNumber(merge.HighestTierCreated)),
+                RecordMetric("Items spawned", RecordNumber(merge.ItemsSpawned))),
+            Activity("tales-backroom", "Tales from the Backroom",
+                RecordMetric("Completed adventures", RecordNumber(adventure.RunsCompleted)),
+                RecordMetric("Different endings", RecordNumber(adventure.EndingKeys.Count)),
+                RecordMetric("Classes completed", RecordNumber(adventure.CompletedClassIds.Count)),
+                RecordMetric("Successful / failed checks", $"{adventure.ChecksSucceeded:N0} / {adventure.ChecksFailed:N0}"),
+                RecordMetric("Natural 20s / 1s", $"{adventure.NaturalTwenties:N0} / {adventure.NaturalOnes:N0}"),
+                RecordMetric("Items found", RecordNumber(adventure.ItemsFound)),
+                RecordMetric("Encounters won / lost", $"{adventure.EncountersWon:N0} / {adventure.EncountersLost:N0}"),
+                RecordMetric("Blackjack / five-of-a-kind victories", $"{adventure.BlackjackWins:N0} / {adventure.FiveOfAKindWins:N0}")),
             Slot("midnight-reels", "Midnight Reels", reels),
             Game("midnight-manor", "Midnight Manor", "slots", manor.NetProfit,
                 RecordMetric("Paid spins", RecordNumber(manor.PaidSpins)),
@@ -288,6 +350,7 @@ public partial class MainWindow
                 Playtime = RecordDuration(controller.TotalPlaytime),
                 Rounds = RecordNumber(blackjack.RoundsPlayed),
                 GamesTracked = games.Count,
+                LoungeCompletions = RecordNumber(loungeCompletions),
             },
             Games = games,
             Session = new
