@@ -21,7 +21,8 @@ internal static class NativeShellWebSmoke
             try
             {
                 foreach (string mode in new[]
-                    { "blackjack", "reels", "neon-vault", "nine-lives", "midnight-merge" })
+                    { "blackjack", "reels", "neon-vault", "nine-lives", "midnight-merge",
+                        "midnight-dice" })
                 {
                     await form.OpenForAcceptanceAsync(mode);
                     bool ready = false;

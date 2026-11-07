@@ -30,7 +30,9 @@ internal static class NativeShellContractSmoke
                 || !ModernNineLivesProtocol.Trusted("https://midnight-manor.local/nine-lives.html")
                 || ModernNineLivesProtocol.Trusted("https://example.com/nine-lives.html")
                 || !ModernMergeProtocol.Trusted("https://midnight-manor.local/midnight-merge.html")
-                || ModernMergeProtocol.Trusted("https://example.com/midnight-merge.html"))
+                || ModernMergeProtocol.Trusted("https://example.com/midnight-merge.html")
+                || !ModernDiceProtocol.Trusted("https://midnight-manor.local/midnight-dice.html")
+                || ModernDiceProtocol.Trusted("https://example.com/midnight-dice.html"))
                 throw new InvalidOperationException("Browser page trust is not isolated.");
 
             using (var session = new NativePreviewRuntime(directory))
@@ -92,6 +94,21 @@ internal static class NativeShellContractSmoke
                         _ => throw new Exception("Duplicate Merge spawn!")) != mergeReceipt)
                     throw new InvalidOperationException("Merge receipt was not idempotent.");
                 session.CloseMerge();
+
+                session.OpenDice();
+                var diceEpoch = new ModernDiceSession();
+                var casual = new ModernDiceCommand(Guid.NewGuid().ToString("D"),
+                    diceEpoch.Id, 0, "casual.start", null, null, null);
+                ModernDiceReply casualReceipt = diceEpoch.Execute(casual, session.ApplyDice);
+                if (!casualReceipt.Success || casualReceipt.Revision != 1)
+                    throw new InvalidOperationException("Casual Midnight Dice start failed.");
+                var roll = new ModernDiceCommand(Guid.NewGuid().ToString("D"),
+                    diceEpoch.Id, 1, "roll", null, null, null);
+                ModernDiceReply rollReceipt = diceEpoch.Execute(roll, session.ApplyDice);
+                if (!rollReceipt.Success || rollReceipt.Revision != 2 ||
+                    diceEpoch.Execute(roll, _ => throw new Exception("Replayed Dice roll!")) != rollReceipt)
+                    throw new InvalidOperationException("Dice roll was not a single authoritative C# command.");
+                session.CloseDice();
                 session.Persist();
             }
             AppPreferences saved = PlayerStateStore.Load(directory);
@@ -103,7 +120,7 @@ internal static class NativeShellContractSmoke
                 throw new InvalidOperationException("Original English/German Merge resources were not loaded.");
 
             Console.WriteLine("PASS: WPF-free WinForms host; Blackjack, Reels, Neon Vault, "
-                + "Nine Lives and Merge; original C# commands, replay protection and isolated saves.");
+                + "Nine Lives, Merge and Dice; original C# commands, replay protection and isolated saves.");
             return 0;
         }
         catch (Exception ex)

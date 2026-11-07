@@ -1,7 +1,7 @@
 # WPF-free native shell: implementation and parity gate
 
 **Branch:** `feature/manor-modernization-phase-1`  
-**Status:** Independent WinForms/WebView2 executable with genuine native Blackjack, Midnight Reels, Neon Vault, Nine Lives and Midnight Merge game bridges. **Preview, not release replacement.** The production installer and auto-updater still package `BlackjackCasino.Desktop.exe` (WPF).
+**Status:** Independent WinForms/WebView2 executable with genuine native Blackjack, Midnight Reels, Neon Vault, Nine Lives, Midnight Merge and Midnight Dice game bridges. **Preview, not release replacement.** The production installer and auto-updater still package `BlackjackCasino.Desktop.exe` (WPF).
 
 ## What is already functional without WPF
 
@@ -11,7 +11,7 @@
 - Browser init/readiness watchdog, retry/lobby recovery without automatic wagers, and fresh browser command sessions. Reels recovery retains native game result state.
 - Source-linked preferences, profile, progression, receipt and save contracts from the actual desktop application, not a newly invented game-engine implementation.
 - A **separate preview save directory** under `%LOCALAPPDATA%\BlackjackCasino\NativeShellPreview`. This pilot never writes over production `player-state.json`, `profile.json` or history. A clean profile and bankroll are expected on first run; this is deliberately not a production-state migration.
-- Windows CI builds the project, runs the headless protocol, replay and isolated-storage smoke, publishes a *separate* native-shell pilot artifact, and checks that all five React documents are bundled. The Development updater's WPF executable, channel, manifest, user saves and release package remain unchanged.
+- Windows CI builds the project, runs the headless protocol, replay and isolated-storage smoke, publishes a *separate* native-shell pilot artifact, and checks that all six React documents are bundled. The Development updater's WPF executable, channel, manifest, user saves and release package remain unchanged.
 
 ## Run the independent shell
 
@@ -45,4 +45,10 @@ A successful CI build of this pilot **does not prove** full migration. Do not se
 
 ## Independent real-WebView2 acceptance
 
-The separate Windows CI `--web-smoke` mode now opens all five native-host routes through the real WinForms WebView2 control and the packaged React pages, requires the UI-ready handshake and a rendered document, then verifies lobby return. Each run uses its own temporary browser profile and player state. The existing headless `--smoke` additionally validates original EN/DE Merge resource lookup, native game actions, spin/order receipts and rejection of replay. This tests host startup and native command bridging; it does **not** replace complete game interaction, player migration, audio, update or screen-reader acceptance.
+The separate Windows CI `--web-smoke` mode now opens all six native-host routes through the real WinForms WebView2 control and the packaged React pages, requires the UI-ready handshake and a rendered document, then verifies lobby return. Each run uses its own temporary browser profile and player state. The existing headless `--smoke` additionally validates original EN/DE Merge resource lookup, native game actions, spin/order receipts and rejection of replay. This tests host startup and native command bridging; it does **not** replace complete game interaction, player migration, audio, update or screen-reader acceptance.
+
+## Midnight Dice native service (2026-11-07)
+
+The native pilot now also hosts `midnight-dice.html`. The reusable `ModernDiceSnapshot` no longer depends on WPF `KniffelView`, `DiceAppearance` or `Localization`: category names and cosmetic palette tokens are shared with the old WPF view as pure C# data. The WinForms host reuses Core `KniffelGame`, `KniffelTable` and `KniffelCash` to support casual sheets and paid casino tables. A complete candidate dice checkpoint and wallet change are written before changing live state. Opponent turns use Core AI away from the UI thread; a native receipt revision is bumped only after the turn has been durably committed. The existing profile progression service remains authoritative.
+
+This is still **preview-only**. Full production replay/save compatibility, browser fault injection on every game, multiple AI table cycles, standalone detached windows and audio parity are not yet proven. The original WPF release is not replaced.
