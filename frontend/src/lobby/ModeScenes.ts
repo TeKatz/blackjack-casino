@@ -56,7 +56,7 @@ type Scene = {
   id:ModeSceneId;art:HTMLElement;card:HTMLElement;
   group:Container;mask:Graphics;back:Sprite|null;front:Sprite|null;
   light:Graphics;signature:Graphics;em:Ember[];
-  x:number;y:number;w:number;h:number;energy:number;
+  x:number;y:number;w:number;h:number;energy:number;reveal:number;
 };
 
 function makeSignature(id:ModeSceneId,color:number):Graphics {
@@ -106,7 +106,7 @@ function createScene(stage:Container,art:HTMLElement,card:HTMLElement,id:ModeSce
   });
   group.addChild(light,signature);
   return {id,art,card,group,mask,back:null,front:null,light,signature,em,
-    x:NaN,y:NaN,w:0,h:0,energy:0};
+    x:NaN,y:NaN,w:0,h:0,energy:0,reveal:0};
 }
 function disposeScene(stage:Container,s:Scene){
   s.group.mask=null;
@@ -120,12 +120,14 @@ function attachArt(s:Scene,resources:Map<ModeSceneId,{back:Texture;front:Texture
   if(!data)return;
   const back=new Sprite(data.back);
   back.anchor.set(.5);
+  back.alpha=0;
   s.group.addChildAt(back,0);
   s.back=back;
   s.art.dataset.pixiArtReady='true';
   if(data.front){
     const front=new Sprite(data.front);
     front.anchor.set(.5);
+    front.alpha=0;
     s.group.addChildAt(front,1);
     s.front=front;
   }
@@ -137,14 +139,18 @@ function placeArt(s:Scene,time:number,motion:boolean){
   const dx=motion?Number.parseFloat(s.card.style.getPropertyValue('--motion-x'))||0:0;
   const dy=motion?Number.parseFloat(s.card.style.getPropertyValue('--motion-y'))||0:0;
   const pulse=motion?Math.sin(time*.62+hash(s.id)%11):0;
-  const base=coverSize(w,h);
+  // Fade in decoded textures without exposing an empty browser rectangle.
+  // Reduced-motion mode skips the transition entirely.
+  s.reveal=motion?Math.min(1,s.reveal+.12):1;
   if(s.back){
+    s.back.alpha=s.reveal;
     s.back.position.set(w*.5-dx*.35,h*.5-dy*.3);
-    s.back.scale.set(base*(1.035+s.energy*.065));
+    s.back.scale.set(coverSize(w,h,s.back.texture.width,s.back.texture.height)*(1.035+s.energy*.065));
   }
   if(s.front){
+    s.front.alpha=s.reveal;
     s.front.position.set(w*.5+dx*.58,h*.5+dy*.44-pulse*.7);
-    s.front.scale.set(base*(1.035+s.energy*.093));
+    s.front.scale.set(coverSize(w,h,s.front.texture.width,s.front.texture.height)*(1.035+s.energy*.093));
   }
   s.light.position.set(w*.5+dx*.6,h*.45+dy*.2);
   s.light.scale.set(w/230,h/140);
