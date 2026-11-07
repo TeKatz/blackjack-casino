@@ -73,9 +73,6 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
 .game-art-window .art-midnight-manor{background-position:-768px -610px;}
 .game-art-window .art-midnight-merge{background-position:0 -740px;}
 .lobby-game:hover .game-art-image{transform:translate(-50%,-50%) scale(1.22);filter:saturate(1.28) brightness(1.13);}
-.art-shimmer{position:absolute;inset:0;background:linear-gradient(105deg,transparent 31%,#ffefb51b 47%,transparent 58%);transform:translateX(-150%);pointer-events:none;}
-.lobby-game:hover .art-shimmer{animation:lobbyShine .75s ease both;}
-@keyframes lobbyShine{to{transform:translateX(150%)}}
 .game-info{position:relative;flex:1;min-height:0;display:flex;flex-direction:column;padding:8px 10px;background:linear-gradient(170deg,#103027e8,#061917eb);}
 .game-category{color:#7de4ba;font-size:9px;font-weight:750;letter-spacing:.06em;white-space:nowrap;}
 .game-midnight-reels .game-category,.game-casino-empire .game-category,.game-midnight-merge .game-category{color:#efbf6a;}

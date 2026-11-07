@@ -15,10 +15,6 @@
  radial-gradient(ellipse at 85% 30%,color-mix(in srgb,var(--tile-accent) 20%,transparent),transparent 48%);
  filter:blur(12px);transform:translate3d(-4%,3%,0);
  animation:tile-ambient-drift 8s ease-in-out infinite alternate}
-.tile-motion-layers .tile-moving-beam{width:42%;left:-60%;
- background:linear-gradient(105deg,transparent 5%,#ffffff06 20%,
- color-mix(in srgb,var(--tile-accent) 18%,transparent) 49%,#ffffff10 57%,transparent 80%);
- transform:skewX(-21deg);animation:tile-beam-cross 8.2s cubic-bezier(.36,0,.4,1) infinite}
 .tile-light-field{opacity:.57;mix-blend-mode:screen;
  background:radial-gradient(ellipse at calc(50% + var(--motion-x,0px)) calc(45% + var(--motion-y,0px)),
  color-mix(in srgb,var(--tile-accent) 26%,transparent),transparent 62%);
@@ -74,14 +70,10 @@
 .tile-empire-sunbeam{top:-24%;left:43%;width:27%;height:150%;
  background:linear-gradient(90deg,transparent,#ffda8a43,transparent);
  transform:rotate(20deg);filter:blur(9px);animation:tile-reflection 6s ease-in-out infinite alternate}
-.tile-dice-sheen{top:-10%;left:-60%;height:125%;width:48%;
- background:linear-gradient(100deg,transparent,#fff0cb50,transparent);
- transform:skewX(-18deg);animation:tile-beam-cross 7s ease-in-out infinite}
 .tile-dice-aura{inset:22% 25%;border-radius:50%;
  background:radial-gradient(ellipse,#ffe9b630,transparent 74%);
  animation:tile-jackpot-pulse 5.7s ease-in-out infinite}
 @keyframes tile-ambient-drift{to{transform:translate3d(9%,-4%,0) scale(1.14)}}
-@keyframes tile-beam-cross{0%,18%{left:-65%;opacity:0}27%{opacity:.8}53%{left:148%;opacity:.7}64%,100%{left:148%;opacity:0}}
 @keyframes tile-reel-scroll{to{background-position:0 150px}}
 @keyframes tile-jackpot-pulse{0%,100%{opacity:.3;transform:scale(.97)}50%{opacity:.9;transform:scale(1.11)}}
 @keyframes tile-vault-spin{from{transform:translate(-50%,-50%) rotate(0)}to{transform:translate(-50%,-50%) rotate(360deg)}}
@@ -105,20 +97,20 @@
 .casino-lobby-shell[data-reduced="true"] .tile-motion-layers *::after{
  animation:none!important;transition:none!important;transform:none!important}
 .casino-lobby-shell[data-reduced="true"] .tile-drift-haze,
-.casino-lobby-shell[data-reduced="true"] .tile-moving-beam,
+.casino-lobby-shell[data-reduced="true"] 
 .casino-lobby-shell[data-reduced="true"] .tile-light-field,
 .casino-lobby-shell[data-reduced="true"] .tile-signature{opacity:0!important}
 .casino-lobby-shell[data-reduced="true"] .lobby-game:has(.tile-motion-layers) .game-art-image,
 .casino-lobby-shell[data-reduced="true"] .lobby-game:has(.tile-motion-layers):is(:hover,:focus-within) .game-art-image{transform:none!important;filter:none}
 @media(prefers-reduced-motion:reduce){
  .tile-motion-layers *, .tile-motion-layers *::before,.tile-motion-layers *::after{animation:none!important;transition:none!important}
- .tile-moving-beam,.tile-drift-haze,.tile-light-field,.tile-signature{opacity:0!important}
+ .tile-drift-haze,.tile-light-field,.tile-signature{opacity:0!important}
  .lobby-game:has(.tile-motion-layers) .game-art-image,
  .lobby-game:has(.tile-motion-layers):is(:hover,:focus-within) .game-art-image{transform:none!important;filter:none}
 }
 
 /* Disabled games and preference toggles never keep decorative animation alive. */
 .tile-motion-layers[data-running="false"] .tile-drift-haze,
-.tile-motion-layers[data-running="false"] .tile-moving-beam,
+.tile-motion-layers[data-running="false"] 
 .tile-motion-layers[data-running="false"] .tile-light-field,
 .tile-motion-layers[data-running="false"] .tile-signature{animation:none!important;opacity:0!important;}

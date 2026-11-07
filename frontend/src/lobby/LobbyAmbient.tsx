@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Application, Graphics } from 'pixi.js';
 import {createTileFx} from './TileFxEngine';
+import {createShopFx} from './ShopFxEngine';
 
 /** One small transparent effect layer. UI/labels stay DOM-rendered and accessible. */
 export function LobbyAmbient({ enabled }: { enabled: boolean }) {
@@ -32,13 +33,16 @@ export function LobbyAmbient({ enabled }: { enabled: boolean }) {
           instance.stage.addChild(dot);
           return {dot, phase: i * 2.21, speed: .08 + (i % 5) * .035};
         });
-        const fx=createTileFx(instance.stage,host.parentElement??host);
-        destroyTileFx=()=>fx.destroy();
+        const root=host.parentElement??host;
+        const fx=createTileFx(instance.stage,root);
+        const shopFx=createShopFx(instance.stage,root);
+        destroyTileFx=()=>{shopFx.destroy();fx.destroy();};
         let clock = 0;
         instance.ticker.maxFPS = 30;
         instance.ticker.add(ticker => {
           clock += ticker.deltaTime/60;
           fx.tick(clock,ticker.deltaTime);
+          shopFx.tick(clock,ticker.deltaTime);
           const width = host.clientWidth, height = host.clientHeight;
           particles.forEach(({dot, phase, speed}) => {
             dot.y -= speed * ticker.deltaTime;
@@ -54,7 +58,7 @@ export function LobbyAmbient({ enabled }: { enabled: boolean }) {
         };
         document.addEventListener('visibilitychange', pause);
       } catch {
-        // WPF lobby remains usable even if a GPU renderer cannot initialize.
+        // React lobby and native hosting remain usable even if the GPU cannot initialize.
         instance.destroy(true);
       }
     })();

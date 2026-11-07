@@ -84,7 +84,6 @@ function GameTile({ mode, language, motionEnabled, onOpen, onSecondary }:{
     <div className="game-art-window" aria-hidden="true">
       <div className={'game-art-image art-'+mode.id}/><GamePreview id={mode.id}/>
       <PremiumTileLayers id={mode.id} enabled={motionEnabled&&mode.enabled}/>
-      <div className="art-shimmer"/>
     </div>
     <div className="game-info">
       <div className="game-category">{categoryById[mode.id] || mode.category.toUpperCase()}</div>
@@ -435,6 +434,7 @@ function LobbyApp() {
         language={data.language} pending={recordsPending} onBack={()=>{closeRecords();setFilter('all');}}
         onActivate={id=>{setRecordsPending(id);lobbyCommand('lobby.records.season.activate',id);}}/>:
       shopVisible?<ModernShop shop={shop} loaded={shopLoaded} language={data.language} pending={shopPending}
+        motionEnabled={!lowMotion && data.animationsEnabled}
         onBack={()=>{closeShop();setFilter('all');}}
         onCosmetic={id=>{setShopPending(id);lobbyCommand('lobby.shop.action',id);}}
         onPack={rarity=>{setShopPending(rarity);lobbyCommand('lobby.shop.pack',rarity);}}

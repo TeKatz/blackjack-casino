@@ -1,13 +1,12 @@
-import {ProfileFrame,DicePreview,CosmeticTitle} from './Cosmetics';
-import {resolveCardSkin} from '../blackjack/cardSkins';
+import {ShopShowcase} from './ShopShowcase';
 import {useMemo,useState} from 'react';
-import type {CSSProperties} from 'react';
 import {filterShop} from './shopBridge';
 import type {ShopSnapshot,ShopItem,ShopKind,ShopFilter,ShopStatus,ShopSort} from './shopBridge';
 import './shop.css';
+import './shopPremium.css';
 
 type Props={
-  shop:ShopSnapshot;language:'en'|'de';loaded:boolean;pending:string|null;
+  shop:ShopSnapshot;language:'en'|'de';loaded:boolean;pending:string|null;motionEnabled?:boolean;
   onBack:()=>void;onCosmetic:(id:string)=>void;onPack:(rarity:string)=>void;onAlbum:()=>void;
 };
 const groups:{id:ShopFilter;en:string;de:string;icon:string}[]=[
@@ -18,42 +17,6 @@ const groups:{id:ShopFilter;en:string;de:string;icon:string}[]=[
   {id:'Frame',en:'Frames',de:'Rahmen',icon:'▣'},
   {id:'Title',en:'Titles',de:'Titel',icon:'♛'},
 ];
-const portraitsJpg=new Set([
-  'house-guest','eclipse-raven','eclipse-lady','eclipse-moon','eclipse-sovereign',
-  'dynasty-heiress','neon-overseer','neon-emperor','neon-croupier',
-]);
-const variantPalette=(variant:string)=>{
-  const v=variant.toLowerCase();
-  if(/slate|graphite|charcoal/.test(v))return ['#9facb8','#34444d','#e1e6e9'];
-  if(/pearl|linen|ivory|porcelain/.test(v))return ['#e8d9bf','#776b5e','#fff9e7'];
-  if(/ruby|crimson|rose|burgundy|ember|red|copper/.test(v))return ['#dc747b','#68303e','#ffd3a9'];
-  if(/opal|aurora|celestial|astral|violet|amethyst|moon|eclipse|starlight/.test(v))return ['#bc96f0','#3f316f','#f1e2ff'];
-  if(/neon|cyan|sapphire|ice|blue|harbor|midnight/.test(v))return ['#78c8f7','#1e4062','#e2f5ff'];
-  if(/forest|emerald|jade|sage/.test(v))return ['#7be1ae','#245846','#e5f4c6'];
-  if(/gold|solar|king|sovereign|art-deco|brass/.test(v))return ['#f2c77f','#765025','#fff0bd'];
-  return ['#d9c5a0','#655343','#fff2d1'];
-};
-function Preview({item}:{item:ShopItem}){
-  const skin=resolveCardSkin(item.visualVariant);
-  const [accent,dark,light]=item.kind==='CardSet'?[skin.accent,skin.backA,skin.faceA]:variantPalette(item.visualVariant);
-  const style={'--preview-accent':accent,'--preview-dark':dark,'--preview-light':light} as CSSProperties;
-  if(item.kind==='Portrait'){
-    const portrait=item.visualVariant.replace(/^portrait-/,'');
-    const path='/shop/portraits/'+portrait+'.'+(portraitsJpg.has(portrait)?'jpg':'png');
-    return <div className="cosmetic-visual portrait-visual" style={style}><div className="portrait-glow"/>
-      <img alt={item.name} src={path} loading="lazy" onError={e=>{e.currentTarget.style.display='none';}}/>
-      <span className="portrait-ring" aria-hidden="true"/></div>;
-  }
-  if(item.kind==='CardSet')return <div className="cosmetic-visual cards-visual" style={style} aria-hidden="true">
-    <div className="shop-playing-card card-reverse" style={{background:'linear-gradient(135deg,'+skin.backA+','+skin.backB+')',color:skin.accent,borderColor:skin.accent}}><span>♠</span><span className="card-ornament">{skin.mark}</span><span>♠</span></div>
-    <div className="shop-playing-card card-front" style={{background:'linear-gradient(135deg,'+skin.faceA+','+skin.faceB+')',color:skin.black,borderColor:skin.border}}><span>A</span><span>♠</span><span>A</span></div>
-  </div>;
-  if(item.kind==='DiceSet')return <div className="cosmetic-visual dice-visual"><DicePreview variant={item.visualVariant}/></div>;
-  if(item.kind==='Frame')return <div className="cosmetic-visual frame-visual"><ProfileFrame variant={item.visualVariant} large/></div>;
-  return <div className="cosmetic-visual title-visual" style={style}>
-    <div className="shop-title-preview"><span>THE MIDNIGHT CLUB</span><strong><CosmeticTitle variant={item.visualVariant}>{item.name}</CosmeticTitle></strong><i>✦ &nbsp; ✦ &nbsp; ✦</i></div>
-  </div>;
-}
 const labelKind=(kind:ShopKind,de:boolean)=>({
   CardSet:de?'Kartenset':'Card Set',DiceSet:de?'Würfelset':'Dice Set',
   Portrait:de?'Porträt':'Portrait',Frame:de?'Rahmen':'Frame',Title:'Title',
@@ -76,7 +39,7 @@ function CosmeticCard({item,de,pending,onPick}:{
       !item.shopAvailable?<b className="shop-tag locked">✦ {de?'BELOHNUNG':'REWARD'}</b>:
       item.requiredPrestige>0?<b className="shop-tag locked">P{item.requiredPrestige}</b>:null}
     </div>
-    <Preview item={item}/>
+    <ShopShowcase item={item}/>
     <div className="shop-product-content">
       <h3 title={item.name}>{item.name}</h3>
       <p>{item.description}</p>
@@ -90,7 +53,7 @@ function CosmeticCard({item,de,pending,onPick}:{
     </div>
   </article>;
 }
-export function ModernShop({shop,language,loaded,pending,onBack,onCosmetic,onPack,onAlbum}:Props){
+export function ModernShop({shop,language,loaded,pending,motionEnabled=true,onBack,onCosmetic,onPack,onAlbum}:Props){
   const de=language==='de';
   const [kind,setKind]=useState<ShopFilter>('All');
   const [status,setStatus]=useState<ShopStatus>('all');
@@ -107,7 +70,7 @@ export function ModernShop({shop,language,loaded,pending,onBack,onCosmetic,onPac
     if(confirm.pack)onPack(confirm.id);else onCosmetic(confirm.id);
     setConfirm(null);
   };
-  return <main className="modern-shop" aria-label={de?'Kosmetik-Shop':'Cosmetic Shop'}>
+  return <main className="modern-shop" data-shop-motion={motionEnabled?'on':'off'} aria-label={de?'Kosmetik-Shop':'Cosmetic Shop'}>
     <div className="shop-scroll">
       <div className="shop-hero">
         <div className="shop-hero-copy">

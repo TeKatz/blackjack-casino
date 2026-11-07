@@ -8,7 +8,6 @@ export function PremiumTileLayers({id,enabled}:{id:string;enabled:boolean}){
   aria-hidden="true">
   <div className="tile-depth-shadow"/>
   <div className="tile-drift-haze"/>
-  <div className="tile-moving-beam"/>
   <div className="tile-light-field"/>
   <div className={'tile-signature tile-signature-'+id}>{signature(id)}</div>
   <div className="tile-top-glass"/>
@@ -22,6 +21,6 @@ function signature(id:AnimatedTileId){
   case 'midnight-manor':return <><i className="tile-manor-flame left"/><i className="tile-manor-flame right"/><i className="tile-manor-portal"/></>;
   case 'chill-lounge':return <><i className="tile-lounge-steam first"/><i className="tile-lounge-steam second"/><i className="tile-lounge-reflection"/></>;
   case 'casino-empire':return <><i className="tile-empire-windows"/><i className="tile-empire-sunbeam"/></>;
-  case 'kniffel':return <><i className="tile-dice-sheen"/><i className="tile-dice-aura"/></>;
+  case 'kniffel':return <i className="tile-dice-aura"/>;
  }
 }
