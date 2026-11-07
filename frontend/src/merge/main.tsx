@@ -1,3 +1,4 @@
+import {finishModeBoot} from '../boot/finishModeBoot';
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {isMergeSnapshot,listenMerge,sendMergeIntent} from './bridge';
@@ -95,7 +96,7 @@ function App(){
    };
  },[]);
  useEffect(()=>{
-   if(snap)window.chrome?.webview?.postMessage({type:'midnight-merge.ui-ready'});
+   if(snap){finishModeBoot();window.chrome?.webview?.postMessage({type:'midnight-merge.ui-ready'});}
  },[!!snap]);
  useEffect(()=>{
    if(!pending)return;

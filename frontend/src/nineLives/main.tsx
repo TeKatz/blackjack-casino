@@ -1,3 +1,4 @@
+import {finishModeBoot} from '../boot/finishModeBoot';
 import {useCallback,useEffect,useRef,useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {listenNineLives,sendNineLivesIntent,paylineCells,symbols} from './bridge';
@@ -90,7 +91,7 @@ function App(){
    window.chrome?.webview?.postMessage({type:'nine-lives.ready'});
    return()=>{detach();cleanTimers();};
  },[cleanTimers]);
- useEffect(()=>{if(snap)window.chrome?.webview?.postMessage({type:'nine-lives.ui-ready'});},[!!snap]);
+ useEffect(()=>{if(snap){finishModeBoot();window.chrome?.webview?.postMessage({type:'nine-lives.ui-ready'});}},[!!snap]);
  useEffect(()=>{
    if(!pending)return;
    const id=setTimeout(()=>{

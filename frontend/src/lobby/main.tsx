@@ -1,3 +1,4 @@
+import {finishModeBoot} from '../boot/finishModeBoot';
 import { useEffect, useState } from 'react';
 import type {PointerEvent as ReactPointerEvent} from 'react';
 import { createRoot } from 'react-dom/client';
@@ -257,7 +258,7 @@ function LobbyApp() {
   useEffect(()=>{
     // Announce readiness only after React committed the real player snapshot.
     // This effect does not depend on visibility, timers or animation frames.
-    if (nativeSnapshotReceived) lobbyCommand('lobby.ui-ready');
+    if (nativeSnapshotReceived) { finishModeBoot(); lobbyCommand('lobby.ui-ready'); }
   },[nativeSnapshotReceived]);
   useEffect(()=>{
     document.documentElement.lang=data.language;

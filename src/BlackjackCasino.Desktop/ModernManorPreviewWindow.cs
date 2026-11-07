@@ -18,7 +18,11 @@ internal sealed class ModernManorPreviewWindow : Window
     internal static string EntryPath => Path.Combine(AppContext.BaseDirectory,"ModernFrontend","index.html");
     internal static bool IsAvailable => File.Exists(EntryPath);
 
-    private readonly WebView2 browser=new() { Name="ModernManorBrowser", Visibility=Visibility.Hidden };
+    private readonly WebView2 browser=new()
+    {
+        Name="ModernManorBrowser", Visibility=Visibility.Hidden,
+        DefaultBackgroundColor=System.Drawing.Color.FromArgb(255,14,12,21),
+    };
     private readonly TextBlock notice;
     private readonly Border splash;
     private readonly BackgroundMusic soundtrack=new(Soundtrack.Manor);

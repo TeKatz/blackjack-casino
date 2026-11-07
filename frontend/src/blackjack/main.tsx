@@ -1,3 +1,4 @@
+import {finishModeBoot} from '../boot/finishModeBoot';
 import {useCallback,useEffect,useRef,useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {CustomRulesEditor} from './CustomRulesEditor';
@@ -57,7 +58,7 @@ function BlackjackApp(){
     window.chrome?.webview?.postMessage({type:'blackjack.ready'});
     return stop;
   },[accept]);
-  useEffect(()=>{if(snapshot)window.chrome?.webview?.postMessage({type:'blackjack.ui-ready'});},[!!snapshot]);
+  useEffect(()=>{if(snapshot){finishModeBoot();window.chrome?.webview?.postMessage({type:'blackjack.ui-ready'});}},[!!snapshot]);
   useEffect(()=>()=>audio.current.dispose(),[]);
   useEffect(()=>{
     if(!winMoment)return;

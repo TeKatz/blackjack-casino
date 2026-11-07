@@ -1,3 +1,4 @@
+import {finishModeBoot} from '../boot/finishModeBoot';
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {listenNeon,sendNeonIntent,symbols} from './bridge';
@@ -124,7 +125,7 @@ function VaultApp(){
    window.chrome?.webview?.postMessage({type:'neon-vault.ready'});
    return()=>{unsubscribe();stopTimers();};
  },[stopTimers]);
- useEffect(()=>{if(snapshot)window.chrome?.webview?.postMessage({type:'neon-vault.ui-ready'});},[!!snapshot]);
+ useEffect(()=>{if(snapshot){finishModeBoot();window.chrome?.webview?.postMessage({type:'neon-vault.ui-ready'});}},[!!snapshot]);
  useEffect(()=>{
    if(!pending)return;
    const watchdog=setTimeout(()=>{

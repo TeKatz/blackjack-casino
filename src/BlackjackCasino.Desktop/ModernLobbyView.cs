@@ -20,7 +20,13 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
     private const string EntryPoint = "https://midnight-manor.local/lobby.html";
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
-    private readonly WebView2 browser = new() { Visibility = Visibility.Hidden };
+    private readonly WebView2 browser = new()
+    {
+        Visibility = Visibility.Hidden,
+        // The first native WebView2 surface must match the WPF/HTML splash.
+        // Otherwise WebView2 can briefly paint its default white background.
+        DefaultBackgroundColor = System.Drawing.Color.FromArgb(255, 4, 22, 17),
+    };
     private readonly Func<object> snapshot;
     private readonly Func<object> shopSnapshot;
     private readonly Func<string, (bool Success, string Message)> cosmeticAction;

@@ -1,3 +1,4 @@
+import {finishModeBoot} from '../boot/finishModeBoot';
 import {lazy,memo,Suspense,useCallback,useEffect,useRef,useState} from 'react';
 import type {FormEvent,ReactNode} from 'react';
 import {createRoot} from 'react-dom/client';
@@ -141,7 +142,7 @@ function EmpireApp(){
   // The authoritative snapshot is sufficient for management. The PixiJS chunk,
   // GPU setup and optional animations never delay actionable DOM controls.
   useEffect(()=>{
-    if(snapshot?.visitId!==undefined)post('empire.ui-ready',{visitId:snapshot.visitId});
+    if(snapshot?.visitId!==undefined){finishModeBoot();post('empire.ui-ready',{visitId:snapshot.visitId});}
   },[snapshot?.visitId]);
   useEffect(()=>{
     if(!pending)return;

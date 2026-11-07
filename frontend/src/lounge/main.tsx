@@ -1,3 +1,4 @@
+import {finishModeBoot} from '../boot/finishModeBoot';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { isLoungeId, readLoungeSnapshot, sendLoungeCommand } from './bridge';
@@ -147,7 +148,8 @@ function App() {
  useEffect(()=>{
    if (snapshot && !signalled.current) {
      signalled.current=true;
-     sendLoungeCommand('lounge.ui-ready');
+     finishModeBoot();
+      sendLoungeCommand('lounge.ui-ready');
    }
  },[snapshot]);
  useEffect(()=>{

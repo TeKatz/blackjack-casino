@@ -1,3 +1,4 @@
+import {finishModeBoot} from '../boot/finishModeBoot';
 import {useCallback,useEffect,useRef,useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {listenReels,sendReelsIntent} from './bridge';
@@ -67,7 +68,7 @@ function ReelsApp(){
     const retry=window.setInterval(()=>{if(!current.current)announce();},1200);
     return()=>{window.clearInterval(retry);unsub();cancelTimers();};
   },[cancelTimers]);
-  useEffect(()=>{if(snapshot)window.chrome?.webview?.postMessage({type:'reels.ui-ready'});},[!!snapshot]);
+  useEffect(()=>{if(snapshot){finishModeBoot();window.chrome?.webview?.postMessage({type:'reels.ui-ready'});}},[!!snapshot]);
   useEffect(()=>{
     if(!pending)return;
     const timer=setTimeout(()=>{

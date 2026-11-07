@@ -1,3 +1,4 @@
+import {finishModeBoot} from './boot/finishModeBoot';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
@@ -143,7 +144,7 @@ function ManorApp() {
   }, [haltAuto]);
 
   useEffect(() => {
-    if (embedded && connected && rendererReady) sendCommand('ui.ready');
+    if (embedded && connected && rendererReady) { finishModeBoot(); sendCommand('ui.ready'); }
   }, [connected, rendererReady]);
 
   const actions = availableActions(snapshot);

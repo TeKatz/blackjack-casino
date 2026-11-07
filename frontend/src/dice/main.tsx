@@ -1,3 +1,4 @@
+import {finishModeBoot} from '../boot/finishModeBoot';
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import type {CSSProperties} from 'react';
 import {createRoot} from 'react-dom/client';
@@ -194,7 +195,7 @@ function App(){
    if(celebrationTimer.current)clearTimeout(celebrationTimer.current);
   };
  },[]);
- useEffect(()=>{if(snapshot)window.chrome?.webview?.postMessage({type:'midnight-dice.ui-ready'});},[!!snapshot]);
+ useEffect(()=>{if(snapshot){finishModeBoot();window.chrome?.webview?.postMessage({type:'midnight-dice.ui-ready'});}},[!!snapshot]);
  useEffect(()=>{
   if(!pending)return;
   const timer=setTimeout(()=>{
