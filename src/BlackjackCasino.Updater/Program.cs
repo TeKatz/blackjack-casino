@@ -50,7 +50,17 @@ internal static class Program
                 ? "The update could not be installed. The available casino installation has been restarted."
                 : "The update could not be installed or the casino could not be restarted. "
                   + "Open BlackjackCasino.Desktop.exe from the installation folder.";
-            ShowFailure(message + Environment.NewLine + Environment.NewLine
+            string advice = ex is IOException or UnauthorizedAccessException
+                ? Environment.NewLine + Environment.NewLine
+                  + "Windows could not access the installation directory. Another casino instance, "
+                  + "a lingering WebView2 process, Windows Explorer or antivirus software may "
+                  + "still be using it; folder permissions can also cause this."
+                  + Environment.NewLine
+                  + "Close all Blackjack Casino windows and any Explorer windows displaying the "
+                  + "installation folder, then retry. If the folder stays locked, restart Windows "
+                  + "before trying again. Do not delete the installation or your save data."
+                : string.Empty;
+            ShowFailure(message + advice + Environment.NewLine + Environment.NewLine
                 + "Details: " + ex.Message + Environment.NewLine
                 + "Diagnostic log: " + LogPath);
             return 1;

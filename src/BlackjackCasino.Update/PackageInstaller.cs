@@ -90,14 +90,17 @@ public static class PackageInstaller
     }
 
     /// <summary>
-    /// A just-exited WPF/WebView2 process or an antivirus scan can temporarily
-    /// deny renaming the installation directory. Retry only filesystem-lock
-    /// errors; keep rename operations atomic and the retry budget bounded.
-    /// Injection points make transient and permanent failures deterministic in tests.
+    /// A just-exited WebView2 browser, Explorer preview or antivirus scan can
+    /// continue to hold a directory handle after the parent desktop process exits.
+    /// Windows needs time to release these handles; the former 15-second budget
+    /// was repeatedly insufficient in real updater logs. Retry only filesystem
+    /// lock/access errors for at most ~90 seconds. Existing installs are never
+    /// removed or partially overwritten while waiting. Injection points keep
+    /// the schedule and permanent failures deterministic in tests.
     /// </summary>
     internal static void MoveDirectoryWithRetries(string source, string destination,
         Action<string, string>? move = null, Action<TimeSpan>? delay = null,
-        int maxAttempts = 12, Action<int, Exception>? onRetry = null)
+        int maxAttempts = 37, Action<int, Exception>? onRetry = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(source);
         ArgumentException.ThrowIfNullOrWhiteSpace(destination);
@@ -116,11 +119,18 @@ public static class PackageInstaller
                 && attempt < maxAttempts)
             {
                 onRetry?.Invoke(attempt, ex);
-                // At most ~15 seconds including antivirus/WebView2 shutdown.
-                int delayMs = Math.Min(1500, 150 * attempt * attempt);
-                delay(TimeSpan.FromMilliseconds(delayMs));
+                // 36 waits: first 15 grow from 0.2s to 3s, then cap at 3s.
+                // Total retry budget is 87s, long enough for slow WebView2
+                // teardown without infinite hangs on ACL/permission failures.
+                delay(GetDirectoryMoveRetryDelay(attempt));
             }
         }
+    }
+
+    internal static TimeSpan GetDirectoryMoveRetryDelay(int attempt)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(attempt);
+        return TimeSpan.FromMilliseconds(Math.Min(3000L, 200L * attempt));
     }
 
     public static string GetRestartPath(string targetDirectory, string restartExecutable)

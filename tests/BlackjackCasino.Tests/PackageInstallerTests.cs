@@ -79,6 +79,46 @@ public sealed class PackageInstallerTests : IDisposable
     }
 
     [Fact]
+    public void DirectoryMove_LongLivedTransientLockRecoversBeyondOldRetryBudget()
+    {
+        string source = Path.Combine(root, "slow-release");
+        string destination = Path.Combine(root, "after-webview-shutdown");
+        Directory.CreateDirectory(source);
+        File.WriteAllText(Path.Combine(source, "existing-save.txt"), "preserved");
+
+        int attempts = 0;
+        var delays = new List<TimeSpan>();
+        PackageInstaller.MoveDirectoryWithRetries(source, destination,
+            move: (from, to) =>
+            {
+                // The old 12-attempt budget exhausted before this unlock.
+                if (++attempts < 19) throw new UnauthorizedAccessException("WebView2 is closing.");
+                Directory.Move(from, to);
+            },
+            delay: delay => delays.Add(delay));
+
+        Assert.Equal(19, attempts);
+        Assert.Equal(18, delays.Count);
+        Assert.Equal(TimeSpan.FromMilliseconds(200), delays[0]);
+        Assert.Equal(TimeSpan.FromSeconds(3), delays[^1]);
+        Assert.Equal("preserved", File.ReadAllText(Path.Combine(destination, "existing-save.txt")));
+    }
+
+    [Fact]
+    public void DirectoryMove_RetryBudgetIsFiniteAndDelayIsCapped()
+    {
+        Assert.Equal(TimeSpan.FromMilliseconds(200),
+            PackageInstaller.GetDirectoryMoveRetryDelay(1));
+        Assert.Equal(TimeSpan.FromSeconds(3),
+            PackageInstaller.GetDirectoryMoveRetryDelay(15));
+        Assert.Equal(TimeSpan.FromSeconds(3),
+            PackageInstaller.GetDirectoryMoveRetryDelay(36));
+        Assert.Equal(TimeSpan.FromSeconds(87),
+            TimeSpan.FromMilliseconds(Enumerable.Range(1, 36)
+                .Sum(attempt => PackageInstaller.GetDirectoryMoveRetryDelay(attempt).TotalMilliseconds)));
+    }
+
+    [Fact]
     public void DirectoryMove_PermanentLockStopsAfterBoundedRetryBudget()
     {
         string source = Path.Combine(root, "still-locked");
