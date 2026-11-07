@@ -158,10 +158,20 @@ internal static class Program
                 }
                 Require(modernTitle.Contains("MIDNIGHT MANOR", StringComparison.OrdinalIgnoreCase),
                     "Modern Manor WebView2 did not load its React interface.");
-                string modernGameplay = await modernBrowser.CoreWebView2!.ExecuteScriptAsync(
-                    "document.querySelector('.gold-button')?.textContent || ''");
-                Require(modernGameplay.Contains("SPIN THE REELS", StringComparison.OrdinalIgnoreCase)
-                    || modernGameplay.Contains("PLAY FREE SPIN", StringComparison.OrdinalIgnoreCase),
+                // React can render its heading before the journal-backed game snapshot
+                // arrives. Also respect the saved German UI language instead of checking
+                // only the English CTA on the first animation frame.
+                string modernGameplay = "false";
+                var gameplayClock = Stopwatch.StartNew();
+                while (gameplayClock.Elapsed < TimeSpan.FromSeconds(15))
+                {
+                    modernGameplay = await modernBrowser.CoreWebView2!.ExecuteScriptAsync(
+                        "Array.from(document.querySelectorAll('.gold-button')).some(button => " +
+                        "/SPIN THE REELS|PLAY FREE SPIN|WALZEN DREHEN|FREISPIN SPIELEN/i.test(button.textContent || ''))");
+                    if (modernGameplay.Equals("true", StringComparison.OrdinalIgnoreCase)) break;
+                    await Task.Delay(150);
+                }
+                Require(modernGameplay.Equals("true", StringComparison.OrdinalIgnoreCase),
                     "Modern Manor did not expose gameplay controls after loading.");
                 string polishedControls = await modernBrowser.CoreWebView2.ExecuteScriptAsync(
                     "(()=>{const bets=[...document.querySelectorAll('.preset-bets .bet-chip')];" +
