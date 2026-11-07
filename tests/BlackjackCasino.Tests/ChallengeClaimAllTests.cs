@@ -313,6 +313,20 @@ public sealed class ChallengeClaimAllTests
             case ChallengeMetric.MemoryExpertCompleted: profile.Memory.ExpertCompleted = (long)value; break;
             case ChallengeMetric.MemoryMasterCompleted: profile.Memory.MasterCompleted = (long)value; break;
             case ChallengeMetric.MemoryBestStreak: profile.Memory.BestStreak = (int)value; break;
+            case ChallengeMetric.SolitaireWins: profile.Solitaire.Wins = (long)value; break;
+            case ChallengeMetric.SolitaireSpiderFourSuitWins: profile.Solitaire.SpiderFourSuitWins = (long)value; break;
+            case ChallengeMetric.SolitaireBestStreak: profile.Solitaire.BestWinStreak = (int)value; break;
+            case ChallengeMetric.SolitaireVariantsWon:
+                profile.Solitaire.KlondikeWins = value >= 1 ? 1 : 0;
+                profile.Solitaire.FreeCellWins = value >= 2 ? 1 : 0;
+                profile.Solitaire.SpiderWins = value >= 3 ? 1 : 0;
+                profile.Solitaire.PyramidWins = value >= 4 ? 1 : 0;
+                profile.Solitaire.GolfWins = value >= 5 ? 1 : 0;
+                profile.Solitaire.TriPeaksWins = value >= 6 ? 1 : 0;
+                break;
+            case ChallengeMetric.ChillLoungeCompletions: profile.Sudoku.CompletedPuzzles = (long)value; break;
+            case ChallengeMetric.JigsawCompletions: profile.Jigsaw.CompletedGames = (long)value; break;
+            case ChallengeMetric.AdventureRunsCompleted: profile.Adventure.RunsCompleted = (long)value; break;
             default: throw new InvalidOperationException($"Missing endgame boundary test for {metric}.");
         }
     }

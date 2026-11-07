@@ -62,7 +62,7 @@ public sealed class WordSearchChallengeTests
         Assert.True(claim.Success);
         Assert.Equal(50, claim.CoinsEarned);
         Assert.False(service.ClaimChallenge("word-search-first").Success);
-        ChallengeDefinition lifetime = ChallengeCatalog.All.Single(x => x.Metric == ChallengeMetric.LifetimePlays);
+        ChallengeDefinition lifetime = ChallengeCatalog.TryGet("lifetime-plays-100000")!;
         Assert.Equal(1m, ChallengeCatalog.Progress(profile, lifetime));
     }
 
