@@ -38,6 +38,7 @@ internal sealed class NativeShellForm : Form
     private ModernMergeSession? mergeEpoch;
     private ModernDiceSession? diceEpoch;
     private bool diceAiScheduling;
+    private bool manorProcessing;
     private string? activeMode;
     private bool listening, ready, browserFailed, closing;
     private readonly string frontendFolder = Path.Combine(AppContext.BaseDirectory, "ModernFrontend");
@@ -84,6 +85,7 @@ internal sealed class NativeShellForm : Form
         navigation.Controls.Add(MakeButton("Nine Lives", () => _ = OpenModeAsync("nine-lives")));
         navigation.Controls.Add(MakeButton("Midnight Merge", () => _ = OpenModeAsync("midnight-merge")));
         navigation.Controls.Add(MakeButton("Midnight Dice", () => _ = OpenModeAsync("midnight-dice")));
+        navigation.Controls.Add(MakeButton("Midnight Manor", () => _ = OpenModeAsync("midnight-manor")));
         navigation.Controls.Add(new Label
         {
             AutoSize = true, Text = "NATIVE HOST • PREVIEW",
@@ -182,6 +184,7 @@ internal sealed class NativeShellForm : Form
         actions.Controls.Add(MakeButton("NINE LIVES", () => _ = OpenModeAsync("nine-lives")));
         actions.Controls.Add(MakeButton("MIDNIGHT MERGE", () => _ = OpenModeAsync("midnight-merge")));
         actions.Controls.Add(MakeButton("MIDNIGHT DICE", () => _ = OpenModeAsync("midnight-dice")));
+        actions.Controls.Add(MakeButton("MIDNIGHT MANOR", () => _ = OpenModeAsync("midnight-manor")));
         page.Controls.Add(actions, 0, 2);
         page.Controls.Add(new Label
         {
@@ -216,13 +219,15 @@ internal sealed class NativeShellForm : Form
             runtime.CloseDice();
             diceEpoch = null;
         }
+        if (activeMode == "midnight-manor")
+            runtime.CloseManor();
         ShowHome();
     }
 
     private async Task OpenModeAsync(string mode)
     {
         if (closing || mode is not ("blackjack" or "reels" or "neon-vault" or "nine-lives"
-            or "midnight-merge" or "midnight-dice")) return;
+            or "midnight-merge" or "midnight-dice" or "midnight-manor")) return;
         if (mode != "blackjack" && runtime.HandInProgress)
         {
             status.Text = "Finish the Blackjack hand first.";
@@ -241,11 +246,27 @@ internal sealed class NativeShellForm : Form
             runtime.CloseDice();
             diceEpoch = null;
         }
+        if (activeMode == "midnight-manor" && mode != "midnight-manor")
+            runtime.CloseManor();
         if (mode == "reels") runtime.OpenReels();
         if (mode == "neon-vault") runtime.OpenNeonVault();
         if (mode == "nine-lives") runtime.OpenNineLives();
         if (mode == "midnight-merge") runtime.OpenMerge();
         if (mode == "midnight-dice") runtime.OpenDice();
+        if (mode == "midnight-manor")
+        {
+            try
+            {
+                runtime.OpenManor();
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+                or InvalidDataException or JsonException or InvalidOperationException)
+            {
+                ShowRecovery(mode, "Manor checkpoint unavailable: " + ex.Message,
+                    assetsAvailable: false);
+                return;
+            }
+        }
         DisposeBrowser();
         activeMode = mode;
         listening = ready = browserFailed = false;
@@ -321,6 +342,7 @@ internal sealed class NativeShellForm : Form
         "nine-lives" => "nine-lives.html",
         "midnight-merge" => "midnight-merge.html",
         "midnight-dice" => "midnight-dice.html",
+        "midnight-manor" => "index.html",
         _ => throw new ArgumentOutOfRangeException(nameof(mode)),
     };
 
@@ -332,6 +354,7 @@ internal sealed class NativeShellForm : Form
         "nine-lives" => ModernNineLivesProtocol.Trusted(source),
         "midnight-merge" => ModernMergeProtocol.Trusted(source),
         "midnight-dice" => ModernDiceProtocol.Trusted(source),
+        "midnight-manor" => ManorPreviewProtocol.IsTrustedSource(source),
         _ => false,
     };
 
@@ -342,6 +365,11 @@ internal sealed class NativeShellForm : Form
             || args.WebMessageAsJson.Length > 4096) return;
         try
         {
+            if (activeMode == "midnight-manor")
+            {
+                HandleManorMessage(args);
+                return;
+            }
             using JsonDocument json = JsonDocument.Parse(args.WebMessageAsJson);
             JsonElement root = json.RootElement;
             if (root.ValueKind != JsonValueKind.Object
@@ -515,6 +543,57 @@ internal sealed class NativeShellForm : Form
                 diceEpoch.Revision,
                 State = runtime.DiceSnapshot(),
             });
+    }
+
+    private void HandleManorMessage(CoreWebView2WebMessageReceivedEventArgs args)
+    {
+        if (manorProcessing || browser?.CoreWebView2 is not { } core
+            || !ManorPreviewProtocol.TryParseCommand(args.Source,
+                args.WebMessageAsJson, out ManorPreviewProtocol.Command? command)
+            || command is null) return;
+
+        if (command.Type == "ui.ready")
+        {
+            listening = ready = true;
+            watchdog.Stop();
+            status.Text = runtime.Status;
+            return;
+        }
+        if (command.Type == "ui.close")
+        {
+            BeginInvoke(new Action(ReturnToHome));
+            return;
+        }
+        if (command.Type is "client.ready" or "snapshot.request")
+        {
+            listening = true;
+            core.PostWebMessageAsJson(
+                ManorPreviewProtocol.SerializeSnapshot(runtime.ManorSnapshot(), command.RequestId));
+            return;
+        }
+
+        manorProcessing = true;
+        try
+        {
+            ManorPreviewProtocol.Snapshot snapshot = runtime.ApplyManor(command);
+            core.PostWebMessageAsJson(
+                ManorPreviewProtocol.SerializeSnapshot(snapshot, command.RequestId));
+            status.Text = runtime.Status;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+            or JsonException or InvalidDataException or InvalidOperationException
+            or ArgumentException or OverflowException)
+        {
+            core.PostWebMessageAsJson(ManorPreviewProtocol.SerializeError(
+                command.RequestId, ex.Message, runtime.ManorSnapshot(),
+                runtime.ManorRequiresRestart));
+            if (runtime.ManorRequiresRestart)
+                status.Text = "Manor journal recovery required. Restart this preview.";
+        }
+        finally
+        {
+            manorProcessing = false;
+        }
     }
 
     private async Task AdvanceDiceAiIfNeededAsync()
