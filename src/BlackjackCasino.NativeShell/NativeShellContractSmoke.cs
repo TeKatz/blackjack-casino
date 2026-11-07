@@ -113,11 +113,12 @@ internal static class NativeShellContractSmoke
                 session.OpenManor();
                 string manorId = Guid.NewGuid().ToString("D");
                 var manorSpin = new ManorPreviewProtocol.Command("spin.paid", manorId,
-                    session.ManorSnapshot().Revision,
+                    long.Parse(session.ManorSnapshot().Revision, System.Globalization.CultureInfo.InvariantCulture),
                     Bet: session.Preferences.ManorBet);
                 var manorBefore = session.ManorSnapshot();
                 ManorPreviewProtocol.Snapshot manorAfter = session.ApplyManor(manorSpin);
-                if (manorAfter.Revision != manorBefore.Revision + 1)
+                if (long.Parse(manorAfter.Revision, System.Globalization.CultureInfo.InvariantCulture)
+                    != long.Parse(manorBefore.Revision, System.Globalization.CultureInfo.InvariantCulture) + 1)
                     throw new InvalidOperationException("Manor journal did not advance.");
                 if (session.ApplyManor(manorSpin).Revision != manorAfter.Revision)
                     throw new InvalidOperationException("Manor replay was not idempotent.");
