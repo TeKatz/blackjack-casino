@@ -243,6 +243,10 @@ public partial class MainWindow : Window
             SavePreferences();
             SetUpdateMessage("Update verified. Restarting…");
             UpdaterLauncher.Launch(packagePath, pendingManifest.Package.Sha256);
+            // Dispose active WebView2 controllers before the parent process exits.
+            // Their virtual-host mappings point at files in the installation
+            // directory, and a lingering browser may prevent its atomic rename.
+            ReleaseBrowserHostsForUpdate();
             Application.Current.Shutdown();
         }
         catch (Exception ex)
