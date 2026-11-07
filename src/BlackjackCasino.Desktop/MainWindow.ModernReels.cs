@@ -158,9 +158,11 @@ public partial class MainWindow
     private void OnModernReelsFailed()
     {
         if (modernReelsView?.Failed != true || !IsLoaded) return;
+        string? reason = modernReelsView.FailureReason;
         CloseModernReels();
         ShowBrowserRecovery("Midnight Reels", ModernReelsView.IsAvailable,
-            OpenMidnightReels, () => EmbeddedSlots_Click(this, new RoutedEventArgs()));
+            OpenMidnightReels, () => EmbeddedSlots_Click(this, new RoutedEventArgs()),
+            failureDetail: reason);
     }
 
     private void CloseModernReels()

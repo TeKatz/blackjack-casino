@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -29,12 +30,42 @@ internal sealed class ModernReelsView : ContentControl, IDisposable
     {
         Interval = TimeSpan.FromSeconds(18),
     };
-    private bool initialized, disposed, listening;
+    private bool initialized, disposed, listening, navigationComplete;
     internal bool Ready { get; private set; }
     internal bool Failed { get; private set; }
+    internal string? FailureReason { get; private set; }
     internal WebView2 Browser => browser;
-    internal static bool IsAvailable => File.Exists(Path.Combine(
-        AppContext.BaseDirectory, "ModernFrontend", "reels.html"));
+    internal static bool IsAvailable => FrontendAssetFailure() is null;
+
+    // Checking only reels.html gives a misleading enabled Retry when the
+    // updater left behind an HTML entry with missing hashed JS/CSS files.
+    internal static string? FrontendAssetFailure()
+    {
+        string folder = Path.Combine(AppContext.BaseDirectory, "ModernFrontend");
+        string entry = Path.Combine(folder, "reels.html");
+        if (!File.Exists(entry)) return "Packaged reels.html is missing.";
+        try
+        {
+            string markup = File.ReadAllText(entry);
+            var assets = Regex.Matches(markup,
+                @"(?:src|href)\s*=\s*[""'](?<file>(?:\.?/)?assets/[^""'?#]+)[""']",
+                RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+            bool hasJavascript = false;
+            foreach (Match asset in assets)
+            {
+                string relative = asset.Groups["file"].Value.TrimStart('.', '/')
+                    .Replace('/', Path.DirectorySeparatorChar);
+                hasJavascript |= relative.EndsWith(".js", StringComparison.OrdinalIgnoreCase);
+                if (!File.Exists(Path.Combine(folder, relative)))
+                    return "Packaged Reels resource is missing: " + Path.GetFileName(relative);
+            }
+            return hasJavascript ? null : "Reels HTML has no compiled JavaScript entry.";
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return "Cannot read Reels frontend files (" + ex.GetType().Name + ").";
+        }
+    }
 
     internal ModernReelsView(Func<object> snapshot,
         Func<ModernReelsCommand, (bool Success, string Message)> commit,
@@ -65,7 +96,11 @@ internal sealed class ModernReelsView : ContentControl, IDisposable
         watchdog.Tick += (_, _) =>
         {
             watchdog.Stop();
-            if (!Ready && !disposed) Fail();
+            if (!Ready && !disposed)
+                FailWithReason(!navigationComplete
+                    ? "Reels HTML navigation timed out."
+                    : !listening ? "Reels JavaScript did not send its startup handshake."
+                    : "Reels did not acknowledge the native snapshot.");
         };
         Loaded += OnLoaded;
         IsVisibleChanged += (_, _) =>
@@ -80,22 +115,41 @@ internal sealed class ModernReelsView : ContentControl, IDisposable
         if (initialized || disposed) return;
         initialized = true;
         watchdog.Start();
-        if (!IsAvailable) { Fail(); return; }
+        if (FrontendAssetFailure() is string assetFailure) { FailWithReason(assetFailure); return; }
         try
         {
             CoreWebView2? core = await ModernWebViewBootstrap.InitializeAsync(
                 browser, () => disposed, Path.Combine(AppContext.BaseDirectory, "ModernFrontend"),
                 ModernReelsProtocol.Trusted);
             if (core is null) return;
-            core.NavigationCompleted += (_, e) => { if (!e.IsSuccess) Fail(); };
-            core.ProcessFailed += (_, _) => Fail();
+            core.NavigationCompleted += (_, e) =>
+            {
+                if (!e.IsSuccess) FailWithReason("Reels navigation failed (" + e.WebErrorStatus + ").");
+                else navigationComplete = true;
+            };
+            core.ProcessFailed += (_, e) =>
+                FailWithReason("WebView2 process failed (" + e.ProcessFailedKind + ").");
             core.WebMessageReceived += OnMessage;
+            // Module-load failures can occur before React mounts and sends reels.ready.
+            // A trusted, document-local error signal distinguishes them from a timeout.
+            await core.AddScriptToExecuteOnDocumentCreatedAsync("""
+                (() => {
+                  const report = () => window.chrome?.webview?.postMessage({type:'reels.client-error'});
+                  window.addEventListener('error', event => {
+                    if (event.target === window || event.target instanceof HTMLScriptElement
+                      || (event.target instanceof HTMLLinkElement && event.target.rel === 'stylesheet'))
+                      report();
+                  }, true);
+                  window.addEventListener('unhandledrejection', report);
+                })();
+                """);
+            if (disposed) return;
             browser.Source = new Uri("https://" + ManorPreviewProtocol.VirtualHost + "/reels.html");
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
-            or InvalidOperationException or System.Runtime.InteropServices.COMException)
+        catch (Exception ex) when (ex is not OutOfMemoryException)
         {
-            Fail();
+            FailWithReason("WebView2 startup failed (" + ex.GetType().Name
+                + ", 0x" + ex.HResult.ToString("X8") + ").");
         }
     }
 
@@ -112,6 +166,12 @@ internal sealed class ModernReelsView : ContentControl, IDisposable
                 || kind.ValueKind != JsonValueKind.String) return;
             switch (kind.GetString())
             {
+                case "reels.client-error":
+                    FailWithReason("Reels JavaScript or a required frontend module failed.");
+                    break;
+                case "reels.snapshot-invalid":
+                    FailWithReason("Reels frontend rejected the native snapshot.");
+                    break;
                 case "reels.ready":
                     listening = true;
                     Refresh();
@@ -167,18 +227,29 @@ internal sealed class ModernReelsView : ContentControl, IDisposable
     internal void Refresh()
     {
         if (disposed || Failed || !listening || !IsVisible) return;
-        Post("reels.snapshot", new
+        try
         {
-            Version = ModernReelsProtocol.Version,
-            Session = commands.Id,
-            commands.Revision,
-            State = snapshot(),
-        });
+            Post("reels.snapshot", new
+            {
+                Version = ModernReelsProtocol.Version,
+                Session = commands.Id,
+                commands.Revision,
+                State = snapshot(),
+            });
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException)
+        {
+            FailWithReason("Native Reels snapshot failed (" + ex.GetType().Name + ").");
+        }
     }
 
-    private void Fail()
+    // Kept parameterless for the existing Windows crash-injection regression smoke.
+    private void Fail() => FailWithReason("The Reels browser was interrupted.");
+
+    private void FailWithReason(string reason)
     {
         if (disposed || Failed) return;
+        FailureReason = reason;
         Failed = true;
         Ready = false;
         listening = false;

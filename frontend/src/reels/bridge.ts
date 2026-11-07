@@ -73,8 +73,10 @@ export function listenReels(receive:(message:{type:'snapshot';data:ReelsSnapshot
   const handler=(event:MessageEvent)=>{
     const payload:unknown=event.data;
     if(!record(payload))return;
-    if(payload.type==='reels.snapshot'&&isReelsSnapshot(payload.data))
-      receive({type:'snapshot',data:payload.data});
+    if(payload.type==='reels.snapshot'){
+      if(isReelsSnapshot(payload.data))receive({type:'snapshot',data:payload.data});
+      else host?.postMessage({type:'reels.snapshot-invalid'});
+    }
     if(payload.type==='reels.result'&&isReelsReply(payload.data))
       receive({type:'result',data:payload.data});
   };

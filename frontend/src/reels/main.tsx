@@ -60,8 +60,12 @@ function ReelsApp(){
         else setMessage(null);
       }
     });
-    window.chrome?.webview?.postMessage({type:'reels.ready'});
-    return()=>{unsub();cancelTimers();};
+    // If the native surface was not visible at the first message, request the
+    // initial snapshot again instead of waiting for the 18-second watchdog.
+    const announce=()=>window.chrome?.webview?.postMessage({type:'reels.ready'});
+    announce();
+    const retry=window.setInterval(()=>{if(!current.current)announce();},1200);
+    return()=>{window.clearInterval(retry);unsub();cancelTimers();};
   },[cancelTimers]);
   useEffect(()=>{if(snapshot)window.chrome?.webview?.postMessage({type:'reels.ui-ready'});},[!!snapshot]);
   useEffect(()=>{

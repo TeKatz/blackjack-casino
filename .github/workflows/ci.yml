@@ -230,6 +230,16 @@ jobs:
           if (!(Test-Path $assets)) { throw "Modern Manor bundles were not packaged." }
           $javascript = Get-ChildItem $assets -Filter "*.js" -File
           if (!$javascript) { throw "Modern Manor JavaScript bundle missing." }
+          $reelsEntry = "artifacts/preview-app/ModernFrontend/reels.html"
+          if (!(Test-Path $reelsEntry)) { throw "Packaged Reels HTML entry missing." }
+          $references = [regex]::Matches((Get-Content $reelsEntry -Raw), '(?:src|href)="(?:\./)?assets/([^"]+)"')
+          if (!(@($references | Where-Object { $_.Groups[1].Value.EndsWith(".js") }).Count)) {
+            throw "Packaged Reels HTML does not reference its compiled JavaScript."
+          }
+          foreach ($reference in $references) {
+            $resource = Join-Path "artifacts/preview-app/ModernFrontend/assets" $reference.Groups[1].Value
+            if (!(Test-Path $resource)) { throw "Packaged Reels resource missing: $resource" }
+          }
 
       - name: Verify published single-file Empire artwork
         shell: pwsh

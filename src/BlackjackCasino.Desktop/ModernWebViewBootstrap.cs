@@ -12,8 +12,30 @@ internal static class ModernWebViewBootstrap
 {
     // Never place Chromium's mutable profile inside the directory swapped by the updater.
     // Reuse one environment for all local browser surfaces, including the detached board.
-    private static readonly Lazy<Task<CoreWebView2Environment>> SharedEnvironment =
-        new(() => CoreWebView2Environment.CreateAsync(userDataFolder: UserDataFolder));
+    // A faulted Lazy<Task> would poison every Retry until the whole casino restarts.
+    // Retain successful environments, but recreate a failed one on the next attempt.
+    private static readonly object EnvironmentSync = new();
+    private static Task<CoreWebView2Environment>? sharedEnvironment;
+
+    private static async Task<CoreWebView2Environment> GetEnvironmentAsync()
+    {
+        Task<CoreWebView2Environment> attempt;
+        lock (EnvironmentSync)
+            attempt = sharedEnvironment ??= CoreWebView2Environment.CreateAsync(userDataFolder: UserDataFolder);
+        try
+        {
+            return await attempt;
+        }
+        catch
+        {
+            lock (EnvironmentSync)
+            {
+                if (ReferenceEquals(sharedEnvironment, attempt))
+                    sharedEnvironment = null;
+            }
+            throw;
+        }
+    }
 
     internal static string UserDataFolder => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -34,7 +56,7 @@ internal static class ModernWebViewBootstrap
         // from locking the installation directory during an out-of-process update.
         // Avoid initializing a browser if its owning view has already been closed.
         if (isClosed()) return null;
-        CoreWebView2Environment environment = await SharedEnvironment.Value;
+        CoreWebView2Environment environment = await GetEnvironmentAsync();
         if (isClosed()) return null;
         await browser.EnsureCoreWebView2Async(environment);
         // Closing a game while WebView2 initializes must not resurrect a

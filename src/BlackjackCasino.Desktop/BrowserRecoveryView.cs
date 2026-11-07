@@ -23,7 +23,8 @@ internal sealed class BrowserRecoveryView : UserControl
     }
 
     internal BrowserRecoveryView(string gameTitle, bool modernAssetsAvailable,
-        bool legacyGamesAvailable, Action<BrowserRecoveryAction> selected)
+        bool legacyGamesAvailable, Action<BrowserRecoveryAction> selected,
+        string? failureDetail = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(gameTitle);
         ArgumentNullException.ThrowIfNull(selected);
@@ -66,6 +67,19 @@ internal sealed class BrowserRecoveryView : UserControl
             FontSize = 16,
             Margin = new Thickness(0, 0, 0, 25),
         });
+
+        if (!string.IsNullOrWhiteSpace(failureDetail))
+        {
+            card.Children.Add(new TextBlock
+            {
+                Text = (german ? "Technischer Hinweis: " : "Technical detail: ") + failureDetail,
+                Foreground = new SolidColorBrush(Color.FromRgb(181, 199, 190)),
+                TextAlignment = TextAlignment.Center,
+                TextWrapping = TextWrapping.Wrap,
+                FontSize = 13,
+                Margin = new Thickness(0, 0, 0, 15),
+            });
+        }
 
         RetryButton = MakeButton("RecoveryRetryButton",
             german ? "Erneut versuchen" : "Retry game presentation",

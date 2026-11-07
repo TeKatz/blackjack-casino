@@ -13,7 +13,7 @@ public partial class MainWindow
     /// A retry constructs a fresh WebView; it never replays a wager or command.
     /// </summary>
     private void ShowBrowserRecovery(string title, bool assetsAvailable, Action retry,
-        Action? openLegacyGames = null)
+        Action? openLegacyGames = null, string? failureDetail = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(title);
         ArgumentNullException.ThrowIfNull(retry);
@@ -39,7 +39,7 @@ public partial class MainWindow
                     default:
                         throw new ArgumentOutOfRangeException(nameof(action), action, null);
                 }
-            });
+            }, failureDetail: failureDetail);
         MountModernSurface(view);
         browserRecoveryView = view;
         if (lobby is not null) lobby.Visibility = Visibility.Collapsed;
