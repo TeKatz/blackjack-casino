@@ -1,0 +1,103 @@
+name: Casino Music Importer
+
+on:
+  workflow_dispatch:
+    inputs:
+      direct_url:
+        description: "Direkter OpenGameArt Audio-Link (MP3/OGG/WAV, nicht /content/)"
+        required: true
+        type: string
+      source_page:
+        description: "Originale OpenGameArt-Seite (/content/...)"
+        required: true
+        type: string
+      creator:
+        description: "Name des Kuenstlers laut OpenGameArt"
+        required: true
+        type: string
+      destination:
+        description: "Musikbereich"
+        required: true
+        type: choice
+        options:
+          - midnight-manor
+          - chill-lounge
+          - lobby
+          - midnight-dice
+      cc0_confirmed:
+        description: "CC0-Lizenz auf OpenGameArt selbst geprueft"
+        required: true
+        default: false
+        type: boolean
+      replace_existing:
+        description: "Vorhandene Musik in diesem Bereich ersetzen"
+        required: false
+        default: false
+        type: boolean
+      publish_development:
+        description: "Danach einen grossen Windows-Development-Build ausloesen"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: casino-music-import
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout target development branch
+        uses: actions/checkout@v7
+        with:
+          ref: feature/manor-modernization-phase-1
+          persist-credentials: true
+
+      - name: Validate importer and available audio tools
+        shell: bash
+        run: |
+          python3 tools/import_casino_music.py --self-test
+          command -v ffprobe
+          command -v ffmpeg
+
+      - name: Download and convert the CC0 music
+        shell: bash
+        env:
+          IMPORT_DIRECT_URL: ${{ inputs.direct_url }}
+          IMPORT_SOURCE_PAGE: ${{ inputs.source_page }}
+          IMPORT_CREATOR: ${{ inputs.creator }}
+          IMPORT_AREA: ${{ inputs.destination }}
+          IMPORT_CC0_CONFIRMED: ${{ inputs.cc0_confirmed }}
+          IMPORT_REPLACE: ${{ inputs.replace_existing }}
+        run: python3 tools/import_casino_music.py
+
+      - name: Commit music and provenance
+        id: commit
+        shell: bash
+        env:
+          MUSIC_AREA: ${{ inputs.destination }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- src/BlackjackCasino.Desktop/Assets/Music/Licensed/
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No audio changes to commit."
+          else
+            git commit -m "assets(audio): import OpenGameArt music for $MUSIC_AREA"
+            git push origin HEAD:refs/heads/feature/manor-modernization-phase-1
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Trigger Development build if selected
+        if: ${{ inputs.publish_development && steps.commit.outputs.changed == 'true' }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run development-release.yml --ref feature/manor-modernization-phase-1
