@@ -132,7 +132,7 @@ function attachArt(s:Scene,resources:Map<ModeSceneId,{back:Texture;front:Texture
 function placeArt(s:Scene,time:number,motion:boolean){
   const w=s.w,h=s.h;
   const hovered=motion&&(s.card.matches(':hover')||s.card.matches(':focus-within'));
-  s.energy+=(Number(hovered)-s.energy)*(motion?.14:1);
+  s.energy+=(Number(hovered)-s.energy)*(motion ? .14 : 1);
   const dx=motion?Number.parseFloat(s.card.style.getPropertyValue('--motion-x'))||0:0;
   const dy=motion?Number.parseFloat(s.card.style.getPropertyValue('--motion-y'))||0:0;
   const pulse=motion?Math.sin(time*.62+hash(s.id)%11):0;
@@ -147,11 +147,11 @@ function placeArt(s:Scene,time:number,motion:boolean){
   }
   s.light.position.set(w*.5+dx*.6,h*.45+dy*.2);
   s.light.scale.set(w/230,h/140);
-  s.light.alpha=motion?.22+s.energy*.68:0;
+  s.light.alpha=motion ? .22+s.energy*.68 : 0;
   s.signature.position.set(s.id==='neon-vault'?w*.53:s.id==='nine-lives'?w*.5:w*.61,h*.48);
   s.signature.scale.set(Math.min(w/230,h/112)*(1+s.energy*.08));
   s.signature.rotation=motion&&s.id==='neon-vault'?time*.19:motion?Math.sin(time*.8)*.05:0;
-  s.signature.alpha=motion?.3+s.energy*.5:0;
+  s.signature.alpha=motion ? .3+s.energy*.5 : 0;
   for(const p of s.em){
     p.node.visible=motion;
     if(!motion)continue;
@@ -164,7 +164,7 @@ function placeArt(s:Scene,time:number,motion:boolean){
 }
 
 /** One clipped PixiJS scene per visible tile, one WebGL renderer total. */
-export function createModeScenes(stage:Container,root:HTMLElement,motion:boolean){
+export function createModeScenes(stage:Container,root:HTMLElement,motion:()=>boolean){
   const scenes=new Map<HTMLElement,Scene>();
   const resources=new Map<ModeSceneId,{back:Texture;front:Texture|null}>();
   let disposed=false,frame=0;
@@ -218,7 +218,7 @@ export function createModeScenes(stage:Container,root:HTMLElement,motion:boolean
           s.group.position.set(x,y);
           s.x=x;s.y=y;s.w=w;s.h=h;
         }
-        placeArt(s,time,motion);
+        placeArt(s,time,motion());
       }
     },
     destroy(){

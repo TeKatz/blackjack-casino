@@ -87,6 +87,35 @@ def main() -> int:
                 f"{filter_match.group(1)!r}, job guard {guard_match.group(1)!r}"
             )
 
+
+    # Custom lobby illustrations are static image resources, not DOM-generated
+    # placeholders. Validate every pair during ordinary repository-contract CI.
+    art_dir = ROOT / "frontend/public/lobby/custom"
+    if art_dir.is_dir():
+        import xml.etree.ElementTree as ET
+        subjects = (
+            "blackjack", "kniffel", "chill-lounge", "casino-empire",
+            "midnight-reels", "neon-vault", "midnight-manor", "midnight-merge",
+        )
+        if not (ROOT / "frontend/public/lobby/art/nine-lives.jpg").is_file():
+            problems.append("Nine Lives original cat art is missing")
+        for subject in subjects:
+            for layer in ("back", "front"):
+                asset = art_dir / f"{subject}-{layer}.svg"
+                if not asset.is_file():
+                    problems.append(f"Missing custom lobby key art: {asset.name}")
+                    continue
+                try:
+                    artwork = ET.parse(asset).getroot()
+                except ET.ParseError as exc:
+                    problems.append(f"Invalid SVG {asset.name}: {exc}")
+                    continue
+                if artwork.get("viewBox") != "0 0 960 440":
+                    problems.append(f"{asset.name}: unexpected design-space bounds")
+                if any(el.tag.rsplit("}", 1)[-1] in ("image", "foreignObject")
+                       for el in artwork.iter()):
+                    problems.append(f"{asset.name}: embedded external images/HTML are forbidden")
+
     if problems:
         print("Repository contract FAILED:")
         for problem in problems:
