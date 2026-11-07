@@ -8,6 +8,7 @@ using System.Windows.Interop;
 using System.Windows.Media.Imaging;
 using BlackjackCasino.Core;
 using BlackjackCasino.Desktop;
+using Microsoft.Web.WebView2.Core;
 
 internal static partial class Program
 {
@@ -42,7 +43,7 @@ internal static partial class Program
     }
     private static async Task Check(MainWindow window,PlayerProfileState qaProfile)
     {
-        await Task.Delay(200);Capture(window,"01-lobby");
+        await Task.Delay(200);await CaptureModernLobby(window,"01-lobby");
         Require(Find<CasinoLobbyView>(window).Any(v=>v.IsVisible),"Application did not start in the lobby");
         Require(Find<Button>(window).Any(v => v.Name == "LobbyNativeUpdatesButton"),
             "WPF lobby fallback has no update entry.");
@@ -82,7 +83,7 @@ internal static partial class Program
             foreach (Button destination in Find<Button>(hub)) RequireWithin(window, destination, "Lobby hub destination");
             Require(tiles.Max(tile => tile.TransformToAncestor(lobby).TransformBounds(new Rect(tile.RenderSize)).Right) < hubBounds.Left, "Hub overlaps game tiles.");
 
-            Capture(window, "lobby-grid-" + (int)size.Item1);
+            await CaptureModernLobby(window, "lobby-grid-" + (int)size.Item1);
         }
         await CheckMenuPerformance(window, qaProfile);
         await CheckDistinctFrames(window);
@@ -475,6 +476,42 @@ internal static partial class Program
     {
         target.UpdateLayout();var visual=new DrawingVisual();using(var d=visual.RenderOpen())d.DrawRectangle(new VisualBrush(target) {ViewboxUnits=BrushMappingMode.Absolute,Viewbox=new Rect(0,0,target.ActualWidth,target.ActualHeight)},null,new Rect(0,0,target.ActualWidth,target.ActualHeight));
         var bmp=new RenderTargetBitmap((int)Math.Ceiling(target.ActualWidth),(int)Math.Ceiling(target.ActualHeight),96,96,PixelFormats.Pbgra32);bmp.Render(visual);return bmp;
+    }
+    /// <summary>
+    /// Capture the real browser compositor rather than a WPF VisualBrush, which
+    /// cannot see the WebView2 HWND and previously captured only the boot cover.
+    /// Wait for every original PixiJS key-art texture to finish loading.
+    /// </summary>
+    private static async Task CaptureModernLobby(MainWindow window,string name)
+    {
+        if (!ModernLobbyView.IsAvailable)
+        {
+            Capture(window,name);
+            return;
+        }
+        ModernLobbyView view=Find<ModernLobbyView>(window).Single();
+        for (int attempt=0;attempt<100 && !view.Ready && !view.Failed;attempt++)
+            await Task.Delay(100);
+        Require(view.Ready && !view.Failed && view.Browser.CoreWebView2 is not null,
+            "Cannot capture lobby artwork: React WebView2 did not become ready.");
+        CoreWebView2 core=view.Browser.CoreWebView2!;
+        bool texturesReady=false;
+        for (int attempt=0;attempt<100;attempt++)
+        {
+            string status=await core.ExecuteScriptAsync(
+                "(()=>{const canvas=document.querySelector('.lobby-pixi canvas');"
+                + "return Boolean(canvas&&canvas.width>0&&canvas.height>0"
+                + "&&document.querySelectorAll('.lobby-game .game-art-window[data-pixi-art-ready]').length===9)})()");
+            if(status=="true"){texturesReady=true;break;}
+            await Task.Delay(100);
+        }
+        Require(texturesReady,"Cannot capture lobby artwork: one or more Pixi key-art textures failed.");
+        await core.ExecuteScriptAsync(
+            "document.querySelector('dialog.casino-news:modal .lobby-gold-button')?.click()");
+        await Task.Delay(220);
+        using var file=File.Create(Path.Combine(output,name+".png"));
+        await core.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png,file);
+        Require(file.Length>15_000,"WebView2 lobby capture unexpectedly empty.");
     }
     private static void Capture(FrameworkElement target,string name){var png=new PngBitmapEncoder();png.Frames.Add(BitmapFrame.Create(Render(target)));using var file=File.Create(Path.Combine(output,name+".png"));png.Save(file);}
     private static void Require(bool condition,string message){if(!condition)throw new Exception(message);}
