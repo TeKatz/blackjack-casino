@@ -17,7 +17,10 @@ jobs:
     # Ongoing Manor migration test builds are published from the single long-lived feature branch.
     if: github.ref == 'refs/heads/feature/manor-modernization-phase-1'
     runs-on: windows-latest
-    timeout-minutes: 20
+    # Includes full frontend/.NET tests, two Windows runtime smokes, two self-contained
+    # publishes, artifact verification, upload and a published-package checksum round trip.
+    # A 20-minute cap cancelled a passing build at the desktop startup smoke in P2 batch 1.
+    timeout-minutes: 60
 
     steps:
       - name: Checkout
@@ -92,6 +95,9 @@ jobs:
         run: dotnet run --project tools/PresentationSmoke --configuration Release -- artifacts/presentation-regression
 
       - name: Desktop startup, Nine Lives and Kniffel smoke
+        # An actual startup deadlock must fail this step explicitly instead of
+        # exhausting the entire development publishing job without diagnostics.
+        timeout-minutes: 18
         run: dotnet run --project tools/StartupSmoke/StartupSmoke.csproj --configuration Release -- artifacts/startup-smoke
 
       - name: Upload startup smoke evidence
