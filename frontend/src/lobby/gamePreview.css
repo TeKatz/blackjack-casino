@@ -1,6 +1,8 @@
 
 .native-preview{position:absolute;inset:0;display:grid;place-items:center;background:radial-gradient(ellipse,#193e31,#061912);overflow:hidden;transition:transform .45s}
-.lobby-game:hover .native-preview{transform:scale(1.06)}
+.lobby-game:hover .native-preview{filter:brightness(1.06) saturate(1.08)}
+/* Don't scale an entire composited preview across the thumbnail clipping edge. */
+.native-preview{transform:none;backface-visibility:hidden}
 .preview-midnight-manor{background:linear-gradient(#100e1cbb,#100e1ccc),url('/album/atlas/midnight-manor.png') center/cover}
 .preview-neon-vault{background:radial-gradient(ellipse,#1b2a52,#0c0a22);box-shadow:inset 0 0 30px #b444de33}
 .preview-midnight-reels{background:radial-gradient(ellipse,#65405b,#1b1324)}

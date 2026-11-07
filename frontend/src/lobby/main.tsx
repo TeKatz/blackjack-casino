@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import {PlayerPortrait,CosmeticTitle,VaultIcon} from './Cosmetics';
 import {Modal} from './Modal';
 import {GamePreview} from './GamePreview';
+import {NavIcon} from './NavIcon';
 import { LobbyAmbient } from './LobbyAmbient';
 import { ModernShop } from './ModernShop';
 import { ModernChallenges } from './ModernChallenges';
@@ -33,17 +34,17 @@ const categoryById: Record<string, string> = {
   'casino-empire':'EMPIRE','midnight-reels':'SLOTS','neon-vault':'SLOTS',
   'nine-lives':'SLOTS','midnight-manor':'SLOTS','midnight-merge':'CASINO RESTORATION',
 };
-const navigation: {id: Filter; icon: string; en: string; de: string}[] = [
-  {id:'all',icon:'⌂',en:'Lobby',de:'Lobby'}, {id:'tables',icon:'♠',en:'Table Games',de:'Tischspiele'},
-  {id:'slots',icon:'▣',en:'Slots',de:'Slots'}, {id:'relax',icon:'☕',en:'Relaxed',de:'Entspannt'},
-  {id:'empire',icon:'♛',en:'Empire',de:'Empire'}, {id:'collections',icon:'▤',en:'Collections',de:'Sammlungen'},
-  {id:'shop',icon:'♢',en:'Shop',de:'Shop'}, {id:'stats',icon:'▥',en:'Statistics',de:'Statistik'},
+const navigation: {id: Filter; en: string; de: string}[] = [
+  {id:'all',en:'Lobby',de:'Lobby'}, {id:'tables',en:'Table Games',de:'Tischspiele'},
+  {id:'slots',en:'Slots',de:'Slots'}, {id:'relax',en:'Relaxed',de:'Entspannt'},
+  {id:'empire',en:'Empire',de:'Empire'}, {id:'collections',en:'Collections',de:'Sammlungen'},
+  {id:'shop',en:'Shop',de:'Shop'}, {id:'stats',en:'Statistics',de:'Statistik'},
   // Remain accessible when the compact viewport hides the topbar and overview widgets.
-  {id:'season',icon:'✦',en:'Season Pass',de:'Saisonpass'},
-  {id:'challenges',icon:'♛',en:'Challenges',de:'Aufgaben'},
-  {id:'vault',icon:'⬡',en:'Vault',de:'Tresor'},
-  {id:'daily',icon:'✦',en:'Daily Login',de:'Täglicher Login'},
-  {id:'profile',icon:'♠',en:'Player Profile',de:'Spielerprofil'},
+  {id:'season',en:'Season Pass',de:'Saisonpass'},
+  {id:'challenges',en:'Challenges',de:'Aufgaben'},
+  {id:'vault',en:'Vault',de:'Tresor'},
+  {id:'daily',en:'Daily Login',de:'Täglicher Login'},
+  {id:'profile',en:'Player Profile',de:'Spielerprofil'},
 ];
 function percent(n: number): string { return Math.round(n * 100) + '%'; }
 function matchesFilter(id: string, filter: Filter): boolean {
@@ -63,11 +64,9 @@ function Progress({value, tone = 'green'}:{value:number; tone?:'green'|'gold'}) 
 function GameTile({ mode, language, onOpen, onSecondary }:{
   mode:LobbyMode; language:'de'|'en'; onOpen:(id:string)=>void; onSecondary:(id:string)=>void;
 }) {
-  const [hover, setHover] = useState(false);
   const wide = false;
   return <article className={'lobby-game '+(wide?'lobby-merge ':'')+'game-'+mode.id+
-      (hover?' hovered':'')+(mode.enabled?'':' unavailable')}
-      onPointerEnter={()=>setHover(true)} onPointerLeave={()=>setHover(false)}>
+      (mode.enabled?'':' unavailable')}>
     <div className="game-art-window" aria-hidden="true">
       <div className={'game-art-image art-'+mode.id}/><GamePreview id={mode.id}/>
       <div className="art-shimmer"/>
@@ -361,12 +360,12 @@ function LobbyApp() {
     <div className={'lobby-body '+(shopVisible?'shop-active':recordsVisible?'records-active':'')}>
       <nav className="lobby-nav" aria-label={de?'Casino-Navigation':'Casino navigation'}>
         <div className="lobby-nav-scroll">
-        <button className="lobby-nav-item" onClick={()=>setNewsOpen(true)}><span className="nav-icon" aria-hidden="true">▧</span><span>News</span></button>
+        <button className="lobby-nav-item" onClick={()=>setNewsOpen(true)}><NavIcon name="news"/><span>News</span></button>
         {navigation.map(n=><button type="button" key={n.id}
           aria-current={(shopVisible?n.id==='shop':recordsVisible?n.id===(recordsVisible==='challenges'?'challenges':recordsVisible==='statistics'?'stats':recordsVisible==='history'?'profile':recordsVisible==='vault'?'vault':recordsVisible==='album'?'collections':recordsVisible==='season'?'season':'profile'):n.id===filter)?'page':undefined}
           className={'lobby-nav-item '+((shopVisible?n.id==='shop':recordsVisible?n.id===(recordsVisible==='challenges'?'challenges':recordsVisible==='statistics'?'stats':recordsVisible==='vault'?'vault':recordsVisible==='album'?'collections':recordsVisible==='season'?'season':'profile'):n.id===filter)?'selected':'')+(n.id==='daily'?' daily-nav':'')+(n.id==='collections'?' nav-section-start':'')}
           onClick={()=>chooseNav(n.id)}>
-          <span className="nav-icon" aria-hidden="true">{n.icon}</span>
+          <NavIcon name={n.id}/>
           <span>{de?n.de:n.en}</span>
           {n.id==='challenges'&&data.challengesReady>0&&
             <span className="nav-ready" aria-label={de?'Belohnungen bereit':'Rewards ready'}>{data.challengesReady}</span>}
@@ -376,13 +375,13 @@ function LobbyApp() {
         <button type="button" className="lobby-updates-entry lobby-settings-entry" data-testid="lobby-settings-entry"
           aria-haspopup="dialog" aria-expanded={settingsOpen}
           onClick={()=>{setUpdatesOpen(false);setSettingsOpen(true);}}>
-          <span className="lobby-updates-glyph" aria-hidden="true">♫</span>
+          <NavIcon name="settings"/>
           <span>{de?'Einstellungen':'Settings'}</span>
         </button>
         <button type="button" className="lobby-updates-entry" data-testid="lobby-updates-entry"
           aria-haspopup="dialog" aria-expanded={updatesOpen}
           onClick={openUpdates}>
-          <span className="lobby-updates-glyph" aria-hidden="true">⚙</span>
+          <NavIcon name="updates"/>
           <span>{de?'Updates':'Updates'}</span>
           {updates.updateAvailable&&<span className="lobby-updates-dot" aria-label={de?'Update verfügbar':'Update available'}/>}
         </button>

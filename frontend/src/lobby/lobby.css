@@ -41,7 +41,7 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
 .lobby-body {z-index:2;min-height:0;display:grid;grid-template-columns:164px minmax(0,1fr) minmax(252px,306px);gap:13px;padding:14px 15px 16px 0;}
 .lobby-nav{min-height:0;position:relative;display:flex;flex-direction:column;gap:8px;padding:22px 8px;background:linear-gradient(165deg,#063625c9,#061c16e8 70%);border:1px solid #1b5640;border-left:0;border-radius:0 24px 24px 0;box-shadow:inset 0 0 50px #1d735222;}
 .lobby-nav-item{height:48px;display:flex;align-items:center;gap:14px;text-align:left;border:1px solid transparent;border-radius:12px;color:#e2decf;background:transparent;padding:0 12px;font-size:13px;font-weight:600;white-space:nowrap;transition:background .2s,border-color .2s,transform .2s,box-shadow .2s;}
-.nav-icon{font:24px Georgia,serif;color:#e6c06b;width:26px;flex:0 0 26px;text-align:center;}
+.nav-icon{width:26px;flex:0 0 26px;height:26px;color:#e6c06b;display:block;}
 .lobby-nav-item:hover{background:#174b34aa;transform:translateX(3px);}
 .lobby-nav-item.selected{border-color:#d7aa58;background:linear-gradient(120deg,#24553a,#0d301d);box-shadow:0 0 14px #f0cb64aa,inset 0 0 12px #f6ce6335;color:#ffeaa8;}
 .lobby-nav-decoration{margin-top:auto;font:130px Georgia,serif;color:#153f2f;opacity:.45;text-align:center;line-height:.85;pointer-events:none;}
@@ -61,7 +61,7 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
 .game-midnight-manor{border-color:#6f72a2;}
 .lobby-game:hover,.lobby-game.hovered{border-color:#f0c66c;transform:translateY(-4px);box-shadow:0 12px 32px #000b,0 0 14px #e2af534e;z-index:2;}
 .lobby-game.unavailable{filter:grayscale(.5);opacity:.55;}
-.game-art-window{position:relative;height:38%;min-height:64px;overflow:hidden;background:radial-gradient(ellipse at 54% 30%,#36674b,#0a1a18 70%);}
+.game-art-window{position:relative;height:38%;min-height:64px;overflow:hidden;isolation:isolate;contain:paint;background:radial-gradient(ellipse at 54% 30%,#36674b,#0a1a18 70%);}
 .game-art-image{position:absolute;left:50%;top:50%;width:256px;height:130px;transform:translate(-50%,-50%) scale(1.06);background-image:url('/lobby/lobby-atlas.webp');background-repeat:no-repeat;background-size:1024px 884px;transition:transform .55s cubic-bezier(.2,.9,.2,1),filter .4s;filter:saturate(1.08);}
 .game-art-window .art-blackjack{background-position:0 -480px;}
 .game-art-window .art-kniffel{background-position:-256px -480px;}
@@ -128,28 +128,15 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
   background-image:url('/lobby/lobby-icon-atlas.webp');
   background-repeat:no-repeat;background-size:260px 208px;background-position:-156px -104px;
 }
-.nav-icon{
-  display:block;flex:0 0 26px;width:26px;height:26px;
-  font-size:0;color:transparent;overflow:hidden;
-  background-image:url('/lobby/lobby-icon-atlas.webp');
-  background-repeat:no-repeat;background-size:130px 104px;
-  transition:filter .2s,transform .2s;
+/* Each gold-etched icon is bound to its semantic route, not menu position. */
+.nav-icon{display:block;width:26px;height:26px;flex:0 0 26px;
+  fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;
+  stroke-linejoin:round;filter:drop-shadow(0 1px 2px #030f0b);
+  transition:filter .2s,transform .2s;}
+.lobby-nav-item:hover .nav-icon,.lobby-nav-item.selected .nav-icon{
+  color:#ffdd9a;filter:drop-shadow(0 0 5px #e5b85b);transform:scale(1.08);
 }
-.lobby-nav-item:hover .nav-icon,.lobby-nav-item.selected .nav-icon{filter:brightness(1.22) drop-shadow(0 0 5px #e5b85b);transform:scale(1.12);}
-.lobby-nav-item:nth-child(1) .nav-icon{background-position:0 0;}
-.lobby-nav-item:nth-child(2) .nav-icon{background-position:-26px 0;}
-.lobby-nav-item:nth-child(3) .nav-icon{background-position:-52px 0;}
-.lobby-nav-item:nth-child(4) .nav-icon{background-position:-78px 0;}
-.lobby-nav-item:nth-child(5) .nav-icon{background-position:-104px 0;}
-.lobby-nav-item:nth-child(6) .nav-icon{background-position:0 -26px;}
-.lobby-nav-item:nth-child(7) .nav-icon{background-position:-26px -26px;}
-.lobby-nav-item:nth-child(8) .nav-icon{background-position:-52px -26px;}
-/* Extra compact-navigation destinations use genuine glyph icons because the
-   imported eight-icon atlas contains only the primary category artwork. */
-.lobby-nav-item:nth-child(n+9) .nav-icon{
-  font:21px Georgia,serif;color:#e6c06b;text-align:center;
-  background-image:none;line-height:26px;overflow:visible;
-}
+.lobby-updates-entry .nav-icon{width:22px;height:22px;flex:0 0 22px;color:#e6c06b;}
 .overview-icon{position:relative;color:transparent;font-size:0;text-shadow:none;overflow:visible;}
 .overview-icon::before{
   content:"";position:absolute;left:50%;top:50%;width:54px;height:54px;
@@ -336,12 +323,7 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
   background-size:400% auto;
   background-position:66.666% 5%;
 }
-.game-kniffel .game-art-window::after{
-  content:"⚄  ⚅";position:absolute;left:50%;top:50%;
-  transform:translate(-50%,-50%) rotate(-8deg);pointer-events:none;
-  font:38px Georgia,serif;letter-spacing:.1em;color:#ffe6a1;
-  text-shadow:0 4px 10px #07140d,0 0 16px #ce9e60;
-}
+/* Midnight Dice already draws physical dice; remove duplicated overlay glyphs. */
 
 /* The lobby owns its own locale switch; native settings are only visible at the Blackjack table. */
 .lobby-language{flex:0 0 auto;min-width:42px;height:38px;margin:0 4px;
@@ -358,7 +340,7 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
 .lobby-updates-entry{flex:0 0 auto;min-height:44px;display:flex;align-items:center;justify-content:flex-start;gap:9px;border:1px solid #a68a54;border-radius:10px;padding:8px 10px;background:linear-gradient(125deg,#1d4331,#0e241e);color:#efd5a0;font-size:12px;font-weight:700;white-space:nowrap;}
 .lobby-updates-entry:hover{border-color:#e2be70;background:#305640;}
 .lobby-updates-entry[aria-expanded=true]{border-color:#e9c57a;box-shadow:0 0 12px #d8ba6e44;}
-.lobby-updates-glyph{font-size:20px;width:25px;flex:0 0 25px;text-align:center;}
+/* Settings and Updates use the same semantic SVG icon treatment. */
 .lobby-updates-dot{width:7px;height:7px;border-radius:50%;background:#e6bb69;box-shadow:0 0 8px #f7c859;}
 .lobby-updates-backdrop{position:absolute;inset:0;z-index:30;background:#010b09da;display:flex;align-items:center;justify-content:center;padding:18px;}
 .lobby-updates-panel{width:min(490px,100%);max-height:calc(100vh - 36px);overflow-y:auto;border:1px solid #ac9055;border-radius:14px;background:linear-gradient(140deg,#143727,#081e1c);box-shadow:0 20px 70px #000b,inset 0 1px #e9dcad24;padding:24px;display:flex;flex-direction:column;gap:17px;}
@@ -401,3 +383,29 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
 .casino-news{width:min(690px,90vw);max-height:80dvh;overflow:hidden;padding:24px;color:#f0e4ca;background:linear-gradient(140deg,#17392b,#0b201b);border:1px solid #d2b273;border-radius:16px;box-shadow:0 30px 90px #000a}
 .casino-news::backdrop{background:#030b09ba}.casino-news header{display:flex;justify-content:space-between;align-items:start;gap:20px}.casino-news small{color:#d2b273;letter-spacing:.12em}.casino-news h2{font:32px Georgia,serif;margin:8px 0}.casino-news header button{border:1px solid #798c6c;background:#24372a;color:#f0e4ca;border-radius:6px;padding:4px 12px;font-size:24px}
 .casino-news-items{max-height:50dvh;overflow:auto;overscroll-behavior:contain;margin:15px 0}.casino-news article{border-left:3px solid;padding:4px 15px;margin:12px 0}.casino-news h3{font-size:17px;margin:5px 0}.casino-news p{color:#c2d1bd;line-height:1.6;font-size:13px}
+
+/* P2: eliminate hover repaint seams between thumbnail and the information pane. */
+.lobby-game:not(.lobby-merge) .game-info{z-index:1;margin-top:-2px;}
+.lobby-game:not(.lobby-merge) .game-info::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:3px;
+  background:#0f2c25;pointer-events:none;
+}
+.lobby-game:focus-within{border-color:#eac576;box-shadow:0 0 0 2px #e4bb6280;}
+/* A distinct indigo/champagne Daily Login wing, keeping the emerald lobby intact. */
+.lobby-daily{position:relative;isolation:isolate;border:1px solid #a78d67;
+ background:radial-gradient(ellipse at 90% 0%,#5c3a58a8,transparent 55%),
+ linear-gradient(150deg,#281e34f2,#141a2cf8 63%,#152927f5);
+ box-shadow:0 9px 30px #0009,inset 0 1px #f9dda45e,0 0 18px #aa789c20;}
+.lobby-daily::before{content:"";position:absolute;top:0;left:17px;right:17px;height:2px;
+ background:linear-gradient(90deg,transparent,#ffdf9d,transparent);pointer-events:none;}
+.lobby-daily .daily-header h2{color:#ffe0a4;text-shadow:0 2px 15px #ceaa7b33;}
+.lobby-daily .daily-header p{color:#d1c9cf;}
+.lobby-daily .daily-visual{border-color:#b89a6e;box-shadow:0 5px 18px #0008,inset 0 0 0 1px #efd29833;}
+.lobby-daily .daily-reward{border-color:#685a73;background:linear-gradient(145deg,#33273e,#172332);}
+.lobby-daily .daily-reward:nth-child(7){background:linear-gradient(112deg,#493649,#232c40);}
+.lobby-daily .daily-reward.claimed{border-color:#668f83;background:linear-gradient(140deg,#253c3e,#192a36);}
+.lobby-daily .daily-reward.current{border-color:#f5cf86;background:linear-gradient(145deg,#614758,#302f47);
+ box-shadow:inset 0 0 16px #e6be8040,0 0 12px #dca47a44;}
+.lobby-daily .daily-cycle-heading span,.lobby-daily .daily-footer p{color:#d0c3d0;}
+.lobby-daily .daily-reward small{color:#c9c0d4;}
+.lobby-daily .daily-claim.claimed{border-color:#887861;background:linear-gradient(140deg,#3b3342,#202d38);color:#f0d9b5;}
