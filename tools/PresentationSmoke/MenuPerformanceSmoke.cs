@@ -39,14 +39,20 @@ internal static partial class Program
                 Require(displayed, "React " + section + " did not materialize in the live lobby.");
                 await window.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
                 watch.Stop();
-                int shopRows = section == "Cosmetic Shop"
-                    ? int.Parse(await core.ExecuteScriptAsync(
-                        "document.querySelectorAll('.shop-product').length"),
-                        System.Globalization.CultureInfo.InvariantCulture)
-                    : 0;
+                int shopRows = 0;
                 if (section == "Cosmetic Shop")
+                {
+                    for (int attempt = 0; attempt < 70; attempt++)
+                    {
+                        shopRows = int.Parse(await core.ExecuteScriptAsync(
+                            "document.querySelectorAll('.shop-product').length"),
+                            System.Globalization.CultureInfo.InvariantCulture);
+                        if (shopRows > 0) break;
+                        await Task.Delay(50);
+                    }
                     Require(shopRows > 0 && shopRows <= 32,
                         $"React Shop materialized {shopRows} items outside its viewport budget.");
+                }
                 timings.Add(new { section, elapsedMilliseconds = watch.ElapsedMilliseconds,
                     materializedShopRows = shopRows });
                 await core.ExecuteScriptAsync(
