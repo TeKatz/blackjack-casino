@@ -13,6 +13,14 @@ public static class PackageInstaller
     /// </summary>
     public static void InstallFromZip(string packagePath, string targetDirectory,
         string restartExecutable, Action<string, int, Exception>? onRetry)
+        => InstallFromZip(packagePath, targetDirectory, restartExecutable, onRetry,
+            directoryMove: Directory.Move, delay: Thread.Sleep, fileMove: null);
+
+    // Injectable boundaries make real directory-lock fallback and partial-write rollback testable.
+    internal static void InstallFromZip(string packagePath, string targetDirectory,
+        string restartExecutable, Action<string, int, Exception>? onRetry,
+        Action<string, string> directoryMove, Action<TimeSpan> delay,
+        Action<string, string, bool>? fileMove)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(packagePath);
         ArgumentException.ThrowIfNullOrWhiteSpace(targetDirectory);
@@ -36,6 +44,13 @@ public static class PackageInstaller
         Directory.CreateDirectory(parent);
 
         string name = Path.GetFileName(target);
+        // All updater versions after this change serialize installs outside the app directory.
+        // A lock left by a crash is harmless: only its OS handle owns the exclusion.
+        string lockFile = Path.Combine(parent, $".{name}.update.lock");
+        using var updateLock = new FileStream(lockFile, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+        // A previous updater may have crashed in the middle of an in-place swap.
+        // Restore its original files before attempting either installation strategy.
+        InPlacePackageInstaller.RecoverPending(target);
         string staging = Path.Combine(parent, $".{name}.staging-{Guid.NewGuid():N}");
         string backup = Path.Combine(parent, $".{name}.backup-{Guid.NewGuid():N}");
 
@@ -49,14 +64,28 @@ public static class PackageInstaller
             bool movedExistingInstall = false;
             if (Directory.Exists(target))
             {
-                MoveDirectoryWithRetries(target, backup,
-                    onRetry: (attempt, error) => onRetry?.Invoke("move-existing", attempt, error));
-                movedExistingInstall = true;
+                try
+                {
+                    // A permanently held directory handle cannot be fixed by 90 seconds
+                    // of retrying the same rename. Try briefly, then overlay file-by-file
+                    // using a durable recovery journal and original-file backups.
+                    MoveDirectoryWithRetries(target, backup,
+                        move: directoryMove, delay: delay, maxAttempts: 4,
+                        onRetry: (attempt, error) => onRetry?.Invoke("move-existing", attempt, error));
+                    movedExistingInstall = true;
+                }
+                catch (Exception directoryError) when (directoryError is IOException or UnauthorizedAccessException)
+                {
+                    onRetry?.Invoke("fallback-in-place", 0, directoryError);
+                    InPlacePackageInstaller.Apply(staging, target, onRetry, fileMove);
+                    return;
+                }
             }
 
             try
             {
                 MoveDirectoryWithRetries(staging, target,
+                    move: directoryMove, delay: delay,
                     onRetry: (attempt, error) => onRetry?.Invoke("activate-package", attempt, error));
             }
             catch (Exception installError)
@@ -66,6 +95,7 @@ public static class PackageInstaller
                     try
                     {
                         MoveDirectoryWithRetries(backup, target,
+                            move: directoryMove, delay: delay,
                             onRetry: (attempt, error) => onRetry?.Invoke("restore-existing", attempt, error));
                     }
                     catch (Exception recoveryError)
@@ -90,13 +120,10 @@ public static class PackageInstaller
     }
 
     /// <summary>
-    /// A just-exited WebView2 browser, Explorer preview or antivirus scan can
-    /// continue to hold a directory handle after the parent desktop process exits.
-    /// Windows needs time to release these handles; the former 15-second budget
-    /// was repeatedly insufficient in real updater logs. Retry only filesystem
-    /// lock/access errors for at most ~90 seconds. Existing installs are never
-    /// removed or partially overwritten while waiting. Injection points keep
-    /// the schedule and permanent failures deterministic in tests.
+    /// Retry transient directory locks for the caller's bounded budget.
+    /// The standard updater now uses only four rename attempts before switching
+    /// to a transactional file-by-file fallback. The longer default remains
+    /// available to individual callers and its original retry-budget tests.
     /// </summary>
     internal static void MoveDirectoryWithRetries(string source, string destination,
         Action<string, string>? move = null, Action<TimeSpan>? delay = null,

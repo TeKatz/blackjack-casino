@@ -33,7 +33,11 @@ internal static class Program
                 options.PackagePath, options.TargetDirectory, options.RestartExecutable,
                 (stage, attempt, error) =>
                 {
-                    Log($"Temporary installation lock during {stage}, retry {attempt}: {error.Message}");
+                    if (stage == "fallback-in-place")
+                        Log("The installation folder cannot be renamed. "
+                            + "Attempting journaled file-by-file replacement instead.", error);
+                    else
+                        Log($"Temporary installation lock during {stage}, retry {attempt}: {error.Message}");
                     // A short-lived WebView2 teardown should resolve on its own.
                     // At longer-lasting failures, log evidence rather than simply
                     // extending the retry timer again and again.
@@ -52,13 +56,18 @@ internal static class Program
             Log("Update failed.", ex);
             if (options is not null && ex is IOException or UnauthorizedAccessException)
                 LogInstallationLockDiagnostics(options.TargetDirectory);
-            // A failed rename leaves the existing directory intact or restores
-            // its backup. Do not strand the player with a closed casino.
-            bool recovered = TryRestartAvailableInstallation(options);
+            // A failed rename leaves the old install intact; a failed file-level
+            // transaction is rolled back. NEVER launch a mixed install if
+            // restoration itself failed (AggregateException preserves backups).
+            bool recovered = ex is not AggregateException
+                && TryRestartAvailableInstallation(options);
             string message = recovered
                 ? "The update could not be installed. The available casino installation has been restarted."
-                : "The update could not be installed or the casino could not be restarted. "
-                  + "Open BlackjackCasino.Desktop.exe from the installation folder.";
+                : ex is AggregateException
+                    ? "The update could not be safely rolled back. Do not launch the casino yet. "
+                      + "Keep the original-file backup listed in Details and contact support."
+                    : "The update could not be installed or the casino could not be restarted. "
+                      + "Open BlackjackCasino.Desktop.exe from the installation folder.";
             string advice = ex is IOException or UnauthorizedAccessException
                 ? Environment.NewLine + Environment.NewLine
                   + "Windows could not access the installation directory. Another casino instance, "

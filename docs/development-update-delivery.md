@@ -70,3 +70,36 @@ All ten local React WebView2 hosts, including the detached Tales investigation b
 The Windows Lobby and Lounge security smoke asserts the runtime-reported `core.Environment.UserDataFolder` equals that exact user-local path, and the source boundary audit rejects a return to implicit default-profile initialization. Existing per-page origin validation, browser permissions and navigation restrictions are retained.
 
 This eliminates one plausible installation-directory lock source. It does not guarantee that antivirus, an open Explorer directory, or another process cannot lock the target. A currently running **older build** can still experience the old profile lock while attempting the first update to the fixed build; in that case close the app and all related WebView2 subprocesses, or install the verified published ZIP manually while no handles are open.
+
+## Directory-rename-independent update fallback (2026-11-07)
+
+The updater still prefers the original staged, whole-folder atomic swap. Repeated
+real-world Windows logs showed that the installation **root itself** could stay
+unrenamable for the entire 87-second retry budget even when a disposable sibling
+directory could be renamed and no casino executable was detected. Longer retry
+loops cannot resolve a permanent root-directory handle.
+
+After four short attempts to rename the existing root, the updater now switches
+to a **journaled in-place replacement of only the verified package files**.
+This makes an open Windows handle on the root directory (without delete sharing)
+independent of the ability to update the files inside it. Original versions of
+every file that will be overwritten are copied to a unique sibling backup before
+the first mutation; non-package files and user data are left untouched. Each
+replacement is a same-volume file move, with the executable swapped last.
+The durable backup journal and active marker are outside the installation root.
+
+Any normal installation error rolls replaced files back before the old casino is
+restarted. The next updater first checks for interrupted journaled transactions
+and restores original files before extracting or activating another package.
+If rollback is blocked, its backup remains and the updater **will not restart
+a potentially mixed installation**. The SHA-256 package check, executable
+validation, release channels and save locations are unchanged. The fallback
+may retain obsolete program assets that were absent from the new package;
+a future successful whole-folder swap removes them.
+
+Windows tests hold an actual directory handle without `FILE_SHARE_DELETE`
+and verify an in-place upgrade while the root rename is denied. Additional
+tests cover a fault after partial file replacement, the recovery journal,
+idempotent restart recovery, and preservation of unrelated local files.
+These tests prove the specific directory-handle case, not arbitrary ACL denial,
+antivirus blocks on individual executable files, or a second active casino.
