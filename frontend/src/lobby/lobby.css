@@ -466,3 +466,8 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
  .lobby-game:is(.game-midnight-reels,.game-neon-vault,.game-nine-lives,.game-midnight-manor) .game-art-image{transition:none;}
 }
 .casino-lobby-shell[data-reduced="true"] .lobby-game .game-art-image{transition:none;}
+
+/* Shared PixiJS canvas paints masked effects inside game-art rectangles. */
+.lobby-game:has(.tile-motion-layers){transform-style:preserve-3d}
+.lobby-game:has(.tile-motion-layers) .game-art-window{overflow:hidden;isolation:isolate}
+.lobby-game:has(.tile-motion-layers):hover{box-shadow:0 16px 36px #000d,0 0 22px color-mix(in srgb,var(--slot-glint,#e2b367) 43%,transparent)}

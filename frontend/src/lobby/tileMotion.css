@@ -1,0 +1,118 @@
+/* Cinematic DOM layers are composited above SVG art and beneath the UI.
+   A single PixiJS WebGL stage supplies GPU particles, masks, and light motions. */
+.tile-motion-layers{position:absolute;inset:0;z-index:2;overflow:hidden;isolation:isolate;
+ pointer-events:none;--tile-accent:#f7c77f;}
+.tile-motion-layers[data-tile-motion="neon-vault"]{--tile-accent:#77f5ef}
+.tile-motion-layers[data-tile-motion="nine-lives"]{--tile-accent:#d884ff}
+.tile-motion-layers[data-tile-motion="midnight-manor"]{--tile-accent:#c7a4f1}
+.tile-motion-layers[data-tile-motion="chill-lounge"]{--tile-accent:#e3c594}
+.tile-motion-layers[data-tile-motion="casino-empire"]{--tile-accent:#f5ce89}
+.tile-motion-layers[data-tile-motion="kniffel"]{--tile-accent:#f1d99f}
+.tile-motion-layers>div{position:absolute;inset:0;pointer-events:none}
+.tile-depth-shadow{background:radial-gradient(ellipse at 55% 48%,transparent 26%,#020b13a0 100%);mix-blend-mode:multiply}
+.tile-drift-haze{opacity:.6;
+ background:radial-gradient(ellipse at 20% 65%,color-mix(in srgb,var(--tile-accent) 34%,transparent),transparent 55%),
+ radial-gradient(ellipse at 85% 30%,color-mix(in srgb,var(--tile-accent) 20%,transparent),transparent 48%);
+ filter:blur(12px);transform:translate3d(-4%,3%,0);
+ animation:tile-ambient-drift 8s ease-in-out infinite alternate}
+.tile-moving-beam{width:42%!important;left:-60%!important;
+ background:linear-gradient(105deg,transparent 5%,#ffffff06 20%,
+ color-mix(in srgb,var(--tile-accent) 18%,transparent) 49%,#ffffff10 57%,transparent 80%);
+ transform:skewX(-21deg);animation:tile-beam-cross 8.2s cubic-bezier(.36,0,.4,1) infinite}
+.tile-light-field{opacity:.57;mix-blend-mode:screen;
+ background:radial-gradient(ellipse at calc(50% + var(--motion-x,0px)) calc(45% + var(--motion-y,0px)),
+ color-mix(in srgb,var(--tile-accent) 26%,transparent),transparent 62%);
+ transition:opacity .4s}
+.tile-top-glass{background:linear-gradient(185deg,#ffffff16 0%,transparent 23%,transparent 65%,#03071375 100%);
+ box-shadow:inset 0 1px color-mix(in srgb,var(--tile-accent) 55%,transparent);opacity:.62}
+.lobby-game:hover .tile-drift-haze,.lobby-game:focus-within .tile-drift-haze{opacity:1;filter:blur(9px)}
+.lobby-game:hover .tile-light-field,.lobby-game:focus-within .tile-light-field{opacity:.94}
+.tile-signature{position:absolute;inset:0;
+ transform:translate3d(calc(var(--motion-x,0px) * -.35),calc(var(--motion-y,0px) * -.25),0);
+ transition:transform .25s ease;pointer-events:none}
+.tile-signature i{display:block;position:absolute;pointer-events:none}
+.tile-signature-midnight-reels .tile-reels-glint{
+ top:3%;bottom:5%;left:35%;width:35%;
+ background:repeating-linear-gradient(0deg,transparent 0 12%,#fff1ba24 13% 14%,transparent 15% 27%);
+ mix-blend-mode:screen;mask-image:linear-gradient(180deg,transparent,#000 25% 75%,transparent);
+ animation:tile-reel-scroll 2.7s linear infinite;opacity:.55}
+.tile-reels-flare{inset:14% 22%;border-radius:50%;background:radial-gradient(ellipse,#ffe2a34d,transparent 68%);
+ filter:blur(8px);animation:tile-jackpot-pulse 4.7s ease-in-out infinite}
+.tile-signature-neon-vault .tile-vault-orbit{width:min(40%,90px);aspect-ratio:1;left:50%;top:50%;
+ border:2px solid #73ffffb0;border-radius:50%;box-shadow:0 0 13px #66faff99,inset 0 0 12px #dd83ff55;
+ border-left-color:transparent;border-bottom-color:#ee5ce2b0;animation:tile-vault-spin 7.4s linear infinite}
+.tile-signature-neon-vault .tile-vault-orbit.inner{width:min(30%,66px);border-color:#f56be39c;
+ border-top-color:transparent;animation-duration:5.3s;animation-direction:reverse}
+.tile-vault-core{inset:29% 37%;border-radius:50%;
+ background:radial-gradient(circle,#b4ffff46,#9158ff29 34%,transparent 70%);
+ animation:tile-jackpot-pulse 3.4s ease-in-out infinite;filter:blur(4px)}
+.tile-cat-mist{width:74%;height:72%;left:-19%;top:13%;border-radius:50%;
+ background:radial-gradient(ellipse,#ac48fd48,#8952e020 55%,transparent 75%);
+ filter:blur(12px);animation:tile-cat-fog 9s ease-in-out infinite alternate}
+.tile-cat-mist.two{left:52%;top:25%;animation-delay:-4.5s;animation-direction:alternate-reverse}
+.tile-cat-aura{inset:15% 20%;background:radial-gradient(circle,#f0a7ff26,transparent 65%);
+ animation:tile-jackpot-pulse 6s ease-in-out infinite}
+.tile-manor-portal{inset:12% 36%;border-radius:48% 48% 0 0;
+ background:radial-gradient(ellipse at 50% 70%,#fbd0ab59,#d9a6ff30 42%,transparent 74%);
+ filter:blur(6px);animation:tile-portal-breathe 5.4s ease-in-out infinite}
+.tile-manor-flame{top:23%;left:40%;width:7%;height:24%;
+ background:radial-gradient(ellipse,#fff7c4a8,#ffd49c54 40%,transparent 75%);
+ border-radius:50%;filter:blur(4px);transform-origin:center bottom;
+ animation:tile-flame-flicker 1.37s ease-in-out infinite alternate}
+.tile-manor-flame.right{left:57%;animation-duration:1.09s;animation-delay:-.38s}
+.tile-lounge-steam{width:7%;height:55%;left:43%;top:18%;border-radius:50%;
+ background:linear-gradient(90deg,transparent,#f6e0b057,transparent);filter:blur(9px);
+ animation:tile-steam-rise 5.8s ease-in-out infinite}
+.tile-lounge-steam.second{left:53%;animation-delay:-2.9s}
+.tile-lounge-reflection{width:95%;left:2%;top:64%;height:14%;border-radius:50%;
+ background:linear-gradient(90deg,transparent,#ffe0a63b,transparent);
+ filter:blur(7px);animation:tile-reflection 7s ease-in-out infinite alternate}
+.tile-empire-windows{inset:18% 25% 12%;
+ background:repeating-linear-gradient(90deg,transparent 0 11%,#f9df9366 12% 15%,transparent 16% 24%),
+ repeating-linear-gradient(0deg,transparent 0 22%,#fbe4ab2b 24% 27%,transparent 28% 40%);
+ mix-blend-mode:screen;opacity:.22;animation:tile-window-glow 4s ease-in-out infinite alternate}
+.tile-empire-sunbeam{top:-24%;left:43%;width:27%;height:150%;
+ background:linear-gradient(90deg,transparent,#ffda8a43,transparent);
+ transform:rotate(20deg);filter:blur(9px);animation:tile-reflection 6s ease-in-out infinite alternate}
+.tile-dice-sheen{top:-10%;left:-60%;height:125%;width:48%;
+ background:linear-gradient(100deg,transparent,#fff0cb50,transparent);
+ transform:skewX(-18deg);animation:tile-beam-cross 7s ease-in-out infinite}
+.tile-dice-aura{inset:22% 25%;border-radius:50%;
+ background:radial-gradient(ellipse,#ffe9b630,transparent 74%);
+ animation:tile-jackpot-pulse 5.7s ease-in-out infinite}
+@keyframes tile-ambient-drift{to{transform:translate3d(9%,-4%,0) scale(1.14)}}
+@keyframes tile-beam-cross{0%,18%{left:-65%;opacity:0}27%{opacity:.8}53%{left:148%;opacity:.7}64%,100%{left:148%;opacity:0}}
+@keyframes tile-reel-scroll{to{background-position:0 150px}}
+@keyframes tile-jackpot-pulse{0%,100%{opacity:.3;transform:scale(.97)}50%{opacity:.9;transform:scale(1.11)}}
+@keyframes tile-vault-spin{from{transform:translate(-50%,-50%) rotate(0)}to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes tile-cat-fog{to{transform:translate(32%,-16%) scale(1.25);opacity:.44}}
+@keyframes tile-portal-breathe{50%{opacity:.78;transform:scale(1.15)}}
+@keyframes tile-flame-flicker{to{opacity:.46;transform:skewX(9deg) scaleY(.82)}}
+@keyframes tile-steam-rise{0%{transform:translateY(24%) scale(.8);opacity:0}40%{opacity:.7}100%{transform:translateY(-42%) scale(1.2);opacity:0}}
+@keyframes tile-reflection{to{opacity:.35;transform:translateX(8%) scaleX(.85)}}
+@keyframes tile-window-glow{to{opacity:.5;filter:brightness(1.3)}}
+.lobby-game:has(.tile-motion-layers) .game-art-image{
+ transform:translate3d(calc(var(--motion-x,0px) * -.55),calc(var(--motion-y,0px) * -.45),0) scale(1.055);
+ transition:transform .22s ease-out,filter .3s ease-out;will-change:transform}
+.lobby-game:has(.tile-motion-layers):is(:hover,:focus-within) .game-art-image{
+ transform:translate3d(calc(var(--motion-x,0px) * -.7),calc(var(--motion-y,0px) * -.55),0) scale(1.12);
+ filter:brightness(1.13) saturate(1.21)}
+.lobby-game:has(.tile-motion-layers) .game-info{isolation:isolate}
+.lobby-game:has(.tile-motion-layers) .game-art-window::after{z-index:4}
+.lobby-game:has(.tile-motion-layers) .art-shimmer{z-index:5}
+.casino-lobby-shell[data-reduced="true"] .tile-motion-layers *,
+.casino-lobby-shell[data-reduced="true"] .tile-motion-layers *::before,
+.casino-lobby-shell[data-reduced="true"] .tile-motion-layers *::after{
+ animation:none!important;transition:none!important;transform:none!important}
+.casino-lobby-shell[data-reduced="true"] .tile-drift-haze,
+.casino-lobby-shell[data-reduced="true"] .tile-moving-beam,
+.casino-lobby-shell[data-reduced="true"] .tile-light-field,
+.casino-lobby-shell[data-reduced="true"] .tile-signature{opacity:0!important}
+.casino-lobby-shell[data-reduced="true"] .lobby-game:has(.tile-motion-layers) .game-art-image,
+.casino-lobby-shell[data-reduced="true"] .lobby-game:has(.tile-motion-layers):is(:hover,:focus-within) .game-art-image{transform:none!important;filter:none}
+@media(prefers-reduced-motion:reduce){
+ .tile-motion-layers *, .tile-motion-layers *::before,.tile-motion-layers *::after{animation:none!important;transition:none!important}
+ .tile-moving-beam,.tile-drift-haze,.tile-light-field,.tile-signature{opacity:0!important}
+ .lobby-game:has(.tile-motion-layers) .game-art-image,
+ .lobby-game:has(.tile-motion-layers):is(:hover,:focus-within) .game-art-image{transform:none!important;filter:none}
+}

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Application, Graphics } from 'pixi.js';
+import {createTileFx} from './TileFxEngine';
 
 /** One small transparent effect layer. UI/labels stay DOM-rendered and accessible. */
 export function LobbyAmbient({ enabled }: { enabled: boolean }) {
@@ -9,6 +10,7 @@ export function LobbyAmbient({ enabled }: { enabled: boolean }) {
     if (!host || !enabled) return;
     let disposed = false;
     let app: Application | undefined;
+    let destroyTileFx = () => {};
     let pause = () => {};
     (async () => {
       const instance = new Application();
@@ -30,10 +32,13 @@ export function LobbyAmbient({ enabled }: { enabled: boolean }) {
           instance.stage.addChild(dot);
           return {dot, phase: i * 2.21, speed: .08 + (i % 5) * .035};
         });
+        const fx=createTileFx(instance.stage,host.parentElement??host);
+        destroyTileFx=()=>fx.destroy();
         let clock = 0;
         instance.ticker.maxFPS = 30;
         instance.ticker.add(ticker => {
-          clock += ticker.deltaTime;
+          clock += ticker.deltaTime/60;
+          fx.tick(clock,ticker.deltaTime);
           const width = host.clientWidth, height = host.clientHeight;
           particles.forEach(({dot, phase, speed}) => {
             dot.y -= speed * ticker.deltaTime;
@@ -56,6 +61,7 @@ export function LobbyAmbient({ enabled }: { enabled: boolean }) {
     return () => {
       disposed = true;
       document.removeEventListener('visibilitychange', pause);
+      destroyTileFx();
       app?.destroy(true);
     };
   }, [enabled]);

@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
+import type {PointerEvent as ReactPointerEvent} from 'react';
 import { createRoot } from 'react-dom/client';
 import {PlayerPortrait,CosmeticTitle,VaultIcon} from './Cosmetics';
 import {Modal} from './Modal';
 import {GamePreview} from './GamePreview';
+import {PremiumTileLayers} from './PremiumTileLayers';
 import {NavIcon} from './NavIcon';
 import { LobbyAmbient } from './LobbyAmbient';
 import { ModernShop } from './ModernShop';
@@ -61,14 +63,27 @@ function Progress({value, tone = 'green'}:{value:number; tone?:'green'|'gold'}) 
       <span style={{width: percent(value)}}/>
     </div>;
 }
-function GameTile({ mode, language, onOpen, onSecondary }:{
-  mode:LobbyMode; language:'de'|'en'; onOpen:(id:string)=>void; onSecondary:(id:string)=>void;
+function GameTile({ mode, language, motionEnabled, onOpen, onSecondary }:{
+  mode:LobbyMode; language:'de'|'en'; motionEnabled:boolean; onOpen:(id:string)=>void; onSecondary:(id:string)=>void;
 }) {
   const wide = false;
+  const move=(event:ReactPointerEvent<HTMLElement>)=>{
+    if(!motionEnabled||event.pointerType==='touch')return;
+    const card=event.currentTarget,rect=card.getBoundingClientRect();
+    const x=Math.max(-1,Math.min(1,(event.clientX-rect.left)/Math.max(rect.width,1)*2-1));
+    const y=Math.max(-1,Math.min(1,(event.clientY-rect.top)/Math.max(rect.height,1)*2-1));
+    card.style.setProperty('--motion-x',(x*6).toFixed(2)+'px');
+    card.style.setProperty('--motion-y',(y*5).toFixed(2)+'px');
+  };
+  const leave=(event:ReactPointerEvent<HTMLElement>)=>{
+    event.currentTarget.style.setProperty('--motion-x','0px');
+    event.currentTarget.style.setProperty('--motion-y','0px');
+  };
   return <article className={'lobby-game '+(wide?'lobby-merge ':'')+'game-'+mode.id+
-      (mode.enabled?'':' unavailable')}>
+      (mode.enabled?'':' unavailable')} onPointerMove={move} onPointerLeave={leave}>
     <div className="game-art-window" aria-hidden="true">
       <div className={'game-art-image art-'+mode.id}/><GamePreview id={mode.id}/>
+      <PremiumTileLayers id={mode.id} enabled={motionEnabled&&mode.enabled}/>
       <div className="art-shimmer"/>
     </div>
     <div className="game-info">
@@ -437,6 +452,7 @@ function LobbyApp() {
         <section className={'lobby-game-grid '+(filter!=='all'?'filtered':'')}
           aria-label={de?'Spiele und Aktivitäten':'Games and activities'}>
           {modes.map(mode=><GameTile key={mode.id} mode={mode} language={data.language}
+            motionEnabled={!lowMotion && data.animationsEnabled}
             onOpen={openMode} onSecondary={openSecondary}/>)}
           {modes.length===0&&<p className="empty-mode">{de?'Keine Spiele in dieser Kategorie.':'No games in this category.'}</p>}
         </section>
