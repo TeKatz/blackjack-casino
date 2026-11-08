@@ -60,9 +60,12 @@ internal static class EmpireWebSmoke
             Require(Application.Current.Windows.Count == nativeWindows, "Embedded Empire created another native window.");
             Require(!((FrameworkElement)window.FindName("CasinoHeader")).IsVisible, "Native header covers Empire.");
             Require(window.FindName("DealButton") is null, "The retired native Blackjack button was recreated over Empire.");
+            await Check(view, "document.querySelectorAll('.empire-gallery .empire-room').length===15 && !document.querySelector('.empire-inspector') && document.querySelector('[data-testid=prestige]')",
+                "Compact estate overview did not show all departments and prestige without opening a room.");
             await Click(view, "floor-3");
             await Check(view, "document.querySelectorAll('.empire-gallery .empire-room').length===5", "Resort gallery lost a department.");
             await Click(view, "room-hotel");
+            await Check(view, "!!document.querySelector('.empire-inspector [data-testid=upgrade]')", "Room selection did not open its upgrade cabinet.");
             var viewports = new List<object>();
             foreach (var size in new[] { (1080d, 720d), (1366d, 768d), (1920d, 1080d) })
             {

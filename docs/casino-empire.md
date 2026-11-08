@@ -10,14 +10,19 @@ game activity can benefit Empire in the other direction.
 
 `frontend/empire.html` is the sole normal Empire presentation in embedded and
 detached windows. The WPF shell owns lifecycle and the original `EmpireService`;
-React owns the gallery/inspector and the Estate, Development, Operations,
+React owns the estate atlas and room cabinet and the Estate, Development, Operations,
 Opportunities and Statistics navigation. Development continues from
 `feature/manor-modernization-phase-1` with the existing release guards.
 
-The gallery shows five departments per floor at standard desktop widths. Floors,
-operating/closed filters, room selection, bulk quantities (1/5/10/25/50/100),
-production breakdowns and milestone progress remain accessible. Estate overview
-contains the prestige action with a confirmation dialog. Research keeps all
+The starting estate atlas shows all fifteen departments in a compact five-column
+grid at standard desktop widths. Floor and operating/closed filters narrow the
+atlas without changing the selected property. Artwork, level and production are
+visible on each tile. Selecting a department opens a side cabinet with bulk
+quantities (1/5/10/25/50/100), production breakdowns, milestone progress and
+upgrade previews; closing it returns to the full atlas. The short prestige strip
+remains available in the overview and retains its confirmation dialog. The
+single Pixi scene remains mounted above the atlas, with a shorter visual frame.
+Research keeps all
 three branches, rank costs and prerequisite links. Each specialist can be
 assigned to any operating department or made inactive. Automation keeps editable
 reserve, budget, target, milestone strategy and ordered room priorities without

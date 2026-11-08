@@ -99,7 +99,7 @@ function ManagerCard({manager,rooms,disabled,onAction,onPreview,onClear,language
 
 function EmpireApp(){
   const [snapshot,setSnapshot]=useState<EmpireSnapshot|null>(null),[page,setPage]=useState<Page>('estate');
-  const [selected,setSelected]=useState<string|null>('slots'),[floor,setFloor]=useState(1),[filter,setFilter]=useState('all'),[bulk,setBulk]=useState(1);
+  const [selected,setSelected]=useState<string|null>(null),[floor,setFloor]=useState(0),[filter,setFilter]=useState('all'),[bulk,setBulk]=useState(1);
   const [pending,setPending]=useState<string|null>(null),[uncertain,setUncertain]=useState(false),[notice,setNotice]=useState<string|null>(null);
   const [preview,setPreview]=useState<Preview|null>(null),[visible,setVisible]=useState(true),[activeVisitId,setActiveVisitId]=useState<number|null>(null),[motion,setMotion]=useState(true),[diagnostics,setDiagnostics]=useState(false);
   const [lowMotion,setLowMotion]=useState(matchMedia('(prefers-reduced-motion: reduce)').matches),[confirmation,setConfirmation]=useState(false);
@@ -107,6 +107,8 @@ function EmpireApp(){
   const live=useRef(snapshot);live.current=snapshot;
   const activeVisit=useRef(activeVisitId);activeVisit.current=activeVisitId;
   const pageRef=useRef(page);pageRef.current=page;
+  const selectedRef=useRef(selected);selectedRef.current=selected;
+  const detailClose=useRef<HTMLButtonElement>(null);
   const pendingRef=useRef<string|null>(null),previewId=useRef<string|null>(null),previewTimer=useRef<ReturnType<typeof setTimeout>|undefined>(undefined);
   const clearPreview=useCallback(()=>{clearTimeout(previewTimer.current);previewId.current=null;setPreview(null);},[]);
   const selectRoom=useCallback((id:string)=>{setSelected(old=>old===id?null:id);clearPreview();},[clearPreview]);
@@ -131,7 +133,7 @@ function EmpireApp(){
       else if(message.type==='activated'){setActiveVisitId(message.visitId);}
       else if(message.type==='visibility'){setVisible(message.visible);if(!message.visible){setActiveVisitId(null);clearPreview();}}
       else if(message.type==='escape'){
-        clearPreview();if(pageRef.current!=='estate')setPage('estate');else post('empire.close');
+        clearPreview();if(pageRef.current!=='estate')setPage('estate');else if(selectedRef.current)setSelected(null);else post('empire.close');
       }else if(message.type==='invalid'){setNotice('Invalid command. Reopen Empire before continuing.');setUncertain(true);}
     });
     post('empire.ready');
@@ -152,10 +154,11 @@ function EmpireApp(){
   useEffect(()=>{
     const key=(e:KeyboardEvent)=>{
       if(e.key!=='Escape'||confirmation)return;
-      e.preventDefault();clearPreview();if(page!=='estate')setPage('estate');else close();
+      e.preventDefault();clearPreview();if(page!=='estate')setPage('estate');else if(selected)setSelected(null);else close();
     };document.addEventListener('keydown',key);return()=>document.removeEventListener('keydown',key);
-  },[page,confirmation,clearPreview]);
+  },[page,selected,confirmation,clearPreview]);
   useEffect(()=>{document.documentElement.lang=snapshot?.state.language??'en';},[snapshot?.state.language]);
+  useEffect(()=>{if(page==='estate'&&selected)detailClose.current?.focus();},[page,selected]);
   const act=(intent:Intent)=>{
     if(!visible||!live.current||activeVisit.current!==live.current.visitId||pendingRef.current||uncertain)return;
     clearPreview();const id=send(live.current,intent);pendingRef.current=id;setPending(id);setNotice(null);
@@ -197,7 +200,7 @@ function EmpireApp(){
   return <div className="empire-shell" data-motion={enabled} data-page={page} data-visit-active={managementActive} data-testid="empire-ready">
     <header className="empire-header"><button className="empire-back" data-testid="back" onClick={close}>← <span>{state.detached?(de?'Fenster schließen':'Close window'):'Casino lobby'}</span></button>
       <div className="empire-wordmark"><span>THE MIDNIGHT CLUB</span><h1>CASINO EMPIRE</h1></div>
-      <label className="empire-property"><span>{de?'ANWESEN':'PROPERTY'}</span><select aria-label={de?'Anwesen':'Property'} value={e.activePropertyId} disabled={disabled} onChange={event=>{setSelected('slots');clearPreview();act({action:'property.select',id:event.target.value});}}>
+      <label className="empire-property"><span>{de?'ANWESEN':'PROPERTY'}</span><select aria-label={de?'Anwesen':'Property'} value={e.activePropertyId} disabled={disabled} onChange={event=>{setSelected(null);clearPreview();act({action:'property.select',id:event.target.value});}}>
         {e.properties.filter(p=>p.owned).map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
     </header>
     <aside className="empire-sidebar"><nav aria-label={de?'Empire-Bereiche':'Empire sections'}>{pages.map((p,i)=><div key={p.id}>
@@ -229,33 +232,28 @@ function EmpireApp(){
         <div className="empire-scene-frame"><Suspense fallback={<div className="empire-scene" data-testid="empire-artwork-fallback"><EmpireArtwork className="empire-scene-art" roomId={room?.id??'slots'}/><div className="empire-scene-shade"/><span className="empire-graphics-status" role="status">Grafik vorbereiten… / Preparing graphics…</span></div>}><EmpireScene roomId={room?.id??'slots'} enabled={enabled&&page==='estate'} diagnostics={diagnostics} onReady={sceneReady}/></Suspense>
           <div className="empire-scene-title"><span className="empire-eyebrow">{room?t(room.category):de?'DEIN WAHRZEICHEN':'YOUR MIDNIGHT LANDMARK'}</span><h2>{room?t(room.name):property.name}</h2><p>{room?t(room.description):t(property.description)}</p></div>
           <span className="empire-scene-badge">{de?'PRESTIGE':'PRESTIGE'} {e.prestige}</span></div>
-        <div className="empire-floorbar"><div role="group" aria-label={de?'Etagen':'Floors'}>{e.floors.map(f=><button key={f.id} data-testid={'floor-'+f.id} aria-pressed={floor===f.id} title={t(f.requirement)} onClick={()=>{setFloor(f.id);clearPreview();}}>{f.unlocked?'':'◆ '}{t(f.displayName)}</button>)}</div>
+        <div className="empire-floorbar"><div role="group" aria-label={de?'Etagen':'Floors'}><button aria-pressed={floor===0} onClick={()=>{setFloor(0);clearPreview();}}>{de?'Alle Etagen':'All floors'}</button>{e.floors.map(f=><button key={f.id} data-testid={'floor-'+f.id} aria-pressed={floor===f.id} title={t(f.requirement)} onClick={()=>{setFloor(f.id);clearPreview();}}>{f.unlocked?'':'◆ '}{t(f.displayName)}</button>)}</div>
           <label className="empire-filter"><span>{de?'Zeigen':'Show'}</span><select value={filter} onChange={event=>{setFilter(event.target.value);clearPreview();}} aria-label={de?'Raumfilter':'Room filter'}>
             <option value="all">{de?'Alle Räume':'All rooms'}</option><option value="open">{de?'In Betrieb':'Operating'}</option><option value="locked">{de?'Noch geschlossen':'Not operating'}</option></select></label>
         </div>
-        {!e.floors.find(f=>f.id===floor)?.unlocked&&<p className="empire-lock">◆ {t(e.floors.find(f=>f.id===floor)?.requirement??'')}</p>}
-        <div className="empire-workspace"><div><div className="empire-gallery">{e.rooms.filter(r=>r.floor===floor&&(filter==='all'||(filter==='open'?r.level>0:r.level===0))).map(r=><RoomCard key={r.id} room={r} selected={selected===r.id} onSelect={selectRoom} language={language}/>)}</div>
-          <button className="empire-overview" data-testid="overview" onClick={()=>{setSelected(null);clearPreview();}}>{de?'Anwesenübersicht':'Estate overview'} ↗</button>
-          {room&&<section className="empire-panel empire-intelligence"><h2>{de?'Raumwissen':'Room intelligence'}</h2><p>{t(room.tags)} · {t(room.requirement)}</p>
-            <div className="empire-breakdown">{Object.entries(room.breakdown).map(([key,value])=><div key={key}><span>{t(key[0].toUpperCase()+key.slice(1))}</span><strong>{key==='base'||key==='final'?n(value)+' cr/s':key==='prestige'||key==='achievements'?'×'+value:'+'+display(String(Number(value)*100),language)+'%'}</strong></div>)}</div>
-            <h3>{de?'Aktive Spezialisten':'Active specialists'}</h3>{e.managers.filter(m=>m.assignment!==null).map(m=><p key={m.id}>{m.name} → {t(e.rooms.find(r=>r.id===m.assignment)?.name??'')} · {t(m.description)}</p>)}
-            <button onClick={()=>go('team')}>{de?'Team verwalten':'Manage team'}</button><button onClick={()=>go('synergies')}>{de?'Synergien prüfen':'Inspect circuits'}</button>
-          </section>}
-        </div>
-        <aside className="empire-inspector empire-panel">{room&&quote?<><span className="empire-eyebrow">{de?'RAUMINSPEKTOR':'ROOM INSPECTOR'}</span><h2>{t(room.name)}</h2><p>{t(room.description)}</p>
-          <div className="empire-inspector-numbers"><div><span>{de?'Stufe':'Level'}</span><strong>{room.level}<small> / 200</small></strong></div><div><span>{de?'Produktion':'Production'}</span><strong>{n(room.rate)}<small> cr/s</small></strong></div></div>
+        {floor!==0&&!e.floors.find(f=>f.id===floor)?.unlocked&&<p className="empire-lock">◆ {t(e.floors.find(f=>f.id===floor)?.requirement??'')}</p>}
+        <div className="empire-workspace"><div><div className="empire-gallery">{e.rooms.filter(r=>(floor===0||r.floor===floor)&&(filter==='all'||(filter==='open'?r.level>0:r.level===0))).map(r=><RoomCard key={r.id} room={r} selected={selected===r.id} onSelect={selectRoom} language={language}/>)}</div>
+          <div className="empire-overview-panel"><div><span className="empire-eyebrow">{de?'NÄCHSTES KAPITEL':'THE NEXT CHAPTER'}</span><strong>{de?'Prestige aufsteigen':'Advance prestige'} · {e.prestige}</strong><span>{e.mainFloorLevels}/{e.prestigeMainFloorLevelRequirement} {de?'Hauptetagenstufen':'main floor levels'} · {n(e.statistics.runCredits)}/{n(e.prestigeRunCreditRequirement)} cr</span></div><button className="empire-overview" data-testid="overview" onClick={()=>{setSelected(null);clearPreview();}}>{de?'Übersicht':'Overview'}</button><button className="empire-gold" data-testid="prestige" disabled={disabled||!e.canPrestige} onClick={()=>setConfirmation(true)}>{de?'Prestige aufsteigen':'Advance prestige'} ↗</button></div>
+        </div></div>
+        {room&&<><button type="button" className="empire-detail-scrim" aria-label={de?'Raumdetails schließen':'Close room details'} onClick={()=>{setSelected(null);clearPreview();}}/><aside className="empire-inspector empire-panel" aria-label={de?'Rauminspektor':'Room inspector'}><button ref={detailClose} type="button" className="empire-detail-close" onClick={()=>{setSelected(null);clearPreview();}} aria-label={de?'Raumdetails schließen':'Close room details'}>×</button><span className="empire-eyebrow">{de?'RAUMINSPEKTOR':'ROOM INSPECTOR'} · {de?'ETAGE':'FLOOR'} {String(room.floor).padStart(2,'0')}</span><h2>{t(room.name)}</h2><p>{t(room.description)}</p>
+          {quote&&<><div className="empire-inspector-numbers"><div><span>{de?'Stufe':'Level'}</span><strong>{room.level}<small> / 200</small></strong></div><div><span>{de?'Produktion':'Production'}</span><strong>{n(room.rate)}<small> cr/s</small></strong></div></div>
           <div className="empire-bulk" role="group" aria-label={de?'Upgrade-Menge':'Upgrade quantity'}>{room.quotes.map(q=><button key={q.requestedLevels} aria-pressed={bulk===q.requestedLevels} onClick={()=>{setBulk(q.requestedLevels);clearPreview();}} onPointerEnter={()=>showPreview({action:'upgrade',id:room.id,levels:q.requestedLevels})} onPointerLeave={clearPreview} onFocus={()=>showPreview({action:'upgrade',id:room.id,levels:q.requestedLevels})} onBlur={clearPreview}>×{q.requestedLevels}</button>)}</div>
           <p>{de?'Nächster Meilenstein':'Next milestone'}: {room.level<200?Math.min(200,(Math.floor(room.level/10)+1)*10):'MAX'}</p>
           <button className="empire-gold empire-upgrade" data-testid="upgrade" disabled={disabled||!quote.canBuy} onClick={()=>act({action:'upgrade',id:room.id,levels:bulk})}
             onPointerEnter={()=>showPreview({action:'upgrade',id:room.id,levels:bulk})} onPointerLeave={clearPreview} onFocus={()=>showPreview({action:'upgrade',id:room.id,levels:bulk})} onBlur={clearPreview}>
             <span>{de?'Ausbauen':'Upgrade'} +{quote.levels}</span><strong>{n(quote.cost)} cr</strong></button>
           {!quote.unlocked&&<p className="empire-lock">◆ {t(room.requirement)}</p>}{room.level===200&&<p>{de?'Maximale Stufe erreicht.':'Maximum level reached.'}</p>}
-          <button onClick={()=>showPreview({action:'upgrade',id:room.id,levels:bulk})} disabled={disabled}>{de?'Vorschau öffnen':'Open preview'}</button>
-        </>:<><span className="empire-eyebrow">{de?'ANWESENÜBERSICHT':'ESTATE OVERVIEW'}</span><h2>{property.name}</h2><p>{t(property.description)}</p><p>{e.totalLevels} {de?'Stufen':'levels'} · {e.reputation} {de?'Ruf':'reputation'}</p>
-          <h3>{de?'Das nächste Kapitel':'Your next chapter'}</h3><p>{de?'Alle fünf Räume der Hauptetage in Betrieb.':'All five Main Floor rooms operating.'} {e.mainFloorLevels}/{e.prestigeMainFloorLevelRequirement} {de?'Hauptetagenstufen':'Main Floor levels'} · {n(e.statistics.runCredits)}/{n(e.prestigeRunCreditRequirement)} cr {de?'im Durchlauf produziert':'produced this run'}.</p><button className="empire-gold" data-testid="prestige" disabled={disabled||!e.canPrestige} onClick={()=>setConfirmation(true)}>{de?'Prestige aufsteigen':'Advance prestige'}</button>
-          <p>{de?'Baukapital, Raumstufen und das aktive Event werden zurückgesetzt. Permanente Projekte und Forschung bleiben erhalten.':'Construction capital, room levels and the active event reset. Permanent projects and research are retained.'}</p>
-          <button onClick={()=>go('research')}>{e.legacyPointsAvailable} {de?'Forschungspunkte verfügbar':'Legacy Points available'}</button></>}
-        </aside></div>
+          <button onClick={()=>showPreview({action:'upgrade',id:room.id,levels:bulk})} disabled={disabled}>{de?'Vorschau öffnen':'Open preview'}</button></>}
+          <details className="empire-intelligence"><summary>{de?'Raumwissen & Produktionsdetails':'Room intelligence & production'}</summary><p>{t(room.tags)} · {t(room.requirement)}</p>
+            <div className="empire-breakdown">{Object.entries(room.breakdown).map(([key,value])=><div key={key}><span>{t(key[0].toUpperCase()+key.slice(1))}</span><strong>{key==='base'||key==='final'?n(value)+' cr/s':key==='prestige'||key==='achievements'?'×'+value:'+'+display(String(Number(value)*100),language)+'%'}</strong></div>)}</div>
+            <h3>{de?'Aktive Spezialisten':'Active specialists'}</h3>{e.managers.filter(m=>m.assignment!==null).map(m=><p key={m.id}>{m.name} → {t(e.rooms.find(r=>r.id===m.assignment)?.name??'')} · {t(m.description)}</p>)}
+            <button onClick={()=>go('team')}>{de?'Team verwalten':'Manage team'}</button><button onClick={()=>go('synergies')}>{de?'Synergien prüfen':'Inspect circuits'}</button>
+          </details></aside></>}
       </section>
       {page==='research'&&<><div className="empire-tabs">{['Operations','Gaming','Hospitality'].map(branch=><button key={branch} aria-pressed={researchBranch===branch} onClick={()=>{setResearchBranch(branch);clearPreview();}}>{t(branch)}</button>)}<span>{e.legacyPointsAvailable} {de?'Forschungspunkte':'Legacy Points'}</span></div>
         <div className="empire-catalog">{e.research.filter(r=>r.branch===researchBranch).map(r=><article key={r.id} className="empire-panel" data-prerequisite={r.prerequisite??''}><span className="empire-eyebrow">{t(r.branch)} · {r.rank}/{r.maxRank}</span><h2>{t(r.name)}</h2><p>{t(r.description)}</p>
