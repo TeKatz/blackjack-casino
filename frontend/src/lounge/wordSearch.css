@@ -153,3 +153,18 @@
  .ws-words .ws-word-new{animation:none!important;}
  .ws-hero .ws-album-launch{transition:none;}
 }
+
+/* Intentional replacement of an in-progress word search — discovery album remains intact. */
+.ws-replace-backdrop{position:fixed;inset:0;z-index:90;display:grid;place-items:center;
+ background:#071519df;backdrop-filter:blur(10px);padding:18px}
+.ws-replace-dialog{width:min(530px,100%);text-align:center;background:
+ radial-gradient(ellipse at 50% 0%,#406b544f,transparent 70%),linear-gradient(140deg,#1c3c34,#11252c);
+ border:1px solid #d1b67e;border-radius:15px;padding:32px 25px;box-shadow:0 30px 90px #000d,0 0 28px #b9a06928}
+.ws-replace-dialog h2{font:normal clamp(22px,3vw,30px) Georgia,serif;color:#f1d7a7;margin:12px 0}
+.ws-replace-dialog p{font-size:13px;line-height:1.55;color:#c4d5c8}
+.ws-replace-dialog>strong{display:inline-block;margin:8px 0 20px;color:#f0ddba;font-size:17px}
+.ws-replace-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.ws-replace-actions button{flex:1;min-width:180px;border:1px solid #8aa594;border-radius:8px;
+ padding:13px 15px;background:#183c31;color:#e5e8d4;font-size:11px;font-weight:800;cursor:pointer}
+.ws-replace-actions button.primary{background:linear-gradient(120deg,#f6dfaa,#b99a60);color:#1a2c27;border-color:#f6dfaa}
+.ws-replace-actions button:focus-visible{outline:2px solid #fff;outline-offset:3px}

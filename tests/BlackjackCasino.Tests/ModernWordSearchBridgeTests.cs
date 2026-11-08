@@ -183,6 +183,43 @@ public sealed class ModernWordSearchBridgeTests
     }
 
     [Fact]
+    public void StartingAnotherPuzzleReplacesOnlyActiveSaveAndCannotDuplicateRewards()
+    {
+        WordSearchProgressState saved = new();
+        int rewards = 0, writes = 0;
+        bool fail = false;
+        var service = new ModernWordSearchService(saved, next =>
+        {
+            if (fail) throw new IOException("Simulated save failure");
+            saved = next; writes++;
+        }, () => new WordSearchStatistics(), _ => { rewards++; return ProgressionAward.None; }, () => "en");
+        var session = new ModernWordSearchSession();
+        bool Do(string action, WordSearchDifficulty? difficulty = null, WordSearchPlacement? placement = null)
+        {
+            var command = ModernWordSearchProtocol.Parse(Request(session, action, difficulty,
+                placement?.StartRow, placement?.StartColumn, placement?.EndRow, placement?.EndColumn))!;
+            return session.Execute(command, service.Execute).Success;
+        }
+        Assert.True(Do("word-search.start", WordSearchDifficulty.Relaxed));
+        WordSearchGameState first = service.CurrentGame!;
+        Assert.True(Do("word-search.select", placement: first.Puzzle.Placements[0]));
+        Assert.Single(saved.DiscoveredWords);
+        Assert.False(Do("word-search.start", WordSearchDifficulty.Easy)); // Must leave the grid first.
+        Assert.True(Do("word-search.back"));
+        fail = true;
+        Assert.Throws<IOException>(() => Do("word-search.start", WordSearchDifficulty.Relaxed));
+        Assert.Equal(first.Puzzle.Id, saved.ActiveGame!.Puzzle.Id);
+        fail = false;
+        Assert.True(Do("word-search.start", WordSearchDifficulty.Relaxed));
+        Assert.NotEqual(first.Puzzle.Id, service.CurrentGame!.Puzzle.Id);
+        Assert.Empty(service.CurrentGame.FoundWords);
+        Assert.Single(saved.DiscoveredWords);
+        Assert.Empty(saved.CompletedGames);
+        Assert.Equal(0, rewards);
+        Assert.True(writes >= 3);
+    }
+
+    [Fact]
     public void PreviouslySavedEnglishGridRemainsIdenticalIfUserResumesInGerman()
     {
         WordSearchGameState original=WordSearchGame.Start(WordSearchCatalog.For(WordSearchDifficulty.Hard)[0],language:"en");

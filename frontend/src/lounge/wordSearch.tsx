@@ -24,7 +24,9 @@ const words={
  back:'← WORD SEARCH LEVELS',complete:'PUZZLE COMPLETE',finished:'Every hidden word found. Your completion was saved.',
  boardView:'VIEW COMPLETED GRID',finishBack:'BACK TO PUZZLES',
  xp:'PLAYER XP',season:'SEASON XP',first:'Click two endpoints or drag across a complete word.',
- required:'Finish your current puzzle before starting another one.',pending:'Saving discovery…',
+ required:'Your current puzzle remains saved until you choose to replace it.',pending:'Saving discovery…',
+ replaceTitle:'START A DIFFERENT PUZZLE?',replaceText:'The unfinished grid and its found-word progress will be replaced. Words already in your collection and finished levels stay saved.',
+ replaceKeep:'KEEP CURRENT GAME',replaceStart:'START NEW PUZZLE',
  saved:'Autosaved',dirRelaxed:'Horizontal + vertical',dirEasy:'Diagonals included',dirHard:'All eight directions, backwards too',
  noRush:'No speed or hint penalties. Relax and enjoy.',newWords:'Twelve new discovery worlds · 576 authored puzzles · a growing collection of words.'},
  de:{eyebrow:'WORTSUCHE · THE MIDNIGHT CLUB',title:'Finde die Wörter. In deinem Tempo.',
@@ -41,7 +43,9 @@ const words={
  back:'← WORTSUCHE-AUSWAHL',complete:'RÄTSEL GELÖST',finished:'Alle Wörter gefunden. Dein Erfolg wurde gespeichert.',
  boardView:'SPIELFELD ANSEHEN',finishBack:'ZUR RÄTSELAUSWAHL',
  xp:'SPIELER-XP',season:'SAISON-XP',first:'Zwei Endpunkte anklicken oder eine Linie über das Wort ziehen.',
- required:'Beende zuerst dein begonnenes Rätsel.',pending:'Fund wird gespeichert…',
+ required:'Dein aktuelles Rätsel bleibt gespeichert, bis du es bewusst ersetzt.',pending:'Fund wird gespeichert…',
+ replaceTitle:'ANDERES RÄTSEL STARTEN?',replaceText:'Das unfertige Spielfeld und dessen Fortschritt werden ersetzt. Entdeckte Wörter im Album und abgeschlossene Level bleiben erhalten.',
+ replaceKeep:'AKTUELLES RÄTSEL BEHALTEN',replaceStart:'NEUES RÄTSEL STARTEN',
  saved:'Automatisch gespeichert',dirRelaxed:'Waagerecht + senkrecht',dirEasy:'Auch diagonal',dirHard:'Alle acht Richtungen, auch rückwärts',
  noRush:'Keine Zeit- oder Hinweisstrafen. Viel Spaß beim Suchen.',newWords:'Zwölf neue Entdeckerwelten · 576 Rätsel · ein wachsendes Wörteralbum.'}};
 const formatTime=(s:number)=>{const h=Math.floor(s/3600),m=Math.floor(s%3600/60),sec=s%60;return(h?String(h).padStart(2,'0')+':':'')+String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0')};
@@ -129,6 +133,7 @@ function Board({game,language,pending,command,animations}:{game:WordSearchPuzzle
 export function WordSearchScreen({state,language,pending,error,command,animations}:Props){
  const t=words[language],game=state.game;
  const [clock,setClock]=useState(0);
+ const [replaceDifficulty,setReplaceDifficulty]=useState<WordSearchDifficulty|null>(null);
  const [dismissedCompletion,setDismissedCompletion]=useState<string|null>(null);
  const [albumOpen,setAlbumOpen]=useState(false);
  const [albumQuery,setAlbumQuery]=useState('');
@@ -137,6 +142,11 @@ export function WordSearchScreen({state,language,pending,error,command,animation
  const lastEvent=useRef<string|null>(null);
  const themes=useMemo(()=>[...new Set(state.discoveredWords.map(x=>x.theme))]
    .sort((a,b)=>a.localeCompare(b,language)),[state.discoveredWords,language]);
+ function startPuzzle(difficulty:WordSearchDifficulty){
+   if(pending)return;
+   if(state.resume){setReplaceDifficulty(difficulty);return;}
+   command({action:'word-search.start',difficulty});
+ }
  const entries=useMemo(()=>state.discoveredWords.filter(entry=>
    (!albumTheme||entry.theme===albumTheme)&&
    (!albumQuery||entry.word.includes(albumQuery.trim().toUpperCase()))),
@@ -224,14 +234,27 @@ export function WordSearchScreen({state,language,pending,error,command,animation
     <small>{i===0?t.dirRelaxed:i===1?t.dirEasy:t.dirHard}</small>
     <div className="ws-progress"><div style={{width:(d.completed/d.total*100)+'%'}}/></div>
     <span className="ws-progress-text">{d.completed}/{d.total} {t.solved.toLowerCase()}</span>
-    <button data-testid={'word-search-start-'+d.difficulty} disabled={!!state.resume} aria-disabled={pending||!!state.resume}
-     onClick={()=>command({action:'word-search.start',difficulty:d.difficulty})}>
+    <button data-testid={'word-search-start-'+d.difficulty} disabled={pending} aria-disabled={pending}
+     onClick={()=>startPuzzle(d.difficulty)}>
      {d.completed>=d.total?t.replay:t.play}</button>
    </article>)}
   </div>
   <p className="ws-expansion">{t.newWords}</p>
   {state.resume&&<p className="ws-help">{t.required}</p>}
   {error&&<p className="ws-alert" role="alert">{error}</p>}
+  {replaceDifficulty&&<div className="ws-replace-backdrop" role="dialog" aria-modal="true"
+    aria-label={t.replaceTitle} data-testid="word-search-replace-confirm">
+    <div className="ws-replace-dialog">
+      <span className="ws-eyebrow">THE MIDNIGHT CLUB · WORD SEARCH</span>
+      <h2>{t.replaceTitle}</h2><p>{t.replaceText}</p>
+      <strong>{names[language][replaceDifficulty]}</strong>
+      <div className="ws-replace-actions">
+        <button type="button" onClick={()=>setReplaceDifficulty(null)}>{t.replaceKeep}</button>
+        <button type="button" className="primary" data-testid="word-search-confirm-replace"
+          onClick={()=>{const difficulty=replaceDifficulty;setReplaceDifficulty(null);
+            command({action:'word-search.start',difficulty});}}>{t.replaceStart}</button>
+      </div>
+    </div></div>}
  </section>;
  const found=new Set(game.found);
  return <section className="ws-game" data-testid="modern-word-search-game" data-puzzle-id={game.id}>

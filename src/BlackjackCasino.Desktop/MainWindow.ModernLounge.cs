@@ -151,7 +151,7 @@ public partial class MainWindow
         MountModernSurface(modernLoungeView);
         if (lobby is not null) lobby.Visibility = Visibility.Collapsed;
         loungeBackgroundMusic?.Dispose();
-        loungeBackgroundMusic = new BackgroundMusic(Soundtrack.ChillLounge);
+        loungeBackgroundMusic = new BackgroundMusic(Soundtrack.Lobby);
         AreaPresentationSettings settings = preferences.Presentation("chill-lounge");
         loungeBackgroundMusic.Start(settings.MusicEnabled, settings.MusicVolume);
         modernAdventureSoundtrack = false;
@@ -163,19 +163,15 @@ public partial class MainWindow
 
     private void SetModernLoungeMenuMusic(bool onMenu)
     {
-        if (!ModernLoungeOpen || modernAdventureSoundtrack || modernLoungeMenuMusic == onMenu) return;
+        // Temporary unified soundtrack: do not dispose/restart it between lounge games.
+        // The installed Lobby MP3 continues playing across all seven activity screens.
         modernLoungeMenuMusic = onMenu;
-        loungeBackgroundMusic?.Dispose();
-        loungeBackgroundMusic = new BackgroundMusic(
-            onMenu ? Soundtrack.ChillLounge : Soundtrack.ChillLoungeActivity);
-        AreaPresentationSettings settings = preferences.Presentation("chill-lounge");
-        loungeBackgroundMusic.Start(settings.MusicEnabled, settings.MusicVolume);
     }
 
     private void OnModernLoungeGameSelected(string id)
     {
         if (!ModernLoungeOpen) return;
-        // The user selected this song for the lounge menu, not individual games.
+        // The temporary Lobby soundtrack now covers the menu and every game.
         if (id is "sudoku" or "solitaire" or "word-search" or "memory" or "jigsaw" or "tower-defense")
             SetModernLoungeMenuMusic(false);
         if (id == "sudoku")
@@ -401,12 +397,10 @@ public partial class MainWindow
     {
         if (modernAdventureSoundtrack == adventureActive || modernLoungeView is null) return;
         modernAdventureSoundtrack = adventureActive;
-        string area = adventureActive ? "adventure" : "chill-lounge";
-        AreaPresentationSettings settings = preferences.Presentation(area);
-        loungeBackgroundMusic?.Dispose();
-        loungeBackgroundMusic = new BackgroundMusic(adventureActive ? Soundtrack.Adventure : Soundtrack.ChillLounge);
-        loungeBackgroundMusic.Start(settings.MusicEnabled, settings.MusicVolume);
-        SyncHostMusic();
+        // Tales from the Backroom uses the same Lobby track without restarting it.
+        AreaPresentationSettings settings = preferences.Presentation("chill-lounge");
+        loungeBackgroundMusic?.SetEnabled(settings.MusicEnabled);
+        loungeBackgroundMusic?.SetVolume(settings.MusicVolume);
     }
 
     private void SaveModernAdventureMusic(bool enabled, double volume)
@@ -415,7 +409,8 @@ public partial class MainWindow
         AreaPresentationSettings next = (current with
         { MusicEnabled = enabled, MusicVolume = Math.Clamp(volume, 0, .32) }).Sanitize();
         AppPreferences previous = preferences;
-        preferences = preferences.WithPresentation("adventure", next);
+        preferences = preferences.WithPresentation("adventure", next)
+            .WithPresentation("chill-lounge", next);
         try { if (!testSession) SavePreferences(); }
         catch { preferences = previous; throw; }
         loungeBackgroundMusic?.SetEnabled(next.MusicEnabled);

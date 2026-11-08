@@ -183,9 +183,31 @@ internal sealed class ModernWordSearchService
 
     private (bool, string) Start(WordSearchDifficulty difficulty)
     {
-        if (game is not null || progress.ActiveGame is not null)
-            return (false, "Resume or finish the current puzzle before starting another.");
+        // Starting a replacement is a deliberate library action. A live grid must be
+        // exited first, so the frontend can ask for confirmation before overwriting it.
+        if (game is not null)
+            return (false, "Return to the Word Search levels before starting a new puzzle.");
         WordSearchPuzzleDefinition definition = WordSearchGame.NextPuzzle(progress, difficulty);
+        if (progress.ActiveGame is { } unfinished && definition.Id == unfinished.Puzzle.Id)
+        {
+            // A replacement must not generate the exact same deterministic grid.
+            // Skip already awarded puzzles so completion XP remains grant-once.
+            IReadOnlyList<WordSearchPuzzleDefinition> pool = WordSearchCatalog.For(difficulty);
+            HashSet<string> solved = progress.CompletedGames.Select(x => x.PuzzleId)
+                .ToHashSet(StringComparer.Ordinal);
+            int position = -1;
+            for (int i = 0; i < pool.Count; i++)
+                if (pool[i].Id == unfinished.Puzzle.Id) { position = i; break; }
+            for (int offset = 1; offset < pool.Count; offset++)
+            {
+                WordSearchPuzzleDefinition candidate = pool[(position + offset) % pool.Count];
+                if (candidate.Id != unfinished.Puzzle.Id && !solved.Contains(candidate.Id))
+                {
+                    definition = candidate;
+                    break;
+                }
+            }
+        }
         WordSearchGameState created = WordSearchGame.Start(definition, language: language());
         WordSearchProgressState next = CloneProgress(progress);
         next.ActiveGame = CloneGame(created);

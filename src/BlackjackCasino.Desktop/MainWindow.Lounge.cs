@@ -65,7 +65,7 @@ public partial class MainWindow
             AreaPresentationSettings presentation = preferences.Presentation(area);
 
             loungeBackgroundMusic?.Dispose();
-            loungeBackgroundMusic = new BackgroundMusic(adventureActive ? Soundtrack.Adventure : Soundtrack.ChillLounge);
+            loungeBackgroundMusic = new BackgroundMusic(Soundtrack.Lobby);
             loungeBackgroundMusic.Start(presentation.MusicEnabled, presentation.MusicVolume);
         }
 
