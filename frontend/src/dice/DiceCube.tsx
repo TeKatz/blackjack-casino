@@ -12,15 +12,27 @@ export function Die({value,palette}:{value:number;palette:DicePalette}){
     <stop offset="0" stopColor="#fff" stopOpacity=".28"/><stop offset=".25" stopColor={palette.top}/>
     <stop offset="1" stopColor={palette.bottom}/></linearGradient>
     <linearGradient id="md-die-gloss" x1="0" y1="0" x2="1" y2=".8">
-      <stop stopColor="#fff" stopOpacity=".42"/><stop offset=".5" stopColor="#fff" stopOpacity="0"/></linearGradient>
+      <stop stopColor="#fff" stopOpacity=".36"/><stop offset=".5" stopColor="#fff" stopOpacity="0"/></linearGradient>
+    <linearGradient id="md-die-bevel" x1=".1" y1="0" x2=".95" y2="1">
+      <stop stopColor="#fff" stopOpacity=".70"/><stop offset=".18" stopColor={palette.top}/>
+      <stop offset=".67" stopColor={palette.bottom}/><stop offset="1" stopColor={palette.edge}/></linearGradient>
+    <radialGradient id="md-pip-inner" cx=".30" cy=".25" r=".85">
+      <stop stopColor={palette.pips}/><stop offset=".7" stopColor={palette.pips}/>
+      <stop offset="1" stopColor={palette.edge}/></radialGradient>
   </defs>
-  <rect x="6" y="7" width="88" height="88" rx="21" fill={palette.bottom} stroke={palette.edge} strokeWidth="5"/>
-  <rect x="8" y="7" width="84" height="80" rx="19" fill={palette.top} stroke="#fff" strokeOpacity=".24" strokeWidth="1.5"/>
-  <rect x="10" y="8" width="80" height="82" rx="18" fill="url(#md-die-gloss)"/>
+  <rect x="0.5" y="0.5" width="99" height="99" rx="17" fill="url(#md-die-bevel)"
+    stroke={palette.edge} strokeWidth="1"/>
+  <rect x="6" y="6" width="88" height="88" rx="14" fill={palette.bottom}
+    stroke={palette.edge} strokeOpacity=".75" strokeWidth="2"/>
+  <rect x="9" y="9" width="82" height="82" rx="12" fill={palette.top}
+    stroke="#fff" strokeOpacity=".32" strokeWidth="1.2"/>
+  <rect x="9" y="9" width="82" height="82" rx="12" fill="url(#md-die-gloss)"/>
+  <path d="M17 13H78 M13 17V72" fill="none" stroke="#fff" strokeOpacity=".34" strokeWidth="1.4"/>
   {pips[value].map(([x,y],i)=><g key={i}>
     {palette.engraved&&<circle cx={x} cy={y+1.5} r="10" fill="#101820" opacity=".35"/>}
-    <circle cx={x} cy={y} r="8.9" fill={palette.pips} stroke={palette.edge} strokeWidth=".8"/>
-    <circle cx={x-2} cy={y-2} r="2.3" fill="#fff" opacity=".35"/>
+    <circle cx={x} cy={y} r="9.5" fill={palette.edge} opacity=".55"/>
+    <circle cx={x} cy={y} r="8.2" fill="url(#md-pip-inner)" stroke={palette.edge} strokeWidth=".65"/>
+    <circle cx={x-2.3} cy={y-2.8} r="2.2" fill="#fff" opacity=".36"/>
   </g>)}
   {value===0&&<text x="50" y="64" textAnchor="middle" fill={palette.pips}
    fontFamily="Georgia" fontSize="43">✦</text>}
@@ -37,13 +49,18 @@ export function DiceCube({value,palette,rolling,index,token}:{
  const style={
   '--die-final-x':x+'deg','--die-final-y':y+'deg',
   '--die-delay':(index*64)+'ms','--die-sideways':(index%2===0?1:-1),
+  '--die-tilt-x':(-17-(index%3)*2)+'deg',
+  '--die-tilt-y':(index%2===0?19:-(17+index))+'deg',
+  '--cube-face-top':palette.top,'--cube-face-bottom':palette.bottom,'--cube-face-edge':palette.edge,
  } as CSSProperties;
  return <span className={'md-die-stage'+(rolling?' is-rolling':'')} style={style}>
   <span className="md-die-shadow" aria-hidden="true"/>
   <span className="md-die-rotor" key={token} aria-hidden="true">
    {[1,2,6,5,3,4].map((face,i)=><span key={face}
     className={'md-cube-face md-face-'+['front','right','back','left','top','bottom'][i]}>
-    <Die value={face} palette={palette}/></span>)}
+    <span className="md-cube-face-material"><Die value={face} palette={palette}/></span>
+    <span className="md-cube-bevel-light" aria-hidden="true"/>
+   </span>)}
   </span>
   <span className="md-die-landing" aria-hidden="true"/>
   <span className="md-die-scatter" aria-hidden="true">
