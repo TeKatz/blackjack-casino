@@ -52,6 +52,20 @@ internal static class ModernShopSmoke
             + "&&item.textContent.includes('Reward only'));})()") == "true",
             "Secret Guest lacks its exclusive animated card, still fallback or challenge-only description.");
 
+        // Load the actual locally bundled animated SVG, not merely its DOM URL.
+        // Capture a dedicated preview for manual evaluation of the face, foil and gems.
+        Require(await web.ExecuteScriptAsync(
+            "(async()=>{const card=document.querySelector('[data-cosmetic-id=\\\"portrait-secret-guest\\\"]');"
+            + "card?.scrollIntoView({block:'center'});"
+            + "const art=card?.querySelector('[data-testid=\\\"secret-guest-showcase\\\"] img');"
+            + "if(!art)return false;art.loading='eager';"
+            + "try{await art.decode();return art.naturalWidth>=240&&art.naturalHeight>=300;}"
+            + "catch{return false;}})()") == "true",
+            "Secret Guest premium artwork did not decode from the packaged offline assets.");
+        await Task.Delay(200);
+        await using (FileStream special = File.Create(Path.Combine(output, "modern-shop-secret-guest.png")))
+            await web.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png, special);
+
         long previousCoins = profile.Coins;
         bool ownedBefore = profile.OwnedCosmeticIds.Contains("frame-slate");
         if (!ownedBefore)
