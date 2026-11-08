@@ -26,7 +26,7 @@ internal static class ModernNeonVaultWebSmoke
             "Boolean(document.querySelector('[data-testid=\"neon-vault-app\"]')"
             + "&&document.querySelectorAll('.vault-cell').length===20"
             + "&&document.querySelectorAll('.vault-cell svg').length===20"
-            + "&&document.querySelectorAll('.vault-payrow').length===8"
+            + "&&document.querySelector('[data-testid=\"neon-vault-paytable\"]')"
             + "&&document.querySelectorAll('.vault-bets button').length===16"
             + "&&document.querySelectorAll('.vault-jackpot').length===4"
             + "&&document.querySelector('[data-testid=\"neon-vault-spin\"]')"
@@ -45,12 +45,20 @@ internal static class ModernNeonVaultWebSmoke
             "Neon Vault energy/free-spin panel or high-roller controls are missing.");
         await core.ExecuteScriptAsync("document.querySelector('[data-testid=\"neon-vault-paytable\"]')?.click()");
         Require(await core.ExecuteScriptAsync(
-            "document.querySelectorAll('.vault-paytable-details > div').length===6") == "true",
-            "The full 3-/4-/5-reel paytable was not opened.");
+            "Boolean(document.querySelectorAll('.vault-paytable-details > div').length===6"
+            + "&&document.querySelectorAll('.vault-paytable-dialog .vault-payrow').length===8"
+            + "&&document.querySelector('[role=\\\"dialog\\\"][aria-modal=\\\"true\\\"]'))") == "true",
+            "The full 3-/4-/5-reel paytable dialog was not opened.");
+        await core.ExecuteScriptAsync("document.querySelector('.vault-paytable-dialog header button')?.click()");
+        Require(await core.ExecuteScriptAsync(
+            "document.querySelector('[data-testid=\\\"neon-vault-paytable-details\\\"]')===null") == "true",
+            "The paytable modal did not close.");
         await core.ExecuteScriptAsync("document.querySelector('[data-testid=\"neon-vault-settings\"]')?.click()");
         Require(await core.ExecuteScriptAsync(
-            "Boolean(document.querySelector('[data-testid=\"neon-vault-settings-panel\"]'))") == "true",
-            "Neon Vault React presentation settings are missing.");
+            "Boolean(document.querySelector('[data-testid=\"neon-vault-settings-panel\"]')"
+            + "&&document.querySelectorAll('[data-testid=\\\"neon-vault-speed\\\"] option').length===3"
+            + "&&document.querySelectorAll('[data-testid=\\\"neon-vault-auto-count\\\"] option').length===5)") == "true",
+            "Neon Vault presentation settings, reel speeds or autospin amounts are missing.");
         using (var image = File.Create(Path.Combine(output, "neon-vault-react-cabinet.png")))
             await core.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png, image);
 
