@@ -40,23 +40,27 @@ internal static class ModernShopSmoke
             + "&&!!shop.querySelector('[data-cosmetic-id=\"portrait-neon-emperor\"]');})()");
         Require(catalogue == "true", "React Shop does not expose complete cards/dice/portrait catalog and five packs.");
 
-        // The lobby may be configured with animations off (or system reduced motion).
-        // In that state the premium illustration MUST use the bundled static JPG.
-        // Otherwise it MUST expose the animated SVG and reduced-motion fallback.
-        // Neither state may fall back to the old Secret Guest placeholder.
-        Require(await web.ExecuteScriptAsync("(()=>{const item=document.querySelector('[data-cosmetic-id=\"portrait-secret-guest\"]');const art=item?.querySelector('[data-testid=\"secret-guest-showcase\"]');const picture=art?.querySelector('picture');const img=picture?.querySelector('img');const media=picture?.querySelector('source[media]');const motion=Boolean(item?.closest('.modern-shop')?.getAttribute('data-shop-motion')==='on');const expected=motion?'/shop/portraits/secret-guest.svg':'/shop/portraits/secret-guest.jpg';const appropriateFallback=motion?media?.getAttribute('srcset')==='/shop/portraits/secret-guest.jpg':!media;return Boolean(item&&art&&picture&&img&&img.getAttribute('src')===expected&&appropriateFallback&&item.textContent.includes('She appears before the room remembers.')&&!item.textContent.includes('Master Key')&&item.querySelector('.shop-tag.locked'));})()") == "true",
+        // Both animation preferences must produce the exclusive portrait.
+        // SVG decode failures may switch to the bundled JPG, retaining CSS effects.
+        Require(await web.ExecuteScriptAsync("(()=>{const item=document.querySelector('[data-cosmetic-id=\"portrait-secret-guest\"]');const art=item?.querySelector('[data-testid=\"secret-guest-showcase\"]');const picture=art?.querySelector('picture');const img=picture?.querySelector('img');const media=picture?.querySelector('source[media]');const motion=Boolean(item?.closest('.modern-shop')?.getAttribute('data-shop-motion')==='on');const url=img?.getAttribute('src');const validArt=motion?url==='/shop/portraits/secret-guest.svg'||url==='/shop/portraits/secret-guest.jpg':url==='/shop/portraits/secret-guest.jpg';return Boolean(item&&art&&picture&&img&&validArt&&(motion?media?.getAttribute('srcset')==='/shop/portraits/secret-guest.jpg':!media)&&item.textContent.includes('She appears before the room remembers.')&&!item.textContent.includes('Master Key')&&item.querySelector('.shop-tag.locked'));})()") == "true",
             "Secret Guest premium art, description or motion-aware fallback is incorrect.");
 
-        // Load the actual locally bundled animated SVG, not merely its DOM URL.
-        // Capture a dedicated preview for manual evaluation of the face, foil and gems.
-        Require(await web.ExecuteScriptAsync(
-            "(async()=>{const card=document.querySelector('[data-cosmetic-id=\\\"portrait-secret-guest\\\"]');"
-            + "card?.scrollIntoView({block:'center'});"
-            + "const art=card?.querySelector('[data-testid=\\\"secret-guest-showcase\\\"] img');"
-            + "if(!art)return false;art.loading='eager';"
-            + "try{await art.decode();return art.naturalWidth>=240&&art.naturalHeight>=300;}"
-            + "catch{return false;}})()") == "true",
-            "Secret Guest premium artwork did not decode from the packaged offline assets.");
+        // Image.decode() is not reliable for self-animated SVGs on every
+        // WebView2 version. Observe actual decoded dimensions instead.
+        // The component falls back to the approved JPG if SVG decoding fails.
+        await web.ExecuteScriptAsync(
+            "document.querySelector('[data-cosmetic-id=\\\"portrait-secret-guest\\\"]')?.scrollIntoView({block:'center'})");
+        try
+        {
+            await UntilAsync(web, "(()=>{const art=document.querySelector('[data-cosmetic-id=\"portrait-secret-guest\"] img');if(art)art.loading='eager';return Boolean(art&&art.complete&&art.naturalWidth>=240&&art.naturalHeight>=300);})()",
+                "Secret Guest did not display a decoded SVG or static portrait.");
+        }
+        catch (InvalidOperationException ex)
+        {
+            string diagnostics = await web.ExecuteScriptAsync("(()=>{const card=document.querySelector('[data-cosmetic-id=\"portrait-secret-guest\"]');const img=card?.querySelector('img');return {picture:!!img,src:img?.getAttribute('src')??null,complete:img?.complete??false,width:img?.naturalWidth??0,height:img?.naturalHeight??0,motion:card?.closest('.modern-shop')?.getAttribute('data-shop-motion')??null};})()");
+            throw new InvalidOperationException(
+                "Secret Guest offline portrait loading failed: " + diagnostics, ex);
+        }
         await Task.Delay(200);
         await using (FileStream special = File.Create(Path.Combine(output, "modern-shop-secret-guest.png")))
             await web.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png, special);

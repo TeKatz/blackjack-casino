@@ -72,7 +72,14 @@ function SecretGuestArtwork({item,motionEnabled}:{item:ShopItem;motionEnabled:bo
      {motionEnabled&&<source media="(prefers-reduced-motion: reduce)"
        srcSet="/shop/portraits/secret-guest.jpg" type="image/jpeg"/>}
      <img src={motionEnabled?'/shop/portraits/secret-guest.svg':portraitPath(item.visualVariant)}
-       alt={item.name} loading="lazy" decoding="async"/>
+       alt={item.name} loading="eager" decoding="async"
+       onError={event=>{
+         // Some WebView2 environments cannot decode the animated SVG's
+         // embedded raster data. Never let this exclusive reward turn blank.
+         const image=event.currentTarget;
+         const still='/shop/portraits/secret-guest.jpg';
+         if(!image.src.endsWith(still))image.src=still;
+       }}/>
    </picture>
    <span className="secret-guest-sweep" aria-hidden="true"/>
    <span className="secret-guest-crown-gem" aria-hidden="true"/>

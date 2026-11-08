@@ -23,6 +23,7 @@ describe('The Secret Guest exclusive presentation',()=>{
     expect(html).toContain('data-testid="secret-guest-showcase"');
     expect(html).toContain('data-secret-guest="true"');
     expect(html).toContain('src="/shop/portraits/secret-guest.svg"');
+    expect(html).toContain('loading="eager"');
     expect(html).toContain('srcSet="/shop/portraits/secret-guest.jpg"');
     expect(html).toContain('media="(prefers-reduced-motion: reduce)"');
     expect(html).toContain('secret-guest-crown-gem');
