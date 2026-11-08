@@ -38,6 +38,17 @@ internal static class MidnightMergeSmoke
         MergeGameState initial = State(window);
         Require(initial.Items.Count == 0, "Fresh Merge board should be empty.");
         await Capture(web, Path.Combine(output, "merge-modern-initial.png"));
+        // Regression: a pending native save must not temporarily disable/dim
+        // unrelated buttons. Observe a permanently empty board cell throughout
+        // multiple spawns and merges rather than checking only settled frames.
+        Require(await web.ExecuteScriptAsync(
+            "(()=>{const cell=document.querySelector('[data-testid=\\\"merge-cell-20\\\"]');"
+            + "if(!cell)return false;window.__mergeStableCellMutations=0;"
+            + "window.__mergeStableObserver=new MutationObserver(records=>"
+            + "{window.__mergeStableCellMutations+=records.length;});"
+            + "window.__mergeStableObserver.observe(cell,"
+            + "{attributes:true,attributeFilter:['disabled','style']});return true;})()") == "true",
+            "Failed to install the pending-state flicker regression observer.");
 
         await Action(web, window, "[data-testid=\"merge-producer-chip-case\"]", 1);
         await Action(web, window, "[data-testid=\"merge-producer-chip-case\"]", 2);
@@ -51,6 +62,12 @@ internal static class MidnightMergeSmoke
         Require(State(window).Items.Single().DefinitionId == "chip-2"
             && State(window).TotalMerges == 1, "React Merge did not merge the native chip identities.");
         await Capture(web, Path.Combine(output, "merge-modern-tier2.png"));
+        Require(await web.ExecuteScriptAsync(
+            "(()=>{window.__mergeStableObserver?.disconnect();"
+            + "return window.__mergeStableCellMutations===0"
+            + "&&document.querySelector('[data-testid=\\\"merge-cell-20\\\"]')"
+            + "?.disabled===false;})()") == "true",
+            "Spawn/merge temporarily disabled unrelated tiles, causing a full-board opacity flash.");
 
         await Action(web, window, "[data-testid=\"merge-deliver-first-stack\"]", 4);
         Require(State(window).RenovationPoints == 10 && State(window).Items.Count == 0,
@@ -118,6 +135,28 @@ internal static class MidnightMergeSmoke
             + "&&cells[41].getBoundingClientRect().width>=24)})()") == "true",
             "React Merge 7x6 table became unusable at 1080×720.");
         await Capture(web, Path.Combine(output, "merge-modern-german-1080x720.png"));
+        Require(await web.ExecuteScriptAsync(
+            "(()=>{if(innerWidth<1000||innerHeight<600)return true;"
+            + "const controls=document.querySelector('.merge-supply');"
+            + "const tile=document.querySelector('.merge-producer');"
+            + "const help=document.querySelector('[data-testid=\\\"merge-how-to-play\\\"]');"
+            + "const settings=document.querySelector('[data-testid=\\\"merge-settings\\\"]');"
+            + "return Boolean(controls&&tile&&help&&settings"
+            + "&&tile.getBoundingClientRect().height>=44"
+            + "&&help.getBoundingClientRect().top<settings.getBoundingClientRect().top"
+            + "&&!document.querySelector('.merge-footer')"
+            + "&&settings.getBoundingClientRect().bottom<=controls.getBoundingClientRect().bottom+3);})()") == "true",
+            "The supply sources, How to Play or relocated Settings do not fit the centered workshop.");
+        await web.ExecuteScriptAsync(
+            "document.querySelector('[data-testid=\\\"merge-how-to-play\\\"] summary')?.click()");
+        Require(await web.ExecuteScriptAsync(
+            "(()=>{const description=document.querySelector('[data-testid=\\\"merge-how-to-play\\\"][open] p');"
+            + "return Boolean(description&&getComputedStyle(description).position==='static'"
+            + "&&description.scrollWidth<=description.clientWidth+2);})()") == "true",
+            "How to Play description is cropped or rendered as an overlapping popover.");
+        await Capture(web, Path.Combine(output, "merge-modern-german-help-expanded.png"));
+        await web.ExecuteScriptAsync(
+            "document.querySelector('[data-testid=\\\"merge-how-to-play\\\"] summary')?.click()");
         Require(await web.ExecuteScriptAsync(
             "(()=>{if(innerWidth<1000||innerHeight<600)return true;"
             + "const root=document.querySelector('.merge-scroll');"
