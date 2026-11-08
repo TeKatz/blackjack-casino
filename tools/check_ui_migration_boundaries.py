@@ -149,8 +149,8 @@ def main() -> int:
     tiles = re.findall(r"\bid:\s*'([a-z]+(?:-[a-z]+)*)'", frontend[
         frontend.find("const catalog: GameInfo[] = ["):frontend.find("const words = {")
     ])
-    if backend != browser or backend != tiles or len(set(backend)) != 6:
-        issues.append(f"Mismatch in six-game manifest: C#={backend}, bridge={browser}, tiles={tiles}")
+    if backend != browser or backend != tiles or len(set(backend)) != 7:
+        issues.append(f"Mismatch in seven-game manifest: C#={backend}, bridge={browser}, tiles={tiles}")
     if "LoungeHostedGameRegistry.Snapshot.Count == 0" not in smoke:
         issues.append("Windows smoke must verify no legacy factories for React Lounge.")
 
