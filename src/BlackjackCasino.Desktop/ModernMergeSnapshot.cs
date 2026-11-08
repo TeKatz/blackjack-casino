@@ -79,6 +79,29 @@ internal static class ModernMergeSnapshot
                 Next = next is null ? null : new { next.Id, Name = Text(next.DisplayName), next.Points },
                 PointsUntilNext = MergeProgression.PointsUntilNext(area, state.RenovationPoints),
                 UpgradeProgress = MergeProgression.UpgradeProgress(area, state.RenovationPoints),
+                Areas = catalog.Areas.Select((room, index) =>
+                {
+                    MergeMilestone roomCurrent = MergeProgression.Current(room, state.RenovationPoints);
+                    MergeMilestone? roomNext = MergeProgression.Next(room, state.RenovationPoints);
+                    return new
+                    {
+                        AreaId = room.Id,
+                        AreaName = Text(room.DisplayName),
+                        AreaIndex = index + 1,
+                        Current = new { roomCurrent.Id, Name = Text(roomCurrent.DisplayName), roomCurrent.Points },
+                        Next = roomNext is null ? null : new
+                        {
+                            roomNext.Id, Name = Text(roomNext.DisplayName), roomNext.Points,
+                        },
+                        PointsUntilNext = MergeProgression.PointsUntilNext(room, state.RenovationPoints),
+                        UpgradeProgress = MergeProgression.UpgradeProgress(room, state.RenovationPoints),
+                        Milestones = room.Milestones.Select(milestone => new
+                        {
+                            milestone.Id, Name = Text(milestone.DisplayName), milestone.Points,
+                            Unlocked = state.RenovationPoints >= milestone.Points,
+                        }).ToArray(),
+                    };
+                }).ToArray(),
                 Milestones = area.Milestones.Select(milestone => new
                 {
                     milestone.Id, Name = Text(milestone.DisplayName), milestone.Points,

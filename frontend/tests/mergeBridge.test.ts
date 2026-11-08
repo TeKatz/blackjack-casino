@@ -14,10 +14,14 @@ const state={language:'en',schemaVersion:2,revision:2,columns:7,rows:6,capacity:
  unlockPoints:0,unlocked:true,available:true,spawnCount:1}],
  orders:[{id:guid,definitionId:'first-stack',areaId:'lobby',reward:10,available:false,visible:true,
  requirements:[{definitionId:'chip-2',count:1,available:0}]}],
- restoration:{areaId:'lobby',areaName:'Lobby restoration',areaIndex:1,areaCount:2,
+ restoration:{areaId:'lobby',areaName:'Lobby restoration',areaIndex:1,areaCount:1,
  current:{id:'dusty',name:'Dusty lobby',points:0},
  next:{id:'cleanup',name:'First cleanup',points:20},pointsUntilNext:20,
- upgradeProgress:0,milestones:[{id:'dusty',name:'Dusty lobby',points:0,unlocked:true}]},
+ upgradeProgress:0,milestones:[{id:'dusty',name:'Dusty lobby',points:0,unlocked:true}],
+ areas:[{areaId:'lobby',areaName:'Lobby restoration',areaIndex:1,
+  current:{id:'dusty',name:'Dusty lobby',points:0},
+  next:{id:'cleanup',name:'First cleanup',points:20},pointsUntilNext:20,
+  upgradeProgress:0,milestones:[{id:'dusty',name:'Dusty lobby',points:0,unlocked:true}]}]},
  profile:{level:1,levelExperience:2,prestige:0,coins:0,nextLevelExperience:100},
  soundEnabled:true,animationsEnabled:true,feedback:'Saved',playerXp:0,seasonXp:0,
  progressionSaveFailed:false,lastAction:null,labels};
@@ -27,6 +31,8 @@ describe('Midnight Merge strict WebView2 projection',()=>{
    expect(isMergeSnapshot(snapshot)).toBe(true);
    expect(isMergeSnapshot({...snapshot,revision:1})).toBe(false);
    expect(isMergeSnapshot({...snapshot,state:{...state,capacity:43}})).toBe(false);
+   expect(isMergeSnapshot({...snapshot,state:{...state,restoration:{...state.restoration,areas:[]}}})).toBe(false);
+   expect(isMergeSnapshot({...snapshot,state:{...state,restoration:{...state.restoration,areaCount:2}}})).toBe(false);
    expect(isMergeSnapshot({...snapshot,state:{...state,items:[{...state.items[0],position:42}]}})).toBe(false);
    expect(isMergeSnapshot({...snapshot,state:{...state,items:[state.items[0],{...state.items[0],id:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'}]}})).toBe(false);
    expect(isMergeSnapshot({...snapshot,state:{...state,orders:[{...state.orders[0],

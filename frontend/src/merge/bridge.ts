@@ -6,10 +6,11 @@ export type MergeProducer={id:string;name:string;outputDefinitionId:string;unloc
 export type MergeOrder={id:string;definitionId:string;areaId:string;reward:number;
  available:boolean;visible:boolean;requirements:{definitionId:string;count:number;available:number}[]};
 export type MergeMilestone={id:string;name:string;points:number;unlocked:boolean};
-export type MergeRestoration={areaId:string;areaName:string;areaIndex:number;areaCount:number;
+export type MergeRoom={areaId:string;areaName:string;areaIndex:number;
  current:{id:string;name:string;points:number};
  next:{id:string;name:string;points:number}|null;
  pointsUntilNext:number;upgradeProgress:number;milestones:MergeMilestone[]};
+export type MergeRestoration=MergeRoom&{areaCount:number;areas:MergeRoom[]};
 export type MergeAction={outcome:string;position:number;fromPosition:number;definitionId:string|null;
  sourceDefinitionId:string|null;reward:number;milestones:string[]|null};
 export type MergeLabels={title:string;eyebrow:string;back:string;producer:string;noEnergy:string;
@@ -50,13 +51,20 @@ const order=(v:unknown):v is MergeOrder=>obj(v)&&guid(v.id)&&str(v.definitionId)
  &&arr(v.requirements)&&v.requirements.length>0&&v.requirements.every(req);
 const milestone=(v:unknown):v is MergeMilestone=>obj(v)&&str(v.id)&&str(v.name)
  &&int(v.points)&&typeof v.unlocked==='boolean';
-const restoration=(v:unknown):v is MergeRestoration=>obj(v)&&str(v.areaId)&&str(v.areaName)
- &&int(v.areaIndex)&&int(v.areaCount)&&v.areaIndex>0&&v.areaIndex<=v.areaCount
+const room=(v:unknown):v is MergeRoom=>obj(v)&&str(v.areaId)&&str(v.areaName)
+ &&int(v.areaIndex)&&v.areaIndex>0
  &&obj(v.current)&&str(v.current.id)&&str(v.current.name)&&int(v.current.points)
  &&(v.next===null||(obj(v.next)&&str(v.next.id)&&str(v.next.name)&&int(v.next.points)))
  &&int(v.pointsUntilNext)&&typeof v.upgradeProgress==='number'&&Number.isFinite(v.upgradeProgress)
  &&v.upgradeProgress>=0&&v.upgradeProgress<=1
- &&arr(v.milestones)&&v.milestones.every(milestone);
+ &&arr(v.milestones)&&v.milestones.length>0&&v.milestones.every(milestone)
+ &&(v.milestones as MergeMilestone[]).some(x=>x.id===(v.current as {id:string}).id);
+const restoration=(v:unknown):v is MergeRestoration=>room(v)&&obj(v)
+ &&int(v.areaCount)&&v.areaCount>0&&v.areaCount<=32&&v.areaIndex<=v.areaCount
+ &&arr(v.areas)&&v.areas.length===v.areaCount&&v.areas.every(room)
+ &&v.areas.every((r,i)=>obj(r)&&r.areaIndex===i+1)
+ &&new Set(v.areas.map(r=>(r as MergeRoom).areaId)).size===v.areaCount
+ &&(v.areas as MergeRoom[]).some(x=>x.areaId===v.areaId&&x.areaIndex===v.areaIndex);
 const action=(v:unknown):v is MergeAction=>obj(v)&&str(v.outcome)
  &&typeof v.position==='number'&&Number.isSafeInteger(v.position)&&v.position>=-1&&v.position<42
  &&typeof v.fromPosition==='number'&&Number.isSafeInteger(v.fromPosition)&&v.fromPosition>=-1&&v.fromPosition<42

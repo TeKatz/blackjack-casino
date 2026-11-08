@@ -15,6 +15,8 @@ const dictionary={
   completed:'AREA COMPLETE',unlocked:'UNLOCKED',locked:'LOCKED',waiting:'NEED ITEMS',
   next:'NEXT UPGRADE',area:'AREA',earned:'PLAYER XP',season:'SEASON XP',
   saved:'AUTOSAVED · NO ENERGY · NO COOLDOWNS',requirements:'REQUIRED SUPPLIES',
+  estate:'CASINO RESTORATION ROADMAP',returnCurrent:'CURRENT ROOM',preview:'VIEWING FINISHED ROOM',
+  expand:'EXPAND PANORAMA',shrink:'CLOSE PANORAMA',
   order:'ORDER',remaining:'TO GO',help:'Select an item, then a free tile to move or an identical tile to merge.',
   empty:'Empty space', selected:'SELECTED',deselect:'Click again to deselect',
   blocked:'Another operation is being saved.',restoring:'Restoring your workshop…',
@@ -31,6 +33,8 @@ const dictionary={
   completed:'BEREICH ABGESCHLOSSEN',unlocked:'FREIGESCHALTET',locked:'GESPERRT',waiting:'ITEMS FEHLEN',
   next:'NÄCHSTES UPGRADE',area:'BEREICH',earned:'SPIELER-XP',season:'SAISON-XP',
   saved:'AUTOMATISCH GESPEICHERT · KEINE ENERGIE · KEINE WARTEZEIT',
+  estate:'AUSBAUPLAN DES CASINOS',returnCurrent:'AKTUELLER RAUM',preview:'ABGESCHLOSSENER RAUM',
+  expand:'PANORAMA VERGRÖSSERN',shrink:'PANORAMA SCHLIESSEN',
   requirements:'BENÖTIGTE VORRÄTE',order:'AUFTRAG',remaining:'NOCH',
   help:'Wähle ein Item und klicke dann auf ein freies Feld oder auf ein gleiches Item.',
   empty:'Freies Feld',selected:'AUSGEWÄHLT',deselect:'Zum Abwählen erneut klicken',
@@ -52,6 +56,8 @@ function App(){
  const [settings,setSettings]=useState(false);
  const [animCell,setAnimCell]=useState(-1);
  const [celebration,setCelebration]=useState(false);
+ const [previewArea,setPreviewArea]=useState<string|null>(null);
+ const [cinematic,setCinematic]=useState(false);
  const activeSnap=useRef<MergeSnapshot|null>(null),activePending=useRef<string|null>(null);
  const lastRevision=useRef(-1);
  const selectedRef=useRef<string|null>(null);
@@ -77,7 +83,7 @@ function App(){
      if(lastRevision.current>=0&&next.revision>lastRevision.current&&next.state.lastAction){
        const result=next.state.lastAction;
        setAnimCell(result.position);
-       if(result.milestones?.length)setCelebration(true);
+       if(result.milestones?.length){setCelebration(true);setPreviewArea(null);}
        if(soundNotice.current)clearTimeout(soundNotice.current);
        if(celebrateTimer.current)clearTimeout(celebrateTimer.current);
        soundNotice.current=setTimeout(()=>setAnimCell(-1),820);
@@ -113,13 +119,14 @@ function App(){
    const key=(event:KeyboardEvent)=>{
      if(event.key!=='Escape')return;
      event.preventDefault();
+     if(cinematic){setCinematic(false);return;}
      if(settings){setSettings(false);return;}
      if(selectedRef.current){selectedRef.current=null;setSelected(null);return;}
      close();
    };
    document.addEventListener('keydown',key);
    return()=>document.removeEventListener('keydown',key);
- },[settings,close]);
+ },[settings,cinematic,close]);
  const onCell=useCallback((position:number,item:MergeItem|null)=>{
    if(activePending.current||uncertain)return;
    const current=selectedRef.current;
@@ -154,7 +161,11 @@ function App(){
  const lang=state?.language??'en',t=dictionary[lang];
  const disabled=!!pending||uncertain;
  const available=state?.capacity!==undefined?state.capacity-state.items.length:42;
- const next=state?.restoration.next;
+ const displayedRoom=state
+   ?state.restoration.areas.find(area=>area.areaId===previewArea)??state.restoration
+   :undefined;
+ const viewingPrevious=!!state&&displayedRoom?.areaId!==state.restoration.areaId;
+ const next=displayedRoom?.next;
  const canMerge=(item:MergeItem|null):boolean=>
    !!item&&!!selectedItem&&selectedItem.id!==item.id&&selectedDef?.id===item.definitionId
    &&selectedDef.mergeResult!==null;
@@ -178,30 +189,61 @@ function App(){
    {!snap||!state||!isMergeSnapshot(snap)?<div className="merge-loading">
      <div className="merge-loading-symbol">◈</div><strong>{t.restoring}</strong></div>:
    <div className="merge-scroll">
-     <div className={'merge-restoration'+(celebration?' celebrating':'')}>
+     <section className={'merge-restoration'+(celebration?' celebrating':'')}
+       aria-label={t.estate}>
        <div className="merge-room-head">
-         <div><small>{t.chapter} · {state.restoration.areaIndex}/{state.restoration.areaCount}</small>
-           <h2 data-testid="merge-area">{state.restoration.areaName}</h2></div>
-         <div className="merge-room-stage"><small>{state.restoration.current.id.toUpperCase()}</small>
-           <strong>{state.restoration.current.name}</strong></div>
+         <div>
+           <small>{t.chapter} · {displayedRoom!.areaIndex}/{state.restoration.areaCount}
+             {viewingPrevious?' · '+t.preview:''}</small>
+           <h2 data-testid="merge-area">{displayedRoom!.areaName}</h2>
+         </div>
+         <div className="merge-room-stage">
+           <small>{displayedRoom!.current.id.toUpperCase()}</small>
+           <strong>{displayedRoom!.current.name}</strong>
+         </div>
+         {viewingPrevious&&<button type="button" className="merge-room-return"
+           onClick={()=>setPreviewArea(null)}>{t.returnCurrent}</button>}
        </div>
-       <div className="merge-scene"><RestorationScene stage={state.restoration}/>
-         {celebration&&<div className="merge-unlock"><span>✦</span>{t.milestone}<span>✦</span></div>}</div>
+       <div className={'merge-scene'+(cinematic?' is-expanded':'')}>
+         <RestorationScene stage={displayedRoom!}/>
+         {celebration&&!viewingPrevious&&<div className="merge-unlock" aria-live="polite">
+           <span>✦</span>{t.milestone}<span>✦</span></div>}
+         <button type="button" className="merge-scene-expand" data-testid="merge-scene-expand"
+           aria-label={cinematic?t.shrink:t.expand}
+           onClick={()=>setCinematic(value=>!value)}>
+           {cinematic?t.shrink:t.expand} <span aria-hidden="true">{cinematic?'×':'⤢'}</span>
+         </button>
+       </div>
        <div className="merge-milestone-bar">
          <div className="merge-next"><div><small>{t.next}</small>
            <strong data-testid="merge-next-upgrade">{next
-             ?lang==='de'? 'Noch '+state.restoration.pointsUntilNext.toLocaleString(lang)+' Punkte bis '+next.name
-               :state.restoration.pointsUntilNext.toLocaleString(lang)+' points until '+next.name
+             ?lang==='de'? 'Noch '+displayedRoom!.pointsUntilNext.toLocaleString(lang)+' Punkte bis '+next.name
+               :displayedRoom!.pointsUntilNext.toLocaleString(lang)+' points until '+next.name
              :labels?.areaComplete}</strong></div>
            <small>{next?state.renovationPoints.toLocaleString(lang)+' / '+next.points.toLocaleString(lang):t.completed}</small></div>
          <div className="merge-progress" role="progressbar" aria-label={t.next}
-           aria-valuenow={Math.round(100*state.restoration.upgradeProgress)}
+           aria-valuenow={Math.round(100*displayedRoom!.upgradeProgress)}
            aria-valuemin={0} aria-valuemax={100}>
-           <span style={{width:state.restoration.upgradeProgress*100+'%'}}/></div>
-         <div className="merge-milestone-labels">{state.restoration.milestones.map(ms=>
+           <span style={{width:displayedRoom!.upgradeProgress*100+'%'}}/></div>
+         <div className="merge-milestone-labels">{displayedRoom!.milestones.map(ms=>
            <span key={ms.id} className={ms.unlocked?'unlocked':''}>{ms.name}</span>)}</div>
        </div>
-     </div>
+       <nav className="merge-estate-roadmap" aria-label={t.estate} data-testid="merge-estate-roadmap">
+         {state.restoration.areas.map(room=>{
+           const unlocked=state.renovationPoints>=room.milestones[0].points;
+           const completed=state.renovationPoints>=room.milestones[room.milestones.length-1].points;
+           const showing=room.areaId===displayedRoom!.areaId;
+           return <button type="button" key={room.areaId} disabled={!unlocked}
+             data-testid={'merge-room-'+room.areaId} aria-pressed={showing}
+             className={'merge-estate-stop'+(showing?' active':'')+
+               (completed?' complete':'')+(unlocked?' unlocked':' locked')}
+             onClick={()=>setPreviewArea(room.areaId===state.restoration.areaId?null:room.areaId)}>
+             <span className="merge-estate-number">{completed?'✓':String(room.areaIndex).padStart(2,'0')}</span>
+             <span className="merge-estate-name">{room.areaName}</span>
+           </button>;
+         })}
+       </nav>
+     </section>
      <div className="merge-workspace">
        <section className="merge-board-panel">
          <div className="merge-section-heading"><h2><span>✦</span> {t.board}</h2>
