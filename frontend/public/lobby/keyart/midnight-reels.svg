@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" preserveAspectRatio="xMidYMid slice" role="img">
+<defs>
+<radialGradient id="ambient"><stop stop-color="#28463d"/><stop offset="1" stop-color="#05131b"/></radialGradient>
+<linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff3c6"/><stop offset=".25" stop-color="#b68b4b"/><stop offset=".58" stop-color="#392e32"/><stop offset=".8" stop-color="#eac889"/><stop offset="1" stop-color="#402e28"/></linearGradient>
+<linearGradient id="glass" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#6a9ca3"/><stop offset=".5" stop-color="#153b42"/><stop offset="1" stop-color="#070e1b"/></linearGradient>
+<radialGradient id="light"><stop stop-color="#fff6be" stop-opacity=".9"/><stop offset=".3" stop-color="#f9b65f" stop-opacity=".33"/><stop offset="1" stop-color="#c67750" stop-opacity="0"/></radialGradient>
+<filter id="glow" x="-75%" y="-75%" width="250%" height="250%"><feGaussianBlur stdDeviation="12"/></filter>
+<filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="5"/></filter>
+<radialGradient id="red"><stop stop-color="#633137"/><stop offset=".7" stop-color="#2a1424"/><stop offset="1" stop-color="#0b0e1c"/></radialGradient>
+</defs>
+<rect width="960" height="440" fill="url(#red)"/>
+<g stroke="#9e634e" stroke-opacity=".23" stroke-width="9"><path d="M0 75H960M0 203H960M0 332H960M180 0V440M790 0V440"/></g>
+<circle cx="480" cy="190" r="295" fill="url(#light)" opacity=".3"/>
+<g transform="translate(285 -18)">
+ <path d="M91 50H305Q351 50 351 100V402H43V100Q43 50 91 50Z" fill="#171a25" stroke="url(#metal)" stroke-width="23"/>
+ <path d="M87 72H311V116H87Z" fill="#432130" stroke="#ead398" stroke-width="6"/>
+ <path d="M101 86Q197 51 295 86" fill="none" stroke="#efbb72" stroke-width="5"/>
+ <g fill="#e6bf79"><circle cx="70" cy="125" r="8"/><circle cx="324" cy="125" r="8"/><circle cx="70" cy="296" r="8"/><circle cx="324" cy="296" r="8"/></g>
+ <rect x="73" y="135" width="251" height="175" rx="13" fill="#111e23" stroke="#d5ac6b" stroke-width="13"/>
+ <g transform="translate(85 149)">
+  <rect width="227" height="143" rx="8" fill="#edddc1"/>
+  <path d="M75 0V143M152 0V143" stroke="#bba780" stroke-width="9"/>
+  <g transform="translate(11 26)">
+   <path d="M28 34Q-8 4 18 0Q33-3 35 21Q36-5 57 1Q83 17 52 39Z" fill="#cf354c" stroke="#6e2034" stroke-width="5"/>
+   <path d="M36 15Q40-10 52-16" stroke="#366343" stroke-width="7" fill="none"/>
+   <path d="M50-16Q69-22 69-6Q56-4 50-16" fill="#4f9657"/>
+  </g>
+  <text x="114" y="103" font-family="Georgia,serif" font-weight="700" font-size="111" fill="#b63443" text-anchor="middle">7</text>
+  <g transform="translate(167 40)">
+   <rect width="49" height="69" rx="7" fill="#321e29" stroke="#ba8a48" stroke-width="4"/>
+   <path d="M7 27H42M7 48H42" stroke="#caa46a" stroke-width="5"/>
+   <text x="25" y="42" font-size="17" text-anchor="middle" font-weight="700" fill="#efdb95">BAR</text>
+  </g>
+ </g>
+ <path d="M63 341H329V384H63Z" fill="#6b2737" stroke="url(#metal)" stroke-width="8"/>
+ <path d="M119 358H272" stroke="#e9bb6a" stroke-width="8"/>
+ <path d="M350 155Q385 167 384 207T353 261" fill="none" stroke="#e3c58b" stroke-width="13"/>
+ <circle cx="386" cy="211" r="19" fill="#b03046" stroke="#efcc84" stroke-width="7"/>
+</g>
+<g fill="#ffe8b3" opacity=".55"><circle cx="167" cy="70" r="4"/><circle cx="705" cy="95" r="3"/><circle cx="778" cy="287" r="5"/></g>
+<rect x="11" y="11" width="938" height="418" rx="21" fill="none" stroke="#ce995f" stroke-width="5"/>
+</svg>

@@ -77,12 +77,35 @@ public sealed record WordSearchCompletionRecord(
     long ElapsedSeconds,
     DateTimeOffset CompletedAt);
 
+/// <summary>One durable entry per distinct A-Z word, across all puzzles and languages.</summary>
+public sealed record WordSearchDiscovery(
+    string Word, string Theme, WordSearchDifficulty Difficulty,
+    string PuzzleId, DateTimeOffset DiscoveredAt);
+
 public sealed class WordSearchProgressState
 {
     public const int CurrentSchemaVersion = 1;
     public int SchemaVersion { get; set; } = CurrentSchemaVersion;
     public WordSearchGameState? ActiveGame { get; set; }
     public List<WordSearchCompletionRecord> CompletedGames { get; set; } = [];
+
+    // Additive, optional save field. Schema v1 continues to load older
+    // installations and previous completion receipts unchanged.
+    public List<WordSearchDiscovery> DiscoveredWords { get; set; } = [];
+
+    public bool Discover(string word, WordSearchPuzzle puzzle, DateTimeOffset? now = null)
+    {
+        ArgumentNullException.ThrowIfNull(puzzle);
+        if (string.IsNullOrWhiteSpace(word) || word.Length is < 3 or > 13
+            || !word.All(c => c is >= 'A' and <= 'Z')
+            || !puzzle.Placements.Any(p => p.Word == word))
+            throw new ArgumentException("Only a solved puzzle target may enter the album.", nameof(word));
+        DiscoveredWords ??= [];
+        if (DiscoveredWords.Any(entry => entry.Word == word)) return false;
+        DiscoveredWords.Add(new(word, puzzle.Theme, puzzle.Difficulty, puzzle.Id,
+            now ?? DateTimeOffset.UtcNow));
+        return true;
+    }
 
     public void Normalize()
     {
@@ -96,7 +119,27 @@ public sealed class WordSearchProgressState
             .Select(x => x.OrderByDescending(y => y.CompletedAt).First())
             .OrderBy(x => x.CompletedAt)
             .ToList();
+        DiscoveredWords ??= [];
+        DiscoveredWords = DiscoveredWords
+            .Where(entry => entry is not null
+                && entry.Word.Length is >= 3 and <= 13
+                && entry.Word.All(c => c is >= 'A' and <= 'Z')
+                && entry.Theme is { Length: > 0 and <= 100 }
+                && entry.PuzzleId is { Length: > 0 and <= 120 }
+                && Enum.IsDefined(entry.Difficulty))
+            .GroupBy(entry => entry.Word, StringComparer.Ordinal)
+            .Select(group => group.OrderBy(entry => entry.DiscoveredAt).First())
+            .OrderBy(entry => entry.DiscoveredAt).ThenBy(entry => entry.Word, StringComparer.Ordinal)
+            .ToList();
         ActiveGame?.Normalize();
+        if (ActiveGame is { } saved)
+        {
+            // Earlier saves already know words from an unfinished grid. Import
+            // only this verifiable subset, without guessing words in old
+            // completed puzzles whose word lists were not persisted.
+            foreach (string word in saved.FoundWords.OrderBy(x => x, StringComparer.Ordinal))
+                Discover(word, saved.Puzzle, saved.StartedAt);
+        }
         if (ActiveGame?.Completed == true) ActiveGame = null;
     }
 }

@@ -1,0 +1,187 @@
+using System.Text.Json;
+using BlackjackCasino.Core.Manor;
+using BlackjackCasino.Desktop;
+using Xunit;
+
+namespace BlackjackCasino.Tests;
+
+public sealed class ManorPreviewProtocolTests
+{
+    [Theory]
+    [InlineData("https://midnight-manor.local/index.html",true)]
+    [InlineData("https://MIDNIGHT-MANOR.local/index.html",true)]
+    [InlineData("http://midnight-manor.local/index.html",false)]
+    [InlineData("https://midnight-manor.local.attacker.test/index.html",false)]
+    [InlineData("https://midnight-manor.local/other.html",false)]
+    [InlineData("https://midnight-manor.local:444/index.html",false)]
+    [InlineData("javascript:alert(1)",false)]
+    public void SourceValidationAllowsOnlyBundledFrontend(string source,bool expected) =>
+        Assert.Equal(expected,ManorPreviewProtocol.IsTrustedSource(source));
+
+    [Fact]
+    public void MutatingCommandsMustBeV2RevisionedAndAllowListed()
+    {
+        const string url=ManorPreviewProtocol.EntryPoint;
+        Assert.True(ManorPreviewProtocol.TryParseCommand(
+            url,"""{"protocolVersion":2,"type":"spin.paid","requestId":"one","expectedRevision":"0","bet":"25"}""",out var command));
+        Assert.Equal("spin.paid",command!.Type);
+        Assert.Equal(0,command.ExpectedRevision);
+        Assert.Equal(25m,command.Bet);
+        foreach(string highBet in new[]{"2500","5000"})
+        {
+            string body=JsonSerializer.Serialize(new
+            {
+                protocolVersion=2,
+                type="spin.paid",
+                requestId="highBet",
+                expectedRevision="0",
+                bet=highBet,
+            });
+            Assert.True(ManorPreviewProtocol.TryParseCommand(url,body,out var highCommand));
+            Assert.Equal(decimal.Parse(highBet),highCommand!.Bet);
+        }
+        Assert.True(ManorPreviewProtocol.TryParseCommand(
+            url,"""{"protocolVersion":2,"type":"ui.ready","requestId":"surface"}""",out var ready));
+        Assert.Equal("ui.ready",ready!.Type);
+
+        Assert.True(ManorPreviewProtocol.TryParseCommand(
+            url,"""{"protocolVersion":2,"type":"run.move","requestId":"room_1","expectedRevision":"17","room":4}""",out var move));
+        Assert.Equal(4,move!.Room);
+        Assert.Equal(17,move.ExpectedRevision);
+
+        string[] invalid=
+        [
+            """{"protocolVersion":1,"type":"spin.paid","requestId":"x","expectedRevision":"0","bet":"25"}""",
+            """{"protocolVersion":2,"type":"spin.paid","requestId":"x","bet":"25"}""",
+            """{"protocolVersion":2,"type":"spin.paid","requestId":"x","expectedRevision":"-1","bet":"25"}""",
+            """{"protocolVersion":2,"type":"spin.paid","requestId":"x","expectedRevision":"0","bet":"1.5"}""",
+            """{"protocolVersion":2,"type":"spin.paid","requestId":"x","expectedRevision":"0","bet":"5001"}""",
+            """{"protocolVersion":2,"type":"run.move","requestId":"x","expectedRevision":"0","room":17}""",
+            """{"protocolVersion":2,"type":"run.move","requestId":"x","expectedRevision":"0","room":"4"}""",
+            """{"protocolVersion":2,"type":"roulette.placeBet","requestId":"x","expectedRevision":"0"}""",
+            """{"protocolVersion":2,"type":"ui.close","requestId":"bad id"}""",
+            "{",
+        ];
+        foreach(string body in invalid)
+            Assert.False(ManorPreviewProtocol.TryParseCommand(url,body,out _));
+        Assert.False(ManorPreviewProtocol.TryParseCommand(
+            "https://malicious.local/index.html",
+            """{"protocolVersion":2,"type":"ui.close","requestId":"x"}""",out _));
+    }
+
+    [Fact]
+    public void SnapshotReflectsCommittedSpinWithoutMutatingFinancialState()
+    {
+        var state=new ManorSessionState
+        {
+            Bankroll=1_234.5m,Bet=20m,Revision=7,
+            LastSpin=ManorRules.Evaluate([0,1,2,3,4],20m),
+            FreeSpinsRemaining=2,CycleActive=true,PaytableVersion=ManorRules.CurrentPaytableVersion
+        };
+        string before=JsonSerializer.Serialize(state);
+        var snapshot=ManorPreviewProtocol.CreateSnapshot(state,false,selectedBet:20m);
+        Assert.Equal("$1,234.50",snapshot.Bankroll);
+        Assert.Equal("$20.00",snapshot.SelectedBet);
+        Assert.Equal("7",snapshot.Revision);
+        Assert.Equal("en",snapshot.Language);
+        Assert.True(snapshot.GlobalSoundEnabled);
+        Assert.True(snapshot.GlobalMusicEnabled);
+        Assert.Equal(.1d,snapshot.GlobalMusicVolume);
+        Assert.Equal(2,snapshot.Rules.Version);
+        Assert.Equal(14,snapshot.Rules.Symbols.Length);
+        Assert.Equal(20,snapshot.Rules.Paylines.Length);
+        Assert.Equal(ManorRules.Symbols[0].Five,snapshot.Rules.Symbols[0].Five);
+        Assert.Equal(15,snapshot.Cells.Length);
+        Assert.Equal(state.LastSpin!.Wins.Length,snapshot.WinningLineDetails.Length);
+        Assert.True(snapshot.CanFreeSpin);
+        Assert.False(snapshot.CanSpin);
+        Assert.False(snapshot.AnimationsEnabled);
+        Assert.Contains("2 free spins",snapshot.Feature);
+        Assert.Equal(before,JsonSerializer.Serialize(state));
+
+        using JsonDocument response=JsonDocument.Parse(ManorPreviewProtocol.SerializeSnapshot(snapshot,"r7"));
+        Assert.Equal(2,response.RootElement.GetProperty("protocolVersion").GetInt32());
+        Assert.Equal("snapshot",response.RootElement.GetProperty("type").GetString());
+        Assert.Equal("r7",response.RootElement.GetProperty("requestId").GetString());
+        Assert.Equal("7",response.RootElement.GetProperty("payload").GetProperty("revision").GetString());
+    }
+
+    [Fact]
+    public void RunSnapshotExposesLegalRoomsAndCluesButNotHiddenGhostCoordinates()
+    {
+        var state=new ManorSessionState
+        {
+            Bankroll=500m,Bet=25m,CycleActive=true,
+            Run=ManorRun.Create(3,2).State,
+        };
+        var snapshot=ManorPreviewProtocol.CreateSnapshot(state,true);
+        Assert.NotNull(snapshot.Run);
+        Assert.Equal(0,snapshot.Run!.PlayerRoom);
+        Assert.Contains(snapshot.Run!.Rooms,r=>r.Id==1 && r.Available);
+        Assert.DoesNotContain(snapshot.Run.Rooms,r=>r.Id==16 && r.Available);
+        Assert.Equal(ManorMap.Edges.Count(edge=>edge.A<17 && edge.B<17),snapshot.Run.Passages.Length);
+        Assert.DoesNotContain(snapshot.Run.Passages,edge=>edge.From>=17 || edge.To>=17);
+        Assert.Contains(snapshot.Run.Passages,edge=>edge.From==6 && edge.To==11 && edge.RequiresKey);
+        Assert.Contains(snapshot.Run.Passages,edge=>edge.From==14 && edge.To==16 && edge.RequiresKey);
+        Assert.False(snapshot.CanFreeSpin);
+        Assert.False(snapshot.CanSpin);
+        using JsonDocument json=JsonDocument.Parse(ManorPreviewProtocol.SerializeSnapshot(snapshot,"m1"));
+        Assert.False(json.RootElement.GetProperty("payload").GetProperty("run").TryGetProperty("ghost",out _));
+    }
+
+    [Fact]
+    public void WinPresentationDetailsComeFromCommittedCorePaylines()
+    {
+        int[] stops=[0,53,42,31,20]; // Compensate for each reel's eleven-stop offset.
+        ManorSpin spin=ManorRules.Evaluate(stops,25m);
+        Assert.NotEmpty(spin.Wins);
+        var state=new ManorSessionState { Bankroll=1000m,Bet=25m,LastSpin=spin };
+        var snapshot=ManorPreviewProtocol.CreateSnapshot(state,true);
+        Assert.Equal(spin.Wins.Length,snapshot.WinningLineDetails.Length);
+        foreach(var win in spin.Wins)
+        {
+            var display=Assert.Single(snapshot.WinningLineDetails,detail=>detail.Number==win.Line+1);
+            Assert.Equal(win.Count,display.Count);
+            Assert.Equal(ManorRules.Paylines[win.Line],display.Rows);
+            Assert.Equal("$"+win.Amount.ToString("N2",System.Globalization.CultureInfo.GetCultureInfo("en-US")),display.Amount);
+        }
+    }
+
+    [Fact]
+    public void LanguageAndLegacyPaytableAreReadOnlyPresentationMetadata()
+    {
+        var previous=new ManorSessionState
+        {
+            Bankroll=250m,Bet=25m,CycleActive=true,
+            PaytableVersion=1,FreeSpinsRemaining=1,
+        };
+        string before=JsonSerializer.Serialize(previous);
+        var german=ManorPreviewProtocol.CreateSnapshot(previous,false,language:"de");
+        Assert.Equal("de",german.Language);
+        Assert.Equal(1,german.Rules.Version);
+        Assert.Equal(ManorRules.SymbolDefinitions(1)[0].Three,german.Rules.Symbols[0].Three);
+        Assert.Equal(20,german.Rules.Paylines.Length);
+        Assert.Equal(before,JsonSerializer.Serialize(previous));
+        Assert.Equal("en",ManorPreviewProtocol.CreateSnapshot(previous,false,language:"unknown").Language);
+        var disabledAudio=ManorPreviewProtocol.CreateSnapshot(previous,false,
+            globalSoundEnabled:false,globalMusicEnabled:false,globalMusicVolume:2);
+        Assert.False(disabledAudio.GlobalSoundEnabled);
+        Assert.False(disabledAudio.GlobalMusicEnabled);
+        Assert.Equal(1d,disabledAudio.GlobalMusicVolume);
+        Assert.Equal(0d,ManorPreviewProtocol.CreateSnapshot(previous,false,
+            globalMusicVolume:double.NaN).GlobalMusicVolume);
+    }
+
+    [Fact]
+    public void EmptySaveHasFifteenDeterministicCellsWithoutDrawingRandomOutcomes()
+    {
+        var state=new ManorSessionState { Bankroll=100m,Bet=10m };
+        var a=ManorPreviewProtocol.CreateSnapshot(state,true);
+        var b=ManorPreviewProtocol.CreateSnapshot(state,true);
+        Assert.False(a.HasCommittedSpin);
+        Assert.True(a.CanSpin);
+        Assert.Equal(a.Cells,b.Cells);
+        Assert.Equal(15,a.Cells.Length);
+        Assert.Equal("$0.00",a.Payout);
+    }
+}

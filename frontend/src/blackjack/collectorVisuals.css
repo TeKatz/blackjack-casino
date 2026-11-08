@@ -1,0 +1,147 @@
+/* Collector cards and vector/particle wager sculpture. Browser-native rendering,
+   no whole-screen sweep and no game-state coupling. */
+
+/* Individual card children must never participate in the card face grid.
+   The original grid assigned the centered suit to a later row and misaligned it. */
+.bj-app .bj-card .bj-card-front{display:block;isolation:isolate}
+.bj-app .bj-card .bj-card-skin-crest{
+ position:absolute;inset:0;left:0;top:0;width:100%;height:100%;
+ transform:none;border:0;border-radius:0;box-shadow:none;
+ pointer-events:none;z-index:0
+}
+.bj-app .bj-card .bj-card-skin-crest::after{content:none!important}
+.bj-app .bj-card .bj-card-engraving{
+ position:absolute;inset:0;width:100%;height:100%;
+ overflow:visible;color:var(--card-accent,#d9b674);opacity:.8;
+ filter:drop-shadow(0 0 2px #8a6e3c44)
+}
+.bj-app .bj-card[data-card-set="card-midnight-sovereign"] .bj-card-engraving{opacity:.77;color:#d2b06c}
+.bj-app .bj-card[data-card-set="card-solar-eclipse"] .bj-card-engraving{opacity:.84;color:#eaa765}
+.bj-app .bj-card .bj-rank{
+ position:absolute;top:5.5%;left:8%;z-index:3;
+ font:700 clamp(14px,1.4vw,20px)/1 Georgia,serif;
+ text-shadow:0 1px 2px #000a;
+ white-space:nowrap
+}
+.bj-app .bj-card .bj-index-pip{
+ position:absolute;top:23%;left:9%;z-index:3;
+ font:normal clamp(9px,1vw,13px)/1 Georgia,serif;
+ filter:drop-shadow(0 1px 1px #0007)
+}
+.bj-app .bj-card .bj-suit{
+ position:absolute;top:50%;left:50%;z-index:2;
+ display:block;width:auto;height:auto;
+ transform:translate(-50%,-50%);
+ font:normal clamp(26px,2.65vw,43px)/1 Georgia,serif;
+ text-align:center;white-space:nowrap;
+ text-shadow:0 2px 2px #000b,0 0 10px #d0aa5e42;
+ filter:none;pointer-events:none
+}
+.bj-app .bj-card .bj-corner-rank{
+ position:absolute;right:9%;bottom:20%;z-index:3;
+ font:700 clamp(12px,1.1vw,17px)/1 Georgia,serif;
+ transform:rotate(180deg);white-space:nowrap
+}
+.bj-app .bj-card .bj-corner-suit{
+ position:absolute;right:8%;bottom:5.5%;z-index:3;
+ font:normal clamp(9px,.95vw,13px)/1 Georgia,serif;
+ transform:rotate(180deg)
+}
+.bj-app .bj-card .bj-ornament{position:absolute;right:8%;top:5.5%;font-size:9px;opacity:.52}
+.bj-app .bj-card[data-card-set="card-midnight-sovereign"] .bj-card-front,
+.bj-app .bj-card[data-card-set="card-solar-eclipse"] .bj-card-front{
+ box-shadow:inset 0 0 0 1px #ffe5ae5e,inset 0 0 15px #040309ba,0 8px 17px #000b
+}
+.bj-app .bj-card[data-card-set="card-midnight-sovereign"] .bj-card-front::after{content:none}
+.bj-app .bj-card[data-card-set="card-midnight-sovereign"] .bj-card-skin-crest,
+.bj-app .bj-card[data-card-set="card-solar-eclipse"] .bj-card-skin-crest{
+ /* Neutralize old centered medallion: the SVG draws true symmetric ornament. */
+ box-shadow:none!important;border:0!important;border-radius:0!important;
+ background:none!important
+}
+.bj-app .bj-card[data-card-set="card-midnight-sovereign"] .bj-suit,
+.bj-app .bj-card[data-card-set="card-solar-eclipse"] .bj-suit{
+ text-shadow:0 2px 3px #000d,0 0 9px #d1aa6173
+}
+.bj-app .bj-card[data-card-set="card-midnight-sovereign"] .bj-card-engraving,
+.bj-app .bj-card[data-card-set="card-solar-eclipse"] .bj-card-engraving{
+ filter:drop-shadow(0 1px 3px #090603)
+}
+/* Compacts keep the key rank/suit readable without intersecting the engraving. */
+.bj-ai .bj-card .bj-card-engraving{opacity:.45}
+.bj-ai .bj-card .bj-rank{font-size:10px;top:5%;left:7%}
+.bj-ai .bj-card .bj-index-pip,.bj-ai .bj-card .bj-corner-rank{display:none}
+.bj-ai .bj-card .bj-suit{font-size:19px}
+.bj-ai .bj-card .bj-corner-suit{font-size:9px;right:7%;bottom:5%}
+@media(max-width:600px){
+ .bj-app .bj-card .bj-rank{font-size:12px}
+ .bj-app .bj-card .bj-index-pip{font-size:8px}
+ .bj-app .bj-card .bj-suit{font-size:24px}
+ .bj-app .bj-card .bj-corner-rank{font-size:11px}
+}
+/* Replaces the temporary flat CSS chip rows with a full scalable illustration.
+   Metallic face/rim gradients stay crisp at 100–200% DPI and large windows. */
+.bj-felt .bj-wager-display.bj-wager-premium{
+ position:absolute;z-index:2;right:clamp(16px,6%,105px);
+ bottom:clamp(110px,24%,250px);
+ display:block;width:clamp(215px,24vw,344px);height:auto;
+ aspect-ratio:320/238;
+ pointer-events:none;user-select:none;
+ filter:drop-shadow(0 12px 14px #0008);
+ transform:none;overflow:visible
+}
+.bj-wager-illustration{display:block;width:100%;height:100%;overflow:visible;
+ filter:drop-shadow(0 5px 6px #0006)}
+.bj-wager-svg-stack{filter:drop-shadow(0 4px 4px #0007)}
+.bj-coin-layer{
+ opacity:1;
+ animation:bj-premium-coin-settle .52s cubic-bezier(.17,.7,.23,1)
+   var(--coin-delay,0ms) both
+}
+.bj-wager-facing-coin{
+ filter:drop-shadow(0 6px 5px #000b);
+ animation:bj-premium-coin-glimmer 5.8s ease-in-out infinite alternate
+}
+.bj-wager-orbits{transform-origin:50% 58%;
+ animation:bj-premium-chip-orbit 9s ease-in-out infinite alternate}
+.bj-wager-engraved-stars{transform-origin:50% 50%;
+ animation:bj-premium-chip-twinkle 4.7s ease-in-out infinite alternate}
+.bj-wager-pixi{position:absolute;inset:0;display:block;pointer-events:none;
+ overflow:hidden;z-index:3;isolation:isolate}
+.bj-wager-pixi canvas{display:block;position:absolute;inset:0;width:100%!important;height:100%!important;
+ pointer-events:none;mix-blend-mode:screen;opacity:.86}
+@keyframes bj-premium-coin-settle{
+ 0%{opacity:0;translate:0 -13px;filter:brightness(1.65)}
+ 65%{opacity:1;translate:0 2px;filter:brightness(1.11)}
+ 100%{opacity:1;translate:0 0;filter:none}
+}
+@keyframes bj-premium-coin-glimmer{50%{filter:drop-shadow(0 5px 7px #000b) drop-shadow(0 0 7px #f0c46e71)}}
+@keyframes bj-premium-chip-orbit{50%{opacity:.8;rotate:2deg}}
+@keyframes bj-premium-chip-twinkle{50%{opacity:.42;filter:brightness(1.45)}}
+.bj-wager-premium[data-animation=false] .bj-coin-layer,
+.bj-wager-premium[data-animation=false] .bj-wager-facing-coin,
+.bj-wager-premium[data-animation=false] .bj-wager-orbits,
+.bj-wager-premium[data-animation=false] .bj-wager-engraved-stars{
+ animation:none!important;translate:none!important;filter:none
+}
+@media(max-width:1100px){
+ .bj-felt .bj-wager-display.bj-wager-premium{
+  width:clamp(170px,22vw,260px);right:2%;bottom:24%;transform:none
+ }
+}
+@media(max-width:800px){
+ .bj-felt .bj-wager-display.bj-wager-premium{
+  width:clamp(140px,20vw,200px);right:0;bottom:25%;transform:none
+ }
+}
+@media(max-width:550px){
+ .bj-felt .bj-wager-display.bj-wager-premium{
+  width:135px;bottom:30%;right:-7px;transform:none
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ .bj-wager-premium *{animation:none!important;transition:none!important;translate:none!important}
+}
+.bj-app[data-motion=false] .bj-wager-premium *{
+ animation:none!important;transition:none!important;translate:none!important
+}

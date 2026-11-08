@@ -1,0 +1,42 @@
+import { describe, expect, it } from 'vitest';
+import { boundedVolume, hostAudioPolicy, MANOR_CUES } from '../src/audio/manorAudio';
+
+describe('Midnight Manor audio safety contract', () => {
+  it('has an entirely local, low-volume sound cue for each presentation', () => {
+    expect(Object.keys(MANOR_CUES)).toHaveLength(12);
+    for (const voices of Object.values(MANOR_CUES)) {
+      expect(voices.length).toBeGreaterThan(0);
+      expect(voices.length).toBeLessThanOrEqual(5);
+      expect(voices.reduce((sum, x) => sum + x.level, 0)).toBeLessThan(.52);
+      for (const voice of voices) {
+        expect(voice.hz).toBeGreaterThanOrEqual(50);
+        expect(voice.hz).toBeLessThan(1500);
+        expect(voice.duration).toBeGreaterThan(0);
+        expect(voice.duration).toBeLessThanOrEqual(1);
+        expect(voice.offset).toBeGreaterThanOrEqual(0);
+        expect(voice.offset).toBeLessThan(1);
+      }
+    }
+  });
+  it('enforces the persisted casino-wide sound and music switches', () => {
+    expect(hostAudioPolicy(false, true, 1)).toEqual({
+      sound: false, music: true, ambientGain: .025,
+    });
+    expect(hostAudioPolicy(true, false, .1).music).toBe(false);
+    expect(hostAudioPolicy(true, true, .1).ambientGain).toBeCloseTo(.0025);
+    expect(hostAudioPolicy(true, true, Number.POSITIVE_INFINITY).ambientGain).toBe(0);
+  });
+  it('has a layered mechanical spin and a substantial, restrained reel-stop cue', () => {
+    expect(MANOR_CUES.spin.length).toBeGreaterThanOrEqual(3);
+    expect(MANOR_CUES.reel.length).toBeGreaterThanOrEqual(3);
+    expect(MANOR_CUES.reel.some(tone => tone.hz <= 100)).toBe(true);
+  });
+
+  it('clamps volume and fails closed for invalid values', () => {
+    expect(boundedVolume(-2)).toBe(0);
+    expect(boundedVolume(0.4)).toBe(.4);
+    expect(boundedVolume(100)).toBe(1);
+    expect(boundedVolume(NaN)).toBe(0);
+    expect(boundedVolume(Infinity)).toBe(0);
+  });
+});

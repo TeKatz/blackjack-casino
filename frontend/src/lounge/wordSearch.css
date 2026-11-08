@@ -1,0 +1,170 @@
+.ws-library,.ws-game{max-width:1500px;margin:0 auto;color:#f0e7d4}
+.ws-eyebrow{display:block;color:#dbba80;font-size:10px;letter-spacing:.18em;font-weight:800}
+.ws-hero{border:1px solid #5f8b71;border-radius:17px;padding:25px 33px;background:radial-gradient(ellipse at 80% 20%,#416c4e77,transparent 50%),linear-gradient(110deg,#163c2e,#081f1b);box-shadow:0 15px 31px #0007}
+.ws-hero h1,.ws-game-heading h1{font:normal clamp(28px,3vw,43px) Georgia,serif;margin:8px 0;color:#f7e8cc}
+.ws-hero p,.ws-game-heading p{font-size:13px;color:#b4ccba;line-height:1.6;max-width:790px;margin:0}
+.ws-stats{display:flex;gap:40px;flex-wrap:wrap;margin-top:20px}
+.ws-stats span{display:flex;flex-direction:column;gap:3px;color:#aac2af;font-size:10px}
+.ws-stats b{color:#f0d6a5;font:27px Georgia,serif}
+.ws-resume{margin:14px 0;display:flex;justify-content:space-between;gap:20px;align-items:center;border:1px solid #ccad6a;border-radius:13px;background:#263b2b;padding:15px 23px}
+.ws-resume h2{font:24px Georgia,serif;margin:6px 0}.ws-resume p{color:#c6d6c6;font-size:11px;margin:0}
+.ws-resume button,.ws-level button,.ws-hint-button,.ws-back,.ws-complete button{border-radius:8px;border:1px solid #cba66a;background:#4e4029;color:#f6e1ae;font-size:11px;font-weight:760;padding:11px 15px;transition:background .16s}
+.ws-resume button:hover:not(:disabled),.ws-level button:hover:not(:disabled),.ws-hint-button:hover:not(:disabled),.ws-back:hover:not(:disabled){background:#466247}
+.ws-resume button:disabled,.ws-level button:disabled,.ws-hint-button:disabled,.ws-back:disabled{opacity:.45;cursor:default}
+.ws-library-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:19px 0 12px}
+.ws-library-heading h2{font:25px Georgia,serif;margin:0}.ws-library-heading small{font-size:11px;color:#b6bf9f}
+.ws-levels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+.ws-level{border:1px solid #557b66;border-radius:13px;background:radial-gradient(ellipse at 100% 0,#4067468c,transparent 55%),linear-gradient(125deg,#1a3c2d,#09251f);padding:15px 18px;min-height:225px;display:flex;flex-direction:column;position:relative;overflow:hidden;box-shadow:0 11px 22px #0005}
+.ws-level-top{display:flex;justify-content:space-between;font-size:10px;color:#d8bf86;font-weight:700}
+.ws-decoration{position:absolute;right:16px;top:30px;font:63px Georgia,serif;color:#e5c58436;pointer-events:none}
+.ws-level h3{font:normal 26px Georgia,serif;margin:14px 0 6px;position:relative}
+.ws-level p{font-size:12px;color:#b7d7c0;margin:0}.ws-level small{font-size:10px;color:#a0bea9;margin-top:9px;min-height:17px}
+.ws-progress{height:6px;background:#081e1a;border:1px solid #315b49;border-radius:8px;overflow:hidden;margin:12px 0 0}
+.ws-progress>div{height:100%;background:linear-gradient(90deg,#78a986,#dfc47c);transition:width .25s}
+.ws-progress-text{font-size:10px;color:#c0d1b9;margin:8px 0 11px}
+.ws-level button{margin-top:auto}.ws-expansion{font-size:13px;color:#c5b47f;border:1px solid #798970;border-radius:10px;padding:13px;background:#203a2a}
+.ws-help{color:#9fbaaa;font-size:11px;line-height:1.5;text-align:center;margin:13px 0 0}
+.ws-alert{font-size:12px;color:#ffaca5}
+.ws-game-heading{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:5px 10px 17px}
+.ws-game-heading h1{margin:5px 0}.ws-game-stats{display:flex;gap:9px}
+.ws-game-stats span{display:flex;flex-direction:column;min-width:94px;padding:10px 12px;background:#16372b;border:1px solid #547565;border-radius:9px}
+.ws-game-stats small{font-size:10px;color:#a6c0b0}
+.ws-game-stats b{font-size:21px;color:#f4d89f;font-variant-numeric:tabular-nums}
+.ws-columns{display:grid;grid-template-columns:minmax(390px,1fr) minmax(255px,335px);gap:19px;align-items:start}
+.ws-board-frame{background:#081e19;border:1px solid #507a62;border-radius:14px;padding:14px;box-shadow:0 16px 31px #0006}
+.ws-board{display:grid;width:min(100%,74vh,790px);aspect-ratio:1;touch-action:none;user-select:none;-webkit-user-select:none;gap:2px;margin:0 auto}
+.ws-cell{min-width:0;min-height:0;aspect-ratio:1;border-radius:3px;background:#16372b;border:1px solid #416750;color:#f4e9d5;display:grid;place-items:center;font:750 clamp(13px,2.1vw,28px) "Segoe UI",sans-serif;padding:0;cursor:crosshair;touch-action:none;transition:background .13s,border .13s}
+.ws-cell:hover:not(:disabled){background:#335e46}.ws-cell.found{background:#376e4b;color:#e5f5d9;border-color:#8bc592}
+.ws-cell.selected{background:#b69655;color:#17281d;border-color:#ffdf97;box-shadow:inset 0 0 0 1px #f7dda1}
+.ws-cell.hint{background:#91723e;color:#fff1b4;border-color:#f5dc9a;animation:ws-hint 1.8s ease-in-out infinite}
+.ws-cell:focus-visible{outline:2px solid #fff2a2;z-index:2}
+.ws-side{background:#112b22;border:1px solid #527761;border-radius:13px;padding:16px;display:flex;flex-direction:column;gap:11px;box-shadow:0 11px 23px #0005}
+.ws-word-heading{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.ws-word-heading b{color:#f4d99f;font-size:16px}
+.ws-side .ws-progress{margin:0}
+.ws-words{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;max-height:min(46vh,460px);overflow:auto;padding:3px}
+.ws-words .ws-word-row{display:flex;align-items:center;gap:6px;background:#18382c;border:1px solid #3d604c;border-radius:6px;color:#d7e1cf;padding:7px;font-size:11px;font-weight:700;overflow-wrap:anywhere}
+.ws-words b{color:#e0c17e}.ws-words .ws-word-row.found{background:#28513a;color:#97cfac}
+.ws-words .ws-word-row.found .ws-word-label{text-decoration:line-through;text-decoration-thickness:1.5px}
+.ws-hint-button{min-height:43px}.ws-note{font-size:11px;color:#96b49f;line-height:1.5;margin:0}
+.ws-status{font-size:12px;color:#eed398;line-height:1.5;min-height:31px}
+.ws-saved{font-size:10px;color:#8dcc9e}.ws-back{background:#244535;border-color:#7c997a}
+.ws-complete{text-align:center;border:1px solid #d9b677;border-radius:14px;padding:23px;margin-top:20px;background:radial-gradient(ellipse at top,#3c5839,#172e26 70%);box-shadow:0 11px 29px #0005}
+.ws-complete h2{font:30px Georgia,serif;color:#f8dda7;margin:0}
+.ws-complete p{font-size:12px;color:#bfd2bc}
+.ws-complete>div{display:flex;justify-content:center;gap:30px}
+.ws-complete>div span{display:flex;flex-direction:column;font-size:11px;color:#aebca9}
+.ws-complete b{font:26px Georgia,serif;color:#e9d19b}
+.ws-bottom-note{text-align:center;margin-top:14px}
+@keyframes ws-hint{50%{box-shadow:0 0 16px #e4c479;transform:scale(1.025)}}
+@media(max-width:1000px){.ws-columns{grid-template-columns:minmax(340px,1fr) minmax(240px,280px);gap:10px}.ws-words{grid-template-columns:1fr}}
+@media(max-width:810px){.ws-levels{grid-template-columns:repeat(2,minmax(0,1fr))}.ws-game-heading{flex-wrap:wrap}.ws-game-stats{width:100%;justify-content:space-between}.ws-columns{grid-template-columns:1fr}.ws-words{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(prefers-reduced-motion:reduce){.ws-cell,.ws-progress>div{transition:none}.ws-cell.hint{animation:none}}
+.ws-board.reduced .ws-cell.hint{animation:none}
+
+/* Word discovery album. The collection is local, durable and grouped by
+   the verified source theme; no browser-authoritative word submission. */
+.ws-hero .ws-album-launch{margin-top:20px;display:flex;align-items:center;gap:13px;
+ width:min(100%,750px);min-height:74px;padding:11px 18px;border:1px solid #bd83eeaa;
+ border-radius:13px;color:#f4e7ff;text-align:left;cursor:pointer;
+ background:radial-gradient(ellipse at 0% 50%,#884bb052,transparent 56%),
+ linear-gradient(95deg,#342049,#182b32 70%,#132b25);
+ box-shadow:0 5px 21px #120b265e,inset 0 1px #e2afff32;
+ transition:border-color .2s,box-shadow .2s,transform .2s;}
+.ws-hero .ws-album-launch:hover{border-color:#e6a7ff;
+ box-shadow:0 7px 28px #ad6cf355;transform:translateY(-1px);}
+.ws-hero .ws-album-launch:focus-visible,.ws-album-return:focus-visible,
+.ws-album-toolbar :is(input,select):focus-visible{outline:2px solid #dba3ff;outline-offset:3px;}
+.ws-album-launch-icon{display:grid;place-items:center;font:40px Georgia,serif;
+ width:52px;height:51px;border-radius:11px;color:#e7b8ff;
+ background:#8b55bf2d;text-shadow:0 0 14px #d1a0ff;}
+.ws-album-launch>span:nth-child(2){display:flex;flex-direction:column;gap:4px;flex:1;}
+.ws-album-launch strong{font:26px Georgia,serif;}
+.ws-album-launch small{font-size:11px;color:#c4abc9;}
+.ws-album-launch b{color:#e8c7ff;font:30px Georgia,serif;}
+.ws-album-launch em{font-size:10px;font-style:normal;letter-spacing:.08em;color:#e4b0fe;font-weight:800;}
+.ws-album{max-width:1450px;margin:0 auto;color:#f0e7f7;}
+.ws-album-header{display:flex;justify-content:space-between;gap:18px;align-items:center;
+ border:1px solid #875bad;border-radius:16px;padding:22px 28px;
+ background:radial-gradient(ellipse at 80% 10%,#8558b14d,transparent 48%),
+ linear-gradient(115deg,#241b39,#0a2025);box-shadow:0 13px 28px #0008;}
+.ws-album-header h1{font:normal clamp(30px,4vw,48px) Georgia,serif;
+ margin:9px 0;color:#efd7ff;}
+.ws-album-header p{font-size:12px;color:#c8b5d5;line-height:1.6;max-width:550px;}
+.ws-album-return{border:1px solid #b78cdb;border-radius:9px;background:#473058;
+ color:#f7dcff;font-size:11px;font-weight:800;padding:12px 16px;cursor:pointer;white-space:nowrap;}
+.ws-album-return:hover{background:#5b3c71;}
+.ws-album-summary{margin:17px 0;padding:13px 22px;display:flex;gap:19px;align-items:center;
+ border:1px solid #75598f;border-radius:14px;
+ background:linear-gradient(95deg,#2f1d46,#181f36,#102e2b);}
+.ws-album-emblem{width:65px;height:65px;display:grid;place-items:center;
+ font:51px Georgia,serif;color:#e1b4ff;text-shadow:0 0 18px #d093ff;}
+.ws-album-summary>div:nth-child(2){display:flex;flex-direction:column;gap:3px;}
+.ws-album-summary strong{font:40px Georgia,serif;color:#edd5ff;font-variant-numeric:tabular-nums;}
+.ws-album-summary span{color:#d2aedf;font-size:10px;letter-spacing:.13em;font-weight:800;}
+.ws-album-summary p{margin-left:auto;color:#c2b6cf;font:italic 18px Georgia,serif;text-align:right;}
+.ws-album-toolbar{display:flex;align-items:center;gap:10px;margin:15px 0;}
+.ws-album-toolbar input,.ws-album-toolbar select{min-height:40px;border:1px solid #84699f;
+ border-radius:8px;background:#171d2c;color:#f3e5fb;font-size:12px;padding:8px 12px;}
+.ws-album-toolbar input{flex:1;min-width:130px;}
+.ws-album-toolbar select{width:min(220px,35%);}
+.ws-album-toolbar>span{font-size:11px;color:#bc9dce;font-variant-numeric:tabular-nums;}
+.ws-album-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(205px,1fr));
+ align-items:stretch;gap:11px;max-height:65vh;overflow:auto;padding:4px;}
+.ws-album-word{position:relative;min-height:121px;overflow:hidden;
+ display:flex;flex-direction:column;gap:6px;padding:17px 17px 11px;
+ border:1px solid #76578f;border-radius:12px;
+ background:radial-gradient(ellipse at 100% 0,#985cb94d,transparent 55%),
+ linear-gradient(140deg,#2b2341,#152934);
+ box-shadow:inset 0 1px #eac0ff23,0 6px 14px #0005;}
+.ws-album-word:hover{border-color:#b58ed6;box-shadow:0 0 24px #a56ed13d;}
+.ws-album-word-sigil{position:absolute;right:12px;top:3px;font:47px Georgia,serif;
+ color:#b17ed252;pointer-events:none;}
+.ws-album-word>strong{position:relative;color:#f4ddff;font:23px Georgia,serif;
+ overflow-wrap:anywhere;letter-spacing:.035em;}
+.ws-album-word>small{position:relative;color:#d7b5e8;font-size:10px;overflow-wrap:anywhere;}
+.ws-album-discovery{margin-top:auto;color:#99b6b1;font-size:10px;}
+.ws-album-empty{padding:42px 22px;border:1px dashed #88669d;border-radius:12px;
+ text-align:center;color:#ceb1d5;background:#211c2f;}
+/* The crossed-out label stays independent from the new purple badge. */
+.ws-words .ws-word-row{min-width:0;position:relative;overflow:visible;}
+.ws-words .ws-word-row b{flex:0 0 auto;}
+.ws-words .ws-word-label{min-width:0;overflow-wrap:anywhere;}
+.ws-words .ws-word-new{margin-left:auto;flex:0 0 auto;display:inline-block;
+ font:900 12px "Segoe UI",sans-serif;letter-spacing:.05em;
+ color:#e1a9ff;text-shadow:0 0 9px #a83cff,0 0 14px #d18cff;
+ text-decoration:none;animation:ws-discovery-arrival 1.1s ease-out both;}
+.ws-words .ws-word-new.static{animation:none;}
+@keyframes ws-discovery-arrival{
+ 0%{transform:translateX(8px) scale(.55);opacity:0;filter:brightness(2.1)}
+ 30%{transform:translateX(0) scale(1.22);opacity:1;filter:brightness(1.65)}
+ 65%{transform:scale(.98);filter:brightness(1)}
+ 100%{transform:scale(1);opacity:1;filter:brightness(1.15)}
+}
+@media(max-width:700px){
+ .ws-album-header{flex-direction:column;align-items:flex-start;padding:19px;}
+ .ws-album-summary{gap:8px;}
+ .ws-album-summary p{font-size:12px;max-width:36%;}
+ .ws-album-grid{grid-template-columns:repeat(auto-fill,minmax(145px,1fr));}
+ .ws-hero .ws-album-launch{flex-wrap:wrap;}
+ .ws-album-launch em{display:none;}
+}
+@media(prefers-reduced-motion:reduce){
+ .ws-words .ws-word-new{animation:none!important;}
+ .ws-hero .ws-album-launch{transition:none;}
+}
+
+/* Intentional replacement of an in-progress word search — discovery album remains intact. */
+.ws-replace-backdrop{position:fixed;inset:0;z-index:90;display:grid;place-items:center;
+ background:#071519df;backdrop-filter:blur(10px);padding:18px}
+.ws-replace-dialog{width:min(530px,100%);text-align:center;background:
+ radial-gradient(ellipse at 50% 0%,#406b544f,transparent 70%),linear-gradient(140deg,#1c3c34,#11252c);
+ border:1px solid #d1b67e;border-radius:15px;padding:32px 25px;box-shadow:0 30px 90px #000d,0 0 28px #b9a06928}
+.ws-replace-dialog h2{font:normal clamp(22px,3vw,30px) Georgia,serif;color:#f1d7a7;margin:12px 0}
+.ws-replace-dialog p{font-size:13px;line-height:1.55;color:#c4d5c8}
+.ws-replace-dialog>strong{display:inline-block;margin:8px 0 20px;color:#f0ddba;font-size:17px}
+.ws-replace-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.ws-replace-actions button{flex:1;min-width:180px;border:1px solid #8aa594;border-radius:8px;
+ padding:13px 15px;background:#183c31;color:#e5e8d4;font-size:11px;font-weight:800;cursor:pointer}
+.ws-replace-actions button.primary{background:linear-gradient(120deg,#f6dfaa,#b99a60);color:#1a2c27;border-color:#f6dfaa}
+.ws-replace-actions button:focus-visible{outline:2px solid #fff;outline-offset:3px}

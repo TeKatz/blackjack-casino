@@ -1,0 +1,76 @@
+.sudoku-library,.sudoku-play{color:#f2e8d7;max-width:1480px;margin:auto}
+.sudoku-eyebrow{display:block;font-size:10px;letter-spacing:.21em;font-weight:800;color:#d7b678}
+.sudoku-banner{border:1px solid #6a846c88;border-radius:16px;background:linear-gradient(105deg,#102d2aee,#071e1de4),url('/lobby/lobby-atlas.webp') center/cover;box-shadow:0 8px 22px #0006;padding:23px 32px;margin-bottom:16px}
+.sudoku-banner h1,.sudoku-play-heading h1{font:normal clamp(25px,3vw,42px) Georgia,serif;margin:8px 0;color:#f4e8d3}
+.sudoku-banner p{color:#b7cbc1;font-size:13px;margin:0}
+.sudoku-stats{display:flex;gap:28px;margin-top:15px}
+.sudoku-stats span{display:flex;align-items:baseline;gap:8px;color:#9ebbb0;font-size:11px}
+.sudoku-stats b{color:#efd394;font:24px Georgia,serif}
+.sudoku-library-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:12px 0}
+.sudoku-library-heading h2{font:normal 25px Georgia,serif;margin:0}
+.sudoku-toggle,.sudoku-difficulty button,.sudoku-daily-card button,.sudoku-actions button{color:#f2e4cd;background:#142e2a;border:1px solid #547b65;border-radius:8px;padding:10px 13px;font-size:12px;font-weight:700;transition:background .16s,border-color .16s}
+.sudoku-toggle:hover:not(:disabled),.sudoku-difficulty button:hover:not(:disabled),.sudoku-daily-card button:hover:not(:disabled),.sudoku-actions button:hover:not(:disabled){background:#2c5240;border-color:#e0b96f}
+.sudoku-toggle.active,.sudoku-actions button.active{border-color:#a9d9ba;background:#365b4d;color:#ecf8e8}
+.sudoku-difficulties{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.sudoku-difficulty{position:relative;overflow:hidden;min-height:170px;border:1px solid #4c7464;border-radius:13px;padding:14px 16px;background:radial-gradient(circle at 93% 0,#2d5744ad,transparent 47%),linear-gradient(140deg,#193a2f,#0d2825);box-shadow:0 12px 24px #0004}
+.sudoku-tile-symbol{position:absolute;right:17px;top:7px;color:#b9a36f5c;font:50px Georgia,serif}
+.sudoku-level{color:#b8aa82;font-size:10px;letter-spacing:.12em}
+.sudoku-difficulty h3{font:normal 24px Georgia,serif;margin:6px 0}
+.sudoku-difficulty p{color:#95bba8;font-size:11px;margin:0}
+.sudoku-solved-count{display:block;font-size:10px;color:#a4b7a8;margin-top:7px}
+.sudoku-tile-actions{display:flex;gap:8px;margin-top:12px}
+.sudoku-tile-actions button{flex:1;padding:9px;font-size:10px}
+.sudoku-difficulty button.primary,.sudoku-dialog-actions .primary{color:#ffe6a8;border-color:#d2a55e;background:#4a3b25}
+.sudoku-difficulty button:disabled,.sudoku-actions button:disabled,.sudoku-daily-card button:disabled{opacity:.42;cursor:default}
+.sudoku-daily-card{display:flex;justify-content:space-between;align-items:center;gap:25px;margin-top:14px;padding:18px 24px;background:linear-gradient(110deg,#2a342b,#132824);border:1px solid #a98d5b;border-radius:13px}
+.sudoku-daily-card h2{font:normal 26px Georgia,serif;margin:5px 0}
+.sudoku-daily-card p{color:#c4cebc;max-width:740px;line-height:1.5;margin:0 0 8px;font-size:12px}
+.sudoku-daily-card small{color:#dfca8e}
+.sudoku-daily-card button{white-space:nowrap;border-color:#d4ad6c;background:#504126;color:#f9e6af}
+.sudoku-alert{color:#f2a59b;font-size:13px}
+.sudoku-dialog{position:fixed;inset:0;z-index:50;background:#010908c9;display:grid;place-items:center;padding:30px}
+.sudoku-dialog>div{width:min(100%,430px);border:1px solid #c6a367;border-radius:14px;padding:28px;background:#142f2a;box-shadow:0 20px 75px #000c}
+.sudoku-dialog h2{font:normal 27px Georgia,serif;margin:0 0 10px}
+.sudoku-dialog p{color:#c6d2c3;font-size:14px;line-height:1.6}
+.sudoku-dialog-actions{display:flex;justify-content:end;gap:9px;margin-top:20px}
+.sudoku-play-heading{display:flex;justify-content:space-between;align-items:center;padding:6px 12px 18px}
+.sudoku-play-heading h1{margin:4px 0}
+.sudoku-play-status{display:flex;gap:13px;align-items:center}
+.sudoku-play-status>span:not(.sudoku-saved){min-width:90px;display:flex;flex-direction:column;border:1px solid #4d765c;border-radius:9px;padding:10px;background:#16332b}
+.sudoku-play-status small{color:#a0baa7;font-size:10px}
+.sudoku-play-status b{font-size:21px;color:#f1d69b;font-variant-numeric:tabular-nums}
+.sudoku-saved{font-size:11px;color:#81cba1}
+.sudoku-play-columns{display:grid;grid-template-columns:minmax(450px,1fr) minmax(280px,350px);gap:22px;align-items:start}
+.sudoku-board-panel{min-width:0;padding:12px;background:#081d1c;border:1px solid #608577;border-radius:14px;box-shadow:0 15px 28px #0007}
+.sudoku-board{display:grid;grid-template-columns:repeat(9,1fr);aspect-ratio:1;width:min(100%,73vh,780px);margin:auto;outline:none}
+.sudoku-cell{min-width:0;min-height:0;display:flex;align-items:center;justify-content:center;position:relative;border-style:solid;border-color:#69847c;background:#182d2d;color:#9bdec1;font-weight:650;font-size:clamp(16px,2.1vw,31px);padding:0;font-family:"Segoe UI",sans-serif;line-height:1;transition:background .1s;aspect-ratio:1}
+.sudoku-cell.given{color:#f0e1c8;font-weight:800}
+.sudoku-cell.related{background:#253d38}
+.sudoku-cell.matching{background:#35544a}
+.sudoku-cell.selected{background:#537b65;box-shadow:inset 0 0 0 2px #e3ce8f}
+.sudoku-cell.incorrect{color:#ff998c}
+.sudoku-cell:hover{background:#4b6e5d}
+.sudoku-notes{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);width:100%;height:100%;align-items:center;justify-items:center;font-size:clamp(8px,.9vw,12px);font-weight:500;color:#a5d6bb}
+.sudoku-help{font-size:10px;color:#98b5a6;text-align:center;line-height:1.5;margin:12px 0 2px}
+.sudoku-actions{background:#102821;border:1px solid #466d5b;border-radius:13px;padding:18px;display:flex;flex-direction:column;gap:11px}
+.sudoku-actions h2{font-size:11px;letter-spacing:.14em;color:#a6cbb5;margin:0}
+.sudoku-numbers{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.sudoku-numbers button{min-height:53px;font-size:24px;background:#173a30}
+.sudoku-numbers button.matching{border-color:#d6bc7e;background:#36574a}
+.sudoku-action-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sudoku-action-row button{min-height:43px}
+.sudoku-actions .sudoku-wide{min-height:43px}
+.sudoku-actions .sudoku-hint{background:#3a3b28;border-color:#988656}
+.sudoku-game-notice{color:#c7d5c1;font-size:12px;line-height:1.5;margin:3px 0 0;min-height:32px}
+.sudoku-pending{color:#dbb676}
+.sudoku-no-rush{font-size:11px;line-height:1.5;color:#849e92;margin:0}
+.sudoku-actions .sudoku-back{background:transparent;border-color:#7d8e77}
+.sudoku-completion{padding:13px;background:radial-gradient(circle at 30% 0,#4a603c,#1a342c);border:1px solid #d2b577;border-radius:12px}
+.sudoku-completion h2{font:normal 22px Georgia,serif;color:#ffe3a6;margin:0}
+.sudoku-completion p{font-size:11px;color:#dbd4b7}
+.sudoku-completion>div{display:flex;gap:16px}
+.sudoku-completion>div span{display:flex;flex-direction:column;font-size:10px;color:#b2c8b3}
+.sudoku-completion strong{color:#fbe7b1;font-size:24px}
+@media(max-width:1120px){.sudoku-play-columns{grid-template-columns:minmax(370px,1fr) minmax(260px,300px);gap:12px}.sudoku-difficulty h3{font-size:21px}.sudoku-difficulty{padding:11px}}
+@media(max-width:810px){.sudoku-difficulties{grid-template-columns:repeat(2,minmax(0,1fr))}.sudoku-play-columns{grid-template-columns:1fr}.sudoku-board{width:min(100%,620px)}.sudoku-actions{max-width:620px;margin:auto;width:100%}.sudoku-daily-card{flex-wrap:wrap}}
+@media(prefers-reduced-motion:reduce){.sudoku-cell{transition:none}}

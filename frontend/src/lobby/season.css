@@ -1,0 +1,158 @@
+/* Season Pass: identity-driven premium treatment for Midnight, Eclipse and Neon. */
+.season-page{--season-primary:#e0c17e;--season-secondary:#7eb7bd;
+ --season-light:#fff0c6;--season-deep:#17242b;--season-haze:#594d3f;
+ --season-border:#b99b66;--season-card:#192c30;}
+.season-page[data-season-theme="eclipse"]{--season-primary:#e4b9f3;--season-secondary:#f2b875;
+ --season-light:#fff0f8;--season-deep:#241b37;--season-haze:#75457b;
+ --season-border:#bb8bc0;--season-card:#282039;}
+.season-page[data-season-theme="neon"]{--season-primary:#73f1e4;--season-secondary:#ff68cb;
+ --season-light:#edffff;--season-deep:#111c35;--season-haze:#354c99;
+ --season-border:#69c9d3;--season-card:#19283c;}
+.season-page .season-hero{min-height:186px;position:relative;
+ background:linear-gradient(100deg,#061a18f2 5%,var(--season-deep) 66%,#060c15e8),
+ url('/lobby/art/hero.png') center/cover;border-color:var(--season-border);}
+.season-page .season-hero::before{content:"";position:absolute;inset:0;pointer-events:none;
+ background:radial-gradient(ellipse at 70% 0%,var(--season-haze),transparent 64%);opacity:.42;}
+.season-page .season-hero-copy,.season-page .season-hero-side{z-index:1;}
+.season-page .season-hero h1{color:var(--season-light);}
+.season-page .season-hero .shop-eyebrow{color:var(--season-primary);}
+.season-page .season-hero-side{background:color-mix(in srgb,var(--season-deep) 84%,#000);
+ border-color:var(--season-border);box-shadow:0 0 22px color-mix(in srgb,var(--season-primary) 20%,transparent);}
+.season-page .season-hero-side strong{color:var(--season-light);font-size:clamp(20px,2vw,28px);}
+.season-hero-emblem{position:absolute;right:24%;top:-65px;font:280px Georgia,serif;
+ color:var(--season-primary);opacity:.07;pointer-events:none;}
+.season-page .season-library{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:16px 0;}
+.season-page .season-library button{--tile:#d1b77e;position:relative;overflow:hidden;min-width:0;
+ padding:14px 15px 13px 60px;min-height:98px;border:1px solid color-mix(in srgb,var(--tile) 48%,#3c4b48);
+ background:linear-gradient(115deg,#101f26,#0e2422);border-radius:13px;
+ transition:border-color .2s,transform .25s,box-shadow .25s;justify-content:center;}
+.season-page .season-library button[data-season-theme="eclipse"]{--tile:#d4a0e9;
+ background:linear-gradient(110deg,#2d193a,#1b2532);}
+.season-page .season-library button[data-season-theme="neon"]{--tile:#72f0e6;
+ background:linear-gradient(115deg,#162e47,#20203b);}
+.season-page .season-library button:hover{transform:translateY(-2px);border-color:var(--tile);}
+.season-page .season-library button.selected{border-color:var(--tile);
+ box-shadow:inset 0 0 22px color-mix(in srgb,var(--tile) 16%,transparent),
+ 0 0 18px color-mix(in srgb,var(--tile) 19%,transparent);}
+.season-library-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);
+ display:grid;place-items:center;width:36px;height:42px;color:var(--tile);
+ font:35px Georgia,serif;text-shadow:0 0 15px color-mix(in srgb,var(--tile) 50%,transparent);}
+.season-page .season-library strong{color:#fff1d4;font-size:clamp(17px,1.5vw,23px);}
+.season-page .season-library button>span:not(.season-library-icon){font-size:11px;}
+.season-page .season-library-state{position:absolute;right:10px;top:9px;
+ color:var(--tile)!important;font-size:9px!important;letter-spacing:.12em;font-weight:850;}
+.season-pass-panel{position:relative;isolation:isolate;overflow:hidden;
+ border-color:color-mix(in srgb,var(--season-border) 60%,#334);
+ background:radial-gradient(ellipse at 80% 0%,color-mix(in srgb,var(--season-haze) 33%,transparent),transparent 50%),
+ linear-gradient(155deg,var(--season-deep),#061c1b 80%);}
+.season-pass-panel::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;
+ background:linear-gradient(90deg,transparent,var(--season-primary),var(--season-secondary),transparent);
+ opacity:.86;pointer-events:none;}
+.season-page .season-heading{align-items:center;gap:18px;padding-bottom:14px;}
+.season-page .season-heading h2{font:normal clamp(29px,2.5vw,40px) Georgia,serif;
+ color:var(--season-light);margin:5px 0;}
+.season-page .season-heading p{margin:4px 0;font-size:12px;color:#c4d4cf;}
+.season-page .season-heading .shop-eyebrow{color:var(--season-primary);}
+.season-page .season-activate{color:#102029;border-color:var(--season-border);
+ background:linear-gradient(125deg,var(--season-primary),var(--season-secondary));}
+.season-page .season-activate:disabled{cursor:default;opacity:.88;}
+.season-progress{padding:16px 18px 13px;border:1px solid color-mix(in srgb,var(--season-border) 35%,#345);
+ border-radius:12px;background:#061b22b0;margin:0 0 15px;}
+.season-progress-heading{display:flex;align-items:baseline;justify-content:space-between;
+ flex-wrap:wrap;gap:12px;color:#dce9e5;font-size:12px;}
+.season-progress-heading strong{font:normal 19px Georgia,serif;}
+.season-progress-heading b{font-size:30px;color:var(--season-light);font-weight:400;}
+.season-progress-heading strong>span{color:#a9c3c0;}
+.season-progress-track{height:13px;position:relative;margin-top:10px;border-radius:11px;
+ overflow:hidden;border:1px solid color-mix(in srgb,var(--season-primary) 45%,#355);
+ background:#03141b;box-shadow:inset 0 3px 7px #000c;}
+.season-progress-track>span{height:100%;display:block;position:relative;border-radius:11px;
+ background:linear-gradient(95deg,var(--season-secondary),var(--season-primary),#fff3ca);
+ box-shadow:0 0 15px color-mix(in srgb,var(--season-primary) 35%,transparent);
+ transition:width .6s cubic-bezier(.2,.75,.28,1);}
+.season-progress-track>span::after{content:"";position:absolute;inset:0;
+ background:linear-gradient(110deg,transparent 25%,#ffffff6a 45%,transparent 62%);
+ transform:translateX(-130%);animation:season-progress-glint 5.5s ease-in-out infinite;}
+@keyframes season-progress-glint{45%,100%{transform:translateX(160%);}}
+.season-progress-caption{display:flex;justify-content:space-between;color:#a8c2c4;
+ gap:10px;margin-top:8px;font-size:10px;}
+.season-featured{position:relative;overflow:hidden;display:flex;gap:17px;align-items:center;
+ padding:17px 20px;border:1px solid var(--season-border);border-radius:13px;
+ background:radial-gradient(ellipse at 78% 50%,color-mix(in srgb,var(--season-secondary) 20%,transparent),transparent 64%),
+ linear-gradient(110deg,#142329,var(--season-deep));
+ box-shadow:inset 0 1px #ffffff22;}
+.season-featured::after{content:"";pointer-events:none;position:absolute;inset:-60%;
+ background:conic-gradient(from 40deg,transparent 0 20%,color-mix(in srgb,var(--season-primary) 10%,transparent) 30%,transparent 46%);
+ animation:season-halo 24s linear infinite;}
+@keyframes season-halo{to{transform:rotate(360deg);}}
+.season-featured>*{position:relative;z-index:1;}
+.season-featured-sigil{display:grid;place-items:center;flex:0 0 78px;width:78px;height:78px;
+ border-radius:15px;color:var(--season-light);font:55px Georgia,serif;
+ border:1px solid var(--season-border);
+ background:radial-gradient(circle,color-mix(in srgb,var(--season-primary) 31%,#173337),#091a22);
+ text-shadow:0 0 20px var(--season-primary);
+ animation:season-emblem-breathe 5s ease-in-out infinite;}
+@keyframes season-emblem-breathe{50%{filter:brightness(1.25);}}
+.season-featured .shop-eyebrow{color:var(--season-primary);}
+.season-featured strong{font:normal clamp(21px,1.8vw,29px) Georgia,serif;color:var(--season-light);display:block;margin:7px 0;}
+.season-featured p{font-size:12px;color:#e4dbe4;margin:0;overflow-wrap:anywhere;}
+.season-featured-xp{margin-left:auto;white-space:nowrap;color:var(--season-primary);
+ font-size:12px;font-weight:800;}
+.season-rewards-heading{display:flex;align-items:flex-end;justify-content:space-between;
+ gap:18px;flex-wrap:wrap;margin:23px 0 10px;}
+.season-page .season-rewards-heading h2{font:normal 27px Georgia,serif;
+ color:var(--season-light);margin:5px 0;}
+.season-page .season-rewards-heading p{margin:0;font-size:11px;color:#b6c9c7;}
+.season-view-tabs{display:flex;flex-wrap:wrap;gap:7px;align-items:center;}
+.season-view-tabs button{padding:9px 13px;min-height:38px;border:1px solid #586e6a;
+ color:#d1e1de;background:#122830;border-radius:8px;font-size:11px;font-weight:700;
+ transition:border-color .2s,background .2s;}
+.season-view-tabs button:hover,.season-view-tabs button:focus-visible{border-color:var(--season-primary);}
+.season-view-tabs button.selected{background:linear-gradient(110deg,var(--season-primary),var(--season-secondary));
+ color:#0a1e26;border-color:var(--season-primary);}
+.season-view-count{color:#a8bfbd!important;font-size:10px!important;margin:0 0 12px!important;}
+.season-page .season-tiers{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:11px;}
+.season-page .season-tier-card{position:relative;isolation:isolate;overflow:hidden;
+ min-height:175px;padding:14px 15px 11px;display:flex;flex-direction:column;align-items:flex-start;gap:7px;
+ border-radius:11px;border:1px solid #415a62;
+ background:linear-gradient(150deg,#132631,#0c1c29);
+ box-shadow:inset 0 1px #c7d6cf12,0 4px 13px #0003;
+ transition:transform .2s,border-color .2s,box-shadow .2s;}
+.season-page .season-tier-card.milestone{border-color:color-mix(in srgb,var(--season-primary) 55%,#475);
+ background:linear-gradient(145deg,color-mix(in srgb,var(--season-card) 70%,#102b26),#0a1e27);}
+.season-page .season-tier-card.earned{border-color:color-mix(in srgb,var(--season-primary) 50%,#345);
+ background:linear-gradient(150deg,color-mix(in srgb,var(--season-deep) 65%,#23483b),#10272a);}
+.season-page .season-tier-card.is-next{border-color:var(--season-primary);
+ box-shadow:inset 0 0 19px color-mix(in srgb,var(--season-primary) 16%,transparent),
+ 0 0 14px color-mix(in srgb,var(--season-primary) 15%,transparent);}
+.season-page .season-tier-card.is-next::after{content:"";position:absolute;inset:0;z-index:-1;
+ pointer-events:none;background:linear-gradient(110deg,transparent 30%,#ffffff16 49%,transparent 70%);
+ transform:translateX(-130%);animation:season-next-glint 4.5s ease-in-out infinite;}
+@keyframes season-next-glint{60%,100%{transform:translateX(130%);}}
+.season-tier-top{display:flex;justify-content:space-between;width:100%;gap:7px;
+ color:var(--season-primary);font-size:10px;font-weight:850;letter-spacing:.09em;}
+.season-tier-top>span:last-child{color:var(--season-light);font-size:15px;line-height:1;}
+.season-tier-symbol{font:normal 38px Georgia,serif!important;color:var(--season-primary)!important;
+ margin:5px 0 1px;line-height:1!important;text-shadow:0 0 14px color-mix(in srgb,var(--season-primary) 48%,transparent);}
+.season-tier-card strong{font:normal 13px/1.25 Georgia,serif;color:var(--season-light);
+ overflow-wrap:anywhere;}
+.season-tier-card small{color:#adc2c7!important;font-size:10px;margin-top:auto;}
+.season-tier-state{font-size:9px!important;letter-spacing:.09em;font-weight:800;
+ color:var(--season-primary)!important;margin-top:3px;}
+@media(max-width:900px){
+ .season-featured{flex-wrap:wrap;}.season-featured-xp{margin-left:0;}
+ .season-page .season-tiers{grid-template-columns:repeat(auto-fill,minmax(145px,1fr));}
+}
+@media(max-width:650px){
+ .season-page .season-library{grid-template-columns:1fr;}
+ .season-featured-sigil{width:55px;height:55px;flex-basis:55px;font-size:37px;}
+ .season-featured{padding:12px;gap:10px;}
+ .season-page .season-tiers{grid-template-columns:repeat(auto-fill,minmax(126px,1fr));gap:7px;}
+ .season-page .season-tier-card{min-height:160px;padding:10px;}
+}
+@media(prefers-reduced-motion:reduce){
+ .season-page *, .season-page *::before,.season-page *::after{animation:none!important;transition:none!important;}
+}
+.casino-lobby-shell[data-reduced="true"] .season-page *,
+.casino-lobby-shell[data-reduced="true"] .season-page *::before,
+.casino-lobby-shell[data-reduced="true"] .season-page *::after{animation:none!important;transition:none!important;}

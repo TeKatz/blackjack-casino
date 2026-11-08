@@ -4,6 +4,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using BlackjackCasino.Desktop;
+using Microsoft.Web.WebView2.Core;
 
 internal static class VaultSmoke
 {
@@ -20,9 +22,102 @@ internal static class VaultSmoke
             CultureInfo.CurrentUICulture = german;
 
             int visibleWindowsBefore = Application.Current.Windows.Cast<Window>().Count(w => w.IsVisible);
+            ModernLobbyView? modern = Find<ModernLobbyView>(window)
+                .FirstOrDefault(view => view.Ready && view.IsVisible);
+            if (modern is not null)
+            {
+                // The Vault is a native-authoritative React page. The old WPF modal
+                // remains available only for fallback and table-mode navigation.
+                CoreWebView2 web = modern.Browser.CoreWebView2!;
+                // The WebView2 message handler may run in a different async
+                // ExecutionContext than this test. Switch the application locale
+                // itself so the UI and C# payout formatter are both German.
+                bool startedGerman = await web.ExecuteScriptAsync(
+                    "document.documentElement.lang==='de'") == "true";
+                if (!startedGerman)
+                {
+                    await web.ExecuteScriptAsync("document.querySelector('.lobby-language')?.click()");
+                    bool germanReady = false;
+                    for (int i=0;i<100 && !germanReady;i++)
+                    {
+                        germanReady = await web.ExecuteScriptAsync(
+                            "document.documentElement.lang==='de'") == "true";
+                        if (!germanReady) await Task.Delay(50);
+                    }
+                    Require(germanReady,"React Vault smoke did not activate the persisted German casino locale.");
+                }
+                string link = await web.ExecuteScriptAsync(
+                    "Boolean([...document.querySelectorAll('.lobby-nav-item')]"
+                    + ".find(x=>/Vault|Tresor/.test(x.textContent||'')))");
+                Require(link == "true", "React lobby is missing the Vault navigation entry.");
+                await web.ExecuteScriptAsync(
+                    "[...document.querySelectorAll('.lobby-nav-item')]"
+                    + ".find(x=>/Vault|Tresor/.test(x.textContent||''))?.click()");
+                for (int i = 0; i < 100 && modern.RecordsPage != "vault"; i++) await Task.Delay(60);
+                Require(modern.RecordsPage == "vault", "Native Vault route did not activate React.");
+                for (int i = 0; i < 100; i++)
+                {
+                    if (await web.ExecuteScriptAsync(
+                        "Boolean(document.querySelector('.vault-page .vault-break:not(:disabled)'))") == "true") break;
+                    await Task.Delay(60);
+                }
+                Require(await web.ExecuteScriptAsync(
+                    "Boolean(document.querySelector('.vault-page .vault-break:not(:disabled)'))") == "true",
+                    "A full Gold Vault is not ready to open in React.");
+                Require(!Find<Grid>(window).Any(g => g.Name == "CasinoVaultOverlay" && g.IsVisible),
+                    "The old WPF Vault was opened over the modern presentation.");
+                await using (FileStream beforeShot = File.Create(Path.Combine(output, "casino-vault-in-app.png")))
+                    await web.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png, beforeShot);
+                await web.ExecuteScriptAsync("document.querySelector('.vault-break')?.click()");
+                bool rewarded = false;
+                for (int i = 0; i < 100; i++)
+                {
+                    rewarded = await web.ExecuteScriptAsync(
+                        "Boolean(document.querySelector('.vault-reward .vault-total strong')"
+                        + "?.textContent?.includes('60.000,00'))") == "true";
+                    if (rewarded) break;
+                    await Task.Delay(75);
+                }
+                if (!rewarded)
+                {
+                    string diagnostics = await web.ExecuteScriptAsync(
+                        "JSON.stringify({notice:document.querySelector('.vault-notice')?.textContent,"
+                        + "reward:document.querySelector('.vault-reward')?.textContent,"
+                        + "button:document.querySelector('.vault-break')?.textContent})");
+                    throw new InvalidOperationException(
+                        "React Vault did not display the German-formatted Gold $60,000 payout. DOM: " + diagnostics);
+                }
+                Require(await web.ExecuteScriptAsync(
+                    "Boolean(document.querySelector('.vault-break:disabled'))") == "true",
+                    "A paid Vault can still be opened a second time.");
+                Require(Application.Current.Windows.Cast<Window>().Count(w => w.IsVisible) == visibleWindowsBefore,
+                    "React Vault unexpectedly opened a second native window.");
+                await using (FileStream rewardShot = File.Create(Path.Combine(output, "casino-vault-opened.png")))
+                    await web.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png, rewardShot);
+                await web.ExecuteScriptAsync("document.querySelector('.vault-page .shop-back')?.click()");
+                for (int i = 0; i < 100 && modern.RecordsPage is not null; i++) await Task.Delay(60);
+                Require(modern.RecordsPage is null, "React Vault did not return to the lobby.");
+                if (!startedGerman)
+                {
+                    await web.ExecuteScriptAsync("document.querySelector('.lobby-language')?.click()");
+                    for (int i=0;i<100;i++)
+                    {
+                        if (await web.ExecuteScriptAsync(
+                            "document.documentElement.lang==='en'") == "true") break;
+                        await Task.Delay(50);
+                    }
+                    Require(await web.ExecuteScriptAsync("document.documentElement.lang==='en'") == "true",
+                        "React Vault smoke did not restore the English casino locale.");
+                }
+                File.WriteAllText(Path.Combine(output, "vault-result.txt"),
+                    "PASS: React Vault opened through its native C# transaction, paid the Gold reserve with the full bonus, and returned to lobby without a WPF overlay.");
+                return;
+            }
             Button vault = Find<Button>(window).Single(button => button.Name == "CasinoVaultButton" && button.IsVisible);
             vault.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            await Task.Delay(90);
+            for (int i = 0; i < 30 && !Find<Grid>(window)
+                .Any(grid => grid.Name == "CasinoVaultOverlay" && grid.IsVisible); i++)
+                await Task.Delay(50);
             window.UpdateLayout();
 
             Grid overlay = Find<Grid>(window).Single(grid => grid.Name == "CasinoVaultOverlay" && grid.IsVisible);

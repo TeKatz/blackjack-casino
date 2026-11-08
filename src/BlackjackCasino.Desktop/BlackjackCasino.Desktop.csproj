@@ -15,10 +15,22 @@
     <Resource Include="Assets\Portraits\*.jpg" />
     <Resource Include="Assets\Navigation\*.png" />
     <Resource Include="Assets\Empire\*.png" />
+    <!-- Copy browser artwork without registering the embedded WPF source as Content.
+         AssociatedContentFile metadata shadows Resource pack URIs in single-file builds. -->
+    <None Remove="Assets/Empire/*.png" />
+    <None Include="Assets/Empire/*.png" Link="ModernFrontend/empire-art/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Resource Include="Assets\Lounge\*.jpg" />
     <Resource Include="Assets/midnight-club.ico" />
+    <!-- Optional user-supplied MP3s, copied into both build and publish outputs. -->
+    <None Update="Assets/Music/Licensed/*.mp3" Link="Music/Licensed/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Resource Include="Assets\NineLives\*.png" />
     <Resource Include="Assets\NineLives\*.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="Assets/NineLives/*.jpg" />
+    <None Include="Assets/NineLives/*.jpg" Link="ModernFrontend/nine-lives-art/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <PackageReference Include="Microsoft.Web.WebView2" />
+    <Content Include="../../frontend/dist/**/*" Link="ModernFrontend/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Condition="Exists('../../frontend/dist/index.html')" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BlackjackCasino.Core\BlackjackCasino.Core.csproj" />

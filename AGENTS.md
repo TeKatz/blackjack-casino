@@ -12,19 +12,17 @@ This file is the repository-level instruction for coding assistants and ChatGPT 
 ## Before any edit
 
 1. Inspect current repository branches, open PRs, active Development release pin, and the source files involved; never infer the freshest branch from its name.
-2. Identify concurrent work and choose a separate branch that does not overwrite it. Do not delete, squash, force-push, reset, merge or repoint active branches without an explicit instruction.
+2. Identify concurrent work and base focused feature/fix changes on `develop` rather than the historical Manor migration branch. Do not delete, squash, force-push, reset, merge or repoint active branches without an explicit instruction.
 3. Define a bounded scope, acceptance criteria, rollback and the tests that should prove it works. Prefer small reversible changes and incremental PRs.
-4. Review architecture and feature-specific docs; update the README and documentation when they are stale.
+4. Review architecture and feature-specific docs; update the README and documentation when they are stale. Write from the perspective of the project, not from a transcript of decisions.
 
-## Current coordination status (2026-11-04)
+## Current coordination status (2026-11-08)
 
-- The game director authorized consolidation of the validated cumulative work into `main`. Verify Jigsaw testing before starting invasive new game changes.
-- Development publishes only from **`feature/manor-modernization-phase-1`**. Both its workflow source gates must agree; ordinary pushes to the feature branch produce test builds without any merge to main.
-- Earlier casino-quality, shop-cosmetics and repository-refresh branches are historical after their functional changes reach `main`. Do not delete them automatically; the owner manages final cleanup.
-- The Midnight Manor React/TypeScript/PixiJS/WebView2 migration is underway on `feature/manor-modernization-phase-1`, not on main. The legacy WPF Manor remains on main and stays playable.
-- A previous agent mistakenly merged the Phase-1 PR (#35) after an instruction only to publish from the feature branch. This accidental merge was reversed via a history-preserving correction. **Publishing to Development is not authorization to merge into main.** No merge, branch deletion, force-push or channel switch without explicit user approval.
-- Future eventual main integration must explicitly account for the historical revert, which remains in Git ancestry.
-- Refresh this dated note as branch ownership changes.
+- The cumulative Manor/React modernization is consolidated through integration PR #36. `main` is the tested integration baseline; **`develop`** is the permanent Development publisher and base for new work. See [branching policy](docs/branching-and-release-policy.md).
+- The Development publisher's push filter and job guard both select `develop`; the in-app update-manifest URL, channel and Stable tag requirements remain unchanged. Feature branches cannot publish through the Development workflow.
+- Modern React/TypeScript/PixiJS local WebView2 surfaces cover the lobby, Manor, Blackjack, Midnight Dice, the seven Chill Lounge activities, collector album and more. C# continues to own outcomes, payouts, progression and persistent receipts; WPF remains the Windows host and some fallback routes.
+- The historical Manor feature branch and the older PR #35 revert are retained for traceability, not as the new source of Development releases. Never rewrite or remove these refs without separate approval.
+- Device-specific visual/audio quality, DPI, extended performance and remaining localization still require validation.
 
 ## Architecture and modernization rules
 
@@ -34,6 +32,13 @@ This file is the repository-level instruction for coding assistants and ChatGPT 
 - RNG/outcome determination precedes visualization; no animation, skip, sound or speed preference may alter outcomes.
 - No full-window scaling of text UI as raster content. Check legibility, pointer targets, keyboard behavior, reduced-motion preferences, resize/DPI, and Win10/Win11 behavior where practical.
 - Do not move the complete casino to a new shell in one change. Run legacy and migrated modes side-by-side; remove WPF code only after acceptance and save-compatibility verification.
+
+## Documentation style
+
+- Document the **current product state, architecture, release policy, verified behavior, and outstanding work**. Historical sections must be clearly identified as such.
+- Avoid conversational provenance and attributions of product decisions to individual participants. State what is implemented, enabled, approved for a channel, or awaiting verification without retelling who asked for it.
+- Keep the README a concise entry point; place detailed milestones and technical decisions in linked documentation.
+- The repository contract scans Markdown files for conversation-style directive phrasing. Resolve failures by rewriting the passage, not by excluding the affected file.
 
 ## Quality gates
 
@@ -46,7 +51,7 @@ This file is the repository-level instruction for coding assistants and ChatGPT 
 
 ## Delivery, releases and reporting
 
-- Leave `main` and the Development publisher protected from unverified updates. The Development workflow intentionally has both a branch push filter and a matching job guard; update **both** only when deliberately switching the channel.
+- Leave `main` and `develop` protected from unverified updates. The Development workflow intentionally has both a branch push filter and a matching job guard; update **both** only when deliberately switching the channel.
 - Do not bypass semver ordering, manifest integrity, updater compatibility or crash-recovery logic. Keep the existing updater and old installation migration path working until replacements pass real upgrade tests.
 - A task report should include: changed paths/branch/PR, user-visible behavior, automated checks actually executed, checks not executed, known risks, and precise next steps for the game tester.
 - Never describe proposed work as completed. Never silently change game mechanics to match a desired visual presentation.

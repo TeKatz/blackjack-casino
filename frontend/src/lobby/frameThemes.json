@@ -1,0 +1,104 @@
+{
+  "emerald-breathe": {
+    "a": "#419669",
+    "b": "#70DC9C",
+    "motion": "pulse",
+    "seconds": 2.8
+  },
+  "midnight-sweep": {
+    "a": "#3C568E",
+    "b": "#6C99E1",
+    "motion": "sweep",
+    "seconds": 3.6
+  },
+  "burgundy-ember": {
+    "a": "#7F3B48",
+    "b": "#D35768",
+    "motion": "ember",
+    "seconds": 2.4
+  },
+  "gold-shimmer": {
+    "a": "#8B6427",
+    "b": "#EEC65B",
+    "motion": "sweep",
+    "seconds": 2.7
+  },
+  "aurora-drift": {
+    "a": "#41D0B1",
+    "b": "#9857DA",
+    "motion": "prism",
+    "seconds": 4.2
+  },
+  "crimson-heartbeat": {
+    "a": "#752231",
+    "b": "#EB5268",
+    "motion": "pulse",
+    "seconds": 1.65
+  },
+  "starlight-orbit": {
+    "a": "#7D9FCF",
+    "b": "#DFEBF5",
+    "motion": "orbit",
+    "seconds": 8.0
+  },
+  "royal-violet": {
+    "a": "#7649A4",
+    "b": "#E0B85B",
+    "motion": "sweep",
+    "seconds": 4.6
+  },
+  "obsidian-pulse": {
+    "a": "#181F25",
+    "b": "#36E0CD",
+    "motion": "pulse",
+    "seconds": 3.2
+  },
+  "prestige-bronze": {
+    "a": "#884E2A",
+    "b": "#D08E52",
+    "motion": "ember",
+    "seconds": 3.2
+  },
+  "prestige-silver": {
+    "a": "#7D8993",
+    "b": "#E1EAF0",
+    "motion": "orbit",
+    "seconds": 9.0
+  },
+  "prestige-gold": {
+    "a": "#977124",
+    "b": "#FFDC66",
+    "motion": "orbit",
+    "seconds": 6.5
+  },
+  "midnight-line": {
+    "a": "#43579D",
+    "b": "#7692E5",
+    "motion": "sweep",
+    "seconds": 4.0
+  },
+  "neon-noir": {
+    "a": "#3BD2BC",
+    "b": "#C54EDB",
+    "motion": "prism",
+    "seconds": 3.4
+  },
+  "eclipse-thread": {
+    "a": "#4A6087",
+    "b": "#AA60BB",
+    "motion": "sweep",
+    "seconds": 4.5
+  },
+  "eclipse-halo": {
+    "a": "#379BA8",
+    "b": "#CE6BB2",
+    "motion": "orbit",
+    "seconds": 7.0
+  },
+  "eclipse-crown": {
+    "a": "#BF8937",
+    "b": "#884FBE",
+    "motion": "prism",
+    "seconds": 4.8
+  }
+}

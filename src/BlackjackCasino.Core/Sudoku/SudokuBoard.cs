@@ -22,6 +22,19 @@ public sealed class SudokuBoard
         HintsUsed = clean.HintsUsed;
     }
 
+    // A React move must never re-run the Sudoku solver. Clone the already solved
+    // native board and commit a candidate only after persistence succeeds.
+    private SudokuBoard(SudokuBoard source)
+    {
+        puzzle = source.puzzle;
+        solution = source.solution;
+        Array.Copy(source.values, values, values.Length);
+        Array.Copy(source.notes, notes, notes.Length);
+        HintsUsed = source.HintsUsed;
+    }
+
+    public SudokuBoard Clone() => new(this);
+
     public SudokuPuzzle Puzzle => puzzle;
     public int HintsUsed { get; private set; }
     public bool IsComplete => CurrentGrid == solution;

@@ -1,0 +1,55 @@
+
+.cosmetic-title{font-weight:700;text-shadow:0 0 14px currentColor}
+.cosmetic-frame{position:relative;isolation:isolate;flex-shrink:0;display:inline-grid;place-items:center;width:48px;height:48px;border:3px solid transparent;border-radius:12px;background:linear-gradient(#10231f,#10231f) padding-box,linear-gradient(135deg,var(--frame-a),var(--frame-b),var(--frame-c)) border-box;color:var(--frame-a);box-shadow:0 0 9px color-mix(in srgb,var(--frame-a) 25%,transparent)}
+.cosmetic-frame.large{width:142px;height:142px;border-width:5px;font-size:60px;border-radius:22px}
+.cosmetic-frame img{display:block;width:100%;height:100%;object-fit:cover;border-radius:8px;min-width:0;min-height:0}
+.cosmetic-frame.animated{animation:cosmetic-glow 4s ease-in-out infinite alternate}
+.cosmetic-frame[data-frame=neon-noir],.cosmetic-frame[data-frame=neon-thread]{border-radius:3px;border-width:2px 1px}
+.cosmetic-frame[data-frame=eclipse-thread]{border-width:1px;border-radius:16px 4px}
+.cosmetic-frame[data-frame=eclipse-halo]{border-radius:50%}
+.cosmetic-frame[data-frame=neon-pagoda]{border-radius:2px 12px;border-width:4px 2px}
+.cosmetic-frame[data-frame=dynasty-crown]{border-radius:14px 3px;border-width:4px 2px}
+.cosmetic-frame[data-frame=dynasty-circuit]{border-radius:4px 14px}
+.prestige-badge{display:grid;place-items:center;min-width:42px;min-height:45px;border:1px solid #f8d58d;border-radius:9px;background:radial-gradient(ellipse at top,#776038,#211a26);color:#ffe8a7;box-shadow:inset 0 0 12px #f6db7c33,0 0 14px #e6bb5833;font:bold 15px Georgia,serif}
+.account-page .prestige-badge{font-size:25px;min-height:60px;margin-top:10px;display:inline-grid;padding:8px 18px}
+.account-portrait{display:flex;align-items:center;gap:24px;padding:18px 0}.account-portrait strong{display:block;font:32px Georgia,serif;color:#f2dfb4}
+.cosmetic-dice{position:relative;width:180px;height:130px;perspective:600px}
+.cosmetic-d6{position:absolute;top:28px;left:28px;width:78px;height:78px;border:2px solid var(--die-edge);border-radius:18%;background:linear-gradient(135deg,var(--die-top),var(--die-bottom));display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:14px;transform:rotate(-14deg);box-shadow:inset 2px 3px 5px #fff4,5px 9px 12px #0008,0 0 14px var(--die-glow)}
+.cosmetic-d6.d6-1{left:86px;top:17px;transform:rotate(14deg)}.cosmetic-d6 i{border-radius:50%;background:var(--die-pips);aspect-ratio:1}
+.cosmetic-dice[data-engraved=true] i{box-shadow:inset 1px 2px 3px #0008,0 1px #fff6}
+@keyframes cosmetic-glow{to{box-shadow:0 0 18px color-mix(in srgb,var(--frame-a) 55%,transparent),inset 0 0 5px var(--frame-b)}}
+[data-reduced=true] .cosmetic-frame,.casino-lobby-shell[data-reduced=true] .vault-door{animation:none!important}
+@media(prefers-reduced-motion:reduce){.cosmetic-frame{animation:none!important}}
+
+.cosmetic-frame.animated{animation-duration:var(--frame-duration,4s)}
+.cosmetic-frame[data-frame-motion=sweep],.cosmetic-frame[data-frame-motion=prism],.cosmetic-frame[data-frame-motion=orbit]{background-size:100% 100%,240% 240%;animation:cosmetic-sweep var(--frame-duration,4s) ease-in-out infinite alternate}
+.cosmetic-frame[data-frame^=static-],.cosmetic-frame[data-frame=classic]{box-shadow:none}
+@keyframes cosmetic-sweep{to{background-position:0 0,100% 100%;box-shadow:0 0 12px color-mix(in srgb,var(--frame-b) 35%,transparent)}}
+
+.premium-vault-icon{width:42px;height:42px;flex:0 0 42px;filter:drop-shadow(0 0 5px currentColor)}
+
+/* Premium frame materials also follow an equipped item into the profile/toolbar.
+   Decorative detail stays within the tiny icon and never becomes a page-wide wipe. */
+.cosmetic-frame.animated::before{content:"";position:absolute;inset:-3px;z-index:2;
+ pointer-events:none;border-radius:inherit;border:1px solid color-mix(in srgb,var(--frame-a) 67%,transparent);
+ box-shadow:0 0 9px color-mix(in srgb,var(--frame-a) 20%,transparent),inset 0 0 7px color-mix(in srgb,var(--frame-b) 15%,transparent);
+ animation:frame-metal-breathe var(--frame-duration,4s) ease-in-out infinite alternate}
+.cosmetic-frame.animated::after{content:"";position:absolute;top:-4px;right:-4px;z-index:3;
+ width:6px;height:6px;pointer-events:none;transform:rotate(45deg);
+ background:var(--frame-b);border:1px solid #fffbe2b0;
+ box-shadow:0 0 5px var(--frame-a),0 0 11px var(--frame-b);
+ animation:frame-gem-breathe 3.3s ease-in-out infinite}
+.cosmetic-frame.animated.large::after{width:9px;height:9px;top:-6px;right:-6px}
+.cosmetic-frame[data-frame-motion=ember]::after{background:#ffad76;animation-duration:1.4s}
+.cosmetic-frame[data-frame-motion=orbit]::after{animation-duration:6s}
+.cosmetic-frame[data-frame-motion=prism]::before{border-style:double;border-width:3px;
+ box-shadow:0 0 10px var(--frame-a),0 0 17px color-mix(in srgb,var(--frame-b) 35%,transparent)}
+.cosmetic-frame[data-frame-motion=pulse]::before{border-width:2px}
+.cosmetic-frame[data-frame^=static-]::before,.cosmetic-frame[data-frame=classic]::before,
+.cosmetic-frame[data-frame^=static-]::after,.cosmetic-frame[data-frame=classic]::after{content:none}
+@keyframes frame-metal-breathe{to{border-color:var(--frame-b);opacity:.57}}
+@keyframes frame-gem-breathe{50%{opacity:.45;filter:brightness(1.5);transform:rotate(45deg) scale(.78)}}
+[data-reduced=true] .cosmetic-frame::before,[data-reduced=true] .cosmetic-frame::after{animation:none!important}
+@media(prefers-reduced-motion:reduce){
+ .cosmetic-frame::before,.cosmetic-frame::after{animation:none!important}
+}

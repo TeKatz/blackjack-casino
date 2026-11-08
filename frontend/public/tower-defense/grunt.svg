@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160" aria-label="Forest raider">
+<defs>
+<radialGradient id="base"><stop stop-color="#4c6b68"/><stop offset=".7" stop-color="#253a3d"/><stop offset="1" stop-color="#0c1a22"/></radialGradient>
+<linearGradient id="iron" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d6d8c6"/><stop offset=".4" stop-color="#78858b"/><stop offset="1" stop-color="#273c49"/></linearGradient>
+<linearGradient id="bronze" x1=".2" y1="0" x2=".8" y2="1"><stop stop-color="#f4daa5"/><stop offset=".4" stop-color="#c79955"/><stop offset="1" stop-color="#684b32"/></linearGradient>
+<linearGradient id="wood" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#a47a56"/><stop offset=".5" stop-color="#70523f"/><stop offset="1" stop-color="#392f31"/></linearGradient>
+<linearGradient id="ice" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#fcffff"/><stop offset=".45" stop-color="#a9e7fb"/><stop offset="1" stop-color="#3184ae"/></linearGradient>
+<radialGradient id="glow"><stop stop-color="#e9fffd" stop-opacity=".8"/><stop offset="1" stop-color="#76c7df" stop-opacity="0"/></radialGradient>
+<filter id="shadow" x="-70%" y="-70%" width="240%" height="240%"><feGaussianBlur stdDeviation="4"/></filter>
+</defs>
+<ellipse cx="81" cy="135" rx="36" ry="10" fill="#000" opacity=".32" filter="url(#shadow)"/><path d="M52 115 L43 91 L50 68 L61 60 L102 60 L116 78 L110 104 L99 127 L62 127Z" fill="#55513c" stroke="#20272c" stroke-width="4"/>
+<path d="M48 69 L21 48 L29 80 L53 86Z M112 69 L138 48 L131 82 L108 86Z" fill="#628b56" stroke="#2b493b" stroke-width="4"/>
+<path d="M43 54 Q48 20 81 20 Q116 22 123 55 L106 66 L54 66Z" fill="#3d4b45" stroke="#1a282c" stroke-width="4"/>
+<path d="M47 59 Q50 42 81 45 Q113 43 115 65 L107 95 Q88 107 76 102 L54 94Z" fill="#7d9b69" stroke="#34493d" stroke-width="4"/>
+<path d="M58 70 L72 73 M89 74 L104 70" stroke="#1c3e3c" stroke-width="5"/>
+<circle cx="65" cy="75" r="4" fill="#e9b968"/><circle cx="96" cy="75" r="4" fill="#e9b968"/>
+<path d="M77 87 L85 92 L76 95" fill="#4c6e51"/><path d="M61 109 L103 108" stroke="#b28b5b" stroke-width="8"/>
+<path d="M69 117 L65 137 M95 115 L100 137" stroke="#50443e" stroke-width="12" stroke-linecap="round"/></svg>

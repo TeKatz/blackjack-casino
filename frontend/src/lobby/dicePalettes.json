@@ -1,0 +1,90 @@
+{
+  "dice-obsidian": {
+    "top": "#35404A",
+    "bottom": "#0C1119",
+    "pips": "#F4D483",
+    "edge": "#C4A05B",
+    "engraved": false
+  },
+  "dice-jade": {
+    "top": "#4A987D",
+    "bottom": "#123E36",
+    "pips": "#F5EDD5",
+    "edge": "#97C7A4",
+    "engraved": false
+  },
+  "dice-violet": {
+    "top": "#9471B7",
+    "bottom": "#35224D",
+    "pips": "#FFE5A5",
+    "edge": "#CBA7E7",
+    "engraved": false
+  },
+  "dice-ice": {
+    "top": "#B7DAEE",
+    "bottom": "#4D7594",
+    "pips": "#132F49",
+    "edge": "#D5EDFA",
+    "engraved": false
+  },
+  "dice-ruby": {
+    "top": "#AC435E",
+    "bottom": "#401A30",
+    "pips": "#FFF0D2",
+    "edge": "#E3A696",
+    "glow": "#F06F95",
+    "engraved": false
+  },
+  "dice-aurora": {
+    "top": "#389E97",
+    "bottom": "#573776",
+    "pips": "#E1FFF4",
+    "edge": "#8BE5D3",
+    "glow": "#86EDDA",
+    "engraved": false
+  },
+  "dice-porcelain": {
+    "top": "#FFFDF4",
+    "bottom": "#D4DFE9",
+    "pips": "#204E83",
+    "edge": "#6C93B7",
+    "engraved": false
+  },
+  "dice-forest": {
+    "top": "#527663",
+    "bottom": "#1A372D",
+    "pips": "#F4E8CF",
+    "edge": "#97AD8D",
+    "engraved": false
+  },
+  "dice-copper": {
+    "top": "#E0B38B",
+    "bottom": "#87503B",
+    "pips": "#302A29",
+    "edge": "#F2CE9E",
+    "engraved": true
+  },
+  "dice-sapphire": {
+    "top": "#3C70A7",
+    "bottom": "#132642",
+    "pips": "#E5F0FD",
+    "edge": "#A3BBD7",
+    "engraved": true
+  },
+  "dice-astral-opal": {
+    "top": "#BCAEDB",
+    "bottom": "#407777",
+    "pips": "#172D42",
+    "edge": "#E1EBFF",
+    "glow": "#B7E8FF",
+    "engraved": true
+  },
+  "dice-solar-crown": {
+    "top": "#37323B",
+    "bottom": "#0E1019",
+    "pips": "#FFE0A0",
+    "edge": "#DDBB75",
+    "glow": "#F6CF7F",
+    "engraved": true
+  }
+}

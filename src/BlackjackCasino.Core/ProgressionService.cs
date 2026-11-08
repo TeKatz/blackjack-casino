@@ -251,7 +251,10 @@ public sealed class ProgressionService
             }
 
             string packText = packReward is { } awardedPack ? $" and a {awardedPack} card pack" : string.Empty;
-            return new ChallengeClaimResult(true, $"Claimed {challenge.CoinReward:N0} coins{packText} for {challenge.Name}.", challenge, challenge.CoinReward);
+            string portraitText = challenge.CosmeticRewardId is string rewardId && EnsureOwned(rewardId)
+                ? $" and unlocked the {CosmeticCatalog.Get(rewardId).Name} portrait"
+                : string.Empty;
+            return new ChallengeClaimResult(true, $"Claimed {challenge.CoinReward:N0} coins{packText}{portraitText} for {challenge.Name}.", challenge, challenge.CoinReward);
         }
     }
 
@@ -286,11 +289,19 @@ public sealed class ProgressionService
             {
                 CollectionService.GrantPack(State, packReward);
             }
+            int portraitsUnlocked = 0;
+            foreach (ChallengeDefinition challenge in available)
+            {
+                if (challenge.CosmeticRewardId is string rewardId && EnsureOwned(rewardId))
+                    portraitsUnlocked++;
+            }
 
             string packText = packRewards.Length == 0
                 ? string.Empty
                 : $" and {packRewards.Length:N0} card pack{(packRewards.Length == 1 ? string.Empty : "s")}";
-            return new(true, $"Claimed {coins:N0} coins{packText} from {available.Length:N0} challenges.", Array.AsReadOnly(available), coins);
+            string portraitText = portraitsUnlocked == 0 ? string.Empty
+                : $" and {portraitsUnlocked:N0} exclusive portrait{(portraitsUnlocked == 1 ? string.Empty : "s")}";
+            return new(true, $"Claimed {coins:N0} coins{packText}{portraitText} from {available.Length:N0} challenges.", Array.AsReadOnly(available), coins);
         }
     }
 
@@ -390,6 +401,10 @@ public sealed class ProgressionService
             .Where(id => ChallengeRegistry.TryGet(id) is not null)
             .Distinct(StringComparer.Ordinal)
             .ToList();
+        // A historical Master Key claim must carry its newly introduced cosmetic reward.
+        // This idempotent migration does not grant coins or alter the challenge ledger.
+        if (State.ClaimedChallengeIds.Contains("sudoku-master-1", StringComparer.Ordinal))
+            EnsureOwned(CosmeticCatalog.SecretGuestPortraitId);
 
         if (CosmeticCatalog.TryGet(State.EquippedTitleId) is not { Kind: CosmeticKind.Title }
             || !State.OwnedCosmeticIds.Contains(State.EquippedTitleId, StringComparer.Ordinal))

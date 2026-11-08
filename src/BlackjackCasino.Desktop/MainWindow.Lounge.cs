@@ -12,15 +12,15 @@ public partial class MainWindow
     private BackgroundMusic? loungeBackgroundMusic;
     private string sudokuRewardNotice = "";
 
-    private void OpenLounge()
+    private void OpenLounge() => OpenLoungeCore(null);
+
+    private void OpenLoungeCore(string? nativeGameId, bool forceLegacy = false)
     {
-        if (session.RoundInProgress || MetaPageOpen || embeddedGameShell is not null || EmpirePageOpen || KniffelPageOpen)
+        if (session.RoundInProgress || MetaPageOpen || embeddedGameShell is not null || EmpirePageOpen || KniffelPageOpen || ModernLoungeOpen || BrowserRecoveryOpen)
         {
             return;
         }
         ProcessLatestCompletedRound();
-        SudokuLoungePolish.EnsureInstalled();
-        LoungeVisualUpgrade.EnsureInstalled(() => preferences.Sudoku);
         RecordSudokuCompletions(preferences.Sudoku);
 
         preferences = preferences with { Solitaire = SolitaireProgressState.Normalize(preferences.Solitaire) };
@@ -32,6 +32,29 @@ public partial class MainWindow
         RecordJigsawCompletions(preferences.Jigsaw);
         preferences = preferences with { Adventure = AdventureProgressState.Normalize(preferences.Adventure) };
 
+        // React starts without creating WPF game factories or presentation resources.
+        if (!forceLegacy && nativeGameId is null)
+        {
+            LoungeHostedGameRegistry.ClearSessionModules();
+            if (ModernLoungeView.IsAvailable)
+                OpenModernLounge();
+            else
+                ShowLoungeBrowserRecovery(assetsAvailable: false);
+            return;
+        }
+
+        OpenLegacyLounge(nativeGameId);
+    }
+
+    /// <summary>
+    /// Emergency native fallback only. WPF factories, styles and shell lifecycle
+    /// cannot be initialized by the ordinary React Lounge route.
+    /// </summary>
+    private void OpenLegacyLounge(string? nativeGameId)
+    {
+        SudokuLoungePolish.EnsureInstalled();
+        LoungeVisualUpgrade.EnsureInstalled(() => preferences.Sudoku);
+
         bool loungeClosing = false;
         bool adventureMusicActive = false;
         void SetLoungeSoundtrack(bool adventureActive)
@@ -42,7 +65,7 @@ public partial class MainWindow
             AreaPresentationSettings presentation = preferences.Presentation(area);
 
             loungeBackgroundMusic?.Dispose();
-            loungeBackgroundMusic = new BackgroundMusic(adventureActive ? Soundtrack.Adventure : Soundtrack.ChillLounge);
+            loungeBackgroundMusic = new BackgroundMusic(Soundtrack.Lobby);
             loungeBackgroundMusic.Start(presentation.MusicEnabled, presentation.MusicVolume);
         }
 
@@ -141,6 +164,7 @@ public partial class MainWindow
                 SetLoungeSoundtrack)
         ]);
 
+        bool returnToModernHub = false;
         var window = new LoungeWindow(
             preferences.Sudoku,
             state =>
@@ -171,7 +195,9 @@ public partial class MainWindow
                     SavePreferences();
                 }
             },
-            rewardNotice: () => sudokuRewardNotice);
+            rewardNotice: () => sudokuRewardNotice,
+            initialGameId: nativeGameId,
+            modernHubBack: nativeGameId is null ? null : () => returnToModernHub = true);
 
         TableModeText.Text = "Chill Lounge";
         MenuAudio.Attach(window, () => preferences.Presentation("chill-lounge").SoundEnabled);
@@ -183,6 +209,8 @@ public partial class MainWindow
             loungeBackgroundMusic?.Dispose();
             loungeBackgroundMusic = null;
             TableModeText.Text = "Casino lobby";
+            if (returnToModernHub && IsLoaded)
+                Dispatcher.BeginInvoke(new Action(OpenLounge), System.Windows.Threading.DispatcherPriority.Loaded);
         });
         SetLoungeSoundtrack(adventureActive: false);
     }

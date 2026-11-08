@@ -26,6 +26,8 @@ internal partial class ProgressionWindow : Window
     private readonly bool albumSounds;
     private readonly HashSet<TabItem> renderedTabs = [];
     private bool menuReady;
+    private Action? openModernShop;
+    private Action<string>? openModernRecords;
 
     public ProgressionWindow(PlayerProgressionController controller, bool animationsEnabled = true, bool soundsEnabled = true)
     {
@@ -54,10 +56,28 @@ internal partial class ProgressionWindow : Window
         menuReady = true;
         ProgressionTabs.SelectionChanged += (_, e) =>
         {
-            if (ReferenceEquals(e.OriginalSource, ProgressionTabs) && ProgressionRoot.IsLoaded) RefreshSelectedTab();
+            if (!ReferenceEquals(e.OriginalSource, ProgressionTabs) || !ProgressionRoot.IsLoaded) return;
+            string? selected = (ProgressionTabs.SelectedItem as TabItem)?.Tag as string;
+            if (selected == "Challenges" && openModernRecords is not null)
+            {
+                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Send,
+                    () => openModernRecords?.Invoke("challenges"));
+                return;
+            }
+            if (selected == "Cosmetic Shop" && openModernShop is not null)
+            {
+                // Queue before WPF Render so the retired tab never paints a frame.
+                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Send,
+                    () => openModernShop?.Invoke());
+                return;
+            }
+            RefreshSelectedTab();
         };
         RefreshMaximizeGlyph();
     }
+
+    internal void ConfigureModernShop(Action navigate) => openModernShop = navigate;
+    internal void ConfigureModernRecords(Action<string> navigate) => openModernRecords = navigate;
 
     internal void RemoveProfileTabs()
     {

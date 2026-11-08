@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" preserveAspectRatio="xMidYMid slice" role="img">
+<defs>
+<radialGradient id="ambient"><stop stop-color="#28463d"/><stop offset="1" stop-color="#05131b"/></radialGradient>
+<linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff3c6"/><stop offset=".25" stop-color="#b68b4b"/><stop offset=".58" stop-color="#392e32"/><stop offset=".8" stop-color="#eac889"/><stop offset="1" stop-color="#402e28"/></linearGradient>
+<linearGradient id="glass" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#6a9ca3"/><stop offset=".5" stop-color="#153b42"/><stop offset="1" stop-color="#070e1b"/></linearGradient>
+<radialGradient id="light"><stop stop-color="#fff6be" stop-opacity=".9"/><stop offset=".3" stop-color="#f9b65f" stop-opacity=".33"/><stop offset="1" stop-color="#c67750" stop-opacity="0"/></radialGradient>
+<filter id="glow" x="-75%" y="-75%" width="250%" height="250%"><feGaussianBlur stdDeviation="12"/></filter>
+<filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="5"/></filter>
+<linearGradient id="velvet" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#314950"/><stop offset=".62" stop-color="#104641"/><stop offset="1" stop-color="#081b23"/></linearGradient>
+</defs>
+<rect width="960" height="440" fill="#081c20"/>
+<rect width="960" height="310" fill="url(#velvet)"/>
+<g stroke="#d3af6b" stroke-opacity=".28" fill="none"><path d="M0 88H960M0 180H960M160 0V315M800 0V315"/><path d="M0 306H960" stroke-width="5"/></g>
+<circle cx="745" cy="87" r="159" fill="url(#light)" opacity=".7"/>
+<path d="M0 323Q480 275 960 323V440H0Z" fill="#172b26"/>
+<path d="M0 350Q490 290 960 350" fill="none" stroke="#8c6a3d" stroke-width="8"/>
+<g transform="translate(94 84)">
+ <path d="M0 205V85Q0 22 74 22H135Q204 22 204 85V205Z" fill="#0c3535" stroke="url(#metal)" stroke-width="11"/>
+ <path d="M13 188V87Q13 35 75 35H130Q189 35 189 87V188" fill="none" stroke="#5a8470" stroke-width="8"/>
+ <path d="M-13 173L37 165L47 240H-15ZM172 166L221 173L224 240H162Z" fill="#193f3b" stroke="#bca269" stroke-width="5"/>
+ <path d="M26 183H175V251H26Z" rx="22" fill="#164840" stroke="#b6a36c" stroke-width="6"/>
+</g>
+<g transform="translate(680 90)">
+ <path d="M45 0V135" stroke="#cfa75a" stroke-width="8"/>
+ <path d="M0 100Q45 28 90 100Z" fill="#f4ca81" stroke="#fff1b6" stroke-width="4"/>
+ <ellipse cx="45" cy="99" rx="50" ry="12" fill="#f4cf89" opacity=".62"/>
+ <ellipse cx="45" cy="98" rx="87" ry="24" fill="#edbd70" opacity=".28" filter="url(#glow)"/>
+</g>
+<g transform="translate(336 240)">
+ <ellipse cx="159" cy="168" rx="245" ry="38" fill="#010d0f" opacity=".6"/>
+ <ellipse cx="159" cy="122" rx="233" ry="82" fill="#0a2f2b" stroke="url(#metal)" stroke-width="12"/>
+ <ellipse cx="159" cy="118" rx="207" ry="65" fill="#1f5145" stroke="#65917a" stroke-width="5"/>
+ <g transform="rotate(-12 127 100)">
+  <rect x="73" y="47" width="110" height="145" rx="8" fill="#f8e3bd" stroke="#d2ac71" stroke-width="6"/>
+  <path d="M91 69H165M91 83H165M91 97H165M91 111H165M91 125H165M91 139H165M104 68V157M123 68V157M142 68V157" stroke="#acaa92" stroke-width="2" opacity=".8"/>
+  <path d="M120 107L132 121L153 92" fill="none" stroke="#419a85" stroke-width="6"/>
+ </g>
+ <g transform="rotate(14 210 95)">
+  <rect x="178" y="44" width="74" height="109" rx="6" fill="#fff8e5" stroke="#f0d7a6" stroke-width="5"/>
+  <path d="M212 78Q220 62 229 78Q236 94 216 110Q195 94 200 78Q205 70 212 78" fill="#b23753"/>
+  <text x="190" y="65" font-family="serif" fill="#b23753" font-size="24">A</text>
+ </g>
+</g>
+<g fill="#e9c980" opacity=".42"><circle cx="407" cy="64" r="3"/><circle cx="486" cy="41" r="2"/><circle cx="628" cy="166" r="3"/><circle cx="853" cy="247" r="2"/></g>
+<rect x="11" y="11" width="938" height="418" rx="21" fill="none" stroke="#ccad72" stroke-opacity=".7" stroke-width="5"/>
+</svg>

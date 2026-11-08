@@ -2,7 +2,7 @@
 
 ## Scope
 
-Phase 7 follows a user-observed regression that was strongly mode-specific: the desktop client remained smooth in fullscreen, while windowed mode became noticeably less responsive after the standard Windows frame was replaced with the custom casino frame. The same report also identified smaller remaining slowdowns in Casino Empire and while opening the Season Pass.
+Phase 7 addresses a reported regression that was strongly mode-specific: the desktop client remained smooth in fullscreen, while windowed mode became noticeably less responsive after the standard Windows frame was replaced with the custom casino frame. The same report also identified smaller remaining slowdowns in Casino Empire and while opening the Season Pass.
 
 No save schema, progression economy, reward definitions, game rules, or content data are changed in this phase.
 
@@ -45,4 +45,4 @@ Season XP, tier requirements, reward claims, pass activation/switching, and rewa
 
 Phase 7 is covered by the existing warnings-as-errors build, unit tests, shared-control contracts, table wager regression, Windows Casino presentation runtime regression, desktop startup smoke, Manor runtime smoke, and the separate Windows hover/layout presentation workflow.
 
-The most important remaining validation is real-device observation of windowed rendering smoothness. CI can verify correctness and presentation behavior, but it cannot reproduce the user's exact GPU/driver/Desktop Window Manager composition path or provide a trustworthy before/after FPS measurement for that machine.
+The most important remaining validation is real-device observation of windowed rendering smoothness. CI can verify correctness and presentation behavior, but it cannot reproduce every target GPU/driver/Desktop Window Manager composition path or provide a trustworthy before/after FPS measurement for that machine.

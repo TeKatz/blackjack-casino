@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -76,23 +77,22 @@ internal static class AdventureBoardSmoke
             {
                 detached.Show(); await Task.Delay(100);
                 engine.SelectChoice("take-case");
-                Require(engine.State.CaseBoard.Nodes.TryGetValue("hotel-mirabelle", out CaseNodeState? revealed)
-                    && revealed.IsKnown, "The story did not discover Hotel Mirabelle before the detached board update.");
-                // The detached board refreshes on a background-priority DispatcherTimer.
-                // Heavy image rendering on hosted Windows runners can defer that tick;
-                // a fixed 700 ms sleep wrongly fails even when synchronization works.
-                // Poll the visible UI instead, retaining a bounded timeout for real regressions.
-                var syncWatch = System.Diagnostics.Stopwatch.StartNew();
+                Require(engine.State.CaseBoard.Nodes.TryGetValue("hotel-mirabelle", out CaseNodeState? discovered)
+                    && discovered.IsKnown,
+                    "Story choice did not discover the expected case-board evidence");
+                // A background-priority WPF dispatcher timer may not tick within a fixed
+                // 700 ms on a heavily loaded Windows runner. Verify eventual visible
+                // synchronization with a bounded deadline instead of racing one tick.
+                var syncClock = Stopwatch.StartNew();
                 bool synchronized;
                 do
                 {
                     detached.UpdateLayout();
                     synchronized = Find<Border>(detached).Any(b => Equals(b.Tag, "hotel-mirabelle"));
-                    if (synchronized) break;
+                    if (synchronized || syncClock.Elapsed >= TimeSpan.FromSeconds(12)) break;
                     await Task.Delay(50);
-                }
-                while (syncWatch.Elapsed < TimeSpan.FromSeconds(12));
-                Require(synchronized, "Detached board failed to synchronize new story evidence within 12 seconds.");
+                } while (true);
+                Require(synchronized, "Detached board failed to synchronize new story evidence within 12 seconds");
                 Save(Render((FrameworkElement)detached.Content), Path.Combine(output, "case-board-detached-live.png"));
             }
             finally { detached.Close(); }

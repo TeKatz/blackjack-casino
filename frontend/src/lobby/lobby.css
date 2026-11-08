@@ -1,0 +1,566 @@
+
+:root { font-family: "Segoe UI", Inter, system-ui, sans-serif; color:#eee8d8;background:#03100c; font-synthesis:none; }
+* { box-sizing:border-box; }
+html,body,#root { margin:0; width:100%; height:100%; min-width:950px; }
+button { font:inherit; cursor:pointer; }
+button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
+.casino-lobby-shell { position:relative; isolation:isolate; width:100%;min-height:100%; overflow:hidden; background:radial-gradient(circle at 51% 0%,#183a2a 0%,#061a16 48%,#040e0e 100%); display:grid;grid-template-rows:70px minmax(0,1fr); }
+.casino-lobby-shell::before { content:"";pointer-events:none; position:absolute;inset:0;z-index:-1;opacity:.35; background:radial-gradient(circle at 35% 27%,#2c775b55,transparent 50%),url('/lobby/lobby-atlas.webp');background-size:auto,100% auto;background-position:center,center top;mix-blend-mode:screen; }
+.lobby-pixi { position:absolute;inset:0;z-index:3;pointer-events:none;overflow:hidden; }
+.lobby-pixi canvas {display:block;width:100%;height:100%;}
+.lobby-topbar { position:relative;z-index:5;display:flex;align-items:center;gap:12px;padding:0 18px;min-width:0;background:linear-gradient(90deg,#031d17ee,#04150ff5);border-bottom:1px solid #ac874e75;box-shadow:0 9px 26px #0005; }
+.lobby-brand {flex:0 0 clamp(250px,22%,360px);display:flex;align-items:center;gap:14px;min-width:0;padding:0;border:0;background:transparent;color:#f8e8bd;text-align:left;}
+.brand-spade{width:52px;height:52px;display:grid;place-items:center;font:42px Georgia,serif;color:#e9be62;border:1px solid #bd9348;border-radius:50%;background:#102b1e;box-shadow:0 0 12px #d5b05f33;}
+.lobby-brand b{display:block;font:700 clamp(17px,1.5vw,25px) Georgia,serif;white-space:nowrap;letter-spacing:.016em;}
+.lobby-brand i{display:block;margin-top:5px;letter-spacing:.24em;font-size:9px;color:#c2a16b;font-style:normal;}
+.lobby-top-status{display:flex;align-items:center;gap:7px;flex:1;min-width:0;justify-content:flex-end;}
+.header-widget{border:1px solid #315e47;background:linear-gradient(140deg,#0b3225,#071b1a);border-radius:10px;min-height:53px;display:flex;align-items:center;gap:8px;color:#f3e8d4;text-align:left;padding:6px 10px;box-shadow:inset 0 1px #a7ffbb12;min-width:0;}
+.header-widget:hover{background:#145037;border-color:#e0b463;box-shadow:0 0 15px #e3b75c28;}
+.header-widget span:not(.header-emoji):not(.header-avatar):not(.prestige-badge){min-width:0;}
+.header-widget small,.lobby-finances small{font-size:9px;letter-spacing:.07em;color:#a7bda8;display:block;white-space:nowrap;}
+.header-widget b{font-size:12px;display:block;white-space:nowrap;}
+.header-compact{min-width:110px;}
+.header-emoji{font-size:24px;color:#dfb965;width:28px;flex:0 0 28px;text-align:center;}
+.header-avatar{width:36px;height:36px;display:grid;place-items:center;border-radius:50%;background:radial-gradient(circle,#533065,#110d29);border:2px solid #9874b2;color:#c6a1e1;font-size:25px;}
+.profile-widget{min-width:170px;gap:7px;}
+.profile-widget small{color:#7ce5b4;}
+.profile-widget em{display:block;color:#cf7ac7;font-size:10px;font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.prestige-badge{margin-left:auto;flex:0 0 30px;text-align:center;color:#ffe29c;font-size:12px;line-height:1.05;border:1px solid #b68a33;padding:5px 3px;border-radius:6px;}
+.vault-widget{min-width:185px;}
+.vault-widget b{font-size:10px;}
+.lobby-meter{width:100%;height:5px;background:#35423d;border:1px solid #597967;border-radius:20px;margin-top:5px;overflow:hidden;}
+.lobby-meter span{display:block;height:100%;background:linear-gradient(90deg,#00a977,#63eaba);box-shadow:0 0 8px #65efd0;transition:width .4s ease;}
+.lobby-meter.gold span{background:linear-gradient(90deg,#b99144,#f4e29c);box-shadow:0 0 7px #f6cf64;}
+.lobby-finances{display:flex;align-items:center;gap:10px;flex:0 0 auto;}
+.lobby-finances>span{padding:2px 8px;white-space:nowrap;}
+.lobby-finances strong{display:block;color:#fbd478;font-size:17px;white-space:nowrap;}
+.lobby-finances .empire-wallet{border:1px solid #3c604c;background:#163127b3;border-radius:8px;padding:8px 12px;}
+.empire-wallet strong{font-size:14px;}
+.lobby-exit{flex:0 0 auto;min-height:40px;border:1px solid #d8aa5c;border-radius:10px;background:#332b15;color:#ffe29b;padding:7px 14px;font-weight:700;box-shadow:inset 0 0 8px #e9bb6334;}
+.lobby-exit:hover{background:#69501e;}
+.lobby-body {z-index:2;min-height:0;display:grid;grid-template-columns:164px minmax(0,1fr) minmax(252px,306px);gap:13px;padding:14px 15px 16px 0;}
+.lobby-nav{min-height:0;position:relative;display:flex;flex-direction:column;gap:8px;padding:22px 8px;background:linear-gradient(165deg,#063625c9,#061c16e8 70%);border:1px solid #1b5640;border-left:0;border-radius:0 24px 24px 0;box-shadow:inset 0 0 50px #1d735222;}
+.lobby-nav-item{height:48px;display:flex;align-items:center;gap:14px;text-align:left;border:1px solid transparent;border-radius:12px;color:#e2decf;background:transparent;padding:0 12px;font-size:13px;font-weight:600;white-space:nowrap;transition:background .2s,border-color .2s,transform .2s,box-shadow .2s;}
+.nav-icon{width:26px;flex:0 0 26px;height:26px;color:#e6c06b;display:block;}
+.lobby-nav-item:hover{background:#174b34aa;transform:translateX(3px);}
+.lobby-nav-item.selected{border-color:#d7aa58;background:linear-gradient(120deg,#24553a,#0d301d);box-shadow:0 0 14px #f0cb64aa,inset 0 0 12px #f6ce6335;color:#ffeaa8;}
+.lobby-nav-decoration{margin-top:auto;font:130px Georgia,serif;color:#153f2f;opacity:.45;text-align:center;line-height:.85;pointer-events:none;}
+.lobby-main{min-width:0;min-height:0;display:flex;flex-direction:column;gap:11px;}
+.lobby-hero{position:relative;flex:0 0 clamp(126px,18vh,177px);min-height:115px;border-radius:12px;overflow:hidden;background:radial-gradient(circle at right,#18432c,#061c16 70%);}
+.lobby-hero-picture{position:absolute;right:0;top:50%;width:min(100%,1024px);height:180px;transform:translateY(-50%);background-image:url('/lobby/lobby-atlas.webp');background-position:0 -300px;background-size:1024px 884px;background-repeat:no-repeat;opacity:.97;filter:saturate(1.07);}
+.lobby-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#051a14 0%,#051a14a6 42%,transparent 87%);pointer-events:none;}
+.hero-copy{position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;justify-content:center;padding:12px 22px 12px 25px;text-shadow:0 2px 6px #000;}
+.lobby-eyebrow{color:#ebc16b;letter-spacing:.19em;font-size:10px;font-weight:750;}
+.hero-copy h1{font:normal clamp(24px,2.65vw,43px)/1.08 Georgia,serif;color:#f6e5c5;letter-spacing:.012em;margin:9px 0;}
+.hero-copy p{margin:0;color:#dedacb;font-size:13px;max-width:590px;}
+.lobby-game-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:minmax(170px,1fr);gap:12px;min-height:0;flex:1;}
+.lobby-game{position:relative;min-height:0;display:flex;flex-direction:column;overflow:hidden;border-radius:14px;border:1px solid #4c8b64;background:linear-gradient(170deg,#112d26,#041714);box-shadow:0 4px 14px #0005;transition:border-color .2s,box-shadow .2s,transform .22s;}
+.lobby-game:nth-child(2),.lobby-game:nth-child(4),.game-midnight-reels{border-color:#a78a4d;}
+.game-neon-vault{border-color:#3889a7;}
+.game-nine-lives{border-color:#9a54a8;}
+.game-midnight-manor{border-color:#6f72a2;}
+.lobby-game:hover,.lobby-game.hovered{border-color:#f0c66c;transform:translateY(-4px);box-shadow:0 12px 32px #000b,0 0 14px #e2af534e;z-index:2;}
+.lobby-game.unavailable{filter:grayscale(.5);opacity:.55;}
+.game-art-window{position:relative;height:38%;min-height:64px;overflow:hidden;isolation:isolate;contain:paint;background:radial-gradient(ellipse at 54% 30%,#36674b,#0a1a18 70%);}
+.game-art-image{position:absolute;left:50%;top:50%;width:256px;height:130px;transform:translate(-50%,-50%) scale(1.06);background-image:url('/lobby/lobby-atlas.webp');background-repeat:no-repeat;background-size:1024px 884px;transition:transform .55s cubic-bezier(.2,.9,.2,1),filter .4s;filter:saturate(1.08);}
+.game-art-window .art-blackjack{background-position:0 -480px;}
+.game-art-window .art-kniffel{background-position:-256px -480px;}
+.game-art-window .art-chill-lounge{background-position:-512px -480px;}
+.game-art-window .art-casino-empire{background-position:-768px -480px;}
+.game-art-window .art-midnight-reels{background-position:0 -610px;}
+.game-art-window .art-neon-vault{background-position:-256px -610px;}
+.game-art-window .art-nine-lives{background-position:-512px -610px;}
+.game-art-window .art-midnight-manor{background-position:-768px -610px;}
+.game-art-window .art-midnight-merge{background-position:0 -740px;}
+.lobby-game:hover .game-art-image{transform:translate(-50%,-50%) scale(1.22);filter:saturate(1.28) brightness(1.13);}
+.game-info{position:relative;flex:1;min-height:0;display:flex;flex-direction:column;padding:8px 10px;background:linear-gradient(170deg,#103027e8,#061917eb);}
+.game-category{color:#7de4ba;font-size:9px;font-weight:750;letter-spacing:.06em;white-space:nowrap;}
+.game-midnight-reels .game-category,.game-casino-empire .game-category,.game-midnight-merge .game-category{color:#efbf6a;}
+.game-neon-vault .game-category{color:#76dfff;}
+.game-nine-lives .game-category{color:#e087f5;}
+.game-info h3{font:normal clamp(18px,1.45vw,24px)/1.07 Georgia,serif;color:#f9e9cb;margin:4px 0 3px;letter-spacing:-.025em;}
+.game-info p{font-size:clamp(10px,.72vw,11px);line-height:1.27;color:#b9c7bb;margin:0 0 4px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;}
+.game-actions{display:flex;gap:6px;justify-content:flex-end;align-items:center;margin-top:auto;}
+.lobby-gold-button{display:inline-flex;align-items:center;gap:7px;justify-content:center;min-height:27px;border:1px solid #fae5a9;border-radius:10px;padding:4px 10px;background:linear-gradient(155deg,#ffe9a1,#c48b3a);color:#191808;font-size:12px;font-weight:800;box-shadow:0 0 13px #efc36977;transition:filter .18s,transform .18s;}
+.lobby-gold-button:hover{filter:brightness(1.18);transform:scale(1.04);}
+.lobby-gold-button:disabled{opacity:.55;cursor:not-allowed;}
+.lobby-gold-button span{font-size:10px;}
+.lobby-secondary{background:#1c4432;border:1px solid #c2ac74;color:#efd399;border-radius:8px;font-size:17px;min-width:28px;min-height:28px;}
+.lobby-merge{grid-column:1/span 3;min-height:160px;display:flex;flex-direction:row;align-items:stretch;border-color:#e6b561;background:#091c16;}
+.lobby-merge .game-art-window{order:2;flex:1;height:auto;min-width:50%;background:#092017;}
+.lobby-merge .game-art-image{width:1024px;height:144px;left:auto;right:-25%;top:50%;background-position:0 -740px;transform:translateY(-50%);opacity:.98;}
+.lobby-merge:hover .game-art-image{transform:translateY(-50%) scale(1.06);}
+.lobby-merge .game-info{order:1;flex:0 0 42%;padding:18px 21px;background:linear-gradient(90deg,#102a20,#0b241d);}
+.lobby-merge .game-info h3{font-size:29px;}
+.lobby-merge .game-info p{-webkit-line-clamp:3;}
+.lobby-merge .game-actions{justify-content:flex-start;}
+.lobby-overview{display:flex;flex-direction:column;gap:3px;min-width:0;min-height:0;border:1px solid #285b46;border-radius:20px;padding:18px 13px 14px;background:linear-gradient(155deg,#093025e8,#071e1ce9);box-shadow:inset 0 1px #bfe3a41a;}
+.lobby-overview h2{font:normal 26px Georgia,serif;margin:3px 0 0;color:#f4dfb7;}
+.overview-intro{font-size:11px;color:#a7c5b6;line-height:1.4;margin:2px 3px 8px;}
+.overview-items{display:grid;grid-template-rows:1.35fr 1fr 1fr 1.1fr 1fr;gap:9px;flex:1;min-height:0;}
+.overview-tile{min-width:0;display:flex;gap:10px;align-items:center;text-align:left;border:1px solid #336d51;border-radius:13px;background:linear-gradient(120deg,#0e3b2b,#08241e);padding:7px;color:#f8e9ca;transition:border-color .2s,transform .2s,background .2s,box-shadow .2s;}
+.overview-tile:hover{border-color:#e9c26f;transform:translateX(-3px);background:linear-gradient(110deg,#174f36,#0f2d24);box-shadow:0 0 12px #ddbc6130;}
+.overview-icon{width:54px;min-width:54px;height:57px;display:grid;place-items:center;font-size:27px;color:#f0c96f;border:1px solid #bfab68;border-radius:12px;background:radial-gradient(circle at 50% 20%,#33654b,#0a251d);text-shadow:0 0 9px #f0cf7e;}
+.overview-icon-1{color:#d78be7;}.overview-icon-2{color:#e4ad65;}.overview-icon-3{color:#98e1ad;}
+.overview-copy{display:flex;flex-direction:column;min-width:0;flex:1;gap:5px;}
+.overview-copy strong{font:normal clamp(16px,1.1vw,20px) Georgia,serif;color:#f8e4c5;}
+.overview-copy small{font-size:10px;color:#afc8bc;line-height:1.25;}
+.overview-copy em{font-size:9px;color:#d7d6b9;font-style:normal;}
+.overview-arrow{font-size:23px;color:#f2d392;}
+.browser-note{position:absolute;bottom:6px;left:210px;color:#abc2b0;font-size:10px;}
+.empty-mode{margin:22px;color:#dac394;}
+@media(min-width:1600px){.lobby-body{grid-template-columns:174px minmax(0,1fr) minmax(292px,340px);gap:17px;padding-right:20px}.lobby-game-grid{gap:14px}.game-info{padding:13px 15px}}
+@media(max-width:1360px){.lobby-top-status .header-compact,.vault-widget{display:none}.lobby-body{grid-template-columns:145px minmax(0,1fr) 244px;gap:9px}.lobby-nav-item{font-size:12px;padding:0 8px;gap:7px}.lobby-game-grid{gap:8px}.game-info{padding:8px}.game-info h3{font-size:19px}.overview-icon{width:45px;min-width:45px}.lobby-overview{padding:12px 9px}.overview-copy strong{font-size:16px}}
+@media(max-width:1100px){.lobby-body{grid-template-columns:122px minmax(0,1fr);}.lobby-overview{display:none}.lobby-nav-item{gap:5px}.lobby-nav-item span:last-child{font-size:11px}.lobby-game-grid{grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:minmax(190px,1fr);overflow:auto}.lobby-merge{grid-column:span 3}.lobby-brand{flex-basis:240px}.lobby-finances .empire-wallet{display:none}}
+@media(max-height:800px){.lobby-body{padding-top:8px;padding-bottom:8px}.lobby-hero{flex-basis:115px}.lobby-nav{padding-top:10px;gap:2px}.lobby-nav-item{height:42px}.lobby-game-grid{grid-auto-rows:minmax(145px,1fr)}.lobby-merge{min-height:135px}.overview-items{gap:5px}.overview-tile{padding:5px}.game-art-window{min-height:67px}.game-info h3{margin:3px 0}.game-info p{margin-bottom:4px}}
+@media(max-height:660px){.casino-lobby-shell{min-height:660px;overflow-y:auto;}.lobby-hero{flex-basis:120px}.lobby-game-grid{grid-auto-rows:180px}.lobby-overview{min-height:600px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+.casino-lobby-shell[data-reduced="true"] *, .casino-lobby-shell[data-reduced="true"] *::before,.casino-lobby-shell[data-reduced="true"] *::after{animation:none!important;transition:none!important}
+
+
+/* Pre-rendered transparent icon atlas: 5 columns × 4 rows, cell = 64 source units.
+   Navigation, club actions, avatar and top status are separate from live DOM text. */
+.brand-spade{
+  color:transparent;font-size:0;overflow:hidden;
+  background-image:url('/lobby/lobby-icon-atlas.webp');
+  background-repeat:no-repeat;background-size:260px 208px;background-position:-156px -104px;
+}
+/* Each gold-etched icon is bound to its semantic route, not menu position. */
+.nav-icon{display:block;width:26px;height:26px;flex:0 0 26px;
+  fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;
+  stroke-linejoin:round;filter:drop-shadow(0 1px 2px #030f0b);
+  transition:filter .2s,transform .2s;}
+.lobby-nav-item:hover .nav-icon,.lobby-nav-item.selected .nav-icon{
+  color:#ffdd9a;filter:drop-shadow(0 0 5px #e5b85b);transform:scale(1.08);
+}
+.lobby-updates-entry .nav-icon{width:22px;height:22px;flex:0 0 22px;color:#e6c06b;}
+.overview-icon{position:relative;color:transparent;font-size:0;text-shadow:none;overflow:visible;}
+.overview-icon::before{
+  content:"";position:absolute;left:50%;top:50%;width:54px;height:54px;
+  transform:translate(-50%,-50%);pointer-events:none;
+  background-image:url('/lobby/lobby-icon-atlas.webp');
+  background-repeat:no-repeat;background-size:270px 216px;
+  transition:transform .25s,filter .25s;
+}
+.overview-tile:hover .overview-icon::before{transform:translate(-50%,-50%) scale(1.11);filter:brightness(1.13) drop-shadow(0 0 7px #ebb65a);}
+.overview-icon-0::before{background-position:-162px -54px;}
+.overview-icon-1::before{background-position:-216px -54px;}
+.overview-icon-2::before{background-position:0 -108px;}
+.overview-icon-3::before{background-position:-54px -108px;}
+.overview-icon-4::before{background-position:-108px -108px;}
+.header-avatar{
+  color:transparent;font-size:0;overflow:hidden;
+  background-image:url('/lobby/lobby-icon-atlas.webp');
+  background-repeat:no-repeat;background-size:180px 144px;background-position:-36px -108px;
+}
+.header-emoji{font-size:0;color:transparent;overflow:hidden;background-image:url('/lobby/lobby-icon-atlas.webp');background-repeat:no-repeat;background-size:140px 112px;width:28px;height:28px;}
+.header-compact:first-child .header-emoji{background-position:-112px -56px;}
+.header-compact:nth-child(2) .header-emoji{background-position:0 -84px;}
+.vault-widget .header-emoji{background-position:-84px -84px;}
+.lobby-exit{position:relative;padding-left:44px;}
+.lobby-exit::before{content:"";position:absolute;left:8px;top:50%;width:30px;height:30px;transform:translateY(-50%);background-image:url('/lobby/lobby-icon-atlas.webp');background-size:150px 120px;background-position:-120px -90px;}
+
+@keyframes lobbyPageReveal{
+  from{opacity:0;transform:translateY(8px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.lobby-hero{animation:lobbyPageReveal .65s ease both;}
+.lobby-game-grid{animation:lobbyPageReveal .72s .08s ease both;}
+.lobby-overview{animation:lobbyPageReveal .72s .14s ease both;}
+@media(max-height:800px){
+  .game-info p{-webkit-line-clamp:1;}
+  .game-art-window{min-height:52px;}
+  .game-info{padding:6px 8px;}
+  .lobby-gold-button{min-height:25px;}
+}
+
+
+
+/* High-resolution direct source artwork: unlike the legacy 256×130 sprite
+   atlas, each image remains sharp on HiDPI screens and during hover zoom. */
+.casino-lobby-shell::before{
+  opacity:.15;
+  background-image:linear-gradient(180deg,transparent,#03140f),url('/lobby/art/ambient.png');
+  background-size:cover; background-position:center;
+}
+.lobby-hero-picture{
+  top:0;right:0;transform:none;width:100%;height:100%;
+  background-image:url('/lobby/art/hero.png');
+  background-position:70% 50%;background-size:cover;
+}
+.game-art-image,.lobby-merge .game-art-image{
+  inset:0; width:100%;height:100%;left:0;top:0;right:auto;
+  background-size:cover;background-position:center;background-repeat:no-repeat;
+  transform:scale(1.02);opacity:1;
+}
+.game-art-window .art-blackjack{background-image:url('/lobby/art/blackjack.png');background-position:50% 49%;}
+.game-art-window .art-kniffel{background-image:url('/lobby/art/dice.png');background-position:50% 51%;}
+.game-art-window .art-chill-lounge{background-image:url('/lobby/art/chill.png');background-position:50% 53%;}
+.game-art-window .art-casino-empire{background-image:url('/lobby/art/empire.png');background-position:50% 48%;}
+.game-art-window .art-midnight-reels{background-image:url('/lobby/art/reels.png');background-position:50% 50%;}
+.game-art-window .art-neon-vault{background-image:url('/lobby/art/neon.png');background-position:50% 53%;}
+.game-art-window .art-nine-lives{background-image:url('/lobby/art/nine-lives.jpg');background-position:50% 45%;}
+.game-art-window .art-midnight-manor{background-image:url('/lobby/art/manor.png');background-position:50% 40%;}
+.game-art-window .art-midnight-merge{background-image:url('/lobby/art/merge.png');background-position:58% 50%;}
+.lobby-game:hover .game-art-image{transform:scale(1.11);filter:saturate(1.2) brightness(1.08);}
+.lobby-merge .game-art-window{min-width:50%;}
+.lobby-merge:hover .game-art-image{transform:scale(1.06);}
+
+/* The old "At a glance" links duplicate the primary left navigation.
+   Its space is now occupied by the fully functional seven-day Login panel. */
+.lobby-daily{
+  display:flex;flex-direction:column;min-height:0;min-width:0;gap:11px;
+  border:1px solid #42735b;border-radius:19px;
+  padding:16px 13px 14px;
+  background:linear-gradient(158deg,#083126ed,#061a17f5 72%);
+  box-shadow:0 9px 24px #0005,inset 0 1px #d1e9ae24;
+}
+.daily-header{text-align:center;flex:0 0 auto;}
+.daily-header h2{font:normal 29px Georgia,serif;color:#f4ddb1;margin:5px 0 4px;}
+.daily-header p{margin:0 auto;max-width:290px;line-height:1.35;color:#b8cabb;font-size:11px;}
+.daily-visual{
+  position:relative;flex:0 1 145px;min-height:85px;border-radius:12px;
+  background:linear-gradient(0deg,#08251beb,transparent 80%),url('/lobby/art/daily.png') center 43%/cover;
+  border:1px solid #745d3499;overflow:hidden;
+}
+.daily-visual::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 80% 22%,#f4d38311,transparent 55%);}
+.daily-visual-copy{position:absolute;bottom:10px;left:12px;text-shadow:0 2px 8px #000;display:flex;flex-direction:column;gap:4px;}
+.daily-visual-copy span{font-size:9px;color:#e2bb70;letter-spacing:.1em;font-weight:800;}
+.daily-visual-copy strong{font:normal 23px Georgia,serif;color:#ffe8ac;}
+.daily-cycle-heading{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+.daily-cycle-heading strong{font:normal 16px Georgia,serif;color:#f0d7a1;}
+.daily-cycle-heading span{font-size:10px;color:#94b4a5;}
+.daily-rewards{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  grid-auto-rows:minmax(70px,1fr);gap:8px;flex:1;min-height:0;
+}
+.daily-reward{
+  border:1px solid #416554;border-radius:10px;
+  background:linear-gradient(155deg,#0c362b,#061e1b);
+  display:flex;flex-direction:column;min-width:0;min-height:0;padding:9px;gap:3px;
+  overflow:hidden;transition:border-color .2s,box-shadow .2s,transform .2s;
+}
+.daily-reward:nth-child(7){grid-column:span 2;background:linear-gradient(100deg,#243622,#092b25);}
+.daily-reward.current{border-color:#ffcd68;box-shadow:inset 0 0 9px #ebac422a,0 0 13px #e9bd6930;}
+.daily-reward.claimed{border-color:#3d7e60;}
+.daily-reward-top{display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#ddcc9c;}
+.daily-reward-top span{color:#f6d184;}
+.daily-reward.claimed .daily-reward-top span{color:#78d9a6;}
+.daily-reward-bankroll{font:normal 17px Georgia,serif;color:#f9e5ae;white-space:nowrap;}
+.daily-reward small{font-size:10px;color:#add2b6;}
+.daily-pack{font-size:9px;text-transform:uppercase;letter-spacing:.04em;color:#ebc087;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.daily-reward-state{margin-top:auto;font-size:9px;letter-spacing:.05em;font-weight:800;color:#93b5a4;}
+.daily-reward.current .daily-reward-state{color:#f2cf79;}
+.daily-footer{display:flex;flex-direction:column;gap:7px;flex:0 0 auto;}
+.daily-footer p{text-align:center;margin:0;font-size:10px;color:#b5c9bc;}
+.daily-claim{
+  width:100%;min-height:44px;padding:7px 10px;border-radius:10px;
+  border:1px solid #fae3a2;background:linear-gradient(150deg,#ffe9ab,#c08a3a);
+  color:#172118;font-weight:800;font-size:13px;box-shadow:0 0 18px #f9bf4c3c;
+}
+.daily-claim.ready:hover{filter:brightness(1.13);transform:translateY(-1px);}
+.daily-claim.claimed{background:linear-gradient(135deg,#244a39,#153b31);color:#b7d8c5;border-color:#376e56;box-shadow:none;cursor:default;}
+.daily-claim span{margin-right:8px;}
+@media(max-width:1360px){
+  .lobby-daily{padding:11px 9px;gap:7px;}
+  .daily-header h2{font-size:23px;}
+  .daily-visual{flex-basis:100px;}
+  .daily-rewards{gap:5px;grid-auto-rows:minmax(65px,1fr);}
+  .daily-reward{padding:6px;}
+}
+@media(max-width:1100px){.lobby-daily{display:none;}}
+@media(max-height:800px){
+  .lobby-daily{gap:5px;padding:8px;}
+  .daily-header h2{font-size:21px;}
+  .daily-header p{font-size:10px;}
+  .daily-visual{flex-basis:76px;min-height:62px;}
+  .daily-cycle-heading strong{font-size:13px;}
+  .daily-rewards{gap:4px;grid-auto-rows:minmax(55px,1fr);}
+  .daily-reward{gap:1px;padding:5px;}
+  .daily-reward-bankroll{font-size:14px;}
+  .daily-reward-state,.daily-pack{font-size:8px;}
+  .daily-footer p{font-size:9px;}
+  .daily-claim{min-height:36px;}
+}
+
+/* At compact widths the rewards stay accessible from the left-hand Daily Login
+   navigation, rather than vanishing along with the former overview column. */
+.lobby-body{position:relative;}
+.lobby-nav-item.daily-nav{display:none;}
+.daily-close{display:none;}
+@media(max-width:1100px){
+  .lobby-nav-item.daily-nav{display:flex;}
+  .lobby-daily.mobile-open{
+    display:flex;position:absolute;z-index:9;
+    top:8px;right:8px;bottom:8px;width:min(355px,calc(100% - 145px));
+    overflow-y:auto;box-shadow:0 16px 50px #000c;
+  }
+  .daily-close{
+    display:grid;place-items:center;position:absolute;right:1px;top:-6px;
+    width:30px;height:30px;font-size:24px;color:#efd8a0;
+    border:1px solid #6c7550;border-radius:7px;background:#123027;
+  }
+  .daily-header{position:relative;}
+}
+
+/* Status stays discoverable after removing the redundant right-hand overview. */
+.nav-ready{
+  margin-left:auto;display:inline-grid;place-items:center;min-width:20px;height:20px;
+  border-radius:10px;background:#d2ad62;color:#123226;
+  font-size:11px;font-weight:900;box-shadow:0 0 9px #d2ad6266;
+}
+
+/* Collection themes are 4×4 image galleries, not single illustrations.
+   Crop *one* cell instead of exposing a strip of several collector cards. */
+.game-art-window .art-neon-vault{
+  background-size:400% auto;
+  background-position:33.333% 5%;
+}
+.game-art-window .art-midnight-manor{
+  background-size:400% auto;
+  background-position:66.666% 5%;
+}
+/* Midnight Dice already draws physical dice; remove duplicated overlay glyphs. */
+
+/* The lobby owns its own locale switch; native settings are only visible at the Blackjack table. */
+.lobby-language{flex:0 0 auto;min-width:42px;height:38px;margin:0 4px;
+ border:1px solid rgba(218,183,112,.55);border-radius:8px;
+ background:rgba(13,48,37,.86);color:#ecd6a6;font-weight:700;font-size:12px;letter-spacing:.09em;
+ cursor:pointer;transition:border-color .18s,background .18s;}
+.lobby-language:hover,.lobby-language:focus-visible{border-color:#f4d7a0;background:#1f523e;}
+
+/* Update access belongs to the casino lobby, never the Blackjack table.
+   Keep the entry anchored to the lower left even when categories overflow. */
+.lobby-nav{overflow:hidden;}
+.lobby-nav-scroll{display:flex;flex-direction:column;min-height:0;flex:1;gap:8px;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:#507258 #0c261b;}
+.lobby-nav-scroll .lobby-nav-decoration{font-size:70px;line-height:.65;opacity:.3;}
+.lobby-updates-entry{flex:0 0 auto;min-height:44px;display:flex;align-items:center;justify-content:flex-start;gap:9px;border:1px solid #a68a54;border-radius:10px;padding:8px 10px;background:linear-gradient(125deg,#1d4331,#0e241e);color:#efd5a0;font-size:12px;font-weight:700;white-space:nowrap;}
+.lobby-updates-entry:hover{border-color:#e2be70;background:#305640;}
+.lobby-updates-entry[aria-expanded=true]{border-color:#e9c57a;box-shadow:0 0 12px #d8ba6e44;}
+/* Settings and Updates use the same semantic SVG icon treatment. */
+.lobby-updates-dot{width:7px;height:7px;border-radius:50%;background:#e6bb69;box-shadow:0 0 8px #f7c859;}
+.lobby-updates-backdrop{position:absolute;inset:0;z-index:30;background:#010b09da;display:flex;align-items:center;justify-content:center;padding:18px;}
+.lobby-updates-panel{width:min(490px,100%);max-height:calc(100vh - 36px);overflow-y:auto;border:1px solid #ac9055;border-radius:14px;background:linear-gradient(140deg,#143727,#081e1c);box-shadow:0 20px 70px #000b,inset 0 1px #e9dcad24;padding:24px;display:flex;flex-direction:column;gap:17px;}
+.lobby-updates-header{display:flex;gap:16px;justify-content:space-between;align-items:flex-start;}
+.lobby-updates-header small{color:#c7a66c;font-weight:700;font-size:10px;letter-spacing:.18em;}
+.lobby-updates-header h2{font:29px Georgia,serif;color:#f2dcab;margin:6px 0;}
+.lobby-updates-header p{margin:0;font-size:12px;color:#b7cbbf;}
+.lobby-updates-panel button{padding:10px 13px;border-radius:7px;border:1px solid #7d956f;background:#183e30;color:#ebead8;font-weight:650;}
+.lobby-updates-panel button:hover:not(:disabled){background:#305a41;border-color:#ddb96a;}
+.lobby-updates-panel button:disabled{opacity:.5;cursor:default;}
+.lobby-updates-panel .lobby-updates-close{background:transparent;font-size:22px;padding:4px 12px;}
+.lobby-updates-panel label{display:grid;gap:8px;font-size:12px;color:#d0ddce;}
+.lobby-updates-panel select{width:100%;min-height:43px;padding:9px;background:#091f19;border:1px solid #5c8168;color:#f2f0e3;border-radius:7px;font:inherit;}
+.lobby-updates-status{border:1px solid #55745a;background:#081e17bb;border-radius:9px;padding:12px;color:#c7d9c6;font-size:13px;line-height:1.5;overflow-wrap:anywhere;}
+.lobby-updates-status strong{color:#edcf89;display:block;margin-bottom:5px;font-size:11px;letter-spacing:.08em;}
+.lobby-updates-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.lobby-updates-actions .install{background:linear-gradient(130deg,#e4cb8a,#b68d51);color:#162b21;border-color:#b28b51;}
+.lobby-updates-actions .install:hover:not(:disabled){background:#e3c077;}
+.lobby-updates-confirm{padding:12px;border:1px solid #a58b56;border-radius:9px;background:#282b1cbf;}
+.lobby-updates-confirm p{font-size:13px;line-height:1.5;}
+.lobby-updates-confirm div{display:flex;gap:9px;justify-content:flex-end;}
+.lobby-updates-confirm .confirm{background:#c9a561;color:#16251b;}
+.lobby-updates-panel .lobby-updates-progress{color:#dec790;font-size:11px;}
+@media(max-height:800px){.lobby-nav-scroll{gap:2px}.lobby-updates-entry{min-height:39px}.lobby-nav-scroll .lobby-nav-decoration{display:none;}}
+@media(max-width:1100px){.lobby-updates-entry{padding:6px}.lobby-updates-glyph{width:19px;flex-basis:19px;}}
+
+/* Global host preferences moved out of the retired WPF Blackjack sidebar. */
+.lobby-settings-entry{margin-bottom:4px;border-color:#628d76;color:#d3e5d2;}
+.lobby-settings-panel .lobby-settings-check{display:flex;align-items:center;gap:12px;font-size:13px;line-height:1.5;}
+.lobby-settings-check input{width:18px;height:18px;accent-color:#d6b475;flex:0 0 auto;}
+.lobby-settings-panel .lobby-settings-volume{display:grid;gap:10px;font-size:13px;}
+.lobby-settings-volume span{display:flex;align-items:center;justify-content:space-between;}
+.lobby-settings-volume input[type=range]{width:100%;accent-color:#ddb86d;cursor:pointer;}
+
+
+.lobby-nav .nav-section-start{border-top:1px solid #c7ad6a88;margin-top:12px;padding-top:12px;height:56px;border-radius:0}
+
+
+
+.casino-news{width:min(690px,90vw);max-height:80dvh;overflow:hidden;padding:24px;color:#f0e4ca;background:linear-gradient(140deg,#17392b,#0b201b);border:1px solid #d2b273;border-radius:16px;box-shadow:0 30px 90px #000a}
+.casino-news::backdrop{background:#030b09ba}.casino-news header{display:flex;justify-content:space-between;align-items:start;gap:20px}.casino-news small{color:#d2b273;letter-spacing:.12em}.casino-news h2{font:32px Georgia,serif;margin:8px 0}.casino-news header button{border:1px solid #798c6c;background:#24372a;color:#f0e4ca;border-radius:6px;padding:4px 12px;font-size:24px}
+.casino-news-items{max-height:50dvh;overflow:auto;overscroll-behavior:contain;margin:15px 0}.casino-news article{border-left:3px solid;padding:4px 15px;margin:12px 0}.casino-news h3{font-size:17px;margin:5px 0}.casino-news p{color:#c2d1bd;line-height:1.6;font-size:13px}
+
+/* P2: eliminate hover repaint seams between thumbnail and the information pane. */
+.lobby-game:not(.lobby-merge) .game-info{z-index:1;margin-top:-2px;}
+.lobby-game:not(.lobby-merge) .game-info::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:3px;
+  background:#0f2c25;pointer-events:none;
+}
+.lobby-game:focus-within{border-color:#eac576;box-shadow:0 0 0 2px #e4bb6280;}
+/* A distinct indigo/champagne Daily Login wing, keeping the emerald lobby intact. */
+.lobby-daily{position:relative;isolation:isolate;border:1px solid #a78d67;
+ background:radial-gradient(ellipse at 90% 0%,#5c3a58a8,transparent 55%),
+ linear-gradient(150deg,#281e34f2,#141a2cf8 63%,#152927f5);
+ box-shadow:0 9px 30px #0009,inset 0 1px #f9dda45e,0 0 18px #aa789c20;}
+.lobby-daily::before{content:"";position:absolute;top:0;left:17px;right:17px;height:2px;
+ background:linear-gradient(90deg,transparent,#ffdf9d,transparent);pointer-events:none;}
+.lobby-daily .daily-header h2{color:#ffe0a4;text-shadow:0 2px 15px #ceaa7b33;}
+.lobby-daily .daily-header p{color:#d1c9cf;}
+.lobby-daily .daily-visual{border-color:#b89a6e;box-shadow:0 5px 18px #0008,inset 0 0 0 1px #efd29833;}
+.lobby-daily .daily-reward{border-color:#685a73;background:linear-gradient(145deg,#33273e,#172332);}
+.lobby-daily .daily-reward:nth-child(7){background:linear-gradient(112deg,#493649,#232c40);}
+.lobby-daily .daily-reward.claimed{border-color:#668f83;background:linear-gradient(140deg,#253c3e,#192a36);}
+.lobby-daily .daily-reward.current{border-color:#f5cf86;background:linear-gradient(145deg,#614758,#302f47);
+ box-shadow:inset 0 0 16px #e6be8040,0 0 12px #dca47a44;}
+.lobby-daily .daily-cycle-heading span,.lobby-daily .daily-footer p{color:#d0c3d0;}
+.lobby-daily .daily-reward small{color:#c9c0d4;}
+.lobby-daily .daily-claim.claimed{border-color:#887861;background:linear-gradient(140deg,#3b3342,#202d38);color:#f0d9b5;}
+
+
+/* P2 Key Art: cinematic full-bleed images instead of miniaturized live game controls. */
+.game-art-window .art-chill-lounge{background-image:url('/lobby/keyart/chill-lounge.svg');background-size:cover;background-position:center;}
+.game-art-window .art-casino-empire{background-image:url('/lobby/keyart/casino-empire.svg');background-size:cover;background-position:center;}
+.game-art-window .art-midnight-reels{background-image:url('/lobby/keyart/midnight-reels.svg');background-size:cover;background-position:center;}
+.game-art-window .art-neon-vault{background-image:url('/lobby/keyart/neon-vault.svg');background-size:cover;background-position:center;}
+.game-art-window .art-midnight-manor{background-image:url('/lobby/keyart/midnight-manor.svg');background-size:cover;background-position:center;}
+/* The existing Midnight Dice illustration is already the correct single visual. */
+.game-art-window .art-kniffel{background-image:url('/lobby/art/dice.png');background-size:cover;background-position:center;}
+/* Unified treatment for every Slot tile: pictorial hero, luxurious glass/metal frame,
+   individual signature accent. Nine Lives retains its original high-detail black cat. */
+.lobby-game:is(.game-midnight-reels,.game-neon-vault,.game-nine-lives,.game-midnight-manor){
+ --slot-glint:#d3a36c;border-color:color-mix(in srgb,var(--slot-glint) 67%,#435b57);
+ background:linear-gradient(175deg,#182b27,#051713);
+}
+.lobby-game.game-midnight-reels{--slot-glint:#edb76a;}
+.lobby-game.game-neon-vault{--slot-glint:#60e6f1;}
+.lobby-game.game-nine-lives{--slot-glint:#d878f8;}
+.lobby-game.game-midnight-manor{--slot-glint:#baa0f0;}
+.lobby-game:is(.game-midnight-reels,.game-neon-vault,.game-nine-lives,.game-midnight-manor) .game-art-window{
+ position:relative;isolation:isolate;contain:paint;
+ background:#0c1319;min-height:78px;height:43%;
+}
+.lobby-game:is(.game-midnight-reels,.game-neon-vault,.game-nine-lives,.game-midnight-manor) .game-art-image{
+ background-size:cover;background-repeat:no-repeat;filter:saturate(1.1) contrast(1.03);
+ transform:scale(1.02);transition:transform .6s cubic-bezier(.2,.8,.2,1),filter .45s;
+}
+.lobby-game:is(.game-midnight-reels,.game-neon-vault,.game-nine-lives,.game-midnight-manor):hover .game-art-image{
+ transform:scale(1.08);filter:saturate(1.22) contrast(1.04) brightness(1.09);
+}
+.lobby-game:is(.game-midnight-reels,.game-neon-vault,.game-nine-lives,.game-midnight-manor) .game-art-window::after{
+ content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+ border:3px solid color-mix(in srgb,var(--slot-glint) 62%,transparent);
+ border-bottom:0;border-radius:10px 10px 0 0;
+ box-shadow:inset 0 0 20px #0008,inset 0 0 13px color-mix(in srgb,var(--slot-glint) 15%,transparent);
+ background:linear-gradient(180deg,#0002 0%,transparent 35%,#040c16a3 100%);
+}
+.lobby-game:is(.game-midnight-reels,.game-neon-vault,.game-nine-lives,.game-midnight-manor) .game-info{
+ border-top:2px solid color-mix(in srgb,var(--slot-glint) 62%,#152c24);
+ background:linear-gradient(173deg,#123027,#061a18);
+}
+/* Non-slot categories use their own identity instead of inheriting the slot motif. */
+.game-chill-lounge .game-art-image{filter:saturate(1.18) contrast(1.03);}
+.game-casino-empire .game-art-image{filter:saturate(1.08) contrast(1.08);}
+.game-chill-lounge .game-art-window,.game-casino-empire .game-art-window{
+ height:41%;min-height:75px;background:#101e22;
+}
+.game-chill-lounge .game-art-window::after,.game-casino-empire .game-art-window::after{
+ content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+ border-bottom:2px solid #bda36b70;
+ background:linear-gradient(180deg,#0002 30%,#0516158a);
+}
+@media(prefers-reduced-motion:reduce){
+ .lobby-game:is(.game-midnight-reels,.game-neon-vault,.game-nine-lives,.game-midnight-manor) .game-art-image{transition:none;}
+}
+.casino-lobby-shell[data-reduced="true"] .lobby-game .game-art-image{transition:none;}
+
+/* Shared PixiJS canvas paints masked effects inside game-art rectangles. */
+.lobby-game:has(.tile-motion-layers){transform-style:preserve-3d}
+.lobby-game:has(.tile-motion-layers) .game-art-window{overflow:hidden;isolation:isolate}
+.lobby-game:has(.tile-motion-layers):hover{box-shadow:0 16px 36px #000d,0 0 22px color-mix(in srgb,var(--slot-glint,#e2b367) 43%,transparent)}
+
+/* Cinematic art is now rendered exclusively by the single shared PixiJS canvas.
+   CSS remains responsible for UI layout, borders and control feedback only. */
+.game-art-window{height:46%;min-height:82px;position:relative;isolation:isolate;
+  contain:layout paint;overflow:hidden;background:#071a1b}
+.lobby-game:is(.game-midnight-reels,.game-neon-vault,.game-nine-lives,.game-midnight-manor)
+  .game-art-window{height:46%;min-height:82px;background:#080f18}
+.game-chill-lounge .game-art-window,.game-casino-empire .game-art-window{height:46%;min-height:82px}
+.lobby-game{--lobby-tile-accent:#e5bb76;
+  box-shadow:0 4px 17px #0008,inset 0 1px #f3d6981d;
+  transition:transform .3s cubic-bezier(.18,.82,.2,1),border-color .26s,box-shadow .3s}
+.game-neon-vault{--lobby-tile-accent:#7de9f5}
+.game-nine-lives{--lobby-tile-accent:#da9cff}
+.game-midnight-manor{--lobby-tile-accent:#bfa5f0}
+.game-chill-lounge{--lobby-tile-accent:#ebd2a2}
+.game-casino-empire{--lobby-tile-accent:#f6d08d}
+.lobby-game:hover,.lobby-game:focus-within{
+  border-color:var(--lobby-tile-accent);transform:translateY(-5px);
+  box-shadow:0 19px 38px #000c,0 0 21px color-mix(in srgb,var(--lobby-tile-accent) 32%,transparent),
+    inset 0 1px color-mix(in srgb,var(--lobby-tile-accent) 48%,transparent)}
+.lobby-game .game-info{position:relative;
+  border-top:1px solid color-mix(in srgb,var(--lobby-tile-accent) 39%,#16382b)}
+/* Retire CSS-paint optical images; animated scene elements live on the GPU. */
+.lobby-game .game-art-window::after{
+  content:none!important;background:none!important;border:0!important;box-shadow:none!important}
+.lobby-game .game-actions .lobby-gold-button{
+  transition:transform .2s ease,box-shadow .25s ease,filter .2s ease}
+.lobby-game:hover .lobby-gold-button,.lobby-game:focus-within .lobby-gold-button{
+  box-shadow:0 0 19px #ffd99583,inset 0 1px #ffffff5e}
+.lobby-merge{grid-column:1/-1;min-height:170px;
+  display:flex;flex-direction:row;align-items:stretch;border-color:#ce9d60}
+.lobby-merge .game-art-window{order:2;flex:1;min-width:0;height:100%;min-height:0}
+.lobby-merge .game-info{order:1;flex:0 0 39%;padding:19px 23px}
+.lobby-merge .game-info h3{font-size:clamp(21px,1.6vw,30px)}
+.lobby-merge .game-info p{-webkit-line-clamp:3}
+@media(max-width:1100px){
+  .lobby-merge{grid-column:auto;display:flex;flex-direction:column}
+  .lobby-merge .game-art-window{order:0;flex:0 0 46%;min-width:0;min-height:82px}
+  .lobby-merge .game-info{order:1;flex:1;padding:8px}
+  .lobby-merge .game-info h3{font-size:19px}
+  .lobby-merge .game-info p{-webkit-line-clamp:2}
+}
+@media(prefers-reduced-motion:reduce){
+  .lobby-game,.lobby-game .game-actions .lobby-gold-button{transition:none!important}
+  .lobby-game:hover{transform:none}
+}
+.casino-lobby-shell[data-reduced="true"] .lobby-game:hover{transform:none}
+
+
+/* Dark-emerald Daily Login, matching the surrounding Midnight Club lobby. */
+.lobby-daily{
+ border:1px solid #538d74;
+ border-radius:19px;
+ background:
+  radial-gradient(ellipse at 50% -20%,#326b563e,transparent 63%),
+  radial-gradient(ellipse at 98% 72%,#13473766,transparent 50%),
+  linear-gradient(160deg,#0d3029,#091c1e 52%,#08171b);
+ box-shadow:
+  0 0 0 1px #7bba9752,
+  0 0 22px #47b88a48,
+  0 0 54px #247b5b2b,
+  inset 0 0 0 1px #afebc31a,
+  inset 0 1px #c0efc558,
+  0 16px 35px #0008;
+ transition:border-color .25s ease,box-shadow .25s ease;
+}
+.lobby-daily::before{background:linear-gradient(90deg,transparent,#8fd7ac7b,#f6ddab,transparent);}
+.lobby-daily::after{content:"";position:absolute;inset:4px;border:1px solid #a1e3c027;
+ border-radius:14px;pointer-events:none;z-index:0;
+ box-shadow:inset 0 0 17px #449d7333}
+.lobby-daily .daily-header,.lobby-daily .daily-visual,
+.lobby-daily .daily-cycle-heading,.lobby-daily .daily-rewards,.lobby-daily .daily-footer{
+ position:relative;z-index:1}
+.lobby-daily .daily-header h2{color:#f5dfb2;text-shadow:0 2px 15px #64c39744}
+.lobby-daily .daily-header p{color:#b6d1bf}
+.lobby-daily .daily-visual{border-color:#658d6c;box-shadow:0 8px 18px #0009,inset 0 0 0 1px #a6d1b126}
+.lobby-daily .daily-reward,.lobby-daily .daily-reward:nth-child(7){
+ background:linear-gradient(145deg,#173d31,#0b2926 65%,#0c2425);
+ border-color:#416f5e;box-shadow:inset 0 1px #a1e2b01a}
+.lobby-daily .daily-reward.current{
+ background:linear-gradient(150deg,#285441,#133b30 65%,#102b29);
+ border-color:#d8c488;box-shadow:0 0 15px #67c3973b,inset 0 0 15px #86d4a61c}
+.lobby-daily .daily-reward.claimed{
+ background:linear-gradient(140deg,#1b4839,#10352f);
+ border-color:#539276}
+.lobby-daily .daily-cycle-heading span,.lobby-daily .daily-footer p,
+.lobby-daily .daily-reward small{color:#b7d1bf}
+.lobby-daily .daily-claim.claimed{
+ background:linear-gradient(135deg,#214d3b,#11362f);
+ border-color:#54866b;color:#bce3ce}
+.lobby-daily .daily-claim.ready{border-color:#f2d899;
+ box-shadow:0 0 20px #e5c36f39,0 0 19px #53b78b26}
+.lobby-daily:focus-within{border-color:#84c8a2;
+ box-shadow:0 0 0 1px #a5ebc075,0 0 30px #69dab56d,
+  0 0 54px #20865d3d,inset 0 1px #ddf1c678,0 17px 37px #0008}
+@media(prefers-reduced-motion:reduce){.lobby-daily{transition:none}}

@@ -8,10 +8,14 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 ART = ROOT / 'src/BlackjackCasino.Desktop/Assets/CollectionArt'
+BROWSER_ATLASES = ROOT / 'frontend/public/album/atlas'
+BROWSER_MANIFEST = ROOT / 'frontend/src/lobby/albumArtManifest.json'
 
 
 def main():
-    manifest = json.loads((ART / 'manifest.json').read_text(encoding='utf-8'))
+    raw_manifest = (ART / 'manifest.json').read_bytes()
+    assert BROWSER_MANIFEST.read_bytes() == raw_manifest, 'React card crop manifest diverged from the authoritative artwork'
+    manifest = json.loads(raw_manifest)
     assert manifest['Version'] == 1, 'Unsupported artwork manifest'
     catalog = (ROOT / 'src/BlackjackCasino.Core/Collections/CollectionCatalog.cs').read_text(encoding='utf-8')
     expected = {}
@@ -23,8 +27,10 @@ def main():
     atlases = {a['Id']: a for a in manifest['Atlases']}
     assert len(atlases) == 16, 'Every theme needs its own illustration atlas'
     assert {a['File'] for a in atlases.values()} == {p.name for p in ART.glob('*.png')}, 'Missing or unused atlas'
+    assert {a['File'] for a in atlases.values()} == {p.name for p in BROWSER_ATLASES.glob('*.png')}, 'Missing or unused React atlas'
     for atlas in atlases.values():
         raw = (ART / atlas['File']).read_bytes()
+        assert (BROWSER_ATLASES / atlas['File']).read_bytes() == raw, f"React atlas differs from desktop: {atlas['File']}"
         assert raw[:8] == b'\x89PNG\r\n\x1a\n', f"Not a PNG: {atlas['File']}"
         assert struct.unpack('>II', raw[16:24]) == (atlas['Width'], atlas['Height']), f"Wrong dimensions: {atlas['File']}"
         assert hashlib.sha256(raw).hexdigest() == atlas['Sha256'], f"Unreviewed image change: {atlas['File']}"
@@ -48,7 +54,7 @@ def main():
             overlap = (max(x, other['X']) < min(x+w, other['X']+other['Width'])
                        and max(y, other['Y']) < min(y+h, other['Y']+other['Height']))
             assert not overlap, f"Overlapping artwork regions: {card['Id']} / {other['Id']}"
-    print('PASS: 136 unique card illustrations, 16 checked atlases, full catalog coverage, valid non-overlapping regions and high-resolution ultra rare art.')
+    print('PASS: 136 unique card illustrations, 16 native and React atlases match byte-for-byte, full catalog coverage, valid non-overlapping crops and high-resolution ultra rare art.')
 
 
 if __name__ == '__main__':

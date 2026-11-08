@@ -1,0 +1,65 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <UseWPF>false</UseWPF>
+    <AssemblyName>BlackjackCasino.NativeShell</AssemblyName>
+    <Description>Experimental WPF-free Windows/WebView2 casino host; not the Development release executable.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" />
+    <ProjectReference Include="../BlackjackCasino.Core/BlackjackCasino.Core.csproj" />
+    <ProjectReference Include="../BlackjackCasino.Update/BlackjackCasino.Update.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Link the EXACT domain and save contracts currently used by the WPF app.
+         These source files do not depend on PresentationFramework or XAML. -->
+    <Compile Include="../BlackjackCasino.Desktop/AppPreferences.cs" Link="Shared/AppPreferences.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/AreaPresentationSettings.cs" Link="Shared/AreaPresentationSettings.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/DebouncedPersistenceWriter.cs" Link="Shared/DebouncedPersistenceWriter.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/PlayerStateStore.cs" Link="Shared/PlayerStateStore.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/PlayerProfileStore.cs" Link="Shared/PlayerProfileStore.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/PlayerProfileTransactionSnapshot.cs" Link="Shared/PlayerProfileTransactionSnapshot.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/PlayerProgressionController.cs" Link="Shared/PlayerProgressionController.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ManorPersistence.cs" Link="Shared/ManorPersistence.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/BlackjackTableController.cs" Link="Shared/BlackjackTableController.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/BlackjackModernSnapshot.cs" Link="Shared/BlackjackModernSnapshot.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/BlackjackModernProtocol.cs" Link="Shared/BlackjackModernProtocol.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/BlackjackModernRules.cs" Link="Shared/BlackjackModernRules.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ModernReelsProtocol.cs" Link="Shared/ModernReelsProtocol.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ModernReelsSnapshot.cs" Link="Shared/ModernReelsSnapshot.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ModernNeonVaultProtocol.cs" Link="Shared/ModernNeonVaultProtocol.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ModernNeonVaultSnapshot.cs" Link="Shared/ModernNeonVaultSnapshot.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ModernNineLivesProtocol.cs" Link="Shared/ModernNineLivesProtocol.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ModernNineLivesSnapshot.cs" Link="Shared/ModernNineLivesSnapshot.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ModernMergeProtocol.cs" Link="Shared/ModernMergeProtocol.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ModernMergeSnapshot.cs" Link="Shared/ModernMergeSnapshot.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ModernDiceProtocol.cs" Link="Shared/ModernDiceProtocol.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ModernDiceSnapshot.cs" Link="Shared/ModernDiceSnapshot.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/KniffelCategoryLabels.cs" Link="Shared/KniffelCategoryLabels.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/DicePaletteTokens.cs" Link="Shared/DicePaletteTokens.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ManorPreviewProtocol.cs" Link="Shared/ManorPreviewProtocol.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ManorController.cs" Link="Shared/ManorController.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/ManorModernGameService.cs" Link="Shared/ManorModernGameService.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/CasinoModeRegistry.cs" Link="Shared/CasinoModeRegistry.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/BrowserRecoverySession.cs" Link="Shared/BrowserRecoverySession.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Compile the existing neutral and German Merge resources under this shell's own root namespace. -->
+    <EmbeddedResource Include="../BlackjackCasino.Desktop/Resources/MergeStrings.resx" Link="Resources/MergeStrings.resx" />
+    <EmbeddedResource Include="../BlackjackCasino.Desktop/Resources/MergeStrings.de.resx" Link="Resources/MergeStrings.de.resx" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="../../frontend/dist/**/*"
+             Link="ModernFrontend/%(RecursiveDir)%(Filename)%(Extension)"
+             CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest"
+             Condition="Exists('../../frontend/dist/index.html')" />
+    <None Include="../BlackjackCasino.Desktop/Assets/Empire/*.png"
+          Link="ModernFrontend/empire-art/%(Filename)%(Extension)"
+          CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="../BlackjackCasino.Desktop/Assets/NineLives/*.jpg"
+          Link="ModernFrontend/nine-lives-art/%(Filename)%(Extension)"
+          CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

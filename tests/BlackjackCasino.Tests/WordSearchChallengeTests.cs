@@ -1,26 +1,32 @@
 using BlackjackCasino.Core;
+using BlackjackCasino.Core.WordSearch;
 
 namespace BlackjackCasino.Tests;
 
 public sealed class WordSearchChallengeTests
 {
-    // The challenge ceiling follows the fixed 144-puzzle offline catalog, so every goal must remain reachable.
+    // The 576-puzzle discovery catalog keeps previous milestone IDs and raises reachable endgame goals.
     [Fact]
     public void CatalogUsesReachableWordSearchGoalsAndNeverRewardsSpeed()
     {
         ChallengeDefinition[] challenges = ChallengeCatalog.For(ChallengeCategory.WordSearch).ToArray();
-        Assert.Equal(21, challenges.Length);
+        Assert.Equal(31, challenges.Length);
         Assert.Contains(challenges, challenge => challenge.Id == "word-search-first");
-        Assert.Contains(challenges, challenge => challenge.Id == "word-search-144" && challenge.IsEndgame);
+        Assert.Contains(challenges, challenge => challenge.Id == "word-search-144" && !challenge.IsEndgame);
+        Assert.Contains(challenges, challenge => challenge.Id == "word-search-288" && !challenge.IsEndgame);
+        Assert.Contains(challenges, challenge => challenge.Id == "word-search-words-2736" && !challenge.IsEndgame);
+        foreach(string id in new []{"word-search-576","word-search-words-5472",
+            "word-search-clean-400","word-search-expert-96","word-search-master-96"})
+            Assert.Contains(challenges, challenge=>challenge.Id==id && challenge.IsEndgame);
         Assert.All(challenges, challenge => Assert.True(challenge.CoinReward > 0));
 
         var maxima = new Dictionary<ChallengeMetric, decimal>
         {
-            [ChallengeMetric.WordSearchCompleted] = 144,
-            [ChallengeMetric.WordSearchWordsFound] = 1368,
-            [ChallengeMetric.WordSearchNoHintCompleted] = 144,
-            [ChallengeMetric.WordSearchExpertCompleted] = 24,
-            [ChallengeMetric.WordSearchMasterCompleted] = 24,
+            [ChallengeMetric.WordSearchCompleted] = WordSearchCatalog.All.Count,
+            [ChallengeMetric.WordSearchWordsFound] = WordSearchCatalog.All.Sum(x => x.WordCount),
+            [ChallengeMetric.WordSearchNoHintCompleted] = WordSearchCatalog.All.Count,
+            [ChallengeMetric.WordSearchExpertCompleted] = WordSearchCatalog.For(BlackjackCasino.Core.WordSearch.WordSearchDifficulty.Expert).Count,
+            [ChallengeMetric.WordSearchMasterCompleted] = WordSearchCatalog.For(BlackjackCasino.Core.WordSearch.WordSearchDifficulty.Master).Count,
         };
 
         Assert.All(challenges, challenge =>
@@ -59,7 +65,7 @@ public sealed class WordSearchChallengeTests
         Assert.True(claim.Success);
         Assert.Equal(50, claim.CoinsEarned);
         Assert.False(service.ClaimChallenge("word-search-first").Success);
-        ChallengeDefinition lifetime = ChallengeCatalog.All.Single(x => x.Metric == ChallengeMetric.LifetimePlays);
+        ChallengeDefinition lifetime = ChallengeCatalog.TryGet("lifetime-plays-100000")!;
         Assert.Equal(1m, ChallengeCatalog.Progress(profile, lifetime));
     }
 

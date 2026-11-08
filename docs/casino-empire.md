@@ -6,57 +6,190 @@ outbound connection is a bounded owner cash dividend. Empire never changes
 Blackjack rules, dice outcomes, slot odds or RTP. Claimed challenges and completed
 game activity can benefit Empire in the other direction.
 
-## Estate command center
+## Modern estate command center
 
-The Estate page gives the room gallery priority. Four quiet navigation groups
-keep every system reachable: Estate (rooms, floors, circuits), Development
-(research, projects, properties), Operations (team, automation) and Opportunities
-(events, contracts). Section pages use only their group's local navigation and
-remain in the same native window. The updater still follows
-`feature/empire-command-center`.
+`frontend/empire.html` is the sole normal Empire presentation in embedded and
+detached windows. The WPF shell owns lifecycle and the original `EmpireService`;
+React owns the estate atlas and room cabinet and the Estate, Development, Operations,
+Opportunities and Statistics navigation. Development continues from
+`develop` with the current release guards; the historical implementation branch was `feature/manor-modernization-phase-1`.
 
-The right inspector holds room upgrades, bulk quantities, cost, production and
-the next milestone. One Room Intelligence surface below the gallery explains
-growth, actual operating specialists, automation requirements and policy,
-participating/benefiting circuits, their individual members and limiting rooms,
-and the exact production factors. Select a room again or use Estate overview to
-clear selection; the panel then shows estate progress, useful next steps and the
-prestige action. Future-floor circuit members can be expanded when relevant.
-There are no permanent research/project/team/opportunity cards or global circuit
-row on the main screen. Long contextual details have local scroll fallbacks for
-small windows; the gallery preserves five cards per floor at standard widths.
+The starting estate atlas shows all fifteen departments in a compact five-column
+grid at standard desktop widths. Floor and operating/closed filters narrow the
+atlas without changing the selected property. Artwork, level and production are
+visible on each tile. Selecting a department opens a side cabinet with bulk
+quantities (1/5/10/25/50/100), production breakdowns, milestone progress and
+upgrade previews; closing it returns to the full atlas. The short prestige strip
+remains available in the overview and retains its confirmation dialog. The
+single Pixi scene remains mounted above the atlas, with a shorter visual frame.
+Research keeps all
+three branches, rank costs and prerequisite links. Each specialist can be
+assigned to any operating department or made inactive. Automation keeps editable
+reserve, budget, target, milestone strategy and ordered room priorities without
+replacing unsaved input on production ticks. Contracts show progress and claims;
+events show their goal, end time and encore. Statistics include portfolio and
+property lifetime totals, tag production, construction, contracts, events,
+achievements, owner cash and offline capacity. Startup catch-up retains per-room
+and per-property earnings.
 
-Hover or keyboard-focus an upgrade quantity or purchase button to preview its
-construction cost, portfolio production delta, room level/output, milestones and
-circuit progress. Specialists can be previewed in the contextual selector or Team;
-automation can be previewed at the contextual toggle or Save automation. Cyan
-values explicitly labelled PREVIEW are temporary. Leaving, changing room, estate,
-floor, filter or section, committing, editing a management form, and unloading
-clear previews. Current values remain separate from their projected effects.
+One Pixi application stays mounted across section and room changes. It animates
+retained light beams and particles over the original room artwork. Gallery cards
+use static high-resolution backgrounds and stable React room references; there
+is no renderer per card and no per-frame shape redraw. DPR is bounded at 2,
+resize and monitor-DPI changes update the existing renderer, and decorative
+motion stops on hidden documents, hidden/minimized native windows, management
+routes, reduced motion or the Empire animation preference. GPU initialization
+failure keeps the DOM controls and static artwork usable. Assets are copied from
+`Assets/Empire` to `ModernFrontend/empire-art` at build/publish time; browser-only
+Vite previews need those local files for artwork.
 
-`EmpireService.Preview` runs real commands on an isolated state at the simulation's
-current instant, with the same achievements and activity snapshot. It never
-accrues future time or calls persistence/wallet callbacks. Portfolio totals include
-other owned properties; an upgrade can affect other rooms through circuits or
-research. `ProductionBreakdown` and live production share the same calculation:
-base (including level milestones) × prestige × achievements × (1 + capped
-strategic additions), with the existing final room cap. Automation purchases
-upgrades every 30 production seconds and does **not** grant an output multiplier;
-specialists have fixed effects, not a fictional manager-level progression.
+## Loading and return-to-estate lifecycle
 
-The palette uses deep club greens, warm ivory, restrained milestone/prestige gold
-and a distinct cyan preview accent. Original vector insignia share a 24-unit grid
-for economy, navigation, room categories, operations and performance. Selection,
-preview entry, circuit progress, purchases and numeric transitions respect Empire's
-animation preference and replace in-flight animations rather than queuing them.
+The first embedded visit creates one dedicated WebView2 control in a separate,
+permanent overlay child. Returning to the lobby collapses that child without
+disposing its browser. Other games continue to use their independent shared
+embedded-game host, so the cached Empire visual is never reparented through their
+content controls. The retained browser is reused on later visits; a failed host
+is disposed and rebuilt on retry or next entry. Detached windows retain their
+own independent lifecycle and are disposed when closed. The cached embedded
+browser is disposed with the main window, not persisted across application
+restarts. This policy trades one resident idle browser for faster repeated visits;
+memory and long-session resource use still need measurement on player hardware.
 
-Research retains its three branch diagrams, rank prerequisites and exact costs.
-Catalog pages retain pagination and automation form inputs remain stable during
-production refreshes. The Windows smoke covers the revised navigation at
-1080×720, 1366×768 and 1920×1080, hover isolation/cleanup, estate overview, room
-changes, catalog purchases and detached hosting. Core regression tests compare
-previews with committed upgrades, cross-room synergy effects, specialist moves,
-automation policies, achievements, level caps and multiple properties.
+The healthy WPF WebView2 control is visible from its first layout pass, rather
+than changing native HWND visibility only after the React handshake. This avoids
+a native-composition repaint that might otherwise wait for a pointer hover.
+The packaged HTML has its own immediate boot splash with a Back action until
+React replaces it. The browser stays interactive for Back while the C# command
+bridge rejects all management mutations until a matching `visitId` arrives.
+C# then sends an `empire.activated` acknowledgement; React keeps purchases and
+previews gated until that acknowledgement is received. Each reopen resets
+authorization without disposing or reparenting the cached browser. Only a failed
+browser is hidden to expose the WPF error/retry surface.
+
+A loading surface appears immediately, with browser setup and estate handshake
+phases, a lobby return action, a 20-second timeout and an explicit retry path.
+Startup milestones are recorded relative to the native opening action for WebView2
+initialization, navigation, bridge readiness and DOM usability. A per-visit ID
+travels with the latest authoritative C# snapshot; React acknowledges it after
+committing the management DOM. Until that acknowledgment, the hosted browser is
+not input-enabled, including on a warm return. This prevents old displayed values
+from accepting commands. PixiJS is imported in a separate, lazy frontend chunk:
+static room artwork and management controls do not wait for the GPU renderer.
+Visual effects only animate while the host is visible and animation is enabled.
+No invented percent progress or asset-wide preloading is used.
+
+The Windows Empire smoke records cold and warm phase timings to
+`empire-startup-timings.json`, verifies browser identity across two visits,
+asserts that the native browser is already visible before its handshake,
+checks automatic DOM activation without mouse/keyboard input, confirms the
+hidden Pixi ticker has stopped, and exercises the detached window separately. These CI timings are observed test-runner milestones, not a universal
+end-user speed guarantee. A retained WebView2 can use more idle private memory;
+verify CPU, memory and resume behavior during extended native testing.
+
+## Bridge and transaction boundary
+
+`EmpireModernProtocol` version 1 accepts intents only from the exact packaged
+HTTPS `/empire.html` origin. Catalog IDs, quantities, policy bounds, UUID request
+IDs, session epoch and expected revision are validated. All production, prices,
+quotes, eligibility and preview outcomes come from C#. Credit amounts cross the
+bridge as invariant decimal strings; display abbreviation never determines a
+purchase. Policy fields support German decimal commas in the UI and are sent
+as exact invariant decimal strings.
+
+Mutations use the existing `MutateEmpire` / `EmpireService.Transact` path.
+Dividends keep the original atomic shared-wallet callback and active-game guard.
+No Core economy formula, balance, save schema or release pin changes. Each
+mounted host has an unpredictable epoch and monotonic command revision; it
+retains up to 4,096 receipts without eviction, then requires reopening. Explicit
+user actions increment that revision, while independent deterministic accrual
+continues at 1 Hz and Core revalidates affordability at commit. A new browser
+cannot replay an old epoch. This is session deduplication, not a new durable
+command journal; durable correctness remains in the existing save transaction.
+
+Previews run actual commands against `EmpireService.Preview`'s isolated copy,
+never persistence or wallet callbacks. Explicit previews are available alongside
+upgrade hover/focus previews and show construction budget, portfolio/room output,
+levels and resulting circuit tiers. Section/room/filter changes, edits and
+commits clear the preview. A command timeout requests a read-only snapshot and
+blocks further mutations until its receipt arrives or the view is reopened.
+Snapshots carry the last receipt so a missing acknowledgement can be recovered
+without automatically resending an action.
+
+## Verification and performance evidence
+
+`EmpireModernBridgeTests` covers the trusted origin, validation, revisions,
+duplicate requests, expired epochs, failed saves, exact German policy decimals,
+read-only snapshots and previews versus committed Core results. Existing Empire
+math, strategy, offline and persistence tests remain applicable. Frontend tests
+cover snapshot/receipt validation, decimal policy editing and retained room data.
+The Windows presentation and startup smokes exercise the actual WebView2 bridge,
+all management routes, upgrades, research, projects, specialists, automation,
+events, contracts, properties, dividend settlement, prestige, three exact CSS viewport
+sizes through WebView2 device emulation, observed native host dimensions, and
+detached/minimized hosting.
+
+The startup smoke also runs sequential read-only WPF and modern fixtures at
+requested native window sizes of 1080×720, 1366×768 and 1920×1080: one property, all 15 rooms at level 100, Prestige
+25, Resort Floor with Luxury Hotel selected, animation enabled and 1 Hz economy.
+It writes `empire-presentation-performance.json` with mean/p95 host composition
+intervals, modern browser rAF intervals, CPU and memory. CPU/memory include the
+host and all processes in the shared WebView2 environment, including the hidden
+lobby when alive, in both cases. The runner may clamp native windows to its
+virtual monitor; recorded actual client dimensions are authoritative. Exact CSS
+viewports are tested separately and never represented as physical monitor tests.
+Reduced motion is disabled for the modern benchmark and its ticker must actually
+be running. The 500 ms warm-up and four-second samples are short runner
+diagnostics. Composition/rAF/ticker clocks have different semantics; none is GPU
+frame time. GPU utilization/VRAM and long-session behavior remain unmeasured.
+No performance improvement is asserted without inspecting an actual result file.
+
+### Published single-file resource regression
+
+Empire PNGs remain WPF `Resource` items. Their browser copies use MSBuild `None`
+items with output/publish target paths; the source PNGs must never also be
+registered as WPF `Content`. Associated-content metadata takes priority over
+embedded pack resources and can resolve through an absent assembly directory in
+a single-file executable, crashing the legacy lobby artwork during startup.
+
+The artwork integrity check rejects overlapping `Resource` / `Content` source
+files. CI and both publishers also launch the actual published executable with
+`--packaged-artwork-smoke` from an unrelated temporary working directory. This
+isolated diagnostic starts before normal windows/player stores, decodes all six
+atlas crops and ten upper/resort rooms through the same WPF loader, and verifies
+all eleven loose browser images and `empire.html`. It writes
+`published-artwork-smoke/packaged-artwork.json`; publishing is blocked on failure.
+Build-directory startup tests alone do not cover this regression.
+
+### Recorded Windows runner comparison — 2026-11-05
+
+[Raw measurements](performance/empire-presentation-a37e354.json) retain the full
+unrounded data and source commit/run. The four-core Windows 10.0.26100 runner
+measured the same late-career fixture sequentially with animations verified on.
+The actual native client sizes below reflect its virtual-monitor limits.
+
+| Actual client | WPF CPU | Modern CPU | Private memory WPF / modern (MiB) | Host callback p95 WPF / modern |
+| --- | ---: | ---: | ---: | ---: |
+| 1042×684 | 3.69% | 0.97% | 733.1 / 768.6 | 31.25 / 15.62 ms |
+| 1042×732 | 5.06% | 0.78% | 726.2 / 761.2 | 31.25 / 15.62 ms |
+| 1042×752 | 7.28% | 1.27% | 724.4 / 765.8 | 31.25 / 15.62 ms |
+
+These four-second samples show lower CPU use and roughly 35–41 MiB more private
+memory for the modern surface in this fixture. Host composition callbacks are
+not GPU frame times or a universal FPS guarantee. Modern browser rAF p95 was
+15.7 ms; raw mean/p95/count values and process accounting remain in the JSON.
+Long-session CPU/memory, GPU/VRAM and native high-DPI acceptance remain open.
+Exact 1080×720, 1366×768 and 1920×1080 CSS layouts are tested separately through
+WebView2 emulation; these measurements do not pretend the runner has those
+physical monitors.
+
+Manual acceptance remains required for German/English text and keyboard use,
+125/150/200% DPI and monitor moves, initial loading and artwork quality, a
+30-minute detached session beside a live game (including blocked dividend
+collection), offline save/reopen and a simulated failed save. Compare baseline
+and modern CPU/private-memory trends on the same machine, graphics device,
+viewport, fixture and duration. Retiring the rollback source is a separate
+post-acceptance cleanup.
 
 ## Departments, floors and properties
 
@@ -259,3 +392,4 @@ command center adds three-resolution visibility checks, every research branch,
 prerequisite connectors, catalog pagination and input stability across refreshes. Existing
 presentation tests retain upgrade/dividend/navigation checks at three sizes.
 See `docs/empire-balancing.md` for simulation results and reproducible commands.
+

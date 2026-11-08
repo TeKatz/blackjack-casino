@@ -16,6 +16,7 @@ internal sealed class LoungeWindow : Window
     private SudokuView? sudokuView;
     private readonly List<LoungeGame> games = [];
     private readonly Func<string>? rewardNotice;
+    private readonly Action? modernHubBack;
     private Button? gamesHeaderBack;
     private bool showTimer;
     private bool showGuides;
@@ -27,9 +28,12 @@ internal sealed class LoungeWindow : Window
         Action<bool> persistTimerVisibility,
         bool showGuides = true,
         Action<bool>? persistGuideVisibility = null,
-        Func<string>? rewardNotice = null)
+        Func<string>? rewardNotice = null,
+        string? initialGameId = null,
+        Action? modernHubBack = null)
     {
         this.rewardNotice = rewardNotice;
+        this.modernHubBack = modernHubBack;
         this.progress = SudokuProgressState.Normalize(progress);
         this.persist = persist ?? throw new ArgumentNullException(nameof(persist));
         this.showTimer = showTimer;
@@ -60,6 +64,15 @@ internal sealed class LoungeWindow : Window
 
         games.Add(new LoungeGame("sudoku", "Sudoku", "A little space to think.", "Six difficulties, saved progress and a separate offline Daily library.", ShowHub, () => new LoungeGameArtwork(false)));
         ShowGames();
+        if (initialGameId is not null && contentHost.Content is LoungeGameMenu menu)
+            menu.OpenGame(initialGameId);
+    }
+
+    private void ReturnToModernHub()
+    {
+        if (modernHubBack is null) { ShowGames(); return; }
+        modernHubBack();
+        Close();
     }
 
     private void ShowGames()
@@ -72,7 +85,8 @@ internal sealed class LoungeWindow : Window
             previous.Dispose();
         }
         SetShellNavigation(null, null);
-        contentHost.Content = new LoungeGameMenu(games, SetShellNavigation);
+        contentHost.Content = new LoungeGameMenu(games, SetShellNavigation,
+            modernHubBack is null ? null : ReturnToModernHub);
     }
 
     private UIElement BuildShell()
@@ -155,7 +169,8 @@ internal sealed class LoungeWindow : Window
             previous.Dispose();
         }
 
-        SetShellNavigation(LoungeGameMenu.GamesBackLabel(), ShowGames);
+        SetShellNavigation(LoungeGameMenu.GamesBackLabel(),
+            modernHubBack is null ? ShowGames : ReturnToModernHub);
         progress = SudokuProgressState.Normalize(progress);
 
         int normalCompleted = progress.CompletedPuzzleIds.Count(id =>

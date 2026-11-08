@@ -2,7 +2,7 @@ name: Development Release
 
 on:
   push:
-    branches: ["feature/manor-modernization-phase-1"]
+    branches: ["develop"]
   workflow_dispatch:
 
 permissions:
@@ -14,16 +14,36 @@ concurrency:
 
 jobs:
   publish-development:
-    # Development test builds are sourced from the long-lived Manor migration branch.
-    if: github.ref == 'refs/heads/feature/manor-modernization-phase-1'
+    # The mutable Development channel is published only from the permanent develop integration branch.
+    if: github.ref == 'refs/heads/develop'
     runs-on: windows-latest
-    timeout-minutes: 20
+    # Includes full frontend/.NET tests, two Windows runtime smokes, two self-contained
+    # publishes, artifact verification, upload and a published-package checksum round trip.
+    # A 20-minute cap cancelled a passing build at the desktop startup smoke in P2 batch 1.
+    timeout-minutes: 60
 
     steps:
       - name: Checkout
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
+
+      - name: Setup Node for modern Manor frontend
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install modern frontend dependencies
+        working-directory: frontend
+        run: npm ci --no-audit --no-fund
+
+      - name: Test modern frontend
+        working-directory: frontend
+        run: npm test
+
+      - name: Build modern frontend
+        working-directory: frontend
+        run: npm run build
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
@@ -65,6 +85,9 @@ jobs:
       - name: Test
         run: dotnet test BlackjackCasino.sln --configuration Release --no-build
 
+      - name: WPF-free native shell protocol and storage smoke
+        run: dotnet run --project src/BlackjackCasino.NativeShell/BlackjackCasino.NativeShell.csproj --configuration Release --no-build -- --smoke
+
       - name: Shared controls regression contract
         run: python tools/check_control_templates.py --self-test
 
@@ -72,6 +95,9 @@ jobs:
         run: dotnet run --project tools/PresentationSmoke --configuration Release -- artifacts/presentation-regression
 
       - name: Desktop startup, Nine Lives and Kniffel smoke
+        # An actual startup deadlock must fail this step explicitly instead of
+        # exhausting the entire development publishing job without diagnostics.
+        timeout-minutes: 18
         run: dotnet run --project tools/StartupSmoke/StartupSmoke.csproj --configuration Release -- artifacts/startup-smoke
 
       - name: Upload startup smoke evidence
@@ -140,6 +166,39 @@ jobs:
 
           New-Item -ItemType Directory -Path artifacts/app/tools/updater -Force | Out-Null
           Copy-Item artifacts/updater/BlackjackCasino.Updater.exe artifacts/app/tools/updater/BlackjackCasino.Updater.exe
+
+      - name: Verify bundled Midnight Manor frontend assets
+        shell: pwsh
+        run: |
+          $index = "artifacts/app/ModernFrontend/index.html"
+          $assets = "artifacts/app/ModernFrontend/assets"
+          if (!(Test-Path $index)) { throw "Modern Manor index.html was not packaged." }
+          if (!(Test-Path $assets)) { throw "Modern Manor bundles were not packaged." }
+          $javascript = Get-ChildItem $assets -Filter "*.js" -File
+          if (!$javascript) { throw "Modern Manor JavaScript bundle missing." }
+          $reelsEntry = "artifacts/app/ModernFrontend/reels.html"
+          if (!(Test-Path $reelsEntry)) { throw "Packaged Reels HTML entry missing." }
+          $references = [regex]::Matches((Get-Content $reelsEntry -Raw), '(?:src|href)="(?:\./)?assets/([^"]+)"')
+          if (!(@($references | Where-Object { $_.Groups[1].Value.EndsWith(".js") }).Count)) {
+            throw "Packaged Reels HTML does not reference its compiled JavaScript."
+          }
+          foreach ($reference in $references) {
+            $resource = Join-Path "artifacts/app/ModernFrontend/assets" $reference.Groups[1].Value
+            if (!(Test-Path $resource)) { throw "Packaged Reels resource missing: $resource" }
+          }
+
+      - name: Verify published single-file Empire artwork
+        shell: pwsh
+        run: ./tools/verify_published_artwork.ps1 -AppDirectory artifacts/app -OutputDirectory artifacts/published-artwork-smoke
+
+      - name: Upload published artwork evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: published-artwork-smoke
+          path: artifacts/published-artwork-smoke
+          if-no-files-found: ignore
+          retention-days: 14
 
       - name: Generate installed release notes
         shell: pwsh

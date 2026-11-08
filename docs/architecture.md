@@ -16,12 +16,31 @@ UI-independent domain logic. It owns:
 
 The desktop UI must not reimplement outcome rules. Presentation may animate or anticipate an already-resolved result, but it cannot change Blackjack settlement or slot outcomes.
 
+## Modern Chill Lounge boundary
+
+All **seven** normal Lounge activities use the React route in the local WebView2 host: Sudoku, Solitaire, Word Search, Memory, Jigsaw, Tales and Midnight Bastion. Native C# remains the game/save authority. Word Search allows an intentional replacement of a running puzzle after library confirmation; completion dialogs are presentation-only. The temporarily shared Lobby soundtrack does not alter any progression or game engine.
+
+
+`MainWindow.Lounge.OpenLoungeCore` normalizes the established C# progress records and routes straight to `OpenModernLounge` when bundled WebView2 is available. `ModernLoungeCatalog` supplies the seven stable game IDs and native read-only status summaries; it is independent of all WPF `LoungeHostedGame` factories. The WebView2 host owns only presentation and validated session/revision/receipt commands, with C# services handling every save and reward. A failed or unavailable WebView2 explicitly calls `OpenLegacyLounge`, which is the sole initializer for native WPF Lounge modules and their visual decorators.
+
+The retired native startup-welcome dialog is not shown during normal startup, but remains as regression-reference source. The remaining native WPF game modules provide tested emergency/fallback behavior and should remain until recovery, accessibility and device acceptance is complete. The [legacy inventory](legacy-wpf-inventory.md) describes which files are still reachable and why.
+
+## Shared modern desktop surface
+
+`ModernGameSurface` is the first extraction from the large WPF `MainWindow`. The seven foreground React game routes (Blackjack, Midnight Dice, Chill Lounge, Midnight Merge, Midnight Reels, Neon Vault and Nine Lives) use the same `MountModernSurface` / `UnmountModernSurface` boundary. The adapter captures the previous native control-enabled states, blocks input behind a mounted React game, rejects a second modern page or occupied native fallback, and restores the exact prior states on exit. Browser commands, wallet settlement and durable C# sessions are unaffected. Modern Manor still uses a native window rehost for WPF resource scope; the React lobby owns its own layered background until a later host step.
+
+The native `LoungeWindow` and other fallback source paths remain. This is a reduction in WPF hosting responsibilities, **not yet a non-WPF executable**. The source boundary and Windows lifecycle test are covered in [desktop host modernization](host-modernization-phase5.md).
+
+## Offline WebView2 initialization and trust boundary
+
+`ModernWebViewBootstrap` is the shared browser-initialization adapter for the ten local React page hosts. It configures the existing `DenyCors` static-resource mapping, disables browser tooling and native privileges, blocks new windows and permission prompts and delegates navigation allowlisting to the exact per-page trust function. If the owner closes while WebView2 initializes, it does not attach handlers or navigate. Each view still owns its navigation/process failure handling, message protocol, native C# transaction session and durable receipts. Real Windows Lobby/Lounge smokes assert the browser configuration; source-level CI prevents reintroduction of competing initializers.
+
 ## `BlackjackCasino.Desktop`
 
-The WPF desktop project is the visible casino shell. It owns:
+The WPF desktop project remains the native host for the React casino lobby and existing game UIs. It owns:
 
 - the casino lobby and mode registry;
-- Blackjack table presentation and configurable table setup;
+- native WebView2 hosting for the fully modern Blackjack table; `BlackjackTableController` supplies UI-independent session state and rules;
 - embedded hosting for Midnight Reels, Midnight Manor and Neon Vault;
 - profile/progression navigation with an in-app back stack;
 - custom casino controls, themes, audio and animation preferences;
@@ -117,7 +136,7 @@ GitHub excludes prereleases from `latest`, so Development cannot accidentally be
 
 ### Development
 
-`.github/workflows/development-release.yml` publishes successful development builds from the explicitly pinned branch, currently `feature/manor-modernization-phase-1` during the Manor migration. Both its push trigger and job guard select that source. Builds use versions such as `0.10.1-dev.N` and replace the assets of the mutable GitHub prerelease tagged `development`.
+`.github/workflows/development-release.yml` publishes successful development builds from the explicitly pinned branch, currently `develop`, the permanent development integration branch. Both its push trigger and job guard select that source. Builds use versions such as `0.10.1-dev.N` and replace the assets of the mutable GitHub prerelease tagged `development`.
 
 The client reads:
 
@@ -144,8 +163,35 @@ These checks intentionally cover both domain correctness and WPF integration bec
 
 The updater protocol is schema-versioned. `minimumUpdaterVersion` allows an old client/updater to be rejected before it consumes a future incompatible package format.
 
-## Planned modern presentation (not implemented yet)
+## Modern presentation and staged shell migration
 
-A staged move from WPF to React + TypeScript + HTML/CSS and PixiJS is planned, **starting with Midnight Manor after the active Jigsaw work ends**. The initial rendering adapter will live in the existing WPF shell via WebView2; only after every migrated mode and updater path passes acceptance would a smaller native .NET host replace WPF. The planned frontend is not allowed to generate outcomes, change the bankroll or own durable rewards. C# Core remains authoritative; any new application/bridge service must have versioned command schemas, origin validation and idempotent settlement. See [modernization roadmap](modernization-roadmap.md) and [agent working agreement](../AGENTS.md).
+The staged migration now includes the React casino lobby, playable Midnight Manor, shop, challenges, statistics, Season Pass, profile identity editor, Blackjack hand history, Casino Vault, Collector's Album and Casino Empire. Empire has its own validated, session-deduplicated bridge to the existing transaction/preview services and uses the same modern host in embedded and detached windows; its economy remains in Core. The presentation adapter lives inside the WPF host via WebView2; only after every migrated mode, album, updater and save path passes acceptance would a smaller native .NET host replace WPF. The planned frontend is not allowed to generate outcomes, change the bankroll or own durable rewards. C# Core remains authoritative; any new application/bridge service must have versioned command schemas, origin validation and idempotent settlement. See [modernization roadmap](modernization-roadmap.md), [branching policy](branching-and-release-policy.md) and [agent working agreement](../AGENTS.md).
 
-Do not merge the Manor migration to main, delete branches, or change the Development source without an explicit instruction. The unrequested Phase-1 merge was corrected with a normal commit. The current cumulative release branch and workflow instructions are documented in [Development delivery](development-update-delivery.md).
+After consolidation, `main` is the tested integration baseline and `develop` is the sole Development publisher. Historical branches remain for traceability; do not delete them or repoint a release channel without explicit approval. The current cumulative release branch and workflow instructions are documented in [Development delivery](development-update-delivery.md).
+
+
+## Blackjack native presentation retirement (2026-11-06)
+
+Blackjack has no WPF table, sidebar, custom-rules dialog or WPF wager renderer. The live C# session and table preferences are owned by `BlackjackTableController` and projected into React via the versioned Blackjack protocol. Browser failure closes the modern view without replacing the session; reopening mounts a new React browser against the same Core hand. The outer WPF application remains until the other games and window-level services can be migrated. See [Blackjack modernization](blackjack-modernization.md).
+
+## Nine Lives presentation boundary (2026-11-06)
+
+`NineLivesSession` and `SlotProgression` remain C# authorities. The native `MainWindow.ModernNineLives` adapter runs each spin and commits the shared wallet, saved preferences and rewards before sending a read-only `ModernNineLivesSnapshot`. `ModernNineLivesProtocol` accepts only enumerated wagers, toggles and spin intents from the exact packaged `nine-lives.html` origin, with an idempotent request/epoch/revision ledger kept outside WebView2. Browser failure cannot reroll or drop bonus spins during in-memory recovery. React/PixiJS owns all Nine Lives game visuals. The old Nine Lives WPF Window was removed, while lobby preview art and remaining native host infrastructure are retained.
+
+## Neon Vault UI boundary (2026-11-06)
+
+`NeonVaultSession` is the sole C# RNG/paytable/bonus engine. The `MainWindow.ModernNeonVault` adapter commits each native result to the shared wallet, progression and profile before sending a `ModernNeonVaultSnapshot` to the offline local React page. The validated `ModernNeonVaultProtocol` rejects untrusted origins, invented wagers, stale revisions and duplicate request receipts. Its epoch and session survive WebView2 failure together with pending native free spins. The old WPF Neon Vault window and reel renderer have been removed. Browser feature effects cannot affect outcomes.
+
+## Midnight Merge gameplay/presentation boundary (2026-11-06)
+
+The original `BlackjackCasino.Core.MidnightMerge` catalog, item definitions, orders, 7×6 board and schema-2 progression are unchanged. `MergeBoard` persists the candidate atomic snapshot to the current `PlayerStateStore` **before** publishing a successful mutation; a failure leaves the prior state untouched. The `MainWindow.MidnightMerge` adapter hosts the local React/PixiJS page, commits every spawn/drop/delivery into C#, calls existing profile ledger synchronization and credits milestone bankroll rewards. `ModernMergeSnapshot` is a localized, read-only projection. `ModernMergeProtocol` accepts only exact origin / versioned requests with a session GUID and expected durable board revision; its retained receipt ledger prevents duplicated in-memory WebView commands. No client-provided reward, score, item definition or random outcome is authoritative. On browser loss, the C# board/ledger survive in memory and rehosting sends a new snapshot without a replay. The retired WPF `MidnightMergeView` game renderer is absent from the play route; the WPF emergency lobby preview remains.
+
+## Midnight Dice native rules and React presentation (2026-11-06)
+
+The lobby's Midnight Dice destination is the locally packaged `frontend/midnight-dice.html` page in `ModernDiceView`. React renders the felt table, five original cosmetic palettes, all thirteen selectable scoring categories, settings, separate casual/casino game setup, AI standings and rank receipts. PixiJS is cosmetic only. The existing WPF game components remain in source for controlled rollback but are not a selectable primary route.
+
+The native `MainWindow.ModernDice` adapter exclusively calls `KniffelGame` and, for the paid four-seat mode, `KniffelCash`/`KniffelTable`. Every roll, hold, score or fee/casino settlement checkpoint is committed through the existing atomic player-state persistence before its result is projected. Player and Season XP, leaderboard statistics, challenges and any shared-cash payouts remain C#-authoritative. `ModernDiceSnapshot` is read-only; the React caller can only propose valid roll/hold/category, mode and preference intents. `ModernDiceProtocol` enforces an exact local URL, version, session, command GUID and monotonic revision; a receipt ledger survives a browser failure in the native host. The original schema and old save IDs remain compatible. The view can be reopened against the same committed checkpoint without replaying a dice roll, AI turn, fee or award.
+
+## Independent WPF-free host candidate
+
+`src/BlackjackCasino.NativeShell` is a separate .NET 10 WinForms/WebView2 executable. It links the existing pure native Blackjack/Reels/Neon Vault/Nine Lives protocols, session controllers and saved-state model; the WinForms browser never owns RNG, wagers or rewards. It has a standalone Windows smoke and CI artifact, and intentionally saves to an isolated preview directory. The full casino parity list and release blockers are documented in [native-shell-migration.md](native-shell-migration.md). The ordinary shipped desktop still uses WPF and cannot be retired yet.

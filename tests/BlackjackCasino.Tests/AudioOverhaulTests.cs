@@ -5,6 +5,28 @@ namespace BlackjackCasino.Tests;
 public sealed class AudioOverhaulTests
 {
     [Theory]
+    [InlineData("Manor", "midnight-manor.mp3")]
+    [InlineData("ChillLounge", "chill-lounge.mp3")]
+    [InlineData("Lobby", "lobby.mp3")]
+    [InlineData("DiceLounge", "midnight-dice.mp3")]
+    public void UserSelectedMusicMapsToItsRequestedArea(string trackName, string fileName)
+    {
+        Soundtrack soundtrack = Enum.Parse<Soundtrack>(trackName);
+        Assert.Equal(fileName, LicensedSoundtracks.FileName(soundtrack));
+    }
+
+    [Fact]
+    public void UnchangedAreasKeepTheirOriginalSoundtracks()
+    {
+        Assert.Null(LicensedSoundtracks.FileName(Soundtrack.Blackjack));
+        Assert.Null(LicensedSoundtracks.FileName(Soundtrack.Reels));
+        Assert.Null(LicensedSoundtracks.FileName(Soundtrack.ChillLoungeActivity));
+        Assert.Null(LicensedSoundtracks.FileName(Soundtrack.Adventure));
+        Assert.Equal(CasinoMusicSynthesis.Build(Soundtrack.Blackjack).Frames,
+            CasinoMusicSynthesis.Build(Soundtrack.Lobby).Frames);
+    }
+
+    [Theory]
     [InlineData(0,72)] [InlineData(1,104)] [InlineData(2,62)] [InlineData(3,68)] [InlineData(4,74)] [InlineData(5,58)]
     public void TracksAreFullStereoPhrasesWithContinuousLoopBoundaries(int trackId,int tempo)
     {

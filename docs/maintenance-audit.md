@@ -1,6 +1,16 @@
 # Repository maintenance audit
 
-**Checked 2026-11-04.** Scope: workflow tooling, pinned .NET test dependencies, available documentation, and migration readiness. This is a record of *verified current state*, not a claim that every dependency is already upgraded.
+**Latest branch/workflow review: 2026-11-08.** Package-version comparisons below are preserved from their 2026-11-04 audit and require renewed verification before dependency upgrades.
+
+## Cumulative integration audit (2026-11-08)
+
+- The cumulative Manor/Casino modernization is integrated through PR #36. `main` becomes the tested integration baseline, while `develop` is the permanent Development update source.
+- The integration incorporates the main-only CC0 Casino Music Importer and the resilient detached-caseboard smoke synchronization fix. The historical earlier Manor preview revert is superseded by the fully tested current frontend.
+- CI, frontend, presentation and repository-contract workflows cover `develop`; Development release changes only after its full Windows tests and package verification succeed. Stable still requires an explicit version tag.
+- The manifest URL, package schema, end-user save location, C# RNG, wager math and reward contracts are unchanged by the branch consolidation.
+- Branch-sensitive Markdown is being updated for the permanent `main`/`develop` model; dated feature-phase documents retain historical context. See [branch policy](branching-and-release-policy.md).
+
+**Historical audit checked 2026-11-04.** Scope: workflow tooling, pinned .NET test dependencies, available documentation, and migration readiness. This is a record of *verified current state*, not a claim that every dependency is already upgraded.
 
 ## Completed in the preparation branch
 
@@ -39,10 +49,10 @@ The existing suite links some Desktop persistence and presentation helper files 
 
 ## Known non-blocking debt
 
-- Some older architecture/feature documents are historical and refer to the WPF implementation; they remain useful reference material, but the new frontend is **only planned**.
+- Some architecture/feature documents cover historical WPF-only implementations; modern Manor is already active in Development, while other modes remain on WPF.
 - Full German localization remains incomplete; `--strict-shell` checks only its explicitly covered surfaces.
-- Jigsaw is in active development; defer branch cleanup, game engine migration and disruptive toolchain changes until that work completes.
-- The intended first PixiJS/TypeScript proof of migration is Midnight Manor, **not** a current installed feature.
+- Jigsaw has its own regression and quality gates. Coordinate broad dependency updates and branch cleanup with other active development workstreams.
+- Midnight Manor is the first shipped React/PixiJS game in Development, with a single lobby entry and source-only WPF rollback.
 
 See [roadmap](modernization-roadmap.md), [agent workflow](../AGENTS.md), and [Development delivery](development-update-delivery.md).
 
@@ -50,6 +60,6 @@ See [roadmap](modernization-roadmap.md), [agent workflow](../AGENTS.md), and [De
 
 The consolidated branch changes the Development publisher from `feature/casino-quality-phase-4` to `main` in **both** required workflow gates. The older note above describes the preparatory state before consolidation. NuGet/xUnit upgrades remain deferred and require a separate testable change. Verify actual main CI and the Development artifact before deleting old feature branches.
 
-## Manor Development branch correction (2026-11-04)
+## Manor Development channel ownership (historical, 2026-11-04)
 
-The active Development publisher is `feature/manor-modernization-phase-1` rather than main. This preserves a clean pre-migration main working tree while allowing iterative updates from the same feature branch without merges. PR #35 was merged in error and reversed by a non-forced forward-only commit. The merge and correction remain in history; future deliberate reintroduction to main needs a reviewed strategy.
+At that time, the active Manor development and testing branch was `feature/manor-modernization-phase-1`, without merging into `main`. Both Development release workflow guards target that branch. Earlier main-publishing notes are historical; the unintended merge was corrected without force-pushing. That arrangement has been superseded by `develop` and PR #36.

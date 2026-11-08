@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using BlackjackCasino.Core;
+using BlackjackCasino.Core.Manor;
 
 namespace BlackjackCasino.Desktop;
 
@@ -156,7 +157,7 @@ internal static class PlayerStateStore
             Sudoku = BlackjackCasino.Core.Sudoku.SudokuProgressState.Normalize(state.Sudoku),
             Jigsaw = NormalizeJigsaw(state.Jigsaw),
             Bankroll = bankroll,
-            ManorBet = Math.Clamp(decimal.Truncate(state.ManorBet), 1, 1_000),
+            ManorBet = Math.Clamp(decimal.Truncate(state.ManorBet), ManorRules.MinimumBet, ManorRules.MaximumBet),
             ManorSpeed = Enum.IsDefined(state.ManorSpeed) ? state.ManorSpeed : SlotSpinSpeed.Normal,
             ManorAuto = (state.ManorAuto ?? new AutoSpinSettings()).Sanitize(),
             SelectedBet = selectedBet,

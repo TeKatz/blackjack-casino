@@ -1,168 +1,147 @@
-using System.Diagnostics;
 using System.IO;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using BlackjackCasino.Core.Kniffel;
 using BlackjackCasino.Core;
+using BlackjackCasino.Core.Kniffel;
 using BlackjackCasino.Desktop;
+using Microsoft.Web.WebView2.Core;
+using static ModernDiceSmokeHelper;
 
 internal static class KniffelSmoke
 {
     internal static async Task Run(MainWindow window, string output, PlayerProfileState profile)
     {
-        Require(window.Modes.Modes.Any(mode => mode.Id == "kniffel"), "Kniffel is missing from the lobby.");
+        Require(window.Modes.Modes.Any(x => x.Id == "kniffel"), "Midnight Dice is missing from the lobby.");
         profile.OwnedCosmeticIds.Add("diceset-aurora");
         profile.EquippedDiceSetId = "diceset-aurora";
-        NavigationSmoke.OpenCovered(window, "kniffel");
-        await Task.Delay(100);
-        KniffelView view = Find<KniffelView>(window).Single();
-        Require(Application.Current.Windows.Cast<Window>().Count(w => w.IsVisible) == 1, "Kniffel opened another native window.");
-        Require(Find<KniffelDie>(view).Count() == 5, "Five vector dice were not rendered.");
-        Require(Find<KniffelDie>(view).All(die => die.VisualVariant == "dice-aurora"), "Equipped premium dice were not rendered.");
-        Require(Find<Button>(view).Count(button => button.Name.StartsWith("Score_", StringComparison.Ordinal)) == 13, "Score sheet does not have 13 boxes.");
-        Require(Find<TextBlock>(view).Any(text => text.Text == "Midnight Dice"), "English game title is missing.");
-        Require(Find<TextBlock>(view).Single(text => text.Name == "TurnText").Text == "Turn 1 of 13", "Table text was not translated.");
-        Require(!Button(view, "CommitButton").IsEnabled, "Scoring was enabled before a roll.");
-        Capture(window, Path.Combine(output, "kniffel-initial.png"));
-        window.Width = 1080;
-        window.Height = 720;
-        await Task.Delay(80);
-        Capture(window, Path.Combine(output, "kniffel-1080x720.png"));
-        window.Width = 1280;
-        window.Height = 900;
+        ModernDiceView view = await Open(window);
+        CoreWebView2 web = view.Browser.CoreWebView2!;
+        Require(Application.Current.Windows.Cast<Window>().Count(w => w.IsVisible) == 1,
+            "Midnight Dice opened a second native window.");
+        Require(await JavaScript(web,
+            "Boolean(document.querySelectorAll('.md-die').length===5"
+            + "&&document.querySelectorAll('.md-category').length===13"
+            + "&&document.querySelector('[data-testid=\"modern-dice-app\"]')?.dataset.mode==='casual')"),
+            "The complete React casual dice sheet was not shown.");
+        Require(await JavaScript(web,
+            "Boolean(document.querySelector('.md-die-image')?.outerHTML.includes('#389E97'))"),
+            "The equipped Aurora dice palette was not projected into the React dice.");
+        Require(!await JavaScript(web,
+            "Boolean(!document.querySelector('[data-testid=\"dice-commit\"]')?.disabled)"),
+            "Scoring is available without a roll.");
 
-        Click(view, "RollButton");
-        Require(view.Game.RollsUsed == 1, "First roll was not committed.");
-        Click(view, "KniffelDie0");
-        int held = view.Game.Dice[0];
-        Click(view, "RollButton");
-        Require(view.Game.RollsUsed == 2 && view.Game.Dice[0] == held, "Reroll changed a held die.");
-        Click(view, "Score_Chance");
-        Require(view.Game.FilledCount == 0, "Selecting a box committed it without confirmation.");
-        Require(Button(view, "Score_Chance").Effect is not null, "A scoring candidate has no glow effect.");
-        Capture(window, Path.Combine(output, "kniffel-score-selection.png"));
-        Click(view, "CommitButton");
-        Require(view.Game.FilledCount == 1 && view.Game.RollsUsed == 0, "Scoring did not advance the turn.");
+        await Capture(web, Path.Combine(output, "kniffel-modern-initial.png"));
+        window.Width = 1080; window.Height = 720;
+        await Task.Delay(160);
+        Require(await JavaScript(web,
+            "(()=>{const dice=document.querySelectorAll('.md-die');"
+            + "const paper=document.querySelector('.md-scorecard');return dice.length===5"
+            + "&&Array.from(dice).every(x=>x.getBoundingClientRect().width>=45)"
+            + "&&paper.getBoundingClientRect().right<=innerWidth+1})()"),
+            "Dice or score sheet are clipped at 1080×720.");
+        await Capture(web, Path.Combine(output, "kniffel-modern-1080x720.png"));
+        window.Width = 1280; window.Height = 900;
 
-        // Returning to the lobby must preserve exact dice, holds and remaining rolls.
-        Click(view, "RollButton");
-        Click(view, "KniffelDie1");
-        int[] dice = view.Game.Dice.ToArray();
-        Click(view, "KniffelBackButton");
-        Require(Find<Button>(window).Any(button => button.Name == "Mode_kniffel" && button.IsVisible && button.IsEnabled), "Lobby was not restored.");
-        NavigationSmoke.OpenCovered(window, "kniffel");
-        await Task.Delay(80);
-        view = Find<KniffelView>(window).Single();
-        Require(view.Game.RollsUsed == 1 && view.Game.Held[1] && dice.SequenceEqual(view.Game.Dice), "Resume changed the turn checkpoint.");
+        if (await JavaScript(web, "Boolean(document.querySelector('[data-testid=\"dice-settings-panel\"]'))"))
+            await Click(web, "dice-settings", false);
+        // The WPF suite leaves per-game animations disabled; ensure deterministic
+        // first-roll smoke independent of the player's presentation preference.
+        await Click(web, "dice-settings", false);
+        bool animationEnabled = await JavaScript(web,
+            "document.querySelectorAll('[data-testid=\"dice-settings-panel\"] input')[1]?.checked===true");
+        await Click(web, "dice-settings", false);
+        if (animationEnabled) await SetAnimations(web, false);
+
+        await Click(web, "dice-roll");
+        Require(Game(window).RollsUsed == 1, "The first native dice roll was not committed.");
+        await Click(web, "dice-die-0");
+        int face = Game(window).Dice[0];
+        Require(Game(window).Held[0], "React did not hold die one.");
+        await Click(web, "dice-roll");
+        Require(Game(window).RollsUsed == 2 && Game(window).Dice[0] == face,
+            "Rolling the native dice changed a held die.");
+        await Select(web, "Chance");
+        Require(Game(window).FilledCount == 0, "Selecting Chance prematurely recorded points.");
+        await Capture(web, Path.Combine(output, "kniffel-modern-selection.png"));
+        await Click(web, "dice-commit");
+        Require(Game(window).FilledCount == 1 && Game(window).RollsUsed == 0,
+            "Recording Chance did not advance the authoritative turn.");
+
+        // Resume precisely the same committed faces, hold switches and roll allowance.
+        await Click(web, "dice-roll");
+        await Click(web, "dice-die-1");
+        int[] faces = Game(window).Dice.ToArray();
+        await Close(window, web);
+        Require(Find<CasinoLobbyView>(window).Any(x => x.IsVisible),
+            "The casino lobby is not visible after the React Midnight Dice exit.");
+
+        view = await Open(window);web = view.Browser.CoreWebView2!;
+        Require(Game(window).RollsUsed == 1 && Game(window).Held[1]
+            && faces.SequenceEqual(Game(window).Dice), "Re-entry did not restore the saved held dice.");
 
         long xpBefore = profile.LifetimeExperience;
-        foreach (KniffelCategory category in KniffelScoring.Categories.Where(category => category != KniffelCategory.Chance))
+        foreach (KniffelCategory category in KniffelScoring.Categories.Where(x => x != KniffelCategory.Chance))
         {
-            if (!view.Game.CanScore) Click(view, "RollButton");
-            int preview = view.Game.Preview(category);
-            Click(view, "Score_" + category);
-            Click(view, preview > 0 ? "CommitButton" : "ScratchButton");
+            if (!Game(window).CanScore) await Click(web, "dice-roll");
+            int preview = Game(window).Preview(category);
+            await Select(web, category.ToString());
+            await Click(web, preview > 0 ? "dice-commit" : "dice-scratch");
         }
-        Require(view.Game.IsComplete && !Button(view, "RollButton").IsEnabled, "The 13-round game did not finish.");
-        long earned = KniffelProgression.PlayerExperience(view.Game.Total);
-        Require(profile.LifetimeExperience == xpBefore + earned, "Completed game did not grant the expected XP.");
-        Require(Find<TextBlock>(view).Single(text => text.Name == "NoticeText").Text.Contains("XP", StringComparison.Ordinal), "Completion did not show the XP award.");
-        await CloseResult(view);
-        Capture(window, Path.Combine(output, "kniffel-complete.png"));
-        Click(view, "KniffelBackButton");
-        NavigationSmoke.OpenCovered(window, "kniffel");
-        await Task.Delay(80);
-        view = Find<KniffelView>(window).Single();
-        Require(view.Game.IsComplete && profile.LifetimeExperience == xpBefore + earned, "Reopening a finished game granted duplicate XP.");
-        await CloseResult(view);
-        Click(view, "NewGameButton");
-        Click(view, "StartCasualButton");
-        view = Find<KniffelView>(window).Single();
-        Require(view.Game.FilledCount == 0, "A new game did not clear the score sheet.");
+        Require(Game(window).IsComplete, "The 13-category React sheet never completed.");
+        long xpEarned = KniffelProgression.PlayerExperience(Game(window).Total);
+        Require(profile.LifetimeExperience == xpBefore + xpEarned,
+            "The casual completion XP was not awarded exactly once.");
+        await WaitFor(window, () => true, "");
+        for (int i = 0; i < 120; i++)
+        {
+            if (await JavaScript(web,
+                "Boolean(document.querySelector('[data-testid=\"dice-result-panel\"]'))")) break;
+            await Task.Delay(70);
+        }
+        Require(await JavaScript(web,
+            "Boolean(document.querySelector('[data-testid=\"dice-result-panel\"]')"
+            + "&&document.body.textContent.includes('XP'))"),
+            "The completed React sheet did not expose its final receipt and XP.");
+        await Click(web, "dice-result-close", false);
+        await Capture(web, Path.Combine(output, "kniffel-modern-complete.png"));
 
-        // Enable actual roll animation, close while it is running, then resume the result.
-        CheckBox animationSetting = Find<CheckBox>(window).Single(box => box.Name == "AnimationsCheckBox");
-        animationSetting.IsChecked = true;
-        var preferencesField = typeof(MainWindow).GetField("preferences", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
-        AppPreferences previousPreferences = (AppPreferences)preferencesField.GetValue(window)!;
-        Require(!previousPreferences.Presentation("kniffel").AnimationsEnabled, "Blackjack animation setting leaked into Midnight Dice.");
-        preferencesField.SetValue(window, previousPreferences.WithPresentation("kniffel", previousPreferences.Presentation("kniffel") with { AnimationsEnabled = true }));
-        Click(view, "RollButton");
-        Require(!Button(view, "RollButton").IsEnabled && !Button(view, "Score_Chance").IsEnabled,
-            "Animation did not lock rolling and scoring.");
-        dice = view.Game.Dice.ToArray();
-        Click(view, "KniffelBackButton");
-        NavigationSmoke.OpenCovered(window, "kniffel");
-        await Task.Delay(80);
-        view = Find<KniffelView>(window).Single();
-        Require(dice.SequenceEqual(view.Game.Dice) && view.Game.RollsUsed == 1, "Leaving mid-animation granted a reroll.");
-        Click(view, "RollButton");
-        Require(view.Game.RollsUsed == 2, "Animated reroll was not committed exactly once.");
-        dice = view.Game.Dice.ToArray();
-        await WaitForRollSettlement(view);
-        Require(view.Game.RollsUsed == 2 && dice.SequenceEqual(view.Game.Dice), "Animation settlement changed the saved roll.");
-        Require(Find<KniffelDie>(view).Select(die => die.Value).SequenceEqual(dice), "Settled dice do not show the saved roll.");
-        Capture(window, Path.Combine(output, "kniffel-animated-settled.png"));
-        Click(view, "NewGameButton");
-        Require(Find<Border>(view).Single(border => border.Name == "RestartOverlay").IsVisible, "Restart did not request confirmation.");
-        Click(view, "CloseDiceSetupButton");
-        Require(view.Game.RollsUsed == 2, "Cancelling restart discarded the turn.");
-        Click(view, "KniffelBackButton");
-        animationSetting.IsChecked = false;
-        AppPreferences currentPreferences = (AppPreferences)preferencesField.GetValue(window)!;
-        preferencesField.SetValue(window, currentPreferences.WithPresentation("kniffel", previousPreferences.Presentation("kniffel")));
+        await Close(window, web);
+        view = await Open(window);web = view.Browser.CoreWebView2!;
+        Require(Game(window).IsComplete && profile.LifetimeExperience == xpBefore + xpEarned,
+            "Reopening the completed game awarded duplicate XP.");
+        await Click(web, "dice-result-close", false);
+        await Click(web, "dice-setup", false);
+        await Click(web, "dice-casual-new");
+        Require(Game(window).FilledCount == 0 && Game(window).RollsUsed == 0,
+            "Starting a fresh casual sheet did not clear the previous game.");
+
+        // A roll is persisted before animation; closing mid-flight cannot grant a reroll.
+        await SetAnimations(web, true);
+        await Click(web, "dice-roll");
+        Require(Game(window).RollsUsed == 1,
+            "Animated roll did not settle natively before the animation.");
+        faces = Game(window).Dice.ToArray();
+        await Close(window, web);
+        view = await Open(window);web = view.Browser.CoreWebView2!;
+        Require(Game(window).RollsUsed == 1 && faces.SequenceEqual(Game(window).Dice),
+            "Exiting during dice animation changed the committed outcome.");
+
+        await Click(web, "dice-roll");
+        Require(Game(window).RollsUsed == 2, "Reroll after re-entry was lost.");
+        faces = Game(window).Dice.ToArray();
+        await Task.Delay(1100);
+        Require(faces.SequenceEqual(Game(window).Dice), "Cosmetic dice animation altered the RNG result.");
+        await Capture(web, Path.Combine(output, "kniffel-modern-animated-settled.png"));
+        await Click(web, "dice-setup", false);
+        await Click(web, "dice-casual-new", false);
+        Require(await JavaScript(web,
+            "Boolean(document.querySelector('[data-testid=\"dice-casual-confirm\"]'))"),
+            "Starting over during an unfinished casual game skipped confirmation.");
+        await Click(web, "dice-setup-close", false);
+        Require(Game(window).RollsUsed == 2, "Canceling a restart lost the committed dice.");
+
+        await SetAnimations(web, false);
+        await Close(window, web);
         File.WriteAllText(Path.Combine(output, "kniffel-result.txt"),
-            "PASS: embedded lobby entry; five vector dice; 13 scoring rows; hold/reroll; score selection and confirmation; glow; full game; checkpoints; animation locking, settlement and mid-animation return; restart cancellation; 1080x720 and 1280x900 captures.");
-    }
-
-    private static async Task WaitForRollSettlement(KniffelView view)
-    {
-        Button roll = Button(view, "RollButton");
-        Button score = Button(view, "Score_Chance");
-        var clock = Stopwatch.StartNew();
-        // The animation settles through a background-priority DispatcherTimer. A fixed
-        // Task.Delay resumes at a different dispatcher priority and can beat that tick
-        // on a loaded Windows runner even after the nominal 840 ms animation duration.
-        while (!roll.IsEnabled || !score.IsEnabled)
-        {
-            if (clock.Elapsed >= TimeSpan.FromSeconds(10))
-                throw new InvalidOperationException($"Animated roll did not settle within 10 seconds. RollsUsed={view.Game.RollsUsed}, RollEnabled={roll.IsEnabled}, ScoreEnabled={score.IsEnabled}, Visible={view.IsVisible}.");
-            await Task.Delay(30);
-        }
-    }
-
-    private static Button Button(DependencyObject root, string name) => Find<Button>(root).Single(button => button.Name == name);
-    private static async Task CloseResult(KniffelView view)
-    {
-        for (int i = 0; i < 400 && !Find<Button>(view).Any(b => b.Name == "CloseMatchResultButton" && b.IsVisible); i++) await Task.Delay(30);
-        Click(view, "CloseMatchResultButton");
-    }
-    private static void Click(DependencyObject root, string name)
-    {
-        Button button = Button(root, name);
-        Require(button.IsEnabled && button.IsVisible, name + " is unavailable.");
-        button.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
-    }
-    private static IEnumerable<T> Find<T>(DependencyObject root) where T : DependencyObject
-    {
-        if (root is T match) yield return match;
-        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
-            foreach (T child in Find<T>(VisualTreeHelper.GetChild(root, i))) yield return child;
-    }
-    private static void Capture(FrameworkElement element, string path)
-    {
-        element.UpdateLayout();
-        var bitmap = new RenderTargetBitmap((int)Math.Ceiling(element.ActualWidth), (int)Math.Ceiling(element.ActualHeight), 96, 96, PixelFormats.Pbgra32);
-        bitmap.Render(element);
-        var encoder = new PngBitmapEncoder();
-        encoder.Frames.Add(BitmapFrame.Create(bitmap));
-        using FileStream file = File.Create(path);
-        encoder.Save(file);
-    }
-    private static void Require(bool condition, string message)
-    {
-        if (!condition) throw new InvalidOperationException(message);
+            "PASS: modern 5-dice/13-score React route, equipped Aurora cosmetics, hold/reroll, preview and confirm, 13 turns and XP, durable exact resume, result receipt, new-game confirmation, animation independence, 1080x720 layout.");
     }
 }

@@ -1,6 +1,6 @@
 namespace BlackjackCasino.Desktop;
 
-internal enum Soundtrack { Blackjack, Reels, Manor, DiceLounge, ChillLounge, Adventure }
+internal enum Soundtrack { Blackjack, Reels, Manor, DiceLounge, ChillLounge, Adventure, Lobby, ChillLoungeActivity }
 
 /// <summary>Original cached scores: sampled themes plus generated lounge compositions; no network dependency.</summary>
 internal static class CasinoMusicSynthesis
@@ -8,9 +8,11 @@ internal static class CasinoMusicSynthesis
     internal static int Tempo(Soundtrack track) => track switch
     {
         Soundtrack.Blackjack => 72,
+        Soundtrack.Lobby => 72,
         Soundtrack.Reels => 104,
         Soundtrack.DiceLounge => 68,
         Soundtrack.ChillLounge => 74,
+        Soundtrack.ChillLoungeActivity => 74,
         Soundtrack.Adventure => 58,
         _ => 62,
     };
@@ -20,20 +22,24 @@ internal static class CasinoMusicSynthesis
     internal static string Theme(Soundtrack track) => track switch
     {
         Soundtrack.Blackjack => "Felt after hours",
+        Soundtrack.Lobby => "The Midnight Club lobby",
         Soundtrack.Reels => "Brass and lucky sevens",
         Soundtrack.DiceLounge => "A quiet roll",
         Soundtrack.ChillLounge => "Velvet Sidewalks",
+        Soundtrack.ChillLoungeActivity => "Velvet Sidewalks",
         Soundtrack.Adventure => "Lanterns Beyond the Door",
         _ => "The clockwork waltz",
     };
 
     internal static AudioClip Build(Soundtrack track)
     {
+        // Fallback for installations without the optional lobby MP3.
+        if (track == Soundtrack.Lobby) return Build(Soundtrack.Blackjack);
         if (track == Soundtrack.DiceLounge)
         {
             return DiceLoungeSynthesis.Build();
         }
-        if (track == Soundtrack.ChillLounge)
+        if (track is Soundtrack.ChillLounge or Soundtrack.ChillLoungeActivity)
         {
             return ChillLoungeSynthesis.Build();
         }

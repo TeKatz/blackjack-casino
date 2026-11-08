@@ -13,6 +13,8 @@ public static class ManorRules
     public const int CurrentPaytableVersion=2;
     public const int MaximumCycleMultiplier=148_600;
     public const int BigWinMultiplier=25;
+    public const decimal MinimumBet=1m;
+    public const decimal MaximumBet=5_000m;
     public static IReadOnlyList<ManorSymbolDefinition> Symbols { get; } = Array.AsReadOnly(new ManorSymbolDefinition[]
     {
         new(ManorSymbol.Jack,"Victorian J",10,14,36,90), new(ManorSymbol.Queen,"Victorian Q",9,18,45,112),
@@ -93,8 +95,8 @@ public static class ManorRules
     public static int FreeSpinCount(int scatters) => scatters>=5 ? 20 : scatters==4 ? 12 : scatters==3 ? 8 : 0;
     public static void ValidateBet(decimal bet)
     {
-        if(bet<SlotMachineRules.MinimumBet || bet>SlotMachineRules.MaximumBet || decimal.Truncate(bet)!=bet)
-            throw new ArgumentOutOfRangeException(nameof(bet),"Manor stakes are whole play-money dollars from $1 to $1,000.");
+        if(bet<MinimumBet || bet>MaximumBet || decimal.Truncate(bet)!=bet)
+            throw new ArgumentOutOfRangeException(nameof(bet),"Manor stakes are whole play-money dollars from $1 to $5,000.");
     }
     public static int Draw(Func<int,int>? rng,int max)
     {

@@ -14,36 +14,16 @@ public partial class MainWindow
     private static readonly Lazy<AudioClip> DiceRollCue = new(() => CasinoSoundSynthesis.Build(TableCue.DiceRoll));
     private static readonly Lazy<AudioClip> DiceFiveOfAKindCue = new(() => CasinoSoundSynthesis.Build(TableCue.DiceFiveOfAKind));
     private readonly List<(UIElement Element, bool Enabled)> kniffelCoveredElements = [];
-    private bool KniffelPageOpen => kniffelView is not null;
+    private bool KniffelPageOpen => modernDiceView is not null || kniffelView is not null;
     private bool KniffelCasinoMode => preferences.KniffelCasinoSelected && preferences.KniffelTable is not null;
     internal decimal DiceCasinoBankroll => session.Bankroll;
     internal KniffelTableState? DiceTableCheckpoint => preferences.KniffelTable;
     private bool kniffelAdvancing;
     private KniffelSetupView? kniffelSetupView;
 
-    private void OpenKniffel()
-    {
-        if (session.RoundInProgress || MetaPageOpen || embeddedGameShell is not null || EmpirePageOpen || KniffelPageOpen) return;
-        ProcessLatestCompletedRound();
-        EnsureEmbeddedGameHost();
-        CreateKniffelView();
-        backgroundMusic.SetEnabled(false);
-        kniffelMusic = new BackgroundMusic(Soundtrack.DiceLounge);
-        kniffelMusic.Start(preferences.Presentation("kniffel").MusicEnabled, preferences.Presentation("kniffel").MusicVolume);
-        foreach (UIElement covered in CasinoRoot.Children.OfType<UIElement>().Where(child => child != embeddedGameOverlay))
-        {
-            kniffelCoveredElements.Add((covered, covered.IsEnabled));
-            covered.SetCurrentValue(IsEnabledProperty, false);
-        }
-        embeddedGameHost!.Content = kniffelView;
-        embeddedGameOverlay!.Visibility = Visibility.Visible;
-        if (lobby is not null) lobby.Visibility = Visibility.Collapsed;
-        KeyboardNavigation.SetTabNavigation(kniffelView, KeyboardNavigationMode.Cycle);
-        KeyboardNavigation.SetControlTabNavigation(kniffelView, KeyboardNavigationMode.Cycle);
-        KeyboardNavigation.SetDirectionalNavigation(kniffelView, KeyboardNavigationMode.Contained);
-        RefreshKniffelTable();
-        if (KniffelCasinoMode) AdvanceKniffelTable();
-    }
+    // The WPF implementation remains for a source-level rollback and legacy presentation tests.
+    // The primary game route is exclusively the local React/PixiJS Midnight Dice experience.
+    private void OpenKniffel() => OpenModernDice();
 
     private void CreateKniffelView()
     {
@@ -239,8 +219,7 @@ public partial class MainWindow
         CasinoAudio.Mixer.Stop(kniffelAudioOwner);
         kniffelMusic?.Dispose();
         kniffelMusic = null;
-        backgroundMusic.SetEnabled(HostMusicSettings.MusicEnabled);
-        backgroundMusic.SetVolume(HostMusicSettings.MusicVolume);
+        hostMusic.Resume(HostMusicSettings, updateVolume: true);
         if (lobby is not null) lobby.Visibility = Visibility.Visible;
         embeddedGameHost!.Content = null;
         kniffelView = null;

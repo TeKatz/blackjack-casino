@@ -5,10 +5,19 @@ namespace BlackjackCasino.Desktop;
 
 public partial class App : Application
 {
-    private bool startupWelcomeQueued;
+    private bool packagedArtworkSmoke;
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        // A diagnostic launch exercises the real published single-file resource loader
+        // before any player stores or normal startup windows are initialized.
+        if (e.Args.Length == 2 && e.Args[0] == "--packaged-artwork-smoke")
+        {
+            packagedArtworkSmoke = true;
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            Shutdown(PackagedArtworkSmoke.Run(e.Args[1]));
+            return;
+        }
         DispatcherUnhandledException += OnDispatcherUnhandledException;
         AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
         Localization.InstallAutomaticTranslation();
@@ -16,63 +25,9 @@ public partial class App : Application
         CasinoUxEnhancements.Install();
         CasinoWindowFrame.Install();
         base.OnStartup(e);
-        Dispatcher.BeginInvoke(QueueStartupWelcome, DispatcherPriority.Loaded);
-    }
-
-    private void QueueStartupWelcome()
-    {
-        if (startupWelcomeQueued)
-        {
-            return;
-        }
-
-        if (MainWindow is not BlackjackCasino.Desktop.MainWindow main)
-        {
-            Dispatcher.BeginInvoke(QueueStartupWelcome, DispatcherPriority.ContextIdle);
-            return;
-        }
-
-        if (main.IsLoaded)
-        {
-            ShowStartupWelcome(main);
-            return;
-        }
-
-        RoutedEventHandler? loaded = null;
-        loaded = (_, _) =>
-        {
-            main.Loaded -= loaded;
-            ShowStartupWelcome(main);
-        };
-        main.Loaded += loaded;
-    }
-
-    private void ShowStartupWelcome(BlackjackCasino.Desktop.MainWindow main)
-    {
-        if (startupWelcomeQueued)
-        {
-            return;
-        }
-
-        startupWelcomeQueued = true;
-        // MainWindow was initially transparent to prevent the unfinished Blackjack table
-        // flashing before the lobby was assembled in PresentationLoaded. Reveal the fully
-        // initialized lobby *before* showing its owned welcome dialog, not after it closes.
-        // Leaving the owner transparent causes the desktop to appear black behind the dialog.
-        main.Opacity = 1;
-        Dispatcher.BeginInvoke(() =>
-        {
-            try
-            {
-                if (main.IsLoaded && main.IsVisible)
-                    StartupWelcomeWindow.ShowFor(main);
-            }
-            finally
-            {
-                // A failed or dismissed welcome must never strand an invisible casino.
-                main.Opacity = 1;
-            }
-        }, DispatcherPriority.ContextIdle);
+        // Keep normal window creation explicit so the isolated diagnostic launch
+        // can exit without creating MainWindow or touching player preferences.
+        new MainWindow().Show();
     }
 
     private static void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
@@ -89,6 +44,7 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        if (packagedArtworkSmoke) { base.OnExit(e); return; }
         // MainWindow performs final routine saves while closing. They are deliberately debounced
         // now, so force the latest preference/profile/history snapshots to disk before process exit.
         PlayerStateStore.FlushPending();

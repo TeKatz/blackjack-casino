@@ -12,6 +12,7 @@ public partial class MainWindow
 {
     private Grid? embeddedGameOverlay;
     private ContentControl? embeddedGameHost;
+    private ModernGameSurface? modernGameSurface;
     private Window? embeddedGameShell;
     // Merge intentionally reuses the host soundtrack; other embedded games own their music.
     private bool keepHostMusicForEmbeddedGame;
@@ -74,12 +75,31 @@ public partial class MainWindow
         Grid.SetColumnSpan(embeddedGameOverlay, Math.Max(1, root.ColumnDefinitions.Count));
         Panel.SetZIndex(embeddedGameOverlay, 1000);
         root.Children.Add(embeddedGameOverlay);
+        modernGameSurface = new ModernGameSurface(root, embeddedGameOverlay, embeddedGameHost);
+    }
+
+    // A single presentation boundary for all React game routes. The native WPF
+    // fallback still uses ShowEmbeddedGame and cannot be mounted at the same time.
+    private void MountModernSurface(UIElement view)
+    {
+        EnsureEmbeddedGameHost();
+        modernGameSurface!.Mount(view);
+    }
+
+    private void UnmountModernSurface(UIElement view)
+    {
+        if (modernGameSurface is null)
+            throw new InvalidOperationException("The modern game surface was not initialized.");
+        modernGameSurface.Unmount(view);
     }
 
     private void ShowEmbeddedGame(Window shell, string title, bool muteHostMusic, Action closed)
     {
         EnsureEmbeddedGameHost();
-        if (embeddedGameShell is not null || embeddedGameOverlay is null || embeddedGameHost is null)
+        // A legacy WPF window (including Manor rollback) must not steal a
+        // mounted React page; ModernGameSurface already enforces the reverse.
+        if (embeddedGameShell is not null || modernGameSurface?.IsOccupied == true
+            || embeddedGameOverlay is null || embeddedGameHost is null)
         {
             return;
         }
@@ -119,9 +139,6 @@ public partial class MainWindow
 
         // The Blackjack keyboard handler tunnels first. Disable table actions while the
         // overlay is active, then forward unconsumed keys to the original game shell.
-        DealButton.IsEnabled = false;
-        ClearBetButton.IsEnabled = false;
-        SetActionAvailability(new HashSet<PlayerAction>());
 
         content.PreviewKeyDown += (_, args) => ForwardEmbeddedKey(shell, args);
         if (content is FrameworkElement element)
@@ -131,7 +148,7 @@ public partial class MainWindow
 
         if (muteHostMusic)
         {
-            backgroundMusic.SetEnabled(false);
+            hostMusic.Mute();
         }
 
         // Window.Loaded belongs to the detached shell rather than the rehosted visual tree.
@@ -306,6 +323,22 @@ public partial class MainWindow
 
     private void CloseEmbeddedGame()
     {
+        if (BrowserRecoveryOpen) { CloseBrowserRecovery(); return; }
+        if (ModernLoungeOpen) { CloseModernLounge(); return; }
+        if (ModernDiceOpen) { CloseModernDice(); return; }
+        if (ModernMergeOpen) { CloseModernMerge(); return; }
+        if (ModernNeonVaultOpen) { CloseModernNeonVault(); return; }
+        if (ModernNineLivesOpen) { CloseModernNineLives(); return; }
+        if (ModernReelsOpen)
+        {
+            CloseModernReels();
+            return;
+        }
+        if (ModernBlackjackOpen)
+        {
+            CloseModernBlackjack();
+            return;
+        }
         if (KniffelPageOpen)
         {
             CloseKniffel();
@@ -376,31 +409,6 @@ public partial class MainWindow
         });
     }
 
-    private void EmbeddedManor_Click(object sender, RoutedEventArgs e)
-    {
-        if (session.RoundInProgress)
-        {
-            StatusText.Text = "Finish the current Blackjack hand before entering Midnight Manor.";
-            return;
-        }
-        if (progressionController is null)
-        {
-            return;
-        }
-
-        ProcessLatestCompletedRound();
-        var controller = new ManorController(preferences, session.Bankroll, progressionController, committed =>
-        {
-            session.ResetBankroll(committed.Bankroll);
-            preferences = committed;
-            selectedBet = Math.Min(selectedBet, session.Bankroll);
-        });
-        var window = new ManorWindow(controller);
-
-        ShowEmbeddedGame(window, "Midnight Manor · Blackjack Casino", muteHostMusic: true, closed: () =>
-        {
-            preferences = window.Preferences;
-
-        });
-    }
+    // Historical entry point, kept for compatibility; never exposes the old WPF slot.
+    private void EmbeddedManor_Click(object sender, RoutedEventArgs e) => OpenModernManor();
 }

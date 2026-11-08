@@ -1,7 +1,7 @@
 # Casino audio overhaul
 
 The original casino compositions now use offline rendered instruments. No audio
-was copied from the reference video. The user clarified the direction as chill
+was copied from the reference video. The target style is chill
 hip-hop lo-fi. Finished WAVs are embedded, so there is no runtime synth, network
 or extra package dependency. [Music source/credits](../src/BlackjackCasino.Desktop/Assets/Music/README.md)
 includes the score renderer and SoundFont attribution.
@@ -71,4 +71,4 @@ a repeated overlapping-effect sample and measured peak/RMS/seam report. CI
 uploads these as `casino-audio-review` for audition. For Windows acceptance,
 listen across at least two loop boundaries, change modes and volume, test both
 mutes, and use Normal/Fast/Turbo with consecutive Manor stops/wins. Human audition
-on the user's output device remains the final judgement of musical taste/mix.
+on representative speakers and headphones remains the final judgement of musical taste/mix.

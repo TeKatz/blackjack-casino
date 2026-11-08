@@ -15,6 +15,7 @@ public enum ChallengeCategory
     WordSearch,
     Memory,
     Jigsaw,
+    Solitaire,
 }
 
 public enum ChallengeMetric
@@ -94,6 +95,10 @@ public enum ChallengeMetric
     WordSearchCompleted, WordSearchWordsFound, WordSearchNoHintCompleted, WordSearchExpertCompleted, WordSearchMasterCompleted,
     MemoryGamesCompleted, MemoryPairsFound, MemoryPerfectGames, MemoryExpertCompleted, MemoryMasterCompleted, MemoryBestStreak,
     JigsawAchievement,
+    SolitaireGamesStarted, SolitaireWins, SolitaireKlondikeWins, SolitaireFreeCellWins,
+    SolitaireSpiderWins, SolitaireSpiderFourSuitWins, SolitairePyramidWins,
+    SolitaireGolfWins, SolitaireTriPeaksWins, SolitaireVariantsWon, SolitaireBestStreak,
+    ChillLoungeCompletions, JigsawCompletions, AdventureRunsCompleted,
 }
 
 public sealed record ChallengeDefinition(
@@ -104,7 +109,8 @@ public sealed record ChallengeDefinition(
     ChallengeMetric Metric,
     decimal Goal,
     long CoinReward,
-    bool IsEndgame = false);
+    bool IsEndgame = false,
+    string? CosmeticRewardId = null);
 
 public static class ChallengeCatalog
 {
@@ -121,7 +127,7 @@ public static class ChallengeCatalog
         C("sudoku-clean-1", ChallengeCategory.Sudoku, "No Nudge Needed", "Complete a Sudoku without using a hint.", ChallengeMetric.SudokuNoHintCompleted, 1, 75),
         C("sudoku-clean-25", ChallengeCategory.Sudoku, "Pencil and Patience", "Complete 25 Sudokus without using a hint.", ChallengeMetric.SudokuNoHintCompleted, 25, 350),
         C("sudoku-expert-10", ChallengeCategory.Sudoku, "Deep Focus", "Complete 10 Expert Sudokus.", ChallengeMetric.SudokuExpertCompleted, 10, 500),
-        C("sudoku-master-1", ChallengeCategory.Sudoku, "Master Key", "Complete your first Master Sudoku.", ChallengeMetric.SudokuMasterCompleted, 1, 250),
+        C("sudoku-master-1", ChallengeCategory.Sudoku, "Master Key", "Complete your first Master Sudoku to unlock the exclusive Secret Guest portrait.", ChallengeMetric.SudokuMasterCompleted, 1, 250, CosmeticCatalog.SecretGuestPortraitId),
         E("sudoku-master-25", ChallengeCategory.Sudoku, "Stillness", "Complete 25 Master Sudokus.", ChallengeMetric.SudokuMasterCompleted, 25, 1200),
         C("sudoku-25", ChallengeCategory.Sudoku, "Quiet Evenings", "Complete 25 Sudoku puzzles.", ChallengeMetric.SudokuCompleted, 25, 250),
         C("sudoku-100", ChallengeCategory.Sudoku, "A Shelf of Grids", "Complete 100 Sudoku puzzles.", ChallengeMetric.SudokuCompleted, 100, 750),
@@ -134,6 +140,29 @@ public static class ChallengeCatalog
         E("sudoku-expert-50", ChallengeCategory.Sudoku, "Expert's Corner", "Complete 50 Expert Sudokus.", ChallengeMetric.SudokuExpertCompleted, 50, 1500),
         C("sudoku-master-10", ChallengeCategory.Sudoku, "Mindful Master", "Complete 10 Master Sudokus.", ChallengeMetric.SudokuMasterCompleted, 10, 750),
 
+        C("solitaire-first", ChallengeCategory.Solitaire, "First Shuffle", "Win your first Midnight Solitaire game.", ChallengeMetric.SolitaireWins, 1, 75),
+        C("solitaire-10", ChallengeCategory.Solitaire, "A Quiet Hand", "Win 10 Solitaire games.", ChallengeMetric.SolitaireWins, 10, 175),
+        C("solitaire-25", ChallengeCategory.Solitaire, "Cards After Dark", "Win 25 Solitaire games.", ChallengeMetric.SolitaireWins, 25, 300),
+        C("solitaire-50", ChallengeCategory.Solitaire, "Solitaire Regular", "Win 50 Solitaire games.", ChallengeMetric.SolitaireWins, 50, 500),
+        C("solitaire-100", ChallengeCategory.Solitaire, "The Patient Dealer", "Win 100 Solitaire games.", ChallengeMetric.SolitaireWins, 100, 850),
+        E("solitaire-250", ChallengeCategory.Solitaire, "Cardroom Veteran", "Win 250 Solitaire games.", ChallengeMetric.SolitaireWins, 250, 1600),
+        E("solitaire-500", ChallengeCategory.Solitaire, "A Thousand Shuffles", "Win 500 Solitaire games.", ChallengeMetric.SolitaireWins, 500, 3000),
+        E("solitaire-1000", ChallengeCategory.Solitaire, "The Endless Deck", "Win 1,000 Solitaire games.", ChallengeMetric.SolitaireWins, 1000, 6000),
+        C("solitaire-klondike", ChallengeCategory.Solitaire, "Golden Klondike", "Win a game of Klondike.", ChallengeMetric.SolitaireKlondikeWins, 1, 100),
+        C("solitaire-freecell", ChallengeCategory.Solitaire, "Open Secrets", "Win a game of FreeCell.", ChallengeMetric.SolitaireFreeCellWins, 1, 100),
+        C("solitaire-spider", ChallengeCategory.Solitaire, "Into the Web", "Win a game of Spider Solitaire.", ChallengeMetric.SolitaireSpiderWins, 1, 125),
+        C("solitaire-spider-four", ChallengeCategory.Solitaire, "Four-Suit Conqueror", "Win four-suit Spider Solitaire.", ChallengeMetric.SolitaireSpiderFourSuitWins, 1, 300),
+        E("solitaire-spider-four-10", ChallengeCategory.Solitaire, "Master of the Web", "Win 10 four-suit Spider games.", ChallengeMetric.SolitaireSpiderFourSuitWins, 10, 1200),
+        E("solitaire-spider-four-50", ChallengeCategory.Solitaire, "The Unbreakable Web", "Win 50 four-suit Spider games.", ChallengeMetric.SolitaireSpiderFourSuitWins, 50, 3500),
+        C("solitaire-pyramid", ChallengeCategory.Solitaire, "Ancient Order", "Win a game of Pyramid Solitaire.", ChallengeMetric.SolitairePyramidWins, 1, 100),
+        C("solitaire-golf", ChallengeCategory.Solitaire, "Under Par", "Win a game of Golf Solitaire.", ChallengeMetric.SolitaireGolfWins, 1, 100),
+        C("solitaire-tripeaks", ChallengeCategory.Solitaire, "Three Summits", "Win a game of TriPeaks Solitaire.", ChallengeMetric.SolitaireTriPeaksWins, 1, 100),
+        C("solitaire-variants-3", ChallengeCategory.Solitaire, "Broad Horizons", "Win at least one game in three different Solitaire variants.", ChallengeMetric.SolitaireVariantsWon, 3, 200),
+        E("solitaire-variants-6", ChallengeCategory.Solitaire, "The Complete Cabinet", "Win at least one game in each of the six Solitaire variants.", ChallengeMetric.SolitaireVariantsWon, 6, 800),
+        C("solitaire-streak-3", ChallengeCategory.Solitaire, "In the Flow", "Reach a three-game Solitaire winning streak.", ChallengeMetric.SolitaireBestStreak, 3, 150),
+        E("solitaire-streak-10", ChallengeCategory.Solitaire, "Unbroken Focus", "Reach a ten-game Solitaire winning streak.", ChallengeMetric.SolitaireBestStreak, 10, 900),
+        C("solitaire-starts-100", ChallengeCategory.Solitaire, "Keep Dealing", "Start 100 distinct Solitaire games.", ChallengeMetric.SolitaireGamesStarted, 100, 200),
+
         // Word Search follows the same Chill Lounge philosophy as Sudoku: progress and discovery matter,
         // never solve speed. Hints remain welcome; no-hint goals are optional side challenges only.
         C("word-search-first", ChallengeCategory.WordSearch, "First Find", "Complete your first Word Search puzzle.", ChallengeMetric.WordSearchCompleted, 1, 50),
@@ -141,22 +170,32 @@ public static class ChallengeCatalog
         C("word-search-25", ChallengeCategory.WordSearch, "Word Hunter", "Complete 25 Word Search puzzles.", ChallengeMetric.WordSearchCompleted, 25, 250),
         C("word-search-50", ChallengeCategory.WordSearch, "Shelf of Searches", "Complete 50 Word Search puzzles.", ChallengeMetric.WordSearchCompleted, 50, 400),
         C("word-search-100", ChallengeCategory.WordSearch, "Hundred Grids", "Complete 100 Word Search puzzles.", ChallengeMetric.WordSearchCompleted, 100, 750),
-        E("word-search-144", ChallengeCategory.WordSearch, "Every Grid in the Lounge", "Complete all 144 unique Word Search puzzles.", ChallengeMetric.WordSearchCompleted, 144, 1800),
+        C("word-search-144", ChallengeCategory.WordSearch, "The Original Collection", "Complete 144 unique Word Search puzzles.", ChallengeMetric.WordSearchCompleted, 144, 1800),
+        C("word-search-288", ChallengeCategory.WordSearch, "The Second Cabinet", "Complete 288 unique Word Search puzzles.", ChallengeMetric.WordSearchCompleted, 288, 2800),
+        E("word-search-576", ChallengeCategory.WordSearch, "Every Hidden Page", "Complete all 576 unique Word Search puzzles.", ChallengeMetric.WordSearchCompleted, 576, 5000),
         C("word-search-words-25", ChallengeCategory.WordSearch, "Sharp Eyes", "Find 25 words across completed puzzles.", ChallengeMetric.WordSearchWordsFound, 25, 75),
         C("word-search-words-100", ChallengeCategory.WordSearch, "Word Collector", "Find 100 words across completed puzzles.", ChallengeMetric.WordSearchWordsFound, 100, 175),
         C("word-search-words-500", ChallengeCategory.WordSearch, "Hidden in Plain Sight", "Find 500 words across completed puzzles.", ChallengeMetric.WordSearchWordsFound, 500, 500),
         C("word-search-words-1000", ChallengeCategory.WordSearch, "Walking Dictionary", "Find 1,000 words across completed puzzles.", ChallengeMetric.WordSearchWordsFound, 1000, 900),
-        C("word-search-words-1368", ChallengeCategory.WordSearch, "Every Last Word", "Find all 1,368 words across the 144 unique puzzles.", ChallengeMetric.WordSearchWordsFound, 1368, 1800),
+        C("word-search-words-1368", ChallengeCategory.WordSearch, "The First Dictionary", "Find 1,368 words across completed puzzles.", ChallengeMetric.WordSearchWordsFound, 1368, 1800),
+        C("word-search-words-2736", ChallengeCategory.WordSearch, "The Second Dictionary", "Find 2,736 target words across completed Word Search puzzles.", ChallengeMetric.WordSearchWordsFound, 2736, 2800),
+        E("word-search-words-5472", ChallengeCategory.WordSearch, "The Complete Lexicon", "Find 5,472 target words across all 576 Word Search puzzles.", ChallengeMetric.WordSearchWordsFound, 5472, 5000),
         C("word-search-clean-1", ChallengeCategory.WordSearch, "No Nudge Needed", "Complete a Word Search without using a hint.", ChallengeMetric.WordSearchNoHintCompleted, 1, 75),
         C("word-search-clean-10", ChallengeCategory.WordSearch, "Trust Your Eyes", "Complete 10 Word Search puzzles without hints.", ChallengeMetric.WordSearchNoHintCompleted, 10, 200),
         C("word-search-clean-50", ChallengeCategory.WordSearch, "Clear Sight", "Complete 50 Word Search puzzles without hints.", ChallengeMetric.WordSearchNoHintCompleted, 50, 500),
         C("word-search-clean-100", ChallengeCategory.WordSearch, "Unaided Explorer", "Complete 100 Word Search puzzles without hints.", ChallengeMetric.WordSearchNoHintCompleted, 100, 1000),
+        C("word-search-clean-200", ChallengeCategory.WordSearch, "Unerring Eye", "Complete 200 Word Search puzzles without hints.", ChallengeMetric.WordSearchNoHintCompleted, 200, 1800),
+        E("word-search-clean-400", ChallengeCategory.WordSearch, "The Unassisted Archive", "Complete 400 Word Search puzzles without using hints.", ChallengeMetric.WordSearchNoHintCompleted, 400, 3500),
         C("word-search-expert-1", ChallengeCategory.WordSearch, "Deep Search", "Complete your first Expert Word Search.", ChallengeMetric.WordSearchExpertCompleted, 1, 175),
         C("word-search-expert-10", ChallengeCategory.WordSearch, "Expert Eye", "Complete 10 Expert Word Search puzzles.", ChallengeMetric.WordSearchExpertCompleted, 10, 450),
-        C("word-search-expert-24", ChallengeCategory.WordSearch, "Expert Collection", "Complete all 24 Expert Word Search puzzles.", ChallengeMetric.WordSearchExpertCompleted, 24, 1200),
+        C("word-search-expert-24", ChallengeCategory.WordSearch, "Expert Collection", "Complete 24 Expert Word Search puzzles.", ChallengeMetric.WordSearchExpertCompleted, 24, 1200),
+        C("word-search-expert-48", ChallengeCategory.WordSearch, "Expanded Expert Collection", "Complete 48 Expert Word Search puzzles.", ChallengeMetric.WordSearchExpertCompleted, 48, 1800),
+        E("word-search-expert-96", ChallengeCategory.WordSearch, "The Expert Archive", "Complete all 96 Expert Word Search puzzles.", ChallengeMetric.WordSearchExpertCompleted, 96, 3600),
         C("word-search-master-1", ChallengeCategory.WordSearch, "Master Finder", "Complete your first Master Word Search.", ChallengeMetric.WordSearchMasterCompleted, 1, 250),
         C("word-search-master-10", ChallengeCategory.WordSearch, "Master of Letters", "Complete 10 Master Word Search puzzles.", ChallengeMetric.WordSearchMasterCompleted, 10, 700),
-        C("word-search-master-24", ChallengeCategory.WordSearch, "The Last Hidden Word", "Complete all 24 Master Word Search puzzles.", ChallengeMetric.WordSearchMasterCompleted, 24, 1600),
+        C("word-search-master-24", ChallengeCategory.WordSearch, "Master's Original Cabinet", "Complete 24 Master Word Search puzzles.", ChallengeMetric.WordSearchMasterCompleted, 24, 1600),
+        C("word-search-master-48", ChallengeCategory.WordSearch, "The Last Hidden Word", "Complete 48 Master Word Search puzzles.", ChallengeMetric.WordSearchMasterCompleted, 48, 2400),
+        E("word-search-master-96", ChallengeCategory.WordSearch, "The Final Word", "Complete all 96 Master Word Search puzzles.", ChallengeMetric.WordSearchMasterCompleted, 96, 4800),
 
         // Memory rewards calm persistence and recall rather than speed. A perfect table and long
         // match streak are optional mastery goals; mistakes never reduce completion XP.
@@ -334,10 +373,32 @@ public static class ChallengeCatalog
         E("lifetime-xp-1000000", ChallengeCategory.Lifetime, "Casino Institution", "Earn 1,000,000 lifetime player XP across all games.", ChallengeMetric.LifetimeExperience, 1000000, 4000),
         E("lifetime-hours-250", ChallengeCategory.Lifetime, "The Long Night", "Record 250 hours of total casino playtime.", ChallengeMetric.LifetimePlaytimeSeconds, 900000, 3000),
         E("lifetime-wager-10000000", ChallengeCategory.Lifetime, "Ten Million in Motion", "Wager $10,000,000 across all games, including preserved pooled slot history.", ChallengeMetric.LifetimeWagered, 10000000, 4000),
-        E("lifetime-plays-100000", ChallengeCategory.Lifetime, "A Hundred Thousand Nights", "Complete 100,000 Blackjack rounds, dice games, Sudoku and Word Search puzzles, Merge orders and slot spins combined, including preserved pooled slot history.", ChallengeMetric.LifetimePlays, 100000, 5000),
+        E("lifetime-plays-100000", ChallengeCategory.Lifetime, "A Hundred Thousand Nights", "Record 100,000 total Blackjack rounds, dice games, slot spins, completed Chill Lounge games, Merge orders and adventures; preserved pooled slot history is included.", ChallengeMetric.LifetimePlays, 100000, 5000),
         E("prestige-3", ChallengeCategory.Prestige, "Third Time Crowned", "Reach Prestige 3.", ChallengeMetric.PrestigeCount, 3, 2500),
         E("prestige-5", ChallengeCategory.Prestige, "Fivefold Legend", "Reach Prestige 5.", ChallengeMetric.PrestigeCount, 5, 4000),
         E("prestige-10", ChallengeCategory.Prestige, "Eternal High Roller", "Reach Prestige 10.", ChallengeMetric.PrestigeCount, 10, 7500),
+        C("lifetime-xp-10000", ChallengeCategory.Lifetime, "The First Ten Thousand", "Earn 10,000 lifetime player XP.", ChallengeMetric.LifetimeExperience, 10000, 125),
+        C("lifetime-xp-100000", ChallengeCategory.Lifetime, "Night School Graduate", "Earn 100,000 lifetime player XP.", ChallengeMetric.LifetimeExperience, 100000, 600),
+        E("lifetime-xp-5000000", ChallengeCategory.Lifetime, "Living Legend", "Earn 5,000,000 lifetime player XP.", ChallengeMetric.LifetimeExperience, 5000000, 8500),
+        C("lifetime-hours-10", ChallengeCategory.Lifetime, "A Regular Evening", "Play for 10 hours in total.", ChallengeMetric.LifetimePlaytimeSeconds, 36000, 125),
+        C("lifetime-hours-50", ChallengeCategory.Lifetime, "After Hours", "Play for 50 hours in total.", ChallengeMetric.LifetimePlaytimeSeconds, 180000, 400),
+        C("lifetime-hours-100", ChallengeCategory.Lifetime, "Part of the Furniture", "Play for 100 hours in total.", ChallengeMetric.LifetimePlaytimeSeconds, 360000, 850),
+        E("lifetime-hours-1000", ChallengeCategory.Lifetime, "A Thousand Midnight Hours", "Play for 1,000 hours in total.", ChallengeMetric.LifetimePlaytimeSeconds, 3600000, 9000),
+        C("lifetime-plays-1000", ChallengeCategory.Lifetime, "One Thousand Sessions", "Record 1,000 combined game rounds, spins, completed puzzles, Solitaire wins and adventure runs.", ChallengeMetric.LifetimePlays, 1000, 400),
+        E("lifetime-plays-10000", ChallengeCategory.Lifetime, "The House Never Sleeps", "Record 10,000 combined plays across the casino and Chill Lounge.", ChallengeMetric.LifetimePlays, 10000, 1500),
+        E("lifetime-plays-500000", ChallengeCategory.Lifetime, "Half a Million Moments", "Record 500,000 combined plays across the casino and Chill Lounge.", ChallengeMetric.LifetimePlays, 500000, 12000),
+        C("lifetime-lounge-25", ChallengeCategory.Lifetime, "A Softer Kind of Night", "Complete 25 Chill Lounge games across Sudoku, Solitaire, Word Search, Memory and Jigsaw.", ChallengeMetric.ChillLoungeCompletions, 25, 175),
+        C("lifetime-lounge-100", ChallengeCategory.Lifetime, "The Quiet Corner", "Complete 100 Chill Lounge games.", ChallengeMetric.ChillLoungeCompletions, 100, 500),
+        E("lifetime-lounge-500", ChallengeCategory.Lifetime, "Lounge Institution", "Complete 500 Chill Lounge games.", ChallengeMetric.ChillLoungeCompletions, 500, 1750),
+        E("lifetime-lounge-2000", ChallengeCategory.Lifetime, "The Eternal Lounge", "Complete 2,000 Chill Lounge games.", ChallengeMetric.ChillLoungeCompletions, 2000, 5000),
+        E("lifetime-jigsaw-250", ChallengeCategory.Lifetime, "Gallery of Patience", "Complete 250 Jigsaw puzzles.", ChallengeMetric.JigsawCompletions, 250, 2400),
+        E("lifetime-adventure-25", ChallengeCategory.Lifetime, "A Hundred Tales", "Finish 25 Tales from the Backroom adventure runs.", ChallengeMetric.AdventureRunsCompleted, 25, 1250),
+        C("prestige-1", ChallengeCategory.Prestige, "First Rebirth", "Reach Player Prestige 1.", ChallengeMetric.PrestigeCount, 1, 600),
+        C("prestige-2", ChallengeCategory.Prestige, "Twice Remembered", "Reach Player Prestige 2.", ChallengeMetric.PrestigeCount, 2, 1200),
+        E("prestige-7", ChallengeCategory.Prestige, "Seven Crowns", "Reach Player Prestige 7.", ChallengeMetric.PrestigeCount, 7, 5000),
+        E("prestige-15", ChallengeCategory.Prestige, "Beyond the Velvet Rope", "Reach Player Prestige 15.", ChallengeMetric.PrestigeCount, 15, 11000),
+        E("prestige-20", ChallengeCategory.Prestige, "The Immortal Regular", "Reach Player Prestige 20.", ChallengeMetric.PrestigeCount, 20, 15000),
+        E("prestige-25", ChallengeCategory.Prestige, "Midnight Ascendant", "Reach Player Prestige 25.", ChallengeMetric.PrestigeCount, 25, 20000),
     });
 
     // The Jigsaw milestones are also the central challenges. They are automatically awarded
@@ -476,13 +537,37 @@ public static class ChallengeCatalog
             ChallengeMetric.MemoryBestStreak => profile.Memory.BestStreak,
             ChallengeMetric.JigsawAchievement => JigsawProgress(profile, challenge),
 
+            ChallengeMetric.SolitaireGamesStarted => profile.Solitaire.GamesStarted,
+            ChallengeMetric.SolitaireWins => profile.Solitaire.Wins,
+            ChallengeMetric.SolitaireKlondikeWins => profile.Solitaire.KlondikeWins,
+            ChallengeMetric.SolitaireFreeCellWins => profile.Solitaire.FreeCellWins,
+            ChallengeMetric.SolitaireSpiderWins => profile.Solitaire.SpiderWins,
+            ChallengeMetric.SolitaireSpiderFourSuitWins => profile.Solitaire.SpiderFourSuitWins,
+            ChallengeMetric.SolitairePyramidWins => profile.Solitaire.PyramidWins,
+            ChallengeMetric.SolitaireGolfWins => profile.Solitaire.GolfWins,
+            ChallengeMetric.SolitaireTriPeaksWins => profile.Solitaire.TriPeaksWins,
+            ChallengeMetric.SolitaireBestStreak => profile.Solitaire.BestWinStreak,
+            ChallengeMetric.SolitaireVariantsWon =>
+                (profile.Solitaire.KlondikeWins > 0 ? 1 : 0)
+                + (profile.Solitaire.FreeCellWins > 0 ? 1 : 0)
+                + (profile.Solitaire.SpiderWins > 0 ? 1 : 0)
+                + (profile.Solitaire.PyramidWins > 0 ? 1 : 0)
+                + (profile.Solitaire.GolfWins > 0 ? 1 : 0)
+                + (profile.Solitaire.TriPeaksWins > 0 ? 1 : 0),
+            ChallengeMetric.ChillLoungeCompletions => profile.Sudoku.CompletedPuzzles
+                + profile.Solitaire.Wins + profile.WordSearch.CompletedPuzzles
+                + profile.Memory.CompletedGames + profile.Jigsaw.CompletedGames,
+            ChallengeMetric.JigsawCompletions => profile.Jigsaw.CompletedGames,
+            ChallengeMetric.AdventureRunsCompleted => profile.Adventure.RunsCompleted,
+
             ChallengeMetric.LifetimeExperience => profile.LifetimeExperience,
             ChallengeMetric.LifetimePlaytimeSeconds => profile.TotalPlaytimeSeconds,
             ChallengeMetric.LifetimeWagered => blackjack.TotalWagered + reels.TotalWagered + neon.TotalWagered + nine.TotalWagered
                 + manor.TotalWagered + legacy.TotalWagered + profile.Kniffel.TotalWagered,
             ChallengeMetric.LifetimePlays => (decimal)blackjack.RoundsPlayed + reels.Spins + neon.Spins + nine.Spins
                 + manor.PaidSpins + manor.FreeSpins + legacy.Spins + profile.Kniffel.CompletedGames + profile.Sudoku.CompletedPuzzles
-                + profile.WordSearch.CompletedPuzzles + profile.Memory.CompletedGames + merge.OrdersCompleted,
+                + profile.WordSearch.CompletedPuzzles + profile.Memory.CompletedGames + merge.OrdersCompleted
+                + profile.Solitaire.Wins + profile.Jigsaw.CompletedGames + profile.Adventure.RunsCompleted,
             ChallengeMetric.PrestigeCount => profile.Prestige,
             _ => 0,
         };
@@ -507,7 +592,9 @@ public static class ChallengeCatalog
         string description,
         ChallengeMetric metric,
         decimal goal,
-        long coins) => new(id, category, name, description, metric, goal, coins);
+        long coins,
+        string? cosmeticRewardId = null) => new(id, category, name, description, metric, goal, coins,
+            CosmeticRewardId: cosmeticRewardId);
 
     private static ChallengeDefinition E(
         string id,

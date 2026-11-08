@@ -1,0 +1,142 @@
+*{box-sizing:border-box}
+html,body,#root{margin:0;min-width:320px;min-height:100%;background:#100918;color:#fae8df;font:14px/1.45 "Segoe UI",Inter,Arial,sans-serif}
+button,input{font:inherit}button{cursor:pointer;color:inherit}button:disabled{cursor:default;opacity:.48}
+button:focus-visible,input:focus-visible{outline:2px solid #f9d389;outline-offset:3px}
+.nine-app{min-height:100vh;position:relative;isolation:isolate;display:flex;flex-direction:column;
+ background:radial-gradient(ellipse at 40% -20%,#a14ab230,transparent 60%),linear-gradient(115deg,#10091d,#1c1030 46%,#090919);overflow:hidden}
+.nine-pixi{pointer-events:none;position:absolute;inset:0;z-index:-1}
+.nine-pixi canvas{display:block;width:100%;height:100%}
+.nine-header{min-height:76px;display:grid;grid-template-columns:1fr 1.2fr 1fr;align-items:center;gap:12px;
+ padding:10px clamp(15px,2.4vw,36px);background:#110b1de9;border-bottom:1px solid #7a568d88;z-index:2}
+.nine-back{justify-self:start;border:1px solid #ab7a95;background:#2a173b;padding:10px 14px;border-radius:9px;
+ color:#f7d6a0;font-weight:700;white-space:nowrap}
+.nine-back:hover:not(:disabled){background:#57325f;border-color:#ead2ac}
+.nine-back kbd{display:inline-block;color:#b9aac7;margin-left:12px;font-size:10px}
+.nine-title{text-align:center}.nine-title small{color:#c99abf;letter-spacing:.18em;font-size:9px;font-weight:700}
+.nine-title h1{font:700 clamp(22px,2.8vw,33px) Georgia,serif;color:#f9ddae;margin:0;letter-spacing:.13em}
+.nine-title h1 em{color:#d79bfa;font-style:normal}
+.nine-header-bank{text-align:right;justify-self:end}.nine-header-bank small{display:block;font-size:10px;color:#bda8c4}
+.nine-header-bank strong{display:block;font-size:clamp(17px,2.3vw,24px);color:#f5d694}
+.nine-layout{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 314px;gap:clamp(12px,1.5vw,26px);
+ width:min(1560px,100%);margin:auto;padding:clamp(13px,1.8vw,25px)}
+.nine-machine{position:relative;min-width:0;display:flex;flex-direction:column;align-items:center;
+ padding:15px clamp(12px,2vw,30px) 21px;border-radius:29px;border:3px solid #ccae78;
+ background:linear-gradient(140deg,#382044eb,#180e27f2 45%,#100b1cfa);
+ box-shadow:0 20px 55px #000a,inset 0 0 0 7px #0c0715,inset 0 0 45px #dd8ce31b;overflow:hidden}
+.nine-machine:before{content:"";position:absolute;inset:9px;border:1px solid #eac68345;border-radius:22px;pointer-events:none}
+.nine-moon{position:absolute;right:7%;top:36px;width:125px;aspect-ratio:1;border-radius:50%;
+ background:radial-gradient(circle at 42% 35%,#fff4c7,#f3d3a4 43%,#bc8eb1 73%,#815990);
+ filter:drop-shadow(0 0 24px #dca9db80);opacity:.3;pointer-events:none}
+.nine-horizon{position:absolute;top:140px;right:0;left:0;height:180px;pointer-events:none;opacity:.37;
+ background:linear-gradient(135deg,transparent 35%,#060816 36% 44%,transparent 45%) bottom/200px 140px repeat-x,
+ linear-gradient(28deg,transparent 30%,#0a081b 31% 60%,transparent 61%) bottom/320px 130px repeat-x}
+.nine-machine-heading{display:flex;justify-content:center;align-items:center;gap:20px;text-align:center;z-index:1}
+.nine-machine-heading>span{color:#fad394;font-size:20px;text-shadow:0 0 13px #e5be67}
+.nine-machine-heading small{font-size:10px;letter-spacing:.16em;color:#cda6c5}
+.nine-machine-heading h2{font:700 clamp(29px,3vw,45px) Georgia,serif;letter-spacing:.18em;color:#f8d79f;margin:3px 0 8px;text-shadow:0 3px 12px #ad6bae}
+.nine-bonus-banner{z-index:1;min-height:31px;color:#ba9fc3;font-size:11px;text-align:center;letter-spacing:.045em}
+.nine-bonus-banner[data-active=true]{color:#f7d47f;text-shadow:0 0 10px #b97bfc;font-size:14px;font-weight:800;animation:nine-bonus-pulse 1.9s ease-in-out infinite alternate}
+.nine-bonus-banner span{color:#cb82f6;margin:0 12px}
+.nine-reels-outer{width:min(724px,100%);display:flex;align-items:center;gap:8px;z-index:1;margin:10px auto 3px}
+.nine-line-number{writing-mode:vertical-rl;color:#d1a96e;font-size:9px;letter-spacing:.18em}
+.nine-reels{position:relative;flex:1;min-width:0;max-width:660px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+ grid-template-rows:repeat(3,minmax(0,1fr));gap:7px;padding:13px;background:#090815;
+ aspect-ratio:1.23;border:6px ridge #b99a70;border-radius:17px;box-shadow:0 0 0 4px #38253a,0 10px 30px #000c,inset 0 0 24px #000}
+.nine-cell{position:relative;min-height:0;border:2px solid #907259;border-radius:10px;
+ background:radial-gradient(circle at 40% 25%,#55406b,#100d24);
+ display:flex;align-items:center;justify-content:center;overflow:hidden;
+ box-shadow:inset 0 0 16px #0006;transition:opacity .35s,border-color .35s,box-shadow .35s}
+.nine-cell img{display:block;width:100%;height:100%;object-fit:contain;image-rendering:auto;user-select:none;pointer-events:none}
+.nine-cell.rolling img{animation:nine-reel-blur .18s linear infinite alternate;opacity:.75}
+.nine-cell.winning,.nine-cell.frenzy{border-color:#ffdf8e;box-shadow:0 0 12px #ffe08ca6,inset 0 0 15px #e7be704e;z-index:2}
+.nine-cell.winning img,.nine-cell.frenzy img{animation:nine-win-pulse .7s ease-in-out 3}
+.nine-cell.pounced{border-color:#e3a2ff;box-shadow:0 0 15px #d274ff99}
+.nine-cell.dimmed{opacity:.42}
+.nine-lines{position:absolute;inset:13px;width:calc(100% - 26px);height:calc(100% - 26px);pointer-events:none;z-index:3;filter:drop-shadow(0 0 6px #ffc46b)}
+.nine-status{z-index:1;min-height:67px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8px 0}
+.nine-status strong{font:700 clamp(16px,1.7vw,24px) Georgia,serif;color:#f9dca9;text-shadow:0 0 14px #ad70ca}
+.nine-status small{color:#baacc9;font-size:11px;margin-top:7px}
+.nine-console{width:min(740px,100%);display:grid;gap:11px;z-index:1;margin-top:auto}
+.nine-meter{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;text-align:center}
+.nine-meter>div{border:1px solid #6a4b79;border-radius:9px;background:#0e0b1dbd;padding:8px}
+.nine-meter small{display:block;font-size:10px;color:#b4a1c1;letter-spacing:.1em}
+.nine-meter strong{display:block;color:#f2d391;font-size:clamp(16px,2vw,24px)}
+.nine-betting{display:flex;align-items:stretch;gap:5px}
+.nine-betting>button{min-width:35px;background:#342046;border:1px solid #806a86;border-radius:7px;font-weight:800}
+.nine-betting>button:hover:not(:disabled){background:#644176}
+.nine-bet-grid{flex:1;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.nine-bet-grid button{font-size:clamp(9px,.9vw,12px);font-weight:700;border:1px solid #6b5273;border-radius:6px;
+ padding:8px 1px;background:#1f162b;color:#e5d8da;white-space:nowrap}
+.nine-bet-grid button.selected{background:linear-gradient(#e5c886,#a97954);color:#27152d;border-color:#f7ddab}
+.nine-bet-grid button:hover:not(:disabled){border-color:#f7cf96}
+.nine-actions{display:grid;grid-template-columns:1fr 160px;gap:10px}
+.nine-spin{width:100%;min-height:57px;border:1px solid #ffebb7;border-radius:10px;
+ background:linear-gradient(#fbe8b2,#bb8251);box-shadow:inset 0 1px #fff8d6,0 4px 0 #72513a;
+ color:#291529;font-size:20px;font-weight:900;letter-spacing:.13em;display:flex;align-items:center;justify-content:center;gap:14px}
+.nine-spin span{color:#733f75}.nine-spin kbd{font-size:10px;letter-spacing:0;border:1px solid #aa8354;padding:4px;border-radius:5px}
+.nine-spin:hover:not(:disabled){filter:brightness(1.08)}
+.nine-auto{background:#442c60;border:1px solid #ad86b8;border-radius:10px;font-weight:800;font-size:13px}
+.nine-auto:hover:not(:disabled){background:#6b3d7f}
+.nine-sidebar{display:flex;flex-direction:column;gap:12px;min-width:0}
+.nine-card{background:linear-gradient(145deg,#291a38e8,#140d22ed);border:1px solid #695179;border-radius:16px;padding:15px 16px;box-shadow:inset 0 1px #d0a4e021}
+.nine-card h2{font:700 21px Georgia,serif;color:#f5d6a3;margin:0}
+.nine-card p{font-size:11px;color:#baa7c4;line-height:1.5;margin:11px 0}
+.nine-section-title{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.nine-section-title button{background:#402a50;border:1px solid #82618a;border-radius:6px;width:29px;height:29px}
+.nine-paytable-list{display:grid;gap:3px;margin:10px 0}
+.nine-payrow{display:grid;grid-template-columns:40px minmax(0,1fr) auto;align-items:center;gap:10px;
+ border-bottom:1px solid #6846725a;padding:3px 0;font-size:12px}
+.nine-payrow img{width:40px;height:40px;object-fit:contain;border-radius:6px;background:#1d1228}
+.nine-payrow strong{font-size:15px;color:#f6d494;white-space:nowrap}
+.nine-detail{padding:12px;border:1px solid #805f8b;border-radius:8px;display:grid;gap:5px;font-size:11px;color:#e3c6ef}
+.nine-detail strong{color:#eecb8e;margin-bottom:4px}
+.nine-record>small{display:block;color:#bb9bd5;margin:8px 0 12px}
+.nine-record-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.nine-record-grid>div{display:flex;flex-direction:column;gap:3px;border:1px solid #5a4267;padding:7px;border-radius:6px;color:#bdaac7;font-size:11px}
+.nine-record-grid strong{color:#f8dcaa;font-size:17px}
+.nine-record p strong{color:#f1ce8d}
+.nine-config{margin-top:auto;display:grid;gap:10px}
+.nine-settings{display:grid;gap:9px}
+.nine-settings label{display:flex;align-items:center;gap:9px;font-size:12px}
+.nine-settings input{accent-color:#d99aff;width:17px;height:17px}
+.nine-config>small{color:#aa94b2;font-size:11px}
+.nine-loading{min-height:100vh;background:#100a1b;display:flex;align-items:center;justify-content:center;gap:14px;flex-direction:column;color:#e9c18e}
+.nine-loading span{font-size:34px;color:#bd8ade}.nine-loading h1{font:36px Georgia,serif;letter-spacing:.17em;margin:0}
+.nine-loading button{padding:12px 16px;background:#36214b;border:1px solid #ad8c71;border-radius:7px}
+@keyframes nine-win-pulse{50%{transform:scale(1.04);filter:brightness(1.25)}}
+@keyframes nine-reel-blur{to{transform:translateY(8px) scaleY(1.04);filter:none}}
+@keyframes nine-bonus-pulse{to{filter:brightness(1.35)}}
+@media(max-height:920px){.nine-header{min-height:65px}.nine-layout{padding-block:10px}
+.nine-machine{padding-block:8px}.nine-machine-heading h2{font-size:29px;margin:0}.nine-bonus-banner{min-height:23px}
+.nine-reels-outer{margin-top:5px}.nine-reels{max-width:510px}.nine-status{min-height:49px}
+.nine-console{gap:6px}.nine-meter>div{padding:4px}.nine-actions button{min-height:48px}
+.nine-card{padding:9px 12px}.nine-card h2{font-size:18px}.nine-card p{margin:5px 0}
+.nine-payrow{padding:1px 0}.nine-payrow img{width:32px;height:32px}.nine-payrow{grid-template-columns:33px minmax(0,1fr) auto}
+.nine-sidebar{gap:7px}}
+@media(max-width:1150px){.nine-layout{grid-template-columns:minmax(0,1fr) 260px;gap:10px}.nine-card{padding-inline:10px}.nine-title h1{font-size:22px}}
+@media(max-width:850px){.nine-layout{grid-template-columns:1fr}.nine-sidebar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.nine-config{grid-column:1/-1;margin-top:0}.nine-reels{max-width:610px}}
+@media(max-width:570px){.nine-header{grid-template-columns:1fr 1fr}.nine-title{grid-column:1/-1;grid-row:1}.nine-back{grid-row:2}.nine-header-bank{grid-row:2}
+.nine-machine{padding-inline:7px}.nine-machine-heading h2{font-size:26px}.nine-reels-outer{gap:2px}
+.nine-reels{gap:3px;padding:6px;border-width:3px}.nine-lines{inset:6px;width:calc(100% - 12px);height:calc(100% - 12px)}
+.nine-cell{border-width:1px;border-radius:5px}.nine-line-number{font-size:7px}
+.nine-bet-grid{grid-template-columns:repeat(5,minmax(0,1fr))}.nine-actions{grid-template-columns:1fr 110px}
+.nine-meter strong{font-size:14px}.nine-spin{font-size:15px;gap:6px}.nine-spin kbd{display:none}
+.nine-sidebar{grid-template-columns:1fr}.nine-header-bank strong{font-size:16px}}
+@media(prefers-reduced-motion:reduce){.nine-cell,.nine-cell img,.nine-bonus-banner{transition:none!important;animation:none!important}}
+
+
+@media(min-width:1000px) and (min-height:600px){
+ .nine-app{height:100dvh;min-height:0}.nine-header{min-height:65px;padding-block:6px}
+ .nine-layout{width:100%;grid-template-columns:minmax(0,1fr) 280px;padding:12px;min-height:0;overflow:hidden}
+ .nine-machine{padding:9px 15px;min-height:0}.nine-machine-heading h2{font-size:28px;margin:0}.nine-bonus-banner{min-height:24px}
+ .nine-reels-outer{flex:1;min-height:100px;width:100%;margin:7px 0;justify-content:center}
+ .nine-reels{height:100%;width:100%;max-width:none;flex:1;aspect-ratio:auto}.nine-status{min-height:44px;padding:3px}.nine-console{width:100%;gap:6px;flex-shrink:0;margin-top:0}
+ .nine-meter>div{padding:4px}.nine-meter strong{font-size:20px}.nine-spin{min-height:48px}.nine-sidebar{min-height:0;overflow:auto}.nine-card{padding:10px}
+}
+.nine-moon{animation:nine-moon-drift 18s ease-in-out infinite alternate}.nine-horizon{animation:nine-night-drift 25s ease-in-out infinite alternate}
+@keyframes nine-moon-drift{to{transform:translate(-22px,9px);opacity:.45}}
+@keyframes nine-night-drift{to{transform:translateX(18px);opacity:.5}}
+@media(prefers-reduced-motion:reduce){.nine-moon,.nine-horizon{animation:none}}
+
+
+.nine-app[data-motion=false] *,.nine-app[data-motion=false] *::before,.nine-app[data-motion=false] *::after{animation:none!important;transition:none!important}

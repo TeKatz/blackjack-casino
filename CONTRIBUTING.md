@@ -4,10 +4,10 @@ The Midnight Club is an offline-first, play-money Windows casino. Gameplay and v
 
 ## Before starting
 
-1. Inspect recent branches and open pull requests. For Manor modernization, the Development publisher is pinned to `feature/manor-modernization-phase-1`. This is independent of the protected main source and does not require merging.
-2. Start from the most recent **validated cumulative base**, not the oldest feature branch. Never overwrite another active workstream.
-3. Continue related Manor changes on the **existing `feature/manor-modernization-phase-1`** branch. Other unrelated projects may use separate focused branches. Never merge to main to deliver a Development update without explicit user approval.
-4. Read [AGENTS.md](AGENTS.md), [architecture](docs/architecture.md), [Development delivery](docs/development-update-delivery.md), and the relevant game-specific documentation.
+1. Inspect recent branches and open pull requests. The Development publisher is pinned to `develop`; `main` is the tested integration baseline. Verify both workflow guards before changing release routing.
+2. Start from the most recent validated `develop` baseline. Never overwrite another active workstream.
+3. Create a focused `feature/*` or `fix/*` branch for independent changes. Create focused feature/fix PRs from `develop` and merge them back into `develop` after checks. Keep PRs reviewable and avoid changing release pins as a side effect.
+4. Read [AGENTS.md](AGENTS.md), [branch policy](docs/branching-and-release-policy.md), [architecture](docs/architecture.md), [Development delivery](docs/development-update-delivery.md), and the relevant game-specific documentation.
 
 ## Local validation (Windows)
 
@@ -18,6 +18,11 @@ python tools/check_repo_contract.py
 python tools/check_localization.py
 python tools/check_localization_coverage.py --strict-shell
 python tools/check_adventure_localization.py
+cd frontend
+npm ci --no-audit --no-fund
+npm test
+npm run build
+cd ..
 dotnet restore BlackjackCasino.sln
 dotnet build BlackjackCasino.sln -c Release
 dotnet test BlackjackCasino.sln -c Release --no-build
@@ -34,10 +39,14 @@ For affected visual surfaces, run the corresponding Windows presentation/startup
 - CI passes, or blockers are explicitly reported and fixed before a Development release is repointed.
 - The final report distinguishes implemented functionality, tests actually run, and remaining work.
 
+## Documentation
+
+Write release notes, README sections and feature guides as project documentation rather than a transcript. Describe functionality, constraints, verified outcomes and remaining work without attributing decisions to conversations or specific participants. The repository contract checks this convention across project Markdown files.
+
 ## Pull requests and releases
 
-Use the PR template and link supporting screenshots/benchmarks when relevant. A preview is not automatically a Development release. Development switches require an explicit source-branch update in **both** workflow guards, a valid increasing SemVer and successful package/updater verification. Do not merge, delete branches, repoint Development or release during another ongoing game change without coordinating it.
+Use `develop` for ongoing work, with reviewable feature/fix PRs. Integrate to `main` at validated milestones rather than merely to publish Development updates. Use the PR template and link supporting screenshots/benchmarks when relevant. A preview is not automatically a Development release. Development switches require an explicit source-branch update in **both** workflow guards, a valid increasing SemVer and successful package/updater verification. Do not merge, delete branches, repoint Development or release during another ongoing game change without coordinating it.
 
 ## Modernization
 
-The first planned new-frontend migration is **Midnight Manor**, after branch consolidation and Jigsaw tester acceptance. See [modernization roadmap](docs/modernization-roadmap.md). Existing C# game engines remain authoritative; PixiJS and React are a presentation layer, not a replacement for casino rules.
+**Midnight Manor** was the first modernized game and remains the only player-facing Manor selection. React/PixiJS renders the game via WebView2 while the C# engine, persistent journal and player wallet remain authoritative. The legacy WPF Manor is retained for a source-level rollback build only. Subsequent modes migrate incrementally; see [modernization roadmap](docs/modernization-roadmap.md).

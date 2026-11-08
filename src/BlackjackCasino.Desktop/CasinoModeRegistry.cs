@@ -1,6 +1,10 @@
 namespace BlackjackCasino.Desktop;
 
-internal sealed record CasinoMode(string Id,string Title,string Subtitle,string Description,string Accent,string Emblem,string Category,Func<System.Windows.FrameworkElement>? Artwork=null, bool UseResourceKeys=false);
+/// <summary>
+/// Pure lobby route metadata: independent of WPF game art, Windows windowing
+/// or browser transport so a future native shell can reuse the same registry.
+/// </summary>
+internal sealed record CasinoMode(string Id,string Title,string Subtitle,string Description,string Accent,string Emblem,string Category,bool UseResourceKeys=false);
 
 /// <summary>Composition root registers modes; lobby rendering stays generic for primary and optional secondary actions.</summary>
 internal sealed class CasinoModeRegistry

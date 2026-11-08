@@ -74,7 +74,9 @@ internal sealed class ManorPersistence(string directory)
         ManorSessionState s=checkpoint.Machine;
         ManorRules.ValidateBet(s.Bet);
         _=ManorRules.SymbolDefinitions(s.PaytableVersion);
-        if(s.Bankroll<0 || checkpoint.Preferences.Bankroll!=s.Bankroll || s.FreeSpinsRemaining is <0 or >20
+        if(s.Revision<0 || (s.LastModernCommandId is { Length: >64 })
+            || (s.LastModernCommandId is { } commandId && commandId.Any(c => !char.IsAsciiLetterOrDigit(c) && c is not ('-' or '_')))
+            || s.Bankroll<0 || checkpoint.Preferences.Bankroll!=s.Bankroll || s.FreeSpinsRemaining is <0 or >20
             || s.CycleReturned<0 || s.CycleReturned>s.Bet*ManorRules.MaximumCycleMultiplier
             || s.Statistics is null || checkpoint.Profile.Manor is null)
             throw new InvalidDataException("Invalid Manor financial state.");

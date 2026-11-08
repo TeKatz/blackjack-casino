@@ -2,9 +2,13 @@ name: CI
 
 on:
   push:
-    branches: [main, "feature/**", "fix/**"]
+    branches: [main, develop, "feature/**", "fix/**"]
   pull_request:
     branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -20,6 +24,26 @@ jobs:
 
       - name: Repository documentation and release guard
         run: python tools/check_repo_contract.py
+
+      - name: React and legacy WPF separation audit
+        run: python tools/check_ui_migration_boundaries.py
+
+      - name: Setup Node for modern Manor frontend
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install modern frontend dependencies
+        working-directory: frontend
+        run: npm ci --no-audit --no-fund
+
+      - name: Test modern frontend
+        working-directory: frontend
+        run: npm test
+
+      - name: Build modern frontend
+        working-directory: frontend
+        run: npm run build
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
@@ -76,11 +100,17 @@ jobs:
       - name: Test
         run: dotnet test BlackjackCasino.sln --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory TestResults
 
+      - name: WPF-free native shell protocol and storage smoke
+        run: dotnet run --project src/BlackjackCasino.NativeShell/BlackjackCasino.NativeShell.csproj --configuration Release --no-build -- --smoke
+
+      - name: WPF-free native shell real WebView2 startup and seven React routes
+        run: dotnet run --project src/BlackjackCasino.NativeShell/BlackjackCasino.NativeShell.csproj --configuration Release --no-build -- --web-smoke
+
       - name: Shared controls regression contract
         run: python tools/check_control_templates.py --self-test
 
-      - name: Table wager presentation regression
-        run: dotnet run --project tools/TableWagerTests --configuration Release
+      - name: Modern Blackjack controller regression
+        run: dotnet test tests/BlackjackCasino.Tests/BlackjackCasino.Tests.csproj --configuration Release --no-build --filter "FullyQualifiedName~BlackjackTableControllerTests"
 
       - name: Casino presentation runtime regression
         run: dotnet run --project tools/PresentationSmoke --configuration Release -- artifacts/presentation-regression
@@ -165,6 +195,65 @@ jobs:
           New-Item -ItemType Directory -Path artifacts/preview-app/tools/updater -Force | Out-Null
           Copy-Item artifacts/preview-updater/BlackjackCasino.Updater.exe artifacts/preview-app/tools/updater/BlackjackCasino.Updater.exe
 
+      - name: Publish WPF-free native shell preview (not the updater target)
+        if: github.event_name == 'push' || github.event_name == 'pull_request'
+        shell: pwsh
+        run: |
+          dotnet publish src/BlackjackCasino.NativeShell/BlackjackCasino.NativeShell.csproj `
+            --configuration Release `
+            --runtime win-x64 `
+            --self-contained true `
+            -p:PublishSingleFile=true `
+            -p:DebugType=None `
+            --output artifacts/native-shell-preview
+          foreach ($name in @("blackjack.html", "reels.html", "neon-vault.html", "nine-lives.html", "midnight-merge.html", "midnight-dice.html", "index.html")) {
+            if (!(Test-Path "artifacts/native-shell-preview/ModernFrontend/$name")) {
+              throw "Native shell is missing packaged $name"
+            }
+          }
+
+      - name: Upload independent WPF-free native shell preview
+        if: github.event_name == 'push' || github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v7
+        with:
+          name: blackjack-casino-native-shell-preview-win-x64
+          path: artifacts/native-shell-preview
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Verify bundled Midnight Manor frontend assets
+        shell: pwsh
+        run: |
+          $index = "artifacts/preview-app/ModernFrontend/index.html"
+          $assets = "artifacts/preview-app/ModernFrontend/assets"
+          if (!(Test-Path $index)) { throw "Modern Manor index.html was not packaged." }
+          if (!(Test-Path $assets)) { throw "Modern Manor bundles were not packaged." }
+          $javascript = Get-ChildItem $assets -Filter "*.js" -File
+          if (!$javascript) { throw "Modern Manor JavaScript bundle missing." }
+          $reelsEntry = "artifacts/preview-app/ModernFrontend/reels.html"
+          if (!(Test-Path $reelsEntry)) { throw "Packaged Reels HTML entry missing." }
+          $references = [regex]::Matches((Get-Content $reelsEntry -Raw), '(?:src|href)="(?:\./)?assets/([^"]+)"')
+          if (!(@($references | Where-Object { $_.Groups[1].Value.EndsWith(".js") }).Count)) {
+            throw "Packaged Reels HTML does not reference its compiled JavaScript."
+          }
+          foreach ($reference in $references) {
+            $resource = Join-Path "artifacts/preview-app/ModernFrontend/assets" $reference.Groups[1].Value
+            if (!(Test-Path $resource)) { throw "Packaged Reels resource missing: $resource" }
+          }
+
+      - name: Verify published single-file Empire artwork
+        shell: pwsh
+        run: ./tools/verify_published_artwork.ps1 -AppDirectory artifacts/preview-app -OutputDirectory artifacts/published-artwork-smoke
+
+      - name: Upload published artwork evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: published-artwork-smoke
+          path: artifacts/published-artwork-smoke
+          if-no-files-found: ignore
+          retention-days: 14
+
       - name: Upload Windows preview
         if: github.event_name == 'push' || github.event_name == 'pull_request'
         uses: actions/upload-artifact@v7
@@ -172,4 +261,34 @@ jobs:
           name: blackjack-casino-preview-win-x64
           path: artifacts/preview-app
           if-no-files-found: error
+          retention-days: 14
+
+  published-artwork:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build local frontend
+        working-directory: frontend
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - name: Publish actual single-file desktop
+        run: dotnet publish src/BlackjackCasino.Desktop/BlackjackCasino.Desktop.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:DebugType=None -o artifacts/single-file-app
+      - name: Decode embedded and browser artwork in published executable
+        shell: pwsh
+        run: ./tools/verify_published_artwork.ps1 -AppDirectory artifacts/single-file-app -OutputDirectory artifacts/single-file-artwork-smoke
+      - name: Upload packaged regression result
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: single-file-artwork-regression
+          path: artifacts/single-file-artwork-smoke
+          if-no-files-found: ignore
           retention-days: 14

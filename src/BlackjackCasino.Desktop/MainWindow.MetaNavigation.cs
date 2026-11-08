@@ -20,15 +20,46 @@ public partial class MainWindow
 
     private void OpenPlayerProfile()
     {
+        if (modernLobby is { Ready: true } && !modernLobby.Failed)
+        {
+            OpenModernProgression("profile");
+            return;
+        }
+        OpenNativePlayerProfile();
+    }
+
+    private void OpenNativePlayerProfile()
+    {
         if (progressionController is null || MetaPageOpen) return;
         progressionController.AccruePlaytime();
         ProcessLatestCompletedRound();
         var profile = new PlayerProfileWindow(progressionController,
-            () => OpenProgressionPage("Season Pass"), CloseMetaPage, OpenProfileStatistics);
+            () => OpenNativeProgressionPage("Season Pass"), CloseMetaPage, OpenProfileStatistics);
         ShowMetaPage(profile);
     }
 
     private void OpenProgressionPage(string tab)
+    {
+        if (progressionController is null) return;
+        if (modernLobby is { Ready: true })
+        {
+            if (tab == "Cosmetic Shop")
+            {
+                OpenModernShopFromProgression();
+                return;
+            }
+            if (tab is "Challenges" or "Statistics" or "Overview" or "Season Pass" or "Hand History" or "Album" or "Collector's Album")
+            {
+                OpenModernProgression(tab == "Challenges" ? "challenges" : tab == "Season Pass" ? "season" : tab == "Hand History" ? "history" : tab is "Album" or "Collector's Album" ? "album" : "statistics");
+                return;
+            }
+        }
+        OpenNativeProgressionPage(tab);
+    }
+
+    // A dedicated fallback for the still-native profile editor and detailed album smoke.
+    // The ordinary lobby and Season Pass navigation never use this WPF route.
+    private void OpenNativeProgressionPage(string tab)
     {
         if (progressionController is null) return;
         progressionController.AccruePlaytime();
@@ -37,6 +68,11 @@ public partial class MainWindow
         page.RemoveAlbumTab();
         page.RemoveProfileTabs();
         page.ConfigureEmbeddedPresentation(CloseMetaPage);
+        if (modernLobby is { Ready: true })
+        {
+            page.ConfigureModernShop(OpenModernShopFromProgression);
+            page.ConfigureModernRecords(OpenModernProgression);
+        }
         page.SelectTab(tab);
         ShowMetaPage(page);
     }
@@ -44,6 +80,11 @@ public partial class MainWindow
     private void OpenProfileStatistics(string section)
     {
         if (progressionController is null) return;
+        if (modernLobby is { Ready: true })
+        {
+            OpenModernProgression(section == "Hand History" ? "history" : "statistics");
+            return;
+        }
         var page = new ProgressionWindow(progressionController, preferences.Presentation("progression").AnimationsEnabled, preferences.Presentation("progression").SoundEnabled);
         page.ConfigureProfileSection(section);
         page.ConfigureEmbeddedPresentation(CloseMetaPage);
@@ -51,6 +92,17 @@ public partial class MainWindow
     }
 
     private void OpenCollectionAlbumPage()
+    {
+        if (modernLobby is { Ready: true } && !modernLobby.Failed)
+        {
+            OpenModernProgression("album");
+            return;
+        }
+        OpenNativeCollectionAlbumPage();
+    }
+
+    // Kept only for WPF fallback, plus the existing detailed native regression suite.
+    internal void OpenNativeCollectionAlbumPage()
     {
         if (progressionController is null || MetaPageOpen) return;
         progressionController.AccruePlaytime();
@@ -112,6 +164,10 @@ public partial class MainWindow
         metaPages.Push(new MetaPage(shell, content));
         metaHost!.Content = content;
         metaOverlay.Visibility = Visibility.Visible;
+        // WebView2 is an HWND/composition surface: keep it out of the native page's
+        // airspace while an embedded WPF profile, shop or album is foregrounded.
+        modernLobby?.SetLobbyVisible(false);
+        UpdateHostHeaderVisibility(embeddedGameOverlay?.IsVisible == true);
         Dispatcher.BeginInvoke(() => content.MoveFocus(new TraversalRequest(FocusNavigationDirection.First)));
     }
 
@@ -176,6 +232,10 @@ public partial class MainWindow
             metaCoveredElements.Clear();
             if (metaPreviousFocus is not null) Keyboard.Focus(metaPreviousFocus);
             metaPreviousFocus = null;
+            // The lobby is visible underneath the native meta page, so its own
+            // IsVisibleChanged handler never fires. Restore React explicitly.
+            modernLobby?.SetLobbyVisible(lobby?.Visibility == Visibility.Visible);
+            UpdateHostHeaderVisibility(embeddedGameOverlay?.IsVisible == true);
         }
     }
 

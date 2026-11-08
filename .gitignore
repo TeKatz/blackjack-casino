@@ -23,3 +23,9 @@ Thumbs.db
 *.zip
 *.sha256
 update-manifest.local.json
+
+# Modern Manor frontend
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+frontend/.vite/

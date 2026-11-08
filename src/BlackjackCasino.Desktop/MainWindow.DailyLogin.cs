@@ -9,63 +9,6 @@ namespace BlackjackCasino.Desktop;
 
 public partial class MainWindow
 {
-    private LobbyDailyDrawer? dailyLoginDrawer;
-
-    private void InitializeDailyLoginDrawer()
-    {
-        if (dailyLoginDrawer is not null || lobby is null)
-        {
-            return;
-        }
-
-        dailyLoginDrawer = new LobbyDailyDrawer(
-            GetDailyLoginStatus,
-            ClaimDailyLoginFromDrawer,
-            () => preferences.Presentation("lobby").AnimationsEnabled)
-        {
-            Visibility = lobby.IsVisible ? Visibility.Visible : Visibility.Collapsed,
-        };
-
-        Grid.SetRow(dailyLoginDrawer, 1);
-        Grid.SetColumnSpan(dailyLoginDrawer, 2);
-        Panel.SetZIndex(dailyLoginDrawer, 1100);
-        CasinoRoot.Children.Add(dailyLoginDrawer);
-
-        lobby.IsVisibleChanged += LobbyDailyVisibilityChanged;
-        dailyLoginDrawer.Refresh(allowAutoOpen: lobby.IsVisible);
-    }
-
-    private void ShutdownDailyLoginDrawer()
-    {
-        if (dailyLoginDrawer is null)
-        {
-            return;
-        }
-
-        if (lobby is not null)
-        {
-            lobby.IsVisibleChanged -= LobbyDailyVisibilityChanged;
-        }
-
-        CasinoRoot.Children.Remove(dailyLoginDrawer);
-        dailyLoginDrawer = null;
-    }
-
-    private void LobbyDailyVisibilityChanged(object sender, DependencyPropertyChangedEventArgs e)
-    {
-        if (dailyLoginDrawer is null)
-        {
-            return;
-        }
-
-        bool visible = (bool)e.NewValue;
-        dailyLoginDrawer.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
-        if (visible)
-        {
-            dailyLoginDrawer.Refresh(allowAutoOpen: true);
-        }
-    }
-
     private DailyLoginStatus GetDailyLoginStatus()
     {
         DailyLoginStatus status = DailyLoginProgress.GetStatus(
@@ -122,7 +65,9 @@ public partial class MainWindow
 
         string packText = reward.PackRarity is { } rarity ? $" · {rarity} card pack" : string.Empty;
         StatusText.Text = $"Daily reward · +{Money(reward.Bankroll)} · +{reward.CosmeticCoins:N0} cosmetic coins{packText} · day {claim.Status.ActiveStep}/{DailyLoginRewardSchedule.CycleLength}";
-        CasinoFeedback.PlayChip(SoundEnabled);
+        // A unique ascending vault-coin chime plays only after the daily claim is
+        // durably committed. Rejected and duplicate claims remain silent.
+        DailyLoginClaimAudio.Play(SoundEnabled);
         AnimateDailyBankrollCredit();
         return claim;
     }

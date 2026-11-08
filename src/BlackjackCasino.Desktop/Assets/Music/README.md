@@ -7,9 +7,8 @@
 | Midnight Manor | The clockwork waltz | D-minor haunted chamber waltz, 62 BPM, 16 bars of 3/4 | Celesta melody, harp, cello and slow strings; no hip-hop drum loop |
 
 These are original scores written for this project. They replace the earlier
-shared oscillator-based compositions. The user's video reference could not be
-played in the build environment; the user clarified the intended direction as
-“Chill Hip Hop Lofi”. No audio was copied from that video.
+shared oscillator-based compositions. The source reference was unavailable to the build environment. The target
+style is “Chill Hip Hop Lofi”; no audio was copied from that reference.
 
 The instrument performances were rendered offline with FluidSynth 2.3.4 and
 **GeneralUser GS 2.0.3 by S. Christian Collins**, then mixed to 32kHz stereo PCM.

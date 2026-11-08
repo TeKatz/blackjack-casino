@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
@@ -11,8 +12,10 @@ namespace BlackjackCasino.Desktop;
 public partial class MainWindow
 {
     private EmpireService? empire;
-    private EmpireView? empireView;
-    private EmpireView? empireDetachedView;
+    private ModernEmpireView? empireView;
+    private ModernEmpireView? cachedEmpireView;
+    private ContentControl? empireCacheHost;
+    private ModernEmpireView? empireDetachedView;
     private Window? empireDetachedWindow;
     private DispatcherTimer? empireTimer;
     private DateTimeOffset empireLastSave;
@@ -62,6 +65,8 @@ public partial class MainWindow
         Closed += (_, _) =>
         {
             empireTimer.Stop();
+            cachedEmpireView?.Dispose();
+            cachedEmpireView = null;
             if (empireDetachedWindow is { IsVisible: true }) empireDetachedWindow.Close();
             empire.Accrue(DateTimeOffset.UtcNow);
             SavePreferences();
@@ -73,6 +78,7 @@ public partial class MainWindow
 
     private void OpenEmpire()
     {
+        long visitStarted = Stopwatch.GetTimestamp();
         if (EmpireDetachedOpen)
         {
             empireDetachedWindow!.Activate();
@@ -82,22 +88,35 @@ public partial class MainWindow
         ProcessLatestCompletedRound();
         EnsureEmbeddedGameHost();
         StartEmpireSession();
-        empireView = new EmpireView(
-            empire,
-            UpgradeEmpire,
-            ClaimEmpireDividend,
-            PrestigeEmpire,
-            CloseEmpire,
-            () => preferences.Presentation("casino-empire").AnimationsEnabled,
-            "←  Casino lobby",
-            MutateEmpire);
-        EmpireStatisticsPage.Attach(empireView, empire);
+        // Keep one embedded WebView attached to a dedicated overlay child. Other games
+        // replace embeddedGameHost.Content, never the cached Empire visual tree.
+        empireCacheHost ??= new ContentControl
+        {
+            HorizontalContentAlignment = HorizontalAlignment.Stretch,
+            VerticalContentAlignment = VerticalAlignment.Stretch,
+            Visibility = Visibility.Collapsed,
+        };
+        if (!embeddedGameOverlay!.Children.Contains(empireCacheHost))
+            embeddedGameOverlay.Children.Add(empireCacheHost);
+        if (cachedEmpireView is null || cachedEmpireView.Failed)
+        {
+            cachedEmpireView?.Dispose();
+            cachedEmpireView = CreateModernEmpireView(CloseEmpire, () =>
+            {
+                CloseEmpire();
+                Dispatcher.BeginInvoke(OpenEmpire);
+            });
+            empireCacheHost.Content = cachedEmpireView;
+        }
+        empireView = cachedEmpireView;
+        empireView.BeginVisit(visitStarted);
         foreach (UIElement covered in CasinoRoot.Children.OfType<UIElement>().Where(child => child != embeddedGameOverlay))
         {
             empireCoveredElements.Add((covered, covered.IsEnabled));
             covered.SetCurrentValue(IsEnabledProperty, false);
         }
-        embeddedGameHost!.Content = empireView;
+        embeddedGameHost!.Visibility = Visibility.Collapsed;
+        empireCacheHost.Visibility = Visibility.Visible;
         embeddedGameOverlay!.Visibility = Visibility.Visible;
         if (lobby is not null) lobby.Visibility = Visibility.Collapsed;
         KeyboardNavigation.SetTabNavigation(empireView, KeyboardNavigationMode.Cycle);
@@ -128,23 +147,13 @@ public partial class MainWindow
             Title = "Casino Empire · Detached",
             Width = 1280,
             Height = 820,
-            MinWidth = 940,
-            MinHeight = 650,
+            MinWidth = 800,
+            MinHeight = 600,
             Background = new SolidColorBrush(Color.FromRgb(8, 20, 19)),
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             Owner = this,
         };
-        EmpireView? view = null;
-        view = new EmpireView(
-            empire,
-            UpgradeEmpire,
-            ClaimEmpireDividend,
-            PrestigeEmpire,
-            () => window.Close(),
-            () => preferences.Presentation("casino-empire").AnimationsEnabled,
-            "Close Empire window",
-            MutateEmpire);
-        EmpireStatisticsPage.Attach(view, empire);
+        ModernEmpireView view = CreateModernEmpireView(() => window.Close());
         window.Content = view;
         window.Closed += (_, _) =>
         {
@@ -163,6 +172,33 @@ public partial class MainWindow
         Dispatcher.BeginInvoke(() => ShowStartupEmpireReport(view));
     }
 
+    private ModernEmpireView CreateModernEmpireView(Action close, Action? retry = null)
+        => new(() => new
+        {
+            Language = Localization.Language == UiLanguagePreference.German ? "de" : "en",
+            AnimationsEnabled = preferences.Presentation("casino-empire").AnimationsEnabled,
+            SoundEnabled = preferences.SoundEnabled,
+            Detached = EmpireDetachedOpen,
+            CanClaimDividend = !session.RoundInProgress && embeddedGameShell is null && !KniffelPageOpen,
+            Economy = EmpireModernSnapshot.Create(empire!),
+        }, command => command.Action == "dividend"
+            ? CollectModernEmpireDividend()
+            : MutateEmpire(candidate => EmpireModernProtocol.Apply(candidate, command, DateTimeOffset.UtcNow)),
+            command => EmpireModernSnapshot.Preview(empire!.Preview(command.InspectRoomId ?? command.RoomId ?? EmpireCatalog.Find(command.Id ?? "")?.Id ?? "slots",
+                (candidate, at) => EmpireModernProtocol.Apply(candidate, command, at))), close, retry);
+
+    private EmpireActionResult CollectModernEmpireDividend()
+    {
+        decimal before = session.Bankroll;
+        bool success = ClaimEmpireDividend();
+        if (success)
+        {
+            string amount = (session.Bankroll - before).ToString("C2", CultureInfo.GetCultureInfo("en-US"));
+            return new(true, $"Owner dividend: {amount} added to your casino cash.");
+        }
+        return new(false, "The owner reserve is empty, a game is active, or the dividend could not be saved. Your unclaimed reserve remains available.");
+    }
+
     private void StartEmpireSession()
     {
         if (empire is null) return;
@@ -174,7 +210,7 @@ public partial class MainWindow
         RefreshEmpireHeader();
     }
 
-    private void ShowStartupEmpireReport(EmpireView? target)
+    private void ShowStartupEmpireReport(ModernEmpireView? target)
     {
         if (target is null || empireStartupReportShown || empireStartupCatchUp is null) return;
         empireStartupReportShown = true;
@@ -268,10 +304,20 @@ public partial class MainWindow
     private void CloseEmpire()
     {
         if (empireView is null) return;
-        empireView.Dispose();
-        if (lobby is not null) lobby.Visibility = Visibility.Visible;
-        embeddedGameHost!.Content = null;
+        // A failed browser must be rebuilt on the next visit. A healthy browser
+        // remains attached but completely hidden, so no WebView2 cold restart occurs.
+        bool failed = empireView.Failed;
+        empireView.PauseVisit();
         empireView = null;
+        if (empireCacheHost is not null) empireCacheHost.Visibility = Visibility.Collapsed;
+        if (failed)
+        {
+            cachedEmpireView?.Dispose();
+            if (empireCacheHost is not null) empireCacheHost.Content = null;
+            cachedEmpireView = null;
+        }
+        embeddedGameHost!.Visibility = Visibility.Visible;
+        if (lobby is not null) lobby.Visibility = Visibility.Visible;
         embeddedGameOverlay!.Visibility = Visibility.Collapsed;
         foreach (var (element, enabled) in empireCoveredElements) element.SetCurrentValue(IsEnabledProperty, enabled);
         empireCoveredElements.Clear();
@@ -289,20 +335,12 @@ public partial class MainWindow
         lobby?.MoveFocus(new TraversalRequest(FocusNavigationDirection.First));
     }
 
-    private void EmpireBalanceSettingChanged(object sender, RoutedEventArgs e)
-    {
-        // XAML may raise Checked before constructor preferences have been loaded.
-        if (empire is null || suppressPreferenceEvents) return;
-        RefreshEmpireHeader();
-        SavePreferences();
-    }
-
     private bool empireHeaderWasLive;
 
     private void RefreshEmpireHeader()
     {
         if (empire is null) return;
-        bool visible = empire.Started && EmpireBalanceCheckBox.IsChecked == true;
+        bool visible = empire.Started && preferences.ShowEmpireBalance;
         EmpireBalancePanel.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
         bool live = visible && EmpireBalancePanel.IsVisible && EmpireBalancePanel.IsEnabled && WindowState != WindowState.Minimized;
         if (!live)
@@ -316,3 +354,4 @@ public partial class MainWindow
         EmpireHeaderRate.Text = "+" + EmpireView.Number(empire.CreditsPerSecond) + " cr / sec";
     }
 }
+

@@ -26,8 +26,6 @@ internal static class UiResponsivenessSmoke
         string oldCards = profile.EquippedCardSetId, oldFrame = profile.EquippedFrameId;
         int oldPrestige = profile.Prestige;
         string[] oldOwned = profile.OwnedCosmeticIds.ToArray();
-        var animationCheck = (CheckBox)window.FindName("AnimationsCheckBox");
-        bool? oldAnimations = animationCheck.IsChecked;
         var host = new Grid { IsHitTestVisible = false, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Bottom };
         var root = (Grid)window.Content;
         Grid.SetRowSpan(host, 2); Grid.SetColumnSpan(host, 2);
@@ -39,7 +37,6 @@ internal static class UiResponsivenessSmoke
                 Levels = EmpireCatalog.Departments.ToDictionary(room => room.Id, room => room.Floor == 1 ? 20 : 0),
             })));
             prefsField.SetValue(window, oldPrefs.WithPresentation("lobby", oldPrefs.Presentation("lobby") with { AnimationsEnabled = true }));
-            animationCheck.IsChecked = true;
             profile.Prestige = 3; profile.EquippedFrameId = "frame-prestige-10";
             profile.OwnedCosmeticIds.Add("frame-prestige-10"); profile.OwnedCosmeticIds.Add("cardset-emerald-house");
             Call(window, "RefreshProfileButton"); Call(window, "RefreshEmpireHeader");
@@ -50,10 +47,38 @@ internal static class UiResponsivenessSmoke
                 var bank = (FrameworkElement)window.FindName("BankrollPanel");
                 var shortcuts = Find<FrameworkElement>(window).Single(e => e.Name == "CasinoHeaderShortcuts");
                 var credits = (FrameworkElement)window.FindName("EmpireBalancePanel");
-                Rect a = Bounds(shortcuts, window), b = Bounds(bank, window), c = Bounds(credits, window);
-                Require(a.Right + 4 <= b.Left && b.Right + 4 <= c.Left, "Header money overlaps shortcuts or Empire credits.");
-                Rect header = Bounds((FrameworkElement)window.FindName("CasinoHeader"), window);
-                Require(c.Right <= window.ActualWidth && b.Top >= header.Top && b.Bottom <= header.Bottom + 1, "Header money left the header.");
+                FrameworkElement nativeHeader = (FrameworkElement)window.FindName("CasinoHeader");
+                if (nativeHeader.IsVisible)
+                {
+                    // Keep the original WPF fallback geometry contract.
+                    Rect a = Bounds(shortcuts, window), b = Bounds(bank, window), c = Bounds(credits, window);
+                    Require(a.Right + 4 <= b.Left && b.Right + 4 <= c.Left,
+                        "Header money overlaps shortcuts or Empire credits.");
+                    Rect header = Bounds(nativeHeader, window);
+                    Require(c.Right <= window.ActualWidth && b.Top >= header.Top && b.Bottom <= header.Bottom + 1,
+                        "Header money left the header.");
+                }
+                else
+                {
+                    // The React lobby deliberately replaces the native casino header.
+                    // Inspect the *visible WebView2 DOM*, rather than measuring an
+                    // invisible WPF header and declaring it clipped.
+                    ModernLobbyView modern = Find<ModernLobbyView>(window)
+                        .Single(view => view.Ready && view.IsVisible);
+                    string headerGeometry = await modern.Browser.CoreWebView2!.ExecuteScriptAsync(
+                        "(()=>{const top=document.querySelector('.lobby-topbar');"
+                        + "const wallet=document.querySelector('.lobby-finances');"
+                        + "const brand=document.querySelector('.lobby-brand');"
+                        + "if(!top||!wallet||!brand)return false;"
+                        + "const a=top.getBoundingClientRect(),b=wallet.getBoundingClientRect(),"
+                        + "c=brand.getBoundingClientRect();"
+                        + "return a.height>=45&&b.width>60&&c.width>100&&"
+                        + "b.left>=a.left&&b.right<=a.right+2&&"
+                        + "b.top>=a.top&&b.bottom<=a.bottom+2;})()");
+                    Require(headerGeometry.Equals("true", StringComparison.OrdinalIgnoreCase),
+                        "React lobby header money is clipped or outside the visible topbar at "
+                        + size.Item1 + "x" + size.Item2 + ".");
+                }
                 Border hub = Find<Border>(window).Single(e => e.Name == "LobbyOverviewHub");
                 foreach (string title in new[] { "Season Pass", "Cosmetic Shop", "Collector's Album", "Challenges", "Statistics" })
                 {
@@ -104,7 +129,26 @@ internal static class UiResponsivenessSmoke
             var counter = (EmpireBalanceCounter)window.FindName("EmpireHeaderBalance");
             Require(!DependencyPropertyHelper.GetValueSource(counter, EmpireBalanceCounter.DisplayedAmountProperty).IsAnimated,
                 "The hidden Empire header continues to animate underneath a menu.");
-            Find<Button>(window).Single(b => b.Name == "ProgressionBackButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            ModernLobbyView? modernRecords = Find<ModernLobbyView>(window)
+                .FirstOrDefault(view => view.Ready && view.IsVisible);
+            if (modernRecords is not null)
+            {
+                for (int i = 0; i < 90 && modernRecords.RecordsPage != "challenges"; i++)
+                    await Task.Delay(60);
+                Require(modernRecords.RecordsPage == "challenges",
+                    "The responsiveness test did not reach React Challenges.");
+                await modernRecords.Browser.CoreWebView2!.ExecuteScriptAsync(
+                    "document.querySelector('.record-page .shop-back')?.click()");
+                for (int i = 0; i < 70 && modernRecords.RecordsPage is not null; i++)
+                    await Task.Delay(60);
+                Require(modernRecords.RecordsPage is null,
+                    "React Challenges did not release the casino header.");
+            }
+            else
+            {
+                Find<Button>(window).Single(b => b.Name == "ProgressionBackButton" && b.IsVisible)
+                    .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            }
             File.WriteAllText(Path.Combine(output, "ui-responsiveness-result.txt"), "PASS: right-aligned bankroll rail; readable unscaled hub text; loaded/equipped card styling; no per-layout card scans; stopped covered header clocks; rendering and input latency samples recorded.");
         }
         finally
@@ -112,7 +156,7 @@ internal static class UiResponsivenessSmoke
             root.Children.Remove(host);
             profile.EquippedCardSetId = oldCards; profile.EquippedFrameId = oldFrame; profile.Prestige = oldPrestige;
             profile.OwnedCosmeticIds.Clear(); foreach (string id in oldOwned) profile.OwnedCosmeticIds.Add(id);
-            prefsField.SetValue(window, oldPrefs); empireField.SetValue(window, oldEmpire); animationCheck.IsChecked = oldAnimations;
+            prefsField.SetValue(window, oldPrefs); empireField.SetValue(window, oldEmpire);
             Call(window, "RefreshProfileButton"); Call(window, "RefreshEmpireHeader");
         }
     }

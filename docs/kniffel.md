@@ -1,7 +1,10 @@
 # Midnight Dice — casual and casino dice tables
 
-Midnight Dice is registered under Table games in the casino lobby and is hosted as a
-UserControl inside the existing main window. It creates no game window or HWND.
+Midnight Dice is registered under Table games in the casino lobby. Its normal game
+surface is the packaged `frontend/midnight-dice.html` React/PixiJS page, hosted
+in a native WebView2 control inside the existing main window. It does not open
+a second visible game window. The previous WPF `KniffelView` remains in source
+for rollback and legacy feedback regression testing, but is no longer a lobby choice.
 The table offers a complete 13-turn casual solo game and a separate paid casino table against three AI opponents. Casual does not debit or credit casino cash; casino entry fees and prizes use the shared bankroll.
 
 ## Playing
@@ -57,17 +60,16 @@ player-state file. Every roll, hold and score updates it; returning to the lobby
 or restarting the application preserves dice, holds, used rolls and completed
 boxes. Malformed Kniffel checkpoints reset only this game, not the bankroll.
 
-The outcome is generated and checkpointed before cosmetic animation. Only
-unheld dice tumble and cycle faces; each settles to the committed result with a
-slight stagger. Rolling, holding and scoring are locked during that animation.
-Leaving mid-animation stops the timer and resumes the already committed roll.
-Unloading/disposal also stops the timer. The existing animation preference is
-respected. Candidate glows have short, bounded pulses; held dice have a mint rim
-and a text label. Scoring is never conveyed by colour alone.
+The outcome is generated and checkpointed before cosmetic animation. The modern
+React interface animates only eligible dice and reveals the already committed
+C# result. Held dice have a distinct mint rim and text label; positive score
+previews appear on the paper-style card. Reduced-motion and local sound settings
+govern presentation without influencing any native roll, bonus or score.
 
-The felt table and paper sheet share a uniformly scaling 1160×748 design, keeping
-all 13 boxes visible at the supported minimum window size without scrolling.
-No runtime artwork downloads or external assets are needed.
+The DOM layout is responsive rather than uniformly scaling a fixed WPF Viewbox.
+The live score sheet and dice controls remain independently legible across
+supported desktop window sizes, with scrolling only when required. No runtime
+artwork downloads or external services are needed.
 
 ## Validation
 
@@ -78,16 +80,26 @@ No runtime artwork downloads or external assets are needed.
 - Further Kniffel maximum previews and once-per-turn bonus settlement.
 - Checkpoint round trips, deep-copy isolation, invalid data normalization and
   transactional rejection of invalid injected dice.
-- `tools/StartupSmoke/KniffelSmoke.cs` exercises the actual hosted WPF surface:
-  roll/hold/reroll, selection/confirmation/glow, a 13-turn game, resume, animated
-  settlement, mid-animation exit, restart cancellation and one-window hosting.
-  CI uploads screenshots at 1080×720 and 1280×900 with the existing startup smoke
-  evidence.
+- `tools/StartupSmoke/KniffelSmoke.cs` now exercises the packaged React casual
+  WebView2 route: exact five native dice, score sheet, hold/reroll, selection and
+  confirmation, the full 13-category game, XP receipts, resume, animations,
+  restart confirmation, layout and screenshots.
+- `tools/StartupSmoke/KniffelCasinoSmoke.cs` opens the React paid table and
+  verifies all three AI opponents, the original settlement formulas, exact
+  cash/XP receipts, browser reentry and confirmed forfeit; the statistics and
+  challenge routes remain visible in the modern lobby.
+- `ModernDiceBridgeTests.cs` and `frontend/tests/diceBridge.test.ts` cover
+  the strict local intent boundary, valid snapshot shape and replay protection.
+  Existing `KniffelFeedbackSmoke` exercises retained WPF feedback code as
+  a source-level rollback regression, not the primary route.
 
 
-## English presentation, audio and completion rewards
+## Language, audio and completion rewards
 
-All table labels, status messages, tooltips and accessibility names are English.
+React labels and controls support both English and German; native score keys and
+previously persisted stable IDs are unchanged. Some native status/AI descriptions
+are retained in their established wording until the remaining legacy localization
+pass. The legacy WPF rollback view uses the original English labels.
 The public name is **Midnight Dice**; the internal `kniffel` lobby/save IDs remain
 unchanged for compatibility. The five-equal-dice box is labelled **Five of a kind**.
 The existing German-classic scoring contract is preserved, including its 50-point
@@ -210,19 +222,20 @@ completion has its own score summary without a cash prize.
 
 **Back to score sheet**, **Game setup** and **Return to casino** provide clear next
 steps. **Match results** reopens the read-only receipt without awarding cash or XP
-again. The Windows feedback smoke uses deterministic five-of-a-kind fixtures to
-verify the player and all three named opponents, ordered/deduplicated sounds,
-bonus entries in another box, failed-save rollback, reduced motion, dialog
-deferral, endscreen timing, tied/loss receipts, minimum-window rendering and cleanup.
+again. The legacy WPF feedback smoke still verifies deterministic five-of-a-kind fixtures,
+deduplicated sounds, failed-save rollback, reduced motion, endscreen timing and
+minimum-window rendering of the rollback implementation. React browser tests and
+the new Windows startup smoke separately verify the primary score sheet, native
+receipts and collision-free score/game transitions.
 
 ## Cosmetic dice sets and presentation refresh
 
 Dice Sets are profile cosmetics bought and equipped through the shared shop.
 House Ivory preserves the original appearance; Obsidian Gold, Jade Palace,
 Royal Amethyst, Moonstone, Ruby Velvet and Aurora Prism supply distinct palettes.
-Only `KniffelDie` drawing colours change. The five die controls, hit targets,
-held border, question-mark state, pips, values, roll transforms, timings and
-five-of-a-kind feedback continue to use their existing code paths.
+The normal React view projects the equipped `DiceAppearance` palette onto SVG
+dice with matching pips and held borders. The WPF `KniffelDie` code remains only
+for rollback checks; it no longer owns the player-facing dice renderer.
 
 The setup screen separates casual play from paid AI tables into two cards. Entry,
 prizes, resume and confirmed forfeit retain their existing actions. Ten new

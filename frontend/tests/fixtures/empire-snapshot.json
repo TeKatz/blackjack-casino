@@ -1,0 +1,121 @@
+{
+  "version": 1,
+  "session": "00000000-0000-0000-0000-000000000001",
+  "revision": 0,
+  "notice": null,
+  "lastReply": null,
+  "offline": null,
+  "state": {
+    "language": "en",
+    "animationsEnabled": true,
+    "soundEnabled": true,
+    "detached": false,
+    "canClaimDividend": true,
+    "economy": {
+      "activePropertyId": "midnight-club",
+      "credits": "150",
+      "dividend": "0",
+      "dividendCapacity": "320",
+      "rate": "0.5",
+      "portfolioRate": "0.5",
+      "cashPerHour": "3.4",
+      "prestige": 0,
+      "totalPrestige": 0,
+      "reputation": 100,
+      "totalLevels": 1,
+      "openRooms": 1,
+      "legacyPointsAvailable": 0,
+      "managerSlots": 0,
+      "automationUnlocked": false,
+      "automation": {
+        "enabled": false,
+        "reserve": "1000000",
+        "spendPercent": "0.25",
+        "targetLevel": 100,
+        "cheapestMilestone": true,
+        "priorities": [
+          "slots",
+          "tables"
+        ]
+      },
+      "managerAssignments": {},
+      "canPrestige": false,
+      "prestigeRequirement": "All five Main Floor rooms",
+      "offlineHours": 8,
+      "floors": [
+        {
+          "id": 1,
+          "displayName": "Main Floor",
+          "accent": "#B99B67",
+          "unlocked": true,
+          "requirement": ""
+        }
+      ],
+      "rooms": [
+        {
+          "id": "slots",
+          "name": "Slot Gallery",
+          "description": "Room",
+          "floor": 1,
+          "category": "Gaming",
+          "tags": "Gaming, Slots, Classic",
+          "accent": "#D6B578",
+          "level": 1,
+          "rate": "0.5",
+          "requirement": "",
+          "breakdown": {
+            "base": "0",
+            "strategy": "0",
+            "synergies": "0",
+            "projects": "0",
+            "managers": "0",
+            "events": "0",
+            "contracts": "0",
+            "strategicBonus": "0",
+            "final": "0",
+            "prestige": "1",
+            "achievements": "1"
+          },
+          "quotes": [
+            {
+              "requestedLevels": 1,
+              "levels": 1,
+              "targetLevel": 2,
+              "cost": "59",
+              "unlocked": true,
+              "canBuy": true
+            }
+          ]
+        }
+      ],
+      "research": [],
+      "projects": [],
+      "properties": [],
+      "synergies": [],
+      "managers": [],
+      "events": [],
+      "activeEvent": null,
+      "contracts": [],
+      "activeContract": null,
+      "contractProgress": "0",
+      "canClaimContract": false,
+      "contractBuff": null,
+      "statistics": {
+        "lifetimeCredits": "0",
+        "runCredits": "0",
+        "lifetimeCashClaimed": "0",
+        "propertyLifetimeCredits": "0",
+        "levelsPurchased": "0",
+        "automatedLevels": "0",
+        "eventsCompleted": "0",
+        "eventEncores": "0",
+        "contractsCompleted": "0",
+        "producedByTag": {}
+      },
+      "achievementBoosts": [],
+      "mainFloorLevels": 1,
+      "prestigeMainFloorLevelRequirement": 250,
+      "prestigeRunCreditRequirement": "5000000"
+    }
+  }
+}

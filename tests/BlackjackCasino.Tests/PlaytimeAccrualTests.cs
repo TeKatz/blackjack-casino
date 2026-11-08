@@ -57,6 +57,12 @@ public sealed class PlaytimeAccrualTests
         var clock = new ManualTimeProvider();
         ChallengeDefinition challenge = ChallengeCatalog.TryGet("lifetime-hours-250")!;
         var profile = new PlayerProfileState { TotalPlaytimeSeconds = (long)challenge.Goal - 1 };
+        // Earlier lifetime milestones can legitimately be claimable before 250 hours.
+        // Mark them claimed to isolate the boundary being tested.
+        profile.ClaimedChallengeIds = ChallengeCatalog.For(ChallengeCategory.Lifetime)
+            .Where(item => item.Metric == ChallengeMetric.LifetimePlaytimeSeconds
+                && item.Goal < challenge.Goal)
+            .Select(item => item.Id).ToList();
         var controller = new PlayerProgressionController(profile, timeProvider: clock);
         clock.Advance(TimeSpan.FromMilliseconds(900));
         Assert.False(bulk ? controller.ClaimAllChallenges().Success : controller.ClaimChallenge(challenge.Id).Success);
@@ -95,6 +101,10 @@ public sealed class PlaytimeAccrualTests
         var clock = new ManualTimeProvider();
         ChallengeDefinition challenge = ChallengeCatalog.TryGet("lifetime-hours-250")!;
         var profile = new PlayerProfileState { TotalPlaytimeSeconds = (long)challenge.Goal - 1 };
+        profile.ClaimedChallengeIds = ChallengeCatalog.For(ChallengeCategory.Lifetime)
+            .Where(item => item.Metric == ChallengeMetric.LifetimePlaytimeSeconds
+                && item.Goal < challenge.Goal)
+            .Select(item => item.Id).ToList();
         int saves = 0;
         string? saved = null;
         var controller = new PlayerProgressionController(profile, state =>
@@ -108,7 +118,7 @@ public sealed class PlaytimeAccrualTests
         Assert.False(controller.ClaimAllChallenges().Success);
 
         Assert.Equal((long)challenge.Goal, profile.TotalPlaytimeSeconds);
-        Assert.Empty(profile.ClaimedChallengeIds);
+        Assert.DoesNotContain(challenge.Id, profile.ClaimedChallengeIds);
         Assert.Equal(0, profile.Coins);
         Assert.True(controller.ClaimAllChallenges().Success);
         Assert.False(controller.ClaimAllChallenges().Success);

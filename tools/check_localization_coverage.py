@@ -28,13 +28,10 @@ PHASE2_XAML = {
     "KniffelView.xaml",
     "SlotMachineWindow.xaml",
     "ManorWindow.xaml",
-    "NeonVaultWindow.xaml",
-    "NineLivesWindow.xaml",
 }
 PHASE2_CODE_AUDIT = {
     "KniffelSetupView.cs", "KniffelView.xaml.cs", "KniffelMatchResultView.cs",
     "SlotMachineWindow.xaml.cs", "ManorWindow.xaml.cs",
-    "NeonVaultWindow.xaml.cs", "NineLivesWindow.xaml.cs",
     "MemoryLoungeModule.cs", "MemoryLoungeVisualModule.cs",
     "SolitaireLoungeModule.cs", "WordSearchLoungeModule.cs",
     "SudokuPremiumMenu.cs", "EmpireView.cs", "EmpireManagementView.cs",
@@ -44,7 +41,6 @@ PHASE1_CODE = {
     "StartupWelcomeWindow.cs",
     "PlayerProfileWindow.cs",
     "MainWindow.TableRules.cs",
-    "TableRulesDialog.cs",
     "CasinoUxEnhancements.cs",
 }
 # Product identity is deliberately shared by both language versions.

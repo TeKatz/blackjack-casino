@@ -23,7 +23,7 @@ internal sealed class CasinoLobbyView : UserControl
     private DropShadowEffect? albumPackBadgeGlow;
     private static readonly string[] Order = ["blackjack", "kniffel", "chill-lounge", "casino-empire", "midnight-reels", "neon-vault", "nine-lives", "midnight-manor"];
 
-    internal CasinoLobbyView(CasinoModeRegistry modes, Action<string> progression, Func<bool>? animations = null)
+    internal CasinoLobbyView(CasinoModeRegistry modes, Action<string> progression, Func<bool>? animations = null, Action? openUpdates = null)
     {
         this.modes = modes;
         this.animations = animations ?? (() => true);
@@ -32,6 +32,7 @@ internal sealed class CasinoLobbyView : UserControl
         var root = new Grid { Margin = new Thickness(30, 14, 30, 14) };
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         root.RowDefinitions.Add(new RowDefinition());
+        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
         var heading = new StackPanel { Margin = new Thickness(10, 0, 10, 12) };
         heading.Children.Add(new TextBlock { Text = "THE MIDNIGHT CLUB", Foreground = Ink("#D6B478"), FontSize = 11 });
@@ -92,6 +93,25 @@ internal sealed class CasinoLobbyView : UserControl
         body.SizeChanged += (_, _) => QueueFit();
         gamesViewport.SizeChanged += (_, _) => QueueFit();
         Loaded += (_, _) => QueueFit();
+
+        if (openUpdates is not null)
+        {
+            var updates = new Button
+            {
+                Name = "LobbyNativeUpdatesButton",
+                Content = "⚙  Updates",
+                Margin = new Thickness(10, 7, 0, 0),
+                Padding = new Thickness(13, 7, 13, 7),
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Foreground = Ink("#EED19A"),
+                Background = Ink("#12372A"),
+                BorderBrush = Ink("#9C8457"),
+                BorderThickness = new Thickness(1),
+            };
+            updates.Click += (_, _) => openUpdates();
+            Grid.SetRow(updates, 2);
+            root.Children.Add(updates);
+        }
 
         Content = root;
         Loaded += OnLoaded;
@@ -458,7 +478,9 @@ internal sealed class CasinoLobbyView : UserControl
                 ClipToBounds = true,
                 Background = new LinearGradientBrush(((SolidColorBrush)accent).Color, Color.FromRgb(9, 17, 22), 65),
             };
-            if (mode.Artwork is not null) art.Children.Add(mode.Artwork());
+            // Only this emergency native lobby depends on WPF artwork.
+            FrameworkElement? nativeArtwork = NativeLobbyArtwork.Create(mode.Id);
+            if (nativeArtwork is not null) art.Children.Add(nativeArtwork);
             else art.Children.Add(new TextBlock
             {
                 Text = mode.Emblem,

@@ -8,6 +8,123 @@ using BlackjackCasino.Desktop;
 
 internal static partial class Program
 {
+    /// <summary>Exercise the actual React controls when active, not a hidden WPF fallback.</summary>
+    private static async Task OpenAlbumFromLobby(MainWindow window, bool fromHeader)
+    {
+        ModernLobbyView? modern = Find<ModernLobbyView>(window)
+            .FirstOrDefault(view => view.Ready && view.IsVisible);
+        if (modern is not null)
+        {
+            string selector = fromHeader
+                ? "document.querySelector('.lobby-top-status .header-compact:nth-child(2)')"
+                : "[...document.querySelectorAll('.lobby-nav-item')].find(x=>/Collections|Sammlungen/.test(x.textContent||''))";
+            string result = await modern.Browser.CoreWebView2!.ExecuteScriptAsync(
+                "Boolean(" + selector + ")");
+            Require(result == "true", "React lobby is missing the Collector's Album shortcut: " + selector);
+            await modern.Browser.CoreWebView2.ExecuteScriptAsync(selector + "?.click()");
+        }
+        else
+        {
+            string name = fromHeader ? "HeaderCollectionAlbumButton" : "LobbyProgression_Album";
+            Find<Button>(window).Single(b => b.Name == name && b.IsVisible)
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        }
+
+        // React owns the Album when available. The WPF surface is a fallback
+        // only; a browser action must never silently open it over the lobby.
+        for (int i = 0; i < 110; i++)
+        {
+            window.UpdateLayout();
+            if (modern is not null)
+            {
+                bool visible=modern.RecordsPage=="album"&&await modern.Browser.CoreWebView2!.ExecuteScriptAsync(
+                    "Boolean(document.querySelector('.album-page .album-themes'))")=="true";
+                if (visible)
+                {
+                    Require(!Find<Grid>(window).Any(g=>g.Name=="CollectionAlbumRoot"&&g.IsVisible),
+                        "The old WPF Album appeared over React.");
+                    return;
+                }
+            }
+            else if(Find<Grid>(window).Any(g=>g.Name=="CollectionAlbumRoot"&&g.IsVisible))
+                return;
+            await Task.Delay(40);
+        }
+        throw new InvalidOperationException("Collector's Album did not open through its active UI.");
+    }
+
+    private static async Task CheckReactAlbum(MainWindow window, PlayerProfileState profile, ModernLobbyView modern)
+    {
+        var web=modern.Browser.CoreWebView2!;
+        async Task Expect(string expression,string message)
+        {
+            for(int i=0;i<110;i++)
+            {
+                if(await web.ExecuteScriptAsync(expression)=="true")return;
+                await Task.Delay(50);
+            }
+            throw new InvalidOperationException(message);
+        }
+        await Expect("document.querySelectorAll('.album-theme-item').length===16",
+            "React Album does not expose all sixteen collections.");
+        await Expect("document.querySelectorAll('.album-card-grid .album-collection-card').length===10",
+            "React Album does not show all ten card positions for the selected theme.");
+        long before=profile.Collection.PacksOpened;
+        int owned=profile.Collection.Packs.GetValueOrDefault(CollectionRarity.Common);
+        Require(owned>0,"React Album acceptance needs an existing Common pack.");
+        await web.ExecuteScriptAsync("document.querySelector('[data-pack-rarity=Common]')?.click()");
+        await Expect("Boolean(document.querySelector('.album-opening-panel.phase-stage'))",
+            "Pack staging did not open in React.");
+        Require(profile.Collection.PacksOpened==before&&
+            profile.Collection.Packs.GetValueOrDefault(CollectionRarity.Common)==owned,
+            "Selecting a React pack incorrectly consumed it before confirmation.");
+        await web.ExecuteScriptAsync("document.querySelector('.album-opening-exit')?.click()");
+        await Expect("!document.querySelector('.album-opening-scrim')",
+            "React staged pack cannot be dismissed without purchasing.");
+        await web.ExecuteScriptAsync("document.querySelector('[data-pack-rarity=Common]')?.click()");
+        await web.ExecuteScriptAsync("document.querySelector('.album-opening-primary')?.click()");
+        for(int i=0;i<120 && profile.Collection.PendingOpening is null;i++)await Task.Delay(40);
+        CollectionOpening receipt=profile.Collection.PendingOpening??
+            throw new InvalidOperationException("React pack click never committed a C# pending receipt.");
+        Require(profile.Collection.PacksOpened==before+1&&
+            profile.Collection.Packs.GetValueOrDefault(CollectionRarity.Common)==owned-1,
+            "React pack open did not debit exactly one C# pack.");
+        await Expect("Boolean(document.querySelector('.album-opening-panel.phase-reveal')"
+            +"||document.querySelector('.album-opening-panel.phase-summary'))",
+            "React did not start its sealed-pack opening animation.");
+        await web.ExecuteScriptAsync(
+            "document.querySelector('.album-opening-panel.phase-reveal .album-opening-secondary')?.click()");
+        await Expect("document.querySelectorAll('.album-reveal-slot.flipped').length===5",
+            "React pack reveal did not expose five distinct animation slots.");
+        Require(profile.Collection.PendingOpening?.Id==receipt.Id,
+            "Rendering the React reveal cleared or rerolled the pending receipt.");
+        await web.ExecuteScriptAsync("document.querySelector('.album-opening-exit')?.click()");
+        await web.ExecuteScriptAsync("document.querySelector('.album-page .shop-back')?.click()");
+        for(int i=0;i<110 && modern.RecordsPage is not null;i++)await Task.Delay(40);
+        Require(profile.Collection.PendingOpening?.Id==receipt.Id,
+            "Leaving React Album discarded the durable reveal receipt.");
+        await web.ExecuteScriptAsync(
+            "[...document.querySelectorAll('.lobby-nav-item')].find(x=>/Collections|Sammlungen/.test(x.textContent||''))?.click()");
+        await Expect("Boolean(document.querySelector('.album-opening-panel.phase-reveal')"
+            +"||document.querySelector('.album-opening-panel.phase-summary'))",
+            "Reloading React Album did not resume the exact saved opening.");
+        Require(profile.Collection.PendingOpening?.Id==receipt.Id,
+            "Resuming a React pack reveal rerolled the five original cards.");
+        await web.ExecuteScriptAsync(
+            "document.querySelector('.album-opening-panel.phase-reveal .album-opening-secondary')?.click()");
+        await Expect("Boolean(document.querySelector('.album-opening-panel.phase-summary'))",
+            "Resumed React reveal never reached the result stage.");
+        await web.ExecuteScriptAsync(
+            "document.querySelector('.album-opening-panel.phase-summary .album-opening-primary')?.click()");
+        for(int i=0;i<110 && profile.Collection.PendingOpening is not null;i++)await Task.Delay(45);
+        Require(profile.Collection.PendingOpening is null,
+            "React Collect did not clear the original native receipt.");
+        await Expect("Boolean(document.querySelector('.album-opening-panel.phase-finished'))",
+            "React Album did not acknowledge a completed five-card pack.");
+        Require(profile.Collection.PacksOpened==before+1,
+            "React resume or collect opened the pack more than once.");
+    }
+
     private static async Task CheckAlbum(MainWindow window, PlayerProfileState profile, TabControl tabs)
     {
         async Task WaitUntil(Func<bool> condition, string message, int attempts = 140)
@@ -21,13 +138,14 @@ internal static partial class Program
             Require(condition(), message);
         }
 
-        // Pack purchasing remains part of the cosmetic shop, but browsing/opening the album is now
-        // a first-class casino page rather than a cramped Progression tab.
-        WrapPanel shop = Find<WrapPanel>(window).Single(p => p.Name == "PackShopPanel");
-        Require(shop.Children.Count == 5, "Shop must offer all five pack rarities");
+        // The migrated React shop is independently exercised through real WebView2
+        // purchase controls in ModernShopSmoke. For this dedicated Album test,
+        // prepare the inventory through the same authoritative collection service
+        // without resurrecting the retired WPF Shop panel.
         int commonBefore = profile.Collection.Packs.GetValueOrDefault(CollectionRarity.Common);
         long coinsBefore = profile.Coins;
-        Find<Button>(shop).Single(b => Equals(b.Tag, CollectionRarity.Common)).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        CollectionActionResult pack = CollectionService.PurchasePack(profile, CollectionRarity.Common);
+        Require(pack.Success, "Unable to prepare a card pack for album acceptance.");
         Require(profile.Coins == coinsBefore - 100, "Pack purchase did not debit exactly 100 coins");
         Require(profile.Collection.Packs[CollectionRarity.Common] == commonBefore + 1, "Purchased pack was not stored");
         Require(!tabs.Items.OfType<TabItem>().Any(t => Equals(t.Header, "Album")), "Legacy Album tab is still present in Progression");
@@ -38,10 +156,21 @@ internal static partial class Program
         Find<Button>(window).Single(b => b.Name == "ProfileBackButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(40); window.UpdateLayout();
         Require(Find<CasinoLobbyView>(window).Any(v => v.IsVisible), "Album test did not return to the lobby");
-        Button lobbyAlbum = Find<Button>(window).Single(b => b.Name == "LobbyProgression_Album" && b.IsVisible);
-        Require(Find<Button>(window).Any(b => b.Name == "HeaderCollectionAlbumButton" && b.IsVisible), "Album header shortcut is missing");
-        lobbyAlbum.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        await OpenAlbumFromLobby(window, fromHeader: false);
         await Task.Delay(70); window.UpdateLayout();
+        ModernLobbyView? reactAlbum = Find<ModernLobbyView>(window).FirstOrDefault(v=>v.Ready&&v.IsVisible);
+        if(reactAlbum is not null)
+        {
+            await CheckReactAlbum(window,profile,reactAlbum);
+            await reactAlbum.Browser.CoreWebView2!.ExecuteScriptAsync(
+                "document.querySelector('.album-page .shop-back')?.click()");
+            await WaitUntil(()=>reactAlbum.RecordsPage is null,
+                "React Album did not return to the casino lobby.");
+            // The full legacy layout/foil test remains as fallback acceptance.
+            window.OpenNativeCollectionAlbumPage();
+            await WaitUntil(()=>Find<Grid>(window).Any(g=>g.Name=="CollectionAlbumRoot"&&g.IsVisible),
+                "Legacy album fallback could not be opened for its regression suite.");
+        }
         RequireSingleHost(window, "Collector album from lobby");
         Require(Find<Grid>(window).Any(g => g.Name == "CollectionAlbumRoot" && g.IsVisible), "Lobby Album shortcut did not open the dedicated page");
 
@@ -77,13 +206,35 @@ internal static partial class Program
             "Duplicate recycling does not consistently expose the numeric point total");
         Capture(window, "album-dedicated-1920");
 
-        // Return once and reopen through the header shortcut so both requested access paths stay covered.
+        // Return all the way to the React lobby before testing its header shortcut.
+        // Old WPF navigation could access the underlying Blackjack header while a
+        // native Profile/Progression page was still foregrounded; that is now hidden.
         Find<Button>(window).Single(b => b.Name == "AlbumBackButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(40); window.UpdateLayout();
+        if (Find<Button>(window).Any(b => b.Name == "ProgressionBackButton" && b.IsVisible))
+            Find<Button>(window).Single(b => b.Name == "ProgressionBackButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        await Task.Delay(40); window.UpdateLayout();
+        if (Find<Button>(window).Any(b => b.Name == "ProfileBackButton" && b.IsVisible))
+            Find<Button>(window).Single(b => b.Name == "ProfileBackButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        await WaitUntil(() => Find<CasinoLobbyView>(window).Any(v => v.IsVisible)
+            && (!ModernLobbyView.IsAvailable
+                || Find<ModernLobbyView>(window).Any(v => v.Ready && v.IsVisible)),
+            "Album Back did not restore the active casino lobby");
         Require(Find<CasinoLobbyView>(window).Any(v => v.IsVisible), "Album Back did not restore the lobby");
-        Find<Button>(window).Single(b => b.Name == "HeaderCollectionAlbumButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        await OpenAlbumFromLobby(window, fromHeader: true);
+        ModernLobbyView? headerReact = Find<ModernLobbyView>(window).FirstOrDefault(v=>v.Ready&&v.IsVisible);
+        if (headerReact is not null)
+        {
+            Require(headerReact.RecordsPage=="album",
+                "React header shortcut did not open the primary Collector's Album.");
+            await headerReact.Browser.CoreWebView2!.ExecuteScriptAsync(
+                "document.querySelector('.album-page .shop-back')?.click()");
+            await WaitUntil(()=>headerReact.RecordsPage is null,
+                "React header Album shortcut could not return to lobby.");
+            window.OpenNativeCollectionAlbumPage();
+        }
         await Task.Delay(60); window.UpdateLayout();
-        Require(Find<Grid>(window).Any(g => g.Name == "CollectionAlbumRoot" && g.IsVisible), "Header Album shortcut did not open the dedicated page");
+        Require(Find<Grid>(window).Any(g => g.Name == "CollectionAlbumRoot" && g.IsVisible), "Native fallback Album did not open for detailed regression.");
 
         Grid browse = Find<Grid>(window).Single(g => g.Name == "AlbumBrowseSurface");
         Border openingOverlay = Find<Border>(window).Single(b => b.Name == "AlbumOpeningOverlay");
@@ -153,7 +304,34 @@ internal static partial class Program
 
         Find<Button>(window).Single(b => b.Name == "AlbumBackButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(40); window.UpdateLayout();
-        Find<Button>(window).Single(b => b.Name == "HeaderCollectionAlbumButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        await OpenAlbumFromLobby(window, fromHeader: true);
+        ModernLobbyView? resumedReact = Find<ModernLobbyView>(window)
+            .FirstOrDefault(view => view.Ready && view.IsVisible);
+        if (resumedReact is not null)
+        {
+            // The public Album route now belongs to React. Confirm it resumes the
+            // exact previously persisted receipt before deliberately switching to
+            // the WPF fallback to test its own historical resume behavior.
+            var web = resumedReact.Browser.CoreWebView2!;
+            bool resumed = false;
+            for (int i = 0; i < 110 && !resumed; i++)
+            {
+                resumed = await web.ExecuteScriptAsync(
+                    "Boolean(document.querySelector('.album-opening-panel.phase-reveal')"
+                    + "||document.querySelector('.album-opening-panel.phase-summary'))") == "true";
+                if (!resumed) await Task.Delay(40);
+            }
+            Require(resumed, "React Album did not resume the saved pack opening.");
+            Require(profile.Collection.PendingOpening is not null,
+                "React Album discarded the original C# opening receipt.");
+            await web.ExecuteScriptAsync("document.querySelector('.album-opening-exit')?.click()");
+            await web.ExecuteScriptAsync("document.querySelector('.album-page .shop-back')?.click()");
+            await WaitUntil(() => resumedReact.RecordsPage is null,
+                "React Album failed to return to lobby after resuming a saved pack.");
+            window.OpenNativeCollectionAlbumPage();
+            await WaitUntil(() => Find<Grid>(window).Any(g => g.Name == "CollectionAlbumRoot" && g.IsVisible),
+                "WPF fallback did not reopen the saved pack for its legacy regression.");
+        }
         await Task.Delay(60); window.UpdateLayout();
         openingOverlay = Find<Border>(window).Single(b => b.Name == "AlbumOpeningOverlay");
         browse = Find<Grid>(window).Single(g => g.Name == "AlbumBrowseSurface");
@@ -293,9 +471,37 @@ internal static partial class Program
         // exercising the old Back contract after this helper returns.
         Find<Button>(window).Single(b => b.Name == "AlbumBackButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(40); window.UpdateLayout();
-        Find<Button>(window).Single(b => b.Name == "PlayerProfileButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-        await Task.Delay(50); window.UpdateLayout();
-        Find<Button>(window).Single(b => b.Name == "ProfileProgressionButton" && b.IsVisible).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        ModernLobbyView? activeLobby = Find<ModernLobbyView>(window)
+            .FirstOrDefault(view => view.Ready && view.IsVisible);
+        if (activeLobby is not null)
+        {
+            string available = await activeLobby.Browser.CoreWebView2!.ExecuteScriptAsync(
+                "Boolean(document.querySelector('.profile-widget'))");
+            Require(available == "true", "Modern lobby has no player-profile shortcut");
+            await activeLobby.Browser.CoreWebView2.ExecuteScriptAsync(
+                "document.querySelector('.profile-widget').click()");
+            await WaitUntil(() => activeLobby.RecordsPage=="profile",
+                "React account hub did not open from the profile widget");
+            bool editorReady = false;
+            for (int i = 0; i < 100 && !editorReady; i++)
+            {
+                editorReady = await activeLobby.Browser.CoreWebView2.ExecuteScriptAsync(
+                    "Boolean(document.querySelector('.account-page .account-routes button:last-child'))") == "true";
+                if (!editorReady) await Task.Delay(50);
+            }
+            Require(editorReady, "The React account editor action was not rendered.");
+            await activeLobby.Browser.CoreWebView2.ExecuteScriptAsync(
+                "document.querySelector('.account-page .account-routes button:last-child')?.click()");
+        }
+        else
+        {
+            Find<Button>(window).Single(b => b.Name == "PlayerProfileButton" && b.IsVisible)
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        }
+        await WaitUntil(() => Find<Button>(window).Any(b => b.Name == "ProfileProgressionButton" && b.IsVisible),
+            "Modern lobby did not open the native profile page");
+        Find<Button>(window).Single(b => b.Name == "ProfileProgressionButton" && b.IsVisible)
+            .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Task.Delay(60); window.UpdateLayout();
         Require(Find<TabControl>(window).Any(t => t.Items.OfType<TabItem>().Any(i => Equals(i.Header, "Challenges"))), "Album smoke did not restore Progression");
         Require(!Find<TabControl>(window).Where(t => t.IsVisible).SelectMany(t => t.Items.OfType<TabItem>()).Any(i => Equals(i.Header, "Album")), "Restored Progression exposed the legacy Album tab");

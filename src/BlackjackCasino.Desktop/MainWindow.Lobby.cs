@@ -12,36 +12,43 @@ public partial class MainWindow
     {
         InitializeHeaderLayout();
         InitializeEmpire();
-        modeRegistry.Register(new("blackjack","Blackjack","The velvet tables","A quiet seat, a fresh shoe and your next decision. Solo or with the house regulars.","#537D66","♠","Table games",()=>new LobbyGameArtwork(false)),()=>
-        {lobby!.Visibility=Visibility.Collapsed;TableModeText.Text="Blackjack · your table";});
-        modeRegistry.Register(new("midnight-reels","Midnight Reels","The golden floor","Three reels, a centre payline and a little old-school casino charm.","#C69A51","7 7 7","Classic slots",()=>new LobbyGameArtwork(true)),()=>
-        {TableModeText.Text="Midnight Reels · classic slots";EmbeddedSlots_Click(this,new RoutedEventArgs());});
-        modeRegistry.Register(new("neon-vault","Neon Vault","The high-voltage floor","Five reels, 1,024 ways and Vault Break Free Spins. High Roller stakes up to $250K.","#55DDF8","◇","Video slots",()=>new NeonVaultArtwork()),()=>
+        modeRegistry.Register(new("blackjack","Blackjack","The velvet tables","A quiet seat, a fresh shoe and your next decision. Solo or with the house regulars.","#537D66","♠","Table games"),()=>
+        {OpenBlackjackMode();TableModeText.Text="Blackjack · your table";});
+        modeRegistry.Register(new("midnight-reels","Midnight Reels","The golden floor","Three reels, a centre payline and a little old-school casino charm.","#C69A51","7 7 7","Classic slots"),()=>
+        {TableModeText.Text="Midnight Reels · classic slots";OpenMidnightReels();});
+        modeRegistry.Register(new("neon-vault","Neon Vault","The high-voltage floor","Five reels, 1,024 ways and Vault Break Free Spins. High Roller stakes up to $250K.","#55DDF8","◇","Video slots"),()=>
         {TableModeText.Text="Neon Vault · high roller slots";EmbeddedNeonVault_Click(this,new RoutedEventArgs());});
-        modeRegistry.Register(new("nine-lives","Nine Lives","The moonlit rooftop","Five lines, Pounce Wilds and nine bonus spins. Chase the 5,000× Full Grid Frenzy.","#C95CFF","9","Video slots",()=>new NineLivesLobbyArtwork()),()=>
+        modeRegistry.Register(new("nine-lives","Nine Lives","The moonlit rooftop","Five lines, Pounce Wilds and nine bonus spins. Chase the 5,000× Full Grid Frenzy.","#C95CFF","9","Video slots"),()=>
         {TableModeText.Text="Nine Lives · high risk slots";EmbeddedNineLives_Click(this,new RoutedEventArgs());});
-        modeRegistry.Register(new("midnight-manor","Midnight Manor","Beyond the moonlit doors","Five haunted reels. Free Spins. A Manor whose rooms remember your choices.","#9170AC","☾","Video slots",()=>new ManorBackdrop {Scene="Exterior",Opacity=.85}),()=>
-        {TableModeText.Text="Midnight Manor · video slots";EmbeddedManor_Click(this,new RoutedEventArgs());});
+        modeRegistry.Register(new("midnight-manor","Midnight Manor","Beyond the moonlit doors","Five haunted reels. Free Spins. A Manor whose rooms remember your choices.","#9170AC","☾","Video slots"),()=>
+        {TableModeText.Text="Midnight Manor · video slots";OpenModernManor();});
         modeRegistry.Register(new("casino-empire", "Casino Empire", "Your name above the door",
             "Build your midnight landmark with lasting upgrades, idle income and owner dividends.",
-            "#CBA66B", "♜", "Idle casino", () => new EmpireFloorArtwork()),
+            "#CBA66B", "♜", "Idle casino"),
             OpenEmpire,
             canOpen: () => !EmpireDetachedOpen,
             secondaryOpen: OpenEmpireDetached,
             secondaryLabel: "OPEN IN NEW WINDOW",
             canSecondaryOpen: () => !EmpirePageOpen);
         modeRegistry.Register(new("midnight-merge", "Merge.Title", "Merge.Subtitle",
-            "Merge.Description", "#CBA66B", "◈", "Merge.Category", () => new MergeLobbyArtwork(), UseResourceKeys: true), OpenMidnightMerge);
+            "Merge.Description", "#CBA66B", "◈", "Merge.Category", UseResourceKeys: true), OpenMidnightMerge);
         modeRegistry.Register(new("chill-lounge", "Chill Lounge", "A quieter corner",
             "Offline games at your own pace. Settle into Sudoku or Midnight Solitaire — no wagers, no rush.",
-            "#7FB49F", "✦", "Relaxed games", () => new LoungeGameArtwork(false)), OpenLounge);
+            "#7FB49F", "✦", "Relaxed games"), OpenLounge);
         modeRegistry.Register(new("kniffel", "Midnight Dice", "The dice lounge",
             "Five dice and your score sheet. Play solo or join a casino table with three AI opponents.",
-            "#9DD6B3", "⚄", "Table games", () => new LoungeGameArtwork(true)), OpenKniffel);
-        lobby=new CasinoLobbyView(modeRegistry,OpenProgression, () => preferences.Presentation("lobby").AnimationsEnabled);
+            "#9DD6B3", "⚄", "Table games"), OpenKniffel);
+        lobby=new CasinoLobbyView(modeRegistry,OpenProgression, () => preferences.Presentation("lobby").AnimationsEnabled,OpenNativeUpdates);
+        // Use the WPF lobby only on genuine frontend failure. Keep its logical
+        // visibility for native navigation, but never allow its art to flash
+        // underneath the new React compositor during mode transitions.
+        lobby.Opacity = ModernLobbyView.IsAvailable ? 0d : 1d;
+        lobby.IsHitTestVisible = !ModernLobbyView.IsAvailable;
         lobby.IsVisibleChanged += (_, _) =>
         {
             LobbyButton.Visibility = lobby.IsVisible ? Visibility.Collapsed : Visibility.Visible;
+            modernLobby?.SetLobbyVisible(lobby.IsVisible);
+            OnModernLobbyStateChanged();
             SyncHostMusic();
             RefreshProfileButton();
         };
@@ -50,11 +57,21 @@ public partial class MainWindow
         TableModeText.Text="Casino lobby";
         RefreshCollectionAlbumHeaderButton();
         RefreshChallengeHeaderButton();
+        InitializeModernLobby();
 
         // InitializeLobby is invoked from PresentationLoaded, so registering another Loaded
         // handler here would be too late. Configure the embedded surface synchronously now.
         ConfigureEmbeddedGameSurface();
     }
+    private void OpenNativeUpdates()
+    {
+        if (lobby?.IsVisible == true && (!ModernLobbyView.IsAvailable || modernLobby?.Failed == true))
+            NativeUpdateOverlay.Visibility = Visibility.Visible;
+    }
+
+    private void CloseNativeUpdates_Click(object sender, RoutedEventArgs e)
+        => NativeUpdateOverlay.Visibility = Visibility.Collapsed;
+
     private void ConfigureEmbeddedGameSurface()
     {
         EnsureEmbeddedGameHost();
@@ -71,7 +88,14 @@ public partial class MainWindow
     {
         if(CasinoHeader.Parent is UIElement hostHeader)
         {
-            hostHeader.Visibility=embeddedGameVisible ? Visibility.Collapsed : Visibility.Visible;
+            // Do not expose the native Blackjack header over a functioning or loading
+            // modern lobby. If the modern entry is missing or its browser has failed,
+            // the legacy fallback needs its native profile, album and settings actions.
+            bool modernOwnsLobby = ModernLobbyView.IsAvailable && modernLobby?.Failed != true;
+            hostHeader.Visibility = embeddedGameVisible
+                || (lobby?.IsVisible == true && modernOwnsLobby)
+                || modernLobby is { Ready: true, IsVisible: true }
+                ? Visibility.Collapsed : Visibility.Visible;
         }
     }
     private void Lobby_Click(object sender,RoutedEventArgs e)
@@ -79,6 +103,7 @@ public partial class MainWindow
         if(session.RoundInProgress) {StatusText.Text="Finish your hand before returning to the lobby.";return;}
         CloseEmbeddedGame();
         if(lobby is not null) lobby.Visibility=Visibility.Visible;
+        modernLobby?.Refresh();
         LobbyButton.Visibility=Visibility.Collapsed;
         TableModeText.Text="Casino lobby";
         RefreshCollectionAlbumHeaderButton();
