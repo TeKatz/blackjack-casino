@@ -33,9 +33,10 @@ grids remain byte-for-byte unchanged when reloaded or switched to a different
 UI language, including older releases.
 
 The six old progress counts, challenge IDs, rewards and completed-puzzle
-receipts remain stable. Previously final 288-puzzle and 2,736-word milestones
-remain collectible as intermediate progression; new endgame challenges can
-be layered onto the 576-grid corpus without rewriting earlier receipts.
+receipts remain stable. Previously final 288-puzzle and 2,736-word milestones remain claimable as
+intermediate progression. New bilingual endgame challenges reward 576 solved
+puzzles, 5,472 target-word finds, 400 no-hint completions, and 96 Expert /
+96 Master completions, without modifying earlier claim IDs or rewards.
 
 ## Words Discovered collection
 
