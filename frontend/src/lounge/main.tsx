@@ -275,7 +275,7 @@ function App() {
    <div className="chill-content">
     {snapshot?.towerDefense
       ? <TowerDefenseScreen state={snapshot.towerDefense} language={language} pending={!!towerDefensePending}
-          error={towerDefenseError} command={towerDefenseCommand} animations={snapshot.animationsEnabled}/>
+          error={towerDefenseError} command={towerDefenseCommand} animations={snapshot.animationsEnabled} soundEnabled={snapshot.soundEnabled}/>
       : snapshot?.adventure
       ? <AdventureScreen state={snapshot.boardOnly&&snapshot.adventure.run?.board?{...snapshot.adventure,screen:'board'}:snapshot.adventure} language={language} pending={!!adventurePending}
           error={adventureError} command={adventureCommand} animations={snapshot.animationsEnabled}/>
