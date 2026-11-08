@@ -12,18 +12,17 @@ This file is the repository-level instruction for coding assistants and ChatGPT 
 ## Before any edit
 
 1. Inspect current repository branches, open PRs, active Development release pin, and the source files involved; never infer the freshest branch from its name.
-2. Identify concurrent work and reuse the active Manor migration branch for related iterations. Do not delete, squash, force-push, reset, merge or repoint active branches without an explicit instruction.
+2. Identify concurrent work and base focused feature/fix changes on `develop` rather than the historical Manor migration branch. Do not delete, squash, force-push, reset, merge or repoint active branches without an explicit instruction.
 3. Define a bounded scope, acceptance criteria, rollback and the tests that should prove it works. Prefer small reversible changes and incremental PRs.
 4. Review architecture and feature-specific docs; update the README and documentation when they are stale. Write from the perspective of the project, not from a transcript of decisions.
 
-## Current coordination status (2026-11-04)
+## Current coordination status (2026-11-08)
 
-- The validated cumulative baseline was consolidated into `main`; historical feature branches were cleaned up after successful CI.
-- The Development publisher follows **`feature/manor-modernization-phase-1`**, with the workflow push filter and job guard both pinned there. Future pushes to this branch publish Development after tests; no merge to `main` is required.
-- Historical casino-quality and shop branches were consolidated and cleaned by the owner. Continue related Manor work on this **one long-lived migration branch**, not one new branch per update.
-- **Midnight Manor modernization:** the React/TypeScript/PixiJS/WebView2 interface is the sole Manor entry in Development. It renders offline symbols, animations and six bonus chambers, while the C# bridge owns spins, decisions, wallet changes and recovery. Legacy WPF Manor is retained for source-level rollback only. Device-specific performance, display, visual and audio checks remain ongoing. Roulette is deferred; CI cannot establish subjective quality.
-- Historical incident: PR #35 unintentionally merged an earlier Manor phase during a Development-channel change. The merge was corrected without rewriting history. **Publishing to Development never implies a merge to `main`. Merges, branch deletion, release-source switches and channel retargeting require separate, explicit project approval.**
-- Refresh this dated note as branch ownership changes.
+- The cumulative Manor/React modernization is consolidated through integration PR #36. `main` is the tested integration baseline; **`develop`** is the permanent Development publisher and base for new work. See [branching policy](docs/branching-and-release-policy.md).
+- The Development publisher's push filter and job guard both select `develop`; the in-app update-manifest URL, channel and Stable tag requirements remain unchanged. Feature branches cannot publish through the Development workflow.
+- Modern React/TypeScript/PixiJS local WebView2 surfaces cover the lobby, Manor, Blackjack, Midnight Dice, the seven Chill Lounge activities, collector album and more. C# continues to own outcomes, payouts, progression and persistent receipts; WPF remains the Windows host and some fallback routes.
+- The historical Manor feature branch and the older PR #35 revert are retained for traceability, not as the new source of Development releases. Never rewrite or remove these refs without separate approval.
+- Device-specific visual/audio quality, DPI, extended performance and remaining localization still require validation.
 
 ## Architecture and modernization rules
 
@@ -52,7 +51,7 @@ This file is the repository-level instruction for coding assistants and ChatGPT 
 
 ## Delivery, releases and reporting
 
-- Leave `main` and the Development publisher protected from unverified updates. The Development workflow intentionally has both a branch push filter and a matching job guard; update **both** only when deliberately switching the channel.
+- Leave `main` and `develop` protected from unverified updates. The Development workflow intentionally has both a branch push filter and a matching job guard; update **both** only when deliberately switching the channel.
 - Do not bypass semver ordering, manifest integrity, updater compatibility or crash-recovery logic. Keep the existing updater and old installation migration path working until replacements pass real upgrade tests.
 - A task report should include: changed paths/branch/PR, user-visible behavior, automated checks actually executed, checks not executed, known risks, and precise next steps for the game tester.
 - Never describe proposed work as completed. Never silently change game mechanics to match a desired visual presentation.

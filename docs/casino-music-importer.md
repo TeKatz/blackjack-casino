@@ -5,7 +5,7 @@ This lightweight workflow imports one CC0 OpenGameArt audio file at a time witho
 ## Using it
 
 1. Open GitHub **Actions > Casino Music Importer > Run workflow**.
-2. Leave the workflow branch on **main**. The importer intentionally commits audio to **feature/manor-modernization-phase-1**, not main.
+2. Leave the workflow branch on **main**. The importer intentionally commits audio to **develop**, not main.
 3. Paste the **direct audio download link** from OpenGameArt (HTTPS, under /sites/default/files/, MP3/OGG/OGA/OPUS/WAV/FLAC). An ordinary /content/ page is not a direct download.
 4. Paste that track's **OpenGameArt source /content/ page** and enter the artist/creator.
 5. Choose one of the currently integrated locations: midnight-manor, chill-lounge, lobby, midnight-dice.

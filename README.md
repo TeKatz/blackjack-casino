@@ -25,7 +25,10 @@ A shared virtual bankroll connects the wagering games. The wider progression sys
 
 ## Casino lobby: modern presentation
 
-The Development lobby uses its own React/TypeScript entry point (`frontend/lobby.html`) beside the Midnight Manor game. It keeps **all nine casino activities**, a category navigation rail, the player's live header and a compact overview of Season Pass, album, cosmetics, challenges and statistics. Its design follows the emerald-and-gold Midnight Club reference.
+The Daily Login panel has a dark emerald palette, an illuminated border and an original post-commit claim chime. The Casino Vault uses a bounded brushed-metal safe facade. The Collector's Album keeps five-card results native-authoritative while presenting the stored pack receipt with a staged seal rupture and rarity-sensitive card reveals.
+
+
+The casino lobby uses its own React/TypeScript entry point (`frontend/lobby.html`) beside the Midnight Manor game. It keeps **all nine casino activities**, a category navigation rail, the player's live header and a compact overview of Season Pass, album, cosmetics, challenges and statistics. Its design follows the emerald-and-gold Midnight Club reference.
 
 - Offline-local **generated artwork atlases** in `frontend/public/lobby/`: the background, hero, background illustrations and decorative navigation icons; mode previews reuse their actual card, dice and symbol artwork. The browser never downloads art from a server.
 - Responsive DOM layout with accessible keyboard-focus states, compact screen-height handling, card hover lift, image zoom, reflected highlights and gold button feedback.
@@ -45,6 +48,9 @@ Midnight Merge runs as a responsive local React/PixiJS experience (`frontend/mid
 
 ## Chill Lounge: all seven games in React
 
+Word Search and Solitaire use visible completion dialogs with time, progress and XP instead of easily overlooked footer notices. Starting a different Word Search puzzle while one is saved requires confirmation; completed levels and collected discoveries are retained. Until dedicated tracks are selected, the Lounge hub and its activities share the casino lobby soundtrack.
+
+
 The Chill Lounge uses a local React/TypeScript hub (`frontend/lounge.html`) with responsive navigation, seven activity tiles, including a featured custom Midnight Bastion tile, and German/English labels. **Sudoku is now rendered and played directly inside this React Lounge**, without opening the old WPF board in normal navigation. Its six difficulties, seeded and generated offline puzzle pools, daily assignments, 81-cell board, wrong-value feedback, hints, pencil notes, undo/redo, number completion, selectable guides, keyboard shortcuts, elapsed time, automatic saves and rewards are all supported. React sends allow-listed actions and displays C#-verified results; the C# `SudokuBoard`, `SudokuProgressState` and progression services remain authoritative and save-compatible. Completion XP is granted at most once through the existing profile receipts. See [Sudoku modernization](docs/sudoku-modernization.md).
 
 **Midnight Solitaire now plays entirely inside the same React Lounge**, with the existing C# engine for Klondike, FreeCell, Spider (1, 2 and 4 suits), Pyramid, Golf and TriPeaks. Players can select or drag card runs, click a destination, double-click cards to send them to foundations, draw stock cards, see all eight table choices, resume independent saved variants, start numbered FreeCell deals and browse the existing achievements. The modern cards use the active collection skin palette; only C# determines legality, shuffles, completion, milestones and rewards. Revisions, command receipts and persistence-first moves avoid duplicate actions and partial game-state updates. See [Midnight Solitaire modernization](docs/solitaire-modernization.md).
@@ -58,6 +64,9 @@ The Chill Lounge uses a local React/TypeScript hub (`frontend/lounge.html`) with
 **Midnight Bastion (Tower Defense)** is the seventh lounge activity, shown as a featured custom strategy tile with its own vector fortress illustration. Phase 2 adds locally bundled illustrated unit sprites and a moonlit battlefield, projectile and impact FX, an expanded tower workshop, ambient fireflies and gesture-unlocked, preference-aware synthesized audio. Phase 1 has a PixiJS battlefield with one fixed-path map, 10 build pads, three upgradeable tower types, four enemy classes, 15 manually started waves, pause/resume, 1×/2× speed, selling, defeat/victory and native C#-verified simulation. The game autosaves inside existing app preferences and continues paused after reopening. Tower Defense has no wagers or shared XP/coin payouts in this initial phase. See [Tower Defense phase 1](docs/tower-defense-phase1.md).
 
 ## Midnight Dice: React/PixiJS dice lounge
+
+Idle and held dice show one flat, readable result face. The six-sided 3D model is mounted only during a throw and hands the view back to the flat result after landing. Outcomes, holds, scoring and settlements remain authoritative in native C#.
+
 
 Midnight Dice now opens through the local `frontend/midnight-dice.html` WebView2 page. Both the free solo score sheet and the paid four-player casino table use a responsive React interface with five equipped cosmetic dice, thirteen native score categories, individual hold/reroll controls, AI standings and opponent sheets, the existing entry tiers, result receipts and gold five-of-a-kind celebrations. The same C# `KniffelGame`, `KniffelCash`, `KniffelTable` and progression services resolve every dice face, score, fee, payout and reward **before** the browser updates. Session receipts prevent duplicate actions after a browser failure, and saved casual/casino states retain their original formats. The WPF dice interface is retained only as unlinked source for rollback while device visual/audio acceptance continues. See [Midnight Dice](docs/kniffel.md).
 
@@ -79,7 +88,7 @@ Windows smoke captures the three supported desktop sizes and detached hosting. A
 
 ## Midnight Manor: modern presentation
 
-**In Development builds, Midnight Manor has one lobby entry.** It opens the modern React/PixiJS version directly; the separate playtest button and selectable legacy WPF version have been retired.
+**Midnight Manor has one lobby entry.** It opens the modern React/PixiJS version directly; the separate playtest button and selectable legacy WPF version have been retired.
 
 - Five reels, scalable local symbol artwork, five staged reel stops and layered win feedback
 - Fixed play-money bets of $50, $100, $250, $1,000, $2,500 and $5,000 (manual stakes $1–$5,000)
@@ -106,7 +115,7 @@ Download a packaged Windows build from [GitHub Releases](https://github.com/TeKa
 
 The updater validates package size and SHA-256 before staged installation. Player data is stored outside the installation directory, in `%LOCALAPPDATA%\BlackjackCasino`. Keep a backup when validating changes to persistence or updating an older installation.
 
-**Active development source:** `feature/manor-modernization-phase-1`. The Development publisher builds directly from this branch, without merging into `main`. Its source is pinned in both the push trigger and job guard of [development-release.yml](.github/workflows/development-release.yml). The usual [update manifest](https://github.com/TeKatz/blackjack-casino/releases/download/development/update-manifest.json) remains unchanged. Branch builds and PR preview artifacts do not automatically become in-app updates.
+**Branch model:** `main` is the tested integration baseline, and **`develop`** is the permanent source of the mutable Development updater. Only successfully verified builds from the [Development Release workflow](.github/workflows/development-release.yml) publish to the [existing in-app manifest](https://github.com/TeKatz/blackjack-casino/releases/download/development/update-manifest.json). Feature/PR builds are not in-app updates. `main` does not automatically publish a Stable release. See [branching policy](docs/branching-and-release-policy.md).
 
 See [Development update delivery](docs/development-update-delivery.md) for release mechanics, versioning and verification.
 
@@ -158,12 +167,12 @@ All seven normal Chill Lounge routes are now registered by `ModernLoungeCatalog`
 
 ## Current engineering boundaries
 
-- **Midnight Manor:** modern presentation is the default in Development; remaining subjective audio, display-scaling and long-session performance checks are tracked separately.
+- **Midnight Manor:** modern presentation is the primary route; remaining subjective audio, display-scaling and long-session performance checks are tracked separately.
 - **Blackjack:** the retired native table, sidebar and custom rule dialog have been removed. React is the only player-facing Blackjack table; its C# session survives a WebView failure and can be rehosted.
 - **Other game interfaces:** the Chill Lounge hub and all seven activities—Sudoku, six Midnight Solitaire variants, Word Search, Memory, Jigsaw, Tales from the Backroom and Midnight Bastion—are React. The old Lounge/Jigsaw/Adventure WPF code remains as emergency fallback and regression coverage. Old Sudoku, Solitaire, Word Search and Memory presentations persist only for fallback and legacy regression checks, not normal navigation. The Midnight Dice WPF source remains for rollback and legacy visual tests, but its normal play route is React. The shared WPF host and emergency lobby remain until all destinations are accepted.
 - **Localization:** English/German shell support is present; some older game and adventure content still needs translation.
 - **Player data and financial outcomes:** preserve backward compatibility, deterministic payout tests and exactly-once committed transitions.
-- **Releases:** `main` and Stable do not inherit Development changes automatically.
+- **Releases:** `develop` publishes the mutable Development channel after verification; Stable is an explicitly tagged release from the tested integrated code on `main`.
 
 The roadmap tracks completed migration stages and outstanding quality gates; historical milestone notes are not separate active feature variants.
 
@@ -172,6 +181,8 @@ The roadmap tracks completed migration stages and outstanding quality gates; his
 - [Contributing](CONTRIBUTING.md) and [coding-agent agreement](AGENTS.md)
 - [Modernization roadmap](docs/modernization-roadmap.md)
 - [Development release and updater](docs/development-update-delivery.md)
+- [Branching, integration and release policy](docs/branching-and-release-policy.md)
+- [Tower Defense graphics and implementation](docs/tower-defense-phase2.md)
 - [Manor quality and release acceptance](docs/manor-phase-3-signoff.md)
 - [Localization status](docs/localization-overhaul.md)
 - [Maintenance audit](docs/maintenance-audit.md)

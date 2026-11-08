@@ -1,28 +1,25 @@
 # Development update delivery
 
-## Current Development publisher for Midnight Manor modernization (2026-11-04)
+## Current Development publisher (2026-11-08)
 
-The current source branch is **`feature/manor-modernization-phase-1`**, selected in both the `on.push.branches` filter and the `publish-development.if` guard of `.github/workflows/development-release.yml`. All future tested pushes on the same branch can publish through the usual in-app Development channel **without merging into main**. The modern Manor is now the sole lobby-launched Manor; legacy WPF code remains only as a source-level rollback option. The manifest URL, updater, package naming, SemVer ordering and SHA-256 verification do not change. The unintended Phase-1 merge to main is corrected in a non-force follow-up commit.
+The permanent source branch is **`develop`**. Both the `on.push.branches` filter and the `publish-development.if` ref guard in `.github/workflows/development-release.yml` select exactly that branch. The publisher builds and tests the frontend and native .NET solution, runs Windows startup/presentation checks, creates the installer package and verifies the SHA-256 checksum, updater manifest and published GitHub assets. Neither `main` nor `feature/*` pushes publish the mutable Development channel.
 
-
-The in-app Development manifest remains:
+**The installed in-app Development manifest URL remains unchanged:**
 
 `https://github.com/TeKatz/blackjack-casino/releases/download/development/update-manifest.json`
 
-The original Manor PR only uploaded a CI artifact. Its `slots/midnight-manor` branch was outside the Development publisher's triggers, leaving the public channel at `0.6.5-dev.71` from main. A final `0.6.5` also sorts above any `0.6.5-dev.N` under SemVer. Changing a URL or comparison only in a new executable cannot repair an already-installed client.
+The upgrade channel, asset names, semantic-version ordering, updater schema and player-data location are unchanged. Only a successful release publication will be offered to installed clients; a branch build or PR artifact is not a released update. The release contains `blackjack-casino-win-x64.zip`, its checksum, the update manifest and release notes.
 
-The Development workflow explicitly includes the active Manor branch, following earlier publisher transitions across feature branches. No Stable release is required for Development test delivery. The active source branch is selected in both publisher guards.
+The [Casino Music Importer](casino-music-importer.md) is still launched through Actions on the default `main` branch, but it explicitly checks out/commits into `develop` and optionally dispatches the Development Release workflow from `develop`.
 
-Before publication, the workflow validates localization resources, builds, runs all tests and the actual Windows WPF smoke, and packages the application with its separate updater. It then verifies the release target and required assets. Package/manifest filenames, SHA-256 verification and updater schema are unchanged. Mutable-manifest requests send Cache-Control: no-cache, no-store to revalidate subsequent checks. The UI shows installed/available versions when no newer update is found.
-
-Versioning rule: start a new Development cycle on a version base strictly above the latest final version. Preserve SemVer ordering; do not offer silent downgrades. PR preview artifacts use dev.0 and are superseded by the published Development run number.
+New work branches from `develop` and is tested before integration. Stable publishing remains an explicit `v*.*.*` tag workflow, separate from a merge to `main`. The old Manor feature-branch publisher and PR #35 revert are historical context only. See [branch policy](branching-and-release-policy.md).
 
 ## Historical test channel: Casino quality – Phase 4
 
 Before consolidation, the mutable in-app `development` release was pinned to
 `feature/casino-quality-phase-4`, building on all work from Phases 1–3
 and the earlier shop-cosmetics expansion. Both the workflow push filter and
-the job-level guard select this branch. The historical pin was superseded during consolidation; the current publisher is the long-lived Manor migration branch.
+the job-level guard select this branch. The historical pin was superseded during consolidation; the former Manor feature publisher was superseded by `develop` on 2026-11-08.
 
 The installed client's Development manifest URL is unchanged, as are
 the package, updater executable, updater schema and SHA-256 validation.
