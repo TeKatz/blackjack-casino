@@ -57,7 +57,8 @@ export function TowerDefenseScreen({state,language,pending,error,animations,soun
  const spent=tower?costs[tower.kind]+Array.from({length:tower.level-1},(_,i)=>
   Math.floor(costs[tower.kind]*(i+2)/2)).reduce((a,b)=>a+b,0):0;
  const sellAmount=Math.floor(spent*.6);
- const spawnPct=game.spawnTotal>0?Math.round(game.spawned/game.spawnTotal*100):0;
+ // Deployment does not equal wave progress: only confirmed enemy kills advance this bar.
+ const killPct=game.spawnTotal>0?Math.round(game.waveKills/game.spawnTotal*100):0;
  const confirmRestart=()=>{
   if(window.confirm(t.restartConfirm))issue({action:'tower.restart'});
  };
@@ -78,7 +79,8 @@ export function TowerDefenseScreen({state,language,pending,error,animations,soun
     {game.phase==='running'&&game.paused?t.paused:t[game.phase]}
    </span>
    <span>{game.phase==='running'
-    ?game.spawned+' / '+game.spawnTotal+' '+(language==='de'?'Gegner erschienen':'enemies deployed')
+    ?game.waveKills+' / '+game.spawnTotal+' '+(language==='de'?'besiegt':'defeated')+
+      (game.waveEscapes>0?' · '+game.waveEscapes+' '+(language==='de'?'entkommen':'escaped'):'')
     :game.phase==='won'?t.won:game.phase==='lost'?t.lost:t.intro}</span>
   </div>
   <div className="td-layout">
@@ -88,10 +90,10 @@ export function TowerDefenseScreen({state,language,pending,error,animations,soun
       <BastionBattlefield model={state} selected={selected} onSelect={setSelected} animations={animations} onCue={playCue}/>
       <div className="td-board-bottom"><span>✦ &nbsp; MIDNIGHT BASTION</span><span>01 / NORTH GATE</span></div>
     </div>
-    {game.phase==='running'&&<div className="td-wave-progress" aria-label={spawnPct+'% deployed'}>
-      <span>{language==='de'?'WELLENFORTSCHRITT':'WAVE DEPLOYMENT'}</span>
-      <div className="td-wave-rail"><div style={{width:spawnPct+'%'}}/></div>
-      <strong>{spawnPct}%</strong>
+    {game.phase==='running'&&<div className="td-wave-progress" aria-label={killPct+'% defeated'}>
+      <span>{language==='de'?'GEGNER BESIEGT':'ENEMIES DEFEATED'}</span>
+      <div className="td-wave-rail"><div style={{width:killPct+'%'}}/></div>
+      <strong>{game.waveKills} / {game.spawnTotal}</strong>
     </div>}
     <p className="td-caption">{t.hint}</p>
     <div className="td-actions">
