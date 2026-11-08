@@ -333,7 +333,7 @@ button:disabled{cursor:default;opacity:.48}
 .md-die.rolling .md-die-shadow{animation:md-shadow-chase 1.34s ease-in-out var(--die-delay) both}
 .md-die.rolling .md-die-landing{animation:md-cube-land .40s ease-out calc(1.08s + var(--die-delay)) both}
 .md-die.rolling .md-die-scatter i{animation:md-cube-particle .52s ease-out calc(1.07s + var(--die-delay)) both;
- animation-delay:calc(1.07s + var(--die-delay) + var(--spark) * 15ms)}
+ animation-delay:calc(1.07s + var(--die-delay) + var(--spark-delay))}
 .md-die.held{transform:translateY(-7px)}
 .md-die.held .md-die-shadow{background:#6bd9a15c;opacity:.85}
 .md-die.held:before{top:-8px;height:calc(100% - 2px);border-color:#b4f7c3;box-shadow:0 0 20px #63d7a44b;z-index:-1}
@@ -356,7 +356,7 @@ button:disabled{cursor:default;opacity:.48}
 @keyframes md-cube-land{0%{opacity:0;transform:scale(.65)}25%{opacity:.66}
  100%{opacity:0;transform:scale(1.7)}}
 @keyframes md-cube-particle{0%{opacity:0;transform:translate(-50%,-50%)}
- 20%{opacity:.9}100%{opacity:0;transform:translate(calc(-50% + 32px * cos(var(--spark) * 60deg)),calc(-50% - 18px * sin(var(--spark) * 60deg))) scale(.4)}}
+ 20%{opacity:.9}100%{opacity:0;transform:rotate(var(--spark-angle)) translateY(-42px) scale(.4)}}
 @media(prefers-reduced-motion:reduce){
  .md-die .md-die-rotor,.md-die .md-die-shadow,.md-die .md-die-landing,
  .md-die .md-die-scatter i{animation:none!important}

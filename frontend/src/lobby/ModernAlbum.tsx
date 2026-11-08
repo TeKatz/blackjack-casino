@@ -364,6 +364,8 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
      <span>{phase==='finished'?'✓':Math.min(revealed,5)+'/5'} {de?'Karten':'cards'}</span>
      {batchRemaining>1&&<span>{de?'Öffnungsserie':'Batch sequence'} · {batchRemaining} {de?'übrig':'remaining'}</span>}</div>
     {opening&&revealed>0&&<div className={'album-reveal-spotlight '+(opening.cards[revealed-1]?.ultraRare?'ultra':'')}
+      key={opening.id+'-'+(revealed-1)}
+      style={{'--spotlight-rarity':rarityColors[opening.cards[revealed-1].rarity]} as CSSProperties}
       data-testid="album-reveal-spotlight" role="status">
        <span>{opening.cards[revealed-1].ultraRare?'✦ ULTRA RARE ✦':opening.cards[revealed-1].rarity.toUpperCase()}</span>
        <strong>{opening.cards[revealed-1].name}</strong>

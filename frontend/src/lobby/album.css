@@ -411,7 +411,7 @@ dialog.album-inspector-backdrop::backdrop{background:#000c}
 .album-reveal-spotlight{display:flex;gap:6px;flex-direction:column;align-items:center;
  min-height:66px;justify-content:center;text-align:center;margin:7px 0 10px;position:relative;
  animation:album-card-title-in .36s ease-out both}
-.album-reveal-spotlight span{color:var(--card-rarity);font-weight:900;font-size:11px;letter-spacing:.2em}
+.album-reveal-spotlight span{color:var(--spotlight-rarity,var(--card-rarity));font-weight:900;font-size:11px;letter-spacing:.2em}
 .album-reveal-spotlight strong{font:normal clamp(19px,2.2vw,26px) Georgia,serif;color:#f6e4bf}
 .album-reveal-spotlight small{font-size:9px;font-weight:900;letter-spacing:.15em;color:#b1dbb8}
 .album-opening-panel.has-ultra .album-theatre-aura{animation:album-ultra-aura 2s ease-in-out infinite alternate}
