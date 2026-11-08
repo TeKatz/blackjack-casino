@@ -326,11 +326,11 @@ function App(){
               {game.dice.map((number,i)=>
                <button key={i} type="button" className={'md-die'+(game.held[i]?' held':'')
                  +(rolling&&rollingCells.includes(i)?' rolling':'')}
-                 data-testid={'dice-die-'+i} data-held={String(game.held[i])} data-face={number} data-roll-token={game.rollToken}
+                 data-testid={'dice-die-'+i} data-held={String(game.held[i])} data-face={number} data-roll-token={state.rollToken}
                  aria-label={(lang==='de'?'Würfel ':'Die ')+(i+1)+': '+number+', '+(game.held[i]?t.held:t.free)}
                  disabled={blocked||waiting||finished||!game.canScore||game.rollsUsed===3}
                  onClick={()=>report({action:'hold',index:i})}>
-                  <DiceCube value={number} palette={palette} rolling={rolling&&rollingCells.includes(i)} index={i} token={game.rollToken}/>
+                  <DiceCube value={number} palette={palette} rolling={rolling&&rollingCells.includes(i)} index={i} token={state.rollToken}/>
                   <span className="md-die-status">{game.held[i]?t.held:game.rollsUsed===3?t.result:t.free}</span>
 
                </button>)}
