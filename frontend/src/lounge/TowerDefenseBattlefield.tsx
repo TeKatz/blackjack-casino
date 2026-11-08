@@ -45,7 +45,6 @@ export function BastionBattlefield({model,selected,onSelect,animations,onCue}:Pr
    groundLights:Graphics|null=null,overlay:Graphics|null=null,shots:Graphics|null=null,hud:Graphics|null=null;
   let towerLayer:Container|null=null,enemyLayer:Container|null=null;
   let textures:Partial<Record<(typeof assets)[number],Texture>>={};
-  let lastLife=20;
   function emit(x:number,y:number,kind:Burst['kind'],seed:number){
    if(!last.current.animations||reducedMotion)return;
    if(bursts.length>=48)bursts.shift();
@@ -124,7 +123,7 @@ export function BastionBattlefield({model,selected,onSelect,animations,onCue}:Pr
    for(const enemy of game.enemies){
     const found=enemyVisuals.get(enemy.id);
     if(!found)makeEnemy(enemy,position(next.mapPath,enemy.distance));
-    else if(found.hp>enemy.hp)found.flashUntil=sceneTime+.13;
+    else if(found.hp>enemy.hp&&last.current.animations&&!reducedMotion)found.flashUntil=sceneTime+.13;
     const visual=enemyVisuals.get(enemy.id);
     if(visual)visual.hp=enemy.hp;
    }
@@ -144,7 +143,6 @@ export function BastionBattlefield({model,selected,onSelect,animations,onCue}:Pr
      if(visual)visual.firedAt=sceneTime;
     }
    }
-   lastLife=game.lives;
    previous=next;
   }
   function render(){

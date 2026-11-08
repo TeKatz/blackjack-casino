@@ -39,6 +39,9 @@ internal static class ModernLoungeSmoke
         await UntilAsync(async () => await web.ExecuteScriptAsync(
             "Boolean(document.querySelector('.td-map canvas'))") == "true",
             "Tower Defense PixiJS battlefield did not render.");
+        await UntilAsync(async () => await web.ExecuteScriptAsync(
+            "document.querySelector('.td-map')?.dataset.renderer === 'illustrated'") == "true",
+            "The new Tower Defense illustrated SVG sprites did not finish loading.");
         await Capture(web, Path.Combine(output, "modern-tower-defense.png"));
         await web.ExecuteScriptAsync("document.querySelector('.chill-exit')?.click()");
         await UntilAsync(async () => await web.ExecuteScriptAsync(
