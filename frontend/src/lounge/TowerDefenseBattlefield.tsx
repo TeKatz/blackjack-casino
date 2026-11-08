@@ -28,6 +28,50 @@ const prng=(n:number)=>{const v=Math.sin(n*127.7+78.23)*43758.5453123;return v-M
 const range=(n:number,a:number,b:number)=>a+(b-a)*prng(n);
 const easeOut=(t:number)=>1-(1-t)*(1-t);
 
+
+/** Static, deterministic details enrich the road and forest without obscuring build pads. */
+function drawTerrainDetails(g:Graphics,path:readonly TdPoint[],pads:readonly TdPoint[]){
+ // Irregular flagstones echo the old causeway beneath the siege.
+ for(let i=1;i<path.length;i++){
+  const a=path[i-1],b=path[i],dx=b.x-a.x,dy=b.y-a.y;
+  const length=Math.hypot(dx,dy),ux=dx/length,uy=dy/length,nx=-uy,ny=ux;
+  for(let j=12;j<length-10;j+=24){
+   for(let lane=-1;lane<=1;lane++){
+    const seed=i*1000+j*7+lane*13;
+    const along=j+range(seed, -5, 5),across=lane*18+range(seed+1,-4,4);
+    const x=a.x+ux*along+nx*across,y=a.y+uy*along+ny*across;
+    const halfL=range(seed+3,6,10),halfW=range(seed+4,5,8);
+    g.poly([x-ux*halfL-nx*halfW,y-uy*halfL-ny*halfW,
+      x+ux*halfL-nx*halfW,y+uy*halfL-ny*halfW,
+      x+ux*halfL+nx*halfW,y+uy*halfL+ny*halfW,
+      x-ux*halfL+nx*halfW,y-uy*halfL+ny*halfW])
+      .fill({color:seed%3===0?0xd3ba91:0x423f36,alpha:seed%3===0?.13:.18});
+   }
+  }
+ }
+ function nearRoad(x:number,y:number){
+  for(let i=1;i<path.length;i++){
+   const a=path[i-1],b=path[i],dx=b.x-a.x,dy=b.y-a.y;
+   const t=Math.max(0,Math.min(1,((x-a.x)*dx+(y-a.y)*dy)/(dx*dx+dy*dy)));
+   if(Math.hypot(x-a.x-t*dx,y-a.y-t*dy)<58)return true;
+  }
+  return false;
+ }
+ for(let i=0;i<180;i++){
+  const x=range(i*31+8,20,940),y=range(i*41+12,20,580);
+  if(nearRoad(x,y)||pads.some(p=>Math.hypot(p.x-x,p.y-y)<49))continue;
+  const r=range(i*19+5,11,23),c=i%4;
+  // Overlapping canopy layers and offset moonlit highlights give the evergreens depth.
+  g.ellipse(x+7,y+8,r*1.05,r*.56).fill({color:0x071a1c,alpha:.5});
+  g.circle(x,y,r).fill({color:c===0?0x173a32:0x203f35,alpha:.95});
+  g.circle(x-r*.28,y+r*.10,r*.68).fill({color:0x345b45,alpha:.92});
+  g.circle(x+r*.25,y-r*.22,r*.66).fill({color:0x254d43,alpha:.98});
+  g.circle(x-r*.19,y-r*.38,r*.40).fill({color:0x58775a,alpha:.62});
+  g.circle(x+r*.37,y+r*.34,r*.36).fill({color:0x132f30,alpha:.95});
+  g.circle(x-r*.21,y-r*.35,Math.max(1,r*.10)).fill({color:0xb2bf8b,alpha:.35});
+ }
+}
+
 export function BastionBattlefield({model,selected,onSelect,animations,onCue}:Props){
  const mount=useRef<HTMLDivElement|null>(null);
  const last=useRef({model,selected,onSelect,animations,onCue,received:performance.now()});
@@ -131,12 +175,13 @@ export function BastionBattlefield({model,selected,onSelect,animations,onCue}:Pr
    const fresh=collectNewShots(game.ticks,game.effects,seenShots);
    if(seenShots.size>6000)seenShots.clear();
    for(const fx of fresh){
+    // Combat audio reflects native shots even when optional animations are disabled.
+    cue(fx.kind);
     if(!last.current.animations||reducedMotion)continue;
     if(flights.length>=90)flights.shift();
     const flight:Flight={kind:fx.kind,from:{x:fx.fromX,y:fx.fromY},
      to:{x:fx.toX,y:fx.toY},age:0,life:fx.kind==='cannon'?.32:fx.kind==='frost'?.27:.19};
     flights.push(flight);
-    cue(fx.kind);
     const matching=next.pads.findIndex(p=>p.x===fx.fromX&&p.y===fx.fromY);
     if(matching>=0){
      const visual=towerVisuals.get(matching);
@@ -302,6 +347,9 @@ export function BastionBattlefield({model,selected,onSelect,animations,onCue}:Pr
     bg=new Graphics().rect(0,0,960,600).fill({color:0x24463d});
    }
    app.stage.addChild(bg);
+   const terrain=mkGraphics();
+   drawTerrainDetails(terrain,last.current.model.mapPath,last.current.model.pads);
+   app.stage.addChild(terrain);
    pads=mkGraphics();
    const model=last.current.model;
    for(const p of model.pads){
