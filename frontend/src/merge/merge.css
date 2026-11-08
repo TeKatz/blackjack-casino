@@ -450,3 +450,22 @@ button:disabled{opacity:.45;cursor:default}button:focus-visible,input:focus-visi
 @media(prefers-reduced-motion:reduce){
  .merge-cell.created::after{animation:none;opacity:0}
 }
+
+
+/* At 720p WebView2's content area is ~684px high. Reserve room for
+   Settings and keep opened help text inside the board panel. */
+@media(min-width:1000px) and (min-height:600px) and (max-height:760px){
+ .merge-supply{gap:4px;justify-content:center}
+ .merge-producer{flex:0 0 45px;min-height:45px;max-height:45px;padding:3px 6px;gap:6px}
+ .merge-producer-art{width:30px;height:30px;flex-basis:30px}
+ .merge-producer-text{min-width:0}
+ .merge-producer-text strong{font-size:10px;line-height:1.16}
+ .merge-producer-text small{font-size:8px;line-height:1.1}
+ .merge-supply-tools{gap:4px}
+ .merge-help{padding:5px 8px;position:relative}
+ .merge-help details[open] p{position:absolute;left:auto;right:0;bottom:calc(100% + 7px);
+   width:min(245px,calc(100vw - 32px));max-width:none;z-index:20;
+   border:1px solid #ae916a;background:#162e35;box-shadow:0 8px 25px #000b;
+   padding:10px 12px;font-size:11px;line-height:1.4}
+ .merge-settings>button{min-height:30px;padding:4px 8px}
+}

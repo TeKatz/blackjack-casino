@@ -151,7 +151,10 @@ internal static class MidnightMergeSmoke
             "document.querySelector('[data-testid=\\\"merge-how-to-play\\\"] summary')?.click()");
         Require(await web.ExecuteScriptAsync(
             "(()=>{const description=document.querySelector('[data-testid=\\\"merge-how-to-play\\\"][open] p');"
-            + "return Boolean(description&&getComputedStyle(description).position==='static'"
+            + "const bounds=description?.getBoundingClientRect();"
+            + "const panel=document.querySelector('.merge-board-panel')?.getBoundingClientRect();"
+            + "return Boolean(description&&bounds&&panel"
+            + "&&bounds.top>=panel.top-2&&bounds.bottom<=panel.bottom+2"
             + "&&description.scrollWidth<=description.clientWidth+2);})()") == "true",
             "How to Play description is cropped or rendered as an overlapping popover.");
         await Capture(web, Path.Combine(output, "merge-modern-german-help-expanded.png"));
