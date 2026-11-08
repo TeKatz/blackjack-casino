@@ -355,8 +355,11 @@ function RestorationSceneArtwork({stage,animated=true,fit='crop'}:
 
 // A delivery, spawn or merge must not repaint hundreds of unchanged SVG nodes.
 // The illustration only depends on the depicted room/stage, motion setting and fit.
-export const RestorationScene=memo(RestorationSceneArtwork,(a,b)=>
- a.stage.areaId===b.stage.areaId&&a.stage.areaName===b.stage.areaName
- &&a.stage.current.id===b.stage.current.id&&a.stage.current.name===b.stage.current.name
- &&(a.stage.next===null)===(b.stage.next===null)
- &&a.animated===b.animated&&a.fit===b.fit);
+type RestorationSceneProps={stage:MergeRoom;animated?:boolean;fit?:MergePanoramaFit};
+export function sameRestorationArtwork(a:RestorationSceneProps,b:RestorationSceneProps){
+ return a.stage.areaId===b.stage.areaId&&a.stage.areaName===b.stage.areaName
+  &&a.stage.current.id===b.stage.current.id&&a.stage.current.name===b.stage.current.name
+  &&(a.stage.next===null)===(b.stage.next===null)
+  &&a.animated===b.animated&&a.fit===b.fit;
+}
+export const RestorationScene=memo(RestorationSceneArtwork,sameRestorationArtwork);

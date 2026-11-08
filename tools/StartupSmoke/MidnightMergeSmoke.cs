@@ -118,6 +118,31 @@ internal static class MidnightMergeSmoke
             + "&&cells[41].getBoundingClientRect().width>=24)})()") == "true",
             "React Merge 7x6 table became unusable at 1080×720.");
         await Capture(web, Path.Combine(output, "merge-modern-german-1080x720.png"));
+        Require(await web.ExecuteScriptAsync(
+            "(()=>{if(innerWidth<1000||innerHeight<600)return true;"
+            + "const root=document.querySelector('.merge-scroll');"
+            + "const orders=document.querySelector('.merge-orders');"
+            + "return Boolean(root&&orders"
+            + "&&getComputedStyle(root).overflowY==='hidden'"
+            + "&&root.scrollHeight<=root.clientHeight+4"
+            + "&&getComputedStyle(orders).overflowY==='auto')})()") == "true",
+            "Merge workshop unexpectedly requires page scrolling at desktop size.");
+        Require(await web.ExecuteScriptAsync(
+            "Boolean(document.querySelector('.merge-producer.unlocked small')"
+            + "?.textContent.includes('STUFE I'))") == "true",
+            "Active supply sources still occupy space with the legacy repeated explanation.");
+        await web.ExecuteScriptAsync("document.querySelector('[data-testid=\"merge-scene-expand\"]')?.click()");
+        Require(await web.ExecuteScriptAsync(
+            "Boolean(document.querySelector('.merge-scene.is-expanded')"
+            + "&&document.querySelector('.merge-scene.is-expanded .merge-room-art')"
+            + "?.getAttribute('preserveAspectRatio')==='xMidYMid meet')") == "true",
+            "Expanded Merge panorama crops the scene instead of showing its complete viewBox.");
+        await Capture(web, Path.Combine(output, "merge-panorama-full-frame.png"));
+        await web.ExecuteScriptAsync("document.querySelector('[data-testid=\"merge-scene-expand\"]')?.click()");
+        Require(await web.ExecuteScriptAsync(
+            "Boolean(document.querySelector('.merge-scene:not(.is-expanded) .merge-room-art')"
+            + "?.getAttribute('preserveAspectRatio')==='xMidYMid slice')") == "true",
+            "Merge panorama did not return to its compact viewport.");
 
         Localization.SetLanguage(UiLanguagePreference.English);
         await Task.Delay(120);
