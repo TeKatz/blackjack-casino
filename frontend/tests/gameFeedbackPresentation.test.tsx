@@ -35,7 +35,7 @@ describe('Midnight Dice 3D throw',()=>{
   const markup=renderToStaticMarkup(createElement(DiceCube,{
    value:6,palette,rolling:true,index:2,token:5,
   }));
-  expect((markup.match(/class="md-cube-face/g)??[]).toHaveLength(6);
+  expect(markup.match(/class="md-cube-face/g)??[]).toHaveLength(6);
   expect(markup).toContain('md-face-front');
   expect(markup).toContain('md-face-back');
   expect(markup).toContain('md-face-right');

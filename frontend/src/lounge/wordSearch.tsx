@@ -155,6 +155,8 @@ export function WordSearchScreen({state,language,pending,error,command,animation
   const timer=window.setInterval(()=>setClock(v=>v+1),1000);return()=>window.clearInterval(timer);
  },[game?.id,game?.completed]);
  useEffect(()=>setClock(0),[game?.id,game?.elapsedSeconds]);
+ // Replaying the same catalog puzzle is a new completion, even if its puzzle id is unchanged.
+ useEffect(()=>{if(game&&!game.completed)setDismissedCompletion(null);},[game?.id,game?.completed]);
  if(!game&&albumOpen)return <section className="ws-album" data-testid="word-search-album">
   <header className="ws-album-header">
    <div><span className="ws-eyebrow">{t.eyebrow} · COLLECTION</span>
