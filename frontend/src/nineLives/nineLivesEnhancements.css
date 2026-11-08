@@ -1,0 +1,128 @@
+/* Moonlit reels: stable compositor strips and layered image-edge transparency. */
+.nine-reels{--nine-track-gap:7px;grid-template-rows:minmax(0,1fr);isolation:isolate}
+.nine-reel-column{position:relative;display:grid;grid-template-rows:repeat(3,minmax(0,1fr));
+ gap:var(--nine-track-gap);min-width:0;min-height:0;overflow:hidden;border-radius:9px;isolation:isolate}
+.nine-reel-column .nine-cell{height:100%;min-width:0;min-height:0;z-index:0}
+.nine-reel-column .nine-cell[data-symbol="Yarn"],.nine-tape-tile[data-symbol="Yarn"]{--nine-rgb:255 89 219}
+.nine-reel-column .nine-cell[data-symbol="Fishbone"],.nine-tape-tile[data-symbol="Fishbone"]{--nine-rgb:63 157 255}
+.nine-reel-column .nine-cell[data-symbol="Bell"],.nine-tape-tile[data-symbol="Bell"]{--nine-rgb:255 195 100}
+.nine-reel-column .nine-cell[data-symbol="TabbyCat"],.nine-tape-tile[data-symbol="TabbyCat"]{--nine-rgb:255 150 94}
+.nine-reel-column .nine-cell[data-symbol="WhiteCat"],.nine-tape-tile[data-symbol="WhiteCat"]{--nine-rgb:162 228 255}
+.nine-reel-column .nine-cell[data-symbol="BlackCat"],.nine-tape-tile[data-symbol="BlackCat"]{--nine-rgb:192 99 255}
+.nine-reel-column .nine-cell[data-symbol="Wild"],.nine-tape-tile[data-symbol="Wild"]{--nine-rgb:213 99 255}
+.nine-reel-column .nine-cell[data-symbol="Bonus"],.nine-tape-tile[data-symbol="Bonus"]{--nine-rgb:255 205 100}
+.nine-reel-column .nine-cell,.nine-tape-tile{
+ --nine-rgb:183 110 255;
+ background:
+   radial-gradient(ellipse at 50% 55%,rgb(var(--nine-rgb) / .18) 0%,transparent 52%),
+   radial-gradient(ellipse at 9% 48%,rgb(var(--nine-rgb) / .14) 0%,transparent 46%),
+   radial-gradient(ellipse at 92% 52%,rgb(var(--nine-rgb) / .17) 0%,transparent 50%),
+   linear-gradient(140deg,#171129,#0c1026 51%,#1b112d);
+}
+.nine-reel-column .nine-cell::before,.nine-tape-tile::before{
+ content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+ background:
+   radial-gradient(circle at 15% 18%,#fff0d5b8 0 1px,transparent 2px),
+   radial-gradient(circle at 83% 72%,#dfaaff90 0 1px,transparent 2px),
+   radial-gradient(circle at 78% 26%,#c7c6ff8c 0 1.4px,transparent 2.4px),
+   repeating-linear-gradient(120deg,transparent 0 35px,rgb(var(--nine-rgb) / .09) 36px 37px,transparent 38px 70px),
+   linear-gradient(95deg,transparent 8%,rgb(var(--nine-rgb) / .18) 43%,transparent 70%);
+ background-size:100% 100%,100% 100%,100% 100%,185% 180%,220% 100%;
+ animation:nine-cell-nightlights 9s ease-in-out infinite alternate;
+}
+.nine-reel-column .nine-cell::after,.nine-tape-tile::after{
+ content:"";position:absolute;inset:7% 3%;pointer-events:none;z-index:1;
+ border-radius:11px;border-left:1px solid rgb(var(--nine-rgb) / .30);
+ border-right:1px solid rgb(var(--nine-rgb) / .28);
+ background:linear-gradient(90deg,rgb(var(--nine-rgb) / .06),transparent 21% 78%,rgb(var(--nine-rgb) / .07));
+ box-shadow:inset 0 0 17px rgb(var(--nine-rgb) / .11);
+ animation:nine-side-glow 4.6s ease-in-out infinite alternate;
+}
+.nine-reel-column .nine-cell img,.nine-tape-tile img{
+ position:relative;z-index:2;display:block;flex:none;width:auto;height:100%;
+ aspect-ratio:1;object-fit:contain;max-width:100%;pointer-events:none;
+ /* Preserve the source artwork's scale, removing the opaque rectangular JPG perimeter. */
+ -webkit-mask-image:radial-gradient(ellipse 61% 63% at 50% 50%,#000 44%,#000e 57%,#0008 77%,transparent 98%);
+ mask-image:radial-gradient(ellipse 61% 63% at 50% 50%,#000 44%,#000e 57%,#0008 77%,transparent 98%);
+ mix-blend-mode:screen;
+ filter:drop-shadow(0 0 8px rgb(var(--nine-rgb) / .27));
+}
+.nine-reel-column .nine-cell[data-symbol="BlackCat"] img,.nine-tape-tile[data-symbol="BlackCat"] img{
+ mix-blend-mode:lighten;
+}
+.nine-reel-column .nine-cell.winning::before,.nine-reel-column .nine-cell.frenzy::before{
+ animation-duration:2s;
+}
+.nine-reel-column .nine-cell.dimmed{opacity:.48}
+.nine-reel-column .nine-cell.winning,.nine-reel-column .nine-cell.frenzy{z-index:1}
+.nine-reel-viewport{position:absolute;inset:0;z-index:4;overflow:hidden;pointer-events:none;
+ border-radius:8px;background:#100c20;contain:paint}
+.nine-reel-tape{position:absolute;top:0;left:0;right:0;display:flex;flex-direction:column;
+ gap:var(--nine-track-gap);will-change:transform;backface-visibility:hidden;transform:translate3d(0,0,0)}
+.nine-tape-tile{position:relative;min-height:0;height:var(--nine-tile-height);
+ flex:0 0 var(--nine-tile-height);display:flex;align-items:center;justify-content:center;
+ border:2px solid #876b75;border-radius:9px;overflow:hidden}
+.nine-reel-column.is-rolling{box-shadow:0 0 0 1px #d6a6ff7c,inset 0 0 10px #b16fe94d}
+.nine-reels .nine-lines{z-index:6}
+.nine-auto-controls{display:grid;grid-template-columns:62px minmax(0,1fr);gap:5px;min-width:0}
+.nine-auto-count,.nine-speed-setting select{min-width:0;appearance:auto;
+ border:1px solid #9877ac;border-radius:7px;background:#251936;color:#fff0d1;
+ font-size:12px;font-weight:750;padding:5px}
+.nine-auto-count{height:100%;text-align:center}
+.nine-auto-controls .nine-auto{min-width:0;font-size:12px;padding:4px 6px}
+.nine-speed-setting{display:flex!important;flex-direction:column;align-items:stretch!important;gap:5px!important}
+.nine-speed-setting select{width:100%;padding:7px 9px}
+.nine-moon{top:31px;right:7%;width:clamp(100px,11vw,152px);opacity:.86;
+ border-radius:50%;border:1px solid #e5d8fa7a;z-index:0;
+ background:
+  radial-gradient(circle at 35% 27%,#917fa278 0 6%,transparent 7%),
+  radial-gradient(circle at 70% 64%,#8275938c 0 10%,transparent 11%),
+  radial-gradient(circle at 64% 25%,#9c8aa27f 0 4%,transparent 5%),
+  radial-gradient(circle at 42% 72%,#c6adbc74 0 8%,transparent 9%),
+  radial-gradient(circle at 30% 29%,#fffcec,#e9dcef 35%,#bfb4d8 68%,#76698c);
+ box-shadow:0 0 18px #ded4f58c,0 0 62px #c69af76c,inset -17px -12px 30px #504467a8;
+ animation:nine-moon-orbit 16s ease-in-out infinite alternate;
+}
+.nine-moon::before{content:"";position:absolute;inset:-11px;border:1px solid #d7baff5e;
+ border-radius:50%;box-shadow:0 0 20px #dabbff24;
+ animation:nine-moon-halo 7s ease-in-out infinite alternate}
+.nine-moon::after{content:"";position:absolute;inset:0;border-radius:50%;
+ background:radial-gradient(circle at 76% 50%,transparent 49%,#9f7dbf44 83%);
+ box-shadow:inset -13px -3px 14px #30254899;pointer-events:none}
+.nine-machine[data-win="true"]::after{
+ content:"";position:absolute;inset:3px;border:3px solid #ffe5a4;
+ border-radius:24px;pointer-events:none;z-index:6;
+ box-shadow:inset 0 0 26px #ffe1a16e,0 0 23px #ffe4a5a1,0 0 40px #cb82ffb6;
+ animation:nine-outer-win-glow 1.1s ease-in-out infinite alternate;
+}
+.nine-machine[data-win="true"] .nine-reels{
+ box-shadow:0 0 0 4px #6c4075,0 0 27px #fbd799bb,inset 0 0 27px #cf8af777;
+}
+@keyframes nine-cell-nightlights{to{background-position:0 0,0 0,0 0,95% 75%,100% 0}}
+@keyframes nine-side-glow{to{opacity:.45;transform:scaleX(.95)}}
+@keyframes nine-moon-orbit{to{transform:translate(-10px,7px) rotate(3deg);box-shadow:0 0 28px #e6d7ffad,0 0 84px #b78dff78,inset -17px -12px 30px #504467a8}}
+@keyframes nine-moon-halo{to{transform:scale(1.07);opacity:.4}}
+@keyframes nine-outer-win-glow{to{opacity:.52;box-shadow:inset 0 0 10px #ffe1a13a,0 0 13px #ffe4a565,0 0 32px #cb82ff7b}}
+@media(max-width:570px){
+ .nine-reels{--nine-track-gap:3px}
+ .nine-tape-tile{border-width:1px;border-radius:5px}
+ .nine-auto-controls{grid-template-columns:46px minmax(0,1fr)}
+ .nine-auto-count{font-size:10px;padding:2px}
+}
+@media(prefers-reduced-motion:reduce){
+ .nine-moon,.nine-moon::before,.nine-machine[data-win="true"]::after,
+ .nine-reel-column .nine-cell::before,.nine-reel-column .nine-cell::after,
+ .nine-tape-tile::before,.nine-tape-tile::after{animation:none!important}
+}
+
+/* The miniature paytable uses the same soft photographic cutout as the reels. */
+.nine-payrow img{background:transparent;
+ -webkit-mask-image:radial-gradient(ellipse 62% 62% at center,#000 50%,#000c 67%,transparent 98%);
+ mask-image:radial-gradient(ellipse 62% 62% at center,#000 50%,#000c 67%,transparent 98%);
+ mix-blend-mode:screen;
+}
+/* Keep the moving tapes inexpensive: one GPU transform, no 60 simultaneous
+   filters or independent lighting animations on the offscreen filler tiles. */
+.nine-reel-tape .nine-tape-tile::before,
+.nine-reel-tape .nine-tape-tile::after{animation:none!important}
+.nine-reel-tape .nine-tape-tile img{filter:none}

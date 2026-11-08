@@ -14,7 +14,7 @@ public partial class MainWindow
     private NineLivesSpinResult? modernNineLivesLastSpin;
     private ProgressionAward? modernNineLivesAward;
     private decimal modernNineLivesBet;
-    private SlotAudio? modernNineLivesAudio;
+    private NineLivesAudio? modernNineLivesAudio;
     private BackgroundMusic? modernNineLivesMusic;
     private string? modernNineLivesAudioSpinId;
     private readonly HashSet<int> modernNineLivesStopped = [];
@@ -53,7 +53,8 @@ public partial class MainWindow
         modernNineLivesAudioSpinId = modernNineLivesLastSpin?.SpinId.ToString("D");
         modernNineLivesOutcomePlayed = modernNineLivesLastSpin is not null;
         modernNineLivesStopped.Clear();
-        modernNineLivesAudio = new SlotAudio();
+        modernNineLivesAudio = new NineLivesAudio();
+        NineLivesAudio.Prewarm();
         var presentation = preferences.Presentation("nine-lives");
         modernNineLivesMusic = new BackgroundMusic(Soundtrack.Manor);
         modernNineLivesMusic.Start(presentation.MusicEnabled, presentation.MusicVolume);
@@ -125,7 +126,7 @@ public partial class MainWindow
                     modernNineLivesAudioSpinId = spin.SpinId.ToString("D");
                     modernNineLivesStopped.Clear();
                     modernNineLivesOutcomePlayed = false;
-                    modernNineLivesAudio?.Play(SlotSound.Start,
+                    modernNineLivesAudio?.Play(NineLivesCue.Spin,
                         preferences.Presentation("nine-lives").SoundEnabled);
                     if (!preferences.Presentation("nine-lives").AnimationsEnabled)
                         ModernNineLivesCompleteSound(modernNineLivesAudioSpinId);
@@ -144,7 +145,7 @@ public partial class MainWindow
     private void ModernNineLivesStopSound(string id, int reel)
     {
         if (id != modernNineLivesAudioSpinId || !modernNineLivesStopped.Add(reel)) return;
-        modernNineLivesAudio?.Play(SlotSound.Stop,
+        modernNineLivesAudio?.Play(NineLivesCue.ReelStop,
             preferences.Presentation("nine-lives").SoundEnabled);
     }
 
@@ -154,10 +155,14 @@ public partial class MainWindow
         modernNineLivesOutcomePlayed = true;
         NineLivesSpinResult result = modernNineLivesLastSpin;
         bool enabled = preferences.Presentation("nine-lives").SoundEnabled;
-        if (result.PounceWildCell.HasValue) modernNineLivesAudio?.Play(SlotSound.Wild, enabled);
-        modernNineLivesAudio?.Play(result.FullGridFrenzy ? SlotSound.Jackpot
-            : result.BonusSpinsAwarded > 0 ? SlotSound.FreeSpins
-            : result.Payout > 0 ? SlotSound.Win : SlotSound.Loss, enabled);
+        if (result.PounceWildCell.HasValue)
+            modernNineLivesAudio?.Play(NineLivesCue.Pounce, enabled);
+        // Nine Lives has its own original audio palette; no generic slot cues.
+        NineLivesCue outcome = result.FullGridFrenzy ? NineLivesCue.Frenzy
+            : result.BonusSpinsAwarded > 0 ? NineLivesCue.Bonus
+            : result.Payout >= result.Bet * 12m ? NineLivesCue.BigWin
+            : result.Payout > 0m ? NineLivesCue.Win : NineLivesCue.Loss;
+        modernNineLivesAudio?.Play(outcome, enabled);
     }
 
     private void OnModernNineLivesFailed()

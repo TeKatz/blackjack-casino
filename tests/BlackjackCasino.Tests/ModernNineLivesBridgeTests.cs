@@ -66,7 +66,7 @@ public sealed class ModernNineLivesBridgeTests
     [Fact]
     public void ProjectionPreservesEveryAuthoritativeBonusAndLineField()
     {
-        var random = new Queue<int>(new[] { 97, 97, 97, 0, 28, 51, 69, 81, 89 });
+        var random = new Queue<int>(new[] { 970, 970, 970, 0, 280, 510, 690, 810, 890 });
         var machine = new NineLivesSession(10000m, max => random.TryDequeue(out int next) ? next : 0);
         NineLivesSpinResult spin = machine.Spin(25m);
         JsonElement state = JsonSerializer.SerializeToElement(
@@ -90,7 +90,7 @@ public sealed class ModernNineLivesBridgeTests
     [Fact]
     public void BrowserRecoveryKeepsAwardedBonusSpinsWhileReconcilingSharedWallet()
     {
-        var random = new Queue<int>(new[] { 97, 97, 97, 0, 28, 51, 69, 81, 89 });
+        var random = new Queue<int>(new[] { 970, 970, 970, 0, 280, 510, 690, 810, 890 });
         var machine = new NineLivesSession(10000m, max => random.TryDequeue(out int next) ? next : 0);
         _ = machine.Spin(25m);
         Assert.Equal(9, machine.BonusSpinsRemaining);

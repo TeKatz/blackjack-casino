@@ -1,21 +1,27 @@
 import {finishModeBoot} from '../boot/finishModeBoot';
 import {useCallback,useEffect,useRef,useState} from 'react';
 import {createRoot} from 'react-dom/client';
-import {listenNineLives,sendNineLivesIntent,paylineCells,symbols} from './bridge';
+import {listenNineLives,sendNineLivesIntent} from './bridge';
 import type {NineLivesIntent,NineLivesSnapshot,NineLivesSpin,NineLivesSymbol} from './bridge';
 import {RooftopAmbient} from './Ambient';
+import {NineSymbolArt} from './SymbolArt';
+import {ReelStage} from './ReelStage';
+import {revealDuration} from './reelMotion';
+import type {NineReelSpeed} from './reelMotion';
 import './nineLives.css';
+import './nineLivesEnhancements.css';
 
 const PREVIEW:NineLivesSymbol[]=['BlackCat','Yarn','Fishbone','WhiteCat','Bonus','Bell','Fishbone','TabbyCat','Wild'];
-const ART:Record<NineLivesSymbol,string>={
- Yarn:'yarn.jpg',Fishbone:'fishbone.jpg',Bell:'bell.jpg',TabbyCat:'tabby-cat.jpg',
- WhiteCat:'white-cat.jpg',BlackCat:'black-cat.jpg',Wild:'wild.jpg',Bonus:'bonus.jpg',
+const SPEED_KEY='nine-lives-reel-speed';
+const readSpeed=():NineReelSpeed=>{
+ try{const value=localStorage.getItem(SPEED_KEY);return value==='fast'||value==='turbo'?value:'normal';}
+ catch{return 'normal';}
 };
 const money=(v:string)=>'$'+Number(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const dict={
  en:{back:'Casino lobby',top:'THE MOONLIT ROOFTOP',tag:'3 REELS · 5 PAYLINES · PLAY MONEY',
  balance:'SHARED BANKROLL',bet:'BET PER SPIN',win:'LAST WIN',spin:'SPIN',free:'FREE SPIN',
- stop:'STOP AUTO',auto:'AUTO ×20',max:'MAX',paytable:'PAYTABLE',settings:'SETTINGS',
+ stop:'STOP AUTO',auto:'AUTO ×20',max:'MAX',paytable:'PAYTABLE',settings:'SETTINGS',speed:'Reel speed',autoCount:'Auto spins',
  status:'The rooftop is waiting.',spinning:'The cats are on the move…',noWin:'The rooftop goes quiet.',
  near:'Two lives. The third stayed in the shadows.',winLabel:'WIN',frenzy:'FULL GRID FRENZY',
  awakened:'NINE LIVES AWAKENED',bonus:'FREE SPINS REMAINING',pounce:'POUNCE WILD',
@@ -30,7 +36,7 @@ const dict={
  unaffordable:'Insufficient bankroll',xp:'Player XP',season:'Season XP',level:'LEVEL UP'},
  de:{back:'Casino-Lobby',top:'DAS MONDBESCHIENENE DACH',tag:'3 WALZEN · 5 GEWINNLINIEN · SPIELGELD',
  balance:'GEMEINSAMES GUTHABEN',bet:'EINSATZ PRO DREH',win:'LETZTER GEWINN',spin:'DREHEN',free:'FREIDREH',
- stop:'AUTO STOPPEN',auto:'AUTO ×20',max:'MAX',paytable:'GEWINNTABELLE',settings:'EINSTELLUNGEN',
+ stop:'AUTO STOPPEN',auto:'AUTO ×20',max:'MAX',paytable:'GEWINNTABELLE',settings:'EINSTELLUNGEN',speed:'Walzengeschwindigkeit',autoCount:'Autodrehs',
  status:'Auf dem Dach ist es ruhig.',spinning:'Die Katzen sind unterwegs…',noWin:'Das Dach wird wieder still.',
  near:'Zwei Leben. Das dritte blieb im Schatten.',winLabel:'GEWINN',frenzy:'VOLLES FELD',
  awakened:'NEUN LEBEN ERWACHT',bonus:'VERBLEIBENDE FREIDREHS',pounce:'SPRUNG-WILD',
@@ -44,9 +50,6 @@ const dict={
  uncertain:'Bestätigung des Drehs fehlt. Öffne Nine Lives erneut, um das C#-Ergebnis sicher wiederherzustellen.',
  unaffordable:'Nicht genug Guthaben',xp:'Spieler-XP',season:'Saison-XP',level:'LEVELAUFSTIEG'},
 };
-function SymbolArt({symbol}:{symbol:NineLivesSymbol}){
- return <img draggable={false} src={'/nine-lives-art/'+ART[symbol]} alt={symbol} loading="eager"/>;
-}
 function App(){
  const [snap,setSnap]=useState<NineLivesSnapshot|null>(null);
  const [pending,setPending]=useState<string|null>(null);
@@ -59,15 +62,15 @@ function App(){
  const [paytableOpen,setPaytableOpen]=useState(false);
  const [settingsOpen,setSettingsOpen]=useState(false);
  const [autoRemaining,setAutoRemaining]=useState(0);
+ const [autoCount,setAutoCount]=useState('20');
+ const [speed,setSpeed]=useState<NineReelSpeed>(readSpeed);
  const pendingRef=useRef<string|null>(null),snapshotRef=useRef<NineLivesSnapshot|null>(null);
  const firstSnapshot=useRef(true),lastSpinId=useRef<string|null>(null);
  const timerRef=useRef<ReturnType<typeof setTimeout>[]>([]);
- const intervalRef=useRef<ReturnType<typeof setInterval>|null>(null);
- const autoScheduled=useRef<string|null>(null),visualTick=useRef(0);
+ const autoScheduled=useRef<string|null>(null);
  const stoppedColumns=useRef<Set<number>>(new Set());
  const cleanTimers=useCallback(()=>{
    timerRef.current.forEach(clearTimeout);timerRef.current=[];
-   if(intervalRef.current!==null){clearInterval(intervalRef.current);intervalRef.current=null;}
  },[]);
  const send=useCallback((intent:NineLivesIntent)=>{
    const current=snapshotRef.current;
@@ -101,6 +104,14 @@ function App(){
    return()=>clearTimeout(id);
  },[pending]);
  const last=snap?.state.lastSpin;
+ const onReelStop=useCallback((id:string,reel:number)=>{
+   const result=snapshotRef.current?.state.lastSpin;
+   if(!result||result.id!==id||stoppedColumns.current.has(reel))return;
+   stoppedColumns.current.add(reel);
+   setSpinningColumns(columns=>columns.filter(column=>column!==reel));
+   setGrid(previous=>previous.map((symbol,index)=>index%3===reel?result.grid[index]:symbol));
+   window.chrome?.webview?.postMessage({type:'nine-lives.reel-stop',spinId:id,reel});
+ },[]);
  useEffect(()=>{
    if(!snap)return;
    if(firstSnapshot.current){
@@ -120,26 +131,15 @@ function App(){
    if(!snap.state.animationsEnabled||reduced){finish();return;}
    setAnimating(true);
    setSpinningColumns([0,1,2]);
-   visualTick.current=0;
    stoppedColumns.current.clear();
-   // The rolling symbols are cosmetic. The settled C# grid is immutable.
-   intervalRef.current=setInterval(()=>{
-     visualTick.current++;
-     setGrid(previous=>previous.map((value,index)=>
-       !stoppedColumns.current.has(index%3)
-       ? symbols[(visualTick.current+index*3)%symbols.length] : value));
-   },85);
-   [900,1480,2040].forEach((delay,reel)=>{
-     timerRef.current.push(setTimeout(()=>{
-       stoppedColumns.current.add(reel);
-       setSpinningColumns(previous=>previous.filter(x=>x!==reel));
-       setGrid(previous=>previous.map((value,index)=>
-         index%3===reel?last.grid[index]:value));
-       window.chrome?.webview?.postMessage({type:'nine-lives.reel-stop',spinId:last.id,reel});
-     },delay));
-   });
-   timerRef.current.push(setTimeout(finish,2380));
- },[last?.id,snap?.state.animationsEnabled,cleanTimers]);
+   // Native C# has settled the grid. Each reel animates a deterministic strip
+   // using a compositor transform; no React image swaps or blur loop.
+   timerRef.current.push(setTimeout(finish,revealDuration(speed)));
+ },[last?.id,snap?.state.animationsEnabled,cleanTimers,speed]);
+ const toggleAuto=useCallback(()=>{
+   autoScheduled.current=null;
+   setAutoRemaining(count=>count===0?(autoCount==='infinite'?-1:Number(autoCount)):0);
+ },[autoCount]);
  const close=useCallback(()=>{
    setAutoRemaining(0);
    if(uncertain)window.chrome?.webview?.postMessage({type:'nine-lives.recover'});
@@ -148,14 +148,15 @@ function App(){
  useEffect(()=>{
    const onKey=(event:KeyboardEvent)=>{
      if(event.ctrlKey||event.altKey||event.metaKey||event.repeat
-       ||event.target instanceof HTMLButtonElement||event.target instanceof HTMLInputElement)return;
+       ||event.target instanceof HTMLButtonElement||event.target instanceof HTMLInputElement
+       ||event.target instanceof HTMLSelectElement)return;
      if(event.key==='Escape'){
        event.preventDefault();
        if(paytableOpen)setPaytableOpen(false);
        else if(settingsOpen)setSettingsOpen(false);
        else close();
      }else if(event.code==='Space'){event.preventDefault();send({action:'spin'});}
-     else if(event.key.toLowerCase()==='a'){event.preventDefault();setAutoRemaining(n=>n>0?0:20);}
+     else if(event.key.toLowerCase()==='a'){event.preventDefault();toggleAuto();}
      else if(event.key==='+'||event.key==='-'){
        const current=snapshotRef.current?.state;
        if(!current||current.bonusActive)return;
@@ -166,24 +167,25 @@ function App(){
    };
    document.addEventListener('keydown',onKey);
    return()=>document.removeEventListener('keydown',onKey);
- },[close,paytableOpen,settingsOpen,send]);
+ },[close,paytableOpen,settingsOpen,send,toggleAuto]);
  useEffect(()=>{
-   if(!autoRemaining||animating||pending||uncertain)return;
+   if(autoRemaining===0||animating||pending||uncertain)return;
    const spinId=last?.id??'initial';
    if(autoScheduled.current===spinId)return;
    autoScheduled.current=spinId;
    if(!snap?.state.canSpin){setAutoRemaining(0);return;}
-   const timer=setTimeout(()=>{setAutoRemaining(n=>Math.max(0,n-1));send({action:'spin'});},500);
+   const timer=setTimeout(()=>{
+     setAutoRemaining(count=>count===-1?-1:Math.max(0,count-1));
+     send({action:'spin'});
+   },speed==='turbo'?120:speed==='fast'?260:500);
    return()=>clearTimeout(timer);
- },[autoRemaining,animating,pending,uncertain,last?.id,snap?.state.canSpin,send]);
+ },[autoRemaining,animating,pending,uncertain,last?.id,snap?.state.canSpin,send,speed]);
  if(!snap)return <div className="nine-loading"><span>☾ ✦ ☾</span><h1>NINE LIVES</h1>
     <p>{dict.en.loading}</p><button onClick={close}>← Casino lobby</button></div>;
  const s=snap.state,t=dict[s.language];
  const locked=!!pending||animating||uncertain;
  const result: NineLivesSpin|null=s.lastSpin;
- const indexes=result?.winningCells??[];
- const winning=result?.winningLines??[];
- const mood=animating?t.spinning:notice??(!result?t.status:
+  const mood=animating?t.spinning:notice??(!result?t.status:
    result.fullGridFrenzy?t.frenzy+' · 5,000×':
    result.bonusSpinsAwarded?t.awakened+' · +9':
    Number(result.payout)>0?t.winLabel+' · '+money(result.payout):
@@ -192,7 +194,8 @@ function App(){
  const selectedIndex=s.bets.indexOf(s.bet);
  return <div className="nine-app" data-motion={s.animationsEnabled} lang={s.language} data-language={s.language}
    data-testid="nine-lives-app" data-spin-id={result?.id??''}
-   data-animating={animating} data-bonus={s.bonusActive}>
+   data-animating={animating} data-bonus={s.bonusActive}
+   data-speed={speed} data-win={activeWin&&!!result&&(Number(result.payout)>0||result.bonusSpinsAwarded>0)}>
    <RooftopAmbient enabled={!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches&&s.animationsEnabled}/>
    <header className="nine-header">
      <button className="nine-back" onClick={close}>← {t.back}<kbd>ESC</kbd></button>
@@ -208,21 +211,11 @@ function App(){
        </div>
        <div className="nine-reels-outer">
          <span className="nine-line-number left">I · II · III</span>
-         <div className="nine-reels" data-testid="nine-lives-reels">
-           {grid.map((symbol,i)=><div key={i} data-symbol={symbol}
-             className={'nine-cell'+(spinningColumns.includes(i%3)?' rolling':'')
-               +(activeWin&&indexes.includes(i)?' winning':'')
-               +(activeWin&&result?.fullGridFrenzy?' frenzy':'')
-               +(activeWin&&indexes.length>0&&!indexes.includes(i)?' dimmed':'')
-               +(activeWin&&result?.pounceWildCell===i?' pounced':'')}>
-             <SymbolArt symbol={symbol}/>
-           </div>)}
-           {!animating&&activeWin&&winning.length>0&&<svg className="nine-lines" viewBox="0 0 300 300" preserveAspectRatio="none" aria-hidden="true">
-             {winning.map(i=><polyline key={i} points={paylineCells[i].map(cell=>
-               ((cell%3)*100+50)+','+(Math.floor(cell/3)*100+50)).join(' ')}
-               stroke={i<3?'#f9d985':'#d48aff'} strokeWidth="3" strokeLinecap="round" fill="none"/>)}
-           </svg>}
-         </div>
+         <ReelStage displayGrid={grid} result={result}
+           spinning={spinningColumns} activeWin={activeWin&&!animating}
+           speed={speed}
+           reducedMotion={!s.animationsEnabled||!!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches}
+           onStop={onReelStop}/>
          <span className="nine-line-number right">III · II · I</span>
        </div>
        <div className="nine-status" role="status" aria-live="polite">
@@ -255,9 +248,19 @@ function App(){
            <button className="nine-spin" data-testid="nine-lives-spin"
              disabled={locked||!s.canSpin} onClick={()=>send({action:'spin'})}>
              <span>✦</span>{locked?t.spinning:s.bonusActive?t.free:t.spin}<kbd>SPACE</kbd></button>
-           <button className="nine-auto" data-testid="nine-lives-auto"
-             disabled={uncertain||(!s.canSpin&&autoRemaining===0)}
-             onClick={()=>setAutoRemaining(n=>n>0?0:20)}>{autoRemaining>0?t.stop:t.auto}</button>
+           <div className="nine-auto-controls">
+             <select className="nine-auto-count" data-testid="nine-lives-auto-count"
+               aria-label={t.autoCount} value={autoCount} disabled={autoRemaining!==0}
+               onChange={event=>setAutoCount(event.target.value)}>
+               {['10','20','50','100'].map(count=><option key={count} value={count}>{count}</option>)}
+               <option value="infinite">∞</option>
+             </select>
+             <button className="nine-auto" data-testid="nine-lives-auto"
+               disabled={uncertain||(!s.canSpin&&autoRemaining===0)}
+               onClick={toggleAuto}>
+               {autoRemaining!==0?t.stop:autoCount==='infinite'?'AUTO ∞':'AUTO ×'+autoCount}
+             </button>
+           </div>
          </div>
        </div>
      </main>
@@ -268,7 +271,7 @@ function App(){
          <p>{t.paylineNote}</p>
          <div className="nine-paytable-list">
            {s.paytable.slice().reverse().map(item=><div key={item.id} className="nine-payrow">
-             <SymbolArt symbol={item.id}/><span>{item.name}</span>
+             <NineSymbolArt symbol={item.id}/><span>{item.name}</span>
              <strong>{item.id==='Bonus'?'9 FREE':item.lineMultiplier+'×'}</strong>
            </div>)}
          </div>
@@ -299,6 +302,19 @@ function App(){
              onChange={e=>send({action:'sound.set',value:String(e.target.checked)})}/>{t.settingSound}</label>
            <label><input type="checkbox" checked={s.animationsEnabled} disabled={locked}
              onChange={e=>send({action:'animations.set',value:String(e.target.checked)})}/>{t.settingMotion}</label>
+           <label className="nine-speed-setting">{t.speed}
+             <select data-testid="nine-lives-speed" aria-label={t.speed}
+               value={speed} disabled={locked||autoRemaining!==0}
+               onChange={event=>{
+                 const value=event.target.value as NineReelSpeed;
+                 setSpeed(value);
+                 try{localStorage.setItem(SPEED_KEY,value);}catch{/* Storage unavailable. */}
+               }}>
+               <option value="normal">Normal</option>
+               <option value="fast">Fast</option>
+               <option value="turbo">Turbo</option>
+             </select>
+           </label>
          </div>}
          <small>{t.offline}</small>
        </section>
