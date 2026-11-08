@@ -1,6 +1,6 @@
 # Sudoku — React gameplay migration
 
-**Development branch:** `feature/manor-modernization-phase-1`  
+**Integrated baseline:** `main` · **Development source:** `develop` (historical implementation: `feature/manor-modernization-phase-1`)  
 **Normal presentation:** React/TypeScript within `frontend/lounge.html`  
 **Game rules and persistence:** `BlackjackCasino.Core.Sudoku` and the existing .NET profile store
 

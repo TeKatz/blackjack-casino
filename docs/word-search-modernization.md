@@ -1,6 +1,6 @@
 # Word Search — Words Discovered mode
 
-**Development branch:** `feature/manor-modernization-phase-1`  
+**Integrated baseline:** `main` · **Development source:** `develop` (historical implementation: `feature/manor-modernization-phase-1`)  
 **Presentation:** React in the shared `frontend/lounge.html`  
 **Authoritative gameplay and persistence:** `BlackjackCasino.Core.WordSearch`
 

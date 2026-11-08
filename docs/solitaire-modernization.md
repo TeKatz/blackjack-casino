@@ -1,6 +1,6 @@
 # Midnight Solitaire — React gameplay migration
 
-**Branch:** `feature/manor-modernization-phase-1`  
+**Integrated baseline:** `main` · **Development source:** `develop` (historical implementation: `feature/manor-modernization-phase-1`)  
 **Presentation:** React in `frontend/lounge.html`  
 **Game rules, saves, achievements and payouts:** Existing `BlackjackCasino.Core.Solitaire` and progression services
 
