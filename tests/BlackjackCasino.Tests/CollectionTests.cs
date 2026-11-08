@@ -21,6 +21,31 @@ public sealed class CollectionTests
     }
 
     [Fact]
+    public void CollectionSidebarCountsUnopenedPacksNotUnclaimedThemeRewards()
+    {
+        var profile = new PlayerProfileState();
+        CollectionService.Normalize(profile);
+        // A completed collection may have a claimable theme reward even if
+        // the inventory is empty. The pack counter must still display zero.
+        CollectionTheme theme = CollectionCatalog.Themes.First(t => !t.UltraRare);
+        foreach (CollectionCard card in theme.Cards)
+            profile.Collection.OwnedCardIds.Add(card.Id);
+        profile.Collection.Packs.Clear();
+        Assert.True(theme.Cards.All(card => profile.Collection.OwnedCardIds.Contains(card.Id)));
+        Assert.DoesNotContain(theme.Id, profile.Collection.ClaimedThemeRewardIds);
+        Assert.Equal(0L, CollectionService.UnopenedPackCount(profile));
+
+        CollectionService.GrantPack(profile, CollectionRarity.Rare, 2);
+        Assert.Equal(2L, CollectionService.UnopenedPackCount(profile));
+
+        CollectionOpening receipt = CollectionService.OpenPack(profile, CollectionRarity.Rare, new Random(14)).Opening!;
+        Assert.NotNull(profile.Collection.PendingOpening);
+        Assert.Equal(1L, CollectionService.UnopenedPackCount(profile));
+        Assert.True(CollectionService.CompleteOpening(profile, receipt.Id));
+        Assert.Equal(1L, CollectionService.UnopenedPackCount(profile));
+    }
+
+    [Fact]
     public void MigrationGivesWelcomePacksOnceWithoutReplayingHistoricalRewards()
     {
         var profile = new PlayerProfileState { SchemaVersion = 5, Prestige = 8, Collection = null!, Coins = 456 };

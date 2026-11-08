@@ -13,7 +13,7 @@ export type LobbySnapshot = {
   dailyLogin: DailyLoginSnapshot;
  titleVariant?:string;portraitVariant?:string;frameVariant?:string;
   displayName: string; level: number; coins: string; prestige: number; title: string;
-  bankroll: string; empireCredits: string; albumOwned: number; albumTotal: number; albumRewardsReady: number;
+  bankroll: string; empireCredits: string; albumOwned: number; albumTotal: number; albumPacksReady: number;
   seasonTier: number; seasonNextTier: number; seasonExperience: number; seasonRequired: number;
   seasonFraction: number; seasonComplete: boolean; challengeName: string;
   challengeFraction: number; challengesReady: number; vaultTier: string;
@@ -49,7 +49,7 @@ export function isLobbySnapshot(x: unknown): x is LobbySnapshot {
   if (!['displayName','coins','title','bankroll','empireCredits','challengeName',
     'vaultTier','vaultAmount','vaultCapacity'].every(k => string(x[k]))) return false;
   if (!['level','prestige','albumOwned','albumTotal','seasonTier','seasonNextTier',
-    'seasonExperience','seasonRequired','challengesReady','albumRewardsReady'].every(k => numeric(x[k]) && Number(x[k]) >= 0)) return false;
+    'seasonExperience','seasonRequired','challengesReady','albumPacksReady'].every(k => numeric(x[k]) && Number(x[k]) >= 0)) return false;
   if (!['seasonFraction','challengeFraction','vaultFraction'].every(k => fraction(x[k]))) return false;
   if (typeof x.seasonComplete !== 'boolean' || typeof x.albumSoundEnabled !== 'boolean'
     || typeof x.animationsEnabled !== 'boolean'
@@ -77,7 +77,7 @@ export const fallbackLobby: LobbySnapshot = {
     ],
   },
   displayName: 'Guest', level: 1, coins: '0', prestige: 0, title: 'Midnight Dealer',
-  bankroll: '$1,000.00', empireCredits: '0 cr', albumOwned: 0, albumTotal: 136, albumRewardsReady: 0,
+  bankroll: '$1,000.00', empireCredits: '0 cr', albumOwned: 0, albumTotal: 136, albumPacksReady: 0,
   seasonTier: 0, seasonNextTier: 1, seasonExperience: 0, seasonRequired: 2000,
   seasonFraction: 0, seasonComplete: false, challengeName: 'Unbroken',
   challengeFraction: 0, challengesReady: 0, vaultTier: 'BRONZE',

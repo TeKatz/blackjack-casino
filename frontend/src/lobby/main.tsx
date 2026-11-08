@@ -377,11 +377,13 @@ function LobbyApp() {
           <NavIcon name={n.id}/>
           <span className="lobby-nav-label">{de?n.de:n.en}</span>
           {((n.id==='challenges'&&data.challengesReady>0)||
-            (n.id==='collections'&&data.albumRewardsReady>0))&&
+            (n.id==='collections'&&data.albumPacksReady>0))&&
             <span className="nav-ready" aria-label={
-              (de?'Abholbereite Belohnungen: ':'Claimable rewards: ')+
-              (n.id==='collections'?data.albumRewardsReady:data.challengesReady)}>
-              +{Math.min(99,n.id==='collections'?data.albumRewardsReady:data.challengesReady)}
+              (n.id==='collections'
+                ?(de?'Ungeöffnete Packs: ':'Unopened packs: ')
+                :(de?'Abholbereite Belohnungen: ':'Claimable rewards: '))+
+              (n.id==='collections'?data.albumPacksReady:data.challengesReady)}>
+              +{Math.min(99,n.id==='collections'?data.albumPacksReady:data.challengesReady)}
             </span>}
         </button>)}
         <div className="lobby-nav-decoration" aria-hidden="true">♣</div>

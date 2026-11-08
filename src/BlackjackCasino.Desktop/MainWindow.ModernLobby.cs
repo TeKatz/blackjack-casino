@@ -259,9 +259,7 @@ public partial class MainWindow
             InstalledVersion = AppVersion.Current.ToString(),
             AlbumOwned = profile.Collection.OwnedCardIds.Count,
             AlbumTotal = CollectionCatalog.Cards.Count,
-            AlbumRewardsReady = CollectionCatalog.Themes.Count(theme =>
-                theme.Cards.All(card => profile.Collection.OwnedCardIds.Contains(card.Id)) &&
-                !profile.Collection.ClaimedThemeRewardIds.Contains(theme.Id)),
+            AlbumPacksReady = CollectionService.UnopenedPackCount(profile),
             SeasonTier = progress.SeasonTier,
             SeasonNextTier = progress.SeasonNextTier,
             SeasonExperience = progress.SeasonExperience,

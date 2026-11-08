@@ -23,9 +23,10 @@ describe('Modern lobby bridge: read-only C# snapshots', () => {
     expect(isLobbySnapshot({ ...fallbackLobby, musicVolume: 1.2 })).toBe(false);
     expect(isLobbySnapshot({ ...fallbackLobby, musicEnabled: 'yes' })).toBe(false);
     expect(isLobbySnapshot({ ...fallbackLobby, showEmpireBalance: null })).toBe(false);
-    expect(isLobbySnapshot({ ...fallbackLobby, albumRewardsReady: -1 })).toBe(false);
-    expect(isLobbySnapshot({ ...fallbackLobby, albumRewardsReady: '3' })).toBe(false);
-    expect(isLobbySnapshot({ ...fallbackLobby, albumRewardsReady: 3, challengesReady: 2 })).toBe(true);
+    expect(isLobbySnapshot({ ...fallbackLobby, albumPacksReady: -1 })).toBe(false);
+    expect(isLobbySnapshot({ ...fallbackLobby, albumPacksReady: '3' })).toBe(false);
+    expect(isLobbySnapshot({ ...fallbackLobby, albumPacksReady: 0, challengesReady: 2 })).toBe(true);
+    expect(isLobbySnapshot({ ...fallbackLobby, albumPacksReady: 3, challengesReady: 2 })).toBe(true);
     expect(isLobbySnapshot({ ...fallbackLobby, modes: [] })).toBe(true);
     expect(isLobbySnapshot({
       ...fallbackLobby, modes: fallbackLobby.modes.map((m, i) =>
