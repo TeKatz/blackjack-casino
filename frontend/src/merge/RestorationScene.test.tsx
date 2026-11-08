@@ -1,7 +1,7 @@
 import {describe,expect,it} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
-import {RestorationScene} from '../src/merge/RestorationScene';
-import type {MergeRoom} from '../src/merge/bridge';
+import {RestorationScene} from './RestorationScene';
+import type {MergeRoom} from './bridge';
 
 const areas=['lobby','bar','gaming-floor','conservatory','lounge','gallery',
  'theater','terrace','vip-suites','observatory'];
