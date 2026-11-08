@@ -354,3 +354,36 @@ button:disabled{opacity:.45;cursor:default}button:focus-visible,input:focus-visi
  .merge-stat-meter i{transition:none}
  .merge-scene.fully-restored{animation:none!important}
 }
+
+/* Layered 2.5D dressing and restrained ambient life for completed rooms. */
+.merge-scene .merge-room-art .merge-depth-far{transform:translateZ(0)}
+.merge-room-art .merge-depth-middle,.merge-room-art .merge-depth-near{transform-origin:center}
+.merge-scene.fully-restored:not(.motion-off) .merge-room-art:not(.static) .merge-depth-far{
+ animation:merge-backroom-drift 15s ease-in-out infinite alternate}
+.merge-scene.fully-restored:not(.motion-off) .merge-room-art:not(.static) .merge-depth-near{
+ animation:merge-foreground-drift 12s ease-in-out infinite alternate}
+.merge-room-art .merge-air-mote{animation:merge-mote-rise 9s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+.merge-room-art .merge-polish-glint{animation:merge-shine-fade 5.5s ease-in-out infinite}
+.merge-room-art .merge-light-theater{animation:merge-shine-fade 7.5s ease-in-out infinite}
+.merge-room-art .merge-breeze{animation:merge-breeze 9s ease-in-out infinite alternate;transform-origin:50% 80%}
+.merge-room-art .merge-starfield circle{animation:merge-star-pulse 5s ease-in-out infinite}
+.merge-room-art .merge-hearth-glow{animation:merge-hearth-pulse 3s ease-in-out infinite alternate}
+.merge-room-art .merge-floor-light{pointer-events:none}
+.merge-scene.fully-restored:not(.motion-off):not(.is-expanded)::after{
+ content:'';position:absolute;inset:0;pointer-events:none;z-index:1;border:1px solid #ffe5ac2b;border-radius:inherit;
+ background:linear-gradient(105deg,transparent 7%,#e7cf8b0c 45%,transparent 68%);mix-blend-mode:screen}
+@keyframes merge-backroom-drift{to{transform:translateX(3px) translateY(-1px)}}
+@keyframes merge-foreground-drift{to{transform:translateX(-4px) translateY(1px)}}
+@keyframes merge-mote-rise{0%,100%{opacity:.15;transform:translateY(7px)}50%{opacity:.68;transform:translateY(-8px)}}
+@keyframes merge-shine-fade{0%,100%{opacity:.25}50%{opacity:.9}}
+@keyframes merge-breeze{to{transform:rotate(.4deg)}}
+@keyframes merge-star-pulse{0%,100%{opacity:.3}50%{opacity:.9}}
+@keyframes merge-hearth-pulse{0%{opacity:.35;transform:scale(.99)}100%{opacity:1;transform:scale(1.015)}}
+.merge-scene.motion-off .merge-room-art *{animation:none!important;transition:none!important}
+.merge-help{position:relative;overflow:visible!important;max-height:none!important}
+.merge-help details[open] p{position:absolute;z-index:12;bottom:calc(100% + 6px);right:0;width:230px;
+ margin:0;padding:10px 12px;border:1px solid #ae916a;border-radius:8px;background:#162e35;
+ box-shadow:0 8px 25px #0009;color:#e0d3b8;font-size:11px;line-height:1.4}
+@media(prefers-reduced-motion:reduce){
+ .merge-room-art *, .merge-room-art .merge-restored-atmosphere *{animation:none!important;transition:none!important}
+}

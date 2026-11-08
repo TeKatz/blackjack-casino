@@ -232,7 +232,7 @@ function App(){
          {viewingPrevious&&<button type="button" className="merge-room-return"
            onClick={()=>setPreviewArea(null)}>{t.returnCurrent}</button>}
        </div>
-       <div className={'merge-scene'+(cinematic?' is-expanded':'')+(displayedRoom!.next===null?' fully-restored':'')}
+       <div className={'merge-scene'+(cinematic?' is-expanded':'')+(displayedRoom!.next===null?' fully-restored':'')+(!state.animationsEnabled?' motion-off':'')}
          role={cinematic?'dialog':undefined} aria-modal={cinematic?true:undefined}
          aria-label={cinematic?displayedRoom!.areaName:undefined}
          data-testid="merge-panorama-container">

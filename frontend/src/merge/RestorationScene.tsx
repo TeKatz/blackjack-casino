@@ -201,6 +201,49 @@ function RoomDetails({kind,phase,p}:{kind:string;phase:number;p:Palette}):ReactN
  }
 }
 
+
+// Room-specific ambient cues are purely decorative. No timers or gameplay state
+// enter this SVG; animation runs on the compositor when a room is fully restored.
+function RestoredAtmosphere({kind,light,metal}:{kind:string;light:string;metal:string}){
+ return <g className="merge-restored-atmosphere" aria-hidden="true">
+   <g className="merge-air-motes">
+     {Array.from({length:13},(_,i)=><circle key={i} className="merge-air-mote"
+       style={{animationDelay:-(i*1.17)+'s',animationDuration:(6+i%5*1.4)+'s'}}
+       cx={92+(i*97)%1030} cy={65+(i*43)%135} r={1.4+i%3*.75}
+       fill={light} opacity=".56"/>)}
+   </g>
+   {(kind==='bar'||kind==='gallery'||kind==='vip-suites')&&<g className="merge-polish-glint">
+      {[285,599,911].map((x,i)=><g key={i}>
+        <path d={'M'+x+' 42 V57 M'+(x-8)+' 49 H'+(x+8)} stroke={light} strokeWidth="2.5" strokeLinecap="round"/>
+        <circle cx={x} cy="49" r="14" fill={light} opacity=".04"/>
+      </g>)}
+    </g>}
+   {(kind==='lobby'||kind==='gaming-floor'||kind==='theater')&&<g className="merge-light-theater">
+      <path d="M280 22 L388 217 L530 217 L340 22Z" fill={light} opacity=".105"/>
+      <path d="M918 22 L700 217 L836 217 L950 22Z" fill={light} opacity=".09"/>
+      <path d="M547 22 L518 207 L681 207 L653 22Z" fill={light} opacity=".047"/>
+    </g>}
+   {(kind==='conservatory'||kind==='terrace')&&<g className="merge-breeze">
+      {[174,304,902,1032].map((x,i)=><g key={x}>
+        <path d={'M'+x+' 177q'+(i%2?23:-23)+' -32 0 -58q'+(i%2?-19:19)+' 37 0 58'} fill="none"
+          stroke="#b1e1ad" strokeWidth="5" opacity=".18"/>
+        <ellipse cx={x+17} cy="151" rx="12" ry="4" fill="#e6f0b0" opacity=".25"/>
+      </g>)}
+    </g>}
+   {(kind==='terrace'||kind==='observatory')&&<g className="merge-starfield">
+      {Array.from({length:15},(_,i)=><circle key={i} cx={56+(i*137)%1070} cy={25+(i*47)%124}
+        r={1.2+i%3*.55} fill="#e1f2ff" opacity=".75"
+        style={{animationDelay:-(i*.61)+'s'}}/>)}
+    </g>}
+   {kind==='lounge'&&<g className="merge-hearth-glow">
+      <path d="M565 196Q548 155 580 125Q581 160 601 142Q614 119 623 130Q654 165 630 198Z"
+        fill="#ffc67b" opacity=".47"/>
+      <ellipse cx="599" cy="200" rx="71" ry="17" fill="#ed975f" opacity=".15"/>
+    </g>}
+   <path d="M80 207 H1119" stroke={metal} strokeWidth="3" opacity=".14"/>
+  </g>;
+}
+
 export type MergePanoramaFit='crop'|'contain';
 function RestorationSceneArtwork({stage,animated=true,fit='crop'}:
   {stage:MergeRoom;animated?:boolean;fit?:MergePanoramaFit}){
@@ -228,6 +271,15 @@ function RestorationSceneArtwork({stage,animated=true,fit='crop'}:
    <radialGradient id={id('glow')}>
     <stop stopColor={p.light} stopOpacity={illuminated?.36:.08}/><stop offset="1" stopColor={p.light} stopOpacity="0"/>
    </radialGradient>
+   <radialGradient id={id('floor-pool')} cx=".5" cy=".5" r=".5">
+    <stop stopColor={p.light} stopOpacity={illuminated?.19:.025}/>
+    <stop offset="1" stopColor={p.light} stopOpacity="0"/>
+   </radialGradient>
+   <linearGradient id={id('backlight')} x1="0" y1="0" x2="1" y2="1">
+    <stop stopColor={p.light} stopOpacity={illuminated?.13:.03}/>
+    <stop offset=".45" stopColor={p.light} stopOpacity="0"/>
+    <stop offset="1" stopColor={p.light} stopOpacity={illuminated?.11:.02}/>
+   </linearGradient>
    <linearGradient id={id('vignette')} x1="0" y1="0" x2="1" y2=".3">
     <stop stopColor="#02080c" stopOpacity=".42"/><stop offset=".18" stopColor="#07111c" stopOpacity="0"/>
     <stop offset=".82" stopColor="#07111c" stopOpacity="0"/><stop offset="1" stopColor="#02080c" stopOpacity=".4"/>
@@ -237,6 +289,15 @@ function RestorationSceneArtwork({stage,animated=true,fit='crop'}:
    </pattern>
   </defs>
   <rect width="1200" height="280" fill={url('wall')}/>
+  <g className="merge-depth-far" opacity={cleaned?1:.54}>
+    <rect x="15" y="14" width="1170" height="191" fill={url('backlight')}/>
+    {!outside&&<><path d="M42 17 H1158 V30 H42Z" fill="#060e17" opacity=".52"/>
+      <path d="M90 38 H1110" stroke={p.metal} strokeOpacity=".27" strokeWidth="2"/>
+      {[284,600,916].map(x=><g key={x}>
+        <path d={'M'+(x-72)+' 49 V193 H'+(x+72)+'V49'} fill="none" stroke={p.metal} strokeOpacity=".13" strokeWidth="5"/>
+        <path d={'M'+(x-63)+' 53 H'+(x+63)} stroke="#f4e4bf" strokeOpacity=".1" strokeWidth="2"/>
+      </g>)}</>}
+  </g>
   {outside&&<><path d="M0 0 H1200 V196 H0Z" fill="#10203a"/>
     <circle cx="995" cy="51" r="31" fill="#e7e6d2" opacity=".85"/>
     {Array.from({length:32},(_,i)=><circle key={i} cx={i*113%1200} cy={i*47%162}
@@ -248,6 +309,8 @@ function RestorationSceneArtwork({stage,animated=true,fit='crop'}:
     <path d={'M'+x+' 25 V200'} stroke="#c5bb9e" strokeOpacity=".2" strokeWidth="3"/>
   </g>)}
   <path d="M0 205 H1200 V280 H0Z" fill={url('floor')}/>
+  <ellipse cx="600" cy="248" rx="520" ry="84" fill={url('floor-pool')} className="merge-floor-light"/>
+  <path d="M0 202H1200L1152 224H48Z" fill="#08141d" opacity=".35"/>
   <path d="M0 205 H1200" stroke={p.metal} strokeWidth={cleaned?6:3} strokeOpacity={cleaned?.85:.3}/>
   {[0,240,480,720,960,1200].map(x=><path key={x} d={'M600 204 L'+x+' 280'}
     stroke={p.metal} strokeWidth="1.5" opacity={cleaned?.19:.07}/>)}
@@ -257,7 +320,8 @@ function RestorationSceneArtwork({stage,animated=true,fit='crop'}:
    {cleaned&&<><path d="M80 22 H1120" stroke={p.metal} strokeWidth="6" opacity=".56"/>
     <path d="M85 35 H1115" stroke="#e4d5b5" strokeWidth="2" opacity=".3"/></>}
   </g>}
-  <RoomDetails kind={stage.areaId} phase={phase} p={p}/>
+  <g className="merge-depth-middle"><RoomDetails kind={stage.areaId} phase={phase} p={p}/></g>
+  {illuminated&&animated&&<RestoredAtmosphere kind={stage.areaId} light={p.light} metal={p.metal}/>}
   {!cleaned&&<g opacity=".56">
    <path d="M55 213 L160 213 L178 231 H44Z M899 216 L1036 216 L1075 232 H873Z" fill="#858987" opacity=".45"/>
    {[154,232,412,625,788,990].map((x,i)=><ellipse key={x} cx={x} cy={242+i%3*7} rx="38" ry="4"
@@ -267,6 +331,17 @@ function RestorationSceneArtwork({stage,animated=true,fit='crop'}:
   </g>}
   {cleaned&&<path d="M115 207 H1085" stroke={p.metal} strokeWidth="2" opacity=".4"/>}
   {furnished&&<ellipse cx="600" cy="241" rx="310" ry="30" fill={p.fabric} opacity=".16"/>}
+  {cleaned&&<g className="merge-depth-near">
+    <path d="M0 255 Q140 240 272 265 L272 280 H0Z M1200 255 Q1060 240 928 265 L928 280 H1200Z"
+      fill="#09151d" opacity=".72"/>
+    <path d="M0 256 Q140 241 272 266 M1200 256 Q1060 241 928 266"
+      fill="none" stroke={p.metal} strokeOpacity=".21" strokeWidth="4"/>
+    {illuminated&&[47,1153].map(x=><g key={x}>
+      <path d={'M'+x+' 203V255'} stroke={p.metal} strokeWidth="6" opacity=".7"/>
+      <circle cx={x} cy="202" r="10" fill={p.light} opacity=".3"/>
+      <circle cx={x} cy="202" r="4" fill={p.light} opacity=".86"/>
+    </g>)}
+   </g>}
   {illuminated&&<g>
     <ellipse cx="600" cy="93" rx="410" ry="170" fill={url('glow')} className="merge-scene-light"/>
     {[132,444,612,782,1065].map((x,i)=><circle key={x} cx={x} cy={59+(i%2)*18}
