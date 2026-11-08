@@ -2,6 +2,7 @@ import {useEffect,useMemo,useRef,useState} from 'react';
 import type {PointerEvent,CSSProperties} from 'react';
 import type {WordSearchDifficulty,WordSearchIntent,WordSearchPuzzle,WordSearchState} from './wordSearchBridge';
 import './wordSearch.css';
+import {PuzzleCompletion} from './PuzzleCompletion';
 type Language='en'|'de';
 type Point={row:number;column:number};
 type Props={state:WordSearchState;language:Language;pending:boolean;error:string;animations:boolean;command:(v:WordSearchIntent)=>void};
@@ -21,6 +22,7 @@ const words={
  noResume:'Choose a difficulty to begin.',hint:'REVEAL STARTING LETTER',hintInfo:'Hints never reduce your XP.',
  wordList:'WORDS TO DISCOVER',found:'FOUND',total:'WORDS',time:'TIME',hints:'HINTS',
  back:'← WORD SEARCH LEVELS',complete:'PUZZLE COMPLETE',finished:'Every hidden word found. Your completion was saved.',
+ boardView:'VIEW COMPLETED GRID',finishBack:'BACK TO PUZZLES',
  xp:'PLAYER XP',season:'SEASON XP',first:'Click two endpoints or drag across a complete word.',
  required:'Finish your current puzzle before starting another one.',pending:'Saving discovery…',
  saved:'Autosaved',dirRelaxed:'Horizontal + vertical',dirEasy:'Diagonals included',dirHard:'All eight directions, backwards too',
@@ -37,6 +39,7 @@ const words={
  noResume:'Wähle einen Schwierigkeitsgrad.',hint:'ANFANGSBUCHSTABEN ZEIGEN',hintInfo:'Hinweise verringern deine XP nicht.',
  wordList:'GESUCHTE WÖRTER',found:'GEFUNDEN',total:'WÖRTER',time:'ZEIT',hints:'HINWEISE',
  back:'← WORTSUCHE-AUSWAHL',complete:'RÄTSEL GELÖST',finished:'Alle Wörter gefunden. Dein Erfolg wurde gespeichert.',
+ boardView:'SPIELFELD ANSEHEN',finishBack:'ZUR RÄTSELAUSWAHL',
  xp:'SPIELER-XP',season:'SAISON-XP',first:'Zwei Endpunkte anklicken oder eine Linie über das Wort ziehen.',
  required:'Beende zuerst dein begonnenes Rätsel.',pending:'Fund wird gespeichert…',
  saved:'Automatisch gespeichert',dirRelaxed:'Waagerecht + senkrecht',dirEasy:'Auch diagonal',dirHard:'Alle acht Richtungen, auch rückwärts',
@@ -126,6 +129,7 @@ function Board({game,language,pending,command,animations}:{game:WordSearchPuzzle
 export function WordSearchScreen({state,language,pending,error,command,animations}:Props){
  const t=words[language],game=state.game;
  const [clock,setClock]=useState(0);
+ const [dismissedCompletion,setDismissedCompletion]=useState<string|null>(null);
  const [albumOpen,setAlbumOpen]=useState(false);
  const [albumQuery,setAlbumQuery]=useState('');
  const [albumTheme,setAlbumTheme]=useState('');
@@ -261,12 +265,15 @@ export function WordSearchScreen({state,language,pending,error,command,animation
       onClick={()=>command({action:'word-search.back'})}>{t.back}</button>
     </aside>
    </div>
-   {game.completed&&<div className="ws-complete" data-testid="word-search-completion" role="status">
-    <h2>✦ {t.complete} ✦</h2><p>{t.finished}</p>
-    <div><span><b>{game.rewardXp}</b>{t.xp}</span><span><b>{Math.floor(game.rewardXp/2)}</b>{t.season}</span></div>
-    <p>{state.rewardNotice}</p>
-    <button onClick={()=>command({action:'word-search.back'})}>{t.back}</button>
-   </div>}
+   {game.completed&&dismissedCompletion!==game.id&&<PuzzleCompletion
+    testId="word-search-completion" kind="words" title={t.complete} subtitle={t.finished}
+    metrics={[{label:t.total,value:game.words.length},{label:t.time,value:formatTime(game.elapsedSeconds)},
+      {label:t.hints,value:game.hintsUsed}]}
+    rewardXp={game.rewardXp} seasonXp={Math.floor(game.rewardXp/2)}
+    rewardNotice={state.rewardNotice} xpLabel={t.xp} seasonLabel={t.season}
+    viewLabel={t.boardView} backLabel={t.finishBack}
+    onView={()=>setDismissedCompletion(game.id)}
+    onBack={()=>command({action:'word-search.back'})} animated={animations}/>
    <p className="ws-note ws-bottom-note">{t.noRush}</p>
  </section>;
 }

@@ -4,6 +4,7 @@ import {resolveCardSkin} from '../blackjack/cardSkins';
 import type {SolitaireCard,SolitaireGame,SolitaireIntent,SolitaireState,SolitaireVariant} from './solitaireBridge';
 import {variants} from './solitaireBridge';
 import './solitaire.css';
+import {PuzzleCompletion} from './PuzzleCompletion';
 
 type Language='de'|'en';
 type Props={state:SolitaireState;language:Language;pending:boolean;error:string;command:(intent:SolitaireIntent)=>void};
@@ -47,6 +48,7 @@ const words={
  adjacentHelp:'Click an uncovered card one rank above or below the waste.',
  spiderHelp:'Choose a same-suit run, then a target column. Stock deals ten cards at once.',
  win:'A QUIET VICTORY',winNote:'Your game and progression reward were recorded in your existing casino profile.',
+ boardView:'VIEW FINISHED TABLE',finishBack:'BACK TO TABLES',
  playerXp:'PLAYER XP',seasonXp:'SEASON XP',newConfirm:'Replace unfinished deal?',
  confirmText:'A new deal replaces the unfinished save for this table and records an abandonment. Other games stay saved.',
  cancel:'KEEP PLAYING',replace:'START NEW DEAL',waiting:'Saving your move…',
@@ -69,6 +71,7 @@ const words={
  adjacentHelp:'Eine freie Karte einen Rang über oder unter der Ablage anklicken.',
  spiderHelp:'Gleichfarbige Kartenfolge auswählen und Zielspalte anklicken. Stock verteilt zehn Karten.',
  win:'STILLER SIEG',winNote:'Spielstand und Fortschrittsbelohnung wurden in deinem Casino-Profil gespeichert.',
+ boardView:'SPIELFELD ANSEHEN',finishBack:'ZUR SPIELAUSWAHL',
  playerXp:'SPIELER-XP',seasonXp:'SAISON-XP',newConfirm:'Unfertige Partie ersetzen?',
  confirmText:'Die neue Partie ersetzt den unfertigen Spielstand dieses Tisches und wird als Aufgabe erfasst. Andere Partien bleiben gespeichert.',
  cancel:'WEITERSPIELEN',replace:'NEU STARTEN',waiting:'Spielzug wird gespeichert…',
@@ -236,6 +239,7 @@ export function SolitaireScreen({state,language,pending,error,command}:Props){
  const [localError,setLocalError]=useState('');
  const [selected,setSelected]=useState<Picked|null>(null);
  const [clock,setClock]=useState(0);
+ const [dismissedCompletion,setDismissedCompletion]=useState<string|null>(null);
  const game=state.game;
  useEffect(()=>setSelected(null),[game?.gameId,game?.moves]);
  useEffect(()=>{
@@ -345,11 +349,15 @@ export function SolitaireScreen({state,language,pending,error,command}:Props){
    <button data-testid="solitaire-back" aria-disabled={pending}
      onClick={()=>command({action:'solitaire.back'})}>{t.back}</button>
   </div>
-  {game.won&&<div className="sol-win" data-testid="solitaire-win">
-    <h2>✦ {t.win} ✦</h2><p>{t.winNote}</p>
-    <strong>{game.rewardXp} {t.playerXp} · {Math.floor(game.rewardXp/2)} {t.seasonXp}</strong>
-    {state.rewardNotice&&<p>{state.rewardNotice}</p>}
-   </div>}
+  {game.won&&dismissedCompletion!==game.gameId&&<PuzzleCompletion
+    testId="solitaire-win" kind="cards" title={t.win} subtitle={t.winNote}
+    metrics={[{label:t.deal,value:'#'+game.dealNumber},{label:t.moves,value:game.moves},
+      {label:t.time,value:formatTime(game.elapsedSeconds)}]}
+    rewardXp={game.rewardXp} seasonXp={Math.floor(game.rewardXp/2)}
+    rewardNotice={state.rewardNotice} xpLabel={t.playerXp} seasonLabel={t.seasonXp}
+    viewLabel={t.boardView} backLabel={t.finishBack}
+    onView={()=>setDismissedCompletion(game.gameId)}
+    onBack={()=>command({action:'solitaire.back'})}/>
   <p className="sol-disclaimer">{t.noRush}</p>
  </section>;
 }
