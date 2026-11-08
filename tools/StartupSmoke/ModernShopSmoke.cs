@@ -40,17 +40,12 @@ internal static class ModernShopSmoke
             + "&&!!shop.querySelector('[data-cosmetic-id=\"portrait-neon-emperor\"]');})()");
         Require(catalogue == "true", "React Shop does not expose complete cards/dice/portrait catalog and five packs.");
 
-        Require(await web.ExecuteScriptAsync(
-            "(()=>{const item=document.querySelector('[data-cosmetic-id=\\\"portrait-secret-guest\\\"]');"
-            + "const art=item?.querySelector('[data-testid=\\\"secret-guest-showcase\\\"]');"
-            + "const picture=art?.querySelector('picture');"
-            + "const media=picture?.querySelector('source[media]');"
-            + "return Boolean(item&&art&&picture&&media"
-            + "&&art.querySelector('img')?.getAttribute('src')==='/shop/portraits/secret-guest.svg'"
-            + "&&media.getAttribute('srcset')==='/shop/portraits/secret-guest.jpg'"
-            + "&&item.textContent.includes('She appears before the room remembers.')"
-            + "&&item.textContent.includes('Reward only'));})()") == "true",
-            "Secret Guest lacks its exclusive animated card, still fallback or challenge-only description.");
+        // The lobby may be configured with animations off (or system reduced motion).
+        // In that state the premium illustration MUST use the bundled static JPG.
+        // Otherwise it MUST expose the animated SVG and reduced-motion fallback.
+        // Neither state may fall back to the old Secret Guest placeholder.
+        Require(await web.ExecuteScriptAsync("(()=>{const item=document.querySelector('[data-cosmetic-id=\"portrait-secret-guest\"]');const art=item?.querySelector('[data-testid=\"secret-guest-showcase\"]');const picture=art?.querySelector('picture');const img=picture?.querySelector('img');const media=picture?.querySelector('source[media]');const motion=Boolean(item?.closest('.modern-shop')?.getAttribute('data-shop-motion')==='on');const expected=motion?'/shop/portraits/secret-guest.svg':'/shop/portraits/secret-guest.jpg';const appropriateFallback=motion?media?.getAttribute('srcset')==='/shop/portraits/secret-guest.jpg':!media;return Boolean(item&&art&&picture&&img&&img.getAttribute('src')===expected&&appropriateFallback&&item.textContent.includes('She appears before the room remembers.')&&!item.textContent.includes('Master Key')&&item.querySelector('.shop-tag.locked'));})()") == "true",
+            "Secret Guest premium art, description or motion-aware fallback is incorrect.");
 
         // Load the actual locally bundled animated SVG, not merely its DOM URL.
         // Capture a dedicated preview for manual evaluation of the face, foil and gems.
