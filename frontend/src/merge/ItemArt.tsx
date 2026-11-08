@@ -5,7 +5,12 @@ export function MergeItemArt({definition,small=false}:{definition:MergeDefinitio
  const uid=useId().replaceAll(':',''),color=definition.color;
  const fill='fill'+uid,shine='shine'+uid,glow='glow'+uid;
  const drink=definition.tags.includes('drink');
- return <svg className={'merge-item-art'+(drink?' drink':' chip')} viewBox="0 0 112 112"
+ const decor=definition.tags.includes('decor');
+ const garden=definition.tags.includes('garden');
+ const stage=definition.tags.includes('stage');
+ const sky=definition.tags.includes('sky');
+ const supply=decor||garden||stage||sky;
+ return <svg className={'merge-item-art'+(drink?' drink':supply?' supplies':' chip')} viewBox="0 0 112 112"
    role="img" aria-label={definition.name}>
   <defs>
    <linearGradient id={fill} x1="0" y1="0" x2="1" y2="1">
@@ -36,6 +41,37 @@ export function MergeItemArt({definition,small=false}:{definition:MergeDefinitio
        <path d="M77 19 L84 11" stroke="#c3ed93" strokeWidth="4"/></>}
       {definition.tier>=7&&<path d="M30 35 L47 11 L66 35" fill="none" stroke="#f3daa1" strokeWidth="3" opacity=".85"/>}
     </g>}
+   </g>:supply?<g>
+    <ellipse cx="56" cy="93" rx="39" ry="8" fill="#030b14" opacity=".55"/>
+    <path d="M20 83 L26 38 L56 18 L86 38 L92 83 Q56 101 20 83Z" fill="#172936" stroke={'url(#'+fill+')'} strokeWidth="3.5"/>
+    <path d="M25 78 L30 40 L56 24 L82 40 L87 78 Q56 91 25 78Z" fill={color} opacity=".31"/>
+    {decor&&<g>
+      {definition.tier>=4?<><path d="M32 75 H80 L74 52 H38Z" fill="#d4b377" stroke="#faf0c4" strokeWidth="2"/>
+        <path d="M56 48 V28" stroke="#e5c989" strokeWidth="5"/><circle cx="56" cy="26" r="7" fill="#ffeed1"/>
+        {definition.tier>=6&&[35,77].map(x=><path key={x} d={'M56 31 L'+x+' 50'} stroke="#f0dca5" strokeWidth="3"/> )}</>:
+       <><rect x="35" y="41" width="42" height="29" rx="5" fill="#9a7589" stroke="#f6e0b1" strokeWidth="3"/>
+        <path d="M35 56 H77" stroke="#eed5a7" strokeWidth="2"/></>}
+     </g>}
+    {garden&&<g>
+     <path d="M37 67 H75 L68 85 H45Z" fill="#9e7055" stroke="#dfc290" strokeWidth="2"/>
+     <path d="M56 67 V37" stroke="#a9db92" strokeWidth="4"/>
+     {[40,72].map((x,i)=><ellipse key={x} cx={x} cy={46} rx={definition.tier>=4?16:12} ry="10"
+       transform={'rotate('+(i?37:-37)+' '+x+' 46)'} fill={i?'#70b47b':'#3c8e65'} stroke="#d0ecab" strokeWidth="1"/>)}
+     {definition.tier>=5&&<circle cx="56" cy="32" r="11" fill="#dceca2"/>}
+    </g>}
+    {stage&&<g>
+     <path d="M38 31 H74 V77 H38Z" fill="#352239" stroke="#e0af8f" strokeWidth="3"/>
+     <path d="M40 35 Q55 68 40 73 M72 35 Q57 68 72 73" fill="none" stroke="#d780aa" strokeWidth="8"/>
+     <circle cx="56" cy="39" r="7" fill="#fff0b4"/>
+     {definition.tier>=4&&<path d="M56 38 L36 82 H76Z" fill="#fff2b9" opacity=".33"/>}
+    </g>}
+    {sky&&<g>
+     <path d="M31 72 L67 35 L81 44 L46 79Z" fill="#587d99" stroke="#d7e8f4" strokeWidth="4"/>
+     <ellipse cx="70" cy="39" rx="13" ry="9" transform="rotate(42 70 39)" fill="#9cc4dd" stroke="#f8e6bc" strokeWidth="3"/>
+     <path d="M55 59 L72 83 M56 60 L42 83" stroke="#e0cd9f" strokeWidth="5"/>
+     {definition.tier>=5&&<circle cx="85" cy="26" r="4" fill="#f4e6be"/>}
+    </g>}
+    <path d="M28 81 Q56 95 85 81" fill="none" stroke="#fff4cc" strokeWidth="2" opacity=".45"/>
    </g>:<g>
     {[0,1].slice(0,definition.stackCount).map(layer=>
       <ellipse key={layer} cx="56" cy={72+layer*6} rx="38" ry="18"

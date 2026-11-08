@@ -205,7 +205,7 @@ function App(){
            onClick={()=>setPreviewArea(null)}>{t.returnCurrent}</button>}
        </div>
        <div className={'merge-scene'+(cinematic?' is-expanded':'')}>
-         <RestorationScene stage={displayedRoom!}/>
+         <RestorationScene stage={displayedRoom!} animated={state.animationsEnabled}/>
          {celebration&&!viewingPrevious&&<div className="merge-unlock" aria-live="polite">
            <span>✦</span>{t.milestone}<span>✦</span></div>}
          <button type="button" className="merge-scene-expand" data-testid="merge-scene-expand"

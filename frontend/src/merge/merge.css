@@ -231,3 +231,5 @@ button:disabled{opacity:.45;cursor:default}button:focus-visible,input:focus-visi
 @media(prefers-reduced-motion:reduce){
  .merge-estate-stop,.merge-room-art .merge-scene-light,.merge-room-art .merge-scene-spark{animation:none!important;transition:none!important}
 }
+
+.merge-room-art.static .merge-scene-light,.merge-room-art.static .merge-scene-spark{animation:none!important}
