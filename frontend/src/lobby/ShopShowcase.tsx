@@ -63,6 +63,27 @@ function DiceArtwork({item}:{item:ShopItem}){
    <span className="dice-facet-glow"/>
  </div>;
 }
+function SecretGuestArtwork({item,motionEnabled}:{item:ShopItem;motionEnabled:boolean}){
+ return <div className="secret-guest-showcase" data-testid="secret-guest-showcase">
+   <span className="secret-guest-halo" aria-hidden="true"/>
+   <span className="secret-guest-aura" aria-hidden="true"/>
+   <span className="secret-guest-frame" aria-hidden="true"/>
+   <picture>
+     {motionEnabled&&<source media="(prefers-reduced-motion: reduce)"
+       srcSet="/shop/portraits/secret-guest.jpg" type="image/jpeg"/>}
+     <img src={motionEnabled?'/shop/portraits/secret-guest.webp':portraitPath(item.visualVariant)}
+       alt={item.name} loading="lazy" decoding="async"/>
+   </picture>
+   <span className="secret-guest-sweep" aria-hidden="true"/>
+   <span className="secret-guest-crown-gem" aria-hidden="true"/>
+   <span className="secret-guest-glint left" aria-hidden="true">✧</span>
+   <span className="secret-guest-glint right" aria-hidden="true">✧</span>
+   <span className="secret-guest-embers" aria-hidden="true">
+     <i/><i/><i/><i/><i/><i/>
+   </span>
+   <span className="secret-guest-sigil" aria-hidden="true">✦ EXCLUSIVE ✦</span>
+ </div>;
+}
 function PortraitArtwork({item}:{item:ShopItem}){
  return <div className="showcase-portrait-stage">
    <span className="portrait-arc"/><span className="portrait-arc secondary"/>
@@ -73,23 +94,25 @@ function PortraitArtwork({item}:{item:ShopItem}){
    <span className="portrait-ambient"/>
  </div>;
 }
-export function ShopShowcase({item}:{item:ShopItem}){
+export function ShopShowcase({item,motionEnabled=true}:{item:ShopItem;motionEnabled?:boolean}){
  const material=shopMaterial(item.kind,item.visualVariant);
  const tier=shopVisualTier(item);
  const skin=item.kind==='CardSet'?resolveCardSkin(item.visualVariant):null;
  const [accent,dark,light]=skin?[skin.accent,skin.backA,skin.faceA]:palette(item.visualVariant);
  const style={'--preview-accent':accent,'--preview-dark':dark,
   '--preview-light':light} as CSSProperties;
+ const secret=item.id==='portrait-secret-guest';
  return <div className={'cosmetic-visual premium-showcase showcase-'+item.kind.toLowerCase()}
    data-shop-fx={item.id} data-shop-kind={item.kind} data-material={material}
-   data-quality={tier} style={style}>
+   data-quality={tier} data-secret-guest={secret?'true':undefined} style={style}>
    <div className="showcase-atmosphere" aria-hidden="true"/>
    <div className="showcase-plinth" aria-hidden="true"/>
    <div className="showcase-object">
      {item.kind==='Frame'?<FrameArtwork item={item}/>:
       item.kind==='CardSet'?<CardArtwork item={item}/>:
       item.kind==='DiceSet'?<DiceArtwork item={item}/>:
-      item.kind==='Portrait'?<PortraitArtwork item={item}/>:
+      item.kind==='Portrait'?(secret?<SecretGuestArtwork item={item} motionEnabled={motionEnabled}/>:
+        <PortraitArtwork item={item}/>):
       <div className="showcase-title-art">
        <span>THE MIDNIGHT CLUB</span><strong><CosmeticTitle variant={item.visualVariant}>{item.name}</CosmeticTitle></strong>
        <i aria-hidden="true">✦ &nbsp; ✦ &nbsp; ✦</i>

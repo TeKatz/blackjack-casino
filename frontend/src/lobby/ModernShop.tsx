@@ -21,8 +21,8 @@ const labelKind=(kind:ShopKind,de:boolean)=>({
   CardSet:de?'Kartenset':'Card Set',DiceSet:de?'Würfelset':'Dice Set',
   Portrait:de?'Porträt':'Portrait',Frame:de?'Rahmen':'Frame',Title:'Title',
 }[kind]);
-function CosmeticCard({item,de,pending,onPick}:{
-  item:ShopItem;de:boolean;pending:boolean;onPick:(item:ShopItem)=>void;
+function CosmeticCard({item,de,pending,motionEnabled,onPick}:{
+  item:ShopItem;de:boolean;pending:boolean;motionEnabled:boolean;onPick:(item:ShopItem)=>void;
 }){
   const locked=!item.owned&&(!item.shopAvailable||item.requiredPrestige>0&&!item.canBuy);
   const cta=item.equipped?(de?'Ausgerüstet':'Equipped'):item.owned?(de?'Ausrüsten':'Equip'):
@@ -30,7 +30,8 @@ function CosmeticCard({item,de,pending,onPick}:{
     item.requiredPrestige>0&&!item.canBuy?(de?'Prestige benötigt':'Prestige required'):
     !item.canBuy?(de?'Zu wenig Münzen':'Not enough coins'):(de?'Kaufen & ausrüsten':'Buy & equip');
   const disabled=item.equipped||pending||(!item.owned&&!item.canBuy);
-  return <article className={'shop-product '+(item.equipped?'is-equipped ':'')+(locked?'is-locked':'')}
+  return <article className={'shop-product '+(item.equipped?'is-equipped ':'')+(locked?'is-locked':'')+
+      (item.id==='portrait-secret-guest'?' secret-guest-product':'')}
       data-cosmetic-id={item.id}>
     <div className="shop-product-top">
       <span>{labelKind(item.kind,de)}</span>
@@ -39,7 +40,7 @@ function CosmeticCard({item,de,pending,onPick}:{
       !item.shopAvailable?<b className="shop-tag locked">✦ {de?'BELOHNUNG':'REWARD'}</b>:
       item.requiredPrestige>0?<b className="shop-tag locked">P{item.requiredPrestige}</b>:null}
     </div>
-    <ShopShowcase item={item}/>
+    <ShopShowcase item={item} motionEnabled={motionEnabled}/>
     <div className="shop-product-content">
       <h3 title={item.name}>{item.name}</h3>
       <p>{item.description}</p>
@@ -132,7 +133,7 @@ export function ModernShop({shop,language,loaded,pending,motionEnabled=true,onBa
         'No cosmetics found. Try a different category or search.'}</div>:
       <section className="shop-product-grid" aria-label={de?'Verfügbare Kosmetik':'Available cosmetics'}>
         {filtered.map(item=><CosmeticCard key={item.id} item={item} de={de}
-          pending={pending===item.id} onPick={pick}/>)}
+          pending={pending===item.id} motionEnabled={motionEnabled} onPick={pick}/>)}
       </section>}
       <div className="shop-packs-section">
         <div className="shop-pack-heading"><span className="shop-section-label">COLLECTOR'S CORNER</span>
