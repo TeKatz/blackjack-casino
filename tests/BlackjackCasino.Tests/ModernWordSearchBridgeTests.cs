@@ -164,7 +164,7 @@ public sealed class ModernWordSearchBridgeTests
         Assert.Single(saved.DiscoveredWords);
         // Duplicate target selections cannot play an additional cue.
         Assert.False(Send("word-search.select",target));
-        Assert.Equal(1,cues.Count);
+        Assert.Single(cues);
         // A second puzzle with the same target is a successful ordinary find,
         // but not a fresh addition to the album.
         var second = WordSearchCatalog.All.Select(d=>WordSearchGame.Start(d))
