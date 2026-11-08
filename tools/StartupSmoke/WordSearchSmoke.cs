@@ -44,7 +44,7 @@ internal static class WordSearchSmoke
 
         Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text == "Word Search"),
             "Word Search hub did not open from the Chill Lounge menu.");
-        Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text.Contains("288 authored puzzle slots", StringComparison.Ordinal)),
+        Require(Find<TextBlock>(window).Any(text => text.IsVisible && text.Text.Contains("576 authored puzzle slots", StringComparison.Ordinal)),
             "Word Search hub does not advertise the deterministic offline puzzle catalog.");
         Require(Find<Button>(window).Count(button => button.IsVisible && button.Name.StartsWith("WordSearchStart_", StringComparison.Ordinal)) == 6,
             "Word Search hub does not expose all six difficulty tiers.");
