@@ -8,6 +8,7 @@ using BlackjackCasino.Core.WordSearch;
 using BlackjackCasino.Core.Memory;
 using BlackjackCasino.Core.Jigsaw;
 using BlackjackCasino.Core.Adventure;
+using BlackjackCasino.Core.TowerDefense;
 
 namespace BlackjackCasino.Desktop;
 
@@ -26,6 +27,8 @@ public partial class MainWindow
     private ModernJigsawSession? modernJigsawSession;
     private ModernJigsawService? modernJigsaw;
     private ModernAdventureSession? modernAdventureSession;
+    private ModernTowerDefenseSession? modernTowerDefenseSession;
+    private ModernTowerDefenseService? modernTowerDefense;
     private ModernAdventureService? modernAdventure;
     private bool modernAdventureSoundtrack;
     private bool modernLoungeMenuMusic = true;
@@ -49,6 +52,7 @@ public partial class MainWindow
             "memory" => CurrentModernMemoryStatus(),
             "jigsaw" => CurrentModernJigsawStatus(),
             "tales-backroom" => CurrentModernAdventureStatus(),
+            "tower-defense" => $"Wave {preferences.TowerDefense?.Wave ?? 0}/15 · {preferences.TowerDefense?.Phase ?? "planning"}",
             _ => null,
         });
         return new
@@ -73,6 +77,9 @@ public partial class MainWindow
             AdventureSession = modernAdventureSession?.Id ?? string.Empty,
             AdventureRevision = modernAdventureSession?.Revision ?? 0L,
             Adventure = modernAdventure?.Snapshot(),
+            TowerDefenseSession = modernTowerDefenseSession?.Id ?? string.Empty,
+            TowerDefenseRevision = modernTowerDefenseSession?.Revision ?? 0L,
+            TowerDefense = modernTowerDefense?.Snapshot(),
             Language = Localization.Language == UiLanguagePreference.German ? "de" : "en",
             MusicEnabled = preferences.Presentation("chill-lounge").MusicEnabled,
             SoundEnabled = preferences.Presentation("chill-lounge").SoundEnabled,
@@ -131,6 +138,7 @@ public partial class MainWindow
         modernMemorySession = new ModernMemorySession();
         modernJigsawSession = new ModernJigsawSession();
         modernAdventureSession = new ModernAdventureSession();
+        modernTowerDefenseSession = new ModernTowerDefenseSession();
         modernLoungeView = new ModernLoungeView(() => CreateModernLoungeSnapshot(),
             OnModernLoungeGameSelected, ApplyModernSudokuCommand, CheckpointModernSudoku,
             ApplyModernSolitaireCommand, CheckpointModernSolitaire,
@@ -138,6 +146,7 @@ public partial class MainWindow
             ApplyModernMemoryCommand, CheckpointModernMemory,
             ApplyModernJigsawCommand, CheckpointModernJigsaw,
             ApplyModernAdventureCommand,
+            ApplyModernTowerDefenseCommand, TickModernTowerDefense,
             CloseModernLounge, OnModernLoungeFailed, OpenModernCaseBoardWindow);
         MountModernSurface(modernLoungeView);
         if (lobby is not null) lobby.Visibility = Visibility.Collapsed;
@@ -167,7 +176,7 @@ public partial class MainWindow
     {
         if (!ModernLoungeOpen) return;
         // The user selected this song for the lounge menu, not individual games.
-        if (id is "sudoku" or "solitaire" or "word-search" or "memory" or "jigsaw")
+        if (id is "sudoku" or "solitaire" or "word-search" or "memory" or "jigsaw" or "tower-defense")
             SetModernLoungeMenuMusic(false);
         if (id == "sudoku")
         {
@@ -245,7 +254,13 @@ public partial class MainWindow
             modernLoungeView?.Refresh();
             return;
         }
-        // All six catalog activities have an in-page React route. An unknown ID
+        if (id == "tower-defense")
+        {
+            modernTowerDefense ??= new ModernTowerDefenseService(preferences.TowerDefense, SaveModernTowerDefenseProgress);
+            modernLoungeView?.Refresh();
+            return;
+        }
+        // All seven catalog activities have an in-page React route. An unknown ID
         // is not a request to create or navigate to an old WPF game.
         StatusText.Text = "Unsupported Chill Lounge activity.";
     }
@@ -574,6 +589,50 @@ public partial class MainWindow
         }
     }
 
+    private void SaveModernTowerDefenseProgress(TdState state)
+    {
+        AppPreferences previous = preferences;
+        preferences = preferences with { TowerDefense = state };
+        try { if (!testSession) SavePreferences(); }
+        catch { preferences = previous; throw; }
+    }
+
+    private ModernTowerDefenseReply ApplyModernTowerDefenseCommand(ModernTowerDefenseCommand command)
+    {
+        if (modernTowerDefenseSession is null || modernTowerDefense is null)
+            return new ModernTowerDefenseReply(command.RequestId, false, "Tower Defense is not open.", 0);
+        return modernTowerDefenseSession.Execute(command, request =>
+        {
+            try
+            {
+                var result = modernTowerDefense.Execute(request);
+                if (result.Success && request.Action == "tower.exit")
+                {
+                    modernTowerDefense = null;
+                    SetModernLoungeMenuMusic(true);
+                }
+                return result;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+                or InvalidOperationException or ArgumentException)
+            {
+                return (false, ex is IOException or UnauthorizedAccessException
+                    ? "Tower Defense could not save. The previous position remains stored."
+                    : ex.Message);
+            }
+        });
+    }
+
+    private bool TickModernTowerDefense()
+    {
+        try { return modernTowerDefense?.Tick() ?? false; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            StatusText.Text = "Tower Defense autosave failed: " + ex.Message;
+            return false;
+        }
+    }
+
     private void OnModernLoungeFailed()
     {
         if (modernLoungeView?.Failed != true || !IsLoaded) return;
@@ -597,6 +656,7 @@ public partial class MainWindow
             ApplyModernSudokuCommand, () => { }, ApplyModernSolitaireCommand, () => { },
             ApplyModernWordSearchCommand, () => { }, ApplyModernMemoryCommand, () => { },
             ApplyModernJigsawCommand, () => { }, ApplyModernAdventureCommand,
+            ApplyModernTowerDefenseCommand, () => false,
             () => host.Close(), () => host.Close(), boardOnly: true);
         host.Content = view;
         host.Closed += (_, _) => { view.Dispose(); service.DetachedBoardOpen = false; modernCaseBoardWindow = null; modernLoungeView?.Refresh(); };
@@ -642,6 +702,16 @@ public partial class MainWindow
         }
         modernJigsaw = null;
         modernJigsawSession = null;
+        if (modernTowerDefense is not null)
+        {
+            try { modernTowerDefense.Checkpoint(); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                StatusText.Text = "Tower Defense save failed: " + ex.Message;
+            }
+        }
+        modernTowerDefense = null;
+        modernTowerDefenseSession = null;
         modernAdventure = null;
         modernAdventureSession = null;
         modernAdventureSoundtrack = false;
