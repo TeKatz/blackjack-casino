@@ -78,6 +78,7 @@
     <Compile Include="../../src/BlackjackCasino.Desktop/DailyLoginClaimAudio.cs" Link="Audio/DailyLoginClaimAudio.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/CasinoAudio.cs" Link="Audio/CasinoAudio.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/SlotAudio.cs" Link="Audio/SlotAudio.cs" />
+    <Compile Include="../../src/BlackjackCasino.Desktop/NineLivesAudio.cs" Link="Audio/NineLivesAudio.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\BlackjackCasino.Core\BlackjackCasino.Core.csproj" />
