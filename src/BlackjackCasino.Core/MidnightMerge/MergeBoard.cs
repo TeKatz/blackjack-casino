@@ -107,6 +107,9 @@ public sealed class MergeBoard
             var order = state.Orders.FirstOrDefault(x => x.Id == orderId && x.Status == "active");
             if (order is null) return new(MergeOutcome.UnknownDefinition);
             var definition = catalog.Orders.Single(x => x.Id == order.DefinitionId);
+            // Future-region orders must not let early materials bypass restoration unlocks.
+            MergeArea area = catalog.Areas.Single(x => x.Id == definition.AreaId);
+            if (state.RenovationPoints < area.Milestones[0].Points) return new(MergeOutcome.Locked);
             var required = MergeOrders.SelectRequired(state, definition);
             if (required is null) return new(MergeOutcome.MissingItems);
             var next = Copy(state) with { RenovationPoints = checked(state.RenovationPoints + definition.Reward) };

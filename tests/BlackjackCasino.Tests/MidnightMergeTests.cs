@@ -218,7 +218,11 @@ public sealed class MidnightMergeTests
     {
         foreach (var item in MergeCatalog.Default.Items.Values.Where(x => x.MergeResult is null))
         {
-            var board = With(Enumerable.Range(0, 42).Select(p => new MergeItemInstance(Guid.NewGuid(), item.Id, p)).ToArray());
+            var board = new MergeBoard(new MergeGameState
+            {
+                RenovationPoints = 49800,
+                Items = Enumerable.Range(0, 42).Select(p => new MergeItemInstance(Guid.NewGuid(), item.Id, p)).ToList(),
+            });
             var order = board.Snapshot.Orders.First(x => MergeOrders.SelectRequired(board.Snapshot, MergeCatalog.Default.Orders.Single(d => d.Id == x.DefinitionId)) is not null);
             Assert.True(board.TryComplete(order.Id).Success);
             Assert.True(board.CanSpawn("chip-case"));

@@ -90,4 +90,72 @@
   <data name="Merge.Drink6" xml:space="preserve"><value>Reserve bottle</value></data>
   <data name="Merge.Drink7" xml:space="preserve"><value>Champagne service</value></data>
   <data name="Merge.Drink8" xml:space="preserve"><value>Midnight reserve</value></data>
+  <data name="Merge.AreaFloor" xml:space="preserve"><value>Gaming floor</value></data>
+  <data name="Merge.StageFloor1" xml:space="preserve"><value>Sealed gaming floor</value></data>
+  <data name="Merge.StageFloor2" xml:space="preserve"><value>Carpets stripped</value></data>
+  <data name="Merge.StageFloor3" xml:space="preserve"><value>Gaming tables installed</value></data>
+  <data name="Merge.StageFloor4" xml:space="preserve"><value>Gaming floor reopened</value></data>
+  <data name="Merge.AreaConservatory" xml:space="preserve"><value>Glass conservatory</value></data>
+  <data name="Merge.StageConservatory1" xml:space="preserve"><value>Overgrown conservatory</value></data>
+  <data name="Merge.StageConservatory2" xml:space="preserve"><value>Glass roof restored</value></data>
+  <data name="Merge.StageConservatory3" xml:space="preserve"><value>Indoor garden planted</value></data>
+  <data name="Merge.StageConservatory4" xml:space="preserve"><value>Conservatory illuminated</value></data>
+  <data name="Merge.AreaLounge" xml:space="preserve"><value>Private lounge</value></data>
+  <data name="Merge.StageLounge1" xml:space="preserve"><value>Shuttered lounge</value></data>
+  <data name="Merge.StageLounge2" xml:space="preserve"><value>Walls and parquet restored</value></data>
+  <data name="Merge.StageLounge3" xml:space="preserve"><value>Lounge furnished</value></data>
+  <data name="Merge.StageLounge4" xml:space="preserve"><value>Private lounge reopened</value></data>
+  <data name="Merge.AreaGallery" xml:space="preserve"><value>Art gallery</value></data>
+  <data name="Merge.StageGallery1" xml:space="preserve"><value>Darkened gallery</value></data>
+  <data name="Merge.StageGallery2" xml:space="preserve"><value>Frames and walls restored</value></data>
+  <data name="Merge.StageGallery3" xml:space="preserve"><value>Exhibits installed</value></data>
+  <data name="Merge.StageGallery4" xml:space="preserve"><value>Gallery unveiled</value></data>
+  <data name="Merge.AreaTheater" xml:space="preserve"><value>Midnight theater</value></data>
+  <data name="Merge.StageTheater1" xml:space="preserve"><value>Curtain down</value></data>
+  <data name="Merge.StageTheater2" xml:space="preserve"><value>Stage repaired</value></data>
+  <data name="Merge.StageTheater3" xml:space="preserve"><value>Lighting rig installed</value></data>
+  <data name="Merge.StageTheater4" xml:space="preserve"><value>Opening night</value></data>
+  <data name="Merge.AreaTerrace" xml:space="preserve"><value>Sky terrace</value></data>
+  <data name="Merge.StageTerrace1" xml:space="preserve"><value>Rooftop closed</value></data>
+  <data name="Merge.StageTerrace2" xml:space="preserve"><value>Deck reinforced</value></data>
+  <data name="Merge.StageTerrace3" xml:space="preserve"><value>Pergola illuminated</value></data>
+  <data name="Merge.StageTerrace4" xml:space="preserve"><value>Sky terrace opened</value></data>
+  <data name="Merge.AreaSuites" xml:space="preserve"><value>VIP suites</value></data>
+  <data name="Merge.StageSuites1" xml:space="preserve"><value>Suites locked</value></data>
+  <data name="Merge.StageSuites2" xml:space="preserve"><value>Interiors restored</value></data>
+  <data name="Merge.StageSuites3" xml:space="preserve"><value>Luxury fittings installed</value></data>
+  <data name="Merge.StageSuites4" xml:space="preserve"><value>VIP suites ready</value></data>
+  <data name="Merge.AreaObservatory" xml:space="preserve"><value>Rooftop observatory</value></data>
+  <data name="Merge.StageObservatory1" xml:space="preserve"><value>Silent observatory</value></data>
+  <data name="Merge.StageObservatory2" xml:space="preserve"><value>Dome mechanism restored</value></data>
+  <data name="Merge.StageObservatory3" xml:space="preserve"><value>Telescope aligned</value></data>
+  <data name="Merge.StageObservatory4" xml:space="preserve"><value>Midnight sky unveiled</value></data>
+  <data name="Merge.ProducerDecor" xml:space="preserve"><value>Decor supply cabinet</value></data>
+  <data name="Merge.Decor1" xml:space="preserve"><value>Polishing kit</value></data>
+  <data name="Merge.Decor2" xml:space="preserve"><value>Gilded fitting</value></data>
+  <data name="Merge.Decor3" xml:space="preserve"><value>Velvet upholstery</value></data>
+  <data name="Merge.Decor4" xml:space="preserve"><value>Brass lamp</value></data>
+  <data name="Merge.Decor5" xml:space="preserve"><value>Marble centerpiece</value></data>
+  <data name="Merge.Decor6" xml:space="preserve"><value>Grand chandelier</value></data>
+  <data name="Merge.ProducerGarden" xml:space="preserve"><value>Garden supply chest</value></data>
+  <data name="Merge.Garden1" xml:space="preserve"><value>Seed packet</value></data>
+  <data name="Merge.Garden2" xml:space="preserve"><value>Ceramic planter</value></data>
+  <data name="Merge.Garden3" xml:space="preserve"><value>Leafy sapling</value></data>
+  <data name="Merge.Garden4" xml:space="preserve"><value>Sculpted topiary</value></data>
+  <data name="Merge.Garden5" xml:space="preserve"><value>Floral arch</value></data>
+  <data name="Merge.Garden6" xml:space="preserve"><value>Living garden wall</value></data>
+  <data name="Merge.ProducerStage" xml:space="preserve"><value>Theater prop trunk</value></data>
+  <data name="Merge.Stage1" xml:space="preserve"><value>Stage fabric</value></data>
+  <data name="Merge.Stage2" xml:space="preserve"><value>Velvet drape</value></data>
+  <data name="Merge.Stage3" xml:space="preserve"><value>Scenery prop</value></data>
+  <data name="Merge.Stage4" xml:space="preserve"><value>Spotlight assembly</value></data>
+  <data name="Merge.Stage5" xml:space="preserve"><value>Grand stage set</value></data>
+  <data name="Merge.Stage6" xml:space="preserve"><value>Golden theater curtain</value></data>
+  <data name="Merge.ProducerSky" xml:space="preserve"><value>Observatory kit</value></data>
+  <data name="Merge.Sky1" xml:space="preserve"><value>Optics toolkit</value></data>
+  <data name="Merge.Sky2" xml:space="preserve"><value>Brass lens</value></data>
+  <data name="Merge.Sky3" xml:space="preserve"><value>Precision mount</value></data>
+  <data name="Merge.Sky4" xml:space="preserve"><value>Astronomy instrument</value></data>
+  <data name="Merge.Sky5" xml:space="preserve"><value>Telescope assembly</value></data>
+  <data name="Merge.Sky6" xml:space="preserve"><value>Celestial telescope</value></data>
 </root>
