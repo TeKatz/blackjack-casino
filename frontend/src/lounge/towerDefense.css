@@ -121,14 +121,14 @@
 
 /* Bastion desktop mode: the tactical map, controls and workshop share one viewport.
    Small windows keep normal scrolling rather than sacrificing readable controls. */
-@media (min-width:1100px) and (min-height:630px){
+@media (min-width:900px) and (min-height:630px){
  .bastion-open{height:100dvh;min-height:0;overflow:hidden}
  .bastion-open .chill-header{min-height:54px;height:54px;padding:4px 20px}
  .bastion-open .chill-mark{height:38px;width:38px;font-size:25px}
  .bastion-open .chill-brand strong{font-size:20px}
  .bastion-open .chill-content{height:calc(100dvh - 54px);max-width:none;min-height:0;padding:6px 14px;overflow:hidden}
  .bastion-open .td-phase2{height:100%;padding:0;display:flex;flex-direction:column;gap:6px;overflow:hidden}
- .bastion-open .td-phase2 .td-heading{flex:0 0 auto;min-height:0;margin:0;align-items:center}
+ .bastion-open .td-phase2 .td-heading{flex:0 0 auto;flex-direction:row;min-height:0;margin:0;align-items:center}
  .bastion-open .td-phase2 .td-eyebrow{font-size:9px!important}
  .bastion-open .td-phase2 h1{font-size:clamp(25px,2.5vw,36px);margin:2px 0 3px}
  .bastion-open .td-phase2 .td-heading p{font-size:10px}
@@ -167,7 +167,7 @@
  .bastion-open .td-phase2 .td-save-note{margin-top:3px;padding-top:5px;line-height:1.35;font-size:9px}
  .bastion-open .td-phase2 .td-error{margin:0;padding:5px 8px;flex:0 0 auto}
 }
-@media (min-width:1100px) and (max-height:740px){
+@media (min-width:900px) and (max-height:740px){
  .bastion-open .td-phase2 .td-caption{display:none}
  .bastion-open .td-phase2 .td-heading .td-eyebrow,
  .bastion-open .td-phase2 .td-heading p{display:none}
