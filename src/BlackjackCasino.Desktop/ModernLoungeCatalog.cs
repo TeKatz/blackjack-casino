@@ -16,6 +16,7 @@ internal static class ModernLoungeCatalog
         "memory",
         "jigsaw",
         "tales-backroom",
+        "tower-defense",
     ];
 
     internal static IReadOnlyList<ModernLoungeGame> Create(Func<string, string?> status)
