@@ -305,6 +305,7 @@ public sealed class ChallengeClaimAllTests
             case ChallengeMetric.MergeRenovationPoints: profile.MidnightMerge.RenovationPointsEarned = (long)value; break;
             case ChallengeMetric.WordSearchCompleted: profile.WordSearch.CompletedPuzzles = (long)value; break;
             case ChallengeMetric.WordSearchWordsFound: profile.WordSearch.WordsFound = (long)value; break;
+            case ChallengeMetric.WordSearchNoHintCompleted: profile.WordSearch.NoHintCompletions = (long)value; break;
             case ChallengeMetric.WordSearchExpertCompleted: profile.WordSearch.ExpertCompleted = (long)value; break;
             case ChallengeMetric.WordSearchMasterCompleted: profile.WordSearch.MasterCompleted = (long)value; break;
             case ChallengeMetric.MemoryGamesCompleted: profile.Memory.CompletedGames = (long)value; break;
