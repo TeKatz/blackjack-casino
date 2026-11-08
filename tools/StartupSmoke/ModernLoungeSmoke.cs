@@ -26,11 +26,24 @@ internal static class ModernLoungeSmoke
         Require(LoungeHostedGameRegistry.Snapshot.Count == 0,
             "Opening React Lounge must not register or instantiate WPF rollback modules.");
         await UntilAsync(async () => await web.ExecuteScriptAsync(
-            "document.querySelectorAll('.chill-card').length") == "6",
-            "React Lounge must show all six activities.");
+            "document.querySelectorAll('.chill-card').length") == "7",
+            "React Lounge must show all seven activities.");
         Require(await web.ExecuteScriptAsync(
             "Boolean(document.querySelector('.chill-tales-backroom'))") == "true",
             "The adventure entry was lost during the Sudoku migration.");
+
+        Require(await web.ExecuteScriptAsync(
+            "Boolean(document.querySelector('.chill-tower-defense .lounge-bastion-preview'))") == "true",
+            "The custom Tower Defense entry is missing.");
+        await web.ExecuteScriptAsync("document.querySelector('.chill-tower-defense')?.click()");
+        await UntilAsync(async () => await web.ExecuteScriptAsync(
+            "Boolean(document.querySelector('.td-map canvas'))") == "true",
+            "Tower Defense PixiJS battlefield did not render.");
+        await Capture(web, Path.Combine(output, "modern-tower-defense.png"));
+        await web.ExecuteScriptAsync("document.querySelector('.chill-exit')?.click()");
+        await UntilAsync(async () => await web.ExecuteScriptAsync(
+            "document.querySelectorAll('.chill-card').length") == "7",
+            "Tower Defense did not navigate back to Chill Lounge.");
 
         await web.ExecuteScriptAsync(
             "[...document.querySelectorAll('.chill-filter button')]"
@@ -130,7 +143,7 @@ internal static class ModernLoungeSmoke
             "React Lounge could not return to the casino.");
 
         File.WriteAllText(Path.Combine(output, "modern-lounge-result.txt"),
-            "PASS: React six-game Lounge; six Sudoku difficulty levels and Daily; 81 cells; notes; undo/redo; wrong-value C# feedback; native hint; persisted resume; navigation.");
+            "PASS: React seven-game Lounge and Tower Defense battlefield; six Sudoku difficulty levels and Daily; 81 cells; notes; undo/redo; wrong-value C# feedback; native hint; persisted resume; navigation.");
     }
 
     private static async Task Capture(CoreWebView2 web, string path)
