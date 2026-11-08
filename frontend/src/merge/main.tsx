@@ -161,7 +161,9 @@ function App(){
  const selectedDef=selectedItem&&definitions.get(selectedItem.definitionId);
  const labels=state?.labels;
  const lang=state?.language??'en',t=dictionary[lang];
- const disabled=!!pending||uncertain;
+ // In-flight requests are already guarded by send, onCell and onDrop.
+ // Disabling every button during a save caused the global disabled opacity flicker.
+ const disabled=uncertain;
  const available=state?.capacity!==undefined?state.capacity-state.items.length:42;
  const displayedRoom=state
    ?state.restoration.areas.find(area=>area.areaId===previewArea)??state.restoration
@@ -216,7 +218,7 @@ function App(){
    </header>
    {!snap||!state||!isMergeSnapshot(snap)?<div className="merge-loading">
      <div className="merge-loading-symbol">◈</div><strong>{t.restoring}</strong></div>:
-   <div className="merge-scroll">
+   <div className="merge-scroll" aria-busy={!!pending}>
      <section className={'merge-restoration'+(celebration?' celebrating':'')}
        aria-label={t.estate}>
        <div className="merge-room-head">
@@ -324,10 +326,27 @@ function App(){
                   t.unlockedAt+' '+producer.unlockPoints.toLocaleString(lang)}</small></span>
                <span className="merge-producer-icon">{producer.unlocked?'+':'⌑'}</span>
              </button>)}
-             <div className="merge-help">
-               <details><summary>{labels?.howToPlay}</summary><p>{t.help}</p></details>
-               {selectedDef&&<div className="merge-selection" data-testid="merge-selected">
-                 <span>{t.selected}</span><strong>{selectedDef.name}</strong><small>{t.deselect}</small></div>}
+             <div className="merge-supply-tools">
+               <div className="merge-help">
+                 <details data-testid="merge-how-to-play">
+                   <summary>{labels?.howToPlay}</summary>
+                   <p>{t.help}</p>
+                 </details>
+                 {selectedDef&&<div className="merge-selection" data-testid="merge-selected">
+                   <span>{t.selected}</span><strong>{selectedDef.name}</strong><small>{t.deselect}</small>
+                 </div>}
+               </div>
+               <div className="merge-settings">
+                 <button type="button" data-testid="merge-settings" aria-expanded={settings}
+                   onClick={()=>setSettings(x=>!x)}>⚙ {t.settings}</button>
+                 {settings&&<div className="merge-settings-panel" data-testid="merge-settings-panel">
+                   <label><input type="checkbox" checked={state.soundEnabled} disabled={disabled}
+                     onChange={e=>send({action:'sound.set',value:e.target.checked?'true':'false'})}/>{t.sound}</label>
+                   <label><input type="checkbox" checked={state.animationsEnabled} disabled={disabled}
+                     onChange={e=>send({action:'animations.set',value:e.target.checked?'true':'false'})}/>{t.motion}</label>
+                   <small>{t.soundHint}</small>
+                 </div>}
+               </div>
              </div>
            </div>
          </div>
@@ -360,31 +379,10 @@ function App(){
          </div>
        </aside>
      </div>
-     <footer className="merge-footer">
-       <div className="merge-status" role="status" aria-live="polite">
-         <small>{t.status} <span>{pending?' · SAVING':''}</span></small>
-         <strong data-testid="merge-feedback">{error??state.feedback}</strong>
-         {state.progressionSaveFailed&&<p className="merge-warning">{labels?.progressionSaveFailed}</p>}
-       </div>
-       <div className="merge-rewards">{state.playerXp>0||state.seasonXp>0
-         ?<strong>+{state.playerXp} {t.earned} · +{state.seasonXp} {t.season}</strong>
-         :<span>{labels?.xpHint}</span>}
-         <small>{state.profile?'P'+state.profile.prestige+' · LV '+state.profile.level+
-            ' · '+state.profile.levelExperience+' / '+state.profile.nextLevelExperience+' XP'
-            :labels?.profileUnavailable}</small></div>
-       <div className="merge-settings">
-         <button data-testid="merge-settings" onClick={()=>setSettings(x=>!x)}>
-           ⚙ {t.settings}</button>
-         {settings&&<div className="merge-settings-panel" data-testid="merge-settings-panel">
-           <label><input type="checkbox" checked={state.soundEnabled} disabled={disabled}
-             onChange={e=>send({action:'sound.set',value:e.target.checked?'true':'false'})}/>{t.sound}</label>
-           <label><input type="checkbox" checked={state.animationsEnabled} disabled={disabled}
-             onChange={e=>send({action:'animations.set',value:e.target.checked?'true':'false'})}/>{t.motion}</label>
-           <small>{t.soundHint}</small>
-         </div>}
-       </div>
-     </footer>
-     <div className="merge-bottom-note">{t.disk}</div>
+     {(error||state.progressionSaveFailed)&&<div className="merge-save-alert" role="alert"
+       data-testid="merge-save-alert">
+       {error??labels?.progressionSaveFailed}
+     </div>}
    </div>}
   </div>;
 }

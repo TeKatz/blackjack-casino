@@ -387,3 +387,66 @@ button:disabled{opacity:.45;cursor:default}button:focus-visible,input:focus-visi
 @media(prefers-reduced-motion:reduce){
  .merge-room-art *, .merge-room-art .merge-restored-atmosphere *{animation:none!important;transition:none!important}
 }
+
+
+/* The workshop footer is gone: allocate the space to readable supply sources.
+   Workbench and controls remain centered; orders are the only vertical scroller. */
+@media(min-width:1000px) and (min-height:600px){
+ .merge-scroll{grid-template-rows:auto minmax(0,1fr);row-gap:6px}
+ .merge-workspace{grid-template-columns:minmax(0,1.64fr) minmax(290px,.84fr)}
+ .merge-board-section{grid-template-columns:minmax(0,1fr) clamp(208px,17vw,256px);gap:10px;align-items:center}
+ .merge-board{max-height:100%;height:auto;width:min(100%,calc(100cqh * 7 / 6));margin-inline:auto}
+ .merge-supply{justify-content:center;align-items:stretch;gap:7px;overflow:visible;min-height:0}
+ .merge-supply h3{font-size:12px;margin:0 0 1px;line-height:1.25;text-align:left}
+ .merge-producer{flex:0 0 53px;min-height:53px;max-height:none;padding:6px 8px;gap:8px;border-radius:8px}
+ .merge-producer-art{width:36px;height:36px;flex:0 0 36px}
+ .merge-producer-text{min-width:0;display:flex;flex-direction:column;justify-content:center}
+ .merge-producer-text strong{font-size:11px;line-height:1.22;overflow-wrap:anywhere}
+ .merge-producer-text small{font-size:9px;margin-top:2px;line-height:1.25}
+ .merge-producer-icon{flex:0 0 auto;font-size:18px}
+ .merge-supply-tools{flex:0 0 auto;display:flex;flex-direction:column;gap:7px;margin-top:3px}
+ .merge-help{margin:0;padding:8px 9px;overflow:visible!important;max-height:none!important}
+ .merge-help details{font-size:11px}
+ .merge-help summary{font-size:11px;line-height:1.4}
+ .merge-help details[open] p{position:static;bottom:auto;right:auto;width:auto;max-width:100%;
+   margin:7px 0 1px;padding:7px 8px;border:1px solid #728b7a55;border-radius:6px;
+   background:#152d33;box-shadow:none;font-size:10px;line-height:1.45;color:#cbd7ca;
+   white-space:normal;overflow-wrap:break-word}
+ .merge-settings{position:relative;width:100%;align-self:stretch}
+ .merge-settings>button{width:100%;min-height:35px;padding:6px 12px;font-size:11px;
+   background:#24443f;border:1px solid #91a17d;border-radius:8px;text-align:center}
+ .merge-settings-panel{z-index:25;right:0;bottom:calc(100% + 7px);
+   width:min(270px,calc(100vw - 32px));box-shadow:0 12px 32px #000d}
+ .merge-footer,.merge-bottom-note{display:none}
+}
+/* Do not fade/redraw the whole SVG when creating an item; animate a local ring. */
+.merge-cell.created .merge-item-art{animation:none!important}
+.merge-cell.created::after{content:'';position:absolute;inset:3px;border-radius:6px;
+ border:2px solid #e8d9a8;box-shadow:0 0 10px #ddc98570;pointer-events:none;
+ animation:merge-created-ring .55s ease-out forwards}
+@keyframes merge-created-ring{from{opacity:.8;transform:scale(.9)}to{opacity:0;transform:scale(1.05)}}
+.merge-save-alert{position:absolute;z-index:50;right:18px;bottom:13px;
+ max-width:min(460px,calc(100vw - 36px));padding:10px 14px;
+ border-radius:9px;border:1px solid #e6b68a;background:#4b2c2a;
+ box-shadow:0 8px 32px #0009;color:#ffe2ca;font-size:12px;line-height:1.4}
+@media(min-width:1000px) and (min-height:600px) and (max-height:760px){
+ .merge-supply{gap:5px}
+ .merge-producer{flex-basis:47px;min-height:47px;padding:4px 6px}
+ .merge-producer-art{width:32px;height:32px;flex-basis:32px}
+ .merge-producer-text strong{font-size:10px}
+ .merge-producer-text small{font-size:8px}
+ .merge-supply-tools{gap:5px;margin-top:0}
+ .merge-help{padding:6px 8px}
+ .merge-settings>button{min-height:31px;padding:5px 8px}
+}
+@media(max-width:999px){
+ .merge-supply-tools{display:flex;flex-direction:column;gap:7px}
+ .merge-help details[open] p{position:static!important;width:auto!important;max-width:100%;
+   margin:7px 0;padding:8px;white-space:normal;overflow-wrap:break-word}
+ .merge-settings{width:100%}
+ .merge-settings>button{width:100%}
+ .merge-save-alert{bottom:12px}
+}
+@media(prefers-reduced-motion:reduce){
+ .merge-cell.created::after{animation:none;opacity:0}
+}
