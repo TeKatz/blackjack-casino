@@ -53,7 +53,9 @@ internal static class ModernMergeSnapshot
             Orders = state.Orders.Select(order =>
             {
                 MergeOrderDefinition definition = catalog.Orders.Single(x => x.Id == order.DefinitionId);
-                bool available = MergeOrders.SelectRequired(state, definition) is not null;
+                MergeArea orderArea = catalog.Areas.Single(x => x.Id == definition.AreaId);
+                bool unlocked = state.RenovationPoints >= orderArea.Milestones[0].Points;
+                bool available = unlocked && MergeOrders.SelectRequired(state, definition) is not null;
                 return new
                 {
                     Id = order.Id.ToString("D"),
@@ -61,7 +63,7 @@ internal static class ModernMergeSnapshot
                     definition.AreaId,
                     definition.Reward,
                     Available = available,
-                    Visible = definition.AreaId == area.Id || available,
+                    Visible = unlocked && (definition.AreaId == area.Id || available),
                     Requirements = definition.Requirements.Select(requirement => new
                     {
                         requirement.DefinitionId, requirement.Count,
