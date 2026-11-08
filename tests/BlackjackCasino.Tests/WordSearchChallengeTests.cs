@@ -5,16 +5,19 @@ namespace BlackjackCasino.Tests;
 
 public sealed class WordSearchChallengeTests
 {
-    // The expanded 288-puzzle offline catalog keeps previous milestone IDs and raises reachable endgame goals.
+    // The 576-puzzle discovery catalog keeps previous milestone IDs and raises reachable endgame goals.
     [Fact]
     public void CatalogUsesReachableWordSearchGoalsAndNeverRewardsSpeed()
     {
         ChallengeDefinition[] challenges = ChallengeCatalog.For(ChallengeCategory.WordSearch).ToArray();
-        Assert.Equal(26, challenges.Length);
+        Assert.Equal(31, challenges.Length);
         Assert.Contains(challenges, challenge => challenge.Id == "word-search-first");
         Assert.Contains(challenges, challenge => challenge.Id == "word-search-144" && !challenge.IsEndgame);
-        Assert.Contains(challenges, challenge => challenge.Id == "word-search-288" && challenge.IsEndgame);
-        Assert.Contains(challenges, challenge => challenge.Id == "word-search-words-2736" && challenge.IsEndgame);
+        Assert.Contains(challenges, challenge => challenge.Id == "word-search-288" && !challenge.IsEndgame);
+        Assert.Contains(challenges, challenge => challenge.Id == "word-search-words-2736" && !challenge.IsEndgame);
+        foreach(string id in new []{"word-search-576","word-search-words-5472",
+            "word-search-clean-400","word-search-expert-96","word-search-master-96"})
+            Assert.Contains(challenges, challenge=>challenge.Id==id && challenge.IsEndgame);
         Assert.All(challenges, challenge => Assert.True(challenge.CoinReward > 0));
 
         var maxima = new Dictionary<ChallengeMetric, decimal>

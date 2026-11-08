@@ -500,4 +500,22 @@
   <data name="Challenge.prestige-20.Description" xml:space="preserve"><value>Reach Player Prestige 20.</value></data>
   <data name="Challenge.prestige-25.Name" xml:space="preserve"><value>Midnight Ascendant</value></data>
   <data name="Challenge.prestige-25.Description" xml:space="preserve"><value>Reach Player Prestige 25.</value></data>
+  <data name="Challenge.word-search-288.Name" xml:space="preserve"><value>The Second Cabinet</value></data>
+  <data name="Challenge.word-search-288.Description" xml:space="preserve"><value>Complete 288 unique Word Search puzzles.</value></data>
+  <data name="Challenge.word-search-words-2736.Name" xml:space="preserve"><value>The Second Dictionary</value></data>
+  <data name="Challenge.word-search-words-2736.Description" xml:space="preserve"><value>Find 2,736 target words across completed Word Search puzzles.</value></data>
+  <data name="Challenge.word-search-expert-48.Name" xml:space="preserve"><value>Expanded Expert Collection</value></data>
+  <data name="Challenge.word-search-expert-48.Description" xml:space="preserve"><value>Complete 48 Expert Word Search puzzles.</value></data>
+  <data name="Challenge.word-search-master-48.Name" xml:space="preserve"><value>The Last Hidden Word</value></data>
+  <data name="Challenge.word-search-master-48.Description" xml:space="preserve"><value>Complete 48 Master Word Search puzzles.</value></data>
+  <data name="Challenge.word-search-576.Name" xml:space="preserve"><value>Every Hidden Page</value></data>
+  <data name="Challenge.word-search-576.Description" xml:space="preserve"><value>Complete all 576 unique Word Search puzzles.</value></data>
+  <data name="Challenge.word-search-words-5472.Name" xml:space="preserve"><value>The Complete Lexicon</value></data>
+  <data name="Challenge.word-search-words-5472.Description" xml:space="preserve"><value>Find 5,472 target words across all 576 Word Search puzzles.</value></data>
+  <data name="Challenge.word-search-clean-400.Name" xml:space="preserve"><value>The Unassisted Archive</value></data>
+  <data name="Challenge.word-search-clean-400.Description" xml:space="preserve"><value>Complete 400 Word Search puzzles without using hints.</value></data>
+  <data name="Challenge.word-search-expert-96.Name" xml:space="preserve"><value>The Expert Archive</value></data>
+  <data name="Challenge.word-search-expert-96.Description" xml:space="preserve"><value>Complete all 96 Expert Word Search puzzles.</value></data>
+  <data name="Challenge.word-search-master-96.Name" xml:space="preserve"><value>The Final Word</value></data>
+  <data name="Challenge.word-search-master-96.Description" xml:space="preserve"><value>Complete all 96 Master Word Search puzzles.</value></data>
 </root>

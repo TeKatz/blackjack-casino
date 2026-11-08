@@ -500,4 +500,22 @@
   <data name="Challenge.prestige-20.Description" xml:space="preserve"><value>Erreiche Spieler-Prestige 20.</value></data>
   <data name="Challenge.prestige-25.Name" xml:space="preserve"><value>Aufstieg der Mitternacht</value></data>
   <data name="Challenge.prestige-25.Description" xml:space="preserve"><value>Erreiche Spieler-Prestige 25.</value></data>
+  <data name="Challenge.word-search-288.Name" xml:space="preserve"><value>Die zweite Sammlung</value></data>
+  <data name="Challenge.word-search-288.Description" xml:space="preserve"><value>Löse 288 einzigartige Wortsuchrätsel.</value></data>
+  <data name="Challenge.word-search-words-2736.Name" xml:space="preserve"><value>Das zweite Wörterbuch</value></data>
+  <data name="Challenge.word-search-words-2736.Description" xml:space="preserve"><value>Finde 2.736 Zielwörter in abgeschlossenen Wortsuchrätseln.</value></data>
+  <data name="Challenge.word-search-expert-48.Name" xml:space="preserve"><value>Erweiterte Expertensammlung</value></data>
+  <data name="Challenge.word-search-expert-48.Description" xml:space="preserve"><value>Löse 48 Experten-Wortsuchrätsel.</value></data>
+  <data name="Challenge.word-search-master-48.Name" xml:space="preserve"><value>Das letzte verborgene Wort</value></data>
+  <data name="Challenge.word-search-master-48.Description" xml:space="preserve"><value>Löse 48 Meister-Wortsuchrätsel.</value></data>
+  <data name="Challenge.word-search-576.Name" xml:space="preserve"><value>Jede verborgene Seite</value></data>
+  <data name="Challenge.word-search-576.Description" xml:space="preserve"><value>Löse alle 576 einzigartigen Wortsuchrätsel.</value></data>
+  <data name="Challenge.word-search-words-5472.Name" xml:space="preserve"><value>Das vollständige Lexikon</value></data>
+  <data name="Challenge.word-search-words-5472.Description" xml:space="preserve"><value>Finde 5.472 Zielwörter in allen 576 Wortsuchrätseln.</value></data>
+  <data name="Challenge.word-search-clean-400.Name" xml:space="preserve"><value>Das Archiv ohne Hinweise</value></data>
+  <data name="Challenge.word-search-clean-400.Description" xml:space="preserve"><value>Löse 400 Wortsuchrätsel ohne Hinweise.</value></data>
+  <data name="Challenge.word-search-expert-96.Name" xml:space="preserve"><value>Das Expertenarchiv</value></data>
+  <data name="Challenge.word-search-expert-96.Description" xml:space="preserve"><value>Löse alle 96 Experten-Wortsuchrätsel.</value></data>
+  <data name="Challenge.word-search-master-96.Name" xml:space="preserve"><value>Das letzte Wort</value></data>
+  <data name="Challenge.word-search-master-96.Description" xml:space="preserve"><value>Löse alle 96 Meister-Wortsuchrätsel.</value></data>
 </root>
