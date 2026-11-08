@@ -56,6 +56,11 @@ internal static class ModernDiceSmokeHelper
             + "&&document.querySelectorAll('[data-testid^=\"dice-die-\"]').length===5"
             + "&&document.querySelectorAll('[data-testid^=\"dice-category-\"]').length===13)"),
             "The React dice table has no five dice or thirteen score categories.");
+        Require(await JavaScript(view!.Browser.CoreWebView2!,
+            "document.querySelectorAll('[data-testid=\\\"dice-flat-face\\\"]').length===5"
+            + "&&document.querySelectorAll('[data-testid=\\\"dice-rolling-3d\\\"]').length===0"
+            + "&&document.querySelectorAll('.md-cube-face').length===0"),
+            "Idle Midnight Dice must show five flat faces with zero 3D side panels.");
         return view!;
     }
     internal static async Task Click(CoreWebView2 web, string testId, bool requiresRevision = true)
