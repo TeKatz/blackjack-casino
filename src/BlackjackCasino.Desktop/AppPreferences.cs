@@ -37,6 +37,7 @@ internal sealed record AppPreferences
     public BlackjackCasino.Core.Memory.MemoryProgressState Memory { get; init; } = new();
     public BlackjackCasino.Core.Jigsaw.JigsawProgressState Jigsaw { get; init; } = new();
     public BlackjackCasino.Core.Adventure.AdventureProgressState Adventure { get; init; } = new();
+    public BlackjackCasino.Core.TowerDefense.TdState TowerDefense { get; init; } = new();
 
     public BlackjackCasino.Core.Empire.EmpireState Empire { get; init; } = new();
 
