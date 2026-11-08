@@ -9,8 +9,12 @@ export type WordSearchPuzzle={id:string;difficulty:WordSearchDifficulty;theme:st
  hint:WordSearchHint|null;hintsUsed:number;elapsedSeconds:number;completed:boolean;rewardXp:number};
 export type WordSearchResume={id:string;difficulty:WordSearchDifficulty;theme:string;
  found:number;total:number;elapsedSeconds:number};
+export type WordSearchDiscovery={word:string;theme:string;difficulty:WordSearchDifficulty;
+ puzzleId:string;discoveredAt:string};
+export type WordSearchFind={word:string;new:boolean;id:string};
 export type WordSearchState={screen:'library'|'game';catalogTotal:number;completedTotal:number;
  themeTotal:number;difficulties:WordSearchTier[];
+ discoveredWords:WordSearchDiscovery[];lastFind:WordSearchFind|null;
  stats:{completedPuzzles:number;wordsFound:number;noHintCompletions:number;
  expertCompleted:number;masterCompleted:number};
  resume:WordSearchResume|null;game:WordSearchPuzzle|null;notice:string;rewardNotice:string};
@@ -26,7 +30,16 @@ const guid=(v:unknown)=>typeof v==='string'&&/^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-
 const difficulty=(v:unknown):v is WordSearchDifficulty=>
  typeof v==='string'&&difficulties.some(d=>d===v);
 const word=(v:unknown)=>typeof v==='string'&&/^[A-Z]{3,13}$/.test(v);
-const count=(v:unknown,max=288)=>integer(v,max);
+const count=(v:unknown,max=576)=>integer(v,max);
+const discovery=(v:unknown):v is WordSearchDiscovery=>record(v)&&word(v.word)&&
+ typeof v.theme==='string'&&v.theme.length>0&&v.theme.length<=100&&
+ difficulty(v.difficulty)&&typeof v.puzzleId==='string'&&
+ /^word-search-(relaxed|easy|medium|hard|expert|master)-\d{3}$/.test(v.puzzleId)&&
+ typeof v.discoveredAt==='string'&&
+ /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d/.test(v.discoveredAt)&&
+ Number.isFinite(Date.parse(v.discoveredAt));
+const lastFind=(v:unknown):v is WordSearchFind=>record(v)&&word(v.word)&&
+ typeof v.new==='boolean'&&guid(v.id);
 const coordinates=(v:Record<string,unknown>,size:number)=>['startRow','startColumn','endRow','endColumn']
  .every(k=>integer(v[k],size-1))&&
  ((v.startRow===v.endRow||v.startColumn===v.endColumn)||
@@ -76,6 +89,11 @@ export function isWordSearchState(v:unknown):v is WordSearchState{
  count(v.catalogTotal)&&integer(v.themeTotal,100)&&count(v.completedTotal)&&v.completedTotal<=v.catalogTotal&&
  Array.isArray(v.difficulties)&&v.difficulties.length===6&&v.difficulties.every(tier)&&
  new Set(v.difficulties.map((t:WordSearchTier)=>t.difficulty)).size===6&&
+ Array.isArray(v.discoveredWords)&&v.discoveredWords.length<=4000&&v.discoveredWords.every(discovery)&&
+ new Set(v.discoveredWords.map((entry:WordSearchDiscovery)=>entry.word)).size===v.discoveredWords.length&&
+ (v.lastFind===null||(lastFind(v.lastFind)&&
+  (v.game===null||(record(v.game)&&Array.isArray(v.game.found)&&
+    v.game.found.includes(v.lastFind.word)))))&&
  (v.difficulties as WordSearchTier[]).reduce((sum,t)=>sum+t.total,0)===v.catalogTotal&&
  record(v.stats)&&integer(v.stats.completedPuzzles)&&integer(v.stats.wordsFound)&&
  integer(v.stats.noHintCompletions)&&integer(v.stats.expertCompleted)&&integer(v.stats.masterCompleted)&&

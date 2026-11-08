@@ -49,6 +49,43 @@ public static class WordSearchCatalog
         new("Mythic Tales", ["DRAGON", "PHOENIX", "GRIFFIN", "UNICORN", "GIANT", "FAIRY", "ELF", "DWARF", "QUEST", "MAGIC", "SPELL", "RUNE", "CASTLE", "FOREST", "SWORD", "SHIELD", "WIZARD", "KNIGHT", "CROWN", "GOBLIN", "POTION", "LEGEND", "TROLL", "ORACLE", "TEMPLE", "HERO"]),
     ];
 
+
+    // Wave III: twelve new bilingual discovery worlds with four variants each.
+    // IDs 001-048 and their banks/seeds are deliberately untouched.
+    private static readonly ThemeWords[] DiscoveryThemes =
+    [
+        new("Arctic Expedition", ["ARCTIC", "GLACIER", "TUNDRA", "AURORA", "POLAR", "SLED", "FROST", "SNOW", "HUSKY", "PACK", "CAMP", "IGLOO", "RIDGE", "STORM", "COMPASS", "NORTH", "ICE", "TRACK", "BOOTS", "SCOUT", "PUFFIN", "SEAL", "HORIZON", "FREEZE", "CRYSTAL", "ANCHOR", "WIND", "ECHO", "COLD", "LIGHT", "SLOPE", "BLIZZARD"]),
+        new("Rainforest", ["JUNGLE", "CANOPY", "VINE", "ORCHID", "LEAVES", "MONKEY", "TOUCAN", "JAGUAR", "RIVER", "FERNS", "PARROT", "MOSS", "HUMID", "TROPIC", "GREEN", "FROG", "SNAKE", "FRUIT", "PALM", "BIRD", "LIZARD", "BRANCH", "WATER", "MIST", "BLOOM", "ROOT", "SHADE", "FLOWER", "RAIN", "PATH", "INSECT", "CREEK"]),
+        new("Clockwork City", ["CLOCKWORK", "BRASS", "GEAR", "SPRING", "COPPER", "STEAM", "TOWER", "ENGINE", "VALVE", "WHEEL", "BOLT", "METAL", "CLOCK", "TICK", "IRON", "LEVER", "PIPE", "RIVET", "PISTON", "DIAL", "COG", "SPARK", "TRAIN", "BRIDGE", "LAMP", "CHIME", "BELL", "WINDING", "MACHINE", "SHAFT", "HANDLE", "GOLD"]),
+        new("Treasure Island", ["TREASURE", "ISLAND", "PIRATE", "MAP", "CHEST", "PEARL", "GOLD", "COIN", "BEACH", "SAND", "SHIP", "SAIL", "COVE", "REEF", "SHARK", "PALM", "TIDE", "STORM", "CANNON", "ANCHOR", "COMPASS", "RUM", "KEY", "HOOK", "SKULL", "CRAB", "WATER", "LAGOON", "CAVE", "JEWEL", "PARROT", "HARBOR"]),
+        new("Music Studio", ["STUDIO", "MIXER", "AUDIO", "MICROPHONE", "RECORD", "TRACK", "BEAT", "MELODY", "PIANO", "BASS", "GUITAR", "DRUMS", "SONG", "TUNE", "ECHO", "REVERB", "FADER", "CABLE", "SPEAKER", "VOICE", "HEADSET", "TEMPO", "RHYTHM", "CHORD", "NOTE", "MUSIC", "SOLO", "CHOIR", "LOOP", "SOUND", "STAGE", "VINYL"]),
+        new("Farmstead", ["FARM", "BARN", "FIELD", "COW", "SHEEP", "HORSE", "GOAT", "HEN", "DUCK", "PIG", "WHEAT", "HAY", "PLOW", "TRACTOR", "SEED", "SOIL", "CROP", "MILK", "EGGS", "CHEESE", "APPLE", "ORCHARD", "FENCE", "GATE", "POND", "RIVER", "BOOTS", "HARVEST", "CORN", "ROOSTER", "GRAIN", "GARDEN"]),
+        new("Underwater Kingdom", ["OCEAN", "CORAL", "REEF", "PEARL", "SHELL", "TIDE", "CURRENT", "ANCHOR", "KELP", "SHARK", "WHALE", "SEAL", "DOLPHIN", "TURTLE", "OCTOPUS", "SAND", "BUBBLE", "GROTTO", "DEPTH", "BLUE", "FISH", "RAY", "STARFISH", "CRAB", "SEAHORSE", "LAGOON", "WRECK", "DIVER", "WATER", "CAVE", "SPONGE", "FIN"]),
+        new("Grand Library", ["LIBRARY", "ATLAS", "NOVEL", "BOOK", "SCROLL", "READER", "SHELF", "PARCHMENT", "INK", "QUILL", "COVER", "STORY", "PAGE", "GLOBE", "MAP", "ARCHIVE", "ANCIENT", "FABLE", "LEGEND", "VERSE", "POEM", "TALE", "STUDY", "LAMP", "DESK", "CHAPTER", "INDEX", "PAPER", "LEATHER", "HISTORY", "MYTH", "VOLUME"]),
+        new("Robotics Lab", ["ROBOT", "CIRCUIT", "CHIP", "SENSOR", "SERVO", "LASER", "METAL", "ARM", "JOINT", "WIRE", "SPARK", "MOTOR", "BOLT", "GEAR", "CAMERA", "CODE", "SCREEN", "POWER", "BINARY", "SIGNAL", "SWITCH", "DRONE", "SCANNER", "BATTERY", "PLASMA", "DESIGN", "TEST", "LAB", "STEEL", "LIGHT", "ENGINE", "CABLE", "MODULE"]),
+        new("Spring Meadow", ["SPRING", "MEADOW", "FLOWER", "DAISY", "TULIP", "PETAL", "BUTTERFLY", "BEE", "BIRD", "BLOOM", "RAIN", "GRASS", "GREEN", "HARE", "RABBIT", "CLOUD", "SUN", "WIND", "POND", "STREAM", "WILLOW", "LILY", "BUD", "SEED", "SOIL", "MOSS", "DEW", "FIELD", "GARDEN", "NEST", "ROBIN", "FERN"]),
+        new("Space Colony", ["COLONY", "PLANET", "MOON", "ROVER", "DOME", "STAR", "SOLAR", "ORBIT", "ROCKET", "MODULE", "HABITAT", "CREW", "ENGINE", "CARGO", "SIGNAL", "RADAR", "AIRLOCK", "SPACE", "ROBOT", "METEOR", "CRATER", "ASTRO", "SHIELD", "OXYGEN", "POWER", "WATER", "GARDEN", "HYDROPONIC", "MARS", "LUNAR", "GALAXY", "PROBE"]),
+        new("Sky Kingdom", ["SKY", "CLOUD", "WING", "EAGLE", "FALCON", "DRAGON", "CASTLE", "TOWER", "WIND", "STORM", "RAINBOW", "SUN", "RIVER", "VALLEY", "MOUNTAIN", "PEAK", "SPIRIT", "GLIDER", "FLOAT", "BREEZE", "FEATHER", "FLIGHT", "HORIZON", "GOLD", "GATE", "BRIDGE", "CLOUDS", "SAIL", "PALACE", "RULER", "RUNE", "STARLIGHT", "AURORA"]),
+    ];
+
+    // Twelve newly authored themes. Four deterministic variants each expand
+    // each difficulty from 48 to 96 without changing indices 001-048.
+    private static readonly ThemeWords[] DiscoveryThemes =
+    [
+        new("Arctic Expedition", "ARCTIC GLACIER TUNDRA AURORA POLAR SLED FROST SNOW HUSKY PACK CAMP IGLOO RIDGE STORM COMPASS NORTH ICE TRACK BOOTS SCOUT PUFFIN SEAL HORIZON FREEZE CRYSTAL ANCHOR WIND ECHO COLD LIGHT SLOPE BLIZZARD".Split(' ')),
+        new("Rainforest", "JUNGLE CANOPY VINE ORCHID LEAVES MONKEY TOUCAN JAGUAR RIVER FERNS PARROT MOSS HUMID TROPIC GREEN FROG SNAKE FRUIT PALM BIRD LIZARD BRANCH WATER MIST BLOOM ROOT SHADE FLOWER RAIN PATH INSECT CREEK".Split(' ')),
+        new("Clockwork City", "CLOCKWORK BRASS GEAR SPRING COPPER STEAM TOWER ENGINE VALVE WHEEL BOLT METAL CLOCK TICK IRON LEVER PIPE RIVET PISTON DIAL COG SPARK TRAIN BRIDGE LAMP CHIME BELL WINDING MACHINE SHAFT HANDLE GOLD".Split(' ')),
+        new("Treasure Island", "TREASURE ISLAND PIRATE MAP CHEST PEARL GOLD COIN BEACH SAND SHIP SAIL COVE REEF SHARK PALM TIDE STORM CANNON ANCHOR COMPASS RUM KEY HOOK SKULL CRAB WATER LAGOON CAVE JEWEL PARROT HARBOR".Split(' ')),
+        new("Music Studio", "STUDIO MIXER AUDIO MICROPHONE RECORD TRACK BEAT MELODY PIANO BASS GUITAR DRUMS SONG TUNE ECHO REVERB FADER CABLE SPEAKER VOICE HEADSET TEMPO RHYTHM CHORD NOTE MUSIC SOLO CHOIR LOOP SOUND STAGE VINYL".Split(' ')),
+        new("Farmstead", "FARM BARN FIELD COW SHEEP HORSE GOAT HEN DUCK PIG WHEAT HAY PLOW TRACTOR SEED SOIL CROP MILK EGGS CHEESE APPLE ORCHARD FENCE GATE POND RIVER BOOTS HARVEST CORN ROOSTER GRAIN GARDEN".Split(' ')),
+        new("Underwater Kingdom", "OCEAN CORAL REEF PEARL SHELL TIDE CURRENT ANCHOR KELP SHARK WHALE SEAL DOLPHIN TURTLE OCTOPUS SAND BUBBLE GROTTO DEPTH BLUE FISH RAY STARFISH CRAB SEAHORSE LAGOON WRECK DIVER WATER CAVE SPONGE FIN".Split(' ')),
+        new("Grand Library", "LIBRARY ATLAS NOVEL BOOK SCROLL READER SHELF PARCHMENT INK QUILL COVER STORY PAGE GLOBE MAP ARCHIVE ANCIENT FABLE LEGEND VERSE POEM TALE STUDY LAMP DESK CHAPTER INDEX PAPER LEATHER HISTORY MYTH VOLUME".Split(' ')),
+        new("Robotics Lab", "ROBOT CIRCUIT CHIP SENSOR SERVO LASER METAL ARM JOINT WIRE SPARK MOTOR BOLT GEAR CAMERA CODE SCREEN POWER BINARY SIGNAL SWITCH DRONE SCANNER BATTERY PLASMA DESIGN TEST LAB STEEL LIGHT ENGINE CABLE MODULE".Split(' ')),
+        new("Spring Meadow", "SPRING MEADOW FLOWER DAISY TULIP PETAL BUTTERFLY BEE BIRD BLOOM RAIN GRASS GREEN HARE RABBIT CLOUD SUN WIND POND STREAM WILLOW LILY BUD SEED SOIL MOSS DEW FIELD GARDEN NEST ROBIN FERN".Split(' ')),
+        new("Space Colony", "COLONY PLANET MOON ROVER DOME STAR SOLAR ORBIT ROCKET MODULE HABITAT CREW ENGINE CARGO SIGNAL RADAR AIRLOCK SPACE ROBOT METEOR CRATER ASTRO SHIELD OXYGEN POWER WATER GARDEN HYDROPONIC MARS LUNAR GALAXY PROBE".Split(' ')),
+        new("Sky Kingdom", "SKY CLOUD WING EAGLE FALCON DRAGON CASTLE TOWER WIND STORM RAINBOW SUN RIVER VALLEY MOUNTAIN PEAK SPIRIT GLIDER FLOAT BREEZE FEATHER FLIGHT HORIZON GOLD GATE BRIDGE CLOUDS SAIL PALACE RULER RUNE STARLIGHT AURORA".Split(' ')),
+    ];
+
     // The localized list changes only the authored puzzle vocabulary, never the stable
     // puzzle ID, difficulty, seed, completion receipt or serialized in-progress grid.
     // Existing active games therefore remain playable after a language switch.
@@ -78,6 +115,18 @@ public static class WordSearchCatalog
             ["Lakeside"] = new("Am See", ["SEE", "FLUSS", "BACH", "UFER", "KANU", "PADDEL", "SCHILF", "WEIDE", "REIHER", "STEG", "HAFEN", "FISCH", "WASSER", "WELLE", "INSEL", "NEBEL", "BRUECKE", "BOOT", "LILIE", "OTTER", "SAND", "MOOS", "TEICH", "DELTA", "BUCHT", "SPRITZER"]),
             ["Workshop"] = new("Werkstatt", ["WERKSTATT", "HAMMER", "NAGEL", "SCHRAUBE", "HOLZ", "METALL", "LEIM", "SAEGE", "BOHRER", "ZAHNRAD", "PINSEL", "FARBE", "WERKZEUG", "BANK", "ZWINGE", "LINEAL", "DREHEN", "RAHMEN", "SCHLUESSEL", "HANDWERK", "SAND", "MEISSEL", "REGAL", "BOLZEN", "KUPFER", "GRIFF"]),
             ["Summer Festival"] = new("Sommerfest", ["FEST", "TANZ", "MUSIK", "TROMMEL", "LIED", "LICHT", "BAND", "BUEHNE", "MENGE", "KARTE", "SOMMER", "FEUERWERK", "UMZUG", "RUMMEL", "FAHNEN", "ESSEN", "SUESS", "BALLON", "NACHT", "LACHEN", "SPIELE", "RAD", "PARTY", "GLANZ", "FREUDE", "MELODIE"]),
+            ["Arctic Expedition"] = new("Arktisreise", ["ARKTIS", "GLETSCHER", "TUNDRA", "AURORA", "POLAR", "SCHLITTEN", "FROST", "SCHNEE", "HUSKY", "PACK", "ZELT", "IGLU", "KAMM", "STURM", "KOMPASS", "NORD", "EIS", "SPUR", "STIEFEL", "PFAD", "PAPAGEI", "ROBBE", "FERNE", "FRIEREN", "KRISTALL", "ANKER", "WIND", "ECHO", "KALT", "LICHT", "HANG", "NEBEL"]),
+            ["Rainforest"] = new("Regenwald", ["DSCHUNGEL", "KRONE", "RANKE", "ORCHIDEE", "LAUB", "AFFE", "TUKAN", "JAGUAR", "FLUSS", "FARN", "PAPAGEI", "MOOS", "FEUCHT", "TROPIK", "GRUEN", "FROSCH", "SCHLANGE", "FRUCHT", "PALME", "VOGEL", "ECHSE", "AST", "WASSER", "NEBEL", "BLUETE", "WURZEL", "SCHATTEN", "BLUME", "REGEN", "PFAD", "INSEKT", "BACH"]),
+            ["Clockwork City"] = new("Uhrenstadt", ["UHRWERK", "MESSING", "ZAHNRAD", "FEDER", "KUPFER", "DAMPF", "TURM", "MOTOR", "VENTIL", "RAD", "BOLZEN", "METALL", "UHR", "TICK", "EISEN", "HEBEL", "ROHR", "NIETE", "KOLBEN", "ZIFFER", "ACHSE", "FUNKE", "ZUG", "BRUECKE", "LAMPE", "KLANG", "GLOCKE", "WELLE", "MASCHINE", "WERK", "GRIFF", "GOLD"]),
+            ["Treasure Island"] = new("Schatzinsel", ["SCHATZ", "INSEL", "PIRAT", "KARTE", "TRUHE", "PERLE", "GOLD", "MUENZE", "STRAND", "SAND", "SCHIFF", "SEGEL", "BUCHT", "RIFF", "HAI", "PALME", "FLUT", "STURM", "KANONE", "ANKER", "KOMPASS", "RUM", "SCHLUESSEL", "HAKEN", "TOTENKOPF", "KRABBE", "WASSER", "LAGUNE", "HOEHLE", "JUWEL", "PAPAGEI", "HAFEN"]),
+            ["Music Studio"] = new("Musikstudio", ["STUDIO", "MISCHER", "AUDIO", "MIKROFON", "PLATTE", "SPUR", "TAKT", "MELODIE", "PIANO", "BASS", "GITARRE", "TROMMEL", "LIED", "TON", "ECHO", "HALL", "REGLER", "KABEL", "BOX", "STIMME", "HOERER", "TEMPO", "RHYTHMUS", "AKKORD", "NOTE", "MUSIK", "SOLO", "CHOR", "SCHLEIFE", "KLANG", "BUEHNE", "VINYL"]),
+            ["Farmstead"] = new("Bauernhof", ["HOF", "SCHEUNE", "FELD", "KUH", "SCHAF", "PFERD", "ZIEGE", "HENNE", "ENTE", "SCHWEIN", "WEIZEN", "HEU", "PFLUG", "TRAKTOR", "SAAT", "ERDE", "ERNTE", "MILCH", "EIER", "KAESE", "APFEL", "OBSTWIESE", "ZAUN", "TOR", "TEICH", "BACH", "STIEFEL", "KORN", "MAIS", "HAHN", "GETREIDE", "GARTEN"]),
+            ["Underwater Kingdom"] = new("Unterwasserwelt", ["MEER", "KORALLE", "RIFF", "PERLE", "MUSCHEL", "FLUT", "STROEMUNG", "ANKER", "TANG", "HAI", "WAL", "ROBBE", "DELFIN", "SCHILDKROETE", "KRAKE", "SAND", "BLASE", "GROTTE", "TIEFE", "BLAU", "FISCH", "ROCHEN", "SEESTERN", "KRABBE", "SEEPFERD", "LAGUNE", "WRACK", "TAUCHER", "WASSER", "HOEHLE", "SCHWAMM", "FLOSSE"]),
+            ["Grand Library"] = new("Grosse Bibliothek", ["BIBLIOTHEK", "ATLAS", "ROMAN", "BUCH", "ROLLE", "LESER", "REGAL", "PERGAMENT", "TINTE", "FEDER", "DECKEL", "SAGE", "SEITE", "GLOBUS", "KARTE", "ARCHIV", "ALT", "FABEL", "LEGENDE", "VERS", "GEDICHT", "ERZAEHLUNG", "STUDIUM", "LAMPE", "TISCH", "KAPITEL", "INDEX", "PAPIER", "LEDER", "HISTORIE", "MYTHOS", "BAND"]),
+            ["Robotics Lab"] = new("Robotiklabor", ["ROBOTER", "SCHALTUNG", "CHIP", "SENSOR", "SERVO", "LASER", "METALL", "ARM", "GELENK", "DRAHT", "FUNKE", "MOTOR", "BOLZEN", "RAD", "KAMERA", "CODE", "BILDSCHIRM", "STROM", "BINAER", "SIGNAL", "SCHALTER", "DROHNE", "SCANNER", "BATTERIE", "PLASMA", "PLAN", "TEST", "LABOR", "STAHL", "LICHT", "ANTRIEB", "KABEL", "MODUL"]),
+            ["Spring Meadow"] = new("Fruehlingswiese", ["FRUEHLING", "WIESE", "BLUME", "MARGERITE", "TULPE", "BLATT", "FALTER", "BIENE", "VOGEL", "BLUETE", "REGEN", "GRAS", "GRUEN", "HASE", "KANINCHEN", "WOLKE", "SONNE", "WIND", "TEICH", "BACH", "WEIDE", "LILIE", "KNOSPE", "SAMEN", "ERDE", "MOOS", "TAU", "FELD", "GARTEN", "NEST", "ROTKEHLCHEN", "FARN"]),
+            ["Space Colony"] = new("Raumkolonie", ["KOLONIE", "PLANET", "MOND", "ROVER", "KUPPEL", "STERN", "SOLAR", "ORBIT", "RAKETE", "MODUL", "HABITAT", "CREW", "MOTOR", "FRACHT", "SIGNAL", "RADAR", "SCHLEUSE", "ALL", "ROBOTER", "METEOR", "KRATER", "ASTRO", "SCHILD", "SAUERSTOFF", "STROM", "WASSER", "GARTEN", "HYDROPONIK", "MARS", "LUNAR", "GALAXIE", "SONDE"]),
+            ["Sky Kingdom"] = new("Himmelsreich", ["HIMMEL", "WOLKE", "FLUEGEL", "ADLER", "FALKE", "DRACHE", "BURG", "TURM", "WIND", "STURM", "REGENBOGEN", "SONNE", "FLUSS", "TAL", "BERG", "GIPFEL", "GEIST", "GLEITER", "SCHWEBEN", "BRISE", "FEDER", "FLUG", "FERNE", "GOLD", "TOR", "BRUECKE", "WOLKEN", "SEGEL", "PALAST", "HERRSCHER", "RUNE", "STERNLICHT", "AURORA"]),
             ["Mythic Tales"] = new("Sagenwelt", ["DRACHE", "PHOENIX", "GREIF", "EINHORN", "RIESE", "FEE", "ELF", "ZWERG", "QUESTE", "MAGIE", "ZAUBER", "RUNE", "BURG", "WALD", "SCHWERT", "SCHILD", "MAGIER", "RITTER", "KRONE", "GOBLIN", "TRANK", "SAGE", "TROLL", "ORAKEL", "TEMPEL", "HELD"]),
         };
 
@@ -113,21 +162,24 @@ public static class WordSearchCatalog
 
     private static IReadOnlyList<WordSearchPuzzleDefinition> Build()
     {
-        var result = new List<WordSearchPuzzleDefinition>(288);
+        var result = new List<WordSearchPuzzleDefinition>(576);
         foreach (WordSearchDifficulty difficulty in Enum.GetValues<WordSearchDifficulty>())
         {
             (int size, int count) = Spec(difficulty);
-            for (int index = 0; index < 48; index++)
+            for (int index = 0; index < 96; index++)
             {
-                bool expansion = index >= 24;
-                int localIndex = expansion ? index - 24 : index;
-                ThemeWords theme = expansion
-                    ? ExpansionThemes[localIndex % ExpansionThemes.Length]
+                bool discovery = index >= 48;
+                bool expansion = index >= 24 && !discovery;
+                int localIndex = discovery ? index - 48 : expansion ? index - 24 : index;
+                ThemeWords theme = discovery
+                    ? DiscoveryThemes[localIndex % DiscoveryThemes.Length]
+                    : expansion ? ExpansionThemes[localIndex % ExpansionThemes.Length]
                     : Themes[localIndex % Themes.Length];
                 int variant = localIndex / 12;
                 // Never modify a seed used by the original 144 puzzle definitions.
-                int seed = expansion
-                    ? 80_000 + (int)difficulty * 2_000 + localIndex * 61 + variant * 193
+                int seed = discovery
+                    ? 180_000 + (int)difficulty * 3_000 + localIndex * 73 + variant * 227
+                    : expansion ? 80_000 + (int)difficulty * 2_000 + localIndex * 61 + variant * 193
                     : 10_000 + (int)difficulty * 1_000 + index * 37 + variant * 101;
                 string id = $"word-search-{difficulty.ToString().ToLowerInvariant()}-{index + 1:000}";
                 result.Add(new(id, difficulty, theme.Theme, size, count, seed, theme.Words));

@@ -1,51 +1,90 @@
-# Word Search — React migration and expanded vocabulary
+# Word Search — Words Discovered mode
 
 **Development branch:** `feature/manor-modernization-phase-1`  
 **Presentation:** React in the shared `frontend/lounge.html`  
-**Authoritative engine:** `BlackjackCasino.Core.WordSearch`
+**Authoritative gameplay and persistence:** `BlackjackCasino.Core.WordSearch`
 
-## Expanded catalog
+## Puzzle library: 96 per difficulty
 
-The catalog previously contained 24 deterministic puzzles per difficulty. It now has 48 in each of the six existing difficulty tiers:
+The catalog contains **576 deterministic puzzles**, split across six retained
+difficulty modes. The grid sizes, per-puzzle word counts and rewards are
+unchanged.
 
-| Difficulty | Grid | Words per grid | Old levels | Added | New total |
+| Difficulty | Grid | Target words | Existing puzzles | New puzzles | Total |
 | --- | --- | --- | --- | --- | --- |
-| Relaxed | 8×8 | 6 | 24 | 24 | 48 |
-| Easy | 9×9 | 7 | 24 | 24 | 48 |
-| Medium | 10×10 | 8 | 24 | 24 | 48 |
-| Hard | 11×11 | 10 | 24 | 24 | 48 |
-| Expert | 12×12 | 12 | 24 | 24 | 48 |
-| Master | 13×13 | 14 | 24 | 24 | 48 |
-| **Total** | | **2,736 target words** | **144** | **144** | **288** |
+| Relaxed | 8×8 | 6 | 48 | 48 | 96 |
+| Easy | 9×9 | 7 | 48 | 48 | 96 |
+| Medium | 10×10 | 8 | 48 | 48 | 96 |
+| Hard | 11×11 | 10 | 48 | 48 | 96 |
+| Expert | 12×12 | 12 | 48 | 48 | 96 |
+| Master | 13×13 | 14 | 48 | 48 | 96 |
+| **Total** | | **5,472 placements** | **288** | **288** | **576** |
 
-The **original 144 definitions are not rewritten**: indices 001–024 at every difficulty use the same IDs, original 12 themes, word banks, seeds, generator and completion semantics. This preserves deterministic old puzzles, existing active-grid saves, completed puzzle IDs, earned XP and bankroll receipts.
+The previously published **IDs 001–048** at every difficulty retain the
+original theme banks, seed formula, deterministic grid algorithm, completion
+receipts and XP. Added indices **049–096** are appended after those levels,
+using twelve new bilingual themes with four variants per difficulty:
+Arctic Expedition, Rainforest, Clockwork City, Treasure Island,
+Music Studio, Farmstead, Underwater Kingdom, Grand Library, Robotics Lab,
+Spring Meadow, Space Colony and Sky Kingdom. Their banks collectively add
+over 770 English and German target candidates. German terms transliterate
+umlauts into ASCII (AE/OE/UE); grids use uppercase A–Z. Existing in-progress
+grids remain byte-for-byte unchanged when reloaded or switched to a different
+UI language, including older releases.
 
-Indices 025–048 introduce twelve further themes with two deterministic variants each:
+The six old progress counts, challenge IDs, rewards and completed-puzzle
+receipts remain stable. Previously final 288-puzzle and 2,736-word milestones
+remain collectible as intermediate progression; new endgame challenges can
+be layered onto the 576-grid corpus without rewriting earlier receipts.
 
-Mountain Trails, Garden Paths, Winter Cabin, Desert Journey, Wildlife, Space Lab, Ancient Ruins, Night Market, Lakeside, Workshop, Summer Festival and Mythic Tales.
+## Words Discovered collection
 
-Every new theme has a dedicated **English and German** word bank with roughly 26 candidate terms. German umlauts are transliterated (for example `UE`, `AE`) so the hidden grids continue to use only uppercase A–Z. The original 12 themes remain playable. Across all themes the total variety expands significantly without introducing network dependencies or making a puzzle depend on the browser's locale after it has been started.
+The Word Search library prominently features a **Words Discovered** button.
+Its album shows the unique words actually found in puzzles, with the first
+known theme, difficulty and date. A search field and theme filter make the
+collection browseable. Words discovered in German and English remain in the
+form shown when actually found; exact identical A–Z spellings count once,
+regardless of language, theme or repeat completions.
 
-The full 288-puzzle progression remains replayable after completion; the next-unsolved selection walks each difficulty's old puzzles first and then its new ones. Previous challenge IDs, receipts and rewards are retained, while new milestones cover 288 puzzles, 2,736 words, 48 Expert, 48 Master and 200 no-hint completions. The original 144-puzzle target is now a milestone rather than the terminal goal.
+An optional additive `DiscoveredWords` list is stored in the existing
+`WordSearchProgressState` preferences object. The schema version stays
+at 1 for compatibility with old save readers. New unique entries are
+recorded **in the same save-first transaction** as `FoundWords`, before
+React sees a found-word result. Failed writes neither credit the album nor
+play a discovery sound. Completion records and XP remain independently
+idempotent. Normalization deduplicates and validates stored album entries.
 
-## Gameplay
+For previous saves, only the verifiable word list in an active unfinished
+puzzle is migrated into the collection. Older completed-game receipts
+contain only a word count and puzzle ID, with no original saved language
+or word list; claiming old individual discoveries would therefore invent
+words. Earlier completion rewards, stats and challenge progress are
+preserved unchanged.
 
-The React interface includes all six difficulties, current progress and reward tiers, a resumable in-progress puzzle, 8×8–13×13 responsive grids, directional selection with mouse/touch dragging or two endpoint clicks (also keyboard activation), native found-word highlighting, a word list that checks off discoveries, starting-letter hint spotlight, a local timer and a completion result. There are no penalties for hint usage or time taken. Motion effects honor `prefers-reduced-motion` and the Lounge animation preference.
+The active native service sends a one-time `LastFind` event containing the
+saved word, first-discovery flag and event ID. React shows a small animated
+purple **New** beside the crossed-out target word when this flag is true;
+repeat finds only cross out the word. Events do not replay when revisiting
+an older puzzle or refreshing the snapshot. The badge is cosmetic, fading
+from view after a short display. The original native PCM audio engine plays
+a short, soft pluck for every successful saved word, with a distinct
+three-note chime for the first addition. Sound respects the existing
+Chill Lounge sound preference, while badge animation obeys reduced-motion
+and the lounge animation preference. No browser-created audio device, wallet
+command or network dependency is introduced.
 
-The game permits a single active puzzle at a time, exactly like the former WPF implementation. Players can leave and resume it in any chosen UI language; the original generated grid and list are persisted as one coherent state. Completing the puzzle releases the active slot and records its original one-time C# reward.
+## Game integrity and validation
 
-## Strict browser/native boundary
+The native service alone confirms selected words, hints, puzzle completion,
+album growth, time checkpointing and rewards. Browser commands may only
+submit two valid grid endpoints or choose a difficulty; they cannot claim a
+word, award XP or add to the album. Browser snapshots validate the album,
+find receipt and six 96-level tiers. Native tests cover all 576 English and
+German grids, old deterministic IDs/seeds, album deduplication, save
+round-trips, failure-before-save, replays and sound-wave quality. Windows
+WebView2 smoke covers opening the album, revealing and persisting a new
+word, returning/resuming a puzzle, completing it and leaving the Lounge.
 
-Browser commands are limited to `word-search.start`, `word-search.resume`, `word-search.select`, `word-search.hint`, `word-search.back`, `word-search.exit`, with a GUID session and request ID, monotonic expected revision, bounded straight-line cell endpoints, and exact packaged origin. No solution, word text, XP, bankroll, game state, time or puzzle seed may be supplied as an authoritative browser input.
-
-Only C# executes `WordSearchGame.TryFind`, chooses hints, generates local deterministic puzzles and stores completion records. Every move is first simulated against a detached state and saved with the existing app preferences writer before the visible native state changes. Failed persistence leaves the live word set and hint count unchanged; retries must be initiated by the player, not automatically by the browser. Completion awards use the existing idempotent progression and wallet path.
-
-## Regression and remaining cleanup
-
-- Native tests verify all English and German grids, 288 unique IDs, 48 per difficulty, stable generation, old save reload, expanded challenge limits and native completion idempotence.
-- Protocol and service tests verify rejected inputs, replay/stale-session safety, save-first word discovery, hint persistence, cross-language resume and completion.
-- React tests validate state/grid/placement shapes, six 48-level tiers and receipt validation.
-- Windows WebView2 startup smoke tests the modern Word Search library, an actual letter grid, native word submission, hint marker, auto-saved resume, all-word completion, XP feedback and return through the modern Lounge.
-- Legacy WPF Word Search smoke remains for rollback coverage. Its old screen is no longer on the regular user route, but the shared desktop host remains WPF.
-
-**Open quality gate:** real-device DPI, accessibility, animation, drag/touch and audio review before deleting the WPF fallback implementation. Memory, Jigsaw and Tales from the Backroom have not yet been migrated.
+Real-device high-DPI and subjective sound/UI balance still require player
+review. Legacy WPF Word Search remains as a fallback and still loads the
+same game state.

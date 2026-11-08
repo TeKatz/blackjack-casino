@@ -16,16 +16,18 @@ internal sealed class ModernWordSearchService
     private readonly Func<WordSearchStatistics> statistics;
     private readonly Func<WordSearchCompletionRecord, ProgressionAward> complete;
     private readonly Func<string> language;
+    private readonly Action<bool>? foundSound;
     private readonly Stopwatch clock = new();
     private long elapsedBase, lastPersistedSeconds;
     private WordSearchPlacement? hint;
     private string notice = "", rewardNotice = "";
+    private (string Word, bool IsNew, string Id)? lastFind;
 
     internal ModernWordSearchService(WordSearchProgressState initial,
         Action<WordSearchProgressState> persist,
         Func<WordSearchStatistics> statistics,
         Func<WordSearchCompletionRecord, ProgressionAward> complete,
-        Func<string> language)
+        Func<string> language, Action<bool>? foundSound = null)
     {
         initial.Normalize();
         progress = CloneProgress(initial);
@@ -33,6 +35,7 @@ internal sealed class ModernWordSearchService
         this.statistics = statistics;
         this.complete = complete;
         this.language = language;
+        this.foundSound = foundSound;
     }
 
     internal WordSearchGameState? CurrentGame => game;
@@ -76,6 +79,16 @@ internal sealed class ModernWordSearchService
         return new
         {
             Screen = game is null ? "library" : "game",
+            DiscoveredWords = progress.DiscoveredWords
+                .OrderByDescending(entry => entry.DiscoveredAt)
+                .ThenBy(entry => entry.Word, StringComparer.Ordinal)
+                .Select(entry => new
+                {
+                    entry.Word, entry.Theme, Difficulty = entry.Difficulty.ToString(),
+                    entry.PuzzleId, entry.DiscoveredAt,
+                }).ToArray(),
+            LastFind = lastFind is { } fresh ? new
+                { fresh.Word, New = fresh.IsNew, fresh.Id } : null,
             CatalogTotal = WordSearchCatalog.All.Count,
             ThemeTotal = WordSearchCatalog.All.Select(x => x.Theme).Distinct(StringComparer.Ordinal).Count(),
             CompletedTotal = progress.CompletedGames.Count,
@@ -109,7 +122,7 @@ internal sealed class ModernWordSearchService
             case "word-search.back":
                 if (game is null) return (false, "There is no active Word Search view.");
                 if (!game.Completed) SaveElapsed();
-                clock.Stop(); game = null; hint = null;
+                clock.Stop(); game = null; hint = null; lastFind = null;
                 return (true, "Returned to Word Search levels.");
             case "word-search.exit":
                 return game is null ? (true, "Returned to Chill Lounge.") :
@@ -144,9 +157,12 @@ internal sealed class ModernWordSearchService
                 if (updated.CompletedGames.All(x => x.PuzzleId != receipt.PuzzleId))
                     updated.CompletedGames.Add(receipt);
                 updated.ActiveGame = null;
+                bool newDiscovery = updated.Discover(found!, next.Puzzle);
                 persist(updated);
                 progress = updated;
                 game = next;
+                lastFind = (found!, newDiscovery, Guid.NewGuid().ToString("D"));
+                foundSound?.Invoke(newDiscovery);
                 lastPersistedSeconds = next.ElapsedSeconds;
                 clock.Stop();
                 hint = null;
@@ -157,7 +173,7 @@ internal sealed class ModernWordSearchService
                     : "Puzzle complete and saved.";
                 return (true, notice);
             }
-            PersistActive(next);
+            PersistActive(next, found);
             hint = null;
             notice = $"Found {found}. Saved.";
             return (true, notice);
@@ -187,16 +203,22 @@ internal sealed class ModernWordSearchService
         lastPersistedSeconds = elapsedBase;
         if (!next.Completed) clock.Start();
         notice = "Drag from the first letter to the last letter of a hidden word.";
-        hint = null; rewardNotice = "";
+        hint = null; rewardNotice = ""; lastFind = null;
     }
 
-    private void PersistActive(WordSearchGameState next)
+    private void PersistActive(WordSearchGameState next, string? newlyFound = null)
     {
         WordSearchProgressState updated = CloneProgress(progress);
         updated.ActiveGame = CloneGame(next);
+        bool isNew = newlyFound is not null && updated.Discover(newlyFound, next.Puzzle);
         persist(updated);
         progress = updated;
         game = next;
+        if (newlyFound is not null)
+        {
+            lastFind = (newlyFound, isNew, Guid.NewGuid().ToString("D"));
+            foundSound?.Invoke(isNew);
+        }
         lastPersistedSeconds = next.ElapsedSeconds;
     }
 
@@ -237,5 +259,6 @@ internal sealed class ModernWordSearchService
         SchemaVersion = source.SchemaVersion,
         ActiveGame = source.ActiveGame is null ? null : CloneGame(source.ActiveGame),
         CompletedGames = source.CompletedGames.ToList(),
+        DiscoveredWords = source.DiscoveredWords.ToList(),
     };
 }

@@ -7,17 +7,40 @@ namespace BlackjackCasino.Tests;
 public sealed class WordSearchTests
 {
     [Fact]
-    public void CatalogContainsFortyEightDeterministicPuzzlesPerDifficulty()
+    public void CatalogContainsNinetySixDeterministicPuzzlesPerDifficulty()
     {
-        Assert.Equal(288, WordSearchCatalog.All.Count);
+        Assert.Equal(576, WordSearchCatalog.All.Count);
         foreach (WordSearchDifficulty difficulty in Enum.GetValues<WordSearchDifficulty>())
         {
             var puzzles = WordSearchCatalog.For(difficulty);
-            Assert.Equal(48, puzzles.Count);
-            Assert.Equal(48, puzzles.Select(x => x.Id).Distinct(StringComparer.Ordinal).Count());
-            Assert.Equal(Enumerable.Range(1, 48).Select(i => $"word-search-{difficulty.ToString().ToLowerInvariant()}-{i:000}"),
+            Assert.Equal(96, puzzles.Count);
+            Assert.Equal(96, puzzles.Select(x => x.Id).Distinct(StringComparer.Ordinal).Count());
+            Assert.Equal(Enumerable.Range(1, 96).Select(i => $"word-search-{difficulty.ToString().ToLowerInvariant()}-{i:000}"),
                 puzzles.Select(p => p.Id));
-            Assert.Equal(12, puzzles.Skip(24).Select(p => p.Theme).Distinct(StringComparer.Ordinal).Count());
+            Assert.Equal(12, puzzles.Skip(24).Take(24).Select(p => p.Theme).Distinct(StringComparer.Ordinal).Count());
+            Assert.Equal(12, puzzles.Skip(48).Select(p => p.Theme).Distinct(StringComparer.Ordinal).Count());
+            Assert.All(puzzles.Skip(48), p => Assert.True(p.WordBank.Count >= 26));
+            Assert.All(puzzles.Take(48), (p) => Assert.True(p.Seed < 100_000));
+        }
+    }
+
+    [Fact]
+    public void OriginalFortyEightDefinitionsKeepIdsAndSeedsAcrossAllDifficulties()
+    {
+        foreach (WordSearchDifficulty difficulty in Enum.GetValues<WordSearchDifficulty>())
+        {
+            var puzzles = WordSearchCatalog.For(difficulty);
+            for (int index = 0; index < 48; index++)
+            {
+                bool expansion = index >= 24;
+                int local = expansion ? index - 24 : index;
+                int variant = local / 12;
+                int expected = expansion
+                    ? 80_000 + (int)difficulty * 2_000 + local * 61 + variant * 193
+                    : 10_000 + (int)difficulty * 1_000 + index * 37 + variant * 101;
+                Assert.Equal(expected, puzzles[index].Seed);
+                Assert.Equal($"word-search-{difficulty.ToString().ToLowerInvariant()}-{index+1:000}", puzzles[index].Id);
+            }
         }
     }
 
@@ -137,6 +160,34 @@ public sealed class WordSearchTests
         Assert.NotNull(loaded.ActiveGame);
         Assert.Equal(game.Puzzle.Grid, loaded.ActiveGame!.Puzzle.Grid);
         Assert.Equal(game.FoundWords, loaded.ActiveGame.FoundWords);
+    }
+
+    [Fact]
+    public void DiscoveryAlbumIsUniqueDurableAndImportsOnlyVerifiableActiveFinds()
+    {
+        var puzzle = WordSearchGame.Start(WordSearchCatalog.For(WordSearchDifficulty.Relaxed)[0]);
+        string first = puzzle.Puzzle.Placements[0].Word;
+        Assert.True(WordSearchGame.TryFind(puzzle,
+            new(puzzle.Puzzle.Placements[0].StartRow, puzzle.Puzzle.Placements[0].StartColumn),
+            new(puzzle.Puzzle.Placements[0].EndRow, puzzle.Puzzle.Placements[0].EndColumn), out _));
+        var legacy = new WordSearchProgressState { ActiveGame = puzzle };
+        legacy.Normalize();
+        Assert.Single(legacy.DiscoveredWords);
+        Assert.Equal(first, legacy.DiscoveredWords[0].Word);
+        Assert.False(legacy.Discover(first, puzzle.Puzzle));
+        string json = JsonSerializer.Serialize(legacy);
+        WordSearchProgressState reload = JsonSerializer.Deserialize<WordSearchProgressState>(json)!;
+        reload.Normalize();
+        Assert.Single(reload.DiscoveredWords);
+        Assert.Equal(first, reload.DiscoveredWords[0].Word);
+        Assert.Throws<ArgumentException>(() => reload.Discover("NOTINTHEPUZZLE", puzzle.Puzzle));
+        // Old completion receipts contain counts, not individual terms.
+        var oldHistory = new WordSearchProgressState
+        {
+            CompletedGames = [new("word-search-relaxed-001", WordSearchDifficulty.Relaxed, 6, 0, 42, DateTimeOffset.UtcNow)]
+        };
+        oldHistory.Normalize();
+        Assert.Empty(oldHistory.DiscoveredWords);
     }
 
     [Fact]

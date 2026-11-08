@@ -30,6 +30,10 @@ public partial class MainWindow
     private bool modernAdventureSoundtrack;
     private bool modernLoungeMenuMusic = true;
     private readonly object modernMemoryAudioOwner = new();
+    private readonly object modernWordSearchAudioOwner = new();
+    private static readonly Lazy<IReadOnlyDictionary<WordSearchCue, AudioClip>> ModernWordSearchCues =
+        new(() => Enum.GetValues<WordSearchCue>()
+            .ToDictionary(cue => cue, WordSearchSoundSynthesis.Build));
     private static readonly Lazy<IReadOnlyDictionary<MemoryCue, AudioClip>> ModernMemoryCues =
         new(() => Enum.GetValues<MemoryCue>().ToDictionary(cue => cue, MemorySoundSynthesis.Build));
     private bool ModernLoungeOpen => modernLoungeView is not null;
@@ -191,7 +195,8 @@ public partial class MainWindow
                 SaveModernWordSearchProgress,
                 () => progressionController?.Profile.WordSearch ?? new WordSearchStatistics(),
                 RecordWordSearchCompletion,
-                () => Localization.Language == UiLanguagePreference.German ? "de" : "en");
+                () => Localization.Language == UiLanguagePreference.German ? "de" : "en",
+                PlayModernWordSearchCue);
             modernLoungeView?.Refresh();
             return;
         }
@@ -491,6 +496,13 @@ public partial class MainWindow
         {
             StatusText.Text = "Memory clock checkpoint could not be saved: " + ex.Message;
         }
+    }
+
+    private void PlayModernWordSearchCue(bool firstDiscovery)
+    {
+        if (!preferences.Presentation("chill-lounge").SoundEnabled) return;
+        WordSearchCue cue = firstDiscovery ? WordSearchCue.NewDiscovery : WordSearchCue.Found;
+        CasinoAudio.Play(ModernWordSearchCues.Value[cue], modernWordSearchAudioOwner, .38);
     }
 
     private void SaveModernWordSearchProgress(WordSearchProgressState state)

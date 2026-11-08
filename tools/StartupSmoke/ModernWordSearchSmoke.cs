@@ -19,11 +19,25 @@ internal static class ModernWordSearchSmoke
             "document.querySelectorAll('.ws-level').length===6",
             "React Word Search did not open all difficulty tiers.");
         Require(await Js(web,
-            "document.querySelectorAll('.ws-level').length===6 && document.querySelector('.ws-stats')?.textContent?.includes('288')===true"),
-            "Expanded Word Search catalog must show 288 puzzles.");
+            "document.querySelectorAll('.ws-level').length===6 && document.querySelector('.ws-stats')?.textContent?.includes('576')===true"),
+            "Expanded Word Search catalog must show 576 puzzles.");
         Require(await Js(web,
-            "[...document.querySelectorAll('.ws-progress-text')].every(el=>el.textContent.includes('/48'))"),
-            "Word Search must show 48 puzzles in every difficulty.");
+            "[...document.querySelectorAll('.ws-progress-text')].every(el=>el.textContent.includes('/96'))"),
+            "Word Search must show 96 puzzles in every difficulty.");
+        Require(await Js(web,
+            "Boolean(document.querySelector('[data-testid=\"word-search-album-open\"]'))"),
+            "Words Discovered must be prominent in the Word Search main menu.");
+        await Click(web,"[data-testid=\"word-search-album-open\"]",
+            "Boolean(document.querySelector('[data-testid=\"word-search-album\"]'))",
+            "Word Search discovery album did not open.");
+        Require(await Js(web,
+            "Boolean(document.querySelector('[data-testid=\"word-search-album-search\"]')"+
+            "&&document.querySelector('[data-testid=\"word-search-album-filter\"]'))"),
+            "Word Search album must offer search and theme filters.");
+        await Capture(web, Path.Combine(output, "modern-word-search-album.png"));
+        await Click(web,"[data-testid=\"word-search-album-back\"]",
+            "Boolean(document.querySelector('[data-testid=\"word-search-library\"]'))",
+            "Word Search album did not return to the library.");
         await Capture(web, Path.Combine(output, "modern-word-search-library.png"));
 
         // The native fallback smoke ran first; the next Relaxed puzzle must load
@@ -55,6 +69,17 @@ internal static class ModernWordSearchSmoke
         Require(firstUnfound is not null, "Expected an unfinished native Word Search puzzle.");
 
         await FindWord(web, firstUnfound!, ++current);
+        JsonElement firstFind = JsonSerializer.SerializeToElement(service.Snapshot(),
+            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })
+            .GetProperty("lastFind");
+        Require(firstFind.GetProperty("word").GetString()==firstUnfound.Word,
+            "Word Search first-found receipt must use the native word.");
+        if(firstFind.GetProperty("new").GetBoolean())
+        {
+            Require(await Js(web,
+                "document.querySelector('[data-testid=\"word-search-new\"]')?.textContent==='New'"),
+                "First-ever discovered words must display their purple New badge.");
+        }
         await Click(web,"[data-testid=\"word-search-hint\"]",
             "document.querySelector('[data-testid=\"word-search-hints\"]')?.textContent==='1'",
             "C# Word Search hint count did not update.");
@@ -64,6 +89,17 @@ internal static class ModernWordSearchSmoke
         await Click(web,"[data-testid=\"word-search-back\"]",
             "Boolean(document.querySelector('[data-testid=\"word-search-library\"]'))",
             "Word Search could not return to its modern difficulty cabinet.");
+        Require(await Js(web,"Boolean(document.querySelector('[data-testid=\"word-search-resume\"]'))"),
+            "Leaving an unfinished Word Search must preserve a resumable puzzle.");
+        await Click(web,"[data-testid=\"word-search-album-open\"]",
+            "Boolean(document.querySelector('[data-testid=\"word-search-album\"]'))",
+            "Opening Words Discovered after finding a word failed.");
+        Require(await Js(web,
+            "Number(document.querySelector('[data-testid=\"word-search-album-count\"]')?.textContent)>=1"),
+            "A saved found word must appear in the persistent discovery album.");
+        await Click(web,"[data-testid=\"word-search-album-back\"]",
+            "Boolean(document.querySelector('[data-testid=\"word-search-library\"]'))",
+            "Album could not return to a resumable Word Search.");
         Require(await Js(web,"Boolean(document.querySelector('[data-testid=\"word-search-resume\"]'))"),
             "Leaving an unfinished Word Search must preserve a resumable puzzle.");
         await Click(web,"[data-testid=\"word-search-resume\"]",
@@ -97,7 +133,7 @@ internal static class ModernWordSearchSmoke
             "Modern Word Search activity tile did not refresh the completion count.");
 
         File.WriteAllText(Path.Combine(output, "modern-word-search-result.txt"),
-            "PASS: 288 Word Search puzzles, six tiers of 48, React 8x8 game, native found-word selection, reverse support via C#, hint highlight, durable resume, full native completion, reward summary and refreshed Lounge status.");
+            "PASS: 576 Word Search puzzles, six tiers of 96, Words Discovered album, native saved discoveries, New label, React 8x8 game, hint highlight, durable resume, native completion, XP reward and Lounge status.");
     }
 
     private static async Task FindWord(CoreWebView2 web, WordSearchPlacement p, int expected)

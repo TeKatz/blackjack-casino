@@ -43,8 +43,9 @@
 .ws-word-heading b{color:#f4d99f;font-size:16px}
 .ws-side .ws-progress{margin:0}
 .ws-words{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;max-height:min(46vh,460px);overflow:auto;padding:3px}
-.ws-words span{display:block;background:#18382c;border:1px solid #3d604c;border-radius:6px;color:#d7e1cf;padding:7px;font-size:11px;font-weight:700;overflow-wrap:anywhere}
-.ws-words b{color:#e0c17e}.ws-words span.found{background:#28513a;color:#97cfac;text-decoration:line-through}
+.ws-words .ws-word-row{display:flex;align-items:center;gap:6px;background:#18382c;border:1px solid #3d604c;border-radius:6px;color:#d7e1cf;padding:7px;font-size:11px;font-weight:700;overflow-wrap:anywhere}
+.ws-words b{color:#e0c17e}.ws-words .ws-word-row.found{background:#28513a;color:#97cfac}
+.ws-words .ws-word-row.found .ws-word-label{text-decoration:line-through;text-decoration-thickness:1.5px}
 .ws-hint-button{min-height:43px}.ws-note{font-size:11px;color:#96b49f;line-height:1.5;margin:0}
 .ws-status{font-size:12px;color:#eed398;line-height:1.5;min-height:31px}
 .ws-saved{font-size:10px;color:#8dcc9e}.ws-back{background:#244535;border-color:#7c997a}
@@ -60,3 +61,95 @@
 @media(max-width:810px){.ws-levels{grid-template-columns:repeat(2,minmax(0,1fr))}.ws-game-heading{flex-wrap:wrap}.ws-game-stats{width:100%;justify-content:space-between}.ws-columns{grid-template-columns:1fr}.ws-words{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(prefers-reduced-motion:reduce){.ws-cell,.ws-progress>div{transition:none}.ws-cell.hint{animation:none}}
 .ws-board.reduced .ws-cell.hint{animation:none}
+
+/* Word discovery album. The collection is local, durable and grouped by
+   the verified source theme; no browser-authoritative word submission. */
+.ws-hero .ws-album-launch{margin-top:20px;display:flex;align-items:center;gap:13px;
+ width:min(100%,750px);min-height:74px;padding:11px 18px;border:1px solid #bd83eeaa;
+ border-radius:13px;color:#f4e7ff;text-align:left;cursor:pointer;
+ background:radial-gradient(ellipse at 0% 50%,#884bb052,transparent 56%),
+ linear-gradient(95deg,#342049,#182b32 70%,#132b25);
+ box-shadow:0 5px 21px #120b265e,inset 0 1px #e2afff32;
+ transition:border-color .2s,box-shadow .2s,transform .2s;}
+.ws-hero .ws-album-launch:hover{border-color:#e6a7ff;
+ box-shadow:0 7px 28px #ad6cf355;transform:translateY(-1px);}
+.ws-hero .ws-album-launch:focus-visible,.ws-album-return:focus-visible,
+.ws-album-toolbar :is(input,select):focus-visible{outline:2px solid #dba3ff;outline-offset:3px;}
+.ws-album-launch-icon{display:grid;place-items:center;font:40px Georgia,serif;
+ width:52px;height:51px;border-radius:11px;color:#e7b8ff;
+ background:#8b55bf2d;text-shadow:0 0 14px #d1a0ff;}
+.ws-album-launch>span:nth-child(2){display:flex;flex-direction:column;gap:4px;flex:1;}
+.ws-album-launch strong{font:26px Georgia,serif;}
+.ws-album-launch small{font-size:11px;color:#c4abc9;}
+.ws-album-launch b{color:#e8c7ff;font:30px Georgia,serif;}
+.ws-album-launch em{font-size:10px;font-style:normal;letter-spacing:.08em;color:#e4b0fe;font-weight:800;}
+.ws-album{max-width:1450px;margin:0 auto;color:#f0e7f7;}
+.ws-album-header{display:flex;justify-content:space-between;gap:18px;align-items:center;
+ border:1px solid #875bad;border-radius:16px;padding:22px 28px;
+ background:radial-gradient(ellipse at 80% 10%,#8558b14d,transparent 48%),
+ linear-gradient(115deg,#241b39,#0a2025);box-shadow:0 13px 28px #0008;}
+.ws-album-header h1{font:normal clamp(30px,4vw,48px) Georgia,serif;
+ margin:9px 0;color:#efd7ff;}
+.ws-album-header p{font-size:12px;color:#c8b5d5;line-height:1.6;max-width:550px;}
+.ws-album-return{border:1px solid #b78cdb;border-radius:9px;background:#473058;
+ color:#f7dcff;font-size:11px;font-weight:800;padding:12px 16px;cursor:pointer;white-space:nowrap;}
+.ws-album-return:hover{background:#5b3c71;}
+.ws-album-summary{margin:17px 0;padding:13px 22px;display:flex;gap:19px;align-items:center;
+ border:1px solid #75598f;border-radius:14px;
+ background:linear-gradient(95deg,#2f1d46,#181f36,#102e2b);}
+.ws-album-emblem{width:65px;height:65px;display:grid;place-items:center;
+ font:51px Georgia,serif;color:#e1b4ff;text-shadow:0 0 18px #d093ff;}
+.ws-album-summary>div:nth-child(2){display:flex;flex-direction:column;gap:3px;}
+.ws-album-summary strong{font:40px Georgia,serif;color:#edd5ff;font-variant-numeric:tabular-nums;}
+.ws-album-summary span{color:#d2aedf;font-size:10px;letter-spacing:.13em;font-weight:800;}
+.ws-album-summary p{margin-left:auto;color:#c2b6cf;font:italic 18px Georgia,serif;text-align:right;}
+.ws-album-toolbar{display:flex;align-items:center;gap:10px;margin:15px 0;}
+.ws-album-toolbar input,.ws-album-toolbar select{min-height:40px;border:1px solid #84699f;
+ border-radius:8px;background:#171d2c;color:#f3e5fb;font-size:12px;padding:8px 12px;}
+.ws-album-toolbar input{flex:1;min-width:130px;}
+.ws-album-toolbar select{width:min(220px,35%);}
+.ws-album-toolbar>span{font-size:11px;color:#bc9dce;font-variant-numeric:tabular-nums;}
+.ws-album-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(205px,1fr));
+ align-items:stretch;gap:11px;max-height:65vh;overflow:auto;padding:4px;}
+.ws-album-word{position:relative;min-height:121px;overflow:hidden;
+ display:flex;flex-direction:column;gap:6px;padding:17px 17px 11px;
+ border:1px solid #76578f;border-radius:12px;
+ background:radial-gradient(ellipse at 100% 0,#985cb94d,transparent 55%),
+ linear-gradient(140deg,#2b2341,#152934);
+ box-shadow:inset 0 1px #eac0ff23,0 6px 14px #0005;}
+.ws-album-word:hover{border-color:#b58ed6;box-shadow:0 0 24px #a56ed13d;}
+.ws-album-word-sigil{position:absolute;right:12px;top:3px;font:47px Georgia,serif;
+ color:#b17ed252;pointer-events:none;}
+.ws-album-word>strong{position:relative;color:#f4ddff;font:23px Georgia,serif;
+ overflow-wrap:anywhere;letter-spacing:.035em;}
+.ws-album-word>small{position:relative;color:#d7b5e8;font-size:10px;overflow-wrap:anywhere;}
+.ws-album-discovery{margin-top:auto;color:#99b6b1;font-size:10px;}
+.ws-album-empty{padding:42px 22px;border:1px dashed #88669d;border-radius:12px;
+ text-align:center;color:#ceb1d5;background:#211c2f;}
+/* The crossed-out label stays independent from the new purple badge. */
+.ws-words .ws-word-row{min-width:0;position:relative;overflow:visible;}
+.ws-words .ws-word-row b{flex:0 0 auto;}
+.ws-words .ws-word-label{min-width:0;overflow-wrap:anywhere;}
+.ws-words .ws-word-new{margin-left:auto;flex:0 0 auto;display:inline-block;
+ font:900 12px "Segoe UI",sans-serif;letter-spacing:.05em;
+ color:#e1a9ff;text-shadow:0 0 9px #a83cff,0 0 14px #d18cff;
+ text-decoration:none;animation:ws-discovery-arrival 1.1s ease-out both;}
+.ws-words .ws-word-new.static{animation:none;}
+@keyframes ws-discovery-arrival{
+ 0%{transform:translateX(8px) scale(.55);opacity:0;filter:brightness(2.1)}
+ 30%{transform:translateX(0) scale(1.22);opacity:1;filter:brightness(1.65)}
+ 65%{transform:scale(.98);filter:brightness(1)}
+ 100%{transform:scale(1);opacity:1;filter:brightness(1.15)}
+}
+@media(max-width:700px){
+ .ws-album-header{flex-direction:column;align-items:flex-start;padding:19px;}
+ .ws-album-summary{gap:8px;}
+ .ws-album-summary p{font-size:12px;max-width:36%;}
+ .ws-album-grid{grid-template-columns:repeat(auto-fill,minmax(145px,1fr));}
+ .ws-hero .ws-album-launch{flex-wrap:wrap;}
+ .ws-album-launch em{display:none;}
+}
+@media(prefers-reduced-motion:reduce){
+ .ws-words .ws-word-new{animation:none!important;}
+ .ws-hero .ws-album-launch{transition:none;}
+}

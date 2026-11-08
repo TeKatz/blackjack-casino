@@ -87,6 +87,8 @@ public sealed class ModernWordSearchBridgeTests
         WordSearchPlacement target=first.Puzzle.Placements[0];
         Execute("word-search.select",sr:target.EndRow,sc:target.EndColumn,er:target.StartRow,ec:target.StartColumn);
         Assert.Single(saved.ActiveGame!.FoundWords);
+        Assert.Single(saved.DiscoveredWords);
+        Assert.Equal(target.Word, saved.DiscoveredWords[0].Word);
         Execute("word-search.hint");
         Assert.Equal(1,service.CurrentGame!.HintsUsed);
         Execute("word-search.back");
@@ -104,10 +106,11 @@ public sealed class ModernWordSearchBridgeTests
         WordSearchProgressState saved = new();
         bool fail=false;
         int rewards=0;
+        int cues=0;
         var service=new ModernWordSearchService(saved,next=>{
             if(fail)throw new IOException("Disk offline");
             saved=next;
-        },()=>new WordSearchStatistics(),_=>{rewards++;return ProgressionAward.None;},()=> "en");
+        },()=>new WordSearchStatistics(),_=>{rewards++;return ProgressionAward.None;},()=> "en",_=>cues++);
         var s=new ModernWordSearchSession();
         ModernWordSearchReply Do(string action,WordSearchDifficulty? d=null,WordSearchPlacement? p=null)
         {
@@ -121,14 +124,62 @@ public sealed class ModernWordSearchBridgeTests
         Assert.Throws<IOException>(()=>Do("word-search.select",p:placements[0]));
         Assert.Empty(service.CurrentGame!.FoundWords);
         Assert.Empty(saved.ActiveGame!.FoundWords);
+        Assert.Empty(saved.DiscoveredWords);
+        Assert.Equal(0,cues);
         fail=false;
         foreach(var placement in placements)Assert.True(Do("word-search.select",p:placement).Success);
         Assert.True(service.CurrentGame!.Completed);
         Assert.Null(saved.ActiveGame);
         Assert.Single(saved.CompletedGames);
         Assert.Equal(1,rewards);
+        Assert.Equal(placements.Length,cues);
+        Assert.Equal(placements.Length,saved.DiscoveredWords.Count);
         Assert.True(Do("word-search.back").Success);
         Assert.False(Do("word-search.resume").Success);
+    }
+
+    [Fact]
+    public void FirstDiscoveryAndRepeatDiscoveryHaveDistinctNativeReceiptsAndCues()
+    {
+        WordSearchGameState active = WordSearchGame.Start(WordSearchCatalog.For(WordSearchDifficulty.Relaxed)[0]);
+        WordSearchPlacement target = active.Puzzle.Placements[0];
+        var saved = new WordSearchProgressState { ActiveGame = active };
+        var cues = new List<bool>();
+        var service = new ModernWordSearchService(saved, state=>saved=state,
+            ()=>new WordSearchStatistics(),_=>ProgressionAward.None,()=>"en",fresh=>cues.Add(fresh));
+        var session = new ModernWordSearchSession();
+        bool Send(string action,WordSearchPlacement? selected=null)
+        {
+            var req = ModernWordSearchProtocol.Parse(Request(session,action,
+                sr:selected?.StartRow,sc:selected?.StartColumn,er:selected?.EndRow,ec:selected?.EndColumn))!;
+            return session.Execute(req,service.Execute).Success;
+        }
+        Assert.True(Send("word-search.resume"));
+        Assert.True(Send("word-search.select",target));
+        Assert.Equal([true],cues);
+        JsonElement first = JsonSerializer.SerializeToElement(service.Snapshot(),new JsonSerializerOptions
+        {PropertyNamingPolicy=JsonNamingPolicy.CamelCase});
+        Assert.True(first.GetProperty("lastFind").GetProperty("new").GetBoolean());
+        Assert.Equal(target.Word,first.GetProperty("lastFind").GetProperty("word").GetString());
+        Assert.Single(saved.DiscoveredWords);
+        // Duplicate target selections cannot play an additional cue.
+        Assert.False(Send("word-search.select",target));
+        Assert.Equal(1,cues.Count);
+        // A second puzzle with the same target is a successful ordinary find,
+        // but not a fresh addition to the album.
+        var second = WordSearchCatalog.All.Select(d=>WordSearchGame.Start(d))
+            .First(g=>g.Puzzle.Id!=active.Puzzle.Id &&
+                g.Puzzle.Placements.Any(p=>p.Word==target.Word));
+        saved.ActiveGame=second;
+        var again = new ModernWordSearchService(saved,state=>saved=state,
+            ()=>new WordSearchStatistics(),_=>ProgressionAward.None,()=>"en",fresh=>cues.Add(fresh));
+        var nextSession = new ModernWordSearchSession();
+        Assert.True(nextSession.Execute(ModernWordSearchProtocol.Parse(Request(nextSession,"word-search.resume"))!,again.Execute).Success);
+        WordSearchPlacement repeated=second.Puzzle.Placements.First(p=>p.Word==target.Word);
+        Assert.True(nextSession.Execute(ModernWordSearchProtocol.Parse(Request(nextSession,"word-search.select",
+            sr:repeated.StartRow,sc:repeated.StartColumn,er:repeated.EndRow,ec:repeated.EndColumn))!,again.Execute).Success);
+        Assert.Equal([true,false],cues);
+        Assert.Single(saved.DiscoveredWords);
     }
 
     [Fact]
