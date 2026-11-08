@@ -5,11 +5,14 @@ import {listenNeon,sendNeonIntent,symbols} from './bridge';
 import type {NeonIntent,NeonSnapshot,NeonSpin,NeonSymbol} from './bridge';
 import {SymbolArt} from './Symbols';
 import {ReelStage} from './ReelStage';
-import {FEATURE_REVEAL_MS} from './reelMotion';
+import {featureRevealDuration,reelAfterglowDuration} from './reelMotion';
+import type {ReelSpeed} from './reelMotion';
+import {winningTraces} from './winTraces';
 import {VaultAmbient} from './Ambient';
 import {neonImpact,isImpactful} from './presentation';
 import type {NeonImpact} from './presentation';
 import './neonVault.css';
+import './neonVaultEnhancements.css';
 
 const PREVIEW:NeonSymbol[]=[
  'Pulse','Prism','Chip','Crown','Key',
@@ -17,6 +20,11 @@ const PREVIEW:NeonSymbol[]=[
  'Crown','Key','Wild','Chip','Pulse',
  'VaultKey','Prism','Scatter','Key','Crown',
 ];
+const SPEED_STORAGE='neon-vault-speed';
+const readSpeed=():ReelSpeed=>{
+ try{const value=localStorage.getItem(SPEED_STORAGE);return value==='fast'||value==='turbo'?value:'normal';}
+ catch{return 'normal';}
+};
 const dollar=(v:string)=>'$'+Number(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const short=(v:string)=>'$'+Number(v).toLocaleString('en-US',{maximumFractionDigits:0});
 const words={
@@ -32,7 +40,7 @@ const words={
    ways:'PAYING WAYS',stats:'YOUR VAULT RECORD',spins:'Spins',wins:'Wins',
    freeSpins:'Free spins',blackouts:'Blackouts',overrides:'Overrides',jackpots:'Jackpots',
    net:'Net result',best:'Best return',paytable:'PAYTABLE',features:'SYSTEM FEATURES',
-   settings:'SETTINGS',sound:'Slot sounds',motion:'Reel & neon animations',
+   settings:'SETTINGS',sound:'Slot sounds',motion:'Reel & neon animations',speed:'Reel speed',autoCount:'Auto spins',
    explain:'Matches pay on consecutive reels from the left, with Wild substitutes.',
    featureExplain:'3 / 4 / 5 Scatters grant 8 / 12 / 16 Free Spins. Wilds can expand; 12 Vault Energy charges a Security Override.',
    jackpotsExplain:'Access Keys unlock four jackpots. Each multiplier is based on your selected bet.',
@@ -54,7 +62,7 @@ const words={
    ways:'GEWINNWEGE',stats:'DEINE VAULT-STATISTIK',spins:'Drehs',wins:'Gewinne',
    freeSpins:'Freidrehs',blackouts:'Blackouts',overrides:'Übersteuerungen',jackpots:'Jackpots',
    net:'Nettoergebnis',best:'Höchste Auszahlung',paytable:'GEWINNTABELLE',features:'SYSTEMFUNKTIONEN',
-   settings:'EINSTELLUNGEN',sound:'Automatengeräusche',motion:'Walzen- und Neonanimationen',
+   settings:'EINSTELLUNGEN',sound:'Automatengeräusche',motion:'Walzen- und Neonanimationen',speed:'Walzengeschwindigkeit',autoCount:'Autodrehs',
    explain:'Gewinnwege zählen auf aufeinanderfolgenden Walzen von links. Wild ersetzt normale Symbole.',
    featureExplain:'3 / 4 / 5 Scatters geben 8 / 12 / 16 Freidrehs. Wilds können expandieren. 12 Vault-Energie lädt eine Übersteuerung.',
    jackpotsExplain:'Zugangsschlüssel schalten vier Jackpots frei. Multiplikatoren beziehen sich auf den Einsatz.',
@@ -99,10 +107,16 @@ function VaultApp(){
  const [paytableOpen,setPaytableOpen]=useState(false);
  const [settingsOpen,setSettingsOpen]=useState(false);
  const [auto,setAuto]=useState(0);
+ const [autoCount,setAutoCount]=useState('20');
+ const [speed,setSpeed]=useState<ReelSpeed>(readSpeed);
  const snapshotRef=useRef<NeonSnapshot|null>(null),pendingRef=useRef<string|null>(null);
  const first=useRef(true),lastId=useRef<string|null>(null);
  const timers=useRef<ReturnType<typeof setTimeout>[]>([]);
  const settled=useRef(new Set<number>()),autoScheduled=useRef<string|null>(null);
+ const toggleAuto=useCallback(()=>{
+   autoScheduled.current=null;
+   setAuto(count=>count===0?(autoCount==='infinite'?-1:Number(autoCount)):0);
+ },[autoCount]);
  const stopTimers=useCallback(()=>{
    for(const t of timers.current)clearTimeout(t);
    timers.current=[];
@@ -177,7 +191,7 @@ function VaultApp(){
    // The five compositor-driven strips invoke onReelStop only when each
    // physical deceleration/overshoot has settled. No intervals or symbol
    // rerolls are used to fake movement.
-   const featureDelay=FEATURE_REVEAL_MS;
+   const featureDelay=featureRevealDuration(speed);
    timers.current.push(setTimeout(()=>{
      if(isImpactful(reaction)){
        setImpact(reaction);
@@ -204,9 +218,9 @@ function VaultApp(){
      setGrid(result.finalGrid);
    },featureDelay));
    timers.current.push(setTimeout(complete,featureDelay+
-     (result.blackout!=='None'||result.expandedReels.length||result.securityOverrideReel!==null?1050:480)));
+     reelAfterglowDuration(speed,result.blackout!=='None'||result.expandedReels.length>0||result.securityOverrideReel!==null)));
    return()=>stopTimers();
- },[result?.id,snapshot?.state.animationsEnabled,stopTimers]);
+ },[result?.id,snapshot?.state.animationsEnabled,stopTimers,speed]);
  const close=useCallback(()=>{
    setAuto(0);
    if(uncertain)window.chrome?.webview?.postMessage({type:'neon-vault.recover'});
@@ -216,14 +230,15 @@ function VaultApp(){
  useEffect(()=>{
    const key=(e:KeyboardEvent)=>{
      if(e.repeat||e.ctrlKey||e.altKey||e.metaKey
-       ||e.target instanceof HTMLButtonElement||e.target instanceof HTMLInputElement)return;
+       ||e.target instanceof HTMLButtonElement||e.target instanceof HTMLInputElement
+       ||e.target instanceof HTMLSelectElement)return;
      if(e.key==='Escape'){
        e.preventDefault();
        if(paytableOpen)setPaytableOpen(false);
        else if(settingsOpen)setSettingsOpen(false);
        else close();
      }else if(e.code==='Space'){e.preventDefault();intent({action:'spin'});}
-     else if(e.key.toLowerCase()==='a'){e.preventDefault();setAuto(n=>n>0?0:20);}
+     else if(e.key.toLowerCase()==='a'){e.preventDefault();toggleAuto();}
      else if(e.key==='+'||e.key==='-'){
        const s=snapshotRef.current?.state;
        if(!s||s.bonusActive)return;
@@ -233,17 +248,21 @@ function VaultApp(){
    };
    document.addEventListener('keydown',key);
    return()=>document.removeEventListener('keydown',key);
- },[close,intent,settingsOpen,paytableOpen]);
+ },[close,intent,settingsOpen,paytableOpen,toggleAuto]);
  useEffect(()=>{
-   if(!auto||pending||animating||uncertain)return;
+   if(auto===0||pending||animating||uncertain)return;
    const id=result?.id??'initial';
    if(autoScheduled.current===id)return;
    autoScheduled.current=id;
    if(!snapshot?.state.canSpin){setAuto(0);return;}
-   const t=setTimeout(()=>{setAuto(n=>Math.max(0,n-1));intent({action:'spin'});},480);
+   const t=setTimeout(()=>{setAuto(n=>n===-1?-1:Math.max(0,n-1));intent({action:'spin'});},speed==='turbo'?110:speed==='fast'?240:480);
    return()=>clearTimeout(t);
- },[auto,pending,animating,uncertain,snapshot?.state.canSpin,result?.id,intent]);
- const winning=useMemo(()=>finished?winCells(result):new Set<number>(),[finished,result]);
+ },[auto,pending,animating,uncertain,snapshot?.state.canSpin,result?.id,intent,speed]);
+ const winning=useMemo(()=>finished?winCells(result):new Set<number>(),[finished,result?.id]);
+ const traces=useMemo(()=>!result?[]:finished
+   ?winningTraces(result.finalGrid,5)
+   :moving.length>0?winningTraces(result.baseGrid,5-moving.length):[],
+   [result?.id,finished,moving.length]);
  if(!snapshot)return <div className="vault-loading"><div className="vault-loading-diamond">◇</div>
    <h1>NEON VAULT</h1><p>{words.en.loading}</p></div>;
  const s=snapshot.state,t=words[s.language];
@@ -259,7 +278,7 @@ function VaultApp(){
  const activeCols=feature?.key==='blackout'?'blackout':'';
  return <div className="vault-app" data-motion={s.animationsEnabled} lang={s.language} data-testid="neon-vault-app"
    data-spin-id={result?.id??''} data-animating={animating} data-tier={s.betTier} data-bonus={s.bonusActive}
-   data-impact={impact?.kind??'idle'} data-win-tier={impact?.winTier??'none'}>
+   data-impact={impact?.kind??'idle'} data-win-tier={impact?.winTier??'none'} data-speed={speed}>
    <VaultAmbient enabled={s.animationsEnabled&&!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches}
      spinning={animating} energy={s.vaultEnergy} bonus={s.bonusActive} impact={impact}/>
    <header className="vault-header">
@@ -297,7 +316,7 @@ function VaultApp(){
          <div className="vault-board-decoration top" aria-hidden="true">V A U L T &nbsp; A C C E S S &nbsp; A R R A Y</div>
          <ReelStage displayGrid={grid} result={result} rolling={moving}
            reducedMotion={!s.animationsEnabled||!!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches}
-           finished={finished} winning={winning} onStop={onReelStop}/>
+           finished={finished} winning={winning} speed={speed} traces={traces} onStop={onReelStop}/>
          <div className="vault-board-decoration bottom" aria-hidden="true">0 0 1 0 1 ◇ 0 1 1 0 0 ◇ S E C U R E D</div>
          {feature&&<div className={'vault-overlay overlay-'+feature.key} role="status">
            <span>◈</span><strong>{feature.label}</strong><span>◈</span></div>}
@@ -340,9 +359,17 @@ function VaultApp(){
            <button className="vault-spin" data-testid="neon-vault-spin" disabled={locked||!s.canSpin}
              onClick={()=>intent({action:'spin'})}><span>◇</span>
              {animating?t.spinning:s.bonusActive?t.freeSpin:s.canSpin?t.spin:t.noMoney}<kbd>SPACE</kbd></button>
-           <button className="vault-auto" data-testid="neon-vault-auto"
-             disabled={uncertain||(!s.canSpin&&auto===0)}
-             onClick={()=>setAuto(n=>n>0?0:20)}>{auto>0?t.stopAuto:t.auto}</button>
+           <div className="vault-auto-controls">
+             <select className="vault-auto-count" data-testid="neon-vault-auto-count"
+               aria-label={t.autoCount} value={autoCount} disabled={auto!==0}
+               onChange={e=>setAutoCount(e.target.value)}>
+               {['10','20','50','100'].map(count=><option key={count} value={count}>{count}</option>)}
+               <option value="infinite">∞</option>
+             </select>
+             <button className="vault-auto" data-testid="neon-vault-auto"
+               disabled={uncertain||(!s.canSpin&&auto===0)}
+               onClick={toggleAuto}>{auto!==0?t.stopAuto:autoCount==='infinite'?'AUTO ∞':'AUTO ×'+autoCount}</button>
+           </div>
          </div>
        </div>
      </main>
@@ -355,25 +382,10 @@ function VaultApp(){
              <strong>{dollar(item.amount)}</strong></div>)}
          </div><p>{t.jackpotsExplain}</p>
        </section>
-       <section className="vault-panel">
-         <div className="vault-panel-title"><span>▦</span><h2>{t.paytable}</h2>
-           <button data-testid="neon-vault-paytable" onClick={()=>setPaytableOpen(v=>!v)}>
-             {paytableOpen?'−':'+'}</button></div>
-         <div className="vault-paytable">
-           {s.paytable.map(item=><div key={item.id} className="vault-payrow">
-             <SymbolArt symbol={item.id} compact/><span>{item.name}</span>
-             <strong>{item.id==='Scatter'?'FREE':
-               item.id==='VaultKey'?'KEY':
-               item.id==='Wild'?'WILD':item.fiveReels+'×'}</strong></div>)}
-         </div>
-         {paytableOpen&&<div className="vault-paytable-details" data-testid="neon-vault-paytable-details">
-           <div>3 REELS <span>4 REELS</span> 5 REELS</div>
-           {s.paytable.slice(0,5).map(item=><div key={item.id}>{item.name}
-             <span>{item.threeReels}×</span><span>{item.fourReels}×</span><span>{item.fiveReels}×</span></div>)}
-           <p>{t.explain}</p>
-         </div>}
-         <p>{t.featureExplain}</p>
-       </section>
+       <button className="vault-paytable-trigger" data-testid="neon-vault-paytable"
+         onClick={()=>setPaytableOpen(true)} aria-haspopup="dialog">
+         <span>▦</span><strong>{t.paytable}</strong><small>+</small>
+       </button>
        <section className="vault-panel vault-record">
          <h2>{t.stats}</h2><small>PRESTIGE {s.profile.prestige} · LEVEL {s.profile.level} · ◆ {s.profile.coins}</small>
          <div className="vault-record-grid">
@@ -395,11 +407,45 @@ function VaultApp(){
              onChange={e=>intent({action:'sound.set',value:String(e.target.checked)})}/>{t.sound}</label>
            <label><input type="checkbox" checked={s.animationsEnabled} disabled={locked}
              onChange={e=>intent({action:'animations.set',value:String(e.target.checked)})}/>{t.motion}</label>
+           <label className="vault-speed-setting">{t.speed}
+             <select data-testid="neon-vault-speed" aria-label={t.speed} value={speed}
+               disabled={locked||auto!==0} onChange={e=>{
+                 const mode=e.target.value as ReelSpeed;
+                 setSpeed(mode);
+                 try{localStorage.setItem(SPEED_STORAGE,mode);}catch{/* Storage unavailable. */}
+               }}>
+               <option value="normal">Normal</option>
+               <option value="fast">Fast</option>
+               <option value="turbo">Turbo</option>
+             </select>
+           </label>
          </div>}
          <small>{t.offline}</small>
        </section>
      </aside>
    </div>
+   {paytableOpen&&<div className="vault-modal-backdrop" onClick={()=>setPaytableOpen(false)}>
+     <section className="vault-paytable-dialog" role="dialog" aria-modal="true"
+       aria-labelledby="vault-paytable-title" onClick={e=>e.stopPropagation()}
+       data-testid="neon-vault-paytable-details">
+       <header><h2 id="vault-paytable-title">{t.paytable}</h2>
+         <button onClick={()=>setPaytableOpen(false)} aria-label="Close">×</button></header>
+       <div className="vault-paytable-dialog-grid">
+         {s.paytable.map(item=><div key={item.id} className="vault-payrow">
+           <SymbolArt symbol={item.id} compact/><span>{item.name}</span>
+           <strong>{item.id==='Scatter'?'FREE':
+             item.id==='VaultKey'?'KEY':
+             item.id==='Wild'?'WILD':item.fiveReels+'×'}</strong>
+         </div>)}
+       </div>
+       <div className="vault-paytable-details">
+         <div>3 REELS <span>4 REELS</span> 5 REELS</div>
+         {s.paytable.slice(0,5).map(item=><div key={item.id}>{item.name}
+           <span>{item.threeReels}×</span><span>{item.fourReels}×</span><span>{item.fiveReels}×</span></div>)}
+       </div>
+       <p>{t.explain}</p><p>{t.featureExplain}</p>
+     </section>
+   </div>}
  </div>;
 }
 createRoot(document.getElementById('root')!).render(<VaultApp/>);

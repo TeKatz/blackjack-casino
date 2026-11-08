@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {reelVisualStrip,reelTrackGeometry,reelKeyframes,REEL_STOP_MS,FEATURE_REVEAL_MS} from '../src/neonVault/reelMotion';
+import {reelVisualStrip,reelTrackGeometry,reelKeyframes,REEL_STOP_MS,FEATURE_REVEAL_MS,reelStopDuration,featureRevealDuration} from '../src/neonVault/reelMotion';
 import type {NeonSymbol} from '../src/neonVault/bridge';
 const initial:NeonSymbol[]=['Pulse','Prism','Chip','Crown'];
 const final:NeonSymbol[]=['Wild','Scatter','VaultKey','Key'];
@@ -34,6 +34,13 @@ describe('premium reel motion is visual-only and geometrically exact',()=>{
   expect(y(frames[5])).toBeLessThan(y(frames[6]));
   expect(y(frames[0])).toBe(geometry.start);
   expect(y(frames[6])).toBe(geometry.finish);
+ });
+ it('offers decreasing normal, fast and turbo durations without changing reel symbols',()=>{
+  expect(reelStopDuration(4,'normal')).toBe(REEL_STOP_MS[4]);
+  expect(reelStopDuration(4,'fast')).toBeLessThan(reelStopDuration(4,'normal'));
+  expect(reelStopDuration(4,'turbo')).toBeLessThan(reelStopDuration(4,'fast'));
+  for(const speed of ['normal','fast','turbo'] as const)
+   expect(featureRevealDuration(speed)).toBeGreaterThan(reelStopDuration(4,speed));
  });
  it('keeps stop times ordered and feature reveal after the last reel settles',()=>{
   expect(REEL_STOP_MS).toHaveLength(5);

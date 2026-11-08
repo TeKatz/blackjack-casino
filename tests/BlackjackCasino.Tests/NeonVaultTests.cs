@@ -5,6 +5,16 @@ namespace BlackjackCasino.Tests;
 public sealed class NeonVaultTests
 {
     [Fact]
+    public void A_Small_Wild_Frequency_Boost_Keeps_The_Strip_At_One_Hundred()
+    {
+        Assert.Equal(100, NeonVaultRules.TotalWeight);
+        Assert.Equal(27, NeonVaultRules.Symbols.Single(x => x.Symbol == NeonVaultSymbol.Pulse).Weight);
+        Assert.Equal(5, NeonVaultRules.Symbols.Single(x => x.Symbol == NeonVaultSymbol.Wild).Weight);
+        Assert.Equal(NeonVaultSymbol.Scatter, NeonVaultRules.SymbolForRoll(96));
+        Assert.Equal(NeonVaultSymbol.VaultKey, NeonVaultRules.SymbolForRoll(99));
+    }
+
+    [Fact]
     public void Supports_Max_Vault_Bet()
     {
         var random = new SequenceRandom(NoMatchGrid().Concat([5_000]));

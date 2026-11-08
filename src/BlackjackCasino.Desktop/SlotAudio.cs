@@ -1,7 +1,8 @@
 namespace BlackjackCasino.Desktop;
 
 internal enum SlotSound { Start, Tick, Stop, Win, Jackpot, Push, Loss, Anticipation, Wild, Blackout, FreeSpins,
-    NeonLockdown, NeonOverload, NeonTotalBlackout, NeonOverride, NeonBigWin, NeonMegaWin }
+    NeonLockdown, NeonOverload, NeonTotalBlackout, NeonOverride, NeonBigWin, NeonMegaWin,
+    NeonWinSparkle, NeonWinCascade, NeonWinTriumph }
 
 /// <summary>Original synthesized mechanical and musical cues, offline and asset-free.</summary>
 internal sealed class SlotAudio : IDisposable
@@ -37,6 +38,9 @@ internal sealed class SlotAudio : IDisposable
             SlotSound.NeonOverride => 0.82,
             SlotSound.NeonBigWin => 1.32,
             SlotSound.NeonMegaWin => 2.15,
+            SlotSound.NeonWinSparkle => 0.83,
+            SlotSound.NeonWinCascade => 1.43,
+            SlotSound.NeonWinTriumph => 2.24,
             _ => 0.30,
         };
         const int rate = 44_100;
@@ -61,6 +65,9 @@ internal sealed class SlotAudio : IDisposable
             SlotSound.Jackpot => [523.25, 659.25, 783.99, 1046.50, 783.99, 1046.50, 1318.51, 1567.98],
             SlotSound.NeonBigWin => [392.00, 523.25, 659.25, 783.99, 1046.50, 1318.51],
             SlotSound.NeonMegaWin => [261.63, 392.00, 523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98, 2093.00],
+            SlotSound.NeonWinSparkle => [987.77, 1318.51, 1567.98, 2093.00],
+            SlotSound.NeonWinCascade => [392.00, 587.33, 783.99, 1174.66, 1567.98, 2093.00, 2349.32],
+            SlotSound.NeonWinTriumph => [261.63, 392.00, 523.25, 783.99, 1046.50, 1318.51, 1567.98, 2093.00, 2637.02, 3135.96],
             SlotSound.NeonOverride => [196, 293.66, 440, 659.25],
             SlotSound.Win => [523.25, 659.25, 783.99, 1046.50],
             SlotSound.FreeSpins => [392.00, 523.25, 659.25, 783.99, 1046.50],
@@ -90,7 +97,7 @@ internal sealed class SlotAudio : IDisposable
             };
             for (int note = 0; note < notes.Length; note++)
             {
-                double local = t - note * (sound is SlotSound.Jackpot or SlotSound.NeonMegaWin ? 0.19 : 0.14);
+                double local = t - note * (sound is SlotSound.Jackpot or SlotSound.NeonMegaWin or SlotSound.NeonWinTriumph ? 0.19 : 0.14);
                 if (local >= 0)
                 {
                     sample += (Math.Sin(2 * Math.PI * notes[note] * local)

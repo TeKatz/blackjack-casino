@@ -136,3 +136,24 @@ columns and clears the temporary strips before leaving the game.
 
 All player balances, payouts, reel probabilities, feature frequencies,
 progression and save formats remain unchanged.
+
+## React / PixiJS cabinet refinement (November 2026)
+
+- Five reel tracks retain the C#-settled base/final grids. No per-spin SVG motion blur;
+  the speed selector (Normal, Fast, Turbo) scales only visual stop/reveal delays.
+  The selector is kept in the WebView virtual-host local storage.
+- Memoized symbol artwork and reel stage isolate the active SVG/Web Animations
+  and PixiJS canvas from unrelated bankroll/bet snapshot updates.
+- A right-hand Paytable trigger opens a full breakdown dialog instead of keeping
+  the symbol table permanently expanded in the narrow information sidebar.
+- Autospins: 10/20/50/100/unlimited. A new run always resets its last-spin guard;
+  timeout, failed receipt and insufficient bankroll terminate the loop.
+- C# base-grid paying ways can be highlighted as reels physically settle. Final
+  ways are traced after all bonus mutations, using the verified final C# grid.
+  No separate client-side outcome or bankroll calculations exist.
+- Tiered continuous jackpot pulses (cyan, teal, violet, gold), complete crown
+  silhouette and new cyan/purple optical-prism artwork.
+- Existing win audio remains intact; three original synthesized win accents are
+  layered over small, big and mega-win/jackpot outcomes.
+- The native symbol strip stays at 100 weight points. One point shifts from
+  Pulse (28 -> 27) to Wild (4 -> 5), a deliberately mild chance adjustment.

@@ -193,6 +193,16 @@ public partial class MainWindow
             : result.FreeSpinsAwarded > 0 ? SlotSound.FreeSpins
             : result.Payout > 0 ? SlotSound.Win : SlotSound.Loss;
         modernNeonVaultAudio?.Play(outcome, enabled);
+        // Layer a fresh neon flourish over the existing native win sound.
+        // AudioMixer supports simultaneous tails; no legacy cue is replaced.
+        if (result.Payout > 0)
+        {
+            SlotSound flourish = result.Jackpot is NeonVaultJackpot.Grand or NeonVaultJackpot.Major
+                || result.TotalMultiplier >= 50m ? SlotSound.NeonWinTriumph
+                : result.Jackpot != NeonVaultJackpot.None || result.TotalMultiplier >= 10m
+                    ? SlotSound.NeonWinCascade : SlotSound.NeonWinSparkle;
+            modernNeonVaultAudio?.Play(flourish, enabled);
+        }
     }
 
     private void OnModernNeonVaultFailed()

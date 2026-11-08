@@ -4,6 +4,18 @@ import type {NeonSymbol} from './bridge';
 /** Pure, visual-only timing. Never used for C# RNG, payout, or bonus decisions. */
 export const REEL_STOP_MS=[760,1120,1510,1920,2430] as const;
 export const FEATURE_REVEAL_MS=REEL_STOP_MS[4]+240;
+export type ReelSpeed='normal'|'fast'|'turbo';
+const SPEED_FACTOR:Record<ReelSpeed,number>={normal:1,fast:.65,turbo:.38};
+export function reelStopDuration(reel:number,speed:ReelSpeed):number{
+ if(reel<0||reel>=REEL_STOP_MS.length)throw new RangeError('Invalid reel');
+ return Math.round(REEL_STOP_MS[reel]*SPEED_FACTOR[speed]);
+}
+export function featureRevealDuration(speed:ReelSpeed):number{
+ return reelStopDuration(4,speed)+Math.round(240*SPEED_FACTOR[speed]);
+}
+export function reelAfterglowDuration(speed:ReelSpeed,feature:boolean):number{
+ return Math.round((feature?1050:480)*SPEED_FACTOR[speed]);
+}
 export const INITIAL_GUARD_ROWS=1;
 const spinSeed=(id:string,reel:number):number=>{
  let hash=(2166136261 ^ reel*97)>>>0;
