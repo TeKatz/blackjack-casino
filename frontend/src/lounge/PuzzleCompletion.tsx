@@ -1,5 +1,5 @@
 import {useEffect,useRef} from 'react';
-import type {ReactNode} from 'react';
+import type {CSSProperties,ReactNode} from 'react';
 import './puzzleCompletion.css';
 
 export type CompletionMetric={label:string;value:string|number};
@@ -35,7 +35,7 @@ export function PuzzleCompletion({testId,kind,title,subtitle,metrics,rewardXp,se
   <div className={'puzzle-finish-panel puzzle-finish-'+kind}>
    <div className="puzzle-finish-glow" aria-hidden="true"/>
    <div className="puzzle-finish-celebration" aria-hidden="true">
-    {Array.from({length:22},(_,i)=><span key={i} style={{'--i':i} as React.CSSProperties}/>)}
+    {Array.from({length:22},(_,i)=><span key={i} style={{'--i':i} as CSSProperties}/>)}
    </div>
    <div className="puzzle-finish-crest" aria-hidden="true">
     <span>{kind==='words'?'✧':'♠'}</span>

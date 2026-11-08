@@ -273,7 +273,7 @@ export function WordSearchScreen({state,language,pending,error,command,animation
     rewardNotice={state.rewardNotice} xpLabel={t.xp} seasonLabel={t.season}
     viewLabel={t.boardView} backLabel={t.finishBack}
     onView={()=>setDismissedCompletion(game.id)}
-    onBack={()=>command({action:'word-search.back'})} animated={animations}/>
+    onBack={()=>command({action:'word-search.back'})} animated={animations}/>}
    <p className="ws-note ws-bottom-note">{t.noRush}</p>
  </section>;
 }

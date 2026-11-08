@@ -357,7 +357,7 @@ export function SolitaireScreen({state,language,pending,error,command}:Props){
     rewardNotice={state.rewardNotice} xpLabel={t.playerXp} seasonLabel={t.seasonXp}
     viewLabel={t.boardView} backLabel={t.finishBack}
     onView={()=>setDismissedCompletion(game.gameId)}
-    onBack={()=>command({action:'solitaire.back'})}/>
+    onBack={()=>command({action:'solitaire.back'})}/>}
   <p className="sol-disclaimer">{t.noRush}</p>
  </section>;
 }
