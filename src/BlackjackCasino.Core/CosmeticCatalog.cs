@@ -76,9 +76,9 @@ public static class CosmeticCatalog
         new("portrait-golden-joker", "Golden Joker", CosmeticKind.Portrait, 2800, true, "A theatrical gold mask for players who enjoy variance.", "portrait-golden-joker"),
         new("portrait-velvet-king", "Velvet King", CosmeticKind.Portrait, 3400, true, "An imperial velvet king crowned in gold, rubies and amethyst.", "portrait-velvet-king"),
 
-        // Exclusive challenge portrait. Never sold in the shop; the personal artwork is supplied separately.
+        // Exclusive challenge portrait; stable Sudoku Master Key reward and original ID.
         new(SecretGuestPortraitId, "The Secret Guest", CosmeticKind.Portrait, 0, false,
-            "An exclusive portrait unlocked by claiming the Master Key Sudoku challenge.", "portrait-secret-guest"),
+            "She appears before the room remembers.", "portrait-secret-guest"),
 
         // Playing-card cosmetics. Classic remains free; the first premium collection requires Player Prestige I.
         new("cardset-art-deco", "Art Deco", CosmeticKind.CardSet, 1800, true, "Ivory faces, black geometry and restrained brass trim.", "card-art-deco"),
