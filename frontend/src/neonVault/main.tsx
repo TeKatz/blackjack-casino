@@ -4,6 +4,8 @@ import {createRoot} from 'react-dom/client';
 import {listenNeon,sendNeonIntent,symbols} from './bridge';
 import type {NeonIntent,NeonSnapshot,NeonSpin,NeonSymbol} from './bridge';
 import {SymbolArt} from './Symbols';
+import {ReelStage} from './ReelStage';
+import {FEATURE_REVEAL_MS} from './reelMotion';
 import {VaultAmbient} from './Ambient';
 import {neonImpact,isImpactful} from './presentation';
 import type {NeonImpact} from './presentation';
@@ -15,7 +17,6 @@ const PREVIEW:NeonSymbol[]=[
  'Crown','Key','Wild','Chip','Pulse',
  'VaultKey','Prism','Scatter','Key','Crown',
 ];
-const STOPS=[650,980,1370,1760,2220];
 const dollar=(v:string)=>'$'+Number(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const short=(v:string)=>'$'+Number(v).toLocaleString('en-US',{maximumFractionDigits:0});
 const words={
@@ -101,12 +102,10 @@ function VaultApp(){
  const snapshotRef=useRef<NeonSnapshot|null>(null),pendingRef=useRef<string|null>(null);
  const first=useRef(true),lastId=useRef<string|null>(null);
  const timers=useRef<ReturnType<typeof setTimeout>[]>([]);
- const ticker=useRef<ReturnType<typeof setInterval>|null>(null);
- const settled=useRef(new Set<number>()),visual=useRef(0),autoScheduled=useRef<string|null>(null);
+ const settled=useRef(new Set<number>()),autoScheduled=useRef<string|null>(null);
  const stopTimers=useCallback(()=>{
    for(const t of timers.current)clearTimeout(t);
    timers.current=[];
-   if(ticker.current!==null){clearInterval(ticker.current);ticker.current=null;}
  },[]);
  const intent=useCallback((command:NeonIntent)=>{
    const current=snapshotRef.current;
@@ -139,6 +138,18 @@ function VaultApp(){
    },9000);
    return()=>clearTimeout(watchdog);
  },[pending]);
+ const onReelStop=useCallback((spinId:string,reel:number)=>{
+   const current=snapshotRef.current;
+   const spin=current?.state.lastSpin;
+   if(!spin||spin.id!==spinId||settled.current.has(reel))return;
+   settled.current.add(reel);
+   setMoving(m=>m.filter(col=>col!==reel));
+   setGrid(g=>g.map((symbol,index)=>index%5===reel?spin.baseGrid[index]:symbol));
+   window.chrome?.webview?.postMessage({type:'neon-vault.reel-stop',spinId,reel});
+   if(reel===3&&spin.nearMiss!=='None')
+     setFeature({key:'near',label:words[current.state.language].nearMiss+
+       ' · '+spin.nearMiss.toUpperCase()});
+ },[]);
  const result=snapshot?.state.lastSpin??null;
  useEffect(()=>{
    if(!snapshot)return;
@@ -162,21 +173,11 @@ function VaultApp(){
      timers.current.push(setTimeout(()=>setImpact(null),reaction.strength===3?2300:1450));
    };
    if(!snapshot.state.animationsEnabled||reduce){complete();return;}
-   setAnimating(true);setMoving([0,1,2,3,4]);visual.current=0;
-   ticker.current=setInterval(()=>{
-     visual.current++;
-     setGrid(g=>g.map((symbol,index)=>settled.current.has(index%5)
-       ?symbol:symbols[(visual.current+index*5)%symbols.length]));
-   },90);
-   STOPS.forEach((delay,reel)=>timers.current.push(setTimeout(()=>{
-     settled.current.add(reel);
-     setMoving(v=>v.filter(n=>n!==reel));
-     setGrid(g=>g.map((symbol,index)=>index%5===reel?result.baseGrid[index]:symbol));
-     window.chrome?.webview?.postMessage({type:'neon-vault.reel-stop',spinId:result.id,reel});
-     if(reel===3&&result.nearMiss!=='None')
-       setFeature({key:'near',label:words[snapshot.state.language].nearMiss+' · '+result.nearMiss.toUpperCase()});
-   },delay)));
-   const featureDelay=STOPS[4]+220;
+   setAnimating(true);setMoving([0,1,2,3,4]);
+   // The five compositor-driven strips invoke onReelStop only when each
+   // physical deceleration/overshoot has settled. No intervals or symbol
+   // rerolls are used to fake movement.
+   const featureDelay=FEATURE_REVEAL_MS;
    timers.current.push(setTimeout(()=>{
      if(isImpactful(reaction)){
        setImpact(reaction);
@@ -256,9 +257,6 @@ function VaultApp(){
  const tierLabel=t[('tier'+s.betTier) as 'tierStandard'|'tierHighRoller'|'tierVaultClass'|'tierMaxExposure'];
  const energy=Math.min(100,Math.round(100*s.vaultEnergy/s.energyTarget));
  const activeCols=feature?.key==='blackout'?'blackout':'';
- const highlight=(i:number)=>finished&&(winning.has(i)
-   ||result?.expandedReels.includes(i%5)||result?.blackoutWildCells.includes(i)
-   ||result?.securityOverrideReel===i%5);
  return <div className="vault-app" data-motion={s.animationsEnabled} lang={s.language} data-testid="neon-vault-app"
    data-spin-id={result?.id??''} data-animating={animating} data-tier={s.betTier} data-bonus={s.bonusActive}
    data-impact={impact?.kind??'idle'} data-win-tier={impact?.winTier??'none'}>
@@ -297,17 +295,9 @@ function VaultApp(){
        <div className={'vault-board '+activeCols} data-testid="neon-vault-grid">
          <div className="vault-board-hologram" aria-hidden="true"/>
          <div className="vault-board-decoration top" aria-hidden="true">V A U L T &nbsp; A C C E S S &nbsp; A R R A Y</div>
-         <div className="vault-grid">
-           {grid.map((symbol,i)=><div key={i} data-symbol={symbol}
-             className={'vault-cell'+(moving.includes(i%5)?' rolling':'')
-               +(highlight(i)?' winner':'')
-               +(finished&&winning.size>0&&!highlight(i)?' muted':'')
-               +(feature?.key==='blackout'?' alarm':'')
-               +(finished&&result?.blackoutWildCells.includes(i)?' converted':'')}>
-             <SymbolArt symbol={symbol}/>
-             {finished&&result?.securityOverrideReel===i%5&&<span className="vault-cell-tag">OVERRIDE</span>}
-           </div>)}
-         </div>
+         <ReelStage displayGrid={grid} result={result} rolling={moving}
+           reducedMotion={!s.animationsEnabled||!!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches}
+           finished={finished} winning={winning} onStop={onReelStop}/>
          <div className="vault-board-decoration bottom" aria-hidden="true">0 0 1 0 1 ◇ 0 1 1 0 0 ◇ S E C U R E D</div>
          {feature&&<div className={'vault-overlay overlay-'+feature.key} role="status">
            <span>◈</span><strong>{feature.label}</strong><span>◈</span></div>}

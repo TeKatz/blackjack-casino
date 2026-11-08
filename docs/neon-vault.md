@@ -89,3 +89,50 @@ sound; it has no effect on rewards, session state or the RNG.
 Acceptance checks cover the durable 20-cell layout, native spin persistence,
 frame/FX DOM surface and reel controls under compact and 1440p resolutions.
 `neonVaultPresentation.test.ts` verifies event classification and priority.
+
+
+## Premium symbol and physical reel upgrade (2026-11-08)
+
+The eight Neon Vault symbols now use **wide 200×136 SVG artwork** that fills
+the landscape reel window instead of letterboxed 160×160 black squares. Each
+symbol is rebuilt with premium metal/faceted surfaces, a separate energy
+halo, plated circuit glass, foil highlights, and a characteristic visual core:
+an electrocardiogram with concentric pulses, multi-faceted prism, heavy
+casino chip, jeweled crown, large mechanical vault key, plasma Wild,
+mechanical vault-break wheel, and a purple access-key crest.
+
+During idle, each family has a different slow motion: breathing circuitry,
+prism color refraction, chip tilt, crown jewels, key-polish highlight,
+magnetized Wild, vault-wheel rotation, and access-core power. Winning cells
+amplify their inner glow and animate independently. A global reduced-motion
+setting and the Neon Vault animation preference stop this motion.
+
+The former 90-ms `setInterval` icon replacement has been removed.
+`ReelStage.tsx` now renders **five real vertical strips** of SVG symbols,
+with an initial recoil, gradual acceleration, smooth velocity change,
+near-end deceleration, a 13%-cell mechanical overshoot, and magnetic
+settle. Animation uses the browser Web Animations compositor rather than
+repeated React state updates. Each strip contains an initial guard,
+the four previously displayed cells, deterministic **cosmetic-only**
+intermediate cells, the four **C#-authoritative base-grid** cells, and an end
+guard. The final stop reveals exactly those four base cells: generated
+intermediate symbols are never treated as outcomes or counted in the wallet.
+Reel-stop sound events fire only after the corresponding visual strip
+settles, by verified spin ID, once per reel.
+
+Different reels finish at 760/1120/1510/1920/2430 ms. The existing
+near-miss and feature overlay then reveal the C# final grid after the
+last reel; Blackout, Wild and Override still execute only from the
+real host receipt. The fallback for Windows reduced motion or disabled
+animations resolves all reels and the native sound path immediately.
+Animation cleanup cancels the strips on navigation/recovery, and a
+bounded timeout prevents a stuck animation from blocking the controls.
+
+The dedicated `reelMotion.ts` tests check exact final-cell geometry,
+deterministic non-gameplay filler, ordered stops, recoil, overshoot and
+settle; React render tests cover all eight wide, animated symbols and the
+20 original visible cells. Native WebView2 smoke verifies all five
+columns and clears the temporary strips before leaving the game.
+
+All player balances, payouts, reel probabilities, feature frequencies,
+progression and save formats remain unchanged.

@@ -351,3 +351,122 @@ button:focus-visible,input:focus-visible{outline:2px solid #7ef0fc;outline-offse
  .vault-cell::after,.vault-cell.converted:before,.vault-win-fanfare{animation:none!important;}
 }
 .vault-app[data-motion=false] .vault-ambient{display:none!important;}
+
+
+/* v3 premium reels — landscape symbols occupy the complete reel glass.
+   Reel tapes animate only compositor transforms; React never re-rolls icons. */
+.vault-grid{--vault-cell-gap:clamp(3px,.6vw,8px);grid-template-rows:minmax(0,1fr);gap:var(--vault-cell-gap);}
+.vault-reel-column{position:relative;min-width:0;min-height:0;height:100%;overflow:hidden;
+ border-radius:10px;background:#040b19;isolation:isolate;
+ box-shadow:0 0 0 1px #5989ac55,0 0 18px #041426,inset 0 0 18px #000;}
+.vault-reel-static{position:absolute;inset:0;display:grid;
+ grid-template-rows:repeat(4,minmax(0,1fr));gap:var(--vault-cell-gap);min-height:0;}
+.vault-reel-column .vault-cell{height:100%;min-height:0;min-width:0;border:1px solid #567ba0a8;
+ border-radius:7px;overflow:hidden;display:block;box-shadow:inset 0 0 13px #020414d9;
+ background:linear-gradient(135deg,#06142b,#0f2350 55%,#050a1a);}
+.vault-reel-column .vault-symbol{width:100%;height:100%;display:block;object-fit:fill;
+ filter:none;transform:none;}
+.vault-reel-column .vault-cell[data-symbol="Crown"],
+.vault-reel-column .vault-cell[data-symbol="Scatter"]{border-color:#ac8f4e88;}
+.vault-reel-column .vault-cell[data-symbol="Prism"],
+.vault-reel-column .vault-cell[data-symbol="VaultKey"]{border-color:#9764c6aa;}
+.vault-reel-column .vault-cell[data-symbol="Wild"]{border-color:#d74db7bd;}
+.vault-reel-glass{position:absolute;inset:0;pointer-events:none;z-index:5;border-radius:9px;
+ background:linear-gradient(90deg,#0107119c 0%,transparent 6%,#e5ffff04 43%,
+ #c9eeff0c 53%,transparent 89%,#01071198 100%);
+ box-shadow:inset 3px 0 6px #0009,inset -3px 0 6px #0009;}
+.vault-reel-glass::before,.vault-reel-glass::after{content:"";position:absolute;
+ left:1px;right:1px;pointer-events:none;height:8px;}
+.vault-reel-glass::before{top:0;background:linear-gradient(#040718ca,transparent);}
+.vault-reel-glass::after{bottom:0;background:linear-gradient(transparent,#040718dc);}
+.vault-reel-viewport{position:absolute;inset:0;overflow:hidden;z-index:3;
+ border-radius:9px;background:#060e26;pointer-events:none;contain:paint;}
+.vault-reel-tape{position:absolute;top:0;left:0;right:0;
+ display:flex;flex-direction:column;gap:var(--vault-cell-gap);will-change:transform;
+ transform:translate3d(0,0,0);backface-visibility:hidden;}
+.vault-reel-tile{position:relative;min-height:0;height:var(--vault-reel-cell-height);
+ flex:0 0 var(--vault-reel-cell-height);overflow:hidden;border:1px solid #34628066;
+ border-radius:7px;background:#0a142b;}
+.vault-reel-tile .vault-symbol{width:100%;height:100%;display:block;}
+.vault-reel-tile .vault-symbol-core{filter:none;}
+.vault-reel-speed-glass{position:absolute;inset:0;z-index:3;pointer-events:none;
+ background:linear-gradient(180deg,#060e227a 0%,#d8f6ff07 13%,transparent 37%,
+ #b4e8ff0b 60%,#050a1da3 100%);
+ box-shadow:inset 0 12px 12px #0007,inset 0 -12px 12px #0007;}
+.vault-reel-column.is-rolling{box-shadow:0 0 0 1px #9dfaff88,0 0 18px #38cfff38;}
+.vault-reel-column.is-rolling .vault-reel-glass{
+ background:linear-gradient(180deg,#9ff6ff09,#6acfff15 48%,#eaffff0b);}
+.vault-cell.winner{border-color:#9affdc;
+ background:#09253b;z-index:1;box-shadow:inset 0 0 16px #5effdf99,0 0 15px #46ffe8b0;}
+.vault-cell.winner::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+ background:radial-gradient(ellipse at 50% 50%,#b6fff521,transparent 80%);
+ animation:vault-win-internal 1.2s ease-in-out infinite alternate;}
+.vault-cell.winner .vault-symbol-core{filter:drop-shadow(0 0 9px #bfffff6e);}
+.vault-cell.muted{opacity:.43;filter:saturate(.62);}
+.vault-cell.converted{border-color:#ff78da;box-shadow:0 0 20px #ff62ccae,inset 0 0 21px #f865ec77;}
+.vault-reel-column .vault-cell-tag{z-index:4;pointer-events:none;}
+/* Core geometry is premium artwork, not text padding. Per-symbol motion is
+   intentionally low-amplitude. Each material has an individual animation. */
+.vault-symbol-core{filter:drop-shadow(0 0 3px #b9f5ff52);}
+.vault-symbol-animated .vault-symbol-energy{transform-origin:100px 69px;
+ animation:vault-symbol-breathe 4.7s ease-in-out infinite alternate;}
+.vault-symbol-animated .vault-symbol-foil-sweep{animation:vault-foil-travel 7.2s ease-in-out infinite;}
+.vault-symbol-animated .vault-symbol-sparkles{animation:vault-twinkle 3.4s ease-in-out infinite alternate;}
+.vault-symbol-animated.vault-symbol-pulse .vault-symbol-pulse-line{
+ animation:vault-electro-trace 2.35s ease-in-out infinite alternate;}
+.vault-symbol-animated.vault-symbol-pulse .vault-symbol-pulse-rings{
+ transform-origin:100px 68px;animation:vault-pulse-rings 2.35s ease-in-out infinite;}
+.vault-symbol-animated.vault-symbol-prism .vault-symbol-prism-facets{
+ transform-origin:100px 69px;animation:vault-prismatic 5.1s ease-in-out infinite alternate;}
+.vault-symbol-animated.vault-symbol-chip .vault-symbol-chip-spin{
+ transform-origin:100px 68px;animation:vault-chip-tilt 7s ease-in-out infinite alternate;}
+.vault-symbol-animated.vault-symbol-crown .vault-symbol-crown-gems{
+ animation:vault-crown-glimmer 3s ease-in-out infinite alternate;}
+.vault-symbol-animated.vault-symbol-key .vault-symbol-key-crest{
+ transform-origin:62px 72px;animation:vault-key-polish 5s ease-in-out infinite alternate;}
+.vault-symbol-animated.vault-symbol-wild .vault-symbol-wild-plasma{
+ transform-origin:101px 68px;animation:vault-wild-magnetism 3s ease-in-out infinite alternate;}
+.vault-symbol-animated.vault-symbol-scatter .vault-symbol-vault-wheel{
+ transform-origin:100px 67px;animation:vault-wheel-turn 12s linear infinite;}
+.vault-symbol-animated.vault-symbol-vaultkey .vault-symbol-access-halo{
+ transform-origin:100px 68px;animation:vault-access-pulse 4.5s ease-in-out infinite alternate;}
+.vault-symbol-celebrate .vault-symbol-core{
+ animation:vault-symbol-victory .72s ease-in-out infinite alternate;}
+.vault-symbol-celebrate .vault-symbol-energy{animation-duration:.85s;}
+.vault-symbol-compact .vault-symbol-foil-sweep{display:none;}
+.vault-symbol-compact .vault-symbol-core{filter:none;}
+@keyframes vault-symbol-breathe{from{opacity:.65;transform:scale(.94)}to{opacity:1;transform:scale(1.09)}}
+@keyframes vault-foil-travel{0%,34%{transform:translateX(-95px);opacity:0}
+  44%{opacity:.18}62%,100%{transform:translateX(255px);opacity:0}}
+@keyframes vault-twinkle{from{opacity:.24}to{opacity:.95}}
+@keyframes vault-electro-trace{from{opacity:.62;stroke-width:7}
+ to{opacity:1;stroke-width:11;filter:drop-shadow(0 0 7px #75faff)}}
+@keyframes vault-pulse-rings{0%{opacity:.34;transform:scale(.93)}
+  50%{opacity:.95;transform:scale(1.07)}100%{opacity:.34;transform:scale(.93)}}
+@keyframes vault-prismatic{from{filter:hue-rotate(-13deg) brightness(.9);transform:scale(.97)}
+ to{filter:hue-rotate(13deg) brightness(1.18);transform:scale(1.025)}}
+@keyframes vault-chip-tilt{from{transform:rotate(-7deg) scale(.985)}
+ to{transform:rotate(7deg) scale(1.025)}}
+@keyframes vault-crown-glimmer{from{opacity:.62;filter:drop-shadow(0 0 1px #ffe6ad)}
+ to{opacity:1;filter:drop-shadow(0 0 7px #fff7b2)}}
+@keyframes vault-key-polish{from{filter:brightness(.9)}
+ to{filter:brightness(1.22)}}
+@keyframes vault-wild-magnetism{from{transform:scale(.95) rotate(-3deg);filter:brightness(.8)}
+ to{transform:scale(1.055) rotate(3deg);filter:brightness(1.26)}}
+@keyframes vault-wheel-turn{to{transform:rotate(360deg)}}
+@keyframes vault-access-pulse{from{transform:scale(.97);filter:brightness(.9)}
+ to{transform:scale(1.05);filter:brightness(1.2)}}
+@keyframes vault-symbol-victory{from{filter:drop-shadow(0 0 3px #d9fff6);transform:scale(.99)}
+ to{filter:drop-shadow(0 0 10px #d1fff0);transform:scale(1.04)}}
+@keyframes vault-win-internal{to{opacity:.4;filter:brightness(1.2)}}
+/* The presentation preference and OS accessibility setting disable ALL
+   cosmetic movement, not only the particle canvas. */
+.vault-app[data-motion="false"] .vault-symbol *,
+.vault-app[data-motion="false"] .vault-symbol,
+.vault-app[data-motion="false"] .vault-reel-column *,
+.vault-app[data-motion="false"] .vault-reactor-rail,
+.vault-app[data-motion="false"] .vault-reactor-pins i{animation:none!important;transition:none!important;}
+@media(prefers-reduced-motion:reduce){
+ .vault-symbol *, .vault-symbol, .vault-reel-column *{animation:none!important;transition:none!important;}
+ .vault-cell.winner::before{animation:none!important;}
+}

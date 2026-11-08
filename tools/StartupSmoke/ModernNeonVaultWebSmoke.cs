@@ -32,7 +32,11 @@ internal static class ModernNeonVaultWebSmoke
             + "&&document.querySelector('[data-testid=\"neon-vault-spin\"]')"
             + "&&document.querySelector('.vault-machine[data-impact=\"idle\"]')"
             + "&&document.querySelectorAll('.vault-reactor-pins i').length===12"
-            + "&&document.querySelector('[data-neon-engine=\"pixi-cabinet-v2\"]'))") == "true",
+            + "&&document.querySelector('[data-neon-engine=\"pixi-cabinet-v2\"]')"
+            + "&&document.querySelector('[data-reel-engine=\"compositor-strips-v2\"]')"
+            + "&&document.querySelectorAll('.vault-reel-column').length===5"
+            + "&&document.querySelectorAll('.vault-cell .vault-symbol[viewBox=\"0 0 200 136\"]').length===20"
+            + "&&document.querySelectorAll('.vault-symbol-animated').length>=20)") == "true",
             "Neon Vault did not render five reels, four rows, all symbols and jackpots.");
         Require(await core.ExecuteScriptAsync(
             "Boolean(document.querySelector('.vault-energy')"
@@ -95,6 +99,10 @@ internal static class ModernNeonVaultWebSmoke
             if (await core.ExecuteScriptAsync(
                 "document.querySelector('[data-testid=\"neon-vault-app\"]')?.dataset.animating") == "\"false\"") break;
         }
+        Require(await core.ExecuteScriptAsync(
+            "Boolean(document.querySelectorAll('.vault-reel-column[data-reel-state=\"settled\"]').length===5"
+            + "&&document.querySelectorAll('.vault-reel-tape').length===0)") == "true",
+            "Neon Vault reels did not finish their compositor motion cleanly.");
         await core.ExecuteScriptAsync("document.querySelector('.vault-back')?.click()");
         await WaitForExit(window);
         Require(Find<CasinoLobbyView>(window).Any(x => x.IsVisible),

@@ -38,7 +38,9 @@ internal static partial class Program
             + "&&document.querySelectorAll('.vault-jackpot').length===4"
             + "&&document.querySelector('[data-testid=\"neon-vault-max\"]')"
             + "&&document.querySelector('.vault-reactor-rail')"
-            + "&&document.querySelector('[data-neon-engine=\"pixi-cabinet-v2\"]'))") == "true",
+            + "&&document.querySelector('[data-neon-engine=\"pixi-cabinet-v2\"]')"
+            + "&&document.querySelectorAll('.vault-reel-column').length===5"
+            + "&&document.querySelectorAll('.vault-cell .vault-symbol').length===20)") == "true",
             "React Neon Vault is missing the five-reel symbols, energy meter or MAX control.");
         await browser.ExecuteScriptAsync(
             "document.querySelector('[data-testid=\"neon-vault-settings\"]')?.click()");
