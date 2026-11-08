@@ -29,3 +29,21 @@ The battlefield is in frontend/src/lounge/TowerDefenseBattlefield.tsx. Native ef
 9. Run frontend Vitest/build, solution tests, Windows startup smoke, presentation regression and Development publisher before declaring release ready.
 
 Phase 2 is an art and feedback pass, not a full production-quality art pipeline. Further sprite animation frames, directional character animation and dynamic light/shadow systems would be later work.
+
+## Reliability and viewport update
+
+The simulation now holds its spawn clock at zero once the final enemy of a wave has deployed. Earlier versions continued decrementing it below zero, producing invalid host snapshots, apparent command revision conflicts, and lost waves when loading affected saves. The loader accepts and clamps previously saved negative spawn clocks, preserving their wave, towers, enemies, coins, and lives instead of silently restarting.
+
+Wave deployment, kills and escapes are distinct. The HUD's completion bar now advances only on actual enemy defeats; spawning and tower shots do not count. The game still ends a wave only after every enemy has spawned **and** every remaining enemy has been defeated or escaped. Native per-wave kill/escape counters are checkpointed with the existing version-1 preferences save; old saves lacking those counters deserialize to zero and continue to load.
+
+Stale UI actions prompt a fresh native snapshot. An exit action deliberately remains available during a pending command or stale revision, because safe exit is preferable to trapping the player inside a stale view. The state-changing tower commands continue to require a matching session and revision.
+
+For standard desktop viewports (at least 1100 × 630 CSS pixels), the battlefield, wave display, action row and workshop are arranged in one height-bounded view, without scrolling or changing the canvas coordinate model. Short or narrow windows retain a scrollable fallback for legible controls. The original illustrated map gains deterministic cached causeway stones and layered forest canopies. Bowstring, frost and cannon synth cues are differentiated and play with sound enabled even if cosmetic animations are disabled.
+
+### Regression focus
+
+- Run the native tower defence tests for end-of-deployment clock bounds, resumed saves (including legacy negative-clock cases), kills/escapes and stale-command exits.
+- Run frontend snapshot validation and presentation tests. Check browser/SVG presentation on the Development channel.
+- Manually play with and without towers long enough for every enemy to spawn, confirm progress does not advance on projectiles, close/reopen at several points and verify the saved wave.
+- Test 1×/2× speed, pause, build/upgrade while a wave is active, use the back button after a simulated stale-revision error, and inspect a compact Windows viewport.
+- Confirm Windows build, audio on/off, reduced-motion behaviour and the Development update artifact before release.
