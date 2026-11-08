@@ -391,3 +391,140 @@
 .challenge-portrait-reward{display:flex;align-items:center;gap:10px;margin-top:5px;color:#f0d9a0}
 .challenge-portrait-reward img{width:42px;height:42px;flex:none;object-fit:cover;border-radius:50%;border:2px solid #d4b36d;box-shadow:0 0 0 3px rgba(17,45,42,.9),0 5px 15px rgba(0,0,0,.35)}
 .challenge-portrait-reward small{color:inherit;line-height:1.35}
+
+
+/* Vault texture repair: the entire safe now stays inside the bordered chamber.
+   Brushed alloy, inset door seams and restrained tier highlights replace the
+   oversized, bright diagonal panel from the former facade. */
+.vault-page .vault-chamber{
+ grid-template-columns:minmax(270px,.76fr) minmax(0,1.4fr);
+ gap:clamp(15px,2.4vw,32px);
+ min-height:318px;
+ padding:22px 28px;
+ align-items:center;
+}
+.vault-page .vault-chamber-art{
+ position:relative;
+ min-width:0;
+ min-height:250px;
+ height:250px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ perspective:980px;
+ isolation:isolate;
+}
+.vault-page .vault-stage-glow{
+ width:min(96%,310px);height:215px;
+ background:radial-gradient(ellipse,
+  color-mix(in srgb,var(--vault-accent) 25%,transparent),transparent 70%);
+ filter:blur(19px);
+}
+.vault-page .vault-safe-body{
+ position:relative;
+ flex:0 0 auto;
+ width:min(100%,270px);
+ height:219px;
+ max-height:calc(100% - 12px);
+ box-sizing:border-box;
+ border:7px solid color-mix(in srgb,var(--vault-accent) 71%,#4c6660);
+ border-radius:20px;
+ transform:rotateY(-5deg) rotateX(1deg);
+ transform-style:preserve-3d;
+ background:
+  linear-gradient(110deg,#edf7df35 0%,transparent 9%,#ffffff0c 34%,transparent 48%,#0417187c 100%),
+  repeating-linear-gradient(0deg,transparent 0 2px,#c1d7be08 2px 3px),
+  linear-gradient(135deg,#53716c,#233c3d 20%,#0d232a 69%,#3c5e5b);
+ box-shadow:
+  3px 4px 0 #061a1a,
+  9px 10px 0 #07191da8,
+  12px 17px 23px #000b,
+  0 0 19px color-mix(in srgb,var(--vault-accent) 27%,transparent),
+  inset 0 0 0 3px #07191b,inset 0 0 0 6px #ccdbc13b;
+}
+.vault-page .vault-safe-body:before{
+ content:"";position:absolute;inset:-5px;border-radius:15px;pointer-events:none;
+ border:1px solid #ffffe752;box-shadow:inset 0 1px #edffff50;
+}
+.vault-page .vault-safe-body::after{
+ inset:8px;border:1px solid #cee0bc60;border-radius:9px;
+ box-shadow:0 0 0 2px #071e23,inset 0 0 0 1px #000b;
+}
+.vault-page .vault-door{
+ inset:11px;
+ width:auto;height:auto;
+ gap:5px;
+ padding:12px 15px;
+ border:4px solid color-mix(in srgb,var(--vault-accent) 77%,#667d7b);
+ border-radius:10px;
+ transform-origin:left center;
+ background:
+  radial-gradient(ellipse at 46% 31%,#b8cfb04b,transparent 46%),
+  repeating-linear-gradient(0deg,transparent 0 3px,#eef5ec08 3px 4px),
+  linear-gradient(125deg,#4b6760,#253c3c 37%,#11282b 82%,#284943);
+ box-shadow:
+  inset 0 0 0 2px #102628,
+  inset 0 0 0 4px #c0d7bc24,
+  inset 0 9px 20px #bbdfae16,
+  inset 0 -10px 18px #061517ab,
+  0 0 0 2px #031314,0 0 9px #000d;
+}
+.vault-page .vault-door:before{
+ inset:7px;border-radius:6px;border-color:#dee6bc5c;
+ box-shadow:inset 0 0 11px #070f1180;
+}
+.vault-page .vault-door-engraving{
+ font:bold 9px/1.1 Georgia,serif;
+ letter-spacing:.18em;color:#e9dcae;text-shadow:0 1px 4px #000a;
+ white-space:nowrap;
+}
+.vault-page .vault-safe-wheel{
+ width:85px;height:85px;
+ flex:0 0 85px;
+ font:normal 54px Georgia,serif!important;
+ border:6px solid color-mix(in srgb,var(--vault-accent) 75%,#b9d6c8);
+ border-radius:50%;
+ background:
+  radial-gradient(circle at 36% 32%,#f5f3d083 0%,#9eb7a465 13%,transparent 30%),
+  radial-gradient(circle at 48% 55%,#446962,#162f34 60%,#071b22 77%);
+ box-shadow:0 5px 13px #000b,inset 0 1px #fff7,inset 0 -9px 16px #061418a9,
+  0 0 12px color-mix(in srgb,var(--vault-accent) 36%,transparent);
+ color:#f4e4bc;line-height:1;
+}
+.vault-page .vault-door b{
+ font:normal 11px Georgia,serif;color:#e9dfba;
+ white-space:nowrap;margin-top:0;
+}
+.vault-page .vault-hinge{
+ right:-14px;
+ width:9px;height:65px;
+ background:linear-gradient(90deg,#14282b,var(--vault-accent) 35%,#e9dfc4 55%,#283c3e);
+}
+.vault-page .vault-bolt{width:12px;height:12px;border:2px solid #d7cba2;background:
+ radial-gradient(circle at 36% 31%,#829b91,#223737 68%,#07191e);z-index:3}
+.vault-page .vault-chamber-art[data-tier=bronze] .vault-door{
+ background:repeating-linear-gradient(0deg,transparent 0 3px,#fff9e10b 3px 4px),
+ linear-gradient(130deg,#7c6754,#43382f 58%,#2b2c29)}
+.vault-page .vault-chamber-art[data-tier=gold] .vault-door{
+ background:repeating-linear-gradient(0deg,transparent 0 3px,#fff9e10c 3px 4px),
+ linear-gradient(130deg,#8f8656,#4b4931 58%,#252b28)}
+.vault-page .vault-chamber-art[data-tier=diamond] .vault-door{
+ background:repeating-linear-gradient(0deg,transparent 0 3px,#fff9e10b 3px 4px),
+ linear-gradient(130deg,#85a6b0,#365864 58%,#152b39)}
+/* Never scale the artwork so high that it intersects the chamber's bottom frame. */
+@media(max-width:1180px){
+ .vault-page .vault-chamber{grid-template-columns:minmax(235px,.75fr) minmax(0,1.25fr);
+  gap:20px;padding:19px;min-height:290px}
+ .vault-page .vault-chamber-art{height:224px;min-height:224px}
+ .vault-page .vault-safe-body{width:min(100%,240px);height:201px}
+ .vault-page .vault-safe-wheel{width:75px;height:75px;flex-basis:75px;font-size:48px!important}
+}
+@media(max-width:760px){
+ .vault-page .vault-chamber{grid-template-columns:minmax(0,1fr);padding:16px;gap:7px}
+ .vault-page .vault-chamber-art{height:200px;min-height:200px}
+ .vault-page .vault-safe-body{width:min(100%,225px);height:179px}
+ .vault-page .vault-safe-wheel{width:67px;height:67px;flex-basis:67px;font-size:43px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ .vault-page .vault-door,.vault-page .vault-safe-body{transition:none!important}
+}
