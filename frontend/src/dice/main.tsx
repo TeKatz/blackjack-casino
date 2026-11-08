@@ -114,6 +114,31 @@ function Die({value,palette}:{value:number;palette:DicePalette}){
    fontFamily="Georgia" fontSize="43">✦</text>}
  </svg>;
 }
+/** Six real textured faces rotate in 3D; the authoritative result is never randomized here. */
+export function DiceCube({value,palette,rolling,index,token}:{
+ value:number;palette:DicePalette;rolling:boolean;index:number;token:number;
+}){
+ const rotations:Record<number,[number,number]>={
+  1:[0,0],2:[0,-90],3:[-90,0],4:[90,0],5:[0,90],6:[0,180],
+ };
+ const [x,y]=rotations[value]??[0,0];
+ const style={
+  '--die-final-x':x+'deg','--die-final-y':y+'deg',
+  '--die-delay':(index*64)+'ms','--die-sideways':(index%2===0?1:-1),
+ } as CSSProperties;
+ return <span className={'md-die-stage'+(rolling?' is-rolling':'')} style={style}>
+  <span className="md-die-shadow" aria-hidden="true"/>
+  <span className="md-die-rotor" key={token} aria-hidden="true">
+   {[1,2,6,5,3,4].map((face,i)=><span key={face}
+    className={'md-cube-face md-face-'+['front','right','back','left','top','bottom'][i]}>
+    <Die value={face} palette={palette}/></span>)}
+  </span>
+  <span className="md-die-landing" aria-hidden="true"/>
+  <span className="md-die-scatter" aria-hidden="true">
+   {Array.from({length:6},(_,k)=><i key={k} style={{'--spark':k} as CSSProperties}/>)}
+  </span>
+ </span>;
+}
 function Face({n}:{n:number}){return <span className="md-face">#{n}</span>}
 function CategoryRows({game,language,compact=false}:{game:DiceGame;language:'en'|'de';compact?:boolean}){
  return <div className={'md-sheet-rows'+(compact?' compact':'')}>
@@ -176,7 +201,7 @@ function App(){
      &&next.state.animationsEnabled&&!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches){
     setRolling(true);setRollingCells(next.state.rollingIndices);
     if(rollTimer.current)clearTimeout(rollTimer.current);
-    rollTimer.current=setTimeout(()=>{setRolling(false);setRollingCells([]);},870);
+    rollTimer.current=setTimeout(()=>{setRolling(false);setRollingCells([]);},1640);
    }
    lastRoll.current=next.state.rollToken;
    for(const event of next.state.events){
@@ -301,11 +326,11 @@ function App(){
               {game.dice.map((number,i)=>
                <button key={i} type="button" className={'md-die'+(game.held[i]?' held':'')
                  +(rolling&&rollingCells.includes(i)?' rolling':'')}
-                 data-testid={'dice-die-'+i} data-held={String(game.held[i])} data-face={number}
+                 data-testid={'dice-die-'+i} data-held={String(game.held[i])} data-face={number} data-roll-token={game.rollToken}
                  aria-label={(lang==='de'?'Würfel ':'Die ')+(i+1)+': '+number+', '+(game.held[i]?t.held:t.free)}
                  disabled={blocked||waiting||finished||!game.canScore||game.rollsUsed===3}
                  onClick={()=>report({action:'hold',index:i})}>
-                  <Die value={number} palette={palette}/>
+                  <DiceCube value={number} palette={palette} rolling={rolling&&rollingCells.includes(i)} index={i} token={game.rollToken}/>
                   <span className="md-die-status">{game.held[i]?t.held:game.rollsUsed===3?t.result:t.free}</span>
 
                </button>)}

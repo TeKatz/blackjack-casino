@@ -305,3 +305,59 @@ button:disabled{cursor:default;opacity:.48}
 .md-app[data-motion=false] *,.md-app[data-motion=false] *::before,.md-app[data-motion=false] *::after{animation:none!important;transition:none!important}
 
 .md-die.rolling .md-die-image{animation:none}
+
+/* MIDNIGHT DICE: actual six-face 3D dice. Each face retains the current palette. */
+.md-die{isolation:isolate;perspective:900px;transform-style:preserve-3d;gap:5px}
+.md-die .md-die-stage{display:block;position:relative;flex-shrink:0;width:min(100%,96px);aspect-ratio:1;
+ container-type:inline-size;perspective:800px;--die-half:clamp(18px,3.4vw,48px);--die-half:50cqw}
+.md-die .md-die-rotor{position:absolute;inset:0;transform-style:preserve-3d;display:block;
+ transform:rotateX(var(--die-final-x)) rotateY(var(--die-final-y));will-change:transform}
+.md-die .md-cube-face{display:block;position:absolute;inset:0;backface-visibility:hidden;
+ border-radius:20%;overflow:hidden;box-shadow:inset 0 1px 3px #fff3}
+.md-die .md-cube-face .md-die-image{width:100%;height:100%;display:block;max-height:none;filter:none}
+.md-die .md-face-front{transform:rotateY(0deg) translateZ(var(--die-half))}
+.md-die .md-face-right{transform:rotateY(90deg) translateZ(var(--die-half))}
+.md-die .md-face-back{transform:rotateY(180deg) translateZ(var(--die-half))}
+.md-die .md-face-left{transform:rotateY(-90deg) translateZ(var(--die-half))}
+.md-die .md-face-top{transform:rotateX(90deg) translateZ(var(--die-half))}
+.md-die .md-face-bottom{transform:rotateX(-90deg) translateZ(var(--die-half))}
+.md-die .md-die-shadow{position:absolute;width:85%;height:19%;background:#001418b0;
+ left:8%;bottom:-19%;border-radius:50%;filter:blur(6px);transform:scale(.9);opacity:.6}
+.md-die .md-die-landing{position:absolute;inset:-8px;border:2px solid #e9d4a7;border-radius:50%;
+ opacity:0;transform:scale(.8);pointer-events:none;z-index:-1}
+.md-die .md-die-scatter{position:absolute;inset:0;pointer-events:none;z-index:2}
+.md-die .md-die-scatter i{display:block;position:absolute;left:50%;top:82%;height:5px;width:5px;
+ border-radius:50%;background:#f8dda7;box-shadow:0 0 9px #f8dda7;opacity:0}
+.md-die.rolling,.md-die.rolling:hover:not(:disabled){animation:none;transform:none}
+.md-die.rolling .md-die-rotor{animation:md-cube-cinematic 1.34s cubic-bezier(.18,.65,.18,1) var(--die-delay) both}
+.md-die.rolling .md-die-shadow{animation:md-shadow-chase 1.34s ease-in-out var(--die-delay) both}
+.md-die.rolling .md-die-landing{animation:md-cube-land .40s ease-out calc(1.08s + var(--die-delay)) both}
+.md-die.rolling .md-die-scatter i{animation:md-cube-particle .52s ease-out calc(1.07s + var(--die-delay)) both;
+ animation-delay:calc(1.07s + var(--die-delay) + var(--spark) * 15ms)}
+.md-die.held{transform:translateY(-7px)}
+.md-die.held .md-die-shadow{background:#6bd9a15c;opacity:.85}
+.md-die.held:before{top:-8px;height:calc(100% - 2px);border-color:#b4f7c3;box-shadow:0 0 20px #63d7a44b;z-index:-1}
+.md-die .md-die-status{margin-top:13px;z-index:3}
+.md-die.rolling .md-die-status{color:#f4dfb2}
+@keyframes md-cube-cinematic{
+ 0%{transform:translate3d(0,0,0) rotateX(calc(var(--die-final-x) + 0deg)) rotateY(calc(var(--die-final-y) + 0deg)) rotateZ(0);filter:brightness(.7)}
+ 10%{transform:translate3d(calc(8px * var(--die-sideways)),-19px,37px) rotateX(calc(var(--die-final-x) + 90deg)) rotateY(calc(var(--die-final-y) + 145deg)) rotateZ(11deg);filter:brightness(1.25)}
+ 27%{transform:translate3d(calc(-18px * var(--die-sideways)),-73px,85px) rotateX(calc(var(--die-final-x) + 420deg)) rotateY(calc(var(--die-final-y) + 480deg)) rotateZ(-19deg)}
+ 49%{transform:translate3d(calc(16px * var(--die-sideways)),-48px,60px) rotateX(calc(var(--die-final-x) + 790deg)) rotateY(calc(var(--die-final-y) + 925deg)) rotateZ(15deg)}
+ 70%{transform:translate3d(calc(-9px * var(--die-sideways)),-7px,23px) rotateX(calc(var(--die-final-x) + 1030deg)) rotateY(calc(var(--die-final-y) + 1100deg)) rotateZ(3deg)}
+ 82%{transform:translate3d(calc(4px * var(--die-sideways)),9px,0) rotateX(calc(var(--die-final-x) + 1080deg)) rotateY(calc(var(--die-final-y) + 1080deg)) rotateZ(-5deg)}
+ 92%{transform:translate3d(0,-11px,13px) rotateX(calc(var(--die-final-x) + 1080deg)) rotateY(calc(var(--die-final-y) + 1080deg)) rotateZ(2deg)}
+ 100%{transform:translate3d(0,0,0) rotateX(calc(var(--die-final-x) + 1080deg)) rotateY(calc(var(--die-final-y) + 1080deg)) rotateZ(0);filter:brightness(1)}
+}
+@keyframes md-shadow-chase{
+ 0%,100%{transform:scale(.85);opacity:.7}
+ 30%{transform:scale(.35);opacity:.18}50%{transform:scale(.55);opacity:.24}
+ 77%{transform:scale(1.25);opacity:.85}90%{transform:scale(.8);opacity:.54}}
+@keyframes md-cube-land{0%{opacity:0;transform:scale(.65)}25%{opacity:.66}
+ 100%{opacity:0;transform:scale(1.7)}}
+@keyframes md-cube-particle{0%{opacity:0;transform:translate(-50%,-50%)}
+ 20%{opacity:.9}100%{opacity:0;transform:translate(calc(-50% + 32px * cos(var(--spark) * 60deg)),calc(-50% - 18px * sin(var(--spark) * 60deg))) scale(.4)}}
+@media(prefers-reduced-motion:reduce){
+ .md-die .md-die-rotor,.md-die .md-die-shadow,.md-die .md-die-landing,
+ .md-die .md-die-scatter i{animation:none!important}
+}
