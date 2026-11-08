@@ -62,6 +62,8 @@ internal static class EmpireWebSmoke
             Require(window.FindName("DealButton") is null, "The retired native Blackjack button was recreated over Empire.");
             await Check(view, "document.querySelectorAll('.empire-gallery .empire-room').length===15 && !document.querySelector('.empire-inspector') && document.querySelector('[data-testid=prestige]')",
                 "Compact estate overview did not show all departments and prestige without opening a room.");
+            await Check(view, "document.querySelector('.empire-pixi canvas, .empire-pixi[data-fallback=true]')",
+                "Estate graphics did not finish initializing before capture.");
             await Capture(view, Path.Combine(output, "empire-react-overview.png"));
             await Click(view, "floor-3");
             await Check(view, "document.querySelectorAll('.empire-gallery .empire-room').length===5", "Resort gallery lost a department.");
