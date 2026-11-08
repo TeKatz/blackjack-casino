@@ -1,5 +1,6 @@
 import {memo,useEffect,useMemo,useRef} from 'react';
 import {NineSymbolArt} from './SymbolArt';
+import {GalaxyBackdrop} from './GalaxyBackdrop';
 import {paylineCells} from './bridge';
 import type {NineLivesSpin,NineLivesSymbol} from './bridge';
 import {reelDuration,reelFrames,reelStrip} from './reelMotion';
@@ -75,12 +76,14 @@ function Column({reel,visible,result,rolling,activeWin,speed,reducedMotion,onSto
        +(activeWin&&result?.fullGridFrenzy?' frenzy':'')
        +(activeWin&&result?.winningCells.length&&!result.winningCells.includes(index)?' dimmed':'')
        +(activeWin&&result?.pounceWildCell===index?' pounced':'')}>
+      <GalaxyBackdrop cell={index}/>
       <NineSymbolArt symbol={symbol}/>
      </div>;
    })}
    {showTape&&<div className="nine-reel-viewport" aria-hidden="true">
      <div className="nine-reel-tape" ref={tapeRef}>
        {tape.map((symbol,i)=><div className="nine-tape-tile" key={i} data-symbol={symbol}>
+         <GalaxyBackdrop cell={9+reel*64+i} compact/>
          <NineSymbolArt symbol={symbol}/>
        </div>)}
      </div>

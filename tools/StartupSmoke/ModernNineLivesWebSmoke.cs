@@ -34,6 +34,9 @@ internal static class ModernNineLivesWebSmoke
             + "&&document.querySelectorAll('.nine-cell').length===9"
             + "&&document.querySelector('[data-reel-engine=\\\"nine-compositor-v1\\\"]')"
             + "&&document.querySelectorAll('.nine-reel-column').length===3"
+            + "&&document.querySelectorAll('.nine-cell .nine-galaxy-scene').length===9"
+            + "&&new Set([...document.querySelectorAll('.nine-cell .nine-galaxy-scene')]"
+            + ".map(scene=>scene.dataset.galaxyName)).size===9"
             + "&&document.querySelectorAll('.nine-payrow').length===8"
             + "&&document.querySelectorAll('.nine-bet-grid button').length===13"
             + "&&document.querySelector('[data-testid=\"nine-lives-spin\"]'))") == "true",

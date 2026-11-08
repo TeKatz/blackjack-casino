@@ -3,55 +3,43 @@
 .nine-reel-column{position:relative;display:grid;grid-template-rows:repeat(3,minmax(0,1fr));
  gap:var(--nine-track-gap);min-width:0;min-height:0;overflow:hidden;border-radius:9px;isolation:isolate}
 .nine-reel-column .nine-cell{height:100%;min-width:0;min-height:0;z-index:0}
-.nine-reel-column .nine-cell[data-symbol="Yarn"],.nine-tape-tile[data-symbol="Yarn"]{--nine-rgb:255 89 219}
-.nine-reel-column .nine-cell[data-symbol="Fishbone"],.nine-tape-tile[data-symbol="Fishbone"]{--nine-rgb:63 157 255}
-.nine-reel-column .nine-cell[data-symbol="Bell"],.nine-tape-tile[data-symbol="Bell"]{--nine-rgb:255 195 100}
-.nine-reel-column .nine-cell[data-symbol="TabbyCat"],.nine-tape-tile[data-symbol="TabbyCat"]{--nine-rgb:255 150 94}
-.nine-reel-column .nine-cell[data-symbol="WhiteCat"],.nine-tape-tile[data-symbol="WhiteCat"]{--nine-rgb:162 228 255}
-.nine-reel-column .nine-cell[data-symbol="BlackCat"],.nine-tape-tile[data-symbol="BlackCat"]{--nine-rgb:192 99 255}
-.nine-reel-column .nine-cell[data-symbol="Wild"],.nine-tape-tile[data-symbol="Wild"]{--nine-rgb:213 99 255}
-.nine-reel-column .nine-cell[data-symbol="Bonus"],.nine-tape-tile[data-symbol="Bonus"]{--nine-rgb:255 205 100}
+/* No translucent stripe/screen overlay: the original JPG must retain its
+   dark fur and sharp facial detail. The sky is always underneath the artwork. */
 .nine-reel-column .nine-cell,.nine-tape-tile{
- --nine-rgb:183 110 255;
- background:
-   radial-gradient(ellipse at 50% 55%,rgb(var(--nine-rgb) / .18) 0%,transparent 52%),
-   radial-gradient(ellipse at 9% 48%,rgb(var(--nine-rgb) / .14) 0%,transparent 46%),
-   radial-gradient(ellipse at 92% 52%,rgb(var(--nine-rgb) / .17) 0%,transparent 50%),
-   linear-gradient(140deg,#171129,#0c1026 51%,#1b112d);
+ background:#080c20;isolation:isolate;
 }
-.nine-reel-column .nine-cell::before,.nine-tape-tile::before{
- content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
- background:
-   radial-gradient(circle at 15% 18%,#fff0d5b8 0 1px,transparent 2px),
-   radial-gradient(circle at 83% 72%,#dfaaff90 0 1px,transparent 2px),
-   radial-gradient(circle at 78% 26%,#c7c6ff8c 0 1.4px,transparent 2.4px),
-   repeating-linear-gradient(120deg,transparent 0 35px,rgb(var(--nine-rgb) / .09) 36px 37px,transparent 38px 70px),
-   linear-gradient(95deg,transparent 8%,rgb(var(--nine-rgb) / .18) 43%,transparent 70%);
- background-size:100% 100%,100% 100%,100% 100%,185% 180%,220% 100%;
- animation:nine-cell-nightlights 9s ease-in-out infinite alternate;
+.nine-galaxy-scene{
+ position:absolute;inset:0;width:100%;height:100%;z-index:0;
+ display:block;overflow:hidden;pointer-events:none;user-select:none;
 }
-.nine-reel-column .nine-cell::after,.nine-tape-tile::after{
- content:"";position:absolute;inset:7% 3%;pointer-events:none;z-index:1;
- border-radius:11px;border-left:1px solid rgb(var(--nine-rgb) / .30);
- border-right:1px solid rgb(var(--nine-rgb) / .28);
- background:linear-gradient(90deg,rgb(var(--nine-rgb) / .06),transparent 21% 78%,rgb(var(--nine-rgb) / .07));
- box-shadow:inset 0 0 17px rgb(var(--nine-rgb) / .11);
- animation:nine-side-glow 4.6s ease-in-out infinite alternate;
+.nine-galaxy-clouds{
+ transform-origin:50% 50%;
+ animation:nine-nebula-breathe 17s ease-in-out infinite alternate;
+}
+.nine-galaxy-star{animation:nine-stellar-twinkle 10s ease-in-out infinite alternate}
+.nine-galaxy-planet{
+ animation:nine-planet-drift 14s ease-in-out infinite alternate;
+ transform-box:fill-box;transform-origin:center;
 }
 .nine-reel-column .nine-cell img,.nine-tape-tile img{
  position:relative;z-index:2;display:block;flex:none;width:auto;height:100%;
  aspect-ratio:1;object-fit:contain;max-width:100%;pointer-events:none;
- /* Preserve the source artwork's scale, removing the opaque rectangular JPG perimeter. */
- -webkit-mask-image:radial-gradient(ellipse 61% 63% at 50% 50%,#000 44%,#000e 57%,#0008 77%,transparent 98%);
- mask-image:radial-gradient(ellipse 61% 63% at 50% 50%,#000 44%,#000e 57%,#0008 77%,transparent 98%);
- mix-blend-mode:screen;
- filter:drop-shadow(0 0 8px rgb(var(--nine-rgb) / .27));
+ /* A soft cutout keeps the original illustrated proportions, without an opaque
+    black rectangle or a screen blend washing out darker symbols. */
+ -webkit-mask-image:radial-gradient(ellipse 63% 68% at 50% 50%,
+   #000 0 43%,#000 57%,#000d 70%,#0006 84%,transparent 98%);
+ mask-image:radial-gradient(ellipse 63% 68% at 50% 50%,
+   #000 0 43%,#000 57%,#000d 70%,#0006 84%,transparent 98%);
+ mix-blend-mode:normal;
+ filter:none;
 }
-.nine-reel-column .nine-cell[data-symbol="BlackCat"] img,.nine-tape-tile[data-symbol="BlackCat"] img{
- mix-blend-mode:lighten;
+.nine-reel-column .nine-cell[data-symbol="BlackCat"] img,
+.nine-tape-tile[data-symbol="BlackCat"] img{
+ filter:brightness(1.22) contrast(1.06) saturate(1.08);
 }
-.nine-reel-column .nine-cell.winning::before,.nine-reel-column .nine-cell.frenzy::before{
- animation-duration:2s;
+.nine-reel-column .nine-cell[data-symbol="WhiteCat"] img,
+.nine-tape-tile[data-symbol="WhiteCat"] img{
+ filter:brightness(1.025) contrast(1.035);
 }
 .nine-reel-column .nine-cell.dimmed{opacity:.48}
 .nine-reel-column .nine-cell.winning,.nine-reel-column .nine-cell.frenzy{z-index:1}
@@ -98,8 +86,9 @@
 .nine-machine[data-win="true"] .nine-reels{
  box-shadow:0 0 0 4px #6c4075,0 0 27px #fbd799bb,inset 0 0 27px #cf8af777;
 }
-@keyframes nine-cell-nightlights{to{background-position:0 0,0 0,0 0,95% 75%,100% 0}}
-@keyframes nine-side-glow{to{opacity:.45;transform:scaleX(.95)}}
+@keyframes nine-nebula-breathe{to{opacity:.59;transform:translate3d(2px,-1px,0) scale(1.02)}}
+@keyframes nine-stellar-twinkle{to{opacity:.23}}
+@keyframes nine-planet-drift{to{transform:translate3d(0,-2.5px,0)}}
 @keyframes nine-moon-orbit{to{transform:translate(-10px,7px) rotate(3deg);box-shadow:0 0 28px #e6d7ffad,0 0 84px #b78dff78,inset -17px -12px 30px #504467a8}}
 @keyframes nine-moon-halo{to{transform:scale(1.07);opacity:.4}}
 @keyframes nine-outer-win-glow{to{opacity:.52;box-shadow:inset 0 0 10px #ffe1a13a,0 0 13px #ffe4a565,0 0 32px #cb82ff7b}}
@@ -111,18 +100,18 @@
 }
 @media(prefers-reduced-motion:reduce){
  .nine-moon,.nine-moon::before,.nine-machine[data-win="true"]::after,
- .nine-reel-column .nine-cell::before,.nine-reel-column .nine-cell::after,
- .nine-tape-tile::before,.nine-tape-tile::after{animation:none!important}
+ .nine-galaxy-clouds,.nine-galaxy-star,.nine-galaxy-planet{animation:none!important}
 }
 
-/* The miniature paytable uses the same soft photographic cutout as the reels. */
+/* Preserve the black cat and other dark symbol artwork in the sidebar too. */
 .nine-payrow img{background:transparent;
- -webkit-mask-image:radial-gradient(ellipse 62% 62% at center,#000 50%,#000c 67%,transparent 98%);
- mask-image:radial-gradient(ellipse 62% 62% at center,#000 50%,#000c 67%,transparent 98%);
- mix-blend-mode:screen;
+ -webkit-mask-image:radial-gradient(ellipse 66% 70% at center,#000 40%,#000d 70%,transparent 98%);
+ mask-image:radial-gradient(ellipse 66% 70% at center,#000 40%,#000d 70%,transparent 98%);
+ mix-blend-mode:normal;
 }
-/* Keep the moving tapes inexpensive: one GPU transform, no 60 simultaneous
-   filters or independent lighting animations on the offscreen filler tiles. */
-.nine-reel-tape .nine-tape-tile::before,
-.nine-reel-tape .nine-tape-tile::after{animation:none!important}
-.nine-reel-tape .nine-tape-tile img{filter:none}
+.nine-reel-tape .nine-galaxy-clouds,
+.nine-reel-tape .nine-galaxy-star{animation:none}
+.nine-reel-tape .nine-galaxy-compact{opacity:.82}
+@media(prefers-reduced-motion:reduce){
+ .nine-galaxy-clouds,.nine-galaxy-star,.nine-galaxy-planet{animation:none!important}
+}
