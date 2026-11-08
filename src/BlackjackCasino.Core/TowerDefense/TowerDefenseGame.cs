@@ -45,15 +45,16 @@ public static class TdMap
         new(440, 245), new(465, 535), new(690, 345), new(700, 130),
         new(880, 125), new(886, 425),
     ];
+    public static double Distance(double dx, double dy) => Math.Sqrt(dx * dx + dy * dy);
     public static double PathLength { get; } = Enumerable.Range(1, Path.Count - 1)
-        .Sum(i => Math.Hypot(Path[i].X - Path[i - 1].X, Path[i].Y - Path[i - 1].Y));
+        .Sum(i => TdMap.Distance(Path[i].X - Path[i - 1].X, Path[i].Y - Path[i - 1].Y));
     public static TdPoint Position(double distance)
     {
         double d = Math.Max(0, distance);
         for (int i = 1; i < Path.Count; i++)
         {
             TdPoint a = Path[i - 1], b = Path[i];
-            double length = Math.Hypot(b.X - a.X, b.Y - a.Y);
+            double length = TdMap.Distance(b.X - a.X, b.Y - a.Y);
             if (d <= length) return new(a.X + (b.X - a.X) * d / length,
                 a.Y + (b.Y - a.Y) * d / length);
             d -= length;
@@ -240,7 +241,7 @@ public sealed class TowerDefenseGame
                 TdEnemy? target = s.Enemies.Where(e =>
                 {
                     TdPoint point = TdMap.Position(e.Distance);
-                    return Math.Hypot(source.X - point.X, source.Y - point.Y) <= Radius(tower);
+                    return TdMap.Distance(source.X - point.X, source.Y - point.Y) <= Radius(tower);
                 }).OrderByDescending(e => e.Distance).FirstOrDefault();
                 if (target is null) { s.Towers[i] = tower with { Cooldown = 0 }; continue; }
                 s.Towers[i] = tower with { Cooldown = Interval(tower) / (1 + (tower.Level - 1) * .12) };
@@ -252,7 +253,7 @@ public sealed class TowerDefenseGame
                     foreach (TdEnemy enemy in s.Enemies.ToArray())
                     {
                         TdPoint p = TdMap.Position(enemy.Distance);
-                        if (Math.Hypot(p.X - hit.X, p.Y - hit.Y) <= 60)
+                        if (TdMap.Distance(p.X - hit.X, p.Y - hit.Y) <= 60)
                             Hit(enemy.Id, damage, false);
                     }
                 }
