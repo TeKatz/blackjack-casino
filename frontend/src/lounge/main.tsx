@@ -105,7 +105,12 @@ function App() {
    const webview=window.chrome?.webview;
    const handler=(event:MessageEvent)=>{
      const incoming=readLoungeSnapshot(event.data);
-     if (incoming) setSnapshot(incoming);
+     if (incoming) {
+       setSnapshot(incoming);
+       // Clear the stale-revision notice only after a valid authoritative frame arrives.
+       if(incoming.towerDefense)
+         setTowerDefenseError(previous=>previous==='Defence changed. Refreshing.'?'':previous);
+     }
      const msg:unknown=event.data;
      if(msg&&typeof msg==='object'&&!Array.isArray(msg)
        &&'type' in msg&&msg.type==='lounge.tower-defense.result'
