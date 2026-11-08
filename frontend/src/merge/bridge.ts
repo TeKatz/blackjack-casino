@@ -59,12 +59,15 @@ const room=(v:unknown):v is MergeRoom=>obj(v)&&str(v.areaId)&&str(v.areaName)
  &&v.upgradeProgress>=0&&v.upgradeProgress<=1
  &&arr(v.milestones)&&v.milestones.length>0&&v.milestones.every(milestone)
  &&(v.milestones as MergeMilestone[]).some(x=>x.id===(v.current as {id:string}).id);
-const restoration=(v:unknown):v is MergeRestoration=>room(v)&&obj(v)
- &&int(v.areaCount)&&v.areaCount>0&&v.areaCount<=32&&v.areaIndex<=v.areaCount
- &&arr(v.areas)&&v.areas.length===v.areaCount&&v.areas.every(room)
- &&v.areas.every((r,i)=>obj(r)&&r.areaIndex===i+1)
- &&new Set(v.areas.map(r=>(r as MergeRoom).areaId)).size===v.areaCount
- &&(v.areas as MergeRoom[]).some(x=>x.areaId===v.areaId&&x.areaIndex===v.areaIndex);
+const restoration=(v:unknown):v is MergeRestoration=>{
+ if(!room(v))return false;
+ const r=v as MergeRestoration;
+ return int(r.areaCount)&&r.areaCount>0&&r.areaCount<=32&&r.areaIndex<=r.areaCount
+  &&arr(r.areas)&&r.areas.length===r.areaCount&&r.areas.every(room)
+  &&r.areas.every((area,i)=>area.areaIndex===i+1)
+  &&new Set(r.areas.map(area=>area.areaId)).size===r.areaCount
+  &&r.areas.some(area=>area.areaId===r.areaId&&area.areaIndex===r.areaIndex);
+};
 const action=(v:unknown):v is MergeAction=>obj(v)&&str(v.outcome)
  &&typeof v.position==='number'&&Number.isSafeInteger(v.position)&&v.position>=-1&&v.position<42
  &&typeof v.fromPosition==='number'&&Number.isSafeInteger(v.fromPosition)&&v.fromPosition>=-1&&v.fromPosition<42
