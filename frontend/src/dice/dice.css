@@ -296,145 +296,250 @@ button:disabled{cursor:default;opacity:.48}
 }
 
 
-.md-die.rolling{animation:md-tumble .9s cubic-bezier(.15,.65,.25,1) both;transform-origin:50% 85%;will-change:transform}
-.md-die.rolling:nth-child(2){animation-delay:40ms}.md-die.rolling:nth-child(3){animation-delay:75ms}.md-die.rolling:nth-child(4){animation-delay:25ms}.md-die.rolling:nth-child(5){animation-delay:100ms}
-@keyframes md-tumble{0%{transform:translateY(0) rotate(0)}20%{transform:translate(-12px,-45px) rotate(-95deg) scale(.9)}45%{transform:translate(9px,-15px) rotate(180deg)}65%{transform:translate(-3px,-28px) rotate(300deg)}85%{transform:translateY(3px) rotate(365deg)}100%{transform:none}}
-@media(prefers-reduced-motion:reduce){.md-die.rolling{animation:none!important}}
-
-
-.md-app[data-motion=false] *,.md-app[data-motion=false] *::before,.md-app[data-motion=false] *::after{animation:none!important;transition:none!important}
-
-.md-die.rolling .md-die-image{animation:none}
-
-/* MIDNIGHT DICE: actual six-face 3D dice. Each face retains the current palette. */
-.md-die{isolation:isolate;perspective:900px;transform-style:preserve-3d;gap:5px}
-.md-die .md-die-stage{display:block;position:relative;flex-shrink:0;width:min(100%,96px);aspect-ratio:1;
- container-type:inline-size;perspective:800px;--die-half:clamp(18px,3.4vw,48px);--die-half:50cqw}
-.md-die .md-die-rotor{position:absolute;inset:0;transform-style:preserve-3d;display:block;
- transform:rotateX(var(--die-final-x)) rotateY(var(--die-final-y));will-change:transform}
-.md-die .md-cube-face{display:block;position:absolute;inset:0;backface-visibility:hidden;
- border-radius:20%;overflow:hidden;box-shadow:inset 0 1px 3px #fff3}
-.md-die .md-cube-face .md-die-image{width:100%;height:100%;display:block;max-height:none;filter:none}
-.md-die .md-face-front{transform:rotateY(0deg) translateZ(var(--die-half))}
-.md-die .md-face-right{transform:rotateY(90deg) translateZ(var(--die-half))}
-.md-die .md-face-back{transform:rotateY(180deg) translateZ(var(--die-half))}
-.md-die .md-face-left{transform:rotateY(-90deg) translateZ(var(--die-half))}
-.md-die .md-face-top{transform:rotateX(90deg) translateZ(var(--die-half))}
-.md-die .md-face-bottom{transform:rotateX(-90deg) translateZ(var(--die-half))}
-.md-die .md-die-shadow{position:absolute;width:85%;height:19%;background:#001418b0;
- left:8%;bottom:-19%;border-radius:50%;filter:blur(6px);transform:scale(.9);opacity:.6}
-.md-die .md-die-landing{position:absolute;inset:-8px;border:2px solid #e9d4a7;border-radius:50%;
- opacity:0;transform:scale(.8);pointer-events:none;z-index:-1}
-.md-die .md-die-scatter{position:absolute;inset:0;pointer-events:none;z-index:2}
-.md-die .md-die-scatter i{display:block;position:absolute;left:50%;top:82%;height:5px;width:5px;
- border-radius:50%;background:#f8dda7;box-shadow:0 0 9px #f8dda7;opacity:0}
-.md-die.rolling,.md-die.rolling:hover:not(:disabled){animation:none;transform:none}
-.md-die.rolling .md-die-rotor{animation:md-cube-cinematic 1.34s cubic-bezier(.18,.65,.18,1) var(--die-delay) both}
-.md-die.rolling .md-die-shadow{animation:md-shadow-chase 1.34s ease-in-out var(--die-delay) both}
-.md-die.rolling .md-die-landing{animation:md-cube-land .40s ease-out calc(1.08s + var(--die-delay)) both}
-.md-die.rolling .md-die-scatter i{animation:md-cube-particle .52s ease-out calc(1.07s + var(--die-delay)) both;
- animation-delay:calc(1.07s + var(--die-delay) + var(--spark-delay))}
-.md-die.held{transform:translateY(-7px)}
-.md-die.held .md-die-shadow{background:#6bd9a15c;opacity:.85}
-.md-die.held:before{top:-8px;height:calc(100% - 2px);border-color:#b4f7c3;box-shadow:0 0 20px #63d7a44b;z-index:-1}
-.md-die .md-die-status{margin-top:13px;z-index:3}
-.md-die.rolling .md-die-status{color:#f4dfb2}
-@keyframes md-cube-cinematic{
- 0%{transform:translate3d(0,0,0) rotateX(calc(var(--die-final-x) + 0deg)) rotateY(calc(var(--die-final-y) + 0deg)) rotateZ(0);filter:brightness(.7)}
- 10%{transform:translate3d(calc(8px * var(--die-sideways)),-19px,37px) rotateX(calc(var(--die-final-x) + 90deg)) rotateY(calc(var(--die-final-y) + 145deg)) rotateZ(11deg);filter:brightness(1.25)}
- 27%{transform:translate3d(calc(-18px * var(--die-sideways)),-73px,85px) rotateX(calc(var(--die-final-x) + 420deg)) rotateY(calc(var(--die-final-y) + 480deg)) rotateZ(-19deg)}
- 49%{transform:translate3d(calc(16px * var(--die-sideways)),-48px,60px) rotateX(calc(var(--die-final-x) + 790deg)) rotateY(calc(var(--die-final-y) + 925deg)) rotateZ(15deg)}
- 70%{transform:translate3d(calc(-9px * var(--die-sideways)),-7px,23px) rotateX(calc(var(--die-final-x) + 1030deg)) rotateY(calc(var(--die-final-y) + 1100deg)) rotateZ(3deg)}
- 82%{transform:translate3d(calc(4px * var(--die-sideways)),9px,0) rotateX(calc(var(--die-final-x) + 1080deg)) rotateY(calc(var(--die-final-y) + 1080deg)) rotateZ(-5deg)}
- 92%{transform:translate3d(0,-11px,13px) rotateX(calc(var(--die-final-x) + 1080deg)) rotateY(calc(var(--die-final-y) + 1080deg)) rotateZ(2deg)}
- 100%{transform:translate3d(0,0,0) rotateX(calc(var(--die-final-x) + 1080deg)) rotateY(calc(var(--die-final-y) + 1080deg)) rotateZ(0);filter:brightness(1)}
-}
-@keyframes md-shadow-chase{
- 0%,100%{transform:scale(.85);opacity:.7}
- 30%{transform:scale(.35);opacity:.18}50%{transform:scale(.55);opacity:.24}
- 77%{transform:scale(1.25);opacity:.85}90%{transform:scale(.8);opacity:.54}}
-@keyframes md-cube-land{0%{opacity:0;transform:scale(.65)}25%{opacity:.66}
- 100%{opacity:0;transform:scale(1.7)}}
-@keyframes md-cube-particle{0%{opacity:0;transform:translate(-50%,-50%)}
- 20%{opacity:.9}100%{opacity:0;transform:rotate(var(--spark-angle)) translateY(-42px) scale(.4)}}
-@media(prefers-reduced-motion:reduce){
- .md-die .md-die-rotor,.md-die .md-die-shadow,.md-die .md-die-landing,
- .md-die .md-die-scatter i{animation:none!important}
+/*
+ * Midnight Dice presentation contract:
+ *  - At rest: exactly ONE orthographic SVG die face; NO 3D cuboid.
+ *  - During a native roll: overlay a real six-faced 3D cube.
+ *  - After landing: fade from the face-on cube into the flat result, with no
+ *    3D side visible in the final frame or while held.
+ * The existing .md-die button keeps hover, keyboard focus, held highlights,
+ * and accessibility labels. Only the cosmetic content changes.
+ */
+.md-app[data-motion=false] *,
+.md-app[data-motion=false] *::before,
+.md-app[data-motion=false] *::after{
+ animation:none!important;transition:none!important;
 }
 
-
-/* Physical dice geometry: the previous result faced the camera perfectly flat.
-   Keep the 6-sided cuboid in perspective even after it has stopped rolling. */
 .md-die .md-die-stage{
- perspective:620px;
+ display:block;
+ position:relative;
+ flex-shrink:0;
+ width:min(100%,96px);
+ aspect-ratio:1;
+ isolation:isolate;
+ --die-half:50cqw;
+ container-type:inline-size;
+}
+
+/* The idle face has no perspective, rotation or neighbouring faces. */
+.md-die .md-die-flat-face{
+ display:block;
+ position:absolute;
+ inset:0;
+ z-index:2;
+ border-radius:17%;
+ filter:drop-shadow(3px 8px 5px #00171291);
+}
+.md-die .md-die-flat-face .md-die-image{
+ display:block;
+ width:100%;
+ height:100%;
+ max-height:none;
+ filter:none;
+ animation:none!important;
+}
+.md-die.held .md-die-flat-face{
+ filter:drop-shadow(0 0 10px #7be6b58c);
+}
+
+/* This whole subtree is mounted only when the game reports an active throw. */
+.md-die .md-die-roll-3d{
+ position:absolute;
+ inset:0;
+ z-index:3;
+ opacity:0;
+ pointer-events:none;
+ perspective:640px;
  transform-style:preserve-3d;
- overflow:visible;
 }
 .md-die .md-die-rotor{
+ position:absolute;
+ inset:0;
+ display:block;
  transform-style:preserve-3d;
- transform:rotateX(var(--die-tilt-x)) rotateY(var(--die-tilt-y))
-  rotateX(var(--die-final-x)) rotateY(var(--die-final-y));
- filter:none;
+ will-change:transform;
 }
 .md-die .md-cube-face{
- transform-style:preserve-3d;
+ position:absolute;
+ inset:0;
+ border-radius:16%;
  overflow:visible;
- border-radius:15%;
- background:linear-gradient(145deg,var(--cube-face-top),var(--cube-face-bottom));
- border:1px solid var(--cube-face-edge);
- box-shadow:inset 0 3px 5px #ffffff48,inset 0 -5px 10px #0006;
  backface-visibility:hidden;
+ transform-style:preserve-3d;
+ background:linear-gradient(135deg,var(--die-front-color),var(--die-side-color));
+ border:1px solid var(--die-edge-color);
+ box-shadow:inset 2px 3px 5px #fff5,inset -4px -5px 7px #0007;
 }
 .md-die .md-cube-face-material{
- position:absolute;inset:0;overflow:hidden;border-radius:15%;
- box-shadow:inset 1px 1px 2px #fff7,inset -4px -5px 9px #0005;
- background:var(--cube-face-bottom);
+ position:absolute;
+ inset:0;
+ overflow:hidden;
+ border-radius:16%;
+ background:var(--die-side-color);
 }
 .md-die .md-cube-face-material .md-die-image{
- display:block;width:100%;height:100%;
- max-height:none;filter:none;
+ display:block;
+ width:100%;
+ height:100%;
+ max-height:none;
+ filter:none;
+ animation:none!important;
 }
 .md-die .md-cube-bevel-light{
- position:absolute;inset:1px;border-radius:15%;
- pointer-events:none;z-index:1;
- border:1.5px solid #ffffff35;
- box-shadow:inset 3px 3px 4px #ffffff42,inset -5px -6px 8px #06141b4d;
+ position:absolute;
+ inset:1px;
+ border-radius:15%;
+ border:1px solid #fff4;
+ box-shadow:inset 3px 3px 4px #ffffff3d,inset -3px -5px 7px #07171b4b;
+ pointer-events:none;
 }
-.md-die .md-face-front{filter:brightness(1)}
-.md-die .md-face-right{filter:brightness(.71)}
-.md-die .md-face-left{filter:brightness(.83)}
-.md-die .md-face-top{filter:brightness(1.17)}
-.md-die .md-face-bottom{filter:brightness(.61)}
-.md-die .md-face-back{filter:brightness(.76)}
+.md-die .md-face-front{transform:rotateY(0deg) translateZ(var(--die-half))}
+.md-die .md-face-right{transform:rotateY(90deg) translateZ(var(--die-half));filter:brightness(.76)}
+.md-die .md-face-back{transform:rotateY(180deg) translateZ(var(--die-half));filter:brightness(.80)}
+.md-die .md-face-left{transform:rotateY(-90deg) translateZ(var(--die-half));filter:brightness(.84)}
+.md-die .md-face-top{transform:rotateX(90deg) translateZ(var(--die-half));filter:brightness(1.08)}
+.md-die .md-face-bottom{transform:rotateX(-90deg) translateZ(var(--die-half));filter:brightness(.66)}
 .md-die .md-die-shadow{
- width:92%;height:18%;left:4%;bottom:-22%;
- background:#03141be3;filter:blur(8px);
+ position:absolute;
+ width:85%;
+ height:19%;
+ left:8%;
+ bottom:-20%;
+ background:#03151bc7;
+ border-radius:50%;
+ filter:blur(6px);
+ transform:scale(.9);
+ opacity:.65;
 }
-.md-die.rolling .md-die-rotor{
- animation:md-physical-dice-throw 1.34s cubic-bezier(.21,.67,.18,1) var(--die-delay) both;
+.md-die .md-die-landing{
+ position:absolute;
+ inset:-8px;
+ border:2px solid #e9d4a7;
+ border-radius:50%;
+ opacity:0;
+ pointer-events:none;
 }
-@keyframes md-physical-dice-throw{
- 0%{transform:translate3d(0,0,0) rotateX(var(--die-tilt-x)) rotateY(var(--die-tilt-y))
-  rotateX(var(--die-final-x)) rotateY(var(--die-final-y))}
- 15%{transform:translate3d(calc(10px * var(--die-sideways)),-23px,42px)
-  rotateX(-15deg) rotateY(19deg)
-  rotateX(calc(var(--die-final-x) + 110deg)) rotateY(calc(var(--die-final-y) + 178deg))}
- 34%{transform:translate3d(calc(-18px * var(--die-sideways)),-63px,90px)
-  rotateX(-25deg) rotateY(-25deg)
-  rotateX(calc(var(--die-final-x) + 453deg)) rotateY(calc(var(--die-final-y) + 498deg))}
- 58%{transform:translate3d(calc(12px * var(--die-sideways)),-27px,43px)
-  rotateX(19deg) rotateY(29deg)
-  rotateX(calc(var(--die-final-x) + 810deg)) rotateY(calc(var(--die-final-y) + 892deg))}
- 74%{transform:translate3d(calc(-5px * var(--die-sideways)),10px,6px)
-  rotateX(-20deg) rotateY(21deg)
-  rotateX(calc(var(--die-final-x) + 1050deg)) rotateY(calc(var(--die-final-y) + 1050deg))}
- 86%{transform:translate3d(2px,-8px,18px)
-  rotateX(var(--die-tilt-x)) rotateY(var(--die-tilt-y))
-  rotateX(calc(var(--die-final-x) + 1080deg)) rotateY(calc(var(--die-final-y) + 1080deg))}
- 100%{transform:translate3d(0,0,0)
-  rotateX(var(--die-tilt-x)) rotateY(var(--die-tilt-y))
-  rotateX(calc(var(--die-final-x) + 1080deg)) rotateY(calc(var(--die-final-y) + 1080deg))}
+.md-die .md-die-scatter{
+ position:absolute;
+ inset:0;
+ z-index:4;
+ pointer-events:none;
 }
+.md-die .md-die-scatter i{
+ position:absolute;
+ display:block;
+ left:50%;
+ top:82%;
+ width:5px;
+ height:5px;
+ border-radius:50%;
+ opacity:0;
+ background:#f8dda7;
+ box-shadow:0 0 9px #f8dda7;
+}
+
+/* The BUTTON itself stays steady; only its temporary cube tumbles. */
+.md-die.rolling,
+.md-die.rolling:hover:not(:disabled){
+ animation:none;
+ transform:none;
+}
+.md-die.rolling .md-die-image{animation:none!important}
+.md-die .md-die-stage.is-rolling .md-die-flat-face{
+ animation:md-face-during-throw 1.34s linear var(--die-delay) both;
+}
+.md-die .md-die-stage.is-rolling .md-die-roll-3d{
+ animation:md-cube-appear 1.34s linear var(--die-delay) both;
+}
+.md-die .md-die-stage.is-rolling .md-die-rotor{
+ animation:md-temporary-cube-throw 1.34s cubic-bezier(.20,.68,.20,1) var(--die-delay) both;
+}
+.md-die .md-die-stage.is-rolling .md-die-shadow{
+ animation:md-roll-shadow 1.34s ease-in-out var(--die-delay) both;
+}
+.md-die .md-die-stage.is-rolling .md-die-landing{
+ animation:md-land-pulse .40s ease-out calc(1.04s + var(--die-delay)) both;
+}
+.md-die .md-die-stage.is-rolling .md-die-scatter i{
+ animation:md-land-spark .46s ease-out calc(1.04s + var(--die-delay) + var(--spark-delay)) both;
+}
+
+@keyframes md-face-during-throw{
+ 0%,3%{opacity:1}
+ 10%,84%{opacity:0}
+ 95%,100%{opacity:1}
+}
+@keyframes md-cube-appear{
+ 0%,3%{opacity:0}
+ 10%,84%{opacity:1}
+ 95%,100%{opacity:0}
+}
+@keyframes md-temporary-cube-throw{
+ 0%{
+  transform:translate3d(0,0,0)
+    rotateX(var(--die-final-x)) rotateY(var(--die-final-y));
+ }
+ 13%{
+  transform:translate3d(calc(10px * var(--die-sideways)),-26px,35px)
+    rotateX(calc(var(--die-final-x) + 135deg))
+    rotateY(calc(var(--die-final-y) + 155deg)) rotateZ(-11deg);
+ }
+ 33%{
+  transform:translate3d(calc(-15px * var(--die-sideways)),-58px,72px)
+    rotateX(calc(var(--die-final-x) + 490deg))
+    rotateY(calc(var(--die-final-y) + 500deg)) rotateZ(16deg);
+ }
+ 57%{
+  transform:translate3d(calc(11px * var(--die-sideways)),-30px,40px)
+    rotateX(calc(var(--die-final-x) + 850deg))
+    rotateY(calc(var(--die-final-y) + 900deg)) rotateZ(-8deg);
+ }
+ 76%{
+  transform:translate3d(calc(-5px * var(--die-sideways)),5px,7px)
+    rotateX(calc(var(--die-final-x) + 1055deg))
+    rotateY(calc(var(--die-final-y) + 1060deg)) rotateZ(4deg);
+ }
+ 86%{
+  transform:translate3d(0,-9px,14px)
+    rotateX(calc(var(--die-final-x) + 1080deg))
+    rotateY(calc(var(--die-final-y) + 1080deg));
+ }
+ 93%,100%{
+  transform:translate3d(0,0,0)
+    rotateX(calc(var(--die-final-x) + 1080deg))
+    rotateY(calc(var(--die-final-y) + 1080deg));
+ }
+}
+@keyframes md-roll-shadow{
+ 0%,100%{transform:scale(.85);opacity:.65}
+ 32%{transform:scale(.4);opacity:.17}
+ 57%{transform:scale(.55);opacity:.25}
+ 78%{transform:scale(1.18);opacity:.8}
+ 90%{transform:scale(.86);opacity:.6}
+}
+@keyframes md-land-pulse{
+ 0%{opacity:0;transform:scale(.6)}
+ 22%{opacity:.7}
+ 100%{opacity:0;transform:scale(1.65)}
+}
+@keyframes md-land-spark{
+ 0%{opacity:0;transform:translate(-50%,-50%)}
+ 23%{opacity:.85}
+ 100%{opacity:0;transform:rotate(var(--spark-angle)) translateY(-40px) scale(.4)}
+}
+
 @media(prefers-reduced-motion:reduce){
- .md-die .md-die-rotor{animation:none!important}
+ .md-die .md-die-stage .md-die-flat-face,
+ .md-die .md-die-stage .md-die-roll-3d,
+ .md-die .md-die-stage .md-die-rotor,
+ .md-die .md-die-stage .md-die-shadow,
+ .md-die .md-die-stage .md-die-landing,
+ .md-die .md-die-stage .md-die-scatter i{
+  animation:none!important;
+ }
+ .md-die .md-die-flat-face{opacity:1!important}
+ .md-die .md-die-roll-3d{opacity:0!important}
 }
+.md-app[data-motion=false] .md-die-flat-face{opacity:1!important}
+.md-app[data-motion=false] .md-die-roll-3d{opacity:0!important}

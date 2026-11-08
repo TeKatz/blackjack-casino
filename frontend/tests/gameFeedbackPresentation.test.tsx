@@ -30,11 +30,25 @@ describe('Lounge completion screens',()=>{
   expect(markup).toContain('is-static');
  });
 });
-describe('Midnight Dice 3D throw',()=>{
- it('renders all six real pip faces while showing the committed result',()=>{
+describe('Midnight Dice: 2D idle → temporary 3D throw → 2D result',()=>{
+ it('renders precisely one flat face at rest with no 3D faces or cube',()=>{
+  for(let value=1;value<=6;value++){
+   const markup=renderToStaticMarkup(createElement(DiceCube,{
+    value,palette,rolling:false,index:0,token:1,
+   }));
+   expect(markup).toContain('data-testid="dice-flat-face"');
+   expect(markup).not.toContain('dice-rolling-3d');
+   expect(markup).not.toContain('md-cube-face');
+   expect(markup.match(/<svg /g)??[]).toHaveLength(1);
+   expect(markup.match(/r="8.2"/g)??[]).toHaveLength(value);
+  }
+ });
+ it('mounts a temporary six-faced cuboid only for active rolling dice',()=>{
   const markup=renderToStaticMarkup(createElement(DiceCube,{
    value:6,palette,rolling:true,index:2,token:5,
   }));
+  expect(markup).toContain('data-testid="dice-flat-face"');
+  expect(markup).toContain('data-testid="dice-rolling-3d"');
   expect(markup.match(/class="md-cube-face md-face-/g)??[]).toHaveLength(6);
   expect(markup).toContain('md-face-front');
   expect(markup).toContain('md-face-back');
@@ -43,17 +57,18 @@ describe('Midnight Dice 3D throw',()=>{
   expect(markup).toContain('md-face-top');
   expect(markup).toContain('md-face-bottom');
   expect(markup).toContain('--die-final-y:180deg');
-  expect(markup).toContain('--die-tilt-x:');
   expect(markup).toContain('md-cube-face-material');
   expect(markup).toContain('md-cube-bevel-light');
   expect(markup).toContain('is-rolling');
  });
- it('does not animate held dice or alter pip colours',()=>{
-  const markup=renderToStaticMarkup(createElement(DiceCube,{
-   value:3,palette,rolling:false,index:0,token:1,
+ it('shows the correct flat result after animation, including held dice',()=>{
+  const result=renderToStaticMarkup(createElement(DiceCube,{
+   value:3,palette,rolling:false,index:0,token:6,
   }));
-  expect(markup).toContain('--die-final-x:-90deg');
-  expect(markup).not.toContain('is-rolling');
-  expect(markup).toContain('#1c2930');
+  expect(result).toContain('data-testid="dice-flat-face"');
+  expect(result).not.toContain('is-rolling');
+  expect(result).not.toContain('md-cube-face');
+  expect(result.match(/r="8.2"/g)??[]).toHaveLength(3);
+  expect(result).toContain('#1c2930');
  });
 });

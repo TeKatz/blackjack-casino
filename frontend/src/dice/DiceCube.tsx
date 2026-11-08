@@ -38,7 +38,12 @@ export function Die({value,palette}:{value:number;palette:DicePalette}){
    fontFamily="Georgia" fontSize="43">✦</text>}
  </svg>;
 }
-/** Six real textured faces rotate in 3D; the authoritative result is never randomized here. */
+/**
+ * Idle/held/result: one exact, flat SVG face. No cuboid or side faces exist.
+ * Rolling: a temporary six-faced object spins, lands face-on, then hands the
+ * visual back to the same SVG. All faces/animations are cosmetic; the native
+ * game supplies the value, holds and roll token.
+ */
 export function DiceCube({value,palette,rolling,index,token}:{
  value:number;palette:DicePalette;rolling:boolean;index:number;token:number;
 }){
@@ -48,23 +53,31 @@ export function DiceCube({value,palette,rolling,index,token}:{
  const [x,y]=rotations[value]??[0,0];
  const style={
   '--die-final-x':x+'deg','--die-final-y':y+'deg',
-  '--die-delay':(index*64)+'ms','--die-sideways':(index%2===0?1:-1),
-  '--die-tilt-x':(-17-(index%3)*2)+'deg',
-  '--die-tilt-y':(index%2===0?19:-(17+index))+'deg',
-  '--cube-face-top':palette.top,'--cube-face-bottom':palette.bottom,'--cube-face-edge':palette.edge,
+  '--die-delay':(index*64)+'ms',
+  '--die-sideways':(index%2===0?1:-1),
+  '--die-front-color':palette.top,
+  '--die-side-color':palette.bottom,
+  '--die-edge-color':palette.edge,
  } as CSSProperties;
  return <span className={'md-die-stage'+(rolling?' is-rolling':'')} style={style}>
-  <span className="md-die-shadow" aria-hidden="true"/>
-  <span className="md-die-rotor" key={token} aria-hidden="true">
-   {[1,2,6,5,3,4].map((face,i)=><span key={face}
-    className={'md-cube-face md-face-'+['front','right','back','left','top','bottom'][i]}>
-    <span className="md-cube-face-material"><Die value={face} palette={palette}/></span>
-    <span className="md-cube-bevel-light" aria-hidden="true"/>
-   </span>)}
+  <span className="md-die-flat-face" data-testid="dice-flat-face" aria-hidden="true">
+   <Die value={value} palette={palette}/>
   </span>
-  <span className="md-die-landing" aria-hidden="true"/>
-  <span className="md-die-scatter" aria-hidden="true">
-   {Array.from({length:6},(_,k)=><i key={k} style={{'--spark':k,'--spark-angle':(k*60)+'deg','--spark-delay':(k*16)+'ms'} as CSSProperties}/>)}
-  </span>
+  {rolling&&<span className="md-die-roll-3d" data-testid="dice-rolling-3d" aria-hidden="true">
+   <span className="md-die-shadow"/>
+   <span className="md-die-rotor" key={token}>
+    {[1,2,6,5,3,4].map((face,i)=><span key={face}
+     className={'md-cube-face md-face-'+['front','right','back','left','top','bottom'][i]}>
+     <span className="md-cube-face-material"><Die value={face} palette={palette}/></span>
+     <span className="md-cube-bevel-light"/>
+    </span>)}
+   </span>
+   <span className="md-die-landing"/>
+   <span className="md-die-scatter">
+    {Array.from({length:6},(_,k)=><i key={k} style={{
+     '--spark-angle':(k*60)+'deg','--spark-delay':(k*16)+'ms',
+    } as CSSProperties}/>)}
+   </span>
+  </span>}
  </span>;
 }
