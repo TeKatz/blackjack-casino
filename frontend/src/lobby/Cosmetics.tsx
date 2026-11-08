@@ -32,12 +32,12 @@ export function ProfileFrame({variant='classic',children,large=false}:{variant?:
  style={{'--frame-a':palette[0],'--frame-b':palette[1],'--frame-c':palette[2]??palette[0],'--frame-duration':(theme?.seconds??4)+'s'} as CSSProperties}>{children??'♠'}</span>;
 }
 export function PlayerPortrait({portrait,frame,large=false}:{portrait?:string;frame?:string;large?:boolean}){
- const secret=portrait==='portrait-secret-guest';
- return <span className={secret?'secret-guest-profile':'player-portrait-default'}>
-  <ProfileFrame variant={frame} large={large}>
+ const framed=<ProfileFrame variant={frame} large={large}>
    {portrait?<img src={portraitPath(portrait)} alt=""/>:'♠'}
-  </ProfileFrame>
-  {secret&&<span className="secret-guest-profile-spark" aria-hidden="true">✦</span>}
+ </ProfileFrame>;
+ if(portrait!=='portrait-secret-guest')return framed;
+ return <span className="secret-guest-profile">
+   {framed}<span className="secret-guest-profile-spark" aria-hidden="true">✦</span>
  </span>;
 }
 export function DicePreview({variant}:{variant:string}){
