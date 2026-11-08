@@ -2,7 +2,7 @@ name: Development Release
 
 on:
   push:
-    branches: ["feature/manor-modernization-phase-1"]
+    branches: ["develop"]
   workflow_dispatch:
 
 permissions:
@@ -14,8 +14,8 @@ concurrency:
 
 jobs:
   publish-development:
-    # Ongoing Manor migration test builds are published from the single long-lived feature branch.
-    if: github.ref == 'refs/heads/feature/manor-modernization-phase-1'
+    # The mutable Development channel is published only from the permanent develop integration branch.
+    if: github.ref == 'refs/heads/develop'
     runs-on: windows-latest
     # Includes full frontend/.NET tests, two Windows runtime smokes, two self-contained
     # publishes, artifact verification, upload and a published-package checksum round trip.
