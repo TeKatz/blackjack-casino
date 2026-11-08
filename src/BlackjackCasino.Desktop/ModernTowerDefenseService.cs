@@ -41,6 +41,8 @@ internal sealed class ModernTowerDefenseService
         }
     }
 
+    internal void Checkpoint() => persist(game.Save());
+
     internal bool Tick()
     {
         if (game.State.Phase != "running" || game.State.Paused) return false;
