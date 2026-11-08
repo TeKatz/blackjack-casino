@@ -38,6 +38,8 @@ internal sealed class ModernLoungeView : ContentControl, IDisposable
     private readonly Func<ModernJigsawCommand, ModernJigsawReply> jigsawCommand;
     private readonly Action jigsawTick;
     private readonly Func<ModernAdventureCommand, ModernAdventureReply> adventureCommand;
+    private readonly Func<ModernTowerDefenseCommand, ModernTowerDefenseReply> towerDefenseCommand;
+    private readonly Func<bool> towerDefenseTick;
     private readonly Action close;
     private readonly Action failure;
     private readonly Action? openBoardWindow;
@@ -49,6 +51,10 @@ internal sealed class ModernLoungeView : ContentControl, IDisposable
     private readonly DispatcherTimer refreshClock = new(DispatcherPriority.Background)
     {
         Interval = TimeSpan.FromSeconds(1),
+    };
+    private readonly DispatcherTimer towerClock = new(DispatcherPriority.Background)
+    {
+        Interval = TimeSpan.FromMilliseconds(100),
     };
     private bool initialized, disposed, listening;
     internal bool Ready { get; private set; }
@@ -64,6 +70,8 @@ internal sealed class ModernLoungeView : ContentControl, IDisposable
         Func<ModernMemoryCommand, ModernMemoryReply> memoryCommand, Action memoryTick,
         Func<ModernJigsawCommand, ModernJigsawReply> jigsawCommand, Action jigsawTick,
         Func<ModernAdventureCommand, ModernAdventureReply> adventureCommand,
+        Func<ModernTowerDefenseCommand, ModernTowerDefenseReply> towerDefenseCommand,
+        Func<bool> towerDefenseTick,
         Action close, Action failure, Action? openBoardWindow = null, bool boardOnly = false)
     {
         this.snapshot = snapshot;
@@ -81,6 +89,13 @@ internal sealed class ModernLoungeView : ContentControl, IDisposable
         this.jigsawCommand = jigsawCommand;
         this.jigsawTick = jigsawTick;
         this.adventureCommand = adventureCommand;
+        this.towerDefenseCommand = towerDefenseCommand;
+        this.towerDefenseTick = towerDefenseTick;
+        towerClock.Tick += (_, _) =>
+        {
+            if (!Ready || !IsVisible || disposed || boardOnly) return;
+            if (this.towerDefenseTick()) Refresh();
+        };
         refreshClock.Tick += (_, _) =>
         {
             if (!Ready || !IsVisible || disposed) return;
@@ -180,6 +195,7 @@ internal sealed class ModernLoungeView : ContentControl, IDisposable
                     Ready = true;
                     watchdog.Stop();
                     refreshClock.Start();
+                    towerClock.Start();
                     break;
                 case "lounge.close" when listening && Ready:
                     close();
@@ -231,12 +247,20 @@ internal sealed class ModernLoungeView : ContentControl, IDisposable
                     Post("lounge.adventure.result", taleReply);
                     Refresh();
                     break;
+                case "lounge.tower-defense.command" when listening && Ready && IsVisible && !boardOnly:
+                    ModernTowerDefenseCommand? towerRequest =
+                        ModernTowerDefenseProtocol.Parse(e.WebMessageAsJson);
+                    if (towerRequest is null) break;
+                    ModernTowerDefenseReply towerReply = towerDefenseCommand(towerRequest);
+                    Post("lounge.tower-defense.result", towerReply);
+                    Refresh();
+                    break;
                 case "lounge.open" when listening && Ready && IsVisible && !boardOnly:
                     if (!root.TryGetProperty("id", out JsonElement id)
                         || id.ValueKind != JsonValueKind.String) return;
                     string? route = id.GetString();
                     if (route is "sudoku" or "solitaire" or "word-search"
-                        or "memory" or "jigsaw" or "tales-backroom")
+                        or "memory" or "jigsaw" or "tales-backroom" or "tower-defense")
                         openGame(route);
                     break;
             }
@@ -264,6 +288,7 @@ internal sealed class ModernLoungeView : ContentControl, IDisposable
         listening = false;
         watchdog.Stop();
         refreshClock.Stop();
+        towerClock.Stop();
         browser.Visibility = Visibility.Collapsed;
         Dispatcher.BeginInvoke(failure, DispatcherPriority.Background);
     }
@@ -274,6 +299,7 @@ internal sealed class ModernLoungeView : ContentControl, IDisposable
         disposed = true;
         watchdog.Stop();
         refreshClock.Stop();
+        towerClock.Stop();
         Loaded -= OnLoaded;
         Localization.LanguageChanged -= LanguageChanged;
         browser.Dispose();
