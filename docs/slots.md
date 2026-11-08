@@ -2,7 +2,7 @@
 
 The **primary Casino Lobby route** now opens the offline React/WebView2 Midnight Reels cabinet (`frontend/reels.html`). The old WPF `SlotMachineWindow` remains available only if the packaged frontend is missing or WebView2 fails, including during a committed spin. The WPF fallback is still exercised by Windows regression tests.
 
-This migration is developed on `feature/manor-modernization-phase-1` without merging to `main`. Finish any active Blackjack hand before switching modes. The .NET gameplay engine and existing saves remain the only authority.
+This migration was implemented on the historical Manor feature branch and is now integrated into `main`; ongoing Development updates come from `develop`. Finish any active Blackjack hand before switching modes. The .NET gameplay engine and existing saves remain the only authority.
 
 ## Play
 
