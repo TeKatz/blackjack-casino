@@ -65,7 +65,9 @@ public partial class MainWindow
 
         string packText = reward.PackRarity is { } rarity ? $" · {rarity} card pack" : string.Empty;
         StatusText.Text = $"Daily reward · +{Money(reward.Bankroll)} · +{reward.CosmeticCoins:N0} cosmetic coins{packText} · day {claim.Status.ActiveStep}/{DailyLoginRewardSchedule.CycleLength}";
-        CasinoFeedback.PlayChip(SoundEnabled);
+        // A unique ascending vault-coin chime plays only after the daily claim is
+        // durably committed. Rejected and duplicate claims remain silent.
+        DailyLoginClaimAudio.Play(SoundEnabled);
         AnimateDailyBankrollCredit();
         return claim;
     }
