@@ -25,7 +25,8 @@ internal static class MidnightMergeSmoke
         Require(await web.ExecuteScriptAsync(
             "Boolean(document.querySelector('[data-testid=\"midnight-merge-app\"]')"
             + "&&document.querySelectorAll('.merge-cell').length===42"
-            + "&&document.querySelectorAll('.merge-producer').length===2"
+            + "&&document.querySelectorAll('.merge-producer').length===6"
+            + "&&document.querySelectorAll('.merge-estate-stop').length===10"
             + "&&document.querySelectorAll('.merge-order').length>=6"
             + "&&document.querySelector('[data-testid=\"merge-next-upgrade\"]')"
             + "&&document.querySelector('.merge-room-art'))") == "true",
@@ -147,7 +148,7 @@ internal static class MidnightMergeSmoke
         await WaitForExit(window);
         window.Width = 1280; window.Height = 900;
         File.WriteAllText(Path.Combine(output, "merge-result.txt"),
-            "PASS: React 7x6 board, two native producers, click select/move/merge, order receipts, XP milestone, atomic disk save, exact reopen, German and English, 1080x720, WebView2 failure recovery.");
+            "PASS: React 7x6 board, six native producers, ten renovation rooms, click select/move/merge, order receipts, XP milestone, atomic disk save, exact reopen, German and English, 1080x720, WebView2 failure recovery.");
     }
 
     private static MergeGameState State(MainWindow window)
