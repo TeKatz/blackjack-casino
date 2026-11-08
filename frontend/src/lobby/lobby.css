@@ -564,3 +564,28 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
  box-shadow:0 0 0 1px #a5ebc075,0 0 30px #69dab56d,
   0 0 54px #20865d3d,inset 0 1px #ddf1c678,0 17px 37px #0008}
 @media(prefers-reduced-motion:reduce){.lobby-daily{transition:none}}
+
+/* Counts for unclaimed collection themes and challenge rewards, kept inside
+   the narrow 122–164px sidebar rather than overhanging its right border. */
+.lobby-nav-item:has(.nav-ready){gap:clamp(4px,.55vw,8px);padding-left:8px;padding-right:7px;min-width:0}
+.lobby-nav-item .lobby-nav-label{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lobby-nav-item .nav-ready{
+ flex:0 0 auto;margin-left:auto;min-width:22px;max-width:31px;height:21px;
+ padding:0 3px;border:1px solid #ffdd9a;border-radius:8px;
+ background:linear-gradient(135deg,#fae2a9,#c48e42);
+ color:#1a281e;font-size:10px;font-weight:900;line-height:1;
+ box-shadow:0 0 5px #e7b65b77;animation:lobby-reward-glow 2.3s ease-in-out infinite alternate;
+}
+@keyframes lobby-reward-glow{
+ 0%{box-shadow:0 0 4px #e7b65b77,0 0 0 #f9e5a400}
+ 100%{box-shadow:0 0 13px #ffdf8cdd,0 0 23px #d7a95a8e}
+}
+@media(max-width:1360px){
+ .lobby-nav-item:has(.nav-ready){gap:4px;padding-inline:6px}
+ .lobby-nav-item:has(.nav-ready) .nav-icon{flex:0 0 21px;width:21px;height:21px}
+ .lobby-nav-item:has(.nav-ready) .lobby-nav-label{font-size:11px}
+}
+@media(prefers-reduced-motion:reduce){
+ .lobby-nav-item .nav-ready{animation:none!important}
+}
+.casino-lobby-shell[data-reduced="true"] .lobby-nav-item .nav-ready{animation:none!important}

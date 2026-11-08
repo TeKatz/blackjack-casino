@@ -375,9 +375,14 @@ function LobbyApp() {
           className={'lobby-nav-item '+((shopVisible?n.id==='shop':recordsVisible?n.id===(recordsVisible==='challenges'?'challenges':recordsVisible==='statistics'?'stats':recordsVisible==='vault'?'vault':recordsVisible==='album'?'collections':recordsVisible==='season'?'season':'profile'):n.id===filter)?'selected':'')+(n.id==='daily'?' daily-nav':'')+(n.id==='collections'?' nav-section-start':'')}
           onClick={()=>chooseNav(n.id)}>
           <NavIcon name={n.id}/>
-          <span>{de?n.de:n.en}</span>
-          {n.id==='challenges'&&data.challengesReady>0&&
-            <span className="nav-ready" aria-label={de?'Belohnungen bereit':'Rewards ready'}>{data.challengesReady}</span>}
+          <span className="lobby-nav-label">{de?n.de:n.en}</span>
+          {((n.id==='challenges'&&data.challengesReady>0)||
+            (n.id==='collections'&&data.albumRewardsReady>0))&&
+            <span className="nav-ready" aria-label={
+              (de?'Abholbereite Belohnungen: ':'Claimable rewards: ')+
+              (n.id==='collections'?data.albumRewardsReady:data.challengesReady)}>
+              +{Math.min(99,n.id==='collections'?data.albumRewardsReady:data.challengesReady)}
+            </span>}
         </button>)}
         <div className="lobby-nav-decoration" aria-hidden="true">♣</div>
         </div>

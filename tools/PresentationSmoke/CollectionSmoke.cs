@@ -92,35 +92,31 @@ internal static partial class Program
         await Expect("Boolean(document.querySelector('.album-opening-panel.phase-reveal')"
             +"||document.querySelector('.album-opening-panel.phase-summary'))",
             "React did not start its sealed-pack opening animation.");
-        await web.ExecuteScriptAsync(
-            "document.querySelector('.album-opening-panel.phase-reveal .album-opening-secondary')?.click()");
-        await Expect("document.querySelectorAll('.album-reveal-slot.flipped').length===5",
-            "React pack reveal did not expose five distinct animation slots.");
+        // Exit before completion; the durable receipt must survive navigation.
         Require(profile.Collection.PendingOpening?.Id==receipt.Id,
-            "Rendering the React reveal cleared or rerolled the pending receipt.");
+            "React reveal regenerated the pending native receipt.");
         await web.ExecuteScriptAsync("document.querySelector('.album-opening-exit')?.click()");
         await web.ExecuteScriptAsync("document.querySelector('.album-page .shop-back')?.click()");
         for(int i=0;i<110 && modern.RecordsPage is not null;i++)await Task.Delay(40);
         Require(profile.Collection.PendingOpening?.Id==receipt.Id,
-            "Leaving React Album discarded the durable reveal receipt.");
+            "Leaving React Album mid-reveal discarded the pending receipt.");
         await web.ExecuteScriptAsync(
             "[...document.querySelectorAll('.lobby-nav-item')].find(x=>/Collections|Sammlungen/.test(x.textContent||''))?.click()");
         await Expect("Boolean(document.querySelector('.album-opening-panel.phase-reveal')"
             +"||document.querySelector('.album-opening-panel.phase-summary'))",
-            "Reloading React Album did not resume the exact saved opening.");
+            "React Album did not resume its durable receipt.");
         Require(profile.Collection.PendingOpening?.Id==receipt.Id,
             "Resuming a React pack reveal rerolled the five original cards.");
         await web.ExecuteScriptAsync(
-            "document.querySelector('.album-opening-panel.phase-reveal .album-opening-secondary')?.click()");
-        await Expect("Boolean(document.querySelector('.album-opening-panel.phase-summary'))",
-            "Resumed React reveal never reached the result stage.");
-        await web.ExecuteScriptAsync(
-            "document.querySelector('.album-opening-panel.phase-summary .album-opening-primary')?.click()");
-        for(int i=0;i<110 && profile.Collection.PendingOpening is not null;i++)await Task.Delay(45);
+            "document.querySelector('.phase-reveal .album-opening-secondary')?.click()");
+        await Expect("document.querySelectorAll('.album-reveal-slot.flipped').length===5"
+            +"&&document.querySelectorAll('.album-reveal-result').length===5",
+            "React Album did not show five card faces with New/Duplicate labels.");
+        for(int i=0;i<150 && profile.Collection.PendingOpening is not null;i++)await Task.Delay(45);
         Require(profile.Collection.PendingOpening is null,
-            "React Collect did not clear the original native receipt.");
+            "React Album did not automatically complete its original receipt.");
         await Expect("Boolean(document.querySelector('.album-opening-panel.phase-finished'))",
-            "React Album did not acknowledge a completed five-card pack.");
+            "React Album did not acknowledge automatic completion.");
         Require(profile.Collection.PacksOpened==before+1,
             "React resume or collect opened the pack more than once.");
     }
