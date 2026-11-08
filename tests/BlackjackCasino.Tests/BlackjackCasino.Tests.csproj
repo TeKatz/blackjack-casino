@@ -74,6 +74,7 @@
     <Compile Include="../../src/BlackjackCasino.Desktop/CollectionSoundSynthesis.cs" Link="Audio/CollectionSoundSynthesis.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/CasinoSoundSynthesis.cs" Link="Audio/CasinoSoundSynthesis.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/WordSearchSoundSynthesis.cs" Link="Audio/WordSearchSoundSynthesis.cs" />
+    <Compile Include="../../src/BlackjackCasino.Desktop/DailyLoginClaimAudio.cs" Link="Audio/DailyLoginClaimAudio.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/CasinoAudio.cs" Link="Audio/CasinoAudio.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/SlotAudio.cs" Link="Audio/SlotAudio.cs" />
   </ItemGroup>
