@@ -40,6 +40,18 @@ internal static class ModernShopSmoke
             + "&&!!shop.querySelector('[data-cosmetic-id=\"portrait-neon-emperor\"]');})()");
         Require(catalogue == "true", "React Shop does not expose complete cards/dice/portrait catalog and five packs.");
 
+        Require(await web.ExecuteScriptAsync(
+            "(()=>{const item=document.querySelector('[data-cosmetic-id=\\\"portrait-secret-guest\\\"]');"
+            + "const art=item?.querySelector('[data-testid=\\\"secret-guest-showcase\\\"]');"
+            + "const picture=art?.querySelector('picture');"
+            + "const media=picture?.querySelector('source[media]');"
+            + "return Boolean(item&&art&&picture&&media"
+            + "&&art.querySelector('img')?.getAttribute('src')==='/shop/portraits/secret-guest.webp'"
+            + "&&media.getAttribute('srcset')==='/shop/portraits/secret-guest.jpg'"
+            + "&&item.textContent.includes('She appears before the room remembers.')"
+            + "&&item.textContent.includes('Reward only'));})()") == "true",
+            "Secret Guest lacks its exclusive animated card, still fallback or challenge-only description.");
+
         long previousCoins = profile.Coins;
         bool ownedBefore = profile.OwnedCosmeticIds.Contains("frame-slate");
         if (!ownedBefore)

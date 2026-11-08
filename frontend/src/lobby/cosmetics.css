@@ -53,3 +53,21 @@
 @media(prefers-reduced-motion:reduce){
  .cosmetic-frame::before,.cosmetic-frame::after{animation:none!important}
 }
+
+
+/* Signature profile finish, intentionally independent of the chosen cosmetic rim. */
+.secret-guest-profile{position:relative;display:inline-grid;place-items:center;isolation:isolate}
+.secret-guest-profile .cosmetic-frame{box-shadow:0 0 12px #f9cb8780,inset 0 0 12px #c49d5a40}
+.secret-guest-profile::before{content:"";position:absolute;inset:-5px;z-index:-1;
+ border:1px solid #e6bb79a1;border-radius:16px;
+ box-shadow:0 0 10px #f2bb7880,0 0 22px #d6906c51;
+ animation:secret-guest-profile-aura 5s ease-in-out infinite}
+.secret-guest-profile-spark{position:absolute;top:-11px;right:-9px;color:#ffe6ab;
+ text-shadow:0 0 10px #e6ac72;pointer-events:none;
+ animation:secret-guest-profile-spark 5s ease-in-out infinite}
+@keyframes secret-guest-profile-aura{50%{opacity:.46;transform:scale(1.04)}}
+@keyframes secret-guest-profile-spark{50%{opacity:.3;transform:rotate(60deg)}}
+[data-reduced=true] .secret-guest-profile::before,[data-reduced=true] .secret-guest-profile-spark{animation:none!important}
+@media(prefers-reduced-motion:reduce){
+ .secret-guest-profile::before,.secret-guest-profile-spark{animation:none!important}
+}
