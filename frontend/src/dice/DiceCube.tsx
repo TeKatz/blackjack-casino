@@ -1,7 +1,7 @@
 import type {CSSProperties} from 'react';
 import type {DicePalette} from './bridge';
 
-function Die({value,palette}:{value:number;palette:DicePalette}){
+export function Die({value,palette}:{value:number;palette:DicePalette}){
  const pips:Record<number,number[][]>={
   0:[],1:[[50,50]],2:[[29,29],[71,71]],3:[[29,29],[50,50],[71,71]],
   4:[[29,29],[71,29],[29,71],[71,71]],5:[[29,29],[71,29],[50,50],[29,71],[71,71]],

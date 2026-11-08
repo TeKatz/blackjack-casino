@@ -4,7 +4,7 @@ import {createRoot} from 'react-dom/client';
 import {categories,issueDiceIntent,listenDice} from './bridge';
 import type {DiceCategory,DiceCelebration,DiceGame,DiceIntent,DiceSnapshot} from './bridge';
 import {DiceAmbient} from './Ambient';
-import {DiceCube} from './DiceCube';
+import {DiceCube,Die} from './DiceCube';
 import './dice.css';
 
 const names:Record<'de'|'en',Record<DiceCategory,string>>={
