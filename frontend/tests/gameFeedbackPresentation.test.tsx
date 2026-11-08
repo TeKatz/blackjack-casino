@@ -43,6 +43,9 @@ describe('Midnight Dice 3D throw',()=>{
   expect(markup).toContain('md-face-top');
   expect(markup).toContain('md-face-bottom');
   expect(markup).toContain('--die-final-y:180deg');
+  expect(markup).toContain('--die-tilt-x:');
+  expect(markup).toContain('md-cube-face-material');
+  expect(markup).toContain('md-cube-bevel-light');
   expect(markup).toContain('is-rolling');
  });
  it('does not animate held dice or alter pip colours',()=>{

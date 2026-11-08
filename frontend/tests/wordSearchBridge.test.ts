@@ -1,4 +1,8 @@
 import {describe,it,expect} from 'vitest';
+import {createElement} from 'react';
+import {renderToStaticMarkup} from 'react-dom/server';
+import {WordSearchScreen} from '../src/lounge/wordSearch';
+import type {WordSearchState} from '../src/lounge/wordSearchBridge';
 import {difficulties,isWordSearchState,isWordSearchReply} from '../src/lounge/wordSearchBridge';
 
 const tiers=difficulties.map((difficulty,index)=>({
@@ -43,5 +47,21 @@ describe('authoritative Word Search snapshot',()=>{
   expect(isWordSearchReply(r)).toBe(true);
   expect(isWordSearchReply({...r,revision:-1})).toBe(false);
   expect(isWordSearchReply({...r,requestId:'invalid'})).toBe(false);
+ });
+});
+
+describe('Word Search replacement choice',()=>{
+ it('offers a new level even when an unfinished save is resumable',()=>{
+  const saved:WordSearchState={...base,screen:'library',
+   resume:{id:'word-search-relaxed-025',difficulty:'Relaxed',theme:'Midnight Club',
+    found:1,total:6,elapsedSeconds:20}};
+  const html=renderToStaticMarkup(createElement(WordSearchScreen,{
+   state:saved,language:'de',pending:false,error:'',animations:false,command:()=>{},
+  }));
+  expect(html).toContain('data-testid="word-search-resume"');
+  expect(html).toContain('data-testid="word-search-start-Relaxed"');
+  expect(html).toContain('data-testid="word-search-start-Easy"');
+  expect(html).toContain('Dein aktuelles Rätsel bleibt gespeichert');
+  expect(html).not.toMatch(/data-testid="word-search-start-Relaxed" disabled/);
  });
 });
