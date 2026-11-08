@@ -113,7 +113,7 @@ function EmpireApp(){
   const clearPreview=useCallback(()=>{clearTimeout(previewTimer.current);previewId.current=null;setPreview(null);},[]);
   const selectRoom=useCallback((id:string)=>{setSelected(old=>old===id?null:id);clearPreview();},[clearPreview]);
   const sceneReady=useCallback(()=>post('empire.graphics-ready'),[]);
-  const go=(next:Page)=>{setPage(next);clearPreview();};
+  const go=(next:Page)=>{setPage(next);if(next!=='estate')setSelected(null);clearPreview();};
   const close=()=>post('empire.close');
   useEffect(()=>{
     const accept=(reply:Reply)=>{
