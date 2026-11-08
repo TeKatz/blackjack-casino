@@ -18,7 +18,10 @@ The desktop UI must not reimplement outcome rules. Presentation may animate or a
 
 ## Modern Chill Lounge boundary
 
-`MainWindow.Lounge.OpenLoungeCore` normalizes the established C# progress records and routes straight to `OpenModernLounge` when bundled WebView2 is available. `ModernLoungeCatalog` supplies the six stable game IDs and native read-only status summaries; it is independent of all WPF `LoungeHostedGame` factories. The WebView2 host owns only presentation and validated session/revision/receipt commands, with C# services handling every save and reward. A failed or unavailable WebView2 explicitly calls `OpenLegacyLounge`, which is the sole initializer for native WPF Lounge modules and their visual decorators.
+All **seven** normal Lounge activities use the React route in the local WebView2 host: Sudoku, Solitaire, Word Search, Memory, Jigsaw, Tales and Midnight Bastion. Native C# remains the game/save authority. Word Search allows an intentional replacement of a running puzzle after library confirmation; completion dialogs are presentation-only. The temporarily shared Lobby soundtrack does not alter any progression or game engine.
+
+
+`MainWindow.Lounge.OpenLoungeCore` normalizes the established C# progress records and routes straight to `OpenModernLounge` when bundled WebView2 is available. `ModernLoungeCatalog` supplies the seven stable game IDs and native read-only status summaries; it is independent of all WPF `LoungeHostedGame` factories. The WebView2 host owns only presentation and validated session/revision/receipt commands, with C# services handling every save and reward. A failed or unavailable WebView2 explicitly calls `OpenLegacyLounge`, which is the sole initializer for native WPF Lounge modules and their visual decorators.
 
 The retired native startup-welcome dialog is not shown during normal startup, but remains as regression-reference source. The remaining native WPF game modules provide tested emergency/fallback behavior and should remain until recovery, accessibility and device acceptance is complete. The [legacy inventory](legacy-wpf-inventory.md) describes which files are still reachable and why.
 
@@ -133,7 +136,7 @@ GitHub excludes prereleases from `latest`, so Development cannot accidentally be
 
 ### Development
 
-`.github/workflows/development-release.yml` publishes successful development builds from the explicitly pinned branch, currently `feature/manor-modernization-phase-1` for the long-lived Manor pilot. Both its push trigger and job guard select that source. Builds use versions such as `0.10.1-dev.N` and replace the assets of the mutable GitHub prerelease tagged `development`.
+`.github/workflows/development-release.yml` publishes successful development builds from the explicitly pinned branch, currently `develop`, the permanent development integration branch. Both its push trigger and job guard select that source. Builds use versions such as `0.10.1-dev.N` and replace the assets of the mutable GitHub prerelease tagged `development`.
 
 The client reads:
 
@@ -162,9 +165,9 @@ The updater protocol is schema-versioned. `minimumUpdaterVersion` allows an old 
 
 ## Modern presentation and staged shell migration
 
-The staged migration now includes the React casino lobby, playable Midnight Manor, shop, challenges, statistics, Season Pass, profile identity editor, Blackjack hand history, Casino Vault, Collector's Album and Casino Empire. Empire has its own validated, session-deduplicated bridge to the existing transaction/preview services and uses the same modern host in embedded and detached windows; its economy remains in Core. The presentation adapter lives inside the WPF host via WebView2; only after every migrated mode, album, updater and save path passes acceptance would a smaller native .NET host replace WPF. The planned frontend is not allowed to generate outcomes, change the bankroll or own durable rewards. C# Core remains authoritative; any new application/bridge service must have versioned command schemas, origin validation and idempotent settlement. See [modernization roadmap](modernization-roadmap.md) and [agent working agreement](../AGENTS.md).
+The staged migration now includes the React casino lobby, playable Midnight Manor, shop, challenges, statistics, Season Pass, profile identity editor, Blackjack hand history, Casino Vault, Collector's Album and Casino Empire. Empire has its own validated, session-deduplicated bridge to the existing transaction/preview services and uses the same modern host in embedded and detached windows; its economy remains in Core. The presentation adapter lives inside the WPF host via WebView2; only after every migrated mode, album, updater and save path passes acceptance would a smaller native .NET host replace WPF. The planned frontend is not allowed to generate outcomes, change the bankroll or own durable rewards. C# Core remains authoritative; any new application/bridge service must have versioned command schemas, origin validation and idempotent settlement. See [modernization roadmap](modernization-roadmap.md), [branching policy](branching-and-release-policy.md) and [agent working agreement](../AGENTS.md).
 
-After consolidation, do not delete branches automatically or change the Development publisher's pin without an explicit release decision. The current cumulative release branch and workflow instructions are documented in [Development delivery](development-update-delivery.md).
+After consolidation, `main` is the tested integration baseline and `develop` is the sole Development publisher. Historical branches remain for traceability; do not delete them or repoint a release channel without explicit approval. The current cumulative release branch and workflow instructions are documented in [Development delivery](development-update-delivery.md).
 
 
 ## Blackjack native presentation retirement (2026-11-06)

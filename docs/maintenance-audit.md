@@ -1,6 +1,16 @@
 # Repository maintenance audit
 
-**Checked 2026-11-04.** Scope: workflow tooling, pinned .NET test dependencies, available documentation, and migration readiness. This is a record of *verified current state*, not a claim that every dependency is already upgraded.
+**Latest branch/workflow review: 2026-11-08.** Package-version comparisons below are preserved from their 2026-11-04 audit and require renewed verification before dependency upgrades.
+
+## Cumulative integration audit (2026-11-08)
+
+- The cumulative Manor/Casino modernization is integrated through PR #36. `main` becomes the tested integration baseline, while `develop` is the permanent Development update source.
+- The integration incorporates the main-only CC0 Casino Music Importer and the resilient detached-caseboard smoke synchronization fix. The historical earlier Manor preview revert is superseded by the fully tested current frontend.
+- CI, frontend, presentation and repository-contract workflows cover `develop`; Development release changes only after its full Windows tests and package verification succeed. Stable still requires an explicit version tag.
+- The manifest URL, package schema, end-user save location, C# RNG, wager math and reward contracts are unchanged by the branch consolidation.
+- Branch-sensitive Markdown is being updated for the permanent `main`/`develop` model; dated feature-phase documents retain historical context. See [branch policy](branching-and-release-policy.md).
+
+**Historical audit checked 2026-11-04.** Scope: workflow tooling, pinned .NET test dependencies, available documentation, and migration readiness. This is a record of *verified current state*, not a claim that every dependency is already upgraded.
 
 ## Completed in the preparation branch
 
@@ -50,6 +60,6 @@ See [roadmap](modernization-roadmap.md), [agent workflow](../AGENTS.md), and [De
 
 The consolidated branch changes the Development publisher from `feature/casino-quality-phase-4` to `main` in **both** required workflow gates. The older note above describes the preparatory state before consolidation. NuGet/xUnit upgrades remain deferred and require a separate testable change. Verify actual main CI and the Development artifact before deleting old feature branches.
 
-## Manor Development channel ownership (2026-11-04)
+## Manor Development channel ownership (historical, 2026-11-04)
 
-The active Manor development and testing branch is `feature/manor-modernization-phase-1`, without merging into `main`. Both Development release workflow guards target that branch. Earlier main-publishing notes are historical; the unintended merge was corrected without force-pushing. Manor iterations continue on the same feature branch.
+At that time, the active Manor development and testing branch was `feature/manor-modernization-phase-1`, without merging into `main`. Both Development release workflow guards target that branch. Earlier main-publishing notes are historical; the unintended merge was corrected without force-pushing. That arrangement has been superseded by `develop` and PR #36.

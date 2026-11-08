@@ -34,7 +34,7 @@ Midnight Reels is left byte-for-byte intact. Shared speed/auto infrastructure is
 
 ## Release gate
 
-Modern Manor ships through the in-app Development channel from `feature/manor-modernization-phase-1`. That workflow builds, tests and runs Windows startup and Manor smoke tests before publishing. The manifest URL and updater protocol remain unchanged. This section records earlier WPF acceptance work; the current source pin and SemVer policy are documented in [Development update delivery](development-update-delivery.md). A Stable rollout remains a separate gate requiring package, checksum, installed-updater and player-save verification.
+Modern Manor is part of the integrated `main` baseline; new in-app Development builds publish from `develop`. That workflow builds, tests and runs Windows startup and Manor smoke tests before publishing. The manifest URL and updater protocol remain unchanged. This section records earlier WPF acceptance work; the current source pin and SemVer policy are documented in [Development update delivery](development-update-delivery.md). A Stable rollout remains a separate gate requiring package, checksum, installed-updater and player-save verification.
 
 ## Modern Manor Phase 3 evidence and human gate
 

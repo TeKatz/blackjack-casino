@@ -1,6 +1,8 @@
 # Modern casino frontend — staged migration roadmap
 
-**Implementation status (2026-11-04):** Midnight Manor's React/TypeScript/PixiJS/WebView2 presentation is the sole Manor lobby entry in Development. Phase-3 rendering, six bonus chambers, the restricted C# command bridge and crash-safe settlements are implemented. The replacement passed CI and Development package verification on `2114b05`; additional hardware/visual checks remain open. Development continues from `feature/manor-modernization-phase-1` without a merge to `main`. WPF Manor is retained in source for rollback only; the frontend never decides results or modifies wallets directly.
+**Current integration status (2026-11-08):** The cumulative modernization is consolidated into `main` through [integration PR #36](https://github.com/TeKatz/blackjack-casino/pull/36). New tested Development packages are sourced from the permanent `develop` branch. The modern lobby, Manor, Blackjack, Midnight Dice, Collector's Album, seven Chill Lounge activities and the other implemented React games are part of the integrated baseline. Later quality and device acceptance work remains separate from compile success. The dated milestones below are retained as technical history; see [current branch policy](branching-and-release-policy.md).
+
+**Historical implementation status (2026-11-04):** Midnight Manor's React/TypeScript/PixiJS/WebView2 presentation is the sole Manor lobby entry in Development. Phase-3 rendering, six bonus chambers, the restricted C# command bridge and crash-safe settlements are implemented. The replacement passed CI and Development package verification on `2114b05`; additional hardware/visual checks remain open. At that date, Development ran on `feature/manor-modernization-phase-1` without a merge to `main`. WPF Manor is retained in source for rollback only; the frontend never decides results or modifies wallets directly.
 
 ## Modern lobby presentation (2026-11-04)
 
@@ -24,7 +26,9 @@ The casino lobby is now a separate, read-only React/TypeScript/PixiJS page built
 
 ## Chill Lounge modern hub — historical first slice (2026-11-06)
 
-*The paragraph below records the initial navigation-only rollout; all six game routes have since been migrated into React, and the WPF registration has been isolated to the emergency fallback.*
+**Current follow-up:** The full seven-game Lounge includes Midnight Bastion Tower Defense phases 1–2, an illustrated battlefield, and native-backed autosaving. Word Search and Solitaire show completion overlays; Word Search permits confirmed replacement of a saved puzzle. The Lounge temporarily shares the casino Lobby music across game routes. See [Tower Defense phase 2](tower-defense-phase2.md) and [Word Search migration](word-search-modernization.md).
+
+*The paragraph below records the initial navigation-only rollout; all seven game routes have since been migrated into React, and the WPF registration has been isolated to the emergency fallback.*
 
 A new local React Lounge landing page (`lounge.html`) is the standard entry from the casino lobby. Its read-only, origin-checked WebView2 bridge exposes just six allow-listed navigation intents and cannot change player state. Each tile opens the selected existing WPF module directly, preserving all current saves, rewards, gameplay and emergency fallback. The Back to Games route reopens React. This isolates the shared lounge navigation so Sudoku, Solitaire, Word Search, Memory, Jigsaw and Tales from the Backroom can be migrated individually; no native game has been retired in this first slice. Follow-up work must replace these six play surfaces and their smoke tests before deleting `LoungeWindow` or switching away from the WPF host.
 
@@ -68,7 +72,7 @@ xUnit, Vitest and a real Windows WebView2 startup smoke cover protocol validatio
 
 ## Tales from the Backroom React gameplay migration (2026-11-06)
 
-All six normal Chill Lounge routes now stay inside React/WebView2. Tales uses the original AdventureEngine and AdventureProgressState for the three public stories, retaining character classes, inventory/conditions, D20, caseboard, branching and original reward receipts. The retired Strangers' Wager story remains loadable for legacy saves and encounter tests but is not a public fourth card. React presents native Blackjack and Five-of-a-Kind encounters without owning random outcomes. GUID/revision commands reject stale or forged mutations; story changes save detached C# copies before becoming live. The original WPF adventure UI stays for emergency fallback. Unit, frontend and real WebView2 smoke tests cover the modernization. Extended Windows hardware, ending-path, sound and accessibility signoff remain open. See [Tales modernization](adventure-modernization.md).
+All seven normal Chill Lounge routes now stay inside React/WebView2. Tales uses the original AdventureEngine and AdventureProgressState for the three public stories, retaining character classes, inventory/conditions, D20, caseboard, branching and original reward receipts. The retired Strangers' Wager story remains loadable for legacy saves and encounter tests but is not a public fourth card. React presents native Blackjack and Five-of-a-Kind encounters without owning random outcomes. GUID/revision commands reject stale or forged mutations; story changes save detached C# copies before becoming live. The original WPF adventure UI stays for emergency fallback. Unit, frontend and real WebView2 smoke tests cover the modernization. Extended Windows hardware, ending-path, sound and accessibility signoff remain open. See [Tales modernization](adventure-modernization.md).
 
 ## Desktop host modernization, second extraction (2026-11-06)
 
@@ -124,9 +128,9 @@ Do **not** rewrite existing engines merely to port the UI. Use adapters and expl
 
 - Refresh user-facing README, architecture and active branch documentation.
 - Add repo-level agent instructions, contribution/PR process, and checks preventing broken documentation and mismatched Development branch guards.
-- Keep the cumulative main baseline unchanged, and publish ongoing test builds from the dedicated Manor feature branch without merges.
+- Historically the Manor pilot was isolated from `main` while it was incomplete. That isolation ended at the reviewed PR #36 integration.
 
-**Exit:** successful CI and Development manifest published from the Manor feature branch, no unintended merge, saves preserved.
+**Historical exit:** successful pilot CI and a Development manifest from the old feature branch; save compatibility preserved.
 
 ### M1 — Midnight Manor baseline audit and design (implemented; acceptance retained)
 
@@ -156,7 +160,7 @@ Do **not** rewrite existing engines merely to port the UI. Use adapters and expl
 
 - Integrate lobby navigation, progression/challenge/album updates, German/English strings, no duplicate audio and crash-safe pending features.
 - Retain WPF Manor **in source** as a rollback option; there is no second in-app Manor choice.
-- Keep Development on the **single long-lived Manor migration branch**; merges and channel-source changes require separate project approval.
+- Keep Development on permanent **`develop`** with tests and release verification. Merge to `main` only at reviewed milestones.
 
 **Status:** the modern Manor is the Development default, backed by passing automated release checks; source-only rollback and device-level quality validation remain documented.
 
