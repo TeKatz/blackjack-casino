@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160" aria-label="Frost tower">
+<defs>
+<radialGradient id="base"><stop stop-color="#4c6b68"/><stop offset=".7" stop-color="#253a3d"/><stop offset="1" stop-color="#0c1a22"/></radialGradient>
+<linearGradient id="iron" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d6d8c6"/><stop offset=".4" stop-color="#78858b"/><stop offset="1" stop-color="#273c49"/></linearGradient>
+<linearGradient id="bronze" x1=".2" y1="0" x2=".8" y2="1"><stop stop-color="#f4daa5"/><stop offset=".4" stop-color="#c79955"/><stop offset="1" stop-color="#684b32"/></linearGradient>
+<linearGradient id="wood" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#a47a56"/><stop offset=".5" stop-color="#70523f"/><stop offset="1" stop-color="#392f31"/></linearGradient>
+<linearGradient id="ice" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#fcffff"/><stop offset=".45" stop-color="#a9e7fb"/><stop offset="1" stop-color="#3184ae"/></linearGradient>
+<radialGradient id="glow"><stop stop-color="#e9fffd" stop-opacity=".8"/><stop offset="1" stop-color="#76c7df" stop-opacity="0"/></radialGradient>
+<filter id="shadow" x="-70%" y="-70%" width="240%" height="240%"><feGaussianBlur stdDeviation="4"/></filter>
+</defs>
+<ellipse cx="80" cy="135" rx="50" ry="13" fill="#000e13" opacity=".55" filter="url(#shadow)"/>
+<path d="M27 111 L80 89 L134 111 L131 130 L80 152 L27 130Z" fill="#172e36" stroke="#8a7559" stroke-width="3"/>
+<path d="M27 111 L80 89 L134 111 L80 137Z" fill="url(#base)" stroke="#d4b476" stroke-width="3"/>
+<path d="M45 112 L80 98 L115 112 L80 126Z" fill="#1a333c" stroke="#ab9665" stroke-width="2"/>
+<path d="M31 124 L80 144 L130 124" stroke="#e4bd79" opacity=".48" fill="none" stroke-width="2"/>
+<ellipse cx="80" cy="102" rx="42" ry="24" fill="#7ae3ff" opacity=".23"/>
+<path d="M52 101 L52 76 L65 62 L95 62 L110 76 L110 101 L80 119Z" fill="url(#iron)" stroke="#203544" stroke-width="3"/>
+<path d="M54 85 L79 99 L107 84 M65 66 L80 76 L95 66" fill="none" stroke="#cce9ef" stroke-width="3"/>
+<path d="M67 78 L81 9 L98 78 L83 105Z" fill="url(#ice)" stroke="#eeffff" stroke-width="3"/>
+<path d="M80 16 L81 95 L69 78Z" fill="#c2f8ff" opacity=".55"/>
+<path d="M80 17 L93 75 L82 94Z" fill="#2983a5" opacity=".65"/>
+<path d="M43 95 L48 47 L65 78 L58 104Z" fill="url(#ice)" stroke="#d4ffff" stroke-width="2"/>
+<path d="M112 92 L116 53 L98 78 L103 102Z" fill="url(#ice)" stroke="#d4ffff" stroke-width="2"/>
+<path d="M62 111 Q80 121 99 111" fill="none" stroke="#9ae7fb" stroke-width="4"/>
+<circle cx="81" cy="56" r="30" fill="url(#glow)" opacity=".6"/>
+<g fill="#dcffff"><circle cx="27" cy="76" r="3"/><circle cx="132" cy="91" r="3"/><circle cx="120" cy="38" r="2"/><circle cx="53" cy="29" r="2"/></g></svg>
