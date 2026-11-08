@@ -46,7 +46,7 @@ internal static class ModernShopSmoke
             + "const picture=art?.querySelector('picture');"
             + "const media=picture?.querySelector('source[media]');"
             + "return Boolean(item&&art&&picture&&media"
-            + "&&art.querySelector('img')?.getAttribute('src')==='/shop/portraits/secret-guest.webp'"
+            + "&&art.querySelector('img')?.getAttribute('src')==='/shop/portraits/secret-guest.svg'"
             + "&&media.getAttribute('srcset')==='/shop/portraits/secret-guest.jpg'"
             + "&&item.textContent.includes('She appears before the room remembers.')"
             + "&&item.textContent.includes('Reward only'));})()") == "true",

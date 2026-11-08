@@ -29,7 +29,7 @@ runtime evidence includes eight circular previews and shop/player screenshots.
 
 The owner-approved special portrait replaces the reserved silhouette. Native
 profile and fallback windows use a cached 512 × 512 `secret-guest.jpg`; the
-React shop displays the matching animated `secret-guest.webp` with its
+React shop displays the matching animated `secret-guest.svg` with an embedded portrait and its
 custom gold/ruby effects, falling back to the still for reduced motion. The
 portrait keeps its existing reward-only Sudoku Master Key unlock, stable cosmetic
 ID, ownership and save behavior. Its deliberately cryptic description is:

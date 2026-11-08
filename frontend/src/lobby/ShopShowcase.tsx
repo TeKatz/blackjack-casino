@@ -71,7 +71,7 @@ function SecretGuestArtwork({item,motionEnabled}:{item:ShopItem;motionEnabled:bo
    <picture>
      {motionEnabled&&<source media="(prefers-reduced-motion: reduce)"
        srcSet="/shop/portraits/secret-guest.jpg" type="image/jpeg"/>}
-     <img src={motionEnabled?'/shop/portraits/secret-guest.webp':portraitPath(item.visualVariant)}
+     <img src={motionEnabled?'/shop/portraits/secret-guest.svg':portraitPath(item.visualVariant)}
        alt={item.name} loading="lazy" decoding="async"/>
    </picture>
    <span className="secret-guest-sweep" aria-hidden="true"/>
