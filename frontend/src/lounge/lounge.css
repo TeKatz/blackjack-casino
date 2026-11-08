@@ -85,3 +85,20 @@ button:focus-visible{outline:2px solid #f5d28d;outline-offset:3px}
 
 
 .board-only .chill-header{display:none}.board-only .chill-content{padding:12px}.board-only .backroom-board-viewport{height:calc(100dvh - 160px)}.board-only .backroom-board-details{max-height:calc(100dvh - 160px)}
+
+
+/* Featured, bespoke strategy entry: unmistakable even beside six classic lounge tiles. */
+.chill-tower-defense{grid-column:1/-1;display:grid;grid-template-columns:minmax(250px,44%) minmax(0,1fr);
+ background:linear-gradient(105deg,#152b32,#172c25 50%,#132a20);border-color:#bb9361}
+.chill-tower-defense .chill-card-art{height:100%;min-height:196px;border-right:1px solid #b69c657b;border-bottom:0;background:#102730}
+.chill-tower-defense .chill-card-art:after{border-color:#f3d6a73b}
+.chill-tower-defense .chill-card-body{min-height:0;justify-content:center;padding:18px 28px}
+.chill-tower-defense .chill-card-body strong{font-size:clamp(26px,2.5vw,39px);color:#f0d39d}
+.chill-tower-defense .chill-description{font-size:13px;max-width:670px;margin-bottom:0}
+.chill-tower-defense .chill-card-bottom{margin-top:16px}
+.chill-tower-defense .chill-card-bottom b{color:#ffde9e}
+.chill-tower-defense .chill-decoration{z-index:1;text-shadow:0 2px 5px #000;letter-spacing:.2em;color:#e5c38b}
+.lounge-bastion-preview{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:drop-shadow(0 6px 12px #0006)}
+@media(max-width:760px){.chill-tower-defense{display:flex;grid-column:1;flex-direction:column}
+ .chill-tower-defense .chill-card-art{height:160px;min-height:160px;border-right:0;border-bottom:1px solid #b69c657b}
+ .chill-tower-defense .chill-card-body{padding:18px}}
