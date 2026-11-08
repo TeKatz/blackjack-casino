@@ -72,7 +72,7 @@ internal static class ModernWordSearchSmoke
         JsonElement firstFind = JsonSerializer.SerializeToElement(service.Snapshot(),
             new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })
             .GetProperty("lastFind");
-        Require(firstFind.GetProperty("word").GetString()==firstUnfound.Word,
+        Require(firstFind.GetProperty("word").GetString()==firstUnfound!.Word,
             "Word Search first-found receipt must use the native word.");
         if(firstFind.GetProperty("new").GetBoolean())
         {
