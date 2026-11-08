@@ -1,6 +1,6 @@
 # Jigsaw Puzzle — Modern React/PixiJS migration
 
-Branch: feature/manor-modernization-phase-1
+Integrated baseline: `main`; Development source: `develop` (historical implementation branch: `feature/manor-modernization-phase-1`).
 Normal presentation: frontend/lounge.html
 Authoritative rules: BlackjackCasino.Core.Jigsaw
 Status: modern gameplay integrated; latest CI and manual device/visual acceptance still required.

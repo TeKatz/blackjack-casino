@@ -1,6 +1,6 @@
 # Modern Cosmetic Shop migration
 
-Target: `feature/manor-modernization-phase-1`. The player-facing Cosmetic Shop is now an in-place React + TypeScript view in the same WebView2 used by the casino lobby. The retired WPF shop is retained as a fallback when the frontend is not available; it is not a second overlay in the normal client.
+Integration baseline: `main`; Development source: `develop` (historical implementation branch: `feature/manor-modernization-phase-1`). The player-facing Cosmetic Shop is now an in-place React + TypeScript view in the same WebView2 used by the casino lobby. The retired WPF shop is retained as a fallback when the frontend is not available; it is not a second overlay in the normal client.
 
 ## Routing
 

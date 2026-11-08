@@ -1,6 +1,6 @@
 # Tales from the Backroom — React/WebView2 modernization
 
-Branch: feature/manor-modernization-phase-1. Normal player route: frontend/lounge.html.
+Integrated baseline: `main`; Development source: `develop` (historical implementation branch: `feature/manor-modernization-phase-1`). Normal player route: `frontend/lounge.html`.
 
 ## Scope
 

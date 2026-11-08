@@ -1,6 +1,6 @@
 # Legacy WPF inventory and safe cleanup boundaries
 
-**Development branch:** \`feature/manor-modernization-phase-1\`  
+**Integrated baseline:** `main`. **Development source:** `develop`. **Historical implementation:** `feature/manor-modernization-phase-1`.
 **Scope:** React/WPF dependency separation, obsolete source cleanup and ongoing fallback inventory (modernization phase 4).
 
 ## Current status
@@ -39,7 +39,7 @@ The CI tool \`tools/check_ui_migration_boundaries.py\` scans all \`.cs\` and \`.
 4. Delete each now-unreferenced native UI family in a separate reversible commit, retain Core engines, and verify native tests, published ZIP, updates and rollback.
 5. After cleanup, proceed to a smaller, WPF-independent Windows shell (phase 5), followed by device QA (phase 6) and stable-channel readiness (phase 7).
 
-The feature branch remains separate from \`main\` and Stable. The Development publisher and update-channel guard remain unchanged.
+The historical feature-branch separation from `main` ended at integration PR #36. The permanent `develop` source now publishes Development; the existing update manifest URL is unchanged. Stable still needs an explicit release tag.
 
 ## Browser recovery decoupling (2026-11-06)
 

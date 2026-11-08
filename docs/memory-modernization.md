@@ -1,6 +1,6 @@
 # Memory — full React gameplay migration
 
-**Branch:** `feature/manor-modernization-phase-1`  
+**Integrated baseline:** `main`; **Development source:** `develop` (historical branch: `feature/manor-modernization-phase-1`)  
 **Frontend:** `frontend/lounge.html` and `frontend/src/lounge/memory.tsx`  
 **Native game:** `BlackjackCasino.Core.Memory`
 

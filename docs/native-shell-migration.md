@@ -1,6 +1,6 @@
 # WPF-free native shell: implementation and parity gate
 
-**Branch:** `feature/manor-modernization-phase-1`  
+**Integrated baseline:** `main`; **Development source:** `develop` (historical implementation: `feature/manor-modernization-phase-1`)  
 **Status:** Independent WinForms/WebView2 executable with genuine native Blackjack, Midnight Reels, Neon Vault, Nine Lives, Midnight Merge, Midnight Dice and Midnight Manor game bridges. **Preview, not release replacement.** The production installer and auto-updater still package `BlackjackCasino.Desktop.exe` (WPF).
 
 ## What is already functional without WPF

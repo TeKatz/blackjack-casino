@@ -12,7 +12,7 @@ game activity can benefit Empire in the other direction.
 detached windows. The WPF shell owns lifecycle and the original `EmpireService`;
 React owns the estate atlas and room cabinet and the Estate, Development, Operations,
 Opportunities and Statistics navigation. Development continues from
-`feature/manor-modernization-phase-1` with the existing release guards.
+`develop` with the current release guards; the historical implementation branch was `feature/manor-modernization-phase-1`.
 
 The starting estate atlas shows all fifteen departments in a compact five-column
 grid at standard desktop widths. Floor and operating/closed filters narrow the

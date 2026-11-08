@@ -1,6 +1,6 @@
 # Modern Blackjack — WPF table retirement
 
-**Development branch:** `feature/manor-modernization-phase-1`
+**Integrated baseline:** `main`; **Development source:** `develop` (historical implementation branch: `feature/manor-modernization-phase-1`).
 
 Blackjack is presented exclusively in React/TypeScript inside the packaged local WebView2 host. The former native WPF Blackjack table, sidebar, controls, table renderer, wager-chip visuals, rule dialog, and visual-fallback routing have been removed. This is the first game area to finish both its *presentation replacement* and the removal of its obsolete WPF presentation. The wider casino shell and other legacy games still use WPF.
 

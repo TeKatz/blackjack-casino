@@ -1,6 +1,6 @@
 # Phase 5 — desktop host modernization
 
-**Status:** first bounded host-extraction slice implemented on `feature/manor-modernization-phase-1`; the executable still uses .NET 10 WPF with offline WebView2.
+**Historical phase status:** first bounded host-extraction slice implemented on `feature/manor-modernization-phase-1`, now integrated into `main`; subsequent development uses `develop`. the executable still uses .NET 10 WPF with offline WebView2.
 
 ## Baseline preserved
 
