@@ -6,13 +6,14 @@ import {rarityOrder} from './albumBridge';
 import type {AlbumCard,AlbumDraw,AlbumOpening,AlbumRarity,AlbumResult,AlbumSnapshot,AlbumTheme} from './albumBridge';
 import './album.css';
 import {playAlbumCue} from './albumAudio';
+import {albumRevealDelay,albumRevealSound,packRuptureTime} from './albumCinema';
 
 type Props={
  data:AlbumSnapshot;loaded:boolean;language:'en'|'de';animate:boolean;soundEnabled:boolean;result:AlbumResult|null;
  onBack:()=>void;onOpen:(rarity:AlbumRarity)=>void;onComplete:(id:string)=>void;
  onClaim:(id:string)=>void;onShop:()=>void;
 };
-type Phase='browse'|'stage'|'await'|'reveal'|'summary'|'finished';
+type Phase='browse'|'stage'|'await'|'rupture'|'reveal'|'summary'|'finished';
 const rarityColors:Record<AlbumRarity,string>={
  Common:'#adbec6',Uncommon:'#77deb2',Rare:'#7cbdfa',Epic:'#d2a1ff',Legendary:'#f5d58d',
 };
@@ -43,17 +44,23 @@ function CollectionCard({card,index,onInspect,de}:{
   {inner}</button>:
   <div className={'album-collection-card '+(card.ultraRare?'is-ultra':'')} style={style}>{inner}</div>;
 }
-function AlbumBooster({rarity,tearing}:{rarity:AlbumRarity;tearing:boolean}){
- return <div className={'album-booster '+(tearing?'is-tearing':'')} style={{'--card-rarity':rarityColors[rarity]} as CSSProperties} aria-hidden="true">
-   <div className="album-booster-light"/><div className="album-booster-back"/>
+function AlbumBooster({rarity,tearing,bursting=false}:{rarity:AlbumRarity;tearing:boolean;bursting?:boolean}){
+ return <div className={'album-booster '+(tearing?'is-tearing ':'')+(bursting?'is-bursting':'')}
+   style={{'--card-rarity':rarityColors[rarity]} as CSSProperties} aria-hidden="true">
+   <div className="album-booster-light"/><div className="album-booster-orbit orbit-a"/><div className="album-booster-orbit orbit-b"/>
+   <div className="album-booster-back"/>
    <div className="album-booster-body">
      <span className="album-booster-top">THE MIDNIGHT CLUB</span>
      <span className="album-booster-sigil">♠</span>
      <strong>{rarity.toUpperCase()}</strong>
      <span className="album-booster-bottom">COLLECTOR EDITION · FIVE CARDS</span>
    </div>
-   <div className="album-booster-tear"/>
-   {Array.from({length:18},(_,i)=><i key={i} className="album-booster-spark" style={{'--spark-i':i} as CSSProperties}/>)}
+   <div className="album-booster-tear"/><div className="album-booster-foil foil-left"/><div className="album-booster-foil foil-right"/>
+   <div className="album-booster-sigil-ring"/><div className="album-booster-flash"/>
+   {Array.from({length:28},(_,i)=><i key={i} className="album-booster-spark"
+    style={{'--spark-i':i,'--angle':(i*360/28)+'deg'} as CSSProperties}/>)}
+   {Array.from({length:12},(_,i)=><b key={i} className="album-booster-shard"
+    style={{'--shard-i':i,'--shard-angle':(i*30)+'deg'} as CSSProperties}/>)}
  </div>;
 }
 function drawCardView(draw:AlbumDraw,de:boolean):CardView{
@@ -62,6 +69,7 @@ function drawCardView(draw:AlbumDraw,de:boolean):CardView{
 }
 export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,onBack,onOpen,onComplete,onClaim,onShop}:Props){
  const de=language==='de';
+ const cinematic=animate&&!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
  const [themeId,setThemeId]=useState('velvet-table');
  const [filter,setFilter]=useState<'all'|'owned'|'missing'>('all');
  const [query,setQuery]=useState('');
@@ -118,7 +126,7 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
    if(cancelled||advanced)return;
    advanced=true;
    artReady.current=true;
-   if(!revealSuspended.current)setPhase('reveal');
+   if(!revealSuspended.current)setPhase(cinematic?'rupture':'reveal');
   };
   const timeout=window.setTimeout(markReady,4000);
   void Promise.all(images.map(img=>img.decode().catch(()=>{}))).then(()=>{
@@ -129,15 +137,22 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
   return()=>{cancelled=true;window.clearTimeout(timeout);};
  },[data.pending?.id]);
  useEffect(()=>{
+  if(phase!=='rupture'||!data.pending)return;
+  playAlbumCue('crack',soundEnabled,rarity);
+  const timer=window.setTimeout(()=>setPhase('reveal'),packRuptureTime(cinematic));
+  return()=>window.clearTimeout(timer);
+ },[phase,data.pending?.id,cinematic,soundEnabled,rarity]);
+ useEffect(()=>{
   if(phase!=='reveal'||!data.pending)return;
   if(revealed>=data.pending.cards.length){setPhase('summary');return;}
-  const extra=animate?(revealed===0?830:320+Math.min(revealed,4)*90):15;
+  const card=data.pending.cards[revealed];
+  const extra=albumRevealDelay(revealed,card,cinematic);
   const timer=window.setTimeout(()=>{
-   playAlbumCue('flip',soundEnabled,data.pending!.cards[revealed].rarity);
+   playAlbumCue(albumRevealSound(card),soundEnabled,card.rarity);
    setRevealed(v=>Math.min(v+1,data.pending!.cards.length));
   },extra);
   return()=>window.clearTimeout(timer);
- },[phase,revealed,data.pending,animate,soundEnabled]);
+ },[phase,revealed,data.pending,cinematic,soundEnabled]);
  // "Open all" is a sequence of *individual* durable native transactions.
  // Never open the next pack before the preceding receipt was completed.
  useEffect(()=>{
@@ -145,9 +160,9 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
   const timer=window.setTimeout(()=>{
    setBusy(true);
    onComplete(data.pending!.id);
-  },animate?1150:80);
+  },cinematic?1600:80);
   return()=>window.clearTimeout(timer);
- },[phase,data.pending,hasQueuedBatch,busy,animate,onComplete]);
+ },[phase,data.pending,hasQueuedBatch,busy,cinematic,onComplete]);
  useEffect(()=>{
   if(!result)return;
   setUnresponsive(false);
@@ -166,7 +181,7 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
    setPhase('await');
    setRevealed(0);
    const next=rarity;
-   const timer=window.setTimeout(()=>{setBusy(true);playAlbumCue('seal',soundEnabled,next);onOpen(next);},animate?280:30);
+   const timer=window.setTimeout(()=>{setBusy(true);playAlbumCue('seal',soundEnabled,next);onOpen(next);},cinematic?450:30);
    return()=>window.clearTimeout(timer);
   }
   setBatchRemaining(0);
@@ -188,7 +203,7 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
    revealSuspended.current=false;
    setDisplayOpening(data.pending);
    setRevealed(0);
-   setPhase(artReady.current?'reveal':'await');
+   setPhase(artReady.current?(cinematic?'rupture':'reveal'):'await');
   }else{
    setPhase('stage');
   }
@@ -222,7 +237,8 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
   setBusy(true);onComplete(data.pending.id);
  }
  const stageHeader=phase==='stage'?(de?'Versiegeltes Pack':'Sealed collector pack'):
-  phase==='await'?(de?'Das Siegel bricht…':'Breaking the seal…'):
+  phase==='await'?(de?'Das Siegel lädt Energie…':'The seal is gathering power…'):
+  phase==='rupture'?(de?'DAS SIEGEL ZERBRICHT':'THE SEAL SHATTERS'):
   phase==='reveal'?(de?'Die Karten erscheinen…':'The cards emerge…'):
   phase==='finished'?(de?'Zum Album hinzugefügt':'Collection updated'):(de?'Deine fünf Karten':'Your five cards');
  return <main className="record-page album-page"><div className="record-page-scroll">
@@ -309,7 +325,14 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
   {notice&&<p className="album-notice" role="status">{notice}</p>}
   </>}
   {loaded&&openActive&&<div className="album-opening-scrim" role="dialog" aria-modal="true" aria-label={stageHeader}>
-   <div className={'album-opening-panel phase-'+phase} style={{'--card-rarity':rarityColors[rarity]} as CSSProperties}>
+   <div className={'album-opening-panel phase-'+phase+
+    (revealed>0&&opening?.cards[Math.min(revealed-1,4)]?.ultraRare?' has-ultra':'')}
+    style={{'--card-rarity':rarityColors[rarity]} as CSSProperties}>
+    <div className="album-theatre-aura" aria-hidden="true"/>
+    <div className="album-theatre-stars" aria-hidden="true">
+      {Array.from({length:32},(_,i)=><i key={i} style={{'--star-i':i,
+       '--star-x':((i*173+47)%100)+'%','--star-y':((i*67+19)%100)+'%'} as CSSProperties}/>)}
+    </div>
     <button type="button" className="album-opening-exit" onClick={()=>{revealSuspended.current=true;setPhase('browse');setBatchRemaining(0);}}>
      {de?'‹ Zum Album':'‹ Back to album'}</button>
     <div className="album-opening-intro"><span className="shop-eyebrow">MIDNIGHT CLUB · BOOSTER REVEAL</span>
@@ -320,7 +343,8 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
       :phase==='finished'?(de?'Alle Ergebnisse sind sicher in deiner Sammlung gespeichert.':'All rewards are already saved in your collection.'):
        (de?'Jede Karte wurde sicher gespeichert, bevor das Siegel geöffnet wurde.':
         'Every card was committed before this reveal began.')}</p></div>
-    {(phase==='stage'||phase==='await')?<div className="album-booster-stage">
+    {(phase==='stage'||phase==='await'||phase==='rupture')?<div className="album-booster-stage">
+     <div className="album-seal-rings" aria-hidden="true"><span/><span/><span/></div>
      {/* Controls appear before decorative artwork, even on a short screen. */}
      <div className="album-opening-actions">
       {phase==='stage'&&<>
@@ -330,27 +354,38 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
         disabled={busy} onClick={()=>startPack(true)}>
         {de?`ALLE ${selectedPackCount} PACKS ÖFFNEN`:`OPEN ALL ${selectedPackCount} PACKS`}</button>}
       </>}
-      {phase==='await'&&<p role="status">{unresponsive
+      {(phase==='await'||phase==='rupture')&&<p role="status">{unresponsive
        ?(de?'Du kannst sicher zum Album zurückkehren.':'You can safely return to the collection.')
        :(de?'Das nächste Pack wird sicher verarbeitet…':'Preparing the next committed pack…')}</p>}
      </div>
-     <AlbumBooster rarity={rarity} tearing={phase==='await'}/>
+     <AlbumBooster rarity={rarity} tearing={phase==='await'||phase==='rupture'} bursting={phase==='rupture'}/>
     </div>:<>
-    <div className="album-reveal-banner"><span>{rarityTitle(rarity,de).toUpperCase()}</span>
+    <div className="album-reveal-banner"><span>✦ {rarityTitle(rarity,de).toUpperCase()} ✦</span>
      <span>{phase==='finished'?'✓':Math.min(revealed,5)+'/5'} {de?'Karten':'cards'}</span>
      {batchRemaining>1&&<span>{de?'Öffnungsserie':'Batch sequence'} · {batchRemaining} {de?'übrig':'remaining'}</span>}</div>
+    {opening&&revealed>0&&<div className={'album-reveal-spotlight '+(opening.cards[revealed-1]?.ultraRare?'ultra':'')}
+      data-testid="album-reveal-spotlight" role="status">
+       <span>{opening.cards[revealed-1].ultraRare?'✦ ULTRA RARE ✦':opening.cards[revealed-1].rarity.toUpperCase()}</span>
+       <strong>{opening.cards[revealed-1].name}</strong>
+       <small>{opening.cards[revealed-1].isNew?(de?'NEUE ENTDECKUNG':'NEW DISCOVERY'):de?'IN DEINER SAMMLUNG':'IN YOUR COLLECTION'}</small>
+     </div>}
+    <div className="album-reveal-theatre">
+     <div className="album-theatre-vortex" aria-hidden="true"/>
     <div className="album-reveal-grid" aria-label={de?'Pack-Ergebnisse':'Pack results'}>
      {opening?.cards.map((card,i)=><div key={opening.id+'-'+i}
-      className={'album-reveal-slot '+(i<revealed?'flipped ':'')+(card.ultraRare?'ultra ':'')+card.rarity.toLowerCase()}
+      className={'album-reveal-slot '+(i<revealed?'flipped ':'')+(i===revealed&&phase==='reveal'?'anticipating ':'')+(card.ultraRare?'ultra ':'')+card.rarity.toLowerCase()}
       style={{'--card-rarity':rarityColors[card.rarity],'--reveal-i':i} as CSSProperties}>
       <div className="album-reveal-inner"><div className="album-reveal-back">
        <span>♠</span><small>THE MIDNIGHT CLUB</small></div>
        <div className="album-reveal-front">
         <CollectionCard card={drawCardView(card,de)} de={de}/>
        </div></div>
-       {i<revealed&&<span className="album-reveal-flare" aria-hidden="true"/>}
+       {i<revealed&&<><span className="album-reveal-flare" aria-hidden="true"/>
+       <span className="album-reveal-burst" aria-hidden="true">
+        {Array.from({length:12},(_,k)=><i key={k} style={{'--ray-i':k,'--ray-angle':(k*30)+'deg'} as CSSProperties}/>)}
+       </span></>}
      </div>)}
-    </div>
+    </div></div>
     {opening&&revealed===5&&<div className="album-opening-summary" role="status">
      <span><strong>{opening.newCards}</strong> {de?'neue Karten':'new cards'}</span>
      <span><strong>+{opening.pointsEarned}</strong> {de?'Duplikatpunkte':'duplicate points'}</span>

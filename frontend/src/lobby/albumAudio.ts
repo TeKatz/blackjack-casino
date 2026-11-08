@@ -1,7 +1,7 @@
 /** Original, quiet Web Audio UI cues. No externally loaded audio or copyrighted music. */
 import type {AlbumRarity} from './albumBridge';
 let context:AudioContext|null=null;
-export type AlbumCue='seal'|'flip'|'finish';
+export type AlbumCue='seal'|'crack'|'flip'|'rare'|'ultra'|'finish';
 export function playAlbumCue(cue:AlbumCue,enabled:boolean,rarity:AlbumRarity='Common'):void{
  if(!enabled||typeof window==='undefined'||!window.AudioContext)return;
  try{
@@ -24,10 +24,22 @@ export function playAlbumCue(cue:AlbumCue,enabled:boolean,rarity:AlbumRarity='Co
   if(cue==='seal'){
    tone(110+rank*19,start,.18,.045,'triangle');
    tone(570+rank*40,start+.12,.35,.033,'sine');
-  }else if(cue==='flip'){
+  }else if(cue==='crack'){
+   tone(124+rank*14,start,.28,.055,'sawtooth');
+   tone(450+rank*55,start+.13,.30,.026,'triangle');
+   tone(1100+rank*65,start+.22,.32,.014,'sine');
+  }else if(cue==='flip'||cue==='rare'||cue==='ultra'){
    tone(290+rank*62,start,.085,.018,'triangle');
    tone(700+rank*85,start+.05,.2+rank*.045,.017+rank*.004,'sine');
-   if(rank>=3)tone(1100+rank*100,start+.11,.29,.008,'sine');
+   if(rank>=3||cue!=='flip')tone(1100+rank*100,start+.11,.29,.008,'sine');
+   if(cue==='rare'||cue==='ultra'){
+    tone(392+rank*26,start+.12,.43,.028,'sine');
+    tone(587+rank*35,start+.24,.46,.024,'triangle');
+   }
+   if(cue==='ultra'){
+    tone(783,start+.34,.68,.024,'sine');
+    tone(1174,start+.49,.76,.016,'sine');
+   }
   }else{
    tone(390,start,.22,.028,'triangle');
    tone(580,start+.09,.33,.022,'sine');
