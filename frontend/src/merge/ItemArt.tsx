@@ -1,7 +1,7 @@
-import {useId} from 'react';
+import {memo,useId} from 'react';
 import type {MergeDefinition} from './bridge';
 
-export function MergeItemArt({definition,small=false}:{definition:MergeDefinition;small?:boolean}){
+function MergeItemArtwork({definition,small=false}:{definition:MergeDefinition;small?:boolean}){
  const uid=useId().replaceAll(':',''),color=definition.color;
  const fill='fill'+uid,shine='shine'+uid,glow='glow'+uid;
  const drink=definition.tags.includes('drink');
@@ -87,3 +87,9 @@ export function MergeItemArt({definition,small=false}:{definition:MergeDefinitio
    {!small&&<path d="M20 30 Q27 13 42 11" fill="none" stroke="#fff" strokeOpacity=".35" strokeWidth="3"/>}
  </svg>;
 }
+
+// Definitions are freshly projected by each C# snapshot; identical art should keep its SVG tree.
+export const MergeItemArt=memo(MergeItemArtwork,(a,b)=>a.small===b.small
+ &&a.definition.id===b.definition.id&&a.definition.name===b.definition.name
+ &&a.definition.color===b.definition.color&&a.definition.mark===b.definition.mark
+ &&a.definition.stackCount===b.definition.stackCount);

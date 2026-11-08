@@ -16,7 +16,8 @@ const dictionary={
   next:'NEXT UPGRADE',area:'AREA',earned:'PLAYER XP',season:'SEASON XP',
   saved:'AUTOSAVED · NO ENERGY · NO COOLDOWNS',requirements:'REQUIRED SUPPLIES',
   estate:'CASINO RESTORATION ROADMAP',returnCurrent:'CURRENT ROOM',preview:'VIEWING FINISHED ROOM',
-  expand:'EXPAND PANORAMA',shrink:'CLOSE PANORAMA',
+  expand:'VIEW FULL PANORAMA',shrink:'CLOSE PANORAMA',
+  tierOne:'TIER I · FREE',unlockedAt:'UNLOCK AT',fullyRestored:'FULLY RESTORED',
   order:'ORDER',remaining:'TO GO',help:'Select an item, then a free tile to move or an identical tile to merge.',
   empty:'Empty space', selected:'SELECTED',deselect:'Click again to deselect',
   blocked:'Another operation is being saved.',restoring:'Restoring your workshop…',
@@ -34,7 +35,8 @@ const dictionary={
   next:'NÄCHSTES UPGRADE',area:'BEREICH',earned:'SPIELER-XP',season:'SAISON-XP',
   saved:'AUTOMATISCH GESPEICHERT · KEINE ENERGIE · KEINE WARTEZEIT',
   estate:'AUSBAUPLAN DES CASINOS',returnCurrent:'AKTUELLER RAUM',preview:'ABGESCHLOSSENER RAUM',
-  expand:'PANORAMA VERGRÖSSERN',shrink:'PANORAMA SCHLIESSEN',
+  expand:'PANORAMA ANSEHEN',shrink:'PANORAMA SCHLIESSEN',
+  tierOne:'STUFE I · GRATIS',unlockedAt:'FREI AB',fullyRestored:'VOLLSTÄNDIG RESTAURIERT',
   requirements:'BENÖTIGTE VORRÄTE',order:'AUFTRAG',remaining:'NOCH',
   help:'Wähle ein Item und klicke dann auf ein freies Feld oder auf ein gleiches Item.',
   empty:'Freies Feld',selected:'AUSGEWÄHLT',deselect:'Zum Abwählen erneut klicken',
@@ -178,10 +180,36 @@ function App(){
        <h1>MIDNIGHT <em>MERGE</em></h1>
        <small>{t.saved}</small>
      </div>
-     <div className="merge-top-stats">
-       <div><small>{t.restoration}</small><strong data-testid="merge-points">{state?.renovationPoints.toLocaleString(lang)||'0'}</strong></div>
-       <div><small>{t.level}</small><strong>{state?.profile?.level??'—'}</strong></div>
-       <div><small>{t.record}</small><strong>{state?.totalMerges.toLocaleString(lang)||'0'}</strong></div>
+     <div className="merge-top-stats" aria-label={lang==='de'?'Spielfortschritt':'Game progress'}>
+       <div className="merge-stat-card stat-renovation">
+         <span className="merge-stat-emblem" aria-hidden="true">
+           <svg viewBox="0 0 32 32"><path d="M5 25V13L16 5l11 8v12H5ZM12 25V15h8v10M8 13h16"/></svg>
+         </span>
+         <span className="merge-stat-content">
+           <small>{t.restoration}</small>
+           <strong data-testid="merge-points">{(state?.renovationPoints??0).toLocaleString(lang)}</strong>
+           <span className="merge-stat-meter"><i style={{width:((state?.restoration.upgradeProgress??0)*100)+'%'}}/></span>
+         </span>
+       </div>
+       <div className="merge-stat-card stat-level">
+         <span className="merge-stat-emblem" aria-hidden="true">
+           <svg viewBox="0 0 32 32"><path d="M16 3l4 9 10 1-7.5 7 2 10-8.5-5-9 5 2-10L2 13l10-1 4-9Z"/></svg>
+         </span>
+         <span className="merge-stat-content">
+           <small>{t.level}</small><strong>{state?.profile?.level??'—'}</strong>
+           <span className="merge-stat-meter"><i style={{width:(state?.profile?.nextLevelExperience
+             ?Math.min(100,100*state.profile.levelExperience/state.profile.nextLevelExperience):0)+'%'}}/></span>
+         </span>
+       </div>
+       <div className="merge-stat-card stat-merges">
+         <span className="merge-stat-emblem" aria-hidden="true">
+           <svg viewBox="0 0 32 32"><path d="M7 9a12 12 0 0 1 19 4M26 6v7h-7M25 23A12 12 0 0 1 6 19M6 26v-7h7"/></svg>
+         </span>
+         <span className="merge-stat-content">
+           <small>{t.record}</small><strong>{(state?.totalMerges??0).toLocaleString(lang)}</strong>
+           <span className="merge-stat-merges-line" aria-hidden="true">◆ ◇ ◆</span>
+         </span>
+       </div>
      </div>
      <button className="merge-back" data-testid="merge-back" disabled={disabled}
        onClick={close}>{labels?.back??'← Casino lobby'}</button>
@@ -204,8 +232,17 @@ function App(){
          {viewingPrevious&&<button type="button" className="merge-room-return"
            onClick={()=>setPreviewArea(null)}>{t.returnCurrent}</button>}
        </div>
-       <div className={'merge-scene'+(cinematic?' is-expanded':'')}>
-         <RestorationScene stage={displayedRoom!} animated={state.animationsEnabled}/>
+       <div className={'merge-scene'+(cinematic?' is-expanded':'')+(displayedRoom!.next===null?' fully-restored':'')}
+         role={cinematic?'dialog':undefined} aria-modal={cinematic?true:undefined}
+         aria-label={cinematic?displayedRoom!.areaName:undefined}
+         data-testid="merge-panorama-container">
+         {cinematic&&<div className="merge-cinema-caption">
+           <small>{t.chapter} {displayedRoom!.areaIndex} / {state.restoration.areaCount}</small>
+           <strong>{displayedRoom!.areaName}</strong><span>{displayedRoom!.current.name}</span>
+         </div>}
+         <RestorationScene stage={displayedRoom!} animated={state.animationsEnabled} fit={cinematic?'contain':'crop'}/>
+         {displayedRoom!.next===null&&<div className="merge-complete-seal" aria-label={t.fullyRestored}>
+           <span aria-hidden="true">✦</span> {t.fullyRestored}</div>}
          {celebration&&!viewingPrevious&&<div className="merge-unlock" aria-live="polite">
            <span>✦</span>{t.milestone}<span>✦</span></div>}
          <button type="button" className="merge-scene-expand" data-testid="merge-scene-expand"
@@ -283,14 +320,12 @@ function App(){
                <span className="merge-producer-art"><MergeItemArt
                  definition={definitions.get(producer.outputDefinitionId)!} small/></span>
                <span className="merge-producer-text"><strong>{producer.name}</strong>
-                 <small>{producer.unlocked?labels?.producerHint:
-                  lang==='de'?'Ab '+producer.unlockPoints+' Punkten': 'Unlocks at '+producer.unlockPoints+' points'}</small></span>
+                 <small>{producer.unlocked?t.tierOne:
+                  t.unlockedAt+' '+producer.unlockPoints.toLocaleString(lang)}</small></span>
                <span className="merge-producer-icon">{producer.unlocked?'+':'⌑'}</span>
              </button>)}
-             <div className="merge-standby">
-               <span>●</span>{labels?.noEnergy}</div>
-             <div className="merge-help"><h4>{labels?.howToPlay}</h4>
-               <p>{t.help}</p>
+             <div className="merge-help">
+               <details><summary>{labels?.howToPlay}</summary><p>{t.help}</p></details>
                {selectedDef&&<div className="merge-selection" data-testid="merge-selected">
                  <span>{t.selected}</span><strong>{selectedDef.name}</strong><small>{t.deselect}</small></div>}
              </div>

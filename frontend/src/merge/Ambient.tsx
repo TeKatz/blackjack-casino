@@ -1,6 +1,6 @@
-import {useEffect,useRef} from 'react';
+import {memo,useEffect,useRef} from 'react';
 import {Application,Graphics} from 'pixi.js';
-export function MergeAmbient({enabled}:{enabled:boolean}){
+function MergeAmbientCanvas({enabled}:{enabled:boolean}){
  const host=useRef<HTMLDivElement>(null);
  useEffect(()=>{
    const node=host.current;
@@ -36,3 +36,5 @@ export function MergeAmbient({enabled}:{enabled:boolean}){
  },[enabled]);
  return <div ref={host} className="merge-ambient" aria-hidden="true"/>;
 }
+
+export const MergeAmbient=memo(MergeAmbientCanvas);

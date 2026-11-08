@@ -1,4 +1,4 @@
-import {useId} from 'react';
+import {memo,useId} from 'react';
 import type {ReactNode} from 'react';
 import type {MergeRoom} from './bridge';
 
@@ -201,7 +201,9 @@ function RoomDetails({kind,phase,p}:{kind:string;phase:number;p:Palette}):ReactN
  }
 }
 
-export function RestorationScene({stage,animated=true}:{stage:MergeRoom;animated?:boolean}){
+export type MergePanoramaFit='crop'|'contain';
+function RestorationSceneArtwork({stage,animated=true,fit='crop'}:
+  {stage:MergeRoom;animated?:boolean;fit?:MergePanoramaFit}){
  const unique=useId().replaceAll(':','');
  const id=(key:string)=>'merge-'+key+'-'+unique;
  const url=(key:string)=>'url(#'+id(key)+')';
@@ -211,7 +213,8 @@ export function RestorationScene({stage,animated=true}:{stage:MergeRoom;animated
  const outside=stage.areaId==='terrace'||stage.areaId==='observatory';
  const glass=stage.areaId==='conservatory';
  return <svg viewBox="0 0 1200 280" className={'merge-room-art'+(animated?'':' static')}
-   data-scene={stage.areaId} data-phase={phase} preserveAspectRatio="xMidYMid slice"
+   data-scene={stage.areaId} data-phase={phase} data-complete={stage.next===null}
+   preserveAspectRatio={fit==='contain'?'xMidYMid meet':'xMidYMid slice'}
    role="img" aria-label={stage.areaName+' – '+stage.current.name}>
   <defs>
    <linearGradient id={id('wall')} x1="0" y1="0" x2="0" y2="1">
@@ -274,3 +277,11 @@ export function RestorationScene({stage,animated=true}:{stage:MergeRoom;animated
   <path d="M0 2 H1200 M0 278 H1200" stroke={p.metal} strokeWidth="5" opacity={illuminated?.84:.4}/>
  </svg>;
 }
+
+// A delivery, spawn or merge must not repaint hundreds of unchanged SVG nodes.
+// The illustration only depends on the depicted room/stage, motion setting and fit.
+export const RestorationScene=memo(RestorationSceneArtwork,(a,b)=>
+ a.stage.areaId===b.stage.areaId&&a.stage.areaName===b.stage.areaName
+ &&a.stage.current.id===b.stage.current.id&&a.stage.current.name===b.stage.current.name
+ &&(a.stage.next===null)===(b.stage.next===null)
+ &&a.animated===b.animated&&a.fit===b.fit);
