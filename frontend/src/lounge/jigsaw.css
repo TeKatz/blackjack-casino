@@ -121,3 +121,9 @@
 @media(prefers-reduced-motion:reduce){
  .jigsaw-drag-preview,.jigsaw-tray-grid button{transition:none!important}
 }
+
+/* Below desktop breakpoints, preserve a real board height instead of a zero-height flex child. */
+@media(max-width:1050px), (max-height:649px){
+ .jigsaw-board-frame{width:100%;height:auto;flex:0 0 auto;aspect-ratio:8/5}
+ .jigsaw-playing .jigsaw-board{height:100%;aspect-ratio:8/5}
+}
