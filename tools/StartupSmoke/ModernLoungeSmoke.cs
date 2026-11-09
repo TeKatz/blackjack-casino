@@ -26,8 +26,8 @@ internal static class ModernLoungeSmoke
         Require(LoungeHostedGameRegistry.Snapshot.Count == 0,
             "Opening React Lounge must not register or instantiate WPF rollback modules.");
         await UntilAsync(async () => await web.ExecuteScriptAsync(
-            "document.querySelectorAll('.chill-card').length") == "7",
-            "React Lounge must show all seven activities.");
+            "document.querySelectorAll('.chill-card').length") == "8",
+            "React Lounge must show all eight activities.");
         Require(await web.ExecuteScriptAsync(
             "Boolean(document.querySelector('.chill-tales-backroom'))") == "true",
             "The adventure entry was lost during the Sudoku migration.");
@@ -66,8 +66,33 @@ internal static class ModernLoungeSmoke
             "Boolean(document.querySelector('.td-stage-card[data-stage=forest]'))",
             "Tower Defense battlefield did not return to map selection.");
         await ClickAndWait(web, ".chill-exit",
-            "document.querySelectorAll('.chill-card').length === 7",
+            "document.querySelectorAll('.chill-card').length === 8",
             "Tower Defense map selection did not return to Chill Lounge.");
+        Require(await web.ExecuteScriptAsync(
+            "Boolean(document.querySelector('.chill-minesweeper .lounge-sweep-preview'))") == "true",
+            "The original Midnight Sweep featured tile is missing.");
+        await web.ExecuteScriptAsync("document.querySelector('.chill-minesweeper')?.click()");
+        await UntilAsync(async () => await web.ExecuteScriptAsync(
+            "document.querySelectorAll('.sweep-difficulty').length") == "3",
+            "Midnight Sweep three-difficulty selection failed.");
+        await web.ExecuteScriptAsync("document.querySelector('.sweep-difficulty-easy')?.click()");
+        await UntilAsync(async () => await web.ExecuteScriptAsync(
+            "document.querySelectorAll('.sweep-tile-target').length") == "64",
+            "The new React/PixiJS minefield failed to open.");
+        await UntilAsync(async () => await web.ExecuteScriptAsync(
+            "Boolean(document.querySelector('.sweep-pixi canvas'))") == "true",
+            "Midnight Sweep PixiJS rendering did not mount.");
+        await web.ExecuteScriptAsync("document.querySelectorAll('.sweep-tile-target')[27]?.click()");
+        await UntilAsync(async () => await web.ExecuteScriptAsync(
+            "document.querySelectorAll('.sweep-tile-target.opened').length > 0") == "true",
+            "Midnight Sweep native safe-first reveal never completed.");
+        await Capture(web, Path.Combine(output, "modern-midnight-sweep.png"));
+        await ClickAndWait(web, ".chill-exit",
+            "document.querySelectorAll('.sweep-difficulty').length === 3",
+            "Midnight Sweep did not return to its difficulty menu.");
+        await ClickAndWait(web, ".chill-exit",
+            "document.querySelectorAll('.chill-card').length === 8",
+            "Midnight Sweep did not return to the Chill Lounge.");
 
         await web.ExecuteScriptAsync(
             "[...document.querySelectorAll('.chill-filter button')]"
@@ -167,7 +192,7 @@ internal static class ModernLoungeSmoke
             "React Lounge could not return to the casino.");
 
         File.WriteAllText(Path.Combine(output, "modern-lounge-result.txt"),
-            "PASS: React seven-game Lounge, Midnight Bastion campaign menu, seven mastery skills, Forest Border Pixi battlefield and two-step exit; six Sudoku difficulty levels and Daily; 81 cells; notes; undo/redo; wrong-value C# feedback; native hint; persisted resume; navigation.");
+            "PASS: React eight-game Lounge, Midnight Bastion campaign menu, seven mastery skills, Forest Border Pixi battlefield and two-step exit; six Sudoku difficulty levels and Daily; 81 cells; notes; undo/redo; wrong-value C# feedback; native hint; persisted resume; navigation.");
     }
 
     private static async Task Capture(CoreWebView2 web, string path)
