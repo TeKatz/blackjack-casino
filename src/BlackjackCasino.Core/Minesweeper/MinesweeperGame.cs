@@ -115,8 +115,7 @@ public sealed class MinesweeperGame
     public SweepProgress State { get; private set; }
     public MinesweeperGame(SweepProgress? saved = null)
     {
-        var candidate = saved?.Copy();
-        State = candidate is not null && Valid(candidate) ? candidate : new SweepProgress();
+        State = saved is not null && Valid(saved) ? saved.Copy() : new SweepProgress();
     }
     private static bool Valid(SweepProgress p)
     {
