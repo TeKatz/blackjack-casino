@@ -95,7 +95,7 @@
  filter:drop-shadow(0 1px 3px #f4d38dbb)}
 .jigsaw-drag-preview{position:fixed;z-index:10000;pointer-events:none;user-select:none;
  filter:drop-shadow(0 5px 12px #000c) drop-shadow(0 0 4px #eccb7c9c);
- opacity:.9;transition:width .1s ease,height .1s ease,opacity .1s ease}
+ opacity:.9;transition:opacity .1s ease}
 .jigsaw-drag-preview.over-board{opacity:1;filter:drop-shadow(0 2px 3px #000d) drop-shadow(0 0 2px #eddfb3)}
 .jigsaw-drag-preview svg{display:block;overflow:visible}
 .jigsaw-tray .jigsaw-recover{margin-top:8px;border-color:#ce9b57;color:#ffe0ad;background:#4c3024;
