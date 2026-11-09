@@ -1,7 +1,7 @@
 import {useEffect,useRef,useState} from 'react';
 import type {PointerEvent as ReactPointerEvent} from 'react';
-import {ARCADE_HEIGHT,ARCADE_STEP,ARCADE_WIDTH,actArcadeRun,createArcadeRun,stepArcadeRun} from './arcadeEngine';
-import type {PlayableArcadeId,ArcadeEvent,ArcadeRunState} from './arcadeEngine';
+import {ARCADE_HEIGHT,ARCADE_STEP,ARCADE_WIDTH,actArcadeRun,createArcadeRun,stepArcadeRun,steerSnake} from './arcadeEngine';
+import type {PlayableArcadeId,ArcadeEvent,ArcadeRunState,ArcadeDirection,ArcadeControls} from './arcadeEngine';
 import {drawArcadeRun} from './arcadeRenderer';
 import {readArcadeRecord,saveArcadeRecord} from './arcadeRecords';
 import type {ArcadeRecord} from './arcadeRecords';
@@ -19,6 +19,9 @@ const strings={
   blocks:'Leertaste oder Klick zum Platzieren. Genaues Stapeln bewahrt die Breite.',
   knives:'Leertaste oder Klick wirft eine Klinge. Triff keine vorhandene Klinge.',
   wings:'Leertaste oder Klick zum Flügelschlag. Berühre keine Hindernisse.',
+  snake:'WASD oder Pfeiltasten steuern. Sammle Futter und meide Wände und den eigenen Schwanz.',
+  breaker:'Maus oder ← / → bewegen den Schläger. Leertaste oder Klick startet den Ball.',
+  storm:'WASD / Pfeiltasten bewegen dein Schiff. Mit gedrückter Maus kannst du es ziehen.',
   exit:'ZUR SPIELAUSWAHL',local:'Persönliche Rekorde werden auf diesem Gerät gespeichert.',
   pauseHint:'Die Spielzeit wird während der Pause angehalten.'},
  en:{back:'← Arcade Games',score:'SCORE',best:'BEST',time:'TIME',plays:'RUNS',
@@ -30,11 +33,15 @@ const strings={
   blocks:'Press Space or click to drop. Perfect alignment saves block width.',
   knives:'Press Space or click to throw a blade. Avoid blades already attached.',
   wings:'Press Space or click to flap. Do not touch the obstacles.',
+  snake:'Steer with WASD or arrow keys. Collect food; avoid walls and your own tail.',
+  breaker:'Move the paddle with the mouse or ← / →. Space or click launches the ball.',
+  storm:'Move the ship with WASD / arrow keys, or hold and drag with the mouse.',
   exit:'BACK TO GAME LIST',local:'Personal bests are saved on this device.',
   pauseHint:'Game time is stopped while the run is paused.'},
 };
 const instructionsKey={
  'midnight-wings':'wings','cave-escape':'hold','perfect-stack':'blocks','blade-timing':'knives',
+ 'death-snake':'snake','neon-breaker':'breaker','bullet-storm':'storm',
 } as const;
 const formatTime=(s:number)=>{
  const whole=Math.floor(Math.max(0,s));
@@ -91,6 +98,9 @@ export function ArcadeGameScreen({id,language,onBack}:{
  const gameRef=useRef<ArcadeRunState>(createArcadeRun(id));
  const canvasRef=useRef<HTMLCanvasElement>(null);
  const held=useRef(false);
+ const keys=useRef(new Set<ArcadeDirection>());
+ const mouseTarget=useRef<{x:number;y:number}|null>(null);
+ const mouseActive=useRef(false);
  const raf=useRef<number>(0);
  const audioRef=useRef<AudioContext|null>(null);
  const phaseRef=useRef<Phase>(phase);
@@ -122,17 +132,18 @@ export function ArcadeGameScreen({id,language,onBack}:{
  };
  const start=()=>{
   held.current=false;
+  keys.current.clear();mouseActive.current=false;mouseTarget.current=null;
   gameRef.current=createArcadeRun(id,Math.floor(Math.random()*0xffffffff));
   setScore(0);setElapsed(0);setIsBest(false);
   phaseRef.current='playing';setPhase('playing');
-  if(id==='midnight-wings'){
+  if(id==='midnight-wings'||id==='neon-breaker'){
    const event=actArcadeRun(gameRef.current);
    tone(event,soundRef.current,audioRef);
   }
   repaint();
  };
  const pause=()=>{
-  held.current=false;
+  held.current=false;keys.current.clear();mouseActive.current=false;
   if(phaseRef.current==='playing'){phaseRef.current='paused';setPhase('paused');}
  };
  const resume=()=>{
@@ -156,12 +167,22 @@ export function ArcadeGameScreen({id,language,onBack}:{
    let steps=0;
    while(accumulator>=ARCADE_STEP&&steps<5&&!gameRef.current.over){
     const state=gameRef.current,old=state.score;
-    const event=stepArcadeRun(state,ARCADE_STEP,held.current);
+    const controls:ArcadeControls={
+     left:keys.current.has('left'),right:keys.current.has('right'),
+     up:keys.current.has('up'),down:keys.current.has('down'),
+    };
+    if((id==='neon-breaker'||id==='bullet-storm')&&mouseTarget.current&&
+     (id==='neon-breaker'||mouseActive.current)){
+     controls.pointerX=mouseTarget.current.x;
+     if(id==='bullet-storm')controls.pointerY=mouseTarget.current.y;
+    }
+    const event=stepArcadeRun(state,ARCADE_STEP,held.current,controls);
     if(old!==state.score){
      setScore(state.score);
      if(event==='score')tone('score',soundRef.current,audioRef);
     }
     if(event==='fail'){finish();break;}
+    if(event==='stage'&&id==='neon-breaker')tone('stage',soundRef.current,audioRef);
     accumulator-=ARCADE_STEP;steps++;
    }
    if(steps===5)accumulator=0;
@@ -175,7 +196,7 @@ export function ArcadeGameScreen({id,language,onBack}:{
  },[phase,id]);
  // Keep the entire run truly paused when the app loses focus or goes to the background.
  useEffect(()=>{
-  const inactive=()=>{held.current=false;if(phaseRef.current==='playing')pause();};
+  const inactive=()=>{held.current=false;keys.current.clear();mouseActive.current=false;if(phaseRef.current==='playing')pause();};
   const hidden=()=>{if(document.hidden)inactive();};
   window.addEventListener('blur',inactive);
   document.addEventListener('visibilitychange',hidden);
