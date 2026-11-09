@@ -212,6 +212,9 @@ function App() {
   return()=>window.clearTimeout(id);
  },[pending,solitairePending,wordSearchPending,memoryPending,jigsawPending,adventurePending,towerDefensePending,sweepPending,snapshot?.language]);
  const language:Language=snapshot?.language??'en', t=words[language];
+ const showingOverview=!!snapshot&&!snapshot.sudoku&&!snapshot.solitaire
+   &&!snapshot.wordSearch&&!snapshot.memory&&!snapshot.jigsaw&&!snapshot.adventure
+   &&!snapshot.towerDefense&&!snapshot.minesweeper;
  const filtered=useMemo(()=>catalog.filter(game=>filter==='all'||game.category===filter),[filter]);
  const statusMap=useMemo(()=>new Map<LoungeId,string|null>((snapshot?.games??[]).map(game=>[game.id,game.status] as const)),[snapshot]);
  const groups: {id:Filter;name:string}[]=[
@@ -259,7 +262,7 @@ function App() {
    setMemoryError('');
    setMemoryPending(issueMemoryIntent(snapshot.memorySession,snapshot.memoryRevision,intent));
  }
- return <main className={"chill-shell"+(snapshot?.boardOnly?" board-only":"")+(snapshot?.towerDefense?" bastion-open":"")+(snapshot?.minesweeper?" sweep-open":"")} data-pending={!!(pending||solitairePending||wordSearchPending||memoryPending||jigsawPending||adventurePending||towerDefensePending||sweepPending)} data-motion={snapshot?.animationsEnabled??true}>
+ return <main className={"chill-shell"+(snapshot?.boardOnly?" board-only":"")+(snapshot?.towerDefense?" bastion-open":"")+(snapshot?.minesweeper?" sweep-open":"")+(showingOverview?" chill-home":"")} data-pending={!!(pending||solitairePending||wordSearchPending||memoryPending||jigsawPending||adventurePending||towerDefensePending||sweepPending)} data-motion={snapshot?.animationsEnabled??true}>
    <div className="chill-sparkles" aria-hidden="true"/>
    <header className="chill-header">
      <div className="chill-mark" aria-hidden="true">✦</div>
@@ -352,7 +355,7 @@ function App() {
        {groups.map(group=><button key={group.id} className={filter===group.id?'selected':''}
          aria-pressed={filter===group.id} onClick={()=>setFilter(group.id)}>{group.name}</button>)}
      </div>
-     <section className="chill-grid" aria-label={t.all}>
+     <section className="chill-grid" data-filter={filter} aria-label={t.all}>
        {filtered.map((game,index)=><button key={game.id} className={'chill-card chill-'+game.id}
          onClick={()=>open(game.id)} disabled={!snapshot}
          style={{animationDelay: String(index*55)+'ms'}}>
