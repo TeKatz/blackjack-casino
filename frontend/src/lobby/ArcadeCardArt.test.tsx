@@ -1,6 +1,7 @@
 import {describe,expect,it} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
-import motion from './arcadeArtMotion.css?raw';
+import {readFileSync} from 'node:fs';
+const motion=readFileSync(new URL('./arcadeArtMotion.css',import.meta.url),'utf8');
 import {ArcadeCardArt} from './ArcadeCardArt';
 
 const scenes=[
@@ -19,7 +20,8 @@ const scenes=[
 describe('Arcade tile illustrations and motion ownership',()=>{
  it.each(scenes)('%s has its own rendered illustration and gameplay motion', (id,subject,keyframe)=>{
   const svg=renderToStaticMarkup(<ArcadeCardArt id={id}/>);
-  expect(svg).toContain('class="arcade-scene arcade-scene--'+id+'"');
+  expect(svg).toContain('class="arcade-scene"');
+  expect(svg).toContain('data-arcade-scene="'+id+'"');
   expect(svg).toContain('viewBox="0 0 320 128"');
   expect(svg).toContain('aria-hidden="true"');
   expect(svg).toContain('class="'+subject+'"');
