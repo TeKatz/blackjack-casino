@@ -57,8 +57,8 @@ function connected(game:JigsawGame,id:number):number[]{
  }
  return queue;
 }
-function PixiBoard({game,reference,view,selected,onPlace,onMove,onReturn,onSelect,onView}:{
- game:JigsawGame;reference:boolean;view:View;selected:number|null;
+function PixiBoard({game,reference,view,selected,pending,error,onPlace,onMove,onReturn,onSelect,onView}:{
+ game:JigsawGame;reference:boolean;view:View;selected:number|null;pending:boolean;error:string;
  onPlace:(index:number,x:number,y:number)=>void;onMove:(index:number,x:number,y:number)=>void;
  onReturn:(index:number)=>void;onSelect:(index:number|null)=>void;onView:(next:View)=>void;
 }){
@@ -132,14 +132,14 @@ function PixiBoard({game,reference,view,selected,onPlace,onMove,onReturn,onSelec
   layer.current.position.set(g.offsetX*g.fit,g.offsetY*g.fit);
   layer.current.scale.set(g.fit*view.zoom);
   const inFlight=pendingDrag.current;
-  if(inFlight&&(game.pieces[inFlight.id].x!==inFlight.originX||game.pieces[inFlight.id].y!==inFlight.originY))pendingDrag.current=null;
+  if(inFlight&&(game.pieces[inFlight.id].x!==inFlight.originX||game.pieces[inFlight.id].y!==inFlight.originY||game.pieces[inFlight.id].locked||(!pending&&!!error)))pendingDrag.current=null;
   if(layer.current.children[0])layer.current.children[0].alpha=reference?.27:0;
   for(let i=0;i<pieces.current.length;i++){
    const p=game.pieces[i],s=pieces.current[i];
    if(drag.current?.group.includes(i)||pendingDrag.current?.group.includes(i))continue;
    s.visible=p.onBoard;s.position.set(p.x,p.y);s.alpha=p.locked?1:.93;
   }
- },[game,view,reference]);
+ },[game,view,reference,pending,error]);
  const local=(clientX:number,clientY:number)=>{
   const r=mount.current!.getBoundingClientRect();
   return toBoard({width:r.width,height:r.height},live.current.view,clientX-r.left,clientY-r.top);
@@ -341,7 +341,7 @@ export function JigsawScreen({state,language,pending,error,command,animations,so
     <button aria-disabled={pending} onClick={()=>on({action:'jigsaw.back'})}>{t.back}</button>
    </div></div>
   <div className="jigsaw-layout"><div className="jigsaw-board-panel">
-   <div ref={boardFrame} className="jigsaw-board-frame"><PixiBoard game={game} reference={reference} view={view} onView={setView} selected={selected}
+   <div ref={boardFrame} className="jigsaw-board-frame"><PixiBoard game={game} reference={reference} view={view} pending={pending} error={error} onView={setView} selected={selected}
     onSelect={setSelected} onPlace={(index,x,y)=>{
      on({action:'jigsaw.place',index,x:Math.round(x*100)/100,y:Math.round(y*100)/100});setSelected(null);
     }}
