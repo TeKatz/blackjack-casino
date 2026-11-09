@@ -1,6 +1,7 @@
 import {describe,it,expect} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {ArcadeMenu} from '../src/lobby/ArcadeMenu';
+import {ArcadeGameScreen} from '../src/lobby/ArcadeGameScreen';
 import {ARCADE_MODE_ID,arcadeCategoryNames,arcadeGames,arcadeLobbyMode} from '../src/lobby/arcadeCatalog';
 
 describe('Arcade Games lobby collection',()=>{
@@ -41,8 +42,21 @@ describe('Arcade Games lobby collection',()=>{
    expect(html).toContain('aria-pressed="true"');
    expect(html).toContain('Midnight Wings');
    expect(html).toContain('Endless Ascent');
-   expect(html).toContain(language==='de'?'IN VORBEREITUNG':'COMING SOON');
+   expect(html).toContain(language==='de'?'4 SPIELBAR · 6 GEPLANT':'4 PLAYABLE · 6 PLANNED');
+   expect((html.match(/arcade-card-live/g)||[]).length).toBe(4);
+   expect((html.match(/arcade-card-soon/g)||[]).length).toBe(10);
    expect(html).not.toContain('lobby.open');
+  }
+ });
+ it('renders independent game screens for the first four games with local scoreboards',()=>{
+  for(const id of ['midnight-wings','cave-escape','perfect-stack','blade-timing'] as const){
+   const html=renderToStaticMarkup(<ArcadeGameScreen id={id} language="de" onBack={()=>{}}/>);
+   expect(html).toContain('data-testid="arcade-game-screen"');
+   expect(html).toContain('data-game-id="'+id+'"');
+   expect(html).toContain('data-testid="arcade-canvas"');
+   expect(html).toContain('data-testid="arcade-score"');
+   expect(html).toContain('data-testid="arcade-best"');
+   expect(html).toContain('SPIEL STARTEN');
   }
  });
 });
