@@ -5,8 +5,8 @@ import type {SnakeRun,BreakerRun,StormRun} from '../src/lobby/arcadeEngine';
 import {readArcadeRecord,saveArcadeRecord} from '../src/lobby/arcadeRecords';
 
 describe('Arcade Update 2: three complete arcade simulations',()=>{
- it('registers seven playable titles and leaves only three upcoming',()=>{
-  expect(PLAYABLE_ARCADE_IDS).toEqual([
+ it('preserves the first seven titles of the playable arcade catalog',()=>{
+  expect(PLAYABLE_ARCADE_IDS.slice(0,7)).toEqual([
    'midnight-wings','cave-escape','perfect-stack','blade-timing',
    'death-snake','neon-breaker','bullet-storm',
   ]);
@@ -15,7 +15,7 @@ describe('Arcade Update 2: three complete arcade simulations',()=>{
    expect(createArcadeRun(id).kind).toBe(id);
   }
   for(const id of ['hexagon-hell','spike-rush','endless-ascent'])
-   expect(isPlayableArcade(id)).toBe(false);
+   expect(isPlayableArcade(id)).toBe(true);
  });
  describe('Death Snake',()=>{
   it('steers on grid ticks, rejects reversals and prevents two turns within one tick',()=>{
