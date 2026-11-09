@@ -210,6 +210,7 @@ public sealed class MinesweeperGame
     {
         if (action == "mine.exit") { State.Screen = "menu"; return (true, "Lounge"); }
         if (action == "mine.menu") { State.Screen = "menu"; return (true, "Map selection"); }
+        if (action == "mine.resume") { State.Screen = "game"; return (true, "Resumed"); }
         if (action == "mine.new")
         {
             if (difficulty is not ("easy" or "standard" or "expert") || index is not null)
