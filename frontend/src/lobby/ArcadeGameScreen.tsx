@@ -113,6 +113,10 @@ export function ArcadeGameScreen({id,language,onBack}:{
  const audioRef=useRef<AudioContext|null>(null);
  const phaseRef=useRef<Phase>(phase);
  phaseRef.current=phase;
+ // The lobby refreshes its snapshot while playing and creates a fresh onBack prop.
+ // Keep that callback current without ever tearing down held-key listeners mid-run.
+ const onBackRef=useRef(onBack);
+ onBackRef.current=onBack;
  const soundRef=useRef(soundEnabled);
  soundRef.current=soundEnabled;
  const repaint=()=>useCanvasPaint(canvasRef.current,gameRef.current);
@@ -221,7 +225,7 @@ export function ArcadeGameScreen({id,language,onBack}:{
     if(event.repeat)return;
     if(phaseRef.current==='playing')pause();
     else if(phaseRef.current==='paused'&&key==='p')resume();
-    else if(key==='escape')onBack();
+    else if(key==='escape')onBackRef.current();
     return;
    }
    if(key==='r'&&!event.repeat){start();return;}
@@ -260,7 +264,9 @@ export function ArcadeGameScreen({id,language,onBack}:{
    window.removeEventListener('keydown',keyDown,true);
    window.removeEventListener('keyup',keyUp,true);
   };
- },[id,onBack]);
+ // Install once per game, not whenever the parent lobby refreshes its callback.
+ // Unmount and switching game IDs still release every held physical key.
+ },[id]);
  useEffect(()=>()=>{void audioRef.current?.close();audioRef.current=null;},[]);
  const pointerCoordinates=(event:ReactPointerEvent<HTMLCanvasElement>)=>{
   const rect=event.currentTarget.getBoundingClientRect();
