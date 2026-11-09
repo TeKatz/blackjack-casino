@@ -304,8 +304,11 @@ function App() {
              : '← Chill Lounge'}</button>
        : snapshot?.sudoku
        ? <button className="chill-exit" disabled={!!pending}
-           onClick={()=>command({action:snapshot.sudoku?.screen==='game'?'sudoku.back':'sudoku.exit'})}>
-           {snapshot.sudoku.screen==='game'
+           onClick={()=>command({action:snapshot.sudoku?.variant?'sudoku.variant.back':
+             snapshot.sudoku?.screen==='game'?'sudoku.back':'sudoku.exit'})}>
+           {snapshot.sudoku.variant
+             ? (language==='de'?'← Varianten-Auswahl':'← Variant selection')
+             : snapshot.sudoku.screen==='game'
              ? (language==='de'?'← Sudoku-Auswahl':'← Sudoku library')
              : (language==='de'?'← Chill Lounge':'← Chill Lounge')}</button>
        : <button className="chill-exit" onClick={()=>sendLoungeCommand('lounge.close')}>{t.back}</button>}

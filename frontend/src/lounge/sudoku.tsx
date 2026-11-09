@@ -2,17 +2,11 @@ import {useEffect,useMemo,useRef,useState} from 'react';
 import type {Difficulty,SudokuGame,SudokuIntent,SudokuState} from './sudokuBridge';
 import {difficulties,sudokuEditIntent} from './sudokuBridge';
 import './sudoku.css';
+import {SudokuModeMenu} from './SudokuModeMenu';
+import {SudokuVariantScreen} from './SudokuVariantScreen';
 
 type Lang='en'|'de';
 type ModeId='classic'|'x'|'killer'|'jigsaw'|'samurai'|'mini';
-const sudokuModes:{id:ModeId;image:string;en:string;de:string;detailEn:string;detailDe:string}[]=[
- {id:'classic',image:'/lounge/sudoku-classic.svg',en:'Classic Sudoku',de:'Classic Sudoku',detailEn:'Nine-by-nine. The timeless original.',detailDe:'Neun mal neun. Das zeitlose Original.'},
- {id:'x',image:'/lounge/sudoku-x.svg',en:'Sudoku X',de:'Sudoku X',detailEn:'Two diagonals, two extra constraints.',detailDe:'Zwei Diagonalen, zwei zusätzliche Regeln.'},
- {id:'killer',image:'/lounge/sudoku-killer.svg',en:'Killer Sudoku',de:'Killer Sudoku',detailEn:'Sum cages meet the familiar grid.',detailDe:'Summenkäfige treffen auf klassische Logik.'},
- {id:'jigsaw',image:'/lounge/sudoku-jigsaw.svg',en:'Jigsaw Sudoku',de:'Jigsaw Sudoku',detailEn:'Irregular regions change everything.',detailDe:'Unregelmäßige Gebiete verändern alles.'},
- {id:'samurai',image:'/lounge/sudoku-samurai.svg',en:'Samurai Sudoku',de:'Samurai Sudoku',detailEn:'Five interlocking grids, one solution.',detailDe:'Fünf verschachtelte Raster, eine Lösung.'},
- {id:'mini',image:'/lounge/sudoku-mini.svg',en:'Mini Sudoku',de:'Mini Sudoku',detailEn:'Compact four-by-four and six-by-six puzzles.',detailDe:'Kompakte 4×4- und 6×6-Rätsel.'},
-];
 
 type Props={state:SudokuState;language:Lang;pending:boolean;error:string;command:(intent:SudokuIntent)=>void};
 const names:Record<Lang,Record<Difficulty,string>>={
@@ -125,53 +119,11 @@ export function SudokuScreen({state,language,pending,error,command}:Props) {
    command({action:'sudoku.new',value:difficulty});
  }
 
- const career=state.career??{level:1,experience:0,nextLevelXp:100,lifetimeExperience:0,cosmeticPointsEarned:0,pointsPerLevel:25};
- const careerProgress=career.nextLevelXp>0?Math.min(100,Math.round(career.experience/career.nextLevelXp*100)):100;
- const nextTitle=career.level>=100?100:Math.ceil((career.level+1)/10)*10;
- if(!game&&selectedMode!=='classic')return <section className="sudoku-mode-menu" data-testid="sudoku-mode-menu">
-  <div className="sudoku-mode-hero">
-   <div><span className="sudoku-eyebrow">THE MIDNIGHT CLUB · SUDOKU LOUNGE</span>
-    <h1>{language==='de'?'Sechs Wege zur Lösung.':'Six ways to solve.'}</h1>
-    <p>{language==='de'?'Wähle deine Variante. Jede hat ihre eigene Logik – und alle gehören zu deiner Sudoku-Karriere.':
-       'Choose your variation. Each has its own logic, and all count toward your Sudoku career.'}</p></div>
-   <div className="sudoku-career-overview" data-testid="sudoku-career">
-    <span>{language==='de'?'SUDOKU-KARRIERE':'SUDOKU CAREER'}</span>
-    <strong>LV {career.level}<small> / 100</small></strong>
-    <div className="sudoku-career-track" role="progressbar" aria-valuemin={0} aria-valuemax={career.nextLevelXp||1}
-      aria-valuenow={career.experience} aria-label="Sudoku experience"><i style={{width:careerProgress+'%'}}/></div>
-    <small>{career.level===100?(language==='de'?'MAXIMALES LEVEL ERREICHT':'MAXIMUM LEVEL REACHED'):
-      career.experience.toLocaleString(language)+' / '+career.nextLevelXp.toLocaleString(language)+' XP'}</small>
-    <div className="sudoku-career-rewards">
-      <span>◆ {career.cosmeticPointsEarned.toLocaleString(language)} CP {language==='de'?'verdient':'earned'}</span>
-      <span>{language==='de'?'Nächster Titel':'Next title'}: LV {nextTitle}</span>
-    </div>
-   </div>
-  </div>
-  {selectedMode===null?
-   <div className="sudoku-mode-grid">
-    {sudokuModes.map(mode=><button type="button" className={'sudoku-mode-tile '+(mode.id==='classic'?'available':'upcoming')}
-      data-testid={'sudoku-mode-'+mode.id} key={mode.id} onClick={()=>setSelectedMode(mode.id)}>
-      <img src={mode.image} alt={language==='de'?'Vorschau '+mode.de:'Preview '+mode.en} loading="eager"/>
-      <span className="sudoku-mode-tile-body"><span className="sudoku-mode-kicker">
-       {mode.id==='classic'?(language==='de'?'JETZT SPIELBAR':'PLAY NOW'):(language==='de'?'PHASE 2':'PHASE TWO')}</span>
-       <strong>{language==='de'?mode.de:mode.en}</strong>
-       <span>{language==='de'?mode.detailDe:mode.detailEn}</span>
-       <b>{mode.id==='classic'?(language==='de'?'SCHWIERIGKEIT WÄHLEN →':'CHOOSE DIFFICULTY →'):(language==='de'?'VORSCHAU ANSEHEN →':'VIEW PREVIEW →')}</b>
-      </span>
-    </button>)}
-   </div>:
-   <div className="sudoku-mode-coming" data-testid="sudoku-mode-preview">
-    <button type="button" className="sudoku-mode-back" onClick={()=>setSelectedMode(null)}>← {language==='de'?'Alle Modi':'All modes'}</button>
-    <img src={sudokuModes.find(m=>m.id===selectedMode)!.image} alt="" aria-hidden="true"/>
-    <span className="sudoku-eyebrow">{language==='de'?'IN VORBEREITUNG · PHASE 2':'COMING IN PHASE TWO'}</span>
-    <h2>{sudokuModes.find(m=>m.id===selectedMode)![language]}</h2>
-    <p>{language==='de'?'Dieser Modus bekommt seine eigene Spiellogik und Rätselbibliothek in Phase 2. Das Vorschaubild und der Platz im Menü sind bereits fertig.':
-      'This variation will receive its own puzzle rules and library in phase two. Its preview art and menu entry are ready.'}</p>
-   </div>}
-  <p className="sudoku-career-note">{language==='de'
-   ?'Mit jedem Sudoku-Levelaufstieg verdienst du Cosmetic Points. Alle zehn Level warten exklusive Titel im Casino-Shop – die Titel für Level 90 und 100 besitzen eigene Animationen.'
-   :'Earn cosmetic points on every Sudoku level-up. Exclusive titles unlock every ten levels in the casino shop, with animated prestige titles at levels 90 and 100.'}</p>
- </section>;
+ if(state.variant)return <SudokuVariantScreen game={state.variant} language={language}
+   pending={pending} error={error} command={command}/>;
+ if(!game&&selectedMode!=='classic')return <SudokuModeMenu language={language}
+   selectedMode={selectedMode} select={setSelectedMode} career={state.career}
+   entries={state.variantEntries??[]} pending={pending} command={command}/>;
  if(!game) return <section className="sudoku-library" data-testid="sudoku-library">
    <button type="button" className="sudoku-mode-back" data-testid="sudoku-back-to-modes" onClick={()=>setSelectedMode(null)}>← {language==='de'?'Alle Sudoku-Modi':'All Sudoku modes'}</button>
    <div className="sudoku-banner">
