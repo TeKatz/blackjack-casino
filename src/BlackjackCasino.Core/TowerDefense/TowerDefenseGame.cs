@@ -59,6 +59,7 @@ public sealed record TdStageRun
     public string Phase { get; set; } = "planning";
     public bool Paused { get; set; }
     public bool Endless { get; set; }
+    public bool LastStandUsed { get; set; }
     public int Speed { get; set; } = 1;
     public int NextEnemyId { get; set; } = 1;
     public int Spawned { get; set; }
@@ -73,7 +74,7 @@ public sealed record TdStageRun
     public static TdStageRun Capture(TdState s) => new()
     {
         Wave = s.Wave, Coins = s.Coins, Lives = s.Lives, Phase = s.Phase,
-        Paused = s.Paused, Endless = s.Endless, Speed = s.Speed,
+        Paused = s.Paused, Endless = s.Endless, LastStandUsed = s.LastStandUsed, Speed = s.Speed,
         NextEnemyId = s.NextEnemyId, Spawned = s.Spawned, SpawnTotal = s.SpawnTotal,
         WaveKills = s.WaveKills, WaveEscapes = s.WaveEscapes, SpawnClock = s.SpawnClock,
         Ticks = s.Ticks, Towers = s.Towers.ToList(), Enemies = s.Enemies.ToList(),
@@ -81,7 +82,7 @@ public sealed record TdStageRun
     public void Restore(TdState s)
     {
         s.Wave = Wave; s.Coins = Coins; s.Lives = Lives; s.Phase = Phase;
-        s.Paused = Paused || Phase == "running"; s.Endless = Endless; s.Speed = Speed;
+        s.Paused = Paused || Phase == "running"; s.Endless = Endless; s.LastStandUsed = LastStandUsed; s.Speed = Speed;
         s.NextEnemyId = NextEnemyId; s.Spawned = Spawned; s.SpawnTotal = SpawnTotal;
         s.WaveKills = WaveKills; s.WaveEscapes = WaveEscapes;
         s.SpawnClock = Math.Max(0, SpawnClock); s.Ticks = Ticks;
@@ -94,6 +95,7 @@ public sealed record TdState
     public string Screen { get; set; } = "menu";
     public string Stage { get; set; } = "forest";
     public bool Endless { get; set; }
+    public bool LastStandUsed { get; set; }
     public TdProgress Progress { get; set; } = new();
     public Dictionary<string, TdStageRun> StageRuns { get; set; } = new(StringComparer.Ordinal);
     public int Wave { get; set; }
@@ -114,7 +116,7 @@ public sealed record TdState
     public List<TdEffect> Effects { get; set; } = [];
     public TdState Copy() => new()
     {
-        Version = Version, Screen = Screen, Stage = Stage, Endless = Endless,
+        Version = Version, Screen = Screen, Stage = Stage, Endless = Endless, LastStandUsed = LastStandUsed,
         Progress = Progress.Copy(), StageRuns = StageRuns.ToDictionary(kv => kv.Key, kv => kv.Value.Copy(), StringComparer.Ordinal),
         Wave = Wave, Coins = Coins, Lives = Lives, Phase = Phase,
         Paused = Paused, Speed = Speed, NextEnemyId = NextEnemyId, Spawned = Spawned,
@@ -206,7 +208,7 @@ public sealed class TowerDefenseGame
         && s.Progress.CompletedStages is { Count: <= 2 }
         && s.Progress.CompletedStages.All(Stages.Contains)
         && s.Progress.BestWaves is { Count: <= 2 } && s.Progress.BestWaves.All(kv => Stages.Contains(kv.Key) && kv.Value is >= 0 and <= MaxEndlessWave)
-        && s.StageRuns is { Count: <= 2 } && s.StageRuns.All(kv => Stages.Contains(kv.Key) && kv.Value is not null && kv.Value.Towers is { Count: <= 10 } && kv.Value.Enemies is { Count: <= 100 })
+        && s.StageRuns is { Count: <= 2 } && s.StageRuns.All(kv => Stages.Contains(kv.Key) && ValidRun(kv.Value, kv.Key))
         && s.Coins is >= 0 and <= 1_000_000 && s.Lives is >= 0 and <= 30
         && s.Phase is "planning" or "running" or "won" or "lost"
         && s.Speed is 1 or 2 && s.NextEnemyId is > 0 and < 100_000
@@ -227,6 +229,27 @@ public sealed class TowerDefenseGame
             && double.IsFinite(e.Hp) && e.Hp > 0 && e.Hp < 1_000_000
             && double.IsFinite(e.Slow) && e.Slow >= 0 && e.Slow <= 10)
         && s.Enemies.Select(e => e.Id).Distinct().Count() == s.Enemies.Count;
+
+    private static bool ValidRun(TdStageRun? r, string stage) =>
+        r is { Wave: >= 0 and <= MaxEndlessWave, Coins: >= 0 and <= 1_000_000,
+            Lives: >= 0 and <= 30, SpawnTotal: >= 0 and <= 100, Spawned: >= 0 and <= 100,
+            WaveKills: >= 0 and <= 100, WaveEscapes: >= 0 and <= 100,
+            Ticks: >= 0 and < 100_000_000, NextEnemyId: > 0 and < 100_000 }
+        && r.Phase is "planning" or "running" or "won" or "lost"
+        && r.Speed is 1 or 2 && r.Spawned <= r.SpawnTotal
+        && r.WaveKills + r.WaveEscapes <= r.Spawned
+        && double.IsFinite(r.SpawnClock) && r.SpawnClock is > -1_000_000 and < 10
+        && r.Towers is { Count: <= 10 } && r.Enemies is { Count: <= 100 }
+        && r.Towers.All(t => t.Pad >= 0 && t.Pad < TdMap.PadsFor(stage).Count
+            && TowerKinds.Contains(t.Kind) && t.Level is >= 1 and <= 3
+            && double.IsFinite(t.Cooldown) && t.Cooldown is >= 0 and <= 10)
+        && r.Towers.Select(t => t.Pad).Distinct().Count() == r.Towers.Count
+        && r.Enemies.All(e => e.Id > 0 && e.Id < r.NextEnemyId
+            && EnemyKinds.Contains(e.Kind) && double.IsFinite(e.Distance)
+            && e.Distance >= 0 && e.Distance <= TdMap.Length(TdMap.PathFor(stage))
+            && double.IsFinite(e.Hp) && e.Hp is > 0 and < 1_000_000
+            && double.IsFinite(e.Slow) && e.Slow is >= 0 and <= 10)
+        && r.Enemies.Select(e => e.Id).Distinct().Count() == r.Enemies.Count;
 
     public TdState Save() { TdState copy = State.Copy(); copy.Effects.Clear(); return copy; }
 
@@ -250,7 +273,7 @@ public sealed class TowerDefenseGame
     private void ResetBattle(string stage)
     {
         TdState s = State;
-        s.Stage = stage; s.Endless = false; s.Wave = 0; s.Coins = 320 + 16 * s.Progress.Rank("capital");
+        s.Stage = stage; s.Endless = false; s.LastStandUsed = false; s.Wave = 0; s.Coins = 320 + 16 * s.Progress.Rank("capital");
         s.Lives = 20 + 2 * s.Progress.Rank("fortify"); s.Phase = "planning";
         s.Paused = false; s.Speed = 1; s.NextEnemyId = 1; s.Spawned = 0;
         s.SpawnTotal = 0; s.WaveKills = 0; s.WaveEscapes = 0; s.SpawnClock = 0;
@@ -273,6 +296,12 @@ public sealed class TowerDefenseGame
             s.StageRuns[s.Stage] = TdStageRun.Capture(s);
             s.Screen = "skills"; s.Paused = true;
             return (true, "Mastery opened.");
+        }
+        if (action == "tower.skill.reset")
+        {
+            if (s.Screen != "skills") return (false, "Open mastery to respec.");
+            s.Progress.Skills.Clear();
+            return (true, "Skill points returned.");
         }
         if (action == "tower.skill.buy")
         {
@@ -298,30 +327,30 @@ public sealed class TowerDefenseGame
         if (action == "tower.restart")
         {
             ResetBattle(s.Stage);
-            s.Progress.RunsStarted++;
             return (true, "New defence ready.");
         }
         if (action == "tower.endless")
         {
-            if (s.Phase != "won") return (false, "Complete the map first.");
+            if (s.Screen != "game" || s.Phase != "won") return (false, "Complete the map first.");
             s.Endless = true; s.Phase = "planning"; s.Paused = true;
             return (true, "Endless defence enabled.");
         }
         if (action == "tower.exit") { s.Paused = true; return (true, "Defence saved."); }
         if (action == "tower.pause")
         {
-            if (s.Phase != "running") return (false, "No wave is active.");
+            if (s.Screen != "game" || s.Phase != "running") return (false, "No wave is active.");
             s.Paused = !s.Paused;
             return (true, s.Paused ? "Paused." : "Resumed.");
         }
         if (action == "tower.speed")
         {
+            if (s.Screen != "game") return (false, "Open a map first.");
             s.Speed = s.Speed == 1 ? 2 : 1;
             return (true, "Speed changed.");
         }
         if (action == "tower.start")
         {
-            if (s.Phase != "planning" || s.Wave >= MaxEndlessWave ||
+            if (s.Screen != "game" || s.Phase != "planning" || s.Wave >= MaxEndlessWave ||
                 (!s.Endless && s.Wave >= TdMastery.StageWaves(s.Stage))) return (false, "Wave cannot start.");
             if (s.Wave == 0) s.Progress.RunsStarted++;
             s.Wave++; s.Spawned = 0; s.SpawnTotal = Math.Min(96, 7 + s.Wave * 2);
@@ -329,7 +358,7 @@ public sealed class TowerDefenseGame
             s.SpawnClock = 0; s.Phase = "running"; s.Paused = false;
             return (true, "Wave started.");
         }
-        if (pad is null || pad < 0 || pad >= TdMap.Pads.Count
+        if (s.Screen != "game" || pad is null || pad < 0 || pad >= Pads.Count
             || s.Phase is "won" or "lost") return (false, "Invalid build position.");
         TdTower? current = s.Towers.FirstOrDefault(t => t.Pad == pad);
         if (action == "tower.build")
@@ -351,9 +380,9 @@ public sealed class TowerDefenseGame
         }
         if (action == "tower.sell")
         {
-            int spent = BuildCost(current.Kind);
+            int spent = Price(BuildCost(current.Kind));
             for (int level = 1; level < current.Level; level++)
-                spent += BuildCost(current.Kind) * (level + 1) / 2;
+                spent += Price(BuildCost(current.Kind) * (level + 1) / 2);
             s.Coins += spent * (60 + 7 * s.Progress.Rank("refund")) / 100;
             s.Towers.Remove(current);
             return (true, "Tower sold.");
@@ -440,7 +469,21 @@ public sealed class TowerDefenseGame
                 }
                 else s.Enemies[i] = enemy;
             }
-            if (s.Lives == 0) { s.Phase = "lost"; s.Paused = true; s.Progress.Defeats++; break; }
+            if (s.Lives == 0)
+            {
+                if (s.Progress.Rank("last-stand") > 0 && !s.LastStandUsed)
+                {
+                    s.LastStandUsed = true;
+                    s.Lives = 1;
+                }
+                else
+                {
+                    s.Phase = "lost"; s.Paused = true; s.Progress.Defeats++;
+                    s.Progress.EnemiesDefeated += s.WaveKills;
+                    s.Progress.EnemiesEscaped += s.WaveEscapes;
+                    break;
+                }
+            }
             for (int i = 0; i < s.Towers.Count; i++)
             {
                 TdTower tower = s.Towers[i];
