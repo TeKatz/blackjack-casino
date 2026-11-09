@@ -309,6 +309,7 @@ export function ArcadeGameScreen({id,language,onBack}:{
    </div>
    <div className="arcade-play-stats" aria-live="off">
     <div><small>{t.score}</small><strong data-testid="arcade-score">{score}</strong></div>
+    <div><small>{t.plays}</small><strong data-testid="arcade-runs">{record.runs}</strong></div>
     <div><small>{t.best}</small><strong data-testid="arcade-best">{record.best}</strong></div>
     <div><small>{t.time}</small><strong>{formatTime(elapsed)}</strong></div>
    </div>
@@ -344,9 +345,5 @@ export function ArcadeGameScreen({id,language,onBack}:{
     </div>
    </div>}
   </div>
-  <footer className="arcade-play-footer">
-   <span>{t[instructionsKey[id]]}</span>
-   <span>{t.local} · {t.plays}: {record.runs}</span>
-  </footer>
  </main>;
 }
