@@ -1,15 +1,17 @@
-import {useEffect,useMemo,useRef,useState} from 'react';
+import {useEffect,useLayoutEffect,useMemo,useRef,useState} from 'react';
 import type {PointerEvent as ReactPointerEvent,MouseEvent as ReactMouseEvent,WheelEvent as ReactWheelEvent} from 'react';
 import {Application,Assets,Container,Graphics,Sprite,Texture} from 'pixi.js';
 import type {JigsawGame,JigsawIntent,JigsawPiece,JigsawState} from './jigsawBridge';
 import {ManorAudio} from '../audio/manorAudio';
 import {pieceSegments,piecePath,trayRank} from './puzzleGeometry';
+import {boundedView,viewport,toBoard,clampPiece,clampGroupMotion,needsRecovery} from './jigsawViewport';
 import './jigsaw.css';
 
 type Lang='en'|'de';
 type Props={state:JigsawState;language:Lang;pending:boolean;error:string;animations:boolean;soundEnabled?:boolean;
  command:(intent:JigsawIntent)=>void};
 type View={zoom:number;x:number;y:number};
+type FloatingPiece={id:number;x:number;y:number;overBoard:boolean};
 // Dedicated, single-scene, high-resolution art; not the legacy collection mosaics.
 const images=(id:string)=>'/jigsaw/scenes/'+id+'.jpg';
 const fmt=(s:number)=>[Math.floor(s/3600),Math.floor(s%3600/60),s%60]
@@ -22,7 +24,8 @@ const copy={
   back:'← PUZZLE MENU',timer:'TIMER',on:'ON',off:'OFF',reference:'REFERENCE',
   reset:'RESET VIEW',zoomIn:'ZOOM +',zoomOut:'ZOOM −',tray:'PIECE TRAY',page:'PAGE',
   return:'RETURN SELECTED PIECE',clear:'CLEAR SELECTION',saved:'Moves save automatically.',
-  guide:'Select a piece in the tray, then click the board. Drag placed pieces to connect matching edges; right-click returns a loose group to the tray.',
+  guide:'Select or drag a piece from the tray. Hold right or middle mouse to pan; a short right-click returns a loose group.',
+  recover:'RECOVER OFFBOARD PIECE',
   result:'THE FINISHED PICTURE',finish:'Puzzle completed and saved.',
   another:'ANOTHER PUZZLE',none:'No time tracked',left:'pieces remaining'},
  de:{title:'Das Puzzle-Atelier',intro:'Zwölf Motive. Acht Größen. Kein Zeitdruck.',
@@ -32,7 +35,8 @@ const copy={
   back:'← PUZZLE-MENÜ',timer:'TIMER',on:'AN',off:'AUS',reference:'VORLAGE',
   reset:'ANSICHT',zoomIn:'ZOOM +',zoomOut:'ZOOM −',tray:'TEILEABLAGE',page:'SEITE',
   return:'AUSGEWÄHLTES TEIL ZURÜCKLEGEN',clear:'AUSWAHL AUFHEBEN',saved:'Züge werden automatisch gespeichert.',
-  guide:'Wähle ein Teil aus der Ablage und klicke auf das Brett. Ziehe gelegte Teile zu passenden Kanten; ein Rechtsklick legt lose Gruppen zurück.',
+  guide:'Wähle oder ziehe ein Teil aus der Ablage. Rechte oder mittlere Maustaste halten verschiebt die Ansicht; kurzer Rechtsklick legt lose Gruppen zurück.',
+  recover:'VERLORENES TEIL ZURÜCKHOLEN',
   result:'DAS FERTIGE BILD',finish:'Puzzle abgeschlossen und gespeichert.',
   another:'WEITERES PUZZLE',none:'Ohne Zeitmessung',left:'Teile übrig'},
 };
@@ -59,8 +63,10 @@ function PixiBoard({game,reference,view,selected,onPlace,onMove,onReturn,onSelec
  onReturn:(index:number)=>void;onSelect:(index:number|null)=>void;onView:(next:View)=>void;
 }){
  const mount=useRef<HTMLDivElement>(null),instance=useRef<Application|null>(null);
+ const resize=useRef<ResizeObserver|null>(null);
  const layer=useRef<Container|null>(null),pieces=useRef<Container[]>([]);
- const panning=useRef<{clientX:number;clientY:number;view:View}|null>(null);
+ const panning=useRef<{clientX:number;clientY:number;view:View;button:number;moved:boolean}|null>(null);
+ const pendingDrag=useRef<{id:number;originX:number;originY:number;group:number[]}|null>(null);
  const live=useRef({game,reference,view}),drag=useRef<{
   id:number;original:JigsawPiece;start:{x:number;y:number};group:number[]
  }|null>(null);
@@ -70,11 +76,22 @@ function PixiBoard({game,reference,view,selected,onPlace,onMove,onReturn,onSelec
   let cancelled=false;
   const app=new Application();
   (async()=>{
-   await app.init({width:960,height:600,backgroundColor:0x0a1e1c,
+   await app.init({width:Math.max(1,host.clientWidth),height:Math.max(1,host.clientHeight),backgroundColor:0x0a1e1c,
     antialias:false,resolution:Math.min(2,window.devicePixelRatio||1),autoDensity:true});
    if(cancelled){app.destroy(true);return;}
    host.appendChild(app.canvas);instance.current=app;
    const stage=new Container();app.stage.addChild(stage);layer.current=stage;
+   const measure=()=>{
+    if(cancelled)return;
+    const frame={width:Math.max(1,host.clientWidth),height:Math.max(1,host.clientHeight)};
+    app.renderer.resize(frame.width,frame.height);
+    const g=viewport(frame,live.current.view);
+    stage.position.set(g.offsetX*g.fit,g.offsetY*g.fit);
+    stage.scale.set(g.fit*live.current.view.zoom);
+    const safe=boundedView(frame,live.current.view);
+    if(safe.x!==live.current.view.x||safe.y!==live.current.view.y)onView(safe);
+   };
+   resize.current=new ResizeObserver(measure);resize.current.observe(host);
    const texture=await Assets.load<Texture>(images(game.motifId));
    if(cancelled)return;
    const backing=new Sprite(texture);
@@ -97,31 +114,37 @@ function PixiBoard({game,reference,view,selected,onPlace,onMove,onReturn,onSelec
    }
    pieces.current=sprites;host.dataset.rendererReady='true';
    const current=live.current;
-   stage.position.set(current.view.x,current.view.y);
-   stage.scale.set(current.view.zoom);
+   const g=viewport({width:host.clientWidth,height:host.clientHeight},current.view);
+   stage.position.set(g.offsetX*g.fit,g.offsetY*g.fit);
+   stage.scale.set(g.fit*current.view.zoom);
    for(let id=0;id<sprites.length;id++){
     const p=current.game.pieces[id],tile=sprites[id];
     tile.visible=p.onBoard;tile.position.set(p.x,p.y);tile.alpha=p.locked?1:.93;
    }
   })().catch(()=>{if(!cancelled)host.textContent='Puzzle renderer unavailable';});
-  return()=>{cancelled=true;if(instance.current===app){instance.current=null;layer.current=null;pieces.current=[];}
+  return()=>{cancelled=true;resize.current?.disconnect();resize.current=null;
+   if(instance.current===app){instance.current=null;layer.current=null;pieces.current=[];}
    try{app.destroy(true);}catch{/* async unmount */}};
  },[game.gameId,game.motifId,game.pieceCount,game.columns,game.rows]);
- useEffect(()=>{
-  if(!layer.current)return;
-  layer.current.position.set(view.x,view.y);layer.current.scale.set(view.zoom);
+ useLayoutEffect(()=>{
+  if(!layer.current||!mount.current)return;
+  const g=viewport({width:mount.current.clientWidth,height:mount.current.clientHeight},view);
+  layer.current.position.set(g.offsetX*g.fit,g.offsetY*g.fit);
+  layer.current.scale.set(g.fit*view.zoom);
+  const inFlight=pendingDrag.current;
+  if(inFlight&&(game.pieces[inFlight.id].x!==inFlight.originX||game.pieces[inFlight.id].y!==inFlight.originY))pendingDrag.current=null;
   if(layer.current.children[0])layer.current.children[0].alpha=reference?.27:0;
   for(let i=0;i<pieces.current.length;i++){
    const p=game.pieces[i],s=pieces.current[i];
-   if(drag.current?.group.includes(i))continue;
+   if(drag.current?.group.includes(i)||pendingDrag.current?.group.includes(i))continue;
    s.visible=p.onBoard;s.position.set(p.x,p.y);s.alpha=p.locked?1:.93;
   }
  },[game,view,reference]);
- const point=(event:ReactPointerEvent<HTMLDivElement>)=>{
-  const r=event.currentTarget.getBoundingClientRect();
-  return {x:((event.clientX-r.left)*960/r.width-view.x)/view.zoom,
-   y:((event.clientY-r.top)*600/r.height-view.y)/view.zoom};
+ const local=(clientX:number,clientY:number)=>{
+  const r=mount.current!.getBoundingClientRect();
+  return toBoard({width:r.width,height:r.height},live.current.view,clientX-r.left,clientY-r.top);
  };
+ const point=(event:ReactPointerEvent<HTMLDivElement>)=>local(event.clientX,event.clientY);
  const pick=(p:{x:number;y:number})=>{
   for(let id=game.pieces.length-1;id>=0;id--){
    const item=game.pieces[id];
@@ -131,64 +154,71 @@ function PixiBoard({game,reference,view,selected,onPlace,onMove,onReturn,onSelec
   return null;
  };
  const down=(event:ReactPointerEvent<HTMLDivElement>)=>{
-  if(event.button===1||event.ctrlKey||event.metaKey){
-   panning.current={clientX:event.clientX,clientY:event.clientY,view};
-   event.currentTarget.setPointerCapture(event.pointerId);return;
+  if(event.button===1||event.button===2||event.ctrlKey||event.metaKey){
+   panning.current={clientX:event.clientX,clientY:event.clientY,view,button:event.button,moved:false};
+   event.currentTarget.setPointerCapture(event.pointerId);event.preventDefault();return;
   }
   if(event.button!==0)return;
   const at=point(event),id=pick(at);
   if(id!==null){
-   drag.current={id,start:at,original:game.pieces[id],group:connected(game,id)};
+   const group=connected(game,id);
+   if(group.some(i=>game.pieces[i].locked))return;
+   pendingDrag.current=null;
+   drag.current={id,start:at,original:game.pieces[id],group};
    onSelect(id);
    event.currentTarget.setPointerCapture(event.pointerId);
   }
  };
  const move=(event:ReactPointerEvent<HTMLDivElement>)=>{
   const pan=panning.current;
-  if(pan){const rect=event.currentTarget.getBoundingClientRect();
-   onView({...pan.view,x:pan.view.x+(event.clientX-pan.clientX)*960/rect.width,
-    y:pan.view.y+(event.clientY-pan.clientY)*600/rect.height});return;
+  if(pan){
+   const r=event.currentTarget.getBoundingClientRect();
+   if(Math.hypot(event.clientX-pan.clientX,event.clientY-pan.clientY)>4)pan.moved=true;
+   const g=viewport({width:r.width,height:r.height},pan.view);
+   onView(boundedView({width:r.width,height:r.height},
+    {...pan.view,x:pan.view.x+(event.clientX-pan.clientX)/g.fit,
+     y:pan.view.y+(event.clientY-pan.clientY)/g.fit}));return;
   }
   const d=drag.current;if(!d)return;
-  const at=point(event),dx=at.x-d.start.x,dy=at.y-d.start.y;
+  const at=point(event);
+  const bounded=clampGroupMotion(game.pieces,d.group,d.id,
+   d.original.x+at.x-d.start.x,d.original.y+at.y-d.start.y,game.columns,game.rows);
   for(const id of d.group){
-   const s=pieces.current[id],p=game.pieces[id];
-   if(s&&!p.locked)s.position.set(p.x+dx,p.y+dy);
+   const sprite=pieces.current[id],p=game.pieces[id];
+   if(sprite&&!p.locked)sprite.position.set(p.x+bounded.dx,p.y+bounded.dy);
   }
  };
  const up=(event:ReactPointerEvent<HTMLDivElement>)=>{
-  if(panning.current){panning.current=null;return;}
-  const at=point(event),d=drag.current;drag.current=null;
-  if(d){
-   if(Math.hypot(at.x-d.start.x,at.y-d.start.y)>1)
-    onMove(d.id,d.original.x+at.x-d.start.x,d.original.y+at.y-d.start.y);
+  const pan=panning.current;
+  if(pan){
+   panning.current=null;
+   if(pan.button===2&&!pan.moved){const id=pick(point(event));if(id!==null)onReturn(id);}
    return;
   }
-  if(selected!==null&&!game.pieces[selected].onBoard)
-   onPlace(selected,at.x-480/game.columns,at.y-300/game.rows);
- };
- const context=(event:ReactMouseEvent<HTMLDivElement>)=>{
-  event.preventDefault();
-  const r=event.currentTarget.getBoundingClientRect();
-  const at={x:((event.clientX-r.left)*960/r.width-view.x)/view.zoom,
-   y:((event.clientY-r.top)*600/r.height-view.y)/view.zoom};
-  const id=pick(at);if(id!==null)onReturn(id);
+  const at=point(event),d=drag.current;drag.current=null;
+  if(d){
+   const bounded=clampGroupMotion(game.pieces,d.group,d.id,
+    d.original.x+at.x-d.start.x,d.original.y+at.y-d.start.y,game.columns,game.rows);
+   if(Math.hypot(bounded.dx,bounded.dy)>.01){
+    pendingDrag.current={id:d.id,originX:d.original.x,originY:d.original.y,group:d.group};
+    onMove(d.id,d.original.x+bounded.dx,d.original.y+bounded.dy);
+   }
+   return;
+  }
+  if(selected!==null&&!game.pieces[selected].onBoard){
+   const spot=clampPiece(at.x-480/game.columns,at.y-300/game.rows,game.columns,game.rows);
+   onPlace(selected,spot.x,spot.y);
+  }
  };
  const wheel=(event:ReactWheelEvent<HTMLDivElement>)=>{
   event.preventDefault();
-  const change=event.deltaY<0?1.25:.8;
-  onView({...view,zoom:Math.min(3,Math.max(1,view.zoom*change))});
+  const rect=event.currentTarget.getBoundingClientRect();
+  onView(boundedView({width:rect.width,height:rect.height},
+   {...view,zoom:view.zoom*(event.deltaY<0?1.25:.8)}));
  };
  return <div ref={mount} className="jigsaw-board" onPointerDown={down}
-   onPointerMove={move} onPointerUp={up} onPointerCancel={()=>{drag.current=null;panning.current=null;}}
-   onDragOver={e=>{if(e.dataTransfer.types.includes('application/x-midnight-piece')){e.preventDefault();e.dataTransfer.dropEffect='move';}}}
-   onDrop={e=>{e.preventDefault();if(!e.dataTransfer.types.includes('application/x-midnight-piece'))return;const id=Number(e.dataTransfer.getData('application/x-midnight-piece'));
-    if(!Number.isInteger(id)||id<0||id>=game.pieceCount||game.pieces[id].onBoard)return;
-    const r=e.currentTarget.getBoundingClientRect();
-    const x=((e.clientX-r.left)*960/r.width-view.x)/view.zoom-480/game.columns;
-    const y=((e.clientY-r.top)*600/r.height-view.y)/view.zoom-300/game.rows;
-    onPlace(id,x,y);}}
-   onWheel={wheel} onContextMenu={context} role="group" aria-label="Jigsaw board"/>;
+   onPointerMove={move} onPointerUp={up} onPointerCancel={()=>{drag.current=null;panning.current=null;pendingDrag.current=null;}}
+   onWheel={wheel} onContextMenu={e=>e.preventDefault()} role="group" aria-label="Jigsaw board"/>;
 }
 export function JigsawScreen({state,language,pending,error,command,animations,soundEnabled=false}:Props){
  const t=copy[language],game=state.game;
@@ -204,13 +234,58 @@ export function JigsawScreen({state,language,pending,error,command,animations,so
  },[game?.gameId,game?.onBoardCount,game?.lockedCount,audio]);
  useEffect(()=>{if(!feedback)return;const id=window.setTimeout(()=>setFeedback(false),650);return()=>window.clearTimeout(id);},[feedback]);
  const [selected,setSelected]=useState<number|null>(null),[page,setPage]=useState(0);
+ const boardFrame=useRef<HTMLDivElement>(null);
+ const trayDrag=useRef<{id:number;x:number;y:number;moved:boolean}|null>(null);
+ const suppressClick=useRef(false);
+ const [floating,setFloating]=useState<FloatingPiece|null>(null);
  const [view,setView]=useState<View>({zoom:1,x:0,y:0}),[reference,setReference]=useState(false);
  const available=useMemo(()=>game?.pieces.filter(p=>!p.onBoard).sort((a,b)=>trayRank(a.id,game.gameId)-trayRank(b.id,game.gameId))??[],[game]);
  const pages=Math.max(1,Math.ceil(available.length/32)),currentPage=Math.min(page,pages-1);
  const on=(intent:JigsawIntent)=>{if(!pending)command(intent);};
- const zoom=(factor:number)=>setView(v=>({...v,zoom:Math.max(1,Math.min(3,v.zoom*factor))}));
+ const frame=()=>{const r=boardFrame.current?.getBoundingClientRect();return {width:r?.width??960,height:r?.height??600};};
+ const zoom=(factor:number)=>setView(v=>boundedView(frame(),{...v,zoom:v.zoom*factor}));
  const motif=state.motifs.find(x=>x.id===(game?.motifId??state.selectedMotifId));
- useEffect(()=>{setPage(0);setSelected(null);setView({zoom:1,x:0,y:0});setReference(false);},[game?.gameId]);
+ useEffect(()=>{setPage(0);setSelected(null);setView({zoom:1,x:0,y:0});setReference(false);setFloating(null);},[game?.gameId]);
+ const recover=game?.pieces.find(p=>needsRecovery(p,game.columns,game.rows));
+ useEffect(()=>{
+  if(!game||state.screen!=='game')return;
+  const key=(e:KeyboardEvent)=>{
+   const target=e.target as HTMLElement|null;
+   if(e.altKey||e.ctrlKey||e.metaKey||target?.isContentEditable||['INPUT','TEXTAREA','SELECT'].includes(target?.tagName??''))return;
+   const name=e.key.toLowerCase();
+   if(name==='arrowleft'||name==='a'){e.preventDefault();setPage(v=>Math.max(0,v-1));}
+   else if(name==='arrowright'||name==='d'){e.preventDefault();setPage(v=>Math.min(pages-1,v+1));}
+   else if(name==='r'){e.preventDefault();setView({zoom:1,x:0,y:0});}
+   else if(name==='h'&&!e.repeat){e.preventDefault();setReference(v=>!v);}
+   else if(name==='t'&&!e.repeat){e.preventDefault();if(!pending)command({action:'jigsaw.timer',enabled:!game.timerEnabled});}
+  };
+  window.addEventListener('keydown',key);return()=>window.removeEventListener('keydown',key);
+ },[game?.gameId,game?.timerEnabled,state.screen,pages,pending,command]);
+ useEffect(()=>{
+  const move=(e:PointerEvent)=>{
+   const d=trayDrag.current;if(!d)return;
+   if(Math.hypot(e.clientX-d.x,e.clientY-d.y)>5)d.moved=true;
+   if(!d.moved)return;
+   const r=boardFrame.current?.getBoundingClientRect();
+   const overBoard=!!r&&e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;
+   setFloating({id:d.id,x:e.clientX,y:e.clientY,overBoard});
+  };
+  const finish=(e:PointerEvent)=>{
+   const d=trayDrag.current;if(!d)return;
+   trayDrag.current=null;setFloating(null);
+   if(!d.moved)return;
+   suppressClick.current=true;window.setTimeout(()=>{suppressClick.current=false;},0);
+   const r=boardFrame.current?.getBoundingClientRect();
+   if(!r||e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom||!game||pending)return;
+   const at=toBoard({width:r.width,height:r.height},view,e.clientX-r.left,e.clientY-r.top);
+   const spot=clampPiece(at.x-480/game.columns,at.y-300/game.rows,game.columns,game.rows);
+   if(!game.pieces[d.id].onBoard){on({action:'jigsaw.place',index:d.id,x:Math.round(spot.x*100)/100,y:Math.round(spot.y*100)/100});setSelected(null);}
+  };
+  const cancel=()=>{trayDrag.current=null;setFloating(null);};
+  window.addEventListener('pointermove',move);window.addEventListener('pointerup',finish);
+  window.addEventListener('pointercancel',cancel);
+  return()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',finish);window.removeEventListener('pointercancel',cancel);};
+ },[game,view,pending]);
  const base=<div className="jigsaw-heading"><div><small>THE MIDNIGHT CLUB · CHILL LOUNGE</small>
   <h1>{t.title}</h1><p>{t.intro}</p></div>
   <div className="jigsaw-stats"><span>{t.completed} <b>{state.stats.completedGames}</b></span>
@@ -266,17 +341,18 @@ export function JigsawScreen({state,language,pending,error,command,animations,so
     <button aria-disabled={pending} onClick={()=>on({action:'jigsaw.back'})}>{t.back}</button>
    </div></div>
   <div className="jigsaw-layout"><div className="jigsaw-board-panel">
-   <PixiBoard game={game} reference={reference} view={view} onView={setView} selected={selected}
+   <div ref={boardFrame} className="jigsaw-board-frame"><PixiBoard game={game} reference={reference} view={view} onView={setView} selected={selected}
     onSelect={setSelected} onPlace={(index,x,y)=>{
      on({action:'jigsaw.place',index,x:Math.round(x*100)/100,y:Math.round(y*100)/100});setSelected(null);
     }}
     onMove={(index,x,y)=>on({action:'jigsaw.move',index,x:Math.round(x*100)/100,y:Math.round(y*100)/100})}
-    onReturn={index=>on({action:'jigsaw.tray',index})}/>
-   <p className="jigsaw-hint">{t.guide}</p><p className="jigsaw-placement-notice" role="status">{state.notice}</p>{error&&<p role="alert" className="jigsaw-error">{error}</p>}</div>
+    onReturn={index=>on({action:'jigsaw.tray',index})}/></div>
+   <p className="jigsaw-hint sr-only">{t.guide}</p><p className="jigsaw-placement-notice" role="status">{state.notice}</p>{error&&<p role="alert" className="jigsaw-error">{error}</p>}</div>
    <aside className="jigsaw-tray"><h2>{t.tray}</h2><p>{available.length} {t.left}</p>
     <div className="jigsaw-tray-grid">{available.slice(currentPage*32,(currentPage+1)*32).map(p=><button
-     key={p.id} data-piece-id={p.id} aria-disabled={pending} aria-pressed={selected===p.id} className={selected===p.id?'selected':''} draggable={!pending} onDragStart={e=>{e.dataTransfer.setData('application/x-midnight-piece',String(p.id));e.dataTransfer.effectAllowed='move';}}
-     title={'Piece '+(p.id+1)} onClick={()=>setSelected(v=>v===p.id?null:p.id)}>
+     key={p.id} data-piece-id={p.id} aria-disabled={pending} aria-pressed={selected===p.id} className={selected===p.id?'selected':''} draggable={false}
+     onPointerDown={e=>{if(e.button===0&&!pending){trayDrag.current={id:p.id,x:e.clientX,y:e.clientY,moved:false};}}}
+     title={'Piece '+(p.id+1)} onClick={()=>{if(suppressClick.current)return;setSelected(v=>v===p.id?null:p.id);}}>
      <svg viewBox="-20 -20 140 140" aria-hidden="true"><defs><clipPath id={'tray-piece-'+p.id}><path d={piecePath(p.id,game.columns,game.rows,100,100)}/></clipPath></defs>
       <image href={images(game.motifId)} x={-(p.id%game.columns)*100} y={-Math.floor(p.id/game.columns)*100}
        width={game.columns*100} height={game.rows*100} preserveAspectRatio="none" clipPath={'url(#tray-piece-'+p.id+')'}/>
@@ -285,11 +361,28 @@ export function JigsawScreen({state,language,pending,error,command,animations,so
     <div className="jigsaw-pages"><button disabled={currentPage===0} onClick={()=>setPage(v=>Math.max(0,v-1))}>◀</button>
      <span>{t.page} {currentPage+1}/{pages}</span>
      <button disabled={currentPage>=pages-1} onClick={()=>setPage(v=>Math.min(pages-1,v+1))}>▶</button></div>
+    {recover&&<button className="jigsaw-recover" disabled={pending} onClick={()=>on({action:'jigsaw.tray',index:recover.id})}>{t.recover} #{recover.id+1}</button>}
     {selected!==null&&<div className="jigsaw-actions">
      {game.pieces[selected].onBoard&&!game.pieces[selected].locked
       &&<button onClick={()=>on({action:'jigsaw.tray',index:selected})}>{t.return}</button>}
      <button onClick={()=>setSelected(null)}>{t.clear}</button></div>}
     <p>{t.saved}</p>
    </aside></div>
+  {floating&&game&&(()=>{
+   const w=960/game.columns,h=600/game.rows,m=Math.min(w,h)*.2;
+   const r=boardFrame.current?.getBoundingClientRect();
+   const scale=floating.overBoard&&r?Math.min(r.width/960,r.height/600)*view.zoom:70/(Math.max(w,h)+m*2);
+   const width=(w+2*m)*scale,height=(h+2*m)*scale;
+   const id=floating.id;
+   return <div className={'jigsaw-drag-preview'+(floating.overBoard?' over-board':'')}
+    style={{left:floating.x-width/2,top:floating.y-height/2,width,height}} aria-hidden="true">
+    <svg viewBox={[-m,-m,w+2*m,h+2*m].join(' ')} width="100%" height="100%">
+     <defs><clipPath id="jigsaw-floating-clip"><path d={piecePath(id,game.columns,game.rows,w,h)}/></clipPath></defs>
+     <image href={images(game.motifId)} x={-(id%game.columns)*w} y={-Math.floor(id/game.columns)*h}
+      width="960" height="600" preserveAspectRatio="none" clipPath="url(#jigsaw-floating-clip)"/>
+     <path d={piecePath(id,game.columns,game.rows,w,h)} fill="none" stroke="#ecd99e" strokeWidth={Math.max(.5,1/scale)}/>
+    </svg>
+   </div>;
+  })()}
  </section>;
 }
