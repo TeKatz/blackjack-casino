@@ -22,7 +22,7 @@ export function ArcadeCardArt({id}:{id:string}){
  const [dark,light,highlight]=palettes[id]??palettes['midnight-wings'];
  const gradient=(name:string)=>'url(#arcade-'+id+'-'+name+')';
  const frame=(children:ReactNode)=><svg
-  className={'arcade-scene arcade-scene--'+id} viewBox="0 0 320 128"
+  className="arcade-scene" data-arcade-scene={id} viewBox="0 0 320 128"
   preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
   <defs>
    <linearGradient id={'arcade-'+id+'-sky'} x1="0" y1="0" x2="1" y2="1">
