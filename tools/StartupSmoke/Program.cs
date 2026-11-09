@@ -559,6 +559,16 @@ internal static class Program
             await Task.Delay(100);
         }
         Require(menuOpened, "Arcade Games did not open its dedicated ten-game menu.");
+        // The streamlined hub must open a full personal high-score table.
+        await web.ExecuteScriptAsync(
+            "document.querySelector('[data-testid=arcade-highscores-open]')?.click()");
+        string highScores = await web.ExecuteScriptAsync(
+            "Boolean(document.querySelector('[data-testid=arcade-highscores-dialog]')"
+            + "&&document.querySelectorAll('.arcade-highscores-entry').length===10)");
+        Require(highScores == "true", "Arcade personal high-score table is missing games.");
+        await web.ExecuteScriptAsync(
+            "document.querySelector('.arcade-highscores-dialog .arcade-detail-close')?.click()");
+
         // Launch and exit all ten real Arcade games in packaged WebView2.
         // Static cards and nonfunctional "Play" buttons cannot pass this check.
         foreach (string id in new[] {
@@ -597,16 +607,16 @@ internal static class Program
                 + "const s=document.querySelector('.arcade-play-stage');"
                 + "const c=document.querySelector('[data-testid=arcade-canvas]');"
                 + "const h=document.querySelector('.arcade-play-header');"
-                + "const f=document.querySelector('.arcade-play-footer');"
+                + "const runs=document.querySelector('[data-testid=arcade-runs]');"
                 + "const shell=document.querySelector('.casino-lobby-shell');"
                 + "const bounds=p?.getBoundingClientRect(),stage=s?.getBoundingClientRect();"
-                + "return Boolean(p&&s&&c&&h&&f&&shell&&p.clientHeight>180"
+                + "return Boolean(p&&s&&c&&h&&runs&&shell&&p.clientHeight>180"
                 + "&&p.scrollHeight<=p.clientHeight+3&&p.scrollWidth<=p.clientWidth+3"
                 + "&&document.documentElement.scrollHeight<=innerHeight+3"
                 + "&&document.body.scrollHeight<=innerHeight+3"
                 + "&&shell.getBoundingClientRect().bottom<=innerHeight+3"
                 + "&&stage.bottom<=bounds.bottom+2"
-                + "&&f.getBoundingClientRect().bottom<=bounds.bottom+2"
+                + "&&runs.getBoundingClientRect().bottom<=h.getBoundingClientRect().bottom+1"
                 + "&&stage.width<innerWidth-100"
                 + "&&stage.height<innerHeight*.78"
                 + "&&c.getBoundingClientRect().height>80)})()");
