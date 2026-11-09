@@ -8,6 +8,7 @@ import {ArcadeGameScreen} from './ArcadeGameScreen';
 import {ArcadeCardArt} from './ArcadeCardArt';
 import type {ArcadeCategory,ArcadeGame} from './arcadeCatalog';
 import './arcade.css';
+import './arcadeArtMotion.css';
 
 type Language='de'|'en';
 type CategoryFilter='all'|ArcadeCategory;
@@ -92,7 +93,6 @@ export function ArcadeMenu({language,onBack}:Props){
     aria-label={game.name+' · '+t.details} onClick={()=>setSelectedId(game.id)}>
     <div className="arcade-game-art" aria-hidden="true">
      <ArcadeCardArt id={game.id}/>
-     <span className="arcade-art-line first"/><span className="arcade-art-line second"/>
      <span className="arcade-art-index">{String(index+1).padStart(2,'0')}</span>
     </div>
     <div className="arcade-card-content">
