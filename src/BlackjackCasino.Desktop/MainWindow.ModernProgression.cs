@@ -35,6 +35,7 @@ public partial class MainWindow
         ChallengeCategory.WordSearch => "Word Search",
         ChallengeCategory.Solitaire => "Solitaire",
         ChallengeCategory.TowerDefense => "Midnight Bastion",
+        ChallengeCategory.Minesweeper => "Midnight Sweep",
         _ => category.ToString(),
     };
 
@@ -177,8 +178,10 @@ public partial class MainWindow
         var merge = profile.MidnightMerge;
         var adventure = profile.Adventure;
         var bastion = profile.TowerDefense;
+        var sweep = profile.Minesweeper;
         long loungeCompletions = sudoku.CompletedPuzzles + solitaire.Wins
-            + wordSearch.CompletedPuzzles + memory.CompletedGames + jigsaw.CompletedGames + bastion.Victories;
+            + wordSearch.CompletedPuzzles + memory.CompletedGames + jigsaw.CompletedGames + bastion.Victories
+            + sweep.Wins + sweep.Losses;
         decimal wagered = blackjack.TotalWagered + reels.TotalWagered + legacy.TotalWagered
             + vault.TotalWagered + nine.TotalWagered + manor.TotalWagered + dice.TotalWagered;
         decimal net = blackjack.NetProfit + reels.NetProfit + legacy.NetProfit
@@ -294,6 +297,17 @@ public partial class MainWindow
                 RecordMetric("Milestones reached", RecordNumber(merge.MilestonesReached)),
                 RecordMetric("Highest item tier", RecordNumber(merge.HighestTierCreated)),
                 RecordMetric("Items spawned", RecordNumber(merge.ItemsSpawned))),
+            Activity("minesweeper", "Midnight Sweep",
+                RecordMetric("Games won", RecordNumber(sweep.Wins)),
+                RecordMetric("Games lost", RecordNumber(sweep.Losses)),
+                RecordMetric("Win rate", RecordPercent(sweep.Wins, sweep.Wins + sweep.Losses)),
+                RecordMetric("Easy / Standard / Expert wins", $"{sweep.EasyWins:N0} / {sweep.StandardWins:N0} / {sweep.ExpertWins:N0}"),
+                RecordMetric("Wins without Echo Scan", RecordNumber(sweep.NoScanWins)),
+                RecordMetric("Best win streak", RecordNumber(sweep.BestWinStreak)),
+                RecordMetric("Safe tiles revealed", RecordNumber(sweep.SafeCellsRevealed)),
+                RecordMetric("Echo scans used", RecordNumber(sweep.ScansUsed)),
+                RecordMetric("Fastest clear", sweep.BestWinSeconds <= 0 ? "—" :
+                    RecordDuration(TimeSpan.FromSeconds(sweep.BestWinSeconds))),
             Activity("tower-defense", "Midnight Bastion",
                 RecordMetric("Mastery level", RecordNumber(bastion.Level)),
                 RecordMetric("Maps completed", RecordNumber(bastion.CompletedStages.Count)),
