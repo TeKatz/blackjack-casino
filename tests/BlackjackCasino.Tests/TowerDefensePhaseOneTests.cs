@@ -34,7 +34,7 @@ public sealed class TowerDefensePhaseOneTests
         Assert.Single(game.State.Towers);
         Assert.Equal("archer", game.State.Towers[0].Kind);
         var restored = new TowerDefenseGame(game.Save());
-        Assert.Equal(1, restored.State.Towers.Count);
+        Assert.Single(restored.State.Towers);
         Assert.True(restored.Execute("tower.menu").Success);
         Assert.True(restored.Execute("tower.play", kind: "frost").Success);
         Assert.Equal("frost", restored.State.Stage);
