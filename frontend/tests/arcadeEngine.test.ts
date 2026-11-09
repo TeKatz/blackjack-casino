@@ -13,7 +13,7 @@ describe('Arcade Update 1: deterministic playable engines',()=>{
    expect(isPlayableArcade(id)).toBe(true);
    expect(createArcadeRun(id).kind).toBe(id);
   }
-  expect(isPlayableArcade('hexagon-hell')).toBe(false);
+  expect(isPlayableArcade('hexagon-hell')).toBe(true);
   expect(isPlayableArcade('../missing')).toBe(false);
  });
  it('implements bird flap physics, pipe scoring and both collision edges',()=>{
