@@ -542,4 +542,32 @@
   <data name="Challenge.bastion-level-15.Description" xml:space="preserve"><value>Erreiche Bastion-Level 15.</value></data>
   <data name="Challenge.bastion-endless-30.Name" xml:space="preserve"><value>Jenseits der Morgendämmerung</value></data>
   <data name="Challenge.bastion-endless-30.Description" xml:space="preserve"><value>Erreiche Welle 30 auf einer beliebigen Karte.</value></data>
+  <data name="Challenge.sweep-first.Name" xml:space="preserve"><value>Erstes Licht</value></data>
+  <data name="Challenge.sweep-first.Description" xml:space="preserve"><value>Räume dein erstes nächtliches Minenfeld.</value></data>
+  <data name="Challenge.sweep-10.Name" xml:space="preserve"><value>Nachtvermesser</value></data>
+  <data name="Challenge.sweep-10.Description" xml:space="preserve"><value>Räume zehn Minenfelder.</value></data>
+  <data name="Challenge.sweep-50.Name" xml:space="preserve"><value>Mondkartograf</value></data>
+  <data name="Challenge.sweep-50.Description" xml:space="preserve"><value>Räume 50 Minenfelder.</value></data>
+  <data name="Challenge.sweep-250.Name" xml:space="preserve"><value>Hüter des Rasters</value></data>
+  <data name="Challenge.sweep-250.Description" xml:space="preserve"><value>Räume 250 Minenfelder.</value></data>
+  <data name="Challenge.sweep-noscan-1.Name" xml:space="preserve"><value>Ohne Hilfsmittel</value></data>
+  <data name="Challenge.sweep-noscan-1.Description" xml:space="preserve"><value>Gewinne ohne Echo-Scan.</value></data>
+  <data name="Challenge.sweep-noscan-25.Name" xml:space="preserve"><value>Vertraue dem Muster</value></data>
+  <data name="Challenge.sweep-noscan-25.Description" xml:space="preserve"><value>Gewinne 25 Partien ohne Echo-Scan.</value></data>
+  <data name="Challenge.sweep-noscan-100.Name" xml:space="preserve"><value>Echter Nachtsichtblick</value></data>
+  <data name="Challenge.sweep-noscan-100.Description" xml:space="preserve"><value>Gewinne 100 Partien ohne Echo-Scan.</value></data>
+  <data name="Challenge.sweep-expert-1.Name" xml:space="preserve"><value>In die Tiefe</value></data>
+  <data name="Challenge.sweep-expert-1.Description" xml:space="preserve"><value>Räume ein Minenfeld auf Experte.</value></data>
+  <data name="Challenge.sweep-expert-10.Name" xml:space="preserve"><value>Meister der Dunkelheit</value></data>
+  <data name="Challenge.sweep-expert-10.Description" xml:space="preserve"><value>Räume zehn Minenfelder auf Experte.</value></data>
+  <data name="Challenge.sweep-expert-50.Name" xml:space="preserve"><value>Alle Sterne kartiert</value></data>
+  <data name="Challenge.sweep-expert-50.Description" xml:space="preserve"><value>Räume 50 Minenfelder auf Experte.</value></data>
+  <data name="Challenge.sweep-streak-3.Name" xml:space="preserve"><value>Ruhige Hand</value></data>
+  <data name="Challenge.sweep-streak-3.Description" xml:space="preserve"><value>Gewinne drei Minenfelder hintereinander.</value></data>
+  <data name="Challenge.sweep-streak-10.Name" xml:space="preserve"><value>Ungebrochenes Sternbild</value></data>
+  <data name="Challenge.sweep-streak-10.Description" xml:space="preserve"><value>Gewinne zehn Minenfelder hintereinander.</value></data>
+  <data name="Challenge.sweep-safe-500.Name" xml:space="preserve"><value>Die Nacht erhellen</value></data>
+  <data name="Challenge.sweep-safe-500.Description" xml:space="preserve"><value>Decke 500 sichere Felder in abgeschlossenen Partien auf.</value></data>
+  <data name="Challenge.sweep-safe-5000.Name" xml:space="preserve"><value>Endloser Horizont</value></data>
+  <data name="Challenge.sweep-safe-5000.Description" xml:space="preserve"><value>Decke 5.000 sichere Felder in abgeschlossenen Partien auf.</value></data>
 </root>
