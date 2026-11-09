@@ -64,8 +64,9 @@ public sealed class ArcadeChallengesTests
         string game = "neon-breaker";
         foreach (int score in new[] { 100, 25, 150 })
             Assert.True(ArcadeProgression.Process(stats, new ArcadeRunReceipt(Guid.NewGuid(), game, score, score / 2)));
-        Assert.Equal(3, ChallengeCatalog.Progress(new PlayerProfileState { Arcade = stats },
-            ChallengeCatalog.TryGet("arcade-neon-breaker-first")!) + 2);
+        Assert.Equal(3, stats.Games[game].Runs);
+        Assert.Equal(3, ArcadeChallengeCatalog.Progress(stats,
+            ChallengeCatalog.TryGet("arcade-neon-breaker-runs-10")!));
         Assert.Equal(150, stats.Games[game].BestScore);
         Assert.Equal(275, stats.Games[game].TotalScore);
         Assert.Equal(75, stats.Games[game].LongestSeconds);
