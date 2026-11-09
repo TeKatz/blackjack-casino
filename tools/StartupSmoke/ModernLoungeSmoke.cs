@@ -103,6 +103,28 @@ internal static class ModernLoungeSmoke
         await web.ExecuteScriptAsync("document.querySelector('.chill-filter button')?.click()");
         await web.ExecuteScriptAsync("document.querySelector('.chill-sudoku')?.click()");
         await UntilAsync(async () => await web.ExecuteScriptAsync(
+            "document.querySelectorAll('.sudoku-mode-tile').length") == "6",
+            "The six-mode Sudoku selection menu did not appear.");
+        Require(await web.ExecuteScriptAsync(
+            "new Set([...document.querySelectorAll('.sudoku-mode-tile img')].map(x=>x.getAttribute('src'))).size") == "6",
+            "Sudoku variants must each have an independently named preview image.");
+        Require(await web.ExecuteScriptAsync(
+            "[...document.querySelectorAll('.sudoku-mode-tile img')].every(x=>x.complete&&x.naturalWidth>0)") == "true",
+            "At least one Sudoku preview artwork failed to load.");
+        Require(await web.ExecuteScriptAsync(
+            "Boolean(document.querySelector('[data-testid=\\\"sudoku-career\\\"]'))") == "true",
+            "The Sudoku career overview was missing.");
+        await Capture(web, Path.Combine(output, "modern-sudoku-modes.png"));
+        await web.ExecuteScriptAsync("document.querySelector('[data-testid=\\\"sudoku-mode-killer\\\"]')?.click()");
+        await UntilAsync(async () => await web.ExecuteScriptAsync(
+            "Boolean(document.querySelector('[data-testid=\\\"sudoku-mode-preview\\\"]'))") == "true",
+            "The phase-two Killer preview was missing.");
+        await web.ExecuteScriptAsync("document.querySelector('.sudoku-mode-back')?.click()");
+        await UntilAsync(async () => await web.ExecuteScriptAsync(
+            "document.querySelectorAll('.sudoku-mode-tile').length") == "6",
+            "Sudoku preview could not return to the six-mode menu.");
+        await web.ExecuteScriptAsync("document.querySelector('[data-testid=\\\"sudoku-mode-classic\\\"]')?.click()");
+        await UntilAsync(async () => await web.ExecuteScriptAsync(
             "document.querySelectorAll('.sudoku-difficulty').length") == "6",
             "The modern Sudoku library did not appear.");
         Require(await web.ExecuteScriptAsync(
