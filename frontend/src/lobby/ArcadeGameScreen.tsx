@@ -22,6 +22,9 @@ const strings={
   snake:'WASD oder Pfeiltasten steuern. Sammle Futter und meide Wände und den eigenen Schwanz.',
   breaker:'Maus oder ← / → bewegen den Schläger. Leertaste oder Klick startet den Ball.',
   storm:'WASD / Pfeiltasten bewegen dein Schiff. Mit gedrückter Maus kannst du es ziehen.',
+  hex:'A / D oder ← / → drehen das Dreieck. Steuere in die Lücken der näherkommenden Ringe.',
+  spike:'Leertaste, ↑ oder Klick zum Springen. Weiche Stacheln und Abgründen aus.',
+  ascent:'A / D oder ← / → lenken deine Figur. Sie springt beim Landen automatisch weiter.',
   exit:'ZUR SPIELAUSWAHL',local:'Persönliche Rekorde werden auf diesem Gerät gespeichert.',
   pauseHint:'Die Spielzeit wird während der Pause angehalten.'},
  en:{back:'← Arcade Games',score:'SCORE',best:'BEST',time:'TIME',plays:'RUNS',
@@ -36,12 +39,16 @@ const strings={
   snake:'Steer with WASD or arrow keys. Collect food; avoid walls and your own tail.',
   breaker:'Move the paddle with the mouse or ← / →. Space or click launches the ball.',
   storm:'Move the ship with WASD / arrow keys, or hold and drag with the mouse.',
+  hex:'A / D or ← / → rotate the triangle. Steer into gaps in the approaching rings.',
+  spike:'Press Space, ↑ or click to jump. Avoid spikes and gaps in the floor.',
+  ascent:'A / D or ← / → steer your character. Each landing triggers an automatic jump.',
   exit:'BACK TO GAME LIST',local:'Personal bests are saved on this device.',
   pauseHint:'Game time is stopped while the run is paused.'},
 };
 const instructionsKey={
  'midnight-wings':'wings','cave-escape':'hold','perfect-stack':'blocks','blade-timing':'knives',
  'death-snake':'snake','neon-breaker':'breaker','bullet-storm':'storm',
+ 'hexagon-hell':'hex','spike-rush':'spike','endless-ascent':'ascent',
 } as const;
 const formatTime=(s:number)=>{
  const whole=Math.floor(Math.max(0,s));
@@ -232,7 +239,7 @@ export function ArcadeGameScreen({id,language,onBack}:{
     }
     return;
    }
-   if(direction&&(id==='neon-breaker'||id==='bullet-storm')){
+   if(direction&&(id==='neon-breaker'||id==='bullet-storm'||id==='hexagon-hell'||id==='endless-ascent')){
     keys.current.add(direction);return;
    }
    if(key===' '||key==='arrowup'){
