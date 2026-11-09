@@ -5,8 +5,8 @@ import type {WingsRun,CaveRun,StackRun,BladeRun} from '../src/lobby/arcadeEngine
 import {readArcadeRecord,saveArcadeRecord} from '../src/lobby/arcadeRecords';
 
 describe('Arcade Update 1: deterministic playable engines',()=>{
- it('contains exactly the first four playable games',()=>{
-  expect(PLAYABLE_ARCADE_IDS).toEqual([
+ it('keeps the four original playable arcade games as the stable prefix',()=>{
+  expect(PLAYABLE_ARCADE_IDS.slice(0,4)).toEqual([
    'midnight-wings','cave-escape','perfect-stack','blade-timing',
   ]);
   for(const id of PLAYABLE_ARCADE_IDS){
