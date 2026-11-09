@@ -1,5 +1,5 @@
 import {ARCADE_HEIGHT as H,ARCADE_WIDTH as W} from './arcadeEngine';
-import {SNAKE_COLS,SNAKE_ROWS} from './arcadeEngine';
+import {SNAKE_COLS,SNAKE_ROWS,BLADE_HIT_ARC,angularDistance} from './arcadeEngine';
 import type {ArcadeRunState,CaveRun,StackRun,BladeRun,WingsRun,SnakeRun,BreakerRun,StormRun,HexRun,SpikeRun,AscentRun} from './arcadeEngine';
 
 type Context=CanvasRenderingContext2D;
@@ -104,15 +104,29 @@ function cave(ctx:Context,state:CaveRun){
   ctx.fillStyle='#6ddcc27c';ctx.beginPath();ctx.arc(s.x,upper-7,3,0,TAU);ctx.fill();
  }
  ctx.save();ctx.translate(225,state.y);
+ // A restrained animated ion trail: particles stream behind the craft with speed and flicker.
+ for(let i=0;i<16;i++){
+  const progress=((i*17+state.elapsed*125)%143)/143;
+  const x=-25-progress*134,y=Math.sin(i*2.37+state.elapsed*7)*(2+progress*11);
+  ctx.globalAlpha=(1-progress)*(.28+.26*Math.sin(state.elapsed*11+i)**2);
+  ctx.fillStyle=i%4===0?'#ffe1a2':'#80f3da';
+  ctx.shadowColor='#8ef5d8';ctx.shadowBlur=7;
+  ctx.beginPath();ctx.arc(x,y,Math.max(.7,3-progress*2),0,TAU);ctx.fill();
+ }
+ ctx.shadowBlur=0;ctx.globalAlpha=1;
  ctx.shadowColor='#8af6dc';ctx.shadowBlur=20;
  ctx.fillStyle='#85e7dc';ctx.strokeStyle='#f8dfac';ctx.lineWidth=2;
  ctx.beginPath();ctx.moveTo(25,0);ctx.lineTo(-12,-15);ctx.lineTo(-23,0);ctx.lineTo(-12,15);
  ctx.closePath();ctx.fill();ctx.stroke();ctx.shadowBlur=0;
  ctx.fillStyle='#11333b';ctx.beginPath();ctx.arc(1,0,6,0,TAU);ctx.fill();
- ctx.strokeStyle='#5addbd99';ctx.lineWidth=3;
- for(let j=0;j<4;j++){
-  ctx.beginPath();ctx.moveTo(-26-j*12,(j%2?1:-1)*5);ctx.lineTo(-37-j*12,(j%2?1:-1)*10);ctx.stroke();
+ ctx.strokeStyle='#5addbd99';ctx.lineWidth=2;
+ for(let j=0;j<3;j++){
+  const flicker=Math.sin(state.elapsed*19+j*2)*4;
+  ctx.globalAlpha=.67-j*.13;
+  ctx.beginPath();ctx.moveTo(-24-j*13,(j%2?1:-1)*3);
+  ctx.lineTo(-43-j*15-flicker,(j%2?1:-1)*(6+j*2));ctx.stroke();
  }
+ ctx.globalAlpha=1;
  ctx.restore();
 }
 function roundedRect(ctx:Context,x:number,y:number,w:number,h:number,r:number){
@@ -122,31 +136,94 @@ function roundedRect(ctx:Context,x:number,y:number,w:number,h:number,r:number){
 function stack(ctx:Context,state:StackRun){
  const blocks=state.blocks;
  const start=Math.max(0,blocks.length-7);
- ctx.fillStyle='#e2be7e30';ctx.fillRect(0,505,W,3);
  const projectedY=(i:number)=>490-(i-start)*48;
- for(let i=start;i<blocks.length;i++){
-  const p=blocks[i],y=projectedY(i);
-  const light=ctx.createLinearGradient(p.x,y,p.x+p.width,y+40);
-  light.addColorStop(0,i%2===0?'#316775':'#9d665b');
-  light.addColorStop(.55,i%2===0?'#7fc4be':'#e9b28c');
-  light.addColorStop(1,i%2===0?'#1f4a61':'#885249');
-  roundedRect(ctx,p.x,y,p.width,38,5);ctx.fillStyle=light;ctx.fill();
-  ctx.strokeStyle='#eedaa4';ctx.lineWidth=1.5;ctx.stroke();
-  ctx.fillStyle='#fbe8c340';ctx.fillRect(p.x+5,y+4,Math.max(0,p.width-10),4);
+ const towerCenter=blocks[blocks.length-1].x+blocks[blocks.length-1].width/2;
+ const time=state.elapsed;
+ // Architectural columns, soft perspective shafts and skyline.
+ for(let i=0;i<9;i++){
+  const x=100+i*100;
+  const shine=.08+.05*Math.sin(time*.75+i*.8);
+  ctx.fillStyle='rgba(139,196,193,'+shine+')';
+  ctx.fillRect(x,44,1,455);
  }
- const last=blocks[blocks.length-1];
- const movingY=projectedY(blocks.length);
- const guideY=movingY+41;
- ctx.strokeStyle='#e9cc7d44';ctx.setLineDash([9,9]);ctx.lineWidth=2;
- ctx.beginPath();ctx.moveTo(last.x,guideY);ctx.lineTo(last.x+last.width,guideY);ctx.stroke();
- ctx.setLineDash([]);
- const glow=ctx.createLinearGradient(state.movingX,movingY,state.movingX+last.width,movingY);
- glow.addColorStop(0,'#8c6dca');glow.addColorStop(.45,'#f5d7a8');glow.addColorStop(1,'#8264bb');
- roundedRect(ctx,state.movingX,movingY,last.width,38,5);
- ctx.fillStyle=glow;ctx.fill();ctx.strokeStyle='#fff1bf';ctx.lineWidth=2;ctx.stroke();
- ctx.fillStyle='#ecce8966';ctx.beginPath();ctx.arc(last.x+last.width/2,510,18,0,TAU);ctx.fill();
- ctx.fillStyle='#fff4d7a6';ctx.font='15px Segoe UI, sans-serif';ctx.textAlign='center';
- ctx.fillText('◆',last.x+last.width/2,526);
+ const halo=ctx.createRadialGradient(towerCenter,318,25,towerCenter,318,290);
+ halo.addColorStop(0,'#e4b56a32');halo.addColorStop(.7,'#7cd5c30b');halo.addColorStop(1,'#00000000');
+ ctx.fillStyle=halo;ctx.fillRect(0,0,W,H);
+ for(let i=0;i<24;i++){
+  const drift=((time*(8+i%6)+i*93)%590);
+  const x=(i*193+17)%W, y=H-drift;
+  ctx.globalAlpha=.13+.19*Math.sin(time+i)*Math.sin(time+i);
+  ctx.fillStyle=i%3===0?'#fae3ad':'#a0f5e2';
+  ctx.beginPath();ctx.arc(x,y,1.3+i%3*.45,0,TAU);ctx.fill();
+ }
+ ctx.globalAlpha=1;
+ // Reinforced golden floor and the plinth supporting the tower.
+ const floor=ctx.createLinearGradient(0,491,0,H);
+ floor.addColorStop(0,'#ecd09a');floor.addColorStop(.17,'#446365');floor.addColorStop(1,'#091c27');
+ ctx.fillStyle=floor;ctx.fillRect(0,505,W,35);
+ ctx.fillStyle='#102832';ctx.fillRect(0,501,W,4);
+ ctx.fillStyle='#efcc8766';ctx.fillRect(0,504,W,2);
+ ctx.shadowBlur=23;ctx.shadowColor='#e4c28c';
+ ctx.fillStyle='#9c9679';ctx.beginPath();ctx.roundRect(towerCenter-162,487,324,20,6);ctx.fill();
+ ctx.shadowBlur=0;
+ ctx.fillStyle='#eedca2';ctx.fillRect(towerCenter-154,487,308,4);
+ ctx.fillStyle='#9bdbc788';ctx.fillRect(towerCenter-125,502,250,3);
+ // Each block has a luminous top, a bevel and an embossed side panel.
+ for(let i=start;i<blocks.length;i++){
+  const p=blocks[i],y=projectedY(i),w=p.width;
+  const cyan=i%2===0;
+  const light=ctx.createLinearGradient(p.x,y,p.x+w,y+38);
+  light.addColorStop(0,cyan?'#276878':'#795270');
+  light.addColorStop(.42,cyan?'#83ccc3':'#e7b48b');
+  light.addColorStop(1,cyan?'#183b56':'#764d68');
+  ctx.shadowColor=cyan?'#73dec4':'#f3ad9e';ctx.shadowBlur=9;
+  roundedRect(ctx,p.x,y,w,38,5);ctx.fillStyle=light;ctx.fill();
+  ctx.shadowBlur=0;ctx.strokeStyle='#f2d8aa';ctx.lineWidth=1.5;ctx.stroke();
+  ctx.fillStyle='#fff0be79';ctx.fillRect(p.x+4,y+4,Math.max(0,w-8),4);
+  ctx.fillStyle='#081b2866';ctx.fillRect(p.x+4,y+29,Math.max(0,w-8),5);
+  if(w>42){
+   ctx.strokeStyle='#ffffff3c';ctx.lineWidth=1;
+   for(let j=1;j<=3;j++){
+    const gx=p.x+w*j/4;
+    ctx.beginPath();ctx.moveTo(gx,y+12);ctx.lineTo(gx,y+26);ctx.stroke();
+   }
+  }
+  ctx.fillStyle='#fbe7bc';ctx.font='700 10px Segoe UI, sans-serif';ctx.textAlign='center';
+  if(w>75)ctx.fillText(String(i+1).padStart(2,'0'),p.x+w/2,y+24);
+ }
+ const last=blocks[blocks.length-1],movingY=projectedY(blocks.length),movingW=last.width;
+ // Landing guide and a translucent afterimage make precision easy to read.
+ ctx.setLineDash([6,7]);ctx.strokeStyle='#a6f5d16b';ctx.lineWidth=2;
+ ctx.strokeRect(last.x,movingY,Math.max(1,last.width),38);ctx.setLineDash([]);
+ ctx.globalAlpha=.14;ctx.fillStyle='#e8c992';
+ roundedRect(ctx,state.movingX-state.direction*17,movingY,movingW,38,5);ctx.fill();ctx.globalAlpha=1;
+ const glow=ctx.createLinearGradient(state.movingX,movingY,state.movingX+movingW,movingY+38);
+ glow.addColorStop(0,'#8064b8');glow.addColorStop(.5,'#fff0c5');glow.addColorStop(1,'#7668ba');
+ ctx.shadowColor='#eac888';ctx.shadowBlur=18;
+ roundedRect(ctx,state.movingX,movingY,movingW,38,5);
+ ctx.fillStyle=glow;ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle='#fff1bf';ctx.lineWidth=2;ctx.stroke();
+ ctx.fillStyle='#ffffff6a';ctx.fillRect(state.movingX+5,movingY+4,Math.max(0,movingW-10),4);
+ // A short sparkling impact burst follows each successful drop.
+ const age=time-state.lastDropAt;
+ if(age>=0&&age<.78){
+  const progress=age/.78,px=state.lastDropX,py=projectedY(blocks.length-1);
+  const particles=state.perfect>0?20:10;
+  for(let j=0;j<particles;j++){
+   const a=j*Math.PI*2/particles;
+   const speed=29+(j%4)*15,rad=6+progress*speed;
+   const x=px+Math.cos(a)*rad,y=py+Math.sin(a)*rad*.63;
+   ctx.globalAlpha=(1-progress)*.95;
+   ctx.fillStyle=j%3===0?'#fff2ba':j%3===1?'#89e3d0':'#dfb6ff';
+   ctx.beginPath();ctx.arc(x,y,Math.max(.6,2.8-progress*1.9),0,TAU);ctx.fill();
+  }
+  ctx.globalAlpha=1;
+ }
+ ctx.fillStyle='#f8dfac';ctx.font='700 16px Segoe UI, sans-serif';ctx.textAlign='left';
+ ctx.fillText('FLOOR '+(blocks.length-1),28,34);
+ if(state.perfect>0){
+  ctx.textAlign='right';ctx.fillStyle='#95f2cc';ctx.font='700 17px Segoe UI, sans-serif';
+  ctx.fillText('PERFECT  ×'+state.perfect,W-28,34);
+ }
 }
 function bladeShape(ctx:Context,angle:number,radius:number){
  ctx.save();ctx.rotate(angle);
@@ -181,6 +258,23 @@ function blades(ctx:Context,state:BladeRun){
  ctx.restore();
  ctx.save();ctx.translate(cx,cy);
  for(const angle of state.blades)bladeShape(ctx,angle+state.rotation,radius);
+ ctx.restore();
+ // The impact reticle is the actual knife collision angle (Math.PI/2),
+ // not a decorative guess. It turns red precisely when the throw would collide.
+ const blocked=state.blades.some(angle=>angularDistance(angle+state.rotation,Math.PI/2)<BLADE_HIT_ARC);
+ const markerColor=blocked?'#ff927e':'#a4f1d2';
+ const impactY=cy+radius;
+ ctx.save();
+ ctx.strokeStyle=markerColor;ctx.fillStyle=markerColor;ctx.lineWidth=2;
+ ctx.shadowColor=markerColor;ctx.shadowBlur=14;
+ ctx.beginPath();ctx.arc(cx,impactY,19+Math.sin(state.elapsed*7)*2,0,TAU);ctx.stroke();
+ ctx.beginPath();ctx.moveTo(cx-29,impactY);ctx.lineTo(cx-10,impactY);
+ ctx.moveTo(cx+10,impactY);ctx.lineTo(cx+29,impactY);ctx.stroke();
+ ctx.beginPath();ctx.moveTo(cx,impactY-28);ctx.lineTo(cx,impactY-11);ctx.stroke();
+ ctx.shadowBlur=0;ctx.setLineDash([5,6]);
+ ctx.beginPath();ctx.moveTo(cx,impactY+30);ctx.lineTo(cx,408);ctx.stroke();ctx.setLineDash([]);
+ ctx.font='700 12px Segoe UI, sans-serif';ctx.textAlign='left';
+ ctx.fillText(blocked?'BLOCKED':'LANDING ZONE',cx+37,impactY+5);
  ctx.restore();
  // Ready knife at the launch position (below the spinning target).
  ctx.save();ctx.translate(cx,431);ctx.rotate(Math.PI);
@@ -296,12 +390,46 @@ function bulletStorm(ctx:Context,state:StormRun){
  }
  ctx.strokeStyle='#c7a4f42c';ctx.lineWidth=1;ctx.beginPath();
  ctx.moveTo(cx,0);ctx.lineTo(cx,H);ctx.moveTo(0,cy);ctx.lineTo(W,cy);ctx.stroke();
+ const t=state.elapsed;
  for(const bullet of state.bullets){
-  const color=['#f3b47c','#bf96ff','#83e8e2'][bullet.style%3];
-  ctx.shadowColor=color;ctx.shadowBlur=13;
-  ctx.fillStyle=color;ctx.beginPath();ctx.arc(bullet.x,bullet.y,bullet.r,0,TAU);ctx.fill();
-  ctx.strokeStyle='#fff5d4';ctx.lineWidth=1;
-  ctx.beginPath();ctx.arc(bullet.x,bullet.y,bullet.r+2,0,TAU);ctx.stroke();
+  const style=bullet.style%3;
+  const color=['#ffbc7d','#c59bff','#7df0e1'][style];
+  ctx.save();ctx.translate(bullet.x,bullet.y);
+  // Subtle velocity-aligned energy trail – gameplay hitboxes remain unchanged.
+  const speed=Math.max(1,Math.hypot(bullet.vx,bullet.vy));
+  const tailX=-bullet.vx/speed*35,tailY=-bullet.vy/speed*35;
+  const trail=ctx.createLinearGradient(tailX,tailY,0,0);
+  trail.addColorStop(0,'#ffffff00');trail.addColorStop(1,color);
+  ctx.strokeStyle=trail;ctx.globalAlpha=.48;ctx.lineWidth=style===2?7:5;
+  ctx.beginPath();ctx.moveTo(tailX,tailY);ctx.lineTo(0,0);ctx.stroke();ctx.globalAlpha=1;
+  ctx.shadowColor=color;ctx.shadowBlur=17;
+  if(style===0){
+   const plasma=ctx.createRadialGradient(-3,-4,1,0,0,bullet.r+2);
+   plasma.addColorStop(0,'#fff7dc');plasma.addColorStop(.45,'#ffd09b');
+   plasma.addColorStop(1,'#d66f64');
+   ctx.fillStyle=plasma;ctx.beginPath();ctx.arc(0,0,bullet.r,0,TAU);ctx.fill();
+   ctx.strokeStyle='#ffe9bd';ctx.lineWidth=1.5;
+   ctx.beginPath();ctx.arc(0,0,bullet.r+2,0,TAU);ctx.stroke();
+  }else if(style===1){
+   ctx.rotate(t*2.4+bullet.x*.014);
+   const diamond=bullet.r+2;
+   ctx.fillStyle='#a78af0';ctx.strokeStyle='#fff1d2';ctx.lineWidth=1.7;
+   ctx.beginPath();ctx.moveTo(0,-diamond);ctx.lineTo(diamond,0);
+   ctx.lineTo(0,diamond);ctx.lineTo(-diamond,0);ctx.closePath();ctx.fill();ctx.stroke();
+   ctx.fillStyle='#ffedda';ctx.beginPath();ctx.arc(0,0,3.5,0,TAU);ctx.fill();
+  }else{
+   ctx.rotate(-t*3.7+bullet.y*.01);
+   ctx.fillStyle='#4ebbaa';ctx.strokeStyle='#d4fff2';ctx.lineWidth=1.7;
+   ctx.beginPath();
+   for(let i=0;i<8;i++){
+    const a=i*Math.PI/4,rad=i%2===0?bullet.r+2:bullet.r*.52;
+    const x=Math.cos(a)*rad,y=Math.sin(a)*rad;
+    if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+   }
+   ctx.closePath();ctx.fill();ctx.stroke();
+   ctx.fillStyle='#fff7cd';ctx.beginPath();ctx.arc(0,0,3.5,0,TAU);ctx.fill();
+  }
+  ctx.shadowBlur=0;ctx.restore();
  }
  ctx.shadowColor='#8ef3dc';ctx.shadowBlur=24;
  ctx.fillStyle='#d0fbe2';ctx.strokeStyle='#d9ba8d';ctx.lineWidth=2;
@@ -316,7 +444,6 @@ function bulletStorm(ctx:Context,state:StormRun){
  ctx.textAlign='right';ctx.fillText('SURVIVE',W-24,32);
  ctx.restore();
 }
-
 
 const easeAngle=(a:number)=>a;
 function hexagonHell(ctx:Context,state:HexRun){
