@@ -4,6 +4,37 @@ export function LoungePreview({id}:{id:LoungeId}){
  if(id==='sudoku'||id==='word-search')return <span className={'lounge-preview-grid '+id}>{(id==='sudoku'?'193628574':'MIDNIGHTCLUBWORD').split('').map((n,i)=><i key={i}>{n}</i>)}</span>;
  if(id==='solitaire')return <span className="lounge-preview-hand">{['A♠','Q♥','K♣'].map((n,i)=><i key={n} style={{rotate:(i*15-15)+'deg'}}>{n}</i>)}</span>;
  if(id==='memory')return <span className="lounge-preview-memory">{['☾','✦','☾','✦'].map((n,i)=><i key={i}>{n}</i>)}</span>;
+ if(id==='minesweeper')return <svg className="lounge-sweep-preview" viewBox="0 0 520 230" role="img" aria-label="Moonlit grid with luminous mines and crystal markers">
+  <defs>
+   <radialGradient id="sweep-preview-night"><stop stopColor="#355e78"/><stop offset="1" stopColor="#102334"/></radialGradient>
+   <linearGradient id="sweep-preview-tile" x1="0" x2=".9" y1="0" y2="1"><stop stopColor="#56869c"/><stop offset="1" stopColor="#1c344c"/></linearGradient>
+  </defs>
+  <rect width="520" height="230" fill="url(#sweep-preview-night)"/>
+  <g fill="#d5e5e1" opacity=".46">{Array.from({length:32},(_,i)=><circle key={i}
+   cx={12+(i*137)%510} cy={11+(i*79)%209} r={i%5===0?2:1}/>)}</g>
+  <circle cx="112" cy="55" r="45" fill="#b2dce7" opacity=".12"/>
+  <circle cx="112" cy="55" r="38" stroke="#c0e1e2" opacity=".54" fill="none"/>
+  <circle cx="112" cy="55" r="27" stroke="#f0d79c" opacity=".4" fill="none"/>
+  <path d="M112 11V100M69 55H156" stroke="#a3dce7" opacity=".4"/>
+  <g transform="translate(232 17) rotate(-7 110 99)">
+   {Array.from({length:35},(_,i)=>{
+    const x=(i%7)*39,y=Math.floor(i/7)*39;
+    const opened=[5,11,12,18,19,20,26,27,33,34].includes(i);
+    const mine=[9,23].includes(i);
+    const flag=[2,30].includes(i);
+    return <g key={i} transform={`translate(${x} ${y})`}>
+     <rect width="34" height="34" rx="5" fill={opened?"#1c394e":"url(#sweep-preview-tile)"}
+      stroke={flag?"#f3d18e":"#8ac0c5"} strokeOpacity={opened?.3:.68}/>
+     {opened&&<text x="17" y="24" fontSize="20" textAnchor="middle" fontWeight="bold"
+      fill="#b1e4dd">{i%4===0?'2':'1'}</text>}
+     {mine&&<g><circle cx="17" cy="17" r="8" fill="#e897a6"/><circle cx="17" cy="17" r="4" fill="#fce1ba"/>
+      <path d="M17 3V9M17 25V31M3 17H9M25 17H31" stroke="#f7c8b3" strokeWidth="3"/></g>}
+     {flag&&<path d="M13 26V8L25 14L13 18" fill="#f5d29a" stroke="#f5d29a" strokeWidth="2"/>}
+    </g>;
+   })}
+  </g>
+  <path d="M0 201 Q70 174 150 197T310 193T520 182" stroke="#a7dee8" strokeWidth="1.4" opacity=".3" fill="none"/>
+ </svg>;
  if(id==='tower-defense')return <svg className="lounge-bastion-preview" viewBox="0 0 520 230" role="img" aria-label="Illustrated midnight fortress under siege">
   <defs><linearGradient id="bastion-night" x1="0" y1="0" x2=".8" y2="1">
    <stop stopColor="#152e3e"/><stop offset="1" stopColor="#0e251c"/></linearGradient>
