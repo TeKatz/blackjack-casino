@@ -172,7 +172,7 @@
 /* Shared arcade game shell. Native-lobby-sized, with a fixed logical 960×540 canvas. */
 .arcade-play{min-width:0;min-height:0;display:flex;flex-direction:column;gap:12px;
  align-items:stretch;justify-content:flex-start;padding:3px 12px 13px 1px;
- overflow:auto;scrollbar-width:thin;scrollbar-color:#7b7053 #0b1e1e;color:#f5e5c8}
+ overflow:hidden;color:#f5e5c8}
 .arcade-play-header{width:100%;display:flex;align-items:center;justify-content:space-between;
  gap:18px;min-height:94px;flex:0 0 auto;padding:11px 18px;
  border:1px solid #9d895d;border-radius:15px;background:linear-gradient(135deg,#142f2d,#0c252a 62%,#20243b);
@@ -193,7 +193,7 @@
 .arcade-play-actions button:hover,.arcade-play-actions button:focus-visible{
  background:#31584a;border-color:#ffe1a0}
 .arcade-play-stage{position:relative;flex:0 0 auto;isolation:isolate;
- width:min(100%,calc((100dvh - 260px) * 16 / 9));aspect-ratio:16/9;
+ width:min(100%,calc((100dvh - 310px) * 16 / 9));aspect-ratio:16/9;
  align-self:center;overflow:hidden;border:2px solid #b99a5f;border-radius:16px;
  box-shadow:0 0 0 1px #ffe8a33c,inset 0 0 15px #0008,0 22px 60px #000b;
  background:#0c2029;touch-action:none}
@@ -243,7 +243,7 @@
  .arcade-play-header{padding:10px;gap:8px}
  .arcade-play-stats>div{min-width:74px;padding:9px}
  .arcade-play-actions button{padding:8px}
- .arcade-play-stage{width:min(100%,calc((100dvh - 245px) * 16 / 9))}
+ .arcade-play-stage{width:min(100%,calc((100dvh - 320px) * 16 / 9))}
 }
 @media(max-width:1050px){
  .arcade-play-header{flex-wrap:wrap}
@@ -257,7 +257,7 @@
  .arcade-play-heading h1{font-size:23px}
  .arcade-play-stats>div{padding:5px 8px}
  .arcade-play-stats strong{font-size:21px}
- .arcade-play-stage{width:min(100%,calc((100dvh - 205px) * 16 / 9))}
+ .arcade-play-stage{width:min(100%,calc((100dvh - 290px) * 16 / 9))}
  .arcade-play-footer{font-size:10px}
 }
 @media(prefers-reduced-motion:reduce){
@@ -265,31 +265,23 @@
  .arcade-detail-play:hover{transform:none}
 }
 
-
-/* Gameplay uses the actual remaining lobby grid height, not a 100dvh guess.
-   The canvas renderer letterboxes its fixed 16:9 world inside the available stage. */
-.lobby-body.arcade-active{min-height:0;overflow:hidden}
+/* Arcade gameplay: restore the original centered 16:9 board, slightly smaller.
+   A fixed viewport height keeps the shell's auto-sized grid from stretching
+   the stage beyond the browser's bottom edge at 1920×1080. */
+.casino-lobby-shell:has(.lobby-body.arcade-active){
+ height:100dvh;min-height:0;overflow:hidden;
+}
+.lobby-body.arcade-active{min-height:0;overflow:hidden;}
 .lobby-body.arcade-active .arcade-play{
- box-sizing:border-box;display:grid;grid-template-rows:auto minmax(0,1fr) auto;
- gap:clamp(5px,.8vh,11px);width:100%;height:100%;max-height:100%;
- min-height:0;min-width:0;overflow:hidden;align-items:stretch;justify-content:stretch;
- padding:3px 12px 10px 1px;
+ box-sizing:border-box;height:100%;max-height:100%;
+ min-height:0;min-width:0;overflow:hidden;
 }
-.lobby-body.arcade-active .arcade-play-header{box-sizing:border-box;min-width:0;min-height:0}
 .lobby-body.arcade-active .arcade-play-stage{
- box-sizing:border-box;display:block;flex:none;min-width:0;min-height:0;
- width:100%;height:100%;max-width:100%;max-height:100%;
- aspect-ratio:auto;align-self:stretch;
+ flex:0 0 auto;height:auto;max-height:calc(100% - 145px);
+ aspect-ratio:16/9;
 }
-.lobby-body.arcade-active .arcade-play-footer{
- box-sizing:border-box;min-width:0;min-height:0;overflow:hidden;
-}
-@media(max-height:760px){
- .lobby-body.arcade-active .arcade-play-header{gap:5px;padding:6px 9px}
- .lobby-body.arcade-active .arcade-play-heading h1{font-size:clamp(18px,2vw,24px)}
- .lobby-body.arcade-active .arcade-play-footer{font-size:9px}
-}
-@media(max-width:1050px){
- .lobby-body.arcade-active .arcade-play{gap:5px}
- .lobby-body.arcade-active .arcade-play-stage{width:100%;height:100%;aspect-ratio:auto}
+@media(max-height:790px){
+ .lobby-body.arcade-active .arcade-play-stage{
+  max-height:calc(100% - 135px);
+ }
 }
