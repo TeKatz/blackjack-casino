@@ -31,6 +31,8 @@ public static class ProfileNormalization
         state.Minesweeper.Normalize();
         state.Jigsaw ??= new();
         state.Jigsaw.Normalize();
+        state.Arcade ??= new();
+        state.Arcade.Normalize();
         state.MidnightMerge ??= new();
         state.MidnightMerge.Normalize();
         state.Slots ??= new();
