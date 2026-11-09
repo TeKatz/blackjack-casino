@@ -10,12 +10,19 @@ const tabs:{id:GameGroup;de:string;en:string}[]=[
   {id:'relaxed',de:'Entspannt',en:'Relaxed'},
 ];
 const symbols:Record<string,string>={
-  blackjack:'♠','midnight-dice':'⚄',sudoku:'▦','midnight-reels':'▣',
+  blackjack:'♠','midnight-dice':'⚄','tower-defense':'♜',sudoku:'▦','midnight-reels':'▣',
   'midnight-manor':'☽','neon-vault':'◇','nine-lives':'●',
   'neon-features':'◇','nine-features':'●','legacy-slots':'▣',
 };
 
 const germanMetrics:Record<string,string>={
+  "Mastery level": "Bastion-Meisterschaft",
+  "Maps completed": "Abgeschlossene Karten",
+  "Victories / defeats": "Siege / Niederlagen",
+  "Waves cleared": "Abgeschlossene Wellen",
+  "Enemies defeated": "Besiegte Gegner",
+  "Enemies escaped": "Entkommene Gegner",
+  "Best endless wave": "Höchste Endloswelle",
   "Games started": "Begonnene Partien",
   "Games won": "Gewonnene Partien",
   "Win rate": "Siegquote",

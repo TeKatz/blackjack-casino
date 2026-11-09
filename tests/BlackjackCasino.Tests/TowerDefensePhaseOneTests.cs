@@ -5,10 +5,171 @@ namespace BlackjackCasino.Tests;
 
 public sealed class TowerDefensePhaseOneTests
 {
+    private static TowerDefenseGame NewGame()
+    {
+        var game = new TowerDefenseGame();
+        Assert.True(game.Execute("tower.play", kind: "forest").Success);
+        return game;
+    }
+
+    [Fact]
+    public void LegacyCompletedMapKeepsVictoryAndReceivesBackfilledMasteryExperience()
+    {
+        var old = new TdState { Screen = "menu", Stage = "forest", Phase = "won", Wave = 15 };
+        var game = new TowerDefenseGame(old);
+        Assert.Contains("forest", game.State.Progress.CompletedStages);
+        Assert.Equal(1, game.State.Progress.Victories);
+        Assert.Equal(15, game.State.Progress.WavesCleared);
+        Assert.True(game.State.Progress.Level >= 3);
+        Assert.True(game.Execute("tower.play", kind: "frost").Success);
+        var again = new TowerDefenseGame(game.Save());
+        Assert.Equal(15, again.State.Progress.WavesCleared);
+        Assert.Equal(1, again.State.Progress.Victories);
+    }
+
+    [Fact]
+    public void MapsAreDistinctAndRetainTheirIndividualDefences()
+    {
+        var progress = new TdProgress { Level = 3 };
+        var game = new TowerDefenseGame(new TdState { Progress = progress });
+        Assert.Equal("menu", game.State.Screen);
+        Assert.True(game.Execute("tower.play", kind: "forest").Success);
+        Assert.True(game.Execute("tower.build", 2, "archer").Success);
+        Assert.True(game.Execute("tower.menu").Success);
+        Assert.True(game.Execute("tower.play", kind: "frost").Success);
+        Assert.Equal("frost", game.State.Stage);
+        Assert.Equal(20, TdMastery.StageWaves(game.State.Stage));
+        Assert.Empty(game.State.Towers);
+        Assert.NotEqual(TdMap.Path, TdMap.FrostPath);
+        Assert.NotEqual(TdMap.Pads, TdMap.FrostPads);
+        Assert.True(game.Execute("tower.build", 5, "frost").Success);
+        Assert.True(game.Execute("tower.menu").Success);
+        Assert.True(game.Execute("tower.play", kind: "forest").Success);
+        Assert.Equal("forest", game.State.Stage);
+        Assert.Single(game.State.Towers);
+        Assert.Equal("archer", game.State.Towers[0].Kind);
+        var restored = new TowerDefenseGame(game.Save());
+        Assert.Single(restored.State.Towers);
+        Assert.True(restored.Execute("tower.menu").Success);
+        Assert.True(restored.Execute("tower.play", kind: "frost").Success);
+        Assert.Equal("frost", restored.State.Stage);
+        Assert.Equal("frost", Assert.Single(restored.State.Towers).Kind);
+    }
+
+    [Fact]
+    public void MasterySpendsOnePointPerLevelAndUnlocksMapsAndTowers()
+    {
+        var game = new TowerDefenseGame();
+        Assert.False(game.Execute("tower.play", kind: "frost").Success);
+        Assert.True(game.Execute("tower.play", kind: "forest").Success);
+        Assert.False(game.Execute("tower.build", 0, "ballista").Success);
+        Assert.True(game.Execute("tower.menu").Success);
+        Assert.True(game.Execute("tower.skills").Success);
+        Assert.False(game.Execute("tower.skill.buy", kind: "capital").Success);
+        var levelled = game.Save();
+        levelled.Progress.Level = 4;
+        var resumed = new TowerDefenseGame(levelled);
+        Assert.Equal(3, resumed.State.Progress.PointsAvailable);
+        Assert.True(resumed.Execute("tower.skill.buy", kind: "capital").Success);
+        Assert.Equal(2, resumed.State.Progress.PointsAvailable);
+        Assert.True(resumed.Execute("tower.skill.buy", kind: "last-stand").Success);
+        Assert.True(resumed.Execute("tower.skill.buy", kind: "scouting").Success);
+        Assert.False(resumed.Execute("tower.skill.buy", kind: "focus").Success);
+        Assert.True(resumed.Execute("tower.skill.reset").Success);
+        Assert.Equal(3, resumed.State.Progress.PointsAvailable);
+        Assert.True(resumed.Execute("tower.menu").Success);
+        Assert.True(resumed.Execute("tower.play", kind: "frost").Success);
+        Assert.True(resumed.Execute("tower.build", 0, "ballista").Success);
+        Assert.True(resumed.Execute("tower.build", 1, "flame").Success);
+    }
+
+    [Fact]
+    public void DiscountsAndRefundsCanNeverGenerateCoins()
+    {
+        var state = new TdState { Screen = "game",
+            Progress = new TdProgress { Level = 11, Skills = new()
+            {
+                ["engineer"] = 5, ["refund"] = 5,
+            } },
+        };
+        var game = new TowerDefenseGame(state);
+        int originalCoins = game.State.Coins;
+        Assert.True(game.Execute("tower.build", 0, "archer").Success);
+        Assert.True(game.Execute("tower.upgrade", 0).Success);
+        // Retaining actual build expenditure prevents profit after changing discounts.
+        Assert.True(game.Execute("tower.menu").Success);
+        Assert.True(game.Execute("tower.skills").Success);
+        Assert.True(game.Execute("tower.skill.reset").Success);
+        Assert.True(game.Execute("tower.menu").Success);
+        Assert.True(game.Execute("tower.play", kind: "forest").Success);
+        Assert.True(game.Execute("tower.sell", 0).Success);
+        Assert.True(game.State.Coins <= originalCoins);
+        Assert.True(game.Execute("tower.build", 0, "cannon").Success);
+        Assert.True(game.Execute("tower.sell", 0).Success);
+        Assert.True(game.State.Coins <= originalCoins);
+    }
+
+    [Fact]
+    public void LastStandSavesExactlyOneFatalEscapePerRunAndSurvivesSave()
+    {
+        var state = new TdState
+        {
+            Screen = "game", Phase = "running", Wave = 1, Lives = 1,
+            Spawned = 1, SpawnTotal = 1, NextEnemyId = 2,
+            Progress = new TdProgress { Level = 2, Skills = new() { ["last-stand"] = 1 } },
+            Enemies = [new TdEnemy(1, "grunt", TdMap.PathLength - 1, 50, 0)],
+        };
+        var game = new TowerDefenseGame(state);
+        Assert.Equal("running", game.State.Phase);
+        Assert.True(game.State.Paused);
+        Assert.True(game.Execute("tower.pause").Success);
+        Assert.True(game.Tick());
+        Assert.Equal(1, game.State.Lives);
+        Assert.True(game.State.LastStandUsed);
+        var restored = new TowerDefenseGame(game.Save());
+        Assert.True(restored.State.LastStandUsed);
+        restored.State.Phase = "running";
+        restored.State.Enemies.Add(new TdEnemy(2, "grunt", TdMap.PathLength - 1, 50, 0));
+        restored.State.NextEnemyId = 3;
+        restored.State.Spawned = 2;
+        restored.State.SpawnTotal = 2;
+        Assert.True(restored.Execute("tower.pause").Success);
+        restored.Tick();
+        Assert.Equal("lost", restored.State.Phase);
+        Assert.Equal(1, restored.State.Progress.Defeats);
+    }
+
+    [Fact]
+    public void CampaignVictoryCanContinueToEndlessWithoutReplayingEarlyWaves()
+    {
+        var saved = new TdState { Screen = "game", Phase = "won", Wave = 15,
+            Progress = new TdProgress { Level = 4 } };
+        var game = new TowerDefenseGame(saved);
+        Assert.True(game.Execute("tower.endless").Success);
+        Assert.Equal("planning", game.State.Phase);
+        Assert.True(game.State.Endless);
+        Assert.True(game.Execute("tower.start").Success);
+        Assert.Equal(16, game.State.Wave);
+    }
+
+    [Fact]
+    public void BastionMilestonesArePartOfTheGlobalChallengeCatalog()
+    {
+        var profile = new BlackjackCasino.Core.PlayerProfileState();
+        profile.TowerDefense.WavesCleared = 12;
+        profile.TowerDefense.Victories = 1;
+        profile.TowerDefense.EnemiesDefeated = 250;
+        Assert.Equal(12, BlackjackCasino.Core.ChallengeCatalog.Progress(profile,
+            BlackjackCasino.Core.ChallengeCatalog.TryGet("bastion-waves-10")!));
+        Assert.Equal(1, BlackjackCasino.Core.ChallengeCatalog.Progress(profile,
+            BlackjackCasino.Core.ChallengeCatalog.TryGet("bastion-first-win")!));
+        Assert.True(BlackjackCasino.Core.ChallengeCatalog.For(BlackjackCasino.Core.ChallengeCategory.TowerDefense).Count >= 10);
+    }
+
     [Fact]
     public void StartBuildUpgradeAndSellAreBoundedAndCannotCreateMoney()
     {
-        var game = new TowerDefenseGame();
+        var game = NewGame();
         Assert.Equal(320, game.State.Coins);
         Assert.True(game.Execute("tower.build", 0, "archer").Success);
         Assert.Equal(250, game.State.Coins);
@@ -26,7 +187,7 @@ public sealed class TowerDefensePhaseOneTests
     [Fact]
     public void WavesHaveManualStartPauseAndFiniteFifteenWaveCap()
     {
-        var game = new TowerDefenseGame();
+        var game = NewGame();
         Assert.False(game.Tick());
         Assert.True(game.Execute("tower.start").Success);
         Assert.Equal(1, game.State.Wave);
@@ -48,7 +209,7 @@ public sealed class TowerDefensePhaseOneTests
     [Fact]
     public void SavedActiveBattleResumesPausedAndRejectsCorruptInputs()
     {
-        var game = new TowerDefenseGame();
+        var game = NewGame();
         Assert.True(game.Execute("tower.build", 4, "frost").Success);
         Assert.True(game.Execute("tower.start").Success);
         for (int i = 0; i < 20; i++) game.Tick();
@@ -67,7 +228,7 @@ public sealed class TowerDefensePhaseOneTests
     [Fact]
     public void LastSpawnNeverMakesClockNegativeOrInvalidatesTheSave()
     {
-        var game = new TowerDefenseGame();
+        var game = NewGame();
         Assert.True(game.Execute("tower.start").Success);
         for (int i = 0; i < 95; i++) game.Tick();
         Assert.Equal(game.State.SpawnTotal, game.State.Spawned);
@@ -85,7 +246,7 @@ public sealed class TowerDefensePhaseOneTests
     [Fact]
     public void LegacyBattleWithNegativeSpawnClockIsRecoveredInsteadOfReset()
     {
-        var game = new TowerDefenseGame();
+        var game = NewGame();
         Assert.True(game.Execute("tower.build", 4, "frost").Success);
         Assert.True(game.Execute("tower.start").Success);
         for (int i = 0; i < 95; i++) game.Tick();
@@ -101,7 +262,7 @@ public sealed class TowerDefensePhaseOneTests
     [Fact]
     public void OnlyDefeatsIncrementKillCounterAndTheNextWaveResetsIt()
     {
-        var game = new TowerDefenseGame();
+        var game = NewGame();
         Assert.True(game.Execute("tower.build", 0, "archer").Success);
         Assert.True(game.Execute("tower.build", 1, "archer").Success);
         Assert.True(game.Execute("tower.start").Success);

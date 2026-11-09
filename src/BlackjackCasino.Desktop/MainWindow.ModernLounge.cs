@@ -52,7 +52,7 @@ public partial class MainWindow
             "memory" => CurrentModernMemoryStatus(),
             "jigsaw" => CurrentModernJigsawStatus(),
             "tales-backroom" => CurrentModernAdventureStatus(),
-            "tower-defense" => $"Wave {preferences.TowerDefense?.Wave ?? 0}/15 · {preferences.TowerDefense?.Phase ?? "planning"}",
+            "tower-defense" => $"Lv {preferences.TowerDefense?.Progress?.Level ?? 1} · {preferences.TowerDefense?.Progress?.CompletedStages?.Count ?? 0}/2 maps",
             _ => null,
         });
         return new
@@ -590,6 +590,20 @@ public partial class MainWindow
         preferences = preferences with { TowerDefense = state };
         try { if (!testSession) SavePreferences(); }
         catch { preferences = previous; throw; }
+        if (progressionController is not null && !testSession)
+        {
+            var profile = progressionController.Profile;
+            var old = profile.TowerDefense;
+            var next = state.Progress;
+            if (old.WavesCleared != next.WavesCleared || old.Victories != next.Victories
+                || old.Defeats != next.Defeats || old.Level != next.Level
+                || old.EnemiesDefeated != next.EnemiesDefeated || old.RunsStarted != next.RunsStarted)
+            {
+                profile.TowerDefense = next.Copy();
+                PlayerProfileStore.SaveProfile(profile);
+                modernLobby?.Refresh();
+            }
+        }
     }
 
     private ModernTowerDefenseReply ApplyModernTowerDefenseCommand(ModernTowerDefenseCommand command)

@@ -31,6 +31,10 @@ describe('Midnight Bastion phase 2 presentation',()=>{
   expect(previewDamage('cannon',2)).toBe(62);
   expect(previewRange('frost',1)).toBe(161);
   expect(previewRange('cannon',3)).toBe(178);
+  expect(previewDamage('ballista',1)).toBe(73);
+  expect(previewRange('ballista',1)).toBe(216);
+  expect(previewDamage('flame',2)).toBe(38);
+  expect(previewRange('flame',1)).toBe(137);
  });
  it('does not initialise audio without an unlocked user gesture',()=>{
   const audio=new BastionAudio();

@@ -39,6 +39,23 @@ describe('Tower Defence native snapshot validation',()=>{
   expect(isTowerDefenseState({...afterDeployment,state:{...afterDeployment.state,
    waveKills:8,waveEscapes:1,enemies:[]}})).toBe(true);
  });
+ it('validates map selection, Frostpass and mastery snapshots',()=>{
+  const progress={level:4,experience:88,skills:{capital:2,scouting:1},
+   completedStages:['forest'],bestWaves:{forest:15,frost:0},enemiesDefeated:180,
+   enemiesEscaped:4,wavesCleared:18,victories:1,defeats:0,runsStarted:2,pointsAvailable:0};
+  const menu={...game,screen:'menu',state:{...game.state,screen:'menu',stage:'forest',progress,
+   stageRuns:{forest:{wave:1}}}};
+  expect(isTowerDefenseState(menu)).toBe(true);
+  expect(isTowerDefenseState({...menu,screen:'skills'})).toBe(true);
+  expect(isTowerDefenseState({...menu,state:{...menu.state,progress:{...progress,level:0}}})).toBe(false);
+  expect(isTowerDefenseState({...menu,state:{...menu.state,progress:{...progress,
+   skills:{unknown:4}}}})).toBe(false);
+  const frost={...menu,screen:'game',maxWaves:20,state:{...menu.state,stage:'frost',
+   towers:[{pad:1,kind:'ballista',level:1,cooldown:0},
+    {pad:2,kind:'flame',level:1,cooldown:0}],
+   effects:[{...game.state.effects[0],kind:'flame'}]}};
+  expect(isTowerDefenseState(frost)).toBe(true);
+ });
  it('only acknowledges valid native command receipts',()=>{
   const reply={requestId:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',success:true,message:'saved',revision:2};
   expect(isTowerReply(reply)).toBe(true);

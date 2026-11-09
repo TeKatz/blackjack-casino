@@ -1,5 +1,5 @@
 /** Tiny locally synthesised Tower Defense SFX; never changes combat or requests network audio. */
-export type BastionCue='build'|'upgrade'|'sell'|'wave'|'archer'|'frost'|'cannon'|'kill'|'gate'|'victory'|'defeat';
+export type BastionCue='build'|'upgrade'|'sell'|'wave'|'archer'|'frost'|'cannon'|'ballista'|'flame'|'kill'|'gate'|'victory'|'defeat';
 type Tone={frequency:number;end?:number;delay?:number;duration:number;level:number;type:OscillatorType};
 const cues:Readonly<Record<BastionCue,readonly Tone[]>>={
  build:[{frequency:293.66,end:349.23,duration:.13,level:.07,type:'triangle'},
@@ -20,6 +20,10 @@ const cues:Readonly<Record<BastionCue,readonly Tone[]>>={
  cannon:[{frequency:145,end:46,duration:.29,level:.095,type:'triangle'},
   {frequency:94,end:37,delay:.012,duration:.33,level:.068,type:'sawtooth'},
   {frequency:57,end:32,delay:.043,duration:.28,level:.035,type:'sawtooth'}],
+ ballista:[{frequency:540,end:87,duration:.15,level:.055,type:'sawtooth'},
+  {frequency:170,end:80,delay:.02,duration:.18,level:.05,type:'triangle'}],
+ flame:[{frequency:180,end:75,duration:.18,level:.045,type:'sawtooth'},
+  {frequency:430,end:120,delay:.04,duration:.16,level:.035,type:'triangle'}],
  kill:[{frequency:580,end:395,duration:.1,level:.025,type:'sine'}],
  gate:[{frequency:92,end:51,duration:.24,level:.07,type:'sawtooth'}],
  victory:[{frequency:261.63,duration:.35,level:.075,type:'triangle'},
@@ -30,7 +34,7 @@ const cues:Readonly<Record<BastionCue,readonly Tone[]>>={
   {frequency:130.81,end:65.4,delay:.2,duration:.6,level:.070,type:'sawtooth'}],
 };
 const minimumInterval:Readonly<Record<BastionCue,number>>={
- build:0,upgrade:0,sell:0,wave:0,archer:95,frost:130,cannon:180,kill:130,gate:120,victory:0,defeat:0,
+ build:0,upgrade:0,sell:0,wave:0,archer:95,frost:130,cannon:180,ballista:250,flame:140,kill:130,gate:120,victory:0,defeat:0,
 };
 export class BastionAudio{
  private context:AudioContext|null=null;

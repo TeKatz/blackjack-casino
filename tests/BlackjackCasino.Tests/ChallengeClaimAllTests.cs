@@ -328,6 +328,20 @@ public sealed class ChallengeClaimAllTests
             case ChallengeMetric.ChillLoungeCompletions: profile.Sudoku.CompletedPuzzles = (long)value; break;
             case ChallengeMetric.JigsawCompletions: profile.Jigsaw.CompletedGames = (long)value; break;
             case ChallengeMetric.AdventureRunsCompleted: profile.Adventure.RunsCompleted = (long)value; break;
+            case ChallengeMetric.BastionWaves: profile.TowerDefense.WavesCleared = (long)value; break;
+            case ChallengeMetric.BastionKills: profile.TowerDefense.EnemiesDefeated = (long)value; break;
+            case ChallengeMetric.BastionVictories: profile.TowerDefense.Victories = (long)value; break;
+            case ChallengeMetric.BastionBestWave:
+                profile.TowerDefense.BestWaves["forest"] = (int)value;
+                break;
+            case ChallengeMetric.BastionMasteryLevel:
+                profile.TowerDefense.Level = (int)value;
+                break;
+            case ChallengeMetric.BastionStages:
+                profile.TowerDefense.CompletedStages.Clear();
+                if (value >= 1) profile.TowerDefense.CompletedStages.Add("forest");
+                if (value >= 2) profile.TowerDefense.CompletedStages.Add("frost");
+                break;
             default: throw new InvalidOperationException($"Missing endgame boundary test for {metric}.");
         }
     }

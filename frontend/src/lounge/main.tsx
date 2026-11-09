@@ -242,7 +242,8 @@ function App() {
      <span className="chill-local">{t.version}</span>
      {snapshot?.towerDefense
        ? <button className="chill-exit"
-           onClick={()=>towerDefenseCommand({action:'tower.exit'})}>← Chill Lounge</button>
+           onClick={()=>towerDefenseCommand({action:snapshot.towerDefense?.screen==='menu'?'tower.exit':'tower.menu'})}>
+             {snapshot.towerDefense.screen==='menu'?'← Chill Lounge':(language==='de'?'← Kartenauswahl':'← Map selection')}</button>
        : snapshot?.adventure
        ? <button className="chill-exit" disabled={!!adventurePending||snapshot.adventure.screen==='encounter'}
            onClick={()=>adventureCommand({action:snapshot.adventure?.screen==='library'?'adventure.exit':

@@ -518,4 +518,28 @@
   <data name="Challenge.word-search-expert-96.Description" xml:space="preserve"><value>Löse alle 96 Experten-Wortsuchrätsel.</value></data>
   <data name="Challenge.word-search-master-96.Name" xml:space="preserve"><value>Das letzte Wort</value></data>
   <data name="Challenge.word-search-master-96.Description" xml:space="preserve"><value>Löse alle 96 Meister-Wortsuchrätsel.</value></data>
+  <data name="Challenge.bastion-first-wave.Name" xml:space="preserve"><value>Erste Nachtwache</value></data>
+  <data name="Challenge.bastion-first-wave.Description" xml:space="preserve"><value>Überstehe deine erste Welle in Midnight Bastion.</value></data>
+  <data name="Challenge.bastion-waves-10.Name" xml:space="preserve"><value>Nachtwache</value></data>
+  <data name="Challenge.bastion-waves-10.Description" xml:space="preserve"><value>Schließe zehn Wellen auf beliebigen Karten ab.</value></data>
+  <data name="Challenge.bastion-waves-50.Name" xml:space="preserve"><value>Ungebrochene Mauern</value></data>
+  <data name="Challenge.bastion-waves-50.Description" xml:space="preserve"><value>Schließe 50 Wellen ab.</value></data>
+  <data name="Challenge.bastion-waves-200.Name" xml:space="preserve"><value>Die lange Wacht</value></data>
+  <data name="Challenge.bastion-waves-200.Description" xml:space="preserve"><value>Schließe 200 Wellen ab.</value></data>
+  <data name="Challenge.bastion-enemies-100.Name" xml:space="preserve"><value>Haltet die Linie</value></data>
+  <data name="Challenge.bastion-enemies-100.Description" xml:space="preserve"><value>Besiege 100 Gegner in Midnight Bastion.</value></data>
+  <data name="Challenge.bastion-enemies-1000.Name" xml:space="preserve"><value>Unnachgiebig</value></data>
+  <data name="Challenge.bastion-enemies-1000.Description" xml:space="preserve"><value>Besiege insgesamt 1.000 Gegner.</value></data>
+  <data name="Challenge.bastion-enemies-5000.Name" xml:space="preserve"><value>Festung der Legenden</value></data>
+  <data name="Challenge.bastion-enemies-5000.Description" xml:space="preserve"><value>Besiege insgesamt 5.000 Gegner.</value></data>
+  <data name="Challenge.bastion-first-win.Name" xml:space="preserve"><value>Die Festung steht</value></data>
+  <data name="Challenge.bastion-first-win.Description" xml:space="preserve"><value>Schließe eine Bastion-Karte erfolgreich ab.</value></data>
+  <data name="Challenge.bastion-both-maps.Name" xml:space="preserve"><value>Zwei Fronten</value></data>
+  <data name="Challenge.bastion-both-maps.Description" xml:space="preserve"><value>Schließe beide Bastion-Karten ab.</value></data>
+  <data name="Challenge.bastion-level-5.Name" xml:space="preserve"><value>Nachwuchskommandant</value></data>
+  <data name="Challenge.bastion-level-5.Description" xml:space="preserve"><value>Erreiche Bastion-Level 5.</value></data>
+  <data name="Challenge.bastion-level-15.Name" xml:space="preserve"><value>Veteran der Festung</value></data>
+  <data name="Challenge.bastion-level-15.Description" xml:space="preserve"><value>Erreiche Bastion-Level 15.</value></data>
+  <data name="Challenge.bastion-endless-30.Name" xml:space="preserve"><value>Jenseits der Morgendämmerung</value></data>
+  <data name="Challenge.bastion-endless-30.Description" xml:space="preserve"><value>Erreiche Welle 30 auf einer beliebigen Karte.</value></data>
 </root>

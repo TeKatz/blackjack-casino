@@ -34,6 +34,7 @@ public partial class MainWindow
         ChallengeCategory.MidnightMerge => "Midnight Merge",
         ChallengeCategory.WordSearch => "Word Search",
         ChallengeCategory.Solitaire => "Solitaire",
+        ChallengeCategory.TowerDefense => "Midnight Bastion",
         _ => category.ToString(),
     };
 
@@ -175,8 +176,9 @@ public partial class MainWindow
         var jigsaw = profile.Jigsaw;
         var merge = profile.MidnightMerge;
         var adventure = profile.Adventure;
+        var bastion = profile.TowerDefense;
         long loungeCompletions = sudoku.CompletedPuzzles + solitaire.Wins
-            + wordSearch.CompletedPuzzles + memory.CompletedGames + jigsaw.CompletedGames;
+            + wordSearch.CompletedPuzzles + memory.CompletedGames + jigsaw.CompletedGames + bastion.Victories;
         decimal wagered = blackjack.TotalWagered + reels.TotalWagered + legacy.TotalWagered
             + vault.TotalWagered + nine.TotalWagered + manor.TotalWagered + dice.TotalWagered;
         decimal net = blackjack.NetProfit + reels.NetProfit + legacy.NetProfit
@@ -292,6 +294,14 @@ public partial class MainWindow
                 RecordMetric("Milestones reached", RecordNumber(merge.MilestonesReached)),
                 RecordMetric("Highest item tier", RecordNumber(merge.HighestTierCreated)),
                 RecordMetric("Items spawned", RecordNumber(merge.ItemsSpawned))),
+            Activity("tower-defense", "Midnight Bastion",
+                RecordMetric("Mastery level", RecordNumber(bastion.Level)),
+                RecordMetric("Maps completed", RecordNumber(bastion.CompletedStages.Count)),
+                RecordMetric("Victories / defeats", $"{bastion.Victories:N0} / {bastion.Defeats:N0}"),
+                RecordMetric("Waves cleared", RecordNumber(bastion.WavesCleared)),
+                RecordMetric("Enemies defeated", RecordNumber(bastion.EnemiesDefeated)),
+                RecordMetric("Enemies escaped", RecordNumber(bastion.EnemiesEscaped)),
+                RecordMetric("Best endless wave", RecordNumber(bastion.BestWaves.Values.DefaultIfEmpty(0).Max()))),
             Activity("tales-backroom", "Tales from the Backroom",
                 RecordMetric("Completed adventures", RecordNumber(adventure.RunsCompleted)),
                 RecordMetric("Different endings", RecordNumber(adventure.EndingKeys.Count)),

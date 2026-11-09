@@ -1,4 +1,5 @@
 import {useEffect,useRef} from 'react';
+import type {DragEvent} from 'react';
 import {Application,Assets,Container,Graphics,Sprite,Texture} from 'pixi.js';
 import type {TdEnemy,TdPoint,TdTower,TowerDefenseState,TowerKind} from './towerDefenseBridge';
 import type {BastionCue} from './towerDefenseAudio';
@@ -6,6 +7,7 @@ import {collectNewShots,enemySpeed,interpolateEnemy,positionOnPath,previewRange}
 
 type Props={
  model:TowerDefenseState;selected:number|null;onSelect:(pad:number)=>void;
+ onDropTower:(pad:number,kind:TowerKind)=>void;
  animations:boolean;onCue:(cue:BastionCue)=>void;
 };
 type TowerVisual={sprite:Sprite;kind:TowerKind;level:number;firedAt:number};
@@ -13,8 +15,8 @@ type EnemyVisual={sprite:Sprite;hp:number;kind:TdEnemy['kind'];flashUntil:number
 type Flight={kind:TowerKind;from:TdPoint;to:TdPoint;age:number;life:number};
 type Burst={x:number;y:number;kind:'build'|'upgrade'|'kill'|'gate'|'impact';age:number;life:number;seed:number};
 const art='/tower-defense/';
-const assets=['battlefield','archer','frost','cannon','grunt','runner','brute','shield'] as const;
-const color:{[K in TowerKind]:number}={archer:0xf0ca83,frost:0xa9eafd,cannon:0xfbb18b};
+const assets=['battlefield','frostpass','archer','frost','cannon','ballista','flame','grunt','runner','brute','shield'] as const;
+const color:{[K in TowerKind]:number}={archer:0xf0ca83,frost:0xa9eafd,cannon:0xfbb18b,ballista:0xe3cd9e,flame:0xff9958};
 const mkGraphics=()=>new Graphics();
 const phaseReady=(s:TowerDefenseState)=>s.state.phase==='running'&&!s.state.paused;
 const dimFor=(kind:TdEnemy['kind'])=>kind==='brute'?74:kind==='runner'?51:kind==='shield'?64:58;
@@ -31,24 +33,7 @@ const easeOut=(t:number)=>1-(1-t)*(1-t);
 
 /** Static, deterministic details enrich the road and forest without obscuring build pads. */
 function drawTerrainDetails(g:Graphics,path:readonly TdPoint[],pads:readonly TdPoint[]){
- // Irregular flagstones echo the old causeway beneath the siege.
- for(let i=1;i<path.length;i++){
-  const a=path[i-1],b=path[i],dx=b.x-a.x,dy=b.y-a.y;
-  const length=Math.hypot(dx,dy),ux=dx/length,uy=dy/length,nx=-uy,ny=ux;
-  for(let j=12;j<length-10;j+=24){
-   for(let lane=-1;lane<=1;lane++){
-    const seed=i*1000+j*7+lane*13;
-    const along=j+range(seed, -5, 5),across=lane*18+range(seed+1,-4,4);
-    const x=a.x+ux*along+nx*across,y=a.y+uy*along+ny*across;
-    const halfL=range(seed+3,6,10),halfW=range(seed+4,5,8);
-    g.poly([x-ux*halfL-nx*halfW,y-uy*halfL-ny*halfW,
-      x+ux*halfL-nx*halfW,y+uy*halfL-ny*halfW,
-      x+ux*halfL+nx*halfW,y+uy*halfL+ny*halfW,
-      x-ux*halfL+nx*halfW,y-uy*halfL+ny*halfW])
-      .fill({color:seed%3===0?0xd3ba91:0x423f36,alpha:seed%3===0?.13:.18});
-   }
-  }
- }
+ // Keep the roads clean; no repeated cross-road marks or stripes.
  function nearRoad(x:number,y:number){
   for(let i=1;i<path.length;i++){
    const a=path[i-1],b=path[i],dx=b.x-a.x,dy=b.y-a.y;
@@ -61,22 +46,23 @@ function drawTerrainDetails(g:Graphics,path:readonly TdPoint[],pads:readonly TdP
   const x=range(i*31+8,20,940),y=range(i*41+12,20,580);
   if(nearRoad(x,y)||pads.some(p=>Math.hypot(p.x-x,p.y-y)<49))continue;
   const r=range(i*19+5,11,23),c=i%4;
-  // Overlapping canopy layers and offset moonlit highlights give the evergreens depth.
-  g.ellipse(x+7,y+8,r*1.05,r*.56).fill({color:0x071a1c,alpha:.5});
-  g.circle(x,y,r).fill({color:c===0?0x173a32:0x203f35,alpha:.95});
-  g.circle(x-r*.28,y+r*.10,r*.68).fill({color:0x345b45,alpha:.92});
-  g.circle(x+r*.25,y-r*.22,r*.66).fill({color:0x254d43,alpha:.98});
-  g.circle(x-r*.19,y-r*.38,r*.40).fill({color:0x58775a,alpha:.62});
-  g.circle(x+r*.37,y+r*.34,r*.36).fill({color:0x132f30,alpha:.95});
-  g.circle(x-r*.21,y-r*.35,Math.max(1,r*.10)).fill({color:0xb2bf8b,alpha:.35});
+  // Upright layered pines replace the irregular rotated triangle trees.
+  g.ellipse(x+4,y+r*.5,r*.9,r*.35).fill({color:0x051b1d,alpha:.52});
+  for(let tier=0;tier<3;tier++){
+   const top=y-r*1.15+tier*r*.47,half=r*(.58+tier*.21);
+   g.poly([x,top,x-half,y+r*(.18+tier*.19),x+half,y+r*(.18+tier*.19)])
+    .fill({color:[0x436b59,0x315a4c,0x21473f][tier],alpha:.96});
+   g.moveTo(x,top+4).lineTo(x-half*.58,y+r*(.10+tier*.19))
+    .stroke({color:0x8fb09a,width:1,alpha:.25});
+  }
  }
 }
 
-export function BastionBattlefield({model,selected,onSelect,animations,onCue}:Props){
+export function BastionBattlefield({model,selected,onSelect,onDropTower,animations,onCue}:Props){
  const mount=useRef<HTMLDivElement|null>(null);
- const last=useRef({model,selected,onSelect,animations,onCue,received:performance.now()});
+ const last=useRef({model,selected,onSelect,onDropTower,animations,onCue,received:performance.now()});
  if(last.current.model.state.ticks!==model.state.ticks)last.current.received=performance.now();
- last.current={...last.current,model,selected,onSelect,animations,onCue};
+ last.current={...last.current,model,selected,onSelect,onDropTower,animations,onCue};
  useEffect(()=>{
   const host=mount.current;if(!host)return;
   let disposed=false,ready=false,canvas:HTMLCanvasElement|null=null,sceneTime=0;
@@ -88,6 +74,7 @@ export function BastionBattlefield({model,selected,onSelect,animations,onCue}:Pr
   let bg:Sprite|Graphics|null=null,pads:Graphics|null=null,weather:Graphics|null=null,
    groundLights:Graphics|null=null,overlay:Graphics|null=null,shots:Graphics|null=null,hud:Graphics|null=null;
   let towerLayer:Container|null=null,enemyLayer:Container|null=null;
+  let previousPadKey='';
   let textures:Partial<Record<(typeof assets)[number],Texture>>={};
   function emit(x:number,y:number,kind:Burst['kind'],seed:number){
    if(!last.current.animations||reducedMotion)return;
@@ -154,6 +141,8 @@ export function BastionBattlefield({model,selected,onSelect,animations,onCue}:Pr
     if(kills>0)cue('kill');
    }
    const towerIds=new Set(game.towers.map(t=>t.pad));
+   const padKey=game.towers.map(t=>t.pad).sort((a,b)=>a-b).join(',');
+   if(padKey!==previousPadKey){previousPadKey=padKey;drawPads();}
    for(const pad of Array.from(towerVisuals.keys()))if(!towerIds.has(pad))removeTower(pad);
    for(const tower of game.towers){
     const existing=towerVisuals.get(tower.pad);
@@ -218,7 +207,7 @@ export function BastionBattlefield({model,selected,onSelect,animations,onCue}:Pr
       .stroke({color:0xf5da9b,width:2,alpha:.91});
     }
     const glimmer=(motion?.65+.35*Math.sin(sceneTime*2.5+i):.78);
-    groundLights.circle(p.x,p.y,17).fill({color:tower?0xe6b971:0x88c7aa,alpha:glimmer*.13});
+    if(!tower)groundLights.circle(p.x,p.y,17).fill({color:0x88c7aa,alpha:glimmer*.13});
    }
    const elapsed=Math.max(0,(performance.now()-current.received)/1000);
    const path=current.model.mapPath;
@@ -233,7 +222,7 @@ export function BastionBattlefield({model,selected,onSelect,animations,onCue}:Pr
     sprite.zIndex=p.y;
     const r=e.kind==='brute'?27:e.kind==='runner'?18:21;
     hud.roundRect(p.x-23,p.y-r-17,46,6,3).fill({color:0x091c20,alpha:.96});
-    const percentage=Math.min(1,Math.max(0,e.hp/maxHp(e.kind,game.wave)));
+    const percentage=Math.min(1,Math.max(0,e.hp/(maxHp(e.kind,game.wave)*(game.stage==='frost'?1.14:1))));
     hud.roundRect(p.x-22,p.y-r-16,44*percentage,4,2)
      .fill({color:percentage<.34?0xf2917f:e.slow>0?0x85d9ee:0x99e0ae});
     if(e.slow>0){
@@ -274,13 +263,13 @@ export function BastionBattlefield({model,selected,onSelect,animations,onCue}:Pr
     const x=f.from.x+(f.to.x-f.from.x)*p,
      y=f.from.y+(f.to.y-f.from.y)*p-(f.kind==='cannon'?32*Math.sin(Math.PI*p):0);
     const clr=color[f.kind];
-    if(f.kind==='archer'){
+    if(f.kind==='archer'||f.kind==='ballista'){
      const angle=Math.atan2(f.to.y-f.from.y,f.to.x-f.from.x);
      const dx=Math.cos(angle)*13,dy=Math.sin(angle)*13;
      shots.moveTo(x-dx,y-dy).lineTo(x+dx,y+dy).stroke({color:0xf8e9c2,width:3.6,alpha:.95});
      shots.moveTo(x-dx*1.5,y-dy*1.5).lineTo(x-dx*.4,y-dy*.4)
       .stroke({color:0xe6bc76,width:6,alpha:.25});
-    }else if(f.kind==='frost'){
+    }else if(f.kind==='frost'){ // ice projectiles
      shots.circle(x,y,13).fill({color:0x75d8f4,alpha:.15});
      shots.circle(x,y,7).fill({color:clr,alpha:.67});
      shots.circle(x,y,3).fill({color:0xf1ffff});
@@ -309,6 +298,28 @@ export function BastionBattlefield({model,selected,onSelect,animations,onCue}:Pr
      const px=b.x+Math.cos(a)*d,py=b.y+Math.sin(a)*d;
      shots.circle(px,py,Math.max(.5,3.3*(1-t))).fill({color:j%3===0?0xffffff:c,alpha:fade*.85});
     }
+   }
+  }
+  function drawPads(){
+   if(!pads)return;
+   pads.clear();
+   const {model}=last.current;
+   const occupied=new Set(model.state.towers.map(t=>t.pad));
+   for(let i=0;i<model.pads.length;i++){
+    if(occupied.has(i))continue;
+    const p=model.pads[i];
+    pads.ellipse(p.x+2,p.y+9,34,14).fill({color:0x071e26,alpha:.68});
+    pads.circle(p.x,p.y,31).fill({color:0x122b32,alpha:.94});
+    pads.circle(p.x,p.y,30).stroke({color:0xc7ab73,width:3,alpha:.8});
+    pads.circle(p.x,p.y,23).fill({color:0x335349,alpha:.88});
+    pads.circle(p.x,p.y,22).stroke({color:0xe6c98d,width:1.3,alpha:.56});
+    for(let k=0;k<6;k++){
+     const a=Math.PI*k/3;
+     pads.circle(p.x+Math.cos(a)*26,p.y+Math.sin(a)*26,2.4)
+      .fill({color:0xeccf97,alpha:.78});
+    }
+    pads.moveTo(p.x-8,p.y).lineTo(p.x+8,p.y).stroke({color:0xb4dfc5,width:2.6,alpha:.72});
+    pads.moveTo(p.x,p.y-8).lineTo(p.x,p.y+8).stroke({color:0xb4dfc5,width:2.6,alpha:.72});
    }
   }
   const handleClick=(event:PointerEvent)=>{
@@ -341,8 +352,9 @@ export function BastionBattlefield({model,selected,onSelect,animations,onCue}:Pr
    results.forEach((result,i)=>{
     if(result.status==='fulfilled')textures[assets[i]]=result.value;
    });
-   if(textures.battlefield){
-    bg=new Sprite(textures.battlefield);bg.width=960;bg.height=600;
+   const background=last.current.model.state.stage==='frost'?textures.frostpass:textures.battlefield;
+   if(background){
+    bg=new Sprite(background);bg.width=960;bg.height=600;
    }else{
     bg=new Graphics().rect(0,0,960,600).fill({color:0x24463d});
    }
@@ -351,21 +363,7 @@ export function BastionBattlefield({model,selected,onSelect,animations,onCue}:Pr
    drawTerrainDetails(terrain,last.current.model.mapPath,last.current.model.pads);
    app.stage.addChild(terrain);
    pads=mkGraphics();
-   const model=last.current.model;
-   for(const p of model.pads){
-    pads.ellipse(p.x+2,p.y+9,34,14).fill({color:0x071e26,alpha:.68});
-    pads.circle(p.x,p.y,31).fill({color:0x122b32,alpha:.94});
-    pads.circle(p.x,p.y,30).stroke({color:0xc7ab73,width:3,alpha:.8});
-    pads.circle(p.x,p.y,23).fill({color:0x335349,alpha:.88});
-    pads.circle(p.x,p.y,22).stroke({color:0xe6c98d,width:1.3,alpha:.56});
-    for(let k=0;k<6;k++){
-     const a=Math.PI*k/3;
-     pads.circle(p.x+Math.cos(a)*26,p.y+Math.sin(a)*26,2.4)
-      .fill({color:0xeccf97,alpha:.78});
-    }
-    pads.moveTo(p.x-8,p.y).lineTo(p.x+8,p.y).stroke({color:0xb4dfc5,width:2.6,alpha:.72});
-    pads.moveTo(p.x,p.y-8).lineTo(p.x,p.y+8).stroke({color:0xb4dfc5,width:2.6,alpha:.72});
-   }
+   drawPads();
    app.stage.addChild(pads);
    groundLights=mkGraphics();app.stage.addChild(groundLights);
    towerLayer=new Container();app.stage.addChild(towerLayer);
@@ -394,6 +392,21 @@ export function BastionBattlefield({model,selected,onSelect,animations,onCue}:Pr
    if(ready)app.destroy(true);
   };
  },[]);
+ const drop=(event:DragEvent<HTMLDivElement>)=>{
+  event.preventDefault();
+  const kind=event.dataTransfer.getData('text/plain') as TowerKind;
+  if(!['archer','frost','cannon','ballista','flame'].includes(kind))return;
+  const canvas=mount.current?.querySelector('canvas');if(!canvas)return;
+  const rect=canvas.getBoundingClientRect();
+  const x=(event.clientX-rect.left)/rect.width*960,y=(event.clientY-rect.top)/rect.height*600;
+  let chosen=-1,minimum=49;
+  for(let i=0;i<model.pads.length;i++){
+   const p=model.pads[i],d=Math.hypot(p.x-x,p.y-y);
+   if(d<minimum){chosen=i;minimum=d;}
+  }
+  if(chosen>=0){onSelect(chosen);onDropTower(chosen,kind);}
+ };
  return <div ref={mount} className="td-map td-illustrated" data-testid="tower-defense-map"
-  role="img" aria-label="Illustrated moonlit fortress battlefield with ten buildable tower sites"/>;
+  onDragOver={event=>{if(Array.from(event.dataTransfer.types).includes('text/plain'))event.preventDefault();}}
+  onDrop={drop} role="img" aria-label="Illustrated battlefield with ten buildable tower sites"/>;
 }
