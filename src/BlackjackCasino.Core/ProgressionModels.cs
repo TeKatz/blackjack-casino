@@ -88,6 +88,7 @@ public sealed class PlayerProfileState
     public SweepStatistics Minesweeper { get; set; } = new();
     public Kniffel.KniffelStatistics Kniffel { get; set; } = new();
     public Sudoku.SudokuStatistics Sudoku { get; set; } = new();
+    public Sudoku.SudokuVariantStatistics SudokuVariants { get; set; } = new();
     public Sudoku.SudokuCareerState SudokuCareer { get; set; } = new();
     public Solitaire.SolitaireStatistics Solitaire { get; set; } = new();
     public WordSearch.WordSearchStatistics WordSearch { get; set; } = new();

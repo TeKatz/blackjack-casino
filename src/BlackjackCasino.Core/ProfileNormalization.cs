@@ -19,6 +19,8 @@ public static class ProfileNormalization
         state.Sudoku.RecordedPuzzleIds ??= new HashSet<string>(StringComparer.Ordinal);
         state.SudokuCareer ??= new();
         state.SudokuCareer.Normalize();
+        state.SudokuVariants ??= new();
+        state.SudokuVariants.Normalize();
         state.Solitaire ??= new();
         state.Solitaire.Normalize();
         state.WordSearch ??= new();

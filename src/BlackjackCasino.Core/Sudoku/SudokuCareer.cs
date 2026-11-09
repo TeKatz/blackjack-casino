@@ -64,13 +64,25 @@ public static class SudokuCareer
     }
 
     /// <summary>Call only after accepting an idempotent Sudoku completion receipt.</summary>
-    public static void Grant(PlayerProfileState profile, SudokuDifficulty difficulty)
+    public static void Grant(PlayerProfileState profile, SudokuDifficulty difficulty) =>
+        GrantPoints(profile, ExperienceForPuzzle(difficulty));
+
+    public static void GrantVariant(PlayerProfileState profile, string mode,
+        SudokuDifficulty difficulty, int miniSize)
+    {
+        int xp = ExperienceForPuzzle(difficulty);
+        if (mode == "samurai") xp *= 3;
+        else if (mode == "killer") xp = xp * 3 / 2;
+        else if (mode == "mini") xp /= miniSize == 4 ? 3 : 2;
+        GrantPoints(profile, xp);
+    }
+
+    private static void GrantPoints(PlayerProfileState profile, int xp)
     {
         ArgumentNullException.ThrowIfNull(profile);
         profile.SudokuCareer ??= new();
         SudokuCareerState career = profile.SudokuCareer;
         career.Normalize();
-        int xp = ExperienceForPuzzle(difficulty);
         career.LifetimeExperience = checked(career.LifetimeExperience + xp);
         if (career.Level == MaximumLevel) return;
         career.Experience += xp;

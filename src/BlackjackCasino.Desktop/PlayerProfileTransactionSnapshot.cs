@@ -50,6 +50,7 @@ internal static class PlayerProfileTransactionSnapshot
             Kniffel = source.Kniffel,
             Sudoku = source.Sudoku,
             SudokuCareer = source.SudokuCareer,
+            SudokuVariants = source.SudokuVariants,
             Solitaire = source.Solitaire,
             WordSearch = source.WordSearch,
             Memory = source.Memory,
@@ -81,6 +82,7 @@ internal static class PlayerProfileTransactionSnapshot
             case RoutineProfileTransactionArea.Sudoku:
                 candidate.Sudoku = ManorPersistence.Clone(source.Sudoku);
                 candidate.SudokuCareer = ManorPersistence.Clone(source.SudokuCareer);
+                candidate.SudokuVariants = ManorPersistence.Clone(source.SudokuVariants);
                 break;
             case RoutineProfileTransactionArea.MidnightMerge:
                 candidate.MidnightMerge = ManorPersistence.Clone(source.MidnightMerge);

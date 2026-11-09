@@ -131,6 +131,21 @@ internal sealed class PlayerProgressionController : IDisposable
         }
     }
 
+    public ProgressionAward ProcessSudokuVariant(BlackjackCasino.Core.Sudoku.SudokuVariantCompletion completion)
+    {
+        lock (Profile)
+        {
+            AccruePlaytime();
+            PlayerProfileState candidate = PlayerProfileTransactionSnapshot.Create(Profile, RoutineProfileTransactionArea.Sudoku);
+            ProgressionAward award = new BlackjackCasino.Core.Sudoku.SudokuVariantProgression(
+                ProgressionService.ForNormalizedSnapshot(candidate)).Process(completion);
+            if (award == ProgressionAward.None) return award;
+            if (persistKniffelRewards) saveKniffelProfile(candidate);
+            AdoptManorProfile(candidate);
+            return award;
+        }
+    }
+
     public BlackjackCasino.Core.MidnightMerge.MergeProfileSyncResult ProcessMidnightMerge(BlackjackCasino.Core.MidnightMerge.MergeGameState state)
     {
         lock (Profile)
@@ -407,6 +422,7 @@ internal sealed class PlayerProgressionController : IDisposable
         Profile.Kniffel = committed.Kniffel;
         Profile.Sudoku = committed.Sudoku;
         Profile.SudokuCareer = committed.SudokuCareer;
+        Profile.SudokuVariants = committed.SudokuVariants;
         Profile.Solitaire = committed.Solitaire;
         Profile.WordSearch = committed.WordSearch;
         Profile.Memory = committed.Memory;
