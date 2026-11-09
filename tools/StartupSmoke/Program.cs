@@ -596,9 +596,19 @@ internal static class Program
                 "(()=>{const p=document.querySelector('.arcade-play');"
                 + "const s=document.querySelector('.arcade-play-stage');"
                 + "const c=document.querySelector('[data-testid=arcade-canvas]');"
-                + "return Boolean(p&&s&&c&&p.clientHeight>180"
+                + "const h=document.querySelector('.arcade-play-header');"
+                + "const f=document.querySelector('.arcade-play-footer');"
+                + "const shell=document.querySelector('.casino-lobby-shell');"
+                + "const bounds=p?.getBoundingClientRect(),stage=s?.getBoundingClientRect();"
+                + "return Boolean(p&&s&&c&&h&&f&&shell&&p.clientHeight>180"
                 + "&&p.scrollHeight<=p.clientHeight+3&&p.scrollWidth<=p.clientWidth+3"
-                + "&&s.getBoundingClientRect().bottom<=p.getBoundingClientRect().bottom+2"
+                + "&&document.documentElement.scrollHeight<=innerHeight+3"
+                + "&&document.body.scrollHeight<=innerHeight+3"
+                + "&&shell.getBoundingClientRect().bottom<=innerHeight+3"
+                + "&&stage.bottom<=bounds.bottom+2"
+                + "&&f.getBoundingClientRect().bottom<=bounds.bottom+2"
+                + "&&stage.width<innerWidth-100"
+                + "&&stage.height<innerHeight*.78"
                 + "&&c.getBoundingClientRect().height>80)})()");
             Require(fits == "true", "Arcade game overflowed its viewport: " + id);
             await web.ExecuteScriptAsync(
