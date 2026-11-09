@@ -125,6 +125,14 @@ export function ArcadeGameScreen({id,language,onBack}:{
   if(phaseRef.current==='over')return;
   const before=readArcadeRecord(id);
   const next=saveArcadeRecord(id,s.score,s.elapsed);
+  // Send one completed-run receipt to the native, persistent global Challenges system.
+  // No per-frame, fake-start or paused runs award challenge progress.
+  try {
+   const runId=window.crypto.randomUUID();
+   window.chrome?.webview?.postMessage({
+    type:'lobby.arcade.run',id,score:s.score,seconds:Math.floor(s.elapsed),runId,
+   });
+  }catch{/* Standalone browser preview still keeps local personal records. */}
   setRecord(next);
   setScore(s.score);setElapsed(s.elapsed);
   setIsBest(s.score>before.best&&s.score>0);
