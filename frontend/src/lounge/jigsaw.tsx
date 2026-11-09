@@ -113,6 +113,14 @@ function PixiBoard({game,reference,view,selected,pending,error,onPlace,onMove,on
     mask.closePath().fill(0xffffff);outline.closePath().stroke({color:0xe7d6aa,width:.65,alpha:.7});
     image.mask=mask;tile.addChild(image,mask,outline);stage.addChild(tile);sprites.push(tile);
    }
+   // Gold trim follows the actual 960 × 600 picture, not its letterboxed outer canvas.
+   // As part of the Pixi stage, the trim stays aligned while zooming and panning.
+   const artworkFrame=new Graphics();
+   artworkFrame.rect(2,2,956,596).stroke({color:0x261b0d,width:6,alpha:.75});
+   artworkFrame.rect(2,2,956,596).stroke({color:0xd7b86e,width:2.5,alpha:1});
+   artworkFrame.rect(5.5,5.5,949,589).stroke({color:0xf1d9a0,width:.7,alpha:.68});
+   artworkFrame.eventMode='none';
+   stage.addChild(artworkFrame);
    pieces.current=sprites;host.dataset.rendererReady='true';
    const current=live.current;
    const g=viewport({width:host.clientWidth,height:host.clientHeight},current.view);
@@ -249,6 +257,12 @@ export function JigsawScreen({state,language,pending,error,command,animations,so
  const available=useMemo(()=>game?.pieces.filter(p=>!p.onBoard).sort((a,b)=>trayRank(a.id,game.gameId)-trayRank(b.id,game.gameId))??[],[game]);
  const pages=Math.max(1,Math.ceil(available.length/32)),currentPage=Math.min(page,pages-1);
  const on=(intent:JigsawIntent)=>{if(!pending)command(intent);};
+ const returnPiece=(index:number)=>{
+  if(pending)return;
+  command({action:'jigsaw.tray',index});
+  // A right-click or return of a connected group should never leave a tray selection behind.
+  setSelected(null);
+ };
  const frame=()=>{const r=boardFrame.current?.getBoundingClientRect();return {width:r?.width??960,height:r?.height??600};};
  const zoom=(factor:number)=>setView(v=>boundedView(frame(),{...v,zoom:v.zoom*factor}));
  const motif=state.motifs.find(x=>x.id===(game?.motifId??state.selectedMotifId));
@@ -353,7 +367,7 @@ export function JigsawScreen({state,language,pending,error,command,animations,so
      on({action:'jigsaw.place',index,x:Math.round(x*100)/100,y:Math.round(y*100)/100});setSelected(null);
     }}
     onMove={(index,x,y)=>on({action:'jigsaw.move',index,x:Math.round(x*100)/100,y:Math.round(y*100)/100})}
-    onReturn={index=>on({action:'jigsaw.tray',index})}/></div>
+    onReturn={returnPiece}/></div>
    <p className="jigsaw-hint sr-only">{t.guide}</p><p className="jigsaw-placement-notice" role="status">{state.notice}</p>{error&&<p role="alert" className="jigsaw-error">{error}</p>}</div>
    <aside className="jigsaw-tray"><h2>{t.tray}</h2><p>{available.length} {t.left}</p>
     <div className="jigsaw-tray-grid">{available.slice(currentPage*32,(currentPage+1)*32).map(p=><button
@@ -368,10 +382,10 @@ export function JigsawScreen({state,language,pending,error,command,animations,so
     <div className="jigsaw-pages"><button disabled={currentPage===0} onClick={()=>setPage(v=>Math.max(0,v-1))}>◀</button>
      <span>{t.page} {currentPage+1}/{pages}</span>
      <button disabled={currentPage>=pages-1} onClick={()=>setPage(v=>Math.min(pages-1,v+1))}>▶</button></div>
-    {recover&&<button className="jigsaw-recover" disabled={pending} onClick={()=>on({action:'jigsaw.tray',index:recover.id})}>{t.recover} #{recover.id+1}</button>}
+    {recover&&<button className="jigsaw-recover" disabled={pending} onClick={()=>returnPiece(recover.id)}>{t.recover} #{recover.id+1}</button>}
     {selected!==null&&<div className="jigsaw-actions">
      {game.pieces[selected].onBoard&&!game.pieces[selected].locked
-      &&<button onClick={()=>on({action:'jigsaw.tray',index:selected})}>{t.return}</button>}
+      &&<button onClick={()=>returnPiece(selected)}>{t.return}</button>}
      <button onClick={()=>setSelected(null)}>{t.clear}</button></div>}
     <p>{t.saved}</p>
    </aside></div>
