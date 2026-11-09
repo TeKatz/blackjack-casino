@@ -17,6 +17,8 @@ public sealed record TdState
     public int NextEnemyId { get; set; } = 1;
     public int Spawned { get; set; }
     public int SpawnTotal { get; set; }
+    public int WaveKills { get; set; }
+    public int WaveEscapes { get; set; }
     public double SpawnClock { get; set; }
     public long Ticks { get; set; }
     public List<TdTower> Towers { get; set; } = [];
@@ -26,7 +28,8 @@ public sealed record TdState
     {
         Version = Version, Wave = Wave, Coins = Coins, Lives = Lives, Phase = Phase,
         Paused = Paused, Speed = Speed, NextEnemyId = NextEnemyId, Spawned = Spawned,
-        SpawnTotal = SpawnTotal, SpawnClock = SpawnClock, Ticks = Ticks,
+        SpawnTotal = SpawnTotal, WaveKills = WaveKills, WaveEscapes = WaveEscapes,
+        SpawnClock = SpawnClock, Ticks = Ticks,
         Towers = Towers.ToList(), Enemies = Enemies.ToList(), Effects = Effects.ToList(),
     };
 }
@@ -74,6 +77,9 @@ public sealed class TowerDefenseGame
     {
         // Corrupt or future-version saves must not load unbounded arrays or malformed geometry.
         State = Valid(saved) ? saved!.Copy() : new TdState();
+        // Previous releases let the spawn clock run below zero after the last spawn.
+        // Preserve those valid battles and repair their clock on load.
+        State.SpawnClock = Math.Max(0, State.SpawnClock);
         if (State.Phase == "running") State.Paused = true;
         State.Effects.Clear();
     }
@@ -84,8 +90,10 @@ public sealed class TowerDefenseGame
         && s.Phase is "planning" or "running" or "won" or "lost"
         && s.Speed is 1 or 2 && s.NextEnemyId is > 0 and < 100_000
         && s.Spawned is >= 0 and <= 100 && s.SpawnTotal is >= 0 and <= 100
+        && s.WaveKills is >= 0 and <= 100 && s.WaveEscapes is >= 0 and <= 100
+        && s.WaveKills + s.WaveEscapes <= s.Spawned
         && s.Ticks is >= 0 and < 10_000_000 && double.IsFinite(s.SpawnClock)
-        && s.SpawnClock is >= 0 and < 10
+        && s.SpawnClock is > -1_000_000 and < 10
         && s.Towers is { Count: <= 10 } && s.Enemies is { Count: <= 100 }
         && s.Effects is { Count: <= 100 }
         && s.Towers.All(t => t.Pad >= 0 && t.Pad < TdMap.Pads.Count
@@ -128,6 +136,7 @@ public sealed class TowerDefenseGame
         {
             if (s.Phase != "planning" || s.Wave >= MaxWaves) return (false, "Wave cannot start.");
             s.Wave++; s.Spawned = 0; s.SpawnTotal = 7 + s.Wave * 2;
+            s.WaveKills = 0; s.WaveEscapes = 0;
             s.SpawnClock = 0; s.Phase = "running"; s.Paused = false;
             return (true, "Wave started.");
         }
@@ -212,11 +221,16 @@ public sealed class TowerDefenseGame
             s.Ticks++;
             s.Effects = s.Effects.Where(f => f.Ticks > 1)
                 .Select(f => f with { Ticks = f.Ticks - 1 }).ToList();
-            s.SpawnClock -= delta;
-            if (s.Spawned < s.SpawnTotal && s.SpawnClock <= 0)
+            // Once all enemies have spawned, the clock must stay valid for snapshots
+            // and saved games. Negative values previously froze the entire Lounge.
+            if (s.Spawned < s.SpawnTotal)
             {
-                Spawn();
-                s.SpawnClock = Math.Max(0, s.SpawnClock) + 0.73;
+                s.SpawnClock = Math.Max(0, s.SpawnClock - delta);
+                if (s.SpawnClock <= 0)
+                {
+                    Spawn();
+                    s.SpawnClock = s.Spawned < s.SpawnTotal ? 0.73 : 0;
+                }
             }
             for (int i = s.Enemies.Count - 1; i >= 0; i--)
             {
@@ -227,6 +241,7 @@ public sealed class TowerDefenseGame
                 if (enemy.Distance >= TdMap.PathLength)
                 {
                     s.Lives = Math.Max(0, s.Lives - (enemy.Kind == "brute" ? 2 : 1));
+                    s.WaveEscapes++;
                     s.Enemies.RemoveAt(i);
                 }
                 else s.Enemies[i] = enemy;
@@ -280,7 +295,7 @@ public sealed class TowerDefenseGame
         double hp = e.Hp - Math.Max(1, amount - armor);
         if (hp <= 0)
         {
-            s.Coins += Bounty(e.Kind); s.Enemies.RemoveAt(index);
+            s.Coins += Bounty(e.Kind); s.WaveKills++; s.Enemies.RemoveAt(index);
         }
         else s.Enemies[index] = e with { Hp = hp, Slow = frost ? 1.6 : e.Slow };
     }

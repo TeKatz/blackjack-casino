@@ -105,7 +105,12 @@ function App() {
    const webview=window.chrome?.webview;
    const handler=(event:MessageEvent)=>{
      const incoming=readLoungeSnapshot(event.data);
-     if (incoming) setSnapshot(incoming);
+     if (incoming) {
+       setSnapshot(incoming);
+       // Clear the stale-revision notice only after a valid authoritative frame arrives.
+       if(incoming.towerDefense)
+         setTowerDefenseError(previous=>previous==='Defence changed. Refreshing.'?'':previous);
+     }
      const msg:unknown=event.data;
      if(msg&&typeof msg==='object'&&!Array.isArray(msg)
        &&'type' in msg&&msg.type==='lounge.tower-defense.result'
@@ -113,6 +118,8 @@ function App() {
        const reply=msg.data;
        setTowerDefensePending(prev=>prev===reply.requestId?null:prev);
        setTowerDefenseError(reply.success?'':reply.message);
+       if(!reply.success && reply.message==='Defence changed. Refreshing.')
+         sendLoungeCommand('lounge.ready');
      }
      if(msg&&typeof msg==='object'&&!Array.isArray(msg)
        &&'type' in msg&&msg.type==='lounge.sudoku.result'
@@ -193,7 +200,7 @@ function App() {
  ];
  function open(id:LoungeId) { if(snapshot && isLoungeId(id))sendLoungeCommand('lounge.open',id); }
  function towerDefenseCommand(intent:TowerIntent){
-   if(!snapshot||towerDefensePending||!snapshot.towerDefense)return;
+   if(!snapshot||(towerDefensePending&&intent.action!=='tower.exit')||!snapshot.towerDefense)return;
    setTowerDefenseError('');
    setTowerDefensePending(issueTowerIntent(snapshot.towerDefenseSession,snapshot.towerDefenseRevision,intent));
  }
@@ -227,14 +234,14 @@ function App() {
    setMemoryError('');
    setMemoryPending(issueMemoryIntent(snapshot.memorySession,snapshot.memoryRevision,intent));
  }
- return <main className={"chill-shell"+(snapshot?.boardOnly?" board-only":"")} data-pending={!!(pending||solitairePending||wordSearchPending||memoryPending||jigsawPending||adventurePending||towerDefensePending)} data-motion={snapshot?.animationsEnabled??true}>
+ return <main className={"chill-shell"+(snapshot?.boardOnly?" board-only":"")+(snapshot?.towerDefense?" bastion-open":"")} data-pending={!!(pending||solitairePending||wordSearchPending||memoryPending||jigsawPending||adventurePending||towerDefensePending)} data-motion={snapshot?.animationsEnabled??true}>
    <div className="chill-sparkles" aria-hidden="true"/>
    <header className="chill-header">
      <div className="chill-mark" aria-hidden="true">✦</div>
      <div className="chill-brand"><span>{t.club}</span><strong>Chill Lounge</strong></div>
      <span className="chill-local">{t.version}</span>
      {snapshot?.towerDefense
-       ? <button className="chill-exit" disabled={!!towerDefensePending}
+       ? <button className="chill-exit"
            onClick={()=>towerDefenseCommand({action:'tower.exit'})}>← Chill Lounge</button>
        : snapshot?.adventure
        ? <button className="chill-exit" disabled={!!adventurePending||snapshot.adventure.screen==='encounter'}

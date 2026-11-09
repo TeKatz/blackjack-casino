@@ -67,7 +67,8 @@ internal sealed class ModernTowerDefenseSession
         if (command.Session != Id)
             return new(command.RequestId, false, "Defence session expired.", Revision);
         if (receipts.TryGetValue(command.RequestId, out var receipt)) return receipt;
-        if (command.ExpectedRevision != Revision)
+        // Exiting is a safe escape hatch even when a stale UI revision was rejected.
+        if (command.Action != "tower.exit" && command.ExpectedRevision != Revision)
             return new(command.RequestId, false, "Defence changed. Refreshing.", Revision);
         if (receipts.Count >= 16_384)
             return new(command.RequestId, false, "Reopen Chill Lounge to continue.", Revision);

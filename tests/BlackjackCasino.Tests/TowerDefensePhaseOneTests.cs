@@ -65,6 +65,86 @@ public sealed class TowerDefensePhaseOneTests
     }
 
     [Fact]
+    public void LastSpawnNeverMakesClockNegativeOrInvalidatesTheSave()
+    {
+        var game = new TowerDefenseGame();
+        Assert.True(game.Execute("tower.start").Success);
+        for (int i = 0; i < 95; i++) game.Tick();
+        Assert.Equal(game.State.SpawnTotal, game.State.Spawned);
+        Assert.Equal(0, game.State.SpawnClock);
+        Assert.Equal(0, game.State.WaveKills);
+        Assert.Equal(0, game.State.WaveEscapes);
+        Assert.Equal("running", game.State.Phase);
+        var resumed = new TowerDefenseGame(game.Save());
+        Assert.Equal(game.State.Wave, resumed.State.Wave);
+        Assert.Equal(game.State.Spawned, resumed.State.Spawned);
+        Assert.Equal(game.State.Enemies.Count, resumed.State.Enemies.Count);
+        Assert.True(resumed.State.Paused);
+    }
+
+    [Fact]
+    public void LegacyBattleWithNegativeSpawnClockIsRecoveredInsteadOfReset()
+    {
+        var game = new TowerDefenseGame();
+        Assert.True(game.Execute("tower.build", 4, "frost").Success);
+        Assert.True(game.Execute("tower.start").Success);
+        for (int i = 0; i < 95; i++) game.Tick();
+        TdState legacy = game.Save();
+        legacy.SpawnClock = -4.5; // valid in an earlier release after the last enemy spawned
+        var restored = new TowerDefenseGame(legacy);
+        Assert.Equal(1, restored.State.Wave);
+        Assert.Equal(0, restored.State.SpawnClock);
+        Assert.Single(restored.State.Towers);
+        Assert.True(restored.State.Paused);
+    }
+
+    [Fact]
+    public void OnlyDefeatsIncrementKillCounterAndTheNextWaveResetsIt()
+    {
+        var game = new TowerDefenseGame();
+        Assert.True(game.Execute("tower.build", 0, "archer").Success);
+        Assert.True(game.Execute("tower.build", 1, "archer").Success);
+        Assert.True(game.Execute("tower.start").Success);
+        Assert.True(game.Tick()); // Native shot is not yet a defeat.
+        Assert.Equal(0, game.State.WaveKills);
+        for (int i = 0; i < 400 && game.State.Phase == "running"; i++)
+        {
+            game.Tick();
+            Assert.Equal(game.State.Spawned - game.State.Enemies.Count,
+                game.State.WaveKills + game.State.WaveEscapes);
+        }
+        Assert.True(game.State.WaveKills > 0);
+        TdState checkpoint = game.Save();
+        var restored = new TowerDefenseGame(checkpoint);
+        Assert.Equal(checkpoint.WaveKills, restored.State.WaveKills);
+        Assert.Equal(checkpoint.WaveEscapes, restored.State.WaveEscapes);
+        if (game.State.Phase == "planning")
+        {
+            Assert.True(game.Execute("tower.start").Success);
+            Assert.Equal(0, game.State.WaveKills);
+            Assert.Equal(0, game.State.WaveEscapes);
+        }
+    }
+
+    [Fact]
+    public void StaleRevisionCannotTrapThePlayerInsideBastion()
+    {
+        var session = new ModernTowerDefenseSession();
+        var newId = Guid.NewGuid().ToString("D");
+        var start = new ModernTowerDefenseCommand(newId, session.Id, 0, "tower.start", null, null);
+        Assert.True(session.Execute(start, _ => (true, "started")).Success);
+        var oldRevision = new ModernTowerDefenseCommand(Guid.NewGuid().ToString("D"),
+            session.Id, 0, "tower.pause", null, null);
+        Assert.False(session.Execute(oldRevision, _ => (true, "paused")).Success);
+        var exit = oldRevision with
+        {
+            RequestId = Guid.NewGuid().ToString("D"),
+            Action = "tower.exit",
+        };
+        Assert.True(session.Execute(exit, _ => (true, "saved")).Success);
+    }
+
+    [Fact]
     public void NativeBridgeRejectsMalformedCommandsAndIsIdempotent()
     {
         var session = new ModernTowerDefenseSession();

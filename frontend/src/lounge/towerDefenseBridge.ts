@@ -7,7 +7,7 @@ export type TdEffect={fromX:number;fromY:number;toX:number;toY:number;kind:Tower
 export type TowerDefenceData={
   version:1;wave:number;coins:number;lives:number;
   phase:'planning'|'running'|'won'|'lost';paused:boolean;speed:1|2;
-  nextEnemyId:number;spawned:number;spawnTotal:number;spawnClock:number;ticks:number;
+  nextEnemyId:number;spawned:number;spawnTotal:number;waveKills:number;waveEscapes:number;spawnClock:number;ticks:number;
   towers:TdTower[];enemies:TdEnemy[];effects:TdEffect[];
 };
 export type TowerDefenseState={screen:'game';mapPath:TdPoint[];pads:TdPoint[];maxWaves:15;state:TowerDefenceData};
@@ -41,7 +41,9 @@ export function isTowerDefenseState(v:unknown):v is TowerDefenseState{
  if(!record(s)||s.version!==1||!int(s.wave,15)||!int(s.coins,1000000)||
   !int(s.lives,20)||!['planning','running','won','lost'].includes(String(s.phase))||
   typeof s.paused!=='boolean'||(s.speed!==1&&s.speed!==2)||
-  !int(s.spawned,100)||!int(s.spawnTotal,100)||!finite(s.spawnClock,10)||
+  !int(s.spawned,100)||!int(s.spawnTotal,100)||s.spawned>s.spawnTotal||
+  !int(s.waveKills,100)||!int(s.waveEscapes,100)||s.waveKills+s.waveEscapes>s.spawned||
+  !finite(s.spawnClock,10)||
   !int(s.nextEnemyId,100000)||!int(s.ticks,10000000)||
   !Array.isArray(s.towers)||s.towers.length>10||!s.towers.every(tower)||
   new Set(s.towers.map((t:TdTower)=>t.pad)).size!==s.towers.length||
