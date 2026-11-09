@@ -321,30 +321,7 @@
 .arcade-highscores-entry strong{color:#f6d18e;font:normal 21px Georgia,serif}
 .arcade-highscores-name{display:flex;gap:12px;align-items:center;font-weight:800;color:#edddbf}
 .arcade-highscores-name b{font-size:10px;color:#86b5a5}
-/* Only animate while hovered/focused. These are small per-game scenes, not looping GIFs. */
-.arcade-art-fly,.arcade-art-jump,.arcade-art-spin,.arcade-art-drop,.arcade-art-bullets,
-.arcade-art-obstacle,.arcade-art-snake,.arcade-art-platforms,.arcade-art-throw,.arcade-art-ball,.arcade-art-bricks,
-.arcade-art-motion{transform-box:fill-box;transform-origin:center;transition:filter .2s}
-.arcade-game-card:hover .arcade-art-fly,.arcade-game-card:focus-visible .arcade-art-fly{animation:arcade-flight .95s ease-in-out infinite alternate}
-.arcade-game-card:hover .arcade-art-spin,.arcade-game-card:focus-visible .arcade-art-spin{animation:arcade-orbit-spin 2.5s linear infinite}
-.arcade-game-card:hover .arcade-art-drop,.arcade-game-card:focus-visible .arcade-art-drop{animation:arcade-drop 1.25s ease-in-out infinite}
-.arcade-game-card:hover .arcade-art-jump,.arcade-game-card:focus-visible .arcade-art-jump{animation:arcade-hop 1.05s ease-in-out infinite}
-.arcade-game-card:hover .arcade-art-throw,.arcade-game-card:focus-visible .arcade-art-throw{animation:arcade-throw .95s ease-in-out infinite}
-.arcade-game-card:hover .arcade-art-bullets,.arcade-game-card:focus-visible .arcade-art-bullets{animation:arcade-rain .85s ease-in-out infinite alternate}
-.arcade-game-card:hover .arcade-art-ball,.arcade-game-card:focus-visible .arcade-art-ball{animation:arcade-ball 1.1s ease-in-out infinite alternate}
-.arcade-game-card:hover .arcade-art-snake,.arcade-game-card:focus-visible .arcade-art-snake{animation:arcade-slink 1.1s ease-in-out infinite alternate}
-.arcade-game-card:hover .arcade-art-platforms,.arcade-game-card:focus-visible .arcade-art-platforms{animation:arcade-rise 1.45s ease-in-out infinite alternate}
-.arcade-game-card:hover .arcade-art-obstacle,.arcade-game-card:focus-visible .arcade-art-obstacle{animation:arcade-spikes 1.4s ease-in-out infinite alternate}
-@keyframes arcade-flight{from{translate:0 5px;rotate:2deg}to{translate:0 -8px;rotate:-5deg}}
-@keyframes arcade-orbit-spin{to{rotate:360deg}}
-@keyframes arcade-drop{0%{translate:0 -12px}60%{translate:0 10px}100%{translate:0 -12px}}
-@keyframes arcade-hop{0%,100%{translate:0 0}50%{translate:0 -17px}}
-@keyframes arcade-throw{0%{translate:0 24px}70%{translate:0 -17px}100%{translate:0 24px}}
-@keyframes arcade-rain{from{translate:0 -8px}to{translate:0 10px}}
-@keyframes arcade-ball{from{translate:-13px 13px}to{translate:12px -12px}}
-@keyframes arcade-slink{from{translate:-5px 0}to{translate:7px 0}}
-@keyframes arcade-rise{from{translate:0 5px}to{translate:0 -8px}}
-@keyframes arcade-spikes{from{translate:-5px 0}to{translate:8px 0}}
+/* Card scenes and all hover choreography are maintained in arcadeArtMotion.css. */
 /* HUD has four metrics now, and no game footer: prevent unnecessary empty space. */
 .arcade-play{padding-bottom:6px}
 .arcade-play-stats>div{min-width:77px;padding:9px 12px}
