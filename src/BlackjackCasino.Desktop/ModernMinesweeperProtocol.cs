@@ -39,7 +39,7 @@ internal static class ModernMinesweeperProtocol
                 "mine.new" => index is null && difficulty is "easy" or "standard" or "expert",
                 "mine.reveal" or "mine.flag" or "mine.scan" or "mine.chord" =>
                     index.HasValue && difficulty is null,
-                "mine.menu" or "mine.exit" => index is null && difficulty is null,
+                "mine.menu" or "mine.exit" or "mine.resume" => index is null && difficulty is null,
                 _ => false,
             };
             return valid ? new(id!, session!, expected, action!, index, difficulty) : null;
