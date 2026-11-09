@@ -195,6 +195,27 @@ public sealed class TowerDefenseGame
         if (State.Phase == "running") State.Paused = true;
         State.Progress ??= new TdProgress();
         State.StageRuns ??= new(StringComparer.Ordinal);
+        // Older v1 saves had no global Bastion XP: recognize their already
+        // completed waves rather than making returning players replay them.
+        if (saved is not null && State.Progress.Level == 1 && State.Progress.Experience == 0
+            && State.Progress.WavesCleared == 0 && State.Wave > 0)
+        {
+            int cleared = Math.Min(MaxWaves, State.Wave -
+                (State.Phase is "running" or "lost" ? 1 : 0));
+            for (int wave = 1; wave <= cleared; wave++)
+            {
+                State.Progress.WavesCleared++;
+                GrantExperience(30 + wave * 13);
+            }
+            if (cleared > 0)
+                State.Progress.BestWaves[State.Stage] = cleared;
+            if (State.Phase == "won" && State.Wave >= TdMastery.StageWaves(State.Stage))
+            {
+                State.Progress.CompletedStages.Add(State.Stage);
+                State.Progress.Victories = Math.Max(1, State.Progress.Victories);
+                GrantExperience(200);
+            }
+        }
         State.Effects.Clear();
     }
 

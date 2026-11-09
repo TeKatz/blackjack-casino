@@ -13,6 +13,21 @@ public sealed class TowerDefensePhaseOneTests
     }
 
     [Fact]
+    public void LegacyCompletedMapKeepsVictoryAndReceivesBackfilledMasteryExperience()
+    {
+        var old = new TdState { Screen = "menu", Stage = "forest", Phase = "won", Wave = 15 };
+        var game = new TowerDefenseGame(old);
+        Assert.Contains("forest", game.State.Progress.CompletedStages);
+        Assert.Equal(1, game.State.Progress.Victories);
+        Assert.Equal(15, game.State.Progress.WavesCleared);
+        Assert.True(game.State.Progress.Level >= 3);
+        Assert.True(game.Execute("tower.play", kind: "frost").Success);
+        var again = new TowerDefenseGame(game.Save());
+        Assert.Equal(15, again.State.Progress.WavesCleared);
+        Assert.Equal(1, again.State.Progress.Victories);
+    }
+
+    [Fact]
     public void MapsAreDistinctAndRetainTheirIndividualDefences()
     {
         var progress = new TdProgress { Level = 3 };
