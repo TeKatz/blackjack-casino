@@ -1,57 +1,16 @@
-/* Arcade card cinemagraphs: game-specific motion, only on hover or keyboard focus.
-   Every layer uses its own gameplay-oriented timing rather than moving the whole SVG. */
+/* Legacy hover choreography retained only for the three accepted Arcade scenes.
+   The seven corrected scenes use arcadeArtMotionV2.css. */
 .arcade-game-art:has(.arcade-scene){background:#0b2430}
 .arcade-game-art:has(.arcade-scene)::before{display:none}
 .arcade-game-art:has(.arcade-scene)::after{opacity:.4;transition:opacity .2s}
 .arcade-game-card:is(:hover,:focus-visible) .arcade-game-art::after{opacity:.15}
 .arcade-scene{display:block;width:100%;height:100%;overflow:hidden;filter:drop-shadow(0 2px 6px #001a22b3)}
 .arcade-scene [class^="arcade-"]{transform-box:fill-box;transform-origin:center}
-.arcade-game-card:is(:hover,:focus-visible) .arcade-wings-course{animation:aw-course 2.9s linear infinite}
-.arcade-game-card:is(:hover,:focus-visible) .arcade-wings-bird{animation:aw-flight 1.2s ease-in-out infinite}
-.arcade-game-card:is(:hover,:focus-visible) .arcade-wings-flap{animation:aw-flap .35s ease-in-out infinite alternate}
-.arcade-game-card:is(:hover,:focus-visible) .arcade-wings-flap-bottom{animation:aw-flap .35s ease-in-out infinite alternate-reverse}
-.arcade-game-card:is(:hover,:focus-visible) .arcade-wings-trail{animation:aw-trail .6s ease-in-out infinite alternate}
-@keyframes aw-course{to{translate:-152px 0}}
-@keyframes aw-flight{0%,100%{translate:0 4px;rotate:2deg}50%{translate:0 -7px;rotate:-4deg}}
-@keyframes aw-flap{from{rotate:-15deg}to{rotate:23deg}}
-@keyframes aw-trail{from{opacity:.32;translate:6px 0}to{opacity:1;translate:-5px 0}}
 
-.arcade-game-card:is(:hover,:focus-visible) .arcade-cave-depth{animation:ac-flow 2.4s linear infinite}
-.arcade-game-card:is(:hover,:focus-visible) .arcade-cave-glider{animation:ac-glide 2.4s ease-in-out infinite}
-.arcade-game-card:is(:hover,:focus-visible) .arcade-cave-thrust{animation:ac-thrust .46s ease-in-out infinite alternate}
-@keyframes ac-flow{to{translate:-24px 0}}
-@keyframes ac-glide{0%,100%{translate:0 9px}52%{translate:0 -11px}}
-@keyframes ac-thrust{from{opacity:.4;scale:.86 1}to{opacity:1;scale:1.12 1}}
 
-.arcade-game-card:is(:hover,:focus-visible) .arcade-hex-ring-out{animation:ah-out 4.5s linear infinite}
-.arcade-game-card:is(:hover,:focus-visible) .arcade-hex-ring-mid{animation:ah-in 3.5s linear infinite}
-.arcade-game-card:is(:hover,:focus-visible) .arcade-hex-pilot{animation:ah-pilot 2.9s ease-in-out infinite alternate}
-@keyframes ah-out{to{rotate:360deg}}
-@keyframes ah-in{to{rotate:-360deg}}
-@keyframes ah-pilot{from{rotate:-48deg}to{rotate:48deg}}
 
-.arcade-game-card:is(:hover,:focus-visible) .arcade-stack-active{animation:as-align 2.2s cubic-bezier(.4,0,.2,1) infinite}
-.arcade-game-card:is(:hover,:focus-visible) .arcade-stack-sparks{animation:as-flash 2.2s ease-out infinite}
-.arcade-game-card:is(:hover,:focus-visible) .arcade-stack-tower{animation:as-pulse 2.2s ease-out infinite}
-@keyframes as-align{0%{translate:-48px -7px}35%{translate:9px -7px}50%,57%{translate:-11px -7px}67%,78%{translate:-11px 12px}82%,100%{translate:-11px 12px;opacity:0}}
-@keyframes as-flash{0%,58%,88%,100%{opacity:0;scale:.7}68%{opacity:1;scale:1.15}}
-@keyframes as-pulse{0%,62%,100%{filter:none}70%{filter:brightness(1.3)}}
 
-.arcade-game-card:is(:hover,:focus-visible) .arcade-spike-hazards{animation:ar-spikes 1.5s linear infinite}
-.arcade-game-card:is(:hover,:focus-visible) .arcade-spike-runner{animation:ar-jump 1.5s ease-in-out infinite}
-.arcade-game-card:is(:hover,:focus-visible) .arcade-spike-speed{animation:ar-road .65s linear infinite}
-.arcade-game-card:is(:hover,:focus-visible) .arcade-spike-landing{animation:ar-dust 1.5s linear infinite}
-@keyframes ar-spikes{to{translate:-83px 0}}
-@keyframes ar-jump{0%,12%,85%,100%{translate:0 0;rotate:0deg}42%{translate:0 -34px;rotate:-8deg}60%{translate:0 -31px;rotate:5deg}}
-@keyframes ar-road{to{translate:-25px 0;opacity:.18}}
-@keyframes ar-dust{0%,72%,100%{opacity:0}83%{opacity:1}}
 
-.arcade-game-card:is(:hover,:focus-visible) .arcade-blade-wheel{animation:ab-wheel 3.4s linear infinite}
-.arcade-game-card:is(:hover,:focus-visible) .arcade-blade-shot{animation:ab-shot 1.65s ease-in infinite}
-.arcade-game-card:is(:hover,:focus-visible) .arcade-blade-impact{animation:ab-hit 1.65s ease-out infinite}
-@keyframes ab-wheel{to{rotate:360deg}}
-@keyframes ab-shot{0%,15%{translate:0 17px;opacity:1}51%{translate:0 -47px;opacity:1}53%,78%{translate:0 -47px;opacity:0}100%{translate:0 17px;opacity:0}}
-@keyframes ab-hit{0%,48%,81%,100%{opacity:0;scale:.65}53%{opacity:1;scale:1.3}70%{opacity:0;scale:1.6}}
 
 .arcade-game-card:is(:hover,:focus-visible) .arcade-bullet-wave-a{animation:au-rain-a 1.3s linear infinite}
 .arcade-game-card:is(:hover,:focus-visible) .arcade-bullet-wave-b{animation:au-rain-b 1.6s linear infinite}
@@ -80,16 +39,6 @@
 @keyframes ad-flow{to{stroke-dashoffset:-33}}
 @keyframes ad-food{0%,59%,100%{scale:1;opacity:1}70%{scale:.15;opacity:.12}82%{scale:0;opacity:0}}
 
-.arcade-game-card:is(:hover,:focus-visible) .arcade-ascent-platforms{animation:ae-scroll 1.65s linear infinite}
-.arcade-game-card:is(:hover,:focus-visible) .arcade-ascent-jumper{animation:ae-jump 1.65s ease-in-out infinite}
-.arcade-game-card:is(:hover,:focus-visible) .arcade-ascent-trail{animation:ae-trail 1.65s ease-out infinite}
-.arcade-game-card:is(:hover,:focus-visible) .arcade-ascent-clouds{animation:ae-clouds 4s linear infinite}
-.arcade-game-card:is(:hover,:focus-visible) .arcade-ascent-arrow{animation:ae-arrow .85s ease-in-out infinite alternate}
-@keyframes ae-scroll{to{translate:0 24px}}
-@keyframes ae-jump{0%,100%{translate:0 7px}50%{translate:0 -29px}76%{translate:6px -12px}}
-@keyframes ae-trail{0%,100%{opacity:0;translate:0 0}48%{opacity:.85;translate:0 12px}80%{opacity:0}}
-@keyframes ae-clouds{to{translate:-30px 0}}
-@keyframes ae-arrow{to{translate:0 -6px;opacity:.4}}
 
 /* Keep every art layer still when either motion preference requests it. */
 @media(prefers-reduced-motion:reduce){
