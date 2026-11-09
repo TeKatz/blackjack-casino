@@ -262,7 +262,7 @@ function App() {
    setMemoryError('');
    setMemoryPending(issueMemoryIntent(snapshot.memorySession,snapshot.memoryRevision,intent));
  }
- return <main className={"chill-shell"+(snapshot?.boardOnly?" board-only":"")+(snapshot?.towerDefense?" bastion-open":"")+(snapshot?.minesweeper?" sweep-open":"")+(showingOverview?" chill-home":"")} data-pending={!!(pending||solitairePending||wordSearchPending||memoryPending||jigsawPending||adventurePending||towerDefensePending||sweepPending)} data-motion={snapshot?.animationsEnabled??true}>
+ return <main className={"chill-shell"+(snapshot?.boardOnly?" board-only":"")+(snapshot?.towerDefense?" bastion-open":"")+(snapshot?.minesweeper?" sweep-open":"")+(showingOverview?" chill-home":"")+(snapshot?.jigsaw?.screen==="game"?" jigsaw-open":"")} data-pending={!!(pending||solitairePending||wordSearchPending||memoryPending||jigsawPending||adventurePending||towerDefensePending||sweepPending)} data-motion={snapshot?.animationsEnabled??true}>
    <div className="chill-sparkles" aria-hidden="true"/>
    <header className="chill-header">
      <div className="chill-mark" aria-hidden="true">✦</div>
