@@ -171,6 +171,7 @@ public partial class MainWindow
         ManorStatistics manor = profile.Manor;
         var dice = profile.Kniffel;
         SudokuStatistics sudoku = profile.Sudoku;
+        SudokuVariantStatistics variants = profile.SudokuVariants;
         var solitaire = profile.Solitaire;
         var wordSearch = profile.WordSearch;
         var memory = profile.Memory;
@@ -179,7 +180,7 @@ public partial class MainWindow
         var adventure = profile.Adventure;
         var bastion = profile.TowerDefense;
         var sweep = profile.Minesweeper;
-        long loungeCompletions = sudoku.CompletedPuzzles + solitaire.Wins
+        long loungeCompletions = sudoku.CompletedPuzzles + variants.CompletedPuzzles + solitaire.Wins
             + wordSearch.CompletedPuzzles + memory.CompletedGames + jigsaw.CompletedGames + bastion.Victories
             + sweep.Wins + sweep.Losses;
         decimal wagered = blackjack.TotalWagered + reels.TotalWagered + legacy.TotalWagered
@@ -252,7 +253,28 @@ public partial class MainWindow
                 RecordMetric("Fastest solve", sudoku.FastestSolveSeconds <= 0 ? "—" : RecordDuration(TimeSpan.FromSeconds(sudoku.FastestSolveSeconds))),
                 RecordMetric("Fastest clean solve", sudoku.FastestNoHintSeconds <= 0 ? "—" : RecordDuration(TimeSpan.FromSeconds(sudoku.FastestNoHintSeconds))),
                 RecordMetric("Relaxed / Easy / Medium", $"{sudoku.RelaxedCompleted:N0} / {sudoku.EasyCompleted:N0} / {sudoku.MediumCompleted:N0}"),
-                RecordMetric("Hard / Expert / Master", $"{sudoku.HardCompleted:N0} / {sudoku.ExpertCompleted:N0} / {sudoku.MasterCompleted:N0}")),
+                RecordMetric("Hard / Expert / Master", $"{sudoku.HardCompleted:N0} / {sudoku.ExpertCompleted:N0} / {sudoku.MasterCompleted:N0}"),
+                RecordMetric("Sudoku career level", profile.SudokuCareer.Level.ToString("N0")),
+                RecordMetric("Sudoku career lifetime XP", RecordNumber(profile.SudokuCareer.LifetimeExperience)),
+                RecordMetric("Cosmetic points earned", RecordNumber(profile.SudokuCareer.CosmeticPointsEarned))),
+            Activity("sudoku-x", "Sudoku X",
+                RecordMetric("Completed puzzles", RecordNumber(variants.XCompleted)),
+                RecordMetric("Career level", RecordNumber(profile.SudokuCareer.Level)),
+                RecordMetric("Variant no-hint solves", RecordNumber(variants.NoHintCompletions))),
+            Activity("sudoku-killer", "Killer Sudoku",
+                RecordMetric("Completed puzzles", RecordNumber(variants.KillerCompleted)),
+                RecordMetric("Variant hints used", RecordNumber(variants.HintsUsed))),
+            Activity("sudoku-jigsaw", "Jigsaw Sudoku",
+                RecordMetric("Completed puzzles", RecordNumber(variants.JigsawCompleted)),
+                RecordMetric("Total variant time", RecordDuration(TimeSpan.FromSeconds(variants.TotalSolveSeconds)))),
+            Activity("sudoku-samurai", "Samurai Sudoku",
+                RecordMetric("Completed puzzles", RecordNumber(variants.SamuraiCompleted)),
+                RecordMetric("Fastest variant", variants.FastestSolveSeconds <= 0 ? "—" :
+                    RecordDuration(TimeSpan.FromSeconds(variants.FastestSolveSeconds)))),
+            Activity("sudoku-mini", "Mini Sudoku",
+                RecordMetric("Completed puzzles", RecordNumber(variants.MiniCompleted)),
+                RecordMetric("4×4 / 6×6 solved", $"{variants.Mini4Completed:N0} / {variants.Mini6Completed:N0}"),
+                RecordMetric("Variant completed total", RecordNumber(variants.CompletedPuzzles))),
             Activity("solitaire", "Midnight Solitaire",
                 RecordMetric("Games started", RecordNumber(solitaire.GamesStarted)),
                 RecordMetric("Games won", RecordNumber(solitaire.Wins)),

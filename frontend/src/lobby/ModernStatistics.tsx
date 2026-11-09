@@ -10,12 +10,22 @@ const tabs:{id:GameGroup;de:string;en:string}[]=[
   {id:'relaxed',de:'Entspannt',en:'Relaxed'},
 ];
 const symbols:Record<string,string>={
-  blackjack:'♠','midnight-dice':'⚄','tower-defense':'♜',minesweeper:'✺',sudoku:'▦','midnight-reels':'▣',
+  blackjack:'♠','midnight-dice':'⚄','tower-defense':'♜',minesweeper:'✺',sudoku:'▦','sudoku-x':'╳','sudoku-killer':'Σ','sudoku-jigsaw':'▩','sudoku-samurai':'✧','sudoku-mini':'▫','midnight-reels':'▣',
   'midnight-manor':'☽','neon-vault':'◇','nine-lives':'●',
   'neon-features':'◇','nine-features':'●','legacy-slots':'▣',
 };
 
 const germanMetrics:Record<string,string>={
+  "Sudoku career level": "Sudoku-Karrierelevel",
+  "Sudoku career lifetime XP": "Sudoku-Karriere-XP gesamt",
+  "Cosmetic points earned": "Verdiente Cosmetic Points",
+  "Career level": "Karrierestufe",
+  "Variant no-hint solves": "Varianten ohne Hinweise",
+  "Variant hints used": "Hinweise in Varianten",
+  "Total variant time": "Gesamtzeit der Sudoku-Varianten",
+  "Fastest variant": "Schnellste Variante",
+  "4×4 / 6×6 solved": "4×4 / 6×6 gelöst",
+  "Variant completed total": "Sudoku-Varianten insgesamt",
   "Games lost": "Verlorene Partien",
   "Easy / Standard / Expert wins": "Siege Leicht / Standard / Experte",
   "Wins without Echo Scan": "Siege ohne Echo-Scan",

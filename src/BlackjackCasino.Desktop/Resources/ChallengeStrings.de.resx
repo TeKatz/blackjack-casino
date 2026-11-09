@@ -570,4 +570,42 @@
   <data name="Challenge.sweep-safe-500.Description" xml:space="preserve"><value>Decke 500 sichere Felder in abgeschlossenen Partien auf.</value></data>
   <data name="Challenge.sweep-safe-5000.Name" xml:space="preserve"><value>Endloser Horizont</value></data>
   <data name="Challenge.sweep-safe-5000.Description" xml:space="preserve"><value>Decke 5.000 sichere Felder in abgeschlossenen Partien auf.</value></data>
+  <data name="Challenge.sudoku-x-first.Name" xml:space="preserve"><value>Erste Diagonalen</value></data>
+  <data name="Challenge.sudoku-x-first.Description" xml:space="preserve"><value>Löse dein erstes Sudoku X.</value></data>
+  <data name="Challenge.sudoku-x-10.Name" xml:space="preserve"><value>Doppelte Konzentration</value></data>
+  <data name="Challenge.sudoku-x-10.Description" xml:space="preserve"><value>Löse zehn Sudoku-X-Rätsel.</value></data>
+  <data name="Challenge.sudoku-killer-first.Name" xml:space="preserve"><value>Der erste Käfig</value></data>
+  <data name="Challenge.sudoku-killer-first.Description" xml:space="preserve"><value>Löse dein erstes Killer Sudoku.</value></data>
+  <data name="Challenge.sudoku-killer-10.Name" xml:space="preserve"><value>Meister der Summen</value></data>
+  <data name="Challenge.sudoku-killer-10.Description" xml:space="preserve"><value>Löse zehn Killer-Sudoku-Rätsel.</value></data>
+  <data name="Challenge.sudoku-jigsaw-first.Name" xml:space="preserve"><value>Andere Formen</value></data>
+  <data name="Challenge.sudoku-jigsaw-first.Description" xml:space="preserve"><value>Löse dein erstes Jigsaw Sudoku.</value></data>
+  <data name="Challenge.sudoku-jigsaw-10.Name" xml:space="preserve"><value>Musterkünstler</value></data>
+  <data name="Challenge.sudoku-jigsaw-10.Description" xml:space="preserve"><value>Löse zehn Jigsaw-Sudokus.</value></data>
+  <data name="Challenge.sudoku-samurai-first.Name" xml:space="preserve"><value>Fünffache Logik</value></data>
+  <data name="Challenge.sudoku-samurai-first.Description" xml:space="preserve"><value>Löse dein erstes Samurai Sudoku.</value></data>
+  <data name="Challenge.sudoku-samurai-10.Name" xml:space="preserve"><value>Fünf Raster</value></data>
+  <data name="Challenge.sudoku-samurai-10.Description" xml:space="preserve"><value>Löse zehn Samurai-Sudokus.</value></data>
+  <data name="Challenge.sudoku-mini-first.Name" xml:space="preserve"><value>Kleine Zahlen</value></data>
+  <data name="Challenge.sudoku-mini-first.Description" xml:space="preserve"><value>Löse dein erstes Mini Sudoku.</value></data>
+  <data name="Challenge.sudoku-mini-25.Name" xml:space="preserve"><value>Rätsel für unterwegs</value></data>
+  <data name="Challenge.sudoku-mini-25.Description" xml:space="preserve"><value>Löse 25 Mini-Sudokus.</value></data>
+  <data name="Challenge.sudoku-mini-4.Name" xml:space="preserve"><value>Vier mal vier</value></data>
+  <data name="Challenge.sudoku-mini-4.Description" xml:space="preserve"><value>Löse ein 4×4-Mini-Sudoku.</value></data>
+  <data name="Challenge.sudoku-mini-6.Name" xml:space="preserve"><value>Sechs mal sechs</value></data>
+  <data name="Challenge.sudoku-mini-6.Description" xml:space="preserve"><value>Löse ein 6×6-Mini-Sudoku.</value></data>
+  <data name="Challenge.sudoku-variants-10.Name" xml:space="preserve"><value>Die große Rätselwelt</value></data>
+  <data name="Challenge.sudoku-variants-10.Description" xml:space="preserve"><value>Löse zehn Sudoku-Varianten.</value></data>
+  <data name="Challenge.sudoku-variants-100.Name" xml:space="preserve"><value>Alle Muster</value></data>
+  <data name="Challenge.sudoku-variants-100.Description" xml:space="preserve"><value>Löse 100 Sudoku-Varianten.</value></data>
+  <data name="Challenge.sudoku-variant-clean-10.Name" xml:space="preserve"><value>Ganz ohne Hilfe</value></data>
+  <data name="Challenge.sudoku-variant-clean-10.Description" xml:space="preserve"><value>Löse zehn Varianten ohne Hinweise.</value></data>
+  <data name="Challenge.sudoku-career-20.Name" xml:space="preserve"><value>Sudoku-Lehrling</value></data>
+  <data name="Challenge.sudoku-career-20.Description" xml:space="preserve"><value>Erreiche Sudoku-Karrierestufe 20.</value></data>
+  <data name="Challenge.sudoku-career-50.Name" xml:space="preserve"><value>Halbwegs zur Legende</value></data>
+  <data name="Challenge.sudoku-career-50.Description" xml:space="preserve"><value>Erreiche Sudoku-Karrierestufe 50.</value></data>
+  <data name="Challenge.sudoku-career-90.Name" xml:space="preserve"><value>Kristallklarer Verstand</value></data>
+  <data name="Challenge.sudoku-career-90.Description" xml:space="preserve"><value>Erreiche Sudoku-Karrierestufe 90.</value></data>
+  <data name="Challenge.sudoku-career-100.Name" xml:space="preserve"><value>Jenseits der Logik</value></data>
+  <data name="Challenge.sudoku-career-100.Description" xml:space="preserve"><value>Erreiche die maximale Sudoku-Karrierestufe 100.</value></data>
 </root>
