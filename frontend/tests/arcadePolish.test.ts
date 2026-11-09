@@ -22,6 +22,16 @@ describe('Arcade controls: reliable simultaneous keys and dynamic steering',()=>
   input.release('ArrowLeft','ArrowLeft');
   expect(input.controls().left).toBe(false);
  });
+ it('keeps fallback key identities distinct with unidentified WebView key codes',()=>{
+  const input=new ArcadeHeldKeys();
+  input.press('Unidentified','a');
+  input.press('Unidentified','d');
+  expect(input.controls()).toMatchObject({left:true,right:true});
+  input.release('Unidentified','a');
+  expect(input.controls()).toMatchObject({left:false,right:true});
+  input.release('Unidentified','d');
+  expect(input.controls().right).toBe(false);
+ });
  it('keeps the remaining direction after one opposite key is released',()=>{
   const input=new ArcadeHeldKeys();
   input.press('KeyA','a');input.press('KeyD','d');
