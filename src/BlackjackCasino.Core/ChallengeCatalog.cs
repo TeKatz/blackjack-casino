@@ -18,6 +18,7 @@ public enum ChallengeCategory
     Solitaire,
     TowerDefense,
     Minesweeper,
+    Arcade,
 }
 
 public enum ChallengeMetric
@@ -104,6 +105,7 @@ public enum ChallengeMetric
     ChillLoungeCompletions, JigsawCompletions, AdventureRunsCompleted,
     BastionWaves, BastionKills, BastionVictories, BastionStages, BastionBestWave, BastionMasteryLevel,
     SweepWins, SweepNoScanWins, SweepExpertWins, SweepBestStreak, SweepSafeCells,
+    ArcadeRuns, ArcadeBestScore, ArcadeTotalScore, ArcadeLongestSeconds,
 }
 
 public sealed record ChallengeDefinition(
@@ -462,7 +464,7 @@ public static class ChallengeCatalog
             a.CoinReward, a.Tier == Jigsaw.JigsawAchievementTier.Platinum)).ToArray();
 
     private static readonly IReadOnlyList<ChallengeDefinition> AllChallenges =
-        Challenges.Concat(JigsawChallenges).ToArray();
+        Challenges.Concat(JigsawChallenges).Concat(ArcadeChallengeCatalog.All).ToArray();
 
     public static IReadOnlyList<ChallengeDefinition> All => AllChallenges;
 
@@ -599,6 +601,9 @@ public static class ChallengeCatalog
             ChallengeMetric.MemoryMasterCompleted => profile.Memory.MasterCompleted,
             ChallengeMetric.MemoryBestStreak => profile.Memory.BestStreak,
             ChallengeMetric.JigsawAchievement => JigsawProgress(profile, challenge),
+            ChallengeMetric.ArcadeRuns or ChallengeMetric.ArcadeBestScore or
+                ChallengeMetric.ArcadeTotalScore or ChallengeMetric.ArcadeLongestSeconds =>
+                ArcadeChallengeCatalog.Progress(profile.Arcade, challenge),
 
             ChallengeMetric.SolitaireGamesStarted => profile.Solitaire.GamesStarted,
             ChallengeMetric.SolitaireWins => profile.Solitaire.Wins,
