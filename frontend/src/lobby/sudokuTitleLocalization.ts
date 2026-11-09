@@ -17,3 +17,9 @@ export const sudokuCareerTitleNames: Record<string, Record<SudokuTitleLanguage, 
 export function localizedSudokuTitle(id:string, fallback:string, language:SudokuTitleLanguage):string {
  return sudokuCareerTitleNames[id]?.[language] ?? fallback;
 }
+
+/** Compact lobby snapshots contain a displayed title rather than its catalog ID. */
+export function localizedSudokuTitleName(name:string,language:SudokuTitleLanguage):string {
+ const names=Object.values(sudokuCareerTitleNames).find(row=>row.de===name||row.en===name);
+ return names?.[language] ?? name;
+}

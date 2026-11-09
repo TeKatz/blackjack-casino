@@ -3,7 +3,7 @@ import {renderToStaticMarkup} from 'react-dom/server';
 import {SudokuModeMenu} from '../src/lounge/SudokuModeMenu';
 import {SudokuVariantScreen} from '../src/lounge/SudokuVariantScreen';
 import type {VariantGame} from '../src/lounge/sudokuBridge';
-import {localizedSudokuTitle,sudokuCareerTitleNames} from '../src/lobby/sudokuTitleLocalization';
+import {localizedSudokuTitle,localizedSudokuTitleName,sudokuCareerTitleNames} from '../src/lobby/sudokuTitleLocalization';
 
 const noop=()=>{};
 describe('Sudoku desktop presentation and title localization',()=>{
@@ -15,6 +15,9 @@ describe('Sudoku desktop presentation and title localization',()=>{
    expect(names.de).not.toBe(names.en);
   }
   expect(localizedSudokuTitle('title-unknown','Keep me','en')).toBe('Keep me');
+  expect(localizedSudokuTitleName('Zahlenkenner','en')).toBe('Number Adept');
+  expect(localizedSudokuTitleName('Number Adept','de')).toBe('Zahlenkenner');
+  expect(localizedSudokuTitleName('Midnight Dealer','en')).toBe('Midnight Dealer');
  });
  it('renders the reward overview in the selected language, without cross-language labels',()=>{
   const props={selectedMode:null,select:noop,entries:[],pending:false,command:noop};
