@@ -5,6 +5,7 @@ import {isPlayableArcade} from './arcadeEngine';
 import type {PlayableArcadeId} from './arcadeEngine';
 import {readArcadeRecord} from './arcadeRecords';
 import {ArcadeGameScreen} from './ArcadeGameScreen';
+import {ArcadeCardArt} from './ArcadeCardArt';
 import type {ArcadeCategory,ArcadeGame} from './arcadeCatalog';
 import './arcade.css';
 
@@ -32,11 +33,14 @@ const text={
 };
 const duration=(game:ArcadeGame)=>game.seconds[0]+'–'+game.seconds[1]+' s';
 const tint=(game:ArcadeGame)=>({'--arcade-accent':game.accent} as CSSProperties);
+const formatArcadeTime=(seconds:number)=>String(Math.floor(seconds/60)).padStart(2,'0')
+ +':'+String(seconds%60).padStart(2,'0');
 
 export function ArcadeMenu({language,onBack}:Props){
  const [category,setCategory]=useState<CategoryFilter>('all');
  const [selectedId,setSelectedId]=useState<string|null>(null);
  const [playingId,setPlayingId]=useState<PlayableArcadeId|null>(null);
+ const [scoresOpen,setScoresOpen]=useState(false);
  const t=text[language],selected=arcadeGames.find(x=>x.id===selectedId);
  const shown=arcadeGames.filter(x=>category==='all'||x.category===category);
  useEffect(()=>{
@@ -44,11 +48,12 @@ export function ArcadeMenu({language,onBack}:Props){
    if(event.key!=='Escape')return;
    event.preventDefault();
    if(playingId)return; // The active game handles Escape and pause.
-   if(selectedId)setSelectedId(null);else onBack();
+   if(scoresOpen)setScoresOpen(false);
+   else if(selectedId)setSelectedId(null);else onBack();
   };
   window.addEventListener('keydown',key);
   return()=>window.removeEventListener('keydown',key);
- },[selectedId,playingId,onBack]);
+ },[selectedId,scoresOpen,playingId,onBack]);
  if(playingId)return <ArcadeGameScreen id={playingId} language={language}
   onBack={()=>{setPlayingId(null);setSelectedId(null);}}/>;
  return <main className="arcade-menu" data-testid="arcade-menu">
@@ -78,23 +83,21 @@ export function ArcadeMenu({language,onBack}:Props){
      {arcadeCategoryNames[id][language]}
     </button>)}
    </div>
-   <span className="arcade-status"><span aria-hidden="true" className="arcade-status-dot"/>{t.coming}</span>
+   <button className="arcade-highscores-button" type="button" data-testid="arcade-highscores-open"
+    onClick={()=>setScoresOpen(true)}>♛ {t.records}</button>
   </div>
   <section className="arcade-games-grid" aria-label={t.games}>
    {shown.map((game,index)=><button type="button" className="arcade-game-card"
     key={game.id} data-arcade-id={game.id} style={tint(game)}
     aria-label={game.name+' · '+t.details} onClick={()=>setSelectedId(game.id)}>
     <div className="arcade-game-art" aria-hidden="true">
-     <div className="arcade-orbit"><span className="arcade-art-symbol">{game.symbol}</span></div>
+     <ArcadeCardArt id={game.id}/>
      <span className="arcade-art-line first"/><span className="arcade-art-line second"/>
      <span className="arcade-art-index">{String(index+1).padStart(2,'0')}</span>
     </div>
     <div className="arcade-card-content">
      <div className="arcade-card-category">
       <span>{arcadeCategoryNames[game.category][language]}</span>
-      <span className={'arcade-card-soon'+(isPlayableArcade(game.id)?' arcade-card-live':'')}>
-       {isPlayableArcade(game.id)?t.available:t.soon}
-      </span>
      </div>
      <h2>{game.name}</h2>
      <p>{game.description[language]}</p>
@@ -105,7 +108,35 @@ export function ArcadeMenu({language,onBack}:Props){
     </div>
    </button>)}
   </section>
-  <p className="arcade-note">{t.note}</p>
+
+  {scoresOpen&&<div className="arcade-detail-backdrop" onMouseDown={e=>{
+   if(e.target===e.currentTarget)setScoresOpen(false);
+  }}>
+   <section className="arcade-highscores-dialog" role="dialog" aria-modal="true"
+    aria-label={t.records} data-testid="arcade-highscores-dialog">
+    <button type="button" className="arcade-detail-close" aria-label={t.close}
+     onClick={()=>setScoresOpen(false)}>×</button>
+    <p className="arcade-eyebrow">THE MIDNIGHT CLUB · ARCADE</p>
+    <h2>{t.records}</h2>
+    <p className="arcade-highscores-intro">{language==='de'?
+     'Deine persönlichen Rekorde, nach Spiel geordnet.':
+     'Your personal records, ordered by game.'}</p>
+    <div className="arcade-highscores-head" aria-hidden="true">
+     <span>{t.games}</span><span>{t.best}</span><span>{language==='de'?'RUNS':'RUNS'}</span>
+     <span>{language==='de'?'BESTE ZEIT':'BEST TIME'}</span>
+    </div>
+    <div className="arcade-highscores-list">
+     {arcadeGames.map((game,index)=>{
+      const record=readArcadeRecord(game.id as PlayableArcadeId);
+      return <div key={game.id} className="arcade-highscores-entry">
+       <span className="arcade-highscores-name"><b>{String(index+1).padStart(2,'0')}</b>{game.name}</span>
+       <strong>{record.best.toLocaleString(language==='de'?'de-DE':'en-US')}</strong>
+       <span>{record.runs}</span><span>{record.bestSeconds?formatArcadeTime(record.bestSeconds):'—'}</span>
+      </div>;
+     })}
+    </div>
+   </section>
+  </div>}
   {selected&&<div className="arcade-detail-backdrop" onMouseDown={e=>{
    if(e.target===e.currentTarget)setSelectedId(null);
   }}>
