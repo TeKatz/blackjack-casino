@@ -495,15 +495,17 @@ internal static class Program
             + "const art=games.map(g=>g.querySelector('.game-art-window'));"
             + "const gpu=document.querySelector('.lobby-pixi');"
             + "const hero=getComputedStyle(document.querySelector('.lobby-hero-picture')).backgroundImage;"
-            + "return Boolean(shell&&games.length===9&&nav.length>=11"
+            + "return Boolean(shell&&games.length===10&&nav.length>=11"
             + "&&daily&&rewards.length===7&&!document.querySelector('.lobby-overview')"
             + "&&gpu"
-            + "&&art.every(x=>x&&x.dataset.modeArt&&!x.firstElementChild)"
+            + "&&art.every(x=>x&&x.dataset.modeArt&&(x.dataset.modeArt==='arcade-games'"
+            + "?Boolean(x.querySelector('.arcade-tile-scene')):!x.firstElementChild))"
+            + "&&Boolean(document.querySelector('.game-arcade-games .lobby-gold-button'))"
             + "&&hero.includes('/lobby/art/hero.png')"
             + "&&profile?.textContent?.includes('Startup Smoke')"
             + "&&document.querySelector('.lobby-hero h1')?.textContent?.length>5);})()");
         Require(result.Equals("true", StringComparison.OrdinalIgnoreCase),
-            "Packaged React lobby did not render nine real games and live profile state. "
+            "Packaged React lobby did not render the nine native modes and Arcade Games tile. "
             + "DOM validation returned " + result);
 
         // The browser-side GPU art system loads local SVG texture pairs in the
@@ -529,6 +531,7 @@ internal static class Program
         await modern.Browser.CoreWebView2.ExecuteScriptAsync("document.querySelector('.casino-news .lobby-gold-button')?.click()");
         await Task.Delay(100);
         RequireNoLegacyLobbyFrame(window, "rendered React lobby");
+        await CheckModernArcadeMenu(modern);
         await CheckModernLobbyUpdates(window, modern);
         Require(!Find<FrameworkElement>(window).Any(drawer => drawer.Name == "LobbyDailyDrawer" && drawer.IsVisible),
             "The obsolete daily-login drawer is still layered over the React lobby.");
@@ -539,6 +542,48 @@ internal static class Program
             CoreWebView2CapturePreviewImageFormat.Png, capture);
         Require(capture.Length > 15_000,
             "Modern lobby WebView2 preview is unexpectedly small or empty.");
+    }
+
+    private static async Task CheckModernArcadeMenu(ModernLobbyView modern)
+    {
+        CoreWebView2 web = modern.Browser.CoreWebView2!;
+        await web.ExecuteScriptAsync("document.querySelector('.game-arcade-games .lobby-gold-button')?.click()");
+        bool menuOpened = false;
+        for (int attempt = 0; attempt < 40; attempt++)
+        {
+            string ready = await web.ExecuteScriptAsync(
+                "Boolean(document.querySelector('[data-testid=arcade-menu]')"
+                + "&&document.querySelectorAll('[data-arcade-id]').length===10"
+                + "&&!document.querySelector('.lobby-hero'))");
+            if (ready == "true") { menuOpened = true; break; }
+            await Task.Delay(100);
+        }
+        Require(menuOpened, "Arcade Games did not open its dedicated ten-game menu.");
+        await web.ExecuteScriptAsync(
+            "document.querySelector('[data-arcade-id=midnight-wings]')?.click()");
+        bool detailsOpened = false;
+        for (int attempt = 0; attempt < 40; attempt++)
+        {
+            string ready = await web.ExecuteScriptAsync(
+                "Boolean(document.querySelector('.arcade-detail[role=dialog]')"
+                + "?.textContent?.includes('Midnight Wings'))");
+            if (ready == "true") { detailsOpened = true; break; }
+            await Task.Delay(100);
+        }
+        Require(detailsOpened, "Arcade game details did not open from the selection.");
+        await web.ExecuteScriptAsync("document.querySelector('.arcade-detail-close')?.click()");
+        await web.ExecuteScriptAsync("document.querySelector('.arcade-back')?.click()");
+        bool backToLobby = false;
+        for (int attempt = 0; attempt < 40; attempt++)
+        {
+            string ready = await web.ExecuteScriptAsync(
+                "Boolean(document.querySelector('.lobby-hero')"
+                + "&&document.querySelector('.game-arcade-games')"
+                + "&&document.querySelector('.lobby-daily'))");
+            if (ready == "true") { backToLobby = true; break; }
+            await Task.Delay(100);
+        }
+        Require(backToLobby, "Back from Arcade Games did not restore the casino lobby.");
     }
 
     private static async Task CheckModernLobbyUpdates(MainWindow window, ModernLobbyView modern)
