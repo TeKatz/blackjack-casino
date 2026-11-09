@@ -8,8 +8,8 @@ export function gameplayAccurateArcadeArt(id:string,gradient:(name:string)=>stri
   <path d="M0 108 28 96 65 106 108 81 148 96 187 84 236 106 277 88 320 102V128H0Z"
    fill="#13323b" opacity=".8"/>
   <g className="preview-wings-pipes">
-   {[44,196,348].map((x,i)=>{
-    const top=i%2===0?31:38,bottom=i%2===0?86:93;
+   {[44,196,348,500].map((x,i)=>{
+    const top=i%2===0?29:36,bottom=i%2===0?98:101;
     return <g key={x}>
      <rect x={x} y="-12" width="34" height={top+9} fill="#285f60" stroke="#bd9d6b" strokeWidth="1.5"/>
      <rect x={x} y={bottom} width="34" height={140-bottom} fill="#2d6662" stroke="#bd9d6b" strokeWidth="1.5"/>
