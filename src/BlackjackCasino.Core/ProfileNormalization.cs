@@ -23,6 +23,8 @@ public static class ProfileNormalization
         state.WordSearch.Normalize();
         state.Memory ??= new();
         state.Memory.Normalize();
+        state.Minesweeper ??= new();
+        state.Minesweeper.Normalize();
         state.Jigsaw ??= new();
         state.Jigsaw.Normalize();
         state.MidnightMerge ??= new();
