@@ -2,7 +2,7 @@ using BlackjackCasino.Desktop;
 
 namespace BlackjackCasino.Tests;
 
-/// <summary>All seven React destinations are represented without constructing WPF game factories.</summary>
+/// <summary>All eight React destinations are represented without constructing WPF game factories.</summary>
 public sealed class ModernLoungeCatalogTests
 {
     [Fact]
@@ -11,9 +11,9 @@ public sealed class ModernLoungeCatalogTests
         Assert.Equal(1, ModernLoungeCatalog.SnapshotVersion);
         Assert.Equal(new[]
         {
-            "sudoku", "solitaire", "word-search", "memory", "jigsaw", "tales-backroom", "tower-defense",
+            "sudoku", "solitaire", "word-search", "memory", "jigsaw", "tales-backroom", "tower-defense", "minesweeper",
         }, ModernLoungeCatalog.GameIds);
-        Assert.Equal(7, ModernLoungeCatalog.GameIds.Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal(8, ModernLoungeCatalog.GameIds.Distinct(StringComparer.Ordinal).Count());
         Assert.All(ModernLoungeCatalog.GameIds, id => Assert.True(ModernLoungeCatalog.Contains(id)));
         Assert.False(ModernLoungeCatalog.Contains("legacy-sudoku"));
         Assert.False(ModernLoungeCatalog.Contains(null));
@@ -32,7 +32,7 @@ public sealed class ModernLoungeCatalogTests
         Assert.Equal(ModernLoungeCatalog.GameIds, called);
         Assert.Equal(ModernLoungeCatalog.GameIds, games.Select(game => game.Id));
         Assert.Null(games[0].Status);
-        Assert.Equal("Native status tower-defense", games[^1].Status);
+        Assert.Equal("Native status minesweeper", games[^1].Status);
         Assert.Throws<ArgumentNullException>(() => ModernLoungeCatalog.Create(null!));
     }
 
