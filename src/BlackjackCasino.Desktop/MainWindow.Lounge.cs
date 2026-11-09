@@ -22,6 +22,7 @@ public partial class MainWindow
         }
         ProcessLatestCompletedRound();
         RecordSudokuCompletions(preferences.Sudoku);
+        RecordSudokuVariantCompletions(preferences.SudokuVariants);
 
         preferences = preferences with { Solitaire = SolitaireProgressState.Normalize(preferences.Solitaire) };
         preferences.WordSearch.Normalize();
@@ -257,6 +258,28 @@ public partial class MainWindow
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
                 sudokuRewardNotice = "Puzzle saved. Reopen the Chill Lounge to retry saving your XP.";
+            }
+        }
+    }
+
+    private void RecordSudokuVariantCompletions(SudokuVariantProgressState state)
+    {
+        if (progressionController is null) return;
+        foreach (SudokuVariantCompletion receipt in state.CompletedReceipts ?? [])
+        {
+            if (progressionController.Profile.SudokuVariants.RecordedPuzzleIds.Contains(receipt.PuzzleId))
+                continue;
+            try
+            {
+                int previousLevel = progressionController.Profile.SudokuCareer.Level;
+                ProgressionAward award = progressionController.ProcessSudokuVariant(receipt);
+                CreditProgressionBankrollReward(award.BankrollEarned, "Sudoku variant reward");
+                if (award.PlayerExperience > 0)
+                    sudokuRewardNotice = $"{receipt.Mode.ToUpperInvariant()} solved! +{award.PlayerExperience:N0} player XP · +{SudokuCareer.ExperienceForVariant(receipt.Mode, receipt.Difficulty, receipt.MiniSize):N0} Sudoku XP · Sudoku level {progressionController.Profile.SudokuCareer.Level}";
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                sudokuRewardNotice = "Puzzle saved. Reopen the Chill Lounge to retry career rewards.";
             }
         }
     }

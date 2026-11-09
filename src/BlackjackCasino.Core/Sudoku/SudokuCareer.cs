@@ -67,15 +67,18 @@ public static class SudokuCareer
     public static void Grant(PlayerProfileState profile, SudokuDifficulty difficulty) =>
         GrantPoints(profile, ExperienceForPuzzle(difficulty));
 
-    public static void GrantVariant(PlayerProfileState profile, string mode,
-        SudokuDifficulty difficulty, int miniSize)
+    public static int ExperienceForVariant(string mode, SudokuDifficulty difficulty, int miniSize)
     {
         int xp = ExperienceForPuzzle(difficulty);
         if (mode == "samurai") xp *= 3;
         else if (mode == "killer") xp = xp * 3 / 2;
         else if (mode == "mini") xp /= miniSize == 4 ? 3 : 2;
-        GrantPoints(profile, xp);
+        return xp;
     }
+
+    public static void GrantVariant(PlayerProfileState profile, string mode,
+        SudokuDifficulty difficulty, int miniSize) =>
+        GrantPoints(profile, ExperienceForVariant(mode, difficulty, miniSize));
 
     private static void GrantPoints(PlayerProfileState profile, int xp)
     {

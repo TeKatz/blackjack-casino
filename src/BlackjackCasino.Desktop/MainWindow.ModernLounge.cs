@@ -191,7 +191,11 @@ public partial class MainWindow
                 value => SaveModernSudokuTimer(value),
                 () => preferences.SudokuShowGuides,
                 value => SaveModernSudokuGuides(value), () => sudokuRewardNotice,
-                () => progressionController?.Profile.SudokuCareer ?? new SudokuCareerState());
+                () => progressionController?.Profile.SudokuCareer ?? new SudokuCareerState(),
+                new ModernSudokuVariants(preferences.SudokuVariants,
+                    SaveModernSudokuVariantProgress,
+                    () => progressionController?.Profile.SudokuVariants ?? new SudokuVariantStatistics(),
+                    () => sudokuRewardNotice));
             modernLoungeView?.Refresh();
             return;
         }
@@ -574,6 +578,15 @@ public partial class MainWindow
         try { if (!testSession) SavePreferences(); }
         catch { preferences = previous; throw; }
         RecordSudokuCompletions(state);
+    }
+
+    private void SaveModernSudokuVariantProgress(SudokuVariantProgressState state)
+    {
+        AppPreferences previous = preferences;
+        preferences = preferences with { SudokuVariants = state };
+        try { if (!testSession) SavePreferences(); }
+        catch { preferences = previous; throw; }
+        RecordSudokuVariantCompletions(state);
     }
 
     private void SaveModernSudokuTimer(bool value)
