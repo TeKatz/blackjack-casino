@@ -1,0 +1,62 @@
+/** Arcade concepts shown in the casino lobby. No game is advertised as playable until its own implementation is wired. */
+export type ArcadeCategory='one-button'|'reaction'|'precision';
+export type ArcadeGame={
+ id:string;name:string;category:ArcadeCategory;symbol:string;accent:string;
+ difficulty:number;seconds:[number,number];controls:{en:string;de:string};
+ description:{en:string;de:string};detail:{en:string;de:string};
+};
+export const ARCADE_MODE_ID='arcade-games';
+export const arcadeGames:readonly ArcadeGame[]=[
+ {id:'midnight-wings',name:'Midnight Wings',category:'one-button',symbol:'✦',accent:'#f0bf72',difficulty:4,seconds:[15,90],
+  controls:{en:'Space / Click',de:'Leertaste / Klick'},
+  description:{en:'Keep flying through ever-narrower gaps.',de:'Fliege durch immer engere Hindernislücken.'},
+  detail:{en:'One tap gives you lift. Keep a steady rhythm as the obstacles get faster and closer together.',de:'Ein Tastendruck gibt Auftrieb. Halte deinen Rhythmus, während die Hindernisse schneller und enger werden.'}},
+ {id:'cave-escape',name:'Cave Escape',category:'one-button',symbol:'⌁',accent:'#75ddc1',difficulty:4,seconds:[20,120],
+  controls:{en:'Hold / Release',de:'Halten / Loslassen'},
+  description:{en:'Survive a tightening underground tunnel.',de:'Überlebe einen immer engeren Höhlentunnel.'},
+  detail:{en:'Hold to rise and release to descend. The cave never stops scrolling.',de:'Gedrückt halten lässt dich steigen, Loslassen sinken. Die Höhle bewegt sich unaufhaltsam weiter.'}},
+ {id:'hexagon-hell',name:'Hexagon Hell',category:'reaction',symbol:'⬡',accent:'#d4a0ff',difficulty:5,seconds:[10,60],
+  controls:{en:'A / D · Arrow keys',de:'A / D · Pfeiltasten'},
+  description:{en:'Rotate through a storm of geometric walls.',de:'Rotiere durch einen Sturm geometrischer Wände.'},
+  detail:{en:'Circle the center and steer into the gaps. As the arena twists, timing matters more than speed.',de:'Kreise um das Zentrum und steuere durch die Lücken. Wenn die Arena rotiert, entscheidet vor allem dein Timing.'}},
+ {id:'perfect-stack',name:'Perfect Stack',category:'precision',symbol:'▤',accent:'#f3be86',difficulty:3,seconds:[30,120],
+  controls:{en:'Space / Click',de:'Leertaste / Klick'},
+  description:{en:'Build a tower one exact landing at a time.',de:'Baue einen Turm mit möglichst perfekten Treffern.'},
+  detail:{en:'Drop moving blocks in alignment. Every overhang is cut away, so each mistake shrinks your next landing.',de:'Lasse bewegte Blöcke möglichst passgenau fallen. Jeder Überstand wird abgeschnitten und macht die nächste Landung schwerer.'}},
+ {id:'spike-rush',name:'Spike Rush',category:'one-button',symbol:'▲',accent:'#ff9b83',difficulty:5,seconds:[20,90],
+  controls:{en:'Space / Click',de:'Leertaste / Klick'},
+  description:{en:'Jump on the beat, or hit the spikes.',de:'Springe im richtigen Moment über Stacheln.'},
+  detail:{en:'Your runner advances automatically. Learn the obstacle patterns and survive each precision jump.',de:'Deine Figur läuft automatisch. Lerne Hindernismuster und überlebe jeden präzisen Sprung.'}},
+ {id:'blade-timing',name:'Blade Timing',category:'precision',symbol:'✧',accent:'#f0d794',difficulty:4,seconds:[15,60],
+  controls:{en:'Space / Click',de:'Leertaste / Klick'},
+  description:{en:'Find a safe gap on the spinning target.',de:'Finde eine freie Lücke auf dem rotierenden Ziel.'},
+  detail:{en:'Launch blades into a rotating wheel without striking a blade already stuck there.',de:'Wirf Klingen auf ein rotierendes Rad, ohne eine bereits steckende Klinge zu treffen.'}},
+ {id:'bullet-storm',name:'Bullet Storm',category:'reaction',symbol:'✹',accent:'#84d7ff',difficulty:5,seconds:[20,120],
+  controls:{en:'Mouse / WASD',de:'Maus / WASD'},
+  description:{en:'Dodge a relentless shower of projectiles.',de:'Weiche einem unaufhörlichen Projektilhagel aus.'},
+  detail:{en:'You have no weapon. Thread your way through carefully arranged bullet patterns for as long as you can.',de:'Du hast keine Waffe. Finde möglichst lange einen Weg durch sorgfältig angeordnete Geschossmuster.'}},
+ {id:'neon-breaker',name:'Neon Breaker',category:'precision',symbol:'▦',accent:'#83e9d6',difficulty:3,seconds:[60,180],
+  controls:{en:'Mouse / Arrow keys',de:'Maus / Pfeiltasten'},
+  description:{en:'Clear the neon bricks before the ball escapes.',de:'Zerstöre die Neonblöcke, ohne den Ball zu verlieren.'},
+  detail:{en:'Move a paddle to rebound the ball. Each cleared wave makes the ball faster and the paddle smaller.',de:'Bewege einen Schläger und halte den Ball im Spiel. Mit jeder Welle wird er schneller und der Schläger kleiner.'}},
+ {id:'death-snake',name:'Death Snake',category:'reaction',symbol:'∞',accent:'#b9e978',difficulty:4,seconds:[30,180],
+  controls:{en:'WASD / Arrow keys',de:'WASD / Pfeiltasten'},
+  description:{en:'Classic snake with speed that never stops rising.',de:'Klassisches Snake mit ständig steigendem Tempo.'},
+  detail:{en:'Collect food, avoid your tail and adapt to new barriers as the snake accelerates.',de:'Sammle Futter, vermeide deinen Schwanz und reagiere auf neue Hindernisse, während die Schlange beschleunigt.'}},
+ {id:'endless-ascent',name:'Endless Ascent',category:'reaction',symbol:'↑',accent:'#b3caff',difficulty:4,seconds:[30,180],
+  controls:{en:'A / D · Arrow keys',de:'A / D · Pfeiltasten'},
+  description:{en:'Jump higher. Falling behind ends the run.',de:'Springe immer höher – wer zurückfällt, verliert.'},
+  detail:{en:'Your character jumps automatically. Guide it onto safe platforms as the screen climbs.',de:'Deine Figur springt automatisch. Lenke sie auf sichere Plattformen, während der Bildschirm nach oben wandert.'}},
+];
+export const arcadeCategoryNames={
+ all:{en:'All games',de:'Alle Spiele'},
+ 'one-button':{en:'One Button',de:'Eine Taste'},
+ reaction:{en:'Reaction',de:'Reaktion'},
+ precision:{en:'Precision',de:'Präzision'},
+} as const;
+export function arcadeLobbyMode(language:'en'|'de'){
+ return {id:ARCADE_MODE_ID,title:'Arcade Games',category:language==='de'?'Arcade':'Arcade',
+  description:language==='de'?'Zehn kurze Herausforderungen. Jeder Versuch zählt.':
+   'Ten quick-fire challenges. Every attempt counts.',
+  enabled:true,secondary:false};
+}
