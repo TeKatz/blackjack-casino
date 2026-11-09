@@ -241,11 +241,18 @@ public partial class MainWindow
 
             try
             {
+                int previousSudokuLevel = progressionController.Profile.SudokuCareer.Level;
                 var award = progressionController.ProcessSudoku(new SudokuCompletionRecord(
                     puzzle.Id, puzzle.Difficulty, puzzle.Pool, clean.ElapsedSeconds, clean.HintsUsed));
                 CreditProgressionBankrollReward(award.BankrollEarned, "Sudoku reward");
                 if (award.PlayerExperience > 0)
-                    sudokuRewardNotice = $"+{award.PlayerExperience:N0} XP · +{award.SeasonExperience:N0} Season XP · +{Money(award.BankrollEarned)} bankroll earned!";
+                {
+                    int newSudokuLevel = progressionController.Profile.SudokuCareer.Level;
+                    string sudokuReward = newSudokuLevel > previousSudokuLevel
+                        ? $" · Sudoku level {newSudokuLevel} · +{SudokuCareer.CosmeticPointsPerLevel * (newSudokuLevel - previousSudokuLevel):N0} cosmetic points"
+                        : $" · +{SudokuCareer.ExperienceForPuzzle(puzzle.Difficulty):N0} Sudoku XP";
+                    sudokuRewardNotice = $"+{award.PlayerExperience:N0} XP · +{award.SeasonExperience:N0} Season XP{sudokuReward} · +{Money(award.BankrollEarned)} bankroll earned!";
+                }
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {

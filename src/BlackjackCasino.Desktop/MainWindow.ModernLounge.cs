@@ -190,7 +190,8 @@ public partial class MainWindow
                 SaveModernSudokuProgress, () => preferences.SudokuShowTimer,
                 value => SaveModernSudokuTimer(value),
                 () => preferences.SudokuShowGuides,
-                value => SaveModernSudokuGuides(value), () => sudokuRewardNotice);
+                value => SaveModernSudokuGuides(value), () => sudokuRewardNotice,
+                () => progressionController?.Profile.SudokuCareer ?? new SudokuCareerState());
             modernLoungeView?.Refresh();
             return;
         }

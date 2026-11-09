@@ -17,6 +17,7 @@ internal sealed class ModernSudokuService
     private readonly Func<bool> guidesVisible;
     private readonly Action<bool> setGuidesVisible;
     private readonly Func<string> rewardNotice;
+    private readonly Func<SudokuCareerState> careerState;
     private readonly Stack<SudokuBoardFrame> undo = new();
     private readonly Stack<SudokuBoardFrame> redo = new();
     private readonly Stopwatch elapsed = new();
@@ -29,7 +30,7 @@ internal sealed class ModernSudokuService
     internal ModernSudokuService(SudokuProgressState saved, Action<SudokuProgressState> persist,
         Func<bool> timerVisible, Action<bool> setTimerVisible,
         Func<bool> guidesVisible, Action<bool> setGuidesVisible,
-        Func<string> rewardNotice)
+        Func<string> rewardNotice, Func<SudokuCareerState>? careerState = null)
     {
         progress = SudokuProgressState.Normalize(saved);
         this.persist = persist;
@@ -38,6 +39,7 @@ internal sealed class ModernSudokuService
         this.guidesVisible = guidesVisible;
         this.setGuidesVisible = setGuidesVisible;
         this.rewardNotice = rewardNotice;
+        this.careerState = careerState ?? (() => new SudokuCareerState());
     }
 
     internal bool InGame => board is not null;
@@ -63,6 +65,9 @@ internal sealed class ModernSudokuService
             };
         }).ToArray();
 
+        SudokuCareerState career = careerState();
+        long nextCareerXp = career.Level < SudokuCareer.MaximumLevel
+            ? SudokuCareer.ExperienceForNextLevel(career.Level) : 0;
         object? game = null;
         if (puzzle is not null && board is not null)
         {
@@ -88,6 +93,9 @@ internal sealed class ModernSudokuService
         return new
         {
             Screen = InGame ? "game" : "library",
+            Career = new { career.Level, career.Experience, NextLevelXp = nextCareerXp,
+                career.LifetimeExperience, career.CosmeticPointsEarned,
+                PointsPerLevel = SudokuCareer.CosmeticPointsPerLevel },
             ShowTimer = timerVisible(), ShowGuides = guidesVisible(),
             Entries = entries,
             NormalCompleted = progress.CompletedPuzzleIds.Count(id =>

@@ -29,6 +29,7 @@ public partial class MainWindow
                 c.Price,
                 c.ShopAvailable,
                 c.RequiredPrestige,
+                c.RequiredSudokuLevel,
                 Owned = profile.OwnedCosmeticIds.Contains(c.Id),
                 Equipped = c.Id == (c.Kind switch
                 {
