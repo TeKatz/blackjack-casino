@@ -23,7 +23,7 @@ describe('Midnight Sweep frontend contract',()=>{
  it('rejects disguised mines and unmasked pre-game numbers',()=>{
   const base=sample();
   expect(isSweepState({...base,cells:[{...base.cells[0],mine:true},...base.cells.slice(1)]})).toBe(false);
-  expect(isSweepState({...base,cells:[{...base.cells[0],adjacent:3},...base.cells.slice(1)]})).toBe(true);
+  expect(isSweepState({...base,cells:[{...base.cells[0],adjacent:3},...base.cells.slice(1)]})).toBe(false);
   expect(isSweepState({...base,runId:'forged'})).toBe(false);
   expect(isSweepState({...base,flagged:10})).toBe(false);
   expect(isSweepState({...base,scansUsed:2})).toBe(false);
