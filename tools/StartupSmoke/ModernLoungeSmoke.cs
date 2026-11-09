@@ -36,17 +36,38 @@ internal static class ModernLoungeSmoke
             "Boolean(document.querySelector('.chill-tower-defense .lounge-bastion-preview'))") == "true",
             "The custom Tower Defense entry is missing.");
         await web.ExecuteScriptAsync("document.querySelector('.chill-tower-defense')?.click()");
+        // Bastion now opens its own campaign menu instead of entering a battle
+        // immediately. Exercise the real native bridge through map selection,
+        // the seven-skill mastery screen and the battlefield before exiting.
         await UntilAsync(async () => await web.ExecuteScriptAsync(
-            "Boolean(document.querySelector('.td-map canvas'))") == "true",
-            "Tower Defense PixiJS battlefield did not render.");
+            "Boolean(document.querySelector('.td-stage-card[data-stage=forest]'))") == "true",
+            "Midnight Bastion campaign map selection did not open.");
+        Require(await web.ExecuteScriptAsync(
+            "Boolean(document.querySelector('.td-stage-card[data-stage=frost]'))") == "true",
+            "Frostpass was missing from the Bastion map selection.");
+        await Capture(web, Path.Combine(output, "modern-tower-defense-menu.png"));
+        await ClickAndWait(web, ".td-mastery-summary button",
+            "Boolean(document.querySelector('[data-testid=midnight-bastion-skills]'))",
+            "Midnight Bastion mastery tree did not open.");
+        Require(await web.ExecuteScriptAsync(
+            "document.querySelectorAll('.td-skill-card').length") == "7",
+            "Midnight Bastion did not show all seven mastery skills.");
+        await ClickAndWait(web, ".td-skills-footer .td-skill-back",
+            "Boolean(document.querySelector('.td-stage-card[data-stage=forest]'))",
+            "Midnight Bastion mastery could not return to map selection.");
+        await ClickAndWait(web, ".td-stage-card[data-stage=forest] .td-primary",
+            "Boolean(document.querySelector('.td-map canvas'))",
+            "Tower Defense PixiJS battlefield did not render after entering Forest Border.");
         await UntilAsync(async () => await web.ExecuteScriptAsync(
             "document.querySelector('.td-map')?.dataset.renderer === 'illustrated'") == "true",
             "The new Tower Defense illustrated SVG sprites did not finish loading.");
         await Capture(web, Path.Combine(output, "modern-tower-defense.png"));
-        await web.ExecuteScriptAsync("document.querySelector('.chill-exit')?.click()");
-        await UntilAsync(async () => await web.ExecuteScriptAsync(
-            "document.querySelectorAll('.chill-card').length") == "7",
-            "Tower Defense did not navigate back to Chill Lounge.");
+        await ClickAndWait(web, ".chill-exit",
+            "Boolean(document.querySelector('.td-stage-card[data-stage=forest]'))",
+            "Tower Defense battlefield did not return to map selection.");
+        await ClickAndWait(web, ".chill-exit",
+            "document.querySelectorAll('.chill-card').length === 7",
+            "Tower Defense map selection did not return to Chill Lounge.");
 
         await web.ExecuteScriptAsync(
             "[...document.querySelectorAll('.chill-filter button')]"
@@ -146,7 +167,7 @@ internal static class ModernLoungeSmoke
             "React Lounge could not return to the casino.");
 
         File.WriteAllText(Path.Combine(output, "modern-lounge-result.txt"),
-            "PASS: React seven-game Lounge and Tower Defense battlefield; six Sudoku difficulty levels and Daily; 81 cells; notes; undo/redo; wrong-value C# feedback; native hint; persisted resume; navigation.");
+            "PASS: React seven-game Lounge, Midnight Bastion campaign menu, seven mastery skills, Forest Border Pixi battlefield and two-step exit; six Sudoku difficulty levels and Daily; 81 cells; notes; undo/redo; wrong-value C# feedback; native hint; persisted resume; navigation.");
     }
 
     private static async Task Capture(CoreWebView2 web, string path)
