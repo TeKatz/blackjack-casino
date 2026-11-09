@@ -193,3 +193,7 @@ The roadmap tracks completed migration stages and outstanding quality gates; his
 - [Tales from the Backroom](docs/adventure-engine.md)
 - [Tales React migration](docs/adventure-modernization.md)
 - [Legacy WPF cleanup inventory](docs/legacy-wpf-inventory.md)
+
+### Midnight Bastion campaign
+
+Midnight Bastion in Chill Lounge now includes forest and Frostpass maps, an independent Bastion XP level and fully unlockable seven-skill mastery tree, Ballista/Flame Spire level-gated towers, saved map progress, optional endless defence after each campaign victory, drag-to-build controls, and global challenge/statistics integration. See [Bastion design and persistence](docs/tower-defense-phase2.md). No casino credits are wagered in this mode.

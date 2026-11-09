@@ -47,3 +47,16 @@ For standard desktop viewports (at least 1100 × 630 CSS pixels), the battlefiel
 - Manually play with and without towers long enough for every enemy to spawn, confirm progress does not advance on projectiles, close/reopen at several points and verify the saved wave.
 - Test 1×/2× speed, pause, build/upgrade while a wave is active, use the back button after a simulated stale-revision error, and inspect a compact Windows viewport.
 - Confirm Windows build, audio on/off, reduced-motion behaviour and the Development update artifact before release.
+
+## Campaign and mastery expansion
+
+- `tower.menu` opens a map hub with an independent run checkpoint per battlefield. `tower.play` validates map requirements in native code, restores that map's saved towers/wave and pauses active waves on reload.
+- `forest` (15 campaign waves) and `frost` (20) use separate native paths, building pads and artwork. Frostpass unlocks at **Bastion level 3**. Initial login routes to the map hub; existing `TdState.Version=1` positions are retained through migration.
+- Midnight Bastion owns its own level progression (`TdProgress`, level 1–100) separate from the casino-wide level. Completing waves awards XP; each level earns exactly one spendable skill point. Skill point count is derived from level minus purchased ranks. `tower.skill.buy` and `tower.skill.reset` are validated and applied natively.
+- Skill branches: capital (additional initial coins), refund (up to 95% sell-back), engineer (cheaper construction and upgrades), fortify (more initial hearts), scouting (preview), focus (tower damage bonus), last-stand (once per run, survive otherwise lethal escape with one heart). All are fully unlockable; reset is free from the skill tree.
+- Two additional tower types are unlocked globally: **Ballista** at level 2 (long-range heavy single target) and **Flame Spire** at level 4 (rapid short-range splash). The standard three towers remain unlocked. All five types have distinct SVGs, shot feedback and native damage/range rules.
+- Drag a tower from the workshop to a free site, or click a site and build normally. Occupied site markers are omitted from the Pixi pad layer.
+- On completing a campaign map, an end screen provides an in-place `tower.endless` continuation, map selection and retry. Endless runs retain the battlefield and enemies scale through a bounded wave cap.
+- Shared challenge and player statistics backends receive Bastion's cumulative completed waves, defeated enemies, map victories, best waves and mastery levels. Challenges live in the normal global challenge catalog and claim using the established reward path.
+- The old forest road striping and rotated triangle-tree SVGs are removed; snow-covered Frostpass has a distinct board/terrain.
+- Data remains offline, credit-free, and native-owned. `TdState.Version` remains 1 so legacy save data loads with the new optional fields and default progress. A saved active wave reloads paused.

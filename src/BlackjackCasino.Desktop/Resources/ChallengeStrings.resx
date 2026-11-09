@@ -518,4 +518,28 @@
   <data name="Challenge.word-search-expert-96.Description" xml:space="preserve"><value>Complete all 96 Expert Word Search puzzles.</value></data>
   <data name="Challenge.word-search-master-96.Name" xml:space="preserve"><value>The Final Word</value></data>
   <data name="Challenge.word-search-master-96.Description" xml:space="preserve"><value>Complete all 96 Master Word Search puzzles.</value></data>
+  <data name="Challenge.bastion-first-wave.Name" xml:space="preserve"><value>First Watch</value></data>
+  <data name="Challenge.bastion-first-wave.Description" xml:space="preserve"><value>Survive your first Bastion wave.</value></data>
+  <data name="Challenge.bastion-waves-10.Name" xml:space="preserve"><value>Night Watch</value></data>
+  <data name="Challenge.bastion-waves-10.Description" xml:space="preserve"><value>Clear ten waves across maps.</value></data>
+  <data name="Challenge.bastion-waves-50.Name" xml:space="preserve"><value>Unbroken Ramparts</value></data>
+  <data name="Challenge.bastion-waves-50.Description" xml:space="preserve"><value>Clear fifty waves.</value></data>
+  <data name="Challenge.bastion-waves-200.Name" xml:space="preserve"><value>The Long Vigil</value></data>
+  <data name="Challenge.bastion-waves-200.Description" xml:space="preserve"><value>Clear 200 waves.</value></data>
+  <data name="Challenge.bastion-enemies-100.Name" xml:space="preserve"><value>Hold the Line</value></data>
+  <data name="Challenge.bastion-enemies-100.Description" xml:space="preserve"><value>Defeat 100 Bastion enemies.</value></data>
+  <data name="Challenge.bastion-enemies-1000.Name" xml:space="preserve"><value>Unyielding</value></data>
+  <data name="Challenge.bastion-enemies-1000.Description" xml:space="preserve"><value>Defeat 1,000 enemies.</value></data>
+  <data name="Challenge.bastion-enemies-5000.Name" xml:space="preserve"><value>A Fortress of Legends</value></data>
+  <data name="Challenge.bastion-enemies-5000.Description" xml:space="preserve"><value>Defeat 5,000 enemies.</value></data>
+  <data name="Challenge.bastion-first-win.Name" xml:space="preserve"><value>The Keep Stands</value></data>
+  <data name="Challenge.bastion-first-win.Description" xml:space="preserve"><value>Complete a Bastion map.</value></data>
+  <data name="Challenge.bastion-both-maps.Name" xml:space="preserve"><value>Two Fronts</value></data>
+  <data name="Challenge.bastion-both-maps.Description" xml:space="preserve"><value>Complete both Bastion maps.</value></data>
+  <data name="Challenge.bastion-level-5.Name" xml:space="preserve"><value>Apprentice Commander</value></data>
+  <data name="Challenge.bastion-level-5.Description" xml:space="preserve"><value>Reach Bastion mastery level five.</value></data>
+  <data name="Challenge.bastion-level-15.Name" xml:space="preserve"><value>Veteran Commander</value></data>
+  <data name="Challenge.bastion-level-15.Description" xml:space="preserve"><value>Reach Bastion mastery level fifteen.</value></data>
+  <data name="Challenge.bastion-endless-30.Name" xml:space="preserve"><value>Beyond the Dawn</value></data>
+  <data name="Challenge.bastion-endless-30.Description" xml:space="preserve"><value>Reach wave 30 on any map.</value></data>
 </root>
