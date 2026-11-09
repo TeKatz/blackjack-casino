@@ -42,6 +42,7 @@ public partial class MainWindow
             ModernAlbumClaim, ModernProfileRename, ModernProfileEquip,
             ActivateModernSeason, ModernVaultOpen,
             ModernChallengeClaim, ModernChallengesClaimAll, OnModernProgressionClosed, OpenProgression,
+            ModernArcadeRun,
             OpenNativePlayerProfile, () => OpenModernProgression("vault"),
             () => { ClaimDailyLoginFromDrawer(); modernLobby?.Refresh(); },
             SetModernLobbyLanguage, Close, OnModernLobbyStateChanged,
