@@ -297,6 +297,21 @@ internal sealed class PlayerProgressionController : IDisposable
         }
     }
 
+    /// <summary>Commit one finished Arcade run to the normal player profile and challenges.</summary>
+    public bool ProcessArcadeRun(ArcadeRunReceipt receipt)
+    {
+        lock (Profile)
+        {
+            AccruePlaytime();
+            PlayerProfileState candidate = PlayerProfileTransactionSnapshot.Create(
+                Profile, RoutineProfileTransactionArea.Arcade);
+            if (!ArcadeProgression.Process(candidate.Arcade, receipt)) return false;
+            if (persistKniffelRewards) saveKniffelProfile(candidate);
+            AdoptManorProfile(candidate);
+            return true;
+        }
+    }
+
     public ChallengeClaimResult ClaimChallenge(string challengeId)
     {
         lock (Profile)
@@ -427,6 +442,7 @@ internal sealed class PlayerProgressionController : IDisposable
         Profile.WordSearch = committed.WordSearch;
         Profile.Memory = committed.Memory;
         Profile.Jigsaw = committed.Jigsaw;
+        Profile.Arcade = committed.Arcade;
         Profile.MidnightMerge = committed.MidnightMerge;
         Profile.Manor = committed.Manor;
         Profile.Vault = committed.Vault;
