@@ -6,6 +6,8 @@ import {PlayerPortrait,CosmeticTitle,VaultIcon} from './Cosmetics';
 import {localizedSudokuTitleName} from './sudokuTitleLocalization';
 import {Modal} from './Modal';
 import {NavIcon} from './NavIcon';
+import {ArcadeMenu} from './ArcadeMenu';
+import {ARCADE_MODE_ID,arcadeLobbyMode} from './arcadeCatalog';
 import { LobbyAmbient } from './LobbyAmbient';
 import { ModernShop } from './ModernShop';
 import { ModernChallenges } from './ModernChallenges';
@@ -30,11 +32,12 @@ import './lobby.css';
 
 type Filter = 'all'|'tables'|'slots'|'relax'|'empire'|'collections'|'shop'|'stats'|'season'|'challenges'|'vault'|'daily'|'profile';
 const artOrder = ['blackjack','kniffel','chill-lounge','casino-empire','midnight-reels',
-  'neon-vault','nine-lives','midnight-manor','midnight-merge'];
+  'neon-vault','nine-lives','midnight-manor','midnight-merge',ARCADE_MODE_ID];
 const categoryById: Record<string, string> = {
   blackjack:'TABLE GAMES',kniffel:'TABLE GAMES','chill-lounge':'RELAXED',
   'casino-empire':'EMPIRE','midnight-reels':'SLOTS','neon-vault':'SLOTS',
   'nine-lives':'SLOTS','midnight-manor':'SLOTS','midnight-merge':'CASINO RESTORATION',
+  'arcade-games':'ARCADE CHALLENGES',
 };
 const navigation: {id: Filter; en: string; de: string}[] = [
   {id:'all',en:'Lobby',de:'Lobby'}, {id:'tables',en:'Table Games',de:'Tischspiele'},
@@ -80,7 +83,13 @@ function GameTile({ mode, language, motionEnabled, onOpen, onSecondary }:{
   };
   return <article className={'lobby-game game-'+mode.id+
       (mode.enabled?'':' unavailable')} onPointerMove={move} onPointerLeave={leave}>
-    <div className="game-art-window" data-mode-art={mode.id} aria-hidden="true"/>
+    <div className="game-art-window" data-mode-art={mode.id} aria-hidden="true">
+      {mode.id===ARCADE_MODE_ID&&<div className="arcade-tile-scene">
+        <span className="arcade-tile-spark one"/><span className="arcade-tile-spark two"/>
+        <span className="arcade-tile-spark three"/>
+        <span className="arcade-tile-machine"><span>✦</span></span>
+      </div>}
+    </div>
     <div className="game-info">
       <div className="game-category">{categoryById[mode.id] || mode.category.toUpperCase()}</div>
       <h3>{mode.title}</h3>
@@ -182,6 +191,7 @@ function LobbyApp() {
   const [shopPending,setShopPending] = useState<string|null>(null);
   const [shopNotice,setShopNotice] = useState<{success:boolean;message:string}|null>(null);
   const [filter,setFilter] = useState<Filter>('all');
+  const [arcadeOpen,setArcadeOpen] = useState(false);
   const [updates,setUpdates] = useState<LobbyUpdatesSnapshot>(fallbackUpdates);
   const [updatesOpen,setUpdatesOpen] = useState(false);
   const [newsOpen,setNewsOpen]=useState(false);
@@ -199,7 +209,7 @@ function LobbyApp() {
   useEffect(()=>{
     const stop = onRecordsMessage(message=>{
       if(message.type==='lobby.records.show'){
-        setRecordsVisible(message.data.page);setShopVisible(false);setDailyOpen(false);
+        setRecordsVisible(message.data.page);setShopVisible(false);setDailyOpen(false);setArcadeOpen(false);
       }else if(message.type==='lobby.records.snapshot'){
         if(message.data.page==='challenges'){setChallenges(message.data.snapshot);setChallengesLoaded(true);}
         else if(message.data.page==='statistics'){setStatistics(message.data.snapshot);setStatisticsLoaded(true);}
@@ -233,7 +243,7 @@ function LobbyApp() {
         setShopPending(null);
         setShopNotice({success:message.data.success,message:message.data.message});
       }
-      else if(message.type==='lobby.shop.show'){setShopVisible(true);setRecordsVisible(null);setDailyOpen(false);}
+      else if(message.type==='lobby.shop.show'){setShopVisible(true);setRecordsVisible(null);setDailyOpen(false);setArcadeOpen(false);}
       else if(message.type==='lobby.shop.hide'){setShopVisible(false);}
     });
     return stop;
@@ -266,6 +276,7 @@ function LobbyApp() {
     lobbyCommand('lobby.records.close');
   };
   const openRecords = (page:RecordsPage) => {
+    setArcadeOpen(false);
     if(shopVisible)closeShop();
     setRecordsVisible(page);setDailyOpen(false);setShopNotice(null);setRecordsPending(null);
     if(page==='vault'){setVaultReward(null);setVaultNotice(null);}
@@ -280,6 +291,7 @@ function LobbyApp() {
     lobbyCommand('lobby.records.open',page);
   };
   const openShop = () => {
+    setArcadeOpen(false);
     if(recordsVisible)closeRecords();
     setShopNotice(null);
     setShopVisible(true);setShopLoaded(!embeddedLobby);setDailyOpen(false);
@@ -289,7 +301,16 @@ function LobbyApp() {
     setShopVisible(false);setShopNotice(null);setShopPending(null);
     lobbyCommand('lobby.shop.close');
   };
-  const openMode = (id:string)=>{if(shopVisible)closeShop();if(recordsVisible)closeRecords();lobbyCommand('lobby.open',id);};
+  const openMode = (id:string)=>{
+    if(shopVisible)closeShop();
+    if(recordsVisible)closeRecords();
+    if(id===ARCADE_MODE_ID){
+      setDailyOpen(false);setFilter('all');setArcadeOpen(true);
+      return;
+    }
+    setArcadeOpen(false);
+    lobbyCommand('lobby.open',id);
+  };
   const openSecondary = (id:string)=>lobbyCommand('lobby.open-secondary',id);
   const openProgression = (id:string)=>{
     if(id==='Cosmetic Shop'){openShop();return;}
@@ -302,6 +323,7 @@ function LobbyApp() {
     lobbyCommand('lobby.progression',id);
   };
   const chooseNav = (id:Filter)=>{
+    setArcadeOpen(false);
     if(id==='collections') {openProgression("Collector's Album");return;}
     if(id==='shop') {openShop();return;}
     if(shopVisible)closeShop();
@@ -325,13 +347,14 @@ function LobbyApp() {
     setUpdatesOpen(false);
     lobbyCommand('lobby.updates.close');
   };
-  const modes = data.modes
+  // Arcade is a local selection screen; it does not issue an unknown native game route.
+  const modes = [...data.modes.filter(x=>x.id!==ARCADE_MODE_ID),arcadeLobbyMode(data.language)]
     .filter(x=>matchesFilter(x.id,filter))
     .sort((a,b)=>artOrder.indexOf(a.id)-artOrder.indexOf(b.id));
   return <div className="casino-lobby-shell" data-reduced={lowMotion || !data.animationsEnabled}>
     <LobbyAmbient motionEnabled={!lowMotion && data.animationsEnabled}/>
     <header className="lobby-topbar">
-      <button className="lobby-brand" type="button" onClick={()=>{if(shopVisible)closeShop();if(recordsVisible)closeRecords();setFilter('all');}}>
+      <button className="lobby-brand" type="button" onClick={()=>{if(shopVisible)closeShop();if(recordsVisible)closeRecords();setArcadeOpen(false);setFilter('all');}}>
         <span className="brand-spade" aria-hidden="true">♠</span>
         <span><b>BLACKJACK CASINO</b><i>THE MIDNIGHT CLUB</i></span>
       </button>
@@ -367,7 +390,7 @@ function LobbyApp() {
         ↪ <span>{de?'Beenden':'Exit'}</span>
       </button>
     </header>
-    <div className={'lobby-body '+(shopVisible?'shop-active':recordsVisible?'records-active':'')}>
+    <div className={'lobby-body '+(shopVisible?'shop-active':recordsVisible?'records-active':arcadeOpen?'arcade-active':'')}>
       <nav className="lobby-nav" aria-label={de?'Casino-Navigation':'Casino navigation'}>
         <div className="lobby-nav-scroll">
         <button className="lobby-nav-item" onClick={()=>setNewsOpen(true)}><NavIcon name="news"/><span>News</span></button>
@@ -441,7 +464,8 @@ function LobbyApp() {
         onBack={()=>{closeShop();setFilter('all');}}
         onCosmetic={id=>{setShopPending(id);lobbyCommand('lobby.shop.action',id);}}
         onPack={rarity=>{setShopPending(rarity);lobbyCommand('lobby.shop.pack',rarity);}}
-        onAlbum={()=>openProgression("Collector's Album")}/>:<>
+        onAlbum={()=>openProgression("Collector's Album")}/>:
+      arcadeOpen?<ArcadeMenu language={data.language} onBack={()=>setArcadeOpen(false)}/>:<>
       <main className="lobby-main">
         <div className="lobby-hero">
           <div className="lobby-hero-picture" aria-hidden="true"/>
