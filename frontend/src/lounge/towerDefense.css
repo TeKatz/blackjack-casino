@@ -175,3 +175,98 @@
  .bastion-open .td-tower-portrait{height:clamp(55px,10vh,80px)}
  .bastion-open .td-phase2 .td-equipped p.td-tower-description{display:none}
 }
+
+/* Midnight Bastion campaign hub, mastery and completion screens. */
+.td-menu,.td-skills{display:flex;flex-direction:column;gap:18px;min-height:0}
+.td-menu-head,.td-skill-header{display:flex;justify-content:space-between;gap:26px;align-items:center;
+ padding:22px 26px;background:linear-gradient(115deg,#183a32,#0d222a 70%,#122b3c);
+ border:1px solid #aa9263;border-radius:15px;box-shadow:0 12px 32px #0004}
+.td-menu-head>div:first-child,.td-skill-header>div:first-child{min-width:0}
+.td-menu-head h1,.td-skill-header h1{margin:9px 0;font:normal clamp(30px,3.4vw,48px) Georgia,serif}
+.td-menu-head p,.td-skill-header p{font-size:12px;color:#b9c9b9;margin:0}
+.td-mastery-summary{width:245px;flex-shrink:0;border:1px solid #b79b665e;border-radius:12px;
+ background:#0b241d;padding:14px;display:flex;flex-direction:column;align-items:center;gap:8px}
+.td-mastery-summary small,.td-skill-points small{font-size:9px;color:#c7b187;letter-spacing:.15em;font-weight:800}
+.td-mastery-summary strong,.td-skill-points strong{font:normal 36px Georgia,serif;color:#f7db9f}
+.td-mastery-summary button{width:100%;min-height:39px}
+.td-xp-rail{width:100%;height:7px;overflow:hidden;border-radius:15px;background:#344d43}
+.td-xp-rail>span{display:block;height:100%;background:linear-gradient(90deg,#7da98e,#efcc87);border-radius:15px;transition:width .2s}
+.td-menu-title{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.td-menu-title h2{font:normal 20px Georgia,serif;color:#e9c995;margin:0}
+.td-menu-title>span{font-size:11px;color:#b7caba}
+.td-stage-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px;min-height:0}
+.td-stage-card{border:1px solid #9c875d;border-radius:14px;overflow:hidden;
+ background:linear-gradient(160deg,#1a3b33,#0d2325);box-shadow:0 14px 30px #0005}
+.td-stage-card.locked{filter:saturate(.55)}
+.td-stage-art{height:clamp(125px,24vh,240px);background-size:cover;background-position:center;
+ padding:15px;display:flex;justify-content:space-between;align-items:flex-start}
+.td-stage-art>span{color:#eed9ad;background:#09262acc;border:1px solid #b89d6966;border-radius:5px;padding:6px 9px;
+ font-size:10px;letter-spacing:.17em;font-weight:800}
+.td-stage-art>strong{font-size:14px;color:#ffdbaf;background:#0b1b24df;padding:8px;border-radius:7px}
+.td-stage-body{padding:15px 19px;display:flex;flex-direction:column;align-items:start;gap:6px}
+.td-stage-body h3{font:normal 26px Georgia,serif;color:#f0d7a9;margin:0}
+.td-stage-body p{margin:0;color:#a9c1b3;font-size:12px}
+.td-stage-status{min-height:20px;color:#ddc58e!important;font-size:11px!important;letter-spacing:.08em}
+.td-stage-body button{width:100%;margin-top:9px;min-height:42px}
+.td-menu-foot{display:flex;gap:15px;justify-content:space-between;align-items:center;border-top:1px solid #56705e;padding-top:10px}
+.td-menu-foot>span{font-size:11px;color:#a4bbab}
+.td-menu-foot button{white-space:nowrap}
+.td-skill-header{padding:19px 26px}
+.td-skill-points{display:flex;align-items:center;flex-direction:column;gap:5px;min-width:130px;
+ padding:11px 16px;border:1px solid #c0a06877;border-radius:10px;background:#102920}
+.td-skill-points strong{font-size:44px}.td-skill-points>span{font-size:11px;color:#c9d7c8}
+.td-skill-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}
+.td-skill-card{padding:16px;display:flex;flex-direction:column;gap:10px;min-height:204px;
+ border:1px solid #69887376;background:linear-gradient(153deg,#1c3b34,#102831);border-radius:12px}
+.td-skill-top{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.td-skill-icon{display:grid;place-items:center;width:42px;height:42px;border-radius:10px;
+ border:1px solid #bda779;background:radial-gradient(circle,#716444,#273e39);font-size:24px;color:#ffdf9b}
+.td-skill-category{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#a8c3b5}
+.td-skill-card h3{font:normal 19px Georgia,serif;color:#f4d9ab;margin:0}
+.td-skill-card p{font-size:11px;line-height:1.45;color:#b3c7b7;margin:0;flex:1}
+.td-skill-ranks{display:flex;gap:5px}
+.td-skill-ranks span{display:block;height:7px;flex:1;border-radius:20px;background:#3d514b;border:1px solid #66837366}
+.td-skill-ranks span.filled{background:#eac583;border-color:#f4d9a4;box-shadow:0 0 6px #eac58366}
+.td-skill-back{align-self:flex-start}
+.td-scout{font-size:10px;color:#d6deb3;border:1px solid #607c7180;background:#15312b;
+ border-radius:6px;padding:6px 10px;margin:2px 0}
+.td-tower-icon.ballista{background:#524735;border-color:#ddc18a}
+.td-tower-icon.flame{background:#522b27;border-color:#efa174}
+.td-portrait-halo.ballista{background:radial-gradient(circle,#f8dba44d,transparent 65%)}
+.td-portrait-halo.flame{background:radial-gradient(circle,#ff955d59,transparent 65%)}
+.td-builds button[draggable=true]{cursor:grab}
+.td-builds button[draggable=true]:active{cursor:grabbing}
+.td-end-screen{position:absolute;inset:0;z-index:18;background:#07141ce8;backdrop-filter:blur(9px);
+ display:grid;place-items:center;padding:18px;overflow-y:auto}
+.td-end-content{width:min(100%,600px);text-align:center;border:1px solid #c6a76d;
+ background:radial-gradient(circle at 50% 0%,#325546,#112830 70%,#101a28);
+ border-radius:16px;padding:28px;box-shadow:0 25px 70px #000c}
+.td-end-emblem{color:#e9ce98;font-size:64px;text-shadow:0 0 38px #b49c69a3;line-height:1.2}
+.td-end-content h2{font:normal clamp(27px,3vw,43px) Georgia,serif;color:#f6dcb1;margin:12px 0}
+.td-end-content>p{font-size:12px;color:#a9c7ba}
+.td-end-numbers{display:flex;gap:10px;margin:22px 0;justify-content:center}
+.td-end-numbers>div{min-width:105px;flex:1;max-width:155px;border:1px solid #68827387;border-radius:10px;
+ background:#0b2528;padding:10px 13px;display:flex;flex-direction:column;gap:5px}
+.td-end-numbers small{font-size:9px;color:#a1b9a4;letter-spacing:.12em}
+.td-end-numbers strong{font:normal 28px Georgia,serif;color:#e8cc95}
+.td-end-actions{display:flex;flex-wrap:wrap;gap:9px;justify-content:center}
+.td-end-actions button{min-height:44px;flex:1 1 150px}
+@media(min-width:900px) and (min-height:630px){
+ .bastion-open .td-menu,.bastion-open .td-skills{overflow-y:auto;overflow-x:hidden;padding:5px 6px 18px;gap:12px}
+ .bastion-open .td-menu .td-menu-head{flex:0 0 auto}
+ .bastion-open .td-menu .td-stage-grid{flex:1 1 auto}
+ .bastion-open .td-skills .td-skill-grid{flex:0 0 auto}
+ .bastion-open .td-phase2 .td-sidebar{overflow-y:auto;scrollbar-width:thin;scrollbar-color:#8d9971 #1a302d}
+ .bastion-open .td-phase2 .td-builds button{min-height:49px}
+ .bastion-open .td-scout{margin:0;padding:4px 7px;flex:0 0 auto}
+}
+@media(max-width:1050px){.td-skill-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){
+ .td-menu-head,.td-skill-header{flex-direction:column;align-items:stretch;padding:17px}
+ .td-mastery-summary{width:100%}
+ .td-stage-grid{grid-template-columns:1fr}
+ .td-skill-grid{grid-template-columns:1fr}
+ .td-menu-foot{flex-wrap:wrap}
+ .td-end-content{padding:14px}
+}
+@media(prefers-reduced-motion:reduce){.td-xp-rail>span{transition:none}}
