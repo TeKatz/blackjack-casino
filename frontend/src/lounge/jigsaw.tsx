@@ -136,10 +136,13 @@ function PixiBoard({game,reference,view,selected,pending,error,onPlace,onMove,on
   if(layer.current.children[0])layer.current.children[0].alpha=reference?.27:0;
   for(let i=0;i<pieces.current.length;i++){
    const p=game.pieces[i],s=pieces.current[i];
+   const outline=s.children[2] as Graphics;
+   outline.alpha=selected===i?1:.75;
+   outline.tint=selected===i?0xffd18c:0xffffff;
    if(drag.current?.group.includes(i)||pendingDrag.current?.group.includes(i))continue;
    s.visible=p.onBoard;s.position.set(p.x,p.y);s.alpha=p.locked?1:.93;
   }
- },[game,view,reference,pending,error]);
+ },[game,view,reference,selected,pending,error]);
  const local=(clientX:number,clientY:number)=>{
   const r=mount.current!.getBoundingClientRect();
   return toBoard({width:r.width,height:r.height},live.current.view,clientX-r.left,clientY-r.top);
