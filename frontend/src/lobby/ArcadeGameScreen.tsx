@@ -195,7 +195,7 @@ export function ArcadeGameScreen({id,language,onBack}:{
     if(event.repeat)return;
     if(phaseRef.current==='playing')pause();
     else if(phaseRef.current==='paused'&&key==='p')resume();
-    else if(key==='escape'&&phaseRef.current!=='playing')onBack();
+    else if(key==='escape')onBack();
     return;
    }
    if(key==='r'&&!event.repeat){start();return;}
