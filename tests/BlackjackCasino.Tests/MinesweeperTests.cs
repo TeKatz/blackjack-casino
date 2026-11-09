@@ -148,6 +148,19 @@ public sealed class MinesweeperTests
     }
 
     [Fact]
+    public void UnrelatedProfileProgressionPreservesCommittedSweepRecords()
+    {
+        var source = new PlayerProfileState();
+        source.TowerDefense.Level = 9;
+        Assert.True(source.Minesweeper.Record(
+            SweepRun.New("easy") with { Phase = "won", SafeRevealed = 54, Seconds = 22 }));
+        var candidate = PlayerProfileTransactionSnapshot.Create(source, RoutineProfileTransactionArea.Sudoku);
+        Assert.Equal(1, candidate.Minesweeper.Wins);
+        Assert.Equal(9, candidate.TowerDefense.Level);
+        Assert.Equal(source.Minesweeper.CompletedRunIds, candidate.Minesweeper.CompletedRunIds);
+    }
+
+    [Fact]
     public void BrowserProtocolRejectsBadArgumentsAndReplaysProduceSameReceipt()
     {
         var session = new ModernMinesweeperSession();
