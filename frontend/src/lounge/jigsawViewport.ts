@@ -7,8 +7,8 @@ export function viewport(frame:PuzzleFrame,view:PuzzleView){
  const visibleW=frame.width/fit,visibleH=frame.height/fit;
  const maxX=Math.max(0,(BOARD_WIDTH*view.zoom-visibleW)/2);
  const maxY=Math.max(0,(BOARD_HEIGHT*view.zoom-visibleH)/2);
- const x=Math.max(-maxX,Math.min(maxX,view.x));
- const y=Math.max(-maxY,Math.min(maxY,view.y));
+ const x=maxX===0?0:Math.max(-maxX,Math.min(maxX,view.x));
+ const y=maxY===0?0:Math.max(-maxY,Math.min(maxY,view.y));
  return {fit,x,y,maxX,maxY,
   offsetX:(visibleW-BOARD_WIDTH*view.zoom)/2+x,
   offsetY:(visibleH-BOARD_HEIGHT*view.zoom)/2+y};
