@@ -12,6 +12,7 @@ internal enum RoutineProfileTransactionArea
     Memory,
     Jigsaw,
     Manor,
+    Arcade,
 }
 
 /// <summary>
@@ -55,6 +56,7 @@ internal static class PlayerProfileTransactionSnapshot
             WordSearch = source.WordSearch,
             Memory = source.Memory,
             Jigsaw = source.Jigsaw,
+            Arcade = source.Arcade,
             MidnightMerge = source.MidnightMerge,
             Manor = source.Manor,
             // Season rewards can grant card packs, so collection state must be isolated for every
@@ -98,6 +100,9 @@ internal static class PlayerProfileTransactionSnapshot
                 break;
             case RoutineProfileTransactionArea.Jigsaw:
                 candidate.Jigsaw = ManorPersistence.Clone(source.Jigsaw);
+                break;
+            case RoutineProfileTransactionArea.Arcade:
+                candidate.Arcade = ManorPersistence.Clone(source.Arcade);
                 break;
             case RoutineProfileTransactionArea.Manor:
                 candidate.Manor = ManorPersistence.Clone(source.Manor);
