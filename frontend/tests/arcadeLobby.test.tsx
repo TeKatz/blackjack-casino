@@ -42,15 +42,15 @@ describe('Arcade Games lobby collection',()=>{
    expect(html).toContain('aria-pressed="true"');
    expect(html).toContain('Midnight Wings');
    expect(html).toContain('Endless Ascent');
-   expect(html).toContain(language==='de'?'7 SPIELBAR · 3 GEPLANT':'7 PLAYABLE · 3 PLANNED');
-   expect((html.match(/arcade-card-live/g)||[]).length).toBe(7);
+   expect(html).toContain(language==='de'?'ALLE 10 SPIELBAR':'ALL 10 PLAYABLE');
+   expect((html.match(/arcade-card-live/g)||[]).length).toBe(10);
    expect((html.match(/arcade-card-soon/g)||[]).length).toBe(10);
    expect(html).not.toContain('lobby.open');
   }
  });
- it('renders independent game screens for the first seven games with local scoreboards',()=>{
+ it('renders independent game screens for the all ten games with local scoreboards',()=>{
   for(const id of ['midnight-wings','cave-escape','perfect-stack','blade-timing',
-   'death-snake','neon-breaker','bullet-storm'] as const){
+   'death-snake','neon-breaker','bullet-storm','hexagon-hell','spike-rush','endless-ascent'] as const){
    const html=renderToStaticMarkup(<ArcadeGameScreen id={id} language="de" onBack={()=>{}}/>);
    expect(html).toContain('data-testid="arcade-game-screen"');
    expect(html).toContain('data-game-id="'+id+'"');
