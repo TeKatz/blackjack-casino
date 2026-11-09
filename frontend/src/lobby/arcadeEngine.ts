@@ -21,7 +21,8 @@ export type WingsRun=Base&{kind:'midnight-wings';y:number;vy:number;spawn:number
 export type CaveSegment={x:number;center:number;gap:number};
 export type CaveRun=Base&{kind:'cave-escape';y:number;vy:number;segments:CaveSegment[];distance:number};
 export type StackBlock={x:number;width:number};
-export type StackRun=Base&{kind:'perfect-stack';blocks:StackBlock[];movingX:number;direction:number;perfect:number};
+export type StackRun=Base&{kind:'perfect-stack';blocks:StackBlock[];movingX:number;direction:number;
+ perfect:number;lastDropAt:number;lastDropX:number;lastDropWidth:number};
 export type BladeRun=Base&{kind:'blade-timing';rotation:number;spin:number;blades:number[];stage:number;hits:number;needed:number};
 export const SNAKE_COLS=30,SNAKE_ROWS=18;
 export type ArcadeDirection='up'|'down'|'left'|'right';
@@ -37,10 +38,10 @@ export type StormRun=Base&{kind:'bullet-storm';x:number;y:number;bullets:StormBu
  spawn:number;wave:number};
 export type HexWall={radius:number;opening:number;gap:number;thickness:number;passed:boolean};
 export type HexRun=Base&{kind:'hexagon-hell';angle:number;rotation:number;walls:HexWall[];spawn:number;lastOpening:number};
-export type SpikeObstacle={x:number;width:number;type:'spike'|'double'|'gap';passed:boolean};
+export type SpikeObstacle={x:number;width:number;type:'spike'|'double'|'gap'|'saw'|'tower';passed:boolean;phase?:number};
 export type SpikeRun=Base&{kind:'spike-rush';feet:number;vy:number;grounded:boolean;spawn:number;
  distance:number;obstacles:SpikeObstacle[]};
-export type AscentPlatform={x:number;y:number;width:number;vx:number};
+export type AscentPlatform={x:number;y:number;width:number;vx:number;kind?:'normal'|'spring'|'fragile';crumble?:number};
 export type AscentRun=Base&{kind:'endless-ascent';x:number;feet:number;vy:number;
  climbed:number;platforms:AscentPlatform[];jumps:number};
 export type ArcadeRunState=WingsRun|CaveRun|StackRun|BladeRun|SnakeRun|BreakerRun|StormRun|HexRun|SpikeRun|AscentRun;
@@ -86,7 +87,7 @@ export function createArcadeRun(kind:PlayableArcadeId,seed=0x543fa1d2):ArcadeRun
   case 'cave-escape':return {...base,kind,y:270,vy:0,distance:0,
    segments:Array.from({length:26},(_,i)=>({x:i*42-42,center:270,gap:292}))};
   case 'perfect-stack':return {...base,kind,blocks:[{x:340,width:280}],
-   movingX:0,direction:1,perfect:0};
+   movingX:0,direction:1,perfect:0,lastDropAt:-10,lastDropX:480,lastDropWidth:280};
   case 'blade-timing':return {...base,kind,rotation:0,spin:1.4,
    blades:[-Math.PI/2,0],stage:1,hits:0,needed:5};
   case 'death-snake':return {...base,kind,body:SNAKE_START.map(c=>({...c})),
@@ -102,11 +103,11 @@ export function createArcadeRun(kind:PlayableArcadeId,seed=0x543fa1d2):ArcadeRun
    obstacles:[{x:1000,width:42,type:'spike',passed:false}]};
   case 'endless-ascent':return {...base,kind,x:480,feet:470,vy:-550,climbed:0,jumps:0,
    platforms:[
-    {x:390,y:471,width:180,vx:0},
-    {x:420,y:368,width:156,vx:0},
-    {x:350,y:265,width:148,vx:0},
-    {x:440,y:162,width:144,vx:0},
-    {x:390,y:59,width:144,vx:0},
+    {x:390,y:471,width:180,vx:0,kind:'normal'},
+    {x:411,y:368,width:132,vx:78,kind:'normal'},
+    {x:323,y:263,width:120,vx:-96,kind:'spring'},
+    {x:475,y:156,width:116,vx:0,kind:'fragile'},
+    {x:346,y:48,width:118,vx:108,kind:'normal'},
    ]};
  }
 }
@@ -137,7 +138,7 @@ export function actArcadeRun(state:ArcadeRunState):ArcadeEvent{
  case 'endless-ascent':return null; // jumping is automatic on platform contact
  case 'spike-rush':
   if(!state.grounded)return null;
-  state.vy=-550;
+  state.vy=-435;
   state.grounded=false;
   return 'flap';
  case 'neon-breaker':
@@ -153,6 +154,9 @@ export function actArcadeRun(state:ArcadeRunState):ArcadeEvent{
   const right=exact?last.x+width:Math.min(last.x+width,state.movingX+width);
   if(right-left<4)return fail(state);
   state.blocks.push({x:left,width:right-left});
+  state.lastDropAt=state.elapsed;
+  state.lastDropX=left+(right-left)/2;
+  state.lastDropWidth=right-left;
   state.score++;
   if(exact)state.perfect++;
   else state.perfect=0;
@@ -400,9 +404,10 @@ export function stepArcadeRun(state:ArcadeRunState,dt:number,holding=false,contr
   if(state.spawn<=0){
    const choice=random(state);
    const kind:SpikeObstacle['type']=state.score<2?'spike':
-    choice<.25?'gap':choice<.54?'double':'spike';
-   const width=kind==='gap'?95:kind==='double'?78:42;
-   state.obstacles.push({x:1010,width,type:kind,passed:false});
+    choice<.17?'gap':choice<.38?'double':choice<.59?'saw':
+    choice<.76?'tower':'spike';
+   const width=kind==='gap'?100:kind==='double'?78:kind==='saw'?46:kind==='tower'?43:42;
+   state.obstacles.push({x:1010,width,type:kind,passed:false,phase:random(state)*Math.PI*2});
    state.spawn+=Math.max(1.1,1.55-state.score*.018);
   }
   for(const obstacle of state.obstacles)obstacle.x-=speed*step;
@@ -422,8 +427,13 @@ export function stepArcadeRun(state:ArcadeRunState,dt:number,holding=false,contr
   }
   for(const obstacle of state.obstacles){
    if(obstacle.type!=='gap' &&
-    obstacle.x<playerX+14&&obstacle.x+obstacle.width>playerX-14&&
-    state.feet>ground-24)return fail(state);
+    obstacle.x<playerX+14&&obstacle.x+obstacle.width>playerX-14){
+    if(obstacle.type==='saw'){
+     const sawY=ground-26+Math.sin(state.elapsed*5.5+(obstacle.phase??0))*7;
+     if(Math.hypot(playerX-(obstacle.x+obstacle.width/2),state.feet-17-sawY)<30)
+      return fail(state);
+    }else if(state.feet>ground-(obstacle.type==='tower'?54:29))return fail(state);
+   }
    if(!obstacle.passed&&obstacle.x+obstacle.width<playerX-15){
     obstacle.passed=true;
     state.score++;
@@ -440,6 +450,10 @@ export function stepArcadeRun(state:ArcadeRunState,dt:number,holding=false,contr
   state.vy+=1110*step;
   state.feet+=state.vy*step;
   for(const platform of state.platforms){
+   if(platform.crumble!==undefined){
+    platform.crumble-=step;
+    if(platform.crumble<=0)continue;
+   }
    if(platform.vx!==0){
     platform.x+=platform.vx*step;
     if(platform.x<24){platform.x=24;platform.vx=Math.abs(platform.vx);}
@@ -447,9 +461,13 @@ export function stepArcadeRun(state:ArcadeRunState,dt:number,holding=false,contr
      platform.x=ARCADE_WIDTH-24-platform.width;platform.vx=-Math.abs(platform.vx);
     }
    }
+   if(platform.crumble!==undefined)continue;
    if(state.vy>0&&oldFeet<=platform.y+1&&state.feet>=platform.y&&
     state.x+13>platform.x&&state.x-13<platform.x+platform.width){
-    state.feet=platform.y;state.vy=-555;state.jumps++;
+    state.feet=platform.y;
+    state.vy=platform.kind==='spring'?-705:-555;
+    if(platform.kind==='fragile')platform.crumble=.20;
+    state.jumps++;
     break;
    }
   }
@@ -464,14 +482,17 @@ export function stepArcadeRun(state:ArcadeRunState,dt:number,holding=false,contr
   let minY=Math.min(...state.platforms.map(p=>p.y));
   while(minY>-85){
    const top=state.platforms.reduce((a,b)=>a.y<b.y?a:b);
-   const width=clamp(150-state.climbed/150,112,150);
-   const center=clamp(top.x+top.width/2+(random(state)-.5)*180,100,ARCADE_WIDTH-100);
-   const y=top.y-(85+random(state)*24);
-   const vx=state.climbed>900&&random(state)<.23?(random(state)<.5?-34:34):0;
-   state.platforms.push({x:center-width/2,y,width,vx});
+   const width=clamp(138-state.climbed/110,92,138);
+   const center=clamp(top.x+top.width/2+(random(state)-.5)*260,95,ARCADE_WIDTH-95);
+   const y=top.y-(90+random(state)*23);
+   const kind:NonNullable<AscentPlatform['kind']>=state.climbed>220&&random(state)<.18?
+    'spring':state.climbed>350&&random(state)<.22?'fragile':'normal';
+   const moving=state.climbed>240&&random(state)<Math.min(.72,.32+state.climbed/6000);
+   const vx=moving?(random(state)<.5?-1:1)*(90+random(state)*75):0;
+   state.platforms.push({x:clamp(center-width/2,24,ARCADE_WIDTH-width-24),y,width,vx,kind});
    minY=y;
   }
-  state.platforms=state.platforms.filter(p=>p.y<ARCADE_HEIGHT+80);
+  state.platforms=state.platforms.filter(p=>p.y<ARCADE_HEIGHT+80&&(p.crumble===undefined||p.crumble>0));
   if(state.feet>ARCADE_HEIGHT+42)return fail(state);
   return null;
  }
