@@ -542,4 +542,32 @@
   <data name="Challenge.bastion-level-15.Description" xml:space="preserve"><value>Reach Bastion mastery level fifteen.</value></data>
   <data name="Challenge.bastion-endless-30.Name" xml:space="preserve"><value>Beyond the Dawn</value></data>
   <data name="Challenge.bastion-endless-30.Description" xml:space="preserve"><value>Reach wave 30 on any map.</value></data>
+  <data name="Challenge.sweep-first.Name" xml:space="preserve"><value>First Light</value></data>
+  <data name="Challenge.sweep-first.Description" xml:space="preserve"><value>Clear your first midnight minefield.</value></data>
+  <data name="Challenge.sweep-10.Name" xml:space="preserve"><value>Night Surveyor</value></data>
+  <data name="Challenge.sweep-10.Description" xml:space="preserve"><value>Clear ten minefields.</value></data>
+  <data name="Challenge.sweep-50.Name" xml:space="preserve"><value>Lunar Cartographer</value></data>
+  <data name="Challenge.sweep-50.Description" xml:space="preserve"><value>Clear 50 minefields.</value></data>
+  <data name="Challenge.sweep-250.Name" xml:space="preserve"><value>Keeper of the Grid</value></data>
+  <data name="Challenge.sweep-250.Description" xml:space="preserve"><value>Clear 250 minefields.</value></data>
+  <data name="Challenge.sweep-noscan-1.Name" xml:space="preserve"><value>Unaided Sight</value></data>
+  <data name="Challenge.sweep-noscan-1.Description" xml:space="preserve"><value>Win without using an Echo Scan.</value></data>
+  <data name="Challenge.sweep-noscan-25.Name" xml:space="preserve"><value>Trust the Pattern</value></data>
+  <data name="Challenge.sweep-noscan-25.Description" xml:space="preserve"><value>Win 25 games without an Echo Scan.</value></data>
+  <data name="Challenge.sweep-noscan-100.Name" xml:space="preserve"><value>True Night Vision</value></data>
+  <data name="Challenge.sweep-noscan-100.Description" xml:space="preserve"><value>Win 100 games without an Echo Scan.</value></data>
+  <data name="Challenge.sweep-expert-1.Name" xml:space="preserve"><value>Into the Deep</value></data>
+  <data name="Challenge.sweep-expert-1.Description" xml:space="preserve"><value>Clear an Expert minefield.</value></data>
+  <data name="Challenge.sweep-expert-10.Name" xml:space="preserve"><value>Master of the Dark</value></data>
+  <data name="Challenge.sweep-expert-10.Description" xml:space="preserve"><value>Clear ten Expert minefields.</value></data>
+  <data name="Challenge.sweep-expert-50.Name" xml:space="preserve"><value>No Star Uncharted</value></data>
+  <data name="Challenge.sweep-expert-50.Description" xml:space="preserve"><value>Clear 50 Expert minefields.</value></data>
+  <data name="Challenge.sweep-streak-3.Name" xml:space="preserve"><value>Steady Hand</value></data>
+  <data name="Challenge.sweep-streak-3.Description" xml:space="preserve"><value>Win three minefields in a row.</value></data>
+  <data name="Challenge.sweep-streak-10.Name" xml:space="preserve"><value>Unbroken Constellation</value></data>
+  <data name="Challenge.sweep-streak-10.Description" xml:space="preserve"><value>Win ten minefields in a row.</value></data>
+  <data name="Challenge.sweep-safe-500.Name" xml:space="preserve"><value>Opening the Night</value></data>
+  <data name="Challenge.sweep-safe-500.Description" xml:space="preserve"><value>Reveal 500 safe tiles across completed runs.</value></data>
+  <data name="Challenge.sweep-safe-5000.Name" xml:space="preserve"><value>The Endless Horizon</value></data>
+  <data name="Challenge.sweep-safe-5000.Description" xml:space="preserve"><value>Reveal 5,000 safe tiles across completed runs.</value></data>
 </root>
