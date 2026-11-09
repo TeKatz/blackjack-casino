@@ -115,14 +115,62 @@ internal static class ModernLoungeSmoke
             "Boolean(document.querySelector('[data-testid=\\\"sudoku-career\\\"]'))") == "true",
             "The Sudoku career overview was missing.");
         await Capture(web, Path.Combine(output, "modern-sudoku-modes.png"));
-        await web.ExecuteScriptAsync("document.querySelector('[data-testid=\\\"sudoku-mode-killer\\\"]')?.click()");
+        await web.ExecuteScriptAsync("document.querySelector('.sudoku-career-overview')?.click()");
         await UntilAsync(async () => await web.ExecuteScriptAsync(
-            "Boolean(document.querySelector('[data-testid=\\\"sudoku-mode-preview\\\"]'))") == "true",
-            "The phase-two Killer preview was missing.");
+            "document.querySelectorAll('.sudoku-career-milestone').length") == "12",
+            "Sudoku career did not show twelve milestone title rewards.");
+        await web.ExecuteScriptAsync("document.querySelector('.sudoku-career-modal-head > button')?.click()");
+        await web.ExecuteScriptAsync("document.querySelector('.sudoku-mode-tile[data-testid*=killer]')?.click()");
+        await UntilAsync(async () => await web.ExecuteScriptAsync(
+            "document.querySelectorAll('.sudoku-variant-option').length") == "3",
+            "Killer Sudoku does not expose its three difficulty choices.");
+        await web.ExecuteScriptAsync("document.querySelector('.sudoku-variant-option button.primary')?.click()");
+        await UntilAsync(async () => await web.ExecuteScriptAsync(
+            "Boolean(document.querySelector('.sudoku-variant[data-mode=killer]'))") == "true",
+            "Killer Sudoku did not start a native-generated board.");
+        Require(await web.ExecuteScriptAsync(
+            "document.querySelectorAll('.variant-cage-label').length > 20") == "true",
+            "Killer Sudoku lost its visible sum cages.");
+        await Capture(web, Path.Combine(output, "modern-sudoku-killer.png"));
+        await web.ExecuteScriptAsync("document.querySelector('.variant-hint')?.click()");
+        await UntilAsync(async () => await web.ExecuteScriptAsync(
+            "document.querySelector('.variant-timers span:last-child b')?.textContent==='1'") == "true",
+            "Killer hint did not persist in the native board.");
+        await web.ExecuteScriptAsync("document.querySelector('.variant-return')?.click()");
+        await UntilAsync(async () => await web.ExecuteScriptAsync(
+            "Boolean(document.querySelector('.sudoku-variant-option button:not(.primary):not(:disabled)'))") == "true",
+            "Unfinished Killer Sudoku could not be resumed.");
         await web.ExecuteScriptAsync("document.querySelector('.sudoku-mode-back')?.click()");
         await UntilAsync(async () => await web.ExecuteScriptAsync(
             "document.querySelectorAll('.sudoku-mode-tile').length") == "6",
-            "Sudoku preview could not return to the six-mode menu.");
+            "Sudoku variant selection did not return to six modes.");
+
+        // Each route must open a real board with mode-specific dimensions.
+        foreach ((string mode, int expectedCells) in new[]
+        {
+            ("x", 81), ("jigsaw", 81), ("samurai", 369), ("mini", 16),
+        })
+        {
+            await web.ExecuteScriptAsync(
+                "document.querySelector('.sudoku-mode-tile[data-testid*=\"" + mode + "\"]')?.click()");
+            await UntilAsync(async () => await web.ExecuteScriptAsync(
+                "document.querySelectorAll('.sudoku-variant-option').length") ==
+                    (mode == "mini" ? "6" : "3"),
+                mode + " variant difficulty options are missing.");
+            await web.ExecuteScriptAsync("document.querySelector('.sudoku-variant-option button.primary')?.click()");
+            await UntilAsync(async () => await web.ExecuteScriptAsync(
+                "document.querySelectorAll('.variant-cell').length") == expectedCells.ToString(),
+                mode + " does not render its correct native board dimensions.");
+            await Capture(web, Path.Combine(output, "modern-sudoku-" + mode + ".png"));
+            await web.ExecuteScriptAsync("document.querySelector('.variant-return')?.click()");
+            await UntilAsync(async () => await web.ExecuteScriptAsync(
+                "Boolean(document.querySelector('.sudoku-variant-options'))") == "true",
+                mode + " could not return to its own difficulty menu.");
+            await web.ExecuteScriptAsync("document.querySelector('.sudoku-mode-back')?.click()");
+            await UntilAsync(async () => await web.ExecuteScriptAsync(
+                "document.querySelectorAll('.sudoku-mode-tile').length") == "6",
+                mode + " could not return to the Sudoku lounge.");
+        }
         await web.ExecuteScriptAsync("document.querySelector('[data-testid=\\\"sudoku-mode-classic\\\"]')?.click()");
         await UntilAsync(async () => await web.ExecuteScriptAsync(
             "document.querySelectorAll('.sudoku-difficulty').length") == "6",
