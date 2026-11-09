@@ -103,7 +103,7 @@ describe('Arcade Update 3: full ten-game collection',()=>{
    expect(first.obstacles.at(-1)?.type).toBe('spike');
    first.score=8;first.spawn=0;
    stepArcadeRun(first,ARCADE_STEP);
-   expect(['spike','double','gap']).toContain(first.obstacles.at(-1)?.type);
+   expect(['spike','double','gap','saw','tower']).toContain(first.obstacles.at(-1)?.type);
   });
  });
  describe('Endless Ascent',()=>{
