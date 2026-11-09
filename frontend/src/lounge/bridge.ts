@@ -54,7 +54,7 @@ export function isLoungeSnapshot(value: unknown): value is LoungeSnapshot {
     || typeof value.towerDefenseSession!=='string'||!/^([\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12})$/i.test(value.towerDefenseSession)
     || typeof value.towerDefenseRevision!=='number'||!Number.isSafeInteger(value.towerDefenseRevision)||value.towerDefenseRevision<0
     || !(value.towerDefense===null||isTowerDefenseState(value.towerDefense))
-    || typeof value.minesweeperSession!=='string'||!/^([\\da-f]{8}-[\\da-f]{4}-[\\da-f]{4}-[\\da-f]{4}-[\\da-f]{12})$/i.test(value.minesweeperSession)
+    || typeof value.minesweeperSession!=='string'||!/^([\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12})$/i.test(value.minesweeperSession)
     || typeof value.minesweeperRevision!=='number'||!Number.isSafeInteger(value.minesweeperRevision)||value.minesweeperRevision<0
     || !(value.minesweeper===null||isSweepState(value.minesweeper))
     || typeof value.musicEnabled !== 'boolean' || typeof value.soundEnabled !== 'boolean'
