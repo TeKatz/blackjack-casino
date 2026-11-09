@@ -45,6 +45,8 @@ internal static class PlayerProfileTransactionSnapshot
             OwnedCosmeticIds = [.. source.OwnedCosmeticIds],
             ClaimedChallengeIds = [.. source.ClaimedChallengeIds],
             Adventure = source.Adventure,
+            TowerDefense = source.TowerDefense,
+            Minesweeper = source.Minesweeper,
             Kniffel = source.Kniffel,
             Sudoku = source.Sudoku,
             Solitaire = source.Solitaire,
