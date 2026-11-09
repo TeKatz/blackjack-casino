@@ -146,7 +146,11 @@ public sealed class LoungeRewardsAndCosmeticsTests
     {
         var profile = new PlayerProfileState();
         var service = new ProgressionService(profile);
-        Assert.Equal(21, ChallengeCatalog.For(ChallengeCategory.Sudoku).Count);
+        Assert.Equal(40, ChallengeCatalog.For(ChallengeCategory.Sudoku).Count);
+        Assert.Contains(ChallengeCatalog.For(ChallengeCategory.Sudoku),
+            challenge => challenge.Id == "sudoku-samurai-first");
+        Assert.Contains(ChallengeCatalog.For(ChallengeCategory.Sudoku),
+            challenge => challenge.Id == "sudoku-career-100");
         Assert.Equal(30, ChallengeCatalog.For(ChallengeCategory.MidnightDice).Count);
         Assert.False(service.ClaimChallenge("sudoku-25").Success);
         Assert.False(service.ClaimChallenge("dice-table-10").Success);
