@@ -9,6 +9,7 @@ import {ArcadeCardArt} from './ArcadeCardArt';
 import type {ArcadeCategory,ArcadeGame} from './arcadeCatalog';
 import './arcade.css';
 import './arcadeArtMotion.css';
+import './arcadeArtMotionV2.css';
 
 type Language='de'|'en';
 type CategoryFilter='all'|ArcadeCategory;
