@@ -1,7 +1,7 @@
 /* Gameplay-accurate hover v2. Every preview moves only its gameplay actors.
    The accepted Bullet Storm, Neon Breaker and Death Snake art remains untouched. */
 .arcade-game-card:is(:hover,:focus-visible) .preview-wings-pipes{
- animation:preview-wings-scroll 2.9s linear infinite}
+ animation:preview-wings-scroll 5.8s linear infinite}
 .arcade-game-card:is(:hover,:focus-visible) .preview-wings-bird{
  animation:preview-wings-bob 1s ease-in-out infinite}
 .arcade-game-card:is(:hover,:focus-visible) .preview-wings-flap{
@@ -9,7 +9,7 @@
  animation:preview-wings-wing .34s ease-in-out infinite alternate}
 .arcade-game-card:is(:hover,:focus-visible) .preview-wings-trail{
  animation:preview-wings-draft .6s ease-in-out infinite alternate}
-@keyframes preview-wings-scroll{to{translate:-152px 0}}
+@keyframes preview-wings-scroll{to{translate:-304px 0}}
 @keyframes preview-wings-bob{
  0%,100%{translate:0 3px}50%{translate:0 -5px}
 }
