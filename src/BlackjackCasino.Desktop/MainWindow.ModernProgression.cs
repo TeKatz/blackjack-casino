@@ -307,7 +307,7 @@ public partial class MainWindow
                 RecordMetric("Safe tiles revealed", RecordNumber(sweep.SafeCellsRevealed)),
                 RecordMetric("Echo scans used", RecordNumber(sweep.ScansUsed)),
                 RecordMetric("Fastest clear", sweep.BestWinSeconds <= 0 ? "—" :
-                    RecordDuration(TimeSpan.FromSeconds(sweep.BestWinSeconds))),
+                    RecordDuration(TimeSpan.FromSeconds(sweep.BestWinSeconds)))),
             Activity("tower-defense", "Midnight Bastion",
                 RecordMetric("Mastery level", RecordNumber(bastion.Level)),
                 RecordMetric("Maps completed", RecordNumber(bastion.CompletedStages.Count)),
