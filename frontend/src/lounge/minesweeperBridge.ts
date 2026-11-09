@@ -27,7 +27,7 @@ export function isSweepState(v:unknown):v is SweepState{
   ||!Array.isArray(v.cells)||!v.cells.every(cell))return false;
  const expected=v.difficulty==='easy'?[8,8,10]:v.difficulty==='standard'?[12,12,24]:[16,16,40];
  if(v.width!==expected[0]||v.height!==expected[1]||v.mines!==expected[2]||
-  v.cells.length!==expected[0]*expected[1]||v.safeRevealed>v.cells.length-v.mines||
+  v.cells.length!==expected[0]*expected[1]||Number(v.safeRevealed)>v.cells.length-v.mines||
   v.flagged!==v.cells.filter((c:SweepCell)=>c.flagged).length)return false;
  return v.cells.every((c:SweepCell)=>!c.mine||v.phase==='won'||v.phase==='lost');
 }
