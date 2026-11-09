@@ -63,6 +63,11 @@
  88%{rotate:16deg}
 }
 
+/* Local impact/shadow scale pivots are fixed as well; never drift from the target. */
+.arcade-scene .preview-stack-hit{transform-box:view-box;transform-origin:175px 54px}
+.arcade-scene .preview-spike-shadow{transform-box:view-box;transform-origin:131px 104px}
+.arcade-scene .preview-blade-impact{transform-box:view-box;transform-origin:159px 102px}
+
 /* The static stack never shifts sideways; only the next block falls down. */
 .arcade-game-card:is(:hover,:focus-visible) .preview-stack-drop{
  animation:preview-stack-vertical 2.1s cubic-bezier(.2,.1,.35,1) infinite}
