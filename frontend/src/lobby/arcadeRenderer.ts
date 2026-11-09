@@ -549,6 +549,39 @@ function spikeRush(ctx:Context,state:SpikeRun){
    }
    continue;
   }
+  if(o.type==='saw'){
+   const x=o.x+o.width/2,y=ground-26+Math.sin(state.elapsed*5.5+(o.phase??0))*7;
+   ctx.save();ctx.translate(x,y);ctx.rotate(state.elapsed*6.8);
+   ctx.shadowColor='#ffac9d';ctx.shadowBlur=16;
+   ctx.fillStyle='#cf7a72';ctx.strokeStyle='#ffe6be';ctx.lineWidth=1.8;
+   ctx.beginPath();
+   for(let k=0;k<20;k++){
+    const a=k*Math.PI/10,r=k%2===0?21:13;
+    if(k===0)ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r);
+    else ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);
+   }
+   ctx.closePath();ctx.fill();ctx.stroke();
+   ctx.shadowBlur=0;ctx.fillStyle='#1a3343';
+   ctx.beginPath();ctx.arc(0,0,7,0,TAU);ctx.fill();
+   ctx.strokeStyle='#fff0c5';ctx.beginPath();ctx.arc(0,0,4,0,TAU);ctx.stroke();
+   ctx.restore();
+   ctx.strokeStyle='#d89baf66';ctx.lineWidth=1.5;
+   ctx.beginPath();ctx.moveTo(x,ground);ctx.lineTo(x,y+17);ctx.stroke();
+   continue;
+  }
+  if(o.type==='tower'){
+   const x=o.x,y=ground-54;
+   const metal=ctx.createLinearGradient(x,y,x+o.width,y);
+   metal.addColorStop(0,'#584772');metal.addColorStop(.5,'#c17ca8');metal.addColorStop(1,'#443b67');
+   ctx.fillStyle=metal;ctx.shadowColor='#e19ab8';ctx.shadowBlur=13;
+   ctx.fillRect(x+3,y+8,o.width-6,46);ctx.shadowBlur=0;
+   ctx.strokeStyle='#ffe1ba';ctx.lineWidth=2;ctx.strokeRect(x+3,y+8,o.width-6,46);
+   ctx.fillStyle='#ffdac1';ctx.beginPath();
+   ctx.moveTo(x,y+10);ctx.lineTo(x+o.width/2,y-7);ctx.lineTo(x+o.width,y+10);
+   ctx.closePath();ctx.fill();ctx.stroke();
+   ctx.fillStyle='#fff3cc';ctx.fillRect(x+o.width/2-3,y+23,6,12);
+   continue;
+  }
   const count=o.type==='double'?2:1;
   for(let i=0;i<count;i++){
    const x=o.x+i*38+2,y=ground;
@@ -593,20 +626,42 @@ function endlessAscent(ctx:Context,state:AscentRun){
  for(let i=0;i<state.platforms.length;i++){
   const p=state.platforms[i];
   if(p.y<-35||p.y>H+35)continue;
+  const spring=p.kind==='spring',fragile=p.kind==='fragile';
   const gradient=ctx.createLinearGradient(p.x,p.y,p.x+p.width,p.y+22);
-  gradient.addColorStop(0,'#315963');gradient.addColorStop(.48,'#80c7c1');gradient.addColorStop(1,'#324a79');
-  ctx.shadowColor=p.vx!==0?'#ba9cff':'#8de2ce';
-  ctx.shadowBlur=13;
+  gradient.addColorStop(0,spring?'#5c806e':fragile?'#7d567c':'#315963');
+  gradient.addColorStop(.48,spring?'#f6df9b':fragile?'#e4a9b8':'#80c7c1');
+  gradient.addColorStop(1,spring?'#6f8f73':fragile?'#6c416f':'#324a79');
+  ctx.globalAlpha=p.crumble!==undefined?Math.max(.3,p.crumble/.2):1;
+  ctx.shadowColor=spring?'#f9dd88':fragile?'#ffabc3':p.vx!==0?'#ba9cff':'#8de2ce';
+  ctx.shadowBlur=15;
   ctx.fillStyle=gradient;ctx.strokeStyle='#f2d69b';ctx.lineWidth=2;
   ctx.beginPath();ctx.roundRect(p.x,p.y,p.width,18,5);ctx.fill();ctx.stroke();
   ctx.shadowBlur=0;
   ctx.fillStyle='#fff1c45c';ctx.fillRect(p.x+7,p.y+4,Math.max(0,p.width-14),3);
   ctx.fillStyle='#243a56';ctx.beginPath();ctx.moveTo(p.x+15,p.y+19);
   ctx.lineTo(p.x+p.width/2,p.y+31);ctx.lineTo(p.x+p.width-15,p.y+19);ctx.closePath();ctx.fill();
+  if(spring){
+   ctx.lineWidth=3;ctx.strokeStyle='#fff1b7';ctx.beginPath();
+   for(let k=0;k<=8;k++){
+    const x=p.x+p.width/2-24+k*6;
+    const y=p.y-3+(k%2===0?-7:3);
+    if(k===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+   }
+   ctx.stroke();ctx.fillStyle='#ffeac3';ctx.font='700 12px Segoe UI, sans-serif';
+   ctx.textAlign='center';ctx.fillText('BOOST',p.x+p.width/2,p.y+14);
+  }
+  if(fragile){
+   ctx.strokeStyle='#583e5e';ctx.lineWidth=2;ctx.beginPath();
+   ctx.moveTo(p.x+p.width*.35,p.y+2);ctx.lineTo(p.x+p.width*.42,p.y+10);
+   ctx.lineTo(p.x+p.width*.38,p.y+18);
+   ctx.moveTo(p.x+p.width*.7,p.y+2);ctx.lineTo(p.x+p.width*.59,p.y+12);
+   ctx.lineTo(p.x+p.width*.65,p.y+18);ctx.stroke();
+  }
   if(p.vx!==0){
    ctx.fillStyle='#e9c8ff';ctx.font='700 13px Segoe UI, sans-serif';ctx.textAlign='center';
-   ctx.fillText('‹  ›',p.x+p.width/2,p.y-8);
+   ctx.fillText('‹  ›',p.x+p.width/2,p.y-9);
   }
+  ctx.globalAlpha=1;
  }
  ctx.save();ctx.translate(state.x,state.feet-18);
  ctx.shadowColor='#e1d3a4';ctx.shadowBlur=22;
