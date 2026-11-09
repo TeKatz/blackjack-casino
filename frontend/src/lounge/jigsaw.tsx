@@ -64,6 +64,7 @@ function PixiBoard({game,reference,view,selected,pending,error,onPlace,onMove,on
 }){
  const mount=useRef<HTMLDivElement>(null),instance=useRef<Application|null>(null);
  const resize=useRef<ResizeObserver|null>(null);
+ const boardPointer=useRef<number|null>(null);
  const layer=useRef<Container|null>(null),pieces=useRef<Container[]>([]);
  const panning=useRef<{clientX:number;clientY:number;view:View;button:number;moved:boolean}|null>(null);
  const pendingDrag=useRef<{id:number;originX:number;originY:number;group:number[]}|null>(null);
@@ -162,6 +163,7 @@ function PixiBoard({game,reference,view,selected,pending,error,onPlace,onMove,on
    event.currentTarget.setPointerCapture(event.pointerId);event.preventDefault();return;
   }
   if(event.button!==0)return;
+  boardPointer.current=event.pointerId;
   const at=point(event),id=pick(at);
   if(id!==null){
    const group=connected(game,id);
@@ -198,6 +200,8 @@ function PixiBoard({game,reference,view,selected,pending,error,onPlace,onMove,on
    if(pan.button===2&&!pan.moved){const id=pick(point(event));if(id!==null)onReturn(id);}
    return;
   }
+  if(boardPointer.current!==event.pointerId)return;
+  boardPointer.current=null;
   const at=point(event),d=drag.current;drag.current=null;
   if(d){
    const bounded=clampGroupMotion(game.pieces,d.group,d.id,
@@ -220,7 +224,7 @@ function PixiBoard({game,reference,view,selected,pending,error,onPlace,onMove,on
    {...view,zoom:view.zoom*(event.deltaY<0?1.25:.8)}));
  };
  return <div ref={mount} className="jigsaw-board" onPointerDown={down}
-   onPointerMove={move} onPointerUp={up} onPointerCancel={()=>{drag.current=null;panning.current=null;pendingDrag.current=null;}}
+   onPointerMove={move} onPointerUp={up} onPointerCancel={()=>{drag.current=null;panning.current=null;pendingDrag.current=null;boardPointer.current=null;}}
    onWheel={wheel} onContextMenu={e=>e.preventDefault()} role="group" aria-label="Jigsaw board"/>;
 }
 export function JigsawScreen({state,language,pending,error,command,animations,soundEnabled=false}:Props){
