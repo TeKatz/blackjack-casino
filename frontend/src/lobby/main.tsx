@@ -345,7 +345,7 @@ function LobbyApp() {
         </button>
         <button className="header-widget profile-widget" onClick={()=>openRecords('profile')}>
           <PlayerPortrait portrait={data.portraitVariant} frame={data.frameVariant}/><span><b>{data.displayName}</b>
-          <small>LV {data.level} · ◆ {data.coins}</small><em><CosmeticTitle variant={data.titleVariant}>{localizedSudokuTitleName(data.title,language)}</CosmeticTitle></em></span>
+          <small>LV {data.level} · ◆ {data.coins}</small><em><CosmeticTitle variant={data.titleVariant}>{localizedSudokuTitleName(data.title,data.language)}</CosmeticTitle></em></span>
           {data.prestige>0&&<span className="prestige-badge">✦<br/>P{data.prestige}</span>}
         </button>
         <button className="header-widget vault-widget" onClick={()=>openRecords('vault')}>
