@@ -102,3 +102,46 @@ button:focus-visible{outline:2px solid #f5d28d;outline-offset:3px}
 @media(max-width:760px){.chill-tower-defense{display:flex;grid-column:1;flex-direction:column}
  .chill-tower-defense .chill-card-art{height:160px;min-height:160px;border-right:0;border-bottom:1px solid #b69c657b}
  .chill-tower-defense .chill-card-body{padding:18px}}
+
+
+/* Three classic columns above; two equal feature cards on the final row. */
+.chill-grid{grid-template-columns:repeat(6,minmax(0,1fr))}
+.chill-grid>.chill-card{grid-column:span 2}
+.chill-grid>.chill-tower-defense,.chill-grid>.chill-minesweeper{
+ grid-column:span 3;display:flex;flex-direction:column;border-radius:17px;
+ border:1px solid #af957164;box-shadow:0 17px 37px #0008,inset 0 1px #eef6d819}
+.chill-grid>.chill-tower-defense .chill-card-art,.chill-grid>.chill-minesweeper .chill-card-art{
+ height:clamp(115px,17vh,200px);min-height:115px;flex-shrink:0;
+ border-right:0;border-bottom:1px solid #b69c657b;
+}
+.chill-grid>.chill-tower-defense .chill-card-body,.chill-grid>.chill-minesweeper .chill-card-body{
+ min-height:0;display:flex;flex:1;flex-direction:column;justify-content:initial;
+ padding:15px 22px 17px;
+}
+.chill-grid>.chill-tower-defense .chill-card-body strong,.chill-grid>.chill-minesweeper .chill-card-body strong{
+ font:normal clamp(24px,2.3vw,34px) Georgia,serif;margin:6px 0;color:#f2d8a8;
+}
+.chill-grid>.chill-tower-defense .chill-description,.chill-grid>.chill-minesweeper .chill-description{
+ font-size:12px;line-height:1.5;margin:9px 0 auto;max-width:unset;
+}
+.chill-grid>.chill-tower-defense .chill-card-bottom,.chill-grid>.chill-minesweeper .chill-card-bottom{
+ margin-top:12px;
+}
+.chill-minesweeper{background:linear-gradient(120deg,#233750,#18273d 58%,#101e30)}
+.chill-minesweeper .chill-card-art{
+ background:radial-gradient(ellipse at 70% 25%,#496c8a,#0d2234 70%);
+}
+.chill-minesweeper:hover{border-color:#aedfe7!important;box-shadow:0 15px 45px #0008,0 0 32px #7ac8e53e!important}
+.chill-minesweeper .chill-card-category,.chill-minesweeper .chill-card-bottom b{color:#a9e2e0}
+.chill-minesweeper .chill-card-body em{color:#a7d9e0}
+.lounge-sweep-preview{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+ filter:drop-shadow(0 8px 16px #0007);transition:transform .4s}
+.chill-minesweeper:hover .lounge-sweep-preview{transform:scale(1.05)}
+@media(max-width:1150px){
+ .chill-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .chill-grid>.chill-card,.chill-grid>.chill-tower-defense,.chill-grid>.chill-minesweeper{grid-column:auto}
+}
+@media(max-width:730px){
+ .chill-grid{grid-template-columns:minmax(0,1fr)}
+ .chill-grid>.chill-card,.chill-grid>.chill-tower-defense,.chill-grid>.chill-minesweeper{grid-column:auto}
+}
