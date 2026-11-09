@@ -29,7 +29,12 @@ export function isSweepState(v:unknown):v is SweepState{
  if(v.width!==expected[0]||v.height!==expected[1]||v.mines!==expected[2]||
   v.cells.length!==expected[0]*expected[1]||Number(v.safeRevealed)>v.cells.length-v.mines||
   v.flagged!==v.cells.filter((c:SweepCell)=>c.flagged).length)return false;
- return v.cells.every((c:SweepCell)=>!c.mine||v.phase==='won'||v.phase==='lost');
+ return v.cells.every((c:SweepCell)=>
+  (!c.mine||v.phase==='won'||v.phase==='lost') &&
+  (c.revealed ? c.adjacent>=0 : c.adjacent===-1) &&
+  (c.scanned ? !c.revealed&&c.scanCount>=0 : c.scanCount===-1) &&
+  !(c.revealed&&c.flagged)) &&
+  v.safeRevealed===v.cells.filter((c:SweepCell)=>c.revealed&&!c.mine).length;
 }
 export function isSweepReply(v:unknown):v is SweepReply{
  return rec(v)&&guid(v.requestId)&&typeof v.success==='boolean'
