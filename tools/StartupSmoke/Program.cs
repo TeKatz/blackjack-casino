@@ -559,9 +559,11 @@ internal static class Program
             await Task.Delay(100);
         }
         Require(menuOpened, "Arcade Games did not open its dedicated ten-game menu.");
-        // Launch and exit each real Arcade Update 1 game in the packaged WebView2
-        // frontend. A static detail card or fake "play" button is not sufficient.
-        foreach (string id in new[] { "midnight-wings", "cave-escape", "perfect-stack", "blade-timing" })
+        // Launch and exit all seven real Arcade games in packaged WebView2.
+        // Static cards and nonfunctional "Play" buttons cannot pass this check.
+        foreach (string id in new[] {
+            "midnight-wings", "cave-escape", "perfect-stack", "blade-timing",
+            "death-snake", "neon-breaker", "bullet-storm" })
         {
             await web.ExecuteScriptAsync(
                 "document.querySelector('[data-arcade-id=" + id + "]')?.click()");
