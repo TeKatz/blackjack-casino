@@ -36,7 +36,11 @@ export function SudokuVariantScreen({game,language,pending,error,command}:Props)
   window.addEventListener('keydown',handle);return()=>window.removeEventListener('keydown',handle);
  },[game,selected,pencil,editable,pending,command]);
  const px=game.mode==='samurai'?Math.round(25*zoom):game.mode==='mini'?(game.digits===4?68:56):52;
- const boardStyle={'--variant-cell-px':px+'px','--variant-width':size} as CSSProperties;
+ // The desktop board fills the available height; cap Mini boards to preserve large, legible cells.
+ // CSS owns viewport sizing, while zoom remains opt-in for Samurai.
+ const maxBoard=game.mode==='mini'?(game.digits===4?'640px':'720px'):'790px';
+ const boardStyle={'--variant-cell-px':px+'px','--variant-width':size,
+  '--variant-board-cap':maxBoard,zoom:game.mode==='samurai'?zoom:1} as CSSProperties;
  return <section className="sudoku-variant" data-testid="sudoku-variant-game" data-mode={game.mode}>
   <header className="variant-heading">
    <div><span className="sudoku-eyebrow">THE MIDNIGHT CLUB / SUDOKU LOUNGE</span>
@@ -50,23 +54,40 @@ export function SudokuVariantScreen({game,language,pending,error,command}:Props)
      <button onClick={()=>setZoom(z=>Math.max(.7,Math.round((z-.1)*10)/10))} disabled={zoom<=.7}>−</button>
      <b>{Math.round(zoom*100)}%</b>
      <button onClick={()=>setZoom(z=>Math.min(1.5,Math.round((z+.1)*10)/10))} disabled={zoom>=1.5}>+</button></div>}
-    <div className="variant-scroll"><div className={'variant-grid variant-'+game.mode} style={boardStyle} role="grid" aria-label={titles[game.mode]}>
+    <div className="variant-scroll"><div className={'variant-grid variant-'+game.mode} style={boardStyle} data-digits={game.digits} role="grid" aria-label={titles[game.mode]}>
      {Array.from({length:game.board.length},(_,i)=>{
       if(game.board[i]==='-')return <span className="variant-void" key={i} aria-hidden="true"/>;
       const row=Math.floor(i/size),col=i%size,reg=game.regions[i],cage=cageMap[i];
-      const edges=(map:number[])=>({
-       borderTopWidth:row===0||map[i-size]!==map[i]?'2px':'1px',
-       borderRightWidth:col===size-1||map[i+1]!==map[i]?'2px':'1px',
-       borderBottomWidth:row===size-1||map[i+size]!==map[i]?'2px':'1px',
-       borderLeftWidth:col===0||map[i-1]!==map[i]?'2px':'1px',
-      }) as CSSProperties;
+      const edges=(map:number[],highlightRegions=false)=>{
+       const top=row===0||map[i-size]!==map[i];
+       const right=col===size-1||map[i+1]!==map[i];
+       const bottom=row===size-1||map[i+size]!==map[i];
+       const left=col===0||map[i-1]!==map[i];
+       if(highlightRegions){
+        // Draw each shared edge once (top/left) to keep irregular regions crisp,
+        // instead of overlapping two thin, indistinguishable block borders.
+        const accent='#dfa8ff',internal='#355960';
+        return {
+         borderTopWidth:top?'4px':'1px',borderTopColor:top?accent:internal,
+         borderLeftWidth:left?'4px':'1px',borderLeftColor:left?accent:internal,
+         borderRightWidth:col===size-1?'4px':'0px',borderRightColor:accent,
+         borderBottomWidth:row===size-1?'4px':'0px',borderBottomColor:accent,
+        } as CSSProperties;
+       }
+       return {
+        borderTopWidth:top?'2px':'1px',
+        borderRightWidth:right?'2px':'1px',
+        borderBottomWidth:bottom?'2px':'1px',
+        borderLeftWidth:left?'2px':'1px',
+       } as CSSProperties;
+      };
       const cls=['variant-cell',game.givens[i]!=='0'?'given':'',selected===i?'selected':'',
        wrong.has(i)?'incorrect':'',conflicts.has(i)?'conflict':'',
        game.mode==='x'&&(row===col||row+col===8)?'diagonal':''].filter(Boolean).join(' ');
       const cageEdges=cage>=0?edges(cageMap):null;
       return <button type="button" role="gridcell" key={i} data-testid={'variant-cell-'+i}
        aria-selected={selected===i} aria-label={'Row '+(row+1)+', column '+(col+1)}
-       className={cls} style={edges(game.regions)} onClick={()=>setSelected(i)}
+       className={cls} style={edges(game.regions,game.mode==='jigsaw')} onClick={()=>setSelected(i)}
        onContextMenu={e=>{e.preventDefault();setSelected(i);setPencil(true);}}>
        {game.mode==='killer'&&cageEdges&&<span className="variant-cage-outline" style={cageEdges} aria-hidden="true"/>}
        {game.mode==='killer'&&cageLabels.has(i)&&<span className="variant-cage-label">{cageLabels.get(i)}</span>}

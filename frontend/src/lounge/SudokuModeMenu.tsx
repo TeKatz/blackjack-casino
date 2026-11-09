@@ -36,7 +36,7 @@ export function SudokuModeMenu({language,selectedMode,select,career:careerRaw,en
  const percent=career.nextLevelXp>0?Math.min(100,career.experience/career.nextLevelXp*100):100;
  const nextLevel=career.level>=100?100:Math.ceil((career.level+1)/10)*10;
  const current=modes.find(m=>m.id===selectedMode);
- return <section className="sudoku-mode-menu" data-testid="sudoku-mode-menu">
+ return <section className={'sudoku-mode-menu'+(selectedMode!==null?' is-selection':'')} data-testid="sudoku-mode-menu">
   <div className="sudoku-mode-hero">
    <div><span className="sudoku-eyebrow">THE MIDNIGHT CLUB · SUDOKU LOUNGE</span>
     <h1>{de?'Sechs Wege zur Lösung.':'Six ways to solve.'}</h1>

@@ -47,3 +47,42 @@
 }
 @media(max-width:750px){.sudoku-variant-options,.sudoku-career-milestones{grid-template-columns:1fr}.sudoku-variant-select-head{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){.sudoku-career-overview{transition:none}}
+
+/* Desktop variant selection: match the full six-tile gallery instead of shrink-to-fit. */
+.sudoku-mode-menu .sudoku-mode-coming.sudoku-variant-select{
+ width:min(100%,1360px);max-width:none;margin:0 auto 10px;
+ display:flex;flex-direction:column;align-self:center;
+ padding:clamp(20px,2vh,28px) clamp(24px,2.4vw,45px);
+}
+.sudoku-mode-menu .sudoku-variant-select-head{
+ width:100%;grid-template-columns:minmax(250px,36%) minmax(0,1fr);
+ gap:clamp(22px,3vw,52px);
+}
+.sudoku-mode-menu .sudoku-variant-select-head img{width:100%;max-height:265px;object-fit:cover}
+.sudoku-mode-menu .sudoku-variant-select-head h2{font-size:clamp(34px,3vw,48px)}
+.sudoku-mode-menu .sudoku-variant-select-head p{font-size:clamp(13px,1vw,17px)}
+.sudoku-mode-menu .sudoku-variant-options{grid-auto-rows:minmax(145px,1fr);gap:clamp(12px,1.2vw,20px);flex:1;min-height:0}
+.sudoku-mode-menu .sudoku-variant-option{padding:clamp(16px,1.6vw,24px);gap:10px;justify-content:center;min-width:0}
+.sudoku-mode-menu .sudoku-variant-option strong{font-size:clamp(22px,1.6vw,29px)}
+.sudoku-mode-menu .sudoku-variant-option>span{font-size:13px}
+.sudoku-mode-menu .sudoku-variant-option button{font-size:clamp(11px,.8vw,14px);min-height:46px;padding:10px 6px}
+.sudoku-mode-menu .sudoku-variant-select h3{font-size:clamp(24px,1.6vw,31px);margin:15px 0 13px}
+.sudoku-mode-menu .sudoku-variant-select .sudoku-mode-back{align-self:flex-start;font-size:13px;padding:9px 14px}
+@media(min-width:1450px) and (min-height:850px){
+ .chill-content .sudoku-mode-menu.is-selection .sudoku-mode-hero{max-height:130px;padding:10px 22px}
+ .chill-content .sudoku-mode-menu.is-selection .sudoku-variant-select{
+  flex:1;min-height:0;max-height:none;margin-bottom:6px;
+ }
+ .chill-content .sudoku-mode-menu.is-selection .sudoku-variant-select-head img{max-height:min(25dvh,240px)}
+ .chill-content .sudoku-mode-menu.is-selection .sudoku-variant-options{align-content:stretch}
+ .chill-content .sudoku-mode-menu.is-selection .sudoku-career-note{margin-top:4px}
+}
+@media(max-width:850px){
+ .sudoku-mode-menu .sudoku-variant-select-head{grid-template-columns:minmax(0,1fr)}
+ .sudoku-mode-menu .sudoku-variant-select-head img{max-height:180px}
+ .sudoku-mode-menu .sudoku-variant-options{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .sudoku-mode-menu .sudoku-variant-select{max-height:none}
+}
+@media(max-width:620px){
+ .sudoku-mode-menu .sudoku-variant-options{grid-template-columns:minmax(0,1fr)}
+}
