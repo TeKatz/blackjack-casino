@@ -337,6 +337,11 @@ public sealed class ChallengeClaimAllTests
             case ChallengeMetric.BastionMasteryLevel:
                 profile.TowerDefense.Level = (int)value;
                 break;
+            case ChallengeMetric.SweepWins: profile.Minesweeper.Wins = (int)value; break;
+            case ChallengeMetric.SweepNoScanWins: profile.Minesweeper.NoScanWins = (int)value; break;
+            case ChallengeMetric.SweepExpertWins: profile.Minesweeper.ExpertWins = (int)value; break;
+            case ChallengeMetric.SweepBestStreak: profile.Minesweeper.BestWinStreak = (int)value; break;
+            case ChallengeMetric.SweepSafeCells: profile.Minesweeper.SafeCellsRevealed = (long)value; break;
             case ChallengeMetric.BastionStages:
                 profile.TowerDefense.CompletedStages.Clear();
                 if (value >= 1) profile.TowerDefense.CompletedStages.Add("forest");
