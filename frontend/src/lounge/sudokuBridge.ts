@@ -5,7 +5,8 @@ export type SudokuGame = {puzzleId:string;difficulty:Difficulty;isDaily:boolean;
   givens:string;board:string;notes:number[];incorrect:number[];conflicts:number[];completedDigits:number[];
   elapsedSeconds:number;hintsUsed:number;completed:boolean;canUndo:boolean;canRedo:boolean;
   completionXp:number;completionSeasonXp:number};
-export type SudokuState = {screen:'library'|'game';showTimer:boolean;showGuides:boolean;entries:SudokuEntry[];
+export type SudokuCareer = {level:number;experience:number;nextLevelXp:number;lifetimeExperience:number;cosmeticPointsEarned:number;pointsPerLevel:number};
+export type SudokuState = {screen:'library'|'game';career?:SudokuCareer;showTimer:boolean;showGuides:boolean;entries:SudokuEntry[];
  normalCompleted:number;normalTotal:number;dailyCompleted:number;
  daily:{date:string;difficulty:Difficulty;completed:boolean;canResume:boolean};
  game:SudokuGame|null;notice:string;rewardNotice:string};
@@ -56,6 +57,10 @@ export function isSudokuState(v:unknown):v is SudokuState{
   ||typeof v.daily.completed!=='boolean'||typeof v.daily.canResume!=='boolean'
   ||typeof v.notice!=='string'||v.notice.length>8192
   ||typeof v.rewardNotice!=='string'||v.rewardNotice.length>8192)return false;
+ if(v.career!==undefined && (!obj(v.career)||!integer(v.career.level,100)||v.career.level<1
+   ||!integer(v.career.experience,9_000_000_000)||!integer(v.career.nextLevelXp,9_000_000_000)
+   ||!integer(v.career.lifetimeExperience,9_000_000_000)
+   ||!integer(v.career.cosmeticPointsEarned,9_000_000_000)||!integer(v.career.pointsPerLevel,1_000_000)))return false;
  return v.screen==='game'?game(v.game):v.game===null;
 }
 export function isSudokuReply(v:unknown):v is SudokuReply{

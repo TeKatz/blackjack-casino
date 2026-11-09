@@ -344,3 +344,7 @@
 .modern-shop[data-shop-motion=off] .secret-guest-showcase *::before,
 .modern-shop[data-shop-motion=off] .secret-guest-showcase *::after{
  animation:none!important;transition:none!important}
+
+.shop-sudoku-exclusive{display:inline-flex;align-items:center;gap:5px;font-size:10px;letter-spacing:.11em;font-weight:800;color:#b8e4e2;border:1px solid #79c4c24a;background:#123b3e77;border-radius:5px;padding:4px 6px;margin-bottom:7px}
+.shop-sudoku-exclusive[data-sudoku-level="90"]{color:#bceefb;border-color:#a3d8f777;background:#27405766}
+.shop-sudoku-exclusive[data-sudoku-level="100"]{color:#ffe3a9;border-color:#ebc27f88;background:#583d2066;box-shadow:0 0 18px #e7b45a24}

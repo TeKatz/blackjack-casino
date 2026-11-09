@@ -2,7 +2,7 @@
 export type ShopKind = 'Title'|'Frame'|'Portrait'|'CardSet'|'DiceSet';
 export type ShopItem = {
   id: string; name: string; description: string; kind: ShopKind; visualVariant: string;
-  price: number; shopAvailable: boolean; requiredPrestige: number;
+  price: number; shopAvailable: boolean; requiredPrestige: number; requiredSudokuLevel?:number;
   owned: boolean; equipped: boolean; canBuy: boolean;
 };
 export type ShopPack = { rarity:string; price:number; owned:number; canBuy:boolean; guaranteed:string; ultraRareChance:number };
@@ -37,7 +37,7 @@ export function isShopSnapshot(x:unknown):x is ShopSnapshot {
     ||!Array.isArray(x.items)||x.items.length>300||!Array.isArray(x.packs)||x.packs.length>10)return false;
   return x.items.every((s:unknown)=>obj(s)&&str(s.id)&&/^[a-z0-9-]{1,80}$/.test(s.id)
     &&str(s.name)&&str(s.description)&&str(s.visualVariant)&&kinds.includes(s.kind as ShopKind)
-    &&num(s.price)&&num(s.requiredPrestige)&&typeof s.shopAvailable==='boolean'
+    &&num(s.price)&&num(s.requiredPrestige)&&(s.requiredSudokuLevel===undefined||num(s.requiredSudokuLevel))&&typeof s.shopAvailable==='boolean'
     &&typeof s.owned==='boolean'&&typeof s.equipped==='boolean'&&typeof s.canBuy==='boolean')
     &&x.packs.every((p:unknown)=>obj(p)&&str(p.rarity)&&/^[A-Za-z]{3,20}$/.test(p.rarity)
       &&num(p.price)&&num(p.owned)&&str(p.guaranteed)

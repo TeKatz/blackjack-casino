@@ -26,7 +26,7 @@ function CosmeticCard({item,de,pending,motionEnabled,onPick}:{
 }){
   const locked=!item.owned&&(!item.shopAvailable||item.requiredPrestige>0&&!item.canBuy);
   const cta=item.equipped?(de?'Ausgerüstet':'Equipped'):item.owned?(de?'Ausrüsten':'Equip'):
-    !item.shopAvailable?(de?'Belohnung':'Reward only'):
+    !item.shopAvailable?(item.requiredSudokuLevel?(de?'Sudoku-Karriere':'Sudoku career'):(de?'Belohnung':'Reward only')):
     item.requiredPrestige>0&&!item.canBuy?(de?'Prestige benötigt':'Prestige required'):
     !item.canBuy?(de?'Zu wenig Münzen':'Not enough coins'):(de?'Kaufen & ausrüsten':'Buy & equip');
   const disabled=item.equipped||pending||(!item.owned&&!item.canBuy);
@@ -42,11 +42,14 @@ function CosmeticCard({item,de,pending,motionEnabled,onPick}:{
     </div>
     <ShopShowcase item={item} motionEnabled={motionEnabled}/>
     <div className="shop-product-content">
+      {item.requiredSudokuLevel?<span className="shop-sudoku-exclusive" data-sudoku-level={item.requiredSudokuLevel}>
+        ✦ {de?'SUDOKU-EXKLUSIV':'SUDOKU EXCLUSIVE'} · LV {item.requiredSudokuLevel}
+      </span>:null}
       <h3 title={item.name}>{item.name}</h3>
       <p>{item.description}</p>
       <div className="shop-product-footer">
         <span className="shop-price">{item.owned?(de?'In Sammlung':'In collection'):
-          !item.shopAvailable?(de?'Nicht käuflich':'Not for sale'):
+          !item.shopAvailable?(item.requiredSudokuLevel?(de?`Sudoku-Level ${item.requiredSudokuLevel}`:`Sudoku level ${item.requiredSudokuLevel}`):(de?'Nicht käuflich':'Not for sale')):
           '◆ '+item.price.toLocaleString('en-US')}</span>
         <button className="shop-card-action" type="button" disabled={disabled}
           onClick={()=>onPick(item)}>{pending?'…':cta}</button>
