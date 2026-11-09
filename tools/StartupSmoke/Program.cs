@@ -559,19 +559,68 @@ internal static class Program
             await Task.Delay(100);
         }
         Require(menuOpened, "Arcade Games did not open its dedicated ten-game menu.");
-        await web.ExecuteScriptAsync(
-            "document.querySelector('[data-arcade-id=midnight-wings]')?.click()");
-        bool detailsOpened = false;
-        for (int attempt = 0; attempt < 40; attempt++)
+        // Launch and exit each real Arcade Update 1 game in the packaged WebView2
+        // frontend. A static detail card or fake "play" button is not sufficient.
+        foreach (string id in new[] { "midnight-wings", "cave-escape", "perfect-stack", "blade-timing" })
         {
-            string ready = await web.ExecuteScriptAsync(
-                "Boolean(document.querySelector('.arcade-detail[role=dialog]')"
-                + "?.textContent?.includes('Midnight Wings'))");
-            if (ready == "true") { detailsOpened = true; break; }
-            await Task.Delay(100);
+            await web.ExecuteScriptAsync(
+                "document.querySelector('[data-arcade-id=" + id + "]')?.click()");
+            bool detailsOpened = false;
+            for (int attempt = 0; attempt < 40; attempt++)
+            {
+                string ready = await web.ExecuteScriptAsync(
+                    "Boolean(document.querySelector('.arcade-detail[role=dialog]')"
+                    + "&&document.querySelector('[data-testid=arcade-play-button]'))");
+                if (ready == "true") { detailsOpened = true; break; }
+                await Task.Delay(100);
+            }
+            Require(detailsOpened, "Playable arcade game did not open details: " + id);
+            await web.ExecuteScriptAsync(
+                "document.querySelector('[data-testid=arcade-play-button]')?.click()");
+            bool gameOpened = false;
+            for (int attempt = 0; attempt < 40; attempt++)
+            {
+                string ready = await web.ExecuteScriptAsync(
+                    "Boolean(document.querySelector('[data-testid=arcade-game-screen][data-game-id=" + id + "]')"
+                    + "&&document.querySelector('[data-testid=arcade-canvas]')"
+                    + "&&document.querySelector('.arcade-play-overlay[data-phase=ready]'))");
+                if (ready == "true") { gameOpened = true; break; }
+                await Task.Delay(100);
+            }
+            Require(gameOpened, "Arcade game failed to mount its real canvas: " + id);
+            await web.ExecuteScriptAsync(
+                "document.querySelector('.arcade-primary-action')?.click()");
+            bool started = false;
+            for (int attempt = 0; attempt < 40; attempt++)
+            {
+                string ready = await web.ExecuteScriptAsync(
+                    "(()=>{const c=document.querySelector('[data-testid=arcade-canvas]');"
+                    + "if(!c||document.querySelector('.arcade-play-overlay[data-phase=ready]'))return false;"
+                    + "const p=c.getContext('2d')?.getImageData(Math.floor(c.width/2),Math.floor(c.height/2),1,1).data;"
+                    + "return Boolean(p&&p[3]>0)})()");
+                if (ready == "true") { started = true; break; }
+                await Task.Delay(100);
+            }
+            Require(started, "Arcade game did not start or render a frame: " + id);
+            // Pause must stop simulation and show a real pause overlay.
+            await web.ExecuteScriptAsync(
+                "document.querySelector('.arcade-play-actions button:last-child')?.click()");
+            bool paused = await web.ExecuteScriptAsync(
+                "Boolean(document.querySelector('.arcade-play-overlay[data-phase=paused]'))") == "true";
+            Require(paused, "Arcade pause control did not pause the run: " + id);
+            await web.ExecuteScriptAsync(
+                "document.querySelector('.arcade-play-heading .arcade-back')?.click()");
+            bool returned = false;
+            for (int attempt = 0; attempt < 40; attempt++)
+            {
+                string ready = await web.ExecuteScriptAsync(
+                    "Boolean(document.querySelector('[data-testid=arcade-menu]')"
+                    + "&&document.querySelectorAll('[data-arcade-id]').length===10)");
+                if (ready == "true") { returned = true; break; }
+                await Task.Delay(100);
+            }
+            Require(returned, "Arcade game did not return to selection: " + id);
         }
-        Require(detailsOpened, "Arcade game details did not open from the selection.");
-        await web.ExecuteScriptAsync("document.querySelector('.arcade-detail-close')?.click()");
         await web.ExecuteScriptAsync("document.querySelector('.arcade-back')?.click()");
         bool backToLobby = false;
         for (int attempt = 0; attempt < 40; attempt++)
