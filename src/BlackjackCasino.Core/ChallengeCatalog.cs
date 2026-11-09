@@ -17,6 +17,7 @@ public enum ChallengeCategory
     Jigsaw,
     Solitaire,
     TowerDefense,
+    Minesweeper,
 }
 
 public enum ChallengeMetric
@@ -101,6 +102,7 @@ public enum ChallengeMetric
     SolitaireGolfWins, SolitaireTriPeaksWins, SolitaireVariantsWon, SolitaireBestStreak,
     ChillLoungeCompletions, JigsawCompletions, AdventureRunsCompleted,
     BastionWaves, BastionKills, BastionVictories, BastionStages, BastionBestWave, BastionMasteryLevel,
+    SweepWins, SweepNoScanWins, SweepExpertWins, SweepBestStreak, SweepSafeCells,
 }
 
 public sealed record ChallengeDefinition(
@@ -118,6 +120,21 @@ public static class ChallengeCatalog
 {
     private static readonly IReadOnlyList<ChallengeDefinition> Challenges = Array.AsReadOnly(new[]
     {
+        // Midnight Sweep milestones are account-wide and read only committed terminal-run receipts.
+        C("sweep-first", ChallengeCategory.Minesweeper, "First Light", "Clear your first midnight minefield.", ChallengeMetric.SweepWins, 1, 75),
+        C("sweep-10", ChallengeCategory.Minesweeper, "Night Surveyor", "Clear ten minefields.", ChallengeMetric.SweepWins, 10, 200),
+        C("sweep-50", ChallengeCategory.Minesweeper, "Lunar Cartographer", "Clear 50 minefields.", ChallengeMetric.SweepWins, 50, 600),
+        E("sweep-250", ChallengeCategory.Minesweeper, "Keeper of the Grid", "Clear 250 minefields.", ChallengeMetric.SweepWins, 250, 2000),
+        C("sweep-noscan-1", ChallengeCategory.Minesweeper, "Unaided Sight", "Win without using an Echo Scan.", ChallengeMetric.SweepNoScanWins, 1, 125),
+        C("sweep-noscan-25", ChallengeCategory.Minesweeper, "Trust the Pattern", "Win 25 games without an Echo Scan.", ChallengeMetric.SweepNoScanWins, 25, 450),
+        E("sweep-noscan-100", ChallengeCategory.Minesweeper, "True Night Vision", "Win 100 games without an Echo Scan.", ChallengeMetric.SweepNoScanWins, 100, 1350),
+        C("sweep-expert-1", ChallengeCategory.Minesweeper, "Into the Deep", "Clear an Expert minefield.", ChallengeMetric.SweepExpertWins, 1, 250),
+        C("sweep-expert-10", ChallengeCategory.Minesweeper, "Master of the Dark", "Clear ten Expert minefields.", ChallengeMetric.SweepExpertWins, 10, 700),
+        E("sweep-expert-50", ChallengeCategory.Minesweeper, "No Star Uncharted", "Clear 50 Expert minefields.", ChallengeMetric.SweepExpertWins, 50, 2500),
+        C("sweep-streak-3", ChallengeCategory.Minesweeper, "Steady Hand", "Win three minefields in a row.", ChallengeMetric.SweepBestStreak, 3, 200),
+        E("sweep-streak-10", ChallengeCategory.Minesweeper, "Unbroken Constellation", "Win ten minefields in a row.", ChallengeMetric.SweepBestStreak, 10, 1200),
+        C("sweep-safe-500", ChallengeCategory.Minesweeper, "Opening the Night", "Reveal 500 safe tiles across completed runs.", ChallengeMetric.SweepSafeCells, 500, 200),
+        E("sweep-safe-5000", ChallengeCategory.Minesweeper, "The Endless Horizon", "Reveal 5,000 safe tiles across completed runs.", ChallengeMetric.SweepSafeCells, 5000, 1200),
         // The catalog grows with additional stages; receipts are global and monotonic.
         C("bastion-first-wave", ChallengeCategory.TowerDefense, "First Watch", "Survive your first Bastion wave.", ChallengeMetric.BastionWaves, 1, 60),
         C("bastion-waves-10", ChallengeCategory.TowerDefense, "Night Watch", "Clear ten waves across maps.", ChallengeMetric.BastionWaves, 10, 150),
@@ -571,7 +588,8 @@ public static class ChallengeCatalog
                 + (profile.Solitaire.TriPeaksWins > 0 ? 1 : 0),
             ChallengeMetric.ChillLoungeCompletions => profile.Sudoku.CompletedPuzzles
                 + profile.Solitaire.Wins + profile.WordSearch.CompletedPuzzles
-                + profile.Memory.CompletedGames + profile.Jigsaw.CompletedGames + profile.TowerDefense.Victories,
+                + profile.Memory.CompletedGames + profile.Jigsaw.CompletedGames + profile.TowerDefense.Victories
+                + profile.Minesweeper.Wins,
             ChallengeMetric.JigsawCompletions => profile.Jigsaw.CompletedGames,
             ChallengeMetric.AdventureRunsCompleted => profile.Adventure.RunsCompleted,
             ChallengeMetric.BastionWaves => profile.TowerDefense.WavesCleared,
@@ -580,6 +598,11 @@ public static class ChallengeCatalog
             ChallengeMetric.BastionStages => profile.TowerDefense.CompletedStages.Count,
             ChallengeMetric.BastionBestWave => profile.TowerDefense.BestWaves.Values.DefaultIfEmpty(0).Max(),
             ChallengeMetric.BastionMasteryLevel => profile.TowerDefense.Level,
+            ChallengeMetric.SweepWins => profile.Minesweeper.Wins,
+            ChallengeMetric.SweepNoScanWins => profile.Minesweeper.NoScanWins,
+            ChallengeMetric.SweepExpertWins => profile.Minesweeper.ExpertWins,
+            ChallengeMetric.SweepBestStreak => profile.Minesweeper.BestWinStreak,
+            ChallengeMetric.SweepSafeCells => profile.Minesweeper.SafeCellsRevealed,
 
             ChallengeMetric.LifetimeExperience => profile.LifetimeExperience,
             ChallengeMetric.LifetimePlaytimeSeconds => profile.TotalPlaytimeSeconds,
@@ -589,7 +612,7 @@ public static class ChallengeCatalog
                 + manor.PaidSpins + manor.FreeSpins + legacy.Spins + profile.Kniffel.CompletedGames + profile.Sudoku.CompletedPuzzles
                 + profile.WordSearch.CompletedPuzzles + profile.Memory.CompletedGames + merge.OrdersCompleted
                 + profile.Solitaire.Wins + profile.Jigsaw.CompletedGames + profile.Adventure.RunsCompleted
-                + profile.TowerDefense.Victories,
+                + profile.TowerDefense.Victories + profile.Minesweeper.Wins + profile.Minesweeper.Losses,
             ChallengeMetric.PrestigeCount => profile.Prestige,
             _ => 0,
         };
