@@ -36,6 +36,7 @@ public partial class MainWindow
         ChallengeCategory.Solitaire => "Solitaire",
         ChallengeCategory.TowerDefense => "Midnight Bastion",
         ChallengeCategory.Minesweeper => "Midnight Sweep",
+        ChallengeCategory.Arcade => "Arcade Games",
         _ => category.ToString(),
     };
 
