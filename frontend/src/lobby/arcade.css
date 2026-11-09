@@ -167,3 +167,100 @@
  .arcade-game-card:hover{transform:none}
 }
 .casino-lobby-shell[data-reduced="true"] .arcade-game-card:hover{transform:none}
+
+
+/* Shared arcade game shell. Native-lobby-sized, with a fixed logical 960×540 canvas. */
+.arcade-play{min-width:0;min-height:0;display:flex;flex-direction:column;gap:12px;
+ align-items:stretch;justify-content:flex-start;padding:3px 12px 13px 1px;
+ overflow:auto;scrollbar-width:thin;scrollbar-color:#7b7053 #0b1e1e;color:#f5e5c8}
+.arcade-play-header{width:100%;display:flex;align-items:center;justify-content:space-between;
+ gap:18px;min-height:94px;flex:0 0 auto;padding:11px 18px;
+ border:1px solid #9d895d;border-radius:15px;background:linear-gradient(135deg,#142f2d,#0c252a 62%,#20243b);
+ box-shadow:0 10px 26px #0006,inset 0 1px #ffffff1b}
+.arcade-play-heading{flex:1;min-width:0}
+.arcade-play-heading .arcade-eyebrow{display:block;margin:8px 0 0;font-size:9px}
+.arcade-play-heading h1{font:normal clamp(25px,2.15vw,35px)/1.07 Georgia,serif;color:#f4e2bd;
+ margin:3px 0 0;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+.arcade-play-stats{display:flex;justify-content:center;align-items:stretch;gap:5px}
+.arcade-play-stats>div{display:flex;flex-direction:column;align-items:center;justify-content:center;
+ gap:4px;min-width:88px;padding:11px 15px;border:1px solid #c4a87348;border-radius:10px;
+ background:#091f20c2;box-shadow:inset 0 1px #d0b46b23}
+.arcade-play-stats small{font-size:9px;letter-spacing:.14em;color:#a5c0b1;font-weight:800}
+.arcade-play-stats strong{font:normal 27px/.95 Georgia,serif;color:#f6d998;white-space:nowrap}
+.arcade-play-actions{display:flex;gap:7px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.arcade-play-actions button{border:1px solid #c4a66c;background:#1a3935;color:#edd3a0;
+ padding:9px 13px;font-weight:700;font-size:11px;border-radius:8px;min-height:36px}
+.arcade-play-actions button:hover,.arcade-play-actions button:focus-visible{
+ background:#31584a;border-color:#ffe1a0}
+.arcade-play-stage{position:relative;flex:0 0 auto;isolation:isolate;
+ width:min(100%,calc((100dvh - 260px) * 16 / 9));aspect-ratio:16/9;
+ align-self:center;overflow:hidden;border:2px solid #b99a5f;border-radius:16px;
+ box-shadow:0 0 0 1px #ffe8a33c,inset 0 0 15px #0008,0 22px 60px #000b;
+ background:#0c2029;touch-action:none}
+.arcade-play-canvas{display:block;width:100%;height:100%;
+ touch-action:none;cursor:crosshair;outline:none}
+.arcade-play-canvas:focus-visible{outline:3px solid #f1d08b;outline-offset:-6px}
+.arcade-play-overlay{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;
+ align-items:center;justify-content:center;text-align:center;gap:12px;padding:25px;
+ background:radial-gradient(ellipse at 50% 36%,#071b1de6,#020c14ec 90%);
+ backdrop-filter:blur(2px)}
+.arcade-overlay-symbol{width:75px;height:75px;display:grid;place-items:center;border:1px solid #dfc188b3;
+ border-radius:18px;background:radial-gradient(circle,#335752ad,#0e252e);
+ box-shadow:0 0 35px #e9bf7952;color:#f4d594;font:normal 54px Georgia,serif}
+.arcade-play-overlay .arcade-eyebrow{font-size:10px;letter-spacing:.14em;margin:0;color:#cfb784}
+.arcade-play-overlay h2{font:normal clamp(29px,3vw,44px)/1.1 Georgia,serif;color:#ffebc0;margin:0;
+ text-shadow:0 4px 22px #000}
+.arcade-overlay-instruction{font-size:13px;line-height:1.6;color:#c2d8c9;
+ max-width:580px;margin:0 0 5px}
+.arcade-final-score{display:flex;align-items:center;justify-content:center;gap:11px;color:#bad8c4;
+ font-size:16px;margin:0}
+.arcade-final-score b{font:normal 34px/1 Georgia,serif;color:#fbd486}
+.arcade-final-score span{color:#8befc6;font-weight:900;font-size:12px;letter-spacing:.07em}
+.arcade-overlay-buttons{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
+.arcade-overlay-buttons button{border:1px solid #b9a16d;border-radius:10px;padding:12px 18px;
+ background:#1b3934;color:#f5deb0;font-weight:850;font-size:12px;min-height:43px}
+.arcade-overlay-buttons button:hover{background:#355b4d;border-color:#f4db9c}
+.arcade-overlay-buttons .arcade-primary-action{border-color:#ffe5a6;
+ background:linear-gradient(135deg,#f4dca1,#bd873b);color:#18241c;
+ box-shadow:0 0 22px #efcc815e}
+.arcade-overlay-buttons .arcade-primary-action:hover{filter:brightness(1.15)}
+.arcade-play-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;
+ flex:0 0 auto;color:#a9c4b6;font-size:11px;line-height:1.4;padding:0 5px}
+.arcade-play-footer span:last-child{color:#c1aa84;text-align:right}
+
+/* Mark shipped arcade games without suggesting that the other six are playable. */
+.arcade-card-live{background:linear-gradient(120deg,#194637,#0e392e);
+ border-color:#81c69b88;color:#b1f2c9}
+.arcade-card-content .arcade-card-best{color:#f0d39a;font-size:9px;font-weight:750}
+.arcade-detail-play{display:block;width:100%;padding:13px;border-radius:10px;border:1px solid #f6e0a1;
+ background:linear-gradient(140deg,#f7dd9d,#b78a42);color:#1f2921;font-size:13px;
+ font-weight:900;letter-spacing:.05em;box-shadow:0 0 20px #ffd99833}
+.arcade-detail-play:hover{filter:brightness(1.15);transform:translateY(-1px)}
+.arcade-detail-record{margin:0 0 12px;display:flex;justify-content:center;gap:20px;color:#b4d4bd;
+ font-size:12px;font-weight:700}
+.arcade-detail-record strong{color:#ffdb98}
+@media(max-width:1500px){
+ .arcade-play-header{padding:10px;gap:8px}
+ .arcade-play-stats>div{min-width:74px;padding:9px}
+ .arcade-play-actions button{padding:8px}
+ .arcade-play-stage{width:min(100%,calc((100dvh - 245px) * 16 / 9))}
+}
+@media(max-width:1050px){
+ .arcade-play-header{flex-wrap:wrap}
+ .arcade-play-stats{order:3;flex:1 0 100%}
+ .arcade-play-stage{width:100%}
+ .arcade-play-footer{flex-direction:column;align-items:flex-start}
+}
+@media(max-height:790px){
+ .arcade-play{gap:7px}
+ .arcade-play-header{min-height:75px;padding:7px}
+ .arcade-play-heading h1{font-size:23px}
+ .arcade-play-stats>div{padding:5px 8px}
+ .arcade-play-stats strong{font-size:21px}
+ .arcade-play-stage{width:min(100%,calc((100dvh - 205px) * 16 / 9))}
+ .arcade-play-footer{font-size:10px}
+}
+@media(prefers-reduced-motion:reduce){
+ .arcade-detail-play{transition:none}
+ .arcade-detail-play:hover{transform:none}
+}
