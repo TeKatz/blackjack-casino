@@ -301,7 +301,7 @@ public partial class MainWindow
                 RecordMetric("Waves cleared", RecordNumber(bastion.WavesCleared)),
                 RecordMetric("Enemies defeated", RecordNumber(bastion.EnemiesDefeated)),
                 RecordMetric("Enemies escaped", RecordNumber(bastion.EnemiesEscaped)),
-                RecordMetric("Best endless wave", RecordNumber(bastion.BestWaves.Values.DefaultIfEmpty(0).Max())),
+                RecordMetric("Best endless wave", RecordNumber(bastion.BestWaves.Values.DefaultIfEmpty(0).Max()))),
             Activity("tales-backroom", "Tales from the Backroom",
                 RecordMetric("Completed adventures", RecordNumber(adventure.RunsCompleted)),
                 RecordMetric("Different endings", RecordNumber(adventure.EndingKeys.Count)),
