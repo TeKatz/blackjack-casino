@@ -122,6 +122,7 @@ export function isInsideCave(run:CaveRun,x:number,y:number,radius=13){
  const gap=a.gap+(b.gap-a.gap)*t;
  return y-radius>center-gap/2&&y+radius<center+gap/2;
 }
+export const BLADE_HIT_ARC=.21;
 export function angularDistance(a:number,b:number){
  return Math.abs(Math.atan2(Math.sin(a-b),Math.cos(a-b)));
 }
@@ -169,7 +170,7 @@ export function actArcadeRun(state:ArcadeRunState):ArcadeEvent{
  case 'blade-timing':{
   const injection=Math.PI/2;
   for(const blade of state.blades){
-   if(angularDistance(blade+state.rotation,injection)<.21)return fail(state);
+   if(angularDistance(blade+state.rotation,injection)<BLADE_HIT_ARC)return fail(state);
   }
   state.blades.push(injection-state.rotation);
   state.score++;
