@@ -12,7 +12,7 @@ const names:Record<string,ArcadeDirection>={
 export function arcadeDirection(code:string,key:string):ArcadeDirection|null{
  return codes[code]??names[key.toLowerCase()]??null;
 }
-const keyIdentity=(code:string,key:string)=>code||key.toLowerCase();
+const keyIdentity=(code:string,key:string)=>Object.prototype.hasOwnProperty.call(codes,code)?code:key.toLowerCase();
 export class ArcadeHeldKeys {
  private held=new Map<string,ArcadeDirection>();
  press(code:string,key:string):ArcadeDirection|null{
