@@ -270,3 +270,6 @@
  .td-end-content{padding:14px}
 }
 @media(prefers-reduced-motion:reduce){.td-xp-rail>span{transition:none}}
+
+.td-skills-footer{display:flex;flex-wrap:wrap;gap:11px;align-items:center}
+.td-skills-footer button{min-height:40px}

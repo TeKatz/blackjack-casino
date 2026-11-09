@@ -47,7 +47,7 @@ internal static class ModernTowerDefenseProtocol
                 "tower.upgrade" or "tower.sell" => pad is >= 0 and < 10 && kind is null,
                 "tower.play" => pad is null && kind is "forest" or "frost",
                 "tower.skill.buy" => pad is null && kind is "capital" or "refund" or "fortify" or "engineer" or "scouting" or "focus" or "last-stand",
-                "tower.start" or "tower.pause" or "tower.speed" or "tower.restart" or "tower.exit" or "tower.menu" or "tower.skills" or "tower.endless" =>
+                "tower.start" or "tower.pause" or "tower.speed" or "tower.restart" or "tower.exit" or "tower.menu" or "tower.skills" or "tower.endless" or "tower.skill.reset" =>
                     pad is null && kind is null,
                 _ => false,
             };

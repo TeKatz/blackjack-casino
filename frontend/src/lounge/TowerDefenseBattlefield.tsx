@@ -1,4 +1,5 @@
 import {useEffect,useRef} from 'react';
+import type {DragEvent} from 'react';
 import {Application,Assets,Container,Graphics,Sprite,Texture} from 'pixi.js';
 import type {TdEnemy,TdPoint,TdTower,TowerDefenseState,TowerKind} from './towerDefenseBridge';
 import type {BastionCue} from './towerDefenseAudio';
@@ -391,7 +392,7 @@ export function BastionBattlefield({model,selected,onSelect,onDropTower,animatio
    if(ready)app.destroy(true);
   };
  },[]);
- const drop=(event:React.DragEvent<HTMLDivElement>)=>{
+ const drop=(event:DragEvent<HTMLDivElement>)=>{
   event.preventDefault();
   const kind=event.dataTransfer.getData('text/plain') as TowerKind;
   if(!['archer','frost','cannon','ballista','flame'].includes(kind))return;
@@ -406,6 +407,6 @@ export function BastionBattlefield({model,selected,onSelect,onDropTower,animatio
   if(chosen>=0){onSelect(chosen);onDropTower(chosen,kind);}
  };
  return <div ref={mount} className="td-map td-illustrated" data-testid="tower-defense-map"
-  onDragOver={event=>{if(event.dataTransfer.types.includes('text/plain'))event.preventDefault();}}
+  onDragOver={event=>{if(Array.from(event.dataTransfer.types).includes('text/plain'))event.preventDefault();}}
   onDrop={drop} role="img" aria-label="Illustrated battlefield with ten buildable tower sites"/>;
 }

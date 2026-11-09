@@ -172,8 +172,12 @@ export function TowerDefenseScreen({state,language,pending,error,animations,soun
       (language==='de'?'FREISCHALTEN':'UPGRADE')+' · 1 ◆'}</button>
    </article>)}
   </div>
+  <div className="td-skills-footer">
   <button className="td-skill-back" disabled={pending} onClick={()=>issue({action:'tower.menu'})}>
    ← {language==='de'?'ZUR KARTENAUSWAHL':'BACK TO MAPS'}</button>
+   <button disabled={pending||Object.values(progress.skills).every(v=>v===0)}
+    onClick={()=>{if(window.confirm(language==='de'?'Skillpunkte kostenlos zurücksetzen?':'Reset all skill points for free?'))issue({action:'tower.skill.reset'});}}>
+    {language==='de'?'PUNKTE NEU VERTEILEN':'RESET SKILL POINTS'}</button></div>
   {error&&<p className="td-error" role="alert">{error}</p>}
  </section>;
  return <section className="td-shell td-phase2" data-testid="midnight-bastion">
