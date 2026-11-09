@@ -1,5 +1,5 @@
 /**
- * Deterministic, dependency-free simulation for the first seven Arcade Games.
+ * Deterministic, dependency-free simulation for the all ten Arcade Games.
  * Every game uses the same logical 960×540 coordinate space and fixed 60Hz steps.
  * Rendering is intentionally separate from input and persistence.
  */
@@ -9,6 +9,7 @@ export const ARCADE_STEP=1/60;
 export const PLAYABLE_ARCADE_IDS=[
  'midnight-wings','cave-escape','perfect-stack','blade-timing',
  'death-snake','neon-breaker','bullet-storm',
+ 'hexagon-hell','spike-rush','endless-ascent',
 ] as const;
 export type PlayableArcadeId=typeof PLAYABLE_ARCADE_IDS[number];
 export const isPlayableArcade=(id:string):id is PlayableArcadeId=>
@@ -34,7 +35,15 @@ export type BreakerRun=Base&{kind:'neon-breaker';ballX:number;ballY:number;vx:nu
 export type StormBullet={x:number;y:number;vx:number;vy:number;r:number;style:number};
 export type StormRun=Base&{kind:'bullet-storm';x:number;y:number;bullets:StormBullet[];
  spawn:number;wave:number};
-export type ArcadeRunState=WingsRun|CaveRun|StackRun|BladeRun|SnakeRun|BreakerRun|StormRun;
+export type HexWall={radius:number;opening:number;gap:number;thickness:number;passed:boolean};
+export type HexRun=Base&{kind:'hexagon-hell';angle:number;rotation:number;walls:HexWall[];spawn:number;lastOpening:number};
+export type SpikeObstacle={x:number;width:number;type:'spike'|'double'|'gap';passed:boolean};
+export type SpikeRun=Base&{kind:'spike-rush';feet:number;vy:number;grounded:boolean;spawn:number;
+ distance:number;obstacles:SpikeObstacle[]};
+export type AscentPlatform={x:number;y:number;width:number;vx:number};
+export type AscentRun=Base&{kind:'endless-ascent';x:number;feet:number;vy:number;
+ climbed:number;platforms:AscentPlatform[];jumps:number};
+export type ArcadeRunState=WingsRun|CaveRun|StackRun|BladeRun|SnakeRun|BreakerRun|StormRun|HexRun|SpikeRun|AscentRun;
 
 const clamp=(value:number,min:number,max:number)=>Math.max(min,Math.min(max,value));
 const random=(state:Base)=>{
@@ -86,6 +95,19 @@ export function createArcadeRun(kind:PlayableArcadeId,seed=0x543fa1d2):ArcadeRun
   case 'neon-breaker':return {...base,kind,ballX:480,ballY:460,vx:168,vy:-265,
    paddleX:480,paddleWidth:130,serve:true,lives:3,wave:1,bricks:newBreakerBricks(1)};
   case 'bullet-storm':return {...base,kind,x:480,y:422,bullets:[],spawn:.65,wave:1};
+  case 'hexagon-hell':return {...base,kind,angle:0,rotation:0,spawn:1.6,
+   lastOpening:0,walls:[{radius:465,opening:0,gap:1.65,thickness:34,passed:false}]};
+  case 'spike-rush':return {...base,kind,feet:440,vy:0,grounded:true,
+   spawn:1.43,distance:0,
+   obstacles:[{x:1000,width:42,type:'spike',passed:false}]};
+  case 'endless-ascent':return {...base,kind,x:480,feet:470,vy:-550,climbed:0,jumps:0,
+   platforms:[
+    {x:390,y:471,width:180,vx:0},
+    {x:420,y:368,width:156,vx:0},
+    {x:350,y:265,width:148,vx:0},
+    {x:440,y:162,width:144,vx:0},
+    {x:390,y:59,width:144,vx:0},
+   ]};
  }
 }
 function fail(state:Base):ArcadeEvent{state.over=true;return 'fail';}
@@ -111,6 +133,13 @@ export function actArcadeRun(state:ArcadeRunState):ArcadeEvent{
  case 'cave-escape':return null; // held input controls lift on fixed steps
  case 'death-snake':return null; // discrete turns are queued with steerSnake
  case 'bullet-storm':return null; // movement is directional or pointer controlled
+ case 'hexagon-hell':return null; // orbit is controlled continuously
+ case 'endless-ascent':return null; // jumping is automatic on platform contact
+ case 'spike-rush':
+  if(!state.grounded)return null;
+  state.vy=-550;
+  state.grounded=false;
+  return 'flap';
  case 'neon-breaker':
   if(!state.serve)return null;
   state.serve=false;
@@ -333,6 +362,117 @@ export function stepArcadeRun(state:ArcadeRunState,dt:number,holding=false,contr
   }
   state.bullets=state.bullets.filter(b=>b.y<ARCADE_HEIGHT+30&&b.x>-35&&b.x<ARCADE_WIDTH+35);
   state.score=Math.floor(state.elapsed*10);
+  return null;
+ }
+ case 'hexagon-hell':{
+  const turn=(controls.right?1:0)-(controls.left?1:0);
+  state.angle+=turn*3.65*step;
+  state.rotation+=Math.sin(state.elapsed*.4)*.14*step;
+  const velocity=Math.min(310,166+state.elapsed*2.3);
+  state.spawn-=step;
+  if(state.spawn<=0){
+   // Keep consecutive openings reachable. All geometry is determined by the run's seed.
+   state.lastOpening+=(random(state)-.5)*1.65;
+   state.walls.push({radius:480,opening:state.lastOpening,
+    gap:Math.max(.86,1.65-state.score*.065),thickness:34,passed:false});
+   state.spawn+=Math.max(1.14,1.7-state.score*.025);
+  }
+  const playerRadius=126;
+  for(const wall of state.walls){
+   wall.radius-=velocity*step;
+   if(Math.abs(wall.radius-playerRadius)<wall.thickness/2+11 &&
+    angularDistance(state.angle,wall.opening+state.rotation)>wall.gap/2-.12)
+    return fail(state);
+   if(!wall.passed&&wall.radius+wall.thickness/2<playerRadius-12){
+    wall.passed=true;
+    state.score++;
+    return 'score';
+   }
+  }
+  state.walls=state.walls.filter(w=>w.radius+w.thickness/2>20);
+  return null;
+ }
+ case 'spike-rush':{
+  const speed=Math.min(390,285+state.score*4);
+  const playerX=210,ground=440;
+  state.distance+=speed*step;
+  state.spawn-=step;
+  if(state.spawn<=0){
+   const choice=random(state);
+   const kind:SpikeObstacle['type']=state.score<2?'spike':
+    choice<.25?'gap':choice<.54?'double':'spike';
+   const width=kind==='gap'?95:kind==='double'?78:42;
+   state.obstacles.push({x:1010,width,type:kind,passed:false});
+   state.spawn+=Math.max(1.1,1.55-state.score*.018);
+  }
+  for(const obstacle of state.obstacles)obstacle.x-=speed*step;
+  const oldFeet=state.feet;
+  const floorMissing=state.obstacles.some(o=>o.type==='gap'&&
+   playerX>o.x+8&&playerX<o.x+o.width-8);
+  if(state.grounded&&!floorMissing){
+   state.feet=ground;
+   state.vy=0;
+  }else{
+   state.grounded=false;
+   state.vy+=1320*step;
+   state.feet+=state.vy*step;
+   if(!floorMissing&&state.vy>=0&&oldFeet<=ground&&state.feet>=ground){
+    state.feet=ground;state.vy=0;state.grounded=true;
+   }
+  }
+  for(const obstacle of state.obstacles){
+   if(obstacle.type!=='gap' &&
+    obstacle.x<playerX+14&&obstacle.x+obstacle.width>playerX-14&&
+    state.feet>ground-24)return fail(state);
+   if(!obstacle.passed&&obstacle.x+obstacle.width<playerX-15){
+    obstacle.passed=true;
+    state.score++;
+   }
+  }
+  if(state.feet>ARCADE_HEIGHT+30)return fail(state);
+  state.obstacles=state.obstacles.filter(o=>o.x+o.width>-20);
+  return null;
+ }
+ case 'endless-ascent':{
+  const direction=(controls.right?1:0)-(controls.left?1:0);
+  state.x=clamp(state.x+direction*355*step,18,ARCADE_WIDTH-18);
+  const oldFeet=state.feet;
+  state.vy+=1110*step;
+  state.feet+=state.vy*step;
+  for(const platform of state.platforms){
+   if(platform.vx!==0){
+    platform.x+=platform.vx*step;
+    if(platform.x<24){platform.x=24;platform.vx=Math.abs(platform.vx);}
+    if(platform.x+platform.width>ARCADE_WIDTH-24){
+     platform.x=ARCADE_WIDTH-24-platform.width;platform.vx=-Math.abs(platform.vx);
+    }
+   }
+   if(state.vy>0&&oldFeet<=platform.y+1&&state.feet>=platform.y&&
+    state.x+13>platform.x&&state.x-13<platform.x+platform.width){
+    state.feet=platform.y;state.vy=-555;state.jumps++;
+    break;
+   }
+  }
+  const shift=Math.max(0,240-state.feet);
+  if(shift>0){
+   state.feet+=shift;
+   for(const p of state.platforms)p.y+=shift;
+   state.climbed+=shift;
+   state.score=Math.floor(state.climbed/20);
+  }
+  // Every generated platform is reachable from the preceding one with one automatic bounce.
+  let minY=Math.min(...state.platforms.map(p=>p.y));
+  while(minY>-85){
+   const top=state.platforms.reduce((a,b)=>a.y<b.y?a:b);
+   const width=clamp(150-state.climbed/150,112,150);
+   const center=clamp(top.x+top.width/2+(random(state)-.5)*180,100,ARCADE_WIDTH-100);
+   const y=top.y-(85+random(state)*24);
+   const vx=state.climbed>900&&random(state)<.23?(random(state)<.5?-34:34):0;
+   state.platforms.push({x:center-width/2,y,width,vx});
+   minY=y;
+  }
+  state.platforms=state.platforms.filter(p=>p.y<ARCADE_HEIGHT+80);
+  if(state.feet>ARCADE_HEIGHT+42)return fail(state);
   return null;
  }
  }
