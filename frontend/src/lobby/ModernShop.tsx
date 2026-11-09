@@ -4,6 +4,7 @@ import {filterShop} from './shopBridge';
 import type {ShopSnapshot,ShopItem,ShopKind,ShopFilter,ShopStatus,ShopSort} from './shopBridge';
 import './shop.css';
 import './shopPremium.css';
+import {localizedSudokuTitle} from './sudokuTitleLocalization';
 
 type Props={
   shop:ShopSnapshot;language:'en'|'de';loaded:boolean;pending:string|null;motionEnabled?:boolean;
@@ -64,7 +65,11 @@ export function ModernShop({shop,language,loaded,pending,motionEnabled=true,onBa
   const [sort,setSort]=useState<ShopSort>('recommended');
   const [query,setQuery]=useState('');
   const [confirm,setConfirm]=useState<{id:string;name:string;price:number;pack:boolean}|null>(null);
-  const filtered=useMemo(()=>filterShop(shop.items,kind,status,query,sort),[shop.items,kind,status,query,sort]);
+  const translatedItems=useMemo(()=>shop.items.map(item=>({
+    ...item,name:localizedSudokuTitle(item.id,item.name,language),
+  })),[shop.items,language]);
+  const filtered=useMemo(()=>filterShop(translatedItems,kind,status,query,sort),
+    [translatedItems,kind,status,query,sort]);
   const pick=(item:ShopItem)=>{
     if(item.owned){onCosmetic(item.id);return;}
     setConfirm({id:item.id,name:item.name,price:item.price,pack:false});

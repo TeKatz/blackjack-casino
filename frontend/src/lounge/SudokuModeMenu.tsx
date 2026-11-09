@@ -1,6 +1,7 @@
 import {useEffect,useState} from 'react';
 import type {SudokuCareer,SudokuIntent,VariantEntry} from './sudokuBridge';
 import './sudokuModes.css';
+import {localizedSudokuTitle} from '../lobby/sudokuTitleLocalization';
 
 export type ModeId='classic'|'x'|'killer'|'jigsaw'|'samurai'|'mini';
 type Lang='de'|'en';
@@ -15,11 +16,12 @@ const modes:{id:ModeId;en:string;de:string;descEn:string;descDe:string}[]=[
  {id:'mini',en:'Mini Sudoku',de:'Mini Sudoku',descEn:'Four-by-four or six-by-six.',descDe:'Vier mal vier oder sechs mal sechs.'},
 ];
 const rewards:[number,string,'normal'|'premium'|'ultra'][]=[
- [10,'Zahlenkenner','normal'],[20,'Logikdetektiv','normal'],[30,'Rätselstratege','normal'],
- [40,'Zahlenvirtuose','normal'],[50,'Meister der Neun','normal'],[60,'Architekt der Logik','normal'],
- [70,'Sudoku-Großmeister','normal'],[80,'Herrscher der Zahlen','normal'],
- [90,'Zahlenvisionär','normal'],[90,'Das perfekte Muster','premium'],
- [100,'Sudoku-Legende','normal'],[100,'Jenseits aller Logik','ultra'],
+ [10,'title-sudoku-10','normal'],[20,'title-sudoku-20','normal'],
+ [30,'title-sudoku-30','normal'],[40,'title-sudoku-40','normal'],
+ [50,'title-sudoku-50','normal'],[60,'title-sudoku-60','normal'],
+ [70,'title-sudoku-70','normal'],[80,'title-sudoku-80','normal'],
+ [90,'title-sudoku-90','normal'],[90,'title-sudoku-90-premium','premium'],
+ [100,'title-sudoku-100','normal'],[100,'title-sudoku-100-ultra','ultra'],
 ];
 const levelNames:Record<Lang,Record<string,string>>={
  de:{Easy:'Leicht',Medium:'Mittel',Hard:'Schwer'},
@@ -101,10 +103,10 @@ export function SudokuModeMenu({language,selectedMode,select,career:careerRaw,en
       <span>{career.level===100?'MAX':career.experience.toLocaleString(language)+' / '+career.nextLevelXp.toLocaleString(language)+' XP'}</span>
     </div>
     <div className="sudoku-career-milestones">
-     {rewards.map(([level,title,tier])=><div key={title}
+     {rewards.map(([level,titleId,tier])=><div key={titleId}
       className={'sudoku-career-milestone '+(level<=career.level?'unlocked':'locked')+' '+tier}>
       <span className="sudoku-milestone-level">LV {level}</span>
-      <span className="sudoku-milestone-name">{title}</span>
+      <span className="sudoku-milestone-name">{localizedSudokuTitle(titleId,titleId,language)}</span>
       <span className="sudoku-milestone-status">{level<=career.level?'✓ '+(de?'FREI':'UNLOCKED'):
         (de?'GESPERRT':'LOCKED')}</span>
      </div>)}
