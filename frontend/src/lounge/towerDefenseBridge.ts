@@ -1,7 +1,7 @@
 export type TowerKind='archer'|'frost'|'cannon'|'ballista'|'flame';
 export type EnemyKind='grunt'|'runner'|'brute'|'shield';
 export type TdPoint={x:number;y:number};
-export type TdTower={pad:number;kind:TowerKind;level:number;cooldown:number};
+export type TdTower={pad:number;kind:TowerKind;level:number;cooldown:number;spent?:number};
 export type TdEnemy={id:number;kind:EnemyKind;distance:number;hp:number;slow:number};
 export type TdEffect={fromX:number;fromY:number;toX:number;toY:number;kind:TowerKind;ticks:number};
 export type BastionProgress={level:number;experience:number;skills:Record<string,number>;
@@ -34,7 +34,8 @@ const kind=(v:unknown):v is TowerKind=>towerKinds.some(k=>k===v);
 const enemyKind=(v:unknown):v is EnemyKind=>enemyKinds.some(k=>k===v);
 const guid=(v:unknown)=>typeof v==='string'&&/^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i.test(v);
 const tower=(v:unknown):v is TdTower=>record(v)&&int(v.pad,9)&&kind(v.kind)
-  &&int(v.level,3)&&v.level>=1&&finite(v.cooldown,10);
+  &&int(v.level,3)&&v.level>=1&&finite(v.cooldown,10)
+  &&(v.spent===undefined||int(v.spent,100000));
 const enemy=(v:unknown):v is TdEnemy=>record(v)&&int(v.id,100000)&&v.id>0
   &&enemyKind(v.kind)&&finite(v.distance,5000)&&finite(v.hp,1000000)&&v.hp>0&&finite(v.slow,10);
 const effect=(v:unknown):v is TdEffect=>record(v)&&finite(v.fromX,960)&&finite(v.fromY,600)

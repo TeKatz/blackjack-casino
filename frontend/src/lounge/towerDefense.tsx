@@ -90,10 +90,9 @@ export function TowerDefenseScreen({state,language,pending,error,animations,soun
  const tower=selected===null?undefined:game.towers.find(x=>x.pad===selected);
  const canAct=game.phase!=='won'&&game.phase!=='lost';
  const levelCost=tower&&tower.level<3?price(Math.floor(costs[tower.kind]*(tower.level+1)/2)):null;
- const spent=tower?costs[tower.kind]+Array.from({length:tower.level-1},(_,i)=>
+ const listPrice=tower?costs[tower.kind]+Array.from({length:tower.level-1},(_,i)=>
   Math.floor(costs[tower.kind]*(i+2)/2)).reduce((a,b)=>a+b,0):0;
- const discountedSpent=tower?price(costs[tower.kind])+Array.from({length:tower.level-1},(_,i)=>price(Math.floor(costs[tower.kind]*(i+2)/2))).reduce((a,b)=>a+b,0):0;
- const sellAmount=Math.floor(discountedSpent*(60+rank('refund')*7)/100);
+ const sellAmount=Math.floor((tower?.spent||listPrice)*(60+rank('refund')*7)/100);
  // Deployment does not equal wave progress: only confirmed enemy kills advance this bar.
  const killPct=game.spawnTotal>0?Math.round(game.waveKills/game.spawnTotal*100):0;
  const confirmRestart=()=>{

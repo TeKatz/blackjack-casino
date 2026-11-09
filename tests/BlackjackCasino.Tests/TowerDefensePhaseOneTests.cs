@@ -81,6 +81,12 @@ public sealed class TowerDefensePhaseOneTests
         int originalCoins = game.State.Coins;
         Assert.True(game.Execute("tower.build", 0, "archer").Success);
         Assert.True(game.Execute("tower.upgrade", 0).Success);
+        // Retaining actual build expenditure prevents profit after changing discounts.
+        Assert.True(game.Execute("tower.menu").Success);
+        Assert.True(game.Execute("tower.skills").Success);
+        Assert.True(game.Execute("tower.skill.reset").Success);
+        Assert.True(game.Execute("tower.menu").Success);
+        Assert.True(game.Execute("tower.play", kind: "forest").Success);
         Assert.True(game.Execute("tower.sell", 0).Success);
         Assert.True(game.State.Coins <= originalCoins);
         Assert.True(game.Execute("tower.build", 0, "cannon").Success);

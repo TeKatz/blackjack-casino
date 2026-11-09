@@ -2,7 +2,7 @@ namespace BlackjackCasino.Core.TowerDefense;
 
 /// <summary>Offline, wager-free tower defence rules. Rendering never determines hits or rewards.</summary>
 public sealed record TdPoint(double X, double Y);
-public sealed record TdTower(int Pad, string Kind, int Level, double Cooldown);
+public sealed record TdTower(int Pad, string Kind, int Level, double Cooldown, int Spent = 0);
 public sealed record TdEnemy(int Id, string Kind, double Distance, double Hp, double Slow);
 public sealed record TdEffect(double FromX, double FromY, double ToX, double ToY, string Kind, int Ticks);
 
@@ -221,7 +221,7 @@ public sealed class TowerDefenseGame
         && s.Effects is { Count: <= 100 }
         && s.Towers.All(t => t.Pad >= 0 && t.Pad < TdMap.Pads.Count
             && TowerKinds.Contains(t.Kind) && t.Level is >= 1 and <= 3
-            && double.IsFinite(t.Cooldown) && t.Cooldown >= 0 && t.Cooldown <= 10)
+            && double.IsFinite(t.Cooldown) && t.Cooldown >= 0 && t.Cooldown <= 10 && t.Spent is >= 0 and <= 100_000)
         && s.Towers.Select(t => t.Pad).Distinct().Count() == s.Towers.Count
         && s.Enemies.All(e => e.Id > 0 && e.Id < s.NextEnemyId
             && EnemyKinds.Contains(e.Kind) && double.IsFinite(e.Distance)
@@ -242,7 +242,7 @@ public sealed class TowerDefenseGame
         && r.Towers is { Count: <= 10 } && r.Enemies is { Count: <= 100 }
         && r.Towers.All(t => t.Pad >= 0 && t.Pad < TdMap.PadsFor(stage).Count
             && TowerKinds.Contains(t.Kind) && t.Level is >= 1 and <= 3
-            && double.IsFinite(t.Cooldown) && t.Cooldown is >= 0 and <= 10)
+            && double.IsFinite(t.Cooldown) && t.Cooldown is >= 0 and <= 10 && t.Spent is >= 0 and <= 100_000)
         && r.Towers.Select(t => t.Pad).Distinct().Count() == r.Towers.Count
         && r.Enemies.All(e => e.Id > 0 && e.Id < r.NextEnemyId
             && EnemyKinds.Contains(e.Kind) && double.IsFinite(e.Distance)
@@ -258,6 +258,13 @@ public sealed class TowerDefenseGame
         "archer" => 70, "frost" => 105, "cannon" => 135,
         "ballista" => 170, "flame" => 150, _ => int.MaxValue,
     };
+    private static int TotalListPrice(TdTower tower)
+    {
+        int total = BuildCost(tower.Kind);
+        for (int level = 1; level < tower.Level; level++)
+            total += BuildCost(tower.Kind) * (level + 1) / 2;
+        return total;
+    }
     private int Price(int amount) => amount == int.MaxValue ? int.MaxValue
         : Math.Max(1, amount * (100 - State.Progress.Rank("engineer") * 2) / 100);
     private void GrantExperience(int amount)
@@ -367,7 +374,7 @@ public sealed class TowerDefenseGame
             if (current is not null || cost == int.MaxValue || s.Coins < cost
                 || s.Progress.Level < TdMastery.RequiredLevel(kind ?? ""))
                 return (false, "Occupied pad, unknown tower or insufficient coins.");
-            s.Coins -= cost; s.Towers.Add(new(pad.Value, kind!, 1, 0));
+            s.Coins -= cost; s.Towers.Add(new(pad.Value, kind!, 1, 0, cost));
             return (true, "Tower built.");
         }
         if (current is null) return (false, "No tower at this position.");
@@ -375,14 +382,12 @@ public sealed class TowerDefenseGame
         {
             int cost = Price(UpgradeCost(current));
             if (s.Coins < cost || cost == int.MaxValue) return (false, "Upgrade unavailable.");
-            s.Coins -= cost; s.Towers[s.Towers.IndexOf(current)] = current with { Level = current.Level + 1 };
+            s.Coins -= cost; s.Towers[s.Towers.IndexOf(current)] = current with { Level = current.Level + 1, Spent = Math.Min(100_000, current.Spent == 0 ? TotalListPrice(current) + cost : current.Spent + cost) };
             return (true, "Tower upgraded.");
         }
         if (action == "tower.sell")
         {
-            int spent = Price(BuildCost(current.Kind));
-            for (int level = 1; level < current.Level; level++)
-                spent += Price(BuildCost(current.Kind) * (level + 1) / 2);
+            int spent = current.Spent > 0 ? current.Spent : TotalListPrice(current);
             s.Coins += spent * (60 + 7 * s.Progress.Rank("refund")) / 100;
             s.Towers.Remove(current);
             return (true, "Tower sold.");
