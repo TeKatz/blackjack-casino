@@ -10,6 +10,7 @@ import { MemoryScreen } from './memory';
 import { JigsawScreen } from './jigsaw';
 import { AdventureScreen } from './adventure';
 import { TowerDefenseScreen } from './towerDefense';
+import { MinesweeperScreen } from './minesweeper';
 import { isSudokuReply, issueSudokuIntent } from './sudokuBridge';
 import type { SudokuIntent } from './sudokuBridge';
 import { isSolitaireReply, issueSolitaireIntent } from './solitaireBridge';
@@ -24,6 +25,8 @@ import { isTaleReply, issueTaleIntent } from './adventureBridge';
 import type { TaleIntent } from './adventureBridge';
 import {isTowerReply,issueTowerIntent} from './towerDefenseBridge';
 import type {TowerIntent} from './towerDefenseBridge';
+import {isSweepReply,issueSweepIntent} from './minesweeperBridge';
+import type {SweepIntent} from './minesweeperBridge';
 import {LoungePreview} from './LoungePreview';
 import './lounge.css';
 
@@ -68,16 +71,21 @@ const catalog: GameInfo[] = [
     description:{en:'Build towers, upgrade defences and face fifteen enemy waves. A strategy game at your own pace.',
       de:'Errichte Türme, verbessere deine Verteidigung und überstehe 15 Gegnerwellen. Strategie in deinem Tempo.'},
     icon:'♜',decoration:'DEFEND  ·  UPGRADE  ·  SURVIVE' },
+  { id:'minesweeper',category:'strategy',title:{en:'Midnight Sweep',de:'Midnight Sweep'},
+    subtitle:{en:'Chart the unknown',de:'Kartiere die Dunkelheit'},
+    description:{en:'Reveal a nocturnal minefield, mark hazards and use one Echo Scan to read the stars.',
+      de:'Decke ein nächtliches Minenfeld auf, markiere Gefahren und nutze einen Echo-Scan, um die Sterne zu lesen.'},
+    icon:'✺',decoration:'OBSERVE  ·  MARK  ·  SURVIVE' },
 ];
 const words = {
  en: {club:'THE MIDNIGHT CLUB',back:'← Casino lobby',kicker:'A QUIETER CORNER',
- title:'Your time, your pace.',intro:'Take a seat away from the casino floor. Seven familiar ways to unwind, all available offline.',
+ title:'Your time, your pace.',intro:'Take a seat away from the casino floor. Eight distinct ways to unwind, all available offline.',
  all:'All activities',puzzles:'Puzzles',cards:'Cards & memory',stories:'Adventures',strategy:'Strategy',
  play:'ENTER GAME',continued:'Your progress is preserved',loading:'Opening your lounge…',
  foot:'THE CHILL LOUNGE',note:'No entry fees. No rush. Save states and rewards stay with your existing profile.',
  version:'LOCAL · OFFLINE'},
  de: {club:'THE MIDNIGHT CLUB',back:'← Casino-Lobby',kicker:'EINE RUHIGERE ECKE',
- title:'Deine Zeit. Dein Tempo.',intro:'Eine kleine Auszeit vom Casino. Sieben vertraute Spiele, vollständig offline verfügbar.',
+ title:'Deine Zeit. Dein Tempo.',intro:'Eine kleine Auszeit vom Casino. Acht unterschiedliche Spiele, vollständig offline verfügbar.',
  all:'Alle Aktivitäten',puzzles:'Rätsel',cards:'Karten & Memory',stories:'Abenteuer',strategy:'Strategie',
  play:'SPIEL ÖFFNEN',continued:'Dein Fortschritt bleibt gespeichert',loading:'Deine Lounge wird geöffnet…',
  foot:'THE CHILL LOUNGE',note:'Keine Einsätze. Kein Zeitdruck. Spielstände und Belohnungen bleiben erhalten.',
@@ -100,6 +108,8 @@ function App() {
  const [adventureError,setAdventureError]=useState('');
  const [towerDefensePending,setTowerDefensePending]=useState<string|null>(null);
  const [towerDefenseError,setTowerDefenseError]=useState('');
+ const [sweepPending,setSweepPending]=useState<string|null>(null);
+ const [sweepError,setSweepError]=useState('');
  const signalled=useRef(false);
  useEffect(()=>{
    const webview=window.chrome?.webview;
@@ -119,6 +129,15 @@ function App() {
        setTowerDefensePending(prev=>prev===reply.requestId?null:prev);
        setTowerDefenseError(reply.success?'':reply.message);
        if(!reply.success && reply.message==='Defence changed. Refreshing.')
+         sendLoungeCommand('lounge.ready');
+     }
+     if(msg&&typeof msg==='object'&&!Array.isArray(msg)
+       &&'type' in msg&&msg.type==='lounge.minesweeper.result'
+       &&'data' in msg&&isSweepReply(msg.data)){
+       const reply=msg.data;
+       setSweepPending(prev=>prev===reply.requestId?null:prev);
+       setSweepError(reply.success?'':reply.message);
+       if(!reply.success&&reply.message==='Field changed. Refreshing.')
          sendLoungeCommand('lounge.ready');
      }
      if(msg&&typeof msg==='object'&&!Array.isArray(msg)
@@ -177,7 +196,7 @@ function App() {
    }
  },[snapshot]);
  useEffect(()=>{
-  if(!pending&&!solitairePending&&!wordSearchPending&&!memoryPending&&!jigsawPending&&!adventurePending&&!towerDefensePending)return;
+  if(!pending&&!solitairePending&&!wordSearchPending&&!memoryPending&&!jigsawPending&&!adventurePending&&!towerDefensePending&&!sweepPending)return;
   const id=window.setTimeout(()=>{
    const message=snapshot?.language==='de'?'Bestätigung fehlt. Der aktuelle Spielstand wird neu geladen.':'Confirmation missing. Refreshing the saved game.';
    if(pending){setPending(null);setSudokuError(message);}
@@ -187,10 +206,11 @@ function App() {
    if(jigsawPending){setJigsawPending(null);setJigsawError(message);}
    if(adventurePending){setAdventurePending(null);setAdventureError(message);}
    if(towerDefensePending){setTowerDefensePending(null);setTowerDefenseError(message);}
+   if(sweepPending){setSweepPending(null);setSweepError(message);}
    sendLoungeCommand('lounge.ready');
   },8000);
   return()=>window.clearTimeout(id);
- },[pending,solitairePending,wordSearchPending,memoryPending,jigsawPending,adventurePending,towerDefensePending,snapshot?.language]);
+ },[pending,solitairePending,wordSearchPending,memoryPending,jigsawPending,adventurePending,towerDefensePending,sweepPending,snapshot?.language]);
  const language:Language=snapshot?.language??'en', t=words[language];
  const filtered=useMemo(()=>catalog.filter(game=>filter==='all'||game.category===filter),[filter]);
  const statusMap=useMemo(()=>new Map<LoungeId,string|null>((snapshot?.games??[]).map(game=>[game.id,game.status] as const)),[snapshot]);
@@ -203,6 +223,11 @@ function App() {
    if(!snapshot||(towerDefensePending&&intent.action!=='tower.exit')||!snapshot.towerDefense)return;
    setTowerDefenseError('');
    setTowerDefensePending(issueTowerIntent(snapshot.towerDefenseSession,snapshot.towerDefenseRevision,intent));
+ }
+ function sweepCommand(intent:SweepIntent){
+   if(!snapshot||!snapshot.minesweeper||(sweepPending&&intent.action!=='mine.exit'))return;
+   setSweepError('');
+   setSweepPending(issueSweepIntent(snapshot.minesweeperSession,snapshot.minesweeperRevision,intent));
  }
  function command(intent:SudokuIntent) {
    if(!snapshot||pending||!snapshot.sudoku)return;
@@ -234,13 +259,18 @@ function App() {
    setMemoryError('');
    setMemoryPending(issueMemoryIntent(snapshot.memorySession,snapshot.memoryRevision,intent));
  }
- return <main className={"chill-shell"+(snapshot?.boardOnly?" board-only":"")+(snapshot?.towerDefense?" bastion-open":"")} data-pending={!!(pending||solitairePending||wordSearchPending||memoryPending||jigsawPending||adventurePending||towerDefensePending)} data-motion={snapshot?.animationsEnabled??true}>
+ return <main className={"chill-shell"+(snapshot?.boardOnly?" board-only":"")+(snapshot?.towerDefense?" bastion-open":"")+(snapshot?.minesweeper?" sweep-open":"")} data-pending={!!(pending||solitairePending||wordSearchPending||memoryPending||jigsawPending||adventurePending||towerDefensePending||sweepPending)} data-motion={snapshot?.animationsEnabled??true}>
    <div className="chill-sparkles" aria-hidden="true"/>
    <header className="chill-header">
      <div className="chill-mark" aria-hidden="true">✦</div>
      <div className="chill-brand"><span>{t.club}</span><strong>Chill Lounge</strong></div>
      <span className="chill-local">{t.version}</span>
-     {snapshot?.towerDefense
+     {snapshot?.minesweeper
+       ? <button className="chill-exit" disabled={!!sweepPending}
+           onClick={()=>sweepCommand({action:snapshot.minesweeper?.screen==='menu'?'mine.exit':'mine.menu'})}>
+           {snapshot.minesweeper.screen==='menu'?'← Chill Lounge':
+            (language==='de'?'← Feldauswahl':'← Field selection')}</button>
+       : snapshot?.towerDefense
        ? <button className="chill-exit"
            onClick={()=>towerDefenseCommand({action:snapshot.towerDefense?.screen==='menu'?'tower.exit':'tower.menu'})}>
              {snapshot.towerDefense.screen==='menu'?'← Chill Lounge':(language==='de'?'← Kartenauswahl':'← Map selection')}</button>
@@ -281,7 +311,11 @@ function App() {
        : <button className="chill-exit" onClick={()=>sendLoungeCommand('lounge.close')}>{t.back}</button>}
    </header>
    <div className="chill-content">
-    {snapshot?.towerDefense
+    {snapshot?.minesweeper
+      ? <MinesweeperScreen state={snapshot.minesweeper} language={language} pending={!!sweepPending}
+          error={sweepError} command={sweepCommand} animations={snapshot.animationsEnabled}
+          soundEnabled={snapshot.soundEnabled}/>
+      : snapshot?.towerDefense
       ? <TowerDefenseScreen state={snapshot.towerDefense} language={language} pending={!!towerDefensePending}
           error={towerDefenseError} command={towerDefenseCommand} animations={snapshot.animationsEnabled} soundEnabled={snapshot.soundEnabled}/>
       : snapshot?.adventure
