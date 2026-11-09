@@ -1,0 +1,41 @@
+.sudoku-variant{max-width:1500px;margin:0 auto;color:#f4e8d1}
+.variant-heading{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:7px 12px 15px}
+.variant-heading h1{font:normal clamp(26px,3vw,37px) Georgia,serif;margin:6px 0;color:#f3e1ba}
+.variant-heading p{color:#afc9be;font-size:12px;margin:0}
+.variant-timers{display:flex;gap:9px}
+.variant-timers span{display:flex;flex-direction:column;min-width:100px;gap:6px;padding:10px 12px;border:1px solid #5e816c;border-radius:9px;background:#15302d;color:#9fbcaa;font-size:10px}
+.variant-timers b{font:22px Georgia,serif;color:#f4d795}
+.variant-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(250px,310px);gap:18px;align-items:start}
+.variant-board-panel{min-width:0;background:#0b2023;padding:13px;border:1px solid #6a8375;border-radius:13px;box-shadow:0 12px 30px #0007}
+.variant-scroll{overflow:auto;max-height:calc(100dvh - 250px);display:flex;justify-content:center;align-items:start}
+.variant-grid{width:min(100%,calc(var(--variant-cell-px)*var(--variant-width)));min-width:calc(var(--variant-cell-px)*var(--variant-width));display:grid;grid-template-columns:repeat(var(--variant-width),minmax(0,1fr));aspect-ratio:1;margin:0 auto;box-shadow:0 6px 24px #0008}
+.variant-cell{box-sizing:border-box;position:relative;appearance:none;aspect-ratio:1;min-width:0;min-height:0;display:grid;place-items:center;background:#182e31;border:1px solid #65817b;color:#a5e7c4;padding:0;font:700 clamp(10px,1.6vw,26px) Georgia,serif;cursor:pointer;transition:background .1s}
+.variant-cell.given{color:#f1dec0;font-weight:800}.variant-cell.diagonal{background:#22444e}
+.variant-cell.selected{background:#4c7967;box-shadow:inset 0 0 0 2px #f4cb78;z-index:2}
+.variant-cell.incorrect,.variant-cell.conflict{color:#ff9d98}.variant-cell.conflict{background:#663636}
+.variant-cell:hover{background:#38584f}
+.variant-grid.variant-samurai .variant-cell{font-size:clamp(10px,1vw,16px)}
+.variant-grid.variant-mini .variant-cell{font-size:clamp(17px,2.1vw,32px)}
+.variant-void{background:transparent;aspect-ratio:1;pointer-events:none}
+.variant-notes{position:absolute;inset:3px;display:grid;grid-template-rows:repeat(3,1fr);align-items:center;justify-items:center;font:500 clamp(6px,.7vw,10px) Segoe UI,sans-serif;color:#99bca9}
+.variant-mini .variant-notes{font-size:10px}.variant-samurai .variant-notes{inset:1px;font-size:5px}
+.variant-cage-outline{position:absolute;inset:2px;border-style:dashed;border-color:#dfb784;pointer-events:none;z-index:1}
+.variant-cage-label{position:absolute;left:3px;top:1px;font:700 8px Segoe UI,sans-serif;color:#f6d6a8;z-index:2}
+.variant-rule{font-size:12px;color:#b7c9bc;line-height:1.5;margin:12px 3px 0}
+.variant-zoom{display:flex;align-items:center;justify-content:flex-end;gap:9px;color:#c4decf;font-size:11px;margin-bottom:10px}
+.variant-zoom button{border-radius:6px;border:1px solid #678f80;background:#25423c;color:#f7e4b9;min-width:29px;min-height:26px;cursor:pointer}
+.variant-zoom button:disabled{opacity:.4}.variant-zoom b{min-width:43px;text-align:center}
+.variant-controls{background:#142d29;border:1px solid #537869;border-radius:13px;padding:17px;display:flex;flex-direction:column;gap:14px}
+.variant-number-pad{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.variant-number-pad button{background:#24453b;color:#f6e5c9;border:1px solid #66977f;border-radius:7px;min-height:48px;font:25px Georgia,serif;cursor:pointer}
+.variant-number-pad button:hover:not(:disabled){background:#426c57}.variant-controls button:disabled{opacity:.35;cursor:default}
+.variant-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.variant-actions button,.variant-hint,.variant-return{min-height:38px;background:#203c35;color:#f2e3c7;border:1px solid #557d69;border-radius:7px;cursor:pointer;font-size:11px;font-weight:750}
+.variant-actions button.active{background:#54745b;border-color:#e9c985}.variant-hint{background:#4a4228;border-color:#b99b60}
+.variant-notice{font-size:11px;color:#a9ccbd;line-height:1.5;min-height:25px;margin:0}
+.variant-victory{border:1px solid #edca84;background:radial-gradient(circle at top,#385a3a,#1b352f);padding:15px;border-radius:10px;text-align:center}
+.variant-victory span{font-size:10px;letter-spacing:.14em;color:#e9d092}
+.variant-victory h2{font:23px Georgia,serif;color:#ffe4aa;margin:7px 0}.variant-victory p,.variant-victory small{font-size:11px;line-height:1.6;color:#e6dfc4}
+.variant-help{font-size:10px;color:#89aa9c;line-height:1.6}.variant-return{background:transparent;min-height:41px}
+@media(max-width:850px){.variant-layout{grid-template-columns:1fr}.variant-controls{max-width:700px;width:100%;margin:auto}.variant-scroll{max-height:none}}
+@media(prefers-reduced-motion:reduce){.variant-cell{transition:none}}
