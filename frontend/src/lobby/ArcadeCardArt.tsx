@@ -34,8 +34,9 @@ export function ArcadeCardArt({id}:{id:string}){
     <stop offset="1" stopColor="#957252"/>
    </linearGradient>
    <linearGradient id={'arcade-'+id+'-energy'} x1="0" y1="0" x2="1" y2="1">
-    <stop stopColor="#d5fff6"/><stop offset=".52" stopColor={highlight}/>
-    <stop offset="1" stopColor="#2c8a9a"/>
+    <stop stopColor={id==='spike-rush'?'#f8e5bc':id==='endless-ascent'?'#fff0bc':'#d5fff6'}/>
+    <stop offset=".52" stopColor={id==='spike-rush'?'#9ee8d7':id==='endless-ascent'?'#8bdfdf':highlight}/>
+    <stop offset="1" stopColor={id==='spike-rush'?'#425d8b':id==='endless-ascent'?'#7283d1':'#2c8a9a'}/>
    </linearGradient>
    <radialGradient id={'arcade-'+id+'-glow'}>
     <stop stopColor={highlight} stopOpacity=".29"/><stop offset="1" stopColor={highlight} stopOpacity="0"/>
