@@ -10,11 +10,12 @@ const state = {version:1,language:'en',
   jigsawSession:'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',jigsawRevision:0,jigsaw:null,
   adventureSession:'ffffffff-ffff-4fff-8fff-ffffffffffff',adventureRevision:0,adventure:null,
   towerDefenseSession:'11111111-1111-4111-8111-111111111111',towerDefenseRevision:0,towerDefense:null,
+  minesweeperSession:'22222222-2222-4222-8222-222222222222',minesweeperRevision:0,minesweeper:null,
   musicEnabled:true,soundEnabled:true,
   animationsEnabled:true,games};
 
 describe('Chill Lounge native navigation snapshot',()=>{
-  it('accepts the seven supported routes and their read-only statuses',()=>{
+  it('accepts the eight supported routes and their read-only statuses',()=>{
     expect(isLoungeSnapshot(state)).toBe(true);
     expect(isLoungeSnapshot({...state,language:'de',games:games.map(g=>({...g,status:'Saved'}))})).toBe(true);
     expect(readLoungeSnapshot({type:'lounge.snapshot',data:state})).toEqual(state);
@@ -28,6 +29,7 @@ describe('Chill Lounge native navigation snapshot',()=>{
     expect(readLoungeSnapshot({type:'untrusted.snapshot',data:state})).toBe(null);
     expect(isLoungeId('tales-backroom')).toBe(true);
     expect(isLoungeId('tower-defense')).toBe(true);
+    expect(isLoungeId('minesweeper')).toBe(true);
     expect(isLoungeId('transfer-bankroll')).toBe(false);
   });
 });
