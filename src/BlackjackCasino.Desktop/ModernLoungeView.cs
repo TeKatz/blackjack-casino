@@ -40,6 +40,8 @@ internal sealed class ModernLoungeView : ContentControl, IDisposable
     private readonly Func<ModernAdventureCommand, ModernAdventureReply> adventureCommand;
     private readonly Func<ModernTowerDefenseCommand, ModernTowerDefenseReply> towerDefenseCommand;
     private readonly Func<bool> towerDefenseTick;
+    private readonly Func<ModernMinesweeperCommand, ModernMinesweeperReply> minesweeperCommand;
+    private readonly Action minesweeperTick;
     private readonly Action close;
     private readonly Action failure;
     private readonly Action? openBoardWindow;
@@ -72,6 +74,8 @@ internal sealed class ModernLoungeView : ContentControl, IDisposable
         Func<ModernAdventureCommand, ModernAdventureReply> adventureCommand,
         Func<ModernTowerDefenseCommand, ModernTowerDefenseReply> towerDefenseCommand,
         Func<bool> towerDefenseTick,
+        Func<ModernMinesweeperCommand, ModernMinesweeperReply> minesweeperCommand,
+        Action minesweeperTick,
         Action close, Action failure, Action? openBoardWindow = null, bool boardOnly = false)
     {
         this.snapshot = snapshot;
@@ -91,6 +95,8 @@ internal sealed class ModernLoungeView : ContentControl, IDisposable
         this.adventureCommand = adventureCommand;
         this.towerDefenseCommand = towerDefenseCommand;
         this.towerDefenseTick = towerDefenseTick;
+        this.minesweeperCommand = minesweeperCommand;
+        this.minesweeperTick = minesweeperTick;
         towerClock.Tick += (_, _) =>
         {
             if (!Ready || !IsVisible || disposed || boardOnly) return;
@@ -104,6 +110,7 @@ internal sealed class ModernLoungeView : ContentControl, IDisposable
             wordSearchTick();
             memoryTick();
             jigsawTick();
+            minesweeperTick();
             Refresh();
         };
         this.close = close;
@@ -255,12 +262,20 @@ internal sealed class ModernLoungeView : ContentControl, IDisposable
                     Post("lounge.tower-defense.result", towerReply);
                     Refresh();
                     break;
+                case "lounge.minesweeper.command" when listening && Ready && IsVisible && !boardOnly:
+                    ModernMinesweeperCommand? mineRequest =
+                        ModernMinesweeperProtocol.Parse(e.WebMessageAsJson);
+                    if (mineRequest is null) break;
+                    ModernMinesweeperReply mineReply = minesweeperCommand(mineRequest);
+                    Post("lounge.minesweeper.result", mineReply);
+                    Refresh();
+                    break;
                 case "lounge.open" when listening && Ready && IsVisible && !boardOnly:
                     if (!root.TryGetProperty("id", out JsonElement id)
                         || id.ValueKind != JsonValueKind.String) return;
                     string? route = id.GetString();
                     if (route is "sudoku" or "solitaire" or "word-search"
-                        or "memory" or "jigsaw" or "tales-backroom" or "tower-defense")
+                        or "memory" or "jigsaw" or "tales-backroom" or "tower-defense" or "minesweeper")
                         openGame(route);
                     break;
             }
