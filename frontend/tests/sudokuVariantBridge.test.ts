@@ -13,7 +13,7 @@ const keys=['x','killer','jigsaw','samurai'].flatMap(mode=>['Easy','Medium','Har
 describe('native variant Sudoku bridge',()=>{
  it('accepts a typed board without leaking an answer',()=>{
   expect(isVariantGame(mini)).toBe(true);
-  expect(isVariantGame({...mini,solution:givens})).toBe(true);
+  expect(isVariantGame({...mini,solution:givens})).toBe(false);
   expect(isVariantGame({...mini,board:'9'+givens.slice(1)})).toBe(false);
   expect(isVariantGame({...mini,notes:[1,...Array(15).fill(0)]})).toBe(false);
   expect(isVariantGame({...mini,width:21})).toBe(false);

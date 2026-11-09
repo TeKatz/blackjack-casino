@@ -64,7 +64,7 @@ const variantEntry=(v:unknown):v is VariantEntry=>obj(v)&&variantKey(v.key)&&var
  variantDifficulty(v.difficulty)&&integer(v.miniSize,9)&&typeof v.canResume==='boolean'&&
  integer(v.elapsedSeconds,9_000_000_000)&&integer(v.completed);
 export function isVariantGame(v:unknown):v is VariantGame{
- if(!obj(v)||!variantMode(v.mode)||!variantDifficulty(v.difficulty)||
+ if(!obj(v)||'solution' in v||!variantMode(v.mode)||!variantDifficulty(v.difficulty)||
   !integer(v.width,21)||![4,6,9,21].includes(v.width)||!integer(v.digits,9)||
   v.digits!==(v.mode==='mini'?v.width:9)||v.width!==(v.mode==='samurai'?21:v.mode==='mini'?v.digits:9)||
   !integer(v.miniSize,9)||!(v.mode==='mini'?[4,6].includes(v.miniSize):v.miniSize===9)||

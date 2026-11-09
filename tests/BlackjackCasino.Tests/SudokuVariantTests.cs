@@ -82,9 +82,19 @@ public sealed class SudokuVariantTests
     public void InvalidVariantCommandsAreRejectedAtNativeProtocolBoundary()
     {
         var session = new ModernSudokuSession();
-        object Make(string action, string? value = null, int? index = null, int? digit = null) =>
-            new { type = "lounge.sudoku.command", version = 1, requestId = Guid.NewGuid().ToString("D"),
-                session = session.Id, expectedRevision = session.Revision, action, value, index, digit };
+        object Make(string action, string? value = null, int? index = null, int? digit = null)
+        {
+            var message = new Dictionary<string, object>
+            {
+                ["type"] = "lounge.sudoku.command", ["version"] = 1,
+                ["requestId"] = Guid.NewGuid().ToString("D"),
+                ["session"] = session.Id, ["expectedRevision"] = session.Revision, ["action"] = action,
+            };
+            if (value is not null) message["value"] = value;
+            if (index.HasValue) message["index"] = index.Value;
+            if (digit.HasValue) message["digit"] = digit.Value;
+            return message;
+        }
         Assert.NotNull(ModernSudokuProtocol.Parse(JsonSerializer.Serialize(Make("sudoku.variant.new", "mini:Easy:4"))));
         Assert.NotNull(ModernSudokuProtocol.Parse(JsonSerializer.Serialize(Make("sudoku.variant.new", "samurai:Hard"))));
         Assert.Null(ModernSudokuProtocol.Parse(JsonSerializer.Serialize(Make("sudoku.variant.new", "classic:Easy"))));
