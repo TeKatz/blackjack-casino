@@ -69,17 +69,17 @@ export function isVariantGame(v:unknown):v is VariantGame{
   v.digits!==(v.mode==='mini'?v.width:9)||v.width!==(v.mode==='samurai'?21:v.mode==='mini'?v.digits:9)||
   !integer(v.miniSize,9)||!(v.mode==='mini'?[4,6].includes(v.miniSize):v.miniSize===9)||
   typeof v.id!=='string'||!/^(variant-)(x|killer|jigsaw|samurai|mini[46])-(easy|medium|hard)-\d{4}$/.test(v.id)||
-  typeof v.board!=='string'||typeof v.givens!=='string'||v.board.length!==v.width*v.width||
+  typeof v.board!=='string'||typeof v.givens!=='string'||v.board.length!==(v.width as number)*(v.width as number)||
   v.givens.length!==v.board.length||!/^[0-9-]+$/.test(v.board)||!/^[0-9-]+$/.test(v.givens)||
   !Array.isArray(v.notes)||v.notes.length!==v.board.length||!v.notes.every(n=>integer(n,1022))||
   !Array.isArray(v.regions)||v.regions.length!==v.board.length||
   !v.regions.every(n=>Number.isSafeInteger(n)&&n>=-1&&n<=44)||
   !Array.isArray(v.cages)||v.cages.length>100||!v.cages.every(c=>obj(c)&&integer(c.sum,45)&&
    Array.isArray(c.cells)&&c.cells.length>=1&&c.cells.length<=9&&
-   c.cells.every(n=>integer(n,v.width*v.width-1))&&new Set(c.cells).size===c.cells.length)||
+   c.cells.every(n=>integer(n,(v.width as number)*(v.width as number)-1))&&new Set(c.cells).size===c.cells.length)||
   !Array.isArray(v.incorrect)||!Array.isArray(v.conflicts)||
-  !v.incorrect.every(n=>integer(n,v.width*v.width-1))||
-  !v.conflicts.every(n=>integer(n,v.width*v.width-1))||
+  !v.incorrect.every(n=>integer(n,(v.width as number)*(v.width as number)-1))||
+  !v.conflicts.every(n=>integer(n,(v.width as number)*(v.width as number)-1))||
   !integer(v.elapsedSeconds,9_000_000_000)||!integer(v.hintsUsed)||typeof v.completed!=='boolean'||
   typeof v.canUndo!=='boolean'||typeof v.canRedo!=='boolean'||!integer(v.completionXp)||
   !integer(v.careerXp)||typeof v.notice!=='string'||typeof v.rewardNotice!=='string')return false;
