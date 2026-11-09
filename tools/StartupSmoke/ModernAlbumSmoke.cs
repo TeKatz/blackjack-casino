@@ -64,6 +64,33 @@ internal static class ModernAlbumSmoke
                 action.GetProperty("visible").GetBoolean()
                 && action.GetProperty("reachable").GetBoolean()),
             "Real pack buttons are not reachable: " + decoded);
+        // Install the interruption *before* opening the pack. On a fast
+        // Windows runner with reduced motion the reveal and automatic native
+        // completion can finish between two ExecuteScriptAsync calls. The old
+        // smoke allowed "phase-summary", so it sometimes navigated away after
+        // a legitimately completed opening and incorrectly expected a receipt.
+        // A MutationObserver exits atomically at the first partially revealed
+        // frame, before the timer for another card (or completion) can fire.
+        await web.ExecuteScriptAsync("""
+            (() => {
+              window.__albumSmokeInterrupt = { interrupted: false, overflowHidden: false };
+              const observer = new MutationObserver(() => {
+                const panel = document.querySelector('.album-opening-panel.phase-reveal');
+                if (!panel || window.__albumSmokeInterrupt.interrupted) return;
+                const close = panel.querySelector('.album-opening-exit');
+                if (!close || panel.querySelectorAll('.album-reveal-slot.flipped').length >= 5) return;
+                window.__albumSmokeInterrupt.overflowHidden =
+                  getComputedStyle(panel).overflowY === 'hidden';
+                window.__albumSmokeInterrupt.interrupted = true;
+                observer.disconnect();
+                close.click();
+              });
+              observer.observe(document.body, {
+                subtree: true, childList: true, attributes: true, attributeFilter: ['class']
+              });
+              return true;
+            })()
+            """);
         await web.ExecuteScriptAsync("document.querySelector('.album-opening-primary')?.click()");
         await Until(()=>profile.Collection.PendingOpening is not null,
             "Opening a React pack did not persist the native receipt.");
@@ -71,16 +98,15 @@ internal static class ModernAlbumSmoke
         Require(receipt.Cards.Count==5 && profile.Collection.PacksOpened==beforeOpened+1
             &&profile.Collection.Packs.GetValueOrDefault(CollectionRarity.Common)==beforePacks-1,
             "A single React open did not commit exactly one five-card transaction.");
-        await Wait(web,"Boolean(document.querySelector('.album-opening-panel.phase-reveal')"
-            +"||document.querySelector('.album-opening-panel.phase-summary'))",
-            "React did not start the pack reveal sequence.");
-        // Close before the five cards finish revealing: the durable receipt
-        // must remain recoverable and must never be replaced by a reroll.
+        await Wait(web,
+            "window.__albumSmokeInterrupt?.interrupted===true"
+            +"&&!document.querySelector('.album-opening-panel')",
+            "React did not safely interrupt the pack during its card reveal.");
         Require(await web.ExecuteScriptAsync(
-            "(()=>{const p=document.querySelector('.album-opening-panel');"
-            +"return Boolean(p)&&getComputedStyle(p).overflowY==='hidden';})()")=="true",
+            "window.__albumSmokeInterrupt.overflowHidden")=="true",
             "Pack opening still exposes an internal vertical scrollbar.");
-        await web.ExecuteScriptAsync("document.querySelector('.album-opening-exit')?.click()");
+        Require(profile.Collection.PendingOpening?.Id==receipt.Id,
+            "Leaving the incomplete reveal discarded its durable transaction.");
         await web.ExecuteScriptAsync("document.querySelector('.album-page .shop-back')?.click()");
         await Until(()=>modern.RecordsPage is null,"React Album failed to return to lobby.");
         Require(profile.Collection.PendingOpening?.Id==receipt.Id,
