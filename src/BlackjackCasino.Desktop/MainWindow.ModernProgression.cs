@@ -135,6 +135,18 @@ public partial class MainWindow
         };
     }
 
+    private bool ModernArcadeRun(string id, int score, int seconds, Guid runId)
+    {
+        if (progressionController is null) return false;
+        bool recorded = progressionController.ProcessArcadeRun(new ArcadeRunReceipt(runId, id, score, seconds));
+        if (recorded)
+        {
+            RefreshProfileButton();
+            modernLobby?.Refresh();
+        }
+        return recorded;
+    }
+
     private (bool Success, string Message) ModernChallengeClaim(string id)
     {
         if (progressionController is null) return (false, "Player profile is not available.");
