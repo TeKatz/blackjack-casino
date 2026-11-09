@@ -17,7 +17,7 @@ const statuses:{id:ChallengeStatus;en:string;de:string}[]=[
 const categoryIcons:Record<string,string>={
   Blackjack:'♠','Midnight Reels':'▣','Midnight Manor':'☽','Neon Vault':'◇','Nine Lives':'●',
   'Midnight Dice':'⚄',Sudoku:'▦','Word Search':'⌕',Memory:'✦',Solitaire:'♣',
-  Jigsaw:'◈','Midnight Merge':'♛',Adventure:'⚔',Lifetime:'♜',Prestige:'♕',
+  Jigsaw:'◈','Midnight Merge':'♛','Midnight Bastion':'♜',Adventure:'⚔',Lifetime:'♜',Prestige:'♕',
 };
 const pct=(v:number)=>Math.round(Math.max(0,Math.min(1,v))*100);
 function Card({entry,de,pending,onClaim}:{

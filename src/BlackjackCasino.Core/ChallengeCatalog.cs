@@ -16,6 +16,7 @@ public enum ChallengeCategory
     Memory,
     Jigsaw,
     Solitaire,
+    TowerDefense,
 }
 
 public enum ChallengeMetric
@@ -99,6 +100,7 @@ public enum ChallengeMetric
     SolitaireSpiderWins, SolitaireSpiderFourSuitWins, SolitairePyramidWins,
     SolitaireGolfWins, SolitaireTriPeaksWins, SolitaireVariantsWon, SolitaireBestStreak,
     ChillLoungeCompletions, JigsawCompletions, AdventureRunsCompleted,
+    BastionWaves, BastionKills, BastionVictories, BastionStages, BastionBestWave, BastionMasteryLevel,
 }
 
 public sealed record ChallengeDefinition(
@@ -116,6 +118,19 @@ public static class ChallengeCatalog
 {
     private static readonly IReadOnlyList<ChallengeDefinition> Challenges = Array.AsReadOnly(new[]
     {
+        // The catalog grows with additional stages; receipts are global and monotonic.
+        C("bastion-first-wave", ChallengeCategory.TowerDefense, "First Watch", "Survive your first Bastion wave.", ChallengeMetric.BastionWaves, 1, 60),
+        C("bastion-waves-10", ChallengeCategory.TowerDefense, "Night Watch", "Clear ten waves across maps.", ChallengeMetric.BastionWaves, 10, 150),
+        C("bastion-waves-50", ChallengeCategory.TowerDefense, "Unbroken Ramparts", "Clear fifty waves.", ChallengeMetric.BastionWaves, 50, 500),
+        E("bastion-waves-200", ChallengeCategory.TowerDefense, "The Long Vigil", "Clear 200 waves.", ChallengeMetric.BastionWaves, 200, 1400),
+        C("bastion-enemies-100", ChallengeCategory.TowerDefense, "Hold the Line", "Defeat 100 Bastion enemies.", ChallengeMetric.BastionKills, 100, 120),
+        C("bastion-enemies-1000", ChallengeCategory.TowerDefense, "Unyielding", "Defeat 1,000 enemies.", ChallengeMetric.BastionKills, 1000, 600),
+        E("bastion-enemies-5000", ChallengeCategory.TowerDefense, "A Fortress of Legends", "Defeat 5,000 enemies.", ChallengeMetric.BastionKills, 5000, 2200),
+        C("bastion-first-win", ChallengeCategory.TowerDefense, "The Keep Stands", "Complete a Bastion map.", ChallengeMetric.BastionVictories, 1, 250),
+        C("bastion-both-maps", ChallengeCategory.TowerDefense, "Two Fronts", "Complete both Bastion maps.", ChallengeMetric.BastionStages, 2, 600),
+        C("bastion-level-5", ChallengeCategory.TowerDefense, "Apprentice Commander", "Reach Bastion mastery level five.", ChallengeMetric.BastionMasteryLevel, 5, 200),
+        C("bastion-level-15", ChallengeCategory.TowerDefense, "Veteran Commander", "Reach Bastion mastery level fifteen.", ChallengeMetric.BastionMasteryLevel, 15, 600),
+        E("bastion-endless-30", ChallengeCategory.TowerDefense, "Beyond the Dawn", "Reach wave 30 on any map.", ChallengeMetric.BastionBestWave, 30, 1100),
         // Sudoku deliberately rewards persistence rather than speed. The Chill Lounge should
         // never turn its timer into pressure or punish players for using accessibility aids.
         C("sudoku-first", ChallengeCategory.Sudoku, "First Grid", "Complete your first Sudoku puzzle.", ChallengeMetric.SudokuCompleted, 1, 50),
@@ -556,9 +571,15 @@ public static class ChallengeCatalog
                 + (profile.Solitaire.TriPeaksWins > 0 ? 1 : 0),
             ChallengeMetric.ChillLoungeCompletions => profile.Sudoku.CompletedPuzzles
                 + profile.Solitaire.Wins + profile.WordSearch.CompletedPuzzles
-                + profile.Memory.CompletedGames + profile.Jigsaw.CompletedGames,
+                + profile.Memory.CompletedGames + profile.Jigsaw.CompletedGames + profile.TowerDefense.Victories,
             ChallengeMetric.JigsawCompletions => profile.Jigsaw.CompletedGames,
             ChallengeMetric.AdventureRunsCompleted => profile.Adventure.RunsCompleted,
+            ChallengeMetric.BastionWaves => profile.TowerDefense.WavesCleared,
+            ChallengeMetric.BastionKills => profile.TowerDefense.EnemiesDefeated,
+            ChallengeMetric.BastionVictories => profile.TowerDefense.Victories,
+            ChallengeMetric.BastionStages => profile.TowerDefense.CompletedStages.Count,
+            ChallengeMetric.BastionBestWave => profile.TowerDefense.BestWaves.Values.DefaultIfEmpty(0).Max(),
+            ChallengeMetric.BastionMasteryLevel => profile.TowerDefense.Level,
 
             ChallengeMetric.LifetimeExperience => profile.LifetimeExperience,
             ChallengeMetric.LifetimePlaytimeSeconds => profile.TotalPlaytimeSeconds,
@@ -567,7 +588,8 @@ public static class ChallengeCatalog
             ChallengeMetric.LifetimePlays => (decimal)blackjack.RoundsPlayed + reels.Spins + neon.Spins + nine.Spins
                 + manor.PaidSpins + manor.FreeSpins + legacy.Spins + profile.Kniffel.CompletedGames + profile.Sudoku.CompletedPuzzles
                 + profile.WordSearch.CompletedPuzzles + profile.Memory.CompletedGames + merge.OrdersCompleted
-                + profile.Solitaire.Wins + profile.Jigsaw.CompletedGames + profile.Adventure.RunsCompleted,
+                + profile.Solitaire.Wins + profile.Jigsaw.CompletedGames + profile.Adventure.RunsCompleted
+                + profile.TowerDefense.Victories,
             ChallengeMetric.PrestigeCount => profile.Prestige,
             _ => 0,
         };

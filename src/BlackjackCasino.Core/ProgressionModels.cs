@@ -1,4 +1,5 @@
 using BlackjackCasino.Core.Adventure;
+using BlackjackCasino.Core.TowerDefense;
 
 namespace BlackjackCasino.Core;
 
@@ -81,6 +82,7 @@ public sealed class PlayerProfileState
     ];
     public List<string> ClaimedChallengeIds { get; set; } = [];
     public AdventureMetaProgressState Adventure { get; set; } = new();
+    public TdProgress TowerDefense { get; set; } = new();
     public Kniffel.KniffelStatistics Kniffel { get; set; } = new();
     public Sudoku.SudokuStatistics Sudoku { get; set; } = new();
     public Solitaire.SolitaireStatistics Solitaire { get; set; } = new();
