@@ -1,8 +1,9 @@
 import {useEffect,useRef,useState} from 'react';
 import type {PointerEvent as ReactPointerEvent} from 'react';
 import {ARCADE_HEIGHT,ARCADE_STEP,ARCADE_WIDTH,actArcadeRun,createArcadeRun,stepArcadeRun,steerSnake} from './arcadeEngine';
-import type {PlayableArcadeId,ArcadeEvent,ArcadeRunState,ArcadeDirection,ArcadeControls} from './arcadeEngine';
+import type {PlayableArcadeId,ArcadeEvent,ArcadeRunState} from './arcadeEngine';
 import {drawArcadeRun} from './arcadeRenderer';
+import {ArcadeHeldKeys,arcadeDirection} from './arcadeControls';
 import {readArcadeRecord,saveArcadeRecord} from './arcadeRecords';
 import type {ArcadeRecord} from './arcadeRecords';
 import {arcadeGames} from './arcadeCatalog';
@@ -105,7 +106,7 @@ export function ArcadeGameScreen({id,language,onBack}:{
  const gameRef=useRef<ArcadeRunState>(createArcadeRun(id));
  const canvasRef=useRef<HTMLCanvasElement>(null);
  const held=useRef(false);
- const keys=useRef(new Set<ArcadeDirection>());
+ const keys=useRef(new ArcadeHeldKeys());
  const mouseTarget=useRef<{x:number;y:number}|null>(null);
  const mouseActive=useRef(false);
  const raf=useRef<number>(0);
@@ -174,10 +175,7 @@ export function ArcadeGameScreen({id,language,onBack}:{
    let steps=0;
    while(accumulator>=ARCADE_STEP&&steps<5&&!gameRef.current.over){
     const state=gameRef.current,old=state.score;
-    const controls:ArcadeControls={
-     left:keys.current.has('left'),right:keys.current.has('right'),
-     up:keys.current.has('up'),down:keys.current.has('down'),
-    };
+    const controls=keys.current.controls();
     if((id==='neon-breaker'||id==='bullet-storm')&&mouseTarget.current&&
      (id==='neon-breaker'||mouseActive.current)){
      controls.pointerX=mouseTarget.current.x;
@@ -227,11 +225,7 @@ export function ArcadeGameScreen({id,language,onBack}:{
     return;
    }
    if(key==='r'&&!event.repeat){start();return;}
-   const directional:Record<string,ArcadeDirection>={
-    w:'up',arrowup:'up',s:'down',arrowdown:'down',
-    a:'left',arrowleft:'left',d:'right',arrowright:'right',
-   };
-   const direction=directional[key];
+   const direction=arcadeDirection(event.code,key);
    if(direction&&id==='death-snake'){
     if(phaseRef.current==='playing'&&!event.repeat){
      const state=gameRef.current;
@@ -240,7 +234,11 @@ export function ArcadeGameScreen({id,language,onBack}:{
     return;
    }
    if(direction&&(id==='neon-breaker'||id==='bullet-storm'||id==='hexagon-hell'||id==='endless-ascent')){
-    keys.current.add(direction);return;
+    keys.current.press(event.code,key);
+    // A pressed key immediately takes over; only actual mouse motion restores mouse steering.
+    if(id==='neon-breaker'&&(direction==='left'||direction==='right'))mouseTarget.current=null;
+    if(id==='bullet-storm')mouseActive.current=false;
+    return;
    }
    if(key===' '||key==='arrowup'){
     if(id==='cave-escape')held.current=true;
@@ -253,18 +251,14 @@ export function ArcadeGameScreen({id,language,onBack}:{
   const keyUp=(event:KeyboardEvent)=>{
    const key=event.key.toLowerCase();
    if(id==='cave-escape'&&(key===' '||key==='arrowup'))held.current=false;
-   const directional:Record<string,ArcadeDirection>={
-    w:'up',arrowup:'up',s:'down',arrowdown:'down',
-    a:'left',arrowleft:'left',d:'right',arrowright:'right',
-   };
-   if(directional[key])keys.current.delete(directional[key]);
+   keys.current.release(event.code,key);
   };
-  window.addEventListener('keydown',keyDown);
-  window.addEventListener('keyup',keyUp);
+  window.addEventListener('keydown',keyDown,true);
+  window.addEventListener('keyup',keyUp,true);
   return()=>{
    held.current=false;keys.current.clear();
-   window.removeEventListener('keydown',keyDown);
-   window.removeEventListener('keyup',keyUp);
+   window.removeEventListener('keydown',keyDown,true);
+   window.removeEventListener('keyup',keyUp,true);
   };
  },[id,onBack]);
  useEffect(()=>()=>{void audioRef.current?.close();audioRef.current=null;},[]);
@@ -279,6 +273,7 @@ export function ArcadeGameScreen({id,language,onBack}:{
  };
  const pointerDown=(event:ReactPointerEvent<HTMLCanvasElement>)=>{
   if(event.button!==0)return;
+  event.currentTarget.focus({preventScroll:true});
   if(id==='cave-escape'||id==='bullet-storm'){
    if(id==='cave-escape')held.current=true;
    if(id==='bullet-storm')mouseActive.current=true;
