@@ -34,7 +34,7 @@ describe('Arcade Games lobby collection',()=>{
    }
   }
  });
- it('renders the whole accessible selection in both languages without pretending games are live',()=>{
+ it('renders the polished arcade selection in both languages with bespoke game artwork',()=>{
   for(const language of ['de','en'] as const){
    const html=renderToStaticMarkup(<ArcadeMenu language={language} onBack={()=>{}}/>);
    expect(html).toContain('data-testid="arcade-menu"');
@@ -42,9 +42,12 @@ describe('Arcade Games lobby collection',()=>{
    expect(html).toContain('aria-pressed="true"');
    expect(html).toContain('Midnight Wings');
    expect(html).toContain('Endless Ascent');
-   expect(html).toContain(language==='de'?'ALLE 10 SPIELBAR':'ALL 10 PLAYABLE');
-   expect((html.match(/arcade-card-live/g)||[]).length).toBe(10);
-   expect((html.match(/arcade-card-soon/g)||[]).length).toBe(10);
+   expect(html).not.toContain('ALLE 10 SPIELBAR');
+   expect(html).not.toContain('ALL 10 PLAYABLE');
+   expect(html).not.toContain('arcade-card-soon');
+   expect(html).not.toContain('arcade-note');
+   expect(html).toContain('data-testid="arcade-highscores-open"');
+   expect((html.match(/class="arcade-scene"/g)||[]).length).toBe(10);
    expect(html).not.toContain('lobby.open');
   }
  });
@@ -57,6 +60,10 @@ describe('Arcade Games lobby collection',()=>{
    expect(html).toContain('data-testid="arcade-canvas"');
    expect(html).toContain('data-testid="arcade-score"');
    expect(html).toContain('data-testid="arcade-best"');
+   expect(html).toContain('data-testid="arcade-runs"');
+   expect(html.indexOf('data-testid="arcade-score"')).toBeLessThan(html.indexOf('data-testid="arcade-runs"'));
+   expect(html.indexOf('data-testid="arcade-runs"')).toBeLessThan(html.indexOf('data-testid="arcade-best"'));
+   expect(html).not.toContain('arcade-play-footer');
    expect(html).toContain('SPIEL STARTEN');
   }
  });
