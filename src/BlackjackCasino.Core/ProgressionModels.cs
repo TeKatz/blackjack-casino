@@ -21,7 +21,8 @@ public sealed record CosmeticDefinition(
     bool ShopAvailable,
     string Description,
     string VisualVariant = "standard",
-    int RequiredPrestige = 0);
+    int RequiredPrestige = 0,
+    int RequiredSudokuLevel = 0);
 
 public sealed class StatisticsSnapshot
 {
@@ -87,6 +88,7 @@ public sealed class PlayerProfileState
     public SweepStatistics Minesweeper { get; set; } = new();
     public Kniffel.KniffelStatistics Kniffel { get; set; } = new();
     public Sudoku.SudokuStatistics Sudoku { get; set; } = new();
+    public Sudoku.SudokuCareerState SudokuCareer { get; set; } = new();
     public Solitaire.SolitaireStatistics Solitaire { get; set; } = new();
     public WordSearch.WordSearchStatistics WordSearch { get; set; } = new();
     public Memory.MemoryStatistics Memory { get; set; } = new();

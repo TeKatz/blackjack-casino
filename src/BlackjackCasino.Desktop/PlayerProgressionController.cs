@@ -406,6 +406,7 @@ internal sealed class PlayerProgressionController : IDisposable
     {
         Profile.Kniffel = committed.Kniffel;
         Profile.Sudoku = committed.Sudoku;
+        Profile.SudokuCareer = committed.SudokuCareer;
         Profile.Solitaire = committed.Solitaire;
         Profile.WordSearch = committed.WordSearch;
         Profile.Memory = committed.Memory;
