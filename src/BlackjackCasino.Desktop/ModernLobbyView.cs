@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text.Json;
+using BlackjackCasino.Core;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -328,8 +329,10 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
                     // Only a terminal run receipt from the trusted local WebView may be
                     // committed. Enforce bounded numeric values and a deduplication token.
                     if (!value.TryGetProperty("score", out JsonElement rawScore)
+                        || rawScore.ValueKind != JsonValueKind.Number
                         || !rawScore.TryGetInt32(out int score) || score is < 0 or > 100_000_000
                         || !value.TryGetProperty("seconds", out JsonElement rawSeconds)
+                        || rawSeconds.ValueKind != JsonValueKind.Number
                         || !rawSeconds.TryGetInt32(out int seconds) || seconds is < 0 or > 21_600
                         || !value.TryGetProperty("runId", out JsonElement rawRun)
                         || rawRun.ValueKind != JsonValueKind.String
