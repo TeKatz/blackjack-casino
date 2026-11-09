@@ -211,7 +211,7 @@ export function ArcadeGameScreen({id,language,onBack}:{
    if(event.ctrlKey||event.altKey||event.metaKey||target?.isContentEditable||
     ['INPUT','TEXTAREA','SELECT'].includes(target?.tagName??''))return;
    const key=event.key.toLowerCase();
-   if([' ','arrowup','p','r','escape'].includes(key))event.preventDefault();
+   if([' ','arrowup','arrowdown','arrowleft','arrowright','w','a','s','d','p','r','escape'].includes(key))event.preventDefault();
    if(key==='p'||key==='escape'){
     if(event.repeat)return;
     if(phaseRef.current==='playing')pause();
@@ -220,6 +220,21 @@ export function ArcadeGameScreen({id,language,onBack}:{
     return;
    }
    if(key==='r'&&!event.repeat){start();return;}
+   const directional:Record<string,ArcadeDirection>={
+    w:'up',arrowup:'up',s:'down',arrowdown:'down',
+    a:'left',arrowleft:'left',d:'right',arrowright:'right',
+   };
+   const direction=directional[key];
+   if(direction&&id==='death-snake'){
+    if(phaseRef.current==='playing'&&!event.repeat){
+     const state=gameRef.current;
+     if(state.kind==='death-snake')steerSnake(state,direction);
+    }
+    return;
+   }
+   if(direction&&(id==='neon-breaker'||id==='bullet-storm')){
+    keys.current.add(direction);return;
+   }
    if(key===' '||key==='arrowup'){
     if(id==='cave-escape')held.current=true;
     if(event.repeat)return;
@@ -229,27 +244,54 @@ export function ArcadeGameScreen({id,language,onBack}:{
    }
   };
   const keyUp=(event:KeyboardEvent)=>{
-   if(id==='cave-escape'&&(event.key===' '||event.key==='ArrowUp'))held.current=false;
+   const key=event.key.toLowerCase();
+   if(id==='cave-escape'&&(key===' '||key==='arrowup'))held.current=false;
+   const directional:Record<string,ArcadeDirection>={
+    w:'up',arrowup:'up',s:'down',arrowdown:'down',
+    a:'left',arrowleft:'left',d:'right',arrowright:'right',
+   };
+   if(directional[key])keys.current.delete(directional[key]);
   };
   window.addEventListener('keydown',keyDown);
   window.addEventListener('keyup',keyUp);
   return()=>{
-   held.current=false;
+   held.current=false;keys.current.clear();
    window.removeEventListener('keydown',keyDown);
    window.removeEventListener('keyup',keyUp);
   };
  },[id,onBack]);
  useEffect(()=>()=>{void audioRef.current?.close();audioRef.current=null;},[]);
+ const pointerCoordinates=(event:ReactPointerEvent<HTMLCanvasElement>)=>{
+  const rect=event.currentTarget.getBoundingClientRect();
+  const scale=Math.min(rect.width/ARCADE_WIDTH,rect.height/ARCADE_HEIGHT);
+  if(scale<=0)return null;
+  return {
+   x:Math.max(0,Math.min(ARCADE_WIDTH,(event.clientX-rect.left-(rect.width-ARCADE_WIDTH*scale)/2)/scale)),
+   y:Math.max(0,Math.min(ARCADE_HEIGHT,(event.clientY-rect.top-(rect.height-ARCADE_HEIGHT*scale)/2)/scale)),
+  };
+ };
  const pointerDown=(event:ReactPointerEvent<HTMLCanvasElement>)=>{
   if(event.button!==0)return;
-  if(id==='cave-escape'){
-   held.current=true;
+  if(id==='cave-escape'||id==='bullet-storm'){
+   if(id==='cave-escape')held.current=true;
+   if(id==='bullet-storm')mouseActive.current=true;
    event.currentTarget.setPointerCapture(event.pointerId);
   }
-  if(phaseRef.current==='ready'){start();if(id==='cave-escape')held.current=true;}
-  else if(phaseRef.current==='playing'&&id!=='cave-escape')action();
+  if(id==='neon-breaker'||id==='bullet-storm')mouseTarget.current=pointerCoordinates(event);
+  if(phaseRef.current==='ready'){
+   start();
+   if(id==='cave-escape')held.current=true;
+   if(id==='bullet-storm'){mouseActive.current=true;mouseTarget.current=pointerCoordinates(event);}
+   if(id==='neon-breaker')mouseTarget.current=pointerCoordinates(event);
+  }
+  else if(phaseRef.current==='playing'&&id!=='cave-escape'&&id!=='bullet-storm')action();
  };
- const pointerRelease=()=>{held.current=false;};
+ const pointerMove=(event:ReactPointerEvent<HTMLCanvasElement>)=>{
+  if(id==='neon-breaker'||(id==='bullet-storm'&&mouseActive.current))
+   mouseTarget.current=pointerCoordinates(event);
+ };
+ const pointerRelease=()=>{held.current=false;mouseActive.current=false;};
+ const pointerLeave=()=>{if(id==='neon-breaker')mouseTarget.current=null;};
  return <main className="arcade-play" data-testid="arcade-game-screen" data-game-id={id}>
   <header className="arcade-play-header">
    <div className="arcade-play-heading">
@@ -274,7 +316,8 @@ export function ArcadeGameScreen({id,language,onBack}:{
     data-testid="arcade-canvas" tabIndex={0} role="application"
     aria-label={game.name+': '+game.controls[language]}
     onContextMenu={e=>e.preventDefault()}
-    onPointerDown={pointerDown} onPointerUp={pointerRelease} onPointerCancel={pointerRelease}
+    onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerLeave={pointerLeave}
+     onPointerUp={pointerRelease} onPointerCancel={pointerRelease}
     onLostPointerCapture={pointerRelease}/>
    {phase!=='playing'&&<div className="arcade-play-overlay" data-phase={phase}>
     <div className="arcade-overlay-symbol" aria-hidden="true">{game.symbol}</div>
