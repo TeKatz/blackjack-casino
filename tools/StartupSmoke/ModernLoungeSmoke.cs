@@ -119,11 +119,25 @@ internal static class ModernLoungeSmoke
         await UntilAsync(async () => await web.ExecuteScriptAsync(
             "document.querySelectorAll('.sudoku-career-milestone').length") == "12",
             "Sudoku career did not show twelve milestone title rewards.");
+        Require(await web.ExecuteScriptAsync(
+            "(() => { const title = document.querySelector('.sudoku-mode-hero h1')?.textContent || '';"
+            + " const reward = document.querySelector('.sudoku-career-milestone .sudoku-milestone-name')?.textContent;"
+            + " return title.includes('Sechs') ? reward === 'Zahlenkenner' : reward === 'Number Adept'; })()") == "true",
+            "Sudoku milestone title names do not follow the selected UI language.");
         await web.ExecuteScriptAsync("document.querySelector('.sudoku-career-modal-head > button')?.click()");
         await web.ExecuteScriptAsync("document.querySelector('.sudoku-mode-tile[data-testid*=killer]')?.click()");
         await UntilAsync(async () => await web.ExecuteScriptAsync(
             "document.querySelectorAll('.sudoku-variant-option').length") == "3",
             "Killer Sudoku does not expose its three difficulty choices.");
+        Require(await web.ExecuteScriptAsync(
+            "(() => { const hero = document.querySelector('.sudoku-mode-hero')?.getBoundingClientRect();"
+            + " const panel = document.querySelector('.sudoku-variant-select')?.getBoundingClientRect();"
+            + " return !!hero && !!panel && panel.width >= hero.width * 0.8; })()") == "true",
+            "Sudoku variant selection is cramped instead of using the desktop menu width.");
+        Require(await web.ExecuteScriptAsync(
+            "window.innerWidth < 1450 || window.innerHeight < 850 ||"
+            + " document.documentElement.scrollHeight <= window.innerHeight + 5") == "true",
+            "The 1920x1080 Sudoku variant selection unexpectedly scrolls.");
         await web.ExecuteScriptAsync("document.querySelector('.sudoku-variant-option button.primary')?.click()");
         await UntilAsync(async () => await web.ExecuteScriptAsync(
             "Boolean(document.querySelector('.sudoku-variant[data-mode=killer]'))") == "true",
@@ -131,6 +145,16 @@ internal static class ModernLoungeSmoke
         Require(await web.ExecuteScriptAsync(
             "document.querySelectorAll('.variant-cage-label').length > 20") == "true",
             "Killer Sudoku lost its visible sum cages.");
+        Require(await web.ExecuteScriptAsync(
+            "(() => { const board = document.querySelector('.variant-grid')?.getBoundingClientRect();"
+            + " const panel = document.querySelector('.variant-board-panel')?.getBoundingClientRect();"
+            + " return window.innerWidth < 1250 || !board || !panel ||"
+            + " board.width >= panel.width * 0.56; })()") == "true",
+            "Sudoku play grid is too small relative to the available desktop panel.");
+        Require(await web.ExecuteScriptAsync(
+            "window.innerWidth < 1450 || window.innerHeight < 850 ||"
+            + " document.documentElement.scrollHeight <= window.innerHeight + 5") == "true",
+            "The 1920x1080 Sudoku board unexpectedly scrolls.");
         await Capture(web, Path.Combine(output, "modern-sudoku-killer.png"));
         await web.ExecuteScriptAsync("document.querySelector('.variant-hint')?.click()");
         await UntilAsync(async () => await web.ExecuteScriptAsync(
@@ -161,6 +185,14 @@ internal static class ModernLoungeSmoke
             await UntilAsync(async () => await web.ExecuteScriptAsync(
                 "document.querySelectorAll('.variant-cell').length") == expectedCells.ToString(),
                 mode + " does not render its correct native board dimensions.");
+            if (mode == "jigsaw")
+            {
+                Require(await web.ExecuteScriptAsync(
+                    "(() => { const cell = document.querySelector('.variant-jigsaw .variant-cell');"
+                    + " return !!cell && getComputedStyle(cell).borderTopColor === 'rgb(223, 168, 255)'"
+                    + " && parseFloat(getComputedStyle(cell).borderTopWidth) >= 4; })()") == "true",
+                    "Jigsaw region borders must be visibly violet and at least four pixels wide.");
+            }
             await Capture(web, Path.Combine(output, "modern-sudoku-" + mode + ".png"));
             await web.ExecuteScriptAsync("document.querySelector('.variant-return')?.click()");
             await UntilAsync(async () => await web.ExecuteScriptAsync(
