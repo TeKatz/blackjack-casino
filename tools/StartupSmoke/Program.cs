@@ -591,6 +591,16 @@ internal static class Program
                 await Task.Delay(100);
             }
             Require(gameOpened, "Arcade game failed to mount its real canvas: " + id);
+            // Gameplay must fit the actual client area, not introduce its own scrollbar.
+            string fits = await web.ExecuteScriptAsync(
+                "(()=>{const p=document.querySelector('.arcade-play');"
+                + "const s=document.querySelector('.arcade-play-stage');"
+                + "const c=document.querySelector('[data-testid=arcade-canvas]');"
+                + "return Boolean(p&&s&&c&&p.clientHeight>180"
+                + "&&p.scrollHeight<=p.clientHeight+3&&p.scrollWidth<=p.clientWidth+3"
+                + "&&s.getBoundingClientRect().bottom<=p.getBoundingClientRect().bottom+2"
+                + "&&c.getBoundingClientRect().height>80)})()");
+            Require(fits == "true", "Arcade game overflowed its viewport: " + id);
             await web.ExecuteScriptAsync(
                 "document.querySelector('.arcade-primary-action')?.click()");
             bool started = false;
