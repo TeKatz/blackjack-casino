@@ -1,5 +1,5 @@
 import {useEffect,useLayoutEffect,useMemo,useRef,useState} from 'react';
-import type {PointerEvent as ReactPointerEvent,MouseEvent as ReactMouseEvent,WheelEvent as ReactWheelEvent} from 'react';
+import type {PointerEvent as ReactPointerEvent,WheelEvent as ReactWheelEvent} from 'react';
 import {Application,Assets,Container,Graphics,Sprite,Texture} from 'pixi.js';
 import type {JigsawGame,JigsawIntent,JigsawPiece,JigsawState} from './jigsawBridge';
 import {ManorAudio} from '../audio/manorAudio';
