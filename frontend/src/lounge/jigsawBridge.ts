@@ -34,7 +34,7 @@ export const motifs=['enchanted-forest','sakura-garden','ocean-depths','frost-ki
 const hasMotif=(v:unknown)=>typeof v==='string'&&motifs.some(id=>id===v);
 const hasSize=(v:unknown):v is number=>typeof v==='number'&&sizes.some(s=>s===v);
 const image=(v:unknown):v is JigsawMotif=>record(v)&&hasMotif(v.id)
- &&label(v.name)&&label(v.category)&&v.asset===v.id+'.png';
+ &&label(v.name)&&label(v.category)&&v.asset===v.id+'.jpg';
 const size=(v:unknown):v is JigsawSize=>record(v)&&hasSize(v.count)
  &&int(v.rows,40)&&int(v.columns,40)&&v.rows*v.columns===v.count&&int(v.rewardXp,10000);
 const piece=(v:unknown):v is JigsawPiece=>record(v)&&int(v.id,999)

@@ -10,7 +10,8 @@ type Lang='en'|'de';
 type Props={state:JigsawState;language:Lang;pending:boolean;error:string;animations:boolean;soundEnabled?:boolean;
  command:(intent:JigsawIntent)=>void};
 type View={zoom:number;x:number;y:number};
-const images=(id:string)=>'/album/atlas/'+id+'.png';
+// Dedicated, single-scene, high-resolution art; not the legacy collection mosaics.
+const images=(id:string)=>'/jigsaw/scenes/'+id+'.jpg';
 const fmt=(s:number)=>[Math.floor(s/3600),Math.floor(s%3600/60),s%60]
  .map(n=>String(n).padStart(2,'0')).join(':');
 const copy={

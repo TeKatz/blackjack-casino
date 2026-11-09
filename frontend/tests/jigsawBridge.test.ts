@@ -1,7 +1,7 @@
 import {describe,expect,it} from 'vitest';
 import {isJigsawReply,isJigsawState,motifs,sizes} from '../src/lounge/jigsawBridge';
 const dims=[[6,4],[8,6],[12,8],[15,10],[20,15],[25,20],[30,25],[40,25]];
-const images=motifs.map(id=>({id,name:id,category:'Fantasy',asset:id+'.png'}));
+const images=motifs.map(id=>({id,name:id,category:'Fantasy',asset:id+'.jpg'}));
 const scale=sizes.map((count,i)=>({count,columns:dims[i][0],rows:dims[i][1],rewardXp:100}));
 const achievements=Array.from({length:30},(_,i)=>({id:'milestone-'+i,name:'Achievement '+i,
  description:'Unlock',tier:'Bronze',goal:1,current:0,unlocked:false,rewardXp:100,rewardCoins:50}));

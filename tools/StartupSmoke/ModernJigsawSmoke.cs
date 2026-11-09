@@ -17,6 +17,11 @@ internal static class ModernJigsawSmoke
             "React Jigsaw did not open the twelve-scene gallery.");
         Require(await Js(web,"document.querySelectorAll('.jigsaw-sizes button').length===8"),
             "One of the eight original puzzle sizes is missing.");
+        await Wait(web, @"[...document.querySelectorAll('.jigsaw-gallery img')].length===12 &&
+          [...document.querySelectorAll('.jigsaw-gallery img')].every(img=>
+            img.complete && img.naturalWidth>=1600 && img.naturalHeight>=900 &&
+            img.currentSrc.includes('/jigsaw/scenes/'))",
+            "The new dedicated 12 high-resolution Jigsaw scene images did not load.");
         await Capture(web,Path.Combine(output,"modern-jigsaw-gallery.png"));
 
         await Click(web,".jigsaw-sizes button:first-child",
