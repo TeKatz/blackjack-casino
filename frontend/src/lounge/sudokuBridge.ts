@@ -6,7 +6,16 @@ export type SudokuGame = {puzzleId:string;difficulty:Difficulty;isDaily:boolean;
   elapsedSeconds:number;hintsUsed:number;completed:boolean;canUndo:boolean;canRedo:boolean;
   completionXp:number;completionSeasonXp:number};
 export type SudokuCareer = {level:number;experience:number;nextLevelXp:number;lifetimeExperience:number;cosmeticPointsEarned:number;pointsPerLevel:number};
-export type SudokuState = {screen:'library'|'game';career?:SudokuCareer;showTimer:boolean;showGuides:boolean;entries:SudokuEntry[];
+export type VariantMode = 'x'|'killer'|'jigsaw'|'samurai'|'mini';
+export type VariantDifficulty = 'Easy'|'Medium'|'Hard';
+export type VariantEntry = {key:string;mode:VariantMode;difficulty:VariantDifficulty;miniSize:number;canResume:boolean;elapsedSeconds:number;completed:number};
+export type VariantCage = {sum:number;cells:number[]};
+export type VariantGame = {id:string;mode:VariantMode;difficulty:VariantDifficulty;miniSize:number;width:number;digits:number;
+ givens:string;board:string;notes:number[];regions:number[];cages:VariantCage[];
+ incorrect:number[];conflicts:number[];elapsedSeconds:number;hintsUsed:number;completed:boolean;
+ canUndo:boolean;canRedo:boolean;completionXp:number;careerXp:number;notice:string;rewardNotice:string};
+export type SudokuState = {screen:'library'|'game';career?:SudokuCareer;
+ variant?:VariantGame|null;variantEntries?:VariantEntry[];showTimer:boolean;showGuides:boolean;entries:SudokuEntry[];
  normalCompleted:number;normalTotal:number;dailyCompleted:number;
  daily:{date:string;difficulty:Difficulty;completed:boolean;canResume:boolean};
  game:SudokuGame|null;notice:string;rewardNotice:string};
@@ -15,7 +24,11 @@ export type SudokuIntent =
  | {action:'sudoku.daily'|'sudoku.back'|'sudoku.exit'|'sudoku.undo'|'sudoku.redo'}
  | {action:'sudoku.value'|'sudoku.note';index:number;digit:number}
  | {action:'sudoku.erase'|'sudoku.hint';index:number}
- | {action:'sudoku.guides'|'sudoku.timer';value:'true'|'false'};
+ | {action:'sudoku.guides'|'sudoku.timer';value:'true'|'false'}
+ | {action:'sudoku.variant.new'|'sudoku.variant.resume';value:string}
+ | {action:'sudoku.variant.back'|'sudoku.variant.undo'|'sudoku.variant.redo'}
+ | {action:'sudoku.variant.value'|'sudoku.variant.note';index:number;digit:number}
+ | {action:'sudoku.variant.erase'|'sudoku.variant.hint';index:number};
 export type SudokuReply = {requestId:string;success:boolean;message:string;revision:number};
 
 const obj=(v:unknown):v is Record<string,unknown>=>v!==null&&typeof v==='object'&&!Array.isArray(v);
@@ -44,6 +57,41 @@ const game=(v:unknown):v is SudokuGame=>{
  }
  return true;
 };
+const variantMode=(v:unknown):v is VariantMode=>v==='x'||v==='killer'||v==='jigsaw'||v==='samurai'||v==='mini';
+const variantDifficulty=(v:unknown):v is VariantDifficulty=>v==='Easy'||v==='Medium'||v==='Hard';
+const variantKey=(v:unknown):v is string=>typeof v==='string'&&/^(x|killer|jigsaw|samurai):(Easy|Medium|Hard)$|^mini:(Easy|Medium|Hard):(4|6)$/.test(v);
+const variantEntry=(v:unknown):v is VariantEntry=>obj(v)&&variantKey(v.key)&&variantMode(v.mode)&&
+ variantDifficulty(v.difficulty)&&integer(v.miniSize,9)&&typeof v.canResume==='boolean'&&
+ integer(v.elapsedSeconds,9_000_000_000)&&integer(v.completed);
+export function isVariantGame(v:unknown):v is VariantGame{
+ if(!obj(v)||!variantMode(v.mode)||!variantDifficulty(v.difficulty)||
+  !integer(v.width,21)||![4,6,9,21].includes(v.width)||!integer(v.digits,9)||
+  v.digits!==(v.mode==='mini'?v.width:9)||v.width!==(v.mode==='samurai'?21:v.mode==='mini'?v.digits:9)||
+  !integer(v.miniSize,9)||!(v.mode==='mini'?[4,6].includes(v.miniSize):v.miniSize===9)||
+  typeof v.id!=='string'||!/^(variant-)(x|killer|jigsaw|samurai|mini[46])-(easy|medium|hard)-\d{4}$/.test(v.id)||
+  typeof v.board!=='string'||typeof v.givens!=='string'||v.board.length!==v.width*v.width||
+  v.givens.length!==v.board.length||!/^[0-9-]+$/.test(v.board)||!/^[0-9-]+$/.test(v.givens)||
+  !Array.isArray(v.notes)||v.notes.length!==v.board.length||!v.notes.every(n=>integer(n,1022))||
+  !Array.isArray(v.regions)||v.regions.length!==v.board.length||
+  !v.regions.every(n=>Number.isSafeInteger(n)&&n>=-1&&n<=44)||
+  !Array.isArray(v.cages)||v.cages.length>100||!v.cages.every(c=>obj(c)&&integer(c.sum,45)&&
+   Array.isArray(c.cells)&&c.cells.length>=1&&c.cells.length<=9&&
+   c.cells.every(n=>integer(n,v.width*v.width-1))&&new Set(c.cells).size===c.cells.length)||
+  !Array.isArray(v.incorrect)||!Array.isArray(v.conflicts)||
+  !v.incorrect.every(n=>integer(n,v.width*v.width-1))||
+  !v.conflicts.every(n=>integer(n,v.width*v.width-1))||
+  !integer(v.elapsedSeconds,9_000_000_000)||!integer(v.hintsUsed)||typeof v.completed!=='boolean'||
+  typeof v.canUndo!=='boolean'||typeof v.canRedo!=='boolean'||!integer(v.completionXp)||
+  !integer(v.careerXp)||typeof v.notice!=='string'||typeof v.rewardNotice!=='string')return false;
+ for(let i=0;i<v.board.length;i++){
+  if(v.givens[i]==='-'&&v.board[i]!=='-')return false;
+  if(v.givens[i]!=='-'&&v.board[i]==='-')return false;
+  if(v.givens[i]!=='0'&&v.givens[i]!==v.board[i])return false;
+  if(v.board[i]!=='0'&&v.notes[i]!==0)return false;
+  if(v.board[i]!=='-'&&Number(v.board[i])>v.digits)return false;
+ }
+ return true;
+}
 export function isSudokuState(v:unknown):v is SudokuState{
  if(!obj(v)||(v.screen!=='library'&&v.screen!=='game')||typeof v.showTimer!=='boolean'
   ||typeof v.showGuides!=='boolean'||!Array.isArray(v.entries)||v.entries.length!==6
@@ -57,6 +105,9 @@ export function isSudokuState(v:unknown):v is SudokuState{
   ||typeof v.daily.completed!=='boolean'||typeof v.daily.canResume!=='boolean'
   ||typeof v.notice!=='string'||v.notice.length>8192
   ||typeof v.rewardNotice!=='string'||v.rewardNotice.length>8192)return false;
+ if(v.variantEntries!==undefined&&(!Array.isArray(v.variantEntries)||v.variantEntries.length!==18||
+  !v.variantEntries.every(variantEntry)||new Set(v.variantEntries.map(e=>(e as VariantEntry).key)).size!==18))return false;
+ if(v.variant!==undefined&&v.variant!==null&&!isVariantGame(v.variant))return false;
  if(v.career!==undefined && (!obj(v.career)||!integer(v.career.level,100)||v.career.level<1
    ||!integer(v.career.experience,9_000_000_000)||!integer(v.career.nextLevelXp,9_000_000_000)
    ||!integer(v.career.lifetimeExperience,9_000_000_000)
