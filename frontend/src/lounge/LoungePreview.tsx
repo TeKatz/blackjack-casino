@@ -72,6 +72,6 @@ export function LoungePreview({id}:{id:LoungeId}){
    <circle cx="387" cy="170" r="9"/></g>
   <path d="M14 218H505" stroke="#d6ad78" opacity=".55" strokeWidth="2"/>
  </svg>;
- if(id==='jigsaw')return <svg className="lounge-preview-puzzle" viewBox="0 0 160 110"><defs><clipPath id="lounge-puzzle"><path d={piecePath(4,3,3,100,100)}/></clipPath></defs><image href="/album/atlas/enchanted-forest.png" width="160" height="110" opacity=".4"/><g transform="translate(35 6)"><image href="/album/atlas/enchanted-forest.png" width="100" height="100" clipPath="url(#lounge-puzzle)"/><path d={piecePath(4,3,3,100,100)} fill="none" stroke="#ead4a1" strokeWidth="2"/></g></svg>;
+ if(id==='jigsaw')return <svg className="lounge-preview-puzzle" viewBox="0 0 160 110"><defs><clipPath id="lounge-puzzle"><path d={piecePath(4,3,3,100,100)}/></clipPath></defs><image href="/jigsaw/scenes/enchanted-forest.jpg" width="160" height="110" preserveAspectRatio="xMidYMid slice" opacity=".48"/><g transform="translate(35 6)"><image href="/jigsaw/scenes/enchanted-forest.jpg" width="100" height="100" preserveAspectRatio="xMidYMid slice" clipPath="url(#lounge-puzzle)"/><path d={piecePath(4,3,3,100,100)} fill="none" stroke="#ead4a1" strokeWidth="2"/></g></svg>;
  return <span className="lounge-preview-story"><i>✦</i><b>TALES<br/>FROM THE<br/>BACKROOM</b><em>20</em></span>;
 }
