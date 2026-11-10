@@ -167,7 +167,7 @@ func run_scene_smoke() -> void:
 		return
 	run.enemies[0].hp = 0
 	run.tick(0.016,Vector2.ZERO,Vector2(250,385),false,false,false)
-	await get_tree().process_frame
+	_process(0.0)
 	if run.state != "reward" or overlay.get_child_count() == 0:
 		get_tree().quit(7)
 		return
@@ -177,7 +177,7 @@ func run_scene_smoke() -> void:
 		get_tree().quit(8)
 		return
 	paused = true
-	await get_tree().process_frame
+	_process(0.0)
 	if overlay_state != "pause":
 		get_tree().quit(9)
 		return
