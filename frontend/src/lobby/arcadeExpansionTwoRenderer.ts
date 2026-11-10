@@ -182,18 +182,20 @@ function circuit(ctx:Ctx,s:CircuitRun){
  const live=new Set(s.powered.map(t=>t.c+':'+t.r));
  for(const tile of s.tiles){
   const x=cx(tile.c),y=cy(tile.r),powered=live.has(tile.c+':'+tile.r);
-  ctx.save();ctx.shadowColor=powered?'#70f0ce':'#527f90';ctx.shadowBlur=powered?21:3;
-  panel(ctx,x-39,y-37,78,74,10,powered?'#1c5d62':'#193647',
-   powered?'#9af3d5':'#477985');
+  ctx.save();ctx.shadowColor=tile.danger?'#ff738d':powered?'#70f0ce':'#527f90';
+  ctx.shadowBlur=tile.danger?21:powered?21:3;
+  panel(ctx,x-39,y-37,78,74,10,tile.danger?'#5e243d':powered?'#1c5d62':'#193647',
+   tile.danger?'#fc8d99':powered?'#9af3d5':'#477985');
   ctx.lineCap='round';
   for(const d of DIRS){
    if(!(tile.mask&d.bit))continue;
    segment(ctx,[x,y],[x+d.dc*31,y+d.dr*30],
-    powered?'#f5dfa7':'#7bb3ba',12);
+    tile.danger?'#ff9bb0':powered?'#f5dfa7':'#7bb3ba',12);
    segment(ctx,[x,y],[x+d.dc*31,y+d.dr*30],
-    powered?'#c7ffe4':'#2f6474',4);
+    tile.danger?'#ffe6e5':powered?'#c7ffe4':'#2f6474',4);
   }
-  circle(ctx,x,y,9,powered?'#f3d6a1':'#4b8491','#d5debd');
+  circle(ctx,x,y,9,tile.danger?'#ffc5c9':powered?'#f3d6a1':'#4b8491','#d5debd');
+  if(tile.danger)label(ctx,'!',x,y-18,21,'#ffe3df','center');
   ctx.restore();
  }
  ctx.save();ctx.strokeStyle='#fce7a8';ctx.lineWidth=3;
@@ -206,7 +208,14 @@ function circuit(ctx:Ctx,s:CircuitRun){
  label(ctx,'CIRCUIT RUSH · STAGE '+s.stage,25,26,15);
  label(ctx,'LIVES '+s.lives,715,26,14);
  label(ctx,'TIME '+Math.ceil(s.timeLeft),W-24,26,15,s.timeLeft<9?'#ffaca5':'#b1f2e0','right');
- label(ctx,'ROTATE TILES WITH CLICK OR ARROWS + SPACE',480,529,13,'#a2efdd','center');
+ label(ctx,'NEVER POWER RED SHORT-CIRCUIT TILES',480,529,13,'#f2c2c1','center');
+ if(s.shockClock>0){
+  ctx.save();ctx.fillStyle='rgba(51,8,25,.82)';ctx.fillRect(0,0,W,H);
+  panel(ctx,237,169,486,187,17,'#4c1f35','#ffacb6');
+  label(ctx,'SHORT CIRCUIT!',480,244,32,'#ffe2df','center');
+  label(ctx,'LIFE LOST · '+s.lives+' REMAINING',480,296,18,'#ffd2ca','center');
+  ctx.restore();
+ }
 }
 function circuitExit(s:CircuitRun){
  const tile=s.tiles.find(t=>t.c===5&&t.r===2);
@@ -218,15 +227,17 @@ function heist(ctx:Ctx,s:HeistRun){
  for(let x=62;x<940;x+=50)segment(ctx,[x,52],[x,485],'#65999b14',1);
  for(let y=77;y<480;y+=50)segment(ctx,[36,y],[930,y],'#65999b14',1);
  for(const guard of s.guards){
-  const angle=guard.direction===1?0:Math.PI;
+  const angle=guard.axis==='y'?
+   (guard.direction===1?Math.PI/2:-Math.PI/2):
+   (guard.direction===1?0:Math.PI);
   ctx.save();ctx.translate(guard.x,guard.y);ctx.rotate(angle);
   ctx.fillStyle='#e7bf7677';ctx.beginPath();ctx.moveTo(0,0);
-  ctx.arc(0,0,190+s.stage*8,-.52,.52);ctx.closePath();ctx.fill();
+  ctx.arc(0,0,205+s.stage*9,-.62,.62);ctx.closePath();ctx.fill();
   ctx.strokeStyle='#f3cb9266';ctx.lineWidth=1.5;ctx.stroke();
   ctx.restore();
  }
  // Obstacles cover the guard vision cone visually as well as mechanically.
- for(const w of HEIST_WALLS){
+ for(const w of s.walls){
   ctx.save();ctx.shadowColor='#030c19';ctx.shadowBlur=12;
   panel(ctx,w.x,w.y,w.w,w.h,8,'#384a51','#a4ab86');
   ctx.restore();
@@ -246,7 +257,7 @@ function heist(ctx:Ctx,s:HeistRun){
  ctx.restore();
  label(ctx,open?'EXIT':'LOCKED',885,454,12,'#f7eac4','center');
  for(const g of s.guards){
-  ctx.save();ctx.translate(g.x,g.y);ctx.rotate(g.direction===1?Math.PI/2:-Math.PI/2);
+  ctx.save();ctx.translate(g.x,g.y);ctx.rotate(g.axis==='y'?(g.direction===1?Math.PI:0):(g.direction===1?Math.PI/2:-Math.PI/2));
   circle(ctx,0,0,15,'#e7bf8b','#553f3a');
   ctx.beginPath();ctx.moveTo(0,-18);ctx.lineTo(7,-5);ctx.lineTo(-7,-5);ctx.closePath();
   ctx.fillStyle='#512f3d';ctx.fill();ctx.restore();
@@ -255,12 +266,13 @@ function heist(ctx:Ctx,s:HeistRun){
  ctx.shadowColor='#8ef2dc';ctx.shadowBlur=16;
  circle(ctx,s.x,s.y,14,'#80e6d6','#f7dfaf');
  circle(ctx,s.x+4,s.y-3,3,'#23455b');ctx.restore();
- label(ctx,'SHADOW HEIST · FLOOR '+s.stage,24,28,15);
+ label(ctx,'SHADOW HEIST · FLOOR '+s.stage+' · LAYOUT '+(1+(s.stage-1)%4),24,28,15);
  label(ctx,'LOOT '+s.loot.filter(g=>g.taken).length+'/'+s.loot.length,350,28,14,'#d4ffec');
  label(ctx,'LIVES '+s.lives,660,28,14);
  label(ctx,'TIME '+Math.ceil(s.timeLeft),W-23,28,15,s.timeLeft<20?'#ffaba3':'#a9e9d8','right');
  statBar(ctx,366,506,230,s.alert,'#f5a27c');
  label(ctx,'ALERT',357,517,12,'#edd1a2','right');
+ label(ctx,'GUARDS '+s.guards.length,700,517,12,'#f2d3ab');
  if(s.lastCaught>0)label(ctx,'DETECTED!',480,80,23,'#ffaea2','center');
 }
 function pulse(ctx:Ctx,s:PulseRun){
