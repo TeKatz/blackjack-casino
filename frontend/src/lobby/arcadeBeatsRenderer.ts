@@ -1,5 +1,6 @@
 import {
  BEATS_LANE_COLORS,BEATS_KEYS,BEATS_HIT_LINE_Y,BEATS_START_Y,BEATS_FIRST_PULSE_AT,
+ beatsTargetTime,
 } from './arcadeBeatsEngine';
 import type {BeatsRun} from './arcadeBeatsEngine';
 
@@ -45,10 +46,10 @@ function drawBackdrop(ctx:Ctx,s:BeatsRun){
   ctx.lineTo(x-120,525);ctx.closePath();ctx.fill();ctx.restore();
  }
  for(const side of [0,1]){
-  const sx=side===0?44:806;
-  rect(ctx,sx,118,102,305,16,'#152c3d','#496575');
-  for(let i=0;i<3;i++){
-   const y=168+i*92;
+  const sx=side===0?44:812;
+  rect(ctx,sx,198,102,232,16,'#152c3d','#496575');
+  for(let i=0;i<2;i++){
+   const y=268+i*106;
    glowCircle(ctx,sx+51,y,29,'#254b59');
    glowCircle(ctx,sx+51,y,19,i===1?'#514267':'#467c85');
    glowCircle(ctx,sx+51,y,8,'#102737');
@@ -56,7 +57,7 @@ function drawBackdrop(ctx:Ctx,s:BeatsRun){
   for(let col=0;col<9;col++){
    const h=22+20*Math.abs(Math.sin(s.elapsed*2+col*.67+(side?2:0)));
    const v=h*(.58+.42*pulse);
-   rect(ctx,sx+8+col*10,446-v,6,v,3,col%3===0?'#b6a1ef':'#6fcabd');
+   rect(ctx,sx+8+col*10,463-v,6,v,3,col%3===0?'#b6a1ef':'#6fcabd');
   }
  }
  for(let i=0;i<35;i++){
@@ -91,7 +92,7 @@ function drawHighway(ctx:Ctx,s:BeatsRun){
  ctx.rect(X,90,4*(LANE_W+LANE_GAP)-LANE_GAP,344);ctx.clip();
  for(let pulse=Math.max(0,s.nextGroovePulse-2);pulse<=s.nextGroovePulse+8;pulse++){
   // Period-local scrollgrid. Decorative beat markers, not alternate note times.
-  const target=s.nextGrooveAt+(pulse-s.nextGroovePulse)*(30/s.bpm);
+  const target=beatsTargetTime(pulse); // Identical timeline to audible pulses and notes.
   const progress=1-(target-s.elapsed)/1.95;
   const y=BEATS_START_Y+progress*(BEATS_HIT_LINE_Y-BEATS_START_Y);
   if(y<90||y>427)continue;
@@ -170,18 +171,25 @@ function drawFeedback(ctx:Ctx,s:BeatsRun){
 export function drawBeatsRun(ctx:Ctx,s:BeatsRun):void{
  ctx.save();ctx.clearRect(0,0,W,H);
  drawBackdrop(ctx,s);drawHighway(ctx,s);drawNotes(ctx,s);drawFeedback(ctx,s);
- text(ctx,'MIDNIGHT BEATS',30,40,24,'#f9dfac');
- text(ctx,'ENDLESS RHYTHM',31,61,12,'#9de7d8');
- text(ctx,'STAGE '+s.stage,807,36,18,'#eacb9d');
- text(ctx,s.bpm+' BPM',807,60,15,'#a1e7dd');
- text(ctx,'COMBO',28,96,14,'#a1dcd2');
- text(ctx,String(s.combo),27,123,33,'#fbe2b4');
- text(ctx,'BEST COMBO '+s.bestCombo,25,151,13,'#a7c8d6');
- text(ctx,'LIVES',812,96,14,'#e6c99a');
+ text(ctx,'MIDNIGHT BEATS',25,39,23,'#f9dfac');
+ text(ctx,'ENDLESS RHYTHM',27,61,12,'#9de7d8');
+ text(ctx,'STAGE '+s.stage,754,37,18,'#eacb9d');
+ text(ctx,s.bpm+' BPM',756,60,15,'#a1e7dd');
+ // Dedicated opaque HUD areas prevent information from merging with speakers.
+ rect(ctx,19,83,195,91,13,'#0d2034','#577b8c');
+ text(ctx,'COMBO',30,104,13,'#a1dcd2');
+ text(ctx,String(s.combo),29,142,34,'#fbe2b4');
+ text(ctx,'BEST '+s.bestCombo,94,142,15,'#a7c8d6');
+ rect(ctx,747,82,190,94,13,'#0d2034','#647887');
+ text(ctx,'LIVES',758,105,15,'#f4dbc7');
+ text(ctx,s.lives+' / 5',925,105,16,s.lives<=2?'#ffb0bb':'#f3d6a4','right');
  for(let i=0;i<5;i++){
-  const x=824+(i%3)*28,y=123+Math.floor(i/3)*28;
-  ctx.save();ctx.globalAlpha=i<s.lives?1:.2;
-  glowCircle(ctx,x,y,9,'#f69fae');ctx.restore();
+  const x=768+i*33;
+  ctx.save();
+  ctx.shadowColor=i<s.lives?'#ff839e':'transparent';
+  ctx.shadowBlur=i<s.lives?11:0;
+  text(ctx,i<s.lives?'♥':'♡',x,150,27,i<s.lives?'#fca9bc':'#6c8193','center');
+  ctx.restore();
  }
  text(ctx,'PERFECT '+s.perfect,28,500,12,'#9eead5');
  text(ctx,'GREAT '+s.great,175,500,12,'#f9dea8');
