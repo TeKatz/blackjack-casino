@@ -261,7 +261,7 @@ func draw_hud() -> void:
 	hud_panel(Rect2(683,659,580,53),VIOLET)
 	text_at(Vector2(695,679),tr_text("RELICS","RELIKTE")+"  %d" % run.relics.size(),13,GOLD)
 	text_at(Vector2(695,699),tr_text("WASD / E  Move / Gate","WASD / E  Bewegung / Tor"),11,MUTED)
-		for i in range(8):
+	for i in range(8):
 		var rect := Rect2(947+i*36,669,30,30)
 		draw_rect(rect,Color("#100d1c"))
 		draw_rect(rect,Color("#695471"),false,1)

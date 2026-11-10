@@ -254,4 +254,4 @@ func draw_actor(enemy: Dictionary) -> void:
 	sprite(kind,pos,direction,frame,size,tint)
 
 func is_ready_for_smoke() -> bool:
-	return TILES.get_width() == 256 and ACTORS["warden"].get_height() == 128 and torches.size() == 5 and side_lights.size() == 2 and ambient != null and boss_light != null and torches[0].range_layer_min == -1 and occluders.size() == model.walls.size()
+	return TILES.get_width() == 256 and RELICS.get_width() == 384 and ACTORS["dealer"].get_height() == 128 and ACTORS["warden"].get_height() == 128 and torches.size() == 5 and side_lights.size() == 2 and ambient != null and boss_light != null and torches[0].range_layer_min == -1 and occluders.size() == model.walls.size()
