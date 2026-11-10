@@ -1,5 +1,5 @@
 import {
- BEATS_LANE_COLORS,BEATS_KEYS,BEATS_HIT_LINE_Y,BEATS_START_Y,
+ BEATS_LANE_COLORS,BEATS_KEYS,BEATS_HIT_LINE_Y,BEATS_START_Y,BEATS_FIRST_PULSE_AT,
 } from './arcadeBeatsEngine';
 import type {BeatsRun} from './arcadeBeatsEngine';
 
