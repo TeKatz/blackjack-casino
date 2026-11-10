@@ -19,7 +19,7 @@ public sealed class ArcadeStatistics
         Games ??= new(StringComparer.Ordinal);
         RecordedRuns ??= [];
         foreach (string key in Games.Keys.ToArray())
-            if (!ArcadeChallengeCatalog.IsGame(key))
+            if (!ArcadeChallengeCatalog.IsGame(key) && !ArcadeChallengeCatalog.IsArchivedGame(key))
                 Games.Remove(key);
             else
             {
@@ -80,7 +80,7 @@ public static class ArcadeChallengeCatalog
         new("neon-breaker", "Neon Breaker", [100, 350, 800, 1800], [1, 10, 75], [1000, 10000], 120),
         new("death-snake", "Death Snake", [5, 12, 25, 50], [1, 10, 75], [50, 400], 90),
         new("endless-ascent", "Endless Ascent", [50, 150, 400, 1000], [1, 10, 75], [700, 6500], 90),
-        new("midnight-pinball", "Midnight Pinball", [150, 450, 1200, 3000], [1, 10, 75], [1200, 10000], 90),
+        new("midnight-beats", "Midnight Beats", [600, 1800, 5000, 15000], [1, 10, 75], [10000, 75000], 80),
         new("phantom-hook", "Phantom Hook", [5, 15, 40, 100], [1, 10, 75], [100, 900], 60),
         new("neon-drift", "Neon Drift", [200, 700, 1800, 4000], [1, 10, 75], [2500, 20000], 90),
         new("gravity-chamber", "Gravity Chamber", [175, 400, 900, 1900], [1, 10, 75], [1800, 13000], 90),
@@ -93,6 +93,10 @@ public static class ArcadeChallengeCatalog
     ];
     private static readonly HashSet<string> GameIds = Games.Select(x => x.Id).ToHashSet(StringComparer.Ordinal);
     public static bool IsGame(string? id) => id is not null && GameIds.Contains(id);
+    // Keep legacy Pinball statistics when loading old save files, but never
+    // accept new Pinball receipts or advertise its retired challenges.
+    public static bool IsArchivedGame(string? id) =>
+        string.Equals(id, "midnight-pinball", StringComparison.Ordinal);
     private static readonly (string Suffix, ChallengeMetric Metric, int Tier, int Coins)[] Milestones =
     [
         ("first", ChallengeMetric.ArcadeRuns, 0, 75),
