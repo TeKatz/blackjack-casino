@@ -183,27 +183,49 @@ export function rotateCircuit(run:CircuitRun,c:number,r:number):ExpansionTwoEven
  run.score+=300+run.stage*50+Math.floor(run.timeLeft*5);
  run.stage++;makeCircuit(run);return 'score';
 }
-export type Guard={x:number;y:number;min:number;max:number;direction:1|-1;speed:number};
+export type Guard={x:number;y:number;min:number;max:number;direction:1|-1;speed:number;axis?:'x'|'y'};
 export type Loot={x:number;y:number;taken:boolean};
 export type Wall={x:number;y:number;w:number;h:number};
 export const HEIST_WALLS:readonly Wall[]=[
  {x:275,y:93,w:108,h:42},{x:430,y:267,w:132,h:50},
  {x:680,y:270,w:102,h:45},{x:159,y:299,w:78,h:48},
 ];
+export const HEIST_STAGE_WALLS:readonly (readonly Wall[])[]=[
+ HEIST_WALLS,
+ [{x:255,y:125,w:102,h:44},{x:460,y:180,w:65,h:141},
+  {x:682,y:307,w:106,h:47},{x:175,y:326,w:74,h:50}],
+ [{x:208,y:191,w:75,h:144},{x:387,y:83,w:117,h:48},
+  {x:589,y:249,w:133,h:55},{x:731,y:101,w:70,h:61}],
+ [{x:310,y:92,w:90,h:75},{x:465,y:287,w:85,h:121},
+  {x:640,y:105,w:115,h:48},{x:184,y:342,w:78,h:43}],
+];
+const HEIST_STAGE_LOOT:readonly (readonly {x:number;y:number}[])[]=[
+ [{x:245,y:166},{x:445,y:166},{x:650,y:171},{x:773,y:390}],
+ [{x:235,y:213},{x:414,y:114},{x:645,y:192},{x:814,y:385},{x:412,y:403}],
+ [{x:305,y:121},{x:475,y:196},{x:663,y:405},{x:815,y:193},{x:365,y:397}],
+ [{x:228,y:191},{x:431,y:215},{x:601,y:404},{x:816,y:263},{x:300,y:404}],
+];
 export type HeistRun=Base&{kind:'shadow-heist';x:number;y:number;
  guards:Guard[];loot:Loot[];walls:readonly Wall[];alert:number;
  lives:number;invincible:number;stage:number;timeLeft:number;lastCaught:number};
 function makeHeist(run:HeistRun):void{
- run.x=94;run.y=438;run.alert=0;run.invincible=1;run.timeLeft=Math.max(67,127-run.stage*4);
- run.loot=[
-  {x:245,y:166,taken:false},{x:445,y:166,taken:false},
-  {x:650,y:171,taken:false},{x:773,y:390,taken:false},
- ];
+ run.x=94;run.y=438;run.alert=0;run.invincible=.8;
+ const variant=(run.stage-1)%HEIST_STAGE_WALLS.length;
+ run.walls=HEIST_STAGE_WALLS[variant];
+ run.timeLeft=Math.max(49,116-run.stage*5);
+ run.loot=HEIST_STAGE_LOOT[variant].map(p=>({...p,taken:false}));
+ const speedUp=Math.min(125,run.stage*12);
  run.guards=[
-  {x:195,y:245,min:145,max:410,direction:1,speed:80+run.stage*10},
-  {x:623,y:218,min:532,max:829,direction:-1,speed:98+run.stage*9},
-  {x:515,y:415,min:362,max:740,direction:1,speed:76+run.stage*10},
+  {x:195,y:245,min:142,max:410,direction:1,speed:83+speedUp,axis:'x'},
+  {x:623,y:218,min:533,max:828,direction:-1,speed:105+speedUp,axis:'x'},
+  {x:515,y:415,min:364,max:747,direction:1,speed:83+speedUp,axis:'x'},
  ];
+ if(run.stage>=2)run.guards.push({
+  x:414,y:193,min:104,max:429,direction:1,speed:95+speedUp,axis:'y'});
+ if(run.stage>=4)run.guards.push({
+  x:738,y:183,min:99,max:440,direction:-1,speed:106+speedUp,axis:'y'});
+ if(run.stage>=7)run.guards.push({
+  x:293,y:381,min:200,max:715,direction:1,speed:110+speedUp,axis:'x'});
 }
 function blockSight(x1:number,y1:number,x2:number,y2:number,walls:readonly Wall[]):boolean{
  for(const wall of walls)for(let k=1;k<16;k++){
@@ -215,8 +237,10 @@ function blockSight(x1:number,y1:number,x2:number,y2:number,walls:readonly Wall[
 export function guardSees(run:HeistRun,guard:Guard):boolean{
  const dx=run.x-guard.x,dy=run.y-guard.y,distance=Math.hypot(dx,dy);
  if(distance<22)return true;
- return distance<190+run.stage*8&&dx*guard.direction>0&&
-  Math.abs(dy)<Math.abs(dx)*.58&&
+ const forward=(guard.axis==='y'?dy:dx)*guard.direction;
+ const lateral=guard.axis==='y'?dx:dy;
+ return distance<205+run.stage*9&&forward>0&&
+  Math.abs(lateral)<forward*.72&&
   !blockSight(guard.x,guard.y,run.x,run.y,run.walls);
 }
 export type PulseRun=Base&{kind:'pulse-perfect';radius:number;target:number;
@@ -402,17 +426,23 @@ function heistStep(run:HeistRun,dt:number,controls:ExpansionTwoControls):Expansi
  const ny=clamp(run.y+dy/d*move,55,H-30);
  if(!collision(run.x,ny))run.y=ny;
  for(const g of run.guards){
-  g.x+=g.direction*g.speed*dt;
-  if(g.x<g.min){g.x=g.min;g.direction=1;}
-  if(g.x>g.max){g.x=g.max;g.direction=-1;}
+  if(g.axis==='y'){
+   g.y+=g.direction*g.speed*dt;
+   if(g.y<g.min){g.y=g.min;g.direction=1;}
+   if(g.y>g.max){g.y=g.max;g.direction=-1;}
+  }else{
+   g.x+=g.direction*g.speed*dt;
+   if(g.x<g.min){g.x=g.min;g.direction=1;}
+   if(g.x>g.max){g.x=g.max;g.direction=-1;}
+  }
  }
  if(run.invincible===0&&run.guards.some(g=>guardSees(run,g)))
-  run.alert=Math.min(1,run.alert+dt*(.85+run.stage*.16));
+  run.alert=Math.min(1,run.alert+dt*(1.13+run.stage*.18));
  else run.alert=Math.max(0,run.alert-dt*.7);
  if(run.alert>=1){
   run.lives--;run.alert=0;run.lastCaught=1;
   if(run.lives<=0){run.over=true;return 'fail';}
-  run.x=94;run.y=438;run.invincible=2;
+  run.x=94;run.y=438;run.invincible=1.2;
   return 'stage';
  }
  for(const gem of run.loot){
