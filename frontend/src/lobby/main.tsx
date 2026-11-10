@@ -94,14 +94,14 @@ function GameTile({ mode, language, motionEnabled, onOpen, onSecondary }:{
       </div>}
     </div>
     <div className="game-info">
-      <div className="game-category">{categoryById[mode.id] || mode.category.toUpperCase()}</div>
+      <div className="game-category">{mode.id==='midnight-descent'?(language==='de'?'ACTION-ROGUELITE · NEUES FENSTER':'ACTION ROGUELITE · NEW WINDOW'):(categoryById[mode.id] || mode.category.toUpperCase())}</div>
       <h3>{mode.title}</h3>
       <p>{mode.description}</p>
       <div className="game-actions">
         <button type="button" className="lobby-gold-button" disabled={!mode.enabled}
           onClick={()=>onOpen(mode.id)}>
-          <span aria-hidden="true">{mode.id==='casino-empire'?'↗':'▶'}</span>
-          {mode.id==='casino-empire'? (language==='de'?'Öffnen':'Enter') :
+          <span aria-hidden="true">{mode.id==='casino-empire'||mode.id==='midnight-descent'?'↗':'▶'}</span>
+          {mode.id==='midnight-descent'?(language==='de'?'Öffnen ↗':'Open ↗'):mode.id==='casino-empire'? (language==='de'?'Öffnen':'Enter') :
             (language==='de'?'Spielen':'Play')}
         </button>
         {mode.secondary && <button className="lobby-secondary" type="button"

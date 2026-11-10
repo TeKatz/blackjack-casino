@@ -628,3 +628,5 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
 /* Descent uses its own local illustration, independent of the PixiJS context. */
 .lobby-game.game-midnight-descent .game-art-window{background:#100e21 url('/lobby/custom/midnight-descent.svg') center/cover no-repeat;}
 .game-midnight-descent .game-category{color:#c5a5f1}
+
+.game-midnight-descent .game-category{font-size:clamp(8px,.66vw,11px);white-space:nowrap;letter-spacing:.035em}

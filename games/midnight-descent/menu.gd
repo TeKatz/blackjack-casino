@@ -80,7 +80,7 @@ func build_shell() -> void:
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	horizontal.add_child(spacer)
-	frame.add_child(label(tr_text("FOUNDATION BUILD  •  MENU PREVIEW  •  GODOT 4", "FOUNDATION BUILD  •  MENÜ-VORSCHAU  •  GODOT 4"), 14, GOLD))
+	frame.add_child(label(tr_text("THE FIRST DESCENT  •  PLAYABLE ALPHA  •  GODOT 4", "DER ERSTE ABSTIEG  •  SPIELBARE ALPHA  •  GODOT 4"), 14, GOLD))
 
 func add_action(caption: String, callback: Callable, locked: bool = false) -> Button:
 	var button := Button.new()
@@ -121,9 +121,9 @@ func show_page(next: String) -> void:
 			detail_label.text = tr_text("Choose your path into the depths.", "Wähle deinen Weg in die Tiefen.")
 			body.add_child(label(tr_text("CHARACTER SELECTION", "CHARAKTERAUSWAHL"), 14, GOLD))
 			add_action(tr_text("Warden  •  Selected", "Wächter  •  Ausgewählt"), select_warden)
-			body.add_child(label(tr_text("A steadfast fighter. Balanced defence and close-range combat are planned for this class.", "Ein standhafter Kämpfer. Ausgewogene Verteidigung und Nahkampf sind für diese Klasse geplant."), 17, MUTED))
+			body.add_child(label(tr_text("A steadfast fighter. Sword, arcane bolts and a quick evasive dash.", "Ein standhafter Kämpfer. Schwert, arkane Geschosse und ein schneller Ausweichschritt."), 17, MUTED))
 			add_action(tr_text("Dealer  •  Locked", "Dealer  •  Gesperrt"), func(): pass, true)
-			add_action(tr_text("Start run  •  Coming in next phase", "Run starten  •  Nächste Phase"), func(): pass, true)
+			add_action(tr_text("Start run  •  The Forgotten Vault", "Run starten  •  Das vergessene Gewölbe"), start_run)
 			add_action(tr_text("Back", "Zurück"), func(): show_page("home"))
 		"codex":
 			detail_label.text = tr_text("Your discoveries will be recorded here.", "Deine Entdeckungen werden hier festgehalten.")
@@ -137,6 +137,9 @@ func show_page(next: String) -> void:
 			add_action(tr_text("Back", "Zurück"), func(): show_page("home"))
 	if not action_buttons.is_empty():
 		action_buttons[0].grab_focus()
+
+func start_run() -> void:
+	get_tree().change_scene_to_file("res://run.tscn")
 
 func select_warden() -> void:
 	chosen = "warden"
@@ -153,7 +156,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func smoke_test() -> void:
 	action_buttons[0].pressed.emit()
-	if page != "expedition" or not action_buttons[2].disabled:
+	if page != "expedition" or action_buttons[2].disabled:
 		get_tree().quit(1)
 		return
 	action_buttons[3].pressed.emit()
@@ -170,5 +173,10 @@ func smoke_test() -> void:
 	if page != "home":
 		get_tree().quit(4)
 		return
+	var simulation = preload("res://run_model.gd").new()
+	if not simulation.smoke_test():
+		get_tree().quit(5)
+		return
 	print("Midnight Descent menu smoke PASS")
+	print("Midnight Descent run smoke PASS")
 	get_tree().quit(0)
