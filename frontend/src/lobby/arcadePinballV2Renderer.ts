@@ -16,7 +16,7 @@ function stroke(ctx:Ctx,points:[number,number][],color:string,w:number){
 function text(ctx:Ctx,str:string,x:number,y:number,size=15,color='#eddbba',align:CanvasTextAlign='left'){
  ctx.font='700 '+size+'px Segoe UI, sans-serif';ctx.fillStyle=color;ctx.textAlign=align;ctx.fillText(str,x,y);
 }
-function rr(ctx:Ctx,x:number,y:number,w:number,h:number,r:number,fill:string,edge?:string){
+function rr(ctx:Ctx,x:number,y:number,w:number,h:number,r:number,fill:string|CanvasGradient|CanvasPattern,edge?:string){
  ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fillStyle=fill;ctx.fill();
  if(edge){ctx.strokeStyle=edge;ctx.lineWidth=2;ctx.stroke();}
 }
