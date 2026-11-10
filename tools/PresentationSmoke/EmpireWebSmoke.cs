@@ -85,6 +85,8 @@ internal static class EmpireWebSmoke
             await Click(view, "empire-idle-classic");
             await Check(view, "document.querySelector('[data-testid=empire-ready]') && document.querySelectorAll('.empire-gallery .empire-room').length===15",
                 "Returning from the idle prototype lost the classic Empire view.");
+            await Check(view, "document.querySelector('.empire-pixi canvas, .empire-pixi[data-fallback=true]')",
+                "Classic graphics did not initialize again after testing the prototype.");
             await Click(view, "floor-3");
             await Check(view, "document.querySelectorAll('.empire-gallery .empire-room').length===5", "Resort gallery lost a department.");
             await Click(view, "room-hotel");
