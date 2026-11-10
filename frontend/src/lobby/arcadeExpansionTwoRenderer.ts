@@ -73,10 +73,24 @@ function prism(ctx:Ctx,s:PrismRun){
  circle(ctx,91,py(2),9,'#f8f3dd');
  ctx.restore();
  const targetY=py(s.targetRow);
- ctx.save();ctx.shadowColor=s.beam.hit?'#e0fffa':'#edc484';ctx.shadowBlur=25;
- panel(ctx,825,targetY-26,43,52,9,s.beam.hit?'#64bdb5':'#37616a','#f3ce93');
- panel(ctx,835,targetY-16,23,32,5,'#0e2835','#96e7d5');
+ // The exit is an illuminated receiver portal, not an anonymous empty rectangle.
+ ctx.save();ctx.translate(845,targetY);
+ ctx.shadowColor=s.beam.hit?'#8cffe7':'#f0c58d';ctx.shadowBlur=23;
+ panel(ctx,-31,-36,62,72,14,'#172e43',s.beam.hit?'#b3fff0':'#d7b987');
+ ctx.beginPath();ctx.arc(0,0,25,0,TAU);
+ ctx.strokeStyle=s.beam.hit?'#b9fff1':'#b4a68d';ctx.lineWidth=5;ctx.stroke();
+ ctx.shadowBlur=0;
+ for(let i=0;i<8;i++){
+  const a=i*TAU/8+s.elapsed*(s.beam.hit?.8:.16);
+  segment(ctx,[Math.cos(a)*19,Math.sin(a)*19],
+   [Math.cos(a)*24,Math.sin(a)*24],
+   s.beam.hit?'#e6fff7':'#8bb3b2',2);
+ }
+ circle(ctx,0,0,15,s.beam.hit?'#5ae2c0':'#0a2334','#e5d6ac');
+ circle(ctx,0,0,s.beam.hit?9:5,s.beam.hit?'#e5fff8':'#3c7780');
  ctx.restore();
+ label(ctx,s.beam.hit?'CONNECTED':'RECEIVER',845,targetY+54,11,
+  s.beam.hit?'#baffea':'#d7c59e','center');
  s.mirrors.forEach(m=>{
   const x=px(m.c),y=py(m.r);
   ctx.save();ctx.shadowColor=m.required?'#ecd09f':'#789aaa';ctx.shadowBlur=9;
@@ -181,12 +195,37 @@ function miner(ctx:Ctx,s:MinerRun){
  }
  ctx.save();ctx.translate(s.x,s.y);
  const heading=Math.atan2(s.vy,s.vx)+Math.PI/2;
- if(Math.hypot(s.vx,s.vy)>8)ctx.rotate(heading);
+ const speed=Math.hypot(s.vx,s.vy);
+ if(speed>8)ctx.rotate(heading);
  ctx.globalAlpha=s.invincible>0?.55+.35*Math.sin(s.elapsed*22):1;
- ctx.shadowColor='#8ce8da';ctx.shadowBlur=15;
- ctx.beginPath();ctx.moveTo(0,-21);ctx.lineTo(16,16);ctx.lineTo(0,9);ctx.lineTo(-16,16);ctx.closePath();
- ctx.fillStyle='#8ae5d8';ctx.fill();ctx.lineWidth=2;ctx.strokeStyle='#ffe1a8';ctx.stroke();
- circle(ctx,0,-3,5,'#194659');
+ ctx.lineJoin='round';
+ // Dual independent thrusters and a layered, swept-wing mining shuttle.
+ if(speed>25){
+  const thrust=9+4*Math.sin(s.elapsed*33);
+  ctx.shadowColor='#f8c58e';ctx.shadowBlur=18;
+  ctx.fillStyle='#e9b978';
+  ctx.beginPath();ctx.moveTo(-11,21);ctx.lineTo(-7,21+thrust);
+  ctx.lineTo(-3,20);ctx.moveTo(3,20);ctx.lineTo(7,21+thrust);
+  ctx.lineTo(11,21);ctx.fill();
+ }
+ ctx.shadowColor='#80f0e0';ctx.shadowBlur=17;
+ ctx.fillStyle='#337887';ctx.strokeStyle='#e4d4a7';ctx.lineWidth=2.2;
+ ctx.beginPath();
+ ctx.moveTo(0,-26);ctx.lineTo(10,-12);ctx.lineTo(24,9);
+ ctx.lineTo(23,23);ctx.lineTo(8,14);ctx.lineTo(6,22);
+ ctx.lineTo(-6,22);ctx.lineTo(-8,14);ctx.lineTo(-23,23);
+ ctx.lineTo(-24,9);ctx.lineTo(-10,-12);ctx.closePath();
+ ctx.fill();ctx.stroke();
+ ctx.shadowBlur=0;
+ ctx.fillStyle='#a1f8e3';
+ ctx.beginPath();ctx.moveTo(0,-23);ctx.lineTo(6,-9);ctx.lineTo(0,4);
+ ctx.lineTo(-6,-9);ctx.closePath();ctx.fill();
+ panel(ctx,-8,-10,16,23,7,'#173d5c','#c7fff4');
+ ctx.fillStyle='#7fcaee';ctx.beginPath();ctx.ellipse(0,-5,5,8,0,0,TAU);ctx.fill();
+ for(const side of [-1,1]){
+  panel(ctx,side<0?-19:12,10,7,13,3,'#142c40','#d0b482');
+  circle(ctx,side*19,15,2.3,'#fff4ce');
+ }
  ctx.restore();
  label(ctx,'OXYGEN',22,30,12,'#e9d6ac');statBar(ctx,22,38,190,s.oxygen/80,'#83e7da');
  label(ctx,'HULL '+s.hull,W-23,30,15,s.hull===1?'#f4a19e':'#e9d3a2','right');
@@ -209,15 +248,19 @@ function circuit(ctx:Ctx,s:CircuitRun){
   ctx.shadowBlur=tile.danger?21:powered?21:3;
   panel(ctx,x-39,y-37,78,74,10,tile.danger?'#5e243d':powered?'#1c5d62':'#193647',
    tile.danger?'#fc8d99':powered?'#9af3d5':'#477985');
-  ctx.lineCap='round';
+  // Rotate exactly the tile that the player clicked: interpolated old -> new ports.
+  ctx.save();ctx.translate(x,y);ctx.lineCap='round';
+  if(s.turnClock>0&&s.turnCell?.c===tile.c&&s.turnCell?.r===tile.r)
+   ctx.rotate(-Math.PI/2*(s.turnClock/.18));
   for(const d of DIRS){
    if(!(tile.mask&d.bit))continue;
-   segment(ctx,[x,y],[x+d.dc*31,y+d.dr*30],
+   segment(ctx,[0,0],[d.dc*31,d.dr*30],
     tile.danger?'#ff9bb0':powered?'#f5dfa7':'#7bb3ba',12);
-   segment(ctx,[x,y],[x+d.dc*31,y+d.dr*30],
+   segment(ctx,[0,0],[d.dc*31,d.dr*30],
     tile.danger?'#ffe6e5':powered?'#c7ffe4':'#2f6474',4);
   }
-  circle(ctx,x,y,9,tile.danger?'#ffc5c9':powered?'#f3d6a1':'#4b8491','#d5debd');
+  circle(ctx,0,0,9,tile.danger?'#ffc5c9':powered?'#f3d6a1':'#4b8491','#d5debd');
+  ctx.restore();
   if(tile.danger)label(ctx,'!',x,y-18,21,'#ffe3df','center');
   ctx.restore();
  }
