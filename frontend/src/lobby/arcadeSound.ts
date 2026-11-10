@@ -70,8 +70,8 @@ export function playArcadeSound(id:PlayableArcadeId,cue:ArcadeSoundCue,
   const profile=ARCADE_VOICES[id],notes=soundNotes(id,cue,pad);
   const special=cue==='perfect'||cue==='bumper'||cue==='solve';
   const miss=['miss','fail','life','caught','collision','short'].includes(cue);
-  const decay=cue==='pad'?.24:special?.43:miss?.24:profile.decay;
-  const amplitude=cue==='pad'?.055:miss?.07:special?.068:.044;
+  const decay=cue==='pad'?0.24:special?0.43:miss?0.24:profile.decay;
+  const amplitude=cue==='pad'?0.055:miss?0.07:special?0.068:0.044;
   const attack=Math.max(.002,profile.attack);
   const filter=context.createBiquadFilter();
   filter.type='lowpass';
@@ -79,30 +79,31 @@ export function playArcadeSound(id:PlayableArcadeId,cue:ArcadeSoundCue,
   filter.Q.value=1.0;
   filter.connect(context.destination);
   const baseTime=context.currentTime;
-  const perNote=notes.length>1?(special?.053:.067):0;
+  const perNote=notes.length>1?(special?0.053:0.067):0;
   let remaining=notes.length*2;
+  const voiceNodes:GainNode[]=[];
   for(let i=0;i<notes.length;i++){
    const f=Math.max(38,notes[i]),t=baseTime+i*perNote,duration=decay+(special?.08:0);
    const voice=context.createGain();
    voice.gain.setValueAtTime(.0001,t);
    voice.gain.exponentialRampToValueAtTime(amplitude/(1+i*.3),t+attack);
    voice.gain.exponentialRampToValueAtTime(.0001,t+duration);
-   voice.connect(filter);
+   voice.connect(filter);voiceNodes.push(voice);
    for(let h=0;h<2;h++){
     const oscillator=context.createOscillator();
     oscillator.type=h===0?profile.wave:'sine';
     const pitch=h===0?f:f*profile.partial;
     oscillator.frequency.setValueAtTime(pitch,t);
     // Distinct glides for hook, gravity and timing; no sound touches gameplay.
-    const bend=id==='phantom-hook'?1.17:id==='gravity-chamber'?.75:
-     id==='neon-drift'?.89:miss?.62:1.03;
+    const bend=id==='phantom-hook'?1.17:id==='gravity-chamber'?0.75:
+     id==='neon-drift'?0.89:miss?0.62:1.03;
     oscillator.frequency.exponentialRampToValueAtTime(Math.max(30,pitch*bend),
-     t+duration*.84);
+     t+duration*0.84);
     oscillator.connect(voice);
     oscillator.onended=()=>{
      oscillator.disconnect();
      remaining--;
-     if(remaining===0){voice.disconnect();filter.disconnect();}
+     if(remaining===0){for(const node of voiceNodes)node.disconnect();filter.disconnect();}
     };
     oscillator.start(t);oscillator.stop(t+duration+.015);
    }
