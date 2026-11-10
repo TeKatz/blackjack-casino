@@ -2,6 +2,7 @@ param(
     [Parameter(Mandatory = $true)][string]$OutputDirectory
 )
 $ErrorActionPreference = "Stop"
+$ProgressPreference = "SilentlyContinue"
 $version = "4.5.1"
 $tag = "$version-stable"
 $root = Split-Path -Parent $PSScriptRoot
@@ -21,9 +22,15 @@ if (!(Test-Path $editor)) {
 if (!(Test-Path (Join-Path $templates "windows_release_x86_64.exe"))) {
     $templateZip = Join-Path $work "templates.zip"
     Invoke-WebRequest "$base/Godot_v$version-stable_export_templates.tpz" -OutFile $templateZip
-    Expand-Archive $templateZip (Join-Path $work "templates") -Force
+    # The official archive includes every platform (over 1 GB). Extract only Windows x64.
     New-Item -ItemType Directory -Force $templates | Out-Null
-    Copy-Item (Join-Path $work "templates/templates/windows_release_x86_64.exe") $templates -Force
+    $archive = [System.IO.Compression.ZipFile]::OpenRead($templateZip)
+    try {
+        $entry = $archive.GetEntry("templates/windows_release_x86_64.exe")
+        if ($null -eq $entry) { throw "Windows release template missing from official archive." }
+        [System.IO.Compression.ZipFileExtensions]::ExtractToFile($entry, (Join-Path $templates "windows_release_x86_64.exe"), $true)
+    } finally { $archive.Dispose() }
+    Remove-Item $templateZip -Force
 }
 function Invoke-Godot([string[]]$GodotArgs) {
     & $editor @GodotArgs
