@@ -249,9 +249,11 @@ export function stepExpansionRun(s:ExpansionRun,dt:number,holding=false,
  controls:ExpansionControls={}):ExpansionEvent{
  if(s.over||!Number.isFinite(dt)||dt<=0)return null;
  const step=Math.min(dt,STEP);
+ // Midnight Beats owns its musical timeline. Advancing it twice would make
+ // the notes and percussion drift at different effective speeds.
+ if(s.kind==='midnight-beats')return stepBeatsRun(s,step);
  s.elapsed+=step;
  switch(s.kind){
-  case 'midnight-beats':return stepBeatsRun(s,step);
   case 'phantom-hook':return hookStep(s,step);
   case 'neon-drift':return driftStep(s,step,holding,controls);
   case 'gravity-chamber':return gravityStep(s,step,controls);
