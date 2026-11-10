@@ -3,6 +3,8 @@ import type {PointerEvent as ReactPointerEvent} from 'react';
 import {ARCADE_HEIGHT,ARCADE_STEP,ARCADE_WIDTH,actArcadeRun,createArcadeRun,stepArcadeRun,steerSnake,chooseEchoPad,selectPrism,rotateCircuit,movePuzzleCursor} from './arcadeEngine';
 import type {PlayableArcadeId,ArcadeEvent,ArcadeRunState} from './arcadeEngine';
 import {drawArcadeRun} from './arcadeRenderer';
+import {playArcadeSound} from './arcadeSound';
+import type {ArcadeSoundCue} from './arcadeSound';
 import {echoPadAt} from './arcadeExpansionOneRenderer';
 import {prismCellAt,circuitCellAt} from './arcadeExpansionTwoRenderer';
 import {ArcadeHeldKeys,arcadeDirection} from './arcadeControls';
@@ -81,25 +83,30 @@ const formatTime=(s:number)=>{
  const whole=Math.floor(Math.max(0,s));
  return Math.floor(whole/60).toString().padStart(2,'0')+':'+(whole%60).toString().padStart(2,'0');
 };
-function tone(event:ArcadeEvent,enabled:boolean,ctxRef:React.MutableRefObject<AudioContext|null>){
- if(!enabled||!event)return;
- try{
-  const context=ctxRef.current??new AudioContext();
-  ctxRef.current=context;
-  if(context.state==='suspended')void context.resume();
-  const oscillator=context.createOscillator(),gain=context.createGain();
-  const start=context.currentTime,frequency={
-   flap:440,score:680,fail:180,stage:930,
-  }[event];
-  oscillator.type=event==='fail'?'sawtooth':'sine';
-  oscillator.frequency.setValueAtTime(frequency,start);
-  oscillator.frequency.exponentialRampToValueAtTime(event==='fail'?75:frequency*1.2,start+.14);
-  gain.gain.setValueAtTime(.0001,start);
-  gain.gain.exponentialRampToValueAtTime(.05,start+.012);
-  gain.gain.exponentialRampToValueAtTime(.0001,start+.19);
-  oscillator.connect(gain).connect(context.destination);
-  oscillator.start(start);oscillator.stop(start+.21);
- }catch{/* Some WebView2 installations disallow audio. Game remains fully playable. */}
+/** Translate deterministic game events into individual synthesized cues. */
+function tone(event:ArcadeEvent,enabled:boolean,ctxRef:{current:AudioContext|null},
+ id:PlayableArcadeId,run:ArcadeRunState){
+ if(!event)return;
+ let cue:ArcadeSoundCue=event;
+ if(id==='pulse-perfect'){
+  if(event==='score'&&run.kind==='pulse-perfect')
+   cue=run.feedback==='perfect'?'perfect':'good';
+  if(event==='stage'||event==='fail')cue='miss';
+ }else if(id==='midnight-pinball'&&run.kind==='midnight-pinball'){
+  if(event==='score')cue=run.hitValue>0?'bumper':'launch';
+  if(event==='flap')cue=run.inShooter?'launch':'flip';
+ }else if(id==='meteor-miner'){
+  if(event==='flap')cue='drill';if(event==='score')cue='dock';
+ }else if(id==='shadow-heist'){
+  if(event==='stage')cue='caught';if(event==='score')cue='collect';
+ }else if(id==='prism-lock'&&run.kind==='prism-lock'){
+  if(event==='score')cue='solve';
+  if(event==='stage'&&run.transition==='lost')cue='life';
+ }else if(id==='circuit-rush'&&run.kind==='circuit-rush'){
+  if(event==='stage'&&run.shockClock>0)cue='short';
+  if(event==='score')cue='solve';
+ }else if(id==='neon-drift'&&event==='stage')cue='collision';
+ playArcadeSound(id,cue,enabled,ctxRef);
 }
 function useCanvasPaint(canvas:HTMLCanvasElement|null,run:ArcadeRunState){
  if(!canvas)return;
@@ -136,6 +143,7 @@ export function ArcadeGameScreen({id,language,onBack}:{
  const mouseTarget=useRef<{x:number;y:number}|null>(null);
  const mouseActive=useRef(false);
  const pinballPointer=useRef<'left'|'right'|null>(null);
+ const lastEchoLight=useRef(-1);
  const raf=useRef<number>(0);
  const audioRef=useRef<AudioContext|null>(null);
  const phaseRef=useRef<Phase>(phase);
@@ -164,30 +172,32 @@ export function ArcadeGameScreen({id,language,onBack}:{
   setScore(s.score);setElapsed(s.elapsed);
   setIsBest(s.score>before.best&&s.score>0);
   phaseRef.current='over';setPhase('over');
-  tone('fail',soundRef.current,audioRef);
+  tone('fail',soundRef.current,audioRef,id,s);
  };
  const action=(pad?:number,cell?:{c:number;r:number})=>{
   if(phaseRef.current!=='playing')return;
   const s=gameRef.current;
+  if(s.kind==='echo-sequence'&&pad!==undefined&&s.phase==='input')
+   playArcadeSound(id,'pad',soundRef.current,audioRef,pad);
   const event=s.kind==='prism-lock'&&cell?selectPrism(s,cell.c,cell.r):
    s.kind==='circuit-rush'&&cell?rotateCircuit(s,cell.c,cell.r):
    s.kind==='echo-sequence'&&pad!==undefined?chooseEchoPad(s,pad):actArcadeRun(s);
   if(s.over)finish();
   else if(event){
    setScore(s.score);
-   tone(event,soundRef.current,audioRef);
+   tone(event,soundRef.current,audioRef,id,s);
   }
   repaint();
  };
  const start=()=>{
-  held.current=false;
+  held.current=false;lastEchoLight.current=-1;
   keys.current.clear();mouseActive.current=false;mouseTarget.current=null;pinballPointer.current=null;
   gameRef.current=createArcadeRun(id,Math.floor(Math.random()*0xffffffff));
   setScore(0);setElapsed(0);setIsBest(false);
   phaseRef.current='playing';setPhase('playing');
   if(id==='midnight-wings'||id==='neon-breaker'||id==='phantom-hook'){
    const event=actArcadeRun(gameRef.current);
-   tone(event,soundRef.current,audioRef);
+   tone(event,soundRef.current,audioRef,id,gameRef.current);
   }
   repaint();
  };
@@ -224,12 +234,19 @@ export function ArcadeGameScreen({id,language,onBack}:{
      if(id==='bullet-storm')controls.pointerY=mouseTarget.current.y;
     }
     const event=stepArcadeRun(state,ARCADE_STEP,held.current,controls);
+     if(state.kind==='echo-sequence'){
+      const light=state.phase==='watch'?state.active:-1;
+      if(light!==lastEchoLight.current){
+       lastEchoLight.current=light;
+       if(light>=0)playArcadeSound(id,'pad',soundRef.current,audioRef,light);
+      }
+     }
     if(old!==state.score){
      setScore(state.score);
-     if(event==='score')tone('score',soundRef.current,audioRef);
+     if(event==='score')tone('score',soundRef.current,audioRef,id,state);
     }
     if(event==='fail'){finish();break;}
-    if(event==='stage')tone('stage',soundRef.current,audioRef);
+    if(event==='stage')tone('stage',soundRef.current,audioRef,id,state);
     accumulator-=ARCADE_STEP;steps++;
    }
    if(steps===5)accumulator=0;
