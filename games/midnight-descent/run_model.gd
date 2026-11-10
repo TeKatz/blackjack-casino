@@ -133,6 +133,8 @@ func enter_room() -> void:
 	effects.clear()
 	hazards.clear()
 	echoes.clear()
+	spirit_life=0
+	guard_pulse_pending=false
 	offers.clear()
 	walls.clear()
 	room_kind = dungeon.kind(room)
@@ -410,7 +412,7 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 			for enemy in enemies:
 				if player.distance_to(enemy.pos)<175: hit_enemy(enemy,bolt_damage*2.0*special_multiplier)
 			for i in range(mini(8,2*relics.count("split"))):
-				shoot(player+aim*21,aim.rotated((float(i)-0.5)*0.25)*590,false,bolt_damage)
+				shoot(player+aim*21,aim.rotated((float(i)-0.5)*0.25)*590,false,bolt_damage*special_multiplier)
 			notices.append("swing")
 		else:
 			var count := mini(9,(3 if character=="dealer" else 1)+2*relics.count("split"))
@@ -422,7 +424,7 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 			notices.append("bolt")
 		if relics.has("cascade") or set_id=="arcanist_fire":
 			for enemy in enemies:
-				if player.distance_to(enemy.pos)<200: hit_enemy(enemy,bolt_damage*0.8)
+				if player.distance_to(enemy.pos)<200: hit_enemy(enemy,bolt_damage*0.8*special_multiplier)
 			effect("burst",player,0.35,Vector2.ZERO)
 	for i in range(echoes.size()-1,-1,-1):
 		echoes[i].time-=dt

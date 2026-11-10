@@ -160,7 +160,7 @@ func _draw() -> void:
 	for shot in run.shots:
 		var pos: Vector2 = shot.pos
 		var vel: Vector2 = shot.vel
-		var color := Color("#ff6b89") if shot.hostile else Color("#8deaff")
+		var color := Color("#ff6b89") if shot.hostile else (Color("#93e4bd") if run.character=="soulbinder" else Color("#8deaff"))
 		draw_line(pos-vel.normalized()*22,pos,color,5,true)
 		draw_circle(pos,10,Color(color,0.17))
 		draw_circle(pos,5,color)
@@ -235,6 +235,24 @@ func run_scene_smoke() -> void:
 		push_error("Descent restart failed to reset run")
 		get_tree().quit(14)
 		return
+	run.floor_index=2
+	run.dungeon.generate(run.seed_value,2)
+	run.room=6
+	run.enter_room()
+	run.shards=20
+	_process(0.0)
+	if overlay_state!="service" or run.room_kind!="forge" or not run.service_action(1):
+		push_error("Crown scene: forge overlay failed")
+		get_tree().quit(17)
+		return
+	_process(0.0)
+	if overlay_state!="route" or run.shards!=4:
+		get_tree().quit(18)
+		return
+	var crown_icon:=UI.atlas(UI.RELICS,47)
+	if crown_icon.atlas!=UI.CROWN_RELICS or crown_icon.region!=Rect2(336,0,48,48):
+		get_tree().quit(19)
+		return
 	print("Midnight Descent gameplay scene smoke PASS")
 	get_tree().quit()
 
@@ -289,7 +307,7 @@ func draw_hud() -> void:
 		draw_rect(Rect2(99,68,health_width,2),Color("#ffb0bc"))
 	text_at(Vector2(343,80),"%d/%d" % [run.hp,run.max_hp],15,WHITE)
 	if run.character=="soulbinder":
-		text_at(Vector2(240,55),tr_text("SOULS","SEELEN")+"  %d/6" % run.souls,13,Color("#8de1cb"))
+		text_at(Vector2(300,55),tr_text("SOULS","SEELEN")+"  %d/6" % run.souls,13,Color("#8de1cb"))
 	text_at(Vector2(460,31),tr_text("EXPEDITION","EXPEDITION"),12,MUTED)
 	text_at(Vector2(460,54),tr_text("FLOOR","EBENE")+"  %d / %d" % [run.floor_index+1,Model.FLOOR_COUNT],21,GOLD)
 	for i in range(Model.ROOM_COUNT):
@@ -307,7 +325,7 @@ func draw_hud() -> void:
 	text_at(Vector2(1100,59),"%02d:%02d" % [int(run.elapsed)/60,int(run.elapsed)%60],24,WHITE)
 	text_at(Vector2(1100,79),"ESC  "+tr_text("Pause","Pause"),12,MUTED)
 	ability_slot(18,0,"LMB" if not german else "LMT",(tr_text("Card","Karte") if run.character=="dealer" else (tr_text("Magic","Magie") if run.character=="arcanist" or run.set_id=="soulbinder_wraith" else (tr_text("Scythe","Sense") if run.character=="soulbinder" else tr_text("Sword","Schwert")))),1.0-run.attack_timer/run.attack_cd,GOLD)
-	ability_slot(184,3,"RMB" if not german else "RMT",(tr_text("Sweep","Wirbel") if run.set_id=="warden_executioner" else tr_text("Bolt","Geschoss")),1.0-run.bolt_timer/run.special_cd,Color("#72cadf"))
+	ability_slot(184,3,"RMB" if not german else "RMT",(tr_text("Sweep","Wirbel") if run.set_id in ["warden_executioner","soulbinder_reaper"] else (tr_text("Summon","Beschwören") if run.set_id=="soulbinder_wraith" else (tr_text("Nova","Nova") if run.set_id=="arcanist_frost" else tr_text("Bolt","Geschoss")))),1.0-run.bolt_timer/run.special_cd,Color("#72cadf"))
 	ability_slot(350,2,"SPACE" if not german else "LEER", "Dash",1.0-run.dash_timer/run.dash_cooldown,VIOLET)
 	ability_slot(516,1,"Q",active_name(),1.0-run.active_timer/run.active_cd,Color("#e8899b"))
 	var active_index: int = {"heal":9,"time":10,"bomb":11,"shield":12,"dice":13,"mirror":14}.get(run.active_item,9)

@@ -140,11 +140,13 @@ func update_preview() -> void:
 			preview_title.text = Content.character_name(spec.character,german).to_upper()
 			preview_sprite.texture = atlas_icon(PixelWorld.ACTORS[spec.character],Rect2(0,0,32,32))
 			preview_detail.text = Content.loadout_display_name(progress.selected,german)
+			if spec.character=="soulbinder":
+				preview_detail.text+=" • "+tr_text("Harvest souls from kills","Seelen durch Kills sammeln")
 			preview_info.text = tr_text("Base HP / main / special","Basis-LP / Haupt / Spezial")+"  %d / %d / %d" % [spec.hp,spec.damage,spec.bolt]
 		"progress":
 			preview_title.text = tr_text("SOUL ESSENCE","SEELENESSENZ")
 			preview_detail.text = str(progress.essence)+"  •  "+tr_text("Permanent currency","Permanente Währung")
-			preview_info.text = tr_text("Expeditions / victories / kills","Expeditionen / Siege / Gegner")+"  %d / %d / %d" % [progress.attempts,progress.wins,progress.total_kills]+"\n"+tr_text("Achievements","Errungenschaften")+"  %d/7  •  " % progress.achievements.size()+tr_text("Elites","Elite")+" %d/5" % progress.elite_kills
+			preview_info.text = tr_text("Expeditions / victories / kills","Expeditionen / Siege / Gegner")+"  %d / %d / %d" % [progress.attempts,progress.wins,progress.total_kills]+"\n"+tr_text("Achievements","Errungenschaften")+"  %d/7  •  " % progress.achievements.size()+tr_text("Elites","Elite")+" %d/5" % progress.elite_kills+"\n"+tr_text("Deepest boss","Tiefster Boss")+"  %d/3" % progress.deepest_boss
 		"codex":
 			preview_title.text = tr_text("VAULT KEEPER","TRESORWÄCHTER")
 			preview_sprite.texture = atlas_icon(PixelWorld.ACTORS["boss"],Rect2(0,0,32,32))
