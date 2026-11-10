@@ -1,4 +1,6 @@
 import {isExpansionRun} from './arcadeExpansionOneEngine';
+import {isExpansionTwoRun} from './arcadeExpansionTwoEngine';
+import {drawExpansionTwoRun} from './arcadeExpansionTwoRenderer';
 import {drawExpansionRun} from './arcadeExpansionOneRenderer';
 import {ARCADE_HEIGHT as H,ARCADE_WIDTH as W} from './arcadeEngine';
 import {SNAKE_COLS,SNAKE_ROWS,BLADE_HIT_ARC,angularDistance} from './arcadeEngine';
@@ -13,6 +15,11 @@ function background(ctx:Context,state:ArcadeRunState){
   'neon-drift':['#11172d','#172939','#122e38'],
   'gravity-chamber':['#0b1b32','#20274a','#152f3e'],
   'echo-sequence':['#0b1830','#292042','#162c3d'],
+  'prism-lock':['#061b2a','#242444','#142b3a'],
+  'meteor-miner':['#061525','#192949','#203348'],
+  'circuit-rush':['#091a2b','#19303b','#12394a'],
+  'shadow-heist':['#081827','#222b39','#193444'],
+  'pulse-perfect':['#0c1730','#302044','#172b39'],
   'midnight-wings':['#061b25','#16283a','#244541'],
   'cave-escape':['#071b23','#13272b','#0b151d'],
   'perfect-stack':['#12292b','#172739','#171d2b'],
@@ -688,6 +695,7 @@ function endlessAscent(ctx:Context,state:AscentRun){
 
 export function drawArcadeRun(ctx:Context,state:ArcadeRunState){
  if(isExpansionRun(state)){drawExpansionRun(ctx,state);return;}
+ if(isExpansionTwoRun(state)){drawExpansionTwoRun(ctx,state);return;}
  ctx.save();
  ctx.clearRect(0,0,W,H);
  background(ctx,state);
