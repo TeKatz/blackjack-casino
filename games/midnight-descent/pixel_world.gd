@@ -138,6 +138,8 @@ func update_view(dt: float) -> void:
 	var target_ambient := Color(0.39,0.30,0.47) if boss_present else Color(0.55,0.49,0.64)
 	if model.floor_index==1: target_ambient=Color(0.35,0.53,0.39)
 	if model.floor_index==2: target_ambient=Color(0.47,0.34,0.50)
+	for light in torches:
+		light.color=[Color("#ffd094"),Color("#a0e2ad"),Color("#e9a0c4")][model.floor_index]
 	ambient.color = ambient.color.lerp(target_ambient, minf(1.0,dt*2.5))
 	gate_open_amount = move_toward(gate_open_amount,1.0 if model.state == "exit" else 0.0,dt*2.5)
 	gate_light.energy = gate_open_amount*(1.1+sin(clock*4)*0.2)
@@ -206,6 +208,7 @@ func _draw() -> void:
 			var pos := Vector2(66+(i*173)%1140,154+(i*97)%460)
 			draw_rect(Rect2(pos,Vector2(10,4)),Color("#486b46"))
 			draw_rect(Rect2(pos+Vector2(3,-5),Vector2(4,8)),Color("#75a65f"))
+	draw_biome_details(arena)
 	# Gate is drawn as stone architecture, with an illuminated open portal.
 	var gate: Vector2 = Model.EXIT
 	tile(6,Rect2(gate-Vector2(22,54),Vector2(48,108)))
@@ -228,10 +231,62 @@ func _draw() -> void:
 			"enemy": draw_actor(object.enemy)
 			"player": draw_warden()
 
+func draw_biome_details(arena: Rect2) -> void:
+	if model.floor_index==0:
+		# Iron floor grates, warning stripes and chains.
+		for x in [420,690,960]:
+			draw_rect(Rect2(x-30,166,60,438),Color("#28212f"),false,2)
+			for y in range(182,594,32):
+				draw_rect(Rect2(x-10,y,20,10),Color("#15131c"))
+				draw_rect(Rect2(x-9,y,18,2),Color("#766b71"))
+				draw_rect(Rect2(x-5,y+3,2,5),Color("#514856"))
+	elif model.floor_index==1:
+		# Dense moss, branching vines and luminous mushrooms, not new collision.
+		for i in range(16):
+			var x: float=80+i*72
+			draw_rect(Rect2(x,148,38,13),Color("#234330"))
+			for j in range(5):
+				var p:=Vector2(x+j*6,158+j*7)
+				draw_rect(Rect2(p,Vector2(7,9)),Color("#47764c"))
+				draw_rect(Rect2(p+Vector2(2,2),Vector2(3,4)),Color("#81a964"))
+			var pos:=Vector2(x+22,602)
+			draw_rect(Rect2(pos-Vector2(2,0),Vector2(4,13)),Color("#d0c69b"))
+			draw_rect(Rect2(pos-Vector2(11,6),Vector2(22,9)),Color("#72bd91"))
+			draw_rect(Rect2(pos-Vector2(7,10),Vector2(14,5)),Color("#b1e4a5"))
+			draw_circle(pos,16,Color(0.37,0.9,0.58,0.08+sin(clock*2+i)*0.025))
+	else:
+		# Royal processional mosaic, torn carpets and sepulchral candles.
+		draw_rect(Rect2(80,355,1115,60),Color("#3e2438"))
+		draw_rect(Rect2(80,356,1115,4),Color("#94725d"))
+		draw_rect(Rect2(80,410,1115,4),Color("#94725d"))
+		for x in range(130,1180,80):
+			draw_rect(Rect2(x,374,24,24),Color("#76504d"),false,2)
+			draw_rect(Rect2(x+10,378,4,16),Color("#ac8068"))
+			draw_rect(Rect2(x+4,384,16,4),Color("#ac8068"))
+		for i in range(12):
+			var pos:=Vector2(110+i*94,595)
+			draw_rect(Rect2(pos-Vector2(8,0),Vector2(16,5)),Color("#72544d"))
+			draw_rect(Rect2(pos-Vector2(3,15),Vector2(6,15)),Color("#e5d1ba"))
+			draw_rect(Rect2(pos-Vector2(2,20),Vector2(4,5)),Color("#f7abc3"))
+
 func draw_pillar(rect: Rect2) -> void:
 	draw_rect(Rect2(rect.position+Vector2(5,6),rect.size),Color("#191320"))
 	tile(5,rect)
-	draw_rect(Rect2(rect.position,Vector2(rect.size.x,4)),Color("#a38b92"))
+	if model.floor_index==1:
+		draw_rect(Rect2(rect.position+Vector2(5,5),rect.size-Vector2(10,10)),Color("#365b42"))
+		for i in range(5):
+			var p: Vector2=rect.position+Vector2(i*rect.size.x/5,8+sin(i*2)*4)
+			draw_rect(Rect2(p,Vector2(10,rect.size.y-12)),Color("#664d39"))
+			draw_rect(Rect2(p+Vector2(2,2),Vector2(5,rect.size.y-20)),Color("#8b704a"))
+		draw_rect(Rect2(rect.position,Vector2(rect.size.x,9)),Color("#80a45e"))
+	elif model.floor_index==2:
+		draw_rect(rect.grow(-5),Color("#382c3a"))
+		draw_rect(rect.grow(-9),Color("#947b76"),false,3)
+		var center:=rect.get_center()
+		draw_rect(Rect2(center-Vector2(5,22),Vector2(10,44)),Color("#b5a18e"))
+		draw_rect(Rect2(center-Vector2(17,6),Vector2(34,12)),Color("#b5a18e"))
+	else:
+		draw_rect(Rect2(rect.position,Vector2(rect.size.x,4)),Color("#a38b92"))
 
 func direction_row(direction: Vector2) -> int:
 	if absf(direction.x) > absf(direction.y):

@@ -19,6 +19,7 @@ var world = PixelWorld.new()
 var displayed_hp := 100.0
 var room_banner := 0.0
 var banner_room := -1
+var banner_floor := -1
 const GOLD := Color("#efc987")
 const VIOLET := Color("#b38aff")
 const WHITE := Color("#f6edf9")
@@ -100,8 +101,9 @@ func _process(dt: float) -> void:
 		rebuild_overlay()
 	world.update_view(dt)
 	displayed_hp = move_toward(displayed_hp,run.hp,dt*52.0)
-	if banner_room != run.room:
+	if banner_room != run.room or banner_floor!=run.floor_index:
 		banner_room = run.room
+		banner_floor=run.floor_index
 		room_banner = 2.0
 	room_banner = maxf(0,room_banner-dt)
 	queue_redraw()
@@ -141,9 +143,27 @@ func _draw() -> void:
 		text_at(gate+Vector2(-86,76),tr_text("E  •  Map","E  •  Karte"),16,GOLD)
 	# Attack telegraphs and projectiles remain above the pixel-world layer.
 	for hazard in run.hazards:
-		var color := Color("#e9b963") if hazard.warn>0 else Color("#77c96d")
-		draw_circle(hazard.pos,hazard.r,Color(color,0.14))
-		draw_arc(hazard.pos,hazard.r,0,TAU,36,color,2,true)
+		var kind: String=hazard.get("type","")
+		var color := Color("#e9b963") if hazard.warn>0 else (Color("#e17fbc") if kind=="rune" else (Color("#f19c7b") if kind=="spikes" else Color("#77c96d")))
+		if hazard.has("rect"):
+			var rect: Rect2=hazard.rect
+			draw_rect(rect,Color(color,0.14 if hazard.warn>0 else 0.37))
+			draw_rect(rect,color,false,2)
+			var vertical: bool=rect.size.y>rect.size.x
+			var length: float=rect.size.y if vertical else rect.size.x
+			for j in range(int(length/24)):
+				var pos: Vector2=rect.position+(Vector2(rect.size.x*0.5,j*24+12) if vertical else Vector2(j*24+12,rect.size.y*0.5))
+				if kind=="spikes" and hazard.warn<=0:
+					draw_colored_polygon(PackedVector2Array([pos+Vector2(-7,8),pos+Vector2(0,-12),pos+Vector2(7,8)]),Color("#eed8b7"))
+				else:
+					draw_rect(Rect2(pos-Vector2(3,3),Vector2(6,6)),Color(color,0.7))
+		else:
+			draw_circle(hazard.pos,hazard.r,Color(color,0.14 if hazard.warn>0 else 0.28))
+			draw_arc(hazard.pos,hazard.r,0,TAU,36,color,2,true)
+			if kind=="sporepool" and hazard.warn<=0:
+				for j in range(8):
+					var pos: Vector2=hazard.pos+Vector2.from_angle(j*TAU/8+clock*0.4)*hazard.r*0.65
+					draw_circle(pos,3+sin(clock*3+j),Color("#a9e388"))
 	if run.relics.has("sun"):
 		var orb: Vector2=run.player+Vector2.from_angle(clock*2.5)*70
 		draw_circle(orb,12,Color("#c284ec"))
@@ -200,15 +220,23 @@ func run_scene_smoke() -> void:
 		get_tree().quit(8)
 		return
 	_process(0.0)
-	if overlay_state!="route" or overlay.get_child_count()==0 or not run.travel(2):
+	if overlay_state!="route" or overlay.get_child_count()==0 or not run.travel(1):
 		get_tree().quit(8)
 		return
-	_process(0.0)
-	if overlay_state!="service" or not run.service_action(1):
+	for unit in run.enemies: unit.hp=0
+	run.tick(0.016,Vector2.ZERO,Vector2(700,385),false,false,false)
+	if run.state=="reward": select_relic(0)
+	run.player=Model.EXIT
+	if not run.next_room() or not run.travel(4):
 		get_tree().quit(15)
 		return
 	_process(0.0)
-	if overlay_state!="route" or run.room!=2:
+	var choice: int=3 if run.room_kind in ["shop","forge"] else (0 if run.room_kind=="shrine" else 1)
+	if overlay_state!="service" or not run.service_action(choice):
+		get_tree().quit(15)
+		return
+	_process(0.0)
+	if overlay_state!="route" or run.room!=4:
 		get_tree().quit(16)
 		return
 	paused = true
@@ -237,7 +265,7 @@ func run_scene_smoke() -> void:
 		return
 	run.floor_index=2
 	run.dungeon.generate(run.seed_value,2)
-	run.room=6
+	run.room=17
 	run.enter_room()
 	run.shards=20
 	_process(0.0)
@@ -310,13 +338,12 @@ func draw_hud() -> void:
 		text_at(Vector2(300,55),tr_text("SOULS","SEELEN")+"  %d/6" % run.souls,13,Color("#8de1cb"))
 	text_at(Vector2(460,31),tr_text("EXPEDITION","EXPEDITION"),12,MUTED)
 	text_at(Vector2(460,54),tr_text("FLOOR","EBENE")+"  %d / %d" % [run.floor_index+1,Model.FLOOR_COUNT],21,GOLD)
-	for i in range(Model.ROOM_COUNT):
-		var center := Vector2(469+i*34,76)
-		if i<Model.ROOM_COUNT-1: draw_line(center,center+Vector2(34,0),Color("#654e75"),2)
-		var points := PackedVector2Array([center+Vector2(0,-9),center+Vector2(9,0),center+Vector2(0,9),center+Vector2(-9,0)])
-		draw_colored_polygon(points,GOLD if run.dungeon.nodes[i].visited else Color("#3b2d50"))
-		draw_polyline(PackedVector2Array([points[0],points[1],points[2],points[3],points[0]]),Color("#b6a0bf"),1,true)
-		if i==run.room: draw_circle(center,14,Color(1,0.77,0.36,0.14+sin(clock*4)*0.06))
+	var cleared: int=run.dungeon.cleared_fights()
+	var required: int=run.dungeon.MIN_FIGHTS[run.floor_index]
+	var elite_required: int=run.dungeon.MIN_ELITES[run.floor_index]
+	text_at(Vector2(460,78),tr_text("FIGHTS","KÄMPFE")+" %d/%d" % [cleared,required],13,GOLD)
+	text_at(Vector2(565,78),"ELITE %d/%d" % [run.dungeon.cleared_elites(),elite_required],13,MUTED)
+	text_at(Vector2(682,78),tr_text("BOSS READY","BOSS BEREIT") if run.dungeon.boss_ready() else tr_text("BOSS LOCKED","BOSS GESPERRT"),12,Color("#8cdbb1") if run.dungeon.boss_ready() else Color("#c99c87"))
 	text_at(Vector2(844,33),tr_text("SHARDS","SPLITTER"),12,MUTED)
 	text_at(Vector2(844,59),str(run.shards),24,GOLD)
 	text_at(Vector2(957,33),tr_text("DEFEATED","BESIEGT"),12,MUTED)
@@ -344,15 +371,17 @@ func draw_hud() -> void:
 				draw_texture_rect_region(icon.atlas,rect,icon.region)
 	if run.state=="fight" and run.room_kind=="boss":
 		for enemy in run.enemies:
-			if enemy.kind=="boss":
+			if enemy.kind in ["boss","rootking","hollowking"]:
 				hud_panel(Rect2(415,107,450,37),Color("#ed7c9e"))
 				text_at(Vector2(434,123),Content.boss_name(run.floor_index,german).to_upper(),15,Color("#ff91bd"))
 				meter(Rect2(434,130,412,7),float(enemy.hp)/float(enemy.max_hp),Color("#e36b86"))
 				break
+	if run.state=="fight" and run.wave_total>1:
+		text_at(Vector2(1020,167),tr_text("WAVE","WELLE")+" %d/%d" % [run.wave,run.wave_total],14,GOLD)
 	if room_banner>0 and run.state=="fight":
 		var opacity := minf(1,room_banner*2.0)
 		draw_rect(Rect2(480,153,320,42),Color(0.06,0.04,0.1,0.77*opacity))
-		text_at(Vector2(498,180),tr_text("DESCENT","ABSTIEG")+"  %02d" % (run.room+1),18,Color(1,0.82,0.52,opacity))
+		text_at(Vector2(498,180),[tr_text("PRESSURE PLATES","DRUCKPLATTEN"),tr_text("TOXIC SPORES","GIFTIGE SPOREN"),tr_text("ROYAL RUNES","KÖNIGLICHE RUNEN")][run.floor_index],18,Color(1,0.82,0.52,opacity))
 
 func make_sound(kind: String) -> AudioStreamWAV:
 	var sample := AudioStreamWAV.new()
@@ -438,8 +467,8 @@ func use_service(choice: int) -> void:
 
 func show_route_map(column: VBoxContainer) -> void:
 	add_label(column,tr_text("DUNGEON MAP","DUNGEON-KARTE")+"  •  %d / %d" % [run.floor_index+1,Model.FLOOR_COUNT],30,GOLD)
-	add_label(column,tr_text("Gold = current  ·  Lit = reachable  ·  ✓ = cleared","Gold = aktuell  ·  Hell = erreichbar  ·  ✓ = gesäubert"),14,MUTED)
-	add_label(column,tr_text("Choose a connected room. Cleared rooms can be revisited.","Wähle einen verbundenen Raum. Gesäuberte Räume sind erneut betretbar."),16,MUTED)
+	add_label(column,tr_text("Gold = current  ·  Lit = reachable  ·  ✓ = cleared","Gold = aktuell  ·  Hell = erreichbar  ·  ✓ = gesäubert"),13,MUTED)
+	add_label(column,tr_text("Boss gate: ","Boss-Tor: ")+tr_text("Fights","Kämpfe")+" %d/%d  •  Elite %d/%d" % [run.dungeon.cleared_fights(),run.dungeon.MIN_FIGHTS[run.floor_index],run.dungeon.cleared_elites(),run.dungeon.MIN_ELITES[run.floor_index]]+("  •  "+tr_text("OPEN","OFFEN") if run.dungeon.boss_ready() else "  •  "+tr_text("LOCKED","GESPERRT")),16,GOLD)
 	var map := RouteMap.new()
 	map.nodes=run.dungeon.nodes
 	map.current=run.room
@@ -450,16 +479,16 @@ func show_route_map(column: VBoxContainer) -> void:
 		var visible_kind: String = node.kind
 		if visible_kind=="secret" and not node.visited and not run.route_options().has(i): visible_kind="?"
 		var caption := room_name(visible_kind)
-		if i==run.room: caption+=" • "+tr_text("HERE","HIER")
+		if i==run.room: caption+=" •"
 		elif node.cleared: caption+=" ✓"
 		var button:=add_button(map,caption,func(): run.travel(id))
-		button.custom_minimum_size=Vector2(174,42)
-		button.size=Vector2(174,42)
-		button.position=RouteMap.POSITIONS[i]-Vector2(87,21)
-		button.add_theme_font_size_override("font_size",15)
+		button.custom_minimum_size=Vector2(104,42)
+		button.size=Vector2(104,42)
+		button.position=map.position_for(i)-Vector2(52,21)
+		button.add_theme_font_size_override("font_size",12)
 		button.icon=UI.atlas(UI.ICONS,int(UI.ROOM_ICONS[visible_kind]))
 		button.expand_icon=true
-		button.add_theme_constant_override("icon_max_width",24)
+		button.add_theme_constant_override("icon_max_width",18)
 		UI.style_button(button,UI.ROOM_COLORS[visible_kind],i==run.room)
 		button.disabled=not run.route_options().has(i)
 		if i==run.room:
@@ -467,6 +496,8 @@ func show_route_map(column: VBoxContainer) -> void:
 			button.add_theme_color_override("font_disabled_color",Color("#fff0c8"))
 		elif node.cleared:
 			button.add_theme_color_override("font_disabled_color",Color("#8db6a8"))
+		if node.kind=="boss" and not run.dungeon.boss_ready():
+			button.text=tr_text("Locked","Gesperrt")
 		button.tooltip_text=tr_text("Current room","Aktueller Raum") if i==run.room else (tr_text("Travel to this room","Diesen Raum betreten") if not button.disabled else tr_text("Not connected to current room","Nicht direkt verbunden"))
 	var footer:=HBoxContainer.new()
 	footer.add_theme_constant_override("separation",12)
@@ -563,7 +594,7 @@ func rebuild_overlay() -> void:
 	center.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	modal_root.add_child(center)
 	var panel:=PanelContainer.new()
-	panel.custom_minimum_size=Vector2(940 if overlay_state in ["reward","route"] else 680,0)
+	panel.custom_minimum_size=Vector2(1160 if overlay_state=="route" else (940 if overlay_state=="reward" else 680),0)
 	var style:=UI.panel(modal_fill(),accent,24)
 	style.set_corner_radius_all(14)
 	style.border_width_top=3
@@ -622,7 +653,7 @@ func rebuild_overlay() -> void:
 					service_option(column,tr_text("Gain 10 max HP","10 maximale LP erhalten"),tr_text("Permanent for this expedition","Für diese Expedition dauerhaft"),1,Color("#e990a8"),1)
 		"reward":
 			add_label(column,tr_text("CHOOSE YOUR RELIC","WÄHLE DEIN RELIKT") if run.room_kind in ["treasure","shop","event","secret"] else tr_text("ROOM CLEARED","RAUM GESÄUBERT"),30,GOLD)
-			add_label(column,tr_text("Choose a relic • recover 12 HP • continue your expedition","Wähle ein Relikt • heile 12 LP • setze deine Expedition fort"),16,MUTED)
+			add_label(column,tr_text("Choose a relic • recover ","Wähle ein Relikt • heile ")+str(10 if run.floor_index==0 else 8)+tr_text(" HP • continue your expedition"," LP • setze deine Expedition fort"),16,MUTED)
 			var cards:=HBoxContainer.new()
 			cards.add_theme_constant_override("separation",14)
 			column.add_child(cards)

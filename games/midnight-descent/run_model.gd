@@ -338,9 +338,15 @@ func spawn_enemy(kind: String, pos: Vector2) -> void:
 			radius = 43.0
 	pos = safe_position(pos,radius)
 	# Move spawn points out of solid pillars before the enemy becomes active.
-	for wall in walls:
-		if wall.grow(radius).has_point(pos):
-			pos = safe_position(Vector2(pos.x, wall.position.y - radius - 10),radius)
+	if blocked(pos,radius):
+		var origin: Vector2=pos
+		for step in range(1,9):
+			for j in range(8):
+				var candidate:=safe_position(origin+Vector2.from_angle(j*TAU/8)*step*36,radius)
+				if not blocked(candidate,radius):
+					pos=candidate
+					break
+			if not blocked(pos,radius): break
 	enemies.append({"kind":kind,"pos":pos,"hp":health,"max_hp":health,"r":radius,"timer":rng.randf_range(0.6,1.4),"wind":0.0,"flash":0.0,"target":pos,"facing":Vector2.LEFT})
 
 func safe_position(pos: Vector2, radius: float) -> Vector2:

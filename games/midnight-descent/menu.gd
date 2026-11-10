@@ -134,7 +134,7 @@ func update_preview() -> void:
 		"home":
 			preview_title.text = tr_text("THE FORGOTTEN VAULT","DAS VERGESSENE GEWÖLBE")
 			preview_detail.text = tr_text("Beneath the club, the old gate waits.","Unter dem Club wartet das alte Tor.")
-			preview_info.text = tr_text("3 floors  •  48 relics  •  8 starting sets","3 Ebenen  •  48 Relikte  •  8 Start-Sets")
+			preview_info.text = tr_text("3 floors  •  78 rooms  •  48 relics","3 Ebenen  •  78 Räume  •  48 Relikte")
 		"expedition","sets":
 			var spec: Dictionary = Content.SETS[progress.selected]
 			preview_title.text = Content.character_name(spec.character,german).to_upper()
