@@ -1,5 +1,5 @@
 /** Arcade concepts shown in the casino lobby. No game is advertised as playable until its own implementation is wired. */
-export type ArcadeCategory='one-button'|'reaction'|'precision';
+export type ArcadeCategory='one-button'|'reaction'|'precision'|'puzzle'|'memory';
 export type ArcadeGame={
  id:string;name:string;category:ArcadeCategory;symbol:string;accent:string;
  difficulty:number;seconds:[number,number];controls:{en:string;de:string};
@@ -46,17 +46,44 @@ export const arcadeGames:readonly ArcadeGame[]=[
  {id:'endless-ascent',name:'Endless Ascent',category:'reaction',symbol:'↑',accent:'#b3caff',difficulty:4,seconds:[30,180],
   controls:{en:'A / D · Arrow keys',de:'A / D · Pfeiltasten'},
   description:{en:'Jump higher. Falling behind ends the run.',de:'Springe immer höher – wer zurückfällt, verliert.'},
-  detail:{en:'Your character jumps automatically. Guide it onto safe platforms as the screen climbs.',de:'Deine Figur springt automatisch. Lenke sie auf sichere Plattformen, während der Bildschirm nach oben wandert.'}},
-];
+  detail:{en:'Your character jumps automatically. Guide it onto safe platforms as the screen climbs.',de:'Deine Figur springt automatisch. Lenke sie auf sichere Plattformen, während der Bildschirm nach oben wandert.'}},,
+ {id:'midnight-pinball',name:'Midnight Pinball',category:'precision',symbol:'◉',accent:'#efc88e',difficulty:4,seconds:[45,150],
+  controls:{en:'A / D flippers · Space launch',de:'A / D Flipper · Leertaste starten'},
+  description:{en:'Three balls, live flippers and luminous score bumpers.',de:'Drei Kugeln, echte Flipper und leuchtende Punkte-Bumper.'},
+  detail:{en:'Launch each ball with Space. Keep it alive with the left and right flippers, bank off bumpers and chain multipliers. Three drained balls end the game.',
+   de:'Starte jede Kugel mit der Leertaste. Halte sie mit linkem und rechtem Flipper im Spiel, triff Bumper und baue Multiplikatoren auf. Drei verlorene Kugeln beenden die Runde.'}},
+ {id:'phantom-hook',name:'Phantom Hook',category:'one-button',symbol:'⌁',accent:'#9cebd8',difficulty:4,seconds:[25,120],
+  controls:{en:'Space / Click · attach/release',de:'Leertaste / Klick · einhaken/loslassen'},
+  description:{en:'Swing between anchors above the abyss.',de:'Schwinge dich mit dem Haken über den Abgrund.'},
+  detail:{en:'A hooked rope creates a genuine pendulum. Release at the right moment and catch the next anchor before you fall. Distance builds your score.',
+   de:'Das Seil bildet ein echtes Pendel. Löse dich im richtigen Moment und greife den nächsten Anker, bevor du abstürzt. Die zurückgelegte Strecke bringt Punkte.'}},
+ {id:'neon-drift',name:'Neon Drift',category:'reaction',symbol:'↝',accent:'#86e1d2',difficulty:4,seconds:[40,150],
+  controls:{en:'A / D steer · Hold Space to drift',de:'A / D lenken · Leertaste halten zum Driften'},
+  description:{en:'Carve a twisting night road and build drift combos.',de:'Meistere eine kurvige Nachtstrecke mit Drift-Kombos.'},
+  detail:{en:'Steer to stay on the track. Hold Space while turning to slide through corners and earn drift points. Three hard wall contacts end the run.',
+   de:'Bleibe durch Lenken auf der Strecke. Halte beim Einlenken die Leertaste für Driftpunkte und Kombos. Drei harte Bandenberührungen beenden die Runde.'}},
+ {id:'gravity-chamber',name:'Gravity Chamber',category:'puzzle',symbol:'⇅',accent:'#c5b3f3',difficulty:4,seconds:[30,180],
+  controls:{en:'A / D move · Space flip gravity',de:'A / D bewegen · Leertaste Gravitation wechseln'},
+  description:{en:'Walk on ceilings to thread through lethal rooms.',de:'Laufe an der Decke entlang durch gefährliche Räume.'},
+  detail:{en:'Reverse gravity in midair, avoid the hazard strips on both sides of the chamber and enter the marked exit. Each solved room gets harder. Three mistakes end the run.',
+   de:'Drehe im Flug die Schwerkraft um, meide die Gefahrenstreifen an Boden und Decke und erreiche den markierten Ausgang. Jeder gelöste Raum wird schwieriger. Drei Fehler beenden die Runde.'}},
+ {id:'echo-sequence',name:'Echo Sequence',category:'memory',symbol:'◇',accent:'#d9b8ff',difficulty:3,seconds:[30,180],
+  controls:{en:'Keys 1–6 / Click colored pads',de:'Tasten 1–6 / Farbflächen anklicken'},
+  description:{en:'Remember an ever-growing pattern of six lights.',de:'Merke dir immer längere Sequenzen aus sechs Lichtern.'},
+  detail:{en:'Watch the lit pads carefully. Repeat the sequence in order using the number keys or mouse. Each round adds another light, but wrong answers and timeouts cost lives.',
+   de:'Präge dir die aufleuchtenden Felder ein und wiederhole ihre Reihenfolge mit den Zahlentasten oder der Maus. Jede Runde kommt ein Licht hinzu; Fehler und Zeitablauf kosten Leben.'}},
+]; 
 export const arcadeCategoryNames={
  all:{en:'All games',de:'Alle Spiele'},
  'one-button':{en:'One Button',de:'Eine Taste'},
  reaction:{en:'Reaction',de:'Reaktion'},
  precision:{en:'Precision',de:'Präzision'},
+ puzzle:{en:'Puzzle',de:'Rätsel'},
+ memory:{en:'Memory',de:'Gedächtnis'},
 } as const;
 export function arcadeLobbyMode(language:'en'|'de'){
  return {id:ARCADE_MODE_ID,title:'Arcade Games',category:language==='de'?'Arcade':'Arcade',
-  description:language==='de'?'Zehn kurze Herausforderungen. Jeder Versuch zählt.':
-   'Ten quick-fire challenges. Every attempt counts.',
+  description:language==='de'?'Fünfzehn kurze Herausforderungen. Jeder Versuch zählt.':
+   'Fifteen quick-fire challenges. Every attempt counts.',
   enabled:true,secondary:false};
 }
