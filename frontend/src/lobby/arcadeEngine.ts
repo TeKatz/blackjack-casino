@@ -133,6 +133,8 @@ export function isInsideCave(run:CaveRun,x:number,y:number,radius=13){
  return y-radius>center-gap/2&&y+radius<center+gap/2;
 }
 export const BLADE_HIT_ARC=.21;
+// Fixed six-o'clock entry point, shared by collision checks and the reticle.
+export const BLADE_IMPACT_ANGLE=Math.PI/2;
 export function angularDistance(a:number,b:number){
  return Math.abs(Math.atan2(Math.sin(a-b),Math.cos(a-b)));
 }
@@ -180,7 +182,7 @@ export function actArcadeRun(state:ArcadeRunState):ArcadeEvent{
   return 'score';
  }
  case 'blade-timing':{
-  const injection=Math.PI/2;
+  const injection=BLADE_IMPACT_ANGLE;
   for(const blade of state.blades){
    if(angularDistance(blade+state.rotation,injection)<BLADE_HIT_ARC)return fail(state);
   }
