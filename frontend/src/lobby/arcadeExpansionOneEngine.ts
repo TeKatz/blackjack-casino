@@ -30,8 +30,17 @@ export type EchoRun=Base&{kind:'echo-sequence';round:number;lives:number;
  active:number;inputClock:number;lastChoice:number;feedback:number;lastGood:boolean};
 export type ExpansionRun=PinballRun|HookRun|DriftRun|GravityRun|EchoRun;
 export const isExpansionRun=(s:{kind:string}):s is ExpansionRun=>isExpansionOneId(s.kind);
-export const driftCenter=(distance:number)=>
- 480+118*Math.sin(distance*.00215)+57*Math.sin(distance*.0047);
+export const driftCenter=(distance:number)=>{
+ const difficulty=1+Math.min(.32,Math.max(0,distance)/14000);
+ return 480+difficulty*(118*Math.sin(distance*.00215)+57*Math.sin(distance*.0047));
+};
+export const driftRoadHalfWidth=(distance:number)=>
+ Math.max(78,148-8*Math.floor(Math.max(0,distance)/1350));
+export const driftTrafficAt=(index:number)=>{
+ const distance=780+index*425+Math.sin(index*2.87)*55;
+ const lane=([-0.55,0,0.55] as const)[(index*7+1)%3];
+ return {distance,x:driftCenter(distance)+lane*driftRoadHalfWidth(distance),r:29};
+};
 export const gravityGoalY=(stage:number)=>stage%2===0?93:438;
 export const gravityHazards=(stage:number)=>[
  {x:260+(stage%3)*22,y:444,w:84,h:25},
@@ -133,17 +142,28 @@ function driftStep(s:DriftRun,dt:number,holding:boolean,c:ExpansionControls):Exp
  const steer=Number(!!c.right)-Number(!!c.left);
  const brake=holding;
  s.hitCooldown=Math.max(0,s.hitCooldown-dt);
- const target=brake?208:365;
+ const target=brake?210:380;
  s.speed+=(target-s.speed)*dt*(brake?1.6:.7);
- s.speed=clamp(s.speed,160,410);
- const sideTarget=steer*(brake?325:255);
+ s.speed=clamp(s.speed,160,445);
+ const sideTarget=steer*(brake?300:260);
  s.vx+=(sideTarget-s.vx)*dt*(brake?1.3:2.8);
  s.vx=clamp(s.vx,-330,330);
  s.x+=s.vx*dt;
  s.distance+=s.speed*dt;
- const road=driftCenter(s.distance),limit=169;
+ const road=driftCenter(s.distance),limit=driftRoadHalfWidth(s.distance);
+ // Approaching traffic requires actual avoidance, not merely staying on the road.
+ const first=Math.max(0,Math.floor((s.distance-870)/425)-1);
+ for(let i=first;i<first+5;i++){
+  const obstacle=driftTrafficAt(i);
+  if(Math.abs(obstacle.distance-s.distance)<24&&
+   Math.abs(s.x-obstacle.x)<obstacle.r+21&&s.hitCooldown<=0){
+   s.hits++;s.hitCooldown=1.1;s.combo=0;s.speed=170;
+   if(s.hits>=3)return fail(s);
+   return 'stage';
+  }
+ }
  if(Math.abs(s.x-road)>limit&&s.hitCooldown===0){
-  s.hits++;s.hitCooldown=1.4;s.combo=0;s.speed=190;
+  s.hits++;s.hitCooldown=1.15;s.combo=0;s.speed=175;
   s.x=road+Math.sign(s.x-road)*limit;
   if(s.hits>=3)return fail(s);
   return 'stage';
