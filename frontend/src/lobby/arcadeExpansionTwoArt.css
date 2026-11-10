@@ -32,12 +32,17 @@
 .arcade-game-card:is(:hover,:focus-visible) .exp-two-circuit-turn{
  animation:exp-two-wire-turn 1.9s steps(1,end) infinite;
 }
+/* Rotate a real port smoothly first, then animate current once connected. */
 @keyframes exp-two-electric{
- 0%,20%{opacity:.15;stroke-dasharray:5 90}
- 72%,91%{opacity:1;stroke-dasharray:110 0}
- 100%{opacity:.15}
+ 0%,43%{opacity:.12;stroke-dasharray:5 90}
+ 58%,86%{opacity:1;stroke-dasharray:110 0}
+ 100%{opacity:.12;stroke-dasharray:5 90}
 }
-@keyframes exp-two-wire-turn{0%,35%{rotate:0deg}50%,100%{rotate:90deg}}
+@keyframes exp-two-wire-turn{
+ 0%,23%{rotate:0deg;opacity:.55}
+ 45%,86%{rotate:90deg;opacity:1}
+ 100%{rotate:0deg;opacity:.55}
+}
 
 .arcade-scene .exp-two-heist-cone{transform-box:view-box;transform-origin:155px 63px}
 .arcade-game-card:is(:hover,:focus-visible) .exp-two-heist-cone{
