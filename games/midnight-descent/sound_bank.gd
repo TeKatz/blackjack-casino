@@ -86,6 +86,30 @@ func synthesize(kind: String) -> AudioStreamWAV:
 		if kind in ["relic","clear","victory","unlock","shrine","purchase"]: tone+=0.33*sin(phase*1.5)+0.18*sin(phase*2.5)
 		var envelope:=minf(1,t*35)*pow(1-t,1.2+decay*3)
 		var value:=lerpf(tone,noise*0.55+previous,noise_mix)*envelope
+		# Different sound families have different physical textures, not just pitch.
+		if kind.begins_with("dealer"):
+			value=(noise*0.8*exp(-t*15)+sin(phase*2.8)*0.38*exp(-t*5)+tone*0.18)*minf(1,t*70)*(1-t)
+		elif kind.begins_with("arcanist_fire") or kind=="bomb":
+			value=(previous*0.85+sin(phase)*0.42+noise*0.20)*envelope*(0.7+0.3*sin(t*28))
+		elif kind.begins_with("arcanist_frost") or kind=="mirror":
+			value=(sin(phase)+0.46*sin(phase*2.76)+0.26*sin(phase*4.11))*envelope*0.62
+		elif kind.begins_with("soulbinder") or kind=="enemy_hollowking":
+			value=(sin(phase+0.8*sin(t*16))+0.5*sin(phase*1.51)+previous*0.18)*envelope*0.68
+		elif kind.begins_with("warden") or kind=="spike_rise" or kind=="spike_retract" or kind=="forge":
+			value=(noise*0.65+previous*0.4+sin(phase*3.7)*0.36*exp(-t*3)+sin(phase)*0.25)*envelope
+		elif kind=="victory" or kind=="relic" or kind=="clear" or kind=="unlock":
+			var note: float=[1.0,1.25,1.5,2.0][mini(3,int(t*4))]
+			value=(sin(TAU*frequency*note*float(i)/22050)+0.32*sin(TAU*frequency*note*2*float(i)/22050))*envelope*0.7
 		data.encode_s16(i*2,int(clampf(value,-1,1)*8500))
 	sample.data=data
 	return sample
+
+func smoke_test() -> bool:
+	var seen: Dictionary={}
+	for key in SPECS:
+		var clip:=synthesize(key)
+		if clip.data.size()<100 or clip.mix_rate!=22050: return false
+		var digest: String=clip.data.hex_encode().sha256_text()
+		if seen.has(digest): return false
+		seen[digest]=true
+	return seen.size()==SPECS.size()

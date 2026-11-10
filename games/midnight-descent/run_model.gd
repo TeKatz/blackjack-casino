@@ -570,7 +570,8 @@ func hit_enemy(enemy: Dictionary, amount: float) -> void:
 	if relics.has("frostfire") and float(enemy.get("chill",0))>0 and float(enemy.get("burn",0))>0: amount+=8*relics.count("frostfire")
 	if relics.has("sacrifice"): amount*=1.0+0.2*relics.count("sacrifice")
 	if enemy.kind=="shield" and enemy.pos.direction_to(player).dot(enemy.get("facing",Vector2.LEFT))>0.35: amount*=0.6
-	enemy.hp -= maxf(1,amount+temp_power)
+	var dealt: float=maxf(1,amount+temp_power)
+	enemy.hp -= dealt
 	if relics.has("frost") or set_id=="arcanist_frost": enemy["chill"]=2.0
 	if relics.has("venom"): enemy["poison"]=3.0
 	if relics.has("storm") and float(enemy.get("burn",0))>0:
@@ -582,7 +583,7 @@ func hit_enemy(enemy: Dictionary, amount: float) -> void:
 	if relics.has("ember") or set_id=="arcanist_fire": enemy["burn"]=3.0
 	enemy.flash = 0.12
 	effect("hit", enemy.pos, 0.22, Vector2.ZERO)
-	if effects.size()<80: effects.append({"kind":"damage","pos":enemy.pos,"time":0.65,"max":0.65,"dir":Vector2.ZERO,"amount":int(round(amount))})
+	if effects.size()<80: effects.append({"kind":"damage","pos":enemy.pos,"time":0.65,"max":0.65,"dir":Vector2.ZERO,"amount":int(round(dealt))})
 	notices.append("hit")
 
 func hurt(amount: float) -> void:
@@ -924,6 +925,24 @@ func smoke_test() -> bool:
 	environment_timer=0
 	update_environment(0.1)
 	if hazards.is_empty() or hazards[-1].get("type")!="spikes": return false
+	var trap: Dictionary=hazards[-1]
+	for cell in trap.cells:
+		for wall in walls:
+			if wall.grow(12).intersects(cell): return false
+	player=trap.cells[0].get_center()
+	hp=100
+	invulnerable=0
+	update_hazards(0.5)
+	if hp!=100: return false
+	update_hazards(0.5)
+	if hp!=84 or not notices.has("spike_rise"): return false
+	invulnerable=0
+	update_hazards(0.45)
+	if hp!=84 or not notices.has("spike_retract"): return false
+	for id in Content.SETS:
+		begin(321,id)
+		tick(0.016,Vector2.ZERO,Vector2(700,385),true,true,false)
+		if not notices.has(id+"_main") or not notices.has(id+"_special"): return false
 	floor_index=1
 	hazards.clear()
 	environment_timer=0

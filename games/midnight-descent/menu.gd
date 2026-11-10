@@ -207,6 +207,7 @@ func add_action(caption: String, callback: Callable, locked: bool = false) -> Bu
 	return button
 
 func show_page(next: String) -> void:
+	if page!=next: audio.play("navigate")
 	page = next
 	for child in body.get_children():
 		body.remove_child(child)
@@ -380,6 +381,10 @@ func smoke_test() -> void:
 		get_tree().quit(11)
 		return
 	toggle_motion(true)
+	if not audio.smoke_test():
+		push_error("Descent sound bank regression failed")
+		get_tree().quit(20)
+		return
 	var simulation = preload("res://run_model.gd").new()
 	if not simulation.smoke_test():
 		push_error("Descent run model regression failed")
