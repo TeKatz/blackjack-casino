@@ -23,6 +23,7 @@ var player_light: PointLight2D
 var gate_light: PointLight2D
 var occluders: Array[LightOccluder2D] = []
 var last_room := -1
+var last_seed: int = -1
 var light_texture: GradientTexture2D
 
 func setup(value) -> void:
@@ -77,10 +78,11 @@ func rebuild_occluders() -> void:
 		add_child(node)
 		occluders.append(node)
 	last_room = model.room
+	last_seed = model.seed_value
 
 func update_view(dt: float) -> void:
 	clock += dt
-	if last_room != model.room or occluders.size() != model.walls.size():
+	if last_room != model.room or last_seed != model.seed_value or occluders.size() != model.walls.size():
 		rebuild_occluders()
 	var delta: Vector2 = model.player-previous_player
 	walking = delta.length_squared() > 0.05
@@ -92,6 +94,7 @@ func update_view(dt: float) -> void:
 	for i in range(torches.size()):
 		torches[i].energy = 0.75 + sin(clock*7.0+i*2.2)*0.1 + sin(clock*13+i)*0.04
 	player_light.position = model.player
+	player_light.color = Color("#ffd2d9") if model.invulnerable > 0.3 else Color("#d8caff")
 	gate_light.enabled = model.state == "exit"
 	for i in range(projectile_lights.size()):
 		var light := projectile_lights[i]
@@ -121,7 +124,7 @@ func _draw() -> void:
 			var size := Vector2(minf(64,arena.size.x-offset.x),minf(64,arena.size.y-offset.y))
 			if size.x <= 0 or size.y <= 0:
 				continue
-			var variant := (x*13+y*7+model.room*3)%4
+			var variant: int = (x*13+y*7+int(model.room)*3)%4
 			tile(variant,Rect2(arena.position+offset,size),size/2.0)
 	for x in range(19):
 		tile(4,Rect2(56+x*64,105,64,40))

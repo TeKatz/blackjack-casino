@@ -213,7 +213,12 @@ func draw_hud() -> void:
 		if index >= 0:
 			draw_texture_rect_region(PixelWorld.RELICS,Rect2(940+i*37,663,32,32),Rect2(index*24,0,24,24))
 	if run.state=="fight" and run.room==Model.ROOM_COUNT-1:
-		text_at(Vector2(460,122),tr_text("THE VAULT KEEPER","DER TRESORWÄCHTER"),18,Color("#ff91bd"))
+		for enemy in run.enemies:
+			if enemy.kind == "boss":
+				draw_rect(Rect2(437,106,404,37),Color("#21162b"))
+				text_at(Vector2(450,123),tr_text("THE VAULT KEEPER","DER TRESORWÄCHTER"),15,Color("#ff91bd"))
+				meter(Rect2(450,130,378,7),float(enemy.hp)/float(enemy.max_hp),Color("#e36b86"))
+				break
 
 func make_sound(kind: String) -> AudioStreamWAV:
 	var sample := AudioStreamWAV.new()
