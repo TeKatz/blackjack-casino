@@ -1,6 +1,8 @@
 extends Node2D
 ## Dedicated Godot gameplay scene; simulation is independent of rendering.
 const Model = preload("res://run_model.gd")
+const PixelWorld = preload("res://pixel_world.gd")
+var world = PixelWorld.new()
 const GOLD := Color("#efc987")
 const VIOLET := Color("#b38aff")
 const WHITE := Color("#f6edf9")
@@ -22,6 +24,9 @@ var last_interact := false
 func _ready() -> void:
 	german = "--language=de" in OS.get_cmdline_user_args()
 	run.begin(int(Time.get_ticks_usec()))
+	light_mask = 0
+	add_child(world)
+	world.setup(run)
 	audio = AudioStreamPlayer.new()
 	add_child(audio)
 	for key in ["swing","bolt","hit","hurt","kill","clear","relic"]:
@@ -63,6 +68,7 @@ func _process(dt: float) -> void:
 	if target != overlay_state:
 		overlay_state = target
 		rebuild_overlay()
+	world.update_view(dt)
 	queue_redraw()
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -89,46 +95,12 @@ func meter(rect: Rect2, ratio: float, color: Color) -> void:
 	draw_rect(rect, Color("#615273"), false, 1)
 
 func _draw() -> void:
-	draw_rect(Rect2(0,0,1280,720), Color("#0c0a16"))
-	draw_rect(Rect2(23,105,1234,542), Color("#151123"))
-	draw_rect(Rect2(24,106,1232,540), Color("#6b4e80"), false, 2)
-	var r: Rect2 = Model.ARENA
-	draw_rect(r, FLOOR)
-	for x in range(0, 19):
-		for y in range(0, 8):
-			var tile := Rect2(r.position + Vector2(x*64,y*64), Vector2(minf(64,r.size.x-x*64),minf(64,r.size.y-y*64)))
-			if tile.size.x <= 0 or tile.size.y <= 0: continue
-			var shade := Color("#251e35") if (x+y)%2==0 else Color("#201b2f")
-			draw_rect(tile.grow(-1), shade)
-			if (x*7+y*11)%13==0:
-				draw_line(tile.position+Vector2(10,6),tile.position+Vector2(34,28),Color("#393044"),1)
-	draw_rect(r, Color("#786083"), false, 3)
-	# Architecture and animated torchlight.
-	for x in [85.0, 400.0, 710.0, 1020.0, 1190.0]:
-		var torch := Vector2(x,132)
-		draw_rect(Rect2(torch-Vector2(17,20),Vector2(34,40)),Color("#3b304b"))
-		var flicker := 1.0+sin(clock*8+x)*0.08
-		for i in range(5,0,-1):
-			draw_circle(torch, i*13*flicker,Color(0.96,0.56,0.23,0.035))
-		draw_colored_polygon(PackedVector2Array([torch+Vector2(-7,5),torch+Vector2(-3,-16*flicker),torch+Vector2(7,3),torch+Vector2(0,12)]),GOLD)
-	for wall in run.walls:
-		draw_rect(wall.grow(6),Color("#100e1a"))
-		draw_rect(wall,Color("#493957"))
-		draw_rect(Rect2(wall.position,Vector2(wall.size.x,12)),Color("#776180"))
-		draw_rect(wall,Color("#9e7895"),false,2)
-		for i in range(1,3):
-			draw_line(wall.position+Vector2(i*28,12),wall.position+Vector2(i*28,wall.size.y),Color("#332940"),2)
+	if not is_instance_valid(world) or world.model == null:
+		return
 	var gate: Vector2 = Model.EXIT
-	draw_rect(Rect2(gate-Vector2(18,54),Vector2(42,108)),Color("#100d19"))
-	draw_rect(Rect2(gate-Vector2(18,54),Vector2(42,108)),GOLD if run.state=="exit" else Color("#574563"),false,3)
-	if run.state=="exit":
-		for i in range(4,0,-1):
-			draw_circle(gate,i*15+sin(clock*4)*3,Color(0.55,0.32,0.94,0.07))
-		draw_arc(gate,27,clock,clock+TAU*0.85,32,GOLD,3,true)
+	if run.state == "exit":
 		text_at(gate+Vector2(-86,76),tr_text("E  •  Descend","E  •  Absteigen"),16,GOLD)
-	else:
-		draw_line(gate+Vector2(-11,-42),gate+Vector2(17,42),Color("#594365"),4)
-	# Telegraphs render below actors.
+	# Attack telegraphs and projectiles remain above the pixel-world layer.
 	for enemy in run.enemies:
 		var pos: Vector2 = enemy.pos
 		if enemy.wind > 0:
@@ -146,8 +118,9 @@ func _draw() -> void:
 		draw_circle(pos,10,Color(color,0.17))
 		draw_circle(pos,5,color)
 	for enemy in run.enemies:
-		draw_enemy(enemy)
-	draw_player()
+		var pos: Vector2 = enemy.pos
+		var radius: float = enemy.r
+		meter(Rect2(pos+Vector2(-radius,-radius-19),Vector2(radius*2,5)),float(enemy.hp)/float(enemy.max_hp),Color("#e36b86"))
 	for effect in run.effects:
 		draw_effect(effect)
 	draw_hud()
@@ -157,6 +130,9 @@ func _draw() -> void:
 func run_scene_smoke() -> void:
 	# Exercise the actual scene and its overlay construction, not just the model.
 	await get_tree().process_frame
+	if not world.is_ready_for_smoke():
+		get_tree().quit(10)
+		return
 	run.begin(512)
 	run.player = Vector2(200,385)
 	run.enemies.clear()
@@ -184,61 +160,6 @@ func run_scene_smoke() -> void:
 	print("Midnight Descent gameplay scene smoke PASS")
 	get_tree().quit()
 
-func draw_player() -> void:
-	var pos: Vector2 = run.player
-	var dir: Vector2 = run.aim
-	var bob := sin(clock*12)*1.7
-	draw_ellipse_shadow(pos, 19)
-	if run.invulnerable>0:
-		draw_arc(pos,24,0,TAU,32,Color(0.65,0.82,1,0.7),2,true)
-	var cape := PackedVector2Array([pos+Vector2(-15,-9),pos+Vector2(12,-9),pos+Vector2(17,19),pos+Vector2(-20,23)])
-	draw_colored_polygon(cape,Color("#663a8e"))
-	draw_rect(Rect2(pos+Vector2(-10,4),Vector2(8,14)),Color("#9a88b3"))
-	draw_rect(Rect2(pos+Vector2(3,4),Vector2(8,14)),Color("#9a88b3"))
-	draw_rect(Rect2(pos+Vector2(-13,-12+bob),Vector2(26,25)),Color("#b6a9c8"))
-	draw_rect(Rect2(pos+Vector2(-12,-11+bob),Vector2(24,8)),Color("#e0d5ef"))
-	draw_circle(pos+Vector2(0,-15+bob),12,Color("#d8c7a4"))
-	draw_rect(Rect2(pos+Vector2(-12,-22+bob),Vector2(24,12)),Color("#5e577b"))
-	draw_rect(Rect2(pos+Vector2(-9,-15+bob),Vector2(18,3)),Color("#e6be7c"))
-	var sword_start := pos+dir*18
-	draw_line(sword_start-dir*4,sword_start+dir*29,Color("#f6e3bb"),5,true)
-	draw_line(sword_start+dir.orthogonal()*8,sword_start-dir.orthogonal()*8,GOLD,4,true)
-	draw_circle(pos+dir*37,3,WHITE)
-
-func draw_ellipse_shadow(pos: Vector2, radius: float) -> void:
-	draw_set_transform(pos+Vector2(0,radius*0.7),0,Vector2(1,0.42))
-	draw_circle(Vector2.ZERO,radius*1.25,Color(0,0,0,0.48))
-	draw_set_transform(Vector2.ZERO)
-
-func draw_enemy(enemy: Dictionary) -> void:
-	var pos: Vector2 = enemy.pos
-	var radius: float = enemy.r
-	var kind: String = enemy.kind
-	var color := Color("#b66f9c")
-	if kind=="caster": color=Color("#776ce0")
-	elif kind=="brute": color=Color("#a96555")
-	elif kind=="boss": color=Color("#9e427d")
-	if enemy.flash>0: color=WHITE
-	draw_ellipse_shadow(pos,radius)
-	if kind=="boss":
-		draw_circle(pos,radius+8,Color(0.68,0.18,0.54,0.18))
-		draw_arc(pos,radius+7,clock,clock+TAU*0.85,40,GOLD,2,true)
-	var points := PackedVector2Array()
-	for i in range(8):
-		var angle := TAU*float(i)/8
-		points.append(pos+Vector2.from_angle(angle)*(radius if i%2==0 else radius*0.76))
-	draw_colored_polygon(points,color)
-	draw_arc(pos,radius*0.68,0,TAU,20,Color("#3c244e"),3,true)
-	var facing := pos.direction_to(run.player)
-	var eye := pos+facing*radius*0.45
-	draw_circle(eye, maxf(3,radius*0.16),Color("#ffe0a2"))
-	if kind=="caster":
-		draw_arc(pos,radius+5,0,TAU,24,Color("#aa9dff"),2,true)
-	if kind=="brute" or kind=="boss":
-		draw_line(pos+Vector2(-radius,-radius*0.6),pos+Vector2(-radius*0.4,-radius*1.3),GOLD,5,true)
-		draw_line(pos+Vector2(radius,-radius*0.6),pos+Vector2(radius*0.4,-radius*1.3),GOLD,5,true)
-	meter(Rect2(pos+Vector2(-radius,-radius-14),Vector2(radius*2,5)),float(enemy.hp)/float(enemy.max_hp),Color("#e36b86"))
-
 func draw_effect(fx: Dictionary) -> void:
 	var alpha := float(fx.time)/float(fx.max)
 	var pos: Vector2 = fx.pos
@@ -256,6 +177,14 @@ func draw_effect(fx: Dictionary) -> void:
 				draw_line(pos+ray*(8+35*(1-alpha)),pos+ray*(15+42*(1-alpha)),color,2,true)
 
 func draw_hud() -> void:
+	draw_rect(Rect2(0,0,1280,103),Color("#171322"))
+	draw_rect(Rect2(0,651,1280,69),Color("#171322"))
+	draw_rect(Rect2(18,12,405,82),Color("#211b30"))
+	draw_rect(Rect2(18,12,405,82),Color("#6b526e"),false,1)
+	draw_rect(Rect2(440,12,365,82),Color("#211b30"))
+	draw_rect(Rect2(440,12,365,82),Color("#6b526e"),false,1)
+	draw_rect(Rect2(823,12,439,82),Color("#211b30"))
+	draw_rect(Rect2(823,12,439,82),Color("#6b526e"),false,1)
 	text_at(Vector2(32,32),tr_text("THE FORGOTTEN VAULT","DAS VERGESSENE GEWÖLBE"),16,GOLD)
 	text_at(Vector2(32,61),tr_text("WARDEN","WÄCHTER"),24,WHITE)
 	meter(Rect2(32,72,274,13),run.hp/run.max_hp,Color("#e26483"))
@@ -272,9 +201,17 @@ func draw_hud() -> void:
 	text_at(Vector2(1090,59),"ESC  "+tr_text("Pause","Pause"),16,MUTED)
 	draw_line(Vector2(30,656),Vector2(1250,656),Color("#5a456d"),1)
 	text_at(Vector2(32,682),tr_text("WASD  Move    LMB  Sword    RMB  Bolt    SPACE  Dash    E  Gate","WASD  Bewegen    LMT  Schwert    RMT  Geschoss    LEERTASTE  Dash    E  Tor"),16,WHITE)
-	text_at(Vector2(895,681),tr_text("DASH","DASH"),14,GOLD)
-	meter(Rect2(951,669,115,12),1.0-run.dash_timer/run.dash_cooldown,VIOLET)
-	text_at(Vector2(1090,682),tr_text("RELICS","RELIKTE")+"  %d" % run.relics.size(),16,GOLD)
+	text_at(Vector2(32,704),tr_text("SPECIAL","SPEZIAL"),12,GOLD)
+	meter(Rect2(110,694,106,9),1.0-run.bolt_timer/0.62,Color("#72cadf"))
+	text_at(Vector2(234,704),"DASH",12,GOLD)
+	meter(Rect2(284,694,100,9),1.0-run.dash_timer/run.dash_cooldown,VIOLET)
+	text_at(Vector2(412,704),tr_text("ACTIVE ITEM: EMPTY","AKTIVES ITEM: LEER"),12,MUTED)
+	text_at(Vector2(850,682),tr_text("RELICS","RELIKTE")+"  %d" % run.relics.size(),16,GOLD)
+	var ids := ["blade","heart","boots","focus","ward","fury"]
+	for i in range(mini(run.relics.size(),8)):
+		var index := ids.find(run.relics[i])
+		if index >= 0:
+			draw_texture_rect_region(PixelWorld.RELICS,Rect2(940+i*37,663,32,32),Rect2(index*24,0,24,24))
 	if run.state=="fight" and run.room==Model.ROOM_COUNT-1:
 		text_at(Vector2(460,122),tr_text("THE VAULT KEEPER","DER TRESORWÄCHTER"),18,Color("#ff91bd"))
 
