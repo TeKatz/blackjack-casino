@@ -131,7 +131,7 @@ func enter_room() -> void:
 	service_used = node.cleared
 	build_room_layout(node)
 	if node.cleared:
-		state = "exit"
+		state = "route"
 		return
 	if room_kind in ["treasure","shop","event","shrine","secret"]:
 		state = "service"
@@ -249,7 +249,8 @@ func service_action(choice: int) -> bool:
 func finish_room() -> void:
 	dungeon.nodes[room].cleared=true
 	service_used=true
-	state="exit"
+	# Non-combat services and their relic selections return directly to the map.
+	state="route" if room_kind in ["treasure","shop","event","shrine","secret"] else "exit"
 
 
 func spawn_enemy(kind: String, pos: Vector2) -> void:
@@ -673,8 +674,14 @@ func smoke_test() -> bool:
 	player=EXIT
 	if not next_room() or not travel(2) or state!="service": return false
 	if not service_action(0) or not choose_relic(0): return false
-	player=EXIT
-	if not next_room() or not travel(0) or state!="exit": return false
+	if state!="route" or not travel(0) or state!="route": return false
+	if not travel(2) or state!="route" or service_action(1): return false
+	# All non-combat services complete directly on the route map.
+	for pair in [[4,3],[5,1],[6,0],[8,1]]:
+		room=pair[0]
+		enter_room()
+		if state!="service" or not service_action(pair[1]) or state!="route": return false
+		if service_action(pair[1]): return false
 	room=9
 	enter_room()
 	for unit in enemies: unit.hp=0

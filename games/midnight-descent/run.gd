@@ -6,6 +6,12 @@ const Content = preload("res://content.gd")
 const Progress = preload("res://progress.gd")
 const RouteMap = preload("res://route_map.gd")
 const UI = preload("res://ui_theme.gd")
+const Atmosphere = preload("res://overlay_atmosphere.gd")
+var modal_root: Control
+var modal_tween: Tween
+var modal_room := -1
+var modal_floor := -1
+var input_grace := 0.0
 var progress = Progress.new()
 var smoke_mode := false
 var last_active := false
@@ -62,7 +68,7 @@ func tr_text(en: String, de: String) -> String:
 	return de if german else en
 
 func _physics_process(dt: float) -> void:
-	if paused or run.state in ["reward","victory","defeat","route","service"]:
+	if paused or input_grace>0 or run.state in ["reward","victory","defeat","route","service"]:
 		return
 	var direction := Vector2(float(Input.is_physical_key_pressed(KEY_D) or Input.is_physical_key_pressed(KEY_RIGHT))-float(Input.is_physical_key_pressed(KEY_A) or Input.is_physical_key_pressed(KEY_LEFT)), float(Input.is_physical_key_pressed(KEY_S) or Input.is_physical_key_pressed(KEY_DOWN))-float(Input.is_physical_key_pressed(KEY_W) or Input.is_physical_key_pressed(KEY_UP)))
 	var dash := Input.is_physical_key_pressed(KEY_SPACE)
@@ -81,13 +87,16 @@ func _physics_process(dt: float) -> void:
 
 func _process(dt: float) -> void:
 	clock += dt
+	input_grace=maxf(0,input_grace-dt)
 	shake = move_toward(shake, 0, dt*30)
 	if run.state in ["victory","defeat"] and not run.settled:
 		progress.settle(run)
 		if not smoke_mode: progress.save()
 	var target: String = "pause" if paused else run.state
-	if target != overlay_state:
+	if target != overlay_state or (target=="route" and (modal_room!=run.room or modal_floor!=run.floor_index)):
 		overlay_state = target
+		modal_room=run.room
+		modal_floor=run.floor_index
 		rebuild_overlay()
 	world.update_view(dt)
 	displayed_hp = move_toward(displayed_hp,run.hp,dt*52.0)
@@ -99,7 +108,7 @@ func _process(dt: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
-		if run.state in ["fight","exit"]:
+		if run.state in ["fight","exit","route","service"]:
 			paused = not paused
 			get_viewport().set_input_as_handled()
 	elif event is InputEventKey and event.pressed and not event.echo and run.state == "reward":
@@ -191,8 +200,16 @@ func run_scene_smoke() -> void:
 		get_tree().quit(8)
 		return
 	_process(0.0)
-	if overlay_state!="route" or overlay.get_child_count()==0 or not run.travel(1):
+	if overlay_state!="route" or overlay.get_child_count()==0 or not run.travel(2):
 		get_tree().quit(8)
+		return
+	_process(0.0)
+	if overlay_state!="service" or not run.service_action(1):
+		get_tree().quit(15)
+		return
+	_process(0.0)
+	if overlay_state!="route" or run.room!=2:
+		get_tree().quit(16)
 		return
 	paused = true
 	_process(0.0)
@@ -249,7 +266,7 @@ func hud_panel(rect: Rect2, accent: Color = GOLD) -> void:
 func ability_slot(x: float, icon_index: int, key: String, name: String, ratio: float, color: Color) -> void:
 	var rect := Rect2(x,659,156,53)
 	hud_panel(rect,color)
-	draw_texture_rect_region(PixelWorld.RELICS,Rect2(x+8,669,32,32),Rect2(icon_index*24,0,24,24))
+	draw_texture_rect_region(PixelWorld.RELICS,Rect2(x+8,669,32,32),Rect2(icon_index*48,0,48,48))
 	text_at(Vector2(x+47,677),key+"  "+name,12,WHITE)
 	meter(Rect2(x+47,686,96,8),ratio,color)
 	if ratio >= 0.99:
@@ -302,7 +319,7 @@ func draw_hud() -> void:
 		draw_rect(rect,Color("#695471"),false,1)
 		if i<run.relics.size():
 			var index: int = Content.RELICS[run.relics[i]][4]
-			if index>=0: draw_texture_rect_region(PixelWorld.RELICS,rect,Rect2(index*24,0,24,24))
+			if index>=0: draw_texture_rect_region(PixelWorld.RELICS,rect,Rect2(index*48,0,48,48))
 	if run.state=="fight" and run.room_kind=="boss":
 		for enemy in run.enemies:
 			if enemy.kind=="boss":
@@ -394,8 +411,7 @@ func room_name(kind: String) -> String:
 
 func use_service(choice: int) -> void:
 	if run.service_action(choice):
-		overlay_state=""
-		rebuild_overlay()
+		play_sound("relic")
 
 func show_route_map(column: VBoxContainer) -> void:
 	add_label(column,tr_text("DUNGEON MAP","DUNGEON-KARTE")+"  •  "+str(run.floor_index+1)+" / 2",30,GOLD)
@@ -426,40 +442,91 @@ func show_route_map(column: VBoxContainer) -> void:
 		button.tooltip_text=tr_text("Current room","Aktueller Raum") if i==run.room else (tr_text("Travel to this room","Diesen Raum betreten") if not button.disabled else tr_text("Not connected to current room","Nicht direkt verbunden"))
 	if run.room_kind=="boss" and run.floor_index==0 and run.dungeon.nodes[run.room].cleared:
 		add_button(column,tr_text("Descend to the Abyss Garden","Abstieg in den Abgrundgarten"),func(): run.descend())
-	add_button(column,tr_text("Close map","Karte schließen"),func(): run.state="exit")
+	if run.room_kind in ["fight","elite","boss"] and run.player.distance_to(Model.EXIT)<=75:
+		add_button(column,tr_text("Close map","Karte schließen"),func(): run.state="exit")
+	else:
+		add_button(column,tr_text("Pause expedition","Expedition pausieren"),func(): paused=true)
+
+func disable_modal_input(node: Node) -> void:
+	if node is Control:
+		node.mouse_filter=Control.MOUSE_FILTER_IGNORE
+		node.focus_mode=Control.FOCUS_NONE
+	if node is BaseButton: node.disabled=true
+	for child in node.get_children(): disable_modal_input(child)
+
+func modal_accent() -> Color:
+	match overlay_state:
+		"route": return Color("#91a9e8")
+		"service": return UI.ROOM_COLORS[run.room_kind]
+		"victory": return Color("#f1cc7e")
+		"defeat": return Color("#e67c9a")
+		"pause": return Color("#a8a0c8")
+	return GOLD
+
+func modal_fill() -> Color:
+	match overlay_state:
+		"route": return Color("#151d33")
+		"service": return Color("#202337") if run.room_kind=="shop" else Color("#211b30")
+		"victory": return Color("#312431")
+		"defeat": return Color("#2e1828")
+		"pause": return Color("#201c30")
+	return Color("#23182e")
 
 func rebuild_overlay() -> void:
-	for child in overlay.get_children():
-		overlay.remove_child(child)
-		child.queue_free()
+	if is_instance_valid(modal_tween): modal_tween.kill()
+	if is_instance_valid(modal_root):
+		var previous: Control=modal_root
+		disable_modal_input(previous)
+		if smoke_mode:
+			previous.free()
+		else:
+			var fade:=create_tween()
+			fade.tween_property(previous,"modulate:a",0.0,0.16)
+			fade.tween_callback(previous.queue_free)
+		modal_root=null
 	if overlay_state not in ["pause","reward","victory","defeat","route","service"]:
+		input_grace=0.18 if not smoke_mode else 0.0
 		return
-	var shade := ColorRect.new()
-	shade.color = Color(0.025,0.02,0.05,0.88)
+	var accent: Color=modal_accent()
+	modal_root=Control.new()
+	modal_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	modal_root.mouse_filter=Control.MOUSE_FILTER_IGNORE
+	overlay.add_child(modal_root)
+	var shade:=ColorRect.new()
+	shade.color=Color(0.02,0.012,0.04,0.63)
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	overlay.add_child(shade)
-	var center := CenterContainer.new()
+	modal_root.add_child(shade)
+	var atmosphere:=Atmosphere.new()
+	atmosphere.accent=accent
+	atmosphere.mode=overlay_state
+	modal_root.add_child(atmosphere)
+	var center:=CenterContainer.new()
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	overlay.add_child(center)
-	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(940 if overlay_state in ["reward","route"] else 680,0)
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color("#191325")
-	style.border_color = GOLD
-	style.set_border_width_all(2)
+	center.mouse_filter=Control.MOUSE_FILTER_IGNORE
+	modal_root.add_child(center)
+	var panel:=PanelContainer.new()
+	panel.custom_minimum_size=Vector2(940 if overlay_state in ["reward","route"] else 680,0)
+	var style:=UI.panel(modal_fill(),accent,24)
 	style.set_corner_radius_all(14)
-	style.shadow_color = Color(0,0,0,0.65)
-	style.shadow_size = 18
-	style.shadow_offset = Vector2(0,8)
-	style.content_margin_left = 28
-	style.content_margin_right = 28
-	style.content_margin_top = 24
-	style.content_margin_bottom = 24
+	style.border_width_top=3
+	style.shadow_size=24
+	style.shadow_offset=Vector2(0,12)
 	panel.add_theme_stylebox_override("panel",style)
 	center.add_child(panel)
-	var column := VBoxContainer.new()
-	column.add_theme_constant_override("separation",14)
+	var column:=VBoxContainer.new()
+	column.add_theme_constant_override("separation",12)
 	panel.add_child(column)
+	var crest:=Label.new()
+	crest.text="M I D N I G H T   D E S C E N T"
+	crest.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+	crest.add_theme_font_size_override("font_size",11)
+	crest.add_theme_color_override("font_color",accent)
+	column.add_child(crest)
+	if not smoke_mode:
+		modal_root.modulate.a=0.0
+		modal_tween=create_tween()
+		modal_tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		modal_tween.tween_property(modal_root,"modulate:a",1.0,0.24)
 	match overlay_state:
 		"route":
 			show_route_map(column)
@@ -472,7 +539,8 @@ func rebuild_overlay() -> void:
 			service_icon.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
 			column.add_child(service_icon)
 			add_label(column,room_name(run.room_kind).to_upper(),30,UI.ROOM_COLORS[run.room_kind])
-			add_label(column,tr_text("Shards","Splitter")+"  "+str(run.shards),18,MUTED)
+			add_label(column,tr_text("Shards","Splitter")+"  "+str(run.shards)+"   •   "+tr_text("HP","LP")+"  %d/%d" % [run.hp,run.max_hp],18,MUTED)
+			add_label(column,tr_text("Your choice returns you directly to the map.","Nach deiner Wahl kehrst du direkt zur Karte zurück."),14,UI.ROOM_COLORS[run.room_kind])
 			match run.room_kind:
 				"treasure","secret":
 					add_button(column,tr_text("Choose a relic","Relikt wählen"),func(): use_service(0))
@@ -492,8 +560,8 @@ func rebuild_overlay() -> void:
 					add_button(column,tr_text("Recover 40 HP","40 LP regenerieren"),func(): use_service(0))
 					add_button(column,tr_text("Gain 10 max HP","10 maximale LP erhalten"),func(): use_service(1))
 		"reward":
-			add_label(column,tr_text("ROOM CLEARED","RAUM GESÄUBERT"),30,GOLD)
-			add_label(column,tr_text("Choose a relic. Recover 12 HP and open the route map.","Wähle ein Relikt. Heile 12 LP und öffne die Karte."),17,MUTED)
+			add_label(column,tr_text("CHOOSE YOUR RELIC","WÄHLE DEIN RELIKT") if run.room_kind in ["treasure","shop","event","secret"] else tr_text("ROOM CLEARED","RAUM GESÄUBERT"),30,GOLD)
+			add_label(column,tr_text("Choose a relic • recover 12 HP • continue your expedition","Wähle ein Relikt • heile 12 LP • setze deine Expedition fort"),16,MUTED)
 			var cards:=HBoxContainer.new()
 			cards.add_theme_constant_override("separation",14)
 			column.add_child(cards)
@@ -504,18 +572,25 @@ func rebuild_overlay() -> void:
 				var rarity: int=Content.rarity(id)
 				var color: Color=UI.RARITY_COLORS[rarity]
 				var card:=PanelContainer.new()
-				card.custom_minimum_size=Vector2(278,270)
+				card.custom_minimum_size=Vector2(278,290)
 				card.size_flags_horizontal=Control.SIZE_EXPAND_FILL
-				card.add_theme_stylebox_override("panel",UI.panel(Color("#241c34"),color,14))
+				var card_style:=UI.panel(Color("#211a30").lerp(color,0.09+rarity*0.035),color,14)
+				card_style.shadow_size=12
+				card_style.shadow_offset=Vector2(0,7)
+				card_style.border_width_top=4
+				card.add_theme_stylebox_override("panel",card_style)
 				cards.add_child(card)
 				var stack:=VBoxContainer.new()
 				stack.add_theme_constant_override("separation",10)
 				card.add_child(stack)
 				var rarity_label: String =["Common","Rare","Epic","Legendary"][rarity] if not german else ["Gewöhnlich","Selten","Episch","Legendär"][rarity]
-				add_label(stack,rarity_label.to_upper(),13,color)
+				var ribbon:=PanelContainer.new()
+				ribbon.add_theme_stylebox_override("panel",UI.panel(color.darkened(0.78),color.darkened(0.25),5))
+				stack.add_child(ribbon)
+				add_label(ribbon,rarity_label.to_upper(),13,color)
 				var icon:=TextureRect.new()
 				icon.texture=UI.atlas(UI.RELICS,int(item[4]))
-				icon.custom_minimum_size=Vector2(0,96)
+				icon.custom_minimum_size=Vector2(0,112)
 				icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE
 				icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 				icon.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
@@ -527,6 +602,10 @@ func rebuild_overlay() -> void:
 				stack.add_child(spacer)
 				var button:=add_button(stack,"%d  •  " % (i+1)+tr_text("Choose","Wählen"),func(): select_relic(index))
 				UI.style_button(button,color)
+				button.mouse_entered.connect(func(): animate_relic_card(card,card_style,color,true))
+				button.mouse_exited.connect(func(): animate_relic_card(card,card_style,color,false))
+				button.focus_entered.connect(func(): animate_relic_card(card,card_style,color,true))
+				button.focus_exited.connect(func(): animate_relic_card(card,card_style,color,false))
 		"pause":
 			add_label(column,tr_text("EXPEDITION PAUSED","EXPEDITION PAUSIERT"),30,GOLD)
 			add_button(column,tr_text("Continue","Fortsetzen"),func(): paused=false)
@@ -540,6 +619,13 @@ func rebuild_overlay() -> void:
 			if not progress.save_ok: add_label(column,tr_text("Save failed — progress not saved.","Speicherfehler — Fortschritt nicht gespeichert."),16,Color("#ff839a"))
 			add_button(column,tr_text("New expedition","Neue Expedition"),restart)
 			add_button(column,tr_text("Main menu","Hauptmenü"),return_to_menu)
+
+func animate_relic_card(card: Control, style: StyleBoxFlat, color: Color, hovered: bool) -> void:
+	if not is_instance_valid(card): return
+	var tween:=create_tween().set_parallel(true)
+	tween.tween_property(style,"shadow_color",Color(color,0.45) if hovered else Color(0,0,0,0.6),0.16)
+	tween.tween_property(style,"bg_color",Color("#211a30").lerp(color,0.20 if hovered else 0.10),0.16)
+	tween.tween_property(card,"modulate",Color(1.06,1.06,1.06) if hovered else Color.WHITE,0.16)
 
 func restart() -> void:
 	paused = false

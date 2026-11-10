@@ -4,7 +4,7 @@ const Model = preload("res://run_model.gd")
 const TILES = preload("res://art/pixel/vault_tiles.svg")
 const GARDEN = preload("res://art/pixel/garden_tiles.svg")
 const TORCH = preload("res://art/pixel/torch.svg")
-const RELICS = preload("res://art/pixel/relics.svg")
+const RELICS = preload("res://art/pixel/relics.png")
 const ACTORS = {
 	"warden": preload("res://art/pixel/warden.svg"),
 	"dealer": preload("res://art/pixel/dealer.svg"),
@@ -275,4 +275,4 @@ func draw_actor(enemy: Dictionary) -> void:
 	sprite(kind,pos,direction,frame,size,tint)
 
 func is_ready_for_smoke() -> bool:
-	return TILES.get_width() == 256 and RELICS.get_width() == 960 and ACTORS["dealer"].get_height() == 128 and ACTORS["warden"].get_height() == 128 and torches.size() == 5 and side_lights.size() == 2 and ambient != null and boss_light != null and torches[0].range_layer_min == -1 and occluders.size() == model.walls.size()
+	return TILES.get_width() == 256 and RELICS.get_width() == 1920 and RELICS.get_height() == 48 and ACTORS["dealer"].get_height() == 128 and ACTORS["warden"].get_height() == 128 and torches.size() == 5 and side_lights.size() == 2 and ambient != null and boss_light != null and torches[0].range_layer_min == -1 and occluders.size() == model.walls.size()

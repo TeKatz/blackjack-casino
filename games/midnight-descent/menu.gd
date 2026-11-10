@@ -158,7 +158,7 @@ func codex_entry(index: int, text: String) -> void:
 	row.add_theme_constant_override("separation",10)
 	body.add_child(row)
 	var icon := TextureRect.new()
-	icon.texture = atlas_icon(PixelWorld.RELICS,Rect2(index*24,0,24,24))
+	icon.texture = UI.atlas(UI.RELICS,index)
 	icon.custom_minimum_size = Vector2(40,40)
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED

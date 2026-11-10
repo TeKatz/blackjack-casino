@@ -1,13 +1,14 @@
 extends RefCounted
 const ICONS = preload("res://art/pixel/ui_icons.svg")
-const RELICS = preload("res://art/pixel/relics.svg")
+const RELICS = preload("res://art/pixel/relics.png")
 const RARITY_COLORS = [Color("#b7b8ca"),Color("#63d2b1"),Color("#bd94f2"),Color("#f6c66c")]
 const ROOM_ICONS = {"fight":0,"elite":1,"treasure":2,"shop":3,"event":4,"shrine":5,"secret":6,"boss":7,"?":4}
 const ROOM_COLORS = {"fight":Color("#c1a6df"),"elite":Color("#ef8b88"),"treasure":Color("#f2ca79"),"shop":Color("#72d4bc"),"event":Color("#d4a1ff"),"shrine":Color("#9ad9b1"),"secret":Color("#d7a5ce"),"boss":Color("#f17b9b"),"?":Color("#a9a1b9")}
 static func atlas(texture: Texture2D, index: int) -> AtlasTexture:
 	var icon := AtlasTexture.new()
 	icon.atlas=texture
-	icon.region=Rect2(index*24,0,24,24)
+	var cell: int=48 if texture==RELICS else 24
+	icon.region=Rect2(index*cell,0,cell,cell)
 	return icon
 static func panel(fill: Color, edge: Color, margin: int = 12) -> StyleBoxFlat:
 	var s:=StyleBoxFlat.new()
