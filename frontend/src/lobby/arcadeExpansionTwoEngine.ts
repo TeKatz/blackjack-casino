@@ -87,10 +87,11 @@ export function selectPrism(run:PrismRun,c:number,r:number):ExpansionTwoEvent{
  run.stage++;run.transition='clear';run.transitionClock=2.15;return 'score';
 }
 export type MinerRock={x:number;y:number;r:number;ore:number;grade:number;flash:number};
+export type MinerDrone={x:number;y:number;vx:number;vy:number;r:number};
 export type MinerRun=Base&{kind:'meteor-miner';x:number;y:number;vx:number;vy:number;
  rocks:MinerRock[];oxygen:number;hull:number;invincible:number;cargo:number;
  cargoValue:number;capacity:number;mineIndex:number;mineProgress:number;
- atBase:boolean;deposits:number;mining:boolean};
+ atBase:boolean;deposits:number;mining:boolean;drones:MinerDrone[]};
 function minerRock(run:MinerRun):MinerRock{
  for(let attempts=0;attempts<100;attempts++){
   const x=245+random(run)*630,y=75+random(run)*378;
@@ -252,7 +253,7 @@ export function createExpansionTwoRun(kind:ExpansionTwoId,seed=0x297b51cd):Expan
  case 'meteor-miner':{
   const run:MinerRun={...base,kind,x:125,y:422,vx:0,vy:0,rocks:[],
    oxygen:79,hull:3,invincible:0,cargo:0,cargoValue:0,capacity:6,
-   mineIndex:-1,mineProgress:0,atBase:true,deposits:0,mining:false};
+   mineIndex:-1,mineProgress:0,atBase:true,deposits:0,mining:false,drones:[]};
   for(let i=0;i<9;i++)run.rocks.push(minerRock(run));
   return run;
  }
@@ -312,13 +313,13 @@ function minerStep(run:MinerRun,dt:number,holding:boolean,controls:ExpansionTwoC
  run.x=clamp(run.x+run.vx*dt,24,W-24);
  run.y=clamp(run.y+run.vy*dt,40,H-30);
  run.invincible=Math.max(0,run.invincible-dt);
- run.oxygen=Math.max(0,run.oxygen-dt);
+ run.oxygen=Math.max(0,run.oxygen-dt*(1.32+run.deposits*.26));
  if(run.oxygen<=0){run.over=true;return 'fail';}
  for(const rock of run.rocks){
   rock.flash=Math.max(0,rock.flash-dt);
   const dist=Math.hypot(run.x-rock.x,run.y-rock.y);
   if(dist<rock.r+15){
-   if(run.invincible===0&&Math.hypot(run.vx,run.vy)>115){
+   if(run.invincible===0&&Math.hypot(run.vx,run.vy)>85){
     run.hull--;run.invincible=1.25;
     if(run.hull<=0){run.over=true;return 'fail';}
    }
@@ -330,12 +331,33 @@ function minerStep(run:MinerRun,dt:number,holding:boolean,controls:ExpansionTwoC
  }
  run.atBase=Math.hypot(run.x-115,run.y-435)<90;
  if(run.atBase){
-  run.oxygen=Math.min(80,run.oxygen+dt*21);
+  run.oxygen=Math.min(80,run.oxygen+dt*14);
   if(run.cargo>0){
    run.score+=run.cargoValue*80+run.cargo*20;
    run.cargo=0;run.cargoValue=0;run.deposits++;
-   run.capacity=Math.min(9,6+Math.floor(run.deposits/3));
+   run.capacity=Math.min(8,6+Math.floor(run.deposits/4));
+   // Security drones appear after the first successful delivery. Unlike
+   // cosmetic asteroids they pursue the player and have true collision.
+   const targetCount=Math.min(4,run.deposits);
+   while(run.drones.length<targetCount){
+    const n=run.drones.length;
+    run.drones.push({x:755-(n%2)*145,y:112+n*82,vx:0,vy:0,r:13+n%2*3});
+   }
    return 'score';
+  }
+ }
+ // Drones chase outside the protected base ring; an occupied drone has to
+ // be dodged, and cannot repeatedly damage the ship during invulnerability.
+ for(const drone of run.drones){
+  const dx=run.x-drone.x,dy=run.y-drone.y,d=Math.max(1,Math.hypot(dx,dy));
+  const speed=55+Math.min(70,run.deposits*9);
+  drone.vx+=(dx/d*speed-drone.vx)*dt*1.8;
+  drone.vy+=(dy/d*speed-drone.vy)*dt*1.8;
+  drone.x=clamp(drone.x+drone.vx*dt,230,W-35);
+  drone.y=clamp(drone.y+drone.vy*dt,52,H-35);
+  if(!run.atBase&&run.invincible<=0&&d<drone.r+16){
+   run.hull--;run.invincible=1.55;run.vx+=(dx/d)*165;run.vy+=(dy/d)*165;
+   if(run.hull<=0){run.over=true;return 'fail';}
   }
  }
  run.mining=holding&&!run.atBase&&run.cargo<run.capacity;
