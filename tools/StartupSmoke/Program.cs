@@ -579,6 +579,7 @@ internal static class Program
             + "&&document.querySelector('.roulette-spin:disabled')"
             + "&&!document.querySelector('.lobby-hero')&&!document.querySelector('.lobby-nav'))",
             "Roulette did not open its React/PixiJS table with all 37 pockets and high-limit chips.");
+        await WaitFor("(()=>{const s=document.querySelector('.roulette-spin'),w=document.querySelector('.roulette-wheel'),r=document.querySelector('.roulette-settlement');return Boolean(s&&w&&r&&document.documentElement.scrollHeight<=innerHeight+1&&s.getBoundingClientRect().bottom<=innerHeight&&r.getBoundingClientRect().bottom<=innerHeight&&w.getBoundingClientRect().top>=0)})()", "Roulette must fit its wheel, settlement and spin controls in the viewport without scrolling.");
 
         ModernWebViewBootstrapSmoke.RequireHardened(web, "Roulette");
         using (var capture=File.Create(Path.Combine(output,"roulette-webview2-live.png")))
