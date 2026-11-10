@@ -8,6 +8,7 @@ namespace BlackjackCasino.Desktop;
 public partial class MainWindow
 {
     private Process? descentProcess;
+    private bool descentClosing;
 
     private void OpenMidnightDescent()
     {
@@ -35,6 +36,7 @@ public partial class MainWindow
         {
             var process = Process.Start(start) ?? throw new InvalidOperationException("Godot did not start.");
             descentProcess = process;
+            SyncHostMusic();
             WindowState = WindowState.Minimized;
             IsEnabled = false;
             // Wait asynchronously on the UI dispatcher; no engine calls cross WebView2.
@@ -48,6 +50,17 @@ public partial class MainWindow
         }
     }
 
+    private void StopMidnightDescent()
+    {
+        descentClosing = true;
+        try
+        {
+            if (descentProcess is { HasExited: false } process) process.Kill();
+        }
+        catch (InvalidOperationException) { }
+        catch (System.ComponentModel.Win32Exception) { }
+    }
+
     private async Task RestoreAfterDescentAsync(Process process, WindowState previousState)
     {
         try { await process.WaitForExitAsync(); }
@@ -55,12 +68,13 @@ public partial class MainWindow
         {
             descentProcess = null;
             process.Dispose();
-            if (IsLoaded)
+            if (!descentClosing && IsLoaded)
             {
                 IsEnabled = true;
                 WindowState = previousState == WindowState.Minimized ? WindowState.Normal : previousState;
                 Activate();
                 modernLobby?.Refresh();
+                SyncHostMusic();
             }
         }
     }

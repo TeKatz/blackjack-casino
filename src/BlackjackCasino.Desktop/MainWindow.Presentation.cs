@@ -18,7 +18,7 @@ public partial class MainWindow
 
     private void SyncHostMusic()
     {
-        bool hostAllowed = !KniffelPageOpen && !ModernDiceOpen &&
+        bool hostAllowed = descentProcess is null && !KniffelPageOpen && !ModernDiceOpen &&
             !ModernLoungeOpen && !ModernReelsOpen && !ModernNineLivesOpen && !ModernNeonVaultOpen &&
             (embeddedGameShell is null || keepHostMusicForEmbeddedGame);
         hostMusic.Sync(HostMusicSettings, hostAllowed, lobby?.IsVisible == true && hostAllowed);
@@ -36,6 +36,7 @@ public partial class MainWindow
 
     private void PresentationClosed(object? sender, EventArgs e)
     {
+        StopMidnightDescent();
         ShutdownVaultFeature();
         ShutdownProgressionFeature();
         hostMusic.Dispose();

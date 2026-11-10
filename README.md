@@ -21,6 +21,7 @@ The current migration repairs and device acceptance checks are documented in [Mi
 | **Midnight Merge** | Collection and combination gameplay with persistent orders |
 | **Arcade Games** | Twenty offline skill minigames, spanning endless four-key rhythm, racing, stealth, mining, optical puzzles, circuits and timing; independent high scores and per-game challenges |
 | **Tales from the Backroom** | Branching adventures and investigations, including *Dead Man's Hand* |
+| **Midnight Descent** | Standalone Godot 2D action roguelite foundation: interactive menu, character preview, Codex and display settings; combat not yet available |
 
 A shared virtual bankroll connects the wagering games. The wider progression system includes experience, Prestige, Seasons, challenges, cosmetic Coins, the Collector's Album, a cosmetic shop and the Casino Vault. Casino Empire maintains a separate construction economy.
 

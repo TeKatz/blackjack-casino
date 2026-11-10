@@ -37,4 +37,6 @@ Invoke-Godot @("--headless", "--path", $project, "--export-release", "Windows De
 foreach ($file in @("MidnightDescent.exe", "MidnightDescent.pck")) {
     if (!(Test-Path (Join-Path $output $file))) { throw "Missing Godot export: $file" }
 }
+Copy-Item (Join-Path $project "licenses/GODOT-LICENSE.txt") $output -Force
+Copy-Item (Join-Path $project "licenses/GODOT-COPYRIGHT.txt") $output -Force
 Write-Host "Midnight Descent exported to $output"
