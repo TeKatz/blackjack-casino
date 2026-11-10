@@ -48,7 +48,7 @@ public partial class MainWindow
             SetModernLobbyLanguage, Close, OnModernLobbyStateChanged,
             GetModernUpdateSnapshot, SetModernUpdateChannel,
             () => CheckForUpdatesAsync(silent: false), InstallUpdateAsync,
-            ChangeModernLobbyPresentation, ModernRouletteSpin);
+            ChangeModernLobbyPresentation);
 
         // Replace the legacy WPF artwork *before* WebView2 starts. Never display
         // the old lobby during navigation or while React is still loading.

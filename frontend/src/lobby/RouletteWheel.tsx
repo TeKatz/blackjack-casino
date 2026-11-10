@@ -16,7 +16,8 @@ export function RouletteWheel({number,spinId,motion,onDone}:{number:number|null;
     initialized=true;if(disposed){app.destroy(true,{children:true});return;}
     const root=new Container();root.position.set(260,260);app.stage.addChild(root);
     const base=new Graphics();
-    base.circle(0,0,250).fill(0x17110e).circle(0,0,246).stroke({color:0x8d5126,width:7}).circle(0,0,231).fill(0x492314).circle(0,0,224).stroke({color:0xe5b96a,width:3}).circle(0,0,214).fill(0x171718).circle(0,0,197).stroke({color:0xb58a47,width:2});root.addChild(base);
+    base.circle(0,0,250).fill(0x17110e).circle(0,0,246).stroke({color:0x8d5126,width:7}).circle(0,0,231).fill(0x492314).circle(0,0,224).stroke({color:0xe5b96a,width:3}).circle(0,0,214).fill(0x171718).circle(0,0,197).stroke({color:0xb58a47,width:2});for(let i=0;i<18;i++){const radius=230+i*.85;base.circle(0,0,radius).stroke({color:i%3===0?0x9a6035:0x4b2b1c,width:.65,alpha:.55});}
+    base.circle(0,0,218).stroke({color:0xf3d08d,width:2}).circle(0,0,211).stroke({color:0x513c25,width:4});root.addChild(base);
     const wheel=new Container();root.addChild(wheel);
     const pockets=new Graphics();const step=TAU/37;
     WHEEL.forEach((n,i)=>{
@@ -26,7 +27,7 @@ export function RouletteWheel({number,spinId,motion,onDone}:{number:number|null;
     WHEEL.forEach((n,i)=>{const a=-Math.PI/2+i*step;const t=new Text({text:String(n),style:{fontFamily:'Arial',fontSize:16,fontWeight:'bold',fill:0xfff5dd}});t.anchor.set(.5);t.position.set(Math.cos(a)*166,Math.sin(a)*166);t.rotation=a+Math.PI/2;wheel.addChild(t);});
     const hub=new Graphics().circle(0,0,125).fill(0x573321).circle(0,0,122).stroke({color:0xe3b76a,width:3}).circle(0,0,99).fill(0x211a18).circle(0,0,97).stroke({color:0x90693a,width:2});
     for(let i=0;i<8;i++){const a=i*TAU/8;hub.moveTo(Math.cos(a)*34,Math.sin(a)*34).lineTo(Math.cos(a)*96,Math.sin(a)*96).stroke({color:0x8b6138,width:3});}
-    hub.circle(0,0,39).fill(0x8d6230).circle(0,0,30).fill(0xe4bd75).circle(0,0,17).fill(0x52321c).circle(-6,-7,9).fill(0xffe6b0);wheel.addChild(hub);
+    hub.circle(0,0,39).fill(0x8d6230).circle(0,0,30).fill(0xe4bd75).circle(0,0,17).fill(0x52321c).circle(-6,-7,9).fill(0xffe6b0);hub.circle(0,0,112).stroke({color:0xc09a5b,width:1.5}).circle(0,0,105).stroke({color:0x77502d,width:2});wheel.addChild(hub);
     const ball=new Graphics().circle(2,4,8).fill({color:0x000000,alpha:.5}).circle(0,0,8).fill(0xf7e9c9).circle(-2,-3,3).fill(0xffffff);ball.position.set(0,-207);root.addChild(ball);
     app.canvas.style.width='100%';app.canvas.style.height='auto';host.current?.appendChild(app.canvas);scene.current={wheel,ball,app};setReady(true);
    }catch{if(!disposed)setFailed(true);if(initialized&&!disposed){app.destroy(true,{children:true});initialized=false;}}

@@ -51,7 +51,6 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
     private readonly Func<string, (bool Success, string Message)> claimChallenge;
     private readonly Func<(bool Success, string Message)> claimAllChallenges;
     private readonly Func<string, int, int, Guid, bool> arcadeRun;
-    private readonly Func<Guid, JsonElement, object>? rouletteSpin;
     private readonly Action recordsClosed;
     private readonly CasinoModeRegistry modes;
     private readonly Action<string> progression;
@@ -107,7 +106,7 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
         Action<string> languageChange, Action exit, Action readyChanged,
         Func<object> updateSnapshot, Action<string> setUpdateChannel,
         Func<Task> checkUpdate, Func<Task> installUpdate,
-        Action<string, string?> presentationSetting, Func<Guid, JsonElement, object>? rouletteSpin = null)
+        Action<string, string?> presentationSetting)
     {
         this.modes = modes;
         this.snapshot = snapshot;
@@ -135,7 +134,6 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
         this.recordsClosed = recordsClosed;
         this.progression = progression;
         this.arcadeRun = arcadeRun;
-        this.rouletteSpin = rouletteSpin;
         this.profile = profile;
         this.vault = vault;
         this.dailyClaim = dailyClaim;
@@ -326,15 +324,6 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
                     Refresh();
                     if (recordsPage is not null) RefreshRecords();
                     break;
-                case "lobby.roulette.spin" when rouletteSpin is not null && ready && IsVisible:
-                {
-                    if (!value.TryGetProperty("roundId", out var rawRound) || rawRound.ValueKind != JsonValueKind.String
-                        || !Guid.TryParse(rawRound.GetString(), out Guid roundId) || roundId == Guid.Empty
-                        || !value.TryGetProperty("bets", out var bets)) break;
-                    PostMessage("lobby.roulette.result", rouletteSpin(roundId, bets));
-                    Refresh();
-                    break;
-                }
                 case "lobby.arcade.run" when id is not null && ArcadeChallengeCatalog.IsGame(id):
                 {
                     // Only a terminal run receipt from the trusted local WebView may be

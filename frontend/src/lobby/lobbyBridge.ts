@@ -86,6 +86,7 @@ export const fallbackLobby: LobbySnapshot = {
   animationsEnabled: true, albumSoundEnabled:true,
   musicEnabled:true, musicVolume:0.10, showEmpireBalance:true,
   language: 'en', modes: [
+    {id:'roulette',title:'Roulette',category:'Table games',description:'European single-zero roulette. High-limit table.',enabled:true,secondary:false},
     {id:'blackjack',title:'Blackjack',category:'Table games',description:'A quiet seat, a fresh shoe and your next decision.',enabled:true,secondary:false},
     {id:'kniffel',title:'Midnight Dice',category:'Table games',description:'Five dice and your score sheet. Play solo or with AI opponents.',enabled:true,secondary:false},
     {id:'chill-lounge',title:'Chill Lounge',category:'Relaxed games',description:'Offline games at your own pace: Sudoku and Solitaire.',enabled:true,secondary:false},

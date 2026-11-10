@@ -451,7 +451,7 @@ internal static class Program
     /// RenderTargetBitmap cannot capture a WebView2 HWND, so WPF-only screenshots
     /// can silently show the legacy fallback even when the React lobby is broken.
     /// Require the actual packaged browser to load, receive live C# profile data,
-    /// expose the full casino navigation (nine native modes, Roulette and Arcade) and produce a real WebView2 capture.
+    /// expose the full casino navigation (ten native modes and Arcade) and produce a real WebView2 capture.
     /// </summary>
     private static async Task VerifyPackagedModernLobby(MainWindow window, string output)
     {
@@ -508,7 +508,7 @@ internal static class Program
             + "&&profile?.textContent?.includes('Startup Smoke')"
             + "&&document.querySelector('.lobby-hero h1')?.textContent?.length>5);})()");
         Require(result.Equals("true", StringComparison.OrdinalIgnoreCase),
-            "Packaged React lobby did not render the nine native modes, Roulette and Arcade Games tiles. "
+            "Packaged React lobby did not render the ten native modes and Arcade Games tile. "
             + "DOM validation returned " + result);
 
         // The browser-side GPU art system loads local SVG texture pairs in the
@@ -534,7 +534,7 @@ internal static class Program
         await modern.Browser.CoreWebView2.ExecuteScriptAsync("document.querySelector('.casino-news .lobby-gold-button')?.click()");
         await Task.Delay(100);
         RequireNoLegacyLobbyFrame(window, "rendered React lobby");
-        await CheckModernRoulette(modern);
+        await CheckModernRoulette(window, modern);
         await CheckModernArcadeMenu(modern);
         await CheckModernLobbyUpdates(window, modern);
         Require(!Find<FrameworkElement>(window).Any(drawer => drawer.Name == "LobbyDailyDrawer" && drawer.IsVisible),
@@ -548,10 +548,14 @@ internal static class Program
             "Modern lobby WebView2 preview is unexpectedly small or empty.");
     }
 
-    private static async Task CheckModernRoulette(ModernLobbyView modern)
+    private static async Task CheckModernRoulette(MainWindow window, ModernLobbyView modern)
     {
         CoreWebView2 web = modern.Browser.CoreWebView2!;
         await web.ExecuteScriptAsync("document.querySelector('.game-roulette .lobby-gold-button')?.click()");
+        ModernRouletteView? roulette = null;
+        for (int attempt=0;attempt<150;attempt++) { roulette=Find<ModernRouletteView>(window).FirstOrDefault(); if(roulette?.Ready==true)break; await Task.Delay(100); }
+        Require(roulette?.Ready==true && !modern.IsVisible, "Roulette did not mount a separate ready WebView.");
+        web=roulette!.Browser.CoreWebView2!;
         async Task WaitFor(string script, string message)
         {
             for (int attempt = 0; attempt < 100; attempt++)
@@ -569,7 +573,7 @@ internal static class Program
             + "&&document.querySelector('.roulette-zero')"
             + "&&document.querySelectorAll('.roulette-chip').length===8"
             + "&&document.querySelector('.roulette-spin:disabled')"
-            + "&&!document.querySelector('.lobby-hero'))",
+            + "&&!document.querySelector('.lobby-hero')&&!document.querySelector('.lobby-nav'))",
             "Roulette did not open its React/PixiJS table with all 37 pockets and high-limit chips.");
 
         // Exercise actual React interactions without changing the seeded wallet
@@ -583,8 +587,9 @@ internal static class Program
             "Boolean(!document.querySelector('.roulette-placed')&&document.querySelector('.roulette-spin:disabled'))",
             "Roulette did not clear the wager and disable spinning.");
         await web.ExecuteScriptAsync("document.querySelector('.roulette-back')?.click()");
+        web=modern.Browser.CoreWebView2!;
         await WaitFor(
-            "Boolean(document.querySelector('.lobby-hero')&&document.querySelector('.game-roulette')&&!document.querySelector('.roulette-room'))",
+            "Boolean(document.querySelector('.lobby-hero')&&document.querySelector('.game-roulette')&&!document.querySelector('.roulette-room')&&document.querySelectorAll('.game-art-window[data-pixi-art-ready]').length===9)",
             "Back from Roulette did not restore the casino lobby.");
     }
 

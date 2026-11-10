@@ -6,7 +6,7 @@ import {PlayerPortrait,CosmeticTitle,VaultIcon} from './Cosmetics';
 import {localizedSudokuTitleName} from './sudokuTitleLocalization';
 import {Modal} from './Modal';
 import {NavIcon} from './NavIcon';
-import {RouletteTable, rouletteLobbyMode} from './RouletteTable';
+import './rouletteTile.css';
 import {ArcadeMenu} from './ArcadeMenu';
 import {ARCADE_MODE_ID,arcadeLobbyMode} from './arcadeCatalog';
 import { LobbyAmbient } from './LobbyAmbient';
@@ -194,7 +194,6 @@ function LobbyApp() {
   const [shopNotice,setShopNotice] = useState<{success:boolean;message:string}|null>(null);
   const [filter,setFilter] = useState<Filter>('all');
   const [arcadeOpen,setArcadeOpen] = useState(false);
-  const [rouletteOpen,setRouletteOpen] = useState(false);
   const [updates,setUpdates] = useState<LobbyUpdatesSnapshot>(fallbackUpdates);
   const [updatesOpen,setUpdatesOpen] = useState(false);
   const [newsOpen,setNewsOpen]=useState(false);
@@ -212,7 +211,7 @@ function LobbyApp() {
   useEffect(()=>{
     const stop = onRecordsMessage(message=>{
       if(message.type==='lobby.records.show'){
-        setRecordsVisible(message.data.page);setShopVisible(false);setDailyOpen(false);setArcadeOpen(false);setRouletteOpen(false);
+        setRecordsVisible(message.data.page);setShopVisible(false);setDailyOpen(false);setArcadeOpen(false);
       }else if(message.type==='lobby.records.snapshot'){
         if(message.data.page==='challenges'){setChallenges(message.data.snapshot);setChallengesLoaded(true);}
         else if(message.data.page==='statistics'){setStatistics(message.data.snapshot);setStatisticsLoaded(true);}
@@ -246,7 +245,7 @@ function LobbyApp() {
         setShopPending(null);
         setShopNotice({success:message.data.success,message:message.data.message});
       }
-      else if(message.type==='lobby.shop.show'){setShopVisible(true);setRecordsVisible(null);setDailyOpen(false);setArcadeOpen(false);setRouletteOpen(false);}
+      else if(message.type==='lobby.shop.show'){setShopVisible(true);setRecordsVisible(null);setDailyOpen(false);setArcadeOpen(false);}
       else if(message.type==='lobby.shop.hide'){setShopVisible(false);}
     });
     return stop;
@@ -279,7 +278,7 @@ function LobbyApp() {
     lobbyCommand('lobby.records.close');
   };
   const openRecords = (page:RecordsPage) => {
-    setArcadeOpen(false);setRouletteOpen(false);
+    setArcadeOpen(false);
     if(shopVisible)closeShop();
     setRecordsVisible(page);setDailyOpen(false);setShopNotice(null);setRecordsPending(null);
     if(page==='vault'){setVaultReward(null);setVaultNotice(null);}
@@ -294,7 +293,7 @@ function LobbyApp() {
     lobbyCommand('lobby.records.open',page);
   };
   const openShop = () => {
-    setArcadeOpen(false);setRouletteOpen(false);
+    setArcadeOpen(false);
     if(recordsVisible)closeRecords();
     setShopNotice(null);
     setShopVisible(true);setShopLoaded(!embeddedLobby);setDailyOpen(false);
@@ -307,12 +306,12 @@ function LobbyApp() {
   const openMode = (id:string)=>{
     if(shopVisible)closeShop();
     if(recordsVisible)closeRecords();
-    if(id==='roulette'){setArcadeOpen(false);setDailyOpen(false);setFilter('all');setRouletteOpen(true);return;}
+    if(id==='roulette'&&!embeddedLobby){window.location.href='./roulette.html';return;}
     if(id===ARCADE_MODE_ID){
       setDailyOpen(false);setFilter('all');setArcadeOpen(true);
       return;
     }
-    setArcadeOpen(false);setRouletteOpen(false);
+    setArcadeOpen(false);
     lobbyCommand('lobby.open',id);
   };
   const openSecondary = (id:string)=>lobbyCommand('lobby.open-secondary',id);
@@ -327,7 +326,7 @@ function LobbyApp() {
     lobbyCommand('lobby.progression',id);
   };
   const chooseNav = (id:Filter)=>{
-    setArcadeOpen(false);setRouletteOpen(false);
+    setArcadeOpen(false);
     if(id==='collections') {openProgression("Collector's Album");return;}
     if(id==='shop') {openShop();return;}
     if(shopVisible)closeShop();
@@ -352,13 +351,13 @@ function LobbyApp() {
     lobbyCommand('lobby.updates.close');
   };
   // Arcade is a local selection screen; it does not issue an unknown native game route.
-  const modes = [...data.modes.filter(x=>x.id!==ARCADE_MODE_ID&&x.id!=='roulette'),rouletteLobbyMode(data.language),arcadeLobbyMode(data.language)]
+  const modes = [...data.modes.filter(x=>x.id!==ARCADE_MODE_ID),arcadeLobbyMode(data.language)]
     .filter(x=>matchesFilter(x.id,filter))
     .sort((a,b)=>artOrder.indexOf(a.id)-artOrder.indexOf(b.id));
   return <div className="casino-lobby-shell" data-reduced={lowMotion || !data.animationsEnabled}>
     <LobbyAmbient motionEnabled={!lowMotion && data.animationsEnabled}/>
     <header className="lobby-topbar">
-      <button className="lobby-brand" type="button" onClick={()=>{if(shopVisible)closeShop();if(recordsVisible)closeRecords();setArcadeOpen(false);setRouletteOpen(false);setFilter('all');}}>
+      <button className="lobby-brand" type="button" onClick={()=>{if(shopVisible)closeShop();if(recordsVisible)closeRecords();setArcadeOpen(false);setFilter('all');}}>
         <span className="brand-spade" aria-hidden="true">♠</span>
         <span><b>BLACKJACK CASINO</b><i>THE MIDNIGHT CLUB</i></span>
       </button>
@@ -394,7 +393,7 @@ function LobbyApp() {
         ↪ <span>{de?'Beenden':'Exit'}</span>
       </button>
     </header>
-    <div className={'lobby-body '+(shopVisible?'shop-active':recordsVisible?'records-active':arcadeOpen||rouletteOpen?'arcade-active':'')}>
+    <div className={'lobby-body '+(shopVisible?'shop-active':recordsVisible?'records-active':arcadeOpen?'arcade-active':'')}>
       <nav className="lobby-nav" aria-label={de?'Casino-Navigation':'Casino navigation'}>
         <div className="lobby-nav-scroll">
         <button className="lobby-nav-item" onClick={()=>setNewsOpen(true)}><NavIcon name="news"/><span>News</span></button>
@@ -469,7 +468,6 @@ function LobbyApp() {
         onCosmetic={id=>{setShopPending(id);lobbyCommand('lobby.shop.action',id);}}
         onPack={rarity=>{setShopPending(rarity);lobbyCommand('lobby.shop.pack',rarity);}}
         onAlbum={()=>openProgression("Collector's Album")}/>:
-      rouletteOpen?<RouletteTable language={data.language} bankroll={data.bankroll} bankrollValue={data.bankrollValue} motion={!lowMotion&&data.animationsEnabled} sound={data.albumSoundEnabled} onBack={()=>setRouletteOpen(false)}/>: 
       arcadeOpen?<ArcadeMenu language={data.language} onBack={()=>setArcadeOpen(false)}/>:<>
       <main className="lobby-main">
         <div className="lobby-hero">

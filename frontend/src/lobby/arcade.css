@@ -112,7 +112,7 @@
  background:#142f2b;text-align:center;color:#d5c29b;font-size:13px;font-weight:800;letter-spacing:.03em}
 
 /* The new tenth tile gets its own arcade-machine art; no fake Pixi texture. */
-.lobby-game-grid:has(.game-arcade-games) .game-midnight-merge,
+.lobby-game-grid:has(.game-arcade-games) .game-midnight-merge{grid-column:span 1}
 .lobby-game-grid:has(.game-arcade-games) .game-arcade-games{grid-column:span 2}
 .lobby-game.game-arcade-games{border-color:#a38c6d}
 .game-arcade-games .game-category{color:#e3c180}
