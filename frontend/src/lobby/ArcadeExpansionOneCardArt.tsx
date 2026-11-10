@@ -17,16 +17,30 @@ export function ArcadeExpansionOneCardArt({id}:{id:ExpansionOneId}){
   {inner}
  </svg>;
  switch(id){
-  case 'midnight-pinball':return bg(<>
-   <rect x="70" y="-16" width="180" height="166" rx="36" fill="#0c2836" stroke={gold} strokeWidth="3"/>
-   <path d="M90 5V103L125 121M230 5V103L195 121" stroke={mint} opacity=".5" fill="none" strokeWidth="4"/>
-   {[[130,34,13],[187,36,13],[160,65,15],[114,79,9],[207,78,9]].map(([x,y,r],i)=>
-    <g key={i}><circle cx={x} cy={y} r={r+3} fill="#153947" stroke={gold} strokeWidth="2"/>
-    <circle cx={x} cy={y} r={r-3} fill="#67c5bf"/></g>)}
-   <g className="exp-pin-flippers" stroke={gold} strokeWidth="8" strokeLinecap="round">
-    <path d="M115 108 153 116 M205 108 167 116" fill="none"/>
+  case 'midnight-beats':return bg(<>
+   <rect x="47" y="-11" width="226" height="153" rx="15" fill="#0e253a" stroke="#c6ab83" strokeWidth="2"/>
+   {['#7de8de','#f1c18c','#c4a2fb','#f58eb0'].map((color,i)=>{
+    const x=67+i*48;
+    return <g key={color}>
+     <rect x={x} y="0" width="43" height="127" rx="4" fill={i%2?'#26334e':'#19384b'} stroke={color} strokeOpacity=".4"/>
+     <rect x={x+4} y="99" width="35" height="25" rx="4" fill="#15283c" stroke={color} strokeWidth="1.5"/>
+     <text x={x+21} y="117" textAnchor="middle" fontSize="14" fontWeight="700" fill={color}>{['D','F','J','K'][i]}</text>
+    </g>;
+   })}
+   <path d="M62 95H262" stroke="#fff1c8" strokeWidth="4"/>
+   <g className="exp-beats-notes">
+    {[
+     {x:75,y:13,c:'#7de8de'},{x:171,y:43,c:'#c4a2fb'},
+     {x:123,y:65,c:'#f1c18c'},{x:219,y:26,c:'#f58eb0'},
+     {x:75,y:78,c:'#7de8de'},
+    ].map((n,i)=><rect key={i} x={n.x} y={n.y} width="27" height="10" rx="3"
+     fill={n.c} stroke="#fff5d9" strokeOpacity=".65"/>)}
    </g>
-   <g className="exp-pin-ball"><circle cx="170" cy="98" r="7" fill="#fff3d5" stroke={gold} strokeWidth="2"/></g>
+   <g className="exp-beats-lights">
+    <circle cx="27" cy="43" r="16" fill="#274962" stroke={mint} strokeWidth="2"/>
+    <circle cx="293" cy="43" r="16" fill="#493a60" stroke={gold} strokeWidth="2"/>
+    <circle cx="27" cy="43" r="7" fill={mint}/><circle cx="293" cy="43" r="7" fill={gold}/>
+   </g>
   </>);
   case 'phantom-hook':return bg(<>
    <path d="M0 111 60 93 120 111 165 87 210 107 263 88 320 103V128H0Z" fill="#25415d" opacity=".8"/>
