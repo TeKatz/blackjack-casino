@@ -1,6 +1,6 @@
-import {drawPinballV2} from './arcadePinballV2Renderer';
+import {drawBeatsRun} from './arcadeBeatsRenderer';
 import {driftCenter,driftRoadHalfWidth,driftTrafficAt,gravityGoalY,gravityHazards,gravitySentries} from './arcadeExpansionOneEngine';
-import type {ExpansionRun,PinballRun,HookRun,DriftRun,GravityRun,EchoRun} from './arcadeExpansionOneEngine';
+import type {ExpansionRun,BeatsRun,HookRun,DriftRun,GravityRun,EchoRun} from './arcadeExpansionOneEngine';
 const W=960,H=540,TAU=Math.PI*2;
 type Ctx=CanvasRenderingContext2D;
 const clamp=(v:number,a:number,b:number)=>Math.max(a,Math.min(b,v));
@@ -31,7 +31,7 @@ function orb(ctx:Ctx,x:number,y:number,r:number,color:string){
  ctx.save();ctx.shadowColor=color;ctx.shadowBlur=17;
  ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.fill();ctx.restore();
 }
-function pinball(ctx:Ctx,s:PinballRun){drawPinballV2(ctx,s);}
+function beats(ctx:Ctx,s:BeatsRun){drawBeatsRun(ctx,s);}
 function hook(ctx:Ctx,s:HookRun){
  backdrop(ctx,'#081c30','#2c2250');
  const cam=s.camera;
@@ -255,7 +255,7 @@ function echo(ctx:Ctx,s:EchoRun){
 export function drawExpansionRun(ctx:Ctx,s:ExpansionRun):void{
  ctx.save();ctx.clearRect(0,0,W,H);
  switch(s.kind){
-  case 'midnight-pinball':pinball(ctx,s);break;
+  case 'midnight-beats':beats(ctx,s);break;
   case 'phantom-hook':hook(ctx,s);break;
   case 'neon-drift':drift(ctx,s);break;
   case 'gravity-chamber':gravity(ctx,s);break;
