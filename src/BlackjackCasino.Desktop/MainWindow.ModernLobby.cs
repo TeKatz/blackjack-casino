@@ -48,7 +48,7 @@ public partial class MainWindow
             SetModernLobbyLanguage, Close, OnModernLobbyStateChanged,
             GetModernUpdateSnapshot, SetModernUpdateChannel,
             () => CheckForUpdatesAsync(silent: false), InstallUpdateAsync,
-            ChangeModernLobbyPresentation);
+            ChangeModernLobbyPresentation, ModernRouletteSpin);
 
         // Replace the legacy WPF artwork *before* WebView2 starts. Never display
         // the old lobby during navigation or while React is still loading.
@@ -255,6 +255,7 @@ public partial class MainWindow
             PortraitVariant = CosmeticCatalog.Get(profile.EquippedPortraitId).VisualVariant,
             FrameVariant = CosmeticCatalog.Get(profile.EquippedFrameId).VisualVariant,
             Bankroll = Money(session.Bankroll),
+            BankrollValue = session.Bankroll,
             EmpireCredits = empire is null ? "—" : FormatModernEmpireCredits(empire.Credits) + " cr",
             News = ReleaseNotesCatalog.Current,
             InstalledVersion = AppVersion.Current.ToString(),

@@ -13,7 +13,7 @@ export type LobbySnapshot = {
   dailyLogin: DailyLoginSnapshot;
  titleVariant?:string;portraitVariant?:string;frameVariant?:string;
   displayName: string; level: number; coins: string; prestige: number; title: string;
-  bankroll: string; empireCredits: string; albumOwned: number; albumTotal: number; albumPacksReady: number;
+  bankroll: string; bankrollValue?:number; empireCredits: string; albumOwned: number; albumTotal: number; albumPacksReady: number;
   seasonTier: number; seasonNextTier: number; seasonExperience: number; seasonRequired: number;
   seasonFraction: number; seasonComplete: boolean; challengeName: string;
   challengeFraction: number; challengesReady: number; vaultTier: string;
@@ -32,6 +32,7 @@ const fraction = (x: unknown) => numeric(x) && x >= 0 && x <= 1;
 
 export function isLobbySnapshot(x: unknown): x is LobbySnapshot {
   if (!object(x) || !object(x.dailyLogin)) return false;
+  if(x.bankrollValue!==undefined&&(!numeric(x.bankrollValue)||x.bankrollValue<0))return false;
   if (!['titleVariant','portraitVariant','frameVariant'].every(k=>x[k]===undefined||
     typeof x[k]==='string'&&/^[a-z0-9-]{1,100}$/.test(x[k] as string)))return false;
   if(x.installedVersion!==undefined&&(!string(x.installedVersion)||x.installedVersion.length>80))return false;
@@ -77,7 +78,7 @@ export const fallbackLobby: LobbySnapshot = {
     ],
   },
   displayName: 'Guest', level: 1, coins: '0', prestige: 0, title: 'Midnight Dealer',
-  bankroll: '$1,000.00', empireCredits: '0 cr', albumOwned: 0, albumTotal: 136, albumPacksReady: 0,
+  bankroll: '$1,000.00', bankrollValue:1000, empireCredits: '0 cr', albumOwned: 0, albumTotal: 136, albumPacksReady: 0,
   seasonTier: 0, seasonNextTier: 1, seasonExperience: 0, seasonRequired: 2000,
   seasonFraction: 0, seasonComplete: false, challengeName: 'Unbroken',
   challengeFraction: 0, challengesReady: 0, vaultTier: 'BRONZE',
