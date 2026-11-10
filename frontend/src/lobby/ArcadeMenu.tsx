@@ -6,31 +6,34 @@ import type {PlayableArcadeId} from './arcadeEngine';
 import {readArcadeRecord} from './arcadeRecords';
 import {ArcadeGameScreen} from './ArcadeGameScreen';
 import {ArcadeCardArt} from './ArcadeCardArt';
+import {ArcadeExpansionOneCardArt} from './ArcadeExpansionOneCardArt';
+import {isExpansionOneId} from './arcadeExpansionOneEngine';
 import type {ArcadeCategory,ArcadeGame} from './arcadeCatalog';
 import './arcade.css';
 import './arcadeArtMotion.css';
 import './arcadeArtMotionV2.css';
+import './arcadeExpansionOneArt.css';
 
 type Language='de'|'en';
 type CategoryFilter='all'|ArcadeCategory;
 type Props={language:Language;onBack:()=>void};
-const categories:readonly CategoryFilter[]=['all','one-button','reaction','precision'];
+const categories:readonly CategoryFilter[]=['all','one-button','reaction','precision','puzzle','memory'];
 const text={
  de:{back:'← Casino-Lobby',eyebrow:'THE MIDNIGHT CLUB · ARCADE',
   intro:'Kurze Runden. Hohe Schwierigkeit. Ein Versuch geht immer noch.',
   subtitle:'Eine eigene Spielhalle für Geschicklichkeit, Timing und Highscores.',
-  games:'SPIELE',coming:'ALLE 10 SPIELBAR',details:'DETAILS ANSEHEN',available:'SPIELBAR',play:'JETZT SPIELEN',best:'REKORD',
+  games:'SPIELE',coming:'ALLE 15 SPIELBAR',details:'DETAILS ANSEHEN',available:'SPIELBAR',play:'JETZT SPIELEN',best:'REKORD',
   records:'HIGHSCORES',soon:'Geplant',difficulty:'SCHWIERIGKEIT',duration:'RUNDE',
   controls:'STEUERUNG',rules:'SPIELPRINZIP',notReady:'Noch nicht spielbar',
-  note:'Arcade Update 3: Alle zehn Minispiele sind spielbar. Persönliche Rekorde werden für jedes Spiel separat gespeichert.',
+  note:'Arcade Expansion I: Fünfzehn Minispiele mit eigenen Spielregeln und persönlichen Rekorden.',
   close:'Details schließen',filter:'Arcade-Spiele filtern'},
  en:{back:'← Casino Lobby',eyebrow:'THE MIDNIGHT CLUB · ARCADE',
   intro:'Short runs. High difficulty. Just one more attempt.',
   subtitle:'A dedicated arcade for skill, timing and high scores.',
-  games:'GAMES',coming:'ALL 10 PLAYABLE',details:'VIEW DETAILS',available:'PLAYABLE',play:'PLAY NOW',best:'BEST',
+  games:'GAMES',coming:'ALL 15 PLAYABLE',details:'VIEW DETAILS',available:'PLAYABLE',play:'PLAY NOW',best:'BEST',
   records:'HIGH SCORES',soon:'Planned',difficulty:'DIFFICULTY',duration:'RUN',
   controls:'CONTROLS',rules:'HOW TO PLAY',notReady:'Not playable yet',
-  note:'Arcade Update 3: All ten minigames are playable. Each game keeps its own personal best.',
+  note:'Arcade Expansion I: Fifteen distinct minigames with individual personal records.',
   close:'Close details',filter:'Filter arcade games'},
 };
 const duration=(game:ArcadeGame)=>game.seconds[0]+'–'+game.seconds[1]+' s';
@@ -93,7 +96,7 @@ export function ArcadeMenu({language,onBack}:Props){
     key={game.id} data-arcade-id={game.id} style={tint(game)}
     aria-label={game.name+' · '+t.details} onClick={()=>setSelectedId(game.id)}>
     <div className="arcade-game-art" aria-hidden="true">
-     <ArcadeCardArt id={game.id}/>
+     {isExpansionOneId(game.id)?<ArcadeExpansionOneCardArt id={game.id}/>:<ArcadeCardArt id={game.id}/>}
      <span className="arcade-art-index">{String(index+1).padStart(2,'0')}</span>
     </div>
     <div className="arcade-card-content">
