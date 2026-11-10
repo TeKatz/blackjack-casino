@@ -136,6 +136,7 @@ export function hitBeatsLane(run:BeatsRun,lane:number):BeatsEvent{
  const multiplier=1+Math.min(7,Math.floor((run.combo-1)/10));
  const points=(grade==='PERFECT'?300:grade==='GREAT'?200:100)*multiplier;
  run.score+=points;run.lastHitPoints=points;
+ run.wrongLock=.085; // Ignore a double tap on an already judged key.
  run.lastGrade=grade;run.lastLane=lane;run.feedbackClock=.56;
  run.laneGlow[lane]=.27;
  return 'score';
