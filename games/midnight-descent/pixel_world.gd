@@ -6,6 +6,7 @@ const TORCH = preload("res://art/pixel/torch.svg")
 const RELICS = preload("res://art/pixel/relics.svg")
 const ACTORS = {
 	"warden": preload("res://art/pixel/warden.svg"),
+	"dealer": preload("res://art/pixel/dealer.svg"),
 	"stalker": preload("res://art/pixel/stalker.svg"),
 	"caster": preload("res://art/pixel/caster.svg"),
 	"brute": preload("res://art/pixel/brute.svg"),
@@ -235,7 +236,7 @@ func draw_warden() -> void:
 	if model.dash_left > 0:
 		frame = 3
 		for i in range(3,0,-1):
-			sprite("warden",pos-model.dash_direction*float(i)*14,player_facing,frame,64,Color(0.65,0.5,1,0.12))
+			sprite(model.character,pos-model.dash_direction*float(i)*14,player_facing,frame,64,Color(0.65,0.5,1,0.12))
 	sprite("warden",pos,player_facing,frame,64)
 
 func draw_actor(enemy: Dictionary) -> void:

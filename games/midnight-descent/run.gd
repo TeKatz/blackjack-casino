@@ -2,6 +2,11 @@ extends Node2D
 ## Dedicated Godot gameplay scene; simulation is independent of rendering.
 const Model = preload("res://run_model.gd")
 const PixelWorld = preload("res://pixel_world.gd")
+const Content = preload("res://content.gd")
+const Progress = preload("res://progress.gd")
+var progress = Progress.new()
+var smoke_mode := false
+var last_active := false
 var world = PixelWorld.new()
 var displayed_hp := 100.0
 var room_banner := 0.0
@@ -26,7 +31,10 @@ var last_interact := false
 
 func _ready() -> void:
 	german = "--language=de" in OS.get_cmdline_user_args()
-	run.begin(int(Time.get_ticks_usec()))
+	smoke_mode = "--run-smoke" in OS.get_cmdline_user_args()
+	if not smoke_mode: progress.load_save()
+	run.begin(int(Time.get_ticks_usec()),progress.selected,progress.ranks)
+	displayed_hp = run.hp
 	light_mask = 0
 	# Isolate ambient world lighting from the sharp HUD and combat telegraphs.
 	var world_layer := CanvasLayer.new()
@@ -57,7 +65,8 @@ func _physics_process(dt: float) -> void:
 	var direction := Vector2(float(Input.is_physical_key_pressed(KEY_D) or Input.is_physical_key_pressed(KEY_RIGHT))-float(Input.is_physical_key_pressed(KEY_A) or Input.is_physical_key_pressed(KEY_LEFT)), float(Input.is_physical_key_pressed(KEY_S) or Input.is_physical_key_pressed(KEY_DOWN))-float(Input.is_physical_key_pressed(KEY_W) or Input.is_physical_key_pressed(KEY_UP)))
 	var dash := Input.is_physical_key_pressed(KEY_SPACE)
 	var interact := Input.is_physical_key_pressed(KEY_E)
-	run.tick(dt, direction, get_global_mouse_position(), Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT), Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT), dash and not last_dash)
+	run.tick(dt, direction, get_global_mouse_position(), Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT), Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT), dash and not last_dash, Input.is_physical_key_pressed(KEY_Q) and not last_active)
+	last_active = Input.is_physical_key_pressed(KEY_Q)
 	if interact and not last_interact:
 		run.next_room()
 	last_dash = dash
@@ -71,6 +80,9 @@ func _physics_process(dt: float) -> void:
 func _process(dt: float) -> void:
 	clock += dt
 	shake = move_toward(shake, 0, dt*30)
+	if run.state in ["victory","defeat"] and not run.settled:
+		progress.settle(run)
+		if not smoke_mode: progress.save()
 	var target: String = "pause" if paused else run.state
 	if target != overlay_state:
 		overlay_state = target
@@ -217,9 +229,9 @@ func draw_hud() -> void:
 	hud_panel(Rect2(17,10,406,84))
 	hud_panel(Rect2(438,10,368,84),VIOLET)
 	hud_panel(Rect2(821,10,442,84))
-	draw_texture_rect_region(PixelWorld.ACTORS["warden"],Rect2(29,23,64,64),Rect2(0,0,32,32))
+	draw_texture_rect_region(PixelWorld.ACTORS[run.character],Rect2(29,23,64,64),Rect2(0,0,32,32))
 	text_at(Vector2(99,30),tr_text("THE FORGOTTEN VAULT","DAS VERGESSENE GEWÖLBE"),13,GOLD)
-	text_at(Vector2(99,55),tr_text("WARDEN","WÄCHTER"),23,WHITE)
+	text_at(Vector2(99,55),(tr_text("WARDEN","WÄCHTER") if run.character=="warden" else "DEALER"),23,WHITE)
 	meter(Rect2(99,68,235,13),displayed_hp/run.max_hp,Color("#a94565"))
 	var health_width := 235.0*clampf(run.hp/run.max_hp,0,1)
 	if health_width > 0:
@@ -242,25 +254,20 @@ func draw_hud() -> void:
 	text_at(Vector2(1100,33),tr_text("RUN TIME","RUN-ZEIT"),12,MUTED)
 	text_at(Vector2(1100,59),"%02d:%02d" % [int(run.elapsed)/60,int(run.elapsed)%60],24,WHITE)
 	text_at(Vector2(1100,79),"ESC  "+tr_text("Pause","Pause"),12,MUTED)
-	ability_slot(18,0,"LMB" if not german else "LMT",tr_text("Sword","Schwert"),1.0-run.attack_timer/0.36,GOLD)
-	ability_slot(184,3,"RMB" if not german else "RMT",tr_text("Bolt","Geschoss"),1.0-run.bolt_timer/0.62,Color("#72cadf"))
+	ability_slot(18,0,"LMB" if not german else "LMT",(tr_text("Card","Karte") if run.character=="dealer" else tr_text("Sword","Schwert")),1.0-run.attack_timer/run.attack_cd,GOLD)
+	ability_slot(184,3,"RMB" if not german else "RMT",(tr_text("Sweep","Wirbel") if run.set_id=="warden_executioner" else tr_text("Bolt","Geschoss")),1.0-run.bolt_timer/run.special_cd,Color("#72cadf"))
 	ability_slot(350,2,"SPACE" if not german else "LEER", "Dash",1.0-run.dash_timer/run.dash_cooldown,VIOLET)
-	hud_panel(Rect2(516,659,156,53),MUTED)
-	draw_rect(Rect2(526,670,30,30),Color("#100d1c"))
-	draw_rect(Rect2(526,670,30,30),Color("#796581"),false,1)
-	text_at(Vector2(536,692),"—",16,MUTED)
-	text_at(Vector2(563,680),tr_text("ACTIVE ITEM","AKTIVES ITEM"),12,MUTED)
-	text_at(Vector2(563,698),tr_text("Empty","Leer"),14,WHITE)
+	ability_slot(516,1,"Q",tr_text("Heal","Heilung"),1.0-run.active_timer/24.0,Color("#e8899b"))
 	hud_panel(Rect2(683,659,580,53),VIOLET)
 	text_at(Vector2(695,679),tr_text("RELICS","RELIKTE")+"  %d" % run.relics.size(),13,GOLD)
 	text_at(Vector2(695,699),tr_text("WASD / E  Move / Gate","WASD / E  Bewegung / Tor"),11,MUTED)
-	var ids := ["blade","heart","boots","focus","ward","fury"]
+	var ids: Array = Content.RELICS.keys()
 	for i in range(8):
 		var rect := Rect2(947+i*36,669,30,30)
 		draw_rect(rect,Color("#100d1c"))
 		draw_rect(rect,Color("#695471"),false,1)
 		if i<run.relics.size():
-			var index := ids.find(run.relics[i])
+			var index: int = Content.RELICS[run.relics[i]][4]
 			if index>=0: draw_texture_rect_region(PixelWorld.RELICS,rect,Rect2(index*24,0,24,24))
 	if run.state=="fight" and run.room==Model.ROOM_COUNT-1:
 		for enemy in run.enemies:
@@ -333,14 +340,7 @@ func add_button(parent: Control, caption: String, callback: Callable) -> Button:
 	return node
 
 func relic_description(id: String) -> String:
-	match id:
-		"blade": return tr_text("Gilded Edge   •   +9 sword damage","Goldene Klinge   •   +9 Schwertschaden")
-		"heart": return tr_text("Ruby Heart   •   +20 max HP, heal 35","Rubinherz   •   +20 max. LP, heilt 35")
-		"boots": return tr_text("Shadow Steps   •   +32 movement speed","Schattenschritte   •   +32 Bewegungstempo")
-		"focus": return tr_text("Arcane Focus   •   +11 bolt damage","Arkaner Fokus   •   +11 Geschossschaden")
-		"ward": return tr_text("Iron Ward   •   +4 damage reduction","Eisenwall   •   +4 Schadensreduktion")
-		"fury": return tr_text("Quickdraw   •   faster dash recharge","Schnellzug   •   kürzere Dash-Abklingzeit")
-	return id
+	return Content.relic_text(id,german)
 
 func select_relic(index: int) -> void:
 	if run.choose_relic(index):
@@ -387,7 +387,7 @@ func rebuild_overlay() -> void:
 				var button := add_button(column,"%d  ·  %s" % [i+1,relic_description(run.offers[i])],func(): select_relic(index))
 				var icon := AtlasTexture.new()
 				icon.atlas = PixelWorld.RELICS
-				icon.region = Rect2(["blade","heart","boots","focus","ward","fury"].find(run.offers[i])*24,0,24,24)
+				icon.region = Rect2(int(Content.RELICS[run.offers[i]][4])*24,0,24,24)
 				button.icon = icon
 				button.expand_icon = true
 				button.add_theme_constant_override("icon_max_width",32)
@@ -399,12 +399,15 @@ func rebuild_overlay() -> void:
 			var won := overlay_state=="victory"
 			add_label(column,tr_text("VAULT CONQUERED","GEWÖLBE EROBERT") if won else tr_text("THE DEPTHS CLAIM YOU","DIE TIEFEN FORDERN DICH"),30,GOLD if won else Color("#f095a9"))
 			add_label(column,tr_text("Run summary","Run-Zusammenfassung")+"\n"+tr_text("Rooms","Räume")+"  %d / %d  •  " % [run.room+1,Model.ROOM_COUNT]+tr_text("Defeated","Besiegt")+"  %d  •  " % run.kills+tr_text("Relics","Relikte")+"  %d" % run.relics.size(),19,WHITE)
+			add_label(column,tr_text("Soul essence earned","Seelenessenz erhalten")+"  +%d" % progress.last_reward,24,GOLD)
+			add_label(column,tr_text("Total essence","Essenz gesamt")+"  %d" % progress.essence,16,MUTED)
+			if not progress.save_ok: add_label(column,tr_text("Save failed — progress not saved.","Speicherfehler — Fortschritt nicht gespeichert."),16,Color("#ff839a"))
 			add_button(column,tr_text("New expedition","Neue Expedition"),restart)
 			add_button(column,tr_text("Main menu","Hauptmenü"),return_to_menu)
 
 func restart() -> void:
 	paused = false
-	run.begin(int(Time.get_ticks_usec()))
+	run.begin(int(Time.get_ticks_usec()),progress.selected,progress.ranks)
 	displayed_hp = run.hp
 	banner_room = -1
 

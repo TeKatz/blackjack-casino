@@ -5,6 +5,11 @@ const MUTED := Color("#b7aaca")
 const LIGHT := Color("#f6eefb")
 const Backdrop = preload("res://menu_backdrop.gd")
 const PixelWorld = preload("res://pixel_world.gd")
+const Content = preload("res://content.gd")
+const Progress = preload("res://progress.gd")
+var progress = Progress.new()
+var codex_page := 0
+var feedback := ""
 var backdrop: Control
 var preview: VBoxContainer
 var preview_title: Label
@@ -23,6 +28,7 @@ func _ready() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg == "--language=de":
 			german = true
+	if not "--smoke-test" in OS.get_cmdline_user_args(): progress.load_save()
 	build_shell()
 	show_page("home")
 	if "--smoke-test" in OS.get_cmdline_user_args():
@@ -42,8 +48,8 @@ func box_style(fill: Color, edge: Color, width: int = 1) -> StyleBoxFlat:
 	style.shadow_offset = Vector2(0,3)
 	style.content_margin_left = 20
 	style.content_margin_right = 20
-	style.content_margin_top = 12
-	style.content_margin_bottom = 12
+	style.content_margin_top = 8
+	style.content_margin_bottom = 8
 	return style
 
 func label(value: String, font_size: int, color: Color) -> Label:
@@ -124,11 +130,17 @@ func update_preview() -> void:
 		"home":
 			preview_title.text = tr_text("THE FORGOTTEN VAULT","DAS VERGESSENE GEWÖLBE")
 			preview_detail.text = tr_text("Beneath the club, the old gate waits.","Unter dem Club wartet das alte Tor.")
-			preview_info.text = tr_text("5 rooms  •  3 enemy types  •  1 boss","5 Räume  •  3 Gegnertypen  •  1 Boss")
-		"expedition":
-			preview_title.text = tr_text("WARDEN","WÄCHTER")
-			preview_detail.text = tr_text("Sword  /  Arcane bolt  /  Dash","Schwert  /  Arkanes Geschoss  /  Dash")
-			preview_info.text = tr_text("100 HP  •  26 sword damage  •  17 bolt damage","100 LP  •  26 Schwertschaden  •  17 Geschossschaden")
+			preview_info.text = tr_text("5 rooms  •  16 relics  •  4 starting sets","5 Räume  •  16 Relikte  •  4 Start-Sets")
+		"expedition","sets":
+			var spec: Dictionary = Content.SETS[progress.selected]
+			preview_title.text = tr_text("WARDEN","WÄCHTER") if spec.character=="warden" else "DEALER"
+			preview_sprite.texture = atlas_icon(PixelWorld.ACTORS[spec.character],Rect2(0,0,32,32))
+			preview_detail.text = Content.set_name(progress.selected,german)
+			preview_info.text = tr_text("Base HP / main / special","Basis-LP / Haupt / Spezial")+"  %d / %d / %d" % [spec.hp,spec.damage,spec.bolt]
+		"progress":
+			preview_title.text = tr_text("SOUL ESSENCE","SEELENESSENZ")
+			preview_detail.text = str(progress.essence)+"  •  "+tr_text("Permanent currency","Permanente Währung")
+			preview_info.text = tr_text("Expeditions / victories / kills","Expeditionen / Siege / Gegner")+"  %d / %d / %d" % [progress.attempts,progress.wins,progress.total_kills]
 		"codex":
 			preview_title.text = tr_text("VAULT KEEPER","TRESORWÄCHTER")
 			preview_sprite.texture = atlas_icon(PixelWorld.ACTORS["boss"],Rect2(0,0,32,32))
@@ -165,7 +177,7 @@ func toggle_motion(value: bool) -> void:
 func add_action(caption: String, callback: Callable, locked: bool = false) -> Button:
 	var button := Button.new()
 	button.text = caption
-	button.custom_minimum_size = Vector2(0, 51)
+	button.custom_minimum_size = Vector2(0, 44)
 	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	button.add_theme_font_size_override("font_size", 19)
 	button.add_theme_color_override("font_color", LIGHT)
@@ -196,28 +208,51 @@ func show_page(next: String) -> void:
 			body.add_child(label(tr_text("THE GATE", "DAS TOR"), 14, GOLD))
 			var primary := add_action(tr_text("New expedition  ›", "Neue Expedition  ›"), func(): show_page("expedition"))
 			primary.add_theme_stylebox_override("normal",box_style(Color("#6a4936"),GOLD,2))
+			add_action(tr_text("Progression", "Fortschritt"), func(): show_page("progress"))
 			add_action(tr_text("Codex", "Kodex"), func(): show_page("codex"))
 			add_action(tr_text("Settings", "Einstellungen"), func(): show_page("settings"))
 			add_action(tr_text("Return to casino", "Zurück zum Casino"), func(): get_tree().quit())
 		"expedition":
-			detail_label.text = tr_text("Choose your path into the depths.", "Wähle deinen Weg in die Tiefen.")
-			body.add_child(label(tr_text("CHARACTER SELECTION", "CHARAKTERAUSWAHL"), 14, GOLD))
-			add_action(tr_text("Warden  •  Selected", "Wächter  •  Ausgewählt"), select_warden)
-			body.add_child(label(tr_text("A steadfast fighter. Sword, arcane bolts and a quick evasive dash.", "Ein standhafter Kämpfer. Schwert, arkane Geschosse und ein schneller Ausweichschritt."), 17, MUTED))
-			add_action(tr_text("Dealer  •  Locked", "Dealer  •  Gesperrt"), func(): pass, true)
-			add_action(tr_text("Start run  •  The Forgotten Vault", "Run starten  •  Das vergessene Gewölbe"), start_run)
-			add_action(tr_text("Back", "Zurück"), func(): show_page("home"))
+			detail_label.text = tr_text("Choose a loadout. Each run starts fresh.","Wähle ein Start-Set. Jeder Run beginnt neu.")
+			body.add_child(label(tr_text("AVAILABLE LOADOUTS","VERFÜGBARE START-SETS"),14,GOLD))
+			for id in progress.unlocked:
+				var chosen_id: String = id
+				add_action(Content.set_name(id,german)+("  •  "+tr_text("Selected","Ausgewählt") if progress.selected==id else ""),func(): select_set(chosen_id))
+			add_action(tr_text("Start run  ›","Run starten  ›"),start_run)
+			add_action(tr_text("Back","Zurück"),func(): show_page("home"))
+		"progress":
+			detail_label.text = tr_text("Invest essence earned from completed runs.","Investiere Seelenessenz aus abgeschlossenen Runs.")
+			body.add_child(label(tr_text("ESSENCE","ESSENZ")+"   "+str(progress.essence),20,GOLD))
+			for key in Content.UPGRADES:
+				var upgrade: Array = Content.UPGRADES[key]
+				var id: String = key
+				var rank: int = progress.ranks[key]
+				var caption: String = upgrade[1 if german else 0]+"  %d/%d  •  " % [rank,upgrade[5]]+str(progress.cost(key))
+				var button := add_action(caption,func(): buy_rank(id),rank>=upgrade[5] or progress.essence<progress.cost(key))
+				button.tooltip_text = upgrade[3 if german else 2]
+			add_action(tr_text("Unlock characters & sets  ›","Charaktere & Sets freischalten  ›"),func(): show_page("sets"))
+			add_action(tr_text("Back","Zurück"),func(): show_page("home"))
+		"sets":
+			detail_label.text = tr_text("Unlock distinct starting playstyles.","Schalte neue Start-Spielstile frei.")
+			body.add_child(label(tr_text("ESSENCE","ESSENZ")+"   "+str(progress.essence),20,GOLD))
+			for id in Content.SETS:
+				var spec: Dictionary = Content.SETS[id]
+				var set_key: String = id
+				var owned: bool = progress.unlocked.has(id)
+				var locked: bool = owned or progress.essence<int(spec.cost) or (id=="dealer_joker" and not progress.unlocked.has("dealer_cards"))
+				var caption := (tr_text("Warden","Wächter") if spec.character=="warden" else "Dealer")+"  /  "+Content.set_name(id,german)
+				caption += "  •  "+(tr_text("Owned","Freigeschaltet") if owned else str(spec.cost))
+				add_action(caption,func(): buy_set(set_key),locked)
+			add_action(tr_text("Back","Zurück"),func(): show_page("progress"))
 		"codex":
-			detail_label.text = tr_text("Your discoveries will be recorded here.", "Deine Entdeckungen werden hier festgehalten.")
-			body.add_child(label(tr_text("THE ARCHIVE", "DAS ARCHIV"), 14, GOLD))
-			codex_entry(0,tr_text("Gilded Edge   +9 sword damage","Goldene Klinge   +9 Schwertschaden"))
-			codex_entry(1,tr_text("Ruby Heart   +20 max HP, heal 35","Rubinherz   +20 max. LP, heilt 35"))
-			codex_entry(2,tr_text("Shadow Steps   +32 movement speed","Schattenschritte   +32 Bewegungstempo"))
-			codex_entry(3,tr_text("Arcane Focus   +11 bolt damage","Arkaner Fokus   +11 Geschossschaden"))
-			codex_entry(4,tr_text("Iron Ward   +4 damage reduction","Eisenwall   +4 Schadensreduktion"))
-			codex_entry(5,tr_text("Quickdraw   faster dash recharge","Schnellzug   kürzere Dash-Abklingzeit"))
-			body.add_child(label(tr_text("Enemies: Stalker · Caster · Brute","Gegner: Stalker · Caster · Brute"),14,MUTED))
-			add_action(tr_text("Back", "Zurück"), func(): show_page("home"))
+			detail_label.text = tr_text("Relic library — discoveries are saved after each run.","Reliktbibliothek — Entdeckungen werden nach Runs gespeichert.")
+			body.add_child(label(tr_text("RELICS DISCOVERED","RELIKTE ENTDECKT")+"  %d / %d" % [progress.discovered.size(),Content.RELICS.size()],14,GOLD))
+			var ids: Array = Content.RELICS.keys()
+			for i in range(codex_page*6,mini(codex_page*6+6,ids.size())):
+				var id: String = ids[i]
+				codex_entry(int(Content.RELICS[id][4]),Content.relic_text(id,german))
+			add_action(tr_text("Next page","Nächste Seite")+"  %d/3" % (codex_page+1),func(): next_codex())
+			add_action(tr_text("Back","Zurück"),func(): show_page("home"))
 		"settings":
 			detail_label.text = tr_text("Adjust the standalone game window.", "Passe das eigenständige Spielfenster an.")
 			body.add_child(label(tr_text("DISPLAY", "ANZEIGE"), 14, GOLD))
@@ -241,11 +276,28 @@ func show_page(next: String) -> void:
 		action_buttons[0].grab_focus()
 
 func start_run() -> void:
+	progress.save()
 	get_tree().change_scene_to_file("res://run.tscn")
 
-func select_warden() -> void:
-	chosen = "warden"
-	show_page("expedition")
+func select_set(id: String) -> void:
+	if progress.unlocked.has(id):
+		progress.selected = id
+		progress.save()
+		show_page("expedition")
+
+func buy_rank(id: String) -> void:
+	if progress.buy_upgrade(id):
+		progress.save()
+		show_page("progress")
+
+func buy_set(id: String) -> void:
+	if progress.unlock_set(id):
+		progress.save()
+		show_page("sets")
+
+func next_codex() -> void:
+	codex_page = (codex_page+1)%3
+	show_page("codex")
 
 func toggle_fullscreen() -> void:
 	var window := get_window()
@@ -257,31 +309,31 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 func smoke_test() -> void:
-	action_buttons[0].pressed.emit()
-	if page != "expedition" or action_buttons[2].disabled or preview_sprite.texture == null:
+	show_page("expedition")
+	if action_buttons.size()!=3 or preview_sprite.texture==null:
 		get_tree().quit(1)
 		return
-	action_buttons[3].pressed.emit()
-	action_buttons[1].pressed.emit()
-	if page != "codex":
+	show_page("progress")
+	if action_buttons.size()!=6:
 		get_tree().quit(2)
 		return
-	action_buttons[0].pressed.emit()
-	action_buttons[2].pressed.emit()
-	if page != "settings" or preview_title.text.is_empty():
+	show_page("sets")
+	if action_buttons.size()!=5:
 		get_tree().quit(3)
 		return
+	show_page("codex")
+	next_codex()
+	if codex_page!=1:
+		get_tree().quit(4)
+		return
+	show_page("settings")
 	toggle_motion(false)
 	if backdrop.get("motion") != false:
 		get_tree().quit(11)
 		return
 	toggle_motion(true)
-	action_buttons[1].pressed.emit()
-	if page != "home":
-		get_tree().quit(4)
-		return
 	var simulation = preload("res://run_model.gd").new()
-	if not simulation.smoke_test():
+	if not simulation.smoke_test() or not progress.smoke_test():
 		get_tree().quit(5)
 		return
 	print("Midnight Descent menu smoke PASS")
