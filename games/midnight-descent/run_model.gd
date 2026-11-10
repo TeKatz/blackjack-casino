@@ -279,7 +279,7 @@ func finish_room() -> void:
 	dungeon.nodes[room].cleared=true
 	service_used=true
 	# Non-combat services and their relic selections return directly to the map.
-	state="route" if room_kind in ["treasure","shop","event","shrine","secret"] else "exit"
+	state="route" if room_kind in ["treasure","shop","event","shrine","secret","forge"] else "exit"
 
 
 func spawn_enemy(kind: String, pos: Vector2) -> void:
@@ -783,7 +783,10 @@ func smoke_test() -> bool:
 	enter_room()
 	shards=16
 	var old_damage:=damage
-	if room_kind!="forge" or not service_action(0) or state!="route" or damage!=old_damage+12 or shards!=0: return false
+	if room_kind!="forge" or not service_action(0) or state!="route" or damage!=old_damage+12 or shards!=0:
+		push_error("Crown smoke: forge completion failed")
+		return false
+	if service_action(0): return false
 	room=9
 	enter_room()
 	for unit in enemies: unit.hp=0
@@ -793,4 +796,15 @@ func smoke_test() -> bool:
 	souls=3
 	hp=50
 	tick(0.016,Vector2.ZERO,Vector2(700,385),false,true,false)
-	return souls==0 and hp==59
+	if souls!=0 or hp!=59: return false
+	begin(100,"soulbinder_wraith")
+	souls=2
+	tick(0.016,Vector2.ZERO,Vector2(700,385),false,true,false)
+	if souls!=0 or spirit_life<=6.9 or shots.size()<5: return false
+	begin(101)
+	relics.append("execution")
+	var enemy: Dictionary=enemies[0]
+	enemy.hp=enemy.max_hp*0.2
+	var before: float=enemy.hp
+	hit_enemy(enemy,5)
+	return is_equal_approx(float(enemy.hp),before-6.5)
