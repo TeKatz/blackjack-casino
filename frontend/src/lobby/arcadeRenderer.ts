@@ -3,7 +3,7 @@ import {isExpansionTwoRun} from './arcadeExpansionTwoEngine';
 import {drawExpansionTwoRun} from './arcadeExpansionTwoRenderer';
 import {drawExpansionRun} from './arcadeExpansionOneRenderer';
 import {ARCADE_HEIGHT as H,ARCADE_WIDTH as W} from './arcadeEngine';
-import {SNAKE_COLS,SNAKE_ROWS,BLADE_HIT_ARC,angularDistance} from './arcadeEngine';
+import {SNAKE_COLS,SNAKE_ROWS,BLADE_HIT_ARC,BLADE_IMPACT_ANGLE,angularDistance} from './arcadeEngine';
 import type {ArcadeRunState,CaveRun,StackRun,BladeRun,WingsRun,SnakeRun,BreakerRun,StormRun,HexRun,SpikeRun,AscentRun} from './arcadeEngine';
 
 type Context=CanvasRenderingContext2D;
@@ -243,12 +243,13 @@ function bladeShape(ctx:Context,angle:number,radius:number){
  ctx.save();ctx.rotate(angle);
  ctx.shadowColor='#eec37c';ctx.shadowBlur=9;
  ctx.fillStyle='#f9dfa3';ctx.strokeStyle='#593d32';ctx.lineWidth=2;
- ctx.beginPath();ctx.moveTo(-5,radius-12);ctx.lineTo(-5,radius+40);
- ctx.lineTo(0,radius+62);ctx.lineTo(5,radius+40);ctx.lineTo(5,radius-12);
+ // Tip bites INTO the target while the handle remains outside the rim.
+ ctx.beginPath();ctx.moveTo(-5,radius+48);ctx.lineTo(-5,radius-6);
+ ctx.lineTo(0,radius-32);ctx.lineTo(5,radius-6);ctx.lineTo(5,radius+48);
  ctx.closePath();ctx.fill();ctx.stroke();
  ctx.shadowBlur=0;
- ctx.fillStyle='#314952';ctx.fillRect(-8,radius+12,16,14);
- ctx.fillStyle='#d2a466';ctx.fillRect(-4,radius+32,8,5);
+ ctx.fillStyle='#314952';ctx.fillRect(-8,radius+20,16,25);
+ ctx.fillStyle='#d2a466';ctx.fillRect(-4,radius+28,8,8);
  ctx.restore();
 }
 function blades(ctx:Context,state:BladeRun){
@@ -273,9 +274,9 @@ function blades(ctx:Context,state:BladeRun){
  ctx.save();ctx.translate(cx,cy);
  for(const angle of state.blades)bladeShape(ctx,angle+state.rotation,radius);
  ctx.restore();
- // The impact reticle is the actual knife collision angle (Math.PI/2),
+ // The reticle is exactly the engine's six-o'clock knife collision angle,
  // not a decorative guess. It turns red precisely when the throw would collide.
- const blocked=state.blades.some(angle=>angularDistance(angle+state.rotation,Math.PI/2)<BLADE_HIT_ARC);
+ const blocked=state.blades.some(angle=>angularDistance(angle+state.rotation,BLADE_IMPACT_ANGLE)<BLADE_HIT_ARC);
  const markerColor=blocked?'#ff927e':'#a4f1d2';
  const impactY=cy+radius;
  ctx.save();
@@ -288,7 +289,7 @@ function blades(ctx:Context,state:BladeRun){
  ctx.shadowBlur=0;ctx.setLineDash([5,6]);
  ctx.beginPath();ctx.moveTo(cx,impactY+30);ctx.lineTo(cx,408);ctx.stroke();ctx.setLineDash([]);
  ctx.font='700 12px Segoe UI, sans-serif';ctx.textAlign='left';
- ctx.fillText(blocked?'BLOCKED':'LANDING ZONE',cx+37,impactY+5);
+ ctx.fillText(blocked?'BLOCKED · DO NOT THROW':'IMPACT POINT · 6 O’CLOCK',cx+37,impactY+5);
  ctx.restore();
  // Ready knife at the launch position (below the spinning target).
  ctx.save();ctx.translate(cx,431);ctx.rotate(Math.PI);
