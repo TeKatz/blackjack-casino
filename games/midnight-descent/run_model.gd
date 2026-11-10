@@ -3,7 +3,22 @@ extends RefCounted
 const ARENA := Rect2(58, 146, 1164, 478)
 const SPAWN := Vector2(143, 385)
 const EXIT := Vector2(1174, 385)
-const ROOM_COUNT := 5
+const ROOM_COUNT := 10
+const FLOOR_COUNT := 2
+const Dungeon = preload("res://dungeon.gd")
+var dungeon = Dungeon.new()
+var floor_index := 0
+var visited_count := 0
+var room_kind := "fight"
+var service_used := false
+var boss_defeated := false
+var elites := 0
+var active_item := "heal"
+var active_cd := 24.0
+var slow_time := 0.0
+var shield_time := 0.0
+var temp_power := 0.0
+var revive_used := false
 const Content = preload("res://content.gd")
 const RELICS = Content.RELICS
 var character := "warden"
@@ -49,6 +64,17 @@ func begin(value: int, loadout: String = "warden_guard", upgrades: Dictionary = 
 	seed_value = value
 	rng.seed = value
 	room = 0
+	floor_index = 0
+	visited_count = 0
+	elites = 0
+	boss_defeated = false
+	active_item = "heal"
+	active_cd = 24.0
+	slow_time = 0
+	shield_time = 0
+	temp_power = 0
+	revive_used = false
+	dungeon.generate(value,0)
 	set_id = loadout if Content.SETS.has(loadout) else "warden_guard"
 	var spec: Dictionary = Content.SETS[set_id]
 	character = spec.character
@@ -87,21 +113,107 @@ func enter_room() -> void:
 	effects.clear()
 	offers.clear()
 	walls.clear()
-	# Keep the central passage and entrance/exit unobstructed.
-	if room < ROOM_COUNT - 1:
-		for x in [490.0, 790.0]:
-			var y: float = 220.0 if rng.randf() < 0.5 else 490.0
-			walls.append(Rect2(x + rng.randf_range(-55, 55), y, 84, 62))
-		var count := 3 + room
+	room_kind = dungeon.kind(room)
+	var node: Dictionary = dungeon.nodes[room]
+	if not node.visited:
+		node.visited = true
+		visited_count += 1
+	service_used = node.cleared
+	if node.cleared:
+		state = "exit"
+		return
+	if room_kind in ["treasure","shop","event","shrine","secret"]:
+		state = "service"
+		return
+	if room_kind != "boss":
+		for x in [490.0,790.0]:
+			var y: float = 220.0 if rng.randf()<0.5 else 490.0
+			walls.append(Rect2(x+rng.randf_range(-55,55),y,84,62))
+		var count := 3 + floor_index + (2 if room_kind=="elite" else room%3)
 		for i in range(count):
-			var kind := "stalker" if i % 3 != 2 else "caster"
-			if room > 0 and i % 4 == 1:
-				kind = "brute"
-			spawn_enemy(kind, Vector2(520 + (i % 3) * 235, 195 + (i / 3) * 135 + rng.randf_range(-18, 18)))
+			var family: Array = ["stalker","caster","brute","archer","shield"] if floor_index==0 else ["spore","vine","mushroom","caster","brute"]
+			var kind: String = family[(i+room+floor_index)%family.size()]
+			spawn_enemy(kind,Vector2(520+(i%3)*235,195+(i/3)*135+rng.randf_range(-18,18)))
+			if room_kind=="elite":
+				enemies[-1].hp *= 1.65
+				enemies[-1].max_hp = enemies[-1].hp
+				enemies[-1]["elite"] = true
 	else:
-		spawn_enemy("boss", Vector2(925, 385))
-		spawn_enemy("caster", Vector2(785, 230))
-		spawn_enemy("stalker", Vector2(785, 540))
+		spawn_enemy("boss" if floor_index==0 else "rootking",Vector2(925,385))
+		spawn_enemy("caster" if floor_index==0 else "spore",Vector2(785,230))
+		spawn_enemy("stalker" if floor_index==0 else "vine",Vector2(785,540))
+
+func route_options() -> Array:
+	return dungeon.available(room)
+
+func open_route() -> bool:
+	if state!="exit" or player.distance_to(EXIT)>75: return false
+	state="route"
+	return true
+
+func travel(destination: int) -> bool:
+	if state!="route" or not route_options().has(destination): return false
+	room=destination
+	enter_room()
+	return true
+
+func descend() -> bool:
+	if state!="route" or room_kind!="boss" or not dungeon.nodes[room].cleared or floor_index>=FLOOR_COUNT-1: return false
+	floor_index += 1
+	room=0
+	dungeon.generate(seed_value,floor_index)
+	enter_room()
+	return true
+
+func service_action(choice: int) -> bool:
+	if state!="service" or service_used: return false
+	match room_kind:
+		"treasure","secret":
+			if choice==0:
+				make_offers(true)
+				state="reward"
+				return true
+			elif choice==1:
+				var items: Array = ["heal","time","bomb","shield","dice","mirror"]
+				active_item=items[rng.randi_range(0,items.size()-1)]
+				active_timer=0
+			else: return false
+		"shop":
+			if choice==0 and shards>=12:
+				shards-=12
+				make_offers(true)
+				state="reward"
+				return true
+			elif choice==1 and shards>=8:
+				shards-=8
+				hp=minf(max_hp,hp+35)
+			elif choice==2 and shards>=10:
+				shards-=10
+				var items: Array = ["time","bomb","shield","dice","mirror"]
+				active_item=items[rng.randi_range(0,items.size()-1)]
+				active_timer=0
+			elif choice!=3: return false
+		"event":
+			if choice==0:
+				hp=maxf(1,hp-15)
+				make_offers(true)
+				state="reward"
+				return true
+			elif choice==1: shards+=8
+			else: return false
+		"shrine":
+			if choice==0: hp=minf(max_hp,hp+40)
+			elif choice==1: max_hp+=10; hp+=10
+			else: return false
+		_: return false
+	finish_room()
+	return true
+
+func finish_room() -> void:
+	dungeon.nodes[room].cleared=true
+	service_used=true
+	state="exit"
+
 
 func spawn_enemy(kind: String, pos: Vector2) -> void:
 	var health := 42.0
@@ -111,6 +223,12 @@ func spawn_enemy(kind: String, pos: Vector2) -> void:
 		"brute":
 			health = 85.0
 			radius = 24.0
+		"archer": health=48.0
+		"shield": health=95.0; radius=24.0
+		"spore": health=50.0
+		"vine": health=65.0
+		"mushroom": health=100.0; radius=26.0
+		"rootking": health=680.0; radius=48.0
 		"boss":
 			health = 430.0
 			radius = 43.0
@@ -144,10 +262,10 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 		return
 	elapsed += dt
 	active_timer = maxf(0,active_timer-dt)
-	if active and active_timer<=0 and hp<max_hp:
-		hp = minf(max_hp,hp+active_heal)
-		active_timer = 24.0
-		notices.append("relic")
+	slow_time=maxf(0,slow_time-dt)
+	shield_time=maxf(0,shield_time-dt)
+	if active and active_timer<=0:
+		use_active()
 	attack_timer = maxf(0, attack_timer - dt)
 	bolt_timer = maxf(0, bolt_timer - dt)
 	dash_timer = maxf(0, dash_timer - dt)
@@ -210,21 +328,32 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 		if enemies[i].hp <= 0:
 			effect("burst", enemies[i].pos, 0.35, Vector2.ZERO)
 			kills += 1
-			shards += 3 if enemies[i].kind != "boss" else 20
+			shards += 20 if enemies[i].kind in ["boss","rootking"] else 3
+			if enemies[i].kind=="mushroom":
+				spawn_enemy("spore",enemies[i].pos+Vector2(35,0))
+				spawn_enemy("spore",enemies[i].pos-Vector2(35,0))
 			hp = minf(max_hp,hp+2.0*relics.count("leech"))
 			enemies.remove_at(i)
 			notices.append("kill")
 	update_effects(dt)
+	if hp <= 0 and relics.has("phoenix") and not revive_used:
+		revive_used=true
+		hp=max_hp*0.5
+		invulnerable=2.0
 	if hp <= 0:
 		state = "defeat"
 		shots.clear()
 	elif enemies.is_empty():
 		shots.clear()
-		if room == ROOM_COUNT - 1:
-			state = "victory"
+		if room_kind=="boss" and floor_index==FLOOR_COUNT-1:
+			dungeon.nodes[room].cleared=true
+			state="victory"
+		elif room_kind=="boss" or room_kind=="elite" or room==0 or rng.randf()<0.30:
+			if room_kind=="elite": elites+=1
+			make_offers(room_kind in ["boss","elite"])
+			state="reward"
 		else:
-			make_offers()
-			state = "reward"
+			finish_room()
 		notices.append("clear")
 
 func effect(kind: String, pos: Vector2, lifetime: float, direction: Vector2) -> void:
@@ -240,7 +369,7 @@ func hit_enemy(enemy: Dictionary, amount: float) -> void:
 	if enemy.hp <= 0:
 		return
 	if relics.has("crit") and rng.randf()<minf(0.8,0.2*relics.count("crit")): amount *= 2
-	enemy.hp -= amount
+	enemy.hp -= amount+temp_power
 	if relics.has("storm") and float(enemy.get("burn",0))>0:
 		for other in enemies:
 			if other!=enemy and other.hp>0 and enemy.pos.distance_to(other.pos)<160:
@@ -253,7 +382,7 @@ func hit_enemy(enemy: Dictionary, amount: float) -> void:
 	notices.append("hit")
 
 func hurt(amount: float) -> void:
-	if invulnerable > 0 or hp <= 0:
+	if invulnerable > 0 or shield_time>0 or hp <= 0:
 		return
 	hp = maxf(0, hp - maxf(1, amount - armor))
 	invulnerable = 0.65
@@ -281,9 +410,9 @@ func update_enemies(dt: float) -> void:
 		if enemy.wind > 0:
 			enemy.wind -= dt
 			if enemy.wind <= 0:
-				if kind == "caster":
+				if kind in ["caster","archer","spore"]:
 					shoot(pos, pos.direction_to(enemy.target)*265, true, 12)
-				elif kind == "boss":
+				elif kind in ["boss","rootking"]:
 					var phase: int = 12 if enemy.hp < enemy.max_hp*0.5 else 8
 					for i in range(phase):
 						var angle := TAU*float(i)/phase + elapsed*0.3
@@ -291,8 +420,8 @@ func update_enemies(dt: float) -> void:
 					if dist < 125:
 						hurt(24)
 				elif dist < radius + 45:
-					hurt(18 if kind == "brute" else 11)
-				enemy.timer = 1.8 if kind == "boss" else 0.9
+					hurt(18 if kind in ["brute","shield","mushroom"] else 11)
+				enemy.timer = 1.8 if kind in ["boss","rootking"] else 0.9
 			continue
 		var velocity := Vector2.ZERO
 		if kind == "caster":
@@ -319,6 +448,10 @@ func update_enemies(dt: float) -> void:
 			var length := separation.length()
 			if length > 0.01 and length < radius + float(other.r) + 8:
 				velocity += separation.normalized()*100
+		if slow_time>0: velocity*=0.4
+		if kind=="vine" and enemy.timer<=0 and dist<260:
+			player=move_actor(player,player.direction_to(pos)*45,15)
+			enemy.timer=2.5
 		var next := move_actor(pos, velocity*dt, radius)
 		if velocity.length_squared() > 1 and next.distance_to(pos) < velocity.length()*dt*0.25:
 			next = move_actor(pos, velocity.rotated(PI/2)*dt, radius)
@@ -327,7 +460,7 @@ func update_enemies(dt: float) -> void:
 func update_shots(dt: float) -> void:
 	for i in range(shots.size()-1,-1,-1):
 		var shot: Dictionary = shots[i]
-		shot.pos += shot.vel*dt
+		shot.pos += shot.vel*dt*(0.4 if shot.hostile and slow_time>0 else 1.0)
 		shot.life -= dt
 		var pos: Vector2 = shot.pos
 		var remove: bool = shot.life <= 0 or not ARENA.has_point(pos) or blocked(pos, 4)
@@ -347,13 +480,17 @@ func update_shots(dt: float) -> void:
 		if remove:
 			shots.remove_at(i)
 
-func make_offers() -> void:
+func make_offers(premium: bool = false) -> void:
 	offers.clear()
 	var pool: Array[String] = []
 	for item in RELICS:
 		pool.append(item)
 	for i in range(3):
 		var index := rng.randi_range(0,pool.size()-1)
+		for attempt in range(5):
+			var rarity: int = Content.rarity(pool[index])
+			if rng.randf() < (0.95 if rarity==0 else (0.75 if premium else 0.4)/rarity): break
+			index=rng.randi_range(0,pool.size()-1)
 		offers.append(pool[index])
 		pool.remove_at(index)
 
@@ -374,15 +511,30 @@ func choose_relic(index: int) -> bool:
 		"tempo": attack_cd = maxf(0.12,attack_cd*0.88)
 		"potion": active_heal += 15
 	hp = minf(max_hp, hp+12)
-	state = "exit"
+	finish_room()
 	return true
 
 func next_room() -> bool:
-	if state != "exit" or player.distance_to(EXIT) > 75 or room >= ROOM_COUNT-1:
-		return false
-	room += 1
-	enter_room()
-	return true
+	return open_route()
+
+func use_active() -> void:
+	if active_item=="heal":
+		if hp>=max_hp: return
+		hp=minf(max_hp,hp+active_heal)
+	elif active_item=="time": slow_time=5.0
+	elif active_item=="bomb":
+		for enemy in enemies:
+			if player.distance_to(enemy.pos)<220: hit_enemy(enemy,75)
+	elif active_item=="shield": shield_time=4.0
+	elif active_item=="dice":
+		temp_power=rng.randf_range(5,18)
+	elif active_item=="mirror":
+		for shot in shots:
+			if shot.hostile:
+				shot.hostile=false
+				shot.vel=-shot.vel
+	active_timer=active_cd
+	notices.append("relic")
 
 func smoke_test() -> bool:
 	begin(123,"dealer_cards")
@@ -394,28 +546,24 @@ func smoke_test() -> bool:
 	tick(0.016,Vector2.ZERO,Vector2(600,385),false,false,false,true)
 	if hp!=55 or active_timer<=0: return false
 	begin(74219)
-	if enemies.size() != 3 or state != "fight":
-		return false
-	var start := player
-	tick(0.1, Vector2.RIGHT, Vector2(600,385), false, false, false)
-	if player.x <= start.x:
-		return false
-	var enemy: Dictionary = enemies[0]
-	var before: float = enemy.hp
-	hit_enemy(enemy, 10)
-	if enemy.hp != before-10:
-		return false
-	for step in range(ROOM_COUNT):
-		for unit in enemies:
-			unit.hp = 0
-		tick(0.016, Vector2.ZERO, Vector2(700,385), false, false, false)
-		if step == ROOM_COUNT-1:
-			return state == "victory" and kills > 0
-		if state != "reward" or offers.size()!=3 or not choose_relic(0):
-			return false
-		if choose_relic(0) or next_room():
-			return false
-		player = EXIT
-		if not next_room():
-			return false
-	return false
+	if enemies.size()!=3 or dungeon.nodes.size()!=10: return false
+	for unit in enemies: unit.hp=0
+	tick(0.016,Vector2.ZERO,Vector2(700,385),false,false,false)
+	if state!="reward" or not choose_relic(0): return false
+	player=EXIT
+	if not next_room() or not travel(2) or state!="service": return false
+	if not service_action(0) or not choose_relic(0): return false
+	player=EXIT
+	if not next_room() or not travel(0) or state!="exit": return false
+	room=9
+	enter_room()
+	for unit in enemies: unit.hp=0
+	tick(0.016,Vector2.ZERO,Vector2(700,385),false,false,false)
+	if not choose_relic(0): return false
+	player=EXIT
+	if not next_room() or not descend() or floor_index!=1 or relics.size()!=3: return false
+	room=9
+	enter_room()
+	for unit in enemies: unit.hp=0
+	tick(0.016,Vector2.ZERO,Vector2(700,385),false,false,false)
+	return state=="victory"

@@ -30,6 +30,10 @@ const UPGRADES := {
 	"agility":["Agility","Agilität","+8 movement speed per rank","+8 Bewegungstempo je Rang",12,4],
 	"alchemy":["Alchemy","Alchemie","+5 active heal per rank","+5 aktive Heilung je Rang",14,4]
 }
+static func rarity(id: String) -> int:
+	var index: int = RELICS[id][4]
+	return 3 if id in ["phoenix","cascade","twin"] else (2 if index>=20 else (1 if index>=8 else 0))
+
 static func relic_text(id: String, german: bool) -> String:
 	var item: Array = RELICS[id]
 	return item[1 if german else 0]+"  •  "+item[3 if german else 2]
