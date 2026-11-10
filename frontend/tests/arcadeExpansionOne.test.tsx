@@ -12,9 +12,9 @@ import {readArcadeRecord,saveArcadeRecord} from '../src/lobby/arcadeRecords';
 
 describe('Arcade Expansion I — five fully playable games',()=>{
  it('preserves the original ten IDs and registers five distinct complete localizations',()=>{
-  expect(PLAYABLE_ARCADE_IDS).toHaveLength(15);
-  expect(PLAYABLE_ARCADE_IDS.slice(-5)).toEqual([...EXPANSION_ONE_IDS]);
-  expect(new Set(PLAYABLE_ARCADE_IDS).size).toBe(15);
+  expect(PLAYABLE_ARCADE_IDS).toHaveLength(20);
+  expect(PLAYABLE_ARCADE_IDS.slice(10,15)).toEqual([...EXPANSION_ONE_IDS]);
+  expect(new Set(PLAYABLE_ARCADE_IDS).size).toBe(20);
   for(const id of EXPANSION_ONE_IDS){
    expect(isPlayableArcade(id)).toBe(true);
    expect(createArcadeRun(id).kind).toBe(id);

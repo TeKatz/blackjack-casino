@@ -1,9 +1,10 @@
 import {useEffect,useRef,useState} from 'react';
 import type {PointerEvent as ReactPointerEvent} from 'react';
-import {ARCADE_HEIGHT,ARCADE_STEP,ARCADE_WIDTH,actArcadeRun,createArcadeRun,stepArcadeRun,steerSnake,chooseEchoPad} from './arcadeEngine';
+import {ARCADE_HEIGHT,ARCADE_STEP,ARCADE_WIDTH,actArcadeRun,createArcadeRun,stepArcadeRun,steerSnake,chooseEchoPad,selectPrism,rotateCircuit,movePuzzleCursor} from './arcadeEngine';
 import type {PlayableArcadeId,ArcadeEvent,ArcadeRunState} from './arcadeEngine';
 import {drawArcadeRun} from './arcadeRenderer';
 import {echoPadAt} from './arcadeExpansionOneRenderer';
+import {prismCellAt,circuitCellAt} from './arcadeExpansionTwoRenderer';
 import {ArcadeHeldKeys,arcadeDirection} from './arcadeControls';
 import {readArcadeRecord,saveArcadeRecord} from './arcadeRecords';
 import type {ArcadeRecord} from './arcadeRecords';
@@ -32,6 +33,11 @@ const strings={
   drift:'A / D oder ← / → lenken. Halte Leertaste für Drift-Kombos.',
   gravity:'A / D bewegen. Leertaste kehrt die Schwerkraft um.',
   echo:'Merke dir die Lichter. Wiederhole mit 1–6 oder per Klick.',
+  prism:'Klicke auf Spiegel oder wähle sie mit Pfeiltasten und Leertaste. Lenke den Laser zum Ausgang.',
+  miner:'WASD/Pfeiltasten fliegen. Leertaste gedrückt halten zum Abbauen. Bringe die Fracht zur Basis.',
+  circuit:'Klicke auf Leiterbahnen oder wähle Felder mit Pfeiltasten und Leertaste. Verbinde den Stromkreis.',
+  heist:'Bewege dich mit WASD/Pfeiltasten, sammle alle Edelsteine und vermeide die Sichtkegel der Wachen.',
+  pulse:'Leertaste/Klick, sobald sich der schrumpfende Ring mit dem Zielring deckt. Drei Fehler beenden das Spiel.',
   exit:'ZUR SPIELAUSWAHL',local:'Persönliche Rekorde werden auf diesem Gerät gespeichert.',
   pauseHint:'Die Spielzeit wird während der Pause angehalten.'},
  en:{back:'← Arcade Games',score:'SCORE',best:'BEST',time:'TIME',plays:'RUNS',
@@ -54,6 +60,11 @@ const strings={
   drift:'A / D or ← / → steer. Hold Space to score drift combos.',
   gravity:'A / D moves. Space flips gravity.',
   echo:'Watch the lights, then repeat with 1–6 or a click.',
+  prism:'Click mirrors or select with arrow keys and Space. Reflect the laser into the receiver.',
+  miner:'WASD/Arrows to fly, hold Space to mine ore. Return cargo to base and refill oxygen.',
+  circuit:'Click circuit tiles or select with arrows and Space. Connect the input to the output.',
+  heist:'Use WASD/Arrows, collect all jewels and avoid the guards’ vision cones.',
+  pulse:'Press Space/click exactly when the shrinking ring overlaps the target. Three misses end the game.',
   exit:'BACK TO GAME LIST',local:'Personal bests are saved on this device.',
   pauseHint:'Game time is stopped while the run is paused.'},
 };
@@ -63,6 +74,8 @@ const instructionsKey={
  'hexagon-hell':'hex','spike-rush':'spike','endless-ascent':'ascent',
  'midnight-pinball':'pinball','phantom-hook':'hook','neon-drift':'drift',
  'gravity-chamber':'gravity','echo-sequence':'echo',
+ 'prism-lock':'prism','meteor-miner':'miner','circuit-rush':'circuit',
+ 'shadow-heist':'heist','pulse-perfect':'pulse',
 } as const;
 const formatTime=(s:number)=>{
  const whole=Math.floor(Math.max(0,s));
@@ -153,10 +166,12 @@ export function ArcadeGameScreen({id,language,onBack}:{
   phaseRef.current='over';setPhase('over');
   tone('fail',soundRef.current,audioRef);
  };
- const action=(pad?:number)=>{
+ const action=(pad?:number,cell?:{c:number;r:number})=>{
   if(phaseRef.current!=='playing')return;
   const s=gameRef.current;
-  const event=s.kind==='echo-sequence'&&pad!==undefined?chooseEchoPad(s,pad):actArcadeRun(s);
+  const event=s.kind==='prism-lock'&&cell?selectPrism(s,cell.c,cell.r):
+   s.kind==='circuit-rush'&&cell?rotateCircuit(s,cell.c,cell.r):
+   s.kind==='echo-sequence'&&pad!==undefined?chooseEchoPad(s,pad):actArcadeRun(s);
   if(s.over)finish();
   else if(event){
    setScore(s.score);
@@ -258,6 +273,16 @@ export function ArcadeGameScreen({id,language,onBack}:{
     return;
    }
    const direction=arcadeDirection(event.code,key);
+   if(direction&&(id==='prism-lock'||id==='circuit-rush')){
+    if(phaseRef.current==='playing'&&!event.repeat){
+     const run=gameRef.current;
+     if(run.kind==='prism-lock'||run.kind==='circuit-rush'){
+      const offset={left:[-1,0],right:[1,0],up:[0,-1],down:[0,1]}[direction];
+      movePuzzleCursor(run,offset[0],offset[1]);repaint();
+     }
+    }
+    return;
+   }
    if(direction&&id==='death-snake'){
     if(phaseRef.current==='playing'&&!event.repeat){
      const state=gameRef.current;
@@ -266,7 +291,8 @@ export function ArcadeGameScreen({id,language,onBack}:{
     return;
    }
    if(direction&&(id==='neon-breaker'||id==='bullet-storm'||id==='hexagon-hell'||id==='endless-ascent'||
-     id==='midnight-pinball'||id==='neon-drift'||id==='gravity-chamber')){
+     id==='midnight-pinball'||id==='neon-drift'||id==='gravity-chamber'||
+     id==='meteor-miner'||id==='shadow-heist')){
     keys.current.press(event.code,key);
     // A pressed key immediately takes over; only actual mouse motion restores mouse steering.
     if(id==='neon-breaker'&&(direction==='left'||direction==='right'))mouseTarget.current=null;
@@ -274,16 +300,16 @@ export function ArcadeGameScreen({id,language,onBack}:{
     return;
    }
    if(key===' '||key==='arrowup'){
-    if(id==='cave-escape'||id==='neon-drift')held.current=true;
+    if(id==='cave-escape'||id==='neon-drift'||id==='meteor-miner')held.current=true;
     if(event.repeat)return;
-    if(phaseRef.current==='ready'){start();if(id==='cave-escape'||id==='neon-drift')held.current=true;}
-    else if(phaseRef.current==='playing'&&id!=='cave-escape'&&id!=='neon-drift')action();
+    if(phaseRef.current==='ready'){start();if(id==='cave-escape'||id==='neon-drift'||id==='meteor-miner')held.current=true;}
+    else if(phaseRef.current==='playing'&&id!=='cave-escape'&&id!=='neon-drift'&&id!=='meteor-miner')action();
     else if(phaseRef.current==='over')start();
    }
   };
   const keyUp=(event:KeyboardEvent)=>{
    const key=event.key.toLowerCase();
-   if((id==='cave-escape'||id==='neon-drift')&&(key===' '||key==='arrowup'))held.current=false;
+   if((id==='cave-escape'||id==='neon-drift'||id==='meteor-miner')&&(key===' '||key==='arrowup'))held.current=false;
    keys.current.release(event.code,key);
   };
   window.addEventListener('keydown',keyDown,true);
@@ -309,6 +335,14 @@ export function ArcadeGameScreen({id,language,onBack}:{
  const pointerDown=(event:ReactPointerEvent<HTMLCanvasElement>)=>{
   if(event.button!==0)return;
   event.currentTarget.focus({preventScroll:true});
+  if((id==='prism-lock'||id==='circuit-rush')&&phaseRef.current==='playing'){
+   const point=pointerCoordinates(event);
+   if(point){
+    const cell=id==='prism-lock'?prismCellAt(point.x,point.y):circuitCellAt(point.x,point.y);
+    if(cell)action(undefined,cell);
+   }
+   return;
+  }
   if(id==='midnight-pinball'&&phaseRef.current==='playing'){
    const point=pointerCoordinates(event),run=gameRef.current;
    if(run.kind==='midnight-pinball'&&run.serve){action();return;}
@@ -323,19 +357,19 @@ export function ArcadeGameScreen({id,language,onBack}:{
    if(pad!==null)action(pad);
    return;
   }
-  if(id==='cave-escape'||id==='bullet-storm'){
-   if(id==='cave-escape')held.current=true;
+  if(id==='cave-escape'||id==='bullet-storm'||id==='meteor-miner'){
+   if(id==='cave-escape'||id==='meteor-miner')held.current=true;
    if(id==='bullet-storm')mouseActive.current=true;
    event.currentTarget.setPointerCapture(event.pointerId);
   }
   if(id==='neon-breaker'||id==='bullet-storm')mouseTarget.current=pointerCoordinates(event);
   if(phaseRef.current==='ready'){
    start();
-   if(id==='cave-escape')held.current=true;
+   if(id==='cave-escape'||id==='meteor-miner')held.current=true;
    if(id==='bullet-storm'){mouseActive.current=true;mouseTarget.current=pointerCoordinates(event);}
    if(id==='neon-breaker')mouseTarget.current=pointerCoordinates(event);
   }
-  else if(phaseRef.current==='playing'&&id!=='cave-escape'&&id!=='bullet-storm')action();
+  else if(phaseRef.current==='playing'&&id!=='cave-escape'&&id!=='bullet-storm'&&id!=='meteor-miner')action();
  };
  const pointerMove=(event:ReactPointerEvent<HTMLCanvasElement>)=>{
   if(id==='neon-breaker'||(id==='bullet-storm'&&mouseActive.current))

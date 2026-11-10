@@ -1,0 +1,76 @@
+/* Arcade Expansion II: only individual gameplay actors animate on hover/focus. */
+.arcade-game-card:is(:hover,:focus-visible) .exp-two-prism-beam{
+ animation:exp-two-laser 1.75s ease-in-out infinite;
+}
+.arcade-game-card:is(:hover,:focus-visible) .exp-two-prism-target{
+ animation:exp-two-receiver 1.75s ease-in-out infinite;
+}
+.arcade-game-card:is(:hover,:focus-visible) .exp-two-prism-mirror{
+ animation:exp-two-reflector 1.75s ease-in-out infinite;
+}
+@keyframes exp-two-laser{0%,20%{opacity:0;stroke-dasharray:0 400}65%,90%{opacity:1;stroke-dasharray:400 0}100%{opacity:0}}
+@keyframes exp-two-receiver{0%,45%,100%{opacity:.3}68%,90%{opacity:1}}
+@keyframes exp-two-reflector{0%,100%{opacity:.6}50%{opacity:1}}
+
+.arcade-game-card:is(:hover,:focus-visible) .exp-two-miner-ship{
+ animation:exp-two-miner-glide 2.6s ease-in-out infinite;
+}
+.arcade-game-card:is(:hover,:focus-visible) .exp-two-miner-beam{
+ animation:exp-two-miner-drill 2.6s ease-in-out infinite;
+}
+.arcade-game-card:is(:hover,:focus-visible) .exp-two-miner-spark{
+ animation:exp-two-miner-hit 2.6s ease-out infinite;
+}
+@keyframes exp-two-miner-glide{0%,100%{translate:-7px 5px}45%,70%{translate:0 0}}
+@keyframes exp-two-miner-drill{0%,30%,90%,100%{opacity:0}46%,83%{opacity:1}}
+@keyframes exp-two-miner-hit{0%,52%,90%,100%{opacity:0;scale:.7}68%{opacity:1;scale:1}}
+
+.arcade-game-card:is(:hover,:focus-visible) .exp-two-circuit-current{
+ animation:exp-two-electric 1.9s ease-in-out infinite;
+}
+.arcade-scene .exp-two-circuit-turn{transform-box:fill-box;transform-origin:center}
+.arcade-game-card:is(:hover,:focus-visible) .exp-two-circuit-turn{
+ animation:exp-two-wire-turn 1.9s steps(1,end) infinite;
+}
+@keyframes exp-two-electric{
+ 0%,20%{opacity:.15;stroke-dasharray:5 90}
+ 72%,91%{opacity:1;stroke-dasharray:110 0}
+ 100%{opacity:.15}
+}
+@keyframes exp-two-wire-turn{0%,35%{rotate:0deg}50%,100%{rotate:90deg}}
+
+.arcade-scene .exp-two-heist-cone{transform-box:view-box;transform-origin:155px 63px}
+.arcade-game-card:is(:hover,:focus-visible) .exp-two-heist-cone{
+ animation:exp-two-guard-sweep 2.8s ease-in-out infinite;
+}
+.arcade-game-card:is(:hover,:focus-visible) .exp-two-heist-player{
+ animation:exp-two-sneak 2.8s ease-in-out infinite;
+}
+@keyframes exp-two-guard-sweep{
+ 0%,100%{rotate:-27deg}45%{rotate:27deg}
+}
+@keyframes exp-two-sneak{
+ 0%,8%{translate:0 0}48%{translate:35px 0}75%,100%{translate:50px -7px}
+}
+
+.arcade-scene .exp-two-pulse-ring{transform-box:view-box;transform-origin:160px 64px}
+.arcade-game-card:is(:hover,:focus-visible) .exp-two-pulse-ring{
+ animation:exp-two-perfect-timing 2s ease-in infinite;
+}
+.arcade-game-card:is(:hover,:focus-visible) .exp-two-pulse-glint{
+ animation:exp-two-perfect-flash 2s ease-out infinite;
+}
+@keyframes exp-two-perfect-timing{
+ 0%{scale:1.2;opacity:.25}
+ 73%,82%{scale:.74;opacity:1}
+ 97%,100%{scale:.68;opacity:0}
+}
+@keyframes exp-two-perfect-flash{
+ 0%,69%,97%,100%{opacity:0}76%{opacity:1}
+}
+@media(prefers-reduced-motion:reduce){
+ .arcade-scene [class^="exp-two-"]{animation:none!important;transition:none!important}
+}
+.casino-lobby-shell[data-reduced="true"] .arcade-scene [class^="exp-two-"]{
+ animation:none!important;transition:none!important
+}
