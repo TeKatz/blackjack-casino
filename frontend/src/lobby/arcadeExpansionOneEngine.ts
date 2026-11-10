@@ -42,11 +42,25 @@ export const driftTrafficAt=(index:number)=>{
  return {distance,x:driftCenter(distance)+lane*driftRoadHalfWidth(distance),r:29};
 };
 export const gravityGoalY=(stage:number)=>stage%2===0?93:438;
-export const gravityHazards=(stage:number)=>[
- {x:260+(stage%3)*22,y:444,w:84,h:25},
- {x:480-(stage%3)*16,y:67,w:92,h:19},
- {x:645+(stage%2)*12,y:444,w:79,h:25},
-];
+export const gravityHazards=(stage:number)=>{
+ const hazards=[
+  {x:260+(stage%3)*22,y:444,w:84,h:25},
+  {x:480-(stage%3)*16,y:67,w:92,h:19},
+  {x:645+(stage%2)*12,y:444,w:79,h:25},
+ ];
+ if(stage>=3)hazards.push({x:350+(stage%2)*24,y:67,w:78,h:19});
+ if(stage>=5)hazards.push({x:520-(stage%3)*13,y:444,w:67,h:25});
+ if(stage>=8)hazards.push({x:710,y:67,w:75,h:19});
+ return hazards;
+};
+/** Moving hazards activate only in advanced rooms. All positions are deterministic. */
+export const gravitySentries=(stage:number,elapsed:number)=>{
+ if(stage<4)return [] as {x:number;y:number;r:number}[];
+ const result=[{x:415+115*Math.sin(elapsed*(.8+stage*.075)),y:260,r:18}];
+ if(stage>=7)result.push({x:628+75*Math.sin(elapsed*.95+2),y:335,r:21});
+ if(stage>=10)result.push({x:290+65*Math.sin(elapsed*1.2+1),y:170,r:15});
+ return result;
+};
 export function createExpansionRun(kind:ExpansionOneId,seed=0x51eab141):ExpansionRun{
  const base={score:0,elapsed:0,over:false,seed:(seed>>>0)||0x51eab141};
  switch(kind){
@@ -189,8 +203,11 @@ function gravityStep(s:GravityRun,dt:number,c:ExpansionControls):ExpansionEvent{
  s.x=clamp(s.x,102,859);s.y=clamp(s.y,93,438);
  if((s.y===93&&s.vy<0)||(s.y===438&&s.vy>0))s.vy=0;
  const hazards=gravityHazards(s.stage);
- if(s.invulnerable===0&&hazards.some(h=>s.x+13>h.x&&s.x-13<h.x+h.w&&
-   s.y+13>h.y&&s.y-13<h.y+h.h)){
+ const collision=hazards.some(h=>s.x+13>h.x&&s.x-13<h.x+h.w&&
+   s.y+13>h.y&&s.y-13<h.y+h.h);
+ const sentryHit=gravitySentries(s.stage,s.elapsed).some(h=>
+   Math.hypot(s.x-h.x,s.y-h.y)<h.r+13);
+ if(s.invulnerable===0&&(collision||sentryHit)){
   s.lives--;
   if(s.lives<=0)return fail(s);
   s.x=132;s.y=438;s.vx=0;s.vy=0;s.gravity=1;s.invulnerable=.85;
