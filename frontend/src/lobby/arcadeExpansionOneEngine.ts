@@ -1,13 +1,12 @@
-import {createPinballRun,launchPinball,stepPinball} from './arcadePinballV2';
-import type {PinballRun} from './arcadePinballV2';
-export {pinBumpers,pinballFlipper,pinballGeometry} from './arcadePinballV2';
-export type {PinballRun} from './arcadePinballV2';
+import {createBeatsRun,stepBeatsRun} from './arcadeBeatsEngine';
+import type {BeatsRun} from './arcadeBeatsEngine';
+export type {BeatsRun} from './arcadeBeatsEngine';
 /**
  * Arcade Expansion I — five independent, deterministic, offline minigames.
  * Pure 60 Hz simulation. The React runner owns user inputs, pause and high scores.
  */
 export const EXPANSION_ONE_IDS=[
- 'midnight-pinball','phantom-hook','neon-drift','gravity-chamber','echo-sequence',
+ 'midnight-beats','phantom-hook','neon-drift','gravity-chamber','echo-sequence',
 ] as const;
 export type ExpansionOneId=typeof EXPANSION_ONE_IDS[number];
 export const isExpansionOneId=(id:string):id is ExpansionOneId=>
@@ -28,7 +27,7 @@ export type GravityRun=Base&{kind:'gravity-chamber';x:number;y:number;vx:number;
 export type EchoRun=Base&{kind:'echo-sequence';round:number;lives:number;
  sequence:number[];phase:'watch'|'input'|'celebrate';clock:number;index:number;
  active:number;inputClock:number;lastChoice:number;feedback:number;lastGood:boolean};
-export type ExpansionRun=PinballRun|HookRun|DriftRun|GravityRun|EchoRun;
+export type ExpansionRun=BeatsRun|HookRun|DriftRun|GravityRun|EchoRun;
 export const isExpansionRun=(s:{kind:string}):s is ExpansionRun=>isExpansionOneId(s.kind);
 export const driftCenter=(distance:number)=>{
  const difficulty=1+Math.min(.32,Math.max(0,distance)/14000);
@@ -64,7 +63,7 @@ export const gravitySentries=(stage:number,elapsed:number)=>{
 export function createExpansionRun(kind:ExpansionOneId,seed=0x51eab141):ExpansionRun{
  const base={score:0,elapsed:0,over:false,seed:(seed>>>0)||0x51eab141};
  switch(kind){
-  case 'midnight-pinball':return createPinballRun(seed);
+  case 'midnight-beats':return createBeatsRun(seed);
   case 'phantom-hook':return {...base,kind,x:145,y:302,vx:164,vy:-90,
    anchored:-1,rope:185,camera:0,lastAnchor:0,
    anchors:[{x:226,y:128},{x:475,y:180},{x:735,y:111},{x:984,y:172}]};
@@ -99,7 +98,7 @@ export function chooseEchoPad(s:EchoRun,pad:number):ExpansionEvent{
 export function actExpansionRun(s:ExpansionRun):ExpansionEvent{
  if(s.over)return null;
  switch(s.kind){
- case 'midnight-pinball':return launchPinball(s);
+ case 'midnight-beats':return null;
  case 'phantom-hook':
   if(s.anchored>=0){
    s.anchored=-1;s.vy=Math.min(s.vy,-155);return 'flap';
@@ -252,7 +251,7 @@ export function stepExpansionRun(s:ExpansionRun,dt:number,holding=false,
  const step=Math.min(dt,STEP);
  s.elapsed+=step;
  switch(s.kind){
-  case 'midnight-pinball':return stepPinball(s,step,controls);
+  case 'midnight-beats':return stepBeatsRun(s,step);
   case 'phantom-hook':return hookStep(s,step);
   case 'neon-drift':return driftStep(s,step,holding,controls);
   case 'gravity-chamber':return gravityStep(s,step,controls);
