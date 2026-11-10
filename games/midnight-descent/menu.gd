@@ -8,6 +8,8 @@ const PixelWorld = preload("res://pixel_world.gd")
 const Content = preload("res://content.gd")
 const Progress = preload("res://progress.gd")
 const UI = preload("res://ui_theme.gd")
+const SoundBank = preload("res://sound_bank.gd")
+var audio = SoundBank.new()
 var progress = Progress.new()
 var codex_page := 0
 var sets_page := 0
@@ -33,6 +35,7 @@ func _ready() -> void:
 		if arg == "--language=de":
 			german = true
 	if not "--smoke-test" in OS.get_cmdline_user_args(): progress.load_save()
+	add_child(audio)
 	build_shell()
 	show_page("home")
 	if "--smoke-test" in OS.get_cmdline_user_args():
@@ -197,7 +200,8 @@ func add_action(caption: String, callback: Callable, locked: bool = false) -> Bu
 	button.add_theme_stylebox_override("disabled", box_style(Color("#181526"), Color("#392d4c")))
 	UI.style_button(button,GOLD)
 	button.disabled = locked
-	button.pressed.connect(callback)
+	button.mouse_entered.connect(func(): audio.play("hover"))
+	button.pressed.connect(func(): audio.play("click"); callback.call())
 	body.add_child(button)
 	action_buttons.append(button)
 	return button
@@ -329,11 +333,13 @@ func select_set(id: String) -> void:
 
 func buy_rank(id: String) -> void:
 	if progress.buy_upgrade(id):
+		audio.play("purchase")
 		progress.save()
 		show_page("progress")
 
 func buy_set(id: String) -> void:
 	if progress.unlock_set(id):
+		audio.play("unlock")
 		progress.save()
 		show_page("sets")
 

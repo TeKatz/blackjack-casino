@@ -121,7 +121,7 @@ func update_view(dt: float) -> void:
 	walking = delta.length_squared() > 0.05
 	if walking:
 		player_facing = delta.normalized()
-	if model.attack_timer > 0.17 or model.bolt_timer > 0.48:
+	if model.attack_timer > maxf(0.0,model.attack_cd-0.18) or model.bolt_timer > maxf(0.0,model.special_cd-0.25):
 		player_facing = model.aim
 	previous_player = model.player
 	for i in range(torches.size()):
@@ -233,13 +233,35 @@ func _draw() -> void:
 
 func draw_biome_details(arena: Rect2) -> void:
 	if model.floor_index==0:
-		# Iron floor grates, warning stripes and chains.
-		for x in [420,690,960]:
-			draw_rect(Rect2(x-30,166,60,438),Color("#28212f"),false,2)
-			for y in range(182,594,32):
-				draw_rect(Rect2(x-10,y,20,10),Color("#15131c"))
-				draw_rect(Rect2(x-9,y,18,2),Color("#766b71"))
-				draw_rect(Rect2(x-5,y+3,2,5),Color("#514856"))
+		# Each physical plate is drawn on the floor canvas. No tiles are placed
+		# within the collision margin of a wall, and actors sort above the tips.
+		for x in [420.0,690.0,960.0]:
+			for cell in model.spike_cells(x):
+				var plate: Rect2=cell
+				draw_rect(plate,Color("#181520"))
+				draw_rect(plate.grow(-2),Color("#4b4354"))
+				draw_rect(plate.grow(-4),Color("#292533"))
+				draw_line(plate.position+Vector2(3,3),plate.position+Vector2(plate.size.x-3,3),Color("#8c7985"),2)
+				var height:=0.0
+				var warning:=false
+				for hazard in model.hazards:
+					if hazard.get("type","")!="spikes" or not hazard.cells.has(plate): continue
+					warning=hazard.warn>0
+					if hazard.warn<=0:
+						height=clampf(-float(hazard.warn)/0.12,0,1)*clampf(float(hazard.life)/0.20,0,1)
+				for i in range(3):
+					var p:=plate.position+Vector2(10+i*16,15)
+					draw_rect(Rect2(p-Vector2(5,4),Vector2(10,8)),Color("#100e17"))
+					draw_rect(Rect2(p-Vector2(4,4),Vector2(8,2)),Color("#736372"))
+					if warning:
+						draw_rect(Rect2(p-Vector2(4,2),Vector2(8,3)),Color(0.98,0.66,0.24,0.55+sin(clock*18)*0.35))
+					if height>0:
+						var h: float=roundf(height*18/2)*2
+						draw_rect(Rect2(p-Vector2(6,2),Vector2(12,5)),Color(0.05,0.03,0.09,0.6))
+						var tip:=p+Vector2(0,-h)
+						draw_colored_polygon(PackedVector2Array([p+Vector2(-5,2),tip,p+Vector2(5,2)]),Color("#c4b4bf"))
+						draw_colored_polygon(PackedVector2Array([p,tip,p+Vector2(5,2)]),Color("#746577"))
+						draw_line(tip,p+Vector2(-4,1),Color("#f5e4d0"),1)
 	elif model.floor_index==1:
 		# Dense moss, branching vines and luminous mushrooms, not new collision.
 		for i in range(16):
@@ -324,7 +346,7 @@ func draw_warden() -> void:
 func draw_actor(enemy: Dictionary) -> void:
 	var kind: String = enemy.kind
 	var pos: Vector2 = enemy.pos
-	var size := 128.0 if kind in ["boss","rootking"] else (80.0 if kind=="mushroom" else 64.0)
+	var size := 128.0 if kind in ["boss","rootking","hollowking"] else (80.0 if kind=="mushroom" else 64.0)
 	var direction: Vector2 = pos.direction_to(model.player)
 	var frame := 2+int(clock*8+pos.x*0.02)%4
 	if enemy.wind > 0:

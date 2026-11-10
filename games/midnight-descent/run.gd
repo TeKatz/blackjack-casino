@@ -33,8 +33,8 @@ var overlay_state := ""
 var clock := 0.0
 var shake := 0.0
 var font: Font = ThemeDB.fallback_font
-var audio: AudioStreamPlayer
-var sounds: Dictionary = {}
+const SoundBank = preload("res://sound_bank.gd")
+var audio = SoundBank.new()
 var last_dash := false
 var last_interact := false
 
@@ -51,10 +51,7 @@ func _ready() -> void:
 	add_child(world_layer)
 	world_layer.add_child(world)
 	world.setup(run)
-	audio = AudioStreamPlayer.new()
 	add_child(audio)
-	for key in ["swing","bolt","hit","hurt","kill","clear","relic"]:
-		sounds[key] = make_sound(key)
 	var layer := CanvasLayer.new()
 	add_child(layer)
 	overlay = Control.new()
@@ -95,6 +92,10 @@ func _process(dt: float) -> void:
 		if not smoke_mode: progress.save()
 	var target: String = "pause" if paused else run.state
 	if target != overlay_state or (target=="route" and (modal_room!=run.room or modal_floor!=run.floor_index)):
+		if target=="route": play_sound("map")
+		elif target=="service": play_sound(run.room_kind)
+		elif target in ["pause","victory","defeat"]: play_sound(target)
+		elif target=="fight" and modal_floor!=run.floor_index: play_sound("descend")
 		overlay_state = target
 		modal_room=run.room
 		modal_floor=run.floor_index
@@ -144,6 +145,7 @@ func _draw() -> void:
 	# Attack telegraphs and projectiles remain above the pixel-world layer.
 	for hazard in run.hazards:
 		var kind: String=hazard.get("type","")
+		if kind=="spikes": continue # drawn on the lit world canvas, below obstacles and actors
 		var color := Color("#e9b963") if hazard.warn>0 else (Color("#e17fbc") if kind=="rune" else (Color("#f19c7b") if kind=="spikes" else Color("#77c96d")))
 		if hazard.has("rect"):
 			var rect: Rect2=hazard.rect
@@ -178,12 +180,7 @@ func _draw() -> void:
 				draw_circle(pos,rad,Color(0.95,0.15,0.3,0.12))
 				draw_arc(pos,rad,0,TAU,48,Color("#ff6481"),2,true)
 	for shot in run.shots:
-		var pos: Vector2 = shot.pos
-		var vel: Vector2 = shot.vel
-		var color := Color("#ff6b89") if shot.hostile else (Color("#93e4bd") if run.character=="soulbinder" else Color("#8deaff"))
-		draw_line(pos-vel.normalized()*22,pos,color,5,true)
-		draw_circle(pos,10,Color(color,0.17))
-		draw_circle(pos,5,color)
+		draw_projectile(shot)
 	for enemy in run.enemies:
 		var pos: Vector2 = enemy.pos
 		var radius: float = enemy.r
@@ -284,21 +281,95 @@ func run_scene_smoke() -> void:
 	print("Midnight Descent gameplay scene smoke PASS")
 	get_tree().quit()
 
+func attack_color(style: String) -> Color:
+	if style.begins_with("dealer"): return Color("#f3cd83")
+	if style.begins_with("arcanist_fire"): return Color("#ff8549")
+	if style.begins_with("arcanist_frost"): return Color("#96e7ff")
+	if style.begins_with("soulbinder"): return Color("#8ce6b9")
+	return Color("#c3b2ff")
+
+func draw_projectile(shot: Dictionary) -> void:
+	var pos: Vector2=shot.pos
+	var direction: Vector2=shot.vel.normalized()
+	var style: String=shot.get("style","")
+	var color: Color=attack_color(style)
+	if shot.hostile:
+		color=Color("#ff7891")
+		if style=="spore": color=Color("#b1de75")
+		elif style=="hexer" or style=="hollowking": color=Color("#ed88d9")
+		elif style=="archer": color=Color("#f8b873")
+	var side:=direction.orthogonal()
+	if style.begins_with("dealer"):
+		var points:=PackedVector2Array([pos-direction*9-side*6,pos+direction*9-side*6,pos+direction*9+side*6,pos-direction*9+side*6])
+		draw_colored_polygon(points,Color("#f7e5ae"))
+		draw_polyline(PackedVector2Array([points[0],points[1],points[2],points[3],points[0]]),Color("#b47741"),2,true)
+		draw_line(pos-side*3,pos+side*3,Color("#a75b55"),2)
+	elif style=="archer" or style.begins_with("arcanist_frost"):
+		draw_line(pos-direction*20,pos+direction*8,color,3,true)
+		draw_colored_polygon(PackedVector2Array([pos+direction*10,pos-direction*4+side*5,pos-direction*4-side*5]),color)
+		draw_line(pos-direction*13,pos-direction*20+side*5,color,2,true)
+	else:
+		draw_line(pos-direction*25,pos,color,6,true)
+		draw_circle(pos,13,Color(color,0.12))
+		draw_circle(pos,6,color)
+		draw_circle(pos+direction*2,3,Color("#fff1d8"))
+		if style.begins_with("arcanist_fire") or style=="spore":
+			for i in range(3):
+				var spark:=pos-direction*(8+i*7)+side*sin(clock*20+i*2)*5
+				draw_rect(Rect2(spark,Vector2(3,3)),Color(color,0.7))
+
 func draw_effect(fx: Dictionary) -> void:
 	var alpha := float(fx.time)/float(fx.max)
 	var pos: Vector2 = fx.pos
 	var dir: Vector2 = fx.dir
-	match fx.kind:
-		"slash":
-			draw_arc(pos,68,dir.angle()-1.25,dir.angle()+1.25,28,Color(1,0.84,0.55,alpha),8,true)
-			draw_arc(pos,80,dir.angle()-1.1,dir.angle()+1.1,28,Color(1,0.95,0.8,alpha*0.8),2,true)
+	var kind: String=fx.kind
+	if kind=="damage":
+		text_at(pos+Vector2(-12,-25-30*(1-alpha)),str(fx.amount),16,Color(1,0.9,0.72,alpha))
+		return
+	if kind.begins_with("slash_"):
+		var style: String=kind.trim_prefix("slash_")
+		var color: Color=Color("#f7cf86") if style.begins_with("warden") else Color("#91e6c0")
+		var radius: float=94 if style in ["warden_executioner","soulbinder_reaper"] else 74
+		var angle: float=dir.angle()-1.3+0.45*(1-alpha)
+		draw_arc(pos,radius,angle,angle+2.4,32,Color(color,alpha*0.32),18,true)
+		draw_arc(pos,radius+5,angle,angle+2.4,32,Color(color,alpha),5,true)
+		draw_arc(pos,radius+8,angle+0.15,angle+2.15,32,Color(1,0.96,0.86,alpha),2,true)
+		return
+	if kind.begins_with("special_") or kind.begins_with("active_"):
+		var style: String=kind.trim_prefix("special_").trim_prefix("active_")
+		var color: Color=attack_color(style)
+		if style=="heal": color=Color("#9ce5a7")
+		elif style=="bomb": color=Color("#fca35f")
+		elif style=="shield": color=Color("#e5cf92")
+		var radius: float=30+110*(1-alpha)
+		draw_arc(pos,radius,0,TAU,48,Color(color,alpha*0.8),4,true)
+		draw_circle(pos,radius,Color(color,alpha*0.07))
+		for i in range(10):
+			var ray:=Vector2.from_angle(i*TAU/10+clock*0.5)
+			var p:=pos+ray*radius
+			draw_rect(Rect2(p-Vector2(3,3),Vector2(6,6)),Color(color,alpha))
+		return
+	if kind.begins_with("enemy_"):
+		var style: String=kind.trim_prefix("enemy_")
+		var color:=Color("#f18c81")
+		if style in ["spore","vine","rootking"]: color=Color("#b3d67e")
+		elif style in ["hexer","hollowking"]: color=Color("#e499d9")
+		if style in ["archer","caster","spore","hexer","vine"]:
+			draw_line(pos,pos+dir*45,Color(color,alpha),5,true)
+			draw_circle(pos+dir*22,12*(1-alpha)+5,Color(color,alpha*0.6))
+		else:
+			draw_arc(pos,34+55*(1-alpha),dir.angle()-1.1,dir.angle()+1.1,24,Color(color,alpha),6,true)
+		return
+	match kind:
 		"dash":
-			draw_line(pos-dir*60,pos+dir*23,Color(0.65,0.52,1,alpha*0.8),15,true)
-		"burst","hit","hurt":
-			var color := Color(1,0.35,0.45,alpha) if fx.kind=="hurt" else Color(1,0.78,0.42,alpha)
-			for i in range(8):
-				var ray := Vector2.from_angle(float(i)*TAU/8+clock)
-				draw_line(pos+ray*(8+35*(1-alpha)),pos+ray*(15+42*(1-alpha)),color,2,true)
+			draw_line(pos-dir*60,pos+dir*23,Color(0.65,0.52,1,alpha*0.8),9,true)
+		"burst","hit","hurt","death":
+			var color := Color(1,0.35,0.45,alpha) if kind=="hurt" else Color(1,0.78,0.42,alpha)
+			for i in range(12 if kind=="death" else 7):
+				var ray := Vector2.from_angle(float(i)*TAU/12+clock)
+				var p:=pos+ray*(8+35*(1-alpha))
+				draw_line(p,p+ray*8,color,2,true)
+			if kind=="death": draw_arc(pos,15+45*(1-alpha),0,TAU,32,color,2,true)
 
 func hud_panel(rect: Rect2, accent: Color = GOLD) -> void:
 	draw_rect(Rect2(rect.position+Vector2(0,4),rect.size),Color("#090710"))
@@ -383,35 +454,8 @@ func draw_hud() -> void:
 		draw_rect(Rect2(480,153,320,42),Color(0.06,0.04,0.1,0.77*opacity))
 		text_at(Vector2(498,180),[tr_text("PRESSURE PLATES","DRUCKPLATTEN"),tr_text("TOXIC SPORES","GIFTIGE SPOREN"),tr_text("ROYAL RUNES","KÖNIGLICHE RUNEN")][run.floor_index],18,Color(1,0.82,0.52,opacity))
 
-func make_sound(kind: String) -> AudioStreamWAV:
-	var sample := AudioStreamWAV.new()
-	sample.format = AudioStreamWAV.FORMAT_16_BITS
-	sample.mix_rate = 22050
-	var duration := 0.15 if kind!="clear" else 0.42
-	var count := int(duration*22050)
-	var data := PackedByteArray()
-	data.resize(count*2)
-	var frequency := 220.0
-	match kind:
-		"swing": frequency=130
-		"bolt": frequency=540
-		"hit": frequency=180
-		"hurt": frequency=95
-		"kill": frequency=320
-		"clear": frequency=660
-		"relic": frequency=880
-	for i in range(count):
-		var t := float(i)/22050
-		var envelope := pow(1.0-float(i)/count,2)*minf(1,t*150)
-		var wave := sin(TAU*frequency*t*(1.0-t*1.4))+0.25*sin(TAU*frequency*2.1*t)
-		data.encode_s16(i*2,int(wave*envelope*4200))
-	sample.data = data
-	return sample
-
 func play_sound(kind: String) -> void:
-	if sounds.has(kind):
-		audio.stream = sounds[kind]
-		audio.play()
+	if not smoke_mode: audio.play(kind)
 
 func add_label(parent: Control, value: String, size: int, color: Color) -> void:
 	var node := Label.new()
@@ -428,7 +472,8 @@ func add_button(parent: Control, caption: String, callback: Callable) -> Button:
 	node.custom_minimum_size = Vector2(0,52)
 	node.add_theme_font_size_override("font_size",20)
 	UI.style_button(node,GOLD)
-	node.pressed.connect(callback)
+	node.mouse_entered.connect(func(): play_sound("hover"))
+	node.pressed.connect(func(): play_sound("click"); callback.call())
 	parent.add_child(node)
 	return node
 
@@ -463,7 +508,7 @@ func room_name(kind: String) -> String:
 
 func use_service(choice: int) -> void:
 	if run.service_action(choice):
-		play_sound("relic")
+		play_sound("purchase" if run.room_kind in ["shop","forge"] else run.room_kind)
 
 func show_route_map(column: VBoxContainer) -> void:
 	add_label(column,tr_text("DUNGEON MAP","DUNGEON-KARTE")+"  •  %d / %d" % [run.floor_index+1,Model.FLOOR_COUNT],30,GOLD)
