@@ -3,7 +3,7 @@ import type {ExpansionRun,PinballRun,HookRun,DriftRun,GravityRun,EchoRun} from '
 const W=960,H=540,TAU=Math.PI*2;
 type Ctx=CanvasRenderingContext2D;
 const clamp=(v:number,a:number,b:number)=>Math.max(a,Math.min(b,v));
-function round(ctx:Ctx,x:number,y:number,w:number,h:number,r:number,fill:string,stroke?:string){
+function round(ctx:Ctx,x:number,y:number,w:number,h:number,r:number,fill:string|CanvasGradient|CanvasPattern,stroke?:string){
  ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fillStyle=fill;ctx.fill();
  if(stroke){ctx.lineWidth=2;ctx.strokeStyle=stroke;ctx.stroke();}
 }
