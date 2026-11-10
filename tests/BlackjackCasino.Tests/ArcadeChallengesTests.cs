@@ -6,11 +6,11 @@ namespace BlackjackCasino.Tests;
 public sealed class ArcadeChallengesTests
 {
     [Fact]
-    public void ExactlyTenGlobalChallengesExistForEachOfFifteenArcadeGames()
+    public void ExactlyTenGlobalChallengesExistForEachOfTwentyArcadeGames()
     {
         ChallengeDefinition[] all = ChallengeCatalog.For(ChallengeCategory.Arcade).ToArray();
-        Assert.Equal(150, all.Length);
-        Assert.Equal(150, all.Select(c => c.Id).Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal(200, all.Length);
+        Assert.Equal(200, all.Select(c => c.Id).Distinct(StringComparer.Ordinal).Count());
         Assert.All(all, challenge =>
         {
             Assert.StartsWith("arcade-", challenge.Id, StringComparison.Ordinal);
@@ -23,7 +23,8 @@ public sealed class ArcadeChallengesTests
         {
             "midnight-wings", "cave-escape", "hexagon-hell", "perfect-stack", "spike-rush",
             "blade-timing", "bullet-storm", "neon-breaker", "death-snake", "endless-ascent",
-            "midnight-pinball", "phantom-hook", "neon-drift", "gravity-chamber", "echo-sequence"
+            "midnight-pinball", "phantom-hook", "neon-drift", "gravity-chamber", "echo-sequence",
+            "prism-lock", "meteor-miner", "circuit-rush", "shadow-heist", "pulse-perfect"
         })
             Assert.Equal(10, all.Count(c => c.Id.StartsWith("arcade-" + gameId + "-", StringComparison.Ordinal)));
     }
@@ -94,6 +95,30 @@ public sealed class ArcadeChallengesTests
             Assert.Equal(1, stats.Games[id].Runs);
             Assert.Equal(500, stats.Games[id].BestScore);
             Assert.Equal(74, stats.Games[id].LongestSeconds);
+            Assert.Equal(1, ArcadeChallengeCatalog.Progress(stats,
+                ChallengeCatalog.TryGet("arcade-" + id + "-first")!));
+        }
+        stats.Normalize();
+        Assert.Equal(5, stats.Games.Count);
+    }
+
+    [Fact]
+    public void SecondExpansionReceiptsPersistAndRejectDuplicates()
+    {
+        var stats = new ArcadeStatistics();
+        foreach (string id in new[]
+        {
+            "prism-lock", "meteor-miner", "circuit-rush", "shadow-heist", "pulse-perfect"
+        })
+        {
+            Guid receiptId = Guid.NewGuid();
+            var receipt = new ArcadeRunReceipt(receiptId, id, 600, 76);
+            Assert.True(ArcadeChallengeCatalog.IsGame(id));
+            Assert.True(ArcadeProgression.Process(stats, receipt));
+            Assert.False(ArcadeProgression.Process(stats, receipt));
+            Assert.Equal(1, stats.Games[id].Runs);
+            Assert.Equal(600, stats.Games[id].BestScore);
+            Assert.Equal(76, stats.Games[id].LongestSeconds);
             Assert.Equal(1, ArcadeChallengeCatalog.Progress(stats,
                 ChallengeCatalog.TryGet("arcade-" + id + "-first")!));
         }
