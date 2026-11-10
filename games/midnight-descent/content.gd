@@ -13,16 +13,16 @@ const RELICS := {
 	"focus":["Arcane Focus","Arkaner Fokus","+11 special damage","+11 Spezialschaden",3],
 	"ward":["Iron Ward","Eisenwall","+4 damage reduction","+4 Schadensreduktion",4],
 	"fury":["Quickdraw","Schnellzug","Faster dash recharge","Kürzere Dash-Abklingzeit",5],
-	"split":["Prism Shard","Prismasplitter","Extra projectiles on special attacks","Zusätzliche Spezialprojektile",3],
-	"pierce":["Silver Needle","Silbernadel","Projectiles pierce one more enemy","Projektile durchdringen einen weiteren Gegner",0],
-	"echo":["Echo Ring","Echoring","Every third main attack releases a bolt","Jeder dritte Hauptangriff erzeugt ein Geschoss",3],
-	"ember":["Ember Seal","Glutsiegel","Hits burn enemies for 3 seconds","Treffer verbrennen Gegner 3 Sekunden",5],
-	"storm":["Storm Mark","Sturmmal","Burning enemies arc lightning on hit","Brennende Gegner lösen Kettenblitze aus",3],
-	"leech":["Vampire Fang","Vampirzahn","Recover 2 HP per defeated enemy","2 LP je besiegtem Gegner",1],
-	"dashfire":["Cinder Steps","Glutschritte","Dash damages nearby enemies","Dash schädigt Gegner in der Nähe",2],
-	"crit":["Loaded Coin","Gezinkte Münze","20% chance of double damage","20 % Chance auf doppelten Schaden",5],
-	"tempo":["Clockwork","Uhrwerk","Main attack 12% faster","Hauptangriff 12 % schneller",4],
-	"potion":["Alchemist Flask","Alchemistenflasche","Active heal gains 15 HP per stack","Aktive Heilung +15 LP je Stapel",1]
+	"split":["Prism Shard","Prismasplitter","Extra projectiles on special attacks","Zusätzliche Spezialprojektile",6],
+	"pierce":["Silver Needle","Silbernadel","Projectiles pierce one more enemy","Projektile durchdringen einen weiteren Gegner",7],
+	"echo":["Echo Ring","Echoring","Every third main attack releases a bolt","Jeder dritte Hauptangriff erzeugt ein Geschoss",8],
+	"ember":["Ember Seal","Glutsiegel","Hits burn enemies for 3 seconds","Treffer verbrennen Gegner 3 Sekunden",9],
+	"storm":["Storm Mark","Sturmmal","Burning enemies arc lightning on hit","Brennende Gegner lösen Kettenblitze aus",10],
+	"leech":["Vampire Fang","Vampirzahn","Recover 2 HP per defeated enemy","2 LP je besiegtem Gegner",11],
+	"dashfire":["Cinder Steps","Glutschritte","Dash damages nearby enemies","Dash schädigt Gegner in der Nähe",12],
+	"crit":["Loaded Coin","Gezinkte Münze","20% chance of double damage","20 % Chance auf doppelten Schaden",13],
+	"tempo":["Clockwork","Uhrwerk","Main attack 12% faster","Hauptangriff 12 % schneller",14],
+	"potion":["Alchemist Flask","Alchemistenflasche","Active heal gains 15 HP per stack","Aktive Heilung +15 LP je Stapel",15]
 }
 const UPGRADES := {
 	"vitality":["Vitality","Vitalität","+5 starting HP per rank","+5 Start-LP je Rang",12,5],

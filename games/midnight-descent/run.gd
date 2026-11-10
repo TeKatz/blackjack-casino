@@ -200,7 +200,7 @@ func draw_effect(fx: Dictionary) -> void:
 			draw_line(pos-dir*60,pos+dir*23,Color(0.65,0.52,1,alpha*0.8),15,true)
 		"burst","hit","hurt":
 			var color := Color(1,0.35,0.45,alpha) if fx.kind=="hurt" else Color(1,0.78,0.42,alpha)
-			for i in range(8):
+		for i in range(8):
 				var ray := Vector2.from_angle(float(i)*TAU/8+clock)
 				draw_line(pos+ray*(8+35*(1-alpha)),pos+ray*(15+42*(1-alpha)),color,2,true)
 
@@ -261,8 +261,7 @@ func draw_hud() -> void:
 	hud_panel(Rect2(683,659,580,53),VIOLET)
 	text_at(Vector2(695,679),tr_text("RELICS","RELIKTE")+"  %d" % run.relics.size(),13,GOLD)
 	text_at(Vector2(695,699),tr_text("WASD / E  Move / Gate","WASD / E  Bewegung / Tor"),11,MUTED)
-	var ids: Array = Content.RELICS.keys()
-	for i in range(8):
+		for i in range(8):
 		var rect := Rect2(947+i*36,669,30,30)
 		draw_rect(rect,Color("#100d1c"))
 		draw_rect(rect,Color("#695471"),false,1)

@@ -223,6 +223,7 @@ func show_page(next: String) -> void:
 		"progress":
 			detail_label.text = tr_text("Invest essence earned from completed runs.","Investiere Seelenessenz aus abgeschlossenen Runs.")
 			body.add_child(label(tr_text("ESSENCE","ESSENZ")+"   "+str(progress.essence),20,GOLD))
+			if not progress.save_ok: body.add_child(label(tr_text("Save failed","Speichern fehlgeschlagen"),14,Color("#ff839a")))
 			for key in Content.UPGRADES:
 				var upgrade: Array = Content.UPGRADES[key]
 				var id: String = key

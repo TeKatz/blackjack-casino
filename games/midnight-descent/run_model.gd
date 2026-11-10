@@ -193,6 +193,8 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 			effect("slash",player,0.3,aim)
 			for enemy in enemies:
 				if player.distance_to(enemy.pos)<175: hit_enemy(enemy,bolt_damage*2.0)
+			for i in range(mini(8,2*relics.count("split"))):
+				shoot(player+aim*21,aim.rotated((float(i)-0.5)*0.25)*590,false,bolt_damage)
 			notices.append("swing")
 		else:
 			var count := mini(9,(3 if character=="dealer" else 1)+2*relics.count("split"))
@@ -383,6 +385,14 @@ func next_room() -> bool:
 	return true
 
 func smoke_test() -> bool:
+	begin(123,"dealer_cards")
+	relics.append("split")
+	relics.append("pierce")
+	tick(0.016,Vector2.ZERO,Vector2(600,385),false,true,false)
+	if shots.size()!=5 or shots[0].pierce!=1: return false
+	hp=30
+	tick(0.016,Vector2.ZERO,Vector2(600,385),false,false,false,true)
+	if hp!=55 or active_timer<=0: return false
 	begin(74219)
 	if enemies.size() != 3 or state != "fight":
 		return false
