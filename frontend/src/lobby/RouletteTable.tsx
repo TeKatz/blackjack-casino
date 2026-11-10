@@ -1,11 +1,9 @@
 import {useEffect,useRef,useState} from 'react';
 import {embeddedLobby} from './lobbyBridge';
-import type {LobbyMode} from './lobbyBridge';
 import {RouletteWheel} from './RouletteWheel';
 import {color,covered,insideKey,LIMIT,randomNumber,settlePreview} from './rouletteModel';
 import type {Bet,Receipt} from './rouletteModel';
 import './roulette.css';
-export function rouletteLobbyMode(language:'de'|'en'):LobbyMode{return {id:'roulette',title:'Roulette',category:'Table games',description:language==='de'?'Der große Kessel. Europäisches Roulette, hohe Einsätze und 37 Möglichkeiten.':'The grand wheel. European roulette, high stakes and 37 possibilities.',enabled:true,secondary:false};}
 const CHIPS=[100,500,1000,5000,10000,25000,50000,100000];
 const outside=['low','even','red','black','odd','high'];
 const labels={de:{low:'1–18',even:'GERADE',red:'ROT',black:'SCHWARZ',odd:'UNGERADE',high:'19–36'},en:{low:'1–18',even:'EVEN',red:'RED',black:'BLACK',odd:'ODD',high:'19–36'}};
@@ -30,7 +28,7 @@ export function RouletteTable({language,bankroll,bankrollValue,motion,sound,onBa
  }
  useEffect(()=>{
   const host=window.chrome?.webview;if(!host)return;
-  const listener=(event:MessageEvent)=>{const m=event.data;if(m?.type!=='lobby.roulette.result')return;const d=m.data;
+  const listener=(event:MessageEvent)=>{const m=event.data;if(m?.type!=='roulette.result')return;const d=m.data;
    if(typeof d?.roundId!=='string'||typeof d.success!=='boolean')return;
    if(d.success&&(!Number.isInteger(d.number)||d.number<0||d.number>36||!['stake','return','net','bankroll'].every(k=>typeof d[k]==='number'&&Number.isFinite(d[k]))))return;
    if(!d.success&&typeof d.message!=='string')return;accept(d as Receipt);
@@ -41,7 +39,7 @@ export function RouletteTable({language,bankroll,bankrollValue,motion,sound,onBa
  function place(key:string){if(lock.current)return;if(total+chip>Math.min(cash,LIMIT)){setNotice(de?'Guthaben oder Tischlimit erreicht.':'Bankroll or table limit reached.');return;}
   const old=bets.find(b=>b.key===key);change(old?bets.map(b=>b.key===key?{...b,amount:b.amount+chip}:b):[...bets,{key,amount:chip}]);tone(520);}
  function pick(n:number){if(inside){setSelection(old=>old.includes(n)?old.filter(x=>x!==n):old.length<6?[...old,n]:old);return;}place('n'+n)}
- function send(){if(request.current)window.chrome?.webview?.postMessage({type:'lobby.roulette.spin',...request.current});}
+ function send(){if(request.current)window.chrome?.webview?.postMessage({type:'roulette.spin',...request.current});}
  function spin(){if(lock.current||!total||total>cash||total>LIMIT)return;lock.current=true;setStartingCash(cash);setPending(true);setResult(null);setRevealed(false);setNotice('');setRetry(false);setPrevious(bets.map(b=>({...b})));const roundId=crypto.randomUUID();request.current={roundId,bets};tone(260,.2);
   if(embeddedLobby)send();else accept(settlePreview(roundId,bets,cash,randomNumber()));
  }

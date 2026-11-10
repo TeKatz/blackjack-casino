@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
+using System.Windows;
 using BlackjackCasino.Core;
 
 namespace BlackjackCasino.Desktop;
@@ -8,6 +9,41 @@ namespace BlackjackCasino.Desktop;
 public partial class MainWindow
 {
     private readonly Dictionary<Guid, object> rouletteReceipts = new();
+    private ModernRouletteView? modernRouletteView;
+    private bool ModernRouletteOpen => modernRouletteView is not null;
+    private void OpenModernRoulette()
+    {
+        if (session.RoundInProgress || MetaPageOpen || embeddedGameShell is not null || modernGameSurface?.IsOccupied == true || progressionController is null) return;
+        if (!ModernRouletteView.IsAvailable) { ShowBrowserRecovery("Roulette", false, OpenModernRoulette); return; }
+        ProcessLatestCompletedRound();
+        modernRouletteView = new ModernRouletteView(() => new
+        {
+            Bankroll = Money(session.Bankroll), BankrollValue = session.Bankroll,
+            Language = Localization.Language == UiLanguagePreference.German ? "de" : "en",
+            Motion = preferences.Presentation("roulette").AnimationsEnabled,
+            Sound = preferences.Presentation("roulette").SoundEnabled,
+        }, ModernRouletteSpin, CloseModernRoulette, () =>
+        {
+            CloseModernRoulette();
+            ShowBrowserRecovery("Roulette", ModernRouletteView.IsAvailable, OpenModernRoulette);
+        });
+        MountModernSurface(modernRouletteView);
+        if (lobby is not null) lobby.Visibility = Visibility.Collapsed;
+        TableModeText.Text = "Roulette · Grand Table";
+        modeRegistry.NotifyStateChanged();
+    }
+    private void CloseModernRoulette()
+    {
+        if (modernRouletteView is not { } view) return;
+        modernRouletteView = null;
+        view.Dispose();
+        UnmountModernSurface(view);
+        if (lobby is not null) lobby.Visibility = Visibility.Visible;
+        TableModeText.Text = "Casino lobby";
+        SyncHostMusic();
+        RefreshGameUi();
+        modeRegistry.NotifyStateChanged();
+    }
     private object ModernRouletteSpin(Guid roundId, JsonElement raw)
     {
         if (rouletteReceipts.TryGetValue(roundId, out var previous)) return previous;
