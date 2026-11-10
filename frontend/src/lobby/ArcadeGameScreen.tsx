@@ -435,7 +435,10 @@ export function ArcadeGameScreen({id,language,onBack}:{
     <div><small>{t.time}</small><strong>{formatTime(elapsed)}</strong></div>
    </div>
    <div className="arcade-play-actions">
-    <button type="button" onClick={()=>setSoundEnabled(v=>!v)}
+    <button type="button" onClick={()=>{
+     if(!soundEnabled&&id==='midnight-beats')unlockBeatsAudio(audioRef,true);
+     setSoundEnabled(v=>!v);
+    }}
      aria-pressed={soundEnabled}>{soundEnabled?t.soundOn:t.soundOff}</button>
     <button type="button" onClick={()=>phase==='playing'?pause():phase==='paused'?resume():start()}>
      {phase==='playing'?t.pause:phase==='paused'?t.resume:t.restart}</button>
