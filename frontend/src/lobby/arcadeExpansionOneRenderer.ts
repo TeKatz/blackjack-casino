@@ -146,11 +146,14 @@ function drift(ctx:Ctx,s:DriftRun){
   const obstacle=driftTrafficAt(i),ahead=obstacle.distance-s.distance;
   if(ahead<-110||ahead>1320)continue;
   const y=422-ahead*.31,size=14+16*clamp(1-ahead/1300,0,1);
-  ctx.save();ctx.shadowColor='#ffad9b';ctx.shadowBlur=12;
-  ctx.beginPath();ctx.moveTo(obstacle.x,y-size);ctx.lineTo(obstacle.x-size*.67,y+size);
-  ctx.lineTo(obstacle.x+size*.67,y+size);ctx.closePath();
-  ctx.fillStyle='#da7c80';ctx.fill();ctx.lineWidth=2;ctx.strokeStyle='#fff3cc';ctx.stroke();
-  line(ctx,[[obstacle.x-size*.38,y+size*.5],[obstacle.x+size*.38,y+size*.5]],'#f8e6c4',3);
+  // These are actual oncoming vehicles, not ambiguous red hazard triangles.
+  ctx.save();ctx.translate(obstacle.x,y);
+  ctx.shadowColor='#ff958f';ctx.shadowBlur=16;
+  round(ctx,-size*.74,-size*1.15,size*1.48,size*2.3,size*.32,'#aa465b','#ffd3ad');
+  round(ctx,-size*.55,-size*.57,size*1.1,size*.95,size*.22,'#21364f','#ffdaaa');
+  round(ctx,-size*.6,size*.75,size*.38,size*.23,3,'#ffb1aa');
+  round(ctx,size*.22,size*.75,size*.38,size*.23,3,'#ffb1aa');
+  line(ctx,[[-size*.39,-size*.88],[size*.39,-size*.88]],'#ffe8ba',2);
   ctx.restore();
  }
  ctx.save();ctx.translate(s.x,422);ctx.rotate(-s.vx/900);
@@ -166,7 +169,7 @@ function drift(ctx:Ctx,s:DriftRun){
  }
  text(ctx,'DRIFT ×'+Math.max(1,Math.floor(s.combo)+1),25,36,18,'#ffe4a9');
  text(ctx,'DISTANCE '+Math.floor(s.distance/10)+' m',25,61,12,'#a9cfcc');
- text(ctx,'ROAD '+Math.floor(driftRoadHalfWidth(s.distance)*2)+' m',25,83,11,'#e2d2ad');
+ text(ctx,'AVOID TRAFFIC · STAY ON THE ROAD',25,83,11,'#e2d2ad');
  text(ctx,'DAMAGE '+s.hits+' / 3',W-25,36,15,s.hits?'#f7a9a2':'#a6e4d5','right');
  text(ctx,'HOLD SPACE FOR DRIFT',W-25,61,12,'#a5ded7','right');
 }
