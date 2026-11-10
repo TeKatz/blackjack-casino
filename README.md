@@ -19,7 +19,7 @@ The current migration repairs and device acceptance checks are documented in [Mi
 | **Casino Empire** | Casino management with properties, research, upgrades and offline progression |
 | **Chill Lounge** | Sudoku, Midnight Solitaire, Word Search, Memory, Jigsaw Puzzle, Tales from the Backroom, Midnight Bastion (Tower Defense) and Midnight Sweep (Minesweeper) |
 | **Midnight Merge** | Collection and combination gameplay with persistent orders |
-| **Arcade Games** | Fifteen offline skill minigames, including pinball, grappling, drift racing, gravity puzzles and pattern memory; independent high scores and per-game challenges |
+| **Arcade Games** | Twenty offline skill minigames, spanning pinball, racing, stealth, mining, optical puzzles, circuits and timing; independent high scores and per-game challenges |
 | **Tales from the Backroom** | Branching adventures and investigations, including *Dead Man's Hand* |
 
 A shared virtual bankroll connects the wagering games. The wider progression system includes experience, Prestige, Seasons, challenges, cosmetic Coins, the Collector's Album, a cosmetic shop and the Casino Vault. Casino Empire maintains a separate construction economy.
