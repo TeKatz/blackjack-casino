@@ -85,6 +85,11 @@ public static class ArcadeChallengeCatalog
         new("neon-drift", "Neon Drift", [200, 700, 1800, 4000], [1, 10, 75], [2500, 20000], 90),
         new("gravity-chamber", "Gravity Chamber", [175, 400, 900, 1900], [1, 10, 75], [1800, 13000], 90),
         new("echo-sequence", "Echo Sequence", [100, 300, 1000, 2800], [1, 10, 75], [1600, 10000], 70),
+        new("prism-lock", "Prism Lock", [250, 800, 1800, 4300], [1, 10, 75], [2500, 14000], 90),
+        new("meteor-miner", "Meteor Miner", [250, 900, 2200, 5000], [1, 10, 75], [2500, 17000], 100),
+        new("circuit-rush", "Circuit Rush", [300, 900, 2100, 4400], [1, 10, 75], [3000, 15000], 90),
+        new("shadow-heist", "Shadow Heist", [200, 800, 1700, 3800], [1, 10, 75], [2500, 13000], 100),
+        new("pulse-perfect", "Pulse Perfect", [100, 450, 1400, 3600], [1, 10, 75], [1800, 12000], 75),
     ];
     private static readonly HashSet<string> GameIds = Games.Select(x => x.Id).ToHashSet(StringComparer.Ordinal);
     public static bool IsGame(string? id) => id is not null && GameIds.Contains(id);
