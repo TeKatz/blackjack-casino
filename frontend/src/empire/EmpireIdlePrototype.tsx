@@ -107,6 +107,18 @@ export function EmpireIdlePrototype({snapshot,disabled,pending,notice,preview,t,
   const [quantity,setQuantity]=useState<number>(1);
   const [researchBranch,setResearchBranch]=useState('Operations');
   const [prestigeConfirm,setPrestigeConfirm]=useState(false);
+  useEffect(()=>{
+    const handle=(event:KeyboardEvent)=>{
+      if(event.key!=='Escape')return;
+      event.preventDefault();
+      if(prestigeConfirm)setPrestigeConfirm(false);
+      else if(preview)onClearPreview();
+      else if(tab!=='business')setTab('business');
+      else onClassic();
+    };
+    document.addEventListener('keydown',handle);
+    return()=>document.removeEventListener('keydown',handle);
+  },[prestigeConfirm,preview,tab,onClassic,onClearPreview]);
   const economy=snapshot.state.economy;
   const de=snapshot.state.language==='de';
   const label=(german:string,english:string)=>de?german:english;
@@ -153,7 +165,7 @@ export function EmpireIdlePrototype({snapshot,disabled,pending,notice,preview,t,
           <p>{label('Alle Betriebe produzieren automatisch – auch während anderer Spiele.','Businesses earn automatically – even while playing other games.')}</p>
         </div>
       </aside>
-      <main className="idle-main">
+      <main className="idle-main" aria-busy={pending}>
         <div className="idle-heading-row">
           <div><span className="idle-kicker">{property?.name??'Casino Empire'}</span>
             <h1>{tab==='business'?label('Deine Betriebe','Your businesses'):tab==='strategy'?label('Management','Management'):tab==='expansion'?label('Dein Imperium','Your empire'):label('Geschäftsbericht','Business report')}</h1>
