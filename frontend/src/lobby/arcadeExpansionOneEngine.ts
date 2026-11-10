@@ -183,7 +183,7 @@ function driftStep(s:DriftRun,dt:number,holding:boolean,c:ExpansionControls):Exp
   return 'stage';
  }
  s.x=clamp(s.x,40,W-40);
- if(brake&&steer&&Math.abs(s.vx)>75&&Math.abs(s.x-road)<limit-12){
+ if(brake&&steer&&Math.abs(s.vx)>62&&Math.abs(s.x-road)<limit-12){
   s.combo=Math.min(8,s.combo+dt*1.5);
   s.driftPoints+=dt*(10+s.combo*9);
  }else s.combo=Math.max(0,s.combo-dt*2.4);
