@@ -3,6 +3,7 @@ import {lazy,memo,Suspense,useCallback,useEffect,useRef,useState} from 'react';
 import type {FormEvent,ReactNode} from 'react';
 import {createRoot} from 'react-dom/client';
 import {EmpireArtwork} from './EmpireArtwork';
+import {EmpireIdlePrototype} from './EmpireIdlePrototype';
 const EmpireScene=lazy(()=>import('./EmpireScene').then(module=>({default:module.EmpireScene})));
 import {decimalInput,display,fractionToPercent,listen,percentToFraction,post,retainRooms,send} from './empireBridge';
 import type {Automation,EmpireSnapshot,Intent,Manager,Preview,Reply,Room} from './empireBridge';
@@ -99,6 +100,7 @@ function ManagerCard({manager,rooms,disabled,onAction,onPreview,onClear,language
 
 function EmpireApp(){
   const [snapshot,setSnapshot]=useState<EmpireSnapshot|null>(null),[page,setPage]=useState<Page>('estate');
+  const [idlePrototype,setIdlePrototype]=useState(false);
   const [selected,setSelected]=useState<string|null>(null),[floor,setFloor]=useState(0),[filter,setFilter]=useState('all'),[bulk,setBulk]=useState(1);
   const [pending,setPending]=useState<string|null>(null),[uncertain,setUncertain]=useState(false),[notice,setNotice]=useState<string|null>(null);
   const [preview,setPreview]=useState<Preview|null>(null),[visible,setVisible]=useState(true),[activeVisitId,setActiveVisitId]=useState<number|null>(null),[motion,setMotion]=useState(true),[diagnostics,setDiagnostics]=useState(false);
@@ -197,9 +199,13 @@ function EmpireApp(){
       <div>{de?'Raumproduktion':'Room production'}<strong>{n(preview.roomBefore.final)} → {n(preview.roomAfter.final)} cr/s</strong></div>
       <details><summary>{de?'Synergien nach der Aktion':'Circuits after action'}</summary>{preview.synergiesAfter.map(s=><p key={s.id}>{t(e.synergies.find(y=>y.id===s.id)?.name??s.id)}: {s.tier} · {Number(s.bonus)*100}%</p>)}</details></>}
     <button onClick={clearPreview}>{de?'Vorschau schließen':'Close preview'}</button></aside>;
+  if(idlePrototype)return <EmpireIdlePrototype snapshot={snapshot} disabled={disabled} pending={!!pending} notice={notice??snapshot.notice} preview={preview} t={t}
+    onAction={act} onPreview={showPreview} onClearPreview={clearPreview} onClassic={()=>{setIdlePrototype(false);clearPreview();}} onClose={close}
+    onDismissOffline={()=>post('empire.dismiss-offline')}/>;
   return <div className="empire-shell" data-motion={enabled} data-page={page} data-visit-active={managementActive} data-testid="empire-ready">
     <header className="empire-header"><button className="empire-back" data-testid="back" onClick={close}>← <span>{state.detached?(de?'Fenster schließen':'Close window'):'Casino lobby'}</span></button>
       <div className="empire-wordmark"><span>THE MIDNIGHT CLUB</span><h1>CASINO EMPIRE</h1></div>
+      <button type="button" className="empire-prototype-entry" data-testid="empire-idle-open" onClick={()=>{setIdlePrototype(true);clearPreview();}}>{de?'◆ Idle-Prototyp testen':'◆ Try idle prototype'}</button>
       <label className="empire-property"><span>{de?'ANWESEN':'PROPERTY'}</span><select aria-label={de?'Anwesen':'Property'} value={e.activePropertyId} disabled={disabled} onChange={event=>{setSelected(null);clearPreview();act({action:'property.select',id:event.target.value});}}>
         {e.properties.filter(p=>p.owned).map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
     </header>
