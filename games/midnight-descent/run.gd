@@ -1,0 +1,368 @@
+extends Node2D
+## Dedicated Godot gameplay scene; simulation is independent of rendering.
+const Model = preload("res://run_model.gd")
+const GOLD := Color("#efc987")
+const VIOLET := Color("#b38aff")
+const WHITE := Color("#f6edf9")
+const MUTED := Color("#ada1bc")
+const FLOOR := Color("#211b32")
+var run = Model.new()
+var german := false
+var paused := false
+var overlay: Control
+var overlay_state := ""
+var clock := 0.0
+var shake := 0.0
+var font: Font = ThemeDB.fallback_font
+var audio: AudioStreamPlayer
+var sounds: Dictionary = {}
+var last_dash := false
+var last_interact := false
+
+func _ready() -> void:
+	german = "--language=de" in OS.get_cmdline_user_args()
+	run.begin(int(Time.get_ticks_usec()))
+	audio = AudioStreamPlayer.new()
+	add_child(audio)
+	for key in ["swing","bolt","hit","hurt","kill","clear","relic"]:
+		sounds[key] = make_sound(key)
+	var layer := CanvasLayer.new()
+	add_child(layer)
+	overlay = Control.new()
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(overlay)
+	set_process(true)
+
+func tr_text(en: String, de: String) -> String:
+	return de if german else en
+
+func _physics_process(dt: float) -> void:
+	if paused or run.state in ["reward","victory","defeat"]:
+		return
+	var direction := Vector2(float(Input.is_physical_key_pressed(KEY_D) or Input.is_physical_key_pressed(KEY_RIGHT))-float(Input.is_physical_key_pressed(KEY_A) or Input.is_physical_key_pressed(KEY_LEFT)), float(Input.is_physical_key_pressed(KEY_S) or Input.is_physical_key_pressed(KEY_DOWN))-float(Input.is_physical_key_pressed(KEY_W) or Input.is_physical_key_pressed(KEY_UP)))
+	var dash := Input.is_physical_key_pressed(KEY_SPACE)
+	var interact := Input.is_physical_key_pressed(KEY_E)
+	run.tick(dt, direction, get_global_mouse_position(), Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT), Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT), dash and not last_dash)
+	if interact and not last_interact:
+		run.next_room()
+	last_dash = dash
+	last_interact = interact
+	for notice in run.notices:
+		play_sound(notice)
+		if notice == "hurt": shake = 7.0
+		if notice == "kill": shake = maxf(shake, 2.0)
+	run.notices.clear()
+
+func _process(dt: float) -> void:
+	clock += dt
+	shake = move_toward(shake, 0, dt*30)
+	var target: String = "pause" if paused else run.state
+	if target != overlay_state:
+		overlay_state = target
+		rebuild_overlay()
+	queue_redraw()
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel"):
+		if run.state in ["fight","exit"]:
+			paused = not paused
+			get_viewport().set_input_as_handled()
+	elif event is InputEventKey and event.pressed and not event.echo and run.state == "reward":
+		var index := -1
+		match event.physical_keycode:
+			KEY_1: index = 0
+			KEY_2: index = 1
+			KEY_3: index = 2
+		if index >= 0:
+			select_relic(index)
+			get_viewport().set_input_as_handled()
+
+func text_at(pos: Vector2, value: String, size: int, color: Color = WHITE) -> void:
+	draw_string(font, pos, value, HORIZONTAL_ALIGNMENT_LEFT, -1, size, color)
+
+func meter(rect: Rect2, ratio: float, color: Color) -> void:
+	draw_rect(rect, Color("#0e0c17"))
+	draw_rect(Rect2(rect.position, Vector2(rect.size.x*clampf(ratio,0,1),rect.size.y)), color)
+	draw_rect(rect, Color("#615273"), false, 1)
+
+func _draw() -> void:
+	draw_rect(Rect2(0,0,1280,720), Color("#0c0a16"))
+	draw_rect(Rect2(23,105,1234,542), Color("#151123"))
+	draw_rect(Rect2(24,106,1232,540), Color("#6b4e80"), false, 2)
+	var r: Rect2 = Model.ARENA
+	draw_rect(r, FLOOR)
+	for x in range(0, 19):
+		for y in range(0, 8):
+			var tile := Rect2(r.position + Vector2(x*64,y*64), Vector2(minf(64,r.size.x-x*64),minf(64,r.size.y-y*64)))
+			if tile.size.x <= 0 or tile.size.y <= 0: continue
+			var shade := Color("#251e35") if (x+y)%2==0 else Color("#201b2f")
+			draw_rect(tile.grow(-1), shade)
+			if (x*7+y*11)%13==0:
+				draw_line(tile.position+Vector2(10,6),tile.position+Vector2(34,28),Color("#393044"),1)
+	draw_rect(r, Color("#786083"), false, 3)
+	# Architecture and animated torchlight.
+	for x in [85.0, 400.0, 710.0, 1020.0, 1190.0]:
+		var torch := Vector2(x,132)
+		draw_rect(Rect2(torch-Vector2(17,20),Vector2(34,40)),Color("#3b304b"))
+		var flicker := 1.0+sin(clock*8+x)*0.08
+		for i in range(5,0,-1):
+			draw_circle(torch, i*13*flicker,Color(0.96,0.56,0.23,0.035))
+		draw_colored_polygon(PackedVector2Array([torch+Vector2(-7,5),torch+Vector2(-3,-16*flicker),torch+Vector2(7,3),torch+Vector2(0,12)]),GOLD)
+	for wall in run.walls:
+		draw_rect(wall.grow(6),Color("#100e1a"))
+		draw_rect(wall,Color("#493957"))
+		draw_rect(Rect2(wall.position,Vector2(wall.size.x,12)),Color("#776180"))
+		draw_rect(wall,Color("#9e7895"),false,2)
+		for i in range(1,3):
+			draw_line(wall.position+Vector2(i*28,12),wall.position+Vector2(i*28,wall.size.y),Color("#332940"),2)
+	var gate: Vector2 = Model.EXIT
+	draw_rect(Rect2(gate-Vector2(18,54),Vector2(42,108)),Color("#100d19"))
+	draw_rect(Rect2(gate-Vector2(18,54),Vector2(42,108)),GOLD if run.state=="exit" else Color("#574563"),false,3)
+	if run.state=="exit":
+		for i in range(4,0,-1):
+			draw_circle(gate,i*15+sin(clock*4)*3,Color(0.55,0.32,0.94,0.07))
+		draw_arc(gate,27,clock,clock+TAU*0.85,32,GOLD,3,true)
+		text_at(gate+Vector2(-86,76),tr_text("E  •  Descend","E  •  Absteigen"),16,GOLD)
+	else:
+		draw_line(gate+Vector2(-11,-42),gate+Vector2(17,42),Color("#594365"),4)
+	# Telegraphs render below actors.
+	for enemy in run.enemies:
+		var pos: Vector2 = enemy.pos
+		if enemy.wind > 0:
+			var rad: float = 126.0 if enemy.kind=="boss" else float(enemy.r)+44
+			if enemy.kind=="caster":
+				draw_line(pos,enemy.target,Color(1,0.32,0.44,0.45),3,true)
+			else:
+				draw_circle(pos,rad,Color(0.95,0.15,0.3,0.12))
+				draw_arc(pos,rad,0,TAU,48,Color("#ff6481"),2,true)
+	for shot in run.shots:
+		var pos: Vector2 = shot.pos
+		var vel: Vector2 = shot.vel
+		var color := Color("#ff6b89") if shot.hostile else Color("#8deaff")
+		draw_line(pos-vel.normalized()*22,pos,color,5,true)
+		draw_circle(pos,10,Color(color,0.17))
+		draw_circle(pos,5,color)
+	for enemy in run.enemies:
+		draw_enemy(enemy)
+	draw_player()
+	for effect in run.effects:
+		draw_effect(effect)
+	draw_hud()
+
+func draw_player() -> void:
+	var pos: Vector2 = run.player
+	var dir: Vector2 = run.aim
+	var bob := sin(clock*12)*1.7
+	draw_ellipse_shadow(pos, 19)
+	if run.invulnerable>0:
+		draw_arc(pos,24,0,TAU,32,Color(0.65,0.82,1,0.7),2,true)
+	var cape := PackedVector2Array([pos+Vector2(-15,-9),pos+Vector2(12,-9),pos+Vector2(17,19),pos+Vector2(-20,23)])
+	draw_colored_polygon(cape,Color("#663a8e"))
+	draw_rect(Rect2(pos+Vector2(-10,4),Vector2(8,14)),Color("#9a88b3"))
+	draw_rect(Rect2(pos+Vector2(3,4),Vector2(8,14)),Color("#9a88b3"))
+	draw_rect(Rect2(pos+Vector2(-13,-12+bob),Vector2(26,25)),Color("#b6a9c8"))
+	draw_rect(Rect2(pos+Vector2(-12,-11+bob),Vector2(24,8)),Color("#e0d5ef"))
+	draw_circle(pos+Vector2(0,-15+bob),12,Color("#d8c7a4"))
+	draw_rect(Rect2(pos+Vector2(-12,-22+bob),Vector2(24,12)),Color("#5e577b"))
+	draw_rect(Rect2(pos+Vector2(-9,-15+bob),Vector2(18,3)),Color("#e6be7c"))
+	var sword_start := pos+dir*18
+	draw_line(sword_start-dir*4,sword_start+dir*29,Color("#f6e3bb"),5,true)
+	draw_line(sword_start+dir.orthogonal()*8,sword_start-dir.orthogonal()*8,GOLD,4,true)
+	draw_circle(pos+dir*37,3,WHITE)
+
+func draw_ellipse_shadow(pos: Vector2, radius: float) -> void:
+	draw_set_transform(pos+Vector2(0,radius*0.7),0,Vector2(1,0.42))
+	draw_circle(Vector2.ZERO,radius*1.25,Color(0,0,0,0.48))
+	draw_set_transform(Vector2.ZERO)
+
+func draw_enemy(enemy: Dictionary) -> void:
+	var pos: Vector2 = enemy.pos
+	var radius: float = enemy.r
+	var kind: String = enemy.kind
+	var color := Color("#b66f9c")
+	if kind=="caster": color=Color("#776ce0")
+	elif kind=="brute": color=Color("#a96555")
+	elif kind=="boss": color=Color("#9e427d")
+	if enemy.flash>0: color=WHITE
+	draw_ellipse_shadow(pos,radius)
+	if kind=="boss":
+		draw_circle(pos,radius+8,Color(0.68,0.18,0.54,0.18))
+		draw_arc(pos,radius+7,clock,clock+TAU*0.85,40,GOLD,2,true)
+	var points := PackedVector2Array()
+	for i in range(8):
+		var angle := TAU*float(i)/8
+		points.append(pos+Vector2.from_angle(angle)*(radius if i%2==0 else radius*0.76))
+	draw_colored_polygon(points,color)
+	draw_arc(pos,radius*0.68,0,TAU,20,Color("#3c244e"),3,true)
+	var facing := pos.direction_to(run.player)
+	var eye := pos+facing*radius*0.45
+	draw_circle(eye, maxf(3,radius*0.16),Color("#ffe0a2"))
+	if kind=="caster":
+		draw_arc(pos,radius+5,0,TAU,24,Color("#aa9dff"),2,true)
+	if kind=="brute" or kind=="boss":
+		draw_line(pos+Vector2(-radius,-radius*0.6),pos+Vector2(-radius*0.4,-radius*1.3),GOLD,5,true)
+		draw_line(pos+Vector2(radius,-radius*0.6),pos+Vector2(radius*0.4,-radius*1.3),GOLD,5,true)
+	meter(Rect2(pos+Vector2(-radius,-radius-14),Vector2(radius*2,5)),float(enemy.hp)/float(enemy.max_hp),Color("#e36b86"))
+
+func draw_effect(fx: Dictionary) -> void:
+	var alpha := float(fx.time)/float(fx.max)
+	var pos: Vector2 = fx.pos
+	var dir: Vector2 = fx.dir
+	match fx.kind:
+		"slash":
+			draw_arc(pos,68,dir.angle()-1.25,dir.angle()+1.25,28,Color(1,0.84,0.55,alpha),8,true)
+			draw_arc(pos,80,dir.angle()-1.1,dir.angle()+1.1,28,Color(1,0.95,0.8,alpha*0.8),2,true)
+		"dash":
+			draw_line(pos-dir*60,pos+dir*23,Color(0.65,0.52,1,alpha*0.8),15,true)
+		"burst","hit","hurt":
+			var color := Color(1,0.35,0.45,alpha) if fx.kind=="hurt" else Color(1,0.78,0.42,alpha)
+			for i in range(8):
+				var ray := Vector2.from_angle(float(i)*TAU/8+clock)
+				draw_line(pos+ray*(8+35*(1-alpha)),pos+ray*(15+42*(1-alpha)),color,2,true)
+
+func draw_hud() -> void:
+	text_at(Vector2(32,32),tr_text("THE FORGOTTEN VAULT","DAS VERGESSENE GEWÖLBE"),16,GOLD)
+	text_at(Vector2(32,61),tr_text("WARDEN","WÄCHTER"),24,WHITE)
+	meter(Rect2(32,72,274,13),run.hp/run.max_hp,Color("#e26483"))
+	text_at(Vector2(318,83),"%d / %d" % [run.hp,run.max_hp],16,WHITE)
+	text_at(Vector2(470,35),tr_text("ROOM","RAUM")+"  %d / %d" % [run.room+1,Model.ROOM_COUNT],21,GOLD)
+	for i in range(Model.ROOM_COUNT):
+		var center := Vector2(493+i*50,69)
+		if i< Model.ROOM_COUNT-1: draw_line(center,center+Vector2(50,0),Color("#5b456d"),2)
+		draw_circle(center,10,GOLD if i<=run.room else Color("#332942"))
+		draw_circle(center,10,Color("#c5a5d9"),false,1)
+	text_at(Vector2(850,32),tr_text("SHARDS","SPLITTER")+"  %d" % run.shards,17,GOLD)
+	text_at(Vector2(850,58),tr_text("DEFEATED","BESIEGT")+"  %d" % run.kills,16,MUTED)
+	text_at(Vector2(1090,32),"%02d:%02d" % [int(run.elapsed)/60,int(run.elapsed)%60],22,WHITE)
+	text_at(Vector2(1090,59),"ESC  "+tr_text("Pause","Pause"),16,MUTED)
+	draw_line(Vector2(30,656),Vector2(1250,656),Color("#5a456d"),1)
+	text_at(Vector2(32,682),tr_text("WASD  Move    LMB  Sword    RMB  Bolt    SPACE  Dash    E  Gate","WASD  Bewegen    LMT  Schwert    RMT  Geschoss    LEERTASTE  Dash    E  Tor"),16,WHITE)
+	text_at(Vector2(895,681),tr_text("DASH","DASH"),14,GOLD)
+	meter(Rect2(951,669,115,12),1.0-run.dash_timer/run.dash_cooldown,VIOLET)
+	text_at(Vector2(1090,682),tr_text("RELICS","RELIKTE")+"  %d" % run.relics.size(),16,GOLD)
+	if run.state=="fight" and run.room==Model.ROOM_COUNT-1:
+		text_at(Vector2(460,122),tr_text("THE VAULT KEEPER","DER TRESORWÄCHTER"),18,Color("#ff91bd"))
+
+func make_sound(kind: String) -> AudioStreamWAV:
+	var sample := AudioStreamWAV.new()
+	sample.format = AudioStreamWAV.FORMAT_16_BITS
+	sample.mix_rate = 22050
+	var duration := 0.15 if kind!="clear" else 0.42
+	var count := int(duration*22050)
+	var data := PackedByteArray()
+	data.resize(count*2)
+	var frequency := 220.0
+	match kind:
+		"swing": frequency=130
+		"bolt": frequency=540
+		"hit": frequency=180
+		"hurt": frequency=95
+		"kill": frequency=320
+		"clear": frequency=660
+		"relic": frequency=880
+	for i in range(count):
+		var t := float(i)/22050
+		var envelope := pow(1.0-float(i)/count,2)*minf(1,t*150)
+		var wave := sin(TAU*frequency*t*(1.0-t*1.4))+0.25*sin(TAU*frequency*2.1*t)
+		data.encode_s16(i*2,int(wave*envelope*4200))
+	sample.data = data
+	return sample
+
+func play_sound(kind: String) -> void:
+	if sounds.has(kind):
+		audio.stream = sounds[kind]
+		audio.play()
+
+func add_label(parent: Control, value: String, size: int, color: Color) -> void:
+	var node := Label.new()
+	node.text = value
+	node.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	node.add_theme_font_size_override("font_size",size)
+	node.add_theme_color_override("font_color",color)
+	node.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	parent.add_child(node)
+
+func add_button(parent: Control, caption: String, callback: Callable) -> Button:
+	var node := Button.new()
+	node.text = caption
+	node.custom_minimum_size = Vector2(0,52)
+	node.add_theme_font_size_override("font_size",20)
+	for style_name in ["normal","hover","pressed","focus"]:
+		var style := StyleBoxFlat.new()
+		style.bg_color = Color("#31243e") if style_name=="normal" else Color("#5b3a72")
+		style.border_color = Color("#9872b1") if style_name=="normal" else GOLD
+		style.set_border_width_all(2)
+		style.set_corner_radius_all(8)
+		node.add_theme_stylebox_override(style_name,style)
+	node.pressed.connect(callback)
+	parent.add_child(node)
+	return node
+
+func relic_description(id: String) -> String:
+	match id:
+		"blade": return tr_text("Gilded Edge   •   +9 sword damage","Goldene Klinge   •   +9 Schwertschaden")
+		"heart": return tr_text("Ruby Heart   •   +20 max HP, heal 35","Rubinherz   •   +20 max. LP, heilt 35")
+		"boots": return tr_text("Shadow Steps   •   +32 movement speed","Schattenschritte   •   +32 Bewegungstempo")
+		"focus": return tr_text("Arcane Focus   •   +11 bolt damage","Arkaner Fokus   •   +11 Geschossschaden")
+		"ward": return tr_text("Iron Ward   •   +4 damage reduction","Eisenwall   •   +4 Schadensreduktion")
+		"fury": return tr_text("Quickdraw   •   faster dash recharge","Schnellzug   •   kürzere Dash-Abklingzeit")
+	return id
+
+func select_relic(index: int) -> void:
+	if run.choose_relic(index):
+		play_sound("relic")
+
+func rebuild_overlay() -> void:
+	for child in overlay.get_children():
+		overlay.remove_child(child)
+		child.queue_free()
+	if overlay_state not in ["pause","reward","victory","defeat"]:
+		return
+	var shade := ColorRect.new()
+	shade.color = Color(0.035,0.025,0.065,0.82)
+	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay.add_child(shade)
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay.add_child(center)
+	var panel := PanelContainer.new()
+	panel.custom_minimum_size = Vector2(660,0)
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color("#191325")
+	style.border_color = GOLD
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(14)
+	style.content_margin_left = 28
+	style.content_margin_right = 28
+	style.content_margin_top = 24
+	style.content_margin_bottom = 24
+	panel.add_theme_stylebox_override("panel",style)
+	center.add_child(panel)
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation",14)
+	panel.add_child(column)
+	match overlay_state:
+		"reward":
+			add_label(column,tr_text("ROOM CLEARED","RAUM GESÄUBERT"),30,GOLD)
+			add_label(column,tr_text("Choose a relic. Recover 12 HP and unlock the next gate.","Wähle ein Relikt. Heile 12 LP und öffne das nächste Tor."),17,MUTED)
+			for i in range(run.offers.size()):
+				var index := i
+				add_button(column,"%d  ·  %s" % [i+1,relic_description(run.offers[i])],func(): select_relic(index))
+		"pause":
+			add_label(column,tr_text("EXPEDITION PAUSED","EXPEDITION PAUSIERT"),30,GOLD)
+			add_button(column,tr_text("Continue","Fortsetzen"),func(): paused=false)
+			add_button(column,tr_text("Abandon run / Main menu","Run aufgeben / Hauptmenü"),return_to_menu)
+		"victory","defeat":
+			var won := overlay_state=="victory"
+			add_label(column,tr_text("VAULT CONQUERED","GEWÖLBE EROBERT") if won else tr_text("THE DEPTHS CLAIM YOU","DIE TIEFEN FORDERN DICH"),30,GOLD if won else Color("#f095a9"))
+			add_label(column,tr_text("Run summary","Run-Zusammenfassung")+"\n"+tr_text("Rooms","Räume")+"  %d / %d  •  " % [run.room+1,Model.ROOM_COUNT]+tr_text("Defeated","Besiegt")+"  %d  •  " % run.kills+tr_text("Relics","Relikte")+"  %d" % run.relics.size(),19,WHITE)
+			add_button(column,tr_text("New expedition","Neue Expedition"),restart)
+			add_button(column,tr_text("Main menu","Hauptmenü"),return_to_menu)
+
+func restart() -> void:
+	paused = false
+	run.begin(int(Time.get_ticks_usec()))
+
+func return_to_menu() -> void:
+	get_tree().change_scene_to_file("res://menu.tscn")
