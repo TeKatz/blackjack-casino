@@ -268,9 +268,14 @@ func smoke_test() -> void:
 		return
 	action_buttons[0].pressed.emit()
 	action_buttons[2].pressed.emit()
-	if page != "settings":
+	if page != "settings" or preview_title.text.is_empty():
 		get_tree().quit(3)
 		return
+	toggle_motion(false)
+	if backdrop.get("motion") != false:
+		get_tree().quit(11)
+		return
+	toggle_motion(true)
 	action_buttons[1].pressed.emit()
 	if page != "home":
 		get_tree().quit(4)

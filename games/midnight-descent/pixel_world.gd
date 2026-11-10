@@ -74,6 +74,9 @@ func make_light(color: Color, scale_value: float, energy_value: float, shadows: 
 	light.shadow_enabled = shadows
 	light.shadow_color = Color(0.06,0.035,0.09,0.82)
 	light.blend_mode = Light2D.BLEND_MODE_ADD
+	# World canvas is isolated at layer -1; include that layer in light ranges.
+	light.range_layer_min = -1
+	light.range_layer_max = -1
 	add_child(light)
 	return light
 
@@ -250,4 +253,4 @@ func draw_actor(enemy: Dictionary) -> void:
 	sprite(kind,pos,direction,frame,size,tint)
 
 func is_ready_for_smoke() -> bool:
-	return TILES.get_width() == 256 and ACTORS["warden"].get_height() == 128 and torches.size() == 5 and side_lights.size() == 2 and ambient != null and boss_light != null and occluders.size() == model.walls.size()
+	return TILES.get_width() == 256 and ACTORS["warden"].get_height() == 128 and torches.size() == 5 and side_lights.size() == 2 and ambient != null and boss_light != null and torches[0].range_layer_min == -1 and occluders.size() == model.walls.size()
