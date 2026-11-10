@@ -590,7 +590,7 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
 }
 .casino-lobby-shell[data-reduced="true"] .lobby-nav-item .nav-ready{animation:none!important}
 
-/* Eleven games: 4 + 4 + 3, with Arcade filling the spare slot. The lobby never grows a fourth row. */
+/* Twelve games: 4 + 4 + 4. Arcade and Descent share the final row. */
 @media(min-width:950px) and (min-height:660px){
  .casino-lobby-shell{height:100dvh;min-height:0;grid-template-rows:70px minmax(0,1fr)}
  .lobby-body:not(.arcade-active):not(.shop-active):not(.records-active){min-height:0;grid-template-rows:minmax(0,1fr)}
@@ -598,7 +598,7 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
  .lobby-hero{flex:0 0 clamp(90px,15vh,152px);min-height:0}
  .lobby-game-grid:not(.filtered){grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));grid-auto-rows:minmax(0,1fr);overflow:visible;gap:10px}
  .lobby-game-grid:not(.filtered) .game-midnight-merge{grid-column:span 1;min-height:0}
- .lobby-game-grid:not(.filtered) .game-arcade-games{grid-column:span 2}
+ .lobby-game-grid:not(.filtered) .game-arcade-games,.lobby-game-grid:not(.filtered) .game-midnight-descent{grid-column:span 1}
  .lobby-game-grid:not(.filtered) .lobby-game .game-art-window{flex:0 0 46%;height:46%;min-height:0}
  .lobby-game-grid:not(.filtered) .game-info{padding:6px 9px;min-height:0}
  .lobby-game-grid:not(.filtered) .game-info h3{font-size:clamp(16px,1.45vw,24px);margin:3px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -624,3 +624,7 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
 .lobby-game.game-midnight-manor .game-art-window{background-image:url('/lobby/custom/midnight-manor-front.svg'),url('/lobby/custom/midnight-manor-back.svg');background-position:center;background-size:cover;background-repeat:no-repeat}
 .lobby-game.game-midnight-merge .game-art-window{background-image:url('/lobby/custom/midnight-merge-front.svg'),url('/lobby/custom/midnight-merge-back.svg');background-position:center;background-size:cover;background-repeat:no-repeat}
 .lobby-game.game-nine-lives .game-art-window{background:url('/lobby/art/nine-lives.jpg') center/cover no-repeat}
+
+/* Descent uses its own local illustration, independent of the PixiJS context. */
+.lobby-game.game-midnight-descent .game-art-window{background:#100e21 url('/lobby/custom/midnight-descent.svg') center/cover no-repeat;}
+.game-midnight-descent .game-category{color:#c5a5f1}

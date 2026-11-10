@@ -33,12 +33,13 @@ import './lobby.css';
 
 type Filter = 'all'|'tables'|'slots'|'relax'|'empire'|'collections'|'shop'|'stats'|'season'|'challenges'|'vault'|'daily'|'profile';
 const artOrder = ['blackjack','roulette','kniffel','chill-lounge','casino-empire','midnight-reels',
-  'neon-vault','nine-lives','midnight-manor','midnight-merge',ARCADE_MODE_ID];
+  'neon-vault','nine-lives','midnight-manor','midnight-merge',ARCADE_MODE_ID,'midnight-descent'];
 const categoryById: Record<string, string> = {
   blackjack:'TABLE GAMES',roulette:'TABLE GAMES · HIGH LIMIT',kniffel:'TABLE GAMES','chill-lounge':'RELAXED',
   'casino-empire':'EMPIRE','midnight-reels':'SLOTS','neon-vault':'SLOTS',
   'nine-lives':'SLOTS','midnight-manor':'SLOTS','midnight-merge':'CASINO RESTORATION',
   'arcade-games':'ARCADE CHALLENGES',
+  'midnight-descent':'ACTION ROGUELITE',
 };
 const navigation: {id: Filter; en: string; de: string}[] = [
   {id:'all',en:'Lobby',de:'Lobby'}, {id:'tables',en:'Table Games',de:'Tischspiele'},

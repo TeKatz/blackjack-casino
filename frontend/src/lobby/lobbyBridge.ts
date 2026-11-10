@@ -95,6 +95,7 @@ export const fallbackLobby: LobbySnapshot = {
     {id:'neon-vault',title:'Neon Vault',category:'Video slots',description:'Five reels, 1,024 ways and Vault Break Free Spins.',enabled:true,secondary:false},
     {id:'nine-lives',title:'Nine Lives',category:'Video slots',description:'Five lines, Pounce Wilds and nine bonus spins.',enabled:true,secondary:false},
     {id:'midnight-manor',title:'Midnight Manor',category:'Video slots',description:'Five haunted reels, Free Spins and rooms that remember.',enabled:true,secondary:false},
+    {id:'midnight-descent',title:'Midnight Descent',category:'Action Roguelite',description:'Descend beneath the club. Discover relics and forge your legend.',enabled:false,secondary:false},
     {id:'midnight-merge',title:'Midnight Merge',category:'Casino restoration',description:'Bring the Midnight Club back room by room.',enabled:true,secondary:false},
   ],
 };

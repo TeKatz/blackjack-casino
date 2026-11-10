@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { fallbackLobby, isLobbySnapshot } from '../src/lobby/lobbyBridge';
 
 describe('Modern lobby bridge: read-only C# snapshots', () => {
-  it('accepts the ten-mode offline preview and every mode identifier is unique', () => {
+  it('accepts the eleven-mode offline preview and every mode identifier is unique', () => {
     expect(isLobbySnapshot(fallbackLobby)).toBe(true);
-    expect(fallbackLobby.modes).toHaveLength(10);
-    expect(new Set(fallbackLobby.modes.map(mode => mode.id)).size).toBe(10);
+    expect(fallbackLobby.modes).toHaveLength(11);
+    expect(new Set(fallbackLobby.modes.map(mode => mode.id)).size).toBe(11);
     expect(fallbackLobby.modes.map(mode => mode.id)).toEqual([
       'roulette', 'blackjack', 'kniffel', 'chill-lounge', 'casino-empire', 'midnight-reels',
-      'neon-vault', 'nine-lives', 'midnight-manor', 'midnight-merge',
+      'neon-vault', 'nine-lives', 'midnight-manor', 'midnight-descent', 'midnight-merge',
     ]);
   });
 

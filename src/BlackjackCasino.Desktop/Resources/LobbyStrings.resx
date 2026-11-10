@@ -43,4 +43,8 @@
   <data name="Lobby.Mode.NeonVault" xml:space="preserve"><value>Neon Vault · high roller slots</value></data>
   <data name="Lobby.Mode.NineLives" xml:space="preserve"><value>Nine Lives · high risk slots</value></data>
   <data name="Lobby.Mode.Manor" xml:space="preserve"><value>Midnight Manor · video slots</value></data>
+  <data name="Descent.Title" xml:space="preserve"><value>Midnight Descent</value></data>
+  <data name="Descent.Subtitle" xml:space="preserve"><value>Beneath the club</value></data>
+  <data name="Descent.Description" xml:space="preserve"><value>Explore the depths, discover relics and forge your legend.</value></data>
+  <data name="Descent.Category" xml:space="preserve"><value>Action Roguelite</value></data>
 </root>

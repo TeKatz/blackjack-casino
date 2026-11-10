@@ -195,6 +195,10 @@ jobs:
           New-Item -ItemType Directory -Path artifacts/preview-app/tools/updater -Force | Out-Null
           Copy-Item artifacts/preview-updater/BlackjackCasino.Updater.exe artifacts/preview-app/tools/updater/BlackjackCasino.Updater.exe
 
+      - name: Export and smoke-test Godot Midnight Descent
+        shell: pwsh
+        run: ./tools/build_midnight_descent.ps1 -OutputDirectory artifacts/preview-app/MidnightDescent
+
       - name: Publish WPF-free native shell preview (not the updater target)
         if: github.event_name == 'push' || github.event_name == 'pull_request'
         shell: pwsh

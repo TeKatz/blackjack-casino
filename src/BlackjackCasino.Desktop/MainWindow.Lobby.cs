@@ -39,6 +39,9 @@ public partial class MainWindow
         modeRegistry.Register(new("kniffel", "Midnight Dice", "The dice lounge",
             "Five dice and your score sheet. Play solo or join a casino table with three AI opponents.",
             "#9DD6B3", "⚄", "Table games"), OpenKniffel);
+        modeRegistry.Register(new("midnight-descent", "Descent.Title", "Descent.Subtitle",
+            "Descent.Description", "#B996EB", "♠", "Descent.Category", UseResourceKeys: true),
+            OpenMidnightDescent);
         lobby=new CasinoLobbyView(modeRegistry,OpenProgression, () => preferences.Presentation("lobby").AnimationsEnabled,OpenNativeUpdates);
         // Use the WPF lobby only on genuine frontend failure. Keep its logical
         // visibility for native navigation, but never allow its art to flash

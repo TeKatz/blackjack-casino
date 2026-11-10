@@ -167,6 +167,10 @@ jobs:
           New-Item -ItemType Directory -Path artifacts/app/tools/updater -Force | Out-Null
           Copy-Item artifacts/updater/BlackjackCasino.Updater.exe artifacts/app/tools/updater/BlackjackCasino.Updater.exe
 
+      - name: Export and smoke-test Godot Midnight Descent
+        shell: pwsh
+        run: ./tools/build_midnight_descent.ps1 -OutputDirectory artifacts/app/MidnightDescent
+
       - name: Verify bundled Midnight Manor frontend assets
         shell: pwsh
         run: |
