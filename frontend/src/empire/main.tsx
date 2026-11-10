@@ -170,7 +170,7 @@ function EmpireApp(){
   const showPreview=(intent:Intent)=>{
     if(!visible||!live.current||activeVisit.current!==live.current.visitId||pendingRef.current||uncertain)return;
     clearPreview();previewTimer.current=setTimeout(()=>{
-      if(live.current&&!pendingRef.current)previewId.current=send(live.current,{...intent,preview:true,inspectRoomId:selected??'slots'});
+      if(live.current&&!pendingRef.current)previewId.current=send(live.current,{...intent,preview:true,inspectRoomId:intent.action==='upgrade'?intent.id:(selected??'slots')});
     },120);
   };
   if(!snapshot)return <main className="empire-loading"><span>♜</span><h1>CASINO EMPIRE</h1><p>{window.chrome?.webview?'Opening your estate…':'Open Casino Empire in the desktop application.'}</p><button onClick={()=>post('empire.close')}>← Casino lobby</button></main>;
