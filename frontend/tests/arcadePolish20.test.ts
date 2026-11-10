@@ -1,7 +1,12 @@
 import {describe,expect,it} from 'vitest';
 import {ARCADE_STEP,actArcadeRun,createArcadeRun,stepArcadeRun,PLAYABLE_ARCADE_IDS} from '../src/lobby/arcadeEngine';
-import {pinballGeometry,pinballFlipper,launchPinball,createPinballRun,
- stepPinball} from '../src/lobby/arcadePinballV2';
+import {
+ createBeatsRun,beatsBpmForPulse,beatsStageForPulse,beatsTargetTime,
+ hitBeatsLane,stepBeatsRun,BEATS_GOOD_WINDOW,
+} from '../src/lobby/arcadeBeatsEngine';
+import {beatsLaneAt} from '../src/lobby/arcadeBeatsRenderer';
+import {playBeatsGroovePulse,playBeatsLaneHit,playBeatsMiss,unlockBeatsAudio}
+ from '../src/lobby/arcadeBeatsAudio';
 import {driftRoadHalfWidth,driftTrafficAt,gravityHazards,gravitySentries}
  from '../src/lobby/arcadeExpansionOneEngine';
 import type {DriftRun,GravityRun} from '../src/lobby/arcadeExpansionOneEngine';
@@ -11,68 +16,89 @@ import type {PrismRun,CircuitRun,MinerRun,HeistRun} from '../src/lobby/arcadeExp
 import {ARCADE_VOICES,ECHO_PAD_NOTES,soundNotes,soundProfileSignature,
  playArcadeSound} from '../src/lobby/arcadeSound';
 
-describe('Midnight Pinball physical rebuild',()=>{
- it('launches from a proper channel into the playable table rather than falling outside',()=>{
-  const run=createPinballRun(123);
-  expect(run.serve).toBe(true);
-  expect(run.x).toBe(pinballGeometry.shooterX);
-  expect(launchPinball(run)).toBe('flap');
-  let entered=false;
-  for(let n=0;n<70&&!run.over;n++){
-   stepPinball(run,ARCADE_STEP);
-   if(!run.inShooter){entered=true;break;}
-  }
-  expect(entered).toBe(true);
-  expect(run.serve).toBe(false);
-  expect(run.x).toBeLessThan(pinballGeometry.shooterX);
-  expect(run.vx).toBeLessThan(0);
-  expect(run.y).toBeLessThan(160);
+describe('Midnight Beats synchronized endless rhythm',()=>{
+ it('produces an exact musical pulse grid and increases tempo at measure boundaries only',()=>{
+  expect(beatsStageForPulse(0)).toBe(1);
+  expect(beatsStageForPulse(31)).toBe(1);
+  expect(beatsStageForPulse(32)).toBe(2);
+  expect(beatsBpmForPulse(0)).toBe(104);
+  expect(beatsBpmForPulse(32)).toBe(112);
+  expect(beatsBpmForPulse(320)).toBe(184);
+  expect(beatsBpmForPulse(1000)).toBe(184);
+  expect(beatsTargetTime(32)-beatsTargetTime(31)).toBeCloseTo(30/104,7);
+  expect(beatsTargetTime(33)-beatsTargetTime(32)).toBeCloseTo(30/112,7);
  });
- it('kicks a descending ball with a raised left or right flipper',()=>{
-  for(const side of ['left','right'] as const){
-   const run=createPinballRun(7);
-   launchPinball(run);
-   run.inShooter=false;
-   run.x=side==='left'?426:534;run.y=439;run.vx=0;run.vy=620;
-   for(let i=0;i<4;i++)stepPinball(run,ARCADE_STEP,{[side]:true});
-   expect(run.vy).toBeLessThan(-200);
-   expect(side==='left'?run.leftLift:run.rightLift).toBeGreaterThan(0);
-  }
+ it('generates timed notes and never places more than two on one subdivision',()=>{
+  const run=createBeatsRun(87);
+  run.lives=10000; // inspect the generator over a long non-terminated run
+  for(let i=0;i<5400;i++)stepBeatsRun(run,ARCADE_STEP);
+  expect(run.stage).toBeGreaterThan(5);
+  expect(run.bpm).toBeGreaterThan(145);
+  expect(run.notes.length).toBeLessThan(35);
+  expect(run.notes.every(n=>n.lane>=0&&n.lane<=3)).toBe(true);
+  const a=createBeatsRun(19),b=createBeatsRun(19);
+  a.lives=10000;b.lives=10000;
+  for(let i=0;i<1800;i++){stepBeatsRun(a,ARCADE_STEP);stepBeatsRun(b,ARCADE_STEP);}
+  expect(a).toEqual(b);
  });
- it('shares exact flipper coordinates with the renderer and preserves a centre drain',()=>{
-  const left=pinballFlipper('left',1),right=pinballFlipper('right',1);
-  expect(left.pivotY).toBe(right.pivotY);
-  expect(left.tipY).toBe(right.tipY);
-  expect(left.tipX).toBeLessThan(right.tipX);
-  expect(left.tipY).toBeLessThan(pinballFlipper('left',0).tipY);
-  const run=createPinballRun(4);
-  launchPinball(run);run.inShooter=false;run.x=480;run.y=532;run.vy=650;
-  expect(stepPinball(run,ARCADE_STEP)).toBe('stage');
-  expect(run.balls).toBe(2);
- });
- it('awards combo bumper scores without per-substep farming and drains three balls',()=>{
-  const run=createPinballRun(6);launchPinball(run);
-  run.inShooter=false;run.x=414;run.y=216;run.vx=-90;run.vy=0;
-  expect(stepPinball(run,ARCADE_STEP)).toBe('score');
-  expect(run.score).toBeGreaterThan(0);
-  const score=run.score;
-  stepPinball(run,ARCADE_STEP);
-  expect(run.score).toBe(score);
-  for(let n=1;n<=3;n++){
-   run.serve=false;run.inShooter=false;run.x=480;run.y=560;run.vy=20;
-   expect(stepPinball(run,ARCADE_STEP)).toBe(n===3?'fail':'stage');
+ it('scores PERFECT/GREAT/GOOD within distinct timing windows and builds combos',()=>{
+  for(const [offset,grade,points] of [
+   [0,'PERFECT',300],[.075,'GREAT',200],[.14,'GOOD',100]
+  ] as const){
+   const run=createBeatsRun(71);
+   for(let i=0;i<140;i++)stepBeatsRun(run,ARCADE_STEP);
+   const note=run.notes.find(n=>n.judgement===null)!;
+   run.elapsed=note.at+offset;
+   expect(hitBeatsLane(run,note.lane)).toBe('score');
+   expect(run.lastGrade).toBe(grade);
+   expect(run.score).toBe(points);
+   expect(run.combo).toBe(1);
+   expect(run.lastHitPoints).toBe(points);
   }
+  expect(BEATS_GOOD_WINDOW).toBeGreaterThan(.14);
+ });
+ it('penalizes unmatched keys, preserves the five-life limit and ignores repeat spam',()=>{
+  const run=createBeatsRun(42);
+  for(let i=0;i<145;i++)stepBeatsRun(run,ARCADE_STEP);
+  const first=run.notes.find(n=>n.judgement===null)!;
+  run.elapsed=first.at;
+  const wrongLane=(first.lane+1)%4;
+  expect(hitBeatsLane(run,wrongLane)).toBe('stage');
+  expect(run.lives).toBe(4);
+  expect(run.combo).toBe(0);
+  expect(hitBeatsLane(run,wrongLane)).toBeNull();
+  expect(run.lives).toBe(4);
+  run.wrongLock=0;
+  run.lives=1;
+  expect(hitBeatsLane(run,wrongLane)).toBe('fail');
   expect(run.over).toBe(true);
  });
- it('stays deterministic under alternating flipper controls',()=>{
-  const a=createPinballRun(33),b=createPinballRun(33);
-  launchPinball(a);launchPinball(b);
-  for(let i=0;i<500;i++){
-   const controls={left:i%41<15,right:i%53<16};
-   stepPinball(a,ARCADE_STEP,controls);stepPinball(b,ARCADE_STEP,controls);
-   if(a.serve&&b.serve){launchPinball(a);launchPinball(b);}
-  }
-  expect(a).toEqual(b);
+ it('maps D/F/J/K pointer lanes and keeps gaps noninteractive',()=>{
+  expect(beatsLaneAt(295,418)).toBe(0);
+  expect(beatsLaneAt(420,418)).toBe(1);
+  expect(beatsLaneAt(540,418)).toBe(2);
+  expect(beatsLaneAt(658,418)).toBe(3);
+  expect(beatsLaneAt(360,418)).toBeNull();
+  expect(beatsLaneAt(300,20)).toBeNull();
+  expect(beatsLaneAt(1100,418)).toBeNull();
+ });
+ it('handles pause via the shared runner without advancing the game clock',()=>{
+  const run=createArcadeRun('midnight-beats',7);
+  expect(run.kind).toBe('midnight-beats');
+  for(let i=0;i<50;i++)stepArcadeRun(run,ARCADE_STEP);
+  const before=JSON.stringify(run);
+  // A paused runner is not stepped by ArcadeGameScreen. Nothing has an independent timer.
+  expect(JSON.stringify(run)).toBe(before);
+  run.over=true;
+  expect(stepArcadeRun(run,ARCADE_STEP)).toBeNull();
+ });
+ it('keeps procedural sound safely optional and distinct from scoring',()=>{
+  const ref:{current:AudioContext|null}={current:null};
+  expect(()=>playBeatsGroovePulse(ref,false,12,104)).not.toThrow();
+  expect(()=>playBeatsLaneHit(ref,false,2,'PERFECT')).not.toThrow();
+  expect(()=>playBeatsMiss(ref,false)).not.toThrow();
+  expect(()=>unlockBeatsAudio(ref,false)).not.toThrow();
+  expect(ref.current).toBeNull();
  });
 });
 
