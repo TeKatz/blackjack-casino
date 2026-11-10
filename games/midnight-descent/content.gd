@@ -4,7 +4,9 @@ const SETS := {
 	"warden_guard": {"character":"warden","en":"Guardian","de":"Beschützer","hp":100.0,"damage":26.0,"bolt":17.0,"speed":245.0,"attack":0.36,"special":0.62,"dash":1.3,"cost":0},
 	"warden_executioner": {"character":"warden","en":"Executioner","de":"Vollstrecker","hp":115.0,"damage":44.0,"bolt":22.0,"speed":215.0,"attack":0.65,"special":2.2,"dash":1.5,"cost":35},
 	"dealer_cards": {"character":"dealer","en":"Cardsharp","de":"Kartenmeister","hp":75.0,"damage":14.0,"bolt":20.0,"speed":270.0,"attack":0.24,"special":1.1,"dash":1.1,"cost":55},
-	"dealer_joker": {"character":"dealer","en":"Joker","de":"Joker","hp":85.0,"damage":17.0,"bolt":27.0,"speed":255.0,"attack":0.32,"special":1.5,"dash":1.2,"cost":85}
+	"dealer_joker": {"character":"dealer","en":"Joker","de":"Joker","hp":85.0,"damage":17.0,"bolt":27.0,"speed":255.0,"attack":0.32,"special":1.5,"dash":1.2,"cost":85},
+	"arcanist_fire":{"character":"arcanist","en":"Pyromancer","de":"Pyromant","hp":80.0,"damage":16.0,"bolt":38.0,"speed":250.0,"attack":0.34,"special":1.8,"dash":1.25,"cost":100},
+	"arcanist_frost":{"character":"arcanist","en":"Frostweaver","de":"Frostweber","hp":90.0,"damage":15.0,"bolt":28.0,"speed":240.0,"attack":0.35,"special":1.6,"dash":1.2,"cost":125}
 }
 const RELICS := {
 	"blade":["Gilded Edge","Goldene Klinge","+9 sword/card damage","+9 Hauptangriffsschaden",0],
@@ -22,7 +24,31 @@ const RELICS := {
 	"dashfire":["Cinder Steps","Glutschritte","Dash damages nearby enemies","Dash schädigt Gegner in der Nähe",12],
 	"crit":["Loaded Coin","Gezinkte Münze","20% chance of double damage","20 % Chance auf doppelten Schaden",13],
 	"tempo":["Clockwork","Uhrwerk","Main attack 12% faster","Hauptangriff 12 % schneller",14],
-	"potion":["Alchemist Flask","Alchemistenflasche","Active heal gains 15 HP per stack","Aktive Heilung +15 LP je Stapel",15]
+	"potion":["Alchemist Flask","Alchemistenflasche","Active heal gains 15 HP per stack","Aktive Heilung +15 LP je Stapel",15],
+	"bounce":["Mirror Shard","Spiegelscherbe","Shots bounce off walls","Geschosse prallen ab",16],
+	"frost":["Frost Heart","Frostherz","Hits chill enemies","Treffer verlangsamen Gegner",17],
+	"shatter":["Shatter Tomb","Splittergrab","Chilled enemies burst on death","Unterkühlte Gegner explodieren",18],
+	"sun":["Black Sun","Schwarze Sonne","Orbit damages nearby enemies","Orbit schädigt nahe Gegner",19],
+	"curse":["Cursed Die","Verfluchter Würfel","Random damage modifier each room","Zufälliger Schadensbonus je Raum",20],
+	"phoenix":["Phoenix Feather","Phönixfeder","Revive once per run","Einmalige Wiederbelebung",21],
+	"cascade":["Arcane Cascade","Arkane Kaskade","Special attacks cause explosions","Spezialangriffe erzeugen Explosionen",22],
+	"twin":["Twin Soul","Zwillingsseele","Main attacks release an extra bolt","Hauptangriffe erzeugen Zusatzgeschoss",23],
+	"sanguine":["Sanguine Pact","Blutpakt","+6 attack, -8 max HP","+6 Angriff, -8 max. LP",24],
+	"bulwark":["Bulwark","Bollwerk","+3 armor","+3 Rüstung",25],
+	"swift":["Swift Feather","Windfeder","+18 movement speed","+18 Bewegungstempo",26],
+	"mana":["Mana Crystal","Manakristall","Special cooldown -15%","Spezial-Abklingzeit -15 %",27],
+	"titan":["Titan Bone","Titanenknochen","+30 max HP","+30 max. LP",28],
+	"needle":["Thorn Needle","Dornnadel","+5 projectile damage","+5 Spezialschaden",29],
+	"charge":["Charged Boots","Ladungsstiefel","Dash cooldown -0.15s","Dash-Abklingzeit -0,15 s",30],
+	"medic":["Medic Seal","Heilsiegel","Heal 6 HP on room entry","6 LP bei Raumbetritt",31],
+	"greed":["Gilded Purse","Goldbeutel","+2 shards per kill","+2 Splitter je Gegner",32],
+	"battery":["Soul Battery","Seelenbatterie","Active cooldown -3s","Aktiv-Abklingzeit -3 s",33],
+	"glass":["Glass Blade","Glasklinge","+16 attack, -3 armor","+16 Angriff, -3 Rüstung",34],
+	"warding":["Warding Rune","Schutzrune","Longer hurt invulnerability","Längere Treffer-Unverwundbarkeit",35],
+	"venom":["Venom Vial","Giftampulle","Hits poison enemies","Treffer vergiften Gegner",36],
+	"nova":["Nova Core","Novakern","Dash releases a burst","Dash erzeugt Explosion",37],
+	"hunter":["Hunter Eye","Jägerauge","+8 damage against elites/bosses","+8 Schaden gegen Elite/Bosse",38],
+	"blood":["Blood Moon","Blutmond","Low HP increases damage","Wenig LP erhöht Schaden",39]
 }
 const UPGRADES := {
 	"vitality":["Vitality","Vitalität","+5 starting HP per rank","+5 Start-LP je Rang",12,5],

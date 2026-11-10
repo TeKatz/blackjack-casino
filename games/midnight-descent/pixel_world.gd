@@ -7,6 +7,13 @@ const RELICS = preload("res://art/pixel/relics.svg")
 const ACTORS = {
 	"warden": preload("res://art/pixel/warden.svg"),
 	"dealer": preload("res://art/pixel/dealer.svg"),
+	"arcanist": preload("res://art/pixel/arcanist.svg"),
+	"archer": preload("res://art/pixel/archer.svg"),
+	"shield": preload("res://art/pixel/shield.svg"),
+	"spore": preload("res://art/pixel/spore.svg"),
+	"vine": preload("res://art/pixel/vine.svg"),
+	"mushroom": preload("res://art/pixel/mushroom.svg"),
+	"rootking": preload("res://art/pixel/rootking.svg"),
 	"stalker": preload("res://art/pixel/stalker.svg"),
 	"caster": preload("res://art/pixel/caster.svg"),
 	"brute": preload("res://art/pixel/brute.svg"),
@@ -24,6 +31,7 @@ var player_light: PointLight2D
 var gate_light: PointLight2D
 var occluders: Array[LightOccluder2D] = []
 var last_room := -1
+var last_floor := -1
 var last_seed: int = -1
 var light_texture: GradientTexture2D
 var ambient: CanvasModulate
@@ -95,11 +103,12 @@ func rebuild_occluders() -> void:
 		add_child(node)
 		occluders.append(node)
 	last_room = model.room
+	last_floor = model.floor_index
 	last_seed = model.seed_value
 
 func update_view(dt: float) -> void:
 	clock += dt
-	if last_room != model.room or last_seed != model.seed_value or occluders.size() != model.walls.size():
+	if last_floor != model.floor_index or last_room != model.room or last_seed != model.seed_value or occluders.size() != model.walls.size():
 		rebuild_occluders()
 	var delta: Vector2 = model.player-previous_player
 	walking = delta.length_squared() > 0.05
@@ -114,12 +123,13 @@ func update_view(dt: float) -> void:
 		side_lights[i].energy = 0.85 + sin(clock*5+i*2)*0.15
 	var boss_present := false
 	for enemy in model.enemies:
-		if enemy.kind == "boss":
+		if enemy.kind in ["boss","rootking"]:
 			boss_present = true
 			boss_light.position = enemy.pos
 			boss_light.energy = 0.75 + sin(clock*3)*0.2 + (0.6 if enemy.wind > 0 else 0.0)
 	boss_light.enabled = boss_present
 	var target_ambient := Color(0.39,0.30,0.47) if boss_present else Color(0.55,0.49,0.64)
+	if model.floor_index==1: target_ambient=Color(0.35,0.53,0.39)
 	ambient.color = ambient.color.lerp(target_ambient, minf(1.0,dt*2.5))
 	gate_open_amount = move_toward(gate_open_amount,1.0 if model.state == "exit" else 0.0,dt*2.5)
 	gate_light.energy = gate_open_amount*(1.1+sin(clock*4)*0.2)
@@ -254,4 +264,4 @@ func draw_actor(enemy: Dictionary) -> void:
 	sprite(kind,pos,direction,frame,size,tint)
 
 func is_ready_for_smoke() -> bool:
-	return TILES.get_width() == 256 and RELICS.get_width() == 384 and ACTORS["dealer"].get_height() == 128 and ACTORS["warden"].get_height() == 128 and torches.size() == 5 and side_lights.size() == 2 and ambient != null and boss_light != null and torches[0].range_layer_min == -1 and occluders.size() == model.walls.size()
+	return TILES.get_width() == 256 and RELICS.get_width() == 960 and ACTORS["dealer"].get_height() == 128 and ACTORS["warden"].get_height() == 128 and torches.size() == 5 and side_lights.size() == 2 and ambient != null and boss_light != null and torches[0].range_layer_min == -1 and occluders.size() == model.walls.size()

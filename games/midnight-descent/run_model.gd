@@ -19,6 +19,7 @@ var slow_time := 0.0
 var shield_time := 0.0
 var temp_power := 0.0
 var revive_used := false
+var orbit_timer := 0.0
 const Content = preload("res://content.gd")
 const RELICS = Content.RELICS
 var character := "warden"
@@ -74,6 +75,7 @@ func begin(value: int, loadout: String = "warden_guard", upgrades: Dictionary = 
 	shield_time = 0
 	temp_power = 0
 	revive_used = false
+	orbit_timer=0
 	dungeon.generate(value,0)
 	set_id = loadout if Content.SETS.has(loadout) else "warden_guard"
 	var spec: Dictionary = Content.SETS[set_id]
@@ -114,6 +116,9 @@ func enter_room() -> void:
 	offers.clear()
 	walls.clear()
 	room_kind = dungeon.kind(room)
+	temp_power=0
+	if relics.has("curse"): temp_power=rng.randf_range(-5,15)
+	if relics.has("medic"): hp=minf(max_hp,hp+6*relics.count("medic"))
 	var node: Dictionary = dungeon.nodes[room]
 	if not node.visited:
 		node.visited = true
@@ -280,6 +285,10 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 		dash_timer = dash_cooldown
 		invulnerable = maxf(invulnerable, 0.28)
 		effect("dash", player, 0.22, dash_direction)
+		if relics.has("nova") or character=="arcanist":
+			for enemy in enemies:
+				if player.distance_to(enemy.pos)<100: hit_enemy(enemy,15)
+				if set_id=="arcanist_frost" and player.distance_to(enemy.pos)<100: enemy["chill"]=2.0
 	var move := dash_direction * 860.0 if dash_left > 0 else direction.limit_length() * speed
 	player = move_actor(player, move * dt, 15)
 	if state == "exit":
@@ -293,7 +302,7 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 	if melee and attack_timer <= 0:
 		attack_timer = attack_cd
 		attacks += 1
-		if character=="dealer":
+		if character in ["dealer","arcanist"]:
 			shoot(player+aim*21,aim*660,false,damage)
 			notices.append("bolt")
 		else:
@@ -303,11 +312,19 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 				var offset: Vector2 = enemy.pos-player
 				if offset.length() <= (118.0 if set_id=="warden_executioner" else 93.0)+float(enemy.r) and (offset.length()<12 or aim.dot(offset.normalized())>0.15):
 					hit_enemy(enemy,damage)
+		if relics.has("twin"):
+			shoot(player+aim*21,aim.rotated(0.14)*590,false,damage*0.55)
 		if relics.has("echo") and attacks%3==0:
 			shoot(player+aim*21,aim*590,false,bolt_damage*relics.count("echo"))
 	if ranged and bolt_timer <= 0:
 		bolt_timer = special_cd
-		if set_id=="warden_executioner":
+		if set_id=="arcanist_frost":
+			for enemy in enemies:
+				if player.distance_to(enemy.pos)<185:
+					hit_enemy(enemy,bolt_damage)
+					enemy["chill"]=4.0
+			effect("burst",player,0.4,Vector2.ZERO)
+		elif set_id=="warden_executioner":
 			effect("slash",player,0.3,aim)
 			for enemy in enemies:
 				if player.distance_to(enemy.pos)<175: hit_enemy(enemy,bolt_damage*2.0)
@@ -322,13 +339,24 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 				if set_id=="dealer_joker": power *= rng.randf_range(0.5,1.8)
 				shoot(player+aim*21,aim.rotated(angle)*590,false,power)
 			notices.append("bolt")
+		if relics.has("cascade") or set_id=="arcanist_fire":
+			for enemy in enemies:
+				if player.distance_to(enemy.pos)<200: hit_enemy(enemy,bolt_damage*0.8)
+			effect("burst",player,0.35,Vector2.ZERO)
+	orbit_timer-=dt
+	if relics.has("sun") and orbit_timer<=0:
+		orbit_timer=0.25
+		for enemy in enemies:
+			if player.distance_to(enemy.pos)<95: hit_enemy(enemy,5*relics.count("sun"))
 	update_enemies(dt)
 	update_shots(dt)
 	for i in range(enemies.size()-1, -1, -1):
 		if enemies[i].hp <= 0:
 			effect("burst", enemies[i].pos, 0.35, Vector2.ZERO)
 			kills += 1
-			shards += 20 if enemies[i].kind in ["boss","rootking"] else 3
+			shards += (20 if enemies[i].kind in ["boss","rootking"] else 3)+2*relics.count("greed")
+			if relics.has("shatter") and float(enemies[i].get("chill",0))>0:
+				for j in range(6): shoot(enemies[i].pos,Vector2.from_angle(j*TAU/6)*400,false,12)
 			if enemies[i].kind=="mushroom":
 				spawn_enemy("spore",enemies[i].pos+Vector2(35,0))
 				spawn_enemy("spore",enemies[i].pos-Vector2(35,0))
@@ -369,14 +397,19 @@ func hit_enemy(enemy: Dictionary, amount: float) -> void:
 	if enemy.hp <= 0:
 		return
 	if relics.has("crit") and rng.randf()<minf(0.8,0.2*relics.count("crit")): amount *= 2
-	enemy.hp -= amount+temp_power
+	if relics.has("hunter") and (enemy.get("elite",false) or enemy.kind in ["boss","rootking"]): amount+=8*relics.count("hunter")
+	if relics.has("blood") and hp<max_hp*0.35: amount*=1.4
+	if enemy.kind=="shield" and enemy.pos.direction_to(player).dot(aim)<-0.5: amount*=0.6
+	enemy.hp -= maxf(1,amount+temp_power)
+	if relics.has("frost") or set_id=="arcanist_frost": enemy["chill"]=2.0
+	if relics.has("venom"): enemy["poison"]=3.0
 	if relics.has("storm") and float(enemy.get("burn",0))>0:
 		for other in enemies:
 			if other!=enemy and other.hp>0 and enemy.pos.distance_to(other.pos)<160:
 				other.hp -= 8.0*relics.count("storm")
 				effect("hit",other.pos,0.18,Vector2.ZERO)
 				break
-	if relics.has("ember"): enemy["burn"]=3.0
+	if relics.has("ember") or set_id=="arcanist_fire": enemy["burn"]=3.0
 	enemy.flash = 0.12
 	effect("hit", enemy.pos, 0.18, Vector2.ZERO)
 	notices.append("hit")
@@ -385,13 +418,13 @@ func hurt(amount: float) -> void:
 	if invulnerable > 0 or shield_time>0 or hp <= 0:
 		return
 	hp = maxf(0, hp - maxf(1, amount - armor))
-	invulnerable = 0.65
+	invulnerable = 0.65+0.15*relics.count("warding")
 	effect("hurt", player, 0.25, Vector2.ZERO)
 	notices.append("hurt")
 
 func shoot(pos: Vector2, velocity: Vector2, hostile: bool, power: float) -> void:
 	if shots.size()>=180: return
-	shots.append({"pos":pos,"vel":velocity,"hostile":hostile,"damage":power,"life":2.8,"pierce":0 if hostile else mini(5,relics.count("pierce")),"hit":[]})
+	shots.append({"pos":pos,"vel":velocity,"hostile":hostile,"damage":power,"life":2.8,"pierce":0 if hostile else mini(5,relics.count("pierce")),"hit":[],"bounce":0 if hostile else mini(3,relics.count("bounce"))})
 
 func update_enemies(dt: float) -> void:
 	for enemy in enemies:
@@ -399,7 +432,11 @@ func update_enemies(dt: float) -> void:
 			continue
 		if float(enemy.get("burn",0))>0:
 			enemy["burn"] = maxf(0,float(enemy.burn)-dt)
-			enemy.hp -= dt*4.0*relics.count("ember")
+			enemy.hp -= dt*4.0*(relics.count("ember")+(1 if set_id=="arcanist_fire" else 0))
+		if float(enemy.get("poison",0))>0:
+			enemy["poison"]=maxf(0,float(enemy.poison)-dt)
+			enemy.hp-=dt*5*relics.count("venom")
+		enemy["chill"]=maxf(0,float(enemy.get("chill",0))-dt)
 		enemy.flash = maxf(0, float(enemy.flash)-dt)
 		enemy.timer -= dt
 		var pos: Vector2 = enemy.pos
@@ -448,7 +485,7 @@ func update_enemies(dt: float) -> void:
 			var length := separation.length()
 			if length > 0.01 and length < radius + float(other.r) + 8:
 				velocity += separation.normalized()*100
-		if slow_time>0: velocity*=0.4
+		if slow_time>0 or enemy.chill>0: velocity*=0.4
 		if kind=="vine" and enemy.timer<=0 and dist<260:
 			player=move_actor(player,player.direction_to(pos)*45,15)
 			enemy.timer=2.5
@@ -463,6 +500,12 @@ func update_shots(dt: float) -> void:
 		shot.pos += shot.vel*dt*(0.4 if shot.hostile and slow_time>0 else 1.0)
 		shot.life -= dt
 		var pos: Vector2 = shot.pos
+		if not ARENA.has_point(pos) and shot.bounce>0:
+			if pos.x<ARENA.position.x or pos.x>ARENA.end.x: shot.vel.x=-shot.vel.x
+			if pos.y<ARENA.position.y or pos.y>ARENA.end.y: shot.vel.y=-shot.vel.y
+			shot.pos=safe_position(pos,5)
+			pos=shot.pos
+			shot.bounce-=1
 		var remove: bool = shot.life <= 0 or not ARENA.has_point(pos) or blocked(pos, 4)
 		if not remove:
 			if shot.hostile:
@@ -510,6 +553,15 @@ func choose_relic(index: int) -> bool:
 		"fury": dash_cooldown = maxf(0.55, dash_cooldown-0.23)
 		"tempo": attack_cd = maxf(0.12,attack_cd*0.88)
 		"potion": active_heal += 15
+		"sanguine": damage+=6; max_hp=maxf(20,max_hp-8); hp=minf(hp,max_hp)
+		"bulwark": armor+=3
+		"swift": speed+=18
+		"mana": special_cd=maxf(0.2,special_cd*0.85)
+		"titan": max_hp+=30; hp+=30
+		"needle": bolt_damage+=5
+		"charge": dash_cooldown=maxf(0.35,dash_cooldown-0.15)
+		"battery": active_cd=maxf(8,active_cd-3)
+		"glass": damage+=16; armor-=3
 	hp = minf(max_hp, hp+12)
 	finish_room()
 	return true
