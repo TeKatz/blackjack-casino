@@ -1,5 +1,5 @@
 import {describe,expect,it} from 'vitest';
-import {commandCanBuy,commandImpact,commandMilestone,commandProgress,commandPurchaseSizes,commandQuote,decimalDifference,researchCoordinates} from '../src/empire/commandCenterModel';
+import {commandCanBuy,commandImpact,commandMilestone,commandProgress,commandPurchaseSizes,commandQuote,decimalDifference,researchCoordinates,researchRequirements} from '../src/empire/commandCenterModel';
 import {isEmpireSnapshot} from '../src/empire/empireBridge';
 import type {Preview,Research} from '../src/empire/empireBridge';
 import fixture from './fixtures/empire-snapshot.json';
@@ -42,4 +42,13 @@ describe('Command Center rules',()=>{
     expect(a.second.x).toBeLessThan(a.third.x);
     expect(a.third.y).toBe(50);
   });
+});
+
+it('explains a research dependency independently of affordable Legacy Points',()=>{
+  const prerequisite={id:'construction',name:'Efficient Construction',rank:1} as Research;
+  const node={id:'compound',rank:0,maxRank:3,costPerRank:2,prerequisite:'construction',prerequisiteRank:2} as Research;
+  expect(researchRequirements(node,[prerequisite,node],10)).toEqual({maxed:false,missingPoints:0,
+    prerequisite:{name:'Efficient Construction',current:1,required:2,met:false}});
+  expect(researchRequirements(node,[{...prerequisite,rank:2},node],1)).toEqual({maxed:false,missingPoints:1,
+    prerequisite:{name:'Efficient Construction',current:2,required:2,met:true}});
 });

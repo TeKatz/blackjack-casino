@@ -1,7 +1,7 @@
-import {useEffect,useMemo,useState} from 'react';
+import {useEffect,useMemo,useRef,useState} from 'react';
 import type {CSSProperties,FormEvent,FocusEvent,MouseEvent} from 'react';
 import {ResearchLattice} from './EmpireCommandPixi';
-import {commandProgress,researchCoordinates} from './commandCenterModel';
+import {commandProgress,researchCoordinates,researchRequirements} from './commandCenterModel';
 import {decimalInput,display,fractionToPercent,percentToFraction} from './empireBridge';
 import type {Automation,EmpireEconomy,Intent,Manager,Research,Room} from './empireBridge';
 
@@ -24,40 +24,66 @@ function Bar({value}:{value:number}){
 function ResearchConsole({economy,language,t,disabled,motion,onAction,onHover,onLeave}:Omit<PanelProps,'section'|'roomId'|'onClose'>){
   const [branch,setBranch]=useState('Operations');
   const [focus,setFocus]=useState<string|null>(null);
+  const [recent,setRecent]=useState<string|null>(null);
   const de=language==='de';
   const items=economy.research.filter(r=>r.branch===branch);
   const positions=useMemo(()=>researchCoordinates(items),[economy.research,branch]);
-  const handleEnter=(event:HoverSource,item:Research)=>{
-    setFocus(item.id);
-    onHover(event,item.canBuy?{action:'research',id:item.id}:null,t(item.name),t(item.description),item.costPerRank+' LP');
+  const item=items.find(r=>r.id===focus)??items[0];
+  const rank= item?economy.research.find(r=>r.id===item.id)?.rank:undefined;
+  const previous=useRef<Record<string,number>>({});
+  useEffect(()=>{
+    const ranks=Object.fromEntries(economy.research.map(r=>[r.id,r.rank]));
+    const changed=economy.research.find(r=>previous.current[r.id]!==undefined&&r.rank>previous.current[r.id]);
+    previous.current=ranks;
+    if(changed){setRecent(changed.id);const timeout=setTimeout(()=>setRecent(null),650);return()=>clearTimeout(timeout);}
+  },[economy.research.map(r=>r.id+':'+r.rank).join('|')]);
+  const reasons=(r:Research)=>researchRequirements(r,economy.research,economy.legacyPointsAvailable);
+  const reasonText=(r:Research)=>{
+    const requirement=reasons(r);
+    const lines:string[]=[];
+    if(requirement.maxed)lines.push(de?'Maximaler Rang erreicht':'Maximum rank reached');
+    if(requirement.missingPoints>0&&!requirement.maxed)lines.push((de?'Fehlende Legacy-Punkte: ':'Missing Legacy Points: ')+requirement.missingPoints);
+    if(requirement.prerequisite&&!requirement.prerequisite.met)lines.push((de?'Benötigt ':'Requires ')+t(requirement.prerequisite.name)+' '+(de?'Rang ':'rank ')+requirement.prerequisite.required+' ('+requirement.prerequisite.current+'/'+requirement.prerequisite.required+')');
+    if(!r.canBuy&&lines.length===0)lines.push(de?'Aktuell nicht verfügbar':'Currently unavailable');
+    return lines;
   };
   return <div className="cc-research-content">
     <div className="cc-module-status"><div><span className="cc-eyebrow">{de?'FORSCHUNG':'RESEARCH'}</span>
       <strong>{economy.legacyPointsAvailable} <small>LP</small></strong>
-      <p>{de?'Jeder Knoten verändert dauerhaft deine Wirtschaftsstrategie.':'Every node permanently changes your economic strategy.'}</p></div>
+      <p>{de?'Wähle einen Knoten. Voraussetzungen und Auswirkungen stehen unten.':'Choose a node. Requirements and effects are shown below.'}</p></div>
       <div className="cc-chip-row" role="group" aria-label={de?'Forschungszweige':'Research branches'}>
         {['Operations','Gaming','Hospitality'].map(id=><button key={id} aria-pressed={branch===id} onClick={()=>{setBranch(id);setFocus(null);onLeave();}}>{t(id)}</button>)}
       </div>
     </div>
     <div className="cc-research-graph" data-testid="cc-research-graph">
-      <ResearchLattice items={items} positions={positions} focus={focus} enabled={motion}/>
-      {items.map(item=>{
-        const at=positions[item.id];if(!at)return null;
-        const complete=item.rank===item.maxRank;
-        return <button type="button" key={item.id} className={'cc-research-node '+(complete?'is-complete ':item.canBuy?'is-available ':'is-locked ')+(focus===item.id?'is-focused':'')}
-          style={{left:at.x+'%',top:at.y+'%'}} data-testid={'cc-research-'+item.id}
-          disabled={disabled} aria-disabled={!item.canBuy}
-          onMouseEnter={event=>handleEnter(event,item)} onMouseLeave={()=>{setFocus(null);onLeave();}}
-          onFocus={event=>handleEnter(event,item)} onBlur={()=>{setFocus(null);onLeave();}}
-          onClick={()=>{if(item.canBuy){onLeave();onAction({action:'research',id:item.id});}}}>
-          <span className="cc-node-emblem">{complete?'✦':item.canBuy?'◇':'◆'}</span>
-          <strong>{t(item.name)}</strong>
-          <small>{de?'Rang':'Rank'} {item.rank}/{item.maxRank}</small>
-          <span className="cc-node-price">{complete?'MAX':item.costPerRank+' LP'}</span>
+      <ResearchLattice items={items} positions={positions} focus={item?.id??null} enabled={motion}/>
+      {items.map(node=>{
+        const at=positions[node.id];if(!at)return null;
+        const complete=node.rank===node.maxRank,requirements=reasons(node);
+        return <button type="button" key={node.id} className={'cc-research-node '+(complete?'is-complete ':node.canBuy?'is-available ':'is-locked ')+(item?.id===node.id?'is-focused ':'')+(recent===node.id?'is-researched':'')}
+          style={{left:at.x+'%',top:at.y+'%'}} data-testid={'cc-research-'+node.id}
+          aria-disabled={disabled||!node.canBuy}
+          onMouseEnter={()=>setFocus(node.id)} onFocus={()=>setFocus(node.id)}
+          onClick={()=>{setFocus(node.id);if(!disabled&&node.canBuy){onLeave();onAction({action:'research',id:node.id});}}}>
+          <span className="cc-node-emblem">{complete?'✦':node.canBuy?'◇':'◆'}</span>
+          <strong>{t(node.name)}</strong>
+          <small>{de?'Rang':'Rank'} {node.rank}/{node.maxRank}</small>
+          <span className="cc-node-price">{complete?'MAX':node.costPerRank+' LP'}</span>
+          {!complete&&requirements.prerequisite&&!requirements.prerequisite.met&&<span className="cc-node-lock">{t(requirements.prerequisite.name)} · {requirements.prerequisite.current}/{requirements.prerequisite.required}</span>}
+          {!complete&&requirements.missingPoints>0&&<span className="cc-node-lock">{de?'Fehlen':'Need'} {requirements.missingPoints} LP</span>}
         </button>;
       })}
     </div>
-    <div className="cc-hint">{de?'Über einen Knoten fahren: Auswirkungen ansehen. Anklicken: Forschung freischalten.':'Hover nodes for exact effects. Click to research.'}</div>
+    {item&&<div className="cc-research-detail" data-testid="cc-research-detail">
+      <div><span className="cc-eyebrow">{de?'AUSGEWÄHLTE FORSCHUNG':'SELECTED RESEARCH'}</span><strong>{t(item.name)} · {de?'Rang':'Rank'} {rank}/{item.maxRank}</strong><p>{t(item.description)}</p></div>
+      <div className="cc-research-requirements"><span className="cc-eyebrow">{de?'VORAUSSETZUNGEN':'REQUIREMENTS'}</span>
+        <span className={economy.legacyPointsAvailable>=item.costPerRank?'cc-positive':'cc-negative'}>{economy.legacyPointsAvailable}/{item.costPerRank} LP</span>
+        {reasons(item).prerequisite&&<span className={reasons(item).prerequisite?.met?'cc-positive':'cc-negative'}>{t(reasons(item).prerequisite!.name)} · {de?'Rang':'Rank'} {reasons(item).prerequisite!.current}/{reasons(item).prerequisite!.required}</span>}
+        {reasonText(item).map(reason=><span key={reason} className="cc-research-reason">{reason}</span>)}
+        {item.canBuy&&<span className="cc-positive">{de?'Bereit zum Kauf':'Ready to research'}</span>}
+      </div>
+      <button type="button" className="cc-primary-action" data-testid="cc-research-purchase" disabled={disabled||!item.canBuy} onClick={()=>{onLeave();onAction({action:'research',id:item.id});}}>{item.rank>=item.maxRank?'MAX':(de?'Erforschen':'Research')+' · '+item.costPerRank+' LP'}</button>
+    </div>}
   </div>;
 }
 
@@ -313,7 +339,7 @@ export function CommandWindow({section,economy,language,roomId,disabled,motion,t
     return()=>document.removeEventListener('keydown',handler,true);
   },[onClose]);
   return <div className="cc-window-layer" data-testid="cc-window-layer">
-    <button className="cc-window-backdrop" tabIndex={-1} aria-label={de?'Schließen':'Close'} onClick={onClose}/>
+    <div className="cc-window-backdrop" aria-hidden="true" onClick={onClose}/>
     <section className={'cc-window cc-window-'+section} role="dialog" aria-modal="true" aria-label={titles[section][de?0:1]}>
       <header className="cc-window-header"><div><span className="cc-eyebrow">CASINO EMPIRE / COMMAND CENTER</span><h2>{titles[section][de?0:1]}</h2></div>
         <button type="button" className="cc-window-close" data-testid="cc-window-close" onClick={onClose} aria-label={de?'Fenster schließen':'Close window'}>×</button></header>

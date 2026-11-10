@@ -60,8 +60,8 @@ export function EmpireCommandCenter({snapshot,disabled,pending,notice,preview,mo
     const box=event.currentTarget.getBoundingClientRect();
     const width=336;
     const x=Math.max(10,Math.min(window.innerWidth-width-10,box.right+10+width<window.innerWidth?box.right+10:box.left-width-10));
-    const y=Math.max(75,Math.min(window.innerHeight-250,box.top+Math.min(box.height,30)));
-    setHover({title,detail,cost,x,y,intent:!!intent,action:intent?.action??null});
+    const y=Math.max(72,Math.min(window.innerHeight-350,box.top+Math.min(box.height,30)));
+    setHover({title,detail,cost,x,y,intent:!!intent&&!disabled,action:intent?.action??null});
     if(intent&&!disabled)onPreview(intent);
     else onClearPreview();
   };
@@ -90,10 +90,11 @@ export function EmpireCommandCenter({snapshot,disabled,pending,notice,preview,mo
     {id:'opportunities',icon:'◇',de:'Aufträge',en:'Contracts',status:economy.canClaimContract?l('Belohnung bereit','Reward ready'):hasAvailableEvent?l('Events verfügbar','Events available'):l('Verwalten','Manage'),ready:economy.canClaimContract},
   ];
   const impact=hover&&preview?.success?commandImpact(preview):null;
-  const signed=(amount:string)=>(amount.startsWith('-')?'':'+')+fmt(amount);
+  const upgradeImpact=!section&&hover?.action==='upgrade'?impact:null;
+  const signed=(amount:string)=>(amount.startsWith('-')?'−':'+')+fmt(amount.replace(/^-/ ,''));
   const gradient=(amount:string)=>amount.startsWith('-')?'cc-negative':amount==='0'?'cc-neutral':'cc-positive';
   const isProducing=Number(economy.portfolioRate)>0;
-  return <div className="empire-command" data-testid="empire-command-center" data-motion={motion}>
+  return <div className="empire-command" data-testid="empire-command-center" data-motion={motion} data-modal-open={!!section}>
     <header className="cc-header">
       <div className="cc-brand"><span>THE MIDNIGHT CLUB <b> / COMMAND CENTER</b></span><strong>CASINO <em>EMPIRE</em></strong></div>
       <div className="cc-header-property">
@@ -104,16 +105,16 @@ export function EmpireCommandCenter({snapshot,disabled,pending,notice,preview,mo
         </select>
       </div>
       <div className="cc-header-actions">
-        <span className="cc-prototype-flag">CONCEPT / 02</span>
+        <span className="cc-prototype-flag">CONCEPT / 03</span>
         <button type="button" data-testid="cc-classic" onClick={onClassic}>{l('Klassisch','Classic')}</button>
         <button type="button" className="cc-exit" data-testid="cc-back" onClick={onClose}>← {l('Lobby','Lobby')}</button>
       </div>
     </header>
     <main className="cc-dashboard" aria-busy={pending}>
       <section className="cc-finance-strip" aria-label={l('Wirtschaftskennzahlen','Economy metrics')}>
-        <div className="cc-finance-item cc-capital"><span>{l('BAUKAPITAL','CAPITAL')}</span><strong title={economy.credits}>{fmt(economy.credits)} <small>cr</small></strong><div>{l('Verfügbares Budget','Available to invest')}</div></div>
+        <div className="cc-finance-item cc-capital"><span>{l('BAUKAPITAL','CAPITAL')}</span><strong className="cc-kpi-value" title={economy.credits}><span>{fmt(economy.credits)} <small>cr</small></span>{upgradeImpact&&<span data-testid="cc-capital-delta" className={"cc-kpi-delta "+gradient(upgradeImpact.capital)}>{signed(upgradeImpact.capital)}</span>}</strong><div>{l('Verfügbares Budget','Available to invest')}</div></div>
         <div className={'cc-finance-item cc-production '+(isProducing?'earning':'')}><span>{l('EINKOMMEN / SEKUNDE','INCOME / SECOND')}</span>
-          <strong title={economy.portfolioRate}>+{fmt(economy.portfolioRate)} <small>cr</small></strong><div><i className="cc-status-dot"/>{l('Portfolio produziert','Portfolio producing')}</div></div>
+          <strong className="cc-kpi-value" title={economy.portfolioRate}><span>+{fmt(economy.portfolioRate)} <small>cr/s</small></span>{upgradeImpact&&<span data-testid="cc-income-delta" className={"cc-kpi-delta "+gradient(upgradeImpact.portfolioIncome)} title={l("Zusätzliches Portfolioeinkommen pro Sekunde","Additional portfolio income per second")}>{signed(upgradeImpact.portfolioIncome)} <small>cr/s</small></span>}</strong><div><i className="cc-status-dot"/>{l('Portfolio produziert','Portfolio producing')}</div></div>
         <div className="cc-finance-item"><span>{l('AKTIVER STANDORT','CURRENT PROPERTY')}</span><strong title={economy.rate}>{fmt(economy.rate)} <small>cr/s</small></strong><div>{t(property?.name??'Casino Empire')}</div></div>
         <div className="cc-finance-item cc-prestige-progress">
           <span>PRESTIGE · P{economy.prestige}</span><strong>{economy.canPrestige?l('Bereit','Ready'):Math.round(prestigeProgress)+' %'}</strong>
@@ -126,7 +127,7 @@ export function EmpireCommandCenter({snapshot,disabled,pending,notice,preview,mo
         </div>
       </section>
       <section className="cc-enterprise" aria-label={l('Betriebsübersicht','Business overview')}>
-        <CommandAtmosphere enabled={motion} earning={isProducing} focusFloor={highlightFloor} burst={burst}/>
+        <CommandAtmosphere enabled={motion&&!section} earning={isProducing} focusFloor={null} burst={burst}/>
         {economy.floors.map(floor=>{
           const rooms=economy.rooms.filter(r=>r.floor===floor.id);
           return <section className={'cc-floor '+(!floor.unlocked?'cc-floor-locked':'')} key={floor.id} data-testid={'cc-floor-'+floor.id}>
@@ -138,23 +139,24 @@ export function EmpireCommandCenter({snapshot,disabled,pending,notice,preview,mo
               {rooms.map(room=>{
                 const quote=commandQuote(room,quantity),milestone=commandMilestone(room.level),locked=!quote?.unlocked;
                 const buying=commandCanBuy(room,quantity,disabled);
+                const managers=economy.managers.filter(m=>m.assignment===room.id);
                 return <article className={'cc-business '+(locked?'is-locked ':'')+(room.id===recent?'is-burst ':'')+(milestone.remaining===1?'is-near-milestone':'')}
                   key={room.id} data-testid={'cc-business-'+room.id}
-                  onMouseEnter={e=>handleRoomEnter(e,room)}
                   onMouseLeave={clearHover}>
-                  <button type="button" className="cc-business-detail" title={t(room.description)}
-                    onFocus={e=>handleRoomEnter(e,room)} onBlur={clearHover}
+                  <button type="button" className="cc-business-detail"
+                    aria-label={t(room.name)}
                     onClick={event=>openSection('room',event.currentTarget,room.id)}>
                     <EmpireArtwork roomId={room.id} className="cc-room-art"/>
                     <span className="cc-room-text"><strong>{t(room.name)}</strong>
                       <span>LV {room.level} <b>·</b> <em>{fmt(room.rate)} cr/s</em></span>
                       <span className="cc-room-milestone"><span className="cc-room-track"><span style={{width:milestone.progress+'%'}}/></span>
                         {milestone.next===null?'MAX':milestone.remaining+' → '+milestone.next}</span>
+                      <span className={"cc-room-manager "+(managers.length?"is-managed":"")} data-testid={"cc-manager-status-"+room.id} title={managers.map(m=>m.name+" · "+t(m.description)).join("\n")}><i aria-hidden="true">♟</i>{managers.length?managers.map(m=>m.name).join(", "):l("Kein Manager","No manager")}</span>
                     </span>
                   </button>
                   <button type="button" className={'cc-room-buy '+(buying?'is-affordable':'')} data-testid={'cc-upgrade-'+room.id}
-                    disabled={!buying} onFocus={e=>handleRoomEnter(e,room)} onBlur={clearHover}
-                    onClick={()=>{clearHover();onAction({action:'upgrade',id:room.id,levels:quantity});}}>
+                    aria-disabled={!buying} onMouseEnter={e=>handleRoomEnter(e,room)} onMouseLeave={clearHover} onFocus={e=>{if(e.currentTarget.matches(":focus-visible"))handleRoomEnter(e,room);}} onBlur={clearHover}
+                    onClick={()=>{if(buying){clearHover();onAction({action:'upgrade',id:room.id,levels:quantity});}}}>
                     <span>{room.level>=200?'MAX':locked?'◆':(quote?.levels??quantity)?'+'+(quote?.levels??quantity):'—'}</span>
                     <small>{quote?.unlocked?fmt(quote.cost):'—'}</small>
                   </button>
@@ -191,7 +193,7 @@ export function EmpireCommandCenter({snapshot,disabled,pending,notice,preview,mo
       <button onClick={onDismissOffline}>{l('Schließen','Dismiss')} ×</button></div>}
     {section&&<CommandWindow section={section} economy={economy} language={language} roomId={roomId}
       disabled={disabled} motion={motion} t={t} onClose={closeSection} onAction={onAction} onHover={showHover} onLeave={clearHover}/>}
-    {hover&&<div className="cc-hover" role="status" data-testid="cc-hover" style={{left:hover.x,top:hover.y}}>
+    {hover&&section!=='research'&&<div className="cc-hover" role="status" data-testid="cc-hover" style={{left:hover.x,top:hover.y}}>
       <div className="cc-hover-heading"><span>◈ {hover.title}</span><small>{l('AKTIONSVORSCHAU','ACTION PREVIEW')}</small></div>
       {hover.detail&&<p>{hover.detail}</p>}
       {hover.cost&&!impact&&<div className="cc-impact-line"><span>{l('Investition','Investment')}</span><strong className="cc-negative">−{hover.cost}</strong></div>}

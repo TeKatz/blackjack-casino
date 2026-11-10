@@ -73,9 +73,10 @@ internal static class EmpireWebSmoke
                 "Command Center did not render all fifteen departments across the three compact floors.");
             await Check(view, "document.querySelector('[data-testid=cc-pixi-atmosphere] canvas, [data-testid=cc-pixi-atmosphere][data-fallback=true]')",
                 "Command Center Pixi atmosphere did not initialize or gracefully fall back.");
+            await Check(view, "document.querySelectorAll(\"[data-testid^=cc-manager-status-]\").length===15", "Room manager labels missing.");
             await Capture(view, Path.Combine(output, "empire-command-center.png"));
-            await Script(view, "document.querySelector('[data-testid=cc-business-slots]').dispatchEvent(new MouseEvent('mouseover',{bubbles:true}));true");
-            await Check(view, "document.querySelector('[data-testid=cc-hover]') && document.querySelector('[data-testid=cc-hover] .cc-impact-line')",
+            await Script(view, "document.querySelector('[data-testid=cc-upgrade-slots]').dispatchEvent(new MouseEvent('mouseover',{bubbles:true}));true");
+            await Check(view, "document.querySelector('[data-testid=cc-hover]') && document.querySelector('[data-testid=cc-income-delta]') && document.querySelector('[data-testid=cc-capital-delta]')",
                 "Business hover did not produce a read-only Core investment preview.");
             Require(fixture.Level("slots") == beforeCommandSlot, "Command Center hover preview mutated Core.");
             await Click(view, "cc-buy-qty-10");
@@ -87,6 +88,10 @@ internal static class EmpireWebSmoke
                 "Research did not open in a graphical contextual window.");
             await Check(view, "document.querySelector('[data-testid=cc-pixi-research] canvas, [data-testid=cc-pixi-research][data-fallback=true]')",
                 "Research network Pixi lattice did not initialize.");
+            await Check(view, "document.querySelector('[data-testid=cc-research-detail]') && document.querySelector('.cc-window-backdrop').tagName==='DIV' && document.querySelector('[data-testid=empire-command-center]').dataset.modalOpen==='true'",
+                "Research details or stable non-button modal backdrop missing.");
+            await Check(view, "document.querySelector('[data-testid=cc-pixi-atmosphere]').dataset.ticker==='stopped' || document.querySelector('[data-testid=cc-pixi-atmosphere]').dataset.fallback==='true'",
+                "Background animation continued behind a modal.");
             await Capture(view, Path.Combine(output, "empire-command-research.png"));
             await Click(view, "cc-window-close");
             foreach (string module in new[] { "projects", "staff", "automation", "expansion", "opportunities" })

@@ -69,11 +69,11 @@ export const CommandAtmosphere=memo(function CommandAtmosphere({enabled,earning,
             flash.roundRect(i*width/3+4,4,width/3-8,height-8,11)
               .stroke({color:0xf2d290,alpha:.24+Math.sin(clock*.003)*.11,width:2});
           }
-          if(burstAge<1250){
-            const progress=burstAge/1250,rad=14+progress*105;
+          if(burstAge<650){
+            const progress=burstAge/650,rad=6+progress*22;
             for(let i=0;i<3;i++){
-              const cx=(i+.5)*width/3,cy=height*.45;
-              flash.circle(cx,cy,rad).stroke({color:0xffd783,alpha:(1-progress)*.24,width:2.8});
+              const cx=(i+.5)*width/3,cy=height-12;
+              flash.circle(cx,cy,rad).stroke({color:0xffd783,alpha:(1-progress)*.12,width:1.5});
               for(let j=0;j<5;j++){
                 const a=j*Math.PI*2/5+progress*1.2;
                 flash.circle(cx+Math.cos(a)*rad,cy+Math.sin(a)*rad,2).fill({color:0xffd783,alpha:(1-progress)*.65});
@@ -153,7 +153,7 @@ export const ResearchLattice=memo(function ResearchLattice({items,positions,focu
         app.ticker.maxFPS=30;
         app.ticker.add(ticker=>{clock+=Math.min(70,ticker.deltaMS);redraw();});
         observer=new ResizeObserver(resize);observer.observe(host);
-        controller.current={sync,paint:redraw};
+        controller.current={sync,paint:()=>{if(!stateRef.current.enabled){redraw();app?.render();}}};
         document.addEventListener('visibilitychange',sync);resize();sync();
       }catch{
         if(!disposed)setFallback(true);
@@ -165,6 +165,7 @@ export const ResearchLattice=memo(function ResearchLattice({items,positions,focu
       document.removeEventListener('visibilitychange',sync);app?.destroy(true,{children:true});
     };
   },[]);
-  useEffect(()=>{controller.current?.sync();controller.current?.paint();},[enabled,items,positions,focus]);
+  useEffect(()=>controller.current?.sync(),[enabled]);
+  useEffect(()=>controller.current?.paint(),[items,positions,focus]);
   return <div ref={hostRef} className="cc-research-lattice" data-testid="cc-pixi-research" data-fallback={fallback}/>;
 });
