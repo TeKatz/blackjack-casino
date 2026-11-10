@@ -395,31 +395,59 @@ See `docs/empire-balancing.md` for simulation results and reproducible commands.
 
 
 
-## Experimental management-idle prototype
+## Command Center prototype (React + PixiJS)
 
-The existing Casino Empire screen remains the default presentation. Its header
-offers **Idle-Prototyp testen / Try idle prototype**, which switches to a separate
-management-first React interface inside the same trusted `empire.html` host.
-The prototype's **Klassische Ansicht / Classic view** button returns instantly
-to the existing interface. Both share the same C# `EmpireService`, bridge
-session, live credits, transaction receipts, save file and offline catch-up;
-there is no second economy, local browser wallet or save migration.
+The experimental **Command Center** replaces the rejected first-generation
+management-list prototype. It is opt-in via **Command Center testen / Try
+Command Center** in the original Empire header and returns to the original
+presentation via **Klassisch / Classic**. The original production screen is
+unchanged and remains the default and immediate rollback.
 
-The experimental interface is organized around a list of all 15 businesses,
-floor filters, the existing server-quoted upgrade quantities (1/5/10/25/50/100),
-income per second, level-10 milestones and on-demand read-only previews.
-Management exposes the existing research, capital projects, manager assignments,
-automatic investment policy, contracts and events. Expansion contains prestige
-goals and confirmation, owned/additional properties and synergies. Portfolio
-statistics and owner dividends are also available. Back-to-lobby, detached
-hosting, latest snapshot validation, request deduplication and failed-save
-behavior are inherited from the classic Empire command bridge.
+The Command Center is designed as a single desktop cockpit at 1366×768:
+five live KPIs, all fifteen businesses grouped in three five-row floor
+columns, 1/5/10/25/50/100 native-quoted bulk purchases, and a short six-module
+management dock. Main-floor, upper-floor, resort-floor unlocks, levels, rates,
+milestones and affordability are rendered directly from Core. No secondary
+wallet, local save, new upgrade quantities or speculative balance rules are
+introduced. A contextual compact department briefing provides all native
+purchase sizes.
 
-This is a usability and interaction prototype, not a rebalance: Core upgrade
-costs, existing automated income, prestige requirements, manager bonuses and
-offline rules have **not** changed. Businesses generate income without clicks;
-the optional auto-investment policy still requires its existing unlock.
-The prototype does not implement a simulated casino floor, novel income sources
-or new buy-max quotes. The six bulk quantities always use authoritative Core
-quotes and preserve the level-200 cap. The classic layout remains the rollback
-path until game-director acceptance.
+Hover/focus previews use the *existing* read-only \`empire.command\` preview
+protocol with its revisioned session, debounced cancellation and authoritative
+Core budget/room/portfolio before-and-after amounts. Exact decimal string
+subtraction is used for deltas; approximate payback is shown only if the
+portfolio gain is positive. Hover never commits an upgrade; clicking the
+affordable button is the only mutation. No in-browser simulation decides
+balances or transaction eligibility.
+
+The bottom dock opens React windows without a route change:
+- **Research** shows unlock/rank nodes and a prerequisite network. The
+  connections and animated completion/affordability halos are a retained
+  PixiJS rendering, while buttons remain accessible HTML controls.
+- **Projects** shows condensed investment tiles, their unlock requirements
+  and a Core preview before committing.
+- **Staff** shows manager identities as visual tokens and a department
+  assignment matrix with read-only previews.
+- **Automation** uses a direct toggle and policy fields that continue to
+  respect existing Core unlocks and safety limits.
+- **Expansion** combines portfolio switching, prestige goals, permanent
+  synergies and a confirmation gate.
+- **Contracts & events** expose real native state. Statistics and individual
+  business briefings are contextual windows as well.
+
+A second PixiJS scene covers the main workbench with gentle per-floor
+earnings activity, particles, focus glows and level-up bursts. Pixi tickers
+are capped at 30 FPS, stop when hidden or when animation is disabled, resize
+with the host, and degrade to an actionable React presentation if graphics
+initialization fails. Reduced-motion preferences are honored. No WebView2
+host trust or save format changes are required.
+
+Windows presentation regression adds a Core-backed ten-level upgrade,
+hover-only read-only preview, both Pixi stage health checks, window opening
+and rollback, and 1366×768 / 1920×1080 one-screen clipping checks. TypeScript
+model tests cover quote whitelisting, milestone and prestige math, exact
+large-number decimal differences, preview deltas and research layout.
+
+This is a UI and interaction prototype rather than an economy rebalance:
+original Core strategy, research, automation and prestige semantics remain
+unchanged until the game director accepts a new progression design.
