@@ -4,7 +4,8 @@ import {
  angularDistance,createArcadeRun,stepArcadeRun,
 } from '../src/lobby/arcadeEngine';
 import type {BladeRun} from '../src/lobby/arcadeEngine';
-import type {CircuitRun,EchoRun,MinerRun} from '../src/lobby/arcadeExpansionTwoEngine';
+import type {CircuitRun,MinerRun} from '../src/lobby/arcadeExpansionTwoEngine';
+import type {EchoRun} from '../src/lobby/arcadeExpansionOneEngine';
 import {beatsMelodyFrequencies,playBeatsGroovePulse} from '../src/lobby/arcadeBeatsAudio';
 import {createBeatsRun,beatsTargetTime,stepBeatsRun} from '../src/lobby/arcadeBeatsEngine';
 import {soundNotes} from '../src/lobby/arcadeSound';
