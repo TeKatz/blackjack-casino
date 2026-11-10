@@ -1,5 +1,5 @@
 import {CIRCUIT_COLS,CIRCUIT_ROWS,PRISM_COLS,PRISM_ROWS,
- DIRS,HEIST_WALLS,guardSees} from './arcadeExpansionTwoEngine';
+ DIRS} from './arcadeExpansionTwoEngine';
 import type {ExpansionTwoRun,PrismRun,MinerRun,CircuitRun,HeistRun,PulseRun}
  from './arcadeExpansionTwoEngine';
 
@@ -92,6 +92,21 @@ function prism(ctx:Ctx,s:PrismRun){
  label(ctx,'LIVES '+s.lives,710,32,15,'#e9c6a5');
  label(ctx,'TIME '+Math.ceil(s.timeLeft),W-23,32,16,s.timeLeft<9?'#ffafa8':'#a6eed9','right');
  label(ctx,'CLICK MIRRORS OR USE ARROWS + SPACE',480,526,13,'#9debdc','center');
+ if(s.transition){
+  const won=s.transition==='clear';
+  ctx.save();ctx.fillStyle='rgba(7,16,29,.91)';ctx.fillRect(0,0,W,H);
+  ctx.shadowColor=won?'#97ffe2':'#ffb4aa';ctx.shadowBlur=30;
+  panel(ctx,205,119,550,300,23,'#173242',won?'#8ef6d4':'#eaa08d');
+  ctx.restore();
+  label(ctx,won?'LEVEL COMPLETE':'LIFE LOST',W/2,205,33,
+   won?'#c4ffeb':'#ffd4c8','center');
+  label(ctx,won?'STAGE '+(s.stage-1)+' CLEARED':'TIME EXPIRED',
+   W/2,252,19,'#eeddb6','center');
+  label(ctx,won?'NEXT: STAGE '+s.stage+' · GET READY':'LIVES REMAINING: '+s.lives,
+   W/2,311,20,won?'#a2eddb':'#ffc7ba','center');
+  statBar(ctx,302,353,356,s.transitionClock/(won?2.15:1.85),
+   won?'#9aecd5':'#f3ab9b');
+ }
 }
 function miner(ctx:Ctx,s:MinerRun){
  background(ctx,'#061525','#192949');
@@ -106,6 +121,18 @@ function miner(ctx:Ctx,s:MinerRun){
  circle(ctx,116,435,32,'#103643','#8ae4d0');
  ctx.restore();
  label(ctx,'BASE',116,441,15,'#ffe8b5','center');
+ for(const drone of s.drones){
+  ctx.save();ctx.shadowColor='#fbabae';ctx.shadowBlur=21;
+  circle(ctx,drone.x,drone.y,drone.r+7,'#3f435d','#d79e9a');
+  circle(ctx,drone.x,drone.y,drone.r,'#a35e77','#ffe5bb');
+  circle(ctx,drone.x,drone.y,5,'#fff2d2');
+  for(let k=0;k<4;k++){
+   const a=s.elapsed*2+k*TAU/4;
+   circle(ctx,drone.x+Math.cos(a)*(drone.r+8),
+    drone.y+Math.sin(a)*(drone.r+8),2.2,'#e0a9b4');
+  }
+  ctx.restore();
+ }
  for(const rock of s.rocks){
   ctx.save();ctx.translate(rock.x,rock.y);
   ctx.shadowColor=rock.grade===2?'#d5a5ff':'#81d9c4';ctx.shadowBlur=rock.flash>0?36:12;
@@ -142,6 +169,9 @@ function miner(ctx:Ctx,s:MinerRun){
  label(ctx,'HULL '+s.hull,W-23,30,15,s.hull===1?'#f4a19e':'#e9d3a2','right');
  label(ctx,'CARGO '+s.cargo+'/'+s.capacity,24,68,13,'#d0b9f8');
  label(ctx,'DEPOSITS '+s.deposits,W-23,59,12,'#afddd7','right');
+ label(ctx,'THREATS '+s.drones.length,W-23,82,12,
+  s.drones.length?'#f5b0b3':'#9fdfcf','right');
+ if(s.oxygen<20)label(ctx,'LOW OXYGEN',480,74,20,'#ffb0ab','center');
  label(ctx,s.atBase?'DOCKED · OXYGEN REFILL':
   s.cargo>=s.capacity?'CARGO FULL · RETURN TO BASE':'HOLD SPACE TO MINE NEAR ASTEROIDS',
   480,520,14,s.atBase?'#a7f2d7':'#f1d9a8','center');
