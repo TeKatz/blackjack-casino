@@ -6,6 +6,10 @@ import {drawArcadeRun} from './arcadeRenderer';
 import {playArcadeSound} from './arcadeSound';
 import type {ArcadeSoundCue} from './arcadeSound';
 import {echoPadAt} from './arcadeExpansionOneRenderer';
+import {hitBeatsLane} from './arcadeBeatsEngine';
+import {beatsLaneAt} from './arcadeBeatsRenderer';
+import {playBeatsGroovePulse,playBeatsLaneHit,playBeatsMiss,unlockBeatsAudio}
+ from './arcadeBeatsAudio';
 import {prismCellAt,circuitCellAt} from './arcadeExpansionTwoRenderer';
 import {ArcadeHeldKeys,arcadeDirection} from './arcadeControls';
 import {readArcadeRecord,saveArcadeRecord} from './arcadeRecords';
@@ -30,7 +34,7 @@ const strings={
   hex:'A / D oder ← / → drehen das Dreieck. Steuere in die Lücken der näherkommenden Ringe.',
   spike:'Leertaste, ↑ oder Klick zum Springen. Weiche Stacheln und Abgründen aus.',
   ascent:'A / D oder ← / → lenken deine Figur. Sie springt beim Landen automatisch weiter.',
-  pinball:'A / D oder ← / → bedienen die Flipper. Leertaste startet eine Kugel.',
+  beats:'Drücke D, F, J, K auf der Trefferlinie. Fünf Fehler beenden die Runde. Leertaste startet das Spiel.',
   hook:'Leertaste oder Klick: Anker einhaken und loslassen. Nutze den Schwung.',
   drift:'A / D oder ← / → lenken. Halte Leertaste für Drift-Kombos.',
   gravity:'A / D bewegen. Leertaste kehrt die Schwerkraft um.',
@@ -57,7 +61,7 @@ const strings={
   hex:'A / D or ← / → rotate the triangle. Steer into gaps in the approaching rings.',
   spike:'Press Space, ↑ or click to jump. Avoid spikes and gaps in the floor.',
   ascent:'A / D or ← / → steer your character. Each landing triggers an automatic jump.',
-  pinball:'A / D or ← / → operate flippers. Space launches a ball.',
+  beats:'Press D, F, J, K as notes reach the hit line. Five misses end the run. Space starts the game.',
   hook:'Space or click attaches/releases the grapple. Use your swing momentum.',
   drift:'A / D or ← / → steer. Hold Space to score drift combos.',
   gravity:'A / D moves. Space flips gravity.',
@@ -74,7 +78,7 @@ const instructionsKey={
  'midnight-wings':'wings','cave-escape':'hold','perfect-stack':'blocks','blade-timing':'knives',
  'death-snake':'snake','neon-breaker':'breaker','bullet-storm':'storm',
  'hexagon-hell':'hex','spike-rush':'spike','endless-ascent':'ascent',
- 'midnight-pinball':'pinball','phantom-hook':'hook','neon-drift':'drift',
+ 'midnight-beats':'beats','phantom-hook':'hook','neon-drift':'drift',
  'gravity-chamber':'gravity','echo-sequence':'echo',
  'prism-lock':'prism','meteor-miner':'miner','circuit-rush':'circuit',
  'shadow-heist':'heist','pulse-perfect':'pulse',
@@ -92,9 +96,8 @@ function tone(event:ArcadeEvent,enabled:boolean,ctxRef:{current:AudioContext|nul
   if(event==='score'&&run.kind==='pulse-perfect')
    cue=run.feedback==='perfect'?'perfect':'good';
   if(event==='stage'||event==='fail')cue='miss';
- }else if(id==='midnight-pinball'&&run.kind==='midnight-pinball'){
-  if(event==='score')cue=run.hitValue>0?'bumper':'launch';
-  if(event==='flap')cue=run.inShooter?'launch':'flip';
+ }else if(id==='midnight-beats'){
+  return; // Dedicated on-grid musical percussion and individual note hits.
  }else if(id==='meteor-miner'){
   if(event==='flap')cue='drill';if(event==='score')cue='dock';
  }else if(id==='shadow-heist'){
@@ -142,7 +145,7 @@ export function ArcadeGameScreen({id,language,onBack}:{
  const keys=useRef(new ArcadeHeldKeys());
  const mouseTarget=useRef<{x:number;y:number}|null>(null);
  const mouseActive=useRef(false);
- const pinballPointer=useRef<'left'|'right'|null>(null);
+
  const lastEchoLight=useRef(-1);
  const raf=useRef<number>(0);
  const audioRef=useRef<AudioContext|null>(null);
@@ -174,14 +177,19 @@ export function ArcadeGameScreen({id,language,onBack}:{
   phaseRef.current='over';setPhase('over');
   tone('fail',soundRef.current,audioRef,id,s);
  };
- const action=(pad?:number,cell?:{c:number;r:number})=>{
+ const action=(pad?:number,cell?:{c:number;r:number},lane?:number)=>{
   if(phaseRef.current!=='playing')return;
   const s=gameRef.current;
   if(s.kind==='echo-sequence'&&pad!==undefined&&s.phase==='input')
    playArcadeSound(id,'pad',soundRef.current,audioRef,pad);
-  const event=s.kind==='prism-lock'&&cell?selectPrism(s,cell.c,cell.r):
+  const event=s.kind==='midnight-beats'&&lane!==undefined?hitBeatsLane(s,lane):
+   s.kind==='prism-lock'&&cell?selectPrism(s,cell.c,cell.r):
    s.kind==='circuit-rush'&&cell?rotateCircuit(s,cell.c,cell.r):
    s.kind==='echo-sequence'&&pad!==undefined?chooseEchoPad(s,pad):actArcadeRun(s);
+  if(s.kind==='midnight-beats'){
+   if(event==='score'&&s.lastGrade)playBeatsLaneHit(audioRef,soundRef.current,lane!,s.lastGrade);
+   if((event==='stage'||event==='fail')&&s.lastGrade==='MISS')playBeatsMiss(audioRef,soundRef.current);
+  }
   if(s.over)finish();
   else if(event){
    setScore(s.score);
@@ -191,10 +199,11 @@ export function ArcadeGameScreen({id,language,onBack}:{
  };
  const start=()=>{
   held.current=false;lastEchoLight.current=-1;
-  keys.current.clear();mouseActive.current=false;mouseTarget.current=null;pinballPointer.current=null;
+  keys.current.clear();mouseActive.current=false;mouseTarget.current=null;
   gameRef.current=createArcadeRun(id,Math.floor(Math.random()*0xffffffff));
   setScore(0);setElapsed(0);setIsBest(false);
   phaseRef.current='playing';setPhase('playing');
+  if(id==='midnight-beats')unlockBeatsAudio(audioRef,soundRef.current);
   if(id==='midnight-wings'||id==='neon-breaker'||id==='phantom-hook'){
    const event=actArcadeRun(gameRef.current);
    tone(event,soundRef.current,audioRef,id,gameRef.current);
@@ -202,7 +211,7 @@ export function ArcadeGameScreen({id,language,onBack}:{
   repaint();
  };
  const pause=()=>{
-  held.current=false;keys.current.clear();mouseActive.current=false;pinballPointer.current=null;
+  held.current=false;keys.current.clear();mouseActive.current=false;
   if(phaseRef.current==='playing'){phaseRef.current='paused';setPhase('paused');}
  };
  const resume=()=>{
@@ -227,13 +236,20 @@ export function ArcadeGameScreen({id,language,onBack}:{
    while(accumulator>=ARCADE_STEP&&steps<5&&!gameRef.current.over){
     const state=gameRef.current,old=state.score;
     const controls=keys.current.controls();
-    if(id==='midnight-pinball'&&pinballPointer.current)controls[pinballPointer.current]=true;
+
     if((id==='neon-breaker'||id==='bullet-storm')&&mouseTarget.current&&
      (id==='neon-breaker'||mouseActive.current)){
      controls.pointerX=mouseTarget.current.x;
      if(id==='bullet-storm')controls.pointerY=mouseTarget.current.y;
     }
+    const previousGroove=state.kind==='midnight-beats'?state.grooveCount:0;
+    const previousMisses=state.kind==='midnight-beats'?state.misses:0;
     const event=stepArcadeRun(state,ARCADE_STEP,held.current,controls);
+    if(state.kind==='midnight-beats'){
+     if(state.grooveCount!==previousGroove)
+      playBeatsGroovePulse(audioRef,soundRef.current,state.lastGroovePulse,state.bpm);
+     if(state.misses>previousMisses)playBeatsMiss(audioRef,soundRef.current);
+    }
      if(state.kind==='echo-sequence'){
       const light=state.phase==='watch'?state.active:-1;
       if(light!==lastEchoLight.current){
@@ -289,6 +305,18 @@ export function ArcadeGameScreen({id,language,onBack}:{
     if(!event.repeat&&phaseRef.current==='playing')action(Number(event.code.slice(-1))-1);
     return;
    }
+   if(id==='midnight-beats'){
+    const lane=event.code==='KeyD'?0:event.code==='KeyF'?1:
+     event.code==='KeyJ'?2:event.code==='KeyK'?3:-1;
+    if(lane>=0){
+     event.preventDefault();
+     if(!event.repeat){
+      if(phaseRef.current==='playing')action(undefined,undefined,lane);
+      else if(phaseRef.current==='ready'||phaseRef.current==='over')start();
+     }
+     return;
+    }
+   }
    const direction=arcadeDirection(event.code,key);
    if(direction&&(id==='prism-lock'||id==='circuit-rush')){
     if(phaseRef.current==='playing'&&!event.repeat){
@@ -308,7 +336,7 @@ export function ArcadeGameScreen({id,language,onBack}:{
     return;
    }
    if(direction&&(id==='neon-breaker'||id==='bullet-storm'||id==='hexagon-hell'||id==='endless-ascent'||
-     id==='midnight-pinball'||id==='neon-drift'||id==='gravity-chamber'||
+     id==='neon-drift'||id==='gravity-chamber'||
      id==='meteor-miner'||id==='shadow-heist')){
     keys.current.press(event.code,key);
     // A pressed key immediately takes over; only actual mouse motion restores mouse steering.
@@ -332,7 +360,7 @@ export function ArcadeGameScreen({id,language,onBack}:{
   window.addEventListener('keydown',keyDown,true);
   window.addEventListener('keyup',keyUp,true);
   return()=>{
-   held.current=false;keys.current.clear();pinballPointer.current=null;
+   held.current=false;keys.current.clear();
    window.removeEventListener('keydown',keyDown,true);
    window.removeEventListener('keyup',keyUp,true);
   };
@@ -360,12 +388,11 @@ export function ArcadeGameScreen({id,language,onBack}:{
    }
    return;
   }
-  if(id==='midnight-pinball'&&phaseRef.current==='playing'){
-   const point=pointerCoordinates(event),run=gameRef.current;
-   if(run.kind==='midnight-pinball'&&run.serve){action();return;}
-   if(point){
-    pinballPointer.current=point.x<ARCADE_WIDTH/2?'left':'right';
-    event.currentTarget.setPointerCapture(event.pointerId);
+  if(id==='midnight-beats'){
+   if(phaseRef.current==='ready'||phaseRef.current==='over'){start();return;}
+   if(phaseRef.current==='playing'){
+    const p=pointerCoordinates(event),lane=p?beatsLaneAt(p.x,p.y):null;
+    if(lane!==null)action(undefined,undefined,lane);
    }
    return;
   }
@@ -392,7 +419,7 @@ export function ArcadeGameScreen({id,language,onBack}:{
   if(id==='neon-breaker'||(id==='bullet-storm'&&mouseActive.current))
    mouseTarget.current=pointerCoordinates(event);
  };
- const pointerRelease=()=>{held.current=false;mouseActive.current=false;pinballPointer.current=null;};
+ const pointerRelease=()=>{held.current=false;mouseActive.current=false;};
  const pointerLeave=()=>{if(id==='neon-breaker')mouseTarget.current=null;};
  return <main className="arcade-play" data-testid="arcade-game-screen" data-game-id={id}>
   <header className="arcade-play-header">
