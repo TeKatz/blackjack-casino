@@ -253,6 +253,8 @@ func draw_warden() -> void:
 		frame = 3
 		for i in range(3,0,-1):
 			sprite(model.character,pos-model.dash_direction*float(i)*14,player_facing,frame,64,Color(0.65,0.5,1,0.12))
+	for echo in model.echoes:
+		sprite(model.character,echo.pos,echo.dir,6,64,Color(0.65,0.45,1,0.45))
 	sprite(model.character,pos,player_facing,frame,64)
 
 func draw_actor(enemy: Dictionary) -> void:
@@ -267,6 +269,9 @@ func draw_actor(enemy: Dictionary) -> void:
 		frame = 7
 	draw_shadow(pos,size)
 	var tint := Color("#ffedda") if enemy.flash > 0 else Color.WHITE
+	if float(enemy.get("chill",0))>0: tint=Color("#a3dfff")
+	if enemy.get("elite",false):
+		draw_arc(pos+Vector2(0,10),size*0.42,0,TAU,24,Color("#f0bf70"),2,true)
 	sprite(kind,pos,direction,frame,size,tint)
 
 func is_ready_for_smoke() -> bool:

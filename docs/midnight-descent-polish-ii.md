@@ -1,0 +1,2 @@
+# Into the Depths polish
+Distinct 40-item atlas, room and active-item icon atlas, larger rarity cards, map status styling, menu portraits and codex hierarchy. Garden has dedicated mossy stone tiles. Four seeded obstacle layouts persist on revisit. New enemy silhouette accents and an animated delayed Twin Soul echo. Existing save IDs and economy retained. Visual inspection on Windows is still needed; these are original pixel graphics derived from the current atlas style, not final hand-animated art.

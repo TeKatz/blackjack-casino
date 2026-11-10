@@ -20,6 +20,7 @@ var shield_time := 0.0
 var temp_power := 0.0
 var revive_used := false
 var orbit_timer := 0.0
+var echoes: Array[Dictionary] = []
 var hazards: Array[Dictionary] = []
 const Content = preload("res://content.gd")
 const RELICS = Content.RELICS
@@ -115,6 +116,7 @@ func enter_room() -> void:
 	shots.clear()
 	effects.clear()
 	hazards.clear()
+	echoes.clear()
 	offers.clear()
 	walls.clear()
 	room_kind = dungeon.kind(room)
@@ -127,6 +129,7 @@ func enter_room() -> void:
 		visited_count += 1
 		if relics.has("medic"): hp=minf(max_hp,hp+6*relics.count("medic"))
 	service_used = node.cleared
+	build_room_layout(node)
 	if node.cleared:
 		state = "exit"
 		return
@@ -134,9 +137,6 @@ func enter_room() -> void:
 		state = "service"
 		return
 	if room_kind != "boss":
-		for x in [490.0,790.0]:
-			var y: float = 220.0 if rng.randf()<0.5 else 490.0
-			walls.append(Rect2(x+rng.randf_range(-55,55),y,84,62))
 		var count := 3 + floor_index + (2 if room_kind=="elite" else room%3)
 		for i in range(count):
 			var family: Array = ["stalker","caster","brute","archer","shield"] if floor_index==0 else ["spore","vine","mushroom","caster","brute"]
@@ -150,6 +150,35 @@ func enter_room() -> void:
 		spawn_enemy("boss" if floor_index==0 else "rootking",Vector2(925,385))
 		spawn_enemy("caster" if floor_index==0 else "spore",Vector2(785,230))
 		spawn_enemy("stalker" if floor_index==0 else "vine",Vector2(785,540))
+
+func build_room_layout(node: Dictionary) -> void:
+	if room_kind=="boss": return
+	var geometry:=RandomNumberGenerator.new()
+	geometry.seed=int(node.geometry_seed)
+	var layout: int=node.layout
+	if room_kind in ["treasure","secret","shrine"]:
+		walls.append(Rect2(590,175,100,58))
+		return
+	if room_kind in ["shop","event"]:
+		walls.append(Rect2(560,174,160,48))
+		return
+	match layout:
+		0:
+			walls.append(Rect2(435+geometry.randf_range(-25,25),210,84,64))
+			walls.append(Rect2(790+geometry.randf_range(-25,25),485,84,64))
+		1:
+			for x in [410,650,890]:
+				walls.append(Rect2(x,230,64,72))
+				walls.append(Rect2(x,480,64,72))
+		2:
+			walls.append(Rect2(470,170,210,48))
+			walls.append(Rect2(700,540,210,48))
+			walls.append(Rect2(610,340,72,80))
+		3:
+			walls.append(Rect2(385,285,65,160))
+			walls.append(Rect2(870,285,65,160))
+			walls.append(Rect2(610,178,100,64))
+			walls.append(Rect2(610,490,100,64))
 
 func route_options() -> Array:
 	return dungeon.available(room)
@@ -315,8 +344,8 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 				var offset: Vector2 = enemy.pos-player
 				if offset.length() <= (118.0 if set_id=="warden_executioner" else 93.0)+float(enemy.r) and (offset.length()<12 or aim.dot(offset.normalized())>0.15):
 					hit_enemy(enemy,damage)
-		if relics.has("twin"):
-			shoot(player+aim*21,aim.rotated(0.14)*590,false,damage*0.55)
+		if relics.has("twin") and echoes.size()<12:
+			echoes.append({"pos":player,"dir":aim,"time":0.28,"damage":damage*0.55})
 		if relics.has("echo") and attacks%3==0:
 			shoot(player+aim*21,aim*590,false,bolt_damage*relics.count("echo"))
 	if ranged and bolt_timer <= 0:
@@ -346,6 +375,13 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 			for enemy in enemies:
 				if player.distance_to(enemy.pos)<200: hit_enemy(enemy,bolt_damage*0.8)
 			effect("burst",player,0.35,Vector2.ZERO)
+	for i in range(echoes.size()-1,-1,-1):
+		echoes[i].time-=dt
+		if echoes[i].time<=0:
+			var echo: Dictionary=echoes[i]
+			shoot(echo.pos+echo.dir*21,echo.dir*590,false,echo.damage)
+			effect("burst",echo.pos,0.16,echo.dir)
+			echoes.remove_at(i)
 	orbit_timer-=dt
 	if relics.has("sun") and orbit_timer<=0:
 		orbit_timer=0.25

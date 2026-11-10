@@ -7,7 +7,7 @@ func generate(seed_value: int, floor_index: int) -> void:
 	rng.seed = seed_value + floor_index*7919
 	nodes.clear()
 	for i in range(10):
-		nodes.append({"kind":KINDS[i],"visited":false,"cleared":false,"links":[],"reward":false})
+		nodes.append({"kind":KINDS[i],"visited":false,"cleared":false,"links":[],"reward":false,"layout":rng.randi_range(0,3),"geometry_seed":rng.randi()})
 	var edges := [[0,1],[0,2],[1,3],[2,4],[3,5],[4,6],[5,7],[6,7],[7,9],[5,8],[8,9]]
 	if rng.randf()<0.5: edges.append([1,4])
 	else: edges.append([2,3])
