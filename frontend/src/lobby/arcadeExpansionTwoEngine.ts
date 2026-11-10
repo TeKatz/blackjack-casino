@@ -103,7 +103,8 @@ function minerRock(run:MinerRun):MinerRock{
 }
 export type CircuitTile=Point&{mask:number;path:boolean;danger:boolean};
 export type CircuitRun=Base&{kind:'circuit-rush';tiles:CircuitTile[];powered:Point[];
- stage:number;lives:number;timeLeft:number;cursor:Point;flash:number;solved:boolean;shockClock:number};
+ stage:number;lives:number;timeLeft:number;cursor:Point;flash:number;solved:boolean;shockClock:number;
+ turnCell:Point|null;turnClock:number;turnFromMask:number};
 export const CIRCUIT_COLS=6,CIRCUIT_ROWS=5;
 export const DIRS=[{dc:0,dr:-1,bit:1,opposite:4},
  {dc:1,dr:0,bit:2,opposite:8},{dc:0,dr:1,bit:4,opposite:1},
@@ -166,6 +167,7 @@ function makeCircuit(run:CircuitRun):void{
   safe.splice(index,1)[0].danger=true;
  }
  run.solved=false;run.flash=0;run.shockClock=0;
+ run.turnCell=null;run.turnClock=0;run.turnFromMask=0;
  run.timeLeft=Math.max(21,46-run.stage*1.9);
 }
 export function rotateCircuit(run:CircuitRun,c:number,r:number):ExpansionTwoEvent{
@@ -173,7 +175,9 @@ export function rotateCircuit(run:CircuitRun,c:number,r:number):ExpansionTwoEven
   r<0||r>=CIRCUIT_ROWS)return null;
  run.cursor={c,r};const tile=run.tiles.find(t=>t.c===c&&t.r===r);
  if(!tile)return null;
- tile.mask=rotatePorts(tile.mask);run.powered=poweredCircuit(run.tiles);run.flash=.2;
+ run.turnFromMask=tile.mask;tile.mask=rotatePorts(tile.mask);
+ run.turnCell={c,r};run.turnClock=.18;
+ run.powered=poweredCircuit(run.tiles);run.flash=.2;
  if(run.tiles.some(t=>t.danger&&run.powered.some(p=>same(p,t)))){
   run.lives--;run.shockClock=1.3;
   if(run.lives<=0){run.over=true;return 'fail';}
@@ -283,7 +287,8 @@ export function createExpansionTwoRun(kind:ExpansionTwoId,seed=0x297b51cd):Expan
  }
  case 'circuit-rush':{
   const run:CircuitRun={...base,kind,tiles:[],powered:[],stage:1,lives:3,
-   timeLeft:40,cursor:{c:2,r:2},flash:0,solved:false,shockClock:0};
+   timeLeft:40,cursor:{c:2,r:2},flash:0,solved:false,shockClock:0,
+   turnCell:null,turnClock:0,turnFromMask:0};
   makeCircuit(run);return run;
  }
  case 'shadow-heist':{
@@ -403,6 +408,8 @@ function minerStep(run:MinerRun,dt:number,holding:boolean,controls:ExpansionTwoC
  return 'flap';
 }
 function circuitStep(run:CircuitRun,dt:number):ExpansionTwoEvent{
+ run.turnClock=Math.max(0,run.turnClock-dt);
+ if(run.turnClock===0)run.turnCell=null;
  if(run.shockClock>0){
   run.shockClock=Math.max(0,run.shockClock-dt);
   if(run.shockClock===0)makeCircuit(run);
