@@ -108,10 +108,11 @@ describe('Progressive difficulty without changing the two approved game mechanic
   run.rocks=[];
   run.x=460;run.y=260;run.vx=0;run.vy=0;run.invincible=0;
   run.drones[0].x=460;run.drones[0].y=260;
+  const oxygen=run.oxygen;
   expect(stepArcadeRun(run,ARCADE_STEP)).toBeNull();
   expect(run.hull).toBe(2);
   expect(run.invincible).toBeGreaterThan(1);
-  expect(run.oxygen).toBeLessThan(79);
+  expect(run.oxygen).toBeLessThan(oxygen);
  });
  it('cycles through four genuinely different Heist rooms with escalating patrol counts',()=>{
   expect(HEIST_STAGE_WALLS).toHaveLength(4);
