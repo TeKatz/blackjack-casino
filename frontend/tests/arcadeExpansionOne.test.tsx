@@ -106,7 +106,7 @@ describe('Phantom Hook',()=>{
   expect(Math.hypot(s.x-a.x,s.y-a.y)).toBeLessThanOrEqual(s.rope+.001);
   expect(actArcadeRun(s)).toBe('flap');
   expect(s.anchored).toBe(-1);
-  s.y=H+30;
+  s.y=570;
   expect(stepArcadeRun(s,ARCADE_STEP)).toBe('fail');
  });
  it('generates deterministic anchor spacing for the same seeded run',()=>{
