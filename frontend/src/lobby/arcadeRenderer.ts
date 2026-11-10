@@ -10,7 +10,7 @@ type Context=CanvasRenderingContext2D;
 const TAU=Math.PI*2;
 function background(ctx:Context,state:ArcadeRunState){
  const tones:Record<ArcadeRunState['kind'],[string,string,string]>={
-  'midnight-pinball':['#061822','#1e1933','#132a33'],
+  'midnight-beats':['#090f21','#261a36','#163144'],
   'phantom-hook':['#081c30','#2c2250','#152d3c'],
   'neon-drift':['#11172d','#172939','#122e38'],
   'gravity-chamber':['#0b1b32','#20274a','#152f3e'],
