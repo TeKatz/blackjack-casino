@@ -23,7 +23,7 @@ export const ARCADE_VOICES:Record<PlayableArcadeId,ArcadeVoice>={
  'hexagon-hell':{base:430,wave:'triangle',partial:1.41,attack:.009,decay:.14,intervals:[0,4,8],filter:2420},
  'spike-rush':{base:348,wave:'square',partial:1.87,attack:.003,decay:.1,intervals:[0,7,15],filter:1900},
  'endless-ascent':{base:465,wave:'sine',partial:2.51,attack:.018,decay:.23,intervals:[0,5,12],filter:3050},
- 'midnight-pinball':{base:780,wave:'triangle',partial:3.84,attack:.002,decay:.42,intervals:[0,7,16],filter:4900},
+ 'midnight-beats':{base:293.66,wave:'triangle',partial:2,attack:.003,decay:.16,intervals:[0,3,7,10],filter:2800},
  'phantom-hook':{base:232,wave:'sine',partial:1.79,attack:.04,decay:.31,intervals:[0,5,9],filter:2150},
  'neon-drift':{base:115,wave:'sawtooth',partial:2.01,attack:.05,decay:.2,intervals:[0,-5,4],filter:1100},
  'gravity-chamber':{base:310,wave:'triangle',partial:1.3,attack:.03,decay:.39,intervals:[0,-7,7],filter:1380},

@@ -1,17 +1,21 @@
-/* Arcade Expansion I: brief gameplay previews, interactive only; the ten original cards are unaffected. */
-.arcade-game-card:is(:hover,:focus-visible) .exp-pin-ball{
- animation:exp-pin-ricochet 1.6s ease-in-out infinite;
+/* Arcade Expansion I: per-game gameplay previews, with reduced-motion fallback. */
+.arcade-game-card:is(:hover,:focus-visible) .exp-beats-notes{
+ animation:exp-beats-fall 1.45s linear infinite;
 }
-.arcade-game-card:is(:hover,:focus-visible) .exp-pin-flippers{
- animation:exp-pin-kick .65s ease-in-out infinite alternate;
+.arcade-game-card:is(:hover,:focus-visible) .exp-beats-lights{
+ animation:exp-beats-lights 1.45s ease-in-out infinite;
 }
-@keyframes exp-pin-ricochet{
- 0%,100%{translate:0 0}
- 30%{translate:30px -46px}
- 57%{translate:-27px -68px}
- 78%{translate:-31px -20px}
+@keyframes exp-beats-fall{
+ 0%{translate:0 -58px;opacity:.3}
+ 50%{opacity:1}
+ 77%{translate:0 19px;opacity:1}
+ 85%,100%{translate:0 27px;opacity:0}
 }
-@keyframes exp-pin-kick{from{translate:0 2px}to{translate:0 -7px}}
+@keyframes exp-beats-lights{
+ 0%,100%{opacity:.35;filter:brightness(.9)}
+ 30%,50%{opacity:1;filter:brightness(1.7)}
+ 70%{opacity:.52}
+}
 
 .arcade-scene .exp-hook-swing{transform-box:view-box;transform-origin:130px 20px}
 .arcade-game-card:is(:hover,:focus-visible) .exp-hook-swing{

@@ -19,7 +19,7 @@ describe('Arcade Games lobby collection',()=>{
   expect(arcadeGames.map(g=>g.name)).toEqual([
    'Midnight Wings','Cave Escape','Hexagon Hell','Perfect Stack','Spike Rush',
    'Blade Timing','Bullet Storm','Neon Breaker','Death Snake','Endless Ascent',
-   'Midnight Pinball','Phantom Hook','Neon Drift','Gravity Chamber','Echo Sequence',
+   'Midnight Beats','Phantom Hook','Neon Drift','Gravity Chamber','Echo Sequence',
    'Prism Lock','Meteor Miner','Circuit Rush','Shadow Heist','Pulse Perfect'
   ]);
   for(const game of arcadeGames){
@@ -56,7 +56,7 @@ describe('Arcade Games lobby collection',()=>{
  it('renders independent game screens for all twenty games with local scoreboards',()=>{
   for(const id of ['midnight-wings','cave-escape','perfect-stack','blade-timing',
    'death-snake','neon-breaker','bullet-storm','hexagon-hell','spike-rush','endless-ascent',
-   'midnight-pinball','phantom-hook','neon-drift','gravity-chamber','echo-sequence',
+   'midnight-beats','phantom-hook','neon-drift','gravity-chamber','echo-sequence',
    'prism-lock','meteor-miner','circuit-rush','shadow-heist','pulse-perfect'] as const){
    const html=renderToStaticMarkup(<ArcadeGameScreen id={id} language="de" onBack={()=>{}}/>);
    expect(html).toContain('data-testid="arcade-game-screen"');

@@ -23,7 +23,7 @@ public sealed class ArcadeChallengesTests
         {
             "midnight-wings", "cave-escape", "hexagon-hell", "perfect-stack", "spike-rush",
             "blade-timing", "bullet-storm", "neon-breaker", "death-snake", "endless-ascent",
-            "midnight-pinball", "phantom-hook", "neon-drift", "gravity-chamber", "echo-sequence",
+            "midnight-beats", "phantom-hook", "neon-drift", "gravity-chamber", "echo-sequence",
             "prism-lock", "meteor-miner", "circuit-rush", "shadow-heist", "pulse-perfect"
         })
             Assert.Equal(10, all.Count(c => c.Id.StartsWith("arcade-" + gameId + "-", StringComparison.Ordinal)));
@@ -60,6 +60,34 @@ public sealed class ArcadeChallengesTests
     }
 
     [Fact]
+    public void MidnightBeatsReplacesPinballWithoutErasingHistoricalSavedStats()
+    {
+        Assert.True(ArcadeChallengeCatalog.IsGame("midnight-beats"));
+        Assert.False(ArcadeChallengeCatalog.IsGame("midnight-pinball"));
+        Assert.True(ArcadeChallengeCatalog.IsArchivedGame("midnight-pinball"));
+        Assert.NotNull(ChallengeCatalog.TryGet("arcade-midnight-beats-first"));
+        Assert.Null(ChallengeCatalog.TryGet("arcade-midnight-pinball-first"));
+        var stats = new ArcadeStatistics();
+        stats.Games["midnight-pinball"] = new ArcadeGameStatistics
+        {
+            Runs = 4, BestScore = 2200, TotalScore = 7200, LongestSeconds = 97
+        };
+        stats.Normalize();
+        Assert.Equal(2200, stats.Games["midnight-pinball"].BestScore);
+        Assert.False(ArcadeProgression.Process(stats,
+            new ArcadeRunReceipt(Guid.NewGuid(), "midnight-pinball", 500, 20)));
+        Assert.True(ArcadeProgression.Process(stats,
+            new ArcadeRunReceipt(Guid.NewGuid(), "midnight-beats", 900, 35)));
+        Assert.Equal(2200, stats.Games["midnight-pinball"].BestScore);
+        Assert.Equal(900, stats.Games["midnight-beats"].BestScore);
+        ArcadeStatistics restored = JsonSerializer.Deserialize<ArcadeStatistics>(
+            JsonSerializer.Serialize(stats))!;
+        restored.Normalize();
+        Assert.Equal(2200, restored.Games["midnight-pinball"].BestScore);
+        Assert.Equal(900, restored.Games["midnight-beats"].BestScore);
+    }
+
+    [Fact]
     public void RecordsAreGameSpecificAndTrackRunsTotalsBestAndLongestRun()
     {
         var stats = new ArcadeStatistics();
@@ -84,7 +112,7 @@ public sealed class ArcadeChallengesTests
         var stats = new ArcadeStatistics();
         foreach (string id in new[]
         {
-            "midnight-pinball", "phantom-hook", "neon-drift", "gravity-chamber", "echo-sequence"
+            "midnight-beats", "phantom-hook", "neon-drift", "gravity-chamber", "echo-sequence"
         })
         {
             Guid receiptId = Guid.NewGuid();

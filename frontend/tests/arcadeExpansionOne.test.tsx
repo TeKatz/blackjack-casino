@@ -6,7 +6,8 @@ import {ArcadeGameScreen} from '../src/lobby/ArcadeGameScreen';
 import {ArcadeMenu} from '../src/lobby/ArcadeMenu';
 import {arcadeGames} from '../src/lobby/arcadeCatalog';
 import {EXPANSION_ONE_IDS,chooseEchoPad,driftCenter,gravityGoalY} from '../src/lobby/arcadeExpansionOneEngine';
-import type {PinballRun,HookRun,DriftRun,GravityRun,EchoRun} from '../src/lobby/arcadeExpansionOneEngine';
+import type {BeatsRun,HookRun,DriftRun,GravityRun,EchoRun} from '../src/lobby/arcadeExpansionOneEngine';
+import {beatsTargetTime,hitBeatsLane} from '../src/lobby/arcadeBeatsEngine';
 import {echoPadAt} from '../src/lobby/arcadeExpansionOneRenderer';
 import {readArcadeRecord,saveArcadeRecord} from '../src/lobby/arcadeRecords';
 
@@ -41,48 +42,60 @@ describe('Arcade Expansion I — five fully playable games',()=>{
   const store={getItem:(key:string)=>data.get(key)??null,
    setItem:(key:string,val:string)=>{data.set(key,val);}};
   saveArcadeRecord('midnight-wings',7,20,store);
+  // Retired Pinball records remain on disk but must never appear as Beats scores.
+  data.set('midnight-club.arcade.v1.midnight-pinball',
+   JSON.stringify({best:99999,last:99999,runs:14,bestSeconds:500}));
   for(const id of EXPANSION_ONE_IDS){
    saveArcadeRecord(id,12,32,store);
    saveArcadeRecord(id,9,25,store);
    expect(readArcadeRecord(id,store)).toEqual({best:12,last:9,runs:2,bestSeconds:32});
   }
   expect(readArcadeRecord('midnight-wings',store).best).toBe(7);
-  expect(data.size).toBe(6);
+  expect(readArcadeRecord('midnight-beats',store).best).toBe(12);
+  expect(data.get('midnight-club.arcade.v1.midnight-pinball')).toContain('99999');
+  expect(data.size).toBe(7);
  });
 });
 
-describe('Midnight Pinball',()=>{
- it('launches balls and lets the two independent flipper controls move',()=>{
-  const s=createArcadeRun('midnight-pinball',19) as PinballRun;
-  expect(s.balls).toBe(3);expect(s.serve).toBe(true);
-  expect(actArcadeRun(s)).toBe('flap');
-  expect(s.serve).toBe(false);expect(s.vy).toBeLessThan(0);
-  expect(actArcadeRun(s)).toBeNull();
-  stepArcadeRun(s,ARCADE_STEP,false,{left:true});
-  expect(s.leftFlipper).toBe(true);expect(s.rightFlipper).toBe(false);
-  stepArcadeRun(s,ARCADE_STEP,false,{right:true});
-  expect(s.leftFlipper).toBe(false);expect(s.rightFlipper).toBe(true);
+describe('Midnight Beats',()=>{
+ it('begins with a musical four-beat count-in before the first synchronized note',()=>{
+  const run=createArcadeRun('midnight-beats',19) as BeatsRun;
+  expect(run.lives).toBe(5);
+  expect(run.combo).toBe(0);
+  expect(run.bpm).toBe(104);
+  expect(run.notes).toHaveLength(0);
+  expect(hitBeatsLane(run,0)).toBeNull();
+  for(let i=0;i<80;i++)stepArcadeRun(run,ARCADE_STEP);
+  expect(run.grooveCount).toBeGreaterThan(0);
+  expect(run.notes.some(n=>Math.abs(n.at-beatsTargetTime(8))<1e-9)).toBe(true);
+  expect(run.score).toBe(0);
  });
- it('scores bumper hits and counts exactly three drained balls',()=>{
-  const s=createArcadeRun('midnight-pinball',19) as PinballRun;
-  actArcadeRun(s);s.inShooter=false;s.x=414;s.y=216;s.vx=-90;s.vy=0;
-  expect(stepArcadeRun(s,ARCADE_STEP)).toBe('score');
-  expect(s.score).toBeGreaterThan(0);
-  const first=s.score;
-  // Contacts are debounced, preventing per-frame score farming.
-  stepArcadeRun(s,ARCADE_STEP);
-  expect(s.score).toBe(first);
-  for(let lost=1;lost<=3;lost++){
-   s.serve=false;s.inShooter=false;s.y=H+25;s.vy=100;
-   const event=stepArcadeRun(s,ARCADE_STEP);
-   expect(event).toBe(lost===3?'fail':'stage');
-   expect(s.balls).toBe(3-lost);
-  }
+ it('judges the matching lane by musical time, not graphic overlap',()=>{
+  const s=createArcadeRun('midnight-beats',19) as BeatsRun;
+  for(let i=0;i<157;i++)stepArcadeRun(s,ARCADE_STEP);
+  const first=s.notes.find(n=>n.judgement===null)!;
+  expect(first).toBeTruthy();
+  expect(Math.abs(first.at-s.elapsed)).toBeLessThan(.046);
+  expect(hitBeatsLane(s,first.lane)).toBe('score');
+  expect(s.lastGrade).toBe('PERFECT');
+  expect(s.score).toBe(300);
+  expect(s.combo).toBe(1);
+  expect(s.successful).toBe(1);
+  expect(hitBeatsLane(s,first.lane)).toBeNull(); // debounce wrong-key spam
+ });
+ it('charges five missed notes and ends the endless round',()=>{
+  const s=createArcadeRun('midnight-beats',42) as BeatsRun;
+  for(let i=0;i<900&&!s.over;i++)stepArcadeRun(s,ARCADE_STEP);
   expect(s.over).toBe(true);
+  expect(s.lives).toBe(0);
+  expect(s.misses).toBe(5);
+  expect(s.score).toBe(0);
+  const old=JSON.stringify(s);
+  expect(stepArcadeRun(s,ARCADE_STEP)).toBeNull();
+  expect(JSON.stringify(s)).toBe(old);
   expect(actArcadeRun(s)).toBeNull();
  });
 });
-const H=540;
 describe('Phantom Hook',()=>{
  it('attaches to reachable nodes, applies a rope constraint and releases on command',()=>{
   const s=createArcadeRun('phantom-hook',4) as HookRun;
@@ -93,7 +106,7 @@ describe('Phantom Hook',()=>{
   expect(Math.hypot(s.x-a.x,s.y-a.y)).toBeLessThanOrEqual(s.rope+.001);
   expect(actArcadeRun(s)).toBe('flap');
   expect(s.anchored).toBe(-1);
-  s.y=H+30;
+  s.y=570;
   expect(stepArcadeRun(s,ARCADE_STEP)).toBe('fail');
  });
  it('generates deterministic anchor spacing for the same seeded run',()=>{

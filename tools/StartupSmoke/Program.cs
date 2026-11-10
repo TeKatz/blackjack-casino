@@ -575,7 +575,7 @@ internal static class Program
             "midnight-wings", "cave-escape", "perfect-stack", "blade-timing",
             "death-snake", "neon-breaker", "bullet-storm",
             "hexagon-hell", "spike-rush", "endless-ascent",
-            "midnight-pinball", "phantom-hook", "neon-drift", "gravity-chamber", "echo-sequence",
+            "midnight-beats", "phantom-hook", "neon-drift", "gravity-chamber", "echo-sequence",
             "prism-lock", "meteor-miner", "circuit-rush", "shadow-heist", "pulse-perfect" })
         {
             await web.ExecuteScriptAsync(
