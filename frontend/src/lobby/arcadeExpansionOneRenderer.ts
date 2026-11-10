@@ -1,4 +1,5 @@
-import {driftCenter,gravityGoalY,gravityHazards,pinBumpers} from './arcadeExpansionOneEngine';
+import {drawPinballV2} from './arcadePinballV2Renderer';
+import {driftCenter,driftRoadHalfWidth,driftTrafficAt,gravityGoalY,gravityHazards,gravitySentries} from './arcadeExpansionOneEngine';
 import type {ExpansionRun,PinballRun,HookRun,DriftRun,GravityRun,EchoRun} from './arcadeExpansionOneEngine';
 const W=960,H=540,TAU=Math.PI*2;
 type Ctx=CanvasRenderingContext2D;
@@ -30,57 +31,17 @@ function orb(ctx:Ctx,x:number,y:number,r:number,color:string){
  ctx.save();ctx.shadowColor=color;ctx.shadowBlur=17;
  ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.fill();ctx.restore();
 }
-function pinball(ctx:Ctx,s:PinballRun){
- backdrop(ctx,'#061822','#1e1933');
- ctx.save();ctx.shadowColor='#dba971';ctx.shadowBlur=24;
- round(ctx,155,22,650,526,38,'#122d35','#d6b47e');ctx.restore();
- round(ctx,175,45,610,470,27,'#082632','#518a88');
- const field=ctx.createLinearGradient(205,55,725,505);
- field.addColorStop(0,'#123b49');field.addColorStop(.55,'#162d42');field.addColorStop(1,'#27223c');
- round(ctx,191,54,578,451,24,field,'#b2a277');
- line(ctx,[[310,80],[210,173],[210,395],[308,450]],'#b5ddca66',4);
- line(ctx,[[650,80],[749,173],[749,395],[652,450]],'#b5ddca66',4);
- // Animated pinball scoring lanes.
- for(let i=0;i<4;i++){
-  const x=315+i*109;
-  round(ctx,x,69,52,13,6,i%2?'#729f9d':'#dbb17b','#f6d7a0');
-  text(ctx,String(i+1),x+26,80,10,'#112a31','center');
- }
- pinBumpers.forEach((b,i)=>{
-  ctx.save();ctx.shadowColor=s.flashes[i]>0?'#fff4ac':'#88ead6';
-  ctx.shadowBlur=s.flashes[i]>0?38:15;
-  orb(ctx,b.x,b.y,b.r+8,'#1c5d67');
-  orb(ctx,b.x,b.y,b.r,'#e8c28e');
-  orb(ctx,b.x,b.y,b.r-8,s.flashes[i]>0?'#fff7ca':'#4a9c9e');
-  ctx.restore();
-  text(ctx,'✦',b.x,b.y+8,23,'#fce6bb','center');
- });
- for(const [side,pressed] of [['left',s.leftFlipper],['right',s.rightFlipper]] as const){
-  const x=side==='left'?386:574,tip=side==='left'?(pressed?489:474):(pressed?471:486);
-  const y=pressed?429:468;
-  ctx.save();ctx.shadowBlur=15;ctx.shadowColor='#edc281';
-  line(ctx,[[x,454],[tip,y]],pressed?'#fff1c4':'#ebc18a',16);
-  ctx.restore();
-  orb(ctx,x,454,10,'#b9d6ca');
- }
- round(ctx,682,64,67,426,13,'#10232f','#bf9d71');
- line(ctx,[[716,81],[716,467]],'#5b9f9c99',3);
- // Plunger channel / remaining balls.
- text(ctx,'BALLS',740,35,12,'#dfd0a5','right');
- for(let i=0;i<3;i++)orb(ctx,702+i*22,35,5,i<s.balls?'#f2cf91':'#40525c');
- if(s.serve){
-  orb(ctx,718,478,12,'#f4f0da');
-  text(ctx,'SPACE TO LAUNCH',480,510,13,'#91e5d9','center');
- }else{
-  ctx.save();ctx.shadowColor='#fff6ce';ctx.shadowBlur=16;
-  orb(ctx,s.x,s.y,11,'#f8f1d6');ctx.restore();
-  orb(ctx,s.x-3,s.y-4,2,'#ffffff');
- }
- text(ctx,'COMBO ×'+(s.combo+1),220,35,14,'#a5f4d9');
-}
+function pinball(ctx:Ctx,s:PinballRun){drawPinballV2(ctx,s);}
 function hook(ctx:Ctx,s:HookRun){
  backdrop(ctx,'#081c30','#2c2250');
  const cam=s.camera;
+ for(let i=0;i<55;i++){
+  const wx=(i*173+73)%(W+900),x=((wx-s.camera*.13)%(W+900)+W+900)%(W+900)-180;
+  const y=20+(i*71)%340;
+  ctx.globalAlpha=.16+(i%4)*.08;
+  orb(ctx,x,y,i%5===0?2.1:.9,i%3===0?'#f8daa8':'#a9e9f3');
+ }
+ ctx.globalAlpha=1;
  for(let depth=0;depth<3;depth++){
   ctx.fillStyle=['#20334d','#16293e','#0e273b'][depth];
   const slide=cam*(.12+depth*.18);
@@ -91,6 +52,15 @@ function hook(ctx:Ctx,s:HookRun){
    ctx.lineTo(x,y);
   }
   ctx.lineTo(W,H);ctx.closePath();ctx.fill();
+ }
+ for(let j=0;j<7;j++){
+  const x=120+j*350-s.camera*.23;
+  if(x>-80&&x<W+80){
+   ctx.save();ctx.globalAlpha=.19;
+   round(ctx,x,280+(j%3)*25,30,210,10,'#43718a');
+   round(ctx,x-14,275+(j%3)*25,58,12,6,'#aec6b7');
+   ctx.restore();
+  }
  }
  // Bright fixed anchor nodes with a crosshair and an attached physics rope.
  for(const a of s.anchors){
@@ -105,14 +75,29 @@ function hook(ctx:Ctx,s:HookRun){
  }
  if(s.anchored>=0){
   const a=s.anchors[s.anchored];
-  if(a)line(ctx,[[s.x-cam,s.y],[a.x-cam,a.y]],'#e8d4af',3);
+  if(a){
+   ctx.save();ctx.shadowColor='#8bf1df';ctx.shadowBlur=14;
+   line(ctx,[[s.x-cam,s.y],[a.x-cam,a.y]],'#9de6d7',7);
+   line(ctx,[[s.x-cam,s.y],[a.x-cam,a.y]],'#fff0c7',2.4);
+   ctx.restore();
+   for(let k=0;k<4;k++){
+    const t=k/5;
+    orb(ctx,(s.x-cam)*(1-t)+(a.x-cam)*t,s.y*(1-t)+a.y*t,2,'#ffe5ad');
+   }
+  }
  }
  const x=s.x-cam,y=s.y;
  ctx.save();ctx.translate(x,y);ctx.rotate(clamp(s.vx/600,-.45,.45));
  ctx.shadowColor='#8ce5e0';ctx.shadowBlur=18;
- round(ctx,-15,-15,30,30,8,'#9fefdf','#f4d49c');
+ ctx.beginPath();ctx.moveTo(0,-21);ctx.lineTo(17,-7);ctx.lineTo(15,12);
+ ctx.lineTo(0,19);ctx.lineTo(-15,12);ctx.lineTo(-17,-7);ctx.closePath();
+ ctx.fillStyle='#7dcaca';ctx.fill();ctx.strokeStyle='#ffdfae';ctx.lineWidth=2.5;ctx.stroke();
+ round(ctx,-11,-9,22,13,6,'#16394b','#b0fff3');
  ctx.restore();
- orb(ctx,x+5,y-5,3,'#173949');
+ orb(ctx,x+4,y-4,2,'#d9ffff');
+ for(const side of [-1,1]){
+  ctx.save();ctx.globalAlpha=.7;orb(ctx,x+side*11,y+17,4,'#f7c694');ctx.restore();
+ }
  for(let i=0;i<5;i++){
   const trailX=x-(i+1)*11,trailY=y+Math.sin(i*.9+s.elapsed*8)*5;
   orb(ctx,trailX,trailY,Math.max(1,4-i*.7),'#4db7b8');
@@ -132,8 +117,8 @@ function drift(ctx:Ctx,s:DriftRun){
  // Road recedes into the horizon; all offsets derive from one deterministic track function.
  for(let y=65;y<560;y+=10){
   const t=clamp((y-65)/475,0,1);
-  const roadWidth=115+165*t;
   const world=s.distance+(420-y)*1.75;
+  const roadWidth=driftRoadHalfWidth(world)*(.68+.39*t);
   const center=driftCenter(world);
   ctx.fillStyle=Math.floor(y/18)%2?'#213648':'#263c4f';
   ctx.fillRect(center-roadWidth,y,roadWidth*2,11);
@@ -150,11 +135,23 @@ function drift(ctx:Ctx,s:DriftRun){
   const y=500-d*.2;
   if(y<40||y>H)continue;
   const cx=driftCenter(s.distance+d);
-  const rw=115+165*clamp((y-65)/475,0,1);
+  const rw=driftRoadHalfWidth(s.distance+d)*(.68+.39*clamp((y-65)/475,0,1));
   for(const side of [-1,1]){
    const x=cx+side*(rw+32);
    orb(ctx,x,y,Math.max(2,8-d/400),'#56aaa0');
   }
+ }
+ for(let i=Math.max(0,Math.floor((s.distance-900)/425)-1);
+ i<Math.floor((s.distance+1400)/425)+3;i++){
+  const obstacle=driftTrafficAt(i),ahead=obstacle.distance-s.distance;
+  if(ahead<-110||ahead>1320)continue;
+  const y=422-ahead*.31,size=14+16*clamp(1-ahead/1300,0,1);
+  ctx.save();ctx.shadowColor='#ffad9b';ctx.shadowBlur=12;
+  ctx.beginPath();ctx.moveTo(obstacle.x,y-size);ctx.lineTo(obstacle.x-size*.67,y+size);
+  ctx.lineTo(obstacle.x+size*.67,y+size);ctx.closePath();
+  ctx.fillStyle='#da7c80';ctx.fill();ctx.lineWidth=2;ctx.strokeStyle='#fff3cc';ctx.stroke();
+  line(ctx,[[obstacle.x-size*.38,y+size*.5],[obstacle.x+size*.38,y+size*.5]],'#f8e6c4',3);
+  ctx.restore();
  }
  ctx.save();ctx.translate(s.x,422);ctx.rotate(-s.vx/900);
  ctx.shadowColor=s.combo>2?'#a4fff1':'#e9b68e';ctx.shadowBlur=21;
@@ -169,6 +166,7 @@ function drift(ctx:Ctx,s:DriftRun){
  }
  text(ctx,'DRIFT ×'+Math.max(1,Math.floor(s.combo)+1),25,36,18,'#ffe4a9');
  text(ctx,'DISTANCE '+Math.floor(s.distance/10)+' m',25,61,12,'#a9cfcc');
+ text(ctx,'ROAD '+Math.floor(driftRoadHalfWidth(s.distance)*2)+' m',25,83,11,'#e2d2ad');
  text(ctx,'DAMAGE '+s.hits+' / 3',W-25,36,15,s.hits?'#f7a9a2':'#a6e4d5','right');
  text(ctx,'HOLD SPACE FOR DRIFT',W-25,61,12,'#a5ded7','right');
 }
@@ -190,6 +188,17 @@ function gravity(ctx:Ctx,s:GravityRun){
    ctx.closePath();ctx.fill();
   }ctx.restore();
  }
+ for(const h of gravitySentries(s.stage,s.elapsed)){
+  ctx.save();ctx.shadowColor='#ff9eaa';ctx.shadowBlur=30;
+  orb(ctx,h.x,h.y,h.r+8,'#663b6d');
+  orb(ctx,h.x,h.y,h.r,'#d88aab');
+  orb(ctx,h.x,h.y,Math.max(4,h.r-8),'#ffe1bc');
+  ctx.restore();
+  for(let i=0;i<6;i++){
+   const a=s.elapsed*2.4+i*TAU/6;
+   orb(ctx,h.x+Math.cos(a)*(h.r+14),h.y+Math.sin(a)*(h.r+14),2,'#ffb9bc');
+  }
+ }
  const goalY=gravityGoalY(s.stage);
  ctx.save();ctx.shadowColor='#ffdda4';ctx.shadowBlur=25;
  round(ctx,802,goalY-29,54,58,7,'#1a4f54','#f0c790');
@@ -204,7 +213,8 @@ function gravity(ctx:Ctx,s:GravityRun){
  ctx.restore();
  text(ctx,'CHAMBER '+s.stage,24,35,17,'#f1d5a5');
  text(ctx,'LIVES '+s.lives,W-25,35,15,'#b7f3db','right');
- text(ctx,'SPACE · FLIP GRAVITY',W/2,35,12,'#c8c7eb','center');
+ text(ctx,s.stage<4?'SPACE · FLIP GRAVITY':'WATCH FOR MOVING SENTRIES',W/2,35,12,'#c8c7eb','center');
+ if(s.stage>=3)text(ctx,'SECURITY LEVEL '+Math.min(5,Math.floor(s.stage/2)),W/2,514,13,'#f1b5ba','center');
 }
 const padColors=['#5dd8c8','#eca873','#bfa5f5','#f08ba5','#8fbfff','#c7e78a'] as const;
 export function echoPadAt(x:number,y:number):number|null{

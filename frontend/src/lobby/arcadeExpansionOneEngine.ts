@@ -1,3 +1,7 @@
+import {createPinballRun,launchPinball,stepPinball} from './arcadePinballV2';
+import type {PinballRun} from './arcadePinballV2';
+export {pinBumpers,pinballFlipper,pinballGeometry} from './arcadePinballV2';
+export type {PinballRun} from './arcadePinballV2';
 /**
  * Arcade Expansion I — five independent, deterministic, offline minigames.
  * Pure 60 Hz simulation. The React runner owns user inputs, pause and high scores.
@@ -14,11 +18,6 @@ export type ExpansionControls={left?:boolean;right?:boolean;up?:boolean;down?:bo
 const W=960,H=540,STEP=1/60;
 const clamp=(v:number,a:number,b:number)=>Math.max(a,Math.min(b,v));
 const rand=(s:Base)=>{s.seed=(Math.imul(s.seed,1664525)+1013904223)>>>0;return s.seed/4294967296;};
-export const pinBumpers=[{x:380,y:216,r:34},{x:580,y:213,r:34},
- {x:480,y:306,r:29},{x:305,y:334,r:24},{x:652,y:331,r:24}] as const;
-export type PinballRun=Base&{kind:'midnight-pinball';x:number;y:number;vx:number;vy:number;
- balls:number;serve:boolean;combo:number;contact:number;flashes:number[];
- leftFlipper:boolean;rightFlipper:boolean};
 export type HookAnchor={x:number;y:number};
 export type HookRun=Base&{kind:'phantom-hook';x:number;y:number;vx:number;vy:number;
  anchored:number;rope:number;anchors:HookAnchor[];camera:number;lastAnchor:number};
@@ -31,20 +30,41 @@ export type EchoRun=Base&{kind:'echo-sequence';round:number;lives:number;
  active:number;inputClock:number;lastChoice:number;feedback:number;lastGood:boolean};
 export type ExpansionRun=PinballRun|HookRun|DriftRun|GravityRun|EchoRun;
 export const isExpansionRun=(s:{kind:string}):s is ExpansionRun=>isExpansionOneId(s.kind);
-export const driftCenter=(distance:number)=>
- 480+118*Math.sin(distance*.00215)+57*Math.sin(distance*.0047);
+export const driftCenter=(distance:number)=>{
+ const difficulty=1+Math.min(.32,Math.max(0,distance)/14000);
+ return 480+difficulty*(118*Math.sin(distance*.00215)+57*Math.sin(distance*.0047));
+};
+export const driftRoadHalfWidth=(distance:number)=>
+ Math.max(78,148-8*Math.floor(Math.max(0,distance)/1350));
+export const driftTrafficAt=(index:number)=>{
+ const distance=780+index*425+Math.sin(index*2.87)*55;
+ const lane=([-0.55,0,0.55] as const)[(index*7+1)%3];
+ return {distance,x:driftCenter(distance)+lane*driftRoadHalfWidth(distance),r:29};
+};
 export const gravityGoalY=(stage:number)=>stage%2===0?93:438;
-export const gravityHazards=(stage:number)=>[
- {x:260+(stage%3)*22,y:444,w:84,h:25},
- {x:480-(stage%3)*16,y:67,w:92,h:19},
- {x:645+(stage%2)*12,y:444,w:79,h:25},
-];
+export const gravityHazards=(stage:number)=>{
+ const hazards=[
+  {x:260+(stage%3)*22,y:444,w:84,h:25},
+  {x:480-(stage%3)*16,y:67,w:92,h:19},
+  {x:645+(stage%2)*12,y:444,w:79,h:25},
+ ];
+ if(stage>=3)hazards.push({x:350+(stage%2)*24,y:67,w:78,h:19});
+ if(stage>=5)hazards.push({x:520-(stage%3)*13,y:444,w:67,h:25});
+ if(stage>=8)hazards.push({x:710,y:67,w:75,h:19});
+ return hazards;
+};
+/** Moving hazards activate only in advanced rooms. All positions are deterministic. */
+export const gravitySentries=(stage:number,elapsed:number)=>{
+ if(stage<4)return [] as {x:number;y:number;r:number}[];
+ const result=[{x:415+115*Math.sin(elapsed*(.8+stage*.075)),y:260,r:18}];
+ if(stage>=7)result.push({x:628+75*Math.sin(elapsed*.95+2),y:335,r:21});
+ if(stage>=10)result.push({x:290+65*Math.sin(elapsed*1.2+1),y:170,r:15});
+ return result;
+};
 export function createExpansionRun(kind:ExpansionOneId,seed=0x51eab141):ExpansionRun{
  const base={score:0,elapsed:0,over:false,seed:(seed>>>0)||0x51eab141};
  switch(kind){
-  case 'midnight-pinball':return {...base,kind,x:718,y:478,vx:0,vy:0,
-   balls:3,serve:true,combo:0,contact:0,flashes:pinBumpers.map(()=>0),
-   leftFlipper:false,rightFlipper:false};
+  case 'midnight-pinball':return createPinballRun(seed);
   case 'phantom-hook':return {...base,kind,x:145,y:302,vx:164,vy:-90,
    anchored:-1,rope:185,camera:0,lastAnchor:0,
    anchors:[{x:226,y:128},{x:475,y:180},{x:735,y:111},{x:984,y:172}]};
@@ -79,10 +99,7 @@ export function chooseEchoPad(s:EchoRun,pad:number):ExpansionEvent{
 export function actExpansionRun(s:ExpansionRun):ExpansionEvent{
  if(s.over)return null;
  switch(s.kind){
- case 'midnight-pinball':
-  if(!s.serve)return null;
-  s.serve=false;s.x=718;s.y=478;s.vx=-145;s.vy=-790;
-  return 'flap';
+ case 'midnight-pinball':return launchPinball(s);
  case 'phantom-hook':
   if(s.anchored>=0){
    s.anchored=-1;s.vy=Math.min(s.vy,-155);return 'flap';
@@ -101,64 +118,6 @@ export function actExpansionRun(s:ExpansionRun):ExpansionEvent{
   s.vy=s.gravity*90;return 'flap';
  case 'neon-drift':case 'echo-sequence':return null;
  }
-}
-function pinballStep(s:PinballRun,dt:number,c:ExpansionControls):ExpansionEvent{
- s.leftFlipper=!!c.left;s.rightFlipper=!!c.right;
- s.contact=Math.max(0,s.contact-dt);
- for(let i=0;i<s.flashes.length;i++)s.flashes[i]=Math.max(0,s.flashes[i]-dt);
- if(s.serve)return null;
- let event:ExpansionEvent=null;
- // Two physics substeps avoid a ball tunnelling through a bumper/flipper.
- for(let k=0;k<2;k++){
-  const t=dt/2;const oldX=s.x,oldY=s.y;
-  s.vy=clamp(s.vy+650*t,-1030,1020);
-  s.x+=s.vx*t;s.y+=s.vy*t;
-  if(s.x<196){s.x=196;s.vx=Math.abs(s.vx)*.91;}
-  if(s.x>764){s.x=764;s.vx=-Math.abs(s.vx)*.91;}
-  if(s.y<53){s.y=53;s.vy=Math.abs(s.vy)*.9;}
-  // The game has diagonal banking guides above the flipper pockets.
-  if(s.y>397&&s.y<453){
-   if(s.x<311){s.x=311;s.vx=Math.max(160,Math.abs(s.vx));}
-   if(s.x>650){s.x=650;s.vx=-Math.max(160,Math.abs(s.vx));}
-  }
-  for(let i=0;i<pinBumpers.length;i++){
-   const b=pinBumpers[i],dx=s.x-b.x,dy=s.y-b.y;
-   const dist=Math.hypot(dx,dy);
-   if(dist>=b.r+11||dist<.00001)continue;
-   const nx=dx/dist,ny=dy/dist;
-   s.x=b.x+nx*(b.r+11);s.y=b.y+ny*(b.r+11);
-   const speed=Math.max(430,Math.hypot(s.vx,s.vy)+90);
-   s.vx=nx*speed;s.vy=ny*speed;
-   if(s.contact<=0){
-    s.score+=10*(1+Math.min(4,s.combo));
-    s.combo=Math.min(4,s.combo+1);s.contact=.13;s.flashes[i]=.27;event='score';
-   }
-  }
-  for(const [side,pressed] of [['left',!!c.left],['right',!!c.right]] as const){
-   const pivot=side==='left'?386:574;
-   const tip=side==='left'?(pressed?489:474):(pressed?471:486);
-   const py=454,ty=pressed?429:468;
-   const ax=tip-pivot,ay=ty-py;
-   const u=clamp(((s.x-pivot)*ax+(s.y-py)*ay)/(ax*ax+ay*ay),0,1);
-   const px=pivot+u*ax,py2=py+u*ay;
-   const dx=s.x-px,dy=s.y-py2,dist=Math.hypot(dx,dy);
-   if(dist>15||s.vy<=-80||oldY>492)continue;
-   const power=pressed?780:420;
-   s.y=py2-15;s.vy=-power;
-   s.vx=(side==='left'?1:-1)*(pressed?160:80)+u*(side==='left'?150:-150);
-   s.combo=Math.max(0,s.combo-1);event='flap';
-  }
-  if(s.y>H+12){
-   s.balls--;
-   if(s.balls<=0)return fail(s);
-   s.serve=true;s.x=718;s.y=478;s.vx=0;s.vy=0;s.combo=0;
-   return 'stage';
-  }
-  // Keep any unusually energetic rebounds numerically stable.
-  s.vx=clamp(s.vx,-920,920);s.vy=clamp(s.vy,-1000,1000);
-  if(!Number.isFinite(oldX)||!Number.isFinite(s.x))return fail(s);
- }
- return event;
 }
 function hookStep(s:HookRun,dt:number):ExpansionEvent{
  s.vy=clamp(s.vy+835*dt,-900,920);
@@ -197,23 +156,34 @@ function driftStep(s:DriftRun,dt:number,holding:boolean,c:ExpansionControls):Exp
  const steer=Number(!!c.right)-Number(!!c.left);
  const brake=holding;
  s.hitCooldown=Math.max(0,s.hitCooldown-dt);
- const target=brake?208:365;
+ const target=brake?210:380;
  s.speed+=(target-s.speed)*dt*(brake?1.6:.7);
- s.speed=clamp(s.speed,160,410);
- const sideTarget=steer*(brake?325:255);
+ s.speed=clamp(s.speed,160,445);
+ const sideTarget=steer*(brake?300:260);
  s.vx+=(sideTarget-s.vx)*dt*(brake?1.3:2.8);
  s.vx=clamp(s.vx,-330,330);
  s.x+=s.vx*dt;
  s.distance+=s.speed*dt;
- const road=driftCenter(s.distance),limit=169;
+ const road=driftCenter(s.distance),limit=driftRoadHalfWidth(s.distance);
+ // Approaching traffic requires actual avoidance, not merely staying on the road.
+ const first=Math.max(0,Math.floor((s.distance-870)/425)-1);
+ for(let i=first;i<first+5;i++){
+  const obstacle=driftTrafficAt(i);
+  if(Math.abs(obstacle.distance-s.distance)<24&&
+   Math.abs(s.x-obstacle.x)<obstacle.r+21&&s.hitCooldown<=0){
+   s.hits++;s.hitCooldown=1.1;s.combo=0;s.speed=170;
+   if(s.hits>=3)return fail(s);
+   return 'stage';
+  }
+ }
  if(Math.abs(s.x-road)>limit&&s.hitCooldown===0){
-  s.hits++;s.hitCooldown=1.4;s.combo=0;s.speed=190;
+  s.hits++;s.hitCooldown=1.15;s.combo=0;s.speed=175;
   s.x=road+Math.sign(s.x-road)*limit;
   if(s.hits>=3)return fail(s);
   return 'stage';
  }
  s.x=clamp(s.x,40,W-40);
- if(brake&&steer&&Math.abs(s.vx)>75&&Math.abs(s.x-road)<limit-12){
+ if(brake&&steer&&Math.abs(s.vx)>62&&Math.abs(s.x-road)<limit-12){
   s.combo=Math.min(8,s.combo+dt*1.5);
   s.driftPoints+=dt*(10+s.combo*9);
  }else s.combo=Math.max(0,s.combo-dt*2.4);
@@ -233,8 +203,11 @@ function gravityStep(s:GravityRun,dt:number,c:ExpansionControls):ExpansionEvent{
  s.x=clamp(s.x,102,859);s.y=clamp(s.y,93,438);
  if((s.y===93&&s.vy<0)||(s.y===438&&s.vy>0))s.vy=0;
  const hazards=gravityHazards(s.stage);
- if(s.invulnerable===0&&hazards.some(h=>s.x+13>h.x&&s.x-13<h.x+h.w&&
-   s.y+13>h.y&&s.y-13<h.y+h.h)){
+ const collision=hazards.some(h=>s.x+13>h.x&&s.x-13<h.x+h.w&&
+   s.y+13>h.y&&s.y-13<h.y+h.h);
+ const sentryHit=gravitySentries(s.stage,s.elapsed).some(h=>
+   Math.hypot(s.x-h.x,s.y-h.y)<h.r+13);
+ if(s.invulnerable===0&&(collision||sentryHit)){
   s.lives--;
   if(s.lives<=0)return fail(s);
   s.x=132;s.y=438;s.vx=0;s.vy=0;s.gravity=1;s.invulnerable=.85;
@@ -279,7 +252,7 @@ export function stepExpansionRun(s:ExpansionRun,dt:number,holding=false,
  const step=Math.min(dt,STEP);
  s.elapsed+=step;
  switch(s.kind){
-  case 'midnight-pinball':return pinballStep(s,step,controls);
+  case 'midnight-pinball':return stepPinball(s,step,controls);
   case 'phantom-hook':return hookStep(s,step);
   case 'neon-drift':return driftStep(s,step,holding,controls);
   case 'gravity-chamber':return gravityStep(s,step,controls);

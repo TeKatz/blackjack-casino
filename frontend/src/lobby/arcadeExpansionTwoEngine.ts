@@ -22,7 +22,7 @@ export type PrismMirror=Point&{slash:boolean;required:boolean};
 export type PrismBeam={points:Point[];hit:boolean};
 export type PrismRun=Base&{kind:'prism-lock';mirrors:PrismMirror[];
  stage:number;lives:number;timeLeft:number;targetRow:number;cursor:Point;
- beam:PrismBeam;flash:number};
+ beam:PrismBeam;flash:number;transition:'clear'|'lost'|null;transitionClock:number};
 export const PRISM_COLS=7,PRISM_ROWS=5;
 const same=(a:Point,b:Point)=>a.c===b.c&&a.r===b.r;
 const mirrorReflect=(dc:number,dr:number,slash:boolean):[number,number]=>
@@ -72,10 +72,10 @@ function makePrism(run:PrismRun):void{
  }
  run.mirrors=mirrors;run.targetRow=second;run.cursor={c:1,r:2};
  run.beam=tracePrism(mirrors,second);run.timeLeft=Math.max(19,42-run.stage*1.8);
- run.flash=0;
+ run.flash=0;run.transition=null;run.transitionClock=0;
 }
 export function selectPrism(run:PrismRun,c:number,r:number):ExpansionTwoEvent{
- if(run.over||!Number.isInteger(c)||!Number.isInteger(r)||c<0||c>=PRISM_COLS||
+ if(run.over||run.transition||!Number.isInteger(c)||!Number.isInteger(r)||c<0||c>=PRISM_COLS||
   r<0||r>=PRISM_ROWS)return null;
  run.cursor={c,r};
  const mirror=run.mirrors.find(m=>m.c===c&&m.r===r);
@@ -84,13 +84,14 @@ export function selectPrism(run:PrismRun,c:number,r:number):ExpansionTwoEvent{
  run.beam=tracePrism(run.mirrors,run.targetRow);run.flash=.25;
  if(!run.beam.hit)return 'flap';
  run.score+=250+run.stage*40+Math.floor(run.timeLeft*5);
- run.stage++;makePrism(run);return 'score';
+ run.stage++;run.transition='clear';run.transitionClock=2.15;return 'score';
 }
 export type MinerRock={x:number;y:number;r:number;ore:number;grade:number;flash:number};
+export type MinerDrone={x:number;y:number;vx:number;vy:number;r:number};
 export type MinerRun=Base&{kind:'meteor-miner';x:number;y:number;vx:number;vy:number;
  rocks:MinerRock[];oxygen:number;hull:number;invincible:number;cargo:number;
  cargoValue:number;capacity:number;mineIndex:number;mineProgress:number;
- atBase:boolean;deposits:number;mining:boolean};
+ atBase:boolean;deposits:number;mining:boolean;drones:MinerDrone[]};
 function minerRock(run:MinerRun):MinerRock{
  for(let attempts=0;attempts<100;attempts++){
   const x=245+random(run)*630,y=75+random(run)*378;
@@ -100,9 +101,9 @@ function minerRock(run:MinerRun):MinerRock{
  }
  return {x:290+random(run)*500,y:90+random(run)*320,r:23,ore:3,grade:1,flash:0};
 }
-export type CircuitTile=Point&{mask:number;path:boolean};
+export type CircuitTile=Point&{mask:number;path:boolean;danger:boolean};
 export type CircuitRun=Base&{kind:'circuit-rush';tiles:CircuitTile[];powered:Point[];
- stage:number;lives:number;timeLeft:number;cursor:Point;flash:number;solved:boolean};
+ stage:number;lives:number;timeLeft:number;cursor:Point;flash:number;solved:boolean;shockClock:number};
 export const CIRCUIT_COLS=6,CIRCUIT_ROWS=5;
 export const DIRS=[{dc:0,dr:-1,bit:1,opposite:4},
  {dc:1,dr:0,bit:2,opposite:8},{dc:0,dr:1,bit:4,opposite:1},
@@ -148,7 +149,7 @@ function makeCircuit(run:CircuitRun):void{
   }
   const rotations=Math.floor(random(run)*4);
   for(let k=0;k<rotations;k++)mask=rotatePorts(mask);
-  tiles.push({c,r,mask,path:index>=0});
+  tiles.push({c,r,mask,path:index>=0,danger:false});
  }
  run.tiles=tiles;run.cursor={c:2,r:2};
  run.powered=poweredCircuit(tiles);
@@ -157,39 +158,74 @@ function makeCircuit(run:CircuitRun):void{
   turn.mask=rotatePorts(turn.mask);
   run.powered=poweredCircuit(tiles);
  }
- run.solved=false;run.flash=0;run.timeLeft=Math.max(22,47-run.stage*1.5);
+ // Red short-circuit tiles are never part of the guaranteed solution path,
+ // and never powered on spawn. Later circuits have more forbidden contacts.
+ const safe=tiles.filter(t=>!t.path&&!run.powered.some(p=>same(p,t)));
+ for(let i=0;i<Math.min(5,1+Math.floor((run.stage-1)/2))&&safe.length;i++){
+  const index=Math.floor(random(run)*safe.length);
+  safe.splice(index,1)[0].danger=true;
+ }
+ run.solved=false;run.flash=0;run.shockClock=0;
+ run.timeLeft=Math.max(21,46-run.stage*1.9);
 }
 export function rotateCircuit(run:CircuitRun,c:number,r:number):ExpansionTwoEvent{
- if(run.over||!Number.isInteger(c)||!Number.isInteger(r)||c<0||c>=CIRCUIT_COLS||
+ if(run.over||run.shockClock>0||!Number.isInteger(c)||!Number.isInteger(r)||c<0||c>=CIRCUIT_COLS||
   r<0||r>=CIRCUIT_ROWS)return null;
  run.cursor={c,r};const tile=run.tiles.find(t=>t.c===c&&t.r===r);
  if(!tile)return null;
  tile.mask=rotatePorts(tile.mask);run.powered=poweredCircuit(run.tiles);run.flash=.2;
+ if(run.tiles.some(t=>t.danger&&run.powered.some(p=>same(p,t)))){
+  run.lives--;run.shockClock=1.3;
+  if(run.lives<=0){run.over=true;return 'fail';}
+  return 'stage';
+ }
  if(!circuitSolved(run))return 'flap';
  run.score+=300+run.stage*50+Math.floor(run.timeLeft*5);
  run.stage++;makeCircuit(run);return 'score';
 }
-export type Guard={x:number;y:number;min:number;max:number;direction:1|-1;speed:number};
+export type Guard={x:number;y:number;min:number;max:number;direction:1|-1;speed:number;axis?:'x'|'y'};
 export type Loot={x:number;y:number;taken:boolean};
 export type Wall={x:number;y:number;w:number;h:number};
 export const HEIST_WALLS:readonly Wall[]=[
  {x:275,y:93,w:108,h:42},{x:430,y:267,w:132,h:50},
  {x:680,y:270,w:102,h:45},{x:159,y:299,w:78,h:48},
 ];
+export const HEIST_STAGE_WALLS:readonly (readonly Wall[])[]=[
+ HEIST_WALLS,
+ [{x:255,y:125,w:102,h:44},{x:460,y:180,w:65,h:141},
+  {x:682,y:307,w:106,h:47},{x:175,y:326,w:74,h:50}],
+ [{x:208,y:191,w:75,h:144},{x:387,y:83,w:117,h:48},
+  {x:589,y:249,w:133,h:55},{x:731,y:101,w:70,h:61}],
+ [{x:310,y:92,w:90,h:75},{x:465,y:287,w:85,h:121},
+  {x:640,y:105,w:115,h:48},{x:184,y:342,w:78,h:43}],
+];
+const HEIST_STAGE_LOOT:readonly (readonly {x:number;y:number}[])[]=[
+ [{x:245,y:166},{x:445,y:166},{x:650,y:171},{x:773,y:390}],
+ [{x:235,y:213},{x:414,y:114},{x:645,y:192},{x:814,y:385},{x:412,y:403}],
+ [{x:305,y:121},{x:475,y:196},{x:663,y:405},{x:815,y:193},{x:365,y:397}],
+ [{x:228,y:191},{x:431,y:215},{x:601,y:404},{x:816,y:263},{x:300,y:404}],
+];
 export type HeistRun=Base&{kind:'shadow-heist';x:number;y:number;
  guards:Guard[];loot:Loot[];walls:readonly Wall[];alert:number;
  lives:number;invincible:number;stage:number;timeLeft:number;lastCaught:number};
 function makeHeist(run:HeistRun):void{
- run.x=94;run.y=438;run.alert=0;run.invincible=1;run.timeLeft=Math.max(67,127-run.stage*4);
- run.loot=[
-  {x:245,y:166,taken:false},{x:445,y:166,taken:false},
-  {x:650,y:171,taken:false},{x:773,y:390,taken:false},
- ];
+ run.x=94;run.y=438;run.alert=0;run.invincible=.8;
+ const variant=(run.stage-1)%HEIST_STAGE_WALLS.length;
+ run.walls=HEIST_STAGE_WALLS[variant];
+ run.timeLeft=Math.max(49,116-run.stage*5);
+ run.loot=HEIST_STAGE_LOOT[variant].map(p=>({...p,taken:false}));
+ const speedUp=Math.min(125,run.stage*12);
  run.guards=[
-  {x:195,y:245,min:145,max:410,direction:1,speed:80+run.stage*10},
-  {x:623,y:218,min:532,max:829,direction:-1,speed:98+run.stage*9},
-  {x:515,y:415,min:362,max:740,direction:1,speed:76+run.stage*10},
+  {x:195,y:245,min:142,max:410,direction:1,speed:83+speedUp,axis:'x'},
+  {x:623,y:218,min:533,max:828,direction:-1,speed:105+speedUp,axis:'x'},
+  {x:515,y:415,min:364,max:747,direction:1,speed:83+speedUp,axis:'x'},
  ];
+ if(run.stage>=2)run.guards.push({
+  x:414,y:193,min:104,max:429,direction:1,speed:95+speedUp,axis:'y'});
+ if(run.stage>=4)run.guards.push({
+  x:738,y:183,min:99,max:440,direction:-1,speed:106+speedUp,axis:'y'});
+ if(run.stage>=7)run.guards.push({
+  x:293,y:381,min:200,max:715,direction:1,speed:110+speedUp,axis:'x'});
 }
 function blockSight(x1:number,y1:number,x2:number,y2:number,walls:readonly Wall[]):boolean{
  for(const wall of walls)for(let k=1;k<16;k++){
@@ -201,8 +237,10 @@ function blockSight(x1:number,y1:number,x2:number,y2:number,walls:readonly Wall[
 export function guardSees(run:HeistRun,guard:Guard):boolean{
  const dx=run.x-guard.x,dy=run.y-guard.y,distance=Math.hypot(dx,dy);
  if(distance<22)return true;
- return distance<190+run.stage*8&&dx*guard.direction>0&&
-  Math.abs(dy)<Math.abs(dx)*.58&&
+ const forward=(guard.axis==='y'?dy:dx)*guard.direction;
+ const lateral=guard.axis==='y'?dx:dy;
+ return distance<205+run.stage*9&&forward>0&&
+  Math.abs(lateral)<forward*.72&&
   !blockSight(guard.x,guard.y,run.x,run.y,run.walls);
 }
 export type PulseRun=Base&{kind:'pulse-perfect';radius:number;target:number;
@@ -233,19 +271,19 @@ export function createExpansionTwoRun(kind:ExpansionTwoId,seed=0x297b51cd):Expan
  switch(kind){
  case 'prism-lock':{
   const run:PrismRun={...base,kind,mirrors:[],targetRow:2,stage:1,lives:3,
-   timeLeft:40,cursor:{c:1,r:2},beam:{points:[],hit:false},flash:0};
+   timeLeft:40,cursor:{c:1,r:2},beam:{points:[],hit:false},flash:0,transition:null,transitionClock:0};
   makePrism(run);return run;
  }
  case 'meteor-miner':{
   const run:MinerRun={...base,kind,x:125,y:422,vx:0,vy:0,rocks:[],
    oxygen:79,hull:3,invincible:0,cargo:0,cargoValue:0,capacity:6,
-   mineIndex:-1,mineProgress:0,atBase:true,deposits:0,mining:false};
+   mineIndex:-1,mineProgress:0,atBase:true,deposits:0,mining:false,drones:[]};
   for(let i=0;i<9;i++)run.rocks.push(minerRock(run));
   return run;
  }
  case 'circuit-rush':{
   const run:CircuitRun={...base,kind,tiles:[],powered:[],stage:1,lives:3,
-   timeLeft:40,cursor:{c:2,r:2},flash:0,solved:false};
+   timeLeft:40,cursor:{c:2,r:2},flash:0,solved:false,shockClock:0};
   makeCircuit(run);return run;
  }
  case 'shadow-heist':{
@@ -274,10 +312,17 @@ export function movePuzzleCursor(run:PrismRun|CircuitRun,dc:number,dr:number):vo
 function losePuzzleLife(run:PrismRun|CircuitRun):ExpansionTwoEvent{
  run.lives--;
  if(run.lives<=0){run.over=true;return 'fail';}
- if(run.kind==='prism-lock')makePrism(run);else makeCircuit(run);
+ if(run.kind==='prism-lock'){
+  run.transition='lost';run.transitionClock=1.85;run.timeLeft=0;
+ }else makeCircuit(run);
  return 'stage';
 }
 function prismStep(run:PrismRun,dt:number):ExpansionTwoEvent{
+ if(run.transition){
+  run.transitionClock=Math.max(0,run.transitionClock-dt);
+  if(run.transitionClock<=0){makePrism(run);return 'stage';}
+  return null;
+ }
  run.timeLeft-=dt;run.flash=Math.max(0,run.flash-dt);
  if(run.timeLeft<=0)return losePuzzleLife(run);
  return null;
@@ -292,13 +337,13 @@ function minerStep(run:MinerRun,dt:number,holding:boolean,controls:ExpansionTwoC
  run.x=clamp(run.x+run.vx*dt,24,W-24);
  run.y=clamp(run.y+run.vy*dt,40,H-30);
  run.invincible=Math.max(0,run.invincible-dt);
- run.oxygen=Math.max(0,run.oxygen-dt);
+ run.oxygen=Math.max(0,run.oxygen-dt*(1.32+run.deposits*.26));
  if(run.oxygen<=0){run.over=true;return 'fail';}
  for(const rock of run.rocks){
   rock.flash=Math.max(0,rock.flash-dt);
   const dist=Math.hypot(run.x-rock.x,run.y-rock.y);
   if(dist<rock.r+15){
-   if(run.invincible===0&&Math.hypot(run.vx,run.vy)>115){
+   if(run.invincible===0&&Math.hypot(run.vx,run.vy)>85){
     run.hull--;run.invincible=1.25;
     if(run.hull<=0){run.over=true;return 'fail';}
    }
@@ -310,12 +355,33 @@ function minerStep(run:MinerRun,dt:number,holding:boolean,controls:ExpansionTwoC
  }
  run.atBase=Math.hypot(run.x-115,run.y-435)<90;
  if(run.atBase){
-  run.oxygen=Math.min(80,run.oxygen+dt*21);
+  run.oxygen=Math.min(80,run.oxygen+dt*14);
   if(run.cargo>0){
    run.score+=run.cargoValue*80+run.cargo*20;
    run.cargo=0;run.cargoValue=0;run.deposits++;
-   run.capacity=Math.min(9,6+Math.floor(run.deposits/3));
+   run.capacity=Math.min(8,6+Math.floor(run.deposits/4));
+   // Security drones appear after the first successful delivery. Unlike
+   // cosmetic asteroids they pursue the player and have true collision.
+   const targetCount=Math.min(4,run.deposits);
+   while(run.drones.length<targetCount){
+    const n=run.drones.length;
+    run.drones.push({x:755-(n%2)*145,y:112+n*82,vx:0,vy:0,r:13+n%2*3});
+   }
    return 'score';
+  }
+ }
+ // Drones chase outside the protected base ring; an occupied drone has to
+ // be dodged, and cannot repeatedly damage the ship during invulnerability.
+ for(const drone of run.drones){
+  const dx=run.x-drone.x,dy=run.y-drone.y,d=Math.max(1,Math.hypot(dx,dy));
+  const speed=55+Math.min(70,run.deposits*9);
+  drone.vx+=(dx/d*speed-drone.vx)*dt*1.8;
+  drone.vy+=(dy/d*speed-drone.vy)*dt*1.8;
+  drone.x=clamp(drone.x+drone.vx*dt,230,W-35);
+  drone.y=clamp(drone.y+drone.vy*dt,52,H-35);
+  if(!run.atBase&&run.invincible<=0&&d<drone.r+16){
+   run.hull--;run.invincible=1.55;run.vx+=(dx/d)*165;run.vy+=(dy/d)*165;
+   if(run.hull<=0){run.over=true;return 'fail';}
   }
  }
  run.mining=holding&&!run.atBase&&run.cargo<run.capacity;
@@ -337,6 +403,11 @@ function minerStep(run:MinerRun,dt:number,holding:boolean,controls:ExpansionTwoC
  return 'flap';
 }
 function circuitStep(run:CircuitRun,dt:number):ExpansionTwoEvent{
+ if(run.shockClock>0){
+  run.shockClock=Math.max(0,run.shockClock-dt);
+  if(run.shockClock===0)makeCircuit(run);
+  return null;
+ }
  run.timeLeft-=dt;run.flash=Math.max(0,run.flash-dt);
  if(run.timeLeft<=0)return losePuzzleLife(run);
  return null;
@@ -355,17 +426,23 @@ function heistStep(run:HeistRun,dt:number,controls:ExpansionTwoControls):Expansi
  const ny=clamp(run.y+dy/d*move,55,H-30);
  if(!collision(run.x,ny))run.y=ny;
  for(const g of run.guards){
-  g.x+=g.direction*g.speed*dt;
-  if(g.x<g.min){g.x=g.min;g.direction=1;}
-  if(g.x>g.max){g.x=g.max;g.direction=-1;}
+  if(g.axis==='y'){
+   g.y+=g.direction*g.speed*dt;
+   if(g.y<g.min){g.y=g.min;g.direction=1;}
+   if(g.y>g.max){g.y=g.max;g.direction=-1;}
+  }else{
+   g.x+=g.direction*g.speed*dt;
+   if(g.x<g.min){g.x=g.min;g.direction=1;}
+   if(g.x>g.max){g.x=g.max;g.direction=-1;}
+  }
  }
  if(run.invincible===0&&run.guards.some(g=>guardSees(run,g)))
-  run.alert=Math.min(1,run.alert+dt*(.85+run.stage*.16));
+  run.alert=Math.min(1,run.alert+dt*(1.13+run.stage*.18));
  else run.alert=Math.max(0,run.alert-dt*.7);
  if(run.alert>=1){
   run.lives--;run.alert=0;run.lastCaught=1;
   if(run.lives<=0){run.over=true;return 'fail';}
-  run.x=94;run.y=438;run.invincible=2;
+  run.x=94;run.y=438;run.invincible=1.2;
   return 'stage';
  }
  for(const gem of run.loot){
