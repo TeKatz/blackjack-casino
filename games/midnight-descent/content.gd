@@ -33,5 +33,5 @@ const UPGRADES := {
 static func relic_text(id: String, german: bool) -> String:
 	var item: Array = RELICS[id]
 	return item[1 if german else 0]+"  •  "+item[3 if german else 2]
-static func set_name(id: String, german: bool) -> String:
+static func loadout_display_name(id: String, german: bool) -> String:
 	return SETS[id]["de" if german else "en"]

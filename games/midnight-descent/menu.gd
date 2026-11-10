@@ -135,7 +135,7 @@ func update_preview() -> void:
 			var spec: Dictionary = Content.SETS[progress.selected]
 			preview_title.text = tr_text("WARDEN","WÄCHTER") if spec.character=="warden" else "DEALER"
 			preview_sprite.texture = atlas_icon(PixelWorld.ACTORS[spec.character],Rect2(0,0,32,32))
-			preview_detail.text = Content.set_name(progress.selected,german)
+			preview_detail.text = Content.loadout_display_name(progress.selected,german)
 			preview_info.text = tr_text("Base HP / main / special","Basis-LP / Haupt / Spezial")+"  %d / %d / %d" % [spec.hp,spec.damage,spec.bolt]
 		"progress":
 			preview_title.text = tr_text("SOUL ESSENCE","SEELENESSENZ")
@@ -217,7 +217,7 @@ func show_page(next: String) -> void:
 			body.add_child(label(tr_text("AVAILABLE LOADOUTS","VERFÜGBARE START-SETS"),14,GOLD))
 			for id in progress.unlocked:
 				var chosen_id: String = id
-				add_action(Content.set_name(id,german)+("  •  "+tr_text("Selected","Ausgewählt") if progress.selected==id else ""),func(): select_set(chosen_id))
+				add_action(Content.loadout_display_name(id,german)+("  •  "+tr_text("Selected","Ausgewählt") if progress.selected==id else ""),func(): select_set(chosen_id))
 			add_action(tr_text("Start run  ›","Run starten  ›"),start_run)
 			add_action(tr_text("Back","Zurück"),func(): show_page("home"))
 		"progress":
@@ -241,7 +241,7 @@ func show_page(next: String) -> void:
 				var set_key: String = id
 				var owned: bool = progress.unlocked.has(id)
 				var locked: bool = owned or progress.essence<int(spec.cost) or (id=="dealer_joker" and not progress.unlocked.has("dealer_cards"))
-				var caption := (tr_text("Warden","Wächter") if spec.character=="warden" else "Dealer")+"  /  "+Content.set_name(id,german)
+				var caption := (tr_text("Warden","Wächter") if spec.character=="warden" else "Dealer")+"  /  "+Content.loadout_display_name(id,german)
 				caption += "  •  "+(tr_text("Owned","Freigeschaltet") if owned else str(spec.cost))
 				add_action(caption,func(): buy_set(set_key),locked)
 			add_action(tr_text("Back","Zurück"),func(): show_page("progress"))
@@ -334,7 +334,12 @@ func smoke_test() -> void:
 		return
 	toggle_motion(true)
 	var simulation = preload("res://run_model.gd").new()
-	if not simulation.smoke_test() or not progress.smoke_test():
+	if not simulation.smoke_test():
+		push_error("Descent run model regression failed")
+		get_tree().quit(5)
+		return
+	if not progress.smoke_test():
+		push_error("Descent progression regression failed")
 		get_tree().quit(5)
 		return
 	print("Midnight Descent menu smoke PASS")
