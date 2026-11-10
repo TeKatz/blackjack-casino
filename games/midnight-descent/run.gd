@@ -187,7 +187,11 @@ func run_scene_smoke() -> void:
 		return
 	select_relic(0)
 	run.player = Model.EXIT
-	if not run.next_room() or not run.travel(1):
+	if not run.next_room():
+		get_tree().quit(8)
+		return
+	_process(0.0)
+	if overlay_state!="route" or overlay.get_child_count()==0 or not run.travel(1):
 		get_tree().quit(8)
 		return
 	paused = true
@@ -507,7 +511,7 @@ func rebuild_overlay() -> void:
 				var stack:=VBoxContainer.new()
 				stack.add_theme_constant_override("separation",10)
 				card.add_child(stack)
-				var rarity_label:=["Common","Rare","Epic","Legendary"][rarity] if not german else ["Gewöhnlich","Selten","Episch","Legendär"][rarity]
+				var rarity_label: String =["Common","Rare","Epic","Legendary"][rarity] if not german else ["Gewöhnlich","Selten","Episch","Legendär"][rarity]
 				add_label(stack,rarity_label.to_upper(),13,color)
 				var icon:=TextureRect.new()
 				icon.texture=UI.atlas(UI.RELICS,int(item[4]))
