@@ -399,9 +399,9 @@ See `docs/empire-balancing.md` for simulation results and reproducible commands.
 
 The existing Casino Empire screen remains the default presentation. Its header
 offers **Idle-Prototyp testen / Try idle prototype**, which switches to a separate
-management-first React interface inside the same trusted \`empire.html\` host.
+management-first React interface inside the same trusted `empire.html` host.
 The prototype's **Klassische Ansicht / Classic view** button returns instantly
-to the existing interface. Both share the same C# \`EmpireService\`, bridge
+to the existing interface. Both share the same C# `EmpireService`, bridge
 session, live credits, transaction receipts, save file and offline catch-up;
 there is no second economy, local browser wallet or save migration.
 
