@@ -439,13 +439,26 @@ func show_route_map(column: VBoxContainer) -> void:
 		button.add_theme_constant_override("icon_max_width",24)
 		UI.style_button(button,UI.ROOM_COLORS[visible_kind],i==run.room)
 		button.disabled=not run.route_options().has(i)
+		if i==run.room:
+			button.add_theme_stylebox_override("disabled",UI.panel(Color("#594333"),GOLD,8))
+			button.add_theme_color_override("font_disabled_color",Color("#fff0c8"))
+		elif node.cleared:
+			button.add_theme_color_override("font_disabled_color",Color("#8db6a8"))
 		button.tooltip_text=tr_text("Current room","Aktueller Raum") if i==run.room else (tr_text("Travel to this room","Diesen Raum betreten") if not button.disabled else tr_text("Not connected to current room","Nicht direkt verbunden"))
+	var footer:=HBoxContainer.new()
+	footer.add_theme_constant_override("separation",12)
+	column.add_child(footer)
 	if run.room_kind=="boss" and run.floor_index==0 and run.dungeon.nodes[run.room].cleared:
-		add_button(column,tr_text("Descend to the Abyss Garden","Abstieg in den Abgrundgarten"),func(): run.descend())
+		var descent:=add_button(footer,tr_text("Descend to the Abyss Garden  ›","Abstieg in den Abgrundgarten  ›"),func(): run.descend())
+		descent.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+		UI.style_button(descent,Color("#8bcea1"),true)
+	var back: Button
 	if run.room_kind in ["fight","elite","boss"] and run.player.distance_to(Model.EXIT)<=75:
-		add_button(column,tr_text("Close map","Karte schließen"),func(): run.state="exit")
+		back=add_button(footer,tr_text("Close map","Karte schließen"),func(): run.state="exit")
 	else:
-		add_button(column,tr_text("Pause expedition","Expedition pausieren"),func(): paused=true)
+		back=add_button(footer,tr_text("Pause expedition","Expedition pausieren"),func(): paused=true)
+	back.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	UI.style_button(back,Color("#a5afd2"))
 
 func disable_modal_input(node: Node) -> void:
 	if node is Control:
@@ -471,6 +484,27 @@ func modal_fill() -> Color:
 		"defeat": return Color("#2e1828")
 		"pause": return Color("#201c30")
 	return Color("#23182e")
+
+func service_option(parent: Control, caption: String, detail: String, icon_index: int, accent: Color, choice: int, available: bool=true) -> Button:
+	var button:=add_button(parent,caption+"\n"+detail,func(): use_service(choice))
+	button.custom_minimum_size=Vector2(0,64)
+	button.alignment=HORIZONTAL_ALIGNMENT_LEFT
+	button.add_theme_font_size_override("font_size",16)
+	button.icon=UI.atlas(UI.RELICS,icon_index)
+	button.expand_icon=true
+	button.add_theme_constant_override("icon_max_width",48)
+	UI.style_button(button,accent)
+	button.disabled=not available
+	return button
+
+func service_intro() -> String:
+	match run.room_kind:
+		"shop": return tr_text("A lantern burns above a merchant's travelling wares.","Eine Laterne leuchtet über den Waren eines reisenden Händlers.")
+		"treasure": return tr_text("A sealed cache awaits. Choose its reward.","Eine versiegelte Truhe wartet. Wähle ihre Belohnung.")
+		"secret": return tr_text("A hidden sanctuary holds a forgotten treasure.","Ein verborgenes Heiligtum birgt einen vergessenen Schatz.")
+		"event": return tr_text("A strange presence offers a bargain.","Eine seltsame Präsenz bietet dir einen Handel an.")
+		"shrine": return tr_text("Ancient magic restores body and spirit.","Alte Magie stärkt Körper und Geist.")
+	return ""
 
 func rebuild_overlay() -> void:
 	if is_instance_valid(modal_tween): modal_tween.kill()
@@ -540,25 +574,23 @@ func rebuild_overlay() -> void:
 			column.add_child(service_icon)
 			add_label(column,room_name(run.room_kind).to_upper(),30,UI.ROOM_COLORS[run.room_kind])
 			add_label(column,tr_text("Shards","Splitter")+"  "+str(run.shards)+"   •   "+tr_text("HP","LP")+"  %d/%d" % [run.hp,run.max_hp],18,MUTED)
-			add_label(column,tr_text("Your choice returns you directly to the map.","Nach deiner Wahl kehrst du direkt zur Karte zurück."),14,UI.ROOM_COLORS[run.room_kind])
+			add_label(column,service_intro(),16,WHITE)
+			add_label(column,tr_text("Your choice returns you directly to the map.","Nach deiner Wahl kehrst du direkt zur Karte zurück."),13,UI.ROOM_COLORS[run.room_kind])
 			match run.room_kind:
 				"treasure","secret":
-					add_button(column,tr_text("Choose a relic","Relikt wählen"),func(): use_service(0))
-					add_button(column,tr_text("Find a new active item","Neues aktives Item finden"),func(): use_service(1))
+					service_option(column,tr_text("Choose a relic","Relikt wählen"),tr_text("Three relics to choose from","Drei Relikte zur Auswahl"),6,GOLD,0)
+					service_option(column,tr_text("Find a new active item","Neues aktives Item finden"),tr_text("Replace your current Q item","Ersetzt dein aktuelles Q-Item"),15,Color("#9dacf0"),1)
 				"shop":
-					var relic_button:=add_button(column,tr_text("Relic offer — 12 shards","Reliktangebot — 12 Splitter"),func(): use_service(0))
-					relic_button.disabled=run.shards<12
-					var heal_button:=add_button(column,tr_text("Heal 35 — 8 shards","35 LP heilen — 8 Splitter"),func(): use_service(1))
-					heal_button.disabled=run.shards<8
-					var item_button:=add_button(column,tr_text("Active item — 10 shards","Aktives Item — 10 Splitter"),func(): use_service(2))
-					item_button.disabled=run.shards<10
-					add_button(column,tr_text("Leave","Verlassen"),func(): use_service(3))
+					service_option(column,tr_text("Relic offer","Reliktangebot"),tr_text("12 shards  •  choose one of three","12 Splitter  •  wähle eines von drei"),6,GOLD,0,run.shards>=12)
+					service_option(column,tr_text("Recover 35 HP","35 LP heilen"),tr_text("8 shards","8 Splitter"),1,Color("#e58fa2"),1,run.shards>=8)
+					service_option(column,tr_text("New active item","Neues aktives Item"),tr_text("10 shards  •  replaces current item","10 Splitter  •  ersetzt aktuelles Item"),15,Color("#8acdb5"),2,run.shards>=10)
+					service_option(column,tr_text("Leave merchant","Händler verlassen"),tr_text("Return to the map without buying","Ohne Kauf zur Karte zurück"),32,MUTED,3)
 				"event":
-					add_button(column,tr_text("Sacrifice 15 HP for a relic","Opfere 15 LP für ein Relikt"),func(): use_service(0))
-					add_button(column,tr_text("Take 8 shards","8 Splitter nehmen"),func(): use_service(1))
+					service_option(column,tr_text("Blood bargain","Bluthandel"),tr_text("Sacrifice 15 HP for a relic","Opfere 15 LP für ein Relikt"),24,Color("#e6809a"),0)
+					service_option(column,tr_text("Take 8 shards","8 Splitter nehmen"),tr_text("Leave the strange presence untouched","Lass die seltsame Präsenz unberührt"),13,GOLD,1)
 				"shrine":
-					add_button(column,tr_text("Recover 40 HP","40 LP regenerieren"),func(): use_service(0))
-					add_button(column,tr_text("Gain 10 max HP","10 maximale LP erhalten"),func(): use_service(1))
+					service_option(column,tr_text("Recover 40 HP","40 LP regenerieren"),tr_text("Restore health","Regeneriert Lebenspunkte"),31,Color("#91d4b0"),0)
+					service_option(column,tr_text("Gain 10 max HP","10 maximale LP erhalten"),tr_text("Permanent for this expedition","Für diese Expedition dauerhaft"),1,Color("#e990a8"),1)
 		"reward":
 			add_label(column,tr_text("CHOOSE YOUR RELIC","WÄHLE DEIN RELIKT") if run.room_kind in ["treasure","shop","event","secret"] else tr_text("ROOM CLEARED","RAUM GESÄUBERT"),30,GOLD)
 			add_label(column,tr_text("Choose a relic • recover 12 HP • continue your expedition","Wähle ein Relikt • heile 12 LP • setze deine Expedition fort"),16,MUTED)
@@ -590,7 +622,7 @@ func rebuild_overlay() -> void:
 				add_label(ribbon,rarity_label.to_upper(),13,color)
 				var icon:=TextureRect.new()
 				icon.texture=UI.atlas(UI.RELICS,int(item[4]))
-				icon.custom_minimum_size=Vector2(0,112)
+				icon.custom_minimum_size=Vector2(0,144)
 				icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE
 				icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 				icon.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
@@ -608,8 +640,11 @@ func rebuild_overlay() -> void:
 				button.focus_exited.connect(func(): animate_relic_card(card,card_style,color,false))
 		"pause":
 			add_label(column,tr_text("EXPEDITION PAUSED","EXPEDITION PAUSIERT"),30,GOLD)
-			add_button(column,tr_text("Continue","Fortsetzen"),func(): paused=false)
-			add_button(column,tr_text("Abandon run / Main menu","Run aufgeben / Hauptmenü"),return_to_menu)
+			add_label(column,tr_text("Your expedition is frozen. Take your time.","Deine Expedition ist angehalten."),16,MUTED)
+			var resume:=add_button(column,tr_text("Continue  ›","Fortsetzen  ›"),func(): paused=false)
+			UI.style_button(resume,GOLD,true)
+			var abandon:=add_button(column,tr_text("Abandon run / Main menu","Run aufgeben / Hauptmenü"),return_to_menu)
+			UI.style_button(abandon,Color("#da8297"))
 		"victory","defeat":
 			var won := overlay_state=="victory"
 			add_label(column,tr_text("VAULT CONQUERED","GEWÖLBE EROBERT") if won else tr_text("THE DEPTHS CLAIM YOU","DIE TIEFEN FORDERN DICH"),30,GOLD if won else Color("#f095a9"))
@@ -622,7 +657,7 @@ func rebuild_overlay() -> void:
 
 func animate_relic_card(card: Control, style: StyleBoxFlat, color: Color, hovered: bool) -> void:
 	if not is_instance_valid(card): return
-	var tween:=create_tween().set_parallel(true)
+	var tween:=card.create_tween().set_parallel(true)
 	tween.tween_property(style,"shadow_color",Color(color,0.45) if hovered else Color(0,0,0,0.6),0.16)
 	tween.tween_property(style,"bg_color",Color("#211a30").lerp(color,0.20 if hovered else 0.10),0.16)
 	tween.tween_property(card,"modulate",Color(1.06,1.06,1.06) if hovered else Color.WHITE,0.16)
