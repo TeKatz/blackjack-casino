@@ -6,6 +6,8 @@ var essence := 0
 var attempts := 0
 var wins := 0
 var total_kills := 0
+var elite_kills := 0
+var achievements: Array[String] = []
 var unlocked: Array[String] = ["warden_guard"]
 var ranks := {"vitality":0,"power":0,"agility":0,"alchemy":0}
 var discovered: Array[String] = []
@@ -21,6 +23,11 @@ func load_save() -> void:
 	attempts = maxi(0,int(cfg.get_value("profile","attempts",0)))
 	wins = clampi(int(cfg.get_value("profile","wins",0)),0,attempts)
 	total_kills = maxi(0,int(cfg.get_value("profile","kills",0)))
+	elite_kills=maxi(0,int(cfg.get_value("profile","elites",0)))
+	var saved_achievements: Variant=cfg.get_value("profile","achievements",[])
+	if saved_achievements is Array:
+		for id in saved_achievements:
+			if id is String and not achievements.has(id): achievements.append(id)
 	var saved: Variant = cfg.get_value("profile","unlocked",[])
 	if saved is Array:
 		for id in saved:
@@ -40,6 +47,8 @@ func save() -> bool:
 	cfg.set_value("profile","attempts",attempts)
 	cfg.set_value("profile","wins",wins)
 	cfg.set_value("profile","kills",total_kills)
+	cfg.set_value("profile","elites",elite_kills)
+	cfg.set_value("profile","achievements",achievements)
 	cfg.set_value("profile","unlocked",unlocked)
 	cfg.set_value("profile","discovered",discovered)
 	cfg.set_value("profile","selected",selected)
@@ -53,8 +62,15 @@ func settle(run) -> int:
 	run.settled = true
 	attempts += 1
 	total_kills += run.kills
+	elite_kills+=run.elites
+	if elite_kills>=5 and not achievements.has("elite_hunter"):
+		achievements.append("elite_hunter")
+		essence+=25
+	if run.state=="victory" and not achievements.has("depths_conquered"):
+		achievements.append("depths_conquered")
+		if not unlocked.has("arcanist_fire"): unlocked.append("arcanist_fire")
 	if run.state == "victory": wins += 1
-	last_reward = int(run.shards/3.0)+run.room*4+(25 if run.state=="victory" else 0)
+	last_reward = int(run.shards/3.0)+maxi(0,run.visited_count-1)*4+(25 if run.state=="victory" else 0)
 	essence += last_reward
 	for id in run.relics:
 		if not discovered.has(id): discovered.append(id)
@@ -72,6 +88,7 @@ func buy_upgrade(key: String) -> bool:
 func unlock_set(id: String) -> bool:
 	if not Content.SETS.has(id) or unlocked.has(id): return false
 	if id=="dealer_joker" and not unlocked.has("dealer_cards"): return false
+	if id=="arcanist_frost" and not unlocked.has("arcanist_fire"): return false
 	var price: int = Content.SETS[id].cost
 	if essence<price: return false
 	essence -= price

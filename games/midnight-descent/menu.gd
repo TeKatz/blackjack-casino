@@ -130,10 +130,10 @@ func update_preview() -> void:
 		"home":
 			preview_title.text = tr_text("THE FORGOTTEN VAULT","DAS VERGESSENE GEWÖLBE")
 			preview_detail.text = tr_text("Beneath the club, the old gate waits.","Unter dem Club wartet das alte Tor.")
-			preview_info.text = tr_text("5 rooms  •  16 relics  •  4 starting sets","5 Räume  •  16 Relikte  •  4 Start-Sets")
+			preview_info.text = tr_text("2 floors  •  40 relics  •  6 starting sets","2 Ebenen  •  40 Relikte  •  6 Start-Sets")
 		"expedition","sets":
 			var spec: Dictionary = Content.SETS[progress.selected]
-			preview_title.text = tr_text("WARDEN","WÄCHTER") if spec.character=="warden" else "DEALER"
+			preview_title.text = tr_text("WARDEN","WÄCHTER") if spec.character=="warden" else ("DEALER" if spec.character=="dealer" else tr_text("ARCANIST","ARKANIST"))
 			preview_sprite.texture = atlas_icon(PixelWorld.ACTORS[spec.character],Rect2(0,0,32,32))
 			preview_detail.text = Content.loadout_display_name(progress.selected,german)
 			preview_info.text = tr_text("Base HP / main / special","Basis-LP / Haupt / Spezial")+"  %d / %d / %d" % [spec.hp,spec.damage,spec.bolt]
@@ -177,7 +177,7 @@ func toggle_motion(value: bool) -> void:
 func add_action(caption: String, callback: Callable, locked: bool = false) -> Button:
 	var button := Button.new()
 	button.text = caption
-	button.custom_minimum_size = Vector2(0, 44)
+	button.custom_minimum_size = Vector2(0, 40)
 	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	button.add_theme_font_size_override("font_size", 19)
 	button.add_theme_color_override("font_color", LIGHT)
@@ -240,8 +240,8 @@ func show_page(next: String) -> void:
 				var spec: Dictionary = Content.SETS[id]
 				var set_key: String = id
 				var owned: bool = progress.unlocked.has(id)
-				var locked: bool = owned or progress.essence<int(spec.cost) or (id=="dealer_joker" and not progress.unlocked.has("dealer_cards"))
-				var caption := (tr_text("Warden","Wächter") if spec.character=="warden" else "Dealer")+"  /  "+Content.loadout_display_name(id,german)
+				var locked: bool = owned or progress.essence<int(spec.cost) or (id=="dealer_joker" and not progress.unlocked.has("dealer_cards")) or (id=="arcanist_frost" and not progress.unlocked.has("arcanist_fire"))
+				var caption := (tr_text("Warden","Wächter") if spec.character=="warden" else ("Dealer" if spec.character=="dealer" else tr_text("Arcanist","Arkanist")))+"  /  "+Content.loadout_display_name(id,german)
 				caption += "  •  "+(tr_text("Owned","Freigeschaltet") if owned else str(spec.cost))
 				add_action(caption,func(): buy_set(set_key),locked)
 			add_action(tr_text("Back","Zurück"),func(): show_page("progress"))
@@ -252,7 +252,7 @@ func show_page(next: String) -> void:
 			for i in range(codex_page*6,mini(codex_page*6+6,ids.size())):
 				var id: String = ids[i]
 				codex_entry(int(Content.RELICS[id][4]),Content.relic_text(id,german))
-			add_action(tr_text("Next page","Nächste Seite")+"  %d/3" % (codex_page+1),func(): next_codex())
+			add_action(tr_text("Next page","Nächste Seite")+"  %d/7" % (codex_page+1),func(): next_codex())
 			add_action(tr_text("Back","Zurück"),func(): show_page("home"))
 		"settings":
 			detail_label.text = tr_text("Adjust the standalone game window.", "Passe das eigenständige Spielfenster an.")
@@ -297,7 +297,7 @@ func buy_set(id: String) -> void:
 		show_page("sets")
 
 func next_codex() -> void:
-	codex_page = (codex_page+1)%3
+	codex_page = (codex_page+1)%7
 	show_page("codex")
 
 func toggle_fullscreen() -> void:
@@ -319,7 +319,7 @@ func smoke_test() -> void:
 		get_tree().quit(2)
 		return
 	show_page("sets")
-	if action_buttons.size()!=5:
+	if action_buttons.size()!=7:
 		get_tree().quit(3)
 		return
 	show_page("codex")

@@ -60,7 +60,7 @@ func tr_text(en: String, de: String) -> String:
 	return de if german else en
 
 func _physics_process(dt: float) -> void:
-	if paused or run.state in ["reward","victory","defeat"]:
+	if paused or run.state in ["reward","victory","defeat","route","service"]:
 		return
 	var direction := Vector2(float(Input.is_physical_key_pressed(KEY_D) or Input.is_physical_key_pressed(KEY_RIGHT))-float(Input.is_physical_key_pressed(KEY_A) or Input.is_physical_key_pressed(KEY_LEFT)), float(Input.is_physical_key_pressed(KEY_S) or Input.is_physical_key_pressed(KEY_DOWN))-float(Input.is_physical_key_pressed(KEY_W) or Input.is_physical_key_pressed(KEY_UP)))
 	var dash := Input.is_physical_key_pressed(KEY_SPACE)
@@ -127,13 +127,13 @@ func _draw() -> void:
 		return
 	var gate: Vector2 = Model.EXIT
 	if run.state == "exit":
-		text_at(gate+Vector2(-86,76),tr_text("E  •  Descend","E  •  Absteigen"),16,GOLD)
+		text_at(gate+Vector2(-86,76),tr_text("E  •  Map","E  •  Karte"),16,GOLD)
 	# Attack telegraphs and projectiles remain above the pixel-world layer.
 	for enemy in run.enemies:
 		var pos: Vector2 = enemy.pos
 		if enemy.wind > 0:
-			var rad: float = 126.0 if enemy.kind=="boss" else float(enemy.r)+44
-			if enemy.kind=="caster":
+			var rad: float = 126.0 if enemy.kind in ["boss","rootking"] else float(enemy.r)+44
+			if enemy.kind in ["caster","archer","spore"]:
 				draw_line(pos,enemy.target,Color(1,0.32,0.44,0.45),3,true)
 			else:
 				draw_circle(pos,rad,Color(0.95,0.15,0.3,0.12))
@@ -177,7 +177,7 @@ func run_scene_smoke() -> void:
 		return
 	select_relic(0)
 	run.player = Model.EXIT
-	if not run.next_room():
+	if not run.next_room() or not run.travel(1):
 		get_tree().quit(8)
 		return
 	paused = true
@@ -249,8 +249,8 @@ func draw_hud() -> void:
 	hud_panel(Rect2(438,10,368,84),VIOLET)
 	hud_panel(Rect2(821,10,442,84))
 	draw_texture_rect_region(PixelWorld.ACTORS[run.character],Rect2(29,23,64,64),Rect2(0,0,32,32))
-	text_at(Vector2(99,30),tr_text("THE FORGOTTEN VAULT","DAS VERGESSENE GEWÖLBE"),13,GOLD)
-	text_at(Vector2(99,55),(tr_text("WARDEN","WÄCHTER") if run.character=="warden" else "DEALER"),23,WHITE)
+	text_at(Vector2(99,30),(tr_text("THE FORGOTTEN VAULT","DAS VERGESSENE GEWÖLBE") if run.floor_index==0 else tr_text("THE ABYSS GARDEN","DER ABGRUNDGARTEN")),13,GOLD)
+	text_at(Vector2(99,55),(tr_text("WARDEN","WÄCHTER") if run.character=="warden" else ("DEALER" if run.character=="dealer" else tr_text("ARCANIST","ARKANIST"))),23,WHITE)
 	meter(Rect2(99,68,235,13),displayed_hp/run.max_hp,Color("#a94565"))
 	var health_width := 235.0*clampf(run.hp/run.max_hp,0,1)
 	if health_width > 0:
@@ -258,12 +258,12 @@ func draw_hud() -> void:
 		draw_rect(Rect2(99,68,health_width,2),Color("#ffb0bc"))
 	text_at(Vector2(343,80),"%d/%d" % [run.hp,run.max_hp],15,WHITE)
 	text_at(Vector2(460,31),tr_text("EXPEDITION","EXPEDITION"),12,MUTED)
-	text_at(Vector2(460,54),tr_text("ROOM","RAUM")+"  %d / %d" % [run.room+1,Model.ROOM_COUNT],21,GOLD)
+	text_at(Vector2(460,54),tr_text("FLOOR","EBENE")+"  %d / 2" % (run.floor_index+1),21,GOLD)
 	for i in range(Model.ROOM_COUNT):
-		var center := Vector2(486+i*64,76)
-		if i<Model.ROOM_COUNT-1: draw_line(center,center+Vector2(64,0),Color("#654e75"),2)
+		var center := Vector2(469+i*34,76)
+		if i<Model.ROOM_COUNT-1: draw_line(center,center+Vector2(34,0),Color("#654e75"),2)
 		var points := PackedVector2Array([center+Vector2(0,-9),center+Vector2(9,0),center+Vector2(0,9),center+Vector2(-9,0)])
-		draw_colored_polygon(points,GOLD if i<=run.room else Color("#3b2d50"))
+		draw_colored_polygon(points,GOLD if run.dungeon.nodes[i].visited else Color("#3b2d50"))
 		draw_polyline(PackedVector2Array([points[0],points[1],points[2],points[3],points[0]]),Color("#b6a0bf"),1,true)
 		if i==run.room: draw_circle(center,14,Color(1,0.77,0.36,0.14+sin(clock*4)*0.06))
 	text_at(Vector2(844,33),tr_text("SHARDS","SPLITTER"),12,MUTED)
@@ -273,10 +273,10 @@ func draw_hud() -> void:
 	text_at(Vector2(1100,33),tr_text("RUN TIME","RUN-ZEIT"),12,MUTED)
 	text_at(Vector2(1100,59),"%02d:%02d" % [int(run.elapsed)/60,int(run.elapsed)%60],24,WHITE)
 	text_at(Vector2(1100,79),"ESC  "+tr_text("Pause","Pause"),12,MUTED)
-	ability_slot(18,0,"LMB" if not german else "LMT",(tr_text("Card","Karte") if run.character=="dealer" else tr_text("Sword","Schwert")),1.0-run.attack_timer/run.attack_cd,GOLD)
+	ability_slot(18,0,"LMB" if not german else "LMT",(tr_text("Card","Karte") if run.character=="dealer" else (tr_text("Magic","Magie") if run.character=="arcanist" else tr_text("Sword","Schwert"))),1.0-run.attack_timer/run.attack_cd,GOLD)
 	ability_slot(184,3,"RMB" if not german else "RMT",(tr_text("Sweep","Wirbel") if run.set_id=="warden_executioner" else tr_text("Bolt","Geschoss")),1.0-run.bolt_timer/run.special_cd,Color("#72cadf"))
 	ability_slot(350,2,"SPACE" if not german else "LEER", "Dash",1.0-run.dash_timer/run.dash_cooldown,VIOLET)
-	ability_slot(516,1,"Q",tr_text("Heal","Heilung"),1.0-run.active_timer/24.0,Color("#e8899b"))
+	ability_slot(516,1,"Q",active_name(),1.0-run.active_timer/run.active_cd,Color("#e8899b"))
 	hud_panel(Rect2(683,659,580,53),VIOLET)
 	text_at(Vector2(695,679),tr_text("RELICS","RELIKTE")+"  %d" % run.relics.size(),13,GOLD)
 	text_at(Vector2(695,699),tr_text("WASD / E  Move / Gate","WASD / E  Bewegung / Tor"),11,MUTED)
@@ -287,11 +287,11 @@ func draw_hud() -> void:
 		if i<run.relics.size():
 			var index: int = Content.RELICS[run.relics[i]][4]
 			if index>=0: draw_texture_rect_region(PixelWorld.RELICS,rect,Rect2(index*24,0,24,24))
-	if run.state=="fight" and run.room==Model.ROOM_COUNT-1:
+	if run.state=="fight" and run.room_kind=="boss":
 		for enemy in run.enemies:
 			if enemy.kind=="boss":
 				hud_panel(Rect2(415,107,450,37),Color("#ed7c9e"))
-				text_at(Vector2(434,123),tr_text("THE VAULT KEEPER","DER TRESORWÄCHTER"),15,Color("#ff91bd"))
+				text_at(Vector2(434,123),(tr_text("THE VAULT KEEPER","DER TRESORWÄCHTER") if run.floor_index==0 else tr_text("THE ROOT KING","DER WURZELKÖNIG")),15,Color("#ff91bd"))
 				meter(Rect2(434,130,412,7),float(enemy.hp)/float(enemy.max_hp),Color("#e36b86"))
 				break
 	if room_banner>0 and run.state=="fight":
@@ -364,11 +364,58 @@ func select_relic(index: int) -> void:
 	if run.choose_relic(index):
 		play_sound("relic")
 
+func active_name() -> String:
+	match run.active_item:
+		"time": return tr_text("Time","Zeit")
+		"bomb": return tr_text("Bomb","Bombe")
+		"shield": return tr_text("Ward","Schutz")
+		"dice": return tr_text("Dice","Würfel")
+		"mirror": return tr_text("Mirror","Spiegel")
+	return tr_text("Heal","Heilung")
+
+func room_name(kind: String) -> String:
+	match kind:
+		"fight": return tr_text("Combat","Kampf")
+		"elite": return "Elite"
+		"treasure": return tr_text("Treasure","Schatz")
+		"shop": return tr_text("Merchant","Händler")
+		"event": return tr_text("Event","Ereignis")
+		"shrine": return tr_text("Shrine","Heiligtum")
+		"secret": return tr_text("Secret","Geheimnis")
+		"boss": return "Boss"
+	return kind
+
+func use_service(choice: int) -> void:
+	if run.service_action(choice):
+		overlay_state=""
+		rebuild_overlay()
+
+func show_route_map(column: VBoxContainer) -> void:
+	add_label(column,tr_text("DUNGEON MAP","DUNGEON-KARTE")+"  •  "+str(run.floor_index+1),27,GOLD)
+	add_label(column,tr_text("Choose a connected room. Cleared rooms can be revisited.","Wähle einen verbundenen Raum. Gesäuberte Räume sind erneut betretbar."),16,MUTED)
+	var grid := GridContainer.new()
+	grid.columns=2
+	grid.add_theme_constant_override("h_separation",10)
+	grid.add_theme_constant_override("v_separation",8)
+	column.add_child(grid)
+	for i in range(run.dungeon.nodes.size()):
+		var id: int = i
+		var node: Dictionary=run.dungeon.nodes[i]
+		var caption := "%02d  " % (i+1)+room_name(node.kind)
+		if i==run.room: caption+="  •  "+tr_text("HERE","HIER")
+		elif node.cleared: caption+="  ✓"
+		var button:=add_button(grid,caption,func(): run.travel(id))
+		button.custom_minimum_size=Vector2(300,42)
+		button.disabled=not run.route_options().has(i)
+	if run.room_kind=="boss" and run.floor_index==0 and run.dungeon.nodes[run.room].cleared:
+		add_button(column,tr_text("Descend to the Abyss Garden","Abstieg in den Abgrundgarten"),func(): run.descend())
+	add_button(column,tr_text("Close map","Karte schließen"),func(): run.state="exit")
+
 func rebuild_overlay() -> void:
 	for child in overlay.get_children():
 		overlay.remove_child(child)
 		child.queue_free()
-	if overlay_state not in ["pause","reward","victory","defeat"]:
+	if overlay_state not in ["pause","reward","victory","defeat","route","service"]:
 		return
 	var shade := ColorRect.new()
 	shade.color = Color(0.035,0.025,0.065,0.82)
@@ -397,12 +444,35 @@ func rebuild_overlay() -> void:
 	column.add_theme_constant_override("separation",14)
 	panel.add_child(column)
 	match overlay_state:
+		"route":
+			show_route_map(column)
+		"service":
+			add_label(column,room_name(run.room_kind).to_upper(),30,GOLD)
+			add_label(column,tr_text("Shards","Splitter")+"  "+str(run.shards),18,MUTED)
+			match run.room_kind:
+				"treasure","secret":
+					add_button(column,tr_text("Choose a relic","Relikt wählen"),func(): use_service(0))
+					add_button(column,tr_text("Find a new active item","Neues aktives Item finden"),func(): use_service(1))
+				"shop":
+					var relic_button:=add_button(column,tr_text("Relic offer — 12 shards","Reliktangebot — 12 Splitter"),func(): use_service(0))
+					relic_button.disabled=run.shards<12
+					var heal_button:=add_button(column,tr_text("Heal 35 — 8 shards","35 LP heilen — 8 Splitter"),func(): use_service(1))
+					heal_button.disabled=run.shards<8
+					var item_button:=add_button(column,tr_text("Active item — 10 shards","Aktives Item — 10 Splitter"),func(): use_service(2))
+					item_button.disabled=run.shards<10
+					add_button(column,tr_text("Leave","Verlassen"),func(): use_service(3))
+				"event":
+					add_button(column,tr_text("Sacrifice 15 HP for a relic","Opfere 15 LP für ein Relikt"),func(): use_service(0))
+					add_button(column,tr_text("Take 8 shards","8 Splitter nehmen"),func(): use_service(1))
+				"shrine":
+					add_button(column,tr_text("Recover 40 HP","40 LP regenerieren"),func(): use_service(0))
+					add_button(column,tr_text("Gain 10 max HP","10 maximale LP erhalten"),func(): use_service(1))
 		"reward":
 			add_label(column,tr_text("ROOM CLEARED","RAUM GESÄUBERT"),30,GOLD)
-			add_label(column,tr_text("Choose a relic. Recover 12 HP and unlock the next gate.","Wähle ein Relikt. Heile 12 LP und öffne das nächste Tor."),17,MUTED)
+			add_label(column,tr_text("Choose a relic. Recover 12 HP and open the route map.","Wähle ein Relikt. Heile 12 LP und öffne die Karte."),17,MUTED)
 			for i in range(run.offers.size()):
 				var index := i
-				var button := add_button(column,"%d  ·  %s" % [i+1,relic_description(run.offers[i])],func(): select_relic(index))
+				var button := add_button(column,"%d  ·  %s" % [i+1,relic_description(run.offers[i])+"  ["+["C","R","E","L"][Content.rarity(run.offers[i])]+"]"],func(): select_relic(index))
 				var icon := AtlasTexture.new()
 				icon.atlas = PixelWorld.RELICS
 				icon.region = Rect2(int(Content.RELICS[run.offers[i]][4])*24,0,24,24)
@@ -416,7 +486,7 @@ func rebuild_overlay() -> void:
 		"victory","defeat":
 			var won := overlay_state=="victory"
 			add_label(column,tr_text("VAULT CONQUERED","GEWÖLBE EROBERT") if won else tr_text("THE DEPTHS CLAIM YOU","DIE TIEFEN FORDERN DICH"),30,GOLD if won else Color("#f095a9"))
-			add_label(column,tr_text("Run summary","Run-Zusammenfassung")+"\n"+tr_text("Rooms","Räume")+"  %d / %d  •  " % [run.room+1,Model.ROOM_COUNT]+tr_text("Defeated","Besiegt")+"  %d  •  " % run.kills+tr_text("Relics","Relikte")+"  %d" % run.relics.size(),19,WHITE)
+			add_label(column,tr_text("Run summary","Run-Zusammenfassung")+"\n"+tr_text("Rooms visited","Räume besucht")+"  %d  •  " % run.visited_count+tr_text("Defeated","Besiegt")+"  %d  •  " % run.kills+tr_text("Relics","Relikte")+"  %d" % run.relics.size(),19,WHITE)
 			add_label(column,tr_text("Soul essence earned","Seelenessenz erhalten")+"  +%d" % progress.last_reward,24,GOLD)
 			add_label(column,tr_text("Total essence","Essenz gesamt")+"  %d" % progress.essence,16,MUTED)
 			if not progress.save_ok: add_label(column,tr_text("Save failed — progress not saved.","Speicherfehler — Fortschritt nicht gespeichert."),16,Color("#ff839a"))

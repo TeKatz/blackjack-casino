@@ -193,6 +193,11 @@ func _draw() -> void:
 	for i in range(28):
 		var pos := Vector2(70+fposmod(i*149+clock*(6+i%4),1138),160+fposmod(i*71-clock*9,450))
 		draw_rect(Rect2(pixel_pos(pos),Vector2(2,2)),Color(0.85,0.65,0.43,0.16+0.12*sin(clock*2+i)))
+	if model.floor_index==1:
+		for i in range(24):
+			var pos := Vector2(66+(i*173)%1140,154+(i*97)%460)
+			draw_rect(Rect2(pos,Vector2(10,4)),Color("#486b46"))
+			draw_rect(Rect2(pos+Vector2(3,-5),Vector2(4,8)),Color("#75a65f"))
 	# Gate is drawn as stone architecture, with an illuminated open portal.
 	var gate: Vector2 = Model.EXIT
 	tile(6,Rect2(gate-Vector2(22,54),Vector2(48,108)))
