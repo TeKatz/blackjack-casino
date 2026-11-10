@@ -1,5 +1,5 @@
 import {useEffect,useMemo,useState} from 'react';
-import type {FormEvent,FocusEvent,MouseEvent} from 'react';
+import type {CSSProperties,FormEvent,FocusEvent,MouseEvent} from 'react';
 import {ResearchLattice} from './EmpireCommandPixi';
 import {commandProgress,researchCoordinates} from './commandCenterModel';
 import {decimalInput,display,fractionToPercent,percentToFraction} from './empireBridge';
@@ -46,10 +46,10 @@ function ResearchConsole({economy,language,t,disabled,motion,onAction,onHover,on
         const complete=item.rank===item.maxRank;
         return <button type="button" key={item.id} className={'cc-research-node '+(complete?'is-complete ':item.canBuy?'is-available ':'is-locked ')+(focus===item.id?'is-focused':'')}
           style={{left:at.x+'%',top:at.y+'%'}} data-testid={'cc-research-'+item.id}
-          disabled={disabled||!item.canBuy}
+          disabled={disabled} aria-disabled={!item.canBuy}
           onMouseEnter={event=>handleEnter(event,item)} onMouseLeave={()=>{setFocus(null);onLeave();}}
           onFocus={event=>handleEnter(event,item)} onBlur={()=>{setFocus(null);onLeave();}}
-          onClick={()=>{onLeave();onAction({action:'research',id:item.id});}}>
+          onClick={()=>{if(item.canBuy){onLeave();onAction({action:'research',id:item.id});}}}>
           <span className="cc-node-emblem">{complete?'✦':item.canBuy?'◇':'◆'}</span>
           <strong>{t(item.name)}</strong>
           <small>{de?'Rang':'Rank'} {item.rank}/{item.maxRank}</small>
@@ -72,11 +72,11 @@ function ProjectConsole({economy,language,t,disabled,onAction,onHover,onLeave}:O
     <div className="cc-project-grid">
       {economy.projects.map((project,i)=><button type="button" key={project.id}
         className={'cc-project '+(project.owned?'is-complete':project.canBuy?'is-available':'is-locked')}
-        data-testid={'cc-project-'+project.id} disabled={disabled||!project.canBuy}
+        data-testid={'cc-project-'+project.id} disabled={disabled} aria-disabled={!project.canBuy}
         onMouseEnter={e=>onHover(e,project.canBuy?{action:'project',id:project.id}:null,t(project.name),t(project.description)+' · '+t(project.requirement),project.cost+' cr')}
         onMouseLeave={onLeave}
         onFocus={e=>onHover(e,project.canBuy?{action:'project',id:project.id}:null,t(project.name),t(project.description),project.cost+' cr')}
-        onBlur={onLeave} onClick={()=>{onLeave();onAction({action:'project',id:project.id});}}>
+        onBlur={onLeave} onClick={()=>{if(project.canBuy){onLeave();onAction({action:'project',id:project.id});}}}>
         <span className="cc-project-symbol">{project.owned?'✓':i%4===0?'◈':i%4===1?'⬡':i%4===2?'✧':'◇'}</span>
         <span className="cc-project-info"><strong>{t(project.name)}</strong><small>{project.owned?(de?'Fertiggestellt':'Complete'):project.canBuy?(de?'Jetzt finanzierbar':'Ready to fund'):t(project.requirement)|| (de?'Noch nicht verfügbar':'Locked')}</small></span>
         <span className="cc-project-price">{project.owned?'✓':display(project.cost,language)+' cr'}</span>
@@ -101,7 +101,7 @@ function StaffConsole({economy,language,t,disabled,onAction,onHover,onLeave}:Omi
         {managers.map((manager,i)=><button key={manager.id} type="button" className="cc-manager"
           aria-pressed={manager.id===managerId} data-testid={'cc-manager-'+manager.id}
           onClick={()=>{setManagerId(manager.id);onLeave();}}>
-          <span className="cc-manager-avatar" style={{'--portrait-accent':['#e6bf82','#88c5b1','#b4a0df','#d8a5b4'][i%4]} as React.CSSProperties}>
+          <span className="cc-manager-avatar" style={{'--portrait-accent':['#e6bf82','#88c5b1','#b4a0df','#d8a5b4'][i%4]} as CSSProperties}>
             {manager.name.split(' ').map(v=>v[0]).join('')}</span>
           <span><strong>{manager.name}</strong><small>{t(manager.role)}</small><small className="cc-manager-assigned">{manager.assignment?t(economy.rooms.find(r=>r.id===manager.assignment)?.name??manager.assignment):de?'Nicht zugewiesen':'Unassigned'}</small></span>
           <span className={'cc-mini-dot '+(manager.assignment?'active':'')}/>
@@ -116,12 +116,12 @@ function StaffConsole({economy,language,t,disabled,onAction,onHover,onLeave}:Omi
             const current=selected?.assignment===room.id;
             const allowed=!!selected&&(selected.available||!!selected.assignment)&&room.level>0&&!current;
             return <button type="button" key={room.id} data-testid={'cc-target-'+room.id}
-              className={'cc-target '+(current?'is-current':'')} disabled={disabled||!allowed}
+              className={'cc-target '+(current?'is-current':'')} disabled={disabled} aria-disabled={!allowed}
               onMouseEnter={event=>onHover(event,allowed?{action:'manager',id:selected?.id,roomId:room.id}:null,
                 t(room.name),de?'Manager diesem Betrieb zuweisen':'Assign manager to department')}
               onMouseLeave={onLeave}
               onFocus={event=>onHover(event,allowed?{action:'manager',id:selected?.id,roomId:room.id}:null,t(room.name))}
-              onBlur={onLeave} onClick={()=>{if(selected){onLeave();onAction({action:'manager',id:selected.id,roomId:room.id});}}}>
+              onBlur={onLeave} onClick={()=>{if(selected&&allowed){onLeave();onAction({action:'manager',id:selected.id,roomId:room.id});}}}>
               <span>{current?'●':'○'}</span><strong>{t(room.name)}</strong><small>{room.level>0?'Lv. '+room.level:'◆'}</small>
             </button>;
           })}
@@ -209,11 +209,11 @@ function ExpansionConsole({economy,language,t,disabled,onAction,onHover,onLeave}
     <div className="cc-section-label">{de?'CASINO-PORTFOLIO':'CASINO PORTFOLIO'}</div>
     <div className="cc-property-grid">
       {economy.properties.map((property,i)=><button key={property.id} type="button" className={'cc-property '+(property.id===economy.activePropertyId?'is-selected':'')}
-        disabled={disabled||(property.owned?property.id===economy.activePropertyId:!property.canBuy)}
+        disabled={disabled} aria-disabled={property.owned?property.id===economy.activePropertyId:!property.canBuy}
         onMouseEnter={e=>onHover(e,property.canBuy?{action:'property.buy',id:property.id}:null,
           t(property.name),t(property.description)+' · '+t(property.requirement),property.owned?undefined:property.cost+' cr')}
         onMouseLeave={onLeave} onFocus={e=>onHover(e,null,t(property.name),t(property.description))} onBlur={onLeave}
-        onClick={()=>{onLeave();onAction({action:property.owned?'property.select':'property.buy',id:property.id});}}>
+        onClick={()=>{if(property.owned?property.id!==economy.activePropertyId:property.canBuy){onLeave();onAction({action:property.owned?'property.select':'property.buy',id:property.id});}}}>
         <span className="cc-property-monogram">{['♜','◈','♛','✧'][i%4]}</span>
         <span><strong>{t(property.name)}</strong><small>{property.owned?'P'+property.state?.prestige+' · '+(de?'Im Besitz':'Owned'):display(property.cost,language)+' cr'}</small></span>
         <span className="cc-property-verb">{property.id===economy.activePropertyId?'●':property.owned?'↗':'+'}</span>
@@ -272,12 +272,12 @@ function RoomConsole({economy,language,t,roomId,disabled,onAction,onHover,onLeav
     </div>
     <div className="cc-section-label">{de?'DIREKT INVESTIEREN':'QUICK INVEST'}</div>
     <div className="cc-room-quote-grid">{room.quotes.map(q=><button key={q.requestedLevels} type="button"
-      disabled={disabled||!q.canBuy} className="cc-quote"
+      disabled={disabled} aria-disabled={!q.canBuy} className="cc-quote"
       onMouseEnter={ev=>onHover(ev,{action:'upgrade',id:room.id,levels:q.requestedLevels},t(room.name)+' ×'+q.requestedLevels,undefined,q.cost+' cr')}
       onMouseLeave={onLeave}
       onFocus={ev=>onHover(ev,{action:'upgrade',id:room.id,levels:q.requestedLevels},t(room.name)+' ×'+q.requestedLevels,undefined,q.cost+' cr')}
       onBlur={onLeave}
-      onClick={()=>{onLeave();onAction({action:'upgrade',id:room.id,levels:q.requestedLevels});}}>
+      onClick={()=>{if(q.canBuy){onLeave();onAction({action:'upgrade',id:room.id,levels:q.requestedLevels});}}}>
       <strong>×{q.requestedLevels}</strong><small>{display(q.cost,language)} cr</small>
       </button>)}</div>
     <div className="cc-hint">{t(room.requirement)|| (de?'Jeder zehnte Level verdoppelt die Grundproduktion.':'Every tenth level doubles base production.')}</div>
