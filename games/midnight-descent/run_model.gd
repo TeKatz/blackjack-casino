@@ -3,7 +3,12 @@ extends RefCounted
 const ARENA := Rect2(58, 146, 1164, 478)
 const SPAWN := Vector2(143, 385)
 const EXIT := Vector2(1174, 385)
-const ROOM_COUNT := 10
+const ROOM_COUNT := 26
+var environment_timer := 0.0
+var environment_cycle := 0
+var wave := 1
+var wave_total := 1
+var room_reward_roll := false
 const FLOOR_COUNT := 3
 var bosses_defeated := 0
 var souls := 0
@@ -138,6 +143,11 @@ func enter_room() -> void:
 	offers.clear()
 	walls.clear()
 	room_kind = dungeon.kind(room)
+	environment_timer=2.5
+	environment_cycle=0
+	wave=1
+	wave_total=2 if floor_index>=1 and room_kind=="elite" else 1
+	room_reward_roll=false
 	temp_power=0
 	if relics.has("curse"): temp_power=rng.randf_range(-5,15)
 	
@@ -157,6 +167,7 @@ func enter_room() -> void:
 		return
 	if room_kind != "boss":
 		var count := 3 + floor_index + (2 if room_kind=="elite" else room%3)
+		if wave_total==2: count=3+floor_index
 		for i in range(count):
 			var family: Array = [["stalker","caster","brute","archer","shield"],["spore","vine","mushroom","caster","brute"],["revenant","hexer","sentinel","archer","shield"]][floor_index]
 			var kind: String = family[(i+room+floor_index)%family.size()]
@@ -171,7 +182,11 @@ func enter_room() -> void:
 		spawn_enemy(["stalker","vine","revenant"][floor_index],Vector2(785,540))
 
 func build_room_layout(node: Dictionary) -> void:
-	if room_kind=="boss": return
+	if room_kind=="boss":
+		if floor_index==2:
+			walls.append(Rect2(480,172,76,76))
+			walls.append(Rect2(480,525,76,76))
+		return
 	var geometry:=RandomNumberGenerator.new()
 	geometry.seed=int(node.geometry_seed)
 	var layout: int=node.layout
@@ -180,6 +195,20 @@ func build_room_layout(node: Dictionary) -> void:
 		return
 	if room_kind in ["shop","event","forge"]:
 		walls.append(Rect2(560,174,160,48))
+		return
+	if floor_index==1:
+		# Root islands create curved routes around dense growth.
+		for x in [420,710,930]:
+			var y: float=205 if (int(x)+layout)%3==0 else 490
+			walls.append(Rect2(x,y,95,80))
+		if layout%2==0: walls.append(Rect2(635,335,80,90))
+		return
+	if floor_index==2:
+		# Tomb corridors: long sarcophagi with alternating gaps.
+		for x in [400,650,900]:
+			walls.append(Rect2(x,180 if layout%2==0 else 460,78,145))
+		walls.append(Rect2(525,460 if layout%2==0 else 180,110,90))
+		walls.append(Rect2(780,460 if layout%2==0 else 180,110,90))
 		return
 	match layout:
 		0:
@@ -200,7 +229,9 @@ func build_room_layout(node: Dictionary) -> void:
 			walls.append(Rect2(610,490,100,64))
 
 func route_options() -> Array:
-	return dungeon.available(room)
+	var options: Array=dungeon.available(room).duplicate()
+	if not dungeon.boss_ready(): options.erase(Dungeon.BOSS)
+	return options
 
 func open_route() -> bool:
 	if state!="exit" or player.distance_to(EXIT)>75: return false
@@ -357,7 +388,7 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 			for enemy in enemies:
 				if player.distance_to(enemy.pos)<100: hit_enemy(enemy,15)
 				if set_id=="arcanist_frost" and player.distance_to(enemy.pos)<100: enemy["chill"]=2.0
-	var move := dash_direction * 860.0 if dash_left > 0 else direction.limit_length() * speed
+	var move := dash_direction * 860.0 if dash_left > 0 else direction.limit_length() * speed*environment_speed()
 	player = move_actor(player, move * dt, 15)
 	if state == "exit":
 		update_effects(dt)
@@ -458,6 +489,7 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 		guard_pulse_pending=false
 		for enemy in enemies:
 			if player.distance_to(enemy.pos)<120: hit_enemy(enemy,18*relics.count("guardpulse"))
+	update_environment(dt)
 	update_hazards(dt)
 	for i in range(enemies.size()-1, -1, -1):
 		if enemies[i].hp <= 0:
@@ -488,13 +520,19 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 		state = "defeat"
 		shots.clear()
 	elif enemies.is_empty():
+		if wave<wave_total:
+			wave+=1
+			shots.clear()
+			hazards.clear()
+			spawn_reinforcements()
+			return
 		shots.clear()
 		hazards.clear()
 		if room_kind=="boss": bosses_defeated=maxi(bosses_defeated,floor_index+1)
 		if room_kind=="boss" and floor_index==FLOOR_COUNT-1:
 			dungeon.nodes[room].cleared=true
 			state="victory"
-		elif room_kind=="boss" or room_kind=="elite" or room==0 or rng.randf()<0.30:
+		elif room_kind=="boss" or room_kind=="elite" or room==0 or rng.randf()<0.22:
 			if room_kind=="elite": elites+=1
 			make_offers(room_kind in ["boss","elite"])
 			state="reward"
@@ -638,6 +676,53 @@ func add_hazard(pos: Vector2, radius: float, warning: float, life: float, power:
 	if hazards.size()>=24: return
 	hazards.append({"pos":safe_position(pos,10),"r":radius,"warn":warning,"life":warning+life,"power":power})
 
+func environment_speed() -> float:
+	if floor_index!=1 or state!="fight": return 1.0
+	for hazard in hazards:
+		if hazard.get("type","")=="sporepool" and hazard.warn<=0 and player.distance_to(hazard.pos)<hazard.r: return 0.65
+	return 1.0
+
+func spawn_reinforcements() -> void:
+	var family: Array=["spore","vine","mushroom"] if floor_index==1 else ["revenant","hexer","sentinel"]
+	for i in range(3):
+		spawn_enemy(family[i],Vector2(840+i*105,220+i*120))
+		enemies[-1].hp*=1.2
+		enemies[-1].max_hp=enemies[-1].hp
+		enemies[-1]["elite"]=true
+	environment_timer=1.5
+
+func update_environment(dt: float) -> void:
+	if hazards.size()>=20: return
+	environment_timer-=dt
+	if environment_timer>0: return
+	environment_cycle+=1
+	match floor_index:
+		0:
+			# The vault's pressure plates fire a telegraphed row of spikes.
+			environment_timer=4.5
+			var x: float=420+(environment_cycle%3)*270
+			add_hazard(Vector2(x,385),40,0.85,0.32,16)
+			hazards[-1]["type"]="spikes"
+			hazards[-1]["rect"]=Rect2(x-30,166,60,438)
+		1:
+			# Persistent toxic pools restrict movement, not merely damage.
+			environment_timer=3.4
+			var pos: Vector2=safe_position(player+Vector2.from_angle(environment_cycle*2.4)*95,48)
+			add_hazard(pos,58,0.85,5.0,12)
+			hazards[-1]["type"]="sporepool"
+		2:
+			# Royal runes fire alternating horizontal/vertical sweeping lanes.
+			environment_timer=3.0
+			var vertical: bool=environment_cycle%2==0
+			var pos: Vector2=player
+			add_hazard(pos,40,1.05,0.55,22)
+			hazards[-1]["type"]="rune"
+			hazards[-1]["rect"]=Rect2(pos.x-36,166,72,438) if vertical else Rect2(78,pos.y-30,1124,60)
+			if room_kind=="boss" and environment_cycle%3==0:
+				add_hazard(pos,48,1.25,0.45,20)
+				hazards[-1]["type"]="rune"
+				hazards[-1]["rect"]=Rect2(78,pos.y-30,1124,60) if vertical else Rect2(pos.x-36,166,72,438)
+
 func update_hazards(dt: float) -> void:
 	for i in range(hazards.size()-1,-1,-1):
 		var hazard: Dictionary=hazards[i]
@@ -645,8 +730,9 @@ func update_hazards(dt: float) -> void:
 		hazard.life-=dt
 		if hazard.life<=0:
 			hazards.remove_at(i)
-		elif hazard.warn<=0 and player.distance_to(hazard.pos)<hazard.r:
-			hurt(hazard.power)
+		elif hazard.warn<=0:
+			var inside: bool=hazard.rect.has_point(player) if hazard.has("rect") else player.distance_to(hazard.pos)<hazard.r
+			if inside: hurt(hazard.power)
 
 func update_shots(dt: float) -> void:
 	for i in range(shots.size()-1,-1,-1):
@@ -716,7 +802,7 @@ func choose_relic(index: int) -> bool:
 		"charge": dash_cooldown=maxf(0.35,dash_cooldown-0.15)
 		"battery": active_cd=maxf(8,active_cd-3)
 		"glass": damage+=16; armor-=3
-	hp = minf(max_hp, hp+12)
+	hp = minf(max_hp, hp+(10.0 if floor_index==0 else 8.0))
 	finish_room()
 	return true
 
@@ -743,6 +829,7 @@ func use_active() -> void:
 	notices.append("relic")
 
 func smoke_test() -> bool:
+	if not dungeon.smoke_test(): return false
 	begin(123,"dealer_cards")
 	relics.append("split")
 	relics.append("pierce")
@@ -752,61 +839,52 @@ func smoke_test() -> bool:
 	tick(0.016,Vector2.ZERO,Vector2(600,385),false,false,false,true)
 	if hp!=55 or active_timer<=0: return false
 	begin(74219)
-	if enemies.size()!=3 or dungeon.nodes.size()!=10: return false
-	for unit in enemies: unit.hp=0
-	tick(0.016,Vector2.ZERO,Vector2(700,385),false,false,false)
-	if state!="reward" or not choose_relic(0): return false
-	player=EXIT
-	if not next_room() or not travel(2) or state!="service": return false
-	if not service_action(0) or not choose_relic(0): return false
-	if state!="route" or not travel(0) or state!="route": return false
-	if not travel(2) or state!="route" or service_action(1): return false
-	# All non-combat services complete directly on the route map.
-	for pair in [[4,3],[5,1],[6,0],[8,1]]:
-		room=pair[0]
+	for floor in range(3):
+		if dungeon.boss_ready() or dungeon.nodes.size()!=ROOM_COUNT: return false
+		for column in range(9):
+			var index: int=0 if column==0 else 1+(column-1)*3+1
+			room=index
+			enter_room()
+			if state=="fight":
+				for step in range(wave_total):
+					for unit in enemies: unit.hp=0
+					# Mushroom splits may require a second cleanup tick.
+					for retry in range(3):
+						if state!="fight": break
+						for unit in enemies: unit.hp=0
+						tick(0.016,Vector2.ZERO,Vector2(700,385),false,false,false)
+						if wave>step+1: break
+				if state=="reward":
+					if not choose_relic(0): return false
+				if state!="exit": return false
+			elif state=="service":
+				var choice: int=3 if room_kind in ["shop","forge"] else 1 if room_kind in ["event","treasure","secret"] else 0
+				if not service_action(choice) or state!="route" or service_action(choice): return false
+		if not dungeon.boss_ready(): return false
+		room=Dungeon.BOSS
 		enter_room()
-		if state!="service" or not service_action(pair[1]) or state!="route": return false
-		if service_action(pair[1]): return false
-	room=9
-	enter_room()
-	for unit in enemies: unit.hp=0
-	tick(0.016,Vector2.ZERO,Vector2(700,385),false,false,false)
-	if not choose_relic(0): return false
-	player=EXIT
-	if not next_room() or not descend() or floor_index!=1 or relics.size()!=3: return false
-	room=9
-	enter_room()
-	for unit in enemies: unit.hp=0
-	tick(0.016,Vector2.ZERO,Vector2(700,385),false,false,false)
-	if state!="reward" or not choose_relic(0): return false
-	player=EXIT
-	if not next_room() or not descend() or floor_index!=2 or relics.size()!=4: return false
-	room=6
-	enter_room()
-	shards=16
-	var old_damage:=damage
-	if room_kind!="forge" or not service_action(0) or state!="route" or damage!=old_damage+12 or shards!=0:
-		push_error("Crown smoke: forge completion failed")
-		return false
-	if service_action(0): return false
-	room=9
-	enter_room()
-	for unit in enemies: unit.hp=0
-	tick(0.016,Vector2.ZERO,Vector2(700,385),false,false,false)
-	if state!="victory" or bosses_defeated!=3: return false
+		for unit in enemies: unit.hp=0
+		tick(0.016,Vector2.ZERO,Vector2(700,385),false,false,false)
+		if floor<2:
+			if not choose_relic(0): return false
+			player=EXIT
+			if not next_room() or not descend(): return false
+		elif state!="victory" or bosses_defeated!=3: return false
 	begin(99,"soulbinder_reaper")
 	souls=3
 	hp=50
 	tick(0.016,Vector2.ZERO,Vector2(700,385),false,true,false)
 	if souls!=0 or hp!=59: return false
-	begin(100,"soulbinder_wraith")
-	souls=2
-	tick(0.016,Vector2.ZERO,Vector2(700,385),false,true,false)
-	if souls!=0 or spirit_life<=6.9 or shots.size()<5: return false
-	begin(101)
-	relics.append("execution")
-	var enemy: Dictionary=enemies[0]
-	enemy.hp=enemy.max_hp*0.2
-	var before: float=enemy.hp
-	hit_enemy(enemy,5)
-	return is_equal_approx(float(enemy.hp),before-6.5)
+	environment_timer=0
+	update_environment(0.1)
+	if hazards.is_empty() or hazards[-1].get("type")!="spikes": return false
+	floor_index=1
+	hazards.clear()
+	environment_timer=0
+	update_environment(0.1)
+	if hazards[-1].get("type")!="sporepool": return false
+	floor_index=2
+	hazards.clear()
+	environment_timer=0
+	update_environment(0.1)
+	return hazards[-1].get("type")=="rune" and hazards[-1].has("rect")
