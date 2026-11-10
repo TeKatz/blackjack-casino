@@ -14,7 +14,7 @@ type Props={
   t:(value:string)=>string;onAction:(intent:Intent)=>void;onPreview:(intent:Intent)=>void;
   onClearPreview:()=>void;onClassic:()=>void;onClose:()=>void;onDismissOffline:()=>void;
 };
-type Hover={title:string;detail?:string;cost?:string;x:number;y:number;intent:boolean};
+type Hover={title:string;detail?:string;cost?:string;x:number;y:number;intent:boolean;action:Intent['action']|null};
 
 export function EmpireCommandCenter({snapshot,disabled,pending,notice,preview,motion,t,onAction,onPreview,onClearPreview,onClassic,onClose,onDismissOffline}:Props){
   const economy=snapshot.state.economy,language=snapshot.state.language,de=language==='de';
@@ -61,7 +61,7 @@ export function EmpireCommandCenter({snapshot,disabled,pending,notice,preview,mo
     const width=336;
     const x=Math.max(10,Math.min(window.innerWidth-width-10,box.right+10+width<window.innerWidth?box.right+10:box.left-width-10));
     const y=Math.max(75,Math.min(window.innerHeight-250,box.top+Math.min(box.height,30)));
-    setHover({title,detail,cost,x,y,intent:!!intent});
+    setHover({title,detail,cost,x,y,intent:!!intent,action:intent?.action??null});
     if(intent&&!disabled)onPreview(intent);
     else onClearPreview();
   };
@@ -203,7 +203,7 @@ export function EmpireCommandCenter({snapshot,disabled,pending,notice,preview,mo
         <div className="cc-impact-line"><span>{l('Portfolioeinkommen','Portfolio income')}</span><strong className={gradient(impact.portfolioIncome)}>{signed(impact.portfolioIncome)} cr/s</strong></div>
         {preview.levelAfter!==preview.levelBefore&&<div className="cc-impact-line"><span>{l('Stufe','Level')}</span><strong>{preview.levelBefore} → {preview.levelAfter}</strong></div>}
         {impact.incomePercent!==null&&<div className="cc-impact-line"><span>{l('Portfolio-Veränderung','Portfolio change')}</span><strong className={gradient(impact.portfolioIncome)}>{impact.incomePercent>=0?'+':''}{impact.incomePercent.toFixed(2)}%</strong></div>}
-        {impact.paybackSeconds!==null&&<div className="cc-impact-line"><span>{l('Amortisation (ca.)','Payback (approx.)')}</span><strong>{impact.paybackSeconds<60?impact.paybackSeconds.toFixed(1)+' s':impact.paybackSeconds<3600?(impact.paybackSeconds/60).toFixed(1)+' min':(impact.paybackSeconds/3600).toFixed(1)+' h'}</strong></div>}
+        {impact.paybackSeconds!==null&&['upgrade','project','property.buy'].includes(hover.action??'')&&<div className="cc-impact-line"><span>{l('Amortisation (ca.)','Payback (approx.)')}</span><strong>{impact.paybackSeconds<60?impact.paybackSeconds.toFixed(1)+' s':impact.paybackSeconds<3600?(impact.paybackSeconds/60).toFixed(1)+' min':(impact.paybackSeconds/3600).toFixed(1)+' h'}</strong></div>}
       </>}
       {!hover.intent&&<span className="cc-preview-pending">{l('Weitere Informationen im jeweiligen Modul.','Additional information is available in this module.')}</span>}
     </div>}
