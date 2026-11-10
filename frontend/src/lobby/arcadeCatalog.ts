@@ -46,7 +46,7 @@ export const arcadeGames:readonly ArcadeGame[]=[
  {id:'endless-ascent',name:'Endless Ascent',category:'reaction',symbol:'↑',accent:'#b3caff',difficulty:4,seconds:[30,180],
   controls:{en:'A / D · Arrow keys',de:'A / D · Pfeiltasten'},
   description:{en:'Jump higher. Falling behind ends the run.',de:'Springe immer höher – wer zurückfällt, verliert.'},
-  detail:{en:'Your character jumps automatically. Guide it onto safe platforms as the screen climbs.',de:'Deine Figur springt automatisch. Lenke sie auf sichere Plattformen, während der Bildschirm nach oben wandert.'}},,
+  detail:{en:'Your character jumps automatically. Guide it onto safe platforms as the screen climbs.',de:'Deine Figur springt automatisch. Lenke sie auf sichere Plattformen, während der Bildschirm nach oben wandert.'}},
  {id:'midnight-pinball',name:'Midnight Pinball',category:'precision',symbol:'◉',accent:'#efc88e',difficulty:4,seconds:[45,150],
   controls:{en:'A / D flippers · Space launch',de:'A / D Flipper · Leertaste starten'},
   description:{en:'Three balls, live flippers and luminous score bumpers.',de:'Drei Kugeln, echte Flipper und leuchtende Punkte-Bumper.'},
@@ -72,7 +72,7 @@ export const arcadeGames:readonly ArcadeGame[]=[
   description:{en:'Remember an ever-growing pattern of six lights.',de:'Merke dir immer längere Sequenzen aus sechs Lichtern.'},
   detail:{en:'Watch the lit pads carefully. Repeat the sequence in order using the number keys or mouse. Each round adds another light, but wrong answers and timeouts cost lives.',
    de:'Präge dir die aufleuchtenden Felder ein und wiederhole ihre Reihenfolge mit den Zahlentasten oder der Maus. Jede Runde kommt ein Licht hinzu; Fehler und Zeitablauf kosten Leben.'}},
-]; 
+];
 export const arcadeCategoryNames={
  all:{en:'All games',de:'Alle Spiele'},
  'one-button':{en:'One Button',de:'Eine Taste'},
