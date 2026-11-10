@@ -151,8 +151,8 @@ func _draw() -> void:
 	for enemy in run.enemies:
 		var pos: Vector2 = enemy.pos
 		if enemy.wind > 0:
-			var rad: float = 126.0 if enemy.kind in ["boss","rootking"] else float(enemy.r)+44
-			if enemy.kind in ["caster","archer","spore","vine"]:
+			var rad: float = 126.0 if enemy.kind in ["boss","rootking","hollowking"] else float(enemy.r)+44
+			if enemy.kind in ["caster","archer","spore","vine","hexer"]:
 				draw_line(pos,enemy.target,Color(1,0.32,0.44,0.45),3,true)
 			else:
 				draw_circle(pos,rad,Color(0.95,0.15,0.3,0.12))
@@ -280,16 +280,18 @@ func draw_hud() -> void:
 	hud_panel(Rect2(438,10,368,84),VIOLET)
 	hud_panel(Rect2(821,10,442,84))
 	draw_texture_rect_region(PixelWorld.ACTORS[run.character],Rect2(29,23,64,64),Rect2(0,0,32,32))
-	text_at(Vector2(99,30),(tr_text("THE FORGOTTEN VAULT","DAS VERGESSENE GEWÖLBE") if run.floor_index==0 else tr_text("THE ABYSS GARDEN","DER ABGRUNDGARTEN")),13,GOLD)
-	text_at(Vector2(99,55),(tr_text("WARDEN","WÄCHTER") if run.character=="warden" else ("DEALER" if run.character=="dealer" else tr_text("ARCANIST","ARKANIST"))),23,WHITE)
+	text_at(Vector2(99,30),Content.floor_name(run.floor_index,german).to_upper(),13,GOLD)
+	text_at(Vector2(99,55),Content.character_name(run.character,german).to_upper(),23,WHITE)
 	meter(Rect2(99,68,235,13),displayed_hp/run.max_hp,Color("#a94565"))
 	var health_width := 235.0*clampf(run.hp/run.max_hp,0,1)
 	if health_width > 0:
 		draw_rect(Rect2(99,68,health_width,9),Color("#dc6e87"))
 		draw_rect(Rect2(99,68,health_width,2),Color("#ffb0bc"))
 	text_at(Vector2(343,80),"%d/%d" % [run.hp,run.max_hp],15,WHITE)
+	if run.character=="soulbinder":
+		text_at(Vector2(240,55),tr_text("SOULS","SEELEN")+"  %d/6" % run.souls,13,Color("#8de1cb"))
 	text_at(Vector2(460,31),tr_text("EXPEDITION","EXPEDITION"),12,MUTED)
-	text_at(Vector2(460,54),tr_text("FLOOR","EBENE")+"  %d / 2" % (run.floor_index+1),21,GOLD)
+	text_at(Vector2(460,54),tr_text("FLOOR","EBENE")+"  %d / %d" % [run.floor_index+1,Model.FLOOR_COUNT],21,GOLD)
 	for i in range(Model.ROOM_COUNT):
 		var center := Vector2(469+i*34,76)
 		if i<Model.ROOM_COUNT-1: draw_line(center,center+Vector2(34,0),Color("#654e75"),2)
@@ -304,7 +306,7 @@ func draw_hud() -> void:
 	text_at(Vector2(1100,33),tr_text("RUN TIME","RUN-ZEIT"),12,MUTED)
 	text_at(Vector2(1100,59),"%02d:%02d" % [int(run.elapsed)/60,int(run.elapsed)%60],24,WHITE)
 	text_at(Vector2(1100,79),"ESC  "+tr_text("Pause","Pause"),12,MUTED)
-	ability_slot(18,0,"LMB" if not german else "LMT",(tr_text("Card","Karte") if run.character=="dealer" else (tr_text("Magic","Magie") if run.character=="arcanist" else tr_text("Sword","Schwert"))),1.0-run.attack_timer/run.attack_cd,GOLD)
+	ability_slot(18,0,"LMB" if not german else "LMT",(tr_text("Card","Karte") if run.character=="dealer" else (tr_text("Magic","Magie") if run.character=="arcanist" or run.set_id=="soulbinder_wraith" else (tr_text("Scythe","Sense") if run.character=="soulbinder" else tr_text("Sword","Schwert")))),1.0-run.attack_timer/run.attack_cd,GOLD)
 	ability_slot(184,3,"RMB" if not german else "RMT",(tr_text("Sweep","Wirbel") if run.set_id=="warden_executioner" else tr_text("Bolt","Geschoss")),1.0-run.bolt_timer/run.special_cd,Color("#72cadf"))
 	ability_slot(350,2,"SPACE" if not german else "LEER", "Dash",1.0-run.dash_timer/run.dash_cooldown,VIOLET)
 	ability_slot(516,1,"Q",active_name(),1.0-run.active_timer/run.active_cd,Color("#e8899b"))
@@ -319,12 +321,14 @@ func draw_hud() -> void:
 		draw_rect(rect,Color("#695471"),false,1)
 		if i<run.relics.size():
 			var index: int = Content.RELICS[run.relics[i]][4]
-			if index>=0: draw_texture_rect_region(PixelWorld.RELICS,rect,Rect2(index*48,0,48,48))
+			if index>=0:
+				var icon:=UI.atlas(UI.RELICS,index)
+				draw_texture_rect_region(icon.atlas,rect,icon.region)
 	if run.state=="fight" and run.room_kind=="boss":
 		for enemy in run.enemies:
 			if enemy.kind=="boss":
 				hud_panel(Rect2(415,107,450,37),Color("#ed7c9e"))
-				text_at(Vector2(434,123),(tr_text("THE VAULT KEEPER","DER TRESORWÄCHTER") if run.floor_index==0 else tr_text("THE ROOT KING","DER WURZELKÖNIG")),15,Color("#ff91bd"))
+				text_at(Vector2(434,123),Content.boss_name(run.floor_index,german).to_upper(),15,Color("#ff91bd"))
 				meter(Rect2(434,130,412,7),float(enemy.hp)/float(enemy.max_hp),Color("#e36b86"))
 				break
 	if room_banner>0 and run.state=="fight":
@@ -407,6 +411,7 @@ func room_name(kind: String) -> String:
 		"shrine": return tr_text("Shrine","Heiligtum")
 		"secret": return tr_text("Secret","Geheimnis")
 		"boss": return "Boss"
+		"forge": return tr_text("Forge","Schmiede")
 	return kind
 
 func use_service(choice: int) -> void:
@@ -414,7 +419,7 @@ func use_service(choice: int) -> void:
 		play_sound("relic")
 
 func show_route_map(column: VBoxContainer) -> void:
-	add_label(column,tr_text("DUNGEON MAP","DUNGEON-KARTE")+"  •  "+str(run.floor_index+1)+" / 2",30,GOLD)
+	add_label(column,tr_text("DUNGEON MAP","DUNGEON-KARTE")+"  •  %d / %d" % [run.floor_index+1,Model.FLOOR_COUNT],30,GOLD)
 	add_label(column,tr_text("Gold = current  ·  Lit = reachable  ·  ✓ = cleared","Gold = aktuell  ·  Hell = erreichbar  ·  ✓ = gesäubert"),14,MUTED)
 	add_label(column,tr_text("Choose a connected room. Cleared rooms can be revisited.","Wähle einen verbundenen Raum. Gesäuberte Räume sind erneut betretbar."),16,MUTED)
 	var map := RouteMap.new()
@@ -448,8 +453,8 @@ func show_route_map(column: VBoxContainer) -> void:
 	var footer:=HBoxContainer.new()
 	footer.add_theme_constant_override("separation",12)
 	column.add_child(footer)
-	if run.room_kind=="boss" and run.floor_index==0 and run.dungeon.nodes[run.room].cleared:
-		var descent:=add_button(footer,tr_text("Descend to the Abyss Garden  ›","Abstieg in den Abgrundgarten  ›"),func(): run.descend())
+	if run.room_kind=="boss" and run.floor_index<Model.FLOOR_COUNT-1 and run.dungeon.nodes[run.room].cleared:
+		var descent:=add_button(footer,tr_text("Descend  ›  ","Abstieg  ›  ")+Content.floor_name(run.floor_index+1,german),func(): run.descend())
 		descent.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 		UI.style_button(descent,Color("#8bcea1"),true)
 	var back: Button
@@ -504,6 +509,7 @@ func service_intro() -> String:
 		"secret": return tr_text("A hidden sanctuary holds a forgotten treasure.","Ein verborgenes Heiligtum birgt einen vergessenen Schatz.")
 		"event": return tr_text("A strange presence offers a bargain.","Eine seltsame Präsenz bietet dir einen Handel an.")
 		"shrine": return tr_text("Ancient magic restores body and spirit.","Alte Magie stärkt Körper und Geist.")
+		"forge": return tr_text("The royal forge still burns. Temper your equipment.","Die königliche Schmiede brennt noch. Härte deine Ausrüstung.")
 	return ""
 
 func rebuild_overlay() -> void:
@@ -588,6 +594,11 @@ func rebuild_overlay() -> void:
 				"event":
 					service_option(column,tr_text("Blood bargain","Bluthandel"),tr_text("Sacrifice 15 HP for a relic","Opfere 15 LP für ein Relikt"),24,Color("#e6809a"),0)
 					service_option(column,tr_text("Take 8 shards","8 Splitter nehmen"),tr_text("Leave the strange presence untouched","Lass die seltsame Präsenz unberührt"),13,GOLD,1)
+				"forge":
+					service_option(column,tr_text("Temper weapon","Waffe härten"),tr_text("16 shards • +12 main damage","16 Splitter • +12 Hauptschaden"),0,Color("#e9ae71"),0,run.shards>=16)
+					service_option(column,tr_text("Imbue focus","Fokus verzaubern"),tr_text("16 shards • +14 special damage, -10% cooldown","16 Splitter • +14 Spezialschaden, -10 % Abklingzeit"),3,VIOLET,1,run.shards>=16)
+					service_option(column,tr_text("Reinforce armor","Rüstung verstärken"),tr_text("12 shards • +4 armor","12 Splitter • +4 Rüstung"),4,Color("#9acbd9"),2,run.shards>=12)
+					service_option(column,tr_text("Leave forge","Schmiede verlassen"),tr_text("Return to the map","Zur Karte zurück"),32,MUTED,3)
 				"shrine":
 					service_option(column,tr_text("Recover 40 HP","40 LP regenerieren"),tr_text("Restore health","Regeneriert Lebenspunkte"),31,Color("#91d4b0"),0)
 					service_option(column,tr_text("Gain 10 max HP","10 maximale LP erhalten"),tr_text("Permanent for this expedition","Für diese Expedition dauerhaft"),1,Color("#e990a8"),1)
@@ -647,7 +658,7 @@ func rebuild_overlay() -> void:
 			UI.style_button(abandon,Color("#da8297"))
 		"victory","defeat":
 			var won := overlay_state=="victory"
-			add_label(column,tr_text("VAULT CONQUERED","GEWÖLBE EROBERT") if won else tr_text("THE DEPTHS CLAIM YOU","DIE TIEFEN FORDERN DICH"),30,GOLD if won else Color("#f095a9"))
+			add_label(column,tr_text("THE HOLLOW CROWN SHATTERS","DIE HOHLE KRONE ZERBRICHT") if won else tr_text("THE DEPTHS CLAIM YOU","DIE TIEFEN FORDERN DICH"),30,GOLD if won else Color("#f095a9"))
 			add_label(column,tr_text("Run summary","Run-Zusammenfassung")+"\n"+tr_text("Rooms visited","Räume besucht")+"  %d  •  " % run.visited_count+tr_text("Defeated","Besiegt")+"  %d  •  " % run.kills+tr_text("Relics","Relikte")+"  %d" % run.relics.size(),19,WHITE)
 			add_label(column,tr_text("Soul essence earned","Seelenessenz erhalten")+"  +%d" % progress.last_reward,24,GOLD)
 			add_label(column,tr_text("Total essence","Essenz gesamt")+"  %d" % progress.essence,16,MUTED)

@@ -3,6 +3,7 @@ extends Node2D
 const Model = preload("res://run_model.gd")
 const TILES = preload("res://art/pixel/vault_tiles.svg")
 const GARDEN = preload("res://art/pixel/garden_tiles.svg")
+const CROWN = preload("res://art/pixel/crown_tiles.svg")
 const TORCH = preload("res://art/pixel/torch.svg")
 const RELICS = preload("res://art/pixel/relics.png")
 const ACTORS = {
@@ -15,6 +16,11 @@ const ACTORS = {
 	"vine": preload("res://art/pixel/vine.svg"),
 	"mushroom": preload("res://art/pixel/mushroom.svg"),
 	"rootking": preload("res://art/pixel/rootking.svg"),
+	"soulbinder": preload("res://art/pixel/soulbinder.svg"),
+	"revenant": preload("res://art/pixel/revenant.svg"),
+	"hexer": preload("res://art/pixel/hexer.svg"),
+	"sentinel": preload("res://art/pixel/sentinel.svg"),
+	"hollowking": preload("res://art/pixel/hollowking.svg"),
 	"stalker": preload("res://art/pixel/stalker.svg"),
 	"caster": preload("res://art/pixel/caster.svg"),
 	"brute": preload("res://art/pixel/brute.svg"),
@@ -124,13 +130,14 @@ func update_view(dt: float) -> void:
 		side_lights[i].energy = 0.85 + sin(clock*5+i*2)*0.15
 	var boss_present := false
 	for enemy in model.enemies:
-		if enemy.kind in ["boss","rootking"]:
+		if enemy.kind in ["boss","rootking","hollowking"]:
 			boss_present = true
 			boss_light.position = enemy.pos
 			boss_light.energy = 0.75 + sin(clock*3)*0.2 + (0.6 if enemy.wind > 0 else 0.0)
 	boss_light.enabled = boss_present
 	var target_ambient := Color(0.39,0.30,0.47) if boss_present else Color(0.55,0.49,0.64)
 	if model.floor_index==1: target_ambient=Color(0.35,0.53,0.39)
+	if model.floor_index==2: target_ambient=Color(0.47,0.34,0.50)
 	ambient.color = ambient.color.lerp(target_ambient, minf(1.0,dt*2.5))
 	gate_open_amount = move_toward(gate_open_amount,1.0 if model.state == "exit" else 0.0,dt*2.5)
 	gate_light.energy = gate_open_amount*(1.1+sin(clock*4)*0.2)
@@ -150,7 +157,7 @@ func pixel_pos(value: Vector2) -> Vector2:
 	return (value/2.0).round()*2.0
 
 func tile(index: int, rect: Rect2, source_size: Vector2 = Vector2(32,32)) -> void:
-	draw_texture_rect_region(GARDEN if model.floor_index==1 else TILES,rect,Rect2(Vector2(index*32,0),source_size))
+	draw_texture_rect_region([TILES,GARDEN,CROWN][model.floor_index],rect,Rect2(Vector2(index*32,0),source_size))
 
 func _draw() -> void:
 	if model == null:
@@ -255,6 +262,8 @@ func draw_warden() -> void:
 			sprite(model.character,pos-model.dash_direction*float(i)*14,player_facing,frame,64,Color(0.65,0.5,1,0.12))
 	for echo in model.echoes:
 		sprite(model.character,echo.pos,echo.dir,6,64,Color(0.65,0.45,1,0.45))
+	if model.spirit_life>0:
+		sprite("soulbinder",model.spirit_pos,Vector2.DOWN,2+int(clock*8)%4,52,Color(0.55,1.0,0.8,0.65))
 	sprite(model.character,pos,player_facing,frame,64)
 
 func draw_actor(enemy: Dictionary) -> void:
