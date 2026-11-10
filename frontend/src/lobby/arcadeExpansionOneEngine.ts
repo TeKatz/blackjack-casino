@@ -28,7 +28,7 @@ export type GravityRun=Base&{kind:'gravity-chamber';x:number;y:number;vx:number;
  gravity:1|-1;stage:number;lives:number;invulnerable:number};
 export type EchoRun=Base&{kind:'echo-sequence';round:number;lives:number;
  sequence:number[];phase:'watch'|'input'|'celebrate';clock:number;index:number;
- active:number;inputClock:number;lastChoice:number};
+ active:number;inputClock:number;lastChoice:number;feedback:number;lastGood:boolean};
 export type ExpansionRun=PinballRun|HookRun|DriftRun|GravityRun|EchoRun;
 export const isExpansionRun=(s:{kind:string}):s is ExpansionRun=>isExpansionOneId(s.kind);
 export const driftCenter=(distance:number)=>
@@ -54,7 +54,7 @@ export function createExpansionRun(kind:ExpansionOneId,seed=0x51eab141):Expansio
    gravity:1,stage:1,lives:3,invulnerable:0};
   case 'echo-sequence':{
    const run:EchoRun={...base,kind,round:1,lives:3,sequence:[],phase:'watch',
-    clock:0,index:0,active:-1,inputClock:0,lastChoice:-1};
+    clock:0,index:0,active:-1,inputClock:0,lastChoice:-1,feedback:0,lastGood:true};
    run.sequence.push(Math.floor(rand(run)*6));return run;
   }
  }
@@ -62,8 +62,8 @@ export function createExpansionRun(kind:ExpansionOneId,seed=0x51eab141):Expansio
 function fail(s:Base):ExpansionEvent{s.over=true;return 'fail';}
 export function chooseEchoPad(s:EchoRun,pad:number):ExpansionEvent{
  if(s.over||s.phase!=='input'||!Number.isSafeInteger(pad)||pad<0||pad>=6)return null;
- s.lastChoice=pad;
- if(s.sequence[s.index]!==pad){
+ s.lastChoice=pad;s.feedback=.28;s.lastGood=s.sequence[s.index]===pad;
+ if(!s.lastGood){
   s.lives--;
   if(s.lives<=0)return fail(s);
   s.phase='watch';s.clock=0;s.index=0;s.active=-1;s.inputClock=0;
@@ -248,6 +248,7 @@ function gravityStep(s:GravityRun,dt:number,c:ExpansionControls):ExpansionEvent{
  return null;
 }
 function echoStep(s:EchoRun,dt:number):ExpansionEvent{
+ s.feedback=Math.max(0,s.feedback-dt);
  if(s.phase==='celebrate'){
   s.clock+=dt;
   if(s.clock>.7){s.phase='watch';s.clock=0;s.index=0;s.active=-1;}
