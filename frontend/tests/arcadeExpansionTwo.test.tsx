@@ -235,7 +235,8 @@ describe('Pulse Perfect — bounded timing window, combos and misses',()=>{
   expect(pulseStrike(good)).toBe('score');
   expect(good.feedback).toBe('good');
   expect(good.score).toBe(55);
-  for(let i=0;i<36;i++)stepArcadeRun(perfect,ARCADE_STEP);
+  // Check at the precise transition frame; later frames advance the next pulse.
+  for(let i=0;i<32;i++)stepArcadeRun(perfect,ARCADE_STEP);
   expect(perfect.radius).toBe(223);
   expect(perfect.round).toBe(2);
  });
