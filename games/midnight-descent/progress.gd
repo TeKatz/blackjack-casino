@@ -1,0 +1,93 @@
+extends RefCounted
+## Local Descent-only persistence. Never reads or writes casino balances.
+const Content = preload("res://content.gd")
+const PATH := "user://descent_progress.cfg"
+var essence := 0
+var attempts := 0
+var wins := 0
+var total_kills := 0
+var unlocked: Array[String] = ["warden_guard"]
+var ranks := {"vitality":0,"power":0,"agility":0,"alchemy":0}
+var discovered: Array[String] = []
+var selected := "warden_guard"
+var last_reward := 0
+var save_ok := true
+
+func load_save() -> void:
+	var cfg := ConfigFile.new()
+	if cfg.load(PATH) != OK:
+		return
+	essence = clampi(int(cfg.get_value("profile","essence",0)),0,100000000)
+	attempts = maxi(0,int(cfg.get_value("profile","attempts",0)))
+	wins = clampi(int(cfg.get_value("profile","wins",0)),0,attempts)
+	total_kills = maxi(0,int(cfg.get_value("profile","kills",0)))
+	var saved: Variant = cfg.get_value("profile","unlocked",[])
+	if saved is Array:
+		for id in saved:
+			if Content.SETS.has(id) and not unlocked.has(id): unlocked.append(id)
+	for key in ranks:
+		ranks[key] = clampi(int(cfg.get_value("upgrades",key,0)),0,int(Content.UPGRADES[key][5]))
+	var seen: Variant = cfg.get_value("profile","discovered",[])
+	if seen is Array:
+		for id in seen:
+			if Content.RELICS.has(id) and not discovered.has(id): discovered.append(id)
+	var wanted := str(cfg.get_value("profile","selected","warden_guard"))
+	if unlocked.has(wanted): selected = wanted
+
+func save() -> bool:
+	var cfg := ConfigFile.new()
+	cfg.set_value("profile","essence",essence)
+	cfg.set_value("profile","attempts",attempts)
+	cfg.set_value("profile","wins",wins)
+	cfg.set_value("profile","kills",total_kills)
+	cfg.set_value("profile","unlocked",unlocked)
+	cfg.set_value("profile","discovered",discovered)
+	cfg.set_value("profile","selected",selected)
+	for key in ranks: cfg.set_value("upgrades",key,ranks[key])
+	save_ok = cfg.save(PATH) == OK
+	return save_ok
+
+func settle(run) -> int:
+	if run.settled or run.state not in ["victory","defeat"]:
+		return 0
+	run.settled = true
+	attempts += 1
+	total_kills += run.kills
+	if run.state == "victory": wins += 1
+	last_reward = int(run.shards/3.0)+run.room*4+(25 if run.state=="victory" else 0)
+	essence += last_reward
+	for id in run.relics:
+		if not discovered.has(id): discovered.append(id)
+	return last_reward
+
+func cost(key: String) -> int:
+	return int(Content.UPGRADES[key][4])*(int(ranks[key])+1)
+
+func buy_upgrade(key: String) -> bool:
+	if not ranks.has(key) or ranks[key]>=Content.UPGRADES[key][5] or essence<cost(key): return false
+	essence -= cost(key)
+	ranks[key] += 1
+	return true
+
+func unlock_set(id: String) -> bool:
+	if not Content.SETS.has(id) or unlocked.has(id): return false
+	if id=="dealer_joker" and not unlocked.has("dealer_cards"): return false
+	var price: int = Content.SETS[id].cost
+	if essence<price: return false
+	essence -= price
+	unlocked.append(id)
+	return true
+
+func smoke_test() -> bool:
+	var model = preload("res://run_model.gd").new()
+	model.begin(42)
+	model.state="victory"
+	model.shards=30
+	model.relics.append("echo")
+	var amount := settle(model)
+	if amount!=35 or settle(model)!=0 or wins!=1 or not discovered.has("echo"): return false
+	if not buy_upgrade("vitality") or ranks.vitality!=1: return false
+	essence=100
+	if not unlock_set("dealer_cards") or unlock_set("dealer_cards"): return false
+	model.begin(43,"dealer_cards",ranks)
+	return model.hp==80 and model.relics.is_empty() and model.character=="dealer"

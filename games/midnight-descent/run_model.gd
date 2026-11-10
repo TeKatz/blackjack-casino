@@ -4,7 +4,17 @@ const ARENA := Rect2(58, 146, 1164, 478)
 const SPAWN := Vector2(143, 385)
 const EXIT := Vector2(1174, 385)
 const ROOM_COUNT := 5
-const RELICS := ["blade", "heart", "boots", "focus", "ward", "fury"]
+const Content = preload("res://content.gd")
+const RELICS = Content.RELICS
+var character := "warden"
+var set_id := "warden_guard"
+var settled := false
+var attack_cd := 0.36
+var special_cd := 0.62
+var active_timer := 0.0
+var active_heal := 25.0
+var attacks := 0
+var dash_hits: Array[Dictionary] = []
 var rng := RandomNumberGenerator.new()
 var seed_value: int
 var room := 0
@@ -35,17 +45,27 @@ var walls: Array[Rect2] = []
 var effects: Array[Dictionary] = []
 var notices: Array[String] = []
 
-func begin(value: int) -> void:
+func begin(value: int, loadout: String = "warden_guard", upgrades: Dictionary = {}) -> void:
 	seed_value = value
 	rng.seed = value
 	room = 0
-	hp = 100.0
-	max_hp = 100.0
-	damage = 26.0
-	speed = 245.0
+	set_id = loadout if Content.SETS.has(loadout) else "warden_guard"
+	var spec: Dictionary = Content.SETS[set_id]
+	character = spec.character
+	max_hp = float(spec.hp)+5*int(upgrades.get("vitality",0))
+	hp = max_hp
+	damage = float(spec.damage)+2*int(upgrades.get("power",0))
+	speed = float(spec.speed)+8*int(upgrades.get("agility",0))
 	armor = 0.0
-	bolt_damage = 17.0
-	dash_cooldown = 1.3
+	bolt_damage = spec.bolt
+	dash_cooldown = spec.dash
+	attack_cd = spec.attack
+	special_cd = spec.special
+	active_heal = 25.0+5*int(upgrades.get("alchemy",0))
+	active_timer = 0
+	attacks = 0
+	settled = false
+	dash_hits.clear()
 	kills = 0
 	shards = 0
 	elapsed = 0.0
@@ -119,10 +139,15 @@ func move_actor(pos: Vector2, motion: Vector2, radius: float) -> Vector2:
 		pos.y = y.y
 	return pos
 
-func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: bool, dash: bool) -> void:
+func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: bool, dash: bool, active: bool = false) -> void:
 	if state != "fight" and state != "exit":
 		return
 	elapsed += dt
+	active_timer = maxf(0,active_timer-dt)
+	if active and active_timer<=0 and hp<max_hp:
+		hp = minf(max_hp,hp+active_heal)
+		active_timer = 24.0
+		notices.append("relic")
 	attack_timer = maxf(0, attack_timer - dt)
 	bolt_timer = maxf(0, bolt_timer - dt)
 	dash_timer = maxf(0, dash_timer - dt)
@@ -133,6 +158,7 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 	if dash and dash_timer <= 0:
 		dash_direction = direction.normalized() if direction.length_squared() > 0.01 else aim
 		dash_left = 0.17
+		dash_hits.clear()
 		dash_timer = dash_cooldown
 		invulnerable = maxf(invulnerable, 0.28)
 		effect("dash", player, 0.22, dash_direction)
@@ -141,18 +167,41 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 	if state == "exit":
 		update_effects(dt)
 		return
-	if melee and attack_timer <= 0:
-		attack_timer = 0.36
-		effect("slash", player, 0.19, aim)
-		notices.append("swing")
+	if dash_left>0 and relics.has("dashfire"):
 		for enemy in enemies:
-			var offset: Vector2 = enemy.pos - player
-			if offset.length() <= 93.0 + float(enemy.r) and (offset.length() < 12 or aim.dot(offset.normalized()) > 0.15):
-				hit_enemy(enemy, damage)
+			if not dash_hits.has(enemy) and player.distance_to(enemy.pos)<65:
+				dash_hits.append(enemy)
+				hit_enemy(enemy,14.0*relics.count("dashfire"))
+	if melee and attack_timer <= 0:
+		attack_timer = attack_cd
+		attacks += 1
+		if character=="dealer":
+			shoot(player+aim*21,aim*660,false,damage)
+			notices.append("bolt")
+		else:
+			effect("slash", player, 0.19, aim)
+			notices.append("swing")
+			for enemy in enemies:
+				var offset: Vector2 = enemy.pos-player
+				if offset.length() <= (118.0 if set_id=="warden_executioner" else 93.0)+float(enemy.r) and (offset.length()<12 or aim.dot(offset.normalized())>0.15):
+					hit_enemy(enemy,damage)
+		if relics.has("echo") and attacks%3==0:
+			shoot(player+aim*21,aim*590,false,bolt_damage*relics.count("echo"))
 	if ranged and bolt_timer <= 0:
-		bolt_timer = 0.62
-		shoot(player + aim * 21, aim * 590, false, bolt_damage)
-		notices.append("bolt")
+		bolt_timer = special_cd
+		if set_id=="warden_executioner":
+			effect("slash",player,0.3,aim)
+			for enemy in enemies:
+				if player.distance_to(enemy.pos)<175: hit_enemy(enemy,bolt_damage*2.0)
+			notices.append("swing")
+		else:
+			var count := mini(9,(3 if character=="dealer" else 1)+2*relics.count("split"))
+			for i in range(count):
+				var angle := (float(i)-(count-1)*0.5)*0.19
+				var power := bolt_damage
+				if set_id=="dealer_joker": power *= rng.randf_range(0.5,1.8)
+				shoot(player+aim*21,aim.rotated(angle)*590,false,power)
+			notices.append("bolt")
 	update_enemies(dt)
 	update_shots(dt)
 	for i in range(enemies.size()-1, -1, -1):
@@ -160,6 +209,7 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 			effect("burst", enemies[i].pos, 0.35, Vector2.ZERO)
 			kills += 1
 			shards += 3 if enemies[i].kind != "boss" else 20
+			hp = minf(max_hp,hp+2.0*relics.count("leech"))
 			enemies.remove_at(i)
 			notices.append("kill")
 	update_effects(dt)
@@ -187,7 +237,15 @@ func update_effects(dt: float) -> void:
 func hit_enemy(enemy: Dictionary, amount: float) -> void:
 	if enemy.hp <= 0:
 		return
+	if relics.has("crit") and rng.randf()<minf(0.8,0.2*relics.count("crit")): amount *= 2
 	enemy.hp -= amount
+	if relics.has("storm") and float(enemy.get("burn",0))>0:
+		for other in enemies:
+			if other!=enemy and other.hp>0 and enemy.pos.distance_to(other.pos)<160:
+				other.hp -= 8.0*relics.count("storm")
+				effect("hit",other.pos,0.18,Vector2.ZERO)
+				break
+	if relics.has("ember"): enemy["burn"]=3.0
 	enemy.flash = 0.12
 	effect("hit", enemy.pos, 0.18, Vector2.ZERO)
 	notices.append("hit")
@@ -201,12 +259,16 @@ func hurt(amount: float) -> void:
 	notices.append("hurt")
 
 func shoot(pos: Vector2, velocity: Vector2, hostile: bool, power: float) -> void:
-	shots.append({"pos":pos,"vel":velocity,"hostile":hostile,"damage":power,"life":2.8})
+	if shots.size()>=180: return
+	shots.append({"pos":pos,"vel":velocity,"hostile":hostile,"damage":power,"life":2.8,"pierce":0 if hostile else mini(5,relics.count("pierce")),"hit":[]})
 
 func update_enemies(dt: float) -> void:
 	for enemy in enemies:
 		if enemy.hp <= 0:
 			continue
+		if float(enemy.get("burn",0))>0:
+			enemy["burn"] = maxf(0,float(enemy.burn)-dt)
+			enemy.hp -= dt*4.0*relics.count("ember")
 		enemy.flash = maxf(0, float(enemy.flash)-dt)
 		enemy.timer -= dt
 		var pos: Vector2 = enemy.pos
@@ -274,9 +336,11 @@ func update_shots(dt: float) -> void:
 					remove = true
 			else:
 				for enemy in enemies:
-					if enemy.hp > 0 and pos.distance_to(enemy.pos) < float(enemy.r)+7:
+					if enemy.hp > 0 and not shot.hit.has(enemy) and pos.distance_to(enemy.pos) < float(enemy.r)+7:
 						hit_enemy(enemy, shot.damage)
-						remove = true
+						shot.hit.append(enemy)
+						remove = shot.pierce <= 0
+						shot.pierce -= 1
 						break
 		if remove:
 			shots.remove_at(i)
@@ -305,6 +369,8 @@ func choose_relic(index: int) -> bool:
 		"focus": bolt_damage += 11
 		"ward": armor += 4
 		"fury": dash_cooldown = maxf(0.55, dash_cooldown-0.23)
+		"tempo": attack_cd = maxf(0.12,attack_cd*0.88)
+		"potion": active_heal += 15
 	hp = minf(max_hp, hp+12)
 	state = "exit"
 	return true
