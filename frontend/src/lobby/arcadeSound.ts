@@ -6,7 +6,7 @@
 import type {PlayableArcadeId} from './arcadeEngine';
 export type ArcadeSoundCue='flap'|'score'|'stage'|'fail'|'pad'|'perfect'|'good'|
  'miss'|'bumper'|'launch'|'flip'|'life'|'solve'|'drill'|'dock'|'caught'|'short'|
- 'collect'|'collision';
+ 'collect'|'collision'|'jump'|'hook'|'release'|'victory'|'mineTick';
 type Wave='sine'|'triangle'|'square'|'sawtooth';
 export type ArcadeVoice={base:number;wave:Wave;partial:number;attack:number;
  decay:number;intervals:readonly number[];filter:number};
@@ -47,6 +47,11 @@ export function soundNotes(id:PlayableArcadeId,cue:ArcadeSoundCue,pad?:number):n
  if(cue==='bumper')return [v.base,v.base*2.01,v.base*3.88];
  if(cue==='launch')return [v.base*.64,v.base*1.11];
  if(cue==='flip')return [v.base*.48];
+ if(cue==='jump')return [v.base*.76];
+ if(cue==='hook')return [v.base*.92,v.base*1.31];
+ if(cue==='release')return [v.base*.9];
+ if(cue==='mineTick')return [v.base*2.6];
+ if(cue==='victory')return [v.base*.75,v.base,v.base*1.26,v.base*1.5,v.base*2];
  if(cue==='drill')return [v.base*.7,v.base*1.64];
  if(cue==='dock')return [v.base*.8,v.base*1.26,v.base*1.6];
  if(cue==='solve')return [v.base,v.base*1.25,v.base*1.5,v.base*2];
@@ -68,18 +73,18 @@ export function playArcadeSound(id:PlayableArcadeId,cue:ArcadeSoundCue,
   contextRef.current=context;
   if(context.state==='suspended')void context.resume();
   const profile=ARCADE_VOICES[id],notes=soundNotes(id,cue,pad);
-  const special=cue==='perfect'||cue==='bumper'||cue==='solve';
+  const special=cue==='perfect'||cue==='bumper'||cue==='solve'||cue==='victory';
   const miss=['miss','fail','life','caught','collision','short'].includes(cue);
-  const decay=cue==='pad'?0.24:special?0.43:miss?0.24:profile.decay;
-  const amplitude=cue==='pad'?0.055:miss?0.07:special?0.068:0.044;
-  const attack=Math.max(.002,profile.attack);
+  const decay=cue==='mineTick'?.065:cue==='jump'?.14:cue==='hook'?.14:cue==='release'?.12:cue==='victory'?.25:cue==='pad'?.24:special?.43:miss?.24:profile.decay;
+  const amplitude=cue==='mineTick'?.022:cue==='jump'?.052:cue==='victory'?.058:cue==='pad'?.055:miss?.07:special?.068:.044;
+  const attack=cue==='jump'||cue==='mineTick'?.003:Math.max(.002,profile.attack);
   const filter=context.createBiquadFilter();
   filter.type='lowpass';
   filter.frequency.setValueAtTime(miss?Math.min(1200,profile.filter):profile.filter,context.currentTime);
   filter.Q.value=1.0;
   filter.connect(context.destination);
   const baseTime=context.currentTime;
-  const perNote=notes.length>1?(special?0.053:0.067):0;
+  const perNote=notes.length>1?(cue==='victory'?.105:special?.053:.067):0;
   let remaining=notes.length*2;
   const voiceNodes:GainNode[]=[];
   for(let i=0;i<notes.length;i++){
@@ -91,11 +96,11 @@ export function playArcadeSound(id:PlayableArcadeId,cue:ArcadeSoundCue,
    voice.connect(filter);voiceNodes.push(voice);
    for(let h=0;h<2;h++){
     const oscillator=context.createOscillator();
-    oscillator.type=h===0?profile.wave:'sine';
+    oscillator.type=h===0?(cue==='jump'||cue==='victory'?'triangle':profile.wave):'sine';
     const pitch=h===0?f:f*profile.partial;
     oscillator.frequency.setValueAtTime(pitch,t);
     // Distinct glides for hook, gravity and timing; no sound touches gameplay.
-    const bend=id==='phantom-hook'?1.17:id==='gravity-chamber'?0.75:
+    const bend=cue==='jump'?1.83:cue==='hook'?1.3:cue==='release'?.67:cue==='mineTick'?.82:id==='phantom-hook'?1.17:id==='gravity-chamber'?0.75:
      id==='neon-drift'?0.89:miss?0.62:1.03;
     oscillator.frequency.exponentialRampToValueAtTime(Math.max(30,pitch*bend),
      t+duration*0.84);
