@@ -412,7 +412,7 @@ wallet, local save, new upgrade quantities or speculative balance rules are
 introduced. A contextual compact department briefing provides all native
 purchase sizes.
 
-Hover/focus previews use the *existing* read-only \`empire.command\` preview
+Hover/focus previews use the *existing* read-only `empire.command` preview
 protocol with its revisioned session, debounced cancellation and authoritative
 Core budget/room/portfolio before-and-after amounts. Exact decimal string
 subtraction is used for deltas; approximate payback is shown only if the
