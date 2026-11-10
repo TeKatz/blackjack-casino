@@ -8,7 +8,6 @@ var environment_timer := 0.0
 var environment_cycle := 0
 var wave := 1
 var wave_total := 1
-var room_reward_roll := false
 const FLOOR_COUNT := 3
 var bosses_defeated := 0
 var souls := 0
@@ -147,7 +146,6 @@ func enter_room() -> void:
 	environment_cycle=0
 	wave=1
 	wave_total=2 if floor_index>=1 and room_kind=="elite" else 1
-	room_reward_roll=false
 	temp_power=0
 	if relics.has("curse"): temp_power=rng.randf_range(-5,15)
 	
@@ -849,8 +847,11 @@ func smoke_test() -> bool:
 		if dungeon.boss_ready() or dungeon.nodes.size()!=ROOM_COUNT: return false
 		for column in range(9):
 			var index: int=0 if column==0 else 1+(column-1)*3+1
-			room=index
-			enter_room()
+			if column>0:
+				if state=="exit":
+					player=EXIT
+					if not open_route(): return false
+				if not travel(index): return false
 			if state=="fight":
 				for step in range(wave_total):
 					for unit in enemies: unit.hp=0
@@ -867,8 +868,10 @@ func smoke_test() -> bool:
 				var choice: int=3 if room_kind in ["shop","forge"] else 1 if room_kind in ["event","treasure","secret"] else 0
 				if not service_action(choice) or state!="route" or service_action(choice): return false
 		if not dungeon.boss_ready(): return false
-		room=Dungeon.BOSS
-		enter_room()
+		if state=="exit":
+			player=EXIT
+			if not open_route(): return false
+		if not travel(Dungeon.BOSS): return false
 		for unit in enemies: unit.hp=0
 		tick(0.016,Vector2.ZERO,Vector2(700,385),false,false,false)
 		if floor<2:

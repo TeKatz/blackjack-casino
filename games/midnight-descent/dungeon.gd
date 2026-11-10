@@ -36,15 +36,15 @@ func generate(seed_value: int, floor: int) -> void:
 		link(22+lane,BOSS)
 	for column in range(1,8):
 		for lane in range(3):
-			var a:=1+(column-1)*3+lane
+			var a: int =1+(column-1)*3+lane
 			link(a,a+3)
 			if rng.randf()<0.60:
-				var other:=lane+1 if lane<2 else lane-1
+				var other: int =lane+1 if lane<2 else lane-1
 				link(a,1+column*3+other)
 			if lane>0 and rng.randf()<0.35: link(a,1+column*3+lane-1)
 	# Connect every lane without forcing a return to the entrance.
 	for column in [2,5,7]:
-		var a:=1+(column-1)*3
+		var a: int =1+(column-1)*3
 		link(a,a+1)
 		link(a+1,a+2)
 
