@@ -103,7 +103,16 @@ describe('Prism Lock — physically reflecting laser',()=>{
   s.timeLeft=.001;
   expect(stepArcadeRun(s,ARCADE_STEP)).toBe('stage');
   expect(s.lives).toBe(2);
-  s.timeLeft=.001;stepArcadeRun(s,ARCADE_STEP);
+  expect(s.transition).toBe('lost');
+  expect(s.transitionClock).toBeGreaterThan(1.5);
+  // Freeze game timer during the full-screen LIFE LOST presentation.
+  const pausedTime=s.timeLeft;
+  stepArcadeRun(s,ARCADE_STEP);
+  expect(s.timeLeft).toBe(pausedTime);
+  for(let i=0;i<125&&s.transition;i++)stepArcadeRun(s,ARCADE_STEP);
+  expect(s.transition).toBeNull();
+  s.timeLeft=.001;expect(stepArcadeRun(s,ARCADE_STEP)).toBe('stage');
+  for(let i=0;i<125&&s.transition;i++)stepArcadeRun(s,ARCADE_STEP);
   s.timeLeft=.001;expect(stepArcadeRun(s,ARCADE_STEP)).toBe('fail');
   expect(s.over).toBe(true);
  });
