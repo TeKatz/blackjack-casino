@@ -63,7 +63,7 @@ public static class ArcadeProgression
     }
 }
 
-/// <summary>Exactly ten independently tracked global milestones for each of ten Arcade games.</summary>
+/// <summary>Ten independent global milestones per playable Arcade game.</summary>
 public static class ArcadeChallengeCatalog
 {
     private sealed record Game(string Id, string Name, int[] Scores, int[] Runs,
@@ -80,6 +80,11 @@ public static class ArcadeChallengeCatalog
         new("neon-breaker", "Neon Breaker", [100, 350, 800, 1800], [1, 10, 75], [1000, 10000], 120),
         new("death-snake", "Death Snake", [5, 12, 25, 50], [1, 10, 75], [50, 400], 90),
         new("endless-ascent", "Endless Ascent", [50, 150, 400, 1000], [1, 10, 75], [700, 6500], 90),
+        new("midnight-pinball", "Midnight Pinball", [150, 450, 1200, 3000], [1, 10, 75], [1200, 10000], 90),
+        new("phantom-hook", "Phantom Hook", [5, 15, 40, 100], [1, 10, 75], [100, 900], 60),
+        new("neon-drift", "Neon Drift", [200, 700, 1800, 4000], [1, 10, 75], [2500, 20000], 90),
+        new("gravity-chamber", "Gravity Chamber", [175, 400, 900, 1900], [1, 10, 75], [1800, 13000], 90),
+        new("echo-sequence", "Echo Sequence", [100, 300, 1000, 2800], [1, 10, 75], [1600, 10000], 70),
     ];
     private static readonly HashSet<string> GameIds = Games.Select(x => x.Id).ToHashSet(StringComparer.Ordinal);
     public static bool IsGame(string? id) => id is not null && GameIds.Contains(id);

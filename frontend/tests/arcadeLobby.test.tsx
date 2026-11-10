@@ -13,12 +13,13 @@ describe('Arcade Games lobby collection',()=>{
   expect(de.secondary).toBe(false);
   expect(de.description).not.toEqual(en.description);
  });
- it('ships ten distinct future minigames, with bounded duration and complete localization',()=>{
-  expect(arcadeGames).toHaveLength(10);
-  expect(new Set(arcadeGames.map(g=>g.id)).size).toBe(10);
+ it('ships fifteen distinct playable minigames, with bounded duration and complete localization',()=>{
+  expect(arcadeGames).toHaveLength(15);
+  expect(new Set(arcadeGames.map(g=>g.id)).size).toBe(15);
   expect(arcadeGames.map(g=>g.name)).toEqual([
    'Midnight Wings','Cave Escape','Hexagon Hell','Perfect Stack','Spike Rush',
-   'Blade Timing','Bullet Storm','Neon Breaker','Death Snake','Endless Ascent'
+   'Blade Timing','Bullet Storm','Neon Breaker','Death Snake','Endless Ascent',
+   'Midnight Pinball','Phantom Hook','Neon Drift','Gravity Chamber','Echo Sequence'
   ]);
   for(const game of arcadeGames){
    expect(game.seconds[0]).toBeGreaterThan(0);
@@ -38,7 +39,7 @@ describe('Arcade Games lobby collection',()=>{
   for(const language of ['de','en'] as const){
    const html=renderToStaticMarkup(<ArcadeMenu language={language} onBack={()=>{}}/>);
    expect(html).toContain('data-testid="arcade-menu"');
-   expect((html.match(/data-arcade-id=/g)||[]).length).toBe(10);
+   expect((html.match(/data-arcade-id=/g)||[]).length).toBe(15);
    expect(html).toContain('aria-pressed="true"');
    expect(html).toContain('Midnight Wings');
    expect(html).toContain('Endless Ascent');
@@ -47,13 +48,14 @@ describe('Arcade Games lobby collection',()=>{
    expect(html).not.toContain('arcade-card-soon');
    expect(html).not.toContain('arcade-note');
    expect(html).toContain('data-testid="arcade-highscores-open"');
-   expect((html.match(/class="arcade-scene"/g)||[]).length).toBe(10);
+   expect((html.match(/class="arcade-scene"/g)||[]).length).toBe(15);
    expect(html).not.toContain('lobby.open');
   }
  });
- it('renders independent game screens for the all ten games with local scoreboards',()=>{
+ it('renders independent game screens for all fifteen games with local scoreboards',()=>{
   for(const id of ['midnight-wings','cave-escape','perfect-stack','blade-timing',
-   'death-snake','neon-breaker','bullet-storm','hexagon-hell','spike-rush','endless-ascent'] as const){
+   'death-snake','neon-breaker','bullet-storm','hexagon-hell','spike-rush','endless-ascent',
+   'midnight-pinball','phantom-hook','neon-drift','gravity-chamber','echo-sequence'] as const){
    const html=renderToStaticMarkup(<ArcadeGameScreen id={id} language="de" onBack={()=>{}}/>);
    expect(html).toContain('data-testid="arcade-game-screen"');
    expect(html).toContain('data-game-id="'+id+'"');

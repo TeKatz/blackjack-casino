@@ -1,5 +1,8 @@
+import {EXPANSION_ONE_IDS,isExpansionOneId,isExpansionRun,createExpansionRun,actExpansionRun,stepExpansionRun} from './arcadeExpansionOneEngine';
+import type {ExpansionRun} from './arcadeExpansionOneEngine';
+export {chooseEchoPad} from './arcadeExpansionOneEngine';
 /**
- * Deterministic, dependency-free simulation for the all ten Arcade Games.
+ * Deterministic, dependency-free simulation for the Arcade Games.
  * Every game uses the same logical 960×540 coordinate space and fixed 60Hz steps.
  * Rendering is intentionally separate from input and persistence.
  */
@@ -10,6 +13,7 @@ export const PLAYABLE_ARCADE_IDS=[
  'midnight-wings','cave-escape','perfect-stack','blade-timing',
  'death-snake','neon-breaker','bullet-storm',
  'hexagon-hell','spike-rush','endless-ascent',
+ ...EXPANSION_ONE_IDS,
 ] as const;
 export type PlayableArcadeId=typeof PLAYABLE_ARCADE_IDS[number];
 export const isPlayableArcade=(id:string):id is PlayableArcadeId=>
@@ -44,7 +48,7 @@ export type SpikeRun=Base&{kind:'spike-rush';feet:number;vy:number;grounded:bool
 export type AscentPlatform={x:number;y:number;width:number;vx:number;kind?:'normal'|'spring'|'fragile';crumble?:number};
 export type AscentRun=Base&{kind:'endless-ascent';x:number;feet:number;vy:number;
  climbed:number;platforms:AscentPlatform[];jumps:number};
-export type ArcadeRunState=WingsRun|CaveRun|StackRun|BladeRun|SnakeRun|BreakerRun|StormRun|HexRun|SpikeRun|AscentRun;
+export type ArcadeRunState=WingsRun|CaveRun|StackRun|BladeRun|SnakeRun|BreakerRun|StormRun|HexRun|SpikeRun|AscentRun|ExpansionRun;
 
 const clamp=(value:number,min:number,max:number)=>Math.max(min,Math.min(max,value));
 const random=(state:Base)=>{
@@ -80,6 +84,7 @@ export function steerSnake(run:SnakeRun,direction:ArcadeDirection):boolean{
  return true;
 }
 export function createArcadeRun(kind:PlayableArcadeId,seed=0x543fa1d2):ArcadeRunState{
+ if(isExpansionOneId(kind))return createExpansionRun(kind,seed);
  const base={score:0,elapsed:0,over:false,seed:seedValue(seed)};
  switch(kind){
   case 'midnight-wings':return {...base,kind,y:265,vy:0,spawn:1.4,
@@ -127,6 +132,7 @@ export function angularDistance(a:number,b:number){
  return Math.abs(Math.atan2(Math.sin(a-b),Math.cos(a-b)));
 }
 export function actArcadeRun(state:ArcadeRunState):ArcadeEvent{
+ if(isExpansionRun(state))return actExpansionRun(state);
  if(state.over)return null;
  switch(state.kind){
  case 'midnight-wings':
@@ -187,6 +193,7 @@ export function actArcadeRun(state:ArcadeRunState):ArcadeEvent{
  }
 }
 export function stepArcadeRun(state:ArcadeRunState,dt:number,holding=false,controls:ArcadeControls={}):ArcadeEvent{
+ if(isExpansionRun(state))return stepExpansionRun(state,dt,holding,controls);
  if(state.over||!Number.isFinite(dt)||dt<=0)return null;
  // Hard cap prevents simulation jumps on tab resumes; the React runner uses a fixed step.
  const step=Math.min(dt,ARCADE_STEP);

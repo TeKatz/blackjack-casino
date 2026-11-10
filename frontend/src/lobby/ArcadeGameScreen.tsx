@@ -1,8 +1,9 @@
 import {useEffect,useRef,useState} from 'react';
 import type {PointerEvent as ReactPointerEvent} from 'react';
-import {ARCADE_HEIGHT,ARCADE_STEP,ARCADE_WIDTH,actArcadeRun,createArcadeRun,stepArcadeRun,steerSnake} from './arcadeEngine';
+import {ARCADE_HEIGHT,ARCADE_STEP,ARCADE_WIDTH,actArcadeRun,createArcadeRun,stepArcadeRun,steerSnake,chooseEchoPad} from './arcadeEngine';
 import type {PlayableArcadeId,ArcadeEvent,ArcadeRunState} from './arcadeEngine';
 import {drawArcadeRun} from './arcadeRenderer';
+import {echoPadAt} from './arcadeExpansionOneRenderer';
 import {ArcadeHeldKeys,arcadeDirection} from './arcadeControls';
 import {readArcadeRecord,saveArcadeRecord} from './arcadeRecords';
 import type {ArcadeRecord} from './arcadeRecords';
@@ -26,6 +27,11 @@ const strings={
   hex:'A / D oder ← / → drehen das Dreieck. Steuere in die Lücken der näherkommenden Ringe.',
   spike:'Leertaste, ↑ oder Klick zum Springen. Weiche Stacheln und Abgründen aus.',
   ascent:'A / D oder ← / → lenken deine Figur. Sie springt beim Landen automatisch weiter.',
+  pinball:'A / D oder ← / → bedienen die Flipper. Leertaste startet eine Kugel.',
+  hook:'Leertaste oder Klick: Anker einhaken und loslassen. Nutze den Schwung.',
+  drift:'A / D oder ← / → lenken. Halte Leertaste für Drift-Kombos.',
+  gravity:'A / D bewegen. Leertaste kehrt die Schwerkraft um.',
+  echo:'Merke dir die Lichter. Wiederhole mit 1–6 oder per Klick.',
   exit:'ZUR SPIELAUSWAHL',local:'Persönliche Rekorde werden auf diesem Gerät gespeichert.',
   pauseHint:'Die Spielzeit wird während der Pause angehalten.'},
  en:{back:'← Arcade Games',score:'SCORE',best:'BEST',time:'TIME',plays:'RUNS',
@@ -43,6 +49,11 @@ const strings={
   hex:'A / D or ← / → rotate the triangle. Steer into gaps in the approaching rings.',
   spike:'Press Space, ↑ or click to jump. Avoid spikes and gaps in the floor.',
   ascent:'A / D or ← / → steer your character. Each landing triggers an automatic jump.',
+  pinball:'A / D or ← / → operate flippers. Space launches a ball.',
+  hook:'Space or click attaches/releases the grapple. Use your swing momentum.',
+  drift:'A / D or ← / → steer. Hold Space to score drift combos.',
+  gravity:'A / D moves. Space flips gravity.',
+  echo:'Watch the lights, then repeat with 1–6 or a click.',
   exit:'BACK TO GAME LIST',local:'Personal bests are saved on this device.',
   pauseHint:'Game time is stopped while the run is paused.'},
 };
@@ -50,6 +61,8 @@ const instructionsKey={
  'midnight-wings':'wings','cave-escape':'hold','perfect-stack':'blocks','blade-timing':'knives',
  'death-snake':'snake','neon-breaker':'breaker','bullet-storm':'storm',
  'hexagon-hell':'hex','spike-rush':'spike','endless-ascent':'ascent',
+ 'midnight-pinball':'pinball','phantom-hook':'hook','neon-drift':'drift',
+ 'gravity-chamber':'gravity','echo-sequence':'echo',
 } as const;
 const formatTime=(s:number)=>{
  const whole=Math.floor(Math.max(0,s));
@@ -109,6 +122,7 @@ export function ArcadeGameScreen({id,language,onBack}:{
  const keys=useRef(new ArcadeHeldKeys());
  const mouseTarget=useRef<{x:number;y:number}|null>(null);
  const mouseActive=useRef(false);
+ const pinballPointer=useRef<'left'|'right'|null>(null);
  const raf=useRef<number>(0);
  const audioRef=useRef<AudioContext|null>(null);
  const phaseRef=useRef<Phase>(phase);
@@ -139,10 +153,10 @@ export function ArcadeGameScreen({id,language,onBack}:{
   phaseRef.current='over';setPhase('over');
   tone('fail',soundRef.current,audioRef);
  };
- const action=()=>{
+ const action=(pad?:number)=>{
   if(phaseRef.current!=='playing')return;
   const s=gameRef.current;
-  const event=actArcadeRun(s);
+  const event=s.kind==='echo-sequence'&&pad!==undefined?chooseEchoPad(s,pad):actArcadeRun(s);
   if(s.over)finish();
   else if(event){
    setScore(s.score);
@@ -152,18 +166,18 @@ export function ArcadeGameScreen({id,language,onBack}:{
  };
  const start=()=>{
   held.current=false;
-  keys.current.clear();mouseActive.current=false;mouseTarget.current=null;
+  keys.current.clear();mouseActive.current=false;mouseTarget.current=null;pinballPointer.current=null;
   gameRef.current=createArcadeRun(id,Math.floor(Math.random()*0xffffffff));
   setScore(0);setElapsed(0);setIsBest(false);
   phaseRef.current='playing';setPhase('playing');
-  if(id==='midnight-wings'||id==='neon-breaker'){
+  if(id==='midnight-wings'||id==='neon-breaker'||id==='phantom-hook'){
    const event=actArcadeRun(gameRef.current);
    tone(event,soundRef.current,audioRef);
   }
   repaint();
  };
  const pause=()=>{
-  held.current=false;keys.current.clear();mouseActive.current=false;
+  held.current=false;keys.current.clear();mouseActive.current=false;pinballPointer.current=null;
   if(phaseRef.current==='playing'){phaseRef.current='paused';setPhase('paused');}
  };
  const resume=()=>{
@@ -188,6 +202,7 @@ export function ArcadeGameScreen({id,language,onBack}:{
    while(accumulator>=ARCADE_STEP&&steps<5&&!gameRef.current.over){
     const state=gameRef.current,old=state.score;
     const controls=keys.current.controls();
+    if(id==='midnight-pinball'&&pinballPointer.current)controls[pinballPointer.current]=true;
     if((id==='neon-breaker'||id==='bullet-storm')&&mouseTarget.current&&
      (id==='neon-breaker'||mouseActive.current)){
      controls.pointerX=mouseTarget.current.x;
@@ -199,7 +214,7 @@ export function ArcadeGameScreen({id,language,onBack}:{
      if(event==='score')tone('score',soundRef.current,audioRef);
     }
     if(event==='fail'){finish();break;}
-    if(event==='stage'&&id==='neon-breaker')tone('stage',soundRef.current,audioRef);
+    if(event==='stage')tone('stage',soundRef.current,audioRef);
     accumulator-=ARCADE_STEP;steps++;
    }
    if(steps===5)accumulator=0;
@@ -228,7 +243,8 @@ export function ArcadeGameScreen({id,language,onBack}:{
    if(event.ctrlKey||event.altKey||event.metaKey||target?.isContentEditable||
     ['INPUT','TEXTAREA','SELECT'].includes(target?.tagName??''))return;
    const key=event.key.toLowerCase();
-   if([' ','arrowup','arrowdown','arrowleft','arrowright','w','a','s','d','p','r','escape'].includes(key))event.preventDefault();
+   if([' ','arrowup','arrowdown','arrowleft','arrowright','w','a','s','d','p','r','escape'].includes(key)||
+    (id==='echo-sequence'&&/^(Digit|Numpad)[1-6]$/.test(event.code)))event.preventDefault();
    if(key==='p'||key==='escape'){
     if(event.repeat)return;
     if(phaseRef.current==='playing')pause();
@@ -237,6 +253,10 @@ export function ArcadeGameScreen({id,language,onBack}:{
     return;
    }
    if(key==='r'&&!event.repeat){start();return;}
+   if(id==='echo-sequence'&&/^(Digit|Numpad)[1-6]$/.test(event.code)){
+    if(!event.repeat&&phaseRef.current==='playing')action(Number(event.code.slice(-1))-1);
+    return;
+   }
    const direction=arcadeDirection(event.code,key);
    if(direction&&id==='death-snake'){
     if(phaseRef.current==='playing'&&!event.repeat){
@@ -245,7 +265,8 @@ export function ArcadeGameScreen({id,language,onBack}:{
     }
     return;
    }
-   if(direction&&(id==='neon-breaker'||id==='bullet-storm'||id==='hexagon-hell'||id==='endless-ascent')){
+   if(direction&&(id==='neon-breaker'||id==='bullet-storm'||id==='hexagon-hell'||id==='endless-ascent'||
+     id==='midnight-pinball'||id==='neon-drift'||id==='gravity-chamber')){
     keys.current.press(event.code,key);
     // A pressed key immediately takes over; only actual mouse motion restores mouse steering.
     if(id==='neon-breaker'&&(direction==='left'||direction==='right'))mouseTarget.current=null;
@@ -253,22 +274,22 @@ export function ArcadeGameScreen({id,language,onBack}:{
     return;
    }
    if(key===' '||key==='arrowup'){
-    if(id==='cave-escape')held.current=true;
+    if(id==='cave-escape'||id==='neon-drift')held.current=true;
     if(event.repeat)return;
-    if(phaseRef.current==='ready'){start();if(id==='cave-escape')held.current=true;}
-    else if(phaseRef.current==='playing'&&id!=='cave-escape')action();
+    if(phaseRef.current==='ready'){start();if(id==='cave-escape'||id==='neon-drift')held.current=true;}
+    else if(phaseRef.current==='playing'&&id!=='cave-escape'&&id!=='neon-drift')action();
     else if(phaseRef.current==='over')start();
    }
   };
   const keyUp=(event:KeyboardEvent)=>{
    const key=event.key.toLowerCase();
-   if(id==='cave-escape'&&(key===' '||key==='arrowup'))held.current=false;
+   if((id==='cave-escape'||id==='neon-drift')&&(key===' '||key==='arrowup'))held.current=false;
    keys.current.release(event.code,key);
   };
   window.addEventListener('keydown',keyDown,true);
   window.addEventListener('keyup',keyUp,true);
   return()=>{
-   held.current=false;keys.current.clear();
+   held.current=false;keys.current.clear();pinballPointer.current=null;
    window.removeEventListener('keydown',keyDown,true);
    window.removeEventListener('keyup',keyUp,true);
   };
@@ -288,6 +309,20 @@ export function ArcadeGameScreen({id,language,onBack}:{
  const pointerDown=(event:ReactPointerEvent<HTMLCanvasElement>)=>{
   if(event.button!==0)return;
   event.currentTarget.focus({preventScroll:true});
+  if(id==='midnight-pinball'&&phaseRef.current==='playing'){
+   const point=pointerCoordinates(event),run=gameRef.current;
+   if(run.kind==='midnight-pinball'&&run.serve){action();return;}
+   if(point){
+    pinballPointer.current=point.x<ARCADE_WIDTH/2?'left':'right';
+    event.currentTarget.setPointerCapture(event.pointerId);
+   }
+   return;
+  }
+  if(id==='echo-sequence'&&phaseRef.current==='playing'){
+   const point=pointerCoordinates(event),pad=point?echoPadAt(point.x,point.y):null;
+   if(pad!==null)action(pad);
+   return;
+  }
   if(id==='cave-escape'||id==='bullet-storm'){
    if(id==='cave-escape')held.current=true;
    if(id==='bullet-storm')mouseActive.current=true;
@@ -306,7 +341,7 @@ export function ArcadeGameScreen({id,language,onBack}:{
   if(id==='neon-breaker'||(id==='bullet-storm'&&mouseActive.current))
    mouseTarget.current=pointerCoordinates(event);
  };
- const pointerRelease=()=>{held.current=false;mouseActive.current=false;};
+ const pointerRelease=()=>{held.current=false;mouseActive.current=false;pinballPointer.current=null;};
  const pointerLeave=()=>{if(id==='neon-breaker')mouseTarget.current=null;};
  return <main className="arcade-play" data-testid="arcade-game-screen" data-game-id={id}>
   <header className="arcade-play-header">
