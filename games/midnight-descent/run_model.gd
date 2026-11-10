@@ -4,7 +4,16 @@ const ARENA := Rect2(58, 146, 1164, 478)
 const SPAWN := Vector2(143, 385)
 const EXIT := Vector2(1174, 385)
 const ROOM_COUNT := 10
-const FLOOR_COUNT := 2
+const FLOOR_COUNT := 3
+var bosses_defeated := 0
+var souls := 0
+var specials := 0
+var harvest_count := 0
+var guard_pulse_pending := false
+var special_multiplier := 1.0
+var spirit_timer := 0.0
+var spirit_life := 0.0
+var spirit_pos := Vector2.ZERO
 const Dungeon = preload("res://dungeon.gd")
 var dungeon = Dungeon.new()
 var floor_index := 0
@@ -71,6 +80,13 @@ func begin(value: int, loadout: String = "warden_guard", upgrades: Dictionary = 
 	visited_count = 0
 	elites = 0
 	boss_defeated = false
+	bosses_defeated=0
+	souls=0
+	specials=0
+	harvest_count=0
+	guard_pulse_pending=false
+	special_multiplier=1.0
+	spirit_life=0
 	active_item = "heal"
 	active_cd = 24.0
 	slow_time = 0
@@ -128,18 +144,19 @@ func enter_room() -> void:
 		node.visited = true
 		visited_count += 1
 		if relics.has("medic"): hp=minf(max_hp,hp+6*relics.count("medic"))
+		if relics.has("sacrifice") and room_kind in ["fight","elite","boss"]: hp=maxf(1,hp-2*relics.count("sacrifice"))
 	service_used = node.cleared
 	build_room_layout(node)
 	if node.cleared:
 		state = "route"
 		return
-	if room_kind in ["treasure","shop","event","shrine","secret"]:
+	if room_kind in ["treasure","shop","event","shrine","secret","forge"]:
 		state = "service"
 		return
 	if room_kind != "boss":
 		var count := 3 + floor_index + (2 if room_kind=="elite" else room%3)
 		for i in range(count):
-			var family: Array = ["stalker","caster","brute","archer","shield"] if floor_index==0 else ["spore","vine","mushroom","caster","brute"]
+			var family: Array = [["stalker","caster","brute","archer","shield"],["spore","vine","mushroom","caster","brute"],["revenant","hexer","sentinel","archer","shield"]][floor_index]
 			var kind: String = family[(i+room+floor_index)%family.size()]
 			spawn_enemy(kind,Vector2(520+(i%3)*235,195+(i/3)*135+rng.randf_range(-18,18)))
 			if room_kind=="elite":
@@ -147,9 +164,9 @@ func enter_room() -> void:
 				enemies[-1].max_hp = enemies[-1].hp
 				enemies[-1]["elite"] = true
 	else:
-		spawn_enemy("boss" if floor_index==0 else "rootking",Vector2(925,385))
-		spawn_enemy("caster" if floor_index==0 else "spore",Vector2(785,230))
-		spawn_enemy("stalker" if floor_index==0 else "vine",Vector2(785,540))
+		spawn_enemy(["boss","rootking","hollowking"][floor_index],Vector2(925,385))
+		spawn_enemy(["caster","spore","hexer"][floor_index],Vector2(785,230))
+		spawn_enemy(["stalker","vine","revenant"][floor_index],Vector2(785,540))
 
 func build_room_layout(node: Dictionary) -> void:
 	if room_kind=="boss": return
@@ -159,7 +176,7 @@ func build_room_layout(node: Dictionary) -> void:
 	if room_kind in ["treasure","secret","shrine"]:
 		walls.append(Rect2(590,175,100,58))
 		return
-	if room_kind in ["shop","event"]:
+	if room_kind in ["shop","event","forge"]:
 		walls.append(Rect2(560,174,160,48))
 		return
 	match layout:
@@ -238,6 +255,18 @@ func service_action(choice: int) -> bool:
 				return true
 			elif choice==1: shards+=8
 			else: return false
+		"forge":
+			if choice==0 and shards>=16:
+				shards-=16
+				damage+=12
+			elif choice==1 and shards>=16:
+				shards-=16
+				bolt_damage+=14
+				special_cd=maxf(0.2,special_cd*0.90)
+			elif choice==2 and shards>=12:
+				shards-=12
+				armor+=4
+			elif choice!=3: return false
 		"shrine":
 			if choice==0: hp=minf(max_hp,hp+40)
 			elif choice==1: max_hp+=10; hp+=10
@@ -267,6 +296,10 @@ func spawn_enemy(kind: String, pos: Vector2) -> void:
 		"vine": health=65.0
 		"mushroom": health=100.0; radius=26.0
 		"rootking": health=680.0; radius=48.0
+		"revenant": health=85.0; radius=19.0
+		"hexer": health=75.0; radius=19.0
+		"sentinel": health=140.0; radius=27.0
+		"hollowking": health=970.0; radius=49.0
 		"boss":
 			health = 430.0
 			radius = 43.0
@@ -335,7 +368,7 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 	if melee and attack_timer <= 0:
 		attack_timer = attack_cd
 		attacks += 1
-		if character in ["dealer","arcanist"]:
+		if character in ["dealer","arcanist"] or set_id=="soulbinder_wraith":
 			shoot(player+aim*21,aim*660,false,damage)
 			notices.append("bolt")
 		else:
@@ -343,7 +376,7 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 			notices.append("swing")
 			for enemy in enemies:
 				var offset: Vector2 = enemy.pos-player
-				if offset.length() <= (118.0 if set_id=="warden_executioner" else 93.0)+float(enemy.r) and (offset.length()<12 or aim.dot(offset.normalized())>0.15):
+				if offset.length() <= (118.0 if set_id in ["warden_executioner","soulbinder_reaper"] else 93.0)+float(enemy.r) and (offset.length()<12 or aim.dot(offset.normalized())>0.15):
 					hit_enemy(enemy,damage)
 		if relics.has("twin") and echoes.size()<12:
 			echoes.append({"pos":player,"dir":aim,"time":0.28,"damage":damage*0.55})
@@ -351,16 +384,31 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 			shoot(player+aim*21,aim*590,false,bolt_damage*relics.count("echo"))
 	if ranged and bolt_timer <= 0:
 		bolt_timer = special_cd
-		if set_id=="arcanist_frost":
+		specials+=1
+		special_multiplier=2.0 if relics.has("overcharge") and specials%4==0 else 1.0
+		if character=="soulbinder":
+			var spent: int=mini(3,souls)
+			souls-=spent
+			if set_id=="soulbinder_reaper":
+				for enemy in enemies:
+					if player.distance_to(enemy.pos)<190: hit_enemy(enemy,bolt_damage*(1.0+spent*0.4)*special_multiplier)
+				hp=minf(max_hp,hp+spent*3)
+				effect("burst",player,0.45,Vector2.ZERO)
+			else:
+				spirit_pos=player+aim*45
+				spirit_life=4.0+spent*1.5
+				spirit_timer=0
+				for i in range(3+spent): shoot(player+aim*21,aim.rotated((i-1.0)*0.19)*560,false,bolt_damage*special_multiplier)
+		elif set_id=="arcanist_frost":
 			for enemy in enemies:
 				if player.distance_to(enemy.pos)<185:
-					hit_enemy(enemy,bolt_damage)
+					hit_enemy(enemy,bolt_damage*special_multiplier)
 					enemy["chill"]=4.0
 			effect("burst",player,0.4,Vector2.ZERO)
 		elif set_id=="warden_executioner":
 			effect("slash",player,0.3,aim)
 			for enemy in enemies:
-				if player.distance_to(enemy.pos)<175: hit_enemy(enemy,bolt_damage*2.0)
+				if player.distance_to(enemy.pos)<175: hit_enemy(enemy,bolt_damage*2.0*special_multiplier)
 			for i in range(mini(8,2*relics.count("split"))):
 				shoot(player+aim*21,aim.rotated((float(i)-0.5)*0.25)*590,false,bolt_damage)
 			notices.append("swing")
@@ -368,7 +416,7 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 			var count := mini(9,(3 if character=="dealer" else 1)+2*relics.count("split"))
 			for i in range(count):
 				var angle := (float(i)-(count-1)*0.5)*0.19
-				var power := bolt_damage
+				var power := bolt_damage*special_multiplier
 				if set_id=="dealer_joker": power *= rng.randf_range(0.5,1.8)
 				shoot(player+aim*21,aim.rotated(angle)*590,false,power)
 			notices.append("bolt")
@@ -388,14 +436,39 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 		orbit_timer=0.25
 		for enemy in enemies:
 			if player.distance_to(enemy.pos)<95: hit_enemy(enemy,5*relics.count("sun"))
+	if spirit_life>0:
+		spirit_life-=dt
+		spirit_timer-=dt
+		if spirit_timer<=0:
+			spirit_timer=0.55
+			var nearest: Dictionary={}
+			var distance:=100000.0
+			for enemy in enemies:
+				var d: float=spirit_pos.distance_to(enemy.pos)
+				if enemy.hp>0 and d<distance:
+					distance=d; nearest=enemy
+			if not nearest.is_empty():
+				spirit_pos=spirit_pos.move_toward(nearest.pos,35)
+				shoot(spirit_pos,spirit_pos.direction_to(nearest.pos)*510,false,bolt_damage*0.6)
 	update_enemies(dt)
 	update_shots(dt)
+	if guard_pulse_pending:
+		guard_pulse_pending=false
+		for enemy in enemies:
+			if player.distance_to(enemy.pos)<120: hit_enemy(enemy,18*relics.count("guardpulse"))
 	update_hazards(dt)
 	for i in range(enemies.size()-1, -1, -1):
 		if enemies[i].hp <= 0:
 			effect("burst", enemies[i].pos, 0.35, Vector2.ZERO)
 			kills += 1
-			shards += (20 if enemies[i].kind in ["boss","rootking"] else 3)+2*relics.count("greed")
+			if character=="soulbinder": souls=mini(6,souls+1)
+			if relics.has("harvest"):
+				harvest_count+=1
+				if harvest_count%5==0: hp=minf(max_hp,hp+8*relics.count("harvest"))
+			if relics.has("soulstorm"):
+				for j in range(3): shoot(enemies[i].pos,Vector2.from_angle(j*TAU/3+elapsed)*420,false,14*relics.count("soulstorm"))
+			if relics.has("bounty") and (enemies[i].get("elite",false) or enemies[i].kind in ["boss","rootking","hollowking"]): shards+=10*relics.count("bounty")
+			shards += (20 if enemies[i].kind in ["boss","rootking","hollowking"] else 3)+2*relics.count("greed")
 			if relics.has("shatter") and float(enemies[i].get("chill",0))>0:
 				for j in range(6): shoot(enemies[i].pos,Vector2.from_angle(j*TAU/6)*400,false,12)
 			if enemies[i].kind=="mushroom":
@@ -415,6 +488,7 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 	elif enemies.is_empty():
 		shots.clear()
 		hazards.clear()
+		if room_kind=="boss": bosses_defeated=maxi(bosses_defeated,floor_index+1)
 		if room_kind=="boss" and floor_index==FLOOR_COUNT-1:
 			dungeon.nodes[room].cleared=true
 			state="victory"
@@ -441,6 +515,9 @@ func hit_enemy(enemy: Dictionary, amount: float) -> void:
 	if relics.has("crit") and rng.randf()<minf(0.8,0.2*relics.count("crit")): amount *= 2
 	if relics.has("hunter") and (enemy.get("elite",false) or enemy.kind in ["boss","rootking"]): amount+=8*relics.count("hunter")
 	if relics.has("blood") and hp<max_hp*0.35: amount*=1.4
+	if relics.has("execution") and enemy.hp<enemy.max_hp*0.25: amount*=1.3
+	if relics.has("frostfire") and float(enemy.get("chill",0))>0 and float(enemy.get("burn",0))>0: amount+=8*relics.count("frostfire")
+	if relics.has("sacrifice"): amount*=1.0+0.2*relics.count("sacrifice")
 	if enemy.kind=="shield" and enemy.pos.direction_to(player).dot(enemy.get("facing",Vector2.LEFT))>0.35: amount*=0.6
 	enemy.hp -= maxf(1,amount+temp_power)
 	if relics.has("frost") or set_id=="arcanist_frost": enemy["chill"]=2.0
@@ -460,6 +537,7 @@ func hurt(amount: float) -> void:
 	if invulnerable > 0 or shield_time>0 or hp <= 0:
 		return
 	hp = maxf(0, hp - maxf(1, amount - armor))
+	if relics.has("guardpulse"): guard_pulse_pending=true
 	invulnerable = 0.65+0.15*relics.count("warding")
 	effect("hurt", player, 0.25, Vector2.ZERO)
 	notices.append("hurt")
@@ -489,9 +567,11 @@ func update_enemies(dt: float) -> void:
 		if enemy.wind > 0:
 			enemy.wind -= dt
 			if enemy.wind <= 0:
-				if kind in ["caster","archer","spore"]:
+				if kind in ["caster","archer","spore","hexer"]:
 					shoot(pos, pos.direction_to(enemy.target)*(390 if kind=="archer" else 265), true, 12)
 					if kind=="spore": add_hazard(enemy.target,44,0.6,2.8,9)
+					if kind=="hexer":
+						for j in range(3): shoot(pos,pos.direction_to(enemy.target).rotated((j-1)*0.25)*330,true,13)
 				elif kind=="vine":
 					if player.distance_to(enemy.target)<75:
 						player=move_actor(player,player.direction_to(pos)*100,15)
@@ -501,6 +581,9 @@ func update_enemies(dt: float) -> void:
 					for i in range(phase):
 						var angle := TAU*float(i)/phase + elapsed*0.3
 						shoot(pos, Vector2.from_angle(angle)*290, true, 15)
+					if kind=="hollowking":
+						for j in range(5 if enemy.hp<enemy.max_hp*0.5 else 3): add_hazard(enemy.target+Vector2.from_angle(j*TAU/5)*85,38,0.7,2.8,19)
+						for j in range(3): shoot(pos,pos.direction_to(enemy.target).rotated((j-1)*0.24)*430,true,18)
 					if kind=="rootking":
 						add_hazard(enemy.target,62,0.8,3.5,18)
 						if enemy.hp<enemy.max_hp*0.5:
@@ -508,7 +591,7 @@ func update_enemies(dt: float) -> void:
 					if dist < 125:
 						hurt(24)
 				elif dist < radius + 45:
-					hurt(18 if kind in ["brute","shield","mushroom"] else 11)
+					hurt(18 if kind in ["brute","shield","mushroom","sentinel"] else 11)
 				enemy.timer = 1.8 if kind in ["boss","rootking"] else 0.9
 			continue
 		var velocity := Vector2.ZERO
@@ -693,4 +776,21 @@ func smoke_test() -> bool:
 	enter_room()
 	for unit in enemies: unit.hp=0
 	tick(0.016,Vector2.ZERO,Vector2(700,385),false,false,false)
-	return state=="victory"
+	if state!="reward" or not choose_relic(0): return false
+	player=EXIT
+	if not next_room() or not descend() or floor_index!=2 or relics.size()!=4: return false
+	room=6
+	enter_room()
+	shards=16
+	var old_damage:=damage
+	if room_kind!="forge" or not service_action(0) or state!="route" or damage!=old_damage+12 or shards!=0: return false
+	room=9
+	enter_room()
+	for unit in enemies: unit.hp=0
+	tick(0.016,Vector2.ZERO,Vector2(700,385),false,false,false)
+	if state!="victory" or bosses_defeated!=3: return false
+	begin(99,"soulbinder_reaper")
+	souls=3
+	hp=50
+	tick(0.016,Vector2.ZERO,Vector2(700,385),false,true,false)
+	return souls==0 and hp==59

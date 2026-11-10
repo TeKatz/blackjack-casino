@@ -6,7 +6,9 @@ const SETS := {
 	"dealer_cards": {"character":"dealer","en":"Cardsharp","de":"Kartenmeister","hp":75.0,"damage":14.0,"bolt":20.0,"speed":270.0,"attack":0.24,"special":1.1,"dash":1.1,"cost":55},
 	"dealer_joker": {"character":"dealer","en":"Joker","de":"Joker","hp":85.0,"damage":17.0,"bolt":27.0,"speed":255.0,"attack":0.32,"special":1.5,"dash":1.2,"cost":85},
 	"arcanist_fire":{"character":"arcanist","en":"Pyromancer","de":"Pyromant","hp":80.0,"damage":16.0,"bolt":38.0,"speed":250.0,"attack":0.34,"special":1.8,"dash":1.25,"cost":100},
-	"arcanist_frost":{"character":"arcanist","en":"Frostweaver","de":"Frostweber","hp":90.0,"damage":15.0,"bolt":28.0,"speed":240.0,"attack":0.35,"special":1.6,"dash":1.2,"cost":125}
+	"arcanist_frost":{"character":"arcanist","en":"Frostweaver","de":"Frostweber","hp":90.0,"damage":15.0,"bolt":28.0,"speed":240.0,"attack":0.35,"special":1.6,"dash":1.2,"cost":125},
+	"soulbinder_reaper":{"character":"soulbinder","en":"Reaper","de":"Schnitter","hp":105.0,"damage":31.0,"bolt":36.0,"speed":240.0,"attack":0.46,"special":2.1,"dash":1.35,"cost":140},
+	"soulbinder_wraith":{"character":"soulbinder","en":"Wraithcaller","de":"Geisterrufer","hp":82.0,"damage":19.0,"bolt":24.0,"speed":255.0,"attack":0.35,"special":2.4,"dash":1.2,"cost":175}
 }
 const RELICS := {
 	"blade":["Gilded Edge","Goldene Klinge","+9 sword/card damage","+9 Hauptangriffsschaden",0],
@@ -48,7 +50,15 @@ const RELICS := {
 	"venom":["Venom Vial","Giftampulle","Hits poison enemies","Treffer vergiften Gegner",36],
 	"nova":["Nova Core","Novakern","Dash releases a burst","Dash erzeugt Explosion",37],
 	"hunter":["Hunter Eye","Jägerauge","+8 damage against elites/bosses","+8 Schaden gegen Elite/Bosse",38],
-	"blood":["Blood Moon","Blutmond","Low HP increases damage","Wenig LP erhöht Schaden",39]
+	"blood":["Blood Moon","Blutmond","Low HP increases damage","Wenig LP erhöht Schaden",39],
+	"harvest":["Soul Chalice","Seelenkelch","Every 5 kills restores 8 HP","Jeder 5. Kill heilt 8 LP",40],
+	"execution":["Executioner's Mark","Richtmal","Deal 30% more damage below 25% enemy HP","30 % mehr Schaden bei Gegnern unter 25 % LP",41],
+	"guardpulse":["Aegis Bell","Ägisglocke","Taking damage releases a shockwave","Erlittener Schaden erzeugt eine Schockwelle",42],
+	"frostfire":["Frostfire Sigil","Frostfeuersiegel","Burning chilled foes take +8 damage per hit","Brennende unterkühlte Gegner erleiden +8 Schaden",43],
+	"soulstorm":["Soulstorm","Seelensturm","Kills release 3 spirit bolts","Kills erzeugen 3 Seelengeschosse",44],
+	"overcharge":["Overcharge Coil","Überladungsspule","Every fourth special attack deals double damage","Jeder vierte Spezialangriff verursacht doppelten Schaden",45],
+	"bounty":["Bounty Seal","Kopfgeldsiegel","Elite and boss kills award +10 shards","Elite- und Bosskills geben +10 Splitter",46],
+	"sacrifice":["Crimson Crown","Blutkrone","+20% damage, lose 2 HP on new combat rooms","+20 % Schaden, -2 LP bei neuen Kampfräumen",47]
 }
 const UPGRADES := {
 	"vitality":["Vitality","Vitalität","+5 starting HP per rank","+5 Start-LP je Rang",12,5],
@@ -58,10 +68,24 @@ const UPGRADES := {
 }
 static func rarity(id: String) -> int:
 	var index: int = RELICS[id][4]
-	return 3 if id in ["phoenix","cascade","twin"] else (2 if index>=20 else (1 if index>=8 else 0))
+	return 3 if id in ["phoenix","cascade","twin","soulstorm","sacrifice"] else (2 if index>=20 else (1 if index>=8 else 0))
 
 static func relic_text(id: String, german: bool) -> String:
 	var item: Array = RELICS[id]
 	return item[1 if german else 0]+"  •  "+item[3 if german else 2]
 static func loadout_display_name(id: String, german: bool) -> String:
 	return SETS[id]["de" if german else "en"]
+
+static func character_name(id: String, german: bool) -> String:
+	match id:
+		"warden": return "Wächter" if german else "Warden"
+		"dealer": return "Dealer"
+		"arcanist": return "Arkanist" if german else "Arcanist"
+		"soulbinder": return "Seelenbinder" if german else "Soulbinder"
+	return id
+static func floor_name(index: int, german: bool) -> String:
+	return ["Das vergessene Gewölbe","Der Abgrundgarten","Die hohle Krone"][index] if german else ["The Forgotten Vault","The Abyss Garden","The Hollow Crown"][index]
+static func boss_name(index: int, german: bool) -> String:
+	return ["Der Tresorwächter","Der Wurzelkönig","Der Hohle König"][index] if german else ["The Vault Keeper","The Root King","The Hollow King"][index]
+static func required_set(id: String) -> String:
+	return {"dealer_joker":"dealer_cards","arcanist_frost":"arcanist_fire","soulbinder_wraith":"soulbinder_reaper"}.get(id,"")
