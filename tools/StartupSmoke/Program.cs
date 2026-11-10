@@ -553,28 +553,29 @@ internal static class Program
         {
             string ready = await web.ExecuteScriptAsync(
                 "Boolean(document.querySelector('[data-testid=arcade-menu]')"
-                + "&&document.querySelectorAll('[data-arcade-id]').length===10"
+                + "&&document.querySelectorAll('[data-arcade-id]').length===15"
                 + "&&!document.querySelector('.lobby-hero'))");
             if (ready == "true") { menuOpened = true; break; }
             await Task.Delay(100);
         }
-        Require(menuOpened, "Arcade Games did not open its dedicated ten-game menu.");
+        Require(menuOpened, "Arcade Games did not open its dedicated fifteen-game menu.");
         // The streamlined hub must open a full personal high-score table.
         await web.ExecuteScriptAsync(
             "document.querySelector('[data-testid=arcade-highscores-open]')?.click()");
         string highScores = await web.ExecuteScriptAsync(
             "Boolean(document.querySelector('[data-testid=arcade-highscores-dialog]')"
-            + "&&document.querySelectorAll('.arcade-highscores-entry').length===10)");
+            + "&&document.querySelectorAll('.arcade-highscores-entry').length===15)");
         Require(highScores == "true", "Arcade personal high-score table is missing games.");
         await web.ExecuteScriptAsync(
             "document.querySelector('.arcade-highscores-dialog .arcade-detail-close')?.click()");
 
-        // Launch and exit all ten real Arcade games in packaged WebView2.
+        // Launch and exit all fifteen real Arcade games in packaged WebView2.
         // Static cards and nonfunctional "Play" buttons cannot pass this check.
         foreach (string id in new[] {
             "midnight-wings", "cave-escape", "perfect-stack", "blade-timing",
             "death-snake", "neon-breaker", "bullet-storm",
-            "hexagon-hell", "spike-rush", "endless-ascent" })
+            "hexagon-hell", "spike-rush", "endless-ascent",
+            "midnight-pinball", "phantom-hook", "neon-drift", "gravity-chamber", "echo-sequence" })
         {
             await web.ExecuteScriptAsync(
                 "document.querySelector('[data-arcade-id=" + id + "]')?.click()");
@@ -648,7 +649,7 @@ internal static class Program
             {
                 string ready = await web.ExecuteScriptAsync(
                     "Boolean(document.querySelector('[data-testid=arcade-menu]')"
-                    + "&&document.querySelectorAll('[data-arcade-id]').length===10)");
+                    + "&&document.querySelectorAll('[data-arcade-id]').length===15)");
                 if (ready == "true") { returned = true; break; }
                 await Task.Delay(100);
             }
