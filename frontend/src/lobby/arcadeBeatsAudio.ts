@@ -50,11 +50,18 @@ function hat(ctx:AudioContext,volume:number):void{
 }
 /** Play one musical eighth subdivision (never a background timer). */
 export function playBeatsGroovePulse(ref:BeatAudioRef,enabled:boolean,
- pulse:number,bpm:number):void{
+ pulse:number,bpm:number,lanes:readonly number[]=[]):void{
  if(!enabled)return;
  try{
   const ctx=contextFor(ref);
-  hat(ctx,pulse%2===0?.023:.013);
+  hat(ctx,pulse%2===0?.017:.011);
+   // The lead follows the exact lanes scheduled for this pulse, not a separate song.
+   for(const lane of lanes){
+    if(!Number.isInteger(lane)||lane<0||lane>=NOTE_FREQUENCIES.length)continue;
+    const frequency=NOTE_FREQUENCIES[lane];
+    synth(ctx,frequency,'triangle',.056,.20,1);
+    synth(ctx,frequency*2,'sine',.014,.14,1);
+   }
   if(pulse%2!==0)return;
   const beat=Math.floor(pulse/2),within=beat%4;
   const energy=Math.min(1,(bpm-104)/80);
@@ -69,8 +76,8 @@ export function playBeatsGroovePulse(ref:BeatAudioRef,enabled:boolean,
   }
   if(within===0||within===2||bpm>145){
    const root=ROOTS[Math.floor(beat/16)%ROOTS.length];
-   synth(ctx,root,'triangle',.034,.23,.98);
-   synth(ctx,root*2,'sine',.011,.22,.98);
+   synth(ctx,root,'triangle',.017,.19,.98);
+   // Keep the low accompaniment quiet; the chart notes carry the melody.
   }
  }catch{/* A suspended/unsupported audio device never blocks the game. */}
 }
@@ -80,10 +87,10 @@ export function playBeatsLaneHit(ref:BeatAudioRef,enabled:boolean,
  if(!enabled||lane<0||lane>=NOTE_FREQUENCIES.length)return;
  try{
   const ctx=contextFor(ref),f=NOTE_FREQUENCIES[lane];
-  const volume=grade==='PERFECT'?.072:grade==='GREAT'?.049:.036;
-  synth(ctx,f,'triangle',volume,.19,1.01);
-  synth(ctx,f*2,'sine',volume*.35,.13,1.04);
-  if(grade==='PERFECT')synth(ctx,f*3,'sine',.022,.11,1.02);
+  const volume=grade==='PERFECT'?.052:grade==='GREAT'?.039:.029;
+  // A short confirmation accent sits above the synchronized lead.
+  synth(ctx,f*2,'triangle',volume,.095,1.04);
+  if(grade==='PERFECT')synth(ctx,f*3,'sine',.018,.09,1.02);
  }catch{/* Audio is optional. */}
 }
 export function playBeatsMiss(ref:BeatAudioRef,enabled:boolean):void{
