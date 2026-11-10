@@ -123,7 +123,7 @@ function flipperCollision(run:PinballRun,side:'left'|'right',dt:number):PinballE
 export function stepPinball(run:PinballRun,dt:number,controls:PinballControls={}):PinballEvent{
  if(run.over||!Number.isFinite(dt)||dt<=0)return null;
  const step=Math.min(1/60,dt);
- run.elapsed+=step;
+ // The shared Arcade runner advances elapsed once before dispatching here.
  run.leftFlipper=!!controls.left;run.rightFlipper=!!controls.right;
  run.leftLift=clamp(run.leftLift+(run.leftFlipper?1:-1)*step*14,0,1);
  run.rightLift=clamp(run.rightLift+(run.rightFlipper?1:-1)*step*14,0,1);
