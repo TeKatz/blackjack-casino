@@ -185,6 +185,25 @@ func run_scene_smoke() -> void:
 	if overlay_state != "pause":
 		get_tree().quit(9)
 		return
+	paused = false
+	run.state = "victory"
+	_process(0.0)
+	if not run.settled or overlay_state != "victory" or progress.attempts != 1:
+		push_error("Descent victory settlement or overlay failed")
+		get_tree().quit(12)
+		return
+	var earned: int = progress.essence
+	_process(0.0)
+	if progress.essence != earned:
+		push_error("Descent run paid out twice")
+		get_tree().quit(13)
+		return
+	restart()
+	_process(0.0)
+	if run.state != "fight" or run.settled or not run.relics.is_empty():
+		push_error("Descent restart failed to reset run")
+		get_tree().quit(14)
+		return
 	print("Midnight Descent gameplay scene smoke PASS")
 	get_tree().quit()
 
@@ -200,7 +219,7 @@ func draw_effect(fx: Dictionary) -> void:
 			draw_line(pos-dir*60,pos+dir*23,Color(0.65,0.52,1,alpha*0.8),15,true)
 		"burst","hit","hurt":
 			var color := Color(1,0.35,0.45,alpha) if fx.kind=="hurt" else Color(1,0.78,0.42,alpha)
-		for i in range(8):
+			for i in range(8):
 				var ray := Vector2.from_angle(float(i)*TAU/8+clock)
 				draw_line(pos+ray*(8+35*(1-alpha)),pos+ray*(15+42*(1-alpha)),color,2,true)
 
