@@ -1,5 +1,5 @@
 /** Arcade concepts shown in the casino lobby. No game is advertised as playable until its own implementation is wired. */
-export type ArcadeCategory='one-button'|'reaction'|'precision'|'puzzle'|'memory';
+export type ArcadeCategory='one-button'|'reaction'|'precision'|'puzzle'|'memory'|'strategy'|'rhythm';
 export type ArcadeGame={
  id:string;name:string;category:ArcadeCategory;symbol:string;accent:string;
  difficulty:number;seconds:[number,number];controls:{en:string;de:string};
@@ -72,6 +72,31 @@ export const arcadeGames:readonly ArcadeGame[]=[
   description:{en:'Remember an ever-growing pattern of six lights.',de:'Merke dir immer längere Sequenzen aus sechs Lichtern.'},
   detail:{en:'Watch the lit pads carefully. Repeat the sequence in order using the number keys or mouse. Each round adds another light, but wrong answers and timeouts cost lives.',
    de:'Präge dir die aufleuchtenden Felder ein und wiederhole ihre Reihenfolge mit den Zahlentasten oder der Maus. Jede Runde kommt ein Licht hinzu; Fehler und Zeitablauf kosten Leben.'}},
+ {id:'prism-lock',name:'Prism Lock',category:'puzzle',symbol:'◇',accent:'#9feee4',difficulty:4,seconds:[35,180],
+  controls:{en:'Click mirrors / Arrows + Space',de:'Spiegel anklicken / Pfeile + Leertaste'},
+  description:{en:'Bend a laser through mirrors to unlock the receiver.',de:'Lenke einen Laser mit Spiegeln zum Empfänger.'},
+  detail:{en:'Rotate the mirrors to reflect the light from its source into the marked receiver. Each puzzle has a guaranteed solution, decoy mirrors, limited time and three lives.',
+   de:'Drehe die Spiegel, bis der Laser vom Sender zum markierten Empfänger gelangt. Jedes Rätsel besitzt eine Lösung und enthält Ablenkspiegel. Die Zeit ist begrenzt, drei Leben stehen zur Verfügung.'}},
+ {id:'meteor-miner',name:'Meteor Miner',category:'strategy',symbol:'✦',accent:'#b5d5fc',difficulty:4,seconds:[45,180],
+  controls:{en:'WASD / Arrows · Hold Space mine',de:'WASD / Pfeile · Leertaste halten zum Abbauen'},
+  description:{en:'Mine drifting asteroids, collect ore and return safely.',de:'Baue Asteroiden ab und bringe wertvolle Erze zur Basis.'},
+  detail:{en:'Pilot your mining ship through the asteroid field. Hold Space near a rock to extract ore, then dock at the base to bank your cargo and refill oxygen. Watch your hull and oxygen.',
+   de:'Steuere dein Minenschiff durch das Asteroidenfeld. Halte nahe einem Felsen die Leertaste zum Abbauen und liefere die Fracht an der Basis ab, um Punkte und Sauerstoff zu erhalten. Achte auf die Hülle.'}},
+ {id:'circuit-rush',name:'Circuit Rush',category:'puzzle',symbol:'⌘',accent:'#a3f3cf',difficulty:4,seconds:[35,180],
+  controls:{en:'Click tiles / Arrows + Space',de:'Felder anklicken / Pfeile + Leertaste'},
+  description:{en:'Rotate circuit tiles until current reaches the exit.',de:'Drehe Leiterbahnen, bis der Strom das Ziel erreicht.'},
+  detail:{en:'Every tile has real directional connections. Rotate the paths to form a continuous powered circuit from the source to the output. Each new circuit has a generated solution, a clock and three lives.',
+   de:'Jedes Feld besitzt echte Leitungsanschlüsse. Drehe die Teile zu einem durchgehend verbundenen Stromkreis von der Quelle bis zum Ziel. Neue Rätsel besitzen eine überprüfbare Lösung; Zeit und drei Leben sind begrenzt.'}},
+ {id:'shadow-heist',name:'Shadow Heist',category:'strategy',symbol:'◆',accent:'#efc799',difficulty:4,seconds:[45,180],
+  controls:{en:'WASD / Arrow keys',de:'WASD / Pfeiltasten'},
+  description:{en:'Steal the jewels and evade patrolling guards.',de:'Sammle Juwelen und entkomme patrouillierenden Wachen.'},
+  detail:{en:'Move through the guarded room, hide behind cover and collect every jewel to open the escape door. The guards detect you in directional vision cones, and repeated detection costs lives.',
+   de:'Schleiche durch den bewachten Raum, nutze Deckungen und sammle alle Juwelen, um die Ausgangstür zu öffnen. Die Wachen erkennen dich in ihren Sichtkegeln. Wiederholte Entdeckung kostet Leben.'}},
+ {id:'pulse-perfect',name:'Pulse Perfect',category:'rhythm',symbol:'◎',accent:'#d9b5f7',difficulty:5,seconds:[25,120],
+  controls:{en:'Space / Click',de:'Leertaste / Klick'},
+  description:{en:'Strike precisely when two rings align.',de:'Drücke genau dann, wenn sich zwei Ringe überlagern.'},
+  detail:{en:'Watch the pulse ring collapse onto the target. Hit the timing window for points, or earn a Perfect hit and build a multiplier. Three missed beats end the run, and the pulses accelerate.',
+   de:'Beobachte den schrumpfenden Ring und drücke im richtigen Moment. Perfekte Treffer bauen deinen Multiplikator auf. Nach drei Fehlschlägen endet die Runde; die Ringe werden immer schneller.'}},
 ];
 export const arcadeCategoryNames={
  all:{en:'All games',de:'Alle Spiele'},
@@ -80,10 +105,12 @@ export const arcadeCategoryNames={
  precision:{en:'Precision',de:'Präzision'},
  puzzle:{en:'Puzzle',de:'Rätsel'},
  memory:{en:'Memory',de:'Gedächtnis'},
+ strategy:{en:'Strategy',de:'Strategie'},
+ rhythm:{en:'Rhythm',de:'Rhythmus'},
 } as const;
 export function arcadeLobbyMode(language:'en'|'de'){
  return {id:ARCADE_MODE_ID,title:'Arcade Games',category:language==='de'?'Arcade':'Arcade',
-  description:language==='de'?'Fünfzehn kurze Herausforderungen. Jeder Versuch zählt.':
-   'Fifteen quick-fire challenges. Every attempt counts.',
+  description:language==='de'?'Zwanzig kurze Herausforderungen. Jeder Versuch zählt.':
+   'Twenty quick-fire challenges. Every attempt counts.',
   enabled:true,secondary:false};
 }
