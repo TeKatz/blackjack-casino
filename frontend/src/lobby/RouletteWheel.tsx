@@ -3,9 +3,10 @@ import {Application,Container,Graphics,Text} from 'pixi.js';
 import {WHEEL,color,pocketAngle} from './rouletteModel';
 const TAU=Math.PI*2;
 const ease=(t:number)=>1-Math.pow(1-t,3);
-export function RouletteWheel({number,spinId,motion,onDone}:{number:number|null;spinId:string;motion:boolean;onDone:()=>void}){
+export function RouletteWheel({number,spinId,motion,onStart,onDone}:{number:number|null;spinId:string;motion:boolean;onStart:()=>void;onDone:()=>void}){
  const host=useRef<HTMLDivElement>(null), scene=useRef<{wheel:Container;ball:Graphics;app:Application}|null>(null);
  const done=useRef(onDone);done.current=onDone;
+ const begin=useRef(onStart);begin.current=onStart;
  const [ready,setReady]=useState(false);
  const [failed,setFailed]=useState(false);
  useEffect(()=>{
@@ -27,7 +28,8 @@ export function RouletteWheel({number,spinId,motion,onDone}:{number:number|null;
     WHEEL.forEach((n,i)=>{const a=-Math.PI/2+i*step;const t=new Text({text:String(n),style:{fontFamily:'Arial',fontSize:16,fontWeight:'bold',fill:0xfff5dd}});t.anchor.set(.5);t.position.set(Math.cos(a)*166,Math.sin(a)*166);t.rotation=a+Math.PI/2;wheel.addChild(t);});
     const hub=new Graphics().circle(0,0,125).fill(0x573321).circle(0,0,122).stroke({color:0xe3b76a,width:3}).circle(0,0,99).fill(0x211a18).circle(0,0,97).stroke({color:0x90693a,width:2});
     for(let i=0;i<8;i++){const a=i*TAU/8;hub.moveTo(Math.cos(a)*34,Math.sin(a)*34).lineTo(Math.cos(a)*96,Math.sin(a)*96).stroke({color:0x8b6138,width:3});}
-    hub.circle(0,0,39).fill(0x8d6230).circle(0,0,30).fill(0xe4bd75).circle(0,0,17).fill(0x52321c).circle(-6,-7,9).fill(0xffe6b0);hub.circle(0,0,112).stroke({color:0xc09a5b,width:1.5}).circle(0,0,105).stroke({color:0x77502d,width:2});wheel.addChild(hub);
+    hub.moveTo(0,-29).lineTo(8,-8).lineTo(29,0).lineTo(8,8).lineTo(0,29).lineTo(-8,8).lineTo(-29,0).lineTo(-8,-8).closePath().fill(0xc99b57).stroke({color:0xf5d895,width:1.5});
+    hub.moveTo(0,-16).lineTo(5,0).lineTo(0,16).lineTo(-5,0).closePath().fill(0xf7db9e);hub.circle(0,0,112).stroke({color:0xc09a5b,width:1.5}).circle(0,0,105).stroke({color:0x77502d,width:2});wheel.addChild(hub);
     const ball=new Graphics().circle(2,4,8).fill({color:0x000000,alpha:.5}).circle(0,0,8).fill(0xf7e9c9).circle(-2,-3,3).fill(0xffffff);ball.position.set(0,-207);root.addChild(ball);
     app.canvas.style.width='100%';app.canvas.style.height='auto';host.current?.appendChild(app.canvas);scene.current={wheel,ball,app};setReady(true);
    }catch{if(!disposed)setFailed(true);if(initialized&&!disposed){app.destroy(true,{children:true});initialized=false;}}
@@ -38,6 +40,7 @@ export function RouletteWheel({number,spinId,motion,onDone}:{number:number|null;
   let frame=0;let cancelled=false;
   const s=scene.current;
   if(!s||!ready){if(failed){const timer=window.setTimeout(()=>done.current(),0);return()=>clearTimeout(timer);}return;}
+  begin.current();
   const start=performance.now(),duration=motion?6100:1, initial=s.wheel.rotation, final=initial+TAU*4+1.2;
   const target=pocketAngle(number)+final;
   const ballStart=Math.atan2(s.ball.y,s.ball.x), diff=((target-ballStart)%TAU+TAU)%TAU-TAU*7;
