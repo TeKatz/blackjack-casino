@@ -25,14 +25,21 @@ var occluders: Array[LightOccluder2D] = []
 var last_room := -1
 var last_seed: int = -1
 var light_texture: GradientTexture2D
+var ambient: CanvasModulate
+var side_lights: Array[PointLight2D] = []
+var boss_light: PointLight2D
+var gate_open_amount := 0.0
 
 func setup(value) -> void:
 	model = value
 	z_index = -1
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	previous_player = model.player
+	ambient = CanvasModulate.new()
+	ambient.color = Color(0.47,0.43,0.58)
+	add_child(ambient)
 	var gradient := Gradient.new()
-	gradient.colors = PackedColorArray([Color(1,1,1,0.95),Color(1,1,1,0.32),Color(1,1,1,0)])
+	gradient.colors = PackedColorArray([Color(1,1,1,0.95),Color(1,1,1,0.48),Color(1,1,1,0)])
 	gradient.offsets = PackedFloat32Array([0.0,0.48,1.0])
 	light_texture = GradientTexture2D.new()
 	light_texture.gradient = gradient
@@ -42,14 +49,19 @@ func setup(value) -> void:
 	light_texture.fill_from = Vector2(0.5,0.5)
 	light_texture.fill_to = Vector2(1,0.5)
 	for pos in TORCH_POSITIONS:
-		var light := make_light(Color("#ffc277"),2.8,0.85,true)
-		light.position = pos + Vector2(0,18)
+		var light := make_light(Color("#ffd094"),4.1,1.25,true)
+		light.position = pos + Vector2(0,40)
 		torches.append(light)
-	player_light = make_light(Color("#d8caff"),2.1,0.32,false)
-	gate_light = make_light(Color("#b18aff"),2.0,0.7,true)
+	player_light = make_light(Color("#d8caff"),2.8,0.58,false)
+	gate_light = make_light(Color("#b18aff"),3.6,1.15,true)
 	gate_light.position = Model.EXIT
+	for pos in [Vector2(89,555),Vector2(1190,555)]:
+		var light := make_light(Color("#e7ac73"),3.3,0.9,true)
+		light.position = pos
+		side_lights.append(light)
+	boss_light = make_light(Color("#ec6d9c"),3.6,0.0,false)
 	for i in range(4):
-		projectile_lights.append(make_light(Color("#8adcf8"),0.75,0.65,false))
+		projectile_lights.append(make_light(Color("#8adcf8"),1.3,1.0,false))
 	rebuild_occluders()
 	update_view(0.0)
 
@@ -67,6 +79,7 @@ func make_light(color: Color, scale_value: float, energy_value: float, shadows: 
 
 func rebuild_occluders() -> void:
 	for old in occluders:
+		remove_child(old)
 		old.queue_free()
 	occluders.clear()
 	for wall in model.walls:
@@ -92,10 +105,23 @@ func update_view(dt: float) -> void:
 		player_facing = model.aim
 	previous_player = model.player
 	for i in range(torches.size()):
-		torches[i].energy = 0.75 + sin(clock*7.0+i*2.2)*0.1 + sin(clock*13+i)*0.04
+		torches[i].energy = 1.25 + sin(clock*7.0+i*2.2)*0.19 + sin(clock*13+i)*0.08
+	for i in range(side_lights.size()):
+		side_lights[i].energy = 0.85 + sin(clock*5+i*2)*0.15
+	var boss_present := false
+	for enemy in model.enemies:
+		if enemy.kind == "boss":
+			boss_present = true
+			boss_light.position = enemy.pos
+			boss_light.energy = 0.75 + sin(clock*3)*0.2 + (0.6 if enemy.wind > 0 else 0.0)
+	boss_light.enabled = boss_present
+	var target_ambient := Color(0.39,0.30,0.47) if boss_present else Color(0.55,0.49,0.64)
+	ambient.color = ambient.color.lerp(target_ambient, minf(1.0,dt*2.5))
+	gate_open_amount = move_toward(gate_open_amount,1.0 if model.state == "exit" else 0.0,dt*2.5)
+	gate_light.energy = gate_open_amount*(1.1+sin(clock*4)*0.2)
 	player_light.position = model.player
 	player_light.color = Color("#ffd2d9") if model.invulnerable > 0.3 else Color("#d8caff")
-	gate_light.enabled = model.state == "exit"
+	gate_light.enabled = gate_open_amount > 0.01
 	for i in range(projectile_lights.size()):
 		var light := projectile_lights[i]
 		light.enabled = i < model.shots.size()
@@ -124,11 +150,15 @@ func _draw() -> void:
 			var size := Vector2(minf(64,arena.size.x-offset.x),minf(64,arena.size.y-offset.y))
 			if size.x <= 0 or size.y <= 0:
 				continue
-			var variant: int = (x*13+y*7+int(model.room)*3)%4
+			var variant: int = (x*13+y*7+int(model.room)*3)%3
+			if (x*19+y*11+int(model.room))%17 == 0:
+				variant = 3
 			tile(variant,Rect2(arena.position+offset,size),size/2.0)
 	for x in range(19):
-		tile(4,Rect2(56+x*64,105,64,40))
-		tile(4,Rect2(56+x*64,624,64,20))
+		var width := minf(64,1222.0-(58+x*64))
+		if width > 0:
+			tile(4,Rect2(58+x*64,105,width,40),Vector2(width/2,32))
+			tile(4,Rect2(58+x*64,624,width,20),Vector2(width/2,32))
 	for y in range(7):
 		tile(4,Rect2(23,146+y*68,35,68))
 		tile(4,Rect2(1222,146+y*68,35,68))
@@ -137,6 +167,18 @@ func _draw() -> void:
 		var pos: Vector2 = TORCH_POSITIONS[i]
 		var frame := int(clock*8+i)%4
 		draw_texture_rect_region(TORCH,Rect2(pos-Vector2(16,37),Vector2(32,64)),Rect2(frame*16,0,16,32))
+	for i in range(side_lights.size()):
+		var pos := side_lights[i].position
+		draw_texture_rect_region(TORCH,Rect2(pos-Vector2(16,37),Vector2(32,64)),Rect2((int(clock*8)+i)%4*16,0,16,32))
+	# Sparse cracks, scattered stones and drifting dust break up the repeated grid.
+	for i in range(22):
+		var pos := Vector2(78+(i*173+int(model.room)*37)%1110,165+(i*97)%440)
+		draw_rect(Rect2(pixel_pos(pos),Vector2(4,2)),Color("#756174"))
+		if i%3 == 0:
+			draw_rect(Rect2(pixel_pos(pos+Vector2(4,2)),Vector2(2,4)),Color("#31283e"))
+	for i in range(28):
+		var pos := Vector2(70+fposmod(i*149+clock*(6+i%4),1138),160+fposmod(i*71-clock*9,450))
+		draw_rect(Rect2(pixel_pos(pos),Vector2(2,2)),Color(0.85,0.65,0.43,0.16+0.12*sin(clock*2+i)))
 	# Gate is drawn as stone architecture, with an illuminated open portal.
 	var gate: Vector2 = Model.EXIT
 	tile(6,Rect2(gate-Vector2(22,54),Vector2(48,108)))
@@ -208,4 +250,4 @@ func draw_actor(enemy: Dictionary) -> void:
 	sprite(kind,pos,direction,frame,size,tint)
 
 func is_ready_for_smoke() -> bool:
-	return TILES.get_width() == 256 and ACTORS["warden"].get_height() == 128 and torches.size() == 5 and occluders.size() == model.walls.size()
+	return TILES.get_width() == 256 and ACTORS["warden"].get_height() == 128 and torches.size() == 5 and side_lights.size() == 2 and ambient != null and boss_light != null and occluders.size() == model.walls.size()
