@@ -29,21 +29,21 @@ export function RouletteWheel({number,spinId,motion,onDone}:{number:number|null;
     hub.circle(0,0,39).fill(0x8d6230).circle(0,0,30).fill(0xe4bd75).circle(0,0,17).fill(0x52321c).circle(-6,-7,9).fill(0xffe6b0);wheel.addChild(hub);
     const ball=new Graphics().circle(2,4,8).fill({color:0x000000,alpha:.5}).circle(0,0,8).fill(0xf7e9c9).circle(-2,-3,3).fill(0xffffff);ball.position.set(0,-207);root.addChild(ball);
     app.canvas.style.width='100%';app.canvas.style.height='auto';host.current?.appendChild(app.canvas);scene.current={wheel,ball,app};setReady(true);
-   }catch{if(!disposed)setFailed(true);if(initialized&&!disposed)app.destroy(true,{children:true});}
+   }catch{if(!disposed)setFailed(true);if(initialized&&!disposed){app.destroy(true,{children:true});initialized=false;}}
   }void init();return()=>{disposed=true;scene.current=null;if(initialized)app.destroy(true,{children:true});};
  },[]);
  useEffect(()=>{
   if(number===null||!spinId)return;
   let frame=0;let cancelled=false;
   const s=scene.current;
-  if(!s||!ready){if(failed||!motion){const timer=window.setTimeout(()=>done.current(),0);return()=>clearTimeout(timer);}return;}
+  if(!s||!ready){if(failed){const timer=window.setTimeout(()=>done.current(),0);return()=>clearTimeout(timer);}return;}
   const start=performance.now(),duration=motion?6100:1, initial=s.wheel.rotation, final=initial+TAU*4+1.2;
   const target=pocketAngle(number)+final;
   const ballStart=Math.atan2(s.ball.y,s.ball.x), diff=((target-ballStart)%TAU+TAU)%TAU-TAU*7;
   function draw(now:number){
    if(cancelled||!s)return;const t=Math.min(1,(now-start)/duration), e=ease(t);
    s.wheel.rotation=initial+(final-initial)*e;
-   const angle=ballStart+diff*e;
+   const angle=ballStart+diff*ease(Math.min(1,t*1.03));
    const drop=Math.max(0,(t-.57)/.43),rad=207-43*ease(drop)+Math.sin(drop*5*Math.PI)*5*(1-drop);
    s.ball.position.set(Math.cos(angle)*rad,Math.sin(angle)*rad);
    if(t<1)frame=requestAnimationFrame(draw);else done.current();

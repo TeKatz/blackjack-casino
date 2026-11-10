@@ -18,6 +18,7 @@ export function RouletteTable({language,bankroll,bankrollValue,motion,sound,onBa
  const [inside,setInside]=useState(false),[selection,setSelection]=useState<number[]>([]);
  const request=useRef<{roundId:string;bets:Bet[]}|null>(null),lock=useRef(false),audio=useRef<AudioContext|null>(null);
  const [retry,setRetry]=useState(false);
+ const [startingCash,setStartingCash]=useState<number|null>(null);
  const total=bets.reduce((s,b)=>s+b.amount,0);
  function tone(freq:number,duration=.07){if(!sound)return;try{const ctx=audio.current??(audio.current=new AudioContext());void ctx.resume();const osc=ctx.createOscillator(),g=ctx.createGain();osc.type='sine';osc.frequency.value=freq;g.gain.setValueAtTime(.035,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+duration);osc.connect(g);g.connect(ctx.destination);osc.start();osc.stop(ctx.currentTime+duration);}catch{/* optional sound */}}
  useEffect(()=>()=>{void audio.current?.close()},[]);
@@ -41,17 +42,17 @@ export function RouletteTable({language,bankroll,bankrollValue,motion,sound,onBa
   const old=bets.find(b=>b.key===key);change(old?bets.map(b=>b.key===key?{...b,amount:b.amount+chip}:b):[...bets,{key,amount:chip}]);tone(520);}
  function pick(n:number){if(inside){setSelection(old=>old.includes(n)?old.filter(x=>x!==n):old.length<6?[...old,n]:old);return;}place('n'+n)}
  function send(){if(request.current)window.chrome?.webview?.postMessage({type:'lobby.roulette.spin',...request.current});}
- function spin(){if(lock.current||!total||total>cash||total>LIMIT)return;lock.current=true;setPending(true);setResult(null);setRevealed(false);setNotice('');setRetry(false);setPrevious(bets.map(b=>({...b})));const roundId=crypto.randomUUID();request.current={roundId,bets};tone(260,.2);
+ function spin(){if(lock.current||!total||total>cash||total>LIMIT)return;lock.current=true;setStartingCash(cash);setPending(true);setResult(null);setRevealed(false);setNotice('');setRetry(false);setPrevious(bets.map(b=>({...b})));const roundId=crypto.randomUUID();request.current={roundId,bets};tone(260,.2);
   if(embeddedLobby)send();else accept(settlePreview(roundId,bets,cash,randomNumber()));
  }
  function finish(){if(!result||!lock.current)return;lock.current=false;setPending(false);setRevealed(true);setHistory(old=>[result.number,...old].slice(0,16));setBets([]);setUndo([]);setSelection([]);tone(result.net>0?880:330,.25);}
  const key=insideKey(selection);
  function betButton(id:string,label:string,cls=''){const amount=bets.find(b=>b.key===id)?.amount;const won=revealed&&result&&covered(id).includes(result.number);return <button key={id} type="button" className={'roulette-cell '+cls+(won?' winning':'')} disabled={pending} onClick={()=>place(id)} aria-label={label+(amount?' '+fmt(amount):'')}><span>{label}</span>{amount&&<b className="roulette-placed">{fmt(amount)}</b>}</button>;}
- return <main className="roulette-room">
- <header className="roulette-header"><div><button className="roulette-back" onClick={onBack} disabled={pending}>{de?'← Zur Lobby':'← Lobby'}</button><small>THE MIDNIGHT CLUB · HIGH LIMIT</small><h1>Roulette</h1><p>{de?'Europäischer Tisch · 0–36':'European table · 0–36'}</p></div><div className="roulette-bank"><small>{de?'SPIELGELD':'PLAY MONEY'}</small><strong>{embeddedLobby?bankroll:fmt(demo)}</strong><span>{de?'Tischlimit':'Table limit'} {fmt(LIMIT)}</span></div></header>
+ return <main className="roulette-room" data-spinning={pending}>
+ <header className="roulette-header"><div><button className="roulette-back" onClick={onBack} disabled={pending}>{de?'← Zur Lobby':'← Lobby'}</button><small>THE MIDNIGHT CLUB · HIGH LIMIT</small><h1>Roulette</h1><p>{de?'Europäischer Tisch · 0–36':'European table · 0–36'}</p></div><div className="roulette-bank"><small>{de?'SPIELGELD':'PLAY MONEY'}</small><strong>{pending&&startingCash!==null?fmt(startingCash):embeddedLobby?bankroll:fmt(demo)}</strong><span>{de?'Tischlimit':'Table limit'} {fmt(LIMIT)}</span></div></header>
  <div className="roulette-stage"><section className="roulette-wheel-panel"><div className="roulette-wheel-top"><small>GRAND ROULETTE</small><span>{pending?(de?'KEINE EINSÄTZE MEHR':'NO MORE BETS'):(de?'EINSÄTZE BITTE':'PLACE YOUR BETS')}</span></div>
  <RouletteWheel number={result?.number??null} spinId={result?.roundId??''} motion={motion} onDone={finish}/>
- <div className={'roulette-result '+(revealed&&result?color(result.number):'')} aria-live="polite">{revealed&&result?<><strong>{result.number}</strong><span>{result.net>=0?'+':''}{fmt(result.net)} {de?'Netto':'net'}</span></>:<span>{pending?(de?'Der Kessel dreht sich …':'The wheel is spinning …'):(de?'Setze deine Jetons':'Place your chips')}</span>}</div>
+ <div className={'roulette-result '+(revealed&&result?color(result.number):'')} aria-live="polite">{revealed&&result?<><strong>{result.number}</strong><span>{result.net>=0?'+':''}{fmt(result.net)} {de?'Netto':'net'}<small>{de?'Auszahlung':'Return'} {fmt(result.return)}</small></span></>:<span>{pending?(de?'Der Kessel dreht sich …':'The wheel is spinning …'):(de?'Setze deine Jetons':'Place your chips')}</span>}</div>
  <div className="roulette-history" aria-label={de?'Letzte Ergebnisse':'Recent results'}>{history.map((n,i)=><span key={i} className={color(n)}>{n}</span>)}</div></section>
  <section className="roulette-felt"><div className="roulette-felt-title"><div><small>EUROPEAN · SINGLE ZERO</small><h2>{de?'Der Tisch':'The table'}</h2></div><span>{de?'Einsatz':'Stake'} <b>{fmt(total)}</b></span></div>
  <div className="roulette-board"><button className={'roulette-cell green roulette-zero'+(selection.includes(0)?' selected':'')+(revealed&&result?.number===0?' winning':'')} disabled={pending} onClick={()=>pick(0)}>0{bets.find(b=>b.key==='n0')&&<b className="roulette-placed">{fmt(bets.find(b=>b.key==='n0')!.amount)}</b>}</button>

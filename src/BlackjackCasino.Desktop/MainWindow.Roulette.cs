@@ -22,11 +22,11 @@ public partial class MainWindow
                 return Reject("Invalid bet.");
             bets.Add(new RouletteBet(key.GetString()!,stake));
         }
+        ProcessLatestCompletedRound();
         RouletteResult result;
         try { result = Roulette.Settle(bets,session.Bankroll,Roulette.Draw()); }
         catch(ArgumentException e) { return Reject(e.Message); }
         catch(OverflowException) { return Reject("Bankroll limit exceeded."); }
-        ProcessLatestCompletedRound();
         session.ResetBankroll(result.Bankroll);
         selectedBet = Math.Min(selectedBet,session.Bankroll);
         var receipt = new { RoundId=roundId, Success=true, result.Number, result.Stake, result.Return, result.Net, result.Bankroll };
