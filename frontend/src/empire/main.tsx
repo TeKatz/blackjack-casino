@@ -108,6 +108,7 @@ function EmpireApp(){
   const [researchBranch,setResearchBranch]=useState('Operations');
   const live=useRef(snapshot);live.current=snapshot;
   const activeVisit=useRef(activeVisitId);activeVisit.current=activeVisitId;
+  const idleRef=useRef(idlePrototype);idleRef.current=idlePrototype;
   const pageRef=useRef(page);pageRef.current=page;
   const selectedRef=useRef(selected);selectedRef.current=selected;
   const detailClose=useRef<HTMLButtonElement>(null);
@@ -135,7 +136,7 @@ function EmpireApp(){
       else if(message.type==='activated'){setActiveVisitId(message.visitId);}
       else if(message.type==='visibility'){setVisible(message.visible);if(!message.visible){setActiveVisitId(null);clearPreview();}}
       else if(message.type==='escape'){
-        clearPreview();if(pageRef.current!=='estate')setPage('estate');else if(selectedRef.current)setSelected(null);else post('empire.close');
+        clearPreview();if(idleRef.current)setIdlePrototype(false);else if(pageRef.current!=='estate')setPage('estate');else if(selectedRef.current)setSelected(null);else post('empire.close');
       }else if(message.type==='invalid'){setNotice('Invalid command. Reopen Empire before continuing.');setUncertain(true);}
     });
     post('empire.ready');
@@ -154,11 +155,12 @@ function EmpireApp(){
     return()=>clearTimeout(timer);
   },[pending]);
   useEffect(()=>{
+    if(idlePrototype)return;
     const key=(e:KeyboardEvent)=>{
       if(e.key!=='Escape'||confirmation)return;
       e.preventDefault();clearPreview();if(page!=='estate')setPage('estate');else if(selected)setSelected(null);else close();
     };document.addEventListener('keydown',key);return()=>document.removeEventListener('keydown',key);
-  },[page,selected,confirmation,clearPreview]);
+  },[page,selected,confirmation,clearPreview,idlePrototype]);
   useEffect(()=>{document.documentElement.lang=snapshot?.state.language??'en';},[snapshot?.state.language]);
   useEffect(()=>{if(page==='estate'&&selected)detailClose.current?.focus();},[page,selected]);
   const act=(intent:Intent)=>{
