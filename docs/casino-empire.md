@@ -393,3 +393,33 @@ prerequisite connectors, catalog pagination and input stability across refreshes
 presentation tests retain upgrade/dividend/navigation checks at three sizes.
 See `docs/empire-balancing.md` for simulation results and reproducible commands.
 
+
+
+## Experimental management-idle prototype
+
+The existing Casino Empire screen remains the default presentation. Its header
+offers **Idle-Prototyp testen / Try idle prototype**, which switches to a separate
+management-first React interface inside the same trusted \`empire.html\` host.
+The prototype's **Klassische Ansicht / Classic view** button returns instantly
+to the existing interface. Both share the same C# \`EmpireService\`, bridge
+session, live credits, transaction receipts, save file and offline catch-up;
+there is no second economy, local browser wallet or save migration.
+
+The experimental interface is organized around a list of all 15 businesses,
+floor filters, the existing server-quoted upgrade quantities (1/5/10/25/50/100),
+income per second, level-10 milestones and on-demand read-only previews.
+Management exposes the existing research, capital projects, manager assignments,
+automatic investment policy, contracts and events. Expansion contains prestige
+goals and confirmation, owned/additional properties and synergies. Portfolio
+statistics and owner dividends are also available. Back-to-lobby, detached
+hosting, latest snapshot validation, request deduplication and failed-save
+behavior are inherited from the classic Empire command bridge.
+
+This is a usability and interaction prototype, not a rebalance: Core upgrade
+costs, existing automated income, prestige requirements, manager bonuses and
+offline rules have **not** changed. Businesses generate income without clicks;
+the optional auto-investment policy still requires its existing unlock.
+The prototype does not implement a simulated casino floor, novel income sources
+or new buy-max quotes. The six bulk quantities always use authoritative Core
+quotes and preserve the level-200 cap. The classic layout remains the rollback
+path until game-director acceptance.
