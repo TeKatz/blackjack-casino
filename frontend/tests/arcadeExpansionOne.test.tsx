@@ -65,7 +65,7 @@ describe('Midnight Pinball',()=>{
  });
  it('scores bumper hits and counts exactly three drained balls',()=>{
   const s=createArcadeRun('midnight-pinball',19) as PinballRun;
-  actArcadeRun(s);s.x=414;s.y=216;s.vx=-90;s.vy=0;
+  actArcadeRun(s);s.inShooter=false;s.x=414;s.y=216;s.vx=-90;s.vy=0;
   expect(stepArcadeRun(s,ARCADE_STEP)).toBe('score');
   expect(s.score).toBeGreaterThan(0);
   const first=s.score;
@@ -73,7 +73,7 @@ describe('Midnight Pinball',()=>{
   stepArcadeRun(s,ARCADE_STEP);
   expect(s.score).toBe(first);
   for(let lost=1;lost<=3;lost++){
-   s.serve=false;s.y=H+25;s.vy=100;
+   s.serve=false;s.inShooter=false;s.y=H+25;s.vy=100;
    const event=stepArcadeRun(s,ARCADE_STEP);
    expect(event).toBe(lost===3?'fail':'stage');
    expect(s.balls).toBe(3-lost);
