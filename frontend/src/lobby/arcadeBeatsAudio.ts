@@ -7,6 +7,11 @@ import type {BeatsGrade} from './arcadeBeatsEngine';
 export type BeatAudioRef={current:AudioContext|null};
 const NOTE_FREQUENCIES=[293.66,349.23,440,523.25] as const; // D4 F4 A4 C5
 const ROOTS=[73.42,87.31,65.41,98.00] as const; // D2 F2 C2 G2
+/** Pure mapping from the playable chart lanes to the notes heard on that exact pulse. */
+export function beatsMelodyFrequencies(lanes:readonly number[]):number[]{
+ return lanes.filter(lane=>Number.isInteger(lane)&&lane>=0&&lane<NOTE_FREQUENCIES.length)
+  .map(lane=>NOTE_FREQUENCIES[lane]);
+}
 function contextFor(ref:BeatAudioRef):AudioContext{
  const context=ref.current??new AudioContext();
  ref.current=context;
@@ -56,9 +61,7 @@ export function playBeatsGroovePulse(ref:BeatAudioRef,enabled:boolean,
   const ctx=contextFor(ref);
   hat(ctx,pulse%2===0?.017:.011);
    // The lead follows the exact lanes scheduled for this pulse, not a separate song.
-   for(const lane of lanes){
-    if(!Number.isInteger(lane)||lane<0||lane>=NOTE_FREQUENCIES.length)continue;
-    const frequency=NOTE_FREQUENCIES[lane];
+   for(const frequency of beatsMelodyFrequencies(lanes)){
     synth(ctx,frequency,'triangle',.056,.20,1);
     synth(ctx,frequency*2,'sine',.014,.14,1);
    }

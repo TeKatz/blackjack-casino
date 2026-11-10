@@ -74,7 +74,7 @@ function prism(ctx:Ctx,s:PrismRun){
  ctx.restore();
  const targetY=py(s.targetRow);
  // The exit is an illuminated receiver portal, not an anonymous empty rectangle.
- ctx.save();ctx.translate(845,targetY);
+ ctx.save();ctx.translate(810,targetY);
  ctx.shadowColor=s.beam.hit?'#8cffe7':'#f0c58d';ctx.shadowBlur=23;
  panel(ctx,-31,-36,62,72,14,'#172e43',s.beam.hit?'#b3fff0':'#d7b987');
  ctx.beginPath();ctx.arc(0,0,25,0,TAU);
@@ -89,7 +89,7 @@ function prism(ctx:Ctx,s:PrismRun){
  circle(ctx,0,0,15,s.beam.hit?'#5ae2c0':'#0a2334','#e5d6ac');
  circle(ctx,0,0,s.beam.hit?9:5,s.beam.hit?'#e5fff8':'#3c7780');
  ctx.restore();
- label(ctx,s.beam.hit?'CONNECTED':'RECEIVER',845,targetY+54,11,
+ label(ctx,s.beam.hit?'CONNECTED':'RECEIVER',810,targetY+54,11,
   s.beam.hit?'#baffea':'#d7c59e','center');
  s.mirrors.forEach(m=>{
   const x=px(m.c),y=py(m.r);
