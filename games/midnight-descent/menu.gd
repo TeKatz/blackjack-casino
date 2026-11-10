@@ -140,7 +140,7 @@ func update_preview() -> void:
 		"progress":
 			preview_title.text = tr_text("SOUL ESSENCE","SEELENESSENZ")
 			preview_detail.text = str(progress.essence)+"  •  "+tr_text("Permanent currency","Permanente Währung")
-			preview_info.text = tr_text("Expeditions / victories / kills","Expeditionen / Siege / Gegner")+"  %d / %d / %d" % [progress.attempts,progress.wins,progress.total_kills]
+			preview_info.text = tr_text("Expeditions / victories / kills","Expeditionen / Siege / Gegner")+"  %d / %d / %d" % [progress.attempts,progress.wins,progress.total_kills]+"\n"+tr_text("Achievements","Errungenschaften")+"  %d/2  •  " % progress.achievements.size()+tr_text("Elites","Elite")+" %d/5" % progress.elite_kills
 		"codex":
 			preview_title.text = tr_text("VAULT KEEPER","TRESORWÄCHTER")
 			preview_sprite.texture = atlas_icon(PixelWorld.ACTORS["boss"],Rect2(0,0,32,32))

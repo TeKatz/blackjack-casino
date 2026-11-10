@@ -20,6 +20,7 @@ var shield_time := 0.0
 var temp_power := 0.0
 var revive_used := false
 var orbit_timer := 0.0
+var hazards: Array[Dictionary] = []
 const Content = preload("res://content.gd")
 const RELICS = Content.RELICS
 var character := "warden"
@@ -113,16 +114,18 @@ func enter_room() -> void:
 	enemies.clear()
 	shots.clear()
 	effects.clear()
+	hazards.clear()
 	offers.clear()
 	walls.clear()
 	room_kind = dungeon.kind(room)
 	temp_power=0
 	if relics.has("curse"): temp_power=rng.randf_range(-5,15)
-	if relics.has("medic"): hp=minf(max_hp,hp+6*relics.count("medic"))
+	
 	var node: Dictionary = dungeon.nodes[room]
 	if not node.visited:
 		node.visited = true
 		visited_count += 1
+		if relics.has("medic"): hp=minf(max_hp,hp+6*relics.count("medic"))
 	service_used = node.cleared
 	if node.cleared:
 		state = "exit"
@@ -242,7 +245,7 @@ func spawn_enemy(kind: String, pos: Vector2) -> void:
 	for wall in walls:
 		if wall.grow(radius).has_point(pos):
 			pos = safe_position(Vector2(pos.x, wall.position.y - radius - 10),radius)
-	enemies.append({"kind":kind,"pos":pos,"hp":health,"max_hp":health,"r":radius,"timer":rng.randf_range(0.6,1.4),"wind":0.0,"flash":0.0,"target":pos})
+	enemies.append({"kind":kind,"pos":pos,"hp":health,"max_hp":health,"r":radius,"timer":rng.randf_range(0.6,1.4),"wind":0.0,"flash":0.0,"target":pos,"facing":Vector2.LEFT})
 
 func safe_position(pos: Vector2, radius: float) -> Vector2:
 	return Vector2(clampf(pos.x, ARENA.position.x + radius, ARENA.end.x - radius), clampf(pos.y, ARENA.position.y + radius, ARENA.end.y - radius))
@@ -350,6 +353,7 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 			if player.distance_to(enemy.pos)<95: hit_enemy(enemy,5*relics.count("sun"))
 	update_enemies(dt)
 	update_shots(dt)
+	update_hazards(dt)
 	for i in range(enemies.size()-1, -1, -1):
 		if enemies[i].hp <= 0:
 			effect("burst", enemies[i].pos, 0.35, Vector2.ZERO)
@@ -373,6 +377,7 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 		shots.clear()
 	elif enemies.is_empty():
 		shots.clear()
+		hazards.clear()
 		if room_kind=="boss" and floor_index==FLOOR_COUNT-1:
 			dungeon.nodes[room].cleared=true
 			state="victory"
@@ -399,7 +404,7 @@ func hit_enemy(enemy: Dictionary, amount: float) -> void:
 	if relics.has("crit") and rng.randf()<minf(0.8,0.2*relics.count("crit")): amount *= 2
 	if relics.has("hunter") and (enemy.get("elite",false) or enemy.kind in ["boss","rootking"]): amount+=8*relics.count("hunter")
 	if relics.has("blood") and hp<max_hp*0.35: amount*=1.4
-	if enemy.kind=="shield" and enemy.pos.direction_to(player).dot(aim)<-0.5: amount*=0.6
+	if enemy.kind=="shield" and enemy.pos.direction_to(player).dot(enemy.get("facing",Vector2.LEFT))>0.35: amount*=0.6
 	enemy.hp -= maxf(1,amount+temp_power)
 	if relics.has("frost") or set_id=="arcanist_frost": enemy["chill"]=2.0
 	if relics.has("venom"): enemy["poison"]=3.0
@@ -448,12 +453,21 @@ func update_enemies(dt: float) -> void:
 			enemy.wind -= dt
 			if enemy.wind <= 0:
 				if kind in ["caster","archer","spore"]:
-					shoot(pos, pos.direction_to(enemy.target)*265, true, 12)
+					shoot(pos, pos.direction_to(enemy.target)*(390 if kind=="archer" else 265), true, 12)
+					if kind=="spore": add_hazard(enemy.target,44,0.6,2.8,9)
+				elif kind=="vine":
+					if player.distance_to(enemy.target)<75:
+						player=move_actor(player,player.direction_to(pos)*100,15)
+						hurt(12)
 				elif kind in ["boss","rootking"]:
 					var phase: int = 12 if enemy.hp < enemy.max_hp*0.5 else 8
 					for i in range(phase):
 						var angle := TAU*float(i)/phase + elapsed*0.3
 						shoot(pos, Vector2.from_angle(angle)*290, true, 15)
+					if kind=="rootking":
+						add_hazard(enemy.target,62,0.8,3.5,18)
+						if enemy.hp<enemy.max_hp*0.5:
+							for i in range(3): add_hazard(enemy.target+Vector2.from_angle(i*TAU/3)*95,40,1.1,3.0,12)
 					if dist < 125:
 						hurt(24)
 				elif dist < radius + 45:
@@ -461,19 +475,24 @@ func update_enemies(dt: float) -> void:
 				enemy.timer = 1.8 if kind in ["boss","rootking"] else 0.9
 			continue
 		var velocity := Vector2.ZERO
-		if kind == "caster":
+		if kind in ["caster","archer","spore"]:
 			if dist > 300: velocity = toward*105
 			elif dist < 200: velocity = -toward*100
 			if enemy.timer <= 0 and dist < 460:
 				enemy.wind = 0.55
 				enemy.target = player
-		elif kind == "boss":
+		elif kind in ["boss","rootking"]:
 			velocity = toward*78 if dist > 125 else Vector2.ZERO
 			if enemy.timer <= 0:
 				enemy.wind = 0.8
 				enemy.target = player
+		elif kind=="vine":
+			velocity=toward*100 if dist>180 else Vector2.ZERO
+			if enemy.timer<=0 and dist<280:
+				enemy.wind=0.65
+				enemy.target=player
 		else:
-			velocity = toward*(82 if kind == "brute" else 138)
+			velocity = toward*(82 if kind in ["brute","shield","mushroom"] else 138)
 			if dist < radius+40 and enemy.timer <= 0:
 				enemy.wind = 0.48 if kind == "brute" else 0.3
 				velocity = Vector2.ZERO
@@ -486,13 +505,26 @@ func update_enemies(dt: float) -> void:
 			if length > 0.01 and length < radius + float(other.r) + 8:
 				velocity += separation.normalized()*100
 		if slow_time>0 or enemy.chill>0: velocity*=0.4
-		if kind=="vine" and enemy.timer<=0 and dist<260:
-			player=move_actor(player,player.direction_to(pos)*45,15)
-			enemy.timer=2.5
+		if kind=="shield" and enemy.wind<=0 and enemy.timer<0.15:
+			enemy.facing=toward
 		var next := move_actor(pos, velocity*dt, radius)
 		if velocity.length_squared() > 1 and next.distance_to(pos) < velocity.length()*dt*0.25:
 			next = move_actor(pos, velocity.rotated(PI/2)*dt, radius)
 		enemy.pos = next
+
+func add_hazard(pos: Vector2, radius: float, warning: float, life: float, power: float) -> void:
+	if hazards.size()>=24: return
+	hazards.append({"pos":safe_position(pos,10),"r":radius,"warn":warning,"life":warning+life,"power":power})
+
+func update_hazards(dt: float) -> void:
+	for i in range(hazards.size()-1,-1,-1):
+		var hazard: Dictionary=hazards[i]
+		hazard.warn-=dt
+		hazard.life-=dt
+		if hazard.life<=0:
+			hazards.remove_at(i)
+		elif hazard.warn<=0 and player.distance_to(hazard.pos)<hazard.r:
+			hurt(hazard.power)
 
 func update_shots(dt: float) -> void:
 	for i in range(shots.size()-1,-1,-1):

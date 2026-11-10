@@ -4,6 +4,7 @@ const Model = preload("res://run_model.gd")
 const PixelWorld = preload("res://pixel_world.gd")
 const Content = preload("res://content.gd")
 const Progress = preload("res://progress.gd")
+const RouteMap = preload("res://route_map.gd")
 var progress = Progress.new()
 var smoke_mode := false
 var last_active := false
@@ -129,11 +130,19 @@ func _draw() -> void:
 	if run.state == "exit":
 		text_at(gate+Vector2(-86,76),tr_text("E  •  Map","E  •  Karte"),16,GOLD)
 	# Attack telegraphs and projectiles remain above the pixel-world layer.
+	for hazard in run.hazards:
+		var color := Color("#e9b963") if hazard.warn>0 else Color("#77c96d")
+		draw_circle(hazard.pos,hazard.r,Color(color,0.14))
+		draw_arc(hazard.pos,hazard.r,0,TAU,36,color,2,true)
+	if run.relics.has("sun"):
+		var orb: Vector2=run.player+Vector2.from_angle(clock*2.5)*70
+		draw_circle(orb,12,Color("#c284ec"))
+		draw_circle(orb,8,Color("#1b102f"))
 	for enemy in run.enemies:
 		var pos: Vector2 = enemy.pos
 		if enemy.wind > 0:
 			var rad: float = 126.0 if enemy.kind in ["boss","rootking"] else float(enemy.r)+44
-			if enemy.kind in ["caster","archer","spore"]:
+			if enemy.kind in ["caster","archer","spore","vine"]:
 				draw_line(pos,enemy.target,Color(1,0.32,0.44,0.45),3,true)
 			else:
 				draw_circle(pos,rad,Color(0.95,0.15,0.3,0.12))
@@ -393,19 +402,23 @@ func use_service(choice: int) -> void:
 func show_route_map(column: VBoxContainer) -> void:
 	add_label(column,tr_text("DUNGEON MAP","DUNGEON-KARTE")+"  •  "+str(run.floor_index+1),27,GOLD)
 	add_label(column,tr_text("Choose a connected room. Cleared rooms can be revisited.","Wähle einen verbundenen Raum. Gesäuberte Räume sind erneut betretbar."),16,MUTED)
-	var grid := GridContainer.new()
-	grid.columns=2
-	grid.add_theme_constant_override("h_separation",10)
-	grid.add_theme_constant_override("v_separation",8)
-	column.add_child(grid)
+	var map := RouteMap.new()
+	map.nodes=run.dungeon.nodes
+	map.current=run.room
+	column.add_child(map)
 	for i in range(run.dungeon.nodes.size()):
 		var id: int = i
 		var node: Dictionary=run.dungeon.nodes[i]
-		var caption := "%02d  " % (i+1)+room_name(node.kind)
-		if i==run.room: caption+="  •  "+tr_text("HERE","HIER")
-		elif node.cleared: caption+="  ✓"
-		var button:=add_button(grid,caption,func(): run.travel(id))
-		button.custom_minimum_size=Vector2(300,42)
+		var visible_kind: String = node.kind
+		if visible_kind=="secret" and not node.visited and not run.route_options().has(i): visible_kind="?"
+		var caption := "%02d " % (i+1)+room_name(visible_kind)
+		if i==run.room: caption+=" • "+tr_text("HERE","HIER")
+		elif node.cleared: caption+=" ✓"
+		var button:=add_button(map,caption,func(): run.travel(id))
+		button.custom_minimum_size=Vector2(174,37)
+		button.size=Vector2(174,37)
+		button.position=RouteMap.POSITIONS[i]-Vector2(87,18)
+		button.add_theme_font_size_override("font_size",14)
 		button.disabled=not run.route_options().has(i)
 	if run.room_kind=="boss" and run.floor_index==0 and run.dungeon.nodes[run.room].cleared:
 		add_button(column,tr_text("Descend to the Abyss Garden","Abstieg in den Abgrundgarten"),func(): run.descend())
