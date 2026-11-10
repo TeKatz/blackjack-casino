@@ -115,6 +115,12 @@ function miner(ctx:Ctx,s:MinerRun){
  for(let r=115;r<620;r+=95){
   ctx.beginPath();ctx.ellipse(480,275,r,r*.48,-.16,0,TAU);ctx.stroke();
  }
+ for(let i=0;i<46;i++){
+  const x=((i*197+s.elapsed*(i%3+1)*2)%W+W)%W,y=(i*139+71)%H;
+  ctx.save();ctx.globalAlpha=.14+(i%6)*.045;
+  circle(ctx,x,y,i%7===0?2.4:1.2,i%3===0?'#c49bea':'#9dd9d7');
+  ctx.restore();
+ }
  ctx.save();ctx.shadowColor='#88ead2';ctx.shadowBlur=23;
  circle(ctx,116,435,66,'#123943','#b1d4b8');
  circle(ctx,116,435,49,'#1f6164','#f4d39a');
@@ -148,13 +154,30 @@ function miner(ctx:Ctx,s:MinerRun){
   ctx.lineTo(rock.r*.45,rock.r*.15);ctx.strokeStyle=rock.grade===2?'#c89bfa':'#74e7d9';ctx.lineWidth=3;ctx.stroke();
   ctx.restore();
   label(ctx,String(rock.ore),rock.x,rock.y+6,13,'#fff5d6','center');
+  ctx.save();ctx.globalAlpha=rock.grade===2?.86:.54;
+  circle(ctx,rock.x-rock.r*.25,rock.y-rock.r*.25,3.6,
+   rock.grade===2?'#efc9ff':'#b8fff0');
+  circle(ctx,rock.x+rock.r*.4,rock.y+rock.r*.2,2.5,'#f8f1cb');
+  ctx.restore();
  }
  if(s.mining&&s.mineIndex>=0&&s.rocks[s.mineIndex]){
   const a=s.rocks[s.mineIndex];
   ctx.save();ctx.shadowColor='#8efae5';ctx.shadowBlur=16;
   segment(ctx,[s.x,s.y],[a.x,a.y],'#80e9d6',5);
+  for(let i=0;i<5;i++){
+   const angle=s.elapsed*11+i*TAU/5,r=a.r+8;
+   circle(ctx,a.x+Math.cos(angle)*r,a.y+Math.sin(angle)*r,2.6,'#fff1bd');
+  }
   ctx.restore();
   statBar(ctx,a.x-25,a.y-a.r-17,50,s.mineProgress/(.53+a.r/110),'#f0d39a');
+ }
+ for(let i=0;i<6;i++){
+  const k=(s.elapsed*7+i*.31)%1,vel=Math.hypot(s.vx,s.vy);
+  const a=Math.atan2(s.vy,s.vx);
+  const x=s.x-Math.cos(a)*(18+k*36)+(i%3-1)*4;
+  const y=s.y-Math.sin(a)*(18+k*36)+(i%2?4:-4);
+  ctx.save();ctx.globalAlpha=(1-k)*Math.min(1,vel/100);
+  circle(ctx,x,y,Math.max(1,5-k*3),i%2?'#f7c994':'#89dcd8');ctx.restore();
  }
  ctx.save();ctx.translate(s.x,s.y);
  const heading=Math.atan2(s.vy,s.vx)+Math.PI/2;
