@@ -111,14 +111,43 @@ internal static class ModernAlbumSmoke
         await Until(()=>modern.RecordsPage is null,"React Album failed to return to lobby.");
         Require(profile.Collection.PendingOpening?.Id==receipt.Id,
             "Navigating away mid-reveal discarded its durable transaction.");
-        await web.ExecuteScriptAsync("document.querySelector('.header-compact:nth-child(2)')?.click()");
-        await Wait(web,"Boolean(document.querySelector('.album-opening-panel.phase-reveal')"
-            +"||document.querySelector('.album-opening-panel.phase-summary'))",
-            "The stored pack opening did not resume.");
-        Require(profile.Collection.PendingOpening?.Id==receipt.Id,
-            "Resuming a pack generated a different receipt.");
+        // Wait for the actual lobby DOM, then reopen through the accessible
+        // Collections navigation. Reduced-motion reveals take only 15ms per
+        // card; a polling test can miss both reveal and summary entirely.
+        await Wait(web,"Boolean(document.querySelector('.lobby-hero')"
+            +"&&!document.querySelector('.album-page'))",
+            "React lobby did not finish restoring after Album close.");
+        await web.ExecuteScriptAsync("""
+            (() => {
+              window.__albumSmokeResume = { id: null, phases: [] };
+              const observer = new MutationObserver(() => {
+                const panel = document.querySelector('.album-opening-panel');
+                if (!panel) return;
+                const phase = ['reveal','summary','finished'].find(p => panel.classList.contains('phase-'+p));
+                if (!phase || !panel.dataset.openingId) return;
+                window.__albumSmokeResume.id = panel.dataset.openingId;
+                window.__albumSmokeResume.phases.push(phase);
+                if (phase === 'finished') observer.disconnect();
+              });
+              observer.observe(document.body, {
+                subtree: true, childList: true, attributes: true,
+                attributeFilter: ['class','data-opening-id']
+              });
+              return true;
+            })()
+            """);
         await web.ExecuteScriptAsync(
-            "document.querySelector('.phase-reveal .album-opening-secondary')?.click()");
+            "[...document.querySelectorAll('.lobby-nav-item')]"
+            +".find(x=>/Collections|Sammlungen/.test(x.textContent||''))?.click()");
+        await Wait(web,"Boolean(window.__albumSmokeResume?.id"
+            +"&&window.__albumSmokeResume.phases.some(p=>p==='reveal'||p==='summary'||p==='finished'))",
+            "The stored pack opening did not resume.");
+        string? resumedId=JsonSerializer.Deserialize<string>(
+            await web.ExecuteScriptAsync("window.__albumSmokeResume.id"));
+        Require(string.Equals(resumedId,receipt.Id.ToString(),StringComparison.OrdinalIgnoreCase)
+            && (profile.Collection.PendingOpening is null || profile.Collection.PendingOpening.Id==receipt.Id)
+            && profile.Collection.PacksOpened==beforeOpened+1,
+            "Resuming a pack generated a different receipt or opened an extra pack.");
         await Wait(web,"document.querySelectorAll('.album-reveal-slot.flipped').length===5"
             +"&&document.querySelectorAll('.album-reveal-result').length===5",
             "Five card faces and the individual new/duplicate badges were not revealed.");

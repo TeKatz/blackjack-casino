@@ -340,6 +340,7 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
   {loaded&&openActive&&<div className="album-opening-scrim" role="dialog" aria-modal="true" aria-label={stageHeader}>
    <div className={'album-opening-panel phase-'+phase+
     (revealed>0&&opening?.cards[Math.min(revealed-1,4)]?.ultraRare?' has-ultra':'')}
+    data-opening-id={opening?.id}
     style={{'--card-rarity':rarityColors[rarity]} as CSSProperties}>
     <div className="album-theatre-aura" aria-hidden="true"/>
     <div className="album-theatre-stars" aria-hidden="true">
