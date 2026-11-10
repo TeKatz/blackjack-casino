@@ -92,7 +92,23 @@ jobs:
         run: python tools/check_control_templates.py --self-test
 
       - name: Casino presentation runtime regression
-        run: dotnet run --project tools/PresentationSmoke --configuration Release -- artifacts/presentation-regression
+        shell: pwsh
+        run: |
+          $output = "artifacts/presentation-regression"
+          New-Item -ItemType Directory -Force $output | Out-Null
+          for ($attempt = 1; $attempt -le 2; $attempt++) {
+            $log = Join-Path $output "attempt-$attempt.log"
+            dotnet run --project tools/PresentationSmoke --configuration Release -- "$output/attempt-$attempt" 2>&1 | Tee-Object -FilePath $log
+            $code = $LASTEXITCODE
+            if ($code -eq 0) { exit 0 }
+            # Retry only a transient initial WebView2 readiness failure. All
+            # other presentation assertions must fail the release immediately.
+            if ($attempt -eq 1 -and (Select-String -Path $log -SimpleMatch "Cannot capture lobby artwork: React WebView2 did not become ready." -Quiet)) {
+              Write-Warning "Lobby browser startup failed; retrying the complete presentation smoke once."
+              continue
+            }
+            throw "Casino presentation regression failed (exit $code). See $log."
+          }
 
       - name: Desktop startup, Nine Lives and Kniffel smoke
         # An actual startup deadlock must fail this step explicitly instead of
