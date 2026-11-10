@@ -30,7 +30,7 @@ function orb(ctx:Ctx,x:number,y:number,r:number,color:string){
  ctx.save();ctx.shadowColor=color;ctx.shadowBlur=17;
  ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.fill();ctx.restore();
 }
-function pinball(ctx:Ctx,s:PinballRun,c:{left?:boolean;right?:boolean}={}){
+function pinball(ctx:Ctx,s:PinballRun){
  backdrop(ctx,'#061822','#1e1933');
  ctx.save();ctx.shadowColor='#dba971';ctx.shadowBlur=24;
  round(ctx,155,22,650,526,38,'#122d35','#d6b47e');ctx.restore();
@@ -55,7 +55,7 @@ function pinball(ctx:Ctx,s:PinballRun,c:{left?:boolean;right?:boolean}={}){
   ctx.restore();
   text(ctx,'✦',b.x,b.y+8,23,'#fce6bb','center');
  });
- for(const [side,pressed] of [['left',!!c.left],['right',!!c.right]] as const){
+ for(const [side,pressed] of [['left',s.leftFlipper],['right',s.rightFlipper]] as const){
   const x=side==='left'?386:574,tip=side==='left'?(pressed?489:474):(pressed?471:486);
   const y=pressed?429:468;
   ctx.save();ctx.shadowBlur=15;ctx.shadowColor='#edc281';
@@ -239,10 +239,10 @@ function echo(ctx:Ctx,s:EchoRun){
   text(ctx,(s.index)+' / '+s.sequence.length,751,508,12,'#e5d4b1');
  }
 }
-export function drawExpansionRun(ctx:Ctx,s:ExpansionRun,controls:{left?:boolean;right?:boolean}={}):void{
+export function drawExpansionRun(ctx:Ctx,s:ExpansionRun):void{
  ctx.save();ctx.clearRect(0,0,W,H);
  switch(s.kind){
-  case 'midnight-pinball':pinball(ctx,s,controls);break;
+  case 'midnight-pinball':pinball(ctx,s);break;
   case 'phantom-hook':hook(ctx,s);break;
   case 'neon-drift':drift(ctx,s);break;
   case 'gravity-chamber':gravity(ctx,s);break;
