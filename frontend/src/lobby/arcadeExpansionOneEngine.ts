@@ -217,7 +217,7 @@ function driftStep(s:DriftRun,dt:number,holding:boolean,c:ExpansionControls):Exp
   s.combo=Math.min(8,s.combo+dt*1.5);
   s.driftPoints+=dt*(10+s.combo*9);
  }else s.combo=Math.max(0,s.combo-dt*2.4);
- const nextScore=Math.floor(s.distance/12)+Math.floor(s.driftPoints);
+ const nextScore=Math.floor(s.distance/12)+Math.floor(s.driftPoints)+s.checkpoint*100;
  s.score=nextScore;
  const checkpoint=Math.floor(s.distance/1200);
  if(checkpoint>s.checkpoint){s.checkpoint=checkpoint;s.score+=100;return 'stage';}
