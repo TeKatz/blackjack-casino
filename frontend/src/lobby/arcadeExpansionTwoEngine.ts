@@ -22,7 +22,7 @@ export type PrismMirror=Point&{slash:boolean;required:boolean};
 export type PrismBeam={points:Point[];hit:boolean};
 export type PrismRun=Base&{kind:'prism-lock';mirrors:PrismMirror[];
  stage:number;lives:number;timeLeft:number;targetRow:number;cursor:Point;
- beam:PrismBeam;flash:number};
+ beam:PrismBeam;flash:number;transition:'clear'|'lost'|null;transitionClock:number};
 export const PRISM_COLS=7,PRISM_ROWS=5;
 const same=(a:Point,b:Point)=>a.c===b.c&&a.r===b.r;
 const mirrorReflect=(dc:number,dr:number,slash:boolean):[number,number]=>
@@ -72,10 +72,10 @@ function makePrism(run:PrismRun):void{
  }
  run.mirrors=mirrors;run.targetRow=second;run.cursor={c:1,r:2};
  run.beam=tracePrism(mirrors,second);run.timeLeft=Math.max(19,42-run.stage*1.8);
- run.flash=0;
+ run.flash=0;run.transition=null;run.transitionClock=0;
 }
 export function selectPrism(run:PrismRun,c:number,r:number):ExpansionTwoEvent{
- if(run.over||!Number.isInteger(c)||!Number.isInteger(r)||c<0||c>=PRISM_COLS||
+ if(run.over||run.transition||!Number.isInteger(c)||!Number.isInteger(r)||c<0||c>=PRISM_COLS||
   r<0||r>=PRISM_ROWS)return null;
  run.cursor={c,r};
  const mirror=run.mirrors.find(m=>m.c===c&&m.r===r);
@@ -84,7 +84,7 @@ export function selectPrism(run:PrismRun,c:number,r:number):ExpansionTwoEvent{
  run.beam=tracePrism(run.mirrors,run.targetRow);run.flash=.25;
  if(!run.beam.hit)return 'flap';
  run.score+=250+run.stage*40+Math.floor(run.timeLeft*5);
- run.stage++;makePrism(run);return 'score';
+ run.stage++;run.transition='clear';run.transitionClock=2.15;return 'score';
 }
 export type MinerRock={x:number;y:number;r:number;ore:number;grade:number;flash:number};
 export type MinerRun=Base&{kind:'meteor-miner';x:number;y:number;vx:number;vy:number;
@@ -100,9 +100,9 @@ function minerRock(run:MinerRun):MinerRock{
  }
  return {x:290+random(run)*500,y:90+random(run)*320,r:23,ore:3,grade:1,flash:0};
 }
-export type CircuitTile=Point&{mask:number;path:boolean};
+export type CircuitTile=Point&{mask:number;path:boolean;danger:boolean};
 export type CircuitRun=Base&{kind:'circuit-rush';tiles:CircuitTile[];powered:Point[];
- stage:number;lives:number;timeLeft:number;cursor:Point;flash:number;solved:boolean};
+ stage:number;lives:number;timeLeft:number;cursor:Point;flash:number;solved:boolean;shockClock:number};
 export const CIRCUIT_COLS=6,CIRCUIT_ROWS=5;
 export const DIRS=[{dc:0,dr:-1,bit:1,opposite:4},
  {dc:1,dr:0,bit:2,opposite:8},{dc:0,dr:1,bit:4,opposite:1},
@@ -148,7 +148,7 @@ function makeCircuit(run:CircuitRun):void{
   }
   const rotations=Math.floor(random(run)*4);
   for(let k=0;k<rotations;k++)mask=rotatePorts(mask);
-  tiles.push({c,r,mask,path:index>=0});
+  tiles.push({c,r,mask,path:index>=0,danger:false});
  }
  run.tiles=tiles;run.cursor={c:2,r:2};
  run.powered=poweredCircuit(tiles);
@@ -157,14 +157,27 @@ function makeCircuit(run:CircuitRun):void{
   turn.mask=rotatePorts(turn.mask);
   run.powered=poweredCircuit(tiles);
  }
- run.solved=false;run.flash=0;run.timeLeft=Math.max(22,47-run.stage*1.5);
+ // Red short-circuit tiles are never part of the guaranteed solution path,
+ // and never powered on spawn. Later circuits have more forbidden contacts.
+ const safe=tiles.filter(t=>!t.path&&!run.powered.some(p=>same(p,t)));
+ for(let i=0;i<Math.min(5,1+Math.floor((run.stage-1)/2))&&safe.length;i++){
+  const index=Math.floor(random(run)*safe.length);
+  safe.splice(index,1)[0].danger=true;
+ }
+ run.solved=false;run.flash=0;run.shockClock=0;
+ run.timeLeft=Math.max(21,46-run.stage*1.9);
 }
 export function rotateCircuit(run:CircuitRun,c:number,r:number):ExpansionTwoEvent{
- if(run.over||!Number.isInteger(c)||!Number.isInteger(r)||c<0||c>=CIRCUIT_COLS||
+ if(run.over||run.shockClock>0||!Number.isInteger(c)||!Number.isInteger(r)||c<0||c>=CIRCUIT_COLS||
   r<0||r>=CIRCUIT_ROWS)return null;
  run.cursor={c,r};const tile=run.tiles.find(t=>t.c===c&&t.r===r);
  if(!tile)return null;
  tile.mask=rotatePorts(tile.mask);run.powered=poweredCircuit(run.tiles);run.flash=.2;
+ if(run.tiles.some(t=>t.danger&&run.powered.some(p=>same(p,t)))){
+  run.lives--;run.shockClock=1.3;
+  if(run.lives<=0){run.over=true;return 'fail';}
+  return 'stage';
+ }
  if(!circuitSolved(run))return 'flap';
  run.score+=300+run.stage*50+Math.floor(run.timeLeft*5);
  run.stage++;makeCircuit(run);return 'score';
@@ -233,7 +246,7 @@ export function createExpansionTwoRun(kind:ExpansionTwoId,seed=0x297b51cd):Expan
  switch(kind){
  case 'prism-lock':{
   const run:PrismRun={...base,kind,mirrors:[],targetRow:2,stage:1,lives:3,
-   timeLeft:40,cursor:{c:1,r:2},beam:{points:[],hit:false},flash:0};
+   timeLeft:40,cursor:{c:1,r:2},beam:{points:[],hit:false},flash:0,transition:null,transitionClock:0};
   makePrism(run);return run;
  }
  case 'meteor-miner':{
@@ -245,7 +258,7 @@ export function createExpansionTwoRun(kind:ExpansionTwoId,seed=0x297b51cd):Expan
  }
  case 'circuit-rush':{
   const run:CircuitRun={...base,kind,tiles:[],powered:[],stage:1,lives:3,
-   timeLeft:40,cursor:{c:2,r:2},flash:0,solved:false};
+   timeLeft:40,cursor:{c:2,r:2},flash:0,solved:false,shockClock:0};
   makeCircuit(run);return run;
  }
  case 'shadow-heist':{
@@ -274,10 +287,17 @@ export function movePuzzleCursor(run:PrismRun|CircuitRun,dc:number,dr:number):vo
 function losePuzzleLife(run:PrismRun|CircuitRun):ExpansionTwoEvent{
  run.lives--;
  if(run.lives<=0){run.over=true;return 'fail';}
- if(run.kind==='prism-lock')makePrism(run);else makeCircuit(run);
+ if(run.kind==='prism-lock'){
+  run.transition='lost';run.transitionClock=1.85;run.timeLeft=0;
+ }else makeCircuit(run);
  return 'stage';
 }
 function prismStep(run:PrismRun,dt:number):ExpansionTwoEvent{
+ if(run.transition){
+  run.transitionClock=Math.max(0,run.transitionClock-dt);
+  if(run.transitionClock<=0){makePrism(run);return 'stage';}
+  return null;
+ }
  run.timeLeft-=dt;run.flash=Math.max(0,run.flash-dt);
  if(run.timeLeft<=0)return losePuzzleLife(run);
  return null;
@@ -337,6 +357,11 @@ function minerStep(run:MinerRun,dt:number,holding:boolean,controls:ExpansionTwoC
  return 'flap';
 }
 function circuitStep(run:CircuitRun,dt:number):ExpansionTwoEvent{
+ if(run.shockClock>0){
+  run.shockClock=Math.max(0,run.shockClock-dt);
+  if(run.shockClock===0)makeCircuit(run);
+  return null;
+ }
  run.timeLeft-=dt;run.flash=Math.max(0,run.flash-dt);
  if(run.timeLeft<=0)return losePuzzleLife(run);
  return null;
