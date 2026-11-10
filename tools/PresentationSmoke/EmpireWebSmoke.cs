@@ -65,6 +65,28 @@ internal static class EmpireWebSmoke
             await Check(view, "document.querySelector('.empire-pixi canvas, .empire-pixi[data-fallback=true]')",
                 "Estate graphics did not finish initializing before capture.");
             await Capture(view, Path.Combine(output, "empire-react-overview.png"));
+            // The alternative idle-management presentation must share the live Core
+            // estate and return to classic without creating another WebView2 session.
+            int prototypeSlotLevel = fixture.Level("slots");
+            await Click(view, "empire-idle-open");
+            await Check(view, "document.querySelector('[data-testid=empire-idle-prototype]') && document.querySelectorAll('.idle-business-list .idle-business').length===15",
+                "Idle prototype did not present all fifteen authoritative businesses.");
+            await Check(view, "document.querySelector('[data-testid=idle-upgrade-slots]') && document.querySelector('.idle-kpis')",
+                "Idle prototype lacks upgrade controls or the economy summary.");
+            await Capture(view, Path.Combine(output, "empire-idle-prototype.png"));
+            await Click(view, "idle-upgrade-slots");
+            await Wait(() => fixture.Level("slots") == prototypeSlotLevel + 1, "Prototype purchase did not reach Core.");
+            await Click(view, "idle-nav-strategy");
+            await Check(view, "document.querySelector('.idle-subnav') && document.querySelector('.idle-card-grid')",
+                "Idle prototype management did not render.");
+            await Click(view, "idle-nav-expansion");
+            await Check(view, "document.querySelector('.idle-prestige') && document.querySelectorAll('.idle-prestige-goals .idle-progress-track').length===3",
+                "Idle prototype prestige goals did not render.");
+            await Click(view, "empire-idle-classic");
+            await Check(view, "document.querySelector('[data-testid=empire-ready]') && document.querySelectorAll('.empire-gallery .empire-room').length===15",
+                "Returning from the idle prototype lost the classic Empire view.");
+            await Check(view, "document.querySelector('.empire-pixi canvas, .empire-pixi[data-fallback=true]')",
+                "Classic graphics did not initialize again after testing the prototype.");
             await Click(view, "floor-3");
             await Check(view, "document.querySelectorAll('.empire-gallery .empire-room').length===5", "Resort gallery lost a department.");
             await Click(view, "room-hotel");
