@@ -144,7 +144,7 @@ internal static class ModernAlbumSmoke
             "The stored pack opening did not resume.");
         string? resumedId=JsonSerializer.Deserialize<string>(
             await web.ExecuteScriptAsync("window.__albumSmokeResume.id"));
-        Require(string.Equals(resumedId,receipt.Id.ToString(),StringComparison.OrdinalIgnoreCase)
+        Require(Guid.TryParse(resumedId,out Guid resumedGuid) && resumedGuid==receipt.Id
             && (profile.Collection.PendingOpening is null || profile.Collection.PendingOpening.Id==receipt.Id)
             && profile.Collection.PacksOpened==beforeOpened+1,
             "Resuming a pack generated a different receipt or opened an extra pack.");
