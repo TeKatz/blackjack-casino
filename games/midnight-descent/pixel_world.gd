@@ -2,6 +2,7 @@ extends Node2D
 ## Pixel art is a rendering layer only: model coordinates and collision rules stay unchanged.
 const Model = preload("res://run_model.gd")
 const TILES = preload("res://art/pixel/vault_tiles.svg")
+const GARDEN = preload("res://art/pixel/garden_tiles.svg")
 const TORCH = preload("res://art/pixel/torch.svg")
 const RELICS = preload("res://art/pixel/relics.svg")
 const ACTORS = {
@@ -149,7 +150,7 @@ func pixel_pos(value: Vector2) -> Vector2:
 	return (value/2.0).round()*2.0
 
 func tile(index: int, rect: Rect2, source_size: Vector2 = Vector2(32,32)) -> void:
-	draw_texture_rect_region(TILES,rect,Rect2(Vector2(index*32,0),source_size))
+	draw_texture_rect_region(GARDEN if model.floor_index==1 else TILES,rect,Rect2(Vector2(index*32,0),source_size))
 
 func _draw() -> void:
 	if model == null:
@@ -252,12 +253,12 @@ func draw_warden() -> void:
 		frame = 3
 		for i in range(3,0,-1):
 			sprite(model.character,pos-model.dash_direction*float(i)*14,player_facing,frame,64,Color(0.65,0.5,1,0.12))
-	sprite("warden",pos,player_facing,frame,64)
+	sprite(model.character,pos,player_facing,frame,64)
 
 func draw_actor(enemy: Dictionary) -> void:
 	var kind: String = enemy.kind
 	var pos: Vector2 = enemy.pos
-	var size := 128.0 if kind == "boss" else 64.0
+	var size := 128.0 if kind in ["boss","rootking"] else (80.0 if kind=="mushroom" else 64.0)
 	var direction: Vector2 = pos.direction_to(model.player)
 	var frame := 2+int(clock*8+pos.x*0.02)%4
 	if enemy.wind > 0:

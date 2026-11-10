@@ -7,8 +7,10 @@ const Backdrop = preload("res://menu_backdrop.gd")
 const PixelWorld = preload("res://pixel_world.gd")
 const Content = preload("res://content.gd")
 const Progress = preload("res://progress.gd")
+const UI = preload("res://ui_theme.gd")
 var progress = Progress.new()
 var codex_page := 0
+var codex_filter := "all"
 var feedback := ""
 var backdrop: Control
 var preview: VBoxContainer
@@ -86,18 +88,18 @@ func build_shell() -> void:
 	horizontal.add_theme_constant_override("separation", 24)
 	frame.add_child(horizontal)
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(510,0)
+	panel.custom_minimum_size = Vector2(580,0)
 	panel.add_theme_stylebox_override("panel", box_style(Color("#161124f2"), Color("#876a85"),2))
 	horizontal.add_child(panel)
 	body = VBoxContainer.new()
-	body.add_theme_constant_override("separation", 8)
+	body.add_theme_constant_override("separation", 6)
 	panel.add_child(body)
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	horizontal.add_child(spacer)
 	var right := PanelContainer.new()
-	right.custom_minimum_size = Vector2(326,0)
+	right.custom_minimum_size = Vector2(350,0)
 	right.size_flags_vertical = Control.SIZE_SHRINK_END
 	right.add_theme_stylebox_override("panel",box_style(Color("#171224ee"),Color("#8c6d7e"),2))
 	horizontal.add_child(right)
@@ -157,12 +159,12 @@ func codex_entry(index: int, text: String) -> void:
 	body.add_child(row)
 	var icon := TextureRect.new()
 	icon.texture = atlas_icon(PixelWorld.RELICS,Rect2(index*24,0,24,24))
-	icon.custom_minimum_size = Vector2(28,28)
+	icon.custom_minimum_size = Vector2(40,40)
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	row.add_child(icon)
-	var caption := label(text,16,LIGHT)
+	var caption := label(text,15,LIGHT)
 	caption.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(caption)
 
@@ -189,6 +191,7 @@ func add_action(caption: String, callback: Callable, locked: bool = false) -> Bu
 	button.add_theme_stylebox_override("pressed", box_style(Color("#614680"), GOLD, 2))
 	button.add_theme_stylebox_override("focus", box_style(Color("#00000000"), GOLD, 2))
 	button.add_theme_stylebox_override("disabled", box_style(Color("#181526"), Color("#392d4c")))
+	UI.style_button(button,GOLD)
 	button.disabled = locked
 	button.pressed.connect(callback)
 	body.add_child(button)
@@ -206,6 +209,8 @@ func show_page(next: String) -> void:
 		"home":
 			detail_label.text = tr_text("Fortune ends at the door. The depths are waiting.", "Das Glück endet an der Tür. Die Tiefen warten.")
 			body.add_child(label(tr_text("THE GATE", "DAS TOR"), 14, GOLD))
+			body.add_child(label(tr_text("Explore two depths, forge your build and return stronger.","Erkunde zwei Ebenen, forme deinen Build und kehre stärker zurück."),18,LIGHT))
+			body.add_child(label(tr_text("Soul essence","Seelenessenz")+"   "+str(progress.essence)+"     •     "+tr_text("Victories","Siege")+"   "+str(progress.wins),15,GOLD))
 			var primary := add_action(tr_text("New expedition  ›", "Neue Expedition  ›"), func(): show_page("expedition"))
 			primary.add_theme_stylebox_override("normal",box_style(Color("#6a4936"),GOLD,2))
 			add_action(tr_text("Progression", "Fortschritt"), func(): show_page("progress"))
@@ -217,7 +222,12 @@ func show_page(next: String) -> void:
 			body.add_child(label(tr_text("AVAILABLE LOADOUTS","VERFÜGBARE START-SETS"),14,GOLD))
 			for id in progress.unlocked:
 				var chosen_id: String = id
-				add_action(Content.loadout_display_name(id,german)+("  •  "+tr_text("Selected","Ausgewählt") if progress.selected==id else ""),func(): select_set(chosen_id))
+				var spec: Dictionary=Content.SETS[id]
+				var button:=add_action(Content.loadout_display_name(id,german)+("  •  "+tr_text("Selected","Ausgewählt") if progress.selected==id else ""),func(): select_set(chosen_id))
+				button.icon=atlas_icon(PixelWorld.ACTORS[spec.character],Rect2(0,0,32,32))
+				button.expand_icon=true
+				button.add_theme_constant_override("icon_max_width",32)
+				UI.style_button(button,GOLD,progress.selected==id)
 			add_action(tr_text("Start run  ›","Run starten  ›"),start_run)
 			add_action(tr_text("Back","Zurück"),func(): show_page("home"))
 		"progress":
@@ -228,9 +238,10 @@ func show_page(next: String) -> void:
 				var upgrade: Array = Content.UPGRADES[key]
 				var id: String = key
 				var rank: int = progress.ranks[key]
-				var caption: String = upgrade[1 if german else 0]+"  %d/%d  •  " % [rank,upgrade[5]]+str(progress.cost(key))
+				var caption: String = upgrade[1 if german else 0]+"  %d/%d  •  " % [rank,upgrade[5]]+str(progress.cost(key))+"  |  "+upgrade[3 if german else 2]
 				var button := add_action(caption,func(): buy_rank(id),rank>=upgrade[5] or progress.essence<progress.cost(key))
 				button.tooltip_text = upgrade[3 if german else 2]
+				button.add_theme_font_size_override("font_size",15)
 			add_action(tr_text("Unlock characters & sets  ›","Charaktere & Sets freischalten  ›"),func(): show_page("sets"))
 			add_action(tr_text("Back","Zurück"),func(): show_page("home"))
 		"sets":
@@ -243,7 +254,10 @@ func show_page(next: String) -> void:
 				var locked: bool = owned or progress.essence<int(spec.cost) or (id=="dealer_joker" and not progress.unlocked.has("dealer_cards")) or (id=="arcanist_frost" and not progress.unlocked.has("arcanist_fire"))
 				var caption := (tr_text("Warden","Wächter") if spec.character=="warden" else ("Dealer" if spec.character=="dealer" else tr_text("Arcanist","Arkanist")))+"  /  "+Content.loadout_display_name(id,german)
 				caption += "  •  "+(tr_text("Owned","Freigeschaltet") if owned else str(spec.cost))
-				add_action(caption,func(): buy_set(set_key),locked)
+				var button:=add_action(caption,func(): buy_set(set_key),locked)
+				button.icon=atlas_icon(PixelWorld.ACTORS[spec.character],Rect2(0,0,32,32))
+				button.expand_icon=true
+				button.add_theme_constant_override("icon_max_width",30)
 			add_action(tr_text("Back","Zurück"),func(): show_page("progress"))
 		"codex":
 			detail_label.text = tr_text("Relic library — discoveries are saved after each run.","Reliktbibliothek — Entdeckungen werden nach Runs gespeichert.")
@@ -251,7 +265,23 @@ func show_page(next: String) -> void:
 			var ids: Array = Content.RELICS.keys()
 			for i in range(codex_page*6,mini(codex_page*6+6,ids.size())):
 				var id: String = ids[i]
-				codex_entry(int(Content.RELICS[id][4]),Content.relic_text(id,german))
+				var item: Array=Content.RELICS[id]
+				var rarity: int=Content.rarity(id)
+				var row:=HBoxContainer.new()
+				row.add_theme_constant_override("separation",10)
+				body.add_child(row)
+				var icon:=TextureRect.new()
+				icon.texture=UI.atlas(UI.RELICS,int(item[4]))
+				icon.custom_minimum_size=Vector2(38,38)
+				icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE
+				icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+				icon.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
+				row.add_child(icon)
+				var details:=VBoxContainer.new()
+				details.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+				row.add_child(details)
+				details.add_child(label(item[1 if german else 0]+("  ✓" if progress.discovered.has(id) else ""),16,UI.RARITY_COLORS[rarity]))
+				details.add_child(label(item[3 if german else 2],13,MUTED))
 			add_action(tr_text("Next page","Nächste Seite")+"  %d/7" % (codex_page+1),func(): next_codex())
 			add_action(tr_text("Back","Zurück"),func(): show_page("home"))
 		"settings":

@@ -5,6 +5,7 @@ const PixelWorld = preload("res://pixel_world.gd")
 const Content = preload("res://content.gd")
 const Progress = preload("res://progress.gd")
 const RouteMap = preload("res://route_map.gd")
+const UI = preload("res://ui_theme.gd")
 var progress = Progress.new()
 var smoke_mode := false
 var last_active := false
@@ -286,6 +287,8 @@ func draw_hud() -> void:
 	ability_slot(184,3,"RMB" if not german else "RMT",(tr_text("Sweep","Wirbel") if run.set_id=="warden_executioner" else tr_text("Bolt","Geschoss")),1.0-run.bolt_timer/run.special_cd,Color("#72cadf"))
 	ability_slot(350,2,"SPACE" if not german else "LEER", "Dash",1.0-run.dash_timer/run.dash_cooldown,VIOLET)
 	ability_slot(516,1,"Q",active_name(),1.0-run.active_timer/run.active_cd,Color("#e8899b"))
+	var active_index: int = {"heal":9,"time":10,"bomb":11,"shield":12,"dice":13,"mirror":14}.get(run.active_item,9)
+	draw_texture_rect_region(UI.ICONS,Rect2(524,669,32,32),Rect2(active_index*24,0,24,24))
 	hud_panel(Rect2(683,659,580,53),VIOLET)
 	text_at(Vector2(695,679),tr_text("RELICS","RELIKTE")+"  %d" % run.relics.size(),13,GOLD)
 	text_at(Vector2(695,699),tr_text("WASD / E  Move / Gate","WASD / E  Bewegung / Tor"),11,MUTED)
@@ -352,16 +355,7 @@ func add_button(parent: Control, caption: String, callback: Callable) -> Button:
 	node.text = caption
 	node.custom_minimum_size = Vector2(0,52)
 	node.add_theme_font_size_override("font_size",20)
-	for style_name in ["normal","hover","pressed","focus"]:
-		var style := StyleBoxFlat.new()
-		style.bg_color = Color("#31243e") if style_name=="normal" else Color("#5b3a72")
-		style.border_color = Color("#9872b1") if style_name=="normal" else GOLD
-		style.set_border_width_all(2)
-		style.set_corner_radius_all(8)
-		style.shadow_color = Color(0,0,0,0.5)
-		style.shadow_size = 4
-		style.shadow_offset = Vector2(0,3)
-		node.add_theme_stylebox_override(style_name,style)
+	UI.style_button(node,GOLD)
 	node.pressed.connect(callback)
 	parent.add_child(node)
 	return node
@@ -400,7 +394,8 @@ func use_service(choice: int) -> void:
 		rebuild_overlay()
 
 func show_route_map(column: VBoxContainer) -> void:
-	add_label(column,tr_text("DUNGEON MAP","DUNGEON-KARTE")+"  •  "+str(run.floor_index+1),27,GOLD)
+	add_label(column,tr_text("DUNGEON MAP","DUNGEON-KARTE")+"  •  "+str(run.floor_index+1)+" / 2",30,GOLD)
+	add_label(column,tr_text("Gold = current  ·  Lit = reachable  ·  ✓ = cleared","Gold = aktuell  ·  Hell = erreichbar  ·  ✓ = gesäubert"),14,MUTED)
 	add_label(column,tr_text("Choose a connected room. Cleared rooms can be revisited.","Wähle einen verbundenen Raum. Gesäuberte Räume sind erneut betretbar."),16,MUTED)
 	var map := RouteMap.new()
 	map.nodes=run.dungeon.nodes
@@ -411,15 +406,20 @@ func show_route_map(column: VBoxContainer) -> void:
 		var node: Dictionary=run.dungeon.nodes[i]
 		var visible_kind: String = node.kind
 		if visible_kind=="secret" and not node.visited and not run.route_options().has(i): visible_kind="?"
-		var caption := "%02d " % (i+1)+room_name(visible_kind)
+		var caption := room_name(visible_kind)
 		if i==run.room: caption+=" • "+tr_text("HERE","HIER")
 		elif node.cleared: caption+=" ✓"
 		var button:=add_button(map,caption,func(): run.travel(id))
-		button.custom_minimum_size=Vector2(174,37)
-		button.size=Vector2(174,37)
-		button.position=RouteMap.POSITIONS[i]-Vector2(87,18)
-		button.add_theme_font_size_override("font_size",14)
+		button.custom_minimum_size=Vector2(174,42)
+		button.size=Vector2(174,42)
+		button.position=RouteMap.POSITIONS[i]-Vector2(87,21)
+		button.add_theme_font_size_override("font_size",15)
+		button.icon=UI.atlas(UI.ICONS,int(UI.ROOM_ICONS[visible_kind]))
+		button.expand_icon=true
+		button.add_theme_constant_override("icon_max_width",24)
+		UI.style_button(button,UI.ROOM_COLORS[visible_kind],i==run.room)
 		button.disabled=not run.route_options().has(i)
+		button.tooltip_text=tr_text("Current room","Aktueller Raum") if i==run.room else (tr_text("Travel to this room","Diesen Raum betreten") if not button.disabled else tr_text("Not connected to current room","Nicht direkt verbunden"))
 	if run.room_kind=="boss" and run.floor_index==0 and run.dungeon.nodes[run.room].cleared:
 		add_button(column,tr_text("Descend to the Abyss Garden","Abstieg in den Abgrundgarten"),func(): run.descend())
 	add_button(column,tr_text("Close map","Karte schließen"),func(): run.state="exit")
@@ -431,14 +431,14 @@ func rebuild_overlay() -> void:
 	if overlay_state not in ["pause","reward","victory","defeat","route","service"]:
 		return
 	var shade := ColorRect.new()
-	shade.color = Color(0.035,0.025,0.065,0.82)
+	shade.color = Color(0.025,0.02,0.05,0.88)
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	overlay.add_child(shade)
 	var center := CenterContainer.new()
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	overlay.add_child(center)
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(660,0)
+	panel.custom_minimum_size = Vector2(940 if overlay_state in ["reward","route"] else 680,0)
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color("#191325")
 	style.border_color = GOLD
@@ -460,7 +460,14 @@ func rebuild_overlay() -> void:
 		"route":
 			show_route_map(column)
 		"service":
-			add_label(column,room_name(run.room_kind).to_upper(),30,GOLD)
+			var service_icon:=TextureRect.new()
+			service_icon.texture=UI.atlas(UI.ICONS,int(UI.ROOM_ICONS[run.room_kind]))
+			service_icon.custom_minimum_size=Vector2(0,72)
+			service_icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE
+			service_icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			service_icon.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
+			column.add_child(service_icon)
+			add_label(column,room_name(run.room_kind).to_upper(),30,UI.ROOM_COLORS[run.room_kind])
 			add_label(column,tr_text("Shards","Splitter")+"  "+str(run.shards),18,MUTED)
 			match run.room_kind:
 				"treasure","secret":
@@ -483,15 +490,39 @@ func rebuild_overlay() -> void:
 		"reward":
 			add_label(column,tr_text("ROOM CLEARED","RAUM GESÄUBERT"),30,GOLD)
 			add_label(column,tr_text("Choose a relic. Recover 12 HP and open the route map.","Wähle ein Relikt. Heile 12 LP und öffne die Karte."),17,MUTED)
+			var cards:=HBoxContainer.new()
+			cards.add_theme_constant_override("separation",14)
+			column.add_child(cards)
 			for i in range(run.offers.size()):
-				var index := i
-				var button := add_button(column,"%d  ·  %s" % [i+1,relic_description(run.offers[i])+"  ["+["C","R","E","L"][Content.rarity(run.offers[i])]+"]"],func(): select_relic(index))
-				var icon := AtlasTexture.new()
-				icon.atlas = PixelWorld.RELICS
-				icon.region = Rect2(int(Content.RELICS[run.offers[i]][4])*24,0,24,24)
-				button.icon = icon
-				button.expand_icon = true
-				button.add_theme_constant_override("icon_max_width",32)
+				var index:=i
+				var id: String=run.offers[i]
+				var item: Array=Content.RELICS[id]
+				var rarity: int=Content.rarity(id)
+				var color: Color=UI.RARITY_COLORS[rarity]
+				var card:=PanelContainer.new()
+				card.custom_minimum_size=Vector2(278,270)
+				card.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+				card.add_theme_stylebox_override("panel",UI.panel(Color("#241c34"),color,14))
+				cards.add_child(card)
+				var stack:=VBoxContainer.new()
+				stack.add_theme_constant_override("separation",10)
+				card.add_child(stack)
+				var rarity_label:=["Common","Rare","Epic","Legendary"][rarity] if not german else ["Gewöhnlich","Selten","Episch","Legendär"][rarity]
+				add_label(stack,rarity_label.to_upper(),13,color)
+				var icon:=TextureRect.new()
+				icon.texture=UI.atlas(UI.RELICS,int(item[4]))
+				icon.custom_minimum_size=Vector2(0,96)
+				icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE
+				icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+				icon.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
+				stack.add_child(icon)
+				add_label(stack,item[1 if german else 0],21,WHITE)
+				add_label(stack,item[3 if german else 2],16,MUTED)
+				var spacer:=Control.new()
+				spacer.size_flags_vertical=Control.SIZE_EXPAND_FILL
+				stack.add_child(spacer)
+				var button:=add_button(stack,"%d  •  " % (i+1)+tr_text("Choose","Wählen"),func(): select_relic(index))
+				UI.style_button(button,color)
 		"pause":
 			add_label(column,tr_text("EXPEDITION PAUSED","EXPEDITION PAUSIERT"),30,GOLD)
 			add_button(column,tr_text("Continue","Fortsetzen"),func(): paused=false)
