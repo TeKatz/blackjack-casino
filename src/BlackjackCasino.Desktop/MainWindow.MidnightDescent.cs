@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
+using BlackjackCasino.Core;
 
 namespace BlackjackCasino.Desktop;
 
@@ -10,7 +11,7 @@ public partial class MainWindow
 
     private void OpenMidnightDescent()
     {
-        if (descentProcess is { HasExited: false }) return;
+        if (descentProcess is not null) return;
         bool de = Localization.Language == UiLanguagePreference.German;
         string executable = Path.Combine(AppContext.BaseDirectory, "MidnightDescent", "MidnightDescent.exe");
         if (!File.Exists(executable) || !File.Exists(Path.ChangeExtension(executable, ".pck")))

@@ -71,7 +71,7 @@ func build_shell() -> void:
 	frame.add_child(horizontal)
 	var panel := PanelContainer.new()
 	panel.custom_minimum_size = Vector2(480, 0)
-	panel.add_theme_stylebox_override("panel", box_style(Color("#df100e20"), Color("#5c447b")))
+	panel.add_theme_stylebox_override("panel", box_style(Color("#100e20df"), Color("#5c447b")))
 	horizontal.add_child(panel)
 	body = VBoxContainer.new()
 	body.add_theme_constant_override("separation", 9)
@@ -120,7 +120,7 @@ func show_page(next: String) -> void:
 		"expedition":
 			detail_label.text = tr_text("Choose your path into the depths.", "Wähle deinen Weg in die Tiefen.")
 			body.add_child(label(tr_text("CHARACTER SELECTION", "CHARAKTERAUSWAHL"), 14, GOLD))
-			add_action(tr_text("Warden  •  Selected", "Wächter  •  Ausgewählt"), func(): chosen = "warden"; show_page("expedition"))
+			add_action(tr_text("Warden  •  Selected", "Wächter  •  Ausgewählt"), select_warden)
 			body.add_child(label(tr_text("A steadfast fighter. Balanced defence and close-range combat are planned for this class.", "Ein standhafter Kämpfer. Ausgewogene Verteidigung und Nahkampf sind für diese Klasse geplant."), 17, MUTED))
 			add_action(tr_text("Dealer  •  Locked", "Dealer  •  Gesperrt"), func(): pass, true)
 			add_action(tr_text("Start run  •  Coming in next phase", "Run starten  •  Nächste Phase"), func(): pass, true)
@@ -137,6 +137,10 @@ func show_page(next: String) -> void:
 			add_action(tr_text("Back", "Zurück"), func(): show_page("home"))
 	if not action_buttons.is_empty():
 		action_buttons[0].grab_focus()
+
+func select_warden() -> void:
+	chosen = "warden"
+	show_page("expedition")
 
 func toggle_fullscreen() -> void:
 	var window := get_window()

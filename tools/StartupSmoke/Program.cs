@@ -495,7 +495,7 @@ internal static class Program
             + "const art=games.map(g=>g.querySelector('.game-art-window'));"
             + "const gpu=document.querySelector('.lobby-pixi');"
             + "const hero=getComputedStyle(document.querySelector('.lobby-hero-picture')).backgroundImage;"
-            + "const expected=['blackjack','roulette','kniffel','chill-lounge','casino-empire','midnight-reels','neon-vault','nine-lives','midnight-manor','midnight-merge','arcade-games'];"
+            + "const expected=['blackjack','roulette','kniffel','chill-lounge','casino-empire','midnight-reels','neon-vault','nine-lives','midnight-manor','midnight-merge','arcade-games','midnight-descent'];"
             + "return Boolean(shell&&games.length===expected.length&&expected.every(id=>games.some(g=>g.classList.contains('game-'+id)))&&nav.length>=11"
             + "&&daily&&rewards.length===7&&!document.querySelector('.lobby-overview')"
             + "&&gpu"
@@ -503,17 +503,19 @@ internal static class Program
             + "?Boolean(x.querySelector('.arcade-tile-scene')):x.dataset.modeArt==='roulette'"
             + "?Boolean(x.querySelector('.roulette-tile-art')):!x.firstElementChild))"
             + "&&Boolean(document.querySelector('.game-arcade-games .lobby-gold-button'))"
+            + "&&Boolean(document.querySelector('.game-midnight-descent .lobby-gold-button:not(:disabled)'))"
+            + "&&getComputedStyle(document.querySelector('.game-midnight-descent .game-art-window')).backgroundImage.includes('midnight-descent.svg')"
             + "&&Boolean(document.querySelector('.game-roulette .lobby-gold-button:not(:disabled)'))"
             + "&&hero.includes('/lobby/art/hero.png')"
             + "&&profile?.textContent?.includes('Startup Smoke')"
             + "&&document.querySelector('.lobby-hero h1')?.textContent?.length>5);})()");
         Require(result.Equals("true", StringComparison.OrdinalIgnoreCase),
-            "Packaged React lobby did not render the ten native modes and Arcade Games tile. "
+            "Packaged React lobby did not render the eleven native modes and Arcade Games tile. "
             + "DOM validation returned " + result);
 
         Require(await modern.Browser.CoreWebView2.ExecuteScriptAsync(
-            "(()=>{const tiles=[...document.querySelectorAll('.lobby-game')];return Boolean(tiles.length===11&&tiles.every(t=>{const r=t.getBoundingClientRect(),b=t.querySelector('.lobby-gold-button').getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight+1&&b.bottom<=r.bottom+1&&b.height>15})&&new Set(tiles.map(t=>t.offsetTop)).size===3)})()") == "true",
-            "The complete eleven-tile lobby must fit on screen in three rows with every Play button visible.");
+            "(()=>{const tiles=[...document.querySelectorAll('.lobby-game')];return Boolean(tiles.length===12&&tiles.every(t=>{const r=t.getBoundingClientRect(),b=t.querySelector('.lobby-gold-button').getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight+1&&b.bottom<=r.bottom+1&&b.height>15})&&new Set(tiles.map(t=>t.offsetTop)).size===3)})()") == "true",
+            "The complete twelve-tile lobby must fit on screen in three rows with every Play button visible.");
 
         // The browser-side GPU art system loads local SVG texture pairs in the
         // background. A visible Canvas alone is not proof that artwork loaded.

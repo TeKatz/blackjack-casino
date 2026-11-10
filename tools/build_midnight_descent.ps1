@@ -25,13 +25,15 @@ if (!(Test-Path (Join-Path $templates "windows_release_x86_64.exe"))) {
     New-Item -ItemType Directory -Force $templates | Out-Null
     Copy-Item (Join-Path $work "templates/templates/windows_release_x86_64.exe") $templates -Force
 }
-function Invoke-Godot {
-    & $editor @args
-    if ($LASTEXITCODE -ne 0) { throw "Godot failed: $args ($LASTEXITCODE)" }
+function Invoke-Godot([string[]]$GodotArgs) {
+    & $editor @GodotArgs
+    if ($LASTEXITCODE -ne 0) { throw "Godot failed: $GodotArgs ($LASTEXITCODE)" }
 }
-Invoke-Godot --headless --path $project --editor --import
-Invoke-Godot --headless --path $project -- --smoke-test
-Invoke-Godot --headless --path $project --export-release "Windows Desktop" (Join-Path $output "MidnightDescent.exe")
+Invoke-Godot @("--headless", "--path", $project, "--editor", "--import")
+$smoke = Invoke-Godot @("--headless", "--path", $project, "--quit-after", "240", "--", "--smoke-test")
+$smoke | Write-Host
+if (($smoke -join "`n") -notmatch "Midnight Descent menu smoke PASS") { throw "Godot menu smoke did not complete." }
+Invoke-Godot @("--headless", "--path", $project, "--export-release", "Windows Desktop", (Join-Path $output "MidnightDescent.exe"))
 foreach ($file in @("MidnightDescent.exe", "MidnightDescent.pck")) {
     if (!(Test-Path (Join-Path $output $file))) { throw "Missing Godot export: $file" }
 }
