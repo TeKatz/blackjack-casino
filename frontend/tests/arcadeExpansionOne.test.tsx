@@ -67,7 +67,7 @@ describe('Midnight Beats',()=>{
   expect(hitBeatsLane(run,0)).toBeNull();
   for(let i=0;i<80;i++)stepArcadeRun(run,ARCADE_STEP);
   expect(run.grooveCount).toBeGreaterThan(0);
-  expect(run.notes.some(n=>n.at===beatsTargetTime(8))).toBe(true);
+  expect(run.notes.some(n=>Math.abs(n.at-beatsTargetTime(8))<1e-9)).toBe(true);
   expect(run.score).toBe(0);
  });
  it('judges the matching lane by musical time, not graphic overlap',()=>{
