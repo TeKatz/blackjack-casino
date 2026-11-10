@@ -35,9 +35,9 @@ export const driftCenter=(distance:number)=>
  480+118*Math.sin(distance*.00215)+57*Math.sin(distance*.0047);
 export const gravityGoalY=(stage:number)=>stage%2===0?93:438;
 export const gravityHazards=(stage:number)=>[
- {x:260+(stage%3)*22,y:454,w:84,h:19},
+ {x:260+(stage%3)*22,y:444,w:84,h:25},
  {x:480-(stage%3)*16,y:67,w:92,h:19},
- {x:645+(stage%2)*12,y:454,w:79,h:19},
+ {x:645+(stage%2)*12,y:444,w:79,h:25},
 ];
 export function createExpansionRun(kind:ExpansionOneId,seed=0x51eab141):ExpansionRun{
  const base={score:0,elapsed:0,over:false,seed:(seed>>>0)||0x51eab141};
