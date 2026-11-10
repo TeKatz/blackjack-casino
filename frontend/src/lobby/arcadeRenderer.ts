@@ -1,3 +1,5 @@
+import {isExpansionRun} from './arcadeExpansionOneEngine';
+import {drawExpansionRun} from './arcadeExpansionOneRenderer';
 import {ARCADE_HEIGHT as H,ARCADE_WIDTH as W} from './arcadeEngine';
 import {SNAKE_COLS,SNAKE_ROWS,BLADE_HIT_ARC,angularDistance} from './arcadeEngine';
 import type {ArcadeRunState,CaveRun,StackRun,BladeRun,WingsRun,SnakeRun,BreakerRun,StormRun,HexRun,SpikeRun,AscentRun} from './arcadeEngine';
@@ -6,6 +8,11 @@ type Context=CanvasRenderingContext2D;
 const TAU=Math.PI*2;
 function background(ctx:Context,state:ArcadeRunState){
  const tones:Record<ArcadeRunState['kind'],[string,string,string]>={
+  'midnight-pinball':['#061822','#1e1933','#132a33'],
+  'phantom-hook':['#081c30','#2c2250','#152d3c'],
+  'neon-drift':['#11172d','#172939','#122e38'],
+  'gravity-chamber':['#0b1b32','#20274a','#152f3e'],
+  'echo-sequence':['#0b1830','#292042','#162c3d'],
   'midnight-wings':['#061b25','#16283a','#244541'],
   'cave-escape':['#071b23','#13272b','#0b151d'],
   'perfect-stack':['#12292b','#172739','#171d2b'],
@@ -680,6 +687,7 @@ function endlessAscent(ctx:Context,state:AscentRun){
 }
 
 export function drawArcadeRun(ctx:Context,state:ArcadeRunState){
+ if(isExpansionRun(state)){drawExpansionRun(ctx,state);return;}
  ctx.save();
  ctx.clearRect(0,0,W,H);
  background(ctx,state);
