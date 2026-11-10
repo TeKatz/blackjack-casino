@@ -92,7 +92,12 @@ function tone(event:ArcadeEvent,enabled:boolean,ctxRef:{current:AudioContext|nul
  id:PlayableArcadeId,run:ArcadeRunState){
  if(!event)return;
  let cue:ArcadeSoundCue=event;
- if(id==='pulse-perfect'){
+ if(id==='phantom-hook'){
+   if(event==='score')return; // Continuous distance scoring must never retrigger a hook.
+   if(event==='flap'&&run.kind==='phantom-hook')
+    cue=run.anchored>=0?'hook':'release';
+  }else if(id==='spike-rush'&&event==='flap')cue='jump';
+  else if(id==='pulse-perfect'){
   if(event==='score'&&run.kind==='pulse-perfect')
    cue=run.feedback==='perfect'?'perfect':'good';
   if(event==='stage'||event==='fail')cue='miss';
@@ -103,7 +108,7 @@ function tone(event:ArcadeEvent,enabled:boolean,ctxRef:{current:AudioContext|nul
  }else if(id==='shadow-heist'){
   if(event==='stage')cue='caught';if(event==='score')cue='collect';
  }else if(id==='prism-lock'&&run.kind==='prism-lock'){
-  if(event==='score')cue='solve';
+  if(event==='score')cue='victory';
   if(event==='stage'&&run.transition==='lost')cue='life';
  }else if(id==='circuit-rush'&&run.kind==='circuit-rush'){
   if(event==='stage'&&run.shockClock>0)cue='short';
@@ -147,6 +152,7 @@ export function ArcadeGameScreen({id,language,onBack}:{
  const mouseActive=useRef(false);
 
  const lastEchoLight=useRef(-1);
+  const lastMiningTick=useRef(-1);
  const raf=useRef<number>(0);
  const audioRef=useRef<AudioContext|null>(null);
  const phaseRef=useRef<Phase>(phase);
@@ -198,12 +204,20 @@ export function ArcadeGameScreen({id,language,onBack}:{
   repaint();
  };
  const start=()=>{
-  held.current=false;lastEchoLight.current=-1;
+  held.current=false;lastEchoLight.current=-1;lastMiningTick.current=-1;
   keys.current.clear();mouseActive.current=false;mouseTarget.current=null;
   gameRef.current=createArcadeRun(id,Math.floor(Math.random()*0xffffffff));
   setScore(0);setElapsed(0);setIsBest(false);
   phaseRef.current='playing';setPhase('playing');
   if(id==='midnight-beats')unlockBeatsAudio(audioRef,soundRef.current);
+   if(id==='echo-sequence'){
+    const run=gameRef.current;
+    if(run.kind==='echo-sequence'){
+     // The first pad must sound during the actual START gesture to unlock Web Audio.
+     playArcadeSound(id,'pad',soundRef.current,audioRef,run.sequence[0]);
+     lastEchoLight.current=run.sequence[0];
+    }
+   }
   if(id==='midnight-wings'||id==='neon-breaker'||id==='phantom-hook'){
    const event=actArcadeRun(gameRef.current);
    tone(event,soundRef.current,audioRef,id,gameRef.current);
@@ -247,10 +261,19 @@ export function ArcadeGameScreen({id,language,onBack}:{
     const event=stepArcadeRun(state,ARCADE_STEP,held.current,controls);
     if(state.kind==='midnight-beats'){
      if(state.grooveCount!==previousGroove)
-      playBeatsGroovePulse(audioRef,soundRef.current,state.lastGroovePulse,state.bpm);
+      playBeatsGroovePulse(audioRef,soundRef.current,state.lastGroovePulse,state.bpm,
+        state.notes.filter(note=>Math.floor(note.id/4)===state.lastGroovePulse)
+         .map(note=>note.lane));
      if(state.misses>previousMisses)playBeatsMiss(audioRef,soundRef.current);
     }
-     if(state.kind==='echo-sequence'){
+     if(state.kind==='meteor-miner'){
+       if(!state.mining||state.mineIndex<0)lastMiningTick.current=state.elapsed-.22;
+       else if(state.elapsed-lastMiningTick.current>=.22){
+        lastMiningTick.current=state.elapsed;
+        playArcadeSound(id,'mineTick',soundRef.current,audioRef);
+       }
+      }
+      if(state.kind==='echo-sequence'){
       const light=state.phase==='watch'?state.active:-1;
       if(light!==lastEchoLight.current){
        lastEchoLight.current=light;
