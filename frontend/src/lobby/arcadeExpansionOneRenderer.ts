@@ -219,7 +219,8 @@ function echo(ctx:Ctx,s:EchoRun){
  round(ctx,199,99,565,391,22,'#112934','#bd9e75');ctx.restore();
  for(let pad=0;pad<6;pad++){
   const col=pad%3,row=Math.floor(pad/3),x=220+col*175,y=130+row*170;
-  const active=s.phase==='watch'&&s.active===pad;
+  const active=(s.phase==='watch'&&s.active===pad)||
+   (s.phase==='input'&&s.feedback>0&&s.lastGood&&s.lastChoice===pad);
   ctx.save();ctx.shadowColor=active?'#fdf4e6':padColors[pad];
   ctx.shadowBlur=active?38:10;
   const c=padColors[pad];round(ctx,x,y,155,145,17,active?'#ecf9e9':c+'55',c);
@@ -232,6 +233,8 @@ function echo(ctx:Ctx,s:EchoRun){
  text(ctx,s.phase==='watch'?'WATCH THE LIGHTS':s.phase==='input'?
   'REPEAT THE PATTERN':'PERFECT SEQUENCE',W/2,65,15,
   s.phase==='input'?'#a4f0dc':'#f3d7a0','center');
+ if(s.feedback>0&&!s.lastGood)
+  text(ctx,'MISSED!',W/2,95,19,'#ffb2a0','center');
  if(s.phase==='input'){
   const limit=6+s.sequence.length*1.6;
   round(ctx,222,499,520,9,4,'#2c4a59');
