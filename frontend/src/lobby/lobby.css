@@ -615,12 +615,12 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
 }
 
 /* Local artwork remains visible even if a WebGL context is temporarily lost. */
-.game-blackjack .game-art-window{background-image:url('/lobby/custom/blackjack-front.svg'),url('/lobby/custom/blackjack-back.svg');background-position:center;background-size:cover;background-repeat:no-repeat}
-.game-kniffel .game-art-window{background-image:url('/lobby/custom/kniffel-front.svg'),url('/lobby/custom/kniffel-back.svg');background-position:center;background-size:cover;background-repeat:no-repeat}
-.game-chill-lounge .game-art-window{background-image:url('/lobby/custom/chill-lounge-front.svg'),url('/lobby/custom/chill-lounge-back.svg');background-position:center;background-size:cover;background-repeat:no-repeat}
-.game-casino-empire .game-art-window{background-image:url('/lobby/custom/casino-empire-front.svg'),url('/lobby/custom/casino-empire-back.svg');background-position:center;background-size:cover;background-repeat:no-repeat}
-.game-midnight-reels .game-art-window{background-image:url('/lobby/custom/midnight-reels-front.svg'),url('/lobby/custom/midnight-reels-back.svg');background-position:center;background-size:cover;background-repeat:no-repeat}
-.game-neon-vault .game-art-window{background-image:url('/lobby/custom/neon-vault-front.svg'),url('/lobby/custom/neon-vault-back.svg');background-position:center;background-size:cover;background-repeat:no-repeat}
-.game-midnight-manor .game-art-window{background-image:url('/lobby/custom/midnight-manor-front.svg'),url('/lobby/custom/midnight-manor-back.svg');background-position:center;background-size:cover;background-repeat:no-repeat}
-.game-midnight-merge .game-art-window{background-image:url('/lobby/custom/midnight-merge-front.svg'),url('/lobby/custom/midnight-merge-back.svg');background-position:center;background-size:cover;background-repeat:no-repeat}
-.game-nine-lives .game-art-window{background:url('/lobby/art/nine-lives.jpg') center/cover no-repeat}
+.lobby-game.game-blackjack .game-art-window{background-image:url('/lobby/custom/blackjack-front.svg'),url('/lobby/custom/blackjack-back.svg');background-position:center;background-size:cover;background-repeat:no-repeat}
+.lobby-game.game-kniffel .game-art-window{background-image:url('/lobby/custom/kniffel-front.svg'),url('/lobby/custom/kniffel-back.svg');background-position:center;background-size:cover;background-repeat:no-repeat}
+.lobby-game.game-chill-lounge .game-art-window{background-image:url('/lobby/custom/chill-lounge-front.svg'),url('/lobby/custom/chill-lounge-back.svg');background-position:center;background-size:cover;background-repeat:no-repeat}
+.lobby-game.game-casino-empire .game-art-window{background-image:url('/lobby/custom/casino-empire-front.svg'),url('/lobby/custom/casino-empire-back.svg');background-position:center;background-size:cover;background-repeat:no-repeat}
+.lobby-game.game-midnight-reels .game-art-window{background-image:url('/lobby/custom/midnight-reels-front.svg'),url('/lobby/custom/midnight-reels-back.svg');background-position:center;background-size:cover;background-repeat:no-repeat}
+.lobby-game.game-neon-vault .game-art-window{background-image:url('/lobby/custom/neon-vault-front.svg'),url('/lobby/custom/neon-vault-back.svg');background-position:center;background-size:cover;background-repeat:no-repeat}
+.lobby-game.game-midnight-manor .game-art-window{background-image:url('/lobby/custom/midnight-manor-front.svg'),url('/lobby/custom/midnight-manor-back.svg');background-position:center;background-size:cover;background-repeat:no-repeat}
+.lobby-game.game-midnight-merge .game-art-window{background-image:url('/lobby/custom/midnight-merge-front.svg'),url('/lobby/custom/midnight-merge-back.svg');background-position:center;background-size:cover;background-repeat:no-repeat}
+.lobby-game.game-nine-lives .game-art-window{background:url('/lobby/art/nine-lives.jpg') center/cover no-repeat}

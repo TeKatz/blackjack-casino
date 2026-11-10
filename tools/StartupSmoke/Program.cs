@@ -512,7 +512,7 @@ internal static class Program
             + "DOM validation returned " + result);
 
         Require(await modern.Browser.CoreWebView2.ExecuteScriptAsync(
-            "(()=>{const tiles=[...document.querySelectorAll('.lobby-game')];return Boolean(tiles.length===11&&tiles.every(t=>{const r=t.getBoundingClientRect(),b=t.querySelector('.lobby-gold-button').getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight+1&&b.bottom<=r.bottom+1&&b.height>15})&&new Set(tiles.map(t=>Math.round(t.getBoundingClientRect().top))).size===3)})()") == "true",
+            "(()=>{const tiles=[...document.querySelectorAll('.lobby-game')];return Boolean(tiles.length===11&&tiles.every(t=>{const r=t.getBoundingClientRect(),b=t.querySelector('.lobby-gold-button').getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight+1&&b.bottom<=r.bottom+1&&b.height>15})&&new Set(tiles.map(t=>t.offsetTop)).size===3)})()") == "true",
             "The complete eleven-tile lobby must fit on screen in three rows with every Play button visible.");
 
         // The browser-side GPU art system loads local SVG texture pairs in the
@@ -538,7 +538,7 @@ internal static class Program
         await modern.Browser.CoreWebView2.ExecuteScriptAsync("document.querySelector('.casino-news .lobby-gold-button')?.click()");
         await Task.Delay(100);
         RequireNoLegacyLobbyFrame(window, "rendered React lobby");
-        await CheckModernRoulette(window, modern);
+        await CheckModernRoulette(window, modern, output);
         await CheckModernArcadeMenu(modern);
         await CheckModernLobbyUpdates(window, modern);
         Require(!Find<FrameworkElement>(window).Any(drawer => drawer.Name == "LobbyDailyDrawer" && drawer.IsVisible),
@@ -552,7 +552,7 @@ internal static class Program
             "Modern lobby WebView2 preview is unexpectedly small or empty.");
     }
 
-    private static async Task CheckModernRoulette(MainWindow window, ModernLobbyView modern)
+    private static async Task CheckModernRoulette(MainWindow window, ModernLobbyView modern, string output)
     {
         CoreWebView2 web = modern.Browser.CoreWebView2!;
         await web.ExecuteScriptAsync("document.querySelector('.game-roulette .lobby-gold-button')?.click()");
@@ -579,6 +579,13 @@ internal static class Program
             + "&&document.querySelector('.roulette-spin:disabled')"
             + "&&!document.querySelector('.lobby-hero')&&!document.querySelector('.lobby-nav'))",
             "Roulette did not open its React/PixiJS table with all 37 pockets and high-limit chips.");
+
+        ModernWebViewBootstrapSmoke.RequireHardened(web, "Roulette");
+        using (var capture=File.Create(Path.Combine(output,"roulette-webview2-live.png")))
+        {
+            await web.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png,capture);
+            Require(capture.Length>15_000,"Roulette WebView2 capture is unexpectedly small.");
+        }
 
         // Exercise actual React interactions without changing the seeded wallet
         // used by the remaining startup tests.
