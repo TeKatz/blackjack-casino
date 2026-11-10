@@ -120,7 +120,7 @@ function EmpireApp(){
   const close=()=>post('empire.close');
   useEffect(()=>{
     const accept=(reply:Reply)=>{
-      if(reply.requestId===previewId.current){setPreview(reply.preview);if(!reply.success)setNotice(reply.message);return;}
+      if(reply.requestId===previewId.current){setPreview(reply.preview);if(!reply.success&&!commandRef.current)setNotice(reply.message);return;}
       if(reply.requestId===pendingRef.current){pendingRef.current=null;setPending(null);setUncertain(false);setNotice(reply.message);clearPreview();}
     };
     const stop=listen(message=>{

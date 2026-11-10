@@ -74,3 +74,14 @@ export function researchCoordinates(items:Research[]):Record<string,{x:number;y:
   }));
   return result;
 }
+
+
+// Mirrors the catalog-driven Core CanResearch prerequisites without overriding
+// its authoritative canBuy flag. Distinguish affordability from dependencies.
+export function researchRequirements(node:Research,all:Research[],points:number){
+  const prerequisite=node.prerequisite?all.find(r=>r.id===node.prerequisite):undefined;
+  return {maxed:node.rank>=node.maxRank,missingPoints:Math.max(0,node.costPerRank-points),
+    prerequisite:node.prerequisite?{name:prerequisite?.name??node.prerequisite,
+      current:prerequisite?.rank??0,required:node.prerequisiteRank,
+      met:(prerequisite?.rank??0)>=node.prerequisiteRank}:null};
+}
