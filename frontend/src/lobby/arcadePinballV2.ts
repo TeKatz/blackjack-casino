@@ -56,7 +56,7 @@ function loseBall(run:PinballRun):PinballEvent{
  run.balls--;
  if(run.balls<=0){run.over=true;return 'fail';}
  run.serve=true;run.inShooter=true;run.x=724;run.y=478;
- run.vx=0;run.vy=0;run.combo=0;run.contact=0;
+ run.vx=0;run.vy=0;run.combo=0;run.contact=0;run.hitValue=0;run.hitTimer=0;
  run.trail=[];run.ballTime=0;run.lastFlipper=null;
  return 'stage';
 }
@@ -109,7 +109,7 @@ function flipperCollision(run:PinballRun,side:'left'|'right',dt:number):PinballE
  // balls weakly; it never generates free energy like a powered kick.
  if(run.vy<-95&&!pressed)return null;
  run.y=y-(BALL+11);
- const outgoing=pressed?800+125*p:355+75*p;
+ const outgoing=pressed?800+125*p:145+35*p;
  run.vy=-outgoing;
  const direction=side==='left'?1:-1;
  run.vx=clamp(run.vx*.35+direction*(pressed?115+235*p:75+100*p),-850,850);
