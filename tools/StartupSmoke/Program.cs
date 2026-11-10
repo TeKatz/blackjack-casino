@@ -451,7 +451,7 @@ internal static class Program
     /// RenderTargetBitmap cannot capture a WebView2 HWND, so WPF-only screenshots
     /// can silently show the legacy fallback even when the React lobby is broken.
     /// Require the actual packaged browser to load, receive live C# profile data,
-    /// expose the full nine-game navigation and produce a real WebView2 capture.
+    /// expose the full casino navigation (nine native modes, Roulette and Arcade) and produce a real WebView2 capture.
     /// </summary>
     private static async Task VerifyPackagedModernLobby(MainWindow window, string output)
     {
@@ -495,17 +495,20 @@ internal static class Program
             + "const art=games.map(g=>g.querySelector('.game-art-window'));"
             + "const gpu=document.querySelector('.lobby-pixi');"
             + "const hero=getComputedStyle(document.querySelector('.lobby-hero-picture')).backgroundImage;"
-            + "return Boolean(shell&&games.length===10&&nav.length>=11"
+            + "const expected=['blackjack','roulette','kniffel','chill-lounge','casino-empire','midnight-reels','neon-vault','nine-lives','midnight-manor','midnight-merge','arcade-games'];"
+            + "return Boolean(shell&&games.length===expected.length&&expected.every(id=>games.some(g=>g.classList.contains('game-'+id)))&&nav.length>=11"
             + "&&daily&&rewards.length===7&&!document.querySelector('.lobby-overview')"
             + "&&gpu"
             + "&&art.every(x=>x&&x.dataset.modeArt&&(x.dataset.modeArt==='arcade-games'"
-            + "?Boolean(x.querySelector('.arcade-tile-scene')):!x.firstElementChild))"
+            + "?Boolean(x.querySelector('.arcade-tile-scene')):x.dataset.modeArt==='roulette'"
+            + "?Boolean(x.querySelector('.roulette-tile-art')):!x.firstElementChild))"
             + "&&Boolean(document.querySelector('.game-arcade-games .lobby-gold-button'))"
+            + "&&Boolean(document.querySelector('.game-roulette .lobby-gold-button:not(:disabled)'))"
             + "&&hero.includes('/lobby/art/hero.png')"
             + "&&profile?.textContent?.includes('Startup Smoke')"
             + "&&document.querySelector('.lobby-hero h1')?.textContent?.length>5);})()");
         Require(result.Equals("true", StringComparison.OrdinalIgnoreCase),
-            "Packaged React lobby did not render the nine native modes and Arcade Games tile. "
+            "Packaged React lobby did not render the nine native modes, Roulette and Arcade Games tiles. "
             + "DOM validation returned " + result);
 
         // The browser-side GPU art system loads local SVG texture pairs in the
@@ -531,6 +534,7 @@ internal static class Program
         await modern.Browser.CoreWebView2.ExecuteScriptAsync("document.querySelector('.casino-news .lobby-gold-button')?.click()");
         await Task.Delay(100);
         RequireNoLegacyLobbyFrame(window, "rendered React lobby");
+        await CheckModernRoulette(modern);
         await CheckModernArcadeMenu(modern);
         await CheckModernLobbyUpdates(window, modern);
         Require(!Find<FrameworkElement>(window).Any(drawer => drawer.Name == "LobbyDailyDrawer" && drawer.IsVisible),
@@ -542,6 +546,46 @@ internal static class Program
             CoreWebView2CapturePreviewImageFormat.Png, capture);
         Require(capture.Length > 15_000,
             "Modern lobby WebView2 preview is unexpectedly small or empty.");
+    }
+
+    private static async Task CheckModernRoulette(ModernLobbyView modern)
+    {
+        CoreWebView2 web = modern.Browser.CoreWebView2!;
+        await web.ExecuteScriptAsync("document.querySelector('.game-roulette .lobby-gold-button')?.click()");
+        async Task WaitFor(string script, string message)
+        {
+            for (int attempt = 0; attempt < 100; attempt++)
+            {
+                if (await web.ExecuteScriptAsync(script) == "true") return;
+                await Task.Delay(100);
+            }
+            Require(false, message);
+        }
+
+        await WaitFor(
+            "Boolean(document.querySelector('.roulette-room')"
+            + "&&document.querySelector('.roulette-wheel canvas')"
+            + "&&document.querySelectorAll('.roulette-numbers .roulette-cell').length===36"
+            + "&&document.querySelector('.roulette-zero')"
+            + "&&document.querySelectorAll('.roulette-chip').length===8"
+            + "&&document.querySelector('.roulette-spin:disabled')"
+            + "&&!document.querySelector('.lobby-hero'))",
+            "Roulette did not open its React/PixiJS table with all 37 pockets and high-limit chips.");
+
+        // Exercise actual React interactions without changing the seeded wallet
+        // used by the remaining startup tests.
+        await web.ExecuteScriptAsync("document.querySelector('.roulette-numbers .roulette-cell')?.click()");
+        await WaitFor(
+            "Boolean(document.querySelector('.roulette-placed')&&document.querySelector('.roulette-spin:not(:disabled)'))",
+            "Roulette did not accept a valid chip on the number layout.");
+        await web.ExecuteScriptAsync("document.querySelector('.roulette-controls button:nth-child(2)')?.click()");
+        await WaitFor(
+            "Boolean(!document.querySelector('.roulette-placed')&&document.querySelector('.roulette-spin:disabled'))",
+            "Roulette did not clear the wager and disable spinning.");
+        await web.ExecuteScriptAsync("document.querySelector('.roulette-back')?.click()");
+        await WaitFor(
+            "Boolean(document.querySelector('.lobby-hero')&&document.querySelector('.game-roulette')&&!document.querySelector('.roulette-room'))",
+            "Back from Roulette did not restore the casino lobby.");
     }
 
     private static async Task CheckModernArcadeMenu(ModernLobbyView modern)
