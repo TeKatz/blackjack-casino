@@ -119,7 +119,8 @@ internal static partial class Program
         Require(profile.Collection.PacksOpened==before+1&&
             profile.Collection.Packs.GetValueOrDefault(CollectionRarity.Common)==owned-1,
             "React pack open did not debit exactly one C# pack.");
-        await Expect("window.__albumSmokeReveal===" + System.Text.Json.JsonSerializer.Serialize(receipt.Id),
+        // The album bridge uses Guid.ToString("N"), not the dashed JSON Guid format.
+        await Expect("window.__albumSmokeReveal===" + System.Text.Json.JsonSerializer.Serialize(receipt.Id.ToString("N")),
             "React did not start its sealed-pack opening animation.");
         await Expect("!document.querySelector('.album-opening-scrim')",
             "React reveal did not suspend at the observed transition.");
@@ -133,7 +134,7 @@ internal static partial class Program
         await ArmReactRevealObserver(web, suspend: true);
         await web.ExecuteScriptAsync(
             "[...document.querySelectorAll('.lobby-nav-item')].find(x=>/Collections|Sammlungen/.test(x.textContent||''))?.click()");
-        await Expect("window.__albumSmokeReveal===" + System.Text.Json.JsonSerializer.Serialize(receipt.Id),
+        await Expect("window.__albumSmokeReveal===" + System.Text.Json.JsonSerializer.Serialize(receipt.Id.ToString("N")),
             "React Album did not resume its durable receipt.");
         await Expect("!document.querySelector('.album-opening-scrim')",
             "React resumed reveal did not suspend.");
@@ -344,11 +345,12 @@ internal static partial class Program
             // exact previously persisted receipt before deliberately switching to
             // the WPF fallback to test its own historical resume behavior.
             var web = resumedReact.Browser.CoreWebView2!;
+            string expectedReceipt = System.Text.Json.JsonSerializer.Serialize(profile.Collection.PendingOpening!.Id.ToString("N"));
             bool resumed = false;
             for (int i = 0; i < 300 && !resumed; i++)
             {
                 resumed = await web.ExecuteScriptAsync(
-                    "Boolean(window.__albumSmokeReveal&&!document.querySelector('.album-opening-scrim'))") == "true";
+                    "Boolean(window.__albumSmokeReveal===" + expectedReceipt + "&&!document.querySelector('.album-opening-scrim'))") == "true";
                 if (!resumed) await Task.Delay(50);
             }
             Require(resumed, "React Album did not resume the saved pack opening.");
