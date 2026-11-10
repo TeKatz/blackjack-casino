@@ -5,6 +5,8 @@ const SPAWN := Vector2(143, 385)
 const EXIT := Vector2(1174, 385)
 const ROOM_COUNT := 26
 var environment_timer := 0.0
+var shot_style := ""
+var enemy_shot_style := ""
 var environment_cycle := 0
 var wave := 1
 var wave_total := 1
@@ -388,6 +390,7 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 		dash_timer = dash_cooldown
 		invulnerable = maxf(invulnerable, 0.28)
 		effect("dash", player, 0.22, dash_direction)
+		notices.append("dash")
 		if relics.has("nova") or character=="arcanist":
 			for enemy in enemies:
 				if player.distance_to(enemy.pos)<100: hit_enemy(enemy,15)
@@ -405,12 +408,12 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 	if melee and attack_timer <= 0:
 		attack_timer = attack_cd
 		attacks += 1
+		shot_style=set_id+"_main"
+		notices.append(shot_style)
 		if character in ["dealer","arcanist"] or set_id=="soulbinder_wraith":
 			shoot(player+aim*21,aim*660,false,damage)
-			notices.append("bolt")
 		else:
-			effect("slash", player, 0.19, aim)
-			notices.append("swing")
+			effect("slash_"+set_id, player, 0.23, aim)
 			for enemy in enemies:
 				var offset: Vector2 = enemy.pos-player
 				if offset.length() <= (118.0 if set_id in ["warden_executioner","soulbinder_reaper"] else 93.0)+float(enemy.r) and (offset.length()<12 or aim.dot(offset.normalized())>0.15):
@@ -422,6 +425,9 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 	if ranged and bolt_timer <= 0:
 		bolt_timer = special_cd
 		specials+=1
+		shot_style=set_id+"_special"
+		notices.append(shot_style)
+		effect("special_"+set_id,player,0.42,aim)
 		special_multiplier=2.0 if relics.has("overcharge") and specials%4==0 else 1.0
 		if character=="soulbinder":
 			var spent: int=mini(3,souls)
@@ -443,12 +449,11 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 					enemy["chill"]=4.0
 			effect("burst",player,0.4,Vector2.ZERO)
 		elif set_id=="warden_executioner":
-			effect("slash",player,0.3,aim)
+			effect("slash_"+set_id,player,0.3,aim)
 			for enemy in enemies:
 				if player.distance_to(enemy.pos)<175: hit_enemy(enemy,bolt_damage*2.0*special_multiplier)
 			for i in range(mini(8,2*relics.count("split"))):
 				shoot(player+aim*21,aim.rotated((float(i)-0.5)*0.25)*590,false,bolt_damage*special_multiplier)
-			notices.append("swing")
 		else:
 			var count := mini(9,(3 if character=="dealer" else 1)+2*relics.count("split"))
 			for i in range(count):
@@ -456,7 +461,6 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 				var power := bolt_damage*special_multiplier
 				if set_id=="dealer_joker": power *= rng.randf_range(0.5,1.8)
 				shoot(player+aim*21,aim.rotated(angle)*590,false,power)
-			notices.append("bolt")
 		if relics.has("cascade") or set_id=="arcanist_fire":
 			for enemy in enemies:
 				if player.distance_to(enemy.pos)<200: hit_enemy(enemy,bolt_damage*0.8*special_multiplier)
@@ -497,7 +501,8 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 	update_hazards(dt)
 	for i in range(enemies.size()-1, -1, -1):
 		if enemies[i].hp <= 0:
-			effect("burst", enemies[i].pos, 0.35, Vector2.ZERO)
+			effect("death", enemies[i].pos, 0.35, Vector2.ZERO)
+			if enemies[i].kind in ["boss","rootking","hollowking"]: notices.append("boss_kill")
 			kills += 1
 			if character=="soulbinder": souls=mini(6,souls+1)
 			if relics.has("harvest"):
@@ -526,6 +531,7 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 	elif enemies.is_empty():
 		if wave<wave_total:
 			wave+=1
+			notices.append("wave")
 			shots.clear()
 			hazards.clear()
 			spawn_reinforcements()
@@ -545,6 +551,7 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 		notices.append("clear")
 
 func effect(kind: String, pos: Vector2, lifetime: float, direction: Vector2) -> void:
+	if effects.size()>=100: return
 	effects.append({"kind":kind,"pos":pos,"time":lifetime,"max":lifetime,"dir":direction})
 
 func update_effects(dt: float) -> void:
@@ -557,7 +564,7 @@ func hit_enemy(enemy: Dictionary, amount: float) -> void:
 	if enemy.hp <= 0:
 		return
 	if relics.has("crit") and rng.randf()<minf(0.8,0.2*relics.count("crit")): amount *= 2
-	if relics.has("hunter") and (enemy.get("elite",false) or enemy.kind in ["boss","rootking"]): amount+=8*relics.count("hunter")
+	if relics.has("hunter") and (enemy.get("elite",false) or enemy.kind in ["boss","rootking","hollowking"]): amount+=8*relics.count("hunter")
 	if relics.has("blood") and hp<max_hp*0.35: amount*=1.4
 	if relics.has("execution") and enemy.hp<enemy.max_hp*0.25: amount*=1.3
 	if relics.has("frostfire") and float(enemy.get("chill",0))>0 and float(enemy.get("burn",0))>0: amount+=8*relics.count("frostfire")
@@ -574,7 +581,8 @@ func hit_enemy(enemy: Dictionary, amount: float) -> void:
 				break
 	if relics.has("ember") or set_id=="arcanist_fire": enemy["burn"]=3.0
 	enemy.flash = 0.12
-	effect("hit", enemy.pos, 0.18, Vector2.ZERO)
+	effect("hit", enemy.pos, 0.22, Vector2.ZERO)
+	if effects.size()<80: effects.append({"kind":"damage","pos":enemy.pos,"time":0.65,"max":0.65,"dir":Vector2.ZERO,"amount":int(round(amount))})
 	notices.append("hit")
 
 func hurt(amount: float) -> void:
@@ -588,7 +596,7 @@ func hurt(amount: float) -> void:
 
 func shoot(pos: Vector2, velocity: Vector2, hostile: bool, power: float) -> void:
 	if shots.size()>=180: return
-	shots.append({"pos":pos,"vel":velocity,"hostile":hostile,"damage":power,"life":2.8,"pierce":0 if hostile else mini(5,relics.count("pierce")),"hit":[],"bounce":0 if hostile else mini(3,relics.count("bounce"))})
+	shots.append({"pos":pos,"vel":velocity,"hostile":hostile,"damage":power,"life":2.8,"pierce":0 if hostile else mini(5,relics.count("pierce")),"hit":[],"bounce":0 if hostile else mini(3,relics.count("bounce")),"style":enemy_shot_style if hostile else shot_style})
 
 func update_enemies(dt: float) -> void:
 	for enemy in enemies:
@@ -611,6 +619,9 @@ func update_enemies(dt: float) -> void:
 		if enemy.wind > 0:
 			enemy.wind -= dt
 			if enemy.wind <= 0:
+				enemy_shot_style=kind
+				notices.append("enemy_"+kind)
+				effect("enemy_"+kind,pos,0.30,pos.direction_to(enemy.target))
 				if kind in ["caster","archer","spore","hexer"]:
 					shoot(pos, pos.direction_to(enemy.target)*(390 if kind=="archer" else 265), true, 12)
 					if kind=="spore": add_hazard(enemy.target,44,0.6,2.8,9)
@@ -620,7 +631,7 @@ func update_enemies(dt: float) -> void:
 					if player.distance_to(enemy.target)<75:
 						player=move_actor(player,player.direction_to(pos)*100,15)
 						hurt(12)
-				elif kind in ["boss","rootking"]:
+				elif kind in ["boss","rootking","hollowking"]:
 					var phase: int = 12 if enemy.hp < enemy.max_hp*0.5 else 8
 					for i in range(phase):
 						var angle := TAU*float(i)/phase + elapsed*0.3
@@ -636,16 +647,16 @@ func update_enemies(dt: float) -> void:
 						hurt(24)
 				elif dist < radius + 45:
 					hurt(18 if kind in ["brute","shield","mushroom","sentinel"] else 11)
-				enemy.timer = 1.8 if kind in ["boss","rootking"] else 0.9
+				enemy.timer = 1.8 if kind in ["boss","rootking","hollowking"] else 0.9
 			continue
 		var velocity := Vector2.ZERO
-		if kind in ["caster","archer","spore"]:
+		if kind in ["caster","archer","spore","hexer"]:
 			if dist > 300: velocity = toward*105
 			elif dist < 200: velocity = -toward*100
 			if enemy.timer <= 0 and dist < 460:
 				enemy.wind = 0.55
 				enemy.target = player
-		elif kind in ["boss","rootking"]:
+		elif kind in ["boss","rootking","hollowking"]:
 			velocity = toward*78 if dist > 125 else Vector2.ZERO
 			if enemy.timer <= 0:
 				enemy.wind = 0.8
@@ -656,7 +667,7 @@ func update_enemies(dt: float) -> void:
 				enemy.wind=0.65
 				enemy.target=player
 		else:
-			velocity = toward*(82 if kind in ["brute","shield","mushroom"] else 138)
+			velocity = toward*(82 if kind in ["brute","shield","mushroom","sentinel"] else (190 if kind=="revenant" else 138))
 			if dist < radius+40 and enemy.timer <= 0:
 				enemy.wind = 0.48 if kind == "brute" else 0.3
 				velocity = Vector2.ZERO
@@ -705,18 +716,21 @@ func update_environment(dt: float) -> void:
 			# The vault's pressure plates fire a telegraphed row of spikes.
 			environment_timer=4.5
 			var x: float=420+(environment_cycle%3)*270
-			add_hazard(Vector2(x,385),40,0.85,0.32,16)
-			hazards[-1]["type"]="spikes"
-			hazards[-1]["rect"]=Rect2(x-30,166,60,438)
+			var cells: Array[Rect2]=spike_cells(x)
+			if not cells.is_empty():
+				hazards.append({"pos":Vector2(x,385),"r":40,"warn":0.85,"life":1.60,"power":16,"type":"spikes","cells":cells,"phase":"warn"})
+				notices.append("spike_warn")
 		1:
 			# Persistent toxic pools restrict movement, not merely damage.
 			environment_timer=3.4
 			var pos: Vector2=safe_position(player+Vector2.from_angle(environment_cycle*2.4)*95,48)
 			add_hazard(pos,58,0.85,5.0,12)
 			hazards[-1]["type"]="sporepool"
+			notices.append("sporepool")
 		2:
 			# Royal runes fire alternating horizontal/vertical sweeping lanes.
 			environment_timer=3.0
+			notices.append("rune")
 			var vertical: bool=environment_cycle%2==0
 			var pos: Vector2=player
 			add_hazard(pos,40,1.05,0.55,22)
@@ -727,6 +741,16 @@ func update_environment(dt: float) -> void:
 				hazards[-1]["type"]="rune"
 				hazards[-1]["rect"]=Rect2(78,pos.y-30,1124,60) if vertical else Rect2(pos.x-36,166,72,438)
 
+func spike_cells(x: float) -> Array[Rect2]:
+	var cells: Array[Rect2]=[]
+	for y in range(180,584,32):
+		var cell:=Rect2(x-26,y,52,28)
+		var clear:=true
+		for wall in walls:
+			if wall.grow(12).intersects(cell): clear=false
+		if clear: cells.append(cell)
+	return cells
+
 func update_hazards(dt: float) -> void:
 	for i in range(hazards.size()-1,-1,-1):
 		var hazard: Dictionary=hazards[i]
@@ -734,6 +758,18 @@ func update_hazards(dt: float) -> void:
 		hazard.life-=dt
 		if hazard.life<=0:
 			hazards.remove_at(i)
+		elif hazard.get("type","")=="spikes":
+			if hazard.warn<=0 and hazard.phase=="warn":
+				hazard.phase="rise"
+				notices.append("spike_rise")
+			if hazard.life<0.20 and hazard.phase=="rise":
+				hazard.phase="retract"
+				notices.append("spike_retract")
+			if hazard.warn<=-0.10 and hazard.life>=0.20:
+				for cell in hazard.cells:
+					if cell.has_point(player):
+						hurt(hazard.power)
+						break
 		elif hazard.warn<=0:
 			var inside: bool=hazard.rect.has_point(player) if hazard.has("rect") else player.distance_to(hazard.pos)<hazard.r
 			if inside: hurt(hazard.power)
@@ -830,7 +866,8 @@ func use_active() -> void:
 				shot.hostile=false
 				shot.vel=-shot.vel
 	active_timer=active_cd
-	notices.append("relic")
+	notices.append(active_item)
+	effect("active_"+active_item,player,0.55,aim)
 
 func smoke_test() -> bool:
 	if not dungeon.smoke_test(): return false
