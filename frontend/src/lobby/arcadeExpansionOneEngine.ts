@@ -17,7 +17,8 @@ const rand=(s:Base)=>{s.seed=(Math.imul(s.seed,1664525)+1013904223)>>>0;return s
 export const pinBumpers=[{x:380,y:216,r:34},{x:580,y:213,r:34},
  {x:480,y:306,r:29},{x:305,y:334,r:24},{x:652,y:331,r:24}] as const;
 export type PinballRun=Base&{kind:'midnight-pinball';x:number;y:number;vx:number;vy:number;
- balls:number;serve:boolean;combo:number;contact:number;flashes:number[]};
+ balls:number;serve:boolean;combo:number;contact:number;flashes:number[];
+ leftFlipper:boolean;rightFlipper:boolean};
 export type HookAnchor={x:number;y:number};
 export type HookRun=Base&{kind:'phantom-hook';x:number;y:number;vx:number;vy:number;
  anchored:number;rope:number;anchors:HookAnchor[];camera:number;lastAnchor:number};
@@ -42,7 +43,8 @@ export function createExpansionRun(kind:ExpansionOneId,seed=0x51eab141):Expansio
  const base={score:0,elapsed:0,over:false,seed:(seed>>>0)||0x51eab141};
  switch(kind){
   case 'midnight-pinball':return {...base,kind,x:718,y:478,vx:0,vy:0,
-   balls:3,serve:true,combo:0,contact:0,flashes:pinBumpers.map(()=>0)};
+   balls:3,serve:true,combo:0,contact:0,flashes:pinBumpers.map(()=>0),
+   leftFlipper:false,rightFlipper:false};
   case 'phantom-hook':return {...base,kind,x:145,y:302,vx:164,vy:-90,
    anchored:-1,rope:185,camera:0,lastAnchor:0,
    anchors:[{x:226,y:128},{x:475,y:180},{x:735,y:111},{x:984,y:172}]};
@@ -101,6 +103,7 @@ export function actExpansionRun(s:ExpansionRun):ExpansionEvent{
  }
 }
 function pinballStep(s:PinballRun,dt:number,c:ExpansionControls):ExpansionEvent{
+ s.leftFlipper=!!c.left;s.rightFlipper=!!c.right;
  s.contact=Math.max(0,s.contact-dt);
  for(let i=0;i<s.flashes.length;i++)s.flashes[i]=Math.max(0,s.flashes[i]-dt);
  if(s.serve)return null;
