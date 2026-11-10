@@ -1,4 +1,5 @@
-import {driftCenter,gravityGoalY,gravityHazards,pinBumpers} from './arcadeExpansionOneEngine';
+import {drawPinballV2} from './arcadePinballV2Renderer';
+import {driftCenter,gravityGoalY,gravityHazards} from './arcadeExpansionOneEngine';
 import type {ExpansionRun,PinballRun,HookRun,DriftRun,GravityRun,EchoRun} from './arcadeExpansionOneEngine';
 const W=960,H=540,TAU=Math.PI*2;
 type Ctx=CanvasRenderingContext2D;
@@ -30,54 +31,7 @@ function orb(ctx:Ctx,x:number,y:number,r:number,color:string){
  ctx.save();ctx.shadowColor=color;ctx.shadowBlur=17;
  ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.fill();ctx.restore();
 }
-function pinball(ctx:Ctx,s:PinballRun){
- backdrop(ctx,'#061822','#1e1933');
- ctx.save();ctx.shadowColor='#dba971';ctx.shadowBlur=24;
- round(ctx,155,22,650,526,38,'#122d35','#d6b47e');ctx.restore();
- round(ctx,175,45,610,470,27,'#082632','#518a88');
- const field=ctx.createLinearGradient(205,55,725,505);
- field.addColorStop(0,'#123b49');field.addColorStop(.55,'#162d42');field.addColorStop(1,'#27223c');
- round(ctx,191,54,578,451,24,field,'#b2a277');
- line(ctx,[[310,80],[210,173],[210,395],[308,450]],'#b5ddca66',4);
- line(ctx,[[650,80],[749,173],[749,395],[652,450]],'#b5ddca66',4);
- // Animated pinball scoring lanes.
- for(let i=0;i<4;i++){
-  const x=315+i*109;
-  round(ctx,x,69,52,13,6,i%2?'#729f9d':'#dbb17b','#f6d7a0');
-  text(ctx,String(i+1),x+26,80,10,'#112a31','center');
- }
- pinBumpers.forEach((b,i)=>{
-  ctx.save();ctx.shadowColor=s.flashes[i]>0?'#fff4ac':'#88ead6';
-  ctx.shadowBlur=s.flashes[i]>0?38:15;
-  orb(ctx,b.x,b.y,b.r+8,'#1c5d67');
-  orb(ctx,b.x,b.y,b.r,'#e8c28e');
-  orb(ctx,b.x,b.y,b.r-8,s.flashes[i]>0?'#fff7ca':'#4a9c9e');
-  ctx.restore();
-  text(ctx,'✦',b.x,b.y+8,23,'#fce6bb','center');
- });
- for(const [side,pressed] of [['left',s.leftFlipper],['right',s.rightFlipper]] as const){
-  const x=side==='left'?386:574,tip=side==='left'?(pressed?489:474):(pressed?471:486);
-  const y=pressed?429:468;
-  ctx.save();ctx.shadowBlur=15;ctx.shadowColor='#edc281';
-  line(ctx,[[x,454],[tip,y]],pressed?'#fff1c4':'#ebc18a',16);
-  ctx.restore();
-  orb(ctx,x,454,10,'#b9d6ca');
- }
- round(ctx,682,64,67,426,13,'#10232f','#bf9d71');
- line(ctx,[[716,81],[716,467]],'#5b9f9c99',3);
- // Plunger channel / remaining balls.
- text(ctx,'BALLS',740,35,12,'#dfd0a5','right');
- for(let i=0;i<3;i++)orb(ctx,702+i*22,35,5,i<s.balls?'#f2cf91':'#40525c');
- if(s.serve){
-  orb(ctx,718,478,12,'#f4f0da');
-  text(ctx,'SPACE TO LAUNCH',480,510,13,'#91e5d9','center');
- }else{
-  ctx.save();ctx.shadowColor='#fff6ce';ctx.shadowBlur=16;
-  orb(ctx,s.x,s.y,11,'#f8f1d6');ctx.restore();
-  orb(ctx,s.x-3,s.y-4,2,'#ffffff');
- }
- text(ctx,'COMBO ×'+(s.combo+1),220,35,14,'#a5f4d9');
-}
+function pinball(ctx:Ctx,s:PinballRun){drawPinballV2(ctx,s);}
 function hook(ctx:Ctx,s:HookRun){
  backdrop(ctx,'#081c30','#2c2250');
  const cam=s.camera;
