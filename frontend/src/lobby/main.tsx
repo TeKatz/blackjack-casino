@@ -101,7 +101,7 @@ function GameTile({ mode, language, motionEnabled, onOpen, onSecondary }:{
         <button type="button" className="lobby-gold-button" disabled={!mode.enabled}
           onClick={()=>onOpen(mode.id)}>
           <span aria-hidden="true">{mode.id==='casino-empire'||mode.id==='midnight-descent'?'↗':'▶'}</span>
-          {mode.id==='midnight-descent'?(language==='de'?'Öffnen ↗':'Open ↗'):mode.id==='casino-empire'? (language==='de'?'Öffnen':'Enter') :
+          {mode.id==='midnight-descent'?(language==='de'?'Öffnen':'Open'):mode.id==='casino-empire'? (language==='de'?'Öffnen':'Enter') :
             (language==='de'?'Spielen':'Play')}
         </button>
         {mode.secondary && <button className="lobby-secondary" type="button"

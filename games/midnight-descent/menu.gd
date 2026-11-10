@@ -128,7 +128,7 @@ func show_page(next: String) -> void:
 		"codex":
 			detail_label.text = tr_text("Your discoveries will be recorded here.", "Deine Entdeckungen werden hier festgehalten.")
 			body.add_child(label(tr_text("THE ARCHIVE", "DAS ARCHIV"), 14, GOLD))
-			body.add_child(label(tr_text("Relics, enemies, weapons and bosses will unlock as the expedition systems are built. No discoveries yet.", "Relikte, Gegner, Waffen und Bosse werden mit dem Ausbau der Expedition freigeschaltet. Noch keine Entdeckungen."), 21, LIGHT))
+			body.add_child(label(tr_text("Explore six relics, three enemy archetypes and the Vault Keeper in the first expedition. Permanent discoveries will arrive in a later update.", "Entdecke sechs Relikte, drei Gegnertypen und den Tresorwächter in der ersten Expedition. Dauerhafte Entdeckungen folgen in einem späteren Update."), 21, LIGHT))
 			add_action(tr_text("Back", "Zurück"), func(): show_page("home"))
 		"settings":
 			detail_label.text = tr_text("Adjust the standalone game window.", "Passe das eigenständige Spielfenster an.")

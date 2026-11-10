@@ -50,6 +50,7 @@ func begin(value: int) -> void:
 	shards = 0
 	elapsed = 0.0
 	relics.clear()
+	notices.clear()
 	enter_room()
 
 func enter_room() -> void:
@@ -93,6 +94,11 @@ func spawn_enemy(kind: String, pos: Vector2) -> void:
 		"boss":
 			health = 430.0
 			radius = 43.0
+	pos = safe_position(pos,radius)
+	# Move spawn points out of solid pillars before the enemy becomes active.
+	for wall in walls:
+		if wall.grow(radius).has_point(pos):
+			pos = safe_position(Vector2(pos.x, wall.position.y - radius - 10),radius)
 	enemies.append({"kind":kind,"pos":pos,"hp":health,"max_hp":health,"r":radius,"timer":rng.randf_range(0.6,1.4),"wind":0.0,"flash":0.0,"target":pos})
 
 func safe_position(pos: Vector2, radius: float) -> Vector2:
@@ -129,7 +135,7 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 		dash_left = 0.17
 		dash_timer = dash_cooldown
 		invulnerable = maxf(invulnerable, 0.28)
-		effect("dash", player, 0.22, aim)
+		effect("dash", player, 0.22, dash_direction)
 	var move := dash_direction * 860.0 if dash_left > 0 else direction.limit_length() * speed
 	player = move_actor(player, move * dt, 15)
 	if state == "exit":

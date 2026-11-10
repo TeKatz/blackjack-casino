@@ -40,6 +40,9 @@ Invoke-Godot @("--headless", "--path", $project, "--editor", "--import")
 $smoke = Invoke-Godot @("--headless", "--path", $project, "--quit-after", "240", "--", "--smoke-test")
 $smoke | Write-Host
 if (($smoke -join "`n") -notmatch "Midnight Descent menu smoke PASS") { throw "Godot menu smoke did not complete." }
+$runSmoke = Invoke-Godot @("--headless", "--path", $project, "--quit-after", "240", "res://run.tscn", "--", "--run-smoke")
+$runSmoke | Write-Host
+if (($runSmoke -join "`n") -notmatch "Midnight Descent gameplay scene smoke PASS") { throw "Godot gameplay scene smoke did not complete." }
 Invoke-Godot @("--headless", "--path", $project, "--export-release", "Windows Desktop", (Join-Path $output "MidnightDescent.exe"))
 foreach ($file in @("MidnightDescent.exe", "MidnightDescent.pck")) {
     if (!(Test-Path (Join-Path $output $file))) { throw "Missing Godot export: $file" }

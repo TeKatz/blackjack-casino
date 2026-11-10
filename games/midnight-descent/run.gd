@@ -33,6 +33,8 @@ func _ready() -> void:
 	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(overlay)
 	set_process(true)
+	if "--run-smoke" in OS.get_cmdline_user_args():
+		call_deferred("run_scene_smoke")
 
 func tr_text(en: String, de: String) -> String:
 	return de if german else en
@@ -149,6 +151,38 @@ func _draw() -> void:
 	for effect in run.effects:
 		draw_effect(effect)
 	draw_hud()
+	if shake > 0:
+		draw_rect(Rect2(0,0,1280,720),Color(0.9,0.15,0.25,shake*0.012))
+
+func run_scene_smoke() -> void:
+	# Exercise the actual scene and its overlay construction, not just the model.
+	await get_tree().process_frame
+	run.begin(512)
+	run.player = Vector2(200,385)
+	run.enemies.clear()
+	run.spawn_enemy("stalker",Vector2(250,385))
+	run.tick(0.016,Vector2.ZERO,Vector2(250,385),true,false,false)
+	if run.enemies[0].hp >= run.enemies[0].max_hp:
+		get_tree().quit(6)
+		return
+	run.enemies[0].hp = 0
+	run.tick(0.016,Vector2.ZERO,Vector2(250,385),false,false,false)
+	await get_tree().process_frame
+	if run.state != "reward" or overlay.get_child_count() == 0:
+		get_tree().quit(7)
+		return
+	select_relic(0)
+	run.player = Model.EXIT
+	if not run.next_room():
+		get_tree().quit(8)
+		return
+	paused = true
+	await get_tree().process_frame
+	if overlay_state != "pause":
+		get_tree().quit(9)
+		return
+	print("Midnight Descent gameplay scene smoke PASS")
+	get_tree().quit()
 
 func draw_player() -> void:
 	var pos: Vector2 = run.player
