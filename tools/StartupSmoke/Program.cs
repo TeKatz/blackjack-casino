@@ -511,6 +511,10 @@ internal static class Program
             "Packaged React lobby did not render the ten native modes and Arcade Games tile. "
             + "DOM validation returned " + result);
 
+        Require(await modern.Browser.CoreWebView2.ExecuteScriptAsync(
+            "(()=>{const tiles=[...document.querySelectorAll('.lobby-game')];return Boolean(tiles.length===11&&tiles.every(t=>{const r=t.getBoundingClientRect(),b=t.querySelector('.lobby-gold-button').getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight+1&&b.bottom<=r.bottom+1&&b.height>15})&&new Set(tiles.map(t=>Math.round(t.getBoundingClientRect().top))).size===3)})()") == "true",
+            "The complete eleven-tile lobby must fit on screen in three rows with every Play button visible.");
+
         // The browser-side GPU art system loads local SVG texture pairs in the
         // background. A visible Canvas alone is not proof that artwork loaded.
         bool graphicsReady = false;

@@ -286,7 +286,8 @@ public partial class MainWindow
                 Id = mode.Id,
                 Title = Localize(mode, mode.Title),
                 Category = Localize(mode, mode.Category),
-                Description = Localize(mode, mode.Description),
+                Description = mode.Id == "roulette" && Localization.Language == UiLanguagePreference.German
+                    ? "Europäisches Roulette mit einer Null und Einsätzen bis $100K." : Localize(mode, mode.Description),
                 Enabled = modeRegistry.CanOpen(mode.Id),
                 Secondary = modeRegistry.HasSecondary(mode.Id) && modeRegistry.CanOpenSecondary(mode.Id),
             }).ToArray(),
