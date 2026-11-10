@@ -4,11 +4,11 @@ import {ARCADE_STEP,PLAYABLE_ARCADE_IDS,actArcadeRun,createArcadeRun,
 import type {HexRun,SpikeRun,AscentRun} from '../src/lobby/arcadeEngine';
 import {readArcadeRecord,saveArcadeRecord} from '../src/lobby/arcadeRecords';
 
-describe('Arcade Update 3: full ten-game collection',()=>{
- it('registers all ten playable games without duplicates or placeholder ids',()=>{
-  expect(PLAYABLE_ARCADE_IDS).toHaveLength(10);
-  expect(new Set(PLAYABLE_ARCADE_IDS).size).toBe(10);
-  expect(PLAYABLE_ARCADE_IDS.slice(-3)).toEqual([
+describe('Arcade Update 3: original ten-game collection remains stable',()=>{
+ it('preserves ten original games and five playable expansions without duplicate ids',()=>{
+  expect(PLAYABLE_ARCADE_IDS).toHaveLength(15);
+  expect(new Set(PLAYABLE_ARCADE_IDS).size).toBe(15);
+  expect(PLAYABLE_ARCADE_IDS.slice(7,10)).toEqual([
    'hexagon-hell','spike-rush','endless-ascent',
   ]);
   for(const id of PLAYABLE_ARCADE_IDS){
