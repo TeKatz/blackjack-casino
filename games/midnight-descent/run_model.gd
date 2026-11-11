@@ -1131,8 +1131,74 @@ func use_active() -> void:
 	notices.append(active_item)
 	effect("active_"+active_item,player,0.55,aim)
 
+func hub_perks_smoke() -> bool:
+	# Each forge must materially affect a real combat action; choices are one-shot.
+	for forge in FORGE_DATA:
+		var found:=false
+		for seed in range(101,125):
+			begin(seed)
+			if forge_offers.has(forge):
+				found=true
+				break
+		if not found or not select_hub_forge(forge) or select_hub_forge(forge): return false
+		if room!=0 or visited_count!=0 or dungeon.nodes[0].visited: return false
+		if not enter_first_room() or forge_id!=forge: return false
+		if select_hub_forge(forge): return false
+		match forge:
+			"rift_echo":
+				tick(0.016,Vector2.ZERO,Vector2(700,385),true,false,false)
+				if echoes.is_empty() or special_cd<=float(Content.SETS[set_id].special): return false
+			"stormheart":
+				if max_hp>=float(Content.SETS[set_id].hp): return false
+				tick(0.016,Vector2.ZERO,Vector2(700,385),false,true,false)
+				if shots.size()<5: return false
+			"void_stride":
+				if dash_cooldown>=float(Content.SETS[set_id].dash) or max_hp>=float(Content.SETS[set_id].hp): return false
+				tick(0.016,Vector2.ZERO,Vector2(700,385),false,false,true)
+				var detected:=false
+				for fx in effects:
+					if fx.kind=="forge_stride": detected=true
+				if not detected: return false
+			"iron_aegis":
+				if forge_guard_charges!=2 or speed>=float(Content.SETS[set_id].speed): return false
+				invulnerable=0
+				var starting_hp: float=hp
+				hurt(20)
+				if forge_guard_charges!=1 or hp!=starting_hp: return false
+				invulnerable=0
+				hurt(20)
+				if forge_guard_charges!=0 or hp!=starting_hp: return false
+				invulnerable=0
+				hurt(20)
+				if hp>=starting_hp or contract_clean_room: return false
+	for contract in CONTRACT_DATA:
+		var found:=false
+		for seed in range(201,225):
+			begin(seed)
+			if contract_offers.has(contract):
+				found=true
+				break
+		if not found or not select_hub_contract(contract) or select_hub_contract(contract): return false
+		if not enter_first_room() or select_hub_contract(contract): return false
+		match contract:
+			"slayer": advance_contract("slayer",12)
+			"untouched": advance_contract("untouched",2)
+			"hoarder":
+				shards=30
+				check_shard_contract()
+			"spellweaver": advance_contract("spellweaver",12)
+		if not contract_completed or relics.size()!=1: return false
+		if contract_progress!=int(CONTRACT_DATA[contract]["goal"]): return false
+		advance_contract(contract)
+		if relics.size()!=1: return false
+	begin(912)
+	if not forge_id.is_empty() or not contract_id.is_empty() or contract_completed or not relics.is_empty(): return false
+	if forge_offers.size()!=3 or contract_offers.size()!=3: return false
+	return true
+
 func smoke_test() -> bool:
 	if not dungeon.smoke_test(): return false
+	if not hub_perks_smoke(): return false
 	begin(123,"dealer_cards")
 	if state!="hub" or visited_count!=0 or dungeon.nodes[0].visited or not enemies.is_empty(): return false
 	if walls.size()!=6 or not blocked(HUB_BAR.get_center(),15) or not blocked(HUB_FORGE.get_center(),15) or not blocked(HUB_TABLE.get_center(),15) or not blocked(HUB_PORTAL,15): return false
