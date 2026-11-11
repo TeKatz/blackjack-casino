@@ -1170,21 +1170,37 @@ func show_route_map(column: VBoxContainer) -> void:
 		var node: Dictionary=run.dungeon.nodes[i]
 		var visible_kind: String = node.kind
 		if visible_kind=="secret" and not node.visited and not run.route_options().has(i): visible_kind="?"
-		# Fixed 92 px cards in 110 px column slots, with a minimum 18 px gap.
-		# Danger uses its own second line instead of overflowing the button text.
+		# Button content must NEVER increase its 92 px hitbox. The icon is
+		# owned by the button, but the one-line caption is a clipped child Label:
+		# long text cannot resize a node or bleed into adjacent columns.
 		var caption: String=room_name(visible_kind)
 		if node.kind in ["fight","elite"]:
-			caption+="\n"+["I","II","III"][int(node.get("threat",0))]
+			caption+=" "+["I","II","III"][int(node.get("threat",0))]
 		if node.cleared: caption+=" ✓"
-		var button:=add_button(map,caption,func(): run.travel(id))
+		var button:=add_button(map,"",func(): run.travel(id))
 		button.custom_minimum_size=Vector2(92,52)
 		button.size=Vector2(92,52)
 		button.position=map.position_for(i)-Vector2(46,26)
-		button.add_theme_font_size_override("font_size",11)
 		button.icon=UI.room_icon(visible_kind)
 		button.expand_icon=true
 		button.add_theme_constant_override("icon_max_width",14)
 		UI.style_button(button,UI.ROOM_COLORS[visible_kind],i==run.room)
+		var caption_label:=Label.new()
+		caption_label.set_anchors_preset(Control.PRESET_FULL_RECT)
+		caption_label.offset_left=24
+		caption_label.offset_right=-4
+		caption_label.text=caption
+		caption_label.vertical_alignment=VERTICAL_ALIGNMENT_CENTER
+		caption_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+		caption_label.autowrap_mode=TextServer.AUTOWRAP_OFF
+		caption_label.clip_text=true
+		caption_label.mouse_filter=Control.MOUSE_FILTER_IGNORE
+		var label_size: int=12
+		while label_size>9 and font.get_string_size(caption,HORIZONTAL_ALIGNMENT_LEFT,-1,label_size).x>64:
+			label_size-=1
+		caption_label.add_theme_font_size_override("font_size",label_size)
+		caption_label.add_theme_color_override("font_color",Color("#fff0ce") if i==run.room else (Color("#92c0ab") if node.cleared else Color("#d7cce3")))
+		button.add_child(caption_label)
 		# Shrink style padding specifically for dense route-map nodes.
 		for variant in ["normal","hover","pressed","disabled"]:
 			var stylebox: StyleBoxFlat=button.get_theme_stylebox(variant).duplicate()
@@ -1201,7 +1217,7 @@ func show_route_map(column: VBoxContainer) -> void:
 		elif node.cleared:
 			button.add_theme_color_override("font_disabled_color",Color("#8db6a8"))
 		if node.kind=="boss" and not run.dungeon.boss_ready():
-			button.text=tr_text("Locked","Gesperrt")
+			caption_label.text=tr_text("Locked","Gesperrt")
 		button.tooltip_text=tr_text("Current room","Aktueller Raum") if i==run.room else (tr_text("Travel to this room","Diesen Raum betreten") if not button.disabled else tr_text("Not connected to current room","Nicht direkt verbunden"))
 		if node.kind in ["fight","elite"]:
 			button.tooltip_text+="\n"+encounter_name(str(node.get("encounter","skirmish")))+" • "+tr_text("Danger","Gefahr")+" "+["I","II","III"][int(node.get("threat",0))]
