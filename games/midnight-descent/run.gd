@@ -391,41 +391,34 @@ func _draw() -> void:
 			draw_rect(Rect2(0,715-i*5,1280,5),tint)
 
 func hub_keycap(rect: Rect2, key_text: String, accent: Color) -> void:
-	draw_rect(Rect2(rect.position+Vector2(0,3),rect.size),Color("#100c19"))
-	draw_rect(rect,Color("#30253d"))
-	draw_rect(rect,accent,false,1)
-	draw_rect(Rect2(rect.position+Vector2(2,2),Vector2(rect.size.x-4,3)),Color(accent,0.33))
+	draw_style_box(UI.panel(Color("#1b3031"),accent,0),rect)
 	draw_string(font,rect.position+Vector2(0,rect.size.y*0.73),key_text,HORIZONTAL_ALIGNMENT_CENTER,rect.size.x,13,WHITE)
 
 func draw_hub_action_prompt(anchor: Vector2, caption: String, alpha: float, accent: Color, width: float) -> void:
 	if alpha<=0.01: return
 	var p:=anchor+Vector2(-width*0.5,-65+sin(clock*2.6)*2.0)
 	var rect:=Rect2(p,Vector2(width,43))
-	draw_rect(Rect2(rect.position+Vector2(3,5),rect.size),Color(0.02,0.01,0.04,0.55*alpha))
-	draw_rect(rect,Color(0.11,0.075,0.18,0.95*alpha))
-	draw_rect(rect,Color(accent,alpha),false,2)
-	draw_rect(Rect2(p+Vector2(4,4),Vector2(width-8,2)),Color(accent,0.38*alpha))
-	draw_rect(Rect2(p+Vector2(9,8),Vector2(26,27)),Color(0.32,0.22,0.44,alpha))
-	draw_rect(Rect2(p+Vector2(9,8),Vector2(26,27)),Color(accent,alpha),false,1)
+	draw_style_box(UI.panel(Color("#19302f",0.95*alpha),Color(accent,alpha),6),rect)
+	draw_rect(Rect2(p+Vector2(9,8),Vector2(26,27)),Color(accent,0.22*alpha))
 	text_at(p+Vector2(17,28),"E",17,Color(1,0.95,0.83,alpha))
 	text_at(p+Vector2(43,27),caption,15,Color(1,0.91,0.77,alpha))
 
 func draw_hub_ui() -> void:
 	# A centered tavern crest replaces the large top-left information slab.
 	hud_panel(Rect2(278,10,724,84),GOLD)
-	draw_rect(Rect2(298,21,684,2),Color("#ab805a"))
-	draw_rect(Rect2(298,84,684,2),Color("#ab805a"))
+	draw_rect(Rect2(298,21,684,1),Color("#a9c0ae",0.40))
+	draw_rect(Rect2(298,84,684,1),Color("#a9c0ae",0.25))
 	for direction in [-1.0,1.0]:
 		var x: float=640+direction*298
 		draw_colored_polygon(PackedVector2Array([Vector2(x,44),Vector2(x+direction*13,55),Vector2(x,66),Vector2(x-direction*13,55)]),Color("#af805f"))
 		draw_circle(Vector2(x,55),3,Color("#f9d89a"))
-	draw_string(font,Vector2(355,48),tr_text("THE THRESHOLD TAVERN","DIE SCHWELLENTAVERNE"),HORIZONTAL_ALIGNMENT_CENTER,570,26,GOLD)
+	draw_string(UI.DISPLAY_FONT,Vector2(355,48),tr_text("THE THRESHOLD TAVERN","DIE SCHWELLENTAVERNE"),HORIZONTAL_ALIGNMENT_CENTER,570,25,GOLD)
 	draw_string(font,Vector2(360,74),tr_text("YOUR DESCENT BEGINS BEYOND THE GATE","DEIN ABSTIEG BEGINNT HINTER DEM TOR"),HORIZONTAL_ALIGNMENT_CENTER,560,12,WHITE)
 	# Compact keycaps and distinct actions remain readable at native 1280x720.
 	hud_panel(Rect2(24,643,645,65),VIOLET)
 	text_at(Vector2(43,657),tr_text("EXPLORATION","STEUERUNG"),10,MUTED)
 	for divider_x in [244.0,445.0]:
-		draw_rect(Rect2(divider_x,662,1,36),Color("#685079"))
+		draw_rect(Rect2(divider_x,662,1,36),Color("#486d66"))
 	hub_keycap(Rect2(43,669,62,27),"WASD",VIOLET)
 	text_at(Vector2(117,689),tr_text("Move","Bewegen"),15,WHITE)
 	hub_keycap(Rect2(271,669,38,27),"E",GOLD)
@@ -1141,9 +1134,8 @@ func draw_hud() -> void:
 	if boss_reveal_toast>0.0:
 		var alpha: float=clampf(boss_reveal_toast*1.5,0,1)
 		var rect:=Rect2(395,234,490,133)
-		draw_rect(Rect2(rect.position+Vector2(5,7),rect.size),Color("#09070d",alpha*0.65))
-		draw_rect(rect,Color("#211122",alpha*0.96))
-		draw_rect(rect,Color("#d6a3ca",alpha),false,3)
+		var presentation:=UI.panel(Color("#1b2b2d",alpha*0.96),Color("#e9a9a0",alpha),0)
+		draw_style_box(presentation,rect)
 		var title: String=Content.boss_name(run.floor_index,german).to_upper()
 		text_at(Vector2(640-ui_font(31).get_string_size(title,HORIZONTAL_ALIGNMENT_LEFT,-1,31).x*0.5,289),title,31,Color(1,0.86,0.94,alpha))
 		var subtitle: String=tr_text("The chamber seals behind you","Die Kammer erwacht") 
@@ -1152,8 +1144,7 @@ func draw_hud() -> void:
 		var soul_alpha: float=minf(1.0,boss_soul_toast_timer*2.5)
 		var soul_y: float=290.0 if synergy_toast_timer>0.0 else 203.0
 		var soul_rect:=Rect2(454,soul_y,372,58)
-		draw_rect(soul_rect,Color(0.10,0.07,0.20,0.93*soul_alpha))
-		draw_rect(soul_rect,Color("#c9a7f5")*Color(1,1,1,soul_alpha),false,2)
+		draw_style_box(UI.panel(Color("#17342f",0.93*soul_alpha),Color("#8dd9b5",soul_alpha),12),soul_rect)
 		text_at(Vector2(481,soul_y+24),tr_text("BOSS SOUL ACQUIRED  +1","BOSS-SEELE ERHALTEN  +1"),18,Color(0.91,0.81,1.0,soul_alpha))
 		text_at(Vector2(481,soul_y+45),tr_text("Spend it in the menu skill tree","Im Skill Tree des Hauptmenüs ausgeben"),12,Color(0.83,0.75,0.93,soul_alpha))
 	if synergy_toast_timer>0.0 and run.last_synergy_id!="" and Content.SYNERGIES.has(run.last_synergy_id):
@@ -1161,9 +1152,7 @@ func draw_hud() -> void:
 		var fade: float=minf(1.0,synergy_toast_timer*3.0)
 		var card_y: float=208.0-14.0*(1.0-remaining)
 		var toast_rect:=Rect2(424,card_y,434,63)
-		draw_rect(Rect2(toast_rect.position+Vector2(3,5),toast_rect.size),Color(0.03,0.02,0.05,0.55*fade))
-		draw_rect(toast_rect,Color(0.10,0.19,0.16,0.94*fade))
-		draw_rect(toast_rect,Color(0.56,0.91,0.69,fade),false,2)
+		draw_style_box(UI.panel(Color("#14352f",0.94*fade),Color("#82dba9",fade),0),toast_rect)
 		var record: Dictionary=Content.SYNERGIES[run.last_synergy_id]
 		text_at(Vector2(443,card_y+22),tr_text("SYNERGY UNLOCKED","SYNERGIE AKTIVIERT"),15,Color(0.73,1.0,0.80,fade))
 		text_at(Vector2(443,card_y+48),str(record["de" if german else "en"]),21,Color(1.0,0.94,0.78,fade))
@@ -1173,9 +1162,7 @@ func draw_hud() -> void:
 		if wave_banner>0:
 			var alpha: float=minf(1.0,minf((2.2-wave_banner)*5,wave_banner*2))
 			var rect:=Rect2(410,258,460,104)
-			draw_rect(rect.grow(5),Color(0.02,0.01,0.05,alpha*0.55))
-			draw_rect(rect,Color(0.12,0.07,0.19,alpha*0.91))
-			draw_rect(rect,Color(0.94,0.73,0.46,alpha),false,2)
+			draw_style_box(UI.panel(Color("#20312e",alpha*0.92),Color(GOLD,alpha),0),rect)
 			var title: String=tr_text("FINAL WAVE","LETZTE WELLE") if run.wave==run.wave_total else tr_text("WAVE","WELLE")+"  %d / %d" % [run.wave,run.wave_total]
 			text_at(Vector2(640-font.get_string_size(title,HORIZONTAL_ALIGNMENT_LEFT,-1,30).x/2,310),title,30,Color(1,0.83,0.55,alpha))
 			var sub: String=tr_text("Defeat the reinforcements","Besiege die Verstärkung")
@@ -1185,8 +1172,7 @@ func draw_hud() -> void:
 		var danger: String=["I","II","III"][run.encounter_threat]
 		var subject: String=(run.layout_name_de if german else run.layout_name) if run.large_room else (room_name(run.room_kind) if Model.Dungeon.SPECIAL_COMBAT.has(run.room_kind) else encounter_name(run.encounter_id))
 		var message: String=subject.to_upper()+"  •  "+tr_text("DANGER","GEFAHR")+" "+danger
-		draw_rect(Rect2(466,153,348,45),Color(0.06,0.04,0.1,0.86*opacity))
-		draw_rect(Rect2(466,153,348,45),Color(0.77,0.49,0.27,opacity),false,1)
+		draw_style_box(UI.panel(Color("#18292b",0.87*opacity),Color(GOLD,opacity),0),Rect2(466,153,348,45))
 		var size: int=17
 		while font.get_string_size(message,HORIZONTAL_ALIGNMENT_LEFT,-1,size).x>326 and size>10: size-=1
 		text_at(Vector2(481,182),message,size,Color(1,0.83,0.55,opacity))
@@ -1360,25 +1346,25 @@ func disable_modal_input(node: Node) -> void:
 
 func modal_accent() -> Color:
 	match overlay_state:
-		"route": return Color("#91a9e8")
+		"route": return Color("#8fcabc")
 		"hub_barkeep": return GOLD
 		"hub_forge": return Color("#e8a879")
 		"service": return UI.ROOM_COLORS[run.room_kind]
 		"victory": return Color("#f1cc7e")
 		"defeat": return Color("#e67c9a")
-		"pause": return Color("#a8a0c8")
+		"pause": return Color("#a0b5ad")
 	return GOLD
 
 func modal_fill() -> Color:
 	match overlay_state:
-		"route": return Color("#151d33")
-		"hub_barkeep": return Color("#32232b")
-		"hub_forge": return Color("#31242a")
-		"service": return Color("#202337") if run.room_kind=="shop" else Color("#211b30")
-		"victory": return Color("#312431")
-		"defeat": return Color("#2e1828")
-		"pause": return Color("#201c30")
-	return Color("#23182e")
+		"route": return Color("#142529f8")
+		"hub_barkeep": return Color("#24302cf8")
+		"hub_forge": return Color("#302b26f8")
+		"service": return Color("#1b3030f8") if run.room_kind=="shop" else Color("#192b2df8")
+		"victory": return Color("#2d3228f8")
+		"defeat": return Color("#332528f8")
+		"pause": return Color("#1a2a2df8")
+	return Color("#19292cf8")
 
 func service_option(parent: Control, caption: String, detail: String, icon_index: int, accent: Color, choice: int, available: bool=true) -> Button:
 	var button:=add_button(parent,caption+"\n"+detail,func(): use_service(choice))
@@ -1455,9 +1441,9 @@ func rebuild_overlay() -> void:
 	var panel:=PanelContainer.new()
 	panel.custom_minimum_size=Vector2(1160 if overlay_state=="route" else (1000 if overlay_state=="relics" else (940 if overlay_state=="reward" else 680)),0)
 	var style:=UI.panel(modal_fill(),accent,24)
-	style.set_corner_radius_all(14)
-	style.border_width_top=3
-	style.shadow_size=24
+	style.set_corner_radius_all(16)
+	style.border_width_top=2
+	style.shadow_size=20
 	style.shadow_offset=Vector2(0,12)
 	panel.add_theme_stylebox_override("panel",style)
 	center.add_child(panel)
@@ -1465,9 +1451,10 @@ func rebuild_overlay() -> void:
 	column.add_theme_constant_override("separation",12)
 	panel.add_child(column)
 	var crest:=Label.new()
-	crest.text="M I D N I G H T   D E S C E N T"
+	crest.text="MIDNIGHT DESCENT  /  CHRONICLES OF THE ABYSS"
 	crest.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
-	crest.add_theme_font_size_override("font_size",11)
+	UI.set_display(crest)
+	crest.add_theme_font_size_override("font_size",13)
 	crest.add_theme_color_override("font_color",accent)
 	column.add_child(crest)
 	if not smoke_mode:
@@ -1594,10 +1581,10 @@ func rebuild_overlay() -> void:
 				var card:=PanelContainer.new()
 				card.custom_minimum_size=Vector2(278,329)
 				card.size_flags_horizontal=Control.SIZE_EXPAND_FILL
-				var card_style:=UI.panel(Color("#211a30").lerp(border_color,0.16 if ready else 0.09+rarity*0.035),border_color,14)
+				var card_style:=UI.panel(Color("#223436").lerp(border_color,0.11 if ready else 0.04+rarity*0.02),border_color,16)
 				card_style.shadow_size=12
 				card_style.shadow_offset=Vector2(0,7)
-				card_style.border_width_top=6 if ready else 4
+				card_style.border_width_top=3 if ready else 2
 				card.add_theme_stylebox_override("panel",card_style)
 				cards.add_child(card)
 				var stack:=VBoxContainer.new()
@@ -1605,7 +1592,7 @@ func rebuild_overlay() -> void:
 				card.add_child(stack)
 				var rarity_label: String =["Common","Rare","Epic","Legendary"][rarity] if not german else ["Gewöhnlich","Selten","Episch","Legendär"][rarity]
 				var ribbon:=PanelContainer.new()
-				ribbon.add_theme_stylebox_override("panel",UI.panel(color.darkened(0.78),color.darkened(0.25),5))
+				ribbon.add_theme_stylebox_override("panel",UI.panel(Color("#1b2d2d"),color.darkened(0.25),6))
 				stack.add_child(ribbon)
 				add_label(ribbon,rarity_label.to_upper(),13,color)
 				var icon:=TextureRect.new()
@@ -1682,7 +1669,7 @@ func show_run_relics(column: VBoxContainer) -> void:
 	var detail_panel:=PanelContainer.new()
 	detail_panel.custom_minimum_size=Vector2(390,0)
 	detail_panel.size_flags_horizontal=Control.SIZE_EXPAND_FILL
-	detail_panel.add_theme_stylebox_override("panel",UI.panel(Color("#211a31"),VIOLET,12))
+	detail_panel.add_theme_stylebox_override("panel",UI.panel(Color("#1d3233"),VIOLET,16))
 	horizontal.add_child(detail_panel)
 	var detail:=VBoxContainer.new()
 	detail.add_theme_constant_override("separation",10)
@@ -1749,7 +1736,7 @@ func animate_relic_card(card: Control, style: StyleBoxFlat, color: Color, hovere
 	if not is_instance_valid(card): return
 	var tween:=card.create_tween().set_parallel(true)
 	tween.tween_property(style,"shadow_color",Color(color,0.45) if hovered else Color(0,0,0,0.6),0.16)
-	tween.tween_property(style,"bg_color",Color("#211a30").lerp(color,0.20 if hovered else 0.10),0.16)
+	tween.tween_property(style,"bg_color",Color("#223436").lerp(color,0.17 if hovered else 0.06),0.20)
 	tween.tween_property(card,"modulate",Color(1.06,1.06,1.06) if hovered else Color.WHITE,0.16)
 
 func restart() -> void:
