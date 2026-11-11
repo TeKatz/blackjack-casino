@@ -58,8 +58,43 @@ const RELICS := {
 	"soulstorm":["Soulstorm","Seelensturm","Kills release 3 spirit bolts","Kills erzeugen 3 Seelengeschosse",44],
 	"overcharge":["Overcharge Coil","Überladungsspule","Every fourth special attack deals double damage","Jeder vierte Spezialangriff verursacht doppelten Schaden",45],
 	"bounty":["Bounty Seal","Kopfgeldsiegel","Elite and boss kills award +10 shards","Elite- und Bosskills geben +10 Splitter",46],
-	"sacrifice":["Crimson Crown","Blutkrone","+20% damage, lose 2 HP on new combat rooms","+20 % Schaden, -2 LP bei neuen Kampfräumen",47]
+	"sacrifice":["Crimson Crown","Blutkrone","+20% damage, lose 2 HP on new combat rooms","+20 % Schaden, -2 LP bei neuen Kampfräumen",47],
+	"w_bastion":["Thorn Bastion","Dornenbastion","Taking damage strikes nearby enemies.","Bei Treffern erleiden nahe Gegner Gegenschaden.",48],
+	"w_oath":["Oathstone","Eidstein","Every 4 kills grants brief protection.","Alle 4 Kills gewähren kurz Schutz.",49],
+	"w_banner":["Rally Banner","Banner des Muts","Recover 6 HP after clearing a combat room.","Heilt nach jedem gesäuberten Kampfraum 6 LP.",50],
+	"w_lance":["Sentinel Lance","Wächterlanze","Special attacks launch a piercing lance.","Spezialangriffe verschießen eine durchdringende Lanze.",51],
+	"w_steel":["Living Plate","Lebendige Platte","+18 maximum HP and +1 armor.","+18 maximale LP und +1 Rüstung.",52],
+	"w_charger":["Shieldbreaker","Schildbrecher","Dash landing releases an armored shockwave.","Dash-Landung entfesselt eine Schildschockwelle.",53],
+	"d_marked":["Marked Deck","Gezinktes Deck","Every fourth main attack fires a card fan.","Jeder vierte Hauptangriff feuert einen Kartenfächer.",54],
+	"d_sleight":["Sleight of Hand","Fingerfertigkeit","Your shots ricochet off one extra wall.","Geschosse prallen einmal zusätzlich ab.",55],
+	"d_coin":["Jinx Coin","Fluchmünze","Critical hits mark enemies for extra damage.","Kritische Treffer markieren Gegner für Bonusschaden.",56],
+	"d_decoy":["Smoke Joker","Rauchjoker","Dash landings burst into damaging smoke.","Dash-Landungen erzeugen eine schädliche Rauchwolke.",57],
+	"d_ace":["Death Ace","Todesass","Every fifth special fires a heavy ace.","Jeder fünfte Spezialangriff wirft ein mächtiges Ass.",58],
+	"d_purse":["House Treasury","Hauskasse","Defeated enemies drop +2 shards.","Besiegte Gegner lassen +2 Splitter fallen.",59],
+	"a_ember":["Primordial Ember","Urglut","Your hits ignite enemies.","Deine Treffer entzünden Gegner.",60],
+	"a_ash":["Ash Catalyst","Aschenkatalysator","Burning enemies explode on death.","Brennende Feinde explodieren beim Tod.",61],
+	"a_frost":["Glacier Sigil","Gletschersiegel","Special casts freeze nearby enemies.","Spezialangriffe unterkühlen nahe Gegner.",62],
+	"a_prism":["Crystal Lens","Kristalllinse","Chilled targets suffer bonus hit damage.","Unterkühlte Ziele erleiden Bonusschaden.",63],
+	"a_orbs":["Astral Wisps","Astrallichter","Summon magical wisps that fire at enemies.","Beschwört magische Lichter, die Gegner angreifen.",64],
+	"a_surge":["Arcane Dynamo","Arkan-Dynamo","Every third special triggers a pulse.","Jeder dritte Spezialangriff erzeugt eine Druckwelle.",65],
+	"s_harvest":["Grim Scythe","Seelensense","Kills yield an additional soul.","Kills gewähren eine zusätzliche Seele.",66],
+	"s_grim":["Soul Brand","Seelenbrand","Specials spend a soul to fire a cursed bolt.","Spezialangriffe opfern eine Seele für einen Fluchschuss.",67],
+	"s_haunt":["Wraith Lantern","Geisterlaterne","Kills summon a seeking spirit projectile.","Kills beschwören ein zielsuchendes Geistergeschoss.",68],
+	"s_coven":["Grave Choir","Grabchor","Every fifth kill releases a death pulse.","Jeder fünfte Kill entfesselt eine Todeswelle.",69],
+	"s_blood":["Blood Vow","Bluteid","Taking damage restores one soul.","Erlittener Schaden gewährt eine Seele.",70],
+	"s_pact":["Last Breath","Letzter Atemzug","Below 40% HP your specials grow stronger.","Unter 40 % LP verursachen Spezialangriffe mehr Schaden.",71]
 }
+# Six exclusive-to-class relics per class. Base relics 0–47 remain shared.
+const CLASS_POOLS := {
+	"warden":["w_bastion","w_oath","w_banner","w_lance","w_steel","w_charger"],
+	"dealer":["d_marked","d_sleight","d_coin","d_decoy","d_ace","d_purse"],
+	"arcanist":["a_ember","a_ash","a_frost","a_prism","a_orbs","a_surge"],
+	"soulbinder":["s_harvest","s_grim","s_haunt","s_coven","s_blood","s_pact"]
+}
+static func relic_owner(id: String) -> String:
+	for character in CLASS_POOLS:
+		if CLASS_POOLS[character].has(id): return str(character)
+	return ""
 # Two-relic build transformations. IDs are stable and derived from the owned
 # relic inventory, so duplicates and run restarts cannot grant phantom combos.
 const SYNERGIES := {
@@ -68,7 +103,19 @@ const SYNERGIES := {
 	"permafrost":{"parts":["frost","shatter"],"en":"Permafrost Burst","de":"Eisgrab","en_effect":"Chilled enemies explode on death and freeze nearby foes.","de_effect":"Unterkühlte Feinde explodieren beim Tod und vereisen weitere Ziele."},
 	"inferno_rush":{"parts":["dashfire","nova"],"en":"Inferno Rush","de":"Infernosturm","en_effect":"Every dash ends in a burning explosion.","de_effect":"Jeder Dash endet in einer brennenden Explosion."},
 	"ricochet_storm":{"parts":["pierce","bounce"],"en":"Ricochet Storm","de":"Abprallsturm","en_effect":"Piercing projectiles split into two ricochets on enemy impact.","de_effect":"Durchschlagende Geschosse teilen sich beim Treffer in zwei Abpraller."},
-	"soul_requiem":{"parts":["soulstorm","leech"],"en":"Soul Requiem","de":"Seelenrequiem","en_effect":"Kills restore extra health and unleash six spirit bolts.","de_effect":"Kills heilen zusätzlich und entfesseln sechs Seelengeschosse."}
+	"soul_requiem":{"parts":["soulstorm","leech"],"en":"Soul Requiem","de":"Seelenrequiem","en_effect":"Kills restore extra health and unleash six spirit bolts.","de_effect":"Kills heilen zusätzlich und entfesseln sechs Seelengeschosse."},
+	"w_fortress":{"parts":["w_bastion","w_steel"],"en":"Thorn Fortress","de":"Dornenfestung","en_effect":"Retaliation becomes a freezing, heavy shockwave.","de_effect":"Gegenangriffe werden zu mächtigen Frost-Schockwellen."},
+	"w_sanctuary":{"parts":["w_oath","w_banner"],"en":"Unbroken Sanctuary","de":"Ungebrochener Hort","en_effect":"Every fourth kill grants healing, shield and a rally pulse.","de_effect":"Jeder vierte Kill bringt Heilung, Schutz und eine Mutwelle."},
+	"w_phalanx":{"parts":["w_lance","w_charger"],"en":"Phalanx Rush","de":"Phalanxansturm","en_effect":"Dash landings release three armor-piercing lances.","de_effect":"Dash-Landungen entfesseln drei durchdringende Lanzen."},
+	"d_royal":{"parts":["d_marked","d_sleight"],"en":"Royal Flush","de":"Royal Flush","en_effect":"Every fourth attack fans five ricocheting cards.","de_effect":"Jeder vierte Angriff entfesselt fünf abprallende Karten."},
+	"d_bluff":{"parts":["d_coin","d_decoy"],"en":"Double Bluff","de":"Doppelbluff","en_effect":"Smoke explosions punish marked foes and spread curses.","de_effect":"Rauchexplosionen bestrafen markierte Gegner und verteilen Flüche."},
+	"d_jackpot":{"parts":["d_ace","d_purse"],"en":"House Jackpot","de":"Hausjackpot","en_effect":"Every fifth special fires three aces and pays bonus shards.","de_effect":"Jeder fünfte Spezialangriff wirft drei Asse und bringt Extrasplitter."},
+	"a_inferno":{"parts":["a_ember","a_ash"],"en":"Inferno Chain","de":"Infernokette","en_effect":"Burning kills cause wide, spreading fire explosions.","de_effect":"Brennende Kills erzeugen weite Kettenexplosionen."},
+	"a_crystal":{"parts":["a_frost","a_prism"],"en":"Crystal Cataclysm","de":"Kristallkataklysmus","en_effect":"Frozen targets shatter into seeking ice shards.","de_effect":"Unterkühlte Ziele zerbersten in zielsuchende Eissplitter."},
+	"a_convergence":{"parts":["a_orbs","a_surge"],"en":"Astral Convergence","de":"Astralkonvergenz","en_effect":"Wisps double their fire and special pulses strike twice.","de_effect":"Astrallichter feuern doppelt und Spezialwellen schlagen zweimal."},
+	"s_requiem":{"parts":["s_harvest","s_grim"],"en":"Dark Requiem","de":"Dunkles Requiem","en_effect":"Spent souls heal and unleash extra dark bolts.","de_effect":"Geopferte Seelen heilen und entfesseln zusätzliche Fluchschüsse."},
+	"s_legion":{"parts":["s_haunt","s_coven"],"en":"Legion of Echoes","de":"Legion der Echos","en_effect":"Spirit kills trigger more seeking spirits and grave pulses.","de_effect":"Geisterkills erzeugen mehr Geistergeschosse und Todeswellen."},
+	"s_undying":{"parts":["s_blood","s_pact"],"en":"Undying Pact","de":"Unsterblicher Pakt","en_effect":"Low-health hits grant a shield and a vengeance blast.","de_effect":"Treffer bei wenig LP gewähren Schild und Vergeltungsexplosion."}
 }
 const UPGRADES := {
 	"vitality":["Vitality","Vitalität","+5 starting HP per rank","+5 Start-LP je Rang",12,5],
@@ -80,6 +127,7 @@ const UPGRADES := {
 }
 static func rarity(id: String) -> int:
 	var index: int = RELICS[id][4]
+	if index>=48: return 1 if (index-48)%6<2 else 2
 	return 3 if id in ["phoenix","cascade","twin","soulstorm","sacrifice"] else (2 if index>=20 else (1 if index>=8 else 0))
 
 static func relic_text(id: String, german: bool) -> String:
