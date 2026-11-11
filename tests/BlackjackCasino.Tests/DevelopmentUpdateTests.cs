@@ -36,7 +36,7 @@ public sealed class DevelopmentUpdateTests
         Assert.Equal(2, handler.RequestUris.Count);
         Assert.Equal("/development/update-manifest.json", handler.RequestUris[0].AbsolutePath);
         Assert.NotEqual(handler.RequestUris[0], handler.RequestUris[1]);
-        Assert.All(handler.RequestUris, uri => Assert.Matches(@"^\\?revision=[0-9a-f]{32}$", uri.Query));
+        Assert.All(handler.RequestUris, uri => Assert.Matches(@"^\?revision=[0-9a-f]{32}$", uri.Query));
     }
 
     [Fact]
