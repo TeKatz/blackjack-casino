@@ -648,6 +648,19 @@ func run_scene_smoke() -> void:
 			push_error("Special chamber art missing: "+id)
 			get_tree().quit(41)
 			return
+	# Map service glyphs are separate, hand-drawn artwork, not aliases to
+	# existing common UI icons. The merchant is the game's "shop" kind.
+	if UI.SERVICE_MAP_ICONS.get_width()!=72 or UI.SERVICE_MAP_ICONS.get_height()!=24:
+		push_error("Missing three redesigned service map icons")
+		get_tree().quit(51)
+		return
+	for i in range(UI.SERVICE_MAP_ORDER.size()):
+		var service_id: String=UI.SERVICE_MAP_ORDER[i]
+		var map_icon: AtlasTexture=UI.room_icon(service_id)
+		if map_icon.atlas!=UI.SERVICE_MAP_ICONS or map_icon.region!=Rect2(i*24,0,24,24):
+			push_error("Wrong map icon for "+service_id)
+			get_tree().quit(52)
+			return
 	# Test reserved decor bounds in each generated room, including all biome fixtures.
 	for floor in range(3):
 		run.floor_index=floor
@@ -662,11 +675,12 @@ func run_scene_smoke() -> void:
 				return
 	# Large-stage art, centered camera and boss-corridor reveal are exercised
 	# in the live rendering scene, not only by the pure layout generator.
-	if world.REACTOR_CORE.get_width()!=512 or world.REACTOR_CORE.get_height()!=128:
-		push_error("New stable reactor core texture is missing or incorrectly sized")
-		get_tree().quit(49)
-		return
 	for stage in range(3):
+		var reactor_texture: Texture2D=world.REACTOR_STAGE_CORES[stage]
+		if reactor_texture.get_width()!=512 or reactor_texture.get_height()!=128:
+			push_error("Missing fixed reactor housing on floor "+str(stage))
+			get_tree().quit(49)
+			return
 		var shutter: Texture2D=world.BOSS_GATE_TEXTURES[stage]
 		if shutter.get_width()!=384 or shutter.get_height()!=384:
 			push_error("Boss gate animation texture is missing on floor "+str(stage))
@@ -700,6 +714,29 @@ func run_scene_smoke() -> void:
 			push_error("Walking through the boss arch failed to initiate the reveal")
 			get_tree().quit(45)
 			return
+	# The Archive's discard choices must display the actual item's icon
+	# so that selecting an equipped relic is visually unambiguous.
+	run.relics.clear()
+	run.relics.append("blade")
+	run.room_kind="archive"
+	run.state="service"
+	_process(0.0)
+	var archive_icon_found:=false
+	var expected_icon: AtlasTexture=UI.atlas(UI.RELICS,int(Content.RELICS["blade"][4]))
+	for item in modal_root.find_children("*","Button",true,false):
+		var candidate: Button=item
+		if candidate.text.begins_with("Rewrite:") or candidate.text.begins_with("Umschreiben:"):
+			var displayed: AtlasTexture=candidate.icon as AtlasTexture
+			if displayed==null or displayed.atlas!=expected_icon.atlas or displayed.region!=expected_icon.region:
+				push_error("Archive choice does not show the equipped relic icon")
+				get_tree().quit(53)
+				return
+			archive_icon_found=true
+			break
+	if not archive_icon_found:
+		push_error("Archive discard choices missing from modal")
+		get_tree().quit(54)
+		return
 	print("Midnight Descent gameplay scene smoke PASS")
 	get_tree().quit()
 
