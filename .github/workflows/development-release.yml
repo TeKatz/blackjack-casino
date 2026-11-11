@@ -260,7 +260,10 @@ jobs:
             publishedAt = (Get-Date).ToUniversalTime().ToString("o")
             minimumUpdaterVersion = "0.1.0-preview.1"
             package = [ordered]@{
-              url = "https://github.com/$repo/releases/download/development/blackjack-casino-win-x64.zip"
+              # Version-specific CDN cache key: the Development release tag
+              # is mutable and the asset keeps its name after replacement.
+              # A stale cached manifest must never silently select another build.
+              url = "https://github.com/$repo/releases/download/development/blackjack-casino-win-x64.zip?revision=$env:VERSION"
               sha256 = $hash
               sizeBytes = $size
             }
@@ -310,6 +313,8 @@ jobs:
           $publishedNotes = Get-Content "$verifyDir/release-notes.json" -Raw | ConvertFrom-Json
           if ($publishedNotes.version -ne $env:VERSION -or $publishedNotes.channel -ne "development") { throw "Published notes version/channel mismatch." }
           if ($manifest.version -ne $env:VERSION -or $manifest.channel -ne "development") { throw "Published manifest version/channel mismatch." }
+          $expectedPackageUrl = "https://github.com/${{ github.repository }}/releases/download/development/blackjack-casino-win-x64.zip?revision=$env:VERSION"
+          if ($manifest.package.url -ne $expectedPackageUrl) { throw "Published manifest URL does not pin this Development build's cache key." }
           $publishedPackage = Get-Item "$verifyDir/blackjack-casino-win-x64.zip"
           $publishedHash = (Get-FileHash $publishedPackage.FullName -Algorithm SHA256).Hash
           if ($publishedHash -ne $manifest.package.sha256 -or $publishedPackage.Length -ne $manifest.package.sizeBytes) { throw "Published package hash/size mismatch." }
