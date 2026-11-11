@@ -29,11 +29,11 @@ var hud_previous: Array[float]=[1.0,1.0,1.0,1.0]
 var room_banner := 0.0
 var banner_room := -1
 var banner_floor := -1
-const GOLD := Color("#efc987")
-const VIOLET := Color("#b38aff")
-const WHITE := Color("#f6edf9")
-const MUTED := Color("#ada1bc")
-const FLOOR := Color("#211b32")
+const GOLD := Color("#dbba81")
+const VIOLET := Color("#80c8bd")
+const WHITE := Color("#f3eddc")
+const MUTED := Color("#b1c0bb")
+const FLOOR := Color("#152629")
 var run = Model.new()
 var german := false
 var paused := false
@@ -49,7 +49,8 @@ var overlay: Control
 var overlay_state := ""
 var clock := 0.0
 var shake := 0.0
-var font: Font = ThemeDB.fallback_font
+var font: Font = UI.BOLD_FONT
+var hud_chrome: StyleBoxFlat
 const SoundBank = preload("res://sound_bank.gd")
 var audio = SoundBank.new()
 var last_dash := false
@@ -77,6 +78,9 @@ func _ready() -> void:
 	hud_shards=run.shards
 	hud_kills=run.kills
 	hub_fade=0.0 if smoke_mode else 1.0
+	hud_chrome=UI.panel(Color("#132326f2"),Color("#476360"),0)
+	hud_chrome.shadow_size=7
+	hud_chrome.shadow_offset=Vector2(0,3)
 	light_mask = 0
 	# Isolate ambient world lighting from the sharp HUD and combat telegraphs.
 	var world_layer := CanvasLayer.new()
@@ -88,6 +92,7 @@ func _ready() -> void:
 	var layer := CanvasLayer.new()
 	add_child(layer)
 	overlay = Control.new()
+	UI.install_theme(overlay)
 	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(overlay)
@@ -258,17 +263,20 @@ func _unhandled_input(event: InputEvent) -> void:
 			select_relic(index)
 			get_viewport().set_input_as_handled()
 
+func ui_font(size: int) -> Font:
+	return UI.DISPLAY_FONT if size>=27 else UI.BOLD_FONT
+
 func text_at(pos: Vector2, value: String, size: int, color: Color = WHITE) -> void:
-	draw_string(font, pos, value, HORIZONTAL_ALIGNMENT_LEFT, -1, size, color)
+	draw_string(ui_font(size),pos,value,HORIZONTAL_ALIGNMENT_LEFT,-1,size,color)
 
 func meter(rect: Rect2, ratio: float, color: Color) -> void:
-	draw_rect(rect.grow(2), Color("#0c0a13"))
-	draw_rect(rect, Color("#211a2b"))
-	var width := rect.size.x*clampf(ratio,0,1)
-	if width > 0:
-		draw_rect(Rect2(rect.position, Vector2(width,rect.size.y)), color.darkened(0.18))
-		draw_rect(Rect2(rect.position, Vector2(width,rect.size.y*0.28)), color.lightened(0.25))
-	draw_rect(rect, Color("#756179"), false, 1)
+	draw_rect(rect.grow(1),Color("#091518"))
+	draw_rect(rect,Color("#2e4140"))
+	var width: float=rect.size.x*clampf(ratio,0,1)
+	if width>0.0:
+		draw_rect(Rect2(rect.position,Vector2(width,rect.size.y)),color.darkened(0.12))
+		draw_rect(Rect2(rect.position,Vector2(width,rect.size.y*0.28)),color.lightened(0.24))
+	draw_rect(rect,Color("#6d8982"),false,1)
 
 func _draw() -> void:
 	if not is_instance_valid(world) or world.model == null:
@@ -365,6 +373,15 @@ func _draw() -> void:
 	draw_set_transform(Vector2.ZERO)
 	draw_hud()
 	if hub_fade>0: draw_rect(Rect2(0,0,1280,720),Color(0.02,0.012,0.035,hub_fade))
+	# Critical health pulses crimson across all HUD islands and screen borders.
+	var critical: float=clampf((0.26-float(run.hp)/maxf(1.0,float(run.max_hp)))/0.26,0.0,1.0)
+	if critical>0.0:
+		var beat: float=0.5+0.5*sin(clock*(5.0+critical*3.0))
+		draw_rect(Rect2(0,0,1280,720),Color(0.93,0.045,0.06,critical*(0.032+0.085*beat)))
+		for i in range(8):
+			var edge_alpha: float=critical*(0.045+0.085*beat)*(1.0-float(i)/8.0)
+			draw_rect(Rect2(0,i*7,1280,7),Color(0.90,0.035,0.045,edge_alpha))
+			draw_rect(Rect2(0,713-i*7,1280,7),Color(0.90,0.035,0.045,edge_alpha))
 	if hud_hit>0:
 		for i in range(4):
 			var tint:=Color(0.9,0.12,0.24,hud_hit*0.07*(1-float(i)/4))
@@ -969,62 +986,71 @@ func update_hud_feedback(dt: float) -> void:
 		hud_ready[i]=move_toward(hud_ready[i],0,dt*2.5)
 
 func hud_panel(rect: Rect2, accent: Color = GOLD) -> void:
-	draw_rect(Rect2(rect.position+Vector2(0,5),rect.size),Color("#08060d"))
-	draw_rect(rect,Color("#110e1b"))
-	draw_rect(rect.grow(-2),Color("#2b2338"))
-	draw_rect(Rect2(rect.position+Vector2(4,4),Vector2(rect.size.x-8,rect.size.y-8)),Color("#1b1728"))
-	for i in range(6):
-		draw_rect(Rect2(rect.position+Vector2(5,5+i*3),Vector2(rect.size.x-10,3)),Color(0.25,0.19,0.34,0.30*(1-float(i)/6)))
-	draw_rect(rect.grow(-1),accent.darkened(0.48),false,1)
-	draw_line(rect.position+Vector2(12,3),rect.position+Vector2(rect.size.x-12,3),accent.darkened(0.12),2)
-	for x in [rect.position.x+5,rect.end.x-10]:
-		draw_rect(Rect2(x,rect.position.y+5,5,5),accent)
-		draw_rect(Rect2(x,rect.end.y-9,5,3),accent.darkened(0.35))
+	# Smooth obsidian-and-bronze surface, not nested pixel rectangles.
+	draw_style_box(hud_chrome,rect)
+	draw_line(rect.position+Vector2(16,2),Vector2(rect.end.x-16,rect.position.y+2),Color(accent,0.55),1.5,true)
+	draw_rect(Rect2(rect.position+Vector2(13,8),Vector2(rect.size.x-26,1)),Color(accent,0.065))
 
 func ability_slot(x: float, icon_index: int, key: String, name: String, ratio: float, color: Color) -> void:
 	var rect:=Rect2(x,657,156,58)
 	var index: int=clampi(int(round((x-18)/166)),0,3)
 	var pulse: float=hud_ready[index]
-	hud_panel(rect,color.lightened(pulse*0.45))
-	if pulse>0: draw_rect(rect.grow(-3),Color(color,pulse*0.16))
-	draw_rect(Rect2(x+8,666,38,38),Color("#100c1b"))
-	draw_rect(Rect2(x+8,666,38,38),color.darkened(0.4),false,1)
+	hud_panel(rect,color.lightened(pulse*0.32))
+	if pulse>0.0: draw_rect(Rect2(x+8,703,140,3),Color(color,pulse*0.8))
+	var icon_rect:=Rect2(x+8,664,40,40)
+	draw_rect(icon_rect.grow(2),Color(color,0.20+0.35*pulse))
+	draw_rect(icon_rect,Color("#142226"))
 	if index==3:
 		var active_index: int={"heal":9,"time":10,"bomb":11,"shield":12,"dice":13,"mirror":14}.get(run.active_item,9)
-		draw_texture_rect_region(UI.ICONS,Rect2(x+11,669,32,32),Rect2(active_index*24,0,24,24))
+		draw_texture_rect_region(UI.ICONS,Rect2(x+12,668,32,32),Rect2(active_index*24,0,24,24))
 	else:
-		draw_texture_rect_region(PixelWorld.RELICS,Rect2(x+11,669,32,32),Rect2(icon_index*48,0,48,48))
-	text_at(Vector2(x+52,672),key,10,color)
-	var font_size: int=12
-	while font.get_string_size(name,HORIZONTAL_ALIGNMENT_LEFT,-1,font_size).x>94 and font_size>8: font_size-=1
-	text_at(Vector2(x+52,686),name,font_size,WHITE)
-	meter(Rect2(x+52,691,94,5),ratio,color)
+		draw_texture_rect_region(PixelWorld.RELICS,Rect2(x+12,668,32,32),Rect2(icon_index*48,0,48,48))
+	var available: float=clampf(ratio,0,1)
+	if available<0.99:
+		draw_rect(Rect2(x+8,664,40,40.0*(1.0-available)),Color(0.015,0.05,0.06,0.77))
+	else:
+		draw_rect(icon_rect,color,false,1.4,true)
+		if pulse>0.0: draw_circle(Vector2(x+28,684),29.0*pulse,Color(color,0.12*pulse))
+	text_at(Vector2(x+54,672),key,12,color.lightened(pulse*0.3))
+	var font_size: int=15
+	while font.get_string_size(name,HORIZONTAL_ALIGNMENT_LEFT,-1,font_size).x>91 and font_size>11: font_size-=1
+	text_at(Vector2(x+54,690),name,font_size,WHITE)
+	meter(Rect2(x+54,697,90,4),available,color)
 	var cooldowns: Array[float]=[run.attack_timer,run.bolt_timer,run.dash_timer,run.active_timer]
-	if ratio>=0.99:
-		draw_rect(Rect2(x+52,698,5,5),color)
-		text_at(Vector2(x+62,711),tr_text("READY","BEREIT"),10,color)
+	if available>=0.99:
+		text_at(Vector2(x+54,712),tr_text("READY","BEREIT"),11,color)
 	else:
-		text_at(Vector2(x+52,711),"%.1fs" % maxf(0,cooldowns[index]),11,MUTED)
+		text_at(Vector2(x+54,712),"%.1fs" % maxf(0,cooldowns[index]),12,MUTED)
 
 func draw_hud() -> void:
-	draw_rect(Rect2(0,0,1280,103),Color("#100d19"))
-	draw_rect(Rect2(0,651,1280,69),Color("#100d19"))
+	# Atmospheric bands keep the established layout without two opaque strips.
+	for i in range(10):
+		draw_rect(Rect2(0,i*10,1280,10),Color(0.035,0.085,0.09,0.85-float(i)*0.076))
+		draw_rect(Rect2(0,651+i*7,1280,7),Color(0.035,0.085,0.09,0.21+float(i)*0.075))
+	draw_line(Vector2(0,651),Vector2(1280,651),Color("#81bba9",0.28),1,true)
 	hud_panel(Rect2(17,10,406,84),GOLD.lerp(Color("#ff526f"),hud_hit))
-	if hud_hit>0: draw_rect(Rect2(20,13,400,78),Color(1,0.12,0.25,hud_hit*0.18))
-	if hud_heal>0: draw_rect(Rect2(20,13,400,78),Color(0.3,1,0.55,hud_heal*0.12))
+	if hud_hit>0:
+		draw_rect(Rect2(28,83,384,3),Color(1,0.22,0.26,hud_hit))
+		draw_rect(Rect2(30,16,378,3),Color(1,0.26,0.28,hud_hit*0.65))
+	if hud_heal>0:
+		draw_rect(Rect2(28,83,384,3),Color(0.38,1,0.70,hud_heal))
+		draw_rect(Rect2(30,16,378,3),Color(0.41,1,0.69,hud_heal*0.65))
 	hud_panel(Rect2(438,10,368,84),VIOLET)
 	hud_panel(Rect2(821,10,442,84),GOLD.lightened(hud_gain*0.45))
-	if hud_gain>0: draw_rect(Rect2(824,13,436,78),Color(1,0.72,0.32,hud_gain*0.12))
-	draw_rect(Rect2(26,20,67,67),Color("#100e1b"))
-	draw_rect(Rect2(26,20,67,67),Color("#8b6f92"),false,2)
+	if hud_gain>0:
+		draw_rect(Rect2(832,84,420,3),Color(GOLD,hud_gain*0.88))
+		draw_circle(Vector2(863,51),22*hud_gain,Color(GOLD,0.15*hud_gain))
+	draw_rect(Rect2(26,20,67,67),Color("#192b2d"))
+	draw_rect(Rect2(26,20,67,67),Color("#71958c"),false,1)
 	draw_texture_rect_region(PixelWorld.ACTORS[run.character],Rect2(29,23,64,64),Rect2(int(clock*2)%2*32,0,32,32))
 	text_at(Vector2(99,30),Content.floor_name(run.floor_index,german).to_upper(),13,GOLD)
 	text_at(Vector2(99,55),Content.character_name(run.character,german).to_upper(),23,WHITE)
-	meter(Rect2(99,68,235,13),displayed_hp/run.max_hp,Color("#a94565"))
+	meter(Rect2(99,68,235,13),displayed_hp/run.max_hp,Color("#c95463") if float(run.hp)/maxf(1.0,float(run.max_hp))>0.25 else UI.DANGER)
 	var health_width := 235.0*clampf(run.hp/run.max_hp,0,1)
 	if health_width > 0:
-		draw_rect(Rect2(99,68,health_width,9),Color("#dc6e87"))
-		draw_rect(Rect2(99,68,health_width,2),Color("#ffb0bc"))
+		draw_rect(Rect2(99,68,health_width,9),Color("#d96b72"))
+		draw_rect(Rect2(99,68,health_width,2),Color("#ffc0b5"))
+		if hud_heal>0: draw_rect(Rect2(99,68,health_width,9),Color(0.31,1,0.62,hud_heal*0.36))
 	text_at(Vector2(343,80),"%d/%d" % [run.hp,run.max_hp],15,WHITE)
 	if run.character=="soulbinder":
 		text_at(Vector2(300,55),tr_text("SOULS","SEELEN")+"  %d/6" % run.souls,13,Color("#8de1cb"))
@@ -1054,8 +1080,8 @@ func draw_hud() -> void:
 	text_at(Vector2(695,699),tr_text("ESC  •  Run relics","ESC  •  Run-Relikte"),12,MUTED)
 	for i in range(6):
 		var rect := Rect2(952+i*40,669,34,34)
-		draw_rect(rect,Color("#100d1c"))
-		draw_rect(rect,Color("#695471"),false,1)
+		draw_rect(rect,Color("#1b3030"))
+		draw_rect(rect,Color("#607e75"),false,1)
 		if i<run.relics.size():
 			var index: int = Content.RELICS[run.relics[maxi(0,run.relics.size()-6)+i]][4]
 			if index>=0:
@@ -1119,7 +1145,7 @@ func draw_hud() -> void:
 		draw_rect(rect,Color("#211122",alpha*0.96))
 		draw_rect(rect,Color("#d6a3ca",alpha),false,3)
 		var title: String=Content.boss_name(run.floor_index,german).to_upper()
-		text_at(Vector2(640-font.get_string_size(title,HORIZONTAL_ALIGNMENT_LEFT,-1,31).x*0.5,289),title,31,Color(1,0.86,0.94,alpha))
+		text_at(Vector2(640-ui_font(31).get_string_size(title,HORIZONTAL_ALIGNMENT_LEFT,-1,31).x*0.5,289),title,31,Color(1,0.86,0.94,alpha))
 		var subtitle: String=tr_text("The chamber seals behind you","Die Kammer erwacht") 
 		text_at(Vector2(640-font.get_string_size(subtitle,HORIZONTAL_ALIGNMENT_LEFT,-1,16).x*0.5,333),subtitle,16,Color(0.91,0.75,0.82,alpha))
 	if boss_soul_toast_timer>0.0:
@@ -1174,6 +1200,7 @@ func add_label(parent: Control, value: String, size: int, color: Color) -> void:
 	node.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	node.add_theme_font_size_override("font_size",size)
 	node.add_theme_color_override("font_color",color)
+	if size>=26: UI.set_display(node)
 	node.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	parent.add_child(node)
 
