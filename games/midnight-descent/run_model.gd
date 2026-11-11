@@ -488,6 +488,7 @@ func service_action(choice: int) -> bool:
 			else: return false
 		_: return false
 	finish_room()
+	check_shard_contract()
 	return true
 
 func finish_room() -> void:
@@ -596,6 +597,11 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 		invulnerable = maxf(invulnerable, 0.28)
 		effect("dash", player, 0.22, dash_direction)
 		notices.append("dash")
+		if forge_id=="void_stride":
+			for enemy in enemies:
+				if enemy.hp>0 and player.distance_to(enemy.pos)<185:
+					hit_enemy(enemy,damage*1.2+16.0)
+			effect("forge_stride",player,0.40,Vector2.ZERO)
 		if relics.has("nova") or character=="arcanist":
 			for enemy in enemies:
 				if player.distance_to(enemy.pos)<100: hit_enemy(enemy,15)
@@ -623,6 +629,9 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 				var offset: Vector2 = enemy.pos-player
 				if offset.length() <= (118.0 if set_id in ["warden_executioner","soulbinder_reaper"] else 93.0)+float(enemy.r) and (offset.length()<12 or aim.dot(offset.normalized())>0.15):
 					hit_enemy(enemy,damage)
+		if forge_id=="rift_echo" and echoes.size()<12:
+			echoes.append({"pos":player,"dir":aim,"time":0.19,"damage":damage*0.85})
+			effect("forge_echo",player,0.34,aim)
 		if relics.has("twin") and echoes.size()<12:
 			echoes.append({"pos":player,"dir":aim,"time":0.28,"damage":damage*0.55})
 		if relics.has("echo") and attacks%3==0:
@@ -630,6 +639,7 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 	if ranged and bolt_timer <= 0:
 		bolt_timer = special_cd
 		specials+=1
+		advance_contract("spellweaver")
 		shot_style=set_id+"_special"
 		notices.append(shot_style)
 		effect("special_"+set_id,player,0.42,aim)
@@ -666,6 +676,11 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 				var power := bolt_damage*special_multiplier
 				if set_id=="dealer_joker": power *= rng.randf_range(0.6,1.35)
 				shoot(player+aim*21,aim.rotated(angle)*590,false,power)
+		if forge_id=="stormheart":
+			for j in range(5):
+				var arc: float=(float(j)-2.0)*0.31
+				shoot(player+aim*21,aim.rotated(arc)*620,false,bolt_damage*0.80*special_multiplier)
+			effect("forge_storm",player,0.58,aim)
 		if relics.has("cascade") or set_id=="arcanist_fire":
 			for enemy in enemies:
 				if player.distance_to(enemy.pos)<200: hit_enemy(enemy,bolt_damage*0.8*special_multiplier)
@@ -709,6 +724,7 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 			effect("death", enemies[i].pos, 0.35, Vector2.ZERO)
 			if enemies[i].kind in ["boss","rootking","hollowking"]: notices.append("boss_kill")
 			kills += 1
+			advance_contract("slayer")
 			if character=="soulbinder": souls=mini(6,souls+1)
 			if relics.has("harvest"):
 				harvest_count+=1
@@ -717,6 +733,7 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 				for j in range(3): shoot(enemies[i].pos,Vector2.from_angle(j*TAU/3+elapsed)*420,false,14*relics.count("soulstorm"))
 			if relics.has("bounty") and (enemies[i].get("elite",false) or enemies[i].kind in ["boss","rootking","hollowking"]): shards+=10*relics.count("bounty")
 			shards += (20 if enemies[i].kind in ["boss","rootking","hollowking"] else 3)+2*relics.count("greed")
+			check_shard_contract()
 			if relics.has("shatter") and float(enemies[i].get("chill",0))>0:
 				for j in range(6): shoot(enemies[i].pos,Vector2.from_angle(j*TAU/6)*400,false,12)
 			if enemies[i].kind=="mushroom":
@@ -744,6 +761,7 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 		shots.clear()
 		hazards.clear()
 		combat_clears+=1
+		if contract_clean_room: advance_contract("untouched")
 		if room_kind=="boss": bosses_defeated=maxi(bosses_defeated,floor_index+1)
 		if room_kind=="boss" and floor_index==FLOOR_COUNT-1:
 			dungeon.nodes[room].cleared=true
@@ -795,6 +813,18 @@ func hit_enemy(enemy: Dictionary, amount: float) -> void:
 func hurt(amount: float) -> void:
 	if invulnerable > 0 or shield_time>0 or hp <= 0:
 		return
+	if forge_id=="iron_aegis" and forge_guard_charges>0:
+		forge_guard_charges-=1
+		invulnerable=0.55
+		effect("forge_guard",player,0.45,Vector2.ZERO)
+		notices.append("forge_guard")
+		if forge_guard_charges==0:
+			for enemy in enemies:
+				if enemy.hp>0 and player.distance_to(enemy.pos)<180:
+					hit_enemy(enemy,38.0)
+			effect("forge_shatter",player,0.65,Vector2.ZERO)
+		return
+	contract_clean_room=false
 	var scaled: float=amount*(1.0+0.20*floor_index)
 	# Armor never negates more than half of an incoming hit.
 	hp = maxf(0,hp-maxf(scaled*0.5,scaled-armor))
