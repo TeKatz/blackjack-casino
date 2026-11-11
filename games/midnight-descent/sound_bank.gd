@@ -42,6 +42,10 @@ const SPECS = {
 	"boss_reveal":[1.35,128,0.26,0.42,2.15],
 	"boss_gate_close":[1.15,94,0.32,0.77,0.43],
 	"boss_gate_lock":[0.58,207,0.56,0.58,0.24],
+	"boss_gate_close_grove":[1.36,113,0.28,0.60,0.42],
+	"boss_gate_lock_grove":[0.82,172,0.50,0.58,0.31],
+	"boss_gate_close_crypt":[1.29,88,0.42,0.53,0.40],
+	"boss_gate_lock_crypt":[0.91,229,0.61,0.47,0.22],
 	"boss_soul":[0.78,790,0.16,0.03,1.95],
 	"class_cards":[0.17,1050,0.72,0.23,0.64],
 	"class_ace":[0.27,690,0.5,0.18,1.5],
@@ -76,6 +80,14 @@ const SPECS = {
 	"sp_unstable_charge":[0.73,780,0.38,0.13,2.33],
 	"sp_unstable_burst":[0.48,96,0.77,0.9,0.4],
 	"sp_unstable_success":[0.91,630,0.18,0.13,1.83],
+	"sp_unstable_enter_grove":[0.69,460,0.22,0.16,1.44],
+	"sp_unstable_charge_grove":[0.80,540,0.35,0.21,2.18],
+	"sp_unstable_burst_grove":[0.54,139,0.62,0.71,0.44],
+	"sp_unstable_success_grove":[0.93,590,0.21,0.15,1.69],
+	"sp_unstable_enter_crypt":[0.68,380,0.30,0.12,1.36],
+	"sp_unstable_charge_crypt":[0.86,690,0.32,0.17,2.22],
+	"sp_unstable_burst_crypt":[0.67,165,0.72,0.78,0.37],
+	"sp_unstable_success_crypt":[0.98,745,0.25,0.14,1.93],
 	"sp_blood_altar_enter":[0.69,180,0.25,0.29,0.65],
 	"sp_blood_altar_sacrifice":[0.86,87,0.52,0.67,1.85],
 	"sp_blood_altar_success":[0.79,320,0.19,0.2,1.51],
@@ -138,7 +150,17 @@ func synthesize(kind: String) -> AudioStreamWAV:
 		var envelope:=minf(1,t*35)*pow(1-t,1.2+decay*3)
 		var value:=lerpf(tone,noise*0.55+previous,noise_mix)*envelope
 		# Different sound families have different physical textures, not just pitch.
-		if kind=="boss_gate_close":
+		if kind=="boss_gate_close_grove":
+			# Living roots flex, splinter and grow into the passage.
+			value=(sin(phase*0.58)*0.41+previous*0.70+noise*pow(maxf(0.0,sin(t*TAU*7.0)),3.0)*0.52)*envelope
+		elif kind=="boss_gate_lock_grove":
+			value=(sin(phase*0.37)*0.38+previous*0.44+noise*pow(maxf(0.0,sin(t*TAU*3.0)),13.0))*envelope
+		elif kind=="boss_gate_close_crypt":
+			# Ossuary portcullis: falling iron bars and resonant bone bells.
+			value=(sin(phase*2.07)*0.41+sin(phase*4.17)*0.18+noise*0.65*absf(sin(t*TAU*14.0)))*envelope
+		elif kind=="boss_gate_lock_crypt":
+			value=(sin(phase*0.71)*0.46+sin(phase*3.26)*0.35+previous*0.55)*envelope
+		elif kind=="boss_gate_close":
 			# Gear train, heavy steel shutters and increasing hydraulic pressure.
 			var grinding: float=0.4+0.6*absf(sin(t*TAU*32.0))
 			value=(noise*0.53+previous*0.51+sin(phase*0.43)*0.43)*envelope*grinding
@@ -166,6 +188,12 @@ func synthesize(kind: String) -> AudioStreamWAV:
 		elif kind.begins_with("sp_bounty_"):
 			# Metallic hunting horn over a syncopated marching percussion.
 			value=(0.45*sin(phase*0.5)+0.35*sin(phase*1.5)+0.5*noise*pow(maxf(0,sin(t*TAU*7)),5))*envelope
+		elif kind.begins_with("sp_unstable_") and kind.ends_with("_grove"):
+			# Hollow wood, sap fizz and airy glassy seed harmonics.
+			value=(sin(phase*0.85+sin(t*11)*0.8)*0.52+previous*0.43+noise*0.25)*envelope
+		elif kind.begins_with("sp_unstable_") and kind.ends_with("_crypt"):
+			# Royal aether reactor: metallic crypt bells over spectral pulses.
+			value=(sin(phase*1.52)*0.43+sin(phase*3.11)*0.3+previous*0.32)*envelope
 		elif kind.begins_with("sp_unstable_"):
 			# Electrical crackle interleaved with rising crystalline pitch.
 			value=(sin(phase+sin(t*38)*2.0)*0.34+previous*0.63+noise*0.35)*envelope*(0.65+0.35*sin(t*75)*sin(t*75))
