@@ -1020,6 +1020,8 @@ func relic_description(id: String) -> String:
 func select_relic(index: int) -> void:
 	if run.choose_relic(index):
 		play_sound("relic")
+		if run.room_kind in ["blood_altar","archive"]:
+			play_sound("sp_"+run.room_kind+"_success")
 
 func active_name() -> String:
 	match run.active_item:
@@ -1062,7 +1064,8 @@ func use_service(choice: int) -> void:
 	if run.service_action(choice):
 		if Model.Dungeon.SPECIAL_SERVICE.has(run.room_kind):
 			var cue: String={"blood_altar":"sacrifice","forgotten_forge":"temper","archive":"exchange"}[run.room_kind]
-			play_sound("sp_"+run.room_kind+"_"+cue if choice!=3 else "sp_"+run.room_kind+"_success")
+			var leaving: bool=choice==3 or (run.room_kind=="blood_altar" and choice==2)
+			play_sound("sp_"+run.room_kind+("_success" if leaving else "_"+cue))
 		else:
 			play_sound("purchase" if run.room_kind in ["shop","forge"] else run.room_kind)
 		# Service decisions happen while physics is paused by the modal.
