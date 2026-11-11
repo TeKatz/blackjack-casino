@@ -101,6 +101,7 @@ var attack_timer := 0.0
 var bolt_timer := 0.0
 var dash_timer := 0.0
 var dash_left := 0.0
+var dash_trail_timer := 0.0
 var invulnerable := 0.0
 var dash_direction := Vector2.RIGHT
 var elapsed := 0.0
@@ -370,6 +371,7 @@ func enter_room() -> void:
 	bolt_timer = 0.0
 	dash_timer = 0.0
 	dash_left = 0.0
+	dash_trail_timer=0.0
 	invulnerable = 0.7
 	enemies.clear()
 	shots.clear()
@@ -684,16 +686,19 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 	bolt_timer = maxf(0, bolt_timer - dt)
 	dash_timer = maxf(0, dash_timer - dt)
 	invulnerable = maxf(0, invulnerable - dt)
+	var was_dashing: bool=dash_left>0.0
 	dash_left = maxf(0, dash_left - dt)
 	if target.distance_to(player) > 4:
 		aim = player.direction_to(target)
 	if dash and dash_timer <= 0:
 		dash_direction = direction.normalized() if direction.length_squared() > 0.01 else aim
 		dash_left = 0.17
+		dash_trail_timer=0.0
 		dash_hits.clear()
 		dash_timer = dash_cooldown
 		invulnerable = maxf(invulnerable, 0.28)
-		effect("dash", player, 0.22, dash_direction)
+		effect("dash",player,0.22,dash_direction)
+		effect("dash_burst_"+character,player,0.39,dash_direction)
 		notices.append("dash")
 		if forge_id=="void_stride":
 			for enemy in enemies:
@@ -701,11 +706,27 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 					hit_enemy(enemy,damage*1.2+16.0)
 			effect("forge_stride",player,0.40,Vector2.ZERO)
 		if relics.has("nova") or character=="arcanist":
+			effect("dash_nova_"+("frost" if set_id=="arcanist_frost" else "fire" if set_id=="arcanist_fire" else "arcane"),player,0.42,Vector2.ZERO)
+			notices.append("dash_nova")
 			for enemy in enemies:
 				if player.distance_to(enemy.pos)<100: hit_enemy(enemy,15)
 				if set_id=="arcanist_frost" and player.distance_to(enemy.pos)<100: enemy["chill"]=2.0
 	var move := dash_direction * 860.0 if dash_left > 0 else direction.limit_length() * speed*environment_speed()
-	player = move_actor(player, move * dt, 15)
+	player=move_actor(player,move*dt,15)
+	if dash_left>0.0:
+		dash_trail_timer-=dt
+		if dash_trail_timer<=0.0:
+			dash_trail_timer=0.028
+			effect("dash_trail_"+character,player,0.30,dash_direction)
+	if was_dashing and dash_left<=0.0:
+		effect("dash_land_"+character,player,0.36,dash_direction)
+		if has_synergy("inferno_rush"):
+			for enemy in enemies:
+				if enemy.hp>0 and player.distance_to(enemy.pos)<140:
+					hit_enemy(enemy,damage*0.95+19.0)
+					enemy["burn"]=maxf(4.0,float(enemy.get("burn",0)))
+			effect("synergy_inferno",player,0.64,Vector2.ZERO)
+			notices.append("dash_nova")
 	if state == "exit":
 		update_effects(dt)
 		return
@@ -714,6 +735,7 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 			if not dash_hits.has(enemy) and player.distance_to(enemy.pos)<65:
 				dash_hits.append(enemy)
 				hit_enemy(enemy,14.0*relics.count("dashfire"))
+				effect("dash_cinder_hit",enemy.pos,0.36,dash_direction)
 	if melee and attack_timer <= 0:
 		attack_timer = attack_cd
 		attacks += 1
