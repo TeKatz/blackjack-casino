@@ -35,7 +35,10 @@ const SPECS = {
 	"portal_charge":[0.82,260,0.30,0.11,1.7],"portal_enter":[0.60,420,0.27,0.10,0.52],"descend":[0.45,210,0.4,0.18,0.55],"purchase":[0.25,950,0.4,0.16,1.5],
 	"navigate":[0.16,470,0.3,0.05,1.25],"unlock":[0.45,660,0.3,0.03,1.6],
 	"contract_accept":[0.24,420,0.35,0.12,1.35],"contract_complete":[0.66,720,0.24,0.04,1.85],
-	"forge_select":[0.62,190,0.55,0.35,1.65],"forge_guard":[0.33,230,0.35,0.22,0.63]
+	"forge_select":[0.62,190,0.55,0.35,1.65],"forge_guard":[0.33,230,0.35,0.22,0.63],
+	"synergy_complete":[0.67,850,0.22,0.04,1.80],"dash_nova":[0.42,115,0.67,0.65,0.45],
+	"boss_charge":[0.62,230,0.35,0.12,1.9],"boss_release":[0.65,95,0.55,0.46,0.52],
+	"boss_phase":[0.90,150,0.28,0.38,1.95]
 }
 var cache: Dictionary={}
 var voices: Array[AudioStreamPlayer]=[]
