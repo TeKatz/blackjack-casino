@@ -2217,6 +2217,11 @@ func build_and_boss_smoke() -> bool:
 		for enemy in enemies:
 			if enemy.kind in ["boss","rootking","hollowking"]: boss=enemy
 		if boss.is_empty(): return false
+		# The boss cannot be attacked before traversing its entrance corridor.
+		player=Vector2(boss_trigger_x+145,boss_arena.get_center().y)
+		tick(0.016,Vector2.ZERO,Vector2(boss.pos.x,boss.pos.y),false,false,false)
+		if not boss_awake: return false
+		boss_intro_timer=0.0
 		hit_enemy(boss,float(boss.max_hp)*8.0)
 		if absf(float(boss.hp)/float(boss.max_hp)-0.68)>0.002: return false
 		update_enemies(0.016)
@@ -2462,10 +2467,18 @@ func smoke_test() -> bool:
 	if not special_rooms_smoke():
 		push_error("Special chamber model smoke failed")
 		return false
-	if not class_relic_smoke(): return false
-	if not build_and_boss_smoke(): return false
-	if not encounter_variation_smoke(): return false
-	if not hub_perks_smoke(): return false
+	if not class_relic_smoke():
+		push_error("Regression failed: class_relic_smoke")
+		return false
+	if not build_and_boss_smoke():
+		push_error("Regression failed: build_and_boss_smoke")
+		return false
+	if not encounter_variation_smoke():
+		push_error("Regression failed: encounter_variation_smoke")
+		return false
+	if not hub_perks_smoke():
+		push_error("Regression failed: hub_perks_smoke")
+		return false
 	begin(123,"dealer_cards")
 	if state!="hub" or visited_count!=0 or dungeon.nodes[0].visited or not enemies.is_empty(): return false
 	if walls.size()!=6 or not blocked(HUB_BAR.get_center(),15) or not blocked(HUB_FORGE.get_center(),15) or not blocked(HUB_TABLE.get_center(),15) or not blocked(HUB_PORTAL,15): return false
