@@ -157,6 +157,17 @@ The first expanded-stage gameplay review identified five defects. This patch add
 
 The regression suite verifies all six initially traversable boss gates, trigger activation, lock timing and blocked return travel, including dash-scale movement. A live Godot scene test checks the new reactor/gate atlas dimensions, and all 26 map nodes must render at fixed width with no wrapped labels. Loading a new expedition clears gate collisions and animations. The workflow now prints a direct source diagnostic when a world script fails to preload, making future Godot parser errors easier to troubleshoot.
 
+## Follow-up quality pass: Objective HUD, service icons and stage II/III
+
+- **Ritual encounters:** The normal combat wave counter and its central Wave banner are limited to real wave-based combat/elite rooms, not ritual, timed survival or reactor objectives. Rituals display only their anchor count and ritual countdown.
+- **Survival encounters:** The timer is now **30 seconds**, down from 45. Both the progress bar and model smoke assertions use the shared `SURVIVAL_DURATION` constant. Survival still grants its normal room-clear reward.
+- **Dungeon Map:** Shrine, Event and Merchant (internal type `shop`) receive **three separately hand-drawn 24×24 pixel icons** in `art/pixel/service_map_icons.svg`, routed through `UI.room_icon()`. Existing route-node labels stay single-line with clipping.
+- **Archive and Forgotten Forge:** Upgrade/replace buttons display the actual equipped relic's 48-pixel icon, using the existing rarity-aware/class-aware relic atlas routing rather than a generic room symbol. The scene test checks that Archive's discard item image matches the item being discarded.
+- **Stage II / III floor identity:** The Elder Grove and Royal Ossuary now have repainted **non-recolor** 512×128 tile atlases. Each follows the calmer 85% base tile / 11% subtle / 4% landmark distribution applied to Stage I. Grove uses broad mossy flagstones, embedded roots and rare fungi; the Ossuary uses smooth stone slabs and rare archaic grave seals.
+- **Stage II / III boss entrances:** The Grove boss gate is a **living woven root barricade** with a glowing seed-lock. The Ossuary boss gate is a **descending iron/bone portcullis** with a skull latch. Both have original four-frame sprite sheets and independently synthesized close/lock cues. Both use the same physical gate lifecycle and sealed approach geometry verified on all six boss layouts. They are not recolors of the mechanical Vault shutter.
+- **Reactor room across all stages:** The reactor shell is stable and physical, while arcs animate. Stages II and III now have separate sprite atlases (`reactor_core_grove.svg` and `reactor_core_crypt.svg`), environmental floor patterns and distinct reaction sounds. Grove contains living-root conduits and an emerald seed crystal; the Ossuary contains a bone-braced rune reliquary and violet aether core. The existing Stage I cyan machine remains unchanged.
+- **Regression checks:** Scene smoke checks all service-icon atlas regions, each floor's reactor core dimensions, imported boss-gate animations and the Archive's selected relic icon. Model smoke checks that timed survival does not finish before 30 seconds.
+
 ## Build and tests
 
 From a Windows checkout run `pwsh ./tools/build_midnight_descent.ps1 -OutputDirectory artifacts/app/MidnightDescent`. The script downloads the pinned Godot 4.5.1 editor and Windows export template, imports the game, runs smoke tests and exports an executable and PCK alongside the casino application.
