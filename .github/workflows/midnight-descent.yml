@@ -41,6 +41,9 @@ jobs:
             "$godot" --headless --path "$project" "$@" 2>&1 | tee "artifacts/descent-smoke/$name.log"
             if grep -Eq 'SCRIPT ERROR:|Parse Error:|Failed to load script' "artifacts/descent-smoke/$name.log"; then
               echo "::error::Godot script error in $name"
+              # Direct compilation exposes the failing source line instead of
+              # only the menu.gd "Could not preload pixel_world.gd" symptom.
+              "$godot" --headless --path "$project" --script res://pixel_world.gd --check-only 2>&1 | tee "artifacts/descent-smoke/pixel-world-parse.log" || true
               exit 1
             fi
           }
