@@ -1913,8 +1913,61 @@ func class_relic_smoke() -> bool:
 		if not boss_found: return false
 	return true
 
+func route_and_damage_smoke() -> bool:
+	for floor in range(FLOOR_COUNT):
+		begin(970+floor)
+		floor_index=floor
+		dungeon.generate(seed_value,floor)
+		for source in range(Dungeon.BOSS):
+			room=source
+			state="route"
+			var current: Dictionary=dungeon.nodes[source]
+			var options: Array=route_options()
+			for destination in options:
+				if not dungeon.available(source).has(destination): return false
+				if int(dungeon.nodes[int(destination)].column)<=int(current.column): return false
+				if bool(dungeon.nodes[int(destination)].visited): return false
+			for neighbor in dungeon.available(source):
+				if int(dungeon.nodes[int(neighbor)].column)<=int(current.column) and options.has(neighbor): return false
+		room=0
+		state="route"
+		if route_options().size()!=3: return false
+		var first: int=int(route_options()[0])
+		if not travel(first): return false
+		# Even forced overlay reopening cannot reclaim past or sibling rooms.
+		state="route"
+		if travel(0): return false
+		if floor>=0 and dungeon.nodes[first].column!=1: return false
+		for neighbor in dungeon.available(first):
+			if int(dungeon.nodes[int(neighbor)].column)==1 and travel(int(neighbor)): return false
+	# Enemy attacks, including hostile projectiles and melee, use a shared
+	# 40% multiplier; environmental hazards must retain their old tuning.
+	begin(995)
+	player=HUB_PORTAL
+	if not enter_first_room(): return false
+	invulnerable=0
+	hp=100
+	hurt(10)
+	if absf(hp-86.0)>0.01: return false
+	invulnerable=0
+	hp=100
+	hurt(10,false)
+	if absf(hp-90.0)>0.01: return false
+	begin(996,"warden_guard",{"resolve":1,"recovery":1})
+	player=HUB_PORTAL
+	if not enter_first_room(): return false
+	invulnerable=0
+	hp=100
+	hurt(10)
+	if absf(hp-86.42)>0.02: return false
+	hp=70
+	class_room_clear()
+	if absf(hp-71.0)>0.01: return false
+	return true
+
 func smoke_test() -> bool:
 	if not dungeon.smoke_test(): return false
+	if not route_and_damage_smoke(): return false
 	if not class_relic_smoke(): return false
 	if not build_and_boss_smoke(): return false
 	if not encounter_variation_smoke(): return false
