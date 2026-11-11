@@ -298,7 +298,7 @@ func _draw() -> void:
 			draw_rect(Rect2(0,715-i*5,1280,5),tint)
 
 func hub_keycap(rect: Rect2, key_text: String, accent: Color) -> void:
-	draw_rect(rect.translated(Vector2(0,3)),Color("#100c19"))
+	draw_rect(Rect2(rect.position+Vector2(0,3),rect.size),Color("#100c19"))
 	draw_rect(rect,Color("#30253d"))
 	draw_rect(rect,accent,false,1)
 	draw_rect(Rect2(rect.position+Vector2(2,2),Vector2(rect.size.x-4,3)),Color(accent,0.33))
@@ -308,7 +308,7 @@ func draw_hub_action_prompt(anchor: Vector2, caption: String, alpha: float, acce
 	if alpha<=0.01: return
 	var p:=anchor+Vector2(-width*0.5,-65+sin(clock*2.6)*2.0)
 	var rect:=Rect2(p,Vector2(width,43))
-	draw_rect(rect.translated(Vector2(3,5)),Color(0.02,0.01,0.04,0.55*alpha))
+	draw_rect(Rect2(rect.position+Vector2(3,5),rect.size),Color(0.02,0.01,0.04,0.55*alpha))
 	draw_rect(rect,Color(0.11,0.075,0.18,0.95*alpha))
 	draw_rect(rect,Color(accent,alpha),false,2)
 	draw_rect(Rect2(p+Vector2(4,4),Vector2(width-8,2)),Color(accent,0.38*alpha))
