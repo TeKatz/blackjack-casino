@@ -18,6 +18,19 @@ const HUB_STOOL_X := [275.0,380.0,485.0,590.0,695.0]
 const HUB_CARD_GUEST_LEFT := Rect2(393,468,49,93)
 const HUB_CARD_GUEST_RIGHT := Rect2(607,468,49,93)
 const HUB_SEAT_HOLD := 1.0
+# Strong run-scoped choices, separate from persistent casino progression.
+const FORGE_DATA := {
+ "rift_echo":{"en":"Echo Anvil","de":"Echosschmiede","en_effect":"Each primary attack releases a delayed spectral copy at 85% damage.","de_effect":"Jeder Hauptangriff entfesselt ein verzögertes Geistergeschoss mit 85 % Schaden.","en_cost":"Special cooldown +40%.","de_cost":"Spezial-Cooldown +40 %."},
+ "stormheart":{"en":"Stormheart","de":"Sturmherz","en_effect":"Every special launches FIVE extra arcane bolts.","de_effect":"Jeder Spezialangriff entfesselt FÜNF zusätzliche Arkangeschosse.","en_cost":"Maximum HP -30%.","de_cost":"Maximale LP -30 %."},
+ "void_stride":{"en":"Void Stride","de":"Leerenritt","en_effect":"Dash twice as often and blast nearby enemies with every dash.","de_effect":"Dash doppelt so häufig und entfessle bei jedem Dash eine Schadenswelle.","en_cost":"Maximum HP -25%.","de_cost":"Maximale LP -25 %."},
+ "iron_aegis":{"en":"Iron Aegis","de":"Eisenägis","en_effect":"Negate the first TWO hits in each combat room; shatter into a shockwave.","de_effect":"Blocke ZWEI Treffer pro Kampfraum, danach explodiert der Schild.","en_cost":"Movement speed -25%.","de_cost":"Bewegungstempo -25 %."}
+}
+const CONTRACT_DATA := {
+ "slayer":{"en":"Bloodied Hands","de":"Blutige Hände","en_goal":"Defeat 12 enemies.","de_goal":"Besiege 12 Gegner.","en_reward":"Gilded Edge: +9 main damage.","de_reward":"Goldene Klinge: +9 Hauptschaden.","goal":12},
+ "untouched":{"en":"Untouchable","de":"Unberührbar","en_goal":"Clear 2 combat rooms without losing HP.","de_goal":"Schließe 2 Kampfräume ohne LP-Verlust ab.","en_reward":"Iron Ward: +4 armor.","de_reward":"Eisenwall: +4 Rüstung.","goal":2},
+ "hoarder":{"en":"The Collector","de":"Der Sammler","en_goal":"Hold 30 shards at once on floor 1.","de_goal":"Besitze 30 Splitter gleichzeitig auf Ebene 1.","en_reward":"Arcane Focus: +11 special damage.","de_reward":"Arkaner Fokus: +11 Spezialschaden.","goal":30},
+ "spellweaver":{"en":"Arcane Trial","de":"Arkane Prüfung","en_goal":"Use 12 special attacks.","de_goal":"Nutze 12 Spezialangriffe.","en_reward":"Mana Sigil: 15% faster specials.","de_reward":"Manasiegel: 15 % schnellere Spezialangriffe.","goal":12}
+}
 const ROOM_COUNT := 26
 var environment_timer := 0.0
 var shot_style := ""
@@ -98,6 +111,14 @@ var shots: Array[Dictionary] = []
 var walls: Array[Rect2] = []
 var effects: Array[Dictionary] = []
 var notices: Array[String] = []
+var forge_id := ""
+var forge_offers: Array[String] = []
+var forge_guard_charges := 0
+var contract_id := ""
+var contract_offers: Array[String] = []
+var contract_progress := 0
+var contract_completed := false
+var contract_clean_room := true
 
 func begin(value: int, loadout: String = "warden_guard", upgrades: Dictionary = {}) -> void:
 	seed_value = value
@@ -145,7 +166,72 @@ func begin(value: int, loadout: String = "warden_guard", upgrades: Dictionary = 
 	elapsed = 0.0
 	relics.clear()
 	notices.clear()
+	forge_id=""
+	forge_guard_charges=0
+	contract_id=""
+	contract_progress=0
+	contract_completed=false
+	contract_clean_room=true
+	forge_offers=roll_hub_offers(FORGE_DATA.keys(),1031)
+	contract_offers=roll_hub_offers(CONTRACT_DATA.keys(),4001)
 	enter_hub()
+
+func roll_hub_offers(source: Array, salt: int) -> Array[String]:
+	# An isolated RNG prevents this hub roll from perturbing the dungeon seed.
+	var pool: Array=source.duplicate()
+	var picker:=RandomNumberGenerator.new()
+	picker.seed=seed_value+salt
+	var result: Array[String]=[]
+	for i in range(mini(3,pool.size())):
+		var index: int=picker.randi_range(0,pool.size()-1)
+		result.append(str(pool[index]))
+		pool.remove_at(index)
+	return result
+
+func select_hub_forge(id: String) -> bool:
+	if state!="hub" or forge_id!="" or not forge_offers.has(id): return false
+	forge_id=id
+	match id:
+		"rift_echo": special_cd*=1.40
+		"stormheart": max_hp=maxf(20.0,max_hp*0.70)
+		"void_stride":
+			dash_cooldown=maxf(0.38,dash_cooldown*0.50)
+			max_hp=maxf(20.0,max_hp*0.75)
+		"iron_aegis": speed*=0.75
+	hp=minf(hp,max_hp)
+	notices.append("forge_select")
+	return true
+
+func select_hub_contract(id: String) -> bool:
+	if state!="hub" or contract_id!="" or not contract_offers.has(id): return false
+	contract_id=id
+	contract_progress=0
+	contract_completed=false
+	notices.append("contract_accept")
+	return true
+
+func advance_contract(id: String, quantity: int=1) -> void:
+	if contract_id!=id or contract_completed or state=="hub": return
+	contract_progress=mini(int(CONTRACT_DATA[id]["goal"]),contract_progress+quantity)
+	if contract_progress>=int(CONTRACT_DATA[id]["goal"]): complete_contract()
+
+func check_shard_contract() -> void:
+	if contract_id!="hoarder" or contract_completed or floor_index!=0: return
+	contract_progress=mini(int(CONTRACT_DATA["hoarder"]["goal"]),maxi(0,shards))
+	if contract_progress>=int(CONTRACT_DATA["hoarder"]["goal"]): complete_contract()
+
+func complete_contract() -> void:
+	if contract_completed or contract_id=="": return
+	contract_completed=true
+	var reward_id: String={"slayer":"blade","untouched":"ward","hoarder":"focus","spellweaver":"mana"}[contract_id]
+	relics.append(reward_id)
+	match reward_id:
+		"blade": damage+=9
+		"ward": armor+=4
+		"focus": bolt_damage+=11
+		"mana": special_cd=maxf(0.2,special_cd*0.85)
+	notices.append("contract_complete")
+	effect("contract_complete",player,1.0,Vector2.ZERO)
 
 func enter_hub() -> void:
 	# This tavern is outside the route graph: no free combat progress or rewards.
@@ -238,6 +324,8 @@ func enter_room() -> void:
 	offers.clear()
 	walls.clear()
 	room_kind = dungeon.kind(room)
+	contract_clean_room=true
+	forge_guard_charges=2 if forge_id=="iron_aegis" and room_kind in ["fight","elite","boss"] else 0
 	environment_timer=2.5
 	environment_cycle=0
 	wave=1
