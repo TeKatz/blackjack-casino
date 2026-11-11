@@ -310,8 +310,8 @@ func class_special_attack() -> void:
 	if relics.has("w_lance"):
 		for i in range(mini(3,relics.count("w_lance"))):
 			var direction: Vector2=aim.rotated((float(i)-float(mini(3,relics.count("w_lance"))-1)*0.5)*0.16)
-			shoot(player+aim*25,direction*680,false,bolt_damage*1.25)
-			shots[-1]["pierce"]=mini(6,int(shots[-1].pierce)+2)
+			shoot(player+aim*25,direction*680,false,bolt_damage*1.25*(1.0+0.20*maxi(0,relics.count("w_lance")-3)))
+			if not shots.is_empty(): shots[-1]["pierce"]=mini(6,int(shots[-1].pierce)+2)
 		effect("class_lance",player,0.38,aim)
 		notices.append("class_lance")
 	if relics.has("d_ace") and specials%5==0:
@@ -467,7 +467,7 @@ func class_wisps_tick(dt: float) -> void:
 		if nearest.is_empty(): continue
 		var shots_per_orb: int=2 if converged else 1
 		for j in range(shots_per_orb):
-			shoot(origin,origin.direction_to(nearest.pos).rotated((float(j)-float(shots_per_orb-1)*0.5)*0.18)*510,false,bolt_damage*0.45)
+			shoot(origin,origin.direction_to(nearest.pos).rotated((float(j)-float(shots_per_orb-1)*0.5)*0.18)*510,false,bolt_damage*(0.45+0.10*float(maxi(0,relics.count("a_orbs")-4))))
 		effect("class_wisp",origin,0.26,origin.direction_to(nearest.pos))
 		notices.append("class_wisp")
 
