@@ -635,6 +635,37 @@ func run_scene_smoke() -> void:
 				push_error("Decor footprint overlap on floor %d room %d" % [floor,room_id])
 				get_tree().quit(24)
 				return
+	# Large-stage art, centered camera and boss-corridor reveal are exercised
+	# in the live rendering scene, not only by the pure layout generator.
+	for stage in range(3):
+		var surface: Texture2D=world.EXPANDED_TILES[stage]
+		if surface.get_width()!=512 or surface.get_height()!=128:
+			push_error("Missing expanded stage art: "+str(stage))
+			get_tree().quit(42)
+			return
+		run.floor_index=stage
+		run.dungeon.generate(9001,stage)
+		run.room=0
+		run.enter_room()
+		camera_room_key=""
+		update_chamber_camera(0.016)
+		world.update_view(0.0)
+		if not run.large_room or world.position!=camera_offset or (run.player+camera_offset-Vector2(640,360)).length()>42:
+			push_error("Player-centered camera lost its world/HUD separation")
+			get_tree().quit(43)
+			return
+		run.room=Model.Dungeon.BOSS
+		run.enter_room()
+		if not run.large_room or run.boss_awake or run.enemies.size()<3:
+			push_error("Boss was not staged behind its approach")
+			get_tree().quit(44)
+			return
+		run.player=Vector2(run.boss_trigger_x+140,run.boss_arena.get_center().y)
+		run.tick(0.016,Vector2.ZERO,run.boss_arena.get_center(),false,false,false)
+		if not run.boss_awake or run.boss_intro_timer<=0 or not run.notices.has("boss_reveal"):
+			push_error("Walking through the boss arch failed to initiate the reveal")
+			get_tree().quit(45)
+			return
 	print("Midnight Descent gameplay scene smoke PASS")
 	get_tree().quit()
 
