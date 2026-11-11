@@ -707,7 +707,7 @@ func start_special_combat(node: Dictionary) -> void:
 			for i in range(3):
 				spawn_enemy(str(family[i]),Vector2(495+i*190,380+i%2*90))
 		"survival":
-			special_timer=45.0
+			special_timer=30.0
 			special_wave_timer=7.0
 			for i in range(5):
 				spawn_enemy(str(family[i%family.size()]),Vector2(520+i*130,230+i%2*280))
@@ -2452,8 +2452,9 @@ func special_rooms_smoke() -> bool:
 				if state!="reward" or offers.size()!=3 or shards<20: return false
 				if not choose_relic(0) or state!="exit": return false
 			"survival":
-				if state!="fight" or special_timer!=45: return false
-				if not tick_special_room(45.01) or state!="reward" or offers.size()!=3: return false
+				if state!="fight" or special_timer!=30: return false
+				if not tick_special_room(29.99) and state!="fight": return false
+				if not tick_special_room(0.02) or state!="reward" or offers.size()!=3: return false
 				if not choose_relic(1) or state!="exit": return false
 			"bounty":
 				var targets:=0
