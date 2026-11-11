@@ -111,11 +111,22 @@ static func build(floor: int, variation: int, boss: bool=false) -> Dictionary:
     var origin: Vector2=Vector2(180,700)
     var exit_point: Vector2=Vector2(regions[-1].end.x-120,700)
     var boss_point: Vector2=Vector2(boss_zone.position.x+boss_zone.size.x*0.62,boss_zone.get_center().y)
+    # Gate sits in the *exclusive* approach corridor. Placing a door in the
+    # overlap with the huge arena leaves a bypass around its upper/lower end.
+    var gate: Rect2=Rect2()
+    if boss:
+        var approach: Rect2=regions[-2]
+        var previous: Rect2=regions[-3]
+        var left: float=maxf(previous.end.x,approach.position.x)+35.0
+        var right: float=minf(boss_zone.position.x,approach.end.x)-35.0
+        var gate_x: float=(left+right)*0.5
+        gate=Rect2(gate_x-27,approach.position.y-5,54,approach.size.y+10)
     return {
         "regions":regions,"walls":walls,"bounds":bounds,
         "spawn":origin,"exit":exit_point,"boss_arena":boss_zone,
         "boss_spawn":boss_point,
         "boss_trigger":boss_zone.position.x+105,
+        "boss_gate":gate,
         "name":(BOSS_NAMES[f][index] if boss else PLAN_NAMES[f][index]),
         "de_name":(BOSS_NAMES_DE[f][index] if boss else PLAN_NAMES_DE[f][index]),
         "floor_name":FLOOR_NAMES[f],"de_floor_name":FLOOR_NAMES_DE[f],
@@ -145,6 +156,12 @@ static func smoke_test() -> bool:
                 if not accessible(layout.spawn,15,regions,walls): return false
                 if not accessible(layout.exit,25,regions,walls): return false
                 if boss and not accessible(layout.boss_spawn,32,regions,walls): return false
+                if boss:
+                    var door: Rect2=layout.boss_gate
+                    var approach: Rect2=regions[-2]
+                    if door.size.x<50 or door.size.y<150 or not approach.encloses(door.grow(-6)): return false
+                    if door.position.x<=regions[-3].end.x or door.end.x>=regions[-1].position.x: return false
+                    if not accessible(layout.boss_spawn,30,regions,walls+[door]): return false
                 # Flood-fill at 24px resolution. Every course must be walkable
                 # from the entrance to the far gate, even through bottlenecks.
                 var origin: Vector2=layout.spawn
