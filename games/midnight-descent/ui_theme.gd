@@ -73,7 +73,7 @@ static func atlas(texture: Texture2D, index: int) -> AtlasTexture:
 static func panel(fill: Color, edge: Color, margin: int = 12) -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()
 	s.bg_color = fill
-	s.border_color = Color(edge, 0.72)
+	s.border_color = Color(edge, edge.a * 0.72)
 	s.set_border_width_all(1)
 	s.border_width_top = 2
 	s.set_corner_radius_all(12)
