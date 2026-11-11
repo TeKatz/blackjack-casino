@@ -11,7 +11,7 @@ var achievements: Array[String] = []
 var deepest_boss := 0
 var character_wins := {"warden":0,"dealer":0,"arcanist":0,"soulbinder":0}
 var unlocked: Array[String] = ["warden_guard"]
-var ranks := {"vitality":0,"power":0,"agility":0,"alchemy":0}
+var ranks := {"vitality":0,"power":0,"agility":0,"alchemy":0,"arcane":0,"fortune":0}
 var discovered: Array[String] = []
 var selected := "warden_guard"
 var last_reward := 0
@@ -87,6 +87,7 @@ func settle(run) -> int:
 			achievements.append(mastery)
 			essence+=30
 	last_reward = int(run.shards/3.0)+maxi(0,run.visited_count-1)*4+(25 if run.state=="victory" else 0)
+	last_reward += int(floor(last_reward*0.05*int(ranks.fortune)))
 	essence += last_reward
 	for id in run.relics:
 		if not discovered.has(id): discovered.append(id)

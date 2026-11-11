@@ -64,7 +64,9 @@ const UPGRADES := {
 	"vitality":["Vitality","Vitalität","+5 starting HP per rank","+5 Start-LP je Rang",12,5],
 	"power":["Power","Kraft","+2 main attack damage per rank","+2 Hauptangriffsschaden je Rang",15,5],
 	"agility":["Agility","Agilität","+8 movement speed per rank","+8 Bewegungstempo je Rang",12,4],
-	"alchemy":["Alchemy","Alchemie","+5 active heal per rank","+5 aktive Heilung je Rang",14,4]
+	"alchemy":["Alchemy","Alchemie","+5 active heal per rank","+5 aktive Heilung je Rang",14,4],
+	"arcane":["Arcane mastery","Arkane Meisterschaft","+3 starting special damage per rank","+3 Start-Spezialschaden je Rang",18,4],
+	"fortune":["Fortune","Fortuna","+5% expedition essence per rank","+5 % Expeditionsessenz je Rang",20,4]
 }
 static func rarity(id: String) -> int:
 	var index: int = RELICS[id][4]

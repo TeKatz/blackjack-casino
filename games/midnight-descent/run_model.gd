@@ -109,7 +109,7 @@ func begin(value: int, loadout: String = "warden_guard", upgrades: Dictionary = 
 	damage = float(spec.damage)+2*int(upgrades.get("power",0))
 	speed = float(spec.speed)+8*int(upgrades.get("agility",0))
 	armor = 0.0
-	bolt_damage = spec.bolt
+	bolt_damage = float(spec.bolt)+3*int(upgrades.get("arcane",0))
 	dash_cooldown = spec.dash
 	attack_cd = spec.attack
 	special_cd = spec.special

@@ -9,6 +9,17 @@ const Content = preload("res://content.gd")
 const Progress = preload("res://progress.gd")
 const UI = preload("res://ui_theme.gd")
 const SoundBank = preload("res://sound_bank.gd")
+const TechTree = preload("res://tech_tree.gd")
+var content_panel: PanelContainer
+var preview_panel: PanelContainer
+var nav_buttons: Dictionary = {}
+var page_tween: Tween
+var tree: Control
+var tree_key := "vitality"
+var tree_rank := 1
+var tree_detail: Label
+var tree_buy: Button
+var preview_clock := 0.0
 var audio = SoundBank.new()
 var progress = Progress.new()
 var codex_page := 0
@@ -68,62 +79,137 @@ func label(value: String, font_size: int, color: Color) -> Label:
 	return node
 
 func build_shell() -> void:
-	backdrop = Backdrop.new()
+	backdrop=Backdrop.new()
 	add_child(backdrop)
 	backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	backdrop.set("motion",get_tree().get_meta("descent_menu_motion",true))
-	var margins := MarginContainer.new()
+	var margins:=MarginContainer.new()
 	margins.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	for edge in ["left", "right", "top", "bottom"]:
-		margins.add_theme_constant_override("margin_" + edge, 34)
+	for edge in ["left","right","top","bottom"]: margins.add_theme_constant_override("margin_"+edge,26)
 	add_child(margins)
-	var frame := VBoxContainer.new()
-	frame.add_theme_constant_override("separation", 8)
+	var frame:=VBoxContainer.new()
+	frame.add_theme_constant_override("separation",12)
 	margins.add_child(frame)
-	frame.add_child(label("THE MIDNIGHT CLUB   /   ROGUELITE", 14, GOLD))
-	title_label = label("MIDNIGHT DESCENT", 48, LIGHT)
-	title_label.add_theme_color_override("font_shadow_color",Color("#08060e"))
-	title_label.add_theme_constant_override("shadow_offset_y",4)
+	var header:=PanelContainer.new()
+	header.add_theme_stylebox_override("panel",UI.panel(Color("#171222ed"),Color("#826b87"),10))
+	frame.add_child(header)
+	var nav:=HBoxContainer.new()
+	nav.add_theme_constant_override("separation",8)
+	header.add_child(nav)
+	var brand:=label("MIDNIGHT / DESCENT",21,GOLD)
+	brand.custom_minimum_size=Vector2(235,0)
+	nav.add_child(brand)
+	var spacer:=Control.new()
+	spacer.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	nav.add_child(spacer)
+	for entry in [["home","Gate","Tor"],["expedition","Expedition","Expedition"],["progress","Tech tree","Tech Tree"],["sets","Loadouts","Start-Sets"],["codex","Codex","Kodex"],["settings","Settings","Optionen"]]:
+		var id: String=entry[0]
+		var button:=Button.new()
+		button.text=tr_text(entry[1],entry[2])
+		button.custom_minimum_size=Vector2(110,40)
+		button.add_theme_font_size_override("font_size",15)
+		UI.style_button(button,GOLD)
+		button.mouse_entered.connect(func(): audio.play("hover"))
+		button.pressed.connect(func(): show_page(id))
+		nav.add_child(button)
+		nav_buttons[id]=button
+	title_label=label("",25,LIGHT)
 	frame.add_child(title_label)
-	detail_label = label("", 18, MUTED)
-	detail_label.custom_minimum_size = Vector2(0, 29)
+	detail_label=label("",16,MUTED)
 	frame.add_child(detail_label)
-	var horizontal := HBoxContainer.new()
-	horizontal.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	horizontal.add_theme_constant_override("separation", 24)
+	var horizontal:=HBoxContainer.new()
+	horizontal.size_flags_vertical=Control.SIZE_EXPAND_FILL
+	horizontal.add_theme_constant_override("separation",18)
 	frame.add_child(horizontal)
-	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(580,0)
-	panel.add_theme_stylebox_override("panel", box_style(Color("#161124f2"), Color("#876a85"),2))
-	horizontal.add_child(panel)
-	body = VBoxContainer.new()
-	body.add_theme_constant_override("separation", 6)
-	panel.add_child(body)
-	var spacer := Control.new()
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	horizontal.add_child(spacer)
-	var right := PanelContainer.new()
-	right.custom_minimum_size = Vector2(350,0)
-	right.size_flags_vertical = Control.SIZE_SHRINK_END
-	right.add_theme_stylebox_override("panel",box_style(Color("#171224ee"),Color("#8c6d7e"),2))
-	horizontal.add_child(right)
-	preview = VBoxContainer.new()
-	preview.add_theme_constant_override("separation",8)
-	right.add_child(preview)
-	preview_title = label("",23,GOLD)
+	content_panel=PanelContainer.new()
+	content_panel.custom_minimum_size=Vector2(620,0)
+	content_panel.add_theme_stylebox_override("panel",UI.panel(Color("#181326ed"),Color("#8c6c8b"),18))
+	horizontal.add_child(content_panel)
+	body=VBoxContainer.new()
+	body.add_theme_constant_override("separation",8)
+	content_panel.add_child(body)
+	var space:=Control.new()
+	space.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	space.mouse_filter=Control.MOUSE_FILTER_IGNORE
+	horizontal.add_child(space)
+	preview_panel=PanelContainer.new()
+	preview_panel.custom_minimum_size=Vector2(320,0)
+	preview_panel.size_flags_vertical=Control.SIZE_SHRINK_END
+	preview_panel.add_theme_stylebox_override("panel",UI.panel(Color("#1c1529f0"),Color("#a5868b"),16))
+	horizontal.add_child(preview_panel)
+	preview=VBoxContainer.new()
+	preview.add_theme_constant_override("separation",10)
+	preview_panel.add_child(preview)
+	preview_title=label("",23,GOLD)
 	preview.add_child(preview_title)
-	preview_sprite = TextureRect.new()
-	preview_sprite.custom_minimum_size = Vector2(0,112)
-	preview_sprite.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	preview_sprite.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	preview_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	preview_sprite=TextureRect.new()
+	preview_sprite.custom_minimum_size=Vector2(0,128)
+	preview_sprite.expand_mode=TextureRect.EXPAND_IGNORE_SIZE
+	preview_sprite.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	preview_sprite.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
 	preview.add_child(preview_sprite)
-	preview_detail = label("",16,LIGHT)
+	preview_detail=label("",17,LIGHT)
 	preview.add_child(preview_detail)
-	preview_info = label("",14,MUTED)
+	preview_info=label("",14,MUTED)
 	preview.add_child(preview_info)
-	frame.add_child(label(tr_text("THE FIRST DESCENT  •  PLAYABLE ALPHA   |   ESC  BACK", "DER ERSTE ABSTIEG  •  SPIELBARE ALPHA   |   ESC  ZURÜCK"), 13, GOLD))
+	var footer:=HBoxContainer.new()
+	frame.add_child(footer)
+	footer.add_child(label("THE MIDNIGHT CLUB  /  ROGUELITE",12,GOLD))
+	var fill:=Control.new()
+	fill.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	footer.add_child(fill)
+	footer.add_child(label(tr_text("ESC  •  BACK TO GATE","ESC  •  ZURÜCK ZUM TOR"),12,MUTED))
+
+func _process(dt: float) -> void:
+	if not is_instance_valid(preview_sprite) or not get_tree().get_meta("descent_menu_motion",true): return
+	preview_clock+=dt
+	if preview_sprite.texture is AtlasTexture and page in ["home","expedition","sets","codex"]:
+		var texture: AtlasTexture=preview_sprite.texture
+		texture.region=Rect2(int(preview_clock*2)%2*32,0,32,32)
+
+func make_tree() -> void:
+	tree=TechTree.new()
+	body.add_child(tree)
+	tree.motion=get_tree().get_meta("descent_menu_motion",true)
+	tree.configure(progress,german,tree_key,tree_rank)
+	tree.rank_selected.connect(select_tree_rank)
+	tree_detail=label("",16,LIGHT)
+	body.add_child(tree_detail)
+	tree_buy=add_action("",buy_tree_rank)
+	tree_buy.custom_minimum_size=Vector2(0,44)
+	update_tree_detail()
+
+func select_tree_rank(id: String, rank: int) -> void:
+	tree_key=id
+	tree_rank=rank
+	audio.play("click")
+	tree.configure(progress,german,tree_key,tree_rank)
+	update_tree_detail()
+
+func update_tree_detail() -> void:
+	var item: Array=Content.UPGRADES[tree_key]
+	var owned: int=progress.ranks[tree_key]
+	tree_detail.text=item[1 if german else 0]+"  •  "+item[3 if german else 2]+"  |  "+tr_text("Rank","Rang")+" %d/%d" % [owned,item[5]]
+	var can_buy: bool=tree_rank==owned+1 and tree_rank<=int(item[5]) and progress.essence>=progress.cost(tree_key)
+	tree_buy.disabled=not can_buy
+	if tree_rank<=owned: tree_buy.text=tr_text("Rank acquired","Rang erworben")
+	elif tree_rank!=owned+1: tree_buy.text=tr_text("Requires previous rank","Benötigt vorherigen Rang")
+	else: tree_buy.text=tr_text("Unlock rank","Rang freischalten")+" %d  •  %d " % [tree_rank,progress.cost(tree_key)]+tr_text("essence","Essenz")
+	preview_title.text=item[1 if german else 0].to_upper()
+	preview_detail.text=item[3 if german else 2]
+	preview_info.text=tr_text("Available essence","Verfügbare Essenz")+"   "+str(progress.essence)+"\n"+tr_text("Select a node, then unlock its rank.","Wähle einen Knoten und schalte seinen Rang frei.")
+	preview_sprite.texture=UI.atlas(UI.RELICS,TechTree.ICONS[TechTree.KEYS.find(tree_key)])
+
+func buy_tree_rank() -> void:
+	if tree_rank!=progress.ranks[tree_key]+1: return
+	if progress.buy_upgrade(tree_key):
+		audio.play("purchase")
+		if not "--smoke-test" in OS.get_cmdline_user_args(): progress.save()
+		tree.configure(progress,german,tree_key,tree_rank)
+		update_tree_detail()
+		if get_tree().get_meta("descent_menu_motion",true):
+			tree.modulate=Color(1.35,1.25,1.05)
+			tree.create_tween().tween_property(tree,"modulate",Color.WHITE,0.5)
 
 func atlas_icon(texture: Texture2D, region: Rect2) -> AtlasTexture:
 	var icon := AtlasTexture.new()
@@ -209,6 +295,11 @@ func add_action(caption: String, callback: Callable, locked: bool = false) -> Bu
 func show_page(next: String) -> void:
 	if page!=next: audio.play("navigate")
 	page = next
+	content_panel.custom_minimum_size=Vector2(790 if page=="progress" else 620,0)
+	preview_panel.visible=page!="home"
+	content_panel.add_theme_stylebox_override("panel",UI.panel(Color("#181326c9") if page=="home" else Color("#181326f5"),Color("#9b7d91"),16))
+	for id in nav_buttons: UI.style_button(nav_buttons[id],GOLD,id==page)
+	title_label.text={"home":tr_text("THE GATE","DAS TOR"),"expedition":tr_text("CHOOSE YOUR LOADOUT","WÄHLE DEIN START-SET"),"progress":tr_text("SOUL CONSTELLATION","SEELENKONSTELLATION"),"sets":tr_text("CHARACTERS & SETS","CHARAKTERE & SETS"),"codex":tr_text("RELIC ARCHIVE","RELIKTARCHIV"),"settings":tr_text("SETTINGS","EINSTELLUNGEN")}.get(page,"")
 	for child in body.get_children():
 		body.remove_child(child)
 		child.queue_free()
@@ -216,16 +307,37 @@ func show_page(next: String) -> void:
 	update_preview()
 	match page:
 		"home":
-			detail_label.text = tr_text("Fortune ends at the door. The depths are waiting.", "Das Glück endet an der Tür. Die Tiefen warten.")
-			body.add_child(label(tr_text("THE GATE", "DAS TOR"), 14, GOLD))
-			body.add_child(label(tr_text("Explore three depths, forge your build and return stronger.","Erkunde drei Ebenen, forme deinen Build und kehre stärker zurück."),18,LIGHT))
-			body.add_child(label(tr_text("Soul essence","Seelenessenz")+"   "+str(progress.essence)+"     •     "+tr_text("Victories","Siege")+"   "+str(progress.wins),15,GOLD))
-			var primary := add_action(tr_text("New expedition  ›", "Neue Expedition  ›"), func(): show_page("expedition"))
-			primary.add_theme_stylebox_override("normal",box_style(Color("#6a4936"),GOLD,2))
-			add_action(tr_text("Progression", "Fortschritt"), func(): show_page("progress"))
-			add_action(tr_text("Codex", "Kodex"), func(): show_page("codex"))
-			add_action(tr_text("Settings", "Einstellungen"), func(): show_page("settings"))
-			add_action(tr_text("Return to casino", "Zurück zum Casino"), func(): get_tree().quit())
+			detail_label.text=tr_text("Fortune ends at the door. The depths are waiting.","Das Glück endet an der Tür. Die Tiefen warten.")
+			var hero:=label("MIDNIGHT\nDESCENT",51,LIGHT)
+			hero.add_theme_color_override("font_shadow_color",Color("#08060e"))
+			hero.add_theme_constant_override("shadow_offset_y",5)
+			body.add_child(hero)
+			body.add_child(label(tr_text("THREE DEPTHS  /  78 ROOMS  /  48 RELICS","DREI EBENEN  /  78 RÄUME  /  48 RELIKTE"),14,GOLD))
+			var primary:=add_action(tr_text("Begin expedition  ›","Expedition beginnen  ›"),func(): show_page("expedition"))
+			primary.custom_minimum_size=Vector2(0,65)
+			primary.add_theme_font_size_override("font_size",24)
+			UI.style_button(primary,GOLD,true)
+			var cards:=GridContainer.new()
+			cards.columns=2
+			cards.add_theme_constant_override("h_separation",10)
+			cards.add_theme_constant_override("v_separation",10)
+			body.add_child(cards)
+			for entry in [["progress",tr_text("Soul constellation","Seelenkonstellation"),tr_text("Permanent upgrades","Permanente Upgrades"),3],["sets",tr_text("Characters","Charaktere"),tr_text("Eight starting sets","Acht Start-Sets"),4],["codex",tr_text("Relic archive","Reliktarchiv"),tr_text("Discover your builds","Entdecke deine Builds"),6],["settings",tr_text("Settings","Einstellungen"),tr_text("Display & audio","Anzeige & Audio"),14]]:
+				var id: String=entry[0]
+				var button:=Button.new()
+				button.text=entry[1]+"\n"+entry[2]
+				button.icon=UI.atlas(UI.RELICS,int(entry[3]))
+				button.expand_icon=true
+				button.add_theme_constant_override("icon_max_width",42)
+				button.custom_minimum_size=Vector2(0,64)
+				button.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+				button.add_theme_font_size_override("font_size",16)
+				UI.style_button(button,Color("#ad90d5"))
+				button.mouse_entered.connect(func(): audio.play("hover"))
+				button.pressed.connect(func(): show_page(id))
+				cards.add_child(button)
+			body.add_child(label(tr_text("Essence","Essenz")+"  "+str(progress.essence)+"    •    "+tr_text("Victories","Siege")+"  "+str(progress.wins)+"    •    "+tr_text("Deepest boss","Tiefster Boss")+"  %d/3" % progress.deepest_boss,15,GOLD))
+			add_action(tr_text("Return to casino","Zurück zum Casino"),func(): get_tree().quit())
 		"expedition":
 			detail_label.text = tr_text("Choose a loadout. Each run starts fresh.","Wähle ein Start-Set. Jeder Run beginnt neu.")
 			body.add_child(label(tr_text("AVAILABLE LOADOUTS","VERFÜGBARE START-SETS"),14,GOLD))
@@ -244,19 +356,9 @@ func show_page(next: String) -> void:
 			add_action(tr_text("Start run  ›","Run starten  ›"),start_run)
 			add_action(tr_text("Back","Zurück"),func(): show_page("home"))
 		"progress":
-			detail_label.text = tr_text("Invest essence earned from completed runs.","Investiere Seelenessenz aus abgeschlossenen Runs.")
-			body.add_child(label(tr_text("ESSENCE","ESSENZ")+"   "+str(progress.essence),20,GOLD))
+			detail_label.text=tr_text("Six linked paths. Select a rank to inspect and unlock it.","Sechs verbundene Pfade. Wähle einen Rang zum Ansehen und Freischalten.")
+			make_tree()
 			if not progress.save_ok: body.add_child(label(tr_text("Save failed","Speichern fehlgeschlagen"),14,Color("#ff839a")))
-			for key in Content.UPGRADES:
-				var upgrade: Array = Content.UPGRADES[key]
-				var id: String = key
-				var rank: int = progress.ranks[key]
-				var caption: String = upgrade[1 if german else 0]+"  %d/%d  •  " % [rank,upgrade[5]]+str(progress.cost(key))+"  |  "+upgrade[3 if german else 2]
-				var button := add_action(caption,func(): buy_rank(id),rank>=upgrade[5] or progress.essence<progress.cost(key))
-				button.tooltip_text = upgrade[3 if german else 2]
-				button.add_theme_font_size_override("font_size",15)
-			add_action(tr_text("Unlock characters & sets  ›","Charaktere & Sets freischalten  ›"),func(): show_page("sets"))
-			add_action(tr_text("Back","Zurück"),func(): show_page("home"))
 		"sets":
 			detail_label.text = tr_text("Unlock distinct starting playstyles.","Schalte neue Start-Spielstile frei.")
 			body.add_child(label(tr_text("ESSENCE","ESSENZ")+"   "+str(progress.essence),20,GOLD))
@@ -321,6 +423,13 @@ func show_page(next: String) -> void:
 			add_action(tr_text("Back", "Zurück"), func(): show_page("home"))
 	if not action_buttons.is_empty():
 		action_buttons[0].grab_focus()
+	if is_instance_valid(page_tween): page_tween.kill()
+	body.modulate=Color.WHITE
+	if get_tree().get_meta("descent_menu_motion",true) and not "--smoke-test" in OS.get_cmdline_user_args():
+		body.modulate.a=0.0
+		page_tween=create_tween()
+		page_tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		page_tween.tween_property(body,"modulate:a",1.0,0.24)
 
 func start_run() -> void:
 	progress.save()
@@ -363,9 +472,20 @@ func smoke_test() -> void:
 		get_tree().quit(1)
 		return
 	show_page("progress")
-	if action_buttons.size()!=6:
+	if tree.nodes.size()!=26 or tree_buy.disabled==false:
 		get_tree().quit(2)
 		return
+	progress.essence=100
+	select_tree_rank("arcane",2)
+	if not tree_buy.disabled:
+		get_tree().quit(21)
+		return
+	select_tree_rank("arcane",1)
+	buy_tree_rank()
+	if progress.ranks.arcane!=1 or progress.essence!=82:
+		get_tree().quit(22)
+		return
+	progress=Progress.new()
 	show_page("sets")
 	if action_buttons.size()!=6:
 		get_tree().quit(3)
