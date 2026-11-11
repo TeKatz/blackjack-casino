@@ -8,6 +8,13 @@ const BIOME_WALLS = preload("res://art/pixel/biome_walls.svg")
 const PROPS = preload("res://art/pixel/room_props.svg")
 const TORCH = preload("res://art/pixel/torch.svg")
 const RELICS = preload("res://art/pixel/relics.png")
+const EXPANDED_TILES = [
+	preload("res://art/pixel/expanded_vault.svg"),
+	preload("res://art/pixel/expanded_grove.svg"),
+	preload("res://art/pixel/expanded_crypt.svg")
+]
+const EXPANDED_EDGES = [Color("#b69b87"),Color("#82bb91"),Color("#c5a1b0")]
+const EXPANDED_FLOORS = [Color("#282633"),Color("#1a3427"),Color("#302637")]
 # Seven original four-frame sprite sheets. Never substitute a shared prop
 # atlas: each chamber has its own material language and animated landmark.
 const SPECIAL_ART = {
@@ -99,7 +106,7 @@ func setup(value) -> void:
 		torches.append(light)
 	player_light = make_light(Color("#d8caff"),2.8,0.58,false)
 	gate_light = make_light(Color("#b18aff"),3.6,1.15,true)
-	gate_light.position = Model.EXIT
+	gate_light.position = model.exit_point
 	for pos in [Vector2(89,555),Vector2(1190,555)]:
 		var light := make_light(Color("#e7ac73"),3.3,0.9,true)
 		light.position = pos
@@ -159,13 +166,18 @@ func update_view(dt: float) -> void:
 		torches[i].enabled=model.state!="hub" or i<HUB_LANTERN_POSITIONS.size()
 		if model.state=="hub" and torches[i].enabled:
 			torches[i].position=HUB_LANTERN_POSITIONS[i]+Vector2(0,4)
+		elif model.large_room:
+			var region: Rect2=model.room_regions[mini(i,model.room_regions.size()-1)]
+			torches[i].position=Vector2(region.position.x+clampf(region.size.x*0.35+float(i%3)*65,64,region.size.x-48),region.position.y+24)
 		elif SPECIAL_ART.has(model.room_kind):
 			torches[i].position=Vector2(174+i*235,153)
 		else:
 			torches[i].position=TORCH_POSITIONS[i]+Vector2(0,40)
 		torches[i].energy=1.1+sin(clock*5.0+i*2.2)*0.15 if model.state=="hub" else 1.25+sin(clock*7.0+i*2.2)*0.19+sin(clock*13+i)*0.08
 	for i in range(side_lights.size()):
-		side_lights[i].energy = 0.85 + sin(clock*5+i*2)*0.15
+		side_lights[i].energy=0.85+sin(clock*5+i*2)*0.15
+		if model.large_room:
+			side_lights[i].position=Vector2(model.room_regions[-1].position.x+130+i*370,model.room_regions[-1].position.y+50)
 	var boss_present := false
 	for enemy in model.enemies:
 		if enemy.kind in ["boss","rootking","hollowking"]:
@@ -177,6 +189,10 @@ func update_view(dt: float) -> void:
 	if model.state=="hub": target_ambient=Color("#9b8490")
 	if model.floor_index==1: target_ambient=Color(0.35,0.53,0.39)
 	if model.floor_index==2: target_ambient=Color(0.47,0.34,0.50)
+	if model.large_room:
+		target_ambient=[Color("#9c8d9e"),Color("#83b697"),Color("#a58a9d")][model.floor_index]
+		if model.room_kind=="boss" and model.boss_awake:
+			target_ambient=target_ambient.darkened(0.25)
 	for light in torches:
 		light.color=SPECIAL_PALETTES[model.room_kind][1] if SPECIAL_ART.has(model.room_kind) else [Color("#ffd094"),Color("#83e5be"),Color("#e9a0c4")][model.floor_index]
 		light.energy*= [0.72,0.66,0.70][model.floor_index]
@@ -184,7 +200,7 @@ func update_view(dt: float) -> void:
 		decor_lights[i].energy=0.24+0.06*sin(clock*3+i*1.7)
 	ambient.color = ambient.color.lerp(target_ambient, minf(1.0,dt*2.5))
 	gate_open_amount = move_toward(gate_open_amount,1.0 if model.state in ["exit","hub"] else 0.0,dt*2.5)
-	gate_light.position = Model.HUB_PORTAL if model.state=="hub" else Model.EXIT
+	gate_light.position = Model.HUB_PORTAL if model.state=="hub" else model.exit_point
 	gate_light.color=Color("#d5a2ff") if model.state=="hub" else Color("#b18aff")
 	gate_light.energy = gate_open_amount*(1.1+sin(clock*4)*0.2)
 	player_light.position = model.player
@@ -213,6 +229,12 @@ func _draw() -> void:
 		return
 	if model.state=="hub":
 		draw_hub()
+		return
+	if model.large_room:
+		draw_expanded_room()
+		draw_royal_seals()
+		draw_gate()
+		draw_expanded_actors()
 		return
 	draw_rect(Rect2(0,0,1280,720),Color("#100c18"))
 	draw_rect(Rect2(22,103,1236,545),Color("#231a2c"))
@@ -285,6 +307,124 @@ func _draw() -> void:
 			"pillar": draw_pillar(object.rect)
 			"prop": draw_prop(object.prop)
 			"enemy": draw_actor(object.enemy)
+			"player": draw_warden()
+
+func draw_expanded_room() -> void:
+	# Authored floor regions and stage-native art. Unwalkable void is rendered as
+	# thick darkness rather than pretending every stage uses one giant rectangle.
+	var floor_id: int=model.floor_index
+	var bounds: Rect2=model.room_bounds
+	var edge: Color=EXPANDED_EDGES[floor_id]
+	var base: Color=EXPANDED_FLOORS[floor_id]
+	draw_rect(bounds.grow(120),Color("#070a10"))
+	for region in model.room_regions:
+		draw_rect(region.grow(13),Color("#080b12"))
+		draw_rect(region.grow(8),edge.darkened(0.55))
+		draw_rect(region,base)
+		for y in range(int(region.position.y),int(region.end.y),96):
+			for x in range(int(region.position.x),int(region.end.x),96):
+				var width: float=minf(96.0,region.end.x-float(x))
+				var height: float=minf(96.0,region.end.y-float(y))
+				if width<=0 or height<=0: continue
+				var variant: int=posmod(int(x/96)+int(y/96)*7+model.floor_index*3+model.room*11,4)
+				draw_texture_rect_region(EXPANDED_TILES[floor_id],Rect2(float(x),float(y),width,height),Rect2(variant*128,0,128*width/96.0,128*height/96.0))
+		# Each connected hall receives a strong architectural border.
+		draw_rect(region,Color(edge,0.45),false,4)
+		match floor_id:
+			0:
+				# Vaults: brass rails and load-bearing latticework.
+				for x in range(int(region.position.x)+60,int(region.end.x)-30,148):
+					draw_rect(Rect2(x,region.position.y+15,34,11),edge.darkened(0.30))
+					draw_rect(Rect2(x+5,region.position.y+18,24,3),Color("#f1d5a4"))
+				for y in range(int(region.position.y)+78,int(region.end.y)-30,175):
+					draw_rect(Rect2(region.position.x+8,y,13,44),edge.darkened(0.45))
+			1:
+				# Groves: thick twisting living roots, fronds, luminous fungus.
+				for x in range(int(region.position.x)+50,int(region.end.x)-20,135):
+					var y: float=region.position.y+24
+					draw_line(Vector2(x,y),Vector2(x+25,y+34),Color("#6d9457"),9,true)
+					draw_line(Vector2(x+25,y+34),Vector2(x+40,y+18),Color("#a5c883"),5,true)
+				for y in range(int(region.position.y)+90,int(region.end.y)-12,135):
+					draw_rect(Rect2(region.position.x+18,y,11,20),Color("#b0e4b0"))
+					draw_rect(Rect2(region.position.x+10,y-7,27,10),Color("#5ec9a2"))
+			2:
+				# Royal ossuary: sepulchral alcoves, bone inlays, nave tracery.
+				for x in range(int(region.position.x)+90,int(region.end.x)-24,166):
+					draw_rect(Rect2(x,region.position.y+7,52,38),Color("#2a1b31"))
+					draw_rect(Rect2(x+6,region.position.y+13,40,29),Color("#ab8795"),false,3)
+					draw_rect(Rect2(x+22,region.position.y+17,7,22),Color("#ddbd9d"))
+				for y in range(int(region.position.y)+90,int(region.end.y)-10,156):
+					draw_rect(Rect2(region.position.x+8,y,34,10),Color("#a27d89"))
+	# Shared walls are collision, but each biome has its own physical dressing.
+	if model.room_kind=="boss":
+		draw_boss_approach()
+	for i in range(torches.size()):
+		if i>=model.room_regions.size()+2: break
+		var light_pos: Vector2=torches[i].position
+		draw_rect(Rect2(light_pos-Vector2(14,12),Vector2(28,21)),edge.darkened(0.25))
+		draw_rect(Rect2(light_pos-Vector2(5,18),Vector2(10,24)),Color("#fff1b2"))
+		draw_circle(light_pos+Vector2(0,-8),18,Color(edge,0.24+0.12*sin(clock*4+i)))
+	# Stage-specific ambient motes are confined to traversable chambers.
+	for i in range(34):
+		var region: Rect2=model.room_regions[i%model.room_regions.size()]
+		var px: float=region.position.x+fposmod(41+i*97+clock*float(i%3+1)*4,region.size.x-60)+30
+		var py: float=region.position.y+fposmod(i*61-clock*float(i%4+1)*2,region.size.y-48)+24
+		var c: Color=[Color("#d6ad7d"),Color("#8cd3aa"),Color("#cba3da")][floor_id]
+		draw_rect(Rect2(pixel_pos(Vector2(px,py)),Vector2(3,3)),Color(c,0.14+0.12*sin(clock*2+i)))
+
+func draw_boss_approach() -> void:
+	var arena: Rect2=model.boss_arena
+	var threshold: float=model.boss_trigger_x-105
+	var edge: Color=EXPANDED_EDGES[model.floor_index]
+	# Tall arch frames the first sight of the boss after the winding approach.
+	var arch:=Rect2(threshold-50,arena.get_center().y-135,100,270)
+	draw_rect(arch.grow(16),Color("#100d17"))
+	draw_rect(arch.grow(7),edge.darkened(0.38))
+	draw_rect(arch,Color("#27202e"))
+	draw_rect(Rect2(arch.position+Vector2(9,7),Vector2(82,255)),Color("#0d0d16"))
+	for j in range(7):
+		draw_rect(Rect2(arch.position+Vector2(11,22+j*31),Vector2(8,11)),edge)
+		draw_rect(Rect2(arch.position+Vector2(80,22+j*31),Vector2(8,11)),edge)
+	var awakened: bool=model.boss_awake
+	var emblem: Vector2=Vector2(threshold,arena.get_center().y)
+	draw_arc(emblem,48+3*sin(clock*3),0,TAU,48,Color(edge,0.32 if awakened else 0.78),4,true)
+	if not awakened:
+		for i in range(10):
+			var angle: float=float(i)*TAU/10.0+clock*0.5
+			var pos: Vector2=emblem+Vector2.from_angle(angle)*37
+			draw_rect(Rect2(pixel_pos(pos),Vector2(5,5)),Color("#f7d19a"))
+	else:
+		var reveal: float=1.0-clampf(model.boss_intro_timer/1.55,0,1)
+		draw_arc(emblem,44+reveal*95,0,TAU,48,Color(edge,0.68*(1.0-reveal)),7,true)
+	var boss_center: Vector2=arena.get_center()
+	for ring in range(3):
+		var radius: float=98+ring*33
+		draw_arc(boss_center,radius,0,TAU,64,Color(edge,0.48-ring*0.1),4,true)
+	for i in range(12):
+		var angle: float=float(i)*TAU/12.0
+		var pos: Vector2=boss_center+Vector2.from_angle(angle)*181
+		draw_rect(Rect2(pixel_pos(pos)-Vector2(6,6),Vector2(12,12)),Color(edge,0.66))
+	if model.floor_index==1:
+		for i in range(6):
+			var pos: Vector2=boss_center+Vector2.from_angle(i*TAU/6.0)*222
+			draw_circle(pos,17,Color("#8adf9e",0.33))
+	elif model.floor_index==2:
+		for i in range(7):
+			draw_rect(Rect2(arena.position.x+70+i*114,arena.position.y+26,40,85),Color("#693e52"))
+			draw_rect(Rect2(arena.position.x+82+i*114,arena.position.y+33,15,68),Color("#d0a18e"))
+
+func draw_expanded_actors() -> void:
+	var objects: Array[Dictionary]=[]
+	for wall in model.walls:
+		objects.append({"kind":"pillar","depth":wall.end.y,"rect":wall})
+	for enemy in model.enemies:
+		objects.append({"kind":"enemy","depth":enemy.pos.y+float(enemy.r),"enemy":enemy})
+	objects.append({"kind":"player","depth":model.player.y+15})
+	objects.sort_custom(func(a: Dictionary,b: Dictionary): return a.depth<b.depth)
+	for thing in objects:
+		match thing.kind:
+			"pillar": draw_pillar(thing.rect)
+			"enemy": draw_actor(thing.enemy)
 			"player": draw_warden()
 
 func draw_wall_lantern(pos: Vector2, index: int) -> void:
@@ -585,7 +725,7 @@ func draw_hub() -> void:
 		sprite(model.character,model.player,facing,frame,68)
 
 func draw_gate() -> void:
-	var gate: Vector2=Model.EXIT
+	var gate: Vector2=model.exit_point
 	var p: Vector2=gate-Vector2(30,61)
 	var color: Color=[Color("#bd9be8"),Color("#8ce0ba"),Color("#e0a3d7")][model.floor_index]
 	draw_rect(Rect2(p+Vector2(5,6),Vector2(60,122)),Color("#100c1b"))
@@ -641,6 +781,10 @@ func draw_royal_seals() -> void:
 func build_decor() -> void:
 	decor.clear()
 	floor_decals.clear()
+	if model.large_room:
+		decor_exclusions=model.walls.duplicate()
+		for light in decor_lights: light.enabled=false
+		return
 	if SPECIAL_ART.has(model.room_kind):
 		# The special rooms own every prop, texture and decorative animation.
 		decor_exclusions=model.walls.duplicate()
@@ -1010,6 +1154,24 @@ func draw_biome_details(arena: Rect2) -> void:
 		# into the floor props or sarcophagi.
 
 func draw_pillar(rect: Rect2) -> void:
+	if model.large_room:
+		var accent: Color=EXPANDED_EDGES[model.floor_index]
+		draw_rect(Rect2(rect.position+Vector2(9,13),rect.size),Color("#09080f"))
+		draw_rect(rect,accent.darkened(0.63))
+		if model.floor_index==0:
+			draw_rect(rect.grow(-6),accent.darkened(0.25),false,4)
+			for j in range(5):
+				draw_rect(Rect2(rect.position+Vector2(12,12+j*(rect.size.y-20)/5),Vector2(rect.size.x-24,4)),accent)
+		elif model.floor_index==1:
+			for j in range(5):
+				var x: float=rect.position.x+14+j*(rect.size.x-28)/5
+				draw_line(Vector2(x,rect.position.y+12),Vector2(x+12,rect.end.y-8),Color("#5d945e"),9,true)
+				draw_rect(Rect2(x,rect.position.y+8,14,13),Color("#a1c782"))
+		else:
+			draw_rect(rect.grow(-10),Color("#957389"),false,6)
+			for j in range(3):
+				draw_rect(Rect2(rect.position+Vector2(20,20+j*(rect.size.y-40)/3),Vector2(rect.size.x-40,6)),Color("#c8a1a4"))
+		return
 	if SPECIAL_ART.has(model.room_kind):
 		var palette: Array=SPECIAL_PALETTES[model.room_kind]
 		draw_rect(Rect2(rect.position+Vector2(6,8),rect.size),Color("#0b0a13"))
