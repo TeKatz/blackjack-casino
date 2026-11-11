@@ -66,6 +66,7 @@ var shield_time := 0.0
 var temp_power := 0.0
 var revive_used := false
 var orbit_timer := 0.0
+var arcane_wisp_timer := 0.0
 var echoes: Array[Dictionary] = []
 var hazards: Array[Dictionary] = []
 const Content = preload("res://content.gd")
@@ -147,6 +148,7 @@ func begin(value: int, loadout: String = "warden_guard", upgrades: Dictionary = 
 	temp_power = 0
 	revive_used = false
 	orbit_timer=0
+	arcane_wisp_timer=0.0
 	dungeon.generate(value,0)
 	set_id = loadout if Content.SETS.has(loadout) else "warden_guard"
 	var spec: Dictionary = Content.SETS[set_id]
@@ -1332,19 +1334,38 @@ func update_shots(dt: float) -> void:
 		if remove:
 			shots.remove_at(i)
 
+func class_relic_pool() -> Array[String]:
+	var result: Array[String]=[]
+	for key in Content.CLASS_POOLS[character]: result.append(str(key))
+	return result
+
+func available_relic_pool() -> Array[String]:
+	var result: Array[String]=[]
+	for key in RELICS:
+		var owner: String=Content.relic_owner(str(key))
+		if owner=="" or owner==character: result.append(str(key))
+	return result
+
 func make_offers(premium: bool = false) -> void:
 	offers.clear()
-	var pool: Array[String] = []
-	for item in RELICS:
-		pool.append(item)
+	var pool: Array[String]=available_relic_pool()
+	var class_pool: Array[String]=class_relic_pool()
 	for i in range(3):
-		var index := rng.randi_range(0,pool.size()-1)
-		for attempt in range(5):
-			var rarity: int = Content.rarity(pool[index])
-			if rng.randf() < (0.95 if rarity==0 else (0.75 if premium else 0.4)/rarity): break
-			index=rng.randi_range(0,pool.size()-1)
-		offers.append(pool[index])
+		# Guaranteed one class relic; a second with 34% probability.
+		var class_pick: bool=i==0 or (i==1 and rng.randf()<0.34)
+		var index: int=rng.randi_range(0,pool.size()-1)
+		if class_pick and not class_pool.is_empty():
+			var chosen: String=class_pool[rng.randi_range(0,class_pool.size()-1)]
+			index=pool.find(chosen)
+		if not class_pick:
+			for attempt in range(5):
+				var rarity: int=Content.rarity(pool[index])
+				if rng.randf()<(0.95 if rarity==0 else (0.75 if premium else 0.4)/maxf(1.0,float(rarity))): break
+				index=rng.randi_range(0,pool.size()-1)
+		var picked: String=pool[index]
+		offers.append(picked)
 		pool.remove_at(index)
+		class_pool.erase(picked)
 	# Once a build has a matching half, occasionally offer an actual payoff.
 	# Only replace one slot and never generate duplicate choices.
 	var candidates: Array[String]=synergy_candidates()
@@ -1378,6 +1399,7 @@ func choose_relic(index: int) -> bool:
 		"charge": dash_cooldown=maxf(0.35,dash_cooldown-0.15)
 		"battery": active_cd=maxf(20,active_cd-3)
 		"glass": damage+=16; armor-=3
+		"w_steel": max_hp+=18; hp=minf(max_hp,hp+18); armor+=1
 	hp = minf(max_hp, hp+(5.0 if floor_index==0 else 3.0))
 	notify_new_synergies(previous_synergies)
 	finish_room()
