@@ -508,7 +508,7 @@ func run_scene_smoke() -> void:
 		get_tree().quit(7)
 		return
 	select_relic(0)
-	run.player = Model.EXIT
+	run.player = run.exit_point
 	if not run.next_room():
 		push_error("Scene gate transition failed: state="+run.state+" at "+str(run.player)+" exit="+str(run.exit_point))
 		get_tree().quit(8)
@@ -1182,7 +1182,7 @@ func show_route_map(column: VBoxContainer) -> void:
 		descent.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 		UI.style_button(descent,Color("#8bcea1"),true)
 	var back: Button
-	if run.room_kind in ["fight","elite","boss"]+Model.Dungeon.SPECIAL_COMBAT and run.player.distance_to(Model.EXIT)<=75:
+	if run.room_kind in ["fight","elite","boss"]+Model.Dungeon.SPECIAL_COMBAT and run.player.distance_to(run.exit_point)<=75:
 		back=add_button(footer,tr_text("Close map","Karte schließen"),func(): run.state="exit")
 	else:
 		back=add_button(footer,tr_text("Pause expedition","Expedition pausieren"),func(): paused=true)
