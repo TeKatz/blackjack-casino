@@ -29,7 +29,9 @@ const ACTORS = {
 	"boss": preload("res://art/pixel/boss.svg")
 }
 const TORCH_POSITIONS = [Vector2(142,143),Vector2(394,143),Vector2(650,143),Vector2(906,143),Vector2(1154,143)]
-const HUB_LANTERN_POSITIONS = [Vector2(162,203),Vector2(666,203),Vector2(934,203),Vector2(1175,203)]
+# Fixtures are suspended from the actual 143px timber rail, not free-floating.
+# The bottle shelving, forge and portal are deliberately kept clear.
+const HUB_LANTERN_POSITIONS = [Vector2(164,198),Vector2(900,198),Vector2(1168,198)]
 var model
 var clock := 0.0
 var previous_player := Vector2.ZERO
@@ -261,6 +263,13 @@ func _draw() -> void:
 func draw_wall_lantern(pos: Vector2, index: int) -> void:
 	# The sconce is riveted to a timber backplate, never suspended in mid-air.
 	var flame_shift: float=roundf(sin(clock*6.5+index*1.7)*2.0)
+	# Iron mount is visibly connected to the horizontal timber wall rail.
+	draw_rect(Rect2(pos.x-7,143,14,pos.y-143-19),Color("#1b1720"))
+	draw_rect(Rect2(pos.x-4,144,8,pos.y-144-19),Color("#77615d"))
+	draw_rect(Rect2(pos.x-17,143,34,9),Color("#a67e66"))
+	draw_rect(Rect2(pos.x-11,146,4,4),Color("#e1b78b"))
+	draw_rect(Rect2(pos.x+7,146,4,4),Color("#e1b78b"))
+	draw_rect(Rect2(pos.x-13,pos.y-22,26,8),Color("#2a232c"))
 	for r in range(4,0,-1):
 		draw_circle(pos+Vector2(0,5),float(r)*16,Color(1,0.54,0.22,0.017))
 	draw_rect(Rect2(pos+Vector2(-20,-29),Vector2(40,9)),Color("#241b24"))
@@ -279,6 +288,106 @@ func draw_wall_lantern(pos: Vector2, index: int) -> void:
 	draw_rect(Rect2(pos+Vector2(-15,17),Vector2(30,6)),Color("#e4b47c"))
 	draw_rect(Rect2(pos+Vector2(-11,23),Vector2(22,4)),Color("#493340"))
 	draw_rect(Rect2(pos+Vector2(-2,27),Vector2(4,5)),Color("#e3b67c"))
+
+func draw_bar_stool(x: float) -> void:
+	# Foot rails and a padded seat make every stool readable from the front.
+	draw_rect(Rect2(x-13,300,26,25),Color("#201721"))
+	draw_rect(Rect2(x-10,300,5,26),Color("#67494b"))
+	draw_rect(Rect2(x+5,300,5,26),Color("#67494b"))
+	draw_rect(Rect2(x-14,315,28,4),Color("#a47a68"))
+	draw_rect(Rect2(x-20,285,40,13),Color("#251c26"))
+	draw_rect(Rect2(x-18,283,36,11),Color("#be886d"))
+	draw_rect(Rect2(x-14,286,28,5),Color("#704651"))
+	draw_rect(Rect2(x-11,282,22,3),Color("#dfae86"))
+
+func draw_seated_player() -> void:
+	var stool: int=model.hub_seat_index
+	if stool<0: return
+	var x: float=float(Model.HUB_STOOL_X[stool])
+	var progress: float=clampf(model.hub_seat_anim,0.0,1.0)
+	var eased: float=progress*progress*(3.0-2.0*progress)
+	# Fast upward hop with feet curling onto the stool and a tiny idle sway.
+	var hop: float=sin(progress*PI)*6.0
+	var p:=Vector2(x,339.0-17.0*eased-hop+sin(clock*1.7)*eased)
+	draw_shadow(Vector2(x,334),45)
+	sprite(model.character,p,Vector2.DOWN,2 if progress<0.7 else int(clock*1.4)%2,61)
+	draw_rect(Rect2(x-15,330,13,5),Color("#251b2a"))
+	draw_rect(Rect2(x+2,330,13,5),Color("#251b2a"))
+	# Cushion and the foot rail remain visible in front of the folded legs.
+	draw_rect(Rect2(x-17,336,34,4),Color("#976e69"))
+
+func draw_card_guest(pos: Vector2, side: int) -> void:
+	var palette: Color=Color("#547e79") if side==0 else Color("#876079")
+	var trim: Color=Color("#b5d4b2") if side==0 else Color("#dcb7cc")
+	var idle: float=roundf(sin(clock*2.1+side*1.8))
+	var p:=pos+Vector2(0,idle)
+	# Chair, boots, coat, face, hair and independent blinking.
+	draw_rect(Rect2(pos+Vector2(-25,-31),Vector2(50,72)),Color("#211a24"))
+	draw_rect(Rect2(pos+Vector2(-22,-30),Vector2(44,64)),Color("#79544f"))
+	draw_rect(Rect2(pos+Vector2(-18,22),Vector2(36,7)),Color("#bb8971"))
+	draw_rect(Rect2(p+Vector2(-21,-30),Vector2(42,48)),palette.darkened(0.3))
+	draw_rect(Rect2(p+Vector2(-17,-28),Vector2(34,43)),palette)
+	draw_rect(Rect2(p+Vector2(-4,-28),Vector2(8,43)),trim)
+	draw_rect(Rect2(p+Vector2(-16,-62),Vector2(32,38)),Color("#201a23"))
+	draw_rect(Rect2(p+Vector2(-13,-58),Vector2(26,31)),Color("#d9a686") if side==0 else Color("#c58d79"))
+	draw_rect(Rect2(p+Vector2(-16,-64),Vector2(32,10)),Color("#4b3837") if side==0 else Color("#30253c"))
+	var blink: bool=fposmod(clock+side*1.6,4.2)<0.14
+	for eye in [-8.0,5.0]:
+		draw_rect(Rect2(p+Vector2(eye,-44),Vector2(4,1 if blink else 3)),Color("#211b28"))
+	draw_rect(Rect2(p+Vector2(-5,-33),Vector2(10,2)),Color("#8e5a59"))
+	# Small readable fidget, as if each is counting the opponent's cards.
+	var shoulder: float=roundf(sin(clock*2.8+side*2)*3)
+	draw_rect(Rect2(p+Vector2(-23 if side==0 else 15,-12+shoulder),Vector2(8,25)),palette.darkened(0.1))
+	draw_rect(Rect2(p+Vector2(-23 if side==0 else 15,8+shoulder),Vector2(8,7)),Color("#d49f83"))
+
+func draw_playing_card(center: Vector2, face: bool, red: bool) -> void:
+	var p:=pixel_pos(center)+Vector2(-7,-10)
+	draw_rect(Rect2(p+Vector2(2,2),Vector2(14,20)),Color("#241b29"))
+	draw_rect(Rect2(p,Vector2(14,20)),Color("#f0dfc6"))
+	draw_rect(Rect2(p+Vector2(1,1),Vector2(12,18)),Color("#fff4df"))
+	if face:
+		var ink: Color=Color("#9d3b54") if red else Color("#31304b")
+		draw_rect(Rect2(p+Vector2(3,3),Vector2(4,4)),ink)
+		draw_rect(Rect2(p+Vector2(7,8),Vector2(4,4)),ink)
+		draw_rect(Rect2(p+Vector2(3,14),Vector2(4,3)),ink)
+	else:
+		draw_rect(Rect2(p+Vector2(3,3),Vector2(8,14)),Color("#543c73"))
+		for stripe in range(3):
+			draw_rect(Rect2(p+Vector2(4,5+stripe*4),Vector2(6,2)),Color("#c99db7"))
+
+func draw_card_duel() -> void:
+	# Six-second loop: examine cards, reach, play, reveal, react, repeat.
+	var phase: float=fposmod(clock,6.4)
+	var left_turn: bool=phase<3.2
+	var turn: float=fposmod(phase,3.2)
+	var reach: float=smoothstep(0.22,1.05,turn)*(1.0-smoothstep(1.48,2.05,turn))
+	var left_hand: Vector2=Vector2(449,506)+Vector2(18*reach if left_turn else 2*sin(clock*2),-9*reach)
+	var right_hand: Vector2=Vector2(600,506)+Vector2(-18*reach if not left_turn else 2*sin(clock*2+2),-9*reach)
+	# Hands and wrist motion are drawn above the table, not behind its front.
+	draw_line(Vector2(430,495),left_hand,Color("#4f726d"),10)
+	draw_line(Vector2(619,495),right_hand,Color("#70556c"),10)
+	draw_rect(Rect2(pixel_pos(left_hand-Vector2(6,4)),Vector2(12,8)),Color("#d6a582"))
+	draw_rect(Rect2(pixel_pos(right_hand-Vector2(6,4)),Vector2(12,8)),Color("#c9947e"))
+	for i in range(3):
+		draw_playing_card(Vector2(491+i*12,495+(i%2)*3),i<2 or phase>2.0, i%2==0)
+	for i in range(2):
+		draw_playing_card(Vector2(546+i*12,495+(i%2)*3),phase>3.65 or i==0,i==1)
+	# The active hand slides one new card onto the felt before it flips face-up.
+	var deal: float=smoothstep(0.48,1.32,turn)
+	var from_x: float=468.0 if left_turn else 582.0
+	var to_x: float=522.0 if left_turn else 531.0
+	var mid: Vector2=Vector2(lerpf(from_x,to_x,deal),483.0-9*sin(deal*PI))
+	draw_playing_card(mid,turn>1.4,not left_turn)
+	# Chips shift in sync with each round; alternating glow marks a challenge.
+	for i in range(3):
+		var chip_x: float=513+i*12
+		var chip_y: float=512+sin(clock*2+i*2)*2
+		draw_rect(Rect2(chip_x,chip_y,9,5),Color("#c69b55"))
+		draw_rect(Rect2(chip_x+2,chip_y+1,5,2),Color("#fae6ae"))
+	if turn>2.25:
+		var p: Vector2=Vector2(422,446) if left_turn else Vector2(629,446)
+		for i in range(2):
+			draw_rect(Rect2(pixel_pos(p+Vector2(-9+i*16,-12-sin(clock*7+i)*3)),Vector2(5,5)),Color(1.0,0.86,0.53,0.58))
 
 func draw_barkeeper() -> void:
 	# Hand-drawn pixel silhouette. Idle breathing, blinking and glass polishing.
@@ -362,27 +471,38 @@ func draw_hub() -> void:
 	draw_rect(Rect2(220,208,520,71),Color("#63414a"))
 	draw_rect(Rect2(220,208,520,14),Color("#b78969"))
 	draw_rect(Rect2(220,224,520,5),Color("#d0a17c"))
-	for i in range(5):
-		var x: float=275+i*105
-		draw_rect(Rect2(x-15,295,30,29),Color("#211a27"))
-		draw_rect(Rect2(x-18,286,36,12),Color("#9c7665"))
-		draw_rect(Rect2(x-12,298,24,4),Color("#614550"))
-	# Two substantial tables and a permanently closed future-workshop nook.
-	draw_rect(Rect2(469,500,132,75),Color("#130f19"))
-	draw_rect(Rect2(458,486,132,76),Color("#633d46"))
-	draw_rect(Rect2(464,492,120,13),Color("#c28e71"))
-	draw_rect(Rect2(475,514,5,37),Color("#8f5e58"))
-	draw_rect(Rect2(561,514,5,37),Color("#8f5e58"))
-	for x in [501.0,545.0]:
-		draw_rect(Rect2(x,471,17,20),Color("#a9826b"))
-		draw_rect(Rect2(x+3,470,11,4),Color("#e3c59c"))
+	for x in Model.HUB_STOOL_X:
+		draw_bar_stool(float(x))
+	# Two named occupants stay on opposite sides of an ornate gaming table.
+	draw_card_guest(Vector2(418,524),0)
+	draw_card_guest(Vector2(630,524),1)
+	# Carved table feet, dark leather apron, gold fittings and deep green felt.
+	draw_rect(Rect2(467,498,140,78),Color("#1e1320"))
+	draw_rect(Rect2(462,510,126,53),Color("#482e34"))
+	for x in [465.0,573.0]:
+		draw_rect(Rect2(x,521,12,47),Color("#281d28"))
+		draw_rect(Rect2(x+3,519,6,43),Color("#90644e"))
+		draw_rect(Rect2(x+1,562,10,6),Color("#b88b67"))
+	draw_rect(Rect2(458,481,132,74),Color("#291e28"))
+	draw_rect(Rect2(459,483,130,66),Color("#a57654"))
+	draw_rect(Rect2(465,488,118,55),Color("#54363b"))
+	draw_rect(Rect2(469,491,110,45),Color("#235146"))
+	draw_rect(Rect2(474,495,100,37),Color("#2d6a56"))
+	draw_rect(Rect2(474,495,100,37),Color("#bc955e"),false,2)
+	draw_rect(Rect2(458,541,132,18),Color("#623d3c"))
+	draw_rect(Rect2(463,544,122,4),Color("#bb8965"))
+	for i in range(6):
+		var x: float=465+i*22
+		draw_rect(Rect2(x,551,8,4),Color("#d7ad73"))
+	draw_rect(Rect2(519,546,12,9),Color("#37202c"))
+	draw_rect(Rect2(522,548,6,5),Color("#f0c787"))
+	draw_card_duel()
 	draw_rect(Rect2(740,223,108,93),Color("#18131e"))
 	draw_rect(Rect2(735,218,108,92),Color("#6c4852"))
 	draw_rect(Rect2(746,225,86,15),Color("#be8e79"))
 	draw_rect(Rect2(750,251,30,50),Color("#3b2c39"))
 	draw_rect(Rect2(790,251,30,50),Color("#3b2c39"))
-	draw_string(ThemeDB.fallback_font,Vector2(738,338),"FORGE",HORIZONTAL_ALIGNMENT_LEFT,-1,12,Color("#a79198"))
-	# Four mounted, animated wall lanterns replace the floating torch sprites.
+	# Wall lanterns now hang from the timber rail in unobstructed wall bays.
 	for i in range(HUB_LANTERN_POSITIONS.size()):
 		draw_wall_lantern(HUB_LANTERN_POSITIONS[i],i)
 	# The hub gate is a distinct wall portal, not the dungeon route-map exit.
@@ -398,9 +518,24 @@ func draw_hub() -> void:
 	for j in range(12):
 		var pos:=portal+Vector2(sin(clock*1.9+j*1.7)*36,-62+fposmod(float(j)*14+clock*18,138))
 		draw_rect(Rect2(pixel_pos(pos),Vector2(4,6)),Color(0.79,0.54,1,0.25+0.20*sin(clock*3+j)))
-	var rune:=PackedVector2Array([portal+Vector2(0,-36),portal+Vector2(29,0),portal+Vector2(0,36),portal+Vector2(-29,0),portal+Vector2(0,-36)])
-	draw_polyline(rune,Color("#e5c3fa"),3)
-	draw_rect(Rect2(portal-Vector2(6,6),Vector2(12,12)),Color("#ffe3bd"))
+	# Slowly counter-rotating diamond seals with a pulsing center.
+	var pulse: float=0.5+0.5*sin(clock*3.1)
+	for ring in range(2):
+		var rotation: float=clock*(0.70 if ring==0 else -1.0)+PI*0.5
+		var radius_x: float=30.0 if ring==0 else 19.0
+		var radius_y: float=38.0 if ring==0 else 24.0
+		var seal:=PackedVector2Array()
+		for point in range(5):
+			var angle: float=rotation+float(point)*TAU/4.0
+			seal.append(portal+Vector2(cos(angle)*radius_x,sin(angle)*radius_y))
+		draw_polyline(seal,Color(0.88,0.72,1.0,0.75+0.23*pulse),3 if ring==0 else 2)
+	for spark in range(4):
+		var orbit: float=clock*1.15+float(spark)*TAU/4.0
+		var center: Vector2=portal+Vector2(cos(orbit)*34,sin(orbit)*45)
+		draw_rect(Rect2(pixel_pos(center)-Vector2(2,2),Vector2(5,5)),Color(0.94,0.68,1.0,0.35+0.52*pulse))
+	var core_size: float=9.0+3.0*pulse
+	draw_rect(Rect2(portal-Vector2(core_size*0.5,core_size*0.5),Vector2(core_size,core_size)),Color("#fff2d3"))
+	draw_rect(Rect2(portal-Vector2(3,3),Vector2(6,6)),Color("#f0bffa"))
 	draw_rect(Rect2(p-Vector2(8,1),Vector2(140,14)),Color("#ba967d"))
 	draw_rect(Rect2(p-Vector2(8,172),Vector2(140,13)),Color("#876d79"))
 	# Gold-capped masonry and flickering runes give the doorway real depth.
@@ -416,8 +551,11 @@ func draw_hub() -> void:
 	# Selected character keeps its own 4x8 sprite sheet and walking frames.
 	var facing: Vector2=player_facing
 	var frame: int=2+int(clock*10)%4 if walking else int(clock*2)%2
-	draw_shadow(model.player,68)
-	sprite(model.character,model.player,facing,frame,68)
+	if model.hub_seat_index>=0:
+		draw_seated_player()
+	else:
+		draw_shadow(model.player,68)
+		sprite(model.character,model.player,facing,frame,68)
 
 func draw_gate() -> void:
 	var gate: Vector2=Model.EXIT
