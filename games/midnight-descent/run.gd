@@ -766,6 +766,44 @@ func run_scene_smoke() -> void:
 		push_error("Archive discard choices missing from modal")
 		get_tree().quit(54)
 		return
+	# Visual system regression: text themes and reactive HUD events must survive
+	# combat and shop transitions, including negative currency changes.
+	if font!=UI.BOLD_FONT or overlay.theme==null or overlay.theme.default_font!=UI.BODY_FONT:
+		push_error("Nocturne UI typography was not installed on gameplay overlays")
+		get_tree().quit(57)
+		return
+	hud_hp=float(run.hp)+3.0
+	update_hud_feedback(0.0)
+	if hud_hit<=0.0:
+		push_error("Health damage feedback failed")
+		get_tree().quit(58)
+		return
+	hud_hp=float(run.hp)-3.0
+	update_hud_feedback(0.0)
+	if hud_heal<=0.0:
+		push_error("Health healing feedback failed")
+		get_tree().quit(59)
+		return
+	hud_shards=run.shards-1
+	update_hud_feedback(0.0)
+	if hud_gain<=0.0:
+		push_error("Currency gain feedback failed")
+		get_tree().quit(60)
+		return
+	hud_shards=run.shards+1
+	update_hud_feedback(0.0)
+	if hud_spend<=0.0:
+		push_error("Currency spend feedback failed")
+		get_tree().quit(61)
+		return
+	hud_previous[0]=1.0
+	run.attack_timer=run.attack_cd
+	update_hud_feedback(0.0)
+	if hud_cast[0]<=0.0:
+		push_error("Ability cast feedback failed")
+		get_tree().quit(62)
+		return
+	print("Midnight Descent Nocturne UI feedback smoke PASS")
 	print("Midnight Descent gameplay scene smoke PASS")
 	get_tree().quit()
 
@@ -1326,7 +1364,7 @@ func show_route_map(column: VBoxContainer) -> void:
 		button.clip_text=true
 		button.disabled=not run.route_options().has(i)
 		if i==run.room:
-			button.add_theme_stylebox_override("disabled",UI.panel(Color("#594333"),GOLD,8))
+			button.add_theme_stylebox_override("disabled",UI.panel(Color("#344945"),GOLD,8))
 			button.add_theme_color_override("font_disabled_color",Color("#fff0c8"))
 		elif node.cleared:
 			button.add_theme_color_override("font_disabled_color",Color("#8db6a8"))

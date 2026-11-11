@@ -52,9 +52,9 @@ func configure(value, de: bool, key: String, rank: int) -> void:
 			var owned: bool=level<=profile.ranks[id]
 			var next: bool=level==profile.ranks[id]+1
 			var active: bool=id==selected and level==selected_rank
-			UI.style_button(button,COLORS[row] if owned or next else Color("#625772"),active or owned)
+			UI.style_button(button,COLORS[row] if owned or next else Color("#536965"),active or owned)
 			if not owned and not next:
-				button.add_theme_color_override("font_color",Color("#9d90aa"))
+				button.add_theme_color_override("font_color",Color("#9aada5"))
 			var status: String="Erworben" if german else "Acquired"
 			if not owned and next: status=str(profile.cost(id))+" "+("Boss-Seelen" if german else "boss souls")
 			elif not owned: status="Vorgängerrang nötig" if german else "Previous rank required"
