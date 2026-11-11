@@ -232,6 +232,7 @@ func _draw() -> void:
 		return
 	if model.large_room:
 		draw_expanded_room()
+		draw_expanded_spikes()
 		draw_royal_seals()
 		draw_gate()
 		draw_expanded_actors()
@@ -371,6 +372,32 @@ func draw_expanded_room() -> void:
 		var py: float=region.position.y+fposmod(i*61-clock*float(i%4+1)*2,region.size.y-48)+24
 		var c: Color=[Color("#d6ad7d"),Color("#8cd3aa"),Color("#cba3da")][floor_id]
 		draw_rect(Rect2(pixel_pos(Vector2(px,py)),Vector2(3,3)),Color(c,0.14+0.12*sin(clock*2+i)))
+
+func draw_expanded_spikes() -> void:
+	if model.floor_index!=0: return
+	for hazard in model.hazards:
+		if str(hazard.get("type",""))!="spikes": continue
+		var warning: bool=float(hazard.warn)>0
+		var triggered: bool=not warning and str(hazard.get("phase",""))=="rise"
+		for cell in hazard.cells:
+			var plate: Rect2=cell
+			draw_rect(plate,Color("#141721"))
+			draw_rect(plate.grow(-3),Color("#655561"))
+			draw_rect(plate.grow(-5),Color("#2a2330"))
+			if warning:
+				var blink: float=0.34+0.35*absf(sin(clock*10))
+				draw_rect(plate.grow(-7),Color(1.0,0.72,0.32,blink))
+				for i in range(3):
+					draw_rect(Rect2(plate.position+Vector2(11+i*13,8),Vector2(5,11)),Color("#ffcd8d"))
+			elif triggered:
+				for i in range(3):
+					var foot: Vector2=plate.position+Vector2(10+i*14,23)
+					var tip: Vector2=foot+Vector2(0,-23)
+					draw_colored_polygon(PackedVector2Array([foot+Vector2(-6,3),tip,foot+Vector2(6,3)]),Color("#e9d8b6"))
+					draw_line(tip,foot+Vector2(-4,1),Color("#fff2d2"),2)
+			else:
+				for i in range(3):
+					draw_rect(Rect2(plate.position+Vector2(10+i*14,13),Vector2(8,3)),Color("#b4a5a4"))
 
 func draw_boss_approach() -> void:
 	var arena: Rect2=model.boss_arena
