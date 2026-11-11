@@ -510,10 +510,12 @@ func run_scene_smoke() -> void:
 	select_relic(0)
 	run.player = Model.EXIT
 	if not run.next_room():
+		push_error("Scene gate transition failed: state="+run.state+" at "+str(run.player)+" exit="+str(run.exit_point))
 		get_tree().quit(8)
 		return
 	_process(0.0)
 	if overlay_state!="route" or overlay.get_child_count()==0 or not run.travel(1):
+		push_error("Scene route selection failed: state="+run.state+" overlay="+overlay_state+" route="+str(run.route_options()))
 		get_tree().quit(8)
 		return
 	if run.room_kind in Model.Dungeon.SPECIAL_COMBAT:
