@@ -63,6 +63,9 @@ var hub_forge_prompt := 0.0
 var hub_panel := ""
 var synergy_toast_timer := 0.0
 var boss_soul_toast_timer := 0.0
+var camera_offset: Vector2=Vector2.ZERO
+var camera_room_key := ""
+var boss_reveal_toast := 0.0
 
 func _ready() -> void:
 	german = "--language=de" in OS.get_cmdline_user_args()
@@ -115,7 +118,10 @@ func _physics_process(dt: float) -> void:
 				hub_panel="barkeep"
 				play_sound("shop")
 	else:
-		run.tick(dt,direction,get_global_mouse_position(),Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT),Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT),dash and not last_dash,Input.is_physical_key_pressed(KEY_Q) and not last_active)
+		# Mouse aim must be transformed back from the fixed HUD screen into
+		# the moving world coordinates used by projectiles and hit detection.
+		var mouse_world: Vector2=get_global_mouse_position()-camera_offset
+		run.tick(dt,direction,mouse_world,Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT),Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT),dash and not last_dash,Input.is_physical_key_pressed(KEY_Q) and not last_active)
 		if interact and not last_interact: run.next_room()
 	last_active=Input.is_physical_key_pressed(KEY_Q)
 	last_dash=dash
@@ -126,12 +132,16 @@ func _physics_process(dt: float) -> void:
 		if notice=="kill": shake=maxf(shake,2.0)
 		if notice=="synergy_complete": synergy_toast_timer=2.7
 		if notice=="boss_phase": shake=maxf(shake,5.0)
+		if notice=="boss_reveal":
+			boss_reveal_toast=2.0
+			shake=maxf(shake,5.0)
 		if notice=="boss_soul": boss_soul_toast_timer=3.0
 		if notice=="dash_nova": shake=maxf(shake,3.0)
 	run.notices.clear()
 
 func _process(dt: float) -> void:
 	clock += dt
+	boss_reveal_toast=maxf(0.0,boss_reveal_toast-dt)
 	synergy_toast_timer=maxf(0,synergy_toast_timer-dt)
 	boss_soul_toast_timer=maxf(0,boss_soul_toast_timer-dt)
 	if hub_transition_stage==1:
@@ -176,6 +186,7 @@ func _process(dt: float) -> void:
 		modal_room=run.room
 		modal_floor=run.floor_index
 		rebuild_overlay()
+	update_chamber_camera(dt)
 	world.update_view(dt)
 	displayed_hp = move_toward(displayed_hp,run.hp,dt*52.0)
 	if banner_room != run.room or banner_floor!=run.floor_index:
@@ -189,11 +200,27 @@ func _process(dt: float) -> void:
 		wave_banner=2.2
 		if run.wave==1: play_sound("wave")
 	if not paused: wave_banner=maxf(0,wave_banner-dt)
-	var nearby: bool=run.state=="exit" and run.player.distance_to(Model.EXIT)<150 and not paused
+	var nearby: bool=run.state=="exit" and run.player.distance_to(run.exit_point)<150 and not paused
 	if nearby and not gate_near: play_sound("portal_near")
 	gate_near=nearby
 	gate_prompt=move_toward(gate_prompt,1.0 if nearby else 0.0,dt*5.0)
 	queue_redraw()
+
+func update_chamber_camera(dt: float) -> void:
+	var signature: String=str(run.floor_index)+":"+str(run.room)+":"+str(run.seed_value)+":"+str(run.large_room)
+	var target: Vector2=Vector2.ZERO
+	if run.large_room:
+		# Character stays around the center, with restrained aim look-ahead.
+		# Unlike viewport clamping, this reveals the entrance corridor from
+		# the player's perspective even right at the edge of a massive arena.
+		var look_ahead: Vector2=run.aim.normalized()*37.0 if run.state=="fight" else Vector2.ZERO
+		target=Vector2(640,360)-run.player-look_ahead
+	if camera_room_key!=signature:
+		camera_offset=target
+		camera_room_key=signature
+	else:
+		camera_offset=camera_offset.lerp(target,clampf(dt*6.5,0,1))
+	world.position=camera_offset
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
@@ -240,7 +267,9 @@ func _draw() -> void:
 		draw_hub_ui()
 		if hub_fade>0: draw_rect(Rect2(0,0,1280,720),Color(0.02,0.012,0.035,hub_fade))
 		return
-	var gate: Vector2 = Model.EXIT
+	var gate: Vector2=run.exit_point
+	# Camera transform affects only combat visuals. HUD remains fixed 1280x720.
+	draw_set_transform(camera_offset)
 	if gate_prompt>0.01 and run.state=="exit":
 		var p:=gate+Vector2(-72,-104+sin(clock*2.6)*3)
 		var rect:=Rect2(p,Vector2(144,36))
@@ -323,6 +352,7 @@ func _draw() -> void:
 		meter(Rect2(pos+Vector2(-radius,-radius-19),Vector2(radius*2,5)),float(enemy.hp)/float(enemy.max_hp),Color("#e36b86"))
 	for effect in run.effects:
 		draw_effect(effect)
+	draw_set_transform(Vector2.ZERO)
 	draw_hud()
 	if hub_fade>0: draw_rect(Rect2(0,0,1280,720),Color(0.02,0.012,0.035,hub_fade))
 	if hud_hit>0:
@@ -495,7 +525,7 @@ func run_scene_smoke() -> void:
 			for unit in run.enemies: unit.hp=0
 			run.tick(0.016,Vector2.ZERO,Vector2(700,385),false,false,false)
 	if run.state=="reward": select_relic(0)
-	run.player=Model.EXIT
+	run.player=run.exit_point
 	if not run.next_room() or not run.travel(4):
 		get_tree().quit(15)
 		return
@@ -1547,7 +1577,10 @@ func restart() -> void:
 	hub_fade=0.0 if smoke_mode else 1.0
 	run.begin(int(Time.get_ticks_usec()),progress.selected,progress.ranks)
 	displayed_hp = run.hp
-	banner_room = -1
+	banner_room=-1
+	camera_offset=Vector2.ZERO
+	camera_room_key=""
+	boss_reveal_toast=0.0
 
 func return_to_menu() -> void:
 	# Leaving after a conquered boss must not discard earned boss souls.
