@@ -401,7 +401,10 @@ func class_enemy_kill(dead: Dictionary) -> void:
 				if inferno: enemy["burn"]=maxf(3.5,float(enemy.get("burn",0)))
 		effect("class_ash",dead.pos,0.55,Vector2.ZERO)
 		notices.append("class_ash")
-	if relics.has("s_harvest"): souls=mini(6,souls+relics.count("s_harvest"))
+	if relics.has("s_harvest"):
+		var overflow: int=maxi(0,souls+relics.count("s_harvest")-6)
+		souls=mini(6,souls+relics.count("s_harvest"))
+		if overflow>0: hp=minf(max_hp,hp+2*overflow)
 	if relics.has("s_haunt"):
 		var target: Dictionary={}
 		var nearest: float=520.0
@@ -1006,6 +1009,10 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 		var visible_orbits: int=mini(8,sun_count)
 		for enemy in enemies:
 			if enemy.hp<=0: continue
+			# Keep a reduced base aura so one sun remains useful against nearby
+			# enemies that do not intersect the orbiting spheres themselves.
+			if player.distance_to(enemy.pos)<96:
+				hit_enemy(enemy,2.3*sun_count)
 			# Every copy adds a physical orbit, and excess copies still scale damage.
 			for orb_index in range(visible_orbits):
 				var angle: float=elapsed*2.6+float(orb_index)*TAU/float(visible_orbits)
@@ -1290,7 +1297,7 @@ func update_enemies(dt: float) -> void:
 			continue
 		if float(enemy.get("burn",0))>0:
 			enemy["burn"] = maxf(0,float(enemy.burn)-dt)
-			enemy.hp -= dt*4.0*(relics.count("ember")+(1 if set_id=="arcanist_fire" else 0))
+			enemy.hp -= dt*4.0*(relics.count("ember")+relics.count("a_ember")+(1 if set_id=="arcanist_fire" else 0))
 		if float(enemy.get("poison",0))>0:
 			enemy["poison"]=maxf(0,float(enemy.poison)-dt)
 			enemy.hp-=dt*5*relics.count("venom")
