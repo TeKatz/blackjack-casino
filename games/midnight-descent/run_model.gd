@@ -1488,8 +1488,86 @@ func encounter_variation_smoke() -> bool:
 	if profiles.size()!=4 or dangers.size()!=3 or champions.size()<3: return false
 	return true
 
+func build_and_boss_smoke() -> bool:
+	# A card must preview the identical combination that gameplay activates.
+	for id in Content.SYNERGIES:
+		begin(405)
+		var parts: Array=Content.SYNERGIES[id]["parts"]
+		var first: String=str(parts[0])
+		var second: String=str(parts[1])
+		relics.append(first)
+		if has_synergy(str(id)) or not synergy_candidates().has(second): return false
+		var info: Dictionary=synergy_preview(second)
+		if info.is_empty() or info["state"]!="ready" or info["id"]!=id: return false
+		relics.append(second)
+		if not has_synergy(str(id)) or synergy_preview(second)["state"]!="active": return false
+	begin(109)
+	if not active_synergies().is_empty(): return false
+	# Actually trigger different transformations, not just their metadata.
+	player=HUB_PORTAL
+	if not enter_first_room(): return false
+	relics.assign(["ember","storm"])
+	enemies.clear()
+	for i in range(4): spawn_enemy("brute",Vector2(380+i*34,380))
+	enemies[0]["burn"]=3.0
+	var health_before: float=float(enemies[3].hp)
+	hit_enemy(enemies[0],12.0)
+	if float(enemies[3].hp)>=health_before: return false
+	relics.assign(["pierce","bounce"])
+	enemies.clear()
+	spawn_enemy("brute",Vector2(320,385))
+	shots.clear()
+	shoot(Vector2(310,385),Vector2(400,0),false,17.0)
+	update_shots(0.016)
+	var ricochet_count:=0
+	for shot in shots:
+		if bool(shot.get("fragment",false)): ricochet_count+=1
+	if ricochet_count!=2: return false
+	relics.assign(["dashfire","nova"])
+	enemies.clear()
+	spawn_enemy("brute",Vector2(250,385))
+	dash_timer=0
+	tick(0.016,Vector2.RIGHT,Vector2(650,385),false,false,true)
+	var burst_seen:=false
+	for fx in effects:
+		if str(fx.kind).begins_with("dash_burst_"): burst_seen=true
+	if not burst_seen: return false
+	tick(0.18,Vector2.RIGHT,Vector2(650,385),false,false,false)
+	var inferno_seen:=false
+	for fx in effects:
+		if fx.kind=="synergy_inferno": inferno_seen=true
+	if not inferno_seen: return false
+	for floor in range(3):
+		begin(557+floor)
+		floor_index=floor
+		dungeon.generate(seed_value,floor)
+		room=Dungeon.BOSS
+		enter_room()
+		var boss: Dictionary={}
+		for enemy in enemies:
+			if enemy.kind in ["boss","rootking","hollowking"]: boss=enemy
+		if boss.is_empty(): return false
+		hit_enemy(boss,float(boss.max_hp)*8.0)
+		if absf(float(boss.hp)/float(boss.max_hp)-0.68)>0.002: return false
+		update_enemies(0.016)
+		if int(boss.phase)!=2 or float(boss.phase_lock)<=0: return false
+		var health_at_lock: float=float(boss.hp)
+		hit_enemy(boss,99999.0)
+		if float(boss.hp)!=health_at_lock: return false
+		boss["phase_lock"]=0.0
+		boss["hp"]=float(boss.max_hp)*0.32
+		update_enemies(0.016)
+		if int(boss.phase)!=3: return false
+		boss["phase_lock"]=0.0
+		boss_start_attack(boss)
+		if hazards.is_empty() or float(boss.wind)<=0: return false
+		boss_release_attack(boss)
+		if shots.size()<7: return false
+	return true
+
 func smoke_test() -> bool:
 	if not dungeon.smoke_test(): return false
+	if not build_and_boss_smoke(): return false
 	if not encounter_variation_smoke(): return false
 	if not hub_perks_smoke(): return false
 	begin(123,"dealer_cards")
