@@ -637,6 +637,127 @@ func enter_room() -> void:
 		spawn_enemy(["caster","spore","hexer"][floor_index],Vector2(785,230))
 		spawn_enemy(["stalker","vine","revenant"][floor_index],Vector2(785,540))
 
+func start_special_combat(node: Dictionary) -> void:
+	var family: Array=encounter_family()
+	special_stage=0
+	notices.append("sp_"+room_kind+"_enter")
+	match room_kind:
+		"ritual":
+			special_timer=36.0
+			special_wave_timer=6.0
+			special_objectives=3
+			for anchor in RITUAL_ANCHORS:
+				spawn_enemy("ritual_anchor",anchor)
+			for i in range(3):
+				spawn_enemy(str(family[i]),Vector2(495+i*190,380+i%2*90))
+		"survival":
+			special_timer=45.0
+			special_wave_timer=7.0
+			for i in range(5):
+				spawn_enemy(str(family[i%family.size()]),Vector2(520+i*130,230+i%2*280))
+		"bounty":
+			special_timer=0.0
+			special_wave_timer=9.0
+			var target_kind: String=str(["brute","mushroom","sentinel"][floor_index])
+			spawn_enemy(target_kind,Vector2(890,385),"frenzied")
+			enemies[-1]["bounty"]=true
+			enemies[-1]["hp"]*=3.8+float(floor_index)*0.5
+			enemies[-1]["max_hp"]=enemies[-1].hp
+			special_objectives=1
+			for i in range(4):
+				spawn_enemy(str(family[i]),Vector2(540+(i%2)*340,220+(i/2)*300))
+		"unstable":
+			special_timer=0.0
+			special_wave_timer=3.8
+			special_objectives=3
+			for i in range(6):
+				spawn_enemy(str(family[i%family.size()]),Vector2(410+(i%3)*230,185+(i/3)*340))
+
+func complete_special_combat() -> void:
+	if special_stage==99 or state!="fight": return
+	var premium: bool=room_kind!="ritual" or special_stage==0
+	special_stage=99
+	var bonus: int=14+encounter_threat*4
+	if room_kind=="ritual": bonus=20 if premium else 6
+	if room_kind=="bounty": bonus=23
+	shards+=bonus
+	check_shard_contract()
+	enemies.clear()
+	shots.clear()
+	hazards.clear()
+	combat_clears+=1
+	class_room_clear()
+	if contract_clean_room: advance_contract("untouched")
+	make_offers(premium)
+	state="reward"
+	notices.append("sp_"+room_kind+"_success")
+	effect("sp_"+room_kind+"_success",player,0.85,Vector2.ZERO)
+
+func tick_special_room(dt: float) -> bool:
+	if state!="fight" or room_kind not in Dungeon.SPECIAL_COMBAT: return false
+	special_elapsed+=dt
+	match room_kind:
+		"ritual":
+			if special_stage==0:
+				special_timer=maxf(0.0,special_timer-dt)
+				if special_timer<=0.0:
+					special_stage=1
+					spawn_enemy(str(["shield","brute","revenant"][floor_index]),Vector2(1050,380),"warded")
+					enemies[-1]["hp"]*=2.4
+					enemies[-1]["max_hp"]=enemies[-1].hp
+					notices.append("sp_ritual_breach")
+				special_wave_timer-=dt
+				if special_wave_timer<=0 and enemies.size()<14:
+					special_wave_timer=6.5
+					var family: Array=encounter_family()
+					for i in range(2):
+						spawn_enemy(str(family[(int(special_elapsed/6.5)+i)%family.size()]),Vector2(450+i*530,240+i*270))
+			if special_objectives==0 and special_stage==0:
+				complete_special_combat()
+				return true
+		"survival":
+			special_timer=maxf(0.0,special_timer-dt)
+			if special_timer<=0.0 and hp>0.0:
+				complete_special_combat()
+				return true
+			special_wave_timer-=dt
+			if special_wave_timer<=0:
+				special_wave_timer=7.0
+				var family: Array=encounter_family()
+				for i in range(3):
+					if enemies.size()>=17: break
+					spawn_enemy(str(family[(int(special_elapsed/7)+i)%family.size()]),Vector2(560+i*205,210+(i%2)*345))
+				notices.append("sp_survival_wave")
+			if int(special_elapsed)%9==1 and special_elapsed-dt<float(int(special_elapsed)):
+				add_hazard(player,86,0.88,0.65,19+encounter_threat*3)
+				hazards[-1]["type"]="sp_survival_hazard"
+		"bounty":
+			special_wave_timer-=dt
+			if special_wave_timer<=0 and enemies.size()<13:
+				special_wave_timer=9.0
+				spawn_enemy(str(encounter_family()[int(special_elapsed/9)%encounter_family().size()]),Vector2(1080,300))
+				notices.append("sp_bounty_backup")
+		"unstable":
+			special_wave_timer-=dt
+			if special_wave_timer<=0:
+				special_wave_timer=4.0
+				special_blast_timer=0.84
+				for core in UNSTABLE_CORES:
+					add_hazard(core,104,0.84,0.43,22+encounter_threat*4)
+					hazards[-1]["type"]="sp_unstable_blast"
+				notices.append("sp_unstable_charge")
+			if special_blast_timer>0:
+				special_blast_timer-=dt
+				if special_blast_timer<=0:
+					for enemy in enemies:
+						if enemy.hp<=0: continue
+						for core in UNSTABLE_CORES:
+							if enemy.pos.distance_to(core)<104:
+								hit_enemy(enemy,40)
+								break
+					notices.append("sp_unstable_burst")
+	return false
+
 func encounter_family() -> Array:
 	return [["stalker","caster","brute","archer","shield"],["spore","vine","mushroom","caster","brute"],["revenant","hexer","sentinel","archer","shield"]][floor_index]
 
@@ -682,6 +803,21 @@ func spawn_encounter_wave(node: Dictionary) -> void:
 			enemies[-1]["elite"]=true
 
 func build_room_layout(node: Dictionary) -> void:
+	if room_kind in Dungeon.SPECIAL_COMBAT:
+		match room_kind:
+			"ritual":
+				walls.append(Rect2(382,206,82,67))
+				walls.append(Rect2(380,515,85,65))
+			"survival":
+				for x in [430.0,900.0]:
+					walls.append(Rect2(x,335,62,95))
+			"bounty":
+				walls.append(Rect2(635,195,80,74))
+				walls.append(Rect2(635,504,80,74))
+			"unstable":
+				for core in UNSTABLE_CORES:
+					walls.append(Rect2(core-Vector2(25,25),Vector2(50,50)))
+		return
 	if room_kind=="boss":
 		if floor_index==2:
 			walls.append(Rect2(480,172,76,76))
@@ -845,6 +981,9 @@ func spawn_enemy(kind: String, pos: Vector2, affix: String="") -> void:
 			health = 430.0
 			radius = 43.0
 	health*=1.25+0.25*floor_index
+	if kind=="ritual_anchor":
+		health=110+floor_index*40
+		radius=28.0
 	if kind in ["boss","rootking","hollowking"]: health*=1.5625 # +25% compared with the previous boss HP
 	else: health*=1.0+float(encounter_threat)*0.16
 	pos = safe_position(pos,radius)
@@ -1078,6 +1217,7 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 			if not nearest.is_empty():
 				spirit_pos=spirit_pos.move_toward(nearest.pos,35)
 				shoot(spirit_pos,spirit_pos.direction_to(nearest.pos)*510,false,bolt_damage*0.6)
+	if tick_special_room(dt): return
 	update_enemies(dt)
 	update_shots(dt)
 	if guard_pulse_pending:
@@ -1088,6 +1228,13 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 	update_hazards(dt)
 	for i in range(enemies.size()-1, -1, -1):
 		if enemies[i].hp <= 0:
+			if enemies[i].kind=="ritual_anchor":
+				special_objectives=maxi(0,special_objectives-1)
+				effect("sp_ritual_anchor",enemies[i].pos,0.70,Vector2.ZERO)
+				notices.append("sp_ritual_anchor")
+				enemies.remove_at(i)
+				continue
+			if bool(enemies[i].get("bounty",false)): special_stage=3
 			effect("death", enemies[i].pos, 0.35, Vector2.ZERO)
 			if enemies[i].kind in ["boss","rootking","hollowking"]:
 				notices.append("boss_kill")
@@ -1128,6 +1275,12 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 			enemies.remove_at(i)
 			notices.append("kill")
 	update_effects(dt)
+	if state=="fight" and room_kind=="bounty" and special_stage==3:
+		complete_special_combat()
+		return
+	if state=="fight" and room_kind=="ritual" and special_objectives==0 and special_stage==0:
+		complete_special_combat()
+		return
 	if hp <= 0 and relics.has("phoenix") and not revive_used:
 		revive_used=true
 		hp=max_hp*0.5
@@ -1135,7 +1288,10 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 	if hp <= 0:
 		state = "defeat"
 		shots.clear()
-	elif enemies.is_empty():
+	elif enemies.is_empty() and (room_kind not in ["survival","ritual"] or (room_kind=="ritual" and special_stage==1)):
+		if room_kind=="ritual":
+			complete_special_combat()
+			return
 		if wave<wave_total:
 			wave+=1
 			notices.append("wave")
@@ -1369,6 +1525,8 @@ func update_enemies(dt: float) -> void:
 		var toward := pos.direction_to(player)
 		var dist := pos.distance_to(player)
 		var kind: String = enemy.kind
+		if kind=="ritual_anchor":
+			continue
 		var radius: float = enemy.r
 		if enemy.wind > 0:
 			enemy.wind -= dt
@@ -1455,6 +1613,7 @@ func spawn_reinforcements() -> void:
 	environment_timer=1.5
 
 func update_environment(dt: float) -> void:
+	if room_kind in Dungeon.SPECIAL_COMBAT: return
 	if hazards.size()>=20: return
 	environment_timer-=dt
 	if environment_timer>0: return
