@@ -20,6 +20,11 @@ var tree_rank := 1
 var tree_detail: Label
 var tree_buy: Button
 var preview_clock := 0.0
+var cinematic_playing := false
+var cinematic_clock := 0.0
+var cinematic_changed_scene := false
+var interface_frame: VBoxContainer
+var cinematic_fade: ColorRect
 var inspected_set := "warden_guard"
 var loadout_cards: Array[Button]=[]
 var footer_left: Label
@@ -95,6 +100,7 @@ func build_shell() -> void:
 	for edge in ["left","right","top","bottom"]: margins.add_theme_constant_override("margin_"+edge,26)
 	add_child(margins)
 	var frame:=VBoxContainer.new()
+	interface_frame=frame
 	frame.add_theme_constant_override("separation",12)
 	margins.add_child(frame)
 	var header:=PanelContainer.new()
@@ -174,8 +180,21 @@ func build_shell() -> void:
 	footer_right.custom_minimum_size=Vector2(220,20)
 	footer_right.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT
 	footer.add_child(footer_right)
+	cinematic_fade=ColorRect.new()
+	cinematic_fade.color=Color(0.03,0.02,0.06,0)
+	cinematic_fade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	cinematic_fade.mouse_filter=Control.MOUSE_FILTER_IGNORE
+	add_child(cinematic_fade)
 
 func _process(dt: float) -> void:
+	if cinematic_playing:
+		cinematic_clock+=dt
+		if cinematic_clock>=1.96:
+			cinematic_fade.color=Color(0.03,0.02,0.06,clampf((cinematic_clock-1.96)/0.55,0,1))
+		if cinematic_clock>=2.56 and not cinematic_changed_scene:
+			cinematic_changed_scene=true
+			get_tree().change_scene_to_file("res://run.tscn")
+		return
 	if not is_instance_valid(preview_sprite) or not get_tree().get_meta("descent_menu_motion",true): return
 	preview_clock+=dt
 	if preview_sprite.texture is AtlasTexture and page in ["home","expedition","sets","codex"]:
@@ -498,10 +517,22 @@ func inspect_loadout(id: String) -> void:
 	show_page(page)
 
 func start_run() -> void:
-	if not progress.unlocked.has(inspected_set): return
+	if cinematic_playing or not progress.unlocked.has(inspected_set): return
 	progress.selected=inspected_set
-	progress.save()
-	get_tree().change_scene_to_file("res://run.tscn")
+	if not visual_smoke: progress.save()
+	cinematic_playing=true
+	cinematic_clock=0.0
+	cinematic_changed_scene=false
+	get_viewport().gui_release_focus()
+	backdrop.begin_cinematic(Content.SETS[inspected_set].character)
+	audio.play("portal_charge")
+	for button in action_buttons:
+		button.disabled=true
+	for button in nav_buttons.values():
+		button.disabled=true
+	var fade:=create_tween()
+	fade.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	fade.tween_property(interface_frame,"modulate:a",0.0,0.52)
 
 func select_set(id: String) -> void:
 	if progress.unlocked.has(id):
@@ -530,6 +561,7 @@ func toggle_fullscreen() -> void:
 	window.mode = Window.MODE_WINDOWED if window.mode == Window.MODE_FULLSCREEN else Window.MODE_FULLSCREEN
 
 func _unhandled_input(event: InputEvent) -> void:
+	if cinematic_playing: return
 	if event.is_action_pressed("ui_cancel") and page != "home":
 		show_page("home")
 		get_viewport().set_input_as_handled()

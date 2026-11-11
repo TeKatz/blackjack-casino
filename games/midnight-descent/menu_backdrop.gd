@@ -2,7 +2,10 @@ extends Control
 ## Animated pixel-art gate chamber, independent of menu widgets.
 const TILES = preload("res://art/pixel/vault_tiles.svg")
 const TORCH = preload("res://art/pixel/torch.svg")
-const WARDEN = preload("res://art/pixel/warden.svg")
+const PixelWorld = preload("res://pixel_world.gd")
+var cinematic_active := false
+var cinematic_clock := 0.0
+var cinematic_character := "warden"
 var clock := 0.0
 var motion := true
 
@@ -12,15 +15,28 @@ func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 func _process(dt: float) -> void:
-	if motion:
+	if motion or cinematic_active:
 		clock += dt
+		if cinematic_active: cinematic_clock+=dt
 		queue_redraw()
+
+func begin_cinematic(character: String) -> void:
+	cinematic_active=true
+	cinematic_clock=0.0
+	cinematic_character=character if PixelWorld.ACTORS.has(character) else "warden"
+	queue_redraw()
 
 func tile(index: int, rect: Rect2) -> void:
 	draw_texture_rect_region(TILES,rect,Rect2(index*32,0,32,32))
 
 func _draw() -> void:
-	draw_set_transform(Vector2.ZERO,0,size/Vector2(1280,720))
+	var camera_progress: float=clampf((cinematic_clock-0.25)/1.10,0,1) if cinematic_active else 0.0
+	var eased: float=camera_progress*camera_progress*(3-2*camera_progress)
+	var zoom: float=1.0+0.22*eased
+	var focus: Vector2=Vector2(925,350)
+	var destination: Vector2=Vector2(810,350)
+	var translation: Vector2=(destination-focus*zoom)*eased
+	draw_set_transform(translation*size/Vector2(1280,720),0,size/Vector2(1280,720)*zoom)
 	draw_rect(Rect2(0,0,1280,720),Color("#100d19"))
 	for y in range(8):
 		for x in range(15):
@@ -65,9 +81,24 @@ func _draw() -> void:
 		for i in range(7,0,-1):
 			draw_circle(pos,float(i)*16+sin(clock*5+x)*2,Color(0.92,0.44,0.17,0.032))
 		draw_texture_rect_region(TORCH,Rect2(pos-Vector2(16,37),Vector2(32,64)),Rect2(int(clock*8)%4*16,0,16,32))
-	# The same actual player atlas as gameplay, enlarged at integer scale.
-	draw_rect(Rect2(881,552,88,12),Color(0,0,0,0.55))
-	draw_texture_rect_region(WARDEN,Rect2(861,430,128,128),Rect2(int(clock*2)%2*32,0,32,32))
+	# Camera intro focuses the selected actual player sprite and the portal.
+	var walk: float=clampf((cinematic_clock-1.02)/0.99,0,1) if cinematic_active else 0.0
+	var y: float=430.0-184.0*(walk*walk*(3-2*walk))
+	var actor_opacity: float=1.0-clampf((cinematic_clock-1.94)/0.30,0,1) if cinematic_active else 1.0
+	draw_rect(Rect2(881,y+122,88,12),Color(0,0,0,0.55*actor_opacity))
+	var frame: int=int(clock*2)%2
+	if cinematic_active:
+		if cinematic_clock<1.02: frame=6 if cinematic_clock>0.65 else int(clock*2)%2
+		elif cinematic_clock<2.04: frame=2+int(clock*12)%4
+		else: frame=0
+	var tex: Texture2D=PixelWorld.ACTORS[cinematic_character]
+	draw_texture_rect_region(tex,Rect2(861,y,128,128),Rect2(frame*32,0,32,32),Color(1,1,1,actor_opacity))
+	if cinematic_active and cinematic_clock>0.72 and cinematic_clock<1.12:
+		var ring_alpha: float=sin((cinematic_clock-0.72)/0.40*PI)
+		draw_arc(Vector2(925,y+68),44,0,TAU,32,Color(0.89,0.73,1,ring_alpha*0.9),3,true)
+		for i in range(6):
+			var p: Vector2=Vector2(925,y+68)+Vector2.from_angle(i*TAU/6+clock)*58
+			draw_rect(Rect2(p,Vector2(3,3)),Color("#ffdcaa"))
 	for i in range(34):
 		var pos := Vector2(540+fposmod(i*79+clock*(4+i%4),730),112+fposmod(i*71-clock*7,490))
 		draw_rect(Rect2(Vector2(roundf(pos.x/2)*2,roundf(pos.y/2)*2),Vector2(2,2)),Color(0.9,0.73,0.5,0.14+0.12*sin(clock*2+i)))
