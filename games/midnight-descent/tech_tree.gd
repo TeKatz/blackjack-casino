@@ -3,9 +3,9 @@ extends Control
 signal rank_selected(id: String, rank: int)
 const UI = preload("res://ui_theme.gd")
 const Content = preload("res://content.gd")
-const KEYS = ["vitality","alchemy","power","arcane","agility","fortune"]
-const COLORS = [Color("#e68e9d"),Color("#83d8b2"),Color("#e7ba75"),Color("#bd9cfa"),Color("#90c9f2"),Color("#efd18a")]
-const ICONS = [1,15,0,3,2,13]
+const KEYS = ["vitality","alchemy","power","arcane","agility","fortune","resolve","recovery"]
+const COLORS = [Color("#e68e9d"),Color("#83d8b2"),Color("#e7ba75"),Color("#bd9cfa"),Color("#90c9f2"),Color("#efd18a"),Color("#eaa78b"),Color("#8edfc9")]
+const ICONS = [1,15,0,3,2,13,35,31]
 var profile
 var german := false
 var selected := "vitality"
@@ -14,7 +14,7 @@ var clock := 0.0
 var motion := true
 var nodes: Array[Button] = []
 func _ready() -> void:
-	custom_minimum_size=Vector2(748,365)
+	custom_minimum_size=Vector2(748,480)
 	mouse_filter=Control.MOUSE_FILTER_IGNORE
 	texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
 func configure(value, de: bool, key: String, rank: int) -> void:
@@ -54,7 +54,10 @@ func configure(value, de: bool, key: String, rank: int) -> void:
 			UI.style_button(button,COLORS[row] if owned or next else Color("#625772"),active or owned)
 			if not owned and not next:
 				button.add_theme_color_override("font_color",Color("#9d90aa"))
-			button.tooltip_text=item[1 if german else 0]+"  "+str(level)+" • "+("Erworben" if german else "Acquired" if owned else "Locked") if owned else item[1 if german else 0]+"  "+str(level)+" • "+(str(profile.cost(id)) if next else ("Vorgängerrang nötig" if german else "Previous rank required"))
+			var status: String="Erworben" if german else "Acquired"
+			if not owned and next: status=str(profile.cost(id))+" "+("Boss-Seelen" if german else "boss souls")
+			elif not owned: status="Vorgängerrang nötig" if german else "Previous rank required"
+			button.tooltip_text=str(item[1 if german else 0])+"  "+str(level)+" • "+status
 			button.pressed.connect(func(): rank_selected.emit(id,level))
 			add_child(button)
 			nodes.append(button)
@@ -64,14 +67,14 @@ func _process(dt: float) -> void:
 		clock+=dt
 		queue_redraw()
 func _draw() -> void:
-	draw_rect(Rect2(0,0,748,365),Color("#12101d"))
-	for x in range(0,748,24): draw_line(Vector2(x,0),Vector2(x,365),Color("#211b2c"),1)
-	for y in range(0,365,24): draw_line(Vector2(0,y),Vector2(748,y),Color("#211b2c"),1)
-	draw_rect(Rect2(5,5,738,355),Color("#594763"),false,2)
+	draw_rect(Rect2(0,0,748,480),Color("#12101d"))
+	for x in range(0,748,24): draw_line(Vector2(x,0),Vector2(x,480),Color("#211b2c"),1)
+	for y in range(0,480,24): draw_line(Vector2(0,y),Vector2(748,y),Color("#211b2c"),1)
+	draw_rect(Rect2(5,5,738,470),Color("#594763"),false,2)
 	if profile==null: return
-	draw_line(Vector2(27,43),Vector2(27,328),Color("#8a6d9b"),3)
-	draw_circle(Vector2(27,185),9,Color("#d2a96e"))
-	draw_circle(Vector2(27,185),5,Color("#f6e1ab"))
+	draw_line(Vector2(27,43),Vector2(27,43+57*(KEYS.size()-1)),Color("#8a6d9b"),3)
+	draw_circle(Vector2(27,43+57.0*(KEYS.size()-1)*0.5),9,Color("#d2a96e"))
+	draw_circle(Vector2(27,43+57.0*(KEYS.size()-1)*0.5),5,Color("#f6e1ab"))
 	for row in range(KEYS.size()):
 		var id: String=KEYS[row]
 		var y: float=43+row*57
