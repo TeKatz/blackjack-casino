@@ -200,7 +200,7 @@ func _process(dt: float) -> void:
 		room_banner = 2.0
 		last_wave=0
 	room_banner = maxf(0,room_banner-dt)
-	if run.state=="fight" and run.room_kind in ["fight","elite"] and run.wave_total>1 and last_wave!=run.wave:
+	if show_combat_wave_hud() and last_wave!=run.wave:
 		last_wave=run.wave
 		wave_banner=2.2
 		if run.wave==1: play_sound("wave")
@@ -210,6 +210,11 @@ func _process(dt: float) -> void:
 	gate_near=nearby
 	gate_prompt=move_toward(gate_prompt,1.0 if nearby else 0.0,dt*5.0)
 	queue_redraw()
+
+func show_combat_wave_hud() -> bool:
+	# Ritual, Survival, Bounty and Reactor are objective modes rather than
+	# traditional kill-every-wave battles. Never display their wave banner.
+	return run.state=="fight" and run.room_kind in ["fight","elite"] and run.wave_total>1
 
 func update_chamber_camera(dt: float) -> void:
 	var signature: String=str(run.floor_index)+":"+str(run.room)+":"+str(run.seed_value)+":"+str(run.large_room)
@@ -714,6 +719,18 @@ func run_scene_smoke() -> void:
 			push_error("Walking through the boss arch failed to initiate the reveal")
 			get_tree().quit(45)
 			return
+	run.state="fight"
+	run.room_kind="ritual"
+	run.wave_total=3
+	if show_combat_wave_hud():
+		push_error("Ritual incorrectly displays the standard wave counter")
+		get_tree().quit(55)
+		return
+	run.room_kind="elite"
+	if not show_combat_wave_hud():
+		push_error("Elite combat wave counter was unintentionally removed")
+		get_tree().quit(56)
+		return
 	# The Archive's discard choices must display the actual item's icon
 	# so that selecting an equipped relic is visually unambiguous.
 	run.relics.clear()
@@ -1124,7 +1141,7 @@ func draw_hud() -> void:
 		var record: Dictionary=Content.SYNERGIES[run.last_synergy_id]
 		text_at(Vector2(443,card_y+22),tr_text("SYNERGY UNLOCKED","SYNERGIE AKTIVIERT"),15,Color(0.73,1.0,0.80,fade))
 		text_at(Vector2(443,card_y+48),str(record["de" if german else "en"]),21,Color(1.0,0.94,0.78,fade))
-	if run.state=="fight" and run.room_kind in ["fight","elite"] and run.wave_total>1:
+	if show_combat_wave_hud():
 		hud_panel(Rect2(1000,150,218,37),GOLD)
 		text_at(Vector2(1016,175),tr_text("WAVE","WELLE")+" %d / %d" % [run.wave,run.wave_total],19,GOLD)
 		if wave_banner>0:
