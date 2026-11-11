@@ -1063,7 +1063,10 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 	for i in range(enemies.size()-1, -1, -1):
 		if enemies[i].hp <= 0:
 			effect("death", enemies[i].pos, 0.35, Vector2.ZERO)
-			if enemies[i].kind in ["boss","rootking","hollowking"]: notices.append("boss_kill")
+			if enemies[i].kind in ["boss","rootking","hollowking"]:
+				notices.append("boss_kill")
+				# A defeated boss counts even if remaining adds end the expedition.
+				bosses_defeated=maxi(bosses_defeated,floor_index+1)
 			kills += 1
 			advance_contract("slayer")
 			if character=="soulbinder": souls=mini(6,souls+1)
