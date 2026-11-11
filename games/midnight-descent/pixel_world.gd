@@ -911,6 +911,19 @@ func draw_actor(enemy: Dictionary) -> void:
 	if float(enemy.get("chill",0))>0: tint=Color("#a3dfff")
 	if enemy.get("elite",false):
 		draw_arc(pos+Vector2(0,10),size*0.42,0,TAU,24,Color("#f0bf70"),2,true)
+	if kind in ["boss","rootking","hollowking"]:
+		var phase: int=int(enemy.get("phase",1))
+		var boss_color: Color=Color("#f1c986") if kind=="boss" else (Color("#96d6a3") if kind=="rootking" else Color("#d59cf4"))
+		for ring in range(phase):
+			var radius: float=size*(0.39+float(ring)*0.095)+sin(clock*4.2+ring)*2
+			draw_arc(pos+Vector2(0,8),radius,0,TAU,48,Color(boss_color,0.4+0.14*sin(clock*3+ring)),3,true)
+		if float(enemy.get("phase_lock",0))>0.0:
+			var lock_alpha: float=clampf(float(enemy.get("phase_lock",0)),0,1)
+			draw_circle(pos+Vector2(0,-16),size*0.37,Color(boss_color,0.10*lock_alpha))
+			for spark in range(12):
+				var ray: Vector2=Vector2.from_angle(float(spark)*TAU/12.0+clock*1.8)
+				var p: Vector2=pos+Vector2(0,-16)+ray*(size*0.46)
+				draw_rect(Rect2(pixel_pos(p)-Vector2(3,3),Vector2(6,6)),Color(boss_color,lock_alpha))
 	var affix: String=str(enemy.get("affix",""))
 	if affix!="":
 		# Champion identity must be visible before the player attacks.
