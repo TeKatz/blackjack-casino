@@ -23,7 +23,9 @@ var hud_kills := 0
 var hud_hit := 0.0
 var hud_heal := 0.0
 var hud_gain := 0.0
+var hud_spend := 0.0
 var hud_kill := 0.0
+var hud_cast: Array[float]=[0.0,0.0,0.0,0.0]
 var hud_ready: Array[float]=[0.0,0.0,0.0,0.0]
 var hud_previous: Array[float]=[1.0,1.0,1.0,1.0]
 var room_banner := 0.0
@@ -964,6 +966,7 @@ func update_hud_feedback(dt: float) -> void:
 	if run.hp<hud_hp: hud_hit=1.0
 	elif run.hp>hud_hp: hud_heal=1.0
 	if run.shards>hud_shards: hud_gain=1.0
+	elif run.shards<hud_shards: hud_spend=1.0
 	if run.kills>hud_kills: hud_kill=1.0
 	hud_hp=run.hp
 	hud_shards=run.shards
@@ -971,12 +974,15 @@ func update_hud_feedback(dt: float) -> void:
 	hud_hit=move_toward(hud_hit,0,dt*2.6)
 	hud_heal=move_toward(hud_heal,0,dt*2.0)
 	hud_gain=move_toward(hud_gain,0,dt*1.8)
+	hud_spend=move_toward(hud_spend,0,dt*2.2)
 	hud_kill=move_toward(hud_kill,0,dt*2.0)
 	var values: Array[float]=[1-run.attack_timer/run.attack_cd,1-run.bolt_timer/run.special_cd,1-run.dash_timer/run.dash_cooldown,1-run.active_timer/run.active_cd]
 	for i in range(4):
 		if values[i]>=0.99 and hud_previous[i]<0.99: hud_ready[i]=1.0
+		elif values[i]<hud_previous[i]-0.16: hud_cast[i]=1.0
 		hud_previous[i]=values[i]
 		hud_ready[i]=move_toward(hud_ready[i],0,dt*2.5)
+		hud_cast[i]=move_toward(hud_cast[i],0,dt*3.5)
 
 func hud_panel(rect: Rect2, accent: Color = GOLD) -> void:
 	# Smooth obsidian-and-bronze surface, not nested pixel rectangles.
@@ -988,8 +994,12 @@ func ability_slot(x: float, icon_index: int, key: String, name: String, ratio: f
 	var rect:=Rect2(x,657,156,58)
 	var index: int=clampi(int(round((x-18)/166)),0,3)
 	var pulse: float=hud_ready[index]
+	var cast_pulse: float=hud_cast[index]
 	hud_panel(rect,color.lightened(pulse*0.32))
 	if pulse>0.0: draw_rect(Rect2(x+8,703,140,3),Color(color,pulse*0.8))
+	if cast_pulse>0.0:
+		draw_rect(Rect2(x+6,660,144,3),Color(color,0.60*cast_pulse))
+		draw_circle(Vector2(x+28,684),28*(1.0-cast_pulse)+6,Color(color,0.15*cast_pulse))
 	var icon_rect:=Rect2(x+8,664,40,40)
 	draw_rect(icon_rect.grow(2),Color(color,0.20+0.35*pulse))
 	draw_rect(icon_rect,Color("#142226"))
@@ -1029,10 +1039,13 @@ func draw_hud() -> void:
 		draw_rect(Rect2(28,83,384,3),Color(0.38,1,0.70,hud_heal))
 		draw_rect(Rect2(30,16,378,3),Color(0.41,1,0.69,hud_heal*0.65))
 	hud_panel(Rect2(438,10,368,84),VIOLET)
-	hud_panel(Rect2(821,10,442,84),GOLD.lightened(hud_gain*0.45))
+	hud_panel(Rect2(821,10,442,84),GOLD.lightened(hud_gain*0.45).lerp(UI.DANGER,hud_spend*0.5))
 	if hud_gain>0:
 		draw_rect(Rect2(832,84,420,3),Color(GOLD,hud_gain*0.88))
 		draw_circle(Vector2(863,51),22*hud_gain,Color(GOLD,0.15*hud_gain))
+	if hud_spend>0:
+		draw_rect(Rect2(832,84,420,3),Color(UI.DANGER,hud_spend*0.85))
+		draw_circle(Vector2(863,51),18*hud_spend,Color(UI.DANGER,0.11*hud_spend))
 	draw_rect(Rect2(26,20,67,67),Color("#192b2d"))
 	draw_rect(Rect2(26,20,67,67),Color("#71958c"),false,1)
 	draw_texture_rect_region(PixelWorld.ACTORS[run.character],Rect2(29,23,64,64),Rect2(int(clock*2)%2*32,0,32,32))
@@ -1058,7 +1071,7 @@ func draw_hud() -> void:
 	text_at(Vector2(565,78),"ELITE %d/%d" % [run.dungeon.cleared_elites(),elite_required],13,MUTED)
 	text_at(Vector2(682,78),tr_text("BOSS READY","BOSS BEREIT") if run.dungeon.boss_ready() else tr_text("BOSS LOCKED","BOSS GESPERRT"),12,Color("#8cdbb1") if run.dungeon.boss_ready() else Color("#c99c87"))
 	text_at(Vector2(844,33),tr_text("SHARDS","SPLITTER"),12,MUTED)
-	text_at(Vector2(844,59),str(run.shards),24,GOLD)
+	text_at(Vector2(844,59),str(run.shards),24,GOLD.lerp(UI.DANGER,hud_spend))
 	text_at(Vector2(957,33),tr_text("DEFEATED","BESIEGT"),12,MUTED)
 	text_at(Vector2(957,59),str(run.kills),24,WHITE.lerp(Color("#ffe0a1"),hud_kill))
 	text_at(Vector2(1100,33),tr_text("RUN TIME","RUN-ZEIT"),12,MUTED)
