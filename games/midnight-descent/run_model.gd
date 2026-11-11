@@ -12,6 +12,7 @@ var wave := 1
 var wave_total := 1
 const FLOOR_COUNT := 3
 var bosses_defeated := 0
+var combat_clears := 0
 var souls := 0
 var specials := 0
 var harvest_count := 0
@@ -87,6 +88,7 @@ func begin(value: int, loadout: String = "warden_guard", upgrades: Dictionary = 
 	elites = 0
 	boss_defeated = false
 	bosses_defeated=0
+	combat_clears=0
 	souls=0
 	specials=0
 	harvest_count=0
@@ -94,7 +96,7 @@ func begin(value: int, loadout: String = "warden_guard", upgrades: Dictionary = 
 	special_multiplier=1.0
 	spirit_life=0
 	active_item = "heal"
-	active_cd = 24.0
+	active_cd = 40.0
 	slow_time = 0
 	shield_time = 0
 	temp_power = 0
@@ -113,7 +115,7 @@ func begin(value: int, loadout: String = "warden_guard", upgrades: Dictionary = 
 	dash_cooldown = spec.dash
 	attack_cd = spec.attack
 	special_cd = spec.special
-	active_heal = 25.0+5*int(upgrades.get("alchemy",0))
+	active_heal = 18.0+3*int(upgrades.get("alchemy",0))
 	active_timer = 0
 	attacks = 0
 	settled = false
@@ -155,7 +157,7 @@ func enter_room() -> void:
 	if not node.visited:
 		node.visited = true
 		visited_count += 1
-		if relics.has("medic"): hp=minf(max_hp,hp+6*relics.count("medic"))
+		if relics.has("medic"): hp=minf(max_hp,hp+3*relics.count("medic"))
 		if relics.has("sacrifice") and room_kind in ["fight","elite","boss"]: hp=maxf(1,hp-2*relics.count("sacrifice"))
 	service_used = node.cleared
 	build_room_layout(node)
@@ -166,8 +168,8 @@ func enter_room() -> void:
 		state = "service"
 		return
 	if room_kind != "boss":
-		var count := 3 + floor_index + (2 if room_kind=="elite" else room%3)
-		if wave_total==2: count=3+floor_index
+		var count := 4 + floor_index + (2 if room_kind=="elite" else room%3)
+		if wave_total==2: count=4+floor_index
 		for i in range(count):
 			var family: Array = [["stalker","caster","brute","archer","shield"],["spore","vine","mushroom","caster","brute"],["revenant","hexer","sentinel","archer","shield"]][floor_index]
 			var kind: String = family[(i+room+floor_index)%family.size()]
@@ -273,7 +275,7 @@ func service_action(choice: int) -> bool:
 				return true
 			elif choice==1 and shards>=8:
 				shards-=8
-				hp=minf(max_hp,hp+35)
+				hp=minf(max_hp,hp+25)
 			elif choice==2 and shards>=10:
 				shards-=10
 				var items: Array = ["time","bomb","shield","dice","mirror"]
@@ -301,7 +303,7 @@ func service_action(choice: int) -> bool:
 				armor+=4
 			elif choice!=3: return false
 		"shrine":
-			if choice==0: hp=minf(max_hp,hp+40)
+			if choice==0: hp=minf(max_hp,hp+30)
 			elif choice==1: max_hp+=10; hp+=10
 			else: return false
 		_: return false
@@ -336,6 +338,8 @@ func spawn_enemy(kind: String, pos: Vector2) -> void:
 		"boss":
 			health = 430.0
 			radius = 43.0
+	health*=1.25+0.25*floor_index
+	if kind in ["boss","rootking","hollowking"]: health*=1.25
 	pos = safe_position(pos,radius)
 	# Move spawn points out of solid pillars before the enemy becomes active.
 	if blocked(pos,radius):
@@ -435,7 +439,7 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 			if set_id=="soulbinder_reaper":
 				for enemy in enemies:
 					if player.distance_to(enemy.pos)<190: hit_enemy(enemy,bolt_damage*(1.0+spent*0.4)*special_multiplier)
-				hp=minf(max_hp,hp+spent*3)
+				hp=minf(max_hp,hp+spent*2)
 				effect("burst",player,0.45,Vector2.ZERO)
 			else:
 				spirit_pos=player+aim*45
@@ -517,7 +521,7 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 			if enemies[i].kind=="mushroom":
 				spawn_enemy("spore",enemies[i].pos+Vector2(35,0))
 				spawn_enemy("spore",enemies[i].pos-Vector2(35,0))
-			hp = minf(max_hp,hp+2.0*relics.count("leech"))
+			hp = minf(max_hp,hp+1.0*relics.count("leech"))
 			enemies.remove_at(i)
 			notices.append("kill")
 	update_effects(dt)
@@ -538,6 +542,7 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 			return
 		shots.clear()
 		hazards.clear()
+		combat_clears+=1
 		if room_kind=="boss": bosses_defeated=maxi(bosses_defeated,floor_index+1)
 		if room_kind=="boss" and floor_index==FLOOR_COUNT-1:
 			dungeon.nodes[room].cleared=true
@@ -589,7 +594,9 @@ func hit_enemy(enemy: Dictionary, amount: float) -> void:
 func hurt(amount: float) -> void:
 	if invulnerable > 0 or shield_time>0 or hp <= 0:
 		return
-	hp = maxf(0, hp - maxf(1, amount - armor))
+	var scaled: float=amount*(1.0+0.20*floor_index)
+	# Armor never negates more than half of an incoming hit.
+	hp = maxf(0,hp-maxf(scaled*0.5,scaled-armor))
 	if relics.has("guardpulse"): guard_pulse_pending=true
 	invulnerable = 0.65+0.15*relics.count("warding")
 	effect("hurt", player, 0.25, Vector2.ZERO)
@@ -833,7 +840,7 @@ func choose_relic(index: int) -> bool:
 		"ward": armor += 4
 		"fury": dash_cooldown = maxf(0.55, dash_cooldown-0.23)
 		"tempo": attack_cd = maxf(0.12,attack_cd*0.88)
-		"potion": active_heal += 15
+		"potion": active_heal += 8
 		"sanguine": damage+=6; max_hp=maxf(20,max_hp-8); hp=minf(hp,max_hp)
 		"bulwark": armor+=3
 		"swift": speed+=18
@@ -841,9 +848,9 @@ func choose_relic(index: int) -> bool:
 		"titan": max_hp+=30; hp+=30
 		"needle": bolt_damage+=5
 		"charge": dash_cooldown=maxf(0.35,dash_cooldown-0.15)
-		"battery": active_cd=maxf(8,active_cd-3)
+		"battery": active_cd=maxf(20,active_cd-3)
 		"glass": damage+=16; armor-=3
-	hp = minf(max_hp, hp+(10.0 if floor_index==0 else 8.0))
+	hp = minf(max_hp, hp+(5.0 if floor_index==0 else 3.0))
 	finish_room()
 	return true
 
@@ -879,7 +886,7 @@ func smoke_test() -> bool:
 	if shots.size()!=5 or shots[0].pierce!=1: return false
 	hp=30
 	tick(0.016,Vector2.ZERO,Vector2(600,385),false,false,false,true)
-	if hp!=55 or active_timer<=0: return false
+	if hp!=48 or active_timer<=0: return false
 	begin(74219)
 	for floor in range(3):
 		if dungeon.boss_ready() or dungeon.nodes.size()!=ROOM_COUNT: return false
@@ -921,7 +928,7 @@ func smoke_test() -> bool:
 	souls=3
 	hp=50
 	tick(0.016,Vector2.ZERO,Vector2(700,385),false,true,false)
-	if souls!=0 or hp!=59: return false
+	if souls!=0 or hp!=56: return false
 	environment_timer=0
 	update_environment(0.1)
 	if hazards.is_empty() or hazards[-1].get("type")!="spikes": return false

@@ -86,7 +86,9 @@ func settle(run) -> int:
 		if not achievements.has(mastery):
 			achievements.append(mastery)
 			essence+=30
-	last_reward = int(run.shards/3.0)+maxi(0,run.visited_count-1)*4+(25 if run.state=="victory" else 0)
+	last_reward = 3+run.combat_clears*2+run.bosses_defeated*6+run.elites*2+(12 if run.state=="victory" else 0)
+	# A small consolation for a genuine attempt; no payout for instantly abandoning.
+	if run.state=="defeat" and run.kills==0 and run.combat_clears==0: last_reward=0
 	last_reward += int(floor(last_reward*0.05*int(ranks.fortune)))
 	essence += last_reward
 	for id in run.relics:
@@ -119,7 +121,7 @@ func smoke_test() -> bool:
 	model.shards=30
 	model.relics.append("echo")
 	var amount := settle(model)
-	if amount!=35 or settle(model)!=0 or wins!=1 or not discovered.has("echo"): return false
+	if amount!=15 or settle(model)!=0 or wins!=1 or not discovered.has("echo"): return false
 	if not buy_upgrade("vitality") or ranks.vitality!=1: return false
 	essence=100
 	if not unlock_set("dealer_cards") or unlock_set("dealer_cards"): return false
@@ -131,4 +133,6 @@ func smoke_test() -> bool:
 	if model.bolt_damage!=20: return false
 	model.state="defeat"
 	model.shards=300
-	return settle(model)==105
+	model.kills=4
+	model.combat_clears=2
+	return settle(model)==7

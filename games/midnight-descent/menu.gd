@@ -20,6 +20,10 @@ var tree_rank := 1
 var tree_detail: Label
 var tree_buy: Button
 var preview_clock := 0.0
+var inspected_set := "warden_guard"
+var loadout_cards: Array[Button]=[]
+var footer_left: Label
+var footer_right: Label
 var visual_smoke := false
 var audio = SoundBank.new()
 var progress = Progress.new()
@@ -48,6 +52,7 @@ func _ready() -> void:
 			german = true
 	visual_smoke="--smoke-test" in OS.get_cmdline_user_args()
 	if not visual_smoke: progress.load_save()
+	inspected_set=progress.selected
 	add_child(audio)
 	build_shell()
 	show_page("home")
@@ -157,11 +162,18 @@ func build_shell() -> void:
 	preview.add_child(preview_info)
 	var footer:=HBoxContainer.new()
 	frame.add_child(footer)
-	footer.add_child(label("THE MIDNIGHT CLUB  /  ROGUELITE",12,GOLD))
+	footer_left=label("THE MIDNIGHT CLUB  /  ROGUELITE",12,GOLD)
+	footer_left.autowrap_mode=TextServer.AUTOWRAP_OFF
+	footer_left.custom_minimum_size=Vector2(280,20)
+	footer.add_child(footer_left)
 	var fill:=Control.new()
 	fill.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	footer.add_child(fill)
-	footer.add_child(label(tr_text("ESC  •  BACK TO GATE","ESC  •  ZURÜCK ZUM TOR"),12,MUTED))
+	footer_right=label(tr_text("ESC  •  BACK TO GATE","ESC  •  ZURÜCK ZUM TOR"),12,MUTED)
+	footer_right.autowrap_mode=TextServer.AUTOWRAP_OFF
+	footer_right.custom_minimum_size=Vector2(220,20)
+	footer_right.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT
+	footer.add_child(footer_right)
 
 func _process(dt: float) -> void:
 	if not is_instance_valid(preview_sprite) or not get_tree().get_meta("descent_menu_motion",true): return
@@ -238,13 +250,11 @@ func update_preview() -> void:
 			preview_detail.text = tr_text("Beneath the club, the old gate waits.","Unter dem Club wartet das alte Tor.")
 			preview_info.text = tr_text("3 floors  •  78 rooms  •  48 relics","3 Ebenen  •  78 Räume  •  48 Relikte")
 		"expedition","sets":
-			var spec: Dictionary = Content.SETS[progress.selected]
-			preview_title.text = Content.character_name(spec.character,german).to_upper()
-			preview_sprite.texture = atlas_icon(PixelWorld.ACTORS[spec.character],Rect2(0,0,32,32))
-			preview_detail.text = Content.loadout_display_name(progress.selected,german)
-			if spec.character=="soulbinder":
-				preview_detail.text+=" • "+tr_text("Harvest souls from kills","Seelen durch Kills sammeln")
-			preview_info.text = tr_text("Base HP / main / special","Basis-LP / Haupt / Spezial")+"  %d / %d / %d" % [spec.hp,spec.damage,spec.bolt]
+			var spec: Dictionary=Content.SETS[inspected_set]
+			preview_title.text=Content.character_name(spec.character,german).to_upper()
+			preview_sprite.texture=atlas_icon(PixelWorld.ACTORS[spec.character],Rect2(0,0,32,32))
+			preview_detail.text=Content.loadout_display_name(inspected_set,german)+"\n"+loadout_description(inspected_set)
+			preview_info.text=tr_text("BASE STATS","BASISWERTE")+"\n"+tr_text("Health","Lebenspunkte")+"  %d\n" % spec.hp+tr_text("Main damage","Hauptschaden")+"  %d\n" % spec.damage+tr_text("Special damage","Spezialschaden")+"  %d\n" % spec.bolt+tr_text("Attack / special cooldown","Angriff / Spezial-Abklingzeit")+"  %.2f / %.2fs\n" % [spec.attack,spec.special]+tr_text("Movement / dash","Tempo / Dash")+"  %d / %.2fs" % [spec.speed,spec.dash]
 		"progress":
 			preview_title.text = tr_text("SOUL ESSENCE","SEELENESSENZ")
 			preview_detail.text = str(progress.essence)+"  •  "+tr_text("Permanent currency","Permanente Währung")
@@ -309,8 +319,9 @@ func add_action(caption: String, callback: Callable, locked: bool = false) -> Bu
 func show_page(next: String) -> void:
 	if page!=next: audio.play("navigate")
 	page = next
-	content_panel.custom_minimum_size=Vector2(790 if page=="progress" else 620,0)
+	content_panel.custom_minimum_size=Vector2(790 if page in ["progress","expedition","sets"] else 620,0)
 	preview_panel.visible=page!="home"
+	preview_panel.size_flags_vertical=Control.SIZE_FILL if page in ["expedition","sets"] else Control.SIZE_SHRINK_END
 	content_panel.add_theme_stylebox_override("panel",UI.panel(Color("#181326c9") if page=="home" else Color("#181326f5"),Color("#9b7d91"),16))
 	for id in nav_buttons: UI.style_button(nav_buttons[id],GOLD,id==page)
 	title_label.text={"home":tr_text("THE GATE","DAS TOR"),"expedition":tr_text("CHOOSE YOUR LOADOUT","WÄHLE DEIN START-SET"),"progress":tr_text("SOUL CONSTELLATION","SEELENKONSTELLATION"),"sets":tr_text("CHARACTERS & SETS","CHARAKTERE & SETS"),"codex":tr_text("RELIC ARCHIVE","RELIKTARCHIV"),"settings":tr_text("SETTINGS","EINSTELLUNGEN")}.get(page,"")
@@ -354,44 +365,15 @@ func show_page(next: String) -> void:
 			body.add_child(label(tr_text("Essence","Essenz")+"  "+str(progress.essence)+"    •    "+tr_text("Victories","Siege")+"  "+str(progress.wins)+"    •    "+tr_text("Deepest boss","Tiefster Boss")+"  %d/3" % progress.deepest_boss,15,GOLD))
 			add_action(tr_text("Return to casino","Zurück zum Casino"),func(): get_tree().quit())
 		"expedition":
-			detail_label.text = tr_text("Choose a loadout. Each run starts fresh.","Wähle ein Start-Set. Jeder Run beginnt neu.")
-			body.add_child(label(tr_text("AVAILABLE LOADOUTS","VERFÜGBARE START-SETS"),14,GOLD))
-			var available: Array=progress.unlocked
-			for i in range(expedition_page*4,mini(expedition_page*4+4,available.size())):
-				var id: String=available[i]
-				var chosen_id: String = id
-				var spec: Dictionary=Content.SETS[id]
-				var button:=add_action(Content.loadout_display_name(id,german)+("  •  "+tr_text("Selected","Ausgewählt") if progress.selected==id else ""),func(): select_set(chosen_id))
-				button.icon=atlas_icon(PixelWorld.ACTORS[spec.character],Rect2(0,0,32,32))
-				button.expand_icon=true
-				button.add_theme_constant_override("icon_max_width",32)
-				UI.style_button(button,GOLD,progress.selected==id)
-			if available.size()>4:
-				add_action(tr_text("More loadouts","Weitere Start-Sets")+"  %d/2" % (expedition_page+1),func(): expedition_page=1-expedition_page; show_page("expedition"))
-			add_action(tr_text("Start run  ›","Run starten  ›"),start_run)
-			add_action(tr_text("Back","Zurück"),func(): show_page("home"))
+			detail_label.text=tr_text("Inspect any of the eight sets. Choose an unlocked set to begin.","Sieh dir alle acht Sets an. Wähle ein freigeschaltetes Set für den Run.")
+			build_loadout_grid()
 		"progress":
 			detail_label.text=tr_text("Six linked paths. Select a rank to inspect and unlock it.","Sechs verbundene Pfade. Wähle einen Rang zum Ansehen und Freischalten.")
 			make_tree()
 			if not progress.save_ok: body.add_child(label(tr_text("Save failed","Speichern fehlgeschlagen"),14,Color("#ff839a")))
 		"sets":
-			detail_label.text = tr_text("Unlock distinct starting playstyles.","Schalte neue Start-Spielstile frei.")
-			body.add_child(label(tr_text("ESSENCE","ESSENZ")+"   "+str(progress.essence),20,GOLD))
-			var ids: Array=Content.SETS.keys()
-			for i in range(sets_page*4,mini(sets_page*4+4,ids.size())):
-				var id: String=ids[i]
-				var spec: Dictionary = Content.SETS[id]
-				var set_key: String = id
-				var owned: bool = progress.unlocked.has(id)
-				var locked: bool = owned or progress.essence<int(spec.cost) or (not Content.required_set(id).is_empty() and not progress.unlocked.has(Content.required_set(id)))
-				var caption := Content.character_name(spec.character,german)+"  /  "+Content.loadout_display_name(id,german)
-				caption += "  •  "+(tr_text("Owned","Freigeschaltet") if owned else str(spec.cost))
-				var button:=add_action(caption,func(): buy_set(set_key),locked)
-				button.icon=atlas_icon(PixelWorld.ACTORS[spec.character],Rect2(0,0,32,32))
-				button.expand_icon=true
-				button.add_theme_constant_override("icon_max_width",30)
-			add_action(tr_text("More sets","Weitere Sets")+"  %d/2" % (sets_page+1),func(): sets_page=1-sets_page; show_page("sets"))
-			add_action(tr_text("Back","Zurück"),func(): show_page("progress"))
+			detail_label.text=tr_text("Inspect every character and unlock new playstyles.","Entdecke alle Charaktere und schalte neue Spielweisen frei.")
+			build_loadout_grid()
 		"codex":
 			detail_label.text = tr_text("Relic library — discoveries are saved after each run.","Reliktbibliothek — Entdeckungen werden nach Runs gespeichert.")
 			body.add_child(label(tr_text("RELICS DISCOVERED","RELIKTE ENTDECKT")+"  %d / %d" % [progress.discovered.size(),Content.RELICS.size()],14,GOLD))
@@ -446,7 +428,78 @@ func show_page(next: String) -> void:
 		page_tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 		page_tween.tween_property(body,"modulate:a",1.0,0.24)
 
+func loadout_description(id: String) -> String:
+	match id:
+		"warden_guard": return tr_text("Balanced sword fighter. Main: close-range slash. Special: rapid arcane bolt.","Ausgewogener Schwertkämpfer. Haupt: Nahkampfschlag. Spezial: schnelles Arkangeschoss.")
+		"warden_executioner": return tr_text("Heavy melee fighter. Wide swings and a powerful radial sweep.","Schwerer Nahkämpfer. Weite Schläge und starker Rundumschlag.")
+		"dealer_cards": return tr_text("Mobile ranged fighter. Fast cards and a three-card spread.","Mobiler Fernkämpfer. Schnelle Karten und Dreifachsalve.")
+		"dealer_joker": return tr_text("Risky ranged build. Special card damage varies randomly.","Riskanter Fernkampf. Spezialkarten verursachen zufälligen Schaden.")
+		"arcanist_fire": return tr_text("Burning projectiles and explosive fire burst.","Brennende Geschosse und explosive Feuerwelle.")
+		"arcanist_frost": return tr_text("Chill enemies with icy shots and a freezing nova.","Verlangsame Gegner mit Eisgeschossen und Frostnova.")
+		"soulbinder_reaper": return tr_text("Collect souls from kills. Spend up to three for area damage and healing.","Sammle Seelen durch Kills. Verbrauche bis zu drei für Flächenschaden und Heilung.")
+		"soulbinder_wraith": return tr_text("Ranged soul magic. Spend souls to summon a longer-lived spirit and fire more bolts.","Seelenmagie aus der Ferne. Seelen verlängern die Geisterbeschwörung und erhöhen die Geschosszahl.")
+	return ""
+
+func build_loadout_grid() -> void:
+	loadout_cards.clear()
+	body.add_child(label(tr_text("ESSENCE","ESSENZ")+"  "+str(progress.essence)+"    •    "+tr_text("Unlocked","Freigeschaltet")+"  %d/8" % progress.unlocked.size(),16,GOLD))
+	var grid:=GridContainer.new()
+	grid.columns=2
+	grid.add_theme_constant_override("h_separation",10)
+	grid.add_theme_constant_override("v_separation",8)
+	body.add_child(grid)
+	for id in Content.SETS:
+		var key: String=id
+		var spec: Dictionary=Content.SETS[key]
+		var owned: bool=progress.unlocked.has(key)
+		var color: Color={"warden":GOLD,"dealer":Color("#d9a1cc"),"arcanist":Color("#91ccec"),"soulbinder":Color("#91d7b6")}[spec.character]
+		var card:=Button.new()
+		card.text=Content.character_name(spec.character,german)+" / "+Content.loadout_display_name(key,german)+"\n"+(tr_text("Equipped","Ausgewählt") if progress.selected==key else (tr_text("Unlocked","Freigeschaltet") if owned else tr_text("Locked","Gesperrt")+"  •  "+str(spec.cost)+" "+tr_text("essence","Essenz")))
+		card.icon=atlas_icon(PixelWorld.ACTORS[spec.character],Rect2(0,0,32,32))
+		card.expand_icon=true
+		card.add_theme_constant_override("icon_max_width",52)
+		card.custom_minimum_size=Vector2(0,76)
+		card.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+		card.alignment=HORIZONTAL_ALIGNMENT_LEFT
+		card.add_theme_font_size_override("font_size",15)
+		UI.style_button(card,color,key==inspected_set)
+		card.tooltip_text=loadout_description(key)
+		card.mouse_entered.connect(func(): audio.play("hover"); animate_hover(card,true))
+		card.mouse_exited.connect(func(): animate_hover(card,false))
+		card.pressed.connect(func(): inspect_loadout(key))
+		grid.add_child(card)
+		loadout_cards.append(card)
+	var owned: bool=progress.unlocked.has(inspected_set)
+	var spec: Dictionary=Content.SETS[inspected_set]
+	var required: String=Content.required_set(inspected_set)
+	if page=="expedition":
+		var primary:=add_action(tr_text("START EXPEDITION  ›","EXPEDITION STARTEN  ›"),start_run,not owned)
+		primary.custom_minimum_size=Vector2(0,60)
+		primary.add_theme_font_size_override("font_size",24)
+		UI.style_button(primary,GOLD,true)
+		if not owned:
+			primary.text=tr_text("Unlock this set in Loadouts","Schalte dieses Set unter Start-Sets frei")
+	else:
+		var available: bool=not owned and progress.essence>=int(spec.cost) and (required.is_empty() or progress.unlocked.has(required))
+		var caption: String=tr_text("Unlock selected set","Ausgewähltes Set freischalten")+"  •  "+str(spec.cost)
+		if owned: caption=tr_text("Already unlocked","Bereits freigeschaltet")
+		elif not required.is_empty() and not progress.unlocked.has(required): caption=tr_text("Requires ","Benötigt ")+Content.loadout_display_name(required,german)
+		var unlock:=add_action(caption,func(): buy_set(inspected_set),not available)
+		UI.style_button(unlock,GOLD,available)
+		unlock.custom_minimum_size=Vector2(0,54)
+		if owned: add_action(tr_text("Use in expedition  ›","In Expedition verwenden  ›"),func(): inspect_loadout(inspected_set); show_page("expedition"))
+	update_preview()
+
+func inspect_loadout(id: String) -> void:
+	inspected_set=id
+	if progress.unlocked.has(id) and page=="expedition":
+		progress.selected=id
+		if not visual_smoke: progress.save()
+	show_page(page)
+
 func start_run() -> void:
+	if not progress.unlocked.has(inspected_set): return
+	progress.selected=inspected_set
 	progress.save()
 	get_tree().change_scene_to_file("res://run.tscn")
 
@@ -483,7 +536,12 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func smoke_test() -> void:
 	show_page("expedition")
-	if action_buttons.size()!=3 or preview_sprite.texture==null:
+	await get_tree().process_frame
+	if footer_left.size.x<260 or footer_right.size.x<200 or footer_left.size.y>30 or footer_right.size.y>30:
+		push_error("Menu footer layout regression")
+		get_tree().quit(23)
+		return
+	if loadout_cards.size()!=8 or preview_sprite.texture==null:
 		get_tree().quit(1)
 		return
 	show_page("progress")
@@ -502,7 +560,7 @@ func smoke_test() -> void:
 		return
 	progress=Progress.new()
 	show_page("sets")
-	if action_buttons.size()!=6:
+	if loadout_cards.size()!=8:
 		get_tree().quit(3)
 		return
 	show_page("codex")

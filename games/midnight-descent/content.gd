@@ -12,7 +12,7 @@ const SETS := {
 }
 const RELICS := {
 	"blade":["Gilded Edge","Goldene Klinge","+9 sword/card damage","+9 Hauptangriffsschaden",0],
-	"heart":["Ruby Heart","Rubinherz","+20 max HP; heal 35","+20 max. LP; heilt 35",1],
+	"heart":["Ruby Heart","Rubinherz","+20 max HP; heal 25","+20 max. LP; heilt 25",1],
 	"boots":["Shadow Steps","Schattenschritte","+32 movement speed","+32 Bewegungstempo",2],
 	"focus":["Arcane Focus","Arkaner Fokus","+11 special damage","+11 Spezialschaden",3],
 	"ward":["Iron Ward","Eisenwall","+4 damage reduction","+4 Schadensreduktion",4],
@@ -64,7 +64,7 @@ const UPGRADES := {
 	"vitality":["Vitality","Vitalität","+5 starting HP per rank","+5 Start-LP je Rang",12,5],
 	"power":["Power","Kraft","+2 main attack damage per rank","+2 Hauptangriffsschaden je Rang",15,5],
 	"agility":["Agility","Agilität","+8 movement speed per rank","+8 Bewegungstempo je Rang",12,4],
-	"alchemy":["Alchemy","Alchemie","+5 active heal per rank","+5 aktive Heilung je Rang",14,4],
+	"alchemy":["Alchemy","Alchemie","+3 active heal per rank","+3 aktive Heilung je Rang",14,4],
 	"arcane":["Arcane mastery","Arkane Meisterschaft","+3 starting special damage per rank","+3 Start-Spezialschaden je Rang",18,4],
 	"fortune":["Fortune","Fortuna","+5% expedition essence per rank","+5 % Expeditionsessenz je Rang",20,4]
 }
