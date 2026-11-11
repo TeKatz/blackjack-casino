@@ -243,6 +243,7 @@ public partial class MainWindow : Window
             {
                 pendingManifest = null;
                 SetUpdateMessage("The selected update is no longer available. Check again.");
+                SetUpdateBusy(false);
                 return;
             }
 
@@ -251,6 +252,7 @@ public partial class MainWindow : Window
             {
                 pendingManifest = null;
                 SetUpdateMessage("This update requires a newer updater. Check the release notes.");
+                SetUpdateBusy(false);
                 return;
             }
 
