@@ -293,6 +293,16 @@ func _draw() -> void:
 			draw_circle(orb,10,halo)
 			draw_circle(orb,6,Color("#1b102f"))
 			draw_rect(Rect2(orb+Vector2(-2,-2),Vector2(4,4)),Color("#fce7c6"))
+	if run.relics.has("a_orbs"):
+		var wisp_count: int=mini(4,run.relics.count("a_orbs"))
+		var colors: Array[Color]=[Color("#a4e8fb"),Color("#e5a9ed"),Color("#e6ca83"),Color("#91efbe")]
+		for i in range(wisp_count):
+			var angle: float=run.elapsed*1.4+float(i)*TAU/wisp_count
+			var orb: Vector2=run.player+Vector2.from_angle(angle)*62
+			var glow: float=0.7+0.3*sin(clock*5+i*2)
+			draw_circle(orb,13*glow,Color(colors[i],0.13))
+			draw_circle(orb,6*glow,colors[i])
+			draw_rect(Rect2(orb-Vector2(2,2),Vector2(4,4)),Color("#fff6d6"))
 	for enemy in run.enemies:
 		var pos: Vector2 = enemy.pos
 		if enemy.wind > 0:
@@ -604,6 +614,36 @@ func draw_effect(fx: Dictionary) -> void:
 	var kind: String=fx.kind
 	if kind=="damage":
 		text_at(pos+Vector2(-12,-25-30*(1-alpha)),str(fx.amount),16,Color(1,0.9,0.72,alpha))
+		return
+	if kind.begins_with("class_") or kind=="relic_sun_hit":
+		var class_color: Color=Color("#e2be83")
+		if kind in ["class_cards","class_ace","class_coin","class_smoke"]: class_color=Color("#d2a4f4")
+		elif kind in ["class_ice","class_crystal","class_wisp","class_surge"]: class_color=Color("#8bd9ed")
+		elif kind in ["class_ash","class_blood"]: class_color=Color("#f49b87")
+		elif kind in ["class_soul","class_ghost","class_grave"]: class_color=Color("#9de0c0")
+		elif kind=="relic_sun_hit": class_color=Color("#cda6f4")
+		var progress: float=1.0-alpha
+		var max_radius: float=145.0
+		if kind in ["class_lance","class_cards","class_ace","class_coin","class_wisp","class_ghost"]: max_radius=52.0
+		if kind in ["class_thorns","class_surge","class_smoke","class_grave"]: max_radius=195.0
+		var radius: float=10+max_radius*progress
+		draw_circle(pos,radius,Color(class_color,0.12*alpha))
+		draw_arc(pos,radius,0,TAU,36,Color(class_color,alpha*0.84),4,true)
+		if kind in ["class_lance","class_cards","class_ace","class_ghost"]:
+			var forward: Vector2=dir.normalized()
+			if forward==Vector2.ZERO: forward=Vector2.RIGHT
+			for j in range(3):
+				var angle: float=(j-1)*0.35
+				var ray: Vector2=forward.rotated(angle)
+				var tail: Vector2=pos+ray*(20+progress*120)
+				draw_line(tail-ray*20,tail+ray*14,Color(class_color,alpha),5,true)
+		else:
+			for j in range(16):
+				var angle: float=float(j)*TAU/16.0+progress*0.9
+				var ray: Vector2=Vector2.from_angle(angle)
+				var particle: Vector2=pos+ray*(radius+4*sin(float(j)*2.4))
+				var size: float=2.0+float(j%3)
+				draw_rect(Rect2(particle-Vector2(size*0.5,size*0.5),Vector2(size,size)),Color(class_color,alpha))
 		return
 	if kind.begins_with("dash_"):
 		var dash_color:=Color("#88ebbf")
