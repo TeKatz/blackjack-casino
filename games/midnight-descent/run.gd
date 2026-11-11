@@ -905,6 +905,24 @@ func draw_hud() -> void:
 		var title: String=str(quest["de" if german else "en"])
 		text_at(Vector2(889,124),tr_text("CONTRACT","AUFTRAG")+" • "+title,13,status_color)
 		text_at(Vector2(889,140),tr_text("DONE • REWARD GRANTED","ERLEDIGT • BONUS ERHALTEN") if run.contract_completed else "%d / %d" % [run.contract_progress,int(quest["goal"])],12,WHITE)
+	if run.state=="fight" and Model.Dungeon.SPECIAL_COMBAT.has(run.room_kind):
+		var room_tint: Color=UI.ROOM_COLORS[run.room_kind]
+		hud_panel(Rect2(412,107,453,42),room_tint)
+		var goal: String=""
+		match run.room_kind:
+			"ritual":
+				goal=tr_text("ANCHORS ","ANKER ")+str(run.special_objectives)+"/3  •  "+tr_text("RITUAL ","RITUAL ")+("%.0fs" % run.special_timer)
+				if run.special_stage==1: goal=tr_text("RITUAL BROKEN • Destroy anchors and guardian","RITUAL VOLLENDET • Zerstöre Anker und Wächter")
+			"survival": goal=tr_text("SURVIVE ","ÜBERLEBE ")+("%.0fs" % run.special_timer)+tr_text(" • No need to kill all enemies"," • Nicht alle Gegner nötig")
+			"bounty":
+				var hp_ratio: float=0.0
+				for enemy in run.enemies:
+					if bool(enemy.get("bounty",false)): hp_ratio=float(enemy.hp)/maxf(1.0,float(enemy.max_hp))
+				goal=tr_text("TARGET CHAMPION ","ZIEL-CHAMPION ")+("%.0f%%" % (hp_ratio*100.0))
+			"unstable": goal=tr_text("REACTOR CORES • Explosions hit enemies too","REAKTORKERNE • Explosionen treffen auch Gegner")
+		text_at(Vector2(425,132),goal,13,room_tint)
+		var progress: float=clampf(run.special_timer/(36.0 if run.room_kind=="ritual" else 45.0),0,1) if run.room_kind in ["ritual","survival"] else (1.0-run.special_wave_timer/4.0 if run.room_kind=="unstable" else 0.0)
+		if progress>0: meter(Rect2(426,138,424,5),progress,room_tint)
 	if run.state=="fight" and run.room_kind=="boss":
 		for enemy in run.enemies:
 			if enemy.kind in ["boss","rootking","hollowking"]:
@@ -948,7 +966,7 @@ func draw_hud() -> void:
 	if room_banner>0 and run.state=="fight":
 		var opacity := minf(1,room_banner*2.0)
 		var danger: String=["I","II","III"][run.encounter_threat]
-		var message: String=encounter_name(run.encounter_id).to_upper()+"  •  "+tr_text("DANGER","GEFAHR")+" "+danger
+		var message: String=(room_name(run.room_kind) if Model.Dungeon.SPECIAL_COMBAT.has(run.room_kind) else encounter_name(run.encounter_id)).to_upper()+"  •  "+tr_text("DANGER","GEFAHR")+" "+danger
 		draw_rect(Rect2(466,153,348,45),Color(0.06,0.04,0.1,0.86*opacity))
 		draw_rect(Rect2(466,153,348,45),Color(0.77,0.49,0.27,opacity),false,1)
 		text_at(Vector2(485,182),message,17,Color(1,0.83,0.55,opacity))
@@ -1086,7 +1104,7 @@ func show_route_map(column: VBoxContainer) -> void:
 		descent.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 		UI.style_button(descent,Color("#8bcea1"),true)
 	var back: Button
-	if run.room_kind in ["fight","elite","boss"] and run.player.distance_to(Model.EXIT)<=75:
+	if run.room_kind in ["fight","elite","boss"]+Model.Dungeon.SPECIAL_COMBAT and run.player.distance_to(Model.EXIT)<=75:
 		back=add_button(footer,tr_text("Close map","Karte schließen"),func(): run.state="exit")
 	else:
 		back=add_button(footer,tr_text("Pause expedition","Expedition pausieren"),func(): paused=true)
