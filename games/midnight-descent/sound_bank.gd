@@ -40,6 +40,8 @@ const SPECS = {
 	"boss_charge":[0.62,230,0.35,0.12,1.9],"boss_release":[0.65,95,0.55,0.46,0.52],
 	"boss_phase":[0.90,150,0.28,0.38,1.95],
 	"boss_reveal":[1.35,128,0.26,0.42,2.15],
+	"boss_gate_close":[1.15,94,0.32,0.77,0.43],
+	"boss_gate_lock":[0.58,207,0.56,0.58,0.24],
 	"boss_soul":[0.78,790,0.16,0.03,1.95],
 	"class_cards":[0.17,1050,0.72,0.23,0.64],
 	"class_ace":[0.27,690,0.5,0.18,1.5],
@@ -136,7 +138,15 @@ func synthesize(kind: String) -> AudioStreamWAV:
 		var envelope:=minf(1,t*35)*pow(1-t,1.2+decay*3)
 		var value:=lerpf(tone,noise*0.55+previous,noise_mix)*envelope
 		# Different sound families have different physical textures, not just pitch.
-		if kind.begins_with("dealer"):
+		if kind=="boss_gate_close":
+			# Gear train, heavy steel shutters and increasing hydraulic pressure.
+			var grinding: float=0.4+0.6*absf(sin(t*TAU*32.0))
+			value=(noise*0.53+previous*0.51+sin(phase*0.43)*0.43)*envelope*grinding
+		elif kind=="boss_gate_lock":
+			# Giant central lock clunks down with a metallic triple-click tail.
+			var latch: float=pow(maxf(0.0,sin(t*TAU*8.0)),15.0)
+			value=(noise*0.35+sin(phase*2.9)*0.45+latch*previous*0.85)*envelope
+		elif kind.begins_with("dealer"):
 			value=(noise*0.8*exp(-t*15)+sin(phase*2.8)*0.38*exp(-t*5)+tone*0.18)*minf(1,t*70)*(1-t)
 		elif kind.begins_with("arcanist_fire") or kind=="bomb":
 			value=(previous*0.85+sin(phase)*0.42+noise*0.20)*envelope*(0.7+0.3*sin(t*28))
