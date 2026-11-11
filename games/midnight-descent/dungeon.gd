@@ -13,8 +13,26 @@ func generate(seed_value: int, floor: int) -> void:
 	rng.seed=seed_value+floor*7919
 	nodes.clear()
 	# Combat columns cannot be bypassed by any service route.
-	var service_columns: Array = [2,5,7] if floor==0 else [2,6]
-	var elite_columns: Array = [4] if floor==1 else ([4,7] if floor==2 else [])
+	# The opening service and the royal forge remain discoverable, but their
+	# surrounding routes and the mandatory elite gauntlets shift every run.
+	var service_columns: Array=[]
+	var elite_columns: Array=[]
+	match floor:
+		0:
+			service_columns=[2]
+			service_columns.append_array(pick_columns([4,5,6,7],2,rng))
+		1:
+			service_columns=[2]
+			service_columns.append_array(pick_columns([5,6,7],1,rng))
+			var elite_pool: Array=[3,4,5,6,7,8]
+			for col in service_columns: elite_pool.erase(col)
+			elite_columns=pick_columns(elite_pool,1,rng)
+		2:
+			service_columns=[6]
+			service_columns.append_array(pick_columns([2,3,5],1,rng))
+			var elite_pool: Array=[3,4,5,7,8]
+			for col in service_columns: elite_pool.erase(col)
+			elite_columns=pick_columns(elite_pool,2,rng)
 	var services: Array = ["treasure","shop","event","shrine","secret"]
 	if floor==2: services.append("forge")
 	add_node("fight",0,1,rng)
@@ -43,10 +61,17 @@ func generate(seed_value: int, floor: int) -> void:
 				link(a,1+column*3+other)
 			if lane>0 and rng.randf()<0.35: link(a,1+column*3+lane-1)
 	# Connect every lane without forcing a return to the entrance.
-	for column in [2,5,7]:
+	for column in service_columns:
 		var a: int =1+(column-1)*3
 		link(a,a+1)
 		link(a+1,a+2)
+
+func pick_columns(source: Array, count: int, rng: RandomNumberGenerator) -> Array:
+	var pool: Array=source.duplicate()
+	var selected: Array=[]
+	for i in range(count):
+		selected.append(pool.pop_at(rng.randi_range(0,pool.size()-1)))
+	return selected
 
 func add_node(kind_name: String, column: int, lane: int, rng: RandomNumberGenerator) -> void:
 	# Encounter profiles and danger levels are fixed by seed and visible on the map.
