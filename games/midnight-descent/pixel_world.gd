@@ -13,6 +13,7 @@ const EXPANDED_TILES = [
 	preload("res://art/pixel/expanded_grove.svg"),
 	preload("res://art/pixel/expanded_crypt.svg")
 ]
+const REACTOR_CORE = preload("res://art/pixel/reactor_core.svg")
 const BOSS_GATE_TEXTURES = [
 	preload("res://art/pixel/boss_gate_vault.svg"),
 	preload("res://art/pixel/boss_gate_grove.svg"),
@@ -1107,10 +1108,17 @@ func draw_special_chamber() -> void:
 	elif id=="unstable":
 		for i in range(Model.UNSTABLE_CORES.size()):
 			var p: Vector2=Model.UNSTABLE_CORES[i]
-			special_animated_sprite(id,p,Vector2(114,114),i)
+			# Solid independently drawn machine body; only plasma arcs animate.
+			var frame: int=(int(clock*4)+i)%4
+			draw_texture_rect_region(REACTOR_CORE,Rect2(p-Vector2(62,62),Vector2(124,124)),Rect2(frame*128,0,128,128))
 			if model.special_blast_timer>0:
-				var beat: float=0.35+0.5*sin(clock*17+i)
+				var beat: float=0.35+0.5*absf(sin(clock*17+i))
 				draw_arc(p,105,0,TAU,40,Color(highlight,beat),3)
+				for arc in range(8):
+					var angle: float=float(arc)*TAU/8+clock*0.63
+					var start: Vector2=p+Vector2.from_angle(angle)*69
+					var end: Vector2=p+Vector2.from_angle(angle+0.16)*88
+					draw_line(start,end,Color(highlight,beat*0.75),3,true)
 	elif id=="blood_altar":
 		special_animated_sprite(id,Vector2(640,290),Vector2(260,260))
 		for i in range(9):
