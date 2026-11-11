@@ -61,6 +61,7 @@ var hub_prompt := 0.0
 var hub_keeper_prompt := 0.0
 var hub_forge_prompt := 0.0
 var hub_panel := ""
+var synergy_toast_timer := 0.0
 
 func _ready() -> void:
 	german = "--language=de" in OS.get_cmdline_user_args()
@@ -122,10 +123,14 @@ func _physics_process(dt: float) -> void:
 		play_sound(notice)
 		if notice=="hurt": shake=7.0
 		if notice=="kill": shake=maxf(shake,2.0)
+		if notice=="synergy_complete": synergy_toast_timer=2.7
+		if notice=="boss_phase": shake=maxf(shake,5.0)
+		if notice=="dash_nova": shake=maxf(shake,3.0)
 	run.notices.clear()
 
 func _process(dt: float) -> void:
 	clock += dt
+	synergy_toast_timer=maxf(0,synergy_toast_timer-dt)
 	if hub_transition_stage==1:
 		hub_transition_time+=dt
 		hub_fade=clampf(hub_transition_time/0.48,0,1)
@@ -841,6 +846,17 @@ func draw_hud() -> void:
 				meter(Rect2(434,130,412,7),float(enemy.hp)/float(enemy.max_hp),Color("#e36b86"))
 				text_at(Vector2(745,123),"PHASE "+str(enemy.get("phase",1))+" / 3",12,Color("#ffe1b2"))
 				break
+	if synergy_toast_timer>0.0 and run.last_synergy_id!="" and Content.SYNERGIES.has(run.last_synergy_id):
+		var remaining: float=clampf(synergy_toast_timer/2.7,0,1)
+		var fade: float=minf(1.0,synergy_toast_timer*3.0)
+		var card_y: float=208.0-14.0*(1.0-remaining)
+		var toast_rect:=Rect2(424,card_y,434,63)
+		draw_rect(Rect2(toast_rect.position+Vector2(3,5),toast_rect.size),Color(0.03,0.02,0.05,0.55*fade))
+		draw_rect(toast_rect,Color(0.10,0.19,0.16,0.94*fade))
+		draw_rect(toast_rect,Color(0.56,0.91,0.69,fade),false,2)
+		var record: Dictionary=Content.SYNERGIES[run.last_synergy_id]
+		text_at(Vector2(443,card_y+22),tr_text("SYNERGY UNLOCKED","SYNERGIE AKTIVIERT"),15,Color(0.73,1.0,0.80,fade))
+		text_at(Vector2(443,card_y+48),str(record["de" if german else "en"]),21,Color(1.0,0.94,0.78,fade))
 	if run.state=="fight" and run.wave_total>1:
 		hud_panel(Rect2(1000,150,218,37),GOLD)
 		text_at(Vector2(1016,175),tr_text("WAVE","WELLE")+" %d / %d" % [run.wave,run.wave_total],19,GOLD)
@@ -1334,6 +1350,7 @@ func restart() -> void:
 	paused = false
 	relics_open=false
 	hub_panel=""
+	synergy_toast_timer=0.0
 	hub_prompt=0.0
 	hub_keeper_prompt=0.0
 	hub_forge_prompt=0.0
