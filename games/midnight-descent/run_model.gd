@@ -2495,6 +2495,7 @@ func smoke_test() -> bool:
 		return false
 	begin(123,"dealer_cards")
 	if state!="hub" or visited_count!=0 or dungeon.nodes[0].visited or not enemies.is_empty(): return false
+	if large_room or room_bounds!=ARENA or room_regions.size()!=0 or exit_point!=EXIT: return false
 	if walls.size()!=6 or not blocked(HUB_BAR.get_center(),15) or not blocked(HUB_FORGE.get_center(),15) or not blocked(HUB_TABLE.get_center(),15) or not blocked(HUB_PORTAL,15): return false
 	if not blocked(HUB_CARD_GUEST_LEFT.get_center(),15) or not blocked(HUB_CARD_GUEST_RIGHT.get_center(),15): return false
 	for seat in range(HUB_STOOL_X.size()):
