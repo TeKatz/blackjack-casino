@@ -159,6 +159,8 @@ func update_view(dt: float) -> void:
 		torches[i].enabled=model.state!="hub" or i<HUB_LANTERN_POSITIONS.size()
 		if model.state=="hub" and torches[i].enabled:
 			torches[i].position=HUB_LANTERN_POSITIONS[i]+Vector2(0,4)
+		elif SPECIAL_ART.has(model.room_kind):
+			torches[i].position=Vector2(174+i*235,153)
 		else:
 			torches[i].position=TORCH_POSITIONS[i]+Vector2(0,40)
 		torches[i].energy=1.1+sin(clock*5.0+i*2.2)*0.15 if model.state=="hub" else 1.25+sin(clock*7.0+i*2.2)*0.19+sin(clock*13+i)*0.08
@@ -176,7 +178,7 @@ func update_view(dt: float) -> void:
 	if model.floor_index==1: target_ambient=Color(0.35,0.53,0.39)
 	if model.floor_index==2: target_ambient=Color(0.47,0.34,0.50)
 	for light in torches:
-		light.color=[Color("#ffd094"),Color("#83e5be"),Color("#e9a0c4")][model.floor_index]
+		light.color=SPECIAL_PALETTES[model.room_kind][1] if SPECIAL_ART.has(model.room_kind) else [Color("#ffd094"),Color("#83e5be"),Color("#e9a0c4")][model.floor_index]
 		light.energy*= [0.72,0.66,0.70][model.floor_index]
 	for i in range(decor_lights.size()):
 		decor_lights[i].energy=0.24+0.06*sin(clock*3+i*1.7)
@@ -235,13 +237,14 @@ func _draw() -> void:
 		tile(4,Rect2(23,146+y*68,35,68))
 		tile(4,Rect2(1222,146+y*68,35,68))
 	draw_rect(Rect2(23,105,1234,542),Color("#755b73"),false,2)
-	for i in range(TORCH_POSITIONS.size()):
-		var pos: Vector2 = TORCH_POSITIONS[i]
-		var frame := int(clock*8+i)%4
-		draw_texture_rect_region(TORCH,Rect2(pos-Vector2(16,37),Vector2(32,64)),Rect2(frame*16,0,16,32))
-	for i in range(side_lights.size()):
-		var pos := side_lights[i].position
-		draw_texture_rect_region(TORCH,Rect2(pos-Vector2(16,37),Vector2(32,64)),Rect2((int(clock*8)+i)%4*16,0,16,32))
+	if not SPECIAL_ART.has(model.room_kind):
+		for i in range(TORCH_POSITIONS.size()):
+			var pos: Vector2=TORCH_POSITIONS[i]
+			var frame: int=int(clock*8+i)%4
+			draw_texture_rect_region(TORCH,Rect2(pos-Vector2(16,37),Vector2(32,64)),Rect2(frame*16,0,16,32))
+		for i in range(side_lights.size()):
+			var pos: Vector2=side_lights[i].position
+			draw_texture_rect_region(TORCH,Rect2(pos-Vector2(16,37),Vector2(32,64)),Rect2((int(clock*8)+i)%4*16,0,16,32))
 	# Sparse cracks, scattered stones and drifting dust break up the repeated grid.
 	for i in range(10):
 		var pos := Vector2(78+(i*173+int(model.room)*37)%1110,165+(i*97)%440)
@@ -256,15 +259,16 @@ func _draw() -> void:
 			var pos := Vector2(66+(i*173)%1140,154+(i*97)%460)
 			draw_rect(Rect2(pos,Vector2(10,4)),Color("#486b46"))
 			draw_rect(Rect2(pos+Vector2(3,-5),Vector2(4,8)),Color("#75a65f"))
-	draw_architecture(arena)
 	if SPECIAL_ART.has(model.room_kind):
 		draw_special_chamber()
 	else:
+		draw_architecture(arena)
 		draw_room_decals()
 		draw_biome_details(arena)
 	draw_service_scene()
 	draw_royal_seals()
-	draw_gate()
+	if SPECIAL_ART.has(model.room_kind): draw_special_gate()
+	else: draw_gate()
 	# Painter's ordering: pillars and actor feet share the same depth list.
 	var objects: Array[Dictionary] = []
 	for wall in model.walls:
@@ -793,7 +797,20 @@ func draw_special_chamber() -> void:
 	var base: Color=palette[0]
 	var light: Color=palette[1]
 	var highlight: Color=palette[2]
-	# A unique room-wide tessellation replaces the generic ground decals.
+	# Full chamber: masonry and anchored light fixtures, never shared props.
+	draw_rect(Rect2(68,108,1143,510),base.darkened(0.75))
+	draw_rect(Rect2(75,110,1128,35),base.darkened(0.23))
+	for i in range(22):
+		var x: float=81+i*50
+		draw_rect(Rect2(x,110,43,26),base.lightened(0.08) if i%2==0 else base.darkened(0.17))
+		draw_rect(Rect2(x+2,131,35,3),Color(light,0.24))
+	for i in range(5):
+		var x: float=174+i*235
+		draw_rect(Rect2(x-10,134,20,13),base.lightened(0.26))
+		draw_rect(Rect2(x-6,144,12,22),base.darkened(0.30))
+		draw_rect(Rect2(x-3,146,6,16),highlight)
+		draw_rect(Rect2(x-8,161,16,4),Color(light,0.80))
+		draw_circle(Vector2(x,157),18,Color(light,0.12+0.05*sin(clock*5+i)))
 	draw_rect(Rect2(68,153,1143,464),base.darkened(0.75))
 	for row in range(11):
 		for col in range(25):
