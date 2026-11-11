@@ -1185,6 +1185,54 @@ func move_actor(pos: Vector2, motion: Vector2, radius: float) -> Vector2:
 		if not blocked(y,radius): pos.y=y.y
 	return pos
 
+func build_navigation_flow() -> void:
+	# A shared flow field avoids each enemy doing its own path search.
+	# It resolves winding corridors/branches without spawning through walls.
+	flow_map.clear()
+	var size: float=48.0
+	var origin: Vector2i=Vector2i(roundi(player.x/size),roundi(player.y/size))
+	if blocked(Vector2(origin.x*size,origin.y*size),18):
+		for dx in range(-2,3):
+			for dy in range(-2,3):
+				var candidate: Vector2i=origin+Vector2i(dx,dy)
+				if not blocked(Vector2(candidate.x*size,candidate.y*size),18):
+					origin=candidate
+					break
+			if not blocked(Vector2(origin.x*size,origin.y*size),18): break
+	if blocked(Vector2(origin.x*size,origin.y*size),18): return
+	flow_origin=origin
+	var queue: Array[Vector2i]=[origin]
+	flow_map[origin]=0
+	var head:=0
+	while head<queue.size() and queue.size()<2400:
+		var cell: Vector2i=queue[head]
+		head+=1
+		var depth: int=int(flow_map[cell])
+		for step in [Vector2i(1,0),Vector2i(0,1),Vector2i(-1,0),Vector2i(0,-1)]:
+			var next: Vector2i=cell+step
+			if flow_map.has(next): continue
+			if blocked(Vector2(next.x*size,next.y*size),18): continue
+			flow_map[next]=depth+1
+			queue.append(next)
+
+func navigation_direction(pos: Vector2, fallback: Vector2) -> Vector2:
+	if flow_map.is_empty(): return fallback
+	var tile_size:=48.0
+	var cell: Vector2i=Vector2i(roundi(pos.x/tile_size),roundi(pos.y/tile_size))
+	var current_depth: int=int(flow_map.get(cell,99999))
+	var best: Vector2=Vector2.ZERO
+	var best_depth: int=current_depth
+	for delta in [Vector2i(1,0),Vector2i(-1,0),Vector2i(0,1),Vector2i(0,-1)]:
+		var next: Vector2i=cell+delta
+		if not flow_map.has(next): continue
+		var depth: int=int(flow_map[next])
+		if depth>=best_depth: continue
+		var target: Vector2=Vector2(next.x*tile_size,next.y*tile_size)
+		if blocked(target,18): continue
+		best_depth=depth
+		best=pos.direction_to(target)
+	return best if best!=Vector2.ZERO else fallback
+
 func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: bool, dash: bool, active: bool = false) -> void:
 	if state=="hub":
 		if target.distance_to(player)>4: aim=player.direction_to(target)
@@ -1608,7 +1656,7 @@ func boss_circle(pos: Vector2, radius: float, warning: float, power: float, kind
 
 func boss_lane(pos: Vector2, vertical: bool, warning: float, power: float) -> void:
 	if hazards.size()>=20: return
-	var area: Rect2=Rect2(pos.x-40,160,80,450) if vertical else Rect2(80,pos.y-40,1120,80)
+	var area: Rect2=Rect2(pos.x-40,pos.y-240 if large_room else 160,80,480 if large_room else 450) if vertical else Rect2(pos.x-400 if large_room else 80,pos.y-40,800 if large_room else 1120,80)
 	var clean_center: Vector2=safe_position(pos,48)
 	boss_circle(clean_center,44,warning,power,"boss_lane")
 	hazards[-1]["rect"]=area
@@ -1797,6 +1845,7 @@ func spawn_reinforcements() -> void:
 
 func update_environment(dt: float) -> void:
 	if room_kind in Dungeon.SPECIAL_COMBAT: return
+	if large_room and room_kind=="boss" and not boss_awake: return
 	if hazards.size()>=20: return
 	environment_timer-=dt
 	if environment_timer>0: return
@@ -1806,10 +1855,10 @@ func update_environment(dt: float) -> void:
 		0:
 			# The vault's pressure plates fire a telegraphed row of spikes.
 			environment_timer=4.5*hazard_multiplier
-			var x: float=420+(environment_cycle%3)*270
+			var x: float=(player.x+float((environment_cycle%3)-1)*95) if large_room else 420+(environment_cycle%3)*270
 			var cells: Array[Rect2]=spike_cells(x)
 			if not cells.is_empty():
-				hazards.append({"pos":Vector2(x,385),"r":40,"warn":0.85,"life":1.60,"power":16,"type":"spikes","cells":cells,"phase":"warn"})
+				hazards.append({"pos":Vector2(x,player.y if large_room else 385),"r":40,"warn":0.85,"life":1.60,"power":16,"type":"spikes","cells":cells,"phase":"warn"})
 				notices.append("spike_warn")
 		1:
 			# Persistent toxic pools restrict movement, not merely damage.
@@ -1828,13 +1877,14 @@ func update_environment(dt: float) -> void:
 				add_royal_seals(pos,not vertical,1.45,20)
 
 func add_royal_seals(pos: Vector2, vertical: bool, warning: float, power: float, enemy_origin: bool=false) -> void:
-	var lane:=Rect2(pos.x-30,166,60,438) if vertical else Rect2(78,pos.y-30,1124,60)
+	var lane:=Rect2(pos.x-30,pos.y-220 if large_room else 166,60,440 if large_room else 438) if vertical else Rect2(pos.x-300 if large_room else 78,pos.y-30,600 if large_room else 1124,60)
 	var cells: Array[Rect2]=[]
-	var count: int=7 if vertical else 18
+	var count: int=9 if vertical and large_room else (12 if large_room else (7 if vertical else 18))
 	for i in range(count):
-		var center:=Vector2(pos.x,196+i*60) if vertical else Vector2(110+i*60,pos.y)
+		var center: Vector2=Vector2(pos.x,pos.y+(i-4)*50) if vertical and large_room else (Vector2(pos.x+(i-6)*50,pos.y) if large_room else (Vector2(pos.x,196+i*60) if vertical else Vector2(110+i*60,pos.y)))
 		var cell:=Rect2(center-Vector2(27,24),Vector2(54,48))
-		if not ARENA.grow(-8).encloses(cell): continue
+		if not room_bounds.grow(-8).encloses(cell): continue
+		if large_room and blocked(cell.get_center(),26): continue
 		var clear:=true
 		for wall in walls:
 			if wall.grow(18).intersects(cell): clear=false; break
@@ -1845,8 +1895,11 @@ func add_royal_seals(pos: Vector2, vertical: bool, warning: float, power: float,
 
 func spike_cells(x: float) -> Array[Rect2]:
 	var cells: Array[Rect2]=[]
-	for y in range(180,584,32):
+	var top: int=int(player.y)-160 if large_room else 180
+	var bottom: int=int(player.y)+161 if large_room else 584
+	for y in range(top,bottom,32):
 		var cell:=Rect2(x-26,y,52,28)
+		if large_room and blocked(cell.get_center(),14): continue
 		var clear:=true
 		for wall in walls:
 			if wall.grow(12).intersects(cell): clear=false
@@ -2397,6 +2450,9 @@ func special_rooms_smoke() -> bool:
 	return true
 
 func smoke_test() -> bool:
+	if not RoomLayouts.smoke_test():
+		push_error("Authored chamber connectivity smoke failed")
+		return false
 	if not dungeon.smoke_test():
 		push_error("Dungeon generation smoke failed")
 		return false
