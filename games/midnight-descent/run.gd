@@ -1278,6 +1278,10 @@ func rebuild_overlay() -> void:
 				icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 				icon.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
 				stack.add_child(icon)
+				var owner: String=Content.relic_owner(id)
+				if owner!="":
+					var class_tint: Color=Color("#e6c18a") if owner=="warden" else (Color("#e2a3c9") if owner=="dealer" else (Color("#8fdde8") if owner=="arcanist" else Color("#a9d6c1"))
+					add_label(stack,tr_text("CLASS RELIC • ","KLASSENRELIKT • ")+Content.character_name(owner,german),12,class_tint)
 				add_label(stack,item[1 if german else 0],21,WHITE)
 				add_label(stack,item[3 if german else 2],16,MUTED)
 				if not preview.is_empty():
