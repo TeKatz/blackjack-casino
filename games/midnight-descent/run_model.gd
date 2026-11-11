@@ -947,10 +947,119 @@ func service_action(choice: int) -> bool:
 			if choice==0: hp=minf(max_hp,hp+30)
 			elif choice==1: max_hp+=10; hp+=10
 			else: return false
+		"blood_altar":
+			if choice==0:
+				max_hp=maxf(20.0,max_hp*0.80)
+				hp=minf(hp,max_hp)
+				make_offers(true)
+				# The greater sacrifice guarantees at least one epic class-safe card.
+				var candidates: Array[String]=[]
+				for id in available_relic_pool():
+					if Content.rarity(id)>=2 and not offers.has(id): candidates.append(id)
+				if not candidates.is_empty():
+					offers[0]=candidates[rng.randi_range(0,candidates.size()-1)]
+				state="reward"
+				notices.append("sp_blood_altar_sacrifice")
+				return true
+			elif choice==1:
+				max_hp=maxf(20.0,max_hp*0.90)
+				hp=minf(hp,max_hp)
+				damage+=12
+				bolt_damage+=9
+				notices.append("sp_blood_altar_sacrifice")
+			elif choice==2:
+				shards+=4
+			else: return false
+		"forgotten_forge":
+			var targets: Array[String]=forge_relic_targets()
+			if choice>=0 and choice<targets.size() and shards>=12:
+				var selected: String=targets[choice]
+				shards-=12
+				var previously: Array[String]=active_synergies()
+				relics.append(selected)
+				apply_relic_stat(selected)
+				tempered_relics.append(selected)
+				notify_new_synergies(previously)
+				notices.append("sp_forgotten_forge_temper")
+			elif choice!=3: return false
+		"archive":
+			var targets: Array[String]=archive_relic_targets()
+			if choice>=0 and choice<targets.size():
+				archive_discarded=targets[choice]
+				relics.erase(archive_discarded)
+				remove_relic_stat(archive_discarded)
+				make_offers(true)
+				# Do not offer the exact same relic we just traded away.
+				for i in range(offers.size()):
+					if offers[i]!=archive_discarded: continue
+					for candidate in available_relic_pool():
+						if candidate!=archive_discarded and not offers.has(candidate):
+							offers[i]=candidate
+							break
+				state="reward"
+				notices.append("sp_archive_exchange")
+				return true
+			elif choice!=3: return false
 		_: return false
 	finish_room()
 	check_shard_contract()
 	return true
+
+func forge_relic_targets() -> Array[String]:
+	var result: Array[String]=[]
+	for id in relics:
+		if not result.has(id):
+			result.append(id)
+			if result.size()==3: break
+	return result
+
+func archive_relic_targets() -> Array[String]:
+	return forge_relic_targets()
+
+func apply_relic_stat(item: String) -> void:
+	match item:
+		"blade": damage+=9
+		"heart": max_hp+=20; hp=minf(max_hp,hp+35)
+		"boots": speed+=32
+		"focus": bolt_damage+=11
+		"ward": armor+=4
+		"fury": dash_cooldown=maxf(0.55,dash_cooldown-0.23)
+		"tempo": attack_cd=maxf(0.12,attack_cd*0.88)
+		"potion": active_heal+=8
+		"sanguine": damage+=6; max_hp=maxf(20,max_hp-8)
+		"bulwark": armor+=3
+		"swift": speed+=18
+		"mana": special_cd=maxf(0.2,special_cd*0.85)
+		"titan": max_hp+=30; hp=minf(max_hp,hp+30)
+		"needle": bolt_damage+=5
+		"charge": dash_cooldown=maxf(0.35,dash_cooldown-0.15)
+		"battery": active_cd=maxf(20,active_cd-3)
+		"glass": damage+=16; armor-=3
+		"w_steel": max_hp+=18; hp=minf(max_hp,hp+18); armor+=1
+	hp=minf(hp,max_hp)
+
+func remove_relic_stat(item: String) -> void:
+	# A transmutation must not retain the discarded relic's flat stat effects.
+	match item:
+		"blade": damage-=9
+		"heart": max_hp=maxf(20,max_hp-20)
+		"boots": speed-=32
+		"focus": bolt_damage-=11
+		"ward": armor-=4
+		"fury": dash_cooldown+=0.23
+		"tempo": attack_cd/=0.88
+		"potion": active_heal-=8
+		"sanguine": damage-=6; max_hp+=8
+		"bulwark": armor-=3
+		"swift": speed-=18
+		"mana": special_cd/=0.85
+		"titan": max_hp=maxf(20,max_hp-30)
+		"needle": bolt_damage-=5
+		"charge": dash_cooldown+=0.15
+		"battery": active_cd+=3
+		"glass": damage-=16; armor+=3
+		"w_steel": max_hp=maxf(20,max_hp-18); armor-=1
+	hp=minf(hp,max_hp)
 
 func finish_room() -> void:
 	dungeon.nodes[room].cleared=true
@@ -1796,27 +1905,7 @@ func choose_relic(index: int) -> bool:
 	var item: String = offers[index]
 	var previous_synergies: Array[String]=active_synergies()
 	relics.append(item)
-	match item:
-		"blade": damage += 9
-		"heart":
-			max_hp += 20
-			hp = minf(max_hp, hp+35)
-		"boots": speed += 32
-		"focus": bolt_damage += 11
-		"ward": armor += 4
-		"fury": dash_cooldown = maxf(0.55, dash_cooldown-0.23)
-		"tempo": attack_cd = maxf(0.12,attack_cd*0.88)
-		"potion": active_heal += 8
-		"sanguine": damage+=6; max_hp=maxf(20,max_hp-8); hp=minf(hp,max_hp)
-		"bulwark": armor+=3
-		"swift": speed+=18
-		"mana": special_cd=maxf(0.2,special_cd*0.85)
-		"titan": max_hp+=30; hp+=30
-		"needle": bolt_damage+=5
-		"charge": dash_cooldown=maxf(0.35,dash_cooldown-0.15)
-		"battery": active_cd=maxf(20,active_cd-3)
-		"glass": damage+=16; armor-=3
-		"w_steel": max_hp+=18; hp=minf(max_hp,hp+18); armor+=1
+	apply_relic_stat(item)
 	hp = minf(max_hp, hp+(5.0 if floor_index==0 else 3.0))
 	notify_new_synergies(previous_synergies)
 	finish_room()
