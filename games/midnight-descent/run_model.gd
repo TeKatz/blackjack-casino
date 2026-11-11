@@ -2242,8 +2242,12 @@ func route_and_damage_smoke() -> bool:
 	return true
 
 func smoke_test() -> bool:
-	if not dungeon.smoke_test(): return false
-	if not route_and_damage_smoke(): return false
+	if not dungeon.smoke_test():
+		push_error("Dungeon generation smoke failed")
+		return false
+	if not route_and_damage_smoke():
+		push_error("Route/damage smoke failed")
+		return false
 	if not class_relic_smoke(): return false
 	if not build_and_boss_smoke(): return false
 	if not encounter_variation_smoke(): return false
@@ -2308,7 +2312,11 @@ func smoke_test() -> bool:
 					if not open_route(): return false
 				if not travel(index): return false
 			if state=="fight":
-				for step in range(wave_total):
+				# Representative traversal tests the shared graph. Bespoke objective
+				# behavior is tested independently in special_rooms_smoke().
+				if room_kind in Dungeon.SPECIAL_COMBAT:
+					complete_special_combat()
+				for step in range(wave_total if room_kind not in Dungeon.SPECIAL_COMBAT else 0):
 					for unit in enemies: unit.hp=0
 					# Mushroom splits may require a second cleanup tick.
 					for retry in range(3):
@@ -2320,7 +2328,7 @@ func smoke_test() -> bool:
 					if not choose_relic(0): return false
 				if state!="exit": return false
 			elif state=="service":
-				var choice: int=3 if room_kind in ["shop","forge"] else 1 if room_kind in ["event","treasure","secret"] else 0
+				var choice: int=3 if room_kind in ["shop","forge","forgotten_forge","archive"] else 2 if room_kind=="blood_altar" else 1 if room_kind in ["event","treasure","secret"] else 0
 				if not service_action(choice) or state!="route" or service_action(choice): return false
 		if not dungeon.boss_ready(): return false
 		if state=="exit":
