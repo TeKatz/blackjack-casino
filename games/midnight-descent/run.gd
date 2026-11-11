@@ -407,11 +407,23 @@ func run_scene_smoke() -> void:
 		return
 	hub_panel=""
 	_process(0.0)
+	# Choices mutate only run-scoped state and are impossible to repeat.
+	var contract_choice: String=run.contract_offers[0]
+	var forge_choice: String=run.forge_offers[0]
+	if not run.select_hub_contract(contract_choice) or not run.select_hub_forge(forge_choice):
+		get_tree().quit(33)
+		return
+	if run.select_hub_contract(contract_choice) or run.select_hub_forge(forge_choice):
+		get_tree().quit(34)
+		return
 	run.player=Model.HUB_PORTAL
 	if not run.enter_first_room() or run.state!="fight":
 		get_tree().quit(26)
 		return
 	run.begin(512)
+	if run.contract_id!="" or run.forge_id!="":
+		get_tree().quit(35)
+		return
 	run.player=Model.HUB_PORTAL
 	if not run.enter_first_room():
 		get_tree().quit(27)
@@ -570,6 +582,17 @@ func draw_effect(fx: Dictionary) -> void:
 	if kind=="damage":
 		text_at(pos+Vector2(-12,-25-30*(1-alpha)),str(fx.amount),16,Color(1,0.9,0.72,alpha))
 		return
+	if kind.begins_with("forge_") or kind=="contract_complete":
+		var accent: Color=Color("#84dbf4") if kind in ["forge_storm","forge_echo"] else (Color("#e8bb7e") if kind in ["forge_guard","forge_shatter"] else Color("#b89cff"))
+		if kind=="contract_complete": accent=Color("#95e5ae")
+		var radius: float=(38 if kind=="forge_echo" else 150)*(1.0-alpha)+24
+		draw_arc(pos,radius,0,TAU,40,Color(accent,alpha*0.75),6,true)
+		draw_circle(pos,radius,Color(accent,alpha*0.07))
+		for i in range(10):
+			var angle: float=TAU*float(i)/10.0+clock*0.85
+			var spark: Vector2=pos+Vector2.from_angle(angle)*radius
+			draw_rect(Rect2(spark-Vector2(3,3),Vector2(6,6)),Color(accent,alpha))
+		return
 	if kind.begins_with("slash_"):
 		var style: String=kind.trim_prefix("slash_")
 		var color: Color=Color("#f7cf86") if style.begins_with("warden") else Color("#91e6c0")
@@ -724,6 +747,13 @@ func draw_hud() -> void:
 			if index>=0:
 				var icon:=UI.atlas(UI.RELICS,index)
 				draw_texture_rect_region(icon.atlas,rect,icon.region)
+	if run.contract_id!="":
+		var quest: Dictionary=Model.CONTRACT_DATA[run.contract_id]
+		var status_color: Color=Color("#91d4b0") if run.contract_completed else GOLD
+		hud_panel(Rect2(875,107,375,39),status_color)
+		var title: String=str(quest["de" if german else "en"])
+		text_at(Vector2(889,124),tr_text("CONTRACT","AUFTRAG")+" • "+title,13,status_color)
+		text_at(Vector2(889,140),tr_text("DONE • REWARD GRANTED","ERLEDIGT • BONUS ERHALTEN") if run.contract_completed else "%d / %d" % [run.contract_progress,int(quest["goal"])],12,WHITE)
 	if run.state=="fight" and run.room_kind=="boss":
 		for enemy in run.enemies:
 			if enemy.kind in ["boss","rootking","hollowking"]:
