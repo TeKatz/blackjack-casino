@@ -828,16 +828,27 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 				harvest_count+=1
 				if harvest_count%5==0: hp=minf(max_hp,hp+8*relics.count("harvest"))
 			if relics.has("soulstorm"):
-				for j in range(3): shoot(enemies[i].pos,Vector2.from_angle(j*TAU/3+elapsed)*420,false,14*relics.count("soulstorm"))
+				var spirits: int=6 if has_synergy("soul_requiem") else 3
+				for j in range(spirits):
+					shoot(enemies[i].pos,Vector2.from_angle(j*TAU/spirits+elapsed)*420,false,14*relics.count("soulstorm"))
+				if spirits==6: effect("synergy_soul",enemies[i].pos,0.46,Vector2.ZERO)
 			if relics.has("bounty") and (enemies[i].get("elite",false) or enemies[i].kind in ["boss","rootking","hollowking"]): shards+=10*relics.count("bounty")
 			shards += (20 if enemies[i].kind in ["boss","rootking","hollowking"] else 3+encounter_threat*2)+2*relics.count("greed")
 			check_shard_contract()
 			if relics.has("shatter") and float(enemies[i].get("chill",0))>0:
-				for j in range(6): shoot(enemies[i].pos,Vector2.from_angle(j*TAU/6)*400,false,12)
+				var frozen_burst: bool=has_synergy("permafrost")
+				var shards_count: int=10 if frozen_burst else 6
+				for j in range(shards_count):
+					shoot(enemies[i].pos,Vector2.from_angle(j*TAU/shards_count)*400,false,17 if frozen_burst else 12)
+				if frozen_burst:
+					for other in enemies:
+						if other!=enemies[i] and other.hp>0 and enemies[i].pos.distance_to(other.pos)<150:
+							other["chill"]=maxf(3.5,float(other.get("chill",0)))
+					effect("synergy_frost",enemies[i].pos,0.56,Vector2.ZERO)
 			if enemies[i].kind=="mushroom":
 				spawn_enemy("spore",enemies[i].pos+Vector2(35,0))
 				spawn_enemy("spore",enemies[i].pos-Vector2(35,0))
-			hp = minf(max_hp,hp+1.0*relics.count("leech"))
+			hp=minf(max_hp,hp+(4.0 if has_synergy("soul_requiem") else 1.0)*relics.count("leech"))
 			enemies.remove_at(i)
 			notices.append("kill")
 	update_effects(dt)
@@ -885,7 +896,10 @@ func update_effects(dt: float) -> void:
 func hit_enemy(enemy: Dictionary, amount: float) -> void:
 	if enemy.hp <= 0:
 		return
-	if relics.has("crit") and rng.randf()<minf(0.8,0.2*relics.count("crit")): amount *= 2
+	var crit_triggered: bool=relics.has("crit") and rng.randf()<minf(0.8,0.2*relics.count("crit"))
+	var poisoned_before: bool=float(enemy.get("poison",0))>0
+	var burning_before: bool=float(enemy.get("burn",0))>0
+	if crit_triggered: amount*=2
 	if relics.has("hunter") and (enemy.get("elite",false) or enemy.kind in ["boss","rootking","hollowking"]): amount+=8*relics.count("hunter")
 	if relics.has("blood") and hp<max_hp*0.35: amount*=1.4
 	if relics.has("execution") and enemy.hp<enemy.max_hp*0.25: amount*=1.3
@@ -897,12 +911,22 @@ func hit_enemy(enemy: Dictionary, amount: float) -> void:
 	enemy.hp -= dealt
 	if relics.has("frost") or set_id=="arcanist_frost": enemy["chill"]=2.0
 	if relics.has("venom"): enemy["poison"]=3.0
-	if relics.has("storm") and float(enemy.get("burn",0))>0:
+	if relics.has("storm") and burning_before:
+		var jumps:=0
+		var wildfire: bool=has_synergy("wildfire_circuit")
 		for other in enemies:
-			if other!=enemy and other.hp>0 and enemy.pos.distance_to(other.pos)<160:
-				other.hp -= 8.0*relics.count("storm")
-				effect("hit",other.pos,0.18,Vector2.ZERO)
-				break
+			if other!=enemy and other.hp>0 and enemy.pos.distance_to(other.pos)<185:
+				other.hp-= (17.0 if wildfire else 8.0)*relics.count("storm")
+				if wildfire: other["burn"]=maxf(3.0,float(other.get("burn",0)))
+				effect("synergy_wildfire" if wildfire else "hit",other.pos,0.32,Vector2.ZERO)
+				jumps+=1
+				if jumps>=(3 if wildfire else 1): break
+	if has_synergy("toxic_jackpot") and crit_triggered and poisoned_before:
+		for other in enemies:
+			if other!=enemy and other.hp>0 and enemy.pos.distance_to(other.pos)<125:
+				other.hp-=maxf(14.0,dealt*0.38)
+				other["poison"]=maxf(4.0,float(other.get("poison",0)))
+		effect("synergy_toxic",enemy.pos,0.56,Vector2.ZERO)
 	if relics.has("ember") or set_id=="arcanist_fire": enemy["burn"]=3.0
 	enemy.flash = 0.12
 	effect("hit", enemy.pos, 0.22, Vector2.ZERO)
@@ -1172,6 +1196,11 @@ func update_shots(dt: float) -> void:
 				for enemy in enemies:
 					if enemy.hp > 0 and not shot.hit.has(enemy) and pos.distance_to(enemy.pos) < float(enemy.r)+7:
 						hit_enemy(enemy, shot.damage)
+						if has_synergy("ricochet_storm") and not bool(shot.get("fragment",false)) and not shot.hostile and shots.size()<175:
+							for arc in [-0.78,0.78]:
+								shoot(pos,shot.vel.normalized().rotated(arc)*515,false,shot.damage*0.43)
+								shots[-1]["fragment"]=true
+							effect("synergy_ricochet",pos,0.38,shot.vel.normalized())
 						shot.hit.append(enemy)
 						remove = shot.pierce <= 0
 						shot.pierce -= 1
