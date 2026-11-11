@@ -168,7 +168,7 @@ func _process(dt: float) -> void:
 	var target: String = ("relics" if relics_open else "pause") if paused else ("hub_"+hub_panel if run.state=="hub" and hub_panel!="" else run.state)
 	if target != overlay_state or (target=="route" and (modal_room!=run.room or modal_floor!=run.floor_index)):
 		if target=="route": play_sound("map")
-		elif target=="service": play_sound(run.room_kind)
+		elif target=="service": play_sound("sp_"+run.room_kind+"_enter" if Model.Dungeon.SPECIAL_SERVICE.has(run.room_kind) else run.room_kind)
 		elif target in ["pause","victory","defeat"]: play_sound(target)
 		elif target=="relics": play_sound("relic_inspect")
 		elif target=="fight" and modal_floor!=run.floor_index: play_sound("descend")
@@ -1002,6 +1002,13 @@ func encounter_name(id: String) -> String:
 
 func room_name(kind: String) -> String:
 	match kind:
+		"ritual": return tr_text("Ritual","Ritual")
+		"survival": return tr_text("Survive","Überleben")
+		"bounty": return tr_text("Bounty","Kopfgeld")
+		"unstable": return tr_text("Reactor","Reaktor")
+		"blood_altar": return tr_text("Blood Altar","Blutaltar")
+		"forgotten_forge": return tr_text("Old Forge","Altschmiede")
+		"archive": return tr_text("Archive","Archiv")
 		"fight": return tr_text("Combat","Kampf")
 		"elite": return "Elite"
 		"treasure": return tr_text("Treasure","Schatz")
@@ -1015,7 +1022,13 @@ func room_name(kind: String) -> String:
 
 func use_service(choice: int) -> void:
 	if run.service_action(choice):
-		play_sound("purchase" if run.room_kind in ["shop","forge"] else run.room_kind)
+		if Model.Dungeon.SPECIAL_SERVICE.has(run.room_kind):
+			var cue: String={"blood_altar":"sacrifice","forgotten_forge":"temper","archive":"exchange"}[run.room_kind]
+			play_sound("sp_"+run.room_kind+"_"+cue if choice!=3 else "sp_"+run.room_kind+"_success")
+		else:
+			play_sound("purchase" if run.room_kind in ["shop","forge"] else run.room_kind)
+		# Service decisions happen while physics is paused by the modal.
+		run.notices.clear()
 
 func show_route_map(column: VBoxContainer) -> void:
 	add_label(column,tr_text("DUNGEON MAP","DUNGEON-KARTE")+"  •  %d / %d" % [run.floor_index+1,Model.FLOOR_COUNT],30,GOLD)
@@ -1041,7 +1054,7 @@ func show_route_map(column: VBoxContainer) -> void:
 		button.size=Vector2(92,52)
 		button.position=map.position_for(i)-Vector2(46,26)
 		button.add_theme_font_size_override("font_size",11)
-		button.icon=UI.atlas(UI.ICONS,int(UI.ROOM_ICONS[visible_kind]))
+		button.icon=UI.room_icon(visible_kind)
 		button.expand_icon=true
 		button.add_theme_constant_override("icon_max_width",14)
 		UI.style_button(button,UI.ROOM_COLORS[visible_kind],i==run.room)
@@ -1121,8 +1134,24 @@ func service_option(parent: Control, caption: String, detail: String, icon_index
 	button.disabled=not available
 	return button
 
+func special_service_option(parent: Control, caption: String, detail: String, choice: int, enabled: bool=true) -> Button:
+	var id: String=run.room_kind
+	var button:=add_button(parent,caption+"\n"+detail,func(): use_service(choice))
+	button.custom_minimum_size=Vector2(0,68)
+	button.alignment=HORIZONTAL_ALIGNMENT_LEFT
+	button.add_theme_font_size_override("font_size",15)
+	button.icon=UI.room_icon(id)
+	button.expand_icon=true
+	button.add_theme_constant_override("icon_max_width",46)
+	UI.style_button(button,UI.ROOM_COLORS[id])
+	button.disabled=not enabled
+	return button
+
 func service_intro() -> String:
 	match run.room_kind:
+		"blood_altar": return tr_text("An ancient bowl demands a permanent piece of your vitality.","Eine uralte Schale verlangt einen dauerhaften Teil deiner Lebenskraft.")
+		"forgotten_forge": return tr_text("The forgotten anvil can temper a relic you already carry.","Der vergessene Amboss kann eines deiner Relikte verdoppeln und härten.")
+		"archive": return tr_text("Erase one relic from your run to discover a new possibility.","Lösche ein Relikt aus deinem Run und wähle eine neue Möglichkeit.")
 		"shop": return tr_text("A lantern burns above a merchant's travelling wares.","Eine Laterne leuchtet über den Waren eines reisenden Händlers.")
 		"treasure": return tr_text("A sealed cache awaits. Choose its reward.","Eine versiegelte Truhe wartet. Wähle ihre Belohnung.")
 		"secret": return tr_text("A hidden sanctuary holds a forgotten treasure.","Ein verborgenes Heiligtum birgt einen vergessenen Schatz.")
@@ -1235,7 +1264,7 @@ func rebuild_overlay() -> void:
 			show_route_map(column)
 		"service":
 			var service_icon:=TextureRect.new()
-			service_icon.texture=UI.atlas(UI.ICONS,int(UI.ROOM_ICONS[run.room_kind]))
+			service_icon.texture=UI.room_icon(run.room_kind)
 			service_icon.custom_minimum_size=Vector2(0,72)
 			service_icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE
 			service_icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -1244,7 +1273,7 @@ func rebuild_overlay() -> void:
 			add_label(column,room_name(run.room_kind).to_upper(),30,UI.ROOM_COLORS[run.room_kind])
 			add_label(column,tr_text("Shards","Splitter")+"  "+str(run.shards)+"   •   "+tr_text("HP","LP")+"  %d/%d" % [run.hp,run.max_hp],18,MUTED)
 			add_label(column,service_intro(),16,WHITE)
-			add_label(column,tr_text("Your choice returns you directly to the map.","Nach deiner Wahl kehrst du direkt zur Karte zurück."),13,UI.ROOM_COLORS[run.room_kind])
+			add_label(column,tr_text("One decision per room; relic selections continue through their own cards.","Eine Entscheidung pro Raum; Relikte werden anschließend separat gewählt."),13,UI.ROOM_COLORS[run.room_kind])
 			match run.room_kind:
 				"treasure","secret":
 					service_option(column,tr_text("Choose a relic","Relikt wählen"),tr_text("Three relics to choose from","Drei Relikte zur Auswahl"),6,GOLD,0)
@@ -1265,8 +1294,30 @@ func rebuild_overlay() -> void:
 				"shrine":
 					service_option(column,tr_text("Recover 30 HP","30 LP regenerieren"),tr_text("Restore health","Regeneriert Lebenspunkte"),31,Color("#91d4b0"),0)
 					service_option(column,tr_text("Gain 10 max HP","10 maximale LP erhalten"),tr_text("Permanent for this expedition","Für diese Expedition dauerhaft"),1,Color("#e990a8"),1)
+				"blood_altar":
+					special_service_option(column,tr_text("Greater Blood Sacrifice","Großes Blutopfer"),tr_text("-20% maximum HP, guaranteed epic relic selection","-20 % maximale LP, mindestens ein episches Relikt"),0,run.max_hp>25)
+					special_service_option(column,tr_text("Lesser Blood Oath","Kleiner Bluteid"),tr_text("-10% maximum HP, +12 main and +9 special damage","-10 % maximale LP, +12 Haupt- und +9 Spezialschaden"),1,run.max_hp>25)
+					special_service_option(column,tr_text("Leave the altar","Den Altar verlassen"),tr_text("Take 4 shards and reject the bargain","Nimm 4 Splitter und lehne den Handel ab"),2)
+				"forgotten_forge":
+					var targets: Array[String]=run.forge_relic_targets()
+					if targets.is_empty():
+						add_label(column,tr_text("You have no relic to temper yet.","Du besitzt noch kein Relikt zum Härten."),14,MUTED)
+					for i in range(targets.size()):
+						var id: String=targets[i]
+						var item: Array=Content.RELICS[id]
+						special_service_option(column,tr_text("Temper: ","Härten: ")+str(item[1 if german else 0]),tr_text("12 shards • gain an extra stack of this relic","12 Splitter • erhalte eine weitere Stufe dieses Relikts"),i,run.shards>=12)
+					special_service_option(column,tr_text("Leave the anvil","Den Amboss verlassen"),tr_text("Keep your current relics and shards","Relikte und Splitter behalten"),3)
+				"archive":
+					var targets: Array[String]=run.archive_relic_targets()
+					if targets.is_empty():
+						add_label(column,tr_text("The archive finds no relic to rewrite.","Das Archiv findet noch kein Relikt zum Umschreiben."),14,MUTED)
+					for i in range(targets.size()):
+						var id: String=targets[i]
+						var item: Array=Content.RELICS[id]
+						special_service_option(column,tr_text("Rewrite: ","Umschreiben: ")+str(item[1 if german else 0]),tr_text("Discard this relic • choose one of three new offers","Dieses Relikt ablegen • eines von drei neuen wählen"),i)
+					special_service_option(column,tr_text("Leave the archive","Archiv verlassen"),tr_text("Preserve your current build","Behalte deinen bisherigen Build"),3)
 		"reward":
-			add_label(column,tr_text("CHOOSE YOUR RELIC","WÄHLE DEIN RELIKT") if run.room_kind in ["treasure","shop","event","secret"] else tr_text("ROOM CLEARED","RAUM GESÄUBERT"),30,GOLD)
+			add_label(column,tr_text("CHOOSE YOUR RELIC","WÄHLE DEIN RELIKT") if run.room_kind in ["treasure","shop","event","secret","archive","blood_altar"] else tr_text("ROOM CLEARED","RAUM GESÄUBERT"),30,GOLD)
 			add_label(column,tr_text("Choose a relic • recover ","Wähle ein Relikt • heile ")+str(5 if run.floor_index==0 else 3)+tr_text(" HP • continue your expedition"," LP • setze deine Expedition fort"),16,MUTED)
 			var cards:=HBoxContainer.new()
 			cards.add_theme_constant_override("separation",14)
