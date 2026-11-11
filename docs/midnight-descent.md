@@ -39,11 +39,38 @@ The pixel-world sprites gain phase-dependent halos. Boss phase, charge and relea
 
 No additional room objectives or floors were introduced in this iteration.
 
+## Class-exclusive relic pools — November 2026
+
+Four run-scoped loot pools are now built on top of the 48 shared relics. Each class has **six exclusive relics** (24 new items total). Both loadouts of the same class share their exclusive pool. Each three-card reward includes at least one card from the current class; the other offers still draw from shared and class items with the existing rarity rules. No other class' relic can appear. The combination-completion offer mechanic still applies. Rarity is rare for the first two of each class' set and epic for its other four.
+
+| Class | Relics and purpose | Three new two-item synergies |
+| --- | --- | --- |
+| Warden | Thorn Bastion (retaliation), Oathstone (periodic protective shield), Rally Banner (room-clear heal), Sentinel Lance (piercing special), Living Plate (HP/armor), Shieldbreaker (dash shockwave) | Thorn Fortress, Unbroken Sanctuary, Phalanx Rush |
+| Dealer | Marked Deck (fourth main attack card fan), Sleight of Hand (extra wall ricochet), Jinx Coin (curse mark), Smoke Joker (dash smoke damage), Death Ace (fifth special bonus card), House Treasury (extra shards) | Royal Flush, Double Bluff, House Jackpot |
+| Arcanist | Primordial Ember (burning hits), Ash Catalyst (burning-death blasts), Glacier Sigil (special chill), Crystal Lens (chill damage), Astral Wisps (orbiting auto-attack sprites), Arcane Dynamo (third-special pulse) | Inferno Chain, Crystal Cataclysm, Astral Convergence |
+| Soulbinder | Grim Scythe (extra souls on kills), Soul Brand (spend a soul for cursed projectile), Wraith Lantern (kill spirit shot), Grave Choir (fifth-kill pulse), Blood Vow (souls on damage), Last Breath (low-HP special bonus) | Dark Requiem, Legion of Echoes, Undying Pact |
+
+The **12 class-specific synergies** are defined in `content.gd` alongside the six original shared synergies, and are calculated by the same `run_model.gd` preview/activation API. Their effects change combat (extra projectiles, special mechanics, explosions, damage pulses, shield windows, status spreading), and show on the reward card when the next item completes a pair. Class relic cards are additionally labeled with their owner in an appropriate accent color. Activation still creates the named synergy toast.
+
+### Artwork and sound
+
+`art/pixel/class_relics.svg` is a new **25-cell, 48×48-pixel icon strip** built with the existing dark framed, crisp-edged 2D pixel-art language. Cell zero redesigns Shadow Steps; cells 1–24 map to item indices 48–71. `ui_theme.gd` routes those indices to the new atlas while preserving the old shared icons (0–39) and crown icons (40–47). Gameplay and UI smoke tests inspect atlas dimensions and index ranges.
+
+The combat renderer draws matching class-tinted area pulses, flying card/lance fans, Astral Wisp companions and Black Sun hit sparks. There are 19 new original **synthesized** sound cues in `sound_bank.gd` for the new relic effects and Black Sun impacts.
+
+### Existing-system corrections
+
+- The Dungeon Map uses 92×52 pixel cards in columns spaced 110 px apart, compact two-line danger labels, and clipped text inside its buttons; this fixes overlapping route nodes.
+- The Vault Keeper, Root King and Hollow King each have **25% more max HP** than before this change. Mandatory health-gated phases remain intact.
+- Black Sun copies now contribute an **additional orbiting, damaging sphere each**, up to eight separate visual orbits. Further stacks continue scaling impact damage beyond that visual limit. The rendered orbit positions and hit calculations both use the run's elapsed time.
+
+These changes introduce no new room types or floors.
+
 ## Build and tests
 
 From a Windows checkout run `pwsh ./tools/build_midnight_descent.ps1 -OutputDirectory artifacts/app/MidnightDescent`. The script downloads the pinned Godot 4.5.1 editor and Windows export template, imports the game, runs smoke tests and exports an executable and PCK alongside the casino application.
 
-Godot CI imports and parses the project and runs menu/model and gameplay-scene smoke tests. The model checks four forge effects, contract selection and payouts, synergy readiness and several combat effects, boss phase thresholds/telegraphs, dash effects, reset behavior, seating collisions, room traversal and combat progression. Visual validation on Windows, including font sizes and longer German strings, is still required.
+Godot CI imports and parses the project and runs menu/model and gameplay-scene smoke tests. The model checks four forge effects, contract selection and payouts, all class-relic offer pools and their isolation, class gameplay synergy samples, existing synergies, Black Sun stack damage, boss HP and phase gates, dash effects, reset behavior, seating collisions, room traversal and combat progression. Visual validation on Windows, including font sizes and longer German strings, is still required.
 
 ## Controls
 
