@@ -2245,6 +2245,7 @@ func special_rooms_smoke() -> bool:
 	var types: Array[String]=[]
 	for kind in Dungeon.SPECIAL_COMBAT+Dungeon.SPECIAL_SERVICE: types.append(str(kind))
 	for kind in types:
+		print("Special chamber smoke: "+kind)
 		var found:=false
 		for floor in range(FLOOR_COUNT):
 			if found: break
@@ -2318,6 +2319,7 @@ func special_rooms_smoke() -> bool:
 				if not service_action(0) or relics.has("blade") or archive_discarded!="blade": return false
 				if offers.size()!=3 or state!="reward" or offers.has("blade"): return false
 				if not choose_relic(0) or state!="route" or service_action(0): return false
+		print("Special chamber smoke OK: "+kind)
 	return true
 
 func smoke_test() -> bool:
