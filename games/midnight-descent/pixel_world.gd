@@ -48,6 +48,7 @@ var boss_light: PointLight2D
 var gate_open_amount := 0.0
 var decor: Array[Dictionary]=[]
 var decor_lights: Array[PointLight2D]=[]
+var floor_decals: Array[Vector2]=[]
 
 func setup(value) -> void:
 	model = value
@@ -219,6 +220,7 @@ func _draw() -> void:
 	draw_architecture(arena)
 	draw_room_decals()
 	draw_biome_details(arena)
+	draw_service_scene()
 	# Gate is drawn as stone architecture, with an illuminated open portal.
 	var gate: Vector2 = Model.EXIT
 	tile(6,Rect2(gate-Vector2(22,54),Vector2(48,108)))
@@ -247,31 +249,39 @@ func _draw() -> void:
 
 func build_decor() -> void:
 	decor.clear()
+	floor_decals.clear()
 	var rng:=RandomNumberGenerator.new()
 	rng.seed=int(model.seed_value)+int(model.room)*7919+int(model.floor_index)*104729
 	var floor_id: int=model.floor_index
+	for i in range(32):
+		floor_decals.append(pixel_pos(Vector2(rng.randf_range(92,1180),rng.randf_range(165,601))))
 	# Wall-adjacent, low props only; avoid blocking gameplay or trap slots.
 	for side in range(2):
 		for j in range(7):
 			var pos:=Vector2(165+j*154+rng.randi_range(-24,24),184 if side==0 else 596)
+			var prop_size: float=rng.randi_range(2,3)*24
+			var bounds:=Rect2(pos-Vector2(prop_size*0.5,prop_size*0.83),Vector2(prop_size,prop_size))
 			var clear:=true
 			for wall in model.walls:
-				if wall.grow(32).has_point(pos): clear=false
+				if wall.grow(6).intersects(bounds): clear=false
 			if floor_id==0:
 				for x in [420.0,690.0,960.0]:
 					if absf(pos.x-x)<55: clear=false
 			if pos.distance_to(Model.EXIT)<110 or pos.distance_to(Vector2(200,385))<90: clear=false
 			if clear and rng.randf()<0.82:
-				decor.append({"pos":pos,"index":floor_id*6+rng.randi_range(0,5),"size":rng.randi_range(2,3)*24})
+				decor.append({"pos":pos,"index":floor_id*6+rng.randi_range(0,5),"size":prop_size})
 	# Service landmarks stay at the existing wall/altar geometry, not in corridors.
 	if model.room_kind in ["shop","treasure","secret","shrine","event","forge"]:
 		var index: int={"shop":0,"treasure":0,"secret":15,"shrine":11,"event":9,"forge":5}[model.room_kind]
-		decor.append({"pos":Vector2(640,202),"index":index,"size":96})
+		decor.append({"pos":Vector2(640,246),"index":index,"size":96})
 	for i in range(decor_lights.size()):
 		var light: PointLight2D=decor_lights[i]
 		light.color=[Color("#e7b170"),Color("#65dcb4"),Color("#db8fd3")][floor_id]
 		light.position=Vector2(180+i*300,198 if i%2==0 else 572)
 		light.enabled=true
+	if model.room_kind in ["shop","treasure","secret","shrine","event","forge"]:
+		decor_lights[0].position=Vector2(640,240)
+		decor_lights[0].color={"shop":Color("#f4c283"),"treasure":Color("#f7d88f"),"secret":Color("#a38fe8"),"shrine":Color("#9cf0cd"),"event":Color("#d8a4ee"),"forge":Color("#ff9d62")}[model.room_kind]
 
 func draw_prop(prop: Dictionary) -> void:
 	var pos: Vector2=prop.pos
@@ -309,12 +319,10 @@ func draw_architecture(arena: Rect2) -> void:
 
 func draw_room_decals() -> void:
 	var floor_id: int=model.floor_index
-	var rng:=RandomNumberGenerator.new()
-	rng.seed=int(model.seed_value)+int(model.room)*613+floor_id*1741
 	var color: Color=[Color("#82707c"),Color("#587e53"),Color("#99736f")][floor_id]
 	# Stable floor-level wear and biome-specific motifs; no changes to collision.
-	for i in range(32):
-		var p:=pixel_pos(Vector2(rng.randf_range(92,1180),rng.randf_range(165,601)))
+	for i in range(floor_decals.size()):
+		var p: Vector2=floor_decals[i]
 		if floor_id==0:
 			draw_rect(Rect2(p,Vector2(8,2)),color.darkened(0.4))
 			draw_rect(Rect2(p+Vector2(8,2),Vector2(2,5)),color.darkened(0.5))
@@ -348,6 +356,43 @@ func draw_room_decals() -> void:
 	else:
 		draw_rect(Rect2(295,325,94,120),Color("#5d414e"),false,2)
 		draw_rect(Rect2(302,332,80,106),Color("#8b6b63"),false,1)
+
+func draw_service_scene() -> void:
+	if model.room_kind not in ["shop","treasure","secret","shrine","event","forge"]: return
+	var center:=Vector2(640,252)
+	var color: Color={"shop":Color("#d7aa73"),"treasure":Color("#e7be7b"),"secret":Color("#9174c4"),"shrine":Color("#83c6a2"),"event":Color("#c184c4"),"forge":Color("#e98754")}[model.room_kind]
+	# The service scene remains behind its modal: a staged, biome-specific landmark.
+	draw_rect(Rect2(480,160,320,170),Color(0.035,0.025,0.055,0.55))
+	draw_rect(Rect2(492,164,296,160),color.darkened(0.65),false,3)
+	draw_rect(Rect2(505,174,270,140),color.darkened(0.75),false,1)
+	match model.room_kind:
+		"shop":
+			for i in range(7):
+				draw_rect(Rect2(500+i*40,164,40,25),Color("#7b4c53") if i%2==0 else Color("#c1a16e"))
+			draw_rect(Rect2(510,240,260,18),Color("#8a604d"))
+			draw_rect(Rect2(510,240,260,4),Color("#d5aa75"))
+			for i in range(5): draw_prop({"pos":Vector2(534+i*52,231),"index":i%6,"size":36})
+		"forge":
+			draw_rect(Rect2(512,180,80,65),Color("#322230"))
+			draw_rect(Rect2(520,190,64,48),Color("#7d423a"))
+			draw_rect(Rect2(528,202,48,32),Color("#d06438"))
+			for i in range(8):
+				var p:=Vector2(531+i*6,223-fposmod(clock*(16+i*2)+i*11,35))
+				draw_rect(Rect2(pixel_pos(p),Vector2(4,4)),Color("#ffd28b"))
+			draw_prop({"pos":Vector2(738,246),"index":5,"size":72})
+		"treasure","secret":
+			for i in range(3):
+				draw_rect(Rect2(536+i*12,276-i*10,208-i*24,12),color.darkened(0.48-i*0.10))
+			draw_rect(Rect2(600,175,80,100),Color(color,0.08+sin(clock*2)*0.025))
+		"shrine","event":
+			for i in range(3):
+				draw_arc(center,62+i*18,0,TAU,48,Color(color,0.42-i*0.10),2,true)
+			for i in range(8):
+				var p:=pixel_pos(center+Vector2.from_angle(i*TAU/8+clock*0.16)*80)
+				draw_rect(Rect2(p,Vector2(5,5)),color)
+	for i in range(10):
+		var p:=Vector2(530+fposmod(i*53+clock*9,220),180+fposmod(i*31-clock*14,125))
+		draw_rect(Rect2(pixel_pos(p),Vector2(2,3)),Color(color,0.46))
 
 func draw_biome_details(arena: Rect2) -> void:
 	if model.floor_index==0:

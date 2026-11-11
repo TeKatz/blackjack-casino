@@ -20,6 +20,7 @@ var tree_rank := 1
 var tree_detail: Label
 var tree_buy: Button
 var preview_clock := 0.0
+var visual_smoke := false
 var audio = SoundBank.new()
 var progress = Progress.new()
 var codex_page := 0
@@ -45,7 +46,8 @@ func _ready() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg == "--language=de":
 			german = true
-	if not "--smoke-test" in OS.get_cmdline_user_args(): progress.load_save()
+	visual_smoke="--smoke-test" in OS.get_cmdline_user_args()
+	if not visual_smoke: progress.load_save()
 	add_child(audio)
 	build_shell()
 	show_page("home")
@@ -109,7 +111,8 @@ func build_shell() -> void:
 		button.custom_minimum_size=Vector2(110,40)
 		button.add_theme_font_size_override("font_size",15)
 		UI.style_button(button,GOLD)
-		button.mouse_entered.connect(func(): audio.play("hover"))
+		button.mouse_entered.connect(func(): audio.play("hover"); animate_hover(button,true))
+		button.mouse_exited.connect(func(): animate_hover(button,false))
 		button.pressed.connect(func(): show_page(id))
 		nav.add_child(button)
 		nav_buttons[id]=button
@@ -211,6 +214,16 @@ func buy_tree_rank() -> void:
 			tree.modulate=Color(1.35,1.25,1.05)
 			tree.create_tween().tween_property(tree,"modulate",Color.WHITE,0.5)
 
+func animate_hover(button: Button, entered: bool) -> void:
+	if visual_smoke or not get_tree().get_meta("descent_menu_motion",true): return
+	if not is_instance_valid(button) or button.disabled: return
+	var previous: Variant=button.get_meta("hover_tween",null)
+	if previous is Tween and previous.is_valid(): previous.kill()
+	var tween:=button.create_tween()
+	button.set_meta("hover_tween",tween)
+	tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.tween_property(button,"modulate",Color(1.13,1.08,1.03) if entered else Color.WHITE,0.15)
+
 func atlas_icon(texture: Texture2D, region: Rect2) -> AtlasTexture:
 	var icon := AtlasTexture.new()
 	icon.atlas = texture
@@ -286,7 +299,8 @@ func add_action(caption: String, callback: Callable, locked: bool = false) -> Bu
 	button.add_theme_stylebox_override("disabled", box_style(Color("#181526"), Color("#392d4c")))
 	UI.style_button(button,GOLD)
 	button.disabled = locked
-	button.mouse_entered.connect(func(): audio.play("hover"))
+	button.mouse_entered.connect(func(): audio.play("hover"); animate_hover(button,true))
+	button.mouse_exited.connect(func(): animate_hover(button,false))
 	button.pressed.connect(func(): audio.play("click"); callback.call())
 	body.add_child(button)
 	action_buttons.append(button)
@@ -333,7 +347,8 @@ func show_page(next: String) -> void:
 				button.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 				button.add_theme_font_size_override("font_size",16)
 				UI.style_button(button,Color("#ad90d5"))
-				button.mouse_entered.connect(func(): audio.play("hover"))
+				button.mouse_entered.connect(func(): audio.play("hover"); animate_hover(button,true))
+				button.mouse_exited.connect(func(): animate_hover(button,false))
 				button.pressed.connect(func(): show_page(id))
 				cards.add_child(button)
 			body.add_child(label(tr_text("Essence","Essenz")+"  "+str(progress.essence)+"    •    "+tr_text("Victories","Siege")+"  "+str(progress.wins)+"    •    "+tr_text("Deepest boss","Tiefster Boss")+"  %d/3" % progress.deepest_boss,15,GOLD))

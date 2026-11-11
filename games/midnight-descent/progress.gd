@@ -124,4 +124,11 @@ func smoke_test() -> bool:
 	essence=100
 	if not unlock_set("dealer_cards") or unlock_set("dealer_cards"): return false
 	model.begin(43,"dealer_cards",ranks)
-	return model.hp==80 and model.relics.is_empty() and model.character=="dealer"
+	if model.hp!=80 or not model.relics.is_empty() or model.character!="dealer": return false
+	essence=200
+	if not buy_upgrade("arcane") or not buy_upgrade("fortune"): return false
+	model.begin(44,"warden_guard",ranks)
+	if model.bolt_damage!=20: return false
+	model.state="defeat"
+	model.shards=300
+	return settle(model)==105

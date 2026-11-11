@@ -22,15 +22,17 @@ func configure(value, de: bool, key: String, rank: int) -> void:
 	german=de
 	selected=key
 	selected_rank=rank
-	for child in get_children(): child.queue_free()
+	for child in get_children():
+		remove_child(child)
+		child.queue_free()
 	nodes.clear()
 	for row in range(KEYS.size()):
 		var id: String=KEYS[row]
 		var item: Array=Content.UPGRADES[id]
 		var caption:=Label.new()
 		caption.text=item[1 if german else 0]
-		caption.position=Vector2(18,22+row*57)
-		caption.size=Vector2(208,42)
+		caption.position=Vector2(52,22+row*57)
+		caption.size=Vector2(180,42)
 		caption.vertical_alignment=VERTICAL_ALIGNMENT_CENTER
 		caption.add_theme_font_size_override("font_size",16)
 		caption.add_theme_color_override("font_color",COLORS[row])
@@ -41,7 +43,7 @@ func configure(value, de: bool, key: String, rank: int) -> void:
 			var button:=Button.new()
 			button.position=Vector2(244+j*94,22+row*57)
 			button.size=Vector2(76,43)
-			button.text=str(level)
+			button.text=str(level)+(" ✓" if level<=profile.ranks[id] else "")
 			button.icon=UI.atlas(UI.RELICS,ICONS[row])
 			button.expand_icon=true
 			button.add_theme_constant_override("icon_max_width",24)
@@ -52,7 +54,7 @@ func configure(value, de: bool, key: String, rank: int) -> void:
 			UI.style_button(button,COLORS[row] if owned or next else Color("#625772"),active or owned)
 			if not owned and not next:
 				button.add_theme_color_override("font_color",Color("#9d90aa"))
-			button.tooltip_text=item[1 if german else 0]+"  "+str(level)
+			button.tooltip_text=item[1 if german else 0]+"  "+str(level)+" • "+("Erworben" if german else "Acquired" if owned else "Locked") if owned else item[1 if german else 0]+"  "+str(level)+" • "+(str(profile.cost(id)) if next else ("Vorgängerrang nötig" if german else "Previous rank required"))
 			button.pressed.connect(func(): rank_selected.emit(id,level))
 			add_child(button)
 			nodes.append(button)
@@ -67,10 +69,15 @@ func _draw() -> void:
 	for y in range(0,365,24): draw_line(Vector2(0,y),Vector2(748,y),Color("#211b2c"),1)
 	draw_rect(Rect2(5,5,738,355),Color("#594763"),false,2)
 	if profile==null: return
+	draw_line(Vector2(27,43),Vector2(27,328),Color("#8a6d9b"),3)
+	draw_circle(Vector2(27,185),9,Color("#d2a96e"))
+	draw_circle(Vector2(27,185),5,Color("#f6e1ab"))
 	for row in range(KEYS.size()):
 		var id: String=KEYS[row]
 		var y: float=43+row*57
 		var color: Color=COLORS[row]
+		draw_line(Vector2(27,y),Vector2(46,y),color.darkened(0.3),2)
+		draw_circle(Vector2(27,y),4,color)
 		draw_line(Vector2(224,y),Vector2(282,y),color.darkened(0.35),3)
 		draw_circle(Vector2(224,y),4,color)
 		for j in range(int(Content.UPGRADES[id][5])-1):
