@@ -58,6 +58,9 @@ var hub_transition_stage := 0
 var hub_transition_time := 0.0
 var hub_fade := 1.0
 var hub_prompt := 0.0
+var hub_keeper_prompt := 0.0
+var hub_forge_prompt := 0.0
+var hub_panel := ""
 
 func _ready() -> void:
 	german = "--language=de" in OS.get_cmdline_user_args()
@@ -91,17 +94,24 @@ func tr_text(en: String, de: String) -> String:
 	return de if german else en
 
 func _physics_process(dt: float) -> void:
-	if paused or input_grace>0 or hub_transition_stage!=0 or run.state in ["reward","victory","defeat","route","service"]:
+	if paused or hub_panel!="" or input_grace>0 or hub_transition_stage!=0 or run.state in ["reward","victory","defeat","route","service"]:
 		return
 	var direction:=Vector2(float(Input.is_physical_key_pressed(KEY_D) or Input.is_physical_key_pressed(KEY_RIGHT))-float(Input.is_physical_key_pressed(KEY_A) or Input.is_physical_key_pressed(KEY_LEFT)),float(Input.is_physical_key_pressed(KEY_S) or Input.is_physical_key_pressed(KEY_DOWN))-float(Input.is_physical_key_pressed(KEY_W) or Input.is_physical_key_pressed(KEY_UP)))
 	var dash:=Input.is_physical_key_pressed(KEY_SPACE)
 	var interact:=Input.is_physical_key_pressed(KEY_E)
 	if run.state=="hub":
 		run.tick(dt,direction,Model.HUB_PORTAL,false,false,false)
-		if interact and not last_interact and run.hub_portal_available():
-			hub_transition_stage=1
-			hub_transition_time=0.0
-			play_sound("portal_charge")
+		if interact and not last_interact:
+			if run.hub_portal_available():
+				hub_transition_stage=1
+				hub_transition_time=0.0
+				play_sound("portal_charge")
+			elif run.hub_forge_available():
+				hub_panel="forge"
+				play_sound("forge")
+			elif run.hub_bartender_available():
+				hub_panel="barkeep"
+				play_sound("shop")
 	else:
 		run.tick(dt,direction,get_global_mouse_position(),Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT),Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT),dash and not last_dash,Input.is_physical_key_pressed(KEY_Q) and not last_active)
 		if interact and not last_interact: run.next_room()
@@ -137,15 +147,17 @@ func _process(dt: float) -> void:
 			hub_fade=0.0
 	elif run.state=="hub":
 		hub_fade=maxf(0,hub_fade-dt*1.5)
-	var near_hub: bool=run.state=="hub" and run.player.distance_to(Model.HUB_PORTAL)<160 and not paused
-	hub_prompt=move_toward(hub_prompt,1.0 if near_hub else 0.0,dt*4.0)
+	var hub_interactive: bool=run.state=="hub" and not paused and hub_panel=="" and hub_transition_stage==0
+	hub_prompt=move_toward(hub_prompt,1.0 if hub_interactive and run.hub_portal_available() else 0.0,dt*5.0)
+	hub_keeper_prompt=move_toward(hub_keeper_prompt,1.0 if hub_interactive and run.hub_bartender_available() else 0.0,dt*5.0)
+	hub_forge_prompt=move_toward(hub_forge_prompt,1.0 if hub_interactive and run.hub_forge_available() else 0.0,dt*5.0)
 	update_hud_feedback(dt)
 	input_grace=maxf(0,input_grace-dt)
 	shake = move_toward(shake, 0, dt*30)
 	if run.state in ["victory","defeat"] and not run.settled:
 		progress.settle(run)
 		if not smoke_mode: progress.save()
-	var target: String = ("relics" if relics_open else "pause") if paused else run.state
+	var target: String = ("relics" if relics_open else "pause") if paused else ("hub_"+hub_panel if run.state=="hub" and hub_panel!="" else run.state)
 	if target != overlay_state or (target=="route" and (modal_room!=run.room or modal_floor!=run.floor_index)):
 		if target=="route": play_sound("map")
 		elif target=="service": play_sound(run.room_kind)
@@ -177,6 +189,10 @@ func _process(dt: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
+		if hub_panel!="":
+			close_hub_panel()
+			get_viewport().set_input_as_handled()
+			return
 		if relics_open:
 			relics_open=false
 			get_viewport().set_input_as_handled()
@@ -184,6 +200,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		if run.state in ["hub","fight","exit","route","service"]:
 			paused = not paused
 			get_viewport().set_input_as_handled()
+	elif event is InputEventKey and event.pressed and not event.echo and run.state=="hub" and hub_panel=="barkeep" and event.physical_keycode==KEY_E:
+		close_hub_panel()
+		get_viewport().set_input_as_handled()
 	elif event is InputEventKey and event.pressed and not event.echo and run.state == "reward":
 		var index := -1
 		match event.physical_keycode:
@@ -278,21 +297,55 @@ func _draw() -> void:
 			draw_rect(Rect2(1275-i*5,0,5,720),tint)
 			draw_rect(Rect2(0,715-i*5,1280,5),tint)
 
+func hub_keycap(rect: Rect2, key_text: String, accent: Color) -> void:
+	draw_rect(rect.translated(Vector2(0,3)),Color("#100c19"))
+	draw_rect(rect,Color("#30253d"))
+	draw_rect(rect,accent,false,1)
+	draw_rect(Rect2(rect.position+Vector2(2,2),Vector2(rect.size.x-4,3)),Color(accent,0.33))
+	draw_string(font,rect.position+Vector2(0,rect.size.y*0.73),key_text,HORIZONTAL_ALIGNMENT_CENTER,rect.size.x,13,WHITE)
+
+func draw_hub_action_prompt(anchor: Vector2, caption: String, alpha: float, accent: Color, width: float) -> void:
+	if alpha<=0.01: return
+	var p:=anchor+Vector2(-width*0.5,-65+sin(clock*2.6)*2.0)
+	var rect:=Rect2(p,Vector2(width,43))
+	draw_rect(rect.translated(Vector2(3,5)),Color(0.02,0.01,0.04,0.55*alpha))
+	draw_rect(rect,Color(0.11,0.075,0.18,0.95*alpha))
+	draw_rect(rect,Color(accent,alpha),false,2)
+	draw_rect(Rect2(p+Vector2(4,4),Vector2(width-8,2)),Color(accent,0.38*alpha))
+	draw_rect(Rect2(p+Vector2(9,8),Vector2(26,27)),Color(0.32,0.22,0.44,alpha))
+	draw_rect(Rect2(p+Vector2(9,8),Vector2(26,27)),Color(accent,alpha),false,1)
+	text_at(p+Vector2(17,28),"E",17,Color(1,0.95,0.83,alpha))
+	text_at(p+Vector2(43,27),caption,15,Color(1,0.91,0.77,alpha))
+
 func draw_hub_ui() -> void:
-	# The foyer is a playable space, not an extra combat node.
-	hud_panel(Rect2(23,11,514,85),GOLD)
-	text_at(Vector2(43,43),tr_text("THE THRESHOLD TAVERN","DIE SCHWELLENTAVERNE"),23,GOLD)
-	text_at(Vector2(43,73),tr_text("Your descent begins beyond the gate.","Hinter dem Tor beginnt dein Abstieg."),15,WHITE)
-	hud_panel(Rect2(26,650,512,51),VIOLET)
-	text_at(Vector2(43,683),tr_text("WASD  Move  •  E  Enter portal  •  ESC  Pause","WASD  Bewegen  •  E  Portal betreten  •  ESC  Pause"),14,WHITE)
-	if hub_prompt>0.01:
-		var p: Vector2=Model.HUB_PORTAL+Vector2(-113,-141+sin(clock*2)*3)
-		var rect:=Rect2(p,Vector2(226,46))
-		draw_rect(rect,Color(0.13,0.08,0.23,0.91*hub_prompt))
-		draw_rect(rect,Color(0.86,0.65,1,hub_prompt),false,2)
-		draw_rect(Rect2(p+Vector2(8,8),Vector2(29,28)),Color(0.44,0.30,0.58,hub_prompt))
-		text_at(p+Vector2(16,29),"E",19,Color(1,0.95,0.83,hub_prompt))
-		text_at(p+Vector2(45,28),tr_text("Begin descent","Abstieg beginnen"),16,Color(1,0.85,0.63,hub_prompt))
+	# A centered tavern crest replaces the large top-left information slab.
+	hud_panel(Rect2(278,10,724,84),GOLD)
+	draw_rect(Rect2(298,21,684,2),Color("#ab805a"))
+	draw_rect(Rect2(298,84,684,2),Color("#ab805a"))
+	for direction in [-1.0,1.0]:
+		var x: float=640+direction*298
+		draw_colored_polygon(PackedVector2Array([Vector2(x,44),Vector2(x+direction*13,55),Vector2(x,66),Vector2(x-direction*13,55)]),Color("#af805f"))
+		draw_circle(Vector2(x,55),3,Color("#f9d89a"))
+	draw_string(font,Vector2(355,48),tr_text("THE THRESHOLD TAVERN","DIE SCHWELLENTAVERNE"),HORIZONTAL_ALIGNMENT_CENTER,570,26,GOLD)
+	draw_string(font,Vector2(360,74),tr_text("YOUR DESCENT BEGINS BEYOND THE GATE","DEIN ABSTIEG BEGINNT HINTER DEM TOR"),HORIZONTAL_ALIGNMENT_CENTER,560,12,WHITE)
+	# Compact keycaps and distinct actions remain readable at native 1280x720.
+	hud_panel(Rect2(24,643,645,65),VIOLET)
+	text_at(Vector2(43,657),tr_text("EXPLORATION","STEUERUNG"),10,MUTED)
+	for divider_x in [244.0,445.0]:
+		draw_rect(Rect2(divider_x,662,1,36),Color("#685079"))
+	hub_keycap(Rect2(43,669,62,27),"WASD",VIOLET)
+	text_at(Vector2(117,689),tr_text("Move","Bewegen"),15,WHITE)
+	hub_keycap(Rect2(271,669,38,27),"E",GOLD)
+	text_at(Vector2(321,689),tr_text("Interact","Interagieren"),15,WHITE)
+	hub_keycap(Rect2(466,669,53,27),"ESC",VIOLET)
+	text_at(Vector2(532,689),tr_text("Pause","Pause"),15,WHITE)
+	draw_hub_action_prompt(Model.HUB_BARTENDER_POINT+Vector2(0,48),tr_text("Talk to keeper","Barkeeper ansprechen"),hub_keeper_prompt,GOLD,224)
+	draw_hub_action_prompt(Model.HUB_FORGE_POINT+Vector2(0,47),tr_text("Inspect forge","Schmiede öffnen"),hub_forge_prompt,Color("#eeab7c"),218)
+	draw_hub_action_prompt(Model.HUB_PORTAL+Vector2(0,-72),tr_text("Begin descent","Abstieg beginnen"),hub_prompt,VIOLET,222)
+
+func close_hub_panel() -> void:
+	hub_panel=""
+	input_grace=0.14
 
 func run_scene_smoke() -> void:
 	# Exercise the actual scene and its overlay construction, not just the model.
@@ -301,6 +354,28 @@ func run_scene_smoke() -> void:
 		push_error("Hub scene spawned enemies or consumed a dungeon node")
 		get_tree().quit(10)
 		return
+	run.player=Vector2(482,351)
+	if not run.hub_bartender_available():
+		get_tree().quit(29)
+		return
+	hub_panel="barkeep"
+	_process(0.0)
+	if overlay_state!="hub_barkeep" or overlay.get_child_count()==0:
+		get_tree().quit(30)
+		return
+	hub_panel=""
+	_process(0.0)
+	run.player=Vector2(790,350)
+	if not run.hub_forge_available():
+		get_tree().quit(31)
+		return
+	hub_panel="forge"
+	_process(0.0)
+	if overlay_state!="hub_forge" or overlay.get_child_count()==0:
+		get_tree().quit(32)
+		return
+	hub_panel=""
+	_process(0.0)
 	run.player=Model.HUB_PORTAL
 	if not run.enter_first_room() or run.state!="fight":
 		get_tree().quit(26)
@@ -758,6 +833,8 @@ func disable_modal_input(node: Node) -> void:
 func modal_accent() -> Color:
 	match overlay_state:
 		"route": return Color("#91a9e8")
+		"hub_barkeep": return GOLD
+		"hub_forge": return Color("#e8a879")
 		"service": return UI.ROOM_COLORS[run.room_kind]
 		"victory": return Color("#f1cc7e")
 		"defeat": return Color("#e67c9a")
@@ -767,6 +844,8 @@ func modal_accent() -> Color:
 func modal_fill() -> Color:
 	match overlay_state:
 		"route": return Color("#151d33")
+		"hub_barkeep": return Color("#32232b")
+		"hub_forge": return Color("#31242a")
 		"service": return Color("#202337") if run.room_kind=="shop" else Color("#211b30")
 		"victory": return Color("#312431")
 		"defeat": return Color("#2e1828")
@@ -807,7 +886,7 @@ func rebuild_overlay() -> void:
 			fade.tween_property(previous,"modulate:a",0.0,0.16)
 			fade.tween_callback(previous.queue_free)
 		modal_root=null
-	if overlay_state not in ["pause","relics","reward","victory","defeat","route","service"]:
+	if overlay_state not in ["pause","relics","reward","victory","defeat","route","service","hub_barkeep","hub_forge"]:
 		input_grace=0.18 if not smoke_mode else 0.0
 		return
 	var accent: Color=modal_accent()
@@ -851,6 +930,22 @@ func rebuild_overlay() -> void:
 		modal_tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 		modal_tween.tween_property(modal_root,"modulate:a",1.0,0.24)
 	match overlay_state:
+		"hub_barkeep":
+			add_label(column,tr_text("THE TAVERN KEEPER","DER WIRT"),30,GOLD)
+			add_label(column,tr_text("Welcome to the Threshold.","Willkommen an der Schwelle."),20,WHITE)
+			add_label(column,tr_text("The keeper polishes a glass and nods toward the gate. His story and dialogue choices will arrive in a future update.","Der Wirt poliert ein Glas und nickt zum Tor. Seine Geschichte und Dialogoptionen folgen in einem späteren Update."),16,MUTED)
+			var leave_keeper:=add_button(column,tr_text("End conversation  [E / ESC]","Gespräch beenden  [E / ESC]"),func(): close_hub_panel())
+			UI.style_button(leave_keeper,GOLD,true)
+		"hub_forge":
+			add_label(column,tr_text("THE TAVERN FORGE","DIE TAVERNENSCHMIEDE"),30,Color("#e8a879"))
+			add_label(column,tr_text("A place to prepare for the descent.","Ein Ort zur Vorbereitung auf den Abstieg."),17,WHITE)
+			add_label(column,tr_text("The forge is not yet operational. Future upgrades and recipes will appear here.","Die Schmiede ist noch nicht in Betrieb. Spätere Upgrades und Rezepte werden hier verfügbar sein."),15,MUTED)
+			for option in [tr_text("Weapon upgrades  ·  Coming soon","Waffen-Upgrades  ·  Demnächst"),tr_text("Equipment crafting  ·  Coming soon","Ausrüstung herstellen  ·  Demnächst")]:
+				var future:=add_button(column,option,func(): pass)
+				UI.style_button(future,Color("#906f78"))
+				future.disabled=true
+			var leave_forge:=add_button(column,tr_text("Close forge  [ESC]","Schmiede schließen  [ESC]"),func(): close_hub_panel())
+			UI.style_button(leave_forge,Color("#e8a879"),true)
 		"relics":
 			show_run_relics(column)
 		"route":
@@ -1034,6 +1129,10 @@ func animate_relic_card(card: Control, style: StyleBoxFlat, color: Color, hovere
 func restart() -> void:
 	paused = false
 	relics_open=false
+	hub_panel=""
+	hub_prompt=0.0
+	hub_keeper_prompt=0.0
+	hub_forge_prompt=0.0
 	hub_transition_stage=0
 	hub_transition_time=0.0
 	hub_fade=0.0 if smoke_mode else 1.0
