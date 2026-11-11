@@ -555,6 +555,19 @@ func run_scene_smoke() -> void:
 	if crown_icon.atlas!=UI.CROWN_RELICS or crown_icon.region!=Rect2(336,0,48,48):
 		get_tree().quit(19)
 		return
+	# The standalone pixel atlas must contain the new Shadow Steps illustration
+	# plus all 24 class relics at exactly 48 px per cell.
+	if UI.CLASS_RELICS.get_width()!=1200 or UI.CLASS_RELICS.get_height()!=48:
+		get_tree().quit(36)
+		return
+	if UI.atlas(UI.RELICS,2).atlas!=UI.CLASS_RELICS or UI.atlas(UI.RELICS,2).region!=Rect2(0,0,48,48):
+		get_tree().quit(37)
+		return
+	for i in range(48,72):
+		var class_icon:=UI.atlas(UI.RELICS,i)
+		if class_icon.atlas!=UI.CLASS_RELICS or class_icon.region!=Rect2((i-47)*48,0,48,48):
+			get_tree().quit(38)
+			return
 	# Test reserved decor bounds in each generated room, including all biome fixtures.
 	for floor in range(3):
 		run.floor_index=floor
