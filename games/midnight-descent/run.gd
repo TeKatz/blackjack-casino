@@ -768,6 +768,7 @@ func draw_hud() -> void:
 				hud_panel(Rect2(415,107,450,37),Color("#ed7c9e"))
 				text_at(Vector2(434,123),Content.boss_name(run.floor_index,german).to_upper(),15,Color("#ff91bd"))
 				meter(Rect2(434,130,412,7),float(enemy.hp)/float(enemy.max_hp),Color("#e36b86"))
+				text_at(Vector2(745,123),"PHASE "+str(enemy.get("phase",1))+" / 3",12,Color("#ffe1b2"))
 				break
 	if run.state=="fight" and run.wave_total>1:
 		hud_panel(Rect2(1000,150,218,37),GOLD)
@@ -1104,13 +1105,16 @@ func rebuild_overlay() -> void:
 				var item: Array=Content.RELICS[id]
 				var rarity: int=Content.rarity(id)
 				var color: Color=UI.RARITY_COLORS[rarity]
+				var preview: Dictionary=run.synergy_preview(id)
+				var ready: bool=not preview.is_empty() and preview["state"]=="ready"
+				var border_color: Color=Color("#89ebae") if ready else color
 				var card:=PanelContainer.new()
-				card.custom_minimum_size=Vector2(278,290)
+				card.custom_minimum_size=Vector2(278,329)
 				card.size_flags_horizontal=Control.SIZE_EXPAND_FILL
-				var card_style:=UI.panel(Color("#211a30").lerp(color,0.09+rarity*0.035),color,14)
+				var card_style:=UI.panel(Color("#211a30").lerp(border_color,0.16 if ready else 0.09+rarity*0.035),border_color,14)
 				card_style.shadow_size=12
 				card_style.shadow_offset=Vector2(0,7)
-				card_style.border_width_top=4
+				card_style.border_width_top=6 if ready else 4
 				card.add_theme_stylebox_override("panel",card_style)
 				cards.add_child(card)
 				var stack:=VBoxContainer.new()
@@ -1123,22 +1127,29 @@ func rebuild_overlay() -> void:
 				add_label(ribbon,rarity_label.to_upper(),13,color)
 				var icon:=TextureRect.new()
 				icon.texture=UI.atlas(UI.RELICS,int(item[4]))
-				icon.custom_minimum_size=Vector2(0,144)
+				icon.custom_minimum_size=Vector2(0,112)
 				icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE
 				icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 				icon.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
 				stack.add_child(icon)
 				add_label(stack,item[1 if german else 0],21,WHITE)
 				add_label(stack,item[3 if german else 2],16,MUTED)
+				if not preview.is_empty():
+					var synergy_info: Dictionary=Content.SYNERGIES[str(preview["id"])]
+					var synergy_state: String=str(preview["state"])
+					var synergy_color: Color=Color("#89ebae") if ready else (Color("#bca6ec") if synergy_state=="building" else Color("#99d3f1"))
+					var label_text: String=tr_text("SYNERGY READY • ","SYNERGIE BEREIT • ") if ready else (tr_text("COMBO PIECE • ","KOMBO-TEIL • ") if synergy_state=="building" else tr_text("ACTIVE • ","AKTIV • "))
+					add_label(stack,label_text+str(synergy_info["de" if german else "en"]),13,synergy_color)
+					if ready: add_label(stack,str(synergy_info["de_effect" if german else "en_effect"]),12,Color("#d8f6e3"))
 				var spacer:=Control.new()
 				spacer.size_flags_vertical=Control.SIZE_EXPAND_FILL
 				stack.add_child(spacer)
 				var button:=add_button(stack,"%d  •  " % (i+1)+tr_text("Choose","Wählen"),func(): select_relic(index))
-				UI.style_button(button,color)
-				button.mouse_entered.connect(func(): animate_relic_card(card,card_style,color,true))
-				button.mouse_exited.connect(func(): animate_relic_card(card,card_style,color,false))
-				button.focus_entered.connect(func(): animate_relic_card(card,card_style,color,true))
-				button.focus_exited.connect(func(): animate_relic_card(card,card_style,color,false))
+				UI.style_button(button,border_color)
+				button.mouse_entered.connect(func(): animate_relic_card(card,card_style,border_color,true))
+				button.mouse_exited.connect(func(): animate_relic_card(card,card_style,border_color,false))
+				button.focus_entered.connect(func(): animate_relic_card(card,card_style,border_color,true))
+				button.focus_exited.connect(func(): animate_relic_card(card,card_style,border_color,false))
 		"pause":
 			add_label(column,tr_text("EXPEDITION PAUSED","EXPEDITION PAUSIERT"),30,GOLD)
 			add_label(column,tr_text("Your expedition is frozen. Take your time.","Deine Expedition ist angehalten."),16,MUTED)
@@ -1198,7 +1209,19 @@ func show_run_relics(column: VBoxContainer) -> void:
 	add_label(detail,tr_text("Main / special / armor","Haupt / Spezial / Rüstung")+"   %.0f / %.0f / %.0f" % [run.damage,run.bolt_damage,run.armor],14,WHITE)
 	add_label(detail,tr_text("Max HP / speed","Max. LP / Tempo")+"   %.0f / %.0f" % [run.max_hp,run.speed],14,WHITE)
 	add_label(detail,tr_text("SYNERGIES","SYNERGIEN"),14,VIOLET)
-	add_label(detail,tr_text("Dedicated combinations will appear here in a future update.","Spezielle Reliktkombinationen erscheinen hier in einem späteren Update."),13,MUTED)
+	var displayed:=0
+	for synergy_id in Content.SYNERGIES:
+		var synergy_data: Dictionary=Content.SYNERGIES[synergy_id]
+		var owned:=0
+		for part in synergy_data["parts"]:
+			if run.relics.has(str(part)): owned+=1
+		if owned==0: continue
+		var activated: bool=run.has_synergy(str(synergy_id))
+		var synergy_label: String=str(synergy_data["de" if german else "en"])
+		add_label(detail,(tr_text("ACTIVE • ","AKTIV • ") if activated else "1/2 • ")+synergy_label,13,Color("#94e8b0") if activated else MUTED)
+		if activated: add_label(detail,str(synergy_data["de_effect" if german else "en_effect"]),12,WHITE)
+		displayed+=1
+	if displayed==0: add_label(detail,tr_text("Collect matching relics to discover combinations.","Finde passende Relikte für mächtige Kombinationen."),13,MUTED)
 	for id in counts:
 		var key: String=id
 		var item: Array=Content.RELICS[key]
