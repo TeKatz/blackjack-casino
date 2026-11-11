@@ -4,6 +4,7 @@ const Model = preload("res://run_model.gd")
 const TILES = preload("res://art/pixel/vault_tiles.svg")
 const GARDEN = preload("res://art/pixel/garden_tiles.svg")
 const CROWN = preload("res://art/pixel/crown_tiles.svg")
+const PROPS = preload("res://art/pixel/room_props.svg")
 const TORCH = preload("res://art/pixel/torch.svg")
 const RELICS = preload("res://art/pixel/relics.png")
 const ACTORS = {
@@ -45,6 +46,8 @@ var ambient: CanvasModulate
 var side_lights: Array[PointLight2D] = []
 var boss_light: PointLight2D
 var gate_open_amount := 0.0
+var decor: Array[Dictionary]=[]
+var decor_lights: Array[PointLight2D]=[]
 
 func setup(value) -> void:
 	model = value
@@ -78,6 +81,7 @@ func setup(value) -> void:
 	boss_light = make_light(Color("#ec6d9c"),3.6,0.0,false)
 	for i in range(4):
 		projectile_lights.append(make_light(Color("#8adcf8"),1.3,1.0,false))
+	for i in range(4): decor_lights.append(make_light(Color("#f3c18b"),1.65,0.65,false))
 	rebuild_occluders()
 	update_view(0.0)
 
@@ -112,6 +116,7 @@ func rebuild_occluders() -> void:
 	last_room = model.room
 	last_floor = model.floor_index
 	last_seed = model.seed_value
+	build_decor()
 
 func update_view(dt: float) -> void:
 	clock += dt
@@ -139,7 +144,10 @@ func update_view(dt: float) -> void:
 	if model.floor_index==1: target_ambient=Color(0.35,0.53,0.39)
 	if model.floor_index==2: target_ambient=Color(0.47,0.34,0.50)
 	for light in torches:
-		light.color=[Color("#ffd094"),Color("#a0e2ad"),Color("#e9a0c4")][model.floor_index]
+		light.color=[Color("#ffd094"),Color("#83e5be"),Color("#e9a0c4")][model.floor_index]
+		light.energy*= [1.0,0.7,0.82][model.floor_index]
+	for i in range(decor_lights.size()):
+		decor_lights[i].energy=0.48+0.12*sin(clock*3+i*1.7)
 	ambient.color = ambient.color.lerp(target_ambient, minf(1.0,dt*2.5))
 	gate_open_amount = move_toward(gate_open_amount,1.0 if model.state == "exit" else 0.0,dt*2.5)
 	gate_light.energy = gate_open_amount*(1.1+sin(clock*4)*0.2)
@@ -208,6 +216,8 @@ func _draw() -> void:
 			var pos := Vector2(66+(i*173)%1140,154+(i*97)%460)
 			draw_rect(Rect2(pos,Vector2(10,4)),Color("#486b46"))
 			draw_rect(Rect2(pos+Vector2(3,-5),Vector2(4,8)),Color("#75a65f"))
+	draw_architecture(arena)
+	draw_room_decals()
 	draw_biome_details(arena)
 	# Gate is drawn as stone architecture, with an illuminated open portal.
 	var gate: Vector2 = Model.EXIT
@@ -220,7 +230,10 @@ func _draw() -> void:
 	# Painter's ordering: pillars and actor feet share the same depth list.
 	var objects: Array[Dictionary] = []
 	for wall in model.walls:
+		draw_rect(Rect2(wall.position+Vector2(9,12),wall.size),Color(0.025,0.015,0.045,0.48))
 		objects.append({"kind":"pillar","depth":wall.end.y,"rect":wall})
+	for prop in decor:
+		objects.append({"kind":"prop","depth":prop.pos.y+8,"prop":prop})
 	for enemy in model.enemies:
 		objects.append({"kind":"enemy","depth":enemy.pos.y+float(enemy.r),"enemy":enemy})
 	objects.append({"kind":"player","depth":model.player.y+15})
@@ -228,8 +241,113 @@ func _draw() -> void:
 	for object in objects:
 		match object.kind:
 			"pillar": draw_pillar(object.rect)
+			"prop": draw_prop(object.prop)
 			"enemy": draw_actor(object.enemy)
 			"player": draw_warden()
+
+func build_decor() -> void:
+	decor.clear()
+	var rng:=RandomNumberGenerator.new()
+	rng.seed=int(model.seed_value)+int(model.room)*7919+int(model.floor_index)*104729
+	var floor_id: int=model.floor_index
+	# Wall-adjacent, low props only; avoid blocking gameplay or trap slots.
+	for side in range(2):
+		for j in range(7):
+			var pos:=Vector2(165+j*154+rng.randi_range(-24,24),184 if side==0 else 596)
+			var clear:=true
+			for wall in model.walls:
+				if wall.grow(32).has_point(pos): clear=false
+			if floor_id==0:
+				for x in [420.0,690.0,960.0]:
+					if absf(pos.x-x)<55: clear=false
+			if pos.distance_to(Model.EXIT)<110 or pos.distance_to(Vector2(200,385))<90: clear=false
+			if clear and rng.randf()<0.82:
+				decor.append({"pos":pos,"index":floor_id*6+rng.randi_range(0,5),"size":rng.randi_range(2,3)*24})
+	# Service landmarks stay at the existing wall/altar geometry, not in corridors.
+	if model.room_kind in ["shop","treasure","secret","shrine","event","forge"]:
+		var index: int={"shop":0,"treasure":0,"secret":15,"shrine":11,"event":9,"forge":5}[model.room_kind]
+		decor.append({"pos":Vector2(640,202),"index":index,"size":96})
+	for i in range(decor_lights.size()):
+		var light: PointLight2D=decor_lights[i]
+		light.color=[Color("#e7b170"),Color("#65dcb4"),Color("#db8fd3")][floor_id]
+		light.position=Vector2(180+i*300,198 if i%2==0 else 572)
+		light.enabled=true
+
+func draw_prop(prop: Dictionary) -> void:
+	var pos: Vector2=prop.pos
+	var size: float=prop.size
+	draw_rect(Rect2(pixel_pos(pos+Vector2(-size*0.40,1)),Vector2(size*0.8,8)),Color(0.03,0.02,0.05,0.50))
+	draw_texture_rect_region(PROPS,Rect2(pixel_pos(pos-Vector2(size*0.5,size*0.83)),Vector2(size,size)),Rect2(int(prop.index)*24,0,24,24))
+
+func draw_architecture(arena: Rect2) -> void:
+	var floor_id: int=model.floor_index
+	var edge: Color=[Color("#9b7d84"),Color("#648d75"),Color("#a58282")][floor_id]
+	# Layered wall faces, cornices and deep contact shadows.
+	draw_rect(Rect2(58,105,1164,8),edge.darkened(0.4))
+	draw_rect(Rect2(58,114,1164,3),edge)
+	draw_rect(Rect2(58,138,1164,8),Color("#171421"))
+	for i in range(7):
+		draw_rect(Rect2(58,146+i*3,1164,3),Color(0.025,0.018,0.05,0.25*(1-float(i)/7)))
+		draw_rect(Rect2(58,616-i*3,1164,3),Color(0.025,0.018,0.05,0.18*(1-float(i)/7)))
+	for x in [58.0,1210.0]:
+		draw_rect(Rect2(x,146,12,472),edge.darkened(0.55))
+		draw_rect(Rect2(x+2,146,2,472),edge.darkened(0.15))
+	for i in range(6):
+		var x: float=190+i*186
+		draw_rect(Rect2(x-26,115,52,24),Color("#171320"))
+		draw_rect(Rect2(x-22,117,44,18),edge.darkened(0.45))
+		draw_rect(Rect2(x-18,119,36,14),Color("#1b1726"))
+		if floor_id==0:
+			draw_rect(Rect2(x-8,119,16,13),Color("#665262"))
+			for j in range(4): draw_rect(Rect2(x-7+j*4,119,2,13),Color("#b1958c"))
+		elif floor_id==1:
+			for j in range(5):
+				draw_rect(Rect2(x-18+j*8,120,5,12),Color("#477a59"))
+		else:
+			draw_rect(Rect2(x-4,119,8,13),Color("#d5a87e"))
+			draw_rect(Rect2(x-11,122,22,3),Color("#d5a87e"))
+
+func draw_room_decals() -> void:
+	var floor_id: int=model.floor_index
+	var rng:=RandomNumberGenerator.new()
+	rng.seed=int(model.seed_value)+int(model.room)*613+floor_id*1741
+	var color: Color=[Color("#82707c"),Color("#587e53"),Color("#99736f")][floor_id]
+	# Stable floor-level wear and biome-specific motifs; no changes to collision.
+	for i in range(32):
+		var p:=pixel_pos(Vector2(rng.randf_range(92,1180),rng.randf_range(165,601)))
+		if floor_id==0:
+			draw_rect(Rect2(p,Vector2(8,2)),color.darkened(0.4))
+			draw_rect(Rect2(p+Vector2(8,2),Vector2(2,5)),color.darkened(0.5))
+			if i%4==0: draw_rect(Rect2(p+Vector2(10,7),Vector2(8,2)),color.darkened(0.35))
+		elif floor_id==1:
+			for j in range(4):
+				draw_rect(Rect2(p+Vector2(j*4,sin(j*2)*4),Vector2(6,5)),Color(color,0.42))
+			if i%3==0:
+				draw_rect(Rect2(p-Vector2(2,2),Vector2(4,4)),Color("#a1ce83"))
+		else:
+			if i%3==0:
+				draw_rect(Rect2(p,Vector2(16,16)),color.darkened(0.3),false,2)
+				draw_rect(Rect2(p+Vector2(6,4),Vector2(4,8)),color.darkened(0.15))
+			else: draw_rect(Rect2(p,Vector2(10,3)),color.darkened(0.5))
+	# A separate focal ornament for each layout and boss arena.
+	if model.room_kind=="boss":
+		var center:=Vector2(860,385)
+		for i in range(3):
+			draw_arc(center,96+i*16,0,TAU,48,Color(color,0.38-i*0.08),2,true)
+		for i in range(8):
+			var p:=pixel_pos(center+Vector2.from_angle(i*TAU/8)*128)
+			draw_rect(Rect2(p-Vector2(4,4),Vector2(8,8)),color)
+	elif floor_id==0:
+		draw_rect(Rect2(298,294,80,182),Color("#3b3042"),false,2)
+		for i in range(5): draw_rect(Rect2(312,310+i*32,52,3),Color("#5f4d61"))
+	elif floor_id==1:
+		for i in range(7):
+			var p:=Vector2(300+i*24,304+sin(i*0.9)*28)
+			draw_rect(Rect2(pixel_pos(p),Vector2(26,7)),Color("#4c6a43"))
+			draw_rect(Rect2(pixel_pos(p+Vector2(1,0)),Vector2(22,2)),Color("#839a60"))
+	else:
+		draw_rect(Rect2(295,325,94,120),Color("#5d414e"),false,2)
+		draw_rect(Rect2(302,332,80,106),Color("#8b6b63"),false,1)
 
 func draw_biome_details(arena: Rect2) -> void:
 	if model.floor_index==0:
@@ -294,6 +412,8 @@ func draw_biome_details(arena: Rect2) -> void:
 func draw_pillar(rect: Rect2) -> void:
 	draw_rect(Rect2(rect.position+Vector2(5,6),rect.size),Color("#191320"))
 	tile(5,rect)
+	draw_rect(Rect2(rect.position+Vector2(0,rect.size.y-12),Vector2(rect.size.x,12)),Color("#1f1927"))
+	draw_rect(Rect2(rect.position+Vector2(0,rect.size.y-14),Vector2(rect.size.x,2)),Color("#877284"))
 	if model.floor_index==1:
 		draw_rect(Rect2(rect.position+Vector2(5,5),rect.size-Vector2(10,10)),Color("#365b42"))
 		for i in range(5):
@@ -329,7 +449,7 @@ func draw_warden() -> void:
 	var pos: Vector2 = model.player
 	draw_shadow(pos,64)
 	var frame := 2+int(clock*11)%4 if walking else int(clock*2)%2
-	if model.attack_timer > 0.17 or model.bolt_timer > 0.48:
+	if model.attack_timer > maxf(0.0,model.attack_cd-0.18) or model.bolt_timer > maxf(0.0,model.special_cd-0.25):
 		frame = 6
 	if model.invulnerable > 0.3:
 		frame = 7
@@ -361,4 +481,4 @@ func draw_actor(enemy: Dictionary) -> void:
 	sprite(kind,pos,direction,frame,size,tint)
 
 func is_ready_for_smoke() -> bool:
-	return TILES.get_width() == 256 and RELICS.get_width() == 1920 and RELICS.get_height() == 48 and ACTORS["dealer"].get_height() == 128 and ACTORS["warden"].get_height() == 128 and torches.size() == 5 and side_lights.size() == 2 and ambient != null and boss_light != null and torches[0].range_layer_min == -1 and occluders.size() == model.walls.size()
+	return TILES.get_width() == 256 and RELICS.get_width() == 1920 and RELICS.get_height() == 48 and ACTORS["dealer"].get_height() == 128 and ACTORS["warden"].get_height() == 128 and torches.size() == 5 and side_lights.size() == 2 and ambient != null and boss_light != null and torches[0].range_layer_min == -1 and occluders.size() == model.walls.size() and PROPS.get_width()==432 and decor_lights.size()==4 and not decor.is_empty()

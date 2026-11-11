@@ -27,6 +27,16 @@ func _draw() -> void:
 			var variant := 4 if y<3 else (x*7+y*5)%3
 			tile(variant,Rect2(320+x*64,100+y*64,64,64))
 	draw_rect(Rect2(320,100,960,512),Color(0.07,0.035,0.14,0.42))
+	# Distant arches and layered masonry add architectural depth.
+	for i in range(5):
+		var x: float=380+i*190
+		draw_rect(Rect2(x,102,42,360),Color("#20172c"))
+		draw_rect(Rect2(x+5,102,8,360),Color("#5a435c"))
+		draw_rect(Rect2(x-8,98,58,14),Color("#78596a"))
+		draw_rect(Rect2(x-9,442,60,20),Color("#302337"))
+		if i<4:
+			draw_rect(Rect2(x+42,120,148,18),Color("#36283e"))
+			draw_rect(Rect2(x+60,137,110,12),Color("#302338"))
 	# Grand portal with stepped masonry, a raised dais and rune accents.
 	for i in range(4):
 		draw_rect(Rect2(745-i*13,440+i*22,350+i*26,23),Color("#292039"))
@@ -61,6 +71,17 @@ func _draw() -> void:
 	for i in range(34):
 		var pos := Vector2(540+fposmod(i*79+clock*(4+i%4),730),112+fposmod(i*71-clock*7,490))
 		draw_rect(Rect2(Vector2(roundf(pos.x/2)*2,roundf(pos.y/2)*2),Vector2(2,2)),Color(0.9,0.73,0.5,0.14+0.12*sin(clock*2+i)))
+	# Slow near-floor mist, floating motes and a foreground arch silhouette.
+	for i in range(11):
+		var x: float=510+fposmod(i*117+clock*(9+i%3),760)
+		var y: float=510+sin(clock*0.55+i)*24+i%3*22
+		draw_rect(Rect2(x,y,120,5),Color(0.59,0.45,0.78,0.045))
+		draw_rect(Rect2(x+24,y+6,88,4),Color(0.59,0.45,0.78,0.035))
+	for x in [645.0,1243.0]:
+		draw_rect(Rect2(x,80,36,540),Color("#110d1a"))
+		draw_rect(Rect2(x+4,80,5,540),Color("#39283e"))
+		draw_rect(Rect2(x-8,80,52,12),Color("#68506b"))
+		draw_rect(Rect2(x-8,600,52,18),Color("#37283e"))
 	# Dark left and bottom edges keep the menu readable.
 	for i in range(16):
 		draw_rect(Rect2(i*37,0,38,720),Color(0.035,0.025,0.07,0.65*(1.0-float(i)/16)))
