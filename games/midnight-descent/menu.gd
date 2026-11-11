@@ -202,8 +202,13 @@ func _process(dt: float) -> void:
 		texture.region=Rect2(int(preview_clock*2)%2*32,0,32,32)
 
 func make_tree() -> void:
+	var tree_scroll:=ScrollContainer.new()
+	tree_scroll.custom_minimum_size=Vector2(748,345)
+	tree_scroll.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	tree_scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED
+	body.add_child(tree_scroll)
 	tree=TechTree.new()
-	body.add_child(tree)
+	tree_scroll.add_child(tree)
 	tree.motion=get_tree().get_meta("descent_menu_motion",true)
 	tree.configure(progress,german,tree_key,tree_rank)
 	tree.rank_selected.connect(select_tree_rank)
@@ -224,14 +229,14 @@ func update_tree_detail() -> void:
 	var item: Array=Content.UPGRADES[tree_key]
 	var owned: int=progress.ranks[tree_key]
 	tree_detail.text=item[1 if german else 0]+"  •  "+item[3 if german else 2]+"  |  "+tr_text("Rank","Rang")+" %d/%d" % [owned,item[5]]
-	var can_buy: bool=tree_rank==owned+1 and tree_rank<=int(item[5]) and progress.essence>=progress.cost(tree_key)
+	var can_buy: bool=tree_rank==owned+1 and tree_rank<=int(item[5]) and progress.boss_souls>=progress.cost(tree_key)
 	tree_buy.disabled=not can_buy
 	if tree_rank<=owned: tree_buy.text=tr_text("Rank acquired","Rang erworben")
 	elif tree_rank!=owned+1: tree_buy.text=tr_text("Requires previous rank","Benötigt vorherigen Rang")
-	else: tree_buy.text=tr_text("Unlock rank","Rang freischalten")+" %d  •  %d " % [tree_rank,progress.cost(tree_key)]+tr_text("essence","Essenz")
+	else: tree_buy.text=tr_text("Unlock rank","Rang freischalten")+" %d  •  %d " % [tree_rank,progress.cost(tree_key)]+tr_text("boss souls","Boss-Seelen")
 	preview_title.text=item[1 if german else 0].to_upper()
 	preview_detail.text=item[3 if german else 2]
-	preview_info.text=tr_text("Available essence","Verfügbare Essenz")+"   "+str(progress.essence)+"\n"+tr_text("Select a node, then unlock its rank.","Wähle einen Knoten und schalte seinen Rang frei.")
+	preview_info.text=tr_text("Available boss souls","Verfügbare Boss-Seelen")+"   "+str(progress.boss_souls)+"\n"+tr_text("Essence for character unlocks","Essenz für Charaktere")+"   "+str(progress.essence)+"\n"+tr_text("One soul per defeated boss. Later ranks cost more.","Eine Seele pro Boss. Höhere Ränge kosten mehr.")
 	preview_sprite.texture=UI.atlas(UI.RELICS,TechTree.ICONS[TechTree.KEYS.find(tree_key)])
 
 func buy_tree_rank() -> void:
@@ -275,9 +280,9 @@ func update_preview() -> void:
 			preview_detail.text=Content.loadout_display_name(inspected_set,german)+"\n"+loadout_description(inspected_set)
 			preview_info.text=tr_text("BASE STATS","BASISWERTE")+"\n"+tr_text("Health","Lebenspunkte")+"  %d\n" % spec.hp+tr_text("Main damage","Hauptschaden")+"  %d\n" % spec.damage+tr_text("Special damage","Spezialschaden")+"  %d\n" % spec.bolt+tr_text("Attack / special cooldown","Angriff / Spezial-Abklingzeit")+"  %.2f / %.2fs\n" % [spec.attack,spec.special]+tr_text("Movement / dash","Tempo / Dash")+"  %d / %.2fs" % [spec.speed,spec.dash]
 		"progress":
-			preview_title.text = tr_text("SOUL ESSENCE","SEELENESSENZ")
-			preview_detail.text = str(progress.essence)+"  •  "+tr_text("Permanent currency","Permanente Währung")
-			preview_info.text = tr_text("Expeditions / victories / kills","Expeditionen / Siege / Gegner")+"  %d / %d / %d" % [progress.attempts,progress.wins,progress.total_kills]+"\n"+tr_text("Achievements","Errungenschaften")+"  %d/7  •  " % progress.achievements.size()+tr_text("Elites","Elite")+" %d/5" % progress.elite_kills+"\n"+tr_text("Deepest boss","Tiefster Boss")+"  %d/3" % progress.deepest_boss
+			preview_title.text = tr_text("BOSS SOULS","BOSS-SEELEN")
+			preview_detail.text = str(progress.boss_souls)+"  •  "+tr_text("For the skill tree","Für den Skill Tree")
+			preview_info.text = tr_text("Essence for loadouts","Essenz für Start-Sets")+"  "+str(progress.essence)+"\n"+tr_text("Expeditions / victories / kills","Expeditionen / Siege / Gegner")+"  %d / %d / %d" % [progress.attempts,progress.wins,progress.total_kills]+"\n"+tr_text("Achievements","Errungenschaften")+"  %d/7  •  " % progress.achievements.size()+tr_text("Elites","Elite")+" %d/5" % progress.elite_kills+"\n"+tr_text("Deepest boss","Tiefster Boss")+"  %d/3" % progress.deepest_boss
 		"codex":
 			preview_title.text = tr_text("VAULT KEEPER","TRESORWÄCHTER")
 			preview_sprite.texture = atlas_icon(PixelWorld.ACTORS["boss"],Rect2(0,0,32,32))
@@ -381,13 +386,13 @@ func show_page(next: String) -> void:
 				button.mouse_exited.connect(func(): animate_hover(button,false))
 				button.pressed.connect(func(): show_page(id))
 				cards.add_child(button)
-			body.add_child(label(tr_text("Essence","Essenz")+"  "+str(progress.essence)+"    •    "+tr_text("Victories","Siege")+"  "+str(progress.wins)+"    •    "+tr_text("Deepest boss","Tiefster Boss")+"  %d/3" % progress.deepest_boss,15,GOLD))
+			body.add_child(label(tr_text("Boss souls","Boss-Seelen")+"  "+str(progress.boss_souls)+"    •    "+tr_text("Essence","Essenz")+"  "+str(progress.essence)+"    •    "+tr_text("Victories","Siege")+"  "+str(progress.wins),15,GOLD))
 			add_action(tr_text("Return to casino","Zurück zum Casino"),func(): get_tree().quit())
 		"expedition":
 			detail_label.text=tr_text("Inspect any of the eight sets. Choose an unlocked set to begin.","Sieh dir alle acht Sets an. Wähle ein freigeschaltetes Set für den Run.")
 			build_loadout_grid()
 		"progress":
-			detail_label.text=tr_text("Six linked paths. Select a rank to inspect and unlock it.","Sechs verbundene Pfade. Wähle einen Rang zum Ansehen und Freischalten.")
+			detail_label.text=tr_text("Eight paths. Defeat bosses to earn souls for permanent upgrades.","Acht Pfade. Besiege Bosse und investiere ihre Seelen in permanente Upgrades.")
 			make_tree()
 			if not progress.save_ok: body.add_child(label(tr_text("Save failed","Speichern fehlgeschlagen"),14,Color("#ff839a")))
 		"sets":
@@ -577,17 +582,17 @@ func smoke_test() -> void:
 		get_tree().quit(1)
 		return
 	show_page("progress")
-	if tree.nodes.size()!=26 or tree_buy.disabled==false:
+	if tree.nodes.size()!=34 or tree_buy.disabled==false:
 		get_tree().quit(2)
 		return
-	progress.essence=100
+	progress.boss_souls=1
 	select_tree_rank("arcane",2)
 	if not tree_buy.disabled:
 		get_tree().quit(21)
 		return
 	select_tree_rank("arcane",1)
 	buy_tree_rank()
-	if progress.ranks.arcane!=1 or progress.essence!=82:
+	if progress.ranks.arcane!=1 or progress.boss_souls!=0:
 		get_tree().quit(22)
 		return
 	progress=Progress.new()
