@@ -1398,7 +1398,7 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 		state = "defeat"
 		shots.clear()
 	elif enemies.is_empty() and (room_kind not in ["survival","ritual"] or (room_kind=="ritual" and special_stage==1)):
-		if room_kind=="ritual":
+		if room_kind in ["ritual","unstable"]:
 			complete_special_combat()
 			return
 		if wave<wave_total:
