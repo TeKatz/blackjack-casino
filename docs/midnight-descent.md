@@ -91,6 +91,39 @@ The eight-path tree scrolls vertically to retain the original menu dimensions. B
 
 The automated model tests reject backward or same-column route travel for all three floors, check the enemy vs. environmental damage delta (and Resolve mitigation), verify Recovery healing, test soul payouts on both victory and defeat, prevent duplicate settlement, assert escalating purchase prices and check that prior permanent ranks are retained. Menu and gameplay smoke tests build the expanded constellation and relevant overlays.
 
+## Seven bespoke dungeon chambers (November 2026)
+
+All seven are additional, deterministic room kinds in the existing three-floor / 26-node graph; no new floor and no shared casino currency. They appear in the seeded branch selection while the original mandatory combat/elite columns and boss unlock counts remain valid. The new route map shows custom glyphs and colors. Backtracking remains prohibited. Each completed combat chamber counts toward the regular combat requirement.
+
+### Four new objective-based combats
+
+| Room | Victory, danger, reward |
+| --- | --- |
+| **Ritual Chamber** (`ritual`) | Destroy three destructible ritual anchors before the 36-second seal completes. Defenders join every ~6.5 seconds. Failure spawns a shielded guardian and removes the premium success reward; the player must then defeat the remaining threats. Successful interruption grants +20 shards and one premium three-card selection. |
+| **Survival Chamber** (`survival`) | Survive 45 seconds against periodic reinforcements and telegraphed danger circles; kills alone do not end the room. Completion immediately clears remaining enemies, counts as a combat victory, and offers a premium relic choice. |
+| **Bounty Hunt** (`bounty`) | Eliminate the prominently marked, high-HP frenzied champion, not all escorts. Additional enemies may spawn while the target survives. Killing the champion completes the objective, removes escorts, grants +23 shards and a premium choice. The champion **does not** grant a permanent boss soul. |
+| **Unstable Chamber** (`unstable`) | A normal eliminate-the-enemies objective under three 4-second-cycle crystal explosions. The blasts hurt **both sides**, allowing the player to weaponize positioning. Clear to gain bonus shards and a premium reward. |
+
+Special combats have dedicated objective/timer readouts. The normal game attacks, hazards and ordinary enemy sprites remain compatible with the new rules. Ritual anchors are special destructible enemies with their own art, no regular kill/shard payout; the bounty champion is tracked separately. Every special win pays only once.
+
+### Three new run-build decision rooms
+
+| Room | Decisions |
+| --- | --- |
+| **Blood Altar** (`blood_altar`) | Give up 20% of current maximum HP for a three-card premium choice guaranteed to contain at least one epic, or sacrifice 10% maximum HP for +12 main and +9 special damage, or decline for four shards. Max HP changes apply only to the active run. |
+| **Forgotten Forge** (`forgotten_forge`) | Spend 12 shards to **temper one** of up to three distinct carried relics; gain an additional functional stack of that relic, including its on-pick stat effect. May decline freely. This is distinct from the entrance forge and the preexisting Royal Forge. |
+| **Archive of the Forgotten** (`archive`) | Pick one of up to three carried relics to discard, remove its on-pick flat modifiers, and choose a replacement from three fresh offers; the discarded relic cannot immediately reappear. Synergy status recalculates against the resulting inventory. A player with no relics can leave instead of being trapped. |
+
+Services are one-shot decisions. Reward prompts follow existing three-card UI and return to the route screen. Class-exclusive relic rules apply to all new premium offers.
+
+### Non-reused art, animation and audio
+
+Each new room owns a **separate original SVG sprite sheet** in `games/midnight-descent/art/pixel/special_<room>.svg`, 512×128 with four individually drawn 128×128 frames, and the standalone original `special_room_icons.svg` contains seven 24px map glyphs. The pixel-world renderer draws **room-native** flooring, wall masonry, fixed sconces, obstacles and animated exits rather than copying old vault props. Central landmarks, rune effects, crystal reactions, orbiting pages and sparks animate independently via time-based sprite frames and particle curves. The seven palettes and graphic motifs are intentionally different.
+
+`sound_bank.gd` adds **23 separately synthesized room-only cues** (introductions, charges, ritual interruptions, waves, exchanges, detonations, and completion stingers). The synthesis code specifies a different waveform and rhythmic family for each of the seven rooms; these are not aliases of existing sound IDs. All textures and sounds are generated/embedded in project source, without external stock assets.
+
+Regression tests cover the appearance of all seven kinds in seed generation, combat objectives and failure rules, archive swaps and ability/stat removal, blood sacrifice offers, relic tempering and no duplicate interactions. The scene smoke test also verifies each imported 512×128 sprite, the seven custom map glyphs and nonoverlapping decorative footprints. Windows visual playtesting and difficulty tuning remain useful before release.
+
 ## Build and tests
 
 From a Windows checkout run `pwsh ./tools/build_midnight_descent.ps1 -OutputDirectory artifacts/app/MidnightDescent`. The script downloads the pinned Godot 4.5.1 editor and Windows export template, imports the game, runs smoke tests and exports an executable and PCK alongside the casino application.
