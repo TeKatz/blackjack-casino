@@ -130,6 +130,11 @@ var boss_arena: Rect2 = Rect2()
 var boss_trigger_x := 0.0
 var boss_awake := false
 var boss_intro_timer := 0.0
+# Dedicated mechanical gate: opening is traversable; closing/closed is solid.
+var boss_gate: Rect2=Rect2()
+var boss_gate_state := "open"
+var boss_gate_time := 0.0
+const BOSS_GATE_CLOSE_DURATION := 1.12
 var flow_map: Dictionary = {}
 var flow_origin: Vector2i = Vector2i(-999,-999)
 var flow_timer := 0.0
@@ -631,6 +636,9 @@ func enter_room() -> void:
 	boss_trigger_x=0.0
 	boss_awake=false
 	boss_intro_timer=0.0
+	boss_gate=Rect2()
+	boss_gate_state="open"
+	boss_gate_time=0.0
 	flow_map.clear()
 	flow_origin=Vector2i(-999,-999)
 	flow_timer=0.0
@@ -863,6 +871,9 @@ func build_room_layout(node: Dictionary) -> void:
 		exit_point=plan.exit
 		boss_arena=plan.boss_arena
 		boss_trigger_x=float(plan.boss_trigger)
+		boss_gate=plan.boss_gate
+		boss_gate_state="open"
+		boss_gate_time=0.0
 		layout_name=str(plan.name)
 		layout_name_de=str(plan.de_name)
 		walls.assign(plan.walls)
@@ -1176,6 +1187,10 @@ func safe_position(pos: Vector2, radius: float) -> Vector2:
 	return Vector2(clampf(pos.x,room_bounds.position.x+radius,room_bounds.end.x-radius),clampf(pos.y,room_bounds.position.y+radius,room_bounds.end.y-radius))
 
 func blocked(pos: Vector2, radius: float) -> bool:
+	# Dynamic obstruction is separate from static layout geometry so an open
+	# door never obstructs the corridor, but a closing one cannot be dashed through.
+	if room_kind=="boss" and boss_gate_state!="open" and boss_gate.grow(radius).has_point(pos):
+		return true
 	if large_room:
 		var inside:=false
 		for region in room_regions:
@@ -1325,9 +1340,17 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 			notices.append("dash_nova")
 	if large_room and room_kind=="boss" and not boss_awake and player.x>=boss_trigger_x:
 		boss_awake=true
-		boss_intro_timer=1.55
+		boss_intro_timer=1.85
+		boss_gate_state="closing"
+		boss_gate_time=0.0
+		notices.append("boss_gate_close")
 		notices.append("boss_reveal")
-		effect("boss_reveal",boss_arena.get_center(),1.5,Vector2.ZERO)
+		effect("boss_reveal",boss_arena.get_center(),1.75,Vector2.ZERO)
+	if boss_gate_state=="closing":
+		boss_gate_time=minf(BOSS_GATE_CLOSE_DURATION,boss_gate_time+dt)
+		if boss_gate_time>=BOSS_GATE_CLOSE_DURATION:
+			boss_gate_state="closed"
+			notices.append("boss_gate_lock")
 	if boss_intro_timer>0.0: boss_intro_timer=maxf(0.0,boss_intro_timer-dt)
 	if state == "exit":
 		update_effects(dt)
@@ -2496,6 +2519,7 @@ func smoke_test() -> bool:
 	begin(123,"dealer_cards")
 	if state!="hub" or visited_count!=0 or dungeon.nodes[0].visited or not enemies.is_empty(): return false
 	if large_room or room_bounds!=ARENA or room_regions.size()!=0 or exit_point!=EXIT: return false
+	if boss_gate.has_area() or boss_gate_state!="open": return false
 	if walls.size()!=6 or not blocked(HUB_BAR.get_center(),15) or not blocked(HUB_FORGE.get_center(),15) or not blocked(HUB_TABLE.get_center(),15) or not blocked(HUB_PORTAL,15): return false
 	if not blocked(HUB_CARD_GUEST_LEFT.get_center(),15) or not blocked(HUB_CARD_GUEST_RIGHT.get_center(),15): return false
 	for seat in range(HUB_STOOL_X.size()):
