@@ -530,6 +530,9 @@ func enter_hub() -> void:
 	boss_awake=false
 	boss_intro_timer=0.0
 	boss_arena=Rect2()
+	boss_gate=Rect2()
+	boss_gate_state="open"
+	boss_gate_time=0.0
 	boss_trigger_x=0.0
 	layout_name=""
 	layout_name_de=""
@@ -891,7 +894,9 @@ func build_room_layout(node: Dictionary) -> void:
 				walls.append(Rect2(635,504,80,74))
 			"unstable":
 				for core in UNSTABLE_CORES:
-					walls.append(Rect2(core-Vector2(25,25),Vector2(50,50)))
+					# Reinforced reactor housing is wider than the previous square;
+					# keep collider inside the painted 124 px device.
+					walls.append(Rect2(core-Vector2(42,42),Vector2(84,84)))
 		return
 	if room_kind=="boss":
 		if floor_index==2:
