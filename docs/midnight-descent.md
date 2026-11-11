@@ -66,6 +66,31 @@ The combat renderer draws matching class-tinted area pulses, flying card/lance f
 
 These changes introduce no new room types or floors.
 
+## One-way routes, stronger enemies and boss souls
+
+### Irreversible route decisions
+
+The Dungeon Map presents an eight-column branching path plus an initial fight and a boss. A player can now travel **only to a directly linked, unvisited room in a later column**. Previously visited rooms, previous columns and sideways branches in the same column are ineligible, even when their graph edges exist. One reward/service room per branching column is therefore all that can be taken in a run. Route hints explicitly say **No backtracking**, and the existing boss-gate fight/elite requirements still use their guaranteed combat columns. Route checks verify that none of the generated seeds and floors leak a backward or sibling option.
+
+### Increased enemy danger
+
+All enemy-origin damage uses a global **×1.40** multiplier before armor, layered onto the existing floor-depth multiplier. This applies to melee attacks, hostile projectiles, enemy-created spore/volatile hazards and boss telegraphed attacks (including root and royal runes). Ordinary environmental hazards (vault spikes, rotating ambient crown runes and ambient spore pools) retain their old damage. The new Resolve skill provides modest late-game mitigation.
+
+### Boss souls and expansion of the permanent constellation
+
+**Boss souls** are a new persistent currency completely separate from the Soulbinder's in-combat souls and the old expedition **essence**. Every boss defeated in a run grants one soul; a run with two conquered bosses earns two even if it ends in defeat. A boss kill is credited as soon as the boss dies, including when other enemies remain. Souls are committed exactly once upon victory, defeat, or manually abandoning a run after defeating a boss. The save file `user://descent_progress.cfg` now includes `profile/boss_souls`. Older saves load with zero souls and **retain all previously unlocked upgrade ranks and loadouts**, without retroactive refunds or removing previously purchased progress.
+
+Permanent skill-tree upgrades now cost **boss souls instead of essence**. The price of successive ranks is **1, 2, 4, 7, 11** souls, cumulative **25** souls for a complete five-rank path or **14** for a four-rank path. Essence remains available for unlocking the eight character loadouts. The constellation now has **eight** paths: the original Vitality, Alchemy, Power, Arcane Mastery, Agility, Fortune, plus:
+
+- **Resolve / Entschlossenheit:** 3% less enemy damage per rank, up to four ranks (12%). Environmental hazards are not mitigated by Resolve.
+- **Battle Recovery / Kampferholung:** +1 HP after clearing each combat room per rank, up to four ranks (+4 HP).
+
+The eight-path tree scrolls vertically to retain the original menu dimensions. Buttons and tooltips show the boss-soul costs for the next rank, while the profile and result overlays separately display the boss-soul balance, earned souls, and existing essence. Boss kills also show a run-soul counter, a distinctive synthesized pickup cue and an acquisition toast. Neither temporary per-run combat souls nor paid casino balances are affected.
+
+### Regression coverage
+
+The automated model tests reject backward or same-column route travel for all three floors, check the enemy vs. environmental damage delta (and Resolve mitigation), verify Recovery healing, test soul payouts on both victory and defeat, prevent duplicate settlement, assert escalating purchase prices and check that prior permanent ranks are retained. Menu and gameplay smoke tests build the expanded constellation and relevant overlays.
+
 ## Build and tests
 
 From a Windows checkout run `pwsh ./tools/build_midnight_descent.ps1 -OutputDirectory artifacts/app/MidnightDescent`. The script downloads the pinned Godot 4.5.1 editor and Windows export template, imports the game, runs smoke tests and exports an executable and PCK alongside the casino application.
