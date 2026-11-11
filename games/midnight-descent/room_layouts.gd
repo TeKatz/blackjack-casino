@@ -119,7 +119,9 @@ static func build(floor: int, variation: int, boss: bool=false) -> Dictionary:
         var previous: Rect2=regions[-3]
         var left: float=maxf(previous.end.x,approach.position.x)+35.0
         var right: float=minf(boss_zone.position.x,approach.end.x)-35.0
-        var gate_x: float=(left+right)*0.5
+        # Place the shutter near the far mouth, not through a pillar in
+        # the middle of the approach (the Elder Grove has one there).
+        var gate_x: float=clampf(boss_zone.position.x-82.0,left,right)
         gate=Rect2(gate_x-27,approach.position.y-5,54,approach.size.y+10)
     return {
         "regions":regions,"walls":walls,"bounds":bounds,
@@ -161,6 +163,7 @@ static func smoke_test() -> bool:
                     var approach: Rect2=regions[-2]
                     if door.size.x<50 or door.size.y<150 or not approach.encloses(door.grow(-6)): return false
                     if door.position.x<=regions[-3].end.x or door.end.x>=regions[-1].position.x: return false
+                    if not accessible(door.get_center(),15,regions,walls): return false
                     var sealed_walls: Array[Rect2]=walls.duplicate()
                     sealed_walls.append(door)
                     if not accessible(layout.boss_spawn,30,regions,sealed_walls): return false
