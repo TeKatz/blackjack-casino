@@ -2241,12 +2241,94 @@ func route_and_damage_smoke() -> bool:
 	if absf(hp-71.0)>0.01: return false
 	return true
 
+func special_rooms_smoke() -> bool:
+	var types: Array[String]=[]
+	for kind in Dungeon.SPECIAL_COMBAT+Dungeon.SPECIAL_SERVICE: types.append(str(kind))
+	for kind in types:
+		var found:=false
+		for floor in range(FLOOR_COUNT):
+			if found: break
+			for seed in range(240,270):
+				begin(850+seed)
+				floor_index=floor
+				dungeon.generate(seed_value,floor)
+				for id in range(1,Dungeon.BOSS):
+					if dungeon.nodes[id].kind==kind:
+						room=id
+						found=true
+						break
+				if found: break
+		if not found:
+			push_error("Special room missing: "+kind)
+			return false
+		# Initialize each room through its real gameplay lifecycle.
+		enter_room()
+		if not dungeon.nodes[room].visited or room_kind!=kind: return false
+		match kind:
+			"ritual":
+				if state!="fight" or special_objectives!=3 or special_timer<35.9: return false
+				var anchors:=0
+				for enemy in enemies:
+					if enemy.kind=="ritual_anchor":
+						anchors+=1
+						enemy.hp=0
+				if anchors!=3: return false
+				tick(0.016,Vector2.ZERO,Vector2(700,385),false,false,false)
+				if state!="reward" or offers.size()!=3 or shards<20: return false
+				if not choose_relic(0) or state!="exit": return false
+			"survival":
+				if state!="fight" or special_timer!=45: return false
+				if not tick_special_room(45.01) or state!="reward" or offers.size()!=3: return false
+				if not choose_relic(1) or state!="exit": return false
+			"bounty":
+				var targets:=0
+				for enemy in enemies:
+					if bool(enemy.get("bounty",false)):
+						targets+=1
+						enemy.hp=0
+				if targets!=1: return false
+				tick(0.016,Vector2.ZERO,Vector2(700,385),false,false,false)
+				if state!="reward" or shards<23 or offers.size()!=3: return false
+			"unstable":
+				if state!="fight" or special_objectives!=3: return false
+				enemies[0].pos=UNSTABLE_CORES[0]+Vector2(20,0)
+				var before: float=float(enemies[0].hp)
+				tick_special_room(4.0)
+				if float(enemies[0].hp)>=before or hazards.size()!=3: return false
+				for enemy in enemies: enemy.hp=0
+				tick(0.016,Vector2.ZERO,Vector2(700,385),false,false,false)
+				if state!="reward": return false
+			"blood_altar":
+				if state!="service" or not service_action(0): return false
+				if state!="reward" or max_hp>=100 or offers.size()!=3: return false
+				if Content.rarity(offers[0])<2: return false
+				if not choose_relic(0) or state!="route" or service_action(1): return false
+			"forgotten_forge":
+				if state!="service": return false
+				relics.append("blade")
+				apply_relic_stat("blade")
+				shards=20
+				var previous: float=damage
+				if not service_action(0) or relics.count("blade")!=2: return false
+				if damage<=previous or shards!=8 or state!="route" or service_action(0): return false
+			"archive":
+				if state!="service": return false
+				relics.append("blade")
+				apply_relic_stat("blade")
+				if not service_action(0) or relics.has("blade") or archive_discarded!="blade": return false
+				if offers.size()!=3 or state!="reward" or offers.has("blade"): return false
+				if not choose_relic(0) or state!="route" or service_action(0): return false
+	return true
+
 func smoke_test() -> bool:
 	if not dungeon.smoke_test():
 		push_error("Dungeon generation smoke failed")
 		return false
 	if not route_and_damage_smoke():
 		push_error("Route/damage smoke failed")
+		return false
+	if not special_rooms_smoke():
+		push_error("Special chamber model smoke failed")
 		return false
 	if not class_relic_smoke(): return false
 	if not build_and_boss_smoke(): return false
