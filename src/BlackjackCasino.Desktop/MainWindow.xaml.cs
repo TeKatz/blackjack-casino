@@ -233,12 +233,55 @@ public partial class MainWindow : Window
         try
         {
             SetUpdateBusy(true);
-            SetUpdateMessage("Downloading update…");
+            // A Development release may be replaced between the menu's original
+            // availability check and the install click. Bind the download to a
+            // newly fetched, validated manifest rather than the cached menu state.
+            UpdateChannel channel = SelectedUpdateChannel;
+            SetUpdateMessage("Revalidating update package…");
+            UpdateCheckResult current = await updateService.CheckAsync(channel, AppVersion.Current);
+            if (!current.UpdateAvailable)
+            {
+                pendingManifest = null;
+                SetUpdateMessage("The selected update is no longer available. Check again.");
+                return;
+            }
 
+            SemanticVersion updaterVersion = UpdaterLauncher.CurrentVersion ?? AppVersion.Current;
+            if (DesktopUpdateService.MinimumUpdaterVersion(current.Manifest) > updaterVersion)
+            {
+                pendingManifest = null;
+                SetUpdateMessage("This update requires a newer updater. Check the release notes.");
+                return;
+            }
+
+            pendingManifest = current.Manifest;
+            SetUpdateMessage("Downloading update…");
             var progress = new Progress<double>(value =>
                 SetUpdateMessage($"Downloading update… {value:P0}"));
 
-            string packagePath = await updateService.DownloadAsync(pendingManifest.Package, progress);
+            string packagePath;
+            try
+            {
+                packagePath = await updateService.DownloadAsync(pendingManifest.Package, progress);
+            }
+            catch (InvalidDataException ex) when (ex.Message.Contains("mismatch", StringComparison.OrdinalIgnoreCase))
+            {
+                // If a mutable release was replaced during the download, refresh
+                // once and retry only when the versioned package identity changed.
+                // Never accept a file with the wrong size or hash.
+                SetUpdateMessage("Release changed during download. Checking latest package…");
+                UpdateCheckResult refreshed = await updateService.CheckAsync(channel, AppVersion.Current);
+                if (!refreshed.UpdateAvailable
+                    || refreshed.Manifest.Package == pendingManifest.Package
+                    || DesktopUpdateService.MinimumUpdaterVersion(refreshed.Manifest) > updaterVersion)
+                {
+                    throw;
+                }
+
+                pendingManifest = refreshed.Manifest;
+                SetUpdateMessage("Downloading refreshed update…");
+                packagePath = await updateService.DownloadAsync(pendingManifest.Package, progress);
+            }
 
             SavePreferences();
             SetUpdateMessage("Update verified. Restarting…");
