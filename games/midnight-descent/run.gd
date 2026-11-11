@@ -955,20 +955,30 @@ func show_route_map(column: VBoxContainer) -> void:
 		var node: Dictionary=run.dungeon.nodes[i]
 		var visible_kind: String = node.kind
 		if visible_kind=="secret" and not node.visited and not run.route_options().has(i): visible_kind="?"
-		var caption := room_name(visible_kind)
+		# Fixed 92 px cards in 110 px column slots, with a minimum 18 px gap.
+		# Danger uses its own second line instead of overflowing the button text.
+		var caption: String=room_name(visible_kind)
 		if node.kind in ["fight","elite"]:
-			caption+=" • "+["I","II","III"][int(node.get("threat",0))]
-		if i==run.room: caption+=" •"
-		elif node.cleared: caption+=" ✓"
+			caption+="\n"+["I","II","III"][int(node.get("threat",0))]
+		if node.cleared: caption+=" ✓"
 		var button:=add_button(map,caption,func(): run.travel(id))
-		button.custom_minimum_size=Vector2(104,42)
-		button.size=Vector2(104,42)
-		button.position=map.position_for(i)-Vector2(52,21)
-		button.add_theme_font_size_override("font_size",12)
+		button.custom_minimum_size=Vector2(92,52)
+		button.size=Vector2(92,52)
+		button.position=map.position_for(i)-Vector2(46,26)
+		button.add_theme_font_size_override("font_size",11)
 		button.icon=UI.atlas(UI.ICONS,int(UI.ROOM_ICONS[visible_kind]))
 		button.expand_icon=true
-		button.add_theme_constant_override("icon_max_width",18)
+		button.add_theme_constant_override("icon_max_width",14)
 		UI.style_button(button,UI.ROOM_COLORS[visible_kind],i==run.room)
+		# Shrink style padding specifically for dense route-map nodes.
+		for variant in ["normal","hover","pressed","disabled"]:
+			var stylebox: StyleBoxFlat=button.get_theme_stylebox(variant).duplicate()
+			stylebox.content_margin_left=3
+			stylebox.content_margin_right=3
+			stylebox.content_margin_top=3
+			stylebox.content_margin_bottom=3
+			button.add_theme_stylebox_override(variant,stylebox)
+		button.clip_text=true
 		button.disabled=not run.route_options().has(i)
 		if i==run.room:
 			button.add_theme_stylebox_override("disabled",UI.panel(Color("#594333"),GOLD,8))
