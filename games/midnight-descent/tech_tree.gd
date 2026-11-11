@@ -16,7 +16,7 @@ var nodes: Array[Button] = []
 func _ready() -> void:
 	custom_minimum_size=Vector2(748,480)
 	mouse_filter=Control.MOUSE_FILTER_IGNORE
-	texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
+	texture_filter=CanvasItem.TEXTURE_FILTER_LINEAR
 func configure(value, de: bool, key: String, rank: int) -> void:
 	profile=value
 	german=de
@@ -36,6 +36,7 @@ func configure(value, de: bool, key: String, rank: int) -> void:
 		caption.vertical_alignment=VERTICAL_ALIGNMENT_CENTER
 		caption.add_theme_font_size_override("font_size",16)
 		caption.add_theme_color_override("font_color",COLORS[row])
+		caption.add_theme_font_override("font",UI.BOLD_FONT)
 		caption.mouse_filter=Control.MOUSE_FILTER_IGNORE
 		add_child(caption)
 		for j in range(int(item[5])):
@@ -67,14 +68,15 @@ func _process(dt: float) -> void:
 		clock+=dt
 		queue_redraw()
 func _draw() -> void:
-	draw_rect(Rect2(0,0,748,480),Color("#12101d"))
-	for x in range(0,748,24): draw_line(Vector2(x,0),Vector2(x,480),Color("#211b2c"),1)
-	for y in range(0,480,24): draw_line(Vector2(0,y),Vector2(748,y),Color("#211b2c"),1)
-	draw_rect(Rect2(5,5,738,470),Color("#594763"),false,2)
+	draw_rect(Rect2(0,0,748,480),Color("#152629"))
+	for row in range(8):
+		draw_rect(Rect2(0,13+row*57,748,54),Color("#253a3b") if row%2==0 else Color("#1c3033"))
+		draw_line(Vector2(10,66+row*57),Vector2(738,66+row*57),Color("#4c6866"),1,true)
+	draw_line(Vector2(8,2),Vector2(740,2),Color("#7fa99a"),2,true)
 	if profile==null: return
-	draw_line(Vector2(27,43),Vector2(27,43+57*(KEYS.size()-1)),Color("#8a6d9b"),3)
-	draw_circle(Vector2(27,43+57.0*(KEYS.size()-1)*0.5),9,Color("#d2a96e"))
-	draw_circle(Vector2(27,43+57.0*(KEYS.size()-1)*0.5),5,Color("#f6e1ab"))
+	draw_line(Vector2(27,43),Vector2(27,43+57*(KEYS.size()-1)),Color("#739d91"),3)
+	draw_circle(Vector2(27,43+57.0*(KEYS.size()-1)*0.5),9,Color("#a7c2b5"))
+	draw_circle(Vector2(27,43+57.0*(KEYS.size()-1)*0.5),5,Color("#f0e7cf"))
 	for row in range(KEYS.size()):
 		var id: String=KEYS[row]
 		var y: float=43+row*57
@@ -86,7 +88,7 @@ func _draw() -> void:
 		for j in range(int(Content.UPGRADES[id][5])-1):
 			var a:=Vector2(282+j*94,y)
 			var b:=a+Vector2(94,0)
-			draw_line(a,b,Color("#45364f"),6)
+			draw_line(a,b,Color("#48605d"),6)
 			if j+2<=profile.ranks[id]: draw_line(a,b,color,3)
 		if id==selected:
 			var center:=Vector2(282+(selected_rank-1)*94,y)

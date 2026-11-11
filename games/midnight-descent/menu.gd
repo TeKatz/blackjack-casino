@@ -1,8 +1,8 @@
 extends Control
 ## Standalone engine menu. No wagers, profile edits or simulated gameplay.
-const GOLD := Color("#e6c58a")
-const MUTED := Color("#b7aaca")
-const LIGHT := Color("#f6eefb")
+const GOLD := Color("#dbba81")
+const MUTED := Color("#b1c0bb")
+const LIGHT := Color("#f3eddc")
 const Backdrop = preload("res://menu_backdrop.gd")
 const PixelWorld = preload("res://pixel_world.gd")
 const Content = preload("res://content.gd")
@@ -56,6 +56,7 @@ func _ready() -> void:
 		if arg == "--language=de":
 			german = true
 	visual_smoke="--smoke-test" in OS.get_cmdline_user_args()
+	UI.install_theme(self)
 	if not visual_smoke: progress.load_save()
 	inspected_set=progress.selected
 	add_child(audio)
@@ -68,18 +69,9 @@ func tr_text(en: String, de: String) -> String:
 	return de if german else en
 
 func box_style(fill: Color, edge: Color, width: int = 1) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = fill
-	style.border_color = edge
+	var style := UI.panel(fill,edge,12)
 	style.set_border_width_all(width)
-	style.set_corner_radius_all(8)
-	style.shadow_color = Color(0,0,0,0.45)
-	style.shadow_size = 5
-	style.shadow_offset = Vector2(0,3)
-	style.content_margin_left = 20
-	style.content_margin_right = 20
-	style.content_margin_top = 8
-	style.content_margin_bottom = 8
+	style.border_width_top=maxi(2,width)
 	return style
 
 func label(value: String, font_size: int, color: Color) -> Label:
@@ -87,6 +79,7 @@ func label(value: String, font_size: int, color: Color) -> Label:
 	node.text = value
 	node.add_theme_font_size_override("font_size", font_size)
 	node.add_theme_color_override("font_color", color)
+	if font_size >= 23: UI.set_display(node)
 	node.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	return node
 
@@ -104,12 +97,13 @@ func build_shell() -> void:
 	frame.add_theme_constant_override("separation",12)
 	margins.add_child(frame)
 	var header:=PanelContainer.new()
-	header.add_theme_stylebox_override("panel",UI.panel(Color("#171222ed"),Color("#826b87"),10))
+	header.add_theme_stylebox_override("panel",UI.panel(Color("#132326ed"),Color("#6d8b87"),12))
 	frame.add_child(header)
 	var nav:=HBoxContainer.new()
 	nav.add_theme_constant_override("separation",8)
 	header.add_child(nav)
-	var brand:=label("MIDNIGHT / DESCENT",21,GOLD)
+	var brand:=label("MIDNIGHT DESCENT",21,GOLD)
+	UI.set_display(brand)
 	brand.custom_minimum_size=Vector2(235,0)
 	nav.add_child(brand)
 	var spacer:=Control.new()
@@ -137,7 +131,7 @@ func build_shell() -> void:
 	frame.add_child(horizontal)
 	content_panel=PanelContainer.new()
 	content_panel.custom_minimum_size=Vector2(620,0)
-	content_panel.add_theme_stylebox_override("panel",UI.panel(Color("#181326ed"),Color("#8c6c8b"),18))
+	content_panel.add_theme_stylebox_override("panel",UI.panel(Color("#172729ec"),Color("#547b78"),20))
 	horizontal.add_child(content_panel)
 	body=VBoxContainer.new()
 	body.add_theme_constant_override("separation",8)
@@ -149,7 +143,7 @@ func build_shell() -> void:
 	preview_panel=PanelContainer.new()
 	preview_panel.custom_minimum_size=Vector2(320,0)
 	preview_panel.size_flags_vertical=Control.SIZE_SHRINK_END
-	preview_panel.add_theme_stylebox_override("panel",UI.panel(Color("#1c1529f0"),Color("#a5868b"),16))
+	preview_panel.add_theme_stylebox_override("panel",UI.panel(Color("#1d2d2df2"),Color("#738d7d"),18))
 	horizontal.add_child(preview_panel)
 	preview=VBoxContainer.new()
 	preview.add_theme_constant_override("separation",10)
@@ -258,7 +252,7 @@ func animate_hover(button: Button, entered: bool) -> void:
 	var tween:=button.create_tween()
 	button.set_meta("hover_tween",tween)
 	tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tween.tween_property(button,"modulate",Color(1.13,1.08,1.03) if entered else Color.WHITE,0.15)
+	tween.tween_property(button,"modulate",Color(1.10,1.17,1.15) if entered else Color.WHITE,0.18)
 
 func atlas_icon(texture: Texture2D, region: Rect2) -> AtlasTexture:
 	var icon := AtlasTexture.new()
@@ -323,14 +317,9 @@ func add_action(caption: String, callback: Callable, locked: bool = false) -> Bu
 	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	button.add_theme_font_size_override("font_size", 19)
 	button.add_theme_color_override("font_color", LIGHT)
-	button.add_theme_color_override("font_hover_color", GOLD)
+	button.add_theme_color_override("font_hover_color", LIGHT)
 	button.add_theme_color_override("font_pressed_color", GOLD)
-	button.add_theme_color_override("font_disabled_color", Color("#827591"))
-	button.add_theme_stylebox_override("normal", box_style(Color("#2b223b"), Color("#886c89"),1))
-	button.add_theme_stylebox_override("hover", box_style(Color("#534064"), GOLD, 2))
-	button.add_theme_stylebox_override("pressed", box_style(Color("#614680"), GOLD, 2))
-	button.add_theme_stylebox_override("focus", box_style(Color("#00000000"), GOLD, 2))
-	button.add_theme_stylebox_override("disabled", box_style(Color("#181526"), Color("#392d4c")))
+	button.add_theme_color_override("font_disabled_color", Color("#81908f"))
 	UI.style_button(button,GOLD)
 	button.disabled = locked
 	button.mouse_entered.connect(func(): audio.play("hover"); animate_hover(button,true))
@@ -346,7 +335,7 @@ func show_page(next: String) -> void:
 	content_panel.custom_minimum_size=Vector2(790 if page in ["progress","expedition","sets"] else 620,0)
 	preview_panel.visible=page!="home"
 	preview_panel.size_flags_vertical=Control.SIZE_FILL if page in ["expedition","sets"] else Control.SIZE_SHRINK_END
-	content_panel.add_theme_stylebox_override("panel",UI.panel(Color("#181326c9") if page=="home" else Color("#181326f5"),Color("#9b7d91"),16))
+	content_panel.add_theme_stylebox_override("panel",UI.panel(Color("#172729db") if page=="home" else Color("#18282af3"),Color("#648582"),18))
 	for id in nav_buttons: UI.style_button(nav_buttons[id],GOLD,id==page)
 	title_label.text={"home":tr_text("THE GATE","DAS TOR"),"expedition":tr_text("CHOOSE YOUR LOADOUT","WÄHLE DEIN START-SET"),"progress":tr_text("SOUL CONSTELLATION","SEELENKONSTELLATION"),"sets":tr_text("CHARACTERS & SETS","CHARAKTERE & SETS"),"codex":tr_text("RELIC ARCHIVE","RELIKTARCHIV"),"settings":tr_text("SETTINGS","EINSTELLUNGEN")}.get(page,"")
 	for child in body.get_children():
@@ -357,7 +346,7 @@ func show_page(next: String) -> void:
 	match page:
 		"home":
 			detail_label.text=tr_text("Fortune ends at the door. The depths are waiting.","Das Glück endet an der Tür. Die Tiefen warten.")
-			var hero:=label("MIDNIGHT\nDESCENT",51,LIGHT)
+			var hero:=label("MIDNIGHT\nDESCENT",47,LIGHT)
 			hero.add_theme_color_override("font_shadow_color",Color("#08060e"))
 			hero.add_theme_constant_override("shadow_offset_y",5)
 			body.add_child(hero)
@@ -381,7 +370,7 @@ func show_page(next: String) -> void:
 				button.custom_minimum_size=Vector2(0,64)
 				button.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 				button.add_theme_font_size_override("font_size",16)
-				UI.style_button(button,Color("#ad90d5"))
+				UI.style_button(button,Color("#83b9ac"))
 				button.mouse_entered.connect(func(): audio.play("hover"); animate_hover(button,true))
 				button.mouse_exited.connect(func(): animate_hover(button,false))
 				button.pressed.connect(func(): show_page(id))
@@ -406,9 +395,12 @@ func show_page(next: String) -> void:
 				var id: String = ids[i]
 				var item: Array=Content.RELICS[id]
 				var rarity: int=Content.rarity(id)
+				var card:=PanelContainer.new()
+				card.add_theme_stylebox_override("panel",UI.panel(Color("#233539c9"),Color("#54726d"),8))
+				body.add_child(card)
 				var row:=HBoxContainer.new()
-				row.add_theme_constant_override("separation",10)
-				body.add_child(row)
+				row.add_theme_constant_override("separation",12)
+				card.add_child(row)
 				var icon:=TextureRect.new()
 				icon.texture=UI.atlas(UI.RELICS,int(item[4]))
 				icon.custom_minimum_size=Vector2(38,38)
@@ -429,6 +421,7 @@ func show_page(next: String) -> void:
 			add_action(tr_text("Toggle fullscreen", "Vollbild umschalten"), toggle_fullscreen)
 			body.add_child(label(tr_text("MASTER VOLUME","GESAMTLAUTSTÄRKE"),14,GOLD))
 			var volume := HSlider.new()
+			volume.modulate=Color("#9fd2c2")
 			volume.min_value = 0
 			volume.max_value = 1
 			volume.step = 0.05
@@ -437,6 +430,7 @@ func show_page(next: String) -> void:
 			volume.value_changed.connect(set_volume)
 			body.add_child(volume)
 			var motion := CheckButton.new()
+			motion.add_theme_color_override("font_color",LIGHT)
 			motion.text = tr_text("Animated menu background","Animierter Menühintergrund")
 			motion.button_pressed = get_tree().get_meta("descent_menu_motion",true)
 			motion.toggled.connect(toggle_motion)
@@ -476,7 +470,7 @@ func build_loadout_grid() -> void:
 		var key: String=id
 		var spec: Dictionary=Content.SETS[key]
 		var owned: bool=progress.unlocked.has(key)
-		var color: Color={"warden":GOLD,"dealer":Color("#d9a1cc"),"arcanist":Color("#91ccec"),"soulbinder":Color("#91d7b6")}[spec.character]
+		var color: Color={"warden":GOLD,"dealer":Color("#d69fa0"),"arcanist":Color("#95bad5"),"soulbinder":Color("#9acbb0")}[spec.character]
 		var card:=Button.new()
 		card.text=Content.character_name(spec.character,german)+" / "+Content.loadout_display_name(key,german)+"\n"+(tr_text("Equipped","Ausgewählt") if progress.selected==key else (tr_text("Unlocked","Freigeschaltet") if owned else tr_text("Locked","Gesperrt")+"  •  "+str(spec.cost)+" "+tr_text("essence","Essenz")))
 		card.icon=atlas_icon(PixelWorld.ACTORS[spec.character],Rect2(0,0,32,32))

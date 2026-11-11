@@ -12,21 +12,23 @@ func _process(dt: float) -> void:
 	clock+=dt
 	queue_redraw()
 func _draw() -> void:
-	draw_rect(Rect2(0,0,1100,334),Color("#101827"))
+	# A quiet wayfinding chart, deliberately free of the old pixel-panel grid.
+	draw_rect(Rect2(0,0,1100,334),Color("#152629"))
 	for i in range(10):
-		draw_rect(Rect2(i*110,0,110,334),Color("#182235") if i%2==0 else Color("#141c2c"))
-		draw_line(Vector2(i*110,0),Vector2(i*110,334),Color("#26364b"),1)
-	for i in range(4):
-		draw_rect(Rect2(2+i,2+i,1096-i*2,330-i*2),Color(0.28,0.37,0.55,0.11),false,1)
+		var x: float=float(i)*110
+		draw_rect(Rect2(x+2,8,106,318),Color("#23373755") if i%2==0 else Color("#1d303344"))
+		draw_line(Vector2(x+55,20),Vector2(x+55,314),Color("#5b8079",0.17),1,true)
+	draw_line(Vector2(0,1),Vector2(1100,1),Color("#82b9a5",0.55),2,true)
+	draw_line(Vector2(0,333),Vector2(1100,333),Color("#82b9a5",0.36),1,true)
 	for i in range(nodes.size()):
 		for neighbor in nodes[i].links:
 			if neighbor>i:
 				var active: bool=i==current or neighbor==current
 				var a:=position_for(i)
 				var b:=position_for(neighbor)
-				draw_line(a,b,Color("#0b101b"),8,true)
-				draw_line(a,b,Color("#e8c182") if active else Color("#526280"),2,true)
+				draw_line(a,b,Color("#0e1b1d",0.85),7,true)
+				draw_line(a,b,Color("#e4c98e") if active else Color("#577f78"),2,true)
 				if active:
-					var point: Vector2=a.lerp(b,fposmod(clock*0.6,1.0))
-					draw_circle(point,5,Color(0.95,0.75,0.4,0.24))
-					draw_circle(point,2,Color("#f5d18d"))
+					var point: Vector2=a.lerp(b,fposmod(clock*0.58,1.0))
+					draw_circle(point,8,Color(0.78,0.95,0.76,0.12))
+					draw_circle(point,3,Color("#e8d5aa"))
