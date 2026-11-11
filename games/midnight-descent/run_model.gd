@@ -1067,6 +1067,8 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 				notices.append("boss_kill")
 				# A defeated boss counts even if remaining adds end the expedition.
 				bosses_defeated=maxi(bosses_defeated,floor_index+1)
+				notices.append("boss_soul")
+				effect("boss_soul",player,1.10,Vector2.ZERO)
 			kills += 1
 			advance_contract("slayer")
 			if character=="soulbinder": souls=mini(6,souls+1)
