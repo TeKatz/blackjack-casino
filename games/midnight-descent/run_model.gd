@@ -34,6 +34,11 @@ const CONTRACT_DATA := {
 const ROOM_COUNT := 26
 # All enemy-origin attacks deal 40% more; world hazards retain their own tuning.
 const ENEMY_DAMAGE_MULTIPLIER := 1.40
+# The starting healing item has a finite tactical budget for each floor.
+const HEAL_CHARGES_PER_FLOOR := 2
+# Clear telegraphs and positioning, rather than huge enemy-HP inflation.
+const ENEMY_PACE_PER_FLOOR := 0.12
+const ENEMY_PACE_PER_THREAT := 0.07
 var environment_timer := 0.0
 var shot_style := ""
 var enemy_shot_style := ""
@@ -63,6 +68,7 @@ var service_used := false
 var boss_defeated := false
 var elites := 0
 var active_item := "heal"
+var heal_charges := HEAL_CHARGES_PER_FLOOR
 var active_cd := 24.0
 var slow_time := 0.0
 var shield_time := 0.0
@@ -94,6 +100,7 @@ var hub_seat_hold := 0.0
 var hub_seat_anim := 0.0
 var hub_seat_released := false
 var aim := Vector2.RIGHT
+var player_motion := Vector2.ZERO
 var hp := 100.0
 var max_hp := 100.0
 var damage := 26.0
@@ -180,6 +187,8 @@ func begin(value: int, loadout: String = "warden_guard", upgrades: Dictionary = 
 	special_multiplier=1.0
 	spirit_life=0
 	active_item = "heal"
+	heal_charges = HEAL_CHARGES_PER_FLOOR
+	player_motion = Vector2.ZERO
 	active_cd = 40.0
 	slow_time = 0
 	shield_time = 0
@@ -847,6 +856,36 @@ func encounter_spawn_point(index: int, picker: RandomNumberGenerator) -> Vector2
 		_:
 			return Vector2(520+(index%3)*235,195+(index/3)*135+jitter)
 
+func enemy_pace() -> float:
+	# Room zero on the first floor remains an approachable introduction.
+	return 1.0+float(floor_index)*ENEMY_PACE_PER_FLOOR+float(encounter_threat)*ENEMY_PACE_PER_THREAT
+
+func predicted_player_position(lead: float) -> Vector2:
+	# Short prediction makes circling a threat, but every dangerous hit is telegraphed.
+	var candidate: Vector2=safe_position(player+player_motion*lead,22.0)
+	return player if blocked(candidate,18.0) else candidate
+
+func champion_pressure(enemy: Dictionary, dt: float) -> void:
+	if not bool(enemy.get("champion",false)) or float(enemy.get("wind",0.0))>0.0: return
+	enemy["pressure_timer"]=float(enemy.get("pressure_timer",2.4))-dt
+	if float(enemy["pressure_timer"])>0.0 or hazards.size()>=18: return
+	var affix: String=str(enemy.get("affix",""))
+	var center: Vector2=predicted_player_position(0.20)
+	var radius: float=57.0
+	var warning: float=0.82
+	if affix=="warded":
+		# A defensive ground pulse makes approaching shielded champions risky.
+		center=enemy.pos
+		radius=76.0
+		warning=0.95
+	elif affix=="volatile":
+		radius=67.0
+		warning=0.92
+	add_hazard(center,radius,warning,0.46,15.0+3.0*floor_index+2.0*encounter_threat,true)
+	hazards[-1]["type"]="champion_"+affix
+	enemy["pressure_timer"]=maxf(3.1,5.1-0.35*floor_index)+rng.randf_range(-0.35,0.35)
+	notices.append("rune")
+
 func spawn_encounter_wave(node: Dictionary) -> void:
 	var picker:=RandomNumberGenerator.new()
 	picker.seed=int(node.geometry_seed)+wave*30011
@@ -860,6 +899,9 @@ func spawn_encounter_wave(node: Dictionary) -> void:
 		if (room_kind=="elite" or encounter_threat==2) and i==count/2:
 			affix=["frenzied","warded","volatile"][picker.randi_range(0,2)]
 		spawn_enemy(kind,encounter_spawn_point(i,picker),affix)
+		if affix!="":
+			enemies[-1]["champion"]=true
+			enemies[-1]["pressure_timer"]=2.2+picker.randf_range(0.0,0.8)
 		if room_kind=="elite":
 			enemies[-1].hp*=1.45
 			enemies[-1].max_hp=enemies[-1].hp
@@ -971,6 +1013,7 @@ func travel(destination: int) -> bool:
 func descend() -> bool:
 	if state!="route" or room_kind!="boss" or not dungeon.nodes[room].cleared or floor_index>=FLOOR_COUNT-1: return false
 	floor_index += 1
+	heal_charges = HEAL_CHARGES_PER_FLOOR
 	room=0
 	dungeon.generate(seed_value,floor_index)
 	enter_room()
@@ -1187,7 +1230,7 @@ func spawn_enemy(kind: String, pos: Vector2, affix: String="") -> void:
 					pos=candidate
 					break
 			if not blocked(pos,radius): break
-	enemies.append({"kind":kind,"pos":pos,"hp":health,"max_hp":health,"r":radius,"timer":rng.randf_range(0.6,1.4),"wind":0.0,"flash":0.0,"target":pos,"facing":Vector2.LEFT,"affix":affix,"primed":false,"phase":1,"phase_lock":0.0})
+	enemies.append({"kind":kind,"pos":pos,"hp":health,"max_hp":health,"r":radius,"timer":rng.randf_range(0.6,1.4),"wind":0.0,"flash":0.0,"target":pos,"facing":Vector2.LEFT,"affix":affix,"primed":false,"strafe_dir":-1 if enemies.size()%2==0 else 1,"phase":1,"phase_lock":0.0})
 
 func safe_position(pos: Vector2, radius: float) -> Vector2:
 	return Vector2(clampf(pos.x,room_bounds.position.x+radius,room_bounds.end.x-radius),clampf(pos.y,room_bounds.position.y+radius,room_bounds.end.y-radius))
@@ -1292,6 +1335,7 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 		return
 	if state != "fight" and state != "exit":
 		return
+	player_motion=direction.limit_length()*speed
 	elapsed += dt
 	active_timer = maxf(0,active_timer-dt)
 	slow_time=maxf(0,slow_time-dt)
@@ -1328,6 +1372,7 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 				if player.distance_to(enemy.pos)<100: hit_enemy(enemy,15)
 				if set_id=="arcanist_frost" and player.distance_to(enemy.pos)<100: enemy["chill"]=2.0
 	var move := dash_direction * 860.0 if dash_left > 0 else direction.limit_length() * speed*environment_speed()
+	player_motion=move
 	player=move_actor(player,move*dt,15)
 	if dash_left>0.0:
 		dash_trail_timer-=dt
@@ -1683,9 +1728,9 @@ func update_boss_phase(enemy: Dictionary, dt: float) -> bool:
 	var old_phase: int=int(enemy.get("phase",1))
 	if next_phase>old_phase:
 		enemy["phase"]=next_phase
-		enemy["phase_lock"]=1.05
+		enemy["phase_lock"]=0.85 if next_phase==2 else 0.65
 		enemy["wind"]=0.0
-		enemy["timer"]=0.9
+		enemy["timer"]=0.74 if next_phase==2 else 0.62
 		effect("boss_phase_"+str(enemy.kind),enemy.pos,1.06,Vector2.ZERO)
 		notices.append("boss_phase")
 	var remaining: float=maxf(0.0,float(enemy.get("phase_lock",0))-dt)
@@ -1707,24 +1752,34 @@ func boss_lane(pos: Vector2, vertical: bool, warning: float, power: float) -> vo
 func boss_start_attack(enemy: Dictionary) -> void:
 	var phase: int=int(enemy.get("phase",1))
 	var kind: String=str(enemy.kind)
-	var aim_point: Vector2=player
+	var aim_point: Vector2=predicted_player_position(0.10 if phase==1 else (0.22 if phase==2 else 0.28))
 	enemy["target"]=aim_point
-	enemy["wind"]=0.95 if phase==1 else (0.85 if phase==2 else 0.78)
+	# Stage-three attacks demand deliberate dodge timing, not blind running.
+	enemy["wind"]=0.93 if phase==1 else (0.79 if phase==2 else 0.68)
 	effect("boss_charge_"+kind,enemy.pos,float(enemy.wind),enemy.pos.direction_to(aim_point))
 	notices.append("boss_charge")
 	match kind:
 		"boss":
 			if phase>=2: boss_lane(aim_point,true,float(enemy.wind),16+phase*3)
-			if phase==3: boss_circle(aim_point+Vector2(0,-105),72,float(enemy.wind)+0.22,23,"boss_blast")
+			if phase==3:
+				# A delayed crossing lane creates a safe dodge window, then closes it.
+				boss_lane(aim_point+Vector2(0,110),false,float(enemy.wind)+0.18,23)
+				boss_circle(aim_point+Vector2(0,-112),68,float(enemy.wind)+0.12,24,"boss_blast")
 		"rootking":
 			boss_circle(aim_point,65,float(enemy.wind),15+phase*4,"boss_root")
 			if phase>=2:
-				for i in range(3 if phase==2 else 4):
-					var pos: Vector2=aim_point+Vector2.from_angle(float(i)*TAU/(3 if phase==2 else 4))*125
+				for i in range(3 if phase==2 else 5):
+					var pos: Vector2=aim_point+Vector2.from_angle(float(i)*TAU/(3 if phase==2 else 5))*125
 					boss_circle(pos,49,float(enemy.wind)+0.12,16+phase*3,"boss_root")
+			if phase==3:
+				# Two late root eruptions punish players who dodge straight back.
+				var retreat: Vector2=aim_point+enemy.pos.direction_to(aim_point)*122.0
+				boss_circle(safe_position(retreat,42),54,float(enemy.wind)+0.28,22,"boss_root")
 		"hollowking":
 			add_royal_seals(aim_point,phase%2==0,float(enemy.wind),17+phase*2,true)
-			if phase==3: add_royal_seals(aim_point,phase%2!=0,float(enemy.wind)+0.22,18,true)
+			if phase==3:
+				add_royal_seals(aim_point,phase%2!=0,float(enemy.wind)+0.22,19,true)
+				boss_circle(aim_point,59,float(enemy.wind)+0.10,22,"boss_blast")
 
 func boss_release_attack(enemy: Dictionary) -> void:
 	var phase: int=int(enemy.get("phase",1))
@@ -1787,7 +1842,8 @@ func update_enemies(dt: float) -> void:
 		if str(enemy.kind) in ["boss","rootking","hollowking"] and update_boss_phase(enemy,dt):
 			continue
 		var affix: String=str(enemy.get("affix",""))
-		enemy.timer-=dt*(1.35 if affix=="frenzied" else 1.0)
+		enemy.timer-=dt*enemy_pace()*(1.35 if affix=="frenzied" else 1.0)
+		champion_pressure(enemy,dt)
 		if affix=="volatile" and not bool(enemy.get("primed",false)) and enemy.hp<enemy.max_hp*0.5:
 			enemy["primed"]=true
 			add_hazard(enemy.pos,67,0.9,1.10,21+encounter_threat*3,true)
@@ -1821,27 +1877,34 @@ func update_enemies(dt: float) -> void:
 					boss_release_attack(enemy)
 				elif dist < radius + 45:
 					hurt(18 if kind in ["brute","shield","mushroom","sentinel"] else 11)
-				enemy.timer = maxf(1.05,2.0-float(enemy.get("phase",1))*0.2) if kind in ["boss","rootking","hollowking"] else 0.9
+				enemy.timer = maxf(0.92,1.86-float(enemy.get("phase",1))*0.24) if kind in ["boss","rootking","hollowking"] else 0.95
 			continue
 		var velocity := Vector2.ZERO
 		if kind in ["caster","archer","spore","hexer"]:
-			if dist > 300: velocity = toward*105
-			elif dist < 200: velocity = -toward*100
-			if enemy.timer <= 0 and dist < 460:
-				enemy.wind = 0.55
-				enemy.target = player
+			# Casters circle the player instead of standing still inside the kite zone.
+			var strafe: Vector2=Vector2(-toward.y,toward.x)*float(enemy.get("strafe_dir",1))
+			if dist>325: velocity=toward*132+strafe*36
+			elif dist<185: velocity=-toward*116+strafe*54
+			else: velocity=strafe*116
+			if enemy.timer<=0 and dist<510:
+				enemy.wind=maxf(0.39,0.57-0.045*floor_index-0.025*encounter_threat)
+				enemy.target=predicted_player_position(0.16 if floor_index==0 else 0.24)
 		elif kind in ["boss","rootking","hollowking"]:
-			velocity=toward*(78+15*int(enemy.get("phase",1))) if dist>145 else Vector2.ZERO
+			velocity=toward*(92+20*int(enemy.get("phase",1))) if dist>145 else Vector2.ZERO
 			if enemy.timer<=0: boss_start_attack(enemy)
 		elif kind=="vine":
-			velocity=toward*100 if dist>180 else Vector2.ZERO
-			if enemy.timer<=0 and dist<280:
-				enemy.wind=0.65
-				enemy.target=player
+			velocity=toward*118 if dist>180 else Vector2.ZERO
+			if enemy.timer<=0 and dist<320:
+				enemy.wind=0.61
+				enemy.target=predicted_player_position(0.16)
 		else:
-			velocity = toward*(82 if kind in ["brute","shield","mushroom","sentinel"] else (190 if kind=="revenant" else 138))
-			if dist < radius+40 and enemy.timer <= 0:
-				enemy.wind = 0.48 if kind == "brute" else 0.3
+			velocity = toward*(100 if kind in ["brute","shield","mushroom","sentinel"] else (204 if kind=="revenant" else 159))
+			# Minions flank alternating sides when closing, but still commit to melee.
+			if dist>radius+72 and dist<260:
+				var flank: Vector2=Vector2(-toward.y,toward.x)*float(enemy.get("strafe_dir",1))
+				velocity+=flank*34.0
+			if dist < radius+45 and enemy.timer <= 0:
+				enemy.wind = 0.48 if kind in ["brute","shield","mushroom","sentinel"] else 0.34
 				velocity = Vector2.ZERO
 		# Simple separation and obstacle steering; no clumping at pillars.
 		for other in enemies:
@@ -1851,7 +1914,9 @@ func update_enemies(dt: float) -> void:
 			var length := separation.length()
 			if length > 0.01 and length < radius + float(other.r) + 8:
 				velocity += separation.normalized()*100
-		if affix=="frenzied": velocity*=1.4
+		if kind not in ["boss","rootking","hollowking"]:
+			velocity*=enemy_pace()
+		if affix=="frenzied": velocity*=1.3
 		if slow_time>0 or enemy.chill>0: velocity*=0.4
 		if kind=="shield" and enemy.wind<=0 and enemy.timer<0.15:
 			enemy.facing=toward
@@ -1880,6 +1945,9 @@ func spawn_reinforcements() -> void:
 		var affix: String=""
 		if room_kind=="elite" and i==count/2: affix="frenzied"
 		spawn_enemy(kind,encounter_spawn_point(i+2,picker),affix)
+		if affix!="":
+			enemies[-1]["champion"]=true
+			enemies[-1]["pressure_timer"]=2.0
 		if room_kind=="elite":
 			enemies[-1].hp*=1.3
 			enemies[-1].max_hp=enemies[-1].hp
@@ -2086,7 +2154,8 @@ func next_room() -> bool:
 
 func use_active() -> void:
 	if active_item=="heal":
-		if hp>=max_hp: return
+		if hp>=max_hp or heal_charges<=0: return
+		heal_charges-=1
 		hp=minf(max_hp,hp+active_heal)
 	elif active_item=="time": slow_time=5.0
 	elif active_item=="bomb":
@@ -2198,6 +2267,8 @@ func encounter_variation_smoke() -> bool:
 						has_champion=true
 						champions[affix]=true
 				if (room_kind=="elite" or encounter_threat==2) and not has_champion: return false
+				for enemy in enemies:
+					if str(enemy.get("affix",""))!="" and not bool(enemy.get("champion",false)): return false
 	if profiles.size()!=4 or dangers.size()!=3 or champions.size()<3: return false
 	return true
 
@@ -2552,6 +2623,66 @@ func boss_gate_smoke() -> bool:
 			return false
 	return true
 
+func difficulty_smoke() -> bool:
+	# Heal is finite, does not spend a charge at full HP, and refills on descent.
+	begin(5150,"warden_guard")
+	player=HUB_PORTAL
+	if not enter_first_room() or heal_charges!=HEAL_CHARGES_PER_FLOOR: return false
+	hp=20.0
+	use_active()
+	if heal_charges!=1 or absf(hp-38.0)>0.01 or active_timer<=0.0: return false
+	active_timer=0.0
+	use_active()
+	if heal_charges!=0 or absf(hp-56.0)>0.01: return false
+	active_timer=0.0
+	use_active()
+	if heal_charges!=0 or absf(hp-56.0)>0.01 or active_timer!=0.0: return false
+	heal_charges=1
+	hp=max_hp
+	use_active()
+	if heal_charges!=1 or hp!=max_hp: return false
+	heal_charges=0
+	room=Dungeon.BOSS
+	room_kind="boss"
+	dungeon.nodes[room].cleared=true
+	state="route"
+	if not descend() or heal_charges!=HEAL_CHARGES_PER_FLOOR or floor_index!=1: return false
+	# An elite/champion gets a visible, delayed pressure attack.
+	enemies.clear()
+	hazards.clear()
+	spawn_enemy("stalker",player+Vector2(140,0),"frenzied")
+	enemies[-1]["champion"]=true
+	enemies[-1]["pressure_timer"]=0.0
+	update_enemies(0.016)
+	if hazards.is_empty() or str(hazards[-1].get("type",""))!="champion_frenzied" or float(hazards[-1].warn)<0.6: return false
+	# Phase III of the final boss must add a lethal-looking, telegraphed blast.
+	begin(5151)
+	floor_index=2
+	dungeon.generate(seed_value,floor_index)
+	room=Dungeon.BOSS
+	enter_room()
+	var final_boss: Dictionary={}
+	for enemy in enemies:
+		if str(enemy.kind)=="hollowking": final_boss=enemy
+	if final_boss.is_empty(): return false
+	final_boss["phase"]=3
+	hazards.clear()
+	boss_start_attack(final_boss)
+	var marked_blast:=false
+	for danger in hazards:
+		if str(danger.get("type",""))=="boss_blast" and float(danger.warn)>=0.6: marked_blast=true
+	if not marked_blast: return false
+	# Defeat must actually remain reachable and end the run.
+	begin(5152)
+	player=HUB_PORTAL
+	if not enter_first_room(): return false
+	hp=5.0
+	invulnerable=0.0
+	hurt(20.0)
+	if hp>0.0: return false
+	tick(0.016,Vector2.ZERO,Vector2(640,385),false,false,false)
+	return state=="defeat"
+
 func smoke_test() -> bool:
 	if not RoomLayouts.smoke_test():
 		push_error("Authored chamber connectivity smoke failed")
@@ -2579,6 +2710,9 @@ func smoke_test() -> bool:
 		return false
 	if not hub_perks_smoke():
 		push_error("Regression failed: hub_perks_smoke")
+		return false
+	if not difficulty_smoke():
+		push_error("Regression failed: difficulty_smoke (healing, elites, bosses or game over)")
 		return false
 	begin(123,"dealer_cards")
 	if state!="hub" or visited_count!=0 or dungeon.nodes[0].visited or not enemies.is_empty(): return false

@@ -1046,19 +1046,25 @@ func ability_slot(x: float, icon_index: int, key: String, name: String, ratio: f
 		draw_texture_rect_region(UI.ICONS,Rect2(x+12,668,32,32),Rect2(active_index*24,0,24,24))
 	else:
 		draw_texture_rect_region(PixelWorld.RELICS,Rect2(x+12,668,32,32),Rect2(icon_index*48,0,48,48))
-	var available: float=clampf(ratio,0,1)
+	var no_heal_charges: bool=index==3 and run.active_item=="heal" and run.heal_charges<=0
+	var available: float=0.0 if no_heal_charges else clampf(ratio,0,1)
 	if available<0.99:
 		draw_rect(Rect2(x+8,664,40,40.0*(1.0-available)),Color(0.015,0.05,0.06,0.77))
 	else:
 		draw_rect(icon_rect,color,false,1.4,true)
 		if pulse>0.0: draw_circle(Vector2(x+28,684),29.0*pulse,Color(color,0.12*pulse))
-	text_at(Vector2(x+54,672),key,12,color.lightened(pulse*0.3))
+	var action_key: String=key
+	if index==3 and run.active_item=="heal":
+		action_key+="  %d/%d" % [run.heal_charges,Model.HEAL_CHARGES_PER_FLOOR]
+	text_at(Vector2(x+54,672),action_key,12,color.lightened(pulse*0.3))
 	var font_size: int=15
 	while font.get_string_size(name,HORIZONTAL_ALIGNMENT_LEFT,-1,font_size).x>91 and font_size>11: font_size-=1
 	text_at(Vector2(x+54,690),name,font_size,WHITE)
 	meter(Rect2(x+54,697,90,4),available,color)
 	var cooldowns: Array[float]=[run.attack_timer,run.bolt_timer,run.dash_timer,run.active_timer]
-	if available>=0.99:
+	if no_heal_charges:
+		text_at(Vector2(x+54,712),tr_text("EMPTY","LEER"),11,UI.DANGER)
+	elif available>=0.99:
 		text_at(Vector2(x+54,712),tr_text("READY","BEREIT"),11,color)
 	else:
 		text_at(Vector2(x+54,712),"%.1fs" % maxf(0,cooldowns[index]),12,MUTED)
@@ -1682,6 +1688,8 @@ func rebuild_overlay() -> void:
 		"pause":
 			add_label(column,tr_text("EXPEDITION PAUSED","EXPEDITION PAUSIERT"),30,GOLD)
 			add_label(column,tr_text("Your expedition is frozen. Take your time.","Deine Expedition ist angehalten."),16,MUTED)
+			if run.active_item=="heal":
+				add_label(column,tr_text("Healing charges: ","Heilungs-Ladungen: ")+str(run.heal_charges)+"/"+str(Model.HEAL_CHARGES_PER_FLOOR)+tr_text("  •  Refill on the next floor","  •  Auf der nächsten Ebene aufgefüllt"),15,UI.AETHER)
 			var resume:=add_button(column,tr_text("Continue  ›","Fortsetzen  ›"),func(): paused=false)
 			UI.style_button(resume,GOLD,true)
 			add_button(column,tr_text("Run relics","Run-Relikte")+"  •  "+str(run.relics.size()),func(): relics_open=true)
