@@ -235,6 +235,57 @@ func complete_contract() -> void:
 	notices.append("contract_complete")
 	effect("contract_complete",player,1.0,Vector2.ZERO)
 
+func has_synergy(id: String) -> bool:
+	if not Content.SYNERGIES.has(id): return false
+	for part in Content.SYNERGIES[id]["parts"]:
+		if not relics.has(str(part)): return false
+	return true
+
+func active_synergies() -> Array[String]:
+	var result: Array[String]=[]
+	for id in Content.SYNERGIES:
+		if has_synergy(id): result.append(str(id))
+	return result
+
+func synergy_preview(item: String) -> Dictionary:
+	# Preview never mutates state; every card uses this same gameplay truth.
+	var strongest: Dictionary={}
+	var priority:=0
+	for id in Content.SYNERGIES:
+		var data: Dictionary=Content.SYNERGIES[id]
+		var parts: Array=data["parts"]
+		if not parts.has(item): continue
+		var active: bool=has_synergy(str(id))
+		var filled:=0
+		for part in parts:
+			if relics.has(str(part)) or (str(part)==item and not relics.has(item)):
+				filled+=1
+		var state: String="active" if active else ("ready" if filled==parts.size() else "building")
+		var rank: int=3 if state=="ready" else (2 if state=="active" else 1)
+		if rank>priority:
+			priority=rank
+			strongest={"id":str(id),"state":state,"owned":filled,"total":parts.size()}
+	return strongest
+
+func synergy_candidates() -> Array[String]:
+	var result: Array[String]=[]
+	for id in Content.SYNERGIES:
+		var parts: Array=Content.SYNERGIES[id]["parts"]
+		var owned:=0
+		var missing: String=""
+		for part in parts:
+			if relics.has(str(part)): owned+=1
+			else: missing=str(part)
+		if owned==parts.size()-1 and missing!="" and not result.has(missing):
+			result.append(missing)
+	return result
+
+func notify_new_synergies(previous: Array[String]) -> void:
+	for id in active_synergies():
+		if previous.has(id): continue
+		notices.append("synergy_complete")
+		effect("synergy_unlock",player,0.8,Vector2.ZERO)
+
 func enter_hub() -> void:
 	# This tavern is outside the route graph: no free combat progress or rewards.
 	state="hub"
