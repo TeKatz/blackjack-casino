@@ -58,7 +58,30 @@ const SPECS = {
 	"class_ghost":[0.28,640,0.28,0.13,0.66],
 	"class_grave":[0.43,105,0.52,0.68,0.6],
 	"class_blood":[0.35,160,0.55,0.46,0.46],
-	"relic_sun":[0.085,670,0.2,0.04,0.63]
+	"relic_sun":[0.085,670,0.2,0.04,0.63],
+	"sp_ritual_enter":[0.62,215,0.25,0.16,1.35],
+	"sp_ritual_anchor":[0.38,1010,0.28,0.06,0.51],
+	"sp_ritual_breach":[1.05,112,0.46,0.4,0.3],
+	"sp_ritual_success":[0.93,550,0.2,0.1,2.14],
+	"sp_survival_enter":[0.51,580,0.15,0.12,0.72],
+	"sp_survival_wave":[0.43,1130,0.66,0.26,0.51],
+	"sp_survival_success":[0.91,665,0.22,0.08,1.95],
+	"sp_bounty_enter":[0.59,144,0.41,0.49,0.38],
+	"sp_bounty_backup":[0.44,295,0.7,0.59,0.66],
+	"sp_bounty_success":[0.96,980,0.2,0.07,1.62],
+	"sp_unstable_enter":[0.64,520,0.18,0.19,1.66],
+	"sp_unstable_charge":[0.73,780,0.38,0.13,2.33],
+	"sp_unstable_burst":[0.48,96,0.77,0.9,0.4],
+	"sp_unstable_success":[0.91,630,0.18,0.13,1.83],
+	"sp_blood_altar_enter":[0.69,180,0.25,0.29,0.65],
+	"sp_blood_altar_sacrifice":[0.86,87,0.52,0.67,1.85],
+	"sp_blood_altar_success":[0.79,320,0.19,0.2,1.51],
+	"sp_forgotten_forge_enter":[0.55,260,0.47,0.58,0.41],
+	"sp_forgotten_forge_temper":[0.68,190,0.66,0.79,1.94],
+	"sp_forgotten_forge_success":[0.87,440,0.26,0.28,1.63],
+	"sp_archive_enter":[0.63,680,0.33,0.08,0.4],
+	"sp_archive_exchange":[0.73,920,0.19,0.1,2.1],
+	"sp_archive_success":[0.92,740,0.14,0.1,1.76]
 }
 var cache: Dictionary={}
 var voices: Array[AudioStreamPlayer]=[]
@@ -122,6 +145,30 @@ func synthesize(kind: String) -> AudioStreamWAV:
 			value=(sin(phase+0.8*sin(t*16))+0.5*sin(phase*1.51)+previous*0.18)*envelope*0.68
 		elif kind.begins_with("warden") or kind=="spike_rise" or kind=="spike_retract" or kind=="forge":
 			value=(noise*0.65+previous*0.4+sin(phase*3.7)*0.36*exp(-t*3)+sin(phase)*0.25)*envelope
+		elif kind.begins_with("sp_ritual_"):
+			# Dissonant pulsing rune harmonics and heavy reversed undertone.
+			value=(0.57*sin(phase+sin(t*15)*1.3)+0.26*sin(phase*2.13)+0.3*sin(phase*0.48)+previous*0.11)*envelope*(0.55+0.45*sin(t*21)*sin(t*21))
+		elif kind.begins_with("sp_survival_"):
+			# Dry ticking gears and accelerated clock chimes.
+			var tick: float=pow(maxf(0,sin(t*TAU*19)),18)
+			value=(0.52*sin(phase*2)+0.65*tick*(noise*0.7+sin(phase*4)))*envelope
+		elif kind.begins_with("sp_bounty_"):
+			# Metallic hunting horn over a syncopated marching percussion.
+			value=(0.45*sin(phase*0.5)+0.35*sin(phase*1.5)+0.5*noise*pow(maxf(0,sin(t*TAU*7)),5))*envelope
+		elif kind.begins_with("sp_unstable_"):
+			# Electrical crackle interleaved with rising crystalline pitch.
+			value=(sin(phase+sin(t*38)*2.0)*0.34+previous*0.63+noise*0.35)*envelope*(0.65+0.35*sin(t*75)*sin(t*75))
+		elif kind.begins_with("sp_blood_altar_"):
+			# Heartbeat thumps and deep ceremonial harmonic drift.
+			var beat: float=pow(maxf(0,sin(t*TAU*3)),9)
+			value=(sin(phase*0.55)*0.45+beat*previous*0.9+sin(phase*1.4)*0.23)*envelope
+		elif kind.begins_with("sp_forgotten_forge_"):
+			# Hammer-on-anvil transient with a decaying metallic ring.
+			var strike: float=pow(maxf(0,sin(t*TAU*6)),14)
+			value=(strike*noise*0.62+sin(phase*3.15)*0.53+sin(phase*7.8)*0.17)*envelope
+		elif kind.begins_with("sp_archive_"):
+			# Turning spectral pages with rising, slowly detuned glass notes.
+			value=(sin(phase)*0.42+sin(phase*1.618+sin(t*7))*0.3+previous*0.23*sin(t*TAU*4))*envelope
 		elif kind=="victory" or kind=="relic" or kind=="clear" or kind=="unlock":
 			var note: float=[1.0,1.25,1.5,2.0][mini(3,int(t*4))]
 			value=(sin(TAU*frequency*note*float(i)/22050)+0.32*sin(TAU*frequency*note*2*float(i)/22050))*envelope*0.7
