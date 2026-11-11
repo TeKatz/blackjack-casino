@@ -1793,8 +1793,90 @@ func build_and_boss_smoke() -> bool:
 		if shots.size()<7: return false
 	return true
 
+func class_relic_smoke() -> bool:
+	# All four classes: shared + exactly six exclusive relics, no cross-class leaks.
+	var loadouts: Array[String]=["warden_guard","dealer_cards","arcanist_fire","soulbinder_reaper"]
+	for loadout in loadouts:
+		begin(605,loadout)
+		var expected: Array[String]=class_relic_pool()
+		var pool: Array[String]=available_relic_pool()
+		if expected.size()!=6 or pool.size()!=54: return false
+		for key in pool:
+			var owner: String=Content.relic_owner(key)
+			if owner!="" and owner!=character: return false
+		for key in expected:
+			if not RELICS.has(key) or not pool.has(key) or int(RELICS[key][4])<48: return false
+		for i in range(12):
+			make_offers(i%2==0)
+			if offers.size()!=3 or Content.relic_owner(offers[0])!=character: return false
+			for j in range(offers.size()):
+				if Content.relic_owner(offers[j]) not in ["",character] or offers.count(offers[j])!=1: return false
+		player=HUB_PORTAL
+		if not enter_first_room(): return false
+		match character:
+			"warden":
+				relics.assign(["w_lance","w_charger"])
+				shots.clear()
+				class_special_attack()
+				class_dash_landing()
+				if shots.size()<4 or not has_synergy("w_phalanx"): return false
+			"dealer":
+				relics.assign(["d_marked","d_sleight"])
+				attacks=4
+				shots.clear()
+				class_main_attack()
+				if shots.size()!=5 or int(shots[0].bounce)<1 or not has_synergy("d_royal"): return false
+			"arcanist":
+				relics.assign(["a_orbs","a_surge"])
+				player=Vector2(300,385)
+				enemies.clear()
+				spawn_enemy("brute",Vector2(390,385))
+				shots.clear()
+				arcane_wisp_timer=0
+				class_wisps_tick(0.72)
+				if shots.size()!=2 or not has_synergy("a_convergence"): return false
+				specials=3
+				var hp_before: float=float(enemies[0].hp)
+				class_special_attack()
+				if float(enemies[0].hp)>=hp_before: return false
+			"soulbinder":
+				relics.assign(["s_harvest","s_grim"])
+				souls=2
+				hp=40
+				shots.clear()
+				class_special_attack()
+				if souls!=1 or shots.size()!=3 or hp<=40 or not has_synergy("s_requiem"): return false
+	begin(606,"warden_guard")
+	player=HUB_PORTAL
+	if not enter_first_room(): return false
+	relics.assign(["sun","sun"])
+	player=Vector2(250,385)
+	elapsed=0
+	orbit_timer=0
+	enemies.clear()
+	spawn_enemy("brute",Vector2(323,385))
+	var before: float=float(enemies[0].hp)
+	tick(0.016,Vector2.ZERO,Vector2(500,385),false,false,false)
+	if float(enemies[0].hp)>=before or relics.count("sun")!=2: return false
+	# +25% boss HP must apply consistently to all three bosses.
+	for floor in range(3):
+		begin(611+floor)
+		floor_index=floor
+		dungeon.generate(seed_value,floor)
+		room=Dungeon.BOSS
+		enter_room()
+		var threshold: float=[800.0,1550.0,2500.0][floor]
+		var boss_found:=false
+		for enemy in enemies:
+			if enemy.kind in ["boss","rootking","hollowking"]:
+				boss_found=true
+				if float(enemy.max_hp)<threshold: return false
+		if not boss_found: return false
+	return true
+
 func smoke_test() -> bool:
 	if not dungeon.smoke_test(): return false
+	if not class_relic_smoke(): return false
 	if not build_and_boss_smoke(): return false
 	if not encounter_variation_smoke(): return false
 	if not hub_perks_smoke(): return false
