@@ -29,6 +29,7 @@ const ACTORS = {
 	"boss": preload("res://art/pixel/boss.svg")
 }
 const TORCH_POSITIONS = [Vector2(142,143),Vector2(394,143),Vector2(650,143),Vector2(906,143),Vector2(1154,143)]
+const HUB_LANTERN_POSITIONS = [Vector2(162,203),Vector2(666,203),Vector2(934,203),Vector2(1175,203)]
 var model
 var clock := 0.0
 var previous_player := Vector2.ZERO
@@ -133,8 +134,12 @@ func update_view(dt: float) -> void:
 		player_facing = model.aim
 	previous_player = model.player
 	for i in range(torches.size()):
-		torches[i].position = ([Vector2(162,169),Vector2(411,169),Vector2(668,169),Vector2(935,169),Vector2(1175,169)][i] if model.state=="hub" else TORCH_POSITIONS[i]+Vector2(0,40))
-		torches[i].energy = 1.25 + sin(clock*7.0+i*2.2)*0.19 + sin(clock*13+i)*0.08
+		torches[i].enabled=model.state!="hub" or i<HUB_LANTERN_POSITIONS.size()
+		if model.state=="hub" and torches[i].enabled:
+			torches[i].position=HUB_LANTERN_POSITIONS[i]+Vector2(0,4)
+		else:
+			torches[i].position=TORCH_POSITIONS[i]+Vector2(0,40)
+		torches[i].energy=1.1+sin(clock*5.0+i*2.2)*0.15 if model.state=="hub" else 1.25+sin(clock*7.0+i*2.2)*0.19+sin(clock*13+i)*0.08
 	for i in range(side_lights.size()):
 		side_lights[i].energy = 0.85 + sin(clock*5+i*2)*0.15
 	var boss_present := false
@@ -253,6 +258,54 @@ func _draw() -> void:
 			"enemy": draw_actor(object.enemy)
 			"player": draw_warden()
 
+func draw_wall_lantern(pos: Vector2, index: int) -> void:
+	# The sconce is riveted to a timber backplate, never suspended in mid-air.
+	var flame_shift: float=roundf(sin(clock*6.5+index*1.7)*2.0)
+	for r in range(4,0,-1):
+		draw_circle(pos+Vector2(0,5),float(r)*16,Color(1,0.54,0.22,0.017))
+	draw_rect(Rect2(pos+Vector2(-20,-29),Vector2(40,9)),Color("#241b24"))
+	draw_rect(Rect2(pos+Vector2(-17,-27),Vector2(34,5)),Color("#96705f"))
+	for offset in [-13.0,13.0]:
+		draw_rect(Rect2(pos+Vector2(offset,-26),Vector2(3,3)),Color("#e2b77f"))
+	draw_rect(Rect2(pos+Vector2(-3,-23),Vector2(6,8)),Color("#2a222a"))
+	draw_rect(Rect2(pos+Vector2(-13,-16),Vector2(26,5)),Color("#d8aa72"))
+	draw_rect(Rect2(pos+Vector2(-15,-12),Vector2(30,32)),Color("#211a25"))
+	draw_rect(Rect2(pos+Vector2(-10,-9),Vector2(20,24)),Color("#8b533d"))
+	draw_rect(Rect2(pos+Vector2(-7,-6),Vector2(14,18)),Color("#f6a956"))
+	draw_rect(Rect2(pos+Vector2(-4,-3),Vector2(8,13)),Color("#ffd58a"))
+	draw_rect(Rect2(pos+Vector2(-2,flame_shift-7),Vector2(4,13)),Color("#fff0bb"))
+	draw_rect(Rect2(pos+Vector2(-13,-12),Vector2(4,29)),Color("#c49566"))
+	draw_rect(Rect2(pos+Vector2(9,-12),Vector2(4,29)),Color("#c49566"))
+	draw_rect(Rect2(pos+Vector2(-15,17),Vector2(30,6)),Color("#e4b47c"))
+	draw_rect(Rect2(pos+Vector2(-11,23),Vector2(22,4)),Color("#493340"))
+	draw_rect(Rect2(pos+Vector2(-2,27),Vector2(4,5)),Color("#e3b67c"))
+
+func draw_barkeeper() -> void:
+	# Hand-drawn pixel silhouette. Idle breathing, blinking and glass polishing.
+	var p:=Vector2(483,215)
+	var breath: float=roundf(sin(clock*2.2)*1.5)
+	draw_rect(Rect2(p+Vector2(-25,-19+breath),Vector2(50,35)),Color("#251b29"))
+	draw_rect(Rect2(p+Vector2(-21,-17+breath),Vector2(42,30)),Color("#5c4650"))
+	draw_rect(Rect2(p+Vector2(-9,-16+breath),Vector2(18,28)),Color("#e4d4bb"))
+	draw_rect(Rect2(p+Vector2(-4,-16+breath),Vector2(8,27)),Color("#825e51"))
+	for x in [-20.0,15.0]:
+		draw_rect(Rect2(p+Vector2(x,-13+breath),Vector2(7,25)),Color("#c7a88a"))
+	# Warm face, swept-back hair and a short beard under the tavern light.
+	draw_rect(Rect2(p+Vector2(-16,-51+breath),Vector2(32,37)),Color("#29202b"))
+	draw_rect(Rect2(p+Vector2(-13,-46+breath),Vector2(26,29)),Color("#d99e82"))
+	draw_rect(Rect2(p+Vector2(-15,-53+breath),Vector2(30,9)),Color("#4d3233"))
+	draw_rect(Rect2(p+Vector2(-11,-24+breath),Vector2(22,10)),Color("#65423d"))
+	var blinking: bool=fposmod(clock+0.25,4.5)<0.13
+	for eye in [-7.0,6.0]:
+		draw_rect(Rect2(p+Vector2(eye,-35+breath),Vector2(4,1 if blinking else 3)),Color("#2c1d28"))
+	draw_rect(Rect2(p+Vector2(-4,-22+breath),Vector2(8,2)),Color("#c58b77"))
+	# A glass rises and lowers in the polishing hand.
+	var polish: float=roundf(sin(clock*3.0)*4.0)
+	draw_rect(Rect2(p+Vector2(22,-15+polish),Vector2(10,8)),Color("#d5a484"))
+	draw_rect(Rect2(p+Vector2(27,-32+polish),Vector2(11,20)),Color("#aaa4bf"))
+	draw_rect(Rect2(p+Vector2(29,-30+polish),Vector2(7,14)),Color("#ecdddc"))
+	draw_rect(Rect2(p+Vector2(25,-18+polish),Vector2(15,3)),Color("#ffecb7"))
+
 func draw_hub() -> void:
 	# The Threshold Tavern: standalone foyer before the first dungeon node.
 	# All furniture aligns to the hub's actual collision volumes.
@@ -302,6 +355,8 @@ func draw_hub() -> void:
 		draw_rect(Rect2(x+2,182,13,4),Color("#b18d75"))
 		draw_rect(Rect2(x+3,189,11,15),bottle_color)
 		draw_rect(Rect2(x+5,190,3,9),bottle_color.lightened(0.35))
+	# Barkeeper stands behind the counter; players reach him from its front.
+	draw_barkeeper()
 	# Back-wall bar and five stools.
 	draw_rect(Rect2(230,202,500,85),Color("#2a1d2a"))
 	draw_rect(Rect2(220,208,520,71),Color("#63414a"))
@@ -327,12 +382,9 @@ func draw_hub() -> void:
 	draw_rect(Rect2(750,251,30,50),Color("#3b2c39"))
 	draw_rect(Rect2(790,251,30,50),Color("#3b2c39"))
 	draw_string(ThemeDB.fallback_font,Vector2(738,338),"FORGE",HORIZONTAL_ALIGNMENT_LEFT,-1,12,Color("#a79198"))
-	# Hanging lamps use the existing four-frame pixel-art torch atlas.
-	for i in [0,2,3,4]:
-		var pos: Vector2=[Vector2(162,205),Vector2(415,205),Vector2(670,205),Vector2(939,205),Vector2(1172,205)][i]
-		for j in range(4,0,-1):
-			draw_circle(pos,float(j)*20,Color(1,0.56,0.23,0.027))
-		draw_texture_rect_region(TORCH,Rect2(pos-Vector2(16,32),Vector2(32,64)),Rect2((int(clock*8)+i)%4*16,0,16,32))
+	# Four mounted, animated wall lanterns replace the floating torch sprites.
+	for i in range(HUB_LANTERN_POSITIONS.size()):
+		draw_wall_lantern(HUB_LANTERN_POSITIONS[i],i)
 	# The hub gate is a distinct wall portal, not the dungeon route-map exit.
 	var portal: Vector2=Model.HUB_PORTAL
 	var p: Vector2=portal-Vector2(62,91)
@@ -351,6 +403,16 @@ func draw_hub() -> void:
 	draw_rect(Rect2(portal-Vector2(6,6),Vector2(12,12)),Color("#ffe3bd"))
 	draw_rect(Rect2(p-Vector2(8,1),Vector2(140,14)),Color("#ba967d"))
 	draw_rect(Rect2(p-Vector2(8,172),Vector2(140,13)),Color("#876d79"))
+	# Gold-capped masonry and flickering runes give the doorway real depth.
+	for side in [0.0,1.0]:
+		var x: float=p.x+(7 if side==0.0 else 108)
+		for step in range(6):
+			var y: float=p.y+22+step*24
+			draw_rect(Rect2(x,y,9,6),Color("#b68a9c"))
+			draw_rect(Rect2(x+2,y+1,5,3),Color("#efd0a4"))
+	for i in range(3):
+		var glow: float=0.42+0.35*sin(clock*2.6+i*1.8)
+		draw_rect(Rect2(portal+Vector2(-42+i*31,-73),Vector2(17,5)),Color(0.80,0.53,1,glow))
 	# Selected character keeps its own 4x8 sprite sheet and walking frames.
 	var facing: Vector2=player_facing
 	var frame: int=2+int(clock*10)%4 if walking else int(clock*2)%2
