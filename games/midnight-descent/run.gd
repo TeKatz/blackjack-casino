@@ -195,7 +195,7 @@ func _process(dt: float) -> void:
 		room_banner = 2.0
 		last_wave=0
 	room_banner = maxf(0,room_banner-dt)
-	if run.state=="fight" and run.wave_total>1 and last_wave!=run.wave:
+	if run.state=="fight" and run.room_kind in ["fight","elite"] and run.wave_total>1 and last_wave!=run.wave:
 		last_wave=run.wave
 		wave_banner=2.2
 		if run.wave==1: play_sound("wave")
@@ -1033,7 +1033,7 @@ func draw_hud() -> void:
 				goal=tr_text("TARGET CHAMPION ","ZIEL-CHAMPION ")+("%.0f%%" % (hp_ratio*100.0))
 			"unstable": goal=tr_text("REACTOR CORES • Explosions hit enemies too","REAKTORKERNE • Explosionen treffen auch Gegner")
 		text_at(Vector2(425,132),goal,13,room_tint)
-		var progress: float=clampf(run.special_timer/(36.0 if run.room_kind=="ritual" else 45.0),0,1) if run.room_kind in ["ritual","survival"] else (1.0-run.special_wave_timer/4.0 if run.room_kind=="unstable" else 0.0)
+		var progress: float=clampf(run.special_timer/(36.0 if run.room_kind=="ritual" else Model.SURVIVAL_DURATION),0,1) if run.room_kind in ["ritual","survival"] else (1.0-run.special_wave_timer/4.0 if run.room_kind=="unstable" else 0.0)
 		if progress>0: meter(Rect2(426,138,424,5),progress,room_tint)
 	if run.large_room and run.state in ["fight","exit"]:
 		var map_accent: Color=[Color("#d2ae80"),Color("#99d4a8"),Color("#e2aec9")][run.floor_index]
@@ -1082,7 +1082,7 @@ func draw_hud() -> void:
 		var record: Dictionary=Content.SYNERGIES[run.last_synergy_id]
 		text_at(Vector2(443,card_y+22),tr_text("SYNERGY UNLOCKED","SYNERGIE AKTIVIERT"),15,Color(0.73,1.0,0.80,fade))
 		text_at(Vector2(443,card_y+48),str(record["de" if german else "en"]),21,Color(1.0,0.94,0.78,fade))
-	if run.state=="fight" and run.wave_total>1:
+	if run.state=="fight" and run.room_kind in ["fight","elite"] and run.wave_total>1:
 		hud_panel(Rect2(1000,150,218,37),GOLD)
 		text_at(Vector2(1016,175),tr_text("WAVE","WELLE")+" %d / %d" % [run.wave,run.wave_total],19,GOLD)
 		if wave_banner>0:
@@ -1306,15 +1306,17 @@ func service_option(parent: Control, caption: String, detail: String, icon_index
 	button.disabled=not available
 	return button
 
-func special_service_option(parent: Control, caption: String, detail: String, choice: int, enabled: bool=true) -> Button:
+func special_service_option(parent: Control, caption: String, detail: String, choice: int, enabled: bool=true, relic_id: String="") -> Button:
 	var id: String=run.room_kind
 	var button:=add_button(parent,caption+"\n"+detail,func(): use_service(choice))
 	button.custom_minimum_size=Vector2(0,68)
 	button.alignment=HORIZONTAL_ALIGNMENT_LEFT
 	button.add_theme_font_size_override("font_size",15)
-	button.icon=UI.room_icon(id)
+	# Show the actual equipped relic for Archive/Forge decisions: players
+	# should recognize the item they are about to destroy or improve.
+	button.icon=UI.atlas(UI.RELICS,int(Content.RELICS[relic_id][4])) if relic_id!="" else UI.room_icon(id)
 	button.expand_icon=true
-	button.add_theme_constant_override("icon_max_width",46)
+	button.add_theme_constant_override("icon_max_width",48)
 	UI.style_button(button,UI.ROOM_COLORS[id])
 	button.disabled=not enabled
 	return button
@@ -1477,7 +1479,7 @@ func rebuild_overlay() -> void:
 					for i in range(targets.size()):
 						var id: String=targets[i]
 						var item: Array=Content.RELICS[id]
-						special_service_option(column,tr_text("Temper: ","Härten: ")+str(item[1 if german else 0]),tr_text("12 shards • gain an extra stack of this relic","12 Splitter • erhalte eine weitere Stufe dieses Relikts"),i,run.shards>=12)
+						special_service_option(column,tr_text("Temper: ","Härten: ")+str(item[1 if german else 0]),tr_text("12 shards • gain an extra stack of this relic","12 Splitter • erhalte eine weitere Stufe dieses Relikts"),i,run.shards>=12,id)
 					special_service_option(column,tr_text("Leave the anvil","Den Amboss verlassen"),tr_text("Keep your current relics and shards","Relikte und Splitter behalten"),3)
 				"archive":
 					var targets: Array[String]=run.archive_relic_targets()
@@ -1486,7 +1488,7 @@ func rebuild_overlay() -> void:
 					for i in range(targets.size()):
 						var id: String=targets[i]
 						var item: Array=Content.RELICS[id]
-						special_service_option(column,tr_text("Rewrite: ","Umschreiben: ")+str(item[1 if german else 0]),tr_text("Discard this relic • choose one of three new offers","Dieses Relikt ablegen • eines von drei neuen wählen"),i)
+						special_service_option(column,tr_text("Rewrite: ","Umschreiben: ")+str(item[1 if german else 0]),tr_text("Discard this relic • choose one of three new offers","Dieses Relikt ablegen • eines von drei neuen wählen"),i,true,id)
 					special_service_option(column,tr_text("Leave the archive","Archiv verlassen"),tr_text("Preserve your current build","Behalte deinen bisherigen Build"),3)
 		"reward":
 			add_label(column,tr_text("CHOOSE YOUR RELIC","WÄHLE DEIN RELIKT") if run.room_kind in ["treasure","shop","event","secret","archive","blood_altar"] else tr_text("ROOM CLEARED","RAUM GESÄUBERT"),30,GOLD)
