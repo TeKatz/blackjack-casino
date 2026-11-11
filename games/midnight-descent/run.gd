@@ -747,6 +747,14 @@ func draw_hud() -> void:
 			if index>=0:
 				var icon:=UI.atlas(UI.RELICS,index)
 				draw_texture_rect_region(icon.atlas,rect,icon.region)
+	if run.forge_id!="":
+		hud_panel(Rect2(18,107,350,39),Color("#e8a879"))
+		var forge_name: String=str(Model.FORGE_DATA[run.forge_id]["de" if german else "en"])
+		text_at(Vector2(31,124),tr_text("FORGE","SCHMIEDE")+" • "+forge_name,13,Color("#e8a879"))
+		var status: String=tr_text("Run modifier active","Run-Modifikator aktiv")
+		if run.forge_id=="iron_aegis":
+			status=tr_text("Shields this room: ","Schilde in diesem Raum: ")+str(run.forge_guard_charges)+" / 2"
+		text_at(Vector2(31,140),status,12,WHITE)
 	if run.contract_id!="":
 		var quest: Dictionary=Model.CONTRACT_DATA[run.contract_id]
 		var status_color: Color=Color("#91d4b0") if run.contract_completed else GOLD
