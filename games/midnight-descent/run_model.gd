@@ -916,7 +916,10 @@ func update_effects(dt: float) -> void:
 			effects.remove_at(i)
 
 func hit_enemy(enemy: Dictionary, amount: float) -> void:
-	if enemy.hp <= 0:
+	if enemy.hp<=0: return
+	var boss: bool=str(enemy.kind) in ["boss","rootking","hollowking"]
+	if boss and float(enemy.get("phase_lock",0))>0:
+		effect("boss_guard",enemy.pos,0.24,Vector2.ZERO)
 		return
 	var crit_triggered: bool=relics.has("crit") and rng.randf()<minf(0.8,0.2*relics.count("crit"))
 	var poisoned_before: bool=float(enemy.get("poison",0))>0
@@ -930,7 +933,13 @@ func hit_enemy(enemy: Dictionary, amount: float) -> void:
 	if str(enemy.get("affix",""))=="warded" and enemy.hp>enemy.max_hp*0.5: amount*=0.62
 	if enemy.kind=="shield" and enemy.pos.direction_to(player).dot(enemy.get("facing",Vector2.LEFT))>0.35: amount*=0.6
 	var dealt: float=maxf(1,amount+temp_power)
-	enemy.hp -= dealt
+	if boss:
+		# Mandatory phase thresholds keep burst builds from one-shotting a boss.
+		var phase: int=int(enemy.get("phase",1))
+		if phase<3:
+			var gate: float=float(enemy.max_hp)*(0.68 if phase==1 else 0.32)
+			dealt=minf(dealt,maxf(0.0,float(enemy.hp)-gate))
+	enemy.hp-=dealt
 	if relics.has("frost") or set_id=="arcanist_frost": enemy["chill"]=2.0
 	if relics.has("venom"): enemy["poison"]=3.0
 	if relics.has("storm") and burning_before:
