@@ -294,6 +294,183 @@ func notify_new_synergies(previous: Array[String]) -> void:
 		notices.append("synergy_complete")
 		effect("synergy_unlock",player,0.8,Vector2.ZERO)
 
+# Class relic runtime powers. All of these depend on the current run inventory,
+# not persistent unlocks; the normal shared relics remain available to everyone.
+func class_main_attack() -> void:
+	if character=="dealer" and relics.has("d_marked") and attacks%4==0:
+		var flush: bool=has_synergy("d_royal")
+		var count: int=5 if flush else 3
+		for i in range(count):
+			var spread: float=(float(i)-float(count-1)*0.5)*0.22
+			shoot(player+aim*22,aim.rotated(spread)*610,false,damage*(0.56 if flush else 0.42)*relics.count("d_marked"))
+			effect("class_cards",player,0.38,aim)
+		notices.append("class_cards")
+
+func class_special_attack() -> void:
+	if relics.has("w_lance"):
+		for i in range(mini(3,relics.count("w_lance"))):
+			var direction: Vector2=aim.rotated((float(i)-float(mini(3,relics.count("w_lance"))-1)*0.5)*0.16)
+			shoot(player+aim*25,direction*680,false,bolt_damage*1.25)
+			shots[-1]["pierce"]=mini(6,int(shots[-1].pierce)+2)
+		effect("class_lance",player,0.38,aim)
+		notices.append("class_lance")
+	if relics.has("d_ace") and specials%5==0:
+		var full_house: bool=has_synergy("d_jackpot")
+		var count: int=3 if full_house else 1
+		for i in range(count):
+			shoot(player+aim*26,aim.rotated((float(i)-float(count-1)*0.5)*0.23)*710,false,bolt_damage*1.75*relics.count("d_ace"))
+			effect("class_ace",player,0.54,aim)
+		if full_house:
+			shards+=5
+			check_shard_contract()
+		notices.append("class_ace")
+	if relics.has("a_frost"):
+		for enemy in enemies:
+			if enemy.hp>0 and player.distance_to(enemy.pos)<195:
+				enemy["chill"]=maxf(float(enemy.get("chill",0)),3.0+0.6*relics.count("a_frost"))
+		effect("class_ice",player,0.48,Vector2.ZERO)
+		notices.append("class_ice")
+	if relics.has("a_surge") and specials%3==0:
+		var convergence: bool=has_synergy("a_convergence")
+		for enemy in enemies:
+			if enemy.hp>0 and player.distance_to(enemy.pos)<(225 if convergence else 165):
+				hit_enemy(enemy,(30 if convergence else 18)*relics.count("a_surge"))
+		effect("class_surge",player,0.62,Vector2.ZERO)
+		notices.append("class_surge")
+	if relics.has("s_grim") and souls>0:
+		souls-=1
+		var dark_requiem: bool=has_synergy("s_requiem")
+		var count: int=3 if dark_requiem else 1
+		for i in range(count):
+			shoot(player+aim*20,aim.rotated((float(i)-float(count-1)*0.5)*0.19)*570,false,bolt_damage*1.15*relics.count("s_grim"))
+		if dark_requiem: hp=minf(max_hp,hp+6)
+		effect("class_soul",player,0.52,aim)
+		notices.append("class_soul")
+
+func class_dash_landing() -> void:
+	if relics.has("w_charger"):
+		for enemy in enemies:
+			if enemy.hp>0 and player.distance_to(enemy.pos)<145:
+				hit_enemy(enemy,16.0*relics.count("w_charger"))
+		if has_synergy("w_phalanx"):
+			for i in range(3):
+				shoot(player+dash_direction*21,dash_direction.rotated((i-1)*0.25)*640,false,bolt_damage*0.85)
+				shots[-1]["pierce"]=2
+		effect("class_shield",player,0.54,dash_direction)
+		notices.append("class_shield")
+	if relics.has("d_decoy"):
+		var bluff: bool=has_synergy("d_bluff")
+		for enemy in enemies:
+			if enemy.hp>0 and player.distance_to(enemy.pos)<(150 if bluff else 98):
+				var bonus: float=24 if bluff and float(enemy.get("hex_mark",0))>0 else 0
+				hit_enemy(enemy,14*relics.count("d_decoy")+bonus)
+				if bluff: enemy["hex_mark"]=maxf(2.5,float(enemy.get("hex_mark",0)))
+		effect("class_smoke",player,0.60,Vector2.ZERO)
+		notices.append("class_smoke")
+
+func class_enemy_hit(enemy: Dictionary, damage_dealt: float) -> void:
+	if relics.has("d_coin") and rng.randf()<minf(0.68,0.17*relics.count("d_coin")):
+		enemy["hex_mark"]=3.5
+		effect("class_coin",enemy.pos,0.35,Vector2.ZERO)
+		notices.append("class_coin")
+	if relics.has("a_ember"):
+		enemy["burn"]=maxf(float(enemy.get("burn",0)),3.0+0.5*relics.count("a_ember"))
+	if has_synergy("a_crystal") and float(enemy.get("chill",0))>0 and float(enemy.get("prism_lock",0))<=0:
+		enemy["prism_lock"]=0.85
+		for j in range(4):
+			var angle: float=float(j)*TAU/4.0+elapsed*0.3
+			shoot(enemy.pos,Vector2.from_angle(angle)*500,false,bolt_damage*0.35)
+		effect("class_crystal",enemy.pos,0.46,Vector2.ZERO)
+		notices.append("class_crystal")
+
+func class_enemy_kill(dead: Dictionary) -> void:
+	if relics.has("w_oath") and kills%4==0:
+		shield_time=maxf(shield_time,1.6+0.4*relics.count("w_oath"))
+		if has_synergy("w_sanctuary"):
+			hp=minf(max_hp,hp+10)
+			for enemy in enemies:
+				if enemy!=dead and enemy.hp>0 and player.distance_to(enemy.pos)<145: hit_enemy(enemy,22)
+		effect("class_oath",player,0.57,Vector2.ZERO)
+		notices.append("class_oath")
+	if relics.has("a_ash") and float(dead.get("burn",0))>0:
+		var inferno: bool=has_synergy("a_inferno")
+		var radius: float=175 if inferno else 110
+		for enemy in enemies:
+			if enemy!=dead and enemy.hp>0 and dead.pos.distance_to(enemy.pos)<radius:
+				hit_enemy(enemy,(27.0 if inferno else 16.0)*relics.count("a_ash"))
+				if inferno: enemy["burn"]=maxf(3.5,float(enemy.get("burn",0)))
+		effect("class_ash",dead.pos,0.55,Vector2.ZERO)
+		notices.append("class_ash")
+	if relics.has("s_harvest"): souls=mini(6,souls+relics.count("s_harvest"))
+	if relics.has("s_haunt"):
+		var target: Dictionary={}
+		var nearest: float=520.0
+		for enemy in enemies:
+			if enemy==dead or enemy.hp<=0: continue
+			var dist: float=dead.pos.distance_to(enemy.pos)
+			if dist<nearest:
+				nearest=dist
+				target=enemy
+		if not target.is_empty():
+			var count: int=3 if has_synergy("s_legion") else 1
+			for i in range(count):
+				var direction: Vector2=dead.pos.direction_to(target.pos).rotated((float(i)-float(count-1)*0.5)*0.24)
+				shoot(dead.pos,direction*530,false,bolt_damage*0.60*relics.count("s_haunt"))
+			effect("class_ghost",dead.pos,0.53,dead.pos.direction_to(target.pos))
+			notices.append("class_ghost")
+	if relics.has("s_coven") and kills%5==0:
+		var radius: float=220 if has_synergy("s_legion") else 145
+		for enemy in enemies:
+			if enemy!=dead and enemy.hp>0 and player.distance_to(enemy.pos)<radius:
+				hit_enemy(enemy,27*relics.count("s_coven"))
+		effect("class_grave",player,0.64,Vector2.ZERO)
+		notices.append("class_grave")
+
+func class_room_clear() -> void:
+	if relics.has("w_banner"):
+		hp=minf(max_hp,hp+6.0*relics.count("w_banner"))
+		effect("class_banner",player,0.48,Vector2.ZERO)
+		notices.append("class_banner")
+
+func class_damage_taken() -> void:
+	if relics.has("w_bastion"):
+		for enemy in enemies:
+			if enemy.hp>0 and player.distance_to(enemy.pos)<(185 if has_synergy("w_fortress") else 120):
+				hit_enemy(enemy,(29.0 if has_synergy("w_fortress") else 16.0)*relics.count("w_bastion"))
+				if has_synergy("w_fortress"): enemy["chill"]=maxf(2.0,float(enemy.get("chill",0)))
+		effect("class_thorns",player,0.54,Vector2.ZERO)
+		notices.append("class_thorns")
+	if relics.has("s_blood"):
+		souls=mini(6,souls+relics.count("s_blood"))
+		if has_synergy("s_undying") and hp<=max_hp*0.4:
+			shield_time=maxf(shield_time,1.4)
+			for enemy in enemies:
+				if enemy.hp>0 and player.distance_to(enemy.pos)<170: hit_enemy(enemy,32)
+			effect("class_blood",player,0.60,Vector2.ZERO)
+		notices.append("class_blood")
+
+func class_wisps_tick(dt: float) -> void:
+	if not relics.has("a_orbs"): return
+	arcane_wisp_timer-=dt
+	if arcane_wisp_timer>0: return
+	arcane_wisp_timer=0.70
+	var count: int=mini(4,relics.count("a_orbs"))
+	var converged: bool=has_synergy("a_convergence")
+	for i in range(count):
+		var origin: Vector2=player+Vector2.from_angle(elapsed*1.4+float(i)*TAU/count)*62
+		var nearest: Dictionary={}
+		var shortest: float=490.0
+		for enemy in enemies:
+			if enemy.hp>0 and enemy.pos.distance_to(origin)<shortest:
+				shortest=enemy.pos.distance_to(origin)
+				nearest=enemy
+		if nearest.is_empty(): continue
+		var shots_per_orb: int=2 if converged else 1
+		for j in range(shots_per_orb):
+			shoot(origin,origin.direction_to(nearest.pos).rotated((float(j)-float(shots_per_orb-1)*0.5)*0.18)*510,false,bolt_damage*0.45)
+		effect("class_wisp",origin,0.26,origin.direction_to(nearest.pos))
+		notices.append("class_wisp")
+
 func enter_hub() -> void:
 	# This tavern is outside the route graph: no free combat progress or rewards.
 	state="hub"
