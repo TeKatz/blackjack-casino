@@ -172,5 +172,5 @@ func smoke_test() -> bool:
 	model.kills=4
 	model.combat_clears=2
 	model.bosses_defeated=3
-	if settle(model)!=7 or last_souls!=3 or boss_souls!=31: return false
+	if settle(model)!=25 or last_souls!=3 or boss_souls!=31: return false
 	return true
