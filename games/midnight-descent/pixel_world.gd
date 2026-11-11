@@ -133,6 +133,7 @@ func update_view(dt: float) -> void:
 		player_facing = model.aim
 	previous_player = model.player
 	for i in range(torches.size()):
+		torches[i].position = ([Vector2(162,169),Vector2(411,169),Vector2(668,169),Vector2(935,169),Vector2(1175,169)][i] if model.state=="hub" else TORCH_POSITIONS[i]+Vector2(0,40))
 		torches[i].energy = 1.25 + sin(clock*7.0+i*2.2)*0.19 + sin(clock*13+i)*0.08
 	for i in range(side_lights.size()):
 		side_lights[i].energy = 0.85 + sin(clock*5+i*2)*0.15
@@ -144,6 +145,7 @@ func update_view(dt: float) -> void:
 			boss_light.energy = 0.75 + sin(clock*3)*0.2 + (0.6 if enemy.wind > 0 else 0.0)
 	boss_light.enabled = boss_present
 	var target_ambient := Color(0.39,0.30,0.47) if boss_present else Color(0.55,0.49,0.64)
+	if model.state=="hub": target_ambient=Color("#9b8490")
 	if model.floor_index==1: target_ambient=Color(0.35,0.53,0.39)
 	if model.floor_index==2: target_ambient=Color(0.47,0.34,0.50)
 	for light in torches:
@@ -152,7 +154,9 @@ func update_view(dt: float) -> void:
 	for i in range(decor_lights.size()):
 		decor_lights[i].energy=0.24+0.06*sin(clock*3+i*1.7)
 	ambient.color = ambient.color.lerp(target_ambient, minf(1.0,dt*2.5))
-	gate_open_amount = move_toward(gate_open_amount,1.0 if model.state == "exit" else 0.0,dt*2.5)
+	gate_open_amount = move_toward(gate_open_amount,1.0 if model.state in ["exit","hub"] else 0.0,dt*2.5)
+	gate_light.position = Model.HUB_PORTAL if model.state=="hub" else Model.EXIT
+	gate_light.color=Color("#d5a2ff") if model.state=="hub" else Color("#b18aff")
 	gate_light.energy = gate_open_amount*(1.1+sin(clock*4)*0.2)
 	player_light.position = model.player
 	player_light.color = Color("#ffd2d9") if model.invulnerable > 0.3 else Color("#d8caff")
@@ -177,6 +181,9 @@ func tile(index: int, rect: Rect2, source_size: Vector2 = Vector2(32,32)) -> voi
 
 func _draw() -> void:
 	if model == null:
+		return
+	if model.state=="hub":
+		draw_hub()
 		return
 	draw_rect(Rect2(0,0,1280,720),Color("#100c18"))
 	draw_rect(Rect2(22,103,1236,545),Color("#231a2c"))
@@ -245,6 +252,110 @@ func _draw() -> void:
 			"prop": draw_prop(object.prop)
 			"enemy": draw_actor(object.enemy)
 			"player": draw_warden()
+
+func draw_hub() -> void:
+	# The Threshold Tavern: standalone foyer before the first dungeon node.
+	# All furniture aligns to the hub's actual collision volumes.
+	draw_rect(Rect2(0,0,1280,720),Color("#110d1b"))
+	draw_rect(Rect2(24,107,1232,537),Color("#2a202a"))
+	var floor_rect:=Rect2(58,146,1164,478)
+	draw_rect(floor_rect,Color("#49313a"))
+	for y in range(10):
+		for x in range(19):
+			var tx: float=58+x*64
+			var ty: float=146+y*48
+			var wide: float=minf(64,1222-tx)
+			var tall: float=minf(48,624-ty)
+			if wide<=0 or tall<=0: continue
+			var plank_color:=Color("#4d343c") if (x+y)%3==0 else (Color("#3b2935") if y%3==0 else Color("#49323a"))
+			draw_rect(Rect2(tx,ty,wide,tall),plank_color)
+			draw_rect(Rect2(tx,ty+3,wide,2),Color("#74505a"))
+			draw_rect(Rect2(tx+6,ty+tall-4,wide-12,2),Color("#2b222e"))
+			if (x+y)%4==0:
+				draw_rect(Rect2(tx+17,ty+20,4,2),Color("#90716a"))
+	# Tavern brick facade and horizontal beams. 32 px tiles retain the native pixel language.
+	for x in range(19):
+		var tx: float=58+x*64
+		draw_texture_rect_region(TILES,Rect2(tx,101,64,48),Rect2(4*32,0,32,32))
+	draw_rect(Rect2(54,133,1170,12),Color("#8e6c63"))
+	draw_rect(Rect2(54,138,1170,4),Color("#c29a77"))
+	for x in [86.0,508.0,858.0,1200.0]:
+		draw_rect(Rect2(x,140,22,480),Color("#241c29"))
+		draw_rect(Rect2(x+4,145,6,470),Color("#88665f"))
+		draw_rect(Rect2(x-9,132,40,15),Color("#b28a72"))
+	draw_rect(Rect2(58,606,1164,18),Color("#2b212c"))
+	draw_rect(Rect2(58,607,1164,4),Color("#916d66"))
+	# Dark wine-red runner leads directly from the tavern into the portal.
+	draw_rect(Rect2(844,342,312,90),Color("#251729"))
+	draw_rect(Rect2(844,344,312,7),Color("#966575"))
+	draw_rect(Rect2(844,423,312,6),Color("#966575"))
+	for i in range(7):
+		draw_rect(Rect2(867+i*42,367,19,38),Color("#5d374b"),false,2)
+	# Bar sign and shelf of bottles, behind the physical wooden counter.
+	draw_rect(Rect2(263,152,390,41),Color("#1c1522"))
+	draw_rect(Rect2(272,158,374,29),Color("#715061"),false,2)
+	draw_string(ThemeDB.fallback_font,Vector2(310,179),"THE THRESHOLD",HORIZONTAL_ALIGNMENT_LEFT,-1,20,Color("#f1d49f"))
+	for j in range(9):
+		var x: float=242+j*52
+		var bottle_color: Color=Color("#73aa96") if j%3==0 else (Color("#b88b6c") if j%3==1 else Color("#a18bba"))
+		draw_rect(Rect2(x,185,17,21),Color("#171320"))
+		draw_rect(Rect2(x+2,182,13,4),Color("#b18d75"))
+		draw_rect(Rect2(x+3,189,11,15),bottle_color)
+		draw_rect(Rect2(x+5,190,3,9),bottle_color.lightened(0.35))
+	# Back-wall bar and five stools.
+	draw_rect(Rect2(230,202,500,85),Color("#2a1d2a"))
+	draw_rect(Rect2(220,208,520,71),Color("#63414a"))
+	draw_rect(Rect2(220,208,520,14),Color("#b78969"))
+	draw_rect(Rect2(220,224,520,5),Color("#d0a17c"))
+	for i in range(5):
+		var x: float=275+i*105
+		draw_rect(Rect2(x-15,295,30,29),Color("#211a27"))
+		draw_rect(Rect2(x-18,286,36,12),Color("#9c7665"))
+		draw_rect(Rect2(x-12,298,24,4),Color("#614550"))
+	# Two substantial tables and a permanently closed future-workshop nook.
+	draw_rect(Rect2(469,500,132,75),Color("#130f19"))
+	draw_rect(Rect2(458,486,132,76),Color("#633d46"))
+	draw_rect(Rect2(464,492,120,13),Color("#c28e71"))
+	draw_rect(Rect2(475,514,5,37),Color("#8f5e58"))
+	draw_rect(Rect2(561,514,5,37),Color("#8f5e58"))
+	for x in [501.0,545.0]:
+		draw_rect(Rect2(x,471,17,20),Color("#a9826b"))
+		draw_rect(Rect2(x+3,470,11,4),Color("#e3c59c"))
+	draw_rect(Rect2(740,223,108,93),Color("#18131e"))
+	draw_rect(Rect2(735,218,108,92),Color("#6c4852"))
+	draw_rect(Rect2(746,225,86,15),Color("#be8e79"))
+	draw_rect(Rect2(750,251,30,50),Color("#3b2c39"))
+	draw_rect(Rect2(790,251,30,50),Color("#3b2c39"))
+	draw_string(ThemeDB.fallback_font,Vector2(738,338),"FORGE",HORIZONTAL_ALIGNMENT_LEFT,-1,12,Color("#a79198"))
+	# Hanging lamps use the existing four-frame pixel-art torch atlas.
+	for i in [0,2,3,4]:
+		var pos: Vector2=[Vector2(162,205),Vector2(415,205),Vector2(670,205),Vector2(939,205),Vector2(1172,205)][i]
+		for j in range(4,0,-1):
+			draw_circle(pos,float(j)*20,Color(1,0.56,0.23,0.027))
+		draw_texture_rect_region(TORCH,Rect2(pos-Vector2(16,32),Vector2(32,64)),Rect2((int(clock*8)+i)%4*16,0,16,32))
+	# The hub gate is a distinct wall portal, not the dungeon route-map exit.
+	var portal: Vector2=Model.HUB_PORTAL
+	var p: Vector2=portal-Vector2(62,91)
+	draw_rect(Rect2(p+Vector2(6,8),Vector2(124,182)),Color("#130e1e"))
+	draw_rect(Rect2(p,Vector2(124,182)),Color("#4d3b55"))
+	draw_rect(Rect2(p+Vector2(7,6),Vector2(110,170)),Color("#94778d"))
+	draw_rect(Rect2(p+Vector2(13,13),Vector2(98,158)),Color("#21182f"))
+	draw_rect(Rect2(p+Vector2(18,17),Vector2(88,149)),Color("#30204e"))
+	for j in range(6,0,-1):
+		draw_circle(portal,float(j)*14,Color(0.58,0.27,0.91,0.023))
+	for j in range(12):
+		var pos:=portal+Vector2(sin(clock*1.9+j*1.7)*36,-62+fposmod(float(j)*14+clock*18,138))
+		draw_rect(Rect2(pixel_pos(pos),Vector2(4,6)),Color(0.79,0.54,1,0.25+0.20*sin(clock*3+j)))
+	var rune:=PackedVector2Array([portal+Vector2(0,-36),portal+Vector2(29,0),portal+Vector2(0,36),portal+Vector2(-29,0),portal+Vector2(0,-36)])
+	draw_polyline(rune,Color("#e5c3fa"),3)
+	draw_rect(Rect2(portal-Vector2(6,6),Vector2(12,12)),Color("#ffe3bd"))
+	draw_rect(Rect2(p-Vector2(8,1),Vector2(140,14)),Color("#ba967d"))
+	draw_rect(Rect2(p-Vector2(8,172),Vector2(140,13)),Color("#876d79"))
+	# Selected character keeps its own 4x8 sprite sheet and walking frames.
+	var facing: Vector2=player_facing
+	var frame: int=2+int(clock*10)%4 if walking else int(clock*2)%2
+	draw_shadow(model.player,68)
+	sprite(model.character,model.player,facing,frame,68)
 
 func draw_gate() -> void:
 	var gate: Vector2=Model.EXIT
