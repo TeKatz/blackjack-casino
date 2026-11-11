@@ -32,6 +32,8 @@ const CONTRACT_DATA := {
  "spellweaver":{"en":"Arcane Trial","de":"Arkane Prüfung","en_goal":"Use 12 special attacks.","de_goal":"Nutze 12 Spezialangriffe.","en_reward":"Mana Sigil: 15% faster specials.","de_reward":"Manasiegel: 15 % schnellere Spezialangriffe.","goal":12}
 }
 const ROOM_COUNT := 26
+# All enemy-origin attacks deal 40% more; world hazards retain their own tuning.
+const ENEMY_DAMAGE_MULTIPLIER := 1.40
 var environment_timer := 0.0
 var shot_style := ""
 var enemy_shot_style := ""
@@ -96,6 +98,8 @@ var max_hp := 100.0
 var damage := 26.0
 var speed := 245.0
 var armor := 0.0
+var resolve_rank := 0
+var recovery_rank := 0
 var bolt_damage := 17.0
 var dash_cooldown := 1.3
 var attack_timer := 0.0
@@ -158,6 +162,8 @@ func begin(value: int, loadout: String = "warden_guard", upgrades: Dictionary = 
 	damage = float(spec.damage)+2*int(upgrades.get("power",0))
 	speed = float(spec.speed)+8*int(upgrades.get("agility",0))
 	armor = 0.0
+	resolve_rank=clampi(int(upgrades.get("resolve",0)),0,4)
+	recovery_rank=clampi(int(upgrades.get("recovery",0)),0,4)
 	bolt_damage = float(spec.bolt)+3*int(upgrades.get("arcane",0))
 	dash_cooldown = spec.dash
 	attack_cd = spec.attack
@@ -431,6 +437,7 @@ func class_enemy_kill(dead: Dictionary) -> void:
 		notices.append("class_grave")
 
 func class_room_clear() -> void:
+	if recovery_rank>0: hp=minf(max_hp,hp+float(recovery_rank))
 	if relics.has("w_banner"):
 		hp=minf(max_hp,hp+6.0*relics.count("w_banner"))
 		effect("class_banner",player,0.48,Vector2.ZERO)
@@ -696,8 +703,15 @@ func build_room_layout(node: Dictionary) -> void:
 			walls.append(Rect2(610,490,100,64))
 
 func route_options() -> Array:
-	var options: Array=dungeon.available(room).duplicate()
-	if not dungeon.boss_ready(): options.erase(Dungeon.BOSS)
+	# A run commits to ONE lane per dungeon column. Neither reversing to an
+	# earlier column nor sweeping sibling service rooms is allowed.
+	var options: Array=[]
+	var current_column: int=int(dungeon.nodes[room].column)
+	for id in dungeon.available(room):
+		var node: Dictionary=dungeon.nodes[int(id)]
+		if int(node.column)<=current_column or bool(node.visited): continue
+		if int(id)==Dungeon.BOSS and not dungeon.boss_ready(): continue
+		options.append(id)
 	return options
 
 func open_route() -> bool:
@@ -1177,7 +1191,7 @@ func hit_enemy(enemy: Dictionary, amount: float) -> void:
 	if effects.size()<80: effects.append({"kind":"damage","pos":enemy.pos,"time":0.65,"max":0.65,"dir":Vector2.ZERO,"amount":int(round(dealt))})
 	notices.append("hit")
 
-func hurt(amount: float) -> void:
+func hurt(amount: float, from_enemy: bool = true) -> void:
 	if invulnerable > 0 or shield_time>0 or hp <= 0:
 		return
 	if forge_id=="iron_aegis" and forge_guard_charges>0:
@@ -1193,6 +1207,8 @@ func hurt(amount: float) -> void:
 		return
 	contract_clean_room=false
 	var scaled: float=amount*(1.0+0.20*floor_index)
+	if from_enemy: scaled*=ENEMY_DAMAGE_MULTIPLIER
+	if from_enemy and resolve_rank>0: scaled*=maxf(0.70,1.0-0.03*resolve_rank)
 	# Armor never negates more than half of an incoming hit.
 	hp = maxf(0,hp-maxf(scaled*0.5,scaled-armor))
 	class_damage_taken()
@@ -1481,7 +1497,7 @@ func update_hazards(dt: float) -> void:
 			if hazard.warn<=-0.10 and hazard.life>=0.20:
 				for cell in hazard.cells:
 					if cell.has_point(player):
-						hurt(hazard.power)
+						hurt(hazard.power,false)
 						break
 		elif hazard.get("type","")=="rune":
 			if hazard.warn<=0 and hazard.phase=="warn":
@@ -1493,11 +1509,11 @@ func update_hazards(dt: float) -> void:
 			if hazard.warn<=-0.12 and hazard.life>=0.24:
 				for cell in hazard.cells:
 					if cell.has_point(player):
-						hurt(hazard.power)
+						hurt(hazard.power,false)
 						break
 		elif hazard.warn<=0:
 			var inside: bool=hazard.rect.has_point(player) if hazard.has("rect") else player.distance_to(hazard.pos)<hazard.r
-			if inside: hurt(hazard.power)
+			if inside: hurt(hazard.power,false)
 
 func update_shots(dt: float) -> void:
 	for i in range(shots.size()-1,-1,-1):
