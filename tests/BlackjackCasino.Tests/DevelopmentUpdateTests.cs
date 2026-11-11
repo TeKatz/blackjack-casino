@@ -33,14 +33,35 @@ public sealed class DevelopmentUpdateTests
         await source.GetLatestAsync();
         await source.GetLatestAsync();
         Assert.Equal(2, handler.Requests);
+        Assert.Equal(2, handler.RequestUris.Count);
+        Assert.Equal("/development/update-manifest.json", handler.RequestUris[0].AbsolutePath);
+        Assert.NotEqual(handler.RequestUris[0], handler.RequestUris[1]);
+        Assert.All(handler.RequestUris, uri => Assert.Matches(@"^\\?revision=[0-9a-f]{32}$", uri.Query));
+    }
+
+    [Fact]
+    public async Task MutableManifestCacheBusterPreservesExistingQueryParameters()
+    {
+        var handler = new ManifestHandler();
+        using var http = new HttpClient(handler);
+        var source = new HttpManifestUpdateSource(http,
+            new Uri("https://updates.example.test/development/update-manifest.json?channel=development"));
+
+        await source.GetLatestAsync();
+
+        Assert.Single(handler.RequestUris);
+        Assert.StartsWith("?channel=development&revision=", handler.RequestUris[0].Query);
     }
 
     private sealed class ManifestHandler : HttpMessageHandler
     {
         public int Requests { get; private set; }
+        public List<Uri> RequestUris { get; } = new();
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             Requests++;
+            Assert.NotNull(request.RequestUri);
+            RequestUris.Add(request.RequestUri);
             Assert.True(request.Headers.CacheControl?.NoCache);
             Assert.True(request.Headers.CacheControl?.NoStore);
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
