@@ -2496,9 +2496,45 @@ func special_rooms_smoke() -> bool:
 		print("Special chamber smoke OK: "+kind)
 	return true
 
+func boss_gate_smoke() -> bool:
+	# The shutter is a REAL collision wall, not merely a decorative door.
+	# All six boss approaches must be open initially, animate shut on entry,
+	# block every actor after closing, and reset on new runs.
+	for floor in range(FLOOR_COUNT):
+		for plan in range(2):
+			begin(9600+floor*2+plan)
+			floor_index=floor
+			dungeon.generate(seed_value,floor)
+			room=Dungeon.BOSS
+			dungeon.nodes[room]["layout"]=plan
+			enter_room()
+			if not large_room or boss_gate_state!="open" or boss_awake: return false
+			if boss_gate.size.x<50 or boss_gate.size.y<150: return false
+			var gate: Rect2=boss_gate
+			var enter_side: Vector2=Vector2(gate.position.x-46,gate.get_center().y)
+			var arena_side: Vector2=Vector2(gate.end.x+46,gate.get_center().y)
+			if blocked(gate.get_center(),15): return false
+			var crossing: Vector2=move_actor(enter_side,Vector2(155,0),15)
+			if crossing.x<=gate.end.x+20: return false
+			player=Vector2(boss_trigger_x+140,boss_arena.get_center().y)
+			tick(0.016,Vector2.ZERO,boss_arena.get_center(),false,false,false)
+			if not boss_awake or boss_gate_state!="closing" or not blocked(gate.get_center(),15): return false
+			if not notices.has("boss_gate_close"): return false
+			# Even a dash-scale movement must stop against the full shutter.
+			var bounced: Vector2=move_actor(arena_side,Vector2(-220,0),15)
+			if bounced.x<gate.end.x+14: return false
+			tick(BOSS_GATE_CLOSE_DURATION+0.03,Vector2.ZERO,boss_arena.get_center(),false,false,false)
+			if boss_gate_state!="closed" or not notices.has("boss_gate_lock"): return false
+		begin(9660+floor)
+		if boss_gate.has_area() or boss_gate_state!="open": return false
+	return true
+
 func smoke_test() -> bool:
 	if not RoomLayouts.smoke_test():
 		push_error("Authored chamber connectivity smoke failed")
+		return false
+	if not boss_gate_smoke():
+		push_error("Boss door physical lock / animation smoke failed")
 		return false
 	if not dungeon.smoke_test():
 		push_error("Dungeon generation smoke failed")
