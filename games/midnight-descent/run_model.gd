@@ -1259,8 +1259,39 @@ func hub_perks_smoke() -> bool:
 	if forge_offers.size()!=3 or contract_offers.size()!=3: return false
 	return true
 
+func encounter_variation_smoke() -> bool:
+	var profiles: Dictionary={}
+	var dangers: Dictionary={}
+	var champions: Dictionary={}
+	for seed in range(6):
+		begin(700+seed)
+		player=HUB_PORTAL
+		if not enter_first_room() or encounter_id!="skirmish" or encounter_threat!=0: return false
+		for floor in range(FLOOR_COUNT):
+			floor_index=floor
+			dungeon.generate(700+seed,floor)
+			for room_id in range(1,Dungeon.BOSS):
+				if dungeon.kind(room_id) not in ["fight","elite"]: continue
+				room=room_id
+				enter_room()
+				if state!="fight" or enemies.is_empty() or encounter_id=="": return false
+				if int(dungeon.nodes[room_id].threat)!=encounter_threat: return false
+				profiles[encounter_id]=true
+				dangers[encounter_threat]=true
+				if encounter_id=="onslaught" and wave_total!=2: return false
+				var has_champion:=false
+				for enemy in enemies:
+					var affix: String=str(enemy.get("affix",""))
+					if affix!="":
+						has_champion=true
+						champions[affix]=true
+				if (room_kind=="elite" or encounter_threat==2) and not has_champion: return false
+	if profiles.size()!=4 or dangers.size()!=3 or champions.size()<3: return false
+	return true
+
 func smoke_test() -> bool:
 	if not dungeon.smoke_test(): return false
+	if not encounter_variation_smoke(): return false
 	if not hub_perks_smoke(): return false
 	begin(123,"dealer_cards")
 	if state!="hub" or visited_count!=0 or dungeon.nodes[0].visited or not enemies.is_empty(): return false
