@@ -1006,7 +1006,7 @@ func use_service(choice: int) -> void:
 
 func show_route_map(column: VBoxContainer) -> void:
 	add_label(column,tr_text("DUNGEON MAP","DUNGEON-KARTE")+"  •  %d / %d" % [run.floor_index+1,Model.FLOOR_COUNT],30,GOLD)
-	add_label(column,tr_text("Gold = current · Lit = reachable · I–III = danger and better rewards","Gold = aktuell · Hell = erreichbar · I–III = Gefahr und bessere Beute"),13,MUTED)
+	add_label(column,tr_text("Choose one forward route per column. No backtracking. I–III = danger and rewards.","Wähle einen Vorwärtsweg je Spalte. Kein Zurück. I–III = Gefahr und Beute."),13,MUTED)
 	add_label(column,tr_text("Boss gate: ","Boss-Tor: ")+tr_text("Fights","Kämpfe")+" %d/%d  •  Elite %d/%d" % [run.dungeon.cleared_fights(),run.dungeon.MIN_FIGHTS[run.floor_index],run.dungeon.cleared_elites(),run.dungeon.MIN_ELITES[run.floor_index]]+("  •  "+tr_text("OPEN","OFFEN") if run.dungeon.boss_ready() else "  •  "+tr_text("LOCKED","GESPERRT")),16,GOLD)
 	var map := RouteMap.new()
 	map.nodes=run.dungeon.nodes
@@ -1329,8 +1329,10 @@ func rebuild_overlay() -> void:
 			var won := overlay_state=="victory"
 			add_label(column,tr_text("THE HOLLOW CROWN SHATTERS","DIE HOHLE KRONE ZERBRICHT") if won else tr_text("THE DEPTHS CLAIM YOU","DIE TIEFEN FORDERN DICH"),30,GOLD if won else Color("#f095a9"))
 			add_label(column,tr_text("Run summary","Run-Zusammenfassung")+"\n"+tr_text("Rooms visited","Räume besucht")+"  %d  •  " % run.visited_count+tr_text("Defeated","Besiegt")+"  %d  •  " % run.kills+tr_text("Relics","Relikte")+"  %d" % run.relics.size(),19,WHITE)
-			add_label(column,tr_text("Soul essence earned","Seelenessenz erhalten")+"  +%d" % progress.last_reward,24,GOLD)
-			add_label(column,tr_text("Total essence","Essenz gesamt")+"  %d" % progress.essence,16,MUTED)
+			add_label(column,tr_text("Boss souls earned","Boss-Seelen erhalten")+"  +%d" % progress.last_souls,26,Color("#bda4ff"))
+			add_label(column,tr_text("Boss souls available","Verfügbare Boss-Seelen")+"  %d" % progress.boss_souls,17,Color("#d8c9ff"))
+			add_label(column,tr_text("Soul essence earned","Seelenessenz erhalten")+"  +%d" % progress.last_reward,20,GOLD)
+			add_label(column,tr_text("Essence for loadouts","Essenz für Start-Sets")+"  %d" % progress.essence,15,MUTED)
 			add_label(column,tr_text("Combat rooms","Kampfräume")+"  %d  •  " % run.combat_clears+tr_text("Bosses","Bosse")+"  %d" % run.bosses_defeated,15,MUTED)
 			if not progress.save_ok: add_label(column,tr_text("Save failed — progress not saved.","Speicherfehler — Fortschritt nicht gespeichert."),16,Color("#ff839a"))
 			add_button(column,tr_text("New expedition","Neue Expedition"),restart)
@@ -1442,4 +1444,10 @@ func restart() -> void:
 	banner_room = -1
 
 func return_to_menu() -> void:
+	# Leaving after a conquered boss must not discard earned boss souls.
+	# Ending an unfinished run is a defeat for progression purposes.
+	if not run.settled and run.bosses_defeated>0:
+		run.state="defeat"
+		progress.settle(run)
+		if not smoke_mode: progress.save()
 	get_tree().change_scene_to_file("res://menu.tscn")
