@@ -54,6 +54,8 @@ var dungeon = Dungeon.new()
 var floor_index := 0
 var visited_count := 0
 var room_kind := "fight"
+var encounter_id := ""
+var encounter_threat := 0
 var service_used := false
 var boss_defeated := false
 var elites := 0
@@ -237,6 +239,8 @@ func enter_hub() -> void:
 	# This tavern is outside the route graph: no free combat progress or rewards.
 	state="hub"
 	room_kind="hub"
+	encounter_id=""
+	encounter_threat=0
 	player=HUB_SPAWN
 	hub_seat_index=-1
 	hub_seat_target=-1
@@ -334,6 +338,9 @@ func enter_room() -> void:
 	if relics.has("curse"): temp_power=rng.randf_range(-5,15)
 	
 	var node: Dictionary = dungeon.nodes[room]
+	encounter_id=str(node.get("encounter","skirmish")) if room_kind in ["fight","elite"] else ""
+	encounter_threat=int(node.get("threat",0)) if room_kind in ["fight","elite"] else 0
+	if encounter_id=="onslaught" and room>0: wave_total=2
 	if not node.visited:
 		node.visited = true
 		visited_count += 1
@@ -348,20 +355,57 @@ func enter_room() -> void:
 		state = "service"
 		return
 	if room_kind != "boss":
-		var count := 4 + floor_index + (2 if room_kind=="elite" else room%3)
-		if wave_total==2: count=4+floor_index
-		for i in range(count):
-			var family: Array = [["stalker","caster","brute","archer","shield"],["spore","vine","mushroom","caster","brute"],["revenant","hexer","sentinel","archer","shield"]][floor_index]
-			var kind: String = family[(i+room+floor_index)%family.size()]
-			spawn_enemy(kind,Vector2(520+(i%3)*235,195+(i/3)*135+rng.randf_range(-18,18)))
-			if room_kind=="elite":
-				enemies[-1].hp *= 1.65
-				enemies[-1].max_hp = enemies[-1].hp
-				enemies[-1]["elite"] = true
+		spawn_encounter_wave(node)
+		if encounter_id!="skirmish":
+			notices.append("encounter_"+encounter_id)
 	else:
 		spawn_enemy(["boss","rootking","hollowking"][floor_index],Vector2(925,385))
 		spawn_enemy(["caster","spore","hexer"][floor_index],Vector2(785,230))
 		spawn_enemy(["stalker","vine","revenant"][floor_index],Vector2(785,540))
+
+func encounter_family() -> Array:
+	return [["stalker","caster","brute","archer","shield"],["spore","vine","mushroom","caster","brute"],["revenant","hexer","sentinel","archer","shield"]][floor_index]
+
+func encounter_enemy_kind(family: Array, index: int, picker: RandomNumberGenerator) -> String:
+	match encounter_id:
+		"crossfire":
+			return str(family[[1,3,1,3,0][index%5]])
+		"siege":
+			return str(family[[4,2,4,1,2,3][index%6]])
+		"onslaught":
+			return str(family[[0,0,2,0,1][index%5]])
+		_:
+			return str(family[picker.randi_range(0,family.size()-1)])
+
+func encounter_spawn_point(index: int, picker: RandomNumberGenerator) -> Vector2:
+	var jitter: float=picker.randf_range(-20,20)
+	match encounter_id:
+		"crossfire":
+			return Vector2(585+(index%3)*195,200 if index%2==0 else 565)+Vector2(jitter,0)
+		"siege":
+			return Vector2(520+(index%2)*120 if index%3!=2 else 950,250+(index%3)*125)+Vector2(jitter,jitter*0.5)
+		"onslaught":
+			return Vector2(470+(index%4)*175,215+(index%3)*140)+Vector2(jitter,jitter*0.5)
+		_:
+			return Vector2(520+(index%3)*235,195+(index/3)*135+jitter)
+
+func spawn_encounter_wave(node: Dictionary) -> void:
+	var picker:=RandomNumberGenerator.new()
+	picker.seed=int(node.geometry_seed)+wave*30011
+	var family: Array=encounter_family()
+	var count: int=4+floor_index+encounter_threat+(2 if room_kind=="elite" else room%3)
+	if wave_total>1: count=4+floor_index+encounter_threat
+	count=mini(11,count)
+	for i in range(count):
+		var kind: String=encounter_enemy_kind(family,i,picker)
+		var affix: String=""
+		if (room_kind=="elite" or encounter_threat==2) and i==count/2:
+			affix=["frenzied","warded","volatile"][picker.randi_range(0,2)]
+		spawn_enemy(kind,encounter_spawn_point(i,picker),affix)
+		if room_kind=="elite":
+			enemies[-1].hp*=1.45
+			enemies[-1].max_hp=enemies[-1].hp
+			enemies[-1]["elite"]=true
 
 func build_room_layout(node: Dictionary) -> void:
 	if room_kind=="boss":
@@ -498,7 +542,7 @@ func finish_room() -> void:
 	state="route" if room_kind in ["treasure","shop","event","shrine","secret","forge"] else "exit"
 
 
-func spawn_enemy(kind: String, pos: Vector2) -> void:
+func spawn_enemy(kind: String, pos: Vector2, affix: String="") -> void:
 	var health := 42.0
 	var radius := 17.0
 	match kind:
@@ -521,6 +565,7 @@ func spawn_enemy(kind: String, pos: Vector2) -> void:
 			radius = 43.0
 	health*=1.25+0.25*floor_index
 	if kind in ["boss","rootking","hollowking"]: health*=1.25
+	else: health*=1.0+float(encounter_threat)*0.16
 	pos = safe_position(pos,radius)
 	# Move spawn points out of solid pillars before the enemy becomes active.
 	if blocked(pos,radius):
@@ -532,7 +577,7 @@ func spawn_enemy(kind: String, pos: Vector2) -> void:
 					pos=candidate
 					break
 			if not blocked(pos,radius): break
-	enemies.append({"kind":kind,"pos":pos,"hp":health,"max_hp":health,"r":radius,"timer":rng.randf_range(0.6,1.4),"wind":0.0,"flash":0.0,"target":pos,"facing":Vector2.LEFT})
+	enemies.append({"kind":kind,"pos":pos,"hp":health,"max_hp":health,"r":radius,"timer":rng.randf_range(0.6,1.4),"wind":0.0,"flash":0.0,"target":pos,"facing":Vector2.LEFT,"affix":affix,"primed":false})
 
 func safe_position(pos: Vector2, radius: float) -> Vector2:
 	return Vector2(clampf(pos.x, ARENA.position.x + radius, ARENA.end.x - radius), clampf(pos.y, ARENA.position.y + radius, ARENA.end.y - radius))
@@ -732,7 +777,7 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 			if relics.has("soulstorm"):
 				for j in range(3): shoot(enemies[i].pos,Vector2.from_angle(j*TAU/3+elapsed)*420,false,14*relics.count("soulstorm"))
 			if relics.has("bounty") and (enemies[i].get("elite",false) or enemies[i].kind in ["boss","rootking","hollowking"]): shards+=10*relics.count("bounty")
-			shards += (20 if enemies[i].kind in ["boss","rootking","hollowking"] else 3)+2*relics.count("greed")
+			shards += (20 if enemies[i].kind in ["boss","rootking","hollowking"] else 3+encounter_threat*2)+2*relics.count("greed")
 			check_shard_contract()
 			if relics.has("shatter") and float(enemies[i].get("chill",0))>0:
 				for j in range(6): shoot(enemies[i].pos,Vector2.from_angle(j*TAU/6)*400,false,12)
@@ -766,9 +811,9 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 		if room_kind=="boss" and floor_index==FLOOR_COUNT-1:
 			dungeon.nodes[room].cleared=true
 			state="victory"
-		elif room_kind=="boss" or room_kind=="elite" or room==0 or rng.randf()<0.22:
+		elif room_kind=="boss" or room_kind=="elite" or room==0 or (encounter_threat==2 and rng.randf()<0.45) or rng.randf()<0.22:
 			if room_kind=="elite": elites+=1
-			make_offers(room_kind in ["boss","elite"])
+			make_offers(room_kind in ["boss","elite"] or encounter_threat==2)
 			state="reward"
 		else:
 			finish_room()
@@ -793,6 +838,7 @@ func hit_enemy(enemy: Dictionary, amount: float) -> void:
 	if relics.has("execution") and enemy.hp<enemy.max_hp*0.25: amount*=1.3
 	if relics.has("frostfire") and float(enemy.get("chill",0))>0 and float(enemy.get("burn",0))>0: amount+=8*relics.count("frostfire")
 	if relics.has("sacrifice"): amount*=1.0+0.2*relics.count("sacrifice")
+	if str(enemy.get("affix",""))=="warded" and enemy.hp>enemy.max_hp*0.5: amount*=0.62
 	if enemy.kind=="shield" and enemy.pos.direction_to(player).dot(enemy.get("facing",Vector2.LEFT))>0.35: amount*=0.6
 	var dealt: float=maxf(1,amount+temp_power)
 	enemy.hp -= dealt
@@ -849,7 +895,13 @@ func update_enemies(dt: float) -> void:
 			enemy.hp-=dt*5*relics.count("venom")
 		enemy["chill"]=maxf(0,float(enemy.get("chill",0))-dt)
 		enemy.flash = maxf(0, float(enemy.flash)-dt)
-		enemy.timer -= dt
+		var affix: String=str(enemy.get("affix",""))
+		enemy.timer-=dt*(1.35 if affix=="frenzied" else 1.0)
+		if affix=="volatile" and not bool(enemy.get("primed",false)) and enemy.hp<enemy.max_hp*0.5:
+			enemy["primed"]=true
+			add_hazard(enemy.pos,67,0.9,1.10,21+encounter_threat*3)
+			hazards[-1]["type"]="volatile"
+			notices.append("rune")
 		var pos: Vector2 = enemy.pos
 		var toward := pos.direction_to(player)
 		var dist := pos.distance_to(player)
@@ -918,6 +970,7 @@ func update_enemies(dt: float) -> void:
 			var length := separation.length()
 			if length > 0.01 and length < radius + float(other.r) + 8:
 				velocity += separation.normalized()*100
+		if affix=="frenzied": velocity*=1.4
 		if slow_time>0 or enemy.chill>0: velocity*=0.4
 		if kind=="shield" and enemy.wind<=0 and enemy.timer<0.15:
 			enemy.facing=toward
@@ -937,12 +990,19 @@ func environment_speed() -> float:
 	return 1.0
 
 func spawn_reinforcements() -> void:
-	var family: Array=["spore","vine","mushroom"] if floor_index==1 else ["revenant","hexer","sentinel"]
-	for i in range(3):
-		spawn_enemy(family[i],Vector2(840+i*105,220+i*120))
-		enemies[-1].hp*=1.2
-		enemies[-1].max_hp=enemies[-1].hp
-		enemies[-1]["elite"]=true
+	var family: Array=encounter_family()
+	var picker:=RandomNumberGenerator.new()
+	picker.seed=int(dungeon.nodes[room].geometry_seed)+wave*30011
+	var count: int=4+floor_index+encounter_threat
+	for i in range(count):
+		var kind: String=encounter_enemy_kind(family,i+wave,picker)
+		var affix: String=""
+		if room_kind=="elite" and i==count/2: affix="frenzied"
+		spawn_enemy(kind,encounter_spawn_point(i+2,picker),affix)
+		if room_kind=="elite":
+			enemies[-1].hp*=1.3
+			enemies[-1].max_hp=enemies[-1].hp
+			enemies[-1]["elite"]=true
 	environment_timer=1.5
 
 func update_environment(dt: float) -> void:
@@ -950,10 +1010,11 @@ func update_environment(dt: float) -> void:
 	environment_timer-=dt
 	if environment_timer>0: return
 	environment_cycle+=1
+	var hazard_multiplier: float=1.0-0.12*encounter_threat
 	match floor_index:
 		0:
 			# The vault's pressure plates fire a telegraphed row of spikes.
-			environment_timer=4.5
+			environment_timer=4.5*hazard_multiplier
 			var x: float=420+(environment_cycle%3)*270
 			var cells: Array[Rect2]=spike_cells(x)
 			if not cells.is_empty():
@@ -961,14 +1022,14 @@ func update_environment(dt: float) -> void:
 				notices.append("spike_warn")
 		1:
 			# Persistent toxic pools restrict movement, not merely damage.
-			environment_timer=3.4
+			environment_timer=3.4*hazard_multiplier
 			var pos: Vector2=safe_position(player+Vector2.from_angle(environment_cycle*2.4)*95,48)
 			add_hazard(pos,58,0.85,5.0,12)
 			hazards[-1]["type"]="sporepool"
 			notices.append("sporepool")
 		2:
 			# Crown seals erupt as spectral lances, never inside tomb geometry.
-			environment_timer=3.4
+			environment_timer=3.4*hazard_multiplier
 			var vertical: bool=environment_cycle%2==0
 			var pos: Vector2=player
 			add_royal_seals(pos,vertical,1.15,22)
