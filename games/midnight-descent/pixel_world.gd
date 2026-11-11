@@ -14,6 +14,16 @@ const EXPANDED_TILES = [
 	preload("res://art/pixel/expanded_crypt.svg")
 ]
 const REACTOR_CORE = preload("res://art/pixel/reactor_core.svg")
+const REACTOR_STAGE_CORES = [
+	REACTOR_CORE,
+	preload("res://art/pixel/reactor_core_grove.svg"),
+	preload("res://art/pixel/reactor_core_crypt.svg")
+]
+const REACTOR_STAGE_PALETTES = [
+	[Color("#174f57"),Color("#81f1dc"),Color("#f9e9b4")],
+	[Color("#1f4432"),Color("#8fc78d"),Color("#daffd1")],
+	[Color("#46364e"),Color("#bb92da"),Color("#ffdbec")]
+]
 const BOSS_GATE_TEXTURES = [
 	preload("res://art/pixel/boss_gate_vault.svg"),
 	preload("res://art/pixel/boss_gate_grove.svg"),
@@ -346,10 +356,9 @@ func draw_expanded_room() -> void:
 				# and grates are a rare landmark, not the entire floor pattern.
 				var hash: int=posmod(int(x/96)*73+int(y/96)*37+model.room*103,100)
 				var variant: int
-				if floor_id==0:
-					variant=0 if hash<85 else (1 if hash<96 else (2 if hash<99 else 3))
-				else:
-					variant=0 if hash<62 else (1 if hash<81 else (2 if hash<92 else 3))
+				# All three biomes use quiet slabs as the dominant surface;
+				# their own rare details remain biome-specific rather than recolors.
+				variant=0 if hash<85 else (1 if hash<96 else (2 if hash<99 else 3))
 				var src:=Rect2(float(variant*128)+(visible.position.x-float(x))*128.0/96.0,(visible.position.y-float(y))*128.0/96.0,visible.size.x*128.0/96.0,visible.size.y*128.0/96.0)
 				draw_texture_rect_region(atlas,visible,src)
 	# Trace only exterior boundary segments. Junctions that are inside the
@@ -1034,7 +1043,7 @@ func draw_special_gate() -> void:
 
 func draw_special_chamber() -> void:
 	var id: String=model.room_kind
-	var palette: Array=SPECIAL_PALETTES[id]
+	var palette: Array=REACTOR_STAGE_PALETTES[model.floor_index] if id=="unstable" else SPECIAL_PALETTES[id]
 	var base: Color=palette[0]
 	var light: Color=palette[1]
 	var highlight: Color=palette[2]
@@ -1070,8 +1079,21 @@ func draw_special_chamber() -> void:
 					draw_rect(Rect2(x,y+31,38,3),Color(light,0.25))
 					if (row+col)%3==0: draw_rect(Rect2(x+13,y+8,12,12),Color(base.lightened(0.13)))
 				"unstable":
-					draw_rect(footprint,Color(base,0.44),false,1)
-					if (row+col)%4==0: draw_line(Vector2(x+7,y+28),Vector2(x+29,y+8),Color(light,0.27),2)
+					match model.floor_index:
+						0:
+							draw_rect(footprint,Color(base,0.42),false,1)
+							if (row+col)%5==0: draw_line(Vector2(x+8,y+26),Vector2(x+29,y+8),Color(light,0.23),2)
+						1:
+							# Forest reactor: wide mossy slabs and delicate roots.
+							draw_rect(Rect2(x+1,y+1,37,33),base.darkened(0.22))
+							if (row+col)%7==0:
+								draw_line(Vector2(x+8,y+20),Vector2(x+26,y+14),Color("#688d62"),3,true)
+						2:
+							# Royal reactor: smooth sepulchral marble, inset runes.
+							draw_rect(Rect2(x+1,y+1,37,33),base.lightened(0.08))
+							if (row+col)%8==0:
+								draw_rect(Rect2(x+17,y+7,4,20),Color(light,0.25))
+								draw_rect(Rect2(x+11,y+15,16,4),Color(light,0.25))
 				"blood_altar":
 					draw_rect(Rect2(x+6,y+6,26,24),Color(base,0.43))
 					if (row+col)%6==0: draw_rect(Rect2(x+17,y+14,4,6),Color(light,0.23))
@@ -1108,9 +1130,10 @@ func draw_special_chamber() -> void:
 	elif id=="unstable":
 		for i in range(Model.UNSTABLE_CORES.size()):
 			var p: Vector2=Model.UNSTABLE_CORES[i]
-			# Solid independently drawn machine body; only plasma arcs animate.
+			# The architecture and inner core are independently painted for
+			# each floor; only the small energy arcs animate between frames.
 			var reactor_frame: int=(int(clock*4)+i)%4
-			draw_texture_rect_region(REACTOR_CORE,Rect2(p-Vector2(62,62),Vector2(124,124)),Rect2(reactor_frame*128,0,128,128))
+			draw_texture_rect_region(REACTOR_STAGE_CORES[model.floor_index],Rect2(p-Vector2(62,62),Vector2(124,124)),Rect2(reactor_frame*128,0,128,128))
 			if model.special_blast_timer>0:
 				var beat: float=0.35+0.5*absf(sin(clock*17+i))
 				draw_arc(p,105,0,TAU,40,Color(highlight,beat),3)
