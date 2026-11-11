@@ -304,9 +304,17 @@ func _draw() -> void:
 		var kind: String=hazard.get("type","")
 		if kind in ["spikes","rune"]: continue # drawn on the lit world canvas, below obstacles and actors
 		var color:=Color("#e9b963")
+		# Champion tells have distinct colors, including before detonation.
+		match kind:
+			"champion_frenzied": color=Color("#f4a16e")
+			"champion_warded": color=Color("#81d4d3")
+			"champion_volatile": color=Color("#eb8392")
 		if hazard.warn<=0:
 			match kind:
 				"boss_lane": color=Color("#d8a7ef")
+				"champion_frenzied": color=Color("#f46762")
+				"champion_warded": color=Color("#5fd2ca")
+				"champion_volatile": color=Color("#ef8b48")
 				"boss_root": color=Color("#9bd783")
 				"boss_blast": color=Color("#f58a71")
 				"volatile": color=Color("#f16a83")
@@ -803,7 +811,26 @@ func run_scene_smoke() -> void:
 		push_error("Ability cast feedback failed")
 		get_tree().quit(62)
 		return
+	# Confirm the defeat state actually builds the Game Over view, not just a flag.
+	run.hp=0.0
+	run.state="defeat"
+	_process(0.0)
+	if overlay_state!="defeat" or not is_instance_valid(modal_root):
+		push_error("Game Over overlay did not appear after defeat")
+		get_tree().quit(63)
+		return
+	var has_retry:=false
+	var has_exit:=false
+	for candidate in modal_root.find_children("*","Button",true,false):
+		var option: Button=candidate
+		has_retry=has_retry or option.text.begins_with("New expedition") or option.text.begins_with("Neue Expedition")
+		has_exit=has_exit or option.text.begins_with("Main menu") or option.text.begins_with("Hauptmenü")
+	if not has_retry or not has_exit:
+		push_error("Game Over overlay is missing retry or menu controls")
+		get_tree().quit(64)
+		return
 	print("Midnight Descent Nocturne UI feedback smoke PASS")
+	print("Midnight Descent defeat screen smoke PASS")
 	print("Midnight Descent gameplay scene smoke PASS")
 	get_tree().quit()
 
