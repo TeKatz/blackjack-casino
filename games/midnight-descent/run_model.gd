@@ -1142,6 +1142,7 @@ func hub_perks_smoke() -> bool:
 				break
 		if not found or not select_hub_forge(forge) or select_hub_forge(forge): return false
 		if room!=0 or visited_count!=0 or dungeon.nodes[0].visited: return false
+		player=HUB_PORTAL
 		if not enter_first_room() or forge_id!=forge: return false
 		if select_hub_forge(forge): return false
 		match forge:
@@ -1179,6 +1180,7 @@ func hub_perks_smoke() -> bool:
 				found=true
 				break
 		if not found or not select_hub_contract(contract) or select_hub_contract(contract): return false
+		player=HUB_PORTAL
 		if not enter_first_room() or select_hub_contract(contract): return false
 		match contract:
 			"slayer": advance_contract("slayer",12)
