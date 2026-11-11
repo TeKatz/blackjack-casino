@@ -1109,8 +1109,8 @@ func draw_special_chamber() -> void:
 		for i in range(Model.UNSTABLE_CORES.size()):
 			var p: Vector2=Model.UNSTABLE_CORES[i]
 			# Solid independently drawn machine body; only plasma arcs animate.
-			var frame: int=(int(clock*4)+i)%4
-			draw_texture_rect_region(REACTOR_CORE,Rect2(p-Vector2(62,62),Vector2(124,124)),Rect2(frame*128,0,128,128))
+			var reactor_frame: int=(int(clock*4)+i)%4
+			draw_texture_rect_region(REACTOR_CORE,Rect2(p-Vector2(62,62),Vector2(124,124)),Rect2(reactor_frame*128,0,128,128))
 			if model.special_blast_timer>0:
 				var beat: float=0.35+0.5*absf(sin(clock*17+i))
 				draw_arc(p,105,0,TAU,40,Color(highlight,beat),3)
