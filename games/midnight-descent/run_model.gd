@@ -128,6 +128,19 @@ var contract_offers: Array[String] = []
 var contract_progress := 0
 var contract_completed := false
 var contract_clean_room := true
+# All seven chambers have their own run-local state. No progress persists
+# into another room or run; deterministic geometry comes from the room seed.
+var special_elapsed := 0.0
+var special_timer := 0.0
+var special_wave_timer := 0.0
+var special_objectives := 0
+var special_stage := 0
+var special_targets := 0
+var special_blast_timer := -1.0
+var tempered_relics: Array[String] = []
+var archive_discarded := ""
+const RITUAL_ANCHORS := [Vector2(635,242),Vector2(885,390),Vector2(635,532)]
+const UNSTABLE_CORES := [Vector2(555,265),Vector2(745,390),Vector2(985,515)]
 
 func begin(value: int, loadout: String = "warden_guard", upgrades: Dictionary = {}) -> void:
 	seed_value = value
@@ -177,6 +190,8 @@ func begin(value: int, loadout: String = "warden_guard", upgrades: Dictionary = 
 	shards = 0
 	elapsed = 0.0
 	relics.clear()
+	tempered_relics.clear()
+	archive_discarded=""
 	last_synergy_id=""
 	notices.clear()
 	forge_id=""
@@ -576,6 +591,14 @@ func enter_room() -> void:
 	offers.clear()
 	walls.clear()
 	room_kind = dungeon.kind(room)
+	special_elapsed=0.0
+	special_timer=0.0
+	special_wave_timer=0.0
+	special_objectives=0
+	special_stage=0
+	special_targets=0
+	special_blast_timer=-1.0
+	archive_discarded=""
 	contract_clean_room=true
 	forge_guard_charges=2 if forge_id=="iron_aegis" and room_kind in ["fight","elite","boss"] else 0
 	environment_timer=2.5
@@ -586,8 +609,8 @@ func enter_room() -> void:
 	if relics.has("curse"): temp_power=rng.randf_range(-5,15)
 	
 	var node: Dictionary = dungeon.nodes[room]
-	encounter_id=str(node.get("encounter","skirmish")) if room_kind in ["fight","elite"] else ""
-	encounter_threat=int(node.get("threat",0)) if room_kind in ["fight","elite"] else 0
+	encounter_id=str(node.get("encounter","skirmish")) if room_kind in Dungeon.ALL_COMBAT else ""
+	encounter_threat=int(node.get("threat",0)) if room_kind in Dungeon.ALL_COMBAT else 0
 	if encounter_id=="onslaught" and room>0: wave_total=2
 	if not node.visited:
 		node.visited = true
@@ -599,8 +622,11 @@ func enter_room() -> void:
 	if node.cleared:
 		state = "route"
 		return
-	if room_kind in ["treasure","shop","event","shrine","secret","forge"]:
-		state = "service"
+	if room_kind in ["treasure","shop","event","shrine","secret","forge"]+Dungeon.SPECIAL_SERVICE:
+		state="service"
+		return
+	if room_kind in Dungeon.SPECIAL_COMBAT:
+		start_special_combat(node)
 		return
 	if room_kind != "boss":
 		spawn_encounter_wave(node)
@@ -664,10 +690,10 @@ func build_room_layout(node: Dictionary) -> void:
 	var geometry:=RandomNumberGenerator.new()
 	geometry.seed=int(node.geometry_seed)
 	var layout: int=node.layout
-	if room_kind in ["treasure","secret","shrine"]:
+	if room_kind in ["treasure","secret","shrine","blood_altar","archive"]:
 		walls.append(Rect2(590,175,100,58))
 		return
-	if room_kind in ["shop","event","forge"]:
+	if room_kind in ["shop","event","forge","forgotten_forge"]:
 		walls.append(Rect2(560,174,160,48))
 		return
 	if floor_index==1:
@@ -794,7 +820,7 @@ func finish_room() -> void:
 	dungeon.nodes[room].cleared=true
 	service_used=true
 	# Non-combat services and their relic selections return directly to the map.
-	state="route" if room_kind in ["treasure","shop","event","shrine","secret","forge"] else "exit"
+	state="route" if room_kind in ["treasure","shop","event","shrine","secret","forge"]+Dungeon.SPECIAL_SERVICE else "exit"
 
 
 func spawn_enemy(kind: String, pos: Vector2, affix: String="") -> void:
