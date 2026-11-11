@@ -246,7 +246,16 @@ func _draw() -> void:
 	for hazard in run.hazards:
 		var kind: String=hazard.get("type","")
 		if kind in ["spikes","rune"]: continue # drawn on the lit world canvas, below obstacles and actors
-		var color := Color("#e9b963") if hazard.warn>0 else (Color("#d8a7ef") if kind=="boss_lane" else (Color("#9bd783") if kind=="boss_root" else (Color("#f58a71") if kind=="boss_blast" else (Color("#f16a83") if kind=="volatile" else (Color("#e17fbc") if kind=="rune" else (Color("#f19c7b") if kind=="spikes" else Color("#77c96d"))))))
+		var color:=Color("#e9b963")
+		if hazard.warn<=0:
+			match kind:
+				"boss_lane": color=Color("#d8a7ef")
+				"boss_root": color=Color("#9bd783")
+				"boss_blast": color=Color("#f58a71")
+				"volatile": color=Color("#f16a83")
+				"rune": color=Color("#e17fbc")
+				"spikes": color=Color("#f19c7b")
+				_: color=Color("#77c96d")
 		if hazard.has("rect"):
 			var rect: Rect2=hazard.rect
 			draw_rect(rect,Color(color,0.14 if hazard.warn>0 else 0.37))
