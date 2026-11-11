@@ -8,6 +8,26 @@ const BIOME_WALLS = preload("res://art/pixel/biome_walls.svg")
 const PROPS = preload("res://art/pixel/room_props.svg")
 const TORCH = preload("res://art/pixel/torch.svg")
 const RELICS = preload("res://art/pixel/relics.png")
+# Seven original four-frame sprite sheets. Never substitute a shared prop
+# atlas: each chamber has its own material language and animated landmark.
+const SPECIAL_ART = {
+	"ritual":preload("res://art/pixel/special_ritual.svg"),
+	"survival":preload("res://art/pixel/special_survival.svg"),
+	"bounty":preload("res://art/pixel/special_bounty.svg"),
+	"unstable":preload("res://art/pixel/special_unstable.svg"),
+	"blood_altar":preload("res://art/pixel/special_blood_altar.svg"),
+	"forgotten_forge":preload("res://art/pixel/special_forgotten_forge.svg"),
+	"archive":preload("res://art/pixel/special_archive.svg")
+}
+const SPECIAL_PALETTES = {
+	"ritual":[Color("#39264f"),Color("#cd9dff"),Color("#f5ddff")],
+	"survival":[Color("#21445f"),Color("#91daf4"),Color("#f1f6c7")],
+	"bounty":[Color("#5b2636"),Color("#f6a178"),Color("#fff1be")],
+	"unstable":[Color("#174f57"),Color("#81f1dc"),Color("#f9e9b4")],
+	"blood_altar":[Color("#55223a"),Color("#f06e91"),Color("#ffddad")],
+	"forgotten_forge":[Color("#5a3029"),Color("#f6af67"),Color("#fff0b0")],
+	"archive":[Color("#37315f"),Color("#d1c2fb"),Color("#f8eac5")]
+}
 const ACTORS = {
 	"warden": preload("res://art/pixel/warden.svg"),
 	"dealer": preload("res://art/pixel/dealer.svg"),
@@ -237,8 +257,11 @@ func _draw() -> void:
 			draw_rect(Rect2(pos,Vector2(10,4)),Color("#486b46"))
 			draw_rect(Rect2(pos+Vector2(3,-5),Vector2(4,8)),Color("#75a65f"))
 	draw_architecture(arena)
-	draw_room_decals()
-	draw_biome_details(arena)
+	if SPECIAL_ART.has(model.room_kind):
+		draw_special_chamber()
+	else:
+		draw_room_decals()
+		draw_biome_details(arena)
 	draw_service_scene()
 	draw_royal_seals()
 	draw_gate()
@@ -614,6 +637,15 @@ func draw_royal_seals() -> void:
 func build_decor() -> void:
 	decor.clear()
 	floor_decals.clear()
+	if SPECIAL_ART.has(model.room_kind):
+		# The special rooms own every prop, texture and decorative animation.
+		decor_exclusions=model.walls.duplicate()
+		for i in range(decor_lights.size()):
+			var lamp: PointLight2D=decor_lights[i]
+			lamp.enabled=i<2
+			lamp.position=Vector2(505+i*370,290)
+			lamp.color=SPECIAL_PALETTES[model.room_kind][1]
+		return
 	var rng:=RandomNumberGenerator.new()
 	rng.seed=int(model.seed_value)+int(model.room)*7919+int(model.floor_index)*104729
 	var floor_id: int=model.floor_index
@@ -747,6 +779,97 @@ func draw_room_decals() -> void:
 	else:
 		draw_rect(Rect2(295,325,94,120),Color("#5d414e"),false,2)
 		draw_rect(Rect2(302,332,80,106),Color("#8b6b63"),false,1)
+
+func special_animated_sprite(id: String, center: Vector2, size: Vector2, offset: int=0) -> void:
+	if not SPECIAL_ART.has(id): return
+	var animation: int=(int(clock*5.0)+offset)%4
+	var pulse: float=1.0+0.028*sin(clock*3.6+offset*1.4)
+	var dimensions: Vector2=size*pulse
+	draw_texture_rect_region(SPECIAL_ART[id],Rect2(pixel_pos(center-dimensions*0.5),dimensions),Rect2(animation*128,0,128,128))
+
+func draw_special_chamber() -> void:
+	var id: String=model.room_kind
+	var palette: Array=SPECIAL_PALETTES[id]
+	var base: Color=palette[0]
+	var light: Color=palette[1]
+	var highlight: Color=palette[2]
+	# A unique room-wide tessellation replaces the generic ground decals.
+	draw_rect(Rect2(68,153,1143,464),base.darkened(0.75))
+	for row in range(11):
+		for col in range(25):
+			var x: float=75+col*45
+			var y: float=158+row*41
+			var shift: float=float((row*7+col*11+id.length())%4)
+			var footprint:=Rect2(x+shift,y+shift,39,35)
+			match id:
+				"ritual":
+					draw_rect(footprint,Color(base,0.44),false,1)
+					if (row+col)%5==0: draw_rect(Rect2(x+16,y+12,6,9),Color(light,0.20))
+				"survival":
+					draw_rect(footprint,Color(base,0.54))
+					if (row+col)%4==0: draw_line(Vector2(x+8,y+9),Vector2(x+31,y+26),Color(light,0.17),2)
+				"bounty":
+					draw_rect(Rect2(x,y+31,38,3),Color(light,0.25))
+					if (row+col)%3==0: draw_rect(Rect2(x+13,y+8,12,12),Color(base.lightened(0.13)))
+				"unstable":
+					draw_rect(footprint,Color(base,0.44),false,1)
+					if (row+col)%4==0: draw_line(Vector2(x+7,y+28),Vector2(x+29,y+8),Color(light,0.27),2)
+				"blood_altar":
+					draw_rect(Rect2(x+6,y+6,26,24),Color(base,0.43))
+					if (row+col)%6==0: draw_rect(Rect2(x+17,y+14,4,6),Color(light,0.23))
+				"forgotten_forge":
+					draw_rect(Rect2(x+2,y+2,34,30),base.darkened(0.28))
+					draw_rect(Rect2(x+5,y+4,28,3),Color(light,0.18))
+				"archive":
+					draw_rect(Rect2(x+3,y+3,32,28),Color(base,0.37))
+					if row%3==0: draw_rect(Rect2(x+9,y+8,23,3),Color(highlight,0.12))
+	var border: Rect2=Rect2(79,166,1121,442)
+	draw_rect(border,Color(light,0.56),false,3)
+	# Distinct decorative emblems and independently animated particles.
+	var frame: float=clock*2.0
+	if id=="ritual":
+		for i in range(3):
+			var angle: float=float(i)*TAU/3.0+clock*0.24
+			var p: Vector2=Vector2(715,380)+Vector2.from_angle(angle)*190
+			draw_arc(p,45,0,TAU,32,Color(light,0.27),3)
+		for n in range(14):
+			var a: float=float(n)*TAU/14.0+clock*0.37
+			var p: Vector2=Vector2(735,380)+Vector2.from_angle(a)*(172+12*sin(frame+n))
+			draw_rect(Rect2(pixel_pos(p),Vector2(4,7)),Color(highlight,0.43))
+	elif id=="survival":
+		special_animated_sprite(id,Vector2(670,265),Vector2(180,180))
+		for i in range(16):
+			var a: float=float(i)*TAU/16.0
+			var p: Vector2=Vector2(670,390)+Vector2.from_angle(a)*(150+8*sin(frame+i))
+			draw_rect(Rect2(pixel_pos(p),Vector2(6,4)),Color(light,0.46))
+	elif id=="bounty":
+		special_animated_sprite(id,Vector2(885,385),Vector2(220,220))
+		for i in range(5):
+			var x: float=365+i*155
+			draw_rect(Rect2(x,190+8*sin(clock*1.5+i),8,98),Color(light,0.24))
+	elif id=="unstable":
+		for i in range(Model.UNSTABLE_CORES.size()):
+			var p: Vector2=Model.UNSTABLE_CORES[i]
+			special_animated_sprite(id,p,Vector2(114,114),i)
+			if model.special_blast_timer>0:
+				var beat: float=0.35+0.5*sin(clock*17+i)
+				draw_arc(p,105,0,TAU,40,Color(highlight,beat),3)
+	elif id=="blood_altar":
+		special_animated_sprite(id,Vector2(640,290),Vector2(260,260))
+		for i in range(9):
+			var p:=Vector2(478+i*41,168+fposmod(clock*(11+i%4)+i*19,150))
+			draw_rect(Rect2(pixel_pos(p),Vector2(4,7)),Color(light,0.55))
+	elif id=="forgotten_forge":
+		special_animated_sprite(id,Vector2(640,288),Vector2(270,270))
+		for i in range(12):
+			var p:=Vector2(515+i*19,342-fposmod(clock*(18+i%4)+i*16,157))
+			draw_rect(Rect2(pixel_pos(p),Vector2(4,4)),Color(highlight,0.65))
+	elif id=="archive":
+		special_animated_sprite(id,Vector2(640,283),Vector2(280,280))
+		for i in range(12):
+			var a: float=float(i)*TAU/12.0+clock*0.44
+			var p: Vector2=Vector2(640,275)+Vector2.from_angle(a)*(152+6*sin(clock*3+i))
+			draw_rect(Rect2(pixel_pos(p),Vector2(4,4)),Color(highlight,0.58))
 
 func draw_service_scene() -> void:
 	if model.room_kind not in ["shop","treasure","secret","shrine","event","forge"]: return
@@ -897,6 +1020,19 @@ func draw_warden() -> void:
 	sprite(model.character,pos,player_facing,frame,64)
 
 func draw_actor(enemy: Dictionary) -> void:
+	if enemy.kind=="ritual_anchor":
+		var pos: Vector2=enemy.pos
+		special_animated_sprite("ritual",pos,Vector2(114,114),int(pos.x))
+		var ratio: float=clampf(float(enemy.hp)/maxf(1.0,float(enemy.max_hp)),0,1)
+		draw_rect(Rect2(pos+Vector2(-37,47),Vector2(74,6)),Color("#161121"))
+		draw_rect(Rect2(pos+Vector2(-36,48),Vector2(72*ratio,4)),Color("#e1adff"))
+		return
+	if bool(enemy.get("bounty",false)):
+		var pos: Vector2=enemy.pos
+		var a: float=0.6+0.3*sin(clock*5.0)
+		draw_arc(pos,49,0,TAU,48,Color(1,0.52,0.33,a),5)
+		draw_rect(Rect2(pixel_pos(pos+Vector2(-12,-80)),Vector2(24,8)),Color("#f5a579"))
+
 	var kind: String = enemy.kind
 	var pos: Vector2 = enemy.pos
 	var size := 128.0 if kind in ["boss","rootking","hollowking"] else (80.0 if kind=="mushroom" else 64.0)
