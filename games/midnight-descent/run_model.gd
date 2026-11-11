@@ -1244,7 +1244,7 @@ func update_boss_phase(enemy: Dictionary, dt: float) -> bool:
 
 func boss_circle(pos: Vector2, radius: float, warning: float, power: float, kind: String) -> void:
 	if hazards.size()>=20: return
-	add_hazard(pos,radius,warning,0.52,power)
+	add_hazard(pos,radius,warning,0.52,power,true)
 	hazards[-1]["type"]=kind
 
 func boss_lane(pos: Vector2, vertical: bool, warning: float, power: float) -> void:
@@ -1273,8 +1273,8 @@ func boss_start_attack(enemy: Dictionary) -> void:
 					var pos: Vector2=aim_point+Vector2.from_angle(float(i)*TAU/(3 if phase==2 else 4))*125
 					boss_circle(pos,49,float(enemy.wind)+0.12,16+phase*3,"boss_root")
 		"hollowking":
-			add_royal_seals(aim_point,phase%2==0,float(enemy.wind),17+phase*2)
-			if phase==3: add_royal_seals(aim_point,phase%2!=0,float(enemy.wind)+0.22,18)
+			add_royal_seals(aim_point,phase%2==0,float(enemy.wind),17+phase*2,true)
+			if phase==3: add_royal_seals(aim_point,phase%2!=0,float(enemy.wind)+0.22,18,true)
 
 func boss_release_attack(enemy: Dictionary) -> void:
 	var phase: int=int(enemy.get("phase",1))
@@ -1334,7 +1334,7 @@ func update_enemies(dt: float) -> void:
 		enemy.timer-=dt*(1.35 if affix=="frenzied" else 1.0)
 		if affix=="volatile" and not bool(enemy.get("primed",false)) and enemy.hp<enemy.max_hp*0.5:
 			enemy["primed"]=true
-			add_hazard(enemy.pos,67,0.9,1.10,21+encounter_threat*3)
+			add_hazard(enemy.pos,67,0.9,1.10,21+encounter_threat*3,true)
 			hazards[-1]["type"]="volatile"
 			notices.append("rune")
 		var pos: Vector2 = enemy.pos
@@ -1350,7 +1350,7 @@ func update_enemies(dt: float) -> void:
 				effect("enemy_"+kind,pos,0.30,pos.direction_to(enemy.target))
 				if kind in ["caster","archer","spore","hexer"]:
 					shoot(pos, pos.direction_to(enemy.target)*(390 if kind=="archer" else 265), true, 12)
-					if kind=="spore": add_hazard(enemy.target,44,0.6,2.8,9)
+					if kind=="spore": add_hazard(enemy.target,44,0.6,2.8,9,true)
 					if kind=="hexer":
 						for j in range(3): shoot(pos,pos.direction_to(enemy.target).rotated((j-1)*0.25)*330,true,13)
 				elif kind=="vine":
@@ -1400,9 +1400,9 @@ func update_enemies(dt: float) -> void:
 			next = move_actor(pos, velocity.rotated(PI/2)*dt, radius)
 		enemy.pos = next
 
-func add_hazard(pos: Vector2, radius: float, warning: float, life: float, power: float) -> void:
+func add_hazard(pos: Vector2, radius: float, warning: float, life: float, power: float, enemy_origin: bool=false) -> void:
 	if hazards.size()>=24: return
-	hazards.append({"pos":safe_position(pos,10),"r":radius,"warn":warning,"life":warning+life,"power":power})
+	hazards.append({"pos":safe_position(pos,10),"r":radius,"warn":warning,"life":warning+life,"power":power,"enemy_origin":enemy_origin})
 
 func environment_speed() -> float:
 	if floor_index!=1 or state!="fight": return 1.0
@@ -1457,7 +1457,7 @@ func update_environment(dt: float) -> void:
 			if room_kind=="boss" and environment_cycle%3==0:
 				add_royal_seals(pos,not vertical,1.45,20)
 
-func add_royal_seals(pos: Vector2, vertical: bool, warning: float, power: float) -> void:
+func add_royal_seals(pos: Vector2, vertical: bool, warning: float, power: float, enemy_origin: bool=false) -> void:
 	var lane:=Rect2(pos.x-30,166,60,438) if vertical else Rect2(78,pos.y-30,1124,60)
 	var cells: Array[Rect2]=[]
 	var count: int=7 if vertical else 18
@@ -1470,7 +1470,7 @@ func add_royal_seals(pos: Vector2, vertical: bool, warning: float, power: float)
 			if wall.grow(18).intersects(cell): clear=false; break
 		if clear: cells.append(cell)
 	if cells.is_empty(): return
-	hazards.append({"pos":pos,"r":40,"warn":warning,"warning":warning,"life":warning+0.84,"power":power,"type":"rune","rect":lane,"cells":cells,"phase":"warn"})
+	hazards.append({"pos":pos,"r":40,"warn":warning,"warning":warning,"life":warning+0.84,"power":power,"type":"rune","rect":lane,"cells":cells,"phase":"warn","enemy_origin":enemy_origin})
 	notices.append("rune")
 
 func spike_cells(x: float) -> Array[Rect2]:
@@ -1500,7 +1500,7 @@ func update_hazards(dt: float) -> void:
 			if hazard.warn<=-0.10 and hazard.life>=0.20:
 				for cell in hazard.cells:
 					if cell.has_point(player):
-						hurt(hazard.power,false)
+						hurt(hazard.power,bool(hazard.get("enemy_origin",false)))
 						break
 		elif hazard.get("type","")=="rune":
 			if hazard.warn<=0 and hazard.phase=="warn":
@@ -1512,11 +1512,11 @@ func update_hazards(dt: float) -> void:
 			if hazard.warn<=-0.12 and hazard.life>=0.24:
 				for cell in hazard.cells:
 					if cell.has_point(player):
-						hurt(hazard.power,false)
+						hurt(hazard.power,bool(hazard.get("enemy_origin",false)))
 						break
 		elif hazard.warn<=0:
 			var inside: bool=hazard.rect.has_point(player) if hazard.has("rect") else player.distance_to(hazard.pos)<hazard.r
-			if inside: hurt(hazard.power,false)
+			if inside: hurt(hazard.power,bool(hazard.get("enemy_origin",false)))
 
 func update_shots(dt: float) -> void:
 	for i in range(shots.size()-1,-1,-1):
