@@ -37,6 +37,14 @@ const FLOOR := Color("#211b32")
 var run = Model.new()
 var german := false
 var paused := false
+var relics_open := false
+var relic_rows := 0
+var relic_detail: Label
+var relic_portrait: TextureRect
+var wave_banner := 0.0
+var last_wave := 0
+var gate_prompt := 0.0
+var gate_near := false
 var overlay: Control
 var overlay_state := ""
 var clock := 0.0
@@ -103,11 +111,12 @@ func _process(dt: float) -> void:
 	if run.state in ["victory","defeat"] and not run.settled:
 		progress.settle(run)
 		if not smoke_mode: progress.save()
-	var target: String = "pause" if paused else run.state
+	var target: String = ("relics" if relics_open else "pause") if paused else run.state
 	if target != overlay_state or (target=="route" and (modal_room!=run.room or modal_floor!=run.floor_index)):
 		if target=="route": play_sound("map")
 		elif target=="service": play_sound(run.room_kind)
 		elif target in ["pause","victory","defeat"]: play_sound(target)
+		elif target=="relics": play_sound("relic_inspect")
 		elif target=="fight" and modal_floor!=run.floor_index: play_sound("descend")
 		overlay_state = target
 		modal_room=run.room
@@ -119,11 +128,25 @@ func _process(dt: float) -> void:
 		banner_room = run.room
 		banner_floor=run.floor_index
 		room_banner = 2.0
+		last_wave=0
 	room_banner = maxf(0,room_banner-dt)
+	if run.state=="fight" and run.wave_total>1 and last_wave!=run.wave:
+		last_wave=run.wave
+		wave_banner=2.2
+		if run.wave==1: play_sound("wave")
+	if not paused: wave_banner=maxf(0,wave_banner-dt)
+	var nearby: bool=run.state=="exit" and run.player.distance_to(Model.EXIT)<150 and not paused
+	if nearby and not gate_near: play_sound("portal_near")
+	gate_near=nearby
+	gate_prompt=move_toward(gate_prompt,1.0 if nearby else 0.0,dt*5.0)
 	queue_redraw()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
+		if relics_open:
+			relics_open=false
+			get_viewport().set_input_as_handled()
+			return
 		if run.state in ["fight","exit","route","service"]:
 			paused = not paused
 			get_viewport().set_input_as_handled()
@@ -153,12 +176,19 @@ func _draw() -> void:
 	if not is_instance_valid(world) or world.model == null:
 		return
 	var gate: Vector2 = Model.EXIT
-	if run.state == "exit":
-		text_at(gate+Vector2(-86,76),tr_text("E  •  Map","E  •  Karte"),16,GOLD)
+	if gate_prompt>0.01 and run.state=="exit":
+		var p:=gate+Vector2(-72,-104+sin(clock*2.6)*3)
+		var rect:=Rect2(p,144,36)
+		draw_rect(rect.grow(3),Color(0.06,0.04,0.12,gate_prompt*0.45))
+		draw_rect(rect,Color(0.12,0.08,0.21,gate_prompt*0.93))
+		draw_rect(rect,Color(0.78,0.60,1,gate_prompt),false,1)
+		draw_rect(Rect2(p+Vector2(7,7),Vector2(25,22)),Color(0.45,0.30,0.62,gate_prompt))
+		text_at(p+Vector2(15,24),"E",16,Color(1,0.95,0.82,gate_prompt))
+		text_at(p+Vector2(40,24),tr_text("Open map","Karte öffnen"),13,Color(1,0.88,0.70,gate_prompt))
 	# Attack telegraphs and projectiles remain above the pixel-world layer.
 	for hazard in run.hazards:
 		var kind: String=hazard.get("type","")
-		if kind=="spikes": continue # drawn on the lit world canvas, below obstacles and actors
+		if kind in ["spikes","rune"]: continue # drawn on the lit world canvas, below obstacles and actors
 		var color := Color("#e9b963") if hazard.warn>0 else (Color("#e17fbc") if kind=="rune" else (Color("#f19c7b") if kind=="spikes" else Color("#77c96d")))
 		if hazard.has("rect"):
 			var rect: Rect2=hazard.rect
@@ -259,6 +289,16 @@ func run_scene_smoke() -> void:
 	if overlay_state != "pause":
 		get_tree().quit(9)
 		return
+	var original: Array=run.relics.duplicate()
+	for i in range(21): run.relics.append(Content.RELICS.keys()[i%12])
+	relics_open=true
+	_process(0.0)
+	if overlay_state!="relics" or relic_rows<12 or not paused or relic_portrait.texture==null:
+		get_tree().quit(25)
+		return
+	relics_open=false
+	run.relics.assign(original)
+	_process(0.0)
 	paused = false
 	run.state = "victory"
 	_process(0.0)
@@ -445,14 +485,17 @@ func ability_slot(x: float, icon_index: int, key: String, name: String, ratio: f
 		draw_texture_rect_region(UI.ICONS,Rect2(x+11,669,32,32),Rect2(active_index*24,0,24,24))
 	else:
 		draw_texture_rect_region(PixelWorld.RELICS,Rect2(x+11,669,32,32),Rect2(icon_index*48,0,48,48))
-	text_at(Vector2(x+52,675),key+"  "+name,11,WHITE)
-	meter(Rect2(x+52,682,94,8),ratio,color)
+	text_at(Vector2(x+52,672),key,10,color)
+	var font_size: int=12
+	while font.get_string_size(name,HORIZONTAL_ALIGNMENT_LEFT,-1,font_size).x>94 and font_size>8: font_size-=1
+	text_at(Vector2(x+52,686),name,font_size,WHITE)
+	meter(Rect2(x+52,691,94,5),ratio,color)
 	var cooldowns: Array[float]=[run.attack_timer,run.bolt_timer,run.dash_timer,run.active_timer]
 	if ratio>=0.99:
 		draw_rect(Rect2(x+52,698,5,5),color)
-		text_at(Vector2(x+62,706),tr_text("READY","BEREIT"),10,color)
+		text_at(Vector2(x+62,711),tr_text("READY","BEREIT"),10,color)
 	else:
-		text_at(Vector2(x+52,706),"%.1fs" % maxf(0,cooldowns[index]),11,MUTED)
+		text_at(Vector2(x+52,711),"%.1fs" % maxf(0,cooldowns[index]),11,MUTED)
 
 func draw_hud() -> void:
 	draw_rect(Rect2(0,0,1280,103),Color("#100d19"))
@@ -497,13 +540,13 @@ func draw_hud() -> void:
 	ability_slot(516,1,"Q",active_name(),1.0-run.active_timer/run.active_cd,Color("#e8899b"))
 	hud_panel(Rect2(683,659,580,53),VIOLET)
 	text_at(Vector2(695,679),tr_text("RELICS","RELIKTE")+"  %d" % run.relics.size(),13,GOLD)
-	text_at(Vector2(695,699),tr_text("WASD / E  Move / Gate","WASD / E  Bewegung / Tor"),11,MUTED)
-	for i in range(8):
-		var rect := Rect2(947+i*36,669,30,30)
+	text_at(Vector2(695,699),tr_text("ESC  •  Run relics","ESC  •  Run-Relikte"),12,MUTED)
+	for i in range(6):
+		var rect := Rect2(952+i*40,669,34,34)
 		draw_rect(rect,Color("#100d1c"))
 		draw_rect(rect,Color("#695471"),false,1)
 		if i<run.relics.size():
-			var index: int = Content.RELICS[run.relics[maxi(0,run.relics.size()-8)+i]][4]
+			var index: int = Content.RELICS[run.relics[maxi(0,run.relics.size()-6)+i]][4]
 			if index>=0:
 				var icon:=UI.atlas(UI.RELICS,index)
 				draw_texture_rect_region(icon.atlas,rect,icon.region)
@@ -515,7 +558,18 @@ func draw_hud() -> void:
 				meter(Rect2(434,130,412,7),float(enemy.hp)/float(enemy.max_hp),Color("#e36b86"))
 				break
 	if run.state=="fight" and run.wave_total>1:
-		text_at(Vector2(1020,167),tr_text("WAVE","WELLE")+" %d/%d" % [run.wave,run.wave_total],14,GOLD)
+		hud_panel(Rect2(1000,150,218,37),GOLD)
+		text_at(Vector2(1016,175),tr_text("WAVE","WELLE")+" %d / %d" % [run.wave,run.wave_total],19,GOLD)
+		if wave_banner>0:
+			var alpha: float=minf(1.0,minf((2.2-wave_banner)*5,wave_banner*2))
+			var rect:=Rect2(410,258,460,104)
+			draw_rect(rect.grow(5),Color(0.02,0.01,0.05,alpha*0.55))
+			draw_rect(rect,Color(0.12,0.07,0.19,alpha*0.91))
+			draw_rect(rect,Color(0.94,0.73,0.46,alpha),false,2)
+			var title: String=tr_text("FINAL WAVE","LETZTE WELLE") if run.wave==run.wave_total else tr_text("WAVE","WELLE")+"  %d / %d" % [run.wave,run.wave_total]
+			text_at(Vector2(640-font.get_string_size(title,HORIZONTAL_ALIGNMENT_LEFT,-1,30).x/2,310),title,30,Color(1,0.83,0.55,alpha))
+			var sub: String=tr_text("Defeat the reinforcements","Besiege die Verstärkung")
+			text_at(Vector2(640-font.get_string_size(sub,HORIZONTAL_ALIGNMENT_LEFT,-1,15).x/2,337),sub,15,Color(0.86,0.78,0.94,alpha))
 	if room_banner>0 and run.state=="fight":
 		var opacity := minf(1,room_banner*2.0)
 		draw_rect(Rect2(480,153,320,42),Color(0.06,0.04,0.1,0.77*opacity))
@@ -685,7 +739,7 @@ func rebuild_overlay() -> void:
 			fade.tween_property(previous,"modulate:a",0.0,0.16)
 			fade.tween_callback(previous.queue_free)
 		modal_root=null
-	if overlay_state not in ["pause","reward","victory","defeat","route","service"]:
+	if overlay_state not in ["pause","relics","reward","victory","defeat","route","service"]:
 		input_grace=0.18 if not smoke_mode else 0.0
 		return
 	var accent: Color=modal_accent()
@@ -706,7 +760,7 @@ func rebuild_overlay() -> void:
 	center.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	modal_root.add_child(center)
 	var panel:=PanelContainer.new()
-	panel.custom_minimum_size=Vector2(1160 if overlay_state=="route" else (940 if overlay_state=="reward" else 680),0)
+	panel.custom_minimum_size=Vector2(1160 if overlay_state=="route" else (1000 if overlay_state=="relics" else (940 if overlay_state=="reward" else 680)),0)
 	var style:=UI.panel(modal_fill(),accent,24)
 	style.set_corner_radius_all(14)
 	style.border_width_top=3
@@ -729,6 +783,8 @@ func rebuild_overlay() -> void:
 		modal_tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 		modal_tween.tween_property(modal_root,"modulate:a",1.0,0.24)
 	match overlay_state:
+		"relics":
+			show_run_relics(column)
 		"route":
 			show_route_map(column)
 		"service":
@@ -815,6 +871,7 @@ func rebuild_overlay() -> void:
 			add_label(column,tr_text("Your expedition is frozen. Take your time.","Deine Expedition ist angehalten."),16,MUTED)
 			var resume:=add_button(column,tr_text("Continue  ›","Fortsetzen  ›"),func(): paused=false)
 			UI.style_button(resume,GOLD,true)
+			add_button(column,tr_text("Run relics","Run-Relikte")+"  •  "+str(run.relics.size()),func(): relics_open=true)
 			var abandon:=add_button(column,tr_text("Abandon run / Main menu","Run aufgeben / Hauptmenü"),return_to_menu)
 			UI.style_button(abandon,Color("#da8297"))
 		"victory","defeat":
@@ -827,6 +884,77 @@ func rebuild_overlay() -> void:
 			if not progress.save_ok: add_label(column,tr_text("Save failed — progress not saved.","Speicherfehler — Fortschritt nicht gespeichert."),16,Color("#ff839a"))
 			add_button(column,tr_text("New expedition","Neue Expedition"),restart)
 			add_button(column,tr_text("Main menu","Hauptmenü"),return_to_menu)
+
+func show_run_relics(column: VBoxContainer) -> void:
+	add_label(column,tr_text("RUN RELICS","RUN-RELIKTE")+"  •  "+str(run.relics.size()),28,GOLD)
+	add_label(column,tr_text("Inspect your current build. Duplicate relics are grouped.","Untersuche deinen aktuellen Build. Doppelte Relikte sind gruppiert."),15,MUTED)
+	var horizontal:=HBoxContainer.new()
+	horizontal.add_theme_constant_override("separation",16)
+	column.add_child(horizontal)
+	var scroll:=ScrollContainer.new()
+	scroll.custom_minimum_size=Vector2(520,354)
+	scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED
+	horizontal.add_child(scroll)
+	var entries:=VBoxContainer.new()
+	entries.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	entries.add_theme_constant_override("separation",6)
+	scroll.add_child(entries)
+	var counts: Dictionary={}
+	for id in run.relics: counts[id]=int(counts.get(id,0))+1
+	relic_rows=0
+	var detail_panel:=PanelContainer.new()
+	detail_panel.custom_minimum_size=Vector2(390,0)
+	detail_panel.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	detail_panel.add_theme_stylebox_override("panel",UI.panel(Color("#211a31"),VIOLET,12))
+	horizontal.add_child(detail_panel)
+	var detail:=VBoxContainer.new()
+	detail.add_theme_constant_override("separation",10)
+	detail_panel.add_child(detail)
+	relic_portrait=TextureRect.new()
+	relic_portrait.custom_minimum_size=Vector2(0,90)
+	relic_portrait.expand_mode=TextureRect.EXPAND_IGNORE_SIZE
+	relic_portrait.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	relic_portrait.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
+	detail.add_child(relic_portrait)
+	relic_detail=Label.new()
+	relic_detail.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+	relic_detail.add_theme_font_size_override("font_size",17)
+	relic_detail.custom_minimum_size=Vector2(340,115)
+	detail.add_child(relic_detail)
+	add_label(detail,tr_text("CURRENT BUILD","AKTUELLER BUILD"),14,GOLD)
+	add_label(detail,tr_text("Main / special / armor","Haupt / Spezial / Rüstung")+"   %.0f / %.0f / %.0f" % [run.damage,run.bolt_damage,run.armor],14,WHITE)
+	add_label(detail,tr_text("Max HP / speed","Max. LP / Tempo")+"   %.0f / %.0f" % [run.max_hp,run.speed],14,WHITE)
+	add_label(detail,tr_text("SYNERGIES","SYNERGIEN"),14,VIOLET)
+	add_label(detail,tr_text("Dedicated combinations will appear here in a future update.","Spezielle Reliktkombinationen erscheinen hier in einem späteren Update."),13,MUTED)
+	for id in counts:
+		var key: String=id
+		var item: Array=Content.RELICS[key]
+		var color: Color=UI.RARITY_COLORS[Content.rarity(key)]
+		var button:=add_button(entries,item[1 if german else 0]+"  ×"+str(counts[key]),func(): inspect_run_relic(key,int(counts[key])))
+		button.custom_minimum_size=Vector2(0,54)
+		button.alignment=HORIZONTAL_ALIGNMENT_LEFT
+		button.icon=UI.atlas(UI.RELICS,int(item[4]))
+		button.expand_icon=true
+		button.add_theme_constant_override("icon_max_width",40)
+		button.add_theme_font_size_override("font_size",17)
+		UI.style_button(button,color)
+		relic_rows+=1
+	if counts.is_empty():
+		add_label(entries,tr_text("No relics collected yet.","Noch keine Relikte gesammelt."),16,MUTED)
+		relic_detail.text=tr_text("Your relics appear here as you collect them.","Gesammelte Relikte erscheinen hier.")
+	else:
+		var first: String=counts.keys()[0]
+		inspect_run_relic(first,int(counts[first]),false)
+	add_button(column,tr_text("Back to pause","Zurück zur Pause"),func(): relics_open=false)
+
+func inspect_run_relic(id: String, count: int, sound: bool=true) -> void:
+	var item: Array=Content.RELICS[id]
+	var rarity: int=Content.rarity(id)
+	var names: Array=["Common","Rare","Epic","Legendary"] if not german else ["Gewöhnlich","Selten","Episch","Legendär"]
+	relic_portrait.texture=UI.atlas(UI.RELICS,int(item[4]))
+	relic_detail.text=item[1 if german else 0]+"  ×"+str(count)+"\n"+names[rarity]+"\n\n"+item[3 if german else 2]
+	relic_detail.add_theme_color_override("font_color",UI.RARITY_COLORS[rarity])
+	if sound: play_sound("relic_inspect")
 
 func animate_relic_card(card: Control, style: StyleBoxFlat, color: Color, hovered: bool) -> void:
 	if not is_instance_valid(card): return
