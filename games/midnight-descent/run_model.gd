@@ -1089,7 +1089,10 @@ func update_enemies(dt: float) -> void:
 			enemy["poison"]=maxf(0,float(enemy.poison)-dt)
 			enemy.hp-=dt*5*relics.count("venom")
 		enemy["chill"]=maxf(0,float(enemy.get("chill",0))-dt)
-		enemy.flash = maxf(0, float(enemy.flash)-dt)
+		enemy.flash = maxf(0,float(enemy.flash)-dt)
+		if str(enemy.kind) in ["boss","rootking","hollowking"] and int(enemy.get("phase",1))<3:
+			var phase_gate: float=float(enemy.max_hp)*(0.68 if int(enemy.get("phase",1))==1 else 0.32)
+			enemy.hp=maxf(phase_gate,float(enemy.hp))
 		if str(enemy.kind) in ["boss","rootking","hollowking"] and update_boss_phase(enemy,dt):
 			continue
 		var affix: String=str(enemy.get("affix",""))
