@@ -902,6 +902,7 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 			effect("dash_trail_"+character,player,0.30,dash_direction)
 	if was_dashing and dash_left<=0.0:
 		effect("dash_land_"+character,player,0.36,dash_direction)
+		class_dash_landing()
 		if has_synergy("inferno_rush"):
 			for enemy in enemies:
 				if enemy.hp>0 and player.distance_to(enemy.pos)<140:
@@ -938,6 +939,7 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 			echoes.append({"pos":player,"dir":aim,"time":0.28,"damage":damage*0.55})
 		if relics.has("echo") and attacks%3==0:
 			shoot(player+aim*21,aim*590,false,bolt_damage*relics.count("echo"))
+		class_main_attack()
 	if ranged and bolt_timer <= 0:
 		bolt_timer = special_cd
 		specials+=1
@@ -946,6 +948,8 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 		notices.append(shot_style)
 		effect("special_"+set_id,player,0.42,aim)
 		special_multiplier=2.0 if relics.has("overcharge") and specials%4==0 else 1.0
+		if relics.has("s_pact") and hp<max_hp*0.4: special_multiplier*=1.0+0.3*relics.count("s_pact")
+		class_special_attack()
 		if character=="soulbinder":
 			var spent: int=mini(3,souls)
 			souls-=spent
@@ -994,6 +998,7 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 			shoot(echo.pos+echo.dir*21,echo.dir*590,false,echo.damage)
 			effect("burst",echo.pos,0.16,echo.dir)
 			echoes.remove_at(i)
+	class_wisps_tick(dt)
 	orbit_timer-=dt
 	if relics.has("sun") and orbit_timer<=0:
 		orbit_timer=0.16
@@ -1040,6 +1045,8 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 			kills += 1
 			advance_contract("slayer")
 			if character=="soulbinder": souls=mini(6,souls+1)
+			class_enemy_kill(enemies[i])
+			if relics.has("d_purse"): shards+=2*relics.count("d_purse")
 			if relics.has("harvest"):
 				harvest_count+=1
 				if harvest_count%5==0: hp=minf(max_hp,hp+8*relics.count("harvest"))
@@ -1086,6 +1093,7 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 		shots.clear()
 		hazards.clear()
 		combat_clears+=1
+		class_room_clear()
 		if contract_clean_room: advance_contract("untouched")
 		if room_kind=="boss": bosses_defeated=maxi(bosses_defeated,floor_index+1)
 		if room_kind=="boss" and floor_index==FLOOR_COUNT-1:
@@ -1124,6 +1132,8 @@ func hit_enemy(enemy: Dictionary, amount: float) -> void:
 	if relics.has("execution") and enemy.hp<enemy.max_hp*0.25: amount*=1.3
 	if relics.has("frostfire") and float(enemy.get("chill",0))>0 and float(enemy.get("burn",0))>0: amount+=8*relics.count("frostfire")
 	if relics.has("sacrifice"): amount*=1.0+0.2*relics.count("sacrifice")
+	if relics.has("d_coin") and float(enemy.get("hex_mark",0))>0: amount+=12.0*relics.count("d_coin")
+	if relics.has("a_prism") and float(enemy.get("chill",0))>0: amount+=7.0*relics.count("a_prism")
 	if str(enemy.get("affix",""))=="warded" and enemy.hp>enemy.max_hp*0.5: amount*=0.62
 	if enemy.kind=="shield" and enemy.pos.direction_to(player).dot(enemy.get("facing",Vector2.LEFT))>0.35: amount*=0.6
 	var dealt: float=maxf(1,amount+temp_power)
@@ -1153,6 +1163,7 @@ func hit_enemy(enemy: Dictionary, amount: float) -> void:
 				other["poison"]=maxf(4.0,float(other.get("poison",0)))
 		effect("synergy_toxic",enemy.pos,0.56,Vector2.ZERO)
 	if relics.has("ember") or set_id=="arcanist_fire": enemy["burn"]=3.0
+	class_enemy_hit(enemy,dealt)
 	enemy.flash = 0.12
 	effect("hit", enemy.pos, 0.22, Vector2.ZERO)
 	if effects.size()<80: effects.append({"kind":"damage","pos":enemy.pos,"time":0.65,"max":0.65,"dir":Vector2.ZERO,"amount":int(round(dealt))})
@@ -1176,6 +1187,7 @@ func hurt(amount: float) -> void:
 	var scaled: float=amount*(1.0+0.20*floor_index)
 	# Armor never negates more than half of an incoming hit.
 	hp = maxf(0,hp-maxf(scaled*0.5,scaled-armor))
+	class_damage_taken()
 	if relics.has("guardpulse"): guard_pulse_pending=true
 	invulnerable = 0.65+0.15*relics.count("warding")
 	effect("hurt", player, 0.25, Vector2.ZERO)
@@ -1183,7 +1195,7 @@ func hurt(amount: float) -> void:
 
 func shoot(pos: Vector2, velocity: Vector2, hostile: bool, power: float) -> void:
 	if shots.size()>=180: return
-	shots.append({"pos":pos,"vel":velocity,"hostile":hostile,"damage":power,"life":2.8,"pierce":0 if hostile else mini(5,relics.count("pierce")),"hit":[],"bounce":0 if hostile else mini(3,relics.count("bounce")),"style":enemy_shot_style if hostile else shot_style})
+	shots.append({"pos":pos,"vel":velocity,"hostile":hostile,"damage":power,"life":2.8,"pierce":0 if hostile else mini(5,relics.count("pierce")),"hit":[],"bounce":0 if hostile else mini(5,relics.count("bounce")+relics.count("d_sleight")),"style":enemy_shot_style if hostile else shot_style})
 
 func boss_phase_for(enemy: Dictionary) -> int:
 	var ratio: float=float(enemy.hp)/maxf(1.0,float(enemy.max_hp))
@@ -1283,6 +1295,8 @@ func update_enemies(dt: float) -> void:
 			enemy["poison"]=maxf(0,float(enemy.poison)-dt)
 			enemy.hp-=dt*5*relics.count("venom")
 		enemy["chill"]=maxf(0,float(enemy.get("chill",0))-dt)
+		enemy["hex_mark"]=maxf(0,float(enemy.get("hex_mark",0))-dt)
+		enemy["prism_lock"]=maxf(0,float(enemy.get("prism_lock",0))-dt)
 		enemy.flash = maxf(0,float(enemy.flash)-dt)
 		if str(enemy.kind) in ["boss","rootking","hollowking"] and int(enemy.get("phase",1))<3:
 			var phase_gate: float=float(enemy.max_hp)*(0.68 if int(enemy.get("phase",1))==1 else 0.32)
