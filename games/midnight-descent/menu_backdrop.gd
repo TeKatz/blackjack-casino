@@ -102,7 +102,7 @@ func _draw() -> void:
 		var ring_alpha: float=sin((cinematic_clock-0.72)/0.40*PI)
 		draw_arc(Vector2(925,actor_y+68),44,0,TAU,32,Color(0.89,0.73,1,ring_alpha*0.9),3,true)
 		for i in range(6):
-			var p: Vector2=Vector2(925,y+68)+Vector2.from_angle(i*TAU/6+clock)*58
+			var p: Vector2=Vector2(925,actor_y+68)+Vector2.from_angle(i*TAU/6+clock)*58
 			draw_rect(Rect2(p,Vector2(3,3)),Color("#ffdcaa"))
 	for i in range(34):
 		var pos := Vector2(540+fposmod(i*79+clock*(4+i%4),730),112+fposmod(i*71-clock*7,490))
