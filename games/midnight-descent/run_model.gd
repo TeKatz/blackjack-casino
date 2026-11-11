@@ -516,6 +516,20 @@ func enter_hub() -> void:
 	# This tavern is outside the route graph: no free combat progress or rewards.
 	state="hub"
 	room_kind="hub"
+	# Always restore the tavern's fixed collision grid after an expedition.
+	large_room=false
+	room_bounds=ARENA
+	room_regions.clear()
+	spawn_point=SPAWN
+	exit_point=EXIT
+	boss_awake=false
+	boss_intro_timer=0.0
+	boss_arena=Rect2()
+	boss_trigger_x=0.0
+	layout_name=""
+	layout_name_de=""
+	flow_map.clear()
+	flow_timer=0.0
 	encounter_id=""
 	encounter_threat=0
 	player=HUB_SPAWN
