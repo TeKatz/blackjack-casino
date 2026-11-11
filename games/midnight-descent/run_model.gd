@@ -632,7 +632,7 @@ func spawn_enemy(kind: String, pos: Vector2, affix: String="") -> void:
 					pos=candidate
 					break
 			if not blocked(pos,radius): break
-	enemies.append({"kind":kind,"pos":pos,"hp":health,"max_hp":health,"r":radius,"timer":rng.randf_range(0.6,1.4),"wind":0.0,"flash":0.0,"target":pos,"facing":Vector2.LEFT,"affix":affix,"primed":false})
+	enemies.append({"kind":kind,"pos":pos,"hp":health,"max_hp":health,"r":radius,"timer":rng.randf_range(0.6,1.4),"wind":0.0,"flash":0.0,"target":pos,"facing":Vector2.LEFT,"affix":affix,"primed":false,"phase":1,"phase_lock":0.0})
 
 func safe_position(pos: Vector2, radius: float) -> Vector2:
 	return Vector2(clampf(pos.x, ARENA.position.x + radius, ARENA.end.x - radius), clampf(pos.y, ARENA.position.y + radius, ARENA.end.y - radius))
@@ -1081,6 +1081,8 @@ func update_enemies(dt: float) -> void:
 			enemy.hp-=dt*5*relics.count("venom")
 		enemy["chill"]=maxf(0,float(enemy.get("chill",0))-dt)
 		enemy.flash = maxf(0, float(enemy.flash)-dt)
+		if str(enemy.kind) in ["boss","rootking","hollowking"] and update_boss_phase(enemy,dt):
+			continue
 		var affix: String=str(enemy.get("affix",""))
 		enemy.timer-=dt*(1.35 if affix=="frenzied" else 1.0)
 		if affix=="volatile" and not bool(enemy.get("primed",false)) and enemy.hp<enemy.max_hp*0.5:
@@ -1109,22 +1111,10 @@ func update_enemies(dt: float) -> void:
 						player=move_actor(player,player.direction_to(pos)*100,15)
 						hurt(12)
 				elif kind in ["boss","rootking","hollowking"]:
-					var phase: int = 12 if enemy.hp < enemy.max_hp*0.5 else 8
-					for i in range(phase):
-						var angle := TAU*float(i)/phase + elapsed*0.3
-						shoot(pos, Vector2.from_angle(angle)*290, true, 15)
-					if kind=="hollowking":
-						for j in range(5 if enemy.hp<enemy.max_hp*0.5 else 3): add_hazard(enemy.target+Vector2.from_angle(j*TAU/5)*85,38,0.7,2.8,19)
-						for j in range(3): shoot(pos,pos.direction_to(enemy.target).rotated((j-1)*0.24)*430,true,18)
-					if kind=="rootking":
-						add_hazard(enemy.target,62,0.8,3.5,18)
-						if enemy.hp<enemy.max_hp*0.5:
-							for i in range(3): add_hazard(enemy.target+Vector2.from_angle(i*TAU/3)*95,40,1.1,3.0,12)
-					if dist < 125:
-						hurt(24)
+					boss_release_attack(enemy)
 				elif dist < radius + 45:
 					hurt(18 if kind in ["brute","shield","mushroom","sentinel"] else 11)
-				enemy.timer = 1.8 if kind in ["boss","rootking","hollowking"] else 0.9
+				enemy.timer = maxf(1.05,2.0-float(enemy.get("phase",1))*0.2) if kind in ["boss","rootking","hollowking"] else 0.9
 			continue
 		var velocity := Vector2.ZERO
 		if kind in ["caster","archer","spore","hexer"]:
@@ -1134,10 +1124,8 @@ func update_enemies(dt: float) -> void:
 				enemy.wind = 0.55
 				enemy.target = player
 		elif kind in ["boss","rootking","hollowking"]:
-			velocity = toward*78 if dist > 125 else Vector2.ZERO
-			if enemy.timer <= 0:
-				enemy.wind = 0.8
-				enemy.target = player
+			velocity=toward*(78+15*int(enemy.get("phase",1))) if dist>145 else Vector2.ZERO
+			if enemy.timer<=0: boss_start_attack(enemy)
 		elif kind=="vine":
 			velocity=toward*100 if dist>180 else Vector2.ZERO
 			if enemy.timer<=0 and dist<280:
