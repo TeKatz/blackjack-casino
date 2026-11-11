@@ -60,6 +60,16 @@ const RELICS := {
 	"bounty":["Bounty Seal","Kopfgeldsiegel","Elite and boss kills award +10 shards","Elite- und Bosskills geben +10 Splitter",46],
 	"sacrifice":["Crimson Crown","Blutkrone","+20% damage, lose 2 HP on new combat rooms","+20 % Schaden, -2 LP bei neuen Kampfräumen",47]
 }
+# Two-relic build transformations. IDs are stable and derived from the owned
+# relic inventory, so duplicates and run restarts cannot grant phantom combos.
+const SYNERGIES := {
+	"toxic_jackpot":{"parts":["venom","crit"],"en":"Toxic Jackpot","de":"Gift-Jackpot","en_effect":"Critical hits against poisoned foes explode, spreading poison.","de_effect":"Kritische Treffer gegen vergiftete Gegner explodieren und verteilen Gift."},
+	"wildfire_circuit":{"parts":["ember","storm"],"en":"Wildfire Circuit","de":"Flammenkette","en_effect":"Striking burning foes chains fire lightning to three enemies.","de_effect":"Treffer gegen brennende Gegner leiten Feuerblitze zu drei Zielen."},
+	"permafrost":{"parts":["frost","shatter"],"en":"Permafrost Burst","de":"Eisgrab","en_effect":"Chilled enemies explode on death and freeze nearby foes.","de_effect":"Unterkühlte Feinde explodieren beim Tod und vereisen weitere Ziele."},
+	"inferno_rush":{"parts":["dashfire","nova"],"en":"Inferno Rush","de":"Infernosturm","en_effect":"Every dash ends in a burning explosion.","de_effect":"Jeder Dash endet in einer brennenden Explosion."},
+	"ricochet_storm":{"parts":["pierce","bounce"],"en":"Ricochet Storm","de":"Abprallsturm","en_effect":"Piercing projectiles split into two ricochets on enemy impact.","de_effect":"Durchschlagende Geschosse teilen sich beim Treffer in zwei Abpraller."},
+	"soul_requiem":{"parts":["soulstorm","leech"],"en":"Soul Requiem","de":"Seelenrequiem","en_effect":"Kills restore extra health and unleash six spirit bolts.","de_effect":"Kills heilen zusätzlich und entfesseln sechs Seelengeschosse."}
+}
 const UPGRADES := {
 	"vitality":["Vitality","Vitalität","+5 starting HP per rank","+5 Start-LP je Rang",12,5],
 	"power":["Power","Kraft","+2 main attack damage per rank","+2 Hauptangriffsschaden je Rang",15,5],
