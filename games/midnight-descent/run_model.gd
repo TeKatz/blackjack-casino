@@ -2509,41 +2509,41 @@ func boss_gate_smoke() -> bool:
 			dungeon.nodes[room]["layout"]=plan
 			enter_room()
 			if not large_room or boss_gate_state!="open" or boss_awake:
-				push_error("Boss gate stage "+str(floor)+" variant "+str(plan)+" checkpoint 1: if not large_room or boss_gate_state!='open' or boss_awake")
+				push_error("Boss gate stage "+str(floor_index)+" room "+str(room)+" checkpoint 1: if not large_room or boss_gate_state!='open' or boss_awake")
 				return false
 			if boss_gate.size.x<50 or boss_gate.size.y<150:
-				push_error("Boss gate stage "+str(floor)+" variant "+str(plan)+" checkpoint 2: if boss_gate.size.x<50 or boss_gate.size.y<150")
+				push_error("Boss gate stage "+str(floor_index)+" room "+str(room)+" checkpoint 2: if boss_gate.size.x<50 or boss_gate.size.y<150")
 				return false
 			var gate: Rect2=boss_gate
 			var enter_side: Vector2=Vector2(gate.position.x-46,gate.get_center().y)
 			var arena_side: Vector2=Vector2(gate.end.x+46,gate.get_center().y)
 			if blocked(gate.get_center(),15):
-				push_error("Boss gate stage "+str(floor)+" variant "+str(plan)+" checkpoint 3: if blocked(gate.get_center(),15)")
+				push_error("Boss gate stage "+str(floor_index)+" room "+str(room)+" checkpoint 3: if blocked(gate.get_center(),15)")
 				return false
 			var crossing: Vector2=move_actor(enter_side,Vector2(155,0),15)
 			if crossing.x<=gate.end.x+20:
-				push_error("Boss gate stage "+str(floor)+" variant "+str(plan)+" checkpoint 4: if crossing.x<=gate.end.x+20")
+				push_error("Boss gate stage "+str(floor_index)+" room "+str(room)+" checkpoint 4: if crossing.x<=gate.end.x+20")
 				return false
 			player=Vector2(boss_trigger_x+140,boss_arena.get_center().y)
 			tick(0.016,Vector2.ZERO,boss_arena.get_center(),false,false,false)
 			if not boss_awake or boss_gate_state!="closing" or not blocked(gate.get_center(),15):
-				push_error("Boss gate stage "+str(floor)+" variant "+str(plan)+" checkpoint 5: if not boss_awake or boss_gate_state!='closing' or not blocked(ga")
+				push_error("Boss gate stage "+str(floor_index)+" room "+str(room)+" checkpoint 5: if not boss_awake or boss_gate_state!='closing' or not blocked(ga")
 				return false
 			if not notices.has("boss_gate_close"):
-				push_error("Boss gate stage "+str(floor)+" variant "+str(plan)+" checkpoint 6: if not notices.has('boss_gate_close')")
+				push_error("Boss gate stage "+str(floor_index)+" room "+str(room)+" checkpoint 6: if not notices.has('boss_gate_close')")
 				return false
 			# Even a dash-scale movement must stop against the full shutter.
 			var bounced: Vector2=move_actor(arena_side,Vector2(-220,0),15)
 			if bounced.x<gate.end.x+14:
-				push_error("Boss gate stage "+str(floor)+" variant "+str(plan)+" checkpoint 7: if bounced.x<gate.end.x+14")
+				push_error("Boss gate stage "+str(floor_index)+" room "+str(room)+" checkpoint 7: if bounced.x<gate.end.x+14")
 				return false
 			tick(BOSS_GATE_CLOSE_DURATION+0.03,Vector2.ZERO,boss_arena.get_center(),false,false,false)
 			if boss_gate_state!="closed" or not notices.has("boss_gate_lock"):
-				push_error("Boss gate stage "+str(floor)+" variant "+str(plan)+" checkpoint 8: if boss_gate_state!='closed' or not notices.has('boss_gate_lock')")
+				push_error("Boss gate stage "+str(floor_index)+" room "+str(room)+" checkpoint 8: if boss_gate_state!='closed' or not notices.has('boss_gate_lock')")
 				return false
 		begin(9660+floor)
 		if boss_gate.has_area() or boss_gate_state!="open":
-			push_error("Boss gate stage "+str(floor)+" variant "+str(plan)+" checkpoint 9: if boss_gate.has_area() or boss_gate_state!='open'")
+			push_error("Boss gate stage "+str(floor_index)+" room "+str(room)+" checkpoint 9: if boss_gate.has_area() or boss_gate_state!='open'")
 			return false
 	return true
 
