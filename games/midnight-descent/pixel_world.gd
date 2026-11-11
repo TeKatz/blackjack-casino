@@ -47,6 +47,7 @@ var side_lights: Array[PointLight2D] = []
 var boss_light: PointLight2D
 var gate_open_amount := 0.0
 var decor: Array[Dictionary]=[]
+var decor_exclusions: Array[Rect2]=[]
 var decor_lights: Array[PointLight2D]=[]
 var floor_decals: Array[Vector2]=[]
 
@@ -262,13 +263,19 @@ func build_decor() -> void:
 	for pos in TORCH_POSITIONS: occupied.append(Rect2(pos-Vector2(30,42),Vector2(60,92)))
 	for light in side_lights: occupied.append(Rect2(light.position-Vector2(35,48),Vector2(70,100)))
 	occupied.append(Rect2(Model.EXIT-Vector2(60,80),Vector2(120,160)))
+	if floor_id==1:
+		occupied.append(Rect2(58,146,1164,56))
+		occupied.append(Rect2(58,585,1164,39))
+	elif floor_id==2:
+		occupied.append(Rect2(58,580,1164,44))
 	if floor_id==0:
 		for x in [420.0,690.0,960.0]: occupied.append(Rect2(x-43,155,86,460))
 	if model.room_kind in ["shop","treasure","secret","shrine","event","forge"]:
 		occupied.append(Rect2(470,145,340,190))
+	decor_exclusions=occupied.duplicate()
 	for side in range(2):
 		for j in range(5):
-			var pos:=Vector2(225+j*205+rng.randi_range(-18,18),225 if side==0 else 554)
+			var pos:=Vector2(225+j*205+rng.randi_range(-18,18),252 if side==0 else 552)
 			var prop_size: float=48
 			var bounds:=Rect2(pos-Vector2(prop_size*0.5,prop_size*0.83),Vector2(prop_size,prop_size)).grow(8)
 			var clear:=true
@@ -286,6 +293,17 @@ func build_decor() -> void:
 	if model.room_kind in ["shop","treasure","secret","shrine","event","forge"]:
 		decor_lights[0].position=Vector2(640,240)
 		decor_lights[0].color={"shop":Color("#f4c283"),"treasure":Color("#f7d88f"),"secret":Color("#a38fe8"),"shrine":Color("#9cf0cd"),"event":Color("#d8a4ee"),"forge":Color("#ff9d62")}[model.room_kind]
+
+func decor_is_clear() -> bool:
+	var occupied: Array[Rect2]=decor_exclusions.duplicate()
+	for prop in decor:
+		var pos: Vector2=prop.pos
+		var size: float=prop.size
+		var bounds:=Rect2(pos-Vector2(size*0.5,size*0.83),Vector2(size,size)).grow(8)
+		for area in occupied:
+			if area.intersects(bounds): return false
+		occupied.append(bounds.grow(14))
+	return true
 
 func draw_prop(prop: Dictionary) -> void:
 	var pos: Vector2=prop.pos

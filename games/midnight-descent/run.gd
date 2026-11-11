@@ -201,8 +201,13 @@ func _draw() -> void:
 	for effect in run.effects:
 		draw_effect(effect)
 	draw_hud()
-	if shake > 0:
-		draw_rect(Rect2(0,0,1280,720),Color(0.9,0.15,0.25,shake*0.012))
+	if hud_hit>0:
+		for i in range(4):
+			var tint:=Color(0.9,0.12,0.24,hud_hit*0.07*(1-float(i)/4))
+			draw_rect(Rect2(0,i*5,1280,5),tint)
+			draw_rect(Rect2(i*5,0,5,720),tint)
+			draw_rect(Rect2(1275-i*5,0,5,720),tint)
+			draw_rect(Rect2(0,715-i*5,1280,5),tint)
 
 func run_scene_smoke() -> void:
 	# Exercise the actual scene and its overlay construction, not just the model.
@@ -291,6 +296,18 @@ func run_scene_smoke() -> void:
 	if crown_icon.atlas!=UI.CROWN_RELICS or crown_icon.region!=Rect2(336,0,48,48):
 		get_tree().quit(19)
 		return
+	# Test reserved decor bounds in each generated room, including all biome fixtures.
+	for floor in range(3):
+		run.floor_index=floor
+		run.dungeon.generate(12345,floor)
+		for room_id in range(run.dungeon.nodes.size()):
+			run.room=room_id
+			run.enter_room()
+			world.update_view(0.0)
+			if not world.decor_is_clear():
+				push_error("Decor footprint overlap on floor %d room %d" % [floor,room_id])
+				get_tree().quit(24)
+				return
 	print("Midnight Descent gameplay scene smoke PASS")
 	get_tree().quit()
 
