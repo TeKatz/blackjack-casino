@@ -736,18 +736,29 @@ func update_environment(dt: float) -> void:
 			hazards[-1]["type"]="sporepool"
 			notices.append("sporepool")
 		2:
-			# Royal runes fire alternating horizontal/vertical sweeping lanes.
-			environment_timer=3.0
-			notices.append("rune")
+			# Crown seals erupt as spectral lances, never inside tomb geometry.
+			environment_timer=3.4
 			var vertical: bool=environment_cycle%2==0
 			var pos: Vector2=player
-			add_hazard(pos,40,1.05,0.55,22)
-			hazards[-1]["type"]="rune"
-			hazards[-1]["rect"]=Rect2(pos.x-36,166,72,438) if vertical else Rect2(78,pos.y-30,1124,60)
+			add_royal_seals(pos,vertical,1.15,22)
 			if room_kind=="boss" and environment_cycle%3==0:
-				add_hazard(pos,48,1.25,0.45,20)
-				hazards[-1]["type"]="rune"
-				hazards[-1]["rect"]=Rect2(78,pos.y-30,1124,60) if vertical else Rect2(pos.x-36,166,72,438)
+				add_royal_seals(pos,not vertical,1.45,20)
+
+func add_royal_seals(pos: Vector2, vertical: bool, warning: float, power: float) -> void:
+	var lane:=Rect2(pos.x-30,166,60,438) if vertical else Rect2(78,pos.y-30,1124,60)
+	var cells: Array[Rect2]=[]
+	var count: int=7 if vertical else 18
+	for i in range(count):
+		var center:=Vector2(pos.x,196+i*60) if vertical else Vector2(110+i*60,pos.y)
+		var cell:=Rect2(center-Vector2(27,24),Vector2(54,48))
+		if not ARENA.grow(-8).encloses(cell): continue
+		var clear:=true
+		for wall in walls:
+			if wall.grow(18).intersects(cell): clear=false; break
+		if clear: cells.append(cell)
+	if cells.is_empty(): return
+	hazards.append({"pos":pos,"r":40,"warn":warning,"warning":warning,"life":warning+0.84,"power":power,"type":"rune","rect":lane,"cells":cells,"phase":"warn"})
+	notices.append("rune")
 
 func spike_cells(x: float) -> Array[Rect2]:
 	var cells: Array[Rect2]=[]
@@ -774,6 +785,18 @@ func update_hazards(dt: float) -> void:
 				hazard.phase="retract"
 				notices.append("spike_retract")
 			if hazard.warn<=-0.10 and hazard.life>=0.20:
+				for cell in hazard.cells:
+					if cell.has_point(player):
+						hurt(hazard.power)
+						break
+		elif hazard.get("type","")=="rune":
+			if hazard.warn<=0 and hazard.phase=="warn":
+				hazard.phase="rise"
+				notices.append("rune_strike")
+			if hazard.life<0.24 and hazard.phase=="rise":
+				hazard.phase="retract"
+				notices.append("rune_fade")
+			if hazard.warn<=-0.12 and hazard.life>=0.24:
 				for cell in hazard.cells:
 					if cell.has_point(player):
 						hurt(hazard.power)
@@ -959,4 +982,19 @@ func smoke_test() -> bool:
 	hazards.clear()
 	environment_timer=0
 	update_environment(0.1)
-	return hazards[-1].get("type")=="rune" and hazards[-1].has("rect")
+	if hazards.is_empty() or hazards[-1].get("type")!="rune": return false
+	var royal: Dictionary=hazards[-1]
+	for cell in royal.cells:
+		for wall in walls:
+			if wall.grow(18).intersects(cell): return false
+	player=royal.cells[0].get_center()
+	hp=100
+	invulnerable=0
+	update_hazards(0.6)
+	if hp!=100: return false
+	update_hazards(0.8)
+	if not notices.has("rune_strike") or hp>=100: return false
+	var after: float=hp
+	invulnerable=0
+	update_hazards(0.42)
+	return hp==after and notices.has("rune_fade")

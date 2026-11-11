@@ -4,6 +4,7 @@ const Model = preload("res://run_model.gd")
 const TILES = preload("res://art/pixel/vault_tiles.svg")
 const GARDEN = preload("res://art/pixel/garden_tiles.svg")
 const CROWN = preload("res://art/pixel/crown_tiles.svg")
+const BIOME_WALLS = preload("res://art/pixel/biome_walls.svg")
 const PROPS = preload("res://art/pixel/room_props.svg")
 const TORCH = preload("res://art/pixel/torch.svg")
 const RELICS = preload("res://art/pixel/relics.png")
@@ -169,6 +170,9 @@ func pixel_pos(value: Vector2) -> Vector2:
 	return (value/2.0).round()*2.0
 
 func tile(index: int, rect: Rect2, source_size: Vector2 = Vector2(32,32)) -> void:
+	if index==4 and model.floor_index>0:
+		draw_texture_rect_region(BIOME_WALLS,rect,Rect2((model.floor_index-1)*32,0,32,32))
+		return
 	draw_texture_rect_region([TILES,GARDEN,CROWN][model.floor_index],rect,Rect2(Vector2(index*32,0),source_size))
 
 func _draw() -> void:
@@ -222,14 +226,8 @@ func _draw() -> void:
 	draw_room_decals()
 	draw_biome_details(arena)
 	draw_service_scene()
-	# Gate is drawn as stone architecture, with an illuminated open portal.
-	var gate: Vector2 = Model.EXIT
-	tile(6,Rect2(gate-Vector2(22,54),Vector2(48,108)))
-	if model.state == "exit":
-		draw_rect(Rect2(gate-Vector2(12,42),Vector2(24,84)),Color("#43316f"))
-		for i in range(7):
-			var p := gate + Vector2(sin(clock*3+i*1.9)*9,-36+float(i)*11)
-			draw_rect(Rect2(pixel_pos(p),Vector2(4,4)),Color("#dcc7ff"))
+	draw_royal_seals()
+	draw_gate()
 	# Painter's ordering: pillars and actor feet share the same depth list.
 	var objects: Array[Dictionary] = []
 	for wall in model.walls:
@@ -247,6 +245,60 @@ func _draw() -> void:
 			"prop": draw_prop(object.prop)
 			"enemy": draw_actor(object.enemy)
 			"player": draw_warden()
+
+func draw_gate() -> void:
+	var gate: Vector2=Model.EXIT
+	var p: Vector2=gate-Vector2(30,61)
+	var color: Color=[Color("#bd9be8"),Color("#8ce0ba"),Color("#e0a3d7")][model.floor_index]
+	draw_rect(Rect2(p+Vector2(5,6),Vector2(60,122)),Color("#100c1b"))
+	draw_rect(Rect2(p,Vector2(60,122)),Color("#352a40"))
+	draw_rect(Rect2(p+Vector2(4,4),Vector2(52,114)),Color("#6f536e"))
+	draw_rect(Rect2(p+Vector2(8,8),Vector2(44,106)),Color("#20172d"))
+	draw_rect(Rect2(p+Vector2(12,12),Vector2(36,98)),Color("#100d1c"))
+	for i in range(4):
+		draw_rect(Rect2(p+Vector2(4,12+i*28),Vector2(6,7)),color.darkened(0.35))
+		draw_rect(Rect2(p+Vector2(50,12+i*28),Vector2(6,7)),color.darkened(0.35))
+	draw_rect(Rect2(p-Vector2(4,4),Vector2(68,10)),Color("#8b6c83"))
+	draw_rect(Rect2(p+Vector2(-4,115),Vector2(68,9)),Color("#756078"))
+	if gate_open_amount>0.01:
+		var alpha: float=gate_open_amount
+		draw_rect(Rect2(p+Vector2(13,13),Vector2(34,96)),Color(color.darkened(0.62),alpha))
+		for i in range(5):
+			var y: float=15+fposmod(clock*19+i*19,92)
+			var x: float=30+sin(clock*2.5+i*1.7)*9
+			draw_rect(Rect2(pixel_pos(p+Vector2(x-9,y)),Vector2(18,4)),Color(color,alpha*0.36))
+			draw_rect(Rect2(pixel_pos(p+Vector2(x,y)),Vector2(4,4)),Color(1,0.93,1,alpha*0.85))
+		draw_rect(Rect2(p+Vector2(10,10),Vector2(40,102)),Color(color,alpha*0.75),false,2)
+		draw_colored_polygon(PackedVector2Array([p+Vector2(30,42),p+Vector2(40,59),p+Vector2(30,76),p+Vector2(20,59)]),Color(color,alpha*0.5))
+	else:
+		for i in range(5): draw_rect(Rect2(p+Vector2(16+i*6,16),Vector2(3,90)),Color("#897080"))
+		draw_rect(Rect2(p+Vector2(12,53),Vector2(36,8)),Color("#b39391"))
+
+func draw_royal_seals() -> void:
+	if model.floor_index!=2: return
+	for hazard in model.hazards:
+		if hazard.get("type","")!="rune": continue
+		var height: float=clampf(-float(hazard.warn)/0.14,0,1)*clampf(float(hazard.life)/0.24,0,1)
+		var warning: bool=hazard.warn>0
+		var color:=Color("#e5a2dc") if warning else Color("#f7c5ff")
+		for cell in hazard.cells:
+			var rect: Rect2=cell
+			var p: Vector2=rect.get_center()
+			var alpha: float=0.32+0.17*sin(clock*12) if warning else 0.65
+			draw_rect(rect,Color(0.23,0.08,0.32,alpha))
+			draw_rect(rect.grow(-2),Color(color,alpha+0.25),false,2)
+			var diamond:=PackedVector2Array([p+Vector2(0,-18),p+Vector2(21,0),p+Vector2(0,18),p+Vector2(-21,0),p+Vector2(0,-18)])
+			draw_polyline(diamond,Color(color,alpha+0.25),2)
+			draw_rect(Rect2(p-Vector2(3,10),Vector2(6,20)),Color(color,alpha))
+			draw_rect(Rect2(p-Vector2(10,3),Vector2(20,6)),Color(color,alpha))
+			if height>0:
+				for j in range(3):
+					var foot:=p+Vector2((j-1)*14,7)
+					var tip:=foot+Vector2(0,-roundf(height*(32+8*(j%2))))
+					draw_colored_polygon(PackedVector2Array([foot+Vector2(-5,3),tip,foot+Vector2(5,3)]),Color(0.66,0.29,0.83,height*0.65))
+					draw_line(foot,tip,Color(0.98,0.84,1,height),3)
+					var spark:=foot+Vector2(sin(clock*21+j)*8,-height*22)
+					draw_rect(Rect2(pixel_pos(spark),Vector2(3,3)),Color(1,0.76,0.95,height))
 
 func build_decor() -> void:
 	decor.clear()
@@ -324,8 +376,14 @@ func draw_architecture(arena: Rect2) -> void:
 	for x in [58.0,1210.0]:
 		draw_rect(Rect2(x,146,12,472),edge.darkened(0.55))
 		draw_rect(Rect2(x+2,146,2,472),edge.darkened(0.15))
-	for i in range(6):
-		var x: float=190+i*186
+	for i in range(4):
+		var x: float=270+i*250
+		if floor_id==2:
+			draw_rect(Rect2(x-18,109,36,30),Color("#271c2c"))
+			draw_rect(Rect2(x-14,111,28,25),Color("#816373"),false,2)
+			draw_rect(Rect2(x-3,116,6,15),Color("#d1ac85"))
+			draw_rect(Rect2(x-9,121,18,4),Color("#d1ac85"))
+			continue
 		draw_rect(Rect2(x-26,115,52,24),Color("#171320"))
 		draw_rect(Rect2(x-22,117,44,18),edge.darkened(0.45))
 		draw_rect(Rect2(x-18,119,36,14),Color("#1b1726"))
@@ -470,11 +528,8 @@ func draw_biome_details(arena: Rect2) -> void:
 			draw_rect(Rect2(x,374,24,24),Color("#76504d"),false,2)
 			draw_rect(Rect2(x+10,378,4,16),Color("#ac8068"))
 			draw_rect(Rect2(x+4,384,16,4),Color("#ac8068"))
-		for i in range(5):
-			var pos:=Vector2(210+i*214,610)
-			draw_rect(Rect2(pos-Vector2(8,0),Vector2(16,5)),Color("#72544d"))
-			draw_rect(Rect2(pos-Vector2(3,15),Vector2(6,15)),Color("#e5d1ba"))
-			draw_rect(Rect2(pos-Vector2(2,20),Vector2(4,5)),Color("#f7abc3"))
+		# Candles are integrated into the wall fixtures below, not scattered
+		# into the floor props or sarcophagi.
 
 func draw_pillar(rect: Rect2) -> void:
 	draw_rect(Rect2(rect.position+Vector2(5,6),rect.size),Color("#191320"))
