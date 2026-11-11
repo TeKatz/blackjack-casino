@@ -246,7 +246,7 @@ func _draw() -> void:
 	for hazard in run.hazards:
 		var kind: String=hazard.get("type","")
 		if kind in ["spikes","rune"]: continue # drawn on the lit world canvas, below obstacles and actors
-		var color := Color("#e9b963") if hazard.warn>0 else (Color("#e17fbc") if kind=="rune" else (Color("#f19c7b") if kind=="spikes" else Color("#77c96d")))
+		var color := Color("#e9b963") if hazard.warn>0 else (Color("#f16a83") if kind=="volatile" else (Color("#e17fbc") if kind=="rune" else (Color("#f19c7b") if kind=="spikes" else Color("#77c96d"))))
 		if hazard.has("rect"):
 			var rect: Rect2=hazard.rect
 			draw_rect(rect,Color(color,0.14 if hazard.warn>0 else 0.37))
@@ -784,8 +784,11 @@ func draw_hud() -> void:
 			text_at(Vector2(640-font.get_string_size(sub,HORIZONTAL_ALIGNMENT_LEFT,-1,15).x/2,337),sub,15,Color(0.86,0.78,0.94,alpha))
 	if room_banner>0 and run.state=="fight":
 		var opacity := minf(1,room_banner*2.0)
-		draw_rect(Rect2(480,153,320,42),Color(0.06,0.04,0.1,0.77*opacity))
-		text_at(Vector2(498,180),[tr_text("PRESSURE PLATES","DRUCKPLATTEN"),tr_text("TOXIC SPORES","GIFTIGE SPOREN"),tr_text("ROYAL RUNES","KÖNIGLICHE RUNEN")][run.floor_index],18,Color(1,0.82,0.52,opacity))
+		var danger: String=["I","II","III"][run.encounter_threat]
+		var message: String=encounter_name(run.encounter_id).to_upper()+"  •  "+tr_text("DANGER","GEFAHR")+" "+danger
+		draw_rect(Rect2(466,153,348,45),Color(0.06,0.04,0.1,0.86*opacity))
+		draw_rect(Rect2(466,153,348,45),Color(0.77,0.49,0.27,opacity),false,1)
+		text_at(Vector2(485,182),message,17,Color(1,0.83,0.55,opacity))
 
 func play_sound(kind: String) -> void:
 	if not smoke_mode: audio.play(kind)
@@ -826,6 +829,14 @@ func active_name() -> String:
 		"mirror": return tr_text("Mirror","Spiegel")
 	return tr_text("Heal","Heilung")
 
+func encounter_name(id: String) -> String:
+	match id:
+		"crossfire": return tr_text("Crossfire","Kreuzfeuer")
+		"siege": return tr_text("Siege","Belagerung")
+		"onslaught": return tr_text("Onslaught","Ansturm")
+		"skirmish": return tr_text("Skirmish","Scharmützel")
+	return tr_text("Unknown threat","Unbekannte Gefahr")
+
 func room_name(kind: String) -> String:
 	match kind:
 		"fight": return tr_text("Combat","Kampf")
@@ -845,7 +856,7 @@ func use_service(choice: int) -> void:
 
 func show_route_map(column: VBoxContainer) -> void:
 	add_label(column,tr_text("DUNGEON MAP","DUNGEON-KARTE")+"  •  %d / %d" % [run.floor_index+1,Model.FLOOR_COUNT],30,GOLD)
-	add_label(column,tr_text("Gold = current  ·  Lit = reachable  ·  ✓ = cleared","Gold = aktuell  ·  Hell = erreichbar  ·  ✓ = gesäubert"),13,MUTED)
+	add_label(column,tr_text("Gold = current · Lit = reachable · I–III = danger and better rewards","Gold = aktuell · Hell = erreichbar · I–III = Gefahr und bessere Beute"),13,MUTED)
 	add_label(column,tr_text("Boss gate: ","Boss-Tor: ")+tr_text("Fights","Kämpfe")+" %d/%d  •  Elite %d/%d" % [run.dungeon.cleared_fights(),run.dungeon.MIN_FIGHTS[run.floor_index],run.dungeon.cleared_elites(),run.dungeon.MIN_ELITES[run.floor_index]]+("  •  "+tr_text("OPEN","OFFEN") if run.dungeon.boss_ready() else "  •  "+tr_text("LOCKED","GESPERRT")),16,GOLD)
 	var map := RouteMap.new()
 	map.nodes=run.dungeon.nodes
@@ -857,6 +868,8 @@ func show_route_map(column: VBoxContainer) -> void:
 		var visible_kind: String = node.kind
 		if visible_kind=="secret" and not node.visited and not run.route_options().has(i): visible_kind="?"
 		var caption := room_name(visible_kind)
+		if node.kind in ["fight","elite"]:
+			caption+=" • "+["I","II","III"][int(node.get("threat",0))]
 		if i==run.room: caption+=" •"
 		elif node.cleared: caption+=" ✓"
 		var button:=add_button(map,caption,func(): run.travel(id))
@@ -877,6 +890,8 @@ func show_route_map(column: VBoxContainer) -> void:
 		if node.kind=="boss" and not run.dungeon.boss_ready():
 			button.text=tr_text("Locked","Gesperrt")
 		button.tooltip_text=tr_text("Current room","Aktueller Raum") if i==run.room else (tr_text("Travel to this room","Diesen Raum betreten") if not button.disabled else tr_text("Not connected to current room","Nicht direkt verbunden"))
+		if node.kind in ["fight","elite"]:
+			button.tooltip_text+="\n"+encounter_name(str(node.get("encounter","skirmish")))+" • "+tr_text("Danger","Gefahr")+" "+["I","II","III"][int(node.get("threat",0))]
 	var footer:=HBoxContainer.new()
 	footer.add_theme_constant_override("separation",12)
 	column.add_child(footer)
