@@ -14,6 +14,10 @@ const HUB_GATE_FRAME := Rect2(988,298,115,180)
 const HUB_BARTENDER_POINT := Vector2(482,326)
 const HUB_FORGE_POINT := Vector2(790,329)
 const HUB_SERVICE_RANGE := 104.0
+const HUB_STOOL_X := [275.0,380.0,485.0,590.0,695.0]
+const HUB_CARD_GUEST_LEFT := Rect2(393,468,49,93)
+const HUB_CARD_GUEST_RIGHT := Rect2(607,468,49,93)
+const HUB_SEAT_HOLD := 1.0
 const ROOM_COUNT := 26
 var environment_timer := 0.0
 var shot_style := ""
@@ -65,6 +69,11 @@ var seed_value: int
 var room := 0
 var state := "hub"
 var player := SPAWN
+var hub_seat_index := -1
+var hub_seat_target := -1
+var hub_seat_hold := 0.0
+var hub_seat_anim := 0.0
+var hub_seat_released := false
 var aim := Vector2.RIGHT
 var hp := 100.0
 var max_hp := 100.0
@@ -143,6 +152,11 @@ func enter_hub() -> void:
 	state="hub"
 	room_kind="hub"
 	player=HUB_SPAWN
+	hub_seat_index=-1
+	hub_seat_target=-1
+	hub_seat_hold=0.0
+	hub_seat_anim=0.0
+	hub_seat_released=false
 	aim=Vector2.RIGHT
 	attack_timer=0.0
 	bolt_timer=0.0
@@ -158,7 +172,35 @@ func enter_hub() -> void:
 	walls.clear()
 	# Each volume extends over the entire visual footprint. The bar and forge
 	# meet the northern arena limit so neither can be bypassed from behind.
-	walls.append_array([HUB_BAR,HUB_FORGE,HUB_TABLE,HUB_GATE_FRAME])
+	walls.append_array([HUB_BAR,HUB_FORGE,HUB_TABLE,HUB_GATE_FRAME,HUB_CARD_GUEST_LEFT,HUB_CARD_GUEST_RIGHT])
+
+func reset_hub_stool_hold() -> void:
+	hub_seat_target=-1
+	hub_seat_hold=0.0
+
+func update_hub_stool(dt: float, direction: Vector2) -> void:
+	if hub_seat_index>=0: return
+	var candidate: int=-1
+	# A deliberate, continuous upward push against a stool is required.
+	# Walking past the bar or briefly tapping toward it never seats the player.
+	if direction.y < -0.75 and absf(direction.x)<0.35 and player.y>=HUB_BAR.end.y+14.5 and player.y<=HUB_BAR.end.y+20.0:
+		for i in range(HUB_STOOL_X.size()):
+			if absf(player.x-float(HUB_STOOL_X[i]))<=21.0:
+				candidate=i
+				break
+	if candidate<0:
+		reset_hub_stool_hold()
+		return
+	if hub_seat_target!=candidate:
+		hub_seat_target=candidate
+		hub_seat_hold=0.0
+	hub_seat_hold+=dt
+	if hub_seat_hold>=HUB_SEAT_HOLD:
+		hub_seat_index=candidate
+		hub_seat_anim=0.0
+		hub_seat_released=false
+		player=Vector2(float(HUB_STOOL_X[candidate]),HUB_BAR.end.y+15.0)
+		reset_hub_stool_hold()
 
 func hub_bartender_available() -> bool:
 	return state=="hub" and player.y >= HUB_BAR.end.y and player.distance_to(HUB_BARTENDER_POINT)<=HUB_SERVICE_RANGE
@@ -424,11 +466,24 @@ func move_actor(pos: Vector2, motion: Vector2, radius: float) -> Vector2:
 func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: bool, dash: bool, active: bool = false) -> void:
 	if state=="hub":
 		if target.distance_to(player)>4: aim=player.direction_to(target)
-		# Substeps prevent walking through narrow furniture during a frame hitch.
+		if hub_seat_index>=0:
+			hub_seat_anim=minf(1.0,hub_seat_anim+dt/0.22)
+			if direction.length_squared()<0.01:
+				hub_seat_released=true
+				return
+			if not hub_seat_released:
+				return
+			# Reposition in front of the same stool, outside of bar collision.
+			player=Vector2(float(HUB_STOOL_X[hub_seat_index]),HUB_BAR.end.y+19.0)
+			hub_seat_index=-1
+			hub_seat_anim=0.0
+			reset_hub_stool_hold()
+		# Substeps prevent walking through furniture during a frame hitch.
 		var motion: Vector2=direction.limit_length()*speed*dt
 		var steps: int=maxi(1,ceili(motion.length()/8.0))
 		for step in range(steps):
 			player=move_actor(player,motion/float(steps),15)
+		update_hub_stool(dt,direction)
 		return
 	if state != "fight" and state != "exit":
 		return
@@ -962,7 +1017,25 @@ func smoke_test() -> bool:
 	if not dungeon.smoke_test(): return false
 	begin(123,"dealer_cards")
 	if state!="hub" or visited_count!=0 or dungeon.nodes[0].visited or not enemies.is_empty(): return false
-	if walls.size()!=4 or not blocked(HUB_BAR.get_center(),15) or not blocked(HUB_FORGE.get_center(),15) or not blocked(HUB_TABLE.get_center(),15) or not blocked(HUB_PORTAL,15): return false
+	if walls.size()!=6 or not blocked(HUB_BAR.get_center(),15) or not blocked(HUB_FORGE.get_center(),15) or not blocked(HUB_TABLE.get_center(),15) or not blocked(HUB_PORTAL,15): return false
+	if not blocked(HUB_CARD_GUEST_LEFT.get_center(),15) or not blocked(HUB_CARD_GUEST_RIGHT.get_center(),15): return false
+	for seat in range(HUB_STOOL_X.size()):
+		player=Vector2(float(HUB_STOOL_X[seat]),344)
+		reset_hub_stool_hold()
+		for tick_index in range(59):
+			tick(1.0/60.0,Vector2.UP,HUB_BARTENDER_POINT,false,false,false)
+		if hub_seat_index!=-1: return false
+		for tick_index in range(4):
+			tick(1.0/60.0,Vector2.UP,HUB_BARTENDER_POINT,false,false,false)
+		if hub_seat_index!=seat or hub_seat_released: return false
+		tick(0.25,Vector2.UP,HUB_BARTENDER_POINT,false,false,false)
+		if hub_seat_index!=seat or hub_seat_anim<0.99: return false
+		tick(0.016,Vector2.ZERO,HUB_BARTENDER_POINT,false,false,false)
+		tick(0.016,Vector2.DOWN,HUB_BARTENDER_POINT,false,false,false)
+		if hub_seat_index!=-1 or hub_seat_target!=-1: return false
+	player=HUB_SPAWN
+	tick(0.25,Vector2.UP,HUB_BARTENDER_POINT,false,false,false)
+	if hub_seat_hold>0: return false
 	if enter_first_room() or hub_bartender_available() or hub_forge_available(): return false
 	player=Vector2(482,370)
 	tick(0.7,Vector2.UP,HUB_BARTENDER_POINT,false,false,false)
