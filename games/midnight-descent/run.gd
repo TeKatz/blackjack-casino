@@ -62,6 +62,7 @@ var hub_keeper_prompt := 0.0
 var hub_forge_prompt := 0.0
 var hub_panel := ""
 var synergy_toast_timer := 0.0
+var boss_soul_toast_timer := 0.0
 
 func _ready() -> void:
 	german = "--language=de" in OS.get_cmdline_user_args()
@@ -125,12 +126,14 @@ func _physics_process(dt: float) -> void:
 		if notice=="kill": shake=maxf(shake,2.0)
 		if notice=="synergy_complete": synergy_toast_timer=2.7
 		if notice=="boss_phase": shake=maxf(shake,5.0)
+		if notice=="boss_soul": boss_soul_toast_timer=3.0
 		if notice=="dash_nova": shake=maxf(shake,3.0)
 	run.notices.clear()
 
 func _process(dt: float) -> void:
 	clock += dt
 	synergy_toast_timer=maxf(0,synergy_toast_timer-dt)
+	boss_soul_toast_timer=maxf(0,boss_soul_toast_timer-dt)
 	if hub_transition_stage==1:
 		hub_transition_time+=dt
 		hub_fade=clampf(hub_transition_time/0.48,0,1)
@@ -856,6 +859,8 @@ func draw_hud() -> void:
 		text_at(Vector2(300,55),tr_text("SOULS","SEELEN")+"  %d/6" % run.souls,13,Color("#8de1cb"))
 	text_at(Vector2(460,31),tr_text("EXPEDITION","EXPEDITION"),12,MUTED)
 	text_at(Vector2(460,54),tr_text("FLOOR","EBENE")+"  %d / %d" % [run.floor_index+1,Model.FLOOR_COUNT],21,GOLD)
+	if run.bosses_defeated>0:
+		text_at(Vector2(687,54),tr_text("BOSS SOULS ","BOSS-SEELEN ")+str(run.bosses_defeated),12,Color("#c7a6ff"))
 	var cleared: int=run.dungeon.cleared_fights()
 	var required: int=run.dungeon.MIN_FIGHTS[run.floor_index]
 	var elite_required: int=run.dungeon.MIN_ELITES[run.floor_index]
@@ -908,6 +913,14 @@ func draw_hud() -> void:
 				meter(Rect2(434,130,412,7),float(enemy.hp)/float(enemy.max_hp),Color("#e36b86"))
 				text_at(Vector2(745,123),"PHASE "+str(enemy.get("phase",1))+" / 3",12,Color("#ffe1b2"))
 				break
+	if boss_soul_toast_timer>0.0:
+		var soul_alpha: float=minf(1.0,boss_soul_toast_timer*2.5)
+		var soul_y: float=290.0 if synergy_toast_timer>0.0 else 203.0
+		var soul_rect:=Rect2(454,soul_y,372,58)
+		draw_rect(soul_rect,Color(0.10,0.07,0.20,0.93*soul_alpha))
+		draw_rect(soul_rect,Color("#c9a7f5")*Color(1,1,1,soul_alpha),false,2)
+		text_at(Vector2(481,soul_y+24),tr_text("BOSS SOUL ACQUIRED  +1","BOSS-SEELE ERHALTEN  +1"),18,Color(0.91,0.81,1.0,soul_alpha))
+		text_at(Vector2(481,soul_y+45),tr_text("Spend it in the menu skill tree","Im Skill Tree des Hauptmenüs ausgeben"),12,Color(0.83,0.75,0.93,soul_alpha))
 	if synergy_toast_timer>0.0 and run.last_synergy_id!="" and Content.SYNERGIES.has(run.last_synergy_id):
 		var remaining: float=clampf(synergy_toast_timer/2.7,0,1)
 		var fade: float=minf(1.0,synergy_toast_timer*3.0)
@@ -1433,6 +1446,7 @@ func restart() -> void:
 	relics_open=false
 	hub_panel=""
 	synergy_toast_timer=0.0
+	boss_soul_toast_timer=0.0
 	hub_prompt=0.0
 	hub_keeper_prompt=0.0
 	hub_forge_prompt=0.0
