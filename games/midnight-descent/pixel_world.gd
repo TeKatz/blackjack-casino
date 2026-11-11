@@ -911,7 +911,19 @@ func draw_actor(enemy: Dictionary) -> void:
 	if float(enemy.get("chill",0))>0: tint=Color("#a3dfff")
 	if enemy.get("elite",false):
 		draw_arc(pos+Vector2(0,10),size*0.42,0,TAU,24,Color("#f0bf70"),2,true)
+	var affix: String=str(enemy.get("affix",""))
+	if affix!="":
+		# Champion identity must be visible before the player attacks.
+		var accent: Color=Color("#f28b7b") if affix=="frenzied" else (Color("#83cbf3") if affix=="warded" else Color("#ee83b7"))
+		draw_arc(pos+Vector2(0,9),size*0.48,0,TAU,32,Color(accent,0.7+0.25*sin(clock*4.0)),3,true)
 	sprite(kind,pos,direction,frame,size,tint)
+	if affix!="":
+		var accent: Color=Color("#f28b7b") if affix=="frenzied" else (Color("#83cbf3") if affix=="warded" else Color("#ee83b7"))
+		var badge_pos: Vector2=pos+Vector2(-10,-size*0.75)
+		draw_rect(Rect2(badge_pos,Vector2(20,13)),Color("#1e1726"))
+		draw_rect(Rect2(badge_pos,Vector2(20,13)),accent,false,2)
+		for i in range(3):
+			draw_rect(Rect2(badge_pos+Vector2(4+i*5,4),Vector2(3,5)),accent if affix!="warded" else Color("#d5f4ff"))
 
 func is_ready_for_smoke() -> bool:
 	return TILES.get_width() == 256 and RELICS.get_width() == 1920 and RELICS.get_height() == 48 and ACTORS["dealer"].get_height() == 128 and ACTORS["warden"].get_height() == 128 and torches.size() == 5 and side_lights.size() == 2 and ambient != null and boss_light != null and torches[0].range_layer_min == -1 and occluders.size() == model.walls.size() and PROPS.get_width()==432 and decor_lights.size()==4 
