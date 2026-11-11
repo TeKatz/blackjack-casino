@@ -124,6 +124,27 @@ Each new room owns a **separate original SVG sprite sheet** in `games/midnight-d
 
 Regression tests cover the appearance of all seven kinds in seed generation, combat objectives and failure rules, archive swaps and ability/stat removal, blood sacrifice offers, relic tempering and no duplicate interactions. The scene smoke test also verifies each imported 512×128 sprite, the seven custom map glyphs and nonoverlapping decorative footprints. Windows visual playtesting and difficulty tuning remain useful before release.
 
+## Exploration overhaul: living floor plans and a follow camera
+
+The original 1280×720 fixed combat rectangle is retained only for the **Threshold Tavern, service rooms and seven custom special rooms**. Regular fights, elite fights and boss rooms now use **authored traversable room geometry**, chosen from `room_layouts.gd` using each dungeon node's seeded `layout` value:
+
+- **Floor 1, Iron Vault:** Twin Vaults, Upper Gallery, Broken Bastion, Twin Passage. Heavy mechanical chambers, raised galleries, narrow links and brass load-bearing structures.
+- **Floor 2, Elder Grove:** Forked Grove, Serpent Roots, Sunken Thicket, Wildwood Crossing. Connecting root corridors, large forest clearings, damp terraces and branching thickets.
+- **Floor 3, Royal Ossuary:** Processional Crypt, Ossuary Cross, Shattered Chapel, Royal Labyrinth. Ossuary halls, joined vaults, chapels and long processional routes.
+- **Boss encounters:** Two further authored **entrance-corridor-to-arena** configurations per stage, for **six boss layouts**. Bosses and escorts are present within the far arena but remain dormant and cannot be damaged until the player crosses the arena threshold. Crossing starts a short reveal, illustrated by an animated arch and sigils with a dedicated synthesized low-horn cue. Existing boss HP, loot, soul award and three phases remain in place.
+
+Each layout is made from overlapping `Rect2` walkable regions and a distinct set of solid obstruction rectangles. The full playable geometry is about twice the former stage width, with vertical travel, winding side halls and separated arena spaces. There is no walking across darkness between rooms: player movement, dashes and projectiles check the authored walkable bounds, and dash movement is substepped to avoid going through walls at frame hitches.
+
+All three expanded floors use **independently painted 512×128 four-tile environment atlases**, `expanded_vault.svg`, `expanded_grove.svg` and `expanded_crypt.svg`. The renderer builds stage-distinct architecture, lamps, roots, stone details, ornaments and floor marks, rather than applying a recolor of floor one's textures. Existing special chambers preserve their own exclusive art and sounds.
+
+A smooth camera offset keeps the player close to the center of the 1280×720 screen with a restrained aiming look-ahead. World lights, the pixel-art stage and effects pan together; screen-space HUD and menus do not move. Mouse aiming is converted back to world coordinates, so shots and abilities hit where the cursor points in a scrolling level. Hazard patterns adapt to the player's locality, rather than firing at the old hardcoded vault coordinates. Enemies use a shared 48px flow-field navigation map to pursue through winding corridors instead of running into the walls of a disconnected room.
+
+### Verification
+
+`RoomLayouts.smoke_test()` flood-fills the walkable floor grid for each of the **18 authored layouts**, validating both access to the far exit and legal boss/player spawn positions. Existing model combat, route, reward and boss tests continue to run. The gameplay scene additionally verifies all new stage atlas dimensions, that the camera tracks the player (while the HUD remains static) and that each floor's boss is triggered by walking into its arena. The legacy small-room renderer remains for the seven previous special chambers and the Tavern.
+
+**Future refinement:** Windows playtesting remains essential for camera feel, precise boss encounter pacing, sprite frame visual polish and collision edge cases in tight corridors.
+
 ## Build and tests
 
 From a Windows checkout run `pwsh ./tools/build_midnight_descent.ps1 -OutputDirectory artifacts/app/MidnightDescent`. The script downloads the pinned Godot 4.5.1 editor and Windows export template, imports the game, runs smoke tests and exports an executable and PCK alongside the casino application.
