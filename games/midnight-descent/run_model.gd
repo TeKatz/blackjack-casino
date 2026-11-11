@@ -622,7 +622,7 @@ func spawn_enemy(kind: String, pos: Vector2, affix: String="") -> void:
 			health = 430.0
 			radius = 43.0
 	health*=1.25+0.25*floor_index
-	if kind in ["boss","rootking","hollowking"]: health*=1.25
+	if kind in ["boss","rootking","hollowking"]: health*=1.5625 # +25% compared with the previous boss HP
 	else: health*=1.0+float(encounter_threat)*0.16
 	pos = safe_position(pos,radius)
 	# Move spawn points out of solid pillars before the enemy becomes active.
@@ -817,9 +817,21 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 			echoes.remove_at(i)
 	orbit_timer-=dt
 	if relics.has("sun") and orbit_timer<=0:
-		orbit_timer=0.25
+		orbit_timer=0.16
+		var sun_count: int=relics.count("sun")
+		var visible_orbits: int=mini(8,sun_count)
 		for enemy in enemies:
-			if player.distance_to(enemy.pos)<95: hit_enemy(enemy,5*relics.count("sun"))
+			if enemy.hp<=0: continue
+			# Every copy adds a physical orbit, and excess copies still scale damage.
+			for orb_index in range(visible_orbits):
+				var angle: float=elapsed*2.6+float(orb_index)*TAU/float(visible_orbits)
+				var radius: float=73.0+float(orb_index%3)*17.0
+				var center: Vector2=player+Vector2.from_angle(angle)*radius
+				if enemy.pos.distance_to(center)<float(enemy.r)+16.0:
+					hit_enemy(enemy,7.0+float(maxi(0,sun_count-8))*2.0)
+					effect("relic_sun_hit",enemy.pos,0.26,Vector2.ZERO)
+					notices.append("relic_sun")
+					break
 	if spirit_life>0:
 		spirit_life-=dt
 		spirit_timer-=dt
