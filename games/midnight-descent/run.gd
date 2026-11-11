@@ -178,7 +178,7 @@ func _draw() -> void:
 	var gate: Vector2 = Model.EXIT
 	if gate_prompt>0.01 and run.state=="exit":
 		var p:=gate+Vector2(-72,-104+sin(clock*2.6)*3)
-		var rect:=Rect2(p,144,36)
+		var rect:=Rect2(p,Vector2(144,36))
 		draw_rect(rect.grow(3),Color(0.06,0.04,0.12,gate_prompt*0.45))
 		draw_rect(rect,Color(0.12,0.08,0.21,gate_prompt*0.93))
 		draw_rect(rect,Color(0.78,0.60,1,gate_prompt),false,1)
