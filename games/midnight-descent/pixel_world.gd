@@ -13,6 +13,11 @@ const EXPANDED_TILES = [
 	preload("res://art/pixel/expanded_grove.svg"),
 	preload("res://art/pixel/expanded_crypt.svg")
 ]
+const BOSS_GATE_TEXTURES = [
+	preload("res://art/pixel/boss_gate_vault.svg"),
+	preload("res://art/pixel/boss_gate_grove.svg"),
+	preload("res://art/pixel/boss_gate_crypt.svg")
+]
 const EXPANDED_EDGES = [Color("#b69b87"),Color("#82bb91"),Color("#c5a1b0")]
 const EXPANDED_FLOORS = [Color("#282633"),Color("#1a3427"),Color("#302637")]
 # Seven original four-frame sprite sheets. Never substitute a shared prop
@@ -310,68 +315,101 @@ func _draw() -> void:
 			"enemy": draw_actor(object.enemy)
 			"player": draw_warden()
 
+func expanded_inside(point: Vector2) -> bool:
+	for region in model.room_regions:
+		if region.has_point(point): return true
+	return false
+
 func draw_expanded_room() -> void:
-	# Authored floor regions and stage-native art. Unwalkable void is rendered as
-	# thick darkness rather than pretending every stage uses one giant rectangle.
+	# Render the UNION of the traversable rectangles. Previously each region
+	# painted its own dark outline and repeated a differently aligned atlas:
+	# intersections looked like stacked disconnected rooms. Global tile origins
+	# and exterior-only borders make all corridor mouths seamless.
 	var floor_id: int=model.floor_index
 	var bounds: Rect2=model.room_bounds
 	var edge: Color=EXPANDED_EDGES[floor_id]
 	var base: Color=EXPANDED_FLOORS[floor_id]
-	draw_rect(bounds.grow(120),Color("#070a10"))
+	draw_rect(bounds.grow(120),Color("#080912"))
 	for region in model.room_regions:
-		draw_rect(region.grow(13),Color("#080b12"))
-		draw_rect(region.grow(8),edge.darkened(0.55))
 		draw_rect(region,base)
-		for y in range(int(region.position.y),int(region.end.y),96):
-			for x in range(int(region.position.x),int(region.end.x),96):
-				var width: float=minf(96.0,region.end.x-float(x))
-				var height: float=minf(96.0,region.end.y-float(y))
-				if width<=0 or height<=0: continue
-				var variant: int=posmod(int(x/96)+int(y/96)*7+model.floor_index*3+model.room*11,4)
-				draw_texture_rect_region(EXPANDED_TILES[floor_id],Rect2(float(x),float(y),width,height),Rect2(variant*128,0,128*width/96.0,128*height/96.0))
-		# Each connected hall receives a strong architectural border.
-		draw_rect(region,Color(edge,0.45),false,4)
-		match floor_id:
-			0:
-				# Vaults: brass rails and load-bearing latticework.
-				for x in range(int(region.position.x)+60,int(region.end.x)-30,148):
-					draw_rect(Rect2(x,region.position.y+15,34,11),edge.darkened(0.30))
-					draw_rect(Rect2(x+5,region.position.y+18,24,3),Color("#f1d5a4"))
-				for y in range(int(region.position.y)+78,int(region.end.y)-30,175):
-					draw_rect(Rect2(region.position.x+8,y,13,44),edge.darkened(0.45))
-			1:
-				# Groves: thick twisting living roots, fronds, luminous fungus.
-				for x in range(int(region.position.x)+50,int(region.end.x)-20,135):
-					var y: float=region.position.y+24
-					draw_line(Vector2(x,y),Vector2(x+25,y+34),Color("#6d9457"),9,true)
-					draw_line(Vector2(x+25,y+34),Vector2(x+40,y+18),Color("#a5c883"),5,true)
-				for y in range(int(region.position.y)+90,int(region.end.y)-12,135):
-					draw_rect(Rect2(region.position.x+18,y,11,20),Color("#b0e4b0"))
-					draw_rect(Rect2(region.position.x+10,y-7,27,10),Color("#5ec9a2"))
-			2:
-				# Royal ossuary: sepulchral alcoves, bone inlays, nave tracery.
-				for x in range(int(region.position.x)+90,int(region.end.x)-24,166):
-					draw_rect(Rect2(x,region.position.y+7,52,38),Color("#2a1b31"))
-					draw_rect(Rect2(x+6,region.position.y+13,40,29),Color("#ab8795"),false,3)
-					draw_rect(Rect2(x+22,region.position.y+17,7,22),Color("#ddbd9d"))
-				for y in range(int(region.position.y)+90,int(region.end.y)-10,156):
-					draw_rect(Rect2(region.position.x+8,y,34,10),Color("#a27d89"))
-	# Shared walls are collision, but each biome has its own physical dressing.
-	if model.room_kind=="boss":
-		draw_boss_approach()
+	var atlas: Texture2D=EXPANDED_TILES[floor_id]
+	for region in model.room_regions:
+		var origin_x: int=int(floor(region.position.x/96.0))*96
+		var origin_y: int=int(floor(region.position.y/96.0))*96
+		for y in range(origin_y,int(region.end.y)+96,96):
+			for x in range(origin_x,int(region.end.x)+96,96):
+				var tile: Rect2=Rect2(float(x),float(y),96,96)
+				var visible: Rect2=tile.intersection(region)
+				if not visible.has_area(): continue
+				# A subdued base tile dominates the first biome: prominent gears
+				# and grates are a rare landmark, not the entire floor pattern.
+				var hash: int=posmod(int(x/96)*73+int(y/96)*37+model.room*103,100)
+				var variant: int
+				if floor_id==0:
+					variant=0 if hash<85 else (1 if hash<96 else (2 if hash<99 else 3))
+				else:
+					variant=0 if hash<62 else (1 if hash<81 else (2 if hash<92 else 3))
+				var src:=Rect2(float(variant*128)+(visible.position.x-float(x))*128.0/96.0,(visible.position.y-float(y))*128.0/96.0,visible.size.x*128.0/96.0,visible.size.y*128.0/96.0)
+				draw_texture_rect_region(atlas,visible,src)
+	# Trace only exterior boundary segments. Junctions that are inside the
+	# next connected region do not receive a dark divider or a doubled outline.
+	for region in model.room_regions:
+		for side in range(4):
+			var length: float=region.size.x if side<2 else region.size.y
+			var step_count: int=maxi(1,ceili(length/18.0))
+			for j in range(step_count):
+				var a: float=float(j)/float(step_count)
+				var b: float=float(j+1)/float(step_count)
+				var p0: Vector2
+				var p1: Vector2
+				var sample: Vector2
+				if side==0:
+					p0=Vector2(lerpf(region.position.x,region.end.x,a),region.position.y)
+					p1=Vector2(lerpf(region.position.x,region.end.x,b),region.position.y)
+					sample=(p0+p1)*0.5+Vector2(0,-7)
+				elif side==1:
+					p0=Vector2(lerpf(region.position.x,region.end.x,a),region.end.y)
+					p1=Vector2(lerpf(region.position.x,region.end.x,b),region.end.y)
+					sample=(p0+p1)*0.5+Vector2(0,7)
+				elif side==2:
+					p0=Vector2(region.position.x,lerpf(region.position.y,region.end.y,a))
+					p1=Vector2(region.position.x,lerpf(region.position.y,region.end.y,b))
+					sample=(p0+p1)*0.5+Vector2(-7,0)
+				else:
+					p0=Vector2(region.end.x,lerpf(region.position.y,region.end.y,a))
+					p1=Vector2(region.end.x,lerpf(region.position.y,region.end.y,b))
+					sample=(p0+p1)*0.5+Vector2(7,0)
+				if expanded_inside(sample): continue
+				draw_line(p0,p1,Color("#0c0d17"),11,true)
+				draw_line(p0,p1,edge.darkened(0.37),4,true)
+	# Per-biome fixtures remain near the OUTER walls, never across corridors.
+	for region in model.room_regions:
+		for x in range(int(region.position.x)+110,int(region.end.x)-35,205):
+			if expanded_inside(Vector2(float(x),region.position.y-15)): continue
+			match floor_id:
+				0:
+					draw_rect(Rect2(x,region.position.y+12,35,9),edge.darkened(0.32))
+					draw_rect(Rect2(x+5,region.position.y+15,25,3),Color("#ddc3a7"))
+				1:
+					draw_line(Vector2(x,region.position.y+13),Vector2(x+22,region.position.y+38),Color("#729764"),7,true)
+					draw_rect(Rect2(x+11,region.position.y+25,10,7),Color("#b2cb8c"))
+				2:
+					draw_rect(Rect2(x,region.position.y+10,48,33),Color("#332135"))
+					draw_rect(Rect2(x+7,region.position.y+15,34,24),Color("#bc9da4"),false,3)
+					draw_rect(Rect2(x+21,region.position.y+18,6,18),Color("#e4c5ad"))
+	if model.room_kind=="boss": draw_boss_approach()
 	for i in range(torches.size()):
 		if i>=model.room_regions.size()+2: break
 		var light_pos: Vector2=torches[i].position
 		draw_rect(Rect2(light_pos-Vector2(14,12),Vector2(28,21)),edge.darkened(0.25))
 		draw_rect(Rect2(light_pos-Vector2(5,18),Vector2(10,24)),Color("#fff1b2"))
 		draw_circle(light_pos+Vector2(0,-8),18,Color(edge,0.24+0.12*sin(clock*4+i)))
-	# Stage-specific ambient motes are confined to traversable chambers.
-	for i in range(34):
+	for i in range(27):
 		var region: Rect2=model.room_regions[i%model.room_regions.size()]
 		var px: float=region.position.x+fposmod(41+i*97+clock*float(i%3+1)*4,region.size.x-60)+30
 		var py: float=region.position.y+fposmod(i*61-clock*float(i%4+1)*2,region.size.y-48)+24
 		var c: Color=[Color("#d6ad7d"),Color("#8cd3aa"),Color("#cba3da")][floor_id]
-		draw_rect(Rect2(pixel_pos(Vector2(px,py)),Vector2(3,3)),Color(c,0.14+0.12*sin(clock*2+i)))
+		draw_rect(Rect2(pixel_pos(Vector2(px,py)),Vector2(3,3)),Color(c,0.12+0.10*sin(clock*2+i)))
 
 func draw_expanded_spikes() -> void:
 	if model.floor_index!=0: return
@@ -399,46 +437,50 @@ func draw_expanded_spikes() -> void:
 				for i in range(3):
 					draw_rect(Rect2(plate.position+Vector2(10+i*14,13),Vector2(8,3)),Color("#b4a5a4"))
 
+func draw_boss_gate() -> void:
+	# Four purpose-painted 96x384 vertical gate frames. The moving shutters
+	# occupy the entire corridor aperture, exactly matching model.boss_gate.
+	var door: Rect2=model.boss_gate
+	if not door.has_area(): return
+	var index: int=0
+	if model.boss_gate_state=="closed": index=3
+	elif model.boss_gate_state=="closing":
+		var phase: float=clampf(model.boss_gate_time/Model.BOSS_GATE_CLOSE_DURATION,0,1)
+		index=mini(2,1+int(phase*2))
+	var rendered: Rect2=door.grow_individual(19,14,19,14)
+	draw_rect(Rect2(rendered.position+Vector2(7,9),rendered.size),Color("#090b12",0.75))
+	draw_texture_rect_region(BOSS_GATE_TEXTURES[model.floor_index],rendered,Rect2(index*96,0,96,384))
+	if model.boss_gate_state=="closing":
+		var warning: float=0.48+0.40*sin(clock*19)
+		draw_line(Vector2(door.get_center().x,door.position.y+25),Vector2(door.get_center().x,door.end.y-25),Color(1.0,0.6,0.32,warning),4,true)
+		for k in range(9):
+			var pos: Vector2=Vector2(door.get_center().x+float((k%3)-1)*18,door.get_center().y+float(k-4)*25)
+			draw_rect(Rect2(pixel_pos(pos),Vector2(5,4)),Color("#f9d5a0",warning))
+	elif model.boss_gate_state=="closed":
+		draw_rect(rendered.grow(3),Color("#d4a38a",0.68),false,3)
+
 func draw_boss_approach() -> void:
 	var arena: Rect2=model.boss_arena
-	var threshold: float=model.boss_trigger_x-105
 	var edge: Color=EXPANDED_EDGES[model.floor_index]
-	# Tall arch frames the first sight of the boss after the winding approach.
-	var arch:=Rect2(threshold-50,arena.get_center().y-135,100,270)
-	draw_rect(arch.grow(16),Color("#100d17"))
-	draw_rect(arch.grow(7),edge.darkened(0.38))
-	draw_rect(arch,Color("#27202e"))
-	draw_rect(Rect2(arch.position+Vector2(9,7),Vector2(82,255)),Color("#0d0d16"))
-	for j in range(7):
-		draw_rect(Rect2(arch.position+Vector2(11,22+j*31),Vector2(8,11)),edge)
-		draw_rect(Rect2(arch.position+Vector2(80,22+j*31),Vector2(8,11)),edge)
-	var awakened: bool=model.boss_awake
-	var emblem: Vector2=Vector2(threshold,arena.get_center().y)
-	draw_arc(emblem,48+3*sin(clock*3),0,TAU,48,Color(edge,0.32 if awakened else 0.78),4,true)
-	if not awakened:
-		for i in range(10):
-			var angle: float=float(i)*TAU/10.0+clock*0.5
-			var pos: Vector2=emblem+Vector2.from_angle(angle)*37
-			draw_rect(Rect2(pixel_pos(pos),Vector2(5,5)),Color("#f7d19a"))
-	else:
-		var reveal: float=1.0-clampf(model.boss_intro_timer/1.55,0,1)
-		draw_arc(emblem,44+reveal*95,0,TAU,48,Color(edge,0.68*(1.0-reveal)),7,true)
 	var boss_center: Vector2=arena.get_center()
+	# Arena floor seal: the gate, not a floating black rectangle, seals
+	# the separate entry corridor after the player crosses the trigger.
 	for ring in range(3):
 		var radius: float=98+ring*33
-		draw_arc(boss_center,radius,0,TAU,64,Color(edge,0.48-ring*0.1),4,true)
+		draw_arc(boss_center,radius,0,TAU,64,Color(edge,0.30-float(ring)*0.07),3,true)
 	for i in range(12):
 		var angle: float=float(i)*TAU/12.0
 		var pos: Vector2=boss_center+Vector2.from_angle(angle)*181
-		draw_rect(Rect2(pixel_pos(pos)-Vector2(6,6),Vector2(12,12)),Color(edge,0.66))
+		draw_rect(Rect2(pixel_pos(pos)-Vector2(6,6),Vector2(12,12)),Color(edge,0.48))
 	if model.floor_index==1:
 		for i in range(6):
-			var pos: Vector2=boss_center+Vector2.from_angle(i*TAU/6.0)*222
+			var pos: Vector2=boss_center+Vector2.from_angle(float(i)*TAU/6)*222
 			draw_circle(pos,17,Color("#8adf9e",0.33))
 	elif model.floor_index==2:
 		for i in range(7):
 			draw_rect(Rect2(arena.position.x+70+i*114,arena.position.y+26,40,85),Color("#693e52"))
 			draw_rect(Rect2(arena.position.x+82+i*114,arena.position.y+33,15,68),Color("#d0a18e"))
+	draw_boss_gate()
 
 func draw_expanded_actors() -> void:
 	var objects: Array[Dictionary]=[]
