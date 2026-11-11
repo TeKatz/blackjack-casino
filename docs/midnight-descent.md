@@ -100,7 +100,7 @@ All seven are additional, deterministic room kinds in the existing three-floor /
 | Room | Victory, danger, reward |
 | --- | --- |
 | **Ritual Chamber** (`ritual`) | Destroy three destructible ritual anchors before the 36-second seal completes. Defenders join every ~6.5 seconds. Failure spawns a shielded guardian and removes the premium success reward; the player must then defeat the remaining threats. Successful interruption grants +20 shards and one premium three-card selection. |
-| **Survival Chamber** (`survival`) | Survive 45 seconds against periodic reinforcements and telegraphed danger circles; kills alone do not end the room. Completion immediately clears remaining enemies, counts as a combat victory, and offers a premium relic choice. |
+| **Survival Chamber** (`survival`) | Survive 30 seconds against periodic reinforcements and telegraphed danger circles; kills alone do not end the room. Completion immediately clears remaining enemies, counts as a combat victory, and offers a premium relic choice. |
 | **Bounty Hunt** (`bounty`) | Eliminate the prominently marked, high-HP frenzied champion, not all escorts. Additional enemies may spawn while the target survives. Killing the champion completes the objective, removes escorts, grants +23 shards and a premium choice. The champion **does not** grant a permanent boss soul. |
 | **Unstable Chamber** (`unstable`) | A normal eliminate-the-enemies objective under three 4-second-cycle crystal explosions. The blasts hurt **both sides**, allowing the player to weaponize positioning. Clear to gain bonus shards and a premium reward. |
 
