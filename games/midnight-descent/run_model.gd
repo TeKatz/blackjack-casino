@@ -419,6 +419,7 @@ func class_enemy_kill(dead: Dictionary) -> void:
 			for i in range(count):
 				var direction: Vector2=dead.pos.direction_to(target.pos).rotated((float(i)-float(count-1)*0.5)*0.24)
 				shoot(dead.pos,direction*530,false,bolt_damage*0.60*relics.count("s_haunt"))
+				if not shots.is_empty(): shots[-1]["seeking"]=true
 			effect("class_ghost",dead.pos,0.53,dead.pos.direction_to(target.pos))
 			notices.append("class_ghost")
 	if relics.has("s_coven") and kills%5==0:
@@ -1501,6 +1502,18 @@ func update_hazards(dt: float) -> void:
 func update_shots(dt: float) -> void:
 	for i in range(shots.size()-1,-1,-1):
 		var shot: Dictionary = shots[i]
+		if bool(shot.get("seeking",false)) and not shot.hostile:
+			var nearest: Dictionary={}
+			var distance: float=500.0
+			for candidate in enemies:
+				if candidate.hp<=0: continue
+				var d: float=shot.pos.distance_to(candidate.pos)
+				if d<distance:
+					distance=d
+					nearest=candidate
+			if not nearest.is_empty():
+				var desired: Vector2=shot.pos.direction_to(nearest.pos)*maxf(430.0,float(shot.vel.length()))
+				shot.vel=shot.vel.lerp(desired,minf(1.0,dt*6.5))
 		shot.pos += shot.vel*dt*(0.4 if shot.hostile and slow_time>0 else 1.0)
 		shot.life -= dt
 		var pos: Vector2 = shot.pos
