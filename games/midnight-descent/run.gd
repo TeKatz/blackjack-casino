@@ -339,7 +339,7 @@ func draw_hub_ui() -> void:
 	text_at(Vector2(321,689),tr_text("Interact","Interagieren"),15,WHITE)
 	hub_keycap(Rect2(466,669,53,27),"ESC",VIOLET)
 	text_at(Vector2(532,689),tr_text("Pause","Pause"),15,WHITE)
-	draw_hub_action_prompt(Model.HUB_BARTENDER_POINT+Vector2(0,48),tr_text("Talk to keeper","Barkeeper ansprechen"),hub_keeper_prompt,GOLD,224)
+	draw_hub_action_prompt(Model.HUB_BARTENDER_POINT+Vector2(0,-151),tr_text("Talk to keeper","Barkeeper ansprechen"),hub_keeper_prompt,GOLD,224)
 	draw_hub_action_prompt(Model.HUB_FORGE_POINT+Vector2(0,47),tr_text("Inspect forge","Schmiede öffnen"),hub_forge_prompt,Color("#eeab7c"),218)
 	draw_hub_action_prompt(Model.HUB_PORTAL+Vector2(0,-72),tr_text("Begin descent","Abstieg beginnen"),hub_prompt,VIOLET,222)
 
