@@ -975,7 +975,17 @@ func draw_hud() -> void:
 		text_at(Vector2(425,132),goal,13,room_tint)
 		var progress: float=clampf(run.special_timer/(36.0 if run.room_kind=="ritual" else 45.0),0,1) if run.room_kind in ["ritual","survival"] else (1.0-run.special_wave_timer/4.0 if run.room_kind=="unstable" else 0.0)
 		if progress>0: meter(Rect2(426,138,424,5),progress,room_tint)
-	if run.state=="fight" and run.room_kind=="boss":
+	if run.large_room and run.state in ["fight","exit"]:
+		var map_accent: Color=[Color("#d2ae80"),Color("#99d4a8"),Color("#e2aec9")][run.floor_index]
+		var label: String=run.layout_name_de if german else run.layout_name
+		if run.room_kind=="boss" and not run.boss_awake:
+			label=tr_text("Follow the passage into the arena","Folge dem Gang zur Arena")
+		hud_panel(Rect2(17,151,365,38),map_accent)
+		text_at(Vector2(31,176),label,14,map_accent)
+	if run.state=="fight" and run.room_kind=="boss" and not run.boss_awake:
+		hud_panel(Rect2(415,107,450,37),Color("#8c7caa"))
+		text_at(Vector2(440,131),tr_text("THE THRONE AWAITS  •  APPROACH","DER THRON WARTET  •  NÄHERE DICH"),15,Color("#c1badc"))
+	if run.state=="fight" and run.room_kind=="boss" and run.boss_awake:
 		for enemy in run.enemies:
 			if enemy.kind in ["boss","rootking","hollowking"]:
 				hud_panel(Rect2(415,107,450,37),Color("#ed7c9e"))
@@ -983,6 +993,16 @@ func draw_hud() -> void:
 				meter(Rect2(434,130,412,7),float(enemy.hp)/float(enemy.max_hp),Color("#e36b86"))
 				text_at(Vector2(745,123),"PHASE "+str(enemy.get("phase",1))+" / 3",12,Color("#ffe1b2"))
 				break
+	if boss_reveal_toast>0.0:
+		var alpha: float=clampf(boss_reveal_toast*1.5,0,1)
+		var rect:=Rect2(395,234,490,133)
+		draw_rect(Rect2(rect.position+Vector2(5,7),rect.size),Color("#09070d",alpha*0.65))
+		draw_rect(rect,Color("#211122",alpha*0.96))
+		draw_rect(rect,Color("#d6a3ca",alpha),false,3)
+		var title: String=Content.boss_name(run.floor_index,german).to_upper()
+		text_at(Vector2(640-font.get_string_size(title,HORIZONTAL_ALIGNMENT_LEFT,-1,31).x*0.5,289),title,31,Color(1,0.86,0.94,alpha))
+		var subtitle: String=tr_text("The chamber seals behind you","Die Kammer erwacht") 
+		text_at(Vector2(640-font.get_string_size(subtitle,HORIZONTAL_ALIGNMENT_LEFT,-1,16).x*0.5,333),subtitle,16,Color(0.91,0.75,0.82,alpha))
 	if boss_soul_toast_timer>0.0:
 		var soul_alpha: float=minf(1.0,boss_soul_toast_timer*2.5)
 		var soul_y: float=290.0 if synergy_toast_timer>0.0 else 203.0
@@ -1018,10 +1038,13 @@ func draw_hud() -> void:
 	if room_banner>0 and run.state=="fight":
 		var opacity := minf(1,room_banner*2.0)
 		var danger: String=["I","II","III"][run.encounter_threat]
-		var message: String=(room_name(run.room_kind) if Model.Dungeon.SPECIAL_COMBAT.has(run.room_kind) else encounter_name(run.encounter_id)).to_upper()+"  •  "+tr_text("DANGER","GEFAHR")+" "+danger
+		var subject: String=(run.layout_name_de if german else run.layout_name) if run.large_room else (room_name(run.room_kind) if Model.Dungeon.SPECIAL_COMBAT.has(run.room_kind) else encounter_name(run.encounter_id))
+		var message: String=subject.to_upper()+"  •  "+tr_text("DANGER","GEFAHR")+" "+danger
 		draw_rect(Rect2(466,153,348,45),Color(0.06,0.04,0.1,0.86*opacity))
 		draw_rect(Rect2(466,153,348,45),Color(0.77,0.49,0.27,opacity),false,1)
-		text_at(Vector2(485,182),message,17,Color(1,0.83,0.55,opacity))
+		var size: int=17
+		while font.get_string_size(message,HORIZONTAL_ALIGNMENT_LEFT,-1,size).x>326 and size>10: size-=1
+		text_at(Vector2(481,182),message,size,Color(1,0.83,0.55,opacity))
 
 func play_sound(kind: String) -> void:
 	if not smoke_mode: audio.play(kind)
