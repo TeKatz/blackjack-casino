@@ -982,6 +982,93 @@ func shoot(pos: Vector2, velocity: Vector2, hostile: bool, power: float) -> void
 	if shots.size()>=180: return
 	shots.append({"pos":pos,"vel":velocity,"hostile":hostile,"damage":power,"life":2.8,"pierce":0 if hostile else mini(5,relics.count("pierce")),"hit":[],"bounce":0 if hostile else mini(3,relics.count("bounce")),"style":enemy_shot_style if hostile else shot_style})
 
+func boss_phase_for(enemy: Dictionary) -> int:
+	var ratio: float=float(enemy.hp)/maxf(1.0,float(enemy.max_hp))
+	return 3 if ratio<=0.32 else (2 if ratio<=0.68 else 1)
+
+func update_boss_phase(enemy: Dictionary, dt: float) -> bool:
+	var next_phase: int=boss_phase_for(enemy)
+	var old_phase: int=int(enemy.get("phase",1))
+	if next_phase>old_phase:
+		enemy["phase"]=next_phase
+		enemy["phase_lock"]=1.05
+		enemy["wind"]=0.0
+		enemy["timer"]=0.9
+		effect("boss_phase_"+str(enemy.kind),enemy.pos,1.06,Vector2.ZERO)
+		notices.append("boss_phase")
+	var remaining: float=maxf(0.0,float(enemy.get("phase_lock",0))-dt)
+	enemy["phase_lock"]=remaining
+	return remaining>0.0
+
+func boss_circle(pos: Vector2, radius: float, warning: float, power: float, kind: String) -> void:
+	if hazards.size()>=20: return
+	add_hazard(pos,radius,warning,0.52,power)
+	hazards[-1]["type"]=kind
+
+func boss_lane(pos: Vector2, vertical: bool, warning: float, power: float) -> void:
+	if hazards.size()>=20: return
+	var area: Rect2=Rect2(pos.x-40,160,80,450) if vertical else Rect2(80,pos.y-40,1120,80)
+	var clean_center: Vector2=safe_position(pos,48)
+	boss_circle(clean_center,44,warning,power,"boss_lane")
+	hazards[-1]["rect"]=area
+
+func boss_start_attack(enemy: Dictionary) -> void:
+	var phase: int=int(enemy.get("phase",1))
+	var kind: String=str(enemy.kind)
+	var aim_point: Vector2=player
+	enemy["target"]=aim_point
+	enemy["wind"]=0.95 if phase==1 else (0.85 if phase==2 else 0.78)
+	effect("boss_charge_"+kind,enemy.pos,float(enemy.wind),enemy.pos.direction_to(aim_point))
+	notices.append("boss_charge")
+	match kind:
+		"boss":
+			if phase>=2: boss_lane(aim_point,true,float(enemy.wind),16+phase*3)
+			if phase==3: boss_circle(aim_point+Vector2(0,-105),72,float(enemy.wind)+0.22,23,"boss_blast")
+		"rootking":
+			boss_circle(aim_point,65,float(enemy.wind),15+phase*4,"boss_root")
+			if phase>=2:
+				for i in range(3 if phase==2 else 4):
+					var pos: Vector2=aim_point+Vector2.from_angle(float(i)*TAU/(3 if phase==2 else 4))*125
+					boss_circle(pos,49,float(enemy.wind)+0.12,16+phase*3,"boss_root")
+		"hollowking":
+			add_royal_seals(aim_point,phase%2==0,float(enemy.wind),17+phase*2)
+			if phase==3: add_royal_seals(aim_point,phase%2!=0,float(enemy.wind)+0.22,18)
+
+func boss_release_attack(enemy: Dictionary) -> void:
+	var phase: int=int(enemy.get("phase",1))
+	var kind: String=str(enemy.kind)
+	var pos: Vector2=enemy.pos
+	var direction: Vector2=pos.direction_to(enemy.target)
+	if direction==Vector2.ZERO: direction=Vector2.LEFT
+	match kind:
+		"boss":
+			var volley: int=5 if phase==1 else (7 if phase==2 else 9)
+			for i in range(volley):
+				var arc: float=(float(i)-(volley-1)*0.5)*0.14
+				shoot(pos,direction.rotated(arc)*(355+phase*20),true,13+phase*2)
+			if phase>=2:
+				for j in range(10 if phase==2 else 14):
+					var angle: float=float(j)*TAU/(10 if phase==2 else 14)+elapsed*0.25
+					shoot(pos,Vector2.from_angle(angle)*295,true,14+phase)
+		"rootking":
+			for i in range(3+phase*2):
+				var arc: float=(float(i)-(2+phase*2)*0.5)*0.20
+				shoot(pos,direction.rotated(arc)*305,true,13+phase*2)
+			if phase>=2:
+				for j in range(5+phase*2):
+					shoot(pos,Vector2.from_angle(float(j)*TAU/(5+phase*2)+elapsed*0.15)*255,true,12+phase*2)
+		"hollowking":
+			var count: int=7 if phase==1 else (11 if phase==2 else 15)
+			for i in range(count):
+				var angle: float=float(i)*TAU/count+elapsed*0.3
+				shoot(pos,Vector2.from_angle(angle)*(310+phase*15),true,14+phase*2)
+			if phase>=2:
+				for j in range(3+phase):
+					var arc: float=(float(j)-(phase+2)*0.5)*0.16
+					shoot(pos,direction.rotated(arc)*420,true,16+phase*2)
+	effect("boss_release_"+kind,pos,0.50,direction)
+	notices.append("boss_release")
+
 func update_enemies(dt: float) -> void:
 	for enemy in enemies:
 		if enemy.hp <= 0:
