@@ -342,6 +342,37 @@ func draw_hub_ui() -> void:
 	draw_hub_action_prompt(Model.HUB_BARTENDER_POINT+Vector2(0,-151),tr_text("Talk to keeper","Barkeeper ansprechen"),hub_keeper_prompt,GOLD,224)
 	draw_hub_action_prompt(Model.HUB_FORGE_POINT+Vector2(0,47),tr_text("Inspect forge","Schmiede öffnen"),hub_forge_prompt,Color("#eeab7c"),218)
 	draw_hub_action_prompt(Model.HUB_PORTAL+Vector2(0,-72),tr_text("Begin descent","Abstieg beginnen"),hub_prompt,VIOLET,222)
+	# The loadout is visible even without opening another menu.
+	hud_panel(Rect2(17,10,248,84),GOLD)
+	text_at(Vector2(32,33),tr_text("KEEPER'S CONTRACT","AUFTRAG DES WIRTS"),11,GOLD)
+	if run.contract_id!="":
+		var contract: Dictionary=Model.CONTRACT_DATA[run.contract_id]
+		text_at(Vector2(32,55),str(contract["de" if german else "en"]),14,WHITE)
+		text_at(Vector2(32,76),tr_text("COMPLETE","ERLEDIGT") if run.contract_completed else "%d / %d" % [run.contract_progress,int(contract["goal"])],13,Color("#91d4b0") if run.contract_completed else MUTED)
+	else:
+		text_at(Vector2(32,56),tr_text("Optional • Speak to keeper","Optional • Wirt ansprechen"),12,WHITE)
+		hud_keycap_hint(Vector2(32,74),tr_text("Choose one for this run","Einen pro Run wählen"))
+	hud_panel(Rect2(1015,10,248,84),Color("#e8a879"))
+	text_at(Vector2(1030,33),tr_text("RUN FORGE","RUN-SCHMIEDE"),11,Color("#e8a879"))
+	if run.forge_id!="":
+		text_at(Vector2(1030,55),str(Model.FORGE_DATA[run.forge_id]["de" if german else "en"]),15,WHITE)
+		text_at(Vector2(1030,76),tr_text("Equipped for this run","Für diesen Run aktiv"),12,Color("#91d4b0"))
+	else:
+		text_at(Vector2(1030,56),tr_text("Optional • Change your build","Optional • Kampfstil ändern"),12,WHITE)
+		hud_keycap_hint(Vector2(1030,74),tr_text("One powerful modification","Eine mächtige Modifikation"))
+
+func hud_keycap_hint(pos: Vector2, message: String) -> void:
+	text_at(pos,message,11,MUTED)
+
+func choose_hub_contract(id: String) -> void:
+	if run.select_hub_contract(id):
+		play_sound("contract_accept")
+		close_hub_panel()
+
+func choose_hub_forge(id: String) -> void:
+	if run.select_hub_forge(id):
+		play_sound("forge_select")
+		close_hub_panel()
 
 func close_hub_panel() -> void:
 	hub_panel=""
@@ -931,20 +962,46 @@ func rebuild_overlay() -> void:
 		modal_tween.tween_property(modal_root,"modulate:a",1.0,0.24)
 	match overlay_state:
 		"hub_barkeep":
-			add_label(column,tr_text("THE TAVERN KEEPER","DER WIRT"),30,GOLD)
-			add_label(column,tr_text("Welcome to the Threshold.","Willkommen an der Schwelle."),20,WHITE)
-			add_label(column,tr_text("The keeper polishes a glass and nods toward the gate. His story and dialogue choices will arrive in a future update.","Der Wirt poliert ein Glas und nickt zum Tor. Seine Geschichte und Dialogoptionen folgen in einem späteren Update."),16,MUTED)
-			var leave_keeper:=add_button(column,tr_text("End conversation  [E / ESC]","Gespräch beenden  [E / ESC]"),func(): close_hub_panel())
+			add_label(column,tr_text("KEEPER'S CONTRACTS","AUFTRÄGE DES WIRTS"),30,GOLD)
+			if run.contract_id=="":
+				add_label(column,tr_text("One optional contract per expedition. The reward is granted immediately when completed.","Ein optionaler Auftrag pro Expedition. Die Belohnung erhältst du sofort beim Abschluss."),15,WHITE)
+				for id in run.contract_offers:
+					var choice: String=id
+					var data: Dictionary=Model.CONTRACT_DATA[choice]
+					var caption: String=str(data["de" if german else "en"])+"\n"+str(data["de_goal" if german else "en_goal"])+"\n"+str(data["de_reward" if german else "en_reward"])
+					var option:=add_button(column,caption,func(): choose_hub_contract(choice))
+					option.custom_minimum_size=Vector2(0,92)
+					option.add_theme_font_size_override("font_size",15)
+					option.alignment=HORIZONTAL_ALIGNMENT_LEFT
+					UI.style_button(option,GOLD)
+			else:
+				var data: Dictionary=Model.CONTRACT_DATA[run.contract_id]
+				add_label(column,str(data["de" if german else "en"]),23,GOLD)
+				add_label(column,str(data["de_goal" if german else "en_goal"]),17,WHITE)
+				add_label(column,"%d / %d" % [run.contract_progress,int(data["goal"])],24,Color("#96ddb8"))
+				add_label(column,tr_text("COMPLETED • Reward granted","ABGESCHLOSSEN • Belohnung erhalten") if run.contract_completed else str(data["de_reward" if german else "en_reward"]),16,MUTED)
+			var leave_keeper:=add_button(column,tr_text("Leave keeper","Wirt verlassen"),func(): close_hub_panel())
 			UI.style_button(leave_keeper,GOLD,true)
 		"hub_forge":
-			add_label(column,tr_text("THE TAVERN FORGE","DIE TAVERNENSCHMIEDE"),30,Color("#e8a879"))
-			add_label(column,tr_text("A place to prepare for the descent.","Ein Ort zur Vorbereitung auf den Abstieg."),17,WHITE)
-			add_label(column,tr_text("The forge is not yet operational. Future upgrades and recipes will appear here.","Die Schmiede ist noch nicht in Betrieb. Spätere Upgrades und Rezepte werden hier verfügbar sein."),15,MUTED)
-			for option in [tr_text("Weapon upgrades  ·  Coming soon","Waffen-Upgrades  ·  Demnächst"),tr_text("Equipment crafting  ·  Coming soon","Ausrüstung herstellen  ·  Demnächst")]:
-				var future:=add_button(column,option,func(): pass)
-				UI.style_button(future,Color("#906f78"))
-				future.disabled=true
-			var leave_forge:=add_button(column,tr_text("Close forge  [ESC]","Schmiede schließen  [ESC]"),func(): close_hub_panel())
+			add_label(column,tr_text("FORGE OF FATE","SCHICKSALSSCHMIEDE"),30,Color("#e8a879"))
+			if run.forge_id=="":
+				add_label(column,tr_text("Choose ONE dramatic modification for this run. Every power comes at a serious cost.","Wähle EINE mächtige Veränderung für diesen Run. Jede Macht hat einen hohen Preis."),15,WHITE)
+				for id in run.forge_offers:
+					var choice: String=id
+					var data: Dictionary=Model.FORGE_DATA[choice]
+					var caption: String=str(data["de" if german else "en"])+"\n"+str(data["de_effect" if german else "en_effect"])+"\n"+str(data["de_cost" if german else "en_cost"])
+					var option:=add_button(column,caption,func(): choose_hub_forge(choice))
+					option.custom_minimum_size=Vector2(0,96)
+					option.add_theme_font_size_override("font_size",15)
+					option.alignment=HORIZONTAL_ALIGNMENT_LEFT
+					UI.style_button(option,Color("#e8a879"))
+			else:
+				var data: Dictionary=Model.FORGE_DATA[run.forge_id]
+				add_label(column,tr_text("BOUND TO THIS RUN","FÜR DIESEN RUN GEBUNDEN"),16,GOLD)
+				add_label(column,str(data["de" if german else "en"]),24,Color("#e8a879"))
+				add_label(column,str(data["de_effect" if german else "en_effect"]),17,WHITE)
+				add_label(column,str(data["de_cost" if german else "en_cost"]),16,Color("#f1a8a0"))
+			var leave_forge:=add_button(column,tr_text("Leave forge","Schmiede verlassen"),func(): close_hub_panel())
 			UI.style_button(leave_forge,Color("#e8a879"),true)
 		"relics":
 			show_run_relics(column)
