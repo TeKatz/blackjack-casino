@@ -54,6 +54,10 @@ const SoundBank = preload("res://sound_bank.gd")
 var audio = SoundBank.new()
 var last_dash := false
 var last_interact := false
+var hub_transition_stage := 0
+var hub_transition_time := 0.0
+var hub_fade := 1.0
+var hub_prompt := 0.0
 
 func _ready() -> void:
 	german = "--language=de" in OS.get_cmdline_user_args()
@@ -64,6 +68,7 @@ func _ready() -> void:
 	hud_hp=run.hp
 	hud_shards=run.shards
 	hud_kills=run.kills
+	hub_fade=0.0 if smoke_mode else 1.0
 	light_mask = 0
 	# Isolate ambient world lighting from the sharp HUD and combat telegraphs.
 	var world_layer := CanvasLayer.new()
@@ -86,25 +91,54 @@ func tr_text(en: String, de: String) -> String:
 	return de if german else en
 
 func _physics_process(dt: float) -> void:
-	if paused or input_grace>0 or run.state in ["reward","victory","defeat","route","service"]:
+	if paused or input_grace>0 or hub_transition_stage!=0 or run.state in ["reward","victory","defeat","route","service"]:
 		return
-	var direction := Vector2(float(Input.is_physical_key_pressed(KEY_D) or Input.is_physical_key_pressed(KEY_RIGHT))-float(Input.is_physical_key_pressed(KEY_A) or Input.is_physical_key_pressed(KEY_LEFT)), float(Input.is_physical_key_pressed(KEY_S) or Input.is_physical_key_pressed(KEY_DOWN))-float(Input.is_physical_key_pressed(KEY_W) or Input.is_physical_key_pressed(KEY_UP)))
-	var dash := Input.is_physical_key_pressed(KEY_SPACE)
-	var interact := Input.is_physical_key_pressed(KEY_E)
-	run.tick(dt, direction, get_global_mouse_position(), Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT), Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT), dash and not last_dash, Input.is_physical_key_pressed(KEY_Q) and not last_active)
-	last_active = Input.is_physical_key_pressed(KEY_Q)
-	if interact and not last_interact:
-		run.next_room()
-	last_dash = dash
-	last_interact = interact
+	var direction:=Vector2(float(Input.is_physical_key_pressed(KEY_D) or Input.is_physical_key_pressed(KEY_RIGHT))-float(Input.is_physical_key_pressed(KEY_A) or Input.is_physical_key_pressed(KEY_LEFT)),float(Input.is_physical_key_pressed(KEY_S) or Input.is_physical_key_pressed(KEY_DOWN))-float(Input.is_physical_key_pressed(KEY_W) or Input.is_physical_key_pressed(KEY_UP)))
+	var dash:=Input.is_physical_key_pressed(KEY_SPACE)
+	var interact:=Input.is_physical_key_pressed(KEY_E)
+	if run.state=="hub":
+		run.tick(dt,direction,Model.HUB_PORTAL,false,false,false)
+		if interact and not last_interact and run.hub_portal_available():
+			hub_transition_stage=1
+			hub_transition_time=0.0
+			play_sound("portal_charge")
+	else:
+		run.tick(dt,direction,get_global_mouse_position(),Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT),Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT),dash and not last_dash,Input.is_physical_key_pressed(KEY_Q) and not last_active)
+		if interact and not last_interact: run.next_room()
+	last_active=Input.is_physical_key_pressed(KEY_Q)
+	last_dash=dash
+	last_interact=interact
 	for notice in run.notices:
 		play_sound(notice)
-		if notice == "hurt": shake = 7.0
-		if notice == "kill": shake = maxf(shake, 2.0)
+		if notice=="hurt": shake=7.0
+		if notice=="kill": shake=maxf(shake,2.0)
 	run.notices.clear()
 
 func _process(dt: float) -> void:
 	clock += dt
+	if hub_transition_stage==1:
+		hub_transition_time+=dt
+		hub_fade=clampf(hub_transition_time/0.48,0,1)
+		if hub_transition_time>=0.48:
+			run.player=Model.HUB_PORTAL
+			if run.enter_first_room():
+				banner_room=-1
+				play_sound("portal_enter")
+				hub_transition_stage=2
+				hub_transition_time=0.0
+			else:
+				hub_transition_stage=0
+				hub_fade=0.0
+	elif hub_transition_stage==2:
+		hub_transition_time+=dt
+		hub_fade=1.0-clampf(hub_transition_time/0.65,0,1)
+		if hub_transition_time>=0.65:
+			hub_transition_stage=0
+			hub_fade=0.0
+	elif run.state=="hub":
+		hub_fade=maxf(0,hub_fade-dt*1.5)
+	var near_hub: bool=run.state=="hub" and run.player.distance_to(Model.HUB_PORTAL)<160 and not paused
+	hub_prompt=move_toward(hub_prompt,1.0 if near_hub else 0.0,dt*4.0)
 	update_hud_feedback(dt)
 	input_grace=maxf(0,input_grace-dt)
 	shake = move_toward(shake, 0, dt*30)
@@ -147,7 +181,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			relics_open=false
 			get_viewport().set_input_as_handled()
 			return
-		if run.state in ["fight","exit","route","service"]:
+		if run.state in ["hub","fight","exit","route","service"]:
 			paused = not paused
 			get_viewport().set_input_as_handled()
 	elif event is InputEventKey and event.pressed and not event.echo and run.state == "reward":
@@ -174,6 +208,10 @@ func meter(rect: Rect2, ratio: float, color: Color) -> void:
 
 func _draw() -> void:
 	if not is_instance_valid(world) or world.model == null:
+		return
+	if run.state=="hub":
+		draw_hub_ui()
+		if hub_fade>0: draw_rect(Rect2(0,0,1280,720),Color(0.02,0.012,0.035,hub_fade))
 		return
 	var gate: Vector2 = Model.EXIT
 	if gate_prompt>0.01 and run.state=="exit":
@@ -231,6 +269,7 @@ func _draw() -> void:
 	for effect in run.effects:
 		draw_effect(effect)
 	draw_hud()
+	if hub_fade>0: draw_rect(Rect2(0,0,1280,720),Color(0.02,0.012,0.035,hub_fade))
 	if hud_hit>0:
 		for i in range(4):
 			var tint:=Color(0.9,0.12,0.24,hud_hit*0.07*(1-float(i)/4))
@@ -239,13 +278,38 @@ func _draw() -> void:
 			draw_rect(Rect2(1275-i*5,0,5,720),tint)
 			draw_rect(Rect2(0,715-i*5,1280,5),tint)
 
+func draw_hub_ui() -> void:
+	# The foyer is a playable space, not an extra combat node.
+	hud_panel(Rect2(23,11,514,85),GOLD)
+	text_at(Vector2(43,43),tr_text("THE THRESHOLD TAVERN","DIE SCHWELLENTAVERNE"),23,GOLD)
+	text_at(Vector2(43,73),tr_text("Your descent begins beyond the gate.","Hinter dem Tor beginnt dein Abstieg."),15,WHITE)
+	hud_panel(Rect2(26,650,512,51),VIOLET)
+	text_at(Vector2(43,683),tr_text("WASD  Move  •  E  Enter portal  •  ESC  Pause","WASD  Bewegen  •  E  Portal betreten  •  ESC  Pause"),14,WHITE)
+	if hub_prompt>0.01:
+		var p: Vector2=Model.HUB_PORTAL+Vector2(-113,-141+sin(clock*2)*3)
+		var rect:=Rect2(p,Vector2(226,46))
+		draw_rect(rect,Color(0.13,0.08,0.23,0.91*hub_prompt))
+		draw_rect(rect,Color(0.86,0.65,1,hub_prompt),false,2)
+		draw_rect(Rect2(p+Vector2(8,8),Vector2(29,28)),Color(0.44,0.30,0.58,hub_prompt))
+		text_at(p+Vector2(16,29),"E",19,Color(1,0.95,0.83,hub_prompt))
+		text_at(p+Vector2(45,28),tr_text("Begin descent","Abstieg beginnen"),16,Color(1,0.85,0.63,hub_prompt))
+
 func run_scene_smoke() -> void:
 	# Exercise the actual scene and its overlay construction, not just the model.
 	await get_tree().process_frame
-	if not world.is_ready_for_smoke():
+	if not world.is_ready_for_smoke() or run.state!="hub" or not run.enemies.is_empty() or run.visited_count!=0:
+		push_error("Hub scene spawned enemies or consumed a dungeon node")
 		get_tree().quit(10)
 		return
+	run.player=Model.HUB_PORTAL
+	if not run.enter_first_room() or run.state!="fight":
+		get_tree().quit(26)
+		return
 	run.begin(512)
+	run.player=Model.HUB_PORTAL
+	if not run.enter_first_room():
+		get_tree().quit(27)
+		return
 	run.player = Vector2(200,385)
 	run.enemies.clear()
 	run.spawn_enemy("stalker",Vector2(250,385))
@@ -314,9 +378,13 @@ func run_scene_smoke() -> void:
 		return
 	restart()
 	_process(0.0)
-	if run.state != "fight" or run.settled or not run.relics.is_empty():
+	if run.state != "hub" or run.settled or not run.relics.is_empty() or run.visited_count!=0 or run.dungeon.nodes[0].visited:
 		push_error("Descent restart failed to reset run")
 		get_tree().quit(14)
+		return
+	run.player=Model.HUB_PORTAL
+	if not run.enter_first_room():
+		get_tree().quit(28)
 		return
 	run.floor_index=2
 	run.dungeon.generate(run.seed_value,2)
@@ -965,6 +1033,10 @@ func animate_relic_card(card: Control, style: StyleBoxFlat, color: Color, hovere
 
 func restart() -> void:
 	paused = false
+	relics_open=false
+	hub_transition_stage=0
+	hub_transition_time=0.0
+	hub_fade=0.0 if smoke_mode else 1.0
 	run.begin(int(Time.get_ticks_usec()),progress.selected,progress.ranks)
 	displayed_hp = run.hp
 	banner_room = -1
