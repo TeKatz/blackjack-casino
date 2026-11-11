@@ -108,6 +108,7 @@ var elapsed := 0.0
 var kills := 0
 var shards := 0
 var relics: Array[String] = []
+var last_synergy_id := ""
 var offers: Array[String] = []
 var enemies: Array[Dictionary] = []
 var shots: Array[Dictionary] = []
@@ -168,6 +169,7 @@ func begin(value: int, loadout: String = "warden_guard", upgrades: Dictionary = 
 	shards = 0
 	elapsed = 0.0
 	relics.clear()
+	last_synergy_id=""
 	notices.clear()
 	forge_id=""
 	forge_guard_charges=0
@@ -286,6 +288,7 @@ func synergy_candidates() -> Array[String]:
 func notify_new_synergies(previous: Array[String]) -> void:
 	for id in active_synergies():
 		if previous.has(id): continue
+		last_synergy_id=str(id)
 		notices.append("synergy_complete")
 		effect("synergy_unlock",player,0.8,Vector2.ZERO)
 
