@@ -145,6 +145,18 @@ A smooth camera offset keeps the player close to the center of the 1280×720 scr
 
 **Future refinement:** Windows playtesting remains essential for camera feel, precise boss encounter pacing, sprite frame visual polish and collision edge cases in tight corridors.
 
+## November 2026 visual and boss-gate quality patch
+
+The first expanded-stage gameplay review identified five defects. This patch addresses them without removing any of the 18 authored stage layouts:
+
+- **Stage 1 floor density:** `art/pixel/expanded_vault.svg` has been repainted with calmer, continuous stone plates. The Vault now uses 85% plain base tile, 11% subtle variation and only 4% vents/gears. Tiles remain aligned to global grid coordinates across every connected room.
+- **Merged corridors:** `pixel_world.gd` paints the union of the walkable region rectangles. Connected passages share a single texture coordinate system, with boundary trim drawn **only along exposed exterior edges**. Previous duplicate black outlines and overlapping branch borders are no longer drawn at intersections.
+- **Dungeon map:** Combat and Elite tier labels use single-line captions (`Combat II`, `Elite III`) in fixed 92×52 pixel nodes. Captions are individually sized and clipped; node text no longer changes clickable card widths or spills over into neighbors.
+- **Reactor chamber:** `art/pixel/reactor_core.svg` is a separate four-frame original animation with a stationary octagonal metal reactor body, cyan plasma center and occasional electrical arcs. The three core colliders have been resized to match the substantial fixed housing.
+- **Boss-gate overhaul:** The Vault, Grove and Royal Ossuary have **separate, original 384×384 four-frame gate sprites** (`art/pixel/boss_gate_{vault,grove,crypt}.svg`). Each gate now spans its approach corridor rather than depicting a small floating frame at the arena entrance. On crossing the boss trigger the gate transitions `open → closing → closed`; the closing state immediately enables a real physical blockage. Its complete lock state remains impassable to player movement, dash and projectiles. Hydraulic closing and mechanical latching have two separately synthesized sounds. The gate is placed between the earlier corridor and the arena's overlap so that the player cannot walk around it; the six layouts have their choke positions checked against static pillars.
+
+The regression suite verifies all six initially traversable boss gates, trigger activation, lock timing and blocked return travel, including dash-scale movement. A live Godot scene test checks the new reactor/gate atlas dimensions, and all 26 map nodes must render at fixed width with no wrapped labels. Loading a new expedition clears gate collisions and animations. The workflow now prints a direct source diagnostic when a world script fails to preload, making future Godot parser errors easier to troubleshoot.
+
 ## Build and tests
 
 From a Windows checkout run `pwsh ./tools/build_midnight_descent.ps1 -OutputDirectory artifacts/app/MidnightDescent`. The script downloads the pinned Godot 4.5.1 editor and Windows export template, imports the game, runs smoke tests and exports an executable and PCK alongside the casino application.
