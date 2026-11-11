@@ -2515,8 +2515,11 @@ func boss_gate_smoke() -> bool:
 				push_error("Boss gate stage "+str(floor_index)+" room "+str(room)+" checkpoint 2: if boss_gate.size.x<50 or boss_gate.size.y<150")
 				return false
 			var gate: Rect2=boss_gate
-			var enter_side: Vector2=Vector2(gate.position.x-46,gate.get_center().y)
-			var arena_side: Vector2=Vector2(gate.end.x+46,gate.get_center().y)
+			# Approach around the Grove's permanent pillar; the shutter itself
+			# spans the whole corridor, not just its centerline.
+			var passage_y: float=gate.position.y+67.0
+			var enter_side: Vector2=Vector2(gate.position.x-46,passage_y)
+			var arena_side: Vector2=Vector2(gate.end.x+46,passage_y)
 			if blocked(gate.get_center(),15):
 				push_error("Boss gate stage "+str(floor_index)+" room "+str(room)+" checkpoint 3: if blocked(gate.get_center(),15)")
 				return false
