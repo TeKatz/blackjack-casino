@@ -146,9 +146,9 @@ func update_view(dt: float) -> void:
 	if model.floor_index==2: target_ambient=Color(0.47,0.34,0.50)
 	for light in torches:
 		light.color=[Color("#ffd094"),Color("#83e5be"),Color("#e9a0c4")][model.floor_index]
-		light.energy*= [1.0,0.7,0.82][model.floor_index]
+		light.energy*= [0.72,0.66,0.70][model.floor_index]
 	for i in range(decor_lights.size()):
-		decor_lights[i].energy=0.48+0.12*sin(clock*3+i*1.7)
+		decor_lights[i].energy=0.24+0.06*sin(clock*3+i*1.7)
 	ambient.color = ambient.color.lerp(target_ambient, minf(1.0,dt*2.5))
 	gate_open_amount = move_toward(gate_open_amount,1.0 if model.state == "exit" else 0.0,dt*2.5)
 	gate_light.energy = gate_open_amount*(1.1+sin(clock*4)*0.2)
@@ -204,16 +204,16 @@ func _draw() -> void:
 		var pos := side_lights[i].position
 		draw_texture_rect_region(TORCH,Rect2(pos-Vector2(16,37),Vector2(32,64)),Rect2((int(clock*8)+i)%4*16,0,16,32))
 	# Sparse cracks, scattered stones and drifting dust break up the repeated grid.
-	for i in range(22):
+	for i in range(10):
 		var pos := Vector2(78+(i*173+int(model.room)*37)%1110,165+(i*97)%440)
 		draw_rect(Rect2(pixel_pos(pos),Vector2(4,2)),Color("#756174"))
 		if i%3 == 0:
 			draw_rect(Rect2(pixel_pos(pos+Vector2(4,2)),Vector2(2,4)),Color("#31283e"))
-	for i in range(28):
+	for i in range(16):
 		var pos := Vector2(70+fposmod(i*149+clock*(6+i%4),1138),160+fposmod(i*71-clock*9,450))
 		draw_rect(Rect2(pixel_pos(pos),Vector2(2,2)),Color(0.85,0.65,0.43,0.16+0.12*sin(clock*2+i)))
 	if model.floor_index==1:
-		for i in range(24):
+		for i in range(10):
 			var pos := Vector2(66+(i*173)%1140,154+(i*97)%460)
 			draw_rect(Rect2(pos,Vector2(10,4)),Color("#486b46"))
 			draw_rect(Rect2(pos+Vector2(3,-5),Vector2(4,8)),Color("#75a65f"))
@@ -253,27 +253,31 @@ func build_decor() -> void:
 	var rng:=RandomNumberGenerator.new()
 	rng.seed=int(model.seed_value)+int(model.room)*7919+int(model.floor_index)*104729
 	var floor_id: int=model.floor_index
-	for i in range(32):
+	for i in range(18):
 		floor_decals.append(pixel_pos(Vector2(rng.randf_range(92,1180),rng.randf_range(165,601))))
-	# Wall-adjacent, low props only; avoid blocking gameplay or trap slots.
-	for side in range(2):
-		for j in range(7):
-			var pos:=Vector2(165+j*154+rng.randi_range(-24,24),184 if side==0 else 596)
-			var prop_size: float=rng.randi_range(2,3)*24
-			var bounds:=Rect2(pos-Vector2(prop_size*0.5,prop_size*0.83),Vector2(prop_size,prop_size))
-			var clear:=true
-			for wall in model.walls:
-				if wall.grow(6).intersects(bounds): clear=false
-			if floor_id==0:
-				for x in [420.0,690.0,960.0]:
-					if absf(pos.x-x)<55: clear=false
-			if pos.distance_to(Model.EXIT)<110 or pos.distance_to(Vector2(200,385))<90: clear=false
-			if clear and rng.randf()<0.82:
-				decor.append({"pos":pos,"index":floor_id*6+rng.randi_range(0,5),"size":prop_size})
-	# Service landmarks stay at the existing wall/altar geometry, not in corridors.
+	# Reserve full sprite footprints, wall fixtures and spike lanes. Keep
+	# decorative silhouettes in a few intentional clusters, never on top of lamps.
+	var occupied: Array[Rect2]=[]
+	for wall in model.walls: occupied.append(wall.grow(14))
+	for pos in TORCH_POSITIONS: occupied.append(Rect2(pos-Vector2(30,42),Vector2(60,92)))
+	for light in side_lights: occupied.append(Rect2(light.position-Vector2(35,48),Vector2(70,100)))
+	occupied.append(Rect2(Model.EXIT-Vector2(60,80),Vector2(120,160)))
+	if floor_id==0:
+		for x in [420.0,690.0,960.0]: occupied.append(Rect2(x-43,155,86,460))
 	if model.room_kind in ["shop","treasure","secret","shrine","event","forge"]:
-		var index: int={"shop":0,"treasure":0,"secret":15,"shrine":11,"event":9,"forge":5}[model.room_kind]
-		decor.append({"pos":Vector2(640,246),"index":index,"size":96})
+		occupied.append(Rect2(470,145,340,190))
+	for side in range(2):
+		for j in range(5):
+			var pos:=Vector2(225+j*205+rng.randi_range(-18,18),225 if side==0 else 554)
+			var prop_size: float=48
+			var bounds:=Rect2(pos-Vector2(prop_size*0.5,prop_size*0.83),Vector2(prop_size,prop_size)).grow(8)
+			var clear:=true
+			for area in occupied:
+				if area.intersects(bounds): clear=false; break
+			if pos.distance_to(Model.SPAWN)<100: clear=false
+			if clear and rng.randf()<0.68:
+				decor.append({"pos":pos,"index":floor_id*6+rng.randi_range(0,5),"size":prop_size})
+				occupied.append(bounds.grow(14))
 	for i in range(decor_lights.size()):
 		var light: PointLight2D=decor_lights[i]
 		light.color=[Color("#e7b170"),Color("#65dcb4"),Color("#db8fd3")][floor_id]
@@ -287,7 +291,7 @@ func draw_prop(prop: Dictionary) -> void:
 	var pos: Vector2=prop.pos
 	var size: float=prop.size
 	draw_rect(Rect2(pixel_pos(pos+Vector2(-size*0.40,1)),Vector2(size*0.8,8)),Color(0.03,0.02,0.05,0.50))
-	draw_texture_rect_region(PROPS,Rect2(pixel_pos(pos-Vector2(size*0.5,size*0.83)),Vector2(size,size)),Rect2(int(prop.index)*24,0,24,24))
+	draw_texture_rect_region(PROPS,Rect2(pixel_pos(pos-Vector2(size*0.5,size*0.83)),Vector2(size,size)),Rect2(int(prop.index)*24,0,24,24),Color(0.76,0.73,0.78))
 
 func draw_architecture(arena: Rect2) -> void:
 	var floor_id: int=model.floor_index
@@ -427,14 +431,14 @@ func draw_biome_details(arena: Rect2) -> void:
 						draw_line(tip,p+Vector2(-4,1),Color("#f5e4d0"),1)
 	elif model.floor_index==1:
 		# Dense moss, branching vines and luminous mushrooms, not new collision.
-		for i in range(16):
-			var x: float=80+i*72
+		for i in range(7):
+			var x: float=120+i*160
 			draw_rect(Rect2(x,148,38,13),Color("#234330"))
 			for j in range(5):
 				var p:=Vector2(x+j*6,158+j*7)
 				draw_rect(Rect2(p,Vector2(7,9)),Color("#47764c"))
 				draw_rect(Rect2(p+Vector2(2,2),Vector2(3,4)),Color("#81a964"))
-			var pos:=Vector2(x+22,602)
+			var pos:=Vector2(x+22,610)
 			draw_rect(Rect2(pos-Vector2(2,0),Vector2(4,13)),Color("#d0c69b"))
 			draw_rect(Rect2(pos-Vector2(11,6),Vector2(22,9)),Color("#72bd91"))
 			draw_rect(Rect2(pos-Vector2(7,10),Vector2(14,5)),Color("#b1e4a5"))
@@ -448,8 +452,8 @@ func draw_biome_details(arena: Rect2) -> void:
 			draw_rect(Rect2(x,374,24,24),Color("#76504d"),false,2)
 			draw_rect(Rect2(x+10,378,4,16),Color("#ac8068"))
 			draw_rect(Rect2(x+4,384,16,4),Color("#ac8068"))
-		for i in range(12):
-			var pos:=Vector2(110+i*94,595)
+		for i in range(5):
+			var pos:=Vector2(210+i*214,610)
 			draw_rect(Rect2(pos-Vector2(8,0),Vector2(16,5)),Color("#72544d"))
 			draw_rect(Rect2(pos-Vector2(3,15),Vector2(6,15)),Color("#e5d1ba"))
 			draw_rect(Rect2(pos-Vector2(2,20),Vector2(4,5)),Color("#f7abc3"))
@@ -526,4 +530,4 @@ func draw_actor(enemy: Dictionary) -> void:
 	sprite(kind,pos,direction,frame,size,tint)
 
 func is_ready_for_smoke() -> bool:
-	return TILES.get_width() == 256 and RELICS.get_width() == 1920 and RELICS.get_height() == 48 and ACTORS["dealer"].get_height() == 128 and ACTORS["warden"].get_height() == 128 and torches.size() == 5 and side_lights.size() == 2 and ambient != null and boss_light != null and torches[0].range_layer_min == -1 and occluders.size() == model.walls.size() and PROPS.get_width()==432 and decor_lights.size()==4 and not decor.is_empty()
+	return TILES.get_width() == 256 and RELICS.get_width() == 1920 and RELICS.get_height() == 48 and ACTORS["dealer"].get_height() == 128 and ACTORS["warden"].get_height() == 128 and torches.size() == 5 and side_lights.size() == 2 and ambient != null and boss_light != null and torches[0].range_layer_min == -1 and occluders.size() == model.walls.size() and PROPS.get_width()==432 and decor_lights.size()==4 
