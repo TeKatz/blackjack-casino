@@ -225,6 +225,7 @@ func check_shard_contract() -> void:
 func complete_contract() -> void:
 	if contract_completed or contract_id=="": return
 	contract_completed=true
+	var previous_synergies: Array[String]=active_synergies()
 	var reward_id: String={"slayer":"blade","untouched":"ward","hoarder":"focus","spellweaver":"mana"}[contract_id]
 	relics.append(reward_id)
 	match reward_id:
@@ -232,6 +233,7 @@ func complete_contract() -> void:
 		"ward": armor+=4
 		"focus": bolt_damage+=11
 		"mana": special_cd=maxf(0.2,special_cd*0.85)
+	notify_new_synergies(previous_synergies)
 	notices.append("contract_complete")
 	effect("contract_complete",player,1.0,Vector2.ZERO)
 
@@ -1190,11 +1192,18 @@ func make_offers(premium: bool = false) -> void:
 			index=rng.randi_range(0,pool.size()-1)
 		offers.append(pool[index])
 		pool.remove_at(index)
+	# Once a build has a matching half, occasionally offer an actual payoff.
+	# Only replace one slot and never generate duplicate choices.
+	var candidates: Array[String]=synergy_candidates()
+	if not candidates.is_empty() and rng.randf()<0.68:
+		var candidate: String=candidates[rng.randi_range(0,candidates.size()-1)]
+		if not offers.has(candidate): offers[2]=candidate
 
 func choose_relic(index: int) -> bool:
 	if state != "reward" or index < 0 or index >= offers.size():
 		return false
 	var item: String = offers[index]
+	var previous_synergies: Array[String]=active_synergies()
 	relics.append(item)
 	match item:
 		"blade": damage += 9
@@ -1217,6 +1226,7 @@ func choose_relic(index: int) -> bool:
 		"battery": active_cd=maxf(20,active_cd-3)
 		"glass": damage+=16; armor-=3
 	hp = minf(max_hp, hp+(5.0 if floor_index==0 else 3.0))
+	notify_new_synergies(previous_synergies)
 	finish_room()
 	return true
 
