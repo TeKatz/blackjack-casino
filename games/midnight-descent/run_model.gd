@@ -52,6 +52,7 @@ var spirit_timer := 0.0
 var spirit_life := 0.0
 var spirit_pos := Vector2.ZERO
 const Dungeon = preload("res://dungeon.gd")
+const RoomLayouts = preload("res://room_layouts.gd")
 var dungeon = Dungeon.new()
 var floor_index := 0
 var visited_count := 0
@@ -118,6 +119,20 @@ var offers: Array[String] = []
 var enemies: Array[Dictionary] = []
 var shots: Array[Dictionary] = []
 var walls: Array[Rect2] = []
+var large_room := false
+var room_bounds: Rect2 = ARENA
+var room_regions: Array[Rect2] = []
+var spawn_point: Vector2 = SPAWN
+var exit_point: Vector2 = EXIT
+var layout_name := ""
+var layout_name_de := ""
+var boss_arena: Rect2 = Rect2()
+var boss_trigger_x := 0.0
+var boss_awake := false
+var boss_intro_timer := 0.0
+var flow_map: Dictionary = {}
+var flow_origin: Vector2i = Vector2i(-999,-999)
+var flow_timer := 0.0
 var effects: Array[Dictionary] = []
 var notices: Array[String] = []
 var forge_id := ""
@@ -591,6 +606,20 @@ func enter_room() -> void:
 	offers.clear()
 	walls.clear()
 	room_kind = dungeon.kind(room)
+	large_room=false
+	room_bounds=ARENA
+	room_regions.clear()
+	spawn_point=SPAWN
+	exit_point=EXIT
+	layout_name=""
+	layout_name_de=""
+	boss_arena=Rect2()
+	boss_trigger_x=0.0
+	boss_awake=false
+	boss_intro_timer=0.0
+	flow_map.clear()
+	flow_origin=Vector2i(-999,-999)
+	flow_timer=0.0
 	special_elapsed=0.0
 	special_timer=0.0
 	special_wave_timer=0.0
@@ -619,6 +648,7 @@ func enter_room() -> void:
 		if relics.has("sacrifice") and room_kind in ["fight","elite","boss"]: hp=maxf(1,hp-2*relics.count("sacrifice"))
 	service_used = node.cleared
 	build_room_layout(node)
+	player=spawn_point
 	if node.cleared:
 		state = "route"
 		return
@@ -633,9 +663,10 @@ func enter_room() -> void:
 		if encounter_id!="skirmish":
 			notices.append("encounter_"+encounter_id)
 	else:
-		spawn_enemy(["boss","rootking","hollowking"][floor_index],Vector2(925,385))
-		spawn_enemy(["caster","spore","hexer"][floor_index],Vector2(785,230))
-		spawn_enemy(["stalker","vine","revenant"][floor_index],Vector2(785,540))
+		var boss_position: Vector2=Vector2(boss_arena.position.x+boss_arena.size.x*0.62,boss_arena.get_center().y) if large_room else Vector2(925,385)
+		spawn_enemy(["boss","rootking","hollowking"][floor_index],boss_position)
+		spawn_enemy(["caster","spore","hexer"][floor_index],boss_position+Vector2(-195,-172))
+		spawn_enemy(["stalker","vine","revenant"][floor_index],boss_position+Vector2(-195,172))
 
 func start_special_combat(node: Dictionary) -> void:
 	var family: Array=encounter_family()
@@ -773,6 +804,12 @@ func encounter_enemy_kind(family: Array, index: int, picker: RandomNumberGenerat
 			return str(family[picker.randi_range(0,family.size()-1)])
 
 func encounter_spawn_point(index: int, picker: RandomNumberGenerator) -> Vector2:
+	if large_room and room_regions.size()>1:
+		var region: Rect2=room_regions[1+index%(room_regions.size()-1)]
+		var center: Vector2=region.get_center()
+		var angle: float=float(index)*2.399+picker.randf_range(-0.28,0.28)
+		var offset: Vector2=Vector2.from_angle(angle)*Vector2(minf(170.0,region.size.x*0.25),minf(150.0,region.size.y*0.22))
+		return center+offset
 	var jitter: float=picker.randf_range(-20,20)
 	match encounter_id:
 		"crossfire":
@@ -803,6 +840,19 @@ func spawn_encounter_wave(node: Dictionary) -> void:
 			enemies[-1]["elite"]=true
 
 func build_room_layout(node: Dictionary) -> void:
+	if room_kind in ["fight","elite","boss"]:
+		var plan: Dictionary=RoomLayouts.build(floor_index,int(node.layout),room_kind=="boss")
+		large_room=true
+		room_bounds=plan.bounds
+		room_regions.assign(plan.regions)
+		spawn_point=plan.spawn
+		exit_point=plan.exit
+		boss_arena=plan.boss_arena
+		boss_trigger_x=float(plan.boss_trigger)
+		layout_name=str(plan.name)
+		layout_name_de=str(plan.de_name)
+		walls.assign(plan.walls)
+		return
 	if room_kind in Dungeon.SPECIAL_COMBAT:
 		match room_kind:
 			"ritual":
@@ -877,7 +927,7 @@ func route_options() -> Array:
 	return options
 
 func open_route() -> bool:
-	if state!="exit" or player.distance_to(EXIT)>75: return false
+	if state!="exit" or player.distance_to(exit_point)>75: return false
 	state="route"
 	return true
 
@@ -1109,21 +1159,30 @@ func spawn_enemy(kind: String, pos: Vector2, affix: String="") -> void:
 	enemies.append({"kind":kind,"pos":pos,"hp":health,"max_hp":health,"r":radius,"timer":rng.randf_range(0.6,1.4),"wind":0.0,"flash":0.0,"target":pos,"facing":Vector2.LEFT,"affix":affix,"primed":false,"phase":1,"phase_lock":0.0})
 
 func safe_position(pos: Vector2, radius: float) -> Vector2:
-	return Vector2(clampf(pos.x, ARENA.position.x + radius, ARENA.end.x - radius), clampf(pos.y, ARENA.position.y + radius, ARENA.end.y - radius))
+	return Vector2(clampf(pos.x,room_bounds.position.x+radius,room_bounds.end.x-radius),clampf(pos.y,room_bounds.position.y+radius,room_bounds.end.y-radius))
 
 func blocked(pos: Vector2, radius: float) -> bool:
+	if large_room:
+		var inside:=false
+		for region in room_regions:
+			if region.grow(-radius).has_point(pos):
+				inside=true
+				break
+		if not inside: return true
 	for wall in walls:
-		if wall.grow(radius).has_point(pos):
-			return true
+		if wall.grow(radius).has_point(pos): return true
 	return false
 
 func move_actor(pos: Vector2, motion: Vector2, radius: float) -> Vector2:
-	var x := safe_position(pos + Vector2(motion.x, 0), radius)
-	if not blocked(x, radius):
-		pos.x = x.x
-	var y := safe_position(pos + Vector2(0, motion.y), radius)
-	if not blocked(y, radius):
-		pos.y = y.y
+	# Substeps prevent high-speed dashes from tunneling through walls or
+	# jumping the playable boundary between two adjoining chambers.
+	var steps: int=maxi(1,ceili(motion.length()/9.0))
+	for i in range(steps):
+		var part: Vector2=motion/float(steps)
+		var x: Vector2=safe_position(pos+Vector2(part.x,0),radius)
+		if not blocked(x,radius): pos.x=x.x
+		var y: Vector2=safe_position(pos+Vector2(0,part.y),radius)
+		if not blocked(y,radius): pos.y=y.y
 	return pos
 
 func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: bool, dash: bool, active: bool = false) -> void:
@@ -1202,6 +1261,12 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 					enemy["burn"]=maxf(4.0,float(enemy.get("burn",0)))
 			effect("synergy_inferno",player,0.64,Vector2.ZERO)
 			notices.append("dash_nova")
+	if large_room and room_kind=="boss" and not boss_awake and player.x>=boss_trigger_x:
+		boss_awake=true
+		boss_intro_timer=1.55
+		notices.append("boss_reveal")
+		effect("boss_reveal",boss_arena.get_center(),1.5,Vector2.ZERO)
+	if boss_intro_timer>0.0: boss_intro_timer=maxf(0.0,boss_intro_timer-dt)
 	if state == "exit":
 		update_effects(dt)
 		return
@@ -1437,6 +1502,7 @@ func update_effects(dt: float) -> void:
 
 func hit_enemy(enemy: Dictionary, amount: float) -> void:
 	if enemy.hp<=0: return
+	if large_room and room_kind=="boss" and not boss_awake: return
 	var boss: bool=str(enemy.kind) in ["boss","rootking","hollowking"]
 	if boss and float(enemy.get("phase_lock",0))>0:
 		effect("boss_guard",enemy.pos,0.24,Vector2.ZERO)
@@ -1605,6 +1671,12 @@ func boss_release_attack(enemy: Dictionary) -> void:
 	notices.append("boss_release")
 
 func update_enemies(dt: float) -> void:
+	if large_room and room_kind=="boss" and (not boss_awake or boss_intro_timer>0.0): return
+	if large_room:
+		flow_timer-=dt
+		if flow_timer<=0.0:
+			flow_timer=0.33
+			build_navigation_flow()
 	for enemy in enemies:
 		if enemy.hp <= 0:
 			continue
@@ -1631,7 +1703,9 @@ func update_enemies(dt: float) -> void:
 			hazards[-1]["type"]="volatile"
 			notices.append("rune")
 		var pos: Vector2 = enemy.pos
-		var toward := pos.direction_to(player)
+		var toward: Vector2=pos.direction_to(player)
+		if large_room and pos.distance_to(player)>100:
+			toward=navigation_direction(pos,toward)
 		var dist := pos.distance_to(player)
 		var kind: String = enemy.kind
 		if kind=="ritual_anchor":
@@ -1832,13 +1906,13 @@ func update_shots(dt: float) -> void:
 		shot.pos += shot.vel*dt*(0.4 if shot.hostile and slow_time>0 else 1.0)
 		shot.life -= dt
 		var pos: Vector2 = shot.pos
-		if not ARENA.has_point(pos) and shot.bounce>0:
-			if pos.x<ARENA.position.x or pos.x>ARENA.end.x: shot.vel.x=-shot.vel.x
-			if pos.y<ARENA.position.y or pos.y>ARENA.end.y: shot.vel.y=-shot.vel.y
+		if not room_bounds.has_point(pos) and shot.bounce>0:
+			if pos.x<room_bounds.position.x or pos.x>room_bounds.end.x: shot.vel.x=-shot.vel.x
+			if pos.y<room_bounds.position.y or pos.y>room_bounds.end.y: shot.vel.y=-shot.vel.y
 			shot.pos=safe_position(pos,5)
 			pos=shot.pos
 			shot.bounce-=1
-		var remove: bool = shot.life <= 0 or not ARENA.has_point(pos) or blocked(pos, 4)
+		var remove: bool = shot.life <= 0 or not room_bounds.has_point(pos) or blocked(pos, 4)
 		if not remove:
 			if shot.hostile:
 				if pos.distance_to(player) < 22:
@@ -2392,7 +2466,7 @@ func smoke_test() -> bool:
 			var index: int=0 if column==0 else 1+(column-1)*3+1
 			if column>0:
 				if state=="exit":
-					player=EXIT
+					player=exit_point
 					if not open_route(): return false
 				if not travel(index): return false
 			if state=="fight":
@@ -2416,14 +2490,14 @@ func smoke_test() -> bool:
 				if not service_action(choice) or state!="route" or service_action(choice): return false
 		if not dungeon.boss_ready(): return false
 		if state=="exit":
-			player=EXIT
+			player=exit_point
 			if not open_route(): return false
 		if not travel(Dungeon.BOSS): return false
 		for unit in enemies: unit.hp=0
 		tick(0.016,Vector2.ZERO,Vector2(700,385),false,false,false)
 		if floor<2:
 			if not choose_relic(0): return false
-			player=EXIT
+			player=exit_point
 			if not next_room() or not descend(): return false
 		elif state!="victory" or bosses_defeated!=3: return false
 	begin(99,"soulbinder_reaper")
