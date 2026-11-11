@@ -4,6 +4,9 @@ const ROOM_COUNT := 26
 const BOSS := 25
 const MIN_FIGHTS := [6,7,7]
 const MIN_ELITES := [0,1,2]
+const SPECIAL_COMBAT := ["ritual","survival","bounty","unstable"]
+const SPECIAL_SERVICE := ["blood_altar","forgotten_forge","archive"]
+const ALL_COMBAT := ["fight","elite","ritual","survival","bounty","unstable"]
 var nodes: Array[Dictionary] = []
 var floor_index := 0
 
@@ -33,20 +36,24 @@ func generate(seed_value: int, floor: int) -> void:
 			var elite_pool: Array=[3,4,5,7,8]
 			for col in service_columns: elite_pool.erase(col)
 			elite_columns=pick_columns(elite_pool,2,rng)
-	var services: Array = ["treasure","shop","event","shrine","secret"]
+	var services: Array = ["treasure","shop","event","shrine","secret","blood_altar","forgotten_forge","archive"]
 	if floor==2: services.append("forge")
 	add_node("fight",0,1,rng)
 	for column in range(1,9):
 		var choices: Array = []
 		if service_columns.has(column):
-			var offset:=rng.randi_range(0,services.size()-1)
-			for lane in range(3): choices.append(services[(offset+lane)%services.size()])
-			# Guarantee one opportunity to use the royal forge.
+			var room_pool: Array=services.duplicate()
+			for lane in range(3):
+				choices.append(room_pool.pop_at(rng.randi_range(0,room_pool.size()-1)))
+			# Guarantee one opportunity to use the old royal forge.
 			if floor==2 and column==6: choices[1]="forge"
 		elif elite_columns.has(column):
 			choices=["elite","elite","elite"]
 		else:
 			choices=["fight","fight","elite" if rng.randf()<0.45 else "fight"]
+			for lane in range(3):
+				if choices[lane]=="fight" and rng.randf()<0.52:
+					choices[lane]=SPECIAL_COMBAT[rng.randi_range(0,SPECIAL_COMBAT.size()-1)]
 		for lane in range(3): add_node(choices[lane],column,lane,rng)
 	add_node("boss",9,1,rng)
 	for lane in range(3):
@@ -76,7 +83,7 @@ func pick_columns(source: Array, count: int, rng: RandomNumberGenerator) -> Arra
 func add_node(kind_name: String, column: int, lane: int, rng: RandomNumberGenerator) -> void:
 	# Encounter profiles and danger levels are fixed by seed and visible on the map.
 	# The first room stays a predictable introduction, not a random difficulty spike.
-	var combat: bool=kind_name in ["fight","elite"]
+	var combat: bool=kind_name in ALL_COMBAT
 	var profiles: Array[String]=["skirmish","crossfire","siege","onslaught"]
 	var encounter: String=profiles[rng.randi_range(0,profiles.size()-1)] if combat else ""
 	var threat: int=clampi(int((column+floor_index)/3)+rng.randi_range(-1,1),0,2) if combat else 0
@@ -99,7 +106,7 @@ func kind(index: int) -> String:
 func cleared_fights() -> int:
 	var count:=0
 	for node in nodes:
-		if node.cleared and node.kind in ["fight","elite"]: count+=1
+		if node.cleared and node.kind in ALL_COMBAT: count+=1
 	return count
 
 func cleared_elites() -> int:
@@ -119,7 +126,7 @@ func smoke_test() -> bool:
 			if nodes.size()!=ROOM_COUNT: return false
 			if nodes[0].encounter!="skirmish" or nodes[0].threat!=0: return false
 			for node in nodes:
-				if node.kind in ["fight","elite"] and (node.encounter not in ["skirmish","crossfire","siege","onslaught"] or node.threat<0 or node.threat>2): return false
+				if node.kind in ALL_COMBAT and (node.encounter not in ["skirmish","crossfire","siege","onslaught"] or node.threat<0 or node.threat>2): return false
 				if node.kind=="elite" and node.threat<1: return false
 			var seen: Array=[0]
 			var cursor:=0
@@ -135,9 +142,20 @@ func smoke_test() -> bool:
 				var all_elite:=true
 				for node in nodes:
 					if node.column==column:
-						all_combat=all_combat and node.kind in ["fight","elite"]
+						all_combat=all_combat and node.kind in ALL_COMBAT
 						all_elite=all_elite and node.kind=="elite"
 				if all_combat: fights+=1
 				if all_elite: elites+=1
 			if fights<MIN_FIGHTS[floor] or elites<MIN_ELITES[floor]: return false
+	# Dedicated room types must actually appear across generated runs, not
+	# remain unreachable descriptions in the room-type registry.
+	var encountered: Dictionary={}
+	for floor in range(3):
+		for seed_value in range(30,70):
+			generate(seed_value,floor)
+			for node in nodes:
+				if node.kind in SPECIAL_COMBAT or node.kind in SPECIAL_SERVICE:
+					encountered[node.kind]=true
+	for id in SPECIAL_COMBAT+SPECIAL_SERVICE:
+		if not encountered.has(id): return false
 	return true
