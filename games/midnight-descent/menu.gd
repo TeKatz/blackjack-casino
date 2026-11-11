@@ -619,6 +619,16 @@ func smoke_test() -> void:
 		push_error("Descent progression regression failed")
 		get_tree().quit(5)
 		return
+	# The selected loadout must drive the actual gate shot, not always the Warden.
+	progress.unlocked.append("dealer_cards")
+	inspected_set="dealer_cards"
+	show_page("expedition")
+	start_run()
+	if not cinematic_playing or progress.selected!="dealer_cards" or backdrop.get("cinematic_character")!="dealer" or not backdrop.get("cinematic_active") or cinematic_fade==null:
+		push_error("Descent selected-character intro regression")
+		get_tree().quit(29)
+		return
+	print("Midnight Descent gate cinematic smoke PASS")
 	print("Midnight Descent menu smoke PASS")
 	print("Midnight Descent run smoke PASS")
 	get_tree().quit(0)
