@@ -49,7 +49,17 @@ func generate(seed_value: int, floor: int) -> void:
 		link(a+1,a+2)
 
 func add_node(kind_name: String, column: int, lane: int, rng: RandomNumberGenerator) -> void:
-	nodes.append({"kind":kind_name,"column":column,"lane":lane,"visited":false,"cleared":false,"links":[],"layout":rng.randi_range(0,3),"geometry_seed":rng.randi()})
+	# Encounter profiles and danger levels are fixed by seed and visible on the map.
+	# The first room stays a predictable introduction, not a random difficulty spike.
+	var combat: bool=kind_name in ["fight","elite"]
+	var profiles: Array[String]=["skirmish","crossfire","siege","onslaught"]
+	var encounter: String=profiles[rng.randi_range(0,profiles.size()-1)] if combat else ""
+	var threat: int=clampi(int((column+floor_index)/3)+rng.randi_range(-1,1),0,2) if combat else 0
+	if kind_name=="elite": threat=maxi(1,threat)
+	if column==0:
+		encounter="skirmish"
+		threat=0
+	nodes.append({"kind":kind_name,"column":column,"lane":lane,"visited":false,"cleared":false,"links":[],"layout":rng.randi_range(0,3),"geometry_seed":rng.randi(),"encounter":encounter,"threat":threat})
 
 func link(a: int,b: int) -> void:
 	if not nodes[a].links.has(b): nodes[a].links.append(b)
@@ -82,6 +92,10 @@ func smoke_test() -> bool:
 		for seed_value in range(24):
 			generate(seed_value,floor)
 			if nodes.size()!=ROOM_COUNT: return false
+			if nodes[0].encounter!="skirmish" or nodes[0].threat!=0: return false
+			for node in nodes:
+				if node.kind in ["fight","elite"] and (node.encounter not in ["skirmish","crossfire","siege","onslaught"] or node.threat<0 or node.threat>2): return false
+				if node.kind=="elite" and node.threat<1: return false
 			var seen: Array=[0]
 			var cursor:=0
 			while cursor<seen.size():
