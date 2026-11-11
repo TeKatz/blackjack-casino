@@ -161,7 +161,9 @@ static func smoke_test() -> bool:
                     var approach: Rect2=regions[-2]
                     if door.size.x<50 or door.size.y<150 or not approach.encloses(door.grow(-6)): return false
                     if door.position.x<=regions[-3].end.x or door.end.x>=regions[-1].position.x: return false
-                    if not accessible(layout.boss_spawn,30,regions,walls+[door]): return false
+                    var sealed_walls: Array[Rect2]=walls.duplicate()
+                    sealed_walls.append(door)
+                    if not accessible(layout.boss_spawn,30,regions,sealed_walls): return false
                 # Flood-fill at 24px resolution. Every course must be walkable
                 # from the entrance to the far gate, even through bottlenecks.
                 var origin: Vector2=layout.spawn
