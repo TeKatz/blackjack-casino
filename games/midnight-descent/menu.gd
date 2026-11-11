@@ -524,7 +524,7 @@ func start_run() -> void:
 	cinematic_clock=0.0
 	cinematic_changed_scene=false
 	get_viewport().gui_release_focus()
-	backdrop.begin_cinematic(Content.SETS[inspected_set].character)
+	backdrop.call("begin_cinematic",Content.SETS[inspected_set].character)
 	audio.play("portal_charge")
 	for button in action_buttons:
 		button.disabled=true

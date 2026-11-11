@@ -2,7 +2,12 @@ extends Control
 ## Animated pixel-art gate chamber, independent of menu widgets.
 const TILES = preload("res://art/pixel/vault_tiles.svg")
 const TORCH = preload("res://art/pixel/torch.svg")
-const PixelWorld = preload("res://pixel_world.gd")
+const ACTORS = {
+	"warden": preload("res://art/pixel/warden.svg"),
+	"dealer": preload("res://art/pixel/dealer.svg"),
+	"arcanist": preload("res://art/pixel/arcanist.svg"),
+	"soulbinder": preload("res://art/pixel/soulbinder.svg")
+}
 var cinematic_active := false
 var cinematic_clock := 0.0
 var cinematic_character := "warden"
@@ -23,7 +28,7 @@ func _process(dt: float) -> void:
 func begin_cinematic(character: String) -> void:
 	cinematic_active=true
 	cinematic_clock=0.0
-	cinematic_character=character if PixelWorld.ACTORS.has(character) else "warden"
+	cinematic_character=character if ACTORS.has(character) else "warden"
 	queue_redraw()
 
 func tile(index: int, rect: Rect2) -> void:
@@ -83,19 +88,19 @@ func _draw() -> void:
 		draw_texture_rect_region(TORCH,Rect2(pos-Vector2(16,37),Vector2(32,64)),Rect2(int(clock*8)%4*16,0,16,32))
 	# Camera intro focuses the selected actual player sprite and the portal.
 	var walk: float=clampf((cinematic_clock-1.02)/0.99,0,1) if cinematic_active else 0.0
-	var y: float=430.0-184.0*(walk*walk*(3-2*walk))
+	var actor_y: float=430.0-184.0*(walk*walk*(3-2*walk))
 	var actor_opacity: float=1.0-clampf((cinematic_clock-1.94)/0.30,0,1) if cinematic_active else 1.0
-	draw_rect(Rect2(881,y+122,88,12),Color(0,0,0,0.55*actor_opacity))
+	draw_rect(Rect2(881,actor_y+122,88,12),Color(0,0,0,0.55*actor_opacity))
 	var frame: int=int(clock*2)%2
 	if cinematic_active:
 		if cinematic_clock<1.02: frame=6 if cinematic_clock>0.65 else int(clock*2)%2
 		elif cinematic_clock<2.04: frame=2+int(clock*12)%4
 		else: frame=0
-	var tex: Texture2D=PixelWorld.ACTORS[cinematic_character]
-	draw_texture_rect_region(tex,Rect2(861,y,128,128),Rect2(frame*32,0,32,32),Color(1,1,1,actor_opacity))
+	var tex: Texture2D=ACTORS[cinematic_character]
+	draw_texture_rect_region(tex,Rect2(861,actor_y,128,128),Rect2(frame*32,0,32,32),Color(1,1,1,actor_opacity))
 	if cinematic_active and cinematic_clock>0.72 and cinematic_clock<1.12:
 		var ring_alpha: float=sin((cinematic_clock-0.72)/0.40*PI)
-		draw_arc(Vector2(925,y+68),44,0,TAU,32,Color(0.89,0.73,1,ring_alpha*0.9),3,true)
+		draw_arc(Vector2(925,actor_y+68),44,0,TAU,32,Color(0.89,0.73,1,ring_alpha*0.9),3,true)
 		for i in range(6):
 			var p: Vector2=Vector2(925,y+68)+Vector2.from_angle(i*TAU/6+clock)*58
 			draw_rect(Rect2(p,Vector2(3,3)),Color("#ffdcaa"))
