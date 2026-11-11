@@ -3,6 +3,9 @@ extends RefCounted
 const ARENA := Rect2(58, 146, 1164, 478)
 const SPAWN := Vector2(143, 385)
 const EXIT := Vector2(1174, 385)
+const HUB_SPAWN := Vector2(318,425)
+const HUB_PORTAL := Vector2(1045,388)
+const HUB_RANGE := 94.0
 const ROOM_COUNT := 26
 var environment_timer := 0.0
 var shot_style := ""
@@ -52,7 +55,7 @@ var dash_hits: Array[Dictionary] = []
 var rng := RandomNumberGenerator.new()
 var seed_value: int
 var room := 0
-var state := "fight"
+var state := "hub"
 var player := SPAWN
 var aim := Vector2.RIGHT
 var hp := 100.0
@@ -125,7 +128,41 @@ func begin(value: int, loadout: String = "warden_guard", upgrades: Dictionary = 
 	elapsed = 0.0
 	relics.clear()
 	notices.clear()
+	enter_hub()
+
+func enter_hub() -> void:
+	# This tavern is outside the route graph: no free combat progress or rewards.
+	state="hub"
+	room_kind="hub"
+	player=HUB_SPAWN
+	aim=Vector2.RIGHT
+	attack_timer=0.0
+	bolt_timer=0.0
+	dash_timer=0.0
+	dash_left=0.0
+	invulnerable=0.0
+	enemies.clear()
+	shots.clear()
+	effects.clear()
+	hazards.clear()
+	echoes.clear()
+	offers.clear()
+	walls.clear()
+	# Furniture footprints are also actual collision volumes.
+	walls.append(Rect2(220,208,520,82))
+	walls.append(Rect2(458,486,132,76))
+	walls.append(Rect2(735,218,108,92))
+
+func hub_portal_available() -> bool:
+	return state=="hub" and player.distance_to(HUB_PORTAL)<=HUB_RANGE
+
+func enter_first_room() -> bool:
+	if not hub_portal_available(): return false
+	room=0
+	floor_index=0
 	enter_room()
+	notices.append("portal_enter")
+	return true
 
 func enter_room() -> void:
 	state = "fight"
@@ -372,6 +409,10 @@ func move_actor(pos: Vector2, motion: Vector2, radius: float) -> Vector2:
 	return pos
 
 func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: bool, dash: bool, active: bool = false) -> void:
+	if state=="hub":
+		if target.distance_to(player)>4: aim=player.direction_to(target)
+		player=move_actor(player,direction.limit_length()*speed*dt,15)
+		return
 	if state != "fight" and state != "exit":
 		return
 	elapsed += dt
@@ -463,7 +504,7 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 			for i in range(count):
 				var angle := (float(i)-(count-1)*0.5)*0.19
 				var power := bolt_damage*special_multiplier
-				if set_id=="dealer_joker": power *= rng.randf_range(0.5,1.8)
+				if set_id=="dealer_joker": power *= rng.randf_range(0.6,1.35)
 				shoot(player+aim*21,aim.rotated(angle)*590,false,power)
 		if relics.has("cascade") or set_id=="arcanist_fire":
 			for enemy in enemies:
@@ -903,6 +944,12 @@ func use_active() -> void:
 func smoke_test() -> bool:
 	if not dungeon.smoke_test(): return false
 	begin(123,"dealer_cards")
+	if state!="hub" or visited_count!=0 or dungeon.nodes[0].visited or not enemies.is_empty(): return false
+	if enter_first_room(): return false
+	player=HUB_PORTAL
+	if not enter_first_room() or state!="fight" or visited_count!=1 or not dungeon.nodes[0].visited: return false
+	if not (Content.SETS.dealer_cards.damage==11.0 and Content.SETS.dealer_cards.attack==0.33): return false
+	if not (Content.SETS.dealer_joker.damage==12.0 and Content.SETS.dealer_joker.attack==0.41): return false
 	relics.append("split")
 	relics.append("pierce")
 	tick(0.016,Vector2.ZERO,Vector2(600,385),false,true,false)
@@ -911,6 +958,8 @@ func smoke_test() -> bool:
 	tick(0.016,Vector2.ZERO,Vector2(600,385),false,false,false,true)
 	if hp!=48 or active_timer<=0: return false
 	begin(74219)
+	player=HUB_PORTAL
+	if not enter_first_room(): return false
 	for floor in range(3):
 		if dungeon.boss_ready() or dungeon.nodes.size()!=ROOM_COUNT: return false
 		for column in range(9):
@@ -948,6 +997,8 @@ func smoke_test() -> bool:
 			if not next_room() or not descend(): return false
 		elif state!="victory" or bosses_defeated!=3: return false
 	begin(99,"soulbinder_reaper")
+	player=HUB_PORTAL
+	if not enter_first_room(): return false
 	souls=3
 	hp=50
 	tick(0.016,Vector2.ZERO,Vector2(700,385),false,true,false)
@@ -971,6 +1022,8 @@ func smoke_test() -> bool:
 	if hp!=84 or not notices.has("spike_retract"): return false
 	for id in Content.SETS:
 		begin(321,id)
+		player=HUB_PORTAL
+		if not enter_first_room(): return false
 		tick(0.016,Vector2.ZERO,Vector2(700,385),true,true,false)
 		if not notices.has(id+"_main") or not notices.has(id+"_special"): return false
 	floor_index=1

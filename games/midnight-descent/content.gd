@@ -3,8 +3,8 @@ extends RefCounted
 const SETS := {
 	"warden_guard": {"character":"warden","en":"Guardian","de":"Beschützer","hp":100.0,"damage":26.0,"bolt":17.0,"speed":245.0,"attack":0.36,"special":0.62,"dash":1.3,"cost":0},
 	"warden_executioner": {"character":"warden","en":"Executioner","de":"Vollstrecker","hp":115.0,"damage":44.0,"bolt":22.0,"speed":215.0,"attack":0.65,"special":2.2,"dash":1.5,"cost":35},
-	"dealer_cards": {"character":"dealer","en":"Cardsharp","de":"Kartenmeister","hp":75.0,"damage":14.0,"bolt":20.0,"speed":270.0,"attack":0.24,"special":1.1,"dash":1.1,"cost":55},
-	"dealer_joker": {"character":"dealer","en":"Joker","de":"Joker","hp":85.0,"damage":17.0,"bolt":27.0,"speed":255.0,"attack":0.32,"special":1.5,"dash":1.2,"cost":85},
+	"dealer_cards": {"character":"dealer","en":"Cardsharp","de":"Kartenmeister","hp":75.0,"damage":11.0,"bolt":17.0,"speed":270.0,"attack":0.33,"special":1.45,"dash":1.1,"cost":55},
+	"dealer_joker": {"character":"dealer","en":"Joker","de":"Joker","hp":85.0,"damage":12.0,"bolt":22.0,"speed":255.0,"attack":0.41,"special":1.9,"dash":1.2,"cost":85},
 	"arcanist_fire":{"character":"arcanist","en":"Pyromancer","de":"Pyromant","hp":80.0,"damage":16.0,"bolt":38.0,"speed":250.0,"attack":0.34,"special":1.8,"dash":1.25,"cost":100},
 	"arcanist_frost":{"character":"arcanist","en":"Frostweaver","de":"Frostweber","hp":90.0,"damage":15.0,"bolt":28.0,"speed":240.0,"attack":0.35,"special":1.6,"dash":1.2,"cost":125},
 	"soulbinder_reaper":{"character":"soulbinder","en":"Reaper","de":"Schnitter","hp":105.0,"damage":31.0,"bolt":36.0,"speed":240.0,"attack":0.46,"special":2.1,"dash":1.35,"cost":140},
