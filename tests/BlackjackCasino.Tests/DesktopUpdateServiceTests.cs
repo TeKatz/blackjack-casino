@@ -44,7 +44,10 @@ public sealed class DesktopUpdateServiceTests
 
         Assert.True(result.UpdateAvailable);
         Assert.Equal("development", result.Manifest.Channel);
-        Assert.Equal(DesktopUpdateService.ManifestUri(UpdateChannel.Development), handler.LastUri);
+        Uri expected = DesktopUpdateService.ManifestUri(UpdateChannel.Development);
+        Assert.NotNull(handler.LastUri);
+        Assert.Equal(expected.GetLeftPart(UriPartial.Path), handler.LastUri.GetLeftPart(UriPartial.Path));
+        Assert.Matches(@"^\?revision=[0-9a-f]{32}$", handler.LastUri.Query);
     }
 
     private static UpdateManifest Manifest(string channel) => new()
