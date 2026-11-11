@@ -127,7 +127,12 @@ func _physics_process(dt: float) -> void:
 	last_dash=dash
 	last_interact=interact
 	for notice in run.notices:
-		play_sound(notice)
+		# Stage II / III have different physical gate mechanisms and reactor
+		# chambers, so their audio follows the actual biome (not Vault cues).
+		var cue: String=notice
+		if run.floor_index in [1,2] and (notice in ["boss_gate_close","boss_gate_lock"] or notice.begins_with("sp_unstable_")):
+			cue=notice+("_grove" if run.floor_index==1 else "_crypt")
+		play_sound(cue)
 		if notice=="hurt": shake=7.0
 		if notice=="kill": shake=maxf(shake,2.0)
 		if notice=="synergy_complete": synergy_toast_timer=2.7
