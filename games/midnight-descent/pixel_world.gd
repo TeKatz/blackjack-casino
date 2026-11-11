@@ -791,6 +791,33 @@ func special_animated_sprite(id: String, center: Vector2, size: Vector2, offset:
 	var dimensions: Vector2=size*pulse
 	draw_texture_rect_region(SPECIAL_ART[id],Rect2(pixel_pos(center-dimensions*0.5),dimensions),Rect2(animation*128,0,128,128))
 
+func draw_special_gate() -> void:
+	var id: String=model.room_kind
+	var palette: Array=SPECIAL_PALETTES[id]
+	var opening: bool=model.state=="exit"
+	var frame: Rect2=Rect2(1137,314,70,142)
+	draw_rect(Rect2(frame.position+Vector2(8,8),frame.size),Color("#090b15"))
+	draw_rect(frame,palette[0].darkened(0.53))
+	draw_rect(frame,palette[1],false,5)
+	draw_rect(frame.grow(-9),Color("#101021"),false,2)
+	var pulse: float=0.55+0.45*sin(clock*3.9)
+	for y in range(4):
+		var py: float=326+y*27
+		for side in [1142.0,1192.0]:
+			draw_rect(Rect2(side,py,7,9),palette[2])
+	if opening:
+		var center: Vector2=frame.get_center()
+		draw_circle(center,26+8*pulse,Color(palette[1],0.20+0.13*pulse))
+		for i in range(8):
+			var angle: float=float(i)*TAU/8.0+clock*0.58
+			var pos: Vector2=center+Vector2.from_angle(angle)*24
+			draw_rect(Rect2(pixel_pos(pos)-Vector2(3,3),Vector2(6,6)),palette[2])
+		special_animated_sprite(id,center,Vector2(58,58))
+	else:
+		for i in range(5):
+			draw_rect(Rect2(1153,339+i*20,39,6),Color(palette[1],0.28))
+		draw_rect(Rect2(1169,333,9,108),palette[0].lightened(0.18))
+
 func draw_special_chamber() -> void:
 	var id: String=model.room_kind
 	var palette: Array=SPECIAL_PALETTES[id]
@@ -983,6 +1010,14 @@ func draw_biome_details(arena: Rect2) -> void:
 		# into the floor props or sarcophagi.
 
 func draw_pillar(rect: Rect2) -> void:
+	if SPECIAL_ART.has(model.room_kind):
+		var palette: Array=SPECIAL_PALETTES[model.room_kind]
+		draw_rect(Rect2(rect.position+Vector2(6,8),rect.size),Color("#0b0a13"))
+		draw_rect(rect,palette[0].darkened(0.45))
+		draw_rect(rect.grow(-5),palette[0].lightened(0.16),false,3)
+		for y in range(0,int(rect.size.y),18):
+			draw_rect(Rect2(rect.position+Vector2(9,y+5),Vector2(rect.size.x-18,4)),Color(palette[1],0.34))
+		return
 	draw_rect(Rect2(rect.position+Vector2(5,6),rect.size),Color("#191320"))
 	tile(5,rect)
 	draw_rect(Rect2(rect.position+Vector2(0,rect.size.y-12),Vector2(rect.size.x,12)),Color("#1f1927"))
