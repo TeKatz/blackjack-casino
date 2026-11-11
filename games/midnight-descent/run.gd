@@ -592,7 +592,10 @@ func draw_effect(fx: Dictionary) -> void:
 		text_at(pos+Vector2(-12,-25-30*(1-alpha)),str(fx.amount),16,Color(1,0.9,0.72,alpha))
 		return
 	if kind.begins_with("dash_"):
-		var dash_color: Color=Color("#edc587") if "warden" in kind else (Color("#d3a2fa") if "dealer" in kind else (Color("#79ddf6") if "arcanist" in kind else Color("#88ebbf"))
+		var dash_color:=Color("#88ebbf")
+		if kind.contains("warden"): dash_color=Color("#edc587")
+		elif kind.contains("dealer"): dash_color=Color("#d3a2fa")
+		elif kind.contains("arcanist"): dash_color=Color("#79ddf6")
 		if "frost" in kind: dash_color=Color("#a5e5ff")
 		if "fire" in kind or "cinder" in kind: dash_color=Color("#ffa06a")
 		if "arcane" in kind: dash_color=Color("#caa4ff")
