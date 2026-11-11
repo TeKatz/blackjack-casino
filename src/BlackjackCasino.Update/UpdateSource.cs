@@ -26,8 +26,15 @@ public sealed class HttpManifestUpdateSource : IUpdateSource
 
     public async Task<UpdateManifest> GetLatestAsync(CancellationToken cancellationToken = default)
     {
-        // The Development tag is mutable; require revalidation instead of a stale cached redirect/manifest.
-        using var request = new HttpRequestMessage(HttpMethod.Get, manifestUri);
+        // GitHub's mutable /development/ release URL may retain a cached redirect
+        // even when the request sends no-cache. A per-request unique query string
+        // makes each manifest fetch an independent CDN cache key. Never remove
+        // the integrity checks: the downloaded ZIP must still match this manifest.
+        var freshUri = new UriBuilder(manifestUri);
+        string nonce = "revision=" + Guid.NewGuid().ToString("N");
+        freshUri.Query = string.IsNullOrEmpty(freshUri.Query.TrimStart('?'))
+            ? nonce : freshUri.Query.TrimStart('?') + "&" + nonce;
+        using var request = new HttpRequestMessage(HttpMethod.Get, freshUri.Uri);
         request.Headers.CacheControl = new CacheControlHeaderValue { NoCache = true, NoStore = true };
         using HttpResponseMessage response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
         response.EnsureSuccessStatusCode();
