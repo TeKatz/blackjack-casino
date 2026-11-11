@@ -486,15 +486,21 @@ func run_scene_smoke() -> void:
 	if overlay_state!="route" or overlay.get_child_count()==0 or not run.travel(1):
 		get_tree().quit(8)
 		return
-	for unit in run.enemies: unit.hp=0
-	run.tick(0.016,Vector2.ZERO,Vector2(700,385),false,false,false)
+	if run.room_kind in Model.Dungeon.SPECIAL_COMBAT:
+		run.complete_special_combat()
+	else:
+		for unit in run.enemies: unit.hp=0
+		for cleanup in range(5):
+			if run.state!="fight": break
+			for unit in run.enemies: unit.hp=0
+			run.tick(0.016,Vector2.ZERO,Vector2(700,385),false,false,false)
 	if run.state=="reward": select_relic(0)
 	run.player=Model.EXIT
 	if not run.next_room() or not run.travel(4):
 		get_tree().quit(15)
 		return
 	_process(0.0)
-	var choice: int=3 if run.room_kind in ["shop","forge"] else (0 if run.room_kind=="shrine" else 1)
+	var choice: int=3 if run.room_kind in ["shop","forge","archive","forgotten_forge"] else (2 if run.room_kind=="blood_altar" else (0 if run.room_kind=="shrine" else 1))
 	if overlay_state!="service" or not run.service_action(choice):
 		get_tree().quit(15)
 		return
@@ -570,6 +576,20 @@ func run_scene_smoke() -> void:
 		var class_icon:=UI.atlas(UI.RELICS,i)
 		if class_icon.atlas!=UI.CLASS_RELICS or class_icon.region!=Rect2((i-47)*48,0,48,48):
 			get_tree().quit(38)
+			return
+	# Each of the seven chambers owns a complete four-frame imported sprite,
+	# a matching standalone map glyph and valid scene renderer.
+	if UI.SPECIAL_ROOM_ICONS.get_width()!=168 or UI.SPECIAL_ROOM_ICONS.get_height()!=24:
+		get_tree().quit(39)
+		return
+	for id in Model.Dungeon.SPECIAL_COMBAT+Model.Dungeon.SPECIAL_SERVICE:
+		if not world.SPECIAL_ART.has(id):
+			get_tree().quit(40)
+			return
+		var tex: Texture2D=world.SPECIAL_ART[id]
+		if tex.get_width()!=512 or tex.get_height()!=128 or UI.room_icon(id).atlas!=UI.SPECIAL_ROOM_ICONS:
+			push_error("Special chamber art missing: "+id)
+			get_tree().quit(41)
 			return
 	# Test reserved decor bounds in each generated room, including all biome fixtures.
 	for floor in range(3):
