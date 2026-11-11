@@ -5,7 +5,15 @@ const SPAWN := Vector2(143, 385)
 const EXIT := Vector2(1174, 385)
 const HUB_SPAWN := Vector2(318,425)
 const HUB_PORTAL := Vector2(1045,388)
-const HUB_RANGE := 94.0
+const HUB_RANGE := 125.0
+# Hub furniture is authoritative geometry; art and interaction points use these footprints.
+const HUB_BAR := Rect2(220,146,520,178)
+const HUB_FORGE := Rect2(735,146,108,166)
+const HUB_TABLE := Rect2(458,469,132,96)
+const HUB_GATE_FRAME := Rect2(988,298,115,180)
+const HUB_BARTENDER_POINT := Vector2(482,326)
+const HUB_FORGE_POINT := Vector2(790,329)
+const HUB_SERVICE_RANGE := 104.0
 const ROOM_COUNT := 26
 var environment_timer := 0.0
 var shot_style := ""
@@ -148,10 +156,15 @@ func enter_hub() -> void:
 	echoes.clear()
 	offers.clear()
 	walls.clear()
-	# Furniture footprints are also actual collision volumes.
-	walls.append(Rect2(220,208,520,82))
-	walls.append(Rect2(458,486,132,76))
-	walls.append(Rect2(735,218,108,92))
+	# Each volume extends over the entire visual footprint. The bar and forge
+	# meet the northern arena limit so neither can be bypassed from behind.
+	walls.append_array([HUB_BAR,HUB_FORGE,HUB_TABLE,HUB_GATE_FRAME])
+
+func hub_bartender_available() -> bool:
+	return state=="hub" and player.y >= HUB_BAR.end.y and player.distance_to(HUB_BARTENDER_POINT)<=HUB_SERVICE_RANGE
+
+func hub_forge_available() -> bool:
+	return state=="hub" and player.distance_to(HUB_FORGE_POINT)<=HUB_SERVICE_RANGE
 
 func hub_portal_available() -> bool:
 	return state=="hub" and player.distance_to(HUB_PORTAL)<=HUB_RANGE
@@ -411,7 +424,11 @@ func move_actor(pos: Vector2, motion: Vector2, radius: float) -> Vector2:
 func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: bool, dash: bool, active: bool = false) -> void:
 	if state=="hub":
 		if target.distance_to(player)>4: aim=player.direction_to(target)
-		player=move_actor(player,direction.limit_length()*speed*dt,15)
+		# Substeps prevent walking through narrow furniture during a frame hitch.
+		var motion: Vector2=direction.limit_length()*speed*dt
+		var steps: int=maxi(1,ceili(motion.length()/8.0))
+		for step in range(steps):
+			player=move_actor(player,motion/float(steps),15)
 		return
 	if state != "fight" and state != "exit":
 		return
@@ -945,6 +962,21 @@ func smoke_test() -> bool:
 	if not dungeon.smoke_test(): return false
 	begin(123,"dealer_cards")
 	if state!="hub" or visited_count!=0 or dungeon.nodes[0].visited or not enemies.is_empty(): return false
+	if walls.size()!=4 or not blocked(HUB_BAR.get_center(),15) or not blocked(HUB_FORGE.get_center(),15) or not blocked(HUB_TABLE.get_center(),15) or not blocked(HUB_PORTAL,15): return false
+	if enter_first_room() or hub_bartender_available() or hub_forge_available(): return false
+	player=Vector2(482,370)
+	tick(0.7,Vector2.UP,HUB_BARTENDER_POINT,false,false,false)
+	if player.y < HUB_BAR.end.y+15 or not hub_bartender_available(): return false
+	player=Vector2(790,370)
+	tick(0.7,Vector2.UP,HUB_FORGE_POINT,false,false,false)
+	if player.y < HUB_FORGE.end.y+15 or not hub_forge_available(): return false
+	player=Vector2(525,600)
+	tick(0.7,Vector2.UP,HUB_TABLE.get_center(),false,false,false)
+	if player.y < HUB_TABLE.end.y+15: return false
+	player=Vector2(1045,535)
+	tick(0.7,Vector2.UP,HUB_PORTAL,false,false,false)
+	if player.y < HUB_GATE_FRAME.end.y+15 or not hub_portal_available(): return false
+	player=HUB_SPAWN
 	if enter_first_room(): return false
 	player=HUB_PORTAL
 	if not enter_first_room() or state!="fight" or visited_count!=1 or not dungeon.nodes[0].visited: return false
