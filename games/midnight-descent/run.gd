@@ -281,9 +281,18 @@ func _draw() -> void:
 					var pos: Vector2=hazard.pos+Vector2.from_angle(j*TAU/8+clock*0.4)*hazard.r*0.65
 					draw_circle(pos,3+sin(clock*3+j),Color("#a9e388"))
 	if run.relics.has("sun"):
-		var orb: Vector2=run.player+Vector2.from_angle(clock*2.5)*70
-		draw_circle(orb,12,Color("#c284ec"))
-		draw_circle(orb,8,Color("#1b102f"))
+		var sun_count: int=run.relics.count("sun")
+		var visible_orbits: int=mini(8,sun_count)
+		for orb_index in range(visible_orbits):
+			var angle: float=run.elapsed*2.6+float(orb_index)*TAU/float(visible_orbits)
+			var radius: float=73.0+float(orb_index%3)*17.0
+			var orb: Vector2=run.player+Vector2.from_angle(angle)*radius
+			var halo: Color=Color("#c284ec") if orb_index%2==0 else Color("#f2a66f")
+			draw_arc(run.player,radius,angle-0.19,angle+0.19,9,Color(halo,0.28),2,true)
+			draw_circle(orb,14,Color(halo,0.16))
+			draw_circle(orb,10,halo)
+			draw_circle(orb,6,Color("#1b102f"))
+			draw_rect(Rect2(orb+Vector2(-2,-2),Vector2(4,4)),Color("#fce7c6"))
 	for enemy in run.enemies:
 		var pos: Vector2 = enemy.pos
 		if enemy.wind > 0:
