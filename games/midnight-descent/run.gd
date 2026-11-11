@@ -514,6 +514,26 @@ func run_scene_smoke() -> void:
 		get_tree().quit(8)
 		return
 	_process(0.0)
+	# Real scene regression: map nodes must never grow or wrap labels into
+	# adjacent columns, even for Blood Altar and Combat III.
+	var checked_map_nodes:=0
+	for candidate in overlay.find_children("*","Button",true,false):
+		if candidate.get_parent()==null or candidate.get_parent().get_script()!=RouteMap: continue
+		checked_map_nodes+=1
+		var map_button: Button=candidate
+		if map_button.size.x>93 or map_button.size.y>53:
+			push_error("Dungeon map card exceeded its fixed column slot")
+			get_tree().quit(46)
+			return
+		for child in map_button.get_children():
+			if child is Label and (str(child.text).contains("\n") or child.autowrap_mode!=TextServer.AUTOWRAP_OFF):
+				push_error("Dungeon map card has wrapped caption")
+				get_tree().quit(47)
+				return
+	if checked_map_nodes!=Model.ROOM_COUNT:
+		push_error("Dungeon map nodes missing or not laid out")
+		get_tree().quit(48)
+		return
 	if overlay_state!="route" or overlay.get_child_count()==0 or not run.travel(1):
 		push_error("Scene route selection failed: state="+run.state+" overlay="+overlay_state+" route="+str(run.route_options()))
 		get_tree().quit(8)
@@ -637,7 +657,16 @@ func run_scene_smoke() -> void:
 				return
 	# Large-stage art, centered camera and boss-corridor reveal are exercised
 	# in the live rendering scene, not only by the pure layout generator.
+	if world.REACTOR_CORE.get_width()!=512 or world.REACTOR_CORE.get_height()!=128:
+		push_error("New stable reactor core texture is missing or incorrectly sized")
+		get_tree().quit(49)
+		return
 	for stage in range(3):
+		var shutter: Texture2D=world.BOSS_GATE_TEXTURES[stage]
+		if shutter.get_width()!=384 or shutter.get_height()!=384:
+			push_error("Boss gate animation texture is missing on floor "+str(stage))
+			get_tree().quit(50)
+			return
 		var surface: Texture2D=world.EXPANDED_TILES[stage]
 		if surface.get_width()!=512 or surface.get_height()!=128:
 			push_error("Missing expanded stage art: "+str(stage))
