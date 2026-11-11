@@ -246,7 +246,7 @@ func _draw() -> void:
 	for hazard in run.hazards:
 		var kind: String=hazard.get("type","")
 		if kind in ["spikes","rune"]: continue # drawn on the lit world canvas, below obstacles and actors
-		var color := Color("#e9b963") if hazard.warn>0 else (Color("#f16a83") if kind=="volatile" else (Color("#e17fbc") if kind=="rune" else (Color("#f19c7b") if kind=="spikes" else Color("#77c96d"))))
+		var color := Color("#e9b963") if hazard.warn>0 else (Color("#d8a7ef") if kind=="boss_lane" else (Color("#9bd783") if kind=="boss_root" else (Color("#f58a71") if kind=="boss_blast" else (Color("#f16a83") if kind=="volatile" else (Color("#e17fbc") if kind=="rune" else (Color("#f19c7b") if kind=="spikes" else Color("#77c96d"))))))
 		if hazard.has("rect"):
 			var rect: Rect2=hazard.rect
 			draw_rect(rect,Color(color,0.14 if hazard.warn>0 else 0.37))
@@ -581,6 +581,65 @@ func draw_effect(fx: Dictionary) -> void:
 	var kind: String=fx.kind
 	if kind=="damage":
 		text_at(pos+Vector2(-12,-25-30*(1-alpha)),str(fx.amount),16,Color(1,0.9,0.72,alpha))
+		return
+	if kind.begins_with("dash_"):
+		var dash_color: Color=Color("#edc587") if "warden" in kind else (Color("#d3a2fa") if "dealer" in kind else (Color("#79ddf6") if "arcanist" in kind else Color("#88ebbf"))
+		if "frost" in kind: dash_color=Color("#a5e5ff")
+		if "fire" in kind or "cinder" in kind: dash_color=Color("#ffa06a")
+		if "arcane" in kind: dash_color=Color("#caa4ff")
+		var progress: float=1.0-alpha
+		if kind.begins_with("dash_trail_"):
+			for i in range(12):
+				var side: Vector2=Vector2(-dir.y,dir.x)
+				var offset: Vector2=-dir*(progress*26+i*2.8)+side*sin(float(i)*2.4+float(fx.max)*18.0)*float(i+2)*1.25
+				var particle: Vector2=pos+offset
+				var size: float=maxf(1.5,(1.0-progress)*5.0-float(i)*0.18)
+				draw_rect(Rect2(particle-Vector2(size/2,size/2),Vector2(size,size)),Color(dash_color,alpha*(0.9-float(i)*0.045)))
+		elif kind.begins_with("dash_burst_") or kind.begins_with("dash_land_"):
+			var span: float=20.0+progress*55.0
+			draw_arc(pos,span,0,TAU,36,Color(dash_color,alpha*0.75),3,true)
+			for i in range(14):
+				var angle: float=float(i)*TAU/14.0+dir.angle()*0.2
+				var ray: Vector2=Vector2.from_angle(angle)
+				var point: Vector2=pos+ray*(20+progress*(60+float(i%3)*10))
+				draw_line(point-ray*12,point+ray*5,Color(dash_color,alpha),3,true)
+		else:
+			var radius: float=16.0+progress*(135.0 if kind.begins_with("dash_nova_") else 75.0)
+			draw_circle(pos,radius,Color(dash_color,alpha*0.12))
+			draw_arc(pos,radius,0,TAU,48,Color(dash_color,alpha),6,true)
+			for i in range(16):
+				var vector: Vector2=Vector2.from_angle(float(i)*TAU/16.0+progress*0.55)
+				var spark: Vector2=pos+vector*radius
+				draw_rect(Rect2(spark-Vector2(3,3),Vector2(6,6)),Color(dash_color,alpha))
+		return
+	if kind.begins_with("synergy_"):
+		var synergy_color: Color=Color("#7dde96") if kind=="synergy_toxic" else (Color("#f5a066") if kind in ["synergy_wildfire","synergy_inferno"] else (Color("#9bdef9") if kind=="synergy_frost" else (Color("#c4a5ff") if kind=="synergy_ricochet" else Color("#a1e8ce"))))
+		if kind=="synergy_unlock": synergy_color=Color("#f5db9a")
+		var burst: float=15.0+115.0*(1.0-alpha)
+		draw_circle(pos,burst,Color(synergy_color,0.13*alpha))
+		draw_arc(pos,burst,0,TAU,40,Color(synergy_color,0.9*alpha),5,true)
+		for i in range(16):
+			var ray: Vector2=Vector2.from_angle(float(i)*TAU/16.0+clock*0.35)
+			var point: Vector2=pos+ray*(burst+sin(float(i)*2.2)*9)
+			draw_line(point-ray*10,point+ray*6,Color(synergy_color,alpha),3,true)
+		return
+	if kind.begins_with("boss_"):
+		var phase_color: Color=Color("#d7b37b") if kind.ends_with("_boss") else (Color("#9bdf8d") if kind.ends_with("_rootking") else Color("#dba2ff"))
+		var progress: float=1.0-alpha
+		if kind.begins_with("boss_charge_"):
+			for ring in range(3):
+				var radius: float=35.0+float(ring)*18.0+sin(clock*11.0+ring)*5
+				draw_arc(pos,radius,dir.angle()-1.0+clock*0.2,dir.angle()+1.0+clock*0.2,28,Color(phase_color,alpha),4,true)
+		elif kind.begins_with("boss_phase_"):
+			for ring in range(3):
+				var radius: float=55.0+progress*115.0+float(ring)*25.0
+				draw_arc(pos,radius,0,TAU,48,Color(phase_color,alpha*(0.9-ring*0.2)),5,true)
+		else:
+			draw_arc(pos,32+progress*90,0,TAU,48,Color(phase_color,alpha),7,true)
+		for i in range(12):
+			var ray: Vector2=Vector2.from_angle(float(i)*TAU/12.0+clock*0.1)
+			var point: Vector2=pos+ray*(28+progress*110)
+			draw_rect(Rect2(point-Vector2(4,4),Vector2(8,8)),Color(phase_color,alpha))
 		return
 	if kind.begins_with("forge_") or kind=="contract_complete":
 		var accent: Color=Color("#84dbf4") if kind in ["forge_storm","forge_echo"] else (Color("#e8bb7e") if kind in ["forge_guard","forge_shatter"] else Color("#b89cff"))
