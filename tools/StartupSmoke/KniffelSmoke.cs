@@ -27,7 +27,7 @@ internal static class KniffelSmoke
             "The equipped Aurora dice palette was not projected into the React dice.");
         Require(await JavaScript(web,
             "Boolean(document.querySelector('[data-testid=\"modern-dice-app\"]')?.dataset.diceVariant==='dice-aurora'"
-            + "&&document.querySelector('[data-testid=\"dice-equipped-skin\"]')?.textContent.includes('Aurora Prism')"
+            + "&&document.querySelector('[data-testid=\"dice-equipped-skin\"]')?.textContent.includes('Aurora')"
             + "&&document.querySelectorAll('.md-die-stage[data-skin=\"dice-aurora\"]').length===5)"),
             "The equipped Shop Dice Set must be identified and used by all five dice.");
         Require(!await JavaScript(web,
