@@ -70,6 +70,49 @@ public sealed class ManorPreviewProtocolTests
     }
 
     [Fact]
+    public void PracticeCommandsRequireRevisionAndLegalRoomIds()
+    {
+        const string url=ManorPreviewProtocol.EntryPoint;
+        Assert.True(ManorPreviewProtocol.TryParseCommand(url,
+            """{"protocolVersion":2,"type":"practice.start","requestId":"p1","expectedRevision":"0"}""",
+            out var start));
+        Assert.Equal("practice.start",start!.Type);
+        Assert.True(ManorPreviewProtocol.TryParseCommand(url,
+            """{"protocolVersion":2,"type":"practice.move","requestId":"p2","expectedRevision":"0","room":4}""",
+            out var move));
+        Assert.Equal(4,move!.Room);
+        Assert.False(ManorPreviewProtocol.TryParseCommand(url,
+            """{"protocolVersion":2,"type":"practice.start","requestId":"p3"}""",out _));
+        Assert.False(ManorPreviewProtocol.TryParseCommand(url,
+            """{"protocolVersion":2,"type":"practice.move","requestId":"p4","expectedRevision":"0","room":17}""",
+            out _));
+        Assert.False(ManorPreviewProtocol.TryParseCommand(url,
+            """{"protocolVersion":2,"type":"practice.credit","requestId":"p5","expectedRevision":"0"}""",
+            out _));
+    }
+
+    [Fact]
+    public void SettledBonusPayoutIsProjectedWithoutRecreditingRun()
+    {
+        var state=new ManorSessionState {
+            Bankroll=500m,Bet=25m,CycleActive=true,
+            Run=ManorRun.Create(3,2).State
+        };
+        var session=new ManorSession(state);
+        session.MarkInteractive();
+        session.CashOut();
+        var snap=ManorPreviewProtocol.CreateSnapshot(state,true);
+        Assert.Null(snap.Run);
+        Assert.NotNull(snap.LastRun);
+        Assert.Equal("CashedOut",snap.LastRun!.Status);
+        Assert.Equal(state.Run!.PaidMultiplier.ToString("0.##",System.Globalization.CultureInfo.InvariantCulture)+"×",
+            snap.LastRun.Multiplier);
+        Assert.Equal("$"+(state.Bet*state.Run.PaidMultiplier).ToString("N2",
+            System.Globalization.CultureInfo.GetCultureInfo("en-US")),snap.LastRun.Award);
+        Assert.Equal(500m+state.Bet*state.Run.PaidMultiplier,state.Bankroll);
+    }
+
+    [Fact]
     public void SnapshotReflectsCommittedSpinWithoutMutatingFinancialState()
     {
         var state=new ManorSessionState

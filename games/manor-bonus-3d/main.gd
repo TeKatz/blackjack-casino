@@ -6,7 +6,7 @@ const CAMERA_HOME := Vector3(0, 2.35, 7.5)
 # Presentation-only WebGL 2 scene. This project never owns wagers, ghost RNG,
 # multipliers, rewards or the Manor save journal.
 # The parent React document sends lawful destination choices; C# decides live
-# results. Demo choices are simulated only in the parent, not persisted.
+# results. Practice and real 3D choices both come from the C# engine.
 
 @onready var camera: Camera3D = $Camera
 
@@ -39,6 +39,8 @@ var _room_id := -1
 var _active := true
 var _reduced_motion := false
 var _breath_clock := 0.0
+var _haunt_clock := 0.0
+var _ghost_band := "distant"
 var _door_tween: Tween
 var _options_signature := ""
 
@@ -344,19 +346,36 @@ func _set_room(name: String, room_id: int = 0) -> void:
         _room_visuals = _room_builder.build(bounded_id)
         add_child(_room_visuals)
         _room_id = bounded_id
-        if bounded_id in [11, 12, 14]:
-            _lighting.light_color = Color("#a4adcb")
-            _lighting.light_energy = 0.55
-        elif bounded_id in [9, 13, 15, 16]:
-            _lighting.light_color = Color("#b1d3ed")
-            _lighting.light_energy = 0.7
-        else:
-            _lighting.light_color = WARM
-            _lighting.light_energy = 1.3
+        _refresh_haunt_light()
     if room_name != null:
         room_name.text = name.to_upper().substr(0, 36)
     if subtitle != null:
         subtitle.text = "ESCAPE THE MANOR"
+
+
+func _refresh_haunt_light() -> void:
+    if _lighting == null:
+        return
+    # Does not reveal which exit contains the ghost. Only the proximity
+    # band calculated by C# affects the entire room's ambient light.
+    if _ghost_band == "danger":
+        _lighting.light_color = Color("#a5bad8")
+        _lighting.light_energy = 0.55
+    elif _ghost_band == "approaching":
+        _lighting.light_color = Color("#c1b6bf")
+        _lighting.light_energy = 0.84
+    elif _ghost_band == "revealed":
+        _lighting.light_color = Color("#a5d8db")
+        _lighting.light_energy = 0.92
+    elif _room_id in [11, 12, 14]:
+        _lighting.light_color = Color("#a4adcb")
+        _lighting.light_energy = 0.55
+    elif _room_id in [9, 13, 15, 16]:
+        _lighting.light_color = Color("#b1d3ed")
+        _lighting.light_energy = 0.7
+    else:
+        _lighting.light_color = WARM
+        _lighting.light_energy = 1.3
 
 
 func _set_options(options: Array) -> void:
@@ -453,6 +472,10 @@ func _initialize_web_bridge() -> void:
 
 
 func _process(delta: float) -> void:
+    if _active and _ghost_band == "danger" and not _reduced_motion:
+        _haunt_clock += delta
+        # Extremely subtle whole-room candlelight tremor, NOT a jump scare.
+        _lighting.light_energy = 0.55 + sin(_haunt_clock * 3.1) * 0.065
     # Barely perceptible resting breath, not walking/head-bobbing.
     # Independent of the choice tween's forward Z motion.
     if _active and not _reduced_motion and not _selected:
@@ -508,6 +531,13 @@ func _apply_web_state(data: Dictionary) -> void:
         _set_room(next_room, next_id)
         camera.position = CAMERA_HOME
         camera.rotation = Vector3.ZERO
+
+    var next_band := str(data.get("ghostBand", "distant"))
+    if next_band not in ["distant", "approaching", "danger", "revealed", "uncertain"]:
+        next_band = "distant"
+    if next_band != _ghost_band:
+        _ghost_band = next_band
+        _refresh_haunt_light()
 
     var options: Variant = data.get("options", [])
     if options is Array:

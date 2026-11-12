@@ -49,14 +49,14 @@ describe('Godot 3D Manor bonus bridge', () => {
   });
   it('keeps the 3D bonus embedded in the machine surface with safe explicit exit', () => {
     const markup = renderToStaticMarkup(createElement(ManorBonus3D, {
-      active: true, demo: true, run: null, language: 'de', reducedMotion: true, disabled: false,
+      active: true, demo: true, run: sample, language: 'de', reducedMotion: true, disabled: false,
       onAction: () => {}, onExitDemo: () => {}, onFallback: () => {},
     }));
     expect(markup).toContain('manor-godot-frame');
     expect(markup).toContain('./manor3d/index.html');
-    expect(markup).toContain('TEST BONUS GAME');
-    expect(markup).toContain('Keine echten Gewinne');
-    expect(markup).toContain('Zurück zum Automaten');
+    expect(markup).toContain('ÜBUNG · OHNE EINSATZ');
+    expect(markup).toContain('Übung verlassen');
+    expect(markup).not.toContain('TEST BONUS GAME');
     expect(markup).toContain('is-active');
     expect(markup).toContain('phase-loading');
     expect(markup).not.toContain('manor-godot-portal');
@@ -67,8 +67,8 @@ describe('Godot 3D Manor bonus bridge', () => {
     // after the Godot bridge is ready, never over a loading screen.
     expect(markup).not.toContain('manor-godot-door-actions');
     expect(markup).toContain('MANOR-GRUNDRISS');
-    expect(markup).toContain('VORSCHAU · KEIN GEIST');
-    expect(markup).not.toContain('Jetzt auszahlen');
+    expect(markup).toContain('UNBEKANNTE PRÄSENZ');
+    expect(markup).toContain('Jetzt auszahlen');
   });  it('keeps the iframe ready but never offers choices while warming behind the reels', () => {
     const markup = renderToStaticMarkup(createElement(ManorBonus3D, {
       active: false, demo: false, run: null, language: 'en', reducedMotion: false,
@@ -80,6 +80,44 @@ describe('Godot 3D Manor bonus bridge', () => {
     expect(markup).toContain('manor-godot-frame');
     expect(markup).not.toContain('manor-godot-door-actions');
     expect(markup).not.toContain('Back to the slot');
+  });
+
+  it('presents committed C# reward without any possibility of a second payout', () => {
+    const outcome = {
+      status: 'Caught' as const, message: 'The ghost catches you. Checkpoint pays 25×.',
+      multiplier: '25×', award: '$625.00',
+    };
+    const markup = renderToStaticMarkup(createElement(ManorBonus3D, {
+      active: true, demo: false, run: sample, conclusion: outcome,
+      language: 'de', reducedMotion: false, disabled: false,
+      onAction: () => {}, onExitDemo: () => {}, onFallback: () => {},
+      onCloseResult: () => {},
+    }));
+    expect(markup).toContain('DER GEIST HAT DICH GEFUNDEN');
+    expect(markup).toContain('$625.00');
+    expect(markup).toContain('manor-godot-conclusion');
+    expect(markup).toContain('Zurück zu den Walzen');
+    expect(markup).not.toContain('manor-godot-door-actions');
+  });
+
+  it('shows a real C# practice run, including ghost and collected item status', () => {
+    const practiceRun: ManorRun = {
+      ...sample, turn: 2, playerRoom: 4, hasKey: true, hasCandle: true,
+      current: '15×', banked: '15×',
+      message: 'You enter Library. +10×. Checkpoint secured. Candle found.',
+      ghostClue: 'A door slams to the east. The ghost is approaching.',
+    };
+    const markup = renderToStaticMarkup(createElement(ManorBonus3D, {
+      active: true, demo: true, run: practiceRun, language: 'en',
+      reducedMotion: true, disabled: false,
+      onAction: () => {}, onExitDemo: () => {}, onFallback: () => {},
+    }));
+    expect(markup).toContain('PRACTICE · NO WAGER');
+    expect(markup).toContain('15×');
+    expect(markup).toContain('manor-godot-ghost-presence approaching');
+    expect(markup).toContain('Candle');
+    expect(markup).toContain('manor-godot-item owned usable');
+    expect(markup).toContain('Cash out now');
   });
 
   it('shows live C# reward, risk and inventory without obscuring 3D doors', () => {

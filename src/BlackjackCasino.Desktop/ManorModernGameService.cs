@@ -11,6 +11,11 @@ namespace BlackjackCasino.Desktop;
 /// </summary>
 internal sealed class ManorModernGameService(ManorController controller)
 {
+    // Isolated practice uses the EXACT same engine as a wagered run. It is
+    // ephemeral and never passed to ManorController.Execute or the journal.
+    private ManorRunState? practice;
+    private readonly HashSet<string> appliedPracticeIds=new(StringComparer.Ordinal);
+    private int practiceStarts;
     internal bool RequiresRestart { get; private set; }
 
     internal ManorPreviewProtocol.Snapshot Snapshot() =>
@@ -22,13 +27,19 @@ internal sealed class ManorModernGameService(ManorController controller)
             controller.Preferences.Language==UiLanguagePreference.German ? "de" : "en",
             controller.Preferences.SoundEnabled,
             controller.Preferences.MusicEnabled,
-            controller.Preferences.MusicVolume);
+            controller.Preferences.MusicVolume,
+            practice);
 
     internal ManorPreviewProtocol.Snapshot Execute(ManorPreviewProtocol.Command command)
     {
         ArgumentNullException.ThrowIfNull(command);
         if(RequiresRestart)
             throw new InvalidOperationException("Saving was interrupted. Close and reopen Midnight Manor to recover the committed checkpoint.");
+
+        if(command.Type.StartsWith("practice.",StringComparison.Ordinal))
+            return ExecutePractice(command);
+        if(practice is not null)
+            throw new InvalidOperationException("Leave the non-wager practice before starting real play.");
 
         if(command.ExpectedRevision is not long expected)
             throw new ArgumentException("A state revision is required.",nameof(command));
@@ -58,6 +69,55 @@ internal sealed class ManorModernGameService(ManorController controller)
             RequiresRestart=true;
             throw;
         }
+    }
+
+    private ManorPreviewProtocol.Snapshot ExecutePractice(ManorPreviewProtocol.Command command)
+    {
+        // A practice request never has access to a bankroll, paytable spin,
+        // persistence, progression or reward settlement. It shares C# game
+        // rules but cannot ever be used to mint play money.
+        if(command.ExpectedRevision!=controller.State.Revision)
+            throw new InvalidOperationException("Game state changed. Refresh before practising.");
+        if(controller.State.CycleActive || controller.State.Run is { Status:ManorRunStatus.Hunting })
+            throw new InvalidOperationException("Finish the saved Manor cycle before entering practice.");
+        if(appliedPracticeIds.Contains(command.RequestId)) return Snapshot();
+
+        if(command.Type is "practice.start" or "practice.restart")
+        {
+            practice=ManorRun.Create(3,(5+practiceStarts++)%16).State;
+        }
+        else if(command.Type=="practice.exit")
+        {
+            practice=null;
+        }
+        else
+        {
+            if(practice is not { Status:ManorRunStatus.Hunting })
+                throw new InvalidOperationException("There is no active practice run.");
+            var run=new ManorRun(practice);
+            switch(command.Type)
+            {
+                case "practice.move":
+                    run.Move(command.Room ?? throw new ArgumentException("Missing practice destination."));
+                    break;
+                case "practice.candle":
+                    run.UseCandle();
+                    break;
+                case "practice.follow":
+                    run.FollowPolicy();
+                    break;
+                case "practice.cashout":
+                    run.CashOut();
+                    break;
+                case "practice.auto":
+                    run.AutoResolve();
+                    break;
+                default:
+                    throw new InvalidOperationException("Unknown practice action.");
+            }
+        }
+        appliedPracticeIds.Add(command.RequestId);
+        return Snapshot();
     }
 
     internal static void Apply(ManorSession machine,ManorPreviewProtocol.Command command)

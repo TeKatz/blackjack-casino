@@ -112,6 +112,31 @@ func _run() -> void:
     if absf(camera.position.y - 2.35) > 0.002:
         _fail("Reduced motion did not settle the camera")
         return
+    # Ghost proximity is a read-only presentation band delivered by React.
+    # It cannot choose a route or reveal which doorway the ghost occupies.
+    scene.call("_apply_web_state", {
+        "source": "manor-react", "type": "state",
+        "active": true, "demo": false, "reducedMotion": false,
+        "roomId": 4, "roomName": "Library", "ghostBand": "danger",
+        "options": [{"id": 5, "name": "Reading Room"}]
+    })
+    var ambient_light := scene.get("_lighting") as OmniLight3D
+    if ambient_light == null or absf(ambient_light.light_energy - 0.55) > 0.02:
+        _fail("Danger status does not affect whole-room ghost lighting")
+        return
+    scene.call("_apply_web_state", {
+        "source": "manor-react", "type": "state",
+        "active": true, "demo": false, "reducedMotion": true,
+        "roomId": 4, "roomName": "Library", "ghostBand": "revealed",
+        "options": [{"id": 5, "name": "Reading Room"}]
+    })
+    if absf(ambient_light.light_energy - 0.92) > 0.02:
+        _fail("Candle reveal does not produce subtle cold atmospheric light")
+        return
+    if scene.get("choice_ids") != [5, -1, -1]:
+        _fail("Ghost lighting modified the authoritative door choices")
+        return
+
     scene.call("_set_options", [
         {"id": 3, "name": "Grand Staircase"},
         {"id": 5, "name": "Reading Room"},

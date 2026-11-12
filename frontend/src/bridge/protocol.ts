@@ -37,6 +37,13 @@ export type ManorRun = {
   passages: ManorPassage[];
 };
 
+export type ManorRunConclusion = {
+  status: 'Escaped' | 'Caught' | 'CashedOut' | 'Exhausted';
+  message: string;
+  multiplier: string;
+  award: string;
+};
+
 export type ManorSnapshot = {
   bankroll: string;
   bet: string;
@@ -65,6 +72,10 @@ export type ManorSnapshot = {
   globalMusicEnabled: boolean;
   globalMusicVolume: number;
   run: ManorRun | null;
+  /** Ephemeral C# ManorRun: never affects bankroll or persistent journal. */
+  practiceRun?: ManorRun | null;
+  /** Last already-committed real run settlement, no client-side payout math. */
+  lastRun?: ManorRunConclusion | null;
   saveNotice: string | null;
 };
 
@@ -75,7 +86,10 @@ export type HostEnvelope =
   } };
 
 export type GameAction = 'spin.paid' | 'spin.free' | 'run.move' | 'run.candle'
-  | 'run.cashout' | 'run.follow' | 'run.auto';
+  | 'run.cashout' | 'run.follow' | 'run.auto'
+  | 'practice.start' | 'practice.restart' | 'practice.exit'
+  | 'practice.move' | 'practice.candle' | 'practice.cashout'
+  | 'practice.follow' | 'practice.auto';
 
 export type ActionArguments = {
   expectedRevision: string;
@@ -147,6 +161,12 @@ export function isSnapshot(value: unknown): value is ManorSnapshot {
     value.rules.paylines.every(line => Array.isArray(line) && line.length === 5 &&
       line.every(row => nonnegative(row) && row <= 2)) &&
     (value.run === null || isRun(value.run)) &&
+    (value.practiceRun === undefined || value.practiceRun === null || isRun(value.practiceRun)) &&
+    (value.lastRun === undefined || value.lastRun === null ||
+      (dictionary(value.lastRun) && text(value.lastRun.status) &&
+       ['Escaped', 'Caught', 'CashedOut', 'Exhausted'].includes(value.lastRun.status) &&
+       text(value.lastRun.message) && text(value.lastRun.multiplier) &&
+       text(value.lastRun.award))) &&
     (value.saveNotice === null || text(value.saveNotice));
 }
 
@@ -216,7 +236,8 @@ export const browserPreview: ManorSnapshot = {
   feature: 'Browser design preview · no wagers executed',
   animationsEnabled: true, hasCommittedSpin: false, revision: '0', canSpin: false,
   canFreeSpin: false, lastSpinFree: false, scatters: 0, doors: 0, winningLines: 0,
-  run: null, saveNotice: null, winningLineDetails: [],
+  run: null, practiceRun: null, lastRun: null,
+  saveNotice: null, winningLineDetails: [],
   language: 'en',
   globalSoundEnabled: false, globalMusicEnabled: false, globalMusicVolume: 0,
   rules: {
@@ -247,7 +268,15 @@ export function availableActions(snapshot: ManorSnapshot): GameAction[] {
       ? ['run.move', 'run.candle', 'run.cashout', 'run.follow', 'run.auto']
       : ['run.move', 'run.cashout', 'run.follow', 'run.auto'];
   }
+  if (snapshot.practiceRun) {
+    if (snapshot.practiceRun.status !== 'Hunting') return ['practice.restart', 'practice.exit'];
+    return snapshot.practiceRun.hasCandle
+      ? ['practice.move', 'practice.candle', 'practice.cashout',
+        'practice.follow', 'practice.auto', 'practice.restart', 'practice.exit']
+      : ['practice.move', 'practice.cashout', 'practice.follow',
+        'practice.auto', 'practice.restart', 'practice.exit'];
+  }
   if (snapshot.canFreeSpin) return ['spin.free'];
-  if (snapshot.canSpin) return ['spin.paid'];
+  if (snapshot.canSpin) return ['spin.paid', 'practice.start'];
   return [];
 }
