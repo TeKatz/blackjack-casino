@@ -30,6 +30,7 @@ var subtitle: Label3D
 var demo_mode := false
 var _web_poll := 0.0
 var _selected := false
+var _hovered_slot := -1
 var _lighting: OmniLight3D
 var _initialized_web := false
 var _room_builder = RoomScenes.new()
@@ -378,6 +379,9 @@ func _set_options(options: Array) -> void:
         door_colliders[i].collision_layer = 1 if room_id >= 0 else 0
         door_panels[i].rotation_degrees.y = 0.0
     _selected = false
+    if _hovered_slot != -1:
+        _hovered_slot = -1
+        _post({"source": "manor-godot", "type": "hover", "room": null})
 
 
 func choose_slot(slot: int) -> void:
@@ -400,17 +404,33 @@ func _send_choice(id: int) -> void:
     _post({"source": "manor-godot", "type": "choice", "room": id})
 
 
-func _unhandled_input(event: InputEvent) -> void:
-    if not event is InputEventMouseButton or not event.pressed or event.button_index != MOUSE_BUTTON_LEFT:
-        return
-    var mouse: Vector2 = event.position
+func _door_slot_at(mouse: Vector2) -> int:
+    if not _active or _selected:
+        return -1
     var origin := camera.project_ray_origin(mouse)
     var direction := camera.project_ray_normal(mouse)
     var query := PhysicsRayQueryParameters3D.create(origin, origin + direction * 40.0, 1)
     var hit: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
     var collider: Object = hit.get("collider")
-    if collider is StaticBody3D:
-        choose_slot(int((collider as StaticBody3D).get_meta("slot", -1)))
+    if not collider is StaticBody3D:
+        return -1
+    var slot := int((collider as StaticBody3D).get_meta("slot", -1))
+    return slot if slot >= 0 and slot < choice_ids.size() and choice_ids[slot] >= 0 else -1
+
+
+func _unhandled_input(event: InputEvent) -> void:
+    if event is InputEventMouseMotion:
+        var slot := _door_slot_at(event.position)
+        if slot != _hovered_slot:
+            _hovered_slot = slot
+            # Hover is cosmetic only. No movement or payout ever originates
+            # from pointer motion inside Godot.
+            _post({"source": "manor-godot", "type": "hover",
+                "room": choice_ids[slot] if slot >= 0 else null})
+    elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+        var slot := _door_slot_at(event.position)
+        if slot >= 0:
+            choose_slot(slot)
 
 
 func _initialize_web_bridge() -> void:
