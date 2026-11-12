@@ -4,7 +4,6 @@ import type {NeonSpin,NeonSymbol} from './bridge';
 import {SymbolArt} from './Symbols';
 import {reelStopDuration,reelKeyframes,reelVisualStrip} from './reelMotion';
 import type {ReelSpeed} from './reelMotion';
-import type {WinTrace} from './winTraces';
 
 type CellState={winner:boolean;muted:boolean;converted:boolean;override:boolean};
 type Props={
@@ -15,7 +14,7 @@ type Props={
  reducedMotion:boolean;
  winning:ReadonlySet<number>;
  speed?:ReelSpeed;
- traces?:readonly WinTrace[];
+
  onStop:(spinId:string,reel:number)=>void;
 };
 const ROWS=4,REELS=5;
@@ -116,28 +115,15 @@ function ReelColumn({reel,visible,spin,rolling,reducedMotion,finished,winning,sp
  </div>;
 }
 function ReelStageView({displayGrid,result,rolling,finished,reducedMotion,winning,onStop,
- speed='normal',traces=[]}:Props){
- return <div className="vault-grid" data-reel-engine="compositor-strips-v2"
-   data-win-trace-count={traces.length}>
+ speed='normal'}:Props){
+ return <div className="vault-grid" data-reel-engine="compositor-strips-v2">
    {Array.from({length:REELS},(_,reel)=><ReelColumn key={reel} reel={reel}
      visible={reelCells(displayGrid,reel)} spin={result}
      rolling={rolling.includes(reel)} reducedMotion={reducedMotion}
      finished={finished} winning={winning} speed={speed} onStop={onStop}/>)}
-   {traces.length>0&&<svg className="vault-win-traces" viewBox="0 0 1000 800"
-     preserveAspectRatio="none" aria-hidden="true">
-     {traces.map(trace=>{
-       const points=trace.cells.map(index=>[100+(index%5)*200,100+Math.floor(index/5)*200]);
-       const path=points.map(([x,y],index)=>(index===0?'M':'L')+x+' '+y).join(' ');
-       return <g key={trace.symbol}>
-         <path className="vault-win-trace-halo" d={path}/>
-         <path className="vault-win-trace-line" d={path}/>
-         {points.map(([x,y],index)=><circle key={index} className="vault-win-trace-node" cx={x} cy={y} r="11"/>)}
-       </g>;
-     })}
-   </svg>}
  </div>;
 }
 export const ReelStage=memo(ReelStageView,(a,b)=>a.displayGrid===b.displayGrid
  &&a.result?.id===b.result?.id&&a.rolling===b.rolling&&a.finished===b.finished
  &&a.reducedMotion===b.reducedMotion&&a.winning===b.winning
- &&a.speed===b.speed&&a.traces===b.traces&&a.onStop===b.onStop);
+ &&a.speed===b.speed&&a.onStop===b.onStop);

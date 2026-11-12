@@ -140,7 +140,7 @@ function ReelsApp(){
     data-testid="reels-app" data-animating={animating} data-spin-id={result?.id??''}>
     <header className="reels-header">
       <button className="reels-back" onClick={close}>← {t.back} <kbd>ESC</kbd></button>
-      <div className="reels-identity"><small>THE MIDNIGHT CLUB</small><h1>MIDNIGHT REELS</h1></div>
+
       <div className="reels-header-wallet"><small>{t.balance}</small><strong>{money(s.bankroll)}</strong></div>
     </header>
     <div className="reels-body">

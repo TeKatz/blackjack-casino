@@ -16,20 +16,20 @@ export class RouletteAudio {
   node.onended=()=>{node.disconnect();gain.disconnect();};node.start();return node;
  }
  private makeRoll(){
+  // Subtle felt-and-wood roll, independent of the settled roulette outcome.
   return this.buffer(6.1,(data,rate)=>{
-   let seed=1234567,low=0,phase=0,impact=0,ring=0;
+   let seed=1234567,low=0,phase=0,tap=0;
    const noise=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/2147483648-1;};
    for(let i=0;i<data.length;i++){
-    const t=i/rate,p=t/6.1, speed=Math.pow(1-p,1.8);
-    const raw=noise();low+=.09*(raw-low);
-    // Ivory rolling on the outer track, then discrete pocket impacts.
-    phase+=(3+37*speed)/rate;if(phase>=1){phase-=1;impact=.45+speed*.25;ring=1;}
-    impact*=Math.exp(-1/(rate*.008));ring*=Math.exp(-1/(rate*.022));
-    const fade=Math.min(1,t/.07,(6.1-t)/.23);
-    const track=(raw-low)*(.065+.10*speed)+low*.12;
-    const click=impact*(raw*.45+Math.sin(t*2*Math.PI*1850)*.35)+ring*Math.sin(t*2*Math.PI*730)*.035;
-    const drop=p>.57?Math.sin((p-.57)*Math.PI*12)*Math.exp(-(p-.57)*5)*.035:0;
-    data[i]=(track+click+drop)*Math.max(0,fade);
+    const t=i/rate,p=t/6.1,speed=Math.pow(1-p,1.65),raw=noise();
+    low+=.006*(raw-low);
+    phase+=(1.8+12*speed)/rate;
+    if(phase>=1){phase-=1;tap=1;}
+    tap*=Math.exp(-1/(rate*.017));
+    const fade=Math.max(0,Math.min(1,t/.14,(6.1-t)/.34));
+    const felt=low*(.055+.025*speed)+(raw-low)*.0035;
+    const woodenTap=tap*(Math.sin(t*2*Math.PI*390)*.028+Math.sin(t*2*Math.PI*590)*.009);
+    data[i]=(felt+woodenTap)*fade;
    }
   });
  }
@@ -41,7 +41,7 @@ export class RouletteAudio {
    }
   });
  }
- roll(){this.stopRoll();if(!this.context)return;try{this.rollBuffer??=this.makeRoll();this.rolling=this.play(this.rollBuffer,.65);}catch{/* optional audio */}}
+ roll(){this.stopRoll();if(!this.context)return;try{this.rollBuffer??=this.makeRoll();this.rolling=this.play(this.rollBuffer,.33);}catch{/* optional audio */}}
  stopRoll(){if(this.rolling){try{this.rolling.stop();}catch{}this.rolling=null;}}
  win(){this.stopRoll();if(!this.context)return;try{if(this.outcome)try{this.outcome.stop();}catch{}this.winBuffer??=this.makeWin();this.outcome=this.play(this.winBuffer,.8);}catch{/* optional audio */}}
  dispose(){this.stopRoll();if(this.outcome)try{this.outcome.stop();}catch{}if(this.context)void this.context.close().catch(()=>{});this.context=null;this.outcome=null;this.rollBuffer=null;this.winBuffer=null;}

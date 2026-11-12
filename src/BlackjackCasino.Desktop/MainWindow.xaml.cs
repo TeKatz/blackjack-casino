@@ -47,6 +47,7 @@ public partial class MainWindow : Window
     private decimal selectedBet { get => blackjack.SelectedBet; set => blackjack.SelectedBet = value; }
     private UpdateManifest? pendingManifest;
     private bool updateOperationBusy;
+    private bool exitingForVerifiedUpdate;
     private bool suppressPreferenceEvents;
 
     private readonly PlayerProfileState? initialProfile;
@@ -89,6 +90,18 @@ public partial class MainWindow : Window
             RefreshGameUi();
             if (manorRecoveryNotice is not null) StatusText.Text = manorRecoveryNotice;
             if(!testSession) await CheckForUpdatesAsync(silent: true);
+        };
+        Closing += (_, e) =>
+        {
+            if (testSession || exitingForVerifiedUpdate) return;
+            bool german = preferences.Language == UiLanguagePreference.German;
+            MessageBoxResult answer = MessageBox.Show(this,
+                german
+                    ? "Möchtest du The Midnight Club wirklich beenden?"
+                    : "Are you sure you want to exit The Midnight Club?",
+                german ? "Programm beenden" : "Exit The Midnight Club",
+                MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+            e.Cancel = answer != MessageBoxResult.Yes;
         };
         Closed += (_, _) =>
         {
@@ -292,6 +305,7 @@ public partial class MainWindow : Window
             // Their virtual-host mappings point at files in the installation
             // directory, and a lingering browser may prevent its atomic rename.
             ReleaseBrowserHostsForUpdate();
+            exitingForVerifiedUpdate = true;
             Application.Current.Shutdown();
         }
         catch (Exception ex)

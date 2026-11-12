@@ -4,8 +4,8 @@ using BlackjackCasino.Core.Collections;
 namespace BlackjackCasino.Desktop;
 
 /// <summary>
-/// Authored archive copy for the grounded collection tiers. Rare and higher entries stay
-/// deliberately sealed until their larger theme stories are designed.
+/// Authored archive copy for all 136 collectible cards, including ultra-rare themes.
+/// Every catalog entry has a distinct English story and a localized German resource.
 /// </summary>
 internal static class CollectionLore
 {
@@ -106,17 +106,67 @@ internal static class CollectionLore
         ["royal-court-05"] = "The knight of the violet banner rides at the front of ceremonial processions and at the rear of real retreats. The position sounds less glorious in songs, but veterans consider it the better measure of courage.",
         ["royal-court-06"] = "The Rose Throne was commissioned for a queen who disliked cold marble halls. Its carved roses are surrounded by living vines tended through hidden channels in the stone, keeping the seat framed in bloom even during winter.",
         ["royal-court-07"] = "The crown jewels are displayed together only once each year. Jewelers spend the previous night checking every clasp and setting. The old master of the vault says the gems are less dangerous than the people who believe owning them would change who they are.",
+        ["velvet-table-08"] = "The twenty-one hand was dealt at exactly midnight on a night when every other table lost. The winner left the cards untouched and asked the dealer to frame them for the next player who needed courage.",
+        ["velvet-table-09"] = "The Midnight Dealer never announces a name. Only the white gloves and an antique silver card shoe reveal who has taken over the table; regulars know to watch the hands instead of the clock.",
+        ["velvet-table-10"] = "Every casino keeps a ledger of chance. The Velvet Table keeps a second, handwritten book recording the moments when kindness mattered more than the house edge; its last page remains deliberately blank.",
+        ["neon-city-08"] = "From the highest rooftop, the skyline looks like a circuit board laid against the rain. A solitary window still shines above the abandoned observatory, though no one has climbed its stairs in years.",
+        ["neon-city-09"] = "The last train leaves Platform Nine after the departure board has gone dark. Its conductor checks every carriage for forgotten passengers and once returned an umbrella to someone who had missed the train decades earlier.",
+        ["neon-city-10"] = "When the city loses power, the oldest neon sign is the last to go out. For a few heartbeats it illuminates the entire square by itself, as if Neon City is unwilling to let the night win.",
+        ["midnight-manor-08"] = "At the twelfth stroke, the ballroom fills with a waltz played by instruments no one can see. The dust on the floor shows two sets of dancing footsteps, but only one guest ever remembers being there.",
+        ["midnight-manor-09"] = "The Host reserves a place at dinner for each visitor before the gate opens. No servant has ever seen the invitation list, and the handwriting on every place card changes with the guest who reads it.",
+        ["midnight-manor-10"] = "The Midnight Heir appears in portraits painted generations apart, always wearing the same black ribbon. The family tree ends at this figure, yet the manor's newest letters are all signed with the heir's seal.",
+        ["ocean-depths-08"] = "Divers found the sunken temple beneath a field of pale coral, its stairs worn smooth by a tide that never reaches it. Tiny fish gather at the closed sanctuary doors whenever the surface moon is full.",
+        ["ocean-depths-09"] = "The Leviathan was first mistaken for an underwater ridge. Then the ridge moved, leaving the sea perfectly still in its wake. Sailors now lower their voices whenever the charts show unusually deep water.",
+        ["ocean-depths-10"] = "The Heart of the Ocean is a blue stone that brightens with the tides. It was once offered to a queen, but she returned it to the reef, believing some treasures can only remain beautiful when they belong to no one.",
+        ["enchanted-forest-08"] = "The Hidden Grove opens between two birch trees only after the first autumn rain. Inside, fallen leaves turn in a slow circle around a spring, and even the oldest pathfinders leave without marking its location.",
+        ["enchanted-forest-09"] = "The Forest Guardian watches from the boundary where ancient roots meet the path. It never speaks, yet animals stop fleeing when it approaches; the woods themselves seem to recognize an old promise being kept.",
+        ["enchanted-forest-10"] = "The World Tree is said to drink from underground rivers and carry their memories into the canopy. Each spring one silver leaf appears among its green branches, bearing the shape of a place the forest has protected.",
+        ["desert-gold-08"] = "The Lost Pyramid emerges only when a sandstorm has passed from east to west. Surveyors have drawn its entrance a dozen times, but their maps never agree on how far it stands from the oasis.",
+        ["desert-gold-09"] = "The Sun Pharaoh ordered a crown of hammered gold with no gemstones so that dawn would be its only ornament. Centuries later the crown still catches the first light inside a tomb without windows.",
+        ["desert-gold-10"] = "The Eternal Scarab moves across the dunes with the stars, vanishing at sunrise. Caravan elders follow its small gold tracks when the horizon disappears; the marks always lead toward water.",
+        ["celestial-voyage-08"] = "The Nebula scattered violet light across the ship's hull without giving off heat. Crew members who watched it through the observation glass described different constellations, each resembling a place they missed.",
+        ["celestial-voyage-09"] = "The Cosmic Dragon appears in navigation records as a line of stars that changes shape once a century. No telescope has found its body, but the oldest pilots leave one channel open when passing beneath its constellation.",
+        ["celestial-voyage-10"] = "First Light is the name explorers gave a signal older than the mapped stars. It repeats at intervals too long for any single voyage to study, so generations of crews have passed the same unfinished recording onward.",
+        ["frost-kingdom-08"] = "The Aurora bends over the northern keep on nights with no wind. Its colors reflect in every frozen lake at once, and travelers tell time by the green band that crosses the highest tower.",
+        ["frost-kingdom-09"] = "The Frost Queen planted a white rose in the palace courtyard during the longest winter. It blooms beneath the ice each year, a quiet reminder that keeping a kingdom alive requires more than keeping it cold.",
+        ["frost-kingdom-10"] = "The Crown of Winter was carved from clear glacier ice and has never melted. Whoever carries it hears distant bells underfoot, as though the mountain remembers every ruler who has crossed its pass.",
+        ["clockwork-08"] = "The Time Engine fills an entire tower with gears, but its central pendulum moves only when nobody is watching. Engineers record its progress by the dust it leaves behind, careful never to ask it to run faster.",
+        ["clockwork-09"] = "The Master Inventor signed each creation with a tiny hidden sun. After the workshop closed, apprentices found the same mark inside a machine no one had yet built, along with a careful note about its first repair.",
+        ["clockwork-10"] = "The Perpetual Heart beats behind glass without a spring or power source. It was made to keep the workshop clock alive through winter blackouts, but the rhythm continues even when the clock is dismantled.",
+        ["sakura-garden-08"] = "The Moon Pavilion stands where the pond reflects the full moon twice. Guests leave their shoes at the bridge and speak softly inside; the water repeats every whispered wish as a ripple.",
+        ["sakura-garden-09"] = "The Sakura Spirit is glimpsed only among petals falling against the wind. Gardeners leave a cup of fresh tea beneath the oldest tree and find it empty at dawn, with one perfect blossom resting on the rim.",
+        ["sakura-garden-10"] = "Thousand Blossoms names the day when every tree in the valley flowers at once. The celebration has no fixed date; families simply open their doors when pink petals begin to drift across the threshold.",
+        ["pirate-cove-08"] = "Treasure Isle is missing from most charts because its reef makes landing almost impossible. The few crews that return speak not of gold but of a lighthouse burning on a shore with no buildings.",
+        ["pirate-cove-09"] = "The Ghost Captain keeps a lantern burning on the empty quarterdeck after storms. Fishermen say the light has guided more lost boats into harbor than any living captain, though nobody has ever seen the ship arrive.",
+        ["pirate-cove-10"] = "The Crown of the Sea was forged from the brass of seven rescued ships. It passes from captain to captain only when a crew chooses to save strangers instead of chasing the nearest treasure.",
+        ["royal-court-08"] = "The Grand Ball begins with a dance taught to every generation of the court. At its final turn, partners exchange places without speaking, recalling the night two rival houses chose peace over a duel.",
+        ["royal-court-09"] = "The Sovereign refuses to sit for portraits while wearing the crown. In the only surviving painting, a plain chair stands beside an open window, because the ruler insisted that duty mattered more than ceremony.",
+        ["royal-court-10"] = "The Royal Flush was played during a treaty negotiation that had stalled for three days. Legend says the winning hand went untouched while both delegations finally found words they could agree on.",
+        ["astral-sovereigns-01"] = "The Dawn Empress wears a mantle woven from the first colors of sunrise. Her court convenes on the edge of morning, when every star has faded except the one she refuses to name.",
+        ["astral-sovereigns-02"] = "The Eclipse King rules neither day nor night, but the brief darkness between them. His black crown reflects a different sky on every side, and even the oldest astronomers cannot identify all its stars.",
+        ["astral-sovereigns-03"] = "The Star Weaver mends the constellations whenever a light disappears. Sailors sometimes wake to find a new star above the route home, tied into the heavens with a thread finer than moonlight.",
+        ["astral-sovereigns-04"] = "The Infinity Throne has no fixed shape; each visitor sees a seat made for someone else. According to the palace chronicle, the throne has stood empty for ages without ever being unguarded.",
+        ["primordial-dragons-01"] = "Ember Origin is remembered as the first warmth in a world of stone. Where the ancient dragon rested, mountain flowers still grow through black volcanic glass after the harshest winters.",
+        ["primordial-dragons-02"] = "The Tidal Ancestor sleeps where the ocean floor descends beyond all soundings. Every great migration follows a rhythm from that depth, and the oldest whales answer it in songs without words.",
+        ["primordial-dragons-03"] = "Storm Eternal rides the upper winds long before thunder reaches the valley. Lightning sketches its wings behind the clouds, and isolated mountain villages still set out bells to greet its passage.",
+        ["primordial-dragons-04"] = "The Void Wyrm coils around a darkness that no telescope can measure. Ancient observatories point toward its resting place, not as a warning but to remind visitors how much of the sky remains unknown.",
+        ["mythic-relics-01"] = "The Chalice of Ages is passed between keepers who never drink from it. Each bearer adds one name to its rim, preserving the memory of a stranger whose life quietly changed their own.",
+        ["mythic-relics-02"] = "The Blade of Dawn was forged to cut through the mist around a mountain pass. Its edge has never dulled, but the sword's greatest legend tells of the traveler who used it to clear a path for refugees.",
+        ["mythic-relics-03"] = "The Oracle Mirror shows the face of a decision rather than the future itself. Those who expect a crown see its weight; those who hope for peace see the work it will demand.",
+        ["mythic-relics-04"] = "Fate's Compass does not point north. Its needle settles toward the person most in need of help, although those who carry it usually understand the direction only after choosing to follow.",
+        ["eternal-casino-01"] = "The First Chip bears no denomination and cannot be wagered. It sits at the center of the Eternal Casino's oldest table, where every new dealer touches its edge before beginning a shift.",
+        ["eternal-casino-02"] = "Fortune's Hand is a set of five cards no one has ever successfully shuffled. Their order changes between readings, and each player insists the cards resemble a choice made long ago.",
+        ["eternal-casino-03"] = "The Timeless Dealer has kept the same table since the casino opened, although no opening date is recorded. Guests disagree about the dealer's face but remember the same gentle tap announcing the final card.",
+        ["eternal-casino-04"] = "The Infinite Vault holds not coins but the promises guests chose to keep. Its doors open only for an owner returning something freely, and the ledger inside never records a balance.",
     };
 
     static CollectionLore()
     {
-        CollectionCard[] expected = CollectionCatalog.Cards
-            .Where(card => !CollectionCatalog.Theme(card).UltraRare && card.Rarity is CollectionRarity.Common or CollectionRarity.Uncommon)
-            .ToArray();
+        CollectionCard[] expected = CollectionCatalog.Cards.ToArray();
         if (Entries.Count != expected.Length || expected.Any(card => !Entries.ContainsKey(card.Id)))
-            throw new InvalidDataException("Common and Uncommon collection lore must cover every regular-theme card exactly once.");
-        if (Entries.Keys.Any(id => CollectionCatalog.Find(id) is not { Rarity: CollectionRarity.Common or CollectionRarity.Uncommon }))
-            throw new InvalidDataException("The grounded lore pass must not author Rare, Epic or Legendary cards yet.");
+            throw new InvalidDataException("Every collection card must have its own archive lore text.");
+        if (Entries.Keys.Any(id => CollectionCatalog.Find(id) is null))
+            throw new InvalidDataException("Collection lore contains a card ID not present in the catalog.");
     }
 
     internal static int AuthoredCount => Entries.Count;
@@ -128,7 +178,7 @@ internal static class CollectionLore
                 ? Localization.T($"Album.Lore.{card.Id}")
                 : body;
         return Localization.Language == UiLanguagePreference.German
-            ? "Dieser Archiveintrag ist noch versiegelt. Geschichten für seltene, epische und legendäre Karten folgen später."
-            : "This archive entry remains sealed. Rare, Epic and Legendary stories will be catalogued in a later lore pass.";
+            ? "Zu dieser Karte ist derzeit kein Archiveintrag verfügbar."
+            : "An archive entry is currently unavailable for this card.";
     }
 }

@@ -35,11 +35,6 @@ export const driftCenter=(distance:number)=>{
 };
 export const driftRoadHalfWidth=(distance:number)=>
  Math.max(78,148-8*Math.floor(Math.max(0,distance)/1350));
-export const driftTrafficAt=(index:number)=>{
- const distance=780+index*425+Math.sin(index*2.87)*55;
- const lane=([-0.55,0,0.55] as const)[(index*7+1)%3];
- return {distance,x:driftCenter(distance)+lane*driftRoadHalfWidth(distance),r:29};
-};
 export const gravityGoalY=(stage:number)=>stage%2===0?93:438;
 export const gravityHazards=(stage:number)=>{
  const hazards=[
@@ -164,17 +159,7 @@ function driftStep(s:DriftRun,dt:number,holding:boolean,c:ExpansionControls):Exp
  s.x+=s.vx*dt;
  s.distance+=s.speed*dt;
  const road=driftCenter(s.distance),limit=driftRoadHalfWidth(s.distance);
- // Approaching traffic requires actual avoidance, not merely staying on the road.
- const first=Math.max(0,Math.floor((s.distance-870)/425)-1);
- for(let i=first;i<first+5;i++){
-  const obstacle=driftTrafficAt(i);
-  if(Math.abs(obstacle.distance-s.distance)<24&&
-   Math.abs(s.x-obstacle.x)<obstacle.r+21&&s.hitCooldown<=0){
-   s.hits++;s.hitCooldown=1.1;s.combo=0;s.speed=170;
-   if(s.hits>=3)return fail(s);
-   return 'stage';
-  }
- }
+ // The road edge is the only obstacle; automatic traffic has been removed.
  if(Math.abs(s.x-road)>limit&&s.hitCooldown===0){
   s.hits++;s.hitCooldown=1.15;s.combo=0;s.speed=175;
   s.x=road+Math.sign(s.x-road)*limit;

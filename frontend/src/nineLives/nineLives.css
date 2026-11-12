@@ -6,15 +6,12 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d389;outline-offse
  background:radial-gradient(ellipse at 40% -20%,#a14ab230,transparent 60%),linear-gradient(115deg,#10091d,#1c1030 46%,#090919);overflow:hidden}
 .nine-pixi{pointer-events:none;position:absolute;inset:0;z-index:-1}
 .nine-pixi canvas{display:block;width:100%;height:100%}
-.nine-header{min-height:76px;display:grid;grid-template-columns:1fr 1.2fr 1fr;align-items:center;gap:12px;
+.nine-header{min-height:76px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;
  padding:10px clamp(15px,2.4vw,36px);background:#110b1de9;border-bottom:1px solid #7a568d88;z-index:2}
 .nine-back{justify-self:start;border:1px solid #ab7a95;background:#2a173b;padding:10px 14px;border-radius:9px;
  color:#f7d6a0;font-weight:700;white-space:nowrap}
 .nine-back:hover:not(:disabled){background:#57325f;border-color:#ead2ac}
 .nine-back kbd{display:inline-block;color:#b9aac7;margin-left:12px;font-size:10px}
-.nine-title{text-align:center}.nine-title small{color:#c99abf;letter-spacing:.18em;font-size:9px;font-weight:700}
-.nine-title h1{font:700 clamp(22px,2.8vw,33px) Georgia,serif;color:#f9ddae;margin:0;letter-spacing:.13em}
-.nine-title h1 em{color:#d79bfa;font-style:normal}
 .nine-header-bank{text-align:right;justify-self:end}.nine-header-bank small{display:block;font-size:10px;color:#bda8c4}
 .nine-header-bank strong{display:block;font-size:clamp(17px,2.3vw,24px);color:#f5d694}
 .nine-layout{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 314px;gap:clamp(12px,1.5vw,26px);
@@ -113,9 +110,9 @@ button:focus-visible,input:focus-visible{outline:2px solid #f9d389;outline-offse
 .nine-card{padding:9px 12px}.nine-card h2{font-size:18px}.nine-card p{margin:5px 0}
 .nine-payrow{padding:1px 0}.nine-payrow img{width:32px;height:32px}.nine-payrow{grid-template-columns:33px minmax(0,1fr) auto}
 .nine-sidebar{gap:7px}}
-@media(max-width:1150px){.nine-layout{grid-template-columns:minmax(0,1fr) 260px;gap:10px}.nine-card{padding-inline:10px}.nine-title h1{font-size:22px}}
+@media(max-width:1150px){.nine-layout{grid-template-columns:minmax(0,1fr) 260px;gap:10px}.nine-card{padding-inline:10px}}
 @media(max-width:850px){.nine-layout{grid-template-columns:1fr}.nine-sidebar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.nine-config{grid-column:1/-1;margin-top:0}.nine-reels{max-width:610px}}
-@media(max-width:570px){.nine-header{grid-template-columns:1fr 1fr}.nine-title{grid-column:1/-1;grid-row:1}.nine-back{grid-row:2}.nine-header-bank{grid-row:2}
+@media(max-width:570px){.nine-header{grid-template-columns:1fr 1fr}
 .nine-machine{padding-inline:7px}.nine-machine-heading h2{font-size:26px}.nine-reels-outer{gap:2px}
 .nine-reels{gap:3px;padding:6px;border-width:3px}.nine-lines{inset:6px;width:calc(100% - 12px);height:calc(100% - 12px)}
 .nine-cell{border-width:1px;border-radius:5px}.nine-line-number{font-size:7px}
