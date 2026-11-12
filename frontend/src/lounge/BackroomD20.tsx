@@ -49,7 +49,9 @@ const poseFor=(value:number)=>{
 export function drawD20(canvas:HTMLCanvasElement,value:number,pitch:number,yaw:number,roll:number){
  const ctx=canvas.getContext('2d');if(!ctx)return;
  const scale=Math.min(2,window.devicePixelRatio||1);
- const w=174,h=172;canvas.width=Math.round(w*scale);canvas.height=Math.round(h*scale);
+ const w=174,h=172;
+ const px=Math.round(w*scale),py=Math.round(h*scale);
+ if(canvas.width!==px||canvas.height!==py){canvas.width=px;canvas.height=py;}
  ctx.setTransform(scale,0,0,scale,0,0);ctx.clearRect(0,0,w,h);
  const shadow=ctx.createRadialGradient(87,144,2,87,144,61);
  shadow.addColorStop(0,'#040e15ad');shadow.addColorStop(1,'#040e1500');
