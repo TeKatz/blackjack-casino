@@ -878,3 +878,252 @@ html,body,#root{height:100%;overflow:hidden}
 @media(prefers-reduced-motion:reduce){
  .manor-room-dressing *,.manor-room-dressing::after{animation:none!important}
 }
+
+
+/* Midnight Manor 3D bonus HUD: positioned against the ACTUAL slot viewport
+   shown in the Windows reference screenshot. The center 3D doors and their
+   three bottom-center choice labels are deliberately unobstructed. */
+.manor-godot-hud-left {
+  position:absolute;top:13px;left:16px;z-index:7;
+  width:clamp(188px,21%,272px);display:flex;flex-direction:column;
+  align-items:stretch;gap:7px;pointer-events:none;
+}
+.manor-godot-room-heading {
+  display:flex;flex-direction:column;align-items:flex-start;gap:4px;
+  padding:5px 7px 6px;background:linear-gradient(90deg,#100e18cf,#100e1860);
+  border-left:2px solid #bf9975;text-shadow:0 1px 3px #000;
+}
+.manor-godot-room-heading .eyebrow {
+  color:#dbc4a3;font-size:9px;font-weight:700;letter-spacing:.09em;
+}
+.manor-godot-room-heading strong {
+  font:650 clamp(14px,1.35vw,19px)/1.2 'Segoe UI',Arial,sans-serif;
+  color:#fff0db;letter-spacing:.012em;
+}
+.manor-godot-room-heading small {
+  color:#cbb7a4;font-size:10px;letter-spacing:.04em;
+}
+.manor-godot-payout-panel {
+  padding:11px 11px 8px;border:1px solid #a99a8b88;border-radius:7px;
+  background:linear-gradient(150deg,#191721ed,#141623e3);
+  box-shadow:0 5px 19px #0006;backdrop-filter:blur(6px);
+}
+.manor-godot-payout-pair {display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.manor-godot-payout-pair>span {display:flex;flex-direction:column;gap:3px;min-width:0;}
+.manor-godot-payout-pair small {
+  color:#c6b4a4;font-size:10px;letter-spacing:.03em;
+}
+.manor-godot-payout-pair strong {
+  color:#f8e7cd;font:750 clamp(15px,1.6vw,23px)/1.12 'Segoe UI',Arial,sans-serif;
+  font-variant-numeric:tabular-nums;
+}
+.manor-godot-payout-pair>span:nth-child(2) strong {color:#dfbf92;}
+.manor-godot-target {display:flex;align-items:center;justify-content:space-between;
+  border-top:1px solid #b8a79742;margin-top:9px;padding-top:6px;
+  color:#cbb8a2;font-size:10px;}
+.manor-godot-target b {color:#f6dfb6;font-variant-numeric:tabular-nums;font-size:11px;}
+.manor-godot-threat {
+  padding:9px 10px 10px;border:1px solid #8e859078;
+  background:#171723e5;border-radius:7px;backdrop-filter:blur(6px);
+}
+.manor-godot-threat-title {
+  display:flex;align-items:center;gap:7px;color:#dfcfbb;
+  font-weight:750;letter-spacing:.09em;font-size:10px;
+}
+.manor-godot-threat-dot {display:inline-block;width:7px;height:7px;border-radius:50%;
+  background:#97a4ad;box-shadow:0 0 8px #97a4ad50;flex-shrink:0;}
+.manor-godot-threat.danger {border-color:#b781817c;}
+.manor-godot-threat.danger .manor-godot-threat-dot {background:#d1a08f;box-shadow:0 0 10px #dba090aa;}
+.manor-godot-threat.approaching .manor-godot-threat-dot {background:#e3bb84;box-shadow:0 0 8px #e3bb8499;}
+.manor-godot-threat.revealed .manor-godot-threat-dot {background:#a1d6e3;box-shadow:0 0 8px #a1d6e3aa;}
+.manor-godot-threat p {margin:6px 0 0;font-size:10px;line-height:1.42;color:#d7cbd0;
+  display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;}
+.manor-godot-event {
+  padding:9px 10px;border:1px solid #d4b98a77;border-radius:7px;
+  color:#f9ead4;background:#302633f2;box-shadow:0 8px 22px #0009;
+  animation:manor-godot-event-in .28s ease-out both;
+}
+.manor-godot-event>span {display:block;font-size:9px;letter-spacing:.11em;
+  color:#edc895;font-weight:750;}
+.manor-godot-event p {margin:4px 0 0;font-size:10px;line-height:1.4;
+  overflow-wrap:anywhere;max-height:4.5em;overflow:hidden;}
+@keyframes manor-godot-event-in {from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+
+/* The minimap stays in the upper-right EMPTY quadrant of the screenshot. */
+.manor-godot-hud-map {
+  position:absolute;right:15px;top:15px;z-index:7;
+  width:clamp(196px,21%,282px);padding:8px 9px 6px;
+  border:1px solid #baa68b9e;border-radius:9px;
+  background:linear-gradient(153deg,#181620f4,#151622eb);
+  box-shadow:0 9px 26px #0009;backdrop-filter:blur(9px);
+}
+.manor-godot-mini-map-heading {display:flex;justify-content:space-between;align-items:center;
+  gap:7px;padding:0 0 4px 4px;}
+.manor-godot-mini-map-heading strong {font-size:10px;color:#e8d4b9;
+  letter-spacing:.09em;font-weight:750;}
+.manor-godot-mini-map-heading button {display:grid;place-items:center;
+  width:26px;height:24px;border:1px solid #a08e805c;border-radius:5px;
+  background:#201e2a;color:#e3d2bc;cursor:pointer;}
+.manor-godot-mini-map-heading button:hover,
+.manor-godot-mini-map-heading button:focus-visible {
+  border-color:#f2d5a6;background:#37303b;outline-offset:2px;
+}
+.manor-godot-map-svg {display:block;width:100%;height:auto;overflow:visible;}
+.manor-godot-map-outline {fill:#20232bd6;stroke:#a1a6ae48;stroke-width:1;}
+.manor-godot-map-compass {fill:#b5b2b7;font-size:8px;letter-spacing:.08em;}
+.manor-godot-map-edge {fill:none;stroke:#a09aa5;stroke-width:2;
+  stroke-linecap:round;opacity:.58;}
+.manor-godot-map-edge.available {stroke:#dec39d;stroke-width:2.8;opacity:1;}
+.manor-godot-map-edge.highlighted {stroke:#fff4da;stroke-width:4;opacity:1;}
+.manor-godot-map-edge.locked {stroke:#b08376;stroke-dasharray:4 3;opacity:.83;}
+.manor-godot-map-lock {fill:#9d6255;stroke:#f1c6ae;stroke-width:.7;}
+.manor-godot-map-unlocked {fill:#586b65;stroke:#b5d1c0;stroke-width:.7;}
+.manor-godot-map-lock-icon {fill:none;stroke:#faf1e3;stroke-width:1;
+  stroke-linejoin:round;}
+.manor-godot-map-room {fill:#555864;stroke:#9fa2ac;stroke-width:1;}
+.manor-godot-map-node.visited .manor-godot-map-room {fill:#82715f;stroke:#c9b698;}
+.manor-godot-map-node.reachable .manor-godot-map-room {stroke:#f8dfb0;stroke-width:2;}
+.manor-godot-map-node.here .manor-godot-map-room {fill:#ead29b;stroke:#fff8e3;stroke-width:2;}
+.manor-godot-map-node.hovered .manor-godot-map-room {
+  fill:#f1d2a5;stroke:#fff5db;stroke-width:2.3;}
+.manor-godot-map-node.ghost-revealed .manor-godot-map-room {fill:#8faeca;}
+.manor-godot-map-index {fill:#f9f0dc;font-size:9px;font-weight:700;
+  pointer-events:none;}
+.manor-godot-map-node.here .manor-godot-map-index,
+.manor-godot-map-node.hovered .manor-godot-map-index {fill:#352b32;}
+.manor-godot-map-current-ring {fill:none;stroke:#e7c78e;stroke-width:2;opacity:.9;}
+.manor-godot-map-ghost-ring {fill:none;stroke:#a3d3e0;stroke-width:2;
+  stroke-dasharray:3 2;}
+.manor-godot-map-summary {display:flex;flex-wrap:wrap;align-items:center;
+  gap:3px 8px;justify-content:space-between;min-height:15px;padding:1px 4px 2px;
+  color:#c8c0bc;font-size:10px;line-height:1.25;}
+.manor-godot-map-summary>span:first-child {white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;max-width:100%;}
+.manor-godot-map-ghost-note {font-size:10px;color:#b1d7e2;overflow-wrap:anywhere;}
+
+/* Bottom left has no door labels in the reference. Inventory lives there. */
+.manor-godot-inventory {position:absolute;left:16px;bottom:82px;z-index:7;
+  display:flex;flex-direction:column;gap:5px;max-width:250px;}
+.manor-godot-inventory>small {color:#d4c0a8;font-size:9px;letter-spacing:.12em;
+  font-weight:700;text-shadow:0 1px 3px #000;}
+.manor-godot-inventory-items {display:flex;gap:6px;}
+.manor-godot-item {display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:4px;min-width:57px;min-height:61px;padding:6px 7px;
+  color:#8d8d96;border:1px solid #837e8277;background:#1a1a24e8;
+  border-radius:7px;box-shadow:0 4px 13px #0006;backdrop-filter:blur(5px);}
+.manor-godot-item svg {opacity:.55;flex:none;}
+.manor-godot-item span {font-size:9px;font-weight:650;color:inherit;white-space:nowrap;}
+.manor-godot-item.owned {color:#f0d6aa;border-color:#d4b58ba6;background:#292330ed;}
+.manor-godot-item.owned svg {opacity:1;}
+button.manor-godot-item {cursor:pointer;}
+button.manor-godot-item:disabled {cursor:default;}
+button.manor-godot-item.usable:hover,
+button.manor-godot-item.usable:focus-visible {
+  color:#ffefcc;border-color:#fff0c8;background:#423040;
+}
+.manor-godot-action-dock {position:absolute;right:15px;bottom:30px;z-index:7;
+  display:flex;flex-direction:column;align-items:stretch;gap:7px;width:clamp(148px,16%,211px);}
+.manor-godot-action-dock .ghost-button {padding:9px 10px;background:#231f2ae8;
+  border:1px solid #c4a68b8a;color:#f6dec0;backdrop-filter:blur(7px);
+  font-size:11px;min-height:35px;}
+.manor-godot-cashout {min-height:40px;border-radius:7px;
+  border:1px solid #e3cb9a;cursor:pointer;color:#251e20;font-weight:750;
+  background:linear-gradient(130deg,#ead5b2,#c59d6b);padding:9px 12px;
+  font-size:11px;box-shadow:0 5px 18px #0009;}
+.manor-godot-cashout:hover:not(:disabled) {filter:brightness(1.12);}
+.manor-godot-cashout:disabled {opacity:.6;cursor:wait;}
+.manor-godot-hint {position:absolute;left:15px;bottom:12px;z-index:4;
+  max-width:55%;margin:0;color:#e9d6bd;font-size:10px;line-height:1.3;
+  text-shadow:0 2px 6px #000;pointer-events:none;}
+.manor-godot-safe {bottom:6px;right:17px;}
+
+/* Preserve the three bottom-center door selectors. The side HUDs do not
+   cover their labels or the doors directly above them in the reference shot. */
+.manor-godot-door-actions {bottom:83px;width:min(57%,810px);gap:clamp(7px,1vw,15px);}
+.manor-godot-door-choice.is-highlighted {border-color:#fff3d5;
+  background:linear-gradient(145deg,#47343ff5,#2c2836f2);}
+.manor-godot-door-choice {min-height:57px;}
+
+/* Enlarged map: only this intentional overlay covers the center doors. */
+.manor-godot-map-overlay {position:absolute;inset:0;z-index:20;display:grid;
+  place-items:center;padding:15px;}
+.manor-godot-map-backdrop {position:absolute;inset:0;background:#080a12d9;
+  backdrop-filter:blur(5px);}
+.manor-godot-map-dialog {position:relative;z-index:1;display:flex;flex-direction:column;
+  max-width:810px;width:100%;max-height:96%;overflow:auto;
+  border:1px solid #d1b591bb;border-radius:12px;
+  background:linear-gradient(145deg,#23202b,#171b27 85%);
+  box-shadow:0 15px 55px #000c;padding:16px 19px 18px;}
+.manor-godot-map-dialog>header {display:flex;justify-content:space-between;align-items:center;
+  gap:18px;border-bottom:1px solid #b7a68c60;padding-bottom:12px;}
+.manor-godot-map-dialog .eyebrow {font-size:10px;letter-spacing:.09em;
+  color:#d9b989;}
+.manor-godot-map-dialog h2 {font-size:clamp(15px,1.7vw,21px);font-weight:650;
+  color:#f6e5c7;margin:5px 0 0;line-height:1.2;}
+.manor-godot-map-dialog>header button {font-size:12px;flex-shrink:0;}
+.manor-godot-map-content.expanded {display:flex;flex-direction:column;gap:8px;}
+.manor-godot-map-content.expanded .manor-godot-map-svg {
+  max-width:690px;max-height:315px;align-self:center;}
+.manor-godot-map-content.expanded .manor-godot-map-summary {font-size:12px;}
+.manor-godot-map-legend {display:flex;flex-wrap:wrap;gap:12px;padding:7px 4px 9px;
+  border-bottom:1px solid #c5b29b44;}
+.manor-godot-map-legend span {display:flex;align-items:center;gap:6px;font-size:11px;color:#ddcfc4;}
+.manor-godot-map-legend i {display:block;width:12px;height:12px;border-radius:3px;
+  background:#555864;border:1px solid #a1a2a9;}
+.manor-godot-map-legend i.map-current {background:#ead29b;border-color:#fff8e3;}
+.manor-godot-map-legend i.map-available {background:#555864;border:2px solid #f8dfb0;}
+.manor-godot-map-legend i.map-visited {background:#82715f;border-color:#c9b698;}
+.manor-godot-map-legend i.map-locked {background:#9d6255;border-color:#f1c6ae;}
+.manor-godot-map-route-heading {display:flex;justify-content:space-between;
+  gap:12px;align-items:baseline;}
+.manor-godot-map-route-heading strong {font-size:11px;letter-spacing:.1em;color:#ead6bd;}
+.manor-godot-map-route-heading span {font-size:11px;color:#b7aeb1;}
+.manor-godot-map-room-list {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:5px;}
+.manor-godot-map-route {display:flex;align-items:center;gap:8px;text-align:left;
+  padding:7px 9px;min-width:0;border-radius:5px;border:1px solid #b0a49b33;
+  background:#232330b0;color:#c4c0c1;font-size:11px;}
+.manor-godot-map-route>span:nth-child(2) {flex:1;min-width:0;line-height:1.3;}
+.manor-godot-route-index {color:#9e9dab;font:700 10px/1.2 monospace;}
+.manor-godot-map-route small {font-size:9px;color:#d4b991;white-space:nowrap;}
+.manor-godot-map-route:disabled {cursor:default;opacity:.7;}
+.manor-godot-map-route.available {border-color:#c5ac806e;color:#f5e5d1;cursor:pointer;}
+.manor-godot-map-route.available:hover,
+.manor-godot-map-route.available:focus-visible,
+.manor-godot-map-route.hovered {background:#49404c;border-color:#eed7b1;}
+.manor-godot-map-footer {font-size:11px;color:#c5b7ae;line-height:1.5;margin:11px 0 0;}
+
+@media(max-width:980px) {
+  .manor-godot-hud-left {width:clamp(170px,22%,225px);left:10px;top:8px;}
+  .manor-godot-hud-map {width:clamp(174px,24%,235px);right:10px;top:9px;padding:6px;}
+  .manor-godot-room-heading strong {font-size:14px;}
+  .manor-godot-payout-pair strong {font-size:16px;}
+  .manor-godot-door-actions {width:57%;bottom:109px;gap:6px;}
+  .manor-godot-door-choice {padding:7px 5px;min-height:48px;}
+  .manor-godot-inventory {left:10px;bottom:107px;}
+  .manor-godot-item {min-width:44px;min-height:51px;padding:4px;}
+  .manor-godot-item svg {width:20px;height:20px;}
+  .manor-godot-action-dock {right:10px;bottom:35px;width:160px;}
+  .manor-godot-map-room-list {grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+@media(max-width:620px) {
+  .manor-godot-hud-left {width:45%;max-width:192px;gap:4px;}
+  .manor-godot-hud-map {width:45%;max-width:192px;}
+  .manor-godot-payout-panel {padding:6px;}
+  .manor-godot-payout-pair small {font-size:9px;}
+  .manor-godot-threat {padding:6px;}
+  .manor-godot-threat p {-webkit-line-clamp:2;}
+  .manor-godot-door-actions {bottom:108px;width:96%;}
+  .manor-godot-door-choice span {font-size:10px;}
+  .manor-godot-inventory {bottom:43px;}
+  .manor-godot-inventory>small,.manor-godot-item span {font-size:8px;}
+  .manor-godot-item {min-width:40px;}
+  .manor-godot-action-dock {width:125px;bottom:28px;gap:4px;}
+  .manor-godot-cashout {font-size:9px;padding:6px;min-height:30px;}
+  .manor-godot-action-dock .ghost-button {font-size:9px;padding:5px;min-height:26px;}
+  .manor-godot-hint {display:none;}
+}
+@media(prefers-reduced-motion:reduce) {
+  .manor-godot-event {animation:none!important;}
+}
+.manor-godot-surface.no-motion .manor-godot-event {animation:none;}

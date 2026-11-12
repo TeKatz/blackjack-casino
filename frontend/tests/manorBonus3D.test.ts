@@ -55,6 +55,13 @@ describe('Godot 3D Manor bonus bridge', () => {
     expect(markup).toContain('Keine echten Gewinne');
     expect(markup).toContain('Zurück zum Automaten');
     expect(markup).toContain('is-active');
+    expect(markup).toContain('manor-godot-hud-left');
+    expect(markup).toContain('manor-godot-hud-map');
+    expect(markup).toContain('manor-godot-inventory');
+    expect(markup).toContain('manor-godot-door-actions');
+    expect(markup).toContain('MANOR-GRUNDRISS');
+    expect(markup).toContain('VORSCHAU · KEIN GEIST');
+    expect(markup).not.toContain('Jetzt auszahlen');
   });  it('keeps the iframe ready but never offers choices while warming behind the reels', () => {
     const markup = renderToStaticMarkup(createElement(ManorBonus3D, {
       active: false, demo: false, run: null, language: 'en', reducedMotion: false,
@@ -65,6 +72,30 @@ describe('Godot 3D Manor bonus bridge', () => {
     expect(markup).toContain('manor-godot-frame');
     expect(markup).not.toContain('manor-godot-door-actions');
     expect(markup).not.toContain('Back to the slot');
+  });
+
+  it('shows live C# reward, risk and inventory without obscuring 3D doors', () => {
+    const run: ManorRun = {
+      ...sample, current: '80×', banked: '25×', turn: 7,
+      hasKey: true, hasCandle: true, hasCharm: true,
+      message: 'You enter Library. +10×. Checkpoint secured.',
+      ghostClue: 'Cold air creeps from the east. The ghost is CLOSE (within two rooms).',
+    };
+    const markup = renderToStaticMarkup(createElement(ManorBonus3D, {
+      active: true, demo: false, run, language: 'de', reducedMotion: false,
+      disabled: false, onAction: () => {}, onExitDemo: () => {}, onFallback: () => {},
+    }));
+    expect(markup).toContain('80×');
+    expect(markup).toContain('25×');
+    expect(markup).toContain('ZUG 7 / 24');
+    expect(markup).toContain('GEIST IN DER NÄHE');
+    expect(markup).toContain('manor-godot-payout-panel');
+    expect(markup).toContain('manor-godot-threat');
+    expect(markup).toContain('manor-godot-map-room');
+    expect(markup).toContain('Schlüssel');
+    expect(markup).toContain('Kerze');
+    expect(markup).toContain('Schutzzauber');
+    expect(markup).toContain('Jetzt auszahlen');
   });
 
 });

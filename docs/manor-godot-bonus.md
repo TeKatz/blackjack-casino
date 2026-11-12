@@ -24,6 +24,47 @@ The fixed first-person camera requires door clicks: there is no WASD, continuous
 
 Godot Web uses the Compatibility renderer and can be slower than its native Windows build. The iframe initializes during ordinary reel play after the main renderer is ready, then stays alive between entries. This aims to remove the repeated approximately ten-second wait when opening the bonus after warmup. Cold starts may still take several seconds depending on WebView2 and the machine. No measured speedup is claimed until tested on actual Windows hardware. Godot's stretch aspect uses Expand so the scene covers non-16:9 slot areas instead of black side bars. The first Windows test still requires manual WebView2 checks for GPU support, iframe input focus, actual door selection, visual appearance, resizing, monitor scaling, audio handoff, cold/warm transition timings, the ambient impact of preloading, and frame-rate performance. If the WebGL content does not initialize, an explicit fallback/exit appears instead of changing any real game state.
 
+## Permanent full floorplan and live bonus HUD (November 2026)
+
+The existing Godot 3D geometry and three-door model remain unchanged. All
+new presentation surfaces are React elements over the **same slot viewport**,
+placed using the Windows screenshot as the reference for clear sightlines.
+
+- **Upper-left:** room and authoritative turn (maximum 24), live current
+  and checkpoint multipliers, exit target, and the localized C# ghost clue
+  with distant/approaching/near/revealed severity. A short, time-limited
+  narration panel appears below the status when an acknowledged C# run
+  message changes. This area is kept away from the physical door labels.
+- **Upper-right:** a persistent *fully uncovered* graph of all 17 playable
+  rooms and their 23 connections. It is rendered from the C# run snapshot,
+  not calculated by Godot. The player marker follows confirmed moves;
+  visited and legally available rooms update; locked shortcuts show a
+  lock symbol. Door hover highlights the same target on the map.
+- **Expanded floorplan:** offers complete room names, accessible route
+  choices, legend and key warnings. Certain nodes (for example Servants'
+  Corridor) have four valid exits but only three physical 3D door objects.
+  The fourth can be selected on this full map through the normal C#
+  revision-checked `run.move` command.
+- **Lower-left:** a compact inventory for acquired key, candle and charm.
+  The candle is clickable only when the authoritative run reports it
+  usable; charm and key are passive displays.
+- **Lower-right:** cash out with the current C# multiplier, or return to
+  the standard 2D view. In preview mode only **Back to the slot** appears.
+  The three original door-choice buttons remain centered at the bottom.
+
+Exact ghost positions appear on the map only when the live C# clue is
+`Candle reveals: ROOM.`. A revealed ghost in an uncharted entrance node
+(e.g. Rear Foyer) is named without inventing an on-map position. Normal
+proximity/direction messaging never implies knowledge of an exact ghost
+room. No new ghost AI or payout probability was introduced.
+
+The no-wager **Test Bonus Game** mode displays the complete authored
+layout and updates a *local* visited-room marker; it explicitly shows
+no simulated multiplier or ghost behavior. Its demo-only topology mirrors
+the C# map but never updates bankroll, multipliers or the persistent
+journal. Actual bonus gameplay still requires the user's explicit
+experimental 3D opt-in and stays under C# authority.
+
 ## Room layout and WebGL material correction
 
 The second Manor 3D quality pass responds to tester reports for Candle Landing, Reading Room, Library, Grand Staircase, Moonlit Landing, Forbidden Wing, Courtyard, Secret Passage, Crypt, Winter Garden, Music Room, Servants' Corridor, and Moonlit Gate.
