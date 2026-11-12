@@ -1,5 +1,6 @@
 import type { ManorRun } from '../bridge/protocol';
 import { legalMapDestinations, makeDemoMap } from './manorGodotMapData';
+import { ghostBand } from './manorRunUi';
 
 export type GodotChoice = { id: number; name: string };
 export type GodotState = {
@@ -8,6 +9,7 @@ export type GodotState = {
   demo: boolean;
   roomName: string;
   roomId: number;
+  ghostBand?: 'distant' | 'approaching' | 'danger' | 'revealed' | 'uncertain';
   active?: boolean;
   reducedMotion?: boolean;
   options: GodotChoice[];
@@ -32,6 +34,7 @@ export function liveState(run: ManorRun): GodotState {
   return {
     source: 'manor-react', type: 'state', demo: false,
     roomName: room?.name ?? 'Entrance Hall', roomId: run.playerRoom,
+    ghostBand: ghostBand(run.ghostClue),
     // Never invent routes. The authoritative C# snapshot marks legal destinations.
     // Three physical doors only; any fourth valid route is exposed via the map.
     options: run.rooms.filter(value => value.available)
