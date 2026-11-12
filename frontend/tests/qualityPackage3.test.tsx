@@ -51,8 +51,8 @@ describe('Quality package 3 visual contracts',()=>{
   expect(renderToStaticMarkup(<Die value={5} palette={palette} variant="dice-copper"/>))
    .toContain('data-skin="dice-copper"');
  });
- it('keeps the Nine Lives background unified but stars different between cells',()=>{
-  expect(galaxySignature(0).split('|')[0]).toBe(galaxySignature(1).split('|')[0]);
+ it('keeps the Nine Lives backdrop uniform while retaining individual celestial signatures',()=>{
+  expect(galaxySignature(0).split('|')[0]).not.toBe(galaxySignature(1).split('|')[0]);
   expect(galaxySignature(0)).not.toBe(galaxySignature(1));
  });
  it('provides usable miniature inventory icons for all native item kinds',()=>{
