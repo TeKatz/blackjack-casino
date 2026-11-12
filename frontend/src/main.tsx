@@ -8,6 +8,7 @@ import type { GameAction, ManorSnapshot } from './bridge/protocol';
 import { ManorStage } from './graphics/ManorStage';
 import { ManorBonusStage } from './graphics/ManorBonusStage';
 import { ManorBonus3D } from './graphics/ManorBonus3D';
+import { shouldMountManorGodot } from './graphics/manorGodotLoadPolicy';
 import { ManorHelp } from './ManorHelp';
 import { localizeFeature, t } from './i18n';
 import type { ManorLanguage } from './i18n';
@@ -322,7 +323,7 @@ function ManorApp() {
                 reducedMotion={motionOff}
                 onAction={(action, room) => act(action, room === undefined ? {} : { room })} />
             </div>}
-            {(godotWarmed || godotVisible) && <ManorBonus3D
+            {shouldMountManorGodot(godotVisible, godotWarmed) && <ManorBonus3D
               active={godotVisible} demo={demoBonusOpen} run={run} language={language}
               reducedMotion={motionOff} disabled={demoBonusOpen ? false : disabled}
               onExitDemo={() => setDemoBonusOpen(false)}

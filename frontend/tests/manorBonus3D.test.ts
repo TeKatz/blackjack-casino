@@ -58,6 +58,8 @@ describe('Godot 3D Manor bonus bridge', () => {
     expect(markup).toContain('Keine echten Gewinne');
     expect(markup).toContain('Zurück zum Automaten');
     expect(markup).toContain('is-active');
+    expect(markup).toContain('phase-loading');
+    expect(markup).not.toContain('manor-godot-portal');
     expect(markup).toContain('manor-godot-hud-left');
     expect(markup).toContain('manor-godot-hud-map');
     expect(markup).toContain('manor-godot-inventory');
@@ -73,6 +75,7 @@ describe('Godot 3D Manor bonus bridge', () => {
       disabled: false, onAction: () => {}, onExitDemo: () => {}, onFallback: () => {},
     }));
     expect(markup).toContain('is-warming');
+    expect(markup).toContain('phase-hidden');
     expect(markup).toContain('aria-hidden="true"');
     expect(markup).toContain('manor-godot-frame');
     expect(markup).not.toContain('manor-godot-door-actions');
