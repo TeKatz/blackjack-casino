@@ -29,6 +29,10 @@ public partial class MainWindow
             UseShellExecute = false,
             WorkingDirectory = Path.GetDirectoryName(executable)!
         };
+        // Godot options must come BEFORE the "--" separator (which starts
+        // user arguments). Force a real fullscreen game window whenever
+        // launched from Blackjack Casino; the host is minimized separately.
+        start.ArgumentList.Add("--fullscreen");
         start.ArgumentList.Add("--");
         start.ArgumentList.Add(de ? "--language=de" : "--language=en");
         var previousState = WindowState;

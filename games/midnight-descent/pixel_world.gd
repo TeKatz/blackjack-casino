@@ -699,77 +699,105 @@ func draw_lantern_cage(pos: Vector2,index: int) -> void:
 	draw_rect(Rect2(pos+Vector2(-2,27),Vector2(4,5)),Color("#e3b67c"))
 
 func draw_bar_stool(x: float) -> void:
-	# The seat is in front of the bar, not buried in the counter texture.
-	# Back legs and footrest remain underneath the seated actor.
-	draw_rect(Rect2(x-17,336,34,46),Color("#191720"))
-	draw_rect(Rect2(x-14,346,6,33),Color("#71514c"))
-	draw_rect(Rect2(x+8,346,6,33),Color("#71514c"))
-	draw_rect(Rect2(x-20,365,40,5),Color("#ba8a68"))
-	draw_rect(Rect2(x-23,339,46,13),Color("#291b29"))
-	draw_rect(Rect2(x-20,337,40,10),Color("#a67660"))
-	draw_rect(Rect2(x-16,339,32,6),Color("#d49f79"))
+	# A low, open four-legged barstool tucked right beneath the counter.
+	# Its saddle is only six pixels below the front lip; no box-shaped
+	# backrest or frame should resemble a child's feeding chair.
+	var y: float=Model.HUB_STOOL_SEAT_Y
+	var rail: float=Model.HUB_STOOL_FOOTREST_Y
+	var timber:=Color("#754a43")
+	draw_rect(Rect2(x-17,y+6,6,43),Color("#281d28"))
+	draw_rect(Rect2(x+11,y+6,6,43),Color("#281d28"))
+	draw_rect(Rect2(x-14,y+8,5,32),timber)
+	draw_rect(Rect2(x+9,y+8,5,32),timber)
+	draw_rect(Rect2(x-17,rail-1,34,4),Color("#af8061"))
+	draw_rect(Rect2(x-21,y-3,42,9),Color("#221b26"))
+	draw_rect(Rect2(x-19,y-4,38,6),Color("#b98066"))
+	draw_rect(Rect2(x-15,y-2,30,3),Color("#dfad88"))
 
 func draw_seated_player() -> void:
 	var stool: int=model.hub_seat_index
 	if stool<0: return
 	var x: float=float(Model.HUB_STOOL_X[stool])
+	var y: float=Model.HUB_STOOL_SEAT_Y
 	var progress: float=clampf(model.hub_seat_anim,0.0,1.0)
-	var eased: float=progress*progress*(3.0-2.0*progress)
-	# No vertical jump. The standing torso eases DOWN into a shortened
-	# seated pose as the knees rotate forward onto the stool footrest.
-	draw_shadow(Vector2(x,371),45)
-	var upper_y: float=294.0+12.0*eased
-	var body: Rect2=Rect2(x-29,upper_y,58,46)
-	# Up-facing back view: the seated player is looking toward the bartender.
-	# Cropped upper body prevents the standing legs from clipping into the
-	# cushion; the knees/boots below are drawn separately.
-	draw_texture_rect_region(ACTORS[model.character],body,Rect2(0,32,32,24))
-	var boot: Color={"warden":Color("#293344"),"dealer":Color("#322336"),"arcanist":Color("#253849"),"soulbinder":Color("#23392e")}[model.character]
-	var pants: Color={"warden":Color("#63587a"),"dealer":Color("#6b4259"),"arcanist":Color("#456c85"),"soulbinder":Color("#426c60")}[model.character]
+	var eased: float=smoothstep(0.0,1.0,progress)
+	# Same head height and size as the normal 68px hero, facing the bar.
+	# Only the lower body folds naturally; no hop or miniaturization.
+	var torso_top: float=293.0+eased*3.0
+	draw_shadow(Vector2(x,369),31)
+	var pants: Color={
+		"warden":Color("#524c71"),"dealer":Color("#70445c"),
+		"arcanist":Color("#406784"),"soulbinder":Color("#3b6157")
+	}[model.character]
+	var boots: Color={
+		"warden":Color("#252b3b"),"dealer":Color("#332536"),
+		"arcanist":Color("#293b51"),"soulbinder":Color("#263c34")
+	}[model.character]
+	# Sturdy adult-sized legs extending below the unobtrusive stool.
 	for side in [-1.0,1.0]:
-		var knee_x: float=x+side*11.0
-		var thigh_y: float=upper_y+36.0
-		var foot_x: float=lerpf(x+side*8.0,x+side*18.0,eased)
-		draw_rect(Rect2(knee_x-5,thigh_y,11,lerpf(24.0,17.0,eased)),pants)
-		draw_rect(Rect2(foot_x-7,upper_y+57.0,14,7),boot)
-		# A bright raised knee is clearly separate from the stool rim.
-		draw_rect(Rect2(knee_x-4,thigh_y+3,9,5),pants.lightened(0.15))
-	# Foreground upholstery lip passes OVER the hips, not the head.
-	draw_rect(Rect2(x-20,346,40,5),Color("#b88672"))
-	draw_rect(Rect2(x-16,347,32,2),Color("#e3b08a"))
+		var hip_x: float=x+side*12.0
+		var knee_x: float=hip_x+side*3.0*eased
+		draw_rect(Rect2(hip_x-5,y+7,10,20),pants)
+		draw_rect(Rect2(knee_x-5,y+23,10,10),pants.darkened(0.10))
+		draw_rect(Rect2(knee_x-8,y+33,16,6),boots)
+		draw_rect(Rect2(knee_x-7,y+34,14,2),boots.lightened(0.17))
+	# Original class-specific shoulders, hair and clothing stay full-size.
+	# This upper/back-facing section stops at the hips so there is no
+	# duplicate standing pair of feet sticking through the stool.
+	draw_texture_rect_region(ACTORS[model.character],
+		Rect2(x-32,torso_top,64,49),
+		Rect2(0,32,32,25))
+	# Lean just a little toward the bar; forearms are rested on the near
+	# counter edge instead of being carried straight down like a doll.
+	var hand_y: float=314.0-3.0*eased
+	for side in [-1.0,1.0]:
+		var shoulder_x: float=x+side*25.0
+		var elbow: Vector2=Vector2(shoulder_x,torso_top+37)
+		var hand: Vector2=Vector2(x+side*24.0,hand_y)
+		draw_line(elbow,hand,pants.lightened(0.21),6,true)
+		draw_rect(Rect2(hand-Vector2(4,3),Vector2(8,6)),Color("#c8a58a"))
+	# Only a narrow wood cushion edge overlaps the pelvis; no tall chair
+	# shell is drawn around the figure.
+	draw_rect(Rect2(x-16,y+3,32,3),Color("#dda985",0.78))
 
 func draw_bar_regular() -> void:
-	# A permanent guest claims the far stool and takes one slow swig every
-	# 6.5 seconds: lift -> hold -> lower -> rest. No idle flipbook flicker.
+	# Permanent tavern guest sits on the public side and faces north toward
+	# the bartender. The player therefore sees his hair and jacket BACK,
+	# not an uncomfortable face staring into the room from the bar.
 	var x: float=float(Model.HUB_STOOL_X[Model.HUB_PATRON_STOOL])
+	var y: float=Model.HUB_STOOL_SEAT_Y
 	var phase: float=fposmod(clock,6.5)
-	var lift: float=smoothstep(0.8,1.75,phase)*(1.0-smoothstep(3.25,4.15,phase))
-	var breath: float=roundf(sin(clock*1.45))
-	draw_shadow(Vector2(x,374),40)
-	# Folded knees and boots align with the same physical stool as the player.
+	var lift: float=smoothstep(0.75,1.75,phase)*(1.0-smoothstep(3.10,4.10,phase))
+	var idle: float=sin(clock*1.6)*0.9
+	draw_shadow(Vector2(x,369),32)
 	for side in [-1.0,1.0]:
-		draw_rect(Rect2(x+side*14.0-6,347,12,22),Color("#253b3c"))
-		draw_rect(Rect2(x+side*16.0-7,368,14,6),Color("#201c26"))
-	draw_rect(Rect2(x-23,315+breath,46,39),Color("#1a2f32"))
-	draw_rect(Rect2(x-19,312+breath,38,36),Color("#42736d"))
-	draw_rect(Rect2(x-6,316+breath,12,28),Color("#bd9473"))
-	draw_rect(Rect2(x-17,299+breath,34,18),Color("#3e2b32"))
-	draw_rect(Rect2(x-14,291+breath,28,23),Color("#c38e75"))
-	draw_rect(Rect2(x-17,287+breath,34,11),Color("#5c3b36"))
-	draw_rect(Rect2(x-10,286+breath,20,5),Color("#8b5145"))
-	# Left arm rests on the counter; right hand lifts the tankard.
-	draw_rect(Rect2(x-24,327,10,18),Color("#325a55"))
-	draw_rect(Rect2(x-21,337,8,7),Color("#c59576"))
-	var mug: Vector2=Vector2(x+28-7*lift,331-22*lift)
-	draw_line(Vector2(x+20,337),mug,Color("#38645e"),9,true)
-	draw_circle(mug,5,Color("#c89577"))
-	draw_rect(Rect2(mug+Vector2(-6,-8),Vector2(14,17)),Color("#a36b3f"))
-	draw_rect(Rect2(mug+Vector2(-4,-7),Vector2(10,15)),Color("#e0aa58"))
-	draw_rect(Rect2(mug+Vector2(8,-3),Vector2(6,9)),Color("#d6a56f"),false,2)
-	draw_rect(Rect2(mug+Vector2(-7,-10),Vector2(16,4)),Color("#f6e4ba"))
-	if lift>0.8:
-		draw_rect(Rect2(x+6,307+breath,5,2),Color("#633d37"))
-	draw_rect(Rect2(x-17,347,34,4),Color("#c58c70"))
+		var lx: float=x+side*13.0
+		draw_rect(Rect2(lx-6,y+5,12,27),Color("#2d4847"))
+		draw_rect(Rect2(lx-8,y+32,16,6),Color("#241e29"))
+		draw_rect(Rect2(lx-7,y+33,14,2),Color("#627d70"))
+	# Coat, collar and broad shoulders. No forward-facing eyes or mouth.
+	draw_rect(Rect2(x-26,295+idle,52,47),Color("#18262c"))
+	draw_rect(Rect2(x-23,293+idle,46,44),Color("#376764"))
+	draw_rect(Rect2(x-6,300+idle,12,33),Color("#b59c7d"))
+	draw_rect(Rect2(x-4,302+idle,8,28),Color("#254a48"))
+	draw_rect(Rect2(x-17,274+idle,34,29),Color("#ac7e66"))
+	draw_rect(Rect2(x-19,270+idle,38,19),Color("#382b31"))
+	draw_rect(Rect2(x-16,271+idle,32,12),Color("#65413a"))
+	draw_rect(Rect2(x-9,273+idle,18,4),Color("#885a47"))
+	draw_rect(Rect2(x-17,287+idle,34,5),Color("#483136"))
+	# Both elbows rest against the front edge of the counter. The right
+	# hand slowly lifts a foamy pint to the side of the character's head.
+	draw_line(Vector2(x-20,314),Vector2(x-25,309),Color("#315954"),9,true)
+	draw_rect(Rect2(x-28,305,9,6),Color("#c99b7e"))
+	var cup_center: Vector2=Vector2(x+27-12*lift,315-27*lift)
+	draw_line(Vector2(x+21,317),cup_center+Vector2(-3,5),Color("#315954"),9,true)
+	draw_circle(cup_center+Vector2(-4,5),5,Color("#c79779"))
+	draw_rect(Rect2(cup_center+Vector2(-9,-11),Vector2(16,22)),Color("#62422f"))
+	draw_rect(Rect2(cup_center+Vector2(-7,-10),Vector2(12,19)),Color("#d9a05b"))
+	draw_rect(Rect2(cup_center+Vector2(-5,-8),Vector2(4,14)),Color("#f2c37a"))
+	draw_rect(Rect2(cup_center+Vector2(7,-5),Vector2(7,11)),Color("#d1a377"),false,3)
+	draw_rect(Rect2(cup_center+Vector2(-10,-13),Vector2(18,5)),Color("#f4e6ba"))
+	draw_rect(Rect2(x-17,y+3,34,4),Color("#b87e64"))
 
 func draw_card_guest(pos: Vector2, side: int) -> void:
 	var palette: Color=Color("#547e79") if side==0 else Color("#876079")
@@ -799,9 +827,10 @@ func draw_card_guest(pos: Vector2, side: int) -> void:
 		draw_rect(Rect2(p+Vector2(eye,-44),Vector2(4,1 if blink else 3)),Color("#211b28"))
 	draw_rect(Rect2(p+Vector2(-5,-33),Vector2(10,2)),Color("#8e5a59"))
 	# Small readable fidget, as if each is counting the opponent's cards.
-	var shoulder: float=roundf(sin(clock*2.8+side*2)*3)
-	draw_rect(Rect2(p+Vector2(-23 if side==0 else 15,-12+shoulder),Vector2(8,25)),palette.darkened(0.1))
-	draw_rect(Rect2(p+Vector2(-23 if side==0 else 15,8+shoulder),Vector2(8,7)),Color("#d49f83"))
+	var shoulder: float=roundf(sin(clock*2.8+side*2)*1.5)
+	var arm_x: float=-23.0 if side==0 else 15.0
+	draw_rect(Rect2(p+Vector2(arm_x,3+shoulder),Vector2(8,19)),palette.darkened(0.08))
+	draw_rect(Rect2(p+Vector2(arm_x,19+shoulder),Vector2(8,7)),Color("#d49f83"))
 
 func draw_playing_card(center: Vector2, face: bool, red: bool) -> void:
 	var p:=pixel_pos(center)+Vector2(-7,-10)
@@ -824,11 +853,17 @@ func draw_card_duel() -> void:
 	var left_turn: bool=phase<3.2
 	var turn: float=fposmod(phase,3.2)
 	var reach: float=smoothstep(0.22,1.05,turn)*(1.0-smoothstep(1.48,2.05,turn))
-	var left_hand: Vector2=Vector2(449,506)+Vector2(18*reach if left_turn else 2*sin(clock*2),-9*reach)
-	var right_hand: Vector2=Vector2(600,506)+Vector2(-18*reach if not left_turn else 2*sin(clock*2+2),-9*reach)
-	# Hands and wrist motion are drawn above the table, not behind its front.
-	draw_line(Vector2(430,495),left_hand,Color("#4f726d"),10)
-	draw_line(Vector2(619,495),right_hand,Color("#70556c"),10)
+	# Arms originate from the SIDE OF THE CHEST at seated elbow height
+	# (y~525), never from beside the head (the old y=495 bug). Hands lean
+	# onto the near felt and slide a card instead of waving overhead.
+	var left_hand: Vector2=Vector2(466,517)+Vector2(13*reach if left_turn else 2*sin(clock*2),-3*reach)
+	var right_hand: Vector2=Vector2(584,517)+Vector2(-13*reach if not left_turn else 2*sin(clock*2+2),-3*reach)
+	var left_elbow:=Vector2(446,534)
+	var right_elbow:=Vector2(601,534)
+	draw_line(Vector2(431,526),left_elbow,Color("#4f726d"),8,true)
+	draw_line(left_elbow,left_hand,Color("#4f726d"),8,true)
+	draw_line(Vector2(619,526),right_elbow,Color("#70556c"),8,true)
+	draw_line(right_elbow,right_hand,Color("#70556c"),8,true)
 	draw_rect(Rect2(pixel_pos(left_hand-Vector2(6,4)),Vector2(12,8)),Color("#d6a582"))
 	draw_rect(Rect2(pixel_pos(right_hand-Vector2(6,4)),Vector2(12,8)),Color("#c9947e"))
 	for i in range(3):
@@ -878,6 +913,79 @@ func draw_barkeeper() -> void:
 	draw_rect(Rect2(p+Vector2(29,-30+polish),Vector2(7,14)),Color("#ecdddc"))
 	draw_rect(Rect2(p+Vector2(25,-18+polish),Vector2(15,3)),Color("#ffecb7"))
 
+func draw_tavern_forge() -> void:
+	# Fully authored exterior: blackened masonry chimney, hot firebox,
+	# iron apron, anvil and suspended hammer. Unlike the old plain cabinet,
+	# this must read as a working smithy before entering its dialogue.
+	var r: Rect2=Model.HUB_FORGE
+	var x: float=r.position.x
+	var y: float=r.position.y
+	var ember: float=0.76+0.19*sin(clock*3.7)
+	# Chimney and its soot-black exhaust mouth.
+	draw_rect(Rect2(x+36,y+3,39,54),Color("#1b1921"))
+	draw_rect(Rect2(x+41,y+1,29,58),Color("#56424a"))
+	draw_rect(Rect2(x+44,y+5,23,7),Color("#a47867"))
+	draw_rect(Rect2(x+46,y+13,19,38),Color("#25202a"))
+	for row in range(4):
+		draw_rect(Rect2(x+42,y+18+row*9,27,2),Color("#846067",0.54))
+	draw_rect(Rect2(x+31,y+5,49,10),Color("#201b26"))
+	draw_rect(Rect2(x+35,y+4,41,5),Color("#a97e6b"))
+	# Stone forge shoulders, ribbed iron side columns and brass rivets.
+	draw_rect(Rect2(x+5,y+56,106,116),Color("#17141b"))
+	draw_rect(Rect2(x+10,y+48,96,115),Color("#574349"))
+	draw_rect(Rect2(x+16,y+54,84,105),Color("#27222b"))
+	for side in [0.0,1.0]:
+		var cx: float=x+(12.0 if side==0.0 else 89.0)
+		draw_rect(Rect2(cx,y+58,11,105),Color("#29242b"))
+		draw_rect(Rect2(cx+2,y+60,5,101),Color("#80605b"))
+		for rivet in range(4):
+			draw_rect(Rect2(cx+3,y+70+rivet*23,4,4),Color("#e0b079"))
+	# A clear labelled plaque above the furnace mouth.
+	draw_rect(Rect2(x+26,y+55,61,20),Color("#17191c"))
+	draw_rect(Rect2(x+28,y+57,57,16),Color("#be8860"),false,2)
+	draw_string(ThemeDB.fallback_font,Vector2(x+39,y+69),"FORGE",HORIZONTAL_ALIGNMENT_LEFT,-1,12,Color("#f0c689"))
+	# Recessed firebox, cast-iron arched frame and animated embers.
+	var mouth: Rect2=Rect2(x+28,y+84,60,57)
+	draw_rect(mouth.grow(5),Color("#100e16"))
+	draw_rect(mouth,Color("#985844"))
+	draw_rect(mouth.grow(-5),Color("#28131a"))
+	draw_circle(mouth.get_center()+Vector2(0,7),25,Color("#e8813c",0.18*ember))
+	draw_rect(Rect2(x+36,y+104,44,26),Color("#a7442f",ember))
+	for flame in range(5):
+		var fx: float=x+39+flame*9
+		var height: float=12.0+float((flame*7)%11)+sin(clock*5.8+flame)*4.0
+		draw_colored_polygon(PackedVector2Array([
+			Vector2(fx-5,y+129),Vector2(fx,y+129-height),
+			Vector2(fx+5,y+129)]),Color("#ffd078") if flame%2==0 else Color("#f1823d"))
+	draw_rect(Rect2(x+34,y+130,48,6),Color("#d29c66"))
+	for grate in range(6):
+		draw_rect(Rect2(x+36+grate*8,y+88,3,48),Color("#2b252b"))
+	draw_rect(Rect2(x+28,y+139,60,6),Color("#8a6861"))
+	# Forged lower apron, slag and a compact anvil in the foreground.
+	draw_rect(Rect2(x+9,y+151,94,14),Color("#262129"))
+	draw_rect(Rect2(x+12,y+153,88,4),Color("#b07c62"))
+	for bolt in [22.0,89.0]:
+		draw_rect(Rect2(x+bolt,y+156,5,5),Color("#dfb27f"))
+	var anvil_x: float=x+63
+	draw_rect(Rect2(anvil_x-19,y+159,38,7),Color("#272a34"))
+	draw_rect(Rect2(anvil_x-24,y+157,48,5),Color("#c3a998"))
+	draw_rect(Rect2(anvil_x-14,y+166,28,10),Color("#7e8794"))
+	draw_rect(Rect2(anvil_x-17,y+176,34,5),Color("#444650"))
+	draw_colored_polygon(PackedVector2Array([
+		Vector2(anvil_x-23,y+157),Vector2(anvil_x-37,y+161),
+		Vector2(anvil_x-18,y+164)]),Color("#a3a4ab"))
+	# Hanging smith's hammer and short tongs on the left flank.
+	draw_line(Vector2(x+22,y+98),Vector2(x+22,y+145),Color("#b08b67"),5)
+	draw_rect(Rect2(x+13,y+92,19,11),Color("#8c9099"))
+	draw_rect(Rect2(x+15,y+94,15,4),Color("#d4b69a"))
+	draw_line(Vector2(x+95,y+102),Vector2(x+91,y+140),Color("#abb0b7"),3)
+	draw_line(Vector2(x+98,y+101),Vector2(x+94,y+139),Color("#6c737d"),3)
+	# Occasional contained sparks, not a screen-wide flicker.
+	for spark in range(3):
+		var drift: float=fposmod(clock*20+spark*29,59)
+		var px: float=x+39+spark*16+sin(clock*2.3+spark)*6
+		draw_rect(Rect2(px,y+126-drift,3,4),Color("#f7ba62",0.30+0.22*ember))
+
 func draw_hub() -> void:
 	# The Threshold Tavern: standalone foyer before the first dungeon node.
 	# All furniture aligns to the hub's actual collision volumes.
@@ -910,12 +1018,18 @@ func draw_hub() -> void:
 		draw_rect(Rect2(x-9,132,40,15),Color("#b28a72"))
 	draw_rect(Rect2(58,606,1164,18),Color("#2b212c"))
 	draw_rect(Rect2(58,607,1164,4),Color("#916d66"))
-	# Dark wine-red runner leads directly from the tavern into the portal.
-	draw_rect(Rect2(844,342,312,90),Color("#251729"))
-	draw_rect(Rect2(844,344,312,7),Color("#966575"))
-	draw_rect(Rect2(844,423,312,6),Color("#966575"))
+	# A northbound carpet leads from the open floor to the relocated upper
+	# right portal. It does not extend past either wall or behind the forge.
+	var runner_x: float=Model.HUB_PORTAL.x
+	var runner_top: float=Model.HUB_GATE_FRAME.end.y+6.0
+	var runner: Rect2=Rect2(runner_x-89,runner_top,178,222)
+	draw_rect(runner,Color("#261b2d"))
+	draw_rect(runner.grow(-5),Color("#633d57"),false,4)
+	draw_rect(runner.grow(-11),Color("#38233c"))
 	for i in range(7):
-		draw_rect(Rect2(867+i*42,367,19,38),Color("#5d374b"),false,2)
+		var cy: float=runner_top+26.0+i*29.0
+		draw_rect(Rect2(runner_x-60,cy,120,11),Color("#6d455e",0.32))
+		draw_rect(Rect2(runner_x-43,cy+3,86,3),Color("#bb8f8a",0.23))
 	# Bar sign and shelf of bottles, behind the physical wooden counter.
 	draw_rect(Rect2(263,152,390,41),Color("#1c1522"))
 	draw_rect(Rect2(272,158,374,29),Color("#715061"),false,2)
@@ -929,11 +1043,23 @@ func draw_hub() -> void:
 		draw_rect(Rect2(x+5,190,3,9),bottle_color.lightened(0.35))
 	# Barkeeper stands behind the counter; players reach him from its front.
 	draw_barkeeper()
-	# Back-wall bar and five stools.
-	draw_rect(Rect2(230,202,500,85),Color("#2a1d2a"))
-	draw_rect(Rect2(220,208,520,71),Color("#63414a"))
-	draw_rect(Rect2(220,208,520,14),Color("#b78969"))
-	draw_rect(Rect2(220,224,520,5),Color("#d0a17c"))
+	# The counter front now reaches y~322, only eight pixels from the
+	# low stools at y=330. This fixes the old 50px visual air gap without
+	# moving the physical collision or teleporting the seated character.
+	draw_rect(Rect2(224,207,512,116),Color("#241923"))
+	draw_rect(Rect2(220,211,520,108),Color("#593943"))
+	draw_rect(Rect2(220,216,520,15),Color("#b18365"))
+	draw_rect(Rect2(222,230,516,78),Color("#50333e"))
+	for panel in range(5):
+		var lx: float=237.0+panel*99.0
+		draw_rect(Rect2(lx,240,87,58),Color("#3c2834"))
+		draw_rect(Rect2(lx+4,243,79,51),Color("#65434b"),false,2)
+		draw_rect(Rect2(lx+15,261,57,4),Color("#795055",0.66))
+	draw_rect(Rect2(216,207,528,10),Color("#d3a07b"))
+	draw_rect(Rect2(222,211,516,3),Color("#e9bd8b"))
+	draw_rect(Rect2(218,309,524,12),Color("#261d28"))
+	draw_rect(Rect2(220,310,520,5),Color("#966859"))
+	draw_rect(Rect2(224,318,512,4),Color("#c69b72"))
 	for x in Model.HUB_STOOL_X:
 		draw_bar_stool(float(x))
 	draw_bar_regular()
@@ -962,11 +1088,7 @@ func draw_hub() -> void:
 	draw_rect(Rect2(519,546,12,9),Color("#37202c"))
 	draw_rect(Rect2(522,548,6,5),Color("#f0c787"))
 	draw_card_duel()
-	draw_rect(Rect2(740,223,108,93),Color("#18131e"))
-	draw_rect(Rect2(735,218,108,92),Color("#6c4852"))
-	draw_rect(Rect2(746,225,86,15),Color("#be8e79"))
-	draw_rect(Rect2(750,251,30,50),Color("#3b2c39"))
-	draw_rect(Rect2(790,251,30,50),Color("#3b2c39"))
+	draw_tavern_forge()
 	# The lanterns are rendered as a foreground overlay after the player;
 	# their open cages must not disappear behind a hero passing underneath.
 	# The hub gate is a distinct wall portal, not the dungeon route-map exit.
@@ -1000,8 +1122,10 @@ func draw_hub() -> void:
 	var core_size: float=9.0+3.0*pulse
 	draw_rect(Rect2(portal-Vector2(core_size*0.5,core_size*0.5),Vector2(core_size,core_size)),Color("#fff2d3"))
 	draw_rect(Rect2(portal-Vector2(3,3),Vector2(6,6)),Color("#f0bffa"))
-	draw_rect(Rect2(p-Vector2(8,1),Vector2(140,14)),Color("#ba967d"))
-	draw_rect(Rect2(p-Vector2(8,172),Vector2(140,13)),Color("#876d79"))
+	# Top lintel and bottom threshold now stay attached to the portal.
+	# The old p - Vector2(8,172) drew a stray cap 172px ABOVE it.
+	draw_rect(Rect2(p+Vector2(-8,-8),Vector2(140,13)),Color("#ba967d"))
+	draw_rect(Rect2(p+Vector2(-8,172),Vector2(140,13)),Color("#876d79"))
 	# Gold-capped masonry and flickering runes give the doorway real depth.
 	for side in [0.0,1.0]:
 		var x: float=p.x+(7 if side==0.0 else 108)
@@ -1658,6 +1782,23 @@ func draw_actor(enemy: Dictionary) -> void:
 		draw_rect(Rect2(badge_pos,Vector2(20,13)),accent,false,2)
 		for i in range(3):
 			draw_rect(Rect2(badge_pos+Vector2(4+i*5,4),Vector2(3,5)),accent if affix!="warded" else Color("#d5f4ff"))
+
+func tavern_visual_layout_smoke() -> bool:
+	# All layout constants are authored in virtual 1280×720 coordinates.
+	# Explicitly reject another portal that floats out of the map, a forge
+	# that obstructs the doorway, or a massive chair-to-counter gap.
+	var portal_visible: Rect2=Rect2(Model.HUB_PORTAL-Vector2(70,100),Vector2(140,200))
+	var interior: Rect2=Rect2(58,146,1164,478)
+	if not interior.encloses(portal_visible): return false
+	if Model.HUB_FORGE.grow(10).intersects(portal_visible): return false
+	if Model.HUB_STOOL_SEAT_Y-Model.HUB_BAR.end.y>12.0: return false
+	if Model.HUB_STOOL_SEAT_Y-Model.HUB_BAR.end.y<2.0: return false
+	if Model.HUB_STOOL_FOOTREST_Y<=Model.HUB_STOOL_SEAT_Y+27: return false
+	if Model.HUB_STOOL_FOOTREST_Y>=Model.HUB_STOOL_SEAT_Y+45: return false
+	# Verify the actual scene still has every distinct crafted foreground
+	# drawing function; a past patch overwrote it with an obsolete version.
+	if not has_method("draw_tavern_forge") or not has_method("draw_bar_regular") or not has_method("draw_seated_player") or not has_method("draw_card_duel"): return false
+	return true
 
 func is_ready_for_smoke() -> bool:
 	return TILES.get_width() == 256 and ACTORS["gearhound"].get_width()==256 and ACTORS["coilgunner"].get_height()==128 and ACTORS["briarling"].get_width()==256 and ACTORS["sporewitch"].get_height()==128 and ACTORS["bone_lancer"].get_width()==256 and ACTORS["crypt_oracle"].get_height()==128 and RELICS.get_width() == 1920 and RELICS.get_height() == 48 and ACTORS["dealer"].get_height() == 128 and ACTORS["warden"].get_height() == 128 and torches.size() == 5 and side_lights.size() == 2 and ambient != null and boss_light != null and torches[0].range_layer_min == -1 and occluders.size() == model.walls.size() and PROPS.get_width()==432 and decor_lights.size()==4 and THRESHOLD_MAGE.get_width()==96 and THRESHOLD_MAGE.get_height()==112 and mage_light!=null and has_method("draw_bar_regular") and has_method("draw_seated_player") and has_method("draw_lantern_cage") 

@@ -5,10 +5,12 @@ on:
     branches: [develop, main]
     paths:
       - 'games/midnight-descent/**'
+      - 'src/BlackjackCasino.Desktop/MainWindow.MidnightDescent.cs'
       - '.github/workflows/midnight-descent.yml'
   pull_request:
     paths:
       - 'games/midnight-descent/**'
+      - 'src/BlackjackCasino.Desktop/MainWindow.MidnightDescent.cs'
       - '.github/workflows/midnight-descent.yml'
 
 permissions:
@@ -20,6 +22,18 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+      - name: Validate fullscreen launch from Blackjack Casino
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          launcher = Path("src/BlackjackCasino.Desktop/MainWindow.MidnightDescent.cs").read_text(encoding="utf-8")
+          game = Path("games/midnight-descent/project.godot").read_text(encoding="utf-8")
+          assert launcher.count('start.ArgumentList.Add("--fullscreen");') == 1, "Casino host must request Godot fullscreen"
+          assert launcher.index('start.ArgumentList.Add("--fullscreen");') < launcher.index('start.ArgumentList.Add("--");'), "Godot fullscreen engine argument must precede user-argument separator"
+          assert "window/size/mode=3" in game, "Godot project must default to fullscreen as fallback"
+          print("Midnight Descent fullscreen host launch contract PASS")
+          PY
       - name: Install pinned Godot editor
         shell: bash
         run: |

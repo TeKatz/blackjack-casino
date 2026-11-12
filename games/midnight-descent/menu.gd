@@ -603,6 +603,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 func smoke_test() -> void:
+	# The exported Windows build must open fullscreen even without the
+	# Blackjack host's explicit --fullscreen engine argument.
+	if int(ProjectSettings.get_setting("display/window/size/mode",0))!=3:
+		push_error("Midnight Descent default startup lost fullscreen mode")
+		get_tree().quit(74)
+		return
 	show_page("expedition")
 	await get_tree().process_frame
 	if footer_left.size.x<260 or footer_right.size.x<200 or footer_left.size.y>30 or footer_right.size.y>30:

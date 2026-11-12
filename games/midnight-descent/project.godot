@@ -16,7 +16,8 @@ window/stretch/mode="canvas_items"
 ; Keep Controls pixel-aligned; leave world transforms unsnapped so the
 ; smooth chamber camera and animated pixel world do not jitter.
 
-window/size/mode=2
+; Fullscreen on direct launch as well as when invoked by the casino host.
+window/size/mode=3
 
 [gui]
 common/snap_controls_to_pixels=true

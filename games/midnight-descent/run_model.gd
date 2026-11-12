@@ -4,17 +4,19 @@ const ARENA := Rect2(58, 146, 1164, 478)
 const SPAWN := Vector2(143, 385)
 const EXIT := Vector2(1174, 385)
 const HUB_SPAWN := Vector2(318,425)
-const HUB_PORTAL := Vector2(1045,388)
+const HUB_PORTAL := Vector2(1034,293)
 const HUB_RANGE := 125.0
 # Hub furniture is authoritative geometry; art and interaction points use these footprints.
 const HUB_BAR := Rect2(220,146,520,178)
 const HUB_FORGE := Rect2(735,146,108,166)
 const HUB_TABLE := Rect2(458,469,132,96)
-const HUB_GATE_FRAME := Rect2(988,298,115,180)
+const HUB_GATE_FRAME := Rect2(978,211,112,165)
 const HUB_BARTENDER_POINT := Vector2(482,326)
 const HUB_FORGE_POINT := Vector2(790,329)
 const HUB_SERVICE_RANGE := 104.0
 const HUB_STOOL_X := [275.0,380.0,485.0,590.0,695.0]
+const HUB_STOOL_SEAT_Y := 330.0
+const HUB_STOOL_FOOTREST_Y := 364.0
 const HUB_PATRON_STOOL := 4 # Reserved for the drinking regular.
 const HUB_LANTERN_ANCHORS := [Vector2(164,198),Vector2(900,198),Vector2(1168,198)]
 const HUB_LANTERN_SIZE := Vector2(36,64)
@@ -2885,6 +2887,28 @@ func boss_gate_smoke() -> bool:
 			return false
 	return true
 
+func hub_layout_polish_smoke() -> bool:
+	begin(83042)
+	# Portal needs side breathing room between the right sconces and must
+	# be reachable from the tavern floor without walking through the frame.
+	if HUB_PORTAL.x<=HUB_LANTERN_ANCHORS[1].x+110.0: return false
+	if HUB_PORTAL.x>=HUB_LANTERN_ANCHORS[2].x-110.0: return false
+	var portal_art: Rect2=Rect2(HUB_PORTAL-Vector2(70,100),Vector2(140,200))
+	if not ARENA.grow(0).encloses(portal_art): return false
+	if HUB_GATE_FRAME.position.x<=HUB_FORGE.end.x+60.0: return false
+	player=Vector2(HUB_PORTAL.x,HUB_GATE_FRAME.end.y+23)
+	if blocked(player,15) or not hub_portal_available(): return false
+	if HUB_STOOL_SEAT_Y-HUB_BAR.end.y>12.0: return false
+	if absf(HUB_STOOL_FOOTREST_Y-HUB_STOOL_SEAT_Y-34.0)>0.01: return false
+	if HUB_STOOL_SEAT_Y<=HUB_BAR.position.y: return false
+	# All four free stools must still be accessible. The patron owns the
+	# fifth, even after entering/exiting the sitting state.
+	player=Vector2(HUB_STOOL_X[1],HUB_BAR.end.y+19)
+	for i in range(68): tick(1.0/60.0,Vector2.UP,HUB_BARTENDER_POINT,false,false,false)
+	if hub_seat_index!=1: return false
+	if HUB_PATRON_STOOL!=4: return false
+	return true
+
 func hub_polish_smoke() -> bool:
 	begin(73001)
 	if walls.size()!=6: return false
@@ -3273,6 +3297,9 @@ func smoke_test() -> bool:
 		return false
 	if not hub_polish_smoke():
 		push_error("Regression failed: hub_polish_smoke (lantern collision, seating)")
+		return false
+	if not hub_layout_polish_smoke():
+		push_error("Regression failed: hub_layout_polish_smoke (portal and bar geometry)")
 		return false
 	if not boss_health_polish_smoke():
 		push_error("Regression failed: boss_health_polish_smoke")

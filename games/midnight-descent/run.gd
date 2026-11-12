@@ -528,7 +528,9 @@ func draw_hub_ui() -> void:
 	text_at(Vector2(532,689),tr_text("Pause","Pause"),15,WHITE)
 	draw_hub_action_prompt(Model.HUB_BARTENDER_POINT+Vector2(0,-151),tr_text("Talk to keeper","Barkeeper ansprechen"),hub_keeper_prompt,GOLD,224)
 	draw_hub_action_prompt(Model.HUB_FORGE_POINT+Vector2(0,47),tr_text("Inspect forge","Schmiede öffnen"),hub_forge_prompt,Color("#eeab7c"),218)
-	draw_hub_action_prompt(Model.HUB_PORTAL+Vector2(0,-72),tr_text("Begin descent","Abstieg beginnen"),hub_prompt,VIOLET,222)
+	# Position the interaction hint BELOW the raised portal, never over
+	# the portal artwork or the upper-right lanterns.
+	draw_hub_action_prompt(Model.HUB_PORTAL+Vector2(0,160),tr_text("Begin descent","Abstieg beginnen"),hub_prompt,VIOLET,222)
 	# The loadout is visible even without opening another menu.
 	hud_panel(Rect2(17,10,248,84),GOLD)
 	text_at(Vector2(32,33),tr_text("KEEPER'S CONTRACT","AUFTRAG DES WIRTS"),11,GOLD)
@@ -571,6 +573,17 @@ func run_scene_smoke() -> void:
 	if not world.is_ready_for_smoke() or run.state!="hub" or not run.enemies.is_empty() or run.visited_count!=0:
 		push_error("Hub scene spawned enemies or consumed a dungeon node")
 		get_tree().quit(10)
+		return
+	if not world.tavern_visual_layout_smoke():
+		push_error("Tavern visuals: portal, seated guests, bar counter or forge geometry regressed")
+		get_tree().quit(110)
+		return
+	# Test interaction from a WALKABLE location in front of the moved
+	# upper-right portal, not just by teleporting into the portal's wall.
+	run.player=Vector2(Model.HUB_PORTAL.x,Model.HUB_GATE_FRAME.end.y+23)
+	if run.blocked(run.player,15.0) or not run.hub_portal_available():
+		push_error("Relocated portal cannot be entered from tavern floor")
+		get_tree().quit(111)
 		return
 	run.player=Vector2(482,351)
 	if not run.hub_bartender_available():
