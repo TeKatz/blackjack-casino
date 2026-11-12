@@ -95,13 +95,7 @@ public partial class MainWindow : Window
         {
             if (testSession || exitingForVerifiedUpdate) return;
             bool german = preferences.Language == UiLanguagePreference.German;
-            MessageBoxResult answer = MessageBox.Show(this,
-                german
-                    ? "Möchtest du The Midnight Club wirklich beenden?"
-                    : "Are you sure you want to exit The Midnight Club?",
-                german ? "Programm beenden" : "Exit The Midnight Club",
-                MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
-            e.Cancel = answer != MessageBoxResult.Yes;
+            e.Cancel = !CasinoExitDialog.Confirm(this, german);
         };
         Closed += (_, _) =>
         {
