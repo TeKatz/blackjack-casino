@@ -122,10 +122,26 @@
 .backroom-board-node.person small{color:#8fc6df}
 .backroom-board-node.location small{color:#95d9a8}
 .backroom-board-node.lead small{color:#9be6e0}
-.backroom-board-details{border:1px solid #506451;border-radius:11px;background:#10231d;padding:18px;overflow:auto;max-height:630px}
-.backroom-board-details h2{font-size:21px}
-.backroom-board-details p,.backroom-board-details blockquote{font-size:12px;line-height:1.7;color:#c0cebf}
-.backroom-board-details blockquote{border-left:2px solid #bda26c;padding-left:14px}
+.backroom-board-details{--detail-accent:#bda26c;border:1px solid #617966;border-radius:13px;
+ background:linear-gradient(165deg,#19362f,#0d221e 68%);padding:0;overflow-y:auto;max-height:630px;
+ box-shadow:inset 0 1px #d2e8d218,0 12px 26px #0006}
+.backroom-detail-heading{position:sticky;top:0;z-index:2;padding:16px 18px 13px;
+ border-bottom:1px solid #66867266;background:#163229f2;backdrop-filter:blur(8px)}
+.backroom-detail-heading h3{margin:4px 0 0;color:#f3ddb1;font-size:16px}
+.backroom-detail-content{padding:18px;border-top:3px solid var(--detail-accent)}
+.backroom-detail-evidence{--detail-accent:#f0be70}.backroom-detail-theory{--detail-accent:#cfadf2}
+.backroom-detail-person{--detail-accent:#8fc6df}.backroom-detail-location{--detail-accent:#95d9a8}
+.backroom-detail-lead{--detail-accent:#9be6e0}
+.backroom-detail-status{display:flex;flex-wrap:wrap;gap:7px}
+.backroom-detail-status span{font-size:10px;letter-spacing:.06em;color:var(--detail-accent);
+ border:1px solid currentColor;border-radius:999px;padding:5px 9px;background:#06171370}
+.backroom-board-details h2{font-size:clamp(19px,1.7vw,25px);line-height:1.25;color:#f9e9c8;margin:15px 0 10px}
+.backroom-board-details h3{font-size:13px;color:#dfc999;margin:18px 0 8px}
+.backroom-board-details p,.backroom-board-details blockquote{font-size:12px;line-height:1.75;color:#c8d7cc;overflow-wrap:anywhere}
+.backroom-detail-description{padding-bottom:13px;border-bottom:1px solid #71857355}
+.backroom-board-details blockquote{margin:8px 0;padding:11px 13px;border-left:3px solid var(--detail-accent);border-radius:0 7px 7px 0;background:#0c211e}
+.backroom-detail-empty{padding:30px 16px;text-align:center;color:#b3c8bc}
+.backroom-detail-empty>span{display:block;font-size:32px;color:#9fbba6}
 .backroom-encounter,.backroom-completion{max-width:960px;margin:12px auto;padding:32px;border:1px solid #ad976c;border-radius:18px;background:linear-gradient(150deg,#1c3328,#0a1915);text-align:center}
 .backroom-encounter h2{color:#97cdb1}
 .backroom-encounter>p{max-width:800px;margin:14px auto}
