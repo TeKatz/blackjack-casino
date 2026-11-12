@@ -556,10 +556,22 @@ func run_scene_smoke() -> void:
 	# Real scene regression: map nodes must never grow or wrap labels into
 	# adjacent columns, even for Blood Altar and Combat III.
 	var checked_map_nodes:=0
+	var masked_map_nodes:=0
+	var available_map_nodes:=0
 	for candidate in overlay.find_children("*","Button",true,false):
 		if candidate.get_parent()==null or candidate.get_parent().get_script()!=RouteMap: continue
 		checked_map_nodes+=1
 		var map_button: Button=candidate
+		var node_id: int=int(map_button.get_meta("room_index",-1))
+		if node_id<0 or node_id>=run.dungeon.nodes.size():
+			push_error("Dungeon map node missing stable room index")
+			get_tree().quit(65)
+			return
+		var expected_visibility: String=run.map_node_visibility(node_id)
+		if str(map_button.get_meta("map_visibility",""))!=expected_visibility:
+			push_error("Dungeon map node has mismatched fog status")
+			get_tree().quit(66)
+			return
 		if map_button.size.x>93 or map_button.size.y>53:
 			push_error("Dungeon map card exceeded its fixed column slot")
 			get_tree().quit(46)
@@ -569,8 +581,23 @@ func run_scene_smoke() -> void:
 				push_error("Dungeon map card has wrapped caption")
 				get_tree().quit(47)
 				return
-	if checked_map_nodes!=Model.ROOM_COUNT:
-		push_error("Dungeon map nodes missing or not laid out")
+		if expected_visibility=="unknown":
+			masked_map_nodes+=1
+			var question_visible:=false
+			for child in map_button.get_children():
+				if child is Label and child.text=="?": question_visible=true
+			if map_button.icon!=null or not map_button.disabled or not question_visible or map_button.tooltip_text.contains("Danger") or map_button.tooltip_text.contains("Gefahr"):
+				push_error("An unknown future room leaked its identity or was selectable")
+				get_tree().quit(67)
+				return
+		elif expected_visibility=="available":
+			available_map_nodes+=1
+			if map_button.disabled or map_button.icon==null:
+				push_error("Directly reachable destination is not properly revealed")
+				get_tree().quit(68)
+				return
+	if checked_map_nodes!=Model.ROOM_COUNT or masked_map_nodes<15 or available_map_nodes!=3:
+		push_error("Dungeon map fog did not conceal future paths (nodes=%d fogged=%d next=%d)" % [checked_map_nodes,masked_map_nodes,available_map_nodes])
 		get_tree().quit(48)
 		return
 	if overlay_state!="route" or overlay.get_child_count()==0 or not run.travel(1):
@@ -1356,47 +1383,52 @@ func use_service(choice: int) -> void:
 
 func show_route_map(column: VBoxContainer) -> void:
 	add_label(column,tr_text("DUNGEON MAP","DUNGEON-KARTE")+"  •  %d / %d" % [run.floor_index+1,Model.FLOOR_COUNT],30,GOLD)
-	add_label(column,tr_text("Choose one forward route per column. No backtracking. I–III = danger and rewards.","Wähle einen Vorwärtsweg je Spalte. Kein Zurück. I–III = Gefahr und Beute."),13,MUTED)
+	add_label(column,tr_text("Only your visited path and the next reachable rooms are revealed. ? marks unexplored territory.","Nur dein bisheriger Weg und direkt erreichbare Räume sind sichtbar. ? markiert unbekanntes Gebiet."),13,MUTED)
 	add_label(column,tr_text("Boss gate: ","Boss-Tor: ")+tr_text("Fights","Kämpfe")+" %d/%d  •  Elite %d/%d" % [run.dungeon.cleared_fights(),run.dungeon.MIN_FIGHTS[run.floor_index],run.dungeon.cleared_elites(),run.dungeon.MIN_ELITES[run.floor_index]]+("  •  "+tr_text("OPEN","OFFEN") if run.dungeon.boss_ready() else "  •  "+tr_text("LOCKED","GESPERRT")),16,GOLD)
 	var map := RouteMap.new()
 	map.nodes=run.dungeon.nodes
 	map.current=run.room
+	var selectable: Array=run.route_options()
 	column.add_child(map)
 	for i in range(run.dungeon.nodes.size()):
 		var id: int = i
 		var node: Dictionary=run.dungeon.nodes[i]
-		var visible_kind: String = node.kind
-		if visible_kind=="secret" and not node.visited and not run.route_options().has(i): visible_kind="?"
-		# Button content must NEVER increase its 92 px hitbox. The icon is
-		# owned by the button, but the one-line caption is a clipped child Label:
-		# long text cannot resize a node or bleed into adjacent columns.
-		var caption: String=room_name(visible_kind)
-		if node.kind in ["fight","elite"]:
+		var visibility: String=run.map_node_visibility(i)
+		var explored: bool=visibility!="unknown"
+		var visible_kind: String=str(node.kind) if explored else "?"
+		# Unrevealed rooms must not leak their types via captions, icons,
+		# danger roman numerals, accent colors, or hover text.
+		# The fixed 92px node rectangle also prevents label overlap.
+		var caption: String=room_name(visible_kind) if explored else "?"
+		if explored and node.kind in ["fight","elite"]:
 			caption+=" "+["I","II","III"][int(node.get("threat",0))]
-		if node.cleared: caption+=" ✓"
+		if explored and node.cleared: caption+=" ✓"
 		var button:=add_button(map,"",func(): run.travel(id))
 		button.custom_minimum_size=Vector2(92,52)
 		button.size=Vector2(92,52)
 		button.position=map.position_for(i)-Vector2(46,26)
-		button.icon=UI.room_icon(visible_kind)
-		button.expand_icon=true
+		button.set_meta("room_index",i)
+		button.set_meta("map_visibility",visibility)
+		button.icon=UI.room_icon(visible_kind) if explored else null
+		button.expand_icon=explored
 		button.add_theme_constant_override("icon_max_width",14)
-		UI.style_button(button,UI.ROOM_COLORS[visible_kind],i==run.room)
+		UI.style_button(button,UI.ROOM_COLORS[visible_kind] if explored else Color("#526a6c"),i==run.room)
 		var caption_label:=Label.new()
 		caption_label.set_anchors_preset(Control.PRESET_FULL_RECT)
-		caption_label.offset_left=24
-		caption_label.offset_right=-4
+		caption_label.offset_left=24 if explored else 0
+		caption_label.offset_right=-4 if explored else 0
 		caption_label.text=caption
 		caption_label.vertical_alignment=VERTICAL_ALIGNMENT_CENTER
 		caption_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
 		caption_label.autowrap_mode=TextServer.AUTOWRAP_OFF
 		caption_label.clip_text=true
 		caption_label.mouse_filter=Control.MOUSE_FILTER_IGNORE
-		var label_size: int=12
-		while label_size>9 and font.get_string_size(caption,HORIZONTAL_ALIGNMENT_LEFT,-1,label_size).x>64:
-			label_size-=1
+		var label_size: int=12 if explored else 23
+		if explored:
+			while label_size>9 and font.get_string_size(caption,HORIZONTAL_ALIGNMENT_LEFT,-1,label_size).x>64:
+				label_size-=1
 		caption_label.add_theme_font_size_override("font_size",label_size)
-		caption_label.add_theme_color_override("font_color",Color("#fff0ce") if i==run.room else (Color("#92c0ab") if node.cleared else Color("#d7cce3")))
+		caption_label.add_theme_color_override("font_color",Color("#fff0ce") if i==run.room else (Color("#92c0ab") if explored and node.cleared else (Color("#d7cce3") if explored else Color("#90a8a6"))))
 		button.add_child(caption_label)
 		# Shrink style padding specifically for dense route-map nodes.
 		for variant in ["normal","hover","pressed","disabled"]:
@@ -1407,17 +1439,20 @@ func show_route_map(column: VBoxContainer) -> void:
 			stylebox.content_margin_bottom=3
 			button.add_theme_stylebox_override(variant,stylebox)
 		button.clip_text=true
-		button.disabled=not run.route_options().has(i)
+		button.disabled=not selectable.has(i)
 		if i==run.room:
 			button.add_theme_stylebox_override("disabled",UI.panel(Color("#344945"),GOLD,8))
 			button.add_theme_color_override("font_disabled_color",Color("#fff0c8"))
 		elif node.cleared:
 			button.add_theme_color_override("font_disabled_color",Color("#8db6a8"))
-		if node.kind=="boss" and not run.dungeon.boss_ready():
+		if explored and node.kind=="boss" and not run.dungeon.boss_ready():
 			caption_label.text=tr_text("Locked","Gesperrt")
-		button.tooltip_text=tr_text("Current room","Aktueller Raum") if i==run.room else (tr_text("Travel to this room","Diesen Raum betreten") if not button.disabled else tr_text("Not connected to current room","Nicht direkt verbunden"))
-		if node.kind in ["fight","elite"]:
-			button.tooltip_text+="\n"+encounter_name(str(node.get("encounter","skirmish")))+" • "+tr_text("Danger","Gefahr")+" "+["I","II","III"][int(node.get("threat",0))]
+		if not explored:
+			button.tooltip_text=tr_text("Unknown room • explore farther to reveal it","Unbekannter Raum • erkunde den Weg, um ihn aufzudecken")
+		else:
+			button.tooltip_text=tr_text("Current room","Aktueller Raum") if i==run.room else (tr_text("Travel to this room","Diesen Raum betreten") if not button.disabled else tr_text("Already visited • no backtracking","Bereits besucht • kein Zurück"))
+			if node.kind in ["fight","elite"]:
+				button.tooltip_text+="\n"+encounter_name(str(node.get("encounter","skirmish")))+" • "+tr_text("Danger","Gefahr")+" "+["I","II","III"][int(node.get("threat",0))]
 	var footer:=HBoxContainer.new()
 	footer.add_theme_constant_override("separation",12)
 	column.add_child(footer)

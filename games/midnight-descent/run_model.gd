@@ -1037,6 +1037,17 @@ func route_options() -> Array:
 		options.append(id)
 	return options
 
+# Fog-of-war truth lives in the run model, never in button cosmetics.
+# Previously visited rooms and the *currently reachable* next-column rooms
+# are readable. Every other node is hidden, including distant bosses/elites.
+func map_node_visibility(index: int) -> String:
+	if index<0 or index>=dungeon.nodes.size(): return "unknown"
+	if index==room or bool(dungeon.nodes[index].get("visited",false)):
+		return "visited"
+	if route_options().has(index):
+		return "available"
+	return "unknown"
+
 func open_route() -> bool:
 	if state!="exit" or player.distance_to(exit_point)>75: return false
 	state="route"
@@ -2837,6 +2848,43 @@ func stage_roster_smoke() -> bool:
 					if hazards.is_empty() or shots.size()!=1 or str(hazards[-1].type)!="oracle_seal": return false
 	return true
 
+func map_fog_smoke() -> bool:
+	# A run reveals only its traversed history and next legal destinations.
+	# No future room identity may leak from an available choice or an old floor.
+	for floor in range(FLOOR_COUNT):
+		begin(98730+floor)
+		floor_index=floor
+		dungeon.generate(seed_value,floor)
+		room=0
+		enter_room()
+		if map_node_visibility(0)!="visited": return false
+		var next_rooms: Array=route_options()
+		if next_rooms.size()!=3: return false
+		for i in range(dungeon.nodes.size()):
+			var state_for_node: String=map_node_visibility(i)
+			var expected: String="visited" if i==0 else ("available" if next_rooms.has(i) else "unknown")
+			if state_for_node!=expected:
+				push_error("Fog initial visibility mismatch at stage %d / node %d" % [floor,i])
+				return false
+		# Even a secret / elite destination is correctly disclosed only
+		# when directly selectable, and other siblings remain unknown.
+		state="route"
+		var chosen: int=int(next_rooms[1])
+		if not travel(chosen): return false
+		if map_node_visibility(0)!="visited" or map_node_visibility(chosen)!="visited": return false
+		for other in next_rooms:
+			if int(other)!=chosen and map_node_visibility(int(other))!="unknown": return false
+		var second_choices: Array=route_options()
+		if second_choices.is_empty(): return false
+		for next in second_choices:
+			if map_node_visibility(int(next))!="available": return false
+		for i in range(dungeon.nodes.size()):
+			if i!=0 and i!=chosen and not second_choices.has(i) and map_node_visibility(i)!="unknown":
+				return false
+		if map_node_visibility(Dungeon.BOSS)!="unknown": return false
+	# Out-of-range indices must never expose names or crash the chart.
+	return map_node_visibility(-1)=="unknown" and map_node_visibility(Dungeon.ROOM_COUNT)=="unknown"
+
 func smoke_test() -> bool:
 	if not RoomLayouts.smoke_test():
 		push_error("Authored chamber connectivity smoke failed")
@@ -2846,6 +2894,9 @@ func smoke_test() -> bool:
 		return false
 	if not dungeon.smoke_test():
 		push_error("Dungeon generation smoke failed")
+		return false
+	if not map_fog_smoke():
+		push_error("Dungeon map fog-of-war regression failed")
 		return false
 	if not route_and_damage_smoke():
 		push_error("Route/damage smoke failed")
