@@ -63,7 +63,6 @@ internal sealed class CasinoExitDialog : Window
             Foreground = Brush("#D8C395"),
             FontSize = 10,
             FontWeight = FontWeights.Bold,
-            CharacterSpacing = 1.6,
             Margin = new Thickness(0, 0, 0, 9)
         };
         Grid.SetRow(kicker, 0);
