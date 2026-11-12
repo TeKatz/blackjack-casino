@@ -298,7 +298,6 @@ function ManorApp() {
                 spinEpoch={spinEpoch} onSpinningChange={setAnimating}
                 onReelStop={index => presentation.current.onReel(index)}
                 onSpinPresented={result => presentation.current.onSpin(result)}
-
                 onReady={() => setRendererReady(true)} />
             </div>
             {(run || demoBonusOpen) && <div className="slot-bonus-portal">
