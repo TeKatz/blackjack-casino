@@ -1,0 +1,39 @@
+name: Starship Explorer 3D prototype (Windows)
+
+on:
+  push:
+    paths:
+      - 'games/starship-explorer/**'
+      - 'tools/build_starship_explorer.ps1'
+      - '.github/workflows/starship-explorer.yml'
+      - 'docs/starship-explorer.md'
+  pull_request:
+    paths:
+      - 'games/starship-explorer/**'
+      - 'tools/build_starship_explorer.ps1'
+      - '.github/workflows/starship-explorer.yml'
+      - 'docs/starship-explorer.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  starship-windows:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check repository contracts
+        run: python tools/check_repo_contract.py
+      - name: Import, test 3D interactions and export Windows prototype
+        shell: pwsh
+        run: ./tools/build_starship_explorer.ps1 -OutputDirectory "${{ runner.temp }}/StarshipExplorer"
+      - name: Upload standalone Windows prototype
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: starship-explorer-windows
+          path: ${{ runner.temp }}/StarshipExplorer/*
+          if-no-files-found: error
+          retention-days: 30
