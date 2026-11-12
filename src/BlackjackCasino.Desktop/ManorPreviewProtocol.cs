@@ -25,13 +25,16 @@ internal static class ManorPreviewProtocol
     internal sealed record RunSnapshot(string Status,string Message,string GhostClue,int PlayerRoom,
         int Turn,int ExitTarget,string Current,string Banked,bool HasCandle,bool HasKey,bool HasCharm,
         Room[] Rooms,Passage[] Passages);
+    // Actual, already-settled C# payout; never synthesized by the 3D frontend.
+    internal sealed record RunConclusion(string Status,string Message,string Multiplier,string Award);
     internal sealed record Snapshot(
         string Bankroll,string Bet,string SelectedBet,string CycleReturned,string Payout,
         string[] Cells,int[] WinningCells,bool CycleActive,int FreeSpinsRemaining,string Feature,
         bool AnimationsEnabled,bool HasCommittedSpin,string Revision,bool CanSpin,bool CanFreeSpin,
         bool LastSpinFree,int Scatters,int Doors,int WinningLines,RunSnapshot? Run,
         string? SaveNotice,WinningLineDetail[] WinningLineDetails,string Language,RulesInfo Rules,
-        bool GlobalSoundEnabled,bool GlobalMusicEnabled,double GlobalMusicVolume);
+        bool GlobalSoundEnabled,bool GlobalMusicEnabled,double GlobalMusicVolume,
+        RunSnapshot? PracticeRun=null,RunConclusion? LastRun=null);
 
     internal static bool IsTrustedSource(string? source)
     {
@@ -74,7 +77,10 @@ internal static class ManorPreviewProtocol
                 return true;
             }
             if(name is not ("spin.paid" or "spin.free" or "run.move" or "run.candle"
-                or "run.cashout" or "run.follow" or "run.auto"))
+                or "run.cashout" or "run.follow" or "run.auto"
+                or "practice.start" or "practice.restart" or "practice.exit"
+                or "practice.move" or "practice.candle" or "practice.cashout"
+                or "practice.follow" or "practice.auto"))
                 return false;
             if(!root.TryGetProperty("expectedRevision",out JsonElement revision)
                 || revision.ValueKind!=JsonValueKind.String
@@ -95,7 +101,7 @@ internal static class ManorPreviewProtocol
                 ManorRules.ValidateBet(wager);
                 bet=wager;
             }
-            if(name=="run.move")
+            if(name is "run.move" or "practice.move")
             {
                 if(!root.TryGetProperty("room",out JsonElement target) || target.ValueKind!=JsonValueKind.Number
                     || !target.TryGetInt32(out int index) || index is <0 or >16)
@@ -113,7 +119,8 @@ internal static class ManorPreviewProtocol
 
     internal static Snapshot CreateSnapshot(ManorSessionState state,bool animationsEnabled,
         decimal selectedBet=25m,string? saveNotice=null,string language="en",
-        bool globalSoundEnabled=true,bool globalMusicEnabled=true,double globalMusicVolume=.1d)
+        bool globalSoundEnabled=true,bool globalMusicEnabled=true,double globalMusicVolume=.1d,
+        ManorRunState? practice=null)
     {
         ArgumentNullException.ThrowIfNull(state);
         ManorSpin? spin=state.LastSpin;
@@ -132,25 +139,14 @@ internal static class ManorPreviewProtocol
                     winningCells.Add(reel*3+ManorRules.Paylines[win.Line][reel]);
             }
 
-        RunSnapshot? runSnapshot=null;
-        if(state.Run is { Status:ManorRunStatus.Hunting } run)
-        {
-            var actual=new ManorRun(run);
-            int[] available=ManorMap.Adjacent(run.Player,run.HasKey,player:true);
-            runSnapshot=new(
-                run.Status.ToString(),run.Message,actual.GhostClue,run.Player,run.Turn,run.ExitTarget,
-                Multiplier(run.Multiplier(run.Current)),Multiplier(run.Multiplier(run.Banked)),
-                run.HasCandle,run.HasKey,run.HasCharm,
-                ManorMap.Rooms.Where(r=>r.Id<17).Select(room=>new Room(
-                    room.Id,room.Name,room.X,room.Y,room.Area.ToString(),
-                    (run.Collected & (1UL<<room.Id))!=0,
-                    available.Contains(room.Id),
-                    ManorMap.Locked(run.Player,room.Id) && !run.HasKey
-                )).ToArray(),
-                ManorMap.Edges.Where(edge=>edge.A<17 && edge.B<17)
-                    .Select(edge=>new Passage(edge.A,edge.B,ManorMap.Locked(edge.A,edge.B)))
-                    .ToArray());
-        }
+        RunSnapshot? runSnapshot=state.Run is { Status:ManorRunStatus.Hunting } active
+            ? ProjectRun(active) : null;
+        RunSnapshot? practiceSnapshot=practice is not null ? ProjectRun(practice) : null;
+        RunConclusion? finishedRun=state.Run is { Status:not ManorRunStatus.Hunting } finished
+            && state.RunPaid
+                ? new(finished.Status.ToString(),finished.Message,
+                    Multiplier(finished.PaidMultiplier),Money(state.Bet*finished.PaidMultiplier))
+                : null;
 
         string feature=runSnapshot is not null
             ? "Escape the Manor · choose your path"
@@ -179,7 +175,28 @@ internal static class ManorPreviewProtocol
                     ManorRules.Paylines[win.Line].ToArray(),Money(win.Amount))).ToArray()
                 ?? [],language=="de" ? "de" : "en",rules,
             globalSoundEnabled,globalMusicEnabled,
-            double.IsFinite(globalMusicVolume) ? Math.Clamp(globalMusicVolume,0d,1d) : 0d);
+            double.IsFinite(globalMusicVolume) ? Math.Clamp(globalMusicVolume,0d,1d) : 0d,
+            practiceSnapshot,finishedRun);
+    }
+
+    private static RunSnapshot ProjectRun(ManorRunState run)
+    {
+        var actual=new ManorRun(run);
+        int[] available=run.Status==ManorRunStatus.Hunting
+            ? ManorMap.Adjacent(run.Player,run.HasKey,player:true) : [];
+        return new RunSnapshot(
+            run.Status.ToString(),run.Message,actual.GhostClue,run.Player,run.Turn,run.ExitTarget,
+            Multiplier(run.Multiplier(run.Current)),Multiplier(run.Multiplier(run.Banked)),
+            run.HasCandle,run.HasKey,run.HasCharm,
+            ManorMap.Rooms.Where(room=>room.Id<17).Select(room=>new Room(
+                room.Id,room.Name,room.X,room.Y,room.Area.ToString(),
+                (run.Collected & (1UL<<room.Id))!=0,
+                available.Contains(room.Id),
+                ManorMap.Locked(run.Player,room.Id) && !run.HasKey
+            )).ToArray(),
+            ManorMap.Edges.Where(edge=>edge.A<17 && edge.B<17)
+                .Select(edge=>new Passage(edge.A,edge.B,ManorMap.Locked(edge.A,edge.B)))
+                .ToArray());
     }
 
     internal static string SerializeSnapshot(Snapshot snapshot,string requestId)=>
