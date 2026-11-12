@@ -13,7 +13,8 @@ export type GodotState = {
   options: GodotChoice[];
 };
 export type GodotMessage = { source: 'manor-godot'; type: 'ready' }
-  | { source: 'manor-godot'; type: 'choice'; room: number };
+  | { source: 'manor-godot'; type: 'choice'; room: number }
+  | { source: 'manor-godot'; type: 'hover'; room: number | null };
 
 export function demoState(roomId: number): GodotState {
   const map = makeDemoMap(roomId);
@@ -43,9 +44,11 @@ export function isGodotMessage(value: unknown): value is GodotMessage {
   const msg = value as Record<string, unknown>;
   if (msg.source !== 'manor-godot') return false;
   if (msg.type === 'ready') return Object.keys(msg).every(k => k === 'source' || k === 'type');
-  return msg.type === 'choice' && Number.isInteger(msg.room) &&
-    typeof msg.room === 'number' && msg.room >= 0 && msg.room <= 16 &&
-    Object.keys(msg).every(k => k === 'source' || k === 'type' || k === 'room');
+  if (msg.type !== 'choice' && msg.type !== 'hover') return false;
+  if (!Object.keys(msg).every(k => k === 'source' || k === 'type' || k === 'room')) return false;
+  if (msg.type === 'hover' && msg.room === null) return true;
+  return typeof msg.room === 'number' && Number.isInteger(msg.room) &&
+    msg.room >= 0 && msg.room <= 16;
 }
 
 /** The message bridge accepts only one of the three actual 3D door labels. */

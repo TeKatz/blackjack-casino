@@ -125,6 +125,13 @@ export function ManorBonus3D({
         postState(latest.current.state, latest.current.active, latest.current.reducedMotion);
         return;
       }
+      if (event.data.type === 'hover') {
+        if (!active || mapOpen) return;
+        const hovered = event.data.room;
+        setHoveredRoom(hovered !== null &&
+          isAllowedGodotChoice(latest.current.state, hovered) ? hovered : null);
+        return;
+      }
       if (!active || mapOpen || !isAllowedGodotChoice(latest.current.state, event.data.room))
         return;
       chooseDestination(event.data.room);
@@ -225,6 +232,7 @@ export function ManorBonus3D({
         src="./manor3d/index.html" title={t(language, 'godotArea')}
         sandbox="allow-scripts allow-same-origin" loading="eager"
         tabIndex={active && !mapOpen ? 0 : -1}
+        onMouseLeave={() => setHoveredRoom(null)}
         onError={() => setFailed(true)} />
 
       {active && <>

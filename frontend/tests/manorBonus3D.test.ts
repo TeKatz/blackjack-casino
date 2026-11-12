@@ -39,6 +39,9 @@ describe('Godot 3D Manor bonus bridge', () => {
   it('rejects spoofed and malformed iframe messages', () => {
     expect(isGodotMessage({ source: 'manor-godot', type: 'ready' })).toBe(true);
     expect(isGodotMessage({ source: 'manor-godot', type: 'choice', room: 7 })).toBe(true);
+    expect(isGodotMessage({ source: 'manor-godot', type: 'hover', room: 7 })).toBe(true);
+    expect(isGodotMessage({ source: 'manor-godot', type: 'hover', room: null })).toBe(true);
+    expect(isGodotMessage({ source: 'manor-godot', type: 'hover', room: 17 })).toBe(false);
     expect(isGodotMessage({ source: 'manor-godot', type: 'choice', room: 17 })).toBe(false);
     expect(isGodotMessage({ source: 'manor-godot', type: 'choice', room: '7' })).toBe(false);
     expect(isGodotMessage({ source: 'manor-react', type: 'choice', room: 7 })).toBe(false);
