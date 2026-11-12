@@ -393,7 +393,7 @@ function Completion({run,copy,meta,pending,send}:{
    <button aria-disabled={pending} onClick={()=>send({action:'adventure.back'})}>{copy.return}</button>
   </div></section>;
 }
-export function AdventureScreen({state,language,pending,error,command}:Props){
+export function AdventureScreen({state,language,pending,error,command,animations}:Props){
  const t=words[language], [classId,setClassId]=useState('rogue');
  const [musicVolume,setMusicVolume]=useState(state.musicVolume);
  useEffect(()=>setMusicVolume(state.musicVolume),[state.musicVolume]);
