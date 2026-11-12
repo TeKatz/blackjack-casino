@@ -1,0 +1,39 @@
+name: First person 3D room (standalone Windows test)
+
+on:
+  push:
+    paths:
+      - 'games/first-person-room/**'
+      - 'tools/build_first_person_room.ps1'
+      - '.github/workflows/first-person-room.yml'
+      - 'docs/first-person-room.md'
+  pull_request:
+    paths:
+      - 'games/first-person-room/**'
+      - 'tools/build_first_person_room.ps1'
+      - '.github/workflows/first-person-room.yml'
+      - 'docs/first-person-room.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-room-prototype:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check repository contracts
+        run: python tools/check_repo_contract.py
+      - name: Import, test interactions and export Godot test
+        shell: pwsh
+        run: ./tools/build_first_person_room.ps1 -OutputDirectory "${{ runner.temp }}/FirstPersonRoom"
+      - name: Upload runnable Windows prototype
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: first-person-room-windows
+          path: ${{ runner.temp }}/FirstPersonRoom/*
+          if-no-files-found: error
+          retention-days: 30
