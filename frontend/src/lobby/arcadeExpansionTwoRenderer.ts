@@ -2,6 +2,7 @@ import {CIRCUIT_COLS,CIRCUIT_ROWS,PRISM_COLS,PRISM_ROWS,
  DIRS} from './arcadeExpansionTwoEngine';
 import type {ExpansionTwoRun,PrismRun,MinerRun,CircuitRun,HeistRun,PulseRun}
  from './arcadeExpansionTwoEngine';
+import {circuitTilePose} from './circuitVisual';
 
 const W=960,H=540,TAU=Math.PI*2;
 type Ctx=CanvasRenderingContext2D;
@@ -248,33 +249,46 @@ function circuit(ctx:Ctx,s:CircuitRun){
   ctx.shadowBlur=tile.danger?21:powered?21:3;
   panel(ctx,x-39,y-37,78,74,10,tile.danger?'#5e243d':powered?'#1c5d62':'#193647',
    tile.danger?'#fc8d99':powered?'#9af3d5':'#477985');
-  // Rotate exactly the tile that the player clicked: interpolated old -> new ports.
-  // Cell material energizes during the eased ninety-degree physical rotation.
-  const turning=s.turnClock>0&&s.turnCell?.c===tile.c&&s.turnCell?.r===tile.r;
-  const remaining=turning?Math.min(1,s.turnClock/.32):0;
-  const eased=remaining*remaining*(3-2*remaining);
-  if(turning){
-   ctx.save();ctx.globalAlpha=.1+.45*(1-remaining);
-   ctx.shadowColor=powered?'#b4ffe4':'#e9c78f';ctx.shadowBlur=22;
-   ctx.strokeStyle=powered?'#94f4d6':'#c9b783';ctx.lineWidth=2.5;
-   ctx.beginPath();ctx.arc(x,y,46+(1-remaining)*17,0,TAU);ctx.stroke();
-   for(let k=0;k<4;k++){
-    const a=k*TAU/4+remaining*2.2;
-    circle(ctx,x+Math.cos(a)*46,y+Math.sin(a)*45,3.2,powered?'#c5ffef':'#ffe5ac');
-   }
-   ctx.restore();
-  }
+  const pose=circuitTilePose(s,tile);
   ctx.save();ctx.translate(x,y);ctx.lineCap='round';
-  if(turning)ctx.rotate(-Math.PI/2*eased);
+  // Inset physical dial: the housing stays put while the engraved rotor turns.
+  const dial=ctx.createRadialGradient(-14,-17,5,0,0,38);
+  dial.addColorStop(0,tile.danger?'#793d4f':powered?'#366b6b':'#385565');
+  dial.addColorStop(.64,tile.danger?'#482a3c':powered?'#214c53':'#1b3445');
+  dial.addColorStop(1,'#0c1a28');
+  ctx.fillStyle=dial;ctx.strokeStyle='#a1ada184';ctx.lineWidth=1.7;
+  ctx.beginPath();ctx.arc(0,0,34.5,0,TAU);ctx.fill();ctx.stroke();
+  ctx.beginPath();ctx.arc(0,0,28.7,0,TAU);
+  ctx.strokeStyle='#dae2c72f';ctx.lineWidth=1;ctx.stroke();
+  ctx.rotate(pose.angle);
+  // Ports are drawn from the OLD mask, then rotate +90° into the new
+  // orientation. This is continuous on the very first frame of a click.
+  const edge=tile.danger?'#f0a3ac':powered?'#d8f8d1':'#a7c6be';
   for(const d of DIRS){
-   if(!(tile.mask&d.bit))continue;
-   segment(ctx,[0,0],[d.dc*31,d.dr*30],
-    tile.danger?'#ff9bb0':powered?'#f5dfa7':'#7bb3ba',12);
-   segment(ctx,[0,0],[d.dc*31,d.dr*30],
-    tile.danger?'#ffe6e5':powered?'#c7ffe4':'#2f6474',4);
+   if(!(pose.mask&d.bit))continue;
+   segment(ctx,[0,0],[d.dc*26.5,d.dr*26],
+    tile.danger?'#713747':powered?'#3c7770':'#3d6171',11);
+   segment(ctx,[0,0],[d.dc*26.5,d.dr*26],
+    tile.danger?'#ffc5c6':powered?'#b8ffdf':'#7cc4d6',5);
+   circle(ctx,d.dc*26.5,d.dr*26,3.5,edge);
   }
-  circle(ctx,0,0,9,tile.danger?'#ffc5c9':powered?'#f3d6a1':'#4b8491','#d5debd');
+  // Precision concentric machining and a restrained sapphire centre cap.
+  ctx.beginPath();ctx.arc(0,0,11.4,0,TAU);
+  ctx.fillStyle='#0d222e';ctx.fill();ctx.lineWidth=2.7;
+  ctx.strokeStyle='#d3bb8d';ctx.stroke();
+  const core=ctx.createRadialGradient(-3,-4,1,0,0,9);
+  core.addColorStop(0,tile.danger?'#ffb7c1':powered?'#d7fff0':'#86b8c8');
+  core.addColorStop(1,tile.danger?'#ac5c6a':powered?'#4b9689':'#365f75');
+  ctx.fillStyle=core;ctx.beginPath();ctx.arc(0,0,7,0,TAU);ctx.fill();
   ctx.restore();
+  // A single short calibration arc replaces the old orbiting sparkle dots.
+  if(pose.turning){
+   ctx.save();
+   ctx.strokeStyle=tile.danger?'#ffd2d8':powered?'#bbf4dc':'#e8cf9c';
+   ctx.lineWidth=2.7;ctx.lineCap='round';ctx.globalAlpha=.4+.5*(1-pose.progress);
+   ctx.beginPath();ctx.arc(x,y,43,-Math.PI/2,-Math.PI/2+TAU*pose.eased);
+   ctx.stroke();ctx.restore();
+  }
   if(tile.danger)label(ctx,'!',x,y-18,21,'#ffe3df','center');
   ctx.restore();
  }

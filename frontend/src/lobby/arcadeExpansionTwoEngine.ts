@@ -106,6 +106,7 @@ export type CircuitRun=Base&{kind:'circuit-rush';tiles:CircuitTile[];powered:Poi
  stage:number;lives:number;timeLeft:number;cursor:Point;flash:number;solved:boolean;shockClock:number;
  turnCell:Point|null;turnClock:number;turnFromMask:number};
 export const CIRCUIT_COLS=6,CIRCUIT_ROWS=5;
+export const CIRCUIT_TURN_DURATION=.32;
 export const DIRS=[{dc:0,dr:-1,bit:1,opposite:4},
  {dc:1,dr:0,bit:2,opposite:8},{dc:0,dr:1,bit:4,opposite:1},
  {dc:-1,dr:0,bit:8,opposite:2}] as const;
@@ -176,7 +177,7 @@ export function rotateCircuit(run:CircuitRun,c:number,r:number):ExpansionTwoEven
  run.cursor={c,r};const tile=run.tiles.find(t=>t.c===c&&t.r===r);
  if(!tile)return null;
  run.turnFromMask=tile.mask;tile.mask=rotatePorts(tile.mask);
- run.turnCell={c,r};run.turnClock=.32;
+ run.turnCell={c,r};run.turnClock=CIRCUIT_TURN_DURATION;
  run.powered=poweredCircuit(run.tiles);run.flash=.2;
  if(run.tiles.some(t=>t.danger&&run.powered.some(p=>same(p,t)))){
   run.lives--;run.shockClock=1.3;
