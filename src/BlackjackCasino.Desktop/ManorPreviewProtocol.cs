@@ -142,10 +142,10 @@ internal static class ManorPreviewProtocol
         RunSnapshot? runSnapshot=state.Run is { Status:ManorRunStatus.Hunting } active
             ? ProjectRun(active) : null;
         RunSnapshot? practiceSnapshot=practice is not null ? ProjectRun(practice) : null;
-        RunConclusion? finishedRun=state.Run is { Status:not ManorRunStatus.Hunting } finished
+        RunConclusion? finishedRun=state.Run is { Status:not ManorRunStatus.Hunting } settled
             && state.RunPaid
-                ? new(finished.Status.ToString(),finished.Message,
-                    Multiplier(finished.PaidMultiplier),Money(state.Bet*finished.PaidMultiplier))
+                ? new(settled.Status.ToString(),settled.Message,
+                    Multiplier(settled.PaidMultiplier),Money(state.Bet*settled.PaidMultiplier))
                 : null;
 
         string feature=runSnapshot is not null
