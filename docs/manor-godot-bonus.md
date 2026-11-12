@@ -24,6 +24,20 @@ The fixed first-person camera requires door clicks: there is no WASD, continuous
 
 Godot Web uses the Compatibility renderer and can be slower than its native Windows build. The iframe initializes during ordinary reel play after the main renderer is ready, then stays alive between entries. This aims to remove the repeated approximately ten-second wait when opening the bonus after warmup. Cold starts may still take several seconds depending on WebView2 and the machine. No measured speedup is claimed until tested on actual Windows hardware. Godot's stretch aspect uses Expand so the scene covers non-16:9 slot areas instead of black side bars. The first Windows test still requires manual WebView2 checks for GPU support, iframe input focus, actual door selection, visual appearance, resizing, monitor scaling, audio handoff, cold/warm transition timings, the ambient impact of preloading, and frame-rate performance. If the WebGL content does not initialize, an explicit fallback/exit appears instead of changing any real game state.
 
+## Room layout and WebGL material correction
+
+The second Manor 3D quality pass responds to tester reports for Candle Landing, Reading Room, Library, Grand Staircase, Moonlit Landing, Forbidden Wing, Courtyard, Secret Passage, Crypt, Winter Garden, Music Room, Servants' Corridor, and Moonlit Gate.
+
+- **Material fix:** All primitive geometry now uses the mesh's explicit repeating UVs, not world-triplanar sampling (which is visually expensive and produced inconsistent wall/stone/floor appearance under the Compatibility renderer). New tiled plaster, paving and cracked crypt-floor artwork complements the existing wood, stone and wallpaper resources. Materials are shared by material ID and tile scale rather than recreated for every box.
+- **Support heights:** Candle placement requires the real height of its tabletop/altar/shelf/plinth. Visible holders sit on the support and wax bodies rise above them. The new geometry test checks every candle base in all 17 locations.
+- **Navigable views:** Bookshelves face into the room and are anchored to the side walls, not sitting across the approach to doors. The Grand Staircase moves to a west-side stairwell, and the Secret Passage's two walls move outside the door clearance.
+- **Distinct interiors:** Moonlit Landing is a blue marble balcony with an orrery and open windows, not the attic reused with extra railings. The Forbidden Wing's dangling black rectangle becomes a carved wall relief with a supporting sill; stone vault braces are separated from the textured ceiling.
+- **Actual greenhouse windows:** The Winter Garden and Moonlit Landing side walls are segmented above, below and between the stained-glass openings. Glazing and leadwork now occupy real wall holes, not the face of opaque blocks.
+- **Supported instruments:** Three Music Room sheet stands have readable scores, legs and floor tripods; all remain outside the door route.
+- **Outdoor masonry:** Courtyard and Moonlit Gate paving, stone columns, parapets and gate lintels all have repeating, image-backed materials.
+
+`room_geometry_test.gd` is executed in the Windows CI *before* exporting the Godot Web package. It checks texture binding and non-triplanar UV mapping in all 17 rooms; supports and bottom heights for every candle; representative textured props; side shelves; glass openings; door clearance; vault/ceiling separation; Moonlit Landing uniqueness; and the existence of music stands' legs. The C# payout system and bankroll remain unchanged.
+
 ## Local build sequence (Windows)
 
 ```powershell

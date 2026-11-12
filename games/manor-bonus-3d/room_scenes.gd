@@ -17,6 +17,7 @@ const TEXTURE_PAVING: Texture2D = preload("res://art/paving.svg")
 const TEXTURE_CRYPT_FLOOR: Texture2D = preload("res://art/crypt_floor.svg")
 
 var m: Dictionary = {}
+var _tiled_material_cache: Dictionary = {}
 
 
 func _init() -> void:
@@ -78,13 +79,17 @@ func _box(p: Node3D, name: String, pos: Vector3, size: Vector3, mat: Material) -
     node.mesh = box
     node.position = pos
     if mat is StandardMaterial3D and (mat as StandardMaterial3D).albedo_texture != null:
-        var uv_mat := (mat as StandardMaterial3D).duplicate() as StandardMaterial3D
-        # Every face of Godot's BoxMesh has valid UV1; repeat large architectural
-        # textures rather than stretching a single pixel-sized tile over a wall.
+        # Share materials with the same tile factor instead of allocating
+        # hundreds of identical GPU material resources per room transition.
         var tiles := clampf(maxf(size.x, maxf(size.y, size.z)) / 2.4, 1.0, 12.0)
-        uv_mat.uv1_scale = Vector3(tiles, tiles, 1.0)
-        uv_mat.texture_repeat = true
-        node.material_override = uv_mat
+        var bucket := int(roundf(tiles * 16.0))
+        var key := "%d:%d" % [mat.get_instance_id(), bucket]
+        if not _tiled_material_cache.has(key):
+            var uv_mat := (mat as StandardMaterial3D).duplicate() as StandardMaterial3D
+            uv_mat.uv1_scale = Vector3(float(bucket) / 16.0, float(bucket) / 16.0, 1.0)
+            uv_mat.texture_repeat = true
+            _tiled_material_cache[key] = uv_mat
+        node.material_override = _tiled_material_cache[key]
     else:
         node.material_override = mat
     p.add_child(node)
