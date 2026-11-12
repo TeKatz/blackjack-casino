@@ -4,6 +4,7 @@ import {drawExpansionTwoRun} from './arcadeExpansionTwoRenderer';
 import {drawExpansionRun} from './arcadeExpansionOneRenderer';
 import {ARCADE_HEIGHT as H,ARCADE_WIDTH as W} from './arcadeEngine';
 import {SNAKE_COLS,SNAKE_ROWS,BLADE_HIT_ARC,BLADE_IMPACT_ANGLE,angularDistance} from './arcadeEngine';
+import {BLADE_PENETRATION,BLADE_RIM_RADIUS,bladePaintedTip} from './bladeGeometry';
 import type {ArcadeRunState,CaveRun,StackRun,BladeRun,WingsRun,SnakeRun,BreakerRun,StormRun,HexRun,SpikeRun,AscentRun} from './arcadeEngine';
 
 type Context=CanvasRenderingContext2D;
@@ -245,7 +246,7 @@ function bladeShape(ctx:Context,angle:number,radius:number){
  ctx.fillStyle='#f9dfa3';ctx.strokeStyle='#593d32';ctx.lineWidth=2;
  // Tip bites INTO the target while the handle remains outside the rim.
  ctx.beginPath();ctx.moveTo(-5,radius+48);ctx.lineTo(-5,radius-6);
- ctx.lineTo(0,radius-32);ctx.lineTo(5,radius-6);ctx.lineTo(5,radius+48);
+ ctx.lineTo(0,radius-BLADE_PENETRATION);ctx.lineTo(5,radius-6);ctx.lineTo(5,radius+48);
  ctx.closePath();ctx.fill();ctx.stroke();
  ctx.shadowBlur=0;
  ctx.fillStyle='#314952';ctx.fillRect(-8,radius+20,16,25);
@@ -253,7 +254,7 @@ function bladeShape(ctx:Context,angle:number,radius:number){
  ctx.restore();
 }
 function blades(ctx:Context,state:BladeRun){
- const cx=W/2,cy=236,radius=113;
+ const cx=W/2,cy=236,radius=BLADE_RIM_RADIUS;
  ctx.save();ctx.translate(cx,cy);
  ctx.shadowColor='#cfa77b';ctx.shadowBlur=18;
  const rim=ctx.createRadialGradient(0,0,12,0,0,radius+14);
@@ -274,24 +275,29 @@ function blades(ctx:Context,state:BladeRun){
  ctx.save();ctx.translate(cx,cy);
  for(const angle of state.blades)bladeShape(ctx,angle+state.rotation,radius);
  ctx.restore();
- // The reticle is exactly the engine's six-o'clock knife collision angle,
- // not a decorative guess. It turns red precisely when the throw would collide.
+ // Collision mathematics remains unchanged. A thrown blade is appended at
+ // BLADE_IMPACT_ANGLE - rotation; the painter rotates its local +Y-oriented
+ // tip by that resulting world angle. Use the same projection for the aim mark.
  const blocked=state.blades.some(angle=>angularDistance(angle+state.rotation,BLADE_IMPACT_ANGLE)<BLADE_HIT_ARC);
+ const {x:impactX,y:impactY}=bladePaintedTip(cx,cy,BLADE_IMPACT_ANGLE,radius);
  const markerColor=blocked?'#ff927e':'#a4f1d2';
- // Blade tip penetrates 32px into the target; the reticle must mark the
- // physical resting tip rather than the outer circle, regardless of rotation.
- const impactY=cy+radius-32;
  ctx.save();
  ctx.strokeStyle=markerColor;ctx.fillStyle=markerColor;ctx.lineWidth=2;
  ctx.shadowColor=markerColor;ctx.shadowBlur=14;
- ctx.beginPath();ctx.arc(cx,impactY,16+Math.sin(state.elapsed*7)*1.5,0,TAU);ctx.stroke();
- ctx.beginPath();ctx.moveTo(cx-29,impactY);ctx.lineTo(cx-10,impactY);
- ctx.moveTo(cx+10,impactY);ctx.lineTo(cx+29,impactY);ctx.stroke();
- ctx.beginPath();ctx.moveTo(cx,impactY-28);ctx.lineTo(cx,impactY-11);ctx.stroke();
+ ctx.beginPath();ctx.arc(impactX,impactY,16+Math.sin(state.elapsed*7)*1.5,0,TAU);ctx.stroke();
+ ctx.beginPath();ctx.moveTo(impactX-29,impactY);ctx.lineTo(impactX-10,impactY);
+ ctx.moveTo(impactX+10,impactY);ctx.lineTo(impactX+29,impactY);ctx.stroke();
+ ctx.beginPath();ctx.moveTo(impactX,impactY-28);ctx.lineTo(impactX,impactY-11);
+ ctx.moveTo(impactX,impactY+11);ctx.lineTo(impactX,impactY+28);ctx.stroke();
  ctx.shadowBlur=0;ctx.setLineDash([5,6]);
- ctx.beginPath();ctx.moveTo(cx,impactY+30);ctx.lineTo(cx,408);ctx.stroke();ctx.setLineDash([]);
- ctx.font='700 12px Segoe UI, sans-serif';ctx.textAlign='left';
- ctx.fillText(blocked?'BLOCKED · DO NOT THROW':'BLADE TIP · 6 O’CLOCK',cx+37,impactY+5);
+ const dx=impactX-cx,dy=impactY-cy,dist=Math.hypot(dx,dy)||1;
+ ctx.beginPath();
+ ctx.moveTo(impactX+dx/dist*22,impactY+dy/dist*22);
+ ctx.lineTo(impactX+dx/dist*50,impactY+dy/dist*50);ctx.stroke();ctx.setLineDash([]);
+ ctx.font='700 12px Segoe UI, sans-serif';
+ ctx.textAlign=impactX<cx?'right':'left';
+ ctx.fillText(blocked?'BLOCKED · DO NOT THROW':'BLADE TIP · IMPACT',
+  impactX+(impactX<cx?-38:38),impactY-6);
  ctx.restore();
  // Ready knife at the launch position (below the spinning target).
  ctx.save();ctx.translate(cx,431);ctx.rotate(Math.PI);
