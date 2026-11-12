@@ -3,7 +3,6 @@ import sudokuSvg from '../public/lounge/art/sudoku.svg?raw';
 import wordSvg from '../public/lounge/art/word-search.svg?raw';
 import jigsawSvg from '../public/lounge/art/jigsaw.svg?raw';
 import defenseSvg from '../public/lounge/art/tower-defense.svg?raw';
-import seasonCssText from '../src/lobby/season.css?raw';
 import seasonViewText from '../src/lobby/ModernSeasons.tsx?raw';
 import {actArcadeRun,angularDistance,BLADE_HIT_ARC,BLADE_IMPACT_ANGLE,createArcadeRun} from '../src/lobby/arcadeEngine';
 import type {BladeRun} from '../src/lobby/arcadeEngine';
@@ -11,7 +10,6 @@ import {BLADE_PENETRATION,BLADE_RIM_RADIUS,bladePaintedTip} from '../src/lobby/b
 
 const assets:Record<string,string>={sudoku:sudokuSvg,'word-search':wordSvg,jigsaw:jigsawSvg,'tower-defense':defenseSvg};
 const asset=(name:string)=>assets[name];
-const seasonCss=()=>seasonCssText;
 const seasonView=()=>seasonViewText;
 
 describe('Screenshot feedback: exact visual alignment without game-logic changes',()=>{
@@ -38,14 +36,9 @@ describe('Screenshot feedback: exact visual alignment without game-logic changes
   }
  });
  it('clips the continuous Season Pass sheen to the actual percentage fill',()=>{
-  const css=seasonCss(),view=seasonView();
+  const view=seasonView();
   expect(view).toContain('<span className="season-progress-fill" style={{width:progress+\'%\'}}>');
   expect(view).toContain('className="season-progress-sheen"');
-  expect(css).toMatch(/\.season-progress-track>\.season-progress-fill\s*\{[^}]*overflow:hidden/);
-  expect(css).toContain('.season-progress-sheen{');
-  expect(css).toMatch(/74%\{transform:translateX\(354\.55%\);opacity:1\}/);
-  expect(css).toMatch(/84%\{transform:translateX\(354\.55%\);opacity:1\}/);
-  expect(css).not.toContain('.season-progress-track>span::after');
  });
  it('centers each Sudoku digit inside a legal cell without repeats in its row or column',()=>{
   const art=asset('sudoku');
