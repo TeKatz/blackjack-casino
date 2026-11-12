@@ -239,7 +239,7 @@ public sealed class ManorModernGameServiceTests : IDisposable
         var library=service.Execute(new ManorPreviewProtocol.Command(
             "practice.move","practice-library",0,Room:4));
         Assert.True(library.PracticeRun!.HasCandle);
-        Assert.True(library.PracticeRun.Banked.EndsWith("×",StringComparison.Ordinal));
+        Assert.EndsWith("×",library.PracticeRun.Banked,StringComparison.Ordinal);
         var candle=service.Execute(new ManorPreviewProtocol.Command(
             "practice.candle","practice-candle",0));
         Assert.False(candle.PracticeRun!.HasCandle);
