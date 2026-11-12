@@ -385,7 +385,8 @@ function ManorApp() {
                   {pending ? t(language, 'saving') : revealingReels ?
                     t(language, 'spinRolling') : t(language, 'spin')}
                 </button>}
-              <div className="auto-spin-controls" role="group" aria-label={t(language, 'autoLabel')}>
+            </div>
+            <div className="auto-spin-controls" role="group" aria-label={t(language, 'autoLabel')}>
                 <span className="auto-label">{autoRemaining === null
                   ? t(language, 'autoLabel')
                   : t(language, 'autoRemaining', autoRemaining)}</span>
@@ -399,7 +400,6 @@ function ManorApp() {
                     <button className="auto-chip auto-stop" type="button"
                       onClick={haltAuto}>{t(language, 'autoStop')}</button>}
                 </div>
-              </div>
             </div>
           </div>}
 
