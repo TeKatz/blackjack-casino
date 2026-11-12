@@ -57,6 +57,10 @@ $testOutput = Invoke-Godot @("--headless", "--path", $project, "--script", "res:
 if (($testOutput -join [Environment]::NewLine) -notmatch "Manor 3D web bonus smoke PASS") {
     throw "Manor 3D runtime smoke did not pass."
 }
+$roomTest = Invoke-Godot @("--headless", "--path", $project, "--script", "res://room_geometry_test.gd")
+if (($roomTest -join [Environment]::NewLine) -notmatch "Manor 3D room geometry PASS") {
+    throw "Manor room geometry and texture contract did not pass."
+}
 Invoke-Godot @("--headless", "--path", $project, "--export-release", "Web", (Join-Path $output "index.html"))
 
 foreach ($name in @("index.html", "index.js", "index.wasm", "index.pck")) {
