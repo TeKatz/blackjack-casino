@@ -7,7 +7,6 @@ import {SymbolArt} from './Symbols';
 import {ReelStage} from './ReelStage';
 import {featureRevealDuration,reelAfterglowDuration} from './reelMotion';
 import type {ReelSpeed} from './reelMotion';
-import {winningTraces} from './winTraces';
 import {VaultAmbient} from './Ambient';
 import {neonImpact,isImpactful} from './presentation';
 import type {NeonImpact} from './presentation';
@@ -259,10 +258,6 @@ function VaultApp(){
    return()=>clearTimeout(t);
  },[auto,pending,animating,uncertain,snapshot?.state.canSpin,result?.id,intent,speed]);
  const winning=useMemo(()=>finished?winCells(result):new Set<number>(),[finished,result?.id]);
- const traces=useMemo(()=>!result?[]:finished
-   ?winningTraces(result.finalGrid,5)
-   :moving.length>0?winningTraces(result.baseGrid,5-moving.length):[],
-   [result?.id,finished,moving.length]);
  if(!snapshot)return <div className="vault-loading"><div className="vault-loading-diamond">◇</div>
    <h1>NEON VAULT</h1><p>{words.en.loading}</p></div>;
  const s=snapshot.state,t=words[s.language];
@@ -316,7 +311,7 @@ function VaultApp(){
          <div className="vault-board-decoration top" aria-hidden="true">V A U L T &nbsp; A C C E S S &nbsp; A R R A Y</div>
          <ReelStage displayGrid={grid} result={result} rolling={moving}
            reducedMotion={!s.animationsEnabled||!!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches}
-           finished={finished} winning={winning} speed={speed} traces={traces} onStop={onReelStop}/>
+           finished={finished} winning={winning} speed={speed} onStop={onReelStop}/>
          <div className="vault-board-decoration bottom" aria-hidden="true">0 0 1 0 1 ◇ 0 1 1 0 0 ◇ S E C U R E D</div>
          {feature&&<div className={'vault-overlay overlay-'+feature.key} role="status">
            <span>◈</span><strong>{feature.label}</strong><span>◈</span></div>}
