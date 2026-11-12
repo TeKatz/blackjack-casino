@@ -376,8 +376,10 @@ export function ManorBonus3D({
           <strong>{failed ? t(language, 'godotUnavailable') : t(language, 'godotLoading')}</strong>
           <span>{failed ? t(language, 'godotUnavailableDetail') :
             t(language, 'godotLoadingDetail')}</span>
-          {failed && <button type="button" className="ghost-button"
-            onClick={demo ? onExitDemo : onFallback}>{t(language, 'godotReturn')}</button>}
+          <button type="button" className="ghost-button"
+            onClick={demo ? onExitDemo : onFallback}>
+            {t(language, demo ? 'godotReturn' : 'godotClassic')}
+          </button>
         </div>}
 
         {mapOpen && active && <div className="manor-godot-map-overlay">
