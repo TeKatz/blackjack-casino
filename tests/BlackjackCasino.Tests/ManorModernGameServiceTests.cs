@@ -204,6 +204,67 @@ public sealed class ManorModernGameServiceTests : IDisposable
         Assert.Equal(1,classic.State.Revision);
     }
 
+    [Fact]
+    public void PracticeUsesSameGhostAndItemEngineButNeverMutatesBankrollOrJournal()
+    {
+        var prefs=new AppPreferences { Bankroll=750m,ManorBet=25m };
+        using var progression=new PlayerProgressionController(new PlayerProfileState());
+        var persistence=new ManorPersistence(folder);
+        var controller=new ManorController(prefs,750m,progression,_=>{},persistence,_=>0);
+        var service=new ManorModernGameService(controller);
+        var start=new ManorPreviewProtocol.Command("practice.start","practice-open",0);
+        var first=service.Execute(start);
+        Assert.Null(first.Run);
+        Assert.NotNull(first.PracticeRun);
+        Assert.Equal(0,first.PracticeRun!.PlayerRoom);
+        Assert.Equal("0",first.Revision);
+        Assert.Null(persistence.Load()); // Not even a checkpoint is written.
+
+        var step=service.Execute(new ManorPreviewProtocol.Command(
+            "practice.move","practice-first",0,Room:1));
+        Assert.Equal(1,step.PracticeRun!.PlayerRoom);
+        Assert.True(step.PracticeRun.HasKey); // Same C# key pickup as real runs.
+        Assert.Contains("Key found",step.PracticeRun.Message);
+        Assert.Equal("1",step.PracticeRun.Turn.ToString());
+        Assert.Equal("0",step.Revision);
+        Assert.Equal(750m,controller.State.Bankroll);
+
+        var library=service.Execute(new ManorPreviewProtocol.Command(
+            "practice.move","practice-library",0,Room:4));
+        Assert.True(library.PracticeRun!.HasCandle);
+        Assert.True(library.PracticeRun.Banked.EndsWith("×",StringComparison.Ordinal));
+        var candle=service.Execute(new ManorPreviewProtocol.Command(
+            "practice.candle","practice-candle",0));
+        Assert.False(candle.PracticeRun!.HasCandle);
+        Assert.StartsWith("Candle reveals:",candle.PracticeRun.GhostClue);
+        Assert.Equal(library.PracticeRun.Turn,candle.PracticeRun.Turn); // No time advance.
+
+        var leave=service.Execute(new ManorPreviewProtocol.Command("practice.exit","practice-exit",0));
+        Assert.Null(leave.PracticeRun);
+        Assert.Equal(750m,controller.State.Bankroll);
+        Assert.Equal(0,controller.State.Revision);
+        Assert.Equal(0,controller.State.Statistics.PaidSpins);
+        Assert.Null(controller.State.Run);
+        Assert.Null(persistence.Load());
+        Assert.Throws<InvalidOperationException>(()=>service.Execute(
+            new ManorPreviewProtocol.Command("practice.move","invalid-after-exit",0,Room:1)));
+    }
+
+    [Fact]
+    public void PracticeCannotRunDuringAnUnresolvedMoneyCycle()
+    {
+        var prefs=new AppPreferences { Bankroll=500m,ManorBet=25m };
+        using var progression=new PlayerProgressionController(new PlayerProfileState());
+        var store=new ManorPersistence(folder);
+        var controller=new ManorController(prefs,500m,progression,_=>{},store,_=>0);
+        controller.State.CycleActive=true;
+        var service=new ManorModernGameService(controller);
+        Assert.Throws<InvalidOperationException>(()=>service.Execute(
+            new ManorPreviewProtocol.Command("practice.start","cycle-practice",0)));
+        Assert.Equal(500m,controller.State.Bankroll);
+        Assert.Null(service.Snapshot().PracticeRun);
+    }
+
     public void Dispose()
     {
         if(Directory.Exists(folder)) Directory.Delete(folder,true);
