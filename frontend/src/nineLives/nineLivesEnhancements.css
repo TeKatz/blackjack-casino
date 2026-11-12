@@ -44,9 +44,10 @@
 .nine-reel-column .nine-cell.dimmed{opacity:.48}
 .nine-reel-column .nine-cell.winning,.nine-reel-column .nine-cell.frenzy{z-index:1}
 .nine-reel-viewport{position:absolute;inset:0;z-index:4;overflow:hidden;pointer-events:none;
- border-radius:8px;background:#100c20;contain:paint}
+ border-radius:8px;background:transparent;contain:paint}
 .nine-reel-tape{position:absolute;top:0;left:0;right:0;display:flex;flex-direction:column;
- gap:var(--nine-track-gap);will-change:transform;backface-visibility:hidden;transform:translate3d(0,0,0)}
+ gap:var(--nine-track-gap);will-change:transform;backface-visibility:hidden;
+ transform:translate3d(0,0,0);visibility:hidden}
 .nine-tape-tile{position:relative;min-height:0;height:var(--nine-tile-height);
  flex:0 0 var(--nine-tile-height);display:flex;align-items:center;justify-content:center;
  border:2px solid #876b75;border-radius:9px;overflow:hidden}
