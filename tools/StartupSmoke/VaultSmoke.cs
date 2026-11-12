@@ -36,7 +36,12 @@ internal static class VaultSmoke
                     "document.documentElement.lang==='de'") == "true";
                 if (!startedGerman)
                 {
-                    await web.ExecuteScriptAsync("document.querySelector('.lobby-language')?.click()");
+                    await web.ExecuteScriptAsync(
+                        "document.querySelector('[data-testid=lobby-settings-entry]')?.click()");
+                    await web.ExecuteScriptAsync(
+                        "(()=>{const select=document.querySelector('[data-testid=lobby-language-select]');" +
+                        "select.value='de';select.dispatchEvent(new Event('change',{bubbles:true}));" +
+                        "document.querySelector('.lobby-updates-close')?.click();})()");
                     bool germanReady = false;
                     for (int i=0;i<100 && !germanReady;i++)
                     {
@@ -99,7 +104,12 @@ internal static class VaultSmoke
                 Require(modern.RecordsPage is null, "React Vault did not return to the lobby.");
                 if (!startedGerman)
                 {
-                    await web.ExecuteScriptAsync("document.querySelector('.lobby-language')?.click()");
+                    await web.ExecuteScriptAsync(
+                        "document.querySelector('[data-testid=lobby-settings-entry]')?.click()");
+                    await web.ExecuteScriptAsync(
+                        "(()=>{const select=document.querySelector('[data-testid=lobby-language-select]');" +
+                        "select.value='en';select.dispatchEvent(new Event('change',{bubbles:true}));" +
+                        "document.querySelector('.lobby-updates-close')?.click();})()");
                     for (int i=0;i<100;i++)
                     {
                         if (await web.ExecuteScriptAsync(
