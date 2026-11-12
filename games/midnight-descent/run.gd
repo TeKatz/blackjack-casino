@@ -64,6 +64,8 @@ var hub_prompt := 0.0
 var hub_keeper_prompt := 0.0
 var hub_forge_prompt := 0.0
 var hub_panel := ""
+var mage_panel := false
+var mage_prompt := 0.0
 var synergy_toast_timer := 0.0
 var boss_soul_toast_timer := 0.0
 var camera_offset: Vector2=Vector2.ZERO
@@ -106,7 +108,7 @@ func tr_text(en: String, de: String) -> String:
 	return de if german else en
 
 func _physics_process(dt: float) -> void:
-	if paused or hub_panel!="" or input_grace>0 or hub_transition_stage!=0 or run.state in ["reward","victory","defeat","route","service"]:
+	if paused or hub_panel!="" or mage_panel or input_grace>0 or hub_transition_stage!=0 or run.state in ["reward","victory","defeat","route","service"]:
 		return
 	var direction:=Vector2(float(Input.is_physical_key_pressed(KEY_D) or Input.is_physical_key_pressed(KEY_RIGHT))-float(Input.is_physical_key_pressed(KEY_A) or Input.is_physical_key_pressed(KEY_LEFT)),float(Input.is_physical_key_pressed(KEY_S) or Input.is_physical_key_pressed(KEY_DOWN))-float(Input.is_physical_key_pressed(KEY_W) or Input.is_physical_key_pressed(KEY_UP)))
 	var dash:=Input.is_physical_key_pressed(KEY_SPACE)
@@ -129,7 +131,12 @@ func _physics_process(dt: float) -> void:
 		# the moving world coordinates used by projectiles and hit detection.
 		var mouse_world: Vector2=get_global_mouse_position()-camera_offset
 		run.tick(dt,direction,mouse_world,Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT),Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT),dash and not last_dash,Input.is_physical_key_pressed(KEY_Q) and not last_active)
-		if interact and not last_interact: run.next_room()
+		if interact and not last_interact:
+			if run.threshold_mage_available():
+				mage_panel=true
+				play_sound("shop")
+			else:
+				run.next_room()
 	last_active=Input.is_physical_key_pressed(KEY_Q)
 	last_dash=dash
 	last_interact=interact
@@ -181,13 +188,14 @@ func _process(dt: float) -> void:
 	hub_prompt=move_toward(hub_prompt,1.0 if hub_interactive and run.hub_portal_available() else 0.0,dt*5.0)
 	hub_keeper_prompt=move_toward(hub_keeper_prompt,1.0 if hub_interactive and run.hub_bartender_available() else 0.0,dt*5.0)
 	hub_forge_prompt=move_toward(hub_forge_prompt,1.0 if hub_interactive and run.hub_forge_available() else 0.0,dt*5.0)
+	mage_prompt=move_toward(mage_prompt,1.0 if not mage_panel and not paused and run.threshold_mage_available() else 0.0,dt*5.0)
 	update_hud_feedback(dt)
 	input_grace=maxf(0,input_grace-dt)
 	shake = move_toward(shake, 0, dt*30)
 	if run.state in ["victory","defeat"] and not run.settled:
 		progress.settle(run)
 		if not smoke_mode: progress.save()
-	var target: String = ("relics" if relics_open else "pause") if paused else ("hub_"+hub_panel if run.state=="hub" and hub_panel!="" else run.state)
+	var target: String = ("relics" if relics_open else "pause") if paused else ("threshold_mage" if mage_panel else ("hub_"+hub_panel if run.state=="hub" and hub_panel!="" else run.state))
 	if target != overlay_state or (target=="route" and (modal_room!=run.room or modal_floor!=run.floor_index)):
 		if target=="route": play_sound("map")
 		elif target=="service": play_sound("sp_"+run.room_kind+"_enter" if Model.Dungeon.SPECIAL_SERVICE.has(run.room_kind) else run.room_kind)
@@ -245,6 +253,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			close_hub_panel()
 			get_viewport().set_input_as_handled()
 			return
+		if mage_panel:
+			close_mage_panel()
+			get_viewport().set_input_as_handled()
+			return
 		if relics_open:
 			relics_open=false
 			get_viewport().set_input_as_handled()
@@ -290,6 +302,13 @@ func _draw() -> void:
 	var gate: Vector2=run.exit_point
 	# Camera transform affects only combat visuals. HUD remains fixed 1280x720.
 	draw_set_transform(camera_offset)
+	if mage_prompt>0.01 and run.room_kind=="boss" and not run.boss_awake:
+		var origin: Vector2=run.threshold_mage_pos+Vector2(-73,-119+sin(clock*3.0)*3.0)
+		var prompt: Rect2=Rect2(origin,Vector2(156,37))
+		draw_rect(prompt,Color("#102526",0.90*mage_prompt))
+		draw_rect(prompt,Color("#80c8bd",mage_prompt*0.78),false,1.5,true)
+		text_at(origin+Vector2(12,25),"E",16,Color("#f3ddaa",mage_prompt))
+		text_at(origin+Vector2(40,25),tr_text("Speak","Ansprechen"),14,Color("#f4f0df",mage_prompt))
 	if gate_prompt>0.01 and run.state=="exit":
 		var p:=gate+Vector2(-72,-104+sin(clock*2.6)*3)
 		var rect:=Rect2(p,Vector2(144,36))
@@ -600,6 +619,35 @@ func run_scene_smoke() -> void:
 		push_error("Dungeon map fog did not conceal future paths (nodes=%d fogged=%d next=%d)" % [checked_map_nodes,masked_map_nodes,available_map_nodes])
 		get_tree().quit(48)
 		return
+	# The Oracle must be a real, paid button in the live dungeon map,
+	# and the purchased column must show identities without unlocking travel.
+	var oracle_ui: Button=null
+	for candidate in overlay.find_children("*","Button",true,false):
+		var offered: Button=candidate
+		if bool(offered.get_meta("oracle_offer",false)): oracle_ui=offered
+	if oracle_ui==null:
+		push_error("Oracle purchase button missing from the map")
+		get_tree().quit(70)
+		return
+	run.shards=90
+	purchase_oracle()
+	if run.oracle_purchases!=1 or run.shards!=78:
+		push_error("Oracle did not charge exactly once for foresight")
+		get_tree().quit(71)
+		return
+	var oracle_nodes:=0
+	for candidate in overlay.find_children("*","Button",true,false):
+		var card: Button=candidate
+		if str(card.get_meta("map_visibility",""))!="oracle": continue
+		oracle_nodes+=1
+		if card.disabled==false or card.icon==null:
+			push_error("Oracle-revealed future room was selectable or iconless")
+			get_tree().quit(72)
+			return
+	if oracle_nodes!=3:
+		push_error("Oracle did not unveil exactly one future column")
+		get_tree().quit(73)
+		return
 	if overlay_state!="route" or overlay.get_child_count()==0 or not run.travel(1):
 		push_error("Scene route selection failed: state="+run.state+" overlay="+overlay_state+" route="+str(run.route_options()))
 		get_tree().quit(8)
@@ -768,6 +816,35 @@ func run_scene_smoke() -> void:
 		if not run.large_room or run.boss_awake or run.enemies.size()<3:
 			push_error("Boss was not staged behind its approach")
 			get_tree().quit(44)
+			return
+		# E opens a modal shop while the boss is still dormant; the
+		# threshold mage is present on all three stage-specific approaches.
+		if run.threshold_mage_pos==Vector2.ZERO or world.THRESHOLD_MAGE.get_width()!=96:
+			push_error("Threshold mage missing in the boss approach")
+			get_tree().quit(74)
+			return
+		run.player=run.threshold_mage_pos+Vector2(-32,0)
+		if not run.threshold_mage_available():
+			push_error("Threshold mage cannot be reached before the gate")
+			get_tree().quit(75)
+			return
+		run.shards=150
+		mage_panel=true
+		_process(0.0)
+		if overlay_state!="threshold_mage" or not is_instance_valid(modal_root):
+			push_error("Threshold mage purchase dialog did not appear")
+			get_tree().quit(76)
+			return
+		buy_threshold_item("special_charge")
+		if run.mage_special_charges!=2 or not run.mage_stock_bought.has("special_charge") or run.shards!=125-stage*6:
+			push_error("Threshold mage special charge purchase did not apply")
+			get_tree().quit(77)
+			return
+		close_mage_panel()
+		_process(0.0)
+		if mage_panel or overlay_state=="threshold_mage":
+			push_error("Threshold mage dialog failed to close before the boss")
+			get_tree().quit(78)
 			return
 		run.player=Vector2(run.boss_trigger_x+140,run.boss_arena.get_center().y)
 		run.tick(0.016,Vector2.ZERO,run.boss_arena.get_center(),false,false,false)
@@ -1381,6 +1458,69 @@ func use_service(choice: int) -> void:
 		# Service decisions happen while physics is paused by the modal.
 		run.notices.clear()
 
+func close_mage_panel() -> void:
+	mage_panel=false
+	input_grace=0.18 if not smoke_mode else 0.0
+
+func buy_threshold_item(item: String) -> void:
+	if run.threshold_mage_purchase(item):
+		play_sound("purchase")
+		rebuild_overlay()
+
+func purchase_oracle() -> void:
+	if run.oracle_reveal():
+		play_sound("relic")
+		# In-place refresh updates the entire chart, Shards and remaining
+		# offer immediately without exiting/reentering the map.
+		rebuild_overlay()
+
+func show_threshold_mage(column: VBoxContainer) -> void:
+	add_label(column,tr_text("THE THRESHOLD MAGUS","DER SCHWELLENMAGIER"),30,Color("#85d7cc"))
+	add_label(column,tr_text("Beyond this gate, preparation becomes destiny. Spend Shards before the seal closes.","Hinter diesem Tor entscheidet die Vorbereitung. Nutze deine Splitter, bevor sich das Siegel schließt."),16,WHITE)
+	add_label(column,tr_text("SHARDS  ","SPLITTER  ")+str(run.shards)+"  •  "+Content.floor_name(run.floor_index,german),19,GOLD)
+	var greetings: Array[String]=[
+		tr_text("The Watcher hears your footsteps. I can ready your arts.","Der Wächter hört deine Schritte. Ich kann deine Künste stärken."),
+		tr_text("The roots are listening. Prepare for what waits below.","Die Wurzeln lauschen. Bereite dich auf das Wesen dahinter vor."),
+		tr_text("The dead keep their bargains. Mine ends at the gate.","Die Toten halten ihre Abmachungen. Meine endet am Tor.")
+	]
+	add_label(column,greetings[run.floor_index],15,MUTED)
+	var items: Array[String]=Model.MAGE_STOCK
+	for item in items:
+		var title: String=""
+		var detail: String=""
+		var icon_index: int=0
+		match item:
+			"heal_charge":
+				title=tr_text("Healing essence","Heilungsessenz")
+				detail=tr_text("+1 Q healing charge (max. 3)","+1 Q-Heilaufladung (max. 3)")
+				icon_index=1
+			"special_charge":
+				title=tr_text("Arcane charges","Arkane Aufladungen")
+				detail=tr_text("Next 2 boss specials recharge 85% faster","Nächste 2 Boss-Spezialangriffe laden 85 % schneller")
+				icon_index=3
+			"ward":
+				title=tr_text("Protective seal","Schutzsiegel")
+				detail=tr_text("Negate the next hit during the boss fight","Verhindert den nächsten Treffer im Bosskampf")
+				icon_index=4
+			"blessing":
+				title=tr_text("Magus' focus","Fokus des Magiers")
+				detail=tr_text("+15% special damage for this boss","15 % mehr Spezialschaden gegen diesen Boss")
+				icon_index=0
+		var purchased: bool=run.mage_stock_bought.has(item)
+		var price: int=run.threshold_mage_price(item)
+		var caption: String=title+"   •   "+(tr_text("PURCHASED","GEKAUFT") if purchased else str(price)+" "+tr_text("Shards","Splitter"))
+		var id: String=item
+		var option:=add_button(column,caption+"\n"+detail,func(): buy_threshold_item(id))
+		option.custom_minimum_size=Vector2(0,66)
+		option.alignment=HORIZONTAL_ALIGNMENT_LEFT
+		option.add_theme_font_size_override("font_size",16)
+		option.icon=UI.atlas(UI.RELICS,icon_index)
+		option.expand_icon=true
+		option.add_theme_constant_override("icon_max_width",42)
+		UI.style_button(option,Color("#85d7cc") if not purchased else MUTED)
+		option.disabled=not run.threshold_mage_can_buy(item)
+	add_button(column,tr_text("Leave the Magus • approach the boss","Magier verlassen • dem Boss entgegentreten"),func(): close_mage_panel())
+
 func show_route_map(column: VBoxContainer) -> void:
 	add_label(column,tr_text("DUNGEON MAP","DUNGEON-KARTE")+"  •  %d / %d" % [run.floor_index+1,Model.FLOOR_COUNT],30,GOLD)
 	add_label(column,tr_text("Only your visited path and the next reachable rooms are revealed. ? marks unexplored territory.","Nur dein bisheriger Weg und direkt erreichbare Räume sind sichtbar. ? markiert unbekanntes Gebiet."),13,MUTED)
@@ -1390,6 +1530,19 @@ func show_route_map(column: VBoxContainer) -> void:
 	map.current=run.room
 	var selectable: Array=run.route_options()
 	column.add_child(map)
+	var oracle_bar:=HBoxContainer.new()
+	oracle_bar.add_theme_constant_override("separation",16)
+	column.add_child(oracle_bar)
+	var next_column: int=run.oracle_next_column()
+	var oracle_details: String=tr_text("ORACLE • Reveal the next unseen column. Forecasts never unlock travel.","ORAKEL • Deckt die nächste unbekannte Spalte auf. Enthüllte Räume sind noch nicht begehbar.")
+	add_label(oracle_bar,oracle_details,14,Color("#a2d9c8"))
+	var oracle_caption: String=tr_text("Consult • ","Befragen • ")+str(run.oracle_price())+" "+tr_text("Shards","Splitter") if next_column>=0 else tr_text("Future revealed","Zukunft enthüllt")
+	var oracle_button:=add_button(oracle_bar,oracle_caption,func(): purchase_oracle())
+	oracle_button.custom_minimum_size=Vector2(218,48)
+	oracle_button.add_theme_font_size_override("font_size",16)
+	UI.style_button(oracle_button,Color("#80c8bd"))
+	oracle_button.disabled=not run.oracle_can_buy()
+	oracle_button.set_meta("oracle_offer",true)
 	for i in range(run.dungeon.nodes.size()):
 		var id: int = i
 		var node: Dictionary=run.dungeon.nodes[i]
@@ -1412,7 +1565,9 @@ func show_route_map(column: VBoxContainer) -> void:
 		button.icon=UI.room_icon(visible_kind) if explored else null
 		button.expand_icon=explored
 		button.add_theme_constant_override("icon_max_width",14)
-		UI.style_button(button,UI.ROOM_COLORS[visible_kind] if explored else Color("#526a6c"),i==run.room)
+		var node_color: Color=UI.ROOM_COLORS[visible_kind] if explored else Color("#526a6c")
+		if visibility=="oracle": node_color=node_color.lerp(Color("#8cdbc3"),0.34)
+		UI.style_button(button,node_color,i==run.room)
 		var caption_label:=Label.new()
 		caption_label.set_anchors_preset(Control.PRESET_FULL_RECT)
 		caption_label.offset_left=24 if explored else 0
@@ -1450,7 +1605,7 @@ func show_route_map(column: VBoxContainer) -> void:
 		if not explored:
 			button.tooltip_text=tr_text("Unknown room • explore farther to reveal it","Unbekannter Raum • erkunde den Weg, um ihn aufzudecken")
 		else:
-			button.tooltip_text=tr_text("Current room","Aktueller Raum") if i==run.room else (tr_text("Travel to this room","Diesen Raum betreten") if not button.disabled else tr_text("Already visited • no backtracking","Bereits besucht • kein Zurück"))
+			button.tooltip_text=tr_text("Revealed by the Oracle • not yet reachable","Vom Orakel enthüllt • noch nicht erreichbar") if visibility=="oracle" else (tr_text("Current room","Aktueller Raum") if i==run.room else (tr_text("Travel to this room","Diesen Raum betreten") if not button.disabled else tr_text("Already visited • no backtracking","Bereits besucht • kein Zurück")))
 			if node.kind in ["fight","elite"]:
 				button.tooltip_text+="\n"+encounter_name(str(node.get("encounter","skirmish")))+" • "+tr_text("Danger","Gefahr")+" "+["I","II","III"][int(node.get("threat",0))]
 	var footer:=HBoxContainer.new()
@@ -1480,6 +1635,7 @@ func modal_accent() -> Color:
 		"route": return Color("#8fcabc")
 		"hub_barkeep": return GOLD
 		"hub_forge": return Color("#e8a879")
+		"threshold_mage": return Color("#85d7cc")
 		"service": return UI.ROOM_COLORS[run.room_kind]
 		"victory": return Color("#f1cc7e")
 		"defeat": return Color("#e67c9a")
@@ -1491,6 +1647,7 @@ func modal_fill() -> Color:
 		"route": return Color("#142529f8")
 		"hub_barkeep": return Color("#24302cf8")
 		"hub_forge": return Color("#302b26f8")
+		"threshold_mage": return Color("#132b2cf8")
 		"service": return Color("#1b3030f8") if run.room_kind=="shop" else Color("#192b2df8")
 		"victory": return Color("#2d3228f8")
 		"defeat": return Color("#332528f8")
@@ -1549,7 +1706,7 @@ func rebuild_overlay() -> void:
 			fade.tween_property(previous,"modulate:a",0.0,0.16)
 			fade.tween_callback(previous.queue_free)
 		modal_root=null
-	if overlay_state not in ["pause","relics","reward","victory","defeat","route","service","hub_barkeep","hub_forge"]:
+	if overlay_state not in ["pause","relics","reward","victory","defeat","route","service","hub_barkeep","hub_forge","threshold_mage"]:
 		input_grace=0.18 if not smoke_mode else 0.0
 		return
 	var accent: Color=modal_accent()
@@ -1570,7 +1727,7 @@ func rebuild_overlay() -> void:
 	center.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	modal_root.add_child(center)
 	var panel:=PanelContainer.new()
-	panel.custom_minimum_size=Vector2(1160 if overlay_state=="route" else (1000 if overlay_state=="relics" else (940 if overlay_state=="reward" else 680)),0)
+	panel.custom_minimum_size=Vector2(1160 if overlay_state=="route" else (1000 if overlay_state=="relics" else (940 if overlay_state=="reward" else (820 if overlay_state=="threshold_mage" else 680))),0)
 	var style:=UI.panel(modal_fill(),accent,24)
 	style.set_corner_radius_all(16)
 	style.border_width_top=2
@@ -1638,6 +1795,8 @@ func rebuild_overlay() -> void:
 			UI.style_button(leave_forge,Color("#e8a879"),true)
 		"relics":
 			show_run_relics(column)
+		"threshold_mage":
+			show_threshold_mage(column)
 		"route":
 			show_route_map(column)
 		"service":
@@ -1876,6 +2035,8 @@ func restart() -> void:
 	paused = false
 	relics_open=false
 	hub_panel=""
+	mage_panel=false
+	mage_prompt=0.0
 	synergy_toast_timer=0.0
 	boss_soul_toast_timer=0.0
 	hub_prompt=0.0

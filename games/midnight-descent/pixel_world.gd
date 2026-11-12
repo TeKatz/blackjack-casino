@@ -7,6 +7,7 @@ const CROWN = preload("res://art/pixel/crown_tiles.svg")
 const BIOME_WALLS = preload("res://art/pixel/biome_walls.svg")
 const PROPS = preload("res://art/pixel/room_props.svg")
 const TORCH = preload("res://art/pixel/torch.svg")
+const THRESHOLD_MAGE = preload("res://art/pixel/threshold_mage.svg")
 const RELICS = preload("res://art/pixel/relics.png")
 const EXPANDED_TILES = [
 	preload("res://art/pixel/expanded_vault.svg"),
@@ -99,6 +100,7 @@ var light_texture: GradientTexture2D
 var ambient: CanvasModulate
 var side_lights: Array[PointLight2D] = []
 var boss_light: PointLight2D
+var mage_light: PointLight2D
 var gate_open_amount := 0.0
 var decor: Array[Dictionary]=[]
 var decor_exclusions: Array[Rect2]=[]
@@ -135,6 +137,7 @@ func setup(value) -> void:
 		light.position = pos
 		side_lights.append(light)
 	boss_light = make_light(Color("#ec6d9c"),3.6,0.0,false)
+	mage_light = make_light(Color("#9deed8"),2.65,0.6,false)
 	for i in range(4):
 		projectile_lights.append(make_light(Color("#8adcf8"),1.3,1.0,false))
 	for i in range(4): decor_lights.append(make_light(Color("#f3c18b"),1.65,0.65,false))
@@ -208,6 +211,11 @@ func update_view(dt: float) -> void:
 			boss_light.position = enemy.pos
 			boss_light.energy = 0.75 + sin(clock*3)*0.2 + (0.6 if enemy.wind > 0 else 0.0)
 	boss_light.enabled = boss_present
+	mage_light.enabled=model.room_kind=="boss" and model.threshold_mage_pos!=Vector2.ZERO
+	if mage_light.enabled:
+		mage_light.position=model.threshold_mage_pos+Vector2(0,-47)
+		mage_light.color=[Color("#c5d1a7"),Color("#8ee9ad"),Color("#d3b8f0")][model.floor_index]
+		mage_light.energy=0.7+0.20*sin(clock*2.6)
 	var target_ambient := Color(0.39,0.30,0.47) if boss_present else Color(0.55,0.49,0.64)
 	if model.state=="hub": target_ambient=Color("#9b8490")
 	if model.floor_index==1: target_ambient=Color(0.35,0.53,0.39)
@@ -625,18 +633,34 @@ func draw_boss_approach() -> void:
 			draw_rect(Rect2(arena.position.x+82+i*114,arena.position.y+33,15,68),Color("#d0a18e"))
 	draw_boss_gate()
 
+func draw_threshold_mage() -> void:
+	if model.threshold_mage_pos==Vector2.ZERO: return
+	var pos: Vector2=model.threshold_mage_pos
+	var accent: Color=[Color("#e9c595"),Color("#a9efbb"),Color("#d5b5f1")][model.floor_index]
+	draw_circle(pos+Vector2(0,7),57,Color(accent,0.052+0.03*sin(clock*2.4)))
+	draw_arc(pos+Vector2(0,4),44,0,TAU,44,Color(accent,0.28),3,true)
+	for index in range(5):
+		var angle: float=float(index)*TAU/5.0+clock*0.22
+		var point: Vector2=pos+Vector2.from_angle(angle)*41.0
+		draw_circle(point,2.5,Color(accent,0.58))
+	draw_rect(Rect2(pos+Vector2(-34,19),Vector2(68,8)),Color("#0b1720",0.5))
+	draw_texture_rect(THRESHOLD_MAGE,Rect2(pos-Vector2(48,93),Vector2(96,112)),false,Color.WHITE)
+
 func draw_expanded_actors() -> void:
 	var objects: Array[Dictionary]=[]
 	for wall in model.walls:
 		objects.append({"kind":"pillar","depth":wall.end.y,"rect":wall})
 	for enemy in model.enemies:
 		objects.append({"kind":"enemy","depth":enemy.pos.y+float(enemy.r),"enemy":enemy})
+	if model.room_kind=="boss" and model.threshold_mage_pos!=Vector2.ZERO:
+		objects.append({"kind":"mage","depth":model.threshold_mage_pos.y+20})
 	objects.append({"kind":"player","depth":model.player.y+15})
 	objects.sort_custom(func(a: Dictionary,b: Dictionary): return a.depth<b.depth)
 	for thing in objects:
 		match thing.kind:
 			"pillar": draw_pillar(thing.rect)
 			"enemy": draw_actor(thing.enemy)
+			"mage": draw_threshold_mage()
 			"player": draw_warden()
 
 func draw_wall_lantern(pos: Vector2, index: int) -> void:
@@ -1525,4 +1549,4 @@ func draw_actor(enemy: Dictionary) -> void:
 			draw_rect(Rect2(badge_pos+Vector2(4+i*5,4),Vector2(3,5)),accent if affix!="warded" else Color("#d5f4ff"))
 
 func is_ready_for_smoke() -> bool:
-	return TILES.get_width() == 256 and ACTORS["gearhound"].get_width()==256 and ACTORS["coilgunner"].get_height()==128 and ACTORS["briarling"].get_width()==256 and ACTORS["sporewitch"].get_height()==128 and ACTORS["bone_lancer"].get_width()==256 and ACTORS["crypt_oracle"].get_height()==128 and RELICS.get_width() == 1920 and RELICS.get_height() == 48 and ACTORS["dealer"].get_height() == 128 and ACTORS["warden"].get_height() == 128 and torches.size() == 5 and side_lights.size() == 2 and ambient != null and boss_light != null and torches[0].range_layer_min == -1 and occluders.size() == model.walls.size() and PROPS.get_width()==432 and decor_lights.size()==4 
+	return TILES.get_width() == 256 and ACTORS["gearhound"].get_width()==256 and ACTORS["coilgunner"].get_height()==128 and ACTORS["briarling"].get_width()==256 and ACTORS["sporewitch"].get_height()==128 and ACTORS["bone_lancer"].get_width()==256 and ACTORS["crypt_oracle"].get_height()==128 and RELICS.get_width() == 1920 and RELICS.get_height() == 48 and ACTORS["dealer"].get_height() == 128 and ACTORS["warden"].get_height() == 128 and torches.size() == 5 and side_lights.size() == 2 and ambient != null and boss_light != null and torches[0].range_layer_min == -1 and occluders.size() == model.walls.size() and PROPS.get_width()==432 and decor_lights.size()==4 and THRESHOLD_MAGE.get_width()==96 and THRESHOLD_MAGE.get_height()==112 and mage_light!=null 

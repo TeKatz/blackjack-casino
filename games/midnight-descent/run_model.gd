@@ -155,6 +155,18 @@ var boss_gate_state := "open"
 var boss_gate_time := 0.0
 const BOSS_GATE_CLOSE_DURATION := 1.12
 const SURVIVAL_DURATION := 30.0
+# Per-stage Shard economy, separate from the permanent Boss Souls.
+const ORACLE_BASE_COST := 12
+const ORACLE_COST_STEP := 8
+const MAGE_REACH := 112.0
+const MAGE_STOCK := ["heal_charge","special_charge","ward","blessing"]
+var oracle_revealed: Dictionary = {}
+var oracle_purchases := 0
+var threshold_mage_pos := Vector2.ZERO
+var mage_stock_bought: Dictionary = {}
+var mage_special_charges := 0
+var mage_guard_charges := 0
+var mage_special_blessing := false
 var flow_map: Dictionary = {}
 var flow_origin: Vector2i = Vector2i(-999,-999)
 var flow_timer := 0.0
@@ -230,6 +242,13 @@ func begin(value: int, loadout: String = "warden_guard", upgrades: Dictionary = 
 	dash_hits.clear()
 	kills = 0
 	shards = 0
+	oracle_revealed.clear()
+	oracle_purchases=0
+	threshold_mage_pos=Vector2.ZERO
+	mage_stock_bought.clear()
+	mage_special_charges=0
+	mage_guard_charges=0
+	mage_special_blessing=false
 	elapsed = 0.0
 	relics.clear()
 	tempered_relics.clear()
@@ -556,6 +575,7 @@ func enter_hub() -> void:
 	boss_gate_state="open"
 	boss_gate_time=0.0
 	boss_trigger_x=0.0
+	threshold_mage_pos=Vector2.ZERO
 	layout_name=""
 	layout_name_de=""
 	flow_map.clear()
@@ -695,6 +715,7 @@ func enter_room() -> void:
 		if relics.has("sacrifice") and room_kind in ["fight","elite","boss"]: hp=maxf(1,hp-2*relics.count("sacrifice"))
 	service_used = node.cleared
 	build_room_layout(node)
+	if room_kind=="boss": place_threshold_mage()
 	player=spawn_point
 	if node.cleared:
 		state = "route"
@@ -1044,9 +1065,74 @@ func map_node_visibility(index: int) -> String:
 	if index<0 or index>=dungeon.nodes.size(): return "unknown"
 	if index==room or bool(dungeon.nodes[index].get("visited",false)):
 		return "visited"
-	if route_options().has(index):
-		return "available"
+	if route_options().has(index): return "available"
+	if oracle_revealed.has(index): return "oracle"
 	return "unknown"
+
+func oracle_next_column() -> int:
+	if state!="route": return -1
+	var current_column: int=int(dungeon.nodes[room].column)
+	for column in range(current_column+2,10):
+		for index in range(dungeon.nodes.size()):
+			if int(dungeon.nodes[index].column)==column and map_node_visibility(index)=="unknown":
+				return column
+	return -1
+
+func oracle_price() -> int:
+	return ORACLE_BASE_COST+ORACLE_COST_STEP*oracle_purchases
+
+func oracle_can_buy() -> bool:
+	return oracle_next_column()>=0 and shards>=oracle_price()
+
+func oracle_reveal() -> bool:
+	if not oracle_can_buy(): return false
+	var column: int=oracle_next_column()
+	shards-=oracle_price()
+	oracle_purchases+=1
+	for index in range(dungeon.nodes.size()):
+		if int(dungeon.nodes[index].column)==column:
+			oracle_revealed[index]=true
+	check_shard_contract()
+	return true
+
+func place_threshold_mage() -> void:
+	threshold_mage_pos=Vector2.ZERO
+	if room_kind!="boss" or not large_room or not boss_gate.has_area(): return
+	var approach: Rect2=room_regions[-2]
+	# Stall belongs to the entrance side of the boss shutter, against the
+	# upper/lower wall, leaving the center of the corridor unobstructed.
+	for offset in [70.0,approach.size.y-70.0,110.0,approach.size.y*0.5]:
+		var candidate: Vector2=Vector2(boss_gate.position.x-142.0,approach.position.y+float(offset))
+		if RoomLayouts.accessible(candidate,28.0,room_regions,walls):
+			threshold_mage_pos=candidate
+			return
+
+func threshold_mage_available() -> bool:
+	return state=="fight" and room_kind=="boss" and not boss_awake and boss_gate_state=="open" and threshold_mage_pos!=Vector2.ZERO and player.distance_to(threshold_mage_pos)<=MAGE_REACH
+
+func threshold_mage_price(item: String) -> int:
+	var base: int={"heal_charge":20,"special_charge":25,"ward":35,"blessing":45}.get(item,-1)
+	return base+floor_index*6 if base>=0 else -1
+
+func threshold_mage_can_buy(item: String) -> bool:
+	if not threshold_mage_available() or not MAGE_STOCK.has(item) or mage_stock_bought.has(item): return false
+	if item=="heal_charge" and (active_item!="heal" or heal_charges>=HEAL_CHARGES_PER_FLOOR+1): return false
+	if item=="special_charge" and mage_special_charges>0: return false
+	if item=="ward" and mage_guard_charges>0: return false
+	if item=="blessing" and mage_special_blessing: return false
+	return shards>=threshold_mage_price(item)
+
+func threshold_mage_purchase(item: String) -> bool:
+	if not threshold_mage_can_buy(item): return false
+	shards-=threshold_mage_price(item)
+	mage_stock_bought[item]=true
+	match item:
+		"heal_charge": heal_charges+=1
+		"special_charge": mage_special_charges=2
+		"ward": mage_guard_charges=1
+		"blessing": mage_special_blessing=true
+	check_shard_contract()
+	return true
 
 func open_route() -> bool:
 	if state!="exit" or player.distance_to(exit_point)>75: return false
@@ -1063,6 +1149,13 @@ func descend() -> bool:
 	if state!="route" or room_kind!="boss" or not dungeon.nodes[room].cleared or floor_index>=FLOOR_COUNT-1: return false
 	floor_index += 1
 	heal_charges = HEAL_CHARGES_PER_FLOOR
+	oracle_revealed.clear()
+	oracle_purchases=0
+	mage_stock_bought.clear()
+	mage_special_charges=0
+	mage_guard_charges=0
+	mage_special_blessing=false
+	threshold_mage_pos=Vector2.ZERO
 	room=0
 	dungeon.generate(seed_value,floor_index)
 	enter_room()
@@ -1489,13 +1582,19 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 			shoot(player+aim*21,aim*590,false,bolt_damage*relics.count("echo"))
 		class_main_attack()
 	if ranged and bolt_timer <= 0:
-		bolt_timer = special_cd
+		# Paid swift casts are spent only during the actual boss encounter.
+		if room_kind=="boss" and boss_awake and mage_special_charges>0:
+			mage_special_charges-=1
+			bolt_timer=maxf(0.09,special_cd*0.15)
+		else:
+			bolt_timer=special_cd
 		specials+=1
 		advance_contract("spellweaver")
 		shot_style=set_id+"_special"
 		notices.append(shot_style)
 		effect("special_"+set_id,player,0.42,aim)
 		special_multiplier=2.0 if relics.has("overcharge") and specials%4==0 else 1.0
+		if room_kind=="boss" and boss_awake and mage_special_blessing: special_multiplier*=1.15
 		if relics.has("s_pact") and hp<max_hp*0.4: special_multiplier*=1.0+0.3*relics.count("s_pact")
 		class_special_attack()
 		if character=="soulbinder":
@@ -1748,6 +1847,12 @@ func hit_enemy(enemy: Dictionary, amount: float) -> void:
 func hurt(amount: float, from_enemy: bool = true) -> void:
 	if invulnerable > 0 or shield_time>0 or hp <= 0:
 		return
+	if room_kind=="boss" and boss_awake and mage_guard_charges>0:
+		mage_guard_charges-=1
+		invulnerable=0.62
+		effect("forge_guard",player,0.48,Vector2.ZERO)
+		notices.append("forge_guard")
+		return
 	if forge_id=="iron_aegis" and forge_guard_charges>0:
 		forge_guard_charges-=1
 		invulnerable=0.55
@@ -1773,6 +1878,8 @@ func hurt(amount: float, from_enemy: bool = true) -> void:
 
 func shoot(pos: Vector2, velocity: Vector2, hostile: bool, power: float) -> void:
 	if shots.size()>=180: return
+	if not hostile and shot_style.ends_with("_special"):
+		power*=special_multiplier
 	shots.append({"pos":pos,"vel":velocity,"hostile":hostile,"damage":power,"life":2.8,"pierce":0 if hostile else mini(5,relics.count("pierce")),"hit":[],"bounce":0 if hostile else mini(5,relics.count("bounce")+relics.count("d_sleight")),"style":enemy_shot_style if hostile else shot_style})
 
 func boss_phase_for(enemy: Dictionary) -> int:
@@ -2885,6 +2992,78 @@ func map_fog_smoke() -> bool:
 	# Out-of-range indices must never expose names or crash the chart.
 	return map_node_visibility(-1)=="unknown" and map_node_visibility(Dungeon.ROOM_COUNT)=="unknown"
 
+func oracle_mage_smoke() -> bool:
+	begin(9160)
+	player=HUB_PORTAL
+	if not enter_first_room(): return false
+	shards=200
+	if oracle_reveal() or map_node_visibility(4)!="unknown": return false
+	state="route"
+	var next_rooms: Array=route_options()
+	if next_rooms.size()!=3 or oracle_next_column()!=2 or oracle_price()!=12: return false
+	if not oracle_reveal() or shards!=188 or oracle_price()!=20: return false
+	for i in range(dungeon.nodes.size()):
+		var column: int=int(dungeon.nodes[i].column)
+		if column==2 and map_node_visibility(i)!="oracle": return false
+		if column==3 and map_node_visibility(i)!="unknown": return false
+		if column==1 and map_node_visibility(i)!="available": return false
+	if route_options().size()!=3 or travel(4): return false
+	if not oracle_reveal() or shards!=168 or map_node_visibility(7)!="oracle": return false
+	shards=0
+	if oracle_reveal(): return false
+	# Each floor must have an interactable, safely placed magus *before*
+	# its boss shutter; purchases are single-use and paid in run Shards.
+	for floor in range(FLOOR_COUNT):
+		begin(9380+floor)
+		floor_index=floor
+		dungeon.generate(seed_value,floor)
+		room=Dungeon.BOSS
+		enter_room()
+		if threshold_mage_pos==Vector2.ZERO or boss_gate_state!="open" or boss_awake: return false
+		if threshold_mage_pos.x>=boss_gate.position.x or not RoomLayouts.accessible(threshold_mage_pos,27.0,room_regions,walls): return false
+		player=threshold_mage_pos+Vector2(-34,0)
+		if not threshold_mage_available(): return false
+		shards=400
+		if threshold_mage_purchase("invalid") or threshold_mage_price("invalid")!=-1: return false
+		if not threshold_mage_purchase("special_charge") or mage_special_charges!=2: return false
+		if threshold_mage_purchase("special_charge"): return false
+		if not threshold_mage_purchase("ward") or mage_guard_charges!=1: return false
+		if not threshold_mage_purchase("blessing") or not mage_special_blessing: return false
+		if not threshold_mage_purchase("heal_charge") or heal_charges!=3: return false
+		if threshold_mage_purchase("heal_charge"): return false
+		boss_awake=true
+		boss_gate_state="closing"
+		if threshold_mage_available() or threshold_mage_purchase("ward"): return false
+		invulnerable=0.0
+		hp=max_hp
+		hurt(22)
+		if hp!=max_hp or mage_guard_charges!=0: return false
+		# Two accelerated casts are consumed; the third casts normally.
+		enemies.clear()
+		shots.clear()
+		bolt_timer=0
+		tick(0.016,Vector2.ZERO,player+Vector2(210,0),false,true,false)
+		if mage_special_charges!=1 or bolt_timer>=special_cd*0.5: return false
+		bolt_timer=0
+		tick(0.016,Vector2.ZERO,player+Vector2(210,0),false,true,false)
+		if mage_special_charges!=0 or bolt_timer>=special_cd*0.5: return false
+		bolt_timer=0
+		tick(0.016,Vector2.ZERO,player+Vector2(210,0),false,true,false)
+		if bolt_timer<special_cd*0.7: return false
+	# Ascending to a new biome must not carry over purchased foresight or buffs.
+	begin(9551)
+	player=HUB_PORTAL
+	if not enter_first_room(): return false
+	shards=40
+	state="route"
+	if not oracle_reveal(): return false
+	room=Dungeon.BOSS
+	room_kind="boss"
+	dungeon.nodes[room].cleared=true
+	if not descend(): return false
+	if not oracle_revealed.is_empty() or oracle_purchases!=0 or mage_special_charges!=0 or mage_guard_charges!=0 or mage_special_blessing: return false
+	return true
+
 func smoke_test() -> bool:
 	if not RoomLayouts.smoke_test():
 		push_error("Authored chamber connectivity smoke failed")
@@ -2897,6 +3076,9 @@ func smoke_test() -> bool:
 		return false
 	if not map_fog_smoke():
 		push_error("Dungeon map fog-of-war regression failed")
+		return false
+	if not oracle_mage_smoke():
+		push_error("Threshold mage and Oracle economy regression failed")
 		return false
 	if not route_and_damage_smoke():
 		push_error("Route/damage smoke failed")
