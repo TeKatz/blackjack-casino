@@ -2,6 +2,7 @@ import {useEffect,useMemo,useRef,useState} from 'react';
 import type {PointerEvent as ReactPointerEvent} from 'react';
 import type {TaleBoard,TaleBoardNode,TaleClass,TaleEncounter,TaleIntent,TaleRun,TaleState} from './adventureBridge';
 import './adventure.css';
+import {BackroomItemIcon} from './BackroomItemIcon';
 
 type Lang='en'|'de';
 type Props={state:TaleState;language:Lang;pending:boolean;error:string;animations:boolean;
@@ -21,7 +22,7 @@ const words={
   pack:'PACK & COINS',coins:'COINS',empty:'No carried items.',use:'USE ITEM',eventLog:'EVENT LOG',
   board:'CASE BOARD',openBoard:'OPEN CASE BOARD',backStory:'← RETURN TO STORY',
   facts:'KNOWN FACTS',quotes:'NOTES & QUOTES',connections:'CONNECTIONS',
-  zoomIn:'ZOOM +',zoomOut:'ZOOM −',reset:'RESET VIEW',node:'CLUE DETAILS',
+  zoomIn:'ZOOM +',zoomOut:'ZOOM −',reset:'RESET VIEW',node:'CLUE DETAILS',newClue:'NEW CASE FILE',panTip:'Drag with left mouse · scroll to zoom',
   finish:'ADVENTURE COMPLETE',end:'ENDING',another:'REPLAY THIS ADVENTURE',
   return:'BACK TO ADVENTURES',checks:'CHECKS',choices:'CHOICES',encounters:'ENCOUNTERS',
   hand:'YOUR HAND',dealer:'DEALER',hit:'HIT',stand:'STAND',total:'TOTAL',
@@ -42,7 +43,7 @@ const words={
   pack:'INVENTAR & MÜNZEN',coins:'MÜNZEN',empty:'Noch keine Gegenstände.',use:'GEGENSTAND NUTZEN',eventLog:'EREIGNISPROTOKOLL',
   board:'ERMITTLUNGSBRETT',openBoard:'ERMITTLUNGSBRETT ÖFFNEN',backStory:'← ZURÜCK ZUR GESCHICHTE',
   facts:'BEKANNTE FAKTEN',quotes:'NOTIZEN & ZITATE',connections:'VERBINDUNGEN',
-  zoomIn:'ZOOM +',zoomOut:'ZOOM −',reset:'ANSICHT ZURÜCKSETZEN',node:'HINWEISDETAILS',
+  zoomIn:'ZOOM +',zoomOut:'ZOOM −',reset:'ANSICHT ZURÜCKSETZEN',node:'HINWEISDETAILS',newClue:'NEUER EINTRAG',panTip:'Linke Maustaste ziehen · Mausrad zum Zoomen',
   finish:'ABENTEUER ABGESCHLOSSEN',end:'ENDE',another:'ERNEUT SPIELEN',
   return:'ZURÜCK ZU ABENTEUERN',checks:'PROBEN',choices:'ENTSCHEIDUNGEN',encounters:'BEGEGNUNGEN',
   hand:'DEINE HAND',dealer:'GEBER',hit:'KARTE',stand:'HALTEN',total:'SUMME',
@@ -83,7 +84,13 @@ function CharacterSheet({run,copy,pending,send}:{
  const character=run.character;
  const [rolling,setRolling]=useState(false),[shownRoll,setShownRoll]=useState(run.lastRoll?.chosenRoll??20);
  useEffect(()=>{if(!rolling)setShownRoll(run.lastRoll?.chosenRoll??20);},[run.lastRoll?.chosenRoll,rolling]);
- useEffect(()=>{if(!rolling)return;const timer=window.setTimeout(()=>setRolling(false),950);return()=>window.clearTimeout(timer);},[rolling]);
+ useEffect(()=>{
+   if(!rolling)return;
+   let value=7;
+   const ticker=window.setInterval(()=>{value=(value*13+11)%20;setShownRoll(value+1);},49);
+   const timer=window.setTimeout(()=>setRolling(false),940);
+   return()=>{window.clearInterval(ticker);window.clearTimeout(timer);};
+  },[rolling]);
  return <aside className="backroom-sheet">
   <small className="backroom-eyebrow">{copy.stats}</small>
   <h2>{character.name}</h2><p>{character.classId} · {copy.level} {character.level}</p>
@@ -105,7 +112,7 @@ function CharacterSheet({run,copy,pending,send}:{
      title={c.remaining+' scenes'}>{c.name} · {c.remaining}</span>)}</div></>}
   <div className={'backroom-d20 '+(run.pending?'active ':'')+(rolling?'rolling':'')}>
    <strong>D20</strong>
-   <span className="backroom-d20-shape"><svg viewBox="0 0 140 150" aria-hidden="true"><defs><linearGradient id="d20-metal" x2="1" y2="1"><stop stopColor="#d6bf83"/><stop offset=".5" stopColor="#334b48"/><stop offset="1" stopColor="#101f27"/></linearGradient></defs><path d="M70 4L128 35L135 105L70 146L5 105L12 35Z" fill="url(#d20-metal)" stroke="#f3d58d" strokeWidth="3"/><path d="M70 4L30 94L110 94Z M12 35L30 94L5 105 M128 35L110 94L135 105 M30 94L70 146L110 94" fill="none" stroke="#d9c08b" strokeWidth="1.5"/></svg><b>{rolling?'✦':shownRoll}</b></span>
+   <span className="backroom-d20-shape"><svg viewBox="0 0 140 150" aria-hidden="true"><defs><linearGradient id="d20-metal" x2="1" y2="1"><stop stopColor="#d6bf83"/><stop offset=".5" stopColor="#334b48"/><stop offset="1" stopColor="#101f27"/></linearGradient></defs><path d="M70 4L128 35L135 105L70 146L5 105L12 35Z" fill="url(#d20-metal)" stroke="#f3d58d" strokeWidth="3"/><path d="M70 4L30 94L110 94Z M12 35L30 94L5 105 M128 35L110 94L135 105 M30 94L70 146L110 94" fill="none" stroke="#d9c08b" strokeWidth="1.5"/></svg><b>{shownRoll}</b></span>
    {run.pending?<><small>{run.pending.ability} · DC {run.pending.difficulty} · {copy.mod} {signed(run.pending.modifier)}
     {run.pending.mode==='Advantage'?' · '+copy.adv:run.pending.mode==='Disadvantage'?' · '+copy.disadv:''}</small>
     <button className="backroom-primary" disabled={rolling} aria-disabled={pending||rolling} onClick={()=>{setRolling(true);send({action:'adventure.roll'});}}>{copy.roll}</button>
@@ -117,9 +124,10 @@ function Inventory({run,copy,pending,send}:{
  run:TaleRun;copy:Copy;pending:boolean;send:(intent:TaleIntent)=>void}){
  return <section className="backroom-inventory">
   <h3>{copy.pack}</h3><div className="backroom-items">
-   <div className="backroom-item coins"><strong>◆ {run.character.coins}</strong><small>{copy.coins}</small></div>
+   <div className="backroom-item coins"><span className="backroom-coin-icon" aria-hidden="true">◆</span><strong>{run.character.coins}</strong><small>{copy.coins}</small></div>
    {run.inventory.length===0&&<p>{copy.empty}</p>}
    {run.inventory.map(item=><div key={item.itemId} className="backroom-item" title={item.description}>
+     <BackroomItemIcon kind={item.kind} name={item.name}/>
      <strong>{item.name}</strong><small>{item.kind} · ×{item.quantity}</small>
      {item.useChoices.map(choice=><button key={choice.id} aria-disabled={pending}
        onClick={()=>send({action:'adventure.choice',choiceId:choice.id})}>
@@ -169,6 +177,20 @@ function CaseBoard({board,copy,pending,send,error}:{
  const [local,setLocal]=useState<{id:string;x:number;y:number}|null>(null);
  const drag=useRef<{id:string;startX:number;startY:number;x:number;y:number}|null>(null);
  const [camera,setCamera]=useState({zoom:board.zoom,panX:board.panX,panY:board.panY});
+ const cameraRef=useRef(camera);cameraRef.current=camera;
+ const sendRef=useRef(send);sendRef.current=send;
+ const pan=useRef<{id:number;x:number;y:number;panX:number;panY:number}|null>(null);
+ const [panning,setPanning]=useState(false);
+ const seen=useRef(new Set(board.nodes.map(n=>n.id)));
+ const [fresh,setFresh]=useState<string[]>([]);
+ useEffect(()=>{
+  const incoming=board.nodes.map(n=>n.id).filter(id=>!seen.current.has(id));
+  board.nodes.forEach(n=>seen.current.add(n.id));
+  if(incoming.length===0)return;
+  setFresh(incoming);
+  const timer=window.setTimeout(()=>setFresh([]),3200);
+  return()=>window.clearTimeout(timer);
+ },[board.nodes]);
  useEffect(()=>setCamera({zoom:board.zoom,panX:board.panX,panY:board.panY}),[board.zoom,board.panX,board.panY]);
  const nodes=board.nodes.filter(n=>visibleCategories.has(n.category));
  const chosen=nodes.find(n=>n.id===selected);
@@ -195,6 +217,45 @@ function CaseBoard({board,copy,pending,send,error}:{
   if((saved&&Math.abs(saved.x-local.x)<1&&Math.abs(saved.y-local.y)<1)||!!error)setLocal(null);}
  },[board.nodes,pending,local,error]);
  const viewport=useRef<HTMLDivElement>(null);
+ // Native non-passive wheel listener prevents the browser scrolling under the board.
+ useEffect(()=>{
+  const el=viewport.current;if(!el)return;
+  let timer:ReturnType<typeof setTimeout>|null=null;
+  const onWheel=(event:WheelEvent)=>{
+   event.preventDefault();
+   const rect=el.getBoundingClientRect();
+   const previous=cameraRef.current;
+   const zoom=Math.max(.2,Math.min(4,previous.zoom*Math.exp(-event.deltaY*.00115)));
+   const pointerX=event.clientX-rect.left,pointerY=event.clientY-rect.top;
+   const next={zoom,
+    panX:Math.max(-5000,Math.min(5000,pointerX-(pointerX-previous.panX)*zoom/previous.zoom)),
+    panY:Math.max(-5000,Math.min(5000,pointerY-(pointerY-previous.panY)*zoom/previous.zoom))};
+   cameraRef.current=next;setCamera(next);
+   if(timer!==null)window.clearTimeout(timer);
+   timer=window.setTimeout(()=>sendRef.current({action:'adventure.board.view',...cameraRef.current}),120);
+  };
+  el.addEventListener('wheel',onWheel,{passive:false});
+  return()=>{el.removeEventListener('wheel',onWheel);if(timer!==null)window.clearTimeout(timer);};
+ },[]);
+ const beginPan=(event:ReactPointerEvent<HTMLDivElement>)=>{
+  if(event.button!==0||(event.target as Element).closest('.backroom-board-node'))return;
+  event.currentTarget.setPointerCapture(event.pointerId);
+  pan.current={id:event.pointerId,x:event.clientX,y:event.clientY,
+   panX:cameraRef.current.panX,panY:cameraRef.current.panY};
+  setPanning(true);
+ };
+ const movePan=(event:ReactPointerEvent<HTMLDivElement>)=>{
+  const p=pan.current;if(!p||p.id!==event.pointerId)return;
+  const next={...cameraRef.current,
+   panX:Math.max(-5000,Math.min(5000,p.panX+event.clientX-p.x)),
+   panY:Math.max(-5000,Math.min(5000,p.panY+event.clientY-p.y))};
+  cameraRef.current=next;setCamera(next);
+ };
+ const finishPan=(event:ReactPointerEvent<HTMLDivElement>)=>{
+  if(!pan.current||pan.current.id!==event.pointerId)return;
+  pan.current=null;setPanning(false);
+  sendRef.current({action:'adventure.board.view',...cameraRef.current});
+ };
  const fit=()=>{const host=viewport.current;if(!host||!nodes.length)return;
   const minX=Math.min(...nodes.map(n=>n.x)),minY=Math.min(...nodes.map(n=>n.y));
   const w=Math.max(...nodes.map(n=>n.x+280))-minX,h=Math.max(...nodes.map(n=>n.y+150))-minY;
@@ -217,7 +278,12 @@ function CaseBoard({board,copy,pending,send,error}:{
     const next=new Set(previous);if(e.target.checked)next.add(c);else next.delete(c);return next;
    })}/>{c}</label>)}</div>
   <div className="backroom-board-grid">
-   <div className="backroom-board-viewport" ref={viewport}>
+   <div className={'backroom-board-viewport'+(panning?' is-panning':'')} ref={viewport}
+    title={copy.panTip} onPointerDown={beginPan} onPointerMove={movePan}
+    onPointerUp={finishPan} onPointerCancel={()=>{pan.current=null;setPanning(false);}}> 
+    {fresh.length>0&&<div className="backroom-new-entry-notice" role="status" key={fresh.join('|')}>
+      <span aria-hidden="true">◇</span> {copy.newClue} · +{fresh.length}
+     </div>}
     <div className="backroom-board-world" style={{
      transform:'translate('+camera.panX+'px,'+camera.panY+'px) scale('+camera.zoom+')'}}>
      <svg className="backroom-board-lines" width="5000" height="5000" viewBox="0 0 5000 5000"
@@ -227,9 +293,10 @@ function CaseBoard({board,copy,pending,send,error}:{
         return <line key={c.id} x1={a.x+130} y1={a.y+60} x2={b.x+130} y2={b.y+60}
          className={c.status.toLowerCase()}/>;})}</svg>
      {nodes.map(n=>{const p=effective(n);return <button key={n.id}
-      aria-disabled={pending} className={'backroom-board-node '+n.category.toLowerCase()+(selected===n.id?' selected':'')}
+      aria-disabled={pending} className={'backroom-board-node '+n.category.toLowerCase()+
+       (selected===n.id?' selected':'')+(fresh.includes(n.id)?' new-entry':'')}
       style={{left:p.x,top:p.y}} title={n.description}
-      onPointerDown={e=>start(e,n)} onPointerMove={movement} onPointerUp={end}
+      onPointerDown={e=>{e.stopPropagation();start(e,n);}} onPointerMove={movement} onPointerUp={end}
       onPointerCancel={()=>{drag.current=null;setLocal(null);}}>
       <small>{n.category.toUpperCase()} · {n.reliability}</small><strong>{n.title}</strong>
       <span>{n.subtitle||n.lead}</span></button>;})}</div>

@@ -39,8 +39,9 @@ describe('Arcade November feedback regressions',()=>{
   // The cursor starts at 2,2; that is the only rotated tile.
   expect(run.turnCell).toEqual({c:2,r:2});
   expect(run.turnClock).toBeGreaterThan(0);
-  expect(run.turnClock).toBeLessThanOrEqual(.18);
-  for(let i=0;i<12;i++)stepArcadeRun(run,ARCADE_STEP);
+  expect(run.turnClock).toBeLessThanOrEqual(.32);
+  // Higher-fidelity 320 ms turn needs 20 frames, without changing the tile rules.
+  for(let i=0;i<21;i++)stepArcadeRun(run,ARCADE_STEP);
   expect(run.turnClock).toBe(0);
   expect(run.turnCell).toBeNull();
  });

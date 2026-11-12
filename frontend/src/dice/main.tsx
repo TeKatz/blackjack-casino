@@ -5,6 +5,7 @@ import {categories,issueDiceIntent,listenDice} from './bridge';
 import type {DiceCategory,DiceCelebration,DiceGame,DiceIntent,DiceSnapshot} from './bridge';
 import {DiceAmbient} from './Ambient';
 import {DiceCube,Die} from './DiceCube';
+import {diceSkin} from './diceSkins';
 import './dice.css';
 
 const names:Record<'de'|'en',Record<DiceCategory,string>>={
@@ -241,7 +242,7 @@ function App(){
  };
  const message=error??state?.notice??t.ready;
  return <div className="md-app" data-motion={animations} data-testid="modern-dice-app" data-revision={snapshot?.revision??-1}
-  data-mode={state?.mode??'loading'} lang={lang}>
+  data-mode={state?.mode??'loading'} data-dice-variant={state?.diceVariant??'dice-ivory'} lang={lang}>
   <DiceAmbient enabled={animations}/>
   <header className="md-header">
     <div className="md-logo"><small>{t.eyebrow}</small>
@@ -258,6 +259,11 @@ function App(){
     <div className="md-topline">
       <span className="md-mode">{state.mode==='casino'?t.casino:t.casual}</span>
       <span className="md-save-dot">● {t.live}</span>
+      <span className="md-equipped-dice" data-testid="dice-equipped-skin">
+        <i aria-hidden="true">◆</i>
+        <span>{lang==='de'?'AUSGERÜSTETES WÜRFELSET':'EQUIPPED DICE SET'}</span>
+        <strong>{lang==='de'?diceSkin(state.diceVariant).de:diceSkin(state.diceVariant).name}</strong>
+      </span>
       {state.mode==='casino'&&state.table&&<span className="md-stake">
         {t.stake}: {cash(state.table.stake)}</span>}
     </div>
@@ -280,7 +286,8 @@ function App(){
                  aria-label={(lang==='de'?'Würfel ':'Die ')+(i+1)+': '+number+', '+(game.held[i]?t.held:t.free)}
                  disabled={blocked||waiting||finished||!game.canScore||game.rollsUsed===3}
                  onClick={()=>report({action:'hold',index:i})}>
-                  <DiceCube value={number} palette={palette} rolling={rolling&&rollingCells.includes(i)} index={i} token={state.rollToken}/>
+                  <DiceCube value={number} palette={palette} variant={state.diceVariant}
+                    rolling={rolling&&rollingCells.includes(i)} index={i} token={state.rollToken}/>
                   <span className="md-die-status">{game.held[i]?t.held:game.rollsUsed===3?t.result:t.free}</span>
 
                </button>)}
@@ -376,7 +383,7 @@ function App(){
     <div className={'md-celebration'+(animations?' animated':'')}>
       <small>{celebration.player} {t.scored}</small><h2>✦ {t.plus} ✦</h2>
       <div className="md-five-dice">{Array.from({length:5},(_,i)=><div key={i}>
-       {celebration.face>0?<Die value={celebration.face} palette={palette}/>:<span>★</span>}</div>)}</div>
+       {celebration.face>0?<Die value={celebration.face} palette={palette} variant={state?.diceVariant??"dice-ivory"}/>:<span>★</span>}</div>)}</div>
       <p>{names[lang][celebration.category]} · {celebration.points} {t.points}
         {celebration.bonus>0?' · +'+celebration.bonus+' BONUS':''}</p>
     </div>

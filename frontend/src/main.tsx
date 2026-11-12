@@ -295,6 +295,11 @@ function ManorApp() {
           <div className={'slot-viewport' + (run || demoBonusOpen ? ' bonus-active' : '') +
             (godotVisible ? ' godot-active' : '') +
             (motionOff ? ' no-motion' : '')}>
+            <div className="manor-room-dressing" aria-hidden="true">
+              <div className="manor-sconce left"><i/><b/><em/></div>
+              <div className="manor-sconce right"><i/><b/><em/></div>
+              <div className="manor-side-haze"><i/><i/><i/></div>
+            </div>
             <div className="slot-dust" aria-hidden="true">
               {Array.from({ length: 20 }, (_, i) => <i key={i} style={{
                 left: (3 + (i * 37) % 91) + '%',

@@ -836,3 +836,45 @@ html,body,#root{height:100%;overflow:hidden}
  .machine .action-console{grid-template-columns:minmax(0,1fr)}
  .machine .auto-spin-controls{grid-column:auto}
 }
+
+
+/* Responsive stonework and low-intensity wall sconces flank the Manor cabinet.
+   The scenery never overlays the authoritative five-reel canvas. */
+.manor-room-dressing{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;
+ background:radial-gradient(ellipse at 50% 60%,#4e3a345e,transparent 72%),
+ linear-gradient(100deg,#131823,#292b35 23%,#1a1c27 52%,#2b2930 80%,#101721)}
+.manor-room-dressing::before{content:'';position:absolute;inset:0;opacity:.36;
+ background:repeating-linear-gradient(90deg,transparent 0 13%,#8c7d6e1a 13.3%,transparent 14% 26%),
+ repeating-linear-gradient(0deg,transparent 0 19%,#bd987e15 19.4%,transparent 20% 40%);
+ box-shadow:inset 0 0 80px #04070cee}
+.manor-room-dressing::after{content:'';position:absolute;inset:0;opacity:.3;
+ background:linear-gradient(105deg,transparent 35%,#f9d9aa18 48%,transparent 60%);
+ animation:manor-scenery-shift 18s ease-in-out infinite alternate}
+.manor-sconce{position:absolute;top:32%;width:clamp(36px,5vw,95px);height:clamp(110px,20vh,225px);
+ z-index:1;filter:drop-shadow(0 10px 12px #000a)}
+.manor-sconce.left{left:3.5%}.manor-sconce.right{right:3.5%;transform:scaleX(-1)}
+.manor-sconce i{position:absolute;top:36%;left:50%;width:40%;height:24%;border:3px solid #bca07b;
+ border-bottom-width:8px;border-radius:8px 8px 19px 19px;transform:translateX(-50%);
+ background:linear-gradient(145deg,#3f3437,#171d27)}
+.manor-sconce b{position:absolute;left:50%;top:0;width:19%;height:42%;transform:translateX(-50%);
+ border-radius:60% 60% 55% 55%;background:radial-gradient(ellipse at 50% 67%,#fff8de 0 13%,#fbd29d 35%,#e59e557d 67%,transparent 85%);
+ filter:drop-shadow(0 0 19px #e8ba77);animation:manor-candle-drift 3.8s ease-in-out infinite alternate}
+.manor-sconce em{position:absolute;inset:0;border-radius:50%;
+ background:radial-gradient(ellipse at 50% 30%,#d49a6935,transparent 55%);
+ animation:manor-scenery-breathe 7s ease-in-out infinite alternate}
+.manor-side-haze{position:absolute;inset:0;overflow:hidden}
+.manor-side-haze i{position:absolute;top:10%;width:9%;height:84%;opacity:.22;
+ background:linear-gradient(#ecc3a052,transparent);filter:blur(13px);
+ transform:rotate(11deg);animation:manor-scenery-breathe 8s ease-in-out infinite alternate}
+.manor-side-haze i:nth-child(1){left:12%}.manor-side-haze i:nth-child(2){right:12%;animation-delay:-3s;transform:rotate(-11deg)}
+.manor-side-haze i:nth-child(3){left:47%;width:4%;animation-delay:-5s;opacity:.12}
+.slot-reels{z-index:1}
+@keyframes manor-scenery-shift{to{transform:translateX(8%);opacity:.12}}
+@keyframes manor-scenery-breathe{to{opacity:.5}}
+@keyframes manor-candle-drift{to{transform:translateX(-50%) rotate(6deg) scale(.87);opacity:.82}}
+.slot-viewport.no-motion .manor-room-dressing *,
+.slot-viewport.no-motion .manor-room-dressing::after{animation:none!important}
+@media(max-width:800px){.manor-sconce{opacity:.5}}
+@media(prefers-reduced-motion:reduce){
+ .manor-room-dressing *,.manor-room-dressing::after{animation:none!important}
+}

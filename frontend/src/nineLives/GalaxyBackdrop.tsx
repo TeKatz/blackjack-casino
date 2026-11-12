@@ -1,9 +1,9 @@
 import {memo,useId,useMemo} from 'react';
 
 /**
- * Nine hand-composed nebula formations, with deterministic non-repeating stars
- * for every tile. The scene belongs to the cell, not the symbol: duplicates of
- * a symbol do not duplicate a sky. All celestial objects stay in the side gutters.
+ * The same moonlit cobalt canvas sits behind every reel symbol. Star positions
+ * remain deterministic but no longer cause mismatched colour blocks on the grid.
+ * All celestial objects stay in the side gutters.
  */
 const SCENES=[
  {name:'Amethyst Rift',base:'#080b20',haze:'#a345b8',glow:'#dd80ff',light:'#ead1ff',
@@ -45,6 +45,9 @@ const SCENES=[
 ] as const;
 
 type Scene=(typeof SCENES)[number];
+const UNIFIED_REEL_BASE='#080f25';
+const UNIFIED_REEL_HAZE='#4d76a0';
+const UNIFIED_REEL_GLOW='#8ab9dc';
 type Star={x:number;y:number;r:number;brightness:number;spark:boolean;delay:number;duration:number};
 
 function starsFor(cell:number,compact:boolean):Star[]{
@@ -101,9 +104,9 @@ function GalaxyBackdropView({cell,compact=false}:{cell:number;compact?:boolean})
    viewBox="0 0 420 180" preserveAspectRatio="none" aria-hidden="true" focusable="false">
    <defs>
      <radialGradient id={id+'-haze'} cx="50%" cy="49%" r="75%">
-       <stop offset="0%" stopColor={scene.haze} stopOpacity=".62"/>
-       <stop offset="55%" stopColor={scene.haze} stopOpacity=".21"/>
-       <stop offset="100%" stopColor={scene.haze} stopOpacity="0"/>
+       <stop offset="0%" stopColor={UNIFIED_REEL_HAZE} stopOpacity=".46"/>
+       <stop offset="55%" stopColor={UNIFIED_REEL_HAZE} stopOpacity=".17"/>
+       <stop offset="100%" stopColor={UNIFIED_REEL_HAZE} stopOpacity="0"/>
      </radialGradient>
      <radialGradient id={id+'-planet'} cx="30%" cy="25%" r="75%">
        <stop offset="0%" stopColor={scene.light}/>
@@ -111,11 +114,11 @@ function GalaxyBackdropView({cell,compact=false}:{cell:number;compact?:boolean})
        <stop offset="100%" stopColor={scene.base}/>
      </radialGradient>
    </defs>
-   <rect width="420" height="180" fill={scene.base}/>
+   <rect width="420" height="180" fill={UNIFIED_REEL_BASE}/>
    <g className="nine-galaxy-clouds" opacity=".83">
      <path d={scene.left} fill={`url(#${id}-haze)`}/>
      <path d={scene.right} fill={`url(#${id}-haze)`}/>
-     <path d={scene.left} stroke={scene.glow} strokeWidth=".65" fill="none" opacity=".20"/>
+     <path d={scene.left} stroke={UNIFIED_REEL_GLOW} strokeWidth=".65" fill="none" opacity=".20"/>
    </g>
    <g className="nine-galaxy-stars">
      {stars.map((star,index)=><g key={index} className="nine-galaxy-star"

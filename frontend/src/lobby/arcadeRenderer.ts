@@ -278,18 +278,20 @@ function blades(ctx:Context,state:BladeRun){
  // not a decorative guess. It turns red precisely when the throw would collide.
  const blocked=state.blades.some(angle=>angularDistance(angle+state.rotation,BLADE_IMPACT_ANGLE)<BLADE_HIT_ARC);
  const markerColor=blocked?'#ff927e':'#a4f1d2';
- const impactY=cy+radius;
+ // Blade tip penetrates 32px into the target; the reticle must mark the
+ // physical resting tip rather than the outer circle, regardless of rotation.
+ const impactY=cy+radius-32;
  ctx.save();
  ctx.strokeStyle=markerColor;ctx.fillStyle=markerColor;ctx.lineWidth=2;
  ctx.shadowColor=markerColor;ctx.shadowBlur=14;
- ctx.beginPath();ctx.arc(cx,impactY,19+Math.sin(state.elapsed*7)*2,0,TAU);ctx.stroke();
+ ctx.beginPath();ctx.arc(cx,impactY,16+Math.sin(state.elapsed*7)*1.5,0,TAU);ctx.stroke();
  ctx.beginPath();ctx.moveTo(cx-29,impactY);ctx.lineTo(cx-10,impactY);
  ctx.moveTo(cx+10,impactY);ctx.lineTo(cx+29,impactY);ctx.stroke();
  ctx.beginPath();ctx.moveTo(cx,impactY-28);ctx.lineTo(cx,impactY-11);ctx.stroke();
  ctx.shadowBlur=0;ctx.setLineDash([5,6]);
  ctx.beginPath();ctx.moveTo(cx,impactY+30);ctx.lineTo(cx,408);ctx.stroke();ctx.setLineDash([]);
  ctx.font='700 12px Segoe UI, sans-serif';ctx.textAlign='left';
- ctx.fillText(blocked?'BLOCKED · DO NOT THROW':'IMPACT POINT · 6 O’CLOCK',cx+37,impactY+5);
+ ctx.fillText(blocked?'BLOCKED · DO NOT THROW':'BLADE TIP · 6 O’CLOCK',cx+37,impactY+5);
  ctx.restore();
  // Ready knife at the launch position (below the spinning target).
  ctx.save();ctx.translate(cx,431);ctx.rotate(Math.PI);

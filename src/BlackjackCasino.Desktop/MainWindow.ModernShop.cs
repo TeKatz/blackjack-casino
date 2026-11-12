@@ -79,6 +79,9 @@ public partial class MainWindow
             if (!purchase.Success) return (false, purchase.Message);
         }
         bool equipped = progressionController.EquipCosmetic(id);
+        // The Shop may be displayed over Midnight Dice. Its dice palette is
+        // projected from the profile on every snapshot, never cached locally.
+        // Refresh after the Shop closes so WebView2 is visible again.
         RefreshProfileButton();
         RefreshCollectionAlbumHeaderButton();
         return equipped
@@ -130,5 +133,9 @@ public partial class MainWindow
         if (lobby?.Visibility != System.Windows.Visibility.Visible)
             modernLobby?.SetLobbyVisible(false);
         UpdateHostHeaderVisibility(embeddedGameOverlay?.IsVisible == true);
+        // Refresh after WPF has restored the underlying game surface. Refresh()
+        // intentionally ignores hidden WebViews, so a synchronous call here
+        // would leave a newly equipped Dice Set visually stale.
+        Dispatcher.BeginInvoke(new Action(() => modernDiceView?.Refresh()));
     }
 }
