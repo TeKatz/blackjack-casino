@@ -16,7 +16,6 @@ import { localizeMoment, runCue, runMoment, spinCue, settledSpinMoment } from '.
 import { isFreshOwnSpin } from './graphics/presentationGate';
 import type { ManorMoment } from './graphics/manorMoments';
 import type { ReelSpeed } from './graphics/reelTiming';
-import type { RendererDiagnostics } from './graphics/rendererDiagnostics';
 import { BET_PRESETS, AUTO_PRESETS, canAffordBet, validManorBet, shouldContinueAuto } from './graphics/manorAutoplay';
 import './styles.css';
 
@@ -65,8 +64,7 @@ function ManorApp() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [ambienceEnabled, setAmbienceEnabled] = useState(false);
   const [volume, setVolume] = useState(35);
-  const [showDiagnostics, setShowDiagnostics] = useState(false);
-  const [renderMetrics, setRenderMetrics] = useState<RendererDiagnostics | null>(null);
+
   const [moment, setMoment] = useState<ManorMoment | null>(null);
   const audio = useRef<ManorAudio | null>(null);
   if (audio.current === null) audio.current = new ManorAudio();
@@ -300,7 +298,7 @@ function ManorApp() {
                 spinEpoch={spinEpoch} onSpinningChange={setAnimating}
                 onReelStop={index => presentation.current.onReel(index)}
                 onSpinPresented={result => presentation.current.onSpin(result)}
-                onDiagnostics={showDiagnostics ? setRenderMetrics : undefined}
+
                 onReady={() => setRendererReady(true)} />
             </div>
             {(run || demoBonusOpen) && <div className="slot-bonus-portal">
@@ -318,17 +316,6 @@ function ManorApp() {
                   reducedMotion={motionOff}
                   onAction={(action, room) => act(action, room === undefined ? {} : { room })} />
               </> : null}
-            </div>}
-            {showDiagnostics && <div className="render-metrics slot-metrics"
-              role="status" aria-live="off">
-              <strong>{t(language, 'diagnostics')}</strong>
-              <span>{motionOff ? t(language, 'tickerPaused') :
-                renderMetrics ? t(language, 'fpsObserved', renderMetrics.fpsEstimate,
-                  renderMetrics.averageMs, renderMetrics.p95Ms, renderMetrics.overBudget,
-                  renderMetrics.frames) : t(language, 'sample')}</span>
-              <small>{renderMetrics
-                ? t(language, 'dpiObserved', renderMetrics.width, renderMetrics.height,
-                  renderMetrics.pixelRatio) : t(language, 'diagnosticsHint')}</small>
             </div>}
             {!demoBonusOpen && visibleMoment && visibleMoment.key !== 'loss' &&
               <div className={'slot-celebration ' + visibleMoment.key +
@@ -511,15 +498,6 @@ function ManorApp() {
                   {language === 'de' ? 'Hintergrundmusik ist global deaktiviert.' :
                     'Background music is disabled in the casino-wide settings.'}</p>}
             </div>
-            <label className="switch-row" htmlFor="manor-perf-diagnostics">
-              <span>{t(language, 'diagnosticsToggle')}</span>
-              <input type="checkbox" id="manor-perf-diagnostics"
-                checked={showDiagnostics}
-                onChange={event => {
-                  setShowDiagnostics(event.target.checked);
-                  setRenderMetrics(null);
-                }} />
-            </label>
             <label className="speed-control" htmlFor="reel-speed">{t(language, 'speed')}
               <select id="reel-speed" value={reelSpeed}
                 onChange={event => setReelSpeed(event.target.value as ReelSpeed)}>
