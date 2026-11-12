@@ -52,8 +52,8 @@ func _execute() -> void:
         _fail("Planet still has no surface texture")
         return
 
-    var main_floor := ship.get_node_or_null("LoungeFloor/MeshInstance3D") as MeshInstance3D
-    var lounge_wall := ship.get_node_or_null("LoungePortWall/MeshInstance3D") as MeshInstance3D
+    var main_floor := _mesh_under(ship.get_node_or_null("LoungeFloor"))
+    var lounge_wall := _mesh_under(ship.get_node_or_null("LoungePortWall"))
     if main_floor == null or lounge_wall == null:
         _fail("Ship room mesh missing")
         return
@@ -155,6 +155,15 @@ func _execute() -> void:
 
     print("Starship explorer smoke PASS")
     quit(0)
+
+
+func _mesh_under(parent: Node) -> MeshInstance3D:
+    if parent == null:
+        return null
+    for child in parent.get_children():
+        if child is MeshInstance3D:
+            return child
+    return null
 
 
 func _fail(message: String) -> void:
