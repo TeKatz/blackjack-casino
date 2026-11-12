@@ -559,7 +559,18 @@ func _build_interactables() -> void:
     _add_body_mesh(_locker, Vector3(1.92, 2.12, 0.09), _mat(Color("#c1d0d7"), 0.72, 0.35, Color.BLACK, 0.0, false, "cargo"), Vector3(0.96, 0, 0))
     _add_body_collision(_locker, Vector3(1.92, 2.12, 0.09), Vector3(0.96, 0, 0))
     _box(_locker, "LockerEdge", Vector3(1.72, 0, -0.08), Vector3(0.12, 1.6, 0.06), locker_frame)
-    _make_control("LockerHandle", Vector3(-8.25, 1.22, -10.92), 0, "locker", "crew", Color("#bdcad4"))
+    # The clickable latch is mounted on the actual door, so it moves with it.
+    var latch := StaticBody3D.new()
+    latch.name = "LockerHandle"
+    latch.position = Vector3(1.73, 0, -0.15)
+    latch.collision_layer = 2
+    latch.collision_mask = 0
+    latch.add_to_group("ship_interactable")
+    latch.set_meta("kind", "locker")
+    latch.set_meta("id", "crew")
+    _locker.add_child(latch)
+    _add_body_mesh(latch, Vector3(0.12, 0.41, 0.18), locker_frame)
+    _add_body_collision(latch, Vector3(0.23, 0.5, 0.24))
 
     # Panoramic window shutters: open on spawn so the view is immediate.
     _shutter = AnimatableBody3D.new()
