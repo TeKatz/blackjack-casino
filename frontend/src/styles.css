@@ -1129,6 +1129,14 @@ button.manor-godot-item.usable:focus-visible {
 .manor-godot-surface.no-motion .manor-godot-event {animation:none;}
 
 
+/* A physical Godot door click while React is transitioning would animate a
+   choice that the locked gameplay bridge must reject. Block those clicks at
+   the iframe as well, then restore hit testing as soon as the reveal ends. */
+.manor-godot-surface.phase-loading .manor-godot-frame,
+.manor-godot-surface.phase-entering .manor-godot-frame,
+.manor-godot-surface.phase-leaving .manor-godot-frame {pointer-events:none;}
+.manor-godot-surface.phase-loading .manor-godot-loading {z-index:30;}
+
 /* 3D Manor portal: genuinely animated entry and exit in the existing slot.
    No heavy shaders or synchronous WebGL work is performed by these effects.
    The doors occupy the view only during the cinematic, then move completely
