@@ -14,7 +14,8 @@ internal sealed class ManorModernGameService(ManorController controller)
     // Isolated practice uses the EXACT same engine as a wagered run. It is
     // ephemeral and never passed to ManorController.Execute or the journal.
     private ManorRunState? practice;
-    private string? lastPracticeCommandId;
+    private readonly HashSet<string> appliedPracticeIds=new(StringComparer.Ordinal);
+    private int practiceStarts;
     internal bool RequiresRestart { get; private set; }
 
     internal ManorPreviewProtocol.Snapshot Snapshot() =>
@@ -37,6 +38,8 @@ internal sealed class ManorModernGameService(ManorController controller)
 
         if(command.Type.StartsWith("practice.",StringComparison.Ordinal))
             return ExecutePractice(command);
+        if(practice is not null)
+            throw new InvalidOperationException("Leave the non-wager practice before starting real play.");
 
         if(command.ExpectedRevision is not long expected)
             throw new ArgumentException("A state revision is required.",nameof(command));
@@ -77,11 +80,11 @@ internal sealed class ManorModernGameService(ManorController controller)
             throw new InvalidOperationException("Game state changed. Refresh before practising.");
         if(controller.State.CycleActive || controller.State.Run is { Status:ManorRunStatus.Hunting })
             throw new InvalidOperationException("Finish the saved Manor cycle before entering practice.");
-        if(lastPracticeCommandId==command.RequestId) return Snapshot();
+        if(appliedPracticeIds.Contains(command.RequestId)) return Snapshot();
 
         if(command.Type is "practice.start" or "practice.restart")
         {
-            practice=ManorRun.Create(3,5).State;
+            practice=ManorRun.Create(3,(5+practiceStarts++)%16).State;
         }
         else if(command.Type=="practice.exit")
         {
@@ -113,7 +116,7 @@ internal sealed class ManorModernGameService(ManorController controller)
                     throw new InvalidOperationException("Unknown practice action.");
             }
         }
-        lastPracticeCommandId=command.RequestId;
+        appliedPracticeIds.Add(command.RequestId);
         return Snapshot();
     }
 
