@@ -1,5 +1,8 @@
 extends Node3D
 
+const SurfaceLibrary = preload("res://surface_library.gd")
+var _surface_library = SurfaceLibrary.new()
+
 # Standalone exploration prototype: no casino bridge, bankroll or saved progress.
 # All ship geometry is original and built with Godot primitives.
 
@@ -39,6 +42,7 @@ func _ready() -> void:
     _build_details()
     _build_doors()
     _build_interactables()
+    _build_finish_details()
     _build_hud()
     player.connect("use_requested", Callable(self, "_on_use"))
     player.connect("target_changed", Callable(self, "_on_focus"))
@@ -78,11 +82,13 @@ func _tr(de: String, en: String) -> String:
     return de if _lang_de else en
 
 
-func _mat(tint: Color, metal: float = 0.0, rough: float = 0.68, glow: Color = Color.BLACK, power: float = 0.0, transparent: bool = false) -> StandardMaterial3D:
+func _mat(tint: Color, metal: float = 0.0, rough: float = 0.68, glow: Color = Color.BLACK, power: float = 0.0, transparent: bool = false, surface: String = "") -> StandardMaterial3D:
     var material := StandardMaterial3D.new()
     material.albedo_color = tint
     material.metallic = metal
     material.roughness = rough
+    if surface != "":
+        _surface_library.apply(material, surface)
     if power > 0.0:
         material.emission_enabled = true
         material.emission = glow
@@ -140,6 +146,9 @@ func _light(zone: String, at: Vector3, color: Color, energy: float, radius: floa
     source.light_energy = energy
     source.omni_range = radius
     source.shadow_enabled = shadows
+    if shadows:
+        source.shadow_bias = 0.065
+        source.shadow_normal_bias = 0.8
     source.visible = bool(_zone_enabled.get(zone, true))
     add_child(source)
     if _zone_lights.has(zone):
@@ -175,29 +184,18 @@ func _build_space() -> void:
     we.environment = env
     world.add_child(we)
 
-    var stars := MultiMeshInstance3D.new()
-    stars.name = "SpaceStars"
-    var star_sphere := SphereMesh.new()
-    star_sphere.radius = 0.7
-    star_sphere.height = 1.4
-    var multi := MultiMesh.new()
-    multi.transform_format = MultiMesh.TRANSFORM_3D
-    multi.instance_count = 580
-    multi.mesh = star_sphere
-    var rng := RandomNumberGenerator.new()
-    rng.seed = 539218
-    for i in range(multi.instance_count):
-        var vec := Vector3(rng.randf_range(-1.0, 1.0), rng.randf_range(-0.7, 0.7), rng.randf_range(-1.0, 1.0)).normalized()
-        var distance := rng.randf_range(105.0, 190.0)
-        var scale := rng.randf_range(0.25, 1.9)
-        multi.set_instance_transform(i, Transform3D(Basis().scaled(Vector3.ONE * scale), vec * distance))
-    stars.multimesh = multi
-    stars.material_override = _mat(Color("#c8e0ff"), 0.0, 1.0, Color("#d9eaff"), 2.0)
-    world.add_child(stars)
+    # Image-backed equirectangular panorama replaces hundreds of giant star spheres.
+    env.background_mode = Environment.BG_SKY
+    env.sky = _surface_library.sky()
+    env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+    var panorama := Node3D.new()
+    panorama.name = "SpacePanorama"
+    world.add_child(panorama)
 
-    var planet := _sphere(world, "Planet", Vector3(-26, 17, 107), 17.0, _mat(Color("#304f85"), 0.04, 0.91, Color("#4169a2"), 0.17))
+    var planet := _sphere(world, "Planet", Vector3(-26, 17, 107), 17.0, _surface_library.celestial(_surface_library.PLANET))
     planet.rotation_degrees.y = 16.0
-    _sphere(world, "FarMoon", Vector3(53, -9, 148), 7.3, _mat(Color("#9b94b1"), 0.0, 0.95, Color("#70677d"), 0.12))
+    _sphere(world, "FarMoon", Vector3(53, -9, 148), 7.3, _surface_library.celestial(_surface_library.MOON))
+    # Planetary terminators are produced by a distant light, not emissive white balls.
     var sun := DirectionalLight3D.new()
     sun.name = "ExteriorStarlight"
     sun.rotation_degrees = Vector3(-24, -31, -2)
@@ -208,11 +206,11 @@ func _build_space() -> void:
 
 
 func _build_hull() -> void:
-    var hull := _mat(Color("#23323f"), 0.26, 0.77)
-    var wall := _mat(Color("#304656"), 0.24, 0.72)
-    var floor_mat := _mat(Color("#172530"), 0.37, 0.55)
-    var glass := _mat(Color(0.25, 0.53, 0.69, 0.16), 0.05, 0.1, Color.BLACK, 0.0, true)
-    var beam := _mat(Color("#4f6877"), 0.74, 0.3)
+    var hull := _mat(Color("#a0b0b9"), 0.42, 0.69, Color.BLACK, 0.0, false, "ceiling")
+    var wall := _mat(Color("#b2c0c8"), 0.36, 0.66, Color.BLACK, 0.0, false, "wall")
+    var floor_mat := _mat(Color("#8799a2"), 0.41, 0.59, Color.BLACK, 0.0, false, "floor")
+    var glass := _mat(Color(0.21, 0.38, 0.48, 0.12), 0.07, 0.12, Color.BLACK, 0.0, true)
+    var beam := _mat(Color("#c1cdd4"), 0.78, 0.28, Color.BLACK, 0.0, false, "brushed")
 
     # Lounge: 16m wide and 15m long, with a broad star-facing aft window.
     _box(self, "LoungeFloor", Vector3(0, -0.25, 1.55), Vector3(16, 0.5, 15.1), floor_mat, true)
@@ -368,16 +366,45 @@ func _rigid_prop(item_name: String, at: Vector3, dimensions: Vector3, material: 
     var collision := CollisionShape3D.new()
     collision.shape = shape
     prop.add_child(collision)
+    _decorate_prop(prop, item_name, dimensions)
     return prop
 
 
+func _decorate_prop(prop: RigidBody3D, item_name: String, dimensions: Vector3) -> void:
+    var bright := _mat(Color("#c9d9df"), 0.73, 0.29, Color.BLACK, 0.0, false, "brushed")
+    var rubber := _mat(Color("#8b9fab"), 0.2, 0.63, Color.BLACK, 0.0, false, "rubber")
+    var screen := _mat(Color("#4ef0e0"), 0.0, 0.23, Color("#27c4c2"), 1.8, false, "console")
+    match item_name:
+        "DataSlate", "CrewNotebook":
+            _box(prop, "InsetScreen", Vector3(0, dimensions.y * 0.5 + 0.007, 0), Vector3(dimensions.x * 0.76, 0.012, dimensions.z * 0.8), screen)
+            _box(prop, "SlateEdge", Vector3(0, 0.006, dimensions.z * 0.5), Vector3(dimensions.x, dimensions.y, 0.024), rubber)
+        "MetalMug":
+            var handle := TorusMesh.new()
+            handle.inner_radius = 0.04
+            handle.outer_radius = 0.085
+            var mesh := MeshInstance3D.new()
+            mesh.mesh = handle
+            mesh.rotation_degrees.x = 90
+            mesh.position = Vector3(dimensions.x * 0.65, 0.02, 0)
+            mesh.material_override = bright
+            prop.add_child(mesh)
+        "BatteryPack", "DiagnosticBlock":
+            _box(prop, "BatteryContact", Vector3(0, dimensions.y * 0.5 + 0.005, 0), Vector3(dimensions.x * 0.74, 0.025, dimensions.z * 0.66), bright)
+            _box(prop, "ChargeIndicator", Vector3(0, dimensions.y * 0.5 + 0.026, 0), Vector3(dimensions.x * 0.38, 0.015, dimensions.z * 0.2), screen)
+        "SpareFuse":
+            _box(prop, "FuseTop", Vector3(0, dimensions.y * 0.51, 0), Vector3(dimensions.x * 1.05, 0.025, dimensions.z * 1.05), bright)
+            _box(prop, "FuseBottom", Vector3(0, -dimensions.y * 0.51, 0), Vector3(dimensions.x * 1.05, 0.025, dimensions.z * 1.05), bright)
+        "SmallCargoParcel":
+            _box(prop, "ParcelStrap", Vector3(0, dimensions.y * 0.5 + 0.007, 0), Vector3(dimensions.x * 0.22, 0.014, dimensions.z), rubber)
+
+
 func _build_details() -> void:
-    var steel := _mat(Color("#526a76"), 0.75, 0.36)
-    var muted := _mat(Color("#263b48"), 0.46, 0.57)
-    var upholstery := _mat(Color("#365163"), 0.08, 0.86)
-    var display := _mat(Color("#63d8dc"), 0.0, 0.19, Color("#51cfd4"), 1.45)
-    var amber := _mat(Color("#d2ab82"), 0.22, 0.55, Color("#e0af77"), 0.7)
-    var cargo := _mat(Color("#5b6f7a"), 0.28, 0.62)
+    var steel := _mat(Color("#bbc9cf"), 0.75, 0.34, Color.BLACK, 0.0, false, "brushed")
+    var muted := _mat(Color("#879ca6"), 0.46, 0.57, Color.BLACK, 0.0, false, "rubber")
+    var upholstery := _mat(Color("#95b0bd"), 0.08, 0.86, Color.BLACK, 0.0, false, "fabric")
+    var display := _mat(Color("#79e0e6"), 0.0, 0.24, Color("#32c4cf"), 0.75, false, "console")
+    var amber := _mat(Color("#d9b998"), 0.22, 0.55, Color.BLACK, 0.0, false, "brushed")
+    var cargo := _mat(Color("#becbd2"), 0.28, 0.62, Color.BLACK, 0.0, false, "cargo")
 
     # View-facing lounge furniture and liftable desk objects.
     _box(self, "PanoramaRail", Vector3(0, 0.78, 8.2), Vector3(12.5, 0.09, 0.16), steel)
@@ -448,7 +475,7 @@ func _make_door(id: String, at: Vector3, rotation_y: float, slide: Vector3) -> v
     body.collision_layer = 1
     body.collision_mask = 0
     add_child(body)
-    _add_body_mesh(body, Vector3(2.94, 3.12, 0.18), _mat(Color("#476172"), 0.7, 0.33))
+    _add_body_mesh(body, Vector3(2.94, 3.12, 0.18), _mat(Color("#c6d1d8"), 0.7, 0.33, Color.BLACK, 0.0, false, "wall"))
     _add_body_mesh(body, Vector3(2.48, 0.07, 0.2), _mat(Color("#8ae5de"), 0.1, 0.25, Color("#64d7d8"), 1.3), Vector3(0, 0.28, 0.02))
     _add_body_mesh(body, Vector3(0.055, 2.8, 0.205), _mat(Color("#172935"), 0.5, 0.52), Vector3(0, 0, 0.02))
     _add_body_collision(body, Vector3(2.94, 3.12, 0.18))
@@ -466,7 +493,7 @@ func _make_control(item_name: String, at: Vector3, rotation_y: float, kind: Stri
     panel.set_meta("kind", kind)
     panel.set_meta("id", id)
     add_child(panel)
-    _add_body_mesh(panel, Vector3(0.63, 0.85, 0.2), _mat(Color("#102331"), 0.58, 0.43))
+    _add_body_mesh(panel, Vector3(0.63, 0.85, 0.2), _mat(Color("#9bafb9"), 0.58, 0.43, Color.BLACK, 0.0, false, "console"))
     _add_body_mesh(panel, Vector3(0.44, 0.59, 0.023), _mat(color, 0.08, 0.25, color, 1.65), Vector3(0, 0, 0.113))
     _add_body_collision(panel, Vector3(0.63, 0.85, 0.2))
     return panel
@@ -500,7 +527,7 @@ func _build_interactables() -> void:
     var torch_model := MeshInstance3D.new()
     torch_model.mesh = torch_mesh
     torch_model.rotation_degrees.z = 90.0
-    torch_model.material_override = _mat(Color("#6f8c95"), 0.72, 0.3)
+    torch_model.material_override = _mat(Color("#b3c2c9"), 0.72, 0.3, Color.BLACK, 0.0, false, "brushed")
     _flashlight_pickup.add_child(torch_model)
     _add_body_collision(_flashlight_pickup, Vector3(0.55, 0.19, 0.22))
     _box(_flashlight_pickup, "TorchTip", Vector3(-0.25, 0, 0), Vector3(0.085, 0.18, 0.2), _mat(Color("#f2f4e7"), 0.0, 0.5, Color("#cce7df"), 0.4))
@@ -514,17 +541,25 @@ func _build_interactables() -> void:
     _make_control("EngineeringTerminal", Vector3(5.3, 1.58, -14.65), 0, "terminal", "systems", Color("#79c7ff"))
     _terminal_display = _sign("STANDBY\nSYSTEMS READY", Vector3(5.65, 2.52, -16.76), 0, Color("#9ddfd6"), 37)
 
-    # Storage locker whose metal door swings on an actual hinge.
-    _box(self, "LockerHousing", Vector3(-9.05, 1.17, -10.25), Vector3(2.1, 2.34, 0.75), _mat(Color("#2e4756"), 0.61, 0.41), true)
+    # Cabin-facing locker: open front points toward NEGATIVE Z (into the cabin),
+    # never into the bulkhead at Z=-9. The empty shell remains visible when opened.
+    var locker_frame := _mat(Color("#b7c8d0"), 0.65, 0.39, Color.BLACK, 0.0, false, "brushed")
+    _box(self, "LockerBack", Vector3(-9.05, 1.17, -9.87), Vector3(2.07, 2.32, 0.13), locker_frame, true)
+    _box(self, "LockerLeft", Vector3(-10.07, 1.17, -10.26), Vector3(0.12, 2.32, 0.83), locker_frame, true)
+    _box(self, "LockerRight", Vector3(-8.03, 1.17, -10.26), Vector3(0.12, 2.32, 0.83), locker_frame, true)
+    _box(self, "LockerRoof", Vector3(-9.05, 2.32, -10.26), Vector3(2.1, 0.1, 0.83), locker_frame, true)
+    _box(self, "LockerFloor", Vector3(-9.05, 0.08, -10.26), Vector3(2.1, 0.16, 0.83), locker_frame, true)
+    _box(self, "LockerShelf", Vector3(-9.05, 1.16, -10.25), Vector3(1.89, 0.06, 0.66), locker_frame, true)
     _locker = AnimatableBody3D.new()
     _locker.name = "CabinLockerDoor"
-    _locker.position = Vector3(-10.0, 1.2, -9.8)
+    _locker.position = Vector3(-10.02, 1.19, -10.74)
     _locker.collision_layer = 1
     _locker.collision_mask = 0
     add_child(_locker)
-    _add_body_mesh(_locker, Vector3(1.9, 2.12, 0.09), _mat(Color("#516b79"), 0.72, 0.35), Vector3(0.95, 0, 0))
-    _add_body_collision(_locker, Vector3(1.9, 2.12, 0.09), Vector3(0.95, 0, 0))
-    _make_control("LockerHandle", Vector3(-8.18, 1.22, -9.65), 0, "locker", "crew", Color("#bdcad4"))
+    _add_body_mesh(_locker, Vector3(1.92, 2.12, 0.09), _mat(Color("#c1d0d7"), 0.72, 0.35, Color.BLACK, 0.0, false, "cargo"), Vector3(0.96, 0, 0))
+    _add_body_collision(_locker, Vector3(1.92, 2.12, 0.09), Vector3(0.96, 0, 0))
+    _box(_locker, "LockerEdge", Vector3(1.72, 0, -0.08), Vector3(0.12, 1.6, 0.06), locker_frame)
+    _make_control("LockerHandle", Vector3(-8.25, 1.22, -10.92), 0, "locker", "crew", Color("#bdcad4"))
 
     # Panoramic window shutters: open on spawn so the view is immediate.
     _shutter = AnimatableBody3D.new()
@@ -533,10 +568,10 @@ func _build_interactables() -> void:
     _shutter.collision_layer = 1
     _shutter.collision_mask = 0
     add_child(_shutter)
-    _add_body_mesh(_shutter, Vector3(11.8, 2.76, 0.13), _mat(Color("#3a505f"), 0.65, 0.32))
+    _add_body_mesh(_shutter, Vector3(11.8, 2.76, 0.13), _mat(Color("#afbfc8"), 0.65, 0.32, Color.BLACK, 0.0, false, "wall"))
     _add_body_collision(_shutter, Vector3(11.8, 2.76, 0.13))
     for x in [-4.4, -1.4, 1.6, 4.6]:
-        _add_body_mesh(_shutter, Vector3(0.09, 2.6, 0.14), _mat(Color("#6c8796"), 0.74, 0.35), Vector3(x, 0, 0))
+        _add_body_mesh(_shutter, Vector3(0.09, 2.6, 0.14), _mat(Color("#bdcad0"), 0.74, 0.35, Color.BLACK, 0.0, false, "brushed"), Vector3(x, 0, 0))
     _make_control("PanoramaShutterControl", Vector3(6.55, 1.66, 8.65), 0, "shutter", "window", Color("#7ac4f1"))
 
 
@@ -590,7 +625,7 @@ func toggle_locker() -> void:
         _locker_tween.kill()
     _locker_tween = create_tween()
     _locker_tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-    _locker_tween.tween_property(_locker, "rotation_degrees:y", -95.0 if _locker_open else 0.0, 0.8)
+    _locker_tween.tween_property(_locker, "rotation_degrees:y", 95.0 if _locker_open else 0.0, 0.8)
     _show_notice(_tr("SCHRANK GEÖFFNET" if _locker_open else "SCHRANK GESCHLOSSEN", "LOCKER OPEN" if _locker_open else "LOCKER CLOSED"))
     _on_focus(_focused)
 
