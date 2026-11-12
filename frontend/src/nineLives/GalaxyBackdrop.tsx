@@ -1,9 +1,9 @@
 import {memo,useId,useMemo} from 'react';
 
 /**
- * Nine hand-composed nebula formations, with deterministic non-repeating stars
- * for every tile. The scene belongs to the cell, not the symbol: duplicates of
- * a symbol do not duplicate a sky. All celestial objects stay in the side gutters.
+ * The same moonlit cobalt canvas sits behind every reel symbol. Star positions
+ * remain deterministic but no longer cause mismatched colour blocks on the grid.
+ * All celestial objects stay in the side gutters.
  */
 const SCENES=[
  {name:'Amethyst Rift',base:'#080b20',haze:'#a345b8',glow:'#dd80ff',light:'#ead1ff',
@@ -45,6 +45,7 @@ const SCENES=[
 ] as const;
 
 type Scene=(typeof SCENES)[number];
+const UNIFIED_REEL_SCENE=SCENES[2];
 type Star={x:number;y:number;r:number;brightness:number;spark:boolean;delay:number;duration:number};
 
 function starsFor(cell:number,compact:boolean):Star[]{
@@ -64,7 +65,7 @@ function starsFor(cell:number,compact:boolean):Star[]{
 
 /** Useful in tests: different cells are guaranteed to use independent star maps. */
 export function galaxySignature(cell:number):string{
- const scene=SCENES[((cell%SCENES.length)+SCENES.length)%SCENES.length];
+ const scene=UNIFIED_REEL_SCENE;
  const points=starsFor(cell,false).map(s=>s.x.toFixed(3)+','+s.y.toFixed(3));
  return scene.name+'|'+points.join('|');
 }
@@ -94,7 +95,7 @@ function Planet({scene,id}:{scene:Scene;id:string}){
 
 function GalaxyBackdropView({cell,compact=false}:{cell:number;compact?:boolean}){
  const id=useId().replace(/:/g,'');
- const scene=SCENES[((cell%SCENES.length)+SCENES.length)%SCENES.length];
+ const scene=UNIFIED_REEL_SCENE;
  const stars=useMemo(()=>starsFor(cell,compact),[cell,compact]);
  return <svg className={'nine-galaxy-scene'+(compact?' nine-galaxy-compact':'')}
    data-galaxy-cell={cell} data-galaxy-name={scene.name}
