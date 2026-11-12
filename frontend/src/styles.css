@@ -1150,8 +1150,10 @@ button.manor-godot-item.usable:focus-visible {
 }
 .manor-godot-surface.is-active.phase-leaving {
   animation:manor-godot-view-exit 640ms cubic-bezier(.5,0,.9,.55) both;
-  pointer-events:none;
+  /* Swallow clicks while the reel controls reappear underneath the closing portal. */
+  pointer-events:auto;
 }
+.manor-godot-portal.phase-leaving {pointer-events:auto;}
 @keyframes manor-godot-view-enter {
   0% {opacity:.58;transform:scale(.94);filter:brightness(.6) blur(2px);}
   42% {opacity:.88;filter:brightness(.85) blur(1px);}
