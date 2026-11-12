@@ -137,7 +137,7 @@ function ReelsApp(){
       strip[(movement.base[index]+n-1+32)%32]);
   };
   return <div className="reels-app" lang={s.language} data-language={s.language}
-    data-testid="reels-app" data-animating={animating} data-spin-id={result?.id??''}>
+    data-testid="reels-app" data-animating={animating} data-bet-pending={!!pending&&!animating} data-spin-id={result?.id??''}>
     <header className="reels-header">
       <button className="reels-back" onClick={close}>← {t.back} <kbd>ESC</kbd></button>
 
@@ -184,7 +184,7 @@ function ReelsApp(){
           </div>
           <button className="reels-spin" data-testid="reels-spin" disabled={locked||!s.canSpin}
             onClick={()=>act({action:'spin'})}>
-            {locked?t.spinning:s.canSpin?t.spin:t.out}<kbd>SPACE</kbd>
+            {animating?t.spinning:s.canSpin?t.spin:t.out}<kbd>SPACE</kbd>
           </button>
         </div>
       </main>
