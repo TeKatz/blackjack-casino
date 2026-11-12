@@ -1930,7 +1930,9 @@ func shoot(pos: Vector2, velocity: Vector2, hostile: bool, power: float) -> void
 
 func boss_phase_for(enemy: Dictionary) -> int:
 	var ratio: float=float(enemy.hp)/maxf(1.0,float(enemy.max_hp))
-	return 3 if ratio<=0.32 else (2 if ratio<=0.68 else 1)
+	# HP values at large multipliers can round a fraction just above
+	# 0.68 / 0.32. Phase gates are inclusive with a tiny float tolerance.
+	return 3 if ratio<=0.3201 else (2 if ratio<=0.6801 else 1)
 
 func update_boss_phase(enemy: Dictionary, dt: float) -> bool:
 	var next_phase: int=boss_phase_for(enemy)
@@ -2517,7 +2519,6 @@ func encounter_variation_smoke() -> bool:
 	return true
 
 func build_and_boss_smoke() -> bool:
-	print("POLISH_BOSS_TEST A: synergy previews")
 	# A card must preview the identical combination that gameplay activates.
 	for id in Content.SYNERGIES:
 		begin(405)
@@ -2530,7 +2531,6 @@ func build_and_boss_smoke() -> bool:
 		if info.is_empty() or info["state"]!="ready" or info["id"]!=id: return false
 		relics.append(second)
 		if not has_synergy(str(id)) or synergy_preview(second)["state"]!="active": return false
-	print("POLISH_BOSS_TEST B: synergy previews OK")
 	begin(109)
 	if not active_synergies().is_empty(): return false
 	# Actually trigger different transformations, not just their metadata.
@@ -2547,7 +2547,6 @@ func build_and_boss_smoke() -> bool:
 	if float(enemies[3].hp)>=health_before:
 		push_error("Chain-lightning smoke lost clustered enemies in the new authored room")
 		return false
-	print("POLISH_BOSS_TEST C: chain proc OK")
 	relics.assign(["pierce","bounce"])
 	enemies.clear()
 	spawn_enemy("brute",Vector2(320,900))
@@ -2560,7 +2559,6 @@ func build_and_boss_smoke() -> bool:
 	if ricochet_count!=2:
 		push_error("Ricochet smoke failed in authored room: "+str(ricochet_count))
 		return false
-	print("POLISH_BOSS_TEST D: ricochet OK")
 	relics.assign(["dashfire","nova"])
 	enemies.clear()
 	spawn_enemy("brute",Vector2(250,385))
@@ -2575,9 +2573,7 @@ func build_and_boss_smoke() -> bool:
 	for fx in effects:
 		if fx.kind=="synergy_inferno": inferno_seen=true
 	if not inferno_seen: return false
-	print("POLISH_BOSS_TEST E: dash effect OK")
 	for floor in range(3):
-		print("POLISH_BOSS_TEST F: floor %d"%floor)
 		begin(557+floor)
 		floor_index=floor
 		dungeon.generate(seed_value,floor)
@@ -2592,11 +2588,14 @@ func build_and_boss_smoke() -> bool:
 		tick(0.016,Vector2.ZERO,Vector2(boss.pos.x,boss.pos.y),false,false,false)
 		if not boss_awake: return false
 		boss_intro_timer=0.0
-		print("POLISH_BOSS_TEST G: HP %f"%float(boss.max_hp))
 		hit_enemy(boss,float(boss.max_hp)*8.0)
-		if absf(float(boss.hp)/float(boss.max_hp)-0.68)>0.002: return false
+		if absf(float(boss.hp)/float(boss.max_hp)-0.68)>0.002:
+			push_error("New boss HP did not respect first phase gate: "+str(boss.hp)+"/"+str(boss.max_hp))
+			return false
 		update_enemies(0.016)
-		if int(boss.phase)!=2 or float(boss.phase_lock)<=0: return false
+		if int(boss.phase)!=2 or float(boss.phase_lock)<=0:
+			push_error("Boss first phase not activated: ratio="+str(float(boss.hp)/float(boss.max_hp))+" phase="+str(boss.phase)+" lock="+str(boss.phase_lock))
+			return false
 		var health_at_lock: float=float(boss.hp)
 		hit_enemy(boss,99999.0)
 		if float(boss.hp)!=health_at_lock: return false
