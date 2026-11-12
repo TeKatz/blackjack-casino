@@ -383,7 +383,7 @@ function App(){
     <div className={'md-celebration'+(animations?' animated':'')}>
       <small>{celebration.player} {t.scored}</small><h2>✦ {t.plus} ✦</h2>
       <div className="md-five-dice">{Array.from({length:5},(_,i)=><div key={i}>
-       {celebration.face>0?<Die value={celebration.face} palette={palette} variant={state.diceVariant}/>:<span>★</span>}</div>)}</div>
+       {celebration.face>0?<Die value={celebration.face} palette={palette} variant={state?.diceVariant??"dice-ivory"}/>:<span>★</span>}</div>)}</div>
       <p>{names[lang][celebration.category]} · {celebration.points} {t.points}
         {celebration.bonus>0?' · +'+celebration.bonus+' BONUS':''}</p>
     </div>
