@@ -42,6 +42,7 @@ func _init() -> void:
     }
 
 
+
 func _material(color: Color, texture: Texture2D = null, metal: float = 0.0,
         rough: float = 0.75, glow: Color = Color.BLACK, power: float = 0.0) -> StandardMaterial3D:
     var mat := StandardMaterial3D.new()
@@ -49,11 +50,15 @@ func _material(color: Color, texture: Texture2D = null, metal: float = 0.0,
     mat.metallic = metal
     mat.roughness = rough
     if texture != null:
+        # WebGL 2's Compatibility renderer renders our large world-triplanar
+        # stone/tile meshes inconsistently and samples three textures/pixel.
+        # Use explicit mesh UVs, mipmaps and repeat instead on *all* surfaces.
         mat.albedo_texture = texture
         mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
-        mat.uv1_triplanar = true
-        mat.uv1_world_triplanar = true
-        mat.uv1_scale = Vector3(0.62, 0.62, 0.62)
+        mat.texture_repeat = true
+        mat.uv1_triplanar = false
+        mat.uv1_world_triplanar = false
+        mat.uv1_scale = Vector3.ONE
     if power > 0.0:
         mat.emission_enabled = true
         mat.emission = glow
@@ -68,10 +73,18 @@ func _box(p: Node3D, name: String, pos: Vector3, size: Vector3, mat: Material) -
     node.name = name
     node.mesh = box
     node.position = pos
-    node.material_override = mat
+    if mat is StandardMaterial3D and (mat as StandardMaterial3D).albedo_texture != null:
+        var uv_mat := (mat as StandardMaterial3D).duplicate() as StandardMaterial3D
+        # Every face of Godot's BoxMesh has valid UV1; repeat large architectural
+        # textures rather than stretching a single pixel-sized tile over a wall.
+        var tiles := clampf(maxf(size.x, maxf(size.y, size.z)) / 2.4, 1.0, 12.0)
+        uv_mat.uv1_scale = Vector3(tiles, tiles, 1.0)
+        uv_mat.texture_repeat = true
+        node.material_override = uv_mat
+    else:
+        node.material_override = mat
     p.add_child(node)
     return node
-
 
 func _cyl(p: Node3D, name: String, pos: Vector3, radius: float, height: float,
         mat: Material, segments: int = 12) -> MeshInstance3D:
@@ -180,6 +193,7 @@ func build(room_id: int) -> Node3D:
     return visual
 
 
+
 func _shell(p: Node3D, family: String, room_id: int) -> void:
     var floor_mat: Material = m["wood"]
     var wall_mat: Material = m["wallpaper"]
@@ -201,13 +215,17 @@ func _shell(p: Node3D, family: String, room_id: int) -> void:
             floor_mat = m["tile"]
             height = 6.2
         "garden":
-            wall_mat = m["glass"]
+            wall_mat = m["plaster"]
             floor_mat = m["tile"]
             height = 6.4
         "attic":
             wall_mat = m["plaster"]
             floor_mat = m["wood"]
             height = 4.9
+        "moonlit":
+            wall_mat = m["bluewall"]
+            floor_mat = m["darkmarble"]
+            height = 6.3
         "crypt":
             wall_mat = m["cryptstone"]
             floor_mat = m["stone"]
@@ -222,45 +240,79 @@ func _shell(p: Node3D, family: String, room_id: int) -> void:
 
     _box(p, "Floor", Vector3(0, -0.18, -1), Vector3(width, 0.36, 20.9), floor_mat)
     if family != "outdoor":
-        _box(p, "Ceiling", Vector3(0, height, -1), Vector3(width, 0.24, 20.9), wall_mat)
+        _box(p, "Ceiling", Vector3(0, height, -1),
+            Vector3(width, 0.24, 20.9), wall_mat)
     else:
-        # The outdoor rooms have genuinely open skies; no fake dark ceiling.
-        var panorama := _material(Color("#111e39"), TEXTURE_GLASS, 0.0, 0.95)
-        _box(p, "MoonlitBackdrop", Vector3(0, 9.3, -1), Vector3(24.0, 0.14, 23.0), panorama)
+        # The open stone courtyard is lit by a moon-blue background rather than
+        # a fake flat ceiling right above the player.
+        _box(p, "DistantNightSky", Vector3(0, 13.8, -1),
+            Vector3(30.0, 0.2, 29.0), m["bluewall"])
+
     for side in [-1, 1]:
-        var x := float(side) * (width * 0.5)
-        _box(p, "SideWall", Vector3(x, (height - 0.2) * 0.5, -1),
-            Vector3(0.35, height, 20.9), wall_mat)
-        _box(p, "Dado", Vector3(x - float(side) * 0.20, 0.95, -1),
-            Vector3(0.17, 1.85, 20.4), trim)
-        _box(p, "ChairRail", Vector3(x - float(side) * 0.24, 1.95, -1),
-            Vector3(0.1, 0.1, 20.4), m["brass"])
+        var x := float(side) * width * 0.5
+        if family == "garden":
+            # Real gaps in the side-wall mesh: stained-glass windows no longer
+            # hover in front of opaque wall panels, and leadwork has a frame.
+            _box(p, "SideWallBelowGlass", Vector3(x, 1.26, -1),
+                Vector3(0.35, 2.52, 20.9), wall_mat)
+            _box(p, "SideWallAboveGlass", Vector3(x, 5.63, -1),
+                Vector3(0.35, 1.54, 20.9), wall_mat)
+            var window_end := -11.45
+            for center in [-5.4, -1.4, 3.0]:
+                var opening_start: float = center - 1.05
+                if opening_start > window_end:
+                    _box(p, "BetweenGlassBays",
+                        Vector3(x, 3.68, (window_end + opening_start) * 0.5),
+                        Vector3(0.35, 2.32, opening_start - window_end), wall_mat)
+                window_end = center + 1.05
+            _box(p, "LastGlassBayEnd", Vector3(x, 3.68, (window_end + 9.45) * 0.5),
+                Vector3(0.35, 2.32, 9.45 - window_end), wall_mat)
+        elif family == "outdoor":
+            _box(p, "CourtyardStoneParapet", Vector3(x, 1.04, -1),
+                Vector3(0.43, 2.08, 20.9), wall_mat)
+            _box(p, "CourtyardParapetCap", Vector3(x, 2.13, -1),
+                Vector3(0.63, 0.19, 20.9), trim)
+        else:
+            _box(p, "SideWall", Vector3(x, (height - 0.2) * 0.5, -1),
+                Vector3(0.35, height, 20.9), wall_mat)
+        if family not in ["outdoor"]:
+            _box(p, "Dado", Vector3(x - float(side) * 0.20, 0.95, -1),
+                Vector3(0.17, 1.85, 20.4), trim)
+            _box(p, "ChairRail", Vector3(x - float(side) * 0.24, 1.95, -1),
+                Vector3(0.1, 0.1, 20.4), m["brass"])
+
     _box(p, "RearWall", Vector3(0, (height - 0.2) * 0.5, -11.41),
         Vector3(width, height, 0.24), wall_mat)
-    _box(p, "FrontWall", Vector3(0, (height - 0.2) * 0.5, 9.41),
-        Vector3(width, height, 0.24), wall_mat)
-    for j in range(4):
-        var z := -8.7 + float(j) * 4.9
-        if family != "outdoor":
-            _box(p, "CrownMoulding", Vector3(0, height - 0.16, z),
-                Vector3(width - 0.6, 0.16, 0.18), trim)
-        if family == "crypt":
-            _box(p, "HeavyVault", Vector3(0, height - 0.31, z),
-                Vector3(width - 0.7, 0.54, 0.46), m["cryptstone"])
+    if family == "outdoor":
+        _box(p, "GardenFrontParapet", Vector3(0, 1.05, 9.41),
+            Vector3(width, 2.1, 0.24), wall_mat)
+    else:
+        _box(p, "FrontWall", Vector3(0, (height - 0.2) * 0.5, 9.41),
+            Vector3(width, height, 0.24), wall_mat)
 
-    if family in ["entrance", "library", "ballroom"]:
-        _box(p, "Runner", Vector3(-0.38, 0.022, -0.45),
-            Vector3(3.5, 0.027, 13.0), m["velvet"] if family != "ballroom" else m["bluevelvet"])
+    if family != "outdoor":
+        for j in range(4):
+            var z := -8.7 + float(j) * 4.9
+            _box(p, "CrownMoulding", Vector3(0, height - 0.28, z),
+                Vector3(width - 0.6, 0.14, 0.18), trim)
+            if family == "crypt":
+                # The old vault beams intersected the textured ceiling; the
+                # result looked like missing/corrupted ceiling tiles in WebGL.
+                _box(p, "VaultArch", Vector3(0, height - 0.82, z),
+                    Vector3(width - 0.55, 0.24, 0.34), m["stone"])
+
+    if family in ["entrance", "library", "ballroom", "moonlit"]:
+        _box(p, "Runner", Vector3(-0.38, 0.024, -0.45),
+            Vector3(3.5, 0.028, 13.0),
+            m["bluevelvet"] if family in ["ballroom", "moonlit"] else m["velvet"])
     if family == "corridor":
-        _box(p, "NarrowRunner", Vector3(0.35, 0.02, 0.0),
-            Vector3(2.4, 0.022, 13.5), m["velvet"])
+        _box(p, "NarrowRunner", Vector3(0.35, 0.022, 0.0),
+            Vector3(2.4, 0.028, 13.5), m["velvet"])
     if family == "outdoor":
         for x in [-7.9, -4.6, 0.5, 6.1]:
-            _box(p, "GardenPavingJoint", Vector3(x, 0.007, -0.9),
-                Vector3(0.055, 0.017, 19.5), m["cryptstone"])
-    # The room label, doors, and interactive collision shapes are independent
-    # from the visual room rebuild and never receive gameplay authority.
-
+            _box(p, "GardenPavingJoint", Vector3(x, 0.012, -0.9),
+                Vector3(0.055, 0.023, 19.5), m["cryptstone"])
+    # The room shell and portals are independent from the C# gameplay state.
 
 func _pillar(p: Node3D, x: float, z: float, y: float = 2.8, stone: bool = false) -> void:
     var material: Material = m["stone"] if stone else m["marble"]
@@ -269,17 +321,18 @@ func _pillar(p: Node3D, x: float, z: float, y: float = 2.8, stone: bool = false)
     _cyl(p, "Capital", Vector3(x, y * 1.87, z), 0.49, 0.29, m["brass"] if not stone else material)
 
 
+
 func _window(p: Node3D, x: float, z: float) -> void:
     var side := signf(x)
-    var glass_x := x - side * 0.27
-    _box(p, "MoonGlass", Vector3(glass_x, 3.68, z), Vector3(0.065, 2.3, 1.85), m["glass"])
-    for dz in [-0.86, 0.0, 0.86]:
-        _box(p, "WindowTracery", Vector3(glass_x - side * 0.075, 3.68, z+dz),
-            Vector3(0.13, 2.36, 0.064), m["brass"])
-    for dy in [-0.95, 0.0, 0.95]:
-        _box(p, "WindowLead", Vector3(glass_x - side * 0.084, 3.68+dy, z),
-            Vector3(0.14, 0.055, 1.98), m["brass"])
-
+    var glass_x := x - side * 0.24
+    _box(p, "MoonGlass", Vector3(glass_x, 3.68, z),
+        Vector3(0.07, 2.26, 1.86), m["glass"])
+    for dz in [-1.0, 0.0, 1.0]:
+        _box(p, "WindowTracery", Vector3(glass_x - side * 0.075, 3.68, z + dz),
+            Vector3(0.15, 2.43, 0.09), m["brass"])
+    for dy in [-1.12, 0.0, 1.12]:
+        _box(p, "WindowLead", Vector3(glass_x - side * 0.084, 3.68 + dy, z),
+            Vector3(0.15, 0.08, 2.08), m["brass"])
 
 func _sconce(p: Node3D, x: float, z: float, y: float = 3.15) -> void:
     # Wall-mounted arm: the base actually touches the wall. No floating
@@ -305,19 +358,33 @@ func _table(p: Node3D, x: float, z: float, length: float = 2.3) -> void:
                 Vector3(0.14, 0.82, 0.14), m["darkwood"])
 
 
+
 func _books(p: Node3D, x: float, z: float, index: int) -> void:
-    _box(p, "BookcaseBack", Vector3(x, 2.47, z), Vector3(2.15, 4.4, 0.33), m["darkwood"])
+    _box(p, "BookcaseBack", Vector3(x, 2.25, z),
+        Vector3(2.15, 4.4, 0.33), m["darkwood"])
     for shelf in range(4):
-        var yy := 0.56 + shelf * 1.05
+        var yy := 0.56 + float(shelf) * 1.02
         _box(p, "Bookshelf", Vector3(x, yy, z + 0.27),
             Vector3(2.25, 0.11, 0.73), m["wood"])
         for b in range(7):
-            var height := 0.51 + float((index+b+shelf)%4)*0.09
+            var book_height := 0.51 + float((index+b+shelf)%4)*0.09
             var shade: Material = m["book"] if (b+shelf)%2 == 0 else m["velvet"]
             _box(p, "BookSpine", Vector3(x - 0.84 + float(b)*0.29,
-                yy + height*0.5+0.075, z + 0.44),
-                Vector3(0.19+0.03*float(b%2), height, 0.31), shade)
+                yy + book_height*0.5 + 0.075, z + 0.44),
+                Vector3(0.19+0.03*float(b%2), book_height, 0.31), shade)
 
+
+func _books_on_wall(p: Node3D, side: int, z: float, index: int) -> void:
+    # Align the BACK of the shelf with the SIDE wall, turn its reading face
+    # toward the room, and keep the line of sight to all three doors clear.
+    var anchor := Node3D.new()
+    anchor.name = "SideBookcase"
+    anchor.position = Vector3(float(side) * 9.05, 0, z)
+    anchor.rotation.y = -float(side) * PI * 0.5
+    p.add_child(anchor)
+    _books(anchor, 0.0, 0.0, index)
+    _box(anchor, "BookcaseWallBracket", Vector3(0, 1.92, -0.1),
+        Vector3(2.2, 0.16, 0.22), m["brass"])
 
 func _plant(p: Node3D, x: float, z: float, height: float) -> void:
     _cyl(p, "Planter", Vector3(x, 0.37, z), 0.34, 0.65, m["stone"])
@@ -328,15 +395,21 @@ func _plant(p: Node3D, x: float, z: float, height: float) -> void:
             z+sin(a)*0.36), 0.4, m["plant"] if i%2 == 0 else m["leaves"])
 
 
-func _candles(p: Node3D, x: float, z: float, count: int) -> void:
-    for i in range(count):
-        var offset := float(i) * 0.28
-        var candle_height := 0.32+float(i%3)*0.14
-        _cyl(p, "Candle", Vector3(x+offset, 0.52+candle_height*0.5, z),
-            0.055, candle_height, m["paper"], 8)
-        _ball(p, "CandleGlow", Vector3(x+offset, 0.58+candle_height, z),
-            0.055, m["flame"])
 
+func _candles(p: Node3D, x: float, z: float, count: int, surface_y: float) -> void:
+    # The anchor is the REAL top surface: desk, dais, altar or flagstone.
+    # A single absolute Y previously caused floating/clipping in seven rooms.
+    for i in range(count):
+        var offset := float(i) * 0.25
+        var candle_height := 0.28 + float(i % 3) * 0.11
+        _cyl(p, "CandleHolder", Vector3(x + offset, surface_y + 0.027, z),
+            0.092, 0.05, m["brass"], 10)
+        var candle := _cyl(p, "Candle", Vector3(x + offset,
+            surface_y + 0.05 + candle_height * 0.5, z),
+            0.055, candle_height, m["paper"], 8)
+        candle.set_meta("support_y", surface_y)
+        _ball(p, "CandleGlow", Vector3(x + offset,
+            surface_y + 0.063 + candle_height, z), 0.055, m["flame"])
 
 func _portrait(p: Node3D, side: float, z: float, crooked: float = 0.0) -> void:
     var x := side * 9.12
