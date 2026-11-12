@@ -24,6 +24,35 @@ The fixed first-person camera requires door clicks: there is no WASD, continuous
 
 Godot Web uses the Compatibility renderer and can be slower than its native Windows build. The iframe initializes during ordinary reel play after the main renderer is ready, then stays alive between entries. This aims to remove the repeated approximately ten-second wait when opening the bonus after warmup. Cold starts may still take several seconds depending on WebView2 and the machine. No measured speedup is claimed until tested on actual Windows hardware. Godot's stretch aspect uses Expand so the scene covers non-16:9 slot areas instead of black side bars. The first Windows test still requires manual WebView2 checks for GPU support, iframe input focus, actual door selection, visual appearance, resizing, monitor scaling, audio handoff, cold/warm transition timings, the ambient impact of preloading, and frame-rate performance. If the WebGL content does not initialize, an explicit fallback/exit appears instead of changing any real game state.
 
+## Deferred WebGL startup and portal transitions (November 2026)
+
+The Godot WebAssembly runtime previously started automatically **1.1 seconds
+after Pixi reported its first frame**. Initializing single-threaded Godot in
+a hidden WebView2 iframe could monopolize the renderer's input thread for
+several seconds despite the slot's background animation continuing.
+
+**New load policy:** do not mount the Godot iframe while playing the ordinary
+Midnight Manor slot. Only an explicit `Test Bonus Game` request or an active
+real bonus with the opt-in 3D setting mounts it. Once mounted, the instance
+stays alive for subsequent entries and runs with its existing reduced inactive
+frame cap. The first bonus visit may therefore have an initial WebGL loading
+screen; normal slot startup no longer pays that cost. This removes the
+avoidable eager load, but an exact startup latency improvement must be
+measured in a real Windows WebView2 run rather than assumed.
+
+**Entry and exit:** once Godot sends its readiness handshake, a lightweight
+0.84-second CSS/DOM wooden-door opening and perspective transition reveals
+the first-person room. Leaving the demo, switching to the classic 2D bonus,
+or finishing a live C# run preserves the previous HUD/frame for a 0.64-second
+closing-door transition while the reels or standard bonus return behind it.
+Transitions have no JavaScript physics or WebGL shader overhead; movement
+controls are locked during them, and the reduced-motion setting skips both
+effects. Game commands are never issued by the transition itself.
+
+The new `shouldMountManorGodot` contract is covered by tests to prevent
+regressions where routine slot opening accidentally starts the hidden
+WebAssembly engine again.
+
 ## Permanent full floorplan and live bonus HUD (November 2026)
 
 The existing Godot 3D geometry and three-door model remain unchanged. All
