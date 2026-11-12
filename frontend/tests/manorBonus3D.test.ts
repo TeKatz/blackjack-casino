@@ -58,7 +58,9 @@ describe('Godot 3D Manor bonus bridge', () => {
     expect(markup).toContain('manor-godot-hud-left');
     expect(markup).toContain('manor-godot-hud-map');
     expect(markup).toContain('manor-godot-inventory');
-    expect(markup).toContain('manor-godot-door-actions');
+    // The iframe has not sent 'ready' in SSR. Door choices appear only
+    // after the Godot bridge is ready, never over a loading screen.
+    expect(markup).not.toContain('manor-godot-door-actions');
     expect(markup).toContain('MANOR-GRUNDRISS');
     expect(markup).toContain('VORSCHAU · KEIN GEIST');
     expect(markup).not.toContain('Jetzt auszahlen');
