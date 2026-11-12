@@ -2,6 +2,7 @@ import {useEffect,useMemo,useRef,useState} from 'react';
 import type {PointerEvent as ReactPointerEvent} from 'react';
 import type {TaleBoard,TaleBoardNode,TaleClass,TaleEncounter,TaleIntent,TaleRun,TaleState} from './adventureBridge';
 import './adventure.css';
+import {BackroomItemIcon} from './BackroomItemIcon';
 
 type Lang='en'|'de';
 type Props={state:TaleState;language:Lang;pending:boolean;error:string;animations:boolean;
@@ -83,7 +84,13 @@ function CharacterSheet({run,copy,pending,send}:{
  const character=run.character;
  const [rolling,setRolling]=useState(false),[shownRoll,setShownRoll]=useState(run.lastRoll?.chosenRoll??20);
  useEffect(()=>{if(!rolling)setShownRoll(run.lastRoll?.chosenRoll??20);},[run.lastRoll?.chosenRoll,rolling]);
- useEffect(()=>{if(!rolling)return;const timer=window.setTimeout(()=>setRolling(false),950);return()=>window.clearTimeout(timer);},[rolling]);
+ useEffect(()=>{
+   if(!rolling)return;
+   let value=7;
+   const ticker=window.setInterval(()=>{value=(value*13+11)%20;setShownRoll(value+1);},49);
+   const timer=window.setTimeout(()=>setRolling(false),940);
+   return()=>{window.clearInterval(ticker);window.clearTimeout(timer);};
+  },[rolling]);
  return <aside className="backroom-sheet">
   <small className="backroom-eyebrow">{copy.stats}</small>
   <h2>{character.name}</h2><p>{character.classId} · {copy.level} {character.level}</p>
@@ -105,7 +112,7 @@ function CharacterSheet({run,copy,pending,send}:{
      title={c.remaining+' scenes'}>{c.name} · {c.remaining}</span>)}</div></>}
   <div className={'backroom-d20 '+(run.pending?'active ':'')+(rolling?'rolling':'')}>
    <strong>D20</strong>
-   <span className="backroom-d20-shape"><svg viewBox="0 0 140 150" aria-hidden="true"><defs><linearGradient id="d20-metal" x2="1" y2="1"><stop stopColor="#d6bf83"/><stop offset=".5" stopColor="#334b48"/><stop offset="1" stopColor="#101f27"/></linearGradient></defs><path d="M70 4L128 35L135 105L70 146L5 105L12 35Z" fill="url(#d20-metal)" stroke="#f3d58d" strokeWidth="3"/><path d="M70 4L30 94L110 94Z M12 35L30 94L5 105 M128 35L110 94L135 105 M30 94L70 146L110 94" fill="none" stroke="#d9c08b" strokeWidth="1.5"/></svg><b>{rolling?'✦':shownRoll}</b></span>
+   <span className="backroom-d20-shape"><svg viewBox="0 0 140 150" aria-hidden="true"><defs><linearGradient id="d20-metal" x2="1" y2="1"><stop stopColor="#d6bf83"/><stop offset=".5" stopColor="#334b48"/><stop offset="1" stopColor="#101f27"/></linearGradient></defs><path d="M70 4L128 35L135 105L70 146L5 105L12 35Z" fill="url(#d20-metal)" stroke="#f3d58d" strokeWidth="3"/><path d="M70 4L30 94L110 94Z M12 35L30 94L5 105 M128 35L110 94L135 105 M30 94L70 146L110 94" fill="none" stroke="#d9c08b" strokeWidth="1.5"/></svg><b>{shownRoll}</b></span>
    {run.pending?<><small>{run.pending.ability} · DC {run.pending.difficulty} · {copy.mod} {signed(run.pending.modifier)}
     {run.pending.mode==='Advantage'?' · '+copy.adv:run.pending.mode==='Disadvantage'?' · '+copy.disadv:''}</small>
     <button className="backroom-primary" disabled={rolling} aria-disabled={pending||rolling} onClick={()=>{setRolling(true);send({action:'adventure.roll'});}}>{copy.roll}</button>
@@ -117,9 +124,10 @@ function Inventory({run,copy,pending,send}:{
  run:TaleRun;copy:Copy;pending:boolean;send:(intent:TaleIntent)=>void}){
  return <section className="backroom-inventory">
   <h3>{copy.pack}</h3><div className="backroom-items">
-   <div className="backroom-item coins"><strong>◆ {run.character.coins}</strong><small>{copy.coins}</small></div>
+   <div className="backroom-item coins"><span className="backroom-coin-icon" aria-hidden="true">◆</span><strong>{run.character.coins}</strong><small>{copy.coins}</small></div>
    {run.inventory.length===0&&<p>{copy.empty}</p>}
    {run.inventory.map(item=><div key={item.itemId} className="backroom-item" title={item.description}>
+     <BackroomItemIcon kind={item.kind} name={item.name}/>
      <strong>{item.name}</strong><small>{item.kind} · ×{item.quantity}</small>
      {item.useChoices.map(choice=><button key={choice.id} aria-disabled={pending}
        onClick={()=>send({action:'adventure.choice',choiceId:choice.id})}>
