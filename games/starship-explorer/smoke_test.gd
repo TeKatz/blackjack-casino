@@ -145,6 +145,16 @@ func _execute() -> void:
     if prop.collision_layer != layer or prop.collision_mask != mask:
         _fail("Collision sweep disabled carried body")
         return
+
+    # Direct regression for clipping: try pulling a held object through the
+    # lounge starboard bulkhead (inner face X~=7.84). Swept physics must stop it.
+    fp.global_position = Vector3(7.05, 0.05, 1.55)
+    fp.rotation.y = -PI * 0.5
+    prop.global_position = Vector3(7.0, 1.68, 1.55)
+    fp.call("_move_held_prop", 0.22)
+    if prop.global_position.x > 7.8:
+        _fail("Carried object clipped through starboard wall")
+        return
     fp.call("drop_prop")
     if fp.get("held_prop") != null or prop.freeze:
         _fail("Physics drop failed")
