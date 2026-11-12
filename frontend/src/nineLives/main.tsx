@@ -199,7 +199,7 @@ function App(){
    <RooftopAmbient enabled={!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches&&s.animationsEnabled}/>
    <header className="nine-header">
      <button className="nine-back" onClick={close}>← {t.back}<kbd>ESC</kbd></button>
-     <div className="nine-title"><small>THE MIDNIGHT CLUB · {t.top}</small><h1>NINE <em>LIVES</em></h1></div>
+
      <div className="nine-header-bank"><small>{t.balance}</small><strong>{money(s.bankroll)}</strong></div>
    </header>
    <div className="nine-layout">
