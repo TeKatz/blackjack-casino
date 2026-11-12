@@ -40,10 +40,10 @@ func _ready() -> void:
     _build_doors()
     _build_interactables()
     _build_hud()
-    player.use_requested.connect(_on_use)
-    player.target_changed.connect(_on_focus)
-    player.flashlight_changed.connect(_on_flashlight_changed)
-    player.held_prop_changed.connect(_on_prop_held)
+    player.connect("use_requested", Callable(self, "_on_use"))
+    player.connect("target_changed", Callable(self, "_on_focus"))
+    player.connect("flashlight_changed", Callable(self, "_on_flashlight_changed"))
+    player.connect("held_prop_changed", Callable(self, "_on_prop_held"))
     _update_language()
 
 
@@ -327,7 +327,9 @@ func _build_ambient_lights() -> void:
     for z in [-8.4, -14.7, -20.9]:
         _box(self, "CorridorDiffuser", Vector3(0, 4.07, z), Vector3(1.1, 0.04, 2.0), diffuser)
         _light("corridor", Vector3(0, 3.92, z), Color("#8bced6"), 1.2, 6.8)
-    for x, zone in [[-6.2, "cabin"], [6.2, "workshop"]]:
+    for cabin_light in [[-6.2, "cabin"], [6.2, "workshop"]]:
+        var x: float = cabin_light[0]
+        var zone: String = cabin_light[1]
         for z in [-11.4, -15.0]:
             _box(self, "CabinDiffuser", Vector3(x, 4.07, z), Vector3(1.7, 0.04, 0.56), diffuser)
             _light(zone, Vector3(x, 3.93, z), Color("#c0e3e6"), 1.35, 6.5, true)
@@ -576,7 +578,7 @@ func take_flashlight() -> void:
         return
     _flashlight_pickup.collision_layer = 0
     _flashlight_pickup.visible = false
-    player.collect_flashlight()
+    player.call("collect_flashlight")
     _show_notice(_tr("TASCHENLAMPE GEFUNDEN · F ZUM EINSCHALTEN", "FLASHLIGHT COLLECTED · PRESS F TO TURN ON"))
     _update_language()
     _on_focus(null)
