@@ -505,3 +505,14 @@ button:disabled{opacity:.45;cursor:default}button:focus-visible,input:focus-visi
  .merge-board-section{grid-template-columns:minmax(0,1fr) minmax(182px,225px);gap:8px}
  .merge-producer{flex-basis:45px;min-height:45px;max-height:45px}
 }
+
+/* At compact 720p heights the producer stack may exceed the vertical room.
+   Keep the gameplay tiles at readable height and keep help/settings visible
+   instead of clipping the bottom of the workshop. */
+@media(min-width:1000px) and (min-height:600px) and (max-height:760px){
+ .merge-supply{justify-content:flex-start;overflow-y:auto;overflow-x:hidden;
+  overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#65877f #132c32}
+ .merge-supply-tools{position:sticky;bottom:0;z-index:8;flex:0 0 auto;
+  padding:5px 0 2px;background:#152e33;border-top:1px solid #63877866;
+  box-shadow:0 -6px 16px #07171ab8}
+}
