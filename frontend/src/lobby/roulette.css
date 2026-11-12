@@ -73,3 +73,14 @@ html,body,#root{height:100%;min-height:0;overflow:hidden}
 .roulette-wheel-slot .roulette-wheel canvas{max-height:100%;object-fit:contain}
 .roulette-shell[data-motion=false] *::before,.roulette-shell[data-motion=false] *::after{animation:none!important;transition:none!important}
 .roulette-settlement.win .settlement-sheen{animation:roulette-sheen 1.4s ease-out 2}
+
+/* The first Pixi frame and fallback overlap; cross-fade only after the stage
+   has actually painted. Preserve the last wheel/ball angle across reopenings. */
+.roulette-wheel{position:relative;isolation:isolate}
+.roulette-wheel canvas{opacity:0;transition:opacity .42s ease-out}
+.roulette-wheel.is-ready canvas{opacity:1}
+.roulette-wheel>.roulette-wheel-fallback{position:absolute;inset:0;z-index:1;
+ display:grid;place-items:center;pointer-events:none;transition:opacity .42s ease-out}
+.roulette-wheel.is-ready>.roulette-wheel-fallback{opacity:0}
+.roulette-wheel.no-motion canvas,.roulette-wheel.no-motion>.roulette-wheel-fallback{transition:none}
+@media(prefers-reduced-motion:reduce){.roulette-wheel canvas,.roulette-wheel>.roulette-wheel-fallback{transition:none}}

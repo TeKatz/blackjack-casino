@@ -3,6 +3,11 @@ import {Application,Container,Graphics,Text} from 'pixi.js';
 import {WHEEL,color,pocketAngle} from './rouletteModel';
 const TAU=Math.PI*2;
 const ease=(t:number)=>1-Math.pow(1-t,3);
+// Preserve painted orientation across lobby close/reopen. Reinitializing Pixi at
+// zero was visible as an initial wheel snap before the first animation frame.
+let restingWheelAngle=0;
+let restingBallAngle=-Math.PI/2;
+const wrapAngle=(angle:number)=>((angle%TAU)+TAU)%TAU;
 export function RouletteWheel({number,spinId,motion,onStart,onDone}:{number:number|null;spinId:string;motion:boolean;onStart:()=>void;onDone:()=>void}){
  const host=useRef<HTMLDivElement>(null), scene=useRef<{wheel:Container;ball:Graphics;app:Application}|null>(null);
  const done=useRef(onDone);done.current=onDone;
@@ -19,7 +24,7 @@ export function RouletteWheel({number,spinId,motion,onStart,onDone}:{number:numb
     const base=new Graphics();
     base.circle(0,0,250).fill(0x17110e).circle(0,0,246).stroke({color:0x8d5126,width:7}).circle(0,0,231).fill(0x492314).circle(0,0,224).stroke({color:0xe5b96a,width:3}).circle(0,0,214).fill(0x171718).circle(0,0,197).stroke({color:0xb58a47,width:2});for(let i=0;i<18;i++){const radius=230+i*.85;base.circle(0,0,radius).stroke({color:i%3===0?0x9a6035:0x4b2b1c,width:.65,alpha:.55});}
     base.circle(0,0,218).stroke({color:0xf3d08d,width:2}).circle(0,0,211).stroke({color:0x513c25,width:4});root.addChild(base);
-    const wheel=new Container();root.addChild(wheel);
+    const wheel=new Container();wheel.rotation=restingWheelAngle;root.addChild(wheel);
     const pockets=new Graphics();const step=TAU/37;
     WHEEL.forEach((n,i)=>{
      const a=-Math.PI/2+i*step-step/2,b=a+step;
@@ -30,8 +35,11 @@ export function RouletteWheel({number,spinId,motion,onStart,onDone}:{number:numb
     for(let i=0;i<8;i++){const a=i*TAU/8;hub.moveTo(Math.cos(a)*34,Math.sin(a)*34).lineTo(Math.cos(a)*96,Math.sin(a)*96).stroke({color:0x8b6138,width:3});}
     hub.moveTo(0,-29).lineTo(8,-8).lineTo(29,0).lineTo(8,8).lineTo(0,29).lineTo(-8,8).lineTo(-29,0).lineTo(-8,-8).closePath().fill(0xc99b57).stroke({color:0xf5d895,width:1.5});
     hub.moveTo(0,-16).lineTo(5,0).lineTo(0,16).lineTo(-5,0).closePath().fill(0xf7db9e);hub.circle(0,0,112).stroke({color:0xc09a5b,width:1.5}).circle(0,0,105).stroke({color:0x77502d,width:2});wheel.addChild(hub);
-    const ball=new Graphics().circle(2,4,8).fill({color:0x000000,alpha:.5}).circle(0,0,8).fill(0xf7e9c9).circle(-2,-3,3).fill(0xffffff);ball.position.set(0,-207);root.addChild(ball);
-    app.canvas.style.width='100%';app.canvas.style.height='auto';host.current?.appendChild(app.canvas);scene.current={wheel,ball,app};setReady(true);
+    const ball=new Graphics().circle(2,4,8).fill({color:0x000000,alpha:.5}).circle(0,0,8).fill(0xf7e9c9).circle(-2,-3,3).fill(0xffffff);ball.position.set(Math.cos(restingBallAngle)*207,Math.sin(restingBallAngle)*207);root.addChild(ball);
+    app.canvas.style.width='100%';app.canvas.style.height='auto';host.current?.appendChild(app.canvas);
+    scene.current={wheel,ball,app};
+    // Reveal the first completed Pixi paint rather than an uninitialized canvas.
+    app.ticker.addOnce(()=>{if(!disposed)setReady(true);});
    }catch{if(!disposed)setFailed(true);if(initialized&&!disposed){app.destroy(true,{children:true});initialized=false;}}
   }void init();return()=>{disposed=true;scene.current=null;if(initialized)app.destroy(true,{children:true});};
  },[]);
@@ -54,8 +62,14 @@ export function RouletteWheel({number,spinId,motion,onStart,onDone}:{number:numb
    const angle=ballStart+diff*ease(Math.min(1,t*1.03));
    const drop=Math.max(0,(t-.57)/.43),rad=207-43*ease(drop)+Math.sin(drop*5*Math.PI)*5*(1-drop);
    s.ball.position.set(Math.cos(angle)*rad,Math.sin(angle)*rad);
+   restingWheelAngle=wrapAngle(s.wheel.rotation);
+   restingBallAngle=wrapAngle(angle);
    if(t<1)frame=requestAnimationFrame(draw);else done.current();
   }frame=requestAnimationFrame(draw);return()=>{cancelled=true;cancelAnimationFrame(frame);};
  },[number,spinId,ready,failed,motion]);
- return <div className="roulette-wheel" ref={host} aria-label="Roulette wheel">{!ready&&<div className="roulette-wheel-fallback"><span>✦</span>{failed&&number!==null&&<b>{number}</b>}</div>}</div>;
+ return <div className={'roulette-wheel'+(ready?' is-ready':'')+(motion?'':' no-motion')} ref={host} aria-label="Roulette wheel">
+  <div className="roulette-wheel-fallback" aria-hidden={ready}>
+   <span>✦</span>{failed&&number!==null&&<b>{number}</b>}
+  </div>
+ </div>;
 }

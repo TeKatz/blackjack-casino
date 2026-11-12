@@ -1,9 +1,15 @@
+import {useId} from 'react';
 import type {CSSProperties} from 'react';
 import type {DicePalette} from './bridge';
 import {diceAppearance} from './diceSkins';
 
 export function Die({value,palette,variant='dice-ivory'}:{value:number;palette:DicePalette;variant?:string}){
  const appearance=diceAppearance(variant,palette);
+ // Every die/animated face needs private paint-server IDs. Shared SVG IDs
+ // resolve to whichever face the browser saw first and can flash on rerender.
+ const paint=useId().replace(/:/g,'');
+ const gradient=(name:string)=>paint+'-'+name;
+ const fillGradient=(name:string)=>'url(#'+gradient(name)+')';
  const pips:Record<number,number[][]>={
   0:[],1:[[50,50]],2:[[29,29],[71,71]],3:[[29,29],[50,50],[71,71]],
   4:[[29,29],[71,29],[29,71],[71,71]],5:[[29,29],[71,29],[50,50],[29,71],[71,71]],
@@ -11,25 +17,25 @@ export function Die({value,palette,variant='dice-ivory'}:{value:number;palette:D
  };
  return <svg viewBox="0 0 100 100" className="md-die-image" data-skin={variant}
    data-material={appearance.surface} aria-hidden="true">
-  <defs><linearGradient id="md-die-grad" x1="0" y1="0" x2=".9" y2="1">
+  <defs><linearGradient id={gradient('md-die-grad')} x1="0" y1="0" x2=".9" y2="1">
     <stop offset="0" stopColor="#fff" stopOpacity=".28"/><stop offset=".25" stopColor={palette.top}/>
     <stop offset="1" stopColor={palette.bottom}/></linearGradient>
-    <linearGradient id="md-die-gloss" x1="0" y1="0" x2="1" y2=".8">
+    <linearGradient id={gradient('md-die-gloss')} x1="0" y1="0" x2="1" y2=".8">
       <stop stopColor="#fff" stopOpacity=".36"/><stop offset=".5" stopColor="#fff" stopOpacity="0"/></linearGradient>
-    <linearGradient id="md-die-bevel" x1=".1" y1="0" x2=".95" y2="1">
+    <linearGradient id={gradient('md-die-bevel')} x1=".1" y1="0" x2=".95" y2="1">
       <stop stopColor="#fff" stopOpacity=".70"/><stop offset=".18" stopColor={palette.top}/>
       <stop offset=".67" stopColor={palette.bottom}/><stop offset="1" stopColor={palette.edge}/></linearGradient>
-    <radialGradient id="md-pip-inner" cx=".30" cy=".25" r=".85">
+    <radialGradient id={gradient('md-pip-inner')} cx=".30" cy=".25" r=".85">
       <stop stopColor={palette.pips}/><stop offset=".7" stopColor={palette.pips}/>
       <stop offset="1" stopColor={palette.edge}/></radialGradient>
   </defs>
-  <rect x="0.5" y="0.5" width="99" height="99" rx="17" fill="url(#md-die-bevel)"
+  <rect x="0.5" y="0.5" width="99" height="99" rx="17" fill={fillGradient('md-die-bevel')}
     stroke={palette.edge} strokeWidth="1"/>
   <rect x="6" y="6" width="88" height="88" rx="14" fill={palette.bottom}
     stroke={palette.edge} strokeOpacity=".75" strokeWidth="2"/>
   <rect x="9" y="9" width="82" height="82" rx="12" fill={palette.top}
     stroke="#fff" strokeOpacity=".32" strokeWidth="1.2"/>
-  <rect x="9" y="9" width="82" height="82" rx="12" fill="url(#md-die-gloss)"/>
+  <rect x="9" y="9" width="82" height="82" rx="12" fill={fillGradient('md-die-gloss')}/>
   {appearance.translucent&&<g opacity=".27" stroke="#ffffff" strokeWidth="1.15" fill="none">
     <path d="M11 35L35 10L79 10M12 76L49 11M10 91L82 24L91 50M31 90L90 34"/>
     <path d="M9 62L35 87L88 66" stroke={palette.edge} strokeWidth="2.2"/>
@@ -58,7 +64,7 @@ export function Die({value,palette,variant='dice-ivory'}:{value:number;palette:D
   {pips[value].map(([x,y],i)=><g key={i}>
     {palette.engraved&&<circle cx={x} cy={y+1.5} r="10" fill="#101820" opacity=".35"/>}
     <circle cx={x} cy={y} r="9.5" fill={palette.edge} opacity=".55"/>
-    <circle cx={x} cy={y} r="8.2" fill="url(#md-pip-inner)" stroke={palette.edge} strokeWidth=".65"/>
+    <circle cx={x} cy={y} r="8.2" fill={fillGradient('md-pip-inner')} stroke={palette.edge} strokeWidth=".65"/>
     <circle cx={x-2.3} cy={y-2.8} r="2.2" fill="#fff" opacity=".36"/>
   </g>)}
   {value===0&&<text x="50" y="64" textAnchor="middle" fill={palette.pips}

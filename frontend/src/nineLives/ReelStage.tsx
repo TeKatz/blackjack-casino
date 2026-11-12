@@ -51,6 +51,9 @@ function Column({reel,visible,result,rolling,activeWin,speed,reducedMotion,onSto
    tapeEl.style.setProperty('--nine-track-gap',gap+'px');
    tapeEl.style.transform=`translate3d(0,${-(height+gap)}px,0)`;
    tapeEl.style.visibility='visible';
+   // Hide the retained settled cells only AFTER the full compositor tape is ready.
+   // Otherwise their planets bleed through translucent strip gaps while spinning.
+   el.dataset.compositorReady='true';
    const duration=reelDuration(reel,speed);
    animation=tapeEl.animate(reelFrames(height+gap,reel),{
     duration,iterations:1,fill:'forwards',easing:'linear',
@@ -65,6 +68,7 @@ function Column({reel,visible,result,rolling,activeWin,speed,reducedMotion,onSto
   return()=>{
    disposed=true;
    observer?.disconnect();
+   if(el)delete el.dataset.compositorReady;
    if(fallback!==null)clearTimeout(fallback);
    animation?.cancel();
   };

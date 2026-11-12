@@ -116,3 +116,12 @@
 @media(prefers-reduced-motion:reduce){
  .nine-galaxy-clouds,.nine-galaxy-star,.nine-galaxy-planet{animation:none!important}
 }
+
+/* Keep retained settled cells mounted for continuity, but never allow their
+   planet/galaxy artwork to bleed through a running reel strip. The compositor
+   marks readiness only after the tape has been positioned in its first frame. */
+.nine-reel-column[data-compositor-ready="true"]>.nine-cell{visibility:hidden}
+.nine-reel-column[data-compositor-ready="true"]>.nine-reel-viewport{
+ background:#080c20;isolation:isolate}
+.nine-reel-column[data-compositor-ready="true"] .nine-tape-tile{
+ background:#080c20;contain:paint}
