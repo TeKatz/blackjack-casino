@@ -76,6 +76,7 @@ func _box(p: Node3D, name: String, pos: Vector3, size: Vector3, mat: Material) -
     box.size = size
     var node := MeshInstance3D.new()
     node.name = name
+    node.set_meta("visual_role", name)
     node.mesh = box
     node.position = pos
     if mat is StandardMaterial3D and (mat as StandardMaterial3D).albedo_texture != null:
@@ -104,6 +105,7 @@ func _cyl(p: Node3D, name: String, pos: Vector3, radius: float, height: float,
     cylinder.radial_segments = segments
     var node := MeshInstance3D.new()
     node.name = name
+    node.set_meta("visual_role", name)
     node.mesh = cylinder
     node.position = pos
     node.material_override = mat
@@ -119,6 +121,7 @@ func _ball(p: Node3D, name: String, pos: Vector3, radius: float, mat: Material) 
     sphere.rings = 6
     var node := MeshInstance3D.new()
     node.name = name
+    node.set_meta("visual_role", name)
     node.mesh = sphere
     node.position = pos
     node.material_override = mat
@@ -394,6 +397,7 @@ func _books_on_wall(p: Node3D, side: int, z: float, index: int) -> void:
     # toward the room, and keep the line of sight to all three doors clear.
     var anchor := Node3D.new()
     anchor.name = "SideBookcase"
+    anchor.set_meta("visual_role", "SideBookcase")
     anchor.position = Vector3(float(side) * 9.05, 0, z)
     anchor.rotation.y = -float(side) * PI * 0.5
     p.add_child(anchor)

@@ -95,34 +95,34 @@ func _run() -> void:
             3:
                 # The stairs belong to the west wall, not in front of the
                 # middle door/camera.
-                for stair_node in visuals.find_children("*GrandStaircaseSteps*", "MeshInstance3D", true, false):
+                for stair_node in _meshes_by_role(visuals, "GrandStaircaseSteps"):
                     if (stair_node as MeshInstance3D).position.x > -5.4:
                         _fail("Grand Staircase still blocks the center door")
                         return
             4, 5:
-                for shelf_node in visuals.find_children("*SideBookcase*", "Node3D", true, false):
+                for shelf_node in _anchors_by_role(visuals, "SideBookcase"):
                     var shelf := shelf_node as Node3D
                     if absf(shelf.position.x) < 8.7:
                         _fail("Library/Reading Room shelf is in front of the doors")
                         return
-                if visuals.find_child("SideBookcase", true, false) == null:
+                if _anchors_by_role(visuals, "SideBookcase").is_empty():
                     _fail("Library/Reading Room shelves are not mounted to walls")
                     return
             8:
-                if visuals.find_children("*MusicStandPole*", "MeshInstance3D", true, false).size() != 3:
+                if _meshes_by_role(visuals, "MusicStandPole").size() != 3:
                     _fail("Music room sheet stands have no floor-standing poles")
                     return
-                if visuals.find_children("*MusicStandTripod*", "MeshInstance3D", true, false).size() != 9:
+                if _meshes_by_role(visuals, "MusicStandTripod").size() != 9:
                     _fail("Music room stands are still floating")
                     return
             9:
                 if visuals.find_child("SideWall", false, false) != null:
                     _fail("Winter Garden windows still face a solid wall")
                     return
-                if visuals.find_children("*MoonGlass*", "MeshInstance3D", true, false).size() != 6:
+                if _meshes_by_role(visuals, "MoonGlass").size() != 6:
                     _fail("Winter Garden does not have six real window openings")
                     return
-                if visuals.find_children("*BetweenGlassBays*", "MeshInstance3D", true, false).size() < 6:
+                if _meshes_by_role(visuals, "BetweenGlassBays").size() < 6:
                     _fail("Winter Garden has no masonry framing around glass")
                     return
             11:
@@ -130,7 +130,7 @@ func _run() -> void:
                     _fail("Forbidden Wing still has floating black wall block")
                     return
                 var ceiling := visuals.get_node("Ceiling") as MeshInstance3D
-                for vault_node in visuals.find_children("*VaultArch*", "MeshInstance3D", true, false):
+                for vault_node in _meshes_by_role(visuals, "VaultArch"):
                     var vault := vault_node as MeshInstance3D
                     if vault.position.y + (vault.mesh as BoxMesh).size.y*0.5 >= ceiling.position.y - (ceiling.mesh as BoxMesh).size.y*0.5:
                         _fail("Forbidden Wing vault beam intersects ceiling texture")
@@ -151,7 +151,7 @@ func _run() -> void:
                     if absf((passage_node as MeshInstance3D).position.x) < 7.25:
                         _fail("Secret Passage walls overlap the portal clearance")
                         return
-                if visuals.find_child("PassageNicheTable", true, false) == null:
+                if _meshes_by_role(visuals, "PassageNicheTable").is_empty():
                     _fail("Secret Passage candles are floating")
                     return
             15, 16:
@@ -161,6 +161,23 @@ func _run() -> void:
 
     print("Manor 3D room geometry PASS")
     quit(0)
+
+
+func _meshes_by_role(visuals: Node3D, role: String) -> Array[MeshInstance3D]:
+    var result: Array[MeshInstance3D] = []
+    for node in visuals.find_children("*", "MeshInstance3D", true, false):
+        var mesh := node as MeshInstance3D
+        if mesh.get_meta("visual_role", "") == role:
+            result.append(mesh)
+    return result
+
+
+func _anchors_by_role(visuals: Node3D, role: String) -> Array[Node3D]:
+    var result: Array[Node3D] = []
+    for node in visuals.get_children():
+        if node is Node3D and node.get_meta("visual_role", "") == role:
+            result.append(node as Node3D)
+    return result
 
 
 func _textured(node: MeshInstance3D) -> bool:
