@@ -1,5 +1,4 @@
 import type {CSSProperties} from 'react';
-import {WagerParticles} from './WagerParticles';
 
 export function stackHeights(wager:string):number[]{
  const amount=Number(wager);
@@ -128,25 +127,13 @@ export function TableWagerChips({wager,animationsEnabled}:{
    <svg className="bj-wager-illustration" viewBox="0 0 320 238" role="presentation">
     <ChipGradients/>
     <ellipse cx="163" cy="137" rx="146" ry="92" fill="url(#bj-wager-ambient)"/>
-    <g className="bj-wager-orbits" fill="none">
-     <ellipse cx="151" cy="138" rx="138" ry="48" transform="rotate(-13 151 138)"
-      stroke="#e9bd73" strokeWidth="1.2" strokeOpacity=".6" strokeDasharray="2 8"/>
-     <path d="M20 155Q100 46 269 85" stroke="#ffe4a0" strokeOpacity=".35"
-      strokeWidth="2" strokeLinecap="round"/>
-    </g>
     <ellipse cx="155" cy="196" rx="120" ry="22" fill="#000" opacity=".37"/>
     {heights.map((height,i)=><Stack key={i} x={positions[i].x} y={positions[i].y}
       index={i} height={height} material={materials[i]}/>)}
     <FacingCoin/>
-    <g className="bj-wager-engraved-stars" fill="#ffdd95">
-     <path d="M49 98l2 6 6 2-6 2-2 6-2-6-6-2 6-2Z"/>
-     <path d="M260 71l1.4 4 4 1.4-4 1.4-1.4 4-1.4-4-4-1.4 4-1.4Z"/>
-     <circle cx="277" cy="128" r="2.4"/><circle cx="51" cy="167" r="1.6"/>
-    </g>
     <path d="M95 216H225" stroke="#b59158" strokeWidth=".8" strokeOpacity=".8"/>
     <text x="160" y="228" textAnchor="middle" fill="#f4d49e" fontSize="10"
       fontFamily="Georgia,serif" letterSpacing="5">WAGER</text>
    </svg>
-   <WagerParticles enabled={animationsEnabled}/>
  </div>;
 }
