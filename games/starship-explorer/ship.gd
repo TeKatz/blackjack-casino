@@ -732,6 +732,74 @@ func _zone_title(id: String) -> String:
     return id
 
 
+
+func _build_finish_details() -> void:
+    # Architectural detailing deliberately sits away from base surfaces to avoid
+    # coplanar geometry and the patterned flicker it can cause at distance.
+    var trim := _mat(Color("#b9c8d1"), 0.76, 0.27, Color.BLACK, 0.0, false, "brushed")
+    var inset := _mat(Color("#829ba7"), 0.43, 0.61, Color.BLACK, 0.0, false, "wall")
+    var grille := _mat(Color("#7d949e"), 0.56, 0.48, Color.BLACK, 0.0, false, "ceiling")
+    var rubber := _mat(Color("#9babb2"), 0.09, 0.84, Color.BLACK, 0.0, false, "rubber")
+    var crates := _mat(Color("#b2c2ca"), 0.43, 0.51, Color.BLACK, 0.0, false, "cargo")
+    var led := _mat(Color("#96fff5"), 0.0, 0.19, Color("#3bf0db"), 1.45)
+    var caution := _mat(Color("#f1c498"), 0.2, 0.5, Color("#e69b62"), 0.36)
+
+    # Panel subdivisions, shallow recessed instruments and the non-repeating
+    # high-frequency details that were missing from the original blockout.
+    for x in [-7.65, 7.65]:
+        for z in [-3.0, 0.5, 3.9]:
+            _box(self, "LoungeInlaidWall", Vector3(x, 2.1, z), Vector3(0.07, 2.55, 2.65), inset)
+            for dz in [-1.17, 1.17]:
+                _box(self, "LoungePanelEdge", Vector3(x + (-0.044 if x < 0 else 0.044), 2.1, z + dz), Vector3(0.025, 2.67, 0.035), trim)
+            _box(self, "LoungeMaintenanceLine", Vector3(x + (-0.047 if x < 0 else 0.047), 3.03, z), Vector3(0.024, 0.034, 2.21), led)
+
+    # Ventilation and access hatches along the narrow central spine.
+    for z in [-8.9, -18.7, -21.2]:
+        for x in [-2.02, 2.02]:
+            _box(self, "SpineServiceAccess", Vector3(x, 2.1, z), Vector3(0.055, 1.55, 1.2), inset)
+            for offset in [-0.44, -0.22, 0.0, 0.22, 0.44]:
+                _box(self, "SpineVentSlat", Vector3(x + (-0.039 if x < 0 else 0.039), 2.1, z + offset), Vector3(0.022, 0.95, 0.034), grille)
+        _box(self, "CeilingServiceBeam", Vector3(0, 4.09, z), Vector3(4.0, 0.13, 0.17), trim)
+
+    # A continuous handrail indicates traversable ship architecture.
+    for x in [-7.75, 7.75]:
+        _box(self, "LoungeHandrail", Vector3(x, 1.05, 1.0), Vector3(0.14, 0.12, 11.7), trim)
+    for x in [-2.02, 2.02]:
+        for z in [-8.3, -18.7]:
+            _box(self, "SpineHandrail", Vector3(x, 1.07, z), Vector3(0.12, 0.11, 4.0), trim)
+
+    # Floor inset plates and overhead ribs distinguish each room from plain boxes.
+    for x in [-4.6, 0.0, 4.6]:
+        for z in [-3.6, 0.0, 4.8]:
+            _box(self, "LoungeFloorTread", Vector3(x, 0.041, z), Vector3(3.6, 0.055, 2.5), rubber)
+            _box(self, "LoungeTreadTrim", Vector3(x, 0.069, z - 1.18), Vector3(3.6, 0.012, 0.055), trim)
+    for z in [-12.2, -15.2]:
+        _box(self, "CrewCeilingRib", Vector3(-6.3, 4.08, z), Vector3(7.7, 0.18, 0.2), trim)
+        _box(self, "EngineeringCeilingRib", Vector3(6.3, 4.08, z), Vector3(7.7, 0.18, 0.2), trim)
+    for z in [-25.2, -29.6]:
+        _box(self, "CargoTruss", Vector3(0, 4.03, z), Vector3(12.5, 0.24, 0.31), crates)
+        for x in [-4.8, -2.4, 0.0, 2.4, 4.8]:
+            _box(self, "CargoTrussBolt", Vector3(x, 3.88, z), Vector3(0.22, 0.08, 0.2), trim)
+
+    # Cargo equipment: grilles, raised warning strips and textured safety ribs.
+    for x in [-4.5, 4.5]:
+        for z in [-26.3, -30.0]:
+            _box(self, "CargoRibTop", Vector3(x, 1.47, z), Vector3(1.55, 0.06, 0.13), trim)
+            _box(self, "CargoRibFront", Vector3(x, 0.83, z + 0.765), Vector3(1.55, 1.12, 0.048), crates)
+            _box(self, "CargoHazardStripe", Vector3(x, 1.41, z + 0.796), Vector3(1.46, 0.06, 0.02), caution)
+
+    # Visible cable runs and equipment casings give each room an identity.
+    for x in [-7.9, -6.9, -5.9]:
+        _box(self, "CrewLockerDuct", Vector3(x, 3.88, -15.65), Vector3(0.31, 0.22, 2.1), grille)
+    for x in [4.9, 6.7, 8.5]:
+        _box(self, "EngineeringPipe", Vector3(x, 3.79, -15.8), Vector3(0.12, 0.12, 1.9), trim)
+    _box(self, "EngineeringAccessPanel", Vector3(9.95, 2.04, -13.1), Vector3(0.08, 1.62, 2.32), inset)
+    for z in [-13.95, -13.63, -13.31, -12.99, -12.67, -12.35]:
+        _box(self, "EngineeringVentSlot", Vector3(9.89, 2.05, z), Vector3(0.08, 0.85, 0.09), grille)
+    _sign("VESPER  /  O2  98.6%  /  DECK 01", Vector3(-4.55, 2.3, -5.68), 0, Color("#b5ddd8"), 32)
+    _sign("SECURITY  /  STORAGE", Vector3(-3.45, 2.65, -32.47), 0, Color("#e7bb8e"), 36)
+
+
 func _hud_text(text: String, font_size: int, color: Color) -> Label:
     var lbl := Label.new()
     lbl.text = text
