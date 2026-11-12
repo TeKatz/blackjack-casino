@@ -1,5 +1,8 @@
 extends Node3D
 
+const RoomScenes = preload("res://room_scenes.gd")
+const CAMERA_HOME := Vector3(0, 2.35, 7.5)
+
 # Presentation-only WebGL 2 scene. This project never owns wagers, ghost RNG,
 # multipliers, rewards or the Manor save journal.
 # The parent React document sends lawful destination choices; C# decides live
@@ -29,17 +32,27 @@ var _web_poll := 0.0
 var _selected := false
 var _lighting: OmniLight3D
 var _initialized_web := false
+var _room_builder = RoomScenes.new()
+var _room_visuals: Node3D
+var _room_id := -1
+var _active := true
+var _reduced_motion := false
+var _breath_clock := 0.0
+var _door_tween: Tween
+var _options_signature := ""
 
 
 func _ready() -> void:
+    # Fill the actual slot aspect ratio rather than preserving a 16:9 image
+    # with black pillarboxing inside a wider WebView2 iframe.
+    get_tree().root.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND
     _build_environment()
-    _build_room()
-    _build_hall_details()
     _build_doors()
-    _build_decoration()
     _build_labels()
-    _set_room("Entrance Hall")
+    _set_room("Entrance Hall", 0)
     if OS.has_feature("web"):
+        _active = false
+        Engine.max_fps = 8
         _initialize_web_bridge()
 
 
@@ -148,7 +161,7 @@ func _build_environment() -> void:
     _lighting.light_color = WARM
     _lighting.light_energy = 2.0
     _lighting.omni_range = 18.0
-    _lighting.shadow_enabled = true
+    _lighting.shadow_enabled = false
     _lighting.shadow_bias = 0.065
     add_child(_lighting)
 
@@ -278,7 +291,16 @@ func _build_doors() -> void:
         collider.shape = shape
         hit.add_child(collider)
         portal.add_child(hit)
-        var l := _label(portal, "", Vector3(0, 5.85, 0.1), 29, Color("#e9d3ac"))
+        # Legible illuminated destination plaques are mounted ON the hinged door.
+        # These move with the door and sit in front of the carved raised panels.
+        _cube(hinge, "ReadableDoorPlaque", Vector3(1.39, 3.03, 0.36),
+            Vector3(2.47, 0.69, 0.09), _mat(Color("#241d27"), 0.06, 0.72))
+        _cube(hinge, "PlaqueBrassEdge", Vector3(1.39, 3.03, 0.31),
+            Vector3(2.55, 0.77, 0.07), frame)
+        var l := _label(hinge, "", Vector3(1.39, 3.02, 0.43), 52, Color("#fff2d5"))
+        l.pixel_size = 0.010
+        l.outline_size = 10
+        l.no_depth_test = true
         doors.append(portal)
         door_panels.append(hinge)
         door_colliders.append(hit)
@@ -309,14 +331,31 @@ func _build_decoration() -> void:
 func _build_labels() -> void:
     room_name = _label(self, "ENTRANCE HALL", Vector3(0, 3.3, -10.95), 43, Color("#eed7b1"))
     subtitle = _label(self, "MIDNIGHT MANOR · THE HOUSE IS AWAKE", Vector3(0, 2.78, -10.94), 23, Color("#bfa0b1"))
-    _label(self, "CHOOSE A DOOR · CLICK TO ENTER", Vector3(0, 0.65, -6.65), 31, Color("#d9c9b9"))
+    # The door instructions belong to React for responsive, readable UI.
 
 
-func _set_room(name: String) -> void:
+func _set_room(name: String, room_id: int = 0) -> void:
+    var bounded_id := clampi(room_id, 0, 16)
+    if _room_id != bounded_id or _room_visuals == null:
+        if _room_visuals != null:
+            remove_child(_room_visuals)
+            _room_visuals.queue_free()
+        _room_visuals = _room_builder.build(bounded_id)
+        add_child(_room_visuals)
+        _room_id = bounded_id
+        if bounded_id in [11, 12, 14]:
+            _lighting.light_color = Color("#a4adcb")
+            _lighting.light_energy = 0.55
+        elif bounded_id in [9, 13, 15, 16]:
+            _lighting.light_color = Color("#b1d3ed")
+            _lighting.light_energy = 0.7
+        else:
+            _lighting.light_color = WARM
+            _lighting.light_energy = 1.3
     if room_name != null:
         room_name.text = name.to_upper().substr(0, 36)
     if subtitle != null:
-        subtitle.text = "ESCAPE THE MANOR · 3D VIEW"
+        subtitle.text = "ESCAPE THE MANOR"
 
 
 func _set_options(options: Array) -> void:
@@ -328,29 +367,37 @@ func _set_options(options: Array) -> void:
             room_id = -1
         choice_ids[i] = room_id
         var title := str(choice.get("name", "SEALED")) if room_id >= 0 else "SEALED"
-        door_names[i].text = title.to_upper().substr(0, 24)
+        var display := title.to_upper()
+        if display.length() > 17 and display.contains(" "):
+            var words := display.split(" ")
+            var midpoint := int(ceil(float(words.size()) * 0.5))
+            var first := " ".join(words.slice(0, midpoint))
+            var second := " ".join(words.slice(midpoint))
+            display = first + "\n" + second
+        door_names[i].text = display.substr(0, 34)
         door_colliders[i].collision_layer = 1 if room_id >= 0 else 0
         door_panels[i].rotation_degrees.y = 0.0
     _selected = false
 
 
 func choose_slot(slot: int) -> void:
-    if slot < 0 or slot >= choice_ids.size() or choice_ids[slot] < 0 or _selected:
+    if not _active or slot < 0 or slot >= choice_ids.size() or choice_ids[slot] < 0 or _selected:
         return
     _selected = true
-    var tween := create_tween()
-    tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
-    tween.tween_property(door_panels[slot], "rotation_degrees:y", -72.0, 0.65)
-    tween.parallel().tween_property(camera, "position:z", 5.8, 0.65)
-    tween.tween_callback(_send_choice.bind(choice_ids[slot]))
+    if _door_tween != null and _door_tween.is_running():
+        _door_tween.kill()
+    _door_tween = create_tween()
+    _door_tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+    var duration := 0.12 if _reduced_motion else 0.65
+    _door_tween.tween_property(door_panels[slot], "rotation_degrees:y", -72.0, duration)
+    _door_tween.parallel().tween_property(camera, "position:z", 5.5, duration)
+    _door_tween.tween_callback(_send_choice.bind(choice_ids[slot]))
 
 
 func _send_choice(id: int) -> void:
-    if not demo_mode:
-        # Live choices are always verified by the parent against the C# snapshot.
-        _post({"source": "manor-godot", "type": "choice", "room": id})
-    else:
-        _post({"source": "manor-godot", "type": "choice", "room": id})
+    # Only a proposed destination ID goes to the React/C# bridge. Rewards,
+    # balances and ghost movements always stay in the native engine.
+    _post({"source": "manor-godot", "type": "choice", "room": id})
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -375,7 +422,9 @@ func _initialize_web_bridge() -> void:
       window.addEventListener('message', function(event) {
         if (event.source !== window.parent || event.origin !== window.location.origin) return;
         const message = event.data;
-        if (message && message.source === 'manor-react' && message.type === 'state') {
+        if (message && message.source === 'manor-react' &&
+            (message.type === 'state' || message.type === 'pick') &&
+            window.__manorBonusQueue.length < 16) {
           window.__manorBonusQueue.push(JSON.stringify(message));
         }
       });
@@ -384,10 +433,21 @@ func _initialize_web_bridge() -> void:
 
 
 func _process(delta: float) -> void:
+    # Barely perceptible resting breath, not walking/head-bobbing.
+    # Independent of the choice tween's forward Z motion.
+    if _active and not _reduced_motion and not _selected:
+        _breath_clock += delta
+        var breath := sin(_breath_clock * 1.65)
+        camera.position.y = CAMERA_HOME.y + breath * 0.018
+        camera.rotation.x = breath * 0.0015
+    else:
+        camera.position.y = lerpf(camera.position.y, CAMERA_HOME.y, minf(1.0, delta * 8.0))
+        camera.rotation.x = lerpf(camera.rotation.x, 0.0, minf(1.0, delta * 8.0))
+
     if not OS.has_feature("web") or not _initialized_web:
         return
     _web_poll += delta
-    if _web_poll < 0.13:
+    if _web_poll < 0.12:
         return
     _web_poll = 0.0
     var value: Variant = JavaScriptBridge.eval("window.__manorBonusQueue.shift() || ''")
@@ -396,19 +456,45 @@ func _process(delta: float) -> void:
     var data: Variant = JSON.parse_string(value)
     if not data is Dictionary:
         return
-    _apply_web_state(data)
+    if data.get("source") != "manor-react":
+        return
+    if data.get("type") == "pick":
+        if _active:
+            var slot: int = int(data.get("slot", -1))
+            choose_slot(slot)
+    elif data.get("type") == "state":
+        _apply_web_state(data)
 
 
 func _apply_web_state(data: Dictionary) -> void:
     if data.get("source") != "manor-react" or data.get("type") != "state":
         return
+    var previous_active := _active
+    _active = data.get("active", true) == true
+    _reduced_motion = data.get("reducedMotion", false) == true
+    if OS.has_feature("web"):
+        # The engine is kept warm and cached between visits, but idles at eight
+        # frames per second while the React slot is visible instead.
+        Engine.max_fps = 60 if _active else 8
+    if not _active:
+        return
     demo_mode = data.get("demo", true) == true
     var next_room: String = str(data.get("roomName", "Entrance Hall"))
-    _set_room(next_room)
+    var next_id: int = clampi(int(data.get("roomId", 0)), 0, 16)
+    var room_changed := next_id != _room_id
+    if room_changed or not previous_active:
+        if _door_tween != null and _door_tween.is_running():
+            _door_tween.kill()
+        _set_room(next_room, next_id)
+        camera.position = CAMERA_HOME
+        camera.rotation = Vector3.ZERO
+
     var options: Variant = data.get("options", [])
     if options is Array:
-        _set_options(options)
-    camera.position = Vector3(0, 2.35, 7.5)
+        var signature := JSON.stringify(options)
+        if signature != _options_signature or room_changed or not previous_active:
+            _options_signature = signature
+            _set_options(options)
 
 
 func _post(data: Dictionary) -> void:
