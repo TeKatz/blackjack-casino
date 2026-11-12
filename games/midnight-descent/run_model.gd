@@ -3039,8 +3039,13 @@ func oracle_mage_smoke() -> bool:
 		hurt(22)
 		if hp!=max_hp or mage_guard_charges!=0: return false
 		# Two accelerated casts are consumed; the third casts normally.
+		# Keep an inert target alive so the fight is not immediately cleared
+		# by the test tick's normal empty-wave victory transition.
 		enemies.clear()
 		shots.clear()
+		spawn_enemy("brute",boss_arena.get_center())
+		enemies[-1]["hp"]=999999.0
+		enemies[-1]["max_hp"]=999999.0
 		bolt_timer=0
 		tick(0.016,Vector2.ZERO,player+Vector2(210,0),false,true,false)
 		if mage_special_charges!=1 or bolt_timer>=special_cd*0.5: return false
