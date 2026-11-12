@@ -428,9 +428,9 @@ function heistStep(run:HeistRun,dt:number,controls:ExpansionTwoControls):Expansi
  const d=Math.hypot(dx,dy)||1,move=220*dt;
  const collision=(x:number,y:number)=>run.walls.some(w=>
   x+13>w.x&&x-13<w.x+w.w&&y+13>w.y&&y-13<w.y+w.h);
- const nx=clamp(run.x+dx/d*move,32,W-32);
+ const nx=clamp(run.x+dx/d*move,48,913);
  if(!collision(nx,run.y))run.x=nx;
- const ny=clamp(run.y+dy/d*move,55,H-30);
+ const ny=clamp(run.y+dy/d*move,66,474);
  if(!collision(run.x,ny))run.y=ny;
  for(const g of run.guards){
   if(g.axis==='y'){
