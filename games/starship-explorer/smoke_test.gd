@@ -114,12 +114,12 @@ func _execute() -> void:
         return
 
     var locker := ship.get_node_or_null("CabinLockerDoor") as AnimatableBody3D
-    var handle := ship.get_node_or_null("LockerHandle") as StaticBody3D
+    var handle := ship.get_node_or_null("CabinLockerDoor/LockerHandle") as StaticBody3D
     if locker == null or handle == null:
         _fail("Cabin locker geometry missing")
         return
     # The hatch must face into the cabin, not towards the adjacent wall.
-    if handle.position.z >= locker.position.z:
+    if handle.global_position.z >= locker.global_position.z:
         _fail("Locker handle still faces the wall")
         return
     ship.toggle_locker()
