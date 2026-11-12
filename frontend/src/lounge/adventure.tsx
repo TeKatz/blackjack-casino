@@ -3,6 +3,7 @@ import type {PointerEvent as ReactPointerEvent} from 'react';
 import type {TaleBoard,TaleBoardNode,TaleClass,TaleEncounter,TaleIntent,TaleRun,TaleState} from './adventureBridge';
 import './adventure.css';
 import {BackroomItemIcon} from './BackroomItemIcon';
+import {BackroomD20} from './BackroomD20';
 
 type Lang='en'|'de';
 type Props={state:TaleState;language:Lang;pending:boolean;error:string;animations:boolean;
@@ -79,18 +80,20 @@ function ChoiceButtons({run,copy,pending,send}:{
   </button>)}
  </div>;
 }
-function CharacterSheet({run,copy,pending,send}:{
- run:TaleRun;copy:Copy;pending:boolean;send:(intent:TaleIntent)=>void}){
+function CharacterSheet({run,copy,pending,send,animations}:{
+ run:TaleRun;copy:Copy;pending:boolean;send:(intent:TaleIntent)=>void;animations:boolean}){
  const character=run.character;
- const [rolling,setRolling]=useState(false),[shownRoll,setShownRoll]=useState(run.lastRoll?.chosenRoll??20);
- useEffect(()=>{if(!rolling)setShownRoll(run.lastRoll?.chosenRoll??20);},[run.lastRoll?.chosenRoll,rolling]);
+ const [rolling,setRolling]=useState(false);
+ const startedAt=useRef(0),startedRollCount=useRef(run.rollsMade);
+ const resolved=rolling&&run.rollsMade>startedRollCount.current;
  useEffect(()=>{
-   if(!rolling)return;
-   let value=7;
-   const ticker=window.setInterval(()=>{value=(value*13+11)%20;setShownRoll(value+1);},49);
-   const timer=window.setTimeout(()=>setRolling(false),940);
-   return()=>{window.clearInterval(ticker);window.clearTimeout(timer);};
-  },[rolling]);
+  if(!rolling)return;
+  // Never invent an outcome. Remain in motion until C# supplies the result,
+  // then give the physical die time to settle on its actual chosen face.
+  const timer=window.setTimeout(()=>setRolling(false),resolved?
+   Math.max(550,1250-(Date.now()-startedAt.current)):8000);
+  return()=>window.clearTimeout(timer);
+ },[rolling,resolved]);
  return <aside className="backroom-sheet">
   <small className="backroom-eyebrow">{copy.stats}</small>
   <h2>{character.name}</h2><p>{character.classId} · {copy.level} {character.level}</p>
@@ -112,10 +115,13 @@ function CharacterSheet({run,copy,pending,send}:{
      title={c.remaining+' scenes'}>{c.name} · {c.remaining}</span>)}</div></>}
   <div className={'backroom-d20 '+(run.pending?'active ':'')+(rolling?'rolling':'')}>
    <strong>D20</strong>
-   <span className="backroom-d20-shape"><svg viewBox="0 0 140 150" aria-hidden="true"><defs><linearGradient id="d20-metal" x2="1" y2="1"><stop stopColor="#d6bf83"/><stop offset=".5" stopColor="#334b48"/><stop offset="1" stopColor="#101f27"/></linearGradient></defs><path d="M70 4L128 35L135 105L70 146L5 105L12 35Z" fill="url(#d20-metal)" stroke="#f3d58d" strokeWidth="3"/><path d="M70 4L30 94L110 94Z M12 35L30 94L5 105 M128 35L110 94L135 105 M30 94L70 146L110 94" fill="none" stroke="#d9c08b" strokeWidth="1.5"/></svg><b>{shownRoll}</b></span>
+   <BackroomD20 value={run.lastRoll?.chosenRoll??20} rolling={rolling}
+     resolved={resolved} motion={animations}/>
+   {run.lastRoll&&!rolling&&<span className="backroom-d20-result" aria-label="D20 result">{run.lastRoll.chosenRoll}</span>}
    {run.pending?<><small>{run.pending.ability} · DC {run.pending.difficulty} · {copy.mod} {signed(run.pending.modifier)}
     {run.pending.mode==='Advantage'?' · '+copy.adv:run.pending.mode==='Disadvantage'?' · '+copy.disadv:''}</small>
-    <button className="backroom-primary" disabled={rolling} aria-disabled={pending||rolling} onClick={()=>{setRolling(true);send({action:'adventure.roll'});}}>{copy.roll}</button>
+    <button className="backroom-primary" disabled={rolling||pending} aria-disabled={pending||rolling}
+      onClick={()=>{startedAt.current=Date.now();startedRollCount.current=run.rollsMade;setRolling(true);send({action:'adventure.roll'});}}>{copy.roll}</button>
    </>:run.lastRoll&&<small>{outcomeLabel(run.lastRoll.outcome,'en')} · {run.lastRoll.total}/{run.lastRoll.difficulty}</small>}
   </div>
  </aside>;
@@ -141,8 +147,8 @@ function Inventory({run,copy,pending,send}:{
    </details>}
  </section>;
 }
-function Story({run,copy,pending,send}:{
- run:TaleRun;copy:Copy;pending:boolean;send:(intent:TaleIntent)=>void}){
+function Story({run,copy,pending,send,animations}:{
+ run:TaleRun;copy:Copy;pending:boolean;send:(intent:TaleIntent)=>void;animations:boolean}){
  return <div className="backroom-story-grid">
   <div className="backroom-story-column">
    <section className="backroom-story-panel" key={run.scene.id}>
@@ -167,7 +173,7 @@ function Story({run,copy,pending,send}:{
    </section>
    <Inventory run={run} copy={copy} pending={pending} send={send}/>
   </div>
-  <CharacterSheet run={run} copy={copy} pending={pending} send={send}/>
+  <CharacterSheet run={run} copy={copy} pending={pending} send={send} animations={animations}/>
  </div>;
 }
 function CaseBoard({board,copy,pending,send,error}:{
@@ -395,6 +401,26 @@ export function AdventureScreen({state,language,pending,error,command}:Props){
  const selectedClass=state.classes.find(c=>c.id===classId)??state.classes[0];
  useEffect(()=>{if(!state.classes.some(c=>c.id===classId))setClassId(state.classes[0]?.id??'rogue');},
   [state.selectedAdventureId,state.classes,classId]);
+ const [newBoard,setNewBoard]=useState<{title:string;count:number}|null>(null);
+ const boardHistory=useRef<{runId:string;ids:Set<string>}|null>(null);
+ useEffect(()=>{
+  const run=state.run;
+  if(!run?.board){
+   if(!run)boardHistory.current=null;
+   return;
+  }
+  const previous=boardHistory.current;
+  if(!previous||previous.runId!==run.runId){
+   boardHistory.current={runId:run.runId,ids:new Set(run.board.nodes.map(n=>n.id))};
+   return;
+  }
+  const additions=run.board.nodes.filter(n=>!previous.ids.has(n.id));
+  additions.forEach(n=>previous.ids.add(n.id));
+  if(!additions.length)return;
+  setNewBoard({title:additions[0].title,count:additions.length});
+  const timer=window.setTimeout(()=>setNewBoard(null),4300);
+  return()=>window.clearTimeout(timer);
+ },[state.run?.runId,state.run?.board?.nodes]);
  const send=(intent:TaleIntent)=>{if(!pending)command(intent);};
  const start=()=>{
   const replacing=selected?.status==='active';
@@ -403,6 +429,14 @@ export function AdventureScreen({state,language,pending,error,command}:Props){
    classId:selectedClass.id,...(replacing?{confirmReplace:true as const}:{})});
  };
  return <div className="backroom-shell" data-testid={'modern-adventure-'+state.screen}>
+  {newBoard&&<div className="backroom-discovery" role="status" aria-live="polite">
+    <span className="backroom-discovery-signal" aria-hidden="true"/>
+    <div><small>{t.newClue}{newBoard.count>1?' · +'+newBoard.count:''}</small>
+      <strong>{newBoard.title}</strong></div>
+    {state.screen!=='board'&&<button type="button"
+      onClick={()=>{setNewBoard(null);send({action:'adventure.board.open'});}}>
+      {t.openBoard}</button>}
+  </div>}
   {state.screen==='library'?<>
    <header className="backroom-library-header">
     <div><small className="backroom-eyebrow">THE MIDNIGHT CLUB · CHILL LOUNGE</small>
@@ -453,7 +487,7 @@ export function AdventureScreen({state,language,pending,error,command}:Props){
     </aside>
    </div>
   </>:state.run&&state.screen==='story'
-   ?<Story run={state.run} copy={t} pending={pending} send={send}/>
+   ?<Story run={state.run} copy={t} pending={pending} send={send} animations={animations}/>
    :state.run&&state.screen==='board'&&state.run.board
    ?<CaseBoard board={state.run.board} copy={t} pending={pending} send={send} error={error}/>
    :state.run&&state.screen==='encounter'&&state.encounter

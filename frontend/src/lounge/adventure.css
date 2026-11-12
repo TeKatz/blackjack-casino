@@ -241,3 +241,48 @@
  .backroom-d20.rolling .backroom-d20-shape,.backroom-d20.rolling .backroom-d20-shape b,
  .backroom-board-node.new-entry,.backroom-new-entry-notice{animation:none!important}
 }
+
+
+/* The W20 is a real, shaded icosahedron rendered in one retained canvas.
+   No flat hexagon, pseudo-random number ticker or full-panel CSS rotation. */
+.backroom-d20{position:relative;overflow:visible;min-width:0;
+ border:1px solid #8d85675c;border-radius:15px;
+ background:radial-gradient(ellipse at 50% 30%,#35474045,transparent 65%),#101c22;
+ box-shadow:inset 0 1px #f5d49c20,0 10px 30px #0004;padding:15px 12px 18px}
+.backroom-d20-stage{position:relative;width:174px;height:172px;max-width:100%;
+ display:grid;place-items:center;isolation:isolate}
+.backroom-d20-stage canvas{position:relative;z-index:2;max-width:100%;height:auto;display:block}
+.backroom-d20-shadow{position:absolute;z-index:1;left:15%;right:15%;bottom:8%;
+ height:13px;border-radius:50%;background:#030d15a8;filter:blur(7px);pointer-events:none}
+.backroom-d20-result{font:700 20px/1.2 "Segoe UI",sans-serif!important;
+ color:#f3dcad!important;letter-spacing:.08em}
+.backroom-d20 .backroom-primary{min-height:43px}
+.backroom-d20.active{border-color:#bda87c8c}
+.backroom-d20.rolling .backroom-d20-stage{filter:drop-shadow(0 0 9px #ddbd7955)}
+/* Visible in STORY as well as BOARD; the former implementation lived inside
+   CaseBoard only, so it could not announce clues earned through story choices. */
+.backroom-shell{position:relative;isolation:isolate}
+.backroom-discovery{position:fixed;z-index:40;right:clamp(18px,3vw,55px);
+ top:clamp(70px,9vh,128px);width:min(385px,calc(100vw - 36px));
+ display:flex;align-items:center;gap:12px;min-height:75px;
+ padding:13px 15px;border:1px solid #d7bd88;border-radius:12px;
+ background:linear-gradient(135deg,#24433d,#172a2e 70%,#182430);
+ box-shadow:0 14px 35px #02090ab3,inset 0 1px #f7e6c131;
+ animation:backroom-discovery-arrival .55s cubic-bezier(.2,.75,.2,1) both}
+.backroom-discovery-signal{flex:0 0 27px;width:27px;height:27px;border-radius:50%;
+ border:2px solid #f0d29b;box-shadow:0 0 0 5px #f5d6a323,inset 0 0 8px #d4a36a76;
+ background:radial-gradient(circle at 40% 40%,#fff1be,#d7ac6d 46%,#493b34)}
+.backroom-discovery>div{flex:1;min-width:0;display:grid;gap:5px}
+.backroom-discovery small{font:800 10px/1.3 "Segoe UI",sans-serif;letter-spacing:.12em;color:#e5cc9e}
+.backroom-discovery strong{font:650 14px/1.3 "Segoe UI",sans-serif;color:#fff0d4;
+ overflow-wrap:anywhere}
+.backroom-discovery button{flex:0 0 auto;max-width:112px;padding:9px!important;
+ border-radius:8px!important;font-size:10px!important;line-height:1.3!important}
+@keyframes backroom-discovery-arrival{
+ from{opacity:0;transform:translate3d(22px,-9px,0) scale(.95)}
+ to{opacity:1;transform:none}
+}
+@media(prefers-reduced-motion:reduce){
+ .backroom-discovery{animation:none!important}
+ .backroom-d20.rolling .backroom-d20-stage{filter:none}
+}
