@@ -25,6 +25,10 @@ type Props = {
 };
 
 type ItemKind = 'key' | 'candle' | 'charm';
+type TransitionPhase = 'hidden' | 'loading' | 'entering' | 'inside' | 'leaving';
+
+const ENTER_DURATION_MS = 840;
+const EXIT_DURATION_MS = 640;
 
 function ItemIcon({ kind }: { kind: ItemKind }) {
   return (
@@ -71,6 +75,12 @@ export function ManorBonus3D({
 }: Props) {
   const frame = useRef<HTMLIFrameElement>(null);
   const [ready, setReady] = useState(false);
+  // Preserve the final 3D frame and HUD for an exit animation, even when
+  // C# removes the finished run from its next authoritative snapshot.
+  const [phase, setPhase] = useState<TransitionPhase>(
+    active ? 'loading' : 'hidden');
+  const phaseRef = useRef<TransitionPhase>(active ? 'loading' : 'hidden');
+  const previouslyActive = useRef(active);
   const [failed, setFailed] = useState(false);
   const [demoRoom, setDemoRoom] = useState(0);
   const [demoSteps, setDemoSteps] = useState(0);
@@ -84,12 +94,51 @@ export function ManorBonus3D({
   const state: GodotState = demo ? demoState(demoRoom) : run ? liveState(run) : demoState(0);
   const map: ManorMapSnapshot = demo ? makeDemoMap(demoRoom, demoVisited) :
     run ?? makeDemoMap(0);
+  const lastShown = useRef({ demo, run, map, state });
+  if (active) lastShown.current = { demo, run, map, state };
+  const shown = active ? { demo, run, map, state } : lastShown.current;
+  const shownRun = shown.run;
+  const shownDemo = shown.demo;
+  const shownMap = shown.map;
+  const shownState = shown.state;
+  const displayed = active || phase !== 'hidden';
   const latest = useRef({ state, active, reducedMotion });
   latest.current = { state, active, reducedMotion };
   const locked = disabled || choiceWaiting;
-  const currentName = map.rooms.find(room => room.id === map.playerRoom)?.name ??
-    state.roomName;
-  const band = run ? ghostBand(run.ghostClue) : 'uncertain';
+  const currentName = shownMap.rooms.find(room => room.id === shownMap.playerRoom)?.name ??
+    shownState.roomName;
+  const band = shownRun ? ghostBand(shownRun.ghostClue) : 'uncertain';
+
+  useEffect(() => {
+    const wasActive = previouslyActive.current;
+    previouslyActive.current = active;
+    let timer: number | undefined;
+    const change = (next: TransitionPhase) => {
+      phaseRef.current = next;
+      setPhase(next);
+    };
+
+    if (active) {
+      // Play the reveal only after the WebGL canvas is ready. While Godot
+      // boots we show a clear loading state instead of a blank iframe.
+      if (!ready) change('loading');
+      else if (reducedMotion) change('inside');
+      else if (!wasActive || phaseRef.current === 'loading' ||
+        phaseRef.current === 'entering' || phaseRef.current === 'leaving') {
+        change('entering');
+        timer = window.setTimeout(() => change('inside'), ENTER_DURATION_MS);
+      }
+    } else if (wasActive || phaseRef.current === 'leaving') {
+      if (reducedMotion) change('hidden');
+      else {
+        change('leaving');
+        timer = window.setTimeout(() => change('hidden'), EXIT_DURATION_MS);
+      }
+    } else {
+      change('hidden');
+    }
+    return () => { if (timer !== undefined) window.clearTimeout(timer); };
+  }, [active, ready, reducedMotion]);
 
   const postState = useCallback((next: GodotState, visible: boolean, reduce: boolean) => {
     frame.current?.contentWindow?.postMessage(
@@ -225,9 +274,10 @@ export function ManorBonus3D({
 
   return (
     <section className={'manor-godot-surface' +
-      (active ? ' is-active' : ' is-warming') +
+      (displayed ? ' is-active' : ' is-warming') +
+      ' phase-' + phase +
       (reducedMotion ? ' no-motion' : '')}
-      aria-label={t(language, 'godotArea')} aria-hidden={!active}>
+      aria-label={t(language, 'godotArea')} aria-hidden={!displayed}>
       <iframe className="manor-godot-frame" ref={frame}
         src="./manor3d/index.html" title={t(language, 'godotArea')}
         sandbox="allow-scripts allow-same-origin" loading="eager"
@@ -235,32 +285,32 @@ export function ManorBonus3D({
         onMouseLeave={() => setHoveredRoom(null)}
         onError={() => setFailed(true)} />
 
-      {active && <>
+      {displayed && <>
         <div className="manor-godot-hud-left">
           <header className="manor-godot-room-heading">
-            <span className="eyebrow">{t(language, demo ? 'godotDemoTag' : 'godotLiveTag')}</span>
+            <span className="eyebrow">{t(language, shownDemo ? 'godotDemoTag' : 'godotLiveTag')}</span>
             <strong>{localizeRoom(currentName, language)}</strong>
-            <small>{demo ? t(language, 'godotDemoProgress', demoSteps) :
-              t(language, 'godotTurnOf', run?.turn ?? 0, 24)}</small>
+            <small>{shownDemo ? t(language, 'godotDemoProgress', demoSteps) :
+              t(language, 'godotTurnOf', shownRun?.turn ?? 0, 24)}</small>
           </header>
           <div className="manor-godot-payout-panel" aria-label={t(language, 'godotRewardStatus')}>
             <div className="manor-godot-payout-pair">
-              <span><small>{t(language, 'potential')}</small><strong>{run?.current ?? '—'}</strong></span>
-              <span><small>{t(language, 'checkpoint')}</small><strong>{run?.banked ?? '—'}</strong></span>
+              <span><small>{t(language, 'potential')}</small><strong>{shownRun?.current ?? '—'}</strong></span>
+              <span><small>{t(language, 'checkpoint')}</small><strong>{shownRun?.banked ?? '—'}</strong></span>
             </div>
             <span className="manor-godot-target">
-              {t(language, 'godotExitTarget')} <b>{run ? String(run.exitTarget) + '×' : '—'}</b>
+              {t(language, 'godotExitTarget')} <b>{shownRun ? String(shownRun.exitTarget) + '×' : '—'}</b>
             </span>
           </div>
           <div className={'manor-godot-threat ' + band} role="status">
             <div className="manor-godot-threat-title">
               <span className="manor-godot-threat-dot" aria-hidden="true"/>
-              {t(language, threatKey(demo ? null : run))}
+              {t(language, threatKey(shownDemo ? null : shownRun))}
             </div>
-            <p>{demo ? t(language, 'godotDemoGhostHint') :
-              localizeRunText(run?.ghostClue ?? '', language)}</p>
+            <p>{shownDemo ? t(language, 'godotDemoGhostHint') :
+              localizeRunText(shownRun?.ghostClue ?? '', language)}</p>
           </div>
-          {eventMessage && !demo &&
+          {eventMessage && !shownDemo &&
             <div key={eventMessage} className="manor-godot-event"
               role="status" aria-live="polite">
               <span>{t(language, 'godotEventTitle')}</span>
@@ -276,17 +326,17 @@ export function ManorBonus3D({
               <MapExpandIcon/>
             </button>
           </div>
-          <ManorGodotMap map={map} language={language}
+          <ManorGodotMap map={shownMap} language={language}
             hoveredRoom={hoveredRoom} onHover={setHoveredRoom}/>
         </aside>
 
-        {ready && !failed && state.options.length > 0 &&
+        {ready && !failed && shownState.options.length > 0 &&
           <nav className="manor-godot-door-actions" aria-label={t(language, 'chooseRoom')}>
-            {state.options.map((choice, slot) =>
+            {shownState.options.map((choice, slot) =>
               <button key={slot} type="button"
                 className={'manor-godot-door-choice' +
                   (hoveredRoom === choice.id ? ' is-highlighted' : '')}
-                disabled={locked || mapOpen} onClick={() => pick(slot)}
+                disabled={!active || locked || mapOpen} onClick={() => pick(slot)}
                 onMouseEnter={() => setHoveredRoom(choice.id)}
                 onMouseLeave={() => setHoveredRoom(null)}
                 onFocus={() => setHoveredRoom(choice.id)}
@@ -300,28 +350,28 @@ export function ManorBonus3D({
         <div className="manor-godot-inventory" aria-label={t(language, 'godotInventoryHeading')}>
           <small>{t(language, 'godotInventoryHeading')}</small>
           <div className="manor-godot-inventory-items">
-            {item('key', !demo && Boolean(run?.hasKey), t(language, 'godotItemKey'))}
-            {item('candle', !demo && Boolean(run?.hasCandle), t(language, 'godotItemCandle'))}
-            {item('charm', !demo && Boolean(run?.hasCharm), t(language, 'godotItemCharm'))}
+            {item('key', !shownDemo && Boolean(shownRun?.hasKey), t(language, 'godotItemKey'))}
+            {item('candle', !shownDemo && Boolean(shownRun?.hasCandle), t(language, 'godotItemCandle'))}
+            {item('charm', !shownDemo && Boolean(shownRun?.hasCharm), t(language, 'godotItemCharm'))}
           </div>
         </div>
 
         <div className="manor-godot-action-dock">
-          {!demo && run && <>
+          {!shownDemo && shownRun && <>
             <button className="manor-godot-cashout" type="button"
-              disabled={locked || mapOpen} onClick={() => onAction('run.cashout')}>
-              {t(language, 'cashout')} · {run.current}
+              disabled={!active || locked || mapOpen} onClick={() => onAction('run.cashout')}>
+              {t(language, 'cashout')} · {shownRun.current}
             </button>
             <button className="ghost-button" type="button"
               onClick={onFallback}>{t(language, 'godotClassic')}</button>
           </>}
-          {demo && <button className="ghost-button" type="button"
+          {shownDemo && <button className="ghost-button" type="button"
             onClick={onExitDemo}>{t(language, 'godotReturn')}</button>}
         </div>
         <p className="manor-godot-hint">{t(language, 'godotHint')}</p>
-        {demo && <span className="manor-godot-safe">{t(language, 'godotNoPayout')}</span>}
+        {shownDemo && <span className="manor-godot-safe">{t(language, 'godotNoPayout')}</span>}
 
-        {(!ready || failed) && <div className="manor-godot-loading" role="status">
+        {(!ready || failed) && active && <div className="manor-godot-loading" role="status">
           <strong>{failed ? t(language, 'godotUnavailable') : t(language, 'godotLoading')}</strong>
           <span>{failed ? t(language, 'godotUnavailableDetail') :
             t(language, 'godotLoadingDetail')}</span>
@@ -329,7 +379,7 @@ export function ManorBonus3D({
             onClick={demo ? onExitDemo : onFallback}>{t(language, 'godotReturn')}</button>}
         </div>}
 
-        {mapOpen && <div className="manor-godot-map-overlay">
+        {mapOpen && active && <div className="manor-godot-map-overlay">
           <div className="manor-godot-map-backdrop"
             onClick={() => setMapOpen(false)} aria-hidden="true"/>
           <section className="manor-godot-map-dialog"
@@ -344,12 +394,18 @@ export function ManorBonus3D({
                 {t(language, 'godotMapClose')}
               </button>
             </header>
-            <ManorGodotMap map={map} language={language}
+            <ManorGodotMap map={shownMap} language={language}
               large disabled={locked} hoveredRoom={hoveredRoom}
               onHover={setHoveredRoom} onSelect={chooseDestination}/>
             <p className="manor-godot-map-footer">{t(language, 'godotMapNote')}</p>
           </section>
         </div>}
+        {(phase === 'entering' || phase === 'leaving') && !reducedMotion &&
+          <div className={'manor-godot-portal phase-' + phase} aria-hidden="true">
+            <span className="manor-godot-portal-leaf left"/>
+            <span className="manor-godot-portal-leaf right"/>
+            <span className="manor-godot-portal-light"/>
+          </div>}
       </>}
     </section>
   );
