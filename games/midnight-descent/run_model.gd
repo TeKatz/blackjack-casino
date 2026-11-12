@@ -392,7 +392,7 @@ func class_special_attack() -> void:
 	if relics.has("w_lance"):
 		for i in range(mini(3,relics.count("w_lance"))):
 			var direction: Vector2=aim.rotated((float(i)-float(mini(3,relics.count("w_lance"))-1)*0.5)*0.16)
-			shoot(player+aim*25,direction*680,false,bolt_damage*1.25*(1.0+0.20*maxi(0,relics.count("w_lance")-3)))
+			shoot(player+aim*25,direction*680,false,bolt_damage*1.25*special_multiplier*(1.0+0.20*maxi(0,relics.count("w_lance")-3)))
 			if not shots.is_empty(): shots[-1]["pierce"]=mini(6,int(shots[-1].pierce)+2)
 		effect("class_lance",player,0.38,aim)
 		notices.append("class_lance")
@@ -400,7 +400,7 @@ func class_special_attack() -> void:
 		var full_house: bool=has_synergy("d_jackpot")
 		var count: int=3 if full_house else 1
 		for i in range(count):
-			shoot(player+aim*26,aim.rotated((float(i)-float(count-1)*0.5)*0.23)*710,false,bolt_damage*1.75*relics.count("d_ace"))
+			shoot(player+aim*26,aim.rotated((float(i)-float(count-1)*0.5)*0.23)*710,false,bolt_damage*1.75*special_multiplier*relics.count("d_ace"))
 			effect("class_ace",player,0.54,aim)
 		if full_house:
 			shards+=5
@@ -416,7 +416,7 @@ func class_special_attack() -> void:
 		var convergence: bool=has_synergy("a_convergence")
 		for enemy in enemies:
 			if enemy.hp>0 and player.distance_to(enemy.pos)<(225 if convergence else 165):
-				hit_enemy(enemy,(30 if convergence else 18)*relics.count("a_surge"))
+				hit_enemy(enemy,(30 if convergence else 18)*special_multiplier*relics.count("a_surge"))
 		effect("class_surge",player,0.62,Vector2.ZERO)
 		notices.append("class_surge")
 	if relics.has("s_grim") and souls>0:
@@ -424,7 +424,7 @@ func class_special_attack() -> void:
 		var dark_requiem: bool=has_synergy("s_requiem")
 		var count: int=3 if dark_requiem else 1
 		for i in range(count):
-			shoot(player+aim*20,aim.rotated((float(i)-float(count-1)*0.5)*0.19)*570,false,bolt_damage*1.15*relics.count("s_grim"))
+			shoot(player+aim*20,aim.rotated((float(i)-float(count-1)*0.5)*0.19)*570,false,bolt_damage*1.15*special_multiplier*relics.count("s_grim"))
 		if dark_requiem: hp=minf(max_hp,hp+6)
 		effect("class_soul",player,0.52,aim)
 		notices.append("class_soul")
@@ -1878,8 +1878,6 @@ func hurt(amount: float, from_enemy: bool = true) -> void:
 
 func shoot(pos: Vector2, velocity: Vector2, hostile: bool, power: float) -> void:
 	if shots.size()>=180: return
-	if not hostile and shot_style.ends_with("_special"):
-		power*=special_multiplier
 	shots.append({"pos":pos,"vel":velocity,"hostile":hostile,"damage":power,"life":2.8,"pierce":0 if hostile else mini(5,relics.count("pierce")),"hit":[],"bounce":0 if hostile else mini(5,relics.count("bounce")+relics.count("d_sleight")),"style":enemy_shot_style if hostile else shot_style})
 
 func boss_phase_for(enemy: Dictionary) -> int:
@@ -3055,6 +3053,24 @@ func oracle_mage_smoke() -> bool:
 		bolt_timer=0
 		tick(0.016,Vector2.ZERO,player+Vector2(210,0),false,true,false)
 		if bolt_timer<special_cd*0.7: return false
+	# A standard special must apply its multiplier only once, including
+	# the pre-boss blessing and old Overcharge relic interaction.
+	begin(9499,"warden_guard")
+	floor_index=0
+	dungeon.generate(seed_value,floor_index)
+	room=Dungeon.BOSS
+	enter_room()
+	boss_awake=true
+	mage_special_blessing=true
+	shots.clear()
+	shot_style="warden_guard_special"
+	special_multiplier=1.15
+	shoot(player,Vector2.RIGHT*500,false,100.0*special_multiplier)
+	if shots.is_empty() or absf(float(shots[-1].damage)-115.0)>0.01: return false
+	shots.clear()
+	special_multiplier=2.0*1.15
+	shoot(player,Vector2.RIGHT*500,false,100.0*special_multiplier)
+	if shots.is_empty() or absf(float(shots[-1].damage)-230.0)>0.01: return false
 	# Ascending to a new biome must not carry over purchased foresight or buffs.
 	begin(9551)
 	player=HUB_PORTAL
