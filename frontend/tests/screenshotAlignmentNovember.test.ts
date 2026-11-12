@@ -1,13 +1,18 @@
 import {describe,expect,it} from 'vitest';
-import {readFileSync} from 'node:fs';
-import {fileURLToPath} from 'node:url';
+import sudokuSvg from '../public/lounge/art/sudoku.svg?raw';
+import wordSvg from '../public/lounge/art/word-search.svg?raw';
+import jigsawSvg from '../public/lounge/art/jigsaw.svg?raw';
+import defenseSvg from '../public/lounge/art/tower-defense.svg?raw';
+import seasonCssText from '../src/lobby/season.css?raw';
+import seasonViewText from '../src/lobby/ModernSeasons.tsx?raw';
 import {actArcadeRun,angularDistance,BLADE_HIT_ARC,BLADE_IMPACT_ANGLE,createArcadeRun} from '../src/lobby/arcadeEngine';
 import type {BladeRun} from '../src/lobby/arcadeEngine';
 import {BLADE_PENETRATION,BLADE_RIM_RADIUS,bladePaintedTip} from '../src/lobby/bladeGeometry';
 
-const asset=(name:string)=>readFileSync(fileURLToPath(new URL('../public/lounge/art/'+name+'.svg',import.meta.url)),'utf8');
-const seasonCss=()=>readFileSync(fileURLToPath(new URL('../src/lobby/season.css',import.meta.url)),'utf8');
-const seasonView=()=>readFileSync(fileURLToPath(new URL('../src/lobby/ModernSeasons.tsx',import.meta.url)),'utf8');
+const assets:Record<string,string>={sudoku:sudokuSvg,'word-search':wordSvg,jigsaw:jigsawSvg,'tower-defense':defenseSvg};
+const asset=(name:string)=>assets[name];
+const seasonCss=()=>seasonCssText;
+const seasonView=()=>seasonViewText;
 
 describe('Screenshot feedback: exact visual alignment without game-logic changes',()=>{
  it('the aiming reticle projects the very same painted tip as a newly placed knife',()=>{
