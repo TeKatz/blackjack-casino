@@ -104,7 +104,7 @@ export function ManorBonus3D({
   const displayed = active || phase !== 'hidden';
   const latest = useRef({ state, active, reducedMotion });
   latest.current = { state, active, reducedMotion };
-  const locked = disabled || choiceWaiting;
+  const locked = disabled || choiceWaiting || phase !== 'inside';
   const currentName = shownMap.rooms.find(room => room.id === shownMap.playerRoom)?.name ??
     shownState.roomName;
   const band = shownRun ? ghostBand(shownRun.ghostClue) : 'uncertain';
@@ -321,7 +321,8 @@ export function ManorBonus3D({
         <aside className="manor-godot-hud-map" aria-label={t(language, 'godotMapHeading')}>
           <div className="manor-godot-mini-map-heading">
             <strong>{t(language, 'godotMapHeading')}</strong>
-            <button type="button" onClick={() => setMapOpen(true)}
+            <button type="button" disabled={!active || phase !== 'inside'}
+              onClick={() => setMapOpen(true)}
               aria-label={t(language, 'godotMapExpand')} title={t(language, 'godotMapExpand')}>
               <MapExpandIcon/>
             </button>
