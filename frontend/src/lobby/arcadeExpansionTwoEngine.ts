@@ -176,7 +176,7 @@ export function rotateCircuit(run:CircuitRun,c:number,r:number):ExpansionTwoEven
  run.cursor={c,r};const tile=run.tiles.find(t=>t.c===c&&t.r===r);
  if(!tile)return null;
  run.turnFromMask=tile.mask;tile.mask=rotatePorts(tile.mask);
- run.turnCell={c,r};run.turnClock=.18;
+ run.turnCell={c,r};run.turnClock=.32;
  run.powered=poweredCircuit(run.tiles);run.flash=.2;
  if(run.tiles.some(t=>t.danger&&run.powered.some(p=>same(p,t)))){
   run.lives--;run.shockClock=1.3;
