@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client';
 import {
   availableActions, browserPreview, sendAction, sendCommand, subscribeToHost,
 } from './bridge/protocol';
-import type { GameAction, ManorSnapshot } from './bridge/protocol';
+import type { GameAction, ManorSnapshot, ManorRun } from './bridge/protocol';
 import { ManorStage } from './graphics/ManorStage';
 import { ManorBonusStage } from './graphics/ManorBonusStage';
 import { ManorBonus3D } from './graphics/ManorBonus3D';
@@ -32,9 +32,11 @@ function ManorApp() {
   const [revealingReels, setRevealingReels] = useState(false);
   const [languageOverride, setLanguageOverride] = useState<ManorLanguage | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
-  const [demoBonusOpen, setDemoBonusOpen] = useState(false);
-  // The real run stays on the established 2D view unless explicitly opted in.
-  const [experimental3DBonus, setExperimental3DBonus] = useState(false);
+  const [classicBonus, setClassicBonus] = useState(false);
+  const classicBonusRef = useRef(false);
+  const [conclusionOpen, setConclusionOpen] = useState(false);
+  const lastLiveRun = useRef<ManorRun | null>(null);
+  const concludedRun = useRef<ManorRun | null>(null);
   const closeHelp = useCallback(() => setHelpOpen(false), []);
   const [connected, setConnected] = useState(!embedded);
   const [error, setError] = useState<string | null>(null);
@@ -90,6 +92,12 @@ function ManorApp() {
     setRevealingReels(false);
     audio.current?.stopReels();
     setShownSnapshot(result);
+    lastLiveRun.current = result.run;
+    if (result.run) {
+      classicBonusRef.current = false;
+      setClassicBonus(false);
+      setConclusionOpen(false);
+    }
     setMoment(settledSpinMoment(result));
     const cue = spinCue(result);
     if (cue) audio.current?.play(cue);
@@ -100,7 +108,20 @@ function ManorApp() {
       if (BigInt(next.revision) < BigInt(acceptedRevisionRef.current)) return false;
       acceptedRevisionRef.current = next.revision;
       setSnapshot(next);
-      if (!conceal && awaitingPresentation.current === null) setShownSnapshot(next);
+      if (!conceal && awaitingPresentation.current === null) {
+        const precedingRun = lastLiveRun.current;
+        if (precedingRun && !next.run && next.lastRun && !classicBonusRef.current) {
+          concludedRun.current = precedingRun;
+          setConclusionOpen(true);
+        }
+        if (next.run) setConclusionOpen(false);
+        lastLiveRun.current = next.run;
+        if (!next.run) {
+          classicBonusRef.current = false;
+          setClassicBonus(false);
+        }
+        setShownSnapshot(next);
+      }
       setBet(defaultBet(next.selectedBet));
       setConnected(true);
       return true;
@@ -158,13 +179,15 @@ function ManorApp() {
   const actions = availableActions(snapshot);
   const motionOff = lowMotion || !ambient || !snapshot.animationsEnabled;
   const disabled = !embedded || !connected || !rendererReady ||
-    pending !== null || fatal || animating || demoBonusOpen ||
+    pending !== null || fatal || animating ||
     revealingReels || awaitingPresentation.current !== null;
   const rolling = revealingReels || pendingTypeRef.current?.startsWith('spin.') === true;
   const validBet = validManorBet(bet);
   const fundedBet = validBet && canAffordBet(snapshot.bankroll, bet);
   const run = shownSnapshot.run;
-  const godotVisible = demoBonusOpen || Boolean(run && experimental3DBonus);
+  const practice = shownSnapshot.practiceRun ?? null;
+  const godotVisible = Boolean(practice || (run && !classicBonus) || conclusionOpen);
+  const bonusRun = practice ?? run ?? (conclusionOpen ? concludedRun.current : null);
   useEffect(() => {
     if (godotVisible) setGodotWarmed(true);
   }, [godotVisible]);
@@ -225,7 +248,8 @@ function ManorApp() {
   useEffect(() => {
     const job = autoSpins.current;
     if (!job || pending !== null || animating || revealingReels ||
-      awaitingPresentation.current !== null || !rendererReady || !connected || fatal) return;
+      awaitingPresentation.current !== null || !rendererReady || !connected || fatal ||
+      Boolean(snapshot.practiceRun)) return;
     if (!shouldContinueAuto(snapshot, job.bet, job.remaining)) {
       haltAuto();
       return;
@@ -249,7 +273,8 @@ function ManorApp() {
     autoRemaining, haltAuto]);
 
   function startAuto(count: number) {
-    if (autoRemaining !== null || disabled || !snapshot.canSpin || !fundedBet) return;
+    if (autoRemaining !== null || disabled || Boolean(snapshot.practiceRun) ||
+      !snapshot.canSpin || !fundedBet) return;
     autoSpins.current = { remaining: count - 1, bet };
     setAutoRemaining(count - 1);
     act('spin.paid', { bet });
@@ -292,7 +317,7 @@ function ManorApp() {
                 : t(language, 'paylinesHeader')}
             </span>
           </div>
-          <div className={'slot-viewport' + (run || demoBonusOpen ? ' bonus-active' : '') +
+          <div className={'slot-viewport' + (run || practice || conclusionOpen ? ' bonus-active' : '') +
             (godotVisible ? ' godot-active' : '') +
             (motionOff ? ' no-motion' : '')}>
             <div className="manor-room-dressing" aria-hidden="true">
@@ -317,17 +342,28 @@ function ManorApp() {
 
                 onReady={() => setRendererReady(true)} />
             </div>
-            {run && !godotVisible && <div className="slot-bonus-portal">
+            {run && classicBonus && <div className="slot-bonus-portal">
               <div className="bonus-depth-tunnel" aria-hidden="true"><i/><i/><i/></div>
               <ManorBonusStage run={run} language={language} disabled={disabled}
                 reducedMotion={motionOff}
                 onAction={(action, room) => act(action, room === undefined ? {} : { room })} />
             </div>}
             {shouldMountManorGodot(godotVisible, godotWarmed) && <ManorBonus3D
-              active={godotVisible} demo={demoBonusOpen} run={run} language={language}
-              reducedMotion={motionOff} disabled={demoBonusOpen ? false : disabled}
-              onExitDemo={() => setDemoBonusOpen(false)}
-              onFallback={() => setExperimental3DBonus(false)}
+              active={godotVisible} demo={Boolean(practice)} run={bonusRun}
+              conclusion={conclusionOpen ? shownSnapshot.lastRun ?? null : null}
+              language={language} reducedMotion={motionOff} disabled={disabled}
+              onExitDemo={() => act('practice.exit')}
+              onCloseResult={() => {
+                concludedRun.current = null;
+                setConclusionOpen(false);
+              }}
+              onFallback={() => {
+                if (practice) act('practice.exit');
+                else {
+                  classicBonusRef.current = true;
+                  setClassicBonus(true);
+                }
+              }}
               onAction={(action, room) => act(action, room === undefined ? {} : { room })} />}
             {!godotVisible && visibleMoment && visibleMoment.key !== 'loss' &&
               <div className={'slot-celebration ' + visibleMoment.key +
@@ -367,7 +403,8 @@ function ManorApp() {
               <div className="bet-input">
                 <span>$</span>
                 <input id="manor-bet" type="text" readOnly value={bet}
-                  disabled={disabled || autoRemaining !== null || !snapshot.canSpin} />
+                  disabled={disabled || Boolean(practice) ||
+                    autoRemaining !== null || !snapshot.canSpin} />
               </div>
               <div className="preset-bets" role="group" aria-label={t(language, 'quickBet')}>
                 {BET_PRESETS.map(value => <button key={value} type="button"
@@ -385,7 +422,8 @@ function ManorApp() {
                 <button className="gold-button" disabled={disabled}
                   onClick={() => act('spin.free')}>{t(language, 'freeSpin', shownSnapshot.freeSpinsRemaining)}</button> :
                 <button className="gold-button"
-                  disabled={disabled || autoRemaining !== null || !shownSnapshot.canSpin || !fundedBet}
+                  disabled={disabled || Boolean(practice) ||
+                    autoRemaining !== null || !shownSnapshot.canSpin || !fundedBet}
                   onClick={() => act('spin.paid', { bet })}>
                   {pending ? t(language, 'saving') : revealingReels ?
                     t(language, 'spinRolling') : t(language, 'spin')}
@@ -447,20 +485,15 @@ function ManorApp() {
             <div className="manor-3d-settings">
               <span className="eyebrow">{t(language, 'godotSettingsHeading')}</span>
               <button className="ghost-button manor-test-bonus" type="button"
-                disabled={Boolean(run) || demoBonusOpen || pending !== null ||
-                  revealingReels || animating || awaitingPresentation.current !== null ||
+                disabled={Boolean(run) || Boolean(practice) || conclusionOpen ||
+                  snapshot.cycleActive || pending !== null || revealingReels ||
+                  animating || awaitingPresentation.current !== null ||
                   autoRemaining !== null || fatal}
                 onClick={() => {
                   haltAuto();
                   setMoment(null);
-                  setDemoBonusOpen(true);
+                  act('practice.start');
                 }}>{t(language, 'godotTestButton')}</button>
-              <label className="switch-row" htmlFor="manor-godot-experimental">
-                <span>{t(language, 'godotEnableLive')}</span>
-                <input id="manor-godot-experimental" type="checkbox"
-                  checked={experimental3DBonus} disabled={Boolean(run) || demoBonusOpen}
-                  onChange={event => setExperimental3DBonus(event.target.checked)} />
-              </label>
               <p className="display-hint">{t(language, 'godotSettingsHint')}</p>
             </div>
             <label className="switch-row"><span>{t(language, 'cabinetAnimation')}</span>
