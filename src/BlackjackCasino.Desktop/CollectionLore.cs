@@ -4,8 +4,8 @@ using BlackjackCasino.Core.Collections;
 namespace BlackjackCasino.Desktop;
 
 /// <summary>
-/// Authored archive copy for the grounded collection tiers. Rare and higher entries stay
-/// deliberately sealed until their larger theme stories are designed.
+/// Authored archive copy for all 136 collectible cards, including ultra-rare themes.
+/// Every catalog entry has a distinct English story and a localized German resource.
 /// </summary>
 internal static class CollectionLore
 {
@@ -178,7 +178,7 @@ internal static class CollectionLore
                 ? Localization.T($"Album.Lore.{card.Id}")
                 : body;
         return Localization.Language == UiLanguagePreference.German
-            ? "Dieser Archiveintrag ist noch versiegelt. Geschichten für seltene, epische und legendäre Karten folgen später."
-            : "This archive entry remains sealed. Rare, Epic and Legendary stories will be catalogued in a later lore pass.";
+            ? "Zu dieser Karte ist derzeit kein Archiveintrag verfügbar."
+            : "An archive entry is currently unavailable for this card.";
     }
 }
