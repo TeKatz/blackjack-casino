@@ -40,7 +40,9 @@ function Invoke-Godot([string[]]$GodotArgs) {
     $lines = @(& $editor @GodotArgs 2>&1)
     $exitCode = $LASTEXITCODE
     $lines | ForEach-Object { Write-Host $_ }
+    $diagnostics = $lines -join [Environment]::NewLine
     if ($exitCode -ne 0) { throw "Godot failed with exit code $exitCode for $($GodotArgs -join ' ')." }
+    if ($diagnostics -match "(?m)(SCRIPT ERROR:|Parse Error:|Failed to load script|^ERROR:)") { throw "Godot reported a script or runtime error for $($GodotArgs -join ' ')." }
     return $lines
 }
 
