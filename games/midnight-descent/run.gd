@@ -73,6 +73,10 @@ var camera_room_key := ""
 var boss_reveal_toast := 0.0
 
 func _ready() -> void:
+	# Font atlas resampling is independent of the pixel-art world. Apply
+	# this before any HUD labels or modal Controls are constructed.
+	get_viewport().oversampling_override=2.0
+	texture_filter=CanvasItem.TEXTURE_FILTER_LINEAR
 	german = "--language=de" in OS.get_cmdline_user_args()
 	smoke_mode = "--run-smoke" in OS.get_cmdline_user_args()
 	if not smoke_mode: progress.load_save()
@@ -923,8 +927,8 @@ func run_scene_smoke() -> void:
 		return
 	# A 1920×1080 window scales the 1280×720 canvas 1.5×. Oversample
 	# all UI faces and omit duplicated glyph shadows, not just one label.
-	if UI.DISPLAY_FONT.oversampling<1.99 or UI.BODY_FONT.oversampling<1.99 or UI.BOLD_FONT.oversampling<1.99 or UI.DISPLAY_FONT.multichannel_signed_distance_field:
-		push_error("Typography rasterizer settings are not consistently installed: display=%.2f body=%.2f bold=%.2f msdf=%s" % [UI.DISPLAY_FONT.oversampling,UI.BODY_FONT.oversampling,UI.BOLD_FONT.oversampling,str(UI.DISPLAY_FONT.multichannel_signed_distance_field)])
+	if get_viewport().oversampling_override<1.99 or overlay.texture_filter!=CanvasItem.TEXTURE_FILTER_LINEAR or UI.DISPLAY_FONT.multichannel_signed_distance_field:
+		push_error("Typography rasterizer settings are not consistently installed: viewport=%.2f filter=%d msdf=%s" % [get_viewport().oversampling_override,overlay.texture_filter,str(UI.DISPLAY_FONT.multichannel_signed_distance_field)])
 		get_tree().quit(82)
 		return
 	hud_hp=float(run.hp)+3.0

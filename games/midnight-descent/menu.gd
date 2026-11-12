@@ -52,6 +52,8 @@ var chosen := "warden"
 var action_buttons: Array[Button] = []
 
 func _ready() -> void:
+	# 1920×1080 displays use 1.5x canvas scale; rasterize fonts at 2x.
+	get_viewport().oversampling_override=2.0
 	for arg in OS.get_cmdline_user_args():
 		if arg == "--language=de":
 			german = true

@@ -4,12 +4,11 @@ extends RefCounted
 const DISPLAY_FONT: FontFile = preload("res://fonts/Cinzel-Variable.ttf")
 static var _font_rasterizer_ready := false
 
-# The canvas is scaled 1.5x at 1920×1080. Godot's default 1x
-# font rasterization plus shadows produces doubled, jagged serifs and
-# shimmering letter edges. Configure all three bundled fonts once,
-# independently of the default editor/UI font import settings.
+# The imported TTF resources keep their own oversampling setting at 0,
+# which correctly means "inherit from Viewport". On Godot 4.5/GL
+# Compatibility a per-FontFile runtime oversampling assignment is
+# ignored. Set Viewport.oversampling_override=2 in each scene instead.
 static func configure_fonts() -> void:
-	print("MD_FONT_BEGIN ready=%s d=%.2f b=%.2f bold=%.2f" % [str(_font_rasterizer_ready),DISPLAY_FONT.oversampling,BODY_FONT.oversampling,BOLD_FONT.oversampling])
 	if _font_rasterizer_ready: return
 	_font_rasterizer_ready=true
 	for font: FontFile in [DISPLAY_FONT,BODY_FONT,BOLD_FONT]:
@@ -18,8 +17,6 @@ static func configure_fonts() -> void:
 		font.subpixel_positioning=TextServer.SUBPIXEL_POSITIONING_AUTO
 		font.multichannel_signed_distance_field=false
 		font.generate_mipmaps=false
-		font.oversampling=2.0
-	print("MD_FONT_END d=%.2f b=%.2f bold=%.2f" % [DISPLAY_FONT.oversampling,BODY_FONT.oversampling,BOLD_FONT.oversampling])
 const BODY_FONT: FontFile = preload("res://fonts/AlegreyaSans-Regular.ttf")
 const BOLD_FONT: FontFile = preload("res://fonts/AlegreyaSans-Bold.ttf")
 const INK := Color("#0d171a")
@@ -45,6 +42,9 @@ const ROOM_COLORS = {"fight":Color("#a9bdc6"),"elite":Color("#ed978a"),"treasure
 
 static func install_theme(root: Control) -> void:
 	configure_fonts()
+	# The project defaults to NEAREST for world pixel art. GUI text must
+	# instead be LINEAR, without touching the isolated PixelWorld layer.
+	root.texture_filter=CanvasItem.TEXTURE_FILTER_LINEAR
 	var skin := Theme.new()
 	skin.default_font = BODY_FONT
 	skin.default_font_size = 18
