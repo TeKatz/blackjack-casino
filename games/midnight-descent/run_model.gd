@@ -2372,21 +2372,27 @@ func build_and_boss_smoke() -> bool:
 	if not enter_first_room(): return false
 	relics.assign(["ember","storm"])
 	enemies.clear()
-	for i in range(4): spawn_enemy("brute",Vector2(380+i*34,380))
+	# Spawn inside the authored opening region, independent of which
+	# stage-specific layout is currently selected.
+	for i in range(4): spawn_enemy("brute",Vector2(230+i*34,900))
 	enemies[0]["burn"]=3.0
 	var health_before: float=float(enemies[3].hp)
 	hit_enemy(enemies[0],12.0)
-	if float(enemies[3].hp)>=health_before: return false
+	if float(enemies[3].hp)>=health_before:
+		push_error("Chain-lightning smoke lost clustered enemies in the new authored room")
+		return false
 	relics.assign(["pierce","bounce"])
 	enemies.clear()
-	spawn_enemy("brute",Vector2(320,385))
+	spawn_enemy("brute",Vector2(320,900))
 	shots.clear()
-	shoot(Vector2(310,385),Vector2(400,0),false,17.0)
+	shoot(Vector2(310,900),Vector2(400,0),false,17.0)
 	update_shots(0.016)
 	var ricochet_count:=0
 	for shot in shots:
 		if bool(shot.get("fragment",false)): ricochet_count+=1
-	if ricochet_count!=2: return false
+	if ricochet_count!=2:
+		push_error("Ricochet smoke failed in authored room: "+str(ricochet_count))
+		return false
 	relics.assign(["dashfire","nova"])
 	enemies.clear()
 	spawn_enemy("brute",Vector2(250,385))
