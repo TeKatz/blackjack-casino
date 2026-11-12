@@ -46,6 +46,7 @@ function ManorApp() {
   const [spinEpoch, setSpinEpoch] = useState(0);
   const [animating, setAnimating] = useState(false);
   const [rendererReady, setRendererReady] = useState(false);
+  const [godotWarmed, setGodotWarmed] = useState(false);
   const [reelSpeed, setReelSpeed] = useState<ReelSpeed>('normal');
   const [bet, setBet] = useState('25');
   const autoSpins = useRef<{ remaining: number; bet: string } | null>(null);
@@ -151,6 +152,15 @@ function ManorApp() {
     if (embedded && connected && rendererReady) { finishModeBoot(); sendCommand('ui.ready'); }
   }, [connected, rendererReady]);
 
+  // Start the expensive WebAssembly/WebGL initialization while the reels are
+  // already on screen. Keep the iframe mounted for the whole Manor session.
+  // Its own idle frame cap keeps this from becoming a second full-speed game.
+  useEffect(() => {
+    if (!rendererReady || !connected || godotWarmed) return;
+    const timer = window.setTimeout(() => setGodotWarmed(true), 1100);
+    return () => window.clearTimeout(timer);
+  }, [rendererReady, connected, godotWarmed]);
+
   const actions = availableActions(snapshot);
   const motionOff = lowMotion || !ambient || !snapshot.animationsEnabled;
   const disabled = !embedded || !connected || !rendererReady ||
@@ -160,6 +170,7 @@ function ManorApp() {
   const validBet = validManorBet(bet);
   const fundedBet = validBet && canAffordBet(snapshot.bankroll, bet);
   const run = shownSnapshot.run;
+  const godotVisible = demoBonusOpen || Boolean(run && experimental3DBonus);
   const language: ManorLanguage = languageOverride ?? snapshot.language;
   const visibleMoment = moment ? localizeMoment(moment, language) : null;
   useEffect(() => { document.documentElement.lang = language; }, [language]);
@@ -284,7 +295,7 @@ function ManorApp() {
             </span>
           </div>
           <div className={'slot-viewport' + (run || demoBonusOpen ? ' bonus-active' : '') +
-            (demoBonusOpen || (run && experimental3DBonus) ? ' godot-active' : '') +
+            (godotVisible ? ' godot-active' : '') +
             (motionOff ? ' no-motion' : '')}>
             <div className="slot-dust" aria-hidden="true">
               {Array.from({ length: 20 }, (_, i) => <i key={i} style={{
@@ -303,23 +314,19 @@ function ManorApp() {
                 onDiagnostics={showDiagnostics ? setRenderMetrics : undefined}
                 onReady={() => setRendererReady(true)} />
             </div>
-            {(run || demoBonusOpen) && <div className="slot-bonus-portal">
-              {demoBonusOpen || experimental3DBonus ? (
-                <ManorBonus3D
-                  demo={demoBonusOpen} run={run} language={language}
-                  reducedMotion={motionOff}
-                  disabled={demoBonusOpen ? false : disabled}
-                  onExitDemo={() => setDemoBonusOpen(false)}
-                  onFallback={() => setExperimental3DBonus(false)}
-                  onAction={(action, room) => act(action, room === undefined ? {} : { room })} />
-              ) : run ? <>
-                <div className="bonus-depth-tunnel" aria-hidden="true"><i/><i/><i/></div>
-                <ManorBonusStage run={run} language={language} disabled={disabled}
-                  reducedMotion={motionOff}
-                  onAction={(action, room) => act(action, room === undefined ? {} : { room })} />
-              </> : null}
+            {run && !godotVisible && <div className="slot-bonus-portal">
+              <div className="bonus-depth-tunnel" aria-hidden="true"><i/><i/><i/></div>
+              <ManorBonusStage run={run} language={language} disabled={disabled}
+                reducedMotion={motionOff}
+                onAction={(action, room) => act(action, room === undefined ? {} : { room })} />
             </div>}
-            {showDiagnostics && <div className="render-metrics slot-metrics"
+            {(godotWarmed || godotVisible) && <ManorBonus3D
+              active={godotVisible} demo={demoBonusOpen} run={run} language={language}
+              reducedMotion={motionOff} disabled={demoBonusOpen ? false : disabled}
+              onExitDemo={() => setDemoBonusOpen(false)}
+              onFallback={() => setExperimental3DBonus(false)}
+              onAction={(action, room) => act(action, room === undefined ? {} : { room })} />}
+            {showDiagnostics && !godotVisible && <div className="render-metrics slot-metrics"
               role="status" aria-live="off">
               <strong>{t(language, 'diagnostics')}</strong>
               <span>{motionOff ? t(language, 'tickerPaused') :
@@ -330,7 +337,7 @@ function ManorApp() {
                 ? t(language, 'dpiObserved', renderMetrics.width, renderMetrics.height,
                   renderMetrics.pixelRatio) : t(language, 'diagnosticsHint')}</small>
             </div>}
-            {!demoBonusOpen && visibleMoment && visibleMoment.key !== 'loss' &&
+            {!godotVisible && visibleMoment && visibleMoment.key !== 'loss' &&
               <div className={'slot-celebration ' + visibleMoment.key +
               (motionOff ? ' no-motion' : '')} role="status" aria-live="polite">
               <div className="slot-celebration-light" aria-hidden="true">
