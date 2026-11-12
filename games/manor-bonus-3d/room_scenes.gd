@@ -442,9 +442,9 @@ func _library(p: Node3D) -> void:
 func _reading(p: Node3D) -> void:
     _books(p, -6.7, -2.8, 13)
     _books(p, 6.7, -4.2, 21)
-    for x,z in [[-3.9, 1.6], [3.6, 3.5]]:
-        var xx := float(x)
-        var zz := float(z)
+    for pair in [[-3.9, 1.6], [3.6, 3.5]]:
+        var xx: float = float(pair[0])
+        var zz: float = float(pair[1])
         _box(p, "VelvetReadingSeat", Vector3(xx, 0.50, zz),
             Vector3(1.6, 0.32, 1.3), m["bluevelvet"])
         _box(p, "VelvetChairBack", Vector3(xx, 1.07, zz+0.57),
@@ -510,8 +510,8 @@ func _garden(p: Node3D) -> void:
     for x in [-9.15, 9.15]:
         for z in [-5.4, -1.4, 3.0]:
             _window(p, x, z)
-    for x,z,h in [[-6.3,2.9,2.0], [6.7,0.7,2.4], [-7.1,-5.6,1.4], [5.2,-6.0,1.8]]:
-        _plant(p, float(x), float(z), float(h))
+    for entry in [[-6.3,2.9,2.0], [6.7,0.7,2.4], [-7.1,-5.6,1.4], [5.2,-6.0,1.8]]:
+        _plant(p, float(entry[0]), float(entry[1]), float(entry[2]))
     _cyl(p, "GardenFountainBasin", Vector3(-0.2, 0.33, 1.0),
         1.85, 0.65, m["marble"])
     _cyl(p, "GardenFountainColumn", Vector3(-0.2, 1.18, 1.0),
@@ -529,9 +529,9 @@ func _attic(p: Node3D) -> void:
                 Vector3(float(side)*4.0, 4.26, z),
                 Vector3(8.1, 0.2, 0.21), m["darkwood"])
             beam.rotation.z = float(side)*0.15
-    for x,z in [[-5.8,-4.1], [6.1,1.1], [-4.1,4.4]]:
-        var xx := float(x)
-        var zz := float(z)
+    for pair in [[-5.8,-4.1], [6.1,1.1], [-4.1,4.4]]:
+        var xx: float = float(pair[0])
+        var zz: float = float(pair[1])
         _box(p, "AntiqueTrunk", Vector3(xx, 0.53, zz),
             Vector3(1.7, 1.01, 1.15), m["darkwood"])
         _box(p, "TrunkBrassBand", Vector3(xx, 1.07, zz),
@@ -595,8 +595,8 @@ func _courtyard(p: Node3D) -> void:
     for x in [-7.7, 7.7]:
         for z in [-4.0, 1.5]:
             _pillar(p, x, z, 2.5, true)
-    for x,z,h in [[-6.4,4.0,2.4], [7.2,2.1,3.3], [5.9,-5.4,2.5]]:
-        _plant(p, float(x), float(z), float(h))
+    for entry in [[-6.4,4.0,2.4], [7.2,2.1,3.3], [5.9,-5.4,2.5]]:
+        _plant(p, float(entry[0]), float(entry[1]), float(entry[2]))
     _cyl(p, "CourtyardWell", Vector3(-3.2, 0.66, 0.3),
         1.2, 1.28, m["stone"])
     _box(p, "CourtyardBench", Vector3(4.2, 0.5, 4.4),
