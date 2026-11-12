@@ -12,6 +12,9 @@ const TEXTURE_GLASS: Texture2D = preload("res://art/glass.svg")
 const TEXTURE_STONE: Texture2D = preload("res://art/stone.svg")
 const TEXTURE_GREEN: Texture2D = preload("res://art/foliage.svg")
 const TEXTURE_BOOKS: Texture2D = preload("res://art/books.svg")
+const TEXTURE_PLASTER: Texture2D = preload("res://art/plaster.svg")
+const TEXTURE_PAVING: Texture2D = preload("res://art/paving.svg")
+const TEXTURE_CRYPT_FLOOR: Texture2D = preload("res://art/crypt_floor.svg")
 
 var m: Dictionary = {}
 
@@ -23,15 +26,16 @@ func _init() -> void:
         "wallpaper": _material(Color("#aaa1ad"), TEXTURE_WALLPAPER, 0.04, 0.9),
         "redwall": _material(Color("#b17b85"), TEXTURE_WALLPAPER, 0.03, 0.84),
         "bluewall": _material(Color("#718baf"), TEXTURE_WALLPAPER, 0.04, 0.79),
-        "plaster": _material(Color("#d0c6ba"), TEXTURE_MARBLE, 0.02, 0.91),
+        "plaster": _material(Color("#d2c9ba"), TEXTURE_PLASTER, 0.02, 0.9),
         "marble": _material(Color("#cec9d1"), TEXTURE_MARBLE, 0.1, 0.43),
         "darkmarble": _material(Color("#797a8d"), TEXTURE_MARBLE, 0.15, 0.48),
         "brass": _material(Color("#d1b384"), TEXTURE_BRASS, 0.74, 0.3),
         "velvet": _material(Color("#ab6571"), TEXTURE_FABRIC, 0.02, 0.88),
         "bluevelvet": _material(Color("#788baa"), TEXTURE_FABRIC, 0.02, 0.91),
         "stone": _material(Color("#b2afb4"), TEXTURE_STONE, 0.02, 0.89),
-        "cryptstone": _material(Color("#636b7b"), TEXTURE_STONE, 0.05, 0.94),
-        "tile": _material(Color("#c9cad4"), TEXTURE_MARBLE, 0.15, 0.38),
+        "cryptstone": _material(Color("#989ca8"), TEXTURE_STONE, 0.05, 0.89),
+        "cryptfloor": _material(Color("#adb2bd"), TEXTURE_CRYPT_FLOOR, 0.06, 0.91),
+        "tile": _material(Color("#f3ebe2"), TEXTURE_PAVING, 0.15, 0.49),
         "glass": _material(Color("#7aacc1"), TEXTURE_GLASS, 0.12, 0.25),
         "plant": _material(Color("#759e7e"), TEXTURE_GREEN, 0.0, 0.82),
         "leaves": _material(Color("#4e8369"), TEXTURE_GREEN, 0.0, 0.9),
@@ -230,7 +234,7 @@ func _shell(p: Node3D, family: String, room_id: int) -> void:
             height = 6.3
         "crypt":
             wall_mat = m["cryptstone"]
-            floor_mat = m["stone"]
+            floor_mat = m["cryptfloor"]
             height = 5.0
             width = 16.4
             trim = m["stone"]
