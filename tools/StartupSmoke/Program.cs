@@ -232,12 +232,11 @@ internal static class Program
                     "return rect.width>100&&Math.abs(rect.height/rect.width-500/960)<0.06;})()");
                 Require(canvasGeometry.Equals("true", StringComparison.OrdinalIgnoreCase),
                     "Modern Manor reel stage is stretched vertically or letterboxed.");
-                // Debug metrics are opt-in and never require a wager or touch a save.
+                // Internal renderer metrics are no longer exposed in player-facing settings.
                 string diagnosticsControl = await modernBrowser.CoreWebView2.ExecuteScriptAsync(
-                    "(()=>{const input=document.querySelector('#manor-perf-diagnostics');" +
-                    "return Boolean(input && input.type==='checkbox' && !input.checked);})()");
+                    "(()=>!document.querySelector('#manor-perf-diagnostics, .render-metrics.slot-metrics'))()");
                 Require(diagnosticsControl.Equals("true", StringComparison.OrdinalIgnoreCase),
-                    "Modern Manor renderer diagnostics must start disabled and remain optional.");
+                    "Modern Manor must not expose renderer diagnostic settings or metrics.");
                 string responsiveReel = await modernBrowser.CoreWebView2.ExecuteScriptAsync(
                     "(()=>{const canvas=document.querySelector('.manor-canvas canvas');" +
                     "if(!canvas)return false;const r=canvas.getBoundingClientRect();" +
