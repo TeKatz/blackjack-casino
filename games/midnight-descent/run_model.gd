@@ -46,6 +46,18 @@ var environment_cycle := 0
 var wave := 1
 var wave_total := 1
 const FLOOR_COUNT := 3
+# Every biome keeps the common combat roster and fields two exclusive specialists.
+const COMMON_ENEMIES := ["stalker","caster","brute","archer","shield"]
+const STAGE_SPECIALISTS := [
+	["gearhound","coilgunner"],
+	["briarling","sporewitch"],
+	["bone_lancer","crypt_oracle"]
+]
+const STAGE_VETERANS := [
+	[],
+	["vine","mushroom","spore"],
+	["revenant","hexer","sentinel"]
+]
 var bosses_defeated := 0
 var combat_clears := 0
 var souls := 0
@@ -702,6 +714,8 @@ func enter_room() -> void:
 		spawn_enemy(["boss","rootking","hollowking"][floor_index],boss_position)
 		spawn_enemy(["caster","spore","hexer"][floor_index],boss_position+Vector2(-195,-172))
 		spawn_enemy(["stalker","vine","revenant"][floor_index],boss_position+Vector2(-195,172))
+		# Each boss also fields an actual native biome specialist.
+		spawn_enemy(str(STAGE_SPECIALISTS[floor_index][1]),boss_position+Vector2(-300,0))
 
 func start_special_combat(node: Dictionary) -> void:
 	var family: Array=encounter_family()
@@ -714,13 +728,15 @@ func start_special_combat(node: Dictionary) -> void:
 			special_objectives=3
 			for anchor in RITUAL_ANCHORS:
 				spawn_enemy("ritual_anchor",anchor)
-			for i in range(3):
-				spawn_enemy(str(family[i]),Vector2(495+i*190,380+i%2*90))
+			for i in range(3+floor_index):
+				var selected: String=str(STAGE_SPECIALISTS[floor_index][0]) if i==3 else str(family[i%family.size()])
+				spawn_enemy(selected,Vector2(420+(i%3)*245,310+(i%2)*150))
 		"survival":
 			special_timer=SURVIVAL_DURATION
 			special_wave_timer=7.0
-			for i in range(5):
-				spawn_enemy(str(family[i%family.size()]),Vector2(520+i*130,230+i%2*280))
+			for i in range(5+floor_index*2):
+				var selected: String=str(STAGE_SPECIALISTS[floor_index][i%2]) if i>=5 else str(family[i%family.size()])
+				spawn_enemy(selected,Vector2(370+(i%4)*212,228+(i%2)*285))
 		"bounty":
 			special_timer=0.0
 			special_wave_timer=9.0
@@ -730,14 +746,16 @@ func start_special_combat(node: Dictionary) -> void:
 			enemies[-1]["hp"]*=3.8+float(floor_index)*0.5
 			enemies[-1]["max_hp"]=enemies[-1].hp
 			special_objectives=1
-			for i in range(4):
-				spawn_enemy(str(family[i]),Vector2(540+(i%2)*340,220+(i/2)*300))
+			for i in range(4+floor_index*2):
+				var selected: String=str(STAGE_SPECIALISTS[floor_index][i%2]) if i>=4 else str(family[i])
+				spawn_enemy(selected,Vector2(420+(i%3)*240,218+(int(i/3))*165))
 		"unstable":
 			special_timer=0.0
 			special_wave_timer=3.8
 			special_objectives=3
-			for i in range(6):
-				spawn_enemy(str(family[i%family.size()]),Vector2(410+(i%3)*230,185+(i/3)*340))
+			for i in range(6+floor_index*2):
+				var selected: String=str(STAGE_SPECIALISTS[floor_index][i%2]) if i>=6 else str(family[i%family.size()])
+				spawn_enemy(selected,Vector2(290+(i%4)*213,200+int(i/4)*138))
 
 func complete_special_combat() -> void:
 	if special_stage==99 or state!="fight": return
@@ -825,9 +843,16 @@ func tick_special_room(dt: float) -> bool:
 	return false
 
 func encounter_family() -> Array:
-	return [["stalker","caster","brute","archer","shield"],["spore","vine","mushroom","caster","brute"],["revenant","hexer","sentinel","archer","shield"]][floor_index]
+	var family: Array=COMMON_ENEMIES.duplicate()
+	family.append_array(STAGE_VETERANS[floor_index])
+	family.append_array(STAGE_SPECIALISTS[floor_index])
+	return family
 
 func encounter_enemy_kind(family: Array, index: int, picker: RandomNumberGenerator) -> String:
+	# Give both stage specialists a guaranteed role in sufficiently large waves.
+	# Their attack patterns make biome identity mechanical, not just a recolor.
+	if room>0 and index%6 in [2,5]:
+		return str(STAGE_SPECIALISTS[floor_index][0 if index%6==2 else 1])
 	match encounter_id:
 		"crossfire":
 			return str(family[[1,3,1,3,0][index%5]])
@@ -840,11 +865,19 @@ func encounter_enemy_kind(family: Array, index: int, picker: RandomNumberGenerat
 
 func encounter_spawn_point(index: int, picker: RandomNumberGenerator) -> Vector2:
 	if large_room and room_regions.size()>1:
+		# Use the full traversable rooms instead of stacking every enemy in
+		# one central 170px ring. Stable per-wave spacing prevents overlap.
 		var region: Rect2=room_regions[1+index%(room_regions.size()-1)]
-		var center: Vector2=region.get_center()
-		var angle: float=float(index)*2.399+picker.randf_range(-0.28,0.28)
-		var offset: Vector2=Vector2.from_angle(angle)*Vector2(minf(170.0,region.size.x*0.25),minf(150.0,region.size.y*0.22))
-		return center+offset
+		var angle: float=float(index)*2.39996+picker.randf_range(-0.20,0.20)
+		var radius_x: float=region.size.x*picker.randf_range(0.17,0.37)
+		var radius_y: float=region.size.y*picker.randf_range(0.17,0.35)
+		var proposal: Vector2=region.get_center()+Vector2(cos(angle)*radius_x,sin(angle)*radius_y)
+		for attempt in range(9):
+			var candidate: Vector2=proposal if attempt==0 else region.get_center()+Vector2.from_angle(angle+float(attempt)*1.73)*Vector2(radius_x,radius_y)*float(9-attempt)/9.0
+			candidate=safe_position(candidate,36.0)
+			if not blocked(candidate,30.0) and candidate.distance_to(player)>175.0:
+				return candidate
+		return region.get_center()
 	var jitter: float=picker.randf_range(-20,20)
 	match encounter_id:
 		"crossfire":
@@ -890,9 +923,14 @@ func spawn_encounter_wave(node: Dictionary) -> void:
 	var picker:=RandomNumberGenerator.new()
 	picker.seed=int(node.geometry_seed)+wave*30011
 	var family: Array=encounter_family()
-	var count: int=4+floor_index+encounter_threat+(2 if room_kind=="elite" else room%3)
-	if wave_total>1: count=4+floor_index+encounter_threat
-	count=mini(11,count)
+	# The authored rooms are world-scale arenas: 4–11 enemies left vast
+	# corridors empty. Density now climbs by stage, danger and room depth.
+	var column: int=int(node.column)
+	var count: int=6+floor_index*4+encounter_threat*2+(3 if room_kind=="elite" else 0)+mini(2,int(column/4))
+	if large_room: count+=2+floor_index
+	if room==0: count=6+floor_index*3
+	if wave_total>1: count-=1
+	count=clampi(count,5,26)
 	for i in range(count):
 		var kind: String=encounter_enemy_kind(family,i,picker)
 		var affix: String=""
@@ -1197,6 +1235,12 @@ func spawn_enemy(kind: String, pos: Vector2, affix: String="") -> void:
 	var radius := 17.0
 	match kind:
 		"caster": health = 35.0
+		"gearhound": health=54.0; radius=17.0
+		"coilgunner": health=62.0; radius=18.0
+		"briarling": health=82.0; radius=21.0
+		"sporewitch": health=58.0; radius=19.0
+		"bone_lancer": health=106.0; radius=22.0
+		"crypt_oracle": health=88.0; radius=20.0
 		"brute":
 			health = 85.0
 			radius = 24.0
@@ -1566,7 +1610,8 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 					shoot(enemies[i].pos,Vector2.from_angle(j*TAU/spirits+elapsed)*420,false,14*relics.count("soulstorm"))
 				if spirits==6: effect("synergy_soul",enemies[i].pos,0.46,Vector2.ZERO)
 			if relics.has("bounty") and (enemies[i].get("elite",false) or enemies[i].kind in ["boss","rootking","hollowking"]): shards+=10*relics.count("bounty")
-			shards += (20 if enemies[i].kind in ["boss","rootking","hollowking"] else 3+encounter_threat*2)+2*relics.count("greed")
+			# More enemies should not triple free spending power in later stages.
+			shards += (20 if enemies[i].kind in ["boss","rootking","hollowking"] else 2+encounter_threat)+2*relics.count("greed")
 			check_shard_contract()
 			if relics.has("shatter") and float(enemies[i].get("chill",0))>0:
 				var frozen_burst: bool=has_synergy("permafrost")
@@ -1864,7 +1909,39 @@ func update_enemies(dt: float) -> void:
 				enemy_shot_style=kind
 				notices.append("enemy_"+kind)
 				effect("enemy_"+kind,pos,0.30,pos.direction_to(enemy.target))
-				if kind in ["caster","archer","spore","hexer"]:
+				if kind=="gearhound":
+					# The gearhound vaults at its marked target; a short windup
+					# and a forward line make the lunge readable and dodgeable.
+					var leap: Vector2=pos.direction_to(enemy.target)
+					enemy.pos=move_actor(pos,leap*120.0,radius)
+					if enemy.pos.distance_to(player)<radius+30: hurt(17)
+					effect("enemy_gearhound",enemy.pos,0.30,leap)
+				elif kind=="briarling":
+					if hazards.size()<24:
+						add_hazard(enemy.target,65,0.70,0.65,16.0+floor_index*3.0,true)
+						hazards[-1]["type"]="briar_snare"
+					if dist<radius+42: hurt(14)
+				elif kind=="sporewitch":
+					if hazards.size()<24:
+						add_hazard(enemy.target,66,0.78,3.4,12.0+floor_index*2.0,true)
+						hazards[-1]["type"]="sporepool"
+					var poison_direction: Vector2=pos.direction_to(enemy.target)
+					shoot(pos,poison_direction*315.0,true,12)
+				elif kind=="coilgunner":
+					var barrel: Vector2=pos.direction_to(enemy.target)
+					for arc in [-0.14,0.14]:
+						shoot(pos,barrel.rotated(arc)*425.0,true,13.0+floor_index)
+				elif kind=="bone_lancer":
+					var spear: Vector2=pos.direction_to(enemy.target)
+					for arc in [-0.10,0.0,0.10]:
+						shoot(pos,spear.rotated(arc)*455.0,true,15.0+floor_index)
+				elif kind=="crypt_oracle":
+					if hazards.size()<24:
+						add_hazard(enemy.target,72,0.84,0.75,21.0+floor_index*2.0,true)
+						hazards[-1]["type"]="oracle_seal"
+					var beam: Vector2=pos.direction_to(enemy.target)
+					shoot(pos,beam*305.0,true,13.0)
+				elif kind in ["caster","archer","spore","hexer"]:
 					shoot(pos, pos.direction_to(enemy.target)*(390 if kind=="archer" else 265), true, 12)
 					if kind=="spore": add_hazard(enemy.target,44,0.6,2.8,9,true)
 					if kind=="hexer":
@@ -1880,23 +1957,25 @@ func update_enemies(dt: float) -> void:
 				enemy.timer = maxf(0.92,1.86-float(enemy.get("phase",1))*0.24) if kind in ["boss","rootking","hollowking"] else 0.95
 			continue
 		var velocity := Vector2.ZERO
-		if kind in ["caster","archer","spore","hexer"]:
-			# Casters circle the player instead of standing still inside the kite zone.
+		if kind in ["caster","archer","spore","hexer","coilgunner","sporewitch","bone_lancer","crypt_oracle"]:
+			# Casters and specialists circle, instead of standing still in the kite zone.
 			var strafe: Vector2=Vector2(-toward.y,toward.x)*float(enemy.get("strafe_dir",1))
 			if dist>325: velocity=toward*132+strafe*36
 			elif dist<185: velocity=-toward*116+strafe*54
 			else: velocity=strafe*116
-			if enemy.timer<=0 and dist<510:
-				enemy.wind=maxf(0.39,0.57-0.045*floor_index-0.025*encounter_threat)
+			if enemy.timer<=0 and dist<555:
+				enemy.wind=maxf(0.40,0.61-0.045*floor_index-0.025*encounter_threat)
+				if kind in ["sporewitch","crypt_oracle"]: enemy.wind+=0.16
 				enemy.target=predicted_player_position(0.16 if floor_index==0 else 0.24)
 		elif kind in ["boss","rootking","hollowking"]:
 			velocity=toward*(92+20*int(enemy.get("phase",1))) if dist>145 else Vector2.ZERO
 			if enemy.timer<=0: boss_start_attack(enemy)
-		elif kind=="vine":
-			velocity=toward*118 if dist>180 else Vector2.ZERO
-			if enemy.timer<=0 and dist<320:
-				enemy.wind=0.61
-				enemy.target=predicted_player_position(0.16)
+		elif kind in ["vine","briarling","gearhound"]:
+			var rapid: bool=kind=="gearhound"
+			velocity=toward*(196.0 if rapid else 123.0) if dist>(102.0 if rapid else 180.0) else Vector2.ZERO
+			if enemy.timer<=0 and dist<(275.0 if rapid else 325.0):
+				enemy.wind=0.44 if rapid else 0.65
+				enemy.target=predicted_player_position(0.24 if rapid else 0.16)
 		else:
 			velocity = toward*(100 if kind in ["brute","shield","mushroom","sentinel"] else (204 if kind=="revenant" else 159))
 			# Minions flank alternating sides when closing, but still commit to melee.
@@ -1939,9 +2018,10 @@ func spawn_reinforcements() -> void:
 	var family: Array=encounter_family()
 	var picker:=RandomNumberGenerator.new()
 	picker.seed=int(dungeon.nodes[room].geometry_seed)+wave*30011
-	var count: int=4+floor_index+encounter_threat
+	var count: int=6+floor_index*3+encounter_threat*2+(2 if room_kind=="elite" else 0)+(2 if large_room else 0)
+	count=clampi(count,6,21)
 	for i in range(count):
-		var kind: String=encounter_enemy_kind(family,i+wave,picker)
+		var kind: String=encounter_enemy_kind(family,i+wave*6,picker)
 		var affix: String=""
 		if room_kind=="elite" and i==count/2: affix="frenzied"
 		spawn_enemy(kind,encounter_spawn_point(i+2,picker),affix)
@@ -2683,6 +2763,74 @@ func difficulty_smoke() -> bool:
 	tick(0.016,Vector2.ZERO,Vector2(640,385),false,false,false)
 	return state=="defeat"
 
+func stage_roster_smoke() -> bool:
+	# All twelve map variants must be represented in each stage and every
+	# larger fight must contain the stage's exclusive enemy identities.
+	for floor in range(FLOOR_COUNT):
+		begin(8118+floor)
+		floor_index=floor
+		dungeon.generate(seed_value,floor)
+		var variants: Dictionary={}
+		for id in range(Dungeon.BOSS):
+			var node: Dictionary=dungeon.nodes[id]
+			if str(node.kind) not in ["fight","elite"]: continue
+			variants[int(node.layout)]=true
+		if variants.size()!=4:
+			push_error("Missing combat layout variants on floor "+str(floor))
+			return false
+		var first_count: int=-1
+		var peak_count: int=0
+		var found_specialists: Dictionary={}
+		for room_id in range(Dungeon.BOSS):
+			if dungeon.kind(room_id) not in ["fight","elite"]: continue
+			room=room_id
+			enter_room()
+			if not large_room or enemies.is_empty(): return false
+			if room_id==0: first_count=enemies.size()
+			peak_count=maxi(peak_count,enemies.size())
+			for enemy in enemies:
+				var kind: String=str(enemy.kind)
+				if STAGE_SPECIALISTS[floor].has(kind): found_specialists[kind]=true
+				for other_floor in range(FLOOR_COUNT):
+					if other_floor!=floor and STAGE_SPECIALISTS[other_floor].has(kind):
+						push_error("Wrong-stage enemy "+kind+" in floor "+str(floor))
+						return false
+		if first_count!=6+floor*3 or peak_count<8+floor*4:
+			push_error("Stage spawn density did not scale for floor "+str(floor))
+			return false
+		if found_specialists.size()!=2:
+			push_error("Missing biome-exclusive specialists on floor "+str(floor))
+			return false
+		# Exercise *each* specialist's actual windup-to-release behavior.
+		# Every new sprite must correspond to a distinct gameplay attack.
+		room=0
+		enter_room()
+		for kind in STAGE_SPECIALISTS[floor]:
+			enemies.clear()
+			hazards.clear()
+			shots.clear()
+			effects.clear()
+			notices.clear()
+			spawn_enemy(str(kind),player+Vector2(205,0))
+			var specialist: Dictionary=enemies[0]
+			specialist["target"]=player
+			specialist["wind"]=0.01
+			update_enemies(0.03)
+			match str(kind):
+				"gearhound":
+					if not notices.has("enemy_gearhound"): return false
+				"coilgunner":
+					if shots.size()!=2: return false
+				"briarling":
+					if hazards.is_empty() or str(hazards[-1].type)!="briar_snare": return false
+				"sporewitch":
+					if hazards.is_empty() or shots.size()!=1 or str(hazards[-1].type)!="sporepool": return false
+				"bone_lancer":
+					if shots.size()!=3: return false
+				"crypt_oracle":
+					if hazards.is_empty() or shots.size()!=1 or str(hazards[-1].type)!="oracle_seal": return false
+	return true
+
 func smoke_test() -> bool:
 	if not RoomLayouts.smoke_test():
 		push_error("Authored chamber connectivity smoke failed")
@@ -2707,6 +2855,9 @@ func smoke_test() -> bool:
 		return false
 	if not encounter_variation_smoke():
 		push_error("Regression failed: encounter_variation_smoke")
+		return false
+	if not stage_roster_smoke():
+		push_error("Regression failed: stage_roster_smoke")
 		return false
 	if not hub_perks_smoke():
 		push_error("Regression failed: hub_perks_smoke")

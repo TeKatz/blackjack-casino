@@ -309,12 +309,16 @@ func _draw() -> void:
 			"champion_frenzied": color=Color("#f4a16e")
 			"champion_warded": color=Color("#81d4d3")
 			"champion_volatile": color=Color("#eb8392")
+			"briar_snare": color=Color("#aed378")
+			"oracle_seal": color=Color("#c99de9")
 		if hazard.warn<=0:
 			match kind:
 				"boss_lane": color=Color("#d8a7ef")
 				"champion_frenzied": color=Color("#f46762")
 				"champion_warded": color=Color("#5fd2ca")
 				"champion_volatile": color=Color("#ef8b48")
+				"briar_snare": color=Color("#75be73")
+				"oracle_seal": color=Color("#d1a8f7")
 				"boss_root": color=Color("#9bd783")
 				"boss_blast": color=Color("#f58a71")
 				"volatile": color=Color("#f16a83")
@@ -367,8 +371,13 @@ func _draw() -> void:
 		var pos: Vector2 = enemy.pos
 		if enemy.wind > 0:
 			var rad: float = 126.0 if enemy.kind in ["boss","rootking","hollowking"] else float(enemy.r)+44
-			if enemy.kind in ["caster","archer","spore","vine","hexer"]:
-				draw_line(pos,enemy.target,Color(1,0.32,0.44,0.45),3,true)
+			if enemy.kind in ["caster","archer","spore","vine","hexer","gearhound","coilgunner","briarling","sporewitch","bone_lancer","crypt_oracle"]:
+				var warning_color: Color=Color("#e8908a")
+				if enemy.kind in ["coilgunner","gearhound"]: warning_color=Color("#f1ad77")
+				elif enemy.kind in ["sporewitch","briarling"]: warning_color=Color("#9cda83")
+				elif enemy.kind in ["bone_lancer","crypt_oracle"]: warning_color=Color("#d3a0eb")
+				draw_line(pos,enemy.target,Color(warning_color,0.62),3,true)
+				draw_circle(enemy.target,5,Color(warning_color,0.52))
 			else:
 				draw_circle(pos,rad,Color(0.95,0.15,0.3,0.12))
 				draw_arc(pos,rad,0,TAU,48,Color("#ff6481"),2,true)
@@ -851,13 +860,16 @@ func draw_projectile(shot: Dictionary) -> void:
 		if style=="spore": color=Color("#b1de75")
 		elif style=="hexer" or style=="hollowking": color=Color("#ed88d9")
 		elif style=="archer": color=Color("#f8b873")
+		elif style in ["gearhound","coilgunner"]: color=Color("#e5b473") if style=="gearhound" else Color("#79d9e8")
+		elif style in ["briarling","sporewitch"]: color=Color("#a2dc88")
+		elif style in ["bone_lancer","crypt_oracle"]: color=Color("#dcc6a0") if style=="bone_lancer" else Color("#b6a4f4")
 	var side:=direction.orthogonal()
 	if style.begins_with("dealer"):
 		var points:=PackedVector2Array([pos-direction*9-side*6,pos+direction*9-side*6,pos+direction*9+side*6,pos-direction*9+side*6])
 		draw_colored_polygon(points,Color("#f7e5ae"))
 		draw_polyline(PackedVector2Array([points[0],points[1],points[2],points[3],points[0]]),Color("#b47741"),2,true)
 		draw_line(pos-side*3,pos+side*3,Color("#a75b55"),2)
-	elif style=="archer" or style.begins_with("arcanist_frost"):
+	elif style in ["archer","bone_lancer","coilgunner"] or style.begins_with("arcanist_frost"):
 		draw_line(pos-direction*20,pos+direction*8,color,3,true)
 		draw_colored_polygon(PackedVector2Array([pos+direction*10,pos-direction*4+side*5,pos-direction*4-side*5]),color)
 		draw_line(pos-direction*13,pos-direction*20+side*5,color,2,true)
@@ -866,7 +878,7 @@ func draw_projectile(shot: Dictionary) -> void:
 		draw_circle(pos,13,Color(color,0.12))
 		draw_circle(pos,6,color)
 		draw_circle(pos+direction*2,3,Color("#fff1d8"))
-		if style.begins_with("arcanist_fire") or style=="spore":
+		if style.begins_with("arcanist_fire") or style in ["spore","sporewitch","crypt_oracle"]:
 			for i in range(3):
 				var spark:=pos-direction*(8+i*7)+side*sin(clock*20+i*2)*5
 				draw_rect(Rect2(spark,Vector2(3,3)),Color(color,0.7))

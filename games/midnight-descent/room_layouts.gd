@@ -79,6 +79,13 @@ const COMBAT_WALLS := [
         [[340,585,180,95],[910,945,155,110],[1575,425,175,95],[1870,870,95,160]]
     ]
 ]
+# A different physical centerpiece for each combat plan (none in special rooms).
+# These supplement each authored region and existing cover layout.
+const COMBAT_SIGNATURE_WALLS := [
+	[[1690,610,95,145],[1600,700,130,85],[1700,770,95,150],[1670,685,145,80]],
+	[[1580,740,100,170],[1620,685,100,120],[1600,775,150,70],[1700,620,100,160]],
+	[[1670,700,135,95],[1670,700,110,140],[1730,800,120,135],[1710,745,145,105]]
+]
 const BOSS_WALLS := [
     [
         [[325,585,65,95],[1085,480,80,95],[1560,340,110,130],[1930,950,150,115]],
@@ -104,6 +111,7 @@ static func build(floor: int, variation: int, boss: bool=false) -> Dictionary:
     var index: int=posmod(variation,2 if boss else 4)
     var regions: Array[Rect2]=rects(BOSS_REGIONS[f][index] if boss else COMBAT_REGIONS[f][index])
     var walls: Array[Rect2]=rects(BOSS_WALLS[f][index] if boss else COMBAT_WALLS[f][index])
+    if not boss: walls.append_array(rects([COMBAT_SIGNATURE_WALLS[f][index]]))
     var bounds:=Rect2(64,118,2400 if boss else 2200,1220)
     var boss_zone:=Rect2(1375,225,990,960) if boss else Rect2()
     if boss:
@@ -147,14 +155,16 @@ static func accessible(point: Vector2, radius: float, regions: Array[Rect2], wal
     return true
 
 static func smoke_test() -> bool:
-    # Check all 18 authored layouts, corridor connectivity and combat space.
+    # Check twelve unique combat rooms and six separate boss approaches; ensure
+    # geometry, obstacles, names and walkable paths are not mere recolors.
     for floor in range(3):
         for boss in [false,true]:
             for index in range(2 if boss else 4):
                 var layout: Dictionary=build(floor,index,boss)
                 var regions: Array[Rect2]=layout.regions
                 var walls: Array[Rect2]=layout.walls
-                if regions.size()<3 or walls.size()<3: return false
+                if regions.size()<3 or walls.size()<(3 if boss else 5): return false
+                if not boss and str(layout.name)!=str(PLAN_NAMES[floor][index]): return false
                 if not accessible(layout.spawn,15,regions,walls): return false
                 if not accessible(layout.exit,25,regions,walls): return false
                 if boss and not accessible(layout.boss_spawn,32,regions,walls): return false

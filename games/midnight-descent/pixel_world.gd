@@ -69,7 +69,14 @@ const ACTORS = {
 	"stalker": preload("res://art/pixel/stalker.svg"),
 	"caster": preload("res://art/pixel/caster.svg"),
 	"brute": preload("res://art/pixel/brute.svg"),
-	"boss": preload("res://art/pixel/boss.svg")
+	"boss": preload("res://art/pixel/boss.svg"),
+	# Biome-exclusive enemies use full 8-frame / 4-direction pixel atlases.
+	"gearhound": preload("res://art/pixel/gearhound.svg"),
+	"coilgunner": preload("res://art/pixel/coilgunner.svg"),
+	"briarling": preload("res://art/pixel/briarling.svg"),
+	"sporewitch": preload("res://art/pixel/sporewitch.svg"),
+	"bone_lancer": preload("res://art/pixel/bone_lancer.svg"),
+	"crypt_oracle": preload("res://art/pixel/crypt_oracle.svg")
 }
 const TORCH_POSITIONS = [Vector2(142,143),Vector2(394,143),Vector2(650,143),Vector2(906,143),Vector2(1154,143)]
 # Fixtures are suspended from the actual 143px timber rail, not free-floating.
@@ -408,6 +415,7 @@ func draw_expanded_room() -> void:
 					draw_rect(Rect2(x+7,region.position.y+15,34,24),Color("#bc9da4"),false,3)
 					draw_rect(Rect2(x+21,region.position.y+18,6,18),Color("#e4c5ad"))
 	if model.room_kind=="boss": draw_boss_approach()
+	else: draw_combat_plan_markings()
 	for i in range(torches.size()):
 		if i>=model.room_regions.size()+2: break
 		var light_pos: Vector2=torches[i].position
@@ -420,6 +428,131 @@ func draw_expanded_room() -> void:
 		var py: float=region.position.y+fposmod(i*61-clock*float(i%4+1)*2,region.size.y-48)+24
 		var c: Color=[Color("#d6ad7d"),Color("#8cd3aa"),Color("#cba3da")][floor_id]
 		draw_rect(Rect2(pixel_pos(Vector2(px,py)),Vector2(3,3)),Color(c,0.12+0.10*sin(clock*2+i)))
+
+func draw_combat_plan_markings() -> void:
+	# Each of the twelve authored rooms has a recognizable floor signature.
+	# These are readable *inlays*, never fake obstacles; actual cover and
+	# pathways come from RoomLayouts.COMBAT_SIGNATURE_WALLS and COMBAT_REGIONS.
+	if not model.large_room or model.room_kind not in ["fight","elite"]: return
+	var variant: int=int(model.dungeon.nodes[model.room].layout)%4
+	var floor_id: int=model.floor_index
+	var chamber: Rect2=model.room_regions[-1]
+	var center: Vector2=chamber.get_center()
+	var faded: Color=[Color("#b5a18f"),Color("#79ac7a"),Color("#c5a2a9")][floor_id]
+	var shadow: Color=[Color("#141723"),Color("#132a24"),Color("#281a2b")][floor_id]
+	# A subdued architectural plinth anchors every composition, and is
+	# distinct from biome tiles even at 1920x1080 scaling.
+	draw_rect(Rect2(center-Vector2(260,198),Vector2(520,396)),Color(shadow,0.08),false,5)
+	match floor_id:
+		0:
+			match variant:
+				0: # Twin Vaults: two geared foundations and a joining bridge.
+					for sign in [-1.0,1.0]:
+						var point: Vector2=center+Vector2(sign*155,0)
+						draw_circle(point,89,Color(shadow,0.48))
+						draw_arc(point,85,0,TAU,52,Color(faded,0.48),6,true)
+						draw_arc(point,59,0,TAU,44,Color(faded,0.38),3,true)
+						for tooth in range(12):
+							var angle: float=float(tooth)*TAU/12
+							draw_rect(Rect2(point+Vector2.from_angle(angle)*80-Vector2(6,6),Vector2(12,12)),Color(faded,0.45))
+					draw_rect(Rect2(center-Vector2(155,18),Vector2(310,36)),Color(faded,0.20))
+					for i in range(8):
+						draw_rect(Rect2(center+Vector2(-140+i*40,-9),Vector2(14,18)),Color(shadow,0.34))
+				1: # Upper Gallery: parallel elevated iron-truss floor lanes.
+					for lane in range(3):
+						var cy: float=center.y+(float(lane)-1.0)*112
+						draw_rect(Rect2(center.x-270,cy-22,540,44),Color(shadow,0.52))
+						draw_line(Vector2(center.x-270,cy-22),Vector2(center.x+270,cy-22),Color(faded,0.65),5,true)
+						draw_line(Vector2(center.x-270,cy+22),Vector2(center.x+270,cy+22),Color(faded,0.54),4,true)
+						for i in range(11):
+							var x: float=center.x-253+i*49
+							draw_line(Vector2(x,cy-16),Vector2(x+30,cy+16),Color(faded,0.19),3,true)
+				2: # Broken Bastion: fractured flagstones around an impact crater.
+					draw_circle(center,126,Color("#171722",0.56))
+					for i in range(10):
+						var angle: float=float(i)*TAU/10
+						var a: Vector2=center+Vector2.from_angle(angle)*48
+						var b: Vector2=center+Vector2.from_angle(angle+0.15)*145
+						draw_line(a,b,Color(faded,0.45),4,true)
+						draw_line(b,b+Vector2.from_angle(angle+0.48)*44,Color(faded,0.26),2,true)
+					for i in range(4):
+						draw_rect(Rect2(center+Vector2(-210+i*122,-183),Vector2(80,55)),Color(faded,0.12),false,3)
+				3: # Twin Passage: long industrial rails and transverse braces.
+					for sign in [-1.0,1.0]:
+						var y: float=center.y+sign*106
+						draw_rect(Rect2(center.x-277,y-17,554,34),Color(shadow,0.46))
+						draw_line(Vector2(center.x-277,y-13),Vector2(center.x+277,y-13),Color(faded,0.67),6,true)
+						draw_line(Vector2(center.x-277,y+13),Vector2(center.x+277,y+13),Color(faded,0.67),6,true)
+						for i in range(12):
+							draw_rect(Rect2(center.x-264+i*45,y-21,13,42),Color(faded,0.27))
+					draw_arc(center,80,0,TAU,48,Color("#e7b578",0.43),4,true)
+		1:
+			match variant:
+				0: # Forked Grove: two organic branches part around a central root.
+					for sign in [-1.0,1.0]:
+						draw_line(center+Vector2(-238,0),center+Vector2(0,sign*152),Color("#415a37",0.65),30,true)
+						draw_line(center+Vector2(-238,0),center+Vector2(0,sign*152),Color("#8dbb72",0.42),7,true)
+						for i in range(5):
+							draw_circle(center+Vector2(-190+i*48,sign*(14+i*23)),14,Color("#b5db83",0.26))
+					draw_circle(center+Vector2(55,0),87,Color("#2b4a36",0.47))
+				1: # Serpent Roots: interwoven serpentine arcs, spores and tendrils.
+					for row in range(3):
+						var offset: float=float(row-1)*91
+						var previous: Vector2=center+Vector2(-265,offset)
+						for i in range(1,16):
+							var p: Vector2=center+Vector2(-265+i*35,offset+sin(float(i)*0.88+row)*43)
+							draw_line(previous,p,Color("#3c5d40",0.75),18,true)
+							draw_line(previous,p,Color("#88ae6b",0.48),4,true)
+							previous=p
+				2: # Sunken Thicket: moss-island chain and dark shallow ponds.
+					for i in range(8):
+						var p: Vector2=center+Vector2(-210+(i%4)*140,-114+int(i/4)*225)
+						draw_circle(p,67,Color("#122c29",0.53))
+						draw_arc(p,61,0,TAU,32,Color("#719b79",0.49),5,true)
+						draw_circle(p+Vector2(19,-12),23,Color("#7b9d65",0.33))
+						for reed in range(4):
+							draw_line(p+Vector2(-28+reed*16,34),p+Vector2(-32+reed*16,17),Color("#a3ca76",0.48),3,true)
+				3: # Wildwood Crossing: crossing woodland routes and ring groves.
+					draw_line(center+Vector2(-270,-170),center+Vector2(270,170),Color("#456240",0.73),54,true)
+					draw_line(center+Vector2(-260,175),center+Vector2(260,-175),Color("#456240",0.71),54,true)
+					for i in range(8):
+						var point: Vector2=center+Vector2.from_angle(float(i)*TAU/8)*186
+						draw_arc(point,33,0,TAU,24,Color("#8dbb84",0.57),5,true)
+						draw_circle(point,12,Color("#cae19a",0.21))
+		2:
+			match variant:
+				0: # Processional Crypt: a ceremonial crimson aisle.
+					draw_rect(Rect2(center-Vector2(286,63),Vector2(572,126)),Color("#5b2c45",0.58))
+					for sign in [-1.0,1.0]:
+						draw_line(center+Vector2(-284,sign*62),center+Vector2(284,sign*62),Color("#cfac82",0.68),5,true)
+					for i in range(11):
+						var x: float=center.x-250+i*50
+						draw_rect(Rect2(x,center.y-15,20,30),Color("#cbb2a2",0.21),false,3)
+				1: # Ossuary Cross: a large bone-and-stone crossing.
+					draw_rect(Rect2(center-Vector2(61,195),Vector2(122,390)),Color("#392a37",0.64))
+					draw_rect(Rect2(center-Vector2(259,54),Vector2(518,108)),Color("#392a37",0.64))
+					draw_rect(Rect2(center-Vector2(34,173),Vector2(68,346)),Color("#bfa995",0.32),false,4)
+					draw_rect(Rect2(center-Vector2(234,30),Vector2(468,60)),Color("#bfa995",0.32),false,4)
+					draw_circle(center,43,Color("#d5bfaa",0.28))
+				2: # Shattered Chapel: fractured rosette/window shards.
+					draw_circle(center,156,Color("#211a2c",0.51))
+					for i in range(12):
+						var angle: float=float(i)*TAU/12
+						var edge: Vector2=center+Vector2.from_angle(angle)*148
+						var left: Vector2=center+Vector2.from_angle(angle-0.11)*67
+						var right: Vector2=center+Vector2.from_angle(angle+0.11)*67
+						var tri: PackedVector2Array=PackedVector2Array([left,right,edge])
+						draw_colored_polygon(tri,Color("#b9879e",0.18 if i%2==0 else 0.27))
+						draw_line(left,edge,Color(faded,0.44),3,true)
+					draw_arc(center,163,0,TAU,64,Color("#bfa5a3",0.48),5,true)
+				3: # Royal Labyrinth: concentric step-maze inlaid in stone.
+					for i in range(5):
+						var radius: float=45.0+i*37.0
+						var rect: Rect2=Rect2(center-Vector2(radius,radius),Vector2(radius*2,radius*2))
+						draw_rect(rect,Color("#bd9e90",0.45-i*0.048),false,6)
+						draw_rect(Rect2(center+Vector2(-radius,-8),Vector2(23,16)),Color(shadow,0.7))
+						draw_rect(Rect2(center+Vector2(radius-21,0),Vector2(24,16)),Color(shadow,0.7))
+					draw_rect(Rect2(center-Vector2(20,20),Vector2(40,40)),Color("#cb9e85",0.4))
 
 func draw_expanded_spikes() -> void:
 	if model.floor_index!=0: return
@@ -1349,7 +1482,7 @@ func draw_actor(enemy: Dictionary) -> void:
 
 	var kind: String = enemy.kind
 	var pos: Vector2 = enemy.pos
-	var size := 128.0 if kind in ["boss","rootking","hollowking"] else (80.0 if kind=="mushroom" else 64.0)
+	var size := 128.0 if kind in ["boss","rootking","hollowking"] else (80.0 if kind in ["mushroom","briarling","bone_lancer"] else 64.0)
 	var direction: Vector2 = pos.direction_to(model.player)
 	var frame := 2+int(clock*8+pos.x*0.02)%4
 	if enemy.wind > 0:
@@ -1358,6 +1491,9 @@ func draw_actor(enemy: Dictionary) -> void:
 		frame = 7
 	draw_shadow(pos,size)
 	var tint := Color("#ffedda") if enemy.flash > 0 else Color.WHITE
+	if kind in ["gearhound","coilgunner","briarling","sporewitch","bone_lancer","crypt_oracle"]:
+		var stage_color: Color={"gearhound":Color("#f1b778"),"coilgunner":Color("#7ddde2"),"briarling":Color("#badc80"),"sporewitch":Color("#cedfa7"),"bone_lancer":Color("#e5ceac"),"crypt_oracle":Color("#c5a9f7")}[kind]
+		draw_arc(pos+Vector2(0,8),size*0.41,0,TAU,32,Color(stage_color,0.21+0.10*sin(clock*3.8)),2,true)
 	if float(enemy.get("chill",0))>0: tint=Color("#a3dfff")
 	if enemy.get("elite",false):
 		draw_arc(pos+Vector2(0,10),size*0.42,0,TAU,24,Color("#f0bf70"),2,true)
@@ -1389,4 +1525,4 @@ func draw_actor(enemy: Dictionary) -> void:
 			draw_rect(Rect2(badge_pos+Vector2(4+i*5,4),Vector2(3,5)),accent if affix!="warded" else Color("#d5f4ff"))
 
 func is_ready_for_smoke() -> bool:
-	return TILES.get_width() == 256 and RELICS.get_width() == 1920 and RELICS.get_height() == 48 and ACTORS["dealer"].get_height() == 128 and ACTORS["warden"].get_height() == 128 and torches.size() == 5 and side_lights.size() == 2 and ambient != null and boss_light != null and torches[0].range_layer_min == -1 and occluders.size() == model.walls.size() and PROPS.get_width()==432 and decor_lights.size()==4 
+	return TILES.get_width() == 256 and ACTORS["gearhound"].get_width()==256 and ACTORS["coilgunner"].get_height()==128 and ACTORS["briarling"].get_width()==256 and ACTORS["sporewitch"].get_height()==128 and ACTORS["bone_lancer"].get_width()==256 and ACTORS["crypt_oracle"].get_height()==128 and RELICS.get_width() == 1920 and RELICS.get_height() == 48 and ACTORS["dealer"].get_height() == 128 and ACTORS["warden"].get_height() == 128 and torches.size() == 5 and side_lights.size() == 2 and ambient != null and boss_light != null and torches[0].range_layer_min == -1 and occluders.size() == model.walls.size() and PROPS.get_width()==432 and decor_lights.size()==4 

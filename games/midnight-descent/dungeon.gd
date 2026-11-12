@@ -9,11 +9,13 @@ const SPECIAL_SERVICE := ["blood_altar","forgotten_forge","archive"]
 const ALL_COMBAT := ["fight","elite","ritual","survival","bounty","unstable"]
 var nodes: Array[Dictionary] = []
 var floor_index := 0
+var layout_rotation := 0
 
 func generate(seed_value: int, floor: int) -> void:
 	floor_index=floor
 	var rng:=RandomNumberGenerator.new()
 	rng.seed=seed_value+floor*7919
+	layout_rotation=rng.randi_range(0,3)
 	nodes.clear()
 	# Combat columns cannot be bypassed by any service route.
 	# The opening service and the royal forge remain discoverable, but their
@@ -91,7 +93,7 @@ func add_node(kind_name: String, column: int, lane: int, rng: RandomNumberGenera
 	if column==0:
 		encounter="skirmish"
 		threat=0
-	nodes.append({"kind":kind_name,"column":column,"lane":lane,"visited":false,"cleared":false,"links":[],"layout":rng.randi_range(0,3),"geometry_seed":rng.randi(),"encounter":encounter,"threat":threat})
+	nodes.append({"kind":kind_name,"column":column,"lane":lane,"visited":false,"cleared":false,"links":[],"layout":posmod(column+lane+layout_rotation,4),"geometry_seed":rng.randi(),"encounter":encounter,"threat":threat})
 
 func link(a: int,b: int) -> void:
 	if not nodes[a].links.has(b): nodes[a].links.append(b)
