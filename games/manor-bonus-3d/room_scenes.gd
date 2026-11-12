@@ -141,8 +141,10 @@ func _theme(room_id: int) -> String:
             return "ballroom"
         9:
             return "garden"
-        10, 13:
+        10:
             return "attic"
+        13:
+            return "moonlit"
         11, 12, 14:
             return "crypt"
         15, 16:
@@ -250,15 +252,19 @@ func _shell(p: Node3D, family: String, room_id: int) -> void:
 
     for side in [-1, 1]:
         var x := float(side) * width * 0.5
-        if family == "garden":
-            # Real gaps in the side-wall mesh: stained-glass windows no longer
-            # hover in front of opaque wall panels, and leadwork has a frame.
+        if family in ["garden", "moonlit"]:
+            # The moonlit gallery and winter garden use actual window openings,
+            # with proper wall and sill segments around them.
+            var upper_height := height - 4.84
             _box(p, "SideWallBelowGlass", Vector3(x, 1.26, -1),
                 Vector3(0.35, 2.52, 20.9), wall_mat)
-            _box(p, "SideWallAboveGlass", Vector3(x, 5.63, -1),
-                Vector3(0.35, 1.54, 20.9), wall_mat)
+            _box(p, "SideWallAboveGlass", Vector3(x, 4.84 + upper_height * 0.5, -1),
+                Vector3(0.35, upper_height, 20.9), wall_mat)
+            var centers: Array = [-5.4, -1.4, 3.0] if family == "garden" else (
+                [-5.4, 1.9] if side < 0 else [-2.2])
             var window_end := -11.45
-            for center in [-5.4, -1.4, 3.0]:
+            for center_value in centers:
+                var center: float = float(center_value)
                 var opening_start: float = center - 1.05
                 if opening_start > window_end:
                     _box(p, "BetweenGlassBays",
