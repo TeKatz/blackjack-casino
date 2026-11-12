@@ -22,6 +22,7 @@ const sample: ManorRun = {
 describe('Godot 3D Manor bonus bridge', () => {
   it('only proposes rooms the authoritative C# snapshot marked available', () => {
     const state = liveState(sample);
+    expect(state.roomId).toBe(0);
     expect(state.options.map(x => x.id)).toEqual([1, 4, 7]);
     expect(isAllowedGodotChoice(state, 16)).toBe(false);
     expect(isAllowedGodotChoice(state, 4)).toBe(true);
@@ -29,6 +30,8 @@ describe('Godot 3D Manor bonus bridge', () => {
   it('keeps the no-bankroll demo separate from an actual run', () => {
     const state = demoState(0);
     expect(state.demo).toBe(true);
+    expect(state.roomId).toBe(0);
+    expect(demoState(8).roomId).toBe(8);
     expect(state.options).toHaveLength(3);
     expect(state.options.map(x => x.id)).toEqual([1, 4, 7]);
     expect(demoState(4).options.some(x => x.id === 5)).toBe(true);
@@ -43,7 +46,7 @@ describe('Godot 3D Manor bonus bridge', () => {
   });
   it('keeps the 3D bonus embedded in the machine surface with safe explicit exit', () => {
     const markup = renderToStaticMarkup(createElement(ManorBonus3D, {
-      demo: true, run: null, language: 'de', reducedMotion: true, disabled: false,
+      active: true, demo: true, run: null, language: 'de', reducedMotion: true, disabled: false,
       onAction: () => {}, onExitDemo: () => {}, onFallback: () => {},
     }));
     expect(markup).toContain('manor-godot-frame');
@@ -51,5 +54,17 @@ describe('Godot 3D Manor bonus bridge', () => {
     expect(markup).toContain('TEST BONUS GAME');
     expect(markup).toContain('Keine echten Gewinne');
     expect(markup).toContain('Zurück zum Automaten');
+    expect(markup).toContain('is-active');
+  });  it('keeps the iframe ready but never offers choices while warming behind the reels', () => {
+    const markup = renderToStaticMarkup(createElement(ManorBonus3D, {
+      active: false, demo: false, run: null, language: 'en', reducedMotion: false,
+      disabled: false, onAction: () => {}, onExitDemo: () => {}, onFallback: () => {},
+    }));
+    expect(markup).toContain('is-warming');
+    expect(markup).toContain('aria-hidden="true"');
+    expect(markup).toContain('manor-godot-frame');
+    expect(markup).not.toContain('manor-godot-door-actions');
+    expect(markup).not.toContain('Back to the slot');
   });
+
 });
