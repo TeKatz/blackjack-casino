@@ -543,3 +543,30 @@ button:disabled{cursor:default;opacity:.48}
 }
 .md-app[data-motion=false] .md-die-flat-face{opacity:1!important}
 .md-app[data-motion=false] .md-die-roll-3d{opacity:0!important}
+
+
+/* Authoritative equipped dice identity and material-specific rendering. */
+.md-equipped-dice{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-left:auto;
+ padding:5px 11px;border:1px solid #a58a634d;border-radius:8px;
+ background:linear-gradient(130deg,#2c3638ad,#101d26ad);font-size:10px;line-height:1.3}
+.md-equipped-dice>i{font-size:15px;color:#c8b794;font-style:normal}
+.md-equipped-dice>span{color:#a8bcb2;letter-spacing:.07em;font-size:9px;font-weight:700}
+.md-equipped-dice strong{font-size:11px;color:#f1dcad;white-space:nowrap;font-weight:800}
+.md-die-stage[data-material=glass] .md-die-flat-face,
+.md-die-stage[data-material=crystal] .md-die-flat-face,
+.md-die-stage[data-material=opal] .md-die-flat-face,
+.md-die-stage[data-material=gem] .md-die-flat-face{
+ filter:drop-shadow(0 7px 8px #040a14b0) drop-shadow(0 0 7px var(--die-glow-color))}
+.md-die-stage[data-material=metal] .md-die-flat-face{filter:drop-shadow(2px 8px 6px #000b)}
+.md-die-stage[data-material=resin] .md-die-flat-face{filter:drop-shadow(0 5px 5px #0e2518c2)}
+.md-die-stage[data-material=porcelain] .md-die-flat-face{filter:drop-shadow(0 5px 7px #11243a91)}
+.md-die-stage[data-skin=dice-astral-opal] .md-die-flat-face{
+ filter:drop-shadow(0 6px 6px #071e2d) drop-shadow(0 0 9px #a9d7d690)}
+.md-die-stage[data-skin=dice-solar-crown] .md-die-flat-face{
+ filter:drop-shadow(0 8px 6px #000a) drop-shadow(0 0 5px #e7c47b85)}
+.md-app .md-topline{gap:11px;flex-wrap:wrap}
+@media(max-width:1100px){
+ .md-equipped-dice{flex:1 1 auto;justify-content:flex-end}
+ .md-equipped-dice>span{display:none}
+}
+@media(prefers-reduced-motion:reduce){.md-die-stage .md-die-flat-face{transition:none}}
