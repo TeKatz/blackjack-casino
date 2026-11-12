@@ -7,7 +7,7 @@ import {
 import {beatsLaneAt} from '../src/lobby/arcadeBeatsRenderer';
 import {playBeatsGroovePulse,playBeatsLaneHit,playBeatsMiss,unlockBeatsAudio}
  from '../src/lobby/arcadeBeatsAudio';
-import {driftRoadHalfWidth,driftTrafficAt,gravityHazards,gravitySentries}
+import {driftRoadHalfWidth,driftCenter,gravityHazards,gravitySentries}
  from '../src/lobby/arcadeExpansionOneEngine';
 import type {DriftRun,GravityRun} from '../src/lobby/arcadeExpansionOneEngine';
 import {createExpansionTwoRun,rotateCircuit,poweredCircuit,selectPrism,tracePrism,
@@ -103,12 +103,14 @@ describe('Midnight Beats synchronized endless rhythm',()=>{
 });
 
 describe('Progressive difficulty without changing the two approved game mechanics',()=>{
- it('narrows Neon Drift and makes crossing oncoming traffic penalize a collision',()=>{
+ it('narrows Neon Drift but only damages the player for leaving the road',()=>{
   expect(driftRoadHalfWidth(12000)).toBeLessThan(driftRoadHalfWidth(0));
   expect(driftRoadHalfWidth(0)).toBeGreaterThan(90);
   const run=createArcadeRun('neon-drift',4) as DriftRun;
-  const obstacle=driftTrafficAt(0);
-  run.distance=obstacle.distance-1;run.x=obstacle.x;run.vx=0;run.hitCooldown=0;
+  run.distance=780;run.x=driftCenter(run.distance);run.vx=0;run.hitCooldown=0;
+  expect(stepArcadeRun(run,ARCADE_STEP)).toBeNull();
+  expect(run.hits).toBe(0);
+  run.x=driftCenter(run.distance)+driftRoadHalfWidth(run.distance)+45;
   expect(stepArcadeRun(run,ARCADE_STEP)).toBe('stage');
   expect(run.hits).toBe(1);
  });
