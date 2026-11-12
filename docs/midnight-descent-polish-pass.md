@@ -21,3 +21,15 @@ Warden, Dealer, Arcanist and Soulbinder now have **eight actual left-facing and 
 
 ## Validation
 Godot scene smoke checks loadout switching without page rebuild, premium tavern offer cards, sprite atlas imports and boss camera focus/return. Pure model tests exercise collision/swing resets, reserved bar patron seat, actual stool sit/stand transitions, boss HP scaling, and the phase-lock/boss entrance.
+
+## Corrective pass after gameplay feedback (12 November 2026)
+
+The first polish patch accidentally committed an old copy of `pixel_world.gd` over the newly authored tavern art. That reverted **all four** visual changes (seated hero, card gamblers, swaying lamp cage, and drinking regular) while keeping related model state and tests. This pass restores the actual `draw_seated_player`, `draw_card_guest`, `draw_bar_regular`, and `draw_lantern_cage` implementations and checks they exist in the real scene's readiness smoke; these are not just model-only behavior tests.
+
+**Seating:** a cropped up-facing torso eases downward onto the stool cushion with bent leg and boot shapes at the correct depth, rather than shifting the ordinary standing sprite up through the bar. Players sit facing the counter. Both card-table guests now have visible knees, seat contact, and boots below the table. The patron at the fifth stool is drawn in the visible tavern scene on every frame and raises a real mug in a looping sequence.
+
+**Lanterns:** the three fixtures are **not physical walls**. Moving through their head-height proximity volumes produces a single impulse, followed by a damped angular cage swing and matching moving point light. The mounts stay attached to the wall, the cage draws in front of the passing hero, and contact re-arms only after leaving the soft trigger. Dedicated tests prove passing through them, registering the swing, decaying the impulse and resetting contact.
+
+**Boss intro:** the old opaque 490×133 screen-center reveal box was still drawn simultaneously with the new cinematic and blocked the boss. It is now removed. The cinematic keeps its camera pan, letterbox and boss name at the bottom; the usual top boss HP/name banner stays hidden during the reveal and returns when fighting starts.
+
+**HP:** all three boss health pools use **4.5× base HP** (up from 2.85× in the first patch, a further **57.9% increase**); phase gates still begin at 68% and 32% health.

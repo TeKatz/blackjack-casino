@@ -181,7 +181,9 @@ func _physics_process(dt: float) -> void:
 func begin_boss_cinematic() -> void:
 	boss_cinematic_elapsed=0.0
 	boss_cinematic_active=true
-	boss_reveal_toast=BOSS_CINEMATIC_DURATION
+	# The old center-screen Boss Reveal panel is intentionally gone.
+	# The letterbox already contains the boss name without blocking the arena.
+	boss_reveal_toast=0.0
 	# Re-center the camera only after the shutter has been crossed;
 	# future model ticks do not receive any player attack/movement input.
 
@@ -956,8 +958,8 @@ func run_scene_smoke() -> void:
 			get_tree().quit(45)
 			return
 		begin_boss_cinematic()
-		if not boss_cinematic_active or boss_cinematic_elapsed!=0.0: 
-			push_error("Boss intro cinematic was not started")
+		if not boss_cinematic_active or boss_cinematic_elapsed!=0.0 or boss_reveal_toast>0.0:
+			push_error("Boss intro cinematic unexpectedly rendered the obsolete center popup")
 			get_tree().quit(96)
 			return
 		boss_cinematic_elapsed=1.30
@@ -1452,7 +1454,7 @@ func draw_hud() -> void:
 	if run.state=="fight" and run.room_kind=="boss" and not run.boss_awake:
 		hud_panel(Rect2(415,107,450,37),Color("#8c7caa"))
 		text_at(Vector2(440,131),tr_text("THE THRONE AWAITS  •  APPROACH","DER THRON WARTET  •  NÄHERE DICH"),15,Color("#c1badc"))
-	if run.state=="fight" and run.room_kind=="boss" and run.boss_awake:
+	if run.state=="fight" and run.room_kind=="boss" and run.boss_awake and not boss_cinematic_active:
 		for enemy in run.enemies:
 			if enemy.kind in ["boss","rootking","hollowking"]:
 				hud_panel(Rect2(415,107,450,37),Color("#ed7c9e"))
@@ -1460,15 +1462,6 @@ func draw_hud() -> void:
 				meter(Rect2(434,130,412,7),float(enemy.hp)/float(enemy.max_hp),Color("#e36b86"))
 				text_at(Vector2(745,123),"PHASE "+str(enemy.get("phase",1))+" / 3",12,Color("#ffe1b2"))
 				break
-	if boss_reveal_toast>0.0:
-		var alpha: float=clampf(boss_reveal_toast*1.5,0,1)
-		var rect:=Rect2(395,234,490,133)
-		var presentation:=UI.panel(Color("#1b2b2d",alpha*0.96),Color("#e9a9a0",alpha),0)
-		draw_style_box(presentation,rect)
-		var title: String=Content.boss_name(run.floor_index,german).to_upper()
-		text_at(Vector2(640-ui_font(31).get_string_size(title,HORIZONTAL_ALIGNMENT_LEFT,-1,31).x*0.5,289),title,31,Color(1,0.86,0.94,alpha))
-		var subtitle: String=tr_text("The chamber seals behind you","Die Kammer erwacht") 
-		text_at(Vector2(640-font.get_string_size(subtitle,HORIZONTAL_ALIGNMENT_LEFT,-1,16).x*0.5,333),subtitle,16,Color(0.91,0.75,0.82,alpha))
 	if boss_soul_toast_timer>0.0:
 		var soul_alpha: float=minf(1.0,boss_soul_toast_timer*2.5)
 		var soul_y: float=290.0 if synergy_toast_timer>0.0 else 203.0

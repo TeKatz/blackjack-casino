@@ -18,7 +18,7 @@ const HUB_STOOL_X := [275.0,380.0,485.0,590.0,695.0]
 const HUB_PATRON_STOOL := 4 # Reserved for the drinking regular.
 const HUB_LANTERN_ANCHORS := [Vector2(164,198),Vector2(900,198),Vector2(1168,198)]
 const HUB_LANTERN_SIZE := Vector2(36,64)
-const BOSS_HEALTH_MULTIPLIER := 2.85
+const BOSS_HEALTH_MULTIPLIER := 4.5 # +57.9% vs the previous 2.85x boss-health pass
 const HUB_CARD_GUEST_LEFT := Rect2(393,468,49,93)
 const HUB_CARD_GUEST_RIGHT := Rect2(607,468,49,93)
 const HUB_SEAT_HOLD := 1.0
@@ -117,6 +117,9 @@ var hub_seat_anim := 0.0
 var hub_seat_released := false
 var hub_lantern_swing: Array[float]=[0.0,0.0,0.0]
 var hub_lantern_cooldown: Array[float]=[0.0,0.0,0.0]
+# Soft contact is triggered only when entering the hanging fixture's
+# head-height area. A player can move freely under all three sconces.
+var hub_lantern_touching: Array[bool]=[false,false,false]
 var aim := Vector2.RIGHT
 var player_motion := Vector2.ZERO
 var hp := 100.0
@@ -606,6 +609,7 @@ func enter_hub() -> void:
 	hub_seat_released=false
 	hub_lantern_swing.assign([0.0,0.0,0.0])
 	hub_lantern_cooldown.assign([0.0,0.0,0.0])
+	hub_lantern_touching.assign([false,false,false])
 	aim=Vector2.RIGHT
 	attack_timer=0.0
 	bolt_timer=0.0
@@ -621,9 +625,9 @@ func enter_hub() -> void:
 	walls.clear()
 	# Each volume extends over the entire visual footprint. The bar and forge
 	# meet the northern arena limit so neither can be bypassed from behind.
+	# Lanterns are not solid walls. Only brushing their hanging cages
+	# generates an animated response; they never prevent movement.
 	walls.append_array([HUB_BAR,HUB_FORGE,HUB_TABLE,HUB_GATE_FRAME,HUB_CARD_GUEST_LEFT,HUB_CARD_GUEST_RIGHT])
-	for anchor in HUB_LANTERN_ANCHORS:
-		walls.append(Rect2(anchor-Vector2(HUB_LANTERN_SIZE.x*0.5,26),HUB_LANTERN_SIZE))
 
 func reset_hub_stool_hold() -> void:
 	hub_seat_target=-1
@@ -1509,14 +1513,16 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 		var motion: Vector2=direction.limit_length()*speed*dt
 		var steps: int=maxi(1,ceili(motion.length()/8.0))
 		for step in range(steps):
-			var proposed: Vector2=player+motion/float(steps)
-			for i in range(HUB_LANTERN_ANCHORS.size()):
-				var anchor: Vector2=HUB_LANTERN_ANCHORS[i]
-				var lamp: Rect2=Rect2(anchor-Vector2(HUB_LANTERN_SIZE.x*0.5,26),HUB_LANTERN_SIZE).grow(15)
-				if lamp.has_point(proposed) and hub_lantern_cooldown[i]<=0.0:
-					hub_lantern_swing[i]=1.0
-					hub_lantern_cooldown[i]=0.48
 			player=move_actor(player,motion/float(steps),15)
+		# Detect an overlap between the hero's upper sprite and each
+		# hanging lantern. This is a *soft* sensor, not a wall or a shove.
+		for i in range(HUB_LANTERN_ANCHORS.size()):
+			var anchor: Vector2=HUB_LANTERN_ANCHORS[i]
+			var touching: bool=absf(player.x-anchor.x)<=40.0 and player.y>=anchor.y+26.0 and player.y<=anchor.y+89.0
+			if touching and not hub_lantern_touching[i] and direction.length_squared()>0.05:
+				hub_lantern_swing[i]=1.0
+				hub_lantern_cooldown[i]=0.28
+			hub_lantern_touching[i]=touching
 		update_hub_stool(dt,direction)
 		return
 	if state != "fight" and state != "exit":
@@ -2881,17 +2887,24 @@ func boss_gate_smoke() -> bool:
 
 func hub_polish_smoke() -> bool:
 	begin(73001)
-	if walls.size()!=9: return false
+	if walls.size()!=6: return false
 	if HUB_STOOL_X.size()!=5 or HUB_PATRON_STOOL!=4: return false
 	for index in range(HUB_LANTERN_ANCHORS.size()):
 		var anchor: Vector2=HUB_LANTERN_ANCHORS[index]
-		if not blocked(anchor,15): return false
-		player=anchor+Vector2(0,79)
-		tick(0.2,Vector2.UP,HUB_PORTAL,false,false,false)
-		if player.y<anchor.y+55 or hub_lantern_swing[index]<=0.0: return false
-		var before: float=hub_lantern_swing[index]
-		tick(0.3,Vector2.ZERO,HUB_PORTAL,false,false,false)
-		if hub_lantern_swing[index]>=before: return false
+		# All three lanterns must remain walk-through, despite triggering
+		# their own sensor when approached at the correct sprite height.
+		if blocked(anchor,15): return false
+		player=anchor+Vector2(0,103)
+		tick(0.24,Vector2.UP,HUB_PORTAL,false,false,false)
+		if player.y>anchor.y+64 or hub_lantern_swing[index]<=0.0: return false
+		var prior: float=hub_lantern_swing[index]
+		tick(0.30,Vector2.ZERO,HUB_PORTAL,false,false,false)
+		if hub_lantern_swing[index]>=prior: return false
+		# Passing completely through the old 64px solid footprint must
+		# never halt the player; touching resets once they leave.
+		tick(0.28,Vector2.UP,HUB_PORTAL,false,false,false)
+		if player.y>=anchor.y+15: return false
+		if hub_lantern_touching[index]: return false
 	player=Vector2(HUB_STOOL_X[HUB_PATRON_STOOL],HUB_BAR.end.y+19)
 	for step in range(75):
 		tick(0.016,Vector2.UP,HUB_PORTAL,false,false,false)
@@ -3268,7 +3281,7 @@ func smoke_test() -> bool:
 	if state!="hub" or visited_count!=0 or dungeon.nodes[0].visited or not enemies.is_empty(): return false
 	if large_room or room_bounds!=ARENA or room_regions.size()!=0 or exit_point!=EXIT: return false
 	if boss_gate.has_area() or boss_gate_state!="open": return false
-	if walls.size()!=9 or not blocked(HUB_BAR.get_center(),15) or not blocked(HUB_FORGE.get_center(),15) or not blocked(HUB_TABLE.get_center(),15) or not blocked(HUB_PORTAL,15): return false
+	if walls.size()!=6 or not blocked(HUB_BAR.get_center(),15) or not blocked(HUB_FORGE.get_center(),15) or not blocked(HUB_TABLE.get_center(),15) or not blocked(HUB_PORTAL,15): return false
 	if not blocked(HUB_CARD_GUEST_LEFT.get_center(),15) or not blocked(HUB_CARD_GUEST_RIGHT.get_center(),15): return false
 	for seat in range(HUB_STOOL_X.size()):
 		if seat==HUB_PATRON_STOOL: continue

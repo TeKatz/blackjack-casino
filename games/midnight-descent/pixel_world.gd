@@ -82,7 +82,7 @@ const ACTORS = {
 const TORCH_POSITIONS = [Vector2(142,143),Vector2(394,143),Vector2(650,143),Vector2(906,143),Vector2(1154,143)]
 # Fixtures are suspended from the actual 143px timber rail, not free-floating.
 # The bottle shelving, forge and portal are deliberately kept clear.
-const HUB_LANTERN_POSITIONS = [Vector2(164,198),Vector2(900,198),Vector2(1168,198)]
+const HUB_LANTERN_POSITIONS = Model.HUB_LANTERN_ANCHORS
 var model
 var clock := 0.0
 var previous_player := Vector2.ZERO
@@ -191,7 +191,7 @@ func update_view(dt: float) -> void:
 	for i in range(torches.size()):
 		torches[i].enabled=model.state!="hub" or i<HUB_LANTERN_POSITIONS.size()
 		if model.state=="hub" and torches[i].enabled:
-			torches[i].position=HUB_LANTERN_POSITIONS[i]+Vector2(0,4)
+			torches[i].position=HUB_LANTERN_POSITIONS[i]+Vector2(sin(clock*8.2+i*0.45)*model.hub_lantern_swing[i]*12.0,4)
 		elif model.large_room:
 			var region: Rect2=model.room_regions[mini(i,model.room_regions.size()-1)]
 			torches[i].position=Vector2(region.position.x+clampf(region.size.x*0.35+float(i%3)*65,64,region.size.x-48),region.position.y+24)
@@ -664,14 +664,20 @@ func draw_expanded_actors() -> void:
 			"player": draw_warden()
 
 func draw_wall_lantern(pos: Vector2, index: int) -> void:
-	# The sconce is riveted to a timber backplate, never suspended in mid-air.
-	var flame_shift: float=roundf(sin(clock*6.5+index*1.7)*2.0)
-	# Iron mount is visibly connected to the horizontal timber wall rail.
+	# The timber mount is fixed; the hanging cage pivots gently when bumped.
 	draw_rect(Rect2(pos.x-7,143,14,pos.y-143-19),Color("#1b1720"))
 	draw_rect(Rect2(pos.x-4,144,8,pos.y-144-19),Color("#77615d"))
 	draw_rect(Rect2(pos.x-17,143,34,9),Color("#a67e66"))
 	draw_rect(Rect2(pos.x-11,146,4,4),Color("#e1b78b"))
 	draw_rect(Rect2(pos.x+7,146,4,4),Color("#e1b78b"))
+	var amplitude: float=model.hub_lantern_swing[index] if model.state=="hub" else 0.0
+	var angle: float=sin(clock*8.2+index*0.45)*amplitude*0.16
+	draw_set_transform(pos+Vector2(0,-23),angle,Vector2.ONE)
+	draw_lantern_cage(Vector2(0,23),index)
+	draw_set_transform()
+
+func draw_lantern_cage(pos: Vector2,index: int) -> void:
+	var flame_shift: float=roundf(sin(clock*6.5+index*1.7)*2.0)
 	draw_rect(Rect2(pos.x-13,pos.y-22,26,8),Color("#2a232c"))
 	for r in range(4,0,-1):
 		draw_circle(pos+Vector2(0,5),float(r)*16,Color(1,0.54,0.22,0.017))
@@ -693,15 +699,15 @@ func draw_wall_lantern(pos: Vector2, index: int) -> void:
 	draw_rect(Rect2(pos+Vector2(-2,27),Vector2(4,5)),Color("#e3b67c"))
 
 func draw_bar_stool(x: float) -> void:
-	# Foot rails and a padded seat make every stool readable from the front.
-	draw_rect(Rect2(x-13,300,26,25),Color("#201721"))
-	draw_rect(Rect2(x-10,300,5,26),Color("#67494b"))
-	draw_rect(Rect2(x+5,300,5,26),Color("#67494b"))
-	draw_rect(Rect2(x-14,315,28,4),Color("#a47a68"))
-	draw_rect(Rect2(x-20,285,40,13),Color("#251c26"))
-	draw_rect(Rect2(x-18,283,36,11),Color("#be886d"))
-	draw_rect(Rect2(x-14,286,28,5),Color("#704651"))
-	draw_rect(Rect2(x-11,282,22,3),Color("#dfae86"))
+	# The seat is in front of the bar, not buried in the counter texture.
+	# Back legs and footrest remain underneath the seated actor.
+	draw_rect(Rect2(x-17,336,34,46),Color("#191720"))
+	draw_rect(Rect2(x-14,346,6,33),Color("#71514c"))
+	draw_rect(Rect2(x+8,346,6,33),Color("#71514c"))
+	draw_rect(Rect2(x-20,365,40,5),Color("#ba8a68"))
+	draw_rect(Rect2(x-23,339,46,13),Color("#291b29"))
+	draw_rect(Rect2(x-20,337,40,10),Color("#a67660"))
+	draw_rect(Rect2(x-16,339,32,6),Color("#d49f79"))
 
 func draw_seated_player() -> void:
 	var stool: int=model.hub_seat_index
@@ -709,15 +715,61 @@ func draw_seated_player() -> void:
 	var x: float=float(Model.HUB_STOOL_X[stool])
 	var progress: float=clampf(model.hub_seat_anim,0.0,1.0)
 	var eased: float=progress*progress*(3.0-2.0*progress)
-	# Fast upward hop with feet curling onto the stool and a tiny idle sway.
-	var hop: float=sin(progress*PI)*6.0
-	var p:=Vector2(x,339.0-17.0*eased-hop+sin(clock*1.7)*eased)
-	draw_shadow(Vector2(x,334),45)
-	sprite(model.character,p,Vector2.DOWN,2 if progress<0.7 else int(clock*1.4)%2,61)
-	draw_rect(Rect2(x-15,330,13,5),Color("#251b2a"))
-	draw_rect(Rect2(x+2,330,13,5),Color("#251b2a"))
-	# Cushion and the foot rail remain visible in front of the folded legs.
-	draw_rect(Rect2(x-17,336,34,4),Color("#976e69"))
+	# No vertical jump. The standing torso eases DOWN into a shortened
+	# seated pose as the knees rotate forward onto the stool footrest.
+	draw_shadow(Vector2(x,371),45)
+	var upper_y: float=294.0+12.0*eased
+	var body: Rect2=Rect2(x-29,upper_y,58,46)
+	# Up-facing back view: the seated player is looking toward the bartender.
+	# Cropped upper body prevents the standing legs from clipping into the
+	# cushion; the knees/boots below are drawn separately.
+	draw_texture_rect_region(ACTORS[model.character],body,Rect2(0,32,32,24))
+	var boot: Color={"warden":Color("#293344"),"dealer":Color("#322336"),"arcanist":Color("#253849"),"soulbinder":Color("#23392e")}[model.character]
+	var pants: Color={"warden":Color("#63587a"),"dealer":Color("#6b4259"),"arcanist":Color("#456c85"),"soulbinder":Color("#426c60")}[model.character]
+	for side in [-1.0,1.0]:
+		var knee_x: float=x+side*11.0
+		var thigh_y: float=upper_y+36.0
+		var foot_x: float=lerpf(x+side*8.0,x+side*18.0,eased)
+		draw_rect(Rect2(knee_x-5,thigh_y,11,lerpf(24.0,17.0,eased)),pants)
+		draw_rect(Rect2(foot_x-7,upper_y+57.0,14,7),boot)
+		# A bright raised knee is clearly separate from the stool rim.
+		draw_rect(Rect2(knee_x-4,thigh_y+3,9,5),pants.lightened(0.15))
+	# Foreground upholstery lip passes OVER the hips, not the head.
+	draw_rect(Rect2(x-20,346,40,5),Color("#b88672"))
+	draw_rect(Rect2(x-16,347,32,2),Color("#e3b08a"))
+
+func draw_bar_regular() -> void:
+	# A permanent guest claims the far stool and takes one slow swig every
+	# 6.5 seconds: lift -> hold -> lower -> rest. No idle flipbook flicker.
+	var x: float=float(Model.HUB_STOOL_X[Model.HUB_PATRON_STOOL])
+	var phase: float=fposmod(clock,6.5)
+	var lift: float=smoothstep(0.8,1.75,phase)*(1.0-smoothstep(3.25,4.15,phase))
+	var breath: float=roundf(sin(clock*1.45))
+	draw_shadow(Vector2(x,374),40)
+	# Folded knees and boots align with the same physical stool as the player.
+	for side in [-1.0,1.0]:
+		draw_rect(Rect2(x+side*14.0-6,347,12,22),Color("#253b3c"))
+		draw_rect(Rect2(x+side*16.0-7,368,14,6),Color("#201c26"))
+	draw_rect(Rect2(x-23,315+breath,46,39),Color("#1a2f32"))
+	draw_rect(Rect2(x-19,312+breath,38,36),Color("#42736d"))
+	draw_rect(Rect2(x-6,316+breath,12,28),Color("#bd9473"))
+	draw_rect(Rect2(x-17,299+breath,34,18),Color("#3e2b32"))
+	draw_rect(Rect2(x-14,291+breath,28,23),Color("#c38e75"))
+	draw_rect(Rect2(x-17,287+breath,34,11),Color("#5c3b36"))
+	draw_rect(Rect2(x-10,286+breath,20,5),Color("#8b5145"))
+	# Left arm rests on the counter; right hand lifts the tankard.
+	draw_rect(Rect2(x-24,327,10,18),Color("#325a55"))
+	draw_rect(Rect2(x-21,337,8,7),Color("#c59576"))
+	var mug: Vector2=Vector2(x+28-7*lift,331-22*lift)
+	draw_line(Vector2(x+20,337),mug,Color("#38645e"),9,true)
+	draw_circle(mug,5,Color("#c89577"))
+	draw_rect(Rect2(mug+Vector2(-6,-8),Vector2(14,17)),Color("#a36b3f"))
+	draw_rect(Rect2(mug+Vector2(-4,-7),Vector2(10,15)),Color("#e0aa58"))
+	draw_rect(Rect2(mug+Vector2(8,-3),Vector2(6,9)),Color("#d6a56f"),false,2)
+	draw_rect(Rect2(mug+Vector2(-7,-10),Vector2(16,4)),Color("#f6e4ba"))
+	if lift>0.8:
+		draw_rect(Rect2(x+6,307+breath,5,2),Color("#633d37"))
+	draw_rect(Rect2(x-17,347,34,4),Color("#c58c70"))
 
 func draw_card_guest(pos: Vector2, side: int) -> void:
 	var palette: Color=Color("#547e79") if side==0 else Color("#876079")
@@ -728,8 +780,16 @@ func draw_card_guest(pos: Vector2, side: int) -> void:
 	draw_rect(Rect2(pos+Vector2(-25,-31),Vector2(50,72)),Color("#211a24"))
 	draw_rect(Rect2(pos+Vector2(-22,-30),Vector2(44,64)),Color("#79544f"))
 	draw_rect(Rect2(pos+Vector2(-18,22),Vector2(36,7)),Color("#bb8971"))
+	# Seated pelvis at y~524 with bent knees and visible boots below.
+	for shoe in [-1.0,1.0]:
+		draw_rect(Rect2(pos+Vector2(shoe*13-6,27),Vector2(12,12)),palette.darkened(0.42))
+		draw_rect(Rect2(pos+Vector2(shoe*14-7,35),Vector2(14,5)),Color("#292531"))
 	draw_rect(Rect2(p+Vector2(-21,-30),Vector2(42,48)),palette.darkened(0.3))
 	draw_rect(Rect2(p+Vector2(-17,-28),Vector2(34,43)),palette)
+	# Split jacket seam/shoulders over the cushion gives a recognizable
+	# seated posture instead of an upright body hovering above its chair.
+	draw_rect(Rect2(p+Vector2(-18,12),Vector2(36,8)),palette.darkened(0.22))
+	draw_rect(Rect2(p+Vector2(-16,21),Vector2(32,5)),Color("#9e7565"))
 	draw_rect(Rect2(p+Vector2(-4,-28),Vector2(8,43)),trim)
 	draw_rect(Rect2(p+Vector2(-16,-62),Vector2(32,38)),Color("#201a23"))
 	draw_rect(Rect2(p+Vector2(-13,-58),Vector2(26,31)),Color("#d9a686") if side==0 else Color("#c58d79"))
@@ -876,7 +936,9 @@ func draw_hub() -> void:
 	draw_rect(Rect2(220,224,520,5),Color("#d0a17c"))
 	for x in Model.HUB_STOOL_X:
 		draw_bar_stool(float(x))
-	# Two named occupants stay on opposite sides of an ornate gaming table.
+	draw_bar_regular()
+	# Two gamblers genuinely sit behind the table: chair backs and bodies
+	# are layered before the felt, while their hands/cards are drawn above it.
 	draw_card_guest(Vector2(418,524),0)
 	draw_card_guest(Vector2(630,524),1)
 	# Carved table feet, dark leather apron, gold fittings and deep green felt.
@@ -905,9 +967,8 @@ func draw_hub() -> void:
 	draw_rect(Rect2(746,225,86,15),Color("#be8e79"))
 	draw_rect(Rect2(750,251,30,50),Color("#3b2c39"))
 	draw_rect(Rect2(790,251,30,50),Color("#3b2c39"))
-	# Wall lanterns now hang from the timber rail in unobstructed wall bays.
-	for i in range(HUB_LANTERN_POSITIONS.size()):
-		draw_wall_lantern(HUB_LANTERN_POSITIONS[i],i)
+	# The lanterns are rendered as a foreground overlay after the player;
+	# their open cages must not disappear behind a hero passing underneath.
 	# The hub gate is a distinct wall portal, not the dungeon route-map exit.
 	var portal: Vector2=Model.HUB_PORTAL
 	var p: Vector2=portal-Vector2(62,91)
@@ -959,6 +1020,10 @@ func draw_hub() -> void:
 	else:
 		draw_shadow(model.player,68)
 		sprite(model.character,model.player,facing,frame,68)
+	# Sconce foreground art is always drawn after actors. Each hanging
+	# cage can swing freely in front of the upper sprite without collision.
+	for i in range(HUB_LANTERN_POSITIONS.size()):
+		draw_wall_lantern(HUB_LANTERN_POSITIONS[i],i)
 
 func draw_gate() -> void:
 	var gate: Vector2=model.exit_point
@@ -1595,4 +1660,4 @@ func draw_actor(enemy: Dictionary) -> void:
 			draw_rect(Rect2(badge_pos+Vector2(4+i*5,4),Vector2(3,5)),accent if affix!="warded" else Color("#d5f4ff"))
 
 func is_ready_for_smoke() -> bool:
-	return TILES.get_width() == 256 and ACTORS["gearhound"].get_width()==256 and ACTORS["coilgunner"].get_height()==128 and ACTORS["briarling"].get_width()==256 and ACTORS["sporewitch"].get_height()==128 and ACTORS["bone_lancer"].get_width()==256 and ACTORS["crypt_oracle"].get_height()==128 and RELICS.get_width() == 1920 and RELICS.get_height() == 48 and ACTORS["dealer"].get_height() == 128 and ACTORS["warden"].get_height() == 128 and ACTORS["arcanist"].get_height() == 128 and ACTORS["soulbinder"].get_height() == 128 and torches.size() == 5 and side_lights.size() == 2 and ambient != null and boss_light != null and torches[0].range_layer_min == -1 and occluders.size() == model.walls.size() and PROPS.get_width()==432 and decor_lights.size()==4 and THRESHOLD_MAGE.get_width()==96 and THRESHOLD_MAGE.get_height()==112 and mage_light!=null 
+	return TILES.get_width() == 256 and ACTORS["gearhound"].get_width()==256 and ACTORS["coilgunner"].get_height()==128 and ACTORS["briarling"].get_width()==256 and ACTORS["sporewitch"].get_height()==128 and ACTORS["bone_lancer"].get_width()==256 and ACTORS["crypt_oracle"].get_height()==128 and RELICS.get_width() == 1920 and RELICS.get_height() == 48 and ACTORS["dealer"].get_height() == 128 and ACTORS["warden"].get_height() == 128 and torches.size() == 5 and side_lights.size() == 2 and ambient != null and boss_light != null and torches[0].range_layer_min == -1 and occluders.size() == model.walls.size() and PROPS.get_width()==432 and decor_lights.size()==4 and THRESHOLD_MAGE.get_width()==96 and THRESHOLD_MAGE.get_height()==112 and mage_light!=null and has_method("draw_bar_regular") and has_method("draw_seated_player") and has_method("draw_lantern_cage") 
