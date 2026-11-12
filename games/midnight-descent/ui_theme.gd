@@ -9,6 +9,7 @@ static var _font_rasterizer_ready := false
 # shimmering letter edges. Configure all three bundled fonts once,
 # independently of the default editor/UI font import settings.
 static func configure_fonts() -> void:
+	print("MD_FONT_BEGIN ready=%s d=%.2f b=%.2f bold=%.2f" % [str(_font_rasterizer_ready),DISPLAY_FONT.oversampling,BODY_FONT.oversampling,BOLD_FONT.oversampling])
 	if _font_rasterizer_ready: return
 	_font_rasterizer_ready=true
 	for font: FontFile in [DISPLAY_FONT,BODY_FONT,BOLD_FONT]:
@@ -18,6 +19,7 @@ static func configure_fonts() -> void:
 		font.multichannel_signed_distance_field=false
 		font.generate_mipmaps=false
 		font.oversampling=2.0
+	print("MD_FONT_END d=%.2f b=%.2f bold=%.2f" % [DISPLAY_FONT.oversampling,BODY_FONT.oversampling,BOLD_FONT.oversampling])
 const BODY_FONT: FontFile = preload("res://fonts/AlegreyaSans-Regular.ttf")
 const BOLD_FONT: FontFile = preload("res://fonts/AlegreyaSans-Bold.ttf")
 const INK := Color("#0d171a")
