@@ -674,7 +674,7 @@ func draw_wall_lantern(pos: Vector2, index: int) -> void:
 	var angle: float=sin(clock*8.2+index*0.45)*amplitude*0.16
 	draw_set_transform(pos+Vector2(0,-23),angle,Vector2.ONE)
 	draw_lantern_cage(Vector2(0,23),index)
-	draw_set_transform()
+	draw_set_transform(Vector2.ZERO)
 
 func draw_lantern_cage(pos: Vector2,index: int) -> void:
 	var flame_shift: float=roundf(sin(clock*6.5+index*1.7)*2.0)
