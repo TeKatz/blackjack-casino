@@ -71,6 +71,12 @@ var boss_soul_toast_timer := 0.0
 var camera_offset: Vector2=Vector2.ZERO
 var camera_room_key := ""
 var boss_reveal_toast := 0.0
+# Short, non-skippable presentation: pan from the player to the arena
+# guardian and return before attacks begin. Combat simulation remains in
+# its intro phase while the camera performs this move.
+const BOSS_CINEMATIC_DURATION := 3.05
+var boss_cinematic_active := false
+var boss_cinematic_elapsed := 0.0
 
 func _ready() -> void:
 	# Font atlas resampling is independent of the pixel-art world. Apply
@@ -114,6 +120,16 @@ func tr_text(en: String, de: String) -> String:
 func _physics_process(dt: float) -> void:
 	if paused or hub_panel!="" or mage_panel or input_grace>0 or hub_transition_stage!=0 or run.state in ["reward","victory","defeat","route","service"]:
 		return
+	if boss_cinematic_active:
+		# Keep the mechanical shutter closing while movement/attack input is
+		# suspended. Boss enemies are inert until boss_intro_timer expires.
+		run.tick(dt,Vector2.ZERO,run.player,false,false,false)
+		for notice in run.notices:
+			if notice in ["boss_gate_lock","boss_gate_close"]:
+				var cue: String=notice+("_grove" if run.floor_index==1 else "_crypt") if run.floor_index>0 else notice
+				play_sound(cue)
+		run.notices.clear()
+		return
 	var direction:=Vector2(float(Input.is_physical_key_pressed(KEY_D) or Input.is_physical_key_pressed(KEY_RIGHT))-float(Input.is_physical_key_pressed(KEY_A) or Input.is_physical_key_pressed(KEY_LEFT)),float(Input.is_physical_key_pressed(KEY_S) or Input.is_physical_key_pressed(KEY_DOWN))-float(Input.is_physical_key_pressed(KEY_W) or Input.is_physical_key_pressed(KEY_UP)))
 	var dash:=Input.is_physical_key_pressed(KEY_SPACE)
 	var interact:=Input.is_physical_key_pressed(KEY_E)
@@ -156,14 +172,31 @@ func _physics_process(dt: float) -> void:
 		if notice=="synergy_complete": synergy_toast_timer=2.7
 		if notice=="boss_phase": shake=maxf(shake,5.0)
 		if notice=="boss_reveal":
-			boss_reveal_toast=2.0
+			begin_boss_cinematic()
 			shake=maxf(shake,5.0)
 		if notice=="boss_soul": boss_soul_toast_timer=3.0
 		if notice=="dash_nova": shake=maxf(shake,3.0)
 	run.notices.clear()
 
+func begin_boss_cinematic() -> void:
+	boss_cinematic_elapsed=0.0
+	boss_cinematic_active=true
+	boss_reveal_toast=BOSS_CINEMATIC_DURATION
+	# Re-center the camera only after the shutter has been crossed;
+	# future model ticks do not receive any player attack/movement input.
+
+func boss_cinematic_focus() -> Vector2:
+	for enemy in run.enemies:
+		if str(enemy.kind) in ["boss","rootking","hollowking"]:
+			return enemy.pos
+	return run.boss_arena.get_center()
+
 func _process(dt: float) -> void:
 	clock += dt
+	if boss_cinematic_active and not paused:
+		boss_cinematic_elapsed=minf(BOSS_CINEMATIC_DURATION,boss_cinematic_elapsed+dt)
+		if boss_cinematic_elapsed>=BOSS_CINEMATIC_DURATION:
+			boss_cinematic_active=false
 	boss_reveal_toast=maxf(0.0,boss_reveal_toast-dt)
 	synergy_toast_timer=maxf(0,synergy_toast_timer-dt)
 	boss_soul_toast_timer=maxf(0,boss_soul_toast_timer-dt)
@@ -239,11 +272,16 @@ func update_chamber_camera(dt: float) -> void:
 	var signature: String=str(run.floor_index)+":"+str(run.room)+":"+str(run.seed_value)+":"+str(run.large_room)
 	var target: Vector2=Vector2.ZERO
 	if run.large_room:
-		# Character stays around the center, with restrained aim look-ahead.
-		# Unlike viewport clamping, this reveals the entrance corridor from
-		# the player's perspective even right at the edge of a massive arena.
+		# Pan over to the stage-specific boss, hold for the name reveal,
+		# then return to the player. No viewport clamp conceals the corridor.
 		var look_ahead: Vector2=run.aim.normalized()*37.0 if run.state=="fight" else Vector2.ZERO
 		target=Vector2(640,360)-run.player-look_ahead
+		if boss_cinematic_active:
+			var focus_offset: Vector2=Vector2(640,360)-boss_cinematic_focus()
+			var reveal: float=smoothstep(0.12,0.84,boss_cinematic_elapsed)
+			var return_to_player: float=smoothstep(2.20,2.93,boss_cinematic_elapsed)
+			var blend: float=reveal*(1.0-return_to_player)
+			target=target.lerp(focus_offset,blend)
 	if camera_room_key!=signature:
 		camera_offset=target
 		camera_room_key=signature
@@ -414,6 +452,8 @@ func _draw() -> void:
 		draw_effect(effect)
 	draw_set_transform(Vector2.ZERO)
 	draw_hud()
+	if boss_cinematic_active:
+		draw_boss_entrance_letterbox()
 	if hub_fade>0: draw_rect(Rect2(0,0,1280,720),Color(0.02,0.012,0.035,hub_fade))
 	# Critical health pulses crimson across all HUD islands and screen borders.
 	var critical: float=clampf((0.26-float(run.hp)/maxf(1.0,float(run.max_hp)))/0.26,0.0,1.0)
@@ -431,6 +471,23 @@ func _draw() -> void:
 			draw_rect(Rect2(i*5,0,5,720),tint)
 			draw_rect(Rect2(1275-i*5,0,5,720),tint)
 			draw_rect(Rect2(0,715-i*5,1280,5),tint)
+
+func draw_boss_entrance_letterbox() -> void:
+	var appear: float=smoothstep(0.0,0.38,boss_cinematic_elapsed)
+	var vanish: float=1.0-smoothstep(2.58,3.04,boss_cinematic_elapsed)
+	var visibility: float=appear*vanish
+	if visibility<=0.0: return
+	var accent: Color=[Color("#e8b884"),Color("#a7d8ad"),Color("#d7afd4")][run.floor_index]
+	draw_rect(Rect2(0,0,1280,64),Color("#081417",0.94*visibility))
+	draw_rect(Rect2(0,635,1280,85),Color("#081417",0.94*visibility))
+	draw_line(Vector2(0,63),Vector2(1280,63),Color(accent,0.65*visibility),2,true)
+	draw_line(Vector2(0,636),Vector2(1280,636),Color(accent,0.65*visibility),2,true)
+	var boss_name: String=Content.boss_name(run.floor_index,german).to_upper()
+	var title_width: float=UI.DISPLAY_FONT.get_string_size(boss_name,HORIZONTAL_ALIGNMENT_LEFT,-1,29).x
+	text_at(Vector2(640.0-title_width*0.5,671),boss_name,29,Color(accent,visibility))
+	var subtitle: String=tr_text("THE GUARDIAN AWAKENS","DER WÄCHTER ERWACHT")
+	var subtitle_width: float=UI.BOLD_FONT.get_string_size(subtitle,HORIZONTAL_ALIGNMENT_LEFT,-1,15).x
+	text_at(Vector2(640.0-subtitle_width*0.5,694),subtitle,15,Color("#f0e9dd",visibility))
 
 func hub_keycap(rect: Rect2, key_text: String, accent: Color) -> void:
 	draw_style_box(UI.panel(Color("#1b3031"),accent,0),rect)
@@ -522,6 +579,13 @@ func run_scene_smoke() -> void:
 	if overlay_state!="hub_barkeep" or overlay.get_child_count()==0:
 		get_tree().quit(30)
 		return
+	var contracts_drawn:=0
+	for candidate in modal_root.find_children("*","PanelContainer",true,false):
+		if str(candidate.get_meta("hub_choice_kind",""))=="barkeep": contracts_drawn+=1
+	if contracts_drawn!=3 or hub_accented_text("+11 special damage",Color("#8ee2b4")).find("[b]+11[/b]")<0:
+		push_error("Keeper cards lost their styled numeric effects")
+		get_tree().quit(104)
+		return
 	hub_panel=""
 	_process(0.0)
 	run.player=Vector2(790,350)
@@ -532,6 +596,13 @@ func run_scene_smoke() -> void:
 	_process(0.0)
 	if overlay_state!="hub_forge" or overlay.get_child_count()==0:
 		get_tree().quit(32)
+		return
+	var forge_cards:=0
+	for candidate in modal_root.find_children("*","PanelContainer",true,false):
+		if str(candidate.get_meta("hub_choice_kind",""))=="forge": forge_cards+=1
+	if forge_cards!=3 or hub_accented_text("Maximum HP -25%",Color("#f6a49b")).find("[b]-25%[/b]")<0:
+		push_error("Forge cards lost their risk/value emphasis")
+		get_tree().quit(105)
 		return
 	hub_panel=""
 	_process(0.0)
@@ -884,6 +955,26 @@ func run_scene_smoke() -> void:
 			push_error("Walking through the boss arch failed to initiate the reveal")
 			get_tree().quit(45)
 			return
+		begin_boss_cinematic()
+		if not boss_cinematic_active or boss_cinematic_elapsed!=0.0: 
+			push_error("Boss intro cinematic was not started")
+			get_tree().quit(96)
+			return
+		boss_cinematic_elapsed=1.30
+		update_chamber_camera(1.0)
+		var expected_focus: Vector2=Vector2(640,360)-boss_cinematic_focus()
+		if camera_offset.distance_to(expected_focus)>2:
+			push_error("Boss camera did not focus on the actual guardian")
+			get_tree().quit(97)
+			return
+		boss_cinematic_elapsed=2.99
+		update_chamber_camera(1.0)
+		if camera_offset.distance_to(Vector2(640,360)-run.player)>48:
+			push_error("Boss camera failed to return to the player")
+			get_tree().quit(98)
+			return
+		boss_cinematic_active=false
+		boss_cinematic_elapsed=0.0
 	run.state="fight"
 	run.room_kind="ritual"
 	run.wave_total=3
@@ -1764,6 +1855,88 @@ func service_intro() -> String:
 		"forge": return tr_text("The royal forge still burns. Temper your equipment.","Die königliche Schmiede brennt noch. Härte deine Ausrüstung.")
 	return ""
 
+func hub_accented_text(value: String,accent: Color) -> String:
+	# RichTextLabel keeps prose readable while emphasizing quantities such
+	# as +40%, -25% and 30 Shards, in both English and German.
+	var regex:=RegEx.new()
+	regex.compile("([+\\-]?[0-9]+(?:[.,][0-9]+)?%?)")
+	return regex.sub(value,"[color=#"+accent.to_html(false)+"][b]$1[/b][/color]",true)
+
+func hub_rich_line(parent: Control,value: String,accent: Color,size: int=15) -> RichTextLabel:
+	var rich:=RichTextLabel.new()
+	rich.bbcode_enabled=true
+	rich.text=hub_accented_text(value,accent)
+	rich.fit_content=true
+	rich.scroll_active=false
+	rich.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	rich.custom_minimum_size=Vector2(0,23)
+	rich.add_theme_font_override("normal_font",UI.BODY_FONT)
+	rich.add_theme_font_override("bold_font",UI.BOLD_FONT)
+	rich.add_theme_font_size_override("normal_font_size",size)
+	rich.add_theme_font_size_override("bold_font_size",size)
+	rich.add_theme_color_override("default_color",WHITE)
+	parent.add_child(rich)
+	return rich
+
+func hub_offer_card(parent: Control,choice: String,forge: bool) -> void:
+	var data: Dictionary=Model.FORGE_DATA[choice] if forge else Model.CONTRACT_DATA[choice]
+	var accent: Color=Color("#e4a573") if forge else Color("#b9d7ac")
+	var card:=PanelContainer.new()
+	card.custom_minimum_size=Vector2(0,104)
+	card.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	var surface: StyleBoxFlat=UI.panel(Color("#263333") if forge else Color("#1e3533"),accent,13)
+	surface.shadow_size=8
+	surface.shadow_offset=Vector2(0,4)
+	card.add_theme_stylebox_override("panel",surface)
+	card.set_meta("hub_choice_kind","forge" if forge else "barkeep")
+	parent.add_child(card)
+	var row:=HBoxContainer.new()
+	row.add_theme_constant_override("separation",15)
+	card.add_child(row)
+	var icon:=TextureRect.new()
+	icon.texture=UI.atlas(UI.RELICS,4 if forge else 13)
+	icon.texture_filter=CanvasItem.TEXTURE_FILTER_NEAREST
+	icon.custom_minimum_size=Vector2(42,48)
+	icon.expand_mode=TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	row.add_child(icon)
+	var detail:=VBoxContainer.new()
+	detail.add_theme_constant_override("separation",3)
+	detail.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	detail.custom_minimum_size=Vector2(410,0)
+	row.add_child(detail)
+	var title:=Label.new()
+	title.text=str(data["de" if german else "en"])
+	title.add_theme_font_override("font",UI.BOLD_FONT)
+	title.add_theme_font_size_override("font_size",19)
+	title.add_theme_color_override("font_color",Color("#f6e7c9"))
+	detail.add_child(title)
+	var objective: String=str(data["de_effect" if german else "en_effect"]) if forge else str(data["de_goal" if german else "en_goal"])
+	hub_rich_line(detail,objective,accent,15)
+	var consequence: String=tr_text("COST • ","PREIS • ")+str(data["de_cost" if german else "en_cost"]) if forge else tr_text("REWARD • ","BELOHNUNG • ")+str(data["de_reward" if german else "en_reward"])
+	hub_rich_line(detail,consequence,Color("#f6a49b") if forge else Color("#8ee2b4"),14)
+	var chosen: String=choice
+	var choose_action: Callable=func():
+		if forge: choose_hub_forge(chosen)
+		else: choose_hub_contract(chosen)
+	var action:=add_button(row,tr_text("BIND","BINDEN") if forge else tr_text("ACCEPT","ANNEHMEN"),choose_action)
+	action.custom_minimum_size=Vector2(136,55)
+	action.add_theme_font_size_override("font_size",17)
+	UI.style_button(action,accent,true)
+
+func hub_selected_card(parent: Control,heading: String,summary: String,detail: String,forge: bool) -> void:
+	var accent: Color=Color("#e4a573") if forge else Color("#91ddb4")
+	var shell:=PanelContainer.new()
+	shell.add_theme_stylebox_override("panel",UI.panel(Color("#253835"),accent,17))
+	shell.custom_minimum_size=Vector2(0,170)
+	parent.add_child(shell)
+	var stack:=VBoxContainer.new()
+	stack.add_theme_constant_override("separation",11)
+	shell.add_child(stack)
+	add_label(stack,heading,25,accent)
+	hub_rich_line(stack,summary,Color("#a8efd1") if not forge else Color("#f0c48d"),17)
+	hub_rich_line(stack,detail,Color("#f4a49b") if forge else Color("#a3d6ab"),16)
+
 func rebuild_overlay() -> void:
 	if is_instance_valid(modal_tween): modal_tween.kill()
 	if is_instance_valid(modal_root):
@@ -1823,44 +1996,26 @@ func rebuild_overlay() -> void:
 	match overlay_state:
 		"hub_barkeep":
 			add_label(column,tr_text("KEEPER'S CONTRACTS","AUFTRÄGE DES WIRTS"),30,GOLD)
+			add_label(column,tr_text("Choose one oath for this expedition. A completed oath grants a permanent-for-this-run reward.","Wähle einen Auftrag für diese Expedition. Nach Erfüllung erhältst du eine Belohnung für diesen Run."),15,MUTED)
 			if run.contract_id=="":
-				add_label(column,tr_text("One optional contract per expedition. The reward is granted immediately when completed.","Ein optionaler Auftrag pro Expedition. Die Belohnung erhältst du sofort beim Abschluss."),15,WHITE)
 				for id in run.contract_offers:
-					var choice: String=id
-					var data: Dictionary=Model.CONTRACT_DATA[choice]
-					var caption: String=str(data["de" if german else "en"])+"\n"+str(data["de_goal" if german else "en_goal"])+"\n"+str(data["de_reward" if german else "en_reward"])
-					var option:=add_button(column,caption,func(): choose_hub_contract(choice))
-					option.custom_minimum_size=Vector2(0,92)
-					option.add_theme_font_size_override("font_size",15)
-					option.alignment=HORIZONTAL_ALIGNMENT_LEFT
-					UI.style_button(option,GOLD)
+					hub_offer_card(column,str(id),false)
 			else:
 				var data: Dictionary=Model.CONTRACT_DATA[run.contract_id]
-				add_label(column,str(data["de" if german else "en"]),23,GOLD)
-				add_label(column,str(data["de_goal" if german else "en_goal"]),17,WHITE)
-				add_label(column,"%d / %d" % [run.contract_progress,int(data["goal"])],24,Color("#96ddb8"))
-				add_label(column,tr_text("COMPLETED • Reward granted","ABGESCHLOSSEN • Belohnung erhalten") if run.contract_completed else str(data["de_reward" if german else "en_reward"]),16,MUTED)
+				hub_selected_card(column,str(data["de" if german else "en"])+("  ✓" if run.contract_completed else ""),str(data["de_goal" if german else "en_goal"]),str(data["de_reward" if german else "en_reward"]),false)
+				add_label(column,"%d / %d" % [run.contract_progress,int(data["goal"])],26,Color("#9ae0b2"))
 			var leave_keeper:=add_button(column,tr_text("Leave keeper","Wirt verlassen"),func(): close_hub_panel())
 			UI.style_button(leave_keeper,GOLD,true)
 		"hub_forge":
 			add_label(column,tr_text("FORGE OF FATE","SCHICKSALSSCHMIEDE"),30,Color("#e8a879"))
+			add_label(column,tr_text("ONE binding per run • tremendous power • a lasting price.","EINE Bindung pro Run • enorme Macht • ein bleibender Preis."),15,MUTED)
 			if run.forge_id=="":
-				add_label(column,tr_text("Choose ONE dramatic modification for this run. Every power comes at a serious cost.","Wähle EINE mächtige Veränderung für diesen Run. Jede Macht hat einen hohen Preis."),15,WHITE)
 				for id in run.forge_offers:
-					var choice: String=id
-					var data: Dictionary=Model.FORGE_DATA[choice]
-					var caption: String=str(data["de" if german else "en"])+"\n"+str(data["de_effect" if german else "en_effect"])+"\n"+str(data["de_cost" if german else "en_cost"])
-					var option:=add_button(column,caption,func(): choose_hub_forge(choice))
-					option.custom_minimum_size=Vector2(0,96)
-					option.add_theme_font_size_override("font_size",15)
-					option.alignment=HORIZONTAL_ALIGNMENT_LEFT
-					UI.style_button(option,Color("#e8a879"))
+					hub_offer_card(column,str(id),true)
 			else:
 				var data: Dictionary=Model.FORGE_DATA[run.forge_id]
 				add_label(column,tr_text("BOUND TO THIS RUN","FÜR DIESEN RUN GEBUNDEN"),16,GOLD)
-				add_label(column,str(data["de" if german else "en"]),24,Color("#e8a879"))
-				add_label(column,str(data["de_effect" if german else "en_effect"]),17,WHITE)
-				add_label(column,str(data["de_cost" if german else "en_cost"]),16,Color("#f1a8a0"))
+				hub_selected_card(column,str(data["de" if german else "en"]),str(data["de_effect" if german else "en_effect"]),tr_text("COST • ","PREIS • ")+str(data["de_cost" if german else "en_cost"]),true)
 			var leave_forge:=add_button(column,tr_text("Leave forge","Schmiede verlassen"),func(): close_hub_panel())
 			UI.style_button(leave_forge,Color("#e8a879"),true)
 		"relics":

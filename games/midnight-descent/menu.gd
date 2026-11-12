@@ -46,6 +46,9 @@ var preview_info: Label
 var german := false
 var page := "home"
 var body: VBoxContainer
+var loadout_primary_action: Button
+var loadout_unlock_action: Button
+var loadout_use_action: Button
 var title_label: Label
 var detail_label: Label
 var chosen := "warden"
@@ -334,6 +337,9 @@ func add_action(caption: String, callback: Callable, locked: bool = false) -> Bu
 func show_page(next: String) -> void:
 	if page!=next: audio.play("navigate")
 	page = next
+	loadout_primary_action=null
+	loadout_unlock_action=null
+	loadout_use_action=null
 	content_panel.custom_minimum_size=Vector2(790 if page in ["progress","expedition","sets"] else 620,0)
 	preview_panel.visible=page!="home"
 	preview_panel.size_flags_vertical=Control.SIZE_FILL if page in ["expedition","sets"] else Control.SIZE_SHRINK_END
@@ -494,29 +500,57 @@ func build_loadout_grid() -> void:
 	var spec: Dictionary=Content.SETS[inspected_set]
 	var required: String=Content.required_set(inspected_set)
 	if page=="expedition":
-		var primary:=add_action(tr_text("START EXPEDITION  ›","EXPEDITION STARTEN  ›"),start_run,not owned)
-		primary.custom_minimum_size=Vector2(0,60)
-		primary.add_theme_font_size_override("font_size",24)
-		UI.style_button(primary,GOLD,true)
-		if not owned:
-			primary.text=tr_text("Unlock this set in Loadouts","Schalte dieses Set unter Start-Sets frei")
+		loadout_primary_action=add_action(tr_text("START EXPEDITION  ›","EXPEDITION STARTEN  ›"),start_run,not owned)
+		loadout_primary_action.custom_minimum_size=Vector2(0,60)
+		loadout_primary_action.add_theme_font_size_override("font_size",24)
 	else:
-		var available: bool=not owned and progress.essence>=int(spec.cost) and (required.is_empty() or progress.unlocked.has(required))
-		var caption: String=tr_text("Unlock selected set","Ausgewähltes Set freischalten")+"  •  "+str(spec.cost)
-		if owned: caption=tr_text("Already unlocked","Bereits freigeschaltet")
-		elif not required.is_empty() and not progress.unlocked.has(required): caption=tr_text("Requires ","Benötigt ")+Content.loadout_display_name(required,german)
-		var unlock:=add_action(caption,func(): buy_set(inspected_set),not available)
-		UI.style_button(unlock,GOLD,available)
-		unlock.custom_minimum_size=Vector2(0,54)
-		if owned: add_action(tr_text("Use in expedition  ›","In Expedition verwenden  ›"),func(): inspect_loadout(inspected_set); show_page("expedition"))
+		loadout_unlock_action=add_action("",func(): buy_set(inspected_set))
+		loadout_unlock_action.custom_minimum_size=Vector2(0,54)
+		loadout_use_action=add_action(tr_text("Use in expedition  ›","In Expedition verwenden  ›"),func(): inspect_loadout(inspected_set); show_page("expedition"))
+	refresh_loadout_inspection()
+
+func refresh_loadout_inspection() -> void:
+	# Selection changes repaint the eight existing cards *in place*.
+	# Calling show_page(page) here used to destroy/recreate every widget,
+	# replay the whole-page fade and flash the entire screen on each click.
+	var keys: Array=Content.SETS.keys()
+	for index in range(loadout_cards.size()):
+		var key: String=str(keys[index])
+		var spec: Dictionary=Content.SETS[key]
+		var card: Button=loadout_cards[index]
+		var owned: bool=progress.unlocked.has(key)
+		var tint: Color={"warden":GOLD,"dealer":Color("#d69fa0"),"arcanist":Color("#95bad5"),"soulbinder":Color("#9acbb0")}[spec.character]
+		card.text=Content.character_name(spec.character,german)+" / "+Content.loadout_display_name(key,german)+"\n"+(tr_text("Equipped","Ausgewählt") if progress.selected==key else (tr_text("Unlocked","Freigeschaltet") if owned else tr_text("Locked","Gesperrt")+"  •  "+str(spec.cost)+" "+tr_text("essence","Essenz")))
+		UI.style_button(card,tint,key==inspected_set)
+	var selected_owned: bool=progress.unlocked.has(inspected_set)
+	var selected_spec: Dictionary=Content.SETS[inspected_set]
+	var required: String=Content.required_set(inspected_set)
+	if is_instance_valid(loadout_primary_action):
+		loadout_primary_action.disabled=not selected_owned
+		loadout_primary_action.text=tr_text("START EXPEDITION  ›","EXPEDITION STARTEN  ›") if selected_owned else tr_text("Unlock this set in Loadouts","Schalte dieses Set unter Start-Sets frei")
+		UI.style_button(loadout_primary_action,GOLD,selected_owned)
+	if is_instance_valid(loadout_unlock_action):
+		var purchasable: bool=not selected_owned and progress.essence>=int(selected_spec.cost) and (required.is_empty() or progress.unlocked.has(required))
+		var description: String=tr_text("Unlock selected set","Ausgewähltes Set freischalten")+"  •  "+str(selected_spec.cost)
+		if selected_owned: description=tr_text("Already unlocked","Bereits freigeschaltet")
+		elif not required.is_empty() and not progress.unlocked.has(required): description=tr_text("Requires ","Benötigt ")+Content.loadout_display_name(required,german)
+		loadout_unlock_action.text=description
+		loadout_unlock_action.disabled=not purchasable
+		UI.style_button(loadout_unlock_action,GOLD,purchasable)
+	if is_instance_valid(loadout_use_action):
+		loadout_use_action.visible=selected_owned
 	update_preview()
 
 func inspect_loadout(id: String) -> void:
+	if not Content.SETS.has(id) or id==inspected_set: return
 	inspected_set=id
 	if progress.unlocked.has(id) and page=="expedition":
 		progress.selected=id
 		if not visual_smoke: progress.save()
-	show_page(page)
+	if page in ["expedition","sets"] and loadout_cards.size()==8:
+		refresh_loadout_inspection()
+	else:
+		show_page(page)
 
 func start_run() -> void:
 	if cinematic_playing or not progress.unlocked.has(inspected_set): return
@@ -577,6 +611,24 @@ func smoke_test() -> void:
 		return
 	if loadout_cards.size()!=8 or preview_sprite.texture==null:
 		get_tree().quit(1)
+		return
+	# Changing the inspected hero must not replace the entire menu tree
+	# or restart its opacity tween. Unlocked/locked states update in-place.
+	show_page("expedition")
+	await get_tree().process_frame
+	var original_grid_card: Button=loadout_cards[0]
+	var old_page_tween: Tween=page_tween
+	inspected_set="warden_guard"
+	progress.unlocked.append("dealer_cards")
+	inspect_loadout("dealer_cards")
+	if loadout_cards[0]!=original_grid_card or inspected_set!="dealer_cards" or progress.selected!="dealer_cards" or page_tween!=old_page_tween or loadout_primary_action.disabled:
+		push_error("Loadout selection rebuilt/flickered the menu UI")
+		get_tree().quit(68)
+		return
+	inspect_loadout("arcanist_fire")
+	if loadout_cards[0]!=original_grid_card or not loadout_primary_action.disabled or progress.selected!="dealer_cards":
+		push_error("Locked loadout did not update without a page fade")
+		get_tree().quit(69)
 		return
 	show_page("progress")
 	if tree.nodes.size()!=34 or tree_buy.disabled==false:

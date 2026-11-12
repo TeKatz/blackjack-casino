@@ -15,6 +15,10 @@ const HUB_BARTENDER_POINT := Vector2(482,326)
 const HUB_FORGE_POINT := Vector2(790,329)
 const HUB_SERVICE_RANGE := 104.0
 const HUB_STOOL_X := [275.0,380.0,485.0,590.0,695.0]
+const HUB_PATRON_STOOL := 4 # Reserved for the drinking regular.
+const HUB_LANTERN_ANCHORS := [Vector2(164,198),Vector2(900,198),Vector2(1168,198)]
+const HUB_LANTERN_SIZE := Vector2(36,64)
+const BOSS_HEALTH_MULTIPLIER := 2.85
 const HUB_CARD_GUEST_LEFT := Rect2(393,468,49,93)
 const HUB_CARD_GUEST_RIGHT := Rect2(607,468,49,93)
 const HUB_SEAT_HOLD := 1.0
@@ -111,6 +115,8 @@ var hub_seat_target := -1
 var hub_seat_hold := 0.0
 var hub_seat_anim := 0.0
 var hub_seat_released := false
+var hub_lantern_swing: Array[float]=[0.0,0.0,0.0]
+var hub_lantern_cooldown: Array[float]=[0.0,0.0,0.0]
 var aim := Vector2.RIGHT
 var player_motion := Vector2.ZERO
 var hp := 100.0
@@ -598,6 +604,8 @@ func enter_hub() -> void:
 	hub_seat_hold=0.0
 	hub_seat_anim=0.0
 	hub_seat_released=false
+	hub_lantern_swing.assign([0.0,0.0,0.0])
+	hub_lantern_cooldown.assign([0.0,0.0,0.0])
 	aim=Vector2.RIGHT
 	attack_timer=0.0
 	bolt_timer=0.0
@@ -614,6 +622,8 @@ func enter_hub() -> void:
 	# Each volume extends over the entire visual footprint. The bar and forge
 	# meet the northern arena limit so neither can be bypassed from behind.
 	walls.append_array([HUB_BAR,HUB_FORGE,HUB_TABLE,HUB_GATE_FRAME,HUB_CARD_GUEST_LEFT,HUB_CARD_GUEST_RIGHT])
+	for anchor in HUB_LANTERN_ANCHORS:
+		walls.append(Rect2(anchor-Vector2(HUB_LANTERN_SIZE.x*0.5,26),HUB_LANTERN_SIZE))
 
 func reset_hub_stool_hold() -> void:
 	hub_seat_target=-1
@@ -626,6 +636,7 @@ func update_hub_stool(dt: float, direction: Vector2) -> void:
 	# Walking past the bar or briefly tapping toward it never seats the player.
 	if direction.y < -0.75 and absf(direction.x)<0.35 and player.y>=HUB_BAR.end.y+14.5 and player.y<=HUB_BAR.end.y+20.0:
 		for i in range(HUB_STOOL_X.size()):
+			if i==HUB_PATRON_STOOL: continue
 			if absf(player.x-float(HUB_STOOL_X[i]))<=21.0:
 				candidate=i
 				break
@@ -640,7 +651,7 @@ func update_hub_stool(dt: float, direction: Vector2) -> void:
 		hub_seat_index=candidate
 		hub_seat_anim=0.0
 		hub_seat_released=false
-		player=Vector2(float(HUB_STOOL_X[candidate]),HUB_BAR.end.y+15.0)
+		player=Vector2(float(HUB_STOOL_X[candidate]),HUB_BAR.end.y+19.0)
 		reset_hub_stool_hold()
 
 func hub_bartender_available() -> bool:
@@ -1380,7 +1391,9 @@ func spawn_enemy(kind: String, pos: Vector2, affix: String="") -> void:
 	if kind=="ritual_anchor":
 		health=110+floor_index*40
 		radius=28.0
-	if kind in ["boss","rootking","hollowking"]: health*=1.5625 # +25% compared with the previous boss HP
+	if kind in ["boss","rootking","hollowking"]: health*=BOSS_HEALTH_MULTIPLIER
+	# Longer multiphase boss fights are the intended endurance test;
+	# ordinary enemies keep their established health and pacing.
 	else: health*=1.0+float(encounter_threat)*0.16
 	pos = safe_position(pos,radius)
 	# Move spawn points out of solid pillars before the enemy becomes active.
@@ -1476,6 +1489,9 @@ func navigation_direction(pos: Vector2, fallback: Vector2) -> Vector2:
 
 func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: bool, dash: bool, active: bool = false) -> void:
 	if state=="hub":
+		for i in range(HUB_LANTERN_ANCHORS.size()):
+			hub_lantern_swing[i]=maxf(0.0,hub_lantern_swing[i]-dt*0.80)
+			hub_lantern_cooldown[i]=maxf(0.0,hub_lantern_cooldown[i]-dt)
 		if target.distance_to(player)>4: aim=player.direction_to(target)
 		if hub_seat_index>=0:
 			hub_seat_anim=minf(1.0,hub_seat_anim+dt/0.22)
@@ -1493,6 +1509,13 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 		var motion: Vector2=direction.limit_length()*speed*dt
 		var steps: int=maxi(1,ceili(motion.length()/8.0))
 		for step in range(steps):
+			var proposed: Vector2=player+motion/float(steps)
+			for i in range(HUB_LANTERN_ANCHORS.size()):
+				var anchor: Vector2=HUB_LANTERN_ANCHORS[i]
+				var lamp: Rect2=Rect2(anchor-Vector2(HUB_LANTERN_SIZE.x*0.5,26),HUB_LANTERN_SIZE).grow(15)
+				if lamp.has_point(proposed) and hub_lantern_cooldown[i]<=0.0:
+					hub_lantern_swing[i]=1.0
+					hub_lantern_cooldown[i]=0.48
 			player=move_actor(player,motion/float(steps),15)
 		update_hub_stool(dt,direction)
 		return
@@ -1554,7 +1577,7 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 			notices.append("dash_nova")
 	if large_room and room_kind=="boss" and not boss_awake and player.x>=boss_trigger_x:
 		boss_awake=true
-		boss_intro_timer=1.85
+		boss_intro_timer=3.25
 		boss_gate_state="closing"
 		boss_gate_time=0.0
 		notices.append("boss_gate_close")
@@ -2850,6 +2873,52 @@ func boss_gate_smoke() -> bool:
 			return false
 	return true
 
+func hub_polish_smoke() -> bool:
+	begin(73001)
+	if walls.size()!=9: return false
+	if HUB_STOOL_X.size()!=5 or HUB_PATRON_STOOL!=4: return false
+	for index in range(HUB_LANTERN_ANCHORS.size()):
+		var anchor: Vector2=HUB_LANTERN_ANCHORS[index]
+		if not blocked(anchor,15): return false
+		player=anchor+Vector2(0,79)
+		tick(0.2,Vector2.UP,HUB_PORTAL,false,false,false)
+		if player.y<anchor.y+55 or hub_lantern_swing[index]<=0.0: return false
+		var before: float=hub_lantern_swing[index]
+		tick(0.3,Vector2.ZERO,HUB_PORTAL,false,false,false)
+		if hub_lantern_swing[index]>=before: return false
+	player=Vector2(HUB_STOOL_X[HUB_PATRON_STOOL],HUB_BAR.end.y+19)
+	for step in range(75):
+		tick(0.016,Vector2.UP,HUB_PORTAL,false,false,false)
+	if hub_seat_index>=0: return false
+	player=Vector2(HUB_STOOL_X[1],HUB_BAR.end.y+19)
+	for step in range(75):
+		tick(0.016,Vector2.UP,HUB_PORTAL,false,false,false)
+	if hub_seat_index!=1: return false
+	for step in range(18):
+		tick(0.016,Vector2.ZERO,HUB_PORTAL,false,false,false)
+	if hub_seat_anim<0.99: return false
+	return true
+
+func boss_health_polish_smoke() -> bool:
+	for floor in range(FLOOR_COUNT):
+		begin(73110+floor)
+		floor_index=floor
+		dungeon.generate(seed_value,floor)
+		room=Dungeon.BOSS
+		enter_room()
+		var champion: Dictionary={}
+		for enemy in enemies:
+			if str(enemy.kind) in ["boss","rootking","hollowking"]: champion=enemy
+		if champion.is_empty(): return false
+		var old_base: float=[430.0,680.0,970.0][floor]*(1.25+0.25*floor)*1.5625
+		if float(champion.max_hp)<old_base*1.75 or float(champion.hp)!=float(champion.max_hp): return false
+		player=Vector2(boss_trigger_x+130,boss_arena.get_center().y)
+		tick(0.016,Vector2.ZERO,boss_arena.get_center(),false,false,false)
+		if not boss_awake or boss_intro_timer<3.0: return false
+		hit_enemy(champion,999999)
+		if absf(float(champion.hp)/float(champion.max_hp)-0.68)>0.002: return false
+	return true
+
 func difficulty_smoke() -> bool:
 	# Heal is finite, does not spend a charge at full HP, and refills on descent.
 	begin(5150,"warden_guard")
@@ -3183,13 +3252,20 @@ func smoke_test() -> bool:
 	if not difficulty_smoke():
 		push_error("Regression failed: difficulty_smoke (healing, elites, bosses or game over)")
 		return false
+	if not hub_polish_smoke():
+		push_error("Regression failed: hub_polish_smoke (lantern collision, seating)")
+		return false
+	if not boss_health_polish_smoke():
+		push_error("Regression failed: boss_health_polish_smoke")
+		return false
 	begin(123,"dealer_cards")
 	if state!="hub" or visited_count!=0 or dungeon.nodes[0].visited or not enemies.is_empty(): return false
 	if large_room or room_bounds!=ARENA or room_regions.size()!=0 or exit_point!=EXIT: return false
 	if boss_gate.has_area() or boss_gate_state!="open": return false
-	if walls.size()!=6 or not blocked(HUB_BAR.get_center(),15) or not blocked(HUB_FORGE.get_center(),15) or not blocked(HUB_TABLE.get_center(),15) or not blocked(HUB_PORTAL,15): return false
+	if walls.size()!=9 or not blocked(HUB_BAR.get_center(),15) or not blocked(HUB_FORGE.get_center(),15) or not blocked(HUB_TABLE.get_center(),15) or not blocked(HUB_PORTAL,15): return false
 	if not blocked(HUB_CARD_GUEST_LEFT.get_center(),15) or not blocked(HUB_CARD_GUEST_RIGHT.get_center(),15): return false
 	for seat in range(HUB_STOOL_X.size()):
+		if seat==HUB_PATRON_STOOL: continue
 		player=Vector2(float(HUB_STOOL_X[seat]),344)
 		reset_hub_stool_hold()
 		for tick_index in range(59):

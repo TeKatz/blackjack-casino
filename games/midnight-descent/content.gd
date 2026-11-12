@@ -57,7 +57,7 @@ const RELICS := {
 	"frostfire":["Frostfire Sigil","Frostfeuersiegel","Burning chilled foes take +8 damage per hit","Brennende unterkühlte Gegner erleiden +8 Schaden",43],
 	"soulstorm":["Soulstorm","Seelensturm","Kills release 3 spirit bolts","Kills erzeugen 3 Seelengeschosse",44],
 	"overcharge":["Overcharge Coil","Überladungsspule","Every fourth special attack deals double damage","Jeder vierte Spezialangriff verursacht doppelten Schaden",45],
-	"bounty":["Bounty Seal","Kopfgeldsiegel","Elite and boss kills award +10 shards","Elite- und Bosskills geben +10 Splitter",46],
+	"bounty":["Bounty Seal","Kopfgeldsiegel","Elite and boss kills award +5 shards","Elite- und Bosskills geben +5 Splitter",46],
 	"sacrifice":["Crimson Crown","Blutkrone","+20% damage, lose 2 HP on new combat rooms","+20 % Schaden, -2 LP bei neuen Kampfräumen",47],
 	"w_bastion":["Thorn Bastion","Dornenbastion","Taking damage strikes nearby enemies.","Bei Treffern erleiden nahe Gegner Gegenschaden.",48],
 	"w_oath":["Oathstone","Eidstein","Every 4 kills grants brief protection.","Alle 4 Kills gewähren kurz Schutz.",49],
