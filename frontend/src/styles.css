@@ -803,3 +803,36 @@ html,body,#root{height:100%;overflow:hidden}
  .manor-godot-surface.is-active{animation:none!important}
  .manor-godot-door-choice{transition:none!important}
 }
+
+
+/* The three betting actions are peers: stake -> primary spin -> auto spin.
+   None of these columns relies on inline widths or the slot canvas height. */
+@media(min-width:961px){
+ .machine .action-console{grid-template-columns:minmax(225px,1.22fr) minmax(150px,.85fr) minmax(165px,.95fr);
+  align-items:stretch;gap:10px;min-height:122px}
+ .machine .stake-control{align-self:center}
+ .machine .main-actions{height:100%;align-items:stretch;justify-content:center;min-width:0}
+ .machine .main-actions .gold-button{width:100%;min-height:80px;white-space:normal}
+ .machine .auto-spin-controls{display:flex;flex-direction:column;align-items:stretch;
+  justify-content:center;gap:9px;min-width:0}
+ .machine .auto-buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  width:100%;gap:5px;flex:0 0 auto}
+ .machine .auto-chip{width:100%;min-width:0;min-height:32px}
+ .machine .auto-chip.auto-stop{grid-column:1/-1}
+}
+@media(min-width:961px) and (max-height:760px){
+ .machine .action-console{min-height:101px;gap:8px;padding:5px 4px 2px}
+ .machine .main-actions .gold-button{min-height:64px}
+ .machine .auto-spin-controls{gap:5px}
+ .machine .auto-chip{min-height:25px}
+}
+@media(max-width:960px){
+ .machine .action-console{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+ .machine .auto-spin-controls{grid-column:1/-1;display:flex;flex-direction:row;align-items:center}
+ .machine .auto-buttons{flex:1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+ .machine .auto-chip.auto-stop{grid-column:span 2}
+}
+@media(max-width:720px){
+ .machine .action-console{grid-template-columns:minmax(0,1fr)}
+ .machine .auto-spin-controls{grid-column:auto}
+}
