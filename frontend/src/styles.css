@@ -1346,3 +1346,126 @@ button.manor-godot-item.usable:focus-visible {
 .manor-godot-surface.no-motion .manor-godot-ghost-presence,
 .manor-godot-surface.no-motion .manor-godot-ward-flare,
 .manor-godot-surface.no-motion .manor-godot-conclusion {animation:none!important}
+
+
+/* Desktop layout v2: one consistent control deck, measured against the actual
+   MACHINE width (not the window width including the unrelated account sidebar).
+   Explicit slots stop older screen-width media rules from scattering Auto Spin. */
+.machine{container:manor-machine / inline-size}
+.machine .action-console{
+ display:grid;grid-template-areas:"wager primary auto";
+ grid-template-columns:minmax(0,1.38fr) minmax(0,.87fr) minmax(0,.92fr);
+ align-items:stretch;gap:12px;min-height:118px;
+ padding:11px 12px;margin:0;
+ border:1px solid #8c79644d;border-radius:11px;
+ background:linear-gradient(150deg,#231d2bbf,#101824e8 64%,#1a2029dd);
+ box-shadow:inset 0 1px #f3d39a19,0 6px 18px #0003;
+}
+.machine .manor-wager-panel{grid-area:wager;min-width:0;display:flex;
+ flex-direction:column;justify-content:center;gap:7px;padding:0}
+.machine .manor-wager-panel .bet-input{width:100%;max-width:none;min-height:40px}
+.machine .manor-wager-panel .bet-input input{width:100%;min-width:0;font-size:clamp(16px,1.3vw,21px)}
+.machine .manor-wager-panel .preset-bets{
+ display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px;width:100%;
+}
+.machine .manor-wager-panel .bet-chip{min-width:0;min-height:32px;padding:6px 2px;
+ font-variant-numeric:tabular-nums;white-space:nowrap}
+.machine .manor-primary-panel{grid-area:primary;display:flex;min-width:0;height:auto;
+ align-items:stretch;justify-content:stretch}
+.machine .manor-primary-panel>.gold-button{flex:1;min-width:0;width:100%;
+ height:100%;min-height:84px;padding:10px 13px;line-height:1.25;
+ font-size:clamp(12px,1.2vw,16px);white-space:normal}
+.machine .manor-autoplay-panel{grid-area:auto;min-width:0;min-height:0;
+ display:flex;flex-direction:column;align-items:stretch;justify-content:center;
+ flex-wrap:nowrap;gap:8px}
+.machine .manor-autoplay-panel .auto-label{display:block;font-size:10px;
+ white-space:normal;line-height:1.35;letter-spacing:.07em}
+.machine .manor-autoplay-panel .auto-buttons{display:grid;
+ grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;width:100%;
+ flex:0 0 auto;justify-content:stretch}
+.machine .manor-autoplay-panel .auto-chip{width:100%;min-width:0;
+ min-height:34px;white-space:nowrap;padding:5px 4px}
+.machine .manor-autoplay-panel .auto-stop{grid-column:1/-1}
+/* Narrow content, e.g. 1080px desktop with 255px account panel: controls
+   intentionally form two rows rather than crushing the six wager presets. */
+@container manor-machine (max-width:850px){
+ .machine .action-console{grid-template-areas:"wager primary" "auto auto";
+   grid-template-columns:minmax(0,1.4fr) minmax(155px,.75fr);gap:9px;
+   min-height:0;padding:9px 10px}
+ .machine .manor-primary-panel>.gold-button{min-height:79px}
+ .machine .manor-autoplay-panel{display:grid;grid-template-columns:auto minmax(0,1fr);
+   gap:10px;align-items:center}
+ .machine .manor-autoplay-panel .auto-buttons{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .machine .manor-autoplay-panel .auto-stop{grid-column:1/-1}
+ .machine .manor-wager-panel .bet-chip{min-height:29px}
+}
+@container manor-machine (max-width:580px){
+ .machine .action-console{grid-template-areas:"wager" "primary" "auto";
+   grid-template-columns:minmax(0,1fr);gap:8px}
+ .machine .manor-primary-panel>.gold-button{min-height:42px}
+ .machine .manor-autoplay-panel{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-height:760px){
+ .machine .action-console{gap:8px;padding:6px 9px;min-height:0}
+ .machine .manor-primary-panel>.gold-button{min-height:56px;padding:8px 12px}
+ .machine .manor-wager-panel .bet-input{min-height:36px;padding:6px 9px}
+ .machine .manor-wager-panel .bet-chip,.machine .manor-autoplay-panel .auto-chip{min-height:28px}
+}
+@media(prefers-reduced-motion:reduce){
+ .machine .action-console *{transition:none!important}
+}
+
+/* The old room dressing sat BEHIND the solid Pixi canvas. The new wall
+   architecture occupies only the visible side gutters, at the same paint
+   level as the reels but clipped outside their exact 960:500 viewport. */
+.slot-viewport .manor-room-dressing{z-index:2;background:none;isolation:isolate}
+.slot-viewport .manor-room-dressing::before,
+.slot-viewport .manor-room-dressing::after{display:none}
+.manor-side-rail{
+ position:absolute;top:0;bottom:0;width:max(0px,calc((100cqw - min(100cqw,192cqh)) / 2));
+ overflow:hidden;isolation:isolate;
+ background:radial-gradient(ellipse at 50% 39%,#806d5724,transparent 80%),
+ linear-gradient(90deg,#101722,#31313a 46%,#1b1d28);
+}
+.manor-side-rail.left{left:0;box-shadow:inset -7px 0 22px #06080eaa}
+.manor-side-rail.right{right:0;transform:scaleX(-1);
+ box-shadow:inset -7px 0 22px #06080eaa}
+.manor-recess{position:absolute;inset:5% 14% 7%;
+ border:1px solid #b8a3894f;border-radius:40% 40% 7px 7px / 18% 18% 7px 7px;
+ box-shadow:inset 0 0 20px #050713,inset 0 0 45px #101e28cc,0 0 15px #bca27a17;
+ background:radial-gradient(ellipse at 48% 36%,#38505b6e,#121e2b 65%,#0a101b)}
+.manor-wall-pilaster{position:absolute;inset:0 auto 0 3%;width:13%;
+ background:linear-gradient(90deg,#0c111c,#9b82672e,#312d33 45%,#0d111d);
+ border-right:1px solid #d4b6942a}
+.manor-lantern{position:absolute;top:24%;left:50%;transform:translateX(-50%);
+ width:min(76%,110px);height:clamp(85px,23cqh,190px);
+ filter:drop-shadow(0 12px 10px #03040aa6)}
+.manor-lantern-arm{position:absolute;left:50%;top:0;width:7px;height:25%;
+ transform:translateX(-50%);border-radius:4px;
+ background:linear-gradient(90deg,#2c2829,#d6b181,#373034)}
+.manor-lantern-housing{position:absolute;left:12%;top:23%;width:76%;height:69%;
+ border:2px solid #bfa079;border-radius:12px 12px 19px 19px;
+ background:linear-gradient(95deg,#171c25,#66615060 30%,#101b25 70%,#15171e);
+ box-shadow:inset 0 2px #d7c39a8c,inset 0 -12px 15px #080e1b}
+.manor-lantern-housing::before{content:'';position:absolute;inset:7% 12% 15%;
+ border:1px solid #e2c8a17c;border-radius:6px 6px 11px 11px;
+ background:radial-gradient(ellipse at 48% 65%,#f9d69b88,#e1a86d3f 40%,#4d5a5b1c 75%,transparent)}
+.manor-lantern-glass{position:absolute;inset:31% 27% 27%;
+ border:1px solid #e9c39f73;border-radius:7px;
+ background:linear-gradient(116deg,#ffe4bc3b,#fff7d00a 25%,#5e7b7840 60%,#d8b18f25);
+ box-shadow:inset 0 0 9px #f5d89b44;transform:skewX(-4deg)}
+.manor-lantern-light{position:absolute;left:50%;top:46%;width:38%;height:32%;
+ transform:translateX(-50%);border-radius:50%;
+ background:radial-gradient(ellipse,#fff7d9bd 4%,#eabb7c8c 32%,#bc855356 55%,transparent 80%);
+ filter:blur(5px);animation:manor-lantern-breathe 7.6s ease-in-out infinite alternate}
+.manor-light-shaft{position:absolute;left:-22%;top:30%;width:150%;height:50%;
+ background:radial-gradient(ellipse,#e5c29127,transparent 65%);
+ filter:blur(11px);animation:manor-side-light 13s ease-in-out infinite alternate}
+.manor-wall-fog{position:absolute;inset:8% 0 0;
+ background:radial-gradient(ellipse at 57% 73%,#aac2c513,transparent 70%);
+ filter:blur(10px);animation:manor-side-fog 19s ease-in-out infinite alternate}
+@keyframes manor-lantern-breathe{to{opacity:.64;transform:translateX(-50%) scale(1.07)}}
+@keyframes manor-side-light{to{opacity:.45;transform:translateY(-5%)}}
+@keyframes manor-side-fog{to{opacity:.4;transform:translateX(12%)}}
+ .slot-viewport.no-motion .manor-side-rail *{animation:none!important}
+@media(prefers-reduced-motion:reduce){.manor-side-rail *{animation:none!important}}

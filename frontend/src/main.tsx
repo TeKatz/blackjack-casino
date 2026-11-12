@@ -321,9 +321,19 @@ function ManorApp() {
             (godotVisible ? ' godot-active' : '') +
             (motionOff ? ' no-motion' : '')}>
             <div className="manor-room-dressing" aria-hidden="true">
-              <div className="manor-sconce left"><i/><b/><em/></div>
-              <div className="manor-sconce right"><i/><b/><em/></div>
-              <div className="manor-side-haze"><i/><i/><i/></div>
+              {(['left','right'] as const).map(side=>
+                <div key={side} className={'manor-side-rail '+side}>
+                  <div className="manor-recess"/>
+                  <div className="manor-wall-pilaster"/>
+                  <div className="manor-lantern">
+                    <span className="manor-lantern-arm"/>
+                    <span className="manor-lantern-housing"/>
+                    <span className="manor-lantern-glass"/>
+                    <span className="manor-lantern-light"/>
+                  </div>
+                  <div className="manor-light-shaft"/>
+                  <div className="manor-wall-fog"/>
+                </div>)}
             </div>
             <div className="slot-dust" aria-hidden="true">
               {Array.from({ length: 20 }, (_, i) => <i key={i} style={{
@@ -398,7 +408,7 @@ function ManorApp() {
               shownSnapshot.doors + ' ' + t(language, 'doors')}</span>
           </div>
           {!run && <div className="action-console">
-            <div className="stake-control">
+            <div className="stake-control manor-wager-panel" data-testid="manor-bet-controls">
               <label htmlFor="manor-bet">{t(language, 'stake')}</label>
               <div className="bet-input">
                 <span>$</span>
@@ -417,7 +427,7 @@ function ManorApp() {
                 </button>)}
               </div>
             </div>
-            <div className="main-actions">
+            <div className="main-actions manor-primary-panel" data-testid="manor-spin-controls">
               {shownSnapshot.canFreeSpin ?
                 <button className="gold-button" disabled={disabled}
                   onClick={() => act('spin.free')}>{t(language, 'freeSpin', shownSnapshot.freeSpinsRemaining)}</button> :
@@ -429,7 +439,7 @@ function ManorApp() {
                     t(language, 'spinRolling') : t(language, 'spin')}
                 </button>}
             </div>
-            <div className="auto-spin-controls" role="group" aria-label={t(language, 'autoLabel')}>
+            <div className="auto-spin-controls manor-autoplay-panel" data-testid="manor-auto-controls" role="group" aria-label={t(language, 'autoLabel')}>
                 <span className="auto-label">{autoRemaining === null
                   ? t(language, 'autoLabel')
                   : t(language, 'autoRemaining', autoRemaining)}</span>
