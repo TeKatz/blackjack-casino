@@ -1,0 +1,55 @@
+import { describe, expect, it } from 'vitest';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { ManorBonus3D } from '../src/graphics/ManorBonus3D';
+import {
+  demoState, liveState, isGodotMessage, isAllowedGodotChoice,
+} from '../src/graphics/manorGodotProtocol';
+import type { ManorRun } from '../src/bridge/protocol';
+
+const sample: ManorRun = {
+  status: 'Hunting', message: '', ghostClue: '', playerRoom: 0, turn: 0,
+  exitTarget: 250, current: '5×', banked: '5×', hasCandle: false,
+  hasKey: false, hasCharm: false, rooms: [
+    { id: 0, name: 'Entrance Hall', x: 0, y: 2, area: 'Entrance', visited: false, available: false, locked: false },
+    { id: 1, name: "Servants' Corridor", x: 1, y: 2, area: 'Corridor', visited: false, available: true, locked: false },
+    { id: 4, name: 'Library', x: 1, y: 1, area: 'Library', visited: false, available: true, locked: false },
+    { id: 7, name: 'Ballroom', x: 1, y: 3, area: 'Ballroom', visited: false, available: true, locked: false },
+    { id: 16, name: 'Moonlit Gate', x: 7, y: 2, area: 'Entrance', visited: false, available: false, locked: true },
+  ], passages: [],
+};
+
+describe('Godot 3D Manor bonus bridge', () => {
+  it('only proposes rooms the authoritative C# snapshot marked available', () => {
+    const state = liveState(sample);
+    expect(state.options.map(x => x.id)).toEqual([1, 4, 7]);
+    expect(isAllowedGodotChoice(state, 16)).toBe(false);
+    expect(isAllowedGodotChoice(state, 4)).toBe(true);
+  });
+  it('keeps the no-bankroll demo separate from an actual run', () => {
+    const state = demoState(0);
+    expect(state.demo).toBe(true);
+    expect(state.options).toHaveLength(3);
+    expect(state.options.map(x => x.id)).toEqual([1, 4, 7]);
+    expect(demoState(4).options.some(x => x.id === 5)).toBe(true);
+  });
+  it('rejects spoofed and malformed iframe messages', () => {
+    expect(isGodotMessage({ source: 'manor-godot', type: 'ready' })).toBe(true);
+    expect(isGodotMessage({ source: 'manor-godot', type: 'choice', room: 7 })).toBe(true);
+    expect(isGodotMessage({ source: 'manor-godot', type: 'choice', room: 17 })).toBe(false);
+    expect(isGodotMessage({ source: 'manor-godot', type: 'choice', room: '7' })).toBe(false);
+    expect(isGodotMessage({ source: 'manor-react', type: 'choice', room: 7 })).toBe(false);
+    expect(isGodotMessage({ source: 'manor-godot', type: 'choice', room: 7, payout: '999×' })).toBe(false);
+  });
+  it('keeps the 3D bonus embedded in the machine surface with safe explicit exit', () => {
+    const markup = renderToStaticMarkup(createElement(ManorBonus3D, {
+      demo: true, run: null, language: 'de', reducedMotion: true, disabled: false,
+      onAction: () => {}, onExitDemo: () => {}, onFallback: () => {},
+    }));
+    expect(markup).toContain('manor-godot-frame');
+    expect(markup).toContain('./manor3d/index.html');
+    expect(markup).toContain('Test Bonus Game');
+    expect(markup).toContain('Keine echten Gewinne');
+    expect(markup).toContain('Zurück zum Automaten');
+  });
+});

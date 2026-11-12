@@ -719,3 +719,55 @@ html,body,#root{height:100%;overflow:hidden}
 .machine .main-actions .gold-button{min-height:54px;font-size:clamp(12px,1.15vw,16px);padding:10px 16px;letter-spacing:.06em;line-height:1.35}
 
 @media(max-height:720px){.machine .main-actions .gold-button{min-height:45px}}
+
+
+
+/* Isolated Godot WebGL bonus overlay. Never changes the casino render loop. */
+.manor-3d-settings{display:flex;flex-direction:column;gap:10px;
+  padding:12px 0 14px;margin-bottom:12px;border-bottom:1px solid #a4826555}
+.manor-3d-settings .eyebrow{font-size:10px;color:#e4c79f;letter-spacing:.12em}
+.manor-3d-settings .manor-test-bonus{width:100%;padding:12px 16px;font-size:13px;
+  border-color:#d6b78b;background:linear-gradient(130deg,#302738,#1d2430)}
+.manor-3d-settings .display-hint{line-height:1.5}
+.manor-godot-surface{position:absolute;inset:0;z-index:5;overflow:hidden;
+  background:radial-gradient(circle at 50% 30%,#4c3b45,#100d18 75%);color:#f3e4cf;
+  font-family:'Segoe UI',Arial,sans-serif}
+.manor-godot-frame{display:block;width:100%;height:100%;border:0;background:#110e17}
+.manor-godot-upper{position:absolute;top:0;left:0;right:0;z-index:2;
+  display:flex;align-items:start;justify-content:space-between;gap:12px;
+  padding:16px 21px 24px;pointer-events:none;
+  background:linear-gradient(#0f0a17cf,#0f0a1740 70%,transparent)}
+.manor-godot-upper>div{display:flex;flex-direction:column;gap:5px}
+.manor-godot-upper strong{font-size:clamp(13px,1.5vw,21px);font-weight:650;
+  color:#ffebd1;letter-spacing:.025em}
+.manor-godot-upper .eyebrow{font-size:10px;color:#d4c09e}
+.manor-godot-result{font-size:12px;color:#ebd6b8;white-space:nowrap}
+.manor-godot-bottom{position:absolute;left:0;right:0;bottom:0;z-index:3;
+  display:flex;align-items:end;justify-content:space-between;gap:14px;
+  background:linear-gradient(transparent,#0d0b15e8);padding:50px 17px 22px;
+  pointer-events:none}
+.manor-godot-bottom>span{font-size:12px;color:#edd6b8;text-shadow:0 2px 4px #000}
+.manor-godot-controls{display:flex;gap:7px;flex-wrap:wrap;pointer-events:auto}
+.manor-godot-controls .ghost-button{font-size:12px;padding:9px 12px;
+  background:#27232edf;backdrop-filter:blur(7px)}
+.manor-godot-safe{position:absolute;bottom:5px;right:18px;z-index:3;
+  color:#e6c3a1a8;font-size:9px;letter-spacing:.09em;pointer-events:none}
+.manor-godot-loading{position:absolute;inset:0;z-index:4;display:flex;
+  flex-direction:column;align-items:center;justify-content:center;gap:10px;
+  padding:26px;text-align:center;background:#120e1af5}
+.manor-godot-loading strong{font-size:19px;color:#eecfa4}
+.manor-godot-loading span{font-size:12px;max-width:430px;color:#c6b4b9;line-height:1.5}
+.manor-godot-loading .ghost-button{margin-top:12px}
+@media(max-width:850px){
+  .manor-godot-upper{padding:9px 11px 15px}
+  .manor-godot-bottom{padding:40px 10px 21px;flex-direction:column;align-items:start}
+  .manor-godot-bottom>span{font-size:10px}
+}
+@media(prefers-reduced-motion:reduce){
+  .manor-godot-surface,.manor-godot-surface *{transition:none!important}
+}
+
+.slot-viewport.godot-active .slot-reels{transform:scale(1.45);opacity:0;filter:blur(3px);pointer-events:none;transition:transform .8s cubic-bezier(.15,.8,.3,1),opacity .65s,filter .65s}
+.slot-viewport.godot-active .slot-bonus-portal{border:0;background:#15121b;box-shadow:none;animation:manor-3d-entry .8s cubic-bezier(.12,.82,.22,1) both}
+@keyframes manor-3d-entry{0%{opacity:0;transform:scale(.89);filter:brightness(.18)}100%{opacity:1;transform:scale(1);filter:brightness(1)}}
+.slot-viewport.godot-active.no-motion .slot-bonus-portal{animation:none}

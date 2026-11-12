@@ -45,6 +45,17 @@ jobs:
         working-directory: frontend
         run: npm run build
 
+      # Export after Vite rebuilds dist, and before MSBuild globs package it.
+      - name: Cache single-threaded Godot Web and Windows templates
+        uses: actions/cache@v4
+        with:
+          path: ~/AppData/Roaming/Godot/export_templates/4.5.1.stable
+          key: manor-godot-4.5.1-web-nothreads-windows-v1
+
+      - name: Import, smoke-test and export Godot Manor bonus for WebView2
+        shell: pwsh
+        run: ./tools/build_manor_bonus_web.ps1 -OutputDirectory frontend/dist/manor3d
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:

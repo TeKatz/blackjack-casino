@@ -7,6 +7,7 @@ import {
 import type { GameAction, ManorSnapshot } from './bridge/protocol';
 import { ManorStage } from './graphics/ManorStage';
 import { ManorBonusStage } from './graphics/ManorBonusStage';
+import { ManorBonus3D } from './graphics/ManorBonus3D';
 import { ManorHelp } from './ManorHelp';
 import { localizeFeature, t } from './i18n';
 import type { ManorLanguage } from './i18n';
@@ -31,6 +32,9 @@ function ManorApp() {
   const [revealingReels, setRevealingReels] = useState(false);
   const [languageOverride, setLanguageOverride] = useState<ManorLanguage | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [demoBonusOpen, setDemoBonusOpen] = useState(false);
+  // The real run stays on the established 2D view unless explicitly opted in.
+  const [experimental3DBonus, setExperimental3DBonus] = useState(false);
   const closeHelp = useCallback(() => setHelpOpen(false), []);
   const [connected, setConnected] = useState(!embedded);
   const [error, setError] = useState<string | null>(null);
@@ -150,7 +154,7 @@ function ManorApp() {
   const actions = availableActions(snapshot);
   const motionOff = lowMotion || !ambient || !snapshot.animationsEnabled;
   const disabled = !embedded || !connected || !rendererReady ||
-    pending !== null || fatal || animating ||
+    pending !== null || fatal || animating || demoBonusOpen ||
     revealingReels || awaitingPresentation.current !== null;
   const rolling = revealingReels || pendingTypeRef.current?.startsWith('spin.') === true;
   const validBet = validManorBet(bet);
@@ -279,7 +283,8 @@ function ManorApp() {
                 : t(language, 'paylinesHeader')}
             </span>
           </div>
-          <div className={'slot-viewport' + (run ? ' bonus-active' : '') +
+          <div className={'slot-viewport' + (run || demoBonusOpen ? ' bonus-active' : '') +
+            (demoBonusOpen || (run && experimental3DBonus) ? ' godot-active' : '') +
             (motionOff ? ' no-motion' : '')}>
             <div className="slot-dust" aria-hidden="true">
               {Array.from({ length: 20 }, (_, i) => <i key={i} style={{
@@ -298,11 +303,21 @@ function ManorApp() {
                 onDiagnostics={showDiagnostics ? setRenderMetrics : undefined}
                 onReady={() => setRendererReady(true)} />
             </div>
-            {run && <div className="slot-bonus-portal">
-              <div className="bonus-depth-tunnel" aria-hidden="true"><i/><i/><i/></div>
-              <ManorBonusStage run={run} language={language} disabled={disabled}
-                reducedMotion={motionOff}
-                onAction={(action, room) => act(action, room === undefined ? {} : { room })} />
+            {(run || demoBonusOpen) && <div className="slot-bonus-portal">
+              {demoBonusOpen || experimental3DBonus ? (
+                <ManorBonus3D
+                  demo={demoBonusOpen} run={run} language={language}
+                  reducedMotion={motionOff}
+                  disabled={demoBonusOpen ? false : disabled}
+                  onExitDemo={() => setDemoBonusOpen(false)}
+                  onFallback={() => setExperimental3DBonus(false)}
+                  onAction={(action, room) => act(action, room === undefined ? {} : { room })} />
+              ) : run ? <>
+                <div className="bonus-depth-tunnel" aria-hidden="true"><i/><i/><i/></div>
+                <ManorBonusStage run={run} language={language} disabled={disabled}
+                  reducedMotion={motionOff}
+                  onAction={(action, room) => act(action, room === undefined ? {} : { room })} />
+              </> : null}
             </div>}
             {showDiagnostics && <div className="render-metrics slot-metrics"
               role="status" aria-live="off">
@@ -315,7 +330,7 @@ function ManorApp() {
                 ? t(language, 'dpiObserved', renderMetrics.width, renderMetrics.height,
                   renderMetrics.pixelRatio) : t(language, 'diagnosticsHint')}</small>
             </div>}
-            {visibleMoment && visibleMoment.key !== 'loss' &&
+            {!demoBonusOpen && visibleMoment && visibleMoment.key !== 'loss' &&
               <div className={'slot-celebration ' + visibleMoment.key +
               (motionOff ? ' no-motion' : '')} role="status" aria-live="polite">
               <div className="slot-celebration-light" aria-hidden="true">
@@ -430,6 +445,25 @@ function ManorApp() {
           <details className="status-card settings-fold">
             <summary className="eyebrow">{t(language, 'settings')}</summary>
             <div className="settings-fold-body">
+            <div className="manor-3d-settings">
+              <span className="eyebrow">{t(language, 'godotSettingsHeading')}</span>
+              <button className="ghost-button manor-test-bonus" type="button"
+                disabled={Boolean(run) || demoBonusOpen || pending !== null ||
+                  revealingReels || animating || awaitingPresentation.current !== null ||
+                  autoRemaining !== null || fatal}
+                onClick={() => {
+                  haltAuto();
+                  setMoment(null);
+                  setDemoBonusOpen(true);
+                }}>{t(language, 'godotTestButton')}</button>
+              <label className="switch-row" htmlFor="manor-godot-experimental">
+                <span>{t(language, 'godotEnableLive')}</span>
+                <input id="manor-godot-experimental" type="checkbox"
+                  checked={experimental3DBonus} disabled={Boolean(run) || demoBonusOpen}
+                  onChange={event => setExperimental3DBonus(event.target.checked)} />
+              </label>
+              <p className="display-hint">{t(language, 'godotSettingsHint')}</p>
+            </div>
             <label className="switch-row"><span>{t(language, 'cabinetAnimation')}</span>
               <input type="checkbox" checked={ambient}
                 onChange={event => setAmbient(event.target.checked)} /></label>

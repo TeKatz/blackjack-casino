@@ -103,6 +103,8 @@ Windows smoke captures the three supported desktop sizes and detached hosting. A
 - Original C# game logic for random outcomes, payouts, bet validation and player decisions
 - Local rendering and audio; the browser interface cannot directly change a balance or award
 
+An optional [embedded Godot 3D Manor bonus prototype](docs/manor-godot-bonus.md) is accessible through **Display Settings → Test Bonus Game** without spins or payouts. Actual bonus rounds retain the existing 2D presentation by default; an optional session-only switch enables the experimental 3D display. The 3D scene runs locally inside the same WebView2 window, while C# continues to own rules, payouts, and saves.
+
 The legacy WPF Manor source remains available for a controlled rollback build, but is **not a second player-selectable game**. Its removal from the menu does not change the save format, payout tables or game rules.
 
 Technical details: [modernization roadmap](docs/modernization-roadmap.md), [Manor design](docs/midnight-manor-design.md), [acceptance and recovery tests](docs/midnight-manor-acceptance.md).
