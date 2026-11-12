@@ -18,7 +18,7 @@ const words={
   go:'ENTER STORY',story:'STORY',what:'WHAT DO YOU DO?',roll:'ROLL THE D20',
   waiting:'FATE IS WAITING FOR YOUR ROLL',mod:'MODIFIER',adv:'ADVANTAGE',disadv:'DISADVANTAGE',
   stats:'CHARACTER SHEET',abilities:'ABILITIES',skills:'SKILLS',conditions:'CONDITIONS',
-  pack:'PACK & COINS',coins:'COINS',empty:'No carried items.',use:'USE ITEM',
+  pack:'PACK & COINS',coins:'COINS',empty:'No carried items.',use:'USE ITEM',eventLog:'EVENT LOG',
   board:'CASE BOARD',openBoard:'OPEN CASE BOARD',backStory:'← RETURN TO STORY',
   facts:'KNOWN FACTS',quotes:'NOTES & QUOTES',connections:'CONNECTIONS',
   zoomIn:'ZOOM +',zoomOut:'ZOOM −',reset:'RESET VIEW',node:'CLUE DETAILS',
@@ -39,7 +39,7 @@ const words={
   go:'GESCHICHTE BETRETEN',story:'GESCHICHTE',what:'WAS TUST DU?',roll:'W20 WÜRFELN',
   waiting:'DAS SCHICKSAL WARTET AUF DEINEN WURF',mod:'MODIFIKATOR',adv:'VORTEIL',disadv:'NACHTEIL',
   stats:'CHARAKTERBOGEN',abilities:'ATTRIBUTE',skills:'FERTIGKEITEN',conditions:'ZUSTÄNDE',
-  pack:'INVENTAR & MÜNZEN',coins:'MÜNZEN',empty:'Noch keine Gegenstände.',use:'GEGENSTAND NUTZEN',
+  pack:'INVENTAR & MÜNZEN',coins:'MÜNZEN',empty:'Noch keine Gegenstände.',use:'GEGENSTAND NUTZEN',eventLog:'EREIGNISPROTOKOLL',
   board:'ERMITTLUNGSBRETT',openBoard:'ERMITTLUNGSBRETT ÖFFNEN',backStory:'← ZURÜCK ZUR GESCHICHTE',
   facts:'BEKANNTE FAKTEN',quotes:'NOTIZEN & ZITATE',connections:'VERBINDUNGEN',
   zoomIn:'ZOOM +',zoomOut:'ZOOM −',reset:'ANSICHT ZURÜCKSETZEN',node:'HINWEISDETAILS',
@@ -125,9 +125,12 @@ function Inventory({run,copy,pending,send}:{
        onClick={()=>send({action:'adventure.choice',choiceId:choice.id})}>
        {copy.use}: {choice.text}</button>)}
     </div>)}</div>
-  {run.feedback.length>0&&<div className="backroom-feed" aria-live="polite">
+  {run.feedback.length>0&&<details className="backroom-feed">
+    <summary>{copy.eventLog} <span>({run.feedback.length})</span></summary>
+    <div className="backroom-feed-entries">
    {run.feedback.map((event,i)=><p className={'event-'+event.type.toLowerCase()+(event.type==='ItemAcquired'&&run.inventory.some(item=>item.kind==='Relic'&&event.title.includes(item.name))?' rare-event':'')} key={event.type+event.title+event.description+i}><strong>{event.title}</strong> {event.description}</p>)}
-  </div>}
+  </div>
+   </details>}
  </section>;
 }
 function Story({run,copy,pending,send}:{
@@ -209,7 +212,7 @@ function CaseBoard({board,copy,pending,send,error}:{
      <button onClick={()=>commitCamera({...camera,zoom:Math.max(.2,camera.zoom*.8)})}>{copy.zoomOut}</button>
      <button onClick={fit}>{copy.reset}</button>
     </div></div>
-  <div className="backroom-board-filters">{categories.map(c=><label key={c}><input type="checkbox"
+  <div className="backroom-board-filters">{categories.map(c=><label key={c} className={'backroom-category-'+c.toLowerCase()}><input type="checkbox"
    checked={visibleCategories.has(c)} onChange={e=>setVisibleCategories(previous=>{
     const next=new Set(previous);if(e.target.checked)next.add(c);else next.delete(c);return next;
    })}/>{c}</label>)}</div>
