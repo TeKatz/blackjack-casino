@@ -2748,7 +2748,7 @@ func special_rooms_smoke() -> bool:
 						enemy.hp=0
 				if anchors!=3: return false
 				tick(0.016,Vector2.ZERO,Vector2(700,385),false,false,false)
-				if state!="reward" or offers.size()!=3 or shards<20: return false
+				if state!="reward" or offers.size()!=3 or shards<special_room_shard_bonus("ritual",true,encounter_threat): return false
 				if not choose_relic(0) or state!="exit": return false
 			"survival":
 				if state!="fight" or special_timer!=SURVIVAL_DURATION: return false
@@ -2763,7 +2763,7 @@ func special_rooms_smoke() -> bool:
 						enemy.hp=0
 				if targets!=1: return false
 				tick(0.016,Vector2.ZERO,Vector2(700,385),false,false,false)
-				if state!="reward" or shards<23 or offers.size()!=3: return false
+				if state!="reward" or shards<special_room_shard_bonus("bounty",true,encounter_threat) or offers.size()!=3: return false
 			"unstable":
 				if state!="fight" or special_objectives!=3: return false
 				enemies[0].pos=UNSTABLE_CORES[0]+Vector2(20,0)
