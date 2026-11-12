@@ -150,14 +150,9 @@ function ManorApp() {
     if (embedded && connected && rendererReady) { finishModeBoot(); sendCommand('ui.ready'); }
   }, [connected, rendererReady]);
 
-  // Start the expensive WebAssembly/WebGL initialization while the reels are
-  // already on screen. Keep the iframe mounted for the whole Manor session.
-  // Its own idle frame cap keeps this from becoming a second full-speed game.
-  useEffect(() => {
-    if (!rendererReady || !connected || godotWarmed) return;
-    const timer = window.setTimeout(() => setGodotWarmed(true), 1100);
-    return () => window.clearTimeout(timer);
-  }, [rendererReady, connected, godotWarmed]);
+  // Godot's WebAssembly + WebGL startup can occupy WebView2's UI thread for
+  // several seconds. NEVER initialize it on a timer during ordinary slot play.
+  // The first explicit 3D visit mounts it; later visits reuse the same iframe.
 
   const actions = availableActions(snapshot);
   const motionOff = lowMotion || !ambient || !snapshot.animationsEnabled;
@@ -169,6 +164,10 @@ function ManorApp() {
   const fundedBet = validBet && canAffordBet(snapshot.bankroll, bet);
   const run = shownSnapshot.run;
   const godotVisible = demoBonusOpen || Boolean(run && experimental3DBonus);
+  useEffect(() => {
+    if (godotVisible) setGodotWarmed(true);
+  }, [godotVisible]);
+
   const language: ManorLanguage = languageOverride ?? snapshot.language;
   const visibleMoment = moment ? localizeMoment(moment, language) : null;
   useEffect(() => { document.documentElement.lang = language; }, [language]);
