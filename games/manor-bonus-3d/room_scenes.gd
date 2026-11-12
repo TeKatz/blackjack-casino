@@ -15,6 +15,7 @@ const TEXTURE_BOOKS: Texture2D = preload("res://art/books.svg")
 const TEXTURE_PLASTER: Texture2D = preload("res://art/plaster.svg")
 const TEXTURE_PAVING: Texture2D = preload("res://art/paving.svg")
 const TEXTURE_CRYPT_FLOOR: Texture2D = preload("res://art/crypt_floor.svg")
+const TEXTURE_NIGHT_SKY: Texture2D = preload("res://art/night_panorama.svg")
 
 var m: Dictionary = {}
 var _tiled_material_cache: Dictionary = {}
@@ -208,6 +209,92 @@ func build(room_id: int) -> Node3D:
 
 
 
+func _floor(p: Node3D, width: float, depth: float, mat: Material) -> void:
+    # A real top-facing X/Z plane with dimensionally consistent UVs. BoxMesh
+    # top-face mapping and ad-hoc pavement lines caused misaligned stones.
+    _box(p, "FloorFoundation", Vector3(0.0, -0.24, -1.0),
+        Vector3(width, 0.44, depth), m["stone"])
+    var plane := PlaneMesh.new()
+    plane.size = Vector2(width, depth)
+    plane.subdivide_width = 10
+    plane.subdivide_depth = 10
+    var node := MeshInstance3D.new()
+    node.name = "Floor"
+    node.set_meta("visual_role", "Floor")
+    node.mesh = plane
+    node.position = Vector3(0.0, 0.012, -1.0)
+    var floor_material := (mat as StandardMaterial3D).duplicate() as StandardMaterial3D
+    floor_material.uv1_scale = Vector3(width / 2.4, depth / 2.4, 1.0)
+    floor_material.texture_repeat = true
+    floor_material.uv1_triplanar = false
+    floor_material.uv1_world_triplanar = false
+    node.material_override = floor_material
+    p.add_child(node)
+
+
+func _runner(p: Node3D, family: String) -> void:
+    if family not in ["entrance", "corridor", "library", "ballroom", "moonlit"]:
+        return
+    # Middle portal is always centered on X=0 and located at Z=-8.2.
+    var width := 4.4 if family == "corridor" else 4.6
+    var depth := 15.3
+    var middle_z := -0.54
+    var cloth: Material = m["bluevelvet"] if family in ["ballroom", "moonlit"] else m["velvet"]
+    var runner := _box(p, "Runner", Vector3(0.0, 0.055, middle_z),
+        Vector3(width, 0.052, depth), cloth)
+    runner.set_meta("runner_center_door", 1)
+    for side in [-1, 1]:
+        _box(p, "RunnerEdge", Vector3(float(side) * (width * 0.5 - 0.10),
+            0.088, middle_z), Vector3(0.04, 0.010, depth - 0.20), m["brass"])
+
+
+func _night_sky(p: Node3D) -> void:
+    # Inward-facing, unshaded panorama instead of an infinite black clear
+    # color or a flat, artificial ceiling; compatible with WebGL2.
+    var dome := SphereMesh.new()
+    dome.radius = 95.0
+    dome.height = 190.0
+    dome.radial_segments = 64
+    dome.rings = 32
+    var material := StandardMaterial3D.new()
+    material.albedo_texture = TEXTURE_NIGHT_SKY
+    material.albedo_color = Color.WHITE
+    material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    material.cull_mode = BaseMaterial3D.CULL_DISABLED
+    material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+    material.texture_repeat = false
+    var sky := MeshInstance3D.new()
+    sky.name = "NightSkyDome"
+    sky.set_meta("visual_role", "NightSkyDome")
+    sky.mesh = dome
+    sky.material_override = material
+    p.add_child(sky)
+
+
+func _outdoor_horizon(p: Node3D, room_id: int) -> void:
+    _night_sky(p)
+    # Physical silhouettes give depth beyond the parapets, not just sky paint.
+    for index in range(10):
+        var side := -1.0 if index % 2 == 0 else 1.0
+        var x := side * (12.0 + float(index % 3) * 1.9)
+        var z := -13.0 + float(index % 5) * 5.3
+        var height := 2.4 + float(index % 4) * 0.55
+        _cyl(p, "DistantTreeTrunk", Vector3(x, height * 0.5 - 0.1, z),
+            0.22, height, m["darkwood"], 7)
+        _ball(p, "DistantTreeCanopy", Vector3(x, height + 0.8, z),
+            1.45 + float(index % 3) * 0.17, m["leaves"])
+    for x in [-8.3, 8.3]:
+        _box(p, "DistantManorTurret", Vector3(x, 7.35, -17.5),
+            Vector3(2.8, 7.0, 2.9), m["cryptstone"])
+        _box(p, "TurretCoping", Vector3(x, 10.93, -17.5),
+            Vector3(3.24, 0.22, 3.3), m["stone"])
+    _box(p, "DistantRoofline", Vector3(0.0, 7.7, -18.1),
+        Vector3(15.0, 1.1, 2.3), m["darkwood"])
+    if room_id == 15:
+        _box(p, "CourtyardFarBalustrade", Vector3(0.0, 8.5, -17.2),
+            Vector3(13.0, 0.14, 0.27), m["stone"])
+
+
 func _shell(p: Node3D, family: String, room_id: int) -> void:
     var floor_mat: Material = m["wood"]
     var wall_mat: Material = m["wallpaper"]
@@ -252,15 +339,12 @@ func _shell(p: Node3D, family: String, room_id: int) -> void:
             height = 7.4
             trim = m["stone"]
 
-    _box(p, "Floor", Vector3(0, -0.18, -1), Vector3(width, 0.36, 20.9), floor_mat)
+    _floor(p, width, 20.9, floor_mat)
     if family != "outdoor":
         _box(p, "Ceiling", Vector3(0, height, -1),
             Vector3(width, 0.24, 20.9), wall_mat)
     else:
-        # The open stone courtyard is lit by a moon-blue background rather than
-        # a fake flat ceiling right above the player.
-        _box(p, "DistantNightSky", Vector3(0, 13.8, -1),
-            Vector3(30.0, 0.2, 29.0), m["bluewall"])
+        _outdoor_horizon(p, room_id)
 
     for side in [-1, 1]:
         var x := float(side) * width * 0.5
@@ -319,17 +403,13 @@ func _shell(p: Node3D, family: String, room_id: int) -> void:
                 _box(p, "VaultArch", Vector3(0, height - 0.82, z),
                     Vector3(width - 0.55, 0.24, 0.34), m["stone"])
 
-    if family in ["entrance", "library", "ballroom", "moonlit"]:
-        _box(p, "Runner", Vector3(-0.38, 0.024, -0.45),
-            Vector3(3.5, 0.028, 13.0),
-            m["bluevelvet"] if family in ["ballroom", "moonlit"] else m["velvet"])
-    if family == "corridor":
-        _box(p, "NarrowRunner", Vector3(0.35, 0.022, 0.0),
-            Vector3(2.4, 0.028, 13.5), m["velvet"])
+    _runner(p, family)
     if family == "outdoor":
-        for x in [-7.9, -4.6, 0.5, 6.1]:
-            _box(p, "GardenPavingJoint", Vector3(x, 0.012, -0.9),
-                Vector3(0.055, 0.023, 19.5), m["cryptstone"])
+        # Stone mortar comes from the planar paving texture, not independent
+        # strips at unrelated X coordinates.
+        for side in [-1, 1]:
+            _box(p, "PavingSideCoping", Vector3(float(side) * (width * 0.5 - 0.63),
+                0.09, -0.7), Vector3(0.16, 0.16, 19.0), m["stone"])
     # The room shell and portals are independent from the C# gameplay state.
 
 func _pillar(p: Node3D, x: float, z: float, y: float = 2.8, stone: bool = false) -> void:
@@ -497,10 +577,16 @@ func _servants(p: Node3D) -> void:
 
 
 func _landing(p: Node3D) -> void:
+    # The former brass slab and the marble tabletop both ended at y=0.82,
+    # causing coplanar-depth flicker. Use four lifted perimeter rails.
     _box(p, "CandleStoneDais", Vector3(-5.5, 0.42, -0.1),
         Vector3(2.7, 0.8, 2.2), m["marble"])
-    _box(p, "DaisCarvedTrim", Vector3(-5.5, 0.77, -0.1),
-        Vector3(2.73, 0.10, 2.25), m["brass"])
+    for dz in [-1.05, 1.05]:
+        _box(p, "DaisEdgeFrontBack", Vector3(-5.5, 0.847, -0.1 + dz),
+            Vector3(2.64, 0.032, 0.055), m["brass"])
+    for dx in [-1.31, 1.31]:
+        _box(p, "DaisEdgeSides", Vector3(-5.5 + dx, 0.847, -0.1),
+            Vector3(0.055, 0.032, 2.08), m["brass"])
     _candles(p, -6.47, 0.15, 4, 0.82)
     _candles(p, -5.20, -0.20, 4, 0.82)
     _portrait(p, 1.0, 1.0, -0.07)
@@ -508,7 +594,6 @@ func _landing(p: Node3D) -> void:
         Vector3(2.1, 1.0, 0.7), m["darkwood"])
     _light(p, "CandleLandingLight", Vector3(-4.9, 3.6, -0.2),
         Color("#e8a874"), 1.6, 12)
-
 
 func _stairs(p: Node3D) -> void:
     # Keep the sightline through the centre door completely clear. The former
@@ -778,13 +863,16 @@ func _moonlit_gate(p: Node3D) -> void:
         _pillar(p, x, -7.3, 3.4, true)
     _box(p, "MoonGateLintel", Vector3(0, 6.7, -7.45),
         Vector3(15.4, 0.6, 1.1), m["stone"])
-    for i in range(8):
-        var a := PI * float(i) / 7.0
-        _box(p, "GateMoonCrest",
-            Vector3(cos(a)*4.7, 4.8+sin(a)*2.5, -7.1),
-            Vector3(0.44, 0.42, 0.32), m["brass"])
+    # Finials now sit on the lintel instead of eight floating gold cubes.
+    for x in [-5.7, 0.0, 5.7]:
+        _box(p, "GateFinialBase", Vector3(x, 7.07, -7.45),
+            Vector3(0.82, 0.14, 0.69), m["brass"])
+        _ball(p, "GateFinial", Vector3(x, 7.37, -7.45), 0.25, m["brass"])
+    _box(p, "GateCrestFrieze", Vector3(0, 6.99, -6.87),
+        Vector3(13.8, 0.10, 0.08), m["brass"])
     _box(p, "GateStarlight", Vector3(0, 2.2, -10.1),
         Vector3(7.0, 4.7, 0.2), m["glass"])
     _plant(p, -7.4, 2.6, 2.2)
     _light(p, "GateOfMoon", Vector3(0.0, 5.4, -5.4),
         Color("#9fd5dc"), 2.3, 16)
+

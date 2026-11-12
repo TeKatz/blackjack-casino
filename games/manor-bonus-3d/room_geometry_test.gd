@@ -40,6 +40,38 @@ func _run() -> void:
                 _fail("Missing or triplanar ceiling material in room %d" % room_id)
                 return
 
+        # No floor-tile UV inversion: the surface is explicitly oriented X/Z.
+        if not floor.mesh is PlaneMesh:
+            _fail("Room %d has no planar, correctly mapped floor" % room_id)
+            return
+        var mapping := floor.mesh as PlaneMesh
+        if absf(floor_mat.uv1_scale.x / floor_mat.uv1_scale.y -
+                mapping.size.x / mapping.size.y) > 0.04:
+            _fail("Room %d has distorted paving UV proportions" % room_id)
+            return
+
+        # Rugs share a centre line with the middle door at X=0, Z=-8.2.
+        # This covers Entrance Hall, Candle Landing, Servants' Corridor,
+        # Grand Staircase, Library, Reading Room, Music Room and Ballroom.
+        var runner := visuals.get_node_or_null("Runner") as MeshInstance3D
+        if room_id in [0, 1, 2, 3, 4, 5, 6, 7, 8, 13]:
+            if runner == null or not runner.mesh is BoxMesh:
+                _fail("Room %d is missing its shared central runner" % room_id)
+                return
+            var cloth := runner.mesh as BoxMesh
+            if absf(runner.position.x) > 0.01 or cloth.size.x < 4.35:
+                _fail("Room %d rug is narrow or off the centre door" % room_id)
+                return
+            if runner.position.z - cloth.size.z * 0.5 > -8.05:
+                _fail("Room %d rug ends before reaching the central door" % room_id)
+                return
+            if runner.position.y - cloth.size.y * 0.5 < floor.position.y + 0.01:
+                _fail("Room %d rug risks coplanar floor z-fighting" % room_id)
+                return
+        elif runner != null:
+            _fail("Room %d has an unexpected floating central runner" % room_id)
+            return
+
         # Every candle requires a real base contact. The old hard-coded 0.52 m
         # center caused both floating candles and candles through tabletops.
         var candle_count := 0
@@ -88,6 +120,12 @@ func _run() -> void:
 
         match room_id:
             2:
+                if visuals.find_child("DaisCarvedTrim", true, false) != null:
+                    _fail("Candle Landing still overlaps tabletop with old slab")
+                    return
+                if _meshes_by_role(visuals, "DaisEdgeFrontBack").size() != 2 or _meshes_by_role(visuals, "DaisEdgeSides").size() != 2:
+                    _fail("Candle Landing lacks isolated edge rails")
+                    return
                 var dais := visuals.find_child("CandleStoneDais", true, false) as MeshInstance3D
                 if dais == null or dais.position.y + (dais.mesh as BoxMesh).size.y*0.5 < 0.81:
                     _fail("Candle Landing has no proper candle base")
@@ -155,9 +193,27 @@ func _run() -> void:
                     _fail("Secret Passage candles are floating")
                     return
             15, 16:
-                if visuals.find_child("DistantNightSky", true, false) == null:
-                    _fail("Outdoor scenery lacks the night backdrop")
+                var dome := visuals.find_child("NightSkyDome", true, false) as MeshInstance3D
+                if dome == null or not dome.mesh is SphereMesh or not _textured(dome):
+                    _fail("Outdoor scene is missing its starry dome texture")
                     return
+                var sky_material := dome.material_override as StandardMaterial3D
+                if sky_material.shading_mode != BaseMaterial3D.SHADING_MODE_UNSHADED or sky_material.cull_mode != BaseMaterial3D.CULL_DISABLED:
+                    _fail("Outdoor dome is not reliably visible from inside in WebGL2")
+                    return
+                if visuals.find_child("DistantNightSky", true, false) != null:
+                    _fail("Old fake outdoor ceiling still exists")
+                    return
+                if visuals.find_child("NightSkyDome", true, false) == null:
+                    _fail("Outdoor scenery lacks its enclosing night panorama")
+                    return
+                if room_id == 16:
+                    if visuals.find_child("GateMoonCrest", true, false) != null:
+                        _fail("Floating gold cubes still hang above Moonlit Gate")
+                        return
+                    if _meshes_by_role(visuals, "GateFinialBase").size() != 3:
+                        _fail("Moonlit Gate finials have no attached bases")
+                        return
 
     print("Manor 3D room geometry PASS")
     quit(0)
