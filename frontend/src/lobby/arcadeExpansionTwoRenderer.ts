@@ -249,9 +249,23 @@ function circuit(ctx:Ctx,s:CircuitRun){
   panel(ctx,x-39,y-37,78,74,10,tile.danger?'#5e243d':powered?'#1c5d62':'#193647',
    tile.danger?'#fc8d99':powered?'#9af3d5':'#477985');
   // Rotate exactly the tile that the player clicked: interpolated old -> new ports.
+  // Cell material energizes during the eased ninety-degree physical rotation.
+  const turning=s.turnClock>0&&s.turnCell?.c===tile.c&&s.turnCell?.r===tile.r;
+  const remaining=turning?Math.min(1,s.turnClock/.32):0;
+  const eased=remaining*remaining*(3-2*remaining);
+  if(turning){
+   ctx.save();ctx.globalAlpha=.1+.45*(1-remaining);
+   ctx.shadowColor=powered?'#b4ffe4':'#e9c78f';ctx.shadowBlur=22;
+   ctx.strokeStyle=powered?'#94f4d6':'#c9b783';ctx.lineWidth=2.5;
+   ctx.beginPath();ctx.arc(x,y,46+(1-remaining)*17,0,TAU);ctx.stroke();
+   for(let k=0;k<4;k++){
+    const a=k*TAU/4+remaining*2.2;
+    circle(ctx,x+Math.cos(a)*46,y+Math.sin(a)*45,3.2,powered?'#c5ffef':'#ffe5ac');
+   }
+   ctx.restore();
+  }
   ctx.save();ctx.translate(x,y);ctx.lineCap='round';
-  if(s.turnClock>0&&s.turnCell?.c===tile.c&&s.turnCell?.r===tile.r)
-   ctx.rotate(-Math.PI/2*(s.turnClock/.18));
+  if(turning)ctx.rotate(-Math.PI/2*eased);
   for(const d of DIRS){
    if(!(tile.mask&d.bit))continue;
    segment(ctx,[0,0],[d.dc*31,d.dr*30],
