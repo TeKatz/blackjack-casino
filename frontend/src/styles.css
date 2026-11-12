@@ -732,6 +732,9 @@ html,body,#root{height:100%;overflow:hidden}
 .manor-godot-surface{position:absolute;inset:0;z-index:5;overflow:hidden;
   background:radial-gradient(circle at 50% 30%,#4c3b45,#100d18 75%);color:#f3e4cf;
   font-family:'Segoe UI',Arial,sans-serif}
+.manor-godot-surface.is-warming{opacity:0;pointer-events:none;visibility:hidden;z-index:1}
+.manor-godot-surface.is-active{opacity:1;visibility:visible;pointer-events:auto;z-index:8;
+  animation:manor-3d-entry .65s cubic-bezier(.18,.82,.25,1) both}
 .manor-godot-frame{display:block;width:100%;height:100%;border:0;background:#110e17}
 .manor-godot-upper{position:absolute;top:0;left:0;right:0;z-index:2;
   display:flex;align-items:start;justify-content:space-between;gap:12px;
@@ -742,6 +745,26 @@ html,body,#root{height:100%;overflow:hidden}
   color:#ffebd1;letter-spacing:.025em}
 .manor-godot-upper .eyebrow{font-size:10px;color:#d4c09e}
 .manor-godot-result{font-size:12px;color:#ebd6b8;white-space:nowrap}
+.manor-godot-door-actions{position:absolute;z-index:5;left:50%;bottom:88px;
+  width:min(78%,880px);transform:translateX(-50%);
+  display:flex;justify-content:center;align-items:stretch;gap:clamp(7px,1.2vw,18px);
+  pointer-events:none}
+.manor-godot-door-choice{pointer-events:auto;display:flex;flex:1 1 0;min-width:0;
+  flex-direction:column;align-items:center;justify-content:center;gap:5px;
+  min-height:55px;padding:10px 12px;border-radius:7px;
+  border:1px solid #e1bd88a8;outline-offset:3px;
+  color:#f9ead4;background:linear-gradient(140deg,#221b28e8,#16141fdc);
+  box-shadow:0 7px 24px #000b,inset 0 1px 0 #ffe9c02b;
+  backdrop-filter:blur(8px);cursor:pointer;transition:background .16s,border-color .16s}
+.manor-godot-door-choice:hover:not(:disabled),
+.manor-godot-door-choice:focus-visible{border-color:#ffe7b7;
+  background:linear-gradient(140deg,#493843f3,#292633f2);
+  box-shadow:0 9px 25px #000d,0 0 0 2px #dfbb8a40}
+.manor-godot-door-choice:disabled{cursor:wait;opacity:.62}
+.manor-godot-door-choice small{font:700 10px/1.1 'Segoe UI',Arial,sans-serif;
+  letter-spacing:.13em;color:#f1ca91}
+.manor-godot-door-choice span{font:650 clamp(12px,1.1vw,16px)/1.24 'Segoe UI',Arial,sans-serif;
+  color:#fff5e7;text-align:center;text-shadow:0 1px 2px #000}
 .manor-godot-bottom{position:absolute;left:0;right:0;bottom:0;z-index:3;
   display:flex;align-items:end;justify-content:space-between;gap:14px;
   background:linear-gradient(transparent,#0d0b15e8);padding:50px 17px 22px;
@@ -768,6 +791,15 @@ html,body,#root{height:100%;overflow:hidden}
 }
 
 .slot-viewport.godot-active .slot-reels{transform:scale(1.45);opacity:0;filter:blur(3px);pointer-events:none;transition:transform .8s cubic-bezier(.15,.8,.3,1),opacity .65s,filter .65s}
-.slot-viewport.godot-active .slot-bonus-portal{border:0;background:#15121b;box-shadow:none;animation:manor-3d-entry .8s cubic-bezier(.12,.82,.22,1) both}
 @keyframes manor-3d-entry{0%{opacity:0;transform:scale(.89);filter:brightness(.18)}100%{opacity:1;transform:scale(1);filter:brightness(1)}}
-.slot-viewport.godot-active.no-motion .slot-bonus-portal{animation:none}
+.slot-viewport.godot-active.no-motion .manor-godot-surface{animation:none}
+
+@media(max-width:850px){
+ .manor-godot-door-actions{bottom:115px;width:min(98%,690px);gap:6px}
+ .manor-godot-door-choice{min-height:48px;padding:7px 5px}
+ .manor-godot-door-choice span{font-size:11px}
+}
+@media(prefers-reduced-motion:reduce){
+ .manor-godot-surface.is-active{animation:none!important}
+ .manor-godot-door-choice{transition:none!important}
+}

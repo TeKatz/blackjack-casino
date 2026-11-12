@@ -6,6 +6,9 @@ export type GodotState = {
   type: 'state';
   demo: boolean;
   roomName: string;
+  roomId: number;
+  active?: boolean;
+  reducedMotion?: boolean;
   options: GodotChoice[];
 };
 export type GodotMessage = { source: 'manor-godot'; type: 'ready' }
@@ -34,7 +37,7 @@ const DEMO_ROOMS: Record<number, { name: string; adjacent: number[] }> = {
 export function demoState(roomId: number): GodotState {
   const room = DEMO_ROOMS[roomId] ?? DEMO_ROOMS[0];
   return {
-    source: 'manor-react', type: 'state', demo: true, roomName: room.name,
+    source: 'manor-react', type: 'state', demo: true, roomName: room.name, roomId,
     options: room.adjacent.slice(0, 3).map(id => ({ id, name: DEMO_ROOMS[id].name })),
   };
 }
@@ -43,7 +46,7 @@ export function liveState(run: ManorRun): GodotState {
   const room: ManorRoom | undefined = run.rooms.find(value => value.id === run.playerRoom);
   return {
     source: 'manor-react', type: 'state', demo: false,
-    roomName: room?.name ?? 'Entrance Hall',
+    roomName: room?.name ?? 'Entrance Hall', roomId: run.playerRoom,
     // Never invent routes. The authoritative C# snapshot marks legal destinations.
     options: run.rooms.filter(value => value.available)
       .slice(0, 3).map(value => ({ id: value.id, name: value.name })),
