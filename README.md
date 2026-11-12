@@ -23,7 +23,7 @@ The current migration repairs and device acceptance checks are documented in [Mi
 | **Tales from the Backroom** | Branching adventures and investigations, including *Dead Man's Hand* |
 | **Midnight Descent** | Standalone Godot 2D action roguelite: first playable five-room expedition, sword/bolt/dash combat, three enemy archetypes, boss and relic choices |
 
-**Standalone Godot 3D experiment:** [Vesper — Starship Explorer](docs/starship-explorer.md) is an isolated first-person exploration prototype with a five-area spacecraft, visible outer space, a collectible flashlight, interactive bulkheads, light switches and physics props. It has a separate Windows test artifact and does not use casino saves or balances.
+**Standalone Godot 3D experiment:** [Vesper — Starship Explorer](docs/starship-explorer.md) is an isolated first-person exploration prototype with five explorable spaces, original PBR-style ship textures and a panoramic space sky, a collectible flashlight, interactive bulkheads, light switches and collision-aware physics props. It has a separate Windows test artifact and does not use casino saves or balances.
 
 A shared virtual bankroll connects the wagering games. The wider progression system includes experience, Prestige, Seasons, challenges, cosmetic Coins, the Collector's Album, a cosmetic shop and the Casino Vault. Casino Empire maintains a separate construction economy.
 
