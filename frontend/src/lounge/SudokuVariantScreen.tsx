@@ -84,7 +84,12 @@ export function SudokuVariantScreen({game,language,pending,error,command}:Props)
       const cls=['variant-cell',game.givens[i]!=='0'?'given':'',selected===i?'selected':'',
        wrong.has(i)?'incorrect':'',conflicts.has(i)?'conflict':'',
        game.mode==='x'&&(row===col||row+col===8)?'diagonal':''].filter(Boolean).join(' ');
-      const cageEdges=cage>=0?edges(cageMap):null;
+      const cageEdges=cage>=0?{
+        borderTopWidth:row===0||cageMap[i-size]!==cage?'3px':'0px',
+        borderRightWidth:col===size-1||cageMap[i+1]!==cage?'3px':'0px',
+        borderBottomWidth:row===size-1||cageMap[i+size]!==cage?'3px':'0px',
+        borderLeftWidth:col===0||cageMap[i-1]!==cage?'3px':'0px',
+      } as CSSProperties:null;
       return <button type="button" role="gridcell" key={i} data-testid={'variant-cell-'+i}
        aria-selected={selected===i} aria-label={'Row '+(row+1)+', column '+(col+1)}
        className={cls} style={edges(game.regions,game.mode==='jigsaw')} onClick={()=>setSelected(i)}
