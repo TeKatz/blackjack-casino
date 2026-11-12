@@ -457,30 +457,34 @@ func _chandelier(p: Node3D, x: float, z: float, y: float) -> void:
         _ball(p, "WarmFlame", Vector3(x+dx, y+0.5, z+dz), 0.08, m["flame"])
 
 
+
 func _servants(p: Node3D) -> void:
     for z in [-4.4, 0.0, 3.8]:
-        _box(p, "ServiceCrossbeam", Vector3(0, 4.92, z),
-            Vector3(15.0, 0.3, 0.35), m["darkwood"])
-    _box(p, "ToolRack", Vector3(-6.78, 2.23, -1.5), Vector3(0.2, 2.8, 3.1), m["wood"])
+        _box(p, "ServiceCrossbeam", Vector3(0, 4.62, z),
+            Vector3(15.0, 0.26, 0.30), m["darkwood"])
+    _box(p, "ToolRack", Vector3(-7.10, 2.23, -1.5),
+        Vector3(0.22, 2.8, 3.1), m["wood"])
     for z in [-2.3, -1.8, -1.3, -0.8]:
-        _box(p, "HangingTool", Vector3(-6.62, 2.25, z),
+        _box(p, "HangingTool", Vector3(-6.93, 2.25, z),
             Vector3(0.16, 1.06, 0.1), m["brass"])
     for z in [-1.8, 1.1, 3.6]:
         _cyl(p, "SupplyBarrel", Vector3(6.4, 0.55, z),
             0.47, 1.08, m["wood"])
     _table(p, -4.8, 3.5, 2.1)
-    _candles(p, -4.4, 3.5, 2)
+    _candles(p, -5.2, 3.45, 3, 0.975)
     _sconce(p, 7.7, 0.4)
-    _light(p, "ServiceLantern", Vector3(2.2, 4.1, 1.3), Color("#e4aa6a"), 1.7, 12)
+    _light(p, "ServiceLantern", Vector3(2.2, 4.1, 1.3),
+        Color("#e4aa6a"), 1.7, 12)
 
 
 func _landing(p: Node3D) -> void:
     _box(p, "CandleStoneDais", Vector3(-5.5, 0.42, -0.1),
         Vector3(2.7, 0.8, 2.2), m["marble"])
-    for x in [-6.3, -5.6, -4.6]:
-        _candles(p, x, 0.2, 4)
+    _box(p, "DaisCarvedTrim", Vector3(-5.5, 0.77, -0.1),
+        Vector3(2.73, 0.10, 2.25), m["brass"])
+    _candles(p, -6.47, 0.15, 4, 0.82)
+    _candles(p, -5.20, -0.20, 4, 0.82)
     _portrait(p, 1.0, 1.0, -0.07)
-    _window(p, -7.7, -4.0)
     _box(p, "LandingBench", Vector3(5.1, 0.65, 3.5),
         Vector3(2.1, 1.0, 0.7), m["darkwood"])
     _light(p, "CandleLandingLight", Vector3(-4.9, 3.6, -0.2),
@@ -488,33 +492,45 @@ func _landing(p: Node3D) -> void:
 
 
 func _stairs(p: Node3D) -> void:
-    for s in range(13):
-        var xx := -5.7 + float(s)*0.58
-        _box(p, "GrandStaircaseSteps", Vector3(xx, 0.10+float(s)*0.27,
-            1.0), Vector3(0.58, 0.28, 3.4), m["marble"])
-    _box(p, "GrandStairRail", Vector3(-2.0, 2.1, -0.65),
-        Vector3(7.6, 0.15, 0.16), m["brass"])
-    _pillar(p, -7.1, -4.8)
-    _portrait(p, 1, 1.2, 0.06)
-    _light(p, "StairwellLamps", Vector3(1.3, 5.1, 2.3), Color("#e9c1a5"), 2.0, 14)
+    # Keep the sightline through the centre door completely clear. The former
+    # 13-step block ran through the camera's middle foreground.
+    for step in range(11):
+        _box(p, "GrandStaircaseSteps",
+            Vector3(-6.68, 0.14 + float(step) * 0.22, 4.45 - float(step) * 0.58),
+            Vector3(2.22, 0.26, 0.58), m["marble"])
+    var rail := _box(p, "GrandStairRail", Vector3(-5.45, 1.62, 1.47),
+        Vector3(0.13, 0.13, 6.8), m["brass"])
+    rail.rotation.x = 0.35
+    _box(p, "StairSidePanelling", Vector3(-7.78, 1.25, 1.45),
+        Vector3(0.14, 2.4, 6.6), m["darkwood"])
+    _pillar(p, 6.9, -4.8)
+    _portrait(p, 1, 2.5, 0.06)
+    _light(p, "StairwellLamps", Vector3(1.3, 5.1, 2.3),
+        Color("#e9c1a5"), 2.0, 14)
 
 
 func _library(p: Node3D) -> void:
-    for x in [-6.9, -4.2, 4.35, 7.05]:
-        _books(p, x, -3.95, int(x*4.0))
+    # Book spines now face inward from the side walls. None sits in the approach
+    # to the three portals at z=-8.2.
+    _books_on_wall(p, -1, -3.2, 1)
+    _books_on_wall(p, 1, -3.6, 4)
+    _books_on_wall(p, -1, 2.35, 7)
+    _books_on_wall(p, 1, 3.0, 12)
     _table(p, -4.0, 2.1, 3.05)
-    _candles(p, -4.0, 1.98, 2)
+    _candles(p, -4.38, 2.06, 3, 0.975)
     _box(p, "ReadingChairSeat", Vector3(-3.0, 0.48, 4.2),
         Vector3(1.18, 0.27, 1.2), m["velvet"])
     _box(p, "ReadingChairBack", Vector3(-3.0, 1.03, 4.69),
         Vector3(1.23, 1.1, 0.23), m["velvet"])
-    _light(p, "LibraryAmber", Vector3(-3.0, 4.6, -0.2), Color("#ffc18a"), 2.25, 14)
-    _portrait(p, 1, 3.65, 0.04)
+    _light(p, "LibraryAmber", Vector3(-3.0, 4.6, -0.2),
+        Color("#ffc18a"), 2.25, 14)
+    _portrait(p, 1, -0.35, 0.04)
 
 
 func _reading(p: Node3D) -> void:
-    _books(p, -6.7, -2.8, 13)
-    _books(p, 6.7, -4.2, 21)
+    _books_on_wall(p, -1, -3.7, 13)
+    _books_on_wall(p, 1, -3.0, 21)
+    _books_on_wall(p, 1, 3.9, 18)
     for pair in [[-3.9, 1.6], [3.6, 3.5]]:
         var xx: float = float(pair[0])
         var zz: float = float(pair[1])
@@ -523,21 +539,24 @@ func _reading(p: Node3D) -> void:
         _box(p, "VelvetChairBack", Vector3(xx, 1.07, zz+0.57),
             Vector3(1.6, 1.0, 0.28), m["bluevelvet"])
     _table(p, -0.6, -0.65, 2.0)
-    _candles(p, -0.5, -0.55, 3)
-    _light(p, "ReadingLamplight", Vector3(2.5, 4.4, 0.5), Color("#ead6a7"), 1.8, 13)
+    _candles(p, -0.9, -0.63, 3, 0.975)
+    _light(p, "ReadingLamplight", Vector3(2.5, 4.4, 0.5),
+        Color("#ead6a7"), 1.8, 13)
 
 
 func _study(p: Node3D) -> void:
     _table(p, 3.3, 0.8, 4.4)
     _box(p, "StudyMap", Vector3(3.3, 1.005, 0.8),
         Vector3(2.8, 0.03, 0.9), m["paper"])
-    _books(p, 6.7, -3.8, 22)
-    _books(p, -6.7, -4.8, 23)
-    _cyl(p, "GlobeStand", Vector3(-4.1, 0.8, 1.1), 0.11, 1.6, m["brass"])
-    _ball(p, "AntiqueGlobe", Vector3(-4.1, 1.63, 1.1), 0.55, m["glass"])
+    _books_on_wall(p, 1, -3.8, 22)
+    _books_on_wall(p, -1, -4.8, 23)
+    _cyl(p, "GlobeStand", Vector3(-4.1, 0.8, 1.1),
+        0.11, 1.6, m["brass"])
+    _ball(p, "AntiqueGlobe", Vector3(-4.1, 1.63, 1.1),
+        0.55, m["glass"])
     _portrait(p, -1.0, -0.8, 0.11)
-    _light(p, "StudyDeskLight", Vector3(3.9, 3.9, 0.5), Color("#ffd2a0"), 2.2, 14)
-
+    _light(p, "StudyDeskLight", Vector3(3.9, 3.9, 0.5),
+        Color("#ffd2a0"), 2.2, 14)
 
 func _ballroom(p: Node3D) -> void:
     for x in [-7.1, 7.1]:
@@ -556,12 +575,14 @@ func _ballroom(p: Node3D) -> void:
         Vector3(0.055, 2.45, 2.4), m["glass"])
 
 
+
 func _music(p: Node3D) -> void:
     _box(p, "GrandPianoBody", Vector3(-4.1, 1.08, 1.35),
         Vector3(3.5, 0.38, 2.2), m["black"])
     for x in [-5.43, -2.72]:
         for z in [0.6, 2.1]:
-            _cyl(p, "PianoLeg", Vector3(x, 0.47, z), 0.11, 0.89, m["darkwood"])
+            _cyl(p, "PianoLeg", Vector3(x, 0.47, z),
+                0.11, 0.89, m["darkwood"])
     _box(p, "PianoKeyboard", Vector3(-4.0, 1.16, 2.55),
         Vector3(2.8, 0.09, 0.52), m["paper"])
     for k in range(13):
@@ -569,18 +590,32 @@ func _music(p: Node3D) -> void:
             Vector3(0.09, 0.055, 0.28), m["black"])
     _box(p, "PianoRaisedLid", Vector3(-4.8, 2.1, 0.4),
         Vector3(0.12, 1.8, 2.9), m["black"])
-    for z in [-3.0, -0.1, 2.6]:
-        _box(p, "MusicStand", Vector3(5.5, 1.8, z),
-            Vector3(1.6, 0.12, 1.03), m["brass"])
-        _box(p, "SheetMusic", Vector3(5.5, 1.89, z),
-            Vector3(1.3, 0.03, 0.85), m["paper"])
+
+    # Three complete orchestra music stands, instead of unsupported floating
+    # rectangular blocks. The vertical scores face the camera.
+    for z in [-3.0, 0.25, 3.5]:
+        _cyl(p, "MusicStandPole", Vector3(5.5, 0.72, z),
+            0.055, 1.41, m["brass"])
+        for foot in [-0.32, 0.0, 0.32]:
+            _box(p, "MusicStandTripod", Vector3(5.5+foot, 0.08, z),
+                Vector3(0.2, 0.08, 0.66), m["darkwood"])
+        var board := _box(p, "MusicStand", Vector3(5.5, 1.68, z),
+            Vector3(1.42, 0.88, 0.13), m["darkwood"])
+        board.rotation.x = -0.11
+        _box(p, "SheetMusic", Vector3(5.5, 1.68, z+0.092),
+            Vector3(1.24, 0.70, 0.04), m["paper"])
+        for line in range(5):
+            _box(p, "MusicScoreLine", Vector3(5.5, 1.45 + float(line) * 0.11, z+0.12),
+                Vector3(1.05, 0.012, 0.02), m["black"])
     _light(p, "MusicRoomSpotlight", Vector3(-3.8, 4.6, 1.2),
         Color("#d6cae8"), 2.0, 13)
     _portrait(p, 1, -6.0)
 
 
 func _garden(p: Node3D) -> void:
-    for x in [-9.15, 9.15]:
+    # Window frames exactly line up with the six holes in _shell, not with
+    # solid walls. No grille can float in front of a wall panel anymore.
+    for x in [-9.4, 9.4]:
         for z in [-5.4, -1.4, 3.0]:
             _window(p, x, z)
     for entry in [[-6.3,2.9,2.0], [6.7,0.7,2.4], [-7.1,-5.6,1.4], [5.2,-6.0,1.8]]:
@@ -591,9 +626,10 @@ func _garden(p: Node3D) -> void:
         0.31, 1.3, m["stone"])
     _ball(p, "GardenFountainGlass", Vector3(-0.2, 1.85, 1.0),
         0.34, m["glass"])
+    _box(p, "OrangeryStonePlanter", Vector3(-5.2, 0.39, -2.4),
+        Vector3(2.4, 0.75, 1.4), m["stone"])
     _light(p, "MoonlitGlasshouse", Vector3(3.2, 4.9, -1.4),
         Color("#a6cddb"), 2.1, 16)
-
 
 func _attic(p: Node3D) -> void:
     for z in [-5.5, -1.4, 2.7, 6.0]:
@@ -613,28 +649,55 @@ func _attic(p: Node3D) -> void:
         Color("#eab58a"), 1.55, 11)
 
 
+
 func _moonlit_landing(p: Node3D) -> void:
-    _attic(p)
-    _window(p, -9.15, -4.0)
-    _window(p, 9.15, 2.8)
-    _box(p, "BalconyRail", Vector3(0.2, 1.2, 1.4),
-        Vector3(7.5, 0.16, 0.16), m["brass"])
-    for x in [-3.2, -1.1, 1.2, 3.3]:
-        _box(p, "RailPost", Vector3(x, 0.68, 1.4),
-            Vector3(0.09, 1.28, 0.09), m["brass"])
-    _light(p, "Moonlight", Vector3(0, 4.2, 0.0), Color("#91bae1"), 0.7, 14)
+    # Entirely independent from Attic: pale stone landing, large blue glazing,
+    # balcony balustrade and moonlit monument. No rafters or antique trunks.
+    for x in [-7.1, 7.1]:
+        _pillar(p, x, -5.4, 2.9)
+    _box(p, "MoonlitVaultRib", Vector3(0, 5.77, -3.1),
+        Vector3(17.7, 0.18, 0.46), m["brass"])
+    for z in [-5.4, 1.9]:
+        _window(p, -9.4, z)
+    _window(p, 9.4, -2.2)
+    _box(p, "MoonlitBalconyFloor", Vector3(-6.8, 0.26, 1.6),
+        Vector3(3.0, 0.50, 9.0), m["marble"])
+    _box(p, "BalconyRail", Vector3(-5.30, 1.34, 1.6),
+        Vector3(0.17, 0.13, 8.9), m["brass"])
+    for z in [-2.5, -0.5, 1.5, 3.5, 5.5]:
+        _box(p, "BalconyBaluster", Vector3(-5.30, 0.85, z),
+            Vector3(0.17, 0.95, 0.16), m["marble"])
+    _box(p, "MoonlitMonumentPlinth", Vector3(5.9, 0.41, 1.8),
+        Vector3(2.0, 0.8, 2.0), m["darkmarble"])
+    _ball(p, "LunarOrrery", Vector3(5.9, 1.45, 1.8),
+        0.63, m["glass"])
+    _light(p, "HighMoonlight", Vector3(-2.0, 5.3, -0.2),
+        Color("#8ebee9"), 1.4, 16)
+    _light(p, "LunarOrreryGlow", Vector3(5.9, 2.3, 1.8),
+        Color("#aacfe8"), 0.7, 7)
 
 
 func _forbidden(p: Node3D) -> void:
     _box(p, "BrokenAltar", Vector3(-4.2, 0.88, -0.4),
         Vector3(2.6, 1.7, 1.8), m["cryptstone"])
-    _box(p, "FallenBeam", Vector3(5.7, 0.48, 2.2),
+    _box(p, "AltarMasonryCap", Vector3(-4.2, 1.72, -0.4),
+        Vector3(2.73, 0.10, 1.92), m["stone"])
+    _candles(p, -5.05, -0.4, 3, 1.78)
+    var fallen := _box(p, "FallenBeam", Vector3(5.7, 0.30, 2.2),
         Vector3(0.36, 0.48, 4.7), m["stone"])
-    _box(p, "BrokenWallRelief", Vector3(7.8, 3.7, -2.3),
-        Vector3(0.21, 1.8, 2.65), m["black"])
+    fallen.rotation.y = 0.08
+    # The former unframed black rectangle was in front of the east wall.
+    # In its place is a recessed, edge-trimmed relief with a supporting sill.
+    _box(p, "ForbiddenAlcoveFrame", Vector3(7.91, 3.20, -2.3),
+        Vector3(0.13, 2.2, 2.85), m["stone"])
+    _box(p, "ForbiddenAlcoveRelief", Vector3(7.82, 3.23, -2.3),
+        Vector3(0.055, 1.75, 2.30), m["darkmarble"])
+    _box(p, "ForbiddenAlcoveMotif", Vector3(7.78, 3.24, -2.3),
+        Vector3(0.035, 1.12, 0.51), m["brass"])
+    _box(p, "ForbiddenAlcoveSill", Vector3(7.73, 2.08, -2.3),
+        Vector3(0.36, 0.13, 2.9), m["stone"])
     _light(p, "ColdForbiddenLight", Vector3(2.3, 4.2, -0.9),
         Color("#819cbc"), 1.15, 14)
-    _candles(p, -5.0, -0.4, 3)
 
 
 func _crypt(p: Node3D) -> void:
@@ -644,25 +707,35 @@ func _crypt(p: Node3D) -> void:
         Vector3(3.05, 1.15, 1.35), m["cryptstone"])
     _box(p, "SarcophagusLid", Vector3(-3.3, 1.22, 1.7),
         Vector3(3.2, 0.19, 1.45), m["stone"])
-    _box(p, "CryptObelisk", Vector3(5.3, 2.15, 0.0),
+    _box(p, "CryptObelisk", Vector3(6.1, 2.15, -4.2),
         Vector3(1.15, 4.23, 1.05), m["stone"])
-    _candles(p, 4.2, -0.2, 5)
-    _light(p, "CryptCandleGlow", Vector3(3.3, 3.4, 1.0),
+    _box(p, "CryptCandlePedestal", Vector3(4.35, 0.57, 1.5),
+        Vector3(2.4, 1.10, 1.25), m["cryptstone"])
+    _box(p, "CryptCandleSlab", Vector3(4.35, 1.13, 1.5),
+        Vector3(2.53, 0.07, 1.36), m["stone"])
+    _candles(p, 3.75, 1.5, 5, 1.17)
+    _light(p, "CryptCandleGlow", Vector3(4.3, 3.5, 1.0),
         Color("#e1a56a"), 1.35, 12)
 
 
 func _secret(p: Node3D) -> void:
-    _box(p, "NarrowPassageLeft", Vector3(-6.0, 2.5, -0.3),
-        Vector3(0.5, 4.7, 16), m["cryptstone"])
-    _box(p, "NarrowPassageRight", Vector3(6.0, 2.5, -0.3),
-        Vector3(0.5, 4.7, 16), m["cryptstone"])
+    # The old x=+/-6.0 inner walls sliced the side portals at x=+/-4.9.
+    # Keep them behind the maximum 6.5 m portal clearance.
+    _box(p, "NarrowPassageLeft", Vector3(-7.65, 2.35, -0.3),
+        Vector3(0.32, 4.55, 16.0), m["cryptstone"])
+    _box(p, "NarrowPassageRight", Vector3(7.65, 2.35, -0.3),
+        Vector3(0.32, 4.55, 16.0), m["cryptstone"])
     for z in [-5.3, -1.4, 2.7, 6.4]:
         _box(p, "PassageBeam", Vector3(0, 4.55, z),
-            Vector3(12.0, 0.26, 0.31), m["stone"])
-    _candles(p, -5.4, 3.0, 3)
+            Vector3(15.0, 0.22, 0.31), m["stone"])
+    # A wall-side niche now visibly supports every candle.
+    _box(p, "PassageNicheTable", Vector3(-6.48, 0.55, 3.0),
+        Vector3(1.38, 1.07, 0.95), m["stone"])
+    _candles(p, -6.95, 3.0, 3, 1.085)
+    _box(p, "PassageNicheBack", Vector3(-7.33, 2.04, 3.0),
+        Vector3(0.12, 1.55, 1.55), m["darkmarble"])
     _light(p, "SecretNiche", Vector3(-4.2, 3.0, 2.8),
         Color("#d7a37d"), 1.1, 11)
-
 
 func _courtyard(p: Node3D) -> void:
     for x in [-7.7, 7.7]:
