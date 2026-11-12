@@ -1,9 +1,10 @@
 :root{font-family:"Segoe UI",Inter,system-ui,sans-serif;color:#eee8d9;background:#061714;font-synthesis:none}
 *{box-sizing:border-box}
-html,body,#root{margin:0;width:100%;height:100%;min-width:580px}
+html,body,#root{margin:0;width:100%;height:100%;min-width:580px;overflow:hidden}
 button{font:inherit;cursor:pointer}
 button:focus-visible{outline:2px solid #f5d28d;outline-offset:3px}
-.chill-shell{position:relative;isolation:isolate;min-height:100%;background:radial-gradient(ellipse at 60% -20%,#25513e 0%,#102a26 40%,#071917 72%,#071210 100%);overflow:hidden}
+.chill-shell{position:relative;isolation:isolate;height:100dvh;min-height:0;overflow-y:auto;scrollbar-width:none;overscroll-behavior:contain;background:radial-gradient(ellipse at 60% -20%,#25513e 0%,#102a26 40%,#071917 72%,#071210 100%);overflow-x:hidden}
+.chill-shell::-webkit-scrollbar{display:none}
 .chill-shell:before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(115deg,#0a2019a3,#03110bcb),url('/lobby/lobby-atlas.webp') center top/cover no-repeat;opacity:.28;filter:blur(3px)}
 .chill-sparkles{position:absolute;inset:0;pointer-events:none;opacity:.45;background-image:radial-gradient(circle,#b8daae8c 1px,transparent 1.6px),radial-gradient(circle,#e6c3898c 1px,transparent 1.6px);background-size:99px 113px,179px 141px;background-position:15px 8px,41px 63px;mask-image:linear-gradient(to bottom,#000,transparent 82%);animation:chill-haze 18s ease-in-out infinite alternate}
 .chill-header{position:relative;z-index:2;display:flex;align-items:center;gap:15px;min-height:76px;padding:10px clamp(18px,3vw,48px);border-bottom:1px solid #ae89516b;background:#071914ec;box-shadow:0 11px 30px #0006}
