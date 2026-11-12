@@ -53,7 +53,7 @@ describe('Manor v2 bridge contract', () => {
   it('exposes only the next legal phase of gameplay', () => {
     expect(availableActions(browserPreview)).toEqual([]);
     const ready = { ...browserPreview, canSpin: true };
-    expect(availableActions(ready)).toEqual(['spin.paid']);
+    expect(availableActions(ready)).toEqual(['spin.paid', 'practice.start']);
     const free = { ...ready, canSpin: false, canFreeSpin: true, cycleActive: true };
     expect(availableActions(free)).toEqual(['spin.free']);
     const run = {
@@ -66,6 +66,23 @@ describe('Manor v2 bridge contract', () => {
     ]);
     expect(availableActions({ ...free, run: { ...run, hasCandle: true } }))
       .toContain('run.candle');
+    const practice = { ...ready, practiceRun: { ...run, hasKey: true }, run: null };
+    expect(availableActions(practice)).toContain('practice.move');
+    expect(availableActions(practice)).toContain('practice.exit');
+    expect(availableActions({ ...practice, practiceRun: {
+      ...practice.practiceRun, hasCandle: true,
+    } })).toContain('practice.candle');
+    expect(availableActions({ ...practice, practiceRun: {
+      ...practice.practiceRun, status: 'Caught',
+    } })).toEqual(['practice.restart', 'practice.exit']);
+    expect(isSnapshot({ ...ready, practiceRun: practice.practiceRun })).toBe(true);
+    expect(isSnapshot({ ...ready, lastRun: {
+      status: 'Caught', message: 'The ghost catches you',
+      multiplier: '25×', award: '$250.00',
+    } })).toBe(true);
+    expect(isSnapshot({ ...ready, lastRun: {
+      status: 'Hunting', message: 'invalid', multiplier: '5×', award: '$0.00',
+    } })).toBe(false);
     expect(isSnapshot({ ...free, run, winningLineDetails: [
       { number: 1, count: 3, rows: [1, 1, 1, 1, 1], amount: '$15.00' },
     ] })).toBe(true);
