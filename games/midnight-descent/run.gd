@@ -281,7 +281,7 @@ func ui_font(size: int) -> Font:
 	return UI.DISPLAY_FONT if size>=27 else UI.BOLD_FONT
 
 func text_at(pos: Vector2, value: String, size: int, color: Color = WHITE) -> void:
-	draw_string(ui_font(size),pos,value,HORIZONTAL_ALIGNMENT_LEFT,-1,size,color)
+	draw_string(ui_font(size),pos.round(),value,HORIZONTAL_ALIGNMENT_LEFT,-1,size,color)
 
 func meter(rect: Rect2, ratio: float, color: Color) -> void:
 	draw_rect(rect.grow(1),Color("#091518"))
@@ -629,6 +629,30 @@ func run_scene_smoke() -> void:
 		push_error("Oracle purchase button missing from the map")
 		get_tree().quit(70)
 		return
+	# Control layout is applied at the end of the frame, not immediately
+	# after rebuilding the overlay. Regression-check the ACTUAL on-screen
+	# 1280×720 geometry to catch the original vertical text and overflow.
+	await get_tree().process_frame
+	var oracle_card: PanelContainer=null
+	var oracle_copy: Label=null
+	for candidate in modal_root.find_children("*","PanelContainer",true,false):
+		var card: PanelContainer=candidate
+		if bool(card.get_meta("oracle_panel",false)): oracle_card=card
+	for candidate in modal_root.find_children("*","Label",true,false):
+		var label_node: Label=candidate
+		if bool(label_node.get_meta("oracle_explainer",false)): oracle_copy=label_node
+	if oracle_card==null or oracle_copy==null:
+		push_error("Oracle card/description is missing")
+		get_tree().quit(79)
+		return
+	if oracle_card.size.x<1095 or oracle_card.size.y>116 or oracle_copy.size.x<590 or oracle_ui.size.x<215:
+		push_error("Oracle card is squeezed/wrapped: panel=%s copy=%s button=%s" % [str(oracle_card.size),str(oracle_copy.size),str(oracle_ui.size)])
+		get_tree().quit(80)
+		return
+	if oracle_card.get_global_rect().end.y>655 or oracle_card.get_global_rect().position.y<0:
+		push_error("Oracle card is outside the visible dungeon map: %s" % str(oracle_card.get_global_rect()))
+		get_tree().quit(81)
+		return
 	run.shards=90
 	purchase_oracle()
 	if run.oracle_purchases!=1 or run.shards!=78:
@@ -840,7 +864,7 @@ func run_scene_smoke() -> void:
 			get_tree().quit(76)
 			return
 		buy_threshold_item("special_charge")
-		if run.mage_special_charges!=2 or not run.mage_stock_bought.has("special_charge") or run.shards!=125-stage*6:
+		if run.mage_special_charges!=2 or not run.mage_stock_bought.has("special_charge") or run.shards!=150-int(Model.MAGE_PRICES["special_charge"][stage]):
 			push_error("Threshold mage special charge purchase did not apply: stage=%d, charges=%d, paid=%s, shards=%d, available=%s, position=%s" % [stage,run.mage_special_charges,str(run.mage_stock_bought.has("special_charge")),run.shards,str(run.threshold_mage_available()),str(run.player)])
 			get_tree().quit(77)
 			return
@@ -896,6 +920,12 @@ func run_scene_smoke() -> void:
 	if font!=UI.BOLD_FONT or overlay.theme==null or overlay.theme.default_font!=UI.BODY_FONT:
 		push_error("Nocturne UI typography was not installed on gameplay overlays")
 		get_tree().quit(57)
+		return
+	# A 1920×1080 window scales the 1280×720 canvas 1.5×. Oversample
+	# all UI faces and omit duplicated glyph shadows, not just one label.
+	if UI.DISPLAY_FONT.oversampling<1.99 or UI.BODY_FONT.oversampling<1.99 or UI.BOLD_FONT.oversampling<1.99 or UI.DISPLAY_FONT.multichannel_signed_distance_field:
+		push_error("Typography rasterizer settings are not consistently installed")
+		get_tree().quit(82)
 		return
 	hud_hp=float(run.hp)+3.0
 	update_hud_feedback(0.0)
@@ -1527,22 +1557,54 @@ func show_threshold_mage(column: VBoxContainer) -> void:
 
 func show_route_map(column: VBoxContainer) -> void:
 	add_label(column,tr_text("DUNGEON MAP","DUNGEON-KARTE")+"  •  %d / %d" % [run.floor_index+1,Model.FLOOR_COUNT],30,GOLD)
-	add_label(column,tr_text("Only your visited path and the next reachable rooms are revealed. ? marks unexplored territory.","Nur dein bisheriger Weg und direkt erreichbare Räume sind sichtbar. ? markiert unbekanntes Gebiet."),13,MUTED)
+	add_label(column,tr_text("Your path and next reachable rooms are visible. Distant rooms remain hidden.","Dein Weg und die nächsten erreichbaren Räume sind sichtbar. Entfernte Räume bleiben verborgen."),13,MUTED)
 	add_label(column,tr_text("Boss gate: ","Boss-Tor: ")+tr_text("Fights","Kämpfe")+" %d/%d  •  Elite %d/%d" % [run.dungeon.cleared_fights(),run.dungeon.MIN_FIGHTS[run.floor_index],run.dungeon.cleared_elites(),run.dungeon.MIN_ELITES[run.floor_index]]+("  •  "+tr_text("OPEN","OFFEN") if run.dungeon.boss_ready() else "  •  "+tr_text("LOCKED","GESPERRT")),16,GOLD)
 	var map := RouteMap.new()
 	map.nodes=run.dungeon.nodes
 	map.current=run.room
 	var selectable: Array=run.route_options()
 	column.add_child(map)
-	var oracle_bar:=HBoxContainer.new()
-	oracle_bar.add_theme_constant_override("separation",16)
-	column.add_child(oracle_bar)
+	# The old HBox assigned the long Oracle label almost zero width, causing
+	# character-by-character wrapping and a modal taller than the viewport.
+	# Give the Oracle a bounded full-width card with a fixed action column.
+	var oracle_panel:=PanelContainer.new()
+	oracle_panel.set_meta("oracle_panel",true)
+	oracle_panel.custom_minimum_size=Vector2(1100,80)
+	oracle_panel.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	var oracle_style: StyleBoxFlat=UI.panel(Color("#1b3031"),Color("#75b8a8"),12)
+	oracle_style.shadow_size=5
+	oracle_style.shadow_offset=Vector2(0,2)
+	oracle_panel.add_theme_stylebox_override("panel",oracle_style)
+	column.add_child(oracle_panel)
+	var oracle_row:=HBoxContainer.new()
+	oracle_row.add_theme_constant_override("separation",18)
+	oracle_row.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	oracle_panel.add_child(oracle_row)
+	var oracle_info:=VBoxContainer.new()
+	oracle_info.add_theme_constant_override("separation",3)
+	oracle_info.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	oracle_info.custom_minimum_size=Vector2(650,0)
+	oracle_row.add_child(oracle_info)
+	var oracle_title:=Label.new()
+	oracle_title.text=tr_text("ORACLE   •   SHARD FORESIGHT","ORAKEL   •   SPLITTER-WEISSAGUNG")
+	oracle_title.add_theme_font_override("font",UI.BOLD_FONT)
+	oracle_title.add_theme_font_size_override("font_size",17)
+	oracle_title.add_theme_color_override("font_color",Color("#b4e7d9"))
+	oracle_title.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	oracle_info.add_child(oracle_title)
+	var oracle_explainer:=Label.new()
+	oracle_explainer.text=tr_text("Reveal one unknown future column. Revealing rooms does not unlock them.","Enthüllt eine unbekannte Spalte. Diese Räume werden nicht vorzeitig begehbar.")
+	oracle_explainer.add_theme_font_size_override("font_size",15)
+	oracle_explainer.add_theme_color_override("font_color",MUTED)
+	oracle_explainer.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+	oracle_explainer.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	oracle_explainer.set_meta("oracle_explainer",true)
+	oracle_info.add_child(oracle_explainer)
 	var next_column: int=run.oracle_next_column()
-	var oracle_details: String=tr_text("ORACLE • Reveal the next unseen column. Forecasts never unlock travel.","ORAKEL • Deckt die nächste unbekannte Spalte auf. Enthüllte Räume sind noch nicht begehbar.")
-	add_label(oracle_bar,oracle_details,14,Color("#a2d9c8"))
-	var oracle_caption: String=tr_text("Consult • ","Befragen • ")+str(run.oracle_price())+" "+tr_text("Shards","Splitter") if next_column>=0 else tr_text("Future revealed","Zukunft enthüllt")
-	var oracle_button:=add_button(oracle_bar,oracle_caption,func(): purchase_oracle())
-	oracle_button.custom_minimum_size=Vector2(218,48)
+	var oracle_caption: String=tr_text("Reveal • ","Enthüllen • ")+str(run.oracle_price())+" "+tr_text("Shards","Splitter") if next_column>=0 else tr_text("All revealed","Alles enthüllt")
+	var oracle_button:=add_button(oracle_row,oracle_caption,func(): purchase_oracle())
+	oracle_button.custom_minimum_size=Vector2(220,52)
+	oracle_button.size_flags_horizontal=Control.SIZE_SHRINK_END
 	oracle_button.add_theme_font_size_override("font_size",16)
 	UI.style_button(oracle_button,Color("#80c8bd"))
 	oracle_button.disabled=not run.oracle_can_buy()

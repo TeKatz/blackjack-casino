@@ -1171,6 +1171,49 @@ func special_animated_sprite(id: String, center: Vector2, size: Vector2, offset:
 	var dimensions: Vector2=size*pulse
 	draw_texture_rect_region(SPECIAL_ART[id],Rect2(pixel_pos(center-dimensions*0.5),dimensions),Rect2(animation*128,0,128,128))
 
+func draw_bounty_gate_seal(frame: Rect2,opening: bool) -> void:
+	# The old gate re-used the Bounty room's *entire* four-frame 128px
+	# banner sprite inside a 58px aperture. It produced a busy, white-
+	# flashing illegible shape. This is a purpose-built, restrained
+	# iron warrant plate with a single readable bounty reticle.
+	var inner: Rect2=frame.grow(-11)
+	var center: Vector2=frame.get_center()
+	var brass: Color=Color("#c8a17b")
+	var rose: Color=Color("#c58b9c")
+	var glow: float=(0.55+0.12*sin(clock*1.75)) if opening else 0.33
+	draw_rect(inner,Color("#100f1c"))
+	draw_rect(inner.grow(-3),Color("#252132"))
+	draw_rect(inner.grow(-5),Color("#171924"))
+	draw_rect(inner,Color(brass,0.70),false,2)
+	for direction in [-1.0,1.0]:
+		var x: float=center.x+direction*inner.size.x*0.34
+		draw_line(Vector2(x,inner.position.y+15),Vector2(x,inner.end.y-15),Color(brass,0.34),2,true)
+	for y in [inner.position.y+13,inner.end.y-13]:
+		draw_line(Vector2(inner.position.x+11,y),Vector2(inner.end.x-11,y),Color(brass,0.38),2,true)
+	# Crosshair and the four compact notch marks remain fixed in place.
+	if opening:
+		draw_circle(center,24.0,Color(rose,0.09+0.035*sin(clock*1.75)))
+	draw_circle(center,19.0,Color("#11151f"))
+	draw_arc(center,19.0,0,TAU,44,Color(brass,0.76),2,true)
+	draw_arc(center,12.0,0,TAU,40,Color(rose,glow),3,true)
+	draw_circle(center,5.0,Color(rose,0.90 if opening else 0.55))
+	draw_circle(center,2.0,Color("#fff0d7",0.90 if opening else 0.62))
+	for i in range(4):
+		var angle: float=float(i)*TAU/4.0
+		var from: Vector2=center+Vector2.from_angle(angle)*23.0
+		var to: Vector2=center+Vector2.from_angle(angle)*30.0
+		draw_line(from,to,Color(brass,0.78),3,true)
+	for xsign in [-1.0,1.0]:
+		for ysign in [-1.0,1.0]:
+			var pin: Vector2=center+Vector2(xsign*inner.size.x*0.32,ysign*inner.size.y*0.39)
+			draw_rect(Rect2(pin-Vector2(2,2),Vector2(4,4)),Color(brass,0.70))
+	if not opening:
+		# Closed warrant, quiet and legible — no flashing full-art overlay.
+		draw_rect(Rect2(center+Vector2(-7,30),Vector2(14,7)),Color(brass,0.38))
+	else:
+		# Ready exit: a gentle glow on the reticle, never a strobing sprite.
+		draw_arc(center,30.0,0,TAU,48,Color(rose,0.24+0.10*sin(clock*1.75)),2,true)
+
 func draw_special_gate() -> void:
 	var id: String=model.room_kind
 	var palette: Array=SPECIAL_PALETTES[id]
@@ -1181,6 +1224,9 @@ func draw_special_gate() -> void:
 	draw_rect(frame,palette[1],false,5)
 	draw_rect(frame.grow(-9),Color("#101021"),false,2)
 	var pulse: float=0.55+0.45*sin(clock*3.9)
+	if id=="bounty":
+		draw_bounty_gate_seal(frame,opening)
+		return
 	for y in range(4):
 		var py: float=326+y*27
 		for side in [1142.0,1192.0]:

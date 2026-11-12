@@ -13,7 +13,13 @@ window/size/viewport_height=720
 window/size/window_width_override=1280
 window/size/window_height_override=720
 window/stretch/mode="canvas_items"
+; Keep Controls pixel-aligned; leave world transforms unsnapped so the
+; smooth chamber camera and animated pixel world do not jitter.
+
 window/size/mode=2
+
+[gui]
+common/snap_controls_to_pixels=true
 
 [rendering]
 textures/canvas_textures/default_texture_filter=0

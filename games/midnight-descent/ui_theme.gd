@@ -2,6 +2,22 @@ extends RefCounted
 ## Midnight Descent's second-generation UI skin. World sprites remain pixel art;
 ## typography and interface chrome deliberately use smooth canvas rendering.
 const DISPLAY_FONT: FontFile = preload("res://fonts/Cinzel-Variable.ttf")
+static var _font_rasterizer_ready := false
+
+# The canvas is scaled 1.5x at 1920×1080. Godot's default 1x
+# font rasterization plus shadows produces doubled, jagged serifs and
+# shimmering letter edges. Configure all three bundled fonts once,
+# independently of the default editor/UI font import settings.
+static func configure_fonts() -> void:
+	if _font_rasterizer_ready: return
+	_font_rasterizer_ready=true
+	for font: FontFile in [DISPLAY_FONT,BODY_FONT,BOLD_FONT]:
+		font.antialiasing=TextServer.FONT_ANTIALIASING_GRAY
+		font.hinting=TextServer.HINTING_LIGHT
+		font.subpixel_positioning=TextServer.SUBPIXEL_POSITIONING_AUTO
+		font.multichannel_signed_distance_field=false
+		font.generate_mipmaps=false
+		font.oversampling=2.0
 const BODY_FONT: FontFile = preload("res://fonts/AlegreyaSans-Regular.ttf")
 const BOLD_FONT: FontFile = preload("res://fonts/AlegreyaSans-Bold.ttf")
 const INK := Color("#0d171a")
@@ -26,6 +42,7 @@ const ROOM_ICONS = {"fight":0,"elite":1,"treasure":2,"shop":3,"event":4,"shrine"
 const ROOM_COLORS = {"fight":Color("#a9bdc6"),"elite":Color("#ed978a"),"treasure":Color("#efd08f"),"shop":Color("#78c6b7"),"event":Color("#bcabd6"),"shrine":Color("#9bd7a7"),"secret":Color("#cab4cb"),"boss":Color("#ef8791"),"forge":Color("#e4b17d"),"?":Color("#a6b1ae"),"ritual":Color("#bfa4e0"),"survival":Color("#93c9de"),"bounty":Color("#e4ac80"),"unstable":Color("#8ad9c9"),"blood_altar":Color("#ed8992"),"forgotten_forge":Color("#eabb84"),"archive":Color("#bdb3d7")}
 
 static func install_theme(root: Control) -> void:
+	configure_fonts()
 	var skin := Theme.new()
 	skin.default_font = BODY_FONT
 	skin.default_font_size = 18
@@ -43,8 +60,11 @@ static func install_theme(root: Control) -> void:
 
 static func set_display(label: Label) -> void:
 	label.add_theme_font_override("font", DISPLAY_FONT)
-	label.add_theme_color_override("font_shadow_color", Color(0,0,0,0.3))
-	label.add_theme_constant_override("shadow_offset_y", 2)
+	# Shadows on thin Cinzel strokes were visibly doubling glyph contours,
+	# particularly in the pause and route overlays on 1080p displays.
+	label.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
+	label.add_theme_constant_override("shadow_offset_y",0)
+	label.add_theme_constant_override("shadow_offset_x",0)
 
 static func room_icon(kind: String) -> AtlasTexture:
 	if SERVICE_MAP_ORDER.has(kind):
@@ -101,6 +121,7 @@ static func button_surface(fill: Color, accent: Color, selected: bool = false) -
 static func style_button(button: Button, color: Color, selected: bool=false) -> void:
 	button.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	button.add_theme_font_override("font", BOLD_FONT)
+	button.add_theme_color_override("font_shadow_color",Color.TRANSPARENT)
 	button.add_theme_stylebox_override("normal", button_surface(Color("#1b2b2e") if not selected else Color("#304143"), color, selected))
 	button.add_theme_stylebox_override("hover", button_surface(Color("#34484a"), color.lightened(0.22), true))
 	button.add_theme_stylebox_override("pressed", button_surface(Color("#3d5251"), color, true))

@@ -160,6 +160,16 @@ const ORACLE_BASE_COST := 12
 const ORACLE_COST_STEP := 8
 const MAGE_REACH := 112.0
 const MAGE_STOCK := ["heal_charge","special_charge","ward","blessing"]
+# Each floor is a bigger financial commitment. A character who hoards all
+# of one stage's drops can still choose, but not sweep the entire catalogue.
+const MAGE_PRICES := {
+	"heal_charge":[35,45,55],
+	"special_charge":[50,62,74],
+	"ward":[65,78,92],
+	"blessing":[80,96,112]
+}
+const SHARDS_BOSS_KILL := 10
+const SHARDS_STANDARD_KILL := 1
 var oracle_revealed: Dictionary = {}
 var oracle_purchases := 0
 var threshold_mage_pos := Vector2.ZERO
@@ -778,13 +788,18 @@ func start_special_combat(node: Dictionary) -> void:
 				var selected: String=str(STAGE_SPECIALISTS[floor_index][i%2]) if i>=6 else str(family[i%family.size()])
 				spawn_enemy(selected,Vector2(290+(i%4)*213,200+int(i/4)*138))
 
+func special_room_shard_bonus(kind: String,premium: bool,threat: int) -> int:
+	if kind=="ritual": return 9 if premium else 3
+	if kind=="bounty": return 10
+	return 6+maxi(0,threat)*2
+
 func complete_special_combat() -> void:
 	if special_stage==99 or state!="fight": return
 	var premium: bool=room_kind!="ritual" or special_stage==0
 	special_stage=99
-	var bonus: int=14+encounter_threat*4
-	if room_kind=="ritual": bonus=20 if premium else 6
-	if room_kind=="bounty": bonus=23
+	# Sparse special-room purses: the old 14–23 Shards were balanced
+	# for 4–6 enemies, before large-arena spawn densities were increased.
+	var bonus: int=special_room_shard_bonus(room_kind,premium,encounter_threat)
 	shards+=bonus
 	check_shard_contract()
 	enemies.clear()
@@ -1111,8 +1126,8 @@ func threshold_mage_available() -> bool:
 	return state=="fight" and room_kind=="boss" and not boss_awake and boss_gate_state=="open" and threshold_mage_pos!=Vector2.ZERO and player.distance_to(threshold_mage_pos)<=MAGE_REACH
 
 func threshold_mage_price(item: String) -> int:
-	var base: int={"heal_charge":20,"special_charge":25,"ward":35,"blessing":45}.get(item,-1)
-	return base+floor_index*6 if base>=0 else -1
+	if not MAGE_PRICES.has(item): return -1
+	return int(MAGE_PRICES[item][floor_index])
 
 func threshold_mage_can_buy(item: String) -> bool:
 	if not threshold_mage_available() or not MAGE_STOCK.has(item) or mage_stock_bought.has(item): return false
@@ -1195,7 +1210,7 @@ func service_action(choice: int) -> bool:
 				make_offers(true)
 				state="reward"
 				return true
-			elif choice==1: shards+=8
+			elif choice==1: shards+=5
 			else: return false
 		"forge":
 			if choice==0 and shards>=16:
@@ -1234,7 +1249,7 @@ func service_action(choice: int) -> bool:
 				bolt_damage+=9
 				notices.append("sp_blood_altar_sacrifice")
 			elif choice==2:
-				shards+=4
+				shards+=3
 			else: return false
 		"forgotten_forge":
 			var targets: Array[String]=forge_relic_targets()
@@ -1710,7 +1725,7 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 			advance_contract("slayer")
 			if character=="soulbinder": souls=mini(6,souls+1)
 			class_enemy_kill(enemies[i])
-			if relics.has("d_purse"): shards+=2*relics.count("d_purse")
+			if relics.has("d_purse"): shards+=relics.count("d_purse")
 			if relics.has("harvest"):
 				harvest_count+=1
 				if harvest_count%5==0: hp=minf(max_hp,hp+8*relics.count("harvest"))
@@ -1719,9 +1734,10 @@ func tick(dt: float, direction: Vector2, target: Vector2, melee: bool, ranged: b
 				for j in range(spirits):
 					shoot(enemies[i].pos,Vector2.from_angle(j*TAU/spirits+elapsed)*420,false,14*relics.count("soulstorm"))
 				if spirits==6: effect("synergy_soul",enemies[i].pos,0.46,Vector2.ZERO)
-			if relics.has("bounty") and (enemies[i].get("elite",false) or enemies[i].kind in ["boss","rootking","hollowking"]): shards+=10*relics.count("bounty")
-			# More enemies should not triple free spending power in later stages.
-			shards += (20 if enemies[i].kind in ["boss","rootking","hollowking"] else 2+encounter_threat)+2*relics.count("greed")
+			if relics.has("bounty") and (enemies[i].get("elite",false) or enemies[i].kind in ["boss","rootking","hollowking"]): shards+=5*relics.count("bounty")
+			# Room density now rises from ~8 to ~18+; never multiply the
+			# old kill purse by every extra enemy, especially on stage III.
+			shards+=kill_shard_reward(enemies[i])+relics.count("greed")
 			check_shard_contract()
 			if relics.has("shatter") and float(enemies[i].get("chill",0))>0:
 				var frozen_burst: bool=has_synergy("permafrost")
@@ -1790,6 +1806,15 @@ func update_effects(dt: float) -> void:
 		effects[i].time -= dt
 		if effects[i].time <= 0:
 			effects.remove_at(i)
+
+func kill_shard_reward(enemy: Dictionary) -> int:
+	var kind: String=str(enemy.get("kind",""))
+	if kind in ["boss","rootking","hollowking"]: return SHARDS_BOSS_KILL
+	var reward: int=SHARDS_STANDARD_KILL
+	if bool(enemy.get("elite",false)) or bool(enemy.get("champion",false)):
+		reward+=1
+	if encounter_threat>=2: reward+=1
+	return reward
 
 func hit_enemy(enemy: Dictionary, amount: float) -> void:
 	if enemy.hp<=0: return
@@ -2990,6 +3015,36 @@ func map_fog_smoke() -> bool:
 	# Out-of-range indices must never expose names or crash the chart.
 	return map_node_visibility(-1)=="unknown" and map_node_visibility(Dungeon.ROOM_COUNT)=="unknown"
 
+func shard_economy_smoke() -> bool:
+	# 70 ordinary kills previously paid >=140 Shards before specials. With
+	# the new model they pay only 70 at threat I and 140 at danger III.
+	begin(5411)
+	encounter_threat=0
+	var ordinary: Dictionary={"kind":"stalker","elite":false,"champion":false}
+	if kill_shard_reward(ordinary)!=1 or 70*kill_shard_reward(ordinary)!=70: return false
+	ordinary["elite"]=true
+	if kill_shard_reward(ordinary)!=2: return false
+	ordinary["elite"]=false
+	encounter_threat=2
+	if kill_shard_reward(ordinary)!=2: return false
+	if kill_shard_reward({"kind":"boss"})!=10: return false
+	if special_room_shard_bonus("ritual",true,2)!=9: return false
+	if special_room_shard_bonus("ritual",false,2)!=3: return false
+	if special_room_shard_bonus("bounty",true,2)!=10: return false
+	if special_room_shard_bonus("survival",true,0)!=6: return false
+	if special_room_shard_bonus("survival",true,2)!=10: return false
+	for floor in range(FLOOR_COUNT):
+		floor_index=floor
+		for item in MAGE_STOCK:
+			if threshold_mage_price(item)!=int(MAGE_PRICES[item][floor]): return false
+			if threshold_mage_price(item)<=0: return false
+	# All four goods deliberately cost more than the typical stage-I
+	# purse of 90–130 Shards; this is a tradeoff, not a free loadout.
+	var total: int=0
+	floor_index=0
+	for item in MAGE_STOCK: total+=threshold_mage_price(item)
+	return total==230
+
 func oracle_mage_smoke() -> bool:
 	begin(9160)
 	player=HUB_PORTAL
@@ -3100,6 +3155,9 @@ func smoke_test() -> bool:
 		return false
 	if not oracle_mage_smoke():
 		push_error("Threshold mage and Oracle economy regression failed")
+		return false
+	if not shard_economy_smoke():
+		push_error("Shard income and mage price regression failed")
 		return false
 	if not route_and_damage_smoke():
 		push_error("Route/damage smoke failed")

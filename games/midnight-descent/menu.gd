@@ -347,8 +347,9 @@ func show_page(next: String) -> void:
 		"home":
 			detail_label.text=tr_text("Fortune ends at the door. The depths are waiting.","Das Glück endet an der Tür. Die Tiefen warten.")
 			var hero:=label("MIDNIGHT\nDESCENT",47,LIGHT)
-			hero.add_theme_color_override("font_shadow_color",Color("#08060e"))
-			hero.add_theme_constant_override("shadow_offset_y",5)
+			# Prevent dark second glyph outlines at fractional window scales.
+			hero.add_theme_color_override("font_shadow_color",Color.TRANSPARENT)
+			hero.add_theme_constant_override("shadow_offset_y",0)
 			body.add_child(hero)
 			body.add_child(label(tr_text("THREE DEPTHS  /  78 ROOMS  /  48 RELICS","DREI EBENEN  /  78 RÄUME  /  48 RELIKTE"),14,GOLD))
 			var primary:=add_action(tr_text("Begin expedition  ›","Expedition beginnen  ›"),func(): show_page("expedition"))
