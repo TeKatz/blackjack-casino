@@ -225,6 +225,13 @@ public sealed class ManorModernGameServiceTests : IDisposable
         Assert.Equal(1,step.PracticeRun!.PlayerRoom);
         Assert.True(step.PracticeRun.HasKey); // Same C# key pickup as real runs.
         Assert.Contains("Key found",step.PracticeRun.Message);
+        var replay=service.Execute(new ManorPreviewProtocol.Command(
+            "practice.move","practice-first",0,Room:1));
+        Assert.Equal(step.PracticeRun.Turn,replay.PracticeRun!.Turn);
+        Assert.Equal(step.PracticeRun.PlayerRoom,replay.PracticeRun.PlayerRoom);
+        Assert.Throws<InvalidOperationException>(()=>service.Execute(
+            new ManorPreviewProtocol.Command("spin.paid","not-while-practising",0,25m)));
+
         Assert.Equal("1",step.PracticeRun.Turn.ToString());
         Assert.Equal("0",step.Revision);
         Assert.Equal(750m,controller.State.Bankroll);
