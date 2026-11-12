@@ -837,7 +837,7 @@ func run_scene_smoke() -> void:
 			return
 		buy_threshold_item("special_charge")
 		if run.mage_special_charges!=2 or not run.mage_stock_bought.has("special_charge") or run.shards!=125-stage*6:
-			push_error("Threshold mage special charge purchase did not apply")
+			push_error("Threshold mage special charge purchase did not apply: stage=%d, charges=%d, paid=%s, shards=%d, available=%s, position=%s" % [stage,run.mage_special_charges,str(run.mage_stock_bought.has("special_charge")),run.shards,str(run.threshold_mage_available()),str(run.player)])
 			get_tree().quit(77)
 			return
 		close_mage_panel()
@@ -1484,7 +1484,7 @@ func show_threshold_mage(column: VBoxContainer) -> void:
 		tr_text("The dead keep their bargains. Mine ends at the gate.","Die Toten halten ihre Abmachungen. Meine endet am Tor.")
 	]
 	add_label(column,greetings[run.floor_index],15,MUTED)
-	var items: Array[String]=Model.MAGE_STOCK
+	var items: Array=Model.MAGE_STOCK
 	for item in items:
 		var title: String=""
 		var detail: String=""
