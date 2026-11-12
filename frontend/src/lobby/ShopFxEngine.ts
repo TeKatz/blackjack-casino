@@ -31,7 +31,7 @@ function scene(stage:Container,root:HTMLElement):Scene|null{
  const group=new Container(),mask=new Graphics();
  stage.addChild(mask);stage.addChild(group);group.mask=mask;
  const random=seeded(hash(root.dataset.shopFx??kind));
- const sparks=Array.from({length:shopFxCount(kind,quality)},(_,i)=>{
+ const sparks=Array.from({length:Math.min(7,Math.ceil(shopFxCount(kind,quality)*.55))},(_,i)=>{
    const radius=(i%4===0?1.8:.85)+random()*1.1;
    const node=new Graphics().circle(0,0,radius).fill({color:i%5===0?0xffffff:color,alpha:.72});
    if(i%6===0)node.scale.set(1.2);
@@ -60,7 +60,7 @@ export function createShopFx(stage:Container,lobbyRoot:HTMLElement){
    const viewport=scroll.getBoundingClientRect();
    // Strict cap prevents large catalogs creating hundreds of GPU objects.
    for(const element of scroll.querySelectorAll<HTMLElement>('.shop-product .premium-showcase')){
-    if(active.size>=18)break;
+    if(active.size>=10)break;
     if(!visibleInViewport(element,viewport))continue;
     active.add(element);
     if(!scenes.has(element)){
@@ -74,9 +74,13 @@ export function createShopFx(stage:Container,lobbyRoot:HTMLElement){
   }
  };
  reconcile();
+ const scroll=lobbyRoot.querySelector<HTMLElement>('.shop-scroll');
+ scroll?.addEventListener('scroll',reconcile,{passive:true});
  return {
-  tick(time:number,delta:number){
-   if(count++%10===0)reconcile();
+  tick(time:number,_delta:number){
+   if(document.hidden)return;
+   if(count++%3!==0)return;
+   if(count%60===1)reconcile();
    const root=lobbyRoot.getBoundingClientRect();
    for(const s of scenes.values()){
     const r=s.object.getBoundingClientRect();
@@ -112,6 +116,7 @@ export function createShopFx(stage:Container,lobbyRoot:HTMLElement){
     }
    }
   },
-  destroy(){for(const s of scenes.values())destroy(stage,s);scenes.clear();}
+  destroy(){scroll?.removeEventListener('scroll',reconcile);
+   for(const s of scenes.values())destroy(stage,s);scenes.clear();}
  };
 }
