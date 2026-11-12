@@ -23,6 +23,8 @@ The current migration repairs and device acceptance checks are documented in [Mi
 | **Tales from the Backroom** | Branching adventures and investigations, including *Dead Man's Hand* |
 | **Midnight Descent** | Standalone Godot 2D action roguelite: first playable five-room expedition, sword/bolt/dash combat, three enemy archetypes, boss and relic choices |
 
+**Independent 3D prototype:** The [first-person room test](docs/first-person-room.md) demonstrates walking in a Godot 3D chamber, opening a sliding door and switching a lamp. It has a separate Windows test artifact and does not appear in the casino lobby or affect progression.
+
 A shared virtual bankroll connects the wagering games. The wider progression system includes experience, Prestige, Seasons, challenges, cosmetic Coins, the Collector's Album, a cosmetic shop and the Casino Vault. Casino Empire maintains a separate construction economy.
 
 ## Casino lobby: modern presentation
