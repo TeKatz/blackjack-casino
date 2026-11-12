@@ -48,7 +48,7 @@ describe('Godot 3D Manor bonus bridge', () => {
     }));
     expect(markup).toContain('manor-godot-frame');
     expect(markup).toContain('./manor3d/index.html');
-    expect(markup).toContain('Test Bonus Game');
+    expect(markup).toContain('TEST BONUS GAME');
     expect(markup).toContain('Keine echten Gewinne');
     expect(markup).toContain('Zurück zum Automaten');
   });
