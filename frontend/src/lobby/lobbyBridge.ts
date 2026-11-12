@@ -16,7 +16,7 @@ export type LobbySnapshot = {
   bankroll: string; bankrollValue?:number; empireCredits: string; albumOwned: number; albumTotal: number; albumPacksReady: number;
   seasonTier: number; seasonNextTier: number; seasonExperience: number; seasonRequired: number;
   seasonFraction: number; seasonComplete: boolean; challengeName: string;
-  challengeFraction: number; challengesReady: number; vaultTier: string;
+  challengeFraction: number; challengesReady: number; challengeTotal: number; challengeCompleted: number; challengeOverallFraction: number; vaultTier: string;
   vaultAmount: string; vaultCapacity: string; vaultFraction: number;
   animationsEnabled: boolean; albumSoundEnabled: boolean;
   musicEnabled: boolean; musicVolume: number; showEmpireBalance: boolean;
@@ -50,8 +50,9 @@ export function isLobbySnapshot(x: unknown): x is LobbySnapshot {
   if (!['displayName','coins','title','bankroll','empireCredits','challengeName',
     'vaultTier','vaultAmount','vaultCapacity'].every(k => string(x[k]))) return false;
   if (!['level','prestige','albumOwned','albumTotal','seasonTier','seasonNextTier',
-    'seasonExperience','seasonRequired','challengesReady','albumPacksReady'].every(k => numeric(x[k]) && Number(x[k]) >= 0)) return false;
-  if (!['seasonFraction','challengeFraction','vaultFraction'].every(k => fraction(x[k]))) return false;
+    'seasonExperience','seasonRequired','challengesReady','albumPacksReady','challengeTotal','challengeCompleted'].every(k => numeric(x[k]) && Number(x[k]) >= 0)) return false;
+  if (!['seasonFraction','challengeFraction','challengeOverallFraction','vaultFraction'].every(k => fraction(x[k]))) return false;
+  if (Number(x.challengeCompleted) > Number(x.challengeTotal)) return false;
   if (typeof x.seasonComplete !== 'boolean' || typeof x.albumSoundEnabled !== 'boolean'
     || typeof x.animationsEnabled !== 'boolean'
     || typeof x.musicEnabled !== 'boolean' || typeof x.showEmpireBalance !== 'boolean'
@@ -81,7 +82,7 @@ export const fallbackLobby: LobbySnapshot = {
   bankroll: '$1,000.00', bankrollValue:1000, empireCredits: '0 cr', albumOwned: 0, albumTotal: 136, albumPacksReady: 0,
   seasonTier: 0, seasonNextTier: 1, seasonExperience: 0, seasonRequired: 2000,
   seasonFraction: 0, seasonComplete: false, challengeName: 'Unbroken',
-  challengeFraction: 0, challengesReady: 0, vaultTier: 'BRONZE',
+  challengeFraction: 0, challengesReady: 0, challengeTotal: 3, challengeCompleted: 1, challengeOverallFraction: 1/3, vaultTier: 'BRONZE',
   vaultAmount: '$0.00', vaultCapacity: '$100,000.00', vaultFraction: 0,
   animationsEnabled: true, albumSoundEnabled:true,
   musicEnabled:true, musicVolume:0.10, showEmpireBalance:true,

@@ -22,11 +22,17 @@ internal static class LocalizationSmoke
             window.FindName("GameModeComboBox") is null,
             "Obsolete WPF Blackjack settings were not removed.");
         Require(await react.Browser.CoreWebView2!.ExecuteScriptAsync(
-            "Boolean(document.querySelector('.lobby-language'))") == "true",
-            "React lobby does not expose the language switch.");
-
+            "Boolean(document.querySelector('[data-testid=lobby-settings-entry]'))") == "true",
+            "React lobby does not expose casino settings.");
         await react.Browser.CoreWebView2!.ExecuteScriptAsync(
-            "document.querySelector('.lobby-language')?.click()");
+            "document.querySelector('[data-testid=lobby-settings-entry]')?.click()");
+        Require(await react.Browser.CoreWebView2!.ExecuteScriptAsync(
+            "Boolean(document.querySelector('[data-testid=lobby-language-select]'))") == "true",
+            "The Settings dialog must contain the language selector.");
+        await react.Browser.CoreWebView2!.ExecuteScriptAsync(
+            "(()=>{const select=document.querySelector('[data-testid=lobby-language-select]');" +
+            "select.value='de';select.dispatchEvent(new Event('change',{bubbles:true}));" +
+            "document.querySelector('.lobby-updates-close')?.click();})()");
         // An async smoke test carries its own captured ExecutionContext. CurrentUICulture
         // inside this continuation may therefore remain English even after the WPF host
         // changes the application locale in WebView2's message callback.
@@ -151,7 +157,11 @@ internal static class LocalizationSmoke
         ModernLobbyView? languageLobby = Find<ModernLobbyView>(window).FirstOrDefault(view => view.Ready && view.IsVisible);
         Require(languageLobby?.Browser.CoreWebView2 is not null, "Returning from Lounge lost the modern lobby.");
         await languageLobby!.Browser.CoreWebView2!.ExecuteScriptAsync(
-            "document.querySelector('.lobby-language')?.click()");
+            "document.querySelector('[data-testid=lobby-settings-entry]')?.click()");
+        await languageLobby.Browser.CoreWebView2.ExecuteScriptAsync(
+            "(()=>{const select=document.querySelector('[data-testid=lobby-language-select]');" +
+            "select.value='en';select.dispatchEvent(new Event('change',{bubbles:true}));" +
+            "document.querySelector('.lobby-updates-close')?.click();})()");
         for (int i = 0; i < 60 && Localization.Language != UiLanguagePreference.English; i++)
             await Task.Delay(50);
         window.UpdateLayout();

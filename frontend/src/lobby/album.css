@@ -45,6 +45,9 @@
 .album-theme-item:hover{background:#1e4833;transform:translateX(2px);}
 .album-theme-item.selected{border-color:var(--theme-accent);background:#244734;box-shadow:inset 3px 0 var(--theme-accent);}
 .album-theme-item.ultra:not(.selected){background:linear-gradient(100deg,#292b39,#172b26);}
+.album-theme-item.completed{border-color:var(--theme-accent);box-shadow:inset 3px 0 var(--theme-accent),inset 0 0 16px #8cdaaa17}
+.album-theme-item.completed .album-theme-name small{color:#b8f1c5;font-weight:850;letter-spacing:.075em}
+.album-theme-item.completed strong{font-weight:850}
 .album-theme-symbol{font-size:22px;color:var(--theme-accent);text-align:center;}
 .album-theme-name{min-width:0;display:flex;flex-direction:column;gap:3px;font-size:12px;font-weight:650;
  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}

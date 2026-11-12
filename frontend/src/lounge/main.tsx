@@ -282,8 +282,9 @@ function App() {
            onClick={()=>adventureCommand({action:snapshot.adventure?.screen==='library'?'adventure.exit':
              snapshot.adventure?.screen==='board'?'adventure.board.close':'adventure.back'})}>
            {snapshot.adventure.screen==='library'?'← Chill Lounge':
-             snapshot.adventure.screen==='board'?'← Zur Geschichte':
-             snapshot.adventure.screen==='encounter'?'Tabletop encounter':'← Abenteuer'}</button>
+             snapshot.adventure.screen==='board'?(language==='de'?'← Zur Geschichte':'← Back to story'):
+             snapshot.adventure.screen==='encounter'?(language==='de'?'Tabletop-Begegnung':'Tabletop encounter'):
+             (language==='de'?'← Abenteuer':'← Adventure library')}</button>
        : snapshot?.jigsaw
        ? <button className="chill-exit" disabled={!!jigsawPending}
            onClick={()=>jigsawCommand({action:snapshot.jigsaw?.screen==='library'?'jigsaw.exit':'jigsaw.back'})}>

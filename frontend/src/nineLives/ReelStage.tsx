@@ -1,4 +1,4 @@
-import {memo,useEffect,useMemo,useRef} from 'react';
+import {memo,useLayoutEffect,useMemo,useRef} from 'react';
 import {NineSymbolArt} from './SymbolArt';
 import {GalaxyBackdrop} from './GalaxyBackdrop';
 import {paylineCells} from './bridge';
@@ -29,7 +29,7 @@ function Column({reel,visible,result,rolling,activeWin,speed,reducedMotion,onSto
  const tape=useMemo(()=>spinId&&result?reelStrip(spinId,reel,visible,cellSymbols(result.grid,reel)):[],
    [spinId,reel]);
  const showTape=rolling&&!reducedMotion&&tape.length>0;
- useEffect(()=>{
+ useLayoutEffect(()=>{
   if(!showTape||!spinId)return;
   const el=viewport.current,tapeEl=tapeRef.current;
   if(!el||!tapeEl)return;
@@ -49,6 +49,8 @@ function Column({reel,visible,result,rolling,activeWin,speed,reducedMotion,onSto
    if(height<=0)return;
    tapeEl.style.setProperty('--nine-tile-height',height+'px');
    tapeEl.style.setProperty('--nine-track-gap',gap+'px');
+   tapeEl.style.transform=`translate3d(0,${-(height+gap)}px,0)`;
+   tapeEl.style.visibility='visible';
    const duration=reelDuration(reel,speed);
    animation=tapeEl.animate(reelFrames(height+gap,reel),{
     duration,iterations:1,fill:'forwards',easing:'linear',

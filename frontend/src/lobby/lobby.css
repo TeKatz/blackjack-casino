@@ -322,12 +322,6 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
 }
 /* Midnight Dice already draws physical dice; remove duplicated overlay glyphs. */
 
-/* The lobby owns its own locale switch; native settings are only visible at the Blackjack table. */
-.lobby-language{flex:0 0 auto;min-width:42px;height:38px;margin:0 4px;
- border:1px solid rgba(218,183,112,.55);border-radius:8px;
- background:rgba(13,48,37,.86);color:#ecd6a6;font-weight:700;font-size:12px;letter-spacing:.09em;
- cursor:pointer;transition:border-color .18s,background .18s;}
-.lobby-language:hover,.lobby-language:focus-visible{border-color:#f4d7a0;background:#1f523e;}
 
 /* Update access belongs to the casino lobby, never the Blackjack table.
    Keep the entry anchored to the lower left even when categories overflow. */
@@ -366,6 +360,9 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
 
 /* Global host preferences moved out of the retired WPF Blackjack sidebar. */
 .lobby-settings-entry{margin-bottom:4px;border-color:#628d76;color:#d3e5d2;}
+.lobby-settings-language{display:grid;grid-template-columns:minmax(100px,1fr) minmax(145px,1fr);align-items:center;gap:16px;font-size:13px;color:#dbe9df}
+.lobby-settings-language select{width:100%;min-height:42px;border:1px solid #7ca892;border-radius:9px;background:#12352b;color:#f2e9d3;padding:9px 12px;font:600 13px "Segoe UI",sans-serif}
+.lobby-settings-language select:focus-visible{outline:2px solid #f0cb81;outline-offset:2px}
 .lobby-settings-panel .lobby-settings-check{display:flex;align-items:center;gap:12px;font-size:13px;line-height:1.5;}
 .lobby-settings-check input{width:18px;height:18px;accent-color:#d6b475;flex:0 0 auto;}
 .lobby-settings-panel .lobby-settings-volume{display:grid;gap:10px;font-size:13px;}

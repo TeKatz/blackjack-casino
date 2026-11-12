@@ -365,7 +365,7 @@ function LobbyApp() {
       <div className="lobby-top-status">
         <button className="header-widget header-compact" onClick={()=>openProgression('Challenges')}>
           <span className="header-emoji">♛</span><span><small>{de?'AUFGABEN':'CHALLENGES'}</small>
-          <b>{percent(data.challengeFraction)}</b><Progress value={data.challengeFraction}/></span>
+          <b>{data.challengeCompleted} / {data.challengeTotal} · {percent(data.challengeOverallFraction)}</b><Progress value={data.challengeOverallFraction}/></span>
         </button>
         <button className="header-widget header-compact" onClick={()=>openProgression("Collector's Album")}>
           <span className="header-emoji">▤</span><span><small>ALBUM</small><b>{data.albumOwned} / {data.albumTotal}</b></span>
@@ -385,11 +385,6 @@ function LobbyApp() {
         <span><small>BANKROLL</small><strong>{data.bankroll}</strong></span>
         {data.showEmpireBalance&&<span className="empire-wallet"><small>EMPIRE CREDITS</small><strong>{data.empireCredits}</strong></span>}
       </div>
-      <button type="button" className="lobby-language" aria-label={de?'Sprache wechseln: Englisch':'Switch language: German'}
-        title={de?'Switch to English':'Zu Deutsch wechseln'}
-        onClick={()=>lobbyCommand('lobby.language.set',de?'en':'de')}>
-        <span>{de?'EN':'DE'}</span>
-      </button>
       <button type="button" className="lobby-exit" onClick={()=>lobbyCommand('lobby.exit')}>
         ↪ <span>{de?'Beenden':'Exit'}</span>
       </button>
@@ -506,11 +501,20 @@ function LobbyApp() {
         <header className="lobby-updates-header">
           <div><small>THE MIDNIGHT CLUB</small>
             <h2>{de?'Einstellungen':'Settings'}</h2>
-            <p>{de?'Musik und die gemeinsame Casino-Anzeige verwalten.':'Manage music and the shared casino display.'}</p>
+            <p>{de?'Musik, Sprache und Casino-Anzeige verwalten.':'Manage language, music and the shared casino display.'}</p>
           </div>
           <button type="button" className="lobby-updates-close" aria-label={de?'Schließen':'Close'}
             onClick={()=>setSettingsOpen(false)}>×</button>
         </header>
+        <label className="lobby-settings-language">
+          <span>{de?'Sprache':'Language'}</span>
+          <select data-testid="lobby-language-select" value={data.language}
+            onChange={e=>lobbyCommand('lobby.language.set',e.target.value)}>
+            <option value="de">Deutsch</option>
+            <option value="en">English</option>
+          </select>
+        </label>
+
         <label className="lobby-settings-check">
           <input type="checkbox" data-testid="lobby-music-enabled" checked={data.musicEnabled}
             onChange={e=>lobbyCommand('lobby.settings.music',String(e.target.checked))}/>

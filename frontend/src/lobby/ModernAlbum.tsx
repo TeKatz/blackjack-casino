@@ -298,10 +298,10 @@ export function ModernAlbum({data,loaded,language,animate,soundEnabled,result,on
    <aside className="album-themes" aria-label={de?'Sammlungsthemen':'Collection themes'}>
     <h2>{de?'Kollektionen':'Collections'}</h2>
     {themes.map(t=><button type="button" key={t.id} data-theme-id={t.id} aria-current={t.id===theme?.id?'true':undefined}
-    className={'album-theme-item '+(t.id===theme?.id?'selected ':'')+(t.ultraRare?'ultra':'')}
+    className={'album-theme-item '+(t.id===theme?.id?'selected ':'')+(t.ultraRare?'ultra ':'')+(t.owned===t.total?'completed':'')}
     style={{'--theme-accent':t.accent} as CSSProperties} onClick={()=>{setThemeId(t.id);setFilter('all');setQuery('');}}>
     <span className="album-theme-symbol">{t.symbol}</span><span className="album-theme-name">{t.name}
-     <small>{t.ultraRare?'ULTRA RARE':'COLLECTION'}</small></span><strong>{t.owned}/{t.total}</strong></button>)}
+     <small>{t.owned===t.total?(de?'✓ VOLLSTÄNDIG':'✓ COMPLETE'):t.ultraRare?'ULTRA RARE':'COLLECTION'}</small></span><strong>{t.owned}/{t.total}</strong></button>)}
    </aside>
    <div className="album-gallery">
    {theme&&<><header className="album-gallery-header" style={{'--theme-accent':theme.accent} as CSSProperties}>

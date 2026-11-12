@@ -234,14 +234,16 @@ function CaseBoard({board,copy,pending,send,error}:{
       <small>{n.category.toUpperCase()} · {n.reliability}</small><strong>{n.title}</strong>
       <span>{n.subtitle||n.lead}</span></button>;})}</div>
    </div>
-   <aside className="backroom-board-details"><h3>{copy.node}</h3>
-    {chosen?<><h2>{chosen.title}</h2><p>{chosen.description}</p>
-      <p>{chosen.category} · {chosen.reliability}</p>
+   <aside className="backroom-board-details" aria-label={copy.node}>
+    <div className="backroom-detail-heading"><span className="backroom-eyebrow">{copy.board}</span><h3>{copy.node}</h3></div>
+    {chosen?<div className={'backroom-detail-content backroom-detail-'+chosen.category.toLowerCase()}>
+      <div className="backroom-detail-status"><span>{chosen.category}</span><span>{chosen.reliability}</span></div>
+      <h2>{chosen.title}</h2><p className="backroom-detail-description">{chosen.description}</p>
       {chosen.facts.length>0&&<><h3>{copy.facts}</h3>
        {chosen.facts.map((f,i)=><p key={i}>{f}</p>)}</>}
       {chosen.quotes.length>0&&<><h3>{copy.quotes}</h3>
-       {chosen.quotes.map((f,i)=><blockquote key={i}>{f}</blockquote>)}</>}</>
-      :<p>{nodes.length} clues · {board.connections.length} {copy.connections}</p>}
+       {chosen.quotes.map((f,i)=><blockquote key={i}>{f}</blockquote>)}</>}</div>
+      : <div className="backroom-detail-empty"><span aria-hidden="true">◇</span><p>{nodes.length} {copy.node.toLowerCase()} · {board.connections.length} {copy.connections}</p></div>}
    </aside>
   </div>
  </div>;

@@ -41,11 +41,15 @@ export function RouletteWheel({number,spinId,motion,onStart,onDone}:{number:numb
   const s=scene.current;
   if(!s||!ready){if(failed){const timer=window.setTimeout(()=>done.current(),0);return()=>clearTimeout(timer);}return;}
   begin.current();
-  const start=performance.now(),duration=motion?6100:1, initial=s.wheel.rotation, final=initial+TAU*4+1.2;
+  // Anchor the timeline to the first painted frame; WebView2 startup cannot skip opening movement.
+  let start:number|null=null;
+  const duration=motion?6100:1, initial=s.wheel.rotation, final=initial+TAU*4+1.2;
   const target=pocketAngle(number)+final;
   const ballStart=Math.atan2(s.ball.y,s.ball.x), diff=((target-ballStart)%TAU+TAU)%TAU-TAU*7;
   function draw(now:number){
-   if(cancelled||!s)return;const t=Math.min(1,(now-start)/duration), e=ease(t);
+   if(cancelled||!s)return;
+   start??=now;
+   const t=Math.min(1,(now-start)/duration), e=ease(t);
    s.wheel.rotation=initial+(final-initial)*e;
    const angle=ballStart+diff*ease(Math.min(1,t*1.03));
    const drop=Math.max(0,(t-.57)/.43),rad=207-43*ease(drop)+Math.sin(drop*5*Math.PI)*5*(1-drop);
