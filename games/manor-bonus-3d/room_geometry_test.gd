@@ -42,8 +42,12 @@ func _run() -> void:
 
         # Every candle requires a real base contact. The old hard-coded 0.52 m
         # center caused both floating candles and candles through tabletops.
-        for node in visuals.find_children("Candle", "MeshInstance3D", true, false):
+        var candle_count := 0
+        for node in visuals.find_children("*", "MeshInstance3D", true, false):
             var candle := node as MeshInstance3D
+            if not candle.has_meta("support_y"):
+                continue
+            candle_count += 1
             var cylinder := candle.mesh as CylinderMesh
             if cylinder == null or not candle.has_meta("support_y"):
                 _fail("Room %d has an unanchored candle" % room_id)
@@ -56,6 +60,10 @@ func _run() -> void:
             if not _textured(candle):
                 _fail("Room %d candle is missing its material" % room_id)
                 return
+
+        if room_id in [1, 2, 4, 5, 11, 12, 14] and candle_count < 3:
+            _fail("Room %d candles are missing or not individually anchored" % room_id)
+            return
 
         # Representative bespoke assets also need their actual texture maps.
         var landmark_name: String = ""
@@ -87,12 +95,12 @@ func _run() -> void:
             3:
                 # The stairs belong to the west wall, not in front of the
                 # middle door/camera.
-                for stair_node in visuals.find_children("GrandStaircaseSteps", "MeshInstance3D", true, false):
+                for stair_node in visuals.find_children("GrandStaircaseSteps*", "MeshInstance3D", true, false):
                     if (stair_node as MeshInstance3D).position.x > -5.4:
                         _fail("Grand Staircase still blocks the center door")
                         return
             4, 5:
-                for shelf_node in visuals.find_children("SideBookcase", "Node3D", true, false):
+                for shelf_node in visuals.find_children("SideBookcase*", "Node3D", true, false):
                     var shelf := shelf_node as Node3D
                     if absf(shelf.position.x) < 8.7:
                         _fail("Library/Reading Room shelf is in front of the doors")
@@ -101,20 +109,20 @@ func _run() -> void:
                     _fail("Library/Reading Room shelves are not mounted to walls")
                     return
             8:
-                if visuals.find_children("MusicStandPole", "MeshInstance3D", true, false).size() != 3:
+                if visuals.find_children("MusicStandPole*", "MeshInstance3D", true, false).size() != 3:
                     _fail("Music room sheet stands have no floor-standing poles")
                     return
-                if visuals.find_children("MusicStandTripod", "MeshInstance3D", true, false).size() != 9:
+                if visuals.find_children("MusicStandTripod*", "MeshInstance3D", true, false).size() != 9:
                     _fail("Music room stands are still floating")
                     return
             9:
                 if visuals.find_child("SideWall", false, false) != null:
                     _fail("Winter Garden windows still face a solid wall")
                     return
-                if visuals.find_children("MoonGlass", "MeshInstance3D", true, false).size() != 6:
+                if visuals.find_children("MoonGlass*", "MeshInstance3D", true, false).size() != 6:
                     _fail("Winter Garden does not have six real window openings")
                     return
-                if visuals.find_children("BetweenGlassBays", "MeshInstance3D", true, false).size() < 6:
+                if visuals.find_children("BetweenGlassBays*", "MeshInstance3D", true, false).size() < 6:
                     _fail("Winter Garden has no masonry framing around glass")
                     return
             11:
@@ -122,7 +130,7 @@ func _run() -> void:
                     _fail("Forbidden Wing still has floating black wall block")
                     return
                 var ceiling := visuals.get_node("Ceiling") as MeshInstance3D
-                for vault_node in visuals.find_children("VaultArch", "MeshInstance3D", true, false):
+                for vault_node in visuals.find_children("VaultArch*", "MeshInstance3D", true, false):
                     var vault := vault_node as MeshInstance3D
                     if vault.position.y + (vault.mesh as BoxMesh).size.y*0.5 >= ceiling.position.y - (ceiling.mesh as BoxMesh).size.y*0.5:
                         _fail("Forbidden Wing vault beam intersects ceiling texture")

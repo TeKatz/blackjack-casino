@@ -612,8 +612,8 @@ func _music(p: Node3D) -> void:
         _cyl(p, "MusicStandPole", Vector3(5.5, 0.72, z),
             0.055, 1.41, m["brass"])
         for foot in [-0.32, 0.0, 0.32]:
-            _box(p, "MusicStandTripod", Vector3(5.5+foot, 0.08, z),
-                Vector3(0.2, 0.08, 0.66), m["darkwood"])
+            _box(p, "MusicStandTripod", Vector3(5.5+foot, 0.06, z),
+                Vector3(0.2, 0.12, 0.66), m["darkwood"])
         var board := _box(p, "MusicStand", Vector3(5.5, 1.68, z),
             Vector3(1.42, 0.88, 0.13), m["darkwood"])
         board.rotation.x = -0.11
@@ -703,14 +703,14 @@ func _forbidden(p: Node3D) -> void:
     fallen.rotation.y = 0.08
     # The former unframed black rectangle was in front of the east wall.
     # In its place is a recessed, edge-trimmed relief with a supporting sill.
-    _box(p, "ForbiddenAlcoveFrame", Vector3(7.91, 3.20, -2.3),
-        Vector3(0.13, 2.2, 2.85), m["stone"])
+    _box(p, "ForbiddenAlcoveFrame", Vector3(7.98, 3.20, -2.3),
+        Vector3(0.15, 2.2, 2.85), m["stone"])
     _box(p, "ForbiddenAlcoveRelief", Vector3(7.82, 3.23, -2.3),
         Vector3(0.055, 1.75, 2.30), m["darkmarble"])
     _box(p, "ForbiddenAlcoveMotif", Vector3(7.78, 3.24, -2.3),
         Vector3(0.035, 1.12, 0.51), m["brass"])
-    _box(p, "ForbiddenAlcoveSill", Vector3(7.73, 2.08, -2.3),
-        Vector3(0.36, 0.13, 2.9), m["stone"])
+    _box(p, "ForbiddenAlcoveSill", Vector3(7.90, 2.08, -2.3),
+        Vector3(0.46, 0.13, 2.9), m["stone"])
     _light(p, "ColdForbiddenLight", Vector3(2.3, 4.2, -0.9),
         Color("#819cbc"), 1.15, 14)
 
@@ -747,8 +747,8 @@ func _secret(p: Node3D) -> void:
     _box(p, "PassageNicheTable", Vector3(-6.48, 0.55, 3.0),
         Vector3(1.38, 1.07, 0.95), m["stone"])
     _candles(p, -6.95, 3.0, 3, 1.085)
-    _box(p, "PassageNicheBack", Vector3(-7.33, 2.04, 3.0),
-        Vector3(0.12, 1.55, 1.55), m["darkmarble"])
+    _box(p, "PassageNicheBack", Vector3(-7.48, 2.04, 3.0),
+        Vector3(0.18, 1.55, 1.55), m["darkmarble"])
     _light(p, "SecretNiche", Vector3(-4.2, 3.0, 2.8),
         Color("#d7a37d"), 1.1, 11)
 
@@ -762,6 +762,9 @@ func _courtyard(p: Node3D) -> void:
         1.2, 1.28, m["stone"])
     _box(p, "CourtyardBench", Vector3(4.2, 0.5, 4.4),
         Vector3(2.8, 0.27, 0.85), m["stone"])
+    for dx in [-1.05, 1.05]:
+        _box(p, "CourtyardBenchLeg", Vector3(4.2 + dx, 0.18, 4.4),
+            Vector3(0.24, 0.36, 0.7), m["stone"])
     _light(p, "NightGardenLight", Vector3(0.0, 6.7, 1.4),
         Color("#9bb7e0"), 1.6, 20)
 
