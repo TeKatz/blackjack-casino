@@ -1240,3 +1240,109 @@ button.manor-godot-item.usable:focus-visible {
 .manor-godot-surface.no-motion.phase-leaving {
   animation:none!important;transform:none!important;filter:none!important;
 }
+
+
+/* Real Ghost pressure and the C# protection charm: no random jumpscares,
+   no invented ghost direction. A proximity band controls ONLY atmosphere. */
+.manor-godot-ghost-presence {
+  position:absolute;inset:0;z-index:2;pointer-events:none;opacity:0;
+  background:radial-gradient(ellipse at 50% 47%,transparent 28%,#090b1b80 100%);
+}
+.manor-godot-ghost-presence.approaching {
+  opacity:.54;
+  box-shadow:inset 0 0 85px 25px #1d304259;
+  animation:manor-ghost-breathe 5.5s ease-in-out infinite alternate;
+}
+.manor-godot-ghost-presence.danger {
+  opacity:.8;
+  box-shadow:inset 0 0 100px 42px #101c36b3;
+  animation:manor-ghost-breathe 2.8s ease-in-out infinite alternate;
+}
+.manor-godot-ghost-presence.revealed {
+  opacity:.42;
+  background:radial-gradient(ellipse at 50% 52%,transparent 18%,#40708066 100%);
+}
+@keyframes manor-ghost-breathe {
+  0% {filter:brightness(.8);opacity:.46}
+  100% {filter:brightness(1.15);opacity:.8}
+}
+.manor-godot-ward-flare {
+  position:absolute;inset:0;z-index:5;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 52%,#bfe5e277,transparent 65%);
+  animation:manor-ward-fade 1.65s ease-out both;
+}
+@keyframes manor-ward-fade {
+  0% {opacity:.88} 100% {opacity:0}
+}
+.manor-godot-event.item-found {border-color:#e0c894;
+  background:linear-gradient(130deg,#453829,#252532ed)}
+.manor-godot-event.checkpoint {border-color:#a7cbad;
+  background:linear-gradient(130deg,#2d413a,#24242bed)}
+.manor-godot-event.protected {border-color:#a3e1e5;
+  background:linear-gradient(130deg,#24404d,#222432ed)}
+.manor-godot-extra-actions {
+  display:flex;flex-direction:column;gap:5px;padding:8px;
+  background:linear-gradient(140deg,#2a2534f5,#181b27f5);
+  border:1px solid #ba9f7d8a;border-radius:8px;box-shadow:0 8px 26px #000b;
+}
+.manor-godot-extra-actions button {
+  cursor:pointer;border:1px solid #b4a59879;background:#2b2932e5;
+  color:#f3e0c9;text-align:left;border-radius:5px;min-height:32px;
+  padding:7px 9px;font:600 11px/1.3 "Segoe UI",Arial,sans-serif;
+}
+.manor-godot-extra-actions button:disabled {opacity:.48;cursor:wait}
+.manor-godot-extra-actions button:hover:not(:disabled),
+.manor-godot-extra-actions button:focus-visible {
+  background:#4b3746;border-color:#e6c39a;
+}
+.manor-godot-auto-confirm p {font-size:11px;line-height:1.4;color:#eed5be;margin:2px 3px 8px}
+
+/* Claim screen is deliberately shown AFTER the C# journal settled the
+   reward, not on an optimistic local room choice. */
+.manor-godot-conclusion {
+  position:absolute;inset:0;z-index:18;display:grid;place-items:center;
+  padding:20px;background:radial-gradient(ellipse at 50% 45%,#100e17c8,#090b13ee 78%);
+  backdrop-filter:blur(6px);overflow:auto;
+  animation:manor-conclusion-enter .55s cubic-bezier(.2,.78,.26,1) both;
+}
+@keyframes manor-conclusion-enter {
+  from {opacity:0;filter:brightness(.5)}to {opacity:1;filter:none}
+}
+.manor-godot-conclusion-content {
+  width:min(90%,500px);display:flex;flex-direction:column;align-items:center;
+  gap:12px;padding:26px 25px 24px;text-align:center;color:#f8e8d1;
+  border:1px solid #d0b38f;border-radius:12px;
+  background:linear-gradient(155deg,#35303bea,#171823f5);
+  box-shadow:0 12px 40px #000d,inset 0 1px #fae8ca20;
+}
+.manor-godot-conclusion-content .eyebrow {font-size:9px;
+  font-weight:700;letter-spacing:.14em;color:#d6b990}
+.manor-godot-conclusion h2 {
+  font:700 clamp(21px,2.5vw,33px)/1.15 Georgia,serif;
+  letter-spacing:.045em;color:#f5debd;margin:0;
+}
+.manor-godot-conclusion.caught h2 {color:#b9c7e2}
+.manor-godot-conclusion-content>p {
+  font-size:12px;line-height:1.5;color:#ddcdd0;
+  max-width:440px;margin:0;overflow-wrap:anywhere;
+}
+.manor-godot-conclusion-reward {display:flex;flex-direction:column;gap:6px;
+  border-top:1px solid #bda38255;border-bottom:1px solid #bda38255;
+  padding:14px 15px;align-items:center;width:100%}
+.manor-godot-conclusion-reward small {
+  color:#e3c69e;font-size:10px;letter-spacing:.11em;text-transform:uppercase;
+}
+.manor-godot-conclusion-reward strong {font:750 clamp(27px,3vw,38px)/1.1 "Segoe UI",Arial,sans-serif;
+  color:#ffecc6;font-variant-numeric:tabular-nums}
+.manor-godot-conclusion-reward span {font-size:11px;color:#d2c4bb}
+.manor-godot-conclusion-actions {display:flex;flex-wrap:wrap;
+  justify-content:center;gap:10px;width:100%;margin-top:5px}
+.manor-godot-conclusion-actions button {min-width:160px;flex:1;max-width:260px}
+@media(prefers-reduced-motion:reduce) {
+  .manor-godot-ghost-presence,
+  .manor-godot-ward-flare,
+  .manor-godot-conclusion {animation:none!important}
+}
+.manor-godot-surface.no-motion .manor-godot-ghost-presence,
+.manor-godot-surface.no-motion .manor-godot-ward-flare,
+.manor-godot-surface.no-motion .manor-godot-conclusion {animation:none!important}
