@@ -924,7 +924,7 @@ func run_scene_smoke() -> void:
 	# A 1920×1080 window scales the 1280×720 canvas 1.5×. Oversample
 	# all UI faces and omit duplicated glyph shadows, not just one label.
 	if UI.DISPLAY_FONT.oversampling<1.99 or UI.BODY_FONT.oversampling<1.99 or UI.BOLD_FONT.oversampling<1.99 or UI.DISPLAY_FONT.multichannel_signed_distance_field:
-		push_error("Typography rasterizer settings are not consistently installed")
+		push_error("Typography rasterizer settings are not consistently installed: display=%.2f body=%.2f bold=%.2f msdf=%s" % [UI.DISPLAY_FONT.oversampling,UI.BODY_FONT.oversampling,UI.BOLD_FONT.oversampling,str(UI.DISPLAY_FONT.multichannel_signed_distance_field)])
 		get_tree().quit(82)
 		return
 	hud_hp=float(run.hp)+3.0
