@@ -785,6 +785,10 @@ func run_scene_smoke() -> void:
 	# Large-stage art, centered camera and boss-corridor reveal are exercised
 	# in the live rendering scene, not only by the pure layout generator.
 	for stage in range(3):
+		# Run-scoped mage stock is intentionally persistent within a floor.
+		# Every stage-specific scene test starts its own fresh expedition;
+		# the model regression separately checks real descend() resets.
+		run.begin(9001+stage)
 		var reactor_texture: Texture2D=world.REACTOR_STAGE_CORES[stage]
 		if reactor_texture.get_width()!=512 or reactor_texture.get_height()!=128:
 			push_error("Missing fixed reactor housing on floor "+str(stage))
