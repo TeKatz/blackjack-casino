@@ -2,7 +2,7 @@
 
 ## Current Development publisher (2026-11-13)
 
-The active source branch is **`develop2`**, created from the completed `develop` → `main` integration commit `24c26c3`. The former `develop` branch remains available for historical reference but cannot publish the shared Development channel. Both the `on.push.branches` filter and the `publish-development.if` ref guard in `.github/workflows/development-release.yml` select exactly that branch. The publisher builds and tests the frontend and native .NET solution, runs Windows startup/presentation checks, creates the installer package and verifies the SHA-256 checksum, updater manifest and published GitHub assets. Neither `main` nor `feature/*` pushes publish the mutable Development channel.
+The active source branch is **`dev`**, descended from the validated `develop` → `main` integration commit `24c26c3`. The former `develop` and `dev` branch names are no longer active Development publishers. Both the `on.push.branches` filter and the `publish-development.if` ref guard in `.github/workflows/development-release.yml` select exactly that branch. The publisher builds and tests the frontend and native .NET solution, runs Windows startup/presentation checks, creates the installer package and verifies the SHA-256 checksum, updater manifest and published GitHub assets. Neither `main` nor `feature/*` pushes publish the mutable Development channel.
 
 **The installed in-app Development manifest URL remains unchanged:**
 
@@ -10,9 +10,9 @@ The active source branch is **`develop2`**, created from the completed `develop`
 
 The upgrade channel, asset names, semantic-version ordering, updater schema and player-data location are unchanged. Only a successful release publication will be offered to installed clients; a branch build or PR artifact is not a released update. The release contains `blackjack-casino-win-x64.zip`, its checksum, the update manifest and release notes.
 
-The [Casino Music Importer](casino-music-importer.md) is still launched through Actions on the default `main` branch, but it explicitly checks out/commits into `develop2` and optionally dispatches the Development Release workflow from `develop2`.
+The [Casino Music Importer](casino-music-importer.md) is still launched through Actions on the default `main` branch, but it explicitly checks out/commits into `dev` and optionally dispatches the Development Release workflow from `dev`.
 
-New work branches from `develop2` and is tested before integration. GitHub Actions CI, presentation, repository contract and Godot workflows explicitly include `develop2` so every push is validated. Release publishing retains a single-branch push filter plus matching job guard. Stable publishing remains an explicit `v*.*.*` tag workflow, separate from a merge to `main`. The old Manor feature-branch publisher and PR #35 revert are historical context only. See [branch policy](branching-and-release-policy.md).
+New work branches from `dev` and is tested before integration. GitHub Actions CI, presentation, repository contract and Godot workflows explicitly include `dev` so every push is validated. Release publishing retains a single-branch push filter plus matching job guard. Stable publishing remains an explicit `v*.*.*` tag workflow, separate from a merge to `main`. The old Manor feature-branch publisher and PR #35 revert are historical context only. See [branch policy](branching-and-release-policy.md).
 
 ## Historical test channel: Casino quality – Phase 4
 

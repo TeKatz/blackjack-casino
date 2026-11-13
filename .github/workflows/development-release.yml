@@ -2,7 +2,7 @@ name: Development Release
 
 on:
   push:
-    branches: ["develop2"]
+    branches: ["dev"]
   workflow_dispatch:
 
 permissions:
@@ -14,8 +14,8 @@ concurrency:
 
 jobs:
   publish-development:
-    # Only develop2 can publish the mutable Development channel; no other branch may replace its release.
-    if: github.ref == 'refs/heads/develop2'
+    # Only dev can publish the mutable Development channel; no other branch may replace its release.
+    if: github.ref == 'refs/heads/dev'
     runs-on: windows-latest
     # Includes full frontend/.NET tests, two Windows runtime smokes, two self-contained
     # publishes, artifact verification, upload and a published-package checksum round trip.

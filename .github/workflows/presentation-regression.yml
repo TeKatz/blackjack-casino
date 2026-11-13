@@ -1,7 +1,7 @@
 name: Casino presentation regression
 on:
   push:
-    branches: [main, develop2, develop, "feature/**", "fix/**", "slots/midnight-manor"]
+    branches: [main, dev, "feature/**", "fix/**", "slots/midnight-manor"]
   pull_request:
   workflow_dispatch:
 concurrency:
