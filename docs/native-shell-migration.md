@@ -247,3 +247,22 @@ separate offline backup.
 updater restart switch, and overwrite-based rollback. These remain separate
 release gates; creating a checkpoint is not authorization to activate the new
 host against live data.
+
+### Production writer exclusivity (2026-11-13)
+
+The installed WPF host acquires an OS-enforced, exclusive
+`%LOCALAPPDATA%\BlackjackCasino\.casino-host-writer.lock` for its entire
+normal session, releasing it **after** all deferred player saves have been
+flushed. A second WPF instance and any migration attempt are blocked while
+that lease is held. The migration snapshot and two-sided cutover checkpoint
+acquire the identical lease for the full read/hash/copy/publish transaction,
+so a newly launched WPF instance cannot modify the source halfway through.
+
+The separate NativeShell test profile continues to use its independent
+`.native-host-writer.lock`, so the existing isolated preview workflow is
+unchanged. An abandoned lock file after a crash is safe; only an open OS file
+handle prevents acquisition. Cross-host single-writer enforcement is now
+tested by both the .NET tests and the Windows native migration smoke.
+
+Production activation is **still locked** pending a current-state-compatible
+rollback and an explicit new-host release gate.

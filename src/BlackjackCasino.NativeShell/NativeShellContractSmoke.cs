@@ -40,6 +40,25 @@ internal static class NativeShellContractSmoke
         byte[] sourceProfile = File.ReadAllBytes(Path.Combine(production, "profile.json"));
         byte[] sourceHistory = File.ReadAllBytes(Path.Combine(production, "hand-history.json"));
         byte[] sourceBrowser = File.ReadAllBytes(Path.Combine(browserData, "000001.ldb"));
+        // The installed WPF host and the migration process must be unable
+        // to modify the same player directory concurrently. This is an OS
+        // file-sharing lease, not a check-then-copy process-name heuristic.
+        using (HostWriterLease.Acquire(production))
+        {
+            try
+            {
+                _ = NativeHostMigration.Stage(production, "blocked",
+                    checkRunningHost: false);
+                throw new InvalidOperationException("Migration ignored the active WPF writer.");
+            }
+            catch (InvalidOperationException ex) when (
+                ex.Message.Contains("already in use", StringComparison.Ordinal))
+            {
+                // Expected: the old host still owns the production directory.
+            }
+        }
+        if (Directory.Exists(NativeHostMigration.CandidatePath(production, "blocked")))
+            throw new InvalidOperationException("Blocked migration published an incomplete candidate.");
         string candidate = NativeHostMigration.Stage(production, "smoke", checkRunningHost: false);
         if (candidate != NativeHostMigration.OpenCandidate(production, "smoke"))
             throw new InvalidOperationException("Candidate manifest not recognized.");
@@ -100,6 +119,22 @@ internal static class NativeShellContractSmoke
 
         // An immutable, separate two-sided rollback point may be created only
         // while the original WPF state still matches the imported baseline.
+        using (HostWriterLease.Acquire(production))
+        {
+            try
+            {
+                _ = NativeCutoverCheckpoint.Prepare(production, "smoke",
+                    "blocked", checkProcesses: false);
+                throw new InvalidOperationException("Cutover ignored the active WPF writer.");
+            }
+            catch (InvalidOperationException ex) when (
+                ex.Message.Contains("already in use", StringComparison.Ordinal))
+            {
+                // Expected: no checkpoint may be built while WPF is writing.
+            }
+        }
+        if (Directory.Exists(NativeCutoverCheckpoint.CheckpointPath(production, "blocked")))
+            throw new InvalidOperationException("Blocked cutover produced a checkpoint.");
         string backup = NativeCutoverCheckpoint.Prepare(production,
             "smoke", "cutover1", checkProcesses: false);
         CutoverCheckpoint report = NativeCutoverCheckpoint.Verify(production, "cutover1");
