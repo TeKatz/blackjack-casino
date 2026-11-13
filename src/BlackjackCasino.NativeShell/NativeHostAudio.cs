@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using BlackjackCasino.Desktop;
+using BlackjackCasino.Core;
 
 namespace BlackjackCasino.NativeShell;
 
@@ -183,6 +184,65 @@ internal sealed class NativeHostAudio : IDisposable
                     CasinoSoundSynthesis.Build));
                 break;
         }
+    }
+
+    // All winning and loss outcomes are read from the C# authoritative spin
+    // result, never from untrusted frontend payout claims. These choices match
+    // the established WPF sound palette and never change a player balance.
+    internal void PlayReelsOutcome(SlotSpinResult result, bool allowed)
+    {
+        if (disposed || !allowed) return;
+        SlotSound cue = result.Multiplier == 100 ? SlotSound.Jackpot
+            : result.Net > 0 ? SlotSound.Win
+            : result.Net == 0 ? SlotSound.Push : SlotSound.Loss;
+        slotCues.Play(cue, true);
+    }
+
+    internal void PlayNeonOutcome(NeonVaultSpinResult result, bool allowed)
+    {
+        if (disposed || !allowed) return;
+        SlotSound outcome = result.Jackpot != NeonVaultJackpot.None
+            ? result.Jackpot is NeonVaultJackpot.Grand or NeonVaultJackpot.Major
+                ? SlotSound.NeonMegaWin : SlotSound.Jackpot
+            : result.Payout > 0 && result.TotalMultiplier >= 50m ? SlotSound.NeonMegaWin
+            : result.Payout > 0 && result.TotalMultiplier >= 10m ? SlotSound.NeonBigWin
+            : result.FreeSpinsAwarded > 0 ? SlotSound.FreeSpins
+            : result.Payout > 0 ? SlotSound.Win : SlotSound.Loss;
+        slotCues.Play(outcome, true);
+        if (result.Payout > 0)
+        {
+            SlotSound flourish = result.Jackpot is NeonVaultJackpot.Grand or NeonVaultJackpot.Major
+                || result.TotalMultiplier >= 50m ? SlotSound.NeonWinTriumph
+                : result.Jackpot != NeonVaultJackpot.None || result.TotalMultiplier >= 10m
+                    ? SlotSound.NeonWinCascade : SlotSound.NeonWinSparkle;
+            slotCues.Play(flourish, true);
+        }
+    }
+
+    internal void PlayNeonFeature(NeonVaultSpinResult result, bool allowed)
+    {
+        if (disposed || !allowed) return;
+        SlotSound? cue = result.Blackout switch
+        {
+            NeonVaultBlackout.Total => SlotSound.NeonTotalBlackout,
+            NeonVaultBlackout.Overload => SlotSound.NeonOverload,
+            NeonVaultBlackout.Blackout => SlotSound.NeonLockdown,
+            _ => result.SecurityOverrideReel.HasValue ? SlotSound.NeonOverride
+                : result.ExpandedReels.Count > 0 ? SlotSound.Wild
+                : result.FreeSpinsAwarded > 0 ? SlotSound.FreeSpins : null,
+        };
+        if (cue is SlotSound sound) slotCues.Play(sound, true);
+    }
+
+    internal void PlayNineOutcome(NineLivesSpinResult result, bool allowed)
+    {
+        if (disposed || !allowed) return;
+        if (result.PounceWildCell.HasValue) nineCues.Play(NineLivesCue.Pounce, true);
+        NineLivesCue outcome = result.FullGridFrenzy ? NineLivesCue.Frenzy
+            : result.BonusSpinsAwarded > 0 ? NineLivesCue.Bonus
+            : result.Payout >= result.Bet * 12m ? NineLivesCue.BigWin
+            : result.Payout > 0 ? NineLivesCue.Win : NineLivesCue.Loss;
+        nineCues.Play(outcome, true);
     }
 
     private void PlayOriginal(AudioClip clip) => CasinoAudio.Play(clip, owner, .65);
