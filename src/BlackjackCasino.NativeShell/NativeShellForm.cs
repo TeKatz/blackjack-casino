@@ -83,6 +83,7 @@ internal sealed class NativeShellForm : Form
             CoreWebView2Environment.CreateAsync(
                 userDataFolder: Path.Combine(previewDirectory, "WebView2")));
 
+        Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
         Text = managedDevelopment
             ? "Blackjack Casino — NativeShell Development"
             : migrationCandidate
@@ -531,6 +532,14 @@ internal sealed class NativeShellForm : Form
             core.Settings.IsStatusBarEnabled = false;
             core.Settings.IsZoomControlEnabled = false;
             core.Settings.IsWebMessageEnabled = true;
+            // WebView2 owns keyboard focus, so normal WinForms KeyDown does
+            // not see F11. Forward the shortcut from each bundled React page.
+            await core.AddScriptToExecuteOnDocumentCreatedAsync(
+                "window.addEventListener('keydown',function(e){"
+                + "if(e.key==='F11'&&!e.repeat){e.preventDefault();"
+                + "e.stopImmediatePropagation();"
+                + "window.chrome.webview.postMessage({type:'host.fullscreen.toggle'});"
+                + "}},true);");
             core.SetVirtualHostNameToFolderMapping(
                 VirtualHost, frontendFolder, CoreWebView2HostResourceAccessKind.DenyCors);
             core.NavigationStarting += (_, args) =>
@@ -675,6 +684,14 @@ internal sealed class NativeShellForm : Form
             core.Settings.IsStatusBarEnabled = false;
             core.Settings.IsZoomControlEnabled = false;
             core.Settings.IsWebMessageEnabled = true;
+            // WebView2 owns keyboard focus, so normal WinForms KeyDown does
+            // not see F11. Forward the shortcut from each bundled React page.
+            await core.AddScriptToExecuteOnDocumentCreatedAsync(
+                "window.addEventListener('keydown',function(e){"
+                + "if(e.key==='F11'&&!e.repeat){e.preventDefault();"
+                + "e.stopImmediatePropagation();"
+                + "window.chrome.webview.postMessage({type:'host.fullscreen.toggle'});"
+                + "}},true);");
             core.SetVirtualHostNameToFolderMapping(
                 VirtualHost, frontendFolder, CoreWebView2HostResourceAccessKind.DenyCors);
 

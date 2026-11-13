@@ -6,6 +6,7 @@
     <UseWPF>false</UseWPF>
     <DefineConstants>$(DefineConstants);NATIVE_SHELL</DefineConstants>
     <AssemblyName>BlackjackCasino.NativeShell</AssemblyName>
+    <ApplicationIcon>../BlackjackCasino.Desktop/Assets/midnight-club.ico</ApplicationIcon>
     <Description>Experimental WPF-free Windows/WebView2 casino host; not the Development release executable.</Description>
   </PropertyGroup>
   <ItemGroup>
