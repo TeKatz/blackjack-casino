@@ -18,6 +18,10 @@ namespace BlackjackCasino.Desktop;
 internal sealed class NativePreviewRuntime : IDisposable
 {
     private readonly string directory;
+    // Prevent two native processes from modifying the same candidate journal,
+    // profile or browser database concurrently. The OS releases this handle
+    // after a crash; the file itself may safely persist across sessions.
+    private readonly FileStream writerLease;
     private readonly PlayerProgressionController progression;
     private readonly NativeRouletteJournal rouletteJournal;
     private readonly EmpireService empire;
@@ -71,6 +75,31 @@ internal sealed class NativePreviewRuntime : IDisposable
         ArgumentException.ThrowIfNullOrWhiteSpace(previewDirectory);
         directory = HostPreviewStorage.RequireIsolatedDirectory(previewDirectory,
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData));
+        Directory.CreateDirectory(directory);
+        try
+        {
+            writerLease = new FileStream(Path.Combine(directory, ".native-host-writer.lock"),
+                FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+        }
+        catch (IOException error)
+        {
+            throw new InvalidOperationException(
+                "This NativeShell player profile is already in use. Close the other casino window first.",
+                error);
+        }
+        try
+        {
+            InitializeAfterLease();
+        }
+        catch
+        {
+            writerLease.Dispose();
+            throw;
+        }
+    }
+
+    private void InitializeAfterLease()
+    {
         // Recover any interrupted aggregate Manor journal BEFORE loading either
         // player preference or profile mirrors, exactly as the regular app does.
         new ManorPersistence(directory).Recover();
@@ -1290,7 +1319,8 @@ internal sealed class NativePreviewRuntime : IDisposable
         finally
         {
             disposed = true;
-            progression.Dispose();
+            try { progression.Dispose(); }
+            finally { writerLease.Dispose(); }
         }
     }
 }

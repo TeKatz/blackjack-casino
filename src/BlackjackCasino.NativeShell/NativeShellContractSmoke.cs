@@ -57,6 +57,24 @@ internal static class NativeShellContractSmoke
                 || imported.Progression.History.Count != 1
                 || imported.Progression.History[0].RoundId != round.RoundId)
                 throw new InvalidOperationException("Native host did not restore imported player state.");
+
+            // A second controller must not race the first one for the same
+            // wallet, Manor/roulette checkpoints or browser profile.
+            try
+            {
+                using var duplicate = new NativePreviewRuntime(candidate);
+                throw new InvalidOperationException("Two simultaneous native writers were admitted.");
+            }
+            catch (InvalidOperationException ex) when (
+                ex.Message.Contains("already in use", StringComparison.Ordinal))
+            {
+                // Expected; the first runtime's lease remains held.
+            }
+        }
+        using (var reopened = new NativePreviewRuntime(candidate))
+        {
+            if (reopened.Bankroll != expectedWallet)
+                throw new InvalidOperationException("Native writer lease did not release on close.");
         }
         if (!sourcePreferences.SequenceEqual(File.ReadAllBytes(
                 Path.Combine(production, "player-state.json")))
