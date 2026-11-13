@@ -113,8 +113,42 @@ internal static class Program
             }
         }
 
+        if (args is ["--stage-live-rehearsal", var checkpointName, var workspaceName])
+        {
+            try
+            {
+                string workspace = NativeCutoverPromotion.Stage(
+                    NativeHostMigration.ProductionDirectory, checkpointName, workspaceName);
+                System.Windows.Forms.MessageBox.Show(
+                    "A verified, independently writable NativeShell rehearsal was staged at:\n"
+                    + workspace + "\n\nThe installed WPF save and original candidate are unchanged.",
+                    "Native cutover rehearsal");
+                return 0;
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException
+                or System.Text.Json.JsonException or InvalidOperationException or ArgumentException)
+            {
+                System.Windows.Forms.MessageBox.Show(error.Message, "Rehearsal blocked");
+                return 1;
+            }
+        }
+
         string? candidateDirectory = null;
-        if (args is ["--candidate", var name])
+        if (args is ["--live-rehearsal", var workspaceNameToOpen])
+        {
+            try
+            {
+                candidateDirectory = NativeCutoverPromotion.Open(
+                    NativeHostMigration.ProductionDirectory, workspaceNameToOpen);
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException
+                or System.Text.Json.JsonException or InvalidOperationException or ArgumentException)
+            {
+                System.Windows.Forms.MessageBox.Show(error.Message, "Invalid rehearsal");
+                return 1;
+            }
+        }
+        else if (args is ["--candidate", var name])
         {
             try { candidateDirectory = NativeHostMigration.OpenCandidate(
                 NativeHostMigration.ProductionDirectory, name); }
@@ -128,7 +162,7 @@ internal static class Program
         else if (args.Length != 0)
         {
             Console.Error.WriteLine(
-                "Usage: BlackjackCasino.NativeShell.exe [--smoke|--web-smoke|--stage-migration NAME|--candidate NAME|--prepare-cutover CANDIDATE BACKUP|--verify-cutover BACKUP|--rehearse-rollback BACKUP legacy\\|native DESTINATION]");
+                "Usage: BlackjackCasino.NativeShell.exe [--smoke|--web-smoke|--stage-migration NAME|--candidate NAME|--prepare-cutover CANDIDATE BACKUP|--verify-cutover BACKUP|--rehearse-rollback BACKUP legacy\\|native DESTINATION|--stage-live-rehearsal BACKUP WORKSPACE|--live-rehearsal WORKSPACE]");
             return 2;
         }
 

@@ -168,7 +168,73 @@ internal static class NativeShellContractSmoke
 
         // An altered installed WPF profile is a fork, not a safe single-writer
         // cutover: never combine it with transactions made in NativeShell.
+        // The next handover step creates a separate writable native data root
+        // from the immutable native backup. It must not replace WPF production,
+        // mutate the original candidate, or ignore the current writer lease.
+        using (HostWriterLease.Acquire(production))
+        {
+            try
+            {
+                _ = NativeCutoverPromotion.Stage(production, "cutover1",
+                    "blocked-root", checkProcesses: false);
+                throw new InvalidOperationException("Promotion ignored WPF writer ownership.");
+            }
+            catch (InvalidOperationException ex) when (
+                ex.Message.Contains("already in use", StringComparison.Ordinal)) { }
+        }
+        if (Directory.Exists(NativeCutoverPromotion.WorkspacePath(production, "blocked-root")))
+            throw new InvalidOperationException("Blocked native handover published a workspace.");
+
+        using (var originalNative = new NativePreviewRuntime(candidate))
+        {
+            try
+            {
+                _ = NativeCutoverPromotion.Stage(production, "cutover1",
+                    "blocked-candidate", checkProcesses: false);
+                throw new InvalidOperationException("Promotion ignored the candidate writer lease.");
+            }
+            catch (InvalidOperationException ex) when (
+                ex.Message.Contains("Close the NativeShell candidate", StringComparison.Ordinal)) { }
+        }
+
+        string promoted = NativeCutoverPromotion.Stage(production, "cutover1",
+            "isolated-live", checkProcesses: false);
+        if (NativeCutoverPromotion.Open(production, "isolated-live") != promoted
+            || !sourceProfile.SequenceEqual(File.ReadAllBytes(
+                Path.Combine(promoted, "profile.json")))
+            || !sourceBrowser.SequenceEqual(File.ReadAllBytes(Path.Combine(promoted,
+                "WebView2", "Default", "Local Storage", "leveldb", "000001.ldb"))))
+            throw new InvalidOperationException("Native rehearsal did not reconstruct the candidate state.");
+        using (var active = new NativePreviewRuntime(promoted))
+        {
+            if (active.Bankroll != expectedWallet ||
+                active.Progression.History.Count != 1)
+                throw new InvalidOperationException("Rehearsal runtime failed to restore existing player data.");
+        }
+        if (!sourcePreferences.SequenceEqual(File.ReadAllBytes(
+                Path.Combine(production, "player-state.json")))
+            || !sourceProfile.SequenceEqual(File.ReadAllBytes(
+                Path.Combine(production, "profile.json"))))
+            throw new InvalidOperationException("Rehearsal changed the legacy save.");
+        try
+        {
+            _ = NativeCutoverPromotion.Stage(production, "cutover1",
+                "isolated-live", checkProcesses: false);
+            throw new InvalidOperationException("Existing handover workspace was overwritten.");
+        }
+        catch (IOException) { /* Rehearsal workspaces must be unique and immutable at creation. */ }
+
         File.WriteAllText(Path.Combine(production, "profile.json"), "{broken");
+        try
+        {
+            _ = NativeCutoverPromotion.Stage(production, "cutover1",
+                "divergent-live", checkProcesses: false);
+            throw new InvalidOperationException("Divergent source was promoted.");
+        }
+        catch (InvalidOperationException ex) when (
+            ex.Message.Contains("changed since", StringComparison.Ordinal)) { }
+        if (Directory.Exists(NativeCutoverPromotion.WorkspacePath(production, "divergent-live")))
+            throw new InvalidOperationException("Divergent handover published an unsafe workspace.");
         try
         {
             _ = NativeCutoverCheckpoint.Prepare(production,

@@ -266,3 +266,26 @@ tested by both the .NET tests and the Windows native migration smoke.
 
 Production activation is **still locked** pending a current-state-compatible
 rollback and an explicit new-host release gate.
+
+### Promotion rehearsal without changing production (2026-11-13)
+
+A verified cutover checkpoint now supports a **separate writable handover
+workspace**. It represents what the new host would load after cutover, while
+the installed WPF profile and the original NativeShell candidate remain intact:
+
+```powershell
+.\BlackjackCasino.NativeShell.exe --stage-live-rehearsal before-switch live-test
+.\BlackjackCasino.NativeShell.exe --live-rehearsal live-test
+```
+
+Preparation requires matching historical WPF and candidate SHA-256 snapshots,
+the production root lease, the candidate writer lease and no unresolved game
+journals. It copies the immutable candidate backup to a fresh directory under
+`%LOCALAPPDATA%\BlackjackCasino\NativeShellPreview\CutoverWorkspaces\live-test`,
+publishing only after all files have been verified. Subsequent gameplay writes
+are isolated to that workspace, and its provenance marker is checked before
+launch.
+
+This deliberately does **not** make the NativeShell the default executable,
+activate production storage or provide live rollback. Those remain separate
+approval gates; the WPF production save and Development updater are unchanged.

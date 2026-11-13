@@ -226,7 +226,7 @@ internal static class NativeCutoverCheckpoint
                 + "Create a new migration candidate; do not merge divergent progress.");
     }
 
-    private static CutoverFile[] Capture(string source)
+    internal static CutoverFile[] Capture(string source)
     {
         AssertPlainDirectory(source);
         var files = new List<string>();
@@ -257,7 +257,7 @@ internal static class NativeCutoverCheckpoint
         return entries.OrderBy(f => f.RelativePath, StringComparer.OrdinalIgnoreCase).ToArray();
     }
 
-    private static void ValidateWalletAndProfile(string directory)
+    internal static void ValidateWalletAndProfile(string directory)
     {
         foreach (string file in new[] { "player-state.json", "profile.json" })
             AssertPlainFile(Path.Combine(directory, file));
@@ -278,7 +278,7 @@ internal static class NativeCutoverCheckpoint
         }
     }
 
-    private static void EnsureNoUnfinishedJournal(string directory)
+    internal static void EnsureNoUnfinishedJournal(string directory)
     {
         foreach (string name in new[] { "manor-checkpoint.json",
             "native-player-aggregate.json", "native-roulette-checkpoint.json" })
@@ -297,7 +297,7 @@ internal static class NativeCutoverCheckpoint
         }
     }
 
-    private static void CopyAndCheck(string source, string target, CutoverFile[] files)
+    internal static void CopyAndCheck(string source, string target, CutoverFile[] files)
     {
         foreach (CutoverFile file in files)
         {
@@ -354,7 +354,7 @@ internal static class NativeCutoverCheckpoint
             throw new InvalidDataException("Filesystem links are not permitted for cutover: " + path);
     }
 
-    private static void RequireCasinoClosed()
+    internal static void RequireCasinoClosed()
     {
         foreach (string name in new[] { "BlackjackCasino.Desktop",
             "BlackjackCasino.Updater", "BlackjackCasino.NativeShell",
