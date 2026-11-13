@@ -213,6 +213,23 @@ function App(){
          </span>
        </div>
      </div>
+     <div className="merge-header-tools">
+       <details className="merge-header-help" data-testid="merge-how-to-play">
+         <summary>{labels?.howToPlay??(lang==='de'?'Spielhilfe':'How to play')}</summary>
+         <p>{t.help}</p>
+       </details>
+       <div className="merge-settings">
+         <button type="button" data-testid="merge-settings" aria-expanded={settings}
+           onClick={()=>setSettings(x=>!x)}>⚙ {t.settings}</button>
+         {settings&&<div className="merge-settings-panel" data-testid="merge-settings-panel">
+           <label><input type="checkbox" checked={state?.soundEnabled??true} disabled={disabled}
+             onChange={e=>send({action:'sound.set',value:e.target.checked?'true':'false'})}/>{t.sound}</label>
+           <label><input type="checkbox" checked={state?.animationsEnabled??true} disabled={disabled}
+             onChange={e=>send({action:'animations.set',value:e.target.checked?'true':'false'})}/>{t.motion}</label>
+           <small>{t.soundHint}</small>
+         </div>}
+       </div>
+     </div>
      <button className="merge-back" data-testid="merge-back" disabled={disabled}
        onClick={close}>{labels?.back??'← Casino lobby'}</button>
    </header>
@@ -300,8 +317,8 @@ function App(){
                  className={'merge-cell'+(item?' filled':' empty')+(own?' selected':'')
                    +(target?' merge-target':'')+(canMerge(item)?' compatible':'')
                    +(animCell===position&&state.animationsEnabled?' created':'')}
-                 aria-label={definition?definition.name+' · '+(Math.floor(position/7)+1)+':'+(position%7+1):
-                   t.empty+' · '+(Math.floor(position/7)+1)+':'+(position%7+1)}
+                 aria-label={definition?definition.name+' · '+(position+1)+'/42':
+                   t.empty+' · '+(position+1)+'/42'}
                  draggable={!!item&&!disabled}
                  onDragStart={event=>item&&onDrag(event,item)}
                  onDragOver={event=>event.preventDefault()}
@@ -326,28 +343,9 @@ function App(){
                   t.unlockedAt+' '+producer.unlockPoints.toLocaleString(lang)}</small></span>
                <span className="merge-producer-icon">{producer.unlocked?'+':'⌑'}</span>
              </button>)}
-             <div className="merge-supply-tools">
-               <div className="merge-help">
-                 <details data-testid="merge-how-to-play">
-                   <summary>{labels?.howToPlay}</summary>
-                   <p>{t.help}</p>
-                 </details>
-                 {selectedDef&&<div className="merge-selection" data-testid="merge-selected">
-                   <span>{t.selected}</span><strong>{selectedDef.name}</strong><small>{t.deselect}</small>
-                 </div>}
-               </div>
-               <div className="merge-settings">
-                 <button type="button" data-testid="merge-settings" aria-expanded={settings}
-                   onClick={()=>setSettings(x=>!x)}>⚙ {t.settings}</button>
-                 {settings&&<div className="merge-settings-panel" data-testid="merge-settings-panel">
-                   <label><input type="checkbox" checked={state.soundEnabled} disabled={disabled}
-                     onChange={e=>send({action:'sound.set',value:e.target.checked?'true':'false'})}/>{t.sound}</label>
-                   <label><input type="checkbox" checked={state.animationsEnabled} disabled={disabled}
-                     onChange={e=>send({action:'animations.set',value:e.target.checked?'true':'false'})}/>{t.motion}</label>
-                   <small>{t.soundHint}</small>
-                 </div>}
-               </div>
-             </div>
+             {selectedDef&&<div className="merge-selection" data-testid="merge-selected">
+               <span>{t.selected}</span><strong>{selectedDef.name}</strong><small>{t.deselect}</small>
+             </div>}
            </div>
          </div>
        </section>
