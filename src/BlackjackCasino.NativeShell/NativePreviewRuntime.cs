@@ -40,6 +40,11 @@ internal sealed class NativePreviewRuntime : IDisposable
     private decimal neonBet;
     private NineLivesSession? nineMachine;
     private NineLivesSpinResult? nineLastSpin;
+    // Read-only, authoritative results for presentation-only audio. Never
+    // settle a second spin from a WebView2 animation callback.
+    internal SlotSpinResult? ReelsAudioResult => reelsLastSpin;
+    internal NeonVaultSpinResult? NeonAudioResult => neonLastSpin;
+    internal NineLivesSpinResult? NineAudioResult => nineLastSpin;
     private ProgressionAward? nineAward;
     private decimal nineBet;
     private MergeBoard? mergeBoard;
