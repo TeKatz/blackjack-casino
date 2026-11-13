@@ -272,6 +272,65 @@ internal static class NativeShellContractSmoke
             throw new InvalidOperationException("Unverified native workspace was exported.");
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException) { }
+        // Crash-recovery contract: both atomic rename interruption points
+        // restore the old WPF data without destroying newer native files.
+        foreach (var failure in new[]
+        {
+            (Name: "failure-after-old", Fault: RollbackFault.AfterOldMove),
+            (Name: "failure-after-new", Fault: RollbackFault.AfterNewMove),
+        })
+        {
+            try
+            {
+                _ = NativeLegacyRollbackRehearsal.Run(production, "return1",
+                    failure.Name, checkProcesses: false, fault: failure.Fault);
+                throw new InvalidOperationException("Injected rollback failure was ignored.");
+            }
+            catch (IOException error) when (
+                error.Message.Contains("Simulated crash", StringComparison.Ordinal)) { }
+
+            _ = NativeLegacyRollbackRehearsal.Recover(production, failure.Name);
+            RollbackRehearsalJournal journal =
+                NativeLegacyRollbackRehearsal.Inspect(production, failure.Name);
+            string recovered = Path.Combine(
+                NativeLegacyRollbackRehearsal.PathFor(production, failure.Name),
+                "current", "player-state.json");
+            if (journal.State != "rolled-back"
+                || !sourcePreferences.SequenceEqual(File.ReadAllBytes(recovered)))
+                throw new InvalidOperationException("Interrupted return lost the original WPF wallet.");
+        }
+        string rehearsal = NativeLegacyRollbackRehearsal.Run(production,
+            "return1", "completed-wpf-swap", checkProcesses: false);
+        RollbackRehearsalJournal finished =
+            NativeLegacyRollbackRehearsal.Inspect(production, "completed-wpf-swap");
+        if (finished.State != "completed"
+            || PlayerStateStore.Load(Path.Combine(rehearsal, "current")).Bankroll
+                != updatedWallet
+            || PlayerStateStore.Load(Path.Combine(rehearsal, "previous")).Bankroll
+                != expectedWallet)
+            throw new InvalidOperationException("WPF rehearsal did not preserve both wallet states.");
+
+        // Native roulette requests have durable IDs unknown to the WPF host.
+        // Until WPF can enforce those IDs, they must block any host swap.
+        string receiptFile = Path.Combine(promoted, "native-roulette-checkpoint.json");
+        var nativeReceipt = new NativeRouletteCheckpoint(1, Pending: false,
+            PlayerStateStore.Load(promoted),
+            [new NativeRouletteReceipt(Guid.NewGuid(), true, 7, 10m, 0m, -10m,
+                updatedWallet)]);
+        File.WriteAllText(receiptFile, JsonSerializer.Serialize(nativeReceipt));
+        try
+        {
+            _ = NativeLegacyRollbackRehearsal.Run(production,
+                "return1", "unbridged-receipts", checkProcesses: false);
+            throw new InvalidOperationException("Unbridged roulette receipts were accepted.");
+        }
+        catch (InvalidOperationException error) when (
+            error.Message.Contains("receipt-ID continuity", StringComparison.Ordinal)) { }
+        if (Directory.Exists(NativeLegacyRollbackRehearsal.PathFor(
+                production, "unbridged-receipts")))
+            throw new InvalidOperationException("Receipt-unsafe WPF swap was published.");
+        File.Delete(receiptFile);
+
         File.AppendAllText(Path.Combine(legacyExport, "player-state.json"), " ");
         try
         {
