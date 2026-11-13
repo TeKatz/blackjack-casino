@@ -113,10 +113,6 @@ function GameTile({ mode, language, motionEnabled, onOpen, onSecondary }:{
 }
 function DailyLogin({data,onClaim,onClose,mobileOpen}:{data:LobbySnapshot;onClaim:()=>void;onClose:()=>void;mobileOpen:boolean}) {
   const de = data.language==='de';
-  const nativePreview = data.nativePreview===true;
-  const previewUnavailable = () => setNativePreviewNotice(de
-    ? 'Diese Funktion ist noch nicht mit der NativeShell-Vorschau verbunden. Spielstände werden nicht verändert.'
-    : 'This feature is not connected to the NativeShell preview yet. Player data has not changed.');
   const daily = data.dailyLogin;
   return <aside className={"lobby-daily "+(mobileOpen?"mobile-open":"")} aria-label={de?'Tägliche Belohnungen':'Daily rewards'}>
     <div className="daily-header">
@@ -279,6 +275,10 @@ function LobbyApp() {
   },[data.language]);
   useEffect(()=>{if(nativeSnapshotReceived&&!newsShown){if(!data.nativePreview)setNewsOpen(true);setNewsShown(true);}},[nativeSnapshotReceived,newsShown]);
   const de = data.language==='de';
+  const nativePreview = data.nativePreview===true;
+  const previewUnavailable = () => setNativePreviewNotice(de
+    ? 'Diese Funktion ist noch nicht mit der NativeShell-Vorschau verbunden. Spielstände werden nicht verändert.'
+    : 'This feature is not connected to the NativeShell preview yet. Player data has not changed.');
   const closeRecords = () => {
     setRecordsVisible(null);setRecordsPending(null);setShopNotice(null);setVaultReward(null);setVaultNotice(null);setAlbumResult(null);
     lobbyCommand('lobby.records.close');
