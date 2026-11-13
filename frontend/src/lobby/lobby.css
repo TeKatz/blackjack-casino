@@ -627,3 +627,9 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
 .game-midnight-descent .game-category{color:#c5a5f1}
 
 .game-midnight-descent .game-category{font-size:clamp(8px,.66vw,11px);white-space:nowrap;letter-spacing:.035em}
+
+/* Independent native-host preview: unavailable operations are reported, not simulated. */
+.native-preview-notice{position:fixed;right:1.25rem;bottom:1.25rem;z-index:1600;max-width:min(32rem,calc(100vw - 2.5rem));display:flex;align-items:center;gap:1rem;padding:1rem 1.15rem;border:1px solid rgba(180,207,192,.35);border-radius:12px;background:rgba(10,30,29,.97);color:#edf4e9;box-shadow:0 20px 50px rgba(0,0,0,.42);font:inherit}
+.native-preview-notice strong{white-space:nowrap;color:#dfc690}.native-preview-notice span{font-size:.9rem;line-height:1.4}.native-preview-notice button{background:transparent;border:0;color:inherit;font-size:1.5rem;cursor:pointer}
+
+.native-lobby-boot{display:grid;place-items:center;min-height:100vh;background:#041611;color:#e8d5ac}.native-lobby-loading{font-size:1rem;letter-spacing:.14em}

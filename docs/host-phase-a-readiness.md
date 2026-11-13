@@ -87,3 +87,9 @@ audio, recovery or browser security is implemented in NativeShell.
 - `dotnet run --project src/BlackjackCasino.NativeShell -- --web-smoke` (Windows/WebView2)
 
 Windows integration and release approval are **not** asserted by source checks alone.
+
+## Phase B migration log (pilot only)
+
+- Native React lobby boots with the existing Vite page, a real Core profile/wallet snapshot and per-route enabled state; unsupported account transactions show a clear preview-only notice.
+- Roulette uses the existing `Roulette.Settle` calculation with an on-disk pending/committed journal, exact WebView2 source checks, and replay-safe request IDs.
+- Read-only lounge/casino route inventories remain canonical; **Empire, Lounge, Midnight Descent, production import, updates and audio are not yet migrated.** This phase must not be treated as complete production parity.

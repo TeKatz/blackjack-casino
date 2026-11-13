@@ -62,6 +62,18 @@ internal static class NativeShellContractSmoke
 
             using (var session = new NativePreviewRuntime(directory))
             {
+                using (var lobby = System.Text.Json.JsonDocument.Parse(
+                    System.Text.Json.JsonSerializer.Serialize(session.LobbySnapshot(),
+                        new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web))))
+                {
+                    var root = lobby.RootElement;
+                    if (!root.GetProperty("nativePreview").GetBoolean()
+                        || root.GetProperty("modes").GetArrayLength() != 11
+                        || root.GetProperty("bankrollValue").GetDecimal() != session.Bankroll
+                        || root.GetProperty("dailyLogin").GetProperty("canClaim").GetBoolean())
+                        throw new InvalidOperationException("Native lobby emitted demo or invalid state.");
+                }
+
                 decimal initial = session.Bankroll;
                 string id = Guid.NewGuid().ToString("D");
                 var epoch = new BlackjackModernSession();

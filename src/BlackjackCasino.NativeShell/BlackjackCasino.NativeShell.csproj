@@ -43,6 +43,7 @@
     <Compile Include="../BlackjackCasino.Desktop/ManorController.cs" Link="Shared/ManorController.cs" />
     <Compile Include="../BlackjackCasino.Desktop/ManorModernGameService.cs" Link="Shared/ManorModernGameService.cs" />
     <Compile Include="../BlackjackCasino.Desktop/CasinoModeRegistry.cs" Link="Shared/CasinoModeRegistry.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/LobbyProgressSnapshot.cs" Link="Shared/LobbyProgressSnapshot.cs" />
     <Compile Include="../BlackjackCasino.Desktop/BrowserRecoverySession.cs" Link="Shared/BrowserRecoverySession.cs" />
   </ItemGroup>
   <ItemGroup>

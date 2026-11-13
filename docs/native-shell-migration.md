@@ -62,3 +62,7 @@ The view in the pilot is embedded in its new WinForms shell rather than a separa
 ## Phase A host parity protection
 
 The current canonical source-level parity matrix, preview route allowlist, host-neutral navigation port, preview storage boundary and CI gates are documented in [Host migration Phase A](host-phase-a-readiness.md). This does not authorize replacing the WPF release application.
+
+## Phase B: React casino lobby preview
+
+The NativeShell preview now attempts the existing `lobby.html` React surface on startup and after returning from a game, backed by a read-only snapshot of the **real pilot** wallet, profile, levels, cosmetics, album, challenges and vault. A true `nativePreview` capability flag blocks unavailable shop, account editing, records, daily payouts, updater and arcade rewards rather than displaying fictional financial state. Exact-document browser navigation and click-to-mode mapping continue to be enforced by C#. The WinForms home remains the explicit browser-failure fallback. This is not full lobby parity, since transactional subviews still require native controller adapters and journaled writes.

@@ -50,6 +50,26 @@ internal static class NativeShellWebSmoke
                     if (form.PreviewMode is not null)
                         throw new InvalidOperationException(mode + " could not return to the native lobby.");
                 }
+                // Returning from a real game must show the real React lobby,
+                // not a dead WinForms test menu or an untrusted document.
+                bool lobbyReady = false;
+                for (int attempt = 0; attempt < 180; attempt++)
+                {
+                    if (form.PreviewMode is null && form.PreviewReady
+                        && form.PreviewBrowser is not null)
+                    {
+                        lobbyReady = true;
+                        break;
+                    }
+                    await Task.Delay(100);
+                }
+                if (!lobbyReady)
+                    throw new InvalidOperationException("Native React lobby was not ready.");
+                string lobbyDom = await form.PreviewBrowser!.ExecuteScriptAsync(
+                    "Boolean(document.querySelector('.casino-lobby-shell'))");
+                if (lobbyDom != "true")
+                    throw new InvalidOperationException("Native lobby did not render React.");
+                Console.WriteLine("PASS: WPF-free native React casino lobby.");
                 result = 0;
             }
             catch (Exception ex)

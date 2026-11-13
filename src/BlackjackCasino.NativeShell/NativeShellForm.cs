@@ -42,6 +42,7 @@ internal sealed class NativeShellForm : Form
     private bool manorProcessing;
     private string? activeMode;
     private bool listening, ready, browserFailed, closing;
+    private bool lobbyShown, lobbyBrowserDisabled;
     private readonly string frontendFolder = Path.Combine(AppContext.BaseDirectory, "ModernFrontend");
 
     internal NativeShellForm(string? previewDirectory = null)
@@ -115,6 +116,12 @@ internal sealed class NativeShellForm : Form
             e.Handled = true;
         };
         ShowHome();
+        Shown += (_, _) =>
+        {
+            lobbyShown = true;
+            if (activeMode is null && !lobbyBrowserDisabled)
+                _ = OpenLobbyAsync();
+        };
     }
 
     // Minimal internal acceptance interface; never used by React or game commands.
@@ -171,7 +178,7 @@ internal sealed class NativeShellForm : Form
             ForeColor = Color.FromArgb(190, 218, 201),
             Font = new Font("Segoe UI", 13),
             Text = "WPF-freier Windows-Host mit echten React-Oberflächen und C#-Spielregeln.\n"
-                + "In dieser isolierten Testversion sind Blackjack, Reels, Neon Vault und Nine Lives angebunden.\n"
+                + "Diese isolierte Testversion bindet acht Spiele mit C#-Regeln an.\n"
                 + "Die übrigen Casino-Bereiche verbleiben vorerst in der regulären Desktop-Anwendung.",
         }, 0, 1);
         var actions = new FlowLayoutPanel
@@ -200,6 +207,7 @@ internal sealed class NativeShellForm : Form
         }, 0, 3);
         content.Controls.Add(page);
         status.Text = "Lobby · Spielgeld: " + runtime.Bankroll.ToString("N2");
+        if (lobbyShown && !lobbyBrowserDisabled) _ = OpenLobbyAsync();
     }
 
     private void ReturnToHome()
@@ -225,6 +233,68 @@ internal sealed class NativeShellForm : Form
         if (activeMode == "midnight-manor")
             runtime.CloseManor();
         ShowHome();
+    }
+
+    private async Task OpenLobbyAsync()
+    {
+        if (closing || lobbyBrowserDisabled || activeMode is not null
+            || !File.Exists(Path.Combine(frontendFolder, "lobby.html"))) return;
+
+        DisposeBrowser();
+        var web = new WebView2
+        {
+            Dock = DockStyle.Fill,
+            DefaultBackgroundColor = Color.FromArgb(4, 22, 17),
+        };
+        browser = web;
+        content.Controls.Clear();
+        content.Controls.Add(web);
+        listening = ready = browserFailed = false;
+        status.Text = "Loading native React casino lobby…";
+        watchdog.Start();
+        try
+        {
+            CoreWebView2Environment env = await environment.Value;
+            if (closing || browser != web || activeMode is not null) return;
+            await web.EnsureCoreWebView2Async(env);
+            if (closing || browser != web || activeMode is not null) return;
+            CoreWebView2 core = web.CoreWebView2
+                ?? throw new InvalidOperationException("Lobby WebView2 initialization failed.");
+            core.Settings.AreDefaultContextMenusEnabled = false;
+            core.Settings.AreDevToolsEnabled = false;
+            core.Settings.AreHostObjectsAllowed = false;
+            core.Settings.IsStatusBarEnabled = false;
+            core.Settings.IsZoomControlEnabled = false;
+            core.Settings.IsWebMessageEnabled = true;
+            core.SetVirtualHostNameToFolderMapping(
+                VirtualHost, frontendFolder, CoreWebView2HostResourceAccessKind.DenyCors);
+            core.NavigationStarting += (_, args) =>
+            {
+                if (!IsTrusted(null, args.Uri)) args.Cancel = true;
+            };
+            core.NewWindowRequested += (_, args) => args.Handled = true;
+            core.PermissionRequested += (_, args) => args.State = CoreWebView2PermissionState.Deny;
+            core.NavigationCompleted += (_, args) =>
+            {
+                if (!args.IsSuccess) ScheduleFailure("React lobby navigation failed.");
+            };
+            core.ProcessFailed += (_, _) => ScheduleFailure("React lobby browser failed.");
+            core.WebMessageReceived += OnMessage;
+            web.Source = new Uri("https://" + VirtualHost + "/lobby.html");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+            or InvalidOperationException or System.Runtime.InteropServices.COMException)
+        {
+            if (!closing && browser == web)
+                FailBrowser("React lobby initialization failed: " + ex.Message);
+        }
+    }
+
+    private void RefreshLobbySnapshot()
+    {
+        if (!closing && !browserFailed && activeMode is null
+            && listening && browser?.CoreWebView2 is not null)
+            Post("lobby.snapshot", runtime.LobbySnapshot());
     }
 
     private async Task OpenModeAsync(string mode)
@@ -345,6 +415,7 @@ internal sealed class NativeShellForm : Form
 
     private static bool IsTrusted(string? mode, string? source) => mode switch
     {
+        null => string.Equals(source, "https://" + VirtualHost + "/lobby.html", StringComparison.Ordinal),
         "blackjack" => BlackjackModernProtocol.Trusted(source),
         "roulette" => string.Equals(source, "https://" + VirtualHost + "/roulette.html", StringComparison.Ordinal),
         "reels" => ModernReelsProtocol.Trusted(source),
@@ -376,6 +447,51 @@ internal sealed class NativeShellForm : Form
             string? message = type.GetString();
             switch (message)
             {
+                case "lobby.ready" when activeMode is null:
+                    listening = true;
+                    RefreshLobbySnapshot();
+                    break;
+                case "lobby.ui-ready" when activeMode is null && listening:
+                    ready = true;
+                    watchdog.Stop();
+                    status.Text = "Native React lobby · preview storage · $" + runtime.Bankroll.ToString("N2");
+                    break;
+                case "lobby.refresh" when activeMode is null && listening:
+                    RefreshLobbySnapshot();
+                    break;
+                case "lobby.open" when activeMode is null && listening && ready:
+                {
+                    if (!root.TryGetProperty("id", out JsonElement rawMode)
+                        || rawMode.ValueKind != JsonValueKind.String) break;
+                    string? id = rawMode.GetString();
+                    HostCasinoRoute? mode = HostMigrationCatalog.PreviewRoutes.FirstOrDefault(
+                        route => string.Equals(route.DesktopModeId, id, StringComparison.Ordinal));
+                    if (mode?.PreviewModeId is { } alias)
+                        BeginInvoke(new Action(() => { _ = OpenModeAsync(alias); }));
+                    break;
+                }
+                case "lobby.language.set" when activeMode is null && listening && ready:
+                {
+                    if (!root.TryGetProperty("id", out JsonElement languageId)
+                        || languageId.ValueKind != JsonValueKind.String) break;
+                    string? choice = languageId.GetString();
+                    if (choice is "de" or "en")
+                    {
+                        runtime.SetLobbyLanguage(choice == "de"
+                            ? UiLanguagePreference.German : UiLanguagePreference.English);
+                        RefreshLobbySnapshot();
+                    }
+                    break;
+                }
+                case "lobby.settings.fullscreen" when activeMode is null && ready:
+                    FormBorderStyle = FormBorderStyle == FormBorderStyle.None
+                        ? FormBorderStyle.Sizable : FormBorderStyle.None;
+                    WindowState = FormBorderStyle == FormBorderStyle.None
+                        ? FormWindowState.Maximized : FormWindowState.Normal;
+                    break;
+                case "lobby.exit" when activeMode is null && ready:
+                    BeginInvoke(new Action(Close));
+                    break;
                 case "roulette.ready" when activeMode == "roulette":
                     listening = true;
                     Post("roulette.snapshot", runtime.RouletteSnapshot());
@@ -657,7 +773,17 @@ internal sealed class NativeShellForm : Form
 
     private void FailBrowser(string message)
     {
-        if (closing || browserFailed || activeMode is null) return;
+        if (closing || browserFailed) return;
+        if (activeMode is null)
+        {
+            // The native WinForms home remains the emergency route when React
+            // or WebView2 is unavailable. Do not spin in a reload/failure loop.
+            lobbyBrowserDisabled = true;
+            DisposeBrowser();
+            ShowHome();
+            status.Text = message;
+            return;
+        }
         browserFailed = true;
         watchdog.Stop();
         string mode = activeMode;

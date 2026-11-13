@@ -76,6 +76,15 @@ internal sealed class NativePreviewRuntime : IDisposable
 
     internal bool RouletteRequiresRestart => rouletteRequiresRestart;
 
+    internal object LobbySnapshot() => NativeLobbySnapshot.Create(this);
+
+    internal void SetLobbyLanguage(UiLanguagePreference language)
+    {
+        if (disposed || rouletteRequiresRestart || ManorRequiresRestart) return;
+        Preferences = Preferences with { Language = language };
+        Persist();
+    }
+
     internal object RouletteSnapshot()
     {
         AreaPresentationSettings area = Preferences.Presentation("roulette");

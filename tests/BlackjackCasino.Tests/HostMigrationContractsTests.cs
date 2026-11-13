@@ -41,7 +41,7 @@ public sealed class HostMigrationContractsTests
     public void PreviewIsNotPromotedToAProductionLobby()
     {
         Assert.Equal(8, HostMigrationCatalog.PreviewRoutes.Count);
-        Assert.False(HostMigrationCatalog.IsPreviewRoute("roulette"));
+        Assert.True(HostMigrationCatalog.IsPreviewRoute("roulette"));
         Assert.False(HostMigrationCatalog.IsPreviewRoute("casino-empire"));
         Assert.False(HostMigrationCatalog.IsPreviewRoute("chill-lounge"));
         Assert.False(HostMigrationCatalog.IsPreviewRoute("kniffel"));

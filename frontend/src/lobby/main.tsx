@@ -113,6 +113,10 @@ function GameTile({ mode, language, motionEnabled, onOpen, onSecondary }:{
 }
 function DailyLogin({data,onClaim,onClose,mobileOpen}:{data:LobbySnapshot;onClaim:()=>void;onClose:()=>void;mobileOpen:boolean}) {
   const de = data.language==='de';
+  const nativePreview = data.nativePreview===true;
+  const previewUnavailable = () => setNativePreviewNotice(de
+    ? 'Diese Funktion ist noch nicht mit der NativeShell-Vorschau verbunden. Spielstände werden nicht verändert.'
+    : 'This feature is not connected to the NativeShell preview yet. Player data has not changed.');
   const daily = data.dailyLogin;
   return <aside className={"lobby-daily "+(mobileOpen?"mobile-open":"")} aria-label={de?'Tägliche Belohnungen':'Daily rewards'}>
     <div className="daily-header">
@@ -203,6 +207,7 @@ function LobbyApp() {
   const [dailyOpen,setDailyOpen] = useState(false);
   const [lowMotion,setLowMotion] = useState(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const [nativeSnapshotReceived,setNativeSnapshotReceived] = useState(!embeddedLobby);
+  const [nativePreviewNotice,setNativePreviewNotice] = useState<string|null>(null);
   useEffect(()=>{
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
     const listener = () => setLowMotion(media.matches);
@@ -272,13 +277,14 @@ function LobbyApp() {
     document.documentElement.lang=data.language;
     document.title='Blackjack Casino · Lobby';
   },[data.language]);
-  useEffect(()=>{if(nativeSnapshotReceived&&!newsShown){setNewsOpen(true);setNewsShown(true);}},[nativeSnapshotReceived,newsShown]);
+  useEffect(()=>{if(nativeSnapshotReceived&&!newsShown){if(!data.nativePreview)setNewsOpen(true);setNewsShown(true);}},[nativeSnapshotReceived,newsShown]);
   const de = data.language==='de';
   const closeRecords = () => {
     setRecordsVisible(null);setRecordsPending(null);setShopNotice(null);setVaultReward(null);setVaultNotice(null);setAlbumResult(null);
     lobbyCommand('lobby.records.close');
   };
   const openRecords = (page:RecordsPage) => {
+    if(nativePreview){previewUnavailable();return;}
     setArcadeOpen(false);
     if(shopVisible)closeShop();
     setRecordsVisible(page);setDailyOpen(false);setShopNotice(null);setRecordsPending(null);
@@ -294,6 +300,7 @@ function LobbyApp() {
     lobbyCommand('lobby.records.open',page);
   };
   const openShop = () => {
+    if(nativePreview){previewUnavailable();return;}
     setArcadeOpen(false);
     if(recordsVisible)closeRecords();
     setShopNotice(null);
@@ -305,6 +312,9 @@ function LobbyApp() {
     lobbyCommand('lobby.shop.close');
   };
   const openMode = (id:string)=>{
+    if(nativePreview&&(id===ARCADE_MODE_ID||!data.modes.some(mode=>mode.id===id&&mode.enabled))){
+      previewUnavailable();return;
+    }
     if(shopVisible)closeShop();
     if(recordsVisible)closeRecords();
     if(id==='roulette'&&!embeddedLobby){window.location.href='./roulette.html';return;}
@@ -315,8 +325,12 @@ function LobbyApp() {
     setArcadeOpen(false);
     lobbyCommand('lobby.open',id);
   };
-  const openSecondary = (id:string)=>lobbyCommand('lobby.open-secondary',id);
+  const openSecondary = (id:string)=>{
+    if(nativePreview){previewUnavailable();return;}
+    lobbyCommand('lobby.open-secondary',id);
+  };
   const openProgression = (id:string)=>{
+    if(nativePreview){previewUnavailable();return;}
     if(id==='Cosmetic Shop'){openShop();return;}
     if(id==="Collector's Album"||id==='Album'){openRecords('album');return;}
     if(id==='Challenges'||id==='Statistics'||id==='Season Pass'){
@@ -327,6 +341,9 @@ function LobbyApp() {
     lobbyCommand('lobby.progression',id);
   };
   const chooseNav = (id:Filter)=>{
+    if(nativePreview&&['collections','shop','stats','season','challenges','vault','daily','profile'].includes(id)){
+      previewUnavailable();return;
+    }
     setArcadeOpen(false);
     if(id==='collections') {openProgression("Collector's Album");return;}
     if(id==='shop') {openShop();return;}
@@ -342,6 +359,7 @@ function LobbyApp() {
     setFilter(id);
   };
   const openUpdates = () => {
+    if(nativePreview){previewUnavailable();return;}
     setSettingsOpen(false);
     setUpdatesOpen(true);
     lobbyCommand('lobby.updates.open');
@@ -352,10 +370,21 @@ function LobbyApp() {
     lobbyCommand('lobby.updates.close');
   };
   // Arcade is a local selection screen; it does not issue an unknown native game route.
-  const modes = [...data.modes.filter(x=>x.id!==ARCADE_MODE_ID),arcadeLobbyMode(data.language)]
+  const modes = [...data.modes.filter(x=>x.id!==ARCADE_MODE_ID),...(nativePreview?[]:[arcadeLobbyMode(data.language)])]
     .filter(x=>matchesFilter(x.id,filter))
     .sort((a,b)=>artOrder.indexOf(a.id)-artOrder.indexOf(b.id));
+  if(embeddedLobby&&!nativeSnapshotReceived){
+    return <div className="casino-lobby-shell native-lobby-boot" role="status" aria-live="polite">
+      <div className="native-lobby-loading">THE MIDNIGHT CLUB · {data.language==='de'?'Lade Spielerdaten…':'Loading player data…'}</div>
+    </div>;
+  }
   return <div className="casino-lobby-shell" data-reduced={lowMotion || !data.animationsEnabled}>
+    {nativePreviewNotice&&<div className="native-preview-notice" role="status">
+      <strong>{de?'NativeShell-Vorschau':'NativeShell Preview'}</strong>
+      <span>{nativePreviewNotice}</span>
+      <button type="button" onClick={()=>setNativePreviewNotice(null)}
+        aria-label={de?'Hinweis schließen':'Dismiss notice'}>×</button>
+    </div>}
     <LobbyAmbient motionEnabled={!lowMotion && data.animationsEnabled}/>
     <header className="lobby-topbar">
       <button className="lobby-brand" type="button" onClick={()=>{if(shopVisible)closeShop();if(recordsVisible)closeRecords();setArcadeOpen(false);setFilter('all');}}>
@@ -392,7 +421,7 @@ function LobbyApp() {
     <div className={'lobby-body '+(shopVisible?'shop-active':recordsVisible?'records-active':arcadeOpen?'arcade-active':'')}>
       <nav className="lobby-nav" aria-label={de?'Casino-Navigation':'Casino navigation'}>
         <div className="lobby-nav-scroll">
-        <button className="lobby-nav-item" onClick={()=>setNewsOpen(true)}><NavIcon name="news"/><span>News</span></button>
+        <button className="lobby-nav-item" onClick={()=>{if(nativePreview){previewUnavailable();return;}setNewsOpen(true);}}><NavIcon name="news"/><span>News</span></button>
         {navigation.map(n=><button type="button" key={n.id}
           aria-current={(shopVisible?n.id==='shop':recordsVisible?n.id===(recordsVisible==='challenges'?'challenges':recordsVisible==='statistics'?'stats':recordsVisible==='history'?'profile':recordsVisible==='vault'?'vault':recordsVisible==='album'?'collections':recordsVisible==='season'?'season':'profile'):n.id===filter)?'page':undefined}
           className={'lobby-nav-item '+((shopVisible?n.id==='shop':recordsVisible?n.id===(recordsVisible==='challenges'?'challenges':recordsVisible==='statistics'?'stats':recordsVisible==='vault'?'vault':recordsVisible==='album'?'collections':recordsVisible==='season'?'season':'profile'):n.id===filter)?'selected':'')+(n.id==='daily'?' daily-nav':'')+(n.id==='collections'?' nav-section-start':'')}
@@ -413,7 +442,7 @@ function LobbyApp() {
         </div>
         <button type="button" className="lobby-updates-entry lobby-settings-entry" data-testid="lobby-settings-entry"
           aria-haspopup="dialog" aria-expanded={settingsOpen}
-          onClick={()=>{setUpdatesOpen(false);setSettingsOpen(true);}}>
+          onClick={()=>{if(nativePreview){previewUnavailable();return;}setUpdatesOpen(false);setSettingsOpen(true);}}>
           <NavIcon name="settings"/>
           <span>{de?'Einstellungen':'Settings'}</span>
         </button>
