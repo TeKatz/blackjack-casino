@@ -317,3 +317,36 @@ handoff/replay policy and crash-safe atomic activation. For now these commands
 are an **offline proof of compatibility**, not a live rollback operation.
 `BlackjackCasino.Desktop.exe`, the installed player saves and the updater
 continue to operate unchanged.
+
+## Phase G — journaled WPF return rehearsal and receipt blockade (2026-11-13)
+
+The NativeShell now supports a **sandbox-only, journaled directory switch**
+between the original WPF player files and the latest verified WPF-compatible
+NativeShell export:
+
+```powershell
+.\BlackjackCasino.NativeShell.exe --rehearse-wpf-return return1 sandbox-return
+```
+
+Both data sets are copied and SHA-256-verified first. The test then renames the
+original player directory to `previous` and replaces `current` with the new
+export. A durable journal records whether the directory transition completed.
+Automated Windows tests simulate crashes **after either rename**, then invoke
+the same recovery logic. Recovery restores the original WPF files while
+preserving the interrupted NativeShell contents separately for investigation.
+The operation is confined to
+`NativeShellPreview\LegacyRollbackRehearsals\NAME`: neither the installed
+WPF profile nor the Development updater is changed.
+
+**Native roulette receipts are a blocking compatibility gate.** The NativeShell
+retains settlement request IDs in `native-roulette-checkpoint.json`, whereas
+the old WPF runtime has no equivalent receipt ledger. Until continuity is
+implemented, a rollback rehearsal with any retained native roulette receipts
+is refused, even if the wallet itself is valid. This prevents treating an
+unverifiable replay state as a safe production swap.
+
+A previously interrupted sandbox can be recovered explicitly with
+`--recover-wpf-rehearsal NAME`. This is not a command to recover or overwrite
+the production WPF save. A real production cutover remains disabled until
+receipt compatibility, startup crash-recovery gating and final Windows QA
+are completed.
