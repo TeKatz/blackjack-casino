@@ -631,9 +631,12 @@ internal static class Program
         for (int attempt = 0; attempt < 40; attempt++)
         {
             string ready = await web.ExecuteScriptAsync(
-                "Boolean(document.querySelector('[data-testid=arcade-menu]')"
+                "(()=>{const menu=document.querySelector('[data-testid=arcade-menu]');"
+                + "const lobby=document.querySelector('.lobby-main');"
+                + "return Boolean(menu&&menu.getClientRects().length>0"
                 + "&&document.querySelectorAll('[data-arcade-id]').length===20"
-                + "&&!document.querySelector('.lobby-hero'))");
+                + "&&lobby&&lobby.getClientRects().length===0"
+                + "&&document.querySelectorAll('.lobby-game .game-art-window[data-pixi-art-ready]').length===9)})()");
             if (ready == "true") { menuOpened = true; break; }
             await Task.Delay(100);
         }
@@ -740,9 +743,13 @@ internal static class Program
         for (int attempt = 0; attempt < 40; attempt++)
         {
             string ready = await web.ExecuteScriptAsync(
-                "Boolean(document.querySelector('.lobby-hero')"
+                "(()=>{const lobby=document.querySelector('.lobby-main');"
+                + "const hero=document.querySelector('.lobby-hero');"
+                + "return Boolean(lobby&&lobby.getClientRects().length>0"
+                + "&&hero&&hero.getClientRects().length>0"
                 + "&&document.querySelector('.game-arcade-games')"
-                + "&&document.querySelector('.lobby-daily'))");
+                + "&&document.querySelectorAll('.lobby-game .game-art-window[data-pixi-art-ready]').length===9"
+                + "&&document.querySelector('.lobby-daily'))})()");
             if (ready == "true") { backToLobby = true; break; }
             await Task.Delay(100);
         }
