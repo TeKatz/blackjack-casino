@@ -108,8 +108,12 @@ internal static class ModernLoungeSmoke
         Require(await web.ExecuteScriptAsync(
             "new Set([...document.querySelectorAll('.sudoku-mode-tile img')].map(x=>x.getAttribute('src'))).size") == "6",
             "Sudoku variants must each have an independently named preview image.");
-        Require(await web.ExecuteScriptAsync(
-            "[...document.querySelectorAll('.sudoku-mode-tile img')].every(x=>x.complete&&x.naturalWidth>0)") == "true",
+        // React commits the six menu tiles before WebView2 necessarily fetches
+        // and decodes their SVG assets. Do not mistake the first pending frame
+        // for a broken file; still fail if any artwork never becomes usable.
+        await UntilAsync(async () => await web.ExecuteScriptAsync(
+            "(()=>{const images=[...document.querySelectorAll('.sudoku-mode-tile img')];"
+            + "return images.length===6&&images.every(x=>x.complete&&x.naturalWidth>0)})()") == "true",
             "At least one Sudoku preview artwork failed to load.");
         Require(await web.ExecuteScriptAsync(
             "Boolean(document.querySelector('[data-testid=\\\"sudoku-career\\\"]'))") == "true",
