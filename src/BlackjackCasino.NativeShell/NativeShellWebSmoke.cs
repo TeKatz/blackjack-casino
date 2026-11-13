@@ -20,6 +20,24 @@ internal static class NativeShellWebSmoke
         {
             try
             {
+                // Exercise the actual startup path and avoid racing a second
+                // WebView2 initialization against the initial React lobby.
+                bool startupLobbyReady = false;
+                for (int attempt = 0; attempt < 180; attempt++)
+                {
+                    if (form.PreviewMode is null && form.PreviewReady
+                        && form.PreviewBrowser is not null)
+                    {
+                        startupLobbyReady = true;
+                        break;
+                    }
+                    await Task.Delay(100);
+                }
+                if (!startupLobbyReady)
+                    throw new InvalidOperationException(
+                        "Native React startup lobby did not acknowledge its UI within the watchdog.");
+                Console.WriteLine("PASS: WPF-free native startup lobby ready.");
+
                 foreach (string mode in new[]
                     { "blackjack", "roulette", "reels", "neon-vault", "nine-lives", "casino-empire", "midnight-merge",
                         "midnight-dice", "midnight-manor" })
