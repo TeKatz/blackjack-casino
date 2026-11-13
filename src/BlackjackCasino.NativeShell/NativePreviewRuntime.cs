@@ -89,17 +89,6 @@ internal sealed class NativePreviewRuntime : IDisposable
         }
         try
         {
-            InitializeAfterLease();
-        }
-        catch
-        {
-            writerLease.Dispose();
-            throw;
-        }
-    }
-
-    private void InitializeAfterLease()
-    {
         // Recover any interrupted aggregate Manor journal BEFORE loading either
         // player preference or profile mirrors, exactly as the regular app does.
         new ManorPersistence(directory).Recover();
@@ -118,6 +107,12 @@ internal sealed class NativePreviewRuntime : IDisposable
         reelsBet = Math.Clamp(Preferences.SlotBet, SlotMachineRules.MinimumBet, SlotMachineRules.MaximumBet);
         neonBet = NeonVaultRules.Bets.OrderBy(bet => Math.Abs(bet - Preferences.NeonVaultBet)).First();
         nineBet = NineLivesRules.Bets.OrderBy(bet => Math.Abs(bet - Preferences.NineLivesBet)).First();
+        }
+        catch
+        {
+            writerLease.Dispose();
+            throw;
+        }
     }
 
     internal void OpenLounge()
