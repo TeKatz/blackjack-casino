@@ -260,23 +260,58 @@ internal sealed class NativeLoungeRuntime(NativePreviewRuntime owner) : IDisposa
             {
                 case "lounge.sudoku.command" when sudoku is not null:
                     if (ModernSudokuProtocol.Parse(payload) is { } sc)
-                        return new("lounge.sudoku.result", sudokuSession.Execute(sc, sudoku.Execute));
+                        {
+                            ModernSudokuReply reply = sudokuSession.Execute(sc, sudoku.Execute);
+                            if (reply.Success && sc.Action == "sudoku.exit")
+                            {
+                                sudoku.Stop(); sudoku = null; sudokuSession = new();
+                            }
+                            return new("lounge.sudoku.result", reply);
+                        }
                     break;
                 case "lounge.solitaire.command" when solitaire is not null:
                     if (ModernSolitaireProtocol.Parse(payload) is { } so)
-                        return new("lounge.solitaire.result", solitaireSession.Execute(so, solitaire.Execute));
+                        {
+                            ModernSolitaireReply reply = solitaireSession.Execute(so, solitaire.Execute);
+                            if (reply.Success && so.Action == "solitaire.exit")
+                            {
+                                solitaire.Stop(); solitaire = null; solitaireSession = new();
+                            }
+                            return new("lounge.solitaire.result", reply);
+                        }
                     break;
                 case "lounge.word-search.command" when wordSearch is not null:
                     if (ModernWordSearchProtocol.Parse(payload) is { } ws)
-                        return new("lounge.word-search.result", wordSearchSession.Execute(ws, wordSearch.Execute));
+                        {
+                            ModernWordSearchReply reply = wordSearchSession.Execute(ws, wordSearch.Execute);
+                            if (reply.Success && ws.Action == "word-search.exit")
+                            {
+                                wordSearch.Stop(); wordSearch = null; wordSearchSession = new();
+                            }
+                            return new("lounge.word-search.result", reply);
+                        }
                     break;
                 case "lounge.memory.command" when memory is not null:
                     if (ModernMemoryProtocol.Parse(payload) is { } me)
-                        return new("lounge.memory.result", memorySession.Execute(me, memory.Execute));
+                        {
+                            ModernMemoryReply reply = memorySession.Execute(me, memory.Execute);
+                            if (reply.Success && me.Action == "memory.exit")
+                            {
+                                memory.Stop(); memory = null; memorySession = new();
+                            }
+                            return new("lounge.memory.result", reply);
+                        }
                     break;
                 case "lounge.jigsaw.command" when jigsaw is not null:
                     if (ModernJigsawProtocol.Parse(payload) is { } ji)
-                        return new("lounge.jigsaw.result", jigsawSession.Execute(ji, jigsaw.Execute));
+                        {
+                            ModernJigsawReply reply = jigsawSession.Execute(ji, jigsaw.Execute);
+                            if (reply.Success && ji.Action == "jigsaw.exit")
+                            {
+                                jigsaw.Stop(); jigsaw = null; jigsawSession = new();
+                            }
+                            return new("lounge.jigsaw.result", reply);
+                        }
                     break;
                 case "lounge.adventure.command" when adventure is not null:
                     if (ModernAdventureProtocol.Parse(payload) is { } ad)
@@ -284,16 +319,37 @@ internal sealed class NativeLoungeRuntime(NativePreviewRuntime owner) : IDisposa
                         if (boardOnly && ad.Action == "adventure.board.close") return null;
                         if (boardOnly && ad.Action is not ("adventure.board.move" or "adventure.board.view"))
                             return null;
-                        return new("lounge.adventure.result", adventureSession.Execute(ad, adventure.Execute));
+                        {
+                            ModernAdventureReply reply = adventureSession.Execute(ad, adventure.Execute);
+                            if (reply.Success && ad.Action == "adventure.exit")
+                            {
+                                adventure = null; adventureSession = new();
+                            }
+                            return new("lounge.adventure.result", reply);
+                        }
                     }
                     break;
                 case "lounge.tower-defense.command" when tower is not null:
                     if (ModernTowerDefenseProtocol.Parse(payload) is { } td)
-                        return new("lounge.tower-defense.result", towerSession.Execute(td, tower.Execute));
+                        {
+                            ModernTowerDefenseReply reply = towerSession.Execute(td, tower.Execute);
+                            if (reply.Success && td.Action == "tower.exit")
+                            {
+                                tower.Checkpoint(); tower = null; towerSession = new();
+                            }
+                            return new("lounge.tower-defense.result", reply);
+                        }
                     break;
                 case "lounge.minesweeper.command" when mine is not null:
                     if (ModernMinesweeperProtocol.Parse(payload) is { } sw)
-                        return new("lounge.minesweeper.result", mineSession.Execute(sw, mine.Execute));
+                        {
+                            ModernMinesweeperReply reply = mineSession.Execute(sw, mine.Execute);
+                            if (reply.Success && sw.Action == "mine.exit")
+                            {
+                                mine.Checkpoint(); mine = null; mineSession = new();
+                            }
+                            return new("lounge.minesweeper.result", reply);
+                        }
                     break;
             }
         }

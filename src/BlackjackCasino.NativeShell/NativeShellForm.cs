@@ -629,7 +629,9 @@ internal sealed class NativeShellForm : Form
                     if (!root.TryGetProperty("id", out JsonElement rawMode)
                         || rawMode.ValueKind != JsonValueKind.String) break;
                     string? id = rawMode.GetString();
-                    HostCasinoRoute? mode = HostMigrationCatalog.PreviewRoutes.FirstOrDefault(
+                    // External Godot modes have no React preview document, so they
+                    // must be resolved against the full canonical route catalog.
+                    HostCasinoRoute? mode = HostMigrationCatalog.CasinoRoutes.FirstOrDefault(
                         route => string.Equals(route.DesktopModeId, id, StringComparison.Ordinal));
                     if (mode?.PreviewModeId is { } alias)
                         BeginInvoke(new Action(() => { _ = OpenModeAsync(alias); }));

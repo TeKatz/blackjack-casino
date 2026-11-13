@@ -1,8 +1,8 @@
-import {memo,useEffect,useMemo,useRef} from 'react';
+import {memo,useLayoutEffect,useMemo,useRef} from 'react';
 import type {CSSProperties} from 'react';
 import type {NeonSpin,NeonSymbol} from './bridge';
 import {SymbolArt} from './Symbols';
-import {reelStopDuration,reelKeyframes,reelVisualStrip} from './reelMotion';
+import {reelStopDuration,reelKeyframes,reelVisualStrip,reelTrackGeometry} from './reelMotion';
 import type {ReelSpeed} from './reelMotion';
 
 type CellState={winner:boolean;muted:boolean;converted:boolean;override:boolean};
@@ -44,7 +44,10 @@ function ReelColumn({reel,visible,spin,rolling,reducedMotion,finished,winning,sp
  // result and strip identity stay fixed for the lifetime of this animation.
  const tape=useMemo(()=>spinId&&target?
    reelVisualStrip(spinId,reel,visible,target):[],[spinId,reel]);
- useEffect(()=>{
+ // Establish the first reel frame before the browser paints. A passive
+ // effect paints the tape at translateY(0) for one frame, exposing the
+ // offscreen guard symbol before the actual reel starts moving.
+ useLayoutEffect(()=>{
   if(!rolling||!spinId||reducedMotion)return;
   const viewport=frameRef.current,tapeEl=tapeRef.current;
   if(!viewport||!tapeEl)return;
@@ -65,6 +68,8 @@ function ReelColumn({reel,visible,spin,rolling,reducedMotion,finished,winning,sp
    const step=height+rowGap;
    tapeEl.style.setProperty('--vault-reel-cell-height',height+'px');
    tapeEl.style.setProperty('--vault-cell-gap',rowGap+'px');
+   tapeEl.style.transform='translate3d(0,'+
+     reelTrackGeometry(step,tape.length).start.toFixed(3)+'px,0)';
    // Guard rows before and after the four visible cells prevent clipping on
    // initial recoil and during the spring-like final overshoot.
    motion=tapeEl.animate(reelKeyframes(step,tape.length),{
