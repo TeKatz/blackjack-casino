@@ -165,7 +165,7 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
   to{opacity:1;transform:translateY(0)}
 }
 .lobby-hero{animation:lobbyPageReveal .65s ease both;}
-.lobby-game-grid{animation:lobbyPageReveal .72s .08s ease both;}
+.lobby-game-grid{animation:none;}
 .lobby-overview{animation:lobbyPageReveal .72s .14s ease both;}
 @media(max-height:800px){
   .game-info p{-webkit-line-clamp:1;}
@@ -633,3 +633,36 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
 .native-preview-notice strong{white-space:nowrap;color:#dfc690}.native-preview-notice span{font-size:.9rem;line-height:1.4}.native-preview-notice button{background:transparent;border:0;color:inherit;font-size:1.5rem;cursor:pointer}
 
 .native-lobby-boot{display:grid;place-items:center;min-height:100vh;background:#041611;color:#e8d5ac}.native-lobby-loading{font-size:1rem;letter-spacing:.14em}
+
+
+/* Final NativeShell polish: avoid re-entry animations that continuously change
+   the GPU art bounds while a tab switch reconstructs the lobby layout. */
+.lobby-game-grid{animation:none!important}
+.lobby-game .game-art-window[data-pixi-art-ready="true"]{
+  background-image:none!important;
+}
+.lobby-game-grid:not(.filtered) .game-info p{
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+  overflow:hidden;
+  font-size:clamp(10px,.72vw,12px);
+  line-height:1.35;
+  overflow-wrap:anywhere;
+}
+@media(min-width:950px) and (max-height:800px) and (min-height:660px){
+  .lobby-game-grid:not(.filtered) .game-info p{
+    display:-webkit-box;
+    -webkit-line-clamp:1;
+    font-size:10px;
+  }
+  .lobby-game-grid:not(.filtered) .game-art-window{flex-basis:37%;height:37%}
+}
+.lobby-brand:focus:not(:focus-visible){outline:0;box-shadow:none}
+.brand-spade{
+  width:52px;height:52px;flex:0 0 52px;border:0;border-radius:50%;
+  background-color:transparent;
+  background-image:url('/lobby/custom/club-spade.svg');
+  background-size:contain;background-position:center;background-repeat:no-repeat;
+  box-shadow:none;filter:drop-shadow(0 0 6px #cba95d33);
+}
