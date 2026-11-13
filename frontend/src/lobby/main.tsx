@@ -11,6 +11,7 @@ import './rouletteTile.css';
 import {ArcadeMenu} from './ArcadeMenu';
 import {ARCADE_MODE_ID,arcadeLobbyMode} from './arcadeCatalog';
 import { LobbyAmbient } from './LobbyAmbient';
+import {stableLobbyTiles} from './lobbyTiles';
 import { ModernShop } from './ModernShop';
 import { ModernChallenges } from './ModernChallenges';
 import { ModernStatistics } from './ModernStatistics';
@@ -55,22 +56,15 @@ const navigation: {id: Filter; en: string; de: string}[] = [
   {id:'profile',en:'Player Profile',de:'Spielerprofil'},
 ];
 function percent(n: number): string { return Math.round(n * 100) + '%'; }
-function matchesFilter(id: string, filter: Filter): boolean {
-  if (filter === 'all') return true;
-  if (filter === 'tables') return id === 'blackjack' || id === 'roulette' || id === 'kniffel';
-  if (filter === 'slots') return ['midnight-reels','neon-vault','nine-lives','midnight-manor'].includes(id);
-  if (filter === 'relax') return id === 'chill-lounge';
-  if (filter === 'empire') return ['casino-empire','midnight-merge'].includes(id);
-  return true;
-}
 function Progress({value, tone = 'green'}:{value:number; tone?:'green'|'gold'}) {
   return <div className={'lobby-meter '+tone} role="progressbar" aria-valuemin={0}
     aria-valuemax={100} aria-valuenow={Math.round(value*100)}>
       <span style={{width: percent(value)}}/>
     </div>;
 }
-function GameTile({ mode, language, motionEnabled, onOpen, onSecondary }:{
-  mode:LobbyMode; language:'de'|'en'; motionEnabled:boolean; onOpen:(id:string)=>void; onSecondary:(id:string)=>void;
+function GameTile({ mode, hidden, language, motionEnabled, onOpen, onSecondary }:{
+  mode:LobbyMode; hidden:boolean; language:'de'|'en'; motionEnabled:boolean;
+  onOpen:(id:string)=>void; onSecondary:(id:string)=>void;
 }) {
   const move=(event:ReactPointerEvent<HTMLElement>)=>{
     if(!motionEnabled||event.pointerType==='touch')return;
@@ -84,7 +78,7 @@ function GameTile({ mode, language, motionEnabled, onOpen, onSecondary }:{
     event.currentTarget.style.setProperty('--motion-x','0px');
     event.currentTarget.style.setProperty('--motion-y','0px');
   };
-  return <article className={'lobby-game game-'+mode.id+
+  return <article hidden={hidden} className={'lobby-game game-'+mode.id+
       (mode.enabled?'':' unavailable')} onPointerMove={move} onPointerLeave={leave}>
     <div className="game-art-window" data-mode-art={mode.id} aria-hidden="true">
       {mode.id==='roulette'&&<div className="roulette-tile-art"><span>✦</span><i/></div>}
@@ -388,9 +382,12 @@ function LobbyApp() {
   // Preserve the artwork DOM and its Pixi scene objects while a subpage is
   // open. Hiding instead of unmounting prevents delayed icon reconstruction.
   const lobbyContentVisible=recordsVisible===null&&!shopVisible&&!arcadeOpen;
-  const modes = [...data.modes.filter(x=>x.id!==ARCADE_MODE_ID),arcadeLobbyMode(data.language)]
-    .filter(x=>matchesFilter(x.id,filter))
-    .sort((a,b)=>artOrder.indexOf(a.id)-artOrder.indexOf(b.id));
+  // Keep the same keyed tile elements across category changes; their PixiJS
+  // sprites and first-frame readiness must not reset when returning to Lobby.
+  const modes = stableLobbyTiles(
+    [...data.modes.filter(x=>x.id!==ARCADE_MODE_ID),arcadeLobbyMode(data.language)],
+    filter,artOrder);
+  const hasVisibleModes=modes.some(({visible})=>visible);
   if(embeddedLobby&&!nativeSnapshotReceived){
     return <div className="casino-lobby-shell native-lobby-boot" role="status" aria-live="polite">
       <div className="native-lobby-loading">THE MIDNIGHT CLUB · {data.language==='de'?'Lade Spielerdaten…':'Loading player data…'}</div>
@@ -526,10 +523,11 @@ function LobbyApp() {
         </div>
         <section className={'lobby-game-grid '+(filter!=='all'?'filtered':'')}
           aria-label={de?'Spiele und Aktivitäten':'Games and activities'}>
-          {modes.map(mode=><GameTile key={mode.id} mode={mode} language={data.language}
+          {modes.map(({mode,visible})=><GameTile key={mode.id} mode={mode}
+            hidden={!visible} language={data.language}
             motionEnabled={!lowMotion && data.animationsEnabled}
             onOpen={openMode} onSecondary={openSecondary}/>)}
-          {modes.length===0&&<p className="empty-mode">{de?'Keine Spiele in dieser Kategorie.':'No games in this category.'}</p>}
+          {!hasVisibleModes&&<p className="empty-mode">{de?'Keine Spiele in dieser Kategorie.':'No games in this category.'}</p>}
         </section>
         {!embeddedLobby&&<small className="browser-note">Browser preview · navigation requires the Windows client.</small>}
       </main>
