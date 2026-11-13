@@ -289,3 +289,31 @@ launch.
 This deliberately does **not** make the NativeShell the default executable,
 activate production storage or provide live rollback. Those remain separate
 approval gates; the WPF production save and Development updater are unchanged.
+
+## Phase F — NativeShell-to-WPF return export (2026-11-13)
+
+The first offline cross-host return now exports **current NativeShell progress**
+to a fresh, verifiable WPF-readable save folder without writing into the live
+casino's production storage. After closing every host and updater:
+
+```powershell
+.\BlackjackCasino.NativeShell.exe --stage-legacy-return live-test return1
+.\BlackjackCasino.NativeShell.exe --verify-legacy-return return1
+```
+
+The export contains the current player wallet and preferences, player profile,
+hand history, Manor checkpoint and WebView2 localStorage LevelDB (including
+Arcade records). The export reuses the established source hash/checkpoint chain,
+blocks divergent WPF edits, waits for exclusive WPF and native writer leases,
+and rejects unresolved native transaction journals. It validates the payload
+through the WPF player-state, hand-history and Manor persistence readers.
+Its manifest records the before/after wallet and SHA-256 hash of every copied
+file. Existing exports cannot be overwritten, and tampered exports fail verify.
+
+Native-only aggregate and roulette receipt journals remain in the native
+workspace and are **not** injected into WPF, which cannot replay them.
+Releasing a real two-way switch additionally requires a tested receipt
+handoff/replay policy and crash-safe atomic activation. For now these commands
+are an **offline proof of compatibility**, not a live rollback operation.
+`BlackjackCasino.Desktop.exe`, the installed player saves and the updater
+continue to operate unchanged.

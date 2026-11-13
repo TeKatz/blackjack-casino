@@ -133,6 +133,54 @@ internal static class Program
             }
         }
 
+        if (args is ["--stage-legacy-return", var nativeWorkspaceName, var returnName])
+        {
+            try
+            {
+                string export = NativeLegacyReturnExport.Stage(
+                    NativeHostMigration.ProductionDirectory, nativeWorkspaceName, returnName);
+                LegacyReturnExportManifest report = NativeLegacyReturnExport.Verify(
+                    NativeHostMigration.ProductionDirectory, returnName);
+                System.Windows.Forms.MessageBox.Show(
+                    "A verified WPF-compatible copy of the latest NativeShell progress is available at:\n"
+                    + export + "\n\nOriginal WPF wallet: " + report.LegacyBankroll
+                    + "\nNativeShell wallet: " + report.NativeBankroll
+                    + "\n\nThis is a DRY RUN. No installed saves or startup settings changed.",
+                    "Offline legacy return export");
+                return 0;
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException
+                or System.Text.Json.JsonException or InvalidOperationException or ArgumentException)
+            {
+                System.Windows.Forms.MessageBox.Show(error.Message,
+                    "Legacy return export blocked");
+                return 1;
+            }
+        }
+        if (args is ["--verify-legacy-return", var returnExportName])
+        {
+            try
+            {
+                LegacyReturnExportManifest report = NativeLegacyReturnExport.Verify(
+                    NativeHostMigration.ProductionDirectory, returnExportName);
+                System.Windows.Forms.MessageBox.Show(
+                    "Export " + report.Name + " verified.\n"
+                    + "Files: " + report.ExportFiles.Length
+                    + "\nOld WPF wallet: " + report.LegacyBankroll
+                    + "\nCurrent NativeShell wallet: " + report.NativeBankroll
+                    + "\n\nNo installed data was overwritten.",
+                    "Legacy return verified");
+                return 0;
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException
+                or System.Text.Json.JsonException or InvalidOperationException or ArgumentException)
+            {
+                System.Windows.Forms.MessageBox.Show(error.Message,
+                    "Legacy return verification failed");
+                return 1;
+            }
+        }
+
         string? candidateDirectory = null;
         if (args is ["--live-rehearsal", var workspaceNameToOpen])
         {
@@ -162,7 +210,7 @@ internal static class Program
         else if (args.Length != 0)
         {
             Console.Error.WriteLine(
-                "Usage: BlackjackCasino.NativeShell.exe [--smoke|--web-smoke|--stage-migration NAME|--candidate NAME|--prepare-cutover CANDIDATE BACKUP|--verify-cutover BACKUP|--rehearse-rollback BACKUP legacy\\|native DESTINATION|--stage-live-rehearsal BACKUP WORKSPACE|--live-rehearsal WORKSPACE]");
+                "Usage: BlackjackCasino.NativeShell.exe [--smoke|--web-smoke|--stage-migration NAME|--candidate NAME|--prepare-cutover CANDIDATE BACKUP|--verify-cutover BACKUP|--rehearse-rollback BACKUP legacy\\|native DESTINATION|--stage-live-rehearsal BACKUP WORKSPACE|--live-rehearsal WORKSPACE|--stage-legacy-return WORKSPACE EXPORT|--verify-legacy-return EXPORT]");
             return 2;
         }
 

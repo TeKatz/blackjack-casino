@@ -221,6 +221,65 @@ internal static class NativeShellContractSmoke
                 active.Progression.History.Count != 1)
                 throw new InvalidOperationException("Rehearsal runtime failed to restore existing player data.");
         }
+        // Simulate new rounds after cutover: they must be exported from the
+        // native workspace, not replaced by the original WPF checkpoint.
+        const decimal earned = 83.25m;
+        decimal updatedWallet = checked(expectedWallet + earned);
+        PlayerStateStore.SaveOrThrow(
+            PlayerStateStore.Load(promoted) with { Bankroll = updatedWallet }, promoted);
+        // Reusing the exact source profile is allowed; bankroll is the
+        // authoritative changed player progress in this rollback fixture.
+        using (var runningNative = new NativePreviewRuntime(promoted))
+        {
+            try
+            {
+                _ = NativeLegacyReturnExport.Stage(production,
+                    "isolated-live", "blocked-native", checkProcesses: false);
+                throw new InvalidOperationException("Legacy export ignored active native writer.");
+            }
+            catch (InvalidOperationException ex) when (
+                ex.Message.Contains("Close the NativeShell workspace", StringComparison.Ordinal)) { }
+        }
+        if (Directory.Exists(NativeLegacyReturnExport.ExportPath(production, "blocked-native")))
+            throw new InvalidOperationException("Legacy export ignored native writer lock.");
+
+        string legacyExport = NativeLegacyReturnExport.Stage(production,
+            "isolated-live", "return1", checkProcesses: false);
+        LegacyReturnExportManifest legacyReport =
+            NativeLegacyReturnExport.Verify(production, "return1");
+        if (legacyReport.AppliedToProduction
+            || legacyReport.LegacyBankroll != expectedWallet
+            || legacyReport.NativeBankroll != updatedWallet
+            || PlayerStateStore.Load(legacyExport).Bankroll != updatedWallet
+            || !sourceBrowser.SequenceEqual(File.ReadAllBytes(Path.Combine(legacyExport,
+                "WebView2", "Default", "Local Storage", "leveldb", "000001.ldb")))
+            || File.Exists(Path.Combine(legacyExport, "native-promotion-rehearsal.json"))
+            || File.Exists(Path.Combine(legacyExport, "native-player-aggregate.json"))
+            || File.Exists(Path.Combine(legacyExport, "native-roulette-checkpoint.json")))
+            throw new InvalidOperationException("WPF return did not preserve new native progress.");
+
+        try
+        {
+            _ = NativeLegacyReturnExport.Stage(production,
+                "isolated-live", "return1", checkProcesses: false);
+            throw new InvalidOperationException("Existing legacy return export was overwritten.");
+        }
+        catch (IOException) { /* Never replace an earlier export. */ }
+        try
+        {
+            _ = NativeLegacyReturnExport.Stage(production,
+                "missing-workspace", "invalid-return", checkProcesses: false);
+            throw new InvalidOperationException("Unverified native workspace was exported.");
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException) { }
+        File.AppendAllText(Path.Combine(legacyExport, "player-state.json"), " ");
+        try
+        {
+            _ = NativeLegacyReturnExport.Verify(production, "return1");
+            throw new InvalidOperationException("Tampered WPF return was accepted.");
+        }
+        catch (InvalidDataException) { /* Expected SHA-256 rejection. */ }
+
         if (!sourcePreferences.SequenceEqual(File.ReadAllBytes(
                 Path.Combine(production, "player-state.json")))
             || !sourceProfile.SequenceEqual(File.ReadAllBytes(
