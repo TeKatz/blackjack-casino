@@ -580,8 +580,7 @@ button:disabled{opacity:.45;cursor:default}button:focus-visible,input:focus-visi
    grid-template-rows:repeat(3,var(--merge-tile-size));
    gap:var(--merge-gap);
    box-sizing:border-box;
-   width:calc(14 * var(--merge-tile-size) + 13 * var(--merge-gap) + 12px);
-   height:calc(3 * var(--merge-tile-size) + 2 * var(--merge-gap) + 12px);
+   width:max-content;height:max-content;
    min-height:0;min-width:0;max-height:none;max-width:100%;
    aspect-ratio:auto;justify-self:start;align-self:start;margin:0;padding:6px;
    overflow:visible}
