@@ -2,7 +2,7 @@ name: Repository contract
 
 on:
   push:
-    branches: [main, develop2, develop, "feature/**", "fix/**"]
+    branches: [main, dev, "feature/**", "fix/**"]
   pull_request:
   workflow_dispatch:
 

@@ -4,9 +4,9 @@ The Midnight Club is an offline-first, play-money Windows casino. Gameplay and v
 
 ## Before starting
 
-1. Inspect recent branches and open pull requests. The Development publisher is pinned to `develop2`; `main` is the tested integration baseline. Verify both workflow guards before changing release routing.
-2. Start from the most recent validated `develop2` baseline. Never overwrite another active workstream.
-3. Create a focused `feature/*` or `fix/*` branch for independent changes. Create focused feature/fix PRs from `develop2` and merge them back into `develop2` after checks. Keep PRs reviewable and avoid changing release pins as a side effect.
+1. Inspect recent branches and open pull requests. The Development publisher is pinned to `dev`; `main` is the tested integration baseline. Verify both workflow guards before changing release routing.
+2. Start from the most recent validated `dev` baseline. Never overwrite another active workstream.
+3. Create a focused `feature/*` or `fix/*` branch for independent changes. Create focused feature/fix PRs from `dev` and merge them back into `dev` after checks. Keep PRs reviewable and avoid changing release pins as a side effect.
 4. Read [AGENTS.md](AGENTS.md), [branch policy](docs/branching-and-release-policy.md), [architecture](docs/architecture.md), [Development delivery](docs/development-update-delivery.md), and the relevant game-specific documentation.
 
 ## Local validation (Windows)
@@ -45,7 +45,7 @@ Write release notes, README sections and feature guides as project documentation
 
 ## Pull requests and releases
 
-Use `develop2` for ongoing work, with reviewable feature/fix PRs. Integrate to `main` at validated milestones rather than merely to publish Development updates. Use the PR template and link supporting screenshots/benchmarks when relevant. A preview is not automatically a Development release. Development switches require an explicit source-branch update in **both** workflow guards, a valid increasing SemVer and successful package/updater verification. Do not merge, delete branches, repoint Development or release during another ongoing game change without coordinating it.
+Use `dev` for ongoing work, with reviewable feature/fix PRs. Integrate to `main` at validated milestones rather than merely to publish Development updates. Use the PR template and link supporting screenshots/benchmarks when relevant. A preview is not automatically a Development release. Development switches require an explicit source-branch update in **both** workflow guards, a valid increasing SemVer and successful package/updater verification. Do not merge, delete branches, repoint Development or release during another ongoing game change without coordinating it.
 
 ## Modernization
 

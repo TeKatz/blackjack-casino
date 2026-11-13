@@ -56,7 +56,7 @@ jobs:
       - name: Checkout target development branch
         uses: actions/checkout@v7
         with:
-          ref: develop2
+          ref: dev
           persist-credentials: true
 
       - name: Validate importer and available audio tools
@@ -91,7 +91,7 @@ jobs:
             echo "No audio changes to commit."
           else
             git commit -m "assets(audio): import OpenGameArt music for $MUSIC_AREA"
-            git push origin HEAD:refs/heads/develop2
+            git push origin HEAD:refs/heads/dev
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
@@ -100,4 +100,4 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run development-release.yml --ref develop2
+        run: gh workflow run development-release.yml --ref dev

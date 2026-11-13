@@ -2,7 +2,7 @@ name: Midnight Descent Godot smoke
 
 on:
   push:
-    branches: [develop2, develop, main]
+    branches: [dev, main]
     paths:
       - 'games/midnight-descent/**'
       - 'src/BlackjackCasino.Desktop/MainWindow.MidnightDescent.cs'

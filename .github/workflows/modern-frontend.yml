@@ -2,7 +2,7 @@ name: Modern Manor frontend
 
 on:
   push:
-    branches: [main, develop2, develop, "feature/**", "fix/**"]
+    branches: [main, dev, "feature/**", "fix/**"]
     paths:
       - "frontend/**"
       - ".github/workflows/modern-frontend.yml"
