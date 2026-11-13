@@ -83,7 +83,7 @@ internal sealed class NativeShellForm : Form
             CoreWebView2Environment.CreateAsync(
                 userDataFolder: Path.Combine(previewDirectory, "WebView2")));
 
-        Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+        Icon = System.Drawing.Icon.ExtractAssociatedIcon(Application.ExecutablePath);
         Text = managedDevelopment
             ? "Blackjack Casino — NativeShell Development"
             : migrationCandidate
