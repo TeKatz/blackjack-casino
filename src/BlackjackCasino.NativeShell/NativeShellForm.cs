@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using BlackjackCasino.Desktop;
 using BlackjackCasino.Core.Hosting;
+using BlackjackCasino.Update;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
 
@@ -26,6 +27,10 @@ internal sealed class NativeShellForm : Form
     private readonly NativeHostAudio hostAudio = new();
     private string? recordsPage;
     private bool shopOpen, updatesOpen;
+    private readonly DesktopUpdateService updateService = new();
+    private readonly CancellationTokenSource updateCancellation = new();
+    private bool checkingUpdates, availableUpdates;
+    private string updateStatus = "This isolated test candidate cannot install updates. You can check the published release status.";
     private readonly Panel content = new() { Dock = DockStyle.Fill };
     private readonly Label status = new()
     {
@@ -1146,10 +1151,24 @@ internal sealed class NativeShellForm : Form
             case "lobby.updates.close":
                 updatesOpen = false;
                 break;
-            case "lobby.updates.check" or "lobby.updates.install" or
-                "lobby.updates.channel.set" when updatesOpen:
-                // This separate pilot is never a permitted target for the
-                // production updater. Phase C verifies the replacement package.
+            case "lobby.updates.channel.set" when updatesOpen && !checkingUpdates
+                && id is "stable" or "development":
+                runtime.UpdateLoungePreferences(p => p with
+                {
+                    UpdateChannel = id == "stable"
+                        ? UpdateChannel.Stable : UpdateChannel.Development,
+                });
+                availableUpdates = false;
+                updateStatus = "Channel changed. You may check published updates, but installation remains disabled in this test candidate.";
+                RefreshNativeUpdates();
+                break;
+            case "lobby.updates.check" when updatesOpen && !checkingUpdates:
+                _ = CheckNativeUpdatesAsync();
+                break;
+            case "lobby.updates.install" when updatesOpen:
+                // A test candidate must NEVER pass a WPF package to an
+                // updater that would overwrite or restart the installed host.
+                updateStatus = "Installation is locked in the NativeShell candidate. Use the installed desktop app for updates.";
                 RefreshNativeUpdates();
                 break;
         }
@@ -1158,16 +1177,58 @@ internal sealed class NativeShellForm : Form
     private void RefreshNativeUpdates()
     {
         if (!updatesOpen || activeMode is not null || !listening) return;
+        string? version = FileVersionInfo.GetVersionInfo(Application.ExecutablePath).ProductVersion;
         Post("lobby.updates.snapshot", new
         {
-            InstalledVersion = typeof(NativeShellForm).Assembly.GetName().Version?.ToString() ?? "Preview",
-            Channel = "development",
-            Status = "NativeShell preview: updates remain in the existing production host until release migration.",
-            Busy = false,
-            CanCheck = false,
+            InstalledVersion = string.IsNullOrWhiteSpace(version) ? "Native preview" : version,
+            Channel = (runtime.Preferences.UpdateChannel ?? UpdateChannel.Development).ToManifestValue(),
+            Status = updateStatus,
+            Busy = checkingUpdates,
+            CanCheck = !checkingUpdates,
             CanInstall = false,
-            UpdateAvailable = false,
+            UpdateAvailable = availableUpdates,
         });
+    }
+
+    private async Task CheckNativeUpdatesAsync()
+    {
+        if (closing || checkingUpdates) return;
+        checkingUpdates = true;
+        availableUpdates = false;
+        updateStatus = "Checking the published release manifest (read-only)…";
+        RefreshNativeUpdates();
+        try
+        {
+            UpdateChannel channel = runtime.Preferences.UpdateChannel ?? UpdateChannel.Development;
+            string? version = FileVersionInfo.GetVersionInfo(Application.ExecutablePath).ProductVersion;
+            if (!SemanticVersion.TryParse(version ?? "", out SemanticVersion current))
+                current = SemanticVersion.Parse("0.1.0");
+            UpdateCheckResult result = await updateService.CheckAsync(
+                channel, current, updateCancellation.Token);
+            if (closing || IsDisposed) return;
+            availableUpdates = result.UpdateAvailable;
+            updateStatus = result.UpdateAvailable
+                ? "A published " + channel.ToManifestValue() + " build is available ("
+                    + result.LatestVersion + "). This isolated NativeShell cannot install it."
+                : "Published " + channel.ToManifestValue() + " releases checked. "
+                    + "No newer version detected; candidate installation is still disabled.";
+        }
+        catch (OperationCanceledException) when (closing || updateCancellation.IsCancellationRequested)
+        {
+            return;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException
+            or InvalidDataException or JsonException or FormatException)
+        {
+            if (closing || IsDisposed) return;
+            updateStatus = ("Cannot check published releases: " + ex.Message)
+                .Substring(0, Math.Min(2048, ("Cannot check published releases: " + ex.Message).Length));
+        }
+        finally
+        {
+            checkingUpdates = false;
+            if (!closing && !IsDisposed) RefreshNativeUpdates();
+        }
     }
 
     private bool SoundEnabledForCurrentMode()
@@ -1490,6 +1551,9 @@ internal sealed class NativeShellForm : Form
         detachedEmpire?.Close();
         detachedEmpire = null;
         DisposeBrowser();
+        updateCancellation.Cancel();
+        updateService.Dispose();
+        updateCancellation.Dispose();
         runtime.Dispose();
         hostAudio.Dispose();
         CasinoAudio.Shutdown();

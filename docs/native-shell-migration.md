@@ -187,3 +187,12 @@ GitHub release. It is a separate Actions artifact, not a supported distribution
 channel. A production cutover still requires an explicit launch-selection
 contract, safe production-data promotion with one writer, cross-version save
 rollback, real updated-client restart coverage, and Windows 10/11 device testing.
+
+### Read-only NativeShell update inspection
+The isolated native candidate now reuses the existing WPF-independent
+`DesktopUpdateService` and `UpdateClient` to check real published stable or
+Development manifests on demand. Channel selection is retained in isolated
+preferences. The UI explicitly disables installation and shows that the
+published updater package belongs to the installed WPF host. No download,
+relaunch, or modification of the user's installed application is permitted.
+Cancellation on window close avoids a late WebView2 update of a disposed form.

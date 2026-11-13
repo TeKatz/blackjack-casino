@@ -31,6 +31,7 @@
     <!-- Link the EXACT domain and save contracts currently used by the WPF app.
          These source files do not depend on PresentationFramework or XAML. -->
     <Compile Include="../BlackjackCasino.Desktop/AppPreferences.cs" Link="Shared/AppPreferences.cs" />
+    <Compile Include="../BlackjackCasino.Desktop/DesktopUpdateService.cs" Link="Shared/DesktopUpdateService.cs" />
     <Compile Include="../BlackjackCasino.Desktop/AreaPresentationSettings.cs" Link="Shared/AreaPresentationSettings.cs" />
     <Compile Include="../BlackjackCasino.Desktop/DebouncedPersistenceWriter.cs" Link="Shared/DebouncedPersistenceWriter.cs" />
     <Compile Include="../BlackjackCasino.Desktop/PlayerStateStore.cs" Link="Shared/PlayerStateStore.cs" />
