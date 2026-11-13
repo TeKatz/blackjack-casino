@@ -86,7 +86,7 @@ public static class HostCutoverLaunchPolicy
                 names.Add(name);
             }
             catch (Exception error) when (error is ArgumentException or IOException
-                or UnauthorizedAccessException or JsonException or InvalidOperationException)
+                or UnauthorizedAccessException or JsonException or InvalidDataException or InvalidOperationException)
             {
                 // Unverified or incomplete candidates are never offered to launch.
             }
