@@ -46,7 +46,7 @@ public static class HostMigrationCatalog
             new("neon-vault", "Neon Vault", "neon-vault", "neon-vault.html"),
             new("nine-lives", "Nine Lives", "nine-lives", "nine-lives.html"),
             new("midnight-manor", "Midnight Manor", "midnight-manor", "index.html"),
-            new("casino-empire", "Casino Empire", null, null, true),
+            new("casino-empire", "Casino Empire", "casino-empire", "empire.html", true),
             new("midnight-merge", "Midnight Merge", "midnight-merge", "midnight-merge.html"),
             new("chill-lounge", "Chill Lounge", null, null),
             new("kniffel", "Midnight Dice", "midnight-dice", "midnight-dice.html"),

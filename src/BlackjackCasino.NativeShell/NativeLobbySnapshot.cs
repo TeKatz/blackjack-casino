@@ -67,7 +67,8 @@ internal static class NativeLobbySnapshot
             FrameVariant = CosmeticCatalog.Get(player.EquippedFrameId).VisualVariant ?? "classic",
             Bankroll = Cash(session.Bankroll),
             BankrollValue = session.Bankroll,
-            EmpireCredits = "—",
+            EmpireCredits = session.EmpireStarted
+                ? session.EmpireCredits.ToString("N0", CultureInfo.InvariantCulture) + " cr" : "—",
             AlbumOwned = player.Collection.OwnedCardIds.Count,
             AlbumTotal = CollectionCatalog.Cards.Count,
             AlbumPacksReady = CollectionService.UnopenedPackCount(player),

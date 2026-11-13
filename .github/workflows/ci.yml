@@ -231,7 +231,7 @@ jobs:
             -p:DebugType=None `
             --output artifacts/native-shell-preview
           Copy-Item artifacts/preview-app/MidnightDescent artifacts/native-shell-preview/MidnightDescent -Recurse -Force
-          foreach ($name in @("lobby.html", "blackjack.html", "roulette.html", "reels.html", "neon-vault.html", "nine-lives.html", "midnight-merge.html", "midnight-dice.html", "index.html")) {
+          foreach ($name in @("lobby.html", "blackjack.html", "roulette.html", "empire.html", "reels.html", "neon-vault.html", "nine-lives.html", "midnight-merge.html", "midnight-dice.html", "index.html")) {
             if (!(Test-Path "artifacts/native-shell-preview/ModernFrontend/$name")) {
               throw "Native shell is missing packaged $name"
             }

@@ -95,3 +95,5 @@ Windows integration and release approval are **not** asserted by source checks a
 - Read-only lounge/casino route inventories remain canonical; **Empire, Lounge, Midnight Descent, production import, updates and audio are not yet migrated.** This phase must not be treated as complete production parity.
 
 - The independent pilot now exposes Midnight Descent when its Godot `.exe` and `.pck` are bundled. This is an external process launcher, not a WebView route or a verified production replacement.
+
+- The embedded Casino Empire React page and native `EmpireService` bridge are now available in the test pilot with original session/revision validation and durable preferences snapshots. Detached windows remain a separate acceptance blocker.

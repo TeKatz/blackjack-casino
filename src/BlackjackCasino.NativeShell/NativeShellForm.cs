@@ -45,6 +45,9 @@ internal sealed class NativeShellForm : Form
     private bool listening, ready, browserFailed, closing;
     private bool lobbyShown, lobbyBrowserDisabled;
     private Process? descentProcess;
+    private EmpireModernSession? empireEpoch;
+    private readonly System.Windows.Forms.Timer empireRefresh = new() { Interval = 2000 };
+    private DateTimeOffset empireLastPersist = DateTimeOffset.UtcNow;
     private readonly string frontendFolder = Path.Combine(AppContext.BaseDirectory, "ModernFrontend");
 
     internal NativeShellForm(string? previewDirectory = null)
@@ -91,6 +94,7 @@ internal sealed class NativeShellForm : Form
         navigation.Controls.Add(MakeButton("Midnight Merge", () => _ = OpenModeAsync("midnight-merge")));
         navigation.Controls.Add(MakeButton("Midnight Dice", () => _ = OpenModeAsync("midnight-dice")));
         navigation.Controls.Add(MakeButton("Midnight Manor", () => _ = OpenModeAsync("midnight-manor")));
+        navigation.Controls.Add(MakeButton("Casino Empire", () => _ = OpenModeAsync("casino-empire")));
         navigation.Controls.Add(new Label
         {
             AutoSize = true, Text = "NATIVE HOST • PREVIEW",
@@ -103,6 +107,17 @@ internal sealed class NativeShellForm : Form
         root.Controls.Add(content, 0, 1);
         root.Controls.Add(status, 0, 2);
         Controls.Add(root);
+        empireRefresh.Tick += (_, _) =>
+        {
+            if (closing || activeMode != "casino-empire" || !ready) return;
+            runtime.TickEmpire();
+            RefreshGameSnapshot();
+            if (DateTimeOffset.UtcNow - empireLastPersist >= TimeSpan.FromSeconds(30))
+            {
+                runtime.Persist();
+                empireLastPersist = DateTimeOffset.UtcNow;
+            }
+        };
         watchdog.Tick += (_, _) =>
         {
             watchdog.Stop();
@@ -197,6 +212,7 @@ internal sealed class NativeShellForm : Form
         actions.Controls.Add(MakeButton("MIDNIGHT MERGE", () => _ = OpenModeAsync("midnight-merge")));
         actions.Controls.Add(MakeButton("MIDNIGHT DICE", () => _ = OpenModeAsync("midnight-dice")));
         actions.Controls.Add(MakeButton("MIDNIGHT MANOR", () => _ = OpenModeAsync("midnight-manor")));
+        actions.Controls.Add(MakeButton("CASINO EMPIRE", () => _ = OpenModeAsync("casino-empire")));
         if (NativeDescentLaunch.IsPackaged(AppContext.BaseDirectory))
             actions.Controls.Add(MakeButton("MIDNIGHT DESCENT", () => _ = OpenDescentAsync()));
         page.Controls.Add(actions, 0, 2);
@@ -236,6 +252,12 @@ internal sealed class NativeShellForm : Form
         }
         if (activeMode == "midnight-manor")
             runtime.CloseManor();
+        if (activeMode == "casino-empire")
+        {
+            empireRefresh.Stop();
+            runtime.CloseEmpire();
+            empireEpoch = null;
+        }
         ShowHome();
     }
 
@@ -369,11 +391,18 @@ internal sealed class NativeShellForm : Form
         }
         if (activeMode == "midnight-manor" && mode != "midnight-manor")
             runtime.CloseManor();
+        if (activeMode == "casino-empire" && mode != "casino-empire")
+        {
+            empireRefresh.Stop();
+            runtime.CloseEmpire();
+            empireEpoch = null;
+        }
         if (mode == "reels") runtime.OpenReels();
         if (mode == "neon-vault") runtime.OpenNeonVault();
         if (mode == "nine-lives") runtime.OpenNineLives();
         if (mode == "midnight-merge") runtime.OpenMerge();
         if (mode == "midnight-dice") runtime.OpenDice();
+        if (mode == "casino-empire") runtime.OpenEmpire();
         if (mode == "midnight-manor")
         {
             try
@@ -398,6 +427,7 @@ internal sealed class NativeShellForm : Form
         // Keep Merge's request receipts when only the WebView process restarts.
         mergeEpoch = mode == "midnight-merge" ? mergeEpoch ?? new ModernMergeSession() : null;
         diceEpoch = mode == "midnight-dice" ? diceEpoch ?? new ModernDiceSession() : null;
+        empireEpoch = mode == "casino-empire" ? empireEpoch ?? new EmpireModernSession() : null;
 
         content.Controls.Clear();
         string document = PageFor(mode);
@@ -462,6 +492,7 @@ internal sealed class NativeShellForm : Form
         null => string.Equals(source, "https://" + VirtualHost + "/lobby.html", StringComparison.Ordinal),
         "blackjack" => BlackjackModernProtocol.Trusted(source),
         "roulette" => string.Equals(source, "https://" + VirtualHost + "/roulette.html", StringComparison.Ordinal),
+        "casino-empire" => EmpireModernProtocol.Trusted(source),
         "reels" => ModernReelsProtocol.Trusted(source),
         "neon-vault" => ModernNeonVaultProtocol.Trusted(source),
         "nine-lives" => ModernNineLivesProtocol.Trusted(source),
@@ -475,7 +506,7 @@ internal sealed class NativeShellForm : Form
     {
         if (closing || browserFailed || browser is null
             || !IsTrusted(activeMode, args.Source)
-            || args.WebMessageAsJson.Length > (activeMode == "roulette" ? 8192 : 4096)) return;
+            || args.WebMessageAsJson.Length > (activeMode is "roulette" or "casino-empire" ? 8192 : 4096)) return;
         try
         {
             if (activeMode == "midnight-manor")
@@ -539,6 +570,41 @@ internal sealed class NativeShellForm : Form
                 case "lobby.exit" when activeMode is null && ready:
                     BeginInvoke(new Action(Close));
                     break;
+                case "empire.ready" when activeMode == "casino-empire":
+                    listening = true;
+                    RefreshGameSnapshot();
+                    break;
+                case "empire.ui-ready" when activeMode == "casino-empire" && listening:
+                    if (!root.TryGetProperty("visitId", out JsonElement visit)
+                        || visit.ValueKind != JsonValueKind.Number
+                        || !visit.TryGetInt32(out int visitId) || visitId != 1) break;
+                    ready = true;
+                    watchdog.Stop();
+                    empireRefresh.Start();
+                    Post("empire.activated", new { VisitId = 1 });
+                    Post("empire.visibility", new { Visible = true });
+                    status.Text = "Casino Empire ready.";
+                    break;
+                case "empire.refresh" when activeMode == "casino-empire" && listening:
+                    RefreshGameSnapshot();
+                    break;
+                case "empire.close" when activeMode == "casino-empire":
+                    BeginInvoke(new Action(ReturnToHome));
+                    break;
+                case "empire.dismiss-offline" when activeMode == "casino-empire":
+                    RefreshGameSnapshot();
+                    break;
+                case "empire.command" when activeMode == "casino-empire" && listening && ready:
+                {
+                    EmpireModernCommand? command = EmpireModernProtocol.Parse(args.WebMessageAsJson);
+                    if (command is null || empireEpoch is null) break;
+                    EmpireModernReply reply = empireEpoch.Execute(command,
+                        runtime.CommitEmpire, runtime.EmpirePreview);
+                    Post("empire.result", reply);
+                    status.Text = reply.Message;
+                    if (!command.Preview) RefreshGameSnapshot();
+                    break;
+                }
                 case "roulette.ready" when activeMode == "roulette":
                     listening = true;
                     Post("roulette.snapshot", runtime.RouletteSnapshot());
@@ -720,6 +786,18 @@ internal sealed class NativeShellForm : Form
                 Revision = runtime.MergeRevision,
                 State = runtime.MergeSnapshot(),
             });
+        else if (activeMode == "casino-empire" && empireEpoch is not null)
+            Post("empire.snapshot", new
+            {
+                Version = EmpireModernProtocol.Version,
+                Session = empireEpoch.Id,
+                empireEpoch.Revision,
+                VisitId = 1,
+                Notice = (string?)null,
+                Offline = (object?)null,
+                LastReply = (EmpireModernReply?)null,
+                State = runtime.EmpireSnapshot(),
+            });
         else if (activeMode == "midnight-dice" && diceEpoch is not null)
             Post("midnight-dice.snapshot", new
             {
@@ -821,6 +899,7 @@ internal sealed class NativeShellForm : Form
     private void FailBrowser(string message)
     {
         if (closing || browserFailed) return;
+        empireRefresh.Stop();
         if (activeMode is null)
         {
             // The native WinForms home remains the emergency route when React
@@ -915,8 +994,10 @@ internal sealed class NativeShellForm : Form
             catch (InvalidOperationException) { }
             catch (System.ComponentModel.Win32Exception) { }
         }
+        empireRefresh.Stop();
         DisposeBrowser();
         runtime.Dispose();
+        empireRefresh.Dispose();
         watchdog.Dispose();
         base.OnFormClosing(e);
     }

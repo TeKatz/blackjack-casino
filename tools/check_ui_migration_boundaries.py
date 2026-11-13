@@ -176,7 +176,7 @@ def main() -> int:
             manifest = text(manifest_path)
             expected_documents = (
                 "blackjack.html", "reels.html", "neon-vault.html", "nine-lives.html",
-                "midnight-merge.html", "midnight-dice.html", "index.html",
+                "midnight-merge.html", "midnight-dice.html", "index.html", "roulette.html", "empire.html",
             )
             if (any(page not in manifest for page in expected_documents)
                     or "HostMigrationCatalog.IsPreviewRoute(mode)" not in form

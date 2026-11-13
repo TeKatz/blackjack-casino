@@ -22,10 +22,11 @@ internal static class NativeShellContractSmoke
                     name.Name is "PresentationFramework" or "PresentationCore" or "WindowsBase"))
                 throw new InvalidOperationException("Native shell still references WPF assemblies.");
 
-            if (HostMigrationCatalog.PreviewRoutes.Count != 8
+            if (HostMigrationCatalog.PreviewRoutes.Count != 9
                 || HostMigrationCatalog.ApprovedForRelease
                 || !HostMigrationCatalog.IsPreviewRoute("midnight-manor")
                 || !HostMigrationCatalog.IsPreviewRoute("roulette")
+                || !HostMigrationCatalog.IsPreviewRoute("casino-empire")
                 || HostMigrationCatalog.IsPreviewRoute("casino-empire")
                 || HostMigrationCatalog.PreviewPageFor("reels") != "reels.html")
                 throw new InvalidOperationException("Host parity manifest is inconsistent.");
@@ -114,6 +115,36 @@ internal static class NativeShellContractSmoke
                         || session.Bankroll != paid.Bankroll)
                         throw new InvalidOperationException("Native roulette double-charged a replay.");
                 }
+
+                session.OpenEmpire();
+                var empireSnapshot = System.Text.Json.JsonSerializer.Serialize(session.EmpireSnapshot(),
+                    new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web));
+                if (!empireSnapshot.Contains("\"economy\"", StringComparison.Ordinal)
+                    || !session.EmpireStarted)
+                    throw new InvalidOperationException("Native Empire is not authoritative.");
+                var empireEpoch = new EmpireModernSession();
+                var empireId = Guid.NewGuid().ToString("D");
+                string empireCommandJson = System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    version = EmpireModernProtocol.Version,
+                    requestId = empireId,
+                    session = empireEpoch.Id,
+                    expectedRevision = 0,
+                    action = "upgrade",
+                    id = "slots",
+                    levels = 1,
+                });
+                EmpireModernCommand? empireCommand = EmpireModernProtocol.Parse(empireCommandJson);
+                if (empireCommand is null)
+                    throw new InvalidOperationException("Native Empire command parsing failed.");
+                EmpireModernReply empireReceipt = empireEpoch.Execute(empireCommand,
+                    session.CommitEmpire, session.EmpirePreview);
+                if (!empireReceipt.Success || empireReceipt.Revision != 1
+                    || empireEpoch.Execute(empireCommand,
+                        _ => throw new Exception("Empire action replayed."),
+                        _ => throw new Exception("Empire preview replayed.")) != empireReceipt)
+                    throw new InvalidOperationException("Native Empire duplicate purchase or missing checkpoint.");
+                session.CloseEmpire();
 
                 session.OpenReels();
                 var spinEpoch = new ModernReelsSession();

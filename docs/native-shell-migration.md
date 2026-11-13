@@ -70,3 +70,7 @@ The NativeShell preview now attempts the existing `lobby.html` React surface on 
 ## Phase B: Midnight Descent process adapter
 
 The preview includes a WPF-free Godot launcher with a strict bundled `MidnightDescent.exe` + `.pck` presence check, the same fullscreen/language arguments as production, and minimized-host restoration after process exit. The CI pilot artifact now includes the exported Godot executable. On machines where the export is absent (such as a local development build), the lobby tile stays unavailable. A headless smoke covers the launch-argument contract; complete real-window focus/audio acceptance is outstanding.
+
+## Phase B: Casino Empire embedded preview bridge
+
+The native preview now links the original Empire protocol/snapshot and Core `EmpireService` instead of introducing a new simulation. Its embedded `empire.html` route handles session/revision-bound commands, read-only previews, authoritative transactional management purchases and single-file owner-dividend/wallet commits. Idle accrual ticks every two seconds while visible, checkpoints at most every thirty seconds and persists on close; production user storage remains untouched. The pilot **does not yet support detached Empire windows**, production save migration or complete performance/audio acceptance. The React lobby exposes Empire only as an embedded primary action, with secondary action disabled.

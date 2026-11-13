@@ -27,6 +27,7 @@ public sealed class HostMigrationContractsTests
     [Theory]
     [InlineData("blackjack", "blackjack.html")]
     [InlineData("roulette", "roulette.html")]
+    [InlineData("casino-empire", "empire.html")]
     [InlineData("reels", "reels.html")]
     [InlineData("neon-vault", "neon-vault.html")]
     [InlineData("nine-lives", "nine-lives.html")]
@@ -42,9 +43,9 @@ public sealed class HostMigrationContractsTests
     [Fact]
     public void PreviewIsNotPromotedToAProductionLobby()
     {
-        Assert.Equal(8, HostMigrationCatalog.PreviewRoutes.Count);
+        Assert.Equal(9, HostMigrationCatalog.PreviewRoutes.Count);
         Assert.True(HostMigrationCatalog.IsPreviewRoute("roulette"));
-        Assert.False(HostMigrationCatalog.IsPreviewRoute("casino-empire"));
+        Assert.True(HostMigrationCatalog.IsPreviewRoute("casino-empire"));
         Assert.False(HostMigrationCatalog.IsPreviewRoute("chill-lounge"));
         Assert.False(HostMigrationCatalog.IsPreviewRoute("kniffel"));
         Assert.False(HostMigrationCatalog.IsPreviewRoute("../lobby"));
