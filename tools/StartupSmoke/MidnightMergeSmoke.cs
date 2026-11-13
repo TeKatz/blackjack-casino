@@ -174,20 +174,26 @@ internal static class MidnightMergeSmoke
             + "&&cells[41].getBoundingClientRect().width>=24)})()") == "true",
             "React Merge 7x6 table became unusable at 1080×720.");
         await Capture(web, Path.Combine(output, "merge-modern-german-1080x720.png"));
-        Require(await web.ExecuteScriptAsync(
-            "(()=>{if(innerWidth<1000||innerHeight<600)return true;"
+        string compactMetrics = await web.ExecuteScriptAsync(
+            "(()=>{if(innerWidth<1000||innerHeight<600)return {ok:true,smallViewport:true};"
             + "const controls=document.querySelector('.merge-supply');"
             + "const tile=document.querySelector('.merge-producer');"
             + "const help=document.querySelector('[data-testid=\\\"merge-how-to-play\\\"]');"
             + "const settings=document.querySelector('[data-testid=\\\"merge-settings\\\"]');"
-            + "return Boolean(controls&&tile&&help&&settings"
-            + "&&tile.getBoundingClientRect().height>=44"
-            + "&&help.closest('.merge-header-tools')"
-            + "&&settings.closest('.merge-header-tools')"
-            + "&&!document.querySelector('.merge-footer')"
-            + "&&settings.getBoundingClientRect().bottom<="
-            + "document.querySelector('.merge-header').getBoundingClientRect().bottom+4);})()") == "true",
-            "The supply sources, header Help or header Settings are not visible.");
+            + "const header=document.querySelector('.merge-header');"
+            + "const tileHeight=tile?.getBoundingClientRect().height||0;"
+            + "const settingsBottom=settings?.getBoundingClientRect().bottom||0;"
+            + "const headerBottom=header?.getBoundingClientRect().bottom||0;"
+            + "const result={width:innerWidth,height:innerHeight,tileHeight,"
+            + "helpInHeader:!!help?.closest('.merge-header-tools'),"
+            + "settingsInHeader:!!settings?.closest('.merge-header-tools'),"
+            + "footerPresent:!!document.querySelector('.merge-footer'),settingsBottom,headerBottom};"
+            + "return {...result,ok:!!controls&&!!tile&&!!help&&!!settings"
+            + "&&tileHeight>=44&&result.helpInHeader&&result.settingsInHeader"
+            + "&&!result.footerPresent&&settingsBottom<=headerBottom+4};})()");
+        using (JsonDocument metrics = JsonDocument.Parse(compactMetrics))
+            Require(metrics.RootElement.GetProperty("ok").GetBoolean(),
+                "Compact Merge layout failed: " + compactMetrics);
         await web.ExecuteScriptAsync(
             "document.querySelector('[data-testid=\\\"merge-how-to-play\\\"] summary')?.click()");
         Require(await web.ExecuteScriptAsync(
