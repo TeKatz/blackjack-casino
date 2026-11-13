@@ -57,7 +57,10 @@ internal sealed class NativeHostAudio : IDisposable
         bool allow = preferences.MusicEnabled && settings.MusicEnabled;
         double gain = Math.Clamp(preferences.MusicVolume, 0, .32) * .45;
         Soundtrack track = TrackFor(mode);
-        if (current == track && enabled == allow)
+        // A zero-volume start creates no player. If the user raises the
+        // master volume later, reopen the soundtrack instead of only changing
+        // the gain on a nonexistent voice.
+        if (current == track && enabled == allow && (volume > 0 || gain <= 0))
         {
             volume = gain;
             if (licensedAlias is not null)
@@ -195,6 +198,8 @@ internal sealed class NativeHostAudio : IDisposable
             licensedAlias = null;
         }
         CasinoAudio.Mixer.Stop(owner);
+        current = null;
+        enabled = false;
     }
 
     public void Dispose()
