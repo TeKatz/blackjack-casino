@@ -88,6 +88,37 @@ def main() -> int:
             )
 
 
+    # The default-branch music import action must commit and explicitly dispatch
+    # on the same development branch that owns the mutable release tag.
+    importer = ROOT / ".github/workflows/casino-music-import.yml"
+    if release.exists() and importer.exists() and filter_match and guard_match:
+        source_branch = filter_match.group(1)
+        importer_source = importer.read_text(encoding="utf-8")
+        required_importer_targets = (
+            f"ref: {source_branch}",
+            f"git push origin HEAD:refs/heads/{source_branch}",
+            f"gh workflow run development-release.yml --ref {source_branch}",
+        )
+        for target in required_importer_targets:
+            if target not in importer_source:
+                problems.append(f"Music importer must target Development publisher: {target}")
+
+    # Every active development code path needs CI on ordinary branch pushes.
+    if filter_match:
+        active_branch = filter_match.group(1)
+        for path in (
+            ".github/workflows/ci.yml",
+            ".github/workflows/repository-hygiene.yml",
+            ".github/workflows/modern-frontend.yml",
+            ".github/workflows/presentation-regression.yml",
+            ".github/workflows/midnight-descent.yml",
+        ):
+            candidate = ROOT / path
+            if candidate.is_file():
+                config = candidate.read_text(encoding="utf-8")
+                if not re.search(r"(?m)^\\s*branches:\\s*\\[[^\\n]*\\b" + re.escape(active_branch) + r"\\b", config):
+                    problems.append(f"{path}: missing Development branch {active_branch!r} push trigger")
+
     # Custom lobby illustrations are static image resources, not DOM-generated
     # placeholders. Validate every pair during ordinary repository-contract CI.
     art_dir = ROOT / "frontend/public/lobby/custom"
