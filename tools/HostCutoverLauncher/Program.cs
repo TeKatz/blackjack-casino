@@ -23,8 +23,8 @@ internal static class Program
         string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         if (args is ["--legacy"])
             return Start(install, appData, null) ? 0 : 1;
-        if (args is ["--native", var candidate])
-            return Start(install, appData, candidate) ? 0 : 1;
+        if (args is ["--native", var requestedCandidate])
+            return Start(install, appData, requestedCandidate) ? 0 : 1;
         if (args.Length != 0)
         {
             MessageBox.Show("Usage: BlackjackCasino.HostCutoverLauncher.exe [--legacy|--native CANDIDATE]",
