@@ -27,7 +27,7 @@ internal static class NativeShellContractSmoke
                 || !HostMigrationCatalog.IsPreviewRoute("midnight-manor")
                 || !HostMigrationCatalog.IsPreviewRoute("roulette")
                 || !HostMigrationCatalog.IsPreviewRoute("casino-empire")
-                || HostMigrationCatalog.IsPreviewRoute("casino-empire")
+
                 || HostMigrationCatalog.PreviewPageFor("reels") != "reels.html")
                 throw new InvalidOperationException("Host parity manifest is inconsistent.");
             string descentFixture = Path.Combine(directory, "descent-fixture");
