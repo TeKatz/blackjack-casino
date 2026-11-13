@@ -126,6 +126,23 @@ internal static class MidnightMergeSmoke
             "React Merge did not rerender the native German resource translations.");
         await Capture(web, Path.Combine(output, "merge-modern-german.png"));
 
+        window.Width = 1920; window.Height = 1080; window.UpdateLayout();
+        await Task.Delay(250);
+        Require(await web.ExecuteScriptAsync(
+            "(()=>{const board=document.querySelector('[data-testid=\\\"merge-board\\\"]');"
+            + "const tiles=document.querySelectorAll('.merge-cell');"
+            + "const room=document.querySelector('.merge-scene');"
+            + "const root=document.querySelector('.merge-scroll');"
+            + "const columns=getComputedStyle(board).gridTemplateColumns.trim().split(/\\s+/);"
+            + "return Boolean(tiles.length===42&&columns.length===14"
+            + "&&tiles[0].getBoundingClientRect().width>=70"
+            + "&&tiles[41].getBoundingClientRect().height>=70"
+            + "&&room.getBoundingClientRect().height>=180"
+            + "&&getComputedStyle(root).overflowY==='hidden'"
+            + "&&root.scrollHeight<=root.clientHeight+4);})()") == "true",
+            "Wide Merge view must present all 42 cells in 14x3 at unchanged size, with larger panorama and no page scroll.");
+        await Capture(web, Path.Combine(output, "merge-wide-14x3-1920x1080.png"));
+
         window.Width = 1080; window.Height = 720; window.UpdateLayout();
         await Task.Delay(180);
         Require(await web.ExecuteScriptAsync(
@@ -143,20 +160,23 @@ internal static class MidnightMergeSmoke
             + "const settings=document.querySelector('[data-testid=\\\"merge-settings\\\"]');"
             + "return Boolean(controls&&tile&&help&&settings"
             + "&&tile.getBoundingClientRect().height>=44"
-            + "&&help.getBoundingClientRect().top<settings.getBoundingClientRect().top"
+            + "&&help.closest('.merge-header-tools')"
+            + "&&settings.closest('.merge-header-tools')"
             + "&&!document.querySelector('.merge-footer')"
-            + "&&settings.getBoundingClientRect().bottom<=controls.getBoundingClientRect().bottom+3);})()") == "true",
-            "The supply sources, How to Play or relocated Settings do not fit the centered workshop.");
+            + "&&settings.getBoundingClientRect().bottom<="
+            + "document.querySelector('.merge-header').getBoundingClientRect().bottom+4);})()") == "true",
+            "The supply sources, header Help or header Settings are not visible.");
         await web.ExecuteScriptAsync(
             "document.querySelector('[data-testid=\\\"merge-how-to-play\\\"] summary')?.click()");
         Require(await web.ExecuteScriptAsync(
             "(()=>{const description=document.querySelector('[data-testid=\\\"merge-how-to-play\\\"][open] p');"
             + "const bounds=description?.getBoundingClientRect();"
-            + "const panel=document.querySelector('.merge-board-panel')?.getBoundingClientRect();"
-            + "return Boolean(description&&bounds&&panel"
-            + "&&bounds.top>=panel.top-2&&bounds.bottom<=panel.bottom+2"
+            + "const header=document.querySelector('.merge-header')?.getBoundingClientRect();"
+            + "return Boolean(description&&bounds&&header"
+            + "&&bounds.top>=header.bottom-3&&bounds.bottom<=innerHeight+3"
+            + "&&bounds.left>=0&&bounds.right<=innerWidth+3"
             + "&&description.scrollWidth<=description.clientWidth+2);})()") == "true",
-            "How to Play description is cropped or rendered as an overlapping popover.");
+            "Header How to Play popup clips or falls outside the viewport.");
         await Capture(web, Path.Combine(output, "merge-modern-german-help-expanded.png"));
         await web.ExecuteScriptAsync(
             "document.querySelector('[data-testid=\\\"merge-how-to-play\\\"] summary')?.click()");
