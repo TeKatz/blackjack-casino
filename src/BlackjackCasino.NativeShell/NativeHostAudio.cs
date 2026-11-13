@@ -28,6 +28,14 @@ internal sealed class NativeHostAudio : IDisposable
     private double volume;
     private string? licensedAlias;
 
+    internal NativeHostAudio()
+    {
+        // Precompute the original mechanical and melodic cues before the
+        // first spin; the initial WinMM playback must not stall for synthesis.
+        SlotAudio.Prewarm();
+        NineLivesAudio.Prewarm();
+    }
+
     [DllImport("winmm.dll", CharSet = CharSet.Unicode, EntryPoint = "mciSendStringW")]
     private static extern int MciSendString(string command, IntPtr result, int count, IntPtr callback);
 

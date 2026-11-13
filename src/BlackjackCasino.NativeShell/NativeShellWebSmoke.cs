@@ -77,6 +77,55 @@ internal static class NativeShellWebSmoke
                 // imported hand-history file, not the live WPF user profile.
                 await form.PreviewBrowser!.ExecuteScriptAsync(
                     "document.querySelector('.lobby-nav-item:nth-child(1)')?.getAttribute('aria-current')");
+                // Regression: navigating back to Lobby must not animate
+                // its entire art grid or show the former pixelated logo.
+                string lobbyLayout = await form.PreviewBrowser!.ExecuteScriptAsync(
+                    "(()=>{const grid=document.querySelector('.lobby-game-grid');"
+                    + "const logo=document.querySelector('.brand-spade');"
+                    + "return !!grid&&!!logo&&getComputedStyle(grid).animationName==='none'"
+                    + "&&getComputedStyle(logo).backgroundImage.includes('club-spade.svg')})()");
+                if (lobbyLayout != "true")
+                    throw new InvalidOperationException(
+                        "Lobby artwork re-entry animation or obsolete logo returned.");
+
+                // The real WebView2 document owns focus. Simulate its F11
+                // keyboard dispatch and require the native window to toggle
+                // in BOTH directions without a WinForms toolbar.
+                await form.PreviewBrowser.ExecuteScriptAsync(
+                    "window.dispatchEvent(new KeyboardEvent('keydown',"
+                    + "{key:'F11',bubbles:true,cancelable:true}))");
+                bool full = false;
+                for (int i = 0; i < 30; i++)
+                {
+                    if (form.FormBorderStyle == FormBorderStyle.None
+                        && form.WindowState == FormWindowState.Maximized)
+                    {
+                        full = true;
+                        break;
+                    }
+                    await Task.Delay(50);
+                }
+                if (!full) throw new InvalidOperationException(
+                    "React/WebView2 F11 did not toggle the native host to fullscreen.");
+                await form.PreviewBrowser.ExecuteScriptAsync(
+                    "window.dispatchEvent(new KeyboardEvent('keydown',"
+                    + "{key:'F11',bubbles:true,cancelable:true}))");
+                bool restored = false;
+                for (int i = 0; i < 30; i++)
+                {
+                    if (form.FormBorderStyle == FormBorderStyle.Sizable
+                        && form.WindowState == FormWindowState.Normal)
+                    {
+                        restored = true;
+                        break;
+                    }
+                    await Task.Delay(50);
+                }
+                if (!restored) throw new InvalidOperationException(
+                    "React/WebView2 F11 failed to leave fullscreen.");
+                if (form.Icon is null)
+                    throw new InvalidOperationException(
+                        "NativeShell executable has no casino window icon.");
                 Console.WriteLine("PASS: WPF-free native startup lobby restored imported state.");
 
                 foreach (string mode in new[]
