@@ -17,7 +17,8 @@ internal sealed record NativeMigrationFile(string Name, long Bytes, string Sha25
 /// </summary>
 internal sealed record NativeMigrationManifest(
     int Version, string Candidate, DateTimeOffset StagedAtUtc,
-    NativeMigrationFile[] Files, string[] RemainingGates);
+    NativeMigrationFile[] Files, NativeMigrationFile[] BrowserFiles,
+    string[] RemainingGates);
 
 /// <summary>
 /// Offline, copy-only rehearsal of the old WPF host's state in a separate
@@ -29,6 +30,10 @@ internal static class NativeHostMigration
     private const int MaxFiles = 128;
     private const long MaxFileBytes = 32L * 1024 * 1024;
     private const long MaxSnapshotBytes = 128L * 1024 * 1024;
+    private const long MaxBrowserBytes = 192L * 1024 * 1024;
+    private const int MaxBrowserFiles = 512;
+    private static readonly string BrowserRelativePath = Path.Combine(
+        "WebView2", "Default", "Local Storage", "leveldb");
     private const string ManifestFile = "native-migration-manifest.json";
     private static readonly JsonSerializerOptions SaveJson = CreateJson();
     private static readonly string[] RequiredFiles = ["player-state.json", "profile.json"];
@@ -76,6 +81,7 @@ internal static class NativeHostMigration
 
         // Validate the real formats, not merely the presence of files.
         NativeMigrationFile[] files = Capture(source);
+        NativeMigrationFile[] browserFiles = CaptureBrowser(source);
         ValidateSource(source);
         if (checkRunningHost) RequireLegacyStopped();
 
@@ -97,16 +103,36 @@ internal static class NativeHostMigration
                 if (!Matches(to, entry))
                     throw new IOException("Copied state differs from source: " + entry.Name);
             }
+            // Chromium stores the twenty Arcade high-score keys in a LevelDB
+            // beneath the old WebView2 user profile, not in player-state.json.
+            // Copy the complete small database, never parse/rewrite LevelDB
+            // tables or open the installed browser profile for writing.
+            string browserSource = Path.Combine(source, BrowserRelativePath);
+            string browserDestination = Path.Combine(temporary, BrowserRelativePath);
+            if (browserFiles.Length > 0)
+            {
+                Directory.CreateDirectory(browserDestination);
+                foreach (NativeMigrationFile entry in browserFiles)
+                {
+                    string from = Path.Combine(browserSource, entry.Name);
+                    string to = Path.Combine(browserDestination, entry.Name);
+                    AssertNotReparsePoint(from);
+                    File.Copy(from, to, overwrite: false);
+                    if (!Matches(to, entry))
+                        throw new IOException("Browser storage copy did not match: " + entry.Name);
+                }
+            }
             ValidateSource(temporary);
             NativeMigrationFile[] after = Capture(source);
-            if (!files.SequenceEqual(after))
-                throw new IOException("The legacy player's data changed during staging. Close it and retry.");
+            if (!files.SequenceEqual(after)
+                || !browserFiles.SequenceEqual(CaptureBrowser(source)))
+                throw new IOException("The legacy player's data or WebView2 storage changed during staging. Close it and retry.");
             if (checkRunningHost) RequireLegacyStopped();
 
             var manifest = new NativeMigrationManifest(SchemaVersion, name,
-                DateTimeOffset.UtcNow, files,
-                ["Browser Arcade localStorage is not imported.",
-                 "History UI, audio, updater and Windows runtime parity are not approved.",
+                DateTimeOffset.UtcNow, files, browserFiles,
+                ["Only the original WebView2 localStorage database is copied; the browser profile's cookies and cache are not imported.",
+                 "Updater and Windows runtime parity are not approved.",
                  "This is a test candidate; it cannot replace the installed host."]);
             string marker = Path.Combine(temporary, ManifestFile);
             using (var stream = new FileStream(marker, FileMode.CreateNew,
@@ -140,7 +166,8 @@ internal static class NativeHostMigration
         NativeMigrationManifest? manifest =
             JsonSerializer.Deserialize<NativeMigrationManifest>(File.ReadAllBytes(marker), SaveJson);
         if (manifest is null || manifest.Version != SchemaVersion
-            || manifest.Candidate != name || manifest.Files.Length < RequiredFiles.Length
+            || manifest.Candidate != name || manifest.BrowserFiles is null
+            || manifest.Files.Length < RequiredFiles.Length
             || !RequiredFiles.All(required => manifest.Files.Any(f => f.Name == required))
             || RequiredFiles.Any(required => !File.Exists(Path.Combine(path, required))))
             throw new InvalidDataException("Invalid or incomplete native migration marker.");
@@ -148,6 +175,35 @@ internal static class NativeHostMigration
         // candidate run. The marker's original SHA256 values are an audit trail,
         // not a reason to discard later candidate progress.
         return path;
+    }
+
+    private static NativeMigrationFile[] CaptureBrowser(string source)
+    {
+        string cursor = source;
+        foreach (string part in new[] { "WebView2", "Default", "Local Storage", "leveldb" })
+        {
+            cursor = Path.Combine(cursor, part);
+            AssertNotReparsePoint(cursor);
+            if (!Directory.Exists(cursor)) return [];
+        }
+        string[] paths = Directory.GetFiles(cursor, "*", SearchOption.TopDirectoryOnly)
+            .OrderBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase).ToArray();
+        if (paths.Length > MaxBrowserFiles)
+            throw new InvalidDataException("Browser localStorage contains too many files to migrate safely.");
+        var entries = new List<NativeMigrationFile>(paths.Length);
+        long total = 0;
+        foreach (string path in paths)
+        {
+            AssertNotReparsePoint(path);
+            var file = new FileInfo(path);
+            total = checked(total + file.Length);
+            if (file.Length > MaxBrowserBytes || total > MaxBrowserBytes)
+                throw new InvalidDataException("Browser localStorage exceeds safe migration limits.");
+            using var stream = File.OpenRead(path);
+            entries.Add(new NativeMigrationFile(file.Name, file.Length,
+                Convert.ToHexString(SHA256.HashData(stream))));
+        }
+        return entries.ToArray();
     }
 
     private static NativeMigrationFile[] Capture(string source)

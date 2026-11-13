@@ -28,15 +28,25 @@ internal static class NativeShellContractSmoke
             new GameRules(), [], [], [], []);
         File.WriteAllText(Path.Combine(production, "hand-history.json"),
             JsonSerializer.Serialize(new[] { round }));
+        string browserData = Path.Combine(production, "WebView2", "Default",
+            "Local Storage", "leveldb");
+        Directory.CreateDirectory(browserData);
+        // Chromium LevelDB is opaque to the migration; its bytes and filenames
+        // must be transported unchanged while the legacy browser is stopped.
+        File.WriteAllText(Path.Combine(browserData, "CURRENT"), "MANIFEST-000001\\n");
+        File.WriteAllBytes(Path.Combine(browserData, "000001.ldb"), [0, 255, 0, 17, 61]);
 
         byte[] sourcePreferences = File.ReadAllBytes(Path.Combine(production, "player-state.json"));
         byte[] sourceProfile = File.ReadAllBytes(Path.Combine(production, "profile.json"));
         byte[] sourceHistory = File.ReadAllBytes(Path.Combine(production, "hand-history.json"));
+        byte[] sourceBrowser = File.ReadAllBytes(Path.Combine(browserData, "000001.ldb"));
         string candidate = NativeHostMigration.Stage(production, "smoke", checkRunningHost: false);
         if (candidate != NativeHostMigration.OpenCandidate(production, "smoke"))
             throw new InvalidOperationException("Candidate manifest not recognized.");
         if (!File.Exists(Path.Combine(candidate, "native-migration-manifest.json"))
             || !File.Exists(Path.Combine(candidate, "hand-history.json"))
+            || !sourceBrowser.SequenceEqual(File.ReadAllBytes(Path.Combine(candidate,
+                "WebView2", "Default", "Local Storage", "leveldb", "000001.ldb")))
             || !sourcePreferences.SequenceEqual(File.ReadAllBytes(
                 Path.Combine(candidate, "player-state.json"))))
             throw new InvalidOperationException("Candidate import failed to copy the original bytes.");
@@ -53,7 +63,9 @@ internal static class NativeShellContractSmoke
             || !sourceProfile.SequenceEqual(File.ReadAllBytes(
                 Path.Combine(production, "profile.json")))
             || !sourceHistory.SequenceEqual(File.ReadAllBytes(
-                Path.Combine(production, "hand-history.json"))))
+                Path.Combine(production, "hand-history.json")))
+            || !sourceBrowser.SequenceEqual(File.ReadAllBytes(
+                Path.Combine(browserData, "000001.ldb"))))
             throw new InvalidOperationException("Migration mutated the installed player's save.");
         try
         {

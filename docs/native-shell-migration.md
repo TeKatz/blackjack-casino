@@ -126,3 +126,20 @@ The candidate now explicitly loads and persists the imported Blackjack
 `hand-history.json` through a path-scoped writer. This prevents empty history
 screens after migration and keeps new candidate rounds outside the live WPF
 player-data directory.
+
+
+### Arcade high-score migration
+The old WPF WebView2 profile stores the local personal Arcade records in
+`%LOCALAPPDATA%\\BlackjackCasino\\WebView2\\Default\\Local Storage\\leveldb`.
+The migration staging operation now copies this LevelDB directory byte-for-byte
+into the matching isolated candidate browser profile before its first launch.
+The original profile is **never opened for writing or modified**. This is a
+browser-profile-level migration, not a reconstruction from the C# statistics.
+
+**Important:** Previously staged candidates (for example, `test1`) are never
+overwritten. To include these changes and the old Arcade high scores, use a new
+candidate name, e.g. `--stage-migration test2` and `--candidate test2`,
+after completely closing the old casino and all WebView2 processes.
+The copy-only staging procedure rejects changed files, excessive size and
+symbolic links. If no legacy localStorage directory exists, it leaves that
+component empty rather than inventing scores.
