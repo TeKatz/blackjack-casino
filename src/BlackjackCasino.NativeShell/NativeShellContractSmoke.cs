@@ -318,25 +318,54 @@ internal static class NativeShellContractSmoke
                 != expectedWallet)
             throw new InvalidOperationException("WPF rehearsal did not preserve both wallet states.");
 
-        // Native roulette requests have durable IDs unknown to the WPF host.
-        // Until WPF can enforce those IDs, they must block any host swap.
+        // A previous WPF export without the durable roulette ledger must
+        // still be blocked after the NativeShell processes a roulette round.
         string receiptFile = Path.Combine(promoted, "native-roulette-checkpoint.json");
-        var nativeReceipt = new NativeRouletteCheckpoint(1, Pending: false,
-            PlayerStateStore.Load(promoted),
-            [new NativeRouletteReceipt(Guid.NewGuid(), true, 7, 10m, 0m, -10m,
-                updatedWallet)]);
-        File.WriteAllText(receiptFile, JsonSerializer.Serialize(nativeReceipt));
+        Guid nativeRoundId = Guid.NewGuid();
+        var settledNativeReceipt = new NativeRouletteReceipt(
+            nativeRoundId, true, 7, 100m, 0m, -100m, updatedWallet);
+        File.WriteAllText(receiptFile, JsonSerializer.Serialize(
+            new NativeRouletteCheckpoint(1, Pending: false,
+                PlayerStateStore.Load(promoted), [settledNativeReceipt])));
         try
         {
             _ = NativeLegacyRollbackRehearsal.Run(production,
                 "return1", "unbridged-receipts", checkProcesses: false);
-            throw new InvalidOperationException("Unbridged roulette receipts were accepted.");
+            throw new InvalidOperationException("WPF export without roulette receipt ledger was accepted.");
         }
         catch (InvalidOperationException error) when (
             error.Message.Contains("receipt-ID continuity", StringComparison.Ordinal)) { }
         if (Directory.Exists(NativeLegacyRollbackRehearsal.PathFor(
                 production, "unbridged-receipts")))
-            throw new InvalidOperationException("Receipt-unsafe WPF swap was published.");
+            throw new InvalidOperationException("Unsafe legacy export was published.");
+
+        // A NEW export includes the original v1 roulette WAL byte-for-byte.
+        // The WPF reader must recognize the same settlement ID after the
+        // cutover and never treat it as an unpaid round.
+        string bridgedExport = NativeLegacyReturnExport.Stage(
+            production, "isolated-live", "return-with-roulette", checkProcesses: false);
+        LegacyReturnExportManifest bridgedReport = NativeLegacyReturnExport.Verify(
+            production, "return-with-roulette");
+        if (!File.ReadAllBytes(receiptFile).SequenceEqual(File.ReadAllBytes(
+                Path.Combine(bridgedExport, "native-roulette-checkpoint.json")))
+            || bridgedReport.ExcludedNativeJournals.Contains(
+                "native-roulette-checkpoint.json", StringComparer.OrdinalIgnoreCase)
+            || NativeRouletteJournal.ValidateSettled(bridgedExport) != 1)
+            throw new InvalidOperationException("Native roulette receipt IDs did not survive the WPF return.");
+        string bridgedRehearsal = NativeLegacyRollbackRehearsal.Run(
+            production, "return-with-roulette", "bridged-roulette", checkProcesses: false);
+        _ = NativeLegacyRollbackRehearsal.Inspect(production, "bridged-roulette");
+        string wpfSide = Path.Combine(bridgedRehearsal, "current");
+        var wpfJournal = new NativeRouletteJournal(wpfSide);
+        if (!wpfJournal.TryReceipt(nativeRoundId, out NativeRouletteReceipt? paid)
+            || paid != settledNativeReceipt)
+            throw new InvalidOperationException("WPF lost the imported native roulette receipt.");
+        var repeat = Roulette.Settle([new RouletteBet("black", 100m)], updatedWallet, 0);
+        if (wpfJournal.Commit(nativeRoundId, repeat,
+                PlayerStateStore.Load(wpfSide)) != settledNativeReceipt
+            || PlayerStateStore.Load(wpfSide).Bankroll != updatedWallet)
+            throw new InvalidOperationException("WPF double-settled a native roulette round.");
+        // This journal belongs ONLY to the disposable native rehearsal.
         File.Delete(receiptFile);
 
         File.AppendAllText(Path.Combine(legacyExport, "player-state.json"), " ");

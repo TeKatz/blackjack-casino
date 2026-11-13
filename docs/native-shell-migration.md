@@ -350,3 +350,27 @@ A previously interrupted sandbox can be recovered explicitly with
 the production WPF save. A real production cutover remains disabled until
 receipt compatibility, startup crash-recovery gating and final Windows QA
 are completed.
+
+## Phase H — shared WPF/NativeShell roulette receipt journal
+
+The legacy WPF client now **compiles the same WPF-independent roulette
+write-ahead-log implementation** as NativeShell, without referencing the native
+executable. Both hosts read and write the existing schema-v1
+`native-roulette-checkpoint.json`, retain all successful roulette request IDs
+across restarts, and complete an interrupted pending wallet mirror **before**
+the WPF MainWindow opens. A WPF roulette round is durably recorded before
+the UI returns success; uncertain writes close the old host instead of
+accepting more bets. The old WPF in-memory receipt cache remains only for
+isolated synthetic test sessions.
+
+Native-to-WPF return exports now include the full original roulette journal
+and verify it with the WPF reader. The sandbox rollback refuses an old export
+that does not contain newly created roulette receipts, but permits an up-to-date,
+verified export carrying the intact ledger. Regression tests check existing
+v1 receipt compatibility, cross-host duplicate request rejection, pending
+recovery and corrupted/duplicate-ID refusal.
+
+This resolves the specific roulette receipt gap. It is **not** a production
+host cutover: other native transaction/journal compatibility and crash-safe
+production activation remain unapproved. The installed WPF launcher and
+Development update channel are unchanged.
