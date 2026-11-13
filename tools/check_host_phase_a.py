@@ -72,8 +72,15 @@ def main() -> int:
         text = source(workflow)
         if "dotnet publish src/BlackjackCasino.Desktop/BlackjackCasino.Desktop.csproj" not in text:
             issues.append(f"{workflow}: production target changed before parity acceptance.")
+        # Native host migration rehearsals may be published alongside the
+        # WPF release, but must be kept out of its updater package directory.
         if "dotnet publish src/BlackjackCasino.NativeShell/" in text:
-            issues.append(f"{workflow}: preview was incorrectly promoted to production.")
+            if workflow.endswith("release.yml") and not workflow.endswith("development-release.yml"):
+                issues.append(f"{workflow}: stable release cannot publish the unapproved native host.")
+            elif "--output artifacts/native-host-candidate" not in text:
+                issues.append(f"{workflow}: native host candidate needs an isolated artifact output.")
+            elif "artifacts/app/BlackjackCasino.Desktop.exe" not in text:
+                issues.append(f"{workflow}: development updater must still validate WPF executable.")
 
     for workflow in (".github/workflows/ci.yml", ".github/workflows/repository-hygiene.yml"):
         if "tools/check_host_phase_a.py" not in source(workflow):
