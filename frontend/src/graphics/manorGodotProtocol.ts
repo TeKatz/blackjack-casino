@@ -1,6 +1,6 @@
 import type { ManorRun } from '../bridge/protocol';
 import { legalMapDestinations, makeDemoMap } from './manorGodotMapData';
-import { ghostBand } from './manorRunUi';
+import { ghostBand } from './manorGhostClue';
 
 export type GodotChoice = { id: number; name: string };
 export type GodotState = {

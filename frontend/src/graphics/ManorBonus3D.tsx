@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ManorRun, ManorRunConclusion, GameAction } from '../bridge/protocol';
 import { localizeRoom, localizeRunText, t } from '../i18n';
 import type { ManorLanguage } from '../i18n';
-import { ghostBand } from './manorRunUi';
+import { ghostBand } from './manorGhostClue';
 import {
   demoState, liveState, isGodotMessage, isAllowedGodotChoice,
 } from './manorGodotProtocol';
