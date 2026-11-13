@@ -87,6 +87,23 @@ internal static class Program
                 ModernGameSurfaceSmoke.Run();
                 BrowserRecoverySmoke.Run();
                 CheckWelcomeOverlay(window, profile, output);
+                Require(!Find<CasinoExitOverlay>(window).Any(),
+                    "Exit WebView2 was eagerly mounted over the startup lobby.");
+                // Real WPF opacity does not hide an HWND-backed WebView2. The exit
+                // surface must be *collapsed* until requested and after cancel.
+                var exitProbe = new CasinoExitOverlay(() => { }, () => { });
+                try
+                {
+                    Require(exitProbe.Visibility == Visibility.Collapsed && !exitProbe.IsHitTestVisible,
+                        "Inactive exit overlay must be collapsed, not just transparent.");
+                    exitProbe.Show(useGerman: false);
+                    Require(exitProbe.Visibility == Visibility.Visible,
+                        "Exit overlay did not become visible on explicit request.");
+                    exitProbe.Hide();
+                    Require(exitProbe.Visibility == Visibility.Collapsed && !exitProbe.IsHitTestVisible,
+                        "Exit overlay remained visible after cancellation.");
+                }
+                finally { exitProbe.Dispose(); }
                 await VerifyPackagedModernLobby(window, output);
                 RequireNoLegacyLobbyFrame(window, "startup");
                 Require(window.Icon is not null && window.Template.FindName("CasinoTitleBar", window) is FrameworkElement { IsVisible: true }, "The desktop icon or custom title bar is missing.");

@@ -32,8 +32,10 @@ internal sealed class CasinoExitOverlay : Grid, IDisposable
         this.confirm = confirm;
         this.cancel = cancel;
         Name = "CasinoReactExitOverlay";
+        // An invisible WPF Opacity=0 ancestor does not reliably hide WebView2's
+        // separate native rendering surface. Collapsing the entire control does.
+        Visibility = Visibility.Collapsed;
         IsHitTestVisible = false;
-        Opacity = 0;
         Children.Add(browser);
         Loaded += OnLoaded;
     }
@@ -43,21 +45,25 @@ internal sealed class CasinoExitOverlay : Grid, IDisposable
         if (disposed) return;
         requested = true;
         german = useGerman;
+        // Make the browser visible only after an explicit exit request. This
+        // also allows the lazily mounted WebView2 to initialize on first use.
+        Visibility = Visibility.Visible;
         if (ready) Reveal();
     }
 
     internal void Hide()
     {
         requested = false;
-        Opacity = 0;
+        // Opacity alone leaves an opaque WebView2 HWND on some Windows devices.
+        Visibility = Visibility.Collapsed;
         IsHitTestVisible = false;
     }
 
     private void Reveal()
     {
         if (!ready || !requested || disposed || browser.CoreWebView2 is null) return;
+        Visibility = Visibility.Visible;
         IsHitTestVisible = true;
-        Opacity = 1;
         browser.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(new
         {
             type = "casino.exit.show",

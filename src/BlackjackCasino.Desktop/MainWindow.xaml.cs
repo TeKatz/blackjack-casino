@@ -90,7 +90,8 @@ public partial class MainWindow : Window
         Loaded += async (_, _) =>
         {
             RefreshGameUi();
-            InitializeCasinoExitOverlay();
+            // The exit browser is intentionally created only when Close is requested.
+            // An idle WebView2 popup can otherwise render over the lobby even at Opacity=0.
             if (manorRecoveryNotice is not null) StatusText.Text = manorRecoveryNotice;
             if(!testSession) await CheckForUpdatesAsync(silent: true);
         };
