@@ -188,8 +188,19 @@ def main() -> int:
         if "--web-smoke" not in text(ROOT / ".github/workflows/ci.yml"):
             issues.append("Real independent WPF-free WebView2 startup smoke is missing.")
         release = text(ROOT / ".github/workflows/development-release.yml")
-        if "dotnet publish src/BlackjackCasino.NativeShell" in release:
-            issues.append("Experimental native shell has been mistakenly switched into Development updates.")
+        # A separately uploaded, isolated migration candidate is allowed.
+        # The mutable Development channel must still package the WPF desktop,
+        # never place the native executable into artifacts/app.
+        if "dotnet publish src/BlackjackCasino.Desktop/BlackjackCasino.Desktop.csproj" not in release:
+            issues.append("Development updates no longer publish the WPF rollback executable.")
+        native_publish = "dotnet publish src/BlackjackCasino.NativeShell/BlackjackCasino.NativeShell.csproj"
+        if native_publish in release:
+            native_block = release.split(native_publish, 1)[1].split("\\n\\n", 1)[0]
+            if "--output artifacts/native-host-candidate" not in native_block or (
+                    "--output artifacts/app" in native_block):
+                issues.append("Native candidate must publish to a separate, non-updater artifact.")
+            if 'artifacts/app/BlackjackCasino.Desktop.exe' not in release:
+                issues.append("Development package no longer validates the WPF executable.")
 
     # Casino navigation descriptors must be reusable by a non-WPF native shell.
     registry_path = ROOT / "src/BlackjackCasino.Desktop/CasinoModeRegistry.cs"
