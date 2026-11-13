@@ -653,10 +653,10 @@ button:focus-visible { outline:2px solid #f4d98d; outline-offset:3px; }
 @media(min-width:950px) and (max-height:800px) and (min-height:660px){
   .lobby-game-grid:not(.filtered) .game-info p{
     display:-webkit-box;
-    -webkit-line-clamp:1;
+    -webkit-line-clamp:2;
     font-size:10px;
   }
-  .lobby-game-grid:not(.filtered) .game-art-window{flex-basis:37%;height:37%}
+  .lobby-game-grid:not(.filtered) .game-art-window{flex-basis:35%;height:35%}
 }
 .lobby-brand:focus:not(:focus-visible){outline:0;box-shadow:none}
 .brand-spade{
