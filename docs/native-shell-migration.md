@@ -86,3 +86,38 @@ The React lobby now exposes the original Empire detached-window action. The nati
 ## Phase B: native React lobby, account and progression transactions
 
 The isolated pilot now uses the original React records/shop screens for account and title/frame cosmetics, seasons, challenge rewards, session statistics, history, the 16-theme album, shop packs, the Casino Vault and daily-login rewards. The same Core catalogs and progression classes used by WPF remain authoritative. Browser requests cannot supply balances or payouts. The preview's profile/wallet aggregate journal covers combined payouts before replacing either mirror, with restart recovery and a frozen writer after uncertain failure. The multi-game Arcade route reports terminal scores through the established Core receipt validation. The NativeShell can show the updater's status panel, but **must not** download or install updates through the production updater while it remains a test pilot.
+
+
+## Phase C: isolated host switch rehearsal (2026-11-13)
+
+The Development and Stable installers still launch `BlackjackCasino.Desktop.exe`.
+The old updater and its manifest remain unchanged while migration acceptance is
+incomplete. This is the **first host-cutover rehearsal**, not a release switch.
+
+The Development CI now runs the native real-WebView2 smoke before publishing and
+uploads `blackjack-casino-host-migration-candidate-win-x64` as a separate artifact,
+including the Godot Manor Web bonus and Midnight Descent executable. It is not
+used by the Development updater.
+
+To rehearse your own progress in the independent host:
+
+1. Fully **exit** the installed casino and its updater. Take a separate backup
+   of `%LOCALAPPDATA%\\BlackjackCasino` if you wish to retain an off-device copy.
+2. Extract the candidate artifact to a new test directory. From PowerShell
+   run `./BlackjackCasino.NativeShell.exe --stage-migration rehearsal-1`.
+   This validates and copies every *top-level JSON file*, including the wallet,
+   profile, hand history, and any existing Manor checkpoint. The source remains
+   untouched. A staged marker records SHA-256 fingerprints. An existing
+   rehearsal name is never overwritten.
+3. Run `./BlackjackCasino.NativeShell.exe --candidate rehearsal-1`.
+   The candidate uses
+   `%LOCALAPPDATA%\\BlackjackCasino\\NativeShellPreview\\Candidates\\rehearsal-1`.
+   All candidate wagers, purchases and saves remain there, not in live state.
+4. Compare the game modes and the imported wallet/profile with the original.
+   Do not switch auto-update channels or delete the legacy installation.
+
+Important limitations: JSON copies do not migrate browser-local Arcade high
+scores, and the new host currently has no equivalent release updater or full
+audio/history/Windows acceptance. This is a **copy-only migration rehearsal**,
+not a single-writer production cutover. The candidate manifest explicitly
+records these outstanding gates.

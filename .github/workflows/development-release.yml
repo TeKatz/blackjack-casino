@@ -99,6 +99,9 @@ jobs:
       - name: WPF-free native shell protocol and storage smoke
         run: dotnet run --project src/BlackjackCasino.NativeShell/BlackjackCasino.NativeShell.csproj --configuration Release --no-build -- --smoke
 
+      - name: Native host migration and isolated storage regression
+        run: dotnet run --project src/BlackjackCasino.NativeShell/BlackjackCasino.NativeShell.csproj --configuration Release --no-build -- --web-smoke
+
       - name: Shared controls regression contract
         run: python tools/check_control_templates.py --self-test
 
@@ -203,6 +206,43 @@ jobs:
       - name: Export and smoke-test Godot Midnight Descent
         shell: pwsh
         run: ./tools/build_midnight_descent.ps1 -OutputDirectory artifacts/app/MidnightDescent
+
+      - name: Build isolated native host migration candidate
+        shell: pwsh
+        run: |
+          dotnet publish src/BlackjackCasino.NativeShell/BlackjackCasino.NativeShell.csproj `
+            --configuration Release `
+            --runtime win-x64 `
+            --self-contained true `
+            -p:PublishSingleFile=true `
+            -p:DebugType=None `
+            -p:Version=$env:VERSION `
+            --output artifacts/native-host-candidate
+          Copy-Item artifacts/app/MidnightDescent artifacts/native-host-candidate/MidnightDescent -Recurse -Force
+          foreach ($page in @("lobby.html", "blackjack.html", "roulette.html", "empire.html",
+              "lounge.html", "reels.html", "neon-vault.html", "nine-lives.html",
+              "midnight-merge.html", "midnight-dice.html", "index.html")) {
+            if (!(Test-Path "artifacts/native-host-candidate/ModernFrontend/$page")) {
+              throw "Native host candidate lacks packaged $page"
+            }
+          }
+          foreach ($asset in @("index.html", "index.js", "index.wasm", "index.pck")) {
+            if (!(Test-Path "artifacts/native-host-candidate/ModernFrontend/manor3d/$asset")) {
+              throw "Native host candidate lacks packaged Manor 3D $asset"
+            }
+          }
+          if (!(Test-Path artifacts/native-host-candidate/MidnightDescent/MidnightDescent.exe) -or
+              !(Test-Path artifacts/native-host-candidate/MidnightDescent/MidnightDescent.pck)) {
+            throw "Native host candidate lacks Midnight Descent"
+          }
+
+      - name: Upload isolated native host candidate (not updater release)
+        uses: actions/upload-artifact@v7
+        with:
+          name: blackjack-casino-host-migration-candidate-win-x64
+          path: artifacts/native-host-candidate
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Verify bundled Midnight Manor frontend assets
         shell: pwsh

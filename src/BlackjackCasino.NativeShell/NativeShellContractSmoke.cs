@@ -1,6 +1,8 @@
 using BlackjackCasino.Desktop;
 using BlackjackCasino.Core;
 using BlackjackCasino.Core.Hosting;
+using System.Security.Cryptography;
+using System.Text.Json;
 
 namespace BlackjackCasino.NativeShell;
 
@@ -11,6 +13,62 @@ namespace BlackjackCasino.NativeShell;
 /// </summary>
 internal static class NativeShellContractSmoke
 {
+    private static void VerifyCandidateMigration(string root)
+    {
+        string production = Path.Combine(root, "production");
+        Directory.CreateDirectory(production);
+        const decimal expectedWallet = 8742.25m;
+        File.WriteAllText(Path.Combine(production, "player-state.json"),
+            JsonSerializer.Serialize(new AppPreferences { Bankroll = expectedWallet }));
+        File.WriteAllText(Path.Combine(production, "profile.json"),
+            JsonSerializer.Serialize(new PlayerProfileState { DisplayName = "Candidate Import" }));
+        File.WriteAllText(Path.Combine(production, "hand-history.json"), "[]");
+
+        byte[] sourcePreferences = File.ReadAllBytes(Path.Combine(production, "player-state.json"));
+        byte[] sourceProfile = File.ReadAllBytes(Path.Combine(production, "profile.json"));
+        string candidate = NativeHostMigration.Stage(production, "smoke", checkRunningHost: false);
+        if (candidate != NativeHostMigration.OpenCandidate(production, "smoke"))
+            throw new InvalidOperationException("Candidate manifest not recognized.");
+        if (!File.Exists(Path.Combine(candidate, "native-migration-manifest.json"))
+            || !File.Exists(Path.Combine(candidate, "hand-history.json"))
+            || !sourcePreferences.SequenceEqual(File.ReadAllBytes(
+                Path.Combine(candidate, "player-state.json"))))
+            throw new InvalidOperationException("Candidate import failed to copy the original bytes.");
+        using (var imported = new NativePreviewRuntime(candidate))
+        {
+            if (imported.Bankroll != expectedWallet
+                || imported.Profile.DisplayName != "Candidate Import")
+                throw new InvalidOperationException("Native host did not restore imported player state.");
+        }
+        if (!sourcePreferences.SequenceEqual(File.ReadAllBytes(
+                Path.Combine(production, "player-state.json")))
+            || !sourceProfile.SequenceEqual(File.ReadAllBytes(
+                Path.Combine(production, "profile.json"))))
+            throw new InvalidOperationException("Migration mutated the installed player's save.");
+        try
+        {
+            _ = NativeHostMigration.Stage(production, "smoke", checkRunningHost: false);
+            throw new InvalidOperationException("Existing migration candidate was overwritten.");
+        }
+        catch (IOException) { /* Expected non-overwrite protection. */ }
+        try
+        {
+            _ = NativeHostMigration.CandidatePath(production, "../live");
+            throw new InvalidOperationException("Traversal was accepted as a candidate name.");
+        }
+        catch (ArgumentException) { /* Expected. */ }
+
+        File.WriteAllText(Path.Combine(production, "profile.json"), "{broken");
+        try
+        {
+            _ = NativeHostMigration.Stage(production, "corrupt", checkRunningHost: false);
+            throw new InvalidOperationException("Corrupt source state was imported.");
+        }
+        catch (JsonException) { /* Expected, without creating a candidate. */ }
+        if (Directory.Exists(NativeHostMigration.CandidatePath(production, "corrupt")))
+            throw new InvalidOperationException("Corrupt migration left a candidate behind.");
+    }
+
     internal static int Run()
     {
         string directory = Path.Combine(Path.GetTempPath(),
@@ -45,6 +103,11 @@ internal static class NativeShellContractSmoke
                 || !string.Equals(descentStart.WorkingDirectory,
                     Path.GetDirectoryName(descentPath), StringComparison.Ordinal))
                 throw new InvalidOperationException("Godot launch flags/lifecycle are incorrect.");
+
+            // Rehearse an actual existing wallet/profile import without touching
+            // user AppData. Exercise atomic staging, hash integrity, isolation,
+            // replay protection, corruption rejection and the native runtime.
+            VerifyCandidateMigration(directory);
 
             string live = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),

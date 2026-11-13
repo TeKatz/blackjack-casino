@@ -57,7 +57,7 @@ internal sealed class NativeShellForm : Form
     private DateTimeOffset empireLastPersist = DateTimeOffset.UtcNow;
     private readonly string frontendFolder = Path.Combine(AppContext.BaseDirectory, "ModernFrontend");
 
-    internal NativeShellForm(string? previewDirectory = null)
+    internal NativeShellForm(string? previewDirectory = null, bool migrationCandidate = false)
     {
         string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         previewDirectory ??= HostPreviewStorage.DefaultDirectory(localAppData);
@@ -68,7 +68,9 @@ internal sealed class NativeShellForm : Form
             CoreWebView2Environment.CreateAsync(
                 userDataFolder: Path.Combine(previewDirectory, "WebView2")));
 
-        Text = "Blackjack Casino — WPF-free Native Shell Preview";
+        Text = migrationCandidate
+            ? "Blackjack Casino — Isolated Host Migration Candidate"
+            : "Blackjack Casino — WPF-free Native Shell Preview";
         StartPosition = FormStartPosition.CenterScreen;
         MinimumSize = new Size(940, 640);
         ClientSize = new Size(1360, 860);
