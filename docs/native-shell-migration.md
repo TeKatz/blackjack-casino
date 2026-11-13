@@ -196,3 +196,20 @@ preferences. The UI explicitly disables installation and shows that the
 published updater package belongs to the installed WPF host. No download,
 relaunch, or modification of the user's installed application is permitted.
 Cancellation on window close avoids a late WebView2 update of a disposed form.
+
+## Phase D: explicit opt-in launch chooser and per-profile writer lock
+
+The dual-host rehearsal now bundles `BlackjackCasino.HostCutoverLauncher.exe`.
+It offers the existing WPF host as the default and offers NativeShell only for
+previously staged, validated candidate profiles. NativeShell receives the
+`--candidate NAME` argument; the chooser never promotes a copied profile to
+production and does not modify installation defaults or the update channel.
+
+Command-line rehearsal options: `--legacy` and `--native test2`. These require
+the same validation as the graphical selector, including a matching staged
+manifest and both protected player-save files.
+
+Every NativeShell runtime now holds an exclusive OS file lock in its isolated
+save directory for its entire lifetime, preventing concurrent sessions from
+writing the same wallet, history or Manor checkpoints. Closing the process
+or a crash releases the lock without changing the original installed saves.

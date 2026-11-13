@@ -218,6 +218,17 @@ jobs:
             -p:DebugType=None `
             -p:Version=$env:VERSION `
             --output artifacts/native-host-candidate
+          # The chooser is a separate WPF-free executable and defaults to WPF.
+          # It is deliberately NOT copied into the regular updater package.
+          dotnet publish tools/HostCutoverLauncher/HostCutoverLauncher.csproj `
+            --configuration Release `
+            --runtime win-x64 `
+            --self-contained true `
+            -p:PublishSingleFile=true `
+            -p:DebugType=None `
+            -p:Version=$env:VERSION `
+            --output artifacts/host-cutover-launcher
+          Copy-Item artifacts/host-cutover-launcher/BlackjackCasino.HostCutoverLauncher.exe artifacts/native-host-candidate/BlackjackCasino.HostCutoverLauncher.exe
           Copy-Item artifacts/app/MidnightDescent artifacts/native-host-candidate/MidnightDescent -Recurse -Force
           foreach ($page in @("lobby.html", "blackjack.html", "roulette.html", "empire.html",
               "lounge.html", "reels.html", "neon-vault.html", "nine-lives.html",
