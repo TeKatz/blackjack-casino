@@ -62,6 +62,7 @@
     <Compile Include="../../src/BlackjackCasino.Desktop/CasinoHostPreferences.cs" Link="Infrastructure/CasinoHostPreferences.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/DebouncedPersistenceWriter.cs" Link="Persistence/DebouncedPersistenceWriter.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/PlayerStateStore.cs" Link="Persistence/PlayerStateStore.cs" />
+    <Compile Include="../../src/BlackjackCasino.NativeShell/NativeRouletteJournal.cs" Link="Persistence/NativeRouletteJournal.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/ManorPersistence.cs" Link="Persistence/ManorPersistence.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/PlayerProfileStore.cs" Link="Persistence/PlayerProfileStore.cs" />
     <Compile Include="../../src/BlackjackCasino.Desktop/PlayerProfileTransactionSnapshot.cs" Link="Persistence/PlayerProfileTransactionSnapshot.cs" />
