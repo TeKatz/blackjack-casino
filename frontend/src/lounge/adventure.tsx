@@ -401,7 +401,7 @@ export function AdventureScreen({state,language,pending,error,command,animations
  const selectedClass=state.classes.find(c=>c.id===classId)??state.classes[0];
  useEffect(()=>{if(!state.classes.some(c=>c.id===classId))setClassId(state.classes[0]?.id??'rogue');},
   [state.selectedAdventureId,state.classes,classId]);
- const [newBoard,setNewBoard]=useState<{title:string;count:number}|null>(null);
+ const [newBoard,setNewBoard]=useState<{id:string;title:string;count:number}|null>(null);
  const boardHistory=useRef<{runId:string;ids:Set<string>}|null>(null);
  useEffect(()=>{
   const run=state.run;
@@ -417,10 +417,14 @@ export function AdventureScreen({state,language,pending,error,command,animations
   const additions=run.board.nodes.filter(n=>!previous.ids.has(n.id));
   additions.forEach(n=>previous.ids.add(n.id));
   if(!additions.length)return;
-  setNewBoard({title:additions[0].title,count:additions.length});
+  setNewBoard({id:run.runId+':'+additions.map(n=>n.id).join('|'),
+   title:additions[0].title,count:additions.length});
+ },[state.run?.runId,state.run?.board?.nodes]);
+ useEffect(()=>{
+  if(!newBoard)return;
   const timer=window.setTimeout(()=>setNewBoard(null),4300);
   return()=>window.clearTimeout(timer);
- },[state.run?.runId,state.run?.board?.nodes]);
+ },[newBoard?.id]);
  const send=(intent:TaleIntent)=>{if(!pending)command(intent);};
  const start=()=>{
   const replacing=selected?.status==='active';
@@ -429,7 +433,8 @@ export function AdventureScreen({state,language,pending,error,command,animations
    classId:selectedClass.id,...(replacing?{confirmReplace:true as const}:{})});
  };
  return <div className="backroom-shell" data-testid={'modern-adventure-'+state.screen}>
-  {newBoard&&<div className="backroom-discovery" role="status" aria-live="polite">
+  {newBoard&&<div key={newBoard.id} className="backroom-discovery"
+    data-testid="backroom-discovery" role="status" aria-live="polite">
     <span className="backroom-discovery-signal" aria-hidden="true"/>
     <div><small>{t.newClue}{newBoard.count>1?' · +'+newBoard.count:''}</small>
       <strong>{newBoard.title}</strong></div>
