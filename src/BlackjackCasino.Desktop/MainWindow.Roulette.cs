@@ -107,7 +107,7 @@ public partial class MainWindow
             session.ResetBankroll(result.Bankroll);
             selectedBet = Math.Min(selectedBet, session.Bankroll);
             preferences = candidate;
-            object receipt = durableReceipt ?? new {
+            object receipt = (object?)durableReceipt ?? new {
                 RoundId = roundId, Success = true, result.Number,
                 result.Stake, result.Return, result.Net, result.Bankroll
             };
