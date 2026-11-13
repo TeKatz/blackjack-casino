@@ -405,7 +405,9 @@ function LobbyApp() {
     </div>}
     <LobbyAmbient motionEnabled={!lowMotion && data.animationsEnabled}/>
     <header className="lobby-topbar">
-      <button className="lobby-brand" type="button" onClick={()=>{if(shopVisible)closeShop();if(recordsVisible)closeRecords();setArcadeOpen(false);setFilter('all');}}>
+      <button className="lobby-brand" type="button"
+        onPointerDown={event=>{if(event.pointerType!=='touch')event.preventDefault();}}
+        onClick={event=>{if(event.detail>0)event.currentTarget.blur();if(shopVisible)closeShop();if(recordsVisible)closeRecords();setArcadeOpen(false);setFilter('all');}}>
         <span className="brand-spade" aria-hidden="true">♠</span>
         <span><b>BLACKJACK CASINO</b><i>THE MIDNIGHT CLUB</i></span>
       </button>
