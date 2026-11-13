@@ -116,7 +116,7 @@ def main() -> int:
             candidate = ROOT / path
             if candidate.is_file():
                 config = candidate.read_text(encoding="utf-8")
-                if not re.search(r"(?m)^\\s*branches:\\s*\\[[^\\n]*\\b" + re.escape(active_branch) + r"\\b", config):
+                if not re.search(r"(?m)^\s*branches:\s*\[[^\n]*\b" + re.escape(active_branch) + r"\b", config):
                     problems.append(f"{path}: missing Development branch {active_branch!r} push trigger")
 
     # Custom lobby illustrations are static image resources, not DOM-generated
