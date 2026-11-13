@@ -185,7 +185,12 @@ internal static class NativeShellContractSmoke
         if (Directory.Exists(NativeCutoverPromotion.WorkspacePath(production, "blocked-root")))
             throw new InvalidOperationException("Blocked native handover published a workspace.");
 
-        using (var originalNative = new NativePreviewRuntime(candidate))
+        // Hold only the writer lease here. Disposing a real NativePreviewRuntime
+        // persists a normalized save, intentionally changing the source hashes
+        // after the checkpoint and invalidating this otherwise clean fixture.
+        using (var candidateWriter = new FileStream(
+            Path.Combine(candidate, ".native-host-writer.lock"),
+            FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None))
         {
             try
             {
