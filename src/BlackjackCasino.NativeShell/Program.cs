@@ -113,12 +113,12 @@ internal static class Program
             }
         }
 
-        if (args is ["--stage-live-rehearsal", var checkpointName, var workspaceName])
+        if (args is ["--stage-live-rehearsal", var rehearsalCheckpointName, var workspaceName])
         {
             try
             {
                 string workspace = NativeCutoverPromotion.Stage(
-                    NativeHostMigration.ProductionDirectory, checkpointName, workspaceName);
+                    NativeHostMigration.ProductionDirectory, rehearsalCheckpointName, workspaceName);
                 System.Windows.Forms.MessageBox.Show(
                     "A verified, independently writable NativeShell rehearsal was staged at:\n"
                     + workspace + "\n\nThe installed WPF save and original candidate are unchanged.",
