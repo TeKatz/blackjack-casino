@@ -128,6 +128,17 @@ internal static class MidnightMergeSmoke
 
         window.Width = 1920; window.Height = 1080; window.UpdateLayout();
         await Task.Delay(250);
+        // Hosted Windows runners may expose only 1078x752 physical pixels,
+        // even after setting a larger WPF Window.Width/Height. Test the 1920
+        // CSS breakpoint in a temporary browser viewport, then restore it.
+        bool emulatedWide = int.Parse(await web.ExecuteScriptAsync("innerWidth"),
+            System.Globalization.CultureInfo.InvariantCulture) < 1580;
+        if (emulatedWide)
+        {
+            await web.CallDevToolsProtocolMethodAsync("Emulation.setDeviceMetricsOverride",
+                "{\"width\":1920,\"height\":1080,\"deviceScaleFactor\":1,\"mobile\":false}");
+            await Task.Delay(230);
+        }
         string wideMetrics = await web.ExecuteScriptAsync(
             "(()=>{const board=document.querySelector('[data-testid=\\\"merge-board\\\"]');"
             + "const tiles=document.querySelectorAll('.merge-cell');"
@@ -146,7 +157,13 @@ internal static class MidnightMergeSmoke
         using (JsonDocument metrics = JsonDocument.Parse(wideMetrics))
             Require(metrics.RootElement.GetProperty("ok").GetBoolean(),
                 "Wide Merge layout invariant failed: " + wideMetrics);
-        await Capture(web, Path.Combine(output, "merge-wide-14x3-1920x1080.png"));
+        if (!emulatedWide)
+            await Capture(web, Path.Combine(output, "merge-wide-14x3-1920x1080.png"));
+        if (emulatedWide)
+        {
+            await web.CallDevToolsProtocolMethodAsync("Emulation.clearDeviceMetricsOverride", "{}");
+            await Task.Delay(130);
+        }
 
         window.Width = 1080; window.Height = 720; window.UpdateLayout();
         await Task.Delay(180);
