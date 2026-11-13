@@ -194,6 +194,8 @@ function ManorApp() {
   }, [snapshot.globalSoundEnabled, snapshot.globalMusicEnabled, snapshot.globalMusicVolume]);
 
   function act(type: GameAction, extras: { bet?: string; room?: number } = {}) {
+    // Never wager behind an acknowledged C# payout whose 3D receipt is open.
+    if (conclusionOpen && type.startsWith('spin.')) return;
     // Immediate ref guard prevents two same-frame clicks from placing two wagers.
     if (disabled || pendingRef.current !== null ||
       awaitingPresentation.current !== null || !actions.includes(type)) return;
@@ -234,7 +236,7 @@ function ManorApp() {
     const job = autoSpins.current;
     if (!job || pending !== null || animating || revealingReels ||
       awaitingPresentation.current !== null || !rendererReady || !connected || fatal ||
-      Boolean(snapshot.practiceRun)) return;
+      Boolean(snapshot.practiceRun) || conclusionOpen) return;
     if (!shouldContinueAuto(snapshot, job.bet, job.remaining)) {
       haltAuto();
       return;
@@ -255,11 +257,11 @@ function ManorApp() {
       }
     };
   }, [snapshot, pending, animating, revealingReels, rendererReady, connected, fatal,
-    autoRemaining, haltAuto]);
+    autoRemaining, conclusionOpen, haltAuto]);
 
   function startAuto(count: number) {
     if (autoRemaining !== null || disabled || Boolean(snapshot.practiceRun) ||
-      !snapshot.canSpin || !fundedBet) return;
+      conclusionOpen || !snapshot.canSpin || !fundedBet) return;
     autoSpins.current = { remaining: count - 1, bet };
     setAutoRemaining(count - 1);
     act('spin.paid', { bet });
@@ -379,7 +381,7 @@ function ManorApp() {
               shownSnapshot.scatters + ' ' + t(language, 'moons') + ' · ' +
               shownSnapshot.doors + ' ' + t(language, 'doors')}</span>
           </div>
-          {!run && <div className="action-console">
+          {!run && !practice && !conclusionOpen && <div className="action-console">
             <div className="stake-control manor-wager-panel" data-testid="manor-bet-controls">
               <label htmlFor="manor-bet">{t(language, 'stake')}</label>
               <div className="bet-input">
