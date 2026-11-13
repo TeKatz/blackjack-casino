@@ -107,7 +107,8 @@ function createScene(stage:Container,art:HTMLElement,card:HTMLElement,id:ModeSce
   });
   group.addChild(signature,detail.layer);
   return {id,art,card,group,mask,back:null,front:null,cat:null,catVertices:null,catWarped:false,
-    detail,signature,em,x:NaN,y:NaN,w:0,h:0,energy:0,reveal:0,hoverProgress:0};
+    // Recreated views reuse decoded textures without fading in from blank.
+    detail,signature,em,x:NaN,y:NaN,w:0,h:0,energy:0,reveal:1,hoverProgress:0};
 }
 function disposeScene(stage:Container,s:Scene){
   s.group.mask=null;

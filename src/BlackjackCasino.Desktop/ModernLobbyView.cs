@@ -73,6 +73,7 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
     private bool ready;
     private bool failed;
     private bool disposed;
+    private string? lastSnapshotMessage;
 
     internal bool Ready => ready && !failed;
     internal bool ShopOpen => shopOpen;
@@ -156,6 +157,7 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
     {
         if (disposed || failed) return;
         Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+        PostMessage("lobby.visibility", new { Visible = visible });
         if (visible)
         {
             Refresh();
@@ -176,7 +178,11 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
         if (!listening || disposed || failed || browser.CoreWebView2 is null) return;
         try
         {
-            PostMessage("lobby.snapshot", snapshot());
+            // Polling must not cause React to reconcile unchanged player state.
+            string payload = JsonSerializer.Serialize(new { type = "lobby.snapshot", data = snapshot() }, Json);
+            if (string.Equals(payload, lastSnapshotMessage, StringComparison.Ordinal)) return;
+            browser.CoreWebView2.PostWebMessageAsJson(payload);
+            lastSnapshotMessage = payload;
         }
         catch (InvalidOperationException ex) { Fail("Snapshot delivery failed: " + ex.Message); }
     }
@@ -307,7 +313,9 @@ internal sealed class ModernLobbyView : UserControl, IDisposable
             {
                 case "lobby.ready":
                     listening = true;
+                    lastSnapshotMessage = null;
                     Refresh();
+                    PostMessage("lobby.visibility", new { Visible = IsVisible });
                     break;
                 case "lobby.ui-ready":
                     if (!listening || ready) break;
