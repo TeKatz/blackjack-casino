@@ -92,46 +92,55 @@ internal sealed class NativeShellForm : Form
         ForeColor = Color.WhiteSmoke;
         KeyPreview = true;
 
-        var root = new TableLayoutPanel
+        if (managedDevelopment)
         {
-            Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3,
-            Margin = Padding.Empty, Padding = Padding.Empty,
-        };
-        root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 57));
-        root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
-
-        var navigation = new FlowLayoutPanel
+            // The real React casino lobby already owns every game, menu and
+            // navigation action. The extra WinForms test-nav and diagnostic
+            // footer were only migration scaffolding. Give the React content
+            // the entire client area (including when switching game routes).
+            Controls.Add(content);
+        }
+        else
         {
-            Dock = DockStyle.Fill, WrapContents = false,
-            FlowDirection = FlowDirection.LeftToRight, AutoScroll = true,
-            BackColor = Color.FromArgb(11, 31, 29),
-            Padding = new Padding(12, 9, 12, 8),
-        };
-        navigation.Controls.Add(MakeButton("Lobby", ReturnToHome));
-        navigation.Controls.Add(MakeButton("Blackjack", () => _ = OpenModeAsync("blackjack")));
-        navigation.Controls.Add(MakeButton("Roulette", () => _ = OpenModeAsync("roulette")));
-        navigation.Controls.Add(MakeButton("Midnight Reels", () => _ = OpenModeAsync("reels")));
-        navigation.Controls.Add(MakeButton("Neon Vault", () => _ = OpenModeAsync("neon-vault")));
-        navigation.Controls.Add(MakeButton("Nine Lives", () => _ = OpenModeAsync("nine-lives")));
-        navigation.Controls.Add(MakeButton("Midnight Merge", () => _ = OpenModeAsync("midnight-merge")));
-        navigation.Controls.Add(MakeButton("Midnight Dice", () => _ = OpenModeAsync("midnight-dice")));
-        navigation.Controls.Add(MakeButton("Midnight Manor", () => _ = OpenModeAsync("midnight-manor")));
-        navigation.Controls.Add(MakeButton("Casino Empire", () => _ = OpenModeAsync("casino-empire")));
-        navigation.Controls.Add(MakeButton("Chill Lounge", () => _ = OpenModeAsync("chill-lounge")));
-        navigation.Controls.Add(new Label
-        {
-            AutoSize = true, Text = managedDevelopment ? "NATIVE HOST • DEVELOPMENT" : "NATIVE HOST • PREVIEW",
-            ForeColor = Color.FromArgb(221, 192, 127),
-            TextAlign = ContentAlignment.MiddleCenter,
-            Padding = new Padding(16, 10, 0, 0),
-        });
-
-        root.Controls.Add(navigation, 0, 0);
-        root.Controls.Add(content, 0, 1);
-        root.Controls.Add(status, 0, 2);
-        Controls.Add(root);
+            var root = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3,
+                Margin = Padding.Empty, Padding = Padding.Empty,
+            };
+            root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 57));
+            root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
+            var navigation = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Fill, WrapContents = false,
+                FlowDirection = FlowDirection.LeftToRight, AutoScroll = true,
+                BackColor = Color.FromArgb(11, 31, 29),
+                Padding = new Padding(12, 9, 12, 8),
+            };
+            navigation.Controls.Add(MakeButton("Lobby", ReturnToHome));
+            navigation.Controls.Add(MakeButton("Blackjack", () => _ = OpenModeAsync("blackjack")));
+            navigation.Controls.Add(MakeButton("Roulette", () => _ = OpenModeAsync("roulette")));
+            navigation.Controls.Add(MakeButton("Midnight Reels", () => _ = OpenModeAsync("reels")));
+            navigation.Controls.Add(MakeButton("Neon Vault", () => _ = OpenModeAsync("neon-vault")));
+            navigation.Controls.Add(MakeButton("Nine Lives", () => _ = OpenModeAsync("nine-lives")));
+            navigation.Controls.Add(MakeButton("Midnight Merge", () => _ = OpenModeAsync("midnight-merge")));
+            navigation.Controls.Add(MakeButton("Midnight Dice", () => _ = OpenModeAsync("midnight-dice")));
+            navigation.Controls.Add(MakeButton("Midnight Manor", () => _ = OpenModeAsync("midnight-manor")));
+            navigation.Controls.Add(MakeButton("Casino Empire", () => _ = OpenModeAsync("casino-empire")));
+            navigation.Controls.Add(MakeButton("Chill Lounge", () => _ = OpenModeAsync("chill-lounge")));
+            navigation.Controls.Add(new Label
+            {
+                AutoSize = true, Text = managedDevelopment ? "NATIVE HOST • DEVELOPMENT" : "NATIVE HOST • PREVIEW",
+                ForeColor = Color.FromArgb(221, 192, 127),
+                TextAlign = ContentAlignment.MiddleCenter,
+                Padding = new Padding(16, 10, 0, 0),
+            });
+            root.Controls.Add(navigation, 0, 0);
+            root.Controls.Add(content, 0, 1);
+            root.Controls.Add(status, 0, 2);
+            Controls.Add(root);
+        }
         loungeRefresh.Tick += (_, _) =>
         {
             if (closing || activeMode != "chill-lounge" || !ready) return;
@@ -230,9 +239,12 @@ internal sealed class NativeShellForm : Form
             Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter,
             ForeColor = Color.FromArgb(190, 218, 201),
             Font = new Font("Segoe UI", 13),
-            Text = "WPF-freier Windows-Host mit echten React-Oberflächen und C#-Spielregeln.\n"
-                + "Diese isolierte Testversion bindet acht Spiele mit C#-Regeln an.\n"
-                + "Die übrigen Casino-Bereiche verbleiben vorerst in der regulären Desktop-Anwendung.",
+            Text = managedDevelopment
+                ? "Die Casino-Lobby konnte nicht geladen werden.\n"
+                    + "Du kannst die Spiele über diese Notfallnavigation öffnen.\n"
+                    + "Dein NativeShell-Spielstand bleibt erhalten."
+                : "WPF-freier Windows-Host mit echten React-Oberflächen und C#-Spielregeln.\n"
+                    + "Die reguläre React-Lobby ist vorübergehend nicht verfügbar.",
         }, 0, 1);
         var actions = new FlowLayoutPanel
         {
@@ -257,9 +269,12 @@ internal sealed class NativeShellForm : Form
         page.Controls.Add(new Label
         {
             Dock = DockStyle.Fill, ForeColor = Color.FromArgb(150, 172, 166),
-            Text = "Sicherer Testmodus: Fortschritt wird ausschließlich unter "
-                + "%LOCALAPPDATA%\\BlackjackCasino\\NativeShellPreview gespeichert. "
-                + "Der normale Spielerstand und der veröffentlichte Updater bleiben unverändert.",
+            Text = managedDevelopment
+                ? "Notfallansicht: Spiele und Guthaben werden weiterhin im Development-"
+                    + "NativeShell-Profil gespeichert. Du kannst das Fenster schließen "
+                    + "und über den normalen Programmstart neu öffnen."
+                : "Sicherer Testmodus: Spielstände liegen ausschließlich im isolierten "
+                    + "NativeShell-Profil; deine ursprünglichen WPF-Daten bleiben erhalten.",
             TextAlign = ContentAlignment.TopCenter,
             Font = new Font("Segoe UI", 10),
         }, 0, 3);
@@ -1545,6 +1560,10 @@ internal sealed class NativeShellForm : Form
             DisposeBrowser();
             ShowHome();
             status.Text = message;
+            if (managedDevelopment)
+                System.Windows.Forms.MessageBox.Show(this, message,
+                    "NativeShell browser recovery", MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
             return;
         }
         browserFailed = true;
