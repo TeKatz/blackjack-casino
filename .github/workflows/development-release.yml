@@ -267,6 +267,10 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+      - name: Enable managed NativeShell as Development default (stable unchanged)
+        shell: pwsh
+        run: ./tools/package_managed_dev_host.ps1 -LegacyDirectory artifacts/app -NativeDirectory artifacts/native-host-candidate
+
       - name: Verify bundled Midnight Manor frontend assets
         shell: pwsh
         run: |

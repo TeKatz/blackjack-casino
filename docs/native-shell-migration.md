@@ -374,3 +374,36 @@ This resolves the specific roulette receipt gap. It is **not** a production
 host cutover: other native transaction/journal compatibility and crash-safe
 production activation remain unapproved. The installed WPF launcher and
 Development update channel are unchanged.
+
+## Development host switch (2026-11-13)
+
+The **Development update package** now includes the previously separate
+`BlackjackCasino.NativeShell.exe` together with its WPF fallback, bundled
+updater, the existing Host Cutover launcher and all required frontend/Godot
+assets. Overlapping published native and WPF files must be byte-for-byte equal,
+and both executables must have the exact same build version.
+
+Only the Development package contains `native-development-default.flag`.
+Launching `BlackjackCasino.Desktop.exe` in this package delegates to
+`BlackjackCasino.NativeShell.exe --development` *before* WPF opens the player
+state. First-run NativeShell copies the existing WPF JSON and Arcade WebView2
+localStorage into an isolated persistent `Candidates/development` profile and
+continues using that profile on subsequent launches. WPF data is never
+overwritten. For a fresh installation without WPF saves, NativeShell uses its
+own new profile. If migration is unsafe the old WPF host is reopened with
+`--legacy`. The user can also launch `BlackjackCasino.Desktop.exe --legacy`
+manually as an explicit fallback; this does not merge divergent progress.
+
+The managed NativeShell can check, download and SHA-256-verify Development
+updates and invoke the existing separate updater. Updater restarts the
+Development Desktop executable, which again delegates to NativeShell.
+Stable builds keep their original WPF executable and updater behavior and
+never receive the Development marker. Isolated `--candidate` and other
+preview commands still cannot install updates.
+
+**Important:** The two independent save roots make this a Development
+cutover, not bidirectional real-time synchronization. Switching manually
+back to WPF does not copy later NativeShell earnings into the old profile.
+The verified return-export and rollback path should be used before a
+permanent downgrade. Windows 10/11 manual QA remains necessary before
+removing WPF or allowing the Stable channel to run NativeShell.
