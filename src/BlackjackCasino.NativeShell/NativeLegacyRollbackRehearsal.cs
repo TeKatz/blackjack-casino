@@ -44,7 +44,8 @@ internal static class NativeLegacyRollbackRehearsal
         string workspace = NativeCutoverPromotion.Open(root, exported.Workspace);
         using var nativeLease = OpenNativeWriter(workspace);
         NativeCutoverCheckpoint.EnsureNoUnfinishedJournal(workspace);
-        RequireNoUnbridgedRouletteReceipts(workspace);
+        VerifyPortableRouletteLedger(workspace,
+            NativeLegacyReturnExport.ExportPath(root, exportName));
 
         CutoverFile[] currentNative = NativeCutoverCheckpoint.Capture(workspace)
             .Where(f => !exported.ExcludedNativeJournals.Contains(
@@ -162,21 +163,34 @@ internal static class NativeLegacyRollbackRehearsal
         return path;
     }
 
-    private static void RequireNoUnbridgedRouletteReceipts(string workspace)
+    private static void VerifyPortableRouletteLedger(
+        string workspace, string exportedDirectory)
     {
-        string file = Path.Combine(workspace, "native-roulette-checkpoint.json");
-        if (!File.Exists(file)) return;
-        if ((File.GetAttributes(file) & FileAttributes.ReparsePoint) != 0)
-            throw new InvalidDataException("Roulette journal cannot be a filesystem link.");
-        NativeRouletteCheckpoint journal = JsonSerializer.Deserialize<NativeRouletteCheckpoint>(
-            File.ReadAllBytes(file), ManorPersistence.Json)
-            ?? throw new InvalidDataException("Empty native roulette journal.");
-        if (journal.Version != 1 || journal.Pending || journal.Receipts is null)
-            throw new InvalidDataException("Native roulette journal has unresolved state.");
-        if (journal.Receipts.Length > 0)
+        string source = Path.Combine(workspace, "native-roulette-checkpoint.json");
+        string portable = Path.Combine(exportedDirectory, "native-roulette-checkpoint.json");
+        if (!File.Exists(source))
+        {
+            if (File.Exists(portable))
+                throw new InvalidDataException("Return export unexpectedly added roulette receipts.");
+            return;
+        }
+        if (!File.Exists(portable))
             throw new InvalidOperationException(
-                "WPF rollback needs roulette receipt-ID continuity; "
-                + "native-only receipts must not be discarded or replayed.");
+                "Roulette receipt-ID continuity requires the shared durable journal in the WPF export.");
+        if ((File.GetAttributes(source) & FileAttributes.ReparsePoint) != 0
+            || (File.GetAttributes(portable) & FileAttributes.ReparsePoint) != 0)
+            throw new InvalidDataException("Roulette journal cannot be a filesystem link.");
+
+        // The exact receipt ledger is portable, including all settled request
+        // IDs. Both hosts deserialize identical schema v1 and replay pending
+        // commits before accepting new money transactions.
+        _ = NativeRouletteJournal.ValidateSettled(workspace);
+        _ = NativeRouletteJournal.ValidateSettled(exportedDirectory);
+        byte[] sourceBytes = File.ReadAllBytes(source);
+        byte[] exportBytes = File.ReadAllBytes(portable);
+        if (!sourceBytes.AsSpan().SequenceEqual(exportBytes))
+            throw new InvalidDataException(
+                "Roulette receipt-ID ledger differs from the verified WPF export.");
     }
 
     private static FileStream OpenNativeWriter(string workspace)

@@ -3,10 +3,10 @@ using System.Text.Json.Serialization;
 using BlackjackCasino.Core;
 using BlackjackCasino.Desktop;
 
-namespace BlackjackCasino.NativeShell;
+namespace BlackjackCasino.Desktop;
 
 /// <summary>
-/// Durable preview-only roulette receipt with browser-compatible JSON names.
+/// Shared WPF/NativeShell roulette receipt with browser-compatible JSON names.
 /// </summary>
 internal sealed record NativeRouletteReceipt(Guid RoundId, bool Success,
     int Number, decimal Stake, decimal Return, decimal Net, decimal Bankroll);
@@ -15,7 +15,7 @@ internal sealed record NativeRouletteCheckpoint(int Version, bool Pending,
     AppPreferences Preferences, NativeRouletteReceipt[] Receipts);
 
 /// <summary>
-/// Journals the financial snapshot before modifying player-state.json.
+/// Journals the financial snapshot before modifying player-state.json on either host.
 /// A pending checkpoint replays the same candidate after an interruption;
 /// all request IDs remain retained for cross-restart idempotency.
 /// </summary>
@@ -39,6 +39,20 @@ internal sealed class NativeRouletteJournal
 
     internal bool TryReceipt(Guid id, out NativeRouletteReceipt? receipt) =>
         receipts.TryGetValue(id, out receipt);
+
+    /// <summary>
+    /// Validate an imported ledger without modifying or replaying its wallet.
+    /// Pending records must first be recovered by the source host.
+    /// </summary>
+    internal static int ValidateSettled(string directory)
+    {
+        var journal = new NativeRouletteJournal(directory);
+        NativeRouletteCheckpoint? state = journal.Load();
+        if (state is { Pending: true })
+            throw new InvalidDataException(
+                "Roulette has an unfinished financial settlement.");
+        return journal.receipts.Count;
+    }
 
     internal void Recover()
     {

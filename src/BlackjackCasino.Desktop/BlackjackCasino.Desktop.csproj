@@ -34,6 +34,11 @@
     <Content Include="../../frontend/dist/**/*" Link="ModernFrontend/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Condition="Exists('../../frontend/dist/index.html')" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Shared, WPF-independent roulette write-ahead and receipt ledger.
+         Compile the SAME durable journal source used by NativeShell. -->
+    <Compile Include="../BlackjackCasino.NativeShell/NativeRouletteJournal.cs" Link="Shared/NativeRouletteJournal.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\BlackjackCasino.Core\BlackjackCasino.Core.csproj" />
     <ProjectReference Include="..\BlackjackCasino.Update\BlackjackCasino.Update.csproj" />
   </ItemGroup>

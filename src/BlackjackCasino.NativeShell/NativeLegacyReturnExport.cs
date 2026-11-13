@@ -29,7 +29,6 @@ internal static class NativeLegacyReturnExport
         "native-promotion-rehearsal.json",
         "native-migration-manifest.json",
         "native-player-aggregate.json",
-        "native-roulette-checkpoint.json",
     };
 
     private static JsonSerializerOptions CreateJson()
@@ -205,6 +204,10 @@ internal static class NativeLegacyReturnExport
         }
         if (File.Exists(Path.Combine(path, "manor-checkpoint.json")))
             _ = new ManorPersistence(path).Load();
+
+        // WPF now compiles the SAME ledger as the native host. Validate it
+        // as WPF would on startup, without replaying or changing the export.
+        _ = NativeRouletteJournal.ValidateSettled(path);
     }
 
     private static FileStream OpenWriterLease(string workspace)

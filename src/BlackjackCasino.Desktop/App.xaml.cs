@@ -1,5 +1,7 @@
 using System.Windows;
 using System.Windows.Threading;
+using System.Text.Json;
+using System.IO;
 using BlackjackCasino.Core.Hosting;
 
 namespace BlackjackCasino.Desktop;
@@ -35,12 +37,21 @@ public partial class App : Application
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "BlackjackCasino");
             playerWriterLease = HostWriterLease.Acquire(playerRoot);
+            // Recover the existing Manor WAL first and the shared roulette
+            // WAL last, exactly as NativeShell does. This must happen before
+            // MainWindow loads any wallet, so old/returning receipt IDs cannot
+            // silently be settled twice after an interrupted disk write.
+            new ManorPersistence(playerRoot).Recover();
+            new NativeRouletteJournal(playerRoot).Recover();
         }
         catch (Exception error) when (error is InvalidOperationException
-            or UnauthorizedAccessException or InvalidDataException)
+            or UnauthorizedAccessException or InvalidDataException or IOException
+            or JsonException)
         {
-            MessageBox.Show(error.Message, "Blackjack Casino already running",
+            MessageBox.Show(error.Message, "Blackjack Casino startup blocked",
                 MessageBoxButton.OK, MessageBoxImage.Warning);
+            playerWriterLease?.Dispose();
+            playerWriterLease = null;
             Shutdown(1);
             return;
         }
